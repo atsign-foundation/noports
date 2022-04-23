@@ -2,74 +2,73 @@
 
 ### Now for a little internet optimism
 
-# Sample README
+# ssh no ports
 
-Open with intent - we welcome contributions - we want pull requests and to hear about issues.
+ssh no ports provides a way to ssh to a remote linux host/device without that device having any open ports (not even 22)
+on internal interfaces. All network connectivity is out bound and there is no need to know the IP address the device 
+has been given. As long as the device has an IP address, DNS and Internet access, you will be able to connect to it.
 
-## Who is this for?
+There are two binaries:-
 
-The README should be addressed to somebody who's never seen this before.
-But also don't assume that they're a novice.
+sshnpd : The daemon that runs on the remote device 
+sshnp  : The client that sets up a connection to the device which yoiu can then ssh to via your localhost interface
 
-### Code user
+To get going you just need the binaries or run them with dart and two @signs and the .atKeys files. Once you have the 
+@atsigns (atsign.com for free or paid @signs), drop the binaries in place on each machine(s) and put the keys in 
+~/.atsign/keys directory. You will need a device @sign and a manager @sign, but each device can also have a unique device
+name using the --device argument
 
-Does this repo publish to [pub.dev](https://pub.dev) or similar?
-In which case the code user just needs a pointer there - e.g. [at_client on pub.dev](https://pub.dev/packages/at_client)
+Once in place you can start up the daemon first on the remote device. Remember to start the daemon on start up using 
+rc.local script or similar.
 
-### Contributor
+`dart bin/ssh_control.dart --atsign <@your_devices_atsign> --manager <@your_manager_atsign>  --device <iot_device_name> -u`
 
-This is the person who we want working with us here.
-[CONTRIBUTING.md](CONTRIBUTING.md) is going to have the detailed guidance on how to setup their tools,
-tests and how to make a pull request.
+Once that has started up you can run the client code from another machine.
 
-## Why, What, How?
+`dart run bin/ssh_trigger.dart --from <@your_manager_atsign> --to <@your_devices_atsign>   --host <example.com>  -l --local-port --device <iot_device_name>`
 
-### Why?
+The --host specifies a DNS name of the openssh sever of the client machine that the remote device can connect to. If every goes to plan the client will complete and tell you how to connect to the remote host for example.
 
-What is the purpose of this project?
+`ssh -p 2222 cconstab@localhost`
 
-### What?
+When you run this you will be connect to the rmeote machine via a reverse ssh tunnel from the remote device. Which means
+you can now turn off ssh from listening all all interfaces instead have ssh listen just on 127.0.0.1.
 
-What is needed to get the project and its dependencies installed?
+That is easily done by editing /etc/ssh/sshd.config 
 
-### How?
+```
+#Port 22
+#AddressFamily any
+ListenAddress 127.0.0.1
+#ListenAddress ::
+```
 
-How does this work? How is this used to fulfil its intended purpose?
+And restarting the ssh daemon. Please make sure you start the sshnpd on startup and reboot and check.. As this is beta code 
+it is suggested to wrap the daemon in a shell script or have sysctld make sure it is running. 
 
-## Checklist
+My preference whilst testing was to run the daemon in TMUX so it is easy to see the logs (-v).
 
-### Writing
 
-Does the writing flow, with proper grammar and correct spelling?
+Thoughts/bugs/contributions via PR all very welcome!
 
-### Links
 
-Are the links to external resources correct?
-Are the links to other parts of the project correct
-(beware stuff carried over from previous repos where the
-project might have lived during earlier development)?
 
-### Description
+## Who is this tool for?
 
-Has the Description field been filled out?
+System Admins
+Network Admins
+IoT Manufacturers
+Anyone running ssh open to a hostile network!
 
-### Acknowledgement/Attribution
 
-Have we correctly acknowledged the work of others (and their Trademarks etc.)
-where appropriate (per the conditions of their LICENSE?
 
-### LICENSE
 
-Which LICENSE are we using?  
-Is the LICENSE(.md) file present?  
-Does it have the correct dates, legal entities etc.?
 
 ## Maintainers
 
-Who created this?  
+Created by The @ Company 
 
-Do they have complete GitHub profiles?  
+original code base by 
 
-How can they be contacted?  
+https://github.com/cconstab
 
-Who is going to respond to pull requests?  
