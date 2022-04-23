@@ -10,8 +10,9 @@ has been given. As long as the device has an IP address, DNS and Internet access
 
 There are two binaries:-
 
-sshnpd : The daemon that runs on the remote device 
-sshnp  : The client that sets up a connection to the device which yoiu can then ssh to via your localhost interface
+`sshnpd` : The daemon that runs on the remote device
+
+`sshnp`  : The client that sets up a connection to the device which yoiu can then ssh to via your localhost interface
 
 To get going you just need the binaries or run them with dart and two @signs and the .atKeys files. Once you have the 
 @atsigns (atsign.com for free or paid @signs), drop the binaries in place on each machine(s) and put the keys in 
