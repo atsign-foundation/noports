@@ -56,21 +56,21 @@ packages:
       name: at_client
       url: "https://pub.dartlang.org"
     source: hosted
-    version: "3.0.18"
+    version: "3.0.20"
   at_commons:
     dependency: transitive
     description:
       name: at_commons
       url: "https://pub.dartlang.org"
     source: hosted
-    version: "3.0.13"
+    version: "3.0.14"
   at_lookup:
     dependency: "direct main"
     description:
       name: at_lookup
       url: "https://pub.dartlang.org"
     source: hosted
-    version: "3.0.19"
+    version: "3.0.20"
   at_onboarding_cli:
     dependency: "direct main"
     description:
@@ -84,7 +84,7 @@ packages:
       name: at_persistence_secondary_server
       url: "https://pub.dartlang.org"
     source: hosted
-    version: "3.0.23"
+    version: "3.0.24"
   at_persistence_spec:
     dependency: transitive
     description:
@@ -189,7 +189,7 @@ packages:
       name: dartssh2
       url: "https://pub.dartlang.org"
     source: hosted
-    version: "2.6.0"
+    version: "2.6.1"
   encrypt:
     dependency: transitive
     description:
@@ -371,7 +371,7 @@ packages:
       name: pinenacl
       url: "https://pub.dartlang.org"
     source: hosted
-    version: "0.3.3"
+    version: "0.3.4"
   pointycastle:
     dependency: transitive
     description:
@@ -560,7 +560,7 @@ packages:
       name: win32
       url: "https://pub.dartlang.org"
     source: hosted
-    version: "2.5.1"
+    version: "2.5.2"
   xml:
     dependency: transitive
     description:
