@@ -22,9 +22,9 @@ Future<void> cleanUp(String sessionId, AtSignLogger _logger) async {
 
   sleep(Duration(seconds: 2));
 // Delete the generated RSA keys and remove the entry from ~/.ssh/authorized_keys
-  // await deleteFile('$sshHomeDirectory${sessionId}_rsa', _logger);
-  // await deleteFile('$sshHomeDirectory${sessionId}_rsa.pub', _logger);
-  //await removeSession(sshHomeDirectory, sessionId, _logger);
+  await deleteFile('$sshHomeDirectory${sessionId}_rsa', _logger);
+  await deleteFile('$sshHomeDirectory${sessionId}_rsa.pub', _logger);
+  await removeSession(sshHomeDirectory, sessionId, _logger);
 
 }
 
