@@ -15,7 +15,6 @@ import 'package:uuid/uuid.dart';
 // local packages
 import 'package:sshnoports/home_directory.dart';
 import 'package:sshnoports/check_non_ascii.dart';
-//import 'package:ssh_control/ssh_local.dart';
 import 'package:sshnoports/cleanup_sshnp.dart';
 //
 
