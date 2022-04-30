@@ -31,7 +31,7 @@ Once that has started up you can run the client code from another machine.
 
 `dart run bin/ssh_trigger.dart --from <@your_manager_atsign> --to <@your_devices_atsign>   --host <example.com>  -l --local-port --device <iot_device_name>`
 
-The --host specifies a DNS name of the openssh sever of the client machine that the remote device can connect to. If every goes to plan the client will complete and tell you how to connect to the remote host for example.
+The --host specifies a DNS name of the openssh sever of the client machine that the remote device can connect to. If everything goes to plan the client will complete and tell you how to connect to the remote host for example.
 
 `ssh -p 2222 cconstab@localhost`
 
