@@ -8,6 +8,9 @@ ssh no ports provides a way to ssh to a remote linux host/device without that de
 on external interfaces. All network connectivity is out bound and there is no need to know the IP address the device 
 has been given. As long as the device has an IP address, DNS and Internet access, you will be able to connect to it.
 
+## Quick demo
+[![asciicast](https://asciinema.org/a/nhcExPw1MZnn7sKEK6gJTJEkR.svg)](https://asciinema.org/a/nhcExPw1MZnn7sKEK6gJTJEkR)
+
 There are two binaries:-
 
 `sshnpd` : The daemon that runs on the remote device
