@@ -2,7 +2,7 @@
 
 ### Now for a little internet optimism
 
-# ssh no ports
+# Ssh! No ports
 
 ssh no ports provides a way to ssh to a remote linux host/device without that device having any open ports (not even 22)
 on external interfaces. All network connectivity is out bound and there is no need to know the IP address the device 
