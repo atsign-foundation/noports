@@ -35,7 +35,7 @@ The --host specifies a DNS name of the openssh sever of the client machine that 
 
 `ssh -p 2222 cconstab@localhost`
 
-When you run this you will be connect to the rmeote machine via a reverse ssh tunnel from the remote device. Which means
+When you run this you will be connect to the remote machine via a reverse ssh tunnel from the remote device. Which means
 you can now turn off ssh from listening all all interfaces instead have ssh listen just on 127.0.0.1.
 
 That is easily done by editing /etc/ssh/sshd.config 
