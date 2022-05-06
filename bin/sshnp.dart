@@ -16,6 +16,7 @@ import 'package:uuid/uuid.dart';
 import 'package:sshnoports/home_directory.dart';
 import 'package:sshnoports/check_non_ascii.dart';
 import 'package:sshnoports/cleanup_sshnp.dart';
+import 'package:sshnoports/check_file_exists.dart';
 //
 
 void main(List<String> args) async {
@@ -27,33 +28,23 @@ void main(List<String> args) async {
   String sessionId = uuid.v4();
 
   ProcessSignal.sigint.watch().listen((signal) async {
-    await cleanUp(sessionId,_logger);
+    await cleanUp(sessionId, _logger);
     exit(0);
   });
 
   var parser = ArgParser();
   // Basic arguments
-  parser.addOption('keyFile', abbr: 'k', mandatory: false, help: 'Sending @sign\'s keyFile if not in ~/.atsign/keys/');
+  parser.addOption('key-file', abbr: 'k', mandatory: false, help: 'Sending @sign\'s atKeys file if not in ~/.atsign/keys/');
   parser.addOption('from', abbr: 'f', mandatory: true, help: 'Sending @sign');
   parser.addOption('to', abbr: 't', mandatory: true, help: 'Send a trigger to this @sign');
   parser.addOption('device', abbr: 'd', mandatory: false, defaultsTo: "default", help: 'Send a trigger to this device');
   parser.addOption('host', abbr: 'h', mandatory: false, help: 'DNS Hostname or IP address to connect back to');
   parser.addOption('port', abbr: 'p', mandatory: false, defaultsTo: '22', help: 'TCP port to connect back to');
-  parser.addOption('local-port', abbr: 'l', defaultsTo: '2222', mandatory: false, help: 'Reverse ssh port to listen on');
-  parser.addOption('ssh-public-key', abbr: 's', defaultsTo: 'false', mandatory: false, help: 'Public key file from ~/.ssh to be apended to authorized_hosts on the remote device');
+  parser.addOption('local-port',
+      abbr: 'l', defaultsTo: '2222', mandatory: false, help: 'Reverse ssh port to listen on');
+  parser.addOption('ssh-public-key', abbr: 's', defaultsTo: 'false', mandatory: false, help: 'Public key file from ~/.ssh to be apended to authorized_hosts on the remote device'); 
   parser.addFlag('verbose', abbr: 'v', help: 'More logging');
-  // New stuff in the works
-  //
-  // parser.addOption('command',
-  //     abbr: 'c',
-  //     mandatory: false,
-  //     defaultsTo: 'sshd',
-  //     help: 'Remote command to trigger',
-  //     allowedHelp: {
-  //       'sshd': 'Call back to a sshd',
-  //       'shell': 'Run a shell command'
-  //     });
-  // parser.addOption('args', abbr: 'a', mandatory: false, help: 'Arguments for command');
+ 
 
   // Check the arguments
   dynamic results;
@@ -68,6 +59,7 @@ void main(List<String> args) async {
   String host = "127.0.0.1";
   String localPort;
   String sshString = "";
+  String sshHomeDirectory = "";
   String sendSshPublicKey = "";
 
   try {
@@ -87,14 +79,24 @@ void main(List<String> args) async {
     if (homeDirectory == null) {
       throw ('\nUnable to determine your home directory: please set environment variable\n\n');
     }
+      // Setup ssh keys location
+      sshHomeDirectory = homeDirectory + "/.ssh/";
+      if (Platform.isWindows) {
+       sshHomeDirectory = homeDirectory + '\\.ssh\\';
+      }
 
     // Find @sign key file
-    if (results['keyFile'] != null) {
-      atsignFile = results['keyFile'];
-    } else {
       fromAtsign = results['from'];
       toAtsign = results['to'];
+    if (results['key-file'] != null) {
+      atsignFile = results['key-file'];
+    } else {
       atsignFile = '${fromAtsign}_key.atKeys';
+      atsignFile = '$homeDirectory/.atsign/keys/$atsignFile';
+    }
+    // Check atKeyFile selected exists
+    if (!await fileExists(atsignFile)) {
+      throw ('\n Unable to find .atKeys file : $atsignFile');
     }
 
     // sendCommand = results['command'];
@@ -111,7 +113,7 @@ void main(List<String> args) async {
 // Get the other easy options
     port = results['port'];
     localPort = results['local-port'];
-// Check device string only conatins ascii
+// Check device string only contains ascii
 //
     if (checkNonAscii(results['device'])) {
       throw ('\nDevice name can only contain alphanumeric characters with a max length of 15');
@@ -122,27 +124,28 @@ void main(List<String> args) async {
 // Check the public key if the option was selected
     sendSshPublicKey = results['ssh-public-key'];
     if ((sendSshPublicKey != 'false')) {
+      sendSshPublicKey = '$sshHomeDirectory$sendSshPublicKey';
+      if (!await fileExists(sendSshPublicKey)) {
+        throw ('\n Unable to find ssh public key file : $sendSshPublicKey');
+      }
       if (!sendSshPublicKey.endsWith('.pub')) {
         throw ('\n The ssh public key should end with ".pub"');
       }
     }
   } catch (e) {
-    print(e);
     print(parser.usage);
-    exit(0);
+    print(e);
+    exit(1);
   }
 
-  // Setup ssh keys
-  var sshHomeDirectory = homeDirectory + "/.ssh/";
-  if (Platform.isWindows) {
-    sshHomeDirectory = homeDirectory + '\\.ssh\\';
-  }
-  await Process.run('ssh-keygen', ['-t', 'rsa', '-b', '4096', '-f', '${sessionId}_rsa', '-q', '-N', ''], workingDirectory: sshHomeDirectory);
+  await Process.run('ssh-keygen', ['-t', 'rsa', '-b', '4096', '-f', '${sessionId}_rsa', '-q', '-N', ''],
+      workingDirectory: sshHomeDirectory);
   String sshPublicKey = await File('$sshHomeDirectory${sessionId}_rsa.pub').readAsString();
   String sshPrivateKey = await File('$sshHomeDirectory${sessionId}_rsa').readAsString();
 
-  File('${sshHomeDirectory}authorized_keys')
-      .writeAsStringSync('command="echo \\"ssh session complete\\";sleep 20",PermitOpen="localhost:22" ${sshPublicKey.trim()} $sessionId\n', mode: FileMode.append);
+  File('${sshHomeDirectory}authorized_keys').writeAsStringSync(
+      'command="echo \\"ssh session complete\\";sleep 20",PermitOpen="localhost:22" ${sshPublicKey.trim()} $sessionId\n',
+      mode: FileMode.append);
   // Now on to the @platform startup
 
   AtSignLogger.root_level = 'WARNING';
@@ -161,7 +164,7 @@ void main(List<String> args) async {
     ..isLocalStoreRequired = true
     ..commitLogPath = '$homeDirectory/.sshnp/$fromAtsign/storage/commitLog'
     //..cramSecret = '<your cram secret>';
-    ..atKeysFilePath = '$homeDirectory/.atsign/keys/$atsignFile';
+    ..atKeysFilePath = atsignFile;
 
   AtOnboardingService onboardingService = AtOnboardingServiceImpl(fromAtsign, atOnboardingConfig);
 
@@ -217,7 +220,8 @@ void main(List<String> args) async {
     ..metadata = metaData;
 
   try {
-    await notificationService.notify(NotificationParams.forUpdate(key, value: sshPrivateKey), onSuccess: (notification) {
+    await notificationService.notify(NotificationParams.forUpdate(key, value: sshPrivateKey),
+        onSuccess: (notification) {
       _logger.info('SUCCESS:' + notification.toString());
     }, onError: (notification) {
       _logger.info('ERROR:' + notification.toString());
@@ -241,18 +245,19 @@ void main(List<String> args) async {
 
   if (sendSshPublicKey != 'false') {
     try {
-      String toSshPublicKey = await File('$sshHomeDirectory$sendSshPublicKey').readAsString();
+      String toSshPublicKey = await File(sendSshPublicKey).readAsString();
       if (!toSshPublicKey.startsWith('ssh-rsa')) {
         throw ('$sshHomeDirectory$sendSshPublicKey does not look like a public key file');
       }
-      await notificationService.notify(NotificationParams.forUpdate(key, value: toSshPublicKey), onSuccess: (notification) {
+      await notificationService.notify(NotificationParams.forUpdate(key, value: toSshPublicKey),
+          onSuccess: (notification) {
         _logger.info('SUCCESS:' + notification.toString());
       }, onError: (notification) {
         _logger.info('ERROR:' + notification.toString());
       });
     } catch (e) {
       print("Error openning or validating public key file or sending to remote @sign: " + e.toString());
-      await cleanUp(sessionId,_logger);
+      await cleanUp(sessionId, _logger);
       exit(0);
     }
   }
@@ -285,7 +290,7 @@ void main(List<String> args) async {
     print(e.toString());
   }
 
-  await cleanUp(sessionId,_logger);
+  await cleanUp(sessionId, _logger);
   print("ssh -p $localPort $remoteUsername@localhost");
   // TODO The terminal handling of ssh2 package needs
   // better implementation before we go this route

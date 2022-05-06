@@ -12,6 +12,7 @@ import 'package:at_client/src/decryption_service/decryption_manager.dart';
 import 'package:at_client/src/service/notification_service.dart';
 // external packages
 import 'package:args/args.dart';
+import 'package:sshnoports/check_file_exists.dart';
 import 'package:uuid/uuid.dart';
 import 'package:dartssh2/dartssh2.dart';
 // local packages
@@ -74,6 +75,11 @@ void main(List<String> args) async {
       managerAtsign = results['manager'];
       atsignFile = '${deviceAtsign}_key.atKeys';
     }
+    atsignFile ='$homeDirectory/.atsign/keys/$atsignFile';
+        // Check atKeyFile selected exists
+    if (!await fileExists(atsignFile)) {
+      throw ('\n Unable to find .atKeys file : $atsignFile');
+    }
   } catch (e) {
     print(e);
     print(parser.usage);
@@ -99,7 +105,7 @@ void main(List<String> args) async {
     ..isLocalStoreRequired = true
     ..commitLogPath = '$homeDirectory/.sshnp/$deviceAtsign/storage/commitLog'
     //..cramSecret = '<your cram secret>';
-    ..atKeysFilePath = '$homeDirectory/.atsign/keys/$atsignFile';
+    ..atKeysFilePath = atsignFile;
   nameSpace = atOnboardingConfig.namespace!;
 
   AtOnboardingService onboardingService = AtOnboardingServiceImpl(deviceAtsign, atOnboardingConfig);
