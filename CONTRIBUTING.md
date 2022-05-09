@@ -28,31 +28,29 @@ describe.
 
 ### Prerequisites
 
-   ``` sh
-   # show how to install the tools needed to work with the code here
-   ```
-
+[Get the Dart SDK](https://dart.dev/get-dart?msclkid=b7e2eef9cf7c11ec853481f094973931)
+if you don't already have Dart (or Flutter) installed.
 
 ### GitHub Repository Clone
 
 To prepare your dedicated GitHub repository:
 
-1. Fork in GitHub https://github.com/atsign-foundation/REPO
-2. Clone *your forked repository* (e.g., `git clone git@github.com:yourname/REPO`)
+1. Fork in GitHub https://github.com/atsign-foundation/sshnoports
+2. Clone *your forked repository* (e.g., `git clone git@github.com:yourname/sshnoports`)
 3. Set your remotes as follows:
 
    ```sh
-   cd REPO
-   git remote add upstream git@github.com:atsign-foundation/REPO.git
+   cd sshnoports
+   git remote add upstream git@github.com:atsign-foundation/sshnoports.git
    git remote set-url upstream --push DISABLED
    ```
 
    Running `git remote -v` should give something similar to:
 
    ```text
-   origin  git@github.com:yourname/REPO.git (fetch)
-   origin  git@github.com:yourname/REPO.git (push)
-   upstream        git@github.com:atsign-foundation/REPO.git (fetch)
+   origin  git@github.com:yourname/sshnoports.git (fetch)
+   origin  git@github.com:yourname/sshnoports.git (push)
+   upstream        git@github.com:atsign-foundation/sshnoports.git (fetch)
    upstream        DISABLED (push)
    ```
 
@@ -87,61 +85,8 @@ To prepare your dedicated GitHub repository:
    git push
    ```
 
-1. How to run tests:
-
-   ``` sh
-   # explain tests here
-   ```
-
 1. Open a new Pull Request to the main repository using your `trunk` branch
 
-
-## @‎library release process
-
-The @ Foundation produces several widgets and libraries that the app developer
-can make use of to develop apps on @‎protocol. These libraries are developed in
-Dart & Flutter and published to [pub.dev](https://pub.dev/publishers/atsign.org/packages).
-
-![alt_text](images/image1.png "Version flow")
-
-## Following the changes
-
-The @ Foundation publishes libraries and widgets to
-[https://pub.dev/publishers/atsign.org/packages](https://pub.dev/publishers/atsign.org/packages).
-Each of these libraries contains a tab called “Changelog” that shows various
-published versions and a short description of what changes that went in.
-
-![alt_text](images/image2.png "Changelog screenshot")
-
-Also the “Versions” tab shows the versions published in the reverse
-chronological order.
-
-![alt_text](images/image3.png "Versions screenshot")
-
-## Reporting a bug
-
-The best place to start reporting bugs on the libraries published by 
-@‎protocol would be the “View/report issues” link available on
-[pub.dev](https://pub.dev/publishers/atsign.org/packages).
-
-![alt_text](images/image4.png "View/report issues highlight")
-
-Once the link is clicked, one should be redirected to GitHub repo where the
-issue can be reported by clicking on the “New issue” button.
-
-![alt_text](images/image5.png "Issues list")
-
-Clicking on the  “New issue” button should take you to the screen to choose
-where the issue is a Bug or an Enhancement.
-
-![alt_text](images/image6.png "Choose Bug report")
-
-Upon clicking on the “Get started” button against the “Bug Report” you should
-be directed to a page with a bug template provided by the @company. Filling
-out all of the fields in the template gives the @company a better chance to
-reproduce and fix the bug.
-
-![alt_text](images/image7.png "Filling a Bug report")
 
 ## Bug fix and delivery process
 
