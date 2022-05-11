@@ -32,16 +32,15 @@ Once in place you can start up the daemon first on the remote device.
 Remember to start the daemon on start up using rc.local script or similar.
 
 ```
-dart bin/ssh_control.dart --atsign <@your_devices_atsign> \
---manager <@your_manager_atsign>  --device <iot_device_name> -u
+./sshnpd --atsign <@your_devices_atsign> --manager <@your_manager_atsign> \
+--device <iot_device_name> -u
 ```
 
 Once that has started up you can run the client code from another machine.
 
 ```
-dart run bin/ssh_trigger.dart --from <@your_manager_atsign> \
---to <@your_devices_atsign>   --host <example.com>  -l --local-port \
---device <iot_device_name>
+./sshnp --from <@your_manager_atsign> --to <@your_devices_atsign>  \
+--host <example.com>  -l --local-port --device <iot_device_name>
 ```
 
 The --host specifies a DNS name of the openssh sever of the client machine
