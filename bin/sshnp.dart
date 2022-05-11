@@ -36,12 +36,12 @@ void main(List<String> args) async {
   // Basic arguments
   parser.addOption('key-file', abbr: 'k', mandatory: false, help: 'Sending @sign\'s atKeys file if not in ~/.atsign/keys/');
   parser.addOption('from', abbr: 'f', mandatory: true, help: 'Sending @sign');
-  parser.addOption('to', abbr: 't', mandatory: true, help: 'Send a trigger to this @sign');
-  parser.addOption('device', abbr: 'd', mandatory: false, defaultsTo: "default", help: 'Send a trigger to this device');
-  parser.addOption('host', abbr: 'h', mandatory: false, help: 'DNS Hostname or IP address to connect back to');
+  parser.addOption('to', abbr: 't', mandatory: true, help: 'Send a notification to this @sign');
+  parser.addOption('device', abbr: 'd', mandatory: false, defaultsTo: "default", help: 'Send a notification to this device');
+  parser.addOption('host', abbr: 'h', mandatory: true, help: 'FQDN Hostname e.g example.com or IP address to connect back to');
   parser.addOption('port', abbr: 'p', mandatory: false, defaultsTo: '22', help: 'TCP port to connect back to');
   parser.addOption('local-port',
-      abbr: 'l', defaultsTo: '2222', mandatory: false, help: 'Reverse ssh port to listen on');
+      abbr: 'l', defaultsTo: '2222', mandatory: false, help: 'Reverse ssh port to listen on, on your local machine');
   parser.addOption('ssh-public-key', abbr: 's', defaultsTo: 'false', mandatory: false, help: 'Public key file from ~/.ssh to be apended to authorized_hosts on the remote device'); 
   parser.addFlag('verbose', abbr: 'v', help: 'More logging');
  
@@ -53,7 +53,6 @@ void main(List<String> args) async {
   String fromAtsign = 'unknown';
   String toAtsign = 'unknown';
   String? homeDirectory = getHomeDirectory();
-  String sendCommand = 'none';
   String device = "";
   String port;
   String host = "127.0.0.1";
@@ -61,6 +60,9 @@ void main(List<String> args) async {
   String sshString = "";
   String sshHomeDirectory = "";
   String sendSshPublicKey = "";
+  // In the future (perhaps) we can send other commands
+  // Perhaps OpenVPN or shell commands
+  String sendCommand = 'sshd';
 
   try {
     // Arg check
@@ -99,18 +101,9 @@ void main(List<String> args) async {
       throw ('\n Unable to find .atKeys file : $atsignFile');
     }
 
-    // sendCommand = results['command'];
-    // set command to sshd if the localport is set
-    sendCommand = 'sshd';
-    if (sendCommand == 'sshd') {
-      if (results['host'] != null) {
-        // sendCommand = results['command'];
-        host = results['host'];
-      } else {
-        throw ('\nUnable to determine Host to connect to: please use --local-ssh-port and specify the DNS/IP address with --host\n\n');
-      }
-    }
+
 // Get the other easy options
+    host = results['host'];
     port = results['port'];
     localPort = results['local-port'];
 // Check device string only contains ascii
