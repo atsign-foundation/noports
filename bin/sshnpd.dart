@@ -266,9 +266,9 @@ void sshCallback(AtNotification notification, String privateKey, AtSignLogger _l
 
     // var result = await Process.run('ssh', sshList);
 
+    try {
     final socket = await SSHSocket.connect(hostname, int.parse(port));
 
-    try {
       final client = SSHClient(
         socket,
         username: username,
