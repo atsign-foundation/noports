@@ -218,35 +218,35 @@ void main(List<String> args) async {
       onDone: () => _logger.info('Notification listener stopped'));
 }
 
-Future<String> getPrivateKey(
-  AtNotification notification,
-  AtSignLogger _logger,
-) async {
-  var atKey = AtKey()
-    ..key = notification.key
-    ..sharedBy = notification.from
-    ..sharedWith = notification.to;
-// Get the decryption key to decrypt the value in the notification object
-  var decryptionService = AtKeyDecryptionManager.get(atKey, notification.to);
-// Decrypt it
-  var privateKey = await decryptionService.decrypt(atKey, notification.value);
-  return (privateKey);
-}
+// Future<String> getPrivateKey(
+//   AtNotification notification,
+//   AtSignLogger _logger,
+// ) async {
+//   var atKey = AtKey()
+//     ..key = notification.key
+//     ..sharedBy = notification.from
+//     ..sharedWith = notification.to;
+// // Get the decryption key to decrypt the value in the notification object
+//   var decryptionService = AtKeyDecryptionManager.get(atKey, notification.to);
+// // Decrypt it
+//   var privateKey = await decryptionService.decrypt(atKey, notification.value);
+//   return (privateKey);
+// }
 
-Future<String> getSshPublicKey(
-  AtNotification notification,
-  AtSignLogger _logger,
-) async {
-  var atKey = AtKey()
-    ..key = notification.key
-    ..sharedBy = notification.from
-    ..sharedWith = notification.to;
-// Get the decryption key to decrypt the value in the notification object
-  var decryptionService = AtKeyDecryptionManager.get(atKey, notification.to);
-// Decrypt it
-  var sshPublicKey = await decryptionService.decrypt(atKey, notification.value);
-  return (sshPublicKey);
-}
+// Future<String> getSshPublicKey(
+//   AtNotification notification,
+//   AtSignLogger _logger,
+// ) async {
+//   var atKey = AtKey()
+//     ..key = notification.key
+//     ..sharedBy = notification.from
+//     ..sharedWith = notification.to;
+// // Get the decryption key to decrypt the value in the notification object
+//   var decryptionService = AtKeyDecryptionManager.get(atKey, notification.to);
+// // Decrypt it
+//   var sshPublicKey = await decryptionService.decrypt(atKey, notification.value);
+//   return (sshPublicKey);
+// }
 
 void sshCallback(
     AtNotification notification, String privateKey, AtSignLogger _logger, String managerAtsign, String device) async {
