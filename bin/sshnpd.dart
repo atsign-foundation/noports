@@ -8,7 +8,6 @@ import 'package:at_utils/at_logger.dart';
 import 'package:at_commons/at_commons.dart';
 import 'package:at_onboarding_cli/at_onboarding_cli.dart';
 // ignore: implementation_imports
-import 'package:at_client/src/decryption_service/decryption_manager.dart';
 import 'package:at_client/src/service/notification_service.dart';
 // external packages
 import 'package:args/args.dart';
@@ -177,7 +176,6 @@ void main(List<String> args) async {
 
     if (keyAtsign == 'privateKey') {
       _logger.info('Private Key recieved from ' + notification.from + ' notification id : ' + notification.id);
-      //privateKey = await getPrivateKey(notification, _logger);
       privateKey = notification.value!;
     }
 
@@ -188,7 +186,6 @@ void main(List<String> args) async {
           sshHomeDirectory = homeDirectory + '\\.ssh\\';
         }
         _logger.info('ssh Public Key recieved from ' + notification.from + ' notification id : ' + notification.id);
-        //sshPublicKey = await getSshPublicKey(notification, _logger);
         sshPublicKey = notification.value!;
 
 // Check to see if the public key looks like one!
@@ -218,51 +215,13 @@ void main(List<String> args) async {
       onDone: () => _logger.info('Notification listener stopped'));
 }
 
-// Future<String> getPrivateKey(
-//   AtNotification notification,
-//   AtSignLogger _logger,
-// ) async {
-//   var atKey = AtKey()
-//     ..key = notification.key
-//     ..sharedBy = notification.from
-//     ..sharedWith = notification.to;
-// // Get the decryption key to decrypt the value in the notification object
-//   var decryptionService = AtKeyDecryptionManager.get(atKey, notification.to);
-// // Decrypt it
-//   var privateKey = await decryptionService.decrypt(atKey, notification.value);
-//   return (privateKey);
-// }
 
-// Future<String> getSshPublicKey(
-//   AtNotification notification,
-//   AtSignLogger _logger,
-// ) async {
-//   var atKey = AtKey()
-//     ..key = notification.key
-//     ..sharedBy = notification.from
-//     ..sharedWith = notification.to;
-// // Get the decryption key to decrypt the value in the notification object
-//   var decryptionService = AtKeyDecryptionManager.get(atKey, notification.to);
-// // Decrypt it
-//   var sshPublicKey = await decryptionService.decrypt(atKey, notification.value);
-//   return (sshPublicKey);
-// }
 
 void sshCallback(
     AtNotification notification, String privateKey, AtSignLogger _logger, String managerAtsign, String device) async {
   var uuid = Uuid();
   String sessionId = uuid.v4();
 
-  // var currentAtsign = atClient?.getCurrentAtSign().toString();
-
-  var atKey = AtKey()
-    ..key = notification.key
-    ..sharedBy = notification.from
-    ..sharedWith = notification.to;
-// Get the decryption key to decrypt the value in the notification object
-  //var decryptionService = AtKeyDecryptionManager.get(atKey, notification.to);
-// Decrypt it
-  //var sshString = await decryptionService.decrypt(atKey, notification.value);
   var sshString = notification.value!;
 
   if (notification.from == managerAtsign) {
