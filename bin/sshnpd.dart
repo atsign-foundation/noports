@@ -8,7 +8,6 @@ import 'package:at_utils/at_logger.dart';
 import 'package:at_commons/at_commons.dart';
 import 'package:at_onboarding_cli/at_onboarding_cli.dart';
 // ignore: implementation_imports
-import 'package:at_client/src/decryption_service/decryption_manager.dart';
 import 'package:at_client/src/service/notification_service.dart';
 // external packages
 import 'package:args/args.dart';
@@ -29,11 +28,17 @@ void main(List<String> args) async {
   // Basic arguments
   parser.addOption('keyFile', abbr: 'k', mandatory: false, help: 'Sending @sign\'s keyFile if not in ~/.atsign/keys/');
   parser.addOption('atsign', abbr: 'a', mandatory: true, help: '@sign of this device');
-  parser.addOption('manager', abbr: 'm', mandatory: true, help: 'Managers @sign, that this device will accept triggers from');
-  parser.addOption('device', abbr: 'd', mandatory: false, defaultsTo: "default", help: 'Send a trigger to this device, allows multiple devices share an @sign');
+  parser.addOption('manager',
+      abbr: 'm', mandatory: true, help: 'Managers @sign, that this device will accept triggers from');
+  parser.addOption('device',
+      abbr: 'd',
+      mandatory: false,
+      defaultsTo: "default",
+      help: 'Send a trigger to this device, allows multiple devices share an @sign');
 
   parser.addFlag('sshpublickey', abbr: 's', help: 'Update authorized_keys to include public key from sshnp');
-  parser.addFlag('username', abbr: 'u', help: 'Send username to the manager to allow sshnp to display username in command line');
+  parser.addFlag('username',
+      abbr: 'u', help: 'Send username to the manager to allow sshnp to display username in command line');
   parser.addFlag('verbose', abbr: 'v', help: 'More logging');
 
   // Check the arguments
@@ -75,8 +80,8 @@ void main(List<String> args) async {
       managerAtsign = results['manager'];
       atsignFile = '${deviceAtsign}_key.atKeys';
     }
-    atsignFile ='$homeDirectory/.atsign/keys/$atsignFile';
-        // Check atKeyFile selected exists
+    atsignFile = '$homeDirectory/.atsign/keys/$atsignFile';
+    // Check atKeyFile selected exists
     if (!await fileExists(atsignFile)) {
       throw ('\n Unable to find .atKeys file : $atsignFile');
     }
@@ -164,14 +169,14 @@ void main(List<String> args) async {
   });
   String privateKey = "";
   String sshPublicKey = "";
-  notificationService.subscribe(regex: '$device.$nameSpace@').listen(((notification) async {
+  notificationService.subscribe(regex: '$device.$nameSpace@', shouldDecrypt: true).listen(((notification) async {
     String keyAtsign = notification.key;
     keyAtsign = keyAtsign.replaceAll(notification.to + ':', '');
     keyAtsign = keyAtsign.replaceAll('.' + device + '.' + nameSpace + notification.from, '');
 
     if (keyAtsign == 'privateKey') {
       _logger.info('Private Key recieved from ' + notification.from + ' notification id : ' + notification.id);
-      privateKey = await getPrivateKey(notification, _logger);
+      privateKey = notification.value!;
     }
 
     if (keyAtsign == 'sshPublicKey') {
@@ -181,18 +186,17 @@ void main(List<String> args) async {
           sshHomeDirectory = homeDirectory + '\\.ssh\\';
         }
         _logger.info('ssh Public Key recieved from ' + notification.from + ' notification id : ' + notification.id);
-        sshPublicKey = await getSshPublicKey(notification, _logger);
+        sshPublicKey = notification.value!;
 
 // Check to see if the public key looks like one!
-      if (!sshPublicKey.startsWith('ssh-rsa')) {
-        throw ('$sshPublicKey does not look like a public key');
-      }
+        if (!sshPublicKey.startsWith('ssh-rsa')) {
+          throw ('$sshPublicKey does not look like a public key');
+        }
 
 // Check to see if the ssh Publickey is already in the file if not append to the ~/.ssh/authorized_keys file
         var authKeys = File('${sshHomeDirectory}authorized_keys');
 
         var authKeysContent = await authKeys.readAsString();
-
 
         if (!authKeysContent.contains(sshPublicKey)) {
           authKeys.writeAsStringSync(sshPublicKey, mode: FileMode.append);
@@ -206,53 +210,19 @@ void main(List<String> args) async {
       _logger.info('ssh callback request recieved from ' + notification.from + ' notification id : ' + notification.id);
       sshCallback(notification, privateKey, _logger, managerAtsign, device);
     }
-  }), onError: (e) => _logger.severe('Notification Failed:' + e.toString()), onDone: () => _logger.info('Notification listener stopped'));
+  }),
+      onError: (e) => _logger.severe('Notification Failed:' + e.toString()),
+      onDone: () => _logger.info('Notification listener stopped'));
 }
 
-Future<String> getPrivateKey(
-  AtNotification notification,
-  AtSignLogger _logger,
-) async {
-  var atKey = AtKey()
-    ..key = notification.key
-    ..sharedBy = notification.from
-    ..sharedWith = notification.to;
-// Get the decryption key to decrypt the value in the notification object
-  var decryptionService = AtKeyDecryptionManager.get(atKey, notification.to);
-// Decrypt it
-  var privateKey = await decryptionService.decrypt(atKey, notification.value);
-  return (privateKey);
-}
 
-Future<String> getSshPublicKey(
-  AtNotification notification,
-  AtSignLogger _logger,
-) async {
-  var atKey = AtKey()
-    ..key = notification.key
-    ..sharedBy = notification.from
-    ..sharedWith = notification.to;
-// Get the decryption key to decrypt the value in the notification object
-  var decryptionService = AtKeyDecryptionManager.get(atKey, notification.to);
-// Decrypt it
-  var sshPublicKey = await decryptionService.decrypt(atKey, notification.value);
-  return (sshPublicKey);
-}
 
-void sshCallback(AtNotification notification, String privateKey, AtSignLogger _logger, String managerAtsign, String device) async {
+void sshCallback(
+    AtNotification notification, String privateKey, AtSignLogger _logger, String managerAtsign, String device) async {
   var uuid = Uuid();
   String sessionId = uuid.v4();
 
-  // var currentAtsign = atClient?.getCurrentAtSign().toString();
-
-  var atKey = AtKey()
-    ..key = notification.key
-    ..sharedBy = notification.from
-    ..sharedWith = notification.to;
-// Get the decryption key to decrypt the value in the notification object
-  var decryptionService = AtKeyDecryptionManager.get(atKey, notification.to);
-// Decrypt it
-  var sshString = await decryptionService.decrypt(atKey, notification.value);
+  var sshString = notification.value!;
 
   if (notification.from == managerAtsign) {
     // Local port, port of sshd , username , hostname
@@ -261,13 +231,14 @@ void sshCallback(AtNotification notification, String privateKey, AtSignLogger _l
     var port = sshList[1];
     var username = sshList[2];
     var hostname = sshList[3];
-    _logger.info('ssh session started for $username to $hostname on port $port using localhost:$localPort on $hostname ');
+    _logger
+        .info('ssh session started for $username to $hostname on port $port using localhost:$localPort on $hostname ');
     _logger.warning('ssh session started from: ' + notification.from.toString() + " session: $sessionId");
 
     // var result = await Process.run('ssh', sshList);
 
     try {
-    final socket = await SSHSocket.connect(hostname, int.parse(port));
+      final socket = await SSHSocket.connect(hostname, int.parse(port));
 
       final client = SSHClient(
         socket,

@@ -135,12 +135,13 @@ void main(List<String> args) async {
       workingDirectory: sshHomeDirectory);
   String sshPublicKey = await File('$sshHomeDirectory${sessionId}_rsa.pub').readAsString();
   String sshPrivateKey = await File('$sshHomeDirectory${sessionId}_rsa').readAsString();
-
+ 
+  // Set up a safe authorized_keys file, for the reverse ssh tunnel
   File('${sshHomeDirectory}authorized_keys').writeAsStringSync(
       'command="echo \\"ssh session complete\\";sleep 20",PermitOpen="localhost:22" ${sshPublicKey.trim()} $sessionId\n',
       mode: FileMode.append);
+  
   // Now on to the @platform startup
-
   AtSignLogger.root_level = 'WARNING';
   if (results['verbose']) {
     _logger.logger.level = Level.INFO;
@@ -285,9 +286,5 @@ void main(List<String> args) async {
 
   await cleanUp(sessionId, _logger);
   print("ssh -p $localPort $remoteUsername@localhost");
-  // TODO The terminal handling of ssh2 package needs
-  // better implementation before we go this route
-  // sshLocal(remoteUsername, localPort);
-
   exit(0);
 }
