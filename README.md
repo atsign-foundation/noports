@@ -75,10 +75,10 @@ Thoughts/bugs/contributions via PR all very welcome!
 
 ## Who is this tool for?
 
-System Admins
-Network Admins
-IoT Manufacturers
-Anyone running ssh open to a hostile network!
+System Admins  
+Network Admins  
+IoT Manufacturers  
+Anyone running ssh open to a hostile network!  
 
 ## Maintainers
 
