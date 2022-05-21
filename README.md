@@ -9,7 +9,7 @@ address the device has been given. As long as the device has an IP address,
 DNS and Internet access, you will be able to connect to it.
 
 ## Quick demo
-[![asciicast](https://asciinema.org/a/nhcExPw1MZnn7sKEK6gJTJEkR.svg)](https://asciinema.org/a/nhcExPw1MZnn7sKEK6gJTJEkR)
+[![asciicast](https://asciinema.org/a/496148.svg)](https://asciinema.org/a/496148)
 
 There are two binaries:-
 
