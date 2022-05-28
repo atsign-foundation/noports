@@ -67,7 +67,7 @@ void main(List<String> args) async {
   String sshString = "";
   String sshHomeDirectory = "";
   String sendSshPublicKey = "";
-  String localSshOptions = "";
+  List<String> localSshOptions = [];
   // In the future (perhaps) we can send other commands
   // Perhaps OpenVPN or shell commands
   String sendCommand = 'sshd';
@@ -115,7 +115,6 @@ void main(List<String> args) async {
     localPort = results['local-port'];
     localSshOptions = results['local-ssh-options'];
 
-    print(localSshOptions);
 // Check device string only contains ascii
 //
     if (checkNonAscii(results['device'])) {
@@ -295,6 +294,13 @@ void main(List<String> args) async {
   }
 
   await cleanUp(sessionId, _logger);
-  print("ssh -p $localPort $remoteUsername@localhost");
+  // print out base ssh command
+  stdout.write("ssh -p $localPort $remoteUsername@localhost ");
+  // print out optional arguments
+  for (var argument in localSshOptions){
+    stdout.write(argument + " ");
+  }
+  // Print the  return 
+  stdout.write('\n');
   exit(0);
 }
