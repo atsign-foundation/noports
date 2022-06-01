@@ -41,7 +41,7 @@ Once that has started up you can run the client code from another machine.
 --host <example.com>  -l --local-port --device <iot_device_name>
 ```
 
-The --host specifies a DNS name of the openssh sever of the client machine
+The --host specifies a DNS name of the openssh server of the client machine
 that the remote device can connect to. If everything goes to plan the client
 will complete and tell you how to connect to the remote host for example.
 
