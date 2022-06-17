@@ -20,10 +20,10 @@ can then ssh to via your localhost interface
 
 To get going you just need the binaries (from latest 
 [release](https://github.com/atsign-foundation/sshnoports/releases))
-or run them with dart and two @signs and the .atKeys files. Once you have the
-@atsigns (atsign.com for free or paid @signs), drop the binaries in place on
+or run them with dart and two Atsigns and the .atKeys files. Once you have the
+@atsigns (atsign.com for free or paid Atsigns), drop the binaries in place on
 each machine(s) and put the keys in `~/.atsign/keys` directory. You will need
-a device @sign and a manager @sign, but each device can also have a unique
+a device Atsign and a manager Atsign, but each device can also have a unique
 device name using the --device argument.
 
 Once in place you can start up the daemon first on the remote device.
@@ -80,7 +80,7 @@ Anyone running ssh open to a hostile network!
 
 ## Maintainers
 
-Created by The @ Company 
+Created by Atsign 
 
 Original code by [@cconstab](https://github.com/cconstab)
 
