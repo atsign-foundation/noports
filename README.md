@@ -165,6 +165,44 @@ Where:
 by the device in its `~/.ssh/authorized_keys`
 * `deviceuser` is the username for the device
 
+### Tunnels in tunnels, an illustration
+
+First a tunnel from Ngrok back to admin_PC:
+
+```
+                    admin_PC                Ngrok
+                    2222<-------------------12345
+
+
+                    <----------------------------
+```
+
+Then a tunnel from the device, through Ngrok to the admin_PC:
+
+```
+                    admin_PC                Ngrok
+          admin_PC  2222<-------------------12345    Device
+          3456<----/‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾\-------22
+
+          <------------------------------------------------
+                    <----------------------------
+```
+
+Finally an SSH connection through those tunnels from the admin_PC
+to the device:
+
+```
+                    admin_PC                Ngrok
+          admin_PC  2222<-------------------12345    Device
+SSH------>3456<----/‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾\-------22-------->SSHD
+          \______________________________________________/
+
+          <------------------------------------------------
+                    <----------------------------
+```
+
+Of course that final SSH connection can also be used as a tunnel...
+
 ## Who is this tool for?
 
 System Admins  
