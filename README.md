@@ -170,6 +170,8 @@ by the device in its `~/.ssh/authorized_keys`
 First a tunnel from Ngrok back to admin_PC:
 
 ```
+ssh -R 0:localhost:2222 tunnel.us.ngrok.com tcp
+
                     admin_PC                Ngrok
                     2222<-------------------12345
 
@@ -177,9 +179,13 @@ First a tunnel from Ngrok back to admin_PC:
                     <----------------------------
 ```
 
-Then a tunnel from the device, through Ngrok to the admin_PC:
+Then a tunnel initiated by `sshnp` from the device, through Ngrok to the
+admin_PC:
 
 ```
+sshnp -f @happyadmin -t @moresecurething \
+--device demothing -h 0.tcp.ngrok.io -p 12345 -l 3456
+
                     admin_PC                Ngrok
           admin_PC  2222<-------------------12345    Device
           3456<----/‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾\-------22
@@ -192,6 +198,8 @@ Finally an SSH connection through those tunnels from the admin_PC
 to the device:
 
 ```
+ssh -p 3456 -i ~/.ssh/key_for_device.key deviceuser@localhost
+
                     admin_PC                Ngrok
           admin_PC  2222<-------------------12345    Device
 SSH------>3456<----/‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾\-------22-------->SSHD
