@@ -87,7 +87,7 @@ dart run bin/sshnpd.dart <args|flags>
 |-----------|--------------|-----------|-------------------------------------------------------------------------------------|-----------|
 | --keyFile | -k           | false     | Sending atSign's keyFile if not in `~/.atsign/keys/`                                |
 | --atsign  | -a           | true      | atSign of this device                                                               |
-| --manager | -m           | true      | manager atSigns, that this device will accept triggers from                         |
+| --manager | -m           | true      | manager's atSign, that this device will accept triggers from                        |
 | --device  | -d           | false     | send a trigger to this device, allows multiple devices share an atSign              | "default" |
 
 | Flags               | Abbreviation | Description                                                                     |
