@@ -87,13 +87,13 @@ dart run bin/sshnpd.dart <args|flags>
 |-----------|--------------|-----------|-------------------------------------------------------------------------------------|-----------|
 | --keyFile | -k           | false     | Sending atSign's keyFile if not in `~/.atsign/keys/`                                |
 | --atsign  | -a           | true      | atSign of this device                                                               |
-| --manager | -m           | true      | manager's atSign, that this device will accept triggers from                        |
-| --device  | -d           | false     | send a trigger to this device, allows multiple devices share an atSign              | "default" |
+| --manager | -m           | true      | Manager's atSign, that this device will accept triggers from                        |
+| --device  | -d           | false     | Send a trigger to this device, allows multiple devices share an atSign              | "default" |
 
 | Flags               | Abbreviation | Description                                                                     |
 |---------------------|--------------|---------------------------------------------------------------------------------|
 | --[no-]sshpublickey | -s           | Update authorized_keys to include public key from sshnp                         |
-| --[no-]username     | -u           | send username to the manager to allow sshnp to display username in command line |
+| --[no-]username     | -u           | Send username to the manager to allow sshnp to display username in command line |
 | --[no-]verbose      | -v           | More logging                                                                    |
 
 ### sshnp (client)
