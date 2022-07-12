@@ -72,6 +72,53 @@ to see the logs (-v).
 
 Thoughts/bugs/contributions via PR all very welcome!
 
+## Usage
+
+### sshnpd (daemon)
+Run the daemon binary file or the dart file:
+```sh
+./sshnpd <args|flags>
+```
+```sh
+dart run bin/sshnpd.dart <args|flags>
+```
+
+| Argument  | Abbreviation | Mandatory | Description                                                                         | Default   |
+|-----------|--------------|-----------|-------------------------------------------------------------------------------------|-----------|
+| --keyFile | -k           | false     | Sending atSign's keyFile if not in `~/.atsign/keys/`                                |
+| --atsign  | -a           | true      | atSign of this device                                                               |
+| --manager | -m           | true      | Manager's atSign, that this device will accept triggers from                        |
+| --device  | -d           | false     | Send a trigger to this device, allows multiple devices share an atSign              | "default" |
+
+| Flags               | Abbreviation | Description                                                                     |
+|---------------------|--------------|---------------------------------------------------------------------------------|
+| --[no-]sshpublickey | -s           | Update authorized_keys to include public key from sshnp                         |
+| --[no-]username     | -u           | Send username to the manager to allow sshnp to display username in command line |
+| --[no-]verbose      | -v           | More logging                                                                    |
+
+### sshnp (client)
+Run the binary file or the dart file:
+```sh
+./sshnp <args|flags>
+```
+```sh
+dart run bin/sshnp.dart <args|flags>
+```
+| Argument         | Abbreviation | Mandatory | Description                                                                           | Default   |
+|------------------|--------------|-----------|---------------------------------------------------------------------------------------|-----------|
+| --key-file       | -k           | false     | Sending atSign's atKeys file if not in `~/.atsign/keys/`                              |
+| --from           | -f           | true      | Sending atSign                                                                        |
+| --to             | -t           | true      | Send a notification to this atSign                                                    |
+| --device         | -d           | false     | Send a notification to this device                                                    | "default" |
+| --host           | -h           | true      | FQDN Hostname e.g. example.com or IP address to connect back to                       |
+| --port           | -p           | false     | TCP port to connect back to                                                           | 22        |
+| --local-port     | -l           | false     | Reverse ssh port to listen on, on your local machine                                  | 2222      |
+| --ssh-public-key | -s           | false     | Public key file from `~/.ssh` to be appended to authorized_hosts on the remote device | false     |
+
+| Flags          | Abbreviation | Description  |
+|----------------|--------------|--------------|
+| --[no-]verbose | -v           | More logging |
+
 ## Using Ngrok to avoid open ports at the admin end
 
 The instructions above work for a system where the person doing the admin of
