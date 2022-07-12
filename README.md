@@ -76,10 +76,10 @@ Thoughts/bugs/contributions via PR all very welcome!
 
 ### sshnpd (daemon)
 Run the daemon binary file or the dart file:
-```
+```sh
 ./sshnpd <args|flags>
 ```
-``` 
+```sh
 dart run bin/sshnpd.dart <args|flags>
 ```
 
@@ -98,11 +98,11 @@ dart run bin/sshnpd.dart <args|flags>
 
 ### sshnp (client)
 Run the binary file or the dart file:
-```
+```sh
 ./sshnp <args|flags>
 ```
-```
-dart bin/sshnp.dart <args|flags>
+```sh
+dart run bin/sshnp.dart <args|flags>
 ```
 | Argument         | Abbreviation | Mandatory | Description                                                                           | Default   |
 |------------------|--------------|-----------|---------------------------------------------------------------------------------------|-----------|
