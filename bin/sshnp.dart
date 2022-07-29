@@ -60,7 +60,7 @@ void main(List<String> args) async {
   String toAtsign = 'unknown';
   String? homeDirectory = getHomeDirectory();
   String device = "";
-  String namespace = '';
+  String nameSpace = '';
   String port;
   String host = "127.0.0.1";
   String localPort;
@@ -119,7 +119,7 @@ void main(List<String> args) async {
     }
     // Add a namespace separater just cause its neater.
     device = results['device'] + ".";
-    namespace = '${device}sshnp';
+    nameSpace = '${device}sshnp';
 
 // Check the public key if the option was selected
     sendSshPublicKey = results['ssh-public-key'];
@@ -201,11 +201,9 @@ void main(List<String> args) async {
     ..key = "username"
     ..sharedBy = toAtsign
     ..sharedWith = fromAtsign
-    ..namespace = namespace
+    ..namespace = nameSpace
     ..metadata = metaData;
-
   var toAtsignUsername = await atClient?.get(atKey);
-  print(toAtsignUsername);
 
   var remoteUsername = toAtsignUsername?.value;
 
@@ -220,7 +218,9 @@ void main(List<String> args) async {
     ..key = 'privateKey'
     ..sharedBy = fromAtsign
     ..sharedWith = toAtsign
+    ..namespace = nameSpace
     ..metadata = metaData;
+  print(key);
 
   try {
     await notificationService.notify(NotificationParams.forUpdate(key, value: sshPrivateKey),
