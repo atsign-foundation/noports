@@ -34,17 +34,23 @@ void main(List<String> args) async {
 
   var parser = ArgParser();
   // Basic arguments
-  parser.addOption('key-file', abbr: 'k', mandatory: false, help: 'Sending @sign\'s atKeys file if not in ~/.atsign/keys/');
+  parser.addOption('key-file',
+      abbr: 'k', mandatory: false, help: 'Sending @sign\'s atKeys file if not in ~/.atsign/keys/');
   parser.addOption('from', abbr: 'f', mandatory: true, help: 'Sending @sign');
   parser.addOption('to', abbr: 't', mandatory: true, help: 'Send a notification to this @sign');
-  parser.addOption('device', abbr: 'd', mandatory: false, defaultsTo: "default", help: 'Send a notification to this device');
-  parser.addOption('host', abbr: 'h', mandatory: true, help: 'FQDN Hostname e.g example.com or IP address to connect back to');
+  parser.addOption('device',
+      abbr: 'd', mandatory: false, defaultsTo: "default", help: 'Send a notification to this device');
+  parser.addOption('host',
+      abbr: 'h', mandatory: true, help: 'FQDN Hostname e.g example.com or IP address to connect back to');
   parser.addOption('port', abbr: 'p', mandatory: false, defaultsTo: '22', help: 'TCP port to connect back to');
   parser.addOption('local-port',
       abbr: 'l', defaultsTo: '2222', mandatory: false, help: 'Reverse ssh port to listen on, on your local machine');
-  parser.addOption('ssh-public-key', abbr: 's', defaultsTo: 'false', mandatory: false, help: 'Public key file from ~/.ssh to be apended to authorized_hosts on the remote device'); 
+  parser.addOption('ssh-public-key',
+      abbr: 's',
+      defaultsTo: 'false',
+      mandatory: false,
+      help: 'Public key file from ~/.ssh to be apended to authorized_hosts on the remote device');
   parser.addFlag('verbose', abbr: 'v', help: 'More logging');
- 
 
   // Check the arguments
   dynamic results;
@@ -54,6 +60,7 @@ void main(List<String> args) async {
   String toAtsign = 'unknown';
   String? homeDirectory = getHomeDirectory();
   String device = "";
+  String namespace = '';
   String port;
   String host = "127.0.0.1";
   String localPort;
@@ -73,7 +80,7 @@ void main(List<String> args) async {
     if (Platform.isLinux || Platform.isMacOS) {
       username = envVars['USER'];
     } else if (Platform.isWindows) {
-      username = envVars['\$env:username'];
+      username = envVars['USERPROFILE'];
     }
     if (username == null) {
       throw ('\nUnable to determine your username: please set environment variable\n\n');
@@ -81,15 +88,15 @@ void main(List<String> args) async {
     if (homeDirectory == null) {
       throw ('\nUnable to determine your home directory: please set environment variable\n\n');
     }
-      // Setup ssh keys location
-      sshHomeDirectory = homeDirectory + "/.ssh/";
-      if (Platform.isWindows) {
-       sshHomeDirectory = homeDirectory + '\\.ssh\\';
-      }
+    // Setup ssh keys location
+    sshHomeDirectory = homeDirectory + "/.ssh/";
+    if (Platform.isWindows) {
+      sshHomeDirectory = homeDirectory + '\\.ssh\\';
+    }
 
     // Find @sign key file
-      fromAtsign = results['from'];
-      toAtsign = results['to'];
+    fromAtsign = results['from'];
+    toAtsign = results['to'];
     if (results['key-file'] != null) {
       atsignFile = results['key-file'];
     } else {
@@ -100,7 +107,6 @@ void main(List<String> args) async {
     if (!await fileExists(atsignFile)) {
       throw ('\n Unable to find .atKeys file : $atsignFile');
     }
-
 
 // Get the other easy options
     host = results['host'];
@@ -113,6 +119,7 @@ void main(List<String> args) async {
     }
     // Add a namespace separater just cause its neater.
     device = results['device'] + ".";
+    namespace = '${device}sshnp';
 
 // Check the public key if the option was selected
     sendSshPublicKey = results['ssh-public-key'];
@@ -135,12 +142,12 @@ void main(List<String> args) async {
       workingDirectory: sshHomeDirectory);
   String sshPublicKey = await File('$sshHomeDirectory${sessionId}_rsa.pub').readAsString();
   String sshPrivateKey = await File('$sshHomeDirectory${sessionId}_rsa').readAsString();
- 
+
   // Set up a safe authorized_keys file, for the reverse ssh tunnel
   File('${sshHomeDirectory}authorized_keys').writeAsStringSync(
       'command="echo \\"ssh session complete\\";sleep 20",PermitOpen="localhost:22" ${sshPublicKey.trim()} $sessionId\n',
       mode: FileMode.append);
-  
+
   // Now on to the @platform startup
   AtSignLogger.root_level = 'WARNING';
   if (results['verbose']) {
@@ -194,9 +201,11 @@ void main(List<String> args) async {
     ..key = "username"
     ..sharedBy = toAtsign
     ..sharedWith = fromAtsign
+    ..namespace = namespace
     ..metadata = metaData;
 
   var toAtsignUsername = await atClient?.get(atKey);
+  print(toAtsignUsername);
 
   var remoteUsername = toAtsignUsername?.value;
 
