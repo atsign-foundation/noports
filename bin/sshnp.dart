@@ -220,7 +220,6 @@ void main(List<String> args) async {
     ..sharedWith = toAtsign
     ..namespace = nameSpace
     ..metadata = metaData;
-  print(key);
 
   try {
     await notificationService.notify(NotificationParams.forUpdate(key, value: sshPrivateKey),
