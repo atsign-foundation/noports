@@ -148,6 +148,7 @@ void main(List<String> args) async {
       ..key = "username.$device"
       ..sharedBy = deviceAtsign
       ..sharedWith = managerAtsign
+      ..namespace = nameSpace
       ..metadata = metaData;
 
     atClient?.put(atKey, username);
