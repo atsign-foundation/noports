@@ -17,7 +17,7 @@ import 'package:sshnoports/home_directory.dart';
 import 'package:sshnoports/check_non_ascii.dart';
 import 'package:sshnoports/cleanup_sshnp.dart';
 import 'package:sshnoports/check_file_exists.dart';
-//
+
 
 void main(List<String> args) async {
   final AtSignLogger _logger = AtSignLogger(' sshnp ');
@@ -158,7 +158,7 @@ void main(List<String> args) async {
 
   //onboarding preference builder can be used to set onboardingService parameters
   AtOnboardingPreference atOnboardingConfig = AtOnboardingPreference()
-    //..qrCodePath = 'etc/qrcode_blueamateurbinding.png'
+    //..qrCodePath = '<location of image>'
     ..hiveStoragePath = '$homeDirectory/.sshnp/$fromAtsign/storage'
     ..namespace = device + 'sshnp'
     ..downloadPath = '$homeDirectory/.sshnp/files'
