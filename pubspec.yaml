@@ -9,7 +9,7 @@ environment:
 
 dependencies: 
   args: ^2.3.0
-  at_lookup: ^3.0.11
+#  at_lookup: ^3.0.11
   at_onboarding_cli: ^1.0.0
   crypton: ^2.0.3
   dartssh2: ^2.6.0
@@ -18,3 +18,9 @@ dependencies:
 
 dev_dependencies:
   lints: ^1.0.0
+dependency_overrides:
+  at_lookup:
+      git:
+         url: https://github.com/atsign-foundation/at_libraries.git
+         path: at_lookup
+         ref: tlsdump
