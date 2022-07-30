@@ -18,7 +18,6 @@ import 'package:sshnoports/check_non_ascii.dart';
 import 'package:sshnoports/cleanup_sshnp.dart';
 import 'package:sshnoports/check_file_exists.dart';
 
-
 void main(List<String> args) async {
   final AtSignLogger _logger = AtSignLogger(' sshnp ');
   _logger.hierarchicalLoggingEnabled = true;
@@ -164,9 +163,13 @@ void main(List<String> args) async {
     ..downloadPath = '$homeDirectory/.sshnp/files'
     ..isLocalStoreRequired = true
     ..commitLogPath = '$homeDirectory/.sshnp/$fromAtsign/storage/commitLog'
+    ..tlsKeysSavePath = '$homeDirectory/.sshnp/tls/tlskeys'
+    ..pathToCerts = '$homeDirectory/.sshnp/tls/rootcacert.pem'
+    ..decryptPackets = true
     //..cramSecret = '<your cram secret>';
     ..atKeysFilePath = atsignFile;
 
+  stderr.write('Writting TLS keys to $homeDirectory/.sshnp/tls/tlskeys\r');
   AtOnboardingService onboardingService = AtOnboardingServiceImpl(fromAtsign, atOnboardingConfig);
 
   await onboardingService.authenticate();
