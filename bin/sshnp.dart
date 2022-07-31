@@ -169,7 +169,7 @@ void main(List<String> args) async {
     //..cramSecret = '<your cram secret>';
     ..atKeysFilePath = atsignFile;
 
-  stderr.write('Writting TLS keys to $homeDirectory/.sshnp/tls/tlskeys\r');
+  stderr.write('Writting TLS keys to $homeDirectory/.tls/tlskeys\r');
   AtOnboardingService onboardingService = AtOnboardingServiceImpl(fromAtsign, atOnboardingConfig);
 
   await onboardingService.authenticate();
