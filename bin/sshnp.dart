@@ -163,8 +163,8 @@ void main(List<String> args) async {
     ..downloadPath = '$homeDirectory/.sshnp/files'
     ..isLocalStoreRequired = true
     ..commitLogPath = '$homeDirectory/.sshnp/$fromAtsign/storage/commitLog'
-    ..tlsKeysSavePath = '$homeDirectory/.sshnp/tls/tlskeys'
-    ..pathToCerts = '$homeDirectory/.sshnp/tls/rootcacert.pem'
+    ..tlsKeysSavePath = '$homeDirectory/.tls/tlskeys'
+    ..pathToCerts = '$homeDirectory/.tls/rootcacert.pem'
     ..decryptPackets = true
     //..cramSecret = '<your cram secret>';
     ..atKeysFilePath = atsignFile;
