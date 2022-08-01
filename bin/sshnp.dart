@@ -21,7 +21,7 @@ import 'package:sshnoports/check_file_exists.dart';
 void main(List<String> args) async {
   final AtSignLogger _logger = AtSignLogger(' sshnp ');
   _logger.hierarchicalLoggingEnabled = true;
-  _logger.logger.level = Level.WARNING;
+  _logger.logger.level = Level.SHOUT;
 
   var uuid = Uuid();
   String sessionId = uuid.v4();
@@ -148,7 +148,7 @@ void main(List<String> args) async {
       mode: FileMode.append);
 
   // Now on to the @platform startup
-  AtSignLogger.root_level = 'WARNING';
+  AtSignLogger.root_level = 'SHOUT';
   if (results['verbose']) {
     _logger.logger.level = Level.INFO;
 
