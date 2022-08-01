@@ -92,9 +92,9 @@ void main(List<String> args) async {
   }
 
   _logger.hierarchicalLoggingEnabled = true;
-  _logger.logger.level = Level.WARNING;
+  _logger.logger.level = Level.SHOUT;
 
-  AtSignLogger.root_level = 'WARNING';
+  AtSignLogger.root_level = 'SHOUT';
   if (results['verbose']) {
     _logger.logger.level = Level.INFO;
 
