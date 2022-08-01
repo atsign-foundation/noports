@@ -92,9 +92,9 @@ void main(List<String> args) async {
   }
 
   _logger.hierarchicalLoggingEnabled = true;
-  _logger.logger.level = Level.WARNING;
+  _logger.logger.level = Level.SHOUT;
 
-  AtSignLogger.root_level = 'WARNING';
+  AtSignLogger.root_level = 'SHOUT';
   if (results['verbose']) {
     _logger.logger.level = Level.INFO;
 
@@ -234,7 +234,7 @@ void sshCallback(
     var hostname = sshList[3];
     _logger
         .info('ssh session started for $username to $hostname on port $port using localhost:$localPort on $hostname ');
-    _logger.warning('ssh session started from: ' + notification.from.toString() + " session: $sessionId");
+    _logger.shout('ssh session started from: ' + notification.from.toString() + " session: $sessionId");
 
     // var result = await Process.run('ssh', sshList);
 
@@ -268,7 +268,7 @@ void sshCallback(
           await client.done;
           stop = true;
           timer.cancel();
-          _logger.warning('ssh session complete for: ' + notification.from.toString() + " session: $sessionId");
+          _logger.shout('ssh session complete for: ' + notification.from.toString() + " session: $sessionId");
         }
       });
       // Answer ssh requests until none are left open
