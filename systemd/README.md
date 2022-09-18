@@ -6,7 +6,7 @@ with `screen -r`
 
 ## Installation
 
-The `sshnpd.service` files should be placed in `\etc\systemd\system` (as root).
+The `sshnpd.service` files should be placed in `/etc/systemd/system` (as root).
 
 Modify the `sshnpd.service` unit to use the appropriate sender and target
 atSigns. (The boilerplate uses @deviceatsign @manageratsign).
