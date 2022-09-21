@@ -5,7 +5,8 @@ After=network-online.target
 [Service]
 User=<username>
 Type=simple
-Restart=on-failure
+Restart=always
+ExecStartPre=/bin/sleep 10
 RestartSec=3
 ExecStart=/usr/bin/screen -DmS sshnpd /home/pi/sshnp/sshnpd -a <@deviceatsign> -m <@manageratsign> -u -d <my_device> -s -v
 
