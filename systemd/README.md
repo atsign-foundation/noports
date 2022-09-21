@@ -8,8 +8,8 @@ with `screen -r`
 
 The `sshnpd.service` files should be placed in `/etc/systemd/system` (as root).
 
-Modify the `sshnpd.service` unit to use the appropriate sender and target
-atSigns. (The boilerplate uses @deviceatsign @manageratsign).
+Modify the `sshnpd.service` unit to use the appropriate host and client
+atSigns. (The boilerplate uses @deviceatsign @manageratsign). Also change the username and make sure that username running sshnpd has the .atkeys file in place at '~/.atsign/keys'.
 
 Then:
 
