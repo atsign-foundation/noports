@@ -7,14 +7,14 @@ packages:
       name: _fe_analyzer_shared
       url: "https://pub.dartlang.org"
     source: hosted
-    version: "43.0.0"
+    version: "46.0.0"
   analyzer:
     dependency: transitive
     description:
       name: analyzer
       url: "https://pub.dartlang.org"
     source: hosted
-    version: "4.3.1"
+    version: "4.6.0"
   archive:
     dependency: transitive
     description:
@@ -56,21 +56,21 @@ packages:
       name: at_client
       url: "https://pub.dartlang.org"
     source: hosted
-    version: "3.0.32"
+    version: "3.0.33"
   at_commons:
     dependency: transitive
     description:
       name: at_commons
       url: "https://pub.dartlang.org"
     source: hosted
-    version: "3.0.21"
+    version: "3.0.24"
   at_lookup:
     dependency: "direct main"
     description:
       name: at_lookup
       url: "https://pub.dartlang.org"
     source: hosted
-    version: "3.0.28"
+    version: "3.0.29"
   at_onboarding_cli:
     dependency: "direct main"
     description:
@@ -84,14 +84,14 @@ packages:
       name: at_persistence_secondary_server
       url: "https://pub.dartlang.org"
     source: hosted
-    version: "3.0.31"
+    version: "3.0.33"
   at_persistence_spec:
     dependency: transitive
     description:
       name: at_persistence_spec
       url: "https://pub.dartlang.org"
     source: hosted
-    version: "2.0.6"
+    version: "2.0.7"
   at_server_status:
     dependency: transitive
     description:
@@ -196,7 +196,7 @@ packages:
       name: dartssh2
       url: "https://pub.dartlang.org"
     source: hosted
-    version: "2.7.1"
+    version: "2.7.2+3"
   encrypt:
     dependency: transitive
     description:
@@ -252,7 +252,7 @@ packages:
       name: http
       url: "https://pub.dartlang.org"
     source: hosted
-    version: "0.13.4"
+    version: "0.13.5"
   http_multi_server:
     dependency: transitive
     description:
@@ -385,7 +385,7 @@ packages:
       name: pinenacl
       url: "https://pub.dartlang.org"
     source: hosted
-    version: "0.3.4"
+    version: "0.5.1"
   pointycastle:
     dependency: transitive
     description:

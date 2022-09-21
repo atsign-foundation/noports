@@ -26,7 +26,9 @@ sudo systemctl start sshnpd.service
 
 ## Usage
 
-When running there will be three detached screens. `screen -r` will list them:
+Make sure you have 'screen' installed it allows you to connect to the runing sshnpd and see the logs in realtime.
+
+When running there will a detached screen `screen -r` will list it:
 
 ```
 There are several suitable screens on:
@@ -35,6 +37,6 @@ There are several suitable screens on:
 Type "screen [-d] -r [pid.]tty.host" to resume one of them.
 ```
 
-An individual screen can be attached to by e.g. `screen -r sshnpd`.
+An individual screen can be attached to by e.g. `screen -r 904.sshnpd`.
 
 To detach again use `Ctrl-a d`
