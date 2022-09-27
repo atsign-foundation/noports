@@ -55,7 +55,7 @@ Future<void> startRepl(ApiUtil apiUtil, String email, String rootUrl) async {
   print('\u001b[37mWelcome to the sshnp setup tool!');
   print(
       'Which one are you? (\'\u001b[31mc\u001b[37m\'=client or \'\u001b[31md\u001b[37m\'=device)');
-  String choice = getChoice();
+  String choice = _getChoice();
   if (!['c', 'd'].contains(choice)) {
     print('Invalid choice. (c/d)\n');
     startRepl(apiUtil, email, rootUrl);
@@ -66,33 +66,33 @@ Future<void> startRepl(ApiUtil apiUtil, String email, String rootUrl) async {
     print('\u001b[32mYou entered the client setup tool.\u001b[37m');
     do {
       _printClientUsage();
-      choice = getChoice();
+      choice = _getChoice();
     } while (!['1', '2'].contains(choice));
 
     if (choice == '1') {
-      await _onboardNewAtSign(apiUtil, email, rootUrl);
+      await _registerNewAtSign(apiUtil, email, rootUrl);
     } else if(choice == '2') {
-      await _onboardExistingAtSign(apiUtil, rootUrl);
+      await _onboardUnactivatedAtSign(apiUtil, rootUrl);
     } 
 
   } else if (choice == 'd') {
     print('You entered the device setup tool.');
     do {
       _printDeviceUsage();
-      choice = getChoice();
+      choice = _getChoice();
     } while (!['1', '2', '3'].contains(choice));
 
     if(choice == '1') {
-      await _onboardNewAtSign(apiUtil, email, rootUrl);
+      await _registerNewAtSign(apiUtil, email, rootUrl);
     } else if(choice == '2') {
-      await _onboardExistingAtSign(apiUtil, rootUrl);
+      await _onboardUnactivatedAtSign(apiUtil, rootUrl);
     } else if(choice == '3') {
       await _writeSshnpdService();
     }
   }
 }
 
-Future<void> _onboardNewAtSign(
+Future<void> _registerNewAtSign(
   ApiUtil apiUtil,
   String email,
   String rootUrl,
@@ -107,7 +107,7 @@ Future<void> _onboardNewAtSign(
     atSigns = await apiUtil.getFreeAtSigns(numAtSigns);
     _printAtSigns(atSigns);
     print('r to refresh');
-    choice = getChoice();
+    choice = _getChoice();
   } while (choice == 'r' ||
       ((int.parse(choice) > numAtSigns) || int.parse(choice) <= 0));
   String atSign = formatAtSign(atSigns[int.parse(choice) - 1]);
@@ -118,7 +118,7 @@ Future<void> _onboardNewAtSign(
     exit(1);
   }
   print('\u001b[31mEnter the OTP sent to your email ($email):');
-  String otp = getChoice(prompt: false)
+  String otp = _getChoice(prompt: false)
       .trim()
       .replaceAll('/\u001b[.*?m/g', '')
       .replaceAll('\n', '')
@@ -129,7 +129,7 @@ Future<void> _onboardNewAtSign(
     exit(1);
   }
 
-  bool onboarded = await onboard(atSign, rootUrl, cram);
+  bool onboarded = await _onboard(atSign, rootUrl, cram);
   if (onboarded) {
     print('\u001b[32mYou have successfully onboarded your atSign $atSign');
   } else {
@@ -137,16 +137,16 @@ Future<void> _onboardNewAtSign(
   }
 }
 
-Future<void> _onboardExistingAtSign(ApiUtil apiUtil, String rootUrl) async {
+Future<void> _onboardUnactivatedAtSign(ApiUtil apiUtil, String rootUrl) async {
   print('\u001b[31mWhat is the unactivated atSign that you own?: ');
-  String atSign = formatAtSign(getChoice(prompt: false));
+  String atSign = formatAtSign(_getChoice(prompt: false));
   bool successfullySent = await apiUtil.authenticateAtSign(atSign); // true if otp sent
   if(!successfullySent) {
     print('\u001b[31mSomething went wrong when sending your OTP. Ensure that the atSign \'$atSign\' is an atSign that you own. Please try again.');
     exit(1);
   }
   print('\u001b[31mEnter the OTP sent to your email (that owns the atSign)');
-  String otp = getChoice(prompt: false).toUpperCase();
+  String otp = _getChoice(prompt: false).toUpperCase();
 
   String? cram = await apiUtil.authenticateAtSignValidate(atSign, otp);
 
@@ -158,7 +158,7 @@ Future<void> _onboardExistingAtSign(ApiUtil apiUtil, String rootUrl) async {
 
   await apiUtil.runUntilSecondaryExists(rootUrl, atSign);
 
-  bool onboarded = await onboard(atSign, rootUrl, cram);
+  bool onboarded = await _onboard(atSign, rootUrl, cram);
 
   if(onboarded) {
     print('\u001b[32mYou have successfully onboarded your atSign $atSign');
@@ -166,6 +166,15 @@ Future<void> _onboardExistingAtSign(ApiUtil apiUtil, String rootUrl) async {
     print('\u001b[31mOnboard unsuccessful. Please try again.');
   }
     
+}
+
+/// creates directories if doesn't exist already
+/// example path: /home/atsign/.sshnp
+Future<void> createDir(String path) async {
+  Directory dir = Directory(path);
+  if (!await dir.exists()) {
+    await dir.create(recursive: true);
+  }
 }
 
 Future<void> _writeSshnpdService() async {
@@ -186,16 +195,16 @@ ExecStart=/usr/bin/screen -DmS sshnpd /home/pi/sshnp/sshnpd -a <@deviceatsign> -
 WantedBy=multi-user.target
       ''';
   
-  File file = File(Directory.fromUri(Uri.directory(
-            '${Platform.environment['HOME']}/etc/systemd/system/sshnpd.service',
-            windows: Platform.isWindows))
-        .path);
+  final uriDirectory = Uri.directory(
+            '${Platform.environment['HOME']}/etc/systemd/system/', windows: Platform.isWindows);
+  final String directoryPath = uriDirectory.toFilePath();
+  await createDir(directoryPath);
+  File file = File(directoryPath + 'sshnpd.service');
   await file.writeAsString(systemdServiceScript);
-  file.createSync(recursive: true);
 }
 
 /// Uses at_onboarding_cli to onboard given the atSign (e.g. '@bob'), rootUrl ('root.atsign.org:64') and the cramkey generated by the API (e.g. 'MIljujdkljasdlk3j21...')
-Future<bool> onboard(String atSign, String rootUrl, String cram) async {
+Future<bool> _onboard(String atSign, String rootUrl, String cram) async {
   List<String> s = rootUrl.split(":");
   AtOnboardingPreference pref = AtOnboardingPreference()
     ..cramSecret = cram
@@ -215,7 +224,7 @@ Future<bool> onboard(String atSign, String rootUrl, String cram) async {
 }
 
 /// Returns the user input string read from terminal. If data is returned without a line terminator. Returns null if no bytes preceded the end of input.
-String getChoice({prompt = true}) {
+String _getChoice({prompt = true}) {
   if (prompt) print('\u001b[31mEnter choice:');
   String input = (stdin.readLineSync() ?? '').toLowerCase();
   print('\u001b[37m');
