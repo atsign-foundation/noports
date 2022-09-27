@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:at_lookup/at_lookup.dart';
 import 'package:http/http.dart';
 import 'package:http/io_client.dart';
 
@@ -135,6 +136,33 @@ class ApiUtil {
 
     // print('postRequest: ${response.body}');
     return response;
+  }
+
+  /// Hot fix in case activating the atSign takes too long (if the person does not press the orange "Activate" button on their atSign, then the secondary was not initialized just yet. Just run this method with async/await and it will pause your code until the secondary is successfully initialized.)
+  Future<void> runUntilSecondaryExists(String rootUrl, String atSign, {timeoutIterations = 10000000}) async {
+  List<String> s = rootUrl.split(':');
+    String rootDomain = s[0];
+    int rootPort = int.parse(s[1]);
+    late SecondaryAddress sAddress;
+    bool exists = false;
+    int timeout = timeoutIterations;
+    int count = 0;
+    do {
+      count++;
+      try {
+        sAddress = await CacheableSecondaryAddressFinder(rootDomain, rootPort).findSecondary(atSign);
+        exists = true;
+      } catch (e) {
+        // ignore
+      }
+
+    } while(!exists && count < timeout); 
+    if(sAddress.host.length > 2) {
+      print('Secondary address found! ${sAddress.host}:${sAddress.port} | Iterations: $count/$timeout');
+    } else {
+      print('Secondary address not found after $count/$timeout iterations');
+    }
+    throw Exception('Secondary address not found after $count/$timeout iterations');
   }
 }
 

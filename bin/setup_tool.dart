@@ -156,6 +156,8 @@ Future<void> _onboardExistingAtSign(ApiUtil apiUtil, String rootUrl) async {
     exit(1);
   }
 
+  await apiUtil.runUntilSecondaryExists(rootUrl, atSign);
+
   bool onboarded = await onboard(atSign, rootUrl, cram);
 
   if(onboarded) {
