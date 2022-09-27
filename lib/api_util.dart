@@ -29,6 +29,10 @@ class ApiUtil {
     for (int i = 0; i < amount; i++) {
       // get request at my.atsign.com/api/app/v3/get-free-atsign/
       response = await getRequest(_authority, Constants.pathGetFreeAtSign);
+      if(response.statusCode != 200) {
+        // TODO handle error
+        // throw something?
+      }
       String atSign = jsonDecode(response.body)['data']['atsign'];
       atSigns.add(atSign);
     }
@@ -45,6 +49,10 @@ class ApiUtil {
       'email': email,
       'oldEmail': oldEmail,
     });
+    if(response.statusCode != 200) {
+      // TODO handle error
+      // throw something?
+    }
 
     Map<String, dynamic> jsonDecoded = jsonDecode(response.body);
     bool sentSuccessfully = jsonDecoded['message'].toLowerCase().contains('success');
@@ -67,6 +75,10 @@ class ApiUtil {
       'oldEmail': oldEmail,
       'confirmation': 'true',
     });
+    if(response.statusCode != 200) {
+      // TODO handle error
+      // throw something?
+    }
     String? cramKey;
     Map<String, dynamic> jsonDecoded = jsonDecode(response.body);
     if((jsonDecoded['message'] != null && (jsonDecoded['message'] as String).toLowerCase().contains('verified')) && jsonDecoded['cramkey'] != null) {
@@ -82,7 +94,10 @@ class ApiUtil {
   /// Will return true if the OTP was successfully sent.
   Future<bool> authenticateAtSign(String atSign) async {
     Response response = await postRequest(_authority, Constants.pathAuthenticateAtSign, {'atsign': atSign});
-
+  if(response.statusCode != 200) {
+      // TODO handle error
+      // throw something?
+    }
     Map<String, dynamic> jsonDecoded = jsonDecode(response.body);
     String? message = jsonDecoded['message'];
     return (message != null && message.contains("Sent Successfully"));
@@ -96,6 +111,10 @@ class ApiUtil {
   /// If unsuccessful, return String? will be null.
   Future<String?> authenticateAtSignValidate(String atSign, String otp) async {
     Response response = await postRequest(_authority, Constants.pathAuthenticateAtSignValidate, {'atsign': atSign, 'otp': otp});
+    if(response.statusCode != 200) {
+      // TODO handle error
+      // throw something?
+    }
     Map<String, dynamic> jsonDecoded = jsonDecode(response.body);
     String? message = jsonDecoded['message'];
     String? cramkey;
@@ -116,6 +135,10 @@ class ApiUtil {
         'Content-Type': Constants.contentType,
       },
     );
+    if(response.statusCode != 200) {
+      // TODO handle error
+      // throw something?
+    }
     // print('getResponse: ${response.body}');
     return response;
   }
