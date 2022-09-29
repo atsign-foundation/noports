@@ -182,10 +182,12 @@ class ApiUtil {
     } while(!exists && count < timeout); 
     if(sAddress.host.length > 2) {
       print('Secondary address found! ${sAddress.host}:${sAddress.port} | Iterations: $count/$timeout');
+      print('Connecting...');
+      await Future.delayed(Duration(seconds: 5));
     } else {
       print('Secondary address not found after $count/$timeout iterations');
+      throw Exception('Secondary address not found after $count/$timeout iterations');
     }
-    throw Exception('Secondary address not found after $count/$timeout iterations');
   }
 }
 
