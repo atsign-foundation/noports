@@ -18,13 +18,13 @@ There are two binaries:-
 `sshnp`  : The client that sets up a connection to the device which you
 can then ssh to via your localhost interface
 
-To get going you just need two Atsigns and their .atKeys files and the
+To get going you just need two atSigns and their .atKeys files and the
 binaries (from latest 
 [release](https://github.com/atsign-foundation/sshnoports/releases)).
 It's also possible to run from the source here using `dart run`. Once you have
-the Atsigns (free or paid Atsigns from atsign.com), drop the binaries in place
+the atSigns (free or paid atSigns from atsign.com), drop the binaries in place
 on each machine and put the keys in `~/.atsign/keys` directory. You will need
-a device Atsign and a manager Atsign, but each device can also have a unique
+a device atSign and a manager atSign, but each device can also have a unique
 device name using the --device argument.
 
 Once in place you can start up the daemon first on the remote device.
