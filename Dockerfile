@@ -26,7 +26,7 @@ COPY --from=buildimage /etc/group /etc/group
 COPY --from=buildimage --chown=atsign:atsign /atsign /atsign/
 COPY --from=buildimage --chown=atsign:atsign /app/startup.sh /atsign/
 COPY --from=buildimage --chown=atsign:atsign /usr/local/at/sshnpd /usr/local/at/
-RUN apt-get update && apt-get install -y openssh-server sudo
+RUN apt-get update && apt-get install -y openssh-server sudo iputils-ping iproute2 tmux
 RUN mkdir /run/sshd
 RUN chmod 755 /atsign/startup.sh
 WORKDIR /atsign
