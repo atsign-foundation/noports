@@ -148,7 +148,7 @@ void main(List<String> args) async {
         throw ('\n Unable to find ssh public key file : $sendSshPublicKey');
       }
       if (!sendSshPublicKey.endsWith('.pub')) {
-        throw ('\n The ssh public key should end with ".pub"');
+        throw ('\n The ssh public key should have a ".pub" extention');
       }
     }
   } catch (e) {
@@ -323,9 +323,11 @@ void main(List<String> args) async {
 
   await cleanUp(sessionId, _logger);
   // print out base ssh command
+  // If we had a Public key include the private key in the command line
+  // By removing the .pub extn
   if (sendSshPublicKey != 'false') {
     stdout.write(
-        "ssh -p $localPort $remoteUsername@localhost -i ${sendSshPublicKey.replaceFirst('.pub', '')} ");
+        "ssh -p $localPort $remoteUsername@localhost -i ${sendSshPublicKey.replaceFirst(RegExp(r'.pub$'), '')} ");
   } else {
     stdout.write("ssh -p $localPort $remoteUsername@localhost ");
   }
