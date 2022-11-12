@@ -8,7 +8,7 @@ RUN \
   dart pub update ; \
   dart compile exe bin/sshnpd.dart -o $BINARYDIR/sshnpd
 
-# Second stage of build FROM scratch
+# Second stage of build FROM debian-slim
 FROM debian:stable-slim
 ENV HOMEDIR=/atsign
 ENV BINARYDIR=/usr/local/at
