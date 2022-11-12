@@ -18,7 +18,6 @@ import 'package:sshnoports/check_non_ascii.dart';
 import 'package:sshnoports/cleanup_sshnp.dart';
 import 'package:sshnoports/check_file_exists.dart';
 
-
 void main(List<String> args) async {
   final AtSignLogger _logger = AtSignLogger(' sshnp ');
   _logger.hierarchicalLoggingEnabled = true;
@@ -35,21 +34,39 @@ void main(List<String> args) async {
   var parser = ArgParser();
   // Basic arguments
   parser.addOption('key-file',
-      abbr: 'k', mandatory: false, help: 'Sending @sign\'s atKeys file if not in ~/.atsign/keys/');
+      abbr: 'k',
+      mandatory: false,
+      help: 'Sending @sign\'s atKeys file if not in ~/.atsign/keys/');
   parser.addOption('from', abbr: 'f', mandatory: true, help: 'Sending @sign');
-  parser.addOption('to', abbr: 't', mandatory: true, help: 'Send a notification to this @sign');
+  parser.addOption('to',
+      abbr: 't', mandatory: true, help: 'Send a notification to this @sign');
   parser.addOption('device',
-      abbr: 'd', mandatory: false, defaultsTo: "default", help: 'Send a notification to this device');
+      abbr: 'd',
+      mandatory: false,
+      defaultsTo: "default",
+      help: 'Send a notification to this device');
   parser.addOption('host',
-      abbr: 'h', mandatory: true, help: 'FQDN Hostname e.g example.com or IP address to connect back to');
-  parser.addOption('port', abbr: 'p', mandatory: false, defaultsTo: '22', help: 'TCP port to connect back to');
+      abbr: 'h',
+      mandatory: true,
+      help: 'FQDN Hostname e.g example.com or IP address to connect back to');
+  parser.addOption('port',
+      abbr: 'p',
+      mandatory: false,
+      defaultsTo: '22',
+      help: 'TCP port to connect back to');
   parser.addOption('local-port',
-      abbr: 'l', defaultsTo: '2222', mandatory: false, help: 'Reverse ssh port to listen on, on your local machine');
+      abbr: 'l',
+      defaultsTo: '2222',
+      mandatory: false,
+      help: 'Reverse ssh port to listen on, on your local machine');
   parser.addOption('ssh-public-key',
       abbr: 's',
       defaultsTo: 'false',
       mandatory: false,
-      help: 'Public key file from ~/.ssh to be apended to authorized_hosts on the remote device');
+      help:
+          'Public key file from ~/.ssh to be apended to authorized_hosts on the remote device');
+  parser.addMultiOption('local-ssh-options',
+      abbr: 'o', help: 'Add these commands to the local ssh command');
   parser.addFlag('verbose', abbr: 'v', help: 'More logging');
 
   // Check the arguments
@@ -67,6 +84,7 @@ void main(List<String> args) async {
   String sshString = "";
   String sshHomeDirectory = "";
   String sendSshPublicKey = "";
+  List<String> localSshOptions = [];
   // In the future (perhaps) we can send other commands
   // Perhaps OpenVPN or shell commands
   String sendCommand = 'sshd';
@@ -112,6 +130,7 @@ void main(List<String> args) async {
     host = results['host'];
     port = results['port'];
     localPort = results['local-port'];
+    localSshOptions = results['local-ssh-options'];
 // Check device string only contains ascii
 //
     if (checkNonAscii(results['device'])) {
@@ -138,10 +157,13 @@ void main(List<String> args) async {
     exit(1);
   }
 
-  await Process.run('ssh-keygen', ['-t', 'rsa', '-b', '4096', '-f', '${sessionId}_rsa', '-q', '-N', ''],
+  await Process.run('ssh-keygen',
+      ['-t', 'rsa', '-b', '4096', '-f', '${sessionId}_rsa', '-q', '-N', ''],
       workingDirectory: sshHomeDirectory);
-  String sshPublicKey = await File('$sshHomeDirectory${sessionId}_rsa.pub').readAsString();
-  String sshPrivateKey = await File('$sshHomeDirectory${sessionId}_rsa').readAsString();
+  String sshPublicKey =
+      await File('$sshHomeDirectory${sessionId}_rsa.pub').readAsString();
+  String sshPrivateKey =
+      await File('$sshHomeDirectory${sessionId}_rsa').readAsString();
 
   // Set up a safe authorized_keys file, for the reverse ssh tunnel
   File('${sshHomeDirectory}authorized_keys').writeAsStringSync(
@@ -167,7 +189,8 @@ void main(List<String> args) async {
     //..cramSecret = '<your cram secret>';
     ..atKeysFilePath = atsignFile;
 
-  AtOnboardingService onboardingService = AtOnboardingServiceImpl(fromAtsign, atOnboardingConfig);
+  AtOnboardingService onboardingService =
+      AtOnboardingServiceImpl(fromAtsign, atOnboardingConfig);
 
   await onboardingService.authenticate();
 
@@ -222,8 +245,9 @@ void main(List<String> args) async {
     ..metadata = metaData;
 
   try {
-    await notificationService.notify(NotificationParams.forUpdate(key, value: sshPrivateKey),
-        onSuccess: (notification) {
+    await notificationService
+        .notify(NotificationParams.forUpdate(key, value: sshPrivateKey),
+            onSuccess: (notification) {
       _logger.info('SUCCESS:' + notification.toString());
     }, onError: (notification) {
       _logger.info('ERROR:' + notification.toString());
@@ -251,14 +275,17 @@ void main(List<String> args) async {
       if (!toSshPublicKey.startsWith('ssh-rsa')) {
         throw ('$sshHomeDirectory$sendSshPublicKey does not look like a public key file');
       }
-      await notificationService.notify(NotificationParams.forUpdate(key, value: toSshPublicKey),
-          onSuccess: (notification) {
+      await notificationService
+          .notify(NotificationParams.forUpdate(key, value: toSshPublicKey),
+              onSuccess: (notification) {
         _logger.info('SUCCESS:' + notification.toString());
       }, onError: (notification) {
         _logger.info('ERROR:' + notification.toString());
       });
     } catch (e) {
-      print("Error openning or validating public key file or sending to remote @sign: " + e.toString());
+      print(
+          "Error openning or validating public key file or sending to remote @sign: " +
+              e.toString());
       await cleanUp(sessionId, _logger);
       exit(0);
     }
@@ -283,7 +310,9 @@ void main(List<String> args) async {
   }
 
   try {
-    await notificationService.notify(NotificationParams.forUpdate(key, value: sshString), onSuccess: (notification) {
+    await notificationService
+        .notify(NotificationParams.forUpdate(key, value: sshString),
+            onSuccess: (notification) {
       _logger.info('SUCCESS:' + notification.toString() + ' ' + sshString);
     }, onError: (notification) {
       _logger.info('ERROR:' + notification.toString() + ' ' + sshString);
@@ -293,6 +322,18 @@ void main(List<String> args) async {
   }
 
   await cleanUp(sessionId, _logger);
-  print("ssh -p $localPort $remoteUsername@localhost");
+  // print out base ssh command
+  if (sendSshPublicKey != 'false') {
+    stdout.write(
+        "ssh -p $localPort $remoteUsername@localhost -i ${sendSshPublicKey.replaceFirst('.pub', '')} ");
+  } else {
+    stdout.write("ssh -p $localPort $remoteUsername@localhost ");
+  }
+  // print out optional arguments
+  for (var argument in localSshOptions) {
+    stdout.write(argument + " ");
+  }
+  // Print the  return
+  stdout.write('\n');
   exit(0);
 }
