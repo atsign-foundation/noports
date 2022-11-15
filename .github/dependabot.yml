@@ -1,7 +1,16 @@
 version: 2
+enable-beta-ecosystems: true
 updates:
   # Maintain dependencies for GitHub Actions
   - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "daily"
+  - package-ecosystem: "docker"
+    directory: "/"
+    schedule:
+      interval: "daily"
+  - package-ecosystem: "pub"
     directory: "/"
     schedule:
       interval: "daily"
