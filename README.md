@@ -1,5 +1,8 @@
 <img width=250px src="https://atsign.dev/assets/img/atPlatform_logo_gray.svg?sanitize=true">
 
+[![GitHub License](https://img.shields.io/badge/license-BSD3-blue.svg)](./LICENSE)
+[![OpenSSF Scorecard](https://api.securityscorecards.dev/projects/github.com/atsign-foundation/sshnoports/badge)](https://api.securityscorecards.dev/projects/github.com/atsign-foundation/sshnoports)
+
 # Ssh! No ports
 
 ssh no ports provides a way to ssh to a remote linux host/device without that
