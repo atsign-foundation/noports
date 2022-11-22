@@ -26,8 +26,8 @@ RUN apt-get update && apt-get install -y openssh-server sudo iputils-ping iprout
    chmod 600 $HOMEDIR/.ssh/authorized_keys ; \
    usermod -aG sudo atsign ; \
    mkdir /run/sshd ; \
-   chmod 755 /atsign/startup.sh
+   chmod 755 /atsign/.startup.sh
 COPY --from=buildimage --chown=atsign:atsign /usr/local/at/sshnpd /usr/local/at/
 WORKDIR /atsign
 # USER atsign
-ENTRYPOINT ["/atsign/startup.sh"]
+ENTRYPOINT ["/atsign/.startup.sh"]
