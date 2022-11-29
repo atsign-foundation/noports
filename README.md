@@ -97,16 +97,32 @@ dart run bin/sshnpd.dart <args|flags>
 | --[no-]verbose      | -v           | More logging                                                                    |
 
 ### sshnpd (daemon) in a docker container
-the daemon can also be deployed as part of a pre built docker container, that also has a number of networking tools installed. The dockerhub container is located at `atsigncompany/sshnpd:latest` of you can build your own using the Dockerfile in the root of the project.
- The image expects to have the atKeys for the atSign being used in the /atsign/.atsign/keys directory, this can be mounted as a volume at startup of the docker run command using `-v $(pwd):/atsign./atsign/keys/` assuming you are in the dircetory where the atKeys file is located. The full comand to start the container would be something like this:-
 
- `docker run -v <location of atKeys>:/atsign./atsign/keys/ atsigncompany/sshnpd "-a <atSign> -m <atSign> -d <device name> -v -u"
+The daemon can also be deployed as part of a pre built docker container,
+that also has a number of networking tools installed. The container image
+is located on Dockerhub as `atsigncompany/sshnpd:latest` or you can build
+your own using the Dockerfile in the root of the project.
 
- Once the container is running to log into the container the sshnp command would be used as normal, but you will log into the container not the host, from the container you could then log into the host or any other local network hosts you have access to.
+The image expects to have the atKeys for the atSign being used in the
+`/atsign/.atsign/keys` directory, this can be mounted as a volume at startup
+of the docker run command using `-v $(pwd):/atsign./atsign/keys/` assuming
+you are in the dircetory where the atKeys file is located. The full comand
+to start the container would be something like this:-
 
- Docker is very well documented and if you want to keep the container running after a reboot if for some reason the container crashes is all easily achieved.
+```
+docker run -v <location of atKeys>:/atsign./atsign/keys/ atsigncompany/sshnpd "-a <atSign> -m <atSign> -d <device name> -v -u"
+```
+
+Once the container is running to log into the container the sshnp command
+would be used as normal, but you will log into the container not the host,
+from the container you could then log into the host or any other local
+network hosts you have access to.
+
+Docker is very well documented and if you want to keep the container running
+after a reboot if for some reason the container crashes is all easily achieved.
 
 ### sshnp (client)
+
 Run the binary file or the dart file:
 ```sh
 ./sshnp <args|flags>
