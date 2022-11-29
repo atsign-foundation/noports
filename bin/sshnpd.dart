@@ -2,13 +2,10 @@
 import 'dart:io';
 import 'dart:async';
 import 'package:logging/src/level.dart';
-// @platform packages
+// atPlatform packages
 import 'package:at_client/at_client.dart';
 import 'package:at_utils/at_logger.dart';
-import 'package:at_commons/at_commons.dart';
 import 'package:at_onboarding_cli/at_onboarding_cli.dart';
-// ignore: implementation_imports
-import 'package:at_client/src/service/notification_service.dart';
 // external packages
 import 'package:args/args.dart';
 import 'package:sshnoports/check_file_exists.dart';
@@ -26,15 +23,15 @@ void main(List<String> args) async {
 
   var parser = ArgParser();
   // Basic arguments
-  parser.addOption('keyFile', abbr: 'k', mandatory: false, help: 'Sending @sign\'s keyFile if not in ~/.atsign/keys/');
-  parser.addOption('atsign', abbr: 'a', mandatory: true, help: '@sign of this device');
+  parser.addOption('keyFile', abbr: 'k', mandatory: false, help: 'Sending atSign\'s keyFile if not in ~/.atsign/keys/');
+  parser.addOption('atsign', abbr: 'a', mandatory: true, help: 'atSign of this device');
   parser.addOption('manager',
-      abbr: 'm', mandatory: true, help: 'Managers @sign, that this device will accept triggers from');
+      abbr: 'm', mandatory: true, help: 'Managers atSign, that this device will accept triggers from');
   parser.addOption('device',
       abbr: 'd',
       mandatory: false,
       defaultsTo: "default",
-      help: 'Send a trigger to this device, allows multiple devices share an @sign');
+      help: 'Send a trigger to this device, allows multiple devices share an atSign');
 
   parser.addFlag('sshpublickey', abbr: 's', help: 'Update authorized_keys to include public key from sshnp');
   parser.addFlag('username',
@@ -72,7 +69,7 @@ void main(List<String> args) async {
     }
     device = results['device'];
 
-    // Find @sign key file
+    // Find atSign key file
     if (results['keyFile'] != null) {
       atsignFile = results['keyFile'];
     } else {
