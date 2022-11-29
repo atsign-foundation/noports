@@ -108,12 +108,12 @@ your own using the Dockerfile in the root of the project.
 
 The image expects to have the atKeys for the atSign being used in the
 `/atsign/.atsign/keys` directory, this can be mounted as a volume at startup
-of the docker run command using `-v $(pwd):/atsign./atsign/keys/` assuming
+of the docker run command using `-v $(pwd):/atsign/.atsign/keys/` assuming
 you are in the dircetory where the atKeys file is located. The full comand
 to start the container would be something like this:-
 
 ```
-docker run -v <location of atKeys>:/atsign./atsign/keys/ atsigncompany/sshnpd "-a <atSign> -m <atSign> -d <device name> -v -u"
+docker run -v <location of atKeys>:/atsign/.atsign/keys/ atsigncompany/sshnpd "-a <atSign> -m <atSign> -d <device name> -v -u"
 ```
 
 Once the container is running to log into the container the sshnp command
