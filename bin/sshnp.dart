@@ -5,10 +5,10 @@ import 'package:logging/src/level.dart';
 // @platform packages
 import 'package:at_client/at_client.dart';
 import 'package:at_utils/at_logger.dart';
-import 'package:at_commons/at_commons.dart';
+//import 'package:at_commons/at_commons.dart';
 import 'package:at_onboarding_cli/at_onboarding_cli.dart';
 // ignore: implementation_imports
-import 'package:at_client/src/service/notification_service.dart';
+//import 'package:at_client/src/service/notification_service.dart';
 // external packages
 import 'package:args/args.dart';
 import 'package:uuid/uuid.dart';
