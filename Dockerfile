@@ -1,4 +1,4 @@
-FROM dart:2.18.4 AS buildimage
+FROM dart:2.18.5@sha256:7744c20385e247d71d421e36ee95a569666afadae1379aebab7e8345cd2c7170 AS buildimage
 ENV BINARYDIR=/usr/local/at
 WORKDIR /app
 COPY . .
@@ -9,7 +9,7 @@ RUN \
   dart compile exe bin/sshnpd.dart -o $BINARYDIR/sshnpd
 
 # Second stage of build FROM debian-slim
-FROM debian:stable-slim
+FROM debian:stable-slim@sha256:e0a0c70afa89724b4e0287e98971e2e9afa0a72ffdde23a372b8614669cb68f4
 ENV HOMEDIR=/atsign
 ENV BINARYDIR=/usr/local/at
 ENV USER_ID=1024
