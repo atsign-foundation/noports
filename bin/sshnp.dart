@@ -1,14 +1,10 @@
 // dart packages
 import 'dart:io';
 import 'package:logging/src/level.dart';
-// import 'dart:convert';
-// @platform packages
+// atPlatform packages
 import 'package:at_client/at_client.dart';
 import 'package:at_utils/at_logger.dart';
-//import 'package:at_commons/at_commons.dart';
 import 'package:at_onboarding_cli/at_onboarding_cli.dart';
-// ignore: implementation_imports
-//import 'package:at_client/src/service/notification_service.dart';
 // external packages
 import 'package:args/args.dart';
 import 'package:uuid/uuid.dart';
@@ -36,10 +32,10 @@ void main(List<String> args) async {
   parser.addOption('key-file',
       abbr: 'k',
       mandatory: false,
-      help: 'Sending @sign\'s atKeys file if not in ~/.atsign/keys/');
-  parser.addOption('from', abbr: 'f', mandatory: true, help: 'Sending @sign');
+      help: 'Sending atSign\'s atKeys file if not in ~/.atsign/keys/');
+  parser.addOption('from', abbr: 'f', mandatory: true, help: 'Sending atSign');
   parser.addOption('to',
-      abbr: 't', mandatory: true, help: 'Send a notification to this @sign');
+      abbr: 't', mandatory: true, help: 'Send a notification to this atSign');
   parser.addOption('device',
       abbr: 'd',
       mandatory: false,
@@ -112,7 +108,7 @@ void main(List<String> args) async {
       sshHomeDirectory = homeDirectory + '\\.ssh\\';
     }
 
-    // Find @sign key file
+    // Find atSign key file
     fromAtsign = results['from'];
     toAtsign = results['to'];
     if (results['key-file'] != null) {
@@ -170,7 +166,7 @@ void main(List<String> args) async {
       'command="echo \\"ssh session complete\\";sleep 20",PermitOpen="localhost:22" ${sshPublicKey.trim()} $sessionId\n',
       mode: FileMode.append);
 
-  // Now on to the @platform startup
+  // Now on to the atPlatform startup
   AtSignLogger.root_level = 'SHOUT';
   if (results['verbose']) {
     _logger.logger.level = Level.INFO;
@@ -284,7 +280,7 @@ void main(List<String> args) async {
       });
     } catch (e) {
       print(
-          "Error openning or validating public key file or sending to remote @sign: " +
+          "Error openning or validating public key file or sending to remote atSign: " +
               e.toString());
       await cleanUp(sessionId, _logger);
       exit(0);
