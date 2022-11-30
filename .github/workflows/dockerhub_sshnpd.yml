@@ -2,8 +2,8 @@ name: dockerhub_sshnpd
 
 on:
   push:
-    branches:
-      - "trunk"
+    tags:
+      - 'v*.*.*'
 
 permissions:  # added using https://github.com/step-security/secure-workflows
   contents: read
@@ -27,6 +27,10 @@ jobs:
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
+ # Extract version for docker tag
+      -
+        name: Get version
+        run: echo "VERSION=${GITHUB_REF##*/}" >> $GITHUB_ENV
       -
         name: Build and push
         uses: docker/build-push-action@c56af957549030174b10d6867f20e78cfd7debc5 # v3.2.0
@@ -34,4 +38,6 @@ jobs:
           context: .
           platforms: linux/amd64,linux/arm64,linux/arm/v7
           push: true
-          tags: atsigncompany/sshnpd:latest
+          tags: |
+            atsigncompany/sshnpd:latest
+            atsigncompany/sshnpd:release-${{ env.VERSION }}
