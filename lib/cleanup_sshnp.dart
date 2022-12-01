@@ -16,11 +16,11 @@ Future<void> cleanUp(String sessionId, AtSignLogger _logger) async {
   }
 // Wait a few seconds for the remote ssh session to connect back here
 // do we need to wait ? Yes as it takes time for the reverse ssh to connect
-// 2 seconds seems like a reasonable time...
+// 5 seconds seems like a reasonable time...
 // could make it an option if folks have trouble.
   _logger.info('Tidying up files');
 
-  sleep(Duration(seconds: 2));
+  sleep(Duration(seconds: 5));
 // Delete the generated RSA keys and remove the entry from ~/.ssh/authorized_keys
   await deleteFile('$sshHomeDirectory${sessionId}_rsa', _logger);
   await deleteFile('$sshHomeDirectory${sessionId}_rsa.pub', _logger);
