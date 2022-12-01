@@ -20,7 +20,7 @@ Future<void> cleanUp(String sessionId, AtSignLogger _logger) async {
 // could make it an option if folks have trouble.
   _logger.info('Tidying up files');
 
-  sleep(Duration(seconds: 5));
+  sleep(Duration(seconds: 10));
 // Delete the generated RSA keys and remove the entry from ~/.ssh/authorized_keys
   await deleteFile('$sshHomeDirectory${sessionId}_rsa', _logger);
   await deleteFile('$sshHomeDirectory${sessionId}_rsa.pub', _logger);
