@@ -302,7 +302,7 @@ void main(List<String> args) async {
 
   if (sendCommand == 'sshd') {
     // Local port, port of sshd , username , hostname
-    sshString = '$localPort $port $username $host ';
+    sshString = '$localPort $port $username $host $sessionId';
   }
 
   try {
@@ -317,7 +317,15 @@ void main(List<String> args) async {
     print(e.toString());
   }
 
+  // Before we clean up we need to make sure that the reverse ssh made the connection.
+  // Or that if it had a problem what the problem was, or timeout and explain why.
+
+///TODO Sleep is not the right solution
+    sleep(Duration(seconds: 2));
+
+  // Clean Up the files we created
   await cleanUp(sessionId, _logger);
+
   // print out base ssh command
   // If we had a Public key include the private key in the command line
   // By removing the .pub extn

@@ -213,8 +213,6 @@ void main(List<String> args) async {
       onDone: () => _logger.info('Notification listener stopped'));
 }
 
-
-
 void sshCallback(
     AtNotification notification, String privateKey, AtSignLogger _logger, String managerAtsign, String device) async {
   var uuid = Uuid();
@@ -229,6 +227,10 @@ void sshCallback(
     var port = sshList[1];
     var username = sshList[2];
     var hostname = sshList[3];
+    // Assure backward compatibility with 1.x clients
+    if (sshList.length == 5) {
+       sessionId = sshList[4];
+    }
     _logger
         .info('ssh session started for $username to $hostname on port $port using localhost:$localPort on $hostname ');
     _logger.shout('ssh session started from: ' + notification.from.toString() + " session: $sessionId");
