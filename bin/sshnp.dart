@@ -199,8 +199,11 @@ void main(List<String> args) async {
     _logger.info('Received $keyAtsign notification');
     if (notification.value == 'connected') {
       _logger.info('Session $sessionId connected succesfully');
-  // Give ssh/sshd a little time to get everything in place
-  //   await Future.delayed(Duration(milliseconds: 250));
+      // Give ssh/sshd a little time to get everything in place
+      //   await Future.delayed(Duration(milliseconds: 250));
+      ack = true;
+    } else {
+      stderr.write('Remote Error: ${notification.value}');
       ack = true;
     }
   }));

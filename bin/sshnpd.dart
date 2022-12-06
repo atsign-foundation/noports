@@ -219,6 +219,22 @@ void sshCallback(
   String sessionId = uuid.v4();
 
   var sshString = notification.value!;
+// Get atPlatform notifications ready
+  var  metaData = Metadata()
+       ..isPublic = false
+      ..isEncrypted = true
+      ..namespaceAware = true
+      ..ttr = -1
+      ..ttl = 10000;
+
+  var atKey = AtKey()
+    ..key = '$sessionId.$device'
+    ..sharedBy = deviceAtsign
+    ..sharedWith = managerAtsign
+    ..namespace =  nameSpace
+    ..metadata = metaData;
+    AtClientManager atClientManager = AtClientManager.getInstance();
+    NotificationService notificationService = atClientManager.notificationService;
 
   if (notification.from == managerAtsign) {
     // Local port, port of sshd , username , hostname
@@ -254,27 +270,24 @@ void sshCallback(
       final forward = await client.forwardRemote(port: int.parse(localPort));
 
       if (forward == null) {
-        _logger.warning('Failed to forward remote port');
+        _logger.warning('Failed to forward remote port $localPort');
+          try {
+    // Say this session is connected to client
+    await notificationService
+        .notify(NotificationParams.forUpdate(atKey, value: 'Failed to forward remote port $localPort'),
+            onSuccess: (notification) {
+      _logger.info('SUCCESS:' + notification.toString() + ' for: ' + sessionId);
+    }, onError: (notification) {
+      _logger.info('ERROR:' + notification.toString());
+    });
+  } catch (e) {
+    print(e.toString());
+  }
         return;
       }
       /// Send a notification to tell sshnp connection is made
       ///
-      AtClientManager atClientManager = AtClientManager.getInstance();
-      NotificationService notificationService = atClientManager.notificationService;
 
-      var  metaData = Metadata()
-       ..isPublic = false
-      ..isEncrypted = true
-      ..namespaceAware = true
-      ..ttr = -1
-      ..ttl = 10000;
-
-  var atKey = AtKey()
-    ..key = '$sessionId.$device'
-    ..sharedBy = deviceAtsign
-    ..sharedWith = managerAtsign
-    ..namespace =  nameSpace
-    ..metadata = metaData;
     
   try {
     // Say this session is connected to client
@@ -318,6 +331,18 @@ void sshCallback(
     } catch (e) {
       // need to make sure things close
       _logger.severe('SSH Client failure : ' + e.toString());
+               try {
+    // Say this session is connected to client
+    await notificationService
+        .notify(NotificationParams.forUpdate(atKey, value: 'Remote SSH Client failure : ' + e.toString()),
+            onSuccess: (notification) {
+      _logger.info('SUCCESS:' + notification.toString() + ' for: ' + sessionId);
+    }, onError: (notification) {
+      _logger.info('ERROR:' + notification.toString());
+    });
+  } catch (e) {
+    print(e.toString());
+  }
     }
   }
 }
