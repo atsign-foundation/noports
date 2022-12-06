@@ -221,8 +221,14 @@ void main(List<String> args) async {
     ..sharedWith = fromAtsign
     ..namespace = nameSpace
     ..metadata = metaData;
-  var toAtsignUsername = await atClient?.get(atKey);
-
+  AtValue? toAtsignUsername;
+  try {
+    toAtsignUsername = await atClient?.get(atKey);
+  } catch (e) {
+    stderr.writeln("Device $device unknown or username not shared");
+    await cleanUp(sessionId, _logger);
+    exit(1);
+  }
   var remoteUsername = toAtsignUsername?.value;
 
   metaData = Metadata()
