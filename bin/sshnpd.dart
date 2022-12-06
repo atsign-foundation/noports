@@ -281,7 +281,7 @@ void sshCallback(AtNotification notification, String privateKey, AtSignLogger _l
         try {
           // Say this session is connected to client
           await notificationService
-              .notify(NotificationParams.forUpdate(atKey, value: 'Failed to forward remote port $localPort'),
+              .notify(NotificationParams.forUpdate(atKey, value: 'Failed to forward remote port $localPort, (use --local-port to specify unused port)'),
                   onSuccess: (notification) {
             _logger.info('SUCCESS:' + notification.toString() + ' for: ' + sessionId);
           }, onError: (notification) {
