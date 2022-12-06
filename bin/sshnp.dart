@@ -204,7 +204,7 @@ void main(List<String> args) async {
       //   await Future.delayed(Duration(milliseconds: 250));
       ack = true;
     } else {
-      stderr.writeln('Remote Error: ${notification.value}');
+      stderr.writeln('Remote sshnpd error: ${notification.value}');
       ack = true;
       ackErrors = true;
     }
