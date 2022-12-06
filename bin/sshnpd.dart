@@ -264,8 +264,8 @@ void sshCallback(
 
   var key = AtKey()
     ..key = sessionId
-    ..sharedBy = managerAtsign
-    ..sharedWith = deviceAtsign
+    ..sharedBy = deviceAtsign
+    ..sharedWith = managerAtsign
     ..namespace = nameSpace
     ..metadata = metaData;
     
