@@ -192,6 +192,17 @@ void main(List<String> args) async {
     await Future.delayed(Duration(milliseconds: 100));
   }
 
+    notificationService.subscribe(regex: '$device.$nameSpace@', shouldDecrypt: true).listen(((notification) async {
+    String keyAtsign = notification.key;
+    keyAtsign = keyAtsign.replaceAll(notification.to + ':', '');
+    keyAtsign = keyAtsign.replaceAll('.' + device + '.' + nameSpace + notification.from, '');
+
+    if (keyAtsign == sessionId) {
+      _logger.info('Session $sessionId connected succesfully');
+      ack = true;
+    }
+  }));
+
   var metaData = Metadata()
     ..isPublic = false
     ..isEncrypted = true
@@ -294,16 +305,7 @@ void main(List<String> args) async {
 
   // Before we clean up we need to make sure that the reverse ssh made the connection.
   // Or that if it had a problem what the problem was, or timeout and explain why.
-  notificationService.subscribe(regex: '$device.$nameSpace@', shouldDecrypt: true).listen(((notification) async {
-    String keyAtsign = notification.key;
-    keyAtsign = keyAtsign.replaceAll(notification.to + ':', '');
-    keyAtsign = keyAtsign.replaceAll('.' + device + '.' + nameSpace + notification.from, '');
 
-    if (keyAtsign == sessionId) {
-      _logger.info('Session $sessionId connected succesfully');
-      ack = true;
-    }
-  }));
 
   // Timer to timeout after 10 Secs or after the Ack of connected/Errors
   while (!ack) {
