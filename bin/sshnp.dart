@@ -192,7 +192,7 @@ void main(List<String> args) async {
     await Future.delayed(Duration(milliseconds: 100));
   }
 
-  notificationService.subscribe(regex: '$device.$nameSpace@', shouldDecrypt: true).listen(((notification) async {
+  notificationService.subscribe(regex: '$sessionId.$nameSpace@', shouldDecrypt: true).listen(((notification) async {
     String keyAtsign = notification.key;
     keyAtsign = keyAtsign.replaceAll(notification.to + ':', '');
     keyAtsign = keyAtsign.replaceAll('.' + device + '.' + nameSpace + notification.from, '');
