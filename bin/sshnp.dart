@@ -66,6 +66,7 @@ void main(List<String> args) async {
   List<String> localSshOptions = [];
   int counter = 0;
   bool ack = false;
+  bool ackErrors = false;
   // In the future (perhaps) we can send other commands
   // Perhaps OpenVPN or shell commands
   String sendCommand = 'sshd';
@@ -205,6 +206,7 @@ void main(List<String> args) async {
     } else {
       stderr.writeln('Remote Error: ${notification.value}');
       ack = true;
+      ackErrors = true;
     }
   }));
 
@@ -323,18 +325,20 @@ void main(List<String> args) async {
   // Clean Up the files we created
   await cleanUp(sessionId, _logger);
 
-  // print out base ssh command
+  // print out base ssh command if we hit no Ack Errors
   // If we had a Public key include the private key in the command line
   // By removing the .pub extn
-  if (sendSshPublicKey != 'false') {
-    stdout.write(
-        "ssh -p $localPort $remoteUsername@localhost -i ${sendSshPublicKey.replaceFirst(RegExp(r'.pub$'), '')} ");
-  } else {
-    stdout.write("ssh -p $localPort $remoteUsername@localhost ");
-  }
-  // print out optional arguments
-  for (var argument in localSshOptions) {
-    stdout.write(argument + " ");
+  if (!ackErrors) {
+    if (sendSshPublicKey != 'false') {
+      stdout.write(
+          "ssh -p $localPort $remoteUsername@localhost -i ${sendSshPublicKey.replaceFirst(RegExp(r'.pub$'), '')} ");
+    } else {
+      stdout.write("ssh -p $localPort $remoteUsername@localhost ");
+    }
+    // print out optional arguments
+    for (var argument in localSshOptions) {
+      stdout.write(argument + " ");
+    }
   }
   // Print the  return
   stdout.write('\n');
