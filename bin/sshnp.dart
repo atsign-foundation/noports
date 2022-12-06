@@ -24,7 +24,7 @@ void main(List<String> args) async {
 
   ProcessSignal.sigint.watch().listen((signal) async {
     await cleanUp(sessionId, _logger);
-    exit(0);
+    exit(1);
   });
 
   var parser = ArgParser();
@@ -278,7 +278,7 @@ void main(List<String> args) async {
     } catch (e) {
       stderr.writeln("Error openning or validating public key file or sending to remote atSign: " + e.toString());
       await cleanUp(sessionId, _logger);
-      exit(0);
+      exit(1);
     }
   }
 
@@ -317,8 +317,11 @@ void main(List<String> args) async {
   while (!ack) {
     await Future.delayed(Duration(milliseconds: 100));
     counter++;
-    if (counter == 100) {
+    if (counter == 300) {
       ack = true;
+      await cleanUp(sessionId, _logger);
+      stderr.writeln('sshnp: connection timeout');
+      exit(1);
     }
   }
 
