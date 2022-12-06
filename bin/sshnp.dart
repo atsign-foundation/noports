@@ -225,7 +225,7 @@ void main(List<String> args) async {
   try {
     toAtsignUsername = await atClient?.get(atKey);
   } catch (e) {
-    stderr.writeln("Device $device unknown or username not shared");
+    stderr.writeln("Device \"${device.replaceAll('.', '')}\" unknown or username not shared");
     await cleanUp(sessionId, _logger);
     exit(1);
   }
