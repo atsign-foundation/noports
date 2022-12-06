@@ -247,7 +247,12 @@ void sshCallback(AtNotification notification, String privateKey, AtSignLogger _l
     // Assure backward compatibility with 1.x clients
     if (sshList.length == 5) {
       sessionId = sshList[4];
-       atKey = AtKey()..key = '$sessionId.$device';
+      atKey = AtKey()
+    ..key = '$sessionId.$device'
+    ..sharedBy = deviceAtsign
+    ..sharedWith = managerAtsign
+    ..namespace = nameSpace
+    ..metadata = metaData;
     }
     _logger
         .info('ssh session started for $username to $hostname on port $port using localhost:$localPort on $hostname ');
