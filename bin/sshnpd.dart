@@ -274,7 +274,7 @@ void sshCallback(
     await notificationService
         .notify(NotificationParams.forUpdate(key, value: "connected"),
             onSuccess: (notification) {
-      _logger.info('SUCCESS:' + notification.toString());
+      _logger.info('SUCCESS:' + notification.toString() + 'for: ' + sessionId);
     }, onError: (notification) {
       _logger.info('ERROR:' + notification.toString());
     });
