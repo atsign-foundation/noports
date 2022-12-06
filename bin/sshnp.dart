@@ -133,8 +133,8 @@ void main(List<String> args) async {
       }
     }
   } catch (e) {
-    print(parser.usage);
-    print(e);
+    stdout.writeln(parser.usage);
+    stderr.writeln(e);
     exit(1);
   }
 
@@ -203,7 +203,7 @@ void main(List<String> args) async {
       //   await Future.delayed(Duration(milliseconds: 250));
       ack = true;
     } else {
-      stderr.write('Remote Error: ${notification.value}');
+      stderr.writeln('Remote Error: ${notification.value}');
       ack = true;
     }
   }));
@@ -245,7 +245,7 @@ void main(List<String> args) async {
       _logger.info('ERROR:' + notification.toString());
     });
   } catch (e) {
-    print(e.toString());
+    stderr.writeln(e.toString());
   }
 
   metaData = Metadata()
@@ -274,7 +274,7 @@ void main(List<String> args) async {
         _logger.info('ERROR:' + notification.toString());
       });
     } catch (e) {
-      print("Error openning or validating public key file or sending to remote atSign: " + e.toString());
+      stderr.writeln("Error openning or validating public key file or sending to remote atSign: " + e.toString());
       await cleanUp(sessionId, _logger);
       exit(0);
     }
@@ -305,7 +305,7 @@ void main(List<String> args) async {
       _logger.info('ERROR:' + notification.toString() + ' ' + sshString);
     });
   } catch (e) {
-    print(e.toString());
+    stderr.writeln(e.toString());
   }
 
   // Before we clean up we need to make sure that the reverse ssh made the connection.

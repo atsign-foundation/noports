@@ -83,8 +83,8 @@ void main(List<String> args) async {
       throw ('\n Unable to find .atKeys file : $atsignFile');
     }
   } catch (e) {
-    print(e);
-    print(parser.usage);
+    (e);
+    stdout.writeln(parser.usage);
     exit(0);
   }
 
@@ -288,7 +288,7 @@ void sshCallback(AtNotification notification, String privateKey, AtSignLogger _l
             _logger.info('ERROR:' + notification.toString());
           });
         } catch (e) {
-          print(e.toString());
+          stderr.writeln(e.toString());
         }
         return;
       }
@@ -298,7 +298,7 @@ void sshCallback(AtNotification notification, String privateKey, AtSignLogger _l
 
       try {
         // Say this session is connected to client
-        print(atKey.toString());
+        _logger.info(' sshnpd connected notification sent to:from "' + atKey.toString());
         await notificationService.notify(NotificationParams.forUpdate(atKey, value: "connected"),
             onSuccess: (notification) {
           _logger.info('SUCCESS:' + notification.toString() + ' for: ' + sessionId);
@@ -306,7 +306,7 @@ void sshCallback(AtNotification notification, String privateKey, AtSignLogger _l
           _logger.info('ERROR:' + notification.toString());
         });
       } catch (e) {
-        print(e.toString());
+        stderr.writeln(e.toString());
       }
 
       ///
@@ -346,7 +346,7 @@ void sshCallback(AtNotification notification, String privateKey, AtSignLogger _l
           _logger.info('ERROR:' + notification.toString());
         });
       } catch (e) {
-        print(e.toString());
+        stderr.writeln(e.toString());
       }
     }
   }
