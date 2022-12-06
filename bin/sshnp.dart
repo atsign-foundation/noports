@@ -30,39 +30,22 @@ void main(List<String> args) async {
   var parser = ArgParser();
   // Basic arguments
   parser.addOption('key-file',
-      abbr: 'k',
-      mandatory: false,
-      help: 'Sending atSign\'s atKeys file if not in ~/.atsign/keys/');
+      abbr: 'k', mandatory: false, help: 'Sending atSign\'s atKeys file if not in ~/.atsign/keys/');
   parser.addOption('from', abbr: 'f', mandatory: true, help: 'Sending atSign');
-  parser.addOption('to',
-      abbr: 't', mandatory: true, help: 'Send a notification to this atSign');
+  parser.addOption('to', abbr: 't', mandatory: true, help: 'Send a notification to this atSign');
   parser.addOption('device',
-      abbr: 'd',
-      mandatory: false,
-      defaultsTo: "default",
-      help: 'Send a notification to this device');
+      abbr: 'd', mandatory: false, defaultsTo: "default", help: 'Send a notification to this device');
   parser.addOption('host',
-      abbr: 'h',
-      mandatory: true,
-      help: 'FQDN Hostname e.g example.com or IP address to connect back to');
-  parser.addOption('port',
-      abbr: 'p',
-      mandatory: false,
-      defaultsTo: '22',
-      help: 'TCP port to connect back to');
+      abbr: 'h', mandatory: true, help: 'FQDN Hostname e.g example.com or IP address to connect back to');
+  parser.addOption('port', abbr: 'p', mandatory: false, defaultsTo: '22', help: 'TCP port to connect back to');
   parser.addOption('local-port',
-      abbr: 'l',
-      defaultsTo: '2222',
-      mandatory: false,
-      help: 'Reverse ssh port to listen on, on your local machine');
+      abbr: 'l', defaultsTo: '2222', mandatory: false, help: 'Reverse ssh port to listen on, on your local machine');
   parser.addOption('ssh-public-key',
       abbr: 's',
       defaultsTo: 'false',
       mandatory: false,
-      help:
-          'Public key file from ~/.ssh to be apended to authorized_hosts on the remote device');
-  parser.addMultiOption('local-ssh-options',
-      abbr: 'o', help: 'Add these commands to the local ssh command');
+      help: 'Public key file from ~/.ssh to be apended to authorized_hosts on the remote device');
+  parser.addMultiOption('local-ssh-options', abbr: 'o', help: 'Add these commands to the local ssh command');
   parser.addFlag('verbose', abbr: 'v', help: 'More logging');
 
   // Check the arguments
@@ -81,6 +64,8 @@ void main(List<String> args) async {
   String sshHomeDirectory = "";
   String sendSshPublicKey = "";
   List<String> localSshOptions = [];
+  int counter = 0;
+  bool ack = false;
   // In the future (perhaps) we can send other commands
   // Perhaps OpenVPN or shell commands
   String sendCommand = 'sshd';
@@ -153,13 +138,10 @@ void main(List<String> args) async {
     exit(1);
   }
 
-  await Process.run('ssh-keygen',
-      ['-t', 'rsa', '-b', '4096', '-f', '${sessionId}_rsa', '-q', '-N', ''],
+  await Process.run('ssh-keygen', ['-t', 'rsa', '-b', '4096', '-f', '${sessionId}_rsa', '-q', '-N', ''],
       workingDirectory: sshHomeDirectory);
-  String sshPublicKey =
-      await File('$sshHomeDirectory${sessionId}_rsa.pub').readAsString();
-  String sshPrivateKey =
-      await File('$sshHomeDirectory${sessionId}_rsa').readAsString();
+  String sshPublicKey = await File('$sshHomeDirectory${sessionId}_rsa.pub').readAsString();
+  String sshPrivateKey = await File('$sshHomeDirectory${sessionId}_rsa').readAsString();
 
   // Set up a safe authorized_keys file, for the reverse ssh tunnel
   File('${sshHomeDirectory}authorized_keys').writeAsStringSync(
@@ -185,8 +167,7 @@ void main(List<String> args) async {
     //..cramSecret = '<your cram secret>';
     ..atKeysFilePath = atsignFile;
 
-  AtOnboardingService onboardingService =
-      AtOnboardingServiceImpl(fromAtsign, atOnboardingConfig);
+  AtOnboardingService onboardingService = AtOnboardingServiceImpl(fromAtsign, atOnboardingConfig);
 
   await onboardingService.authenticate();
 
@@ -241,9 +222,8 @@ void main(List<String> args) async {
     ..metadata = metaData;
 
   try {
-    await notificationService
-        .notify(NotificationParams.forUpdate(key, value: sshPrivateKey),
-            onSuccess: (notification) {
+    await notificationService.notify(NotificationParams.forUpdate(key, value: sshPrivateKey),
+        onSuccess: (notification) {
       _logger.info('SUCCESS:' + notification.toString());
     }, onError: (notification) {
       _logger.info('ERROR:' + notification.toString());
@@ -271,17 +251,14 @@ void main(List<String> args) async {
       if (!toSshPublicKey.startsWith('ssh-rsa')) {
         throw ('$sshHomeDirectory$sendSshPublicKey does not look like a public key file');
       }
-      await notificationService
-          .notify(NotificationParams.forUpdate(key, value: toSshPublicKey),
-              onSuccess: (notification) {
+      await notificationService.notify(NotificationParams.forUpdate(key, value: toSshPublicKey),
+          onSuccess: (notification) {
         _logger.info('SUCCESS:' + notification.toString());
       }, onError: (notification) {
         _logger.info('ERROR:' + notification.toString());
       });
     } catch (e) {
-      print(
-          "Error openning or validating public key file or sending to remote atSign: " +
-              e.toString());
+      print("Error openning or validating public key file or sending to remote atSign: " + e.toString());
       await cleanUp(sessionId, _logger);
       exit(0);
     }
@@ -306,9 +283,7 @@ void main(List<String> args) async {
   }
 
   try {
-    await notificationService
-        .notify(NotificationParams.forUpdate(key, value: sshString),
-            onSuccess: (notification) {
+    await notificationService.notify(NotificationParams.forUpdate(key, value: sshString), onSuccess: (notification) {
       _logger.info('SUCCESS:' + notification.toString() + ' ' + sshString);
     }, onError: (notification) {
       _logger.info('ERROR:' + notification.toString() + ' ' + sshString);
@@ -319,9 +294,25 @@ void main(List<String> args) async {
 
   // Before we clean up we need to make sure that the reverse ssh made the connection.
   // Or that if it had a problem what the problem was, or timeout and explain why.
+  notificationService.subscribe(regex: '$device.$nameSpace@', shouldDecrypt: true).listen(((notification) async {
+    String keyAtsign = notification.key;
+    keyAtsign = keyAtsign.replaceAll(notification.to + ':', '');
+    keyAtsign = keyAtsign.replaceAll('.' + device + '.' + nameSpace + notification.from, '');
 
-///TODO Sleep is not the right solution
-    sleep(Duration(seconds: 2));
+    if (keyAtsign == sessionId) {
+      _logger.info('Session $sessionId connected succesfully');
+      ack = true;
+    }
+  }));
+
+  // Timer to timeout after 10 Secs or after the Ack of connected/Errors
+  while (!ack) {
+    await Future.delayed(Duration(milliseconds: 100));
+    counter++;
+    if (counter == 100) {
+      ack = true;
+    }
+  }
 
   // Clean Up the files we created
   await cleanUp(sessionId, _logger);

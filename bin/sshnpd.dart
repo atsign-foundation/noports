@@ -206,7 +206,7 @@ void main(List<String> args) async {
 
     if (keyAtsign == 'sshd') {
       _logger.info('ssh callback request recieved from ' + notification.from + ' notification id : ' + notification.id);
-      sshCallback(notification, privateKey, _logger, managerAtsign, device);
+      sshCallback(notification, privateKey, _logger, managerAtsign, deviceAtsign, nameSpace, device);
     }
   }),
       onError: (e) => _logger.severe('Notification Failed:' + e.toString()),
@@ -214,7 +214,7 @@ void main(List<String> args) async {
 }
 
 void sshCallback(
-    AtNotification notification, String privateKey, AtSignLogger _logger, String managerAtsign, String device) async {
+    AtNotification notification, String privateKey, AtSignLogger _logger, String managerAtsign, String deviceAtsign,String nameSpace, String device) async {
   var uuid = Uuid();
   String sessionId = uuid.v4();
 
@@ -250,6 +250,40 @@ void sshCallback(
       );
 
       await client.authenticated;
+      ///
+      ///
+      AtClientManager atClientManager = AtClientManager.getInstance();
+      NotificationService notificationService = atClientManager.notificationService;
+
+      var  metaData = Metadata()
+       ..isPublic = false
+      ..isEncrypted = true
+      ..namespaceAware = true
+      ..ttr = -1
+      ..ttl = 10000;
+
+  var key = AtKey()
+    ..key = sessionId
+    ..sharedBy = managerAtsign
+    ..sharedWith = deviceAtsign
+    ..namespace = nameSpace
+    ..metadata = metaData;
+    
+  try {
+    // Say this session is connected to client
+    await notificationService
+        .notify(NotificationParams.forUpdate(key, value: "connected"),
+            onSuccess: (notification) {
+      _logger.info('SUCCESS:' + notification.toString());
+    }, onError: (notification) {
+      _logger.info('ERROR:' + notification.toString());
+    });
+  } catch (e) {
+    print(e.toString());
+  }
+
+
+      ///
 
       final forward = await client.forwardRemote(port: int.parse(localPort));
 
