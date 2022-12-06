@@ -266,7 +266,7 @@ void sshCallback(
     ..key = sessionId
     ..sharedBy = deviceAtsign
     ..sharedWith = managerAtsign
-    ..namespace = nameSpace
+    ..namespace = device + '.' + nameSpace
     ..metadata = metaData;
     
   try {
