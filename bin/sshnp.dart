@@ -195,9 +195,9 @@ void main(List<String> args) async {
   notificationService.subscribe(regex: '$sessionId.$nameSpace@', shouldDecrypt: true).listen(((notification) async {
     String keyAtsign = notification.key;
     keyAtsign = keyAtsign.replaceAll(notification.to + ':', '');
-    keyAtsign = keyAtsign.replaceAll('.' + device + '.' + nameSpace + notification.from, '');
+    keyAtsign = keyAtsign.replaceAll('.' + device + '.' + 'sshnp' + notification.from, '');
     _logger.info('Received $keyAtsign notification');
-    if (keyAtsign == sessionId) {
+    if (notification.value == 'connected') {
       _logger.info('Session $sessionId connected succesfully');
       ack = true;
     }
