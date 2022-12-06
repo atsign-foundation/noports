@@ -248,9 +248,16 @@ void sshCallback(
           ...SSHKeyPair.fromPem(privateKey)
         ],
       );
-
+      // connect back to ssh server/port
       await client.authenticated;
-      ///
+      // Do the port forwarding
+      final forward = await client.forwardRemote(port: int.parse(localPort));
+
+      if (forward == null) {
+        _logger.warning('Failed to forward remote port');
+        return;
+      }
+      /// Send a notification to tell sshnp connection is made
       ///
       AtClientManager atClientManager = AtClientManager.getInstance();
       NotificationService notificationService = atClientManager.notificationService;
@@ -285,12 +292,6 @@ void sshCallback(
 
       ///
 
-      final forward = await client.forwardRemote(port: int.parse(localPort));
-
-      if (forward == null) {
-        _logger.warning('Failed to forward remote port');
-        return;
-      }
 
       int counter = 0;
       bool stop = false;
