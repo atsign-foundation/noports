@@ -14,6 +14,7 @@ import 'package:dartssh2/dartssh2.dart';
 // local packages
 import 'package:sshnoports/check_non_ascii.dart';
 import 'package:sshnoports/home_directory.dart';
+import 'package:sshnoports/version.dart';
 //
 
 void main(List<String> args) async {
@@ -84,6 +85,7 @@ void main(List<String> args) async {
     }
   } catch (e) {
     (e);
+    version();
     stdout.writeln(parser.usage);
     exit(0);
   }
@@ -249,11 +251,11 @@ void sshCallback(AtNotification notification, String privateKey, AtSignLogger _l
     if (sshList.length == 5) {
       sessionId = sshList[4];
       atKey = AtKey()
-    ..key = '$sessionId.$device'
-    ..sharedBy = deviceAtsign
-    ..sharedWith = managerAtsign
-    ..namespace = nameSpace
-    ..metadata = metaData;
+        ..key = '$sessionId.$device'
+        ..sharedBy = deviceAtsign
+        ..sharedWith = managerAtsign
+        ..namespace = nameSpace
+        ..metadata = metaData;
     }
     _logger
         .info('ssh session started for $username to $hostname on port $port using localhost:$localPort on $hostname ');
@@ -281,9 +283,10 @@ void sshCallback(AtNotification notification, String privateKey, AtSignLogger _l
         _logger.warning('Failed to forward remote port $localPort');
         try {
           // Say this session is connected to client
-          await notificationService
-              .notify(NotificationParams.forUpdate(atKey, value: 'Failed to forward remote port $localPort, (use --local-port to specify unused port)'),
-                  onSuccess: (notification) {
+          await notificationService.notify(
+              NotificationParams.forUpdate(atKey,
+                  value: 'Failed to forward remote port $localPort, (use --local-port to specify unused port)'),
+              onSuccess: (notification) {
             _logger.info('SUCCESS:' + notification.toString() + ' for: ' + sessionId);
           }, onError: (notification) {
             _logger.info('ERROR:' + notification.toString());

@@ -9,6 +9,7 @@ import 'package:at_onboarding_cli/at_onboarding_cli.dart';
 import 'package:args/args.dart';
 import 'package:uuid/uuid.dart';
 // local packages
+import 'package:sshnoports/version.dart';
 import 'package:sshnoports/home_directory.dart';
 import 'package:sshnoports/check_non_ascii.dart';
 import 'package:sshnoports/cleanup_sshnp.dart';
@@ -134,6 +135,7 @@ void main(List<String> args) async {
       }
     }
   } catch (e) {
+    version();
     stdout.writeln(parser.usage);
     stderr.writeln(e);
     exit(1);
