@@ -1,4 +1,4 @@
-FROM dart:2.18.5@sha256:7bccbb999d2ac510ea05ba9a940fd16f4915d7c69bddf035179b95b119e6ae33 AS buildimage
+FROM dart:2.18.5@sha256:9a6a450b52fabc7c2a9e73fef3cf40de35d6ea1b029b69ff8c192b6efa568025 AS buildimage
 ENV BINARYDIR=/usr/local/at
 WORKDIR /app
 COPY . .
@@ -9,7 +9,7 @@ RUN \
   dart compile exe bin/sshnpd.dart -o $BINARYDIR/sshnpd
 
 # Second stage of build FROM debian-slim
-FROM debian:stable-20221205-slim@sha256:3859a088ca0ca6ee375fc280dfba2d1e27c9700d04239e31978654dfbf2f4872
+FROM debian:stable-slim@sha256:cb1452ab51eb89a3a8b7cea58536558c809b2e4e8f687eb61e6ea4bde353f60d
 ENV HOMEDIR=/atsign
 ENV BINARYDIR=/usr/local/at
 ENV USER_ID=1024
@@ -29,5 +29,5 @@ RUN apt-get update && apt-get install -y openssh-server sudo iputils-ping iprout
    chmod 755 /atsign/.startup.sh
 COPY --from=buildimage --chown=atsign:atsign /usr/local/at/sshnpd /usr/local/at/
 WORKDIR /atsign
-# USER atsign
+# USER atsign 
 ENTRYPOINT ["/atsign/.startup.sh"]
