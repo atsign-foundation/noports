@@ -107,6 +107,7 @@ void main(List<String> args) async {
     ..isLocalStoreRequired = true
     ..commitLogPath = '$homeDirectory/.sshnp/$deviceAtsign/storage/commitLog'
     //..cramSecret = '<your cram secret>';
+    ..fetchOfflineNotifications = false
     ..atKeysFilePath = atsignFile;
   nameSpace = atOnboardingConfig.namespace!;
 

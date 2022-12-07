@@ -165,6 +165,7 @@ void main(List<String> args) async {
     ..downloadPath = '$homeDirectory/.sshnp/files'
     ..isLocalStoreRequired = true
     ..commitLogPath = '$homeDirectory/.sshnp/$fromAtsign/storage/commitLog'
+    ..fetchOfflineNotifications = false
     //..cramSecret = '<your cram secret>';
     ..atKeysFilePath = atsignFile;
 
