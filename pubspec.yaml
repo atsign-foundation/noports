@@ -1,6 +1,6 @@
 name: sshnoports
-description: A simple command-line application.
-version: 2.0.0
+description: Encrypted/Secure control plane for ssh/d or other commands in the future
+version: 2.0.2
 homepage: https://docs.atsign.com/
 
 environment:
