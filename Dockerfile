@@ -9,7 +9,7 @@ RUN \
   dart compile exe bin/sshnpd.dart -o $BINARYDIR/sshnpd
 
 # Second stage of build FROM debian-slim
-FROM debian:stable-20230109-slim@sha256:6ff6079a0f52b1d81ea567cc7b38755228956e388808abac4aa66a426a02c26c
+FROM debian:stable-20230109-slim@sha256:439abf32c7a53d22e3b81a64023538fd5cf490c5837a93d4589a83617bb00d5d
 ENV HOMEDIR=/atsign
 ENV BINARYDIR=/usr/local/at
 ENV USER_ID=1024
