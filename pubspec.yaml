@@ -1,6 +1,6 @@
 name: sshnoports
 description: Encrypted/Secure control plane for ssh/d or other commands in the future
-version: 2.0.2
+version: 2.2.0
 homepage: https://docs.atsign.com/
 
 environment:

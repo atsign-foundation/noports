@@ -171,9 +171,21 @@ void main(List<String> args) async {
     //..cramSecret = '<your cram secret>';
     ..atKeysFilePath = atsignFile;
 
-  AtOnboardingService onboardingService = AtOnboardingServiceImpl(fromAtsign, atOnboardingConfig);
-
-  await onboardingService.authenticate();
+    AtOnboardingService onboardingService = AtOnboardingServiceImpl(fromAtsign, atOnboardingConfig);
+  bool onboarded = false;
+  Duration retryDuration = Duration(seconds: 3);
+  while (!onboarded) {
+    try {
+      //stdout.write(chalk.brightBlue('\r\x1b[KConnecting ... '));
+      await Future.delayed(Duration(milliseconds: 1000)); // Pause just long enough for the retry to be visible
+      onboarded = await onboardingService.authenticate();
+    } catch (exception) {
+      //stdout.write(chalk.brightRed('$exception. Will retry in ${retryDuration.inSeconds} seconds'));
+    }
+    if (!onboarded) {
+      await Future.delayed(retryDuration);
+    }
+  }
 
   var atClient = await onboardingService.getAtClient();
 
@@ -181,20 +193,6 @@ void main(List<String> args) async {
 
   NotificationService notificationService = atClientManager.notificationService;
 
-  bool syncComplete = false;
-  void onSyncDone(syncResult) {
-    _logger.info("syncResult.syncStatus: ${syncResult.syncStatus}");
-    _logger.info("syncResult.lastSyncedOn ${syncResult.lastSyncedOn}");
-    syncComplete = true;
-  }
-
-  // Wait for initial sync to complete
-  _logger.info("Waiting for initial sync");
-  syncComplete = false;
-  atClientManager.syncService.sync(onDone: onSyncDone);
-  while (!syncComplete) {
-    await Future.delayed(Duration(milliseconds: 100));
-  }
 
   notificationService.subscribe(regex: '$sessionId.$nameSpace@', shouldDecrypt: true).listen(((notification) async {
     String keyAtsign = notification.key;
