@@ -1,4 +1,4 @@
-FROM dart:2.19.2@sha256:0a026627a5ffeaa20907bba6ace9e42585720a34771efef5c1ee622ae8ebbd32 AS buildimage
+FROM dart:3.0.0-218.1.beta@sha256:ea3a949da39c1bd733bbc94ba75b515df95ee2005f1e7075cdfbd13bb04dfb00 AS buildimage
 ENV BINARYDIR=/usr/local/at
 WORKDIR /app
 COPY . .
