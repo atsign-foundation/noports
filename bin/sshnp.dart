@@ -173,7 +173,7 @@ void main(List<String> args) async {
 
     AtOnboardingService onboardingService = AtOnboardingServiceImpl(fromAtsign, atOnboardingConfig);
   bool onboarded = false;
-  Duration retryDuration = Duration(seconds: 3);
+  Duration retryDuration = Duration(seconds: 1);
   while (!onboarded) {
     try {
       //stdout.write(chalk.brightBlue('\r\x1b[KConnecting ... '));
@@ -188,6 +188,8 @@ void main(List<String> args) async {
   }
 
   var atClient = await onboardingService.getAtClient();
+
+atClient.
 
   AtClientManager atClientManager = AtClientManager.getInstance();
 
