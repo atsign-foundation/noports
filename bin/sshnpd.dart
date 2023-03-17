@@ -20,6 +20,16 @@ import 'package:sshnoports/check_non_ascii.dart';
 import 'package:sshnoports/check_file_exists.dart';
 
 void main(List<String> args) async {
+  await runZonedGuarded<Future<void>>(() async {
+    _main(args);
+  }, (error,  stackTrace) async {
+    stderr.writeln('sshnpd encountered exception: ${error.toString()}');
+    stderr.writeln(stackTrace);
+    exit(1);
+  });
+}
+
+void _main(List<String> args) async {
   final AtSignLogger logger = AtSignLogger(' sshnpd ');
   late AtClient? atClient;
   String nameSpace = '';
@@ -311,7 +321,7 @@ void sshCallback(
       if (forward == null) {
         logger.warning('Failed to forward remote port $localPort');
         try {
-          // Say this session is connected to client
+          // Say this session is NOT connected to client
           await notificationService.notify(
               NotificationParams.forUpdate(atKey,
                   value:
