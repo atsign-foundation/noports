@@ -22,9 +22,9 @@ import 'package:sshnoports/check_file_exists.dart';
 void main(List<String> args) async {
   await runZonedGuarded<Future<void>>(() async {
     _main(args);
-  }, (error,  stackTrace) async {
+  }, (error, stackTrace) async {
     stderr.writeln('sshnpd encountered exception: ${error.toString()}');
-    stderr.writeln(stackTrace);
+    stderr.writeln('stack trace: ${stackTrace.toString()}');
     exit(1);
   });
 }
@@ -195,11 +195,11 @@ void _main(List<String> args) async {
       .subscribe(regex: '$device.$nameSpace@', shouldDecrypt: true)
       .listen(((notification) async {
     String notificationKey = notification.key
-      .replaceAll('${notification.to}:', '')
-      .replaceAll('.$device.$nameSpace${notification.from}', '')
-      // convert to lower case as the latest AtClient converts notification
-      // keys to lower case when received
-      .toLowerCase();
+        .replaceAll('${notification.to}:', '')
+        .replaceAll('.$device.$nameSpace${notification.from}', '')
+        // convert to lower case as the latest AtClient converts notification
+        // keys to lower case when received
+        .toLowerCase();
 
     if (notificationKey == 'privatekey') {
       logger.info(

@@ -1,4 +1,4 @@
-<img width=250px src="https://atsign.dev/assets/img/atPlatform_logo_gray.svg?sanitize=true">
+<img width=250px src="https://atsign.dev/assets/img/atPlatform_logo_gray.svg?sanitize=true" alt="The atPlatform logo">
 
 [![GitHub License](https://img.shields.io/badge/license-BSD3-blue.svg)](./LICENSE)
 [![OpenSSF Scorecard](https://api.securityscorecards.dev/projects/github.com/atsign-foundation/sshnoports/badge)](https://api.securityscorecards.dev/projects/github.com/atsign-foundation/sshnoports)
@@ -22,8 +22,8 @@ There are two binaries:-
 can then ssh to via your localhost interface
 
 To get going you just need two atSigns and their .atKeys files and the
-binaries (from latest 
-[release](https://github.com/atsign-foundation/sshnoports/releases)).
+binaries (from the 
+[latest release](https://github.com/atsign-foundation/sshnoports/releases)).
 It's also possible to run from the source here using `dart run`. Once you have
 the atSigns (free or paid atSigns from atsign.com), drop the binaries in place
 on each machine and put the keys in `~/.atsign/keys` directory. You will need
@@ -53,9 +53,9 @@ will complete and tell you how to connect to the remote host for example.
 ssh -p 3456 cconstab@localhost
 ```
 
-When you run this you will be connect to the remote machine via a reverse
+When you run this you will be connected to the remote machine via a reverse
 ssh tunnel from the remote device. Which means you can now turn off ssh from
-listening all all interfaces instead have ssh listen just on 127.0.0.1.
+listening on all interfaces, and instead have ssh listen only on 127.0.0.1.
 
 That is easily done by editing `/etc/ssh/sshd_config`  
 
@@ -67,10 +67,10 @@ ListenAddress 127.0.0.1
 ```
 
 And restarting the ssh daemon. Please make sure you start the sshnpd on
-startup and reboot and check.. As this is beta code it is suggested to
+startup and reboot and check. As this is beta code it is suggested to
 wrap the daemon in a shell script or have sysctld make sure it is running. 
 
-My preference whilst testing was to run the daemon in TMUX so it is easy
+My preference whilst testing was to run the daemon in TMUX so that it is easy
 to see the logs (-v).
 
 Thoughts/bugs/contributions via PR all very welcome!
@@ -101,7 +101,7 @@ dart run bin/sshnpd.dart <args|flags>
 
 ### sshnpd (daemon) in a docker container
 
-The daemon can also be deployed as part of a pre built docker container,
+The daemon can also be deployed as part of a pre-built docker container,
 that also has a number of networking tools installed. The container image
 is located on Dockerhub as `atsigncompany/sshnpd:latest` or you can build
 your own using the Dockerfile in the root of the project.
@@ -109,7 +109,7 @@ your own using the Dockerfile in the root of the project.
 The image expects to have the atKeys for the atSign being used in the
 `/atsign/.atsign/keys` directory, this can be mounted as a volume at startup
 of the docker run command using `-v $(pwd):/atsign/.atsign/keys/` assuming
-you are in the dircetory where the atKeys file is located. The full comand
+you are in the directory where the atKeys file is located. The full command
 to start the container would be something like this:-
 
 ```
@@ -133,17 +133,17 @@ Run the binary file or the dart file:
 ```sh
 dart run bin/sshnp.dart <args|flags>
 ```
-| Argument           | Abbreviation | Mandatory | Description                                                                           | Default   |
-|--------------------|--------------|-----------|---------------------------------------------------------------------------------------|-----------|
-| --key-file         | -k           | false     | Sending atSign's atKeys file if not in `~/.atsign/keys/`                              |
-| --from             | -f           | true      | Sending atSign                                                                        |
-| --to               | -t           | true      | Send a notification to this atSign                                                    |
-| --device           | -d           | false     | Send a notification to this device                                                    | "default" |
-| --host             | -h           | true      | FQDN Hostname e.g. example.com or IP address to connect back to                       |       
-| --port             | -p           | false     | TCP port to connect back to                                                           | 22        |
-| --local-port       | -l           | false     | Reverse ssh port to listen on, on your local machine                                  | 2222      |
-| --ssh-public-key   | -s           | false     | Public key file from `~/.ssh` to be appended to authorized_hosts on the remote device | false     |
-| --local-ssh-options| -o           | false     | Add these commands to the local ssh command, useful if you want to tunnel ports       |
+| Argument            | Abbreviation | Mandatory | Description                                                                           | Default   |
+|---------------------|--------------|-----------|---------------------------------------------------------------------------------------|-----------|
+| --key-file          | -k           | false     | Sending atSign's atKeys file if not in `~/.atsign/keys/`                              |           |
+| --from              | -f           | true      | Sending atSign                                                                        |           |
+| --to                | -t           | true      | Send a notification to this atSign                                                    |           |
+| --device            | -d           | false     | Send a notification to this device                                                    | "default" |
+| --host              | -h           | true      | FQDN Hostname e.g. example.com or IP address to connect back to                       |           |
+| --port              | -p           | false     | TCP port to connect back to                                                           | 22        |
+| --local-port        | -l           | false     | Reverse ssh port to listen on, on your local machine                                  | 2222      |
+| --ssh-public-key    | -s           | false     | Public key file from `~/.ssh` to be appended to authorized_hosts on the remote device | false     |
+| --local-ssh-options | -o           | false     | Add these commands to the local ssh command, useful if you want to tunnel ports       |           |
 
 | Flags          | Abbreviation | Description  |
 |----------------|--------------|--------------|
@@ -155,7 +155,7 @@ dart run bin/sshnp.dart <args|flags>
 
 The scripts directory of this repo contains an example `sshnpd.sh` that can
 be run in a user's home directory (and assumes that the release has been
-untarred there too).
+`untar`'d there too).
 
 Make sure to replace the placeholders for sending <atSign> receiving <atSign>
 and <devicename>.
@@ -305,7 +305,7 @@ sshnp -f @happyadmin -t @moresecurething \
                     <----------------------------
 ```
 
-Finally an SSH connection through those tunnels from the admin_PC
+Finally, an SSH connection through those tunnels from the admin_PC
 to the device:
 
 ```
