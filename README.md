@@ -149,6 +149,40 @@ dart run bin/sshnp.dart <args|flags>
 |----------------|--------------|--------------|
 | --[no-]verbose | -v           | More logging |
 
+## Ways to run ssh no ports daemon
+
+### `sshnpd.sh`
+
+The scripts directory of this repo contains an example `sshnpd.sh` that can
+be run in a user's home directory (and assumes that the release has been
+untarred there too).
+
+Make sure to replace the placeholders for sending <atSign> receiving <atSign>
+and <devicename>.
+
+You might also want to add a crontab entry to run the script on reboot:
+
+```
+@reboot /home/<username>/sshnpd.sh > ~/sshnpd.log 2>&1
+```
+
+### `tmux-sshnpd.sh`
+
+This runs the daemon inside a tmux session, which can be connected to in order
+to see logs.
+
+Once again, ensure that the placeholders are replaced, and this can be run
+by cron using:
+
+```
+@reboot /home/<username>/tmux-sshnpd.sh > ~/sshnpd.log 2>&1
+```
+
+### systemd units
+
+The systemd directory contains an example unit file with its own
+[README](systemd/README.md).
+
 ## Using Ngrok to avoid open ports at the admin end
 
 The instructions above work for a system where the person doing the admin of
