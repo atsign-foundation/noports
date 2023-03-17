@@ -225,10 +225,13 @@ void main(List<String> args) async {
   notificationService
       .subscribe(regex: '$sessionId.$nameSpace@', shouldDecrypt: true)
       .listen(((notification) async {
-    String keyAtsign = notification.key;
-    keyAtsign = keyAtsign.replaceAll('${notification.to}:', '');
-    keyAtsign = keyAtsign.replaceAll('.$device.sshnp${notification.from}', '');
-    logger.info('Received $keyAtsign notification');
+    String notificationKey = notification.key
+      .replaceAll('${notification.to}:', '')
+      .replaceAll('.$device.sshnp${notification.from}', '')
+      // convert to lower case as the latest AtClient converts notification
+      // keys to lower case when received
+      .toLowerCase();
+    logger.info('Received $notificationKey notification');
     if (notification.value == 'connected') {
       logger.info('Session $sessionId connected successfully');
       // Give ssh/sshd a little time to get everything in place

@@ -187,6 +187,8 @@ void main(List<String> args) async {
     String notificationKey = notification.key
       .replaceAll('${notification.to}:', '')
       .replaceAll('.$device.$nameSpace${notification.from}', '')
+      // convert to lower case as the latest AtClient converts notification
+      // keys to lower case when received
       .toLowerCase();
 
     if (notificationKey == 'privatekey') {
@@ -195,7 +197,7 @@ void main(List<String> args) async {
       privateKey = notification.value!;
     }
 
-    if (notificationKey == 'sshPublicKey') {
+    if (notificationKey == 'sshpublickey') {
       try {
         var sshHomeDirectory = "$homeDirectory/.ssh/";
         if (Platform.isWindows) {
