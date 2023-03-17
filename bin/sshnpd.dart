@@ -184,18 +184,18 @@ void main(List<String> args) async {
   notificationService
       .subscribe(regex: '$device.$nameSpace@', shouldDecrypt: true)
       .listen(((notification) async {
-    String keyAtsign = notification.key;
-    keyAtsign = keyAtsign.replaceAll('${notification.to}:', '');
-    keyAtsign =
-        keyAtsign.replaceAll('.$device.$nameSpace${notification.from}', '');
+    String notificationKey = notification.key
+      .replaceAll('${notification.to}:', '')
+      .replaceAll('.$device.$nameSpace${notification.from}', '')
+      .toLowerCase();
 
-    if (keyAtsign == 'privateKey') {
+    if (notificationKey == 'privatekey') {
       logger.info(
           'Private Key received from ${notification.from} notification id : ${notification.id}');
       privateKey = notification.value!;
     }
 
-    if (keyAtsign == 'sshPublicKey') {
+    if (notificationKey == 'sshPublicKey') {
       try {
         var sshHomeDirectory = "$homeDirectory/.ssh/";
         if (Platform.isWindows) {
@@ -224,7 +224,7 @@ void main(List<String> args) async {
       }
     }
 
-    if (keyAtsign == 'sshd') {
+    if (notificationKey == 'sshd') {
       logger.info(
           'ssh callback request received from ${notification.from} notification id : ${notification.id}');
       sshCallback(notification, privateKey, logger, managerAtsign, deviceAtsign,
