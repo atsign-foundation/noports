@@ -10,7 +10,7 @@ environment:
 dependencies: 
   args: ^2.3.0
   at_lookup: ^3.0.11
-  at_onboarding_cli: ^1.0.0
+  at_onboarding_cli: ^1.2.5
   crypton: ^2.0.3
   dartssh2: ^2.6.0
   ssh_key: ">=0.7.1 <0.9.0"
