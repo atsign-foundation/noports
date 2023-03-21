@@ -17,6 +17,7 @@ import 'package:sshnoports/home_directory.dart';
 import 'package:sshnoports/check_non_ascii.dart';
 import 'package:sshnoports/cleanup_sshnp.dart';
 import 'package:sshnoports/check_file_exists.dart';
+import 'package:version/version.dart';
 
 void main(List<String> args) async {
   final AtSignLogger logger = AtSignLogger(' sshnp ');
@@ -193,7 +194,8 @@ void main(List<String> args) async {
     ..commitLogPath = '$homeDirectory/.sshnp/$fromAtsign/storage/commitLog'
     ..fetchOfflineNotifications = false
     //..cramSecret = '<your cram secret>';
-    ..atKeysFilePath = atsignFile;
+    ..atKeysFilePath = atsignFile
+    ..atProtocolEmitted = Version(2, 0, 0);
 
   AtOnboardingService onboardingService =
       AtOnboardingServiceImpl(fromAtsign, atOnboardingConfig);

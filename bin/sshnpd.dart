@@ -18,6 +18,7 @@ import 'package:sshnoports/version.dart';
 import 'package:sshnoports/home_directory.dart';
 import 'package:sshnoports/check_non_ascii.dart';
 import 'package:sshnoports/check_file_exists.dart';
+import 'package:version/version.dart';
 
 void main(List<String> args) async {
   await runZonedGuarded<Future<void>>(() async {
@@ -134,7 +135,8 @@ void _main(List<String> args) async {
     ..commitLogPath = '$homeDirectory/.sshnp/$deviceAtsign/storage/commitLog'
     //..cramSecret = '<your cram secret>';
     ..fetchOfflineNotifications = false
-    ..atKeysFilePath = atsignFile;
+    ..atKeysFilePath = atsignFile
+    ..atProtocolEmitted = Version(2, 0, 0);
   nameSpace = atOnboardingConfig.namespace!;
 
   AtOnboardingService onboardingService =
