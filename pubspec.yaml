@@ -9,9 +9,9 @@ environment:
 
 dependencies: 
   args: ^2.4.0
-  at_client: ^3.0.56
+  at_client: ^3.0.57
   at_lookup: ^3.0.35
-  at_onboarding_cli: ^1.2.4
+  at_onboarding_cli: ^1.2.5
   at_utils: ^3.0.12
   crypton: ^2.1.0
   dartssh2: ^2.8.2
