@@ -228,11 +228,11 @@ void main(List<String> args) async {
       .subscribe(regex: '$sessionId.$nameSpace@', shouldDecrypt: true)
       .listen(((notification) async {
     String notificationKey = notification.key
-      .replaceAll('${notification.to}:', '')
-      .replaceAll('.$device.sshnp${notification.from}', '')
-      // convert to lower case as the latest AtClient converts notification
-      // keys to lower case when received
-      .toLowerCase();
+        .replaceAll('${notification.to}:', '')
+        .replaceAll('.$device.sshnp${notification.from}', '')
+        // convert to lower case as the latest AtClient converts notification
+        // keys to lower case when received
+        .toLowerCase();
     logger.info('Received $notificationKey notification');
     if (notification.value == 'connected') {
       logger.info('Session $sessionId connected successfully');
