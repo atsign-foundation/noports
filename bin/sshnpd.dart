@@ -21,17 +21,17 @@ import 'package:sshnoports/check_file_exists.dart';
 import 'package:version/version.dart';
 
 void main(List<String> args) async {
-  await runZonedGuarded<Future<void>>(() async {
-    _main(args);
-  }, (error, stackTrace) async {
+  try {
+    await _main(args);
+  } catch (error, stackTrace) {
     stderr.writeln('sshnpd: ${error.toString()}');
     stderr.writeln('stack trace: ${stackTrace.toString()}');
     await stderr.flush().timeout(Duration(milliseconds: 100));
     exit(1);
-  });
+  }
 }
 
-void _main(List<String> args) async {
+Future<void> _main(List<String> args) async {
   final AtSignLogger logger = AtSignLogger(' sshnpd ');
   late AtClient? atClient;
   String nameSpace = '';
