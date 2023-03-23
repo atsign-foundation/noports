@@ -276,7 +276,7 @@ void main(List<String> args) async {
     ..ttl = 10000;
 
   var key = AtKey()
-    ..key = 'privateKey'
+    ..key = 'privatekey'
     ..sharedBy = fromAtsign
     ..sharedWith = toAtsign
     ..namespace = nameSpace
@@ -302,7 +302,7 @@ void main(List<String> args) async {
     ..ttl = 10000;
 
   key = AtKey()
-    ..key = 'sshPublicKey'
+    ..key = 'sshpublickey'
     ..sharedBy = fromAtsign
     ..sharedWith = toAtsign
     ..metadata = metaData;
