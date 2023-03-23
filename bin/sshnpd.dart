@@ -154,7 +154,7 @@ Future<void> _main(List<String> args) async {
   }
 
   // Wait for initial sync to complete
-  logger.shout("Waiting for atSign initial sync");
+  logger.shout("Starting $deviceAtsign sync");
   syncComplete = false;
   // TODO Use SyncProgressListener instead
   // ignore: deprecated_member_use
@@ -162,7 +162,7 @@ Future<void> _main(List<String> args) async {
   while (!syncComplete) {
     await Future.delayed(Duration(milliseconds: 100));
   }
-  logger.shout("Initial atSign sync complete");
+  logger.shout("$deviceAtsign sync complete");
 
   // If it was OK to send the username to the sshnp client set it up
   if (results['username']) {
