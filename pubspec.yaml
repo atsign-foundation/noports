@@ -1,6 +1,6 @@
 name: sshnoports
 description: Encrypted/Secure control plane for ssh/d or other commands in the future
-version: 2.0.2
+version: 3.0.0
 homepage: https://docs.atsign.com/
 
 environment:
@@ -8,13 +8,17 @@ environment:
 
 
 dependencies: 
-  args: ^2.3.0
-  at_lookup: ^3.0.11
+  args: ^2.4.0
+  at_client: ^3.0.57
+  at_lookup: ^3.0.35
   at_onboarding_cli: ^1.2.5
-  crypton: ^2.0.3
-  dartssh2: ^2.6.0
+  at_utils: ^3.0.12
+  crypton: ^2.1.0
+  dartssh2: ^2.8.2
   ssh_key: ">=0.7.1 <0.9.0"
-  uuid: ^3.0.6
+  uuid: ^3.0.7
+  logging: ^1.1.1
+  version: ^3.0.2
 
 dev_dependencies:
   lints: ">=1.0.0 <3.0.0"
