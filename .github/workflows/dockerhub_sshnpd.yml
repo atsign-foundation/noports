@@ -1,6 +1,7 @@
 name: dockerhub_sshnpd
 
 on:
+  workflow_dispatch:
   push:
     tags:
       - 'v*.*.*'
@@ -38,6 +39,7 @@ jobs:
           context: .
           platforms: linux/amd64,linux/arm64,linux/arm/v7
           push: true
+          provenance: false
           tags: |
             atsigncompany/sshnpd:latest
             atsigncompany/sshnpd:release-${{ env.VERSION }}
