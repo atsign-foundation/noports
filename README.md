@@ -25,7 +25,7 @@ To get going you just need two atSigns and their .atKeys files and the
 binaries (from the 
 [latest release](https://github.com/atsign-foundation/sshnoports/releases)).
 It's also possible to run from the source here using `dart run`. Once you have
-the atSigns (free or paid atSigns from atsign.com), drop the binaries in place
+the atSigns (free or paid atSigns from [atsign.com](https://atsign.com)), drop the binaries in place
 on each machine and put the keys in `~/.atsign/keys` directory. You will need
 a device atSign and a manager atSign, but each device can also have a unique
 device name using the --device argument.
