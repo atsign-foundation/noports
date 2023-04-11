@@ -35,39 +35,22 @@ void main(List<String> args) async {
   var parser = ArgParser();
   // Basic arguments
   parser.addOption('key-file',
-      abbr: 'k',
-      mandatory: false,
-      help: 'Sending atSign\'s atKeys file if not in ~/.atsign/keys/');
+      abbr: 'k', mandatory: false, help: 'Sending atSign\'s atKeys file if not in ~/.atsign/keys/');
   parser.addOption('from', abbr: 'f', mandatory: true, help: 'Sending atSign');
-  parser.addOption('to',
-      abbr: 't', mandatory: true, help: 'Send a notification to this atSign');
+  parser.addOption('to', abbr: 't', mandatory: true, help: 'Send a notification to this atSign');
   parser.addOption('device',
-      abbr: 'd',
-      mandatory: false,
-      defaultsTo: "default",
-      help: 'Send a notification to this device');
+      abbr: 'd', mandatory: false, defaultsTo: "default", help: 'Send a notification to this device');
   parser.addOption('host',
-      abbr: 'h',
-      mandatory: true,
-      help: 'FQDN Hostname e.g example.com or IP address to connect back to');
-  parser.addOption('port',
-      abbr: 'p',
-      mandatory: false,
-      defaultsTo: '22',
-      help: 'TCP port to connect back to');
+      abbr: 'h', mandatory: true, help: 'FQDN Hostname e.g example.com or IP address to connect back to');
+  parser.addOption('port', abbr: 'p', mandatory: false, defaultsTo: '22', help: 'TCP port to connect back to');
   parser.addOption('local-port',
-      abbr: 'l',
-      defaultsTo: '2222',
-      mandatory: false,
-      help: 'Reverse ssh port to listen on, on your local machine');
+      abbr: 'l', defaultsTo: '2222', mandatory: false, help: 'Reverse ssh port to listen on, on your local machine');
   parser.addOption('ssh-public-key',
       abbr: 's',
       defaultsTo: 'false',
       mandatory: false,
-      help:
-          'Public key file from ~/.ssh to be appended to authorized_hosts on the remote device');
-  parser.addMultiOption('local-ssh-options',
-      abbr: 'o', help: 'Add these commands to the local ssh command');
+      help: 'Public key file from ~/.ssh to be appended to authorized_hosts on the remote device');
+  parser.addMultiOption('local-ssh-options', abbr: 'o', help: 'Add these commands to the local ssh command');
   parser.addFlag('verbose', abbr: 'v', help: 'More logging');
 
   // Check the arguments
@@ -163,13 +146,10 @@ void main(List<String> args) async {
     exit(1);
   }
 
-  await Process.run('ssh-keygen',
-      ['-t', 'rsa', '-b', '4096', '-f', '${sessionId}_rsa', '-q', '-N', ''],
+  await Process.run('ssh-keygen', ['-t', 'rsa', '-b', '4096', '-f', '${sessionId}_rsa', '-q', '-N', ''],
       workingDirectory: sshHomeDirectory);
-  String sshPublicKey =
-      await File('$sshHomeDirectory${sessionId}_rsa.pub').readAsString();
-  String sshPrivateKey =
-      await File('$sshHomeDirectory${sessionId}_rsa').readAsString();
+  String sshPublicKey = await File('$sshHomeDirectory${sessionId}_rsa.pub').readAsString();
+  String sshPrivateKey = await File('$sshHomeDirectory${sessionId}_rsa').readAsString();
 
   // Set up a safe authorized_keys file, for the reverse ssh tunnel
   File('${sshHomeDirectory}authorized_keys').writeAsStringSync(
@@ -197,8 +177,7 @@ void main(List<String> args) async {
     ..atKeysFilePath = atsignFile
     ..atProtocolEmitted = Version(2, 0, 0);
 
-  AtOnboardingService onboardingService =
-      AtOnboardingServiceImpl(fromAtsign, atOnboardingConfig);
+  AtOnboardingService onboardingService = AtOnboardingServiceImpl(fromAtsign, atOnboardingConfig);
 
   await onboardingService.authenticate();
 
@@ -224,9 +203,7 @@ void main(List<String> args) async {
   }
   logger.info("Initial sync complete");
 
-  notificationService
-      .subscribe(regex: '$sessionId.$nameSpace@', shouldDecrypt: true)
-      .listen(((notification) async {
+  notificationService.subscribe(regex: '$sessionId.$nameSpace@', shouldDecrypt: true).listen(((notification) async {
     String notificationKey = notification.key
         .replaceAll('${notification.to}:', '')
         .replaceAll('.$device.sshnp${notification.from}', '')
@@ -261,8 +238,7 @@ void main(List<String> args) async {
   try {
     toAtsignUsername = await atClient.get(atKey);
   } catch (e) {
-    stderr.writeln(
-        "Device \"${device.replaceAll('.', '')}\" unknown or username not shared");
+    stderr.writeln("Device \"${device.replaceAll('.', '')}\" unknown or username not shared");
     await cleanUp(sessionId, logger);
     exit(1);
   }
@@ -283,9 +259,8 @@ void main(List<String> args) async {
     ..metadata = metaData;
 
   try {
-    await notificationService
-        .notify(NotificationParams.forUpdate(key, value: sshPrivateKey),
-            onSuccess: (notification) {
+    await notificationService.notify(NotificationParams.forUpdate(key, value: sshPrivateKey),
+        onSuccess: (notification) {
       logger.info('SUCCESS:$notification');
     }, onError: (notification) {
       logger.info('ERROR:$notification');
@@ -313,16 +288,14 @@ void main(List<String> args) async {
       if (!toSshPublicKey.startsWith('ssh-rsa')) {
         throw ('$sshHomeDirectory$sendSshPublicKey does not look like a public key file');
       }
-      await notificationService
-          .notify(NotificationParams.forUpdate(key, value: toSshPublicKey),
-              onSuccess: (notification) {
+      await notificationService.notify(NotificationParams.forUpdate(key, value: toSshPublicKey),
+          onSuccess: (notification) {
         logger.info('SUCCESS:$notification');
       }, onError: (notification) {
         logger.info('ERROR:$notification');
       });
     } catch (e) {
-      stderr.writeln(
-          "Error opening or validating public key file or sending to remote atSign: $e");
+      stderr.writeln("Error opening or validating public key file or sending to remote atSign: $e");
       await cleanUp(sessionId, logger);
       exit(1);
     }
@@ -347,9 +320,7 @@ void main(List<String> args) async {
   }
 
   try {
-    await notificationService
-        .notify(NotificationParams.forUpdate(key, value: sshString),
-            onSuccess: (notification) {
+    await notificationService.notify(NotificationParams.forUpdate(key, value: sshString), onSuccess: (notification) {
       logger.info('SUCCESS:$notification $sshString');
     }, onError: (notification) {
       logger.info('ERROR:$notification $sshString');
