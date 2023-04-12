@@ -41,7 +41,9 @@ void main(List<String> args) async {
   parser.addOption('device',
       abbr: 'd', mandatory: false, defaultsTo: "default", help: 'Send a notification to this device');
   parser.addOption('host',
-      abbr: 'h', mandatory: true, help: 'FQDN Hostname e.g example.com or IP address to connect back to');
+      abbr: 'h',
+      mandatory: true,
+      help: 'FQDN/IP address to connect back to or atSign of streaming service e.g @stream');
   parser.addOption('port', abbr: 'p', mandatory: false, defaultsTo: '22', help: 'TCP port to connect back to');
   parser.addOption('local-port',
       abbr: 'l', defaultsTo: '2222', mandatory: false, help: 'Reverse ssh port to listen on, on your local machine');
@@ -243,6 +245,36 @@ void main(List<String> args) async {
     exit(1);
   }
   var remoteUsername = toAtsignUsername.value;
+
+  // If host has an @ then contact the stream service for some ports
+  if (host.startsWith('@')) {
+    print(host);
+    metaData = Metadata()
+      ..isPublic = false
+      ..isEncrypted = true
+      ..namespaceAware = false
+      ..ttr = -1
+      ..ttl = 10000;
+
+    atKey = AtKey()
+      ..key = '${device}stream'
+      ..sharedBy = fromAtsign
+      ..sharedWith = host
+      ..metadata = metaData;
+
+    try {
+      await notificationService.notify(NotificationParams.forUpdate(atKey, value: 'HELLO WORLD'),
+          onSuccess: (notification) {
+        logger.info('SUCCESS:$notification $sshString');
+      }, onError: (notification) {
+        logger.info('ERROR:$notification $sshString');
+      });
+    } catch (e) {
+      stderr.writeln(e.toString());
+    }
+  }
+
+
 
   metaData = Metadata()
     ..isPublic = false
