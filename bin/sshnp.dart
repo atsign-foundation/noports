@@ -313,12 +313,9 @@ void main(List<String> args) async {
     }
     ack = false;
 // connect sshd locally to Stream Service
+    // ignore: unused_local_variable
     SocketConnector socketStream = await SocketConnector.socketToSocket(socketAddressA: InternetAddress.loopbackIPv4, socketPortA: 22, socketAddressB: InternetAddress(host),socketPortB: int.parse(streamingPort));
-      bool closed = false;
-  while (closed == false) {
-    closed = await socketStream.closed();
-  }
-    exit(0);
+
   }
 
   metaData = Metadata()
