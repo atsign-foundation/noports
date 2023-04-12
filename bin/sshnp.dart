@@ -263,7 +263,7 @@ void main(List<String> args) async {
       ..metadata = metaData;
 
     try {
-      await notificationService.notify(NotificationParams.forUpdate(atKey, value: 'HELLO WORLD'),
+      await notificationService.notify(NotificationParams.forUpdate(atKey, value: uuid.v4()),
           onSuccess: (notification) {
         logger.info('SUCCESS:$notification $sshString');
       }, onError: (notification) {
@@ -272,9 +272,8 @@ void main(List<String> args) async {
     } catch (e) {
       stderr.writeln(e.toString());
     }
+    exit(0);
   }
-
-
 
   metaData = Metadata()
     ..isPublic = false
