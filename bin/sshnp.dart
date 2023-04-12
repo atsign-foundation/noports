@@ -66,7 +66,7 @@ void main(List<String> args) async {
   String device = "";
   String nameSpace = '';
   String port;
-  String streamingPort ='';
+  String streamingPort = '';
   String host = "127.0.0.1";
   String localPort;
   String sshString = "";
@@ -76,6 +76,7 @@ void main(List<String> args) async {
   int counter = 0;
   bool ack = false;
   bool ackErrors = false;
+  late SocketConnector socketStream;
   // In the future (perhaps) we can send other commands
   // Perhaps OpenVPN or shell commands
   String sendCommand = 'sshd';
@@ -286,14 +287,10 @@ void main(List<String> args) async {
       ..sharedWith = fromAtsign
       ..metadata = metaData;
 
-    // await Future.delayed(Duration(seconds: 5));
-    print(' waiting');
 
     notificationService.subscribe(regex: '$streamId.stream@', shouldDecrypt: true).listen(((notification) async {
-      print(notification.key);
       var data = await atClient.get(atKey);
       ack = true;
-      print('>>>${data.value}<<<');
       String ipPorts = data.value;
       List results = ipPorts.split(',');
       host = results[0];
@@ -314,7 +311,12 @@ void main(List<String> args) async {
     ack = false;
 // connect sshd locally to Stream Service
     // ignore: unused_local_variable
-    SocketConnector socketStream = await SocketConnector.socketToSocket(socketAddressA: InternetAddress.loopbackIPv4, socketPortA: 22, socketAddressB: InternetAddress(host),socketPortB: int.parse(streamingPort),verbose: false);
+    socketStream = await SocketConnector.socketToSocket(
+        socketAddressA: InternetAddress.loopbackIPv4,
+        socketPortA: 22,
+        socketAddressB: InternetAddress(host),
+        socketPortB: int.parse(streamingPort),
+        verbose: false);
   }
 
   metaData = Metadata()
@@ -437,5 +439,13 @@ void main(List<String> args) async {
   }
   // Print the  return
   stdout.write('\n');
-  // exit(0);
+  // If we are going via a stream wait for the stream if not we can exit
+  if (results['host'].toString().startsWith('@')) {
+    bool closed = false;
+    while (closed == false) {
+      closed = await socketStream.closed();
+    }
+  } else {
+    exit(0);
+  }
 }
