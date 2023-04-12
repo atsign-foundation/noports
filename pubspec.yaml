@@ -19,6 +19,7 @@ dependencies:
   uuid: ^3.0.7
   logging: ^1.1.1
   version: ^3.0.2
+  socket_connector: ^1.0.8
 
 dev_dependencies:
   lints: ">=1.0.0 <3.0.0"
