@@ -287,7 +287,6 @@ void main(List<String> args) async {
       ..sharedWith = fromAtsign
       ..metadata = metaData;
 
-
     notificationService.subscribe(regex: '$streamId.stream@', shouldDecrypt: true).listen(((notification) async {
       var data = await atClient.get(atKey);
       ack = true;
@@ -445,6 +444,7 @@ void main(List<String> args) async {
     while (closed == false) {
       closed = await socketStream.closed();
     }
+    exit(0);
   } else {
     exit(0);
   }
