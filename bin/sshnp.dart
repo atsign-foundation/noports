@@ -10,6 +10,7 @@ import 'package:at_onboarding_cli/at_onboarding_cli.dart';
 import 'package:args/args.dart';
 import 'package:logging/logging.dart';
 import 'package:uuid/uuid.dart';
+import 'package:socket_connector/socket_connector.dart';
 
 // local packages
 import 'package:sshnoports/version.dart';
@@ -65,6 +66,7 @@ void main(List<String> args) async {
   String device = "";
   String nameSpace = '';
   String port;
+  String streamingPort ='';
   String host = "127.0.0.1";
   String localPort;
   String sshString = "";
@@ -248,7 +250,8 @@ void main(List<String> args) async {
 
   // If host has an @ then contact the stream service for some ports
   if (host.startsWith('@')) {
-    print(host);
+    String streamId = uuid.v4();
+
     metaData = Metadata()
       ..isPublic = false
       ..isEncrypted = true
@@ -263,8 +266,7 @@ void main(List<String> args) async {
       ..metadata = metaData;
 
     try {
-      await notificationService.notify(NotificationParams.forUpdate(atKey, value: uuid.v4()),
-          onSuccess: (notification) {
+      await notificationService.notify(NotificationParams.forUpdate(atKey, value: streamId), onSuccess: (notification) {
         logger.info('SUCCESS:$notification $sshString');
       }, onError: (notification) {
         logger.info('ERROR:$notification $sshString');
@@ -272,6 +274,50 @@ void main(List<String> args) async {
     } catch (e) {
       stderr.writeln(e.toString());
     }
+
+    metaData = Metadata()
+      ..isPublic = false
+      ..isEncrypted = true
+      ..namespaceAware = false;
+
+    atKey = AtKey()
+      ..key = '$streamId.stream'
+      ..sharedBy = host
+      ..sharedWith = fromAtsign
+      ..metadata = metaData;
+
+    // await Future.delayed(Duration(seconds: 5));
+    print(' waiting');
+
+    notificationService.subscribe(regex: '$streamId.stream@', shouldDecrypt: true).listen(((notification) async {
+      print(notification.key);
+      var data = await atClient.get(atKey);
+      ack = true;
+      print('>>>${data.value}<<<');
+      String ipPorts = data.value;
+      List results = ipPorts.split(',');
+      host = results[0];
+      port = results[1];
+      streamingPort = results[2];
+    }));
+
+    while (!ack) {
+      await Future.delayed(Duration(milliseconds: 100));
+      counter++;
+      if (counter == 100) {
+        ack = true;
+        await cleanUp(sessionId, logger);
+        stderr.writeln('sshnp: connection timeout to streaming $host service');
+        exit(1);
+      }
+    }
+    ack = false;
+// connect sshd locally to Stream Service
+    SocketConnector socketStream = await SocketConnector.socketToSocket(socketAddressA: InternetAddress.loopbackIPv4, socketPortA: 22, socketAddressB: InternetAddress(host),socketPortB: int.parse(streamingPort));
+      bool closed = false;
+  while (closed == false) {
+    closed = await socketStream.closed();
+  }
     exit(0);
   }
 
