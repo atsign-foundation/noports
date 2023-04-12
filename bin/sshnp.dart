@@ -314,7 +314,7 @@ void main(List<String> args) async {
     ack = false;
 // connect sshd locally to Stream Service
     // ignore: unused_local_variable
-    SocketConnector socketStream = await SocketConnector.socketToSocket(socketAddressA: InternetAddress.loopbackIPv4, socketPortA: 22, socketAddressB: InternetAddress(host),socketPortB: int.parse(streamingPort),verbose: true);
+    SocketConnector socketStream = await SocketConnector.socketToSocket(socketAddressA: InternetAddress.loopbackIPv4, socketPortA: 22, socketAddressB: InternetAddress(host),socketPortB: int.parse(streamingPort),verbose: false);
   }
 
   metaData = Metadata()
@@ -437,5 +437,5 @@ void main(List<String> args) async {
   }
   // Print the  return
   stdout.write('\n');
-  exit(0);
+  // exit(0);
 }
