@@ -47,7 +47,10 @@ void main(List<String> args) async {
       help: 'FQDN/IP address to connect back to or atSign of streaming service e.g @stream');
   parser.addOption('port', abbr: 'p', mandatory: false, defaultsTo: '22', help: 'TCP port to connect back to');
   parser.addOption('local-port',
-      abbr: 'l', defaultsTo: '2222', mandatory: false, help: 'Reverse ssh port to listen on, on your local machine');
+      abbr: 'l',
+      defaultsTo: '0',
+      mandatory: false,
+      help: 'Reverse ssh port to listen on, on your local machine, by sshnp default finds a spare port');
   parser.addOption('ssh-public-key',
       abbr: 's',
       defaultsTo: 'false',
@@ -373,6 +376,13 @@ void main(List<String> args) async {
       await cleanUp(sessionId, logger);
       exit(1);
     }
+  }
+
+  // find a spare localport
+  if (localPort == '0') {
+    ServerSocket serverSocket = await ServerSocket.bind(InternetAddress.loopbackIPv4, 0);
+    localPort = serverSocket.port.toString();
+    await serverSocket.close();
   }
 
   metaData = Metadata()
