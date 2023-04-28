@@ -290,7 +290,7 @@ void main(List<String> args) async {
       ..sharedWith = fromAtsign
       ..metadata = metaData;
 
-    notificationService.subscribe(regex: 'stream@', shouldDecrypt: true).listen(((notification) async {
+    notificationService.subscribe(regex: '$streamId.stream@', shouldDecrypt: true).listen((notification) async {
       print(">>>${notification.value}");
       String ipPorts = notification.value.toString();
       List results = ipPorts.split(',');
@@ -298,7 +298,7 @@ void main(List<String> args) async {
       port = results[1];
       streamingPort = results[2];
       ack = true;
-    }));
+    });
 
     while (!ack) {
       await Future.delayed(Duration(milliseconds: 100));
