@@ -255,6 +255,26 @@ void main(List<String> args) async {
   // If host has an @ then contact the stream service for some ports
   if (host.startsWith('@')) {
     String streamId = uuid.v4();
+        metaData = Metadata()
+      ..isPublic = false
+      ..isEncrypted = true
+      ..namespaceAware = false;
+
+    atKey = AtKey()
+      ..key = '$streamId.stream'
+      ..sharedBy = host
+      ..sharedWith = fromAtsign
+      ..metadata = metaData;
+
+    atClient.notificationService.subscribe(regex: '$streamId.stream@', shouldDecrypt: true).listen((notification) async {
+      print(">>>${notification.value}");
+      String ipPorts = notification.value.toString();
+      List results = ipPorts.split(',');
+      host = results[0];
+      port = results[1];
+      streamingPort = results[2];
+      ack = true;
+    });
 
     metaData = Metadata()
       ..isPublic = false
@@ -279,26 +299,7 @@ void main(List<String> args) async {
       stderr.writeln(e.toString());
     }
 
-    metaData = Metadata()
-      ..isPublic = false
-      ..isEncrypted = true
-      ..namespaceAware = false;
 
-    atKey = AtKey()
-      ..key = '$streamId.stream'
-      ..sharedBy = host
-      ..sharedWith = fromAtsign
-      ..metadata = metaData;
-
-    atClient.notificationService.subscribe(regex: '$streamId.stream@', shouldDecrypt: true).listen((notification) async {
-      print(">>>${notification.value}");
-      String ipPorts = notification.value.toString();
-      List results = ipPorts.split(',');
-      host = results[0];
-      port = results[1];
-      streamingPort = results[2];
-      ack = true;
-    });
 
     while (!ack) {
       await Future.delayed(Duration(milliseconds: 100));
