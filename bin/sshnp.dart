@@ -291,6 +291,7 @@ void main(List<String> args) async {
       ..metadata = metaData;
 
     notificationService.subscribe(regex: '$streamId.stream@', shouldDecrypt: true).listen(((notification) async {
+      print(">>>${notification.value}");
       ack = true;
       String ipPorts = notification.value.toString();
       List results = ipPorts.split(',');
