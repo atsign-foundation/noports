@@ -292,12 +292,12 @@ void main(List<String> args) async {
 
     notificationService.subscribe(regex: '$streamId.stream@', shouldDecrypt: true).listen(((notification) async {
       print(">>>${notification.value}");
-      ack = true;
       String ipPorts = notification.value.toString();
       List results = ipPorts.split(',');
       host = results[0];
       port = results[1];
       streamingPort = results[2];
+      ack = true;
     }));
 
     while (!ack) {
