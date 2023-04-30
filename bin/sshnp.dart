@@ -20,6 +20,8 @@ import 'package:sshnoports/check_non_ascii.dart';
 import 'package:sshnoports/cleanup_sshnp.dart';
 import 'package:sshnoports/check_file_exists.dart';
 import 'package:version/version.dart';
+import 'package:sshnoports/service_factories.dart';
+
 
 void main(List<String> args) async {
   final AtSignLogger logger = AtSignLogger(' sshnp ');
@@ -170,7 +172,7 @@ void main(List<String> args) async {
   }
 
   await Process.run('ssh-keygen',
-      ['-t', 'rsa', '-b', '4096', '-f', '${sessionId}_rsa', '-q', '-N', ''],
+      ['-t', 'rsa', '-b', '2048', '-f', '${sessionId}_rsa', '-q', '-N', ''],
       workingDirectory: sshHomeDirectory);
   String sshPublicKey =
       await File('$sshHomeDirectory${sessionId}_rsa.pub').readAsString();
@@ -201,8 +203,13 @@ void main(List<String> args) async {
     ..atKeysFilePath = atsignFile
     ..atProtocolEmitted = Version(2, 0, 0);
 
-  AtOnboardingService onboardingService =
-      AtOnboardingServiceImpl(fromAtsign, atOnboardingConfig);
+  AtServiceFactory? atServiceFactory;
+
+  atServiceFactory = ServiceFactoryWithNoOpSyncService();
+
+  AtOnboardingService onboardingService = AtOnboardingServiceImpl(
+      fromAtsign, atOnboardingConfig,
+      atServiceFactory: atServiceFactory);
 
   await onboardingService.authenticate();
 
@@ -210,23 +217,23 @@ void main(List<String> args) async {
 
   NotificationService notificationService = atClient.notificationService;
 
-  bool syncComplete = false;
-  void onSyncDone(syncResult) {
-    logger.info("syncResult.syncStatus: ${syncResult.syncStatus}");
-    logger.info("syncResult.lastSyncedOn ${syncResult.lastSyncedOn}");
-    syncComplete = true;
-  }
+  // bool syncComplete = false;
+  // void onSyncDone(syncResult) {
+  //   logger.info("syncResult.syncStatus: ${syncResult.syncStatus}");
+  //   logger.info("syncResult.lastSyncedOn ${syncResult.lastSyncedOn}");
+  //   syncComplete = true;
+  // }
 
-  // Wait for initial sync to complete
-  logger.info("Waiting for initial sync");
-  syncComplete = false;
-  // TODO Use SyncProgressListener instead
-  // ignore: deprecated_member_use
-  atClient.syncService.sync(onDone: onSyncDone);
-  while (!syncComplete) {
-    await Future.delayed(Duration(milliseconds: 100));
-  }
-  logger.info("Initial sync complete");
+  // // Wait for initial sync to complete
+  // logger.info("Waiting for initial sync");
+  // syncComplete = false;
+  // // TODO Use SyncProgressListener instead
+  // // ignore: deprecated_member_use
+  // atClient.syncService.sync(onDone: onSyncDone);
+  // while (!syncComplete) {
+  //   await Future.delayed(Duration(milliseconds: 100));
+  // }
+  // logger.info("Initial sync complete");
 
   notificationService
       .subscribe(regex: '$sessionId.$nameSpace@', shouldDecrypt: true)
