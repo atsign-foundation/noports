@@ -16,8 +16,8 @@ Future<void> cleanUp(String sessionId, AtSignLogger logger) async {
   }
   logger.info('Tidying up files');
 // Delete the generated RSA keys and remove the entry from ~/.ssh/authorized_keys
-  await deleteFile('$sshHomeDirectory${sessionId}_rsa', logger);
-  await deleteFile('$sshHomeDirectory${sessionId}_rsa.pub', logger);
+  await deleteFile('$sshHomeDirectory${sessionId}_sshnp', logger);
+  await deleteFile('$sshHomeDirectory${sessionId}_sshnp.pub', logger);
   await removeSession(sshHomeDirectory, sessionId, logger);
 }
 

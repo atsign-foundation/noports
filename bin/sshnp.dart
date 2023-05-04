@@ -22,7 +22,6 @@ import 'package:sshnoports/check_file_exists.dart';
 import 'package:version/version.dart';
 import 'package:sshnoports/service_factories.dart';
 
-
 void main(List<String> args) async {
   final AtSignLogger logger = AtSignLogger(' sshnp ');
   logger.hierarchicalLoggingEnabled = true;
@@ -75,6 +74,10 @@ void main(List<String> args) async {
   parser.addMultiOption('local-ssh-options',
       abbr: 'o', help: 'Add these commands to the local ssh command');
   parser.addFlag('verbose', abbr: 'v', help: 'More logging');
+  parser.addFlag('rsa',
+      abbr: 'r',
+      defaultsTo: false,
+      help: 'Use RSA 4096 keys rather than the default ED25519 keys');
 
   // Check the arguments
   dynamic results;
@@ -96,6 +99,7 @@ void main(List<String> args) async {
   int counter = 0;
   bool ack = false;
   bool ackErrors = false;
+  bool rsa = false;
   late SocketConnector socketStream;
   // In the future (perhaps) we can send other commands
   // Perhaps OpenVPN or shell commands
@@ -151,6 +155,7 @@ void main(List<String> args) async {
 
     // Add a namespace separator just cause its neater.
     device = results['device'] + ".";
+    rsa = results['rsa'];
     nameSpace = '${device}sshnp';
 
     // Check the public key if the option was selected
@@ -170,14 +175,30 @@ void main(List<String> args) async {
     stderr.writeln(e);
     exit(1);
   }
-
-  await Process.run('ssh-keygen',
-      ['-t', 'rsa', '-b', '2048', '-f', '${sessionId}_rsa', '-q', '-N', ''],
-      workingDirectory: sshHomeDirectory);
+  if (rsa) {
+    await Process.run('ssh-keygen',
+        ['-t', 'rsa', '-b', '4096', '-f', '${sessionId}_sshnp', '-q', '-N', ''],
+        workingDirectory: sshHomeDirectory);
+  } else {
+    await Process.run(
+        'ssh-keygen',
+        [
+          '-t',
+          'ed25519',
+          '-a',
+          '100',
+          '-f',
+          '${sessionId}_sshnp',
+          '-q',
+          '-N',
+          ''
+        ],
+        workingDirectory: sshHomeDirectory);
+  }
   String sshPublicKey =
-      await File('$sshHomeDirectory${sessionId}_rsa.pub').readAsString();
+      await File('$sshHomeDirectory${sessionId}_sshnp.pub').readAsString();
   String sshPrivateKey =
-      await File('$sshHomeDirectory${sessionId}_rsa').readAsString();
+      await File('$sshHomeDirectory${sessionId}_sshnp').readAsString();
 
   // Set up a safe authorized_keys file, for the reverse ssh tunnel
   File('${sshHomeDirectory}authorized_keys').writeAsStringSync(
@@ -194,11 +215,12 @@ void main(List<String> args) async {
 
   //onboarding preference builder can be used to set onboardingService parameters
   AtOnboardingPreference atOnboardingConfig = AtOnboardingPreference()
-    ..hiveStoragePath = '$homeDirectory/.sshnp/$fromAtsign/storage'
+    ..hiveStoragePath = '/tmp/.sshnp/$fromAtsign/$sessionId/storage'
     ..namespace = '${device}sshnp'
-    ..downloadPath = '$homeDirectory/.sshnp/files'
+    ..downloadPath = '/tmp/.sshnp/files'
     ..isLocalStoreRequired = true
-    ..commitLogPath = '$homeDirectory/.sshnp/$fromAtsign/storage/commitLog'
+    ..commitLogPath =
+        '$homeDirectory/.sshnp/$fromAtsign/$sessionId/storage/commitLog'
     ..fetchOfflineNotifications = false
     ..atKeysFilePath = atsignFile
     ..atProtocolEmitted = Version(2, 0, 0);
@@ -342,7 +364,7 @@ void main(List<String> args) async {
     ack = false;
 // Connect to rz point using background process
 // This way this program can exit
-    unawaited( Process.run('./tcpcon', [host, streamingPort]));
+    unawaited(Process.run('./tcpcon', [host, streamingPort]));
   }
 
   metaData = Metadata()
@@ -387,7 +409,7 @@ void main(List<String> args) async {
   if (sendSshPublicKey != 'false') {
     try {
       String toSshPublicKey = await File(sendSshPublicKey).readAsString();
-      if (!toSshPublicKey.startsWith('ssh-rsa')) {
+      if (!toSshPublicKey.startsWith('ssh-')) {
         throw ('$sshHomeDirectory$sendSshPublicKey does not look like a public key file');
       }
       await notificationService
@@ -478,6 +500,5 @@ void main(List<String> args) async {
   }
   // Print the  return
   stdout.write('\n');
-    exit(0);
-
+  exit(0);
 }
