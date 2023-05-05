@@ -220,8 +220,8 @@ Future<void> _main(List<String> args) async {
             'ssh Public Key received from ${notification.from} notification id : ${notification.id}');
         sshPublicKey = notification.value!;
 
-        // Check to see if the public key looks like one!
-        if (!sshPublicKey.startsWith('ssh-rsa')) {
+        // Check to see if the ssh public key looks like one!
+        if (!sshPublicKey.startsWith('ssh-')) {
           throw ('$sshPublicKey does not look like a public key');
         }
 
