@@ -1,0 +1,26 @@
+FROM atsigncompany/buildimage:automated@sha256:9abbc3997700117914848e6c3080c4c6ed3b07adbd9a44514ce42129a203a3c5 AS build
+# Using atsigncompany/buildimage until official dart image has RISC-V support
+WORKDIR /sshnoports
+COPY . .
+RUN set -eux; \
+    case "$(dpkg --print-architecture)" in \
+        amd64) \
+            ARCH="x64";; \
+        armhf) \
+            ARCH="arm";; \
+        arm64) \
+            ARCH="arm64";; \
+        riscv64) \
+            ARCH="riscv64";; \
+    esac; \
+    mkdir sshnp; \
+    mkdir tarball; \
+    dart pub get; \
+    dart compile exe bin/activate_cli.dart -v -o sshnp/at_activate; \
+    dart compile exe bin/sshnp.dart -v -o sshnp/sshnp; \
+    dart compile exe bin/sshnpd.dart -v -o sshnp/sshnpd; \
+    cp scripts/* sshnp; \
+    tar -cvzf tarball/sshnp-linux-${ARCH}.tgz sshnp
+    
+FROM scratch
+COPY --from=build /sshnoports/tarball/* /
