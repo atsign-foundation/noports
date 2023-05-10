@@ -1,9 +1,6 @@
 name: Multibuild
 
 on: 
-  push:
-    branches:
-      - "cpswan-automate-binaries"
   workflow_dispatch:
 
 permissions:  # added using https://github.com/step-security/secure-repo
