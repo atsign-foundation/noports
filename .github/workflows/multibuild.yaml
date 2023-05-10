@@ -1,0 +1,35 @@
+name: Multibuild
+
+on: [workflow_dispatch]
+
+permissions:  # added using https://github.com/step-security/secure-repo
+  contents: read
+
+jobs:
+  build:
+    runs-on: ${{ matrix.os }}
+
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macOS-latest]
+        include:
+          - os: ubuntu-latest
+            output-name: sshnp-linux-x64
+          - os: macOS-latest
+            output-name: sshnp-macos-x64
+
+    steps:
+      - uses: actions/checkout@8e5e7e5ab8b370d6c329ec480221332ada57f0ab # v3.5.2
+      - uses: dart-lang/setup-dart@d6a63dab3335f427404425de0fbfed4686d93c4f # v1.5.0
+      - run: mkdir sshnp
+      - run: mkdir tarball
+      - run: dart pub get
+      - run: dart compile exe bin/activate_cli.dart -v -o sshnp/at_activate
+      - run: dart compile exe bin/sshnp.dart -v -o sshnp/sshnp
+      - run: dart compile exe bin/sshnpd.dart -v -o sshnp/sshnpd
+      - run: cp scripts/* sshnp
+      - run: tar -cvzf tarball/${{ matrix.output-name }}.tgz sshnp
+      - uses: actions/upload-artifact@0b7f8abb1508181956e8e162db84b466c27e18ce # v3.1.2
+        with:
+          name: binaries
+          path: tarball
