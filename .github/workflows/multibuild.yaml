@@ -53,3 +53,14 @@ jobs:
         with:
           name: other_binaries
           path: upload
+
+  notify_on_completion:
+    needs: [x64_build, other_build]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Google Chat Notification
+        uses: Co-qn/google-chat-notification@3691ccf4763537d6e544bc6cdcccc1965799d056 # v1
+        with:
+          name: SSH no ports binaries were built by GitHub Action ${{ github.run_number }}
+          url: ${{ secrets.GOOGLE_CHAT_WEBHOOK }}
+          status: ${{ job.status }}
