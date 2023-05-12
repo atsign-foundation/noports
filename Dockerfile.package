@@ -19,6 +19,8 @@ RUN set -eux; \
     dart compile exe bin/activate_cli.dart -v -o sshnp/at_activate; \
     dart compile exe bin/sshnp.dart -v -o sshnp/sshnp; \
     dart compile exe bin/sshnpd.dart -v -o sshnp/sshnpd; \
+    dart compile exe bin/sshrv.dart -v -o sshnp/sshrv; \
+    dart compile exe bin/sshrvd.dart -v -o sshnp/sshrvd; \
     cp scripts/* sshnp; \
     tar -cvzf tarball/sshnp-linux-${ARCH}.tgz sshnp
     

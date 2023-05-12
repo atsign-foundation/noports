@@ -12,6 +12,7 @@ import 'package:args/args.dart';
 import 'package:logging/logging.dart';
 import 'package:uuid/uuid.dart';
 import 'package:socket_connector/socket_connector.dart';
+import "package:path/path.dart" show dirname;
 
 // local packages
 import 'package:sshnoports/version.dart';
@@ -34,6 +35,9 @@ void main(List<String> args) async {
     await cleanUp(sessionId, logger);
     exit(1);
   });
+  String sshnpDir = (dirname(Platform.script.toString()));
+  sshnpDir = sshnpDir.replaceAll('file://', '');
+  sshnpDir = sshnpDir + '/';
 
   var parser = ArgParser();
   // Basic arguments
@@ -364,7 +368,7 @@ void main(List<String> args) async {
     ack = false;
 // Connect to rz point using background process
 // This way this program can exit
-    unawaited(Process.run('./sshrv', [host, streamingPort]));
+    unawaited(Process.run('${sshnpDir}sshrv', [host, streamingPort]));
   }
 
   metaData = Metadata()
