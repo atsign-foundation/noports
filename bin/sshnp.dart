@@ -364,7 +364,7 @@ void main(List<String> args) async {
     ack = false;
 // Connect to rz point using background process
 // This way this program can exit
-    unawaited(Process.run('./tcpcon', [host, streamingPort]));
+    unawaited(Process.run('./sshrv', [host, streamingPort]));
   }
 
   metaData = Metadata()
