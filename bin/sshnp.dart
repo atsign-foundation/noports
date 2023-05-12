@@ -37,7 +37,6 @@ void main(List<String> args) async {
   });
   String sshnpDir = (dirname(Platform.script.toString()));
   sshnpDir = sshnpDir.replaceAll('file://', '');
-  sshnpDir = sshnpDir + '/';
 
   var parser = ArgParser();
   // Basic arguments
@@ -368,7 +367,7 @@ void main(List<String> args) async {
     ack = false;
 // Connect to rz point using background process
 // This way this program can exit
-    unawaited(Process.run('${sshnpDir}sshrv', [host, streamingPort]));
+    unawaited(Process.run('${sshnpDir}/sshrv', [host, streamingPort]));
   }
 
   metaData = Metadata()
