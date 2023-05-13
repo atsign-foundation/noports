@@ -11,7 +11,6 @@ import 'package:at_onboarding_cli/at_onboarding_cli.dart';
 // external packages
 import 'package:args/args.dart';
 import 'package:logging/logging.dart';
-import 'package:uuid/uuid.dart';
 import 'package:socket_connector/socket_connector.dart';
 import 'package:version/version.dart';
 
@@ -46,7 +45,7 @@ void main(List<String> args) async {
   parser.addOption('atsign',
       abbr: 'a', mandatory: true, help: 'atSign for service');
   parser.addOption('ip',
-      abbr: 'i', mandatory: true, help: 'IP address to send to clients');
+      abbr: 'i', mandatory: true, help: 'FQDN/IP address sent to clients');
 
   parser.addFlag('verbose', abbr: 'v', help: 'More logging');
 
