@@ -55,12 +55,12 @@ void main(List<String> args) async {
       abbr: 'h',
       mandatory: true,
       help:
-          'FQDN/IP address to connect back to or atSign of streaming service e.g @stream');
+          'atSign of sshrzd daemon e.g @stream or FQDN/IP address to connect back to ');
   parser.addOption('port',
       abbr: 'p',
       mandatory: false,
       defaultsTo: '22',
-      help: 'TCP port to connect back to');
+      help: 'TCP port to connect back to (only required if --host specified a FQDN/IP)');
   parser.addOption('local-port',
       abbr: 'l',
       defaultsTo: '0',
