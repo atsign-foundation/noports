@@ -124,7 +124,8 @@ void main(List<String> args) async {
       session = notification.value!;
       forAtsign = notification.from;
       var ports = await connectSpawn(0, 0, session, forAtsign, snoop);
-      logger.warning('Starting stream session $session for $forAtsign using ports $ports');
+      logger.warning(
+          'Starting stream session $session for $forAtsign using ports $ports');
 
       var metaData = Metadata()
         ..isPublic = false
@@ -166,7 +167,8 @@ Future<List<int>> connectSpawn(
   SendPort mySendPort = await myReceivePort.first;
 
   myReceivePort = ReceivePort();
-  mySendPort.send([portA, portB, session, forAtsign, snoop, myReceivePort.sendPort]);
+  mySendPort
+      .send([portA, portB, session, forAtsign, snoop, myReceivePort.sendPort]);
 
   List message = await myReceivePort.first as List;
 
@@ -218,6 +220,6 @@ Future<void> connect(SendPort mySendPort) async {
     closed = await socketStream.closed();
   }
 
-  logger.warning('Finished stream session $session for $forAtsign using ports [$portA, $portB]');
-
+  logger.warning(
+      'Finished stream session $session for $forAtsign using ports [$portA, $portB]');
 }

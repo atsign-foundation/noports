@@ -14,7 +14,6 @@ import 'package:logging/logging.dart';
 import 'package:uuid/uuid.dart';
 import 'package:version/version.dart';
 
-
 // local packages
 import 'package:sshnoports/version.dart';
 import 'package:sshnoports/home_directory.dart';
@@ -399,5 +398,3 @@ void sshCallback(
     }
   }
 }
-
-

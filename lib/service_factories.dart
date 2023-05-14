@@ -4,7 +4,10 @@ import 'package:at_client/src/service/sync_service.dart';
 
 class ServiceFactoryWithNoOpSyncService extends DefaultAtServiceFactory {
   @override
-  Future<SyncService> syncService(AtClient atClient, AtClientManager atClientManager, NotificationService notificationService) async {
+  Future<SyncService> syncService(
+      AtClient atClient,
+      AtClientManager atClientManager,
+      NotificationService notificationService) async {
     return NoOpSyncService();
   }
 }
@@ -30,5 +33,4 @@ class NoOpSyncService implements SyncService {
 
   @override
   void sync({Function? onDone, Function? onError}) {}
-
 }
