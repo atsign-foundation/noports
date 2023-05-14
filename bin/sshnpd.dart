@@ -148,7 +148,7 @@ Future<void> _main(List<String> args) async {
   atClient = AtClientManager.getInstance().atClient;
 
   // Wait for initial sync to complete
-  logger.shout("Starting $deviceAtsign sync");
+  logger.shout("Starting sync for : $deviceAtsign");
 
   var mySynclistener = MySyncProgressListener();
   atClient.syncService.addProgressListener(mySynclistener);
@@ -156,7 +156,7 @@ Future<void> _main(List<String> args) async {
     await Future.delayed(Duration(milliseconds: 100));
   }
 
-  logger.shout("$deviceAtsign sync complete");
+  logger.shout("$deviceAtsign sync status: ${mySynclistener.syncResult}");
 
   // If it was OK to send the username to the sshnp client set it up
   if (results['username']) {
