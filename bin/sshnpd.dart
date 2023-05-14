@@ -12,13 +12,15 @@ import 'package:args/args.dart';
 import 'package:dartssh2/dartssh2.dart';
 import 'package:logging/logging.dart';
 import 'package:uuid/uuid.dart';
+import 'package:version/version.dart';
+
 
 // local packages
 import 'package:sshnoports/version.dart';
 import 'package:sshnoports/home_directory.dart';
 import 'package:sshnoports/check_non_ascii.dart';
 import 'package:sshnoports/check_file_exists.dart';
-import 'package:version/version.dart';
+import 'package:sshnoports/sync_listener.dart';
 
 void main(List<String> args) async {
   try {
@@ -146,13 +148,6 @@ Future<void> _main(List<String> args) async {
 
   atClient = AtClientManager.getInstance().atClient;
 
-  bool syncComplete = false;
-  void onSyncDone(syncResult) {
-    logger.info("syncResult.syncStatus: ${syncResult.syncStatus}");
-    logger.info("syncResult.lastSyncedOn ${syncResult.lastSyncedOn}");
-    syncComplete = true;
-  }
-
   // Wait for initial sync to complete
   logger.shout("Starting $deviceAtsign sync");
 
@@ -161,7 +156,7 @@ Future<void> _main(List<String> args) async {
   while (!mySynclistener.syncComplete) {
     await Future.delayed(Duration(milliseconds: 100));
   }
-  
+
   logger.shout("$deviceAtsign sync complete");
 
   // If it was OK to send the username to the sshnp client set it up
@@ -405,15 +400,4 @@ void sshCallback(
   }
 }
 
-class MySyncProgressListener extends SyncProgressListener {
-  bool syncComplete = false;
 
-  @override
-  void onSyncProgressEvent(SyncProgress syncProgress) {
-    if (syncProgress.syncStatus == SyncStatus.failure ||
-        syncProgress.syncStatus == SyncStatus.success) {
-      syncComplete = true;
-    }
-    return;
-  }
-}

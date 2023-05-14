@@ -1,4 +1,5 @@
 // dart packages
+import 'dart:async';
 import 'dart:io';
 import 'dart:isolate';
 
@@ -160,7 +161,7 @@ Future<List<int>> connectSpawn(
   /// Spawn an isolate, passing my receivePort sendPort
 
   ReceivePort myReceivePort = ReceivePort();
-  Isolate.spawn<SendPort>(connect, myReceivePort.sendPort);
+  unawaited(Isolate.spawn<SendPort>(connect, myReceivePort.sendPort));
 
   SendPort mySendPort = await myReceivePort.first;
 

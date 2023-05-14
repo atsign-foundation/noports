@@ -11,6 +11,7 @@ import 'package:at_onboarding_cli/at_onboarding_cli.dart';
 import 'package:args/args.dart';
 import 'package:logging/logging.dart';
 import 'package:uuid/uuid.dart';
+import 'package:version/version.dart';
 import "package:path/path.dart" show dirname;
 
 // local packages
@@ -19,7 +20,6 @@ import 'package:sshnoports/home_directory.dart';
 import 'package:sshnoports/check_non_ascii.dart';
 import 'package:sshnoports/cleanup_sshnp.dart';
 import 'package:sshnoports/check_file_exists.dart';
-import 'package:version/version.dart';
 import 'package:sshnoports/service_factories.dart';
 
 void main(List<String> args) async {
