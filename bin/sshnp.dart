@@ -55,7 +55,7 @@ void main(List<String> args) async {
       abbr: 'h',
       mandatory: true,
       help:
-          'atSign of sshrzd daemon e.g @stream or FQDN/IP address to connect back to ');
+          'atSign of sshrvd daemon e.g @stream or FQDN/IP address to connect back to ');
   parser.addOption('port',
       abbr: 'p',
       mandatory: false,
