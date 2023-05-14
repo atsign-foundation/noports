@@ -12,7 +12,7 @@ address the device has been given. As long as the device and client has an IP ad
 DNS and Internet access, you will be able to connect to it.
 
 ## Quick demo
-[![asciicast](https://asciinema.org/a/496148.svg)](https://asciinema.org/a/496148)
+[![asciicast](https://asciinema.org/a/584007.svg)](https://asciinema.org/a/584007)
 
 There are five binaries:-
 
@@ -95,8 +95,6 @@ wrap the daemon in a shell script or have sysctld make sure it is running.
 My preference whilst testing was to run the daemon in TMUX so that it is easy
 to see the logs (-v).
 
-Thoughts/bugs/contributions via PR all very welcome!
-
 
 ### sshnpd (daemon) in a docker container
 
@@ -161,6 +159,9 @@ The systemd directory contains an example unit file with its own
 ## Maintainers
 
 Created by Atsign 
+
+Thoughts/bugs/contributions via PR all very welcome!
+
 
 Original code by [@cconstab](https://github.com/cconstab)
 
