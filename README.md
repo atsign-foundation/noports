@@ -12,7 +12,8 @@ address the device has been given. As long as the device and client has an IP ad
 DNS and Internet access, you will be able to connect to it.
 
 ## Quick demo
-[![asciicast](https://asciinema.org/a/584007.svg)](https://asciinema.org/a/584007)
+![sshnp](https://github.com/atsign-foundation/sshnoports/assets/6131216/4ff005f1-230e-4621-9b33-f834caa9a1d1)
+
 
 There are five binaries:-
 
