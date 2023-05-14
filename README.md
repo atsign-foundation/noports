@@ -37,7 +37,7 @@ a device atSign and a manager atSign, but each device can also have a unique
 device name using the --device argument.
 
 Once in place you can start up the daemon first on the remote device.
-Remember to start the daemon on start up using rc.local script or similar, exmaples can be found in the scripts directory in this repo and in the release tar files.
+Remember to start the daemon on start up using rc.local script or similar, examples can be found in the scripts directory in this repo and in the release tar files.
 
 `sshnpd.sh` : bash script
 `tmux-sshnpd.sh` : bash script that uses `tmux` to provide realtime logging/view of the running daemon
@@ -66,19 +66,19 @@ Which would output
 ssh -p 39011 cconstab@localhost -i /home/cconstab/.ssh/id_ed25519
 ```
 
-Atsign provides sshrv services using `@stream` will work just fine but if you want to run your own `sshrvd` you will need a machine that has an internet IP and all ports 1024-65535 un firewalled and an atSign for the daemon to use.
+Atsign provides a sshrv service using `@stream` which will work just fine but if you want to run your own `sshrvd` you will need a machine that has an internet IP and all ports 1024-65535 un firewalled and an atSign for the daemon to use.
 
 
 When you run this you will be connected to the remote machine via a reverse
 ssh tunnel from the remote device. 
 
-If you want to do this in a single command use `$(<command>)` for example, note you can specify a ssh public key so you do not get asked for passwords. Use ssh-keygen to generate a new ssh key if you do not have one.
+If you want to do this in a single command use `$(<command>)` for example, note you can specify a ssh public key so you do not get asked for passwords. Use `ssh-keygen` to generate a new ssh key if you do not have one already to access the remote sshd.
 
 ```
 $(./sshnp -f @myclient -t @myserver -d mymachine -h @myrz -s id_ed25519.pub)
 ```
 
-If you can now login using sshnp then you can now turn off sshd from listening on all interfaces, and instead have ssh listen only on 127.0.0.1.
+If you can now login using sshnp then you can now turn off sshd from listening on all external interfaces, and instead have ssh listen only on 127.0.0.1.
 
 That is easily done by editing `/etc/ssh/sshd_config`  
 
@@ -123,7 +123,7 @@ Docker is very well documented and if you want to keep the container running
 after a reboot if for some reason the container crashes is all easily achieved.
 
 
-## Ways to run ssh no ports daemons
+## Ways to run SSH! no ports daemons
 
 ### `sshnpd.sh`
 
