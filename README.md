@@ -23,9 +23,9 @@ There are five binaries:-
 `sshnp`  : The client that sets up a connection to the device which you
 can then ssh to via your localhost interface
 
-`sshrvd` : This daemon acts as a Rendezvous service and provides Internet routable IP/Ports for sshnpd and sshrv to connect to
+`sshrvd` : This daemon acts as a rendezvous service and provides Internet routable IP/Ports for sshnpd and sshrv to connect to
 
-`sshrv`  : This client is called by sshnp to connect the local sshd to the renezvous point
+`sshrv`  : This client is called by sshnp to connect the local sshd to the rendezvous point
 
 To get going you just need two (or three if you want to use your own sshrvd service) atSigns and their .atKeys files and the
 binaries (from the 
