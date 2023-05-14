@@ -1,7 +1,6 @@
 // dart packages
 import 'dart:io';
 import 'dart:isolate';
-import 'dart:math';
 
 // atPlatform packages
 import 'package:at_client/at_client.dart';

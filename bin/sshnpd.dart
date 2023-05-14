@@ -155,11 +155,10 @@ Future<void> _main(List<String> args) async {
 
   // Wait for initial sync to complete
   logger.shout("Starting $deviceAtsign sync");
-  syncComplete = false;
-  // TODO Use SyncProgressListener instead
-  // ignore: deprecated_member_use
-  atClient.syncService.sync(onDone: onSyncDone);
-  while (!syncComplete) {
+
+  var mySync = MySyncProgressListener();
+  atClient.syncService.addProgressListener(mySync);
+  while (!mySync.syncComplete) {
     await Future.delayed(Duration(milliseconds: 100));
   }
   logger.shout("$deviceAtsign sync complete");
@@ -402,5 +401,18 @@ void sshCallback(
         stderr.writeln(e.toString());
       }
     }
+  }
+}
+
+class MySyncProgressListener extends SyncProgressListener {
+  bool syncComplete = false;
+
+  @override
+  void onSyncProgressEvent(SyncProgress syncProgress) {
+    if (syncProgress.syncStatus == SyncStatus.failure ||
+        syncProgress.syncStatus == SyncStatus.success) {
+      syncComplete = true;
+    }
+    return;
   }
 }

@@ -11,7 +11,6 @@ import 'package:at_onboarding_cli/at_onboarding_cli.dart';
 import 'package:args/args.dart';
 import 'package:logging/logging.dart';
 import 'package:uuid/uuid.dart';
-import 'package:socket_connector/socket_connector.dart';
 import "package:path/path.dart" show dirname;
 
 // local packages
@@ -103,7 +102,6 @@ void main(List<String> args) async {
   bool ack = false;
   bool ackErrors = false;
   bool rsa = false;
-  late SocketConnector socketStream;
   // In the future (perhaps) we can send other commands
   // Perhaps OpenVPN or shell commands
   String sendCommand = 'sshd';
@@ -242,24 +240,6 @@ void main(List<String> args) async {
 
   NotificationService notificationService = atClient.notificationService;
 
-  // bool syncComplete = false;
-  // void onSyncDone(syncResult) {
-  //   logger.info("syncResult.syncStatus: ${syncResult.syncStatus}");
-  //   logger.info("syncResult.lastSyncedOn ${syncResult.lastSyncedOn}");
-  //   syncComplete = true;
-  // }
-
-  // // Wait for initial sync to complete
-  // logger.info("Waiting for initial sync");
-  // syncComplete = false;
-  // // TODO Use SyncProgressListener instead
-  // // ignore: deprecated_member_use
-  // atClient.syncService.sync(onDone: onSyncDone);
-  // while (!syncComplete) {
-  //   await Future.delayed(Duration(milliseconds: 100));
-  // }
-  // logger.info("Initial sync complete");
-
   notificationService
       .subscribe(regex: '$sessionId.$nameSpace@', shouldDecrypt: true)
       .listen(((notification) async {
@@ -367,7 +347,7 @@ void main(List<String> args) async {
     ack = false;
 // Connect to rz point using background process
 // This way this program can exit
-    unawaited(Process.run('${sshnpDir}/sshrv', [host, streamingPort]));
+    unawaited(Process.run('$sshnpDir/sshrv', [host, streamingPort]));
   }
 
   metaData = Metadata()

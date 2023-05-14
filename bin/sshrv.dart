@@ -2,8 +2,6 @@
 import 'dart:io';
 
 // external packages
-import 'package:args/args.dart';
-import 'package:logging/logging.dart';
 import 'package:socket_connector/socket_connector.dart';
 
 Future<void> main(List<String> args) async {
