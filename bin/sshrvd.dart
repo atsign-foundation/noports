@@ -179,7 +179,7 @@ Future<List<int>> connectSpawn(
 }
 
 Future<void> connect(SendPort mySendPort) async {
-  final AtSignLogger logger = AtSignLogger(' sshnp ');
+  final AtSignLogger logger = AtSignLogger(' sshrvd ');
   logger.hierarchicalLoggingEnabled = true;
 
   AtSignLogger.root_level = 'WARNING';
