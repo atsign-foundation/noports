@@ -66,7 +66,7 @@ Which would output
 ssh -p 39011 cconstab@localhost -i /home/cconstab/.ssh/id_ed25519
 ```
 
-Atsign provides a sshrv service using `@stream` which will work just fine but if you want to run your own `sshrvd` you will need a machine that has an internet IP and all ports 1024-65535 un firewalled and an atSign for the daemon to use.
+Atsign provides a sshrvd service but if you want to run your own `sshrvd` you will need a machine that has an internet IP and all ports 1024-65535 unfirewalled and an atSign for the daemon to use.
 
 
 When you run this you will be connected to the remote machine via a reverse
