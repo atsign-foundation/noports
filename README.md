@@ -123,7 +123,7 @@ Docker is very well documented and if you want to keep the container running
 after a reboot if for some reason the container crashes is all easily achieved.
 
 
-## Ways to run SSH! no ports daemons
+## Ways to run SSH! no ports daemons (root access NOT required)
 
 ### `sshnpd.sh`
 
