@@ -32,7 +32,7 @@ void main(List<String> args) async {
   dynamic results;
   String atsignFile;
   String ipAddress;
-  String nameSpace = 'stream';
+  String nameSpace = 'sshrvd';
   bool snoop = false;
 
   // Get the command line arguments to fill in the details
@@ -43,7 +43,7 @@ void main(List<String> args) async {
       mandatory: false,
       help: 'atSign\'s atKeys file if not in ~/.atsign/keys/');
   parser.addOption('atsign',
-      abbr: 'a', mandatory: true, help: 'atSign for service');
+      abbr: 'a', mandatory: true, help: 'atSign for sshrvd');
   parser.addOption('ip',
       abbr: 'i', mandatory: true, help: 'FQDN/IP address sent to clients');
 
@@ -98,11 +98,11 @@ void main(List<String> args) async {
   //onboarding preference builder can be used to set onboardingService parameters
   AtOnboardingPreference atOnboardingConfig = AtOnboardingPreference()
     //..qrCodePath = '<location of image>'
-    ..hiveStoragePath = '$homeDirectory/.stream/$atSign/storage'
+    ..hiveStoragePath = '$homeDirectory/.sshrvd/$atSign/storage'
     ..namespace = nameSpace
-    ..downloadPath = '$homeDirectory/.stream/files'
+    ..downloadPath = '$homeDirectory/.sshrvd/files'
     ..isLocalStoreRequired = true
-    ..commitLogPath = '$homeDirectory/.stream/$atSign/storage/commitLog'
+    ..commitLogPath = '$homeDirectory/.sshrvd/$atSign/storage/commitLog'
     ..fetchOfflineNotifications = false
     ..atKeysFilePath = atsignFile
     ..atProtocolEmitted = Version(2, 0, 0);
@@ -118,14 +118,14 @@ void main(List<String> args) async {
   NotificationService notificationService = atClient.notificationService;
 
   notificationService
-      .subscribe(regex: 'stream@', shouldDecrypt: true)
+      .subscribe(regex: '$nameSpace@', shouldDecrypt: true)
       .listen(((notification) async {
-    if (notification.key.contains('stream')) {
+    if (notification.key.contains(nameSpace)) {
       session = notification.value!;
       forAtsign = notification.from;
       var ports = await connectSpawn(0, 0, session, forAtsign, snoop);
       logger.warning(
-          'Starting stream session $session for $forAtsign using ports $ports');
+          'Starting session $session for $forAtsign using ports $ports');
 
       var metaData = Metadata()
         ..isPublic = false
@@ -221,5 +221,5 @@ Future<void> connect(SendPort mySendPort) async {
   }
 
   logger.warning(
-      'Finished stream session $session for $forAtsign using ports [$portA, $portB]');
+      'Finished session $session for $forAtsign using ports [$portA, $portB]');
 }

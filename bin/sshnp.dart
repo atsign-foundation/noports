@@ -55,12 +55,13 @@ void main(List<String> args) async {
       abbr: 'h',
       mandatory: true,
       help:
-          'atSign of sshrvd daemon e.g @stream or FQDN/IP address to connect back to ');
+          'atSign of sshrvd daemon or FQDN/IP address to connect back to ');
   parser.addOption('port',
       abbr: 'p',
       mandatory: false,
       defaultsTo: '22',
-      help: 'TCP port to connect back to (only required if --host specified a FQDN/IP)');
+      help:
+          'TCP port to connect back to (only required if --host specified a FQDN/IP)');
   parser.addOption('local-port',
       abbr: 'l',
       defaultsTo: '0',
@@ -90,8 +91,9 @@ void main(List<String> args) async {
   String? homeDirectory = getHomeDirectory();
   String device = "";
   String nameSpace = '';
+  String sshrvdNameSpace = 'sshrvd';
   String port;
-  String streamingPort = '';
+  String sshrvdPort = '';
   String host = "127.0.0.1";
   String localPort;
   String sshString = "";
@@ -284,28 +286,28 @@ void main(List<String> args) async {
   }
   var remoteUsername = toAtsignUsername.value;
 
-  // If host has an @ then contact the stream service for some ports
+  // If host has an @ then contact the sshrvd service for some ports
   if (host.startsWith('@')) {
-    String streamId = uuid.v4();
+    String sshrvdId = uuid.v4();
     metaData = Metadata()
       ..isPublic = false
       ..isEncrypted = true
       ..namespaceAware = false;
 
     atKey = AtKey()
-      ..key = '$streamId.stream'
+      ..key = '$sshrvdId.$sshrvdNameSpace'
       ..sharedBy = host
       ..sharedWith = fromAtsign
       ..metadata = metaData;
 
     atClient.notificationService
-        .subscribe(regex: '$streamId.stream@', shouldDecrypt: true)
+        .subscribe(regex: '$sshrvdId.$sshrvdNameSpace@', shouldDecrypt: true)
         .listen((notification) async {
       String ipPorts = notification.value.toString();
       List results = ipPorts.split(',');
       host = results[0];
       port = results[1];
-      streamingPort = results[2];
+      sshrvdPort = results[2];
       ack = true;
     });
 
@@ -317,14 +319,14 @@ void main(List<String> args) async {
       ..ttl = 10000;
 
     atKey = AtKey()
-      ..key = '${device}stream'
+      ..key = '$device$sshrvdNameSpace'
       ..sharedBy = fromAtsign
       ..sharedWith = host
       ..metadata = metaData;
 
     try {
       await notificationService
-          .notify(NotificationParams.forUpdate(atKey, value: streamId),
+          .notify(NotificationParams.forUpdate(atKey, value: sshrvdId),
               onSuccess: (notification) {
         logger.info('SUCCESS:$notification $sshString');
       }, onError: (notification) {
@@ -340,14 +342,14 @@ void main(List<String> args) async {
       if (counter == 100) {
         ack = true;
         await cleanUp(sessionId, logger);
-        stderr.writeln('sshnp: connection timeout to streaming $host service');
+        stderr.writeln('sshnp: connection timeout to sshrvd $host service');
         exit(1);
       }
     }
     ack = false;
 // Connect to rz point using background process
 // This way this program can exit
-    unawaited(Process.run('$sshnpDir/sshrv', [host, streamingPort]));
+    unawaited(Process.run('$sshnpDir/sshrv', [host, sshrvdPort]));
   }
 
   metaData = Metadata()
