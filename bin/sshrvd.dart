@@ -31,6 +31,7 @@ void main(List<String> args) async {
   String? homeDirectory = getHomeDirectory();
   dynamic results;
   String atsignFile;
+  String managerAtsign = 'unknown';
   String ipAddress;
   String nameSpace = 'sshrvd';
   bool snoop = false;
@@ -44,6 +45,11 @@ void main(List<String> args) async {
       help: 'atSign\'s atKeys file if not in ~/.atsign/keys/');
   parser.addOption('atsign',
       abbr: 'a', mandatory: true, help: 'atSign for sshrvd');
+  parser.addOption('manager',
+      abbr: 'm',
+      defaultsTo: 'open',
+      mandatory: false,
+      help: 'Managers atSign, that sshrvd will accept requests from');
   parser.addOption('ip',
       abbr: 'i', mandatory: true, help: 'FQDN/IP address sent to clients');
 
@@ -60,6 +66,7 @@ void main(List<String> args) async {
     // Find atSign key file
     atSign = results['atsign'];
     ipAddress = results['ip'];
+    managerAtsign = results['manager'];
     if (results['key-file'] != null) {
       atsignFile = results['key-file'];
     } else {
@@ -123,37 +130,41 @@ void main(List<String> args) async {
     if (notification.key.contains(nameSpace)) {
       session = notification.value!;
       forAtsign = notification.from;
-      var ports = await connectSpawn(0, 0, session, forAtsign, snoop);
-      logger.warning(
-          'Starting session $session for $forAtsign using ports $ports');
+      if (forAtsign == managerAtsign || managerAtsign == 'open') {
+        var ports = await connectSpawn(0, 0, session, forAtsign, snoop);
+        logger.warning(
+            'Starting session $session for $forAtsign using ports $ports');
 
-      var metaData = Metadata()
-        ..isPublic = false
-        ..isEncrypted = true
-        ..ttr = -1
-        ..ttl = 10000
-        ..namespaceAware = true;
+        var metaData = Metadata()
+          ..isPublic = false
+          ..isEncrypted = true
+          ..ttr = -1
+          ..ttl = 10000
+          ..namespaceAware = true;
 
-      var atKey = AtKey()
-        ..key = notification.value
-        ..sharedBy = atSign
-        ..sharedWith = notification.from
-        ..namespace = nameSpace
-        ..metadata = metaData;
+        var atKey = AtKey()
+          ..key = notification.value
+          ..sharedBy = atSign
+          ..sharedWith = notification.from
+          ..namespace = nameSpace
+          ..metadata = metaData;
 
-      String data = '$ipAddress,${ports[0]},${ports[1]}';
+        String data = '$ipAddress,${ports[0]},${ports[1]}';
 
-      try {
-        await atClient.notificationService.notify(
-            NotificationParams.forUpdate(atKey, value: data),
-            waitForFinalDeliveryStatus: false,
-            checkForFinalDeliveryStatus: false);
-      } catch (e) {
-        stderr.writeln("Error writting session ${notification.value} atKey");
+        try {
+          await atClient.notificationService.notify(
+              NotificationParams.forUpdate(atKey, value: data),
+              waitForFinalDeliveryStatus: false,
+              checkForFinalDeliveryStatus: false);
+        } catch (e) {
+          stderr.writeln("Error writting session ${notification.value} atKey");
+        }
+      } else {
+        stderr.writeln('Unknown error: ${notification.value}');
       }
-    } else {
-      stderr.writeln('Unknown error: ${notification.value}');
     }
+            logger.shout(
+            'Session $session for $forAtsign denied');
   }));
 }
 
