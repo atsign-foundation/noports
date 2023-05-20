@@ -21,7 +21,7 @@ import 'package:sshnoports/home_directory.dart';
 import 'package:sshnoports/check_file_exists.dart';
 
 void main(List<String> args) async {
-  final AtSignLogger logger = AtSignLogger(' sshnp ');
+  final AtSignLogger logger = AtSignLogger(' sshrvd ');
   logger.hierarchicalLoggingEnabled = true;
   logger.logger.level = Level.SHOUT;
 
