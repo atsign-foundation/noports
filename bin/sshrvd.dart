@@ -41,7 +41,7 @@ void main(List<String> args) async {
   parser.addOption('key-file',
       abbr: 'k',
       mandatory: false,
-      help: 'Sending atSign\'s atKeys file if not in ~/.atsign/keys/');
+      help: 'atSign\'s atKeys file if not in ~/.atsign/keys/');
   parser.addOption('atsign',
       abbr: 'a', mandatory: true, help: 'atSign for service');
   parser.addOption('ip',

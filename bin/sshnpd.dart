@@ -398,4 +398,6 @@ void sshCallback(
       }
     }
   }
+      logger.shout(
+        'ssh session attempted from: ${notification.from} session: $sessionId and ignored');
 }
