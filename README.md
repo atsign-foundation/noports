@@ -137,7 +137,7 @@ and <devicename>.
 You might also want to add a crontab entry to run the script on reboot:
 
 ```
-@reboot /home/<username>/sshnpd.sh > ~/sshnpd.log 2>&1
+@reboot /home/<username>/sshnp/sshnpd.sh > ~/sshnpd.log 2>&1
 ```
 
 ### `tmux-sshnpd.sh`
@@ -149,7 +149,7 @@ Once again, ensure that the placeholders are replaced, and this can be run
 by cron using:
 
 ```
-@reboot /home/<username>/tmux-sshnpd.sh > ~/sshnpd.log 2>&1
+@reboot /home/<username>/sshnp/tmux-sshnpd.sh > ~/sshnpd.log 2>&1
 ```
 
 ### systemd units
