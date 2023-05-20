@@ -5,7 +5,7 @@ import 'package:at_onboarding_cli/src/activate_cli/activate_cli.dart'
 
 Future<void> main(List<String> args) async {
   try {
-    var a =await activate_cli.main(args);
+    await activate_cli.main(args);
   } catch (e) {
     print(e.toString());
   }
