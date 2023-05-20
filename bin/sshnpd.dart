@@ -138,9 +138,9 @@ Future<void> _main(List<String> args) async {
     ..fetchOfflineNotifications = false
     ..atKeysFilePath = atsignFile
     ..atProtocolEmitted = Version(2, 0, 0);
-  
+
   nameSpace = atOnboardingConfig.namespace!;
-  
+
   AtOnboardingService onboardingService =
       AtOnboardingServiceImpl(deviceAtsign, atOnboardingConfig);
 
@@ -397,7 +397,8 @@ void sshCallback(
         stderr.writeln(e.toString());
       }
     }
-  }
-      logger.shout(
+  } else {
+    logger.shout(
         'ssh session attempted from: ${notification.from} session: $sessionId and ignored');
+  }
 }

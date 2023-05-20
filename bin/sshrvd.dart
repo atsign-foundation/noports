@@ -160,12 +160,12 @@ void main(List<String> args) async {
           stderr.writeln("Error writting session ${notification.value} atKey");
         }
       } else {
-        stderr.writeln('Unknown error: ${notification.value}');
+        logger.shout('Session $session for $forAtsign denied');
       }
     }
-            logger.shout(
-            'Session $session for $forAtsign denied');
-  }));
+  }
+  )
+  );
 }
 
 Future<List<int>> connectSpawn(
