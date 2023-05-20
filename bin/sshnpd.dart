@@ -12,13 +12,14 @@ import 'package:args/args.dart';
 import 'package:dartssh2/dartssh2.dart';
 import 'package:logging/logging.dart';
 import 'package:uuid/uuid.dart';
+import 'package:version/version.dart';
 
 // local packages
 import 'package:sshnoports/version.dart';
 import 'package:sshnoports/home_directory.dart';
 import 'package:sshnoports/check_non_ascii.dart';
 import 'package:sshnoports/check_file_exists.dart';
-import 'package:version/version.dart';
+import 'package:sshnoports/sync_listener.dart';
 
 void main(List<String> args) async {
   try {
@@ -137,6 +138,7 @@ Future<void> _main(List<String> args) async {
     ..fetchOfflineNotifications = false
     ..atKeysFilePath = atsignFile
     ..atProtocolEmitted = Version(2, 0, 0);
+
   nameSpace = atOnboardingConfig.namespace!;
 
   AtOnboardingService onboardingService =
@@ -146,23 +148,16 @@ Future<void> _main(List<String> args) async {
 
   atClient = AtClientManager.getInstance().atClient;
 
-  bool syncComplete = false;
-  void onSyncDone(syncResult) {
-    logger.info("syncResult.syncStatus: ${syncResult.syncStatus}");
-    logger.info("syncResult.lastSyncedOn ${syncResult.lastSyncedOn}");
-    syncComplete = true;
-  }
-
   // Wait for initial sync to complete
-  logger.shout("Starting $deviceAtsign sync");
-  syncComplete = false;
-  // TODO Use SyncProgressListener instead
-  // ignore: deprecated_member_use
-  atClient.syncService.sync(onDone: onSyncDone);
-  while (!syncComplete) {
+  logger.shout("Starting sync for : $deviceAtsign");
+
+  var mySynclistener = MySyncProgressListener();
+  atClient.syncService.addProgressListener(mySynclistener);
+  while (!mySynclistener.syncComplete) {
     await Future.delayed(Duration(milliseconds: 100));
   }
-  logger.shout("$deviceAtsign sync complete");
+
+  logger.shout("$deviceAtsign sync status: ${mySynclistener.syncResult}");
 
   // If it was OK to send the username to the sshnp client set it up
   if (results['username']) {
@@ -220,8 +215,8 @@ Future<void> _main(List<String> args) async {
             'ssh Public Key received from ${notification.from} notification id : ${notification.id}');
         sshPublicKey = notification.value!;
 
-        // Check to see if the public key looks like one!
-        if (!sshPublicKey.startsWith('ssh-rsa')) {
+        // Check to see if the ssh public key looks like one!
+        if (!sshPublicKey.startsWith('ssh-')) {
           throw ('$sshPublicKey does not look like a public key');
         }
 
@@ -402,5 +397,8 @@ void sshCallback(
         stderr.writeln(e.toString());
       }
     }
+  } else {
+    logger.shout(
+        'ssh session attempted from: ${notification.from} session: $sessionId and ignored');
   }
 }

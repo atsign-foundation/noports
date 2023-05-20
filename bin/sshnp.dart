@@ -1,4 +1,5 @@
 // dart packages
+import 'dart:async';
 import 'dart:io';
 
 // atPlatform packages
@@ -10,6 +11,8 @@ import 'package:at_onboarding_cli/at_onboarding_cli.dart';
 import 'package:args/args.dart';
 import 'package:logging/logging.dart';
 import 'package:uuid/uuid.dart';
+import 'package:version/version.dart';
+import "package:path/path.dart" show dirname;
 
 // local packages
 import 'package:sshnoports/version.dart';
@@ -17,7 +20,7 @@ import 'package:sshnoports/home_directory.dart';
 import 'package:sshnoports/check_non_ascii.dart';
 import 'package:sshnoports/cleanup_sshnp.dart';
 import 'package:sshnoports/check_file_exists.dart';
-import 'package:version/version.dart';
+import 'package:sshnoports/service_factories.dart';
 
 void main(List<String> args) async {
   final AtSignLogger logger = AtSignLogger(' sshnp ');
@@ -31,6 +34,8 @@ void main(List<String> args) async {
     await cleanUp(sessionId, logger);
     exit(1);
   });
+  String sshnpDir = (dirname(Platform.script.toString()));
+  sshnpDir = sshnpDir.replaceAll('file://', '');
 
   var parser = ArgParser();
   // Basic arguments
@@ -49,17 +54,20 @@ void main(List<String> args) async {
   parser.addOption('host',
       abbr: 'h',
       mandatory: true,
-      help: 'FQDN Hostname e.g example.com or IP address to connect back to');
+      help:
+          'atSign of sshrvd daemon or FQDN/IP address to connect back to ');
   parser.addOption('port',
       abbr: 'p',
       mandatory: false,
       defaultsTo: '22',
-      help: 'TCP port to connect back to');
+      help:
+          'TCP port to connect back to (only required if --host specified a FQDN/IP)');
   parser.addOption('local-port',
       abbr: 'l',
-      defaultsTo: '2222',
+      defaultsTo: '0',
       mandatory: false,
-      help: 'Reverse ssh port to listen on, on your local machine');
+      help:
+          'Reverse ssh port to listen on, on your local machine, by sshnp default finds a spare port');
   parser.addOption('ssh-public-key',
       abbr: 's',
       defaultsTo: 'false',
@@ -69,6 +77,10 @@ void main(List<String> args) async {
   parser.addMultiOption('local-ssh-options',
       abbr: 'o', help: 'Add these commands to the local ssh command');
   parser.addFlag('verbose', abbr: 'v', help: 'More logging');
+  parser.addFlag('rsa',
+      abbr: 'r',
+      defaultsTo: false,
+      help: 'Use RSA 4096 keys rather than the default ED25519 keys');
 
   // Check the arguments
   dynamic results;
@@ -79,7 +91,9 @@ void main(List<String> args) async {
   String? homeDirectory = getHomeDirectory();
   String device = "";
   String nameSpace = '';
+  String sshrvdNameSpace = 'sshrvd';
   String port;
+  String sshrvdPort = '';
   String host = "127.0.0.1";
   String localPort;
   String sshString = "";
@@ -89,6 +103,7 @@ void main(List<String> args) async {
   int counter = 0;
   bool ack = false;
   bool ackErrors = false;
+  bool rsa = false;
   // In the future (perhaps) we can send other commands
   // Perhaps OpenVPN or shell commands
   String sendCommand = 'sshd';
@@ -143,6 +158,7 @@ void main(List<String> args) async {
 
     // Add a namespace separator just cause its neater.
     device = results['device'] + ".";
+    rsa = results['rsa'];
     nameSpace = '${device}sshnp';
 
     // Check the public key if the option was selected
@@ -162,14 +178,30 @@ void main(List<String> args) async {
     stderr.writeln(e);
     exit(1);
   }
-
-  await Process.run('ssh-keygen',
-      ['-t', 'rsa', '-b', '4096', '-f', '${sessionId}_rsa', '-q', '-N', ''],
-      workingDirectory: sshHomeDirectory);
+  if (rsa) {
+    await Process.run('ssh-keygen',
+        ['-t', 'rsa', '-b', '4096', '-f', '${sessionId}_sshnp', '-q', '-N', ''],
+        workingDirectory: sshHomeDirectory);
+  } else {
+    await Process.run(
+        'ssh-keygen',
+        [
+          '-t',
+          'ed25519',
+          '-a',
+          '100',
+          '-f',
+          '${sessionId}_sshnp',
+          '-q',
+          '-N',
+          ''
+        ],
+        workingDirectory: sshHomeDirectory);
+  }
   String sshPublicKey =
-      await File('$sshHomeDirectory${sessionId}_rsa.pub').readAsString();
+      await File('$sshHomeDirectory${sessionId}_sshnp.pub').readAsString();
   String sshPrivateKey =
-      await File('$sshHomeDirectory${sessionId}_rsa').readAsString();
+      await File('$sshHomeDirectory${sessionId}_sshnp').readAsString();
 
   // Set up a safe authorized_keys file, for the reverse ssh tunnel
   File('${sshHomeDirectory}authorized_keys').writeAsStringSync(
@@ -186,43 +218,29 @@ void main(List<String> args) async {
 
   //onboarding preference builder can be used to set onboardingService parameters
   AtOnboardingPreference atOnboardingConfig = AtOnboardingPreference()
-    //..qrCodePath = '<location of image>'
-    ..hiveStoragePath = '$homeDirectory/.sshnp/$fromAtsign/storage'
+    ..hiveStoragePath = '/tmp/.sshnp/$fromAtsign/$sessionId/storage'
     ..namespace = '${device}sshnp'
-    ..downloadPath = '$homeDirectory/.sshnp/files'
+    ..downloadPath = '/tmp/.sshnp/files'
     ..isLocalStoreRequired = true
-    ..commitLogPath = '$homeDirectory/.sshnp/$fromAtsign/storage/commitLog'
+    ..commitLogPath =
+        '$homeDirectory/.sshnp/$fromAtsign/$sessionId/storage/commitLog'
     ..fetchOfflineNotifications = false
-    //..cramSecret = '<your cram secret>';
     ..atKeysFilePath = atsignFile
     ..atProtocolEmitted = Version(2, 0, 0);
 
-  AtOnboardingService onboardingService =
-      AtOnboardingServiceImpl(fromAtsign, atOnboardingConfig);
+  AtServiceFactory? atServiceFactory;
+
+  atServiceFactory = ServiceFactoryWithNoOpSyncService();
+
+  AtOnboardingService onboardingService = AtOnboardingServiceImpl(
+      fromAtsign, atOnboardingConfig,
+      atServiceFactory: atServiceFactory);
 
   await onboardingService.authenticate();
 
   var atClient = AtClientManager.getInstance().atClient;
 
   NotificationService notificationService = atClient.notificationService;
-
-  bool syncComplete = false;
-  void onSyncDone(syncResult) {
-    logger.info("syncResult.syncStatus: ${syncResult.syncStatus}");
-    logger.info("syncResult.lastSyncedOn ${syncResult.lastSyncedOn}");
-    syncComplete = true;
-  }
-
-  // Wait for initial sync to complete
-  logger.info("Waiting for initial sync");
-  syncComplete = false;
-  // TODO Use SyncProgressListener instead
-  // ignore: deprecated_member_use
-  atClient.syncService.sync(onDone: onSyncDone);
-  while (!syncComplete) {
-    await Future.delayed(Duration(milliseconds: 100));
-  }
-  logger.info("Initial sync complete");
 
   notificationService
       .subscribe(regex: '$sessionId.$nameSpace@', shouldDecrypt: true)
@@ -268,6 +286,72 @@ void main(List<String> args) async {
   }
   var remoteUsername = toAtsignUsername.value;
 
+  // If host has an @ then contact the sshrvd service for some ports
+  if (host.startsWith('@')) {
+    String sshrvdId = uuid.v4();
+    metaData = Metadata()
+      ..isPublic = false
+      ..isEncrypted = true
+      ..namespaceAware = false;
+
+    atKey = AtKey()
+      ..key = '$sshrvdId.$sshrvdNameSpace'
+      ..sharedBy = host
+      ..sharedWith = fromAtsign
+      ..metadata = metaData;
+
+    atClient.notificationService
+        .subscribe(regex: '$sshrvdId.$sshrvdNameSpace@', shouldDecrypt: true)
+        .listen((notification) async {
+      String ipPorts = notification.value.toString();
+      List results = ipPorts.split(',');
+      host = results[0];
+      port = results[1];
+      sshrvdPort = results[2];
+      ack = true;
+    });
+
+    metaData = Metadata()
+      ..isPublic = false
+      ..isEncrypted = true
+      ..namespaceAware = false
+      ..ttr = -1
+      ..ttl = 10000;
+
+    atKey = AtKey()
+      ..key = '$device$sshrvdNameSpace'
+      ..sharedBy = fromAtsign
+      ..sharedWith = host
+      ..metadata = metaData;
+
+    try {
+      await notificationService
+          .notify(NotificationParams.forUpdate(atKey, value: sshrvdId),
+              onSuccess: (notification) {
+        logger.info('SUCCESS:$notification $sshString');
+      }, onError: (notification) {
+        logger.info('ERROR:$notification $sshString');
+      });
+    } catch (e) {
+      stderr.writeln(e.toString());
+    }
+
+    while (!ack) {
+      await Future.delayed(Duration(milliseconds: 100));
+      counter++;
+      if (counter == 100) {
+        ack = true;
+        await cleanUp(sessionId, logger);
+        stderr.writeln('sshnp: connection timeout to sshrvd $host service');
+        exit(1);
+      }
+    }
+    ack = false;
+// Connect to rz point using background process
+// This way this program can exit
+    unawaited(Process.run('$sshnpDir/sshrv', [host, sshrvdPort]));
+  }
+
   metaData = Metadata()
     ..isPublic = false
     ..isEncrypted = true
@@ -310,7 +394,7 @@ void main(List<String> args) async {
   if (sendSshPublicKey != 'false') {
     try {
       String toSshPublicKey = await File(sendSshPublicKey).readAsString();
-      if (!toSshPublicKey.startsWith('ssh-rsa')) {
+      if (!toSshPublicKey.startsWith('ssh-')) {
         throw ('$sshHomeDirectory$sendSshPublicKey does not look like a public key file');
       }
       await notificationService
@@ -326,6 +410,14 @@ void main(List<String> args) async {
       await cleanUp(sessionId, logger);
       exit(1);
     }
+  }
+
+  // find a spare localport
+  if (localPort == '0') {
+    ServerSocket serverSocket =
+        await ServerSocket.bind(InternetAddress.loopbackIPv4, 0);
+    localPort = serverSocket.port.toString();
+    await serverSocket.close();
   }
 
   metaData = Metadata()

@@ -1,7 +1,7 @@
 import 'dart:io';
 
-// Get the home directory or null if unknown.
+//Print version number
 void version() {
-  final String version = "3.0.0";
+  final String version = "3.1.0";
   stdout.writeln('Version : $version');
 }
