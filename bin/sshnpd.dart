@@ -138,8 +138,9 @@ Future<void> _main(List<String> args) async {
     ..fetchOfflineNotifications = false
     ..atKeysFilePath = atsignFile
     ..atProtocolEmitted = Version(2, 0, 0);
+  
   nameSpace = atOnboardingConfig.namespace!;
-
+  
   AtOnboardingService onboardingService =
       AtOnboardingServiceImpl(deviceAtsign, atOnboardingConfig);
 
