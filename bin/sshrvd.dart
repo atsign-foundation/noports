@@ -49,7 +49,7 @@ void main(List<String> args) async {
       abbr: 'm',
       defaultsTo: 'open',
       mandatory: false,
-      help: 'Managers atSign, that sshrvd will accept requests from');
+      help: 'Managers atSign that sshrvd will accept requests from. Default is any atSign can use sshrvd');
   parser.addOption('ip',
       abbr: 'i', mandatory: true, help: 'FQDN/IP address sent to clients');
 
