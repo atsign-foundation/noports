@@ -1,4 +1,6 @@
 #!/bin/bash
+# allow machine to bring up network
+sleep 10
 export USER=`whoami` 
 while true
 do
