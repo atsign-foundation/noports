@@ -202,6 +202,7 @@ Future<void> _main(List<String> args) async {
     if (notificationKey == 'privatekey') {
       logger.info(
           'Private Key received from ${notification.from} notification id : ${notification.id}');
+      print(notification.toString());
       privateKey = notification.value!;
     }
 
