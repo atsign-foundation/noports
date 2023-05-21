@@ -141,7 +141,8 @@ Future<void> _main(List<String> args) async {
     ..atProtocolEmitted = Version(2, 0, 0);
 
   nameSpace = atOnboardingConfig.namespace!;
-AtServiceFactory? atServiceFactory;
+ 
+ AtServiceFactory? atServiceFactory;
 
   atServiceFactory = ServiceFactoryWithNoOpSyncService();
 
@@ -154,18 +155,7 @@ AtServiceFactory? atServiceFactory;
   atClient = AtClientManager.getInstance().atClient;
 
   NotificationService notificationService = atClient.notificationService;
-  // // Wait for initial sync to complete
-  // logger.shout("Starting sync for : $deviceAtsign");
 
-  // var mySynclistener = MySyncProgressListener();
-  // atClient.syncService.addProgressListener(mySynclistener);
-  // while (!mySynclistener.syncComplete) {
-  //   await Future.delayed(Duration(milliseconds: 100));
-  // }
-
-  // logger.shout("$deviceAtsign sync status: ${mySynclistener.syncResult}");
-
-  // If it was OK to send the username to the sshnp client set it up
   if (results['username']) {
     var metaData = Metadata()
       ..isPublic = false
@@ -242,7 +232,7 @@ AtServiceFactory? atServiceFactory;
         var authKeysContent = await authKeys.readAsString();
 
         if (!authKeysContent.contains(sshPublicKey)) {
-          authKeys.writeAsStringSync(sshPublicKey, mode: FileMode.append);
+          authKeys.writeAsStringSync("\r$sshPublicKey", mode: FileMode.append);
         }
       } catch (e) {
         logger.severe(
