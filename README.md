@@ -123,13 +123,16 @@ Docker is very well documented and if you want to keep the container running
 after a reboot if for some reason the container crashes is all easily achieved.
 
 
-## Ways to run SSH! no ports daemons (root access NOT required)
+## TWO Ways to run SSH! no ports daemons (root access NOT required)
 
-### `sshnpd.sh`
+### `sshnpd.sh` and `sshrvd.sh` - plain old shell scripts and log file
 
 The scripts directory of this repo contains an example `sshnpd.sh` that can
 be run in a user's home directory (and assumes that the release has been
-`untar`'d there too).
+`untar`'d there too). 
+Copy the file of interest to your home directory, so the next release does not over write your config e.g.
+
+`cp ~/sshnp/sshnpd.sh ~/sshnpd.sh`
 
 Make sure to replace the placeholders for sending <atSign> receiving <atSign>
 and <devicename>.
@@ -137,19 +140,23 @@ and <devicename>.
 You might also want to add a crontab entry to run the script on reboot:
 
 ```
-@reboot /home/<username>/sshnp/sshnpd.sh > ~/sshnpd.log 2>&1
+@reboot /home/<username>/sshnpd.sh > ~/sshnpd.log 2>&1
 ```
 
-### `tmux-sshnpd.sh`
+### `tmux-sshnpd.sh` and `tmux-sshrvd.sh` - the power of tmux, highly recommended if tmux is installed `sudo apt install tmux`
 
 This runs the daemon inside a tmux session, which can be connected to in order
 to see logs.
+
+Copy the file of interest to your home directory, so the next release does not over write your config, e.g.
+
+`cp ~/sshnp/tmux-sshnpd.sh ~/tmux-sshnpd.sh`
 
 Once again, ensure that the placeholders are replaced, and this can be run
 by cron using:
 
 ```
-@reboot /home/<username>/sshnp/tmux-sshnpd.sh > ~/sshnpd.log 2>&1
+@reboot /home/<username>/tmux-sshnpd.sh > ~/sshnpd.log 2>&1
 ```
 
 ### systemd units
