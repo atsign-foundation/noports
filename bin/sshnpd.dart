@@ -164,6 +164,7 @@ Future<void> _main(List<String> args) async {
     var metaData = Metadata()
       ..isPublic = false
       ..isEncrypted = true
+      ..ttr = -1
       ..namespaceAware = true;
 
     var atKey = AtKey()
@@ -175,6 +176,9 @@ Future<void> _main(List<String> args) async {
 
     await atClient.put(atKey, username);
   }
+
+
+  //publickey@impressive1
 
   // Keep an eye on connectivity and report failures if we see them
   ConnectivityListener().subscribe().listen((isConnected) {
@@ -190,14 +194,14 @@ Future<void> _main(List<String> args) async {
   String privateKey = "";
   String sshPublicKey = "";
 
-  notificationService
-      .subscribe(regex: '$device.$nameSpace@', shouldDecrypt: false)
-      .listen(((notification) async {
+  // notificationService
+  //     .subscribe(regex: '$device.$nameSpace@', shouldDecrypt: false)
+  //     .listen(((notification) async {
 
-    print(notification.toString());
+  //   print(notification.toString());
 
 
-      }));
+  //     }));
 
   notificationService
       .subscribe(regex: '$device.$nameSpace@', shouldDecrypt: true)
