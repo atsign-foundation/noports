@@ -125,7 +125,7 @@ after a reboot if for some reason the container crashes is all easily achieved.
 
 ## TWO Ways to run SSH! no ports daemons (root access NOT required)
 
-### `sshnpd.sh` - plain old shell script and log file
+### `sshnpd.sh` and `sshrvd.sh` - plain old shell scripts and log file
 
 The scripts directory of this repo contains an example `sshnpd.sh` that can
 be run in a user's home directory (and assumes that the release has been
@@ -143,7 +143,7 @@ You might also want to add a crontab entry to run the script on reboot:
 @reboot /home/<username>/sshnpd.sh > ~/sshnpd.log 2>&1
 ```
 
-### `tmux-sshnpd.sh` - the power of tmux, highly recommended if tmux is installed `sudo apt install tmux`
+### `tmux-sshnpd.sh` and `tmux-sshrvd.sh` - the power of tmux, highly recommended if tmux is installed `sudo apt install tmux`
 
 This runs the daemon inside a tmux session, which can be connected to in order
 to see logs.
