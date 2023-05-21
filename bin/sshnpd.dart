@@ -192,6 +192,7 @@ Future<void> _main(List<String> args) async {
   notificationService
       .subscribe(regex: '$device.$nameSpace@', shouldDecrypt: true)
       .listen(((notification) async {
+      print(notification.toString());
     String notificationKey = notification.key
         .replaceAll('${notification.to}:', '')
         .replaceAll('.$device.$nameSpace${notification.from}', '')
@@ -202,7 +203,6 @@ Future<void> _main(List<String> args) async {
     if (notificationKey == 'privatekey') {
       logger.info(
           'Private Key received from ${notification.from} notification id : ${notification.id}');
-      print(notification.toString());
       privateKey = notification.value!;
     }
 
