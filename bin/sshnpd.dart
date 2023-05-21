@@ -20,6 +20,7 @@ import 'package:sshnoports/home_directory.dart';
 import 'package:sshnoports/check_non_ascii.dart';
 import 'package:sshnoports/check_file_exists.dart';
 import 'package:sshnoports/sync_listener.dart';
+import 'package:sshnoports/service_factories.dart';
 
 void main(List<String> args) async {
   try {
@@ -140,24 +141,29 @@ Future<void> _main(List<String> args) async {
     ..atProtocolEmitted = Version(2, 0, 0);
 
   nameSpace = atOnboardingConfig.namespace!;
+AtServiceFactory? atServiceFactory;
 
-  AtOnboardingService onboardingService =
-      AtOnboardingServiceImpl(deviceAtsign, atOnboardingConfig);
+  atServiceFactory = ServiceFactoryWithNoOpSyncService();
+
+  AtOnboardingService onboardingService = AtOnboardingServiceImpl(
+      deviceAtsign, atOnboardingConfig,
+      atServiceFactory: atServiceFactory);
 
   await onboardingService.authenticate();
 
   atClient = AtClientManager.getInstance().atClient;
 
-  // Wait for initial sync to complete
-  logger.shout("Starting sync for : $deviceAtsign");
+  NotificationService notificationService = atClient.notificationService;
+  // // Wait for initial sync to complete
+  // logger.shout("Starting sync for : $deviceAtsign");
 
-  var mySynclistener = MySyncProgressListener();
-  atClient.syncService.addProgressListener(mySynclistener);
-  while (!mySynclistener.syncComplete) {
-    await Future.delayed(Duration(milliseconds: 100));
-  }
+  // var mySynclistener = MySyncProgressListener();
+  // atClient.syncService.addProgressListener(mySynclistener);
+  // while (!mySynclistener.syncComplete) {
+  //   await Future.delayed(Duration(milliseconds: 100));
+  // }
 
-  logger.shout("$deviceAtsign sync status: ${mySynclistener.syncResult}");
+  // logger.shout("$deviceAtsign sync status: ${mySynclistener.syncResult}");
 
   // If it was OK to send the username to the sshnp client set it up
   if (results['username']) {
@@ -173,7 +179,18 @@ Future<void> _main(List<String> args) async {
       ..namespace = nameSpace
       ..metadata = metaData;
 
-    await atClient.put(atKey, username);
+    //await atClient.notificationService.(atKey, username);
+        try {
+      await notificationService
+          .notify(NotificationParams.forUpdate(atKey, value: username),
+              onSuccess: (notification) {
+        logger.info('SUCCESS:$notification $username');
+      }, onError: (notification) {
+        logger.info('ERROR:$notification $username');
+      });
+    } catch (e) {
+      stderr.writeln(e.toString());
+    }
   }
 
   // Keep an eye on connectivity and report failures if we see them
@@ -185,7 +202,6 @@ Future<void> _main(List<String> args) async {
     }
   });
 
-  NotificationService notificationService = atClient.notificationService;
 
   String privateKey = "";
   String sshPublicKey = "";
