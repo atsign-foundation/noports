@@ -9,10 +9,10 @@ environment:
 
 dependencies: 
   args: ^2.4.0
-  at_client: 3.0.58
+  at_client: 3.0.59
   at_lookup: ^3.0.35
   at_onboarding_cli: ^1.2.6
-  at_utils: ^3.0.12
+  at_utils: 3.0.12
   crypton: ^2.1.0
   dartssh2: ^2.8.2
   ssh_key: ">=0.7.1 <0.9.0"
