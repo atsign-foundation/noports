@@ -130,7 +130,7 @@ after a reboot if for some reason the container crashes is all easily achieved.
 The scripts directory of this repo contains an example `sshnpd.sh` that can
 be run in a user's home directory (and assumes that the release has been
 `untar`'d there too). 
-Copy the file to your home directory, so the next release does not over write your config.
+Copy the file of interest to your home directory, so the next release does not over write your config e.g.
 
 `cp ~/sshnp/sshnpd.sh ~/sshnpd.sh`
 
@@ -148,7 +148,7 @@ You might also want to add a crontab entry to run the script on reboot:
 This runs the daemon inside a tmux session, which can be connected to in order
 to see logs.
 
-Copy the file to your home directory, so the next release does not over write your config.
+Copy the file of interest to your home directory, so the next release does not over write your config, e.g.
 
 `cp ~/sshnp/tmux-sshnpd.sh ~/tmux-sshnpd.sh`
 
