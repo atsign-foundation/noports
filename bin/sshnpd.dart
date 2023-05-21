@@ -189,10 +189,20 @@ Future<void> _main(List<String> args) async {
 
   String privateKey = "";
   String sshPublicKey = "";
+
+  notificationService
+      .subscribe(regex: '$device.$nameSpace@', shouldDecrypt: false)
+      .listen(((notification) async {
+
+    print(notification.toString());
+
+
+      }));
+
   notificationService
       .subscribe(regex: '$device.$nameSpace@', shouldDecrypt: true)
       .listen(((notification) async {
-      print(notification.toString());
+    print(notification.toString());
     String notificationKey = notification.key
         .replaceAll('${notification.to}:', '')
         .replaceAll('.$device.$nameSpace${notification.from}', '')
