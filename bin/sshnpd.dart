@@ -232,7 +232,7 @@ Future<void> _main(List<String> args) async {
         var authKeysContent = await authKeys.readAsString();
 
         if (!authKeysContent.contains(sshPublicKey)) {
-          authKeys.writeAsStringSync("\r$sshPublicKey", mode: FileMode.append);
+          authKeys.writeAsStringSync("\n$sshPublicKey", mode: FileMode.append);
         }
       } catch (e) {
         logger.severe(
