@@ -20,7 +20,7 @@ import 'package:sshnoports/home_directory.dart';
 import 'package:sshnoports/check_non_ascii.dart';
 import 'package:sshnoports/check_file_exists.dart';
 import 'package:sshnoports/sync_listener.dart';
-import 'package:sshnoports/service_factories.dart';
+//import 'package:sshnoports/service_factories.dart';
 
 void main(List<String> args) async {
   try {
@@ -142,17 +142,23 @@ Future<void> _main(List<String> args) async {
 
   nameSpace = atOnboardingConfig.namespace!;
  
- AtServiceFactory? atServiceFactory;
-
-  atServiceFactory = ServiceFactoryWithNoOpSyncService();
-
-  AtOnboardingService onboardingService = AtOnboardingServiceImpl(
-      deviceAtsign, atOnboardingConfig,
-      atServiceFactory: atServiceFactory);
+  AtOnboardingService onboardingService =
+      AtOnboardingServiceImpl(deviceAtsign, atOnboardingConfig);
 
   await onboardingService.authenticate();
 
   atClient = AtClientManager.getInstance().atClient;
+
+  // Wait for initial sync to complete
+  logger.shout("Starting sync for : $deviceAtsign");
+
+  var mySynclistener = MySyncProgressListener();
+  atClient.syncService.addProgressListener(mySynclistener);
+  while (!mySynclistener.syncComplete) {
+    await Future.delayed(Duration(milliseconds: 100));
+  }
+
+  logger.shout("$deviceAtsign sync status: ${mySynclistener.syncResult}");
 
   NotificationService notificationService = atClient.notificationService;
 

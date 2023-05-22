@@ -20,7 +20,8 @@ import 'package:sshnoports/home_directory.dart';
 import 'package:sshnoports/check_non_ascii.dart';
 import 'package:sshnoports/cleanup_sshnp.dart';
 import 'package:sshnoports/check_file_exists.dart';
-import 'package:sshnoports/service_factories.dart';
+import 'package:sshnoports/sync_listener.dart';
+//import 'package:sshnoports/service_factories.dart';
 
 void main(List<String> args) async {
   final AtSignLogger logger = AtSignLogger(' sshnp ');
@@ -83,6 +84,7 @@ void main(List<String> args) async {
       help: 'Use RSA 4096 keys rather than the default ED25519 keys');
 
   // Check the arguments
+  late AtClient? atClient;
   dynamic results;
   String? username;
   String atsignFile;
@@ -228,17 +230,25 @@ void main(List<String> args) async {
     ..atKeysFilePath = atsignFile
     ..atProtocolEmitted = Version(2, 0, 0);
 
-  AtServiceFactory? atServiceFactory;
-
-  atServiceFactory = ServiceFactoryWithNoOpSyncService();
-
-  AtOnboardingService onboardingService = AtOnboardingServiceImpl(
-      fromAtsign, atOnboardingConfig,
-      atServiceFactory: atServiceFactory);
+  AtOnboardingService onboardingService =
+      AtOnboardingServiceImpl(fromAtsign, atOnboardingConfig);
 
   await onboardingService.authenticate();
 
-  var atClient = AtClientManager.getInstance().atClient;
+  atClient = AtClientManager.getInstance().atClient;
+
+  // Wait for initial sync to complete
+  logger.info("Starting sync for : $fromAtsign");
+
+  var mySynclistener = MySyncProgressListener();
+  atClient.syncService.addProgressListener(mySynclistener);
+  while (!mySynclistener.syncComplete) {
+    await Future.delayed(Duration(milliseconds: 100));
+  }
+
+  logger.info("$fromAtsign sync status: ${mySynclistener.syncResult}");
+
+  atClient = AtClientManager.getInstance().atClient;
 
   NotificationService notificationService = atClient.notificationService;
 
