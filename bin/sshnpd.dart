@@ -160,6 +160,7 @@ Future<void> _main(List<String> args) async {
     var metaData = Metadata()
       ..isPublic = false
       ..isEncrypted = true
+      ..ttr=-1
       ..namespaceAware = true;
 
     var atKey = AtKey()
