@@ -15,16 +15,17 @@ import 'package:socket_connector/socket_connector.dart';
 import 'package:version/version.dart';
 
 // local packages
-import 'package:sshnoports/service_factories.dart';
+//import 'package:sshnoports/service_factories.dart';
 import 'package:sshnoports/version.dart';
 import 'package:sshnoports/home_directory.dart';
 import 'package:sshnoports/check_file_exists.dart';
+import 'package:sshnoports/sync_listener.dart';
 
 void main(List<String> args) async {
   final AtSignLogger logger = AtSignLogger(' sshrvd ');
   logger.hierarchicalLoggingEnabled = true;
   logger.logger.level = Level.SHOUT;
-
+  late AtClient atClient;
   String session = '';
   String atSign = 'unknown';
   String forAtsign = '';
@@ -98,9 +99,7 @@ void main(List<String> args) async {
 
   snoop = results['snoop'];
 
-  AtServiceFactory? atServiceFactory;
 
-  atServiceFactory = ServiceFactoryWithNoOpSyncService();
 
   //onboarding preference builder can be used to set onboardingService parameters
   AtOnboardingPreference atOnboardingConfig = AtOnboardingPreference()
@@ -114,13 +113,25 @@ void main(List<String> args) async {
     ..atKeysFilePath = atsignFile
     ..atProtocolEmitted = Version(2, 0, 0);
 
-  AtOnboardingService onboardingService = AtOnboardingServiceImpl(
-      atSign, atOnboardingConfig,
-      atServiceFactory: atServiceFactory);
+  AtOnboardingService onboardingService =
+      AtOnboardingServiceImpl(atSign, atOnboardingConfig);
 
   await onboardingService.authenticate();
 
-  var atClient = AtClientManager.getInstance().atClient;
+   atClient = AtClientManager.getInstance().atClient;
+
+  // Wait for initial sync to complete
+  logger.shout("Starting sync for : $atSign");
+
+  var mySynclistener = MySyncProgressListener();
+  atClient.syncService.addProgressListener(mySynclistener);
+  while (!mySynclistener.syncComplete) {
+    await Future.delayed(Duration(milliseconds: 100));
+  }
+
+  logger.shout("$atSign sync status: ${mySynclistener.syncResult}");
+
+  atClient = AtClientManager.getInstance().atClient;
 
   NotificationService notificationService = atClient.notificationService;
 

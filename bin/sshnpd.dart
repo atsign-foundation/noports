@@ -20,6 +20,7 @@ import 'package:sshnoports/home_directory.dart';
 import 'package:sshnoports/check_non_ascii.dart';
 import 'package:sshnoports/check_file_exists.dart';
 import 'package:sshnoports/sync_listener.dart';
+//import 'package:sshnoports/service_factories.dart';
 
 void main(List<String> args) async {
   try {
@@ -140,7 +141,7 @@ Future<void> _main(List<String> args) async {
     ..atProtocolEmitted = Version(2, 0, 0);
 
   nameSpace = atOnboardingConfig.namespace!;
-
+ 
   AtOnboardingService onboardingService =
       AtOnboardingServiceImpl(deviceAtsign, atOnboardingConfig);
 
@@ -159,11 +160,13 @@ Future<void> _main(List<String> args) async {
 
   logger.shout("$deviceAtsign sync status: ${mySynclistener.syncResult}");
 
-  // If it was OK to send the username to the sshnp client set it up
+  NotificationService notificationService = atClient.notificationService;
+
   if (results['username']) {
     var metaData = Metadata()
       ..isPublic = false
       ..isEncrypted = true
+      ..ttr=-1
       ..namespaceAware = true;
 
     var atKey = AtKey()
@@ -173,7 +176,18 @@ Future<void> _main(List<String> args) async {
       ..namespace = nameSpace
       ..metadata = metaData;
 
-    await atClient.put(atKey, username);
+    //await atClient.notificationService.(atKey, username);
+        try {
+      await notificationService
+          .notify(NotificationParams.forUpdate(atKey, value: username),
+              onSuccess: (notification) {
+        logger.info('SUCCESS:$notification $username');
+      }, onError: (notification) {
+        logger.info('ERROR:$notification $username');
+      });
+    } catch (e) {
+      stderr.writeln(e.toString());
+    }
   }
 
   // Keep an eye on connectivity and report failures if we see them
@@ -185,7 +199,6 @@ Future<void> _main(List<String> args) async {
     }
   });
 
-  NotificationService notificationService = atClient.notificationService;
 
   String privateKey = "";
   String sshPublicKey = "";
@@ -226,7 +239,7 @@ Future<void> _main(List<String> args) async {
         var authKeysContent = await authKeys.readAsString();
 
         if (!authKeysContent.contains(sshPublicKey)) {
-          authKeys.writeAsStringSync(sshPublicKey, mode: FileMode.append);
+          authKeys.writeAsStringSync("\n$sshPublicKey", mode: FileMode.append);
         }
       } catch (e) {
         logger.severe(
