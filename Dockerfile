@@ -31,4 +31,4 @@ RUN apt-get update && apt-get install -y openssh-server sudo iputils-ping iprout
 COPY --from=buildimage --chown=${USER}:${USER} /usr/local/at/sshnpd /usr/local/at/
 WORKDIR ${HOMEDIR}
 # USER atsign 
-ENTRYPOINT ["/${USER}/.startup.sh"]
+ENTRYPOINT ["/atsign/.startup.sh"]
