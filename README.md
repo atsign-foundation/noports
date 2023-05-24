@@ -47,7 +47,7 @@ Remember to start the daemon on start up using rc.local script or similar, examp
 --device <iot_device_name> -u -s
 ```
 
-Once that has started up you can run the client code from another machine. The client machine has to be running sshd even if only listening on localhost on port 22.
+Once that has started up you can run the client code from another machine. The client machine has to be running sshd even if only listening on localhost on an open port.
 
 ```
 ./sshnp --from <@your_manager_atsign> --to <@your_devices_atsign>  \
