@@ -67,9 +67,11 @@ Future<void> _main(List<String> arguments) async {
 
     final ArgResults argResults = parser.parse(arguments);
     ProcessResult pres;
-    // 1. make ~/.ssh/, ~/sshnp/bin, ~/.atsign/keys, /usr/local/at directories if they don't exist
-    pres = await runCommand('mkdir -p $homeDir/.ssh $homeDir/.sshnp/bin $homeDir/.atsign/keys /usr/local/at /run/sshd');
-    stdout.writeln('done mkdir -p $homeDir/.ssh $homeDir/.sshnp $homeDir/.atsign/keys /usr/local/at /run/sshd| pres.exitcode: ${pres.exitCode}');
+    String cmd;
+    // 1. make ~/.ssh/, ~/.sshnp/bin, ~/.atsign/keys, /usr/local/at /run/sshd directories if they don't exist
+    cmd = 'mkdir -p $sshHomeDir $sshnpHomeBinDir $atSignKeysDir $usrLocalAtDir $runSshdDir';
+    pres = await runCommand(cmd);
+    stdout.writeln('done $cmd | pres.exitcode: ${pres.exitCode}');
 
     // 2. copy over files to ~/.sshnp/bin directory
     for (final String file in filesToCopyOverToSshnpDir) {
@@ -77,14 +79,15 @@ Future<void> _main(List<String> arguments) async {
       if (!File(file).existsSync()) {
         continue;
       }
-
-      pres = await runCommand('cp $file $homeDir/.sshnp/bin');
+      cmd = 'cp $file $sshnpHomeBinDir';
+      pres = await runCommand(cmd);
     }
-    stdout.writeln('done cp files $homeDir/.sshnp/bin | pres.exitcode: ${pres.exitCode}');
+    stdout.writeln('done cp files $sshnpHomeBinDir | pres.exitcode: ${pres.exitCode}');
 
     // 3. copy sshnpd to /usr/local/at
-    pres = await runCommand('cp $homeDir/.sshnp/bin/sshnpd /usr/local/at');
-    stdout.writeln('cp $homeDir/.sshnp/bin/sshnpd /usr/local/at | pres.exitcode: ${pres.exitCode}');
+    cmd = 'cp $homeDir/.sshnp/bin/sshnpd /usr/local/at';
+    pres = await runCommand(cmd);
+    stdout.writeln('cp $cmd | pres.exitcode: ${pres.exitCode}');
 
     // 4. write custom .startup.sh and write it to `~`
     final String startupShScriptString = 
@@ -94,7 +97,7 @@ ssh-keygen -A
 /usr/sbin/sshd -D -o "ListenAddress 127.0.0.1" -o "PasswordAuthentication no"  &
 while true
 do
-/usr/local/at/sshnpd -a ${argResults['atsign']} -m ${argResults['manager']} ${argResults['device'] != null ? '-d ${argResults['device']}' : ''} ${argResults['sshpublickey'] ? '-s' : ''} ${argResults['username'] ? '-u' : ''} ${argResults['verbose'] ? '-v' : ''}${argResults['keyFile'] != null ? '-k ${argResults['keyFile']}' : ''}
+$usrLocalAtDir/sshnpd -a ${argResults['atsign']} -m ${argResults['manager']} ${argResults['device'] != null ? '-d ${argResults['device']}' : ''} ${argResults['sshpublickey'] ? '-s' : ''} ${argResults['username'] ? '-u' : ''} ${argResults['verbose'] ? '-v' : ''}${argResults['keyFile'] != null ? '-k ${argResults['keyFile']}' : ''}
 sleep 3
 done
 ''';
@@ -106,13 +109,19 @@ done
     stdout.writeln('$homeDir/.startup.sh exists?: ${startupShScript.existsSync()}');
 
     // also chmod 755 ~/.startup.sh
-    pres = await runCommand('chmod 755 $homeDir/.startup.sh');
-    stdout.writeln('chmod 755 $homeDir/.startup.sh | pres.exitcode: ${pres.exitCode}');
+    cmd = 'chmod 755 $homeDir/.startup.sh';
+    pres = await runCommand(cmd);
+    stdout.writeln('done $cmd | pres.exitcode: ${pres.exitCode}');
     stdout.writeln('cat $homeDir/.startup.sh: \n---\n${(await runCommand('cat $homeDir/.startup.sh')).stdout}\n---\n');
 
     // 5. `touch ~/.ssh/authorized_keys` and `chmod 600 ~/.ssh/authorized_keys`
-    pres = await runCommand('touch $homeDir/.ssh/authorized_keys');
-    stdout.writeln('touch $homeDir/.ssh/authorized_keys, pres.exitcode: ${pres.exitCode}');
+    cmd = 'touch $homeDir/.ssh/authorized_keys';
+    pres = await runCommand(cmd);
+    stdout.writeln('$cmd | pres.exitcode: ${pres.exitCode}');
+
+    cmd = 'chmod 600 $homeDir/.ssh/authorized_keys';
+    pres = await runCommand(cmd);
+    stdout.writeln('$cmd | pres.exitcode: ${pres.exitCode}');
 
     pres = await runCommand('chmod 600 $homeDir/.ssh/authorized_keys');
     stdout.writeln('chmod 600 $homeDir/.ssh/authorized_keys, pres.exitcode: ${pres.exitCode}');
