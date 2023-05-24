@@ -38,6 +38,7 @@ device name using the --device argument.
 
 Once in place you can start up the daemon first on the remote device.
 Remember to start the daemon on start up using rc.local script or similar, examples can be found in the scripts directory in this repo and in the release tar files.
+The daemon machine has to be running sshd even if only listening on localhost on an open port.
 
 `sshnpd.sh` : bash script
 `tmux-sshnpd.sh` : bash script that uses `tmux` to provide realtime logging/view of the running daemon
