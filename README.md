@@ -159,7 +159,7 @@ by cron using:
 @reboot /home/<username>/tmux-sshnpd.sh > ~/sshnpd.log 2>&1
 ```
 
-### systemd units
+## systemd units
 
 The systemd directory contains an example unit file with its own
 [README](systemd/README.md).
