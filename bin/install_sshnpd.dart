@@ -23,6 +23,15 @@ const List<String> filesToCopyOverToSshnpDir = [
   'install_sshnpd'
 ];
 
+const String usrLocalAtDir = '/usr/local/at';       // /usr/local/at
+const String runSshdDir = '/run/sshd';              // /run/sshd
+
+late String? homeDir;  // ~
+
+final String sshHomeDir = '$homeDir/.ssh';                  // ~/.ssh
+final String atSignKeysDir = '$homeDir/.atsign/keys';       // ~/.atsign/keys
+final String sshnpHomeBinDir = '$homeDir/.atsign/keys';    // ~/.sshnp/bin
+
 // Usage: "./install_sshnpd --help"
 // ./install_sshnpd -a @66dear32 -m @lemon -d lemon -s -u -v
 void main(List<String> arguments) async {
@@ -50,7 +59,7 @@ Future<void> _main(List<String> arguments) async {
   parser.addFlag('verbose', abbr: 'v', help: 'More logging');
 
   try {
-    final String? homeDir = getHomeDirectory();
+    homeDir = getHomeDirectory();
     if (homeDir == null) {
       throw Exception('Could not get home directory');
     }
