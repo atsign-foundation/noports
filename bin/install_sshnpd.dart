@@ -2,7 +2,6 @@ import 'dart:io';
 
 import 'package:args/args.dart';
 import 'package:io/ansi.dart';
-import 'package:sshnoports/home_directory.dart';
 import 'package:sshnoports/process_util.dart';
 import 'package:sshnoports/version.dart';
 
@@ -31,6 +30,8 @@ const List<String> filesToCopyOverToSshnpDir = [
   'install_sshnpd'
 ];
 
+const String user = 'atsign'; // TODO: get this dynamically from installs cript
+
 const String runSshdDir = '/run/sshd'; // /run/sshd
 
 late String? homeDir; // ~
@@ -52,7 +53,7 @@ void main(List<String> arguments) async {
   try {
     await _main(arguments);
   } catch (error, stackTrace) {
-    stderr.writeln('sshnpd: ${error.toString()}');
+    stderr.writeln('install_sshnpd: ${error.toString()}');
     stderr.writeln('stack trace: ${stackTrace.toString()}');
     await stderr.flush().timeout(Duration(milliseconds: 100));
     exit(1);
@@ -77,7 +78,8 @@ Future<void> _main(List<String> arguments) async {
   parser.addFlag('verbose', abbr: 'v', help: 'More logging');
 
   try {
-    homeDir = getHomeDirectory();
+    // homeDir = getHomeDirectory();
+    homeDir = '/atsign';
     if (homeDir == null) {
       throw Exception('Could not get home directory...');
     }
@@ -93,17 +95,17 @@ Future<void> _main(List<String> arguments) async {
 
     // 2. copy over all files to ~/sshnp directory
     // 2a. check if one of the files exist in ~/sshnp, overwrite? exit if no.
-    for (final String file in filesToCopyOverToSshnpDir) {
-      if (File('$sshnpHomeDir/$file').existsSync()) {
-        stdout.writeln(
-            '[${lightRed.wrap('\u2717')}] Sshnp was already installed. Do you want to overwrite it? (y/n)');
-        final String? response = stdin.readLineSync();
-        if (response == null || response.toLowerCase() != 'y') {
-          stdout.writeln('[${lightRed.wrap('\u2717')}] Aborting installation...');
-          exit(1);
-        }
-      }
-    }
+    // for (final String file in filesToCopyOverToSshnpDir) {
+    //   if (File('$sshnpHomeDir/$file').existsSync()) {
+    //     stdout.writeln(
+    //         '[${lightRed.wrap('\u2717')}] $file was already installed. Do you want to overwrite it? (y/n)');
+    //     final String? response = stdin.readLineSync();
+    //     if (response == null || response.toLowerCase().trim() != 'y') {
+    //       stdout.writeln('[${lightRed.wrap('\u2717')}] Aborting installation...');
+    //       exit(1);
+    //     }
+    //   }
+    // }
 
     // 2b. copy over all files to ~/sshnp
     for (final String file in filesToCopyOverToSshnpDir) {
@@ -155,8 +157,9 @@ if [ ! -f \$SSHNPD ]; then
     exit 1
 fi
 
-echo "Health check passed"
+echo "$sshnpHomeDir/healthcheck.sh passed"
 ''';
+
     final File healthCheckShScript = File('$sshnpHomeDir/healthcheck.sh');
     await healthCheckShScript.writeAsString(healthCheckShScriptString);
 
@@ -165,12 +168,11 @@ echo "Health check passed"
 #!/bin/bash
 # run $sshnpHomeDir/healthcheck.sh
 sh $sshnpHomeDir/healthcheck.sh
-
 ssh-keygen -A
 /usr/sbin/sshd -D -o "ListenAddress 127.0.0.1" -o "PasswordAuthentication no"  &
 while true
 do
-$sshnpHomeDir/sshnpd -a ${argResults['atsign']} -m ${argResults['manager']} ${argResults['device'] != null ? '-d ${argResults['device']}' : ''} ${argResults['sshpublickey'] ? '-s' : ''} ${argResults['username'] ? '-u' : ''} ${argResults['verbose'] ? '-v' : ''}${argResults['keyFile'] != null ? '-k ${argResults['keyFile']}' : ''}
+sudo -u $user $sshnpHomeDir/sshnpd -a ${argResults['atsign']} -m ${argResults['manager']} ${argResults['device'] != null ? '-d ${argResults['device']}' : ''} ${argResults['sshpublickey'] ? '-s' : ''} ${argResults['username'] ? '-u' : ''} ${argResults['verbose'] ? '-v' : ''}${argResults['keyFile'] != null ? '-k ${argResults['keyFile']}' : ''}
 sleep 3
 done
 ''';
