@@ -8,7 +8,7 @@ norm_atsign() {
   INPUT=${!KEY} # Get the value of the variable
   # Add @ if missing
   shopt -s extglob
-  ATSIGN=${INPUT/#?(\@)/\@}
+  ATSIGN=${INPUT/#?(\@)/\@} # Add @ if missing
   shopt -u extglob
   export "${KEY}"="$ATSIGN" # Set the variable to new value
 }
