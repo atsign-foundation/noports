@@ -12,7 +12,6 @@ import 'package:args/args.dart';
 import 'package:logging/logging.dart';
 import 'package:uuid/uuid.dart';
 import 'package:version/version.dart';
-import "package:path/path.dart" show dirname;
 
 // local packages
 import 'package:sshnoports/version.dart';
@@ -35,8 +34,16 @@ void main(List<String> args) async {
     await cleanUp(sessionId, logger);
     exit(1);
   });
-  String sshnpDir = (dirname(Platform.script.toString()));
-  sshnpDir = sshnpDir.replaceAll('file://', '');
+  
+  // Get location of running sshnp so
+  // sshrv can be run even if sshnp was found
+  // by a PATH location rather than fully qualified
+  // *Note sshnp and sshrv need to be compiled to exe before use as result.
+  String sshnpDir = Platform.resolvedExecutable;
+  String pathSeparator = Platform.pathSeparator;
+  List<String> pathList = sshnpDir.split(pathSeparator);
+  pathList.removeLast();
+  sshnpDir = pathList.join(pathSeparator) + pathSeparator;
 
   var parser = ArgParser();
   // Basic arguments
@@ -55,8 +62,7 @@ void main(List<String> args) async {
   parser.addOption('host',
       abbr: 'h',
       mandatory: true,
-      help:
-          'atSign of sshrvd daemon or FQDN/IP address to connect back to ');
+      help: 'atSign of sshrvd daemon or FQDN/IP address to connect back to ');
   parser.addOption('port',
       abbr: 'p',
       mandatory: false,
