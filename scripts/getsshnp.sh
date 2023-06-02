@@ -1,5 +1,6 @@
 #!/bin/bash
 
+SSHNP_DEV_MODE=false;
 BINARY_NAME="sshnp";
 
 norm_atsign() {
@@ -135,12 +136,12 @@ make_dirs() {
            "/usr/local/bin";
 
   chown -R "$SUDO_USER" "$HOME_PATH/.ssh" \
-                        "$HOME_PATH/.sshnp" \
-                        "$HOME_PATH/.atsign" \
-                        "$HOME_PATH/.local/bin";
+                                   "$HOME_PATH/.sshnp" \
+                                   "$HOME_PATH/.atsign" \
+                                   "$HOME_PATH/.local/bin";
 
-  chmod -R 700 "$HOME_PATH/.local/bin";
-  chmod -R 600 "$HOME_PATH/.ssh" \
+  chmod -R 700 "$HOME_PATH/.local/bin"\
+               "$HOME_PATH/.ssh" \
                "$HOME_PATH/.sshnp" \
                "$HOME_PATH/.atsign/keys";
 }
@@ -157,6 +158,10 @@ download() {
     tar -zxvf "$HOME_PATH/.atsign/temp/$BINARY_NAME.$EXT" -C "$HOME_PATH/.atsign/temp/";
     ;;
   esac
+  if [ $SSHNP_DEV_MODE ]; then
+    echo "DEV MODE: using local templates";
+    cp -R templates/ "$HOME_PATH/.atsign/temp/$BINARY_NAME/templates/";
+  fi
 }
 
 # Place user based scripts locally
