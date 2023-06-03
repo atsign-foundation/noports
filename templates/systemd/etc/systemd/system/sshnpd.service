@@ -8,7 +8,7 @@ Type=simple
 Restart=always
 ExecStartPre=/bin/sleep 10
 RestartSec=3
-ExecStart=/usr/bin/screen -DmS sshnpd /home/pi/sshnp/sshnpd -a <@client_atsign> -m <@device_manager_atsign> -u -d <device_name> -s -v
+ExecStart=/usr/bin/screen -DmS sshnpd /home/pi/.local/bin/sshnpd -a <@client_atsign> -m <@device_manager_atsign> -u -d <device_name> -s -v
 
 [Install]
 WantedBy=multi-user.target

@@ -8,6 +8,6 @@ tmux send-keys -t  sshrvd "while true" C-m
 tmux send-keys -t  sshrvd "do" C-m
 # -a = atSign
 # -i = FQDN/IP
-tmux send-keys -t  sshrvd "$HOME/sshnp/sshrvd -a $1 -i $2" C-m
+tmux send-keys -t  sshrvd "$HOME/.local/bin/sshrvd -a $1 -i $2" C-m
 tmux send-keys -t  sshrvd "sleep 10" C-m
 tmux send-keys -t  sshrvd "done" C-m

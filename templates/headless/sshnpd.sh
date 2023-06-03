@@ -8,6 +8,6 @@ do
 # -a = client atSign
 # -m = device manager atSign
 # -d = device name
-~/sshnp/sshnpd -a "$1" -m "$2"  -u  -d "$3" -v -s
+~/.local/bin/sshnpd -a "$1" -m "$2"  -u  -d "$3" -v -s
 sleep 10
 done
