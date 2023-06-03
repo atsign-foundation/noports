@@ -5,7 +5,7 @@ TO="$DEVICE_MANAGER_ATSIGN";
 HOST="$DEFAULT_HOST_ATSIGN";
 
 usage() {
-  echo "sshnp$DEVICE_MANAGER_ATSIGN [-h <host>] <device name>";
+  echo "Usage: sshnp$DEVICE_MANAGER_ATSIGN [-h <host>] <device name>";
 }
 
 parse_args() {
@@ -20,19 +20,20 @@ parse_args() {
       shift 2
       ;;
     *)
-      DEVICE="$1"
+      SSHNP_DEVICE="$1"
       shift
       ;;
     esac
     shift
   done
-  if [ -z "$DEVICE" ]; then
+  if [ -z "$SSHNP_DEVICE" ]; then
     echo "No device specified";
     usage;
     exit 1;
   fi
 }
 
+parse_args "$@";
 # -f = client atSign ("from")
 # -t = device manager atSign ("to")
 # -h = host rendezvous server atSign (SRS)
