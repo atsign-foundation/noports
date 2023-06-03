@@ -1,6 +1,6 @@
 #!/bin/bash
 
-BINARY_NAME="sshnp";
+BINARY_NAME="sshnpd";
 
 norm_atsign() {
   KEY="$1" # Get the variable name
@@ -14,12 +14,9 @@ norm_atsign() {
 usage() {
   echo "Usage: $0 [options]"
   echo "Options:"
-  echo "  -c, --client <address>    (mandatory)  Client address"
-  echo "  -d, --device <address>    (mandatory)  Device manager address"
-  echo "  -h, --host <region code>  (mandatory)  Default host rendezvous region code (am, eu, ap)"
-  echo "  -l, --local <path>                     Install using local zip/tgz"
-  echo "  -r, --repo <path>                      Install using local repo"
-  echo "      --help                             Display this help message"
+  echo "  -l, --local <path>                   Install using local zip/tgz"
+  echo "  -r, --repo <path>                     Install using local repo"
+  echo "      --help                           Display this help message"
 }
 
 parse_args() {
@@ -45,73 +42,12 @@ parse_args() {
       SSHNP_DEV_MODE="$2"
       shift 2
     ;;
-    -c|--client)
-      if [ $# -lt 0 ]; then
-        echo "Missing argument for $1";
-        exit 1;
-      fi
-      CLIENT_ATSIGN="$2"
-      shift 2
-    ;;
-    -d|--device)
-      if [ $# -lt 0 ]; then
-        echo "Missing argument for $1";
-        exit 1;
-      fi
-      DEVICE_MANAGER_ATSIGN="$2"
-      shift 2
-    ;;
-    -h|--host)
-      if [ $# -lt 0 ]; then
-        echo "Missing argument for $1";
-        exit 1;
-      fi
-      HOST_RENDEZVOUS_ATSIGN="$2"
-      shift 2
-    ;;
     *)
       echo "Unknown argument: $1"
       exit 1
     ;;
     esac
   done
-
-  if [ -z "$CLIENT_ATSIGN" ]; then
-    read -rp "Client address: " CLIENT_ATSIGN;
-  fi
-
-  if [ -z "$DEVICE_MANAGER_ATSIGN" ]; then
-    read -rp "Device manager address: " DEVICE_MANAGER_ATSIGN;
-  fi
-
-  if [ -z "$HOST_RENDEZVOUS_ATSIGN" ]; then
-    echo Pick your default region:
-    echo am: Americas
-    echo ap: Asia Pacific
-    echo eu: Europe
-    read -rp "region: " HOST_RENDEZVOUS_ATSIGN;
-  fi
-
-  while [[ "$HOST_RENDEZVOUS_ATSIGN" != @rv_* ]]; do
-    case "$HOST_RENDEZVOUS_ATSIGN" in
-    [Aa][Mm]*)
-      HOST_RENDEZVOUS_ATSIGN="@rv_am"
-      ;;
-    [Ee][Uu]*)
-      HOST_RENDEZVOUS_ATSIGN="@rv_eu"
-      ;;
-    [Aa][Pp]*)
-      HOST_RENDEZVOUS_ATSIGN="@rv_ap"
-      ;;
-    esac
-    if [[ "$HOST_RENDEZVOUS_ATSIGN" != @rv_* ]]; then
-      echo "Invalid region: $HOST_RENDEZVOUS_ATSIGN"
-      read -rp "region: " HOST_RENDEZVOUS_ATSIGN;
-    fi
-  done
-
-  norm_atsign CLIENT_ATSIGN
-  norm_atsign DEVICE_MANAGER_ATSIGN
   echo;
 }
 
@@ -203,6 +139,7 @@ download() {
     tar -zxvf "$HOME_PATH/.atsign/temp/$BINARY_NAME.$EXT" -C "$HOME_PATH/.atsign/temp/";
     ;;
   esac
+  mv "$HOME_PATH/.atsign/temp/sshnp/" "$HOME_PATH/.atsign/temp/$BINARY_NAME"; # Rename the extracted folder
   if [ -n "$SSHNP_DEV_MODE" ]; then
     echo "DEV MODE: Installing from local repo: $SSHNP_DEV_MODE";
     cp -R "$SSHNP_DEV_MODE/templates" "$HOME_PATH/.atsign/temp/$BINARY_NAME/templates";
@@ -212,7 +149,7 @@ download() {
 
 # Place the actual sshnp binary
 setup_main_binaries() {
-  MAIN_BINARIES="$BINARY_NAME at_activate sshrv update_$BINARY_NAME";
+  MAIN_BINARIES="$BINARY_NAME at_activate sshrv update_sshnp$BINARY_NAME";
   for binary in $MAIN_BINARIES; do
     mv "$HOME_PATH/.atsign/temp/$BINARY_NAME/$binary" "$HOME_PATH/.local/bin/$binary";
     chmod +x "$HOME_PATH/.local/bin/$binary";
@@ -220,19 +157,12 @@ setup_main_binaries() {
   echo "Installed binaries: $MAIN_BINARIES";
 }
 
-# Place custom user based scripts
-setup_custom_binary() {
-  echo "Installing $BINARY_NAME$DEVICE_MANAGER_ATSIGN to $HOME_PATH/.local/bin/$BINARY_NAME$DEVICE_MANAGER_ATSIGN";
-  sed -e "s/\$CLIENT_ATSIGN/$CLIENT_ATSIGN/g" \
-      -e "s/\$DEVICE_MANAGER_ATSIGN/$DEVICE_MANAGER_ATSIGN/g" \
-      -e "s/\$DEFAULT_HOST_ATSIGN/$HOST_RENDEZVOUS_ATSIGN/g" \
-  <"$HOME_PATH/.atsign/temp/$BINARY_NAME/templates/client/sshnp-full.sh" \
-  >"$HOME_PATH/.local/bin/$BINARY_NAME$DEVICE_MANAGER_ATSIGN"
-  chmod +x "$HOME_PATH/.local/bin/$BINARY_NAME$DEVICE_MANAGER_ATSIGN";
+restart_service() {
+  true # TODO: Implement
 }
 
 post_install() {
-  #rm -rf "$HOME_PATH/.atsign/temp";
+  rm -rf "$HOME_PATH/.atsign/temp";
   echo;
 
   if ! echo "$PATH" | grep -q "$HOME_PATH/.local/bin"; then
@@ -252,7 +182,7 @@ main () {
   download
 
   setup_main_binaries
-  setup_custom_binary
+  restart_service
 
   post_install
 }

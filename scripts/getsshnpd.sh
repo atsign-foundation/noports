@@ -1,6 +1,6 @@
 #!/bin/bash
 
-BINARY_NAME="sshnp";
+BINARY_NAME="sshnpd";
 
 norm_atsign() {
   KEY="$1" # Get the variable name
@@ -16,7 +16,7 @@ usage() {
   echo "Options:"
   echo "  -c, --client <address>    (mandatory)  Client address"
   echo "  -d, --device <address>    (mandatory)  Device manager address"
-  echo "  -h, --host <region code>  (mandatory)  Default host rendezvous region code (am, eu, ap)"
+  echo "  -n, --name <device name>  (mandatory)  Name of the device"
   echo "  -l, --local <path>                     Install using local zip/tgz"
   echo "  -r, --repo <path>                      Install using local repo"
   echo "      --help                             Display this help message"
@@ -61,12 +61,12 @@ parse_args() {
       DEVICE_MANAGER_ATSIGN="$2"
       shift 2
     ;;
-    -h|--host)
+    -n|--name)
       if [ $# -lt 0 ]; then
         echo "Missing argument for $1";
         exit 1;
       fi
-      HOST_RENDEZVOUS_ATSIGN="$2"
+      SSHNP_DEVICE_NAME="$2"
       shift 2
     ;;
     *)
@@ -84,31 +84,9 @@ parse_args() {
     read -rp "Device manager address: " DEVICE_MANAGER_ATSIGN;
   fi
 
-  if [ -z "$HOST_RENDEZVOUS_ATSIGN" ]; then
-    echo Pick your default region:
-    echo am: Americas
-    echo ap: Asia Pacific
-    echo eu: Europe
-    read -rp "region: " HOST_RENDEZVOUS_ATSIGN;
+  if [ -z "$SSHNP_DEVICE_NAME" ]; then
+    read -rp "Device name: " SSHNP_DEVICE_NAME;
   fi
-
-  while [[ "$HOST_RENDEZVOUS_ATSIGN" != @rv_* ]]; do
-    case "$HOST_RENDEZVOUS_ATSIGN" in
-    [Aa][Mm]*)
-      HOST_RENDEZVOUS_ATSIGN="@rv_am"
-      ;;
-    [Ee][Uu]*)
-      HOST_RENDEZVOUS_ATSIGN="@rv_eu"
-      ;;
-    [Aa][Pp]*)
-      HOST_RENDEZVOUS_ATSIGN="@rv_ap"
-      ;;
-    esac
-    if [[ "$HOST_RENDEZVOUS_ATSIGN" != @rv_* ]]; then
-      echo "Invalid region: $HOST_RENDEZVOUS_ATSIGN"
-      read -rp "region: " HOST_RENDEZVOUS_ATSIGN;
-    fi
-  done
 
   norm_atsign CLIENT_ATSIGN
   norm_atsign DEVICE_MANAGER_ATSIGN
@@ -179,11 +157,16 @@ parse_env() {
 
 make_dirs() {
   rm -rf "$HOME_PATH/.atsign/temp";
-  mkdir -p "$HOME_PATH/.ssh" \
-           "$HOME_PATH/.sshnp" \
+  mkdir -p "$HOME_PATH/.ssh/" \
+           "$HOME_PATH/.sshnp/logs" \
            "$HOME_PATH/.atsign/keys" \
            "$HOME_PATH/.atsign/temp" \
            "$HOME_PATH/.local/bin";
+
+  if [ ! -f "$HOME_PATH/.ssh/authorized_keys" ]; then
+    touch "$HOME_PATH/.ssh/authorized_keys";
+    chmod 600 "$HOME_PATH/.ssh/authorized_keys";
+  fi
 }
 
 download() {
@@ -197,12 +180,14 @@ download() {
 
   case "$EXT" in
   zip)
-    unzip -qo "$HOME_PATH/.atsign/temp/$BINARY_NAME.$EXT" -d "$HOME_PATH/.atsign/temp";
+    unzip -qo "$HOME_PATH/.atsign/temp/$BINARY_NAME.$EXT" -d "$HOME_PATH/.atsign/temp/";
     ;;
   tgz|tar.gz)
     tar -zxvf "$HOME_PATH/.atsign/temp/$BINARY_NAME.$EXT" -C "$HOME_PATH/.atsign/temp/";
     ;;
   esac
+  mv "$HOME_PATH/.atsign/temp/sshnp" "$HOME_PATH/.atsign/temp/$BINARY_NAME"; # Rename the extracted folder
+
   if [ -n "$SSHNP_DEV_MODE" ]; then
     echo "DEV MODE: Installing from local repo: $SSHNP_DEV_MODE";
     cp -R "$SSHNP_DEV_MODE/templates" "$HOME_PATH/.atsign/temp/$BINARY_NAME/templates";
@@ -221,27 +206,36 @@ setup_main_binaries() {
 }
 
 # Place custom user based scripts
-setup_custom_binary() {
-  echo "Installing $BINARY_NAME$DEVICE_MANAGER_ATSIGN to $HOME_PATH/.local/bin/$BINARY_NAME$DEVICE_MANAGER_ATSIGN";
-  sed -e "s/\$CLIENT_ATSIGN/$CLIENT_ATSIGN/g" \
-      -e "s/\$DEVICE_MANAGER_ATSIGN/$DEVICE_MANAGER_ATSIGN/g" \
-      -e "s/\$DEFAULT_HOST_ATSIGN/$HOST_RENDEZVOUS_ATSIGN/g" \
-  <"$HOME_PATH/.atsign/temp/$BINARY_NAME/templates/client/sshnp-full.sh" \
-  >"$HOME_PATH/.local/bin/$BINARY_NAME$DEVICE_MANAGER_ATSIGN"
-  chmod +x "$HOME_PATH/.local/bin/$BINARY_NAME$DEVICE_MANAGER_ATSIGN";
+setup_service() {
+  # TODO - Fix this
+  # = is used as the delimiter to avoid escaping / in the path
+  sed -e "s=\$HOME=$HOME_PATH=g" \
+      -e "s/\$1/$DEVICE_MANAGER_ATSIGN/g" \
+      -e "s/\$2/$CLIENT_ATSIGN/g" \
+      -e "s/\$3/$SSHNP_DEVICE_NAME/g" \
+    <"$HOME_PATH/.atsign/temp/$BINARY_NAME/templates/headless/sshnpd.sh" \
+    >"$HOME_PATH/.local/bin/$BINARY_NAME$CLIENT_ATSIGN";
+    chmod +x "$HOME_PATH/.local/bin/$BINARY_NAME$CLIENT_ATSIGN";
+
+  if command -v tmux; then
+    echo "Installing to sshnpd tmux pane"
+    COMMAND="tmux send-keys -t  sshnpd $HOME_PATH/.local/bin/$BINARY_NAME$CLIENT_ATSIGN C-m"
+    eval "$COMMAND"
+    (crontab -l 2>/dev/null; echo "@reboot $COMMAND") | crontab -
+  elif command -v screen; then
+    echo "Installing to sshnpd screen session"
+    COMMAND="screen -dmS sshnpd $HOME_PATH/.local/bin/$BINARY_NAME$CLIENT_ATSIGN"
+    eval "$COMMAND"
+    (crontab -l 2>/dev/null; echo "@reboot $COMMAND") | crontab -
+  else
+    echo "Installing as a headless service"
+    COMMAND="$BINARY_NAME$CLIENT_ATSIGN"
+    (crontab -l 2>/dev/null; echo "* * * * * $COMMAND") | crontab -
+  fi
 }
 
 post_install() {
-  #rm -rf "$HOME_PATH/.atsign/temp";
-  echo;
-
-  if ! echo "$PATH" | grep -q "$HOME_PATH/.local/bin"; then
-    PATH="\$PATH:$HOME_PATH/.local/bin";
-    echo "Added $HOME_PATH/.local/bin to your PATH."
-    echo "Include the following line in your shell profile to persist across logins:"
-    echo "  export PATH=\"\$PATH:$HOME_PATH/.local/bin\""
-  fi
-
+  rm -rf "$HOME_PATH/.atsign/temp";
   echo; echo "Installation complete!";
 }
 
@@ -252,7 +246,7 @@ main () {
   download
 
   setup_main_binaries
-  setup_custom_binary
+  setup_service
 
   post_install
 }

@@ -114,6 +114,7 @@ parse_env() {
 }
 
 make_dirs() {
+  rm -rf "$HOME_PATH/.atsign/temp";
   mkdir -p "$HOME_PATH/.ssh" \
            "$HOME_PATH/.sshnp" \
            "$HOME_PATH/.atsign/keys" \
@@ -140,7 +141,7 @@ download() {
   esac
   if [ -n "$SSHNP_DEV_MODE" ]; then
     echo "DEV MODE: Installing from local repo: $SSHNP_DEV_MODE";
-    cp -R "$SSHNP_DEV_MODE/templates" "$HOME_PATH/.atsign/temp/$BINARY_NAME/";
+    cp -R "$SSHNP_DEV_MODE/templates" "$HOME_PATH/.atsign/temp/$BINARY_NAME/templates";
     cp -R "$SSHNP_DEV_MODE/scripts/" "$HOME_PATH/.atsign/temp/$BINARY_NAME/";
   fi
 }
