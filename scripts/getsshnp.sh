@@ -14,12 +14,12 @@ norm_atsign() {
 usage() {
   echo "Usage: $0 [options]"
   echo "Options:"
-  echo "  -f, --from <address>    (mandatory)  Client address"
-  echo "  -t, --to <address>      (mandatory)  Device manager address"
-  echo "  -h, --host <region>     (mandatory)  Default host rendezvous region code (am, eu, ap)"
-  echo "  -l, --local <path>                   Install using local zip/tgz"
-  echo "  -d, --dev <path>                     Install using local repo"
-  echo "      --help                           Display this help message"
+  echo "  -c, --client <address>    (mandatory)  Client address"
+  echo "  -d, --device <address>    (mandatory)  Device manager address"
+  echo "  -h, --host <region code>  (mandatory)  Default host rendezvous region code (am, eu, ap)"
+  echo "  -l, --local <path>                     Install using local zip/tgz"
+  echo "  -r, --repo <path>                      Install using local repo"
+  echo "      --help                             Display this help message"
 }
 
 parse_args() {
@@ -37,7 +37,7 @@ parse_args() {
       SSHNP_LOCAL="$2"
       shift 2
     ;;
-    -d|--dev)
+    -r|--repo)
       if [ $# -lt 0 ]; then
         echo "Missing argument for $1";
         exit 1;
@@ -45,7 +45,7 @@ parse_args() {
       SSHNP_DEV_MODE="$2"
       shift 2
     ;;
-    -f|--from)
+    -c|--client)
       if [ $# -lt 0 ]; then
         echo "Missing argument for $1";
         exit 1;
@@ -53,7 +53,7 @@ parse_args() {
       CLIENT_ATSIGN="$2"
       shift 2
     ;;
-    -t|--to)
+    -d|--device)
       if [ $# -lt 0 ]; then
         echo "Missing argument for $1";
         exit 1;
@@ -211,7 +211,7 @@ download() {
 
 # Place the actual sshnp binary
 setup_main_binaries() {
-  MAIN_BINARIES="$BINARY_NAME at_activate sshrv update_sshnp";
+  MAIN_BINARIES="$BINARY_NAME at_activate sshrv update_$BINARY_NAME";
   for binary in $MAIN_BINARIES; do
     mv "$HOME_PATH/.atsign/temp/$BINARY_NAME/$binary" "$HOME_PATH/.local/bin/$binary";
     chmod +x "$HOME_PATH/.local/bin/$binary";
