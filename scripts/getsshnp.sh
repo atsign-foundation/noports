@@ -232,7 +232,7 @@ setup_custom_binary() {
 }
 
 post_install() {
-  #rm -rf "$HOME_PATH/.atsign/temp";
+  rm -rf "$HOME_PATH/.atsign/temp";
   echo;
 
   if ! echo "$PATH" | grep -q "$HOME_PATH/.local/bin"; then
