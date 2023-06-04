@@ -191,13 +191,12 @@ download() {
   if [ -n "$SSHNP_DEV_MODE" ]; then
     echo "DEV MODE: Installing from local repo: $SSHNP_DEV_MODE";
     cp -R "$SSHNP_DEV_MODE/templates" "$HOME_PATH/.atsign/temp/$BINARY_NAME/templates";
-    cp -R "$SSHNP_DEV_MODE/scripts/" "$HOME_PATH/.atsign/temp/$BINARY_NAME/";
+    cp "$SSHNP_DEV_MODE/scripts/*" "$HOME_PATH/.atsign/temp/$BINARY_NAME/*";
   fi
 }
 
 # Place the actual sshnp binary
 setup_main_binaries() {
-  mv "$HOME_PATH/.atsign/temp/$BINARY_NAME/scripts/update_$BINARY_NAME" "$HOME_PATH/.atsign/temp/$BINARY_NAME/update_$BINARY_NAME";
   MAIN_BINARIES="$BINARY_NAME at_activate sshrv update_$BINARY_NAME";
   for binary in $MAIN_BINARIES; do
     mv "$HOME_PATH/.atsign/temp/$BINARY_NAME/$binary" "$HOME_PATH/.local/bin/$binary";
