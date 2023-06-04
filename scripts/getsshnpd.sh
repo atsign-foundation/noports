@@ -128,7 +128,7 @@ parse_env() {
   x86_64)
     ARCH="x64."
     ;;
-  arm64)
+  aarch64|arm64)
     if [ "$PLATFORM" == "macos" ]; then
       ARCH="arm"
     else
@@ -207,30 +207,35 @@ setup_main_binaries() {
 
 # Place custom user based scripts
 setup_service() {
-  # TODO - Fix this
+  # TODO - Check this
   # = is used as the delimiter to avoid escaping / in the path
+  SSHNPD_SERVICE_BINARY_PATH="$HOME_PATH/.local/bin/$BINARY_NAME$CLIENT_ATSIGN";
   sed -e "s=\$HOME=$HOME_PATH=g" \
-      -e "s/\$1/$DEVICE_MANAGER_ATSIGN/g" \
-      -e "s/\$2/$CLIENT_ATSIGN/g" \
-      -e "s/\$3/$SSHNP_DEVICE_NAME/g" \
-    <"$HOME_PATH/.atsign/temp/$BINARY_NAME/templates/headless/sshnpd.sh" \
-    >"$HOME_PATH/.local/bin/$BINARY_NAME$CLIENT_ATSIGN";
-    chmod +x "$HOME_PATH/.local/bin/$BINARY_NAME$CLIENT_ATSIGN";
+    -e "s/\$1/$DEVICE_MANAGER_ATSIGN/g" \
+    -e "s/\$2/$CLIENT_ATSIGN/g" \
+    -e "s/\$3/$SSHNP_DEVICE_NAME/g" \
+  <"$HOME_PATH/.atsign/temp/$BINARY_NAME/templates/headless/sshnpd.sh" \
+  >"$SSHNPD_SERVICE_BINARY_PATH";
+  chmod +x "$SSHNPD_SERVICE_BINARY_PATH";
 
   if command -v tmux; then
-    echo "Installing to sshnpd tmux pane"
-    COMMAND="tmux send-keys -t  sshnpd $HOME_PATH/.local/bin/$BINARY_NAME$CLIENT_ATSIGN C-m"
-    eval "$COMMAND"
-    (crontab -l 2>/dev/null; echo "@reboot $COMMAND") | crontab -
-  elif command -v screen; then
-    echo "Installing to sshnpd screen session"
-    COMMAND="screen -dmS sshnpd $HOME_PATH/.local/bin/$BINARY_NAME$CLIENT_ATSIGN"
-    eval "$COMMAND"
-    (crontab -l 2>/dev/null; echo "@reboot $COMMAND") | crontab -
+    SSHNP_CRON_SCHEDULE="@reboot";
+    SSHNP_COMMAND="tmux send-keys -t  sshnpd $SSHNPD_SERVICE_BINARY_PATH C-m"
+    eval "$SSHNP_COMMAND";
+  elif command -v sreen; then
+    SSHNP_CRON_SCHEDULE="@reboot";
+    SSHNP_COMMAND="screen -dmS sshnpd $SSHNPD_SERVICE_BINARY_PATH"
+    eval "$SSHNP_COMMAND";
   else
-    echo "Installing as a headless service"
-    COMMAND="$BINARY_NAME$CLIENT_ATSIGN"
-    (crontab -l 2>/dev/null; echo "* * * * * $COMMAND") | crontab -
+    SSHNP_CRON_SCHEDULE="* * * * *";
+    SSHNP_COMMAND="$SSHNPD_SERVICE_BINARY_PATH"
+    eval "nohup $SSHNP_COMMAND >/dev/null 2>&1 &";
+  fi
+
+  if grep -Fxq "$SSHNP_CRON_SCHEDULE $SSHNP_COMMAND" <(crontab -l 2>/dev/null); then
+    echo "Cron job already installed";
+  else
+    (crontab -l 2>/dev/null; echo "$SSHNP_CRON_SCHEDULE $SSHNP_COMMAND") | crontab -
   fi
 }
 

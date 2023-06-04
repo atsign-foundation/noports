@@ -150,7 +150,7 @@ parse_env() {
   x86_64)
     ARCH="x64."
     ;;
-  arm64)
+  aarch64|arm64)
     if [ "$PLATFORM" == "macos" ]; then
       ARCH="arm"
     else
@@ -200,7 +200,7 @@ download() {
     unzip -qo "$HOME_PATH/.atsign/temp/$BINARY_NAME.$EXT" -d "$HOME_PATH/.atsign/temp";
     ;;
   tgz|tar.gz)
-    tar -zxvf "$HOME_PATH/.atsign/temp/$BINARY_NAME.$EXT" -C "$HOME_PATH/.atsign/temp/";
+    tar -zxf "$HOME_PATH/.atsign/temp/$BINARY_NAME.$EXT" -C "$HOME_PATH/.atsign/temp/";
     ;;
   esac
   if [ -n "$SSHNP_DEV_MODE" ]; then
