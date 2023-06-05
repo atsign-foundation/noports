@@ -158,23 +158,13 @@ setup_main_binaries() {
 }
 
 restart_service() {
-  SERVICE_MECHANISM_FILE="$HOME_PATH/.$BINARY_NAME/.service_mechanism";
-  SSHNPD_SERVICE_MECHANISM=$(cat "$SERVICE_MECHANISM_FILE")
-  SSHNPD_SERVICE_BINARY_PATH="$HOME_PATH/.local/bin/$BINARY_NAME$CLIENT_ATSIGN";
-  case "$SSHNPD_SERVICE_MECHANISM" in
-  tmux)
-    tmux send-keys -t sshnpd C-c
-    tmux send-keys -t sshnpd "$SSHNPD_SERVICE_BINARY_PATH" C-m
-    ;;
-  cron)
-    killall -qu "$SSHNP_USER" "$BINARY_NAME$CLIENT_ATSIGN";
-    ;;
-  *)
-    echo "Unknown service mechanism: $SSHNPD_SERVICE_MECHANISM";
-    echo "Please restart sshnpd manually";
-    exit 1;
-    ;;
-  esac
+  # SERVICE_MECHANISM_FILE="$HOME_PATH/.$BINARY_NAME/.service_mechanism";
+  # SSHNPD_SERVICE_MECHANISM=$(cat "$SERVICE_MECHANISM_FILE")
+  SERVICE_LIST_FILE="$HOME_PATH/.$BINARY_NAME/.service_list";
+  while read -r SERVICE;
+  do
+    killall -qu "$SSHNP_USER" "$SERVICE";
+  done < "$SERVICE_LIST_FILE";
 }
 
 post_install() {

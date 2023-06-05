@@ -217,19 +217,15 @@ setup_service() {
   >"$SSHNPD_SERVICE_BINARY_PATH";
   chmod +x "$SSHNPD_SERVICE_BINARY_PATH";
 
+  SSHNP_CRON_SCHEDULE="@reboot";
   if command -v tmux; then
     SSHNPD_SERVICE_MECHANISM="tmux";
-    SSHNP_CRON_SCHEDULE="@reboot";
-    SSHNP_COMMAND="tmux send-keys -t  sshnpd $SSHNPD_SERVICE_BINARY_PATH C-m"
-    eval "$SSHNP_COMMAND";
+    SSHNP_COMMAND="tmux new-session -d -s sshnpd && tmux send-keys -t sshnpd $SSHNPD_SERVICE_BINARY_PATH C-m"
   # Untested for the time being, feel free to use at your own risk:
   # elif command -v screen; then
-  #   SSHNP_CRON_SCHEDULE="@reboot";
   #   SSHNP_COMMAND="screen -dmS sshnpd $SSHNPD_SERVICE_BINARY_PATH"
-  #   eval "$SSHNP_COMMAND";
   else
     SSHNPD_SERVICE_MECHANISM="cron";
-    SSHNP_CRON_SCHEDULE="* * * * *";
     SSHNP_COMMAND="$SSHNPD_SERVICE_BINARY_PATH"
   fi
 
@@ -240,10 +236,13 @@ setup_service() {
     echo "Installed cron job: '$SSHNP_CRON_SCHEDULE $SSHNP_COMMAND'";
   fi
 
+  eval nohup "$SSHNP_COMMAND &>/dev/null &"
+
   SERVICE_MECHANISM_FILE="$HOME_PATH/.$BINARY_NAME/.service_mechanism";
-  # touch "$SERVICE_MECHANISM_FILE";
-  # chmod 600 "$SERVICE_MECHANISM_FILE";
   echo "$SSHNPD_SERVICE_MECHANISM" > "$SERVICE_MECHANISM_FILE";
+
+  SERVICE_LIST_FILE="$HOME_PATH/.$BINARY_NAME/.service_list";
+  echo "$BINARY_NAME$CLIENT_ATSIGN" >> "$SERVICE_LIST_FILE";
 }
 
 post_install() {

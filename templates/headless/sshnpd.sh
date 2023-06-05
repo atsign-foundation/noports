@@ -1,7 +1,7 @@
 #!/bin/bash
 # allow machine to bring up network
 sleep 10
-USER=$(whoami) 
+USER=$(whoami)
 export USER
 while true
 do
