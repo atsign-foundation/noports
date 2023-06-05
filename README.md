@@ -67,9 +67,6 @@ Which would output
 ssh -p 39011 cconstab@localhost -i /home/cconstab/.ssh/id_ed25519
 ```
 
-Atsign provides a sshrvd service but if you want to run your own `sshrvd` you will need a machine that has an internet IP and all ports 1024-65535 unfirewalled and an atSign for the daemon to use.
-
-
 When you run this you will be connected to the remote machine via a reverse
 ssh tunnel from the remote device. 
 
@@ -77,6 +74,13 @@ If you want to do this in a single command use `$(<command>)` for example, note 
 
 ```
 $(./sshnp -f @myclient -t @myserver -d mymachine -h @myrz -s id_ed25519.pub)
+```
+
+Atsign provides a sshrvd service but if you want to run your own `sshrvd` you will need a machine that has an internet IP and all ports 1024-65535 unfirewalled and an atSign for the daemon to use.
+
+To run your own rendezvous service, simply run the `sshrvd` binary.  You may omit the manager atSign to allow all atSigns to use your rendezvous service. There are also flags like `-s` to snoop on traffic passing through the service. 
+```
+./sshrvd --atsign <@your_sshrvd_atsign> --manager <@manager_atsign> --ip <FQDN/IP address sent to clients>  
 ```
 
 If you can now login using sshnp then you can now turn off sshd from listening on all external interfaces, and instead have ssh listen only on 127.0.0.1.
