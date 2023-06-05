@@ -21,7 +21,7 @@ RUN set -eux; \
     dart compile exe bin/sshnpd.dart -v -o sshnp/sshnpd; \
     dart compile exe bin/sshrv.dart -v -o sshnp/sshrv; \
     dart compile exe bin/sshrvd.dart -v -o sshnp/sshrvd; \
-    cp -r templates/* sshnp; \
+    cp -r templates sshnp/templates; \
     cp scripts/* sshnp/; \
     tar -cvzf tarball/sshnp-linux-${ARCH}.tgz sshnp
 
