@@ -38,4 +38,4 @@ parse_args "$@";
 # -t = device manager atSign ("to")
 # -h = host rendezvous server atSign (SRS)
 # -d = device name
-eval "$BINARY -f $FROM -t $TO -h $HOST -d $DEVICE";
+eval "$BINARY -f $FROM -t $TO -h $HOST -d $SSHNP_DEVICE";
