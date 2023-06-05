@@ -1,4 +1,5 @@
 #!/bin/bash
+#v1.0.0
 
 BINARY_NAME="sshnp";
 

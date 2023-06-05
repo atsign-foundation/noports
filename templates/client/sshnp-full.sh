@@ -1,8 +1,10 @@
 #!/bin/bash
-BINARY="/usr/local/bin/sshnp";
+#v1.0.0
+BINARY_NAME="sshnp";
 FROM="$CLIENT_ATSIGN";
 TO="$DEVICE_MANAGER_ATSIGN";
 HOST="$DEFAULT_HOST_ATSIGN";
+PUBLIC_KEY="$SSHNP_PUBLIC_KEY";
 
 usage() {
   echo "Usage: sshnp$DEVICE_MANAGER_ATSIGN [-h <host>] <device name>";
@@ -38,4 +40,4 @@ parse_args "$@";
 # -t = device manager atSign ("to")
 # -h = host rendezvous server atSign (SRS)
 # -d = device name
-eval "$BINARY -f $FROM -t $TO -h $HOST -d $SSHNP_DEVICE";
+eval "$HOME/.local/bin/$BINARY_NAME -f $FROM -t $TO -h $HOST -d $SSHNP_DEVICE" -s "$PUBLIC_KEY";

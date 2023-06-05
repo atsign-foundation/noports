@@ -1,4 +1,5 @@
 #!/bin/bash
+#v1.0.0
 tmux new-session -d -s sshnpd
 tmux send-keys -t  sshnpd "cd " C-m
 # Allow machine to bring up network

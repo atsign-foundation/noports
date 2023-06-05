@@ -1,4 +1,5 @@
 #!/bin/bash
+#v1.0.0
 # allow machine to bring up network
 sleep 10
 USER=$(whoami) 
@@ -7,6 +8,6 @@ while true
 do
 # -a = atSign
 # -i = FQDN/IP
-~/.local/bin/sshrvd -a "$1" -i "$2"
+$HOME/.local/bin/sshrvd -a "$1" -i "$2"
 sleep 10
 done

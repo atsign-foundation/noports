@@ -222,8 +222,15 @@ setup_main_binaries() {
 
 # Place custom user based scripts
 setup_custom_binary() {
+  SSHNP_KEY_FILE="$BINARY_NAME$DEVICE_MANAGER_ATSIGN"
+  ssh-keygen -o -a 100 -t ed25519 -f "$HOME_PATH/.ssh/$SSHNP_KEY_FILE" \
+     -C "$BINARY_NAME$CLIENT_ATSIGN$DEVICE_MANAGER_ATSIGN" -N "" -q;
+
   echo "Installing $BINARY_NAME$DEVICE_MANAGER_ATSIGN to $HOME_PATH/.local/bin/$BINARY_NAME$DEVICE_MANAGER_ATSIGN";
-  sed -e "s/\$CLIENT_ATSIGN/$CLIENT_ATSIGN/g" \
+  # = is used as the delimiter to avoid escaping / in the path
+  sed -e "s=\$BINARY_PATH=$HOME_PATH/.local/bin/$BINARY_NAME=g" \
+      -e "s/\$SSHNP_PUBLIC_KEY/$SSHNP_KEY_FILE.pub/g" \
+      -e "s/\$CLIENT_ATSIGN/$CLIENT_ATSIGN/g" \
       -e "s/\$DEVICE_MANAGER_ATSIGN/$DEVICE_MANAGER_ATSIGN/g" \
       -e "s/\$DEFAULT_HOST_ATSIGN/$HOST_RENDEZVOUS_ATSIGN/g" \
   <"$HOME_PATH/.atsign/temp/$BINARY_NAME/templates/client/sshnp-full.sh" \

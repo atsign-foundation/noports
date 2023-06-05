@@ -207,8 +207,8 @@ setup_main_binaries() {
 
 # Place custom user based scripts
 setup_service() {
-  # = is used as the delimiter to avoid escaping / in the path
   SSHNPD_SERVICE_BINARY_PATH="$HOME_PATH/.local/bin/$BINARY_NAME$CLIENT_ATSIGN";
+  # = is used as the delimiter to avoid escaping / in the path
   sed -e "s=\$HOME=$HOME_PATH=g" \
     -e "s/\$1/$DEVICE_MANAGER_ATSIGN/g" \
     -e "s/\$2/$CLIENT_ATSIGN/g" \
