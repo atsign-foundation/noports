@@ -86,7 +86,7 @@ parse_env() {
   x86_64)
     ARCH="x64."
     ;;
-  arm64)
+  aarch64|arm64)
     if [ "$PLATFORM" == "macos" ]; then
       ARCH="arm"
     else

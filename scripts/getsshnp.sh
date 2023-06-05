@@ -19,13 +19,13 @@ usage() {
   echo "  -h, --host <region code>  (mandatory)  Default host rendezvous region code (am, eu, ap)"
   echo "  -l, --local <path>                     Install using local zip/tgz"
   echo "  -r, --repo <path>                      Install using local repo"
-  echo "  -h, --help                             Display this help message"
+  echo "      --help                             Display this help message"
 }
 
 parse_args() {
   while [ $# -gt 0 ]; do
     case "$1" in
-    -h|--help)
+    --help)
       usage
       exit 0
     ;;
