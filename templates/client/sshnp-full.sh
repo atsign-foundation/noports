@@ -37,7 +37,7 @@ parse_args() {
 
 parse_args "$@";
 # -f = client atSign ("from")
-# -t = device manager atSign ("to")
+# -t = device atSign ("to")
 # -h = host rendezvous server atSign (SRS)
 # -d = device name
 eval "$HOME/.local/bin/$BINARY_NAME -f $FROM -t $TO -h $HOST -d $SSHNP_DEVICE" -s "$PUBLIC_KEY";

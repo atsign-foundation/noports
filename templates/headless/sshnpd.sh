@@ -6,8 +6,8 @@ USER=$(whoami)
 export USER
 while true
 do
-# -a = client atSign
-# -m = device manager atSign
+# -a = device atSign
+# -m = client atSign
 # -d = device name
 $HOME/.local/bin/sshnpd -a "$1" -m "$2"  -u  -d "$3" -v -s
 sleep 10
