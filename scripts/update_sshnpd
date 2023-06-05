@@ -167,6 +167,7 @@ restart_service() {
     tmux send-keys -t sshnpd "$SSHNPD_SERVICE_BINARY_PATH" C-m
     ;;
   cron)
+    killall -qu "$SSHNP_USER" "$BINARY_NAME$CLIENT_ATSIGN";
     ;;
   *)
     echo "Unknown service mechanism: $SSHNPD_SERVICE_MECHANISM";
@@ -174,21 +175,6 @@ restart_service() {
     exit 1;
     ;;
   esac
-  if command -v tmux; then
-    SSHNP_CRON_SCHEDULE="@reboot";
-    SSHNP_COMMAND="tmux send-keys -t sshnpd $SSHNPD_SERVICE_BINARY_PATH C-m"
-    eval "$SSHNP_COMMAND";
-  # Untested for the time being, feel free to use at your own risk:
-  # elif command -v screen; then
-  #   SSHNP_CRON_SCHEDULE="@reboot";
-  #   SSHNP_COMMAND="screen -dmS sshnpd $SSHNPD_SERVICE_BINARY_PATH"
-  #   eval "$SSHNP_COMMAND";
-  else
-    SSHNP_CRON_SCHEDULE="* * * * *";
-    SSHNP_COMMAND="$SSHNPD_SERVICE_BINARY_PATH"
-  fi
-
-  
 }
 
 post_install() {
