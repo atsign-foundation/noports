@@ -142,8 +142,8 @@ download() {
   mv "$HOME_PATH/.atsign/temp/sshnp/" "$HOME_PATH/.atsign/temp/$BINARY_NAME"; # Rename the extracted folder
   if [ -n "$SSHNP_DEV_MODE" ]; then
     echo "DEV MODE: Installing from local repo: $SSHNP_DEV_MODE";
-    cp -R "$SSHNP_DEV_MODE/templates" "$HOME_PATH/.atsign/temp/$BINARY_NAME/templates";
-    cp "$SSHNP_DEV_MODE/scripts/*" "$HOME_PATH/.atsign/temp/$BINARY_NAME/*";
+    cp -R "$SSHNP_DEV_MODE/templates/" "$HOME_PATH/.atsign/temp/$BINARY_NAME/templates/";
+    cp -R "$SSHNP_DEV_MODE/scripts/" "$HOME_PATH/.atsign/temp/$BINARY_NAME/";
   fi
 }
 
