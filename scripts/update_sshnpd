@@ -158,7 +158,8 @@ setup_main_binaries() {
 }
 
 restart_service() {
-  SSHNPD_SERVICE_MECHANISM=$(cat "$HOME_PATH/.sshnpd/service_mechanism")
+  SERVICE_MECHANISM_FILE="$HOME_PATH/.$BINARY_NAME/.service_mechanism";
+  SSHNPD_SERVICE_MECHANISM=$(cat "$SERVICE_MECHANISM_FILE")
   SSHNPD_SERVICE_BINARY_PATH="$HOME_PATH/.local/bin/$BINARY_NAME$CLIENT_ATSIGN";
   case "$SSHNPD_SERVICE_MECHANISM" in
   tmux)

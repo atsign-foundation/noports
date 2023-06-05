@@ -240,10 +240,10 @@ setup_service() {
     echo "Installed cron job: '$SSHNP_CRON_SCHEDULE $SSHNP_COMMAND'";
   fi
 
-  SERVICE_MECHANISM_FILE="$HOME_PATH/.$BINARY_NAME/service_mechanism";
-  touch "$SERVICE_MECHANISM_FILE";
-  chmod 600 "$SERVICE_MECHANISM_FILE";
-  echo "$SSHNPD_SERVICE_MECHANISM" >> "$SERVICE_MECHANISM_FILE";
+  SERVICE_MECHANISM_FILE="$HOME_PATH/.$BINARY_NAME/.service_mechanism";
+  # touch "$SERVICE_MECHANISM_FILE";
+  # chmod 600 "$SERVICE_MECHANISM_FILE";
+  echo "$SSHNPD_SERVICE_MECHANISM" > "$SERVICE_MECHANISM_FILE";
 }
 
 post_install() {
