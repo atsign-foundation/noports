@@ -149,7 +149,7 @@ download() {
 
 # Place the actual sshnp binary
 setup_main_binaries() {
-  MAIN_BINARIES="$BINARY_NAME at_activate sshrv update_sshnp$BINARY_NAME";
+  MAIN_BINARIES="$BINARY_NAME at_activate sshrv update_$BINARY_NAME";
   for binary in $MAIN_BINARIES; do
     mv "$HOME_PATH/.atsign/temp/$BINARY_NAME/$binary" "$HOME_PATH/.local/bin/$binary";
     chmod +x "$HOME_PATH/.local/bin/$binary";
