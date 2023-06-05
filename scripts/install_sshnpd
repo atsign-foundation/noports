@@ -183,7 +183,7 @@ download() {
     unzip -qo "$HOME_PATH/.atsign/temp/$BINARY_NAME.$EXT" -d "$HOME_PATH/.atsign/temp/";
     ;;
   tgz|tar.gz)
-    tar -zxvf "$HOME_PATH/.atsign/temp/$BINARY_NAME.$EXT" -C "$HOME_PATH/.atsign/temp/";
+    tar -zxf "$HOME_PATH/.atsign/temp/$BINARY_NAME.$EXT" -C "$HOME_PATH/.atsign/temp/";
     ;;
   esac
   mv "$HOME_PATH/.atsign/temp/sshnp" "$HOME_PATH/.atsign/temp/$BINARY_NAME"; # Rename the extracted folder
@@ -218,12 +218,12 @@ setup_service() {
   chmod +x "$SSHNPD_SERVICE_BINARY_PATH";
 
   SSHNP_CRON_SCHEDULE="@reboot";
-  if command -v tmux; then
+  if command -v tmux >/dev/null; then
     SSHNPD_SERVICE_MECHANISM="tmux";
-    SSHNP_COMMAND="tmux new-session -d -s sshnpd && tmux send-keys -t sshnpd $SSHNPD_SERVICE_BINARY_PATH C-m"
+    SSHNP_COMMAND="tmux new-session -d -s $BINARY_NAME$CLIENT_ATSIGN && tmux send-keys -t $BINARY_NAME$CLIENT_ATSIGN $SSHNPD_SERVICE_BINARY_PATH C-m"
   # Untested for the time being, feel free to use at your own risk:
   # elif command -v screen; then
-  #   SSHNP_COMMAND="screen -dmS sshnpd $SSHNPD_SERVICE_BINARY_PATH"
+  #   SSHNP_COMMAND="screen -dmS $BINARY_NAME$CLIENT_ATSIGtN $SSHNPD_SERVICE_BINARY_PATH"
   else
     SSHNPD_SERVICE_MECHANISM="cron";
     SSHNP_COMMAND="nohup $SSHNPD_SERVICE_BINARY_PATH > $HOME_PATH/.$BINARY_NAME/logs/$CLIENT_ATSIGN.log 2> $HOME_PATH/.$BINARY_NAME/logs/$CLIENT_ATSIGN.err"
