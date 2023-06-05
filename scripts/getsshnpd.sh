@@ -158,7 +158,7 @@ parse_env() {
 make_dirs() {
   rm -rf "$HOME_PATH/.atsign/temp";
   mkdir -p "$HOME_PATH/.ssh/" \
-           "$HOME_PATH/.sshnp/logs" \
+           "$HOME_PATH/.$BINARY_NAME/logs" \
            "$HOME_PATH/.atsign/keys" \
            "$HOME_PATH/.atsign/temp" \
            "$HOME_PATH/.local/bin";
@@ -240,7 +240,7 @@ setup_service() {
     echo "Installed cron job: '$SSHNP_CRON_SCHEDULE $SSHNP_COMMAND'";
   fi
 
-  SERVICE_MECHANISM_FILE="$HOME_PATH/.sshnpd/service_mechanism";
+  SERVICE_MECHANISM_FILE="$HOME_PATH/.$BINARY_NAME/service_mechanism";
   touch "$SERVICE_MECHANISM_FILE";
   chmod 600 "$SERVICE_MECHANISM_FILE";
   echo "$SSHNPD_SERVICE_MECHANISM" >> "$SERVICE_MECHANISM_FILE";
