@@ -19,13 +19,13 @@ usage() {
   echo "  -n, --name <device name>  (mandatory)  Name of the device"
   echo "  -l, --local <path>                     Install using local zip/tgz"
   echo "  -r, --repo <path>                      Install using local repo"
-  echo "      --help                             Display this help message"
+  echo "  -h, --help                             Display this help message"
 }
 
 parse_args() {
   while [ $# -gt 0 ]; do
     case "$1" in
-    --help)
+    -h|--help)
       usage
       exit 0
     ;;
@@ -218,24 +218,29 @@ setup_service() {
   chmod +x "$SSHNPD_SERVICE_BINARY_PATH";
 
   if command -v tmux; then
+    SSHNPD_SERVICE_MECHANISM="tmux";
     SSHNP_CRON_SCHEDULE="@reboot";
     SSHNP_COMMAND="tmux send-keys -t  sshnpd $SSHNPD_SERVICE_BINARY_PATH C-m"
     eval "$SSHNP_COMMAND";
-  elif command -v sreen; then
-    SSHNP_CRON_SCHEDULE="@reboot";
-    SSHNP_COMMAND="screen -dmS sshnpd $SSHNPD_SERVICE_BINARY_PATH"
-    eval "$SSHNP_COMMAND";
+  # Untested for the time being, feel free to use at your own risk:
+  # elif command -v screen; then
+  #   SSHNP_CRON_SCHEDULE="@reboot";
+  #   SSHNP_COMMAND="screen -dmS sshnpd $SSHNPD_SERVICE_BINARY_PATH"
+  #   eval "$SSHNP_COMMAND";
   else
+    SSHNPD_SERVICE_MECHANISM="cron";
     SSHNP_CRON_SCHEDULE="* * * * *";
     SSHNP_COMMAND="$SSHNPD_SERVICE_BINARY_PATH"
-    eval "nohup $SSHNP_COMMAND >/dev/null 2>&1 &";
   fi
 
   if grep -Fxq "$SSHNP_CRON_SCHEDULE $SSHNP_COMMAND" <(crontab -l 2>/dev/null); then
-    echo "Cron job already installed";
+    echo "Cron job already installed: '$SSHNP_CRON_SCHEDULE $SSHNP_COMMAND'";
   else
     (crontab -l 2>/dev/null; echo "$SSHNP_CRON_SCHEDULE $SSHNP_COMMAND") | crontab -
+    echo "Installed cron job: '$SSHNP_CRON_SCHEDULE $SSHNP_COMMAND'";
   fi
+
+  echo "$SSHNPD_SERVICE_MECHANISM" >> "$HOME_PATH/.sshnpd/service_mechanism";
 }
 
 post_install() {

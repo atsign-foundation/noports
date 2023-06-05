@@ -16,13 +16,13 @@ usage() {
   echo "Options:"
   echo "  -l, --local <path>                   Install using local zip/tgz"
   echo "  -r, --repo <path>                     Install using local repo"
-  echo "      --help                           Display this help message"
+  echo "  -h, --help                           Display this help message"
 }
 
 parse_args() {
   while [ $# -gt 0 ]; do
     case "$1" in
-    --help)
+    -h|--help)
       usage
       exit 0
     ;;
