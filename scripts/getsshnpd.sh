@@ -238,11 +238,8 @@ setup_service() {
 
   eval nohup "$SSHNP_COMMAND &>/dev/null &"
 
-  SERVICE_MECHANISM_FILE="$HOME_PATH/.$BINARY_NAME/.service_mechanism";
-  echo "$SSHNPD_SERVICE_MECHANISM" > "$SERVICE_MECHANISM_FILE";
-
   SERVICE_LIST_FILE="$HOME_PATH/.$BINARY_NAME/.service_list";
-  echo "$BINARY_NAME$CLIENT_ATSIGN" >> "$SERVICE_LIST_FILE";
+  echo "$BINARY_NAME$CLIENT_ATSIGN $SSHNPD_SERVICE_MECHANISM" >> "$SERVICE_LIST_FILE";
 }
 
 post_install() {

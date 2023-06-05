@@ -159,11 +159,10 @@ setup_main_binaries() {
 }
 
 restart_service() {
-  # SERVICE_MECHANISM_FILE="$HOME_PATH/.$BINARY_NAME/.service_mechanism";
-  # SSHNPD_SERVICE_MECHANISM=$(cat "$SERVICE_MECHANISM_FILE")
   SERVICE_LIST_FILE="$HOME_PATH/.$BINARY_NAME/.service_list";
   while read -r SERVICE;
   do
+    SERVICE=$(echo "$SERVICE" | cut -f 1 -d ' ');
     killall -qu "$SSHNP_USER" "$SERVICE";
   done < "$SERVICE_LIST_FILE";
 }
