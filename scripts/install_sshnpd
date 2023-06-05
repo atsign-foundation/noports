@@ -226,7 +226,7 @@ setup_service() {
   #   SSHNP_COMMAND="screen -dmS sshnpd $SSHNPD_SERVICE_BINARY_PATH"
   else
     SSHNPD_SERVICE_MECHANISM="cron";
-    SSHNP_COMMAND="$SSHNPD_SERVICE_BINARY_PATH"
+    SSHNP_COMMAND="nohup $SSHNPD_SERVICE_BINARY_PATH > $HOME_PATH/.$BINARY_NAME/logs/$CLIENT_ATSIGN.log 2> $HOME_PATH/.$BINARY_NAME/logs/$CLIENT_ATSIGN.err"
   fi
 
   if grep -Fxq "$SSHNP_CRON_SCHEDULE $SSHNP_COMMAND" <(crontab -l 2>/dev/null); then
@@ -236,7 +236,7 @@ setup_service() {
     echo "Installed cron job: '$SSHNP_CRON_SCHEDULE $SSHNP_COMMAND'";
   fi
 
-  eval nohup "$SSHNP_COMMAND &>/dev/null &"
+  eval "$SSHNP_COMMAND &"
 
   SERVICE_LIST_FILE="$HOME_PATH/.$BINARY_NAME/.service_list";
   echo "$BINARY_NAME$CLIENT_ATSIGN $SSHNPD_SERVICE_MECHANISM" >> "$SERVICE_LIST_FILE";
