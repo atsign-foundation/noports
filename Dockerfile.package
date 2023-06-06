@@ -4,14 +4,10 @@ WORKDIR /sshnoports
 COPY . .
 RUN set -eux; \
     case "$(dpkg --print-architecture)" in \
-    amd64) \
-    ARCH="x64";; \
-    armhf) \
-    ARCH="arm";; \
-    arm64) \
-    ARCH="arm64";; \
-    riscv64) \
-    ARCH="riscv64";; \
+        amd64) ARCH="x64";; \
+        armhf) ARCH="arm";; \
+        arm64) ARCH="arm64";; \
+        riscv64) ARCH="riscv64";; \
     esac; \
     mkdir sshnp; \
     mkdir tarball; \
