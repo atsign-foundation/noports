@@ -4,14 +4,10 @@ WORKDIR /sshnoports
 COPY . .
 RUN set -eux; \
     case "$(dpkg --print-architecture)" in \
-        amd64) \
-            ARCH="x64";; \
-        armhf) \
-            ARCH="arm";; \
-        arm64) \
-            ARCH="arm64";; \
-        riscv64) \
-            ARCH="riscv64";; \
+        amd64) ARCH="x64";; \
+        armhf) ARCH="arm";; \
+        arm64) ARCH="arm64";; \
+        riscv64) ARCH="riscv64";; \
     esac; \
     mkdir sshnp; \
     mkdir tarball; \
@@ -21,8 +17,9 @@ RUN set -eux; \
     dart compile exe bin/sshnpd.dart -v -o sshnp/sshnpd; \
     dart compile exe bin/sshrv.dart -v -o sshnp/sshrv; \
     dart compile exe bin/sshrvd.dart -v -o sshnp/sshrvd; \
-    cp scripts/* sshnp; \
+    cp -r templates sshnp/templates; \
+    cp scripts/* sshnp/; \
     tar -cvzf tarball/sshnp-linux-${ARCH}.tgz sshnp
-    
+
 FROM scratch
 COPY --from=build /sshnoports/tarball/* /
