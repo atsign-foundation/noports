@@ -14,8 +14,8 @@ norm_atsign() {
 usage() {
   echo "Usage: $0 [options]"
   echo "Options:"
-  echo "  -c, --client <address>    (mandatory)  Client address"
-  echo "  -d, --device <address>    (mandatory)  Device manager address"
+  echo "  -c, --client <address>    (mandatory)  Client address (e.g. @alice_client)"
+  echo "  -d, --device <address>    (mandatory)  Device address (e.g. @alice_device)"
   echo "  -h, --host <region code>  (mandatory)  Default host rendezvous region code (am, eu, ap)"
   echo "  -l, --local <path>                     Install using local zip/tgz"
   echo "  -r, --repo <path>                      Install using local repo"
@@ -147,13 +147,7 @@ parse_env() {
 
   # ARCH includes the dot at the end to avoid conflict between arm and arm64
   case "$(uname -m)" in
-    aarch64|arm64)
-      if [ "$PLATFORM" == "macos" ]; then
-        ARCH="arm"
-      else
-        ARCH="arm64."
-      fi
-      ;;
+    aarch64|arm64) ARCH="arm64.";;
     x86_64|amd64) ARCH="x64.";;
     arm) ARCH="arm.";;
     riscv64) ARCH="riscv64.";;

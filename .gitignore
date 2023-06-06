@@ -10,3 +10,6 @@ pubspec.lock
 
 # Conventional directory for build output.
 build/
+
+# Macos
+.DS_Store
