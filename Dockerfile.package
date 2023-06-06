@@ -1,4 +1,4 @@
-FROM atsigncompany/buildimage:3.0.2_3.1.0-63.1.beta@sha256:261cca38295c117c11763dfb84b6b5535739995afd091825543cdda0ecab76e9 AS build
+FROM atsigncompany/buildimage:3.0.3_3.1.0-63.1.beta@sha256:9104c514de99241a529262ca7cbdf3ac6e764aeea47f6f8d316cf85397beff7a AS build
 # Using atsigncompany/buildimage until official dart image has RISC-V support
 WORKDIR /sshnoports
 COPY . .
