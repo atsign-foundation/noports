@@ -1,5 +1,15 @@
 #!/bin/bash
 
+if [ "$(uname)" != "Darwin" ]; then
+  echo "This script is only for macOS";
+  exit 1;
+fi
+
+if [ "$(uname -m)" != "arm64" ]; then
+  echo "This script is only for Apple Silicon";
+  exit 1;
+fi
+
 if [ -n "$FLUTTER_ROOT" ]; then
   DART="$FLUTTER_ROOT/bin/dart"
 else
@@ -8,16 +18,19 @@ fi
 
 eval "$DART pub upgrade"
 
-rm -r build/sshnp build/sshnp-macos-arm64.tgz
-mkdir -p build/sshnp
+OUTPUT_DIR_PATH="build/macos-arm64"
+OUTPUT_DIR="$OUTPUT_DIR_PATH/sshnp"
 
-eval "$DART compile exe -o build/sshnp/sshnpd bin/sshnpd.dart"
-eval "$DART compile exe -o build/sshnp/sshnp bin/sshnp.dart"
-eval "$DART compile exe -o build/sshnp/sshrvd bin/sshrvd.dart"
-eval "$DART compile exe -o build/sshnp/sshrv bin/sshrv.dart"
-eval "$DART compile exe -o build/sshnp/at_activate bin/activate_cli.dart"
+rm -r "$OUTPUT_DIR" build/sshnp-macos-arm64.tgz
+mkdir -p "$OUTPUT_DIR"
 
-cp -r templates build/sshnp/templates;
-cp scripts/* build/sshnp/;
+eval "$DART compile exe -o $OUTPUT_DIR/sshnpd bin/sshnpd.dart"
+eval "$DART compile exe -o $OUTPUT_DIR/sshnp bin/sshnp.dart"
+eval "$DART compile exe -o $OUTPUT_DIR/sshrvd bin/sshrvd.dart"
+eval "$DART compile exe -o $OUTPUT_DIR/sshrv bin/sshrv.dart"
+eval "$DART compile exe -o $OUTPUT_DIR/at_activate bin/activate_cli.dart"
 
-tar czf build/sshnp-macos-arm64.tgz -C build sshnp
+cp -r templates $OUTPUT_DIR/templates;
+cp scripts/* "$OUTPUT_DIR/";
+
+tar czf build/sshnp-macos-arm64.tgz -C "$OUTPUT_DIR_PATH" sshnp
