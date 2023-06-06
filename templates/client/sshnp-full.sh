@@ -13,18 +13,18 @@ usage() {
 parse_args() {
   while [ $# -gt 0 ]; do
     case "$1" in
-    -h|--host)
-      if [ $# -lt 0 ]; then
-        echo "Missing argument for $1";
-        exit 1;
-      fi
-      HOST="$2"
-      shift 2
-      ;;
-    *)
-      SSHNP_DEVICE="$1"
-      shift
-      ;;
+      -h|--host)
+        if [ $# -lt 0 ]; then
+          echo "Missing argument for $1";
+          exit 1;
+        fi
+        HOST="$2"
+        shift 2
+        ;;
+      *)
+        SSHNP_DEVICE="$1"
+        shift
+        ;;
     esac
     shift
   done

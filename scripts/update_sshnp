@@ -64,17 +64,17 @@ parse_env() {
   URL="https://api.github.com/repos/atsign-foundation/sshnoports/releases/$SSHNP_VERSION";
 
   case "$(uname)" in
-  Darwin)
-    PLATFORM="macos"
-    EXT="zip"
-    ;;
-  Linux)
-    PLATFORM="linux"
-    EXT="tgz"
-    ;;
-  *)
-    PLATFORM="Unknown"
-    ;;
+    Darwin)
+      PLATFORM="macos"
+      EXT="zip"
+      ;;
+    Linux)
+      PLATFORM="linux"
+      EXT="tgz"
+      ;;
+    *)
+      PLATFORM="Unknown"
+      ;;
   esac
 
   if [ "$PLATFORM" == "Unknown" ]; then
@@ -83,26 +83,18 @@ parse_env() {
   fi
 
   # ARCH includes the dot at the end to avoid conflict between arm and arm64
-  case "$(uname -m)" in
-  x86_64)
-    ARCH="x64."
-    ;;
-  aarch64|arm64)
-    if [ "$PLATFORM" == "macos" ]; then
-      ARCH="arm"
-    else
-      ARCH="arm64."
-    fi
-    ;;
-  arm)
-    ARCH="arm."
-    ;;
-  riscv64)
-    ARCH="riscv64."
-    ;;
-  *)
-    ARCH="Unknown"
-    ;;
+    case "$(uname -m)" in
+      aarch64|arm64)
+        if [ "$PLATFORM" == "macos" ]; then
+          ARCH="arm"
+        else
+          ARCH="arm64."
+        fi
+        ;;
+      x86_64|amd64) ARCH="x64.";;
+      arm) ARCH="arm.";;
+      riscv64) ARCH="riscv64.";;
+      *) ARCH="Unknown";;
   esac
 
   if [ "$ARCH" == "Unknown" ]; then
@@ -133,12 +125,12 @@ download() {
   fi
 
   case "$EXT" in
-  zip)
-    unzip -qo "$HOME_PATH/.atsign/temp/$BINARY_NAME.$EXT" -d "$HOME_PATH/.atsign/temp";
-    ;;
-  tgz|tar.gz)
-    tar -zxvf "$HOME_PATH/.atsign/temp/$BINARY_NAME.$EXT" -C "$HOME_PATH/.atsign/temp/";
-    ;;
+    zip)
+      unzip -qo "$HOME_PATH/.atsign/temp/$BINARY_NAME.$EXT" -d "$HOME_PATH/.atsign/temp";
+      ;;
+    tgz|tar.gz)
+      tar -zxvf "$HOME_PATH/.atsign/temp/$BINARY_NAME.$EXT" -C "$HOME_PATH/.atsign/temp/";
+      ;;
   esac
   if [ -n "$SSHNP_DEV_MODE" ]; then
     echo "DEV MODE: Installing from local repo: $SSHNP_DEV_MODE";

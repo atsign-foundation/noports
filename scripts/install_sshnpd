@@ -25,54 +25,54 @@ usage() {
 parse_args() {
   while [ $# -gt 0 ]; do
     case "$1" in
-    -h|--help)
-      usage
-      exit 0
-    ;;
-    -l|--local)
-      if [ $# -lt 0 ]; then
-        echo "Missing argument for $1";
-        exit 1;
-      fi
-      SSHNP_LOCAL="$2"
-      shift 2
-    ;;
-    -r|--repo)
-      if [ $# -lt 0 ]; then
-        echo "Missing argument for $1";
-        exit 1;
-      fi
-      SSHNP_DEV_MODE="$2"
-      shift 2
-    ;;
-    -c|--client)
-      if [ $# -lt 0 ]; then
-        echo "Missing argument for $1";
-        exit 1;
-      fi
-      CLIENT_ATSIGN="$2"
-      shift 2
-    ;;
-    -d|--device)
-      if [ $# -lt 0 ]; then
-        echo "Missing argument for $1";
-        exit 1;
-      fi
-      DEVICE_MANAGER_ATSIGN="$2"
-      shift 2
-    ;;
-    -n|--name)
-      if [ $# -lt 0 ]; then
-        echo "Missing argument for $1";
-        exit 1;
-      fi
-      SSHNP_DEVICE_NAME="$2"
-      shift 2
-    ;;
-    *)
-      echo "Unknown argument: $1"
-      exit 1
-    ;;
+      -h|--help)
+        usage
+        exit 0
+      ;;
+      -l|--local)
+        if [ $# -lt 0 ]; then
+          echo "Missing argument for $1";
+          exit 1;
+        fi
+        SSHNP_LOCAL="$2"
+        shift 2
+      ;;
+      -r|--repo)
+        if [ $# -lt 0 ]; then
+          echo "Missing argument for $1";
+          exit 1;
+        fi
+        SSHNP_DEV_MODE="$2"
+        shift 2
+      ;;
+      -c|--client)
+        if [ $# -lt 0 ]; then
+          echo "Missing argument for $1";
+          exit 1;
+        fi
+        CLIENT_ATSIGN="$2"
+        shift 2
+      ;;
+      -d|--device)
+        if [ $# -lt 0 ]; then
+          echo "Missing argument for $1";
+          exit 1;
+        fi
+        DEVICE_MANAGER_ATSIGN="$2"
+        shift 2
+      ;;
+      -n|--name)
+        if [ $# -lt 0 ]; then
+          echo "Missing argument for $1";
+          exit 1;
+        fi
+        SSHNP_DEVICE_NAME="$2"
+        shift 2
+      ;;
+      *)
+        echo "Unknown argument: $1"
+        exit 1
+      ;;
     esac
   done
 
@@ -105,17 +105,17 @@ parse_env() {
   URL="https://api.github.com/repos/atsign-foundation/sshnoports/releases/$SSHNP_VERSION";
 
   case "$(uname)" in
-  Darwin)
-    PLATFORM="macos"
-    EXT="zip"
-    ;;
-  Linux)
-    PLATFORM="linux"
-    EXT="tgz"
-    ;;
-  *)
-    PLATFORM="Unknown"
-    ;;
+    Darwin)
+      PLATFORM="macos"
+      EXT="zip"
+      ;;
+    Linux)
+      PLATFORM="linux"
+      EXT="tgz"
+      ;;
+    *)
+      PLATFORM="Unknown"
+      ;;
   esac
 
   if [ "$PLATFORM" == "Unknown" ]; then
@@ -125,25 +125,17 @@ parse_env() {
 
   # ARCH includes the dot at the end to avoid conflict between arm and arm64
   case "$(uname -m)" in
-  x86_64)
-    ARCH="x64."
-    ;;
-  aarch64|arm64)
-    if [ "$PLATFORM" == "macos" ]; then
-      ARCH="arm"
-    else
-      ARCH="arm64."
-    fi
-    ;;
-  arm)
-    ARCH="arm."
-    ;;
-  riscv64)
-    ARCH="riscv64."
-    ;;
-  *)
-    ARCH="Unknown"
-    ;;
+    aarch64|arm64)
+      if [ "$PLATFORM" == "macos" ]; then
+        ARCH="arm"
+      else
+        ARCH="arm64."
+      fi
+      ;;
+    x86_64|amd64) ARCH="x64.";;
+    arm) ARCH="arm.";;
+    riscv64) ARCH="riscv64.";;
+    *) ARCH="Unknown";;
   esac
 
   if [ "$ARCH" == "Unknown" ]; then
@@ -179,12 +171,12 @@ download() {
   fi
 
   case "$EXT" in
-  zip)
-    unzip -qo "$HOME_PATH/.atsign/temp/$BINARY_NAME.$EXT" -d "$HOME_PATH/.atsign/temp/";
-    ;;
-  tgz|tar.gz)
-    tar -zxf "$HOME_PATH/.atsign/temp/$BINARY_NAME.$EXT" -C "$HOME_PATH/.atsign/temp/";
-    ;;
+    zip)
+      unzip -qo "$HOME_PATH/.atsign/temp/$BINARY_NAME.$EXT" -d "$HOME_PATH/.atsign/temp/";
+      ;;
+    tgz|tar.gz)
+      tar -zxf "$HOME_PATH/.atsign/temp/$BINARY_NAME.$EXT" -C "$HOME_PATH/.atsign/temp/";
+      ;;
   esac
   mv "$HOME_PATH/.atsign/temp/sshnp" "$HOME_PATH/.atsign/temp/$BINARY_NAME"; # Rename the extracted folder
 
