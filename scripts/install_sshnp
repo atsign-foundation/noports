@@ -76,20 +76,20 @@ parse_args() {
     esac
   done
 
-  if [ -z "$CLIENT_ATSIGN" ]; then
-    read -rp "Client address: " CLIENT_ATSIGN;
-  fi
+  while [ -z "$CLIENT_ATSIGN" ]; do
+    read -rp "Client address (e.g. @alice_client): " CLIENT_ATSIGN;
+  done
 
-  if [ -z "$DEVICE_MANAGER_ATSIGN" ]; then
-    read -rp "Device manager address: " DEVICE_MANAGER_ATSIGN;
-  fi
+  while [ -z "$DEVICE_MANAGER_ATSIGN" ]; do
+    read -rp "Device address (e.g. @alice_device): " DEVICE_MANAGER_ATSIGN;
+  done
 
   if [ -z "$HOST_RENDEZVOUS_ATSIGN" ]; then
     echo Pick your default region:
-    echo am: Americas
-    echo ap: Asia Pacific
-    echo eu: Europe
-    read -rp "region: " HOST_RENDEZVOUS_ATSIGN;
+    echo "  am: Americas"
+    echo "  ap: Asia Pacific"
+    echo "  eu: Europe"
+    read -rp "> " HOST_RENDEZVOUS_ATSIGN;
   fi
 
   while [[ "$HOST_RENDEZVOUS_ATSIGN" != @rv_* ]]; do
