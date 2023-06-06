@@ -147,13 +147,7 @@ parse_env() {
 
   # ARCH includes the dot at the end to avoid conflict between arm and arm64
   case "$(uname -m)" in
-    aarch64|arm64)
-      if [ "$PLATFORM" == "macos" ]; then
-        ARCH="arm"
-      else
-        ARCH="arm64."
-      fi
-      ;;
+    aarch64|arm64) ARCH="arm64.";;
     x86_64|amd64) ARCH="x64.";;
     arm) ARCH="arm.";;
     riscv64) ARCH="riscv64.";;
