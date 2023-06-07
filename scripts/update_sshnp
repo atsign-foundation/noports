@@ -127,8 +127,10 @@ download() {
       ;;
   esac
 
-  UPDATE_SCRIPT_URL="https://raw.githubusercontent.com/atsign-foundation/sshnoports/trunk/scripts/update_$BINARY_NAME";
-  curl -sL "$UPDATE_SCRIPT_URL" -o "$HOME_PATH/.atsign/temp/$BINARY_NAME/update_$BINARY_NAME";
+  if [ -z "$SSHNP_LOCAL" ]; then
+    UPDATE_SCRIPT_URL="https://raw.githubusercontent.com/atsign-foundation/sshnoports/trunk/scripts/update_$BINARY_NAME";
+    curl -sL "$UPDATE_SCRIPT_URL" -o "$HOME_PATH/.atsign/temp/$BINARY_NAME/update_$BINARY_NAME";
+  fi
 
   if [ -n "$SSHNP_DEV_MODE" ]; then
     echo "DEV MODE: Installing from local repo: $SSHNP_DEV_MODE";
