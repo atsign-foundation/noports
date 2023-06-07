@@ -86,7 +86,7 @@ parse_env() {
   case "$(uname -m)" in
     aarch64|arm64) ARCH="arm64.";;
     x86_64|amd64) ARCH="x64.";;
-    arm) ARCH="arm.";;
+    armv7l|arm) ARCH="arm.";;
     riscv64) ARCH="riscv64.";;
     *) ARCH="Unknown";;
   esac
