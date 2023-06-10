@@ -415,7 +415,7 @@ void main(List<String> args) async {
     }
   }
 
-  // find a spare localport
+  // find a spare local port
   if (localPort == '0') {
     ServerSocket serverSocket =
         await ServerSocket.bind(InternetAddress.loopbackIPv4, 0);

@@ -85,8 +85,7 @@ void main(List<String> args) async {
     exit(1);
   }
 
-  // Loging setup
-  // Now on to the atPlatform startup
+  // Logging setup
   AtSignLogger.root_level = 'WARNING';
   logger.logger.level = Level.WARNING;
   if (results['verbose']) {
@@ -99,6 +98,7 @@ void main(List<String> args) async {
 
 
 
+  // Now on to the atPlatform startup
   //onboarding preference builder can be used to set onboardingService parameters
   AtOnboardingPreference atOnboardingConfig = AtOnboardingPreference()
     //..qrCodePath = '<location of image>'
