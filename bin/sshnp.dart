@@ -19,8 +19,6 @@ import 'package:sshnoports/home_directory.dart';
 import 'package:sshnoports/check_non_ascii.dart';
 import 'package:sshnoports/cleanup_sshnp.dart';
 import 'package:sshnoports/check_file_exists.dart';
-import 'package:sshnoports/sync_listener.dart';
-//import 'package:sshnoports/service_factories.dart';
 
 void main(List<String> args) async {
   final AtSignLogger logger = AtSignLogger(' sshnp ');
@@ -242,17 +240,6 @@ void main(List<String> args) async {
   await onboardingService.authenticate();
 
   atClient = AtClientManager.getInstance().atClient;
-
-  // Wait for initial sync to complete
-  logger.info("Starting sync for : $fromAtsign");
-
-  var mySynclistener = MySyncProgressListener();
-  atClient.syncService.addProgressListener(mySynclistener);
-  while (!mySynclistener.syncComplete) {
-    await Future.delayed(Duration(milliseconds: 100));
-  }
-
-  logger.info("$fromAtsign sync status: ${mySynclistener.syncResult}");
 
   atClient = AtClientManager.getInstance().atClient;
 
