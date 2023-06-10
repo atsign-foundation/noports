@@ -19,8 +19,6 @@ import 'package:sshnoports/home_directory.dart';
 import 'package:sshnoports/check_non_ascii.dart';
 import 'package:sshnoports/cleanup_sshnp.dart';
 import 'package:sshnoports/check_file_exists.dart';
-import 'package:sshnoports/sync_listener.dart';
-//import 'package:sshnoports/service_factories.dart';
 
 void main(List<String> args) async {
   final AtSignLogger logger = AtSignLogger(' sshnp ');
@@ -243,19 +241,6 @@ void main(List<String> args) async {
 
   atClient = AtClientManager.getInstance().atClient;
 
-  // Wait for initial sync to complete
-  logger.info("Starting sync for : $fromAtsign");
-
-  var mySynclistener = MySyncProgressListener();
-  atClient.syncService.addProgressListener(mySynclistener);
-  while (!mySynclistener.syncComplete) {
-    await Future.delayed(Duration(milliseconds: 100));
-  }
-
-  logger.info("$fromAtsign sync status: ${mySynclistener.syncResult}");
-
-  atClient = AtClientManager.getInstance().atClient;
-
   NotificationService notificationService = atClient.notificationService;
 
   notificationService
@@ -428,7 +413,7 @@ void main(List<String> args) async {
     }
   }
 
-  // find a spare localport
+  // find a spare local port
   if (localPort == '0') {
     ServerSocket serverSocket =
         await ServerSocket.bind(InternetAddress.loopbackIPv4, 0);
