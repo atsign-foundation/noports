@@ -241,8 +241,6 @@ void main(List<String> args) async {
 
   atClient = AtClientManager.getInstance().atClient;
 
-  atClient = AtClientManager.getInstance().atClient;
-
   NotificationService notificationService = atClient.notificationService;
 
   notificationService
