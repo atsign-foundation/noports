@@ -381,7 +381,7 @@ class SSHNP {
     });
 
     AtKey ourSshrvdIdKey = AtKey()
-      ..key = '$device$sshrvdNameSpace'
+      ..key = '$device.$sshrvdNameSpace'
       ..sharedBy = clientAtSign // shared by us
       ..sharedWith = host // shared with the sshrvd host
       ..metadata = (Metadata()..ttr=-1..ttl=10000);
