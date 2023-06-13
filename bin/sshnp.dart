@@ -384,7 +384,12 @@ class SSHNP {
       ..key = '$device.$sshrvdNameSpace'
       ..sharedBy = clientAtSign // shared by us
       ..sharedWith = host // shared with the sshrvd host
-      ..metadata = (Metadata()..ttr=-1..ttl=10000);
+      ..metadata = (Metadata()
+        // as we are sending a notification to the sshrvd namespace,
+        // we don't want to append our namespace
+        ..namespaceAware = false
+        ..ttr = -1
+        ..ttl = 10000);
 
     try {
       await atClient.notificationService
