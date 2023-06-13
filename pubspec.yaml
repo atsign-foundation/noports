@@ -1,6 +1,10 @@
 name: sshnoports
 description: Encrypted/Secure control plane for ssh/d or other commands in the future
+
+# NOTE: If you update the version number here, you
+# must also update it in version.dart
 version: 3.3.0
+
 homepage: https://docs.atsign.com/
 
 environment:
