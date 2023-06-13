@@ -10,6 +10,8 @@ import 'package:at_onboarding_cli/at_onboarding_cli.dart';
 // external packages
 import 'package:args/args.dart';
 import 'package:logging/logging.dart';
+import 'package:meta/meta.dart';
+import 'package:sshnoports/service_factories.dart';
 import 'package:uuid/uuid.dart';
 import 'package:version/version.dart';
 
@@ -20,237 +22,211 @@ import 'package:sshnoports/check_non_ascii.dart';
 import 'package:sshnoports/cleanup_sshnp.dart';
 import 'package:sshnoports/check_file_exists.dart';
 
-void main(List<String> args) async {
-  final AtSignLogger logger = AtSignLogger(' sshnp ');
-  logger.hierarchicalLoggingEnabled = true;
-  logger.logger.level = Level.SHOUT;
+final Uuid uuid = Uuid();
+final String sessionId = uuid.v4();
 
-  var uuid = Uuid();
-  String sessionId = uuid.v4();
+void main(List<String> args) async {
+  AtSignLogger.root_level = 'SHOUT';
+
+  SSHNP sshnp = await SSHNP.fromCommandLineArgs(args);
 
   ProcessSignal.sigint.watch().listen((signal) async {
-    await cleanUp(sessionId, logger);
+    await cleanUp(sessionId, sshnp.logger);
     exit(1);
   });
-  
-  // Get location of running sshnp so
-  // sshrv can be run even if sshnp was found
-  // by a PATH location rather than fully qualified
-  // *Note sshnp and sshrv need to be compiled to exe before use as result.
-  String sshnpDir = Platform.resolvedExecutable;
-  String pathSeparator = Platform.pathSeparator;
-  List<String> pathList = sshnpDir.split(pathSeparator);
-  pathList.removeLast();
-  sshnpDir = pathList.join(pathSeparator) + pathSeparator;
 
-  var parser = ArgParser();
-  // Basic arguments
-  parser.addOption('key-file',
-      abbr: 'k',
-      mandatory: false,
-      help: 'Sending atSign\'s atKeys file if not in ~/.atsign/keys/');
-  parser.addOption('from', abbr: 'f', mandatory: true, help: 'Sending atSign');
-  parser.addOption('to',
-      abbr: 't', mandatory: true, help: 'Send a notification to this atSign');
-  parser.addOption('device',
-      abbr: 'd',
-      mandatory: false,
-      defaultsTo: "default",
-      help: 'Send a notification to this device');
-  parser.addOption('host',
-      abbr: 'h',
-      mandatory: true,
-      help: 'atSign of sshrvd daemon or FQDN/IP address to connect back to ');
-  parser.addOption('port',
-      abbr: 'p',
-      mandatory: false,
-      defaultsTo: '22',
-      help:
-          'TCP port to connect back to (only required if --host specified a FQDN/IP)');
-  parser.addOption('local-port',
-      abbr: 'l',
-      defaultsTo: '0',
-      mandatory: false,
-      help:
-          'Reverse ssh port to listen on, on your local machine, by sshnp default finds a spare port');
-  parser.addOption('ssh-public-key',
-      abbr: 's',
-      defaultsTo: 'false',
-      mandatory: false,
-      help:
-          'Public key file from ~/.ssh to be appended to authorized_hosts on the remote device');
-  parser.addMultiOption('local-ssh-options',
-      abbr: 'o', help: 'Add these commands to the local ssh command');
-  parser.addFlag('verbose', abbr: 'v', help: 'More logging');
-  parser.addFlag('rsa',
-      abbr: 'r',
-      defaultsTo: false,
-      help: 'Use RSA 4096 keys rather than the default ED25519 keys');
+  await sshnp.init();
 
-  // Check the arguments
-  late AtClient? atClient;
-  dynamic results;
-  String? username;
-  String atsignFile;
-  String fromAtsign = 'unknown';
-  String toAtsign = 'unknown';
-  String? homeDirectory = getHomeDirectory();
-  String device = "";
-  String nameSpace = '';
-  String sshrvdNameSpace = 'sshrvd';
+  await sshnp.run();
+}
+
+class SSHNP {
+  // TODO Make this a const in SSHRVD class
+  static const String sshrvdNameSpace = 'sshrvd';
+
+  final AtSignLogger logger = AtSignLogger(' sshnp ');
+
+  /// The [AtClient] used to communicate with sshnpd and sshrvd
+  final AtClient atClient;
+
+  /// The atSign of the sshnpd we wish to communicate with
+  final String sshnpdAtSign;
+
+  /// The device name of the sshnpd we wish to communicate with
+  final String device;
+
+  /// The user name on this host
+  final String username;
+
+  /// The home directory on this host
+  final String homeDirectory;
+
+  /// Set to [AtClient.getCurrentAtSign] during construction
+  @visibleForTesting
+  late final String clientAtSign;
+
+  /// The username to use on the remote host in the ssh session. Is fetched
+  /// during [init]
+  late final String remoteUsername;
+
+  late final String sshPublicKey;
+  late final String sshPrivateKey;
+  /// Namespace will be set to [device].sshnp
+  late final String nameSpace;
+
   String port;
+  String host;
   String sshrvdPort = '';
-  String host = "127.0.0.1";
   String localPort;
   String sshString = "";
   String sshHomeDirectory = "";
-  String sendSshPublicKey = "";
+  final String sendSshPublicKey;
   List<String> localSshOptions = [];
+
   int counter = 0;
   bool ack = false;
   bool ackErrors = false;
   bool rsa = false;
+
   // In the future (perhaps) we can send other commands
   // Perhaps OpenVPN or shell commands
-  String sendCommand = 'sshd';
+  static const String commandToSend = 'sshd';
 
-  try {
-    // Arg check
-    results = parser.parse(args);
+  @visibleForTesting
+  bool initialized = false;
 
-    // Do we have a username ?
-    Map<String, String> envVars = Platform.environment;
-    if (Platform.isLinux || Platform.isMacOS) {
-      username = envVars['USER'];
-    } else if (Platform.isWindows) {
-      username = envVars['USERPROFILE'];
-    }
-    if (username == null) {
-      throw ('\nUnable to determine your username: please set environment variable\n\n');
-    }
-    if (homeDirectory == null) {
-      throw ('\nUnable to determine your home directory: please set environment variable\n\n');
-    }
+  SSHNP({
+    required this.atClient,
+    required this.sshnpdAtSign,
+    required this.username,
+    required this.homeDirectory,
+    required this.device,
+    required this.host,
+    required this.port,
+    required this.localPort,
+    required this.localSshOptions,
+    this.sendSshPublicKey = 'false'
+  }) {
+    nameSpace = '$device.sshnp';
+    clientAtSign = atClient.getCurrentAtSign()!;
+    logger.hierarchicalLoggingEnabled = true;
+    logger.logger.level = Level.SHOUT;
     // Setup ssh keys location
-    sshHomeDirectory = "$homeDirectory/.ssh/";
-    if (Platform.isWindows) {
-      sshHomeDirectory = '$homeDirectory\\.ssh\\';
+    sshHomeDirectory = '$homeDirectory${Platform.pathSeparator}.ssh${Platform.pathSeparator}';
+    if (! Directory(sshHomeDirectory).existsSync()) {
+      Directory(sshHomeDirectory).createSync();
+    }
+  }
+
+  /// Must be run after construction, to complete initialization
+  Future<void> init() async {
+    if (initialized) {
+      throw StateError('Cannot init() - already initialized');
     }
 
-    // Find atSign key file
-    fromAtsign = results['from'];
-    toAtsign = results['to'];
-    if (results['key-file'] != null) {
-      atsignFile = results['key-file'];
-    } else {
-      atsignFile = '${fromAtsign}_key.atKeys';
-      atsignFile = '$homeDirectory/.atsign/keys/$atsignFile';
-    }
-    // Check atKeyFile selected exists
-    if (!await fileExists(atsignFile)) {
-      throw ('\n Unable to find .atKeys file : $atsignFile');
-    }
+    logger.info('Subscribing to notifications on $sessionId.$nameSpace@');
+    // Start listening for response notifications from sshnpd
+    atClient.notificationService
+        .subscribe(regex: '$sessionId.$nameSpace@', shouldDecrypt: true)
+        .listen(handleSshnpdResponses);
 
-    // Get the other easy options
-    host = results['host'];
-    port = results['port'];
-    localPort = results['local-port'];
-    localSshOptions = results['local-ssh-options'];
+    await setupSshKeys();
 
-    // Check device string only contains ascii
-    if (checkNonAscii(results['device'])) {
-      throw ('\nDevice name can only contain alphanumeric characters with a max length of 15');
+    await fetchRemoteUserName();
+
+    // If host has an @ then contact the sshrvd service for some ports
+    if (host.startsWith('@')) {
+      await getHostAndPortFromSshrvd();
     }
 
-    // Add a namespace separator just cause its neater.
-    device = results['device'] + ".";
-    rsa = results['rsa'];
-    nameSpace = '${device}sshnp';
+    await sharePrivateKeyWithSshnpd();
 
-    // Check the public key if the option was selected
-    sendSshPublicKey = results['ssh-public-key'];
-    if ((sendSshPublicKey != 'false')) {
-      sendSshPublicKey = '$sshHomeDirectory$sendSshPublicKey';
-      if (!await fileExists(sendSshPublicKey)) {
-        throw ('\n Unable to find ssh public key file : $sendSshPublicKey');
+    await sharePublicKeyWithSshnpdIfRequired();
+
+    initialized = true;
+  }
+
+  /// May only be run after [init] has been run
+  Future<void> run() async {
+    if (!initialized) {
+      throw StateError('Cannot run() - not initialized');
+    }
+    // find a spare local port
+    if (localPort == '0') {
+      ServerSocket serverSocket =
+          await ServerSocket.bind(InternetAddress.loopbackIPv4, 0);
+      localPort = serverSocket.port.toString();
+      await serverSocket.close();
+    }
+
+    AtKey keyForCommandToSend = AtKey()
+      ..key = commandToSend
+      ..namespace = nameSpace
+      ..sharedBy = clientAtSign
+      ..sharedWith = sshnpdAtSign
+      ..metadata = (Metadata()..ttr=-1..ttl=10000);
+
+    if (commandToSend == 'sshd') {
+      // Local port, port of sshd , username , hostname
+      sshString = '$localPort $port $username $host $sessionId';
+    }
+
+    try {
+      await atClient.notificationService
+          .notify(NotificationParams.forUpdate(keyForCommandToSend, value: sshString),
+              onSuccess: (notification) {
+        logger.info('SUCCESS:$notification $sshString');
+      }, onError: (notification) {
+        logger.info('ERROR:$notification $sshString');
+      });
+    } catch (e) {
+      stderr.writeln(e.toString());
+    }
+
+    // Before we clean up we need to make sure that the reverse ssh made the connection.
+    // Or that if it had a problem what the problem was, or timeout and explain why.
+
+    // Timer to timeout after 10 Secs or after the Ack of connected/Errors
+    while (!ack) {
+      await Future.delayed(Duration(milliseconds: 100));
+      counter++;
+      if (counter == 300) {
+        ack = true;
+        await cleanUp(sessionId, logger);
+        stderr.writeln('sshnp: connection timeout');
+        exit(1);
       }
-      if (!sendSshPublicKey.endsWith('.pub')) {
-        throw ('\n The ssh public key should have a ".pub" extension');
+    }
+
+    // Clean Up the files we created
+    await cleanUp(sessionId, logger);
+
+    // print out base ssh command if we hit no Ack Errors
+    // If we had a Public key include the private key in the command line
+    // By removing the .pub extn
+    if (!ackErrors) {
+      if (sendSshPublicKey != 'false') {
+        stdout.write(
+            "ssh -p $localPort $remoteUsername@localhost -i ${sendSshPublicKey.replaceFirst(RegExp(r'.pub$'), '')} ");
+      } else {
+        stdout.write("ssh -p $localPort $remoteUsername@localhost ");
+      }
+      // print out optional arguments
+      for (var argument in localSshOptions) {
+        stdout.write("$argument ");
       }
     }
-  } catch (e) {
-    version();
-    stdout.writeln(parser.usage);
-    stderr.writeln(e);
-    exit(1);
-  }
-  if (rsa) {
-    await Process.run('ssh-keygen',
-        ['-t', 'rsa', '-b', '4096', '-f', '${sessionId}_sshnp', '-q', '-N', ''],
-        workingDirectory: sshHomeDirectory);
-  } else {
-    await Process.run(
-        'ssh-keygen',
-        [
-          '-t',
-          'ed25519',
-          '-a',
-          '100',
-          '-f',
-          '${sessionId}_sshnp',
-          '-q',
-          '-N',
-          ''
-        ],
-        workingDirectory: sshHomeDirectory);
-  }
-  String sshPublicKey =
-      await File('$sshHomeDirectory${sessionId}_sshnp.pub').readAsString();
-  String sshPrivateKey =
-      await File('$sshHomeDirectory${sessionId}_sshnp').readAsString();
-
-  // Set up a safe authorized_keys file, for the reverse ssh tunnel
-  File('${sshHomeDirectory}authorized_keys').writeAsStringSync(
-      'command="echo \\"ssh session complete\\";sleep 20",PermitOpen="localhost:22" ${sshPublicKey.trim()} $sessionId\n',
-      mode: FileMode.append);
-
-  // Now on to the atPlatform startup
-  AtSignLogger.root_level = 'SHOUT';
-  if (results['verbose']) {
-    logger.logger.level = Level.INFO;
-
-    AtSignLogger.root_level = 'INFO';
+    // Print the  return
+    stdout.write('\n');
+    exit(0);
   }
 
-  //onboarding preference builder can be used to set onboardingService parameters
-  AtOnboardingPreference atOnboardingConfig = AtOnboardingPreference()
-    ..hiveStoragePath = '/tmp/.sshnp/$fromAtsign/$sessionId/storage'
-    ..namespace = '${device}sshnp'
-    ..downloadPath = '/tmp/.sshnp/files'
-    ..isLocalStoreRequired = true
-    ..commitLogPath =
-        '$homeDirectory/.sshnp/$fromAtsign/$sessionId/storage/commitLog'
-    ..fetchOfflineNotifications = false
-    ..atKeysFilePath = atsignFile
-    ..atProtocolEmitted = Version(2, 0, 0);
-
-  AtOnboardingService onboardingService =
-      AtOnboardingServiceImpl(fromAtsign, atOnboardingConfig);
-
-  await onboardingService.authenticate();
-
-  atClient = AtClientManager.getInstance().atClient;
-
-  NotificationService notificationService = atClient.notificationService;
-
-  notificationService
-      .subscribe(regex: '$sessionId.$nameSpace@', shouldDecrypt: true)
-      .listen(((notification) async {
+  handleSshnpdResponses(notification) async {
     String notificationKey = notification.key
         .replaceAll('${notification.to}:', '')
         .replaceAll('.$device.sshnp${notification.from}', '')
-        // convert to lower case as the latest AtClient converts notification
-        // keys to lower case when received
+    // convert to lower case as the latest AtClient converts notification
+    // keys to lower case when received
         .toLowerCase();
     logger.info('Received $notificationKey notification');
     if (notification.value == 'connected') {
@@ -263,44 +239,79 @@ void main(List<String> args) async {
       ack = true;
       ackErrors = true;
     }
-  }));
-
-  var metaData = Metadata()
-    ..isPublic = false
-    ..isEncrypted = true
-    ..namespaceAware = true;
-
-  var atKey = AtKey()
-    ..key = "username"
-    ..sharedBy = toAtsign
-    ..sharedWith = fromAtsign
-    ..namespace = nameSpace
-    ..metadata = metaData;
-  AtValue? toAtsignUsername;
-  try {
-    toAtsignUsername = await atClient.get(atKey);
-  } catch (e) {
-    stderr.writeln(
-        "Device \"${device.replaceAll('.', '')}\" unknown or username not shared");
-    await cleanUp(sessionId, logger);
-    exit(1);
   }
-  var remoteUsername = toAtsignUsername.value;
 
-  // If host has an @ then contact the sshrvd service for some ports
-  if (host.startsWith('@')) {
+
+  /// Look up the user name ... we expect a key to have been shared with us by
+  /// sshnpd. Let's say we are @human running sshnp, and @daemon is running
+  /// sshnpd, then we expect a key to have been shared whose ID is
+  /// @human:username.device.sshnp@daemon
+  Future<void> fetchRemoteUserName() async {
+    AtKey userNameRecordID = AtKey.fromString('$clientAtSign:username.$nameSpace$sshnpdAtSign');
+    try {
+      remoteUsername = (await atClient.get(userNameRecordID)).value as String;
+    } catch (e) {
+      stderr.writeln("Device \"$device\" unknown, or username not shared ");
+      await cleanUp(sessionId, logger);
+      exit(1);
+    }
+  }
+
+  Future<void> sharePublicKeyWithSshnpdIfRequired() async {
+    if (sendSshPublicKey != 'false') {
+      try {
+        String toSshPublicKey = await File(sendSshPublicKey).readAsString();
+        if (!toSshPublicKey.startsWith('ssh-')) {
+          throw ('$sshHomeDirectory$sendSshPublicKey does not look like a public key file');
+        }
+        AtKey sendOurPublicKeyToSshnpd = AtKey()
+          ..key = 'sshpublickey'
+          ..sharedBy = clientAtSign
+          ..sharedWith = sshnpdAtSign
+          ..metadata = (Metadata()
+            ..ttr = -1
+            ..ttl = 10000);
+        await atClient.notificationService.notify(
+            NotificationParams.forUpdate(sendOurPublicKeyToSshnpd,
+                value: toSshPublicKey), onSuccess: (notification) {
+          logger.info('SUCCESS:$notification');
+        }, onError: (notification) {
+          logger.info('ERROR:$notification');
+        });
+      } catch (e) {
+        stderr.writeln(
+            "Error opening or validating public key file or sending to remote atSign: $e");
+        await cleanUp(sessionId, logger);
+        exit(1);
+      }
+    }
+  }
+
+  Future<void> sharePrivateKeyWithSshnpd() async {
+    AtKey sendOurPrivateKeyToSshnpd = AtKey()
+      ..key = 'privatekey'
+      ..sharedBy = clientAtSign
+      ..sharedWith = sshnpdAtSign
+      ..namespace = nameSpace
+      ..metadata = (Metadata()
+        ..ttr = -1
+        ..ttl = 10000);
+
+    try {
+      await atClient.notificationService
+          .notify(NotificationParams.forUpdate(sendOurPrivateKeyToSshnpd, value: sshPrivateKey),
+              onSuccess: (notification) {
+        logger.info('SUCCESS:$notification');
+      }, onError: (notification) {
+        logger.info('ERROR:$notification');
+      });
+    } catch (e) {
+      stderr.writeln(e.toString());
+    }
+  }
+
+  Future<void> getHostAndPortFromSshrvd() async {
     String sshrvdId = uuid.v4();
-    metaData = Metadata()
-      ..isPublic = false
-      ..isEncrypted = true
-      ..namespaceAware = false;
-
-    atKey = AtKey()
-      ..key = '$sshrvdId.$sshrvdNameSpace'
-      ..sharedBy = host
-      ..sharedWith = fromAtsign
-      ..metadata = metaData;
-
     atClient.notificationService
         .subscribe(regex: '$sshrvdId.$sshrvdNameSpace@', shouldDecrypt: true)
         .listen((notification) async {
@@ -312,22 +323,15 @@ void main(List<String> args) async {
       ack = true;
     });
 
-    metaData = Metadata()
-      ..isPublic = false
-      ..isEncrypted = true
-      ..namespaceAware = false
-      ..ttr = -1
-      ..ttl = 10000;
-
-    atKey = AtKey()
+    AtKey ourSshrvdIdKey = AtKey()
       ..key = '$device$sshrvdNameSpace'
-      ..sharedBy = fromAtsign
-      ..sharedWith = host
-      ..metadata = metaData;
+      ..sharedBy = clientAtSign // shared by us
+      ..sharedWith = host // shared with the sshrvd host
+      ..metadata = (Metadata()..ttr=-1..ttl=10000);
 
     try {
-      await notificationService
-          .notify(NotificationParams.forUpdate(atKey, value: sshrvdId),
+      await atClient.notificationService
+          .notify(NotificationParams.forUpdate(ourSshrvdIdKey, value: sshrvdId),
               onSuccess: (notification) {
         logger.info('SUCCESS:$notification $sshString');
       }, onError: (notification) {
@@ -348,143 +352,248 @@ void main(List<String> args) async {
       }
     }
     ack = false;
-// Connect to rz point using background process
-// This way this program can exit
-    unawaited(Process.run('$sshnpDir/sshrv', [host, sshrvdPort]));
+
+    // Connect to rendezvous point using background process.
+    // sshnp (this program) can then exit without issue.
+    unawaited(Process.run(getSshrvCommand(), [host, sshrvdPort]));
   }
 
-  metaData = Metadata()
-    ..isPublic = false
-    ..isEncrypted = true
-    ..namespaceAware = true
-    ..ttr = -1
-    ..ttl = 10000;
-
-  var key = AtKey()
-    ..key = 'privatekey'
-    ..sharedBy = fromAtsign
-    ..sharedWith = toAtsign
-    ..namespace = nameSpace
-    ..metadata = metaData;
-
-  try {
-    await notificationService
-        .notify(NotificationParams.forUpdate(key, value: sshPrivateKey),
-            onSuccess: (notification) {
-      logger.info('SUCCESS:$notification');
-    }, onError: (notification) {
-      logger.info('ERROR:$notification');
-    });
-  } catch (e) {
-    stderr.writeln(e.toString());
-  }
-
-  metaData = Metadata()
-    ..isPublic = false
-    ..isEncrypted = true
-    ..namespaceAware = true
-    ..ttr = -1
-    ..ttl = 10000;
-
-  key = AtKey()
-    ..key = 'sshpublickey'
-    ..sharedBy = fromAtsign
-    ..sharedWith = toAtsign
-    ..metadata = metaData;
-
-  if (sendSshPublicKey != 'false') {
-    try {
-      String toSshPublicKey = await File(sendSshPublicKey).readAsString();
-      if (!toSshPublicKey.startsWith('ssh-')) {
-        throw ('$sshHomeDirectory$sendSshPublicKey does not look like a public key file');
-      }
-      await notificationService
-          .notify(NotificationParams.forUpdate(key, value: toSshPublicKey),
-              onSuccess: (notification) {
-        logger.info('SUCCESS:$notification');
-      }, onError: (notification) {
-        logger.info('ERROR:$notification');
-      });
-    } catch (e) {
-      stderr.writeln(
-          "Error opening or validating public key file or sending to remote atSign: $e");
-      await cleanUp(sessionId, logger);
-      exit(1);
-    }
-  }
-
-  // find a spare local port
-  if (localPort == '0') {
-    ServerSocket serverSocket =
-        await ServerSocket.bind(InternetAddress.loopbackIPv4, 0);
-    localPort = serverSocket.port.toString();
-    await serverSocket.close();
-  }
-
-  metaData = Metadata()
-    ..isPublic = false
-    ..isEncrypted = true
-    ..namespaceAware = true
-    ..ttr = -1
-    ..ttl = 10000;
-
-  key = AtKey()
-    ..key = sendCommand
-    ..sharedBy = fromAtsign
-    ..sharedWith = toAtsign
-    ..metadata = metaData;
-
-  if (sendCommand == 'sshd') {
-    // Local port, port of sshd , username , hostname
-    sshString = '$localPort $port $username $host $sessionId';
-  }
-
-  try {
-    await notificationService
-        .notify(NotificationParams.forUpdate(key, value: sshString),
-            onSuccess: (notification) {
-      logger.info('SUCCESS:$notification $sshString');
-    }, onError: (notification) {
-      logger.info('ERROR:$notification $sshString');
-    });
-  } catch (e) {
-    stderr.writeln(e.toString());
-  }
-
-  // Before we clean up we need to make sure that the reverse ssh made the connection.
-  // Or that if it had a problem what the problem was, or timeout and explain why.
-
-  // Timer to timeout after 10 Secs or after the Ack of connected/Errors
-  while (!ack) {
-    await Future.delayed(Duration(milliseconds: 100));
-    counter++;
-    if (counter == 300) {
-      ack = true;
-      await cleanUp(sessionId, logger);
-      stderr.writeln('sshnp: connection timeout');
-      exit(1);
-    }
-  }
-
-  // Clean Up the files we created
-  await cleanUp(sessionId, logger);
-
-  // print out base ssh command if we hit no Ack Errors
-  // If we had a Public key include the private key in the command line
-  // By removing the .pub extn
-  if (!ackErrors) {
-    if (sendSshPublicKey != 'false') {
-      stdout.write(
-          "ssh -p $localPort $remoteUsername@localhost -i ${sendSshPublicKey.replaceFirst(RegExp(r'.pub$'), '')} ");
+  Future<void> setupSshKeys() async {
+    if (rsa) {
+      await Process.run(
+          'ssh-keygen',
+          [
+            '-t',
+            'rsa',
+            '-b',
+            '4096',
+            '-f',
+            '${sessionId}_sshnp',
+            '-q',
+            '-N',
+            ''
+          ],
+          workingDirectory: sshHomeDirectory);
     } else {
-      stdout.write("ssh -p $localPort $remoteUsername@localhost ");
+      await Process.run(
+          'ssh-keygen',
+          [
+            '-t',
+            'ed25519',
+            '-a',
+            '100',
+            '-f',
+            '${sessionId}_sshnp',
+            '-q',
+            '-N',
+            ''
+          ],
+          workingDirectory: sshHomeDirectory);
     }
-    // print out optional arguments
-    for (var argument in localSshOptions) {
-      stdout.write("$argument ");
+
+    sshPublicKey =
+        await File('$sshHomeDirectory${sessionId}_sshnp.pub').readAsString();
+    sshPrivateKey =
+        await File('$sshHomeDirectory${sessionId}_sshnp').readAsString();
+
+    // Set up a safe authorized_keys file, for the reverse ssh tunnel
+    File('${sshHomeDirectory}authorized_keys').writeAsStringSync(
+        'command="echo \\"ssh session complete\\";sleep 20",PermitOpen="localhost:22" ${sshPublicKey.trim()} $sessionId\n',
+        mode: FileMode.append);
+  }
+
+  static Future<SSHNP> fromCommandLineArgs(List<String> args) async {
+    ArgParser parser = createArgParser();
+
+    try {
+      // Arg check
+      ArgResults results = parser.parse(args);
+
+      // Do we have a username ?
+      var username = getUserName();
+      if (username == null) {
+        throw ('\nUnable to determine your username: please set environment variable\n\n');
+      }
+
+      // Do we have a 'home' directory?
+      var homeDirectory = getHomeDirectory();
+      if (homeDirectory == null) {
+        throw ('\nUnable to determine your home directory: please set environment variable\n\n');
+      }
+
+      // Setup ssh keys location
+      var sshHomeDirectory =
+          "$homeDirectory${Platform.pathSeparator}.ssh${Platform.pathSeparator}";
+
+      var clientAtSign = results['from'];
+      var sshnpdAtSign = results['to'];
+
+      String? atKeysFilePath;
+      // Find atSign key file
+      if (results['key-file'] != null) {
+        atKeysFilePath = results['key-file'];
+      } else {
+        atKeysFilePath = '${clientAtSign}_key.atKeys';
+        atKeysFilePath = '$homeDirectory/.atsign/keys/$atKeysFilePath';
+      }
+      // Check atKeyFile selected exists
+      if (!File(atKeysFilePath!).existsSync()) {
+        throw ('\n Unable to find .atKeys file : $atKeysFilePath');
+      }
+
+      // Check device string only contains ascii
+      if (checkNonAscii(results['device'])) {
+        throw ('\nDevice name can only contain alphanumeric characters with a max length of 15');
+      }
+
+      var device = results['device'];
+
+      // Check the public key if the option was selected
+      var sendSshPublicKey = results['ssh-public-key'];
+      if ((sendSshPublicKey != 'false')) {
+        sendSshPublicKey = '$sshHomeDirectory$sendSshPublicKey';
+        if (!await fileExists(sendSshPublicKey)) {
+          throw ('\n Unable to find ssh public key file : $sendSshPublicKey');
+        }
+        if (!sendSshPublicKey.endsWith('.pub')) {
+          throw ('\n The ssh public key should have a ".pub" extension');
+        }
+      }
+
+      if (results['verbose']) {
+        AtSignLogger.root_level = 'INFO';
+      }
+
+      AtClient atClient = await createAtClient(
+          clientAtSign: clientAtSign,
+          device: device,
+          sessionId: sessionId,
+          atKeysFilePath: atKeysFilePath);
+
+      var sshnp = SSHNP(
+          atClient: atClient,
+          sshnpdAtSign: sshnpdAtSign,
+          username: username,
+          homeDirectory: homeDirectory,
+          device: device,
+          host: results['host'],
+          port: results['port'],
+          localPort: results['local-port'],
+          sendSshPublicKey: sendSshPublicKey,
+          localSshOptions: results['local-ssh-options'] ?? []);
+      if (results['verbose']) {
+        sshnp.logger.logger.level = Level.INFO;
+      }
+
+      return sshnp;
+    } catch (e) {
+      version();
+      stdout.writeln(parser.usage);
+      stderr.writeln(e);
+      exit(1);
     }
   }
-  // Print the  return
-  stdout.write('\n');
-  exit(0);
+
+  static Future<AtClient> createAtClient(
+      {required String clientAtSign,
+        required String device,
+        required String sessionId,
+        required String atKeysFilePath}) async {
+    // Now on to the atPlatform startup
+    //onboarding preference builder can be used to set onboardingService parameters
+    AtOnboardingPreference atOnboardingConfig = AtOnboardingPreference()
+      ..hiveStoragePath = '/tmp/.sshnp/$clientAtSign/$sessionId/storage'
+      ..namespace = '$device.sshnp'
+      ..downloadPath = '/tmp/.sshnp/files'
+      ..isLocalStoreRequired = true
+      ..commitLogPath = '/tmp/.sshnp/$clientAtSign/$sessionId/storage/commitLog'
+      ..fetchOfflineNotifications = false
+      ..atKeysFilePath = atKeysFilePath
+      ..atProtocolEmitted = Version(2, 0, 0);
+
+    AtOnboardingService onboardingService =
+    AtOnboardingServiceImpl(clientAtSign, atOnboardingConfig, atServiceFactory: ServiceFactoryWithNoOpSyncService());
+
+    await onboardingService.authenticate();
+
+    return AtClientManager.getInstance().atClient;
+  }
+
+  static ArgParser createArgParser() {
+    var parser = ArgParser();
+    // Basic arguments
+    parser.addOption('key-file',
+        abbr: 'k',
+        mandatory: false,
+        help: 'Sending atSign\'s atKeys file if not in ~/.atsign/keys/');
+    parser.addOption('from',
+        abbr: 'f', mandatory: true, help: 'Sending atSign');
+    parser.addOption('to',
+        abbr: 't', mandatory: true, help: 'Send a notification to this atSign');
+    parser.addOption('device',
+        abbr: 'd',
+        mandatory: false,
+        defaultsTo: "default",
+        help: 'Send a notification to this device');
+    parser.addOption('host',
+        abbr: 'h',
+        mandatory: true,
+        help: 'atSign of sshrvd daemon or FQDN/IP address to connect back to ');
+    parser.addOption('port',
+        abbr: 'p',
+        mandatory: false,
+        defaultsTo: '22',
+        help:
+            'TCP port to connect back to (only required if --host specified a FQDN/IP)');
+    parser.addOption('local-port',
+        abbr: 'l',
+        defaultsTo: '0',
+        mandatory: false,
+        help:
+            'Reverse ssh port to listen on, on your local machine, by sshnp default finds a spare port');
+    parser.addOption('ssh-public-key',
+        abbr: 's',
+        defaultsTo: 'false',
+        mandatory: false,
+        help:
+            'Public key file from ~/.ssh to be appended to authorized_hosts on the remote device');
+    parser.addMultiOption('local-ssh-options',
+        abbr: 'o', help: 'Add these commands to the local ssh command');
+    parser.addFlag('verbose', abbr: 'v', help: 'More logging');
+    parser.addFlag('rsa',
+        abbr: 'r',
+        defaultsTo: false,
+        help: 'Use RSA 4096 keys rather than the default ED25519 keys');
+    return parser;
+  }
+
+  /// Return the command which this program should execute in order to start the
+  /// sshrv program.
+  /// - In normal usage, sshnp and sshrv are compiled to exe before use, thus the
+  /// path is [Platform.resolvedExecutable] but with the last part (`sshnp` in
+  /// this case) replaced with `sshrv`
+  static String getSshrvCommand() {
+    late String sshnpDir;
+    if (Platform.executable.endsWith('${Platform.pathSeparator}sshnp')) {
+      List<String> pathList =
+          Platform.resolvedExecutable.split(Platform.pathSeparator);
+      pathList.removeLast();
+      sshnpDir = pathList.join(Platform.pathSeparator) + Platform.pathSeparator;
+
+      return '$sshnpDir${Platform.pathSeparator}sshrv';
+    } else {
+      throw Exception(
+          'sshnp is expected to be run as a compiled executable, not via the dart command');
+    }
+  }
+}
+
+String? getUserName() {
+  Map<String, String> envVars = Platform.environment;
+  if (Platform.isLinux || Platform.isMacOS) {
+    return envVars['USER'];
+  } else if (Platform.isWindows) {
+    return envVars['USERPROFILE'];
+  }
+  return null;
 }
