@@ -46,6 +46,9 @@ class SSHNP {
 
   final AtSignLogger logger = AtSignLogger(' sshnp ');
 
+  // ====================================================================
+  // Final instance variables, injected via constructor
+  // ====================================================================
   /// The [AtClient] used to communicate with sshnpd and sshrvd
   final AtClient atClient;
 
@@ -61,51 +64,107 @@ class SSHNP {
   /// The home directory on this host
   final String homeDirectory;
 
+  final String sendSshPublicKey;
+  final List<String> localSshOptions;
+
+  /// When false, we generate [sshPublicKey] and [sshPrivateKey] using ed25519.
+  /// When true, we generate [sshPublicKey] and [sshPrivateKey] using RSA.
+  /// Defaults to false
+  final bool rsa;
+
+
+
+  // ====================================================================
+  // Volatile instance variables, injected via constructor
+  // but possibly modified later on
+  // ====================================================================
+
+  /// Host that we will send to sshnpd for it to connect to,
+  /// or the atSign of the sshrvd.
+  /// If using sshrvd then we will fetch the _actual_ host to use from sshrvd.
+  String host;
+
+  /// Port that we will send to sshnpd for it to connect to.
+  /// Required if we are not using sshrvd.
+  /// If using sshrvd then initial port value will be ignored and instead we
+  /// will fetch the port from sshrvd.
+  String port;
+
+  /// Port to which sshnpd will forwardRemote its [SSHClient]. If localPort
+  /// is set to '0' then
+  String localPort;
+
+  // ====================================================================
+  // Derived final instance variables, set during construction or init
+  // ====================================================================
+
   /// Set to [AtClient.getCurrentAtSign] during construction
   @visibleForTesting
   late final String clientAtSign;
 
   /// The username to use on the remote host in the ssh session. Is fetched
-  /// during [init]
+  /// from the sshnpd by [fetchRemoteUserName] during [init]
   late final String remoteUsername;
 
+  /// Set by [generateSshKeys] during [init].
+  /// sshnp generates a new keypair for each ssh session, using ed25519 by
+  /// default but rsa if the [rsa] flag is set to true. sshnp will write
+  /// [sshPublicKey] to ~/.ssh/authorized_keys
   late final String sshPublicKey;
+
+  /// Set by [generateSshKeys] during [init].
+  /// sshnp generates a new keypair for each ssh session, using ed25519 by
+  /// default but rsa if the [rsa] flag is set to true. sshnp will send the
+  /// [sshPrivateKey] to sshnpd
   late final String sshPrivateKey;
+
   /// Namespace will be set to [device].sshnp
   late final String nameSpace;
 
-  String port;
-  String host;
-  String sshrvdPort = '';
-  String localPort;
-  String sshString = "";
-  String sshHomeDirectory = "";
-  final String sendSshPublicKey;
-  List<String> localSshOptions = [];
+  /// When using sshrvd, this is fetched from sshrvd during [init]
+  late final String sshrvdPort;
 
-  int counter = 0;
-  bool ack = false;
-  bool ackErrors = false;
-  bool rsa = false;
+  /// Set to '$localPort $port $username $host $sessionId' during [init]
+  late final String sshString;
+
+  /// Set by constructor to
+  /// '$homeDirectory${Platform.pathSeparator}.ssh${Platform.pathSeparator}'
+  late final String sshHomeDirectory;
+
+  /// true once we have received any response (success or error) from sshnpd
+  @visibleForTesting
+  bool sshnpdAck = false;
+
+  /// true once we have received an error response from sshnpd
+  @visibleForTesting
+  bool sshnpdAckErrors = false;
+
+  /// true once we have received a response from sshrvd
+  @visibleForTesting
+  bool sshrvdAck = false;
 
   // In the future (perhaps) we can send other commands
   // Perhaps OpenVPN or shell commands
   static const String commandToSend = 'sshd';
 
+  /// true once [init] has completed
   @visibleForTesting
   bool initialized = false;
 
   SSHNP({
+    // final fields
     required this.atClient,
     required this.sshnpdAtSign,
+    required this.device,
     required this.username,
     required this.homeDirectory,
-    required this.device,
+    this.sendSshPublicKey = 'false',
+    required this.localSshOptions,
+    this.rsa = false,
+    // volatile fields
     required this.host,
     required this.port,
-    required this.localPort,
-    required this.localSshOptions,
-    this.sendSshPublicKey = 'false'
+    required this.localPort
   }) {
     nameSpace = '$device.sshnp';
     clientAtSign = atClient.getCurrentAtSign()!;
@@ -130,7 +189,7 @@ class SSHNP {
         .subscribe(regex: '$sessionId.$nameSpace@', shouldDecrypt: true)
         .listen(handleSshnpdResponses);
 
-    await setupSshKeys();
+    await generateSshKeys();
 
     await fetchRemoteUserName();
 
@@ -143,6 +202,19 @@ class SSHNP {
 
     await sharePublicKeyWithSshnpdIfRequired();
 
+    // find a spare local port
+    if (localPort == '0') {
+      ServerSocket serverSocket =
+      await ServerSocket.bind(InternetAddress.loopbackIPv4, 0);
+      localPort = serverSocket.port.toString();
+      await serverSocket.close();
+    }
+
+    if (commandToSend == 'sshd') {
+      // Local port, port of sshd , username , hostname
+      sshString = '$localPort $port $username $host $sessionId';
+    }
+
     initialized = true;
   }
 
@@ -151,25 +223,12 @@ class SSHNP {
     if (!initialized) {
       throw StateError('Cannot run() - not initialized');
     }
-    // find a spare local port
-    if (localPort == '0') {
-      ServerSocket serverSocket =
-          await ServerSocket.bind(InternetAddress.loopbackIPv4, 0);
-      localPort = serverSocket.port.toString();
-      await serverSocket.close();
-    }
-
     AtKey keyForCommandToSend = AtKey()
       ..key = commandToSend
       ..namespace = nameSpace
       ..sharedBy = clientAtSign
       ..sharedWith = sshnpdAtSign
       ..metadata = (Metadata()..ttr=-1..ttl=10000);
-
-    if (commandToSend == 'sshd') {
-      // Local port, port of sshd , username , hostname
-      sshString = '$localPort $port $username $host $sessionId';
-    }
 
     try {
       await atClient.notificationService
@@ -186,12 +245,12 @@ class SSHNP {
     // Before we clean up we need to make sure that the reverse ssh made the connection.
     // Or that if it had a problem what the problem was, or timeout and explain why.
 
+    int counter = 0;
     // Timer to timeout after 10 Secs or after the Ack of connected/Errors
-    while (!ack) {
+    while (!sshnpdAck) {
       await Future.delayed(Duration(milliseconds: 100));
       counter++;
-      if (counter == 300) {
-        ack = true;
+      if (counter == 100) {
         await cleanUp(sessionId, logger);
         stderr.writeln('sshnp: connection timeout');
         exit(1);
@@ -204,7 +263,7 @@ class SSHNP {
     // print out base ssh command if we hit no Ack Errors
     // If we had a Public key include the private key in the command line
     // By removing the .pub extn
-    if (!ackErrors) {
+    if (!sshnpdAckErrors) {
       if (sendSshPublicKey != 'false') {
         stdout.write(
             "ssh -p $localPort $remoteUsername@localhost -i ${sendSshPublicKey.replaceFirst(RegExp(r'.pub$'), '')} ");
@@ -231,13 +290,11 @@ class SSHNP {
     logger.info('Received $notificationKey notification');
     if (notification.value == 'connected') {
       logger.info('Session $sessionId connected successfully');
-      // Give ssh/sshd a little time to get everything in place
-      //   await Future.delayed(Duration(milliseconds: 250));
-      ack = true;
+      sshnpdAck = true;
     } else {
       stderr.writeln('Remote sshnpd error: ${notification.value}');
-      ack = true;
-      ackErrors = true;
+      sshnpdAck = true;
+      sshnpdAckErrors = true;
     }
   }
 
@@ -320,7 +377,7 @@ class SSHNP {
       host = results[0];
       port = results[1];
       sshrvdPort = results[2];
-      ack = true;
+      sshrvdAck = true;
     });
 
     AtKey ourSshrvdIdKey = AtKey()
@@ -341,24 +398,23 @@ class SSHNP {
       stderr.writeln(e.toString());
     }
 
-    while (!ack) {
+    int counter = 0;
+    while (!sshrvdAck) {
       await Future.delayed(Duration(milliseconds: 100));
       counter++;
       if (counter == 100) {
-        ack = true;
         await cleanUp(sessionId, logger);
         stderr.writeln('sshnp: connection timeout to sshrvd $host service');
         exit(1);
       }
     }
-    ack = false;
 
     // Connect to rendezvous point using background process.
     // sshnp (this program) can then exit without issue.
     unawaited(Process.run(getSshrvCommand(), [host, sshrvdPort]));
   }
 
-  Future<void> setupSshKeys() async {
+  Future<void> generateSshKeys() async {
     if (rsa) {
       await Process.run(
           'ssh-keygen',
@@ -479,8 +535,10 @@ class SSHNP {
           host: results['host'],
           port: results['port'],
           localPort: results['local-port'],
+          localSshOptions: results['local-ssh-options'] ?? [],
+          rsa: results['rsa'],
           sendSshPublicKey: sendSshPublicKey,
-          localSshOptions: results['local-ssh-options'] ?? []);
+          );
       if (results['verbose']) {
         sshnp.logger.logger.level = Level.INFO;
       }
