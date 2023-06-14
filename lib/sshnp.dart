@@ -162,6 +162,16 @@ class SSHNP {
   }
 
   /// Must be run after construction, to complete initialization
+  /// - Starts notification subscription to listen for responses from sshnpd
+  /// - calls [generateSshKeys] which generates the ssh keypair to use
+  ///   ( [sshPublicKey] and [sshPrivateKey] )
+  /// - calls [fetchRemoteUserName] to fetch the username to use on the remote
+  ///   host in the ssh session
+  /// - If not supplied via constructor, finds a spare port for [localPort]
+  /// - If using sshrv, calls [getHostAndPortFromSshrvd] to fetch host and port
+  ///   from sshrvd
+  /// - calls [sharePrivateKeyWithSshnpd]
+  /// - calls [sharePublicKeyWithSshnpdIfRequired]
   Future<void> init() async {
     if (initialized) {
       throw StateError('Cannot init() - already initialized');
@@ -203,7 +213,11 @@ class SSHNP {
     initialized = true;
   }
 
-  /// May only be run after [init] has been run
+  /// May only be run after [init] has been run.
+  /// - Sends request to sshnpd; the response listener was started by [init]
+  /// - Waits for success or error response, or time out after 10 secs
+  /// - If got a success response, print the ssh command to use to stdout
+  /// - Clean up temporary files
   Future<void> run() async {
     if (!initialized) {
       throw StateError('Cannot run() - not initialized');
