@@ -279,6 +279,9 @@ class SSHNP {
     exit(0);
   }
 
+  /// Function which the response subscription (created in the [init] method
+  /// will call when it gets a response from the sshnpd
+  @visibleForTesting
   handleSshnpdResponses(notification) async {
     String notificationKey = notification.key
         .replaceAll('${notification.to}:', '')
