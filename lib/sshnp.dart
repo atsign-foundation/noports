@@ -195,15 +195,14 @@ class SSHNP {
       await serverSocket.close();
     }
 
-    if (commandToSend == 'sshd') {
-      // Local port, port of sshd , username , hostname
-      sshString = '$localPort $port $username $host $sessionId';
-    }
-
-
     // If host has an @ then contact the sshrvd service for some ports
     if (host.startsWith('@')) {
       await getHostAndPortFromSshrvd();
+    }
+
+    if (commandToSend == 'sshd') {
+      // Local port, port of sshd , username , hostname
+      sshString = '$localPort $port $username $host $sessionId';
     }
 
     await sharePrivateKeyWithSshnpd();
