@@ -1,7 +1,7 @@
 // dart packages
 import 'dart:io';
 // local packages
-import 'package:sshnoports/home_directory.dart';
+import 'package:sshnoports/sshnp_utils.dart';
 // atPlatform packages
 import 'package:at_utils/at_logger.dart';
 
