@@ -1,19 +1,24 @@
+// dart packages
 import 'dart:async';
 import 'dart:io';
 
-import 'package:args/args.dart';
+// atPlatform packages
+import 'package:at_utils/at_logger.dart';
 import 'package:at_client/at_client.dart';
 import 'package:at_onboarding_cli/at_onboarding_cli.dart';
-import 'package:at_utils/at_logger.dart';
+
+// other packages
+import 'package:args/args.dart';
 import 'package:logging/logging.dart';
 import 'package:meta/meta.dart';
-import 'package:sshnoports/service_factories.dart';
-import 'package:sshnoports/sshnp_utils.dart';
 import 'package:uuid/uuid.dart';
 import 'package:version/version.dart';
 
-import 'cleanup_sshnp.dart';
-import 'version.dart';
+// local packages
+import 'package:sshnoports/service_factories.dart';
+import 'package:sshnoports/sshnp_utils.dart';
+import 'package:sshnoports/cleanup_sshnp.dart';
+import 'package:sshnoports/version.dart';
 
 class SSHNP {
   // TODO Make this a const in SSHRVD class
