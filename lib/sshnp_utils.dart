@@ -53,3 +53,12 @@ bool checkNonAscii(String test) {
   }
 }
 
+String getDefaultAtKeysFilePath(String homeDirectory, String atSign) {
+return '$homeDirectory/.atsign/keys/${atSign}_key.atKeys'
+    .replaceAll('/', Platform.pathSeparator);
+}
+
+String getDefaultSshDirectory(String homeDirectory) {
+return '$homeDirectory/.ssh/'
+    .replaceAll('/', Platform.pathSeparator);
+}

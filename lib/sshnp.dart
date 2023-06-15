@@ -154,8 +154,8 @@ class SSHNP {
     clientAtSign = atClient.getCurrentAtSign()!;
     logger.hierarchicalLoggingEnabled = true;
     logger.logger.level = Level.SHOUT;
-    // Setup ssh keys location
-    sshHomeDirectory = '$homeDirectory${Platform.pathSeparator}.ssh${Platform.pathSeparator}';
+
+    sshHomeDirectory = getDefaultSshDirectory(homeDirectory);
     if (! Directory(sshHomeDirectory).existsSync()) {
       Directory(sshHomeDirectory).createSync();
     }
@@ -463,7 +463,7 @@ class SSHNP {
         mode: FileMode.append);
   }
 
-  static SSHNPParams getSSHNPParams(List<String> args) {
+  static SSHNPParams parseSSHNPParams(List<String> args) {
     var p = SSHNPParams();
 
     // Arg check
@@ -475,10 +475,6 @@ class SSHNP {
     // Do we have a 'home' directory?
     p.homeDirectory = getHomeDirectory(throwIfNull:true)!;
 
-    // Setup ssh keys location
-    p.sshHomeDirectory =
-    '${p.homeDirectory}${Platform.pathSeparator}.ssh${Platform.pathSeparator}';
-
     p.clientAtSign = r['from'];
     p.sshnpdAtSign = r['to'];
 
@@ -486,7 +482,7 @@ class SSHNP {
     if (r['key-file'] != null) {
       p.atKeysFilePath = r['key-file'];
     } else {
-      p.atKeysFilePath = '${p.homeDirectory}/.atsign/keys/${p.clientAtSign}_key.atKeys';
+      p.atKeysFilePath = getDefaultAtKeysFilePath(p.homeDirectory, p.clientAtSign);
     }
     // Check atKeyFile selected exists
     if (!File(p.atKeysFilePath).existsSync()) {
@@ -503,7 +499,7 @@ class SSHNP {
     // Check the public key if the option was selected
     var sendSshPublicKey = r['ssh-public-key'];
     if ((sendSshPublicKey != 'false')) {
-      sendSshPublicKey = '${p.sshHomeDirectory}$sendSshPublicKey';
+      sendSshPublicKey = '${getDefaultSshDirectory(p.homeDirectory)}$sendSshPublicKey';
       if (!File(sendSshPublicKey).existsSync()) {
         throw ('\n Unable to find ssh public key file : $sendSshPublicKey');
       }
@@ -527,7 +523,7 @@ class SSHNP {
 
   static Future<SSHNP> fromCommandLineArgs(List<String> args) async {
     try {
-      var p = getSSHNPParams(args);
+      var p = parseSSHNPParams(args);
 
       String sessionId = Uuid().v4();
 
@@ -577,10 +573,13 @@ class SSHNP {
     //onboarding preference builder can be used to set onboardingService parameters
     AtOnboardingPreference atOnboardingConfig = AtOnboardingPreference()
       ..hiveStoragePath = '/tmp/.sshnp/$clientAtSign/$sessionId/storage'
+          .replaceAll('/', Platform.pathSeparator)
       ..namespace = '$device.sshnp'
-      ..downloadPath = '/tmp/.sshnp/files'
+      ..downloadPath =
+          '/tmp/.sshnp/files'.replaceAll('/', Platform.pathSeparator)
       ..isLocalStoreRequired = true
       ..commitLogPath = '/tmp/.sshnp/$clientAtSign/$sessionId/storage/commitLog'
+          .replaceAll('/', Platform.pathSeparator)
       ..fetchOfflineNotifications = false
       ..atKeysFilePath = atKeysFilePath
       ..atProtocolEmitted = Version(2, 0, 0);
@@ -664,17 +663,15 @@ class SSHNP {
 
 class SSHNPParams {
   late final String clientAtSign;
-  late final String device;
-  late final String sessionId;
-  late final String atKeysFilePath;
-  late final String username;
-  late final String homeDirectory;
-  late final String sshHomeDirectory;
   late final String sshnpdAtSign;
-  late final String sendSshPublicKey;
+  late final String device;
   late final String host;
   late final String port;
   late final String localPort;
+  late final String username;
+  late final String homeDirectory;
+  late final String atKeysFilePath;
+  late final String sendSshPublicKey;
   late final List<String> localSshOptions;
   late final bool rsa;
   late final bool verbose;
