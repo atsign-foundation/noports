@@ -488,10 +488,6 @@ class SSHNP {
     } else {
       p.atKeysFilePath = getDefaultAtKeysFilePath(p.homeDirectory, p.clientAtSign);
     }
-    // Check atKeyFile selected exists
-    if (!File(p.atKeysFilePath).existsSync()) {
-      throw ('\n Unable to find .atKeys file : ${p.atKeysFilePath}');
-    }
 
     // Check device string only contains ascii
     if (checkNonAscii(r['device'])) {
@@ -504,9 +500,6 @@ class SSHNP {
     var sendSshPublicKey = r['ssh-public-key'];
     if ((sendSshPublicKey != 'false')) {
       sendSshPublicKey = '${getDefaultSshDirectory(p.homeDirectory)}$sendSshPublicKey';
-      if (!File(sendSshPublicKey).existsSync()) {
-        throw ('\n Unable to find ssh public key file : $sendSshPublicKey');
-      }
       if (!sendSshPublicKey.endsWith('.pub')) {
         throw ('\n The ssh public key should have a ".pub" extension');
       }
@@ -530,6 +523,15 @@ class SSHNP {
   static Future<SSHNP> fromCommandLineArgs(List<String> args) async {
     try {
       var p = parseSSHNPParams(args);
+
+      // Check atKeyFile selected exists
+      if (!File(p.atKeysFilePath).existsSync()) {
+        throw ('\n Unable to find .atKeys file : ${p.atKeysFilePath}');
+      }
+
+      if (!File(p.sendSshPublicKey).existsSync()) {
+        throw ('\n Unable to find ssh public key file : ${p.sendSshPublicKey}');
+      }
 
       String sessionId = Uuid().v4();
 

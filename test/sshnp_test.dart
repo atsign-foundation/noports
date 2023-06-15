@@ -38,8 +38,9 @@ void main() {
       var p = SSHNP.parseSSHNPParams(args);
       expect(p.clientAtSign, '@alice');
       expect(p.sshnpdAtSign, '@bob');
-      expect(p.device, 'default');
       expect(p.host, 'host.subdomain.test');
+
+      expect(p.device, 'default');
       expect(p.port, '22');
       expect(p.localPort, '0');
       expect(p.username, getUserName(throwIfNull: true));
@@ -50,6 +51,42 @@ void main() {
       expect(p.rsa, false);
       expect(p.verbose, false);
       expect(p.remoteUsername, null);
+    });
+
+    test('test parsed args with non-mandatory args provided', () {
+      List<String> args = [];
+      args.addAll(['-f', '@alice']);
+      args.addAll(['-t', '@bob']);
+      args.addAll(['-h', 'host.subdomain.test']);
+
+
+      args.addAll([
+        '--device','ancient_pc',
+        '--port','56789',
+        '--local-port','98765',
+        '--key-file','/tmp/temp_keys.json',
+        '--ssh-public-key','sekrit.pub',
+        '--local-ssh-options','--arg 2 --arg 4 foo bar -x',
+        '--remote-user-name','gary',
+        '-v',
+        '-r'
+      ]);
+      var p = SSHNP.parseSSHNPParams(args);
+      expect(p.clientAtSign, '@alice');
+      expect(p.sshnpdAtSign, '@bob');
+      expect(p.host, 'host.subdomain.test');
+
+      expect(p.device, 'ancient_pc');
+      expect(p.port, '56789');
+      expect(p.localPort, '98765');
+      expect(p.username, getUserName(throwIfNull: true));
+      expect(p.homeDirectory, getHomeDirectory(throwIfNull:true));
+      expect(p.atKeysFilePath, '/tmp/temp_keys.json');
+      expect(p.sendSshPublicKey, '${getDefaultSshDirectory(p.homeDirectory)}sekrit.pub');
+      expect(p.localSshOptions, ['--arg 2 --arg 4 foo bar -x']);
+      expect(p.rsa, true);
+      expect(p.verbose, true);
+      expect(p.remoteUsername, 'gary');
     });
   });
 }
