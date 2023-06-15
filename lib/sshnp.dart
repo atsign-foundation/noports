@@ -463,97 +463,106 @@ class SSHNP {
         mode: FileMode.append);
   }
 
+  static SSHNPParams getSSHNPParams(List<String> args) {
+    var p = SSHNPParams();
+
+    // Arg check
+    ArgResults r = createArgParser().parse(args);
+
+    // Do we have a username ?
+    p.username = getUserName(throwIfNull:true)!;
+
+    // Do we have a 'home' directory?
+    p.homeDirectory = getHomeDirectory(throwIfNull:true)!;
+
+    // Setup ssh keys location
+    p.sshHomeDirectory =
+    '${p.homeDirectory}${Platform.pathSeparator}.ssh${Platform.pathSeparator}';
+
+    p.clientAtSign = r['from'];
+    p.sshnpdAtSign = r['to'];
+
+    // Find atSign key file
+    if (r['key-file'] != null) {
+      p.atKeysFilePath = r['key-file'];
+    } else {
+      p.atKeysFilePath = '${p.homeDirectory}/.atsign/keys/${p.clientAtSign}_key.atKeys';
+    }
+    // Check atKeyFile selected exists
+    if (!File(p.atKeysFilePath).existsSync()) {
+      throw ('\n Unable to find .atKeys file : ${p.atKeysFilePath}');
+    }
+
+    // Check device string only contains ascii
+    if (checkNonAscii(r['device'])) {
+      throw ('\nDevice name can only contain alphanumeric characters with a max length of 15');
+    }
+
+    p.device = r['device'];
+
+    // Check the public key if the option was selected
+    var sendSshPublicKey = r['ssh-public-key'];
+    if ((sendSshPublicKey != 'false')) {
+      sendSshPublicKey = '${p.sshHomeDirectory}$sendSshPublicKey';
+      if (!File(sendSshPublicKey).existsSync()) {
+        throw ('\n Unable to find ssh public key file : $sendSshPublicKey');
+      }
+      if (!sendSshPublicKey.endsWith('.pub')) {
+        throw ('\n The ssh public key should have a ".pub" extension');
+      }
+    }
+    p.sendSshPublicKey = sendSshPublicKey;
+
+    p.host = r['host'];
+    p.port = r['port'];
+    p.localPort = r['local-port'];
+
+    p.localSshOptions = r['local-ssh-options'];
+
+    p.rsa = r['rsa'];
+    p.verbose = r['verbose'];
+
+    return p;
+  }
+
   static Future<SSHNP> fromCommandLineArgs(List<String> args) async {
-    ArgParser parser = createArgParser();
-
-    String sessionId = Uuid().v4();
     try {
-      // Arg check
-      ArgResults results = parser.parse(args);
+      var p = getSSHNPParams(args);
 
-      // Do we have a username ?
-      var username = getUserName();
-      if (username == null) {
-        throw ('\nUnable to determine your username: please set environment variable\n\n');
-      }
+      String sessionId = Uuid().v4();
 
-      // Do we have a 'home' directory?
-      var homeDirectory = getHomeDirectory();
-      if (homeDirectory == null) {
-        throw ('\nUnable to determine your home directory: please set environment variable\n\n');
-      }
-
-      // Setup ssh keys location
-      var sshHomeDirectory =
-          "$homeDirectory${Platform.pathSeparator}.ssh${Platform.pathSeparator}";
-
-      var clientAtSign = results['from'];
-      var sshnpdAtSign = results['to'];
-
-      String? atKeysFilePath;
-      // Find atSign key file
-      if (results['key-file'] != null) {
-        atKeysFilePath = results['key-file'];
-      } else {
-        atKeysFilePath = '${clientAtSign}_key.atKeys';
-        atKeysFilePath = '$homeDirectory/.atsign/keys/$atKeysFilePath';
-      }
-      // Check atKeyFile selected exists
-      if (!File(atKeysFilePath!).existsSync()) {
-        throw ('\n Unable to find .atKeys file : $atKeysFilePath');
-      }
-
-      // Check device string only contains ascii
-      if (checkNonAscii(results['device'])) {
-        throw ('\nDevice name can only contain alphanumeric characters with a max length of 15');
-      }
-
-      var device = results['device'];
-
-      // Check the public key if the option was selected
-      var sendSshPublicKey = results['ssh-public-key'];
-      if ((sendSshPublicKey != 'false')) {
-        sendSshPublicKey = '$sshHomeDirectory$sendSshPublicKey';
-        if (!await fileExists(sendSshPublicKey)) {
-          throw ('\n Unable to find ssh public key file : $sendSshPublicKey');
-        }
-        if (!sendSshPublicKey.endsWith('.pub')) {
-          throw ('\n The ssh public key should have a ".pub" extension');
-        }
-      }
-
-      if (results['verbose']) {
+      if (p.verbose) {
         AtSignLogger.root_level = 'INFO';
       }
 
       AtClient atClient = await createAtClient(
-          clientAtSign: clientAtSign,
-          device: device,
+          clientAtSign: p.clientAtSign,
+          device: p.device,
           sessionId: sessionId,
-          atKeysFilePath: atKeysFilePath);
+          atKeysFilePath: p.atKeysFilePath);
 
       var sshnp = SSHNP(
         atClient: atClient,
-        sshnpdAtSign: sshnpdAtSign,
-        username: username,
-        homeDirectory: homeDirectory,
+        sshnpdAtSign: p.sshnpdAtSign,
+        username: p.username,
+        homeDirectory: p.homeDirectory,
         sessionId: sessionId,
-        device: device,
-        host: results['host'],
-        port: results['port'],
-        localPort: results['local-port'],
-        localSshOptions: results['local-ssh-options'] ?? [],
-        rsa: results['rsa'],
-        sendSshPublicKey: sendSshPublicKey,
+        device: p.device,
+        host: p.host,
+        port: p.port,
+        localPort: p.localPort,
+        localSshOptions: p.localSshOptions,
+        rsa: p.rsa,
+        sendSshPublicKey: p.sendSshPublicKey
       );
-      if (results['verbose']) {
+      if (p.verbose) {
         sshnp.logger.logger.level = Level.INFO;
       }
 
       return sshnp;
     } catch (e) {
       version();
-      stdout.writeln(parser.usage);
+      stdout.writeln(createArgParser().usage);
       stderr.writeln(e);
       exit(1);
     }
@@ -651,4 +660,22 @@ class SSHNP {
           'sshnp is expected to be run as a compiled executable, not via the dart command');
     }
   }
+}
+
+class SSHNPParams {
+  late final String clientAtSign;
+  late final String device;
+  late final String sessionId;
+  late final String atKeysFilePath;
+  late final String username;
+  late final String homeDirectory;
+  late final String sshHomeDirectory;
+  late final String sshnpdAtSign;
+  late final String sendSshPublicKey;
+  late final String host;
+  late final String port;
+  late final String localPort;
+  late final List<String> localSshOptions;
+  late final bool rsa;
+  late final bool verbose;
 }
