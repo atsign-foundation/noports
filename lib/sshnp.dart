@@ -2,23 +2,21 @@
 import 'dart:async';
 import 'dart:io';
 
-// atPlatform packages
-import 'package:at_utils/at_logger.dart';
-import 'package:at_client/at_client.dart';
-import 'package:at_onboarding_cli/at_onboarding_cli.dart';
-
 // other packages
 import 'package:args/args.dart';
+import 'package:at_client/at_client.dart';
+import 'package:at_onboarding_cli/at_onboarding_cli.dart';
+// atPlatform packages
+import 'package:at_utils/at_logger.dart';
 import 'package:logging/logging.dart';
 import 'package:meta/meta.dart';
-import 'package:uuid/uuid.dart';
-import 'package:version/version.dart';
-
+import 'package:sshnoports/cleanup_sshnp.dart';
 // local packages
 import 'package:sshnoports/service_factories.dart';
 import 'package:sshnoports/sshnp_utils.dart';
-import 'package:sshnoports/cleanup_sshnp.dart';
 import 'package:sshnoports/version.dart';
+import 'package:uuid/uuid.dart';
+import 'package:version/version.dart';
 
 class SSHNP {
   // TODO Make this a const in SSHRVD class
@@ -55,8 +53,6 @@ class SSHNP {
   /// Defaults to false
   final bool rsa;
 
-
-
   // ====================================================================
   // Volatile instance variables, injected via constructor
   // but possibly modified later on
@@ -87,7 +83,7 @@ class SSHNP {
 
   /// The username to use on the remote host in the ssh session. Is fetched
   /// from the sshnpd by [fetchRemoteUserName] during [init]
-  late final String remoteUsername;
+  String? remoteUsername;
 
   /// Set by [generateSshKeys] during [init].
   /// sshnp generates a new keypair for each ssh session, using ed25519 by
@@ -148,15 +144,18 @@ class SSHNP {
     // volatile fields
     required this.host,
     required this.port,
-    required this.localPort
+    required this.localPort,
+    this.remoteUsername,
   }) {
     nameSpace = '$device.sshnp';
     clientAtSign = atClient.getCurrentAtSign()!;
     logger.hierarchicalLoggingEnabled = true;
     logger.logger.level = Level.SHOUT;
+
     // Setup ssh keys location
-    sshHomeDirectory = '$homeDirectory${Platform.pathSeparator}.ssh${Platform.pathSeparator}';
-    if (! Directory(sshHomeDirectory).existsSync()) {
+    sshHomeDirectory =
+        '$homeDirectory${Platform.pathSeparator}.ssh${Platform.pathSeparator}';
+    if (!Directory(sshHomeDirectory).existsSync()) {
       Directory(sshHomeDirectory).createSync();
     }
   }
@@ -185,12 +184,14 @@ class SSHNP {
 
     await generateSshKeys();
 
-    await fetchRemoteUserName();
+    if (remoteUsername == null) {
+      await fetchRemoteUserName();
+    }
 
     // find a spare local port
     if (localPort == '0') {
       ServerSocket serverSocket =
-      await ServerSocket.bind(InternetAddress.loopbackIPv4, 0);
+          await ServerSocket.bind(InternetAddress.loopbackIPv4, 0);
       localPort = serverSocket.port.toString();
       await serverSocket.close();
     }
@@ -226,16 +227,18 @@ class SSHNP {
       ..namespace = nameSpace
       ..sharedBy = clientAtSign
       ..sharedWith = sshnpdAtSign
-      ..metadata = (Metadata()..ttr=-1..ttl=10000);
+      ..metadata = (Metadata()
+        ..ttr = -1
+        ..ttl = 10000);
 
     try {
-      await atClient.notificationService
-          .notify(NotificationParams.forUpdate(keyForCommandToSend, value: sshString),
+      await atClient.notificationService.notify(
+          NotificationParams.forUpdate(keyForCommandToSend, value: sshString),
           onSuccess: (notification) {
-            logger.info('SUCCESS:$notification $sshString');
-          }, onError: (notification) {
-            logger.info('ERROR:$notification $sshString');
-          });
+        logger.info('SUCCESS:$notification $sshString');
+      }, onError: (notification) {
+        logger.info('ERROR:$notification $sshString');
+      });
     } catch (e) {
       stderr.writeln(e.toString());
     }
@@ -285,8 +288,8 @@ class SSHNP {
     String notificationKey = notification.key
         .replaceAll('${notification.to}:', '')
         .replaceAll('.$device.sshnp${notification.from}', '')
-    // convert to lower case as the latest AtClient converts notification
-    // keys to lower case when received
+        // convert to lower case as the latest AtClient converts notification
+        // keys to lower case when received
         .toLowerCase();
     logger.info('Received $notificationKey notification');
     if (notification.value == 'connected') {
@@ -299,13 +302,13 @@ class SSHNP {
     }
   }
 
-
   /// Look up the user name ... we expect a key to have been shared with us by
   /// sshnpd. Let's say we are @human running sshnp, and @daemon is running
   /// sshnpd, then we expect a key to have been shared whose ID is
   /// @human:username.device.sshnp@daemon
   Future<void> fetchRemoteUserName() async {
-    AtKey userNameRecordID = AtKey.fromString('$clientAtSign:username.$nameSpace$sshnpdAtSign');
+    AtKey userNameRecordID =
+        AtKey.fromString('$clientAtSign:username.$nameSpace$sshnpdAtSign');
     try {
       remoteUsername = (await atClient.get(userNameRecordID)).value as String;
     } catch (e) {
@@ -356,13 +359,13 @@ class SSHNP {
         ..ttl = 10000);
 
     try {
-      await atClient.notificationService
-          .notify(NotificationParams.forUpdate(sendOurPrivateKeyToSshnpd, value: sshPrivateKey),
-          onSuccess: (notification) {
-            logger.info('SUCCESS:$notification');
-          }, onError: (notification) {
-            logger.info('ERROR:$notification');
-          });
+      await atClient.notificationService.notify(
+          NotificationParams.forUpdate(sendOurPrivateKeyToSshnpd,
+              value: sshPrivateKey), onSuccess: (notification) {
+        logger.info('SUCCESS:$notification');
+      }, onError: (notification) {
+        logger.info('ERROR:$notification');
+      });
     } catch (e) {
       stderr.writeln(e.toString());
     }
@@ -385,20 +388,20 @@ class SSHNP {
       ..sharedBy = clientAtSign // shared by us
       ..sharedWith = host // shared with the sshrvd host
       ..metadata = (Metadata()
-      // as we are sending a notification to the sshrvd namespace,
-      // we don't want to append our namespace
+        // as we are sending a notification to the sshrvd namespace,
+        // we don't want to append our namespace
         ..namespaceAware = false
         ..ttr = -1
         ..ttl = 10000);
 
     try {
-      await atClient.notificationService
-          .notify(NotificationParams.forUpdate(ourSshrvdIdKey, value: sessionId),
+      await atClient.notificationService.notify(
+          NotificationParams.forUpdate(ourSshrvdIdKey, value: sessionId),
           onSuccess: (notification) {
-            logger.info('SUCCESS:$notification $ourSshrvdIdKey');
-          }, onError: (notification) {
-            logger.info('ERROR:$notification $ourSshrvdIdKey');
-          });
+        logger.info('SUCCESS:$notification $ourSshrvdIdKey');
+      }, onError: (notification) {
+        logger.info('ERROR:$notification $ourSshrvdIdKey');
+      });
     } catch (e) {
       stderr.writeln(e.toString());
     }
@@ -453,9 +456,9 @@ class SSHNP {
     }
 
     sshPublicKey =
-    await File('$sshHomeDirectory${sessionId}_sshnp.pub').readAsString();
+        await File('$sshHomeDirectory${sessionId}_sshnp.pub').readAsString();
     sshPrivateKey =
-    await File('$sshHomeDirectory${sessionId}_sshnp').readAsString();
+        await File('$sshHomeDirectory${sessionId}_sshnp').readAsString();
 
     // Set up a safe authorized_keys file, for the reverse ssh tunnel
     File('${sshHomeDirectory}authorized_keys').writeAsStringSync(
@@ -475,6 +478,11 @@ class SSHNP {
       var username = getUserName();
       if (username == null) {
         throw ('\nUnable to determine your username: please set environment variable\n\n');
+      }
+
+      String? remoteUsername;
+      if (results.wasParsed('remote-user-name')) {
+        remoteUsername = results['remote-user-name'];
       }
 
       // Do we have a 'home' directory?
@@ -545,6 +553,7 @@ class SSHNP {
         localSshOptions: results['local-ssh-options'] ?? [],
         rsa: results['rsa'],
         sendSshPublicKey: sendSshPublicKey,
+        remoteUsername: remoteUsername,
       );
       if (results['verbose']) {
         sshnp.logger.logger.level = Level.INFO;
@@ -561,9 +570,9 @@ class SSHNP {
 
   static Future<AtClient> createAtClient(
       {required String clientAtSign,
-        required String device,
-        required String sessionId,
-        required String atKeysFilePath}) async {
+      required String device,
+      required String sessionId,
+      required String atKeysFilePath}) async {
     // Now on to the atPlatform startup
     //onboarding preference builder can be used to set onboardingService parameters
     AtOnboardingPreference atOnboardingConfig = AtOnboardingPreference()
@@ -576,8 +585,9 @@ class SSHNP {
       ..atKeysFilePath = atKeysFilePath
       ..atProtocolEmitted = Version(2, 0, 0);
 
-    AtOnboardingService onboardingService =
-    AtOnboardingServiceImpl(clientAtSign, atOnboardingConfig, atServiceFactory: ServiceFactoryWithNoOpSyncService());
+    AtOnboardingService onboardingService = AtOnboardingServiceImpl(
+        clientAtSign, atOnboardingConfig,
+        atServiceFactory: ServiceFactoryWithNoOpSyncService());
 
     await onboardingService.authenticate();
 
@@ -609,19 +619,19 @@ class SSHNP {
         mandatory: false,
         defaultsTo: '22',
         help:
-        'TCP port to connect back to (only required if --host specified a FQDN/IP)');
+            'TCP port to connect back to (only required if --host specified a FQDN/IP)');
     parser.addOption('local-port',
         abbr: 'l',
         defaultsTo: '0',
         mandatory: false,
         help:
-        'Reverse ssh port to listen on, on your local machine, by sshnp default finds a spare port');
+            'Reverse ssh port to listen on, on your local machine, by sshnp default finds a spare port');
     parser.addOption('ssh-public-key',
         abbr: 's',
         defaultsTo: 'false',
         mandatory: false,
         help:
-        'Public key file from ~/.ssh to be appended to authorized_hosts on the remote device');
+            'Public key file from ~/.ssh to be appended to authorized_hosts on the remote device');
     parser.addMultiOption('local-ssh-options',
         abbr: 'o', help: 'Add these commands to the local ssh command');
     parser.addFlag('verbose', abbr: 'v', help: 'More logging');
@@ -629,6 +639,10 @@ class SSHNP {
         abbr: 'r',
         defaultsTo: false,
         help: 'Use RSA 4096 keys rather than the default ED25519 keys');
+    parser.addOption('remote-user-name',
+        abbr: 'u',
+        mandatory: false,
+        help: 'user name to use in the ssh session on the remote host');
     return parser;
   }
 
@@ -641,7 +655,7 @@ class SSHNP {
     late String sshnpDir;
     if (Platform.executable.endsWith('${Platform.pathSeparator}sshnp')) {
       List<String> pathList =
-      Platform.resolvedExecutable.split(Platform.pathSeparator);
+          Platform.resolvedExecutable.split(Platform.pathSeparator);
       pathList.removeLast();
       sshnpDir = pathList.join(Platform.pathSeparator) + Platform.pathSeparator;
 
