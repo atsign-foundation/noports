@@ -2,21 +2,23 @@
 import 'dart:async';
 import 'dart:io';
 
-// other packages
-import 'package:args/args.dart';
-import 'package:at_client/at_client.dart';
-import 'package:at_onboarding_cli/at_onboarding_cli.dart';
 // atPlatform packages
 import 'package:at_utils/at_logger.dart';
+import 'package:at_client/at_client.dart';
+import 'package:at_onboarding_cli/at_onboarding_cli.dart';
+
+// other packages
+import 'package:args/args.dart';
 import 'package:logging/logging.dart';
 import 'package:meta/meta.dart';
-import 'package:sshnoports/cleanup_sshnp.dart';
+import 'package:uuid/uuid.dart';
+import 'package:version/version.dart';
+
 // local packages
 import 'package:sshnoports/service_factories.dart';
 import 'package:sshnoports/sshnp_utils.dart';
+import 'package:sshnoports/cleanup_sshnp.dart';
 import 'package:sshnoports/version.dart';
-import 'package:uuid/uuid.dart';
-import 'package:version/version.dart';
 
 class SSHNP {
   // TODO Make this a const in SSHRVD class
@@ -81,8 +83,9 @@ class SSHNP {
   @visibleForTesting
   late final String clientAtSign;
 
-  /// The username to use on the remote host in the ssh session. Is fetched
-  /// from the sshnpd by [fetchRemoteUserName] during [init]
+  /// The username to use on the remote host in the ssh session. Either passed
+  /// through class constructor or  Is fetched from the sshnpd
+  /// by [fetchRemoteUserName] during [init]
   String? remoteUsername;
 
   /// Set by [generateSshKeys] during [init].
@@ -306,6 +309,7 @@ class SSHNP {
   /// sshnpd. Let's say we are @human running sshnp, and @daemon is running
   /// sshnpd, then we expect a key to have been shared whose ID is
   /// @human:username.device.sshnp@daemon
+  /// fetches remote user name if not provided through class constructor
   Future<void> fetchRemoteUserName() async {
     AtKey userNameRecordID =
         AtKey.fromString('$clientAtSign:username.$nameSpace$sshnpdAtSign');
@@ -480,11 +484,6 @@ class SSHNP {
         throw ('\nUnable to determine your username: please set environment variable\n\n');
       }
 
-      String? remoteUsername;
-      if (results.wasParsed('remote-user-name')) {
-        remoteUsername = results['remote-user-name'];
-      }
-
       // Do we have a 'home' directory?
       var homeDirectory = getHomeDirectory();
       if (homeDirectory == null) {
@@ -553,7 +552,7 @@ class SSHNP {
         localSshOptions: results['local-ssh-options'] ?? [],
         rsa: results['rsa'],
         sendSshPublicKey: sendSshPublicKey,
-        remoteUsername: remoteUsername,
+        remoteUsername: results['remote-username'],
       );
       if (results['verbose']) {
         sshnp.logger.logger.level = Level.INFO;
