@@ -49,6 +49,7 @@ void main() {
       expect(p.localSshOptions, []);
       expect(p.rsa, false);
       expect(p.verbose, false);
+      expect(p.remoteUsername, null);
     });
   });
 }
