@@ -522,6 +522,8 @@ class SSHNP {
     p.rsa = r['rsa'];
     p.verbose = r['verbose'];
 
+    p.remoteUsername = r['remote-username'];
+
     return p;
   }
 
@@ -554,7 +556,7 @@ class SSHNP {
         localSshOptions: p.localSshOptions,
         rsa: p.rsa,
         sendSshPublicKey: p.sendSshPublicKey,
-        remoteUsername: results['remote-username'],
+        remoteUsername: p.remoteUsername,
       );
       if (p.verbose) {
         sshnp.logger.logger.level = Level.INFO;
@@ -685,4 +687,5 @@ class SSHNPParams {
   late final List<String> localSshOptions;
   late final bool rsa;
   late final bool verbose;
+  late final String? remoteUsername;
 }
