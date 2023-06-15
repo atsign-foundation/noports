@@ -522,7 +522,7 @@ class SSHNP {
     p.rsa = r['rsa'];
     p.verbose = r['verbose'];
 
-    p.remoteUsername = r['remote-username'];
+    p.remoteUsername = r['remote-user-name'];
 
     return p;
   }
