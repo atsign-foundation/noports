@@ -1,34 +1,40 @@
 import 'dart:io';
 
 /// Get the home directory or null if unknown.
-String? getHomeDirectory() {
+String? getHomeDirectory({bool throwIfNull = false}) {
+  String? homeDir;
   switch (Platform.operatingSystem) {
     case 'linux':
     case 'macos':
-      return Platform.environment['HOME'];
+      homeDir = Platform.environment['HOME'];
     case 'windows':
-      return Platform.environment['USERPROFILE'];
+      homeDir = Platform.environment['USERPROFILE'];
     case 'android':
       // Probably want internal storage.
-      return '/storage/sdcard0';
+      homeDir = '/storage/sdcard0';
     case 'ios':
       // iOS doesn't really have a home directory.
-      return null;
     case 'fuchsia':
       // I have no idea.
-      return null;
     default:
-      return null;
+      homeDir = null;
   }
+  if (throwIfNull && homeDir == null) {
+    throw ('\nUnable to determine your home directory: please set environment variable\n\n');
+  }
+  return homeDir;
 }
 
 /// Get the local username or null if unknown
-String? getUserName() {
+String? getUserName({bool throwIfNull = false}) {
   Map<String, String> envVars = Platform.environment;
   if (Platform.isLinux || Platform.isMacOS) {
     return envVars['USER'];
   } else if (Platform.isWindows) {
     return envVars['USERPROFILE'];
+  }
+  if (throwIfNull) {
+    throw ('\nUnable to determine your username: please set environment variable\n\n');
   }
   return null;
 }
@@ -47,3 +53,12 @@ bool checkNonAscii(String test) {
   }
 }
 
+String getDefaultAtKeysFilePath(String homeDirectory, String atSign) {
+return '$homeDirectory/.atsign/keys/${atSign}_key.atKeys'
+    .replaceAll('/', Platform.pathSeparator);
+}
+
+String getDefaultSshDirectory(String homeDirectory) {
+return '$homeDirectory/.ssh/'
+    .replaceAll('/', Platform.pathSeparator);
+}

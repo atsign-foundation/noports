@@ -2,21 +2,23 @@
 import 'dart:async';
 import 'dart:io';
 
-// other packages
-import 'package:args/args.dart';
-import 'package:at_client/at_client.dart';
-import 'package:at_onboarding_cli/at_onboarding_cli.dart';
 // atPlatform packages
 import 'package:at_utils/at_logger.dart';
+import 'package:at_client/at_client.dart';
+import 'package:at_onboarding_cli/at_onboarding_cli.dart';
+
+// other packages
+import 'package:args/args.dart';
 import 'package:logging/logging.dart';
 import 'package:meta/meta.dart';
-import 'package:sshnoports/cleanup_sshnp.dart';
+import 'package:uuid/uuid.dart';
+import 'package:version/version.dart';
+
 // local packages
 import 'package:sshnoports/service_factories.dart';
 import 'package:sshnoports/sshnp_utils.dart';
+import 'package:sshnoports/cleanup_sshnp.dart';
 import 'package:sshnoports/version.dart';
-import 'package:uuid/uuid.dart';
-import 'package:version/version.dart';
 
 class SSHNP {
   // TODO Make this a const in SSHRVD class
@@ -153,10 +155,8 @@ class SSHNP {
     logger.hierarchicalLoggingEnabled = true;
     logger.logger.level = Level.SHOUT;
 
-    // Setup ssh keys location
-    sshHomeDirectory =
-        '$homeDirectory${Platform.pathSeparator}.ssh${Platform.pathSeparator}';
-    if (!Directory(sshHomeDirectory).existsSync()) {
+    sshHomeDirectory = getDefaultSshDirectory(homeDirectory);
+    if (! Directory(sshHomeDirectory).existsSync()) {
       Directory(sshHomeDirectory).createSync();
     }
   }
@@ -233,13 +233,13 @@ class SSHNP {
         ..ttl = 10000);
 
     try {
-      await atClient.notificationService.notify(
-          NotificationParams.forUpdate(keyForCommandToSend, value: sshString),
+      await atClient.notificationService
+          .notify(NotificationParams.forUpdate(keyForCommandToSend, value: sshString),
           onSuccess: (notification) {
-        logger.info('SUCCESS:$notification $sshString');
-      }, onError: (notification) {
-        logger.info('ERROR:$notification $sshString');
-      });
+            logger.info('SUCCESS:$notification $sshString');
+          }, onError: (notification) {
+            logger.info('ERROR:$notification $sshString');
+          });
     } catch (e) {
       stderr.writeln(e.toString());
     }
@@ -309,8 +309,7 @@ class SSHNP {
   /// @human:username.device.sshnp@daemon
   /// Is not called if remoteUserName was set via constructor
   Future<void> fetchRemoteUserName() async {
-    AtKey userNameRecordID =
-        AtKey.fromString('$clientAtSign:username.$nameSpace$sshnpdAtSign');
+    AtKey userNameRecordID = AtKey.fromString('$clientAtSign:username.$nameSpace$sshnpdAtSign');
     try {
       remoteUsername = (await atClient.get(userNameRecordID)).value as String;
     } catch (e) {
@@ -361,13 +360,13 @@ class SSHNP {
         ..ttl = 10000);
 
     try {
-      await atClient.notificationService.notify(
-          NotificationParams.forUpdate(sendOurPrivateKeyToSshnpd,
-              value: sshPrivateKey), onSuccess: (notification) {
-        logger.info('SUCCESS:$notification');
-      }, onError: (notification) {
-        logger.info('ERROR:$notification');
-      });
+      await atClient.notificationService
+          .notify(NotificationParams.forUpdate(sendOurPrivateKeyToSshnpd, value: sshPrivateKey),
+          onSuccess: (notification) {
+            logger.info('SUCCESS:$notification');
+          }, onError: (notification) {
+            logger.info('ERROR:$notification');
+          });
     } catch (e) {
       stderr.writeln(e.toString());
     }
@@ -397,13 +396,13 @@ class SSHNP {
         ..ttl = 10000);
 
     try {
-      await atClient.notificationService.notify(
-          NotificationParams.forUpdate(ourSshrvdIdKey, value: sessionId),
+      await atClient.notificationService
+          .notify(NotificationParams.forUpdate(ourSshrvdIdKey, value: sessionId),
           onSuccess: (notification) {
-        logger.info('SUCCESS:$notification $ourSshrvdIdKey');
-      }, onError: (notification) {
-        logger.info('ERROR:$notification $ourSshrvdIdKey');
-      });
+            logger.info('SUCCESS:$notification $ourSshrvdIdKey');
+          }, onError: (notification) {
+            logger.info('ERROR:$notification $ourSshrvdIdKey');
+          });
     } catch (e) {
       stderr.writeln(e.toString());
     }
@@ -458,9 +457,9 @@ class SSHNP {
     }
 
     sshPublicKey =
-        await File('$sshHomeDirectory${sessionId}_sshnp.pub').readAsString();
+    await File('$sshHomeDirectory${sessionId}_sshnp.pub').readAsString();
     sshPrivateKey =
-        await File('$sshHomeDirectory${sessionId}_sshnp').readAsString();
+    await File('$sshHomeDirectory${sessionId}_sshnp').readAsString();
 
     // Set up a safe authorized_keys file, for the reverse ssh tunnel
     File('${sshHomeDirectory}authorized_keys').writeAsStringSync(
@@ -468,98 +467,103 @@ class SSHNP {
         mode: FileMode.append);
   }
 
+  static SSHNPParams parseSSHNPParams(List<String> args) {
+    var p = SSHNPParams();
+
+    // Arg check
+    ArgResults r = createArgParser().parse(args);
+
+    // Do we have a username ?
+    p.username = getUserName(throwIfNull:true)!;
+
+    // Do we have a 'home' directory?
+    p.homeDirectory = getHomeDirectory(throwIfNull:true)!;
+
+    p.clientAtSign = r['from'];
+    p.sshnpdAtSign = r['to'];
+
+    // Find atSign key file
+    if (r['key-file'] != null) {
+      p.atKeysFilePath = r['key-file'];
+    } else {
+      p.atKeysFilePath = getDefaultAtKeysFilePath(p.homeDirectory, p.clientAtSign);
+    }
+    // Check atKeyFile selected exists
+    if (!File(p.atKeysFilePath).existsSync()) {
+      throw ('\n Unable to find .atKeys file : ${p.atKeysFilePath}');
+    }
+
+    // Check device string only contains ascii
+    if (checkNonAscii(r['device'])) {
+      throw ('\nDevice name can only contain alphanumeric characters with a max length of 15');
+    }
+
+    p.device = r['device'];
+
+    // Check the public key if the option was selected
+    var sendSshPublicKey = r['ssh-public-key'];
+    if ((sendSshPublicKey != 'false')) {
+      sendSshPublicKey = '${getDefaultSshDirectory(p.homeDirectory)}$sendSshPublicKey';
+      if (!File(sendSshPublicKey).existsSync()) {
+        throw ('\n Unable to find ssh public key file : $sendSshPublicKey');
+      }
+      if (!sendSshPublicKey.endsWith('.pub')) {
+        throw ('\n The ssh public key should have a ".pub" extension');
+      }
+    }
+    p.sendSshPublicKey = sendSshPublicKey;
+
+    p.host = r['host'];
+    p.port = r['port'];
+    p.localPort = r['local-port'];
+
+    p.localSshOptions = r['local-ssh-options'];
+
+    p.rsa = r['rsa'];
+    p.verbose = r['verbose'];
+
+    return p;
+  }
+
   static Future<SSHNP> fromCommandLineArgs(List<String> args) async {
-    ArgParser parser = createArgParser();
-
-    String sessionId = Uuid().v4();
     try {
-      // Arg check
-      ArgResults results = parser.parse(args);
+      var p = parseSSHNPParams(args);
 
-      // Do we have a username ?
-      var username = getUserName();
-      if (username == null) {
-        throw ('\nUnable to determine your username: please set environment variable\n\n');
-      }
+      String sessionId = Uuid().v4();
 
-      // Do we have a 'home' directory?
-      var homeDirectory = getHomeDirectory();
-      if (homeDirectory == null) {
-        throw ('\nUnable to determine your home directory: please set environment variable\n\n');
-      }
-
-      // Setup ssh keys location
-      var sshHomeDirectory =
-          "$homeDirectory${Platform.pathSeparator}.ssh${Platform.pathSeparator}";
-
-      var clientAtSign = results['from'];
-      var sshnpdAtSign = results['to'];
-
-      String? atKeysFilePath;
-      // Find atSign key file
-      if (results['key-file'] != null) {
-        atKeysFilePath = results['key-file'];
-      } else {
-        atKeysFilePath = '${clientAtSign}_key.atKeys';
-        atKeysFilePath = '$homeDirectory/.atsign/keys/$atKeysFilePath';
-      }
-      // Check atKeyFile selected exists
-      if (!File(atKeysFilePath!).existsSync()) {
-        throw ('\n Unable to find .atKeys file : $atKeysFilePath');
-      }
-
-      // Check device string only contains ascii
-      if (checkNonAscii(results['device'])) {
-        throw ('\nDevice name can only contain alphanumeric characters with a max length of 15');
-      }
-
-      var device = results['device'];
-
-      // Check the public key if the option was selected
-      var sendSshPublicKey = results['ssh-public-key'];
-      if ((sendSshPublicKey != 'false')) {
-        sendSshPublicKey = '$sshHomeDirectory$sendSshPublicKey';
-        if (!await fileExists(sendSshPublicKey)) {
-          throw ('\n Unable to find ssh public key file : $sendSshPublicKey');
-        }
-        if (!sendSshPublicKey.endsWith('.pub')) {
-          throw ('\n The ssh public key should have a ".pub" extension');
-        }
-      }
-
-      if (results['verbose']) {
+      if (p.verbose) {
         AtSignLogger.root_level = 'INFO';
       }
 
       AtClient atClient = await createAtClient(
-          clientAtSign: clientAtSign,
-          device: device,
+          clientAtSign: p.clientAtSign,
+          device: p.device,
           sessionId: sessionId,
-          atKeysFilePath: atKeysFilePath);
+          atKeysFilePath: p.atKeysFilePath);
 
       var sshnp = SSHNP(
         atClient: atClient,
-        sshnpdAtSign: sshnpdAtSign,
-        username: username,
-        homeDirectory: homeDirectory,
+        sshnpdAtSign: p.sshnpdAtSign,
+        username: p.username,
+        homeDirectory: p.homeDirectory,
         sessionId: sessionId,
-        device: device,
-        host: results['host'],
-        port: results['port'],
-        localPort: results['local-port'],
-        localSshOptions: results['local-ssh-options'] ?? [],
-        rsa: results['rsa'],
-        sendSshPublicKey: sendSshPublicKey,
+        device: p.device,
+        host: p.host,
+        port: p.port,
+        localPort: p.localPort,
+        localSshOptions: p.localSshOptions,
+        rsa: p.rsa,
+        sendSshPublicKey: p.sendSshPublicKey,
         remoteUsername: results['remote-username'],
       );
-      if (results['verbose']) {
+      if (p.verbose) {
         sshnp.logger.logger.level = Level.INFO;
       }
 
       return sshnp;
     } catch (e) {
       version();
-      stdout.writeln(parser.usage);
+      stdout.writeln(createArgParser().usage);
       stderr.writeln(e);
       exit(1);
     }
@@ -567,17 +571,20 @@ class SSHNP {
 
   static Future<AtClient> createAtClient(
       {required String clientAtSign,
-      required String device,
-      required String sessionId,
-      required String atKeysFilePath}) async {
+        required String device,
+        required String sessionId,
+        required String atKeysFilePath}) async {
     // Now on to the atPlatform startup
     //onboarding preference builder can be used to set onboardingService parameters
     AtOnboardingPreference atOnboardingConfig = AtOnboardingPreference()
       ..hiveStoragePath = '/tmp/.sshnp/$clientAtSign/$sessionId/storage'
+          .replaceAll('/', Platform.pathSeparator)
       ..namespace = '$device.sshnp'
-      ..downloadPath = '/tmp/.sshnp/files'
+      ..downloadPath =
+          '/tmp/.sshnp/files'.replaceAll('/', Platform.pathSeparator)
       ..isLocalStoreRequired = true
       ..commitLogPath = '/tmp/.sshnp/$clientAtSign/$sessionId/storage/commitLog'
+          .replaceAll('/', Platform.pathSeparator)
       ..fetchOfflineNotifications = false
       ..atKeysFilePath = atKeysFilePath
       ..atProtocolEmitted = Version(2, 0, 0);
@@ -616,19 +623,19 @@ class SSHNP {
         mandatory: false,
         defaultsTo: '22',
         help:
-            'TCP port to connect back to (only required if --host specified a FQDN/IP)');
+        'TCP port to connect back to (only required if --host specified a FQDN/IP)');
     parser.addOption('local-port',
         abbr: 'l',
         defaultsTo: '0',
         mandatory: false,
         help:
-            'Reverse ssh port to listen on, on your local machine, by sshnp default finds a spare port');
+        'Reverse ssh port to listen on, on your local machine, by sshnp default finds a spare port');
     parser.addOption('ssh-public-key',
         abbr: 's',
         defaultsTo: 'false',
         mandatory: false,
         help:
-            'Public key file from ~/.ssh to be appended to authorized_hosts on the remote device');
+        'Public key file from ~/.ssh to be appended to authorized_hosts on the remote device');
     parser.addMultiOption('local-ssh-options',
         abbr: 'o', help: 'Add these commands to the local ssh command');
     parser.addFlag('verbose', abbr: 'v', help: 'More logging');
@@ -662,4 +669,20 @@ class SSHNP {
           'sshnp is expected to be run as a compiled executable, not via the dart command');
     }
   }
+}
+
+class SSHNPParams {
+  late final String clientAtSign;
+  late final String sshnpdAtSign;
+  late final String device;
+  late final String host;
+  late final String port;
+  late final String localPort;
+  late final String username;
+  late final String homeDirectory;
+  late final String atKeysFilePath;
+  late final String sendSshPublicKey;
+  late final List<String> localSshOptions;
+  late final bool rsa;
+  late final bool verbose;
 }
