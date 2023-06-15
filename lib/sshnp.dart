@@ -2,23 +2,21 @@
 import 'dart:async';
 import 'dart:io';
 
-// atPlatform packages
-import 'package:at_utils/at_logger.dart';
-import 'package:at_client/at_client.dart';
-import 'package:at_onboarding_cli/at_onboarding_cli.dart';
-
 // other packages
 import 'package:args/args.dart';
+import 'package:at_client/at_client.dart';
+import 'package:at_onboarding_cli/at_onboarding_cli.dart';
+// atPlatform packages
+import 'package:at_utils/at_logger.dart';
 import 'package:logging/logging.dart';
 import 'package:meta/meta.dart';
-import 'package:uuid/uuid.dart';
-import 'package:version/version.dart';
-
+import 'package:sshnoports/cleanup_sshnp.dart';
 // local packages
 import 'package:sshnoports/service_factories.dart';
 import 'package:sshnoports/sshnp_utils.dart';
-import 'package:sshnoports/cleanup_sshnp.dart';
 import 'package:sshnoports/version.dart';
+import 'package:uuid/uuid.dart';
+import 'package:version/version.dart';
 
 class SSHNP {
   // TODO Make this a const in SSHRVD class
@@ -84,7 +82,7 @@ class SSHNP {
   late final String clientAtSign;
 
   /// The username to use on the remote host in the ssh session. Either passed
-  /// through class constructor or  Is fetched from the sshnpd
+  /// through class constructor or fetched from the sshnpd
   /// by [fetchRemoteUserName] during [init]
   String? remoteUsername;
 
@@ -309,7 +307,7 @@ class SSHNP {
   /// sshnpd. Let's say we are @human running sshnp, and @daemon is running
   /// sshnpd, then we expect a key to have been shared whose ID is
   /// @human:username.device.sshnp@daemon
-  /// fetches remote user name if not provided through class constructor
+  /// Is not called if remoteUserName was set via constructor
   Future<void> fetchRemoteUserName() async {
     AtKey userNameRecordID =
         AtKey.fromString('$clientAtSign:username.$nameSpace$sshnpdAtSign');
