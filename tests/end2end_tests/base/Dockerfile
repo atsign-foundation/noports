@@ -50,7 +50,7 @@ RUN sed -E -i 's|^#?(PasswordAuthentication)\s.*|\1 no|' /etc/ssh/sshd_config
 RUN sed -i 's/#ListenAddress 0.0.0.0/ListenAddress 127.0.0.1/g' /etc/ssh/sshd_config
 
 # copy binaries from buildimage
-RUN mkdir -p ${HOMEDIR}/.local/bin  ${HOMEDIR}/repo ;
+RUN mkdir -p ${HOMEDIR}/.local/bin ${HOMEDIR}/repo ;
 COPY --from=buildimage --chown=${USER}:${USER} /app/bin/* ${HOMEDIR}/.local/bin
 
 WORKDIR ${HOMEDIR}

@@ -1,0 +1,8 @@
+place id_ed25519 and id_ed25519.pub in this directory
+
+generate ssh keys via
+```sh
+cd tests/end2end_tests/sshnp/sshkeys
+ssh-keygen -o -a 100 -t ed25519 -f ./id_ed25519 -C "john@example.com"
+```
+(replace `./` with the path to this directory)
