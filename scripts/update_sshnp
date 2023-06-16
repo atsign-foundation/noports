@@ -16,7 +16,7 @@ usage() {
   echo "Usage: $0 [options]"
   echo "Options:"
   echo "  -l, --local <path>                   Install using local zip/tgz"
-  echo "  -r, --repo <path>                     Install using local repo"
+  echo "  -r, --repo <path>                    Install using local repo"
   echo "  -h, --help                           Display this help message"
 }
 
@@ -123,7 +123,7 @@ download() {
       unzip -qo "$HOME_PATH/.atsign/temp/$BINARY_NAME.$EXT" -d "$HOME_PATH/.atsign/temp";
       ;;
     tgz|tar.gz)
-      tar -zxvf "$HOME_PATH/.atsign/temp/$BINARY_NAME.$EXT" -C "$HOME_PATH/.atsign/temp/";
+      tar -zxf "$HOME_PATH/.atsign/temp/$BINARY_NAME.$EXT" -C "$HOME_PATH/.atsign/temp/";
       ;;
   esac
 
