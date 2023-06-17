@@ -76,7 +76,7 @@ main() {
 
     build_base_image
 
-    containertag=sshnp_test_$type # example: sshnp_test_sshnpdd
+    containertag=sshnp_test_$type # example: sshnp_test_sshnpd
     imagetag=atsigncompany/$containertag # example: atsigncompany/sshnp_test_sshnpd
     networkname=${containertag}_network # example: sshnp_test_sshnpd_network
 
