@@ -14,7 +14,6 @@ RUN set -eux ; \
     mkdir -p ${HOMEDIR}/.ssh ; \
     cd ${HOMEDIR}/.ssh ; \
     touch authorized_keys ; \
-    chmod 600 ${HOMEDIR}/.ssh ; \
     ssh-keygen -t ed25519 -a 100 -f id_ed25519 -q -N '' ; \
     chown -R ${USER}:${USER} ${HOMEDIR} ; \
     ex +"%s/^%sudo.*$/%sudo ALL=(ALL:ALL) NOPASSWD:ALL/g" -scwq! /etc/sudoers ; \
