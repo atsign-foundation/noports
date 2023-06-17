@@ -177,6 +177,10 @@ class SSHNP {
       throw StateError('Cannot init() - already initialized');
     }
 
+    if(!(await sshnpdAtSignExists(sshnpdAtSign))) {
+        throw ('sshnpd atSign $sshnpdAtSign does not exist');
+    }
+
     logger.info('Subscribing to notifications on $sessionId.$nameSpace@');
     // Start listening for response notifications from sshnpd
     atClient.notificationService
@@ -300,6 +304,17 @@ class SSHNP {
       stderr.writeln('Remote sshnpd error: ${notification.value}');
       sshnpdAck = true;
       sshnpdAckErrors = true;
+    }
+  }
+
+  Future<bool> sshnpdAtSignExists(final String sshnpdAtSign) async {
+    final AtKey publicKey = AtKey.public('publickey', sharedBy: sshnpdAtSign).build();
+
+    try {
+      await atClient.get(publicKey);
+      return true;
+    } catch (e) {
+      return false;
     }
   }
 

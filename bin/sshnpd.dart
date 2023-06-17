@@ -145,6 +145,15 @@ Future<void> _main(List<String> args) async {
 
   atClient = AtClientManager.getInstance().atClient;
 
+  // check if sshnp atSign exists
+  final AtKey publicKey = AtKey.public('publickey', sharedBy: managerAtsign).build();
+  try {
+    await atClient.get(publicKey);
+  } catch (e) {
+    logger.severe('sshnp atSign $managerAtsign does not exist');
+    exit(1);
+  }
+
   NotificationService notificationService = atClient.notificationService;
 
   if (results['username']) {
