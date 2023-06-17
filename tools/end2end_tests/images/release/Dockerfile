@@ -31,7 +31,7 @@ RUN mkdir -p ${HOMEDIR}/.atsign/keys ${HOMEDIR}/.local/bin ${HOMEDIR}/tmp/build 
     cd sshnp ; \
     mv sshnp sshnpd sshrv sshrvd at_activate ${HOMEDIR}/.local/bin ;
 
-COPY --chown=${USER}:${USER} ../ ${HOMEDIR}/.atsign/keys
+COPY --chown=${USER}:${USER} ../keys ${HOMEDIR}/.atsign/keys
 
 WORKDIR ${HOMEDIR}
 
