@@ -148,6 +148,17 @@ Future<void> _main(List<String> args) async {
 
   atClient = AtClientManager.getInstance().atClient;
 
+	var atKey = AtKey()
+		..key = 'publickey'
+		..sharedBy = managerAtsign
+		..metadata = (Metadata()..isPublic = true);
+
+  final AtValue atValue = await atClient.get(atKey);
+	if(atValue.value == null) {
+		logger.severe('No public key found for $managerAtsign. Ensure that this atSign is activated using at_activate');
+		exit(1);
+	}
+
   // Wait for initial sync to complete
   logger.shout("Starting sync for : $deviceAtsign");
 
