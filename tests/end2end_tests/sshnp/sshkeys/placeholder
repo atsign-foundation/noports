@@ -5,4 +5,10 @@ generate ssh keys via
 cd tests/end2end_tests/sshnp/sshkeys
 ssh-keygen -o -a 100 -t ed25519 -f ./id_ed25519 -C "john@example.com"
 ```
+
+or with our script
+```sh
+cd tests/end2end_tests/scripts
+./generate_ssh_keys.sh -e email@email.com
+```
 (replace `./` with the path to this directory)
