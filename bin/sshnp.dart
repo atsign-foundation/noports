@@ -240,12 +240,13 @@ void main(List<String> args) async {
 
   var atClient = AtClientManager.getInstance().atClient;
 
-  var atKey = AtKey()
+  var pk = AtKey()
 	..key = 'publickey'
 	..sharedBy = toAtsign
 	..metadata = (Metadata()..isPublic = true);
 
-  final AtValue atValue = await atClient.get(atKey);
+  final AtValue atValue = await atClient.get(pk);
+  
   if(atValue.value == null) {
     logger.severe('No public key found for $toAtsign. Ensure that this atSign is activated using at_activate');
   	exit(1);
