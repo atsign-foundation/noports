@@ -11,6 +11,7 @@ import 'package:at_onboarding_cli/at_onboarding_cli.dart';
 import 'package:args/args.dart';
 import 'package:logging/logging.dart';
 import 'package:meta/meta.dart';
+import 'package:sshnoports/atsign_exists.dart';
 import 'package:uuid/uuid.dart';
 import 'package:version/version.dart';
 
@@ -177,7 +178,7 @@ class SSHNP {
       throw StateError('Cannot init() - already initialized');
     }
 
-    if(!(await sshnpdAtSignExists(sshnpdAtSign))) {
+    if(!(await atSignIsActivated(atClient, sshnpdAtSign))) {
         throw ('sshnpd atSign $sshnpdAtSign does not exist');
     }
 
@@ -304,17 +305,6 @@ class SSHNP {
       stderr.writeln('Remote sshnpd error: ${notification.value}');
       sshnpdAck = true;
       sshnpdAckErrors = true;
-    }
-  }
-
-  Future<bool> sshnpdAtSignExists(final String sshnpdAtSign) async {
-    final AtKey publicKey = AtKey.public('publickey', sharedBy: sshnpdAtSign).build();
-
-    try {
-      await atClient.get(publicKey);
-      return true;
-    } catch (e) {
-      return false;
     }
   }
 

@@ -11,6 +11,7 @@ import 'package:at_onboarding_cli/at_onboarding_cli.dart';
 import 'package:args/args.dart';
 import 'package:dartssh2/dartssh2.dart';
 import 'package:logging/logging.dart';
+import 'package:sshnoports/atsign_exists.dart';
 import 'package:uuid/uuid.dart';
 import 'package:version/version.dart';
 
@@ -146,12 +147,8 @@ Future<void> _main(List<String> args) async {
   atClient = AtClientManager.getInstance().atClient;
 
   // check if sshnp atSign exists
-  final AtKey publicKey = AtKey.public('publickey', sharedBy: managerAtsign).build();
-  try {
-    await atClient.get(publicKey);
-  } catch (e) {
-    logger.severe('sshnp atSign $managerAtsign does not exist');
-    exit(1);
+  if(!(await atSignIsActivated(atClient, managerAtsign))) {
+    throw ('\nManager atSign $managerAtsign is not activated');
   }
 
   NotificationService notificationService = atClient.notificationService;
