@@ -11,7 +11,6 @@ import 'package:at_onboarding_cli/at_onboarding_cli.dart';
 import 'package:args/args.dart';
 import 'package:dartssh2/dartssh2.dart';
 import 'package:logging/logging.dart';
-import 'package:sshnoports/atsign_exists.dart';
 import 'package:uuid/uuid.dart';
 import 'package:version/version.dart';
 
