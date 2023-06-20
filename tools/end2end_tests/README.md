@@ -51,6 +51,8 @@ With the two containers, we can change directory to `~/.local/bin` and run the b
 - `images/branch/Dockerfile` - compiles a specific branch or commit id
 - `images/release/Dockerfile` - downloads a release from github
 
+All images copy `keys/` over to their containers `~/.atsign/keys`
+
 ## Notes
 
 - niche thing to remember for `images/local/Dockerfile`: if you ever refactor this tool, double check the keys path directory inside of `images/local/Dockerfile` because that `keys/` directory path is relative to the root of the project, not relative to the scripts directory.
