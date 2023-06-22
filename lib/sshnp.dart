@@ -661,11 +661,11 @@ class SSHNP {
   /// this case) replaced with `sshrv`
   static String getSshrvCommand() {
     late String sshnpDir;
-    if (Platform.executable.endsWith('${Platform.pathSeparator}sshnp')) {
-      List<String> pathList =
-          Platform.resolvedExecutable.split(Platform.pathSeparator);
+    List<String> pathList =
+        Platform.resolvedExecutable.split(Platform.pathSeparator);
+    if (pathList.last == 'sshnp' || pathList.last == 'sshnp.exe') {
       pathList.removeLast();
-      sshnpDir = pathList.join(Platform.pathSeparator) + Platform.pathSeparator;
+      sshnpDir = pathList.join(Platform.pathSeparator);
 
       return '$sshnpDir${Platform.pathSeparator}sshrv';
     } else {
