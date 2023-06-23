@@ -529,8 +529,10 @@ class SSHNP {
         throw ('\n Unable to find .atKeys file : ${p.atKeysFilePath}');
       }
 
-      if (!File(p.sendSshPublicKey).existsSync()) {
-        throw ('\n Unable to find ssh public key file : ${p.sendSshPublicKey}');
+      if (p.sendSshPublicKey != 'false') {
+        if (!File(p.sendSshPublicKey).existsSync()) {
+          throw ('\n Unable to find ssh public key file : ${p.sendSshPublicKey}');
+        }
       }
 
       String sessionId = Uuid().v4();
