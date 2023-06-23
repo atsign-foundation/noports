@@ -64,6 +64,13 @@ parse_args() {
         exit 1
     fi
 
+    if [[ $type != "sshnp" && $type != "sshnpd" && $type != "sshrvd" ]]; 
+    then
+        echo "Invalid type: $type, must be one of: sshnp/sshnpd/sshrvd"
+        usage
+        exit 1
+    fi
+
     if [[ -z $local && -z $branch && -z $release && -z $blank ]]; 
     then
         echo "Missing required argument: ONE OF THE FOLLOWING: --local, --branch, --release, --blank"
