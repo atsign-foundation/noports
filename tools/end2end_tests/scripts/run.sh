@@ -2,12 +2,16 @@
 usage() {
     echo "usage: $0"
     echo "  -h|--help"
-    echo "  -t|--type <type> (required)"
+    echo "  -t|--type <sshnp/sshnpd/sshrvd> (required)"
     echo "  ONE OF THE FOLLOWING (required)"
     echo "  -l|--local"
     echo "  -b|--branch <branch/commitid>"
     echo "  -r|--release <release>"
     echo "  --blank"
+    echo ""
+    echo "  example: $0 -t sshnp -b trunk"
+    echo "  example: $0 -t sshnpd -l"
+    echo "  example: $0 -t sshnprvd -r 3.3.0"
 }
 
 parse_args() {
