@@ -20,6 +20,8 @@ import 'package:sshnoports/version.dart';
 import 'package:sshnoports/service_factories.dart';
 import 'package:sshnoports/sshnpd_utils.dart';
 
+const String nameSpace = 'sshnp';
+
 class SSHNPD {
   // final fields
   final AtSignLogger logger = AtSignLogger(' sshnpd '); //
@@ -27,29 +29,25 @@ class SSHNPD {
   final String username; //
   final String homeDirectory; //
 
-  dynamic results; //
-  String device; //
+  final String device; //
 
-  @visibleForTesting
-  late final String deviceAtsign; //
+  String get deviceAtsign => atClient.getCurrentAtSign()!;
   late final String managerAtsign; //
-  late final String nameSpace; //
 
   @visibleForTesting
   bool initialized = false;
 
   static const String commandToSend = 'sshd';
 
-  SSHNPD({
-    // final fields
-    required this.atClient,
-    required this.username,
-    required this.homeDirectory,
-    // volatile fields
-    required this.device,
-    required this.results,
-  }) {
-    nameSpace = '$device.sshnp';
+  SSHNPD(
+      {
+      // final fields
+      required this.atClient,
+      required this.username,
+      required this.homeDirectory,
+      // volatile fields
+      required this.device,
+      required this.managerAtsign}) {
     logger.hierarchicalLoggingEnabled = true;
     logger.logger.level = Level.SHOUT;
   }
@@ -59,16 +57,6 @@ class SSHNPD {
       throw StateError('Cannot init() - already initialized');
     }
 
-    logger.hierarchicalLoggingEnabled = true;
-    logger.logger.level = Level.SHOUT;
-
-    AtSignLogger.root_level = 'SHOUT';
-    if (results['verbose']) {
-      logger.logger.level = Level.INFO;
-
-      AtSignLogger.root_level = 'INFO';
-    }
-    
     initialized = true;
   }
 
@@ -96,6 +84,8 @@ class SSHNPD {
       try {
         await notificationService
             .notify(NotificationParams.forUpdate(atKey, value: username),
+                waitForFinalDeliveryStatus: false,
+                checkForFinalDeliveryStatus: false,
                 onSuccess: (notification) {
           logger.info('SUCCESS:$notification $username');
         }, onError: (notification) {
@@ -106,6 +96,7 @@ class SSHNPD {
       }
     }
 
+    logger.info('Starting connectivity listener');
     // Keep an eye on connectivity and report failures if we see them
     ConnectivityListener().subscribe().listen((isConnected) {
       if (isConnected) {
@@ -117,8 +108,9 @@ class SSHNPD {
 
     String privateKey = "";
     String sshPublicKey = "";
+    logger.info('Subscribing to $device\\.$nameSpace@');
     notificationService
-        .subscribe(regex: '$device.$nameSpace@', shouldDecrypt: true)
+        .subscribe(regex: '$device\\.$nameSpace@', shouldDecrypt: true)
         .listen(((notification) async {
       String notificationKey = notification.key
           .replaceAll('${notification.to}:', '')
@@ -166,7 +158,7 @@ class SSHNPD {
         logger.info(
             'ssh callback request received from ${notification.from} notification id : ${notification.id}');
         sshCallback(notification, privateKey, logger, managerAtsign,
-            deviceAtsign, nameSpace, device);
+            deviceAtsign, device);
       }
     }),
             onError: (e) => logger.severe('Notification Failed:$e'),
@@ -227,14 +219,16 @@ class SSHNPD {
     }
 
     // Find atSign key file
-    if (r['key-file'] != null) {
-      p.atKeysFilePath = r['key-file'];
+    if (r['keyFile'] != null) {
+      p.atKeysFilePath = r['keyFile'];
     } else {
       p.deviceAtsign = r['atsign'];
       p.managerAtsign = r['manager'];
       p.atKeysFilePath =
-          getDefaultAtKeysFilePath(p.homeDirectory, p.clientAtSign);
+          getDefaultAtKeysFilePath(p.homeDirectory, p.deviceAtsign);
     }
+
+    p.verbose = r['verbose'];
 
     return p;
   }
@@ -250,6 +244,7 @@ class SSHNPD {
 
       String sessionId = Uuid().v4();
 
+      AtSignLogger.root_level = 'SHOUT';
       if (p.verbose) {
         AtSignLogger.root_level = 'INFO';
       }
@@ -258,16 +253,14 @@ class SSHNPD {
           homeDirectory: p.homeDirectory,
           deviceAtsign: p.deviceAtsign,
           sessionId: sessionId,
-          atKeysFilePath: p.atKeysFilePath,
-          nameSpace: p.nameSpace);
+          atKeysFilePath: p.atKeysFilePath);
 
       var sshnpd = SSHNPD(
-        atClient: atClient,
-        username: p.username,
-        homeDirectory: p.homeDirectory,
-        device: p.device,
-        results: p,
-      );
+          atClient: atClient,
+          username: p.username,
+          homeDirectory: p.homeDirectory,
+          device: p.device,
+          managerAtsign: p.managerAtsign);
       if (p.verbose) {
         sshnpd.logger.logger.level = Level.INFO;
       }
@@ -285,8 +278,7 @@ class SSHNPD {
       {required String homeDirectory,
       required String deviceAtsign,
       required String sessionId,
-      required String atKeysFilePath,
-      required String? nameSpace}) async {
+      required String atKeysFilePath}) async {
     // Now on to the atPlatform startup
     //onboarding preference builder can be used to set onboardingService parameters
     AtOnboardingPreference atOnboardingConfig = AtOnboardingPreference()
@@ -301,8 +293,6 @@ class SSHNPD {
       ..fetchOfflineNotifications = false
       ..atKeysFilePath = atKeysFilePath
       ..atProtocolEmitted = Version(2, 0, 0);
-
-    nameSpace = atOnboardingConfig.namespace!;
 
     AtOnboardingService onboardingService = AtOnboardingServiceImpl(
         deviceAtsign, atOnboardingConfig,
@@ -319,7 +309,6 @@ class SSHNPD {
       AtSignLogger logger,
       String managerAtsign,
       String deviceAtsign,
-      String nameSpace,
       String device) async {
     // sessionId is local if we do not have a 2.0 client
     var uuid = Uuid();
@@ -476,7 +465,6 @@ class SSHNPD {
 }
 
 class SSHNPDParams {
-  late final String clientAtSign;
   late final String device;
   late final String username;
   late final String homeDirectory;
@@ -485,5 +473,4 @@ class SSHNPDParams {
   late final String sendSshPublicKey;
   late final String deviceAtsign;
   late final bool verbose;
-  late final String nameSpace;
 }
