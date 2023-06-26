@@ -17,7 +17,8 @@ ENV BINARYDIR=/usr/local/at
 ENV USER_ID=1024
 ENV GROUP_ID=1024
 COPY --from=buildimage  /app/.startup.sh /atsign/
-RUN  set -eux ; \
+RUN  \
+   set -eux ; \
    apt-get update && apt-get install -y openssh-server sudo iputils-ping iproute2 ncat telnet net-tools nmap iperf3 tmux traceroute vim;\
    addgroup --gid $GROUP_ID atsign ; \
    useradd --system --uid $USER_ID --gid $GROUP_ID --shell /bin/bash  --home $HOMEDIR atsign ; \
