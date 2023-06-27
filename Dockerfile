@@ -1,8 +1,10 @@
 FROM dart:3.0.5@sha256:65e5f5d6d72ad2f7b32f402c01b5fe8a426455b1ede1e9f840f95a2a8c14afbd AS buildimage
 ENV BINARYDIR=/usr/local/at
+SHELL ["/bin/bash", "-c"]
 WORKDIR /app
 COPY . .
 RUN \
+  set -eux ; \
   mkdir -p $BINARYDIR ; \
   dart pub get ; \
   dart pub update ; \
@@ -15,9 +17,10 @@ ENV BINARYDIR=/usr/local/at
 ENV USER_ID=1024
 ENV GROUP_ID=1024
 COPY --from=buildimage  /app/.startup.sh /atsign/
-RUN apt-get update && apt-get install -y openssh-server sudo iputils-ping iproute2 ncat telnet net-tools nmap iperf3 tmux traceroute vim;\
+RUN  \
+   set -eux ; \
+   apt-get update && apt-get install -y openssh-server sudo iputils-ping iproute2 ncat telnet net-tools nmap iperf3 tmux traceroute vim;\
    addgroup --gid $GROUP_ID atsign ; \
-   sysctl -w net.ipv4.ping_group_range="0 1024" ; \
    useradd --system --uid $USER_ID --gid $GROUP_ID --shell /bin/bash  --home $HOMEDIR atsign ; \
    mkdir -p $HOMEDIR/.atsign/keys ; \
    mkdir -p $HOMEDIR/.ssh ; \
