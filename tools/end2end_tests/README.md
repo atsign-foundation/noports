@@ -94,4 +94,4 @@ All images copy `keys/` over to their containers `~/.atsign/keys`
 ## Notes
 
 - niche thing to remember for `images/local/Dockerfile`: if you ever refactor this tool, double check the keys path directory inside of `images/local/Dockerfile` because that `keys/` directory path is relative to the root of the project, not relative to the scripts directory.
-
+- if you run into errors when trying to docker build (like fetching the metadata of a particular image), try deleting your docker config.json through `rm ~/.docker/config.json`.
