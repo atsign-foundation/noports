@@ -68,7 +68,8 @@ return '$homeDirectory/.ssh/'
 /// Checks if the provided atSign's atServer has been properly activated with a public RSA key.
 /// `atClient` must be authenticated
 /// `atSign` is the atSign to check
-/// Returns `true` if the atSign is activated, `false` otherwise
+/// Returns `true`, if the atSign's cloud secondary server has an existing `public:publickey@` in their server, 
+/// Returns `false`, if the atSign's cloud secondary *exists*, but does not have an existing `public:publickey@`
 /// Throws [AtClientException] if the cloud secondary is invalid or not reachable
 Future<bool> atSignIsActivated(final AtClient atClient, String atSign) async {
   final Metadata metadata = Metadata()
