@@ -97,16 +97,16 @@ main() {
 
     if [[ ! -z $local ]];
     then
-        sudo docker build -t $imagetag -f ../images/local/Dockerfile ../../../
+        sudo docker build --no-cache -t $imagetag -f ../images/local/Dockerfile ../../../
     elif [[ ! -z $branch ]];
     then
-        sudo docker build -t $imagetag --build-arg branch=$branch -f ../images/branch/Dockerfile ../
+        sudo docker build --no-cache -t $imagetag --build-arg branch=$branch -f ../images/branch/Dockerfile ../
     elif [[ ! -z $release ]];
     then
-        sudo docker build -t $imagetag --build-arg release=$release -f ../images/release/Dockerfile ../
+        sudo docker build --no-cache -t $imagetag --build-arg release=$release -f ../images/release/Dockerfile ../
     elif [[ ! -z $blank ]];
     then
-        sudo docker build -t $imagetag -f ../images/blank/Dockerfile ../
+        sudo docker build --no-cache -t $imagetag -f ../images/blank/Dockerfile ../
     fi
 
     sudo docker run -it --network=$networkname --name $containertag $imagetag
