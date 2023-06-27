@@ -146,8 +146,9 @@ Future<void> _main(List<String> args) async {
   atClient = AtClientManager.getInstance().atClient;
 
   // check if sshnp atSign exists
-  if(!(await atSignIsActivated(atClient, managerAtsign))) {
-    throw ('\nManager atSign $managerAtsign is not activated');
+  while(!(await atSignIsActivated(atClient, managerAtsign))) {
+    await Future.delayed(Duration(seconds: 5));
+    logger.warning('Waiting for $managerAtsign to be activated...');
   }
 
   NotificationService notificationService = atClient.notificationService;
