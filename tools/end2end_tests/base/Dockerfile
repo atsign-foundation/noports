@@ -1,4 +1,4 @@
-FROM debian:latest
+FROM debian:stable-20230612-slim@sha256:b09f68bffcf9c14f3105f262e92321d05abaf48460d1f43f884325bcd4395b95
 
 ENV USER=atsign
 ENV HOMEDIR=/${USER}
