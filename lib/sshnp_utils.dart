@@ -84,8 +84,7 @@ Future<bool> atSignIsActivated(final AtClient atClient, String atSign) async {
     await atClient.get(publicKey);
     return true;
   } catch (e) {
-    print(e.runtimeType.toString());
-    if(e is AtKeyNotFoundException || e is InternalServerError) {
+    if(e is AtKeyNotFoundException || (e is AtClientException && e.message.contains("public:publickey"))) {
       return false;
     }
     rethrow;
