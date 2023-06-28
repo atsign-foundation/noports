@@ -259,12 +259,7 @@ setup_service() {
 
 # used to restart the service after an update
 restart_service() {
-  SERVICE_LIST_FILE="$HOME_PATH/.$BINARY_NAME/.service_list";
-  while read -r SERVICE;
-  do
-    SERVICE=$(echo "$SERVICE" | cut -f 1 -d ' ');
-    killall -qu "$SSHNP_USER" "$SERVICE";
-  done < "$SERVICE_LIST_FILE";
+  killall -qu "$SSHNP_USER" -r "$BINARY_NAME$"
 }
 
 post_install() {
