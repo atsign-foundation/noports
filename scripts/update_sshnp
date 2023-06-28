@@ -15,9 +15,9 @@ norm_atsign() {
 usage() {
   echo "Usage: $0 [options]"
   echo "Options:"
-  echo "  -l, --local <path>                   Install using local zip/tgz"
-  echo "  -r, --repo <path>                    Install using local repo"
-  echo "  -h, --help                           Display this help message"
+  echo "  -l, --local <path>          Install using local zip/tgz"
+  echo "  -r, --repo <path>           Install using local repo"
+  echo "  -h, --help                  Display this help message"
 }
 
 parse_args() {

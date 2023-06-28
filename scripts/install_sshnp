@@ -13,13 +13,15 @@ norm_atsign() {
 
 usage() {
   echo "Usage: $0 [options]"
-  echo "Options:"
-  echo "  -c, --client <address>    (mandatory)  Client address (e.g. @alice_client)"
-  echo "  -d, --device <address>    (mandatory)  Device address (e.g. @alice_device)"
-  echo "  -h, --host <region code>  (mandatory)  Default host rendezvous region code (am, eu, ap)"
-  echo "  -l, --local <path>                     Install using local zip/tgz"
-  echo "  -r, --repo <path>                      Install using local repo"
-  echo "      --help                             Display this help message"
+  echo "General options:"
+  echo "  -l, --local <path>          Install using local zip/tgz"
+  echo "  -r, --repo <path>           Install using local repo"
+  echo "  -h, --help                  Display this help message"
+  echo ""
+  echo "Installation options:"
+  echo "  -c, --client <address>      Client address (e.g. @alice_client)"
+  echo "  -d, --device <address>      Device address (e.g. @alice_device)"
+  echo "  -h, --host <region code>    Default host rendezvous region code (am, eu, ap)"
 }
 
 parse_args() {

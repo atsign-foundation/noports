@@ -14,15 +14,15 @@ norm_atsign() {
 usage() {
   echo "Usage: $0 [options]"
   echo "General options:"
-  echo "  -u, --update                           Update all services instead of installing"
-  echo "  -l, --local <path>                     Install using local zip/tgz"
-  echo "  -r, --repo <path>                      Install using local repo"
-  echo "  -h, --help                             Display this help message"
+  echo "  -u, --update                Update all services instead of installing"
+  echo "  -l, --local <path>          Install using local zip/tgz"
+  echo "  -r, --repo <path>           Install using local repo"
+  echo "  -h, --help                  Display this help message"
   echo ""
   echo "Installation options:"
-  echo "  -c, --client <address>    (mandatory)  Client address (e.g. @alice_client)"
-  echo "  -d, --device <address>    (mandatory)  Device address (e.g. @alice_device)"
-  echo "  -n, --name <device name>  (mandatory)  Name of the device"
+  echo "  -c, --client <address>      Client address (e.g. @alice_client)"
+  echo "  -d, --device <address>      Device address (e.g. @alice_device)"
+  echo "  -n, --name <device name>    Name of the device"
 }
 
 parse_args() {
