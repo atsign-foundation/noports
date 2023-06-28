@@ -259,12 +259,7 @@ setup_service() {
 
 # used to restart the service after an update
 restart_service() {
-  SERVICE_LIST_FILE="$HOME_PATH/.$BINARY_NAME/.service_list";
-  while read -r SERVICE;
-  do
-    SERVICE=$(echo "$SERVICE" | cut -f 1 -d ' ');
-    killall -qu "$SSHNP_USER" "$SERVICE";
-  done < "$SERVICE_LIST_FILE";
+  killall -q -u "$SSHNP_USER" -r "$BINARY_NAME$"
 }
 
 post_install() {
@@ -280,20 +275,15 @@ main () {
 
   setup_main_binaries
 
-  case "$SSHNP_OP" in
-    install)
-      setup_service
-      ;;
-    update)
-      restart_service
-      ;;
-    *)
-      echo "Invalid operation: $SSHNP_OP";
-      exit 0;
-      ;;
-  esac
+  if [ "$SSHNP_OP" = 'install' ]; then
+    setup_service
+  fi
 
   post_install
+
+  if [ "$SSHNP_OP" = 'update' ]; then
+    restart_service
+  fi
 }
 
 parse_args "$@";
