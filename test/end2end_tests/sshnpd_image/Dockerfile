@@ -5,7 +5,7 @@ ENV OUTPUTDIR=/output
 
 WORKDIR ${BUILDDIR}
 
-COPY . .
+COPY ../../../ .
 
 RUN ls -la
 
