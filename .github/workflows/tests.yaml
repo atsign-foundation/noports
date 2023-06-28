@@ -26,6 +26,7 @@ jobs:
         working-directory: .
         run: |
           docker build -t sshnpd_image -f test/end2end_tests/sshnpd_image/Dockerfile .
+          docker run -it --name sshnpd_container sshnpd_image
       
   end2end_tests:
     runs-on: ubuntu-latest
