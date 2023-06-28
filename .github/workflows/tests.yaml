@@ -1,0 +1,47 @@
+name: tests
+
+on:
+  workflow_dispatch:
+  pull_request:
+    branches:
+      - trunk
+
+jobs:
+  end2end_tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9 # v3.5.3
+      - uses: dart-lang/setup-dart@d6a63dab3335f427404425de0fbfed4686d93c4f # v1.5.0
+        with:
+          sdk: stable
+
+      # Install dependencies in sshnoports
+      - name: Install dependencies in sshnoports
+        working-directory: .
+        run: dart pub get
+
+      # Install dependencies in end2end_tests
+      - name: Install dependencies in test/end2end_tests
+        working-directory: test/end2end_tests
+        run: dart pub get
+
+      # # Run end-to-end test
+      # - name: End to end test
+      #   # Needs a secret, so don't run for Dependabot PRs
+      #   if: ${{ github.actor != 'dependabot[bot]' }}
+      #   working-directory: tests/at_end2end_test
+      #   run: dart test --concurrency=1 --coverage="coverage"
+
+      # - name: Convert coverage to LCOV format
+      #   # Needs tests to have run, so don't run for Dependabot PRs
+      #   if: ${{ github.actor != 'dependabot[bot]' }}
+      #   working-directory: tests/at_end2end_test
+      #   run: dart run coverage:format_coverage --check-ignore --lcov --in=coverage --out=end2end_test_coverage.lcov --report-on=lib
+
+      # - name: Upload coverage to Codecov
+      #   # Needs LCOV report to upload, so don't run for Dependabot PRs
+      #   if: ${{ github.actor != 'dependabot[bot]' }}
+      #   uses: codecov/codecov-action@eaaf4bedf32dbdc6b720b63067d99c4d77d6047d # v3.1.4
+      #   with:
+      #     file: tests/at_end2end_test/end2end_test_coverage.lcov
+      #     flags: end2end_tests
