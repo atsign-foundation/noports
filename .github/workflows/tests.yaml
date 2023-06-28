@@ -24,24 +24,4 @@ jobs:
       - name: Install dependencies in test/end2end_tests
         working-directory: test/end2end_tests
         run: dart pub get
-
-      # # Run end-to-end test
-      # - name: End to end test
-      #   # Needs a secret, so don't run for Dependabot PRs
-      #   if: ${{ github.actor != 'dependabot[bot]' }}
-      #   working-directory: tests/at_end2end_test
-      #   run: dart test --concurrency=1 --coverage="coverage"
-
-      # - name: Convert coverage to LCOV format
-      #   # Needs tests to have run, so don't run for Dependabot PRs
-      #   if: ${{ github.actor != 'dependabot[bot]' }}
-      #   working-directory: tests/at_end2end_test
-      #   run: dart run coverage:format_coverage --check-ignore --lcov --in=coverage --out=end2end_test_coverage.lcov --report-on=lib
-
-      # - name: Upload coverage to Codecov
-      #   # Needs LCOV report to upload, so don't run for Dependabot PRs
-      #   if: ${{ github.actor != 'dependabot[bot]' }}
-      #   uses: codecov/codecov-action@eaaf4bedf32dbdc6b720b63067d99c4d77d6047d # v3.1.4
-      #   with:
-      #     file: tests/at_end2end_test/end2end_test_coverage.lcov
-      #     flags: end2end_tests
+				
