@@ -218,16 +218,30 @@ setup_service() {
   else
     SSHNPD_SERVICE_MECHANISM="cron";
     SSHNP_COMMAND="nohup $SSHNPD_SERVICE_BINARY_PATH > $HOME_PATH/.$BINARY_NAME/logs/$CLIENT_ATSIGN.log 2> $HOME_PATH/.$BINARY_NAME/logs/$CLIENT_ATSIGN.err"
+    LOGROTATE="40 6 * * * logrotate -f $HOME_PATH/.$BINARY_NAME/logs/$CLIENT_ATSIGN.log"
   fi
 
   if grep -Fxq "$SSHNP_CRON_SCHEDULE $SSHNP_COMMAND" <(crontab -l 2>/dev/null); then
+    NO_RUN=1;
     echo "Cron job already installed: '$SSHNP_CRON_SCHEDULE $SSHNP_COMMAND'";
   else
     (crontab -l 2>/dev/null; echo "$SSHNP_CRON_SCHEDULE $SSHNP_COMMAND") | crontab -
     echo "Installed cron job: '$SSHNP_CRON_SCHEDULE $SSHNP_COMMAND'";
   fi
 
-  eval "$SSHNP_COMMAND &"
+  if [ "$SSHNPD_SERVICE_MECHANISM" = "cron" ]; then
+    if grep -Fxq "$LOGROTATE" <(crontab -l 2>/dev/null); then
+      echo "Cron job already installed: '$LOGROTATE'";
+    else
+      (crontab -l 2>/dev/null; echo "$LOGROTATE") | crontab -
+      echo "Installed cron job: '$LOGROTATE'";
+    fi
+  fi
+
+  if [ -z "$NO_RUN" ]; then
+    echo "Starting $BINARY_NAME$CLIENT_ATSIGN service...";
+    eval "$SSHNP_COMMAND &"
+  fi
 
   SERVICE_LIST_FILE="$HOME_PATH/.$BINARY_NAME/.service_list";
   echo "$BINARY_NAME$CLIENT_ATSIGN $SSHNPD_SERVICE_MECHANISM" >> "$SERVICE_LIST_FILE";
