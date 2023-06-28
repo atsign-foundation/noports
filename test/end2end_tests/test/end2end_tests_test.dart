@@ -12,6 +12,8 @@ void main() {
       'id_ed25519.pub',
       '-h',
       '@rv_am',
+      '-d',
+      'docker',
       '-v'
     ];
 
