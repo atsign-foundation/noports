@@ -20,7 +20,7 @@ jobs:
             output-name: sshnp-macos-x64
 
     steps:
-      - uses: actions/checkout@8e5e7e5ab8b370d6c329ec480221332ada57f0ab # v3.5.2
+      - uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9 # v3.5.3
       - uses: dart-lang/setup-dart@d6a63dab3335f427404425de0fbfed4686d93c4f # v1.5.0
       - run: mkdir sshnp
       - run: mkdir tarball
@@ -30,6 +30,7 @@ jobs:
       - run: dart compile exe bin/sshnpd.dart -v -o sshnp/sshnpd
       - run: dart compile exe bin/sshrv.dart -v -o sshnp/sshrv
       - run: dart compile exe bin/sshrvd.dart -v -o sshnp/sshrvd
+      - run: cp -r templates sshnp/templates
       - run: cp scripts/* sshnp
       - run: tar -cvzf tarball/${{ matrix.output-name }}.tgz sshnp
       - uses: actions/upload-artifact@0b7f8abb1508181956e8e162db84b466c27e18ce # v3.1.2
@@ -41,9 +42,9 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@8e5e7e5ab8b370d6c329ec480221332ada57f0ab # v3.5.2
-      - uses: docker/setup-qemu-action@e81a89b1732b9c48d79cd809d8d81d79c4647a18 # v2.1.0
-      - uses: docker/setup-buildx-action@4b4e9c3e2d4531116a6f8ba8e71fc6e2cb6e6c8c # v2.5.0
+      - uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9 # v3.5.3
+      - uses: docker/setup-qemu-action@2b82ce82d56a2a04d2637cd93a637ae1b359c0a7 # v2.2.0
+      - uses: docker/setup-buildx-action@ecf95283f03858871ff00b787d79c419715afc34 # v2.7.0
       - run: |
           docker buildx build -t atsigncompany/sshnptarball -f Dockerfile.package \
           --platform linux/arm/v7,linux/arm64,linux/riscv64 -o type=tar,dest=bins.tar .

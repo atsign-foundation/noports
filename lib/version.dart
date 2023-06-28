@@ -1,7 +1,7 @@
 import 'dart:io';
 
-//Print version number
+/// Print version number
 void version() {
-  final String version = "3.1.2";
+  final String version = "3.3.0";
   stdout.writeln('Version : $version');
 }

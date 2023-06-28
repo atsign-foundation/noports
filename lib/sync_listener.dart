@@ -3,7 +3,7 @@ import 'package:at_client/at_client.dart';
 
 class MySyncProgressListener extends SyncProgressListener {
   bool syncComplete = false;
-  String syncResult = 'synching';
+  String syncResult = 'syncing';
 
   @override
   void onSyncProgressEvent(SyncProgress syncProgress) {
@@ -15,7 +15,7 @@ class MySyncProgressListener extends SyncProgressListener {
       syncResult = 'Failed';
     }
     if (syncProgress.syncStatus == SyncStatus.success ) {
-      syncResult = 'Suceeeded';
+      syncResult = 'Succeeded';
     }
 
     return;

@@ -38,6 +38,7 @@ device name using the --device argument.
 
 Once in place you can start up the daemon first on the remote device.
 Remember to start the daemon on start up using rc.local script or similar, examples can be found in the scripts directory in this repo and in the release tar files.
+The daemon machine has to be running sshd even if only listening on localhost on an open port.
 
 `sshnpd.sh` : bash script
 `tmux-sshnpd.sh` : bash script that uses `tmux` to provide realtime logging/view of the running daemon
@@ -47,7 +48,7 @@ Remember to start the daemon on start up using rc.local script or similar, examp
 --device <iot_device_name> -u -s
 ```
 
-Once that has started up you can run the client code from another machine.
+Once that has started up you can run the client code from another machine. The client machine has to be running sshd even if only listening on localhost on an open port.
 
 ```
 ./sshnp --from <@your_manager_atsign> --to <@your_devices_atsign>  \
@@ -66,9 +67,6 @@ Which would output
 ssh -p 39011 cconstab@localhost -i /home/cconstab/.ssh/id_ed25519
 ```
 
-Atsign provides a sshrvd service but if you want to run your own `sshrvd` you will need a machine that has an internet IP and all ports 1024-65535 unfirewalled and an atSign for the daemon to use.
-
-
 When you run this you will be connected to the remote machine via a reverse
 ssh tunnel from the remote device. 
 
@@ -76,6 +74,13 @@ If you want to do this in a single command use `$(<command>)` for example, note 
 
 ```
 $(./sshnp -f @myclient -t @myserver -d mymachine -h @myrz -s id_ed25519.pub)
+```
+
+Atsign provides a sshrvd service but if you want to run your own `sshrvd` you will need a machine that has an internet IP and all ports 1024-65535 unfirewalled and an atSign for the daemon to use.
+
+To run your own rendezvous service, simply run the `sshrvd` binary.  You may omit the manager atSign to allow all atSigns to use your rendezvous service. There are also flags like `-s` to snoop on traffic passing through the service. 
+```
+./sshrvd --atsign <@your_sshrvd_atsign> --manager <@manager_atsign> --ip <FQDN/IP address sent to clients>  
 ```
 
 If you can now login using sshnp then you can now turn off sshd from listening on all external interfaces, and instead have ssh listen only on 127.0.0.1.
@@ -140,7 +145,7 @@ and <devicename>.
 You might also want to add a crontab entry to run the script on reboot:
 
 ```
-@reboot /home/<username>/sshnpd.sh > ~/sshnpd.log 2>&1
+@reboot ~/sshnpd.sh > ~/sshnpd.log 2>&1
 ```
 
 ### `tmux-sshnpd.sh` and `tmux-sshrvd.sh` - the power of tmux, highly recommended if tmux is installed `sudo apt install tmux`
@@ -156,10 +161,10 @@ Once again, ensure that the placeholders are replaced, and this can be run
 by cron using:
 
 ```
-@reboot /home/<username>/tmux-sshnpd.sh > ~/sshnpd.log 2>&1
+@reboot ~/tmux-sshnpd.sh > ~/sshnpd.log 2>&1
 ```
 
-### systemd units
+## systemd units
 
 The systemd directory contains an example unit file with its own
 [README](systemd/README.md).

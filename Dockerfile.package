@@ -1,17 +1,13 @@
-FROM atsigncompany/buildimage:3.0.1_3.1.0-63.1.beta@sha256:28d7af401ae21be184607e9d9e9aa6d25a65cfc13b8a0bc84a6dd980deb151d9 AS build
+FROM atsigncompany/buildimage:3.0.5_3.1.0-163.1.beta@sha256:5d126560a8c60d9c94da3cca185208172f2368b8ba8b0423aa6ee1a890c4e33b AS build
 # Using atsigncompany/buildimage until official dart image has RISC-V support
 WORKDIR /sshnoports
 COPY . .
 RUN set -eux; \
     case "$(dpkg --print-architecture)" in \
-        amd64) \
-            ARCH="x64";; \
-        armhf) \
-            ARCH="arm";; \
-        arm64) \
-            ARCH="arm64";; \
-        riscv64) \
-            ARCH="riscv64";; \
+        amd64) ARCH="x64";; \
+        armhf) ARCH="arm";; \
+        arm64) ARCH="arm64";; \
+        riscv64) ARCH="riscv64";; \
     esac; \
     mkdir sshnp; \
     mkdir tarball; \
@@ -21,8 +17,9 @@ RUN set -eux; \
     dart compile exe bin/sshnpd.dart -v -o sshnp/sshnpd; \
     dart compile exe bin/sshrv.dart -v -o sshnp/sshrv; \
     dart compile exe bin/sshrvd.dart -v -o sshnp/sshrvd; \
-    cp scripts/* sshnp; \
+    cp -r templates sshnp/templates; \
+    cp scripts/* sshnp/; \
     tar -cvzf tarball/sshnp-linux-${ARCH}.tgz sshnp
-    
+
 FROM scratch
 COPY --from=build /sshnoports/tarball/* /

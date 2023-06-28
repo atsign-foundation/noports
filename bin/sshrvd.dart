@@ -15,11 +15,8 @@ import 'package:socket_connector/socket_connector.dart';
 import 'package:version/version.dart';
 
 // local packages
-//import 'package:sshnoports/service_factories.dart';
 import 'package:sshnoports/version.dart';
-import 'package:sshnoports/home_directory.dart';
-import 'package:sshnoports/check_file_exists.dart';
-import 'package:sshnoports/sync_listener.dart';
+import 'package:sshnoports/sshnp_utils.dart';
 
 void main(List<String> args) async {
   final AtSignLogger logger = AtSignLogger(' sshrvd ');
@@ -87,8 +84,7 @@ void main(List<String> args) async {
     exit(1);
   }
 
-  // Loging setup
-  // Now on to the atPlatform startup
+  // Logging setup
   AtSignLogger.root_level = 'WARNING';
   logger.logger.level = Level.WARNING;
   if (results['verbose']) {
@@ -101,6 +97,7 @@ void main(List<String> args) async {
 
 
 
+  // Now on to the atPlatform startup
   //onboarding preference builder can be used to set onboardingService parameters
   AtOnboardingPreference atOnboardingConfig = AtOnboardingPreference()
     //..qrCodePath = '<location of image>'
@@ -117,19 +114,6 @@ void main(List<String> args) async {
       AtOnboardingServiceImpl(atSign, atOnboardingConfig);
 
   await onboardingService.authenticate();
-
-   atClient = AtClientManager.getInstance().atClient;
-
-  // Wait for initial sync to complete
-  logger.shout("Starting sync for : $atSign");
-
-  var mySynclistener = MySyncProgressListener();
-  atClient.syncService.addProgressListener(mySynclistener);
-  while (!mySynclistener.syncComplete) {
-    await Future.delayed(Duration(milliseconds: 100));
-  }
-
-  logger.shout("$atSign sync status: ${mySynclistener.syncResult}");
 
   atClient = AtClientManager.getInstance().atClient;
 
