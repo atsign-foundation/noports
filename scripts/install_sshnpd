@@ -13,18 +13,26 @@ norm_atsign() {
 
 usage() {
   echo "Usage: $0 [options]"
-  echo "Options:"
-  echo "  -c, --client <address>    (mandatory)  Client address (e.g. @alice_client)"
-  echo "  -d, --device <address>    (mandatory)  Device address (e.g. @alice_device)"
-  echo "  -n, --name <device name>  (mandatory)  Name of the device"
+  echo "General options:"
+  echo "  -u, --update                           Update all services instead of installing"
   echo "  -l, --local <path>                     Install using local zip/tgz"
   echo "  -r, --repo <path>                      Install using local repo"
   echo "  -h, --help                             Display this help message"
+  echo ""
+  echo "Installation options:"
+  echo "  -c, --client <address>    (mandatory)  Client address (e.g. @alice_client)"
+  echo "  -d, --device <address>    (mandatory)  Device address (e.g. @alice_device)"
+  echo "  -n, --name <device name>  (mandatory)  Name of the device"
 }
 
 parse_args() {
+  SSHNP_OP="install"
   while [ $# -gt 0 ]; do
     case "$1" in
+      -u|--update)
+        SSHNP_OP="update"
+        break
+      ;;
       -h|--help)
         usage
         exit 0
@@ -174,11 +182,6 @@ download() {
   esac
   mv "$HOME_PATH/.atsign/temp/sshnp" "$HOME_PATH/.atsign/temp/$BINARY_NAME"; # Rename the extracted folder
 
-  if [ -z "$SSHNP_LOCAL" ]; then
-    UPDATE_SCRIPT_URL="https://raw.githubusercontent.com/atsign-foundation/sshnoports/trunk/scripts/update_$BINARY_NAME";
-    curl -sL "$UPDATE_SCRIPT_URL" -o "$HOME_PATH/.atsign/temp/$BINARY_NAME/update_$BINARY_NAME";
-  fi
-
   if [ -n "$SSHNP_DEV_MODE" ]; then
     echo "DEV MODE: Installing from local repo: $SSHNP_DEV_MODE";
     cp -R "$SSHNP_DEV_MODE/templates/" "$HOME_PATH/.atsign/temp/$BINARY_NAME/templates/";
@@ -188,7 +191,7 @@ download() {
 
 # Place the actual sshnp binary
 setup_main_binaries() {
-  MAIN_BINARIES="$BINARY_NAME at_activate sshrv update_$BINARY_NAME";
+  MAIN_BINARIES="$BINARY_NAME at_activate sshrv";
   for binary in $MAIN_BINARIES; do
     mv "$HOME_PATH/.atsign/temp/$BINARY_NAME/$binary" "$HOME_PATH/.local/bin/$binary";
     chmod +x "$HOME_PATH/.local/bin/$binary";
@@ -247,6 +250,16 @@ setup_service() {
   echo "$BINARY_NAME$CLIENT_ATSIGN $SSHNPD_SERVICE_MECHANISM" >> "$SERVICE_LIST_FILE";
 }
 
+# used to restart the service after an update
+restart_service() {
+  SERVICE_LIST_FILE="$HOME_PATH/.$BINARY_NAME/.service_list";
+  while read -r SERVICE;
+  do
+    SERVICE=$(echo "$SERVICE" | cut -f 1 -d ' ');
+    killall -qu "$SSHNP_USER" "$SERVICE";
+  done < "$SERVICE_LIST_FILE";
+}
+
 post_install() {
   rm -rf "$HOME_PATH/.atsign/temp";
   echo; echo "Installation complete!";
@@ -259,7 +272,19 @@ main () {
   download
 
   setup_main_binaries
-  setup_service
+
+  case "$SSHNP_OP" in
+    install)
+      setup_service
+      ;;
+    update)
+      restart_service
+      ;;
+    *)
+      echo "Invalid operation: $SSHNP_OP";
+      exit 0;
+      ;;
+  esac
 
   post_install
 }
