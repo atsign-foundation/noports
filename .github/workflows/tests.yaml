@@ -13,7 +13,12 @@ jobs:
   setup_sshnpd:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9 # v3.5.3
+
+      - name: Copy keys 
+        run: echo "${{secrets.SOCCER0_KEY}}" > @soccer0_key.atKeys
+        working-directory: test/end2end_tests/sshnpd_image/keys
+
       - name: Build sshnpd_image
         run: |
           docker build -t sshnpd_image -f test/end2end_tests/sshnpd_image/Dockerfile test/end2end_tests/sshnpd_image
