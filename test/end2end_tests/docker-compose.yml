@@ -1,0 +1,6 @@
+version: '3'
+services:
+  sshnpd:
+    build: ./sshnpd_image
+    container_name: end2end_tests_sshnpd
+

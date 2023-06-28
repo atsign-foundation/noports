@@ -10,6 +10,14 @@ on:
       - trunk
 
 jobs:
+  setup_sshnpd:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Build sshnpd_image
+        run: |
+          docker build -t sshnpd_image -f test/end2end_tests/sshnpd/Dockerfile test/end2end_tests/sshnpd
+      
   end2end_tests:
     runs-on: ubuntu-latest
     steps:
@@ -28,6 +36,7 @@ jobs:
         working-directory: test/end2end_tests
         run: dart pub get
 
+      # Run end2end_tests
       - name: Run end2end_tests
         working-directory: test/end2end_tests
-        run: dart run test.dart
+        run: dart test .
