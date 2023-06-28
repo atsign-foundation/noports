@@ -11,7 +11,8 @@ void main() {
       '-s',
       'id_ed25519.pub',
       '-h',
-      '@rv_am'
+      '@rv_am',
+      '-v'
     ];
 
     SSHNP sshnp = await SSHNP.fromCommandLineArgs(args);

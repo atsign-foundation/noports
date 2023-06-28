@@ -53,7 +53,9 @@ jobs:
         run: ssh-keygen -t ed25519 -f ~/.ssh/id_ed25519 -N "" -q
 
       - name: Copy keys
-        run: echo "${{ secrets.JEREMY_0_KEY }}" > ~/.atsign/@jeremy_0_key.atKeys
+        run: |
+          mkdir -p ~/.atsign/keys
+          echo "${{ secrets.JEREMY_0_KEY }}" > ~/.atsign/@jeremy_0_key.atKeys
 
       # Run end2end_tests
       - name: Run end2end_tests
