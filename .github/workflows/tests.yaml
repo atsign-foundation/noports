@@ -1,4 +1,4 @@
-name: tests
+name: end2end_tests
 
 on:
   workflow_dispatch:
@@ -24,4 +24,4 @@ jobs:
       - name: Install dependencies in test/end2end_tests
         working-directory: test/end2end_tests
         run: dart pub get
-				
+
