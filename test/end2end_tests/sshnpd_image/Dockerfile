@@ -7,7 +7,9 @@ WORKDIR ${BUILDDIR}
 
 COPY . .
 
-RUN mkdir -p ${OUTPUTDIR} ; \
+RUN ls -la
+
+RUN mkdir -p ${OUTPUTDIR} ${BUILDDIR} ; \
     dart pub get ; \
     dart compile exe ${BUILDDIR}/bin/sshnp.dart -o ${OUTPUTDIR}/sshnp ; \
     dart compile exe ${BUILDDIR}/bin/sshnpd.dart -o ${OUTPUTDIR}/sshnpd ; \
