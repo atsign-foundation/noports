@@ -14,6 +14,7 @@ norm_atsign() {
 usage() {
   echo "Usage: $0 [options]"
   echo "General options:"
+  echo "  -u, --update                Update the main binaries instead of installing"
   echo "  -l, --local <path>          Install using local zip/tgz"
   echo "  -r, --repo <path>           Install using local repo"
   echo "  -h, --help                  Display this help message"
@@ -25,8 +26,13 @@ usage() {
 }
 
 parse_args() {
+   SSHNP_OP="install"
   while [ $# -gt 0 ]; do
     case "$1" in
+      -u|--update)
+        SSHNP_OP="update"
+        shift 1
+      ;;
       --help)
         usage
         exit 0
@@ -78,43 +84,45 @@ parse_args() {
     esac
   done
 
-  while [ -z "$CLIENT_ATSIGN" ]; do
-    read -rp "Client address (e.g. @alice_client): " CLIENT_ATSIGN;
-  done
+  if [ "$SSHNP_OP" = "install" ]; then
+    while [ -z "$CLIENT_ATSIGN" ]; do
+      read -rp "Client address (e.g. @alice_client): " CLIENT_ATSIGN;
+    done
 
-  while [ -z "$DEVICE_MANAGER_ATSIGN" ]; do
-    read -rp "Device address (e.g. @alice_device): " DEVICE_MANAGER_ATSIGN;
-  done
+    while [ -z "$DEVICE_MANAGER_ATSIGN" ]; do
+      read -rp "Device address (e.g. @alice_device): " DEVICE_MANAGER_ATSIGN;
+    done
 
-  if [ -z "$HOST_RENDEZVOUS_ATSIGN" ]; then
-    echo Pick your default region:
-    echo "  am: Americas"
-    echo "  ap: Asia Pacific"
-    echo "  eu: Europe"
-    read -rp "> " HOST_RENDEZVOUS_ATSIGN;
-  fi
-
-  while [[ "$HOST_RENDEZVOUS_ATSIGN" != @rv_* ]]; do
-    case "$HOST_RENDEZVOUS_ATSIGN" in
-      [Aa][Mm]*)
-        HOST_RENDEZVOUS_ATSIGN="@rv_am"
-        ;;
-      [Ee][Uu]*)
-        HOST_RENDEZVOUS_ATSIGN="@rv_eu"
-        ;;
-      [Aa][Pp]*)
-        HOST_RENDEZVOUS_ATSIGN="@rv_ap"
-        ;;
-    esac
-    if [[ "$HOST_RENDEZVOUS_ATSIGN" != @rv_* ]]; then
-      echo "Invalid region: $HOST_RENDEZVOUS_ATSIGN"
-      read -rp "region: " HOST_RENDEZVOUS_ATSIGN;
+    if [ -z "$HOST_RENDEZVOUS_ATSIGN" ]; then
+      echo Pick your default region:
+      echo "  am: Americas"
+      echo "  ap: Asia Pacific"
+      echo "  eu: Europe"
+      read -rp "> " HOST_RENDEZVOUS_ATSIGN;
     fi
-  done
 
-  norm_atsign CLIENT_ATSIGN
-  norm_atsign DEVICE_MANAGER_ATSIGN
-  echo;
+    while [[ "$HOST_RENDEZVOUS_ATSIGN" != @rv_* ]]; do
+      case "$HOST_RENDEZVOUS_ATSIGN" in
+        [Aa][Mm]*)
+          HOST_RENDEZVOUS_ATSIGN="@rv_am"
+          ;;
+        [Ee][Uu]*)
+          HOST_RENDEZVOUS_ATSIGN="@rv_eu"
+          ;;
+        [Aa][Pp]*)
+          HOST_RENDEZVOUS_ATSIGN="@rv_ap"
+          ;;
+      esac
+      if [[ "$HOST_RENDEZVOUS_ATSIGN" != @rv_* ]]; then
+        echo "Invalid region: $HOST_RENDEZVOUS_ATSIGN"
+        read -rp "region: " HOST_RENDEZVOUS_ATSIGN;
+      fi
+    done
+
+    norm_atsign CLIENT_ATSIGN
+    norm_atsign DEVICE_MANAGER_ATSIGN
+    echo;
+  fi
 }
 
 parse_env() {
@@ -192,11 +200,6 @@ download() {
       ;;
   esac
 
-  if [ -z "$SSHNP_LOCAL" ]; then
-    UPDATE_SCRIPT_URL="https://raw.githubusercontent.com/atsign-foundation/sshnoports/trunk/scripts/update_$BINARY_NAME";
-    curl -sL "$UPDATE_SCRIPT_URL" -o "$HOME_PATH/.atsign/temp/$BINARY_NAME/update_$BINARY_NAME";
-  fi
-
   if [ -n "$SSHNP_DEV_MODE" ]; then
     echo "DEV MODE: Installing from local repo: $SSHNP_DEV_MODE";
     cp -R "$SSHNP_DEV_MODE/templates/" "$HOME_PATH/.atsign/temp/$BINARY_NAME/templates/";
@@ -206,7 +209,7 @@ download() {
 
 # Place the actual sshnp binary
 setup_main_binaries() {
-  MAIN_BINARIES="$BINARY_NAME at_activate sshrv update_$BINARY_NAME";
+  MAIN_BINARIES="$BINARY_NAME at_activate sshrv";
   for binary in $MAIN_BINARIES; do
     mv "$HOME_PATH/.atsign/temp/$BINARY_NAME/$binary" "$HOME_PATH/.local/bin/$binary";
     chmod +x "$HOME_PATH/.local/bin/$binary";
@@ -253,7 +256,17 @@ main () {
   download
 
   setup_main_binaries
-  setup_custom_binary
+
+  case "$SSHNP_OP" in
+    install)
+      setup_custom_binary
+      ;;
+    update);;
+    *)
+      echo "Invalid operation: $SSHNP_OP";
+      exit 0;
+      ;;
+  esac
 
   post_install
 }
