@@ -259,7 +259,7 @@ setup_service() {
 
 # used to restart the service after an update
 restart_service() {
-  killall -qu "$SSHNP_USER" -r "$BINARY_NAME$"
+  killall -q -u "$SSHNP_USER" -r "$BINARY_NAME$"
 }
 
 post_install() {
