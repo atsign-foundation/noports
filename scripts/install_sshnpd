@@ -84,21 +84,23 @@ parse_args() {
     esac
   done
 
-  if [ -z "$CLIENT_ATSIGN" ]; then
-    read -rp "Client address (e.g. @alice_client): " CLIENT_ATSIGN;
-  fi
+  if [ "$SSHNP_OP" = "install" ]; then
+    if [ -z "$CLIENT_ATSIGN" ]; then
+      read -rp "Client address (e.g. @alice_client): " CLIENT_ATSIGN;
+    fi
 
-  if [ -z "$DEVICE_MANAGER_ATSIGN" ]; then
-    read -rp "Device address (e.g. @alice_device): " DEVICE_MANAGER_ATSIGN;
-  fi
+    if [ -z "$DEVICE_MANAGER_ATSIGN" ]; then
+      read -rp "Device address (e.g. @alice_device): " DEVICE_MANAGER_ATSIGN;
+    fi
 
-  if [ -z "$SSHNP_DEVICE_NAME" ]; then
-    read -rp "Device name: " SSHNP_DEVICE_NAME;
-  fi
+    if [ -z "$SSHNP_DEVICE_NAME" ]; then
+      read -rp "Device name: " SSHNP_DEVICE_NAME;
+    fi
 
-  norm_atsign CLIENT_ATSIGN
-  norm_atsign DEVICE_MANAGER_ATSIGN
-  echo;
+    norm_atsign CLIENT_ATSIGN
+    norm_atsign DEVICE_MANAGER_ATSIGN
+    echo;
+  fi
 }
 
 parse_env() {
