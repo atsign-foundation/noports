@@ -280,20 +280,15 @@ main () {
 
   setup_main_binaries
 
-  case "$SSHNP_OP" in
-    install)
-      setup_service
-      ;;
-    update)
-      restart_service
-      ;;
-    *)
-      echo "Invalid operation: $SSHNP_OP";
-      exit 0;
-      ;;
-  esac
+  if [ "$SSHNP_OP" = 'install' ]; then
+    setup_service
+  fi
 
   post_install
+
+  if [ "$SSHNP_OP" = 'update' ]; then
+    restart_service
+  fi
 }
 
 parse_args "$@";
