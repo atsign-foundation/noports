@@ -31,7 +31,7 @@ parse_args() {
     case "$1" in
       -u|--update)
         SSHNP_OP="update"
-        break
+        shift 1
       ;;
       -h|--help)
         usage
