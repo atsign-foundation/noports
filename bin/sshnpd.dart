@@ -1,44 +1,65 @@
 // dart packages
-import 'dart:io';
 import 'dart:async';
-import 'package:logging/src/level.dart';
-// @platform packages
+import 'dart:io';
+
+// atPlatform packages
 import 'package:at_client/at_client.dart';
 import 'package:at_utils/at_logger.dart';
-import 'package:at_commons/at_commons.dart';
 import 'package:at_onboarding_cli/at_onboarding_cli.dart';
-// ignore: implementation_imports
-import 'package:at_client/src/service/notification_service.dart';
+
 // external packages
 import 'package:args/args.dart';
-import 'package:sshnoports/check_file_exists.dart';
-import 'package:uuid/uuid.dart';
 import 'package:dartssh2/dartssh2.dart';
+import 'package:logging/logging.dart';
+import 'package:uuid/uuid.dart';
+import 'package:version/version.dart';
+
 // local packages
-import 'package:sshnoports/check_non_ascii.dart';
-import 'package:sshnoports/home_directory.dart';
-//
+import 'package:sshnoports/version.dart';
+import 'package:sshnoports/sshnp_utils.dart';
 
 void main(List<String> args) async {
-  final AtSignLogger _logger = AtSignLogger(' sshnpd ');
+  try {
+    await _main(args);
+  } catch (error, stackTrace) {
+    stderr.writeln('sshnpd: ${error.toString()}');
+    stderr.writeln('stack trace: ${stackTrace.toString()}');
+    await stderr.flush().timeout(Duration(milliseconds: 100));
+    exit(1);
+  }
+}
+
+Future<void> _main(List<String> args) async {
+  final AtSignLogger logger = AtSignLogger(' sshnpd ');
   late AtClient? atClient;
   String nameSpace = '';
 
   var parser = ArgParser();
   // Basic arguments
-  parser.addOption('keyFile', abbr: 'k', mandatory: false, help: 'Sending @sign\'s keyFile if not in ~/.atsign/keys/');
-  parser.addOption('atsign', abbr: 'a', mandatory: true, help: '@sign of this device');
+  parser.addOption('keyFile',
+      abbr: 'k',
+      mandatory: false,
+      help: 'Sending atSign\'s keyFile if not in ~/.atsign/keys/');
+  parser.addOption('atsign',
+      abbr: 'a', mandatory: true, help: 'atSign of this device');
   parser.addOption('manager',
-      abbr: 'm', mandatory: true, help: 'Managers @sign, that this device will accept triggers from');
+      abbr: 'm',
+      mandatory: true,
+      help: 'Managers atSign, that this device will accept triggers from');
   parser.addOption('device',
       abbr: 'd',
       mandatory: false,
       defaultsTo: "default",
-      help: 'Send a trigger to this device, allows multiple devices share an @sign');
+      help:
+          'Send a trigger to this device, allows multiple devices share an atSign');
 
-  parser.addFlag('sshpublickey', abbr: 's', help: 'Update authorized_keys to include public key from sshnp');
+  parser.addFlag('sshpublickey',
+      abbr: 's',
+      help: 'Update authorized_keys to include public key from sshnp');
   parser.addFlag('username',
-      abbr: 'u', help: 'Send username to the manager to allow sshnp to display username in command line');
+      abbr: 'u',
+      help:
+          'Send username to the manager to allow sshnp to display username in command line');
   parser.addFlag('verbose', abbr: 'v', help: 'More logging');
 
   // Check the arguments
@@ -72,7 +93,7 @@ void main(List<String> args) async {
     }
     device = results['device'];
 
-    // Find @sign key file
+    // Find atSign key file
     if (results['keyFile'] != null) {
       atsignFile = results['keyFile'];
     } else {
@@ -86,17 +107,18 @@ void main(List<String> args) async {
       throw ('\n Unable to find .atKeys file : $atsignFile');
     }
   } catch (e) {
-    print(e);
-    print(parser.usage);
+    (e);
+    version();
+    stdout.writeln(parser.usage);
     exit(0);
   }
 
-  _logger.hierarchicalLoggingEnabled = true;
-  _logger.logger.level = Level.SHOUT;
+  logger.hierarchicalLoggingEnabled = true;
+  logger.logger.level = Level.SHOUT;
 
   AtSignLogger.root_level = 'SHOUT';
   if (results['verbose']) {
-    _logger.logger.level = Level.INFO;
+    logger.logger.level = Level.INFO;
 
     AtSignLogger.root_level = 'INFO';
   }
@@ -110,38 +132,26 @@ void main(List<String> args) async {
     ..isLocalStoreRequired = true
     ..commitLogPath = '$homeDirectory/.sshnp/$deviceAtsign/storage/commitLog'
     //..cramSecret = '<your cram secret>';
-    ..atKeysFilePath = atsignFile;
-  nameSpace = atOnboardingConfig.namespace!;
+    ..fetchOfflineNotifications = false
+    ..atKeysFilePath = atsignFile
+    ..atProtocolEmitted = Version(2, 0, 0);
 
-  AtOnboardingService onboardingService = AtOnboardingServiceImpl(deviceAtsign, atOnboardingConfig);
+  nameSpace = atOnboardingConfig.namespace!;
+ 
+  AtOnboardingService onboardingService =
+      AtOnboardingServiceImpl(deviceAtsign, atOnboardingConfig);
 
   await onboardingService.authenticate();
 
-  atClient = await onboardingService.getAtClient();
+  atClient = AtClientManager.getInstance().atClient;
 
-  AtClientManager atClientManager = AtClientManager.getInstance();
-
-  bool syncComplete = false;
-  void onSyncDone(syncResult) {
-    _logger.info("syncResult.syncStatus: ${syncResult.syncStatus}");
-    _logger.info("syncResult.lastSyncedOn ${syncResult.lastSyncedOn}");
-    syncComplete = true;
-  }
-
-  // Wait for initial sync to complete
-  _logger.info("Waiting for initial sync");
-  syncComplete = false;
-  atClientManager.syncService.sync(onDone: onSyncDone);
-  while (!syncComplete) {
-    await Future.delayed(Duration(milliseconds: 100));
-  }
-
-// If it was OK to send the username to the sshnp client set it up
+  NotificationService notificationService = atClient.notificationService;
 
   if (results['username']) {
     var metaData = Metadata()
       ..isPublic = false
       ..isEncrypted = true
+      ..ttr=-1
       ..namespaceAware = true;
 
     var atKey = AtKey()
@@ -151,79 +161,118 @@ void main(List<String> args) async {
       ..namespace = nameSpace
       ..metadata = metaData;
 
-    atClient?.put(atKey, username);
+    //await atClient.notificationService.(atKey, username);
+        try {
+      await notificationService
+          .notify(NotificationParams.forUpdate(atKey, value: username),
+              onSuccess: (notification) {
+        logger.info('SUCCESS:$notification $username');
+      }, onError: (notification) {
+        logger.info('ERROR:$notification $username');
+      });
+    } catch (e) {
+      stderr.writeln(e.toString());
+    }
   }
 
-// Keep an eye on connectivity and report failures if we see them
+  // Keep an eye on connectivity and report failures if we see them
   ConnectivityListener().subscribe().listen((isConnected) {
     if (isConnected) {
-      _logger.warning('connection available');
+      logger.warning('connection available');
     } else {
-      _logger.warning('connection lost');
+      logger.warning('connection lost');
     }
   });
 
-  NotificationService notificationService = atClientManager.notificationService;
 
-  atClientManager.syncService.sync(onDone: () {
-    _logger.info('sync complete');
-  });
   String privateKey = "";
   String sshPublicKey = "";
-  notificationService.subscribe(regex: '$device.$nameSpace@', shouldDecrypt: true).listen(((notification) async {
-    String keyAtsign = notification.key;
-    keyAtsign = keyAtsign.replaceAll(notification.to + ':', '');
-    keyAtsign = keyAtsign.replaceAll('.' + device + '.' + nameSpace + notification.from, '');
+  notificationService
+      .subscribe(regex: '$device.$nameSpace@', shouldDecrypt: true)
+      .listen(((notification) async {
+    String notificationKey = notification.key
+        .replaceAll('${notification.to}:', '')
+        .replaceAll('.$device.$nameSpace${notification.from}', '')
+        // convert to lower case as the latest AtClient converts notification
+        // keys to lower case when received
+        .toLowerCase();
 
-    if (keyAtsign == 'privateKey') {
-      _logger.info('Private Key recieved from ' + notification.from + ' notification id : ' + notification.id);
+    if (notificationKey == 'privatekey') {
+      logger.info(
+          'Private Key received from ${notification.from} notification id : ${notification.id}');
       privateKey = notification.value!;
     }
 
-    if (keyAtsign == 'sshPublicKey') {
+    if (notificationKey == 'sshpublickey') {
       try {
-        var sshHomeDirectory = homeDirectory + "/.ssh/";
+        var sshHomeDirectory = "$homeDirectory/.ssh/";
         if (Platform.isWindows) {
-          sshHomeDirectory = homeDirectory + '\\.ssh\\';
+          sshHomeDirectory = '$homeDirectory\\.ssh\\';
         }
-        _logger.info('ssh Public Key recieved from ' + notification.from + ' notification id : ' + notification.id);
+        logger.info(
+            'ssh Public Key received from ${notification.from} notification id : ${notification.id}');
         sshPublicKey = notification.value!;
 
-// Check to see if the public key looks like one!
-        if (!sshPublicKey.startsWith('ssh-rsa')) {
+        // Check to see if the ssh public key looks like one!
+        if (!sshPublicKey.startsWith('ssh-')) {
           throw ('$sshPublicKey does not look like a public key');
         }
 
-// Check to see if the ssh Publickey is already in the file if not append to the ~/.ssh/authorized_keys file
+        // Check to see if the ssh Publickey is already in the file if not append to the ~/.ssh/authorized_keys file
         var authKeys = File('${sshHomeDirectory}authorized_keys');
 
         var authKeysContent = await authKeys.readAsString();
 
         if (!authKeysContent.contains(sshPublicKey)) {
-          authKeys.writeAsStringSync(sshPublicKey, mode: FileMode.append);
+          authKeys.writeAsStringSync("\n$sshPublicKey", mode: FileMode.append);
         }
       } catch (e) {
-        _logger.severe('Error writting to $username .ssh/authorized_keys file : $e');
+        logger.severe(
+            'Error writing to $username .ssh/authorized_keys file : $e');
       }
     }
 
-    if (keyAtsign == 'sshd') {
-      _logger.info('ssh callback request recieved from ' + notification.from + ' notification id : ' + notification.id);
-      sshCallback(notification, privateKey, _logger, managerAtsign, device);
+    if (notificationKey == 'sshd') {
+      logger.info(
+          'ssh callback request received from ${notification.from} notification id : ${notification.id}');
+      sshCallback(notification, privateKey, logger, managerAtsign, deviceAtsign,
+          nameSpace, device);
     }
   }),
-      onError: (e) => _logger.severe('Notification Failed:' + e.toString()),
-      onDone: () => _logger.info('Notification listener stopped'));
+          onError: (e) => logger.severe('Notification Failed:$e'),
+          onDone: () => logger.info('Notification listener stopped'));
 }
 
-
-
 void sshCallback(
-    AtNotification notification, String privateKey, AtSignLogger _logger, String managerAtsign, String device) async {
+    AtNotification notification,
+    String privateKey,
+    AtSignLogger logger,
+    String managerAtsign,
+    String deviceAtsign,
+    String nameSpace,
+    String device) async {
+  // sessionId is local if we do not have a 2.0 client
   var uuid = Uuid();
   String sessionId = uuid.v4();
 
   var sshString = notification.value!;
+  // Get atPlatform notifications ready
+  var metaData = Metadata()
+    ..isPublic = false
+    ..isEncrypted = true
+    ..namespaceAware = true
+    ..ttr = -1
+    ..ttl = 10000;
+
+  var atKey = AtKey()
+    ..key = '$sessionId.$device'
+    ..sharedBy = deviceAtsign
+    ..sharedWith = managerAtsign
+    ..namespace = nameSpace
+    ..metadata = metaData;
+
+  var atClient = AtClientManager.getInstance().atClient;
+  NotificationService notificationService = atClient.notificationService;
 
   if (notification.from == managerAtsign) {
     // Local port, port of sshd , username , hostname
@@ -232,9 +281,20 @@ void sshCallback(
     var port = sshList[1];
     var username = sshList[2];
     var hostname = sshList[3];
-    _logger
-        .info('ssh session started for $username to $hostname on port $port using localhost:$localPort on $hostname ');
-    _logger.shout('ssh session started from: ' + notification.from.toString() + " session: $sessionId");
+    // Assure backward compatibility with 1.x clients
+    if (sshList.length == 5) {
+      sessionId = sshList[4];
+      atKey = AtKey()
+        ..key = '$sessionId.$device'
+        ..sharedBy = deviceAtsign
+        ..sharedWith = managerAtsign
+        ..namespace = nameSpace
+        ..metadata = metaData;
+    }
+    logger.info(
+        'ssh session started for $username to $hostname on port $port using localhost:$localPort on $hostname ');
+    logger.shout(
+        'ssh session started from: ${notification.from} session: $sessionId');
 
     // var result = await Process.run('ssh', sshList);
 
@@ -249,15 +309,48 @@ void sshCallback(
           ...SSHKeyPair.fromPem(privateKey)
         ],
       );
-
+      // connect back to ssh server/port
       await client.authenticated;
-
+      // Do the port forwarding
       final forward = await client.forwardRemote(port: int.parse(localPort));
 
       if (forward == null) {
-        _logger.warning('Failed to forward remote port');
+        logger.warning('Failed to forward remote port $localPort');
+        try {
+          // Say this session is NOT connected to client
+          await notificationService.notify(
+              NotificationParams.forUpdate(atKey,
+                  value:
+                      'Failed to forward remote port $localPort, (use --local-port to specify unused port)'),
+              onSuccess: (notification) {
+            logger.info('SUCCESS:$notification for: $sessionId');
+          }, onError: (notification) {
+            logger.info('ERROR:$notification');
+          });
+        } catch (e) {
+          stderr.writeln(e.toString());
+        }
         return;
       }
+
+      /// Send a notification to tell sshnp connection is made
+      ///
+
+      try {
+        // Say this session is connected to client
+        logger.info(' sshnpd connected notification sent to:from "$atKey');
+        await notificationService
+            .notify(NotificationParams.forUpdate(atKey, value: "connected"),
+                onSuccess: (notification) {
+          logger.info('SUCCESS:$notification for: $sessionId');
+        }, onError: (notification) {
+          logger.info('ERROR:$notification');
+        });
+      } catch (e) {
+        stderr.writeln(e.toString());
+      }
+
+      ///
 
       int counter = 0;
       bool stop = false;
@@ -268,22 +361,42 @@ void sshCallback(
           await client.done;
           stop = true;
           timer.cancel();
-          _logger.shout('ssh session complete for: ' + notification.from.toString() + " session: $sessionId");
+          logger.shout(
+              'ssh session complete for: ${notification.from} session: $sessionId');
         }
       });
       // Answer ssh requests until none are left open
       await for (final connection in forward.connections) {
         counter++;
         final socket = await Socket.connect('localhost', 22);
+
+        // ignore: unawaited_futures
         connection.stream.cast<List<int>>().pipe(socket).whenComplete(() async {
           counter--;
         });
+        // ignore: unawaited_futures
         socket.pipe(connection.sink);
         if (stop) break;
       }
     } catch (e) {
       // need to make sure things close
-      _logger.severe('SSH Client failure : ' + e.toString());
+      logger.severe('SSH Client failure : $e');
+      try {
+        // Say this session is connected to client
+        await notificationService.notify(
+            NotificationParams.forUpdate(atKey,
+                value: 'Remote SSH Client failure : $e'),
+            onSuccess: (notification) {
+          logger.info('SUCCESS:$notification for: $sessionId');
+        }, onError: (notification) {
+          logger.info('ERROR:$notification');
+        });
+      } catch (e) {
+        stderr.writeln(e.toString());
+      }
     }
+  } else {
+    logger.shout(
+        'ssh session attempted from: ${notification.from} session: $sessionId and ignored');
   }
 }

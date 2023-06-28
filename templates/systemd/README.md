@@ -1,8 +1,8 @@
 # Systemd Units
 
-This directory contains a systemd unit definitions. It runs a the sshnpd component
-of the ssh! no ports in a GNU screen, which can be attached to (for logging etc.)
-with `screen -r`
+This directory contains a systemd unit definition. It runs the sshnpd component
+of SSH no ports in a GNU screen, which can be attached to (for logging etc.)
+with `screen -r`.
 
 ## Installation
 
