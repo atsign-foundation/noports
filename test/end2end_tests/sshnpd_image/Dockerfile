@@ -3,14 +3,13 @@ FROM dart:3.0.5@sha256:65e5f5d6d72ad2f7b32f402c01b5fe8a426455b1ede1e9f840f95a2a8
 ENV BUILDDIR=/build
 ENV OUTPUTDIR=/output
 
+RUN mkdir -p ${BUILDDIR} ${OUTPUTDIR}
+
 WORKDIR ${BUILDDIR}
 
-COPY ../../../ .
+COPY . .
 
-RUN ls -la
-
-RUN mkdir -p ${OUTPUTDIR} ${BUILDDIR} ; \
-    dart pub get ; \
+RUN dart pub get ; \
     dart compile exe ${BUILDDIR}/bin/sshnp.dart -o ${OUTPUTDIR}/sshnp ; \
     dart compile exe ${BUILDDIR}/bin/sshnpd.dart -o ${OUTPUTDIR}/sshnpd ; \
     dart compile exe ${BUILDDIR}/bin/sshrv.dart -o ${OUTPUTDIR}/sshrv ; \
