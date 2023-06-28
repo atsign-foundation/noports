@@ -52,7 +52,7 @@ jobs:
         run: ls -la
 
       - name: Copy keys
-        run: echo "${{secrets.SOCCER0_KEY}}" > @soccer0_key.atKeys
+        run: echo "${{ secrets.SOCCER0_KEY }}" > @soccer0_key.atKeys
         working-directory: test/end2end_tests/sshnpd_image/keys
 
       - name: Build Docker container

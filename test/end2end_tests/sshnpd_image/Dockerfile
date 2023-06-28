@@ -40,12 +40,15 @@ RUN set -eux ; \
     touch ${HOMEDIR}/entrypoint.sh ; \
     chown -R ${USER}:${USER} ${HOMEDIR} ;
 
-COPY --from=buildimage --chown=${USER}:${USER} /output/* ${HOMEDIR}/.local/bin/
-COPY --chown=${USER}:${USER} test/end2end_tests/sshnpd_image/entrypoint.sh ${HOMEDIR}/entrypoint.sh
-COPY --chown=${USER}:${USER} test/end2end_tests/sshnpd_image/keys/*.atKeys ${HOMEDIR}/.atsign/keys/
 
 WORKDIR ${HOMEDIR}
 
 USER ${USER}
 
-ENTRYPOINT sudo service ssh start && bash -c /atsign/entrypoint.sh
+COPY --from=buildimage --chown=${USER}:${USER} /output/* ${HOMEDIR}/.local/bin/
+COPY --chown=${USER}:${USER} test/end2end_tests/sshnpd_image/entrypoint.sh ${HOMEDIR}/entrypoint.sh
+COPY --chown=${USER}:${USER} test/end2end_tests/sshnpd_image/keys/*.atKeys ${HOMEDIR}/.atsign/keys/
+
+RUN chown -R ${USER}:${USER} ${HOMEDIR}
+
+ENTRYPOINT sudo service ssh start && sh /atsign/entrypoint.sh
