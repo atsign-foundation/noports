@@ -177,6 +177,10 @@ class SSHNP {
       throw StateError('Cannot init() - already initialized');
     }
 
+    if(!(await atSignIsActivated(atClient, sshnpdAtSign))) {
+        throw ('sshnpd atSign $sshnpdAtSign is not activated.');
+    }
+
     logger.info('Subscribing to notifications on $sessionId.$nameSpace@');
     // Start listening for response notifications from sshnpd
     atClient.notificationService
