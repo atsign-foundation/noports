@@ -1,4 +1,3 @@
 #!/bin/bash
 cd ~/.local/bin
-./sshnpd -a @smoothalligator -m @jeremy_0 -d docker -s -u -v
-/bin/bash
+./sshnpd -a @soccer0 -m @jeremy_0 -d docker -s -u -v
