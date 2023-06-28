@@ -25,3 +25,6 @@ jobs:
         working-directory: test/end2end_tests
         run: dart pub get
 
+      - name: Run end2end_tests
+        working-directory: test/end2end_tests
+        run: dart run test.dart
