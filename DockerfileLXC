@@ -18,7 +18,7 @@ ENV USER_ID=1024
 ENV GROUP_ID=1024
 COPY --from=buildimage  /app/.startupLXC.sh /atsign/
 COPY --from=buildimage /runtime  /
-COPY --from=buildimage --chown=atsign:atsign /usr/local/at/sshnpd /usr/local/at/
+COPY --from=buildimage --chown=1024:1024 /usr/local/at/sshnpd /usr/local/at/
 RUN apk add --no-cache dhclient openssh bash sudo file iputils ;\
    echo "sshnpd" > /etc/hostname ; \
   #  rc-update add sshd ; \
