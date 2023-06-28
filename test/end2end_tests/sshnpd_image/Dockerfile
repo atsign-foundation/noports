@@ -40,7 +40,7 @@ RUN set -eux ; \
     touch ${HOMEDIR}/entrypoint.sh ; \
     chown -R ${USER}:${USER} ${HOMEDIR} ;
 
-COPY --from=buildimage --chown=${USER}:${USER} /output/* ${HOMEDIR}/.local/bin
+COPY --from=buildimage --chown=${USER}:${USER} /output/* ${HOMEDIR}/.local/bin/
 COPY --chown=${USER}:${USER} test/end2end_tests/sshnpd_image/entrypoint.sh ${HOMEDIR}/entrypoint.sh
 COPY --chown=${USER}:${USER} test/end2end_tests/sshnpd_image/keys/*.atKeys ${HOMEDIR}/.atsign/keys/
 
