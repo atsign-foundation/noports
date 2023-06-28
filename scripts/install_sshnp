@@ -191,6 +191,11 @@ download() {
     curl -sL "$DOWNLOAD" -o "$HOME_PATH/.atsign/temp/$BINARY_NAME.$EXT";
   fi
 
+  if [ ! -f "$HOME_PATH/.atsign/temp/$BINARY_NAME.$EXT" ]; then
+    echo "Failed to download $BINARY_NAME";
+    exit 1;
+  fi
+
   case "$EXT" in
     zip)
       unzip -qo "$HOME_PATH/.atsign/temp/$BINARY_NAME.$EXT" -d "$HOME_PATH/.atsign/temp";
