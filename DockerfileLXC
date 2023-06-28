@@ -1,0 +1,42 @@
+FROM dart:3.0.5@sha256:65e5f5d6d72ad2f7b32f402c01b5fe8a426455b1ede1e9f840f95a2a8c14afbd AS buildimage
+ENV BINARYDIR=/usr/local/at
+SHELL ["/bin/bash", "-c"]
+WORKDIR /app
+COPY . .
+RUN \
+  set -eux ; \
+  mkdir -p ${BINARYDIR} ; \
+  dart pub get ; \
+  dart pub update ; \
+  dart compile exe bin/sshnpd.dart -o ${BINARYDIR}/sshnpd
+
+# Second stage of build FROM debian-slim
+FROM alpine:3.17.3@sha256:124c7d2707904eea7431fffe91522a01e5a861a624ee31d03372cc1d138a3126
+ENV HOMEDIR=/atsign
+ENV BINARYDIR=/usr/local/at
+ENV USER_ID=1024
+ENV GROUP_ID=1024
+COPY --from=buildimage  /app/.startupLXC.sh /atsign/
+COPY --from=buildimage /runtime  /
+COPY --from=buildimage --chown=atsign:atsign /usr/local/at/sshnpd /usr/local/at/
+RUN apk add --no-cache dhclient openssh bash sudo file;\
+   echo "sshnpd" > /etc/hostname ; \
+  #  rc-update add sshd ; \
+  #  service sshd start ; \
+  # addgroup --gid $GROUP_ID atsign ; \
+   addgroup -g $GROUP_ID atsign ; \
+   sysctl -w net.ipv4.ping_group_range="0 1024" ; \
+   #useradd --system --uid $USER_ID --gid $GROUP_ID --shell /bin/bash  --home $HOMEDIR atsign ; \
+   adduser -S -h $HOMEDIR -s /bin/bash -G atsign -u $USER_ID atsign ; \
+   sed -i s/atsign:!/"atsign:*"/g /etc/shadow ; \
+   mkdir -p $HOMEDIR/.atsign/keys ; \
+   mkdir -p $HOMEDIR/.ssh ; \
+   touch $HOMEDIR/.ssh/authorized_keys ; \
+   chown -R atsign:atsign $HOMEDIR ; \
+   chmod 600 $HOMEDIR/.ssh/authorized_keys ; \
+   usermod -aG sudo atsign ; \
+   mkdir /run/sshd ; \
+   chmod 755 /atsign/.startupLXC.sh
+WORKDIR /atsign
+# USER atsign 
+ENTRYPOINT ["/atsign/.startupLXC.sh"]
