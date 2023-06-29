@@ -29,18 +29,29 @@ jobs:
         working-directory: test/end2end_tests
         run: docker build -t atsigncompany/sshnp-e2e-base -f images/base/Dockerfile images/base
 
-      - name: Build Trunk Image
+      - name: Build Trunk Images
         working-directory: test/end2end_tests
-        run: docker build -t atsigncompany/sshnp-e2e-trunk -f images/trunk/Dockerfile context/sshnp
+        run: |
+          docker build -t atsigncompany/sshnp-e2e-trunk -f images/trunk/Dockerfile images/trunk
 
       - name: Run Sshnpd Trunk
         run: |
-          docker run -t --name sshnp-e2e-trunk-sshnpd atsigncompany/sshnp-e2e-trunk
+          docker run \
+            -t \
+            --name sshnp-e2e-trunk-sshnpd \
+            --entrypoint context/sshnpd/entrypoint.sh \
+            -v context/sshnpd/keys:/atsign/.atsign/keys \
+            atsigncompany/sshnp-e2e-trunk
           echo $?
 
       - name: Run Sshnp Trunk
         run: |
-          docker run -t --name sshnp-e2e-trunk-sshnp atsigncompany/sshnp-e2e-trunk
+          docker run \
+            -t \
+            --name sshnp-e2e-trunk-sshnp \
+            --entrypoint context/sshnp/entrypoint.sh \
+            -v context/sshnp/keys:/atsign/.atsign/keys \
+            atsigncompany/sshnp-e2e-trunk
           echo $?
 
       - name: View containers
