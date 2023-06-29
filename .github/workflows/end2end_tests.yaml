@@ -17,7 +17,9 @@ jobs:
         uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9 # v3.5.3
 
       - name: View files
-        run: ls -la
+        run: |
+          ls -la
+          pwd
 
       - name: Copy keys
         working-directory: test/end2end_tests/context
