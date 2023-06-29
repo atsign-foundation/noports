@@ -1,4 +1,4 @@
 #!/bin/bash
 cd ~/.local/bin
-./sshnpd -a @smoothalligator -m @jeremy_0 -d docker -s -u -v > results.txt
-cat results.txt
+sudo ./sshnpd -a @smoothalligator -m @jeremy_0 -d docker -s -u -v > results.txt
+sudo cat results.txt
