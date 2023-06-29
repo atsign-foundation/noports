@@ -16,7 +16,7 @@ usage() {
 
 parse_args() {
 
-    if [[ $# -eq 0 ]]; 
+    if [[ $# -eq 0 ]];
     then
         usage
         exit 1
@@ -57,21 +57,21 @@ parse_args() {
         esac
     done
 
-    if [[ -z $type ]]; 
+    if [[ -z $type ]];
     then
         echo "Missing required argument: --type"
         usage
         exit 1
     fi
 
-    if [[ $type != "sshnp" && $type != "sshnpd" && $type != "sshrvd" ]]; 
+    if [[ $type != "sshnp" && $type != "sshnpd" && $type != "sshrvd" ]];
     then
         echo "Invalid type: $type, must be one of: sshnp/sshnpd/sshrvd"
         usage
         exit 1
     fi
 
-    if [[ -z $local && -z $branch && -z $release && -z $blank ]]; 
+    if [[ -z $local && -z $branch && -z $release && -z $blank ]];
     then
         echo "Missing required argument: ONE OF THE FOLLOWING: --local, --branch, --release, --blank"
         usage
