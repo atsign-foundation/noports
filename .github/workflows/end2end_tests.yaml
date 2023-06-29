@@ -31,10 +31,11 @@ jobs:
         working-directory: test/end2end_tests
         run: docker build -t atsigncompany/sshnp-e2e-base -f images/base/Dockerfile images/base
 
-      - name: Build Trunk Image
+      - name: Build Sshnp & Sshnpd Trunk Images
         working-directory: test/end2end_tests
         run: |
-          docker build -t atsigncompany/sshnp-e2e-trunk -f images/trunk/Dockerfile images/trunk
+          docker build -t atsigncompany/sshnp-e2e-sshnp-trunk -f images/trunk/Dockerfile context/sshnp
+          docker build -t atsigncompany/sshnp-e2e-sshnpd-trunk -f images/trunk/Dockerfile context/sshnpd
 
       - name: Run Sshnpd Trunk
         working-directory: test/end2end_tests
@@ -42,8 +43,6 @@ jobs:
           docker run \
             -t \
             --name sshnp-e2e-trunk-sshnpd \
-            --entrypoint context/sshnpd/entrypoint.sh \
-            -v $(pwd)/test/end2end_tests/context/sshnpd/keys/:/atsign/.atsign/keys/ \
             atsigncompany/sshnp-e2e-trunk
           echo $?
 
@@ -53,8 +52,6 @@ jobs:
           docker run \
             -t \
             --name sshnp-e2e-trunk-sshnp \
-            --entrypoint context/sshnp/entrypoint.sh \
-            -v $(pwd)/test/end2end_tests/context/sshnp/keys/:/atsign/.atsign/keys/ \
             atsigncompany/sshnp-e2e-trunk
           echo $?
 
