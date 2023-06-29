@@ -41,7 +41,7 @@ jobs:
             -t \
             --name sshnp-e2e-trunk-sshnpd \
             --entrypoint context/sshnpd/entrypoint.sh \
-            -v context/sshnpd/keys:/atsign/.atsign/keys \
+            -v context/sshnpd/keys/:/atsign/.atsign/keys/ \
             atsigncompany/sshnp-e2e-trunk
           echo $?
 
@@ -52,7 +52,7 @@ jobs:
             -t \
             --name sshnp-e2e-trunk-sshnp \
             --entrypoint context/sshnp/entrypoint.sh \
-            -v context/sshnp/keys:/atsign/.atsign/keys \
+            -v context/sshnp/keys/:/atsign/.atsign/keys/ \
             atsigncompany/sshnp-e2e-trunk
           echo $?
 
