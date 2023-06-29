@@ -29,19 +29,15 @@ jobs:
         working-directory: test/end2end_tests
         run: docker build -t atsigncompany/sshnp-e2e-base -f images/base/Dockerfile images/base
 
-      - name: Build Sshnp Trunk Image
+      - name: Build Trunk Image
         working-directory: test/end2end_tests
-        run: docker build -t atsigncompany/sshnp-e2e-trunk-sshnp -f images/trunk/Dockerfile context/sshnp
-
-      - name: Build Sshnpd Trunk Image
-        working-directory: test/end2end_tests
-        run: docker build -t atsigncompany/sshnp-e2e-trunk-sshnp -f images/trunk/Dockerfile context/sshnpd
+        run: docker build -t atsigncompany/sshnp-e2e-trunk -f images/trunk/Dockerfile context/sshnp
 
       - name: Run Sshnpd Trunk
-        run: docker run -d --name sshnp-e2e-trunk-sshnpd atsigncompany/sshnp-e2e-trunk-sshnpd
+        run: docker run -d --name sshnp-e2e-trunk-sshnpd atsigncompany/sshnp-e2e-trunk
 
       - name: Run Sshnp Trunk
-        run: docker run -d --name sshnp-e2e-trunk-sshnp atsigncompany/sshnp-e2e-trunk-sshnp
+        run: docker run -d --name sshnp-e2e-trunk-sshnp atsigncompany/sshnp-e2e-trunk
 
 
   # attempting to use `dart test `
