@@ -11,4 +11,14 @@ usage() {
   echo "Note: previously device name was a positional argument, please specify it with -d."
 }
 
+if [ "$#" -eq 0 ]; then
+  usage;
+  exit 1;
+fi
+
+if [ "$1" = "--help" ]; then
+  usage;
+  exit 0;
+fi
+
 "$HOME/.local/bin/$BINARY_NAME" -f "$FROM" -t "$TO" -h "$HOST" -s "$PUBLIC_KEY" "$@";
