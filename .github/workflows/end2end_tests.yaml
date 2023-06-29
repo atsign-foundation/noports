@@ -29,12 +29,13 @@ jobs:
         working-directory: test/end2end_tests
         run: docker build -t atsigncompany/sshnp-e2e-base -f images/base/Dockerfile images/base
 
-      - name: Build Trunk Images
+      - name: Build Trunk Image
         working-directory: test/end2end_tests
         run: |
           docker build -t atsigncompany/sshnp-e2e-trunk -f images/trunk/Dockerfile images/trunk
 
       - name: Run Sshnpd Trunk
+        working-directory: test/end2end_tests
         run: |
           docker run \
             -t \
@@ -45,6 +46,7 @@ jobs:
           echo $?
 
       - name: Run Sshnp Trunk
+        working-directory: test/end2end_tests
         run: |
           docker run \
             -t \
