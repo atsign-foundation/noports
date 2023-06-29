@@ -1,4 +1,4 @@
-FROM end2end_tests-base:latest
+FROM sshnp-e2e-base:latest
 
 ARG release="3.3.0"
 

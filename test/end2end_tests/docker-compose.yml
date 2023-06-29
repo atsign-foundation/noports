@@ -14,7 +14,7 @@ services:
   sshnp_trunk:
     depends_on:
       - base
-    build: 
+    build:
       context: ./context/sshnp
       dockerfile: ../../images/sshnp_trunk/Dockerfile
     container_name: sshnp_trunk
@@ -28,7 +28,7 @@ services:
   sshnp_release:
     depends_on:
       - base
-    build: 
+    build:
       context: ./context/sshnp
       dockerfile: ../../images/sshnp_release/Dockerfile
     container_name: sshnpd_release
