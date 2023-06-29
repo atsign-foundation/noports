@@ -1,3 +1,4 @@
 #!/bin/bash
 cd ~/.local/bin
-./sshnpd -a @smoothalligator -m @jeremy_0 -d docker -s -u -v
+# ./sshnpd -a @smoothalligator -m @jeremy_0 -d docker -s -u -v
+exit 13

@@ -34,10 +34,14 @@ jobs:
         run: docker build -t atsigncompany/sshnp-e2e-trunk -f images/trunk/Dockerfile context/sshnp
 
       - name: Run Sshnpd Trunk
-        run: docker run -d --name sshnp-e2e-trunk-sshnpd atsigncompany/sshnp-e2e-trunk
+        run: |
+          docker run -d -t --name sshnp-e2e-trunk-sshnpd atsigncompany/sshnp-e2e-trunk
+          echo $?
 
       - name: Run Sshnp Trunk
-        run: docker run -d --name sshnp-e2e-trunk-sshnp atsigncompany/sshnp-e2e-trunk
+        run: |
+          docker run -d -t --name sshnp-e2e-trunk-sshnp atsigncompany/sshnp-e2e-trunk
+          echo $?
 
 
   # attempting to use `dart test `
