@@ -5,6 +5,7 @@ WORKDIR /app
 COPY . .
 RUN \
   set -eux ; \
+  find /runtime -ls ;  \
   mkdir -p ${BINARYDIR} ; \
   dart pub get ; \
   dart pub update ; \
