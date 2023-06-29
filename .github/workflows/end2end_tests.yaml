@@ -30,8 +30,8 @@ jobs:
       - name: Ensure keys are in place
         working-directory: test/end2end_tests
         run: |
-          ls -la context/sshnp/keys | grep *.atKeys
-          ls -la context/sshnpd/keys | grep *.atKeys
+          ls -la context/sshnp/keys
+          ls -la context/sshnpd/keys
 
       - name: Build Base Image
         working-directory: test/end2end_tests
