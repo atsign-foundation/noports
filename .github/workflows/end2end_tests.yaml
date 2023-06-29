@@ -36,11 +36,13 @@ jobs:
       - name: Run Sshnpd Trunk
         run: |
           docker run -d -t --name sshnp-e2e-trunk-sshnpd atsigncompany/sshnp-e2e-trunk
+          docker ps -a
           echo $?
 
       - name: Run Sshnp Trunk
         run: |
           docker run -d -t --name sshnp-e2e-trunk-sshnp atsigncompany/sshnp-e2e-trunk
+          docker ps -a
           echo $?
 
 
