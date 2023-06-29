@@ -1,4 +1,4 @@
-
+#!/bin/bash
 sudo docker container stop sshnp_test_sshnp
 sudo docker container stop sshnp_test_sshnpd
 sudo docker container stop sshnp_test_sshrvd
