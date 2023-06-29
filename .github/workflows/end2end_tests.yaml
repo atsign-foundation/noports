@@ -35,15 +35,15 @@ jobs:
 
       - name: Run Sshnpd Trunk
         run: |
-          docker run -d -t --name sshnp-e2e-trunk-sshnpd atsigncompany/sshnp-e2e-trunk
-          docker ps -a
+          docker run -d --name sshnp-e2e-trunk-sshnpd atsigncompany/sshnp-e2e-trunk
           echo $?
-
+          docker ps -a
+          
       - name: Run Sshnp Trunk
         run: |
-          docker run -d -t --name sshnp-e2e-trunk-sshnp atsigncompany/sshnp-e2e-trunk
-          docker ps -a
+          docker run -d --name sshnp-e2e-trunk-sshnp atsigncompany/sshnp-e2e-trunk
           echo $?
+          docker ps -a
 
 
   # attempting to use `dart test `
