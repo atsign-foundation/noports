@@ -34,8 +34,8 @@ jobs:
       - name: Build Sshnp & Sshnpd Trunk Images
         working-directory: test/end2end_tests
         run: |
-          docker build -t atsigncompany/sshnp-e2e-sshnp-trunk -f images/trunk/Dockerfile context/sshnp
-          docker build -t atsigncompany/sshnp-e2e-sshnpd-trunk -f images/trunk/Dockerfile context/sshnpd
+          docker build -t atsigncompany/sshnp-e2e-trunk-sshnp -f images/trunk/Dockerfile context/sshnp
+          docker build -t atsigncompany/sshnp-e2e-trunk-sshnpd -f images/trunk/Dockerfile context/sshnpd
 
       - name: Run Sshnpd Trunk
         working-directory: test/end2end_tests
@@ -43,7 +43,7 @@ jobs:
           docker run \
             -t \
             --name sshnp-e2e-trunk-sshnpd \
-            atsigncompany/sshnp-e2e-trunk
+            atsigncompany/sshnp-e2e-trunk-sshnpd
           echo $?
 
       - name: Run Sshnp Trunk
@@ -52,7 +52,7 @@ jobs:
           docker run \
             -t \
             --name sshnp-e2e-trunk-sshnp \
-            atsigncompany/sshnp-e2e-trunk
+            atsigncompany/sshnp-e2e-trunk-sshnp
           echo $?
 
       - name: View containers
