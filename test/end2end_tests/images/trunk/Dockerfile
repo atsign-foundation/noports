@@ -19,7 +19,7 @@ RUN git clone -b ${branch} --single-branch ${URL} . ; \
     dart compile exe ${BUILDDIR}/repo/bin/sshrvd.dart -o ${BUILDDIR}/bin/sshrvd ; \
     dart compile exe ${BUILDDIR}/repo/bin/activate_cli.dart -o ${BUILDDIR}/bin/at_activate ;
 
-FROM sshnp-e2e-base:latest
+FROM atsigncompany/sshnp-e2e-base:latest
 
 RUN mkdir -p ${HOMEDIR}/.atsign/keys ${HOMEDIR}/.local/bin
 

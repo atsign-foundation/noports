@@ -1,4 +1,4 @@
-FROM sshnp-e2e-base:latest
+FROM atsigncompany/sshnp-e2e-base:latest
 
 ARG release="3.3.0"
 
