@@ -1,4 +1,4 @@
 #!/bin/bash
 cd ~/.local/bin
-sudo ./sshnpd -a @smoothalligator -m @jeremy_0 -d docker -s -u -v > results.txt
-sudo cat results.txt
+sudo -u atsign ./sshnpd -a @smoothalligator -m @jeremy_0 -d docker -s -u -v > results.txt
+sudo -u atsign cat results.txt
