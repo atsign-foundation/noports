@@ -19,17 +19,17 @@ COPY . .
 ENV HOMEDIR=/atsign
 ENV USER_ID=1024
 ENV GROUP_ID=1024
-RUN apk add --no-cache dhclient openssh bash sudo file iputils;\
+RUN apk add --no-cache dhclient openssh bash sudo file iputils curl;\
    apk add dart --repository=http://dl-cdn.alpinelinux.org/alpine/edge/testing/ ; \
    echo "sshnpd" > /etc/hostname ; \
    addgroup -g $GROUP_ID atsign ; \
-   sysctl -w net.ipv4.ping_group_range="0 1024" ; \
    adduser -S -h $HOMEDIR -s /bin/bash -G atsign -u $USER_ID atsign ; \
    sed -i s/atsign:!/"atsign:*"/g /etc/shadow ; \
    mkdir -p $HOMEDIR/.atsign/keys ; \
    mkdir -p $HOMEDIR/.ssh ; \
    touch $HOMEDIR/.ssh/authorized_keys ; \
    chown -R atsign:atsign $HOMEDIR ; \
+   chown -R atsign:atsign /app ; \
    chmod 600 $HOMEDIR/.ssh/authorized_keys ; \
    usermod -aG sudo atsign ; \
    mkdir /run/sshd ; \
