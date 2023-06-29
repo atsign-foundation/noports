@@ -27,7 +27,7 @@ RUN mkdir -p ${HOMEDIR}/.atsign/keys ${HOMEDIR}/.local/bin ; \
 
 COPY --chown=${USER}:${USER} --from=buildimage /build/bin ${HOMEDIR}/.local/bin
 
-COPY --chown=${USER}:${USER} keys/*.atKeys ${HOMEDIR}/.atsign/keys
+COPY --chown=${USER}:${USER} keys/*.atKeys ${HOMEDIR}/.atsign/keys/
 COPY --chown=${USER}:${USER} entrypoint.sh ${HOMEDIR}/entrypoint.sh
 
 WORKDIR ${HOMEDIR}
