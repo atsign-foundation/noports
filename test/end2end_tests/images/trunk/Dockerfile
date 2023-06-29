@@ -21,7 +21,9 @@ RUN git clone -b ${branch} --single-branch ${URL} . ; \
 
 FROM atsigncompany/sshnp-e2e-base:latest
 
-RUN mkdir -p ${HOMEDIR}/.atsign/keys ${HOMEDIR}/.local/bin
+RUN mkdir -p ${HOMEDIR}/.atsign/keys ${HOMEDIR}/.local/bin ; \
+    touch results.txt ; \
+    chown -R ${USER}:${USER} ${HOMEDIR} ;
 
 COPY --chown=${USER}:${USER} --from=buildimage /build/bin ${HOMEDIR}/.local/bin
 

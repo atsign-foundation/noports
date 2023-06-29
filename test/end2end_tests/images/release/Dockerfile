@@ -29,6 +29,10 @@ RUN mkdir -p ${HOMEDIR}/.atsign/keys ${HOMEDIR}/.local/bin ${HOMEDIR}/tmp/build 
     cd sshnp ; \
     mv sshnp sshnpd sshrv sshrvd at_activate ${HOMEDIR}/.local/bin ;
 
+RUN mkdir -p ${HOMEDIR}/.atsign/keys ${HOMEDIR}/.local/bin ; \
+    touch results.txt ; \
+    chown -R ${USER}:${USER} ${HOMEDIR} ;
+
 COPY --chown=${USER}:${USER} keys/*.atKeys ${HOMEDIR}/.atsign/keys/
 COPY --chown=${USER}:${USER} entrypoint.sh ${HOMEDIR}/entrypoint.sh
 
