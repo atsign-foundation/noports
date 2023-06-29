@@ -17,7 +17,7 @@ DNS and Internet access, you will be able to connect to it.
 
 There are five binaries:-
 
-`at_activate`  : Command line tool to "cut" your atSigns cryptographic keys an place them in ~/.atsign/keys with .atKeys extension
+`at_activate`  : Command line tool to "cut" your atSigns cryptographic keys and place them in ~/.atsign/keys with .atKeys extension
 
 `sshnpd` : The daemon that runs on the remote device
 
