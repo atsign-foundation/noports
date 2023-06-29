@@ -20,8 +20,10 @@ jobs:
         run: ls -la
 
       - name: Copy keys
-        working-directory: test/end2end_tests/sshnpd_image/keys
-        run: echo "${{ secrets.SOCCER0_KEY }}" > @soccer0_key.atKeys
+        working-directory: test/end2end_tests/context
+        run: |
+          echo "${{ secrets.JEREMY_0_KEY }}" > sshnp/keys/@jeremy_0.atKeys
+          echo "${{ secrets.SMOOTHALLIGATOR_KEY }}" > sshnpd/keys/@smoothalligator.atKeys
 
       - name: Build Base Image
         working-directory: test/end2end_tests
