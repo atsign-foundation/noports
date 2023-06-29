@@ -31,7 +31,8 @@ RUN apk add --no-cache dhclient openssh bash sudo file iputils curl;\
    chown -R atsign:atsign $HOMEDIR ; \
    chown -R atsign:atsign /app ; \
    chmod 600 $HOMEDIR/.ssh/authorized_keys ; \
-   usermod -aG sudo atsign ; \
+   echo '%wheel ALL=(ALL) ALL' > /etc/sudoers.d/wheel ; \
+   addgroup atsign wheel ; \
    mkdir /run/sshd ; \
    cp /app/.startupLXC.sh /atsign ;\
    chmod 755 /atsign/.startupLXC.sh
