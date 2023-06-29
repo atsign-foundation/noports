@@ -2,8 +2,6 @@ FROM atsigncompany/sshnp-e2e-base:latest
 
 ARG release="3.3.0"
 
-RUN echo "release: ${release}"
-
 RUN mkdir -p ${HOMEDIR}/.atsign/keys ${HOMEDIR}/.local/bin ${HOMEDIR}/tmp/build ; \
     cd ${HOMEDIR}/tmp/build ; \
     case "$(dpkg --print-architecture)" in \
@@ -31,7 +29,7 @@ RUN mkdir -p ${HOMEDIR}/.atsign/keys ${HOMEDIR}/.local/bin ${HOMEDIR}/tmp/build 
     cd sshnp ; \
     mv sshnp sshnpd sshrv sshrvd at_activate ${HOMEDIR}/.local/bin ;
 
-COPY --chown=${USER}:${USER} ../keys ${HOMEDIR}/.atsign/keys
+COPY --chown=${USER}:${USER} keys/*.atKeys ${HOMEDIR}/.atsign/keys/
 COPY --chown=${USER}:${USER} entrypoint.sh ${HOMEDIR}/entrypoint.sh
 
 WORKDIR ${HOMEDIR}
