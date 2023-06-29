@@ -22,10 +22,16 @@ jobs:
           pwd
 
       - name: Copy keys
-        working-directory: test/end2end_tests/context
+        working-directory: test/end2end_tests
         run: |
-          echo "${{ secrets.JEREMY_0_KEY }}" > sshnp/keys/@jeremy_0.atKeys
-          echo "${{ secrets.SMOOTHALLIGATOR_KEY }}" > sshnpd/keys/@smoothalligator.atKeys
+          echo "${{ secrets.JEREMY_0_KEY }}" > context/sshnp/keys/@jeremy_0.atKeys
+          echo "${{ secrets.SMOOTHALLIGATOR_KEY }}" > context/sshnpd/keys/@smoothalligator.atKeys
+
+      - name: Ensure keys are in place
+        working-directory: test/end2end_tests
+        run: |
+          ls -la context/sshnp/keys | grep *.atKeys
+          ls -la context/sshnpd/keys | grep *.atKeys
 
       - name: Build Base Image
         working-directory: test/end2end_tests
