@@ -37,12 +37,14 @@ jobs:
         run: |
           docker run -d --name sshnp-e2e-trunk-sshnpd atsigncompany/sshnp-e2e-trunk
           echo $?
-          docker ps -a
-          
+
       - name: Run Sshnp Trunk
         run: |
           docker run -d --name sshnp-e2e-trunk-sshnp atsigncompany/sshnp-e2e-trunk
           echo $?
+
+      - name: View containers
+        run: |
           docker ps -a
 
 
