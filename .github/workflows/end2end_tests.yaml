@@ -37,19 +37,23 @@ jobs:
         working-directory: test/end2end_tests
         run: docker build -t atsigncompany/sshnp-e2e-base -f images/base/Dockerfile images/base
 
-      - name: Build Sshnp & Sshnpd Trunk Images
+      - name: Build Sshnp Trunk Image
         working-directory: test/end2end_tests
         run: |
           docker build -t atsigncompany/sshnp-e2e-trunk-sshnp -f images/trunk/Dockerfile context/sshnp/
+
+      - name: Build Sshnpd Trunk Image
+        working-directory: test/end2end_tests
+        run: |
           docker build -t atsigncompany/sshnp-e2e-trunk-sshnpd -f images/trunk/Dockerfile context/sshnpd/
 
-      # - name: Run Sshnpd Trunk
-      #   working-directory: test/end2end_tests
-      #   run: |
-      #     docker run \
-      #       -t \
-      #       --name sshnp-e2e-trunk-sshnpd \
-      #       atsigncompany/sshnp-e2e-trunk-sshnpd ; echo $?
+      - name: Run Sshnpd Trunk
+        working-directory: test/end2end_tests
+        run: |
+          docker run \
+            -t \
+            --name sshnp-e2e-trunk-sshnpd \
+            atsigncompany/sshnp-e2e-trunk-sshnpd ; echo $?
 
       - name: Run Sshnp Trunk
         working-directory: test/end2end_tests
