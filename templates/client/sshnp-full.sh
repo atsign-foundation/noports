@@ -7,7 +7,7 @@ HOST="$DEFAULT_HOST_ATSIGN";
 PUBLIC_KEY="$SSHNP_PUBLIC_KEY";
 
 usage() {
-  "$HOME/.local/bin/$BINARY_NAME" --help | grep -v -e "(mandatory)" -e "FormatException";
+  "$HOME/.local/bin/$BINARY_NAME" --help | grep -v -e "(mandatory)" -v -e "FormatException";
   echo "Note: previously device name was a positional argument, please specify it with -d."
 }
 
