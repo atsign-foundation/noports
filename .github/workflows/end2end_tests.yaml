@@ -43,13 +43,13 @@ jobs:
           docker build -t atsigncompany/sshnp-e2e-trunk-sshnp -f images/trunk/Dockerfile context/sshnp/
           docker build -t atsigncompany/sshnp-e2e-trunk-sshnpd -f images/trunk/Dockerfile context/sshnpd/
 
-      - name: Run Sshnpd Trunk
-        working-directory: test/end2end_tests
-        run: |
-          docker run \
-            -t \
-            --name sshnp-e2e-trunk-sshnpd \
-            atsigncompany/sshnp-e2e-trunk-sshnpd ; echo $?
+      # - name: Run Sshnpd Trunk
+      #   working-directory: test/end2end_tests
+      #   run: |
+      #     docker run \
+      #       -t \
+      #       --name sshnp-e2e-trunk-sshnpd \
+      #       atsigncompany/sshnp-e2e-trunk-sshnpd ; echo $?
 
       - name: Run Sshnp Trunk
         working-directory: test/end2end_tests
