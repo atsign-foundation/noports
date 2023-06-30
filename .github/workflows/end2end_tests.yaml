@@ -47,7 +47,7 @@ jobs:
         working-directory: test/end2end_tests
         run: |
           docker run \
-            -t
+            -t \
             --name sshnp-e2e-trunk-sshnpd \
             atsigncompany/sshnp-e2e-trunk-sshnpd ; echo $?
 
@@ -55,7 +55,7 @@ jobs:
         working-directory: test/end2end_tests
         run: |
           docker run \
-            -t
+            -t \
             --name sshnp-e2e-trunk-sshnp \
             atsigncompany/sshnp-e2e-trunk-sshnp ; echo $?
       - name: View containers
