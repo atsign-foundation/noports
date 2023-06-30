@@ -24,8 +24,8 @@ jobs:
       - name: Copy keys
         working-directory: test/end2end_tests
         run: |
-          echo "${{ secrets.JEREMY_0_KEY }}" > context/sshnp/keys/@jeremy_0.atKeys
-          echo "${{ secrets.SMOOTHALLIGATOR_KEY }}" > context/sshnpd/keys/@smoothalligator.atKeys
+          echo "${{ secrets.JEREMY_0_KEY }}" > context/sshnp/keys/@jeremy_0_key.atKeys
+          echo "${{ secrets.SMOOTHALLIGATOR_KEY }}" > context/sshnpd/keys/@smoothalligator_key.atKeys
 
       - name: Ensure keys are in place
         working-directory: test/end2end_tests
