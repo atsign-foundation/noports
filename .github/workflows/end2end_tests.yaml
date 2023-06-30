@@ -58,6 +58,7 @@ jobs:
             -t \
             --name sshnp-e2e-trunk-sshnp \
             atsigncompany/sshnp-e2e-trunk-sshnp ; echo $?
+
       - name: View containers
         run: |
           docker ps -a
