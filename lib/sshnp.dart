@@ -541,6 +541,7 @@ class SSHNP {
 
       String sessionId = Uuid().v4();
 
+      AtSignLogger.root_level = 'SHOUT';
       if (p.verbose) {
         AtSignLogger.root_level = 'INFO';
       }
