@@ -1,5 +1,7 @@
 import 'dart:io';
 
+import 'package:at_client/at_client.dart';
+
 /// Get the home directory or null if unknown.
 String? getHomeDirectory({bool throwIfNull = false}) {
   String? homeDir;
@@ -61,4 +63,31 @@ return '$homeDirectory/.atsign/keys/${atSign}_key.atKeys'
 String getDefaultSshDirectory(String homeDirectory) {
 return '$homeDirectory/.ssh/'
     .replaceAll('/', Platform.pathSeparator);
+}
+
+/// Checks if the provided atSign's atServer has been properly activated with a public RSA key.
+/// `atClient` must be authenticated
+/// `atSign` is the atSign to check
+/// Returns `true`, if the atSign's cloud secondary server has an existing `public:publickey@` in their server, 
+/// Returns `false`, if the atSign's cloud secondary *exists*, but does not have an existing `public:publickey@`
+/// Throws [AtClientException] if the cloud secondary is invalid or not reachable
+Future<bool> atSignIsActivated(final AtClient atClient, String atSign) async {
+  final Metadata metadata = Metadata()
+    ..isPublic = true
+    ..namespaceAware = false;
+
+  final AtKey publicKey = AtKey()
+    ..sharedBy = atSign
+    ..key = 'publickey'
+    ..metadata = metadata;
+
+  try {
+    await atClient.get(publicKey);
+    return true;
+  } catch (e) {
+    if(e is AtKeyNotFoundException || (e is AtClientException && e.message.contains("public:publickey") && e.message.contains("does not exist in keystore"))) {
+      return false;
+    }
+    rethrow;
+  }
 }
