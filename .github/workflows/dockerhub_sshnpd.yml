@@ -12,6 +12,9 @@ permissions:  # added using https://github.com/step-security/secure-workflows
 jobs:
   docker:
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./packages/sshnoports
     steps:
       -
         name: Checkout

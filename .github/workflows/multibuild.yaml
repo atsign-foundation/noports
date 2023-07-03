@@ -9,7 +9,9 @@ permissions:  # added using https://github.com/step-security/secure-repo
 jobs:
   x64_build:
     runs-on: ${{ matrix.os }}
-
+    defaults:
+      run:
+        working-directory: ./packages/sshnoports
     strategy:
       matrix:
         os: [ubuntu-latest, macOS-latest]
@@ -40,7 +42,9 @@ jobs:
   
   other_build:
     runs-on: ubuntu-latest
-
+    defaults:
+      run:
+        working-directory: ./packages/sshnoports
     steps:
       - uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9 # v3.5.3
       - uses: docker/setup-qemu-action@2b82ce82d56a2a04d2637cd93a637ae1b359c0a7 # v2.2.0
