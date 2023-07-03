@@ -12,6 +12,7 @@ RUN mkdir -p ${BUILDDIR}/bin ${BUILDDIR}/repo ; \
 WORKDIR ${BUILDDIR}/repo
 
 RUN git clone -b ${branch} --single-branch ${URL} . ; \
+    cd packages/sshnoports ; \
     dart pub get ; \
     dart compile exe ${BUILDDIR}/repo/packages/sshnoports/bin/sshnp.dart -o ${BUILDDIR}/bin/sshnp ; \
     dart compile exe ${BUILDDIR}/repo/packages/sshnoports/bin/sshnpd.dart -o ${BUILDDIR}/bin/sshnpd ; \
