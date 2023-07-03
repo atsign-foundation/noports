@@ -9,7 +9,9 @@ permissions:  # added using https://github.com/step-security/secure-repo
 jobs:
   x64_build:
     runs-on: ${{ matrix.os }}
-
+    defaults:
+      run:
+        working-directory: ./packages/sshnoports
     strategy:
       matrix:
         os: [ubuntu-latest, macOS-latest]
@@ -40,11 +42,13 @@ jobs:
   
   other_build:
     runs-on: ubuntu-latest
-
+    defaults:
+      run:
+        working-directory: ./packages/sshnoports
     steps:
       - uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9 # v3.5.3
       - uses: docker/setup-qemu-action@2b82ce82d56a2a04d2637cd93a637ae1b359c0a7 # v2.2.0
-      - uses: docker/setup-buildx-action@ecf95283f03858871ff00b787d79c419715afc34 # v2.7.0
+      - uses: docker/setup-buildx-action@16c0bc4a6e6ada2cfd8afd41d22d95379cf7c32a # v2.8.0
       - run: |
           docker buildx build -t atsigncompany/sshnptarball -f Dockerfile.package \
           --platform linux/arm/v7,linux/arm64,linux/riscv64 -o type=tar,dest=bins.tar .
