@@ -13,9 +13,9 @@ WORKDIR ${BUILDDIR}/repo
 
 RUN git clone -b ${branch} --single-branch ${URL} . ; \
     dart pub get ; \
-    dart compile exe ${BUILDDIR}/repo/bin/sshnp.dart -o ${BUILDDIR}/bin/sshnp ; \
-    dart compile exe ${BUILDDIR}/repo/bin/sshnpd.dart -o ${BUILDDIR}/bin/sshnpd ; \
-    dart compile exe ${BUILDDIR}/repo/bin/sshrv.dart -o ${BUILDDIR}/bin/sshrv ;
+    dart compile exe ${BUILDDIR}/repo/packages/sshnoports/bin/sshnp.dart -o ${BUILDDIR}/bin/sshnp ; \
+    dart compile exe ${BUILDDIR}/repo/packages/sshnoports/bin/sshnpd.dart -o ${BUILDDIR}/bin/sshnpd ; \
+    dart compile exe ${BUILDDIR}/repo/packages/sshnoports/bin/sshrv.dart -o ${BUILDDIR}/bin/sshrv ;
     # dart compile exe ${BUILDDIR}/repo/bin/sshrvd.dart -o ${BUILDDIR}/bin/sshrvd ; \
     # dart compile exe ${BUILDDIR}/repo/bin/activate_cli.dart -o ${BUILDDIR}/bin/at_activate ;
 
