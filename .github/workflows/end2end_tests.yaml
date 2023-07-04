@@ -41,13 +41,17 @@ jobs:
       - name: Docker Compose Build
         working-directory: packages/sshnoports/test/end2end_tests
         run: |
-          docker compose build
+          docker compose build --build-arg branch=trunk --no-cache
 
       - name: Docker Compose Up
         working-directory: packages/sshnoports/test/end2end_tests
         run: |
-          docker compose up --abort-on-container-exit --timestamps
+          docker compose up --abort-on-container-exit --detach
 
       - name: (Debug) View containers
         run: |
-          docker ps -a
+          docker compose ps -a --no-trunc
+
+      - name: (Debug) View containers
+        run: |
+          docker compose logs --timestamps
