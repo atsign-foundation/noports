@@ -6,7 +6,8 @@ ENV OUTPUT_DIR=/app/output
 
 ARG branch=trunk
 
-RUN mkdir -p ${REPO_DIR} ${OUTPUT_DIR} ; \
+RUN set -eux ; \
+  mkdir -p ${REPO_DIR} ${OUTPUT_DIR} ; \
   apt-get update ; \
   apt-get install -y git ; \
   cd ${REPO_DIR} ; \
@@ -16,8 +17,8 @@ RUN mkdir -p ${REPO_DIR} ${OUTPUT_DIR} ; \
   dart compile exe ${REPO_DIR}/packages/sshnoports/bin/sshnp.dart -o ${OUTPUT_DIR}/sshnp ; \
   dart compile exe ${REPO_DIR}/packages/sshnoports/bin/sshnpd.dart -o ${OUTPUT_DIR}/sshnpd ; \
   dart compile exe ${REPO_DIR}/packages/sshnoports/bin/sshrv.dart -o ${OUTPUT_DIR}/sshrv ; \
-  dart compile exe ${REPO_DIR}/packages/sshnoports/bin/sshrvd.dart -o ${BUILDDIR}/bin/sshrvd ; \
-  dart compile exe ${REPO_DIR}/packages/sshnoports/bin/activate_cli.dart -o ${BUILDDIR}/bin/at_activate ;
+  dart compile exe ${REPO_DIR}/packages/sshnoports/bin/sshrvd.dart -o ${OUTPUT_DIR}/sshrvd ; \
+  dart compile exe ${REPO_DIR}/packages/sshnoports/bin/activate_cli.dart -o ${OUTPUT_DIR}/at_activate ;
 
 FROM dart:3.0.5@sha256:65e5f5d6d72ad2f7b32f402c01b5fe8a426455b1ede1e9f840f95a2a8c14afbd AS build-local
 
@@ -29,7 +30,8 @@ RUN mkdir -p ${REPO_DIR} ${OUTPUT_DIR} ;
 # context must be the same folder as the Dockerfile
 COPY ../../../ ${REPO_DIR}
 
-RUN cd ${REPO_DIR} ; \
+RUN set -eux ; \
+  cd ${REPO_DIR} ; \
   dart pub get ; \
   dart compile exe ${REPO_DIR}/bin/sshnp.dart -o ${OUTPUTDIR}/sshnp ; \
   dart compile exe ${REPO_DIR}/bin/sshnpd.dart -o ${OUTPUTDIR}/sshnpd ; \
@@ -39,34 +41,39 @@ RUN cd ${REPO_DIR} ; \
 
 FROM debian:stable-20230612-slim@sha256:b09f68bffcf9c14f3105f262e92321d05abaf48460d1f43f884325bcd4395b95 AS build-release
 
-ARG release="3.3.0"
+ARG release
 
-RUN mkdir -p ${HOMEDIR}/.atsign/keys ${HOMEDIR}/.local/bin ${HOMEDIR}/tmp/build ; \
-  cd ${HOMEDIR}/tmp/build ; \
+ENV BUILD_DIR=/app/build
+ENV OUTPUT_DIR=/app/output
+ENV URL="https://api.github.com/repos/atsign-foundation/sshnoports/releases/latest"
+ENV URLP="https://github.com/atsign-foundation/sshnoports/releases/download"
+
+RUN apt-get update ; \
+  apt-get install -y wget dpkg ; \
+  mkdir -p ${BUILD_DIR} ${OUTPUT_DIR} ; \
+  cd ${BUILD_DIR} ; \
   case "$(dpkg --print-architecture)" in \
-  amd64) \
-  ARCH="x64";; \
-  armhf) \
-  ARCH="arm";; \
-  arm64) \
-  ARCH="arm64";; \
-  riscv64) \
-  ARCH="riscv64";; \
+    amd64) \
+      ARCH="x64";; \
+    armhf) \
+      ARCH="arm";; \
+    arm64) \
+      ARCH="arm64";; \
+    riscv64) \
+      ARCH="riscv64";; \
   esac; \
-  URL="https://api.github.com/repos/atsign-foundation/sshnoports/releases/latest"; \
-  URLP="https://github.com/atsign-foundation/sshnoports/releases/download"; \
   if [ -z "${release}" ]; \
   then \
-  LATEST_VERSION=$(curl --silent ${URL} | grep -Po '"tag_name": "v\K.*?(?=")') ; \
-  VERSION=${LATEST_VERSION} ; \
+    LATEST_VERSION=$(curl --silent ${URL} | grep -Po '"tag_name": "v\K.*?(?=")') ; \
+    VERSION=${LATEST_VERSION} ; \
   else \
-  VERSION=${release} ; \
+    VERSION=${release} ; \
   fi ; \
   wget "${URLP}/v${VERSION}/sshnp-linux-${ARCH}.tgz" ; \
   tar -xvf sshnp-linux-${ARCH}.tgz ; \
   rm sshnp-linux-${ARCH}.tgz ; \
   cd sshnp ; \
-  mv sshnp sshnpd sshrv sshrvd at_activate ${HOMEDIR}/.local/bin ;
+  mv sshnp sshnpd sshrv sshrvd at_activate ${OUTPUT_DIR} ;
 
 FROM debian:stable-20230612-slim@sha256:b09f68bffcf9c14f3105f262e92321d05abaf48460d1f43f884325bcd4395b95 AS base
 
@@ -77,7 +84,7 @@ ENV GROUP_ID=1024
 
 RUN set -eux ; \
   apt-get update ; \
-  apt-get install -y openssh-server sudo wget curl openssh-server nano vim iproute2 nmap tmux git dpkg ; \
+  apt-get install -y openssh-server sudo vim nano iproute2 nmap tmux ; \
   groupadd --gid ${GROUP_ID} ${USER} ; \
   useradd --system --shell /bin/bash --home ${HOMEDIR} --uid ${USER_ID} --gid ${GROUP_ID} ${USER} ; \
   usermod -aG sudo ${USER} ; \
@@ -89,20 +96,40 @@ RUN set -eux ; \
   sed -E -i 's|^#?(PasswordAuthentication)\s.*|\1 no|' /etc/ssh/sshd_config ; \
   sed -i 's/#ListenAddress 0.0.0.0/ListenAddress 127.0.0.1/g' /etc/ssh/sshd_config ;
 
-FROM base AS blank
+FROM base AS runtime-blank
 
 WORKDIR ${HOMEDIR}
+
 USER ${USER}
+
 ENTRYPOINT sudo service ssh start && sh ${HOMEDIR}/entrypoint.sh
 
-FROM blank AS runtime-branch
+FROM base AS runtime-branch
 
 COPY --chown=${USER}:${USER} --from=build-branch /app/output ${HOMEDIR}/.local/bin
 
-FROM blank AS runtime-release
+WORKDIR ${HOMEDIR}
+
+USER ${USER}
+
+ENTRYPOINT sudo service ssh start && sh ${HOMEDIR}/entrypoint.sh
+
+FROM base AS runtime-release
 
 COPY --chown=${USER}:${USER} --from=build-release /app/output ${HOMEDIR}/.local/bin
 
-FROM blank AS runtime-local
+WORKDIR ${HOMEDIR}
+
+USER ${USER}
+
+ENTRYPOINT sudo service ssh start && sh ${HOMEDIR}/entrypoint.sh
+
+FROM base AS runtime-local
 
 COPY --chown=${USER}:${USER} --from=build-local /app/output ${HOMEDIR}/.local/bin
+
+WORKDIR ${HOMEDIR}
+
+USER ${USER}
+
+ENTRYPOINT sudo service ssh start && sh ${HOMEDIR}/entrypoint.sh

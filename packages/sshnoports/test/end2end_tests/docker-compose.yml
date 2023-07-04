@@ -1,6 +1,37 @@
 version: '3'
 
 services:
+  # image-runtime-blank:
+  #   build:
+  #     context: ./image/
+  #     dockerfile: ./Dockerfile
+  #     target: runtime-blank
+  #   image: atsigncompany/sshnp-e2e-runtime:blank
+  #   deploy:
+  #     mode: replicated
+  #     replicas: 0
+  # image-runtime-local:
+  #   build:
+  #     context: ./image/
+  #     dockerfile: ./Dockerfile
+  #     target: runtime-release
+  #     args:
+  #       - release=3.3.0
+  #   image: atsigncompany/sshnp-e2e-runtime:local
+  #   deploy:
+  #     mode: replicated
+  #     replicas: 0
+  # image-runtime-release:
+  #   build:
+  #     context: ./image/
+  #     dockerfile: ./Dockerfile
+  #     target: runtime-release
+  #     args:
+  #       - release=3.3.0
+  #   image: atsigncompany/sshnp-e2e-runtime:release
+  #   deploy:
+  #     mode: replicated
+  #     replicas: 0
   image-runtime-trunk:
     build:
       context: ./image/

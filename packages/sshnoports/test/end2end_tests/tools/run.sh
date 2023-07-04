@@ -5,7 +5,7 @@
 usage() {
     echo "usage: $0"
     echo "  -h|--help"
-    echo "  -t|--type <sshnp/sshnpd/sshrvd> (required)"
+    echo "  -t|--tag <sshnp/sshnpd/sshrvd> (required)"
     echo "  ONE OF THE FOLLOWING (required)"
     echo "  -l|--local"
     echo "  -b|--branch <branch/commitid>"
@@ -33,7 +33,7 @@ parse_args() {
                 exit 0
                 ;;
             -t|--type)
-                type=$2
+                tag=$2
                 shift 2
                 ;;
             -l|--local)
@@ -60,28 +60,80 @@ parse_args() {
         esac
     done
 
-    if [[ -z $type ]];
+    # check that tag is provided
+    if [[ -z $tag ]];
     then
-        echo "Missing required argument: --type"
+        echo "Missing required argument: --tag"
         usage
         exit 1
     fi
 
-    if [[ $type != "sshnp" && $type != "sshnpd" && $type != "sshrvd" ]];
+    # check that tag is one of: sshnp/sshnpd/sshrvd
+    if [[ $tag != "sshnp" && $tag != "sshnpd" && $tag != "sshrvd" ]];
     then
-        echo "Invalid type: $type, must be one of: sshnp/sshnpd/sshrvd"
+        echo "Invalid tag: $tag, must be one of: sshnp/sshnpd/sshrvd"
         usage
         exit 1
     fi
 
+    # check that at least one of the following is provided: local branch release blank
     if [[ -z $local && -z $branch && -z $release && -z $blank ]];
     then
         echo "Missing required argument: ONE OF THE FOLLOWING: --local, --branch, --release, --blank"
         usage
         exit 1
     fi
+
+    # check that only one and only one of the following is provided: local branch release blank
+    local_count=0
+    branch_count=0
+    release_count=0
+    blank_count=0
+
+    if [[ ! -z $local ]];
+    then
+        type=local
+        local_count=1
+    fi
+
+    if [[ ! -z $branch ]];
+    then
+        type=branch
+        branch_count=1
+    fi
+
+    if [[ ! -z $release ]];
+    then
+        type=release
+        release_count=1
+    fi
+
+    if [[ ! -z $blank ]];
+    then
+        type=blank
+        blank_count=1
+    fi
+
+    if [[ $local_count + $branch_count + $release_count + $blank_count -gt 1 ]];
+    then
+        echo "Too many arguments provided: ONE OF THE FOLLOWING: --local, --branch, --release, --blank"
+        usage
+        exit 1
+    fi
 }
 
-cd ..
-sudo docker-compose up --exit-code-from=sshnp-trunk --build $@
-sudo docker-compose down
+main() {
+    # if type is branch
+    if [[ $type == "branch" ]];
+    then
+        sudo docker compose build --no-cache --build-arg branch=$branch
+    else if [[ $type == "release" ]]
+        sudo docker compose build --no-cache --build-arg release=$release
+    else
+        sudo docker compose build
+    fi
+
+}
+
+parse_args $@
+main
