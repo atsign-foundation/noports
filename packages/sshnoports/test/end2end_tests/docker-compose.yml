@@ -16,8 +16,8 @@ services:
     image: atsigncompany/sshnp-e2e-runtime:branch-trunk
     container_name: sshnpd_trunk
     volumes:
-      - sshnpd-keys:/atsign/.atsign/keys/ # mount keys
-      - sshnpd-entrypoint:/atsign/entrypoint.sh # mount entrypoint
+      - ./contexts/sshnpd/keys/:/atsign/.atsign/keys/ # mount keys
+      - ./contexts/sshnpd/entrypoint.sh:/atsign/entrypoint.sh # mount entrypoint
     networks:
       - sshnpd
     depends_on:
@@ -26,8 +26,8 @@ services:
     image: atsigncompany/sshnp-e2e-runtime:branch-trunk
     container_name: sshnp_trunk
     volumes:
-      - sshnp-keys:/atsign/.atsign/keys/ # mount keys
-      - sshnp-entrypoint:/atsign/entrypoint.sh # mount entrypoint
+      - ./contexts/sshnp/keys/:/atsign/.atsign/keys/ # mount keys
+      - ./contexts/sshnp/entrypoint.sh:/atsign/entrypoint.sh # mount entrypoint
     networks:
       - sshnp
     depends_on:
@@ -41,33 +41,3 @@ networks:
   sshnpd:
     driver: bridge
     name: atsigncompany/sshnp-e2e-network-sshnpd
-
-volumes:
-  sshnpd-keys:
-    name: sshnpd-keys
-    driver: local
-    driver_opts:
-      type: none
-      o: bind
-      device: ./context/sshnpd/keys/
-  sshnpd-entrypoint:
-    name: sshnpd-entrypoint
-    driver: local
-    driver_opts:
-      type: none
-      o: bind
-      device: ./context/sshnpd/entrypoint.sh
-  sshnp-keys:
-    name: sshnp-keys
-    driver: local
-    driver_opts:
-      type: none
-      o: bind
-      device: ./context/sshnp/keys/
-  sshnp-entrypoint:
-    name: sshnp-entrypoint
-    driver: local
-    driver_opts:
-      type: none
-      o: bind
-      device: ./context/sshnp/entrypoint.sh
