@@ -41,7 +41,7 @@ jobs:
       - name: Docker Compose
         working-directory: packages/sshnoports/test/end2end_tests
         run: |
-          docker-compose up --build --abort-on-container-exit
+          docker compose up --build --abort-on-container-exit
 
       - name: View containers
         run: |

@@ -5,10 +5,10 @@ services:
     build:
       context: ./image
       dockerfile: ./Dockerfile
-      target: branch-build
+      target: build-branch
       args:
         - branch=trunk
-    image: atsigncompany/sshnp-e2e-build:trunk
+    image: atsigncompany/sshnp-e2e-build:branch-trunk
     deploy:
       mode: replicated
       replicas: 0
@@ -17,14 +17,14 @@ services:
       context: ./image
       dockerfile: ./Dockerfile
       target: runtime-branch
-    image: atsigncompany/sshnp-e2e-runtime:trunk
+    image: atsigncompany/sshnp-e2e-runtime:branch-trunk
     deploy:
       mode: replicated
       replicas: 0
     depends_on:
       - image-build-trunk
   container-trunk-sshnpd:
-    image: atsigncompany/sshnp-e2e-runtime:trunk
+    image: atsigncompany/sshnp-e2e-runtime:branch-trunk
     container_name: sshnpd_trunk
     volumes:
       - ./contexts/sshnpd/keys/:/atsign/.atsign/keys/ # mount keys
@@ -33,7 +33,7 @@ services:
       - image-build-trunk
       - image-runtime-trunk
   container-trunk-sshnp:
-    image: atsigncompany/sshnp-e2e-runtime:trunk
+    image: atsigncompany/sshnp-e2e-runtime:branch-trunk
     container_name: sshnp_trunk
     volumes:
       - ./contexts/sshnp/keys/:/atsign/.atsign/keys/ # mount keys

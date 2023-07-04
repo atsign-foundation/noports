@@ -1,4 +1,4 @@
-FROM dart:3.0.5@sha256:65e5f5d6d72ad2f7b32f402c01b5fe8a426455b1ede1e9f840f95a2a8c14afbd AS branch-build
+FROM dart:3.0.5@sha256:65e5f5d6d72ad2f7b32f402c01b5fe8a426455b1ede1e9f840f95a2a8c14afbd AS build-branch
 
 ENV URL=https://github.com/atsign-foundation/sshnoports.git
 ENV REPO_DIR=/app/repo
@@ -19,7 +19,7 @@ RUN mkdir -p ${REPO_DIR} ${OUTPUT_DIR} ; \
   # dart compile exe ${BUILDDIR}/repo/bin/sshrvd.dart -o ${BUILDDIR}/bin/sshrvd ; \
   # dart compile exe ${BUILDDIR}/repo/bin/activate_cli.dart -o ${BUILDDIR}/bin/at_activate ;
 
-FROM dart:3.0.5@sha256:65e5f5d6d72ad2f7b32f402c01b5fe8a426455b1ede1e9f840f95a2a8c14afbd AS local-build
+FROM dart:3.0.5@sha256:65e5f5d6d72ad2f7b32f402c01b5fe8a426455b1ede1e9f840f95a2a8c14afbd AS build-local
 
 ENV REPO_DIR=/app/repo
 ENV OUTPUT_DIR=/app/output
@@ -36,7 +36,7 @@ RUN cd ${REPO_DIR} ; \
   # dart compile exe ${REPO_DIR}/bin/sshrvd.dart -o ${OUTPUTDIR}/sshrvd ; \
   # dart compile exe ${REPO_DIR}/bin/activate_cli.dart -o ${OUTPUTDIR}/at_activate ;
 
-FROM debian:stable-20230612-slim@sha256:b09f68bffcf9c14f3105f262e92321d05abaf48460d1f43f884325bcd4395b95 AS release-build
+FROM debian:stable-20230612-slim@sha256:b09f68bffcf9c14f3105f262e92321d05abaf48460d1f43f884325bcd4395b95 AS build-release
 
 ARG release="3.3.0"
 
@@ -90,7 +90,7 @@ RUN set -eux ; \
 
 FROM base AS runtime-branch
 
-COPY --chown=${USER}:${USER} --from=branch-build /app/output ${HOMEDIR}/.local/bin
+COPY --chown=${USER}:${USER} --from=build-branch /app/output ${HOMEDIR}/.local/bin
 
 WORKDIR ${HOMEDIR}
 
@@ -100,7 +100,7 @@ ENTRYPOINT sudo service ssh start && sh ${HOMEDIR}/entrypoint.sh
 
 FROM base AS runtime-release
 
-COPY --chown=${USER}:${USER} --from=release-build /app/output ${HOMEDIR}/.local/bin
+COPY --chown=${USER}:${USER} --from=build-release /app/output ${HOMEDIR}/.local/bin
 
 WORKDIR ${HOMEDIR}
 
@@ -110,7 +110,7 @@ ENTRYPOINT sudo service ssh start && sh ${HOMEDIR}/entrypoint.sh
 
 FROM base AS runtime-local
 
-COPY --chown=${USER}:${USER} --from=local-build /app/output ${HOMEDIR}/.local/bin
+COPY --chown=${USER}:${USER} --from=build-local /app/output ${HOMEDIR}/.local/bin
 
 WORKDIR ${HOMEDIR}
 
