@@ -1,0 +1,54 @@
+
+version: '3.8'
+
+services:
+  image-runtime-local:
+    build:
+      context: ../../image/
+      dockerfile: ./Dockerfile
+      target: runtime-local
+    image: atsigncompany/sshnp-e2e-manual-runtime:local
+    deploy:
+      mode: replicated
+      replicas: 0
+  container-local-sshnpd:
+    image: atsigncompany/sshnp-e2e-manual-runtime:local
+    container_name: manual_local_sshnpd
+    volumes:
+      - ../../contexts/sshnpd/keys/:/atsign/.atsign/keys/ # mount keys
+      - ../../contexts/sshnpd/entrypoint.sh:/atsign/entrypoint.sh # mount entrypoint
+    networks:
+      - sshnpd
+    depends_on:
+      - image-runtime-local
+  container-local-sshnp:
+    image: atsigncompany/sshnp-e2e-manual-runtime:local
+    container_name: manual_local_sshnp
+    volumes:
+      - ../../contexts/sshnp/keys/:/atsign/.atsign/keys/ # mount keys
+      - ../../contexts/sshnp/entrypoint.sh:/atsign/entrypoint.sh # mount entrypoint
+    networks:
+      - sshnp
+    depends_on:
+      - image-runtime-local
+  container-local-sshrvd:
+    image: atsigncompany/sshnp-e2e-manual-runtime:local
+    container_name: manual_local_sshrvd
+    volumes:
+      - ../../contexts/sshnp/keys/:/atsign/.atsign/keys/ # mount keys
+      - ../../contexts/sshnp/entrypoint.sh:/atsign/entrypoint.sh # mount entrypoint
+    networks:
+      - sshrvd
+    depends_on:
+      - image-runtime-local
+
+networks:
+  sshnpd:
+    name: atsigncompany/sshnp-e2e-manual-network-sshnpd
+    driver: bridge
+  sshnp:
+    name: atsigncompany/sshnp-e2e-manual-network-sshnp
+    driver: bridge
+  sshrvd:
+    name: atsigncompany/sshnp-e2e-manual-network-sshrvd
+    driver: bridge

@@ -1,0 +1,58 @@
+
+version: '3.8'
+
+services:
+  image-runtime-blank:
+    build:
+      context: ../../image/
+      dockerfile: ./Dockerfile
+      target: runtime-blank
+    image: atsigncompany/sshnp-e2e-manual-runtime:blank
+    deploy:
+      mode: replicated
+      replicas: 0
+  container-blank-sshnpd:
+    image: atsigncompany/sshnp-e2e-manual-runtime:blank
+    container_name: manual_blank_sshnpd
+    volumes:
+      - ../../contexts/sshnpd/keys/:/atsign/.atsign/keys/ # mount keys
+      - ../../contexts/sshnpd/entrypoint.sh:/atsign/entrypoint.sh # mount entrypoint
+    networks:
+      - sshnpd
+    depends_on:
+      - image-runtime-blank
+  container-blank-sshnp:
+    image: atsigncompany/sshnp-e2e-manual-runtime:blank
+    container_name: manual_blank_sshnp
+    volumes:
+      - ../../contexts/sshnp/keys/:/atsign/.atsign/keys/ # mount keys
+      - ../../contexts/sshnp/entrypoint.sh:/atsign/entrypoint.sh # mount entrypoint
+    networks:
+      - sshnp
+    entrypoint:
+      - /bin/bash
+    depends_on:
+      - image-runtime-blank
+  container-blank-sshrvd:
+    image: atsigncompany/sshnp-e2e-manual-runtime:blank
+    container_name: manual_blank_sshrvd
+    volumes:
+      - ../../contexts/sshnp/keys/:/atsign/.atsign/keys/ # mount keys
+      - ../../contexts/sshnp/entrypoint.sh:/atsign/entrypoint.sh # mount entrypoint
+    networks:
+      - sshrvd
+    entrypoint:
+      - /bin/bash
+    depends_on:
+      - image-runtime-blank
+
+networks:
+  sshnpd:
+    name: atsigncompany/sshnp-e2e-manual-network-sshnpd
+    driver: bridge
+  sshnp:
+    name: atsigncompany/sshnp-e2e-manual-network-sshnp
+    driver: bridge
+  sshrvd:
+    name: atsigncompany/sshnp-e2e-manual-network-sshrvd
+    driver: bridge

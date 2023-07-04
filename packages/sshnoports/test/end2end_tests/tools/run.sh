@@ -3,6 +3,7 @@
 # Spin up an interactive container with a specific version of ssh no ports
 
 usage() {
+    echo ""
     echo "usage: $0"
     echo "  -h|--help"
     echo "  -t|--tag <sshnp/sshnpd/sshrvd> (required)"
@@ -15,6 +16,7 @@ usage() {
     echo "  example: $0 -t sshnp -b trunk"
     echo "  example: $0 -t sshnpd -l"
     echo "  example: $0 -t sshrvd -r 3.3.0"
+    echo ""
 }
 
 parse_args() {
@@ -32,7 +34,7 @@ parse_args() {
                 usage
                 exit 0
                 ;;
-            -t|--type)
+            -t|--tag)
                 tag=$2
                 shift 2
                 ;;
@@ -53,7 +55,7 @@ parse_args() {
                 shift 1
                 ;;
             *)
-                echo "Unknown option: $1"
+                echo "Invalid argument: $1"
                 usage
                 exit 1
                 ;;
@@ -84,55 +86,56 @@ parse_args() {
         exit 1
     fi
 
-    # check that only one and only one of the following is provided: local branch release blank
-    local_count=0
-    branch_count=0
-    release_count=0
-    blank_count=0
-
     if [[ ! -z $local ]];
     then
         type=local
-        local_count=1
     fi
 
     if [[ ! -z $branch ]];
     then
         type=branch
-        branch_count=1
     fi
 
     if [[ ! -z $release ]];
     then
         type=release
-        release_count=1
     fi
 
     if [[ ! -z $blank ]];
     then
         type=blank
-        blank_count=1
     fi
 
-    if [[ $local_count + $branch_count + $release_count + $blank_count -gt 1 ]];
-    then
-        echo "Too many arguments provided: ONE OF THE FOLLOWING: --local, --branch, --release, --blank"
-        usage
-        exit 1
-    fi
 }
 
 main() {
-    # if type is branch
     if [[ $type == "branch" ]];
     then
-        sudo docker compose build --no-cache --build-arg branch=$branch
-    else if [[ $type == "release" ]]
-        sudo docker compose build --no-cache --build-arg release=$release
-    else
-        sudo docker compose build
+        cd branch
+        sudo docker compose run -it --build --rm container-branch-$tag
+        cd ..
     fi
 
+    if [[ $type == "release" ]];
+    then
+        cd release
+        sudo docker compose run -it --build --rm container-release-$tag --entrypoint="sudo service ssh start && sh"
+        cd ..
+    fi
+
+    if [[ $type == "local" ]];
+    then
+        cd local
+        sudo docker compose run -it --build --rm --entrypoint="sudo service ssh start" container-local-$tag /bin/bash
+        cd ..
+    fi
+
+    if [[ $type == "blank" ]];
+    then
+        cd blank
+        sudo docker compose run -it --build --rm --entrypoint="sudo service ssh start" container-blank-$tag /bin/bash
+        cd ..
+    fi
 }
 
 parse_args $@

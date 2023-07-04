@@ -59,3 +59,9 @@ jobs:
         working-directory: packages/sshnoports/test/end2end_tests
         run: |
           docker compose logs --timestamps
+
+      - name: Docker Compose Down
+        continue-on-error: true # in case step fails, pass anyway
+        working-directory: packages/sshnoports/test/end2end_tests
+        run: |
+          docker compose down

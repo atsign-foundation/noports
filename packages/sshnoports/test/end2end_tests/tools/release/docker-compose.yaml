@@ -1,0 +1,58 @@
+
+version: '3.8'
+
+services:
+  image-runtime-release:
+    build:
+      context: ../../image/
+      dockerfile: ./Dockerfile
+      target: runtime-release
+      args:
+        - release=3.3.0
+    image: atsigncompany/sshnp-e2e-manual-runtime:release
+    deploy:
+      mode: replicated
+      replicas: 0
+  container-release-sshnpd:
+    image: atsigncompany/sshnp-e2e-manual-runtime:release
+    container_name: manual_release_sshnpd
+    volumes:
+      - ../../contexts/sshnpd/keys/:/atsign/.atsign/keys/ # mount keys
+      - ../../contexts/sshnpd/entrypoint.sh:/atsign/entrypoint.sh # mount entrypoint
+    networks:
+      - sshnpd
+    command: sudo service ssh start
+    depends_on:
+      - image-runtime-release
+  container-release-sshnp:
+    image: atsigncompany/sshnp-e2e-manual-runtime:release
+    container_name: manual_release_sshnp
+    volumes:
+      - ../../contexts/sshnp/keys/:/atsign/.atsign/keys/ # mount keys
+      - ../../contexts/sshnp/entrypoint.sh:/atsign/entrypoint.sh # mount entrypoint
+    networks:
+      - sshnp
+    depends_on:
+      - image-runtime-release
+  container-release-sshrvd:
+    image: atsigncompany/sshnp-e2e-manual-runtime:release
+    container_name: manual_release_sshnp
+    volumes:
+      - ../../contexts/sshnp/keys/:/atsign/.atsign/keys/ # mount keys
+      - ../../contexts/sshnp/entrypoint.sh:/atsign/entrypoint.sh # mount entrypoint
+    networks:
+      - sshnp
+    command: sudo service ssh start
+    depends_on:
+      - image-runtime-release
+
+networks:
+  sshnpd:
+    name: atsigncompany/sshnp-e2e-manual-network-sshnpd
+    driver: bridge
+  sshnp:
+    name: atsigncompany/sshnp-e2e-manual-network-sshnp
+    driver: bridge
+  sshrvd:
+    name: atsigncompany/sshnp-e2e-manual-network-sshrvd
+    driver: bridge

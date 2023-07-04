@@ -82,6 +82,8 @@ ENV HOMEDIR=/${USER}
 ENV USER_ID=1024
 ENV GROUP_ID=1024
 
+CMD sudo service ssh start
+
 RUN set -eux ; \
   apt-get update ; \
   apt-get install -y openssh-server sudo vim nano iproute2 nmap tmux ; \
@@ -100,9 +102,13 @@ FROM base AS runtime-blank
 
 WORKDIR ${HOMEDIR}
 
+RUN set -eux ; \
+  apt-get update ; \
+  apt-get install -y curl ;
+
 USER ${USER}
 
-ENTRYPOINT sudo service ssh start && sh ${HOMEDIR}/entrypoint.sh
+ENTRYPOINT sudo service ssh start && bash
 
 FROM base AS runtime-branch
 
