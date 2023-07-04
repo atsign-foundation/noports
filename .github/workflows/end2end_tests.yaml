@@ -27,13 +27,13 @@ jobs:
           pwd
 
       - name: Copy keys
-        working-directory: packages/sshnoports/test/end2end_tests/context
+        working-directory: packages/sshnoports/test/end2end_tests/contexts
         run: |
           echo "${{ secrets.JEREMY_0_KEY }}" > sshnp/keys/${{ env.SSHNP_ATSIGN }}_key.atKeys
           echo "${{ secrets.SMOOTHALLIGATOR_KEY }}" > sshnpd/keys/${{ env.SSHNPD_ATSIGN }}_key.atKeys
 
       - name: Ensure keys are in place
-        working-directory: packages/sshnoports/test/end2end_tests/context
+        working-directory: packages/sshnoports/test/end2end_tests/contexts
         run: |
           ls sshnp/keys
           ls sshnpd/keys
