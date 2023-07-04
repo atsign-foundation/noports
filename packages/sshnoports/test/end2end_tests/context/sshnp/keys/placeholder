@@ -1,1 +1,2 @@
 This is to ensure the keys/ directory exists.
+Only needed for `runLocal.sh`

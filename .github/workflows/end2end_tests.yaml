@@ -22,7 +22,7 @@ jobs:
           pwd
 
       - name: Copy keys
-        working-directory: test/end2end_tests
+        working-directory: packages/sshnoports/test/end2end_tests
         run: |
           echo "${{ secrets.JEREMY_0_KEY }}" > context/sshnp/keys/@jeremy_0_key.atKeys
           echo "${{ secrets.SMOOTHALLIGATOR_KEY }}" > context/sshnpd/keys/@smoothalligator_key.atKeys
@@ -33,36 +33,14 @@ jobs:
           ls -la context/sshnp/keys
           ls -la context/sshnpd/keys
 
-      - name: Build Base Image
-        working-directory: test/end2end_tests
-        run: docker build -t atsigncompany/sshnp-e2e-base -f images/base/Dockerfile images/base
-
-      - name: Build Sshnp Trunk Image
-        working-directory: test/end2end_tests
+      - name: Docker Compose
+        working-directory: packages/sshnoports/test/end2end_tests
         run: |
-          docker build -t atsigncompany/sshnp-e2e-trunk-sshnp -f images/trunk/Dockerfile context/sshnp/
-
-      - name: Build Sshnpd Trunk Image
-        working-directory: test/end2end_tests
-        run: |
-          docker build -t atsigncompany/sshnp-e2e-trunk-sshnpd -f images/trunk/Dockerfile context/sshnpd/
-
-      - name: Run Sshnpd & Sshnp Trunk
-        working-directory: test/end2end_tests
-        run: |
-          docker run \
-            -t \
-            --name sshnp-e2e-trunk-sshnpd \
-            atsigncompany/sshnp-e2e-trunk-sshnpd ; echo $?
-          docker run \
-            -t \
-            --name sshnp-e2e-trunk-sshnp \
-            atsigncompany/sshnp-e2e-trunk-sshnp ; echo $?
+          docker-compose up
 
       - name: View containers
         run: |
           docker ps -a
-
 
   # attempting to use `dart test `
   # end2end_tests:

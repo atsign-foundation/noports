@@ -1,3 +1,3 @@
 #!/bin/bash
-sudo docker-compose build
-sudo docker-compose up
+sudo docker-compose up $@ --exit-code-from=sshnp-trunk
+# sudo docker-compose down

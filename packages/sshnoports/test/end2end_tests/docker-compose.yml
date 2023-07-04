@@ -1,35 +1,42 @@
 version: '3'
+
 services:
   base:
     build:
-      context: .
-      dockerfile: images/base/Dockerfile
-  sshnpd_trunk:
+      context: ./images/base
+      dockerfile: ./Dockerfile
+    image: atsigncompany/sshnp-e2e-base # image name
+    deploy:
+      mode: replicated
+      replicas: 0 # build base image, but do not start container.
+  trunk:
     depends_on:
       - base
     build:
-      context: ./context/sshnpd
-      dockerfile: ../../images/sshnpd_trunk/Dockerfile
-    container_name: sshnpd_trunk
-  sshnp_trunk:
+      context: ./images/trunk
+      dockerfile: ./Dockerfile
+    image: atsigncompany/sshnp-e2e-trunk
+    deploy:
+      mode: replicated
+      replicas: 0 # build base image, but do not start container.
+  sshnpd-trunk:
     depends_on:
       - base
-    build:
-      context: ./context/sshnp
-      dockerfile: ../../images/sshnp_trunk/Dockerfile
-    container_name: sshnp_trunk
-  sshnpd_release:
+      - trunk
+    image: atsigncompany/sshnp-e2e-trunk # image name
+    container_name: sshnpd_trunk # container name
+    user: atsign
+    volumes:
+      - ./context/sshnpd/keys/:/atsign/.atsign/keys/ # mount keys
+      - ./context/sshnpd/entrypoint.sh:/atsign/entrypoint.sh # mount entrypoint
+  sshnp-trunk:
     depends_on:
       - base
-    build:
-      context: ./context/sshnpd
-      dockerfile: ../../images/sshnpd_release/Dockerfile
-    container_name: sshnpd_release
-  sshnp_release:
-    depends_on:
-      - base
-    build:
-      context: ./context/sshnp
-      dockerfile: ../../images/sshnp_release/Dockerfile
-    container_name: sshnpd_release
-
+      - trunk
+      - sshnpd-trunk
+    image: atsigncompany/sshnp-e2e-trunk
+    container_name: sshnp_trunk # container name
+    user: atsign
+    volumes:
+      - ./context/sshnp/keys/:/atsign/.atsign/keys/ # mount keys
+      - ./context/sshnp/entrypoint.sh:/atsign/entrypoint.sh # mount entrypoint
