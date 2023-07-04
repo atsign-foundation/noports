@@ -46,12 +46,12 @@ jobs:
       - name: Docker Compose Up
         working-directory: packages/sshnoports/test/end2end_tests
         run: |
-          docker compose up --abort-on-container-exit --detach
+          docker compose up --abort-on-container-exit
 
       - name: (Debug) View containers
         run: |
           docker compose ps -a --no-trunc
 
-      - name: (Debug) View containers
+      - name: (Debug) Show Docker container logs
         run: |
           docker compose logs --timestamps
