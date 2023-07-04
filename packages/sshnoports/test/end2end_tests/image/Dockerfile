@@ -26,7 +26,7 @@ ENV OUTPUT_DIR=/app/output
 
 RUN mkdir -p ${REPO_DIR} ${OUTPUT_DIR} ;
 
-COPY ../../../../ ${REPO_DIR}
+COPY ../../../ ${REPO_DIR}
 
 RUN cd ${REPO_DIR} ; \
   dart pub get ; \
