@@ -51,7 +51,7 @@ jobs:
 
       - name: (Debug) View containers
         run: |
-          docker compose ps -a --no-trunc
+          docker ps -a --no-trunc
 
       - name: (Debug) Show Docker container logs
         run: |
