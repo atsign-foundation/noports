@@ -4,8 +4,8 @@ services:
   sshnpd-trunk:
     build:
       context: ./contexts/sshnpd
-      dockerfile: ./image/Dockerfile
-      target: trunk
+      dockerfile: ../../image/Dockerfile
+      target: trunk-build
     image: atsigncompany/sshnp-e2e-trunk # image name
     container_name: sshnpd_trunk # container name
     user: atsign
@@ -15,8 +15,8 @@ services:
   sshnp-trunk:
     build:
       context: ./contexts/sshnpd
-      dockerfile: ./image/Dockerfile
-      target: trunk
+      dockerfile: ../../image/Dockerfile
+      target: trunk-build
     depends_on:
       - sshnpd-trunk
     image: atsigncompany/sshnp-e2e-trunk
