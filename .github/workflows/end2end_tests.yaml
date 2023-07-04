@@ -12,6 +12,7 @@ on:
 env:
   SSHNP_ATSIGN: "@jeremy_0"
   SSHNPD_ATSIGN: "@smoothalligator"
+  CONTAINER_TIMEOUT: "30"
 
 jobs:
   end2end_tests_trunk:
@@ -46,7 +47,7 @@ jobs:
       - name: Docker Compose Up
         working-directory: packages/sshnoports/test/end2end_tests
         run: |
-          docker compose up --abort-on-container-exit
+          docker compose up --abort-on-container-exit --exit-code-from=container-trunk-sshnp --wait-timeout=${{ env.CONTAINER_TIMEOUT }} --always-recreate-deps
 
       - name: (Debug) View containers
         run: |
