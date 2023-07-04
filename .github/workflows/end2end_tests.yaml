@@ -33,7 +33,7 @@ jobs:
           echo "${{ secrets.JEREMY_0_KEY }}" > sshnp/keys/${{ env.SSHNP_ATSIGN }}_key.atKeys
           echo "${{ secrets.SMOOTHALLIGATOR_KEY }}" > sshnpd/keys/${{ env.SSHNPD_ATSIGN }}_key.atKeys
 
-      - name: Ensure keys are in place
+      - name: (Debug) View show .atKeys
         working-directory: packages/sshnoports/test/end2end_tests/contexts
         run: |
           ls sshnp/keys
@@ -54,7 +54,8 @@ jobs:
         run: |
           docker ps -a --no-trunc
 
-      - name: (Debug) Show Docker container logs
+      - name: (Debug) View Docker container logs
         continue-on-error: true # in case step fails, pass anyway
+        working-directory: packages/sshnoports/test/end2end_tests
         run: |
           docker compose logs --timestamps
