@@ -50,9 +50,11 @@ jobs:
           docker compose up --abort-on-container-exit --exit-code-from=container-trunk-sshnp --wait-timeout=${{ env.CONTAINER_TIMEOUT }} --always-recreate-deps
 
       - name: (Debug) View containers
+        continue-on-error: true # in case step fails, pass anyway
         run: |
           docker ps -a --no-trunc
 
       - name: (Debug) Show Docker container logs
+        continue-on-error: true # in case step fails, pass anyway
         run: |
           docker compose logs --timestamps
