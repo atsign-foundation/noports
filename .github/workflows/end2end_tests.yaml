@@ -9,6 +9,10 @@ on:
     branches:
       - trunk
 
+env:
+  SSHNP_ATSIGN: "@jeremy_0"
+  SSHNPD_ATSIGN: "@smoothalligator"
+
 jobs:
   end2end_tests_trunk:
     runs-on: ubuntu-latest
@@ -18,14 +22,14 @@ jobs:
 
       - name: View files
         run: |
-          ls -la
+          ls -la packages/sshnoports
           pwd
 
       - name: Copy keys
-        working-directory: packages/sshnoports/test/end2end_tests
+        working-directory: packages/sshnoports/test/end2end_tests/context
         run: |
-          echo "${{ secrets.JEREMY_0_KEY }}" > context/sshnp/keys/@jeremy_0_key.atKeys
-          echo "${{ secrets.SMOOTHALLIGATOR_KEY }}" > context/sshnpd/keys/@smoothalligator_key.atKeys
+          echo "${{ secrets.JEREMY_0_KEY }}" > sshnp/keys/${{ env.SSHNP_ATSIGN }}_key.atKeys
+          echo "${{ secrets.SMOOTHALLIGATOR_KEY }}" > sshnpd/keys/${{ env.SSHNPD_ATSIGN }}_key.atKeys
 
       - name: Ensure keys are in place
         working-directory: test/end2end_tests
