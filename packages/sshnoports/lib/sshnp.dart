@@ -246,6 +246,7 @@ class SSHNP {
           });
     } catch (e) {
       stderr.writeln(e.toString());
+      rethrow;
     }
 
     // Before we clean up we need to make sure that the reverse ssh made the connection.
@@ -373,6 +374,7 @@ class SSHNP {
           });
     } catch (e) {
       stderr.writeln(e.toString());
+      rethrow;
     }
   }
 
@@ -409,6 +411,7 @@ class SSHNP {
           });
     } catch (e) {
       stderr.writeln(e.toString());
+      rethrow;
     }
 
     int counter = 0;
