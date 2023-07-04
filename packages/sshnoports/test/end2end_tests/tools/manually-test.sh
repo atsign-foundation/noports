@@ -1,6 +1,4 @@
 #!/bin/bash
-
-#!/bin/bash
 usage() {
     echo "usage: $0"
     echo "  -h|--help"

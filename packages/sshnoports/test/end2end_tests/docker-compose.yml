@@ -1,27 +1,44 @@
 version: '3'
 
 services:
-  sshnpd-trunk:
+  image-build-trunk:
     build:
-      context: ./contexts/sshnpd
-      dockerfile: ../../image/Dockerfile
-      target: trunk-build
-    image: atsigncompany/sshnp-e2e-trunk # image name
-    container_name: sshnpd_trunk # container name
-    user: atsign
+      context: ./image
+      dockerfile: ./Dockerfile
+      target: branch-build
+      args:
+        - branch=trunk
+    image: atsigncompany/sshnp-e2e-build:trunk
+    deploy:
+      mode: replicated
+      replicas: 0
+  image-runtime-trunk:
+    build:
+      context: ./image
+      dockerfile: ./Dockerfile
+      target: runtime-branch
+    image: atsigncompany/sshnp-e2e-runtime:trunk
+    deploy:
+      mode: replicated
+      replicas: 0
+    depends_on:
+      - image-build-trunk
+  container-trunk-sshnpd:
+    image: atsigncompany/sshnp-e2e-runtime:trunk
+    container_name: sshnpd_trunk
     volumes:
       - ./contexts/sshnpd/keys/:/atsign/.atsign/keys/ # mount keys
       - ./contexts/sshnpd/entrypoint.sh:/atsign/entrypoint.sh # mount entrypoint
-  sshnp-trunk:
-    build:
-      context: ./contexts/sshnpd
-      dockerfile: ../../image/Dockerfile
-      target: trunk-build
     depends_on:
-      - sshnpd-trunk
-    image: atsigncompany/sshnp-e2e-trunk
-    container_name: sshnp_trunk # container name
-    user: atsign
+      - image-build-trunk
+      - image-runtime-trunk
+  container-trunk-sshnp:
+    image: atsigncompany/sshnp-e2e-runtime:trunk
+    container_name: sshnp_trunk
     volumes:
       - ./contexts/sshnp/keys/:/atsign/.atsign/keys/ # mount keys
       - ./contexts/sshnp/entrypoint.sh:/atsign/entrypoint.sh # mount entrypoint
+    depends_on:
+      - image-build-trunk
+      - image-runtime-trunk
+      - container-trunk-sshnpd

@@ -1,4 +1,4 @@
-FROM dart:3.0.5@sha256:65e5f5d6d72ad2f7b32f402c01b5fe8a426455b1ede1e9f840f95a2a8c14afbd AS trunk-build
+FROM dart:3.0.5@sha256:65e5f5d6d72ad2f7b32f402c01b5fe8a426455b1ede1e9f840f95a2a8c14afbd AS branch-build
 
 ENV URL=https://github.com/atsign-foundation/sshnoports.git
 ENV REPO_DIR=/app/repo
@@ -80,7 +80,7 @@ RUN set -eux ; \
   groupadd --gid ${GROUP_ID} ${USER} ; \
   useradd --system --shell /bin/bash --home ${HOMEDIR} --uid ${USER_ID} --gid ${GROUP_ID} ${USER} ; \
   usermod -aG sudo ${USER} ; \
-  mkdir -p ${HOMEDIR}/.ssh ; \
+  mkdir -p ${HOMEDIR}/.ssh ${HOMEDIR}/.atsign/keys ${HOMEDIR}/.local/bin ; \
   touch ${HOMEDIR}/.ssh/authorized_keys ; \
   ssh-keygen -t ed25519 -a 100 -f ${HOMEDIR}/.ssh/id_ed25519 -q -N '' ; \
   chown -R ${USER}:${USER} ${HOMEDIR} ; \
@@ -88,14 +88,28 @@ RUN set -eux ; \
   sed -E -i 's|^#?(PasswordAuthentication)\s.*|\1 no|' /etc/ssh/sshd_config ; \
   sed -i 's/#ListenAddress 0.0.0.0/ListenAddress 127.0.0.1/g' /etc/ssh/sshd_config ;
 
+FROM base AS runtime-branch
 
-# depends on the base image - `sudo docker build -t atsigncompany/sshnp-e2e-base -f ./images/base/Dockerfile ./images/base`
-FROM base
+COPY --chown=${USER}:${USER} --from=branch-build /app/output ${HOMEDIR}/.local/bin
 
-RUN mkdir -p ${HOMEDIR}/.atsign/keys ${HOMEDIR}/.local/bin ;
+WORKDIR ${HOMEDIR}
 
-COPY --chown=${USER}:${USER} --from=trunk-build /app/output ${HOMEDIR}/.local/bin
+USER ${USER}
+
+ENTRYPOINT sudo service ssh start && sh ${HOMEDIR}/entrypoint.sh
+
+FROM base AS runtime-release
+
 COPY --chown=${USER}:${USER} --from=release-build /app/output ${HOMEDIR}/.local/bin
+
+WORKDIR ${HOMEDIR}
+
+USER ${USER}
+
+ENTRYPOINT sudo service ssh start && sh ${HOMEDIR}/entrypoint.sh
+
+FROM base AS runtime-local
+
 COPY --chown=${USER}:${USER} --from=local-build /app/output ${HOMEDIR}/.local/bin
 
 WORKDIR ${HOMEDIR}
