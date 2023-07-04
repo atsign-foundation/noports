@@ -20,7 +20,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3
 
-      - name: View files
+      - name: (Debug) View files
         working-directory: packages/sshnoports
         run: |
           ls -la
@@ -38,11 +38,16 @@ jobs:
           ls sshnp/keys
           ls sshnpd/keys
 
-      - name: Docker Compose
+      - name: Docker Compose Build
         working-directory: packages/sshnoports/test/end2end_tests
         run: |
-          docker compose up --build --abort-on-container-exit
+          docker compose build
 
-      - name: View containers
+      - name: Docker Compose Up
+        working-directory: packages/sshnoports/test/end2end_tests
+        run: |
+          docker compose up --abort-on-container-exit --timestamps
+
+      - name: (Debug) View containers
         run: |
           docker ps -a
