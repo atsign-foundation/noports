@@ -1,4 +1,7 @@
 #!/bin/bash
+
+# Spin up an interactive container with a specific version of ssh no ports
+
 usage() {
     echo "usage: $0"
     echo "  -h|--help"

@@ -89,32 +89,20 @@ RUN set -eux ; \
   sed -E -i 's|^#?(PasswordAuthentication)\s.*|\1 no|' /etc/ssh/sshd_config ; \
   sed -i 's/#ListenAddress 0.0.0.0/ListenAddress 127.0.0.1/g' /etc/ssh/sshd_config ;
 
-FROM base AS runtime-branch
+FROM base AS blank
+
+WORKDIR ${HOMEDIR}
+USER ${USER}
+ENTRYPOINT sudo service ssh start && sh ${HOMEDIR}/entrypoint.sh
+
+FROM blank AS runtime-branch
 
 COPY --chown=${USER}:${USER} --from=build-branch /app/output ${HOMEDIR}/.local/bin
 
-WORKDIR ${HOMEDIR}
-
-USER ${USER}
-
-ENTRYPOINT sudo service ssh start && sh ${HOMEDIR}/entrypoint.sh
-
-FROM base AS runtime-release
+FROM blank AS runtime-release
 
 COPY --chown=${USER}:${USER} --from=build-release /app/output ${HOMEDIR}/.local/bin
 
-WORKDIR ${HOMEDIR}
-
-USER ${USER}
-
-ENTRYPOINT sudo service ssh start && sh ${HOMEDIR}/entrypoint.sh
-
-FROM base AS runtime-local
+FROM blank AS runtime-local
 
 COPY --chown=${USER}:${USER} --from=build-local /app/output ${HOMEDIR}/.local/bin
-
-WORKDIR ${HOMEDIR}
-
-USER ${USER}
-
-ENTRYPOINT sudo service ssh start && sh ${HOMEDIR}/entrypoint.sh

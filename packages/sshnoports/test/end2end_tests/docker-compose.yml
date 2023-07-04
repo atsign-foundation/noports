@@ -18,6 +18,8 @@ services:
     volumes:
       - sshnpd-keys:/atsign/.atsign/keys/ # mount keys
       - sshnpd-entrypoint:/atsign/entrypoint.sh # mount entrypoint
+    networks:
+      - sshnpd
     depends_on:
       - image-runtime-trunk
   container-trunk-sshnp:
@@ -26,10 +28,19 @@ services:
     volumes:
       - sshnp-keys:/atsign/.atsign/keys/ # mount keys
       - sshnp-entrypoint:/atsign/entrypoint.sh # mount entrypoint
+    networks:
+      - sshnp
     depends_on:
       - image-runtime-trunk
       - container-trunk-sshnpd
 
+networks:
+  sshnp:
+    driver: bridge
+    name: atsigncompany/sshnp-e2e-network-sshnp
+  sshnpd:
+    driver: bridge
+    name: atsigncompany/sshnp-e2e-network-sshnpd
 
 volumes:
   sshnpd-keys:
