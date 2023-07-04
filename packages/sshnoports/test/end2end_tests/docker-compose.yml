@@ -1,42 +1,27 @@
 version: '3'
 
 services:
-  base:
-    build:
-      context: ./images/base
-      dockerfile: ./Dockerfile
-    image: atsigncompany/sshnp-e2e-base # image name
-    deploy:
-      mode: replicated
-      replicas: 0 # build base image, but do not start container.
-  trunk:
-    depends_on:
-      - base
-    build:
-      context: ./images/trunk
-      dockerfile: ./Dockerfile
-    image: atsigncompany/sshnp-e2e-trunk
-    deploy:
-      mode: replicated
-      replicas: 0 # build base image, but do not start container.
   sshnpd-trunk:
-    depends_on:
-      - base
-      - trunk
+    build:
+      context: ./contexts/sshnpd
+      dockerfile: ./image/Dockerfile
+      target: trunk
     image: atsigncompany/sshnp-e2e-trunk # image name
     container_name: sshnpd_trunk # container name
     user: atsign
     volumes:
-      - ./context/sshnpd/keys/:/atsign/.atsign/keys/ # mount keys
-      - ./context/sshnpd/entrypoint.sh:/atsign/entrypoint.sh # mount entrypoint
+      - ./contexts/sshnpd/keys/:/atsign/.atsign/keys/ # mount keys
+      - ./contexts/sshnpd/entrypoint.sh:/atsign/entrypoint.sh # mount entrypoint
   sshnp-trunk:
+    build:
+      context: ./contexts/sshnpd
+      dockerfile: ./image/Dockerfile
+      target: trunk
     depends_on:
-      - base
-      - trunk
       - sshnpd-trunk
     image: atsigncompany/sshnp-e2e-trunk
     container_name: sshnp_trunk # container name
     user: atsign
     volumes:
-      - ./context/sshnp/keys/:/atsign/.atsign/keys/ # mount keys
-      - ./context/sshnp/entrypoint.sh:/atsign/entrypoint.sh # mount entrypoint
+      - ./contexts/sshnp/keys/:/atsign/.atsign/keys/ # mount keys
+      - ./contexts/sshnp/entrypoint.sh:/atsign/entrypoint.sh # mount entrypoint
