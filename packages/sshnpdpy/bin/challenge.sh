@@ -35,5 +35,5 @@ fi
 result=$(echo "$temp" | sed 's/@DONE//g')
 
 #returns passing challenge and server address
-echo "$result | $server_address"
+echo "$result|$server_address"
 
