@@ -16,7 +16,7 @@ import 'package:version/version.dart';
 
 // local packages
 import 'package:sshnoports/service_factories.dart';
-import 'package:sshnoports/sshnp_utils.dart';
+import 'package:sshnoports/utils.dart';
 import 'package:sshnoports/cleanup_sshnp.dart';
 import 'package:sshnoports/version.dart';
 
@@ -156,7 +156,7 @@ class SSHNP {
     logger.logger.level = Level.SHOUT;
 
     sshHomeDirectory = getDefaultSshDirectory(homeDirectory);
-    if (! Directory(sshHomeDirectory).existsSync()) {
+    if (!Directory(sshHomeDirectory).existsSync()) {
       Directory(sshHomeDirectory).createSync();
     }
   }
@@ -177,8 +177,8 @@ class SSHNP {
       throw StateError('Cannot init() - already initialized');
     }
 
-    if(!(await atSignIsActivated(atClient, sshnpdAtSign))) {
-        throw ('sshnpd atSign $sshnpdAtSign is not activated.');
+    if (!(await atSignIsActivated(atClient, sshnpdAtSign))) {
+      throw ('sshnpd atSign $sshnpdAtSign is not activated.');
     }
 
     logger.info('Subscribing to notifications on $sessionId.$nameSpace@');
@@ -237,13 +237,13 @@ class SSHNP {
         ..ttl = 10000);
 
     try {
-      await atClient.notificationService
-          .notify(NotificationParams.forUpdate(keyForCommandToSend, value: sshString),
+      await atClient.notificationService.notify(
+          NotificationParams.forUpdate(keyForCommandToSend, value: sshString),
           onSuccess: (notification) {
-            logger.info('SUCCESS:$notification $sshString');
-          }, onError: (notification) {
-            logger.info('ERROR:$notification $sshString');
-          });
+        logger.info('SUCCESS:$notification $sshString');
+      }, onError: (notification) {
+        logger.info('ERROR:$notification $sshString');
+      });
     } catch (e) {
       stderr.writeln(e.toString());
       rethrow;
@@ -314,7 +314,8 @@ class SSHNP {
   /// @human:username.device.sshnp@daemon
   /// Is not called if remoteUserName was set via constructor
   Future<void> fetchRemoteUserName() async {
-    AtKey userNameRecordID = AtKey.fromString('$clientAtSign:username.$nameSpace$sshnpdAtSign');
+    AtKey userNameRecordID =
+        AtKey.fromString('$clientAtSign:username.$nameSpace$sshnpdAtSign');
     try {
       remoteUsername = (await atClient.get(userNameRecordID)).value as String;
     } catch (e) {
@@ -365,13 +366,13 @@ class SSHNP {
         ..ttl = 10000);
 
     try {
-      await atClient.notificationService
-          .notify(NotificationParams.forUpdate(sendOurPrivateKeyToSshnpd, value: sshPrivateKey),
-          onSuccess: (notification) {
-            logger.info('SUCCESS:$notification');
-          }, onError: (notification) {
-            logger.info('ERROR:$notification');
-          });
+      await atClient.notificationService.notify(
+          NotificationParams.forUpdate(sendOurPrivateKeyToSshnpd,
+              value: sshPrivateKey), onSuccess: (notification) {
+        logger.info('SUCCESS:$notification');
+      }, onError: (notification) {
+        logger.info('ERROR:$notification');
+      });
     } catch (e) {
       stderr.writeln(e.toString());
       rethrow;
@@ -402,13 +403,13 @@ class SSHNP {
         ..ttl = 10000);
 
     try {
-      await atClient.notificationService
-          .notify(NotificationParams.forUpdate(ourSshrvdIdKey, value: sessionId),
+      await atClient.notificationService.notify(
+          NotificationParams.forUpdate(ourSshrvdIdKey, value: sessionId),
           onSuccess: (notification) {
-            logger.info('SUCCESS:$notification $ourSshrvdIdKey');
-          }, onError: (notification) {
-            logger.info('ERROR:$notification $ourSshrvdIdKey');
-          });
+        logger.info('SUCCESS:$notification $ourSshrvdIdKey');
+      }, onError: (notification) {
+        logger.info('ERROR:$notification $ourSshrvdIdKey');
+      });
     } catch (e) {
       stderr.writeln(e.toString());
       rethrow;
@@ -464,9 +465,9 @@ class SSHNP {
     }
 
     sshPublicKey =
-    await File('$sshHomeDirectory${sessionId}_sshnp.pub').readAsString();
+        await File('$sshHomeDirectory${sessionId}_sshnp.pub').readAsString();
     sshPrivateKey =
-    await File('$sshHomeDirectory${sessionId}_sshnp').readAsString();
+        await File('$sshHomeDirectory${sessionId}_sshnp').readAsString();
 
     // Set up a safe authorized_keys file, for the reverse ssh tunnel
     File('${sshHomeDirectory}authorized_keys').writeAsStringSync(
@@ -481,10 +482,10 @@ class SSHNP {
     ArgResults r = createArgParser().parse(args);
 
     // Do we have a username ?
-    p.username = getUserName(throwIfNull:true)!;
+    p.username = getUserName(throwIfNull: true)!;
 
     // Do we have a 'home' directory?
-    p.homeDirectory = getHomeDirectory(throwIfNull:true)!;
+    p.homeDirectory = getHomeDirectory(throwIfNull: true)!;
 
     p.clientAtSign = r['from'];
     p.sshnpdAtSign = r['to'];
@@ -493,7 +494,8 @@ class SSHNP {
     if (r['key-file'] != null) {
       p.atKeysFilePath = r['key-file'];
     } else {
-      p.atKeysFilePath = getDefaultAtKeysFilePath(p.homeDirectory, p.clientAtSign);
+      p.atKeysFilePath =
+          getDefaultAtKeysFilePath(p.homeDirectory, p.clientAtSign);
     }
 
     // Check device string only contains ascii
@@ -506,7 +508,8 @@ class SSHNP {
     // Check the public key if the option was selected
     var sendSshPublicKey = r['ssh-public-key'];
     if ((sendSshPublicKey != 'false')) {
-      sendSshPublicKey = '${getDefaultSshDirectory(p.homeDirectory)}$sendSshPublicKey';
+      sendSshPublicKey =
+          '${getDefaultSshDirectory(p.homeDirectory)}$sendSshPublicKey';
       if (!sendSshPublicKey.endsWith('.pub')) {
         throw ('\n The ssh public key should have a ".pub" extension');
       }
@@ -585,9 +588,9 @@ class SSHNP {
 
   static Future<AtClient> createAtClient(
       {required String clientAtSign,
-        required String device,
-        required String sessionId,
-        required String atKeysFilePath}) async {
+      required String device,
+      required String sessionId,
+      required String atKeysFilePath}) async {
     // Now on to the atPlatform startup
     //onboarding preference builder can be used to set onboardingService parameters
     AtOnboardingPreference atOnboardingConfig = AtOnboardingPreference()
@@ -615,52 +618,88 @@ class SSHNP {
   static ArgParser createArgParser() {
     var parser = ArgParser();
     // Basic arguments
-    parser.addOption('key-file',
-        abbr: 'k',
-        mandatory: false,
-        help: 'Sending atSign\'s atKeys file if not in ~/.atsign/keys/');
-    parser.addOption('from',
-        abbr: 'f', mandatory: true, help: 'Sending atSign');
-    parser.addOption('to',
-        abbr: 't', mandatory: true, help: 'Send a notification to this atSign');
-    parser.addOption('device',
-        abbr: 'd',
-        mandatory: false,
-        defaultsTo: "default",
-        help: 'Send a notification to this device');
-    parser.addOption('host',
-        abbr: 'h',
-        mandatory: true,
-        help: 'atSign of sshrvd daemon or FQDN/IP address to connect back to ');
-    parser.addOption('port',
-        abbr: 'p',
-        mandatory: false,
-        defaultsTo: '22',
-        help:
-        'TCP port to connect back to (only required if --host specified a FQDN/IP)');
-    parser.addOption('local-port',
-        abbr: 'l',
-        defaultsTo: '0',
-        mandatory: false,
-        help:
-        'Reverse ssh port to listen on, on your local machine, by sshnp default finds a spare port');
-    parser.addOption('ssh-public-key',
-        abbr: 's',
-        defaultsTo: 'false',
-        mandatory: false,
-        help:
-        'Public key file from ~/.ssh to be appended to authorized_hosts on the remote device');
-    parser.addMultiOption('local-ssh-options',
-        abbr: 'o', help: 'Add these commands to the local ssh command');
-    parser.addFlag('verbose', abbr: 'v', help: 'More logging');
-    parser.addFlag('rsa',
-        abbr: 'r',
-        defaultsTo: false,
-        help: 'Use RSA 4096 keys rather than the default ED25519 keys');
-    parser.addOption('remote-user-name',
-        abbr: 'u',
-        mandatory: false,
-        help: 'user name to use in the ssh session on the remote host');
+    parser.addOption(
+      'key-file',
+      abbr: 'k',
+      mandatory: false,
+      help: 'Sending atSign\'s atKeys file if not in ~/.atsign/keys/',
+    );
+    parser.addOption(
+      'from',
+      abbr: 'f',
+      mandatory: true,
+      help: 'Sending atSign',
+    );
+    parser.addOption(
+      'to',
+      abbr: 't',
+      mandatory: true,
+      help: 'Send a notification to this atSign',
+    );
+    parser.addOption(
+      'device',
+      abbr: 'd',
+      mandatory: false,
+      defaultsTo: "default",
+      help: 'Send a notification to this device',
+    );
+    parser.addOption(
+      'host',
+      abbr: 'h',
+      mandatory: true,
+      help: 'atSign of sshrvd daemon or FQDN/IP address to connect back to ',
+    );
+    parser.addOption(
+      'port',
+      abbr: 'p',
+      mandatory: false,
+      defaultsTo: '22',
+      help:
+          'TCP port to connect back to (only required if --host specified a FQDN/IP)',
+    );
+    parser.addOption(
+      'local-port',
+      abbr: 'l',
+      defaultsTo: '0',
+      mandatory: false,
+      help:
+          'Reverse ssh port to listen on, on your local machine, by sshnp default finds a spare port',
+    );
+    parser.addOption(
+      'ssh-public-key',
+      abbr: 's',
+      defaultsTo: 'false',
+      mandatory: false,
+      help:
+          'Public key file from ~/.ssh to be appended to authorized_hosts on the remote device',
+    );
+    parser.addMultiOption(
+      'local-ssh-options',
+      abbr: 'o',
+      help: 'Add these commands to the local ssh command',
+    );
+    parser.addFlag(
+      'verbose',
+      abbr: 'v',
+      help: 'More logging',
+    );
+    parser.addFlag(
+      'rsa',
+      abbr: 'r',
+      defaultsTo: false,
+      help: 'Use RSA 4096 keys rather than the default ED25519 keys',
+    );
+    parser.addOption(
+      'remote-user-name',
+      abbr: 'u',
+      mandatory: false,
+      help: 'username to use in the ssh session on the remote host',
+    );
+    // Config files
+    parser.addOption(
+      'config-file',
+      help: 'Read from a config file',
+    );
     return parser;
   }
 
