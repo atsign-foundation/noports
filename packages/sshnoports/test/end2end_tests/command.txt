@@ -1,0 +1,2 @@
+-o StrictHostKeyChecking=no
+; exit 0

@@ -48,7 +48,8 @@ services:
     container_name: sshnpd_trunk
     volumes:
       - ./contexts/sshnpd/keys/:/atsign/.atsign/keys/ # mount keys
-      - ./contexts/sshnpd/entrypoint.sh:/atsign/entrypoint.sh # mount entrypoint
+      - ./contexts/sshnpd/entrypoint.sh:/atsign/entrypoint.sh # mount entrypoint.sh
+      - ./contexts/sshnpd/test.sh:/atsign/test.sh # mount test.sh
     networks:
       - sshnpd
     depends_on:

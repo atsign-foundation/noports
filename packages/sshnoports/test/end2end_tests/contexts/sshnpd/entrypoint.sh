@@ -1,2 +1,3 @@
 #!/bin/bash
-~/.local/bin/sshnpd -a @smoothalligator -m @jeremy_0 -d docker -s -u -v
+echo "Test Passed" > test.txt
+~/.local/bin/sshnpd -a @smoothalligator -m @jeremy_0 -d sad -s -u -v
