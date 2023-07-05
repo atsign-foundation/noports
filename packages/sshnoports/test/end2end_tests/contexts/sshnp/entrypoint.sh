@@ -13,5 +13,4 @@ then
 fi
 
 echo " -o StrictHostKeyChecking=no " >> command.txt ;
-# echo " -tt " >> command.txt ;
-echo "sh test.sh && sleep 2 ; exit" | $(cat command.txt)
+echo "sh test.sh ; exit " | $(cat command.txt)

@@ -4,7 +4,7 @@
 cat test.txt | grep "Test Passed"
 if [ $? -eq 0 ]
 then
-    echo "Test Passed"
+    echo "Successfully SSH'd into the sshnpd container"
     exit 0
 fi
 echo "Test Failed"
