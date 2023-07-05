@@ -479,17 +479,18 @@ class SSHNP {
 
   static SSHNPParams parseSSHNPParams(List<String> args) {
     var p = SSHNPParams();
+    ArgParser parser = createArgParser();
     late ArgResults r;
     List<String> configArgs = [];
 
     // Config file
-    r = createConfigParser().parse(args);
+    r = parser.parse(args);
     if (r.wasParsed('config-file')) {
       configArgs = parseConfigFile(r['config-file']);
     }
 
     // Main Args
-    r = createArgParser().parse(configArgs + args);
+    r = parser.parse(configArgs + args);
 
     // Do we have a username ?
     p.username = getUserName(throwIfNull: true)!;
@@ -590,7 +591,7 @@ class SSHNP {
       return sshnp;
     } catch (e) {
       version();
-      stdout.writeln(createConfigParser(createArgParser()).usage);
+      stdout.writeln(createArgParser().usage);
       stderr.writeln(e);
       exit(1);
     }
@@ -658,18 +659,12 @@ class SSHNP {
       }
     }
     if (withConfig) {
-      parser = createConfigParser(parser);
+      parser.addOption(
+        'config-file',
+        help:
+            'Read args from a config file\nMandatory args are not required if already supplied in the config file',
+      );
     }
-    return parser;
-  }
-
-  static ArgParser createConfigParser([ArgParser? parser]) {
-    parser ??= ArgParser();
-    parser.addOption(
-      'config-file',
-      help:
-          'Read args from a config file\nMandatory args are not required if already supplied in the config file',
-    );
     return parser;
   }
 
