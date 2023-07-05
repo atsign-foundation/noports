@@ -488,10 +488,8 @@ class SSHNP {
       configArgs = parseConfigFile(r['config-file']);
     }
 
-    print(configArgs + args);
-
     // Main Args
-    r = createArgParser(withConfig: true).parse(configArgs + args);
+    r = createArgParser().parse(configArgs + args);
 
     // Do we have a username ?
     p.username = getUserName(throwIfNull: true)!;
@@ -627,7 +625,7 @@ class SSHNP {
     return AtClientManager.getInstance().atClient;
   }
 
-  static ArgParser createArgParser({bool withConfig = false}) {
+  static ArgParser createArgParser({bool withConfig = true}) {
     var parser = ArgParser();
     // Basic arguments
     for (SSHNPArg arg in sshnpArgs) {
