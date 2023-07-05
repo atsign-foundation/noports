@@ -1,6 +1,6 @@
 #!/bin/bash
 sleep 2
-~/.local/bin/sshnp -f @jeremy_0 -t @smoothalligator -d sad -h @rv_am -s id_ed25519.pub -v > logs.txt
+~/.local/bin/sshnp -f @jeremy_0 -t @smoothalligator -d e2e -h @rv_am -s id_ed25519.pub -v > logs.txt
 cat logs.txt
 tail -n 5 logs.txt | grep "ssh -p" > command.txt
 
@@ -13,6 +13,5 @@ then
 fi
 
 echo " -o StrictHostKeyChecking=no " >> command.txt ;
-echo " -tt " >> command.txt ;
-echo "sh test.sh && exit" | $(cat command.txt)
-exit
+# echo " -tt " >> command.txt ;
+echo "sh test.sh && sleep 2 ; exit" | $(cat command.txt)
