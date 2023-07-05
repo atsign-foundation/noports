@@ -11,6 +11,8 @@ import 'package:at_onboarding_cli/at_onboarding_cli.dart';
 import 'package:args/args.dart';
 import 'package:logging/logging.dart';
 import 'package:meta/meta.dart';
+import 'package:sshnoports/config_util.dart';
+import 'package:sshnoports/sshnp_args.dart';
 import 'package:uuid/uuid.dart';
 import 'package:version/version.dart';
 
@@ -477,9 +479,19 @@ class SSHNP {
 
   static SSHNPParams parseSSHNPParams(List<String> args) {
     var p = SSHNPParams();
+    late ArgResults r;
+    List<String> configArgs = [];
 
-    // Arg check
-    ArgResults r = createArgParser().parse(args);
+    // Config file
+    r = createConfigParser().parse(args);
+    if (r.wasParsed('config-file')) {
+      configArgs = parseConfigFile(r['config-file']);
+    }
+
+    print(configArgs + args);
+
+    // Main Args
+    r = createArgParser(withConfig: true).parse(configArgs + args);
 
     // Do we have a username ?
     p.username = getUserName(throwIfNull: true)!;
@@ -580,7 +592,7 @@ class SSHNP {
       return sshnp;
     } catch (e) {
       version();
-      stdout.writeln(createArgParser().usage);
+      stdout.writeln(createConfigParser(createArgParser()).usage);
       stderr.writeln(e);
       exit(1);
     }
@@ -615,90 +627,50 @@ class SSHNP {
     return AtClientManager.getInstance().atClient;
   }
 
-  static ArgParser createArgParser() {
+  static ArgParser createArgParser({bool withConfig = false}) {
     var parser = ArgParser();
     // Basic arguments
-    parser.addOption(
-      'key-file',
-      abbr: 'k',
-      mandatory: false,
-      help: 'Sending atSign\'s atKeys file if not in ~/.atsign/keys/',
-    );
-    parser.addOption(
-      'from',
-      abbr: 'f',
-      mandatory: true,
-      help: 'Sending atSign',
-    );
-    parser.addOption(
-      'to',
-      abbr: 't',
-      mandatory: true,
-      help: 'Send a notification to this atSign',
-    );
-    parser.addOption(
-      'device',
-      abbr: 'd',
-      mandatory: false,
-      defaultsTo: "default",
-      help: 'Send a notification to this device',
-    );
-    parser.addOption(
-      'host',
-      abbr: 'h',
-      mandatory: true,
-      help: 'atSign of sshrvd daemon or FQDN/IP address to connect back to ',
-    );
-    parser.addOption(
-      'port',
-      abbr: 'p',
-      mandatory: false,
-      defaultsTo: '22',
-      help:
-          'TCP port to connect back to (only required if --host specified a FQDN/IP)',
-    );
-    parser.addOption(
-      'local-port',
-      abbr: 'l',
-      defaultsTo: '0',
-      mandatory: false,
-      help:
-          'Reverse ssh port to listen on, on your local machine, by sshnp default finds a spare port',
-    );
-    parser.addOption(
-      'ssh-public-key',
-      abbr: 's',
-      defaultsTo: 'false',
-      mandatory: false,
-      help:
-          'Public key file from ~/.ssh to be appended to authorized_hosts on the remote device',
-    );
-    parser.addMultiOption(
-      'local-ssh-options',
-      abbr: 'o',
-      help: 'Add these commands to the local ssh command',
-    );
-    parser.addFlag(
-      'verbose',
-      abbr: 'v',
-      help: 'More logging',
-    );
-    parser.addFlag(
-      'rsa',
-      abbr: 'r',
-      defaultsTo: false,
-      help: 'Use RSA 4096 keys rather than the default ED25519 keys',
-    );
-    parser.addOption(
-      'remote-user-name',
-      abbr: 'u',
-      mandatory: false,
-      help: 'username to use in the ssh session on the remote host',
-    );
-    // Config files
+    for (SSHNPArg arg in sshnpArgs) {
+      switch (arg.format) {
+        case ArgFormat.option:
+          parser.addOption(
+            arg.name,
+            abbr: arg.abbr,
+            mandatory: arg.mandatory,
+            defaultsTo: arg.defaultsTo as String?,
+            help: arg.help,
+          );
+          break;
+        case ArgFormat.multiOption:
+          parser.addMultiOption(
+            arg.name,
+            abbr: arg.abbr,
+            defaultsTo: arg.defaultsTo as List<String>?,
+            help: arg.help,
+          );
+          break;
+        case ArgFormat.flag:
+          parser.addFlag(
+            arg.name,
+            abbr: arg.abbr,
+            defaultsTo: arg.defaultsTo as bool?,
+            help: arg.help,
+          );
+          break;
+      }
+    }
+    if (withConfig) {
+      parser = createConfigParser(parser);
+    }
+    return parser;
+  }
+
+  static ArgParser createConfigParser([ArgParser? parser]) {
+    parser ??= ArgParser();
     parser.addOption(
       'config-file',
-      help: 'Read from a config file',
+      help:
+          'Read args from a config file\nMandatory args are not required if already supplied in the config file',
     );
     return parser;
   }
