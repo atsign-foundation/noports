@@ -10,10 +10,16 @@
 ## need at_python, argparse
 ## plan to use bash scripts for most of the heavy lifting
 ##  let's get this mvp out.
-import os, argparse, subprocess, base64
+import json
+import os, argparse, subprocess
+from socket import socket, AF_INET, SOCK_STREAM
+from ssl import PROTOCOL_TLSv1_2, wrap_socket
+from time import sleep
+import uuid
 
 
 from at_client.common import AtClient, AtSign
+from at_client.common.keys import AtKey, SharedKey
 from at_client.util import EncryptionUtil, KeysUtil
 
 namespace = 'sshnp'
@@ -34,43 +40,54 @@ else:
 
 commit_log_path = os.path.dirname(f'{home_dir}/.sshnp/{args.device_atsign}/storage/commitLog')
 download_path = os.path.dirname(f'{home_dir}/.sshnp/files')
-#
-bin_path = '/mnt/c/Users/xavie/atsign/sshnoports/packages/sshnpdpy/bin/' 
-def monitor_process(popen):    
-    for stdout_line in iter(popen.stdout.readline, ""):
-        yield stdout_line 
-    popen.stdout.close()
-    return_code = popen.wait()
-    if return_code:
-        raise subprocess.CalledProcessError(return_code, [f'{bin_path}monitor.sh', args.manager_atsign[1:]])
+ssh_path = os.path.dirname(f'{home_dir}/.ssh/')
     
-challenge = ""
-challenge_recieved = False
+privatekey = ""
+sshPublicKey = ""
 ssh_notification_recieved = False
+client = AtClient(AtSign(args.device_atsign))
+secondary = client.secondary_connection
+secondary.connect()
+secondary.execute_command(f'monitor {args.device}\.{namespace}@')
 
-popen = subprocess.Popen([f'{bin_path}monitor.sh', args.manager_atsign[1:]], stdin=subprocess.PIPE, stdout=subprocess.PIPE, universal_newlines=True)
 while not ssh_notification_recieved:
-    if not challenge_recieved:
-        for line in monitor_process(popen):
-            if "data" in line:
-                challenge = line.split("@data:")[1].strip()    
-                print(challenge)
-                challenge_recieved = True
-                break
-    else:    
-        client = AtClient(AtSign(args.manager_atsign))
-        client.pkam_authenticate()
-        KeysUtil.load_keys(args.manager_atsign)
-        privatekey = client.keys[KeysUtil.pkam_private_key_name]
-        signature = EncryptionUtil.sign_sha256_rsa(challenge, privatekey)
-        popen.stdin.write(f'pkam:{signature}\n')
-        popen.stdin.flush()
-        for notification in monitor_process(popen):
-            print(notification)  
-
-
-
-
-
-
-
+    response = secondary.parse_raw_response(secondary.read())
+    raw_data = response.get_raw_data_response().strip(": \t\n\r")
+    notification = json.loads(raw_data)
+    
+    if notification['id'] == "-1":
+        sleep(1)
+        continue
+    
+    keyName = notification['key'].split(":")[1].split(".")[0]
+    if keyName == "privatekey":
+        print(f'private key received from ${notification["from"]} notification id : ${notification["id"]}')
+        privatekey = notification['value']
+        continue
+    
+    if keyName == "sshpublickey":
+        try:
+            print(f'ssh Public Key received from ${notification["from"]} notification id : ${notification["id"]}')
+            sshPublicKey = notification['value']
+            #// Check to see if the ssh Publickey is already in the file if not append to the ~/.ssh/authorized_keys file
+            with open(f'{ssh_path}/authorized_keys', 'r') as file:
+                filedata = file.read()
+                if sshPublicKey not in filedata:
+                    file.write(sshPublicKey)
+            continue
+        except: 
+            print("Error writing to authorized_keys file")
+            continue
+    
+    if keyName == "sshd":
+        print(f'ssh callback requested from ${notification["from"]} notification id : ${notification["id"]}')
+        ssh_notification_recieved = True
+        session_id = uuid.uuid4()
+        shared_key = SharedKey(f'{keyName}.{args.device}', shared_by=AtSign(args.device_atsign), shared_with=AtSign(args.manager_atsign))
+        shared_key.set_namespace(namespace)
+        decrypted_value = client.get(shared_key)
+        sshList = decrypted_value.split(" ")
+        
+        continue
+    
+    sleep(1)
