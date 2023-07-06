@@ -5,14 +5,15 @@
 #vscode
 .vscode
 
-#Files created by montior.sh
-session_output.txt
+#Docker
+.devcontainer
 
 
 # atPlatform stuff
 *.hive
 *.hash
 *.atKeys
+
 # Ignore pubspec.lock
 pubspec.lock
 
