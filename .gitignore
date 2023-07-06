@@ -1,6 +1,14 @@
 # Files and directories created by pub.
 .dart_tool/
 .packages
+
+#vscode
+.vscode
+
+#Files created by montior.sh
+session_output.txt
+
+
 # atPlatform stuff
 *.hive
 *.hash
