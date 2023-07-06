@@ -1,0 +1,1 @@
+~/.local/bin/sshrvd -a @smoothalligator -m @jeremy_0 -d e2e -s -u -v

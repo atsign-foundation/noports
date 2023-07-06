@@ -2,17 +2,17 @@
 version: '3.8'
 
 services:
-  image-runtime-local:
+  image-manual-local:
     build:
-      context: ../../image/
-      dockerfile: ./Dockerfile
-      target: runtime-local
-    image: atsigncompany/sshnp-e2e-manual-runtime:local
+      context: ../../../../
+      dockerfile: test/end2end_tests/image/Dockerfile
+      target: manual-local
+    image: atsigncompany/sshnp-e2e-manual:local
     deploy:
       mode: replicated
       replicas: 0
   container-local-sshnpd:
-    image: atsigncompany/sshnp-e2e-manual-runtime:local
+    image: atsigncompany/sshnp-e2e-manual:local
     container_name: manual_local_sshnpd
     volumes:
       - ../../contexts/sshnpd/keys/:/atsign/.atsign/keys/ # mount keys
@@ -20,9 +20,9 @@ services:
     networks:
       - sshnpd
     depends_on:
-      - image-runtime-local
+      - image-manual-local
   container-local-sshnp:
-    image: atsigncompany/sshnp-e2e-manual-runtime:local
+    image: atsigncompany/sshnp-e2e-manual:local
     container_name: manual_local_sshnp
     volumes:
       - ../../contexts/sshnp/keys/:/atsign/.atsign/keys/ # mount keys
@@ -30,17 +30,17 @@ services:
     networks:
       - sshnp
     depends_on:
-      - image-runtime-local
+      - image-manual-local
   container-local-sshrvd:
-    image: atsigncompany/sshnp-e2e-manual-runtime:local
+    image: atsigncompany/sshnp-e2e-manual:local
     container_name: manual_local_sshrvd
     volumes:
-      - ../../contexts/sshnp/keys/:/atsign/.atsign/keys/ # mount keys
-      - ../../contexts/sshnp/entrypoint.sh:/atsign/entrypoint.sh # mount entrypoint
+      - ../../contexts/sshrvd/keys/:/atsign/.atsign/keys/ # mount keys
+      - ../../contexts/sshrvd/entrypoint.sh:/atsign/entrypoint.sh # mount entrypoint
     networks:
       - sshrvd
     depends_on:
-      - image-runtime-local
+      - image-manual-local
 
 networks:
   sshnpd:

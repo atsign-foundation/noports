@@ -73,3 +73,6 @@ networks:
   sshnpd:
     driver: bridge
     name: atsigncompany/sshnp-e2e-network-sshnpd
+  sshrvd:
+    driver: bridge
+    name: atsigncompany/sshnp-e2e-network-sshrvd

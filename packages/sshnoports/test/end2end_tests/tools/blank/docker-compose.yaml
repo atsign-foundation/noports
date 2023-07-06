@@ -2,17 +2,17 @@
 version: '3.8'
 
 services:
-  image-runtime-blank:
+  image-manual-blank:
     build:
       context: ../../image/
       dockerfile: ./Dockerfile
       target: runtime-blank
-    image: atsigncompany/sshnp-e2e-manual-runtime:blank
+    image: atsigncompany/sshnp-e2e-manual:blank
     deploy:
       mode: replicated
       replicas: 0
   container-blank-sshnpd:
-    image: atsigncompany/sshnp-e2e-manual-runtime:blank
+    image: atsigncompany/sshnp-e2e-manual:blank
     container_name: manual_blank_sshnpd
     volumes:
       - ../../contexts/sshnpd/keys/:/atsign/.atsign/keys/ # mount keys
@@ -20,31 +20,27 @@ services:
     networks:
       - sshnpd
     depends_on:
-      - image-runtime-blank
+      - image-manual-blank
   container-blank-sshnp:
-    image: atsigncompany/sshnp-e2e-manual-runtime:blank
+    image: atsigncompany/sshnp-e2e-manual:blank
     container_name: manual_blank_sshnp
     volumes:
       - ../../contexts/sshnp/keys/:/atsign/.atsign/keys/ # mount keys
       - ../../contexts/sshnp/entrypoint.sh:/atsign/entrypoint.sh # mount entrypoint
     networks:
       - sshnp
-    entrypoint:
-      - /bin/bash
     depends_on:
-      - image-runtime-blank
+      - image-manual-blank
   container-blank-sshrvd:
-    image: atsigncompany/sshnp-e2e-manual-runtime:blank
+    image: atsigncompany/sshnp-e2e-manual:blank
     container_name: manual_blank_sshrvd
     volumes:
-      - ../../contexts/sshnp/keys/:/atsign/.atsign/keys/ # mount keys
-      - ../../contexts/sshnp/entrypoint.sh:/atsign/entrypoint.sh # mount entrypoint
+      - ../../contexts/sshrvd/keys/:/atsign/.atsign/keys/ # mount keys
+      - ../../contexts/sshrvd/entrypoint.sh:/atsign/entrypoint.sh # mount entrypoint
     networks:
       - sshrvd
-    entrypoint:
-      - /bin/bash
     depends_on:
-      - image-runtime-blank
+      - image-manual-blank
 
 networks:
   sshnpd:

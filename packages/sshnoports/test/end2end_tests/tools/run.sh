@@ -6,12 +6,13 @@ usage() {
     echo ""
     echo "usage: $0"
     echo "  -h|--help"
-    echo "  -t|--tag <sshnp/sshnpd/sshrvd> (required)"
+    echo "  -t|--tag <sshnp/sshnpd/sshrvd> (required) - docker container tag"
+    echo "  --no-cache (optional) - docker build without cache"
     echo "  ONE OF THE FOLLOWING (required)"
-    echo "  -l|--local"
-    echo "  -b|--branch <branch/commitid>"
-    echo "  -r|--release <release>"
-    echo "  --blank"
+    echo "  -l|--local - build from local source"
+    echo "  -b|--branch <branch/commitid> - build from branch/commitid"
+    echo "  -r|--release <release> - build from a sshnoports release"
+    echo "  --blank - build container with no binaries"
     echo ""
     echo "  example: $0 -t sshnp -b trunk"
     echo "  example: $0 -t sshnpd -l"
@@ -37,6 +38,10 @@ parse_args() {
             -t|--tag)
                 tag=$2
                 shift 2
+                ;;
+            --no-cache)
+                nocache=true
+                shift 1
                 ;;
             -l|--local)
                 local=true
@@ -109,33 +114,43 @@ parse_args() {
 }
 
 main() {
+    command="cd $type"
     if [[ $type == "branch" ]];
     then
-        cd branch
-        sudo docker compose run -it --build --rm container-branch-$tag
-        cd ..
+        dockercmd1="sudo docker compose build --build-arg branch=$branch"
+        dockercmd2="sudo docker compose run -it container-branch-$tag"
     fi
 
     if [[ $type == "release" ]];
     then
-        cd release
-        sudo docker compose run -it --build --rm container-release-$tag --entrypoint="sudo service ssh start && sh"
-        cd ..
+        dockercmd1="sudo docker compose build --build-arg release=$release"
+        dockercmd2="sudo docker compose run -it container-release-$tag"
     fi
 
     if [[ $type == "local" ]];
     then
-        cd local
-        sudo docker compose run -it --build --rm --entrypoint="sudo service ssh start" container-local-$tag /bin/bash
-        cd ..
+        dockercmd1="sudo docker compose build"
+        dockercmd2="sudo docker compose run -it container-local-$tag"
     fi
 
     if [[ $type == "blank" ]];
     then
-        cd blank
-        sudo docker compose run -it --build --rm --entrypoint="sudo service ssh start" container-blank-$tag /bin/bash
-        cd ..
+        dockercmd1="sudo docker compose build"
+        dockercmd2="sudo docker compose run -it container-blank-$tag"
     fi
+
+    command="$command ; $dockercmd1"
+
+    if [[ ! -z $nocache ]];
+    then
+        command="$command --no-cache"
+    fi
+    command="$command ; $dockercmd2"
+    command="$command ; cd .."
+
+    # execute command
+    echo "Executing command: $command"
+    eval $command
 }
 
 parse_args $@

@@ -2,19 +2,19 @@
 version: '3.8'
 
 services:
-  image-runtime-branch:
+  image-manual-branch:
     build:
       context: ../../image/
       dockerfile: ./Dockerfile
-      target: runtime-branch
+      target: manual-branch
       args:
         - branch=trunk
-    image: atsigncompany/sshnp-e2e-manual-runtime:branch
+    image: atsigncompany/sshnp-e2e-manual:branch
     deploy:
       mode: replicated
       replicas: 0
   container-branch-sshnpd:
-    image: atsigncompany/sshnp-e2e-manual-runtime:branch
+    image: atsigncompany/sshnp-e2e-manual:branch
     container_name: manual_branch_sshnpd
     volumes:
       - ../../contexts/sshnpd/keys/:/atsign/.atsign/keys/ # mount keys
@@ -22,9 +22,9 @@ services:
     networks:
       - sshnpd
     depends_on:
-      - image-runtime-branch
+      - image-manual-branch
   container-branch-sshnp:
-    image: atsigncompany/sshnp-e2e-manual-runtime:branch
+    image: atsigncompany/sshnp-e2e-manual:branch
     container_name: manual_branch_sshnp
     volumes:
       - ../../contexts/sshnp/keys/:/atsign/.atsign/keys/ # mount keys
@@ -32,17 +32,17 @@ services:
     networks:
       - sshnp
     depends_on:
-      - image-runtime-branch
+      - image-manual-branch
   container-branch-sshrvd:
-    image: atsigncompany/sshnp-e2e-manual-runtime:branch
+    image: atsigncompany/sshnp-e2e-manual:branch
     container_name: manual_branch_sshrvd
     volumes:
-      - ../../contexts/sshnp/keys/:/atsign/.atsign/keys/ # mount keys
-      - ../../contexts/sshnp/entrypoint.sh:/atsign/entrypoint.sh # mount entrypoint
+      - ../../contexts/sshrvd/keys/:/atsign/.atsign/keys/ # mount keys
+      - ../../contexts/sshrvd/entrypoint.sh:/atsign/entrypoint.sh # mount entrypoint
     networks:
       - sshrvd
     depends_on:
-      - image-runtime-branch
+      - image-manual-branch
 
 
 networks:

@@ -27,17 +27,17 @@ ENV OUTPUT_DIR=/app/output
 
 RUN mkdir -p ${REPO_DIR} ${OUTPUT_DIR} ;
 
-# context must be the same folder as the Dockerfile
-COPY ../../../ ${REPO_DIR}
+# context must be the same directory as pubspec.yaml
+COPY . ${REPO_DIR}
 
 RUN set -eux ; \
   cd ${REPO_DIR} ; \
   dart pub get ; \
-  dart compile exe ${REPO_DIR}/bin/sshnp.dart -o ${OUTPUTDIR}/sshnp ; \
-  dart compile exe ${REPO_DIR}/bin/sshnpd.dart -o ${OUTPUTDIR}/sshnpd ; \
-  dart compile exe ${REPO_DIR}/bin/sshrv.dart -o ${OUTPUTDIR}/sshrv ; \
-  dart compile exe ${REPO_DIR}/bin/sshrvd.dart -o ${OUTPUTDIR}/sshrvd ; \
-  dart compile exe ${REPO_DIR}/bin/activate_cli.dart -o ${OUTPUTDIR}/at_activate ;
+  dart compile exe ${REPO_DIR}/bin/sshnp.dart -o ${OUTPUT_DIR}/sshnp ; \
+  dart compile exe ${REPO_DIR}/bin/sshnpd.dart -o ${OUTPUT_DIR}/sshnpd ; \
+  dart compile exe ${REPO_DIR}/bin/sshrv.dart -o ${OUTPUT_DIR}/sshrv ; \
+  dart compile exe ${REPO_DIR}/bin/sshrvd.dart -o ${OUTPUT_DIR}/sshrvd ; \
+  dart compile exe ${REPO_DIR}/bin/activate_cli.dart -o ${OUTPUT_DIR}/at_activate ;
 
 FROM debian:stable-20230612-slim@sha256:b09f68bffcf9c14f3105f262e92321d05abaf48460d1f43f884325bcd4395b95 AS build-release
 
@@ -139,3 +139,15 @@ WORKDIR ${HOMEDIR}
 USER ${USER}
 
 ENTRYPOINT sudo service ssh start && sh ${HOMEDIR}/entrypoint.sh
+
+FROM runtime-branch AS manual-branch
+
+ENTRYPOINT sudo service ssh start && bash
+
+FROM runtime-release AS manual-release
+
+ENTRYPOINT sudo service ssh start && bash
+
+FROM runtime-local AS manual-local
+
+ENTRYPOINT sudo service ssh start && bash
