@@ -39,13 +39,13 @@ jobs:
         working-directory: packages/sshnoports/test/end2end_tests/contexts
         run: |
           sed -i "s/@sshnpatsign/${{ env.SSHNP_ATSIGN }}/g" sshnp/entrypoint.sh
-          sed -i "s/@sshnpdatsign/${{ env.SSHNP_ATSIGN }}/g" sshnp/entrypoint.sh
-          sed -i "s/@sshrvdatsign/${{ env.SSHNP_ATSIGN }}/g" sshnp/entrypoint.sh
-          sed -i "s/@sshnpatsign/${{ env.SSHNPD_ATSIGN }}/g" sshnpd/entrypoint.sh
+          sed -i "s/@sshnpdatsign/${{ env.SSHNPD_ATSIGN }}/g" sshnp/entrypoint.sh
+          sed -i "s/@sshrvdatsign/${{ env.SSHRVD_ATSIGN }}/g" sshnp/entrypoint.sh
+          sed -i "s/@sshnpatsign/${{ env.SSHNP_ATSIGN }}/g" sshnpd/entrypoint.sh
           sed -i "s/@sshnpdatsign/${{ env.SSHNPD_ATSIGN }}/g" sshnpd/entrypoint.sh
-          sed -i "s/@sshrvdatsign/${{ env.SSHNPD_ATSIGN }}/g" sshnpd/entrypoint.sh
-          sed -i "s/@sshnpatsign/${{ env.SSHRVD_ATSIGN }}/g" sshrvd/entrypoint.sh
-          sed -i "s/@sshnpdatsign/${{ env.SSHRVD_ATSIGN }}/g" sshrvd/entrypoint.sh
+          sed -i "s/@sshrvdatsign/${{ env.SSHRVD_ATSIGN }}/g" sshnpd/entrypoint.sh
+          sed -i "s/@sshnpatsign/${{ env.SSHNP_ATSIGN }}/g" sshrvd/entrypoint.sh
+          sed -i "s/@sshnpdatsign/${{ env.SSHND_ATSIGN }}/g" sshrvd/entrypoint.sh
           sed -i "s/@sshrvdatsign/${{ env.SSHRVD_ATSIGN }}/g" sshrvd/entrypoint.sh
           cat sshnp/entrypoint.sh
           cat sshnpd/entrypoint.sh
