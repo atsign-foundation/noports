@@ -12,6 +12,7 @@ on:
 env:
   SSHNP_ATSIGN: "@jeremy_0"
   SSHNPD_ATSIGN: "@smoothalligator"
+  SSHRVD_ATSIGN: "@tastlessbanana"
   CONTAINER_TIMEOUT: "300" # seconds
 
 jobs:
@@ -32,12 +33,14 @@ jobs:
         run: |
           echo "${{ secrets.JEREMY_0_KEY }}" > sshnp/keys/${{ env.SSHNP_ATSIGN }}_key.atKeys
           echo "${{ secrets.SMOOTHALLIGATOR_KEY }}" > sshnpd/keys/${{ env.SSHNPD_ATSIGN }}_key.atKeys
+          echo "${{ secrets.TASTELESSBANANA_KEY }}" > sshrvd/keys/${{ env.SSHRVD_ATSIGN }}_key.atKeys
 
       - name: (Debug) View show .atKeys
         working-directory: packages/sshnoports/test/end2end_tests/contexts
         run: |
           ls sshnp/keys
           ls sshnpd/keys
+          ls sshrvd/keys
 
       - name: Docker Compose Build
         working-directory: packages/sshnoports/test/end2end_tests
