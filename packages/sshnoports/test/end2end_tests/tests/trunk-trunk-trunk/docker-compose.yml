@@ -14,7 +14,7 @@ services:
       replicas: 0
   container-sshnpd:
     image: atsigncompany/sshnp-e2e-runtime:branch-trunk
-    container_name: sshnpd_trunk
+    container_name: sshnpd
     volumes:
       - ../../contexts/sshnpd/keys/:/atsign/.atsign/keys/ # mount keys
       - ../../contexts/sshnpd/entrypoint.sh:/atsign/entrypoint.sh # mount entrypoint.sh
@@ -26,7 +26,7 @@ services:
       - container-sshrvd
   container-sshnp:
     image: atsigncompany/sshnp-e2e-runtime:branch-trunk
-    container_name: sshnp_trunk
+    container_name: sshnp
     volumes:
       - ../../contexts/sshnp/keys/:/atsign/.atsign/keys/ # mount keys
       - ../../contexts/sshnp/entrypoint.sh:/atsign/entrypoint.sh # mount entrypoint
@@ -37,7 +37,7 @@ services:
       - container-sshnpd
   container-sshrvd:
     image: atsigncompany/sshnp-e2e-runtime:branch-trunk
-    container_name: sshrvd_trunk
+    container_name: sshrvd
     volumes:
       - ../../contexts/sshrvd/keys/:/atsign/.atsign/keys/ # mount keys
       - ../../contexts/sshrvd/entrypoint.sh:/atsign/entrypoint.sh # mount entrypoint
