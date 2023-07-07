@@ -1,6 +1,6 @@
 #!/bin/bash
 sleep 2
-~/.local/bin/sshnp -f @sshnp -t @sshnpd -d e2e -h @sshrvd -s id_ed25519.pub -v > logs.txt
+~/.local/bin/sshnp -f @sshnp_atsign -t @sshnpd_atsign -d e2e -h @sshrvd -s id_ed25519.pub -v > logs.txt
 cat logs.txt
 tail -n 5 logs.txt | grep "ssh -p" > command.txt
 

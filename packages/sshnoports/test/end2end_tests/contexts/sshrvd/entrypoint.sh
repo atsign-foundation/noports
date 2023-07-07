@@ -1,1 +1,1 @@
-~/.local/bin/sshrvd -a @sshrvd -i $(hostname -i) -v -s
+~/.local/bin/sshrvd -a @sshrvd_atsign -i $(hostname -i) -v -s
