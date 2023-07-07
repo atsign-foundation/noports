@@ -45,7 +45,7 @@ jobs:
           sed -i "s/@sshnpdatsign/${{ env.SSHNPD_ATSIGN }}/g" sshnpd/entrypoint.sh
           sed -i "s/@sshrvdatsign/${{ env.SSHRVD_ATSIGN }}/g" sshnpd/entrypoint.sh
           sed -i "s/@sshnpatsign/${{ env.SSHNP_ATSIGN }}/g" sshrvd/entrypoint.sh
-          sed -i "s/@sshnpdatsign/${{ env.SSHND_ATSIGN }}/g" sshrvd/entrypoint.sh
+          sed -i "s/@sshnpdatsign/${{ env.SSHNPD_ATSIGN }}/g" sshrvd/entrypoint.sh
           sed -i "s/@sshrvdatsign/${{ env.SSHRVD_ATSIGN }}/g" sshrvd/entrypoint.sh
           cat sshnp/entrypoint.sh
           cat sshnpd/entrypoint.sh
@@ -58,6 +58,16 @@ jobs:
           ls sshnp/keys
           ls sshnpd/keys
           ls sshrvd/keys
+
+      - name: trunk-trunk-trunk
+        working-directory: packages/sshnoports/test/end2end_tests/tests/trunk-trunk-trunk
+        run: |
+          docker compose build
+          docker compose up --abort-on-container-exit --exit-code-from=container-sshnp
+          echo "Printing information ------"
+          docker ps -a --no-trunc
+          docker compose logs --timestamps
+          docker compose down
 
       - name: local-trunk-release
         working-directory: packages/sshnoports/test/end2end_tests/tests/local-trunk-release
@@ -80,16 +90,6 @@ jobs:
 
       - name: local-local-local
         working-directory: packages/sshnoports/test/end2end_tests/tests/local-local-local
-        run: |
-          docker compose build
-          docker compose up --abort-on-container-exit --exit-code-from=container-sshnp
-          echo "Printing information ------"
-          docker ps -a --no-trunc
-          docker compose logs --timestamps
-          docker compose down
-
-      - name: trunk-trunk-trunk
-        working-directory: packages/sshnoports/test/end2end_tests/tests/trunk-trunk-trunk
         run: |
           docker compose build
           docker compose up --abort-on-container-exit --exit-code-from=container-sshnp

@@ -19,8 +19,8 @@ void main(List<String> args) async {
   });
 
   try {
-    await sshnp.init();
-    await sshnp.run();
+    // await sshnp.init();
+    // await sshnp.run();
   } catch (error, stackTrace) {
     stderr.writeln('Error: $error');
     stderr.writeln('Stack Trace: $stackTrace');
