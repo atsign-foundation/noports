@@ -38,9 +38,9 @@ jobs:
       - name: Fix all entrypoint.sh to match atSigns
         working-directory: packages/sshnoports/test/end2end_tests/contexts
         run: |
-          sed -i "s/@sshnp_atsign/${{ env.SSHNP_ATSIGN }}/g" sshnp/entrypoint.sh
-          sed -i "s/@sshnpd_atsign/${{ env.SSHNPD_ATSIGN }}/g" sshnpd/entrypoint.sh
-          sed -i "s/@sshrvd_atsign/${{ env.SSHRVD_ATSIGN }}/g" sshrvd/entrypoint.sh
+          sed -i "s/@sshnpatsign/${{ env.SSHNP_ATSIGN }}/g" sshnp/entrypoint.sh
+          sed -i "s/@sshnpdatsign/${{ env.SSHNPD_ATSIGN }}/g" sshnpd/entrypoint.sh
+          sed -i "s/@sshrvdatsign/${{ env.SSHRVD_ATSIGN }}/g" sshrvd/entrypoint.sh
           cat sshnp/entrypoint.sh
           cat sshnpd/entrypoint.sh
           cat sshrvd/entrypoint.sh
