@@ -13,4 +13,4 @@ then
 fi
 
 echo " -o StrictHostKeyChecking=no " >> command.txt ;
-echo "sh test.sh ; exit " | $(cat command.txt)
+echo "sh test.sh ; sh test.sh ; sh test.sh ; exit " | $(cat command.txt)
