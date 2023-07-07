@@ -1,1 +1,1 @@
-~/.local/bin/sshrvd -a @tastelessbanana -i $(hostname -i) -v -s
+~/.local/bin/sshrvd -a @sshrvd -i $(hostname -i) -v -s
