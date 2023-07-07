@@ -49,7 +49,7 @@ ENV URL="https://api.github.com/repos/atsign-foundation/sshnoports/releases/late
 ENV URLP="https://github.com/atsign-foundation/sshnoports/releases/download"
 
 RUN apt-get update ; \
-  apt-get install -y wget dpkg ; \
+  apt-get install -y wget dpkg curl ; \
   mkdir -p ${BUILD_DIR} ${OUTPUT_DIR} ; \
   cd ${BUILD_DIR} ; \
   case "$(dpkg --print-architecture)" in \
