@@ -54,6 +54,7 @@ services:
       - sshnpd
     depends_on:
       - image-runtime-trunk
+      - container-trunk-sshrvd
   container-trunk-sshnp:
     image: atsigncompany/sshnp-e2e-runtime:branch-trunk
     container_name: sshnp_trunk
@@ -65,6 +66,15 @@ services:
     depends_on:
       - image-runtime-trunk
       - container-trunk-sshnpd
+  container-trunk-sshrvd:
+    image: atsigncompany/sshnp-e2e-runtime:branch-trunk
+    container_name: sshrvd_trunk
+    volumes:
+      - ./contexts/sshrvd/keys/:/atsign/.atsign/keys/ # mount keys
+      - ./contexts/sshrvd/entrypoint.sh:/atsign/entrypoint.sh # mount entrypoint
+    network_mode: host
+    depends_on:
+      - image-runtime-trunk
 
 networks:
   sshnp:
@@ -73,6 +83,4 @@ networks:
   sshnpd:
     driver: bridge
     name: atsigncompany/sshnp-e2e-network-sshnpd
-  sshrvd:
-    driver: bridge
-    name: atsigncompany/sshnp-e2e-network-sshrvd
+

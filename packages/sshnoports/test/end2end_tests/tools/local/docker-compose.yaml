@@ -37,8 +37,7 @@ services:
     volumes:
       - ../../contexts/sshrvd/keys/:/atsign/.atsign/keys/ # mount keys
       - ../../contexts/sshrvd/entrypoint.sh:/atsign/entrypoint.sh # mount entrypoint
-    networks:
-      - sshrvd
+    network_mode: host
     depends_on:
       - image-manual-local
 
@@ -48,7 +47,4 @@ networks:
     driver: bridge
   sshnp:
     name: atsigncompany/sshnp-e2e-manual-network-sshnp
-    driver: bridge
-  sshrvd:
-    name: atsigncompany/sshnp-e2e-manual-network-sshrvd
     driver: bridge
