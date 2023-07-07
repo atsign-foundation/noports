@@ -1,19 +1,28 @@
 version: '3'
 
 services:
-  image-runtime-trunk:
+  image-runtime-local:
     build:
-      context: ../../image/
-      dockerfile: ./Dockerfile
-      target: runtime-branch
-      args:
-        - branch=trunk
-    image: atsigncompany/sshnp-e2e-runtime:branch-trunk
+      context: ../../../../
+      dockerfile: test/end2end_tests/image/Dockerfile
+      target: runtime-local
+    image: atsigncompany/sshnp-e2e-runtime:local
     deploy:
       mode: replicated
       replicas: 0
+  container-sshnp:
+    image: atsigncompany/sshnp-e2e-runtime:local
+    container_name: sshnp_trunk
+    volumes:
+      - ../../contexts/sshnp/keys/:/atsign/.atsign/keys/ # mount keys
+      - ../../contexts/sshnp/entrypoint.sh:/atsign/entrypoint.sh # mount entrypoint
+    networks:
+      - sshnp
+    depends_on:
+      - image-runtime-local
+      - container-sshnpd
   container-sshnpd:
-    image: atsigncompany/sshnp-e2e-runtime:branch-trunk
+    image: atsigncompany/sshnp-e2e-runtime:local
     container_name: sshnpd_trunk
     volumes:
       - ../../contexts/sshnpd/keys/:/atsign/.atsign/keys/ # mount keys
@@ -24,26 +33,15 @@ services:
     depends_on:
       - image-runtime-trunk
       - container-sshrvd
-  container-sshnp:
-    image: atsigncompany/sshnp-e2e-runtime:branch-trunk
-    container_name: sshnp_trunk
-    volumes:
-      - ../../contexts/sshnp/keys/:/atsign/.atsign/keys/ # mount keys
-      - ../../contexts/sshnp/entrypoint.sh:/atsign/entrypoint.sh # mount entrypoint
-    networks:
-      - sshnp
-    depends_on:
-      - image-runtime-trunk
-      - container-sshnpd
   container-sshrvd:
-    image: atsigncompany/sshnp-e2e-runtime:branch-trunk
+    image: atsigncompany/sshnp-e2e-runtime:local
     container_name: sshrvd_trunk
     volumes:
       - ../../contexts/sshrvd/keys/:/atsign/.atsign/keys/ # mount keys
       - ../../contexts/sshrvd/entrypoint.sh:/atsign/entrypoint.sh # mount entrypoint
     network_mode: host
     depends_on:
-      - image-runtime-trunk
+      - image-runtime-release
 
 networks:
   sshnp:

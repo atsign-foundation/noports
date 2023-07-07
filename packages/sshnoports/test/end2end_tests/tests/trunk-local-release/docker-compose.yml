@@ -1,6 +1,15 @@
 version: '3'
 
 services:
+  image-runtime-local:
+    build:
+      context: ../../../../
+      dockerfile: test/end2end_tests/image/Dockerfile
+      target: runtime-local
+    image: atsigncompany/sshnp-e2e-runtime:local
+    deploy:
+      mode: replicated
+      replicas: 0
   image-runtime-trunk:
     build:
       context: ../../image/
@@ -12,18 +21,15 @@ services:
     deploy:
       mode: replicated
       replicas: 0
-  container-sshnpd:
-    image: atsigncompany/sshnp-e2e-runtime:branch-trunk
-    container_name: sshnpd_trunk
-    volumes:
-      - ../../contexts/sshnpd/keys/:/atsign/.atsign/keys/ # mount keys
-      - ../../contexts/sshnpd/entrypoint.sh:/atsign/entrypoint.sh # mount entrypoint.sh
-      - ../../contexts/sshnpd/test.sh:/atsign/test.sh # mount test.sh
-    networks:
-      - sshnpd
-    depends_on:
-      - image-runtime-trunk
-      - container-sshrvd
+  image-runtime-release:
+    build:
+      context: ../../image/
+      dockerfile: ./Dockerfile
+      target: runtime-release
+    image: atsigncompany/sshnp-e2e-runtime:release
+    deploy:
+      mode: replicated
+      replicas: 0
   container-sshnp:
     image: atsigncompany/sshnp-e2e-runtime:branch-trunk
     container_name: sshnp_trunk
@@ -35,15 +41,27 @@ services:
     depends_on:
       - image-runtime-trunk
       - container-sshnpd
+  container-sshnpd:
+    image: atsigncompany/sshnp-e2e-runtime:local
+    container_name: sshnpd_trunk
+    volumes:
+      - ../../contexts/sshnpd/keys/:/atsign/.atsign/keys/ # mount keys
+      - ../../contexts/sshnpd/entrypoint.sh:/atsign/entrypoint.sh # mount entrypoint.sh
+      - ../../contexts/sshnpd/test.sh:/atsign/test.sh # mount test.sh
+    networks:
+      - sshnpd
+    depends_on:
+      - image-runtime-trunk
+      - container-sshrvd
   container-sshrvd:
-    image: atsigncompany/sshnp-e2e-runtime:branch-trunk
+    image: atsigncompany/sshnp-e2e-runtime:release
     container_name: sshrvd_trunk
     volumes:
       - ../../contexts/sshrvd/keys/:/atsign/.atsign/keys/ # mount keys
       - ../../contexts/sshrvd/entrypoint.sh:/atsign/entrypoint.sh # mount entrypoint
     network_mode: host
     depends_on:
-      - image-runtime-trunk
+      - image-runtime-release
 
 networks:
   sshnp:
