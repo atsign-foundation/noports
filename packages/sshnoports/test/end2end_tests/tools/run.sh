@@ -11,7 +11,7 @@ usage() {
     echo "  ONE OF THE FOLLOWING (required)"
     echo "  -l|--local - build from local source"
     echo "  -b|--branch <branch/commitid> - build from branch/commitid"
-    echo "  -r|--release <release> - build from a sshnoports release"
+    echo "  -r|--release [release] - build from a sshnoports release, latest release by default"
     echo "  --blank - build container with no binaries"
     echo ""
     echo "  example: $0 -t sshnp -b trunk"
@@ -53,7 +53,16 @@ parse_args() {
                 ;;
             -r|--release)
                 release=$2
-                shift 2
+                if [[ -z $release ]];
+                then
+                    release=true
+                    shift 1
+                fi
+
+                if [[ ! -z $release ]];
+                then
+                    shift 2
+                fi
                 ;;
             --blank)
                 blank=true
@@ -123,7 +132,11 @@ main() {
 
     if [[ $type == "release" ]];
     then
-        dockercmd1="sudo docker compose build --build-arg release=$release"
+        dockercmd1="sudo docker compose build"
+        if [[ ! ($release == true) ]]; # if release was provided, pass it as a build arg
+        then
+            dockercmd1="$dockercmd1 --build-arg release=$release"
+        fi
         dockercmd2="sudo docker compose run -it container-release-$tag"
     fi
 
@@ -145,6 +158,7 @@ main() {
     then
         command="$command --no-cache"
     fi
+
     command="$command ; $dockercmd2"
     command="$command ; cd .."
 

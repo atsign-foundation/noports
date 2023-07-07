@@ -13,7 +13,6 @@ env:
   SSHNP_ATSIGN: "@jeremy_0"
   SSHNPD_ATSIGN: "@smoothalligator"
   SSHRVD_ATSIGN: "@tastelessbanana"
-  CONTAINER_TIMEOUT: "300" # seconds
 
 jobs:
   end2end_tests_trunk:
@@ -47,13 +46,13 @@ jobs:
       - name: Build sshnp:local sshnpd:trunk sshrvd:release
         working-directory: packages/sshnoports/test/end2end_tests/tests/local-trunk-release
         run: |
-          docker compose build --build-arg branch=trunk --build-arg release=3.3.0 --no-cache
+          docker compose build --build-arg branch=trunk --no-cache
 
 
       - name: Test sshnp:local sshnpd:trunk sshrvd:release
         working-directory: packages/sshnoports/test/end2end_tests/tests/local-trunk-release
         run: |
-          docker compose up --abort-on-container-exit --exit-code-from=container-sshnp -t=${{ env.CONTAINER_TIMEOUT }}
+          docker compose up --abort-on-container-exit --exit-code-from=container-sshnp
 
       - name: Clean up sshnp:local sshnpd:trunk sshrvd:release
         working-directory: packages/sshnoports/test/end2end_tests/tests/local-trunk-release
