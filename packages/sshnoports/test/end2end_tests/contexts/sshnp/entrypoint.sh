@@ -1,5 +1,4 @@
 #!/bin/bash
-sleep 2
 ~/.local/bin/sshnp -f @sshnpatsign -t @sshnpdatsign -d e2e -h @sshrvdatsign -s id_ed25519.pub -v > logs.txt
 cat logs.txt
 tail -n 5 logs.txt | grep "ssh -p" > command.txt

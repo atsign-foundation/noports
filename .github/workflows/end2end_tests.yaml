@@ -13,6 +13,7 @@ env:
   SSHNP_ATSIGN: "@jeremy_0"
   SSHNPD_ATSIGN: "@smoothalligator"
   SSHRVD_ATSIGN: "@tastelessbanana"
+  CONTAINER_TIMEOUT: 60 # 1 minute, exit if container takes longer than this to finish
 
 jobs:
   end2end_tests_trunk:
@@ -63,7 +64,7 @@ jobs:
         working-directory: packages/sshnoports/test/end2end_tests/tests/trunk-trunk-trunk
         run: |
           docker compose build
-          docker compose up --abort-on-container-exit --exit-code-from=container-sshnp
+          docker compose up --abort-on-container-exit --exit-code-from=container-sshnp -t=${{ env.CONTAINER_TIMEOUT }}
           echo "Printing information ------"
           docker ps -a --no-trunc
           docker compose logs --timestamps
@@ -73,7 +74,7 @@ jobs:
         working-directory: packages/sshnoports/test/end2end_tests/tests/local-trunk-release
         run: |
           docker compose build
-          docker compose up --abort-on-container-exit --exit-code-from=container-sshnp
+          docker compose up --abort-on-container-exit --exit-code-from=container-sshnp -t=${{ env.CONTAINER_TIMEOUT }}
           docker ps -a --no-trunc
           docker compose logs --timestamps
           docker compose down
@@ -82,7 +83,7 @@ jobs:
         working-directory: packages/sshnoports/test/end2end_tests/tests/trunk-local-release
         run: |
           docker compose build
-          docker compose up --abort-on-container-exit --exit-code-from=container-sshnp
+          docker compose up --abort-on-container-exit --exit-code-from=container-sshnp -t=${{ env.CONTAINER_TIMEOUT }}
           echo "Printing information ------"
           docker ps -a --no-trunc
           docker compose logs --timestamps
@@ -92,7 +93,7 @@ jobs:
         working-directory: packages/sshnoports/test/end2end_tests/tests/local-local-local
         run: |
           docker compose build
-          docker compose up --abort-on-container-exit --exit-code-from=container-sshnp
+          docker compose up --abort-on-container-exit --exit-code-from=container-sshnp -t=${{ env.CONTAINER_TIMEOUT }}
           echo "Printing information ------"
           docker ps -a --no-trunc
           docker compose logs --timestamps
