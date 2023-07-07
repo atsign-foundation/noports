@@ -35,6 +35,16 @@ jobs:
           echo "${{ secrets.SMOOTHALLIGATOR_KEY }}" > sshnpd/keys/${{ env.SSHNPD_ATSIGN }}_key.atKeys
           echo "${{ secrets.TASTELESSBANANA_KEY }}" > sshrvd/keys/${{ env.SSHRVD_ATSIGN }}_key.atKeys
 
+      - name: Fix all entrypoint.sh to match atSigns
+        working-directory: packages/sshnoports/test/end2end_tests/contexts
+        run: |
+          sed -i "s/@jeremy_0/${{ env.SSHNP_ATSIGN }}/g" sshnp/entrypoint.sh
+          sed -i "s/@smoothalligator/${{ env.SSHNPD_ATSIGN }}/g" sshnpd/entrypoint.sh
+          sed -i "s/@tastelessbanana/${{ env.SSHRVD_ATSIGN }}/g" sshrvd/entrypoint.sh
+          cat sshnp/entrypoint.sh
+          cat sshnpd/entrypoint.sh
+          cat sshrvd/entrypoint.sh
+
       - name: (Debug) Show .atKeys
         continue-on-error: true # in case step fails, pass anyway
         working-directory: packages/sshnoports/test/end2end_tests/contexts
