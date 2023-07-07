@@ -53,7 +53,7 @@ jobs:
       - name: Test sshnp:local sshnpd:trunk sshrvd:release
         working-directory: packages/sshnoports/test/end2end_tests/tests/local-trunk-release
         run: |
-          docker compose up --abort-on-container-exit --exit-code-from=container-trunk-sshnp -t=${{ env.CONTAINER_TIMEOUT }}
+          docker compose up --abort-on-container-exit --exit-code-from=container-sshnp -t=${{ env.CONTAINER_TIMEOUT }}
 
       - name: Clean up sshnp:local sshnpd:trunk sshrvd:release
         working-directory:
