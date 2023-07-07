@@ -23,6 +23,7 @@ jobs:
         uses: actions/checkout@v3
 
       - name: (Debug) View files
+        continue-on-error: true # in case step fails, pass anyway
         working-directory: packages/sshnoports
         run: |
           ls -la
@@ -35,36 +36,19 @@ jobs:
           echo "${{ secrets.SMOOTHALLIGATOR_KEY }}" > sshnpd/keys/${{ env.SSHNPD_ATSIGN }}_key.atKeys
           echo "${{ secrets.TASTELESSBANANA_KEY }}" > sshrvd/keys/${{ env.SSHRVD_ATSIGN }}_key.atKeys
 
-      - name: (Debug) View show .atKeys
+      - name: (Debug) Show .atKeys
+        continue-on-error: true # in case step fails, pass anyway
         working-directory: packages/sshnoports/test/end2end_tests/contexts
         run: |
           ls sshnp/keys
           ls sshnpd/keys
           ls sshrvd/keys
 
-      - name: Docker Compose Build
-        working-directory: packages/sshnoports/test/end2end_tests
+      - name: Test sshnp:local sshnpd:trunk sshrvd:release
+        working-directory: packages/sshnoports/test/end2end_tests/tests/local-trunk-release
         run: |
           docker compose build --build-arg branch=trunk --no-cache
-
-      - name: Docker Compose Up
-        working-directory: packages/sshnoports/test/end2end_tests
-        run: |
           docker compose up --abort-on-container-exit --exit-code-from=container-trunk-sshnp -t=${{ env.CONTAINER_TIMEOUT }}
-
-      - name: (Debug) View containers
-        continue-on-error: true # in case step fails, pass anyway
-        run: |
           docker ps -a --no-trunc
-
-      - name: (Debug) View Docker container logs
-        continue-on-error: true # in case step fails, pass anyway
-        working-directory: packages/sshnoports/test/end2end_tests
-        run: |
           docker compose logs --timestamps
-
-      - name: Docker Compose Down
-        continue-on-error: true # in case step fails, pass anyway
-        working-directory: packages/sshnoports/test/end2end_tests
-        run: |
           docker compose down
