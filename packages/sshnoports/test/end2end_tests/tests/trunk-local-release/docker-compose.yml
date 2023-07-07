@@ -51,7 +51,7 @@ services:
     networks:
       - sshnpd
     depends_on:
-      - image-runtime-trunk
+      - image-runtime-local
       - container-sshrvd
   container-sshrvd:
     image: atsigncompany/sshnp-e2e-runtime:release

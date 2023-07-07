@@ -31,7 +31,7 @@ services:
     networks:
       - sshnpd
     depends_on:
-      - image-runtime-trunk
+      - image-runtime-local
       - container-sshrvd
   container-sshrvd:
     image: atsigncompany/sshnp-e2e-runtime:local
@@ -41,7 +41,7 @@ services:
       - ../../contexts/sshrvd/entrypoint.sh:/atsign/entrypoint.sh # mount entrypoint
     network_mode: host
     depends_on:
-      - image-runtime-release
+      - image-runtime-local
 
 networks:
   sshnp:

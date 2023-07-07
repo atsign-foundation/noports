@@ -52,7 +52,7 @@ jobs:
           docker compose logs --timestamps
           docker compose down
 
-      - name: Build sshnp:trunk sshnpd:local sshrvd:release
+      - name: Build, test, and clean up sshnp:trunk sshnpd:local sshrvd:release
         working-directory: packages/sshnoports/test/end2end_tests/tests/trunk-local-release
         run: |
           docker compose build
@@ -61,7 +61,7 @@ jobs:
           docker compose logs --timestamps
           docker compose down
 
-      - name: Build sshnp:local sshnpd:local sshrvd:local
+      - name: Build, test, and clean up sshnp:local sshnpd:local sshrvd:local
         working-directory: packages/sshnoports/test/end2end_tests/tests/local-local-local
         run: |
           docker compose build
@@ -70,7 +70,7 @@ jobs:
           docker compose logs --timestamps
           docker compose down
 
-      - name: Build sshnp:trunk sshnpd:trunk sshrvd:trunk
+      - name: Build, test, and clean up sshnp:trunk sshnpd:trunk sshrvd:trunk
         working-directory: packages/sshnoports/test/end2end_tests/tests/trunk-trunk-trunk
         run: |
           docker compose build
