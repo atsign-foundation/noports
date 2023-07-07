@@ -70,21 +70,21 @@ jobs:
           docker compose logs --timestamps
           docker compose down
 
-      - name: local-trunk-release
-        working-directory: packages/sshnoports/test/end2end_tests/tests/local-trunk-release
-        run: |
-          docker compose build
-          docker compose up --abort-on-container-exit --exit-code-from=container-sshnp -t=${{ env.CONTAINER_TIMEOUT }}
-          docker ps -a --no-trunc
-          docker compose logs --timestamps
-          docker compose down
-
       - name: trunk-local-release
         working-directory: packages/sshnoports/test/end2end_tests/tests/trunk-local-release
         run: |
           docker compose build
           docker compose up --abort-on-container-exit --exit-code-from=container-sshnp -t=${{ env.CONTAINER_TIMEOUT }}
           echo "Printing information ------"
+          docker ps -a --no-trunc
+          docker compose logs --timestamps
+          docker compose down
+
+      - name: local-trunk-release
+        working-directory: packages/sshnoports/test/end2end_tests/tests/local-trunk-release
+        run: |
+          docker compose build
+          docker compose up --abort-on-container-exit --exit-code-from=container-sshnp -t=${{ env.CONTAINER_TIMEOUT }}
           docker ps -a --no-trunc
           docker compose logs --timestamps
           docker compose down
