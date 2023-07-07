@@ -12,7 +12,7 @@ on:
 env:
   SSHNP_ATSIGN: "@jeremy_0"
   SSHNPD_ATSIGN: "@smoothalligator"
-  SSHRVD_ATSIGN: "@tastlessbanana"
+  SSHRVD_ATSIGN: "@tastelessbanana"
   CONTAINER_TIMEOUT: "300" # seconds
 
 jobs:
