@@ -47,7 +47,7 @@ jobs:
         working-directory: packages/sshnoports/test/end2end_tests/tests/local-trunk-release
         run: |
           docker compose build
-          docker compose up --abort-on-container-exit
+          docker compose up --abort-on-container-exit --exit-code-from=container-sshnp
           docker ps -a --no-trunc
           docker compose logs --timestamps
           docker compose down
@@ -56,7 +56,7 @@ jobs:
         working-directory: packages/sshnoports/test/end2end_tests/tests/trunk-local-release
         run: |
           docker compose build
-          docker compose up --abort-on-container-exit
+          docker compose up --abort-on-container-exit --exit-code-from=container-sshnp
           docker ps -a --no-trunc
           docker compose logs --timestamps
           docker compose down
@@ -65,7 +65,7 @@ jobs:
         working-directory: packages/sshnoports/test/end2end_tests/tests/local-local-local
         run: |
           docker compose build
-          docker compose up --abort-on-container-exit
+          docker compose up --abort-on-container-exit --exit-code-from=container-sshnp
           docker ps -a --no-trunc
           docker compose logs --timestamps
           docker compose down
@@ -74,7 +74,7 @@ jobs:
         working-directory: packages/sshnoports/test/end2end_tests/tests/trunk-trunk-trunk
         run: |
           docker compose build
-          docker compose up --abort-on-container-exit
+          docker compose up --abort-on-container-exit --exit-code-from=container-sshnp
           docker ps -a --no-trunc
           docker compose logs --timestamps
           docker compose down
