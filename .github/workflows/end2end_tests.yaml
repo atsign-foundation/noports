@@ -57,6 +57,7 @@ jobs:
         run: |
           docker compose build
           docker compose up --abort-on-container-exit --exit-code-from=container-sshnp
+          echo "Printing information ------"
           docker ps -a --no-trunc
           docker compose logs --timestamps
           docker compose down
@@ -66,6 +67,7 @@ jobs:
         run: |
           docker compose build
           docker compose up --abort-on-container-exit --exit-code-from=container-sshnp
+          echo "Printing information ------"
           docker ps -a --no-trunc
           docker compose logs --timestamps
           docker compose down
@@ -75,6 +77,7 @@ jobs:
         run: |
           docker compose build
           docker compose up --abort-on-container-exit --exit-code-from=container-sshnp
+          echo "Printing information ------"
           docker ps -a --no-trunc
           docker compose logs --timestamps
           docker compose down
