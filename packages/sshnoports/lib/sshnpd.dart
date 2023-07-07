@@ -18,31 +18,30 @@ import 'package:uuid/uuid.dart';
 // local packages
 import 'package:sshnoports/version.dart';
 import 'package:sshnoports/service_factories.dart';
-import 'package:sshnoports/sshnpd_utils.dart';
+import 'package:sshnoports/utils.dart';
 
 const String nameSpace = 'sshnp';
 
 class SSHNPD {
+  final AtSignLogger logger = AtSignLogger(' sshnpd ');
 
-  final AtSignLogger logger = AtSignLogger(' sshnpd '); 
-  
   /// The [AtClient] used to communicate with sshnpd and sshrvd
-  late AtClient atClient; 
+  late AtClient atClient;
 
   // ====================================================================
   // Final instance variables, injected via constructor
   // ====================================================================
   /// The user name on this host
-  final String username; 
+  final String username;
 
   /// The home directory on this host
-  final String homeDirectory; 
+  final String homeDirectory;
 
   /// The device name on this host
   final String device;
 
   String get deviceAtsign => atClient.getCurrentAtSign()!;
-  late final String managerAtsign; 
+  late final String managerAtsign;
 
   /// true once [init] has completed
   @visibleForTesting
@@ -103,11 +102,10 @@ class SSHNPD {
         ..metadata = metaData;
 
       try {
-        await notificationService
-            .notify(NotificationParams.forUpdate(atKey, value: username),
-                waitForFinalDeliveryStatus: false,
-                checkForFinalDeliveryStatus: false,
-                onSuccess: (notification) {
+        await notificationService.notify(
+            NotificationParams.forUpdate(atKey, value: username),
+            waitForFinalDeliveryStatus: false,
+            checkForFinalDeliveryStatus: false, onSuccess: (notification) {
           logger.info('SUCCESS:$notification $username');
         }, onError: (notification) {
           logger.info('ERROR:$notification $username');
