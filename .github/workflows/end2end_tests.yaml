@@ -1,0 +1,104 @@
+name: end2end_tests
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - trunk
+  pull_request:
+    branches:
+      - trunk
+
+env:
+  SSHNP_ATSIGN: "@jeremy_0"
+  SSHNPD_ATSIGN: "@smoothalligator"
+  SSHRVD_ATSIGN: "@tastelessbanana"
+  CONTAINER_TIMEOUT: 60 # 1 minute, exit if container takes longer than this to finish
+
+jobs:
+  end2end_tests_trunk:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9 # v3.5.3
+
+      - name: (Debug) View files
+        continue-on-error: true # in case step fails, pass anyway
+        working-directory: packages/sshnoports
+        run: |
+          ls -la
+          pwd
+
+      - name: Copy keys
+        working-directory: packages/sshnoports/test/end2end_tests/contexts
+        run: |
+          echo "${{ secrets.JEREMY_0_KEY }}" > sshnp/keys/${{ env.SSHNP_ATSIGN }}_key.atKeys
+          echo "${{ secrets.SMOOTHALLIGATOR_KEY }}" > sshnpd/keys/${{ env.SSHNPD_ATSIGN }}_key.atKeys
+          echo "${{ secrets.TASTELESSBANANA_KEY }}" > sshrvd/keys/${{ env.SSHRVD_ATSIGN }}_key.atKeys
+
+      - name: Fix all entrypoint.sh to match atSigns
+        working-directory: packages/sshnoports/test/end2end_tests/contexts
+        run: |
+          sed -i "s/@sshnpatsign/${{ env.SSHNP_ATSIGN }}/g" sshnp/entrypoint.sh
+          sed -i "s/@sshnpdatsign/${{ env.SSHNPD_ATSIGN }}/g" sshnp/entrypoint.sh
+          sed -i "s/@sshrvdatsign/${{ env.SSHRVD_ATSIGN }}/g" sshnp/entrypoint.sh
+          sed -i "s/@sshnpatsign/${{ env.SSHNP_ATSIGN }}/g" sshnpd/entrypoint.sh
+          sed -i "s/@sshnpdatsign/${{ env.SSHNPD_ATSIGN }}/g" sshnpd/entrypoint.sh
+          sed -i "s/@sshrvdatsign/${{ env.SSHRVD_ATSIGN }}/g" sshnpd/entrypoint.sh
+          sed -i "s/@sshnpatsign/${{ env.SSHNP_ATSIGN }}/g" sshrvd/entrypoint.sh
+          sed -i "s/@sshnpdatsign/${{ env.SSHNPD_ATSIGN }}/g" sshrvd/entrypoint.sh
+          sed -i "s/@sshrvdatsign/${{ env.SSHRVD_ATSIGN }}/g" sshrvd/entrypoint.sh
+          cat sshnp/entrypoint.sh
+          cat sshnpd/entrypoint.sh
+          cat sshrvd/entrypoint.sh
+
+      - name: (Debug) Show .atKeys
+        continue-on-error: true # in case step fails, pass anyway
+        working-directory: packages/sshnoports/test/end2end_tests/contexts
+        run: |
+          ls sshnp/keys
+          ls sshnpd/keys
+          ls sshrvd/keys
+
+      - name: Build images
+        working-directory: packages/sshnoports/test/end2end_tests/tests
+        run: |
+          cd local-local-local ; docker compose build ; cd ..
+          cd local-trunk-release ; docker compose build ; cd ..
+          cd trunk-local-release ; docker compose build ; cd ..
+          cd trunk-trunk-trunk ; docker compose build ; cd ..
+
+      - name: trunk-trunk-trunk
+        working-directory: packages/sshnoports/test/end2end_tests/tests/trunk-trunk-trunk
+        run: |
+          docker compose up --build --no-recreate --exit-code-from=container-sshnp -t=${{ env.CONTAINER_TIMEOUT }}
+          echo "Printing information ------"
+          docker ps -a --no-trunc
+          docker compose logs --timestamps
+          docker compose down
+
+      - name: trunk-local-release
+        working-directory: packages/sshnoports/test/end2end_tests/tests/trunk-local-release
+        run: |
+          docker compose up --build --no-recreate --exit-code-from=container-sshnp -t=${{ env.CONTAINER_TIMEOUT }}
+          echo "Printing information ------"
+          docker ps -a --no-trunc
+          docker compose logs --timestamps
+          docker compose down
+
+      - name: local-trunk-release
+        working-directory: packages/sshnoports/test/end2end_tests/tests/local-trunk-release
+        run: |
+          docker compose up --build --no-recreate --exit-code-from=container-sshnp -t=${{ env.CONTAINER_TIMEOUT }}
+          docker ps -a --no-trunc
+          docker compose logs --timestamps
+          docker compose down
+
+      - name: local-local-local
+        working-directory: packages/sshnoports/test/end2end_tests/tests/local-local-local
+        run: |
+          docker compose up --build --no-recreate --exit-code-from=container-sshnp -t=${{ env.CONTAINER_TIMEOUT }}
+          echo "Printing information ------"
+          docker ps -a --no-trunc
+          docker compose logs --timestamps
+          docker compose down

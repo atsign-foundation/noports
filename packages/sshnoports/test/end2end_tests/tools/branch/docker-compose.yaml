@@ -1,0 +1,53 @@
+
+version: '3.8'
+
+services:
+  image-manual-branch:
+    build:
+      context: ../../image/
+      dockerfile: ./Dockerfile
+      target: manual-branch
+      args:
+        - branch=trunk
+    image: atsigncompany/sshnp-e2e-manual:branch
+    deploy:
+      mode: replicated
+      replicas: 0
+  container-branch-sshnpd:
+    image: atsigncompany/sshnp-e2e-manual:branch
+    container_name: manual_branch_sshnpd
+    volumes:
+      - ../../contexts/sshnpd/keys/:/atsign/.atsign/keys/ # mount keys
+      - ../../contexts/sshnpd/entrypoint.sh:/atsign/entrypoint.sh # mount entrypoint
+    networks:
+      - sshnpd
+    depends_on:
+      - image-manual-branch
+  container-branch-sshnp:
+    image: atsigncompany/sshnp-e2e-manual:branch
+    container_name: manual_branch_sshnp
+    volumes:
+      - ../../contexts/sshnp/keys/:/atsign/.atsign/keys/ # mount keys
+      - ../../contexts/sshnp/entrypoint.sh:/atsign/entrypoint.sh # mount entrypoint
+    networks:
+      - sshnp
+    depends_on:
+      - image-manual-branch
+  container-branch-sshrvd:
+    image: atsigncompany/sshnp-e2e-manual:branch
+    container_name: manual_branch_sshrvd
+    volumes:
+      - ../../contexts/sshrvd/keys/:/atsign/.atsign/keys/ # mount keys
+      - ../../contexts/sshrvd/entrypoint.sh:/atsign/entrypoint.sh # mount entrypoint
+    network_mode: host
+    depends_on:
+      - image-manual-branch
+
+
+networks:
+  sshnpd:
+    name: atsigncompany/sshnp-e2e-manual-network-sshnpd
+    driver: bridge
+  sshnp:
+    name: atsigncompany/sshnp-e2e-manual-network-sshnp
+    driver: bridge
