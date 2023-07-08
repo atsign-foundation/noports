@@ -1,15 +1,15 @@
 #!/bin/bash
-~/.local/bin/sshnp -f @sshnpatsign -t @sshnpdatsign -d e2e -h @sshrvdatsign -s id_ed25519.pub -v > logs.txt
+~/.local/bin/sshnp -f @jeremy_0 -t @smoothalligator -d lemonade -h @rv_am -s id_ed25519.pub -v > logs.txt
 cat logs.txt
-tail -n 5 logs.txt | grep "ssh -p" > command.txt
+tail -n 5 logs.txt | grep "ssh -p" > sshcommand.txt
 
-# if command.txt is empty, exit 1
-if [ ! -s command.txt ]
+# if sshcommand.txt is empty, exit 1
+if [ ! -s sshcommand.txt ]
 then
-    echo "command.txt is empty"
+    echo "sshcommand.txt is empty"
     tail -n 1 logs.txt || echo
     exit 1
 fi
 
-echo " -o StrictHostKeyChecking=no " >> command.txt ;
-echo "sh test.sh ; sh test.sh ; sh test.sh ; exit " | $(cat command.txt)
+echo " -o StrictHostKeyChecking=no " >> sshcommand.txt ;
+echo "sh test.sh " | $(cat sshcommand.txt)

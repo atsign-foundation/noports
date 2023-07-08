@@ -1,10 +1,10 @@
 #!/bin/bash
-~/.local/bin/sshnp -f @sshnpatsign -t @sshnpdatsign -d e2e -h @sshrvdatsign -s id_ed25519.pub -v > logs.txt
+~/.local/bin/sshnp -f @sshnpatsign -t @sshnpdatsign -d deviceName -h @sshrvdatsign -s id_ed25519.pub -v > logs.txt
 cat logs.txt
 tail -n 5 logs.txt | grep "ssh -p" > sshcommand.txt
 
 # if sshcommand.txt is empty, exit 1
-if [ ! -s command.txt ]
+if [ ! -s sshcommand.txt ]
 then
     echo "sshcommand.txt is empty"
     tail -n 1 logs.txt || echo
@@ -12,4 +12,4 @@ then
 fi
 
 echo " -o StrictHostKeyChecking=no " >> sshcommand.txt ;
-echo "sh test.sh ; sh test.sh ; sh test.sh ; exit " | $(cat sshcommand.txt)
+echo "sh test.sh " | $(cat sshcommand.txt)

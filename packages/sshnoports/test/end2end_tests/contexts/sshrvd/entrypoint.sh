@@ -1,1 +1,2 @@
-~/.local/bin/sshrvd -a @sshrvdatsign -i $(hostname -i) -v -s
+#!/bin/bash
+~/.local/bin/sshrvd -a @tastelessbanana -i $(hostname -i) -v -s
