@@ -7,41 +7,34 @@ services:
       context: ../../image/
       dockerfile: ./Dockerfile
       target: manual-release
-      args:
-        - release=3.3.0
     image: atsigncompany/sshnp-e2e-manual:release
     deploy:
       mode: replicated
       replicas: 0
-  container-release-sshnpd:
-    image: atsigncompany/sshnp-e2e-manual:release
-    container_name: manual_release_sshnpd
-    volumes:
-      - ../../contexts/sshnpd/keys/:/atsign/.atsign/keys/ # mount keys
-      - ../../contexts/sshnpd/entrypoint.sh:/atsign/entrypoint.sh # mount entrypoint
-    networks:
-      - sshnpd
-    command: sudo service ssh start
-    depends_on:
-      - image-manual-release
-  container-release-sshnp:
+  container-sshnp:
     image: atsigncompany/sshnp-e2e-manual:release
     container_name: manual_release_sshnp
     volumes:
       - ../../contexts/sshnp/keys/:/atsign/.atsign/keys/ # mount keys
-      - ../../contexts/sshnp/entrypoint.sh:/atsign/entrypoint.sh # mount entrypoint
     networks:
       - sshnp
     depends_on:
       - image-manual-release
-  container-release-sshrvd:
+  container-sshnpd:
+    image: atsigncompany/sshnp-e2e-manual:release
+    container_name: manual_release_sshnpd
+    volumes:
+      - ../../contexts/sshnpd/keys/:/atsign/.atsign/keys/ # mount keys
+    networks:
+      - sshnpd
+    depends_on:
+      - image-manual-release
+  container-sshrvd:
     image: atsigncompany/sshnp-e2e-manual:release
     container_name: manual_release_sshnp
     volumes:
       - ../../contexts/sshrvd/keys/:/atsign/.atsign/keys/ # mount keys
-      - ../../contexts/sshrvd/entrypoint.sh:/atsign/entrypoint.sh # mount entrypoint
     network_mode: host
-    command: sudo service ssh start
     depends_on:
       - image-manual-release
 

@@ -11,32 +11,29 @@ services:
     deploy:
       mode: replicated
       replicas: 0
-  container-blank-sshnpd:
+  container-sshnpd:
     image: atsigncompany/sshnp-e2e-manual:blank
     container_name: manual_blank_sshnpd
     volumes:
       - ../../contexts/sshnpd/keys/:/atsign/.atsign/keys/ # mount keys
-      - ../../contexts/sshnpd/entrypoint.sh:/atsign/entrypoint.sh # mount entrypoint
     networks:
       - sshnpd
     depends_on:
       - image-manual-blank
-  container-blank-sshnp:
+  container-sshnp:
     image: atsigncompany/sshnp-e2e-manual:blank
     container_name: manual_blank_sshnp
     volumes:
       - ../../contexts/sshnp/keys/:/atsign/.atsign/keys/ # mount keys
-      - ../../contexts/sshnp/entrypoint.sh:/atsign/entrypoint.sh # mount entrypoint
     networks:
       - sshnp
     depends_on:
       - image-manual-blank
-  container-blank-sshrvd:
+  container-sshrvd:
     image: atsigncompany/sshnp-e2e-manual:blank
     container_name: manual_blank_sshrvd
     volumes:
       - ../../contexts/sshrvd/keys/:/atsign/.atsign/keys/ # mount keys
-      - ../../contexts/sshrvd/entrypoint.sh:/atsign/entrypoint.sh # mount entrypoint
     network_mode: host
     depends_on:
       - image-manual-blank

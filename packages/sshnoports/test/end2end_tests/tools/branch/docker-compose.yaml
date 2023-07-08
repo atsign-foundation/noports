@@ -13,32 +13,29 @@ services:
     deploy:
       mode: replicated
       replicas: 0
-  container-branch-sshnpd:
+  container-sshnpd:
     image: atsigncompany/sshnp-e2e-manual:branch
     container_name: manual_branch_sshnpd
     volumes:
       - ../../contexts/sshnpd/keys/:/atsign/.atsign/keys/ # mount keys
-      - ../../contexts/sshnpd/entrypoint.sh:/atsign/entrypoint.sh # mount entrypoint
     networks:
       - sshnpd
     depends_on:
       - image-manual-branch
-  container-branch-sshnp:
+  container-sshnp:
     image: atsigncompany/sshnp-e2e-manual:branch
     container_name: manual_branch_sshnp
     volumes:
       - ../../contexts/sshnp/keys/:/atsign/.atsign/keys/ # mount keys
-      - ../../contexts/sshnp/entrypoint.sh:/atsign/entrypoint.sh # mount entrypoint
     networks:
       - sshnp
     depends_on:
       - image-manual-branch
-  container-branch-sshrvd:
+  container-sshrvd:
     image: atsigncompany/sshnp-e2e-manual:branch
     container_name: manual_branch_sshrvd
     volumes:
       - ../../contexts/sshrvd/keys/:/atsign/.atsign/keys/ # mount keys
-      - ../../contexts/sshrvd/entrypoint.sh:/atsign/entrypoint.sh # mount entrypoint
     network_mode: host
     depends_on:
       - image-manual-branch

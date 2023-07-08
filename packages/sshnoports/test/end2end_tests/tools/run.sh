@@ -124,32 +124,19 @@ parse_args() {
 
 main() {
     command="cd $type"
+    dockercmd1="sudo docker compose build"
+    dockercmd2="sudo docker compose run -it container-$tag"
     if [[ $type == "branch" ]];
     then
-        dockercmd1="sudo docker compose build --build-arg branch=$branch"
-        dockercmd2="sudo docker compose run -it container-branch-$tag"
+        dockercmd1="$dockercmd1 --build-arg branch=$branch"
     fi
 
     if [[ $type == "release" ]];
     then
-        dockercmd1="sudo docker compose build"
         if [[ ! ($release == true) ]]; # if release was provided, pass it as a build arg
         then
             dockercmd1="$dockercmd1 --build-arg release=$release"
         fi
-        dockercmd2="sudo docker compose run -it container-release-$tag"
-    fi
-
-    if [[ $type == "local" ]];
-    then
-        dockercmd1="sudo docker compose build"
-        dockercmd2="sudo docker compose run -it container-local-$tag"
-    fi
-
-    if [[ $type == "blank" ]];
-    then
-        dockercmd1="sudo docker compose build"
-        dockercmd2="sudo docker compose run -it container-blank-$tag"
     fi
 
     command="$command ; $dockercmd1"
