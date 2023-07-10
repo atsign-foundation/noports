@@ -17,7 +17,7 @@ env:
   CONTAINER_TIMEOUT: 60 # 1 minute, exit if container takes longer than this to finish
 
 jobs:
-  end2end_tests_prep:
+  e2e_prep:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -56,18 +56,39 @@ jobs:
         working-directory: packages/sshnoports/test/end2end_tests/tests
         run: |
           cd local-trunk-release ; docker compose build ; cd ..
-  e2e_trunk-trunk-trunk:
+
+  e2e_local-local-local:
     runs-on: ubuntu-latest
-    needs: end2end_tests_prep
+    needs: e2e_prep
     steps:
-      - name: trunk-trunk-trunk
-        working-directory: packages/sshnoports/test/end2end_tests/tests/trunk-trunk-trunk
+      - name: run test - docker compose up
+        working-directory: packages/sshnoports/test/end2end_tests/tests/local-local-local
         run: |
           docker compose up --build --no-recreate --exit-code-from=container-sshnp -t=${{ env.CONTAINER_TIMEOUT }}
+      - name: print logs
+        working-directory: packages/sshnoports/test/end2end_tests/tests/local-local-local
+        run: |
           echo "Printing information ------"
           docker ps -a --no-trunc
           docker compose logs --timestamps
           docker compose down
+
+  e2e_trunk-trunk-trunk:
+    runs-on: ubuntu-latest
+    needs: e2e_prep
+    steps:
+      - name: run test - docker compose up
+        working-directory: packages/sshnoports/test/end2end_tests/tests/trunk-trunk-trunk
+        run: |
+          docker compose up --build --no-recreate --exit-code-from=container-sshnp -t=${{ env.CONTAINER_TIMEOUT }}
+      - name: print logs
+        working-directory: packages/sshnoports/test/end2end_tests/tests/trunk-trunk-trunk
+        run: |
+          echo "Printing information ------"
+          docker ps -a --no-trunc
+          docker compose logs --timestamps
+          docker compose down
+  e2e_trunk-local-release:
 
       # - name: trunk-trunk-trunk
       #   working-directory: packages/sshnoports/test/end2end_tests/tests/trunk-trunk-trunk
