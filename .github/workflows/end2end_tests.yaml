@@ -15,13 +15,13 @@ env:
   SSHRVD_ATSIGN: "@8485wealthy51"
   DOCKER_COMPOSE_UP_CMD: "docker compose up --exit-code-from=container-sshnp --attach=container-sshnp -t=60 --timestamps --no-recreate"
   DOCKER_COMPOSE_DOWN_CMD: "docker compose down"
-  DEVICE_NAME_LOCAL-LOCAL-LOCAL: "locallocallocal"
-  DEVICE_NAME_LOCAL-LOCAL-RELEASE: "locallocalrelease"
-  DEVICE_NAME_LOCAL-TRUNK-RELEASE: "localtrunkrelease"
-  DEVICE_NAME_RELEASE-RELEASE-RELEASE: "releasereleaserelease"
-  DEVICE_NAME_TRUNK-LOCAL-RELEASE: "trunklocalrelease"
-  DEVICE_NAME_TRUNK-TRUNK-RELEASE: "trunktrunkrelease"
-  DEVICE_NAME_TRUNK-TRUNK-TRUNK: "trunktrunktrunk"
+  DEVICE_NAME_LOCAL-LOCAL-LOCAL: "e2e1"
+  DEVICE_NAME_LOCAL-LOCAL-RELEASE: "e2e2"
+  DEVICE_NAME_LOCAL-TRUNK-RELEASE: "e2e3"
+  DEVICE_NAME_RELEASE-RELEASE-RELEASE: "e2e4"
+  DEVICE_NAME_TRUNK-LOCAL-RELEASE: "e2e5"
+  DEVICE_NAME_TRUNK-TRUNK-RELEASE: "e2e6"
+  DEVICE_NAME_TRUNK-TRUNK-TRUNK: "e2e7"
 
 jobs:
   end2end_tests:
