@@ -4,11 +4,11 @@ sleep 2 # time for sshnpd to share device name
 cat logs.txt
 tail -n 5 logs.txt | grep "ssh -p" > sshcommand.txt
 
-# if sshcommand.txt is empty, exit 1
 if [ ! -s sshcommand.txt ]
 then
-    echo "sshcommand.txt is empty"
-    tail -n 1 logs.txt || echo
+    echo "could not find \'ssh -p\' command in logs.txt"
+    echo "last 5 lines of logs.txt:"
+    tail -n 5 logs.txt || echo
     exit 1
 fi
 
