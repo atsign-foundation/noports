@@ -13,9 +13,15 @@ env:
   SSHNP_ATSIGN: "@8incanteater"
   SSHNPD_ATSIGN: "@8052simple"
   SSHRVD_ATSIGN: "@8485wealthy51"
-  DEVICE_NAME: "e2e"
   DOCKER_COMPOSE_UP_CMD: "docker compose up --exit-code-from=container-sshnp --attach=container-sshnp -t=60"
   DOCKER_COMPOSE_DOWN_CMD: "docker compose down"
+  DEVICE_NAME_LOCAL-LOCAL-LOCAL: "local-local-local"
+  DEVICE_NAME_LOCAL-LOCAL-RELEASE: "local-local-release"
+  DEVICE_NAME_LOCAL-TRUNK-RELEASE: "local-trunk-release"
+  DEVICE_NAME_RELEASE-RELEASE-RELEASE: "release-release-release"
+  DEVICE_NAME_TRUNK-LOCAL-RELEASE: "trunk-local-release"
+  DEVICE_NAME_TRUNK-TRUNK-RELEASE: "trunk-trunk-release"
+  DEVICE_NAME_TRUNK-TRUNK-TRUNK: "trunk-trunk-trunk"
 
 jobs:
   end2end_tests:
@@ -39,20 +45,6 @@ jobs:
           ls sshnpd/keys
           ls sshrvd/keys
 
-      - name: Set up entrypoints
-        working-directory: packages/sshnoports/test/end2end_tests/tools/configuration
-        run: |
-          ./setup-sshnp-entrypoint.sh ${{ env.DEVICE_NAME }} ${{ env.SSHNP_ATSIGN }} ${{ env.SSHNPD_ATSIGN }} ${{ env.SSHRVD_ATSIGN }}
-          ./setup-sshnpd-entrypoint.sh ${{ env.DEVICE_NAME }} ${{ env.SSHNP_ATSIGN }} ${{ env.SSHNPD_ATSIGN }}
-          ./setup-sshrvd-entrypoint.sh ${{ env.SSHRVD_ATSIGN }}
-
-      - name: Ensure entrypoints exist
-        working-directory: packages/sshnoports/test/end2end_tests/contexts
-        run: |
-          cat sshnp/entrypoint.sh
-          cat sshnpd/entrypoint.sh
-          cat sshrvd/entrypoint.sh
-
       - name: Docker compose build
         working-directory: packages/sshnoports/test/end2end_tests/tests/local-trunk-release
         run: |
@@ -61,41 +53,62 @@ jobs:
       - name: local-local-local
         working-directory: packages/sshnoports/test/end2end_tests/tests/local-local-local
         run: |
+          ./setup-sshnp-entrypoint.sh ${{ env.DEVICE_NAME_LOCAL-LOCAL-LOCAL }} ${{ env.SSHNP_ATSIGN }} ${{ env.SSHNPD_ATSIGN }} ${{ env.SSHRVD_ATSIGN }}
+          ./setup-sshnpd-entrypoint.sh ${{ env.DEVICE_NAME_LOCAL-LOCAL-LOCAL }} ${{ env.SSHNP_ATSIGN }} ${{ env.SSHNPD_ATSIGN }}
+          ./setup-sshrvd-entrypoint.sh ${{ env.SSHRVD_ATSIGN }}
           ${{ env.DOCKER_COMPOSE_UP_CMD }}
           ${{ env.DOCKER_COMPOSE_DOWN_CMD }}
 
       - name: local-local-release
         working-directory: packages/sshnoports/test/end2end_tests/tests/local-local-release
         run: |
+          ./setup-sshnp-entrypoint.sh ${{ env.DEVICE_NAME_LOCAL-LOCAL-RELEASE }} ${{ env.SSHNP_ATSIGN }} ${{ env.SSHNPD_ATSIGN }} ${{ env.SSHRVD_ATSIGN }}
+          ./setup-sshnpd-entrypoint.sh ${{ env.DEVICE_NAME_LOCAL-LOCAL-RELEASE }} ${{ env.SSHNP_ATSIGN }} ${{ env.SSHNPD_ATSIGN }}
+          ./setup-sshrvd-entrypoint.sh ${{ env.SSHRVD_ATSIGN }}
           ${{ env.DOCKER_COMPOSE_UP_CMD }}
           ${{ env.DOCKER_COMPOSE_DOWN_CMD }}
 
       - name: local-trunk-release
         working-directory: packages/sshnoports/test/end2end_tests/tests/local-trunk-release
         run: |
+          ./setup-sshnp-entrypoint.sh ${{ env.DEVICE_NAME_LOCAL-TRUNK-RELEASE }} ${{ env.SSHNP_ATSIGN }} ${{ env.SSHNPD_ATSIGN }} ${{ env.SSHRVD_ATSIGN }}
+          ./setup-sshnpd-entrypoint.sh ${{ env.DEVICE_NAME_LOCAL-TRUNK-RELEASE }} ${{ env.SSHNP_ATSIGN }} ${{ env.SSHNPD_ATSIGN }}
+          ./setup-sshrvd-entrypoint.sh ${{ env.SSHRVD_ATSIGN }}
           ${{ env.DOCKER_COMPOSE_UP_CMD }}
           ${{ env.DOCKER_COMPOSE_DOWN_CMD }}
 
       - name: release-release-release
         working-directory: packages/sshnoports/test/end2end_tests/tests/release-release-release
         run: |
+          ./setup-sshnp-entrypoint.sh ${{ env.DEVICE_NAME_RELEASE-RELEASE-RELEASE }} ${{ env.SSHNP_ATSIGN }} ${{ env.SSHNPD_ATSIGN }} ${{ env.SSHRVD_ATSIGN }}
+          ./setup-sshnpd-entrypoint.sh ${{ env.DEVICE_NAME_RELEASE-RELEASE-RELEASE }} ${{ env.SSHNP_ATSIGN }} ${{ env.SSHNPD_ATSIGN }}
+          ./setup-sshrvd-entrypoint.sh ${{ env.SSHRVD_ATSIGN }}
           ${{ env.DOCKER_COMPOSE_UP_CMD }}
           ${{ env.DOCKER_COMPOSE_DOWN_CMD }}
 
       - name: trunk-local-release
         working-directory: packages/sshnoports/test/end2end_tests/tests/trunk-local-release
         run: |
+          ./setup-sshnp-entrypoint.sh ${{ env.DEVICE_NAME_TRUNK-LOCAL-RELEASE }} ${{ env.SSHNP_ATSIGN }} ${{ env.SSHNPD_ATSIGN }} ${{ env.SSHRVD_ATSIGN }}
+          ./setup-sshnpd-entrypoint.sh ${{ env.DEVICE_NAME_TRUNK-LOCAL-RELEASE }} ${{ env.SSHNP_ATSIGN }} ${{ env.SSHNPD_ATSIGN }}
+          ./setup-sshrvd-entrypoint.sh ${{ env.SSHRVD_ATSIGN }}
           ${{ env.DOCKER_COMPOSE_UP_CMD }}
           ${{ env.DOCKER_COMPOSE_DOWN_CMD }}
 
       - name: trunk-trunk-release
         working-directory: packages/sshnoports/test/end2end_tests/tests/trunk-trunk-release
         run: |
+          ./setup-sshnp-entrypoint.sh ${{ env.DEVICE_NAME_TRUNK-TRUNK-RELEASE }} ${{ env.SSHNP_ATSIGN }} ${{ env.SSHNPD_ATSIGN }} ${{ env.SSHRVD_ATSIGN }}
+          ./setup-sshnpd-entrypoint.sh ${{ env.DEVICE_NAME_TRUNK-TRUNK-RELEASE }} ${{ env.SSHNP_ATSIGN }} ${{ env.SSHNPD_ATSIGN }}
+          ./setup-sshrvd-entrypoint.sh ${{ env.SSHRVD_ATSIGN }}
           ${{ env.DOCKER_COMPOSE_UP_CMD }}
           ${{ env.DOCKER_COMPOSE_DOWN_CMD }}
 
       - name: trunk-trunk-trunk
         working-directory: packages/sshnoports/test/end2end_tests/tests/trunk-trunk-trunk
         run: |
+          ./setup-sshnp-entrypoint.sh ${{ env.DEVICE_NAME_TRUNK-TRUNK-TRUNK }} ${{ env.SSHNP_ATSIGN }} ${{ env.SSHNPD_ATSIGN }} ${{ env.SSHRVD_ATSIGN }}
+          ./setup-sshnpd-entrypoint.sh ${{ env.DEVICE_NAME_TRUNK-TRUNK-TRUNK }} ${{ env.SSHNP_ATSIGN }} ${{ env.SSHNPD_ATSIGN }}
+          ./setup-sshrvd-entrypoint.sh ${{ env.SSHRVD_ATSIGN }}
           ${{ env.DOCKER_COMPOSE_UP_CMD }}
           ${{ env.DOCKER_COMPOSE_DOWN_CMD }}
