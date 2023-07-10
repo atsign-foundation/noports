@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# this script copies the keys from ~/.atsign/keys to ../../contexts/sshnpd/keys
+# example usage: ./setup-sshnpd-keys.sh @alice
+
 sshnpd=$1
 
 cp ~/.atsign/keys/${sshnpd}_key.atKeys ../../contexts/sshnpd/keys/${sshnpd}_key.atKeys

@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# this script copies the keys from ~/.atsign/keys to ../../contexts/sshnp/keys
+# example usage: ./setup-sshnp-keys.sh @alice
+
 sshnp=$1
 
 cp ~/.atsign/keys/${sshnp}_key.atKeys ../../contexts/sshnp/keys/${sshnp}_key.atKeys

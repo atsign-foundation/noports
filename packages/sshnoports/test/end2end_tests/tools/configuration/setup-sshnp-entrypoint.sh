@@ -1,5 +1,9 @@
 #!/bin/bash
 
+# this script copies the template sshnp entrypoint to ../../contexts/sshnp/entrypoint.sh
+# then also replaces the device name, sshnp atSign, sshnpd atSign, and sshrvd atSign with the provided arguments
+# example usage: ./setup-sshnp-entrypoint.sh e2e @alice @alice @alice
+
 device=$1 # e.g. e2e
 sshnp=$2 # e.g. @alice
 sshnpd=$3 # e.g. @alice

@@ -1,5 +1,9 @@
 #!/bin/bash
 
+# this script copies the template entrypoint to ../../contexts/sshnpd/entrypoint.sh
+# then also replaces the @sshnpatsign, @sshnpdatsign and device name with the provided arguments
+# example usage: ./setup-sshnpd-entrypoint.sh e2e @alice @alice
+
 device=$1 # e.g. e2e
 sshnp=$2 # e.g. @alice
 sshnpd=$3 # e.g. @alice
