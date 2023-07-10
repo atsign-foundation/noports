@@ -14,7 +14,8 @@ env:
   SSHNPD_ATSIGN: "@8052simple"
   SSHRVD_ATSIGN: "@8485wealthy51"
   DEVICE_NAME: "e2e"
-  CONTAINER_TIMEOUT: 60 # 1 minute, exit if container takes longer than this to finish
+  DOCKER_COMPOSE_UP_CMD: "docker compose up --exit-code-from=container-sshnp --attach=container-sshnp -t=60"
+  DOCKER_COMPOSE_DOWN_CMD: "docker compose down"
 
 jobs:
   end2end_tests:
@@ -60,41 +61,41 @@ jobs:
       - name: local-local-local
         working-directory: packages/sshnoports/test/end2end_tests/tests/local-local-local
         run: |
-          docker compose up --exit-code-from=container-sshnp -a=container-sshnp -t=${{ env.CONTAINER_TIMEOUT }}
-          docker compose down
+          ${{ env.DOCKER_COMPOSE_UP_CMD }}
+          ${{ env.DOCKER_COMPOSE_DOWN_CMD }}
 
       - name: local-local-release
         working-directory: packages/sshnoports/test/end2end_tests/tests/local-local-release
         run: |
-          docker compose up --exit-code-from=container-sshnp -a=container-sshnp -t=${{ env.CONTAINER_TIMEOUT }}
-          docker compose down
+          ${{ env.DOCKER_COMPOSE_UP_CMD }}
+          ${{ env.DOCKER_COMPOSE_DOWN_CMD }}
 
       - name: local-trunk-release
         working-directory: packages/sshnoports/test/end2end_tests/tests/local-trunk-release
         run: |
-          docker compose up --exit-code-from=container-sshnp -a=container-sshnp -t=${{ env.CONTAINER_TIMEOUT }}
-          docker compose down
+          ${{ env.DOCKER_COMPOSE_UP_CMD }}
+          ${{ env.DOCKER_COMPOSE_DOWN_CMD }}
 
       - name: release-release-release
         working-directory: packages/sshnoports/test/end2end_tests/tests/release-release-release
         run: |
-          docker compose up --exit-code-from=container-sshnp -a=container-sshnp -t=${{ env.CONTAINER_TIMEOUT }}
-          docker compose down
+          ${{ env.DOCKER_COMPOSE_UP_CMD }}
+          ${{ env.DOCKER_COMPOSE_DOWN_CMD }}
 
       - name: trunk-local-release
         working-directory: packages/sshnoports/test/end2end_tests/tests/trunk-local-release
         run: |
-          docker compose up --exit-code-from=container-sshnp -a=container-sshnp -t=${{ env.CONTAINER_TIMEOUT }}
-          docker compose down
+          ${{ env.DOCKER_COMPOSE_UP_CMD }}
+          ${{ env.DOCKER_COMPOSE_DOWN_CMD }}
 
       - name: trunk-trunk-release
         working-directory: packages/sshnoports/test/end2end_tests/tests/trunk-trunk-release
         run: |
-          docker compose up --exit-code-from=container-sshnp -a=container-sshnp -t=${{ env.CONTAINER_TIMEOUT }}
-          docker compose down
+          ${{ env.DOCKER_COMPOSE_UP_CMD }}
+          ${{ env.DOCKER_COMPOSE_DOWN_CMD }}
 
       - name: trunk-trunk-trunk
         working-directory: packages/sshnoports/test/end2end_tests/tests/trunk-trunk-trunk
         run: |
-          docker compose up --exit-code-from=container-sshnp -a=container-sshnp -t=${{ env.CONTAINER_TIMEOUT }}
-          docker compose down
+          ${{ env.DOCKER_COMPOSE_UP_CMD }}
+          ${{ env.DOCKER_COMPOSE_DOWN_CMD }}
