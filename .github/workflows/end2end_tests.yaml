@@ -166,12 +166,14 @@ jobs:
           ${{ env.DOCKER_COMPOSE_UP_CMD }}
 
       - name: Logs
+        if: always()
         working-directory: packages/sshnoports/test/end2end_tests/tests/local-trunk-release
         run: |
           docker compose ps -a
           docker compose logs --timestamps
 
       - name: Tear down
+        if: always()
         working-directory: packages/sshnoports/test/end2end_tests/tests/local-trunk-release
         run: |
           docker compose down
@@ -201,12 +203,14 @@ jobs:
           ${{ env.DOCKER_COMPOSE_UP_CMD }}
 
       - name: Logs
+        if: always()
         working-directory: packages/sshnoports/test/end2end_tests/tests/release-release-release
         run: |
           docker compose ps -a
           docker compose logs --timestamps
 
       - name: Tear down
+        if: always()
         working-directory: packages/sshnoports/test/end2end_tests/tests/release-release-release
         run: |
           docker compose down
@@ -235,12 +239,14 @@ jobs:
           ${{ env.DOCKER_COMPOSE_UP_CMD }}
 
       - name: Logs
+        if: always()
         working-directory: packages/sshnoports/test/end2end_tests/tests/trunk-local-release
         run: |
           docker compose ps -a
           docker compose logs --timestamps
 
       - name: Tear down
+        if: always()
         working-directory: packages/sshnoports/test/end2end_tests/tests/trunk-local-release
         run: |
           docker compose down
@@ -270,12 +276,14 @@ jobs:
           ${{ env.DOCKER_COMPOSE_UP_CMD }}
 
       - name: Logs
+        if: always()
         working-directory: packages/sshnoports/test/end2end_tests/tests/trunk-trunk-release
         run: |
           docker compose ps -a
           docker compose logs --timestamps
 
       - name: Tear down
+        if: always()
         working-directory: packages/sshnoports/test/end2end_tests/tests/trunk-trunk-release
         run: |
           docker compose down
@@ -305,12 +313,14 @@ jobs:
           ${{ env.DOCKER_COMPOSE_UP_CMD }}
 
       - name: Logs
+        if: always()
         working-directory: packages/sshnoports/test/end2end_tests/tests/trunk-trunk-trunk
         run: |
           docker compose ps -a
           docker compose logs --timestamps
 
       - name: Tear down
+        if: always()
         working-directory: packages/sshnoports/test/end2end_tests/tests/trunk-trunk-trunk
         run: |
           docker compose down
