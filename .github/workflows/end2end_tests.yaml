@@ -43,7 +43,7 @@ jobs:
         run: |
           ./setup-sshnp-entrypoint.sh ${{ env.DEVICE_NAME }} ${{ env.SSHNP_ATSIGN }} ${{ env.SSHNPD_ATSIGN }} ${{ env.SSHRVD_ATSIGN }}
           ./setup-sshnpd-entrypoint.sh ${{ env.DEVICE_NAME }} ${{ env.SSHNP_ATSIGN }} ${{ env.SSHNPD_ATSIGN }}
-          ./setup-sshrvd-entrypoint.sh ${{ env.DEVICE_NAME }} ${{ env.SSHNP_ATSIGN }} ${{ env.SSHNPD_ATSIGN }} ${{ env.SSHRVD_ATSIGN }}
+          ./setup-sshrvd-entrypoint.sh ${{ env.SSHRVD_ATSIGN }}
 
       - name: Ensure entrypoints exist
         working-directory: packages/sshnoports/test/end2end_tests/contexts
