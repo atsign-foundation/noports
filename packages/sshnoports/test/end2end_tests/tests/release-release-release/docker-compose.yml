@@ -1,7 +1,7 @@
 version: '3'
 
 services:
-  image-runtime-trunk:
+  image-runtime-release:
     build:
       context: ../../image/
       dockerfile: ./Dockerfile
@@ -19,7 +19,7 @@ services:
     networks:
       - sshnp
     depends_on:
-      - image-runtime-trunk
+      - image-runtime-release
       - container-sshnpd
   container-sshnpd:
     image: atsigncompany/sshnp-e2e-runtime:release
@@ -31,7 +31,7 @@ services:
     networks:
       - sshnpd
     depends_on:
-      - image-runtime-trunk
+      - image-runtime-release
       - container-sshrvd
   container-sshrvd:
     image: atsigncompany/sshnp-e2e-runtime:release
@@ -41,7 +41,7 @@ services:
       - ../../contexts/sshrvd/entrypoint.sh:/atsign/entrypoint.sh # mount entrypoint
     network_mode: host
     depends_on:
-      - image-runtime-trunk
+      - image-runtime-release
 
 networks:
   sshnp:
