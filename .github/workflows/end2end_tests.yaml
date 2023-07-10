@@ -13,7 +13,7 @@ env:
   SSHNP_ATSIGN: "@8incanteater"
   SSHNPD_ATSIGN: "@8052simple"
   SSHRVD_ATSIGN: "@8485wealthy51"
-  DOCKER_COMPOSE_UP_CMD: "docker compose up --exit-code-from=container-sshnp --attach=container-sshnp -t=60 --timestamps --no-recreate"
+  DOCKER_COMPOSE_UP_CMD: "docker compose up --exit-code-from=container-sshnp --attach=container-sshnp -t=60 --no-recreate"
   DOCKER_COMPOSE_DOWN_CMD: "docker compose down"
   DEVICE_NAME_LOCAL-LOCAL-LOCAL: "e2e1"
   DEVICE_NAME_LOCAL-LOCAL-RELEASE: "e2e2"
@@ -56,6 +56,9 @@ jobs:
           ./setup-sshnp-entrypoint.sh ${{ env.DEVICE_NAME_LOCAL-LOCAL-LOCAL }} ${{ env.SSHNP_ATSIGN }} ${{ env.SSHNPD_ATSIGN }} ${{ env.SSHRVD_ATSIGN }}
           ./setup-sshnpd-entrypoint.sh ${{ env.DEVICE_NAME_LOCAL-LOCAL-LOCAL }} ${{ env.SSHNP_ATSIGN }} ${{ env.SSHNPD_ATSIGN }}
           ./setup-sshrvd-entrypoint.sh ${{ env.SSHRVD_ATSIGN }}
+          cat ../../contexts/sshnp/entrypoint.sh
+          cat ../../contexts/sshnpd/entrypoint.sh
+          cat ../../contexts/sshrvd/entrypoint.sh
 
       - name: test local-local-local
         working-directory: packages/sshnoports/test/end2end_tests/tests/local-local-local
@@ -67,7 +70,7 @@ jobs:
         run: |
           docker compose down
           docker compose ps -a
-          docker compose logs
+          docker compose logs --timestamps
 
       - name: set up local-local-release test
         working-directory: packages/sshnoports/test/end2end_tests/tools/configuration
@@ -75,6 +78,9 @@ jobs:
           ./setup-sshnp-entrypoint.sh ${{ env.DEVICE_NAME_LOCAL-LOCAL-RELEASE }} ${{ env.SSHNP_ATSIGN }} ${{ env.SSHNPD_ATSIGN }} ${{ env.SSHRVD_ATSIGN }}
           ./setup-sshnpd-entrypoint.sh ${{ env.DEVICE_NAME_LOCAL-LOCAL-RELEASE }} ${{ env.SSHNP_ATSIGN }} ${{ env.SSHNPD_ATSIGN }}
           ./setup-sshrvd-entrypoint.sh ${{ env.SSHRVD_ATSIGN }}
+          cat ../../contexts/sshnp/entrypoint.sh
+          cat ../../contexts/sshnpd/entrypoint.sh
+          cat ../../contexts/sshrvd/entrypoint.sh
 
       - name: test local-local-release
         working-directory: packages/sshnoports/test/end2end_tests/tests/local-local-release
@@ -87,7 +93,7 @@ jobs:
         run: |
           docker compose down
           docker compose ps -a
-          docker compose logs
+          docker compose logs --timestamps
 
       - name: set up local-trunk-release
         working-directory: packages/sshnoports/test/end2end_tests/tools/configuration
@@ -95,6 +101,9 @@ jobs:
           ./setup-sshnp-entrypoint.sh ${{ env.DEVICE_NAME_LOCAL-TRUNK-RELEASE }} ${{ env.SSHNP_ATSIGN }} ${{ env.SSHNPD_ATSIGN }} ${{ env.SSHRVD_ATSIGN }}
           ./setup-sshnpd-entrypoint.sh ${{ env.DEVICE_NAME_LOCAL-TRUNK-RELEASE }} ${{ env.SSHNP_ATSIGN }} ${{ env.SSHNPD_ATSIGN }}
           ./setup-sshrvd-entrypoint.sh ${{ env.SSHRVD_ATSIGN }}
+          cat ../../contexts/sshnp/entrypoint.sh
+          cat ../../contexts/sshnpd/entrypoint.sh
+          cat ../../contexts/sshrvd/entrypoint.sh
 
       - name: test local-trunk-release
         working-directory: packages/sshnoports/test/end2end_tests/tests/local-trunk-release
@@ -107,7 +116,7 @@ jobs:
         run: |
           docker compose down
           docker compose ps -a
-          docker compose logs
+          docker compose logs --timestamps
 
       - name: set up release-release-release
         working-directory: packages/sshnoports/test/end2end_tests/tools/configuration
@@ -115,6 +124,9 @@ jobs:
           ./setup-sshnp-entrypoint.sh ${{ env.DEVICE_NAME_RELEASE-RELEASE-RELEASE }} ${{ env.SSHNP_ATSIGN }} ${{ env.SSHNPD_ATSIGN }} ${{ env.SSHRVD_ATSIGN }}
           ./setup-sshnpd-entrypoint.sh ${{ env.DEVICE_NAME_RELEASE-RELEASE-RELEASE }} ${{ env.SSHNP_ATSIGN }} ${{ env.SSHNPD_ATSIGN }}
           ./setup-sshrvd-entrypoint.sh ${{ env.SSHRVD_ATSIGN }}
+          cat ../../contexts/sshnp/entrypoint.sh
+          cat ../../contexts/sshnpd/entrypoint.sh
+          cat ../../contexts/sshrvd/entrypoint.sh
 
       - name: test release-release-release
         working-directory: packages/sshnoports/test/end2end_tests/tests/release-release-release
@@ -127,7 +139,7 @@ jobs:
         run: |
           docker compose down
           docker compose ps -a
-          docker compose logs
+          docker compose logs --timestamps
 
       - name: set up trunk-local-release
         working-directory: packages/sshnoports/test/end2end_tests/tools/configuration
@@ -135,6 +147,9 @@ jobs:
           ./setup-sshnp-entrypoint.sh ${{ env.DEVICE_NAME_TRUNK-LOCAL-RELEASE }} ${{ env.SSHNP_ATSIGN }} ${{ env.SSHNPD_ATSIGN }} ${{ env.SSHRVD_ATSIGN }}
           ./setup-sshnpd-entrypoint.sh ${{ env.DEVICE_NAME_TRUNK-LOCAL-RELEASE }} ${{ env.SSHNP_ATSIGN }} ${{ env.SSHNPD_ATSIGN }}
           ./setup-sshrvd-entrypoint.sh ${{ env.SSHRVD_ATSIGN }}
+          cat ../../contexts/sshnp/entrypoint.sh
+          cat ../../contexts/sshnpd/entrypoint.sh
+          cat ../../contexts/sshrvd/entrypoint.sh
 
       - name: test trunk-local-release
         working-directory: packages/sshnoports/test/end2end_tests/tests/trunk-local-release
@@ -147,7 +162,7 @@ jobs:
         run: |
           docker compose down
           docker compose ps -a
-          docker compose logs
+          docker compose logs --timestamps
 
       - name: set up trunk-trunk-release
         working-directory: packages/sshnoports/test/end2end_tests/tools/configuration
@@ -155,6 +170,9 @@ jobs:
           ./setup-sshnp-entrypoint.sh ${{ env.DEVICE_NAME_TRUNK-TRUNK-RELEASE }} ${{ env.SSHNP_ATSIGN }} ${{ env.SSHNPD_ATSIGN }} ${{ env.SSHRVD_ATSIGN }}
           ./setup-sshnpd-entrypoint.sh ${{ env.DEVICE_NAME_TRUNK-TRUNK-RELEASE }} ${{ env.SSHNP_ATSIGN }} ${{ env.SSHNPD_ATSIGN }}
           ./setup-sshrvd-entrypoint.sh ${{ env.SSHRVD_ATSIGN }}
+          cat ../../contexts/sshnp/entrypoint.sh
+          cat ../../contexts/sshnpd/entrypoint.sh
+          cat ../../contexts/sshrvd/entrypoint.sh
 
       - name: test trunk-trunk-release
         working-directory: packages/sshnoports/test/end2end_tests/tests/trunk-trunk-release
@@ -167,7 +185,7 @@ jobs:
         run: |
           docker compose down
           docker compose ps -a
-          docker compose logs
+          docker compose logs --timestamps
 
       - name: set up trunk-trunk-trunk
         working-directory: packages/sshnoports/test/end2end_tests/tools/configuration
@@ -175,6 +193,9 @@ jobs:
           ./setup-sshnp-entrypoint.sh ${{ env.DEVICE_NAME_TRUNK-TRUNK-TRUNK }} ${{ env.SSHNP_ATSIGN }} ${{ env.SSHNPD_ATSIGN }} ${{ env.SSHRVD_ATSIGN }}
           ./setup-sshnpd-entrypoint.sh ${{ env.DEVICE_NAME_TRUNK-TRUNK-TRUNK }} ${{ env.SSHNP_ATSIGN }} ${{ env.SSHNPD_ATSIGN }}
           ./setup-sshrvd-entrypoint.sh ${{ env.SSHRVD_ATSIGN }}
+          cat ../../contexts/sshnp/entrypoint.sh
+          cat ../../contexts/sshnpd/entrypoint.sh
+          cat ../../contexts/sshrvd/entrypoint.sh
 
       - name: trunk-trunk-trunk
         working-directory: packages/sshnoports/test/end2end_tests/tests/trunk-trunk-trunk
@@ -187,4 +208,4 @@ jobs:
         run: |
           docker compose down
           docker compose ps -a
-          docker compose logs
+          docker compose logs --timestamps
