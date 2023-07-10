@@ -50,16 +50,33 @@ jobs:
         run: |
           docker compose build --no-cache
 
-      - name: local-local-local
-        working-directory: packages/sshnoports/test/end2end_tests/tests/local-local-local
+      - name: set up local-local-local test
+        working-directory: packages/sshnoports/test/end2end_tests/tools/configuration
         run: |
           ./setup-sshnp-entrypoint.sh ${{ env.DEVICE_NAME_LOCAL-LOCAL-LOCAL }} ${{ env.SSHNP_ATSIGN }} ${{ env.SSHNPD_ATSIGN }} ${{ env.SSHRVD_ATSIGN }}
           ./setup-sshnpd-entrypoint.sh ${{ env.DEVICE_NAME_LOCAL-LOCAL-LOCAL }} ${{ env.SSHNP_ATSIGN }} ${{ env.SSHNPD_ATSIGN }}
           ./setup-sshrvd-entrypoint.sh ${{ env.SSHRVD_ATSIGN }}
-          ${{ env.DOCKER_COMPOSE_UP_CMD }}
-          ${{ env.DOCKER_COMPOSE_DOWN_CMD }}
 
-      - name: local-local-release
+      - name: test local-local-local
+        working-directory: packages/sshnoports/test/end2end_tests/tests/local-local-local
+        run: |
+          ${{ env.DOCKER_COMPOSE_UP_CMD }}
+
+      - name: tear down & logs local-local-local
+        working-directory: packages/sshnoports/test/end2end_tests/tests/local-local-local
+        run: |
+          docker compose down
+          docker compose ps -a
+          docker compose logs
+
+      - name: set up local-local-local test
+        working-directory: packages/sshnoports/test/end2end_tests/tools/configuration
+        run: |
+          ./setup-sshnp-entrypoint.sh ${{ env.DEVICE_NAME_LOCAL-LOCAL-RELEASE }} ${{ env.SSHNP_ATSIGN }} ${{ env.SSHNPD_ATSIGN }} ${{ env.SSHRVD_ATSIGN }}
+          ./setup-sshnpd-entrypoint.sh ${{ env.DEVICE_NAME_LOCAL-LOCAL-RELEASE }} ${{ env.SSHNP_ATSIGN }} ${{ env.SSHNPD_ATSIGN }}
+          ./setup-sshrvd-entrypoint.sh ${{ env.SSHRVD_ATSIGN }}
+
+      - name: test local-local-release
         working-directory: packages/sshnoports/test/end2end_tests/tests/local-local-release
         run: |
           ./setup-sshnp-entrypoint.sh ${{ env.DEVICE_NAME_LOCAL-LOCAL-RELEASE }} ${{ env.SSHNP_ATSIGN }} ${{ env.SSHNPD_ATSIGN }} ${{ env.SSHRVD_ATSIGN }}
@@ -68,7 +85,21 @@ jobs:
           ${{ env.DOCKER_COMPOSE_UP_CMD }}
           ${{ env.DOCKER_COMPOSE_DOWN_CMD }}
 
-      - name: local-trunk-release
+      - name: tear down & logs local-local-release
+        working-directory: packages/sshnoports/test/end2end_tests/tests/local-local-release
+        run: |
+          docker compose down
+          docker compose ps -a
+          docker compose logs
+
+      - name: set up local-trunk-release
+        working-directory: packages/sshnoports/test/end2end_tests/tools/configuration
+        run: |
+          ./setup-sshnp-entrypoint.sh ${{ env.DEVICE_NAME_LOCAL-TRUNK-RELEASE }} ${{ env.SSHNP_ATSIGN }} ${{ env.SSHNPD_ATSIGN }} ${{ env.SSHRVD_ATSIGN }}
+          ./setup-sshnpd-entrypoint.sh ${{ env.DEVICE_NAME_LOCAL-TRUNK-RELEASE }} ${{ env.SSHNP_ATSIGN }} ${{ env.SSHNPD_ATSIGN }}
+          ./setup-sshrvd-entrypoint.sh ${{ env.SSHRVD_ATSIGN }}
+
+      - name: test local-trunk-release
         working-directory: packages/sshnoports/test/end2end_tests/tests/local-trunk-release
         run: |
           ./setup-sshnp-entrypoint.sh ${{ env.DEVICE_NAME_LOCAL-TRUNK-RELEASE }} ${{ env.SSHNP_ATSIGN }} ${{ env.SSHNPD_ATSIGN }} ${{ env.SSHRVD_ATSIGN }}
@@ -77,7 +108,21 @@ jobs:
           ${{ env.DOCKER_COMPOSE_UP_CMD }}
           ${{ env.DOCKER_COMPOSE_DOWN_CMD }}
 
-      - name: release-release-release
+      - name: tear down & logs local-trunk-release
+        working-directory: packages/sshnoports/test/end2end_tests/tests/local-trunk-release
+        run: |
+          docker compose down
+          docker compose ps -a
+          docker compose logs
+
+      - name: set up release-release-release
+        working-directory: packages/sshnoports/test/end2end_tests/tools/configuration
+        run: |
+          ./setup-sshnp-entrypoint.sh ${{ env.DEVICE_NAME_RELEASE-RELEASE-RELEASE }} ${{ env.SSHNP_ATSIGN }} ${{ env.SSHNPD_ATSIGN }} ${{ env.SSHRVD_ATSIGN }}
+          ./setup-sshnpd-entrypoint.sh ${{ env.DEVICE_NAME_RELEASE-RELEASE-RELEASE }} ${{ env.SSHNP_ATSIGN }} ${{ env.SSHNPD_ATSIGN }}
+          ./setup-sshrvd-entrypoint.sh ${{ env.SSHRVD_ATSIGN }}
+
+      - name: test release-release-release
         working-directory: packages/sshnoports/test/end2end_tests/tests/release-release-release
         run: |
           ./setup-sshnp-entrypoint.sh ${{ env.DEVICE_NAME_RELEASE-RELEASE-RELEASE }} ${{ env.SSHNP_ATSIGN }} ${{ env.SSHNPD_ATSIGN }} ${{ env.SSHRVD_ATSIGN }}
@@ -86,7 +131,21 @@ jobs:
           ${{ env.DOCKER_COMPOSE_UP_CMD }}
           ${{ env.DOCKER_COMPOSE_DOWN_CMD }}
 
-      - name: trunk-local-release
+      - name: tear down & logs release-release-release
+        working-directory: packages/sshnoports/test/end2end_tests/tests/release-release-release
+        run: |
+          docker compose down
+          docker compose ps -a
+          docker compose logs
+
+      - name: set up trunk-local-release
+        working-directory: packages/sshnoports/test/end2end_tests/tools/configuration
+        run: |
+          ./setup-sshnp-entrypoint.sh ${{ env.DEVICE_NAME_TRUNK-LOCAL-RELEASE }} ${{ env.SSHNP_ATSIGN }} ${{ env.SSHNPD_ATSIGN }} ${{ env.SSHRVD_ATSIGN }}
+          ./setup-sshnpd-entrypoint.sh ${{ env.DEVICE_NAME_TRUNK-LOCAL-RELEASE }} ${{ env.SSHNP_ATSIGN }} ${{ env.SSHNPD_ATSIGN }}
+          ./setup-sshrvd-entrypoint.sh ${{ env.SSHRVD_ATSIGN }}
+
+      - name: test trunk-local-release
         working-directory: packages/sshnoports/test/end2end_tests/tests/trunk-local-release
         run: |
           ./setup-sshnp-entrypoint.sh ${{ env.DEVICE_NAME_TRUNK-LOCAL-RELEASE }} ${{ env.SSHNP_ATSIGN }} ${{ env.SSHNPD_ATSIGN }} ${{ env.SSHRVD_ATSIGN }}
@@ -95,7 +154,21 @@ jobs:
           ${{ env.DOCKER_COMPOSE_UP_CMD }}
           ${{ env.DOCKER_COMPOSE_DOWN_CMD }}
 
-      - name: trunk-trunk-release
+      - name: tear down & logs trunk-local-release
+        working-directory: packages/sshnoports/test/end2end_tests/tests/trunk-local-release
+        run: |
+          docker compose down
+          docker compose ps -a
+          docker compose logs
+
+      - name: set up trunk-trunk-release
+        working-directory: packages/sshnoports/test/end2end_tests/tools/configuration
+        run: |
+          ./setup-sshnp-entrypoint.sh ${{ env.DEVICE_NAME_TRUNK-TRUNK-RELEASE }} ${{ env.SSHNP_ATSIGN }} ${{ env.SSHNPD_ATSIGN }} ${{ env.SSHRVD_ATSIGN }}
+          ./setup-sshnpd-entrypoint.sh ${{ env.DEVICE_NAME_TRUNK-TRUNK-RELEASE }} ${{ env.SSHNP_ATSIGN }} ${{ env.SSHNPD_ATSIGN }}
+          ./setup-sshrvd-entrypoint.sh ${{ env.SSHRVD_ATSIGN }}
+
+      - name: test trunk-trunk-release
         working-directory: packages/sshnoports/test/end2end_tests/tests/trunk-trunk-release
         run: |
           ./setup-sshnp-entrypoint.sh ${{ env.DEVICE_NAME_TRUNK-TRUNK-RELEASE }} ${{ env.SSHNP_ATSIGN }} ${{ env.SSHNPD_ATSIGN }} ${{ env.SSHRVD_ATSIGN }}
@@ -103,6 +176,20 @@ jobs:
           ./setup-sshrvd-entrypoint.sh ${{ env.SSHRVD_ATSIGN }}
           ${{ env.DOCKER_COMPOSE_UP_CMD }}
           ${{ env.DOCKER_COMPOSE_DOWN_CMD }}
+
+      - name: tear down & logs trunk-trunk-release
+        working-directory: packages/sshnoports/test/end2end_tests/tests/trunk-trunk-release
+        run: |
+          docker compose down
+          docker compose ps -a
+          docker compose logs
+
+      - name: set up trunk-trunk-trunk
+        working-directory: packages/sshnoports/test/end2end_tests/tools/configuration
+        run: |
+          ./setup-sshnp-entrypoint.sh ${{ env.DEVICE_NAME_TRUNK-TRUNK-TRUNK }} ${{ env.SSHNP_ATSIGN }} ${{ env.SSHNPD_ATSIGN }} ${{ env.SSHRVD_ATSIGN }}
+          ./setup-sshnpd-entrypoint.sh ${{ env.DEVICE_NAME_TRUNK-TRUNK-TRUNK }} ${{ env.SSHNP_ATSIGN }} ${{ env.SSHNPD_ATSIGN }}
+          ./setup-sshrvd-entrypoint.sh ${{ env.SSHRVD_ATSIGN }}
 
       - name: trunk-trunk-trunk
         working-directory: packages/sshnoports/test/end2end_tests/tests/trunk-trunk-trunk
@@ -112,3 +199,10 @@ jobs:
           ./setup-sshrvd-entrypoint.sh ${{ env.SSHRVD_ATSIGN }}
           ${{ env.DOCKER_COMPOSE_UP_CMD }}
           ${{ env.DOCKER_COMPOSE_DOWN_CMD }}
+
+      - name: tear down & logs trunk-trunk-trunk
+        working-directory: packages/sshnoports/test/end2end_tests/tests/trunk-trunk-trunk
+        run: |
+          docker compose down
+          docker compose ps -a
+          docker compose logs
