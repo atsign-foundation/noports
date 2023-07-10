@@ -69,7 +69,7 @@ jobs:
           docker compose ps -a
           docker compose logs
 
-      - name: set up local-local-local test
+      - name: set up local-local-release test
         working-directory: packages/sshnoports/test/end2end_tests/tools/configuration
         run: |
           ./setup-sshnp-entrypoint.sh ${{ env.DEVICE_NAME_LOCAL-LOCAL-RELEASE }} ${{ env.SSHNP_ATSIGN }} ${{ env.SSHNPD_ATSIGN }} ${{ env.SSHRVD_ATSIGN }}
@@ -79,9 +79,6 @@ jobs:
       - name: test local-local-release
         working-directory: packages/sshnoports/test/end2end_tests/tests/local-local-release
         run: |
-          ./setup-sshnp-entrypoint.sh ${{ env.DEVICE_NAME_LOCAL-LOCAL-RELEASE }} ${{ env.SSHNP_ATSIGN }} ${{ env.SSHNPD_ATSIGN }} ${{ env.SSHRVD_ATSIGN }}
-          ./setup-sshnpd-entrypoint.sh ${{ env.DEVICE_NAME_LOCAL-LOCAL-RELEASE }} ${{ env.SSHNP_ATSIGN }} ${{ env.SSHNPD_ATSIGN }}
-          ./setup-sshrvd-entrypoint.sh ${{ env.SSHRVD_ATSIGN }}
           ${{ env.DOCKER_COMPOSE_UP_CMD }}
           ${{ env.DOCKER_COMPOSE_DOWN_CMD }}
 
@@ -102,9 +99,6 @@ jobs:
       - name: test local-trunk-release
         working-directory: packages/sshnoports/test/end2end_tests/tests/local-trunk-release
         run: |
-          ./setup-sshnp-entrypoint.sh ${{ env.DEVICE_NAME_LOCAL-TRUNK-RELEASE }} ${{ env.SSHNP_ATSIGN }} ${{ env.SSHNPD_ATSIGN }} ${{ env.SSHRVD_ATSIGN }}
-          ./setup-sshnpd-entrypoint.sh ${{ env.DEVICE_NAME_LOCAL-TRUNK-RELEASE }} ${{ env.SSHNP_ATSIGN }} ${{ env.SSHNPD_ATSIGN }}
-          ./setup-sshrvd-entrypoint.sh ${{ env.SSHRVD_ATSIGN }}
           ${{ env.DOCKER_COMPOSE_UP_CMD }}
           ${{ env.DOCKER_COMPOSE_DOWN_CMD }}
 
@@ -125,9 +119,6 @@ jobs:
       - name: test release-release-release
         working-directory: packages/sshnoports/test/end2end_tests/tests/release-release-release
         run: |
-          ./setup-sshnp-entrypoint.sh ${{ env.DEVICE_NAME_RELEASE-RELEASE-RELEASE }} ${{ env.SSHNP_ATSIGN }} ${{ env.SSHNPD_ATSIGN }} ${{ env.SSHRVD_ATSIGN }}
-          ./setup-sshnpd-entrypoint.sh ${{ env.DEVICE_NAME_RELEASE-RELEASE-RELEASE }} ${{ env.SSHNP_ATSIGN }} ${{ env.SSHNPD_ATSIGN }}
-          ./setup-sshrvd-entrypoint.sh ${{ env.SSHRVD_ATSIGN }}
           ${{ env.DOCKER_COMPOSE_UP_CMD }}
           ${{ env.DOCKER_COMPOSE_DOWN_CMD }}
 
@@ -148,9 +139,6 @@ jobs:
       - name: test trunk-local-release
         working-directory: packages/sshnoports/test/end2end_tests/tests/trunk-local-release
         run: |
-          ./setup-sshnp-entrypoint.sh ${{ env.DEVICE_NAME_TRUNK-LOCAL-RELEASE }} ${{ env.SSHNP_ATSIGN }} ${{ env.SSHNPD_ATSIGN }} ${{ env.SSHRVD_ATSIGN }}
-          ./setup-sshnpd-entrypoint.sh ${{ env.DEVICE_NAME_TRUNK-LOCAL-RELEASE }} ${{ env.SSHNP_ATSIGN }} ${{ env.SSHNPD_ATSIGN }}
-          ./setup-sshrvd-entrypoint.sh ${{ env.SSHRVD_ATSIGN }}
           ${{ env.DOCKER_COMPOSE_UP_CMD }}
           ${{ env.DOCKER_COMPOSE_DOWN_CMD }}
 
@@ -171,9 +159,6 @@ jobs:
       - name: test trunk-trunk-release
         working-directory: packages/sshnoports/test/end2end_tests/tests/trunk-trunk-release
         run: |
-          ./setup-sshnp-entrypoint.sh ${{ env.DEVICE_NAME_TRUNK-TRUNK-RELEASE }} ${{ env.SSHNP_ATSIGN }} ${{ env.SSHNPD_ATSIGN }} ${{ env.SSHRVD_ATSIGN }}
-          ./setup-sshnpd-entrypoint.sh ${{ env.DEVICE_NAME_TRUNK-TRUNK-RELEASE }} ${{ env.SSHNP_ATSIGN }} ${{ env.SSHNPD_ATSIGN }}
-          ./setup-sshrvd-entrypoint.sh ${{ env.SSHRVD_ATSIGN }}
           ${{ env.DOCKER_COMPOSE_UP_CMD }}
           ${{ env.DOCKER_COMPOSE_DOWN_CMD }}
 
@@ -194,9 +179,6 @@ jobs:
       - name: trunk-trunk-trunk
         working-directory: packages/sshnoports/test/end2end_tests/tests/trunk-trunk-trunk
         run: |
-          ./setup-sshnp-entrypoint.sh ${{ env.DEVICE_NAME_TRUNK-TRUNK-TRUNK }} ${{ env.SSHNP_ATSIGN }} ${{ env.SSHNPD_ATSIGN }} ${{ env.SSHRVD_ATSIGN }}
-          ./setup-sshnpd-entrypoint.sh ${{ env.DEVICE_NAME_TRUNK-TRUNK-TRUNK }} ${{ env.SSHNP_ATSIGN }} ${{ env.SSHNPD_ATSIGN }}
-          ./setup-sshrvd-entrypoint.sh ${{ env.SSHRVD_ATSIGN }}
           ${{ env.DOCKER_COMPOSE_UP_CMD }}
           ${{ env.DOCKER_COMPOSE_DOWN_CMD }}
 
