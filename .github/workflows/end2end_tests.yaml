@@ -68,9 +68,9 @@ jobs:
       - name: tear down & logs local-local-local
         working-directory: packages/sshnoports/test/end2end_tests/tests/local-local-local
         run: |
-          docker compose down
           docker compose ps -a
           docker compose logs --timestamps
+          docker compose down
 
       - name: set up local-local-release test
         working-directory: packages/sshnoports/test/end2end_tests/tools/configuration
@@ -86,14 +86,13 @@ jobs:
         working-directory: packages/sshnoports/test/end2end_tests/tests/local-local-release
         run: |
           ${{ env.DOCKER_COMPOSE_UP_CMD }}
-          ${{ env.DOCKER_COMPOSE_DOWN_CMD }}
 
       - name: tear down & logs local-local-release
         working-directory: packages/sshnoports/test/end2end_tests/tests/local-local-release
         run: |
-          docker compose down
           docker compose ps -a
           docker compose logs --timestamps
+          docker compose down
 
       - name: set up local-trunk-release
         working-directory: packages/sshnoports/test/end2end_tests/tools/configuration
@@ -109,14 +108,13 @@ jobs:
         working-directory: packages/sshnoports/test/end2end_tests/tests/local-trunk-release
         run: |
           ${{ env.DOCKER_COMPOSE_UP_CMD }}
-          ${{ env.DOCKER_COMPOSE_DOWN_CMD }}
 
       - name: tear down & logs local-trunk-release
         working-directory: packages/sshnoports/test/end2end_tests/tests/local-trunk-release
         run: |
-          docker compose down
           docker compose ps -a
           docker compose logs --timestamps
+          docker compose down
 
       - name: set up release-release-release
         working-directory: packages/sshnoports/test/end2end_tests/tools/configuration
@@ -132,14 +130,13 @@ jobs:
         working-directory: packages/sshnoports/test/end2end_tests/tests/release-release-release
         run: |
           ${{ env.DOCKER_COMPOSE_UP_CMD }}
-          ${{ env.DOCKER_COMPOSE_DOWN_CMD }}
 
       - name: tear down & logs release-release-release
         working-directory: packages/sshnoports/test/end2end_tests/tests/release-release-release
         run: |
-          docker compose down
           docker compose ps -a
           docker compose logs --timestamps
+          docker compose down
 
       - name: set up trunk-local-release
         working-directory: packages/sshnoports/test/end2end_tests/tools/configuration
@@ -155,14 +152,13 @@ jobs:
         working-directory: packages/sshnoports/test/end2end_tests/tests/trunk-local-release
         run: |
           ${{ env.DOCKER_COMPOSE_UP_CMD }}
-          ${{ env.DOCKER_COMPOSE_DOWN_CMD }}
 
       - name: tear down & logs trunk-local-release
         working-directory: packages/sshnoports/test/end2end_tests/tests/trunk-local-release
         run: |
-          docker compose down
           docker compose ps -a
           docker compose logs --timestamps
+          docker compose down
 
       - name: set up trunk-trunk-release
         working-directory: packages/sshnoports/test/end2end_tests/tools/configuration
@@ -178,14 +174,13 @@ jobs:
         working-directory: packages/sshnoports/test/end2end_tests/tests/trunk-trunk-release
         run: |
           ${{ env.DOCKER_COMPOSE_UP_CMD }}
-          ${{ env.DOCKER_COMPOSE_DOWN_CMD }}
 
       - name: tear down & logs trunk-trunk-release
         working-directory: packages/sshnoports/test/end2end_tests/tests/trunk-trunk-release
         run: |
-          docker compose down
           docker compose ps -a
           docker compose logs --timestamps
+          docker compose down
 
       - name: set up trunk-trunk-trunk
         working-directory: packages/sshnoports/test/end2end_tests/tools/configuration
@@ -201,11 +196,10 @@ jobs:
         working-directory: packages/sshnoports/test/end2end_tests/tests/trunk-trunk-trunk
         run: |
           ${{ env.DOCKER_COMPOSE_UP_CMD }}
-          ${{ env.DOCKER_COMPOSE_DOWN_CMD }}
 
       - name: tear down & logs trunk-trunk-trunk
         working-directory: packages/sshnoports/test/end2end_tests/tests/trunk-trunk-trunk
         run: |
-          docker compose down
           docker compose ps -a
           docker compose logs --timestamps
+          docker compose down
