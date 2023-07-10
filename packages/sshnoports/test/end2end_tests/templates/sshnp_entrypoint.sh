@@ -13,3 +13,4 @@ fi
 
 echo " -o StrictHostKeyChecking=no " >> sshcommand.txt ;
 echo "sh test.sh " | $(cat sshcommand.txt)
+sleep 2
