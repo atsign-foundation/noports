@@ -92,39 +92,3 @@ jobs:
           docker ps -a --no-trunc
           docker compose logs --timestamps
           docker compose down
-  e2e_trunk-local-release:
-
-    # - name: trunk-trunk-trunk
-    #   working-directory: packages/sshnoports/test/end2end_tests/tests/trunk-trunk-trunk
-    #   run: |
-    #     docker compose up --build --no-recreate --exit-code-from=container-sshnp -t=${{ env.CONTAINER_TIMEOUT }}
-    #     echo "Printing information ------"
-    #     docker ps -a --no-trunc
-    #     docker compose logs --timestamps
-    #     docker compose down
-
-    # - name: trunk-local-release
-    #   working-directory: packages/sshnoports/test/end2end_tests/tests/trunk-local-release
-    #   run: |
-    #     docker compose up --exit-code-from=container-sshnp -t=${{ env.CONTAINER_TIMEOUT }}
-    #     echo "Printing information ------"
-    #     docker ps -a --no-trunc
-    #     docker compose logs --timestamps
-    #     docker compose down
-
-    # - name: local-trunk-release
-    #   working-directory: packages/sshnoports/test/end2end_tests/tests/local-trunk-release
-    #   run: |
-    #     docker compose up --exit-code-from=container-sshnp -t=${{ env.CONTAINER_TIMEOUT }}
-    #     docker ps -a --no-trunc
-    #     docker compose logs --timestamps
-    #     docker compose down
-
-    # - name: local-local-local
-    #   working-directory: packages/sshnoports/test/end2end_tests/tests/local-local-local
-    #   run: |
-    #     docker compose up --exit-code-from=container-sshnp -t=${{ env.CONTAINER_TIMEOUT }}
-    #     echo "Printing information ------"
-    #     docker ps -a --no-trunc
-    #     docker compose logs --timestamps
-    #     docker compose down
