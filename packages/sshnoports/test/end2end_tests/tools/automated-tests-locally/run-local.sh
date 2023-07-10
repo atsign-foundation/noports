@@ -98,8 +98,6 @@ main() {
     ../configuration/setup-sshnpd-entrypoint.sh $device $sshnp $sshnpd
     ../configuration/setup-sshrvd-entrypoint.sh $sshrvd
 
-    cd ../../tests/$test
-
     buildcmd="sudo docker-compose build"
 
     if [[ ! -z $nocache ]];
@@ -111,10 +109,12 @@ main() {
 
     downcmd="sudo docker-compose down"
 
+    echo "Running: cd ../../tests/$test"
     echo "Running: $buildcmd"
     echo "Running: $upcmd"
     echo "Running: $downcmd"
 
+    cd ../../tests/$test
     eval $buildcmd
     eval $upcmd
     eval $downcmd
