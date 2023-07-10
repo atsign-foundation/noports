@@ -24,7 +24,7 @@ env:
   DEVICE_NAME_TRUNK-TRUNK-TRUNK: "e2e7"
 
 jobs:
-  end2end_tests:
+  e2e-local-local-local:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -50,156 +50,267 @@ jobs:
         run: |
           docker compose build --no-cache
 
-      - name: set up local-local-local test
+      - name: Set up entrypoints
         working-directory: packages/sshnoports/test/end2end_tests/tools/configuration
         run: |
           ./setup-sshnp-entrypoint.sh ${{ env.DEVICE_NAME_LOCAL-LOCAL-LOCAL }} ${{ env.SSHNP_ATSIGN }} ${{ env.SSHNPD_ATSIGN }} ${{ env.SSHRVD_ATSIGN }}
           ./setup-sshnpd-entrypoint.sh ${{ env.DEVICE_NAME_LOCAL-LOCAL-LOCAL }} ${{ env.SSHNP_ATSIGN }} ${{ env.SSHNPD_ATSIGN }}
           ./setup-sshrvd-entrypoint.sh ${{ env.SSHRVD_ATSIGN }}
-          cat ../../contexts/sshnp/entrypoint.sh
-          cat ../../contexts/sshnpd/entrypoint.sh
-          cat ../../contexts/sshrvd/entrypoint.sh
 
-      - name: test local-local-local
+      - name: Ensure entrypoints exist
+        working-directory: packages/sshnoports/test/end2end_tests/contexts
+        run: |
+          cat contexts/sshnp/entrypoint.sh
+          cat contexts/sshnpd/entrypoint.sh
+          cat contexts/sshrvd/entrypoint.sh
+
+      - name: Test
         working-directory: packages/sshnoports/test/end2end_tests/tests/local-local-local
         run: |
           ${{ env.DOCKER_COMPOSE_UP_CMD }}
 
-      - name: tear down & logs local-local-local
+      - name: Logs
+        if: always()
         working-directory: packages/sshnoports/test/end2end_tests/tests/local-local-local
         run: |
           docker compose ps -a
           docker compose logs --timestamps
+
+      - name: Tear down
+        if: always()
+        working-directory: packages/sshnoports/test/end2end_tests/tests/local-local-local
+        run: |
           docker compose down
 
-      - name: set up local-local-release test
+  e2e-local-local-release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9 # v3.5.3
+
+      - name: Copy keys
+        working-directory: packages/sshnoports/test/end2end_tests/contexts
+        run: |
+          echo "${{ secrets.ATKEYS_8INCANTEATER }}" > sshnp/keys/${{ env.SSHNP_ATSIGN }}_key.atKeys
+          echo "${{ secrets.ATKEYS_8052SIMPLE }}" > sshnpd/keys/${{ env.SSHNPD_ATSIGN }}_key.atKeys
+          echo "${{ secrets.ATKEYS_8485WEALTHY51 }}" > sshrvd/keys/${{ env.SSHRVD_ATSIGN }}_key.atKeys
+
+      - name: Ensure keys are in place
+        continue-on-error: true # in case step fails, pass anyway
+        working-directory: packages/sshnoports/test/end2end_tests/contexts
+        run: |
+          ls sshnp/keys
+          ls sshnpd/keys
+          ls sshrvd/keys
+
+      - name: Docker compose build
+        working-directory: packages/sshnoports/test/end2end_tests/tests/local-trunk-release
+        run: |
+          docker compose build --no-cache
+
+      - name: Set up entrypoints
         working-directory: packages/sshnoports/test/end2end_tests/tools/configuration
         run: |
           ./setup-sshnp-entrypoint.sh ${{ env.DEVICE_NAME_LOCAL-LOCAL-RELEASE }} ${{ env.SSHNP_ATSIGN }} ${{ env.SSHNPD_ATSIGN }} ${{ env.SSHRVD_ATSIGN }}
           ./setup-sshnpd-entrypoint.sh ${{ env.DEVICE_NAME_LOCAL-LOCAL-RELEASE }} ${{ env.SSHNP_ATSIGN }} ${{ env.SSHNPD_ATSIGN }}
           ./setup-sshrvd-entrypoint.sh ${{ env.SSHRVD_ATSIGN }}
-          cat ../../contexts/sshnp/entrypoint.sh
-          cat ../../contexts/sshnpd/entrypoint.sh
-          cat ../../contexts/sshrvd/entrypoint.sh
 
-      - name: test local-local-release
+      - name: Ensure entrypoints exist
+        working-directory: packages/sshnoports/test/end2end_tests/contexts
+        run: |
+          cat sshnp/entrypoint.sh
+          cat sshnpd/entrypoint.sh
+          cat sshrvd/entrypoint.sh
+
+      - name: Test
         working-directory: packages/sshnoports/test/end2end_tests/tests/local-local-release
         run: |
           ${{ env.DOCKER_COMPOSE_UP_CMD }}
 
-      - name: tear down & logs local-local-release
+      - name: Logs
+        if: always()
         working-directory: packages/sshnoports/test/end2end_tests/tests/local-local-release
         run: |
           docker compose ps -a
           docker compose logs --timestamps
+
+      - name: Tear down
+        if: always()
+        working-directory: packages/sshnoports/test/end2end_tests/tests/local-local-release
+        run: |
           docker compose down
 
-      - name: set up local-trunk-release
+
+  e2e-local-trunk-release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9 # v3.5.3
+
+      - name: Set up local-trunk-release
         working-directory: packages/sshnoports/test/end2end_tests/tools/configuration
         run: |
           ./setup-sshnp-entrypoint.sh ${{ env.DEVICE_NAME_LOCAL-TRUNK-RELEASE }} ${{ env.SSHNP_ATSIGN }} ${{ env.SSHNPD_ATSIGN }} ${{ env.SSHRVD_ATSIGN }}
           ./setup-sshnpd-entrypoint.sh ${{ env.DEVICE_NAME_LOCAL-TRUNK-RELEASE }} ${{ env.SSHNP_ATSIGN }} ${{ env.SSHNPD_ATSIGN }}
           ./setup-sshrvd-entrypoint.sh ${{ env.SSHRVD_ATSIGN }}
+
+      - name: Ensure entrypoints exist
+        working-directory: packages/sshnoports/test/end2end_tests/contexts
+        run: |
           cat ../../contexts/sshnp/entrypoint.sh
           cat ../../contexts/sshnpd/entrypoint.sh
           cat ../../contexts/sshrvd/entrypoint.sh
 
-      - name: test local-trunk-release
+      - name: Test
         working-directory: packages/sshnoports/test/end2end_tests/tests/local-trunk-release
         run: |
           ${{ env.DOCKER_COMPOSE_UP_CMD }}
 
-      - name: tear down & logs local-trunk-release
+      - name: Logs
         working-directory: packages/sshnoports/test/end2end_tests/tests/local-trunk-release
         run: |
           docker compose ps -a
           docker compose logs --timestamps
+
+      - name: Tear down
+        working-directory: packages/sshnoports/test/end2end_tests/tests/local-trunk-release
+        run: |
           docker compose down
 
-      - name: set up release-release-release
+  e2e-release-release-release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9 # v3.5.3
+
+      - name: Set up
         working-directory: packages/sshnoports/test/end2end_tests/tools/configuration
         run: |
           ./setup-sshnp-entrypoint.sh ${{ env.DEVICE_NAME_RELEASE-RELEASE-RELEASE }} ${{ env.SSHNP_ATSIGN }} ${{ env.SSHNPD_ATSIGN }} ${{ env.SSHRVD_ATSIGN }}
           ./setup-sshnpd-entrypoint.sh ${{ env.DEVICE_NAME_RELEASE-RELEASE-RELEASE }} ${{ env.SSHNP_ATSIGN }} ${{ env.SSHNPD_ATSIGN }}
           ./setup-sshrvd-entrypoint.sh ${{ env.SSHRVD_ATSIGN }}
-          cat ../../contexts/sshnp/entrypoint.sh
-          cat ../../contexts/sshnpd/entrypoint.sh
-          cat ../../contexts/sshrvd/entrypoint.sh
 
-      - name: test release-release-release
+      - name: Ensure entrypoints exist
+        working-directory: packages/sshnoports/test/end2end_tests/contexts
+        run: |
+          cat contexts/sshnp/entrypoint.sh
+          cat contexts/sshnpd/entrypoint.sh
+          cat contexts/sshrvd/entrypoint.sh
+
+      - name: Test
         working-directory: packages/sshnoports/test/end2end_tests/tests/release-release-release
         run: |
           ${{ env.DOCKER_COMPOSE_UP_CMD }}
 
-      - name: tear down & logs release-release-release
+      - name: Logs
         working-directory: packages/sshnoports/test/end2end_tests/tests/release-release-release
         run: |
           docker compose ps -a
           docker compose logs --timestamps
+
+      - name: Tear down
+        working-directory: packages/sshnoports/test/end2end_tests/tests/release-release-release
+        run: |
           docker compose down
 
-      - name: set up trunk-local-release
+  e2e-trunk-local-release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9 # v3.5.3
+
+      - name: Set up
         working-directory: packages/sshnoports/test/end2end_tests/tools/configuration
         run: |
           ./setup-sshnp-entrypoint.sh ${{ env.DEVICE_NAME_TRUNK-LOCAL-RELEASE }} ${{ env.SSHNP_ATSIGN }} ${{ env.SSHNPD_ATSIGN }} ${{ env.SSHRVD_ATSIGN }}
           ./setup-sshnpd-entrypoint.sh ${{ env.DEVICE_NAME_TRUNK-LOCAL-RELEASE }} ${{ env.SSHNP_ATSIGN }} ${{ env.SSHNPD_ATSIGN }}
           ./setup-sshrvd-entrypoint.sh ${{ env.SSHRVD_ATSIGN }}
-          cat ../../contexts/sshnp/entrypoint.sh
-          cat ../../contexts/sshnpd/entrypoint.sh
-          cat ../../contexts/sshrvd/entrypoint.sh
+      - name: Ensure entrypoints exist
+        working-directory: packages/sshnoports/test/end2end_tests/contexts
+        run: |
+          cat contexts/sshnp/entrypoint.sh
+          cat contexts/sshnpd/entrypoint.sh
+          cat contexts/sshrvd/entrypoint.sh
 
-      - name: test trunk-local-release
+      - name: Test
         working-directory: packages/sshnoports/test/end2end_tests/tests/trunk-local-release
         run: |
           ${{ env.DOCKER_COMPOSE_UP_CMD }}
 
-      - name: tear down & logs trunk-local-release
+      - name: Logs
         working-directory: packages/sshnoports/test/end2end_tests/tests/trunk-local-release
         run: |
           docker compose ps -a
           docker compose logs --timestamps
+
+      - name: Tear down
+        working-directory: packages/sshnoports/test/end2end_tests/tests/trunk-local-release
+        run: |
           docker compose down
 
-      - name: set up trunk-trunk-release
+  e2e-trunk-trunk-release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9 # v3.5.3
+
+      - name: Set up
         working-directory: packages/sshnoports/test/end2end_tests/tools/configuration
         run: |
           ./setup-sshnp-entrypoint.sh ${{ env.DEVICE_NAME_TRUNK-TRUNK-RELEASE }} ${{ env.SSHNP_ATSIGN }} ${{ env.SSHNPD_ATSIGN }} ${{ env.SSHRVD_ATSIGN }}
           ./setup-sshnpd-entrypoint.sh ${{ env.DEVICE_NAME_TRUNK-TRUNK-RELEASE }} ${{ env.SSHNP_ATSIGN }} ${{ env.SSHNPD_ATSIGN }}
           ./setup-sshrvd-entrypoint.sh ${{ env.SSHRVD_ATSIGN }}
-          cat ../../contexts/sshnp/entrypoint.sh
-          cat ../../contexts/sshnpd/entrypoint.sh
-          cat ../../contexts/sshrvd/entrypoint.sh
 
-      - name: test trunk-trunk-release
+      - name: Ensure entrypoints exist
+        working-directory: packages/sshnoports/test/end2end_tests/contexts
+        run: |
+          cat contexts/sshnp/entrypoint.sh
+          cat contexts/sshnpd/entrypoint.sh
+          cat contexts/sshrvd/entrypoint.sh
+
+      - name: Test
         working-directory: packages/sshnoports/test/end2end_tests/tests/trunk-trunk-release
         run: |
           ${{ env.DOCKER_COMPOSE_UP_CMD }}
 
-      - name: tear down & logs trunk-trunk-release
+      - name: Logs
         working-directory: packages/sshnoports/test/end2end_tests/tests/trunk-trunk-release
         run: |
           docker compose ps -a
           docker compose logs --timestamps
+
+      - name: Tear down
+        working-directory: packages/sshnoports/test/end2end_tests/tests/trunk-trunk-release
+        run: |
           docker compose down
 
-      - name: set up trunk-trunk-trunk
+  e2e-trunk-trunk-trunk:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9 # v3.5.3
+
+      - name: Set up
         working-directory: packages/sshnoports/test/end2end_tests/tools/configuration
         run: |
           ./setup-sshnp-entrypoint.sh ${{ env.DEVICE_NAME_TRUNK-TRUNK-TRUNK }} ${{ env.SSHNP_ATSIGN }} ${{ env.SSHNPD_ATSIGN }} ${{ env.SSHRVD_ATSIGN }}
           ./setup-sshnpd-entrypoint.sh ${{ env.DEVICE_NAME_TRUNK-TRUNK-TRUNK }} ${{ env.SSHNP_ATSIGN }} ${{ env.SSHNPD_ATSIGN }}
           ./setup-sshrvd-entrypoint.sh ${{ env.SSHRVD_ATSIGN }}
-          cat ../../contexts/sshnp/entrypoint.sh
-          cat ../../contexts/sshnpd/entrypoint.sh
-          cat ../../contexts/sshrvd/entrypoint.sh
 
-      - name: trunk-trunk-trunk
+      - name: Ensure entrypoints exist
+        working-directory: packages/sshnoports/test/end2end_tests/contexts
+        run: |
+          cat contexts/sshnp/entrypoint.sh
+          cat contexts/sshnpd/entrypoint.sh
+          cat contexts/sshrvd/entrypoint.sh
+
+      - name: Test
         working-directory: packages/sshnoports/test/end2end_tests/tests/trunk-trunk-trunk
         run: |
           ${{ env.DOCKER_COMPOSE_UP_CMD }}
 
-      - name: tear down & logs trunk-trunk-trunk
+      - name: Logs
         working-directory: packages/sshnoports/test/end2end_tests/tests/trunk-trunk-trunk
         run: |
           docker compose ps -a
           docker compose logs --timestamps
+
+      - name: Tear down
+        working-directory: packages/sshnoports/test/end2end_tests/tests/trunk-trunk-trunk
+        run: |
           docker compose down
