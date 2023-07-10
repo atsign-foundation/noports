@@ -1,5 +1,5 @@
 #!/bin/bash
-~/.local/bin/sshnp -f @jeremy_0 -t @smoothalligator -d lemonade -h @rv_am -s id_ed25519.pub -v > logs.txt
+~/.local/bin/sshnp -f @jeremy_0 -t @smoothalligator -d e2e -h @tastelessbanana -s id_ed25519.pub -v > logs.txt
 cat logs.txt
 tail -n 5 logs.txt | grep "ssh -p" > sshcommand.txt
 

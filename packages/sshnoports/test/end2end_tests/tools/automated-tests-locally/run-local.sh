@@ -86,68 +86,19 @@ pargs_args() {
 }
 
 main() {
-    cp ~/.atsign/keys/${sshnp}_key.atKeys ../../contexts/sshnp/keys/${sshnp}_key.atKeys
-    cp ~/.atsign/keys/${sshnpd}_key.atKeys ../../contexts/sshnpd/keys/${sshnpd}_key.atKeys
+    ../configuration/setup-sshnp-keys.sh $sshnp
+    ../configuration/setup-sshnpd-keys.sh $sshnpd
     if [[ $sshrvd != "@rv_am" && $sshrvd != "@rv_eu" && $sshrvd != "@rv_ap" ]];
     then
         run_srs_locally=true
-        cp ~/.atsign/keys/${sshrvd}_key.atKeys ../../contexts/sshrvd/keys/${sshrvd}_key.atKeys
+        ../configuration/setup-sshrvd-keys.sh $sshrvd
     fi
 
-    if [[ ! -f ../../contexts/sshnp/keys/${sshnp}_key.atKeys ]];
-    then
-        echo "Could not copy ${sshnp}_key.atKeys to ../../contexts/sshnp/keys/${sshnp}_key.atKeys"
-        exit 1
-    fi
+    ../configuration/setup-sshnp-entrypoint.sh $device $sshnp $sshnpd $sshrvd
+    ../configuration/setup-sshnpd-entrypoint.sh $device $sshnp $sshnpd
+    ../configuration/setup-sshrvd-entrypoint.sh $sshrvd
 
-    if [[ ! -f ../../contexts/sshnpd/keys/${sshnpd}_key.atKeys ]];
-    then
-        echo "Could not copy ${sshnpd}_key.atKeys to ../../contexts/sshnpd/keys/${sshnpd}_key.atKeys"
-        exit 1
-    fi
-
-    if [[ ! -z $run_srs_locally ]];
-    then
-        if [[ ! -f ../../contexts/sshrvd/keys/${sshrvd}_key.atKeys ]];
-        then
-            echo "Could not copy ${sshrvd}_key.atKeys to ../../contexts/sshrvd/keys/${sshrvd}_key.atKeys"
-            exit 1
-        fi
-    fi
-
-    # copy and sed the entrypoints
-    cp ../../templates/sshnp_entrypoint.sh ../../contexts/sshnp/entrypoint.sh
-    cp ../../templates/sshnpd_entrypoint.sh ../../contexts/sshnpd/entrypoint.sh
-    if [[ ! -z $run_srs_locally ]];
-    then
-        cp ../../templates/sshrvd_entrypoint.sh ../../contexts/sshrvd/entrypoint.sh
-    fi
-
-    # if on MacOS
-    prefix="sed -i"
-    if [[ $(uname) == "Darwin" ]];
-    then
-        prefix="$prefix ''"
-    fi
-
-    eval $prefix "s/@sshnpatsign/${sshnp}/g" ../../contexts/sshnp/entrypoint.sh
-    eval $prefix "s/@sshnpdatsign/${sshnpd}/g" ../../contexts/sshnp/entrypoint.sh
-    eval $prefix "s/@sshrvdatsign/${sshrvd}/g" ../../contexts/sshnp/entrypoint.sh
-
-    eval $prefix "s/@sshnpatsign/${sshnp}/g" ../../contexts/sshnpd/entrypoint.sh
-    eval $prefix "s/@sshnpdatsign/${sshnpd}/g" ../../contexts/sshnpd/entrypoint.sh
-
-    eval $prefix "s/deviceName/${device}/g" ../../contexts/sshnpd/entrypoint.sh
-    eval $prefix "s/deviceName/${device}/g" ../../contexts/sshnp/entrypoint.sh
-    if [[ ! -z $run_srs_locally ]];
-    then
-        eval $prefix "s/@sshnpdatsign/${sshnpd}/g" ../../contexts/sshrvd/entrypoint.sh
-        eval $prefix "s/@sshrvdatsign/${sshrvd}/g" ../../contexts/sshrvd/entrypoint.sh
-    fi
-
-    cd ../../tests
-
-    cd $test
+    cd ../../tests/$test
 
     buildcmd="sudo docker-compose build"
 
