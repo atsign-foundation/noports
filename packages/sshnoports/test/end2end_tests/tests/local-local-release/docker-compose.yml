@@ -1,0 +1,62 @@
+version: '3'
+
+services:
+  image-runtime-local:
+    build:
+      context: ../../../../
+      dockerfile: test/end2end_tests/image/Dockerfile
+      target: runtime-local
+    image: atsigncompany/sshnp-e2e-runtime:local
+    deploy:
+      mode: replicated
+      replicas: 0
+  image-runtime-release:
+    build:
+      context: ../../image/
+      dockerfile: ./Dockerfile
+      target: runtime-release
+    image: atsigncompany/sshnp-e2e-runtime:release
+    deploy:
+      mode: replicated
+      replicas: 0
+  container-sshnp:
+    image: atsigncompany/sshnp-e2e-runtime:local
+    container_name: sshnp
+    volumes:
+      - ../../contexts/sshnp/keys/:/atsign/.atsign/keys/ # mount keys
+      - ../../contexts/sshnp/entrypoint.sh:/atsign/entrypoint.sh # mount entrypoint
+    networks:
+      - sshnp
+    depends_on:
+      - image-runtime-local
+      - container-sshnpd
+  container-sshnpd:
+    image: atsigncompany/sshnp-e2e-runtime:local
+    container_name: sshnpd
+    volumes:
+      - ../../contexts/sshnpd/keys/:/atsign/.atsign/keys/ # mount keys
+      - ../../contexts/sshnpd/entrypoint.sh:/atsign/entrypoint.sh # mount entrypoint.sh
+      - ../../contexts/sshnpd/test.sh:/atsign/test.sh # mount test.sh
+    networks:
+      - sshnpd
+    depends_on:
+      - image-runtime-local
+      - container-sshrvd
+  container-sshrvd:
+    image: atsigncompany/sshnp-e2e-runtime:release
+    container_name: sshrvd
+    volumes:
+      - ../../contexts/sshrvd/keys/:/atsign/.atsign/keys/ # mount keys
+      - ../../contexts/sshrvd/entrypoint.sh:/atsign/entrypoint.sh # mount entrypoint
+    network_mode: host
+    depends_on:
+      - image-runtime-local
+
+networks:
+  sshnp:
+    driver: bridge
+    name: atsigncompany/sshnp-e2e-network-sshnp
+  sshnpd:
+    driver: bridge
+    name: atsigncompany/sshnp-e2e-network-sshnpd
+
