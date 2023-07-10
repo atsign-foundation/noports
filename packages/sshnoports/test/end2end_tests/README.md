@@ -1,5 +1,10 @@
 # sshnoports/packages/test/end2end_tests
 
+There are two main things happening in this folder that you can use for testing stuff locally:
+
+1. [Running Containers Automatically Locally](#running-containers-automatically-locally)
+2. [Running Containers Manually Locally](#running-containers-manually-locally)
+
 ## Tour
 
 There's a lot going on here. Here's a quick tour:
