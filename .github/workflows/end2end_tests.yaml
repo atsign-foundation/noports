@@ -156,9 +156,9 @@ jobs:
       - name: Ensure entrypoints exist
         working-directory: packages/sshnoports/test/end2end_tests/contexts
         run: |
-          cat ../../contexts/sshnp/entrypoint.sh
-          cat ../../contexts/sshnpd/entrypoint.sh
-          cat ../../contexts/sshrvd/entrypoint.sh
+          cat sshnp/entrypoint.sh
+          cat sshnpd/entrypoint.sh
+          cat sshrvd/entrypoint.sh
 
       - name: Test
         working-directory: packages/sshnoports/test/end2end_tests/tests/local-trunk-release
@@ -193,9 +193,9 @@ jobs:
       - name: Ensure entrypoints exist
         working-directory: packages/sshnoports/test/end2end_tests/contexts
         run: |
-          cat contexts/sshnp/entrypoint.sh
-          cat contexts/sshnpd/entrypoint.sh
-          cat contexts/sshrvd/entrypoint.sh
+          cat sshnp/entrypoint.sh
+          cat sshnpd/entrypoint.sh
+          cat sshrvd/entrypoint.sh
 
       - name: Test
         working-directory: packages/sshnoports/test/end2end_tests/tests/release-release-release
@@ -229,9 +229,9 @@ jobs:
       - name: Ensure entrypoints exist
         working-directory: packages/sshnoports/test/end2end_tests/contexts
         run: |
-          cat contexts/sshnp/entrypoint.sh
-          cat contexts/sshnpd/entrypoint.sh
-          cat contexts/sshrvd/entrypoint.sh
+          cat sshnp/entrypoint.sh
+          cat sshnpd/entrypoint.sh
+          cat sshrvd/entrypoint.sh
 
       - name: Test
         working-directory: packages/sshnoports/test/end2end_tests/tests/trunk-local-release
@@ -266,9 +266,9 @@ jobs:
       - name: Ensure entrypoints exist
         working-directory: packages/sshnoports/test/end2end_tests/contexts
         run: |
-          cat contexts/sshnp/entrypoint.sh
-          cat contexts/sshnpd/entrypoint.sh
-          cat contexts/sshrvd/entrypoint.sh
+          cat sshnp/entrypoint.sh
+          cat sshnpd/entrypoint.sh
+          cat sshrvd/entrypoint.sh
 
       - name: Test
         working-directory: packages/sshnoports/test/end2end_tests/tests/trunk-trunk-release
@@ -303,9 +303,9 @@ jobs:
       - name: Ensure entrypoints exist
         working-directory: packages/sshnoports/test/end2end_tests/contexts
         run: |
-          cat contexts/sshnp/entrypoint.sh
-          cat contexts/sshnpd/entrypoint.sh
-          cat contexts/sshrvd/entrypoint.sh
+          cat sshnp/entrypoint.sh
+          cat sshnpd/entrypoint.sh
+          cat sshrvd/entrypoint.sh
 
       - name: Test
         working-directory: packages/sshnoports/test/end2end_tests/tests/trunk-trunk-trunk
