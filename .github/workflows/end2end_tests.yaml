@@ -13,7 +13,7 @@ env:
   SSHNP_ATSIGN: "@8incanteater"
   SSHNPD_ATSIGN: "@8052simple"
   SSHRVD_ATSIGN: "@8485wealthy51"
-  DOCKER_COMPOSE_UP_CMD: "docker compose up --exit-code-from=container-sshnp --attach=container-sshnp -t=60"
+  DOCKER_COMPOSE_UP_CMD: "docker compose up --exit-code-from=container-sshnp --attach=container-sshnp -t=60 --timestamps --no-recreate"
   DOCKER_COMPOSE_DOWN_CMD: "docker compose down"
   DEVICE_NAME_LOCAL-LOCAL-LOCAL: "local-local-local"
   DEVICE_NAME_LOCAL-LOCAL-RELEASE: "local-local-release"
