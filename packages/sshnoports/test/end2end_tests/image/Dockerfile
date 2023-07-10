@@ -98,18 +98,6 @@ RUN set -eux ; \
   sed -E -i 's|^#?(PasswordAuthentication)\s.*|\1 no|' /etc/ssh/sshd_config ; \
   sed -i 's/#ListenAddress 0.0.0.0/ListenAddress 127.0.0.1/g' /etc/ssh/sshd_config ;
 
-FROM base AS runtime-blank
-
-WORKDIR ${HOMEDIR}
-
-RUN set -eux ; \
-  apt-get update ; \
-  apt-get install -y curl ;
-
-USER ${USER}
-
-ENTRYPOINT sudo service ssh start && bash
-
 FROM base AS runtime-branch
 
 COPY --chown=${USER}:${USER} --from=build-branch /app/output ${HOMEDIR}/.local/bin
@@ -149,5 +137,17 @@ FROM runtime-release AS manual-release
 ENTRYPOINT sudo service ssh start && bash
 
 FROM runtime-local AS manual-local
+
+ENTRYPOINT sudo service ssh start && bash
+
+FROM base AS manual-blank
+
+WORKDIR ${HOMEDIR}
+
+RUN set -eux ; \
+  apt-get update ; \
+  apt-get install -y curl ;
+
+USER ${USER}
 
 ENTRYPOINT sudo service ssh start && bash

@@ -6,7 +6,7 @@ services:
     build:
       context: ../../image/
       dockerfile: ./Dockerfile
-      target: runtime-blank
+      target: manual-blank
     image: atsigncompany/sshnp-e2e-manual:blank
     deploy:
       mode: replicated
