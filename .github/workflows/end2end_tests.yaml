@@ -13,8 +13,7 @@ env:
   SSHNP_ATSIGN: "@8incanteater"
   SSHNPD_ATSIGN: "@8052simple"
   SSHRVD_ATSIGN: "@8485wealthy51"
-  DOCKER_COMPOSE_UP_CMD: "docker compose up --exit-code-from=container-sshnp --attach=container-sshnp -t=60 --no-recreate"
-  DOCKER_COMPOSE_DOWN_CMD: "docker compose down"
+  DOCKER_COMPOSE_UP_CMD: "docker compose up --build --exit-code-from=container-sshnp --quiet-pull --attach=container-sshnp -t=60 --no-recreate"
   DEVICE_NAME_LOCAL-LOCAL-LOCAL: "e2e1"
   DEVICE_NAME_LOCAL-LOCAL-RELEASE: "e2e2"
   DEVICE_NAME_LOCAL-TRUNK-RELEASE: "e2e3"
@@ -35,11 +34,6 @@ jobs:
           echo "${{ secrets.ATKEYS_8INCANTEATER }}" > sshnp/keys/${{ env.SSHNP_ATSIGN }}_key.atKeys
           echo "${{ secrets.ATKEYS_8052SIMPLE }}" > sshnpd/keys/${{ env.SSHNPD_ATSIGN }}_key.atKeys
           echo "${{ secrets.ATKEYS_8485WEALTHY51 }}" > sshrvd/keys/${{ env.SSHRVD_ATSIGN }}_key.atKeys
-
-      - name: Docker compose build
-        working-directory: packages/sshnoports/test/end2end_tests/tests/local-trunk-release
-        run: |
-          docker compose build --no-cache
 
       - name: Set up entrypoints
         working-directory: packages/sshnoports/test/end2end_tests/tools/configuration
@@ -85,11 +79,6 @@ jobs:
           echo "${{ secrets.ATKEYS_8INCANTEATER }}" > sshnp/keys/${{ env.SSHNP_ATSIGN }}_key.atKeys
           echo "${{ secrets.ATKEYS_8052SIMPLE }}" > sshnpd/keys/${{ env.SSHNPD_ATSIGN }}_key.atKeys
           echo "${{ secrets.ATKEYS_8485WEALTHY51 }}" > sshrvd/keys/${{ env.SSHRVD_ATSIGN }}_key.atKeys
-
-      - name: Docker compose build
-        working-directory: packages/sshnoports/test/end2end_tests/tests/local-trunk-release
-        run: |
-          docker compose build --no-cache
 
       - name: Set up entrypoints
         working-directory: packages/sshnoports/test/end2end_tests/tools/configuration
