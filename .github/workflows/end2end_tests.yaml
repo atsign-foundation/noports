@@ -66,7 +66,7 @@ jobs:
       - name: run test - docker compose up
         working-directory: packages/sshnoports/test/end2end_tests/tests/local-local-local
         run: |
-          docker compose up --build --no-recreate --exit-code-from=container-sshnp -t=${{ env.CONTAINER_TIMEOUT }}
+          docker compose up --exit-code-from=container-sshnp -t=${{ env.CONTAINER_TIMEOUT }}
 
       - name: print logs
         working-directory: packages/sshnoports/test/end2end_tests/tests/local-local-local
@@ -94,7 +94,7 @@ jobs:
       - name: run test - docker compose up
         working-directory: packages/sshnoports/test/end2end_tests/tests/local-local-release
         run: |
-          docker compose up --build --no-recreate --exit-code-from=container-sshnp -t=${{ env.CONTAINER_TIMEOUT }}
+          docker compose up --exit-code-from=container-sshnp -t=${{ env.CONTAINER_TIMEOUT }}
 
       - name: print logs
         working-directory: packages/sshnoports/test/end2end_tests/tests/local-local-release
@@ -121,7 +121,7 @@ jobs:
       - name: run test - docker compose up
         working-directory: packages/sshnoports/test/end2end_tests/tests/local-trunk-release
         run: |
-          docker compose up --build --no-recreate --exit-code-from=container-sshnp -t=${{ env.CONTAINER_TIMEOUT }}
+          docker compose up --exit-code-from=container-sshnp -t=${{ env.CONTAINER_TIMEOUT }}
 
       - name: print logs
         working-directory: packages/sshnoports/test/end2end_tests/tests/local-trunk-release
@@ -146,7 +146,7 @@ jobs:
       - name: run test - docker compose up
         working-directory: packages/sshnoports/test/end2end_tests/tests/trunk-local-release
         run: |
-          docker compose up --build --no-recreate --exit-code-from=container-sshnp -t=${{ env.CONTAINER_TIMEOUT }}
+          docker compose up --exit-code-from=container-sshnp -t=${{ env.CONTAINER_TIMEOUT }}
       - name: print logs
         working-directory: packages/sshnoports/test/end2end_tests/tests/trunk-local-release
         run: |
@@ -169,7 +169,7 @@ jobs:
       - name: run test - docker compose up
         working-directory: packages/sshnoports/test/end2end_tests/tests/trunk-trunk-release
         run: |
-          docker compose up --build --no-recreate --exit-code-from=container-sshnp -t=${{ env.CONTAINER_TIMEOUT }}
+          docker compose up --exit-code-from=container-sshnp -t=${{ env.CONTAINER_TIMEOUT }}
       - name: print logs
         working-directory: packages/sshnoports/test/end2end_tests/tests/trunk-trunk-release
         run: |
@@ -195,7 +195,7 @@ jobs:
       - name: run test - docker compose up
         working-directory: packages/sshnoports/test/end2end_tests/tests/trunk-trunk-trunk
         run: |
-          docker compose up --build --no-recreate --exit-code-from=container-sshnp -t=${{ env.CONTAINER_TIMEOUT }}
+          docker compose up --exit-code-from=container-sshnp -t=${{ env.CONTAINER_TIMEOUT }}
 
       - name: print logs
         working-directory: packages/sshnoports/test/end2end_tests/tests/trunk-trunk-trunk
