@@ -52,6 +52,11 @@ jobs:
           cat sshnpd/entrypoint.sh
           cat sshrvd/entrypoint.sh
 
+      - name: build - docker compose build
+        working-directory: packages/sshnoports/test/end2end_tests/tests/local-trunk-release
+        run: |
+          docker compose build
+
   end2end_tests_local-local-local:
     needs: [ end2end_tests_prep ]
     runs-on: ubuntu-latest
