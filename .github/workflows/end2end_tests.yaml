@@ -52,11 +52,6 @@ jobs:
           cat sshnpd/entrypoint.sh
           cat sshrvd/entrypoint.sh
 
-      - name: build - docker compose build
-        working-directory: packages/sshnoports/test/end2end_tests/tests/local-trunk-release
-        run: |
-          docker compose build
-
   end2end_tests_local-local-local:
     needs: [ end2end_tests_prep ]
     runs-on: ubuntu-latest
@@ -147,15 +142,18 @@ jobs:
         working-directory: packages/sshnoports/test/end2end_tests/tests/trunk-local-release
         run: |
           docker compose build
+
       - name: run test - docker compose up
         working-directory: packages/sshnoports/test/end2end_tests/tests/trunk-local-release
         run: |
           docker compose up --exit-code-from=container-sshnp -t=${{ env.CONTAINER_TIMEOUT }}
+
       - name: print logs
         working-directory: packages/sshnoports/test/end2end_tests/tests/trunk-local-release
         run: |
           docker ps -a --no-trunc
           docker compose logs --timestamps
+
       - name: tear down - docker compose down
         working-directory: packages/sshnoports/test/end2end_tests/tests/trunk-local-release
         run: |
@@ -170,15 +168,18 @@ jobs:
         working-directory: packages/sshnoports/test/end2end_tests/tests/release-release-release
         run: |
           docker compose build
+
       - name: run test - docker compose up
         working-directory: packages/sshnoports/test/end2end_tests/tests/release-release-release
         run: |
           docker compose up --exit-code-from=container-sshnp -t=${{ env.CONTAINER_TIMEOUT }}
+
       - name: print logs
         working-directory: packages/sshnoports/test/end2end_tests/tests/release-release-release
         run: |
           docker ps -a --no-trunc
           docker compose logs --timestamps
+
       - name: tear down - docker compose down
         working-directory: packages/sshnoports/test/end2end_tests/tests/release-release-release
         run: |
@@ -193,20 +194,22 @@ jobs:
         working-directory: packages/sshnoports/test/end2end_tests/tests/trunk-trunk-release
         run: |
           docker compose build
+
       - name: run test - docker compose up
         working-directory: packages/sshnoports/test/end2end_tests/tests/trunk-trunk-release
         run: |
           docker compose up --exit-code-from=container-sshnp -t=${{ env.CONTAINER_TIMEOUT }}
+
       - name: print logs
         working-directory: packages/sshnoports/test/end2end_tests/tests/trunk-trunk-release
         run: |
           docker ps -a --no-trunc
           docker compose logs --timestamps
+
       - name: tear down - docker compose down
         working-directory: packages/sshnoports/test/end2end_tests/tests/trunk-trunk-release
         run: |
           docker compose down
-
 
   end2end_tests_trunk-trunk-trunk:
     needs: [ end2end_tests_prep ]
