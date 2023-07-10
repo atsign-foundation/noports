@@ -97,6 +97,15 @@ parse_args() {
       read -rp "Device name: " SSHNP_DEVICE_NAME;
     fi
 
+    while [ -z "$SSHNP_DEVICE_NAME" ] ||
+      [ "${#SSHNP_DEVICE_NAME}" -gt 15 ] ||
+      [[ "$SSHNP_DEVICE_NAME" =~ [^a-zA-Z0-9] ]]; do
+        if [ -n "$SSHNP_DEVICE_NAME" ]; then
+          echo "Device name must be between 1 and 15 characters and only contain alphanumeric characters";
+        fi
+        read -rp "Device name: " SSHNP_DEVICE_NAME;
+    done;
+
     norm_atsign CLIENT_ATSIGN
     norm_atsign DEVICE_MANAGER_ATSIGN
     echo;
