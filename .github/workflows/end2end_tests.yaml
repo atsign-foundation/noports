@@ -15,12 +15,6 @@ env:
   # SSHRVD_ATSIGN: "@8485wealthy51"
   SSHRVD_ATSIGN: "@rv_am"
   DOCKER_COMPOSE_UP_CMD: "docker compose up --build --exit-code-from=container-sshnp --quiet-pull"
-  DEVICE-NAME-LOCAL-LOCAL: "e2e1"
-  DEVICE-NAME-LOCAL-RELEASE: "e2e2"
-  DEVICE-NAME-LOCAL-TRUNK: "e2e3"
-  DEVICE-NAME-RELEASE-LOCAL: "e2e4"
-  DEVICE-NAME-TRUNK-LOCAL: "e2e5"
-
 jobs:
   # e2e-set-up-sshrvd:
   #   concurrency: e2e-set-up-sshrvd
@@ -63,8 +57,8 @@ jobs:
       - name: Set up entrypoints
         working-directory: packages/sshnoports/test/end2end_tests/tools/configuration
         run: |
-          ./setup-sshnp-entrypoint.sh ${{ env.DEVICE-NAME-LOCAL-LOCAL }} ${{ env.SSHNP_ATSIGN }} ${{ env.SSHNPD_ATSIGN }} ${{ env.SSHRVD_ATSIGN }}
-          ./setup-sshnpd-entrypoint.sh ${{ env.DEVICE-NAME-LOCAL-LOCAL }} ${{ env.SSHNP_ATSIGN }} ${{ env.SSHNPD_ATSIGN }}
+          ./setup-sshnp-entrypoint.sh ${{ github.run_id }}${{ github.run_attempt }}1 ${{ env.SSHNP_ATSIGN }} ${{ env.SSHNPD_ATSIGN }} ${{ env.SSHRVD_ATSIGN }}
+          ./setup-sshnpd-entrypoint.sh ${{ github.run_id }}${{ github.run_attempt }}1 ${{ env.SSHNP_ATSIGN }} ${{ env.SSHNPD_ATSIGN }}
 
       - name: Ensure entrypoints exist
         working-directory: packages/sshnoports/test/end2end_tests/contexts
@@ -106,8 +100,8 @@ jobs:
       - name: Set up
         working-directory: packages/sshnoports/test/end2end_tests/tools/configuration
         run: |
-          ./setup-sshnp-entrypoint.sh ${{ env.DEVICE-NAME-LOCAL-TRUNK }} ${{ env.SSHNP_ATSIGN }} ${{ env.SSHNPD_ATSIGN }} ${{ env.SSHRVD_ATSIGN }}
-          ./setup-sshnpd-entrypoint.sh ${{ env.DEVICE-NAME-LOCAL-TRUNK }} ${{ env.SSHNP_ATSIGN }} ${{ env.SSHNPD_ATSIGN }}
+          ./setup-sshnp-entrypoint.sh ${{ github.run_id }}${{ github.run_attempt }}2 ${{ env.SSHNP_ATSIGN }} ${{ env.SSHNPD_ATSIGN }} ${{ env.SSHRVD_ATSIGN }}
+          ./setup-sshnpd-entrypoint.sh ${{ github.run_id }}${{ github.run_attempt }}2 ${{ env.SSHNP_ATSIGN }} ${{ env.SSHNPD_ATSIGN }}
 
       - name: Ensure entrypoints exist
         working-directory: packages/sshnoports/test/end2end_tests/contexts
@@ -148,8 +142,8 @@ jobs:
       - name: Set up
         working-directory: packages/sshnoports/test/end2end_tests/tools/configuration
         run: |
-          ./setup-sshnp-entrypoint.sh ${{ env.DEVICE-NAME-TRUNK-LOCAL }} ${{ env.SSHNP_ATSIGN }} ${{ env.SSHNPD_ATSIGN }} ${{ env.SSHRVD_ATSIGN }}
-          ./setup-sshnpd-entrypoint.sh ${{ env.DEVICE-NAME-TRUNK-LOCAL }} ${{ env.SSHNP_ATSIGN }} ${{ env.SSHNPD_ATSIGN }}
+          ./setup-sshnp-entrypoint.sh ${{ github.run_id }}${{ github.run_attempt }}3 ${{ env.SSHNP_ATSIGN }} ${{ env.SSHNPD_ATSIGN }} ${{ env.SSHRVD_ATSIGN }}
+          ./setup-sshnpd-entrypoint.sh ${{ github.run_id }}${{ github.run_attempt }}3 ${{ env.SSHNP_ATSIGN }} ${{ env.SSHNPD_ATSIGN }}
 
       - name: Ensure entrypoints exist
         working-directory: packages/sshnoports/test/end2end_tests/contexts
@@ -190,8 +184,8 @@ jobs:
       - name: Set up
         working-directory: packages/sshnoports/test/end2end_tests/tools/configuration
         run: |
-          ./setup-sshnp-entrypoint.sh ${{ env.DEVICE-NAME-LOCAL-RELEASE }} ${{ env.SSHNP_ATSIGN }} ${{ env.SSHNPD_ATSIGN }} ${{ env.SSHRVD_ATSIGN }}
-          ./setup-sshnpd-entrypoint.sh ${{ env.DEVICE-NAME-LOCAL-RELEASE }} ${{ env.SSHNP_ATSIGN }} ${{ env.SSHNPD_ATSIGN }}
+          ./setup-sshnp-entrypoint.sh ${{ github.run_id }}${{ github.run_attempt }}4 ${{ env.SSHNP_ATSIGN }} ${{ env.SSHNPD_ATSIGN }} ${{ env.SSHRVD_ATSIGN }}
+          ./setup-sshnpd-entrypoint.sh ${{ github.run_id }}${{ github.run_attempt }}4 ${{ env.SSHNP_ATSIGN }} ${{ env.SSHNPD_ATSIGN }}
 
       - name: Ensure entrypoints exist
         working-directory: packages/sshnoports/test/end2end_tests/contexts
@@ -232,8 +226,8 @@ jobs:
       - name: Set up
         working-directory: packages/sshnoports/test/end2end_tests/tools/configuration
         run: |
-          ./setup-sshnp-entrypoint.sh ${{ env.DEVICE-NAME-RELEASE-LOCAL }} ${{ env.SSHNP_ATSIGN }} ${{ env.SSHNPD_ATSIGN }} ${{ env.SSHRVD_ATSIGN }}
-          ./setup-sshnpd-entrypoint.sh ${{ env.DEVICE-NAME-RELEASE-LOCAL }} ${{ env.SSHNP_ATSIGN }} ${{ env.SSHNPD_ATSIGN }}
+          ./setup-sshnp-entrypoint.sh ${{ github.run_id }}${{ github.run_attempt }}5 ${{ env.SSHNP_ATSIGN }} ${{ env.SSHNPD_ATSIGN }} ${{ env.SSHRVD_ATSIGN }}
+          ./setup-sshnpd-entrypoint.sh ${{ github.run_id }}${{ github.run_attempt }}5 ${{ env.SSHNP_ATSIGN }} ${{ env.SSHNPD_ATSIGN }}
 
       - name: Ensure entrypoints exist
         working-directory: packages/sshnoports/test/end2end_tests/contexts
