@@ -9,6 +9,7 @@ import 'package:sshnoports/sshnp.dart';
 import 'package:sshnoports/cleanup_sshnp.dart';
 
 void main(List<String> args) async {
+  exit(1);
   AtSignLogger.root_level = 'SHOUT';
 
   SSHNP sshnp = await SSHNP.fromCommandLineArgs(args);
