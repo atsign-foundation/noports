@@ -14,7 +14,7 @@ env:
   SSHNPD_ATSIGN: "@8052simple"
   # SSHRVD_ATSIGN: "@8485wealthy51"
   SSHRVD_ATSIGN: "@rv_am"
-  DOCKER_COMPOSE_UP_CMD: "docker compose up --build --exit-code-from=container-sshnp --quiet-pull -t=60 --no-recreate"
+  DOCKER_COMPOSE_UP_CMD: "docker compose up --build --exit-code-from=container-sshnp --quiet-pull"
   DEVICE-NAME-LOCAL-LOCAL: "e2e1"
   DEVICE-NAME-LOCAL-RELEASE: "e2e2"
   DEVICE-NAME-LOCAL-TRUNK: "e2e3"
@@ -242,19 +242,19 @@ jobs:
           cat sshnpd/entrypoint.sh
 
       - name: Test
-        working-directory: packages/sshnoports/test/end2end_tests/tests/local-local
+        working-directory: packages/sshnoports/test/end2end_tests/tests/release-local
         run: |
           ${{ env.DOCKER_COMPOSE_UP_CMD }}
 
       - name: Logs
         if: always()
-        working-directory: packages/sshnoports/test/end2end_tests/tests/local-local
+        working-directory: packages/sshnoports/test/end2end_tests/tests/release-local
         run: |
           docker compose ps -a
           docker compose logs --timestamps
 
       - name: Tear down
         if: always()
-        working-directory: packages/sshnoports/test/end2end_tests/tests/local-local
+        working-directory: packages/sshnoports/test/end2end_tests/tests/release-local
         run: |
           docker compose down

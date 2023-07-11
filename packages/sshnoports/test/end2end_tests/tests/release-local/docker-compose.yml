@@ -28,7 +28,7 @@ services:
     networks:
       - sshnp
     depends_on:
-      - image-runtime-local
+      - image-runtime-release
       - container-sshnpd
   container-sshnpd:
     image: atsigncompany/sshnp-e2e-runtime:local
