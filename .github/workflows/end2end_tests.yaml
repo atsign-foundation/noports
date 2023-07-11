@@ -44,7 +44,7 @@ jobs:
       - name: Docker compose up
         working-directory: packages/sshnoports/test/end2end_tests/utility/sshrvd-release
         run: |
-          docker compose up --build --quiet-pull --exit-code-from=container-sshrvd
+          docker compose up --build -d
 
   e2e-local-local:
     needs: [e2e-set-up-sshrvd]
