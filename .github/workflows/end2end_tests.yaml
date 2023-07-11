@@ -47,6 +47,7 @@ jobs:
           docker compose up --build --quiet-pull --exit-code-from=container-sshrvd
 
   e2e-local-local:
+    needs: [e2e-set-up-sshrvd]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9 # v3.5.3
@@ -89,6 +90,7 @@ jobs:
 
 
   e2e-local-trunk:
+    needs: [e2e-set-up-sshrvd]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9 # v3.5.3
@@ -130,6 +132,7 @@ jobs:
           docker compose down
 
   e2e-trunk-local:
+    needs: [e2e-set-up-sshrvd]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9 # v3.5.3
@@ -171,6 +174,7 @@ jobs:
           docker compose down
 
   e2e-local-release:
+    needs: [e2e-set-up-sshrvd]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9 # v3.5.3
@@ -212,6 +216,7 @@ jobs:
           docker compose down
 
   e2e-release-local:
+    needs: [e2e-set-up-sshrvd]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9 # v3.5.3
