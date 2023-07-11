@@ -36,7 +36,7 @@ cd test/end2end_tests/tools/automated-tests-locally
 
 ```sh
 jeremytubongbanua@Jeremys-M2-Air automated-tests-locally % sh run-local.sh -1 @jeremy_0 -2 @smoothalligator -3 @rv_am -t local-local-local -d e2e 
-Running: cd ../../tests/local-local-local
+Running: cd local-local-local
 Running: sudo docker-compose build
 Running: sudo docker-compose up --exit-code-from=container-sshnp
 Running: sudo docker-compose down

@@ -1,3 +1,0 @@
-This is to ensure the keys/ directory exists.
-Place your sshrvd atKeys here
-Example: `sshrvd/keys/@alice_key.atKeys`

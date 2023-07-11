@@ -5,6 +5,8 @@ There are two main things happening in this folder that you can use for testing 
 1. [Running Containers Automatically Locally](#running-containers-automatically-locally)
 2. [Running Containers Manually Locally](#running-containers-manually-locally)
 
+Then there's automated testing stuff that can be found in `tests/` and `tools/configuration/`. Read `.github/workflows/end2end_tests.yaml` to learn more.
+
 ## Tour
 
 There's a lot going on here. Here's a quick tour:
@@ -12,8 +14,9 @@ There's a lot going on here. Here's a quick tour:
 - `contexts/` - files and folders that Docker containers interact with via volumes
 - `image/` - the Docker image with multiple targets. Read more on this [here](#dockerfile-image)
 - `templates/` - templates for the entrypoints that the containers use
-- `tools/` - tools for testing sshnoports 1. automated locally, 2. manually locally, 3. configuration scripts that CI uses
 - `tests/` - contains the docker compose files to run the end2end services
+- `tools/` - tools for testing sshnoports 1. automated locally, 2. manually locally, 3. configuration scripts that CI uses
+- `utility/` - contains the utility compose files that may prove useful for testing
 
 ## Running Containers Manually Locally
 
