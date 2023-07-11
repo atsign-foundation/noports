@@ -10,17 +10,19 @@ services:
     deploy:
       mode: replicated
       replicas: 0
-  image-runtime-release:
+  image-runtime-trunk:
     build:
       context: ../../image/
       dockerfile: ./Dockerfile
-      target: runtime-release
-    image: atsigncompany/sshnp-e2e-runtime:release
+      target: runtime-branch
+      args:
+        - branch=trunk
+    image: atsigncompany/sshnp-e2e-runtime:branch-trunk
     deploy:
       mode: replicated
       replicas: 0
   container-sshnp:
-    image: atsigncompany/sshnp-e2e-runtime:local
+    image: atsigncompany/sshnp-e2e-runtime:branch-trunk
     container_name: sshnp
     volumes:
       - ../../contexts/sshnp/keys/:/atsign/.atsign/keys/ # mount keys
@@ -28,7 +30,7 @@ services:
     networks:
       - sshnp
     depends_on:
-      - image-runtime-local
+      - image-runtime-trunk
       - container-sshnpd
   container-sshnpd:
     image: atsigncompany/sshnp-e2e-runtime:local
@@ -39,16 +41,6 @@ services:
       - ../../contexts/sshnpd/test.sh:/atsign/test.sh # mount test.sh
     networks:
       - sshnpd
-    depends_on:
-      - image-runtime-local
-      - container-sshrvd
-  container-sshrvd:
-    image: atsigncompany/sshnp-e2e-runtime:release
-    container_name: sshrvd
-    volumes:
-      - ../../contexts/sshrvd/keys/:/atsign/.atsign/keys/ # mount keys
-      - ../../contexts/sshrvd/entrypoint.sh:/atsign/entrypoint.sh # mount entrypoint
-    network_mode: host
     depends_on:
       - image-runtime-local
 

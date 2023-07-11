@@ -62,7 +62,7 @@ pargs_args() {
         esac
     done
 
-    if [[ -z $sshnp || -z $sshnpd || -z $sshrvd || -z $test ]];
+    if [[ -z $sshnp || -z $sshnpd || -z $sshrvd || -z $test || -z $device ]];
     then
         echo "You are missing arguments..."
         usage
@@ -109,12 +109,12 @@ main() {
 
     downcmd="sudo docker-compose down"
 
-    echo "Running: cd ../../tests/$test"
+    echo "Running: cd $test"
     echo "Running: $buildcmd"
     echo "Running: $upcmd"
     echo "Running: $downcmd"
 
-    cd ../../tests/$test
+    cd $test
     eval $buildcmd
     eval $upcmd
     eval $downcmd
