@@ -42,7 +42,7 @@ jobs:
           cat sshrvd/entrypoint.sh
 
       - name: Docker compose up
-        working-directory: packages/sshnoports/test/end2end_tests/tests/sshrvd
+        working-directory: packages/sshnoports/test/end2end_tests/utility/sshrvd-release
         run: |
           docker compose up --build --quiet-pull --exit-code-from=container-sshrvd
 
@@ -71,20 +71,20 @@ jobs:
           cat sshnpd/entrypoint.sh
 
       - name: Test
-        working-directory: packages/sshnoports/test/end2end_tests/tests/local-local-release
+        working-directory: packages/sshnoports/test/end2end_tests/tests/local-local
         run: |
           ${{ env.DOCKER_COMPOSE_UP_CMD }}
 
       - name: Logs
         if: always()
-        working-directory: packages/sshnoports/test/end2end_tests/tests/local-local-release
+        working-directory: packages/sshnoports/test/end2end_tests/tests/local-local
         run: |
           docker compose ps -a
           docker compose logs --timestamps
 
       - name: Tear down
         if: always()
-        working-directory: packages/sshnoports/test/end2end_tests/tests/local-local-release
+        working-directory: packages/sshnoports/test/end2end_tests/tests/local-local
         run: |
           docker compose down
 
@@ -114,20 +114,20 @@ jobs:
           cat sshnpd/entrypoint.sh
 
       - name: Test
-        working-directory: packages/sshnoports/test/end2end_tests/tests/local-trunk-release
+        working-directory: packages/sshnoports/test/end2end_tests/tests/local-trunk
         run: |
           ${{ env.DOCKER_COMPOSE_UP_CMD }}
 
       - name: Logs
         if: always()
-        working-directory: packages/sshnoports/test/end2end_tests/tests/local-trunk-release
+        working-directory: packages/sshnoports/test/end2end_tests/tests/local-trunk
         run: |
           docker compose ps -a
           docker compose logs --timestamps
 
       - name: Tear down
         if: always()
-        working-directory: packages/sshnoports/test/end2end_tests/tests/local-trunk-release
+        working-directory: packages/sshnoports/test/end2end_tests/tests/local-trunk
         run: |
           docker compose down
 
@@ -156,20 +156,20 @@ jobs:
           cat sshnpd/entrypoint.sh
 
       - name: Test
-        working-directory: packages/sshnoports/test/end2end_tests/tests/trunk-local-release
+        working-directory: packages/sshnoports/test/end2end_tests/tests/trunk-local
         run: |
           ${{ env.DOCKER_COMPOSE_UP_CMD }}
 
       - name: Logs
         if: always()
-        working-directory: packages/sshnoports/test/end2end_tests/tests/trunk-local-release
+        working-directory: packages/sshnoports/test/end2end_tests/tests/trunk-local
         run: |
           docker compose ps -a
           docker compose logs --timestamps
 
       - name: Tear down
         if: always()
-        working-directory: packages/sshnoports/test/end2end_tests/tests/trunk-local-release
+        working-directory: packages/sshnoports/test/end2end_tests/tests/trunk-local
         run: |
           docker compose down
 
@@ -198,20 +198,20 @@ jobs:
           cat sshnpd/entrypoint.sh
 
       - name: Test
-        working-directory: packages/sshnoports/test/end2end_tests/tests/local-release-release
+        working-directory: packages/sshnoports/test/end2end_tests/tests/local-release
         run: |
           ${{ env.DOCKER_COMPOSE_UP_CMD }}
 
       - name: Logs
         if: always()
-        working-directory: packages/sshnoports/test/end2end_tests/tests/local-release-release
+        working-directory: packages/sshnoports/test/end2end_tests/tests/local-release
         run: |
           docker compose ps -a
           docker compose logs --timestamps
 
       - name: Tear down
         if: always()
-        working-directory: packages/sshnoports/test/end2end_tests/tests/local-release-release
+        working-directory: packages/sshnoports/test/end2end_tests/tests/local-release
         run: |
           docker compose down
 
@@ -240,19 +240,19 @@ jobs:
           cat sshnpd/entrypoint.sh
 
       - name: Test
-        working-directory: packages/sshnoports/test/end2end_tests/tests/local-local-release
+        working-directory: packages/sshnoports/test/end2end_tests/tests/local-local
         run: |
           ${{ env.DOCKER_COMPOSE_UP_CMD }}
 
       - name: Logs
         if: always()
-        working-directory: packages/sshnoports/test/end2end_tests/tests/local-local-release
+        working-directory: packages/sshnoports/test/end2end_tests/tests/local-local
         run: |
           docker compose ps -a
           docker compose logs --timestamps
 
       - name: Tear down
         if: always()
-        working-directory: packages/sshnoports/test/end2end_tests/tests/local-local-release
+        working-directory: packages/sshnoports/test/end2end_tests/tests/local-local
         run: |
           docker compose down
