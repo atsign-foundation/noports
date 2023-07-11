@@ -1,3 +1,0 @@
-This is to ensure the keys/ directory exists.
-Place your sshnpd atKeys here
-Example: `sshnpd/keys/@alice_key.atKeys`
