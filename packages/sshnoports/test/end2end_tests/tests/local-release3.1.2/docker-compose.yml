@@ -16,13 +16,13 @@ services:
       dockerfile: ./Dockerfile
       target: runtime-release
       args:
-        - release=3.2.0
-    image: atsigncompany/sshnp-e2e-runtime:release3.1.0
+        - release=3.1.2
+    image: atsigncompany/sshnp-e2e-runtime:release3.1.2
     deploy:
       mode: replicated
       replicas: 0
   container-sshnp:
-    image: atsigncompany/sshnp-e2e-runtime:release3.1.0
+    image: atsigncompany/sshnp-e2e-runtime:local
     container_name: sshnp
     volumes:
       - ../../contexts/sshnp/keys/:/atsign/.atsign/keys/ # mount keys
@@ -33,7 +33,7 @@ services:
       - image-runtime-local
       - container-sshnpd
   container-sshnpd:
-    image: atsigncompany/sshnp-e2e-runtime:local
+    image: atsigncompany/sshnp-e2e-runtime:release3.1.2
     container_name: sshnpd
     volumes:
       - ../../contexts/sshnpd/keys/:/atsign/.atsign/keys/ # mount keys
