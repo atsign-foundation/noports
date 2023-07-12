@@ -17,8 +17,8 @@ import 'package:uuid/uuid.dart';
 import 'package:version/version.dart';
 
 // local packages
-import 'package:sshnoports/shared/service_factories.dart';
-import 'package:sshnoports/shared/utils.dart';
+import 'package:sshnoports/common/service_factories.dart';
+import 'package:sshnoports/common/utils.dart';
 import 'package:sshnoports/sshnp/cleanup.dart';
 import 'package:sshnoports/version.dart';
 

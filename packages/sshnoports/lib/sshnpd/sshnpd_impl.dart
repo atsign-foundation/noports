@@ -18,9 +18,9 @@ import 'package:uuid/uuid.dart';
 
 // local packages
 import 'package:sshnoports/version.dart';
-import 'package:sshnoports/shared/service_factories.dart';
+import 'package:sshnoports/common/service_factories.dart';
 
-import '../shared/create_at_client_cli.dart';
+import '../common/create_at_client_cli.dart';
 
 const String nameSpace = 'sshnp';
 

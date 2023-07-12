@@ -1,6 +1,6 @@
 import 'package:args/args.dart';
 
-import '../shared/utils.dart';
+import '../common/utils.dart';
 
 class SSHNPDParams {
   late final String device;

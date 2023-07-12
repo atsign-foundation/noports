@@ -1,7 +1,7 @@
 import 'package:sshnoports/sshnpd/sshnpd_cli_params.dart';
 import 'package:test/test.dart';
 import 'package:args/args.dart';
-import 'package:sshnoports/shared/utils.dart';
+import 'package:sshnoports/common/utils.dart';
 
 void main() {
   group('args parser test', () {

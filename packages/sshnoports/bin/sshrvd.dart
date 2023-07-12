@@ -16,7 +16,7 @@ import 'package:version/version.dart';
 
 // local packages
 import 'package:sshnoports/version.dart';
-import 'package:sshnoports/shared/utils.dart';
+import 'package:sshnoports/common/utils.dart';
 
 void main(List<String> args) async {
   final AtSignLogger logger = AtSignLogger(' sshrvd ');
