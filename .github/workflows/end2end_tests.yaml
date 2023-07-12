@@ -430,14 +430,14 @@ jobs:
       - name: Set up
         working-directory: packages/sshnoports/test/end2end_tests/tools/configuration
         run: |
-          ./setup-sshnp-entrypoint.sh ${{ github.run_id }}${{ github.run_attempt }}9 ${{ env.SSHNP_ATSIGN }} ${{ env.SSHNPD_ATSIGN }} ${{ env.SSHRVD_ATSIGN }}
-          ./setup-sshnpd-entrypoint.sh ${{ github.run_id }}${{ github.run_attempt }}9 ${{ env.SSHNP_ATSIGN }} ${{ env.SSHNPD_ATSIGN }}
+          ./setup-sshnp-entrypoint.sh ${{ github.run_id }}${{ github.run_attempt }}10 ${{ env.SSHNP_ATSIGN }} ${{ env.SSHNPD_ATSIGN }} ${{ env.SSHRVD_ATSIGN }}
+          ./setup-sshnpd-entrypoint.sh ${{ github.run_id }}${{ github.run_attempt }}10 ${{ env.SSHNP_ATSIGN }} ${{ env.SSHNPD_ATSIGN }}
 
-          - name: Ensure entrypoints exist
-          working-directory: packages/sshnoports/test/end2end_tests/contexts
-          run: |
-            cat sshnp/entrypoint.sh
-            cat sshnpd/entrypoint.sh
+      - name: Ensure entrypoints exist
+        working-directory: packages/sshnoports/test/end2end_tests/contexts
+        run: |
+          cat sshnp/entrypoint.sh
+          cat sshnpd/entrypoint.sh
 
       - name: Test
         working-directory: packages/sshnoports/test/end2end_tests/tests/release3.1.2-local
@@ -471,14 +471,14 @@ jobs:
       - name: Set up
         working-directory: packages/sshnoports/test/end2end_tests/tools/configuration
         run: |
-          ./setup-sshnp-entrypoint.sh ${{ github.run_id }}${{ github.run_attempt }}9 ${{ env.SSHNP_ATSIGN }} ${{ env.SSHNPD_ATSIGN }} ${{ env.SSHRVD_ATSIGN }}
-          ./setup-sshnpd-entrypoint.sh ${{ github.run_id }}${{ github.run_attempt }}9 ${{ env.SSHNP_ATSIGN }} ${{ env.SSHNPD_ATSIGN }}
+          ./setup-sshnp-entrypoint.sh ${{ github.run_id }}${{ github.run_attempt }}11 ${{ env.SSHNP_ATSIGN }} ${{ env.SSHNPD_ATSIGN }} ${{ env.SSHRVD_ATSIGN }}
+          ./setup-sshnpd-entrypoint.sh ${{ github.run_id }}${{ github.run_attempt }}11 ${{ env.SSHNP_ATSIGN }} ${{ env.SSHNPD_ATSIGN }}
 
-          - name: Ensure entrypoints exist
-          working-directory: packages/sshnoports/test/end2end_tests/contexts
-          run: |
-            cat sshnp/entrypoint.sh
-            cat sshnpd/entrypoint.sh
+      - name: Ensure entrypoints exist
+        working-directory: packages/sshnoports/test/end2end_tests/contexts
+        run: |
+          cat sshnp/entrypoint.sh
+          cat sshnpd/entrypoint.sh
 
       - name: Test
         working-directory: packages/sshnoports/test/end2end_tests/tests/local-release3.1.2
