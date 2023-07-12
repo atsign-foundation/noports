@@ -11,7 +11,7 @@ import 'package:at_client/at_client.dart';
 import 'package:logging/logging.dart';
 import 'package:meta/meta.dart';
 import 'package:sshnoports/sshnpd/sshnpd.dart';
-import 'package:sshnoports/sshnpd/sshnpd_cli_params.dart';
+import 'package:sshnoports/sshnpd/sshnpd_params.dart';
 import 'package:version/version.dart';
 import 'package:dartssh2/dartssh2.dart';
 import 'package:uuid/uuid.dart';
