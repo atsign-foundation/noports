@@ -74,13 +74,4 @@ abstract class SSHNPD {
   /// - If an 'sshpublickey' notification is received, Checks if the SSH public key is valid, Appends the SSH public key to the authorized_keys file in the user's SSH directory if it is not already present
   /// - If an 'sshd' notification is received, it triggers the sshCallback function to handle the SSH callback request.
   Future<void> run();
-
-  void sshCallback(
-    AtNotification notification,
-    String privateKey,
-    AtSignLogger logger,
-    String managerAtsign,
-    String deviceAtsign,
-    String device,
-  );
 }

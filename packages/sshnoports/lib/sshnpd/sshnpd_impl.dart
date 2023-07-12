@@ -213,7 +213,7 @@ class SSHNPDImpl implements SSHNPD {
       if (notificationKey == 'sshd') {
         logger.info(
             'ssh callback request received from ${notification.from} notification id : ${notification.id}');
-        sshCallback(notification, privateKey, logger, managerAtsign,
+        _sshCallback(notification, privateKey, logger, managerAtsign,
             deviceAtsign, device);
       }
     }),
@@ -250,8 +250,7 @@ class SSHNPDImpl implements SSHNPD {
     return AtClientManager.getInstance().atClient;
   }
 
-  @override
-  void sshCallback(
+  void _sshCallback(
       AtNotification notification,
       String privateKey,
       AtSignLogger logger,
