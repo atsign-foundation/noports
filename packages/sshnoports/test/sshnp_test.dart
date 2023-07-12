@@ -1,6 +1,6 @@
 import 'package:args/args.dart';
-import 'package:sshnoports/sshnp.dart';
-import 'package:sshnoports/utils.dart';
+import 'package:sshnoports/sshnp/sshnp.dart';
+import 'package:sshnoports/shared/utils.dart';
 import 'package:test/test.dart';
 
 void main() {

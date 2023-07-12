@@ -11,15 +11,15 @@ import 'package:at_onboarding_cli/at_onboarding_cli.dart';
 import 'package:args/args.dart';
 import 'package:logging/logging.dart';
 import 'package:meta/meta.dart';
-import 'package:sshnoports/config_util.dart';
-import 'package:sshnoports/sshnp_args.dart';
+import 'package:sshnoports/sshnp/parse_config_file.dart';
+import 'package:sshnoports/sshnp/sshnp_arg.dart';
 import 'package:uuid/uuid.dart';
 import 'package:version/version.dart';
 
 // local packages
-import 'package:sshnoports/service_factories.dart';
-import 'package:sshnoports/utils.dart';
-import 'package:sshnoports/cleanup_sshnp.dart';
+import 'package:sshnoports/shared/service_factories.dart';
+import 'package:sshnoports/shared/utils.dart';
+import 'package:sshnoports/sshnp/cleanup.dart';
 import 'package:sshnoports/version.dart';
 
 class SSHNP {

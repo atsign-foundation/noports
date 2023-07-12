@@ -2,7 +2,7 @@
 import 'dart:io';
 
 // local packages
-import 'package:sshnoports/sshnpd.dart';
+import 'package:sshnoports/sshnpd/sshnpd.dart';
 
 void main(List<String> args) async {
 

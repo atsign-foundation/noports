@@ -1,6 +1,6 @@
 import 'dart:io';
 
-import 'package:sshnoports/sshnp_args.dart';
+import 'package:sshnoports/sshnp/sshnp_arg.dart';
 
 List<String> parseConfigFile(String fileName) {
   List<String> args = <String>[];
