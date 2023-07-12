@@ -4,7 +4,7 @@ version: '3.8'
 services:
   image-manual-release:
     build:
-      context: ../../image/
+      context: ../../../image/
       dockerfile: ./Dockerfile
       target: manual-release
     image: atsigncompany/sshnp-e2e-manual:release
@@ -15,7 +15,7 @@ services:
     image: atsigncompany/sshnp-e2e-manual:release
     container_name: manual_release_sshnp
     volumes:
-      - ../../contexts/sshnp/keys/:/atsign/.atsign/keys/ # mount keys
+      - ../../../contexts/sshnp/keys/:/atsign/.atsign/keys/ # mount keys
     networks:
       - sshnp
     depends_on:
@@ -24,7 +24,7 @@ services:
     image: atsigncompany/sshnp-e2e-manual:release
     container_name: manual_release_sshnpd
     volumes:
-      - ../../contexts/sshnpd/keys/:/atsign/.atsign/keys/ # mount keys
+      - ../../../contexts/sshnpd/keys/:/atsign/.atsign/keys/ # mount keys
     networks:
       - sshnpd
     depends_on:
@@ -33,7 +33,7 @@ services:
     image: atsigncompany/sshnp-e2e-manual:release
     container_name: manual_release_sshnp
     volumes:
-      - ../../contexts/sshrvd/keys/:/atsign/.atsign/keys/ # mount keys
+      - ../../../contexts/sshrvd/keys/:/atsign/.atsign/keys/ # mount keys
     network_mode: host
     depends_on:
       - image-manual-release
