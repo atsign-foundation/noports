@@ -67,7 +67,7 @@ class SSHNPDImpl implements SSHNPD {
 
   static Future<SSHNPD> fromCommandLineArgs(List<String> args) async {
     try {
-      var p = SshnpdCliParams.fromArgs(args);
+      var p = SSHNPDParams.fromArgs(args);
 
       // Check atKeyFile selected exists
       if (!File(p.atKeysFilePath).existsSync()) {
@@ -101,7 +101,7 @@ class SSHNPDImpl implements SSHNPD {
       return sshnpd;
     } catch (e) {
       version();
-      stdout.writeln(SshnpdCliParams.parser.usage);
+      stdout.writeln(SSHNPDParams.parser.usage);
       stderr.writeln(e);
       exit(1);
     }

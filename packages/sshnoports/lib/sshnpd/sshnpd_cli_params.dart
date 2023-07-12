@@ -2,7 +2,7 @@ import 'package:args/args.dart';
 
 import '../shared/utils.dart';
 
-class SshnpdCliParams {
+class SSHNPDParams {
   late final String device;
   late final String username;
   late final String homeDirectory;
@@ -15,7 +15,7 @@ class SshnpdCliParams {
   // Non param variables
   static final ArgParser parser = _createArgParser();
 
-  SshnpdCliParams.fromArgs(List<String> args) {
+  SSHNPDParams.fromArgs(List<String> args) {
     // Arg check
     ArgResults r = parser.parse(args);
 
