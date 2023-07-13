@@ -3,7 +3,6 @@ import 'dart:async';
 import 'dart:io';
 
 // atPlatform packages
-import 'package:at_onboarding_cli/at_onboarding_cli.dart';
 import 'package:at_utils/at_logger.dart';
 import 'package:at_client/at_client.dart';
 
@@ -12,13 +11,11 @@ import 'package:logging/logging.dart';
 import 'package:meta/meta.dart';
 import 'package:sshnoports/sshnpd/sshnpd.dart';
 import 'package:sshnoports/sshnpd/sshnpd_params.dart';
-import 'package:version/version.dart';
 import 'package:dartssh2/dartssh2.dart';
 import 'package:uuid/uuid.dart';
 
 // local packages
 import 'package:sshnoports/version.dart';
-import 'package:sshnoports/common/service_factories.dart';
 
 import '../common/create_at_client_cli.dart';
 
@@ -219,35 +216,6 @@ class SSHNPDImpl implements SSHNPD {
     }),
             onError: (e) => logger.severe('Notification Failed:$e'),
             onDone: () => logger.info('Notification listener stopped'));
-  }
-
-  static Future<AtClient> createAtClient(
-      {required String homeDirectory,
-      required String deviceAtsign,
-      required String sessionId,
-      required String atKeysFilePath}) async {
-    // Now on to the atPlatform startup
-    //onboarding preference builder can be used to set onboardingService parameters
-    AtOnboardingPreference atOnboardingConfig = AtOnboardingPreference()
-      ..hiveStoragePath = '$homeDirectory/.sshnp/$deviceAtsign/storage'
-          .replaceAll('/', Platform.pathSeparator)
-      ..namespace = 'sshnp'
-      ..downloadPath =
-          '$homeDirectory/.sshnp/files'.replaceAll('/', Platform.pathSeparator)
-      ..isLocalStoreRequired = true
-      ..commitLogPath = '$homeDirectory/.sshnp/$deviceAtsign/storage/commitLog'
-          .replaceAll('/', Platform.pathSeparator)
-      ..fetchOfflineNotifications = false
-      ..atKeysFilePath = atKeysFilePath
-      ..atProtocolEmitted = Version(2, 0, 0);
-
-    AtOnboardingService onboardingService = AtOnboardingServiceImpl(
-        deviceAtsign, atOnboardingConfig,
-        atServiceFactory: ServiceFactoryWithNoOpSyncService());
-
-    await onboardingService.authenticate();
-
-    return AtClientManager.getInstance().atClient;
   }
 
   void _sshCallback(
