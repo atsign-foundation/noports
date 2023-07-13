@@ -168,19 +168,4 @@ abstract class SSHNP {
   /// - If got a success response, print the ssh command to use to stdout
   /// - Clean up temporary files
   Future<void> run();
-
-  /// Look up the user name ... we expect a key to have been shared with us by
-  /// sshnpd. Let's say we are @human running sshnp, and @daemon is running
-  /// sshnpd, then we expect a key to have been shared whose ID is
-  /// @human:username.device.sshnp@daemon
-  /// Is not called if remoteUserName was set via constructor
-  Future<void> fetchRemoteUserName();
-
-  Future<void> sharePublicKeyWithSshnpdIfRequired();
-
-  Future<void> sharePrivateKeyWithSshnpd();
-
-  Future<void> getHostAndPortFromSshrvd();
-
-  Future<void> generateSshKeys();
 }

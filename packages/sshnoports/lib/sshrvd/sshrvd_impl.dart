@@ -156,7 +156,6 @@ class SSHRVDImpl implements SSHRVD {
     }
   }
 
-  @override
   Future<List<int>> connectSpawn(int portA, int portB, String session,
       String forAtsign, bool snoop) async {
     /// Spawn an isolate, passing my receivePort sendPort
@@ -178,7 +177,6 @@ class SSHRVDImpl implements SSHRVD {
     return ([portA, portB]);
   }
 
-  @override
   Future<void> connect(SendPort mySendPort) async {
     final AtSignLogger logger = AtSignLogger(' sshrvd ');
     logger.hierarchicalLoggingEnabled = true;

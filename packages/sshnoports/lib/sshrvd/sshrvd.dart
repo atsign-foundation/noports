@@ -1,5 +1,3 @@
-import 'dart:isolate';
-
 import 'package:at_client/at_client.dart';
 import 'package:at_utils/at_logger.dart';
 import 'package:meta/meta.dart';
@@ -48,9 +46,4 @@ abstract class SSHRVD {
 
   Future<void> init();
   Future<void> run();
-
-  Future<List<int>> connectSpawn(
-      int portA, int portB, String session, String forAtsign, bool snoop);
-
-  Future<void> connect(SendPort mySendPort);
 }
