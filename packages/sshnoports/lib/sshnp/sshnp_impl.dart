@@ -229,7 +229,7 @@ class SSHNPImpl implements SSHNP {
 
       return sshnp;
     } catch (e) {
-      version();
+      printVersion();
       stdout.writeln(SSHNPPartialParams.parser.usage);
       stderr.writeln(e);
       rethrow;

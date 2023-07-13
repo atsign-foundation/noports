@@ -89,7 +89,7 @@ class SSHNPDImpl implements SSHNPD {
 
       return sshnpd;
     } catch (e) {
-      version();
+      printVersion();
       stdout.writeln(SSHNPDParams.parser.usage);
       stderr.writeln(e);
       rethrow;
