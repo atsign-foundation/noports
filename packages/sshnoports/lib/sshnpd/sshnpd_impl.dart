@@ -150,27 +150,36 @@ class SSHNPDImpl implements SSHNPD {
       }
     });
 
-    String privateKey = "";
-    String sshPublicKey = "";
     logger.info('Subscribing to $device\\.${SSHNPD.namespace}@');
     notificationService
         .subscribe(regex: '$device\\.${SSHNPD.namespace}@', shouldDecrypt: true)
-        .listen(((notification) async {
-      String notificationKey = notification.key
-          .replaceAll('${notification.to}:', '')
-          .replaceAll('.$device.${SSHNPD.namespace}${notification.from}', '')
-          // convert to lower case as the latest AtClient converts notification
-          // keys to lower case when received
-          .toLowerCase();
+        .listen(
+          _notificationHandler,
+          onError: (e) => logger.severe('Notification Failed:$e'),
+          onDone: () => logger.info('Notification listener stopped'),
+        );
+    logger.info('Done');
+  }
 
-      logger.info('Received: $notificationKey');
+  void _notificationHandler(AtNotification notification) async {
+    String privateKey = "";
+    String sshPublicKey = "";
 
-      if (notificationKey == 'privatekey') {
+    String notificationKey = notification.key
+        .replaceAll('${notification.to}:', '')
+        .replaceAll('.$device.${SSHNPD.namespace}${notification.from}', '')
+        // convert to lower case as the latest AtClient converts notification
+        // keys to lower case when received
+        .toLowerCase();
+
+    logger.info('Received: $notificationKey');
+    switch (notificationKey) {
+      case 'privatekey':
         logger.info(
             'Private Key received from ${notification.from} notification id : ${notification.id}');
         privateKey = notification.value!;
-      }
-      if (notificationKey == 'sshpublickey') {
+        break;
+      case 'sshpublickey':
         try {
           var sshHomeDirectory = "$homeDirectory/.ssh/";
           if (Platform.isWindows) {
@@ -198,17 +207,14 @@ class SSHNPDImpl implements SSHNPD {
           logger.severe(
               'Error writing to $username .ssh/authorized_keys file : $e');
         }
-      }
-
-      if (notificationKey == 'sshd') {
+        break;
+      case 'sshd':
         logger.info(
             'ssh callback request received from ${notification.from} notification id : ${notification.id}');
         _sshCallback(notification, privateKey, logger, managerAtsign,
             deviceAtsign, device);
-      }
-    }),
-            onError: (e) => logger.severe('Notification Failed:$e'),
-            onDone: () => logger.info('Notification listener stopped'));
+        break;
+    }
   }
 
   void _sshCallback(

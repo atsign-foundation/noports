@@ -109,45 +109,51 @@ class SSHRVDImpl implements SSHRVD {
 
     notificationService
         .subscribe(regex: '${SSHRVD.namespace}@', shouldDecrypt: true)
-        .listen(((notification) async {
-      if (notification.key.contains(SSHRVD.namespace)) {
-        String session = notification.value!;
-        String forAtsign = notification.from;
-        if (forAtsign == managerAtsign || managerAtsign == 'open') {
-          var ports = await connectSpawn(0, 0, session, forAtsign, snoop);
-          logger.warning(
-              'Starting session $session for $forAtsign using ports $ports');
+        .listen(_notificationHandler);
+  }
 
-          var metaData = Metadata()
-            ..isPublic = false
-            ..isEncrypted = true
-            ..ttr = -1
-            ..ttl = 10000
-            ..namespaceAware = true;
+  void _notificationHandler(AtNotification notification) async {
+    if (!notification.key.contains(SSHRVD.namespace)) {
+      // ignore notifications not for this namespace
+      return;
+    }
 
-          var atKey = AtKey()
-            ..key = notification.value
-            ..sharedBy = atSign
-            ..sharedWith = notification.from
-            ..namespace = SSHRVD.namespace
-            ..metadata = metaData;
+    String session = notification.value!;
+    String forAtsign = notification.from;
 
-          String data = '$ipAddress,${ports[0]},${ports[1]}';
+    if (managerAtsign != 'open' && managerAtsign != forAtsign) {
+      logger.shout('Session $session for $forAtsign denied');
+      return;
+    }
 
-          try {
-            await atClient.notificationService.notify(
-                NotificationParams.forUpdate(atKey, value: data),
-                waitForFinalDeliveryStatus: false,
-                checkForFinalDeliveryStatus: false);
-          } catch (e) {
-            stderr
-                .writeln("Error writting session ${notification.value} atKey");
-          }
-        } else {
-          logger.shout('Session $session for $forAtsign denied');
-        }
-      }
-    }));
+    var ports = await connectSpawn(0, 0, session, forAtsign, snoop);
+    logger
+        .warning('Starting session $session for $forAtsign using ports $ports');
+
+    var metaData = Metadata()
+      ..isPublic = false
+      ..isEncrypted = true
+      ..ttr = -1
+      ..ttl = 10000
+      ..namespaceAware = true;
+
+    var atKey = AtKey()
+      ..key = notification.value
+      ..sharedBy = atSign
+      ..sharedWith = notification.from
+      ..namespace = SSHRVD.namespace
+      ..metadata = metaData;
+
+    String data = '$ipAddress,${ports[0]},${ports[1]}';
+
+    try {
+      await atClient.notificationService.notify(
+          NotificationParams.forUpdate(atKey, value: data),
+          waitForFinalDeliveryStatus: false,
+          checkForFinalDeliveryStatus: false);
+    } catch (e) {
+      stderr.writeln("Error writting session ${notification.value} atKey");
+    }
   }
 
   @override
