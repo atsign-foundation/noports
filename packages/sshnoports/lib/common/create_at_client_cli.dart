@@ -5,21 +5,23 @@ import 'package:version/version.dart';
 
 import 'service_factories.dart';
 
-Future<AtClient> createAtClientCli(
-    {required String homeDirectory,
-    required String atsign,
-    String? sessionId,
-    required String atKeysFilePath}) async {
+Future<AtClient> createAtClientCli({
+  required String homeDirectory,
+  required String atsign,
+  required String atKeysFilePath,
+  String? pathExtension,
+  String namespace = 'sshnp',
+}) async {
   // Now on to the atPlatform startup
   //onboarding preference builder can be used to set onboardingService parameters
   String pathBase = '$homeDirectory/.sshnp/$atsign/';
-  if (sessionId != null) {
-    pathBase += '$sessionId/';
+  if (pathExtension != null) {
+    pathBase += '$pathExtension${Platform.pathSeparator}';
   }
   AtOnboardingPreference atOnboardingConfig = AtOnboardingPreference()
     ..hiveStoragePath =
         '$pathBase/storage'.replaceAll('/', Platform.pathSeparator)
-    ..namespace = 'sshnp'
+    ..namespace = namespace
     ..downloadPath =
         '$homeDirectory/.sshnp/files'.replaceAll('/', Platform.pathSeparator)
     ..isLocalStoreRequired = true
