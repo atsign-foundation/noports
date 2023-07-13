@@ -6,8 +6,8 @@ void main(List<String> args) async {
 
   try {
     await sshnpd.init();
-
     await sshnpd.run();
+    exit(0);
   } catch (error, stackTrace) {
     stderr.writeln('sshnpd: ${error.toString()}');
     stderr.writeln('stack trace: ${stackTrace.toString()}');

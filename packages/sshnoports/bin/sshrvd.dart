@@ -6,8 +6,8 @@ void main(List<String> args) async {
 
   try {
     await sshrvd.init();
-
     await sshrvd.run();
+    exit(0);
   } catch (error, stackTrace) {
     stderr.writeln('sshrvd: ${error.toString()}');
     stderr.writeln('stack trace: ${stackTrace.toString()}');
