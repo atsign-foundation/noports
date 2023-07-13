@@ -87,7 +87,7 @@ class SSHRVDImpl implements SSHRVD {
       version();
       stdout.writeln(SSHRVDParams.parser.usage);
       stderr.writeln(e);
-      exit(1);
+      rethrow;
     }
   }
 

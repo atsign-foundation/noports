@@ -232,7 +232,7 @@ class SSHNPImpl implements SSHNP {
       version();
       stdout.writeln(SSHNPPartialParams.parser.usage);
       stderr.writeln(e);
-      exit(1);
+      rethrow;
     }
   }
 
@@ -336,8 +336,7 @@ class SSHNPImpl implements SSHNP {
       counter++;
       if (counter == 100) {
         await cleanUp(sessionId, logger);
-        stderr.writeln('sshnp: connection timeout');
-        exit(1);
+        throw ('sshnp: connection timeout');
       }
     }
 
@@ -361,7 +360,6 @@ class SSHNPImpl implements SSHNP {
     }
     // Print the  return
     stdout.write('\n');
-    exit(0);
   }
 
   /// Function which the response subscription (created in the [init] method
@@ -399,7 +397,7 @@ class SSHNPImpl implements SSHNP {
     } catch (e) {
       stderr.writeln("Device \"$device\" unknown, or username not shared ");
       await cleanUp(sessionId, logger);
-      exit(1);
+      rethrow;
     }
   }
 
@@ -429,7 +427,7 @@ class SSHNPImpl implements SSHNP {
         stderr.writeln(
             "Error opening or validating public key file or sending to remote atSign: $e");
         await cleanUp(sessionId, logger);
-        exit(1);
+        rethrow;
       }
     }
   }
@@ -504,7 +502,7 @@ class SSHNPImpl implements SSHNP {
       if (counter == 100) {
         await cleanUp(sessionId, logger);
         stderr.writeln('sshnp: connection timeout to sshrvd $host service');
-        exit(1);
+        throw ('sshnp: connection timeout to sshrvd $host service');
       }
     }
 
