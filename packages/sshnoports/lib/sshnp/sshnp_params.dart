@@ -53,15 +53,15 @@ class SSHNPParams {
       clientAtSign: partial.clientAtSign!,
       sshnpdAtSign: partial.sshnpdAtSign!,
       host: partial.host!,
-      device: partial.device!,
-      port: partial.port!,
-      localPort: partial.localPort!,
-      atKeysFilePath: partial.atKeysFilePath!,
-      sendSshPublicKey: partial.sendSshPublicKey!,
+      device: partial.device ?? 'default',
+      port: partial.port ?? '22',
+      localPort: partial.localPort ?? '0',
+      sendSshPublicKey: partial.sendSshPublicKey ?? 'false',
       localSshOptions: partial.localSshOptions,
-      rsa: partial.rsa!,
+      rsa: partial.rsa ?? false,
+      verbose: partial.verbose ?? false,
       remoteUsername: partial.remoteUsername,
-      verbose: partial.verbose!,
+      atKeysFilePath: partial.atKeysFilePath,
     );
   }
 }
@@ -154,7 +154,7 @@ class SSHNPPartialParams {
   factory SSHNPPartialParams.fromArgs(List<String> args) {
     var params = SSHNPPartialParams.empty();
 
-    var parsedArgs = parser.parse(args);
+    var parsedArgs = _createArgParser(withDefaults: false).parse(args);
 
     if (parsedArgs.wasParsed('config-file')) {
       var configFileName = parsedArgs['config-file'] as String;
@@ -175,7 +175,8 @@ class SSHNPPartialParams {
     );
   }
 
-  static ArgParser _createArgParser({bool withConfig = true}) {
+  static ArgParser _createArgParser(
+      {bool withConfig = true, bool withDefaults = true}) {
     var parser = ArgParser();
     // Basic arguments
     for (SSHNPArg arg in SSHNPArg.args) {
@@ -185,7 +186,7 @@ class SSHNPPartialParams {
             arg.name,
             abbr: arg.abbr,
             mandatory: arg.mandatory,
-            defaultsTo: arg.defaultsTo as String?,
+            defaultsTo: withDefaults ? arg.defaultsTo as String? : null,
             help: arg.help,
           );
           break;
@@ -193,7 +194,7 @@ class SSHNPPartialParams {
           parser.addMultiOption(
             arg.name,
             abbr: arg.abbr,
-            defaultsTo: arg.defaultsTo as List<String>?,
+            defaultsTo: withDefaults ? arg.defaultsTo as List<String>? : null,
             help: arg.help,
           );
           break;
@@ -201,7 +202,7 @@ class SSHNPPartialParams {
           parser.addFlag(
             arg.name,
             abbr: arg.abbr,
-            defaultsTo: arg.defaultsTo as bool?,
+            defaultsTo: withDefaults ? arg.defaultsTo as bool? : null,
             help: arg.help,
           );
           break;
