@@ -6,6 +6,7 @@ import 'package:at_utils/at_logger.dart';
 import 'package:logging/logging.dart';
 import 'package:meta/meta.dart';
 import 'package:sshnoports/common/create_at_client_cli.dart';
+import 'package:sshnoports/sshnp/get_sshrv_command.dart';
 import 'package:sshnoports/common/utils.dart';
 import 'package:sshnoports/sshnp/cleanup.dart';
 import 'package:sshnoports/sshnp/sshnp.dart';
@@ -178,7 +179,7 @@ class SSHNPImpl implements SSHNP {
 
     if (sendSshPublicKey != 'false') {
       this.sendSshPublicKey =
-          '$sshHomeDirectory${Platform.pathSeparator}$sendSshPublicKey';
+          '$sshHomeDirectory${Platform.pathSeparator}$sendSshPublicKey${Platform.pathSeparator}';
       if (!File(this.sendSshPublicKey).existsSync()) {
         throw ('\n Unable to find ssh public key file : $sendSshPublicKey');
       }
@@ -558,25 +559,5 @@ class SSHNPImpl implements SSHNP {
     File('${sshHomeDirectory}authorized_keys').writeAsStringSync(
         'command="echo \\"ssh session complete\\";sleep 20",PermitOpen="localhost:22" ${sshPublicKey.trim()} $sessionId\n',
         mode: FileMode.append);
-  }
-
-  /// Return the command which this program should execute in order to start the
-  /// sshrv program.
-  /// - In normal usage, sshnp and sshrv are compiled to exe before use, thus the
-  /// path is [Platform.resolvedExecutable] but with the last part (`sshnp` in
-  /// this case) replaced with `sshrv`
-  static String getSshrvCommand() {
-    late String sshnpDir;
-    List<String> pathList =
-        Platform.resolvedExecutable.split(Platform.pathSeparator);
-    if (pathList.last == 'sshnp' || pathList.last == 'sshnp.exe') {
-      pathList.removeLast();
-      sshnpDir = pathList.join(Platform.pathSeparator);
-
-      return '$sshnpDir${Platform.pathSeparator}sshrv';
-    } else {
-      throw Exception(
-          'sshnp is expected to be run as a compiled executable, not via the dart command');
-    }
   }
 }
