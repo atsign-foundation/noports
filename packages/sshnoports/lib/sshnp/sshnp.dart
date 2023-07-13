@@ -1,11 +1,9 @@
-
 import 'dart:async';
 
 import 'package:at_client/at_client.dart';
 import 'package:at_utils/at_logger.dart';
 import 'package:meta/meta.dart';
 import 'package:sshnoports/sshnp/sshnp_impl.dart';
-
 
 abstract class SSHNP {
   abstract final AtSignLogger logger;
@@ -108,10 +106,6 @@ abstract class SSHNP {
   /// true once we have received a response from sshrvd
   @visibleForTesting
   abstract bool sshrvdAck;
-
-  // In the future (perhaps) we can send other commands
-  // Perhaps OpenVPN or shell commands
-  static const String commandToSend = 'sshd';
 
   /// true once [init] has completed
   @visibleForTesting
