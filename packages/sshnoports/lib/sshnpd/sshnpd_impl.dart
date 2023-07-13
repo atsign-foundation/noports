@@ -1,4 +1,3 @@
-
 import 'dart:async';
 import 'dart:io';
 
@@ -163,6 +162,8 @@ class SSHNPDImpl implements SSHNPD {
           // convert to lower case as the latest AtClient converts notification
           // keys to lower case when received
           .toLowerCase();
+
+      logger.info('Received: $notificationKey');
 
       if (notificationKey == 'privatekey') {
         logger.info(
