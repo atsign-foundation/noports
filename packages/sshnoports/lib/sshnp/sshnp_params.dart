@@ -165,9 +165,9 @@ class SSHNPPartialParams {
     }
 
     // THIS IS A WORKAROUND IN ORDER TO BE TYPE SAFE IN SSHNPPartialParams.fromArgMap
-    Map<String, dynamic> parsedArgsMap = Map.fromIterable(
-      parsedArgs.options.map((e) => MapEntry(e, parsedArgs[e])),
-    );
+    Map<String, dynamic> parsedArgsMap = {
+      for (var e in parsedArgs.options) e: parsedArgs
+    };
 
     return SSHNPPartialParams.merge(
       params,
