@@ -212,7 +212,6 @@ class SSHNPDImpl implements SSHNPD {
       case 'sshd':
         logger.info(
             'ssh callback request received from ${notification.from} notification id : ${notification.id}');
-        print('pk: $_privateKey');
         _sshCallback(notification, _privateKey, logger, managerAtsign,
             deviceAtsign, device);
         break;
