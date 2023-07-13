@@ -79,7 +79,6 @@ class SSHNPDImpl implements SSHNPD {
       AtClient atClient = await createAtClientCli(
         homeDirectory: p.homeDirectory,
         atsign: p.deviceAtsign,
-        // sessionId: sessionId, // This was not used in sshnpd
         atKeysFilePath: p.atKeysFilePath,
       );
 
