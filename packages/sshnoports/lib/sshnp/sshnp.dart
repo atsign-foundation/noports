@@ -1,6 +1,5 @@
 // dart packages
 import 'dart:async';
-import 'dart:io';
 
 // atPlatform packages
 import 'package:at_utils/at_logger.dart';
@@ -13,9 +12,6 @@ import 'package:sshnoports/sshnp/sshnp_impl.dart';
 // local packages
 
 abstract class SSHNP {
-  // TODO Make this a const in SSHRVD class
-  static const String sshrvdNameSpace = 'sshrvd';
-
   abstract final AtSignLogger logger;
 
   // ====================================================================
@@ -183,27 +179,6 @@ abstract class SSHNP {
   /// - Clean up temporary files
   Future<void> run();
 
-  /// Function which the response subscription (created in the [init] method
-  /// will call when it gets a response from the sshnpd
-  @visibleForTesting
-  handleSshnpdResponses(notification) async {
-    String notificationKey = notification.key
-        .replaceAll('${notification.to}:', '')
-        .replaceAll('.$device.sshnp${notification.from}', '')
-        // convert to lower case as the latest AtClient converts notification
-        // keys to lower case when received
-        .toLowerCase();
-    logger.info('Received $notificationKey notification');
-    if (notification.value == 'connected') {
-      logger.info('Session $sessionId connected successfully');
-      sshnpdAck = true;
-    } else {
-      stderr.writeln('Remote sshnpd error: ${notification.value}');
-      sshnpdAck = true;
-      sshnpdAckErrors = true;
-    }
-  }
-
   /// Look up the user name ... we expect a key to have been shared with us by
   /// sshnpd. Let's say we are @human running sshnp, and @daemon is running
   /// sshnpd, then we expect a key to have been shared whose ID is
@@ -218,24 +193,4 @@ abstract class SSHNP {
   Future<void> getHostAndPortFromSshrvd();
 
   Future<void> generateSshKeys();
-
-  /// Return the command which this program should execute in order to start the
-  /// sshrv program.
-  /// - In normal usage, sshnp and sshrv are compiled to exe before use, thus the
-  /// path is [Platform.resolvedExecutable] but with the last part (`sshnp` in
-  /// this case) replaced with `sshrv`
-  static String getSshrvCommand() {
-    late String sshnpDir;
-    List<String> pathList =
-        Platform.resolvedExecutable.split(Platform.pathSeparator);
-    if (pathList.last == 'sshnp' || pathList.last == 'sshnp.exe') {
-      pathList.removeLast();
-      sshnpDir = pathList.join(Platform.pathSeparator);
-
-      return '$sshnpDir${Platform.pathSeparator}sshrv';
-    } else {
-      throw Exception(
-          'sshnp is expected to be run as a compiled executable, not via the dart command');
-    }
-  }
 }
