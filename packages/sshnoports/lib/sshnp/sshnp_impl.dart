@@ -266,7 +266,7 @@ class SSHNPImpl implements SSHNP {
 
     await generateSshKeys();
 
-    if (!File(sendSshPublicKey).existsSync()) {
+    if (sendSshPublicKey != 'false' && !File(sendSshPublicKey).existsSync()) {
       throw ('\n Unable to find ssh public key file : $sendSshPublicKey');
     }
 

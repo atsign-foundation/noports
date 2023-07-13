@@ -39,6 +39,10 @@ class SSHNPDImpl implements SSHNPD {
   @visibleForTesting
   bool initialized = false;
 
+  /// State variables used by [_notificationHandler]
+  String _privateKey = "";
+  String _sshPublicKey = "";
+
   static const String commandToSend = 'sshd';
 
   SSHNPDImpl(
@@ -162,9 +166,6 @@ class SSHNPDImpl implements SSHNPD {
   }
 
   void _notificationHandler(AtNotification notification) async {
-    String privateKey = "";
-    String sshPublicKey = "";
-
     String notificationKey = notification.key
         .replaceAll('${notification.to}:', '')
         .replaceAll('.$device.${SSHNPD.namespace}${notification.from}', '')
@@ -177,7 +178,7 @@ class SSHNPDImpl implements SSHNPD {
       case 'privatekey':
         logger.info(
             'Private Key received from ${notification.from} notification id : ${notification.id}');
-        privateKey = notification.value!;
+        _privateKey = notification.value!;
         break;
       case 'sshpublickey':
         try {
@@ -187,11 +188,11 @@ class SSHNPDImpl implements SSHNPD {
           }
           logger.info(
               'ssh Public Key received from ${notification.from} notification id : ${notification.id}');
-          sshPublicKey = notification.value!;
+          _sshPublicKey = notification.value!;
 
           // Check to see if the ssh public key looks like one!
-          if (!sshPublicKey.startsWith('ssh-')) {
-            throw ('$sshPublicKey does not look like a public key');
+          if (!_sshPublicKey.startsWith('ssh-')) {
+            throw ('$_sshPublicKey does not look like a public key');
           }
 
           // Check to see if the ssh Publickey is already in the file if not append to the ~/.ssh/authorized_keys file
@@ -199,8 +200,8 @@ class SSHNPDImpl implements SSHNPD {
 
           var authKeysContent = await authKeys.readAsString();
 
-          if (!authKeysContent.contains(sshPublicKey)) {
-            authKeys.writeAsStringSync("\n$sshPublicKey",
+          if (!authKeysContent.contains(_sshPublicKey)) {
+            authKeys.writeAsStringSync("\n$_sshPublicKey",
                 mode: FileMode.append);
           }
         } catch (e) {
@@ -211,7 +212,8 @@ class SSHNPDImpl implements SSHNPD {
       case 'sshd':
         logger.info(
             'ssh callback request received from ${notification.from} notification id : ${notification.id}');
-        _sshCallback(notification, privateKey, logger, managerAtsign,
+        print('pk: $_privateKey');
+        _sshCallback(notification, _privateKey, logger, managerAtsign,
             deviceAtsign, device);
         break;
     }
