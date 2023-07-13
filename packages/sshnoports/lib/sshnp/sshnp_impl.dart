@@ -179,9 +179,6 @@ class SSHNPImpl implements SSHNP {
 
     if (sendSshPublicKey != 'false') {
       this.sendSshPublicKey = '$sshHomeDirectory$sendSshPublicKey';
-      if (!File(this.sendSshPublicKey).existsSync()) {
-        throw ('\n Unable to find ssh public key file : ${this.sendSshPublicKey}');
-      }
     } else {
       this.sendSshPublicKey = 'false';
     }
@@ -269,9 +266,11 @@ class SSHNPImpl implements SSHNP {
 
     await generateSshKeys();
 
-    if (remoteUsername == null) {
-      await fetchRemoteUserName();
+    if (!File(sendSshPublicKey).existsSync()) {
+      throw ('\n Unable to find ssh public key file : $sendSshPublicKey');
     }
+
+    remoteUsername ?? await fetchRemoteUserName();
 
     // find a spare local port
     if (localPort == '0') {
@@ -411,7 +410,7 @@ class SSHNPImpl implements SSHNP {
       try {
         String toSshPublicKey = await File(sendSshPublicKey).readAsString();
         if (!toSshPublicKey.startsWith('ssh-')) {
-          throw ('$sshHomeDirectory$sendSshPublicKey does not look like a public key file');
+          throw ('$sendSshPublicKey does not look like a public key file');
         }
         AtKey sendOurPublicKeyToSshnpd = AtKey()
           ..key = 'sshpublickey'
