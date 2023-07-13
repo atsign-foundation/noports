@@ -1,28 +1,20 @@
-// dart packages
 import 'dart:async';
 import 'dart:io';
 
-// atPlatform packages
-import 'package:at_utils/at_logger.dart';
 import 'package:at_client/at_client.dart';
-
-// other packages
+import 'package:at_utils/at_logger.dart';
 import 'package:logging/logging.dart';
 import 'package:meta/meta.dart';
 import 'package:sshnoports/common/create_at_client_cli.dart';
-import 'package:sshnoports/sshnp/sshnp.dart';
-import 'package:sshnoports/sshnp/sshnp_params.dart';
-import 'package:uuid/uuid.dart';
-
-// local packages
 import 'package:sshnoports/common/utils.dart';
 import 'package:sshnoports/sshnp/cleanup.dart';
+import 'package:sshnoports/sshnp/sshnp.dart';
+import 'package:sshnoports/sshnp/sshnp_params.dart';
+import 'package:sshnoports/sshrvd/sshrvd.dart';
 import 'package:sshnoports/version.dart';
+import 'package:uuid/uuid.dart';
 
 class SSHNPImpl implements SSHNP {
-  // TODO Make this a const in SSHRVD class
-  static const String sshrvdNameSpace = 'sshrvd';
-
   @override
   final AtSignLogger logger = AtSignLogger(' sshnp ');
 
@@ -192,12 +184,12 @@ class SSHNPImpl implements SSHNP {
       );
 
       // Check atKeyFile selected exists
-      if (!File(p.atKeysFilePath).existsSync()) {
+      if (!await fileExists(p.atKeysFilePath)) {
         throw ('\n Unable to find .atKeys file : ${p.atKeysFilePath}');
       }
 
       if (p.sendSshPublicKey != 'false') {
-        if (!File(p.sendSshPublicKey).existsSync()) {
+        if (!await fileExists(p.sendSshPublicKey)) {
           throw ('\n Unable to find ssh public key file : ${p.sendSshPublicKey}');
         }
       }
@@ -470,7 +462,8 @@ class SSHNPImpl implements SSHNP {
   @override
   Future<void> getHostAndPortFromSshrvd() async {
     atClient.notificationService
-        .subscribe(regex: '$sessionId.$sshrvdNameSpace@', shouldDecrypt: true)
+        .subscribe(
+            regex: '$sessionId.${SSHRVD.namespace}@', shouldDecrypt: true)
         .listen((notification) async {
       String ipPorts = notification.value.toString();
       List results = ipPorts.split(',');
@@ -481,7 +474,7 @@ class SSHNPImpl implements SSHNP {
     });
 
     AtKey ourSshrvdIdKey = AtKey()
-      ..key = '$device.$sshrvdNameSpace'
+      ..key = '$device.${SSHRVD.namespace}'
       ..sharedBy = clientAtSign // shared by us
       ..sharedWith = host // shared with the sshrvd host
       ..metadata = (Metadata()

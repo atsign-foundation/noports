@@ -1,19 +1,15 @@
-// dart packages
+
 import 'dart:async';
 
-// atPlatform packages
-import 'package:at_utils/at_logger.dart';
 import 'package:at_client/at_client.dart';
-
-// external packages
+import 'package:at_utils/at_logger.dart';
 import 'package:meta/meta.dart';
 import 'package:sshnoports/sshnpd/sshnpd_impl.dart';
 
-// local packages
-
-const String nameSpace = 'sshnp';
 
 abstract class SSHNPD {
+  static const String namespace = 'sshnp';
+
   abstract final AtSignLogger logger;
 
   /// The [AtClient] used to communicate with sshnpd and sshrvd

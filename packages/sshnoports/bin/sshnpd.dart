@@ -1,11 +1,7 @@
-// dart packages
 import 'dart:io';
-
-// local packages
 import 'package:sshnoports/sshnpd/sshnpd.dart';
 
 void main(List<String> args) async {
-
   SSHNPD sshnpd = await SSHNPD.fromCommandLineArgs(args);
 
   try {

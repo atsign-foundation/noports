@@ -1,8 +1,5 @@
-// dart packages
 import 'dart:io';
-// local packages
 import 'package:sshnoports/common/utils.dart';
-// atPlatform packages
 import 'package:at_utils/at_logger.dart';
 
 Future<void> cleanUp(String sessionId, AtSignLogger logger) async {

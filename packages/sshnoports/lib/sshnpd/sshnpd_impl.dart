@@ -1,25 +1,18 @@
-// dart packages
+
 import 'dart:async';
 import 'dart:io';
 
-// atPlatform packages
-import 'package:at_utils/at_logger.dart';
 import 'package:at_client/at_client.dart';
-
-// external packages
+import 'package:at_utils/at_logger.dart';
+import 'package:dartssh2/dartssh2.dart';
 import 'package:logging/logging.dart';
 import 'package:meta/meta.dart';
+import 'package:sshnoports/common/create_at_client_cli.dart';
+import 'package:sshnoports/common/utils.dart';
 import 'package:sshnoports/sshnpd/sshnpd.dart';
 import 'package:sshnoports/sshnpd/sshnpd_params.dart';
-import 'package:dartssh2/dartssh2.dart';
-import 'package:uuid/uuid.dart';
-
-// local packages
 import 'package:sshnoports/version.dart';
-
-import '../common/create_at_client_cli.dart';
-
-const String nameSpace = 'sshnp';
+import 'package:uuid/uuid.dart';
 
 class SSHNPDImpl implements SSHNPD {
   @override
@@ -67,7 +60,7 @@ class SSHNPDImpl implements SSHNPD {
       var p = SSHNPDParams.fromArgs(args);
 
       // Check atKeyFile selected exists
-      if (!File(p.atKeysFilePath).existsSync()) {
+      if (!await fileExists(p.atKeysFilePath)) {
         throw ('\n Unable to find .atKeys file : ${p.atKeysFilePath}');
       }
 
@@ -131,7 +124,7 @@ class SSHNPDImpl implements SSHNPD {
         ..key = "username.$device"
         ..sharedBy = deviceAtsign
         ..sharedWith = managerAtsign
-        ..namespace = nameSpace
+        ..namespace = namespace
         ..metadata = metaData;
 
       try {
@@ -160,13 +153,13 @@ class SSHNPDImpl implements SSHNPD {
 
     String privateKey = "";
     String sshPublicKey = "";
-    logger.info('Subscribing to $device\\.$nameSpace@');
+    logger.info('Subscribing to $device\\.$namespace@');
     notificationService
-        .subscribe(regex: '$device\\.$nameSpace@', shouldDecrypt: true)
+        .subscribe(regex: '$device\\.$namespace@', shouldDecrypt: true)
         .listen(((notification) async {
       String notificationKey = notification.key
           .replaceAll('${notification.to}:', '')
-          .replaceAll('.$device.$nameSpace${notification.from}', '')
+          .replaceAll('.$device.$namespace${notification.from}', '')
           // convert to lower case as the latest AtClient converts notification
           // keys to lower case when received
           .toLowerCase();
@@ -241,7 +234,7 @@ class SSHNPDImpl implements SSHNPD {
       ..key = '$sessionId.$device'
       ..sharedBy = deviceAtsign
       ..sharedWith = managerAtsign
-      ..namespace = nameSpace
+      ..namespace = namespace
       ..metadata = metaData;
 
     var atClient = AtClientManager.getInstance().atClient;
@@ -261,7 +254,7 @@ class SSHNPDImpl implements SSHNPD {
           ..key = '$sessionId.$device'
           ..sharedBy = deviceAtsign
           ..sharedWith = managerAtsign
-          ..namespace = nameSpace
+          ..namespace = namespace
           ..metadata = metaData;
       }
       logger.info(

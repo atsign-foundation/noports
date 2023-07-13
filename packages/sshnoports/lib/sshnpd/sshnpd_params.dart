@@ -1,6 +1,5 @@
 import 'package:args/args.dart';
-
-import '../common/utils.dart';
+import 'package:sshnoports/common/utils.dart';
 
 class SSHNPDParams {
   late final String device;
@@ -33,14 +32,10 @@ class SSHNPDParams {
       throw ('\nDevice name can only contain alphanumeric characters with a max length of 15');
     }
 
-    // Find atSign key file
-    if (r['keyFile'] != null) {
-      atKeysFilePath = r['keyFile'];
-    } else {
-      deviceAtsign = r['atsign'];
-      managerAtsign = r['manager'];
-      atKeysFilePath = getDefaultAtKeysFilePath(homeDirectory, deviceAtsign);
-    }
+    deviceAtsign = r['atsign'];
+    managerAtsign = r['manager'];
+    atKeysFilePath =
+        r['keyFile'] ?? getDefaultAtKeysFilePath(homeDirectory, deviceAtsign);
 
     verbose = r['verbose'];
   }

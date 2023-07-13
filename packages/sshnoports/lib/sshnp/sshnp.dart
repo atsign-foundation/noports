@@ -1,15 +1,11 @@
-// dart packages
+
 import 'dart:async';
 
-// atPlatform packages
-import 'package:at_utils/at_logger.dart';
 import 'package:at_client/at_client.dart';
-
-// other packages
+import 'package:at_utils/at_logger.dart';
 import 'package:meta/meta.dart';
 import 'package:sshnoports/sshnp/sshnp_impl.dart';
 
-// local packages
 
 abstract class SSHNP {
   abstract final AtSignLogger logger;
