@@ -158,7 +158,7 @@ class SSHNPPartialParams {
 
     if (parsedArgs.wasParsed('config-file')) {
       var configFileName = parsedArgs['config-file'] as String;
-      SSHNPPartialParams.merge(
+      params = SSHNPPartialParams.merge(
         params,
         SSHNPPartialParams.fromConfig(configFileName),
       );
@@ -166,7 +166,7 @@ class SSHNPPartialParams {
 
     // THIS IS A WORKAROUND IN ORDER TO BE TYPE SAFE IN SSHNPPartialParams.fromArgMap
     Map<String, dynamic> parsedArgsMap = {
-      for (var e in parsedArgs.options) e: parsedArgs
+      for (var e in (parsedArgs.options)) e: parsedArgs[e]
     };
 
     return SSHNPPartialParams.merge(
@@ -244,9 +244,9 @@ class SSHNPPartialParams {
           continue;
         case ArgFormat.multiOption:
           var values = value.split(';');
+          args.putIfAbsent(arg.name, () => <String>[]);
           for (String val in values) {
             if (val.isEmpty) continue;
-            args.putIfAbsent(arg.name, () => <String>[]);
             args[arg.name].add(val);
           }
           continue;
