@@ -124,7 +124,7 @@ class SSHNPDImpl implements SSHNPD {
         ..key = "username.$device"
         ..sharedBy = deviceAtsign
         ..sharedWith = managerAtsign
-        ..namespace = namespace
+        ..namespace = SSHNPD.namespace
         ..metadata = metaData;
 
       try {
@@ -153,13 +153,13 @@ class SSHNPDImpl implements SSHNPD {
 
     String privateKey = "";
     String sshPublicKey = "";
-    logger.info('Subscribing to $device\\.$namespace@');
+    logger.info('Subscribing to $device\\.${SSHNPD.namespace}@');
     notificationService
-        .subscribe(regex: '$device\\.$namespace@', shouldDecrypt: true)
+        .subscribe(regex: '$device\\.${SSHNPD.namespace}@', shouldDecrypt: true)
         .listen(((notification) async {
       String notificationKey = notification.key
           .replaceAll('${notification.to}:', '')
-          .replaceAll('.$device.$namespace${notification.from}', '')
+          .replaceAll('.$device.${SSHNPD.namespace}${notification.from}', '')
           // convert to lower case as the latest AtClient converts notification
           // keys to lower case when received
           .toLowerCase();
@@ -234,7 +234,7 @@ class SSHNPDImpl implements SSHNPD {
       ..key = '$sessionId.$device'
       ..sharedBy = deviceAtsign
       ..sharedWith = managerAtsign
-      ..namespace = namespace
+      ..namespace = SSHNPD.namespace
       ..metadata = metaData;
 
     var atClient = AtClientManager.getInstance().atClient;
@@ -254,7 +254,7 @@ class SSHNPDImpl implements SSHNPD {
           ..key = '$sessionId.$device'
           ..sharedBy = deviceAtsign
           ..sharedWith = managerAtsign
-          ..namespace = namespace
+          ..namespace = SSHNPD.namespace
           ..metadata = metaData;
       }
       logger.info(

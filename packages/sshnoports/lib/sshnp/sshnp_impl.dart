@@ -110,7 +110,7 @@ class SSHNPImpl implements SSHNP {
 
   /// Namespace will be set to [device].sshnp
   @override
-  late final String nameSpace;
+  late final String namespace;
 
   /// When using sshrvd, this is fetched from sshrvd during [init]
   @override
@@ -166,7 +166,7 @@ class SSHNPImpl implements SSHNP {
     required this.localPort,
     this.remoteUsername,
   }) {
-    nameSpace = '$device.sshnp';
+    this.namespace = '$device.sshnp';
     clientAtSign = atClient.getCurrentAtSign()!;
     logger.hierarchicalLoggingEnabled = true;
     logger.logger.level = Level.SHOUT;
@@ -257,10 +257,10 @@ class SSHNPImpl implements SSHNP {
       throw ('sshnpd atSign $sshnpdAtSign is not activated.');
     }
 
-    logger.info('Subscribing to notifications on $sessionId.$nameSpace@');
+    logger.info('Subscribing to notifications on $sessionId.${namespace}@');
     // Start listening for response notifications from sshnpd
     atClient.notificationService
-        .subscribe(regex: '$sessionId.$nameSpace@', shouldDecrypt: true)
+        .subscribe(regex: '$sessionId.$namespace@', shouldDecrypt: true)
         .listen(handleSshnpdResponses);
 
     await generateSshKeys();
@@ -306,7 +306,7 @@ class SSHNPImpl implements SSHNP {
     }
     AtKey keyForCommandToSend = AtKey()
       ..key = commandToSend
-      ..namespace = nameSpace
+      ..namespace = namespace
       ..sharedBy = clientAtSign
       ..sharedWith = sshnpdAtSign
       ..metadata = (Metadata()
@@ -391,7 +391,7 @@ class SSHNPImpl implements SSHNP {
   @override
   Future<void> fetchRemoteUserName() async {
     AtKey userNameRecordID =
-        AtKey.fromString('$clientAtSign:username.$nameSpace$sshnpdAtSign');
+        AtKey.fromString('$clientAtSign:username.$namespace$sshnpdAtSign');
     try {
       remoteUsername = (await atClient.get(userNameRecordID)).value as String;
     } catch (e) {
@@ -438,7 +438,7 @@ class SSHNPImpl implements SSHNP {
       ..key = 'privatekey'
       ..sharedBy = clientAtSign
       ..sharedWith = sshnpdAtSign
-      ..namespace = nameSpace
+      ..namespace = namespace
       ..metadata = (Metadata()
         ..ttr = -1
         ..ttl = 10000);

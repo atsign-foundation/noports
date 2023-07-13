@@ -85,7 +85,7 @@ abstract class SSHNP {
   abstract final String sshPrivateKey;
 
   /// Namespace will be set to [device].sshnp
-  abstract final String nameSpace;
+  abstract final String namespace;
 
   /// When using sshrvd, this is fetched from sshrvd during [init]
   abstract final String sshrvdPort;
