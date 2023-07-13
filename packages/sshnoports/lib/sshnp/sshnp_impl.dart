@@ -46,7 +46,7 @@ class SSHNPImpl implements SSHNP {
   final String sessionId;
 
   @override
-  final String sendSshPublicKey;
+  late final String sendSshPublicKey;
   @override
   final List<String> localSshOptions;
 
@@ -157,7 +157,7 @@ class SSHNPImpl implements SSHNP {
     required this.username,
     required this.homeDirectory,
     required this.sessionId,
-    this.sendSshPublicKey = 'false',
+    String sendSshPublicKey = 'false',
     required this.localSshOptions,
     this.rsa = false,
     // volatile fields
@@ -166,7 +166,7 @@ class SSHNPImpl implements SSHNP {
     required this.localPort,
     this.remoteUsername,
   }) {
-    this.namespace = '$device.sshnp';
+    namespace = '$device.sshnp';
     clientAtSign = atClient.getCurrentAtSign()!;
     logger.hierarchicalLoggingEnabled = true;
     logger.logger.level = Level.SHOUT;
@@ -174,6 +174,16 @@ class SSHNPImpl implements SSHNP {
     sshHomeDirectory = getDefaultSshDirectory(homeDirectory);
     if (!Directory(sshHomeDirectory).existsSync()) {
       Directory(sshHomeDirectory).createSync();
+    }
+
+    if (sendSshPublicKey != 'false') {
+      this.sendSshPublicKey =
+          '$sshHomeDirectory${Platform.pathSeparator}$sendSshPublicKey';
+      if (!File(this.sendSshPublicKey).existsSync()) {
+        throw ('\n Unable to find ssh public key file : $sendSshPublicKey');
+      }
+    } else {
+      this.sendSshPublicKey = 'false';
     }
   }
 
@@ -186,12 +196,6 @@ class SSHNPImpl implements SSHNP {
       // Check atKeyFile selected exists
       if (!await fileExists(p.atKeysFilePath)) {
         throw ('\n Unable to find .atKeys file : ${p.atKeysFilePath}');
-      }
-
-      if (p.sendSshPublicKey != 'false') {
-        if (!await fileExists(p.sendSshPublicKey)) {
-          throw ('\n Unable to find ssh public key file : ${p.sendSshPublicKey}');
-        }
       }
 
       String sessionId = Uuid().v4();
@@ -257,7 +261,7 @@ class SSHNPImpl implements SSHNP {
       throw ('sshnpd atSign $sshnpdAtSign is not activated.');
     }
 
-    logger.info('Subscribing to notifications on $sessionId.${namespace}@');
+    logger.info('Subscribing to notifications on $sessionId.$namespace@');
     // Start listening for response notifications from sshnpd
     atClient.notificationService
         .subscribe(regex: '$sessionId.$namespace@', shouldDecrypt: true)
