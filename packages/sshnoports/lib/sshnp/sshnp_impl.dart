@@ -181,7 +181,7 @@ class SSHNPImpl implements SSHNP {
       this.sendSshPublicKey =
           '$sshHomeDirectory${Platform.pathSeparator}$sendSshPublicKey${Platform.pathSeparator}';
       if (!File(this.sendSshPublicKey).existsSync()) {
-        throw ('\n Unable to find ssh public key file : $sendSshPublicKey');
+        throw ('\n Unable to find ssh public key file : $this.sendSshPublicKey');
       }
     } else {
       this.sendSshPublicKey = 'false';
