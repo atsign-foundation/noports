@@ -528,19 +528,19 @@ jobs:
           cat sshrvd/entrypoint.sh
 
       - name: Test
-        working-directory: packages/sshnoports/test/end2end_tests/tests/local-release3.1.2
+        working-directory: packages/sshnoports/test/end2end_tests/tests/local-local-local
         run: |
           ${{ env.DOCKER_COMPOSE_UP_CMD }}
 
       - name: Logs
         if: always()
-        working-directory: packages/sshnoports/test/end2end_tests/tests/local-release3.1.2
+        working-directory: packages/sshnoports/test/end2end_tests/tests/local-local-local
         run: |
           docker compose ps -a
           docker compose logs --timestamps
 
       - name: Tear down
         if: always()
-        working-directory: packages/sshnoports/test/end2end_tests/tests/local-release3.1.2
+        working-directory: packages/sshnoports/test/end2end_tests/tests/local-local-local
         run: |
           docker compose down
