@@ -43,6 +43,7 @@ class SSHRVDParams {
       'key-file',
       abbr: 'k',
       mandatory: false,
+      aliases: const ['keyFile'],
       help: 'atSign\'s atKeys file if not in ~/.atsign/keys/',
     );
     parser.addOption(
@@ -65,13 +66,11 @@ class SSHRVDParams {
       mandatory: true,
       help: 'FQDN/IP address sent to clients',
     );
-
     parser.addFlag(
       'verbose',
       abbr: 'v',
       help: 'More logging',
     );
-
     parser.addFlag(
       'snoop',
       abbr: 's',
