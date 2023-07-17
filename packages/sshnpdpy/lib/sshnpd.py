@@ -154,6 +154,7 @@ def ssh_callback(event: AtEvent, private_key: str, manager_atsign: str, device_a
     try:
         auth_result = ssh_client.connect(
             hostname, port, username, pkey=private_key)
+        reverse_forward_tunnel(local_port, hostname, port, ssh_client)
     except Exception as e:
         print("Failed to connect to SSHClient")
         exit(1)
@@ -186,3 +187,5 @@ def main():
     threading.Thread(target=handle_event, args=(
         event_queue, client, ssh_path)).start()
     threading.Thread(target=client.start_monitor, args=()).start()
+
+main()
