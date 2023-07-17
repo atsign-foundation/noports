@@ -35,7 +35,7 @@ class SSHNPDParams {
     deviceAtsign = r['atsign'];
     managerAtsign = r['manager'];
     atKeysFilePath =
-        r['keyFile'] ?? getDefaultAtKeysFilePath(homeDirectory, deviceAtsign);
+        r['key-file'] ?? getDefaultAtKeysFilePath(homeDirectory, deviceAtsign);
 
     verbose = r['verbose'];
   }
