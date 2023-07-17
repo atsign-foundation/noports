@@ -1,37 +1,15 @@
 # MVP
-
-
-# Need to at_py
-# need to setup a reverse ssh connection via notifications
-# 1. monitor the atsign and while you wait for a notification, sync.
-# 2. once recieved a notification send a reverse ssh connection to user
-# 3. wait for an sshd connection
-# 4. donezo (make sure to close the connection when users are done)
-
-# need at_python, argparse
-# plan to use bash scripts for most of the heavy lifting
-# let's get this mvp out.
-import base64
 from io import StringIO
-import json
-import os
-import argparse
-import select
-import subprocess
+import os, threading, argparse, select, socket
 from queue import Empty, Queue
-from socket import socket, AF_INET, SOCK_STREAM
-from ssl import PROTOCOL_TLSv1_2, wrap_socket
-import threading
 from time import sleep
-import uuid
+from uuid import uuid4
 from paramiko import SSHClient
 from paramiko.rsakey import RSAKey
 
 from at_client import AtClient
 from at_client.common import AtSign
-from at_client.common.keys import AtKey, SharedKey, Metadata
-from at_client.connections.notification.atnotification import AtNotification
-from at_client.connections.atmonitorconnection import AtMonitorConnection
+from at_client.common.keys import AtKey, Metadata
 from at_client.connections.notification.atevents import AtEvent, AtEventType
 
 namespace = 'sshnp'
@@ -128,7 +106,7 @@ def reverse_forward_tunnel(server_port, remote_host, remote_port, ssh_client: SS
 
 
 def ssh_callback(event: AtEvent, private_key: str, manager_atsign: str, device_atsign: str, device: str):
-    uuid = uuid.uuid4()
+    uuid = uuid4()
     ssh_list = event.event_data["decryptedValue"].split(" ")
     metadata = Metadata(is_public=False, ttl=10000, ttr=-1,
                         is_encrypted=True, namespace_aware=True)
@@ -150,7 +128,7 @@ def ssh_callback(event: AtEvent, private_key: str, manager_atsign: str, device_a
           "@" + hostname + " on port " + port)
     ssh_client = SSHClient()
     with StringIO(private_key) as f:
-        pkey = RSAKey.from_private_key(f)
+        private_key = RSAKey.from_private_key(f)
     try:
         auth_result = ssh_client.connect(
             hostname, port, username, pkey=private_key)
