@@ -27,7 +27,7 @@ class SSHRVDParams {
     atSign = r['atsign'];
     managerAtsign = r['manager'];
     atKeysFilePath =
-        r['keyFile'] ?? getDefaultAtKeysFilePath(homeDirectory, atSign);
+        r['key-file'] ?? getDefaultAtKeysFilePath(homeDirectory, atSign);
 
     ipAddress = r['ip'];
 

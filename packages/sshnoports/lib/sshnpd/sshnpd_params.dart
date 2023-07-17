@@ -44,31 +44,50 @@ class SSHNPDParams {
     var parser = ArgParser();
 
     // Basic arguments
-    parser.addOption('keyFile',
-        abbr: 'k',
-        mandatory: false,
-        help: 'Sending atSign\'s keyFile if not in ~/.atsign/keys/');
-    parser.addOption('atsign',
-        abbr: 'a', mandatory: true, help: 'atSign of this device');
-    parser.addOption('manager',
-        abbr: 'm',
-        mandatory: true,
-        help: 'Managers atSign, that this device will accept triggers from');
-    parser.addOption('device',
-        abbr: 'd',
-        mandatory: false,
-        defaultsTo: "default",
-        help:
-            'Send a trigger to this device, allows multiple devices share an atSign');
+    parser.addOption(
+      'key-file',
+      abbr: 'k',
+      mandatory: false,
+      aliases: const ['keyFile'],
+      help: 'Sending atSign\'s keyFile if not in ~/.atsign/keys/',
+    );
+    parser.addOption(
+      'atsign',
+      abbr: 'a',
+      mandatory: true,
+      help: 'atSign of this device',
+    );
+    parser.addOption(
+      'manager',
+      abbr: 'm',
+      mandatory: true,
+      help: 'Managers atSign, that this device will accept triggers from',
+    );
+    parser.addOption(
+      'device',
+      abbr: 'd',
+      mandatory: false,
+      defaultsTo: "default",
+      help:
+          'Send a trigger to this device, allows multiple devices share an atSign',
+    );
 
-    parser.addFlag('sshpublickey',
-        abbr: 's',
-        help: 'Update authorized_keys to include public key from sshnp');
-    parser.addFlag('username',
-        abbr: 'u',
-        help:
-            'Send username to the manager to allow sshnp to display username in command line');
-    parser.addFlag('verbose', abbr: 'v', help: 'More logging');
+    parser.addFlag(
+      'sshpublickey',
+      abbr: 's',
+      help: 'Update authorized_keys to include public key from sshnp',
+    );
+    parser.addFlag(
+      'username',
+      abbr: 'u',
+      help:
+          'Send username to the manager to allow sshnp to display username in command line',
+    );
+    parser.addFlag(
+      'verbose',
+      abbr: 'v',
+      help: 'More logging',
+    );
 
     return parser;
   }
