@@ -13,7 +13,7 @@ import 'package:sshnoports/sshrvd/sshrvd.dart';
 import 'package:sshnoports/sshrvd/sshrvd_params.dart';
 import 'package:sshnoports/version.dart';
 
-typedef IsolateParams = (SendPort, int, int, String, String, bool);
+typedef IsolateParams = (int, int, String, String, bool);
 typedef PortPair = (int, int);
 
 class SSHRVDImpl implements SSHRVD {
@@ -171,13 +171,15 @@ class SSHRVDImpl implements SSHRVD {
     /// Spawn an isolate and wait for it to send back the issued port numbers
     ReceivePort receivePort = ReceivePort(session);
 
-    IsolateParams parameters =
-        (receivePort.sendPort, portA, portB, session, forAtsign, snoop);
+    IsolateParams parameters = (portA, portB, session, forAtsign, snoop);
 
     logger
         .info("Spawning socket connector isolate with parameters $parameters");
 
     unawaited(Isolate.spawn<IsolateParams>(_socketConnector, parameters));
+
+    await Future.delayed(Duration(seconds: 5));
+    throw ('Expected throw, testing the Isolate startup');
 
     PortPair ports = await receivePort.first;
 
@@ -190,7 +192,7 @@ class SSHRVDImpl implements SSHRVD {
   /// It starts the socket connector, and sends back the assigned ports to the main isolate
   /// It then waits for socket connector to die before shutting itself down
   void _socketConnector(IsolateParams params) async {
-    var (sendPort, portA, portB, session, forAtsign, snoop) = params;
+    var (portA, portB, session, forAtsign, snoop) = params;
 
     logger.info('Starting socket connector session $session for $forAtsign');
 
@@ -210,7 +212,7 @@ class SSHRVDImpl implements SSHRVD {
     logger.info('Assigned ports [$portA, $portB] for session $session');
 
     /// Return the assigned ports to the main isolate
-    sendPort.send((portA, portB));
+    //sendPort.send((portA, portB));
 
     /// Shut myself down once the socket connector closes
     bool closed = false;
