@@ -6,15 +6,12 @@ import 'package:at_client/at_client.dart';
 import 'package:at_utils/at_logger.dart';
 import 'package:logging/logging.dart';
 import 'package:meta/meta.dart';
-import 'package:socket_connector/socket_connector.dart';
 import 'package:sshnoports/common/create_at_client_cli.dart';
 import 'package:sshnoports/common/utils.dart';
+import 'package:sshnoports/sshrvd/socket_connector.dart';
 import 'package:sshnoports/sshrvd/sshrvd.dart';
 import 'package:sshnoports/sshrvd/sshrvd_params.dart';
 import 'package:sshnoports/version.dart';
-
-typedef IsolateParams = (SendPort, int, int, String, String, bool);
-typedef PortPair = (int, int);
 
 class SSHRVDImpl implements SSHRVD {
   @override
@@ -161,6 +158,10 @@ class SSHRVDImpl implements SSHRVD {
     }
   }
 
+  /// This function spawns a new socketConnector in a background isolate
+  /// once the socketConnector has spawned and is ready to accept connections
+  /// it sends back the port numbers to the main isolate
+  /// then the port numbers are returned from this function
   Future<PortPair> _spawnSocketConnector(
     int portA,
     int portB,
@@ -171,54 +172,18 @@ class SSHRVDImpl implements SSHRVD {
     /// Spawn an isolate and wait for it to send back the issued port numbers
     ReceivePort receivePort = ReceivePort(session);
 
-    IsolateParams parameters =
+    ConnectorParams parameters =
         (receivePort.sendPort, portA, portB, session, forAtsign, snoop);
 
     logger
         .info("Spawning socket connector isolate with parameters $parameters");
 
-    unawaited(Isolate.spawn<IsolateParams>(_socketConnector, parameters));
+    unawaited(Isolate.spawn<ConnectorParams>(socketConnector, parameters));
 
     PortPair ports = await receivePort.first;
 
     logger.info('Received ports $ports in main isolate for session $session');
 
     return ports;
-  }
-
-  /// This function runs in a separate isolate
-  /// It starts the socket connector, and sends back the assigned ports to the main isolate
-  /// It then waits for socket connector to die before shutting itself down
-  void _socketConnector(IsolateParams params) async {
-    var (sendPort, portA, portB, session, forAtsign, snoop) = params;
-
-    logger.info('Starting socket connector session $session for $forAtsign');
-
-    /// Create the socket connector
-    SocketConnector socketStream = await SocketConnector.serverToServer(
-      serverAddressA: InternetAddress.anyIPv4,
-      serverAddressB: InternetAddress.anyIPv4,
-      serverPortA: portA,
-      serverPortB: portB,
-      verbose: snoop,
-    );
-
-    /// Get the assigned ports from the socket connector
-    portA = socketStream.senderPort()!;
-    portB = socketStream.receiverPort()!;
-
-    logger.info('Assigned ports [$portA, $portB] for session $session');
-
-    /// Return the assigned ports to the main isolate
-    sendPort.send((portA, portB));
-
-    /// Shut myself down once the socket connector closes
-    bool closed = false;
-    while (closed == false) {
-      closed = await socketStream.closed();
-    }
-
-    logger.warning(
-        'Finished session $session for $forAtsign using ports [$portA, $portB]');
   }
 }
