@@ -10,5 +10,16 @@
     "options" : "Options",
     "connect" : "Connect",
     "cancel" : "Cancel",
-    "new" : "New"
+    "newText" : "New",
+    "sshnpdAtSign" : "sshnpdAtSign",
+    "sshnpdAtSignHint" : "The atSign of the sshnpd we wish to communicate with",
+    "device" : "Device",
+    "deviceHint" : "The device name of the sshnpd we wish to communicate with",
+    "username" : "Username",
+    "usernameHint": "The user name on this host",
+    "homeDirectory" : "Home Directory",
+    "homeDirectoryHint" : "The home directory on this host",
+    "sessionId" : "Session ID",
+    "sendSshPublicKey" : "Send SSH Public Key",
+    "rsa" : "RSA"
 }

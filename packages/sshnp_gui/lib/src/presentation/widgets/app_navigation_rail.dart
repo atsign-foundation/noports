@@ -12,39 +12,49 @@ class AppNavigationRail extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final currentIndex = ref.watch(currentNavIndexProvider);
+
     return NavigationRail(
         destinations: [
           NavigationRailDestination(
             icon: currentIndex == 0
                 ? SvgPicture.asset('assets/images/nav_icons/home_selected.svg')
                 : SvgPicture.asset(
-                    'assets/images/nav_icons/home.svg',
+                    'assets/images/nav_icons/home_unselected.svg',
                   ),
             label: const Text(''),
           ),
           NavigationRailDestination(
             icon: currentIndex == 1
                 ? SvgPicture.asset('assets/images/nav_icons/new_selected.svg')
-                : SvgPicture.asset('assets/images/nav_icons/new.svg'),
+                : SvgPicture.asset('assets/images/nav_icons/new_unselected.svg'),
             label: const Text(''),
           ),
           NavigationRailDestination(
             icon: currentIndex == 2
-                ? SvgPicture.asset('assets/images/nav_icons/picanonboard_selected.svg')
-                : SvgPicture.asset('assets/images/nav_icons/picanonboard.svg'),
+                ? SvgPicture.asset('assets/images/nav_icons/pican_selected.svg')
+                : SvgPicture.asset('assets/images/nav_icons/pican_unselected.svg'),
             label: const Text(''),
           ),
           NavigationRailDestination(
             icon: currentIndex == 3
                 ? SvgPicture.asset('assets/images/nav_icons/settings_selected.svg')
-                : SvgPicture.asset('assets/images/nav_icons/settings.svg'),
+                : SvgPicture.asset('assets/images/nav_icons/settings_unselected.svg'),
             label: const Text(''),
           ),
         ],
         selectedIndex: ref.watch(currentNavIndexProvider),
         onDestinationSelected: (int selectedIndex) {
           ref.read(currentNavIndexProvider.notifier).update((state) => selectedIndex);
-          context.goNamed(AppRoute.home.name);
+
+          switch (selectedIndex) {
+            case 0:
+              context.goNamed(AppRoute.home.name);
+              break;
+            case 1:
+              context.goNamed(AppRoute.newConnection.name);
+              break;
+            default:
+          }
         });
   }
 }

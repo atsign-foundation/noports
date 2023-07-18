@@ -1,11 +1,13 @@
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:sshnp_gui/src/presentation/screens/new_screen.dart';
 import 'package:sshnp_gui/src/repository/navigation_service.dart';
 
 import '../presentation/screens/home_screen.dart';
 import '../presentation/screens/onboarding_screen.dart';
 
-enum AppRoute { onboarding, home }
+enum AppRoute { onboarding, home, newConnection }
 
 final goRouterProvider = Provider<GoRouter>((ref) => GoRouter(
       navigatorKey: NavigationService.navKey,
@@ -20,7 +22,20 @@ final goRouterProvider = Provider<GoRouter>((ref) => GoRouter(
               GoRoute(
                 path: 'home',
                 name: AppRoute.home.name,
-                builder: (context, state) => const HomeScreen(),
+                pageBuilder: (context, state) => CustomTransitionPage<void>(
+                    key: state.pageKey,
+                    child: const HomeScreen(),
+                    transitionsBuilder: ((context, animation, secondaryAnimation, child) =>
+                        FadeTransition(opacity: animation, child: child))),
+              ),
+              GoRoute(
+                path: 'new',
+                name: AppRoute.newConnection.name,
+                pageBuilder: (context, state) => CustomTransitionPage<void>(
+                    key: state.pageKey,
+                    child: const NewScreen(),
+                    transitionsBuilder: ((context, animation, secondaryAnimation, child) =>
+                        FadeTransition(opacity: animation, child: child))),
               )
             ]),
       ],
