@@ -15,51 +15,63 @@ from at_client.connections.notification.atevents import AtEvent, AtEventType
 namespace = 'sshnp'
 
 
-def handle_event(queue, client, ssh_path):
+def handle_decryption(queue:Queue, client:AtClient, ssh_path, args: argparse.ArgumentParser):
     private_key = ""
     sshPublicKey = ""
     ssh_notification_recieved = False
     while not ssh_notification_recieved:
         try:
             at_event = queue.get(block=False)
-            client.handle_event(queue, at_event)
+            print("event received")
             event_type = at_event.event_type
             event_data = at_event.event_data
-            if event_type == AtEventType.DECRYPTED_UPDATE_NOTIFICATION:
-                key = event_data["key"]
-                decrypted_value = str(event_data["decryptedValue"])
-                if key == "privatekey":
-                    print(
-                        f'private key received from ${event_data["from"]} notification id : ${event_data["id"]}')
-                    private_key = decrypted_value
-                    continue
+            if(event_type != AtEventType.DECRYPTED_UPDATE_NOTIFICATION):
+                continue
+            key = event_data["key"].split(":")[1].split(".")[0]
+            decrypted_value = str(event_data["decryptedValue"])
+            if key == "privatekey":
+                print(
+                    f'private key received from ${event_data["from"]} notification id : ${event_data["id"]}')
+                private_key = decrypted_value
+                continue
 
-                if key == "sshpublickey":
-                    print(
-                        f'ssh Public Key received from ${event_data["from"]} notification id : ${event_data["id"]}')
-                    sshPublicKey = decrypted_value
-                    # // Check to see if the ssh Publickey is already in the file if not append to the ~/.ssh/authorized_keys file
-                    writeKey = False
-                    with open(f'{ssh_path}/authorized_keys', 'r') as read:
-                        filedata = read.read()
-                        if sshPublicKey not in filedata:
-                            writeKey = True
-                    with open(f'{ssh_path}/authorized_keys', 'w') as write:
-                        if writeKey:
-                            write.write(f'\n{sshPublicKey}')
-                            print("key written")
-                    continue
+            if key == "sshpublickey":
+                print(
+                    f'ssh Public Key received from ${event_data["from"]} notification id : ${event_data["id"]}')
+                sshPublicKey = decrypted_value
+                # // Check to see if the ssh Publickey is already in the file if not append to the ~/.ssh/authorized_keys file
+                writeKey = False
+                with open(f'{ssh_path}/authorized_keys', 'r') as read:
+                    filedata = read.read()
+                    if sshPublicKey not in filedata:
+                        writeKey = True
+                with open(f'{ssh_path}/authorized_keys', 'w') as write:
+                    if writeKey:
+                        write.write(f'\n{sshPublicKey}')
+                        print("key written")
+                continue
 
-                if key == "sshd":
-                    print(
-                        f'ssh callback requested from ${event_data["from"]} notification id : ${event_data["id"]}')
-                    ssh_notification_recieved = True
+            if key == "sshd":
+                print(
+                    f'ssh callback requested from ${event_data["from"]} notification id : ${event_data["id"]}')
+                ssh_notification_recieved = True
+                callbackArgs = [at_event, private_key, args.manager_atsign, args.device_atsign, args.device]
+                return callbackArgs
 
-                    continue
-
-                sleep(1)
         except Empty:
             pass
+
+def handle_events(queue:Queue, client: AtClient):
+    while(True):
+        try:
+            at_event = queue.get()
+            print("event received")
+            event_type = at_event.event_type
+            if event_type != AtEventType.DECRYPTED_UPDATE_NOTIFICATION:
+                client.handle_event(queue, at_event)
+        except Empty:
+            pass
+        
 
 
 def ssh_handler(chan, host, port):
@@ -127,11 +139,12 @@ def ssh_callback(event: AtEvent, private_key: str, manager_atsign: str, device_a
     print("ssh session started for " + username +
           "@" + hostname + " on port " + port)
     ssh_client = SSHClient()
-    with StringIO(private_key) as f:
-        private_key = RSAKey.from_private_key(f)
+    
+    file_like = StringIO(private_key)
     try:
         auth_result = ssh_client.connect(
-            hostname, port, username, pkey=private_key)
+            hostname, port, username, pkey=file_like)
+        print("Forwarding port " + local_port + " to " + hostname + ":" + port)
         reverse_forward_tunnel(local_port, hostname, port, ssh_client)
     except Exception as e:
         print("Failed to connect to SSHClient")
@@ -140,7 +153,6 @@ def ssh_callback(event: AtEvent, private_key: str, manager_atsign: str, device_a
 
 def main():
     parser = argparse.ArgumentParser("sshnpd")
-
     parser.add_argument('--manager', dest='manager_atsign', type=str)
     parser.add_argument('--atsign', dest='device_atsign', type=str)
     parser.add_argument('--device', dest='device', type=str)
@@ -158,12 +170,14 @@ def main():
         f'{home_dir}/.sshnp/{args.device_atsign}/storage/commitLog')
     download_path = os.path.dirname(f'{home_dir}/.sshnp/files')
     ssh_path = os.path.dirname(f'{home_dir}/.ssh/')
-
-    event_queue = Queue(maxsize=10)
+    callbackArgs = []
+    event_queue = Queue(maxsize=20)
     client = AtClient(AtSign(args.device_atsign), queue=event_queue)
-
-    threading.Thread(target=handle_event, args=(
-        event_queue, client, ssh_path)).start()
-    threading.Thread(target=client.start_monitor, args=()).start()
-
-main()
+    monitor = threading.Thread(target=client.start_monitor, args=())
+    monitor.start()
+    event = threading.Thread(target=handle_events, args=(event_queue, client))
+    event.start()
+    callbackArgs = handle_decryption(event_queue, client, ssh_path, args)
+    ssh_callback(*callbackArgs)
+if __name__ == "__main__":
+    main()
