@@ -1,0 +1,50 @@
+name: sshnp_gui
+description: A new Flutter project
+version: 1.0.0+1
+publish_to: 'none' # Remove this line if you wish to publish to pub.dev
+
+environment:
+  sdk: ">=2.17.1 <3.0.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  at_client_mobile: ^3.2.6
+  at_utils: ^3.0.11
+  path_provider: ^2.0.11
+  flutter_dotenv: ^5.0.2
+  at_app_flutter: ^5.0.1
+  at_onboarding_flutter: ^6.1.0
+  biometric_storage: ^4.1.3
+  intl: any
+  at_contacts_flutter: ^4.0.5
+  flutter_riverpod: ^2.3.6
+  go_router: ^9.0.3
+  flutter_localizations:
+    sdk: flutter
+  flutter_svg: ^2.0.7
+  at_contact: ^3.0.7
+  shared_preferences: ^2.2.0
+  sshnoports:
+    git:
+      url: https://github.com/atsign-foundation/sshnoports.git
+      ref: trunk
+      path: packages/sshnoports/
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^2.0.0
+
+dependency_overrides:
+  intl: ^0.17.0-nullsafety.2
+  image: ^4.0.17
+  zxing2: ^0.2.0
+flutter:
+  uses-material-design: true
+  generate: true
+  assets:
+    - .env
+    - assets/images/nav_icons/
+    - assets/images/
+

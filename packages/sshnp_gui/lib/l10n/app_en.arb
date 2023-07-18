@@ -1,0 +1,14 @@
+{
+    "currentConnections" : "Current Connections",
+    "addNewConnection" : "Add New Connection",
+    "hostSelection" : "Host Selection",
+    "host" : "Host",
+    "sourcePort" : "Source Port",
+    "status" : "Status",
+    "destination" : "Destination",
+    "dest" : "Dest.",
+    "options" : "Options",
+    "connect" : "Connect",
+    "cancel" : "Cancel",
+    "new" : "New"
+}
