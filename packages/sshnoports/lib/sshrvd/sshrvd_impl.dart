@@ -168,19 +168,27 @@ class SSHRVDImpl implements SSHRVD {
     String forAtsign,
     bool snoop,
   ) async {
-    /// Spawn an isolate, passing my receivePort sendPort
-    ReceivePort myReceivePort = ReceivePort();
+    /// Spawn an isolate and wait for it to send back the issued port numbers
+    ReceivePort receivePort = ReceivePort(session);
 
     IsolateParams parameters =
-        (myReceivePort.sendPort, portA, portB, session, forAtsign, snoop);
+        (receivePort.sendPort, portA, portB, session, forAtsign, snoop);
+
+    logger
+        .info("Spawning socket connector isolate with parameters $parameters");
 
     unawaited(Isolate.spawn<IsolateParams>(_socketConnector, parameters));
 
-    PortPair ports = await myReceivePort.first;
+    PortPair ports = await receivePort.first;
+
+    logger.info('Received ports $ports in main isolate for session $session');
 
     return ports;
   }
 
+  /// This function runs in a separate isolate
+  /// It starts the socket connector, and sends back the assigned ports to the main isolate
+  /// It then waits for socket connector to die before shutting itself down
   Future<void> _socketConnector(IsolateParams params) async {
     final AtSignLogger logger = AtSignLogger(' sshrvd ');
     logger.hierarchicalLoggingEnabled = true;
@@ -188,7 +196,9 @@ class SSHRVDImpl implements SSHRVD {
     AtSignLogger.root_level = 'WARNING';
     logger.logger.level = Level.WARNING;
 
-    var (mySendPort, portA, portB, session, forAtsign, snoop) = params;
+    var (sendPort, portA, portB, session, forAtsign, snoop) = params;
+
+    logger.info('Starting socket connector session $session for $forAtsign');
 
     /// Create the socket connector
     SocketConnector socketStream = await SocketConnector.serverToServer(
@@ -203,8 +213,10 @@ class SSHRVDImpl implements SSHRVD {
     portA = socketStream.senderPort()!;
     portB = socketStream.receiverPort()!;
 
+    logger.info('Assigned ports [$portA, $portB] for session $session');
+
     /// Return the assigned ports to the main isolate
-    mySendPort.send((portA, portB));
+    sendPort.send((portA, portB));
 
     /// Shut myself down once the socket connector closes
     bool closed = false;
