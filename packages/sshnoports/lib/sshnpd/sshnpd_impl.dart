@@ -228,9 +228,8 @@ class SSHNPDImpl implements SSHNPD {
     // sessionId is local if we do not have a 2.0 client
     var uuid = Uuid();
     String sessionId = uuid.v4();
+    String sshString = notification.value!;
 
-    var sshString = notification.value!;
-    // Get atPlatform notifications ready
     var metaData = Metadata()
       ..isPublic = false
       ..isEncrypted = true
@@ -238,6 +237,7 @@ class SSHNPDImpl implements SSHNPD {
       ..ttr = -1
       ..ttl = 10000;
 
+    /// Setup an atKey to return a notification to the managerAtsign
     var atKey = AtKey()
       ..key = '$sessionId.$device'
       ..sharedBy = deviceAtsign
@@ -245,136 +245,125 @@ class SSHNPDImpl implements SSHNPD {
       ..namespace = SSHNPD.namespace
       ..metadata = metaData;
 
-    var atClient = AtClientManager.getInstance().atClient;
-    NotificationService notificationService = atClient.notificationService;
-
-    if (notification.from == managerAtsign) {
-      // Local port, port of sshd , username , hostname
-      List<String> sshList = sshString.split(' ');
-      var localPort = sshList[0];
-      var port = sshList[1];
-      var username = sshList[2];
-      var hostname = sshList[3];
-      // Assure backward compatibility with 1.x clients
-      if (sshList.length == 5) {
-        sessionId = sshList[4];
-        atKey = AtKey()
-          ..key = '$sessionId.$device'
-          ..sharedBy = deviceAtsign
-          ..sharedWith = managerAtsign
-          ..namespace = SSHNPD.namespace
-          ..metadata = metaData;
-      }
-      logger.info(
-          'ssh session started for $username to $hostname on port $port using localhost:$localPort on $hostname ');
-      logger.shout(
-          'ssh session started from: ${notification.from} session: $sessionId');
-
-      // var result = await Process.run('ssh', sshList);
-
-      try {
-        final socket = await SSHSocket.connect(hostname, int.parse(port));
-
-        final client = SSHClient(
-          socket,
-          username: username,
-          identities: [
-            // A single private key file may contain multiple keys.
-            ...SSHKeyPair.fromPem(privateKey)
-          ],
-        );
-        // connect back to ssh server/port
-        await client.authenticated;
-        // Do the port forwarding
-        final forward = await client.forwardRemote(port: int.parse(localPort));
-
-        if (forward == null) {
-          logger.warning('Failed to forward remote port $localPort');
-          try {
-            // Say this session is NOT connected to client
-            await notificationService.notify(
-                NotificationParams.forUpdate(atKey,
-                    value:
-                        'Failed to forward remote port $localPort, (use --local-port to specify unused port)'),
-                onSuccess: (notification) {
-              logger.info('SUCCESS:$notification for: $sessionId');
-            }, onError: (notification) {
-              logger.info('ERROR:$notification');
-            });
-          } catch (e) {
-            stderr.writeln(e.toString());
-          }
-          return;
-        }
-
-        /// Send a notification to tell sshnp connection is made
-        ///
-
-        try {
-          // Say this session is connected to client
-          logger.info(' sshnpd connected notification sent to:from "$atKey');
-          await notificationService
-              .notify(NotificationParams.forUpdate(atKey, value: "connected"),
-                  onSuccess: (notification) {
-            logger.info('SUCCESS:$notification for: $sessionId');
-          }, onError: (notification) {
-            logger.info('ERROR:$notification');
-          });
-        } catch (e) {
-          stderr.writeln(e.toString());
-        }
-
-        ///
-
-        int counter = 0;
-        bool stop = false;
-        // Set up time to check to see if all connections are down
-        Timer.periodic(Duration(seconds: 15), (timer) async {
-          if (counter == 0) {
-            client.close();
-            await client.done;
-            stop = true;
-            timer.cancel();
-            logger.shout(
-                'ssh session complete for: ${notification.from} session: $sessionId');
-          }
-        });
-        // Answer ssh requests until none are left open
-        await for (final connection in forward.connections) {
-          counter++;
-          final socket = await Socket.connect('localhost', 22);
-
-          // ignore: unawaited_futures
-          connection.stream
-              .cast<List<int>>()
-              .pipe(socket)
-              .whenComplete(() async {
-            counter--;
-          });
-          // ignore: unawaited_futures
-          socket.pipe(connection.sink);
-          if (stop) break;
-        }
-      } catch (e) {
-        // need to make sure things close
-        logger.severe('SSH Client failure : $e');
-        try {
-          // Say this session is connected to client
-          await notificationService.notify(
-              NotificationParams.forUpdate(atKey,
-                  value: 'Remote SSH Client failure : $e'),
-              onSuccess: (notification) {
-            logger.info('SUCCESS:$notification for: $sessionId');
-          }, onError: (notification) {
-            logger.info('ERROR:$notification');
-          });
-        } catch (e) {
-          stderr.writeln(e.toString());
-        }
-      }
-    } else {
+    if (notification.from != managerAtsign) {
       logger.shout(
           'ssh session attempted from: ${notification.from} session: $sessionId and ignored');
+      return;
     }
+
+    /// Local port, port of sshd, username, hostname
+    List<String> sshList = sshString.split(' ');
+    var localPort = sshList[0];
+    var port = sshList[1];
+    var username = sshList[2];
+    var hostname = sshList[3];
+
+    /// Assure backward compatibility with 1.x clients
+    if (sshList.length == 5) {
+      sessionId = sshList[4];
+      atKey = AtKey()
+        ..key = '$sessionId.$device'
+        ..sharedBy = deviceAtsign
+        ..sharedWith = managerAtsign
+        ..namespace = SSHNPD.namespace
+        ..metadata = metaData;
+    }
+
+    logger.info(
+        'ssh session started for $username to $hostname on port $port using localhost:$localPort on $hostname ');
+    logger.shout(
+        'ssh session started from: ${notification.from} session: $sessionId');
+
+    // var result = await Process.run('ssh', sshList);
+
+    int counter = 0;
+    bool shouldStop = false;
+
+    try {
+      final socket = await SSHSocket.connect(hostname, int.parse(port));
+
+      final client = SSHClient(
+        socket,
+        username: username,
+        identities: [
+          // A single private key file may contain multiple keys.
+          ...SSHKeyPair.fromPem(privateKey)
+        ],
+      );
+
+      /// connect back to ssh server/port
+      await client.authenticated;
+
+      /// Do the port forwarding
+      final forward = await client.forwardRemote(port: int.parse(localPort));
+
+      if (forward == null) {
+        logger.warning('Failed to forward remote port $localPort');
+        // Say this session is NOT connected to client
+        await _notify(
+          atKey,
+          'Failed to forward remote port $localPort, (use --local-port to specify unused port)',
+          sessionId: sessionId,
+        );
+        return;
+      }
+
+      /// Send a notification to tell sshnp connection is made
+
+      /// Say this session is connected to client
+      logger.info(' sshnpd connected notification sent to:from "$atKey');
+      await _notify(atKey, "connected", sessionId: sessionId);
+
+      /// Set up time to check to see if all connections are down
+      Timer.periodic(Duration(seconds: 15), (timer) async {
+        if (counter == 0) {
+          client.close();
+          await client.done;
+          shouldStop = true;
+          timer.cancel();
+          logger.shout(
+              'ssh session complete for: ${notification.from} session: $sessionId');
+        }
+      });
+
+      /// Answer ssh requests until none are left open
+      await for (final connection in forward.connections) {
+        counter++;
+        final socket = await Socket.connect('localhost', 22);
+
+        unawaited(
+          connection.stream.cast<List<int>>().pipe(socket).whenComplete(
+            () async {
+              counter--;
+            },
+          ),
+        );
+        unawaited(socket.pipe(connection.sink));
+        if (shouldStop) break;
+      }
+    } catch (e) {
+      // need to make sure things close
+      logger.severe('SSH Client failure : $e');
+      // Say this session is connected to client
+      await _notify(
+        atKey,
+        'Remote SSH Client failure : $e',
+        sessionId: sessionId,
+      );
+    }
+  }
+
+  Future<void> _notify(AtKey atKey, String value,
+      {String sessionId = ""}) async {
+    AtClient atClient = AtClientManager.getInstance().atClient;
+    NotificationService notificationService = atClient.notificationService;
+
+    await notificationService
+        .notify(NotificationParams.forUpdate(atKey, value: value),
+            onSuccess: (notification) {
+      logger.info('SUCCESS:$notification for: $sessionId with value: $value');
+    }, onError: (notification) {
+      logger.info('ERROR:$notification');
+    });
   }
 }
