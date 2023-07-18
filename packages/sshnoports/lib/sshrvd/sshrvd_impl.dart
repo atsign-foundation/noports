@@ -189,13 +189,7 @@ class SSHRVDImpl implements SSHRVD {
   /// This function runs in a separate isolate
   /// It starts the socket connector, and sends back the assigned ports to the main isolate
   /// It then waits for socket connector to die before shutting itself down
-  Future<void> _socketConnector(IsolateParams params) async {
-    final AtSignLogger logger = AtSignLogger(' sshrvd ');
-    logger.hierarchicalLoggingEnabled = true;
-
-    AtSignLogger.root_level = 'WARNING';
-    logger.logger.level = Level.WARNING;
-
+  void _socketConnector(IsolateParams params) async {
     var (sendPort, portA, portB, session, forAtsign, snoop) = params;
 
     logger.info('Starting socket connector session $session for $forAtsign');
