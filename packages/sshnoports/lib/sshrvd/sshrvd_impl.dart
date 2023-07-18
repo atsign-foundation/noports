@@ -13,6 +13,9 @@ import 'package:sshnoports/sshrvd/sshrvd.dart';
 import 'package:sshnoports/sshrvd/sshrvd_params.dart';
 import 'package:sshnoports/version.dart';
 
+typedef IsolateParams = (SendPort, int, int, String, String, bool);
+typedef PortPair = (int, int);
+
 class SSHRVDImpl implements SSHRVD {
   @override
   final AtSignLogger logger = AtSignLogger(' sshrvd ');
@@ -126,7 +129,9 @@ class SSHRVDImpl implements SSHRVD {
       return;
     }
 
-    var ports = await connectSpawn(0, 0, session, forAtsign, snoop);
+    (int, int) ports =
+        await _spawnSocketConnector(0, 0, session, forAtsign, snoop);
+    var (portA, portB) = ports;
     logger
         .warning('Starting session $session for $forAtsign using ports $ports');
 
@@ -144,7 +149,7 @@ class SSHRVDImpl implements SSHRVD {
       ..namespace = SSHRVD.namespace
       ..metadata = metaData;
 
-    String data = '$ipAddress,${ports[0]},${ports[1]}';
+    String data = '$ipAddress,$portA,$portB';
 
     try {
       await atClient.notificationService.notify(
@@ -156,64 +161,52 @@ class SSHRVDImpl implements SSHRVD {
     }
   }
 
-  Future<List<int>> connectSpawn(int portA, int portB, String session,
-      String forAtsign, bool snoop) async {
+  Future<PortPair> _spawnSocketConnector(
+    int portA,
+    int portB,
+    String session,
+    String forAtsign,
+    bool snoop,
+  ) async {
     /// Spawn an isolate, passing my receivePort sendPort
-
     ReceivePort myReceivePort = ReceivePort();
-    unawaited(Isolate.spawn<SendPort>(connect, myReceivePort.sendPort));
 
-    SendPort mySendPort = await myReceivePort.first;
+    IsolateParams parameters =
+        (myReceivePort.sendPort, portA, portB, session, forAtsign, snoop);
 
-    myReceivePort = ReceivePort();
-    mySendPort.send(
-        [portA, portB, session, forAtsign, snoop, myReceivePort.sendPort]);
+    unawaited(Isolate.spawn<IsolateParams>(_socketConnector, parameters));
 
-    List message = await myReceivePort.first as List;
+    PortPair ports = await myReceivePort.first;
 
-    portA = message[0];
-    portB = message[1];
-
-    return ([portA, portB]);
+    return ports;
   }
 
-  Future<void> connect(SendPort mySendPort) async {
+  Future<void> _socketConnector(IsolateParams params) async {
     final AtSignLogger logger = AtSignLogger(' sshrvd ');
     logger.hierarchicalLoggingEnabled = true;
 
     AtSignLogger.root_level = 'WARNING';
     logger.logger.level = Level.WARNING;
 
-    int portA = 0;
-    int portB = 0;
-    String session;
-    String forAtsign;
-    bool verbose = false;
-    ReceivePort myReceivePort = ReceivePort();
-    mySendPort.send(myReceivePort.sendPort);
+    var (mySendPort, portA, portB, session, forAtsign, snoop) = params;
 
-    List message = await myReceivePort.first as List;
-    portA = message[0];
-    portB = message[1];
-    session = message[2];
-    forAtsign = message[3];
-    verbose = message[4];
-    mySendPort = message[5];
-
+    /// Create the socket connector
     SocketConnector socketStream = await SocketConnector.serverToServer(
       serverAddressA: InternetAddress.anyIPv4,
       serverAddressB: InternetAddress.anyIPv4,
       serverPortA: portA,
       serverPortB: portB,
-      verbose: verbose,
+      verbose: snoop,
     );
 
+    /// Get the assigned ports from the socket connector
     portA = socketStream.senderPort()!;
     portB = socketStream.receiverPort()!;
 
-    mySendPort.send([portA, portB]);
+    /// Return the assigned ports to the main isolate
+    mySendPort.send((portA, portB));
 
-    // await Future.delayed(Duration(seconds: 10));
+    /// Shut myself down once the socket connector closes
     bool closed = false;
     while (closed == false) {
       closed = await socketStream.closed();
