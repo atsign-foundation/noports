@@ -1,16 +1,21 @@
 import 'dart:io';
 
 import 'package:args/args.dart';
+import 'package:at_utils/at_utils.dart';
 import 'package:sshnoports/common/utils.dart';
 import 'package:sshnoports/sshnp/sshnp_arg.dart';
 
 class SSHNPParams {
-  /// from atSign
-  late final String clientAtSign;
+  /// Required Arguments
+  /// These arguments do not have fallback values and must be provided.
+  /// Since there are multiple sources for these values, we cannot validate
+  /// that they will be provided. If any are null, then the caller must
+  /// handle the error.
+  late final String? clientAtSign;
+  late final String? sshnpdAtSign;
+  late final String? host;
 
-  /// to atSign
-  late final String sshnpdAtSign;
-  late final String host;
+  /// Optional Arguments
   late final String device;
   late final String port;
   late final String localPort;
@@ -44,15 +49,24 @@ class SSHNPParams {
     homeDirectory = getHomeDirectory(throwIfNull: true)!;
 
     // Use default atKeysFilePath if not provided
+
     this.atKeysFilePath =
         atKeysFilePath ?? getDefaultAtKeysFilePath(homeDirectory, clientAtSign);
   }
 
   factory SSHNPParams.fromPartial(SSHNPPartialParams partial) {
+    AtSignLogger logger = AtSignLogger(' SSHNPParams ');
+
+    /// If any required params are null log severe, but do not throw
+    /// The caller must handle the error if any required params are null
+    partial.clientAtSign ?? (logger.severe('clientAtSign is null'));
+    partial.sshnpdAtSign ?? (logger.severe('sshnpdAtSign is null'));
+    partial.host ?? (logger.severe('host is null'));
+
     return SSHNPParams(
-      clientAtSign: partial.clientAtSign!,
-      sshnpdAtSign: partial.sshnpdAtSign!,
-      host: partial.host!,
+      clientAtSign: partial.clientAtSign,
+      sshnpdAtSign: partial.sshnpdAtSign,
+      host: partial.host,
       device: partial.device ?? 'default',
       port: partial.port ?? '22',
       localPort: partial.localPort ?? '0',

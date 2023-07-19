@@ -54,7 +54,8 @@ bool checkNonAscii(String test) {
   }
 }
 
-String getDefaultAtKeysFilePath(String homeDirectory, String atSign) {
+String getDefaultAtKeysFilePath(String homeDirectory, String? atSign) {
+  if (atSign == null) return '';
   return '$homeDirectory/.atsign/keys/${atSign}_key.atKeys'
       .replaceAll('/', Platform.pathSeparator);
 }
