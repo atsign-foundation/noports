@@ -4,7 +4,8 @@ import os, threading, argparse, select, socket
 from queue import Empty, Queue
 from time import sleep
 from uuid import uuid4
-from paramiko import SSHClient
+from paramiko import SSHClient, SSHException
+from paramiko.ssh_exception import NoValidConnectionsError
 from paramiko.rsakey import RSAKey
 
 from at_client import AtClient
@@ -25,7 +26,13 @@ def handle_decryption(queue:Queue, client:AtClient, ssh_path, args: argparse.Arg
             print("event received")
             event_type = at_event.event_type
             event_data = at_event.event_data
-            if(event_type != AtEventType.DECRYPTED_UPDATE_NOTIFICATION):
+            
+            #There's defintely a better way to do this
+            #oh well
+            #TODO: fix this
+            if event_type == AtEventType.UPDATE_NOTIFICATION :
+                queue.put(at_event)
+            if event_type != AtEventType.DECRYPTED_UPDATE_NOTIFICATION :
                 continue
             key = event_data["key"].split(":")[1].split(".")[0]
             decrypted_value = str(event_data["decryptedValue"])
@@ -64,11 +71,11 @@ def handle_decryption(queue:Queue, client:AtClient, ssh_path, args: argparse.Arg
 def handle_events(queue:Queue, client: AtClient):
     while(True):
         try:
-            at_event = queue.get()
-            print("event received")
+            at_event = queue.get(block=False)
             event_type = at_event.event_type
             if event_type != AtEventType.DECRYPTED_UPDATE_NOTIFICATION:
                 client.handle_event(queue, at_event)
+            
         except Empty:
             pass
         
@@ -146,9 +153,13 @@ def ssh_callback(event: AtEvent, private_key: str, manager_atsign: str, device_a
             hostname, port, username, pkey=file_like)
         print("Forwarding port " + local_port + " to " + hostname + ":" + port)
         reverse_forward_tunnel(local_port, hostname, port, ssh_client)
-    except Exception as e:
-        print("Failed to connect to SSHClient")
+    except NoValidConnectionsError as e:
+        print("Failed to forward port: ")
+        for exception in e.errors:
+            print(exception)
         exit(1)
+    except Exception:
+        print("Failed to create SSHClient")
 
 
 def main():
@@ -173,11 +184,13 @@ def main():
     callbackArgs = []
     event_queue = Queue(maxsize=20)
     client = AtClient(AtSign(args.device_atsign), queue=event_queue)
-    monitor = threading.Thread(target=client.start_monitor, args=())
+    regex = ""
+    monitor = threading.Thread(target=client.start_monitor, args=(regex,))
     monitor.start()
-    event = threading.Thread(target=handle_events, args=(event_queue, client))
+    event = threading.Thread(target=handle_events, args=(client.queue, client))
     event.start()
-    callbackArgs = handle_decryption(event_queue, client, ssh_path, args)
-    ssh_callback(*callbackArgs)
+    callbackArgs = handle_decryption(client.queue, client, ssh_path, args)
+    
+    
 if __name__ == "__main__":
     main()
