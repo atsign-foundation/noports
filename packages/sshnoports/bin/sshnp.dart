@@ -22,18 +22,17 @@ void main(List<String> args) async {
     await sshnp.init();
     await sshnp.run();
     exit(0);
+  } on ArgumentError catch (_) {
+    exit(1);
   } catch (error, stackTrace) {
-    stderr.writeln("\n${error.toString()}");
-
-    if (sshnp?.verbose ?? false) {
-      /// only show stack trace if verbose is true
-      /// or if the program failed before it could be set
-      stderr.writeln('\nStack Trace: $stackTrace');
-    }
+    stderr.writeln('Error: ${error.toString()}');
+    stderr.writeln('Stack Trace: ${stackTrace.toString()}');
 
     if (sshnp != null) {
       await cleanUp(sshnp.sessionId, sshnp.logger);
     }
+
+    await stderr.flush().timeout(Duration(milliseconds: 100));
     exit(1);
   }
 }

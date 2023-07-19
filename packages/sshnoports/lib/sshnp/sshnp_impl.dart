@@ -195,16 +195,15 @@ class SSHNPImpl implements SSHNP {
       );
 
       if (p.clientAtSign == null) {
-        throw FormatException('"--from" is required');
+        throw ArgumentError('Option from is mandatory.');
       }
 
       if (p.sshnpdAtSign == null) {
-        throw FormatException('"--to" is required');
-        
+        throw ArgumentError('Option to is mandatory.');
       }
 
       if (p.host == null) {
-        throw FormatException('"--host" is required');
+        throw ArgumentError('Option host is mandatory.');
       }
 
       // Check atKeyFile selected exists
@@ -250,6 +249,7 @@ class SSHNPImpl implements SSHNP {
     } catch (e) {
       printVersion();
       stdout.writeln(SSHNPPartialParams.parser.usage);
+      stderr.writeln('\n$e');
       rethrow;
     }
   }
