@@ -150,6 +150,9 @@ class SSHNPImpl implements SSHNP {
   @visibleForTesting
   bool initialized = false;
 
+  @override
+  bool verbose = false;
+
   SSHNPImpl({
     // final fields
     required this.atClient,
@@ -166,6 +169,7 @@ class SSHNPImpl implements SSHNP {
     required this.port,
     required this.localPort,
     this.remoteUsername,
+    this.verbose = false,
   }) {
     namespace = '$device.sshnp';
     clientAtSign = atClient.getCurrentAtSign()!;
@@ -190,9 +194,22 @@ class SSHNPImpl implements SSHNP {
         SSHNPPartialParams.fromArgs(args),
       );
 
+      if (p.clientAtSign == null) {
+        throw FormatException('"--from" is required');
+      }
+
+      if (p.sshnpdAtSign == null) {
+        throw FormatException('"--to" is required');
+        
+      }
+
+      if (p.host == null) {
+        throw FormatException('"--host" is required');
+      }
+
       // Check atKeyFile selected exists
       if (!await fileExists(p.atKeysFilePath)) {
-        throw ('\n Unable to find .atKeys file : ${p.atKeysFilePath}');
+        throw ('\nUnable to find .atKeys file : ${p.atKeysFilePath}');
       }
 
       String sessionId = Uuid().v4();
@@ -204,25 +221,26 @@ class SSHNPImpl implements SSHNP {
 
       AtClient atClient = await createAtClientCli(
           homeDirectory: p.homeDirectory,
-          atsign: p.clientAtSign,
+          atsign: p.clientAtSign!,
           namespace: '${p.device}.sshnp',
           pathExtension: sessionId,
           atKeysFilePath: p.atKeysFilePath);
 
       var sshnp = SSHNP(
         atClient: atClient,
-        sshnpdAtSign: p.sshnpdAtSign,
+        sshnpdAtSign: p.sshnpdAtSign!,
         username: p.username,
         homeDirectory: p.homeDirectory,
         sessionId: sessionId,
         device: p.device,
-        host: p.host,
+        host: p.host!,
         port: p.port,
         localPort: p.localPort,
         localSshOptions: p.localSshOptions,
         rsa: p.rsa,
         sendSshPublicKey: p.sendSshPublicKey,
         remoteUsername: p.remoteUsername,
+        verbose: p.verbose,
       );
       if (p.verbose) {
         sshnp.logger.logger.level = Level.INFO;
@@ -232,7 +250,6 @@ class SSHNPImpl implements SSHNP {
     } catch (e) {
       printVersion();
       stdout.writeln(SSHNPPartialParams.parser.usage);
-      stderr.writeln(e);
       rethrow;
     }
   }

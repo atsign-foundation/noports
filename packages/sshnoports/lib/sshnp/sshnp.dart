@@ -107,9 +107,13 @@ abstract class SSHNP {
   @visibleForTesting
   abstract bool sshrvdAck;
 
+  bool verbose = false;
+
   /// true once [init] has completed
   @visibleForTesting
   bool initialized = false;
+
+
 
   factory SSHNP({
     // final fields
@@ -127,6 +131,7 @@ abstract class SSHNP {
     required String port,
     required String localPort,
     String? remoteUsername,
+    bool verbose = false,
   }) {
     return SSHNPImpl(
       atClient: atClient,
@@ -142,6 +147,7 @@ abstract class SSHNP {
       port: port,
       localPort: localPort,
       remoteUsername: remoteUsername,
+      verbose: verbose,
     );
   }
 
