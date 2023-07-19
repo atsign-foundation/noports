@@ -149,6 +149,10 @@ abstract class SSHNP {
     return SSHNPImpl.fromCommandLineArgs(args);
   }
 
+  static Future<SSHNP> fromConfigFile(String filePath) async {
+    return SSHNPImpl.fromCommandLineArgs([filePath]); // TODO implement logic
+  }
+
   /// Must be run after construction, to complete initialization
   /// - Starts notification subscription to listen for responses from sshnpd
   /// - calls [generateSshKeys] which generates the ssh keypair to use
