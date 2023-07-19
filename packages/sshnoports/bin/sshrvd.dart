@@ -11,8 +11,8 @@ void main(List<String> args) async {
   } on ArgumentError catch (_) {
     exit(1);
   } catch (error, stackTrace) {
-    stderr.writeln('sshrvd: ${error.toString()}');
-    stderr.writeln('stack trace: ${stackTrace.toString()}');
+    stderr.writeln('Error: ${error.toString()}');
+    stderr.writeln('Stack Trace: ${stackTrace.toString()}');
     await stderr.flush().timeout(Duration(milliseconds: 100));
     exit(1);
   }
