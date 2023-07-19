@@ -1,60 +1,60 @@
-// dart packages
 import 'dart:async';
 import 'dart:io';
 
-// atPlatform packages
-import 'package:at_utils/at_logger.dart';
 import 'package:at_client/at_client.dart';
-import 'package:at_onboarding_cli/at_onboarding_cli.dart';
-
-// other packages
-import 'package:args/args.dart';
+import 'package:at_utils/at_logger.dart';
 import 'package:logging/logging.dart';
 import 'package:meta/meta.dart';
-import 'package:sshnoports/config_util.dart';
-import 'package:sshnoports/sshnp_args.dart';
-import 'package:uuid/uuid.dart';
-import 'package:version/version.dart';
-
-// local packages
-import 'package:sshnoports/service_factories.dart';
-import 'package:sshnoports/utils.dart';
-import 'package:sshnoports/cleanup_sshnp.dart';
+import 'package:sshnoports/common/create_at_client_cli.dart';
+import 'package:sshnoports/sshnp/get_sshrv_command.dart';
+import 'package:sshnoports/common/utils.dart';
+import 'package:sshnoports/sshnp/cleanup.dart';
+import 'package:sshnoports/sshnp/sshnp.dart';
+import 'package:sshnoports/sshnp/sshnp_params.dart';
+import 'package:sshnoports/sshrvd/sshrvd.dart';
 import 'package:sshnoports/version.dart';
+import 'package:uuid/uuid.dart';
 
-class SSHNP {
-  // TODO Make this a const in SSHRVD class
-  static const String sshrvdNameSpace = 'sshrvd';
-
+class SSHNPImpl implements SSHNP {
+  @override
   final AtSignLogger logger = AtSignLogger(' sshnp ');
 
   // ====================================================================
   // Final instance variables, injected via constructor
   // ====================================================================
   /// The [AtClient] used to communicate with sshnpd and sshrvd
+  @override
   final AtClient atClient;
 
   /// The atSign of the sshnpd we wish to communicate with
+  @override
   final String sshnpdAtSign;
 
   /// The device name of the sshnpd we wish to communicate with
+  @override
   final String device;
 
   /// The user name on this host
+  @override
   final String username;
 
   /// The home directory on this host
+  @override
   final String homeDirectory;
 
   /// The sessionId we will use
+  @override
   final String sessionId;
 
-  final String sendSshPublicKey;
+  @override
+  late final String sendSshPublicKey;
+  @override
   final List<String> localSshOptions;
 
   /// When false, we generate [sshPublicKey] and [sshPrivateKey] using ed25519.
   /// When true, we generate [sshPublicKey] and [sshPrivateKey] using RSA.
   /// Defaults to false
+  @override
   final bool rsa;
 
   // ====================================================================
@@ -65,16 +65,19 @@ class SSHNP {
   /// Host that we will send to sshnpd for it to connect to,
   /// or the atSign of the sshrvd.
   /// If using sshrvd then we will fetch the _actual_ host to use from sshrvd.
+  @override
   String host;
 
   /// Port that we will send to sshnpd for it to connect to.
   /// Required if we are not using sshrvd.
   /// If using sshrvd then initial port value will be ignored and instead we
   /// will fetch the port from sshrvd.
+  @override
   String port;
 
   /// Port to which sshnpd will forwardRemote its [SSHClient]. If localPort
   /// is set to '0' then
+  @override
   String localPort;
 
   // ====================================================================
@@ -82,48 +85,59 @@ class SSHNP {
   // ====================================================================
 
   /// Set to [AtClient.getCurrentAtSign] during construction
+  @override
   @visibleForTesting
   late final String clientAtSign;
 
   /// The username to use on the remote host in the ssh session. Either passed
   /// through class constructor or fetched from the sshnpd
   /// by [fetchRemoteUserName] during [init]
+  @override
   String? remoteUsername;
 
   /// Set by [generateSshKeys] during [init].
   /// sshnp generates a new keypair for each ssh session, using ed25519 by
   /// default but rsa if the [rsa] flag is set to true. sshnp will write
   /// [sshPublicKey] to ~/.ssh/authorized_keys
+  @override
   late final String sshPublicKey;
 
   /// Set by [generateSshKeys] during [init].
   /// sshnp generates a new keypair for each ssh session, using ed25519 by
   /// default but rsa if the [rsa] flag is set to true. sshnp will send the
   /// [sshPrivateKey] to sshnpd
+  @override
   late final String sshPrivateKey;
 
   /// Namespace will be set to [device].sshnp
-  late final String nameSpace;
+  @override
+  late final String namespace;
 
   /// When using sshrvd, this is fetched from sshrvd during [init]
+  @override
   late final String sshrvdPort;
 
   /// Set to '$localPort $port $username $host $sessionId' during [init]
+  @override
   late final String sshString;
 
   /// Set by constructor to
   /// '$homeDirectory${Platform.pathSeparator}.ssh${Platform.pathSeparator}'
+  @override
   late final String sshHomeDirectory;
 
   /// true once we have received any response (success or error) from sshnpd
+  @override
   @visibleForTesting
   bool sshnpdAck = false;
 
   /// true once we have received an error response from sshnpd
+  @override
   @visibleForTesting
   bool sshnpdAckErrors = false;
 
   /// true once we have received a response from sshrvd
+  @override
   @visibleForTesting
   bool sshrvdAck = false;
 
@@ -132,10 +146,11 @@ class SSHNP {
   static const String commandToSend = 'sshd';
 
   /// true once [init] has completed
+  @override
   @visibleForTesting
   bool initialized = false;
 
-  SSHNP({
+  SSHNPImpl({
     // final fields
     required this.atClient,
     required this.sshnpdAtSign,
@@ -143,7 +158,7 @@ class SSHNP {
     required this.username,
     required this.homeDirectory,
     required this.sessionId,
-    this.sendSshPublicKey = 'false',
+    String sendSshPublicKey = 'false',
     required this.localSshOptions,
     this.rsa = false,
     // volatile fields
@@ -152,7 +167,7 @@ class SSHNP {
     required this.localPort,
     this.remoteUsername,
   }) {
-    nameSpace = '$device.sshnp';
+    namespace = '$device.sshnp';
     clientAtSign = atClient.getCurrentAtSign()!;
     logger.hierarchicalLoggingEnabled = true;
     logger.logger.level = Level.SHOUT;
@@ -160,6 +175,65 @@ class SSHNP {
     sshHomeDirectory = getDefaultSshDirectory(homeDirectory);
     if (!Directory(sshHomeDirectory).existsSync()) {
       Directory(sshHomeDirectory).createSync();
+    }
+
+    if (sendSshPublicKey != 'false') {
+      this.sendSshPublicKey = '$sshHomeDirectory$sendSshPublicKey';
+    } else {
+      this.sendSshPublicKey = 'false';
+    }
+  }
+
+  static Future<SSHNP> fromCommandLineArgs(List<String> args) async {
+    try {
+      var p = SSHNPParams.fromPartial(
+        SSHNPPartialParams.fromArgs(args),
+      );
+
+      // Check atKeyFile selected exists
+      if (!await fileExists(p.atKeysFilePath)) {
+        throw ('\n Unable to find .atKeys file : ${p.atKeysFilePath}');
+      }
+
+      String sessionId = Uuid().v4();
+
+      AtSignLogger.root_level = 'SHOUT';
+      if (p.verbose) {
+        AtSignLogger.root_level = 'INFO';
+      }
+
+      AtClient atClient = await createAtClientCli(
+          homeDirectory: p.homeDirectory,
+          atsign: p.clientAtSign,
+          namespace: '${p.device}.sshnp',
+          pathExtension: sessionId,
+          atKeysFilePath: p.atKeysFilePath);
+
+      var sshnp = SSHNP(
+        atClient: atClient,
+        sshnpdAtSign: p.sshnpdAtSign,
+        username: p.username,
+        homeDirectory: p.homeDirectory,
+        sessionId: sessionId,
+        device: p.device,
+        host: p.host,
+        port: p.port,
+        localPort: p.localPort,
+        localSshOptions: p.localSshOptions,
+        rsa: p.rsa,
+        sendSshPublicKey: p.sendSshPublicKey,
+        remoteUsername: p.remoteUsername,
+      );
+      if (p.verbose) {
+        sshnp.logger.logger.level = Level.INFO;
+      }
+
+      return sshnp;
+    } catch (e) {
+      printVersion();
+      stdout.writeln(SSHNPPartialParams.parser.usage);
+      stderr.writeln(e);
+      rethrow;
     }
   }
 
@@ -174,6 +248,7 @@ class SSHNP {
   ///   from sshrvd
   /// - calls [sharePrivateKeyWithSshnpd]
   /// - calls [sharePublicKeyWithSshnpdIfRequired]
+  @override
   Future<void> init() async {
     if (initialized) {
       throw StateError('Cannot init() - already initialized');
@@ -183,17 +258,19 @@ class SSHNP {
       throw ('sshnpd atSign $sshnpdAtSign is not activated.');
     }
 
-    logger.info('Subscribing to notifications on $sessionId.$nameSpace@');
+    logger.info('Subscribing to notifications on $sessionId.$namespace@');
     // Start listening for response notifications from sshnpd
     atClient.notificationService
-        .subscribe(regex: '$sessionId.$nameSpace@', shouldDecrypt: true)
+        .subscribe(regex: '$sessionId.$namespace@', shouldDecrypt: true)
         .listen(handleSshnpdResponses);
 
     await generateSshKeys();
 
-    if (remoteUsername == null) {
-      await fetchRemoteUserName();
+    if (sendSshPublicKey != 'false' && !File(sendSshPublicKey).existsSync()) {
+      throw ('\n Unable to find ssh public key file : $sendSshPublicKey');
     }
+
+    remoteUsername ?? await fetchRemoteUserName();
 
     // find a spare local port
     if (localPort == '0') {
@@ -225,13 +302,14 @@ class SSHNP {
   /// - Waits for success or error response, or time out after 10 secs
   /// - If got a success response, print the ssh command to use to stdout
   /// - Clean up temporary files
+  @override
   Future<void> run() async {
     if (!initialized) {
       throw StateError('Cannot run() - not initialized');
     }
     AtKey keyForCommandToSend = AtKey()
       ..key = commandToSend
-      ..namespace = nameSpace
+      ..namespace = namespace
       ..sharedBy = clientAtSign
       ..sharedWith = sshnpdAtSign
       ..metadata = (Metadata()
@@ -261,8 +339,7 @@ class SSHNP {
       counter++;
       if (counter == 100) {
         await cleanUp(sessionId, logger);
-        stderr.writeln('sshnp: connection timeout');
-        exit(1);
+        throw ('sshnp: connection timeout');
       }
     }
 
@@ -286,7 +363,6 @@ class SSHNP {
     }
     // Print the  return
     stdout.write('\n');
-    exit(0);
   }
 
   /// Function which the response subscription (created in the [init] method
@@ -317,13 +393,13 @@ class SSHNP {
   /// Is not called if remoteUserName was set via constructor
   Future<void> fetchRemoteUserName() async {
     AtKey userNameRecordID =
-        AtKey.fromString('$clientAtSign:username.$nameSpace$sshnpdAtSign');
+        AtKey.fromString('$clientAtSign:username.$namespace$sshnpdAtSign');
     try {
       remoteUsername = (await atClient.get(userNameRecordID)).value as String;
     } catch (e) {
       stderr.writeln("Device \"$device\" unknown, or username not shared ");
       await cleanUp(sessionId, logger);
-      exit(1);
+      rethrow;
     }
   }
 
@@ -332,7 +408,7 @@ class SSHNP {
       try {
         String toSshPublicKey = await File(sendSshPublicKey).readAsString();
         if (!toSshPublicKey.startsWith('ssh-')) {
-          throw ('$sshHomeDirectory$sendSshPublicKey does not look like a public key file');
+          throw ('$sendSshPublicKey does not look like a public key file');
         }
         AtKey sendOurPublicKeyToSshnpd = AtKey()
           ..key = 'sshpublickey'
@@ -352,7 +428,7 @@ class SSHNP {
         stderr.writeln(
             "Error opening or validating public key file or sending to remote atSign: $e");
         await cleanUp(sessionId, logger);
-        exit(1);
+        rethrow;
       }
     }
   }
@@ -362,7 +438,7 @@ class SSHNP {
       ..key = 'privatekey'
       ..sharedBy = clientAtSign
       ..sharedWith = sshnpdAtSign
-      ..namespace = nameSpace
+      ..namespace = namespace
       ..metadata = (Metadata()
         ..ttr = -1
         ..ttl = 10000);
@@ -383,7 +459,8 @@ class SSHNP {
 
   Future<void> getHostAndPortFromSshrvd() async {
     atClient.notificationService
-        .subscribe(regex: '$sessionId.$sshrvdNameSpace@', shouldDecrypt: true)
+        .subscribe(
+            regex: '$sessionId.${SSHRVD.namespace}@', shouldDecrypt: true)
         .listen((notification) async {
       String ipPorts = notification.value.toString();
       List results = ipPorts.split(',');
@@ -394,7 +471,7 @@ class SSHNP {
     });
 
     AtKey ourSshrvdIdKey = AtKey()
-      ..key = '$device.$sshrvdNameSpace'
+      ..key = '$device.${SSHRVD.namespace}'
       ..sharedBy = clientAtSign // shared by us
       ..sharedWith = host // shared with the sshrvd host
       ..metadata = (Metadata()
@@ -424,7 +501,7 @@ class SSHNP {
       if (counter == 100) {
         await cleanUp(sessionId, logger);
         stderr.writeln('sshnp: connection timeout to sshrvd $host service');
-        exit(1);
+        throw ('sshnp: connection timeout to sshrvd $host service');
       }
     }
 
@@ -476,232 +553,4 @@ class SSHNP {
         'command="echo \\"ssh session complete\\";sleep 20",PermitOpen="localhost:22" ${sshPublicKey.trim()} $sessionId\n',
         mode: FileMode.append);
   }
-
-  static SSHNPParams parseSSHNPParams(List<String> args) {
-    var p = SSHNPParams();
-    ArgParser parser = createArgParser();
-    late ArgResults r;
-    List<String> configArgs = [];
-
-    // Config file
-    r = parser.parse(args);
-    if (r.wasParsed('config-file')) {
-      configArgs = parseConfigFile(r['config-file']);
-    }
-
-    // Main Args
-    r = parser.parse(configArgs + args);
-
-    // Do we have a username ?
-    p.username = getUserName(throwIfNull: true)!;
-
-    // Do we have a 'home' directory?
-    p.homeDirectory = getHomeDirectory(throwIfNull: true)!;
-
-    p.clientAtSign = r['from'];
-    p.sshnpdAtSign = r['to'];
-
-    // Find atSign key file
-    if (r['key-file'] != null) {
-      p.atKeysFilePath = r['key-file'];
-    } else {
-      p.atKeysFilePath =
-          getDefaultAtKeysFilePath(p.homeDirectory, p.clientAtSign);
-    }
-
-    // Check device string only contains ascii
-    if (checkNonAscii(r['device'])) {
-      throw ('\nDevice name can only contain alphanumeric characters with a max length of 15');
-    }
-
-    p.device = r['device'];
-
-    // Check the public key if the option was selected
-    var sendSshPublicKey = r['ssh-public-key'];
-    if ((sendSshPublicKey != 'false')) {
-      sendSshPublicKey =
-          '${getDefaultSshDirectory(p.homeDirectory)}$sendSshPublicKey';
-      if (!sendSshPublicKey.endsWith('.pub')) {
-        throw ('\n The ssh public key should have a ".pub" extension');
-      }
-    }
-    p.sendSshPublicKey = sendSshPublicKey;
-
-    p.host = r['host'];
-    p.port = r['port'];
-    p.localPort = r['local-port'];
-
-    p.localSshOptions = r['local-ssh-options'];
-
-    p.rsa = r['rsa'];
-    p.verbose = r['verbose'];
-
-    p.remoteUsername = r['remote-user-name'];
-
-    return p;
-  }
-
-  static Future<SSHNP> fromCommandLineArgs(List<String> args) async {
-    try {
-      var p = parseSSHNPParams(args);
-
-      // Check atKeyFile selected exists
-      if (!File(p.atKeysFilePath).existsSync()) {
-        throw ('\n Unable to find .atKeys file : ${p.atKeysFilePath}');
-      }
-
-      if (p.sendSshPublicKey != 'false') {
-        if (!File(p.sendSshPublicKey).existsSync()) {
-          throw ('\n Unable to find ssh public key file : ${p.sendSshPublicKey}');
-        }
-      }
-
-      String sessionId = Uuid().v4();
-
-      AtSignLogger.root_level = 'SHOUT';
-      if (p.verbose) {
-        AtSignLogger.root_level = 'INFO';
-      }
-
-      AtClient atClient = await createAtClient(
-          clientAtSign: p.clientAtSign,
-          device: p.device,
-          sessionId: sessionId,
-          atKeysFilePath: p.atKeysFilePath);
-
-      var sshnp = SSHNP(
-        atClient: atClient,
-        sshnpdAtSign: p.sshnpdAtSign,
-        username: p.username,
-        homeDirectory: p.homeDirectory,
-        sessionId: sessionId,
-        device: p.device,
-        host: p.host,
-        port: p.port,
-        localPort: p.localPort,
-        localSshOptions: p.localSshOptions,
-        rsa: p.rsa,
-        sendSshPublicKey: p.sendSshPublicKey,
-        remoteUsername: p.remoteUsername,
-      );
-      if (p.verbose) {
-        sshnp.logger.logger.level = Level.INFO;
-      }
-
-      return sshnp;
-    } catch (e) {
-      version();
-      stdout.writeln(createArgParser().usage);
-      stderr.writeln(e);
-      exit(1);
-    }
-  }
-
-  static Future<AtClient> createAtClient(
-      {required String clientAtSign,
-      required String device,
-      required String sessionId,
-      required String atKeysFilePath}) async {
-    // Now on to the atPlatform startup
-    //onboarding preference builder can be used to set onboardingService parameters
-    AtOnboardingPreference atOnboardingConfig = AtOnboardingPreference()
-      ..hiveStoragePath = '/tmp/.sshnp/$clientAtSign/$sessionId/storage'
-          .replaceAll('/', Platform.pathSeparator)
-      ..namespace = '$device.sshnp'
-      ..downloadPath =
-          '/tmp/.sshnp/files'.replaceAll('/', Platform.pathSeparator)
-      ..isLocalStoreRequired = true
-      ..commitLogPath = '/tmp/.sshnp/$clientAtSign/$sessionId/storage/commitLog'
-          .replaceAll('/', Platform.pathSeparator)
-      ..fetchOfflineNotifications = false
-      ..atKeysFilePath = atKeysFilePath
-      ..atProtocolEmitted = Version(2, 0, 0);
-
-    AtOnboardingService onboardingService = AtOnboardingServiceImpl(
-        clientAtSign, atOnboardingConfig,
-        atServiceFactory: ServiceFactoryWithNoOpSyncService());
-
-    await onboardingService.authenticate();
-
-    return AtClientManager.getInstance().atClient;
-  }
-
-  static ArgParser createArgParser({bool withConfig = true}) {
-    var parser = ArgParser();
-    // Basic arguments
-    for (SSHNPArg arg in sshnpArgs) {
-      switch (arg.format) {
-        case ArgFormat.option:
-          parser.addOption(
-            arg.name,
-            abbr: arg.abbr,
-            mandatory: arg.mandatory,
-            defaultsTo: arg.defaultsTo as String?,
-            help: arg.help,
-          );
-          break;
-        case ArgFormat.multiOption:
-          parser.addMultiOption(
-            arg.name,
-            abbr: arg.abbr,
-            defaultsTo: arg.defaultsTo as List<String>?,
-            help: arg.help,
-          );
-          break;
-        case ArgFormat.flag:
-          parser.addFlag(
-            arg.name,
-            abbr: arg.abbr,
-            defaultsTo: arg.defaultsTo as bool?,
-            help: arg.help,
-          );
-          break;
-      }
-    }
-    if (withConfig) {
-      parser.addOption(
-        'config-file',
-        help:
-            'Read args from a config file\nMandatory args are not required if already supplied in the config file',
-      );
-    }
-    return parser;
-  }
-
-  /// Return the command which this program should execute in order to start the
-  /// sshrv program.
-  /// - In normal usage, sshnp and sshrv are compiled to exe before use, thus the
-  /// path is [Platform.resolvedExecutable] but with the last part (`sshnp` in
-  /// this case) replaced with `sshrv`
-  static String getSshrvCommand() {
-    late String sshnpDir;
-    List<String> pathList =
-        Platform.resolvedExecutable.split(Platform.pathSeparator);
-    if (pathList.last == 'sshnp' || pathList.last == 'sshnp.exe') {
-      pathList.removeLast();
-      sshnpDir = pathList.join(Platform.pathSeparator);
-
-      return '$sshnpDir${Platform.pathSeparator}sshrv';
-    } else {
-      throw Exception(
-          'sshnp is expected to be run as a compiled executable, not via the dart command');
-    }
-  }
-}
-
-class SSHNPParams {
-  late final String clientAtSign;
-  late final String sshnpdAtSign;
-  late final String device;
-  late final String host;
-  late final String port;
-  late final String localPort;
-  late final String username;
-  late final String homeDirectory;
-  late final String atKeysFilePath;
-  late final String sendSshPublicKey;
-  late final List<String> localSshOptions;
-  late final bool rsa;
-  late final bool verbose;
-  late final String? remoteUsername;
 }

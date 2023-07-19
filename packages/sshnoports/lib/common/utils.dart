@@ -1,5 +1,4 @@
 import 'dart:io';
-
 import 'package:at_client/at_client.dart';
 
 /// Get the home directory or null if unknown.
@@ -15,9 +14,9 @@ String? getHomeDirectory({bool throwIfNull = false}) {
       // Probably want internal storage.
       homeDir = '/storage/sdcard0';
     case 'ios':
-      // iOS doesn't really have a home directory.
+    // iOS doesn't really have a home directory.
     case 'fuchsia':
-      // I have no idea.
+    // I have no idea.
     default:
       homeDir = null;
   }
@@ -56,19 +55,18 @@ bool checkNonAscii(String test) {
 }
 
 String getDefaultAtKeysFilePath(String homeDirectory, String atSign) {
-return '$homeDirectory/.atsign/keys/${atSign}_key.atKeys'
-    .replaceAll('/', Platform.pathSeparator);
+  return '$homeDirectory/.atsign/keys/${atSign}_key.atKeys'
+      .replaceAll('/', Platform.pathSeparator);
 }
 
 String getDefaultSshDirectory(String homeDirectory) {
-return '$homeDirectory/.ssh/'
-    .replaceAll('/', Platform.pathSeparator);
+  return '$homeDirectory/.ssh/'.replaceAll('/', Platform.pathSeparator);
 }
 
 /// Checks if the provided atSign's atServer has been properly activated with a public RSA key.
 /// `atClient` must be authenticated
 /// `atSign` is the atSign to check
-/// Returns `true`, if the atSign's cloud secondary server has an existing `public:publickey@` in their server, 
+/// Returns `true`, if the atSign's cloud secondary server has an existing `public:publickey@` in their server,
 /// Returns `false`, if the atSign's cloud secondary *exists*, but does not have an existing `public:publickey@`
 /// Throws [AtClientException] if the cloud secondary is invalid or not reachable
 Future<bool> atSignIsActivated(final AtClient atClient, String atSign) async {
@@ -85,7 +83,10 @@ Future<bool> atSignIsActivated(final AtClient atClient, String atSign) async {
     await atClient.get(publicKey);
     return true;
   } catch (e) {
-    if(e is AtKeyNotFoundException || (e is AtClientException && e.message.contains("public:publickey") && e.message.contains("does not exist in keystore"))) {
+    if (e is AtKeyNotFoundException ||
+        (e is AtClientException &&
+            e.message.contains("public:publickey") &&
+            e.message.contains("does not exist in keystore"))) {
       return false;
     }
     rethrow;

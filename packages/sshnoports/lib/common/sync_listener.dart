@@ -1,4 +1,3 @@
-// atPlatform packages
 import 'package:at_client/at_client.dart';
 
 class MySyncProgressListener extends SyncProgressListener {
@@ -11,10 +10,10 @@ class MySyncProgressListener extends SyncProgressListener {
         syncProgress.syncStatus == SyncStatus.success) {
       syncComplete = true;
     }
-    if (syncProgress.syncStatus == SyncStatus.failure ) {
+    if (syncProgress.syncStatus == SyncStatus.failure) {
       syncResult = 'Failed';
     }
-    if (syncProgress.syncStatus == SyncStatus.success ) {
+    if (syncProgress.syncStatus == SyncStatus.success) {
       syncResult = 'Succeeded';
     }
 

@@ -1,8 +1,5 @@
-// dart packages
 import 'dart:io';
-// local packages
-import 'package:sshnoports/utils.dart';
-// atPlatform packages
+import 'package:sshnoports/common/utils.dart';
 import 'package:at_utils/at_logger.dart';
 
 Future<void> cleanUp(String sessionId, AtSignLogger logger) async {
@@ -21,15 +18,16 @@ Future<void> cleanUp(String sessionId, AtSignLogger logger) async {
   await removeSession(sshHomeDirectory, sessionId, logger);
 }
 
-Future<int> deleteFile(String fileName, AtSignLogger logger) async {
+Future<bool> deleteFile(String fileName, AtSignLogger logger) async {
   try {
     final file = File(fileName);
 
     await file.delete();
+    return true;
   } catch (e) {
     logger.severe("Error deleting file : $fileName");
+    return false;
   }
-  return 0;
 }
 
 Future<void> removeSession(
