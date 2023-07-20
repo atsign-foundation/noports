@@ -45,4 +45,4 @@ jobs:
           provenance: false
           tags: |
             atsigncompany/sshnpd:latest
-            atsigncompany/sshnpd:release-${{ env.VERSION }}
+            atsigncompany/sshnpd:release-v3.4.0
