@@ -34,9 +34,7 @@ jobs:
       - run: dart compile exe bin/sshrvd.dart -v -o sshnp/sshrvd
       - run: cp -r templates sshnp/templates
       - run: cp scripts/* sshnp
-      - run: ls -l sshnp
       - run: tar -cvzf tarball/${{ matrix.output-name }}.tgz sshnp
-      - run: ls -l tarball
       - uses: actions/upload-artifact@0b7f8abb1508181956e8e162db84b466c27e18ce # v3.1.2
         with:
           name: x64_binaries
@@ -66,7 +64,6 @@ jobs:
           --platform ${{ matrix.platform }} -o type=tar,dest=bins.tar .
       - run: mkdir tarballs
       - run: tar -xvf bins.tar -C tarballs
-      - run: ls -l tarballs
       - uses: actions/upload-artifact@0b7f8abb1508181956e8e162db84b466c27e18ce # v3.1.2
         with:
           name: other_binaries
