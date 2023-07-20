@@ -40,7 +40,7 @@ jobs:
       - uses: actions/upload-artifact@0b7f8abb1508181956e8e162db84b466c27e18ce # v3.1.2
         with:
           name: x64_binaries
-          path: tarball/${{ matrix.output-name }}.tgz
+          path: ./packages/sshnoports/tarball/${{ matrix.output-name }}.tgz
 
   other_build:
     runs-on: ubuntu-latest
@@ -73,7 +73,7 @@ jobs:
       - uses: actions/upload-artifact@0b7f8abb1508181956e8e162db84b466c27e18ce # v3.1.2
         with:
           name: other_binaries
-          path: upload/${{ matrix.output-name }}.tgz
+          path: ./packages/sshnoports/upload/${{ matrix.output-name }}.tgz
 
   notify_on_completion:
     needs: [x64_build, other_build]
@@ -83,5 +83,17 @@ jobs:
         uses: Co-qn/google-chat-notification@3691ccf4763537d6e544bc6cdcccc1965799d056 # v1
         with:
           name: SSH no ports binaries were built by GitHub Action ${{ github.run_number }}
+          url: ${{ secrets.GOOGLE_CHAT_WEBHOOK }}
+          status: ${{ job.status }}
+
+  notify_on_failure:
+    if: failure()
+    needs: [x64_build, other_build]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Google Chat Notification
+        uses: Co-qn/google-chat-notification@3691ccf4763537d6e544bc6cdcccc1965799d056 # v1
+        with:
+          name: SSH no ports binaries build FAILED by GitHub Action ${{ github.run_number }}
           url: ${{ secrets.GOOGLE_CHAT_WEBHOOK }}
           status: ${{ job.status }}
