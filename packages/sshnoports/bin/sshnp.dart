@@ -7,12 +7,16 @@ import 'package:at_utils/at_logger.dart';
 // local packages
 import 'package:sshnoports/sshnp/sshnp.dart';
 import 'package:sshnoports/sshnp/cleanup.dart';
+import 'package:sshnoports/sshnp/sshnp_params.dart';
 
 void main(List<String> args) async {
   AtSignLogger.root_level = 'SHOUT';
   SSHNP? sshnp;
+
+  var params = SSHNPParams.fromPartial(SSHNPPartialParams.fromArgs(args));
+
   try {
-    sshnp = await SSHNP.fromCommandLineArgs(args);
+    sshnp = await SSHNP.fromParams(params);
 
     ProcessSignal.sigint.watch().listen((signal) async {
       await cleanUp(sshnp!.sessionId, sshnp.logger);
@@ -25,8 +29,11 @@ void main(List<String> args) async {
   } on ArgumentError catch (_) {
     exit(1);
   } catch (error, stackTrace) {
-    stderr.writeln('Error: ${error.toString()}');
-    stderr.writeln('Stack Trace: ${stackTrace.toString()}');
+    stderr.writeln(error.toString());
+
+    if (params.verbose) {
+      stderr.writeln('\nStack Trace: ${stackTrace.toString()}');
+    }
 
     if (sshnp != null) {
       await cleanUp(sshnp.sessionId, sshnp.logger);
