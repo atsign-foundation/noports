@@ -488,7 +488,7 @@ jobs:
           cat sshnpd/entrypoint.sh
 
       - name: Build
-        working-directory: packages/sshnoports/test/end2end_tests/tests/release3.1.2.-local
+        working-directory: packages/sshnoports/test/end2end_tests/tests/release3.1.2-local
         run: |
           docker compose build
 
