@@ -14,7 +14,7 @@ env:
   SSHNPD_ATSIGN: "@8052simple"
   SSHRVD_ATSIGN: "@8485wealthy51"
   SSHRVD_RV_AM_ATSIGN: "@rv_am"
-  DOCKER_COMPOSE_UP_CMD: "docker compose up --build --exit-code-from=container-sshnp --quiet-pull"
+  DOCKER_COMPOSE_UP_CMD: "docker compose up --exit-code-from=container-sshnp"
   WAITING_TIME_WITH_SYNC: 30
   WAITING_TIME_WITHOUT_SYNC: 2
 
@@ -69,6 +69,11 @@ jobs:
           cat sshnp/entrypoint.sh
           cat sshnpd/entrypoint.sh
 
+      - name: Build
+        working-directory: packages/sshnoports/test/end2end_tests/tests/local-local
+        run: |
+          docker compose build
+
       - name: Test
         working-directory: packages/sshnoports/test/end2end_tests/tests/local-local
         run: |
@@ -110,6 +115,11 @@ jobs:
         run: |
           cat sshnp/entrypoint.sh
           cat sshnpd/entrypoint.sh
+
+      - name: Build
+        working-directory: packages/sshnoports/test/end2end_tests/tests/local-trunk
+        run: |
+          docker compose build
 
       - name: Test
         working-directory: packages/sshnoports/test/end2end_tests/tests/local-trunk
@@ -153,6 +163,11 @@ jobs:
           cat sshnp/entrypoint.sh
           cat sshnpd/entrypoint.sh
 
+      - name: Build
+        working-directory: packages/sshnoports/test/end2end_tests/tests/trunk-local
+        run: |
+          docker compose build
+
       - name: Test
         working-directory: packages/sshnoports/test/end2end_tests/tests/trunk-local
         run: |
@@ -194,6 +209,11 @@ jobs:
         run: |
           cat sshnp/entrypoint.sh
           cat sshnpd/entrypoint.sh
+
+      - name: Build
+        working-directory: packages/sshnoports/test/end2end_tests/tests/local-release
+        run: |
+          docker compose build
 
       - name: Test
         working-directory: packages/sshnoports/test/end2end_tests/tests/local-release
@@ -237,6 +257,11 @@ jobs:
           cat sshnp/entrypoint.sh
           cat sshnpd/entrypoint.sh
 
+      - name: Build
+        working-directory: packages/sshnoports/test/end2end_tests/tests/release-local
+        run: |
+          docker compose build
+
       - name: Test
         working-directory: packages/sshnoports/test/end2end_tests/tests/release-local
         run: |
@@ -277,6 +302,11 @@ jobs:
         run: |
           cat sshnp/entrypoint.sh
           cat sshnpd/entrypoint.sh
+
+      - name: Build
+        working-directory: packages/sshnoports/test/end2end_tests/tests/local-release3.2.0
+        run: |
+          docker compose build
 
       - name: Test
         working-directory: packages/sshnoports/test/end2end_tests/tests/local-release3.2.0
@@ -319,6 +349,11 @@ jobs:
           cat sshnp/entrypoint.sh
           cat sshnpd/entrypoint.sh
 
+      - name: Build
+        working-directory: packages/sshnoports/test/end2end_tests/tests/release3.2.0-local
+        run: |
+          docker compose build
+
       - name: Test
         working-directory: packages/sshnoports/test/end2end_tests/tests/release3.2.0-local
         run: |
@@ -359,6 +394,11 @@ jobs:
         run: |
           cat sshnp/entrypoint.sh
           cat sshnpd/entrypoint.sh
+
+      - name: Build
+        working-directory: packages/sshnoports/test/end2end_tests/tests/local-release3.3.0
+        run: |
+          docker compose build
 
       - name: Test
         working-directory: packages/sshnoports/test/end2end_tests/tests/local-release3.3.0
@@ -401,6 +441,11 @@ jobs:
           cat sshnp/entrypoint.sh
           cat sshnpd/entrypoint.sh
 
+      - name: Build
+        working-directory: packages/sshnoports/test/end2end_tests/tests/release3.3.0-local
+        run: |
+          docker compose build
+
       - name: Test
         working-directory: packages/sshnoports/test/end2end_tests/tests/release3.3.0-local
         run: |
@@ -442,6 +487,11 @@ jobs:
           cat sshnp/entrypoint.sh
           cat sshnpd/entrypoint.sh
 
+      - name: Build
+        working-directory: packages/sshnoports/test/end2end_tests/tests/release3.1.2-local
+        run: |
+          docker compose build
+
       - name: Test
         working-directory: packages/sshnoports/test/end2end_tests/tests/release3.1.2-local
         run: |
@@ -482,6 +532,11 @@ jobs:
         run: |
           cat sshnp/entrypoint.sh
           cat sshnpd/entrypoint.sh
+
+      - name: Build
+        working-directory: packages/sshnoports/test/end2end_tests/tests/local-release3.1.2
+        run: |
+          docker compose build
 
       - name: Test
         working-directory: packages/sshnoports/test/end2end_tests/tests/local-release3.1.2
@@ -526,6 +581,11 @@ jobs:
           cat sshnp/entrypoint.sh
           cat sshnpd/entrypoint.sh
           cat sshrvd/entrypoint.sh
+
+      - name: Build
+        working-directory: packages/sshnoports/test/end2end_tests/tests/local-local-local
+        run: |
+          docker compose build
 
       - name: Test
         working-directory: packages/sshnoports/test/end2end_tests/tests/local-local-local
