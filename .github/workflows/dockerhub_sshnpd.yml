@@ -12,9 +12,6 @@ permissions:  # added using https://github.com/step-security/secure-workflows
 jobs:
   docker:
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: ./packages/sshnoports
     steps:
       -
         name: Checkout
@@ -39,7 +36,7 @@ jobs:
         name: Build and push
         uses: docker/build-push-action@2eb1c1961a95fc15694676618e422e8ba1d63825 # v4.1.1
         with:
-          context: .
+          context: ./packages/sshnoports
           platforms: linux/amd64,linux/arm64,linux/arm/v7
           push: true
           provenance: false
