@@ -1,12 +1,12 @@
 # MVP
 from io import StringIO
-import os, threading, argparse, select, socket
+import os, threading, argparse
 from queue import Empty, Queue
 from time import sleep
 from uuid import uuid4
-from paramiko import SSHClient, SSHException
+from paramiko import AutoAddPolicy, SSHClient
 from paramiko.ssh_exception import NoValidConnectionsError
-from paramiko.rsakey import RSAKey
+from paramiko.ed25519key import Ed25519Key
 
 from at_client import AtClient
 from at_client.common import AtSign
@@ -15,7 +15,6 @@ from at_client.connections.notification.atevents import AtEvent, AtEventType
 
 namespace = 'sshnp'
 
-
 def handle_decryption(queue:Queue, client:AtClient, ssh_path, args: argparse.ArgumentParser):
     private_key = ""
     sshPublicKey = ""
@@ -23,7 +22,6 @@ def handle_decryption(queue:Queue, client:AtClient, ssh_path, args: argparse.Arg
     while not ssh_notification_recieved:
         try:
             at_event = queue.get(block=False)
-            print("event received")
             event_type = at_event.event_type
             event_data = at_event.event_data
             
@@ -32,6 +30,7 @@ def handle_decryption(queue:Queue, client:AtClient, ssh_path, args: argparse.Arg
             #TODO: fix this
             if event_type == AtEventType.UPDATE_NOTIFICATION :
                 queue.put(at_event)
+                sleep(1)
             if event_type != AtEventType.DECRYPTED_UPDATE_NOTIFICATION :
                 continue
             key = event_data["key"].split(":")[1].split(".")[0]
@@ -73,55 +72,19 @@ def handle_events(queue:Queue, client: AtClient):
         try:
             at_event = queue.get(block=False)
             event_type = at_event.event_type
-            if event_type != AtEventType.DECRYPTED_UPDATE_NOTIFICATION:
+            #Surely this can't be the best way to do this
+            #probably something involving locks because I think both threads are trying to access the queue
+            #the Main thread needs to access the queue AFTER the handle thread has finished with it
+            if event_type == AtEventType.DECRYPTED_UPDATE_NOTIFICATION:
+                queue.put(at_event)
+                sleep(1) 
+            else:
+                print("decrypting event")
                 client.handle_event(queue, at_event)
             
         except Empty:
             pass
         
-
-
-def ssh_handler(chan, host, port):
-    sock = socket.socket()
-    try:
-        sock.connect((host, port))
-    except Exception as e:
-        print("Forwarding request to %s:%d failed: %r" % (host, port, e))
-        return
-
-    print(
-        "Connected!  Tunnel open %r -> %r -> %r"
-        % (chan.origin_addr, chan.getpeername(), (host, port))
-    )
-    while True:
-        r, w, x = select.select([sock, chan], [], [])
-        if sock in r:
-            data = sock.recv(1024)
-            if len(data) == 0:
-                break
-            chan.send(data)
-        if chan in r:
-            data = chan.recv(1024)
-            if len(data) == 0:
-                break
-            sock.send(data)
-    chan.close()
-    sock.close()
-    print("Tunnel closed from %r" % (chan.origin_addr,))
-
-
-def reverse_forward_tunnel(server_port, remote_host, remote_port, ssh_client: SSHClient):
-    transport = ssh_client.get_transport()
-    transport.request_port_forward("", server_port)
-    while True:
-        chan = transport.accept(1000)
-        if chan is None:
-            continue
-        thr = threading.Thread(
-            target=ssh_handler, args=(chan, remote_host, remote_port)
-        )
-        thr.setDaemon(True)
-        thr.start()
 
 
 def ssh_callback(event: AtEvent, private_key: str, manager_atsign: str, device_atsign: str, device: str):
@@ -144,22 +107,29 @@ def ssh_callback(event: AtEvent, private_key: str, manager_atsign: str, device_a
         at_key.metadata = metadata
         at_key.namespace = namespace
     print("ssh session started for " + username +
-          "@" + hostname + " on port " + port)
+          " @ " + hostname + " on port " + port)
     ssh_client = SSHClient()
-    
+    ssh_client.set_missing_host_key_policy(AutoAddPolicy())
+    ssh_client.load_system_host_keys()
+    #convert string to bytes
     file_like = StringIO(private_key)
+    tp = ssh_client.get_transport()
     try:
+        pkey = Ed25519Key(file_obj=file_like)
         auth_result = ssh_client.connect(
-            hostname, port, username, pkey=file_like)
+            hostname=hostname, port=port, username=username, pkey=pkey)
+        tp.request_port_forward("", local_port)
+        
         print("Forwarding port " + local_port + " to " + hostname + ":" + port)
-        reverse_forward_tunnel(local_port, hostname, port, ssh_client)
     except NoValidConnectionsError as e:
-        print("Failed to forward port: ")
+        print("Failed to connect: ")
         for exception in e.errors:
             print(exception)
         exit(1)
-    except Exception:
-        print("Failed to create SSHClient")
+    except Exception as e:
+        print(e) 
+
+
 
 
 def main():
@@ -185,12 +155,10 @@ def main():
     event_queue = Queue(maxsize=20)
     client = AtClient(AtSign(args.device_atsign), queue=event_queue)
     regex = ""
-    monitor = threading.Thread(target=client.start_monitor, args=(regex,))
-    monitor.start()
-    event = threading.Thread(target=handle_events, args=(client.queue, client))
-    event.start()
+    threading.Thread(target=client.start_monitor, args=(regex,)).start()
+    threading.Thread(target=handle_events, args=(client.queue, client)).start()
     callbackArgs = handle_decryption(client.queue, client, ssh_path, args)
-    
+    ssh_callback(*callbackArgs)
     
 if __name__ == "__main__":
     main()
