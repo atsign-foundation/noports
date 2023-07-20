@@ -188,12 +188,13 @@ class SSHNPImpl implements SSHNP {
     }
   }
 
-  static Future<SSHNP> fromCommandLineArgs(List<String> args) async {
-    try {
-      var p = SSHNPParams.fromPartial(
-        SSHNPPartialParams.fromArgs(args),
-      );
+  static Future<SSHNP> fromCommandLineArgs(List<String> args) {
+    var params = SSHNPParams.fromPartial(SSHNPPartialParams.fromArgs(args));
+    return fromParams(params);
+  }
 
+  static Future<SSHNP> fromParams(SSHNPParams p) async {
+    try {
       if (p.clientAtSign == null) {
         throw ArgumentError('Option from is mandatory.');
       }

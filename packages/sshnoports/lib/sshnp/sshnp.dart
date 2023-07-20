@@ -4,6 +4,7 @@ import 'package:at_client/at_client.dart';
 import 'package:at_utils/at_logger.dart';
 import 'package:meta/meta.dart';
 import 'package:sshnoports/sshnp/sshnp_impl.dart';
+import 'package:sshnoports/sshnp/sshnp_params.dart';
 
 abstract class SSHNP {
   abstract final AtSignLogger logger;
@@ -113,8 +114,6 @@ abstract class SSHNP {
   @visibleForTesting
   bool initialized = false;
 
-
-
   factory SSHNP({
     // final fields
     required AtClient atClient,
@@ -153,6 +152,10 @@ abstract class SSHNP {
 
   static Future<SSHNP> fromCommandLineArgs(List<String> args) async {
     return SSHNPImpl.fromCommandLineArgs(args);
+  }
+
+  static Future<SSHNP> fromParams(SSHNPParams p) {
+    return SSHNPImpl.fromParams(p);
   }
 
   /// Must be run after construction, to complete initialization
