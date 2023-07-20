@@ -55,8 +55,8 @@ codesign \
   -v \
   "$WORKING_DIR"/sshnp/{ssh*,at_activate};
 
-echo Verifying signature:
-codesign -vvv --deep --strict "$WORKING_DIR"/sshnp;
+echo Verifying signatures:
+codesign -vvv --deep --strict "$WORKING_DIR"/sshnp/{ssh*,at_activate};
 
 # Zip the signed binaries
 ditto -c -k --keepParent "$WORKING_DIR"/sshnp "$WORKING_DIR/$OUTPUT_FILE".zip
