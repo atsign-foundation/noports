@@ -39,6 +39,7 @@ jobs:
         with:
           name: x64_binaries
           path: ./packages/sshnoports/tarball/${{ matrix.output-name }}.tgz
+          if-no-files-found: error
 
   other_build:
     runs-on: ubuntu-latest
@@ -68,6 +69,7 @@ jobs:
         with:
           name: other_binaries
           path: ./packages/sshnoports/tarballs/${{ matrix.output-name }}.tgz
+          if-no-files-found: error
 
   notify_on_completion:
     needs: [x64_build, other_build]
