@@ -14,7 +14,7 @@ env:
   SSHNPD_ATSIGN: "@8052simple"
   SSHRVD_ATSIGN: "@8485wealthy51"
   SSHRVD_RV_AM_ATSIGN: "@rv_am"
-  DOCKER_COMPOSE_UP_CMD: "docker compose up --build --exit-code-from=container-sshnp --quiet-pull"
+  DOCKER_COMPOSE_UP_CMD: "docker compose up --build --exit-code-from=container-sshnp"
   WAITING_TIME_WITH_SYNC: 30
   WAITING_TIME_WITHOUT_SYNC: 2
 
