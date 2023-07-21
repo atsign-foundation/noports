@@ -199,24 +199,24 @@ jobs:
           cat docker-compose.yaml
 
       - name: Build
-        working-directory: tests/end2end_tests/tests/local-local-local
+        working-directory: tests/end2end_tests/tests
         run: |
           docker compose build
 
       - name: Test
-        working-directory: tests/end2end_tests/tests/local-local-local
+        working-directory: tests/end2end_tests/tests
         run: |
           ${{ env.DOCKER_COMPOSE_UP_CMD }}
 
       - name: Logs
         if: always()
-        working-directory: tests/end2end_tests/tests/local-local-local
+        working-directory: tests/end2end_tests/tests
         run: |
           docker compose ps -a
           docker compose logs --timestamps
 
       - name: Tear down
         if: always()
-        working-directory: tests/end2end_tests/tests/local-local-local
+        working-directory: tests/end2end_tests/tests
         run: |
           docker compose down
