@@ -15,72 +15,42 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        # Default values (test id: 10)
-        id: [10]
-        np: [local]
-        npd: [local]
+        np: [local, trunk, latest, v3.3.0]
+        npd: [local, trunk, latest, v3.3.0]
         rvd: [prod]
         wait: [4]
-
+        exclude:
+          # Don't run these against themselves, they're irrelevant
+          - np: [trunk, latest, v3.3.0]
+            npd: [trunk, latest, v3.3.0]
         include:
           ### RVD TESTS ###
-          - id: 11
-            rvd: local
-            np: local
+          - np: local
             npd: local
-
-          - id: 12
             rvd: local
-            np: latest
+            wait: 4
+
+          - np: latest
             npd: latest
+            rvd: local
+            wait: 4
 
-          ### NP TESTS ###
-          - id: 20
-            np: local
-            npd: trunk
-
-          - id: 21
-            np: local
-            npd: latest
-
-          - id: 22
-            np: local
+          ### BACKWARD TESTS WHICH NEED SYNC ###
+          - np: local
             npd: v3.1.2
             wait: 30
 
-          - id: 23
-            np: local
+          - np: local
             npd: v3.2.0
             wait: 30
 
-          - id: 24
-            np: local
-            npd: v3.3.0
-            wait: 4
-
-          ### NPD TESTS ###
-          - id: 30
-            npd: local
-            np: trunk
-
-          - id: 31
-            npd: local
-            np: latest
-
-          - id: 32
-            npd: local
+          - npd: local
             np: v3.1.2
             wait: 30
 
-          - id: 33
-            npd: local
+          - npd: local
             np: v3.2.0
             wait: 30
-
-          - id: 34
-            npd: local
-            np: v3.3.0
-            wait: 4
 
     steps:
       - name: show env
