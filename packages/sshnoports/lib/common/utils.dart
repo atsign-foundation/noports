@@ -45,13 +45,10 @@ Future<bool> fileExists(String file) async {
   return f;
 }
 
+const String asciiMatcher = r'[a-zA-Z0-9_]{0,15}';
+
 bool checkNonAscii(String test) {
-  var extra = test.replaceAll(RegExp(r'[a-zA-Z0-9_]*'), '');
-  if ((extra != '') || (test.length > 15)) {
-    return true;
-  } else {
-    return false;
-  }
+  return RegExp(asciiMatcher).allMatches(test).first.group(0) != test;
 }
 
 String getDefaultAtKeysFilePath(String homeDirectory, String? atSign) {

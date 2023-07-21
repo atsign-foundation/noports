@@ -162,9 +162,14 @@ class SSHNPDImpl implements SSHNPD {
           onError: (e) => logger.severe('Notification Failed:$e'),
           onDone: () => logger.info('Notification listener stopped'),
         );
+
+    // Refresh the device entry every hour
+    Timer.periodic(const Duration(hours: 1), (_) => _refreshDeviceEntry());
+
     logger.info('Done');
   }
 
+  /// Notification handler for sshnpd
   void _notificationHandler(AtNotification notification) async {
     String notificationKey = notification.key
         .replaceAll('${notification.to}:', '')
@@ -215,9 +220,29 @@ class SSHNPDImpl implements SSHNPD {
         _sshCallback(notification, _privateKey, logger, managerAtsign,
             deviceAtsign, device);
         break;
+      case 'ping':
+        logger.info(
+            'ping received from ${notification.from} notification id : ${notification.id}');
+        var metaData = Metadata()
+          ..isPublic = false
+          ..isEncrypted = true
+          ..ttr = -1
+          ..namespaceAware = true;
+
+        var atKey = AtKey()
+          ..key = "heartbeat.$device"
+          ..sharedBy = deviceAtsign
+          ..sharedWith = managerAtsign
+          ..namespace = SSHNPD.namespace
+          ..metadata = metaData;
+
+        /// send a heartbeat back
+        await _notify(atKey, device);
+        break;
     }
   }
 
+  /// A callback which is called to start an sshnp session
   void _sshCallback(
       AtNotification notification,
       String privateKey,
@@ -353,6 +378,7 @@ class SSHNPDImpl implements SSHNPD {
     }
   }
 
+  /// This function sends a notification given an atKey and value
   Future<void> _notify(AtKey atKey, String value,
       {String sessionId = ""}) async {
     AtClient atClient = AtClientManager.getInstance().atClient;
@@ -365,5 +391,30 @@ class SSHNPDImpl implements SSHNPD {
     }, onError: (notification) {
       logger.info('ERROR:$notification');
     });
+  }
+
+  /// This function creates an atKey which shares the device name with the client
+  Future<void> _refreshDeviceEntry() async {
+    const ttl = 1000 * 60 * 60 * 24 * 30; // 30 days
+    var metaData = Metadata()
+      ..isPublic = false
+      ..isEncrypted = true
+      ..ttr = -1
+      ..ttl = ttl
+      ..updatedAt = DateTime.now()
+      ..namespaceAware = true;
+
+    var atKey = AtKey()
+      ..key = "devicename.$device"
+      ..sharedBy = deviceAtsign
+      ..sharedWith = managerAtsign
+      ..namespace = SSHNPD.namespace
+      ..metadata = metaData;
+
+    try {
+      await atClient.put(atKey, device);
+    } catch (e) {
+      stderr.writeln(e.toString());
+    }
   }
 }
