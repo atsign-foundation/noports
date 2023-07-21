@@ -67,8 +67,8 @@ jobs:
         run: |
           echo ${{ matrix.np }}
           echo ${{ matrix.npd }}
-          echo ${{ matrix.rvd }}
-          echo ${{ matrix.wait }}
+          echo ${{ matrix.rvd || env.DEFAULT_RVD }}
+          echo ${{ matrix.wait || env.DEFAULT_WAIT }}
 
       # - uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9 # v3.5.3
       # - name: Copy keys
