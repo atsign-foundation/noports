@@ -173,7 +173,9 @@ jobs:
           cat service-container-sshnpd.yaml >> docker-compose.yaml
           echo '    image: atsigncompany/sshnp-e2e-runtime:${{ matrix.npd }}' >> docker-compose.yaml
           echo '    depends_on:' >> docker-compose.yaml
-          echo '      - container-sshrvd' >> docker-compose.yaml
+          if [ "${{contains(env.BRANCHES, matrix.np)}}" = true ]; then
+            echo '      - container-sshrvd' >> docker-compose.yaml
+          fi
           if [ "${{contains(env.RELEASES, matrix.npd)}}" = true ]; then
             echo '      - image-runtime-release' >> docker-compose.yaml
           elif [ "${{contains(env.BRANCHES, matrix.npd)}}" = true ]; then
@@ -189,7 +191,6 @@ jobs:
           cat service-container-sshrvd.yaml >> docker-compose.yaml
           echo '    image: atsigncompany/sshnp-e2e-runtime:${{ matrix.rvd }}' >> docker-compose.yaml
           echo '    depends_on:' >> docker-compose.yaml
-          echo '      - container-sshrvd' >> docker-compose.yaml
           if [ "${{contains(env.RELEASES, matrix.rvd)}}" = true ]; then
             echo '      - image-runtime-release' >> docker-compose.yaml
           elif [ "${{contains(env.BRANCHES, matrix.rvd)}}" = true ]; then
