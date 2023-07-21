@@ -29,6 +29,7 @@ jobs:
   e2e_test:
     runs-on: ubuntu-latest
     strategy:
+      fail-fast: false
       matrix:
         np: [local, trunk]
         npd: [local, trunk]
