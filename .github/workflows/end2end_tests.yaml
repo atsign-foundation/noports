@@ -70,12 +70,12 @@ jobs:
             npd: v3.2.0
             wait: 30
 
-          - npd: local
-            np: v3.1.2
+          - np: v3.1.2
+            npd: local
             wait: 30
 
-          - npd: local
-            np: v3.2.0
+          - np: v3.2.0
+            npd: local
             wait: 30
     steps:
       - name: Show Matrix Values
@@ -120,79 +120,83 @@ jobs:
       - name: Store lists in env
         run: |
 
-      - name: Add runtime-release image to docker-compose.yml
+      - name: Add runtime-release image to docker-compose.yaml
         working-directory: packages/sshnoports/test/end2end_tests/tests
         if: ${{ contains(env.RELEASES, matrix.np) || contains(env.RELEASES, matrix.npd) || contains(env.RELEASES, matrix.rvd) }}
         run: |
-          echo $(cat service-image-runtime-release.yaml) >> docker-compose.yml
+          cat service-image-runtime-release.yaml >> docker-compose.yaml
           if [ "${{contains(env.RELEASES, matrix.np)}}" = true ]; then
-            echo '    image: atsigncompany/sshnp-e2e-runtime:${{ matrix.np }}' >> docker-compose.yml
+            echo '    image: atsigncompany/sshnp-e2e-runtime:${{ matrix.np }}' >> docker-compose.yaml
           elif [ "${{contains(env.RELEASES, matrix.npd)}}" = true ]; then
-            echo '    image: atsigncompany/sshnpd-e2e-runtime:${{ matrix.npd }}' >> docker-compose.yml
+            echo '    image: atsigncompany/sshnpd-e2e-runtime:${{ matrix.npd }}' >> docker-compose.yaml
           elif [ "${{contains(env.RELEASES, matrix.rvd)}}" = true ]; then
-            echo '    image: atsigncompany/sshrvd-e2e-runtime:${{ matrix.rvd }}' >> docker-compose.yml
+            echo '    image: atsigncompany/sshrvd-e2e-runtime:${{ matrix.rvd }}' >> docker-compose.yaml
           fi
 
-      - name: Add runtime-branch image to docker-compose.yml
+      - name: Add runtime-branch image to docker-compose.yaml
         working-directory: packages/sshnoports/test/end2end_tests/tests
         if: ${{ contains(env.BRANCHES, matrix.np) || contains(env.BRANCHES, matrix.npd) || contains(env.BRANCHES, matrix.rvd) }}
         run: |
-          echo $(cat service-image-runtime-branch.yaml) >> docker-compose.yml
+          cat service-image-runtime-branch.yaml >> docker-compose.yaml
           if [ "${{contains(env.BRANCHES, matrix.np)}}" = true ]; then
-            echo '    image: atsigncompany/sshnp-e2e-runtime:${{ matrix.np }}' >> docker-compose.yml
+            echo '    image: atsigncompany/sshnp-e2e-runtime:${{ matrix.np }}' >> docker-compose.yaml
           elif [ "${{contains(env.BRANCHES, matrix.npd)}}" = true ]; then
-            echo '    image: atsigncompany/sshnpd-e2e-runtime:${{ matrix.npd }}' >> docker-compose.yml
+            echo '    image: atsigncompany/sshnpd-e2e-runtime:${{ matrix.npd }}' >> docker-compose.yaml
           elif [ "${{contains(env.BRANCHES, matrix.rvd)}}" = true ]; then
-            echo '    image: atsigncompany/sshrvd-e2e-runtime:${{ matrix.rvd }}' >> docker-compose.yml
+            echo '    image: atsigncompany/sshrvd-e2e-runtime:${{ matrix.rvd }}' >> docker-compose.yaml
           fi
 
-      - name: Add container-sshnp to docker-compose.yml
+      - name: Add container-sshnp to docker-compose.yaml
         working-directory: packages/sshnoports/test/end2end_tests/tests
         run: |
-          echo '    image: atsigncompany/sshnp-e2e-runtime:${{ matrix.np }}' >> docker-compose.yml
-          echo '    depends_on:' >> docker-compose.yml
-          echo '      - container-sshnpd' >> docker-compose.yml
+          cat service-container-sshnp.yaml >> docker-compose.yaml
+          echo '    image: atsigncompany/sshnp-e2e-runtime:${{ matrix.np }}' >> docker-compose.yaml
+          echo '    depends_on:' >> docker-compose.yaml
+          echo '      - container-sshnpd' >> docker-compose.yaml
           if [ "${{contains(env.RELEASES, matrix.np)}}" = true ]; then
-            echo '      - image-runtime-release' >> docker-compose.yml
+            echo '      - image-runtime-release' >> docker-compose.yaml
           elif [ "${{contains(env.BRANCHES, matrix.np)}}" = true ]; then
-            echo '      - image-runtime-branch' >> docker-compose.yml
+            echo '      - image-runtime-branch' >> docker-compose.yaml
           else
-            echo '      - image-runtime-local' >> docker-compose.yml
-
-      - name: Add container-sshnpd to docker-compose.yml
-        working-directory: packages/sshnoports/test/end2end_tests/tests
-        run: |
-          echo '    image: atsigncompany/sshnp-e2e-runtime:${{ matrix.npd }}' >> docker-compose.yml
-          echo '    depends_on:' >> docker-compose.yml
-          echo '      - container-sshrvd' >> docker-compose.yml
-          if [ "${{contains(env.RELEASES, matrix.npd)}}" = true ]; then
-            echo '      - image-runtime-release' >> docker-compose.yml
-          elif [ "${{contains(env.BRANCHES, matrix.npd)}}" = true ]; then
-            echo '      - image-runtime-branch' >> docker-compose.yml
-          else
-            echo '      - image-runtime-local' >> docker-compose.yml
+            echo '      - image-runtime-local' >> docker-compose.yaml
           fi
 
-      - name: Add container-sshrvd to docker-compose.yml
+      - name: Add container-sshnpd to docker-compose.yaml
+        working-directory: packages/sshnoports/test/end2end_tests/tests
+        run: |
+          cat service-container-sshnpd.yaml >> docker-compose.yaml
+          echo '    image: atsigncompany/sshnp-e2e-runtime:${{ matrix.npd }}' >> docker-compose.yaml
+          echo '    depends_on:' >> docker-compose.yaml
+          echo '      - container-sshrvd' >> docker-compose.yaml
+          if [ "${{contains(env.RELEASES, matrix.npd)}}" = true ]; then
+            echo '      - image-runtime-release' >> docker-compose.yaml
+          elif [ "${{contains(env.BRANCHES, matrix.npd)}}" = true ]; then
+            echo '      - image-runtime-branch' >> docker-compose.yaml
+          else
+            echo '      - image-runtime-local' >> docker-compose.yaml
+          fi
+
+      - name: Add container-sshrvd to docker-compose.yaml
         working-directory: packages/sshnoports/test/end2end_tests/tests
         if: matrix.rvd
         run: |
-          echo '    image: atsigncompany/sshnp-e2e-runtime:${{ matrix.rvd }}' >> docker-compose.yml
-          echo '    depends_on:' >> docker-compose.yml
-          echo '      - container-sshrvd' >> docker-compose.yml
+          cat service-container-sshrvd.yaml >> docker-compose.yaml
+          echo '    image: atsigncompany/sshnp-e2e-runtime:${{ matrix.rvd }}' >> docker-compose.yaml
+          echo '    depends_on:' >> docker-compose.yaml
+          echo '      - container-sshrvd' >> docker-compose.yaml
           if [ "${{contains(env.RELEASES, matrix.rvd)}}" = true ]; then
-            echo '      - image-runtime-release' >> docker-compose.yml
+            echo '      - image-runtime-release' >> docker-compose.yaml
           elif [ "${{contains(env.BRANCHES, matrix.rvd)}}" = true ]; then
-            echo '      - image-runtime-branch' >> docker-compose.yml
+            echo '      - image-runtime-branch' >> docker-compose.yaml
           else
-            echo '      - image-runtime-local' >> docker-compose.yml
+            echo '      - image-runtime-local' >> docker-compose.yaml
           fi
 
-      - name: docker-compose.yml
+      - name: docker-compose.yaml
         if: always()
         working-directory: packages/sshnoports/test/end2end_tests/tests
         run: |
-          cat docker-compose.yml
+          cat docker-compose.yaml
 
       - name: Build
         working-directory: packages/sshnoports/test/end2end_tests/tests/local-local-local
