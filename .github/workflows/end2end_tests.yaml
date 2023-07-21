@@ -90,13 +90,13 @@ jobs:
       - uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9 # v3.5.3
 
       - name: Copy NP/NPD keys
-        working-directory: packages/sshnoports/test/end2end_tests/contexts
+        working-directory: tests/end2end_tests/contexts
         run: |
           echo "${{ secrets.ATKEYS_8INCANTEATER }}" > sshnp/keys/${{ env.SSHNP_ATSIGN }}_key.atKeys
           echo "${{ secrets.ATKEYS_8052SIMPLE }}" > sshnpd/keys/${{ env.SSHNPD_ATSIGN }}_key.atKeys
 
       - name: Copy RVD keys
-        working-directory: packages/sshnoports/test/end2end_tests/contexts
+        working-directory: tests/end2end_tests/contexts
         if: matrix.rvd
         run: |
           echo "${{ secrets.ATKEYS_8485WEALTHY51 }}" > sshrvd/keys/${{ matrix.rvd_atsign }}_key.atKeys
@@ -111,7 +111,7 @@ jobs:
           wait_time: ${{ matrix.wait }}
 
       - name: Ensure entrypoints exist
-        working-directory: packages/sshnoports/test/end2end_tests/contexts
+        working-directory: tests/end2end_tests/contexts
         run: |
           cat sshnp/entrypoint.sh
           cat sshnpd/entrypoint.sh
@@ -121,7 +121,7 @@ jobs:
         run: |
 
       - name: Add runtime-release image to docker-compose.yaml
-        working-directory: packages/sshnoports/test/end2end_tests/tests
+        working-directory: tests/end2end_tests/tests
         if: ${{ contains(env.RELEASES, matrix.np) || contains(env.RELEASES, matrix.npd) || contains(env.RELEASES, matrix.rvd) }}
         run: |
           cat service-image-runtime-release.yaml >> docker-compose.yaml
@@ -134,7 +134,7 @@ jobs:
           fi
 
       - name: Add runtime-branch image to docker-compose.yaml
-        working-directory: packages/sshnoports/test/end2end_tests/tests
+        working-directory: tests/end2end_tests/tests
         if: ${{ contains(env.BRANCHES, matrix.np) || contains(env.BRANCHES, matrix.npd) || contains(env.BRANCHES, matrix.rvd) }}
         run: |
           cat service-image-runtime-branch.yaml >> docker-compose.yaml
@@ -147,7 +147,7 @@ jobs:
           fi
 
       - name: Add container-sshnp to docker-compose.yaml
-        working-directory: packages/sshnoports/test/end2end_tests/tests
+        working-directory: tests/end2end_tests/tests
         run: |
           cat service-container-sshnp.yaml >> docker-compose.yaml
           echo '    image: atsigncompany/sshnp-e2e-runtime:${{ matrix.np }}' >> docker-compose.yaml
@@ -162,7 +162,7 @@ jobs:
           fi
 
       - name: Add container-sshnpd to docker-compose.yaml
-        working-directory: packages/sshnoports/test/end2end_tests/tests
+        working-directory: tests/end2end_tests/tests
         run: |
           cat service-container-sshnpd.yaml >> docker-compose.yaml
           echo '    image: atsigncompany/sshnp-e2e-runtime:${{ matrix.npd }}' >> docker-compose.yaml
@@ -177,7 +177,7 @@ jobs:
           fi
 
       - name: Add container-sshrvd to docker-compose.yaml
-        working-directory: packages/sshnoports/test/end2end_tests/tests
+        working-directory: tests/end2end_tests/tests
         if: matrix.rvd
         run: |
           cat service-container-sshrvd.yaml >> docker-compose.yaml
@@ -194,29 +194,29 @@ jobs:
 
       - name: docker-compose.yaml
         if: always()
-        working-directory: packages/sshnoports/test/end2end_tests/tests
+        working-directory: tests/end2end_tests/tests
         run: |
           cat docker-compose.yaml
 
       - name: Build
-        working-directory: packages/sshnoports/test/end2end_tests/tests/local-local-local
+        working-directory: tests/end2end_tests/tests/local-local-local
         run: |
           docker compose build
 
       - name: Test
-        working-directory: packages/sshnoports/test/end2end_tests/tests/local-local-local
+        working-directory: tests/end2end_tests/tests/local-local-local
         run: |
           ${{ env.DOCKER_COMPOSE_UP_CMD }}
 
       - name: Logs
         if: always()
-        working-directory: packages/sshnoports/test/end2end_tests/tests/local-local-local
+        working-directory: tests/end2end_tests/tests/local-local-local
         run: |
           docker compose ps -a
           docker compose logs --timestamps
 
       - name: Tear down
         if: always()
-        working-directory: packages/sshnoports/test/end2end_tests/tests/local-local-local
+        working-directory: tests/end2end_tests/tests/local-local-local
         run: |
           docker compose down
