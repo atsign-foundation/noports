@@ -1,4 +1,4 @@
-name: Setup NP entrypoint
+name: Setup entrypoints
 description: |
   Sets up the environment for e2e tests.
 
@@ -24,7 +24,7 @@ runs:
   steps:
     - name: Setup NP entrypoint
       shell: bash
-      working-directory: packages/sshnoports/test/end2end_tests/tools/configuration
+      working-directory: tests/end2end_tests/tools/configuration
       run: |
         ./setup-sshnp-entrypoint.sh ${{ inputs.devicename }} ${{ inputs.sshnp_atsign }} ${{ inputs.sshnpd_atsign }} ${{ inputs.sshrvd_atsign }} ${{ inputs.wait_time }}
         ./setup-sshnpd-entrypoint.sh ${{ inputs.devicename }} ${{ inputs.sshnp_atsign }} ${{ inputs.sshnpd_atsign }} ${{ inputs.sshrvd_atsign }}
