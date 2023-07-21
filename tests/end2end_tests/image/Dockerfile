@@ -63,7 +63,7 @@ RUN apt-get update ; \
   ARCH="riscv64";; \
   esac; \
   if [ -z ${release} ] || [ "${release}" = 'latest' ]; then \
-  LATEST_VERSION=$(curl --silent ${URL} | grep -Po '"tag_name": "v\K.*?(?=")') ; \
+  LATEST_VERSION=$(curl --silent ${URL} | grep -Po '"tag_name": "\Kv.*?(?=")') ; \
   VERSION=${LATEST_VERSION} ; \
   else \
   VERSION=${release} ; \
