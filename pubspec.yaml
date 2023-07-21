@@ -8,10 +8,9 @@ version: 3.3.0
 homepage: https://docs.atsign.com/
 
 environment:
-  sdk: '>=3.0.0 <4.0.0'
+  sdk: ">=3.0.0 <4.0.0"
 
-
-dependencies: 
+dependencies:
   args: 2.4.2
   at_client: 3.0.61
   at_lookup: 3.0.37
@@ -24,6 +23,10 @@ dependencies:
   logging: 1.2.0
   version: 3.0.2
   socket_connector: 1.0.8
+
+dependency_overrides:
+  at_persistence_secondary_server: 3.0.54
+  at_persistence_spec: 2.0.12
 
 dev_dependencies:
   lints: ">=1.0.0 <3.0.0"
