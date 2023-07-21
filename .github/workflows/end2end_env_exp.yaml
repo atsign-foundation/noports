@@ -65,6 +65,7 @@ jobs:
     steps:
       - name: show env
         run: |
+          echo ${{ strategy.job-index }}
           echo ${{ matrix.np }}
           echo ${{ matrix.npd }}
           echo ${{ matrix.rvd || env.DEFAULT_RVD }}
