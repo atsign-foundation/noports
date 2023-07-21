@@ -122,7 +122,7 @@ jobs:
 
       - name: Add runtime-release image to docker-compose.yaml
         working-directory: tests/end2end_tests/tests
-        if: ${{ contains(env.RELEASES, matrix.np) || contains(env.RELEASES, matrix.npd) || contains(env.RELEASES, matrix.rvd) }}
+        if: ${{ contains(env.RELEASES, matrix.np) || contains(env.RELEASES, matrix.npd) || (matrix.rvd && contains(env.RELEASES, matrix.rvd)) }}
         run: |
           cat service-image-runtime-release.yaml >> docker-compose.yaml
           if [ "${{contains(env.RELEASES, matrix.np)}}" = true ]; then
@@ -135,7 +135,7 @@ jobs:
 
       - name: Add runtime-branch image to docker-compose.yaml
         working-directory: tests/end2end_tests/tests
-        if: ${{ contains(env.BRANCHES, matrix.np) || contains(env.BRANCHES, matrix.npd) || contains(env.BRANCHES, matrix.rvd) }}
+        if: ${{ contains(env.BRANCHES, matrix.np) || contains(env.BRANCHES, matrix.npd) || (matrix.rvd && contains(env.BRANCHES, matrix.rvd)) }}
         run: |
           cat service-image-runtime-branch.yaml >> docker-compose.yaml
           if [ "${{contains(env.BRANCHES, matrix.np)}}" = true ]; then
