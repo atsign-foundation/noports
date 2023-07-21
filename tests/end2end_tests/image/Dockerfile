@@ -31,7 +31,7 @@ RUN mkdir -p ${REPO_DIR} ${OUTPUT_DIR} ;
 COPY . ${REPO_DIR}
 
 RUN set -eux ; \
-  cd ${PKG_DIR} ; \
+  cd ${REPO_DIR} ; \
   cd packages/sshnoports ; \
   dart pub get ; \
   dart compile exe ${REPO_DIR}/packages/sshnoports/bin/sshnp.dart -o ${OUTPUT_DIR}/sshnp ; \
@@ -54,21 +54,21 @@ RUN apt-get update ; \
   mkdir -p ${BUILD_DIR} ${OUTPUT_DIR} ; \
   cd ${BUILD_DIR} ; \
   case "$(dpkg --print-architecture)" in \
-    amd64) \
-      ARCH="x64";; \
-    armhf) \
-      ARCH="arm";; \
-    arm64) \
-      ARCH="arm64";; \
-    riscv64) \
-      ARCH="riscv64";; \
+  amd64) \
+  ARCH="x64";; \
+  armhf) \
+  ARCH="arm";; \
+  arm64) \
+  ARCH="arm64";; \
+  riscv64) \
+  ARCH="riscv64";; \
   esac; \
   if [ -z ${release} ]; \
   then \
-    LATEST_VERSION=$(curl --silent ${URL} | grep -Po '"tag_name": "v\K.*?(?=")') ; \
-    VERSION=${LATEST_VERSION} ; \
+  LATEST_VERSION=$(curl --silent ${URL} | grep -Po '"tag_name": "v\K.*?(?=")') ; \
+  VERSION=${LATEST_VERSION} ; \
   else \
-    VERSION=${release} ; \
+  VERSION=${release} ; \
   fi ; \
   wget "${URLP}/v${VERSION}/sshnp-linux-${ARCH}.tgz" ; \
   tar -xvf sshnp-linux-${ARCH}.tgz ; \

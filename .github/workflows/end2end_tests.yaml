@@ -130,10 +130,10 @@ jobs:
             echo '        - release=${{ matrix.np }}' >> docker-compose.yaml
             echo '    image: atsigncompany/sshnp-e2e-runtime:${{ matrix.np }}' >> docker-compose.yaml
             elif [ "${{contains(env.RELEASES, matrix.npd)}}" = true ]; then
-            echo '        - release=${{ matrix.np }}' >> docker-compose.yaml
+            echo '        - release=${{ matrix.npd }}' >> docker-compose.yaml
             echo '    image: atsigncompany/sshnpd-e2e-runtime:${{ matrix.npd }}' >> docker-compose.yaml
             elif [ "${{contains(env.RELEASES, matrix.rvd)}}" = true ]; then
-            echo '        - release=${{ matrix.np }}' >> docker-compose.yaml
+            echo '        - release=${{ matrix.rvd }}' >> docker-compose.yaml
             echo '    image: atsigncompany/sshrvd-e2e-runtime:${{ matrix.rvd }}' >> docker-compose.yaml
           fi
 
@@ -146,10 +146,10 @@ jobs:
             echo '        - branch=${{ matrix.np }}' >> docker-compose.yaml
             echo '    image: atsigncompany/sshnp-e2e-runtime:${{ matrix.np }}' >> docker-compose.yaml
             elif [ "${{contains(env.BRANCHES, matrix.npd)}}" = true ]; then
-            echo '        - branch=${{ matrix.np }}' >> docker-compose.yaml
+            echo '        - branch=${{ matrix.npd }}' >> docker-compose.yaml
             echo '    image: atsigncompany/sshnpd-e2e-runtime:${{ matrix.npd }}' >> docker-compose.yaml
             elif [ "${{contains(env.BRANCHES, matrix.rvd)}}" = true ]; then
-            echo '        - branch=${{ matrix.np }}' >> docker-compose.yaml
+            echo '        - branch=${{ matrix.rvd }}' >> docker-compose.yaml
             echo '    image: atsigncompany/sshrvd-e2e-runtime:${{ matrix.rvd }}' >> docker-compose.yaml
           fi
 
