@@ -41,5 +41,5 @@ jobs:
           push: true
           provenance: false
           tags: |
-            atsigncompany/sshnpd:latest
+            atsigncompany/sshnpd:${{ env.VERSION }}
             atsigncompany/sshnpd:release-${{ env.VERSION }}

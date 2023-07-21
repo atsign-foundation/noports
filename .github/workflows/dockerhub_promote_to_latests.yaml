@@ -1,0 +1,28 @@
+name: dockerhub_promote_to_latest
+
+on:
+  workflow_dispatch:
+
+permissions: # added using https://github.com/step-security/secure-workflows
+  contents: read
+
+jobs:
+  docker:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9 # v3.5.3
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@2b82ce82d56a2a04d2637cd93a637ae1b359c0a7 # v2.2.0
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@4c0219f9ac95b02789c1075625400b2acbff50b1 # v2.9.1
+      - name: Login to Docker Hub
+        uses: docker/login-action@465a07811f14bebb1938fbed4728c6a1ff8901fc # v2.2.0
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+      # Extract version for docker tag
+      - name: Get version
+        run: echo "VERSION=${GITHUB_REF##*/}" >> $GITHUB_ENV
+      - name: Promote image to latest
+        run: docker buildx imagetools create -t atsigncompany/sshnpd:latest atsigncompany/sshnpd:release-${{ env.VERSION }}
