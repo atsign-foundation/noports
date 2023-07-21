@@ -27,12 +27,11 @@ ENV OUTPUT_DIR=/app/output
 
 RUN mkdir -p ${REPO_DIR} ${OUTPUT_DIR} ;
 
-# context must be the same directory as pubspec.yaml
+# context must be the root of the repo
 COPY . ${REPO_DIR}
 
 RUN set -eux ; \
-  cd ${REPO_DIR} ; \
-  cd packages/sshnoports ; \
+  cd ${REPO_DIR}/packages/sshnoports ; \
   dart pub get ; \
   dart compile exe ${REPO_DIR}/packages/sshnoports/bin/sshnp.dart -o ${OUTPUT_DIR}/sshnp ; \
   dart compile exe ${REPO_DIR}/packages/sshnoports/bin/sshnpd.dart -o ${OUTPUT_DIR}/sshnpd ; \
