@@ -174,7 +174,7 @@ jobs:
           cat service-container-sshnpd.yaml >> docker-compose.yaml
           echo '    image: atsigncompany/sshnp-e2e-runtime:${{ matrix.npd }}' >> docker-compose.yaml
           echo '    depends_on:' >> docker-compose.yaml
-          if [ "${{contains(env.BRANCHES, matrix.np)}}" = true ]; then
+          if [ "${{ matrix.rvd }}" = true ]; then
             echo '      - container-sshrvd' >> docker-compose.yaml
           fi
           if [ "${{contains(env.RELEASES, matrix.npd)}}" = true ]; then
