@@ -11,6 +11,7 @@ import 'package:sshnoports/common/utils.dart';
 import 'package:sshnoports/sshnp/cleanup.dart';
 import 'package:sshnoports/sshnp/sshnp.dart';
 import 'package:sshnoports/sshnp/sshnp_params.dart';
+import 'package:sshnoports/sshnpd/sshnpd.dart';
 import 'package:sshnoports/sshrvd/sshrvd.dart';
 import 'package:sshnoports/version.dart';
 import 'package:uuid/uuid.dart';
@@ -338,18 +339,7 @@ class SSHNPImpl implements SSHNP {
         ..ttr = -1
         ..ttl = 10000);
 
-    try {
-      await atClient.notificationService.notify(
-          NotificationParams.forUpdate(keyForCommandToSend, value: sshString),
-          onSuccess: (notification) {
-        logger.info('SUCCESS:$notification $sshString');
-      }, onError: (notification) {
-        logger.info('ERROR:$notification $sshString');
-      });
-    } catch (e) {
-      stderr.writeln(e.toString());
-      rethrow;
-    }
+    await _notify(keyForCommandToSend, sshString);
 
     // Before we clean up we need to make sure that the reverse ssh made the connection.
     // Or that if it had a problem what the problem was, or timeout and explain why.
@@ -442,13 +432,7 @@ class SSHNPImpl implements SSHNP {
           ..metadata = (Metadata()
             ..ttr = -1
             ..ttl = 10000);
-        await atClient.notificationService.notify(
-            NotificationParams.forUpdate(sendOurPublicKeyToSshnpd,
-                value: toSshPublicKey), onSuccess: (notification) {
-          logger.info('SUCCESS:$notification');
-        }, onError: (notification) {
-          logger.info('ERROR:$notification');
-        });
+        await _notify(sendOurPublicKeyToSshnpd, toSshPublicKey);
       } catch (e) {
         stderr.writeln(
             "Error opening or validating public key file or sending to remote atSign: $e");
@@ -467,19 +451,7 @@ class SSHNPImpl implements SSHNP {
       ..metadata = (Metadata()
         ..ttr = -1
         ..ttl = 10000);
-
-    try {
-      await atClient.notificationService.notify(
-          NotificationParams.forUpdate(sendOurPrivateKeyToSshnpd,
-              value: sshPrivateKey), onSuccess: (notification) {
-        logger.info('SUCCESS:$notification');
-      }, onError: (notification) {
-        logger.info('ERROR:$notification');
-      });
-    } catch (e) {
-      stderr.writeln(e.toString());
-      rethrow;
-    }
+    await _notify(sendOurPrivateKeyToSshnpd, sshPrivateKey);
   }
 
   Future<void> getHostAndPortFromSshrvd() async {
@@ -505,19 +477,7 @@ class SSHNPImpl implements SSHNP {
         ..namespaceAware = false
         ..ttr = -1
         ..ttl = 10000);
-
-    try {
-      await atClient.notificationService.notify(
-          NotificationParams.forUpdate(ourSshrvdIdKey, value: sessionId),
-          onSuccess: (notification) {
-        logger.info('SUCCESS:$notification $ourSshrvdIdKey');
-      }, onError: (notification) {
-        logger.info('ERROR:$notification $ourSshrvdIdKey');
-      });
-    } catch (e) {
-      stderr.writeln(e.toString());
-      rethrow;
-    }
+    await _notify(ourSshrvdIdKey, sessionId);
 
     int counter = 0;
     while (!sshrvdAck) {
@@ -577,5 +537,68 @@ class SSHNPImpl implements SSHNP {
     File('${sshHomeDirectory}authorized_keys').writeAsStringSync(
         'command="echo \\"ssh session complete\\";sleep 20",PermitOpen="localhost:22" ${sshPublicKey.trim()} $sessionId\n',
         mode: FileMode.append);
+  }
+
+  @override
+  Future<(Iterable<String>, Iterable<String>)> listDevices() async {
+    // get all the keys devicename.*.sshnpd
+    var atKeys =
+        await atClient.getAtKeys(regex: 'devicename\\.$asciiMatcher\\.sshnpd');
+
+    var devices = <String>{};
+    var heartbeats = <String>{};
+
+    // Listen for heartbeat notifications
+    atClient.notificationService
+        .subscribe(regex: 'heartbeat\\.$asciiMatcher', shouldDecrypt: true)
+        .listen((notification) {
+      heartbeats.add(notification.value.toString());
+    });
+
+    // for each key, get the value
+    for (var entryKey in atKeys) {
+      var devicename = await atClient.get(entryKey);
+      // send a ping to the device
+
+      var metaData = Metadata()
+        ..isPublic = false
+        ..isEncrypted = true
+        ..ttr = -1
+        ..namespaceAware = true;
+
+      var pingKey = AtKey()
+        ..key = "heartbeat.$devicename"
+        ..sharedBy = clientAtSign
+        ..sharedWith = entryKey.sharedBy
+        ..namespace = SSHNPD.namespace
+        ..metadata = metaData;
+
+      unawaited(_notify(pingKey, 'ping'));
+
+      // Add the device to the base list
+      devices.add(devicename.value as String);
+    }
+
+    // wait for 10 seconds in case any are being slow
+    await Future.delayed(const Duration(seconds: 10));
+
+    // The intersection is in place on the off chance that some random device
+    // sends a heartbeat notification, but is not on the list of devices
+    return (devices.intersection(heartbeats), devices.difference(heartbeats));
+  }
+
+  /// This function sends a notification given an atKey and value
+  Future<void> _notify(AtKey atKey, String value,
+      {String sessionId = ""}) async {
+    AtClient atClient = AtClientManager.getInstance().atClient;
+    NotificationService notificationService = atClient.notificationService;
+
+    await notificationService
+        .notify(NotificationParams.forUpdate(atKey, value: value),
+            onSuccess: (notification) {
+      logger.info('SUCCESS:$notification for: $sessionId with value: $value');
+    }, onError: (notification) {
+      logger.info('ERROR:$notification');
+    });
   }
 }
