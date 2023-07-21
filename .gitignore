@@ -5,8 +5,7 @@
 *.hive
 *.hash
 *.atKeys
-# Ignore pubspec.lock
-pubspec.lock
+
 
 # Conventional directory for build output.
 build/
