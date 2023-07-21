@@ -188,6 +188,12 @@ jobs:
             echo '      - image-runtime-local' >> docker-compose.yml
           fi
 
+      - name: docker-compose.yml
+        if: always()
+        working-directory: packages/sshnoports/test/end2end_tests/tests
+        run: |
+          cat docker-compose.yml
+
       - name: Build
         working-directory: packages/sshnoports/test/end2end_tests/tests/local-local-local
         run: |
