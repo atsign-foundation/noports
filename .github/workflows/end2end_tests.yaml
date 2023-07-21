@@ -129,12 +129,12 @@ jobs:
           if [ "${{contains(env.RELEASES, matrix.np)}}" = true ]; then
             echo '        - release=${{ matrix.np }}' >> docker-compose.yaml
             echo '    image: atsigncompany/sshnp-e2e-runtime:${{ matrix.np }}' >> docker-compose.yaml
-            elif [ "${{contains(env.RELEASES, matrix.npd)}}" = true ]; then
+          elif [ "${{contains(env.RELEASES, matrix.npd)}}" = true ]; then
             echo '        - release=${{ matrix.npd }}' >> docker-compose.yaml
-            echo '    image: atsigncompany/sshnpd-e2e-runtime:${{ matrix.npd }}' >> docker-compose.yaml
-            elif [ "${{contains(env.RELEASES, matrix.rvd)}}" = true ]; then
+            echo '    image: atsigncompany/sshnp-e2e-runtime:${{ matrix.npd }}' >> docker-compose.yaml
+          elif [ "${{contains(env.RELEASES, matrix.rvd)}}" = true ]; then
             echo '        - release=${{ matrix.rvd }}' >> docker-compose.yaml
-            echo '    image: atsigncompany/sshrvd-e2e-runtime:${{ matrix.rvd }}' >> docker-compose.yaml
+            echo '    image: atsigncompany/sshnp-e2e-runtime:${{ matrix.rvd }}' >> docker-compose.yaml
           fi
 
       - name: Add runtime-branch image to docker-compose.yaml
@@ -145,12 +145,12 @@ jobs:
           if [ "${{contains(env.BRANCHES, matrix.np)}}" = true ]; then
             echo '        - branch=${{ matrix.np }}' >> docker-compose.yaml
             echo '    image: atsigncompany/sshnp-e2e-runtime:${{ matrix.np }}' >> docker-compose.yaml
-            elif [ "${{contains(env.BRANCHES, matrix.npd)}}" = true ]; then
+          elif [ "${{contains(env.BRANCHES, matrix.npd)}}" = true ]; then
             echo '        - branch=${{ matrix.npd }}' >> docker-compose.yaml
-            echo '    image: atsigncompany/sshnpd-e2e-runtime:${{ matrix.npd }}' >> docker-compose.yaml
-            elif [ "${{contains(env.BRANCHES, matrix.rvd)}}" = true ]; then
+            echo '    image: atsigncompany/sshnp-e2e-runtime:${{ matrix.npd }}' >> docker-compose.yaml
+          elif [ "${{contains(env.BRANCHES, matrix.rvd)}}" = true ]; then
             echo '        - branch=${{ matrix.rvd }}' >> docker-compose.yaml
-            echo '    image: atsigncompany/sshrvd-e2e-runtime:${{ matrix.rvd }}' >> docker-compose.yaml
+            echo '    image: atsigncompany/sshnp-e2e-runtime:${{ matrix.rvd }}' >> docker-compose.yaml
           fi
 
       - name: Add container-sshnp to docker-compose.yaml
