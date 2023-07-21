@@ -15,25 +15,36 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        np: [local, trunk, latest, v3.3.0]
-        npd: [local, trunk, latest, v3.3.0]
+        np: [local, trunk]
+        npd: [local, trunk]
         rvd: [prod]
         wait: [4]
         exclude:
           # Don't run these against themselves, they're irrelevant
-          - np: [trunk, latest, v3.3.0]
-            npd: [trunk, latest, v3.3.0]
+          - np: trunk
+            npd: trunk
         include:
           ### RVD TESTS ###
           - np: local
             npd: local
             rvd: local
-            wait: 4
 
           - np: latest
             npd: latest
             rvd: local
-            wait: 4
+
+          ### BACKWARD TESTS WITHOUT SYNC ###
+          - np: local
+            npd: latest
+
+          - np: latest
+            npd: local
+
+          - np: local
+            npd: v3.3.0
+
+          - np: v3.3.0
+            npd: local
 
           ### BACKWARD TESTS WHICH NEED SYNC ###
           - np: local
