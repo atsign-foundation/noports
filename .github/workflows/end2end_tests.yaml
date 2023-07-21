@@ -3,6 +3,8 @@ name: end2end_tests
 on:
   workflow_dispatch:
   push:
+    branches:
+      - trunk
 
   pull_request:
     branches:
