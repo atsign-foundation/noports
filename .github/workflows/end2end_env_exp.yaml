@@ -16,11 +16,11 @@ jobs:
     strategy:
       matrix:
         # Default values (test id: 10)
+        id: [10]
         np: [local]
         npd: [local]
         rvd: [prod]
         wait: [4]
-        id: [10]
 
         include:
           ### RVD TESTS ###
@@ -85,11 +85,11 @@ jobs:
     steps:
       - name: show env
         run: |
-          print ${{ matrix.id }}
-          print ${{ matrix.np }}
-          print ${{ matrix.npd }}
-          print ${{ matrix.rvd }}
-          print ${{ matrix.wait }}
+          echo ${{ matrix.id }}
+          echo ${{ matrix.np }}
+          echo ${{ matrix.npd }}
+          echo ${{ matrix.rvd }}
+          echo ${{ matrix.wait }}
 
       # - uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9 # v3.5.3
       # - name: Copy keys
