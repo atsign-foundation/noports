@@ -16,7 +16,7 @@ env:
   SSHRVD_RV_AM_ATSIGN: "@rv_am"
   DOCKER_COMPOSE_UP_CMD: "docker compose up --exit-code-from=container-sshnp"
   WAITING_TIME_WITH_SYNC: 30
-  WAITING_TIME_WITHOUT_SYNC: 2
+  WAITING_TIME_WITHOUT_SYNC: 4
 
 jobs:
   # e2e-set-up-sshrvd:
