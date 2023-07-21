@@ -62,14 +62,13 @@ RUN apt-get update ; \
   riscv64) \
   ARCH="riscv64";; \
   esac; \
-  if [ -z ${release} ]; \
-  then \
+  if [ -z ${release} ] || [ ${release} = 'latest' ]; then \
   LATEST_VERSION=$(curl --silent ${URL} | grep -Po '"tag_name": "v\K.*?(?=")') ; \
   VERSION=${LATEST_VERSION} ; \
   else \
   VERSION=${release} ; \
   fi ; \
-  wget "${URLP}/v${VERSION}/sshnp-linux-${ARCH}.tgz" ; \
+  wget "${URLP}/${VERSION}/sshnp-linux-${ARCH}.tgz" ; \
   tar -xvf sshnp-linux-${ARCH}.tgz ; \
   rm sshnp-linux-${ARCH}.tgz ; \
   cd sshnp ; \
