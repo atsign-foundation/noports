@@ -1,0 +1,141 @@
+name: end2end_env_exp
+
+on:
+  workflow_dispatch:
+  push:
+
+env:
+  SSHNP_ATSIGN: "@8incanteater"
+  SSHNPD_ATSIGN: "@8052simple"
+  SSHRVD_ATSIGN: "@8485wealthy51"
+  SSHRVD_RV_AM_ATSIGN: "@rv_am"
+  DOCKER_COMPOSE_UP_CMD: "docker compose up --exit-code-from=container-sshnp"
+jobs:
+  e2e_test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        # Default values (test id: 10)
+        np: [local]
+        npd: [local]
+        rvd: [prod]
+        wait: [4]
+        id: [10]
+
+        include:
+          ### RVD TESTS ###
+          - id: 11
+            rvd: local
+            np: local
+            npd: local
+
+          - id: 12
+            rvd: local
+            np: latest
+            npd: latest
+
+          ### NP TESTS ###
+          - id: 20
+            np: local
+            npd: trunk
+
+          - id: 21
+            np: local
+            npd: latest
+
+          - id: 22
+            np: local
+            npd: v3.1.2
+            wait: 30
+
+          - id: 23
+            np: local
+            npd: v3.2.0
+            wait: 30
+
+          - id: 24
+            np: local
+            npd: v3.3.0
+            wait: 4
+
+          ### NPD TESTS ###
+          - id: 30
+            npd: local
+            np: trunk
+
+          - id: 31
+            npd: local
+            np: latest
+
+          - id: 32
+            npd: local
+            np: v3.1.2
+            wait: 30
+
+          - id: 33
+            npd: local
+            np: v3.2.0
+            wait: 30
+
+          - id: 34
+            npd: local
+            np: v3.3.0
+            wait: 4
+
+    steps:
+      - name: show env
+        run: |
+          print ${{ matrix.id }}
+          print ${{ matrix.np }}
+          print ${{ matrix.npd }}
+          print ${{ matrix.rvd }}
+          print ${{ matrix.wait }}
+
+      # - uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9 # v3.5.3
+      # - name: Copy keys
+      #   working-directory: packages/sshnoports/test/end2end_tests/contexts
+      #   run: |
+      #     echo "${{ secrets.ATKEYS_8INCANTEATER }}" > sshnp/keys/${{ env.SSHNP_ATSIGN }}_key.atKeys
+      #     echo "${{ secrets.ATKEYS_8052SIMPLE }}" > sshnpd/keys/${{ env.SSHNPD_ATSIGN }}_key.atKeys
+      #     echo "${{ secrets.ATKEYS_8485WEALTHY51 }}" > sshrvd/keys/${{ env.SSHRVD_ATSIGN }}_key.atKeys
+
+      # - name: Set up
+      #   working-directory: packages/sshnoports/test/end2end_tests/tools/configuration
+      #   run: |
+      #     ./setup-sshnp-entrypoint.sh ${{ github.run_id }}${{ github.run_attempt }}12 ${{ env.SSHNP_ATSIGN }} ${{ env.SSHNPD_ATSIGN }} ${{ env.SSHRVD_ATSIGN }} ${{ matrix.wait }}
+      #     ./setup-sshnpd-entrypoint.sh ${{ github.run_id }}${{ github.run_attempt }}12 ${{ env.SSHNP_ATSIGN }} ${{ env.SSHNPD_ATSIGN }}
+      #     ./setup-sshrvd-entrypoint.sh ${{ env.SSHRVD_ATSIGN }}
+      # - name: Ensure entrypoints exist
+      #   working-directory: packages/sshnoports/test/end2end_tests/contexts
+      #   run: |
+      #     cat sshnp/entrypoint.sh
+      #     cat sshnpd/entrypoint.sh
+      #     cat sshrvd/entrypoint.sh
+
+  # ae2e-local-local-local:
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9
+
+  #     - name: Build
+  #       working-directory: packages/sshnoports/test/end2end_tests/tests/local-local-local
+  #       run: |
+  #         docker compose build
+
+  #     - name: Test
+  #       working-directory: packages/sshnoports/test/end2end_tests/tests/local-local-local
+  #       run: |
+  #         ${{ env.DOCKER_COMPOSE_UP_CMD }}
+
+  #     - name: Logs
+  #       if: always()
+  #       working-directory: packages/sshnoports/test/end2end_tests/tests/local-local-local
+  #       run: |
+  #         docker compose ps -a
+  #         docker compose logs --timestamps
+
+  #     - name: Tear down
+  #       if: always()
+  #       working-directory: packages/sshnoports/test/end2end_tests/tests/local-local-local
+  #       run: |
+  #         docker compose down
