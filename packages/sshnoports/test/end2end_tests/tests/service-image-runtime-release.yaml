@@ -1,0 +1,10 @@
+  image-runtime-release:
+    build:
+      context: ../image/
+      dockerfile: ./Dockerfile
+      target: runtime-release
+    deploy:
+      mode: replicated
+      replicas: 0
+    # auto added:
+    # - image

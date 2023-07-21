@@ -1,0 +1,12 @@
+  image-runtime-branch:
+    build:
+      context: ../image/
+      dockerfile: ./Dockerfile
+      target: runtime-branch
+    deploy:
+      mode: replicated
+      replicas: 0
+      args:
+        - branch=trunk
+    # auto added:
+    # - image

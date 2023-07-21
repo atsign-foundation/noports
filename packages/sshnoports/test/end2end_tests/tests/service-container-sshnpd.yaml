@@ -1,0 +1,11 @@
+  container-sshnpd:
+    container_name: sshnpd
+    volumes:
+      - ../contexts/sshnpd/keys/:/atsign/.atsign/keys/ # mount keys
+      - ../contexts/sshnpd/entrypoint.sh:/atsign/entrypoint.sh # mount entrypoint.sh
+      - ../contexts/sshnpd/test.sh:/atsign/test.sh # mount test.sh
+    networks:
+      - sshnpd
+    # auto added:
+    # - image
+    # - depends_on: (sshrvd + runtime service)
