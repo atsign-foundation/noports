@@ -10,6 +10,8 @@ env:
   SSHRVD_ATSIGN: "@8485wealthy51"
   SSHRVD_RV_AM_ATSIGN: "@rv_am"
   DOCKER_COMPOSE_UP_CMD: "docker compose up --exit-code-from=container-sshnp"
+  DEFAULT_WAIT: 4
+  DEFAULT_RVD: prod
 jobs:
   e2e_test:
     runs-on: ubuntu-latest
@@ -17,8 +19,6 @@ jobs:
       matrix:
         np: [local, trunk]
         npd: [local, trunk]
-        rvd: [prod]
-        wait: [4]
         exclude:
           # Don't run these against themselves, they're irrelevant
           - np: trunk
@@ -62,11 +62,9 @@ jobs:
           - npd: local
             np: v3.2.0
             wait: 30
-
     steps:
       - name: show env
         run: |
-          echo ${{ matrix.id }}
           echo ${{ matrix.np }}
           echo ${{ matrix.npd }}
           echo ${{ matrix.rvd }}
