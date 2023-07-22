@@ -115,7 +115,7 @@ class SSHNPImpl implements SSHNP {
 
   /// When using sshrvd, this is fetched from sshrvd during [init]
   @override
-  late final String sshrvdPort;
+  late String sshrvdPort;
 
   /// Set to '$localPort $port $username $host $sessionId' during [init]
   @override
