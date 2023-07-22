@@ -514,12 +514,13 @@ packages:
     source: hosted
     version: "1.0.4"
   socket_connector:
-    dependency: "direct main"
+    dependency: "direct dev"
     description:
-      name: socket_connector
-      sha256: "59b253e50b6be8772606f1725fb6dac4b50f209efad89a23b2ff26b9d52f0335"
-      url: "https://pub.dev"
-    source: hosted
+      path: "."
+      ref: throughput
+      resolved-ref: "2588a44324b2f5602280b19d4c9570f22721bec7"
+      url: "https://github.com/cconstab/socket_connector.git"
+    source: git
     version: "1.0.8"
   source_map_stack_trace:
     dependency: transitive
