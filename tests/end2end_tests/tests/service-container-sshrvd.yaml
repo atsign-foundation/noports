@@ -1,0 +1,9 @@
+  container-sshrvd:
+    container_name: sshrvd
+    volumes:
+      - ../contexts/sshrvd/keys/:/atsign/.atsign/keys/ # mount keys
+      - ../contexts/sshrvd/entrypoint.sh:/atsign/entrypoint.sh # mount entrypoint
+    network_mode: host
+    # auto added:
+    # - image
+    # - depends_on: (runtime service)

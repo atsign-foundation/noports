@@ -27,17 +27,17 @@ ENV OUTPUT_DIR=/app/output
 
 RUN mkdir -p ${REPO_DIR} ${OUTPUT_DIR} ;
 
-# context must be the same directory as pubspec.yaml
+# context must be the root of the repo
 COPY . ${REPO_DIR}
 
 RUN set -eux ; \
-  cd ${REPO_DIR} ; \
+  cd ${REPO_DIR}/packages/sshnoports ; \
   dart pub get ; \
-  dart compile exe ${REPO_DIR}/bin/sshnp.dart -o ${OUTPUT_DIR}/sshnp ; \
-  dart compile exe ${REPO_DIR}/bin/sshnpd.dart -o ${OUTPUT_DIR}/sshnpd ; \
-  dart compile exe ${REPO_DIR}/bin/sshrv.dart -o ${OUTPUT_DIR}/sshrv ; \
-  dart compile exe ${REPO_DIR}/bin/sshrvd.dart -o ${OUTPUT_DIR}/sshrvd ; \
-  dart compile exe ${REPO_DIR}/bin/activate_cli.dart -o ${OUTPUT_DIR}/at_activate ;
+  dart compile exe ${REPO_DIR}/packages/sshnoports/bin/sshnp.dart -o ${OUTPUT_DIR}/sshnp ; \
+  dart compile exe ${REPO_DIR}/packages/sshnoports/bin/sshnpd.dart -o ${OUTPUT_DIR}/sshnpd ; \
+  dart compile exe ${REPO_DIR}/packages/sshnoports/bin/sshrv.dart -o ${OUTPUT_DIR}/sshrv ; \
+  dart compile exe ${REPO_DIR}/packages/sshnoports/bin/sshrvd.dart -o ${OUTPUT_DIR}/sshrvd ; \
+  dart compile exe ${REPO_DIR}/packages/sshnoports/bin/activate_cli.dart -o ${OUTPUT_DIR}/at_activate ;
 
 FROM debian:stable-20230612-slim@sha256:b09f68bffcf9c14f3105f262e92321d05abaf48460d1f43f884325bcd4395b95 AS build-release
 
@@ -53,23 +53,22 @@ RUN apt-get update ; \
   mkdir -p ${BUILD_DIR} ${OUTPUT_DIR} ; \
   cd ${BUILD_DIR} ; \
   case "$(dpkg --print-architecture)" in \
-    amd64) \
-      ARCH="x64";; \
-    armhf) \
-      ARCH="arm";; \
-    arm64) \
-      ARCH="arm64";; \
-    riscv64) \
-      ARCH="riscv64";; \
+  amd64) \
+  ARCH="x64";; \
+  armhf) \
+  ARCH="arm";; \
+  arm64) \
+  ARCH="arm64";; \
+  riscv64) \
+  ARCH="riscv64";; \
   esac; \
-  if [ -z ${release} ]; \
-  then \
-    LATEST_VERSION=$(curl --silent ${URL} | grep -Po '"tag_name": "v\K.*?(?=")') ; \
-    VERSION=${LATEST_VERSION} ; \
+  if [ -z ${release} ] || [ "${release}" = 'latest' ]; then \
+  LATEST_VERSION=$(curl --silent ${URL} | grep -Po '"tag_name": "\Kv.*?(?=")') ; \
+  VERSION=${LATEST_VERSION} ; \
   else \
-    VERSION=${release} ; \
+  VERSION=${release} ; \
   fi ; \
-  wget "${URLP}/v${VERSION}/sshnp-linux-${ARCH}.tgz" ; \
+  wget "${URLP}/${VERSION}/sshnp-linux-${ARCH}.tgz" ; \
   tar -xvf sshnp-linux-${ARCH}.tgz ; \
   rm sshnp-linux-${ARCH}.tgz ; \
   cd sshnp ; \
