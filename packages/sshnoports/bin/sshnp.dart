@@ -11,6 +11,7 @@ import 'package:sshnoports/sshnp/sshnp_params.dart';
 
 void main(List<String> args) async {
   AtSignLogger.root_level = 'SHOUT';
+  AtSignLogger.defaultLoggingHandler = AtSignLogger.stdErrLoggingHandler;
   SSHNP? sshnp;
 
   var params = SSHNPParams.fromPartial(SSHNPPartialParams.fromArgs(args));
