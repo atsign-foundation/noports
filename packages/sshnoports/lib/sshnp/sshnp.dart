@@ -87,7 +87,7 @@ abstract class SSHNP {
   abstract final String namespace;
 
   /// When using sshrvd, this is fetched from sshrvd during [init]
-  abstract final String sshrvdPort;
+  String get sshrvdPort;
 
   /// Set to '$localPort $port $username $host $sessionId' during [init]
   abstract final String sshString;
