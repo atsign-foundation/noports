@@ -77,10 +77,10 @@ packages:
     dependency: transitive
     description:
       name: at_commons
-      sha256: a621036d44e9b59e14655b4723703dc0b711a1ad9f41f36ad75f29cf52658fbb
+      sha256: "1e8c6b981f9797ee8b902efc1dc17c85245d61a272d4f2f735070b98a2d55871"
       url: "https://pub.dev"
     source: hosted
-    version: "3.0.51"
+    version: "3.0.52"
   at_lookup:
     dependency: "direct main"
     description:
@@ -225,14 +225,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "0.2.8"
-  dartssh2:
-    dependency: "direct main"
-    description:
-      name: dartssh2
-      sha256: "53a230c7dd6f487b704ceef1b29323ad64d19be89e786ccbc81e157a70417a56"
-      url: "https://pub.dev"
-    source: hosted
-    version: "2.8.2"
   ecdsa:
     dependency: transitive
     description:
@@ -449,14 +441,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "5.4.0"
-  pinenacl:
-    dependency: transitive
-    description:
-      name: pinenacl
-      sha256: "3a5503637587d635647c93ea9a8fecf48a420cc7deebe6f1fc85c2a5637ab327"
-      url: "https://pub.dev"
-    source: hosted
-    version: "0.5.1"
   pointycastle:
     dependency: transitive
     description:
@@ -545,14 +529,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.10.0"
-  ssh_key:
-    dependency: "direct main"
-    description:
-      name: ssh_key
-      sha256: ded1af84f2c34748c000101940e7b9a63a077c9a136aaab85dbf54a6e9d19ec8
-      url: "https://pub.dev"
-    source: hosted
-    version: "0.8.0"
   stack_trace:
     dependency: transitive
     description:
@@ -609,14 +585,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "0.5.4"
-  tuple:
-    dependency: transitive
-    description:
-      name: tuple
-      sha256: a97ce2013f240b2f3807bcbaf218765b6f301c3eff91092bcfa23a039e7dd151
-      url: "https://pub.dev"
-    source: hosted
-    version: "2.0.2"
   typed_data:
     dependency: transitive
     description:

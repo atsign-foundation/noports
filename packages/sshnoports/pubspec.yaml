@@ -17,8 +17,6 @@ dependencies:
   at_onboarding_cli: 1.3.0
   at_utils: 3.0.15
   crypton: 2.1.0
-  dartssh2: 2.8.2
-  ssh_key: ">=0.7.1 <0.9.0"
   uuid: 3.0.7
   logging: 1.2.0
   version: 3.0.2
