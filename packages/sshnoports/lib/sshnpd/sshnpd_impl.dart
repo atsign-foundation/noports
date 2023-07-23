@@ -294,12 +294,28 @@ class SSHNPDImpl implements SSHNPD {
       // to listen on some port and forward all connections to that port to port 22 on sshnpd's host.
       // The incantation for that is -R clientHostPort:localhost:22
       //
+      // We will disable strict host checking since we don't know what hosts we're going to be
+      // connecting to. We add these options:
+      // -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null
+      //
       // Lastly, we want to ensure that if the connection isn't used then it closes after 15 seconds
       // or once the last connection via the remote port has ended. For that we append 'sleep 15' to
       // the ssh command.
       //
-      // ssh username@targetHostName -p remote -i $pemFile -R clientHostPort:localhost:22 sleep 15
-      List<String> args = ['$username@$hostname', '-p', port, '-t', '-t', '-i', pemFile.absolute.path, '-R', '$localPort:localhost:22', 'sleep', '15'];
+      // Final command will look like this:
+      //
+      // ssh username@targetHostName -p targetHostPort -i $pemFile -R clientForwardPort:localhost:22 \
+      //     -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
+      //     sleep 15
+      List<String> args = [
+        '$username@$hostname',
+        '-p', port,
+        '-t', '-t',
+        '-i', pemFile.absolute.path,
+        '-R', '$localPort:localhost:22',
+        '-o', 'StrictHostKeyChecking=no',
+        '-o', 'UserKnownHostsFile=/dev/null',
+        'sleep', '15'];
       logger.info('$sessionId | Executing /usr/bin/ssh ${args.join(' ')}');
       unawaited(Process.run('/usr/bin/ssh', args)
         .then((ProcessResult result) {
