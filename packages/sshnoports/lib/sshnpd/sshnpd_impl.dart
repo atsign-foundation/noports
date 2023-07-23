@@ -3,7 +3,6 @@ import 'dart:io';
 
 import 'package:at_client/at_client.dart';
 import 'package:at_utils/at_logger.dart';
-import 'package:dartssh2/dartssh2.dart';
 import 'package:logging/logging.dart';
 import 'package:meta/meta.dart';
 import 'package:sshnoports/common/create_at_client_cli.dart';
@@ -41,7 +40,6 @@ class SSHNPDImpl implements SSHNPD {
 
   /// State variables used by [_notificationHandler]
   String _privateKey = "";
-  String _sshPublicKey = "";
 
   static const String commandToSend = 'sshd';
 
@@ -181,6 +179,7 @@ class SSHNPDImpl implements SSHNPD {
         _privateKey = notification.value!;
         break;
       case 'sshpublickey':
+        late final String sshPublicKey;
         try {
           var sshHomeDirectory = "$homeDirectory/.ssh/";
           if (Platform.isWindows) {
@@ -188,11 +187,11 @@ class SSHNPDImpl implements SSHNPD {
           }
           logger.info(
               'ssh Public Key received from ${notification.from} notification id : ${notification.id}');
-          _sshPublicKey = notification.value!;
+          sshPublicKey = notification.value!;
 
           // Check to see if the ssh public key looks like one!
-          if (!_sshPublicKey.startsWith('ssh-')) {
-            throw ('$_sshPublicKey does not look like a public key');
+          if (!sshPublicKey.startsWith('ssh-')) {
+            throw ('$sshPublicKey does not look like a public key');
           }
 
           // Check to see if the ssh Publickey is already in the file if not append to the ~/.ssh/authorized_keys file
@@ -200,8 +199,8 @@ class SSHNPDImpl implements SSHNPD {
 
           var authKeysContent = await authKeys.readAsString();
 
-          if (!authKeysContent.contains(_sshPublicKey)) {
-            authKeys.writeAsStringSync("\n$_sshPublicKey",
+          if (!authKeysContent.contains(sshPublicKey)) {
+            authKeys.writeAsStringSync("\n$sshPublicKey",
                 mode: FileMode.append);
           }
         } catch (e) {
@@ -274,32 +273,63 @@ class SSHNPDImpl implements SSHNPD {
     logger.shout(
         'ssh session started from: ${notification.from} session: $sessionId');
 
-    // var result = await Process.run('ssh', sshList);
-
-    int counter = 0;
-    bool shouldStop = false;
-
     try {
-      final socket = await SSHSocket.connect(hostname, int.parse(port));
+      final pemFile = File('/tmp/.pem-${Uuid().v4()}');
+      pemFile.writeAsStringSync(privateKey);
+      await Process.run('chmod', ['go-rwx', pemFile.absolute.path]);
 
-      final client = SSHClient(
-        socket,
-        username: username,
-        identities: [
-          // A single private key file may contain multiple keys.
-          ...SSHKeyPair.fromPem(privateKey)
-        ],
-      );
+      bool running = true;
+      // When we receive notification 'sshd', WE are going to ssh to the host and port provided by sshnp
+      // which could be the host and port of a client machine, or the host and port of an sshrvd which is
+      // joined via socket connector to the client machine. Let's call it targetHostName/Port
+      //
+      // so: ssh username@targetHostName -p targetHostPort
+      //
+      // We're not providing a stdin so we use '-t -t' to get ssh to create a pseudo-terminal anyway
+      //
+      // We need to use the private key which the client sent to us (and we just stored in a tmp file)
+      // This is done by adding '-i <pemFile>' to the ssh command
+      //
+      // When we make the connection (remember we are the client) we want to tell the client
+      // to listen on some port and forward all connections to that port to port 22 on sshnpd's host.
+      // The incantation for that is -R clientHostPort:localhost:22
+      //
+      // Lastly, we want to ensure that if the connection isn't used then it closes after 15 seconds
+      // or once the last connection via the remote port has ended. For that we append 'sleep 15' to
+      // the ssh command.
+      //
+      // ssh username@targetHostName -p remote -i $pemFile -R clientHostPort:localhost:22 sleep 15
+      List<String> args = ['$username@$hostname', '-p', port, '-t', '-t', '-i', pemFile.absolute.path, '-R', '$localPort:localhost:22', 'sleep', '15'];
+      logger.info('$sessionId | Executing /usr/bin/ssh ${args.join(' ')}');
+      unawaited(Process.run('/usr/bin/ssh', args)
+        .then((ProcessResult result) {
+          running = false;
+          if (result.exitCode != 0) {
+            logger.shout('$sessionId | Non-zero exit code from /usr/bin/ssh ${args.join(' ')}');
+            logger.shout('$sessionId | stdout   : ${result.stdout}');
+            logger.shout('$sessionId | stderr   : ${result.stderr}');
+          } else {
+            logger.shout('$sessionId | ssh session ended');
+          }
+          if (pemFile.existsSync()) {
+            pemFile.deleteSync();
+          }
+        })
+          .onError((error, stackTrace) {
+            running = false;
+            if (pemFile.existsSync()) {
+              pemFile.deleteSync();
+            }
+            logger.shout('$sessionId | Error $error from running /usr/bin/ssh ${args.join(' ')}');
+      }));
+      await Future.delayed(Duration(milliseconds: 500));
+      if (pemFile.existsSync()) {
+        pemFile.deleteSync();
+      }
 
-      /// connect back to ssh server/port
-      await client.authenticated;
-
-      /// Do the port forwarding
-      final forward = await client.forwardRemote(port: int.parse(localPort));
-
-      if (forward == null) {
+      if (! running) {
         logger.warning('Failed to forward remote port $localPort');
-        // Say this session is NOT connected to client
+        // Notify sshnp that this session is NOT connected
         await _notify(
           atKey,
           'Failed to forward remote port $localPort, (use --local-port to specify unused port)',
@@ -308,43 +338,13 @@ class SSHNPDImpl implements SSHNPD {
         return;
       }
 
-      /// Send a notification to tell sshnp connection is made
-
-      /// Say this session is connected to client
+      /// Notify sshnp that the connection has been made
       logger.info(' sshnpd connected notification sent to:from "$atKey');
       await _notify(atKey, "connected", sessionId: sessionId);
 
-      /// Set up time to check to see if all connections are down
-      Timer.periodic(Duration(seconds: 15), (timer) async {
-        if (counter == 0) {
-          client.close();
-          await client.done;
-          shouldStop = true;
-          timer.cancel();
-          logger.shout(
-              'ssh session complete for: ${notification.from} session: $sessionId');
-        }
-      });
-
-      /// Answer ssh requests until none are left open
-      await for (final connection in forward.connections) {
-        counter++;
-        final socket = await Socket.connect('localhost', 22);
-
-        unawaited(
-          connection.stream.cast<List<int>>().pipe(socket).whenComplete(
-            () async {
-              counter--;
-            },
-          ),
-        );
-        unawaited(socket.pipe(connection.sink));
-        if (shouldStop) break;
-      }
     } catch (e) {
-      // need to make sure things close
       logger.severe('SSH Client failure : $e');
-      // Say this session is connected to client
+      // Notify sshnp that this session is NOT connected
       await _notify(
         atKey,
         'Remote SSH Client failure : $e',
