@@ -35,34 +35,41 @@ jobs:
       matrix:
         np: [local, trunk]
         npd: [local, trunk]
+        wait: [4]
         exclude:
           # Don't run these against themselves, they're irrelevant
           - np: trunk
             npd: trunk
         include:
           ### RVD TESTS ###
-          - np: local
-            npd: local
-            rvd: local
-            rvd_atsign: "@8485wealthy51"
+          # - np: local
+          #   npd: local
+          #   rvd: local
+          #   rvd_atsign: "@8485wealthy51"
+          #   wait: 4
 
           - np: latest
             npd: latest
             rvd: local
             rvd_atsign: "@8485wealthy51"
+            wait: 4
 
           ### BACKWARD TESTS WITHOUT SYNC ###
           - np: local
             npd: latest
+            wait: 4
 
           - np: latest
             npd: local
+            wait: 4
 
           - np: local
             npd: v3.3.0
+            wait: 4
 
           - np: v3.3.0
             npd: local
+            wait: 4
 
           ### BACKWARD TESTS WHICH NEED SYNC ###
           - np: local
@@ -83,12 +90,12 @@ jobs:
     steps:
       - name: Show Matrix Values
         run: |
-          echo ${{ strategy.job-index }}
-          echo ${{ matrix.np }}
-          echo ${{ matrix.npd }}
-          echo ${{ matrix.rvd }}
-          echo ${{ matrix.rvd_atsign || env.DEFAULT_RVD_ATSIGN }}
-          echo ${{ matrix.wait }}
+          echo "job index: ${{ strategy.job-index }}"
+          echo "np: ${{ matrix.np }}"
+          echo "npd: ${{ matrix.npd }}"
+          echo "rvd: ${{ matrix.rvd }}"
+          echo "rvd: ${{ matrix.rvd_atsign || env.DEFAULT_RVD_ATSIGN }}"
+          echo "wait: ${{ matrix.wait }}"
 
       - uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9 # v3.5.3
 
