@@ -371,7 +371,7 @@ class SSHNPDImpl implements SSHNPD {
       '-v',
       '-t', '-t',
       '-o', 'StrictHostKeyChecking=no',
-      // '-o', 'IdentitiesOnly=yes',
+      '-o', 'IdentitiesOnly=yes',
       '-o', 'UserKnownHostsFile=/dev/null',
       '-o', 'BatchMode=yes',
       '-o', 'ExitOnForwardFailure=yes',
