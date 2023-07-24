@@ -41,17 +41,17 @@ jobs:
             npd: trunk
         include:
           ### RVD TESTS ###
-          - np: local
-            npd: local
-            rvd: local
-            rvd_atsign: "@8485wealthy51"
-            wait: 4
-
-          # - np: latest
-          #   npd: latest
+          # - np: local
+          #   npd: local
           #   rvd: local
           #   rvd_atsign: "@8485wealthy51"
           #   wait: 4
+
+          - np: latest
+            npd: latest
+            rvd: local
+            rvd_atsign: "@8485wealthy51"
+            wait: 4
 
           ### BACKWARD TESTS WITHOUT SYNC ###
           - np: local
