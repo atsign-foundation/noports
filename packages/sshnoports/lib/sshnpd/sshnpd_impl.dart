@@ -371,7 +371,7 @@ class SSHNPDImpl implements SSHNPD {
       '-v',
       '-t', '-t',
       '-o', 'StrictHostKeyChecking=no',
-      '-o', 'IdentitiesOnly=yes',
+      // '-o', 'IdentitiesOnly=yes',
       '-o', 'UserKnownHostsFile=/dev/null',
       '-o', 'BatchMode=yes',
       '-o', 'ExitOnForwardFailure=yes',
@@ -386,9 +386,8 @@ class SSHNPDImpl implements SSHNPD {
     ProcessResult? result;
     late int sshExitCode;
     try {
-      result =
-      await Process.run('/usr/bin/ssh', args).timeout(Duration(seconds: 10));
-      sshExitCode = result.exitCode;
+      Process process = await Process.start('/usr/bin/ssh', args);
+      sshExitCode = await process.exitCode.timeout(Duration(seconds: 10));
     // ignore: unused_catch_clause
     } on TimeoutException catch (e) {
       sshExitCode = 6464;
