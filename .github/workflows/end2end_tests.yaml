@@ -52,19 +52,24 @@ jobs:
             npd: latest
             rvd: local
             rvd_atsign: "@8485wealthy51"
+            wait: 4
 
           ### BACKWARD TESTS WITHOUT SYNC ###
           - np: local
             npd: latest
+            wait: 4
 
           - np: latest
             npd: local
+            wait: 4
 
           - np: local
             npd: v3.3.0
+            wait: 4
 
           - np: v3.3.0
             npd: local
+            wait: 4
 
           ### BACKWARD TESTS WHICH NEED SYNC ###
           - np: local
