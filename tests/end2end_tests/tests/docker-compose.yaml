@@ -9,7 +9,7 @@ networks:
 services:
   image-runtime-local:
     build:
-      context: ../../../
+      context: ../
       dockerfile: ./tests/end2end_tests/image/Dockerfile
       target: runtime-local
     image: atsigncompany/sshnp-e2e-runtime:local
