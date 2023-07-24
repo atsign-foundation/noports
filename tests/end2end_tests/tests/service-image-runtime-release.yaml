@@ -8,6 +8,6 @@
       target: runtime-release
       args:
         # auto added:
-        # - branch
+        # - release
     # auto added:
     # - image
