@@ -4,9 +4,11 @@ import 'dart:io';
 
 import 'package:at_client/at_client.dart' hide StringBuffer;
 import 'package:at_utils/at_logger.dart';
+import 'package:dartssh2/dartssh2.dart';
 import 'package:logging/logging.dart';
 import 'package:meta/meta.dart';
 import 'package:sshnoports/common/create_at_client_cli.dart';
+import 'package:sshnoports/common/supported_ssh_clients.dart';
 import 'package:sshnoports/common/utils.dart';
 import 'package:sshnoports/sshnpd/sshnpd.dart';
 import 'package:sshnoports/sshnpd/sshnpd_params.dart';
@@ -36,6 +38,9 @@ class SSHNPDImpl implements SSHNPD {
   late final String managerAtsign;
 
   @override
+  final SupportedSshClient sshClient;
+
+  @override
   @visibleForTesting
   bool initialized = false;
 
@@ -50,9 +55,9 @@ class SSHNPDImpl implements SSHNPD {
       required this.atClient,
       required this.username,
       required this.homeDirectory,
-      // volatile fields
       required this.device,
-      required this.managerAtsign}) {
+      required this.managerAtsign,
+      required this.sshClient}) {
     logger.hierarchicalLoggingEnabled = true;
     logger.logger.level = Level.SHOUT;
   }
@@ -83,6 +88,7 @@ class SSHNPDImpl implements SSHNPD {
         homeDirectory: p.homeDirectory,
         device: p.device,
         managerAtsign: p.managerAtsign,
+        sshClient: p.sshClient
       );
 
       if (p.verbose) {
@@ -270,19 +276,24 @@ class SSHNPDImpl implements SSHNPD {
     }
 
     logger.info(
-        'ssh session started for $username to $hostname on port $port using localhost:$localPort on $hostname ');
+        'Starting ssh session for $username to $hostname on port $port using localhost:$localPort on $hostname ');
     logger.shout(
-        'ssh session started from: ${notification.from} session: $sessionId');
+        'Starting ssh session using ${sshClient.name} (${sshClient.cliArg}) from: ${notification.from} session: $sessionId');
 
     try {
       bool success = false;
       String? errorMessage;
 
-      // TODO Add command line param which determines how to do the ssh
-      // 1) by executing the ssh command on the host
-      // 2) by using SSHClient
-      (success, errorMessage) = await reverseSshViaExec(
-          privateKey, username, hostname, port, localPort, logger, sessionId);
+      switch (sshClient) {
+        case SupportedSshClient.hostSsh:
+          (success, errorMessage) = await reverseSshViaExec(
+              privateKey, username, hostname, port, localPort, logger, sessionId);
+          break;
+        case SupportedSshClient.pureDart:
+          (success, errorMessage) = await reverseSshViaSSHClient(
+              privateKey, username, hostname, port, localPort, logger, sessionId);
+          break;
+      }
 
       if (!success) {
         errorMessage ??= 'Failed to forward remote port $localPort';
@@ -310,8 +321,98 @@ class SSHNPDImpl implements SSHNPD {
     }
   }
 
-  /// Set up a reverse ssh session. We will ssh outwards, with a remote port
-  /// forwarding to allow a client on the other side to ssh to port 22 here.
+  /// Reverse ssh using SSHClient.
+  /// We will ssh outwards with a remote port forwarding to allow a client on
+  /// the other side to ssh to port 22 here.
+  Future<(bool, String?)> reverseSshViaSSHClient(
+      String privateKey,
+      String username,
+      String hostname,
+      String port,
+      String localPort,
+      AtSignLogger logger,
+      String sessionId) async {
+
+    late final SSHSocket socket;
+    try {
+      socket = await SSHSocket.connect(hostname, int.parse(port));
+    } catch (e) {
+      return (false, 'Failed to open socket to $hostname:$port : $e');
+    }
+
+    late final SSHClient client;
+    try {
+      client = SSHClient(
+        socket,
+        username: username,
+        identities: [
+          // A single private key file may contain multiple keys.
+          ...SSHKeyPair.fromPem(privateKey)
+        ],
+      );
+    } catch (e) {
+      return (false, 'Failed to create SSHClient for $username@$hostname:$port : $e');
+    }
+
+    try {
+      await client.authenticated;
+    } catch (e) {
+      return (false, 'Failed to authenticate as $username@$hostname:$port : $e');
+    }
+
+    /// Do the port forwarding
+    final SSHRemoteForward? forward;
+    try {
+      forward = await client.forwardRemote(port: int.parse(localPort));
+    } catch (e) {
+      return (false, 'Failed to request forwardRemote : $e');
+    }
+
+    if (forward == null) {
+      return (false, 'Failed to forward remote port $localPort');
+    }
+
+    int counter = 0;
+    bool shouldStop = false;
+
+    /// Set up time to check to see if all connections are down
+    Timer.periodic(Duration(seconds: 15), (timer) async {
+      if (counter == 0) {
+        client.close();
+        await client.done;
+        shouldStop = true;
+        timer.cancel();
+        logger.shout(
+            '$sessionId | ssh session complete');
+      }
+    });
+
+    /// Answer ssh requests until none are left open
+    unawaited(Future.delayed(Duration(milliseconds: 0), () async {
+      await for (final connection in forward!.connections) {
+        counter++;
+        final socket = await Socket.connect('localhost', 22);
+
+        unawaited(
+          connection.stream.cast<List<int>>().pipe(socket).whenComplete(
+                () async {
+              counter--;
+            },
+          ),
+        );
+        unawaited(socket.pipe(connection.sink));
+        if (shouldStop) break;
+      }
+    }).catchError((e) {
+      logger.shout('$sessionId | reverseSshViaSSHClient | error from forward connections handler $e');
+    }));
+
+    return (true, null);
+  }
+
+  /// Reverse ssh by executing ssh directly on the host.
+  /// We will ssh outwards with a remote port forwarding to allow a client on
+  /// the other side to ssh to port 22 here.
   Future<(bool, String?)> reverseSshViaExec(
       String privateKey,
       String username,
