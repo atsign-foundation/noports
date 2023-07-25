@@ -404,8 +404,6 @@ class SSHNPDImpl implements SSHNPD {
         logger.shout(
             '$sessionId | Exit code $sshExitCode from'
                 ' /usr/bin/ssh ${args.join(' ')}');
-        logger.shout('$sessionId | stdout   : ${result?.stdout}');
-        logger.shout('$sessionId | stderr   : ${result?.stderr}');
         errorMessage = 'Failed to establish connection - exit code $sshExitCode';
       }
     }
