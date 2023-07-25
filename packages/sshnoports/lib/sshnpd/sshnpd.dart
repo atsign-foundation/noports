@@ -32,8 +32,6 @@ abstract class SSHNPD {
   @visibleForTesting
   bool initialized = false;
 
-  static const String commandToSend = 'sshd';
-
   factory SSHNPD(
       {
       // final fields
