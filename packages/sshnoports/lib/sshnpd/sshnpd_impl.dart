@@ -83,13 +83,12 @@ class SSHNPDImpl implements SSHNPD {
       );
 
       var sshnpd = SSHNPD(
-        atClient: atClient,
-        username: p.username,
-        homeDirectory: p.homeDirectory,
-        device: p.device,
-        managerAtsign: p.managerAtsign,
-        sshClient: p.sshClient
-      );
+          atClient: atClient,
+          username: p.username,
+          homeDirectory: p.homeDirectory,
+          device: p.device,
+          managerAtsign: p.managerAtsign,
+          sshClient: p.sshClient);
 
       if (p.verbose) {
         sshnpd.logger.logger.level = Level.INFO;
@@ -286,12 +285,12 @@ class SSHNPDImpl implements SSHNPD {
 
       switch (sshClient) {
         case SupportedSshClient.hostSsh:
-          (success, errorMessage) = await reverseSshViaExec(
-              privateKey, username, hostname, port, localPort, logger, sessionId);
+          (success, errorMessage) = await reverseSshViaExec(privateKey,
+              username, hostname, port, localPort, logger, sessionId);
           break;
         case SupportedSshClient.pureDart:
-          (success, errorMessage) = await reverseSshViaSSHClient(
-              privateKey, username, hostname, port, localPort, logger, sessionId);
+          (success, errorMessage) = await reverseSshViaSSHClient(privateKey,
+              username, hostname, port, localPort, logger, sessionId);
           break;
       }
 
@@ -307,7 +306,6 @@ class SSHNPDImpl implements SSHNPD {
       } else {
         /// Notify sshnp that the connection has been made
         logger.info(' sshnpd connected notification sent to:from "$atKey');
-        await Future.delayed(Duration(seconds:1));
         await _notify(atKey, "connected", sessionId: sessionId);
       }
     } catch (e) {
@@ -332,7 +330,6 @@ class SSHNPDImpl implements SSHNPD {
       String localPort,
       AtSignLogger logger,
       String sessionId) async {
-
     late final SSHSocket socket;
     try {
       socket = await SSHSocket.connect(hostname, int.parse(port));
@@ -351,13 +348,19 @@ class SSHNPDImpl implements SSHNPD {
         ],
       );
     } catch (e) {
-      return (false, 'Failed to create SSHClient for $username@$hostname:$port : $e');
+      return (
+        false,
+        'Failed to create SSHClient for $username@$hostname:$port : $e'
+      );
     }
 
     try {
       await client.authenticated;
     } catch (e) {
-      return (false, 'Failed to authenticate as $username@$hostname:$port : $e');
+      return (
+        false,
+        'Failed to authenticate as $username@$hostname:$port : $e'
+      );
     }
 
     /// Do the port forwarding
@@ -382,8 +385,7 @@ class SSHNPDImpl implements SSHNPD {
         await client.done;
         shouldStop = true;
         timer.cancel();
-        logger.shout(
-            '$sessionId | ssh session complete');
+        logger.shout('$sessionId | ssh session complete');
       }
     });
 
@@ -395,7 +397,7 @@ class SSHNPDImpl implements SSHNPD {
 
         unawaited(
           connection.stream.cast<List<int>>().pipe(socket).whenComplete(
-                () async {
+            () async {
               counter--;
             },
           ),
@@ -404,7 +406,8 @@ class SSHNPDImpl implements SSHNPD {
         if (shouldStop) break;
       }
     }).catchError((e) {
-      logger.shout('$sessionId | reverseSshViaSSHClient | error from forward connections handler $e');
+      logger.shout(
+          '$sessionId | reverseSshViaSSHClient | error from forward connections handler $e');
     }));
 
     return (true, null);
@@ -422,7 +425,7 @@ class SSHNPDImpl implements SSHNPD {
       AtSignLogger logger,
       String sessionId) async {
     final pemFile = File('/tmp/.${Uuid().v4()}');
-    if (! privateKey.endsWith('\n')) {
+    if (!privateKey.endsWith('\n')) {
       privateKey += '\n';
     }
     pemFile.writeAsStringSync(privateKey);
@@ -466,20 +469,19 @@ class SSHNPDImpl implements SSHNPD {
     // ssh username@targetHostName -p targetHostPort -i $pemFile -R clientForwardPort:localhost:22 \
     //     -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
     //     sleep 15
-    List<String> args = [
-      '$username@$hostname',
-      '-p', port,
-      '-i', pemFile.absolute.path,
-      '-R', '$localPort:localhost:22',
-      '-o LogLevel=VERBOSE',
-      '-t', '-t',
-      '-o', 'StrictHostKeyChecking=accept-new',
-      '-o', 'IdentitiesOnly=yes',
-      '-o', 'BatchMode=yes',
-      '-o', 'ExitOnForwardFailure=yes',
-      '-o', 'ForkAfterAuthentication=yes',
-      'sleep', '15'
-    ];
+    List<String> args = '$username@$hostname'
+            ' -p $port'
+            ' -i ${pemFile.absolute.path}'
+            ' -R $localPort:localhost:22'
+            ' -o LogLevel=VERBOSE'
+            ' -t -t'
+            ' -o StrictHostKeyChecking=accept-new'
+            ' -o IdentitiesOnly=yes'
+            ' -o BatchMode=yes'
+            ' -o ExitOnForwardFailure=yes'
+            ' -o ForkAfterAuthentication=yes'
+            ' sleep 15'
+        .split(' ');
     logger.info('$sessionId | Executing /usr/bin/ssh ${args.join(' ')}');
 
     // Because of the options we are using, we can wait for this process
@@ -501,7 +503,7 @@ class SSHNPDImpl implements SSHNPD {
         logger.info('$sessionId | sshStdErr | $s');
       }, onError: (e) {});
       sshExitCode = await process.exitCode.timeout(Duration(seconds: 10));
-    // ignore: unused_catch_clause
+      // ignore: unused_catch_clause
     } on TimeoutException catch (e) {
       sshExitCode = 6464;
     }
@@ -514,10 +516,10 @@ class SSHNPDImpl implements SSHNPD {
             '$sessionId | Command timed out: /usr/bin/ssh ${args.join(' ')}');
         errorMessage = 'Failed to establish connection - timed out';
       } else {
-        logger.shout(
-            '$sessionId | Exit code $sshExitCode from'
-                ' /usr/bin/ssh ${args.join(' ')}');
-        errorMessage = 'Failed to establish connection - exit code $sshExitCode';
+        logger.shout('$sessionId | Exit code $sshExitCode from'
+            ' /usr/bin/ssh ${args.join(' ')}');
+        errorMessage =
+            'Failed to establish connection - exit code $sshExitCode';
       }
     }
 
