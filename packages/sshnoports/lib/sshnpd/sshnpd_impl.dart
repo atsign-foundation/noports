@@ -1,7 +1,8 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
 
-import 'package:at_client/at_client.dart';
+import 'package:at_client/at_client.dart' hide StringBuffer;
 import 'package:at_utils/at_logger.dart';
 import 'package:logging/logging.dart';
 import 'package:meta/meta.dart';
@@ -384,8 +385,20 @@ class SSHNPDImpl implements SSHNPD {
     // to complete, because it will exit with exitCode 0 once it has connected
     // successfully
     late int sshExitCode;
+    final soutBuf = StringBuffer();
+    final serrBuf = StringBuffer();
     try {
       Process process = await Process.start('/usr/bin/ssh', args);
+      process.stdout.listen((List<int> l) {
+        var s = utf8.decode(l);
+        soutBuf.write(s);
+        logger.info('$sessionId | sshStdOut | $s');
+      }, onError: (e) {});
+      process.stderr.listen((List<int> l) {
+        var s = utf8.decode(l);
+        serrBuf.write(s);
+        logger.info('$sessionId | sshStdErr | $s');
+      }, onError: (e) {});
       sshExitCode = await process.exitCode.timeout(Duration(seconds: 10));
     // ignore: unused_catch_clause
     } on TimeoutException catch (e) {
