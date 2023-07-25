@@ -77,10 +77,10 @@ packages:
     dependency: transitive
     description:
       name: at_commons
-      sha256: a621036d44e9b59e14655b4723703dc0b711a1ad9f41f36ad75f29cf52658fbb
+      sha256: "1e8c6b981f9797ee8b902efc1dc17c85245d61a272d4f2f735070b98a2d55871"
       url: "https://pub.dev"
     source: hosted
-    version: "3.0.51"
+    version: "3.0.52"
   at_lookup:
     dependency: "direct main"
     description:

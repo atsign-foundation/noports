@@ -373,10 +373,13 @@ class SSHNPImpl implements SSHNP {
     // By removing the .pub extn
     if (!sshnpdAckErrors) {
       if (sendSshPublicKey != 'false') {
-        stdout.write(
-            "ssh -p $localPort $remoteUsername@localhost -i ${sendSshPublicKey.replaceFirst(RegExp(r'.pub$'), '')} ");
+        stdout.write('ssh -p $localPort $remoteUsername@localhost'
+            ' -o StrictHostKeyChecking=accept-new'
+            ' -o IdentitiesOnly=yes'
+            ' -i ${sendSshPublicKey.replaceFirst(RegExp(r'.pub$'), '')}');
       } else {
-        stdout.write("ssh -p $localPort $remoteUsername@localhost ");
+        stdout.write('ssh -p $localPort $remoteUsername@localhost -o ssh'
+            ' -o StrictHostKeyChecking=accept-new');
       }
       // print out optional arguments
       for (var argument in localSshOptions) {
