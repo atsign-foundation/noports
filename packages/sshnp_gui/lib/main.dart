@@ -32,7 +32,7 @@ class MyApp extends ConsumerWidget {
       localizationsDelegates: AppLocalizations.localizationsDelegates,
       supportedLocales: AppLocalizations.supportedLocales,
       routerConfig: ref.watch(goRouterProvider),
-      theme: AppTheme.light(),
+      theme: AppTheme.dark(),
       // * The onboarding screen (first screen)p[]
     );
   }

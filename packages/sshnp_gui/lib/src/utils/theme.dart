@@ -1,39 +1,84 @@
 import 'package:flutter/material.dart';
+import 'package:sshnp_gui/src/utils/sizes.dart';
 
 import 'constants.dart';
 
 class AppTheme {
   static TextTheme lightTextTheme = const TextTheme(
-    displayLarge: TextStyle(
-      fontSize: 80,
-      fontWeight: FontWeight.bold,
-      // letterSpacing: -1.5,
-    ),
-    displayMedium: TextStyle(
-      fontSize: 60,
-      fontWeight: FontWeight.bold,
-      // letterSpacing: -0.5,
-    ),
-    displaySmall: TextStyle(
-      fontSize: 48,
-      fontWeight: FontWeight.w800,
-    ),
-    headlineMedium: TextStyle(
-      fontSize: 34,
+    // displayLarge: TextStyle(
+    //   fontSize: 80,
+    //   fontWeight: FontWeight.bold,
+    //   // letterSpacing: -1.5,
+    // ),
+    // displayMedium: TextStyle(
+    //   fontSize: 60,
+    //   fontWeight: FontWeight.bold,
+    //   // letterSpacing: -0.5,
+    // ),
+    // displaySmall: TextStyle(
+    //   fontSize: 48,
+    //   fontWeight: FontWeight.w800,
+    // ),
+    // headlineMedium: TextStyle(
+    //   fontSize: 34,
+    //   fontWeight: FontWeight.w600,
+    //   // letterSpacing: 0.25,
+    // ),
+    // headlineSmall: TextStyle(
+    //   fontSize: 24,
+    //   fontWeight: FontWeight.w400,
+    // ),
+    // titleLarge: TextStyle(
+    //   fontSize: 20,
+    //   fontWeight: FontWeight.w500,
+    //   // letterSpacing: 0.15,
+    // ),
+    titleMedium: TextStyle(
+      fontSize: 18,
       fontWeight: FontWeight.w600,
-      // letterSpacing: 0.25,
-    ),
-    headlineSmall: TextStyle(
-      fontSize: 24,
-      fontWeight: FontWeight.w400,
-    ),
-    titleLarge: TextStyle(
-      fontSize: 20,
-      fontWeight: FontWeight.w500,
       // letterSpacing: 0.15,
     ),
+    // titleSmall: TextStyle(
+    //   fontSize: 14,
+    //   fontWeight: FontWeight.w500,
+    //   // letterSpacing: 0.1,
+    // ),
+    bodyLarge: TextStyle(
+      fontSize: 11,
+      fontWeight: FontWeight.w500,
+      // letterSpacing: 0.5,
+    ),
+    bodyMedium: TextStyle(
+      fontSize: 14,
+      fontWeight: FontWeight.w400,
+      // letterSpacing: 0.25,
+    ),
+    bodySmall: TextStyle(
+      fontSize: 12,
+      fontWeight: FontWeight.w400,
+      // letterSpacing: 0.4,
+    ),
+    labelLarge: TextStyle(
+      fontSize: 11,
+      fontWeight: FontWeight.w500,
+      // letterSpacing: 1.25,
+    ),
+    labelMedium: TextStyle(
+      fontSize: 11,
+      fontWeight: FontWeight.w500,
+      // letterSpacing: 1.25,
+    ),
+    labelSmall: TextStyle(
+      fontSize: 10,
+      fontWeight: FontWeight.w400,
+      // letterSpacing: 1.5,
+    ),
+  );
+
+  // 2
+  static TextTheme darkTextTheme = const TextTheme(
     titleMedium: TextStyle(
-      fontSize: 16,
+      fontSize: 32,
       fontWeight: FontWeight.w600,
       // letterSpacing: 0.15,
     ),
@@ -68,9 +113,6 @@ class AppTheme {
       // letterSpacing: 1.5,
     ),
   );
-
-  // 2
-  static TextTheme darkTextTheme = const TextTheme();
 
   // 3
   static ThemeData light() {
@@ -150,39 +192,70 @@ class AppTheme {
   static ThemeData dark() {
     return ThemeData(
       useMaterial3: true,
-      colorScheme: const ColorScheme.dark().copyWith(
-          // primary: kPrimaryColorDark,
-          // onPrimary: kOnPrimaryColorDark,
-          // primaryContainer: kPrimaryContainerDark,
-          // onPrimaryContainer: kOnPrimaryContainerDark,
-          // secondary: kSecondaryColorDark,
-          // onSecondary: kOnSecondaryColorDark,
-          // secondaryContainer: kSecondaryContainerDark,
-          // onSecondaryContainer: kOnSecondaryContainerDark,
-          // tertiary: kTertiaryColorDark,
-          // onTertiary: kOnTertiaryColorDark,
-          // tertiaryContainer: kTertiaryContainerDark,
-          // onTertiaryContainer: kOnTertiaryContainerDark,
-          // error: kErrorColorDark,
-          // onError: kOnErrorDark,
-          // errorContainer: kErrorContainerDark,
-          // onErrorContainer: kOnErrorContainerDark,
-          // background: kBackgroundColorDark,
-          // onBackground: kOnBackgroundDark,
-          // surface: kSurfaceDark,
-          // onSurface: kOnSurfaceDark,
+      colorScheme: const ColorScheme.dark().copyWith(primary: kPrimaryColor, background: kBackGroundColorDark
+          // onPrimary: kOnPrimaryColor,
+          // primaryContainer: kPrimaryContainer,
+          // onPrimaryContainer: kOnPrimaryContainer,
+          // secondary: kSecondaryColor,
+          // onSecondary: kOnSecondaryColor,
+          // secondaryContainer: kSecondaryContainer,
+          // onSecondaryContainer: kOnSecondaryContainer,
+          // tertiary: kTertiaryColor,
+          // onTertiary: kOnTertiaryColor,
+          // tertiaryContainer: kTertiaryContainer,
+          // onTertiaryContainer: kOnTertiaryContainer,
+          // error: kErrorColor,
+          // onError: kOnError,
+          // errorContainer: kErrorContainer,
+          // onErrorContainer: kOnErrorContainer,
+          // background: kBackgroundColor,
+          // onBackground: kOnBackground,
+          // surface: kSurface,
+          // onSurface: kOnSurface,
           ),
-      brightness: Brightness.dark,
-      appBarTheme: AppBarTheme(
-        foregroundColor: Colors.white,
-        backgroundColor: Colors.grey[900],
+      checkboxTheme: CheckboxThemeData(
+        fillColor: MaterialStateColor.resolveWith(
+          (states) {
+            return Colors.black;
+          },
+        ),
       ),
       floatingActionButtonTheme: const FloatingActionButtonThemeData(
-        foregroundColor: Colors.white,
-        backgroundColor: Colors.green,
+        foregroundColor: Color(0xFFF8C630),
+        backgroundColor: Colors.black,
       ),
-      textTheme: darkTextTheme,
-      // iconTheme: const IconThemeData(color: kSecondaryColor),
+      textTheme: lightTextTheme,
+      elevatedButtonTheme: ElevatedButtonThemeData(
+        style: ButtonStyle(
+          shape: MaterialStateProperty.all<RoundedRectangleBorder>(
+            RoundedRectangleBorder(
+              side: const BorderSide(
+                width: 1,
+                color: Color(0xFF707070),
+              ),
+              borderRadius: BorderRadius.circular(Sizes.p3),
+            ),
+          ),
+          backgroundColor: MaterialStateProperty.all<Color>(const Color(0xFF2F2F2F)),
+          foregroundColor: MaterialStateProperty.all<Color>(const Color(0xFF707070)),
+        ),
+      ),
+      dialogTheme: const DialogTheme(
+        surfaceTintColor: kPrimaryColor,
+      ),
+      cardTheme: CardTheme(
+        elevation: 0,
+        surfaceTintColor: kPrimaryColor,
+        color: const Color(0xFFF4F4F4),
+        shape: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(5),
+          borderSide: BorderSide.none,
+        ),
+      ),
+      navigationRailTheme: const NavigationRailThemeData(
+        useIndicator: false,
+        backgroundColor: kPrimaryColor,
+      ),
     );
   }
 }

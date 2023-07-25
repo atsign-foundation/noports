@@ -21,5 +21,15 @@
     "homeDirectoryHint" : "The home directory on this host",
     "sessionId" : "Session ID",
     "sendSshPublicKey" : "Send SSH Public Key",
-    "rsa" : "RSA"
+    "rsa" : "RSA",
+    "keyFile" : "Key File",
+    "from" : "From",
+    "to" : "To",
+    "host" : "Host",
+    "port" : "Port",
+    "localPort": "Local Port",
+    "sshPublicKey" : "SSH Public Key",
+    "localSshOptions" : "Local SSH Options",
+    "verbose" : "verbose",
+    "remoteUserName" : "Remote User Name"
 }

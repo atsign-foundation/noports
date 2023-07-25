@@ -24,7 +24,7 @@ class HomeScreen extends StatelessWidget {
                 Padding(
                   padding: const EdgeInsets.only(left: Sizes.p36, top: Sizes.p21),
                   child: SvgPicture.asset(
-                    'assets/images/noports_dark.svg',
+                    'assets/images/noports_light.svg',
                   ),
                 ),
 
