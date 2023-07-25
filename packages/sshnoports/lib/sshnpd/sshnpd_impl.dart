@@ -341,8 +341,9 @@ class SSHNPDImpl implements SSHNPD {
     // The incantation for that is -R clientHostPort:localhost:22
     //
     // We will disable strict host checking since we don't know what hosts we're going to be
-    // connecting to. We add these options:
-    // -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null
+    // connecting to. Instead, we'll accept new hostnames but the checks will still be executed
+    // if the host identity has changed.
+    // -o StrictHostKeyChecking=accept-new
     //
     // We don't want keyboard interactive: we add -o BatchMode=yes
     //
@@ -351,8 +352,8 @@ class SSHNPDImpl implements SSHNPD {
     // So we will add options 'ForkAfterAuthentication=yes' and also
     // 'ExitOnForwardFailure=yes' so that it won't fork until after
     // all of the forwarding has been successfully set up.
-    // This allows us to do a simple Process.run() knowing we will get an exit
-    // code 0 promptly if the ssh connection has succeeded, and the ssh
+    // This allows us to do a simple Process.start() knowing we will get an exit
+    // code 0 promptly if the ssh connection has succeeded, and the actual ssh
     // connection can run happily in the background.
     //
     // Lastly, we want to ensure that if the connection isn't used then it closes after 15 seconds
@@ -369,11 +370,10 @@ class SSHNPDImpl implements SSHNPD {
       '-p', port,
       '-i', pemFile.absolute.path,
       '-R', '$localPort:localhost:22',
-      '-v',
+      '-o LogLevel=VERBOSE',
       '-t', '-t',
-      '-o', 'StrictHostKeyChecking=no',
+      '-o', 'StrictHostKeyChecking=accept-new',
       '-o', 'IdentitiesOnly=yes',
-      '-o', 'UserKnownHostsFile=/dev/null',
       '-o', 'BatchMode=yes',
       '-o', 'ExitOnForwardFailure=yes',
       '-o', 'ForkAfterAuthentication=yes',
