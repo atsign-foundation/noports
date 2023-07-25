@@ -12,8 +12,14 @@ import 'package:sshnoports/sshnp/sshnp_params.dart';
 void main(List<String> args) async {
   AtSignLogger.root_level = 'SHOUT';
   SSHNP? sshnp;
+  SSHNPParams? params;
 
-  var params = SSHNPParams.fromPartial(SSHNPPartialParams.fromArgs(args));
+  try {
+    params = SSHNPParams.fromPartial(SSHNPPartialParams.fromArgs(args));
+  } catch (error) {
+    stderr.writeln(error.toString());
+    exit(1);
+  }
 
   try {
     sshnp = await SSHNP.fromParams(params);
