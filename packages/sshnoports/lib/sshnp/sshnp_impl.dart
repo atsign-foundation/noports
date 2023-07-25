@@ -376,6 +376,7 @@ class SSHNPImpl implements SSHNP {
         stdout.write(
             'ssh -p $localPort $remoteUsername@localhost'
                 ' -o StrictHostKeyChecking=accept-new'
+                ' -o IdentitiesOnly=yes'
                 ' -i ${sendSshPublicKey.replaceFirst(RegExp(r'.pub$'), '')}');
       } else {
         stdout.write('ssh -p $localPort $remoteUsername@localhost -o ssh'
