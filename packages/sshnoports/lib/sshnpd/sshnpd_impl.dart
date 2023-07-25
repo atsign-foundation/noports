@@ -383,7 +383,6 @@ class SSHNPDImpl implements SSHNPD {
     // Because of the options we are using, we can wait for this process
     // to complete, because it will exit with exitCode 0 once it has connected
     // successfully
-    ProcessResult? result;
     late int sshExitCode;
     try {
       Process process = await Process.start('/usr/bin/ssh', args);
