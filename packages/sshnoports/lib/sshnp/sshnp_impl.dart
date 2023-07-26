@@ -541,13 +541,15 @@ class SSHNPImpl implements SSHNP {
   }
 
   @override
-  Future<(Iterable<String>, Iterable<String>)> listDevices() async {
+  Future<(Iterable<String>, Iterable<String>, Map<String, dynamic>)>
+      listDevices() async {
     // get all the keys devicename.*.sshnpd
     var atKeys =
         await atClient.getAtKeys(regex: 'devicename\\.$asciiMatcher\\.sshnpd');
 
     var devices = <String>{};
     var heartbeats = <String>{};
+    var info = <String, dynamic>{};
 
     // Listen for heartbeat notifications
     atClient.notificationService
@@ -557,6 +559,7 @@ class SSHNPImpl implements SSHNP {
       var devicename = deviceInfo['devicename'];
       if (devicename != null) {
         heartbeats.add(devicename);
+        info[devicename] = deviceInfo;
       }
     });
 
@@ -594,7 +597,11 @@ class SSHNPImpl implements SSHNP {
 
     // The intersection is in place on the off chance that some random device
     // sends a heartbeat notification, but is not on the list of devices
-    return (devices.intersection(heartbeats), devices.difference(heartbeats));
+    return (
+      devices.intersection(heartbeats),
+      devices.difference(heartbeats),
+      info,
+    );
   }
 
   /// This function sends a notification given an atKey and value

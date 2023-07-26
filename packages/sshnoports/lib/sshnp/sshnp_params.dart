@@ -28,6 +28,9 @@ class SSHNPParams {
   late final String? remoteUsername;
   late final bool verbose;
 
+  /// Special Arguments
+  late final bool listDevices;
+
   SSHNPParams({
     required this.clientAtSign,
     required this.sshnpdAtSign,
@@ -41,6 +44,7 @@ class SSHNPParams {
     this.rsa = false,
     this.remoteUsername,
     String? atKeysFilePath,
+    this.listDevices = false,
   }) {
     // Do we have a username ?
     username = getUserName(throwIfNull: true)!;
@@ -76,6 +80,7 @@ class SSHNPParams {
       verbose: partial.verbose ?? false,
       remoteUsername: partial.remoteUsername,
       atKeysFilePath: partial.atKeysFilePath,
+      listDevices: partial.listDevices,
     );
   }
 }
@@ -84,6 +89,7 @@ class SSHNPParams {
 /// This may be used when part of the params come from separate sources
 /// e.g. default values from a config file and the rest from the command line
 class SSHNPPartialParams {
+  /// Main Params
   late final String? clientAtSign;
   late final String? sshnpdAtSign;
   late final String? host;
@@ -96,6 +102,10 @@ class SSHNPPartialParams {
   late final bool? rsa;
   late final String? remoteUsername;
   late final bool? verbose;
+
+  /// Special Params
+  // N.B. config file is a meta param and doesn't need to be included
+  late final bool listDevices;
 
   // Non param variables
   static final ArgParser parser = _createArgParser();
@@ -113,6 +123,7 @@ class SSHNPPartialParams {
     this.rsa,
     this.remoteUsername,
     this.verbose,
+    this.listDevices = false,
   });
 
   factory SSHNPPartialParams.empty() {
@@ -138,6 +149,7 @@ class SSHNPPartialParams {
       rsa: params2.rsa ?? params1.rsa,
       remoteUsername: params2.remoteUsername ?? params1.remoteUsername,
       verbose: params2.verbose ?? params1.verbose,
+      listDevices: params2.listDevices || params1.listDevices,
     );
   }
 
@@ -155,6 +167,7 @@ class SSHNPPartialParams {
       rsa: args['rsa'],
       remoteUsername: args['remote-user-name'],
       verbose: args['verbose'],
+      listDevices: args['list-devices'] ?? false,
     );
   }
 
@@ -189,8 +202,11 @@ class SSHNPPartialParams {
     );
   }
 
-  static ArgParser _createArgParser(
-      {bool withConfig = true, bool withDefaults = true}) {
+  static ArgParser _createArgParser({
+    bool withConfig = true,
+    bool withDefaults = true,
+    bool withListDevices = true,
+  }) {
     var parser = ArgParser();
     // Basic arguments
     for (SSHNPArg arg in SSHNPArg.args) {
@@ -227,6 +243,14 @@ class SSHNPPartialParams {
         'config-file',
         help:
             'Read args from a config file\nMandatory args are not required if already supplied in the config file',
+      );
+    }
+    if (withListDevices) {
+      parser.addFlag(
+        'list-devices',
+        aliases: ['ls'],
+        negatable: false,
+        help: 'List available devices',
       );
     }
     return parser;

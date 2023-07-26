@@ -24,6 +24,31 @@ void main(List<String> args) async {
       exit(1);
     });
 
+    if (params.listDevices) {
+      var (active, off, info) = await sshnp.listDevices();
+      if (active.isEmpty && off.isEmpty) {
+        print('No devices found\n');
+        print(
+            'Note: only devices with sshnpd version 3.4.0 or higher are supported by this command');
+        print(
+            'Please update your devices to sshnpd version >= 3.4.0 and try again');
+        exit(0);
+      }
+      if (active.isNotEmpty) {
+        print('Active Devices:');
+        for (var device in active) {
+          print('  $device - ${info[device]['version']}');
+        }
+      }
+      if (off.isNotEmpty) {
+        print('Inactive Devices:');
+        for (var device in off) {
+          print('  $device - ${info[device]['version']}');
+        }
+      }
+      exit(0);
+    }
+
     await sshnp.init();
     await sshnp.run();
     exit(0);
