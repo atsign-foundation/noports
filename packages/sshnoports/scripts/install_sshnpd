@@ -221,11 +221,15 @@ download() {
 
   if [ -n "$SSHNP_DEV_MODE" ]; then
     echo "DEV MODE: Installing from local repo: $SSHNP_DEV_MODE";
+    mkdir -p "$HOME_PATH/.atsign/temp/$BINARY_NAME/templates/"
+    mkdir -p "$HOME_PATH/.atsign/temp/$BINARY_NAME/scripts/"
+
     dart compile exe "$SSHNP_DEV_MODE/packages/sshnoports/bin/sshnp.dart" -o "$HOME_PATH/.atsign/temp/$BINARY_NAME/sshnp";
     dart compile exe "$SSHNP_DEV_MODE/packages/sshnoports/bin/sshnpd.dart" -o "$HOME_PATH/.atsign/temp/$BINARY_NAME/sshnpd";
     dart compile exe "$SSHNP_DEV_MODE/packages/sshnoports/bin/sshrv.dart" -o "$HOME_PATH/.atsign/temp/$BINARY_NAME/sshrv";
     dart compile exe "$SSHNP_DEV_MODE/packages/sshnoports/bin/sshrvd.dart" -o "$HOME_PATH/.atsign/temp/$BINARY_NAME/sshrvd";
     dart compile exe "$SSHNP_DEV_MODE/packages/sshnoports/bin/activate_cli.dart" -o "$HOME_PATH/.atsign/temp/$BINARY_NAME/at_activate";
+
 
     cp -R "$SSHNP_DEV_MODE/packages/sshnoports/templates/" "$HOME_PATH/.atsign/temp/$BINARY_NAME/templates/";
     cp "$SSHNP_DEV_MODE"/packages/sshnoports/scripts/* "$HOME_PATH/.atsign/temp/$BINARY_NAME";
