@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:at_client/at_client.dart';
@@ -545,13 +546,22 @@ class SSHNPImpl implements SSHNP {
     atClient.notificationService
         .subscribe(regex: 'heartbeat\\.$asciiMatcher', shouldDecrypt: true)
         .listen((notification) {
-      heartbeats.add(notification.value.toString());
+      var deviceInfo = jsonDecode(notification.value ?? '{}');
+      var devicename = deviceInfo['devicename'];
+      if (devicename != null) {
+        heartbeats.add(devicename);
+      }
     });
 
     // for each key, get the value
     for (var entryKey in atKeys) {
-      var devicename = await atClient.get(entryKey);
+      var deviceInfo = jsonDecode((await atClient.get(entryKey)).value ?? '{}');
+      var devicename = deviceInfo['devicename'];
       // send a ping to the device
+
+      if (devicename == null) {
+        continue;
+      }
 
       var metaData = Metadata()
         ..isPublic = false
@@ -573,7 +583,7 @@ class SSHNPImpl implements SSHNP {
     }
 
     // wait for 10 seconds in case any are being slow
-    await Future.delayed(const Duration(seconds: 10));
+    await Future.delayed(const Duration(seconds: 5));
 
     // The intersection is in place on the off chance that some random device
     // sends a heartbeat notification, but is not on the list of devices
