@@ -572,10 +572,7 @@ class SSHNPDImpl implements SSHNPD {
   /// This function sends a notification given an atKey and value
   Future<void> _notify(AtKey atKey, String value,
       {String sessionId = ""}) async {
-    AtClient atClient = AtClientManager.getInstance().atClient;
-    NotificationService notificationService = atClient.notificationService;
-
-    await notificationService
+    await atClient.notificationService
         .notify(NotificationParams.forUpdate(atKey, value: value),
             onSuccess: (notification) {
       logger.info('SUCCESS:$notification for: $sessionId with value: $value');
