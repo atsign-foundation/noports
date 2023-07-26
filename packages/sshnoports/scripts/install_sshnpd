@@ -227,8 +227,8 @@ download() {
     dart compile exe "$SSHNP_DEV_MODE/bin/sshrvd.dart" -o "$HOME_PATH/.atsign/temp/$BINARY_NAME/sshrvd";
     dart compile exe "$SSHNP_DEV_MODE/bin/activate_cli.dart" -o "$HOME_PATH/.atsign/temp/$BINARY_NAME/at_activate";
 
-    cp -R "$SSHNP_DEV_MODE/templates/" "$HOME_PATH/.atsign/temp/$BINARY_NAME/templates/";
-    cp "$SSHNP_DEV_MODE"/scripts/* "$HOME_PATH/.atsign/temp/$BINARY_NAME";
+    cp -R "$SSHNP_DEV_MODE/packages/sshnoports/templates/" "$HOME_PATH/.atsign/temp/$BINARY_NAME/templates/";
+    cp "$SSHNP_DEV_MODE"/packages/sshnoports/scripts/* "$HOME_PATH/.atsign/temp/$BINARY_NAME";
   fi
 }
 
