@@ -5,6 +5,7 @@ on:
   push:
     branches:
       - trunk
+
   pull_request:
     branches:
       - trunk
@@ -12,595 +13,227 @@ on:
 env:
   SSHNP_ATSIGN: "@8incanteater"
   SSHNPD_ATSIGN: "@8052simple"
-  SSHRVD_ATSIGN: "@8485wealthy51"
-  SSHRVD_RV_AM_ATSIGN: "@rv_am"
   DOCKER_COMPOSE_UP_CMD: "docker compose up --exit-code-from=container-sshnp"
-  WAITING_TIME_WITH_SYNC: 30
-  WAITING_TIME_WITHOUT_SYNC: 2
+
+  # Fallback values for missing matrix values
+  DEFAULT_RVD_ATSIGN: "@rv_am"
+
+  RELEASES: |
+    latest
+    v3.1.2
+    v3.2.0
+    v3.3.0
+
+  BRANCHES: |
+    trunk
 
 jobs:
-  # e2e-set-up-sshrvd:
-  #   concurrency: e2e-set-up-sshrvd
-  #   runs-on: ubuntu-latest
-  #   steps:
-  #     - uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9 # v3.5.3
-
-  #     - name: Copy keys
-  #       working-directory: packages/sshnoports/test/end2end_tests/contexts
-  #       run: |
-  #         echo "${{ secrets.ATKEYS_8485WEALTHY51 }}" > sshrvd/keys/${{ env.SSHRVD_ATSIGN }}_key.atKeys
-
-  #     - name: Set up sshrvd
-  #       working-directory: packages/sshnoports/test/end2end_tests/tools/configuration
-  #       run: |
-  #         ./setup-sshrvd-entrypoint.sh ${{ env.SSHRVD_ATSIGN }}
-
-  #     - name: Ensure entrypoint exists
-  #       working-directory: packages/sshnoports/test/end2end_tests/contexts
-  #       run: |
-  #         cat sshrvd/entrypoint.sh
-
-  #     - name: Docker compose up
-  #       working-directory: packages/sshnoports/test/end2end_tests/utility/sshrvd-release
-  #       run: |
-  #         docker compose up --build -d
-
-  e2e-local-local:
-    # needs: [e2e-set-up-sshrvd]
+  e2e_test:
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        np: [local, trunk]
+        npd: [local, trunk]
+        wait: [4]
+        exclude:
+          # Don't run these against themselves, they're irrelevant
+          - np: trunk
+            npd: trunk
+        include:
+          ### RVD TESTS ###
+          # - np: local
+          #   npd: local
+          #   rvd: local
+          #   rvd_atsign: "@8485wealthy51"
+          #   wait: 4
+
+          - np: latest
+            npd: latest
+            rvd: local
+            rvd_atsign: "@8485wealthy51"
+            wait: 4
+
+          ### BACKWARD TESTS WITHOUT SYNC ###
+          - np: local
+            npd: latest
+            wait: 4
+
+          - np: latest
+            npd: local
+            wait: 4
+
+          - np: local
+            npd: v3.3.0
+            wait: 4
+
+          - np: v3.3.0
+            npd: local
+            wait: 4
+
+          ### BACKWARD TESTS WHICH NEED SYNC ###
+          - np: local
+            npd: v3.1.2
+            wait: 30
+
+          - np: local
+            npd: v3.2.0
+            wait: 30
+
+          - np: v3.1.2
+            npd: local
+            wait: 30
+
+          - np: v3.2.0
+            npd: local
+            wait: 30
     steps:
+      - name: Show Matrix Values
+        run: |
+          echo "job index: ${{ strategy.job-index }}"
+          echo "np: ${{ matrix.np }}"
+          echo "npd: ${{ matrix.npd }}"
+          echo "rvd: ${{ matrix.rvd }}"
+          echo "rvd: ${{ matrix.rvd_atsign || env.DEFAULT_RVD_ATSIGN }}"
+          echo "wait: ${{ matrix.wait }}"
+
       - uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9 # v3.5.3
 
-      - name: Copy keys
-        working-directory: packages/sshnoports/test/end2end_tests/contexts
+      - name: Copy NP/NPD keys
+        working-directory: tests/end2end_tests/contexts
         run: |
           echo "${{ secrets.ATKEYS_8INCANTEATER }}" > sshnp/keys/${{ env.SSHNP_ATSIGN }}_key.atKeys
           echo "${{ secrets.ATKEYS_8052SIMPLE }}" > sshnpd/keys/${{ env.SSHNPD_ATSIGN }}_key.atKeys
+
+      - name: Copy RVD keys
+        working-directory: tests/end2end_tests/contexts
+        if: matrix.rvd
+        run: |
+          echo "${{ secrets.ATKEYS_8485WEALTHY51 }}" > sshrvd/keys/${{ matrix.rvd_atsign }}_key.atKeys
 
       - name: Set up entrypoints
-        working-directory: packages/sshnoports/test/end2end_tests/tools/configuration
-        run: |
-          ./setup-sshnp-entrypoint.sh ${{ github.run_id }}${{ github.run_attempt }}1 ${{ env.SSHNP_ATSIGN }} ${{ env.SSHNPD_ATSIGN }} ${{ env.SSHRVD_RV_AM_ATSIGN }} ${{ env.WAITING_TIME_WITHOUT_SYNC }}
-          ./setup-sshnpd-entrypoint.sh ${{ github.run_id }}${{ github.run_attempt }}1 ${{ env.SSHNP_ATSIGN }} ${{ env.SSHNPD_ATSIGN }}
+        uses: ./.github/composite/setup_entrypoints
+        with:
+          devicename: ${{ github.run_id }}${{ github.run_attempt }}${{ strategy.job-index }}
+          sshnp_atsign: ${{ env.SSHNP_ATSIGN }}
+          sshnpd_atsign: ${{ env.SSHNPD_ATSIGN }}
+          sshrvd_atsign: ${{ matrix.rvd_atsign || env.DEFAULT_RVD_ATSIGN }}
+          wait_time: ${{ matrix.wait }}
 
       - name: Ensure entrypoints exist
-        working-directory: packages/sshnoports/test/end2end_tests/contexts
-        run: |
-          cat sshnp/entrypoint.sh
-          cat sshnpd/entrypoint.sh
-
-      - name: Build
-        working-directory: packages/sshnoports/test/end2end_tests/tests/local-local
-        run: |
-          docker compose build
-
-      - name: Test
-        working-directory: packages/sshnoports/test/end2end_tests/tests/local-local
-        run: |
-          ${{ env.DOCKER_COMPOSE_UP_CMD }}
-
-      - name: Logs
-        if: always()
-        working-directory: packages/sshnoports/test/end2end_tests/tests/local-local
-        run: |
-          docker compose ps -a
-          docker compose logs --timestamps
-
-      - name: Tear down
-        if: always()
-        working-directory: packages/sshnoports/test/end2end_tests/tests/local-local
-        run: |
-          docker compose down
-
-  e2e-local-trunk:
-    # needs: [e2e-set-up-sshrvd]
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9 # v3.5.3
-
-      - name: Copy keys
-        working-directory: packages/sshnoports/test/end2end_tests/contexts
-        run: |
-          echo "${{ secrets.ATKEYS_8INCANTEATER }}" > sshnp/keys/${{ env.SSHNP_ATSIGN }}_key.atKeys
-          echo "${{ secrets.ATKEYS_8052SIMPLE }}" > sshnpd/keys/${{ env.SSHNPD_ATSIGN }}_key.atKeys
-
-      - name: Set up
-        working-directory: packages/sshnoports/test/end2end_tests/tools/configuration
-        run: |
-          ./setup-sshnp-entrypoint.sh ${{ github.run_id }}${{ github.run_attempt }}2 ${{ env.SSHNP_ATSIGN }} ${{ env.SSHNPD_ATSIGN }} ${{ env.SSHRVD_RV_AM_ATSIGN }} ${{ env.WAITING_TIME_WITHOUT_SYNC }}
-          ./setup-sshnpd-entrypoint.sh ${{ github.run_id }}${{ github.run_attempt }}2 ${{ env.SSHNP_ATSIGN }} ${{ env.SSHNPD_ATSIGN }}
-
-      - name: Ensure entrypoints exist
-        working-directory: packages/sshnoports/test/end2end_tests/contexts
-        run: |
-          cat sshnp/entrypoint.sh
-          cat sshnpd/entrypoint.sh
-
-      - name: Build
-        working-directory: packages/sshnoports/test/end2end_tests/tests/local-trunk
-        run: |
-          docker compose build
-
-      - name: Test
-        working-directory: packages/sshnoports/test/end2end_tests/tests/local-trunk
-        run: |
-          ${{ env.DOCKER_COMPOSE_UP_CMD }}
-
-      - name: Logs
-        if: always()
-        working-directory: packages/sshnoports/test/end2end_tests/tests/local-trunk
-        run: |
-          docker compose ps -a
-          docker compose logs --timestamps
-
-      - name: Tear down
-        if: always()
-        working-directory: packages/sshnoports/test/end2end_tests/tests/local-trunk
-        run: |
-          docker compose down
-
-  e2e-trunk-local:
-    # needs: [e2e-set-up-sshrvd]
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9 # v3.5.3
-
-      - name: Copy keys
-        working-directory: packages/sshnoports/test/end2end_tests/contexts
-        run: |
-          echo "${{ secrets.ATKEYS_8INCANTEATER }}" > sshnp/keys/${{ env.SSHNP_ATSIGN }}_key.atKeys
-          echo "${{ secrets.ATKEYS_8052SIMPLE }}" > sshnpd/keys/${{ env.SSHNPD_ATSIGN }}_key.atKeys
-
-      - name: Set up
-        working-directory: packages/sshnoports/test/end2end_tests/tools/configuration
-        run: |
-          ./setup-sshnp-entrypoint.sh ${{ github.run_id }}${{ github.run_attempt }}3 ${{ env.SSHNP_ATSIGN }} ${{ env.SSHNPD_ATSIGN }} ${{ env.SSHRVD_RV_AM_ATSIGN }} ${{ env.WAITING_TIME_WITHOUT_SYNC }}
-          ./setup-sshnpd-entrypoint.sh ${{ github.run_id }}${{ github.run_attempt }}3 ${{ env.SSHNP_ATSIGN }} ${{ env.SSHNPD_ATSIGN }}
-
-      - name: Ensure entrypoints exist
-        working-directory: packages/sshnoports/test/end2end_tests/contexts
-        run: |
-          cat sshnp/entrypoint.sh
-          cat sshnpd/entrypoint.sh
-
-      - name: Build
-        working-directory: packages/sshnoports/test/end2end_tests/tests/trunk-local
-        run: |
-          docker compose build
-
-      - name: Test
-        working-directory: packages/sshnoports/test/end2end_tests/tests/trunk-local
-        run: |
-          ${{ env.DOCKER_COMPOSE_UP_CMD }}
-
-      - name: Logs
-        if: always()
-        working-directory: packages/sshnoports/test/end2end_tests/tests/trunk-local
-        run: |
-          docker compose ps -a
-          docker compose logs --timestamps
-
-      - name: Tear down
-        if: always()
-        working-directory: packages/sshnoports/test/end2end_tests/tests/trunk-local
-        run: |
-          docker compose down
-
-  e2e-local-release:
-    # needs: [e2e-set-up-sshrvd]
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9 # v3.5.3
-
-      - name: Copy keys
-        working-directory: packages/sshnoports/test/end2end_tests/contexts
-        run: |
-          echo "${{ secrets.ATKEYS_8INCANTEATER }}" > sshnp/keys/${{ env.SSHNP_ATSIGN }}_key.atKeys
-          echo "${{ secrets.ATKEYS_8052SIMPLE }}" > sshnpd/keys/${{ env.SSHNPD_ATSIGN }}_key.atKeys
-
-      - name: Set up
-        working-directory: packages/sshnoports/test/end2end_tests/tools/configuration
-        run: |
-          ./setup-sshnp-entrypoint.sh ${{ github.run_id }}${{ github.run_attempt }}4 ${{ env.SSHNP_ATSIGN }} ${{ env.SSHNPD_ATSIGN }} ${{ env.SSHRVD_RV_AM_ATSIGN }} ${{ env.WAITING_TIME_WITHOUT_SYNC }}
-          ./setup-sshnpd-entrypoint.sh ${{ github.run_id }}${{ github.run_attempt }}4 ${{ env.SSHNP_ATSIGN }} ${{ env.SSHNPD_ATSIGN }}
-
-      - name: Ensure entrypoints exist
-        working-directory: packages/sshnoports/test/end2end_tests/contexts
-        run: |
-          cat sshnp/entrypoint.sh
-          cat sshnpd/entrypoint.sh
-
-      - name: Build
-        working-directory: packages/sshnoports/test/end2end_tests/tests/local-release
-        run: |
-          docker compose build
-
-      - name: Test
-        working-directory: packages/sshnoports/test/end2end_tests/tests/local-release
-        run: |
-          ${{ env.DOCKER_COMPOSE_UP_CMD }}
-
-      - name: Logs
-        if: always()
-        working-directory: packages/sshnoports/test/end2end_tests/tests/local-release
-        run: |
-          docker compose ps -a
-          docker compose logs --timestamps
-
-      - name: Tear down
-        if: always()
-        working-directory: packages/sshnoports/test/end2end_tests/tests/local-release
-        run: |
-          docker compose down
-
-  e2e-release-local:
-    # needs: [e2e-set-up-sshrvd]
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9 # v3.5.3
-
-      - name: Copy keys
-        working-directory: packages/sshnoports/test/end2end_tests/contexts
-        run: |
-          echo "${{ secrets.ATKEYS_8INCANTEATER }}" > sshnp/keys/${{ env.SSHNP_ATSIGN }}_key.atKeys
-          echo "${{ secrets.ATKEYS_8052SIMPLE }}" > sshnpd/keys/${{ env.SSHNPD_ATSIGN }}_key.atKeys
-
-      - name: Set up
-        working-directory: packages/sshnoports/test/end2end_tests/tools/configuration
-        run: |
-          ./setup-sshnp-entrypoint.sh ${{ github.run_id }}${{ github.run_attempt }}5 ${{ env.SSHNP_ATSIGN }} ${{ env.SSHNPD_ATSIGN }} ${{ env.SSHRVD_RV_AM_ATSIGN }} ${{ env.WAITING_TIME_WITHOUT_SYNC }}
-          ./setup-sshnpd-entrypoint.sh ${{ github.run_id }}${{ github.run_attempt }}5 ${{ env.SSHNP_ATSIGN }} ${{ env.SSHNPD_ATSIGN }}
-
-      - name: Ensure entrypoints exist
-        working-directory: packages/sshnoports/test/end2end_tests/contexts
-        run: |
-          cat sshnp/entrypoint.sh
-          cat sshnpd/entrypoint.sh
-
-      - name: Build
-        working-directory: packages/sshnoports/test/end2end_tests/tests/release-local
-        run: |
-          docker compose build
-
-      - name: Test
-        working-directory: packages/sshnoports/test/end2end_tests/tests/release-local
-        run: |
-          ${{ env.DOCKER_COMPOSE_UP_CMD }}
-
-      - name: Logs
-        if: always()
-        working-directory: packages/sshnoports/test/end2end_tests/tests/release-local
-        run: |
-          docker compose ps -a
-          docker compose logs --timestamps
-
-      - name: Tear down
-        if: always()
-        working-directory: packages/sshnoports/test/end2end_tests/tests/release-local
-        run: |
-          docker compose down
-
-  e2e-local-release3-2-0:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9 # v3.5.3
-
-      - name: Copy keys
-        working-directory: packages/sshnoports/test/end2end_tests/contexts
-        run: |
-          echo "${{ secrets.ATKEYS_8INCANTEATER }}" > sshnp/keys/${{ env.SSHNP_ATSIGN }}_key.atKeys
-          echo "${{ secrets.ATKEYS_8052SIMPLE }}" > sshnpd/keys/${{ env.SSHNPD_ATSIGN }}_key.atKeys
-
-      - name: Set up
-        working-directory: packages/sshnoports/test/end2end_tests/tools/configuration
-        run: |
-          ./setup-sshnp-entrypoint.sh ${{ github.run_id }}${{ github.run_attempt }}6 ${{ env.SSHNP_ATSIGN }} ${{ env.SSHNPD_ATSIGN }} ${{ env.SSHRVD_RV_AM_ATSIGN }} ${{ env.WAITING_TIME_WITH_SYNC }}
-          ./setup-sshnpd-entrypoint.sh ${{ github.run_id }}${{ github.run_attempt }}6 ${{ env.SSHNP_ATSIGN }} ${{ env.SSHNPD_ATSIGN }}
-
-      - name: Ensure entrypoints exist
-        working-directory: packages/sshnoports/test/end2end_tests/contexts
-        run: |
-          cat sshnp/entrypoint.sh
-          cat sshnpd/entrypoint.sh
-
-      - name: Build
-        working-directory: packages/sshnoports/test/end2end_tests/tests/local-release3.2.0
-        run: |
-          docker compose build
-
-      - name: Test
-        working-directory: packages/sshnoports/test/end2end_tests/tests/local-release3.2.0
-        run: |
-          ${{ env.DOCKER_COMPOSE_UP_CMD }}
-
-      - name: Logs
-        if: always()
-        working-directory: packages/sshnoports/test/end2end_tests/tests/local-release3.2.0
-        run: |
-          docker compose ps -a
-          docker compose logs --timestamps
-
-      - name: Tear down
-        if: always()
-        working-directory: packages/sshnoports/test/end2end_tests/tests/local-release3.2.0
-        run: |
-          docker compose down
-
-  e2e-release3-2-0-local:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9 # v3.5.3
-
-      - name: Copy keys
-        working-directory: packages/sshnoports/test/end2end_tests/contexts
-        run: |
-          echo "${{ secrets.ATKEYS_8INCANTEATER }}" > sshnp/keys/${{ env.SSHNP_ATSIGN }}_key.atKeys
-          echo "${{ secrets.ATKEYS_8052SIMPLE }}" > sshnpd/keys/${{ env.SSHNPD_ATSIGN }}_key.atKeys
-
-      - name: Set up
-        working-directory: packages/sshnoports/test/end2end_tests/tools/configuration
-        run: |
-          ./setup-sshnp-entrypoint.sh ${{ github.run_id }}${{ github.run_attempt }}7 ${{ env.SSHNP_ATSIGN }} ${{ env.SSHNPD_ATSIGN }} ${{ env.SSHRVD_RV_AM_ATSIGN }} ${{ env.WAITING_TIME_WITHOUT_SYNC }}
-          ./setup-sshnpd-entrypoint.sh ${{ github.run_id }}${{ github.run_attempt }}7 ${{ env.SSHNP_ATSIGN }} ${{ env.SSHNPD_ATSIGN }}
-
-      - name: Ensure entrypoints exist
-        working-directory: packages/sshnoports/test/end2end_tests/contexts
-        run: |
-          cat sshnp/entrypoint.sh
-          cat sshnpd/entrypoint.sh
-
-      - name: Build
-        working-directory: packages/sshnoports/test/end2end_tests/tests/release3.2.0-local
-        run: |
-          docker compose build
-
-      - name: Test
-        working-directory: packages/sshnoports/test/end2end_tests/tests/release3.2.0-local
-        run: |
-          ${{ env.DOCKER_COMPOSE_UP_CMD }}
-
-      - name: Logs
-        if: always()
-        working-directory: packages/sshnoports/test/end2end_tests/tests/release3.2.0-local
-        run: |
-          docker compose ps -a
-          docker compose logs --timestamps
-
-      - name: Tear down
-        if: always()
-        working-directory: packages/sshnoports/test/end2end_tests/tests/release3.2.0-local
-        run: |
-          docker compose down
-
-  e2e-local-release3-3-0:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9 # v3.5.3
-
-      - name: Copy keys
-        working-directory: packages/sshnoports/test/end2end_tests/contexts
-        run: |
-          echo "${{ secrets.ATKEYS_8INCANTEATER }}" > sshnp/keys/${{ env.SSHNP_ATSIGN }}_key.atKeys
-          echo "${{ secrets.ATKEYS_8052SIMPLE }}" > sshnpd/keys/${{ env.SSHNPD_ATSIGN }}_key.atKeys
-
-      - name: Set up
-        working-directory: packages/sshnoports/test/end2end_tests/tools/configuration
-        run: |
-          ./setup-sshnp-entrypoint.sh ${{ github.run_id }}${{ github.run_attempt }}8 ${{ env.SSHNP_ATSIGN }} ${{ env.SSHNPD_ATSIGN }} ${{ env.SSHRVD_RV_AM_ATSIGN }} ${{ env.WAITING_TIME_WITHOUT_SYNC }}
-          ./setup-sshnpd-entrypoint.sh ${{ github.run_id }}${{ github.run_attempt }}8 ${{ env.SSHNP_ATSIGN }} ${{ env.SSHNPD_ATSIGN }}
-
-      - name: Ensure entrypoints exist
-        working-directory: packages/sshnoports/test/end2end_tests/contexts
-        run: |
-          cat sshnp/entrypoint.sh
-          cat sshnpd/entrypoint.sh
-
-      - name: Build
-        working-directory: packages/sshnoports/test/end2end_tests/tests/local-release3.3.0
-        run: |
-          docker compose build
-
-      - name: Test
-        working-directory: packages/sshnoports/test/end2end_tests/tests/local-release3.3.0
-        run: |
-          ${{ env.DOCKER_COMPOSE_UP_CMD }}
-
-      - name: Logs
-        if: always()
-        working-directory: packages/sshnoports/test/end2end_tests/tests/local-release3.3.0
-        run: |
-          docker compose ps -a
-          docker compose logs --timestamps
-
-      - name: Tear down
-        if: always()
-        working-directory: packages/sshnoports/test/end2end_tests/tests/local-release3.3.0
-        run: |
-          docker compose down
-
-  e2e-release3-3-0-local:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9 # v3.5.3
-
-      - name: Copy keys
-        working-directory: packages/sshnoports/test/end2end_tests/contexts
-        run: |
-          echo "${{ secrets.ATKEYS_8INCANTEATER }}" > sshnp/keys/${{ env.SSHNP_ATSIGN }}_key.atKeys
-          echo "${{ secrets.ATKEYS_8052SIMPLE }}" > sshnpd/keys/${{ env.SSHNPD_ATSIGN }}_key.atKeys
-
-      - name: Set up
-        working-directory: packages/sshnoports/test/end2end_tests/tools/configuration
-        run: |
-          ./setup-sshnp-entrypoint.sh ${{ github.run_id }}${{ github.run_attempt }}9 ${{ env.SSHNP_ATSIGN }} ${{ env.SSHNPD_ATSIGN }} ${{ env.SSHRVD_RV_AM_ATSIGN }} ${{ env.WAITING_TIME_WITHOUT_SYNC }}
-          ./setup-sshnpd-entrypoint.sh ${{ github.run_id }}${{ github.run_attempt }}9 ${{ env.SSHNP_ATSIGN }} ${{ env.SSHNPD_ATSIGN }}
-
-      - name: Ensure entrypoints exist
-        working-directory: packages/sshnoports/test/end2end_tests/contexts
-        run: |
-          cat sshnp/entrypoint.sh
-          cat sshnpd/entrypoint.sh
-
-      - name: Build
-        working-directory: packages/sshnoports/test/end2end_tests/tests/release3.3.0-local
-        run: |
-          docker compose build
-
-      - name: Test
-        working-directory: packages/sshnoports/test/end2end_tests/tests/release3.3.0-local
-        run: |
-          ${{ env.DOCKER_COMPOSE_UP_CMD }}
-
-      - name: Logs
-        if: always()
-        working-directory: packages/sshnoports/test/end2end_tests/tests/release3.3.0-local
-        run: |
-          docker compose ps -a
-          docker compose logs --timestamps
-
-      - name: Tear down
-        if: always()
-        working-directory: packages/sshnoports/test/end2end_tests/tests/release3.3.0-local
-        run: |
-          docker compose down
-
-  e2e-release3-1-2-local:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9 # v3.5.3
-
-      - name: Copy keys
-        working-directory: packages/sshnoports/test/end2end_tests/contexts
-        run: |
-          echo "${{ secrets.ATKEYS_8INCANTEATER }}" > sshnp/keys/${{ env.SSHNP_ATSIGN }}_key.atKeys
-          echo "${{ secrets.ATKEYS_8052SIMPLE }}" > sshnpd/keys/${{ env.SSHNPD_ATSIGN }}_key.atKeys
-
-      - name: Set up
-        working-directory: packages/sshnoports/test/end2end_tests/tools/configuration
-        run: |
-          ./setup-sshnp-entrypoint.sh ${{ github.run_id }}${{ github.run_attempt }}10 ${{ env.SSHNP_ATSIGN }} ${{ env.SSHNPD_ATSIGN }} ${{ env.SSHRVD_RV_AM_ATSIGN }} ${{ env.WAITING_TIME_WITHOUT_SYNC }}
-          ./setup-sshnpd-entrypoint.sh ${{ github.run_id }}${{ github.run_attempt }}10 ${{ env.SSHNP_ATSIGN }} ${{ env.SSHNPD_ATSIGN }}
-
-      - name: Ensure entrypoints exist
-        working-directory: packages/sshnoports/test/end2end_tests/contexts
-        run: |
-          cat sshnp/entrypoint.sh
-          cat sshnpd/entrypoint.sh
-
-      - name: Build
-        working-directory: packages/sshnoports/test/end2end_tests/tests/release3.1.2-local
-        run: |
-          docker compose build
-
-      - name: Test
-        working-directory: packages/sshnoports/test/end2end_tests/tests/release3.1.2-local
-        run: |
-          ${{ env.DOCKER_COMPOSE_UP_CMD }}
-
-      - name: Logs
-        if: always()
-        working-directory: packages/sshnoports/test/end2end_tests/tests/release3.1.2-local
-        run: |
-          docker compose ps -a
-          docker compose logs --timestamps
-
-      - name: Tear down
-        if: always()
-        working-directory: packages/sshnoports/test/end2end_tests/tests/release3.1.2-local
-        run: |
-          docker compose down
-
-  e2e-local-release3-1-2:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9 # v3.5.3
-
-      - name: Copy keys
-        working-directory: packages/sshnoports/test/end2end_tests/contexts
-        run: |
-          echo "${{ secrets.ATKEYS_8INCANTEATER }}" > sshnp/keys/${{ env.SSHNP_ATSIGN }}_key.atKeys
-          echo "${{ secrets.ATKEYS_8052SIMPLE }}" > sshnpd/keys/${{ env.SSHNPD_ATSIGN }}_key.atKeys
-
-      - name: Set up
-        working-directory: packages/sshnoports/test/end2end_tests/tools/configuration
-        run: |
-          ./setup-sshnp-entrypoint.sh ${{ github.run_id }}${{ github.run_attempt }}11 ${{ env.SSHNP_ATSIGN }} ${{ env.SSHNPD_ATSIGN }} ${{ env.SSHRVD_RV_AM_ATSIGN }} ${{ env.WAITING_TIME_WITH_SYNC }}
-          ./setup-sshnpd-entrypoint.sh ${{ github.run_id }}${{ github.run_attempt }}11 ${{ env.SSHNP_ATSIGN }} ${{ env.SSHNPD_ATSIGN }}
-
-      - name: Ensure entrypoints exist
-        working-directory: packages/sshnoports/test/end2end_tests/contexts
-        run: |
-          cat sshnp/entrypoint.sh
-          cat sshnpd/entrypoint.sh
-
-      - name: Build
-        working-directory: packages/sshnoports/test/end2end_tests/tests/local-release3.1.2
-        run: |
-          docker compose build
-
-      - name: Test
-        working-directory: packages/sshnoports/test/end2end_tests/tests/local-release3.1.2
-        run: |
-          ${{ env.DOCKER_COMPOSE_UP_CMD }}
-
-      - name: Logs
-        if: always()
-        working-directory: packages/sshnoports/test/end2end_tests/tests/local-release3.1.2
-        run: |
-          docker compose ps -a
-          docker compose logs --timestamps
-
-      - name: Tear down
-        if: always()
-        working-directory: packages/sshnoports/test/end2end_tests/tests/local-release3.1.2
-        run: |
-          docker compose down
-
-  e2e-local-local-local:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9
-
-      - name: Copy keys
-        working-directory: packages/sshnoports/test/end2end_tests/contexts
-        run: |
-          echo "${{ secrets.ATKEYS_8INCANTEATER }}" > sshnp/keys/${{ env.SSHNP_ATSIGN }}_key.atKeys
-          echo "${{ secrets.ATKEYS_8052SIMPLE }}" > sshnpd/keys/${{ env.SSHNPD_ATSIGN }}_key.atKeys
-          echo "${{ secrets.ATKEYS_8485WEALTHY51 }}" > sshrvd/keys/${{ env.SSHRVD_ATSIGN }}_key.atKeys
-
-      - name: Set up
-        working-directory: packages/sshnoports/test/end2end_tests/tools/configuration
-        run: |
-          ./setup-sshnp-entrypoint.sh ${{ github.run_id }}${{ github.run_attempt }}12 ${{ env.SSHNP_ATSIGN }} ${{ env.SSHNPD_ATSIGN }} ${{ env.SSHRVD_ATSIGN }} ${{ env.WAITING_TIME_WITHOUT_SYNC }}
-          ./setup-sshnpd-entrypoint.sh ${{ github.run_id }}${{ github.run_attempt }}12 ${{ env.SSHNP_ATSIGN }} ${{ env.SSHNPD_ATSIGN }}
-          ./setup-sshrvd-entrypoint.sh ${{ env.SSHRVD_ATSIGN }}
-
-      - name: Ensure entrypoints exist
-        working-directory: packages/sshnoports/test/end2end_tests/contexts
+        working-directory: tests/end2end_tests/contexts
         run: |
           cat sshnp/entrypoint.sh
           cat sshnpd/entrypoint.sh
           cat sshrvd/entrypoint.sh
 
+      - name: Store lists in env
+        run: |
+
+      - name: Add runtime-release image to docker-compose.yaml
+        working-directory: tests/end2end_tests/tests
+        if: ${{ contains(env.RELEASES, matrix.np) || contains(env.RELEASES, matrix.npd) || (matrix.rvd && contains(env.RELEASES, matrix.rvd)) }}
+        run: |
+          cat service-image-runtime-release.yaml >> docker-compose.yaml
+          if [ "${{contains(env.RELEASES, matrix.np)}}" = true ]; then
+            echo '        - release=${{ matrix.np }}' >> docker-compose.yaml
+            echo '    image: atsigncompany/sshnp-e2e-runtime:${{ matrix.np }}' >> docker-compose.yaml
+          elif [ "${{contains(env.RELEASES, matrix.npd)}}" = true ]; then
+            echo '        - release=${{ matrix.npd }}' >> docker-compose.yaml
+            echo '    image: atsigncompany/sshnp-e2e-runtime:${{ matrix.npd }}' >> docker-compose.yaml
+          elif [ "${{contains(env.RELEASES, matrix.rvd)}}" = true ]; then
+            echo '        - release=${{ matrix.rvd }}' >> docker-compose.yaml
+            echo '    image: atsigncompany/sshnp-e2e-runtime:${{ matrix.rvd }}' >> docker-compose.yaml
+          fi
+
+      - name: Add runtime-branch image to docker-compose.yaml
+        working-directory: tests/end2end_tests/tests
+        if: ${{ contains(env.BRANCHES, matrix.np) || contains(env.BRANCHES, matrix.npd) || (matrix.rvd && contains(env.BRANCHES, matrix.rvd)) }}
+        run: |
+          cat service-image-runtime-branch.yaml >> docker-compose.yaml
+          if [ "${{contains(env.BRANCHES, matrix.np)}}" = true ]; then
+            echo '        - branch=${{ matrix.np }}' >> docker-compose.yaml
+            echo '    image: atsigncompany/sshnp-e2e-runtime:${{ matrix.np }}' >> docker-compose.yaml
+          elif [ "${{contains(env.BRANCHES, matrix.npd)}}" = true ]; then
+            echo '        - branch=${{ matrix.npd }}' >> docker-compose.yaml
+            echo '    image: atsigncompany/sshnp-e2e-runtime:${{ matrix.npd }}' >> docker-compose.yaml
+          elif [ "${{contains(env.BRANCHES, matrix.rvd)}}" = true ]; then
+            echo '        - branch=${{ matrix.rvd }}' >> docker-compose.yaml
+            echo '    image: atsigncompany/sshnp-e2e-runtime:${{ matrix.rvd }}' >> docker-compose.yaml
+          fi
+
+      - name: Add container-sshnp to docker-compose.yaml
+        working-directory: tests/end2end_tests/tests
+        run: |
+          cat service-container-sshnp.yaml >> docker-compose.yaml
+          echo '    image: atsigncompany/sshnp-e2e-runtime:${{ matrix.np }}' >> docker-compose.yaml
+          echo '    depends_on:' >> docker-compose.yaml
+          echo '      - container-sshnpd' >> docker-compose.yaml
+          if [ "${{contains(env.RELEASES, matrix.np)}}" = true ]; then
+            echo '      - image-runtime-release' >> docker-compose.yaml
+          elif [ "${{contains(env.BRANCHES, matrix.np)}}" = true ]; then
+            echo '      - image-runtime-branch' >> docker-compose.yaml
+          else
+            echo '      - image-runtime-local' >> docker-compose.yaml
+          fi
+
+      - name: Add container-sshnpd to docker-compose.yaml
+        working-directory: tests/end2end_tests/tests
+        run: |
+          cat service-container-sshnpd.yaml >> docker-compose.yaml
+          echo '    image: atsigncompany/sshnp-e2e-runtime:${{ matrix.npd }}' >> docker-compose.yaml
+          echo '    depends_on:' >> docker-compose.yaml
+          if [ "${{ matrix.rvd }}" = true ]; then
+            echo '      - container-sshrvd' >> docker-compose.yaml
+          fi
+          if [ "${{contains(env.RELEASES, matrix.npd)}}" = true ]; then
+            echo '      - image-runtime-release' >> docker-compose.yaml
+          elif [ "${{contains(env.BRANCHES, matrix.npd)}}" = true ]; then
+            echo '      - image-runtime-branch' >> docker-compose.yaml
+          else
+            echo '      - image-runtime-local' >> docker-compose.yaml
+          fi
+
+      - name: Add container-sshrvd to docker-compose.yaml
+        working-directory: tests/end2end_tests/tests
+        if: matrix.rvd
+        run: |
+          cat service-container-sshrvd.yaml >> docker-compose.yaml
+          echo '    image: atsigncompany/sshnp-e2e-runtime:${{ matrix.rvd }}' >> docker-compose.yaml
+          echo '    depends_on:' >> docker-compose.yaml
+          if [ "${{contains(env.RELEASES, matrix.rvd)}}" = true ]; then
+            echo '      - image-runtime-release' >> docker-compose.yaml
+          elif [ "${{contains(env.BRANCHES, matrix.rvd)}}" = true ]; then
+            echo '      - image-runtime-branch' >> docker-compose.yaml
+          else
+            echo '      - image-runtime-local' >> docker-compose.yaml
+          fi
+
+      - name: docker-compose.yaml
+        if: always()
+        working-directory: tests/end2end_tests/tests
+        run: |
+          cat docker-compose.yaml
+
       - name: Build
-        working-directory: packages/sshnoports/test/end2end_tests/tests/local-local-local
+        working-directory: tests/end2end_tests/tests
         run: |
           docker compose build
 
       - name: Test
-        working-directory: packages/sshnoports/test/end2end_tests/tests/local-local-local
+        working-directory: tests/end2end_tests/tests
         run: |
           ${{ env.DOCKER_COMPOSE_UP_CMD }}
 
       - name: Logs
         if: always()
-        working-directory: packages/sshnoports/test/end2end_tests/tests/local-local-local
+        working-directory: tests/end2end_tests/tests
         run: |
           docker compose ps -a
           docker compose logs --timestamps
 
       - name: Tear down
         if: always()
-        working-directory: packages/sshnoports/test/end2end_tests/tests/local-local-local
+        working-directory: tests/end2end_tests/tests
         run: |
           docker compose down

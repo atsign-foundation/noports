@@ -1,3 +1,4 @@
+import 'package:sshnoports/common/supported_ssh_clients.dart';
 import 'package:sshnoports/sshnpd/sshnpd_params.dart';
 import 'package:test/test.dart';
 import 'package:args/args.dart';
@@ -22,10 +23,7 @@ void main() {
     });
 
     test('test parsed args with only mandatory provided', () {
-      List<String> args = [];
-
-      args.addAll(['-a', '@bob']);
-      args.addAll(['-m', '@alice']);
+      List<String> args = '-a @bob -m @alice'.split(' ');
 
       var p = SSHNPDParams.fromArgs(args);
 
@@ -40,20 +38,31 @@ void main() {
           getDefaultAtKeysFilePath(p.homeDirectory, p.deviceAtsign));
     });
 
+    test('test --ssh-client arg', () {
+      expect(SSHNPDParams.fromArgs('-a @bob -m @alice'.split(' ')).sshClient,
+          SupportedSshClient.hostSsh);
+
+      expect(
+          SSHNPDParams.fromArgs(
+                  '-a @bob -m @alice --ssh-client pure-dart'.split(' '))
+              .sshClient,
+          SupportedSshClient.pureDart);
+
+      expect(
+          SSHNPDParams.fromArgs(
+                  '-a @bob -m @alice --ssh-client /usr/bin/ssh'.split(' '))
+              .sshClient,
+          SupportedSshClient.hostSsh);
+
+      expect(
+          () => SSHNPDParams.fromArgs(
+              '-a @bob -m @alice --ssh-client something-we-do-not-support'
+                  .split(' ')),
+          throwsA(isA<ArgParserException>()));
+    });
+
     test('test parsed args with non-mandatory args provided', () {
-      List<String> args = [];
-
-      args.addAll(['-a', '@bob']);
-      args.addAll(['-m', '@alice']);
-
-      args.addAll([
-        '-d',
-        'device',
-        '-u',
-        '-v',
-        '-s',
-        '-u',
-      ]);
+      List<String> args = '-a @bob -m @alice -d device -u -v -s -u'.split(' ');
 
       var p = SSHNPDParams.fromArgs(args);
 

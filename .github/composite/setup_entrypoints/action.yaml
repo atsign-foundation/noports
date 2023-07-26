@@ -1,0 +1,31 @@
+name: Setup entrypoints
+description: |
+  Sets up the environment for e2e tests.
+
+inputs:
+  devicename:
+    description: Unique sshnp devicename
+    required: true
+  sshnp_atsign:
+    description: sshnp atsign
+    required: true
+  sshnpd_atsign:
+    description: sshnpd atsign
+    required: true
+  sshrvd_atsign:
+    description: sshrvd atsign
+    required: true
+  wait_time:
+    description: Time to wait for sshnpd to start
+    default: "4"
+
+runs:
+  using: composite
+  steps:
+    - name: Setup NP entrypoint
+      shell: bash
+      working-directory: tests/end2end_tests/tools/configuration
+      run: |
+        ./setup-sshnp-entrypoint.sh ${{ inputs.devicename }} ${{ inputs.sshnp_atsign }} ${{ inputs.sshnpd_atsign }} ${{ inputs.sshrvd_atsign }} ${{ inputs.wait_time }}
+        ./setup-sshnpd-entrypoint.sh ${{ inputs.devicename }} ${{ inputs.sshnp_atsign }} ${{ inputs.sshnpd_atsign }} ${{ inputs.sshrvd_atsign }}
+        ./setup-sshrvd-entrypoint.sh ${{ inputs.sshrvd_atsign }}
