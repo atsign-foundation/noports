@@ -258,7 +258,13 @@ class SSHNPDImpl implements SSHNPD {
           ..metadata = metaData;
 
         /// send a heartbeat back
-        await _notify(atKey, device);
+        await _notify(
+          atKey,
+          {
+            'devicename': device,
+            'version': version,
+          }.toString(),
+        );
         break;
     }
   }
@@ -612,7 +618,13 @@ class SSHNPDImpl implements SSHNPD {
       ..metadata = metaData;
 
     try {
-      await atClient.put(atKey, device);
+      await atClient.put(
+        atKey,
+        {
+          'devicename': device,
+          'version': version,
+        }.toString(),
+      );
     } catch (e) {
       stderr.writeln(e.toString());
     }
