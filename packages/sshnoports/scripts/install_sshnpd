@@ -11,6 +11,16 @@ norm_atsign() {
   export "${KEY}"="$ATSIGN" # Set the variable to new value
 }
 
+norm_version() {
+  KEY="$1" # Get the variable name
+  INPUT=${!KEY} # Get the value of the variable
+  shopt -s extglob
+  OUTPUT=${INPUT#tags\/} # Remove tags prefix if present
+  OUTPUT=${OUTPUT#v} # Remove v prefix if present
+  shopt -u extglob
+  export "${KEY}"="tags/v$OUTPUT" # Add full tags/v prefix
+}
+
 usage() {
   echo "Usage: $0 [options]"
   echo "General options:"
@@ -23,6 +33,7 @@ usage() {
   echo "  -c, --client <address>      Client address (e.g. @alice_client)"
   echo "  -d, --device <address>      Device address (e.g. @alice_device)"
   echo "  -n, --name <device name>    Name of the device"
+  echo "  -v, --version <version>     Version to install (default: latest)"
 }
 
 parse_args() {
@@ -77,6 +88,14 @@ parse_args() {
         SSHNP_DEVICE_NAME="$2"
         shift 2
       ;;
+      -v|--version)
+        if [ $# -lt 0 ]; then
+          echo "Missing argument for $1";
+          exit 1;
+        fi
+        SSHNP_VERSION="$2"
+        shift 2
+      ;;
       *)
         echo "Unknown argument: $1"
         exit 1
@@ -97,6 +116,13 @@ parse_args() {
       read -rp "Device name: " SSHNP_DEVICE_NAME;
     fi
 
+    while [ -z "$SSHNP_DEVICE_NAME" ] ||
+      [ "${#SSHNP_DEVICE_NAME}" -gt 15 ] ||
+      [[ "$SSHNP_DEVICE_NAME" =~ [^a-zA-Z0-9] ]]; do
+        echo "Device name must be between 1 and 15 characters and only contain alphanumeric characters";
+        read -rp "Device name: " SSHNP_DEVICE_NAME;
+    done;
+
     norm_atsign CLIENT_ATSIGN
     norm_atsign DEVICE_MANAGER_ATSIGN
     echo;
@@ -111,6 +137,8 @@ parse_env() {
 
   if [ -z "$SSHNP_VERSION" ]; then
     SSHNP_VERSION="latest";
+  else
+    norm_version SSHNP_VERSION
   fi
   URL="https://api.github.com/repos/atsign-foundation/sshnoports/releases/$SSHNP_VERSION";
 

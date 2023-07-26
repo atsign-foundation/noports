@@ -5,20 +5,48 @@ import 'dart:io';
 import 'package:at_utils/at_logger.dart';
 
 // local packages
-import 'package:sshnoports/sshnp.dart';
-import 'package:sshnoports/cleanup_sshnp.dart';
+import 'package:sshnoports/sshnp/sshnp.dart';
+import 'package:sshnoports/sshnp/cleanup.dart';
+import 'package:sshnoports/sshnp/sshnp_params.dart';
 
 void main(List<String> args) async {
   AtSignLogger.root_level = 'SHOUT';
+  AtSignLogger.defaultLoggingHandler = AtSignLogger.stdErrLoggingHandler;
+  SSHNP? sshnp;
+  SSHNPParams? params;
 
-  SSHNP sshnp = await SSHNP.fromCommandLineArgs(args);
-
-  ProcessSignal.sigint.watch().listen((signal) async {
-    await cleanUp(sshnp.sessionId, sshnp.logger);
+  try {
+    params = SSHNPParams.fromPartial(SSHNPPartialParams.fromArgs(args));
+  } catch (error) {
+    stderr.writeln(error.toString());
     exit(1);
-  });
+  }
 
-  await sshnp.init();
+  try {
+    sshnp = await SSHNP.fromParams(params);
 
-  await sshnp.run();
+    ProcessSignal.sigint.watch().listen((signal) async {
+      await cleanUp(sshnp!.sessionId, sshnp.logger);
+      exit(1);
+    });
+
+    await sshnp.init();
+    await sshnp.run();
+    exit(0);
+  } on ArgumentError catch (_) {
+    exit(1);
+  } catch (error, stackTrace) {
+    stderr.writeln(error.toString());
+
+    if (params.verbose) {
+      stderr.writeln('\nStack Trace: ${stackTrace.toString()}');
+    }
+
+    if (sshnp != null) {
+      await cleanUp(sshnp.sessionId, sshnp.logger);
+    }
+
+    await stderr.flush().timeout(Duration(milliseconds: 100));
+    exit(1);
+  }
 }

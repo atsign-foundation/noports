@@ -1,0 +1,10 @@
+  container-sshnp:
+    container_name: sshnp
+    volumes:
+      - ../contexts/sshnp/keys/:/atsign/.atsign/keys/ # mount keys
+      - ../contexts/sshnp/entrypoint.sh:/atsign/entrypoint.sh # mount entrypoint
+    networks:
+      - sshnp
+    # auto added:
+    # - image
+    # - depends_on: (sshnpd + runtime service)
