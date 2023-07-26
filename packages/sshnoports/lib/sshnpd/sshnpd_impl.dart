@@ -160,6 +160,7 @@ class SSHNPDImpl implements SSHNPD {
           onDone: () => logger.info('Notification listener stopped'),
         );
 
+    unawaited(_refreshDeviceEntry());
     // Refresh the device entry every hour
     Timer.periodic(const Duration(hours: 1), (_) => _refreshDeviceEntry());
 
