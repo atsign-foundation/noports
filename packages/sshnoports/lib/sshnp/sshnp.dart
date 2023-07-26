@@ -182,5 +182,6 @@ abstract class SSHNP {
   /// Returns two Iterable<String>:
   /// - Iterable<String> of atSigns of sshnpd that responded
   /// - Iterable<String> of atSigns of sshnpd that did not respond
-  Future<(Iterable<String>, Iterable<String>)> listDevices();
+  Future<(Iterable<String>, Iterable<String>, Map<String, dynamic>)>
+      listDevices();
 }
