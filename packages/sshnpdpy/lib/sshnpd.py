@@ -59,9 +59,9 @@ def handle_decryption(queue:Queue, client:AtClient, ssh_path, args: argparse.Arg
 
             if key == "sshd":
                 print(
-                    f'ssh callback requested from ${event_data["from"]} notification id : ${event_data["id"]}')
+                    f'ssh callback requested from {event_data["from"]} notification id : {event_data["id"]}')
                 ssh_notification_recieved = True
-                callbackArgs = [at_event, private_key, args.manager_atsign, args.device_atsign, args.device]
+                callbackArgs = [at_event, client, private_key, args.manager_atsign, args.device_atsign, args.device, ssh_path]
                 return callbackArgs
 
         except Empty:
@@ -80,14 +80,45 @@ def handle_events(queue:Queue, client: AtClient):
                 sleep(1) 
             else:
                 print("decrypting event")
+                if event_type == AtEventType.UPDATE_NOTIFICATION:
+                    client.secondary_connection.execute_command("notify:remove:" + at_event.event_data["id"])
                 client.handle_event(queue, at_event)
-            
         except Empty:
             pass
         
 
 
-def ssh_callback(event: AtEvent, private_key: str, manager_atsign: str, device_atsign: str, device: str):
+def reverse_ssh_client(ssh_list: list, private_key: str, ssh_path: str):
+    local_port = ssh_list[0]
+    port = ssh_list[1]
+    username = ssh_list[2]
+    hostname = ssh_list[3]
+    print("ssh session started for " + username +
+          " @ " + hostname + " on port " + port)
+    ssh_client = SSHClient()
+    ssh_client.load_system_host_keys(f'{ssh_path}/known_hosts')
+    ssh_client.set_missing_host_key_policy(AutoAddPolicy())
+    file_like = StringIO(private_key)
+
+    try:        
+        pkey = Ed25519Key.from_private_key(file_obj=file_like)
+        ssh_client.connect(
+            hostname=hostname, port=port, username=username, pkey=pkey, look_for_keys=False, disabled_algorithms={"pubkeys":["rsa-sha2-512", "rsa-sha2-256"]})
+        tp = ssh_client.get_transport()
+        tp.request_port_forward("", local_port)
+        print("Forwarding port " + local_port + " to " + hostname + ":" + port)
+    except NoValidConnectionsError as e:
+        print("Failed to connect: ")
+        for exception in e.errors:
+            print(exception)
+        return False
+    except Exception as e:
+        print(e) 
+        return False
+    return True
+    
+        
+def sshnp_callback(event: AtEvent, at_client: AtClient, private_key, manager_atsign, device_atsign, device, ssh_path):
     uuid = uuid4()
     ssh_list = event.event_data["decryptedValue"].split(" ")
     metadata = Metadata(is_public=False, ttl=10000, ttr=-1,
@@ -96,42 +127,22 @@ def ssh_callback(event: AtEvent, private_key: str, manager_atsign: str, device_a
     at_key.shared_with = manager_atsign
     at_key.metadata = metadata
     at_key.namespace = namespace
-    local_port = ssh_list[0]
-    port = ssh_list[1]
-    username = ssh_list[2]
-    hostname = ssh_list[3]
     if len(ssh_list) == 5:
         uuid = ssh_list[4]
         at_key = AtKey(f'{uuid}.{device}', device_atsign)
         at_key.shared_with = manager_atsign
         at_key.metadata = metadata
         at_key.namespace = namespace
-    print("ssh session started for " + username +
-          " @ " + hostname + " on port " + port)
-    ssh_client = SSHClient()
-    ssh_client.set_missing_host_key_policy(AutoAddPolicy())
-    ssh_client.load_system_host_keys()
-    #convert string to bytes
-    file_like = StringIO(private_key)
-    tp = ssh_client.get_transport()
-    try:
-        pkey = Ed25519Key(file_obj=file_like)
-        auth_result = ssh_client.connect(
-            hostname=hostname, port=port, username=username, pkey=pkey)
-        tp.request_port_forward("", local_port)
-        
-        print("Forwarding port " + local_port + " to " + hostname + ":" + port)
-    except NoValidConnectionsError as e:
-        print("Failed to connect: ")
-        for exception in e.errors:
-            print(exception)
-        exit(1)
-    except Exception as e:
-        print(e) 
-
-
-
-
+    
+    ssh_auth = reverse_ssh_client(ssh_list, private_key,  ssh_path)
+    if ssh_auth:
+        #encrypted_value = EncryptionUtil.
+        #command = f'notify:update:{at_key.shared_with}:{at_key.name}.{at_key.namespace}.{namespace}:{at_key.shared_by}:'
+        #at_client.secondary_connection.execute_command(command)
+        print("sent ssh notification to " + at_key.shared_with)
+    else:
+        print("ssh failed")
+    
 def main():
     parser = argparse.ArgumentParser("sshnpd")
     parser.add_argument('--manager', dest='manager_atsign', type=str)
@@ -154,11 +165,12 @@ def main():
     callbackArgs = []
     event_queue = Queue(maxsize=20)
     client = AtClient(AtSign(args.device_atsign), queue=event_queue)
-    regex = ""
+    regex = f"{namespace}"
     threading.Thread(target=client.start_monitor, args=(regex,)).start()
     threading.Thread(target=handle_events, args=(client.queue, client)).start()
     callbackArgs = handle_decryption(client.queue, client, ssh_path, args)
-    ssh_callback(*callbackArgs)
-    
+    sshnp_callback(*callbackArgs)
+    while True:
+        sleep(1)
 if __name__ == "__main__":
     main()
