@@ -38,13 +38,7 @@ client = SSHNPClient(
     public_key=getenv("SSH_PUBLIC_KEY"),
 )
 
-ssh = client.connect(
-    device_name=getenv("DEVICE"),
-)
+client.connect(getenv("DEVICE"))
 
-services = client.get_service_list()
-
-for service in services:
-    client.update_service(
-        service[0], LocalPackageSource("/Users/chant/src/af/sshnoports")
-    )
+client.update_sshnpd(LocalPackageSource("/Users/chant/src/af/sshnoports"))
+client.restart_all_services()

@@ -544,8 +544,15 @@ class SSHNPImpl implements SSHNP {
   Future<(Iterable<String>, Iterable<String>, Map<String, dynamic>)>
       listDevices() async {
     // get all the keys devicename.*.sshnpd
-    var atKeys =
-        await atClient.getAtKeys(regex: 'devicename\\.$asciiMatcher\\.sshnpd');
+    print('regex: devicename\\.$asciiMatcher\\.${SSHNPD.namespace}');
+
+    var pref = atClient.getPreferences() ?? AtClientPreference();
+    print('pref: ${pref.isLocalStoreRequired}');
+    pref.isLocalStoreRequired = false;
+    atClient.setPreferences(pref);
+
+    var atKeys = await atClient.getAtKeys(
+        regex: 'devicename\\.$asciiMatcher\\.${SSHNPD.namespace}');
 
     var devices = <String>{};
     var heartbeats = <String>{};
@@ -565,7 +572,12 @@ class SSHNPImpl implements SSHNP {
 
     // for each key, get the value
     for (var entryKey in atKeys) {
-      var deviceInfo = jsonDecode((await atClient.get(entryKey)).value ?? '{}');
+      var deviceInfo = jsonDecode((await atClient.get(
+            entryKey,
+           getRequestOptions: GetRequestOptions()..bypassCache = true,
+          ))
+              .value ??
+          '{}');
       var devicename = deviceInfo['devicename'];
       // send a ping to the device
 
@@ -586,7 +598,7 @@ class SSHNPImpl implements SSHNP {
         ..namespace = SSHNPD.namespace
         ..metadata = metaData;
 
-      unawaited(_notify(pingKey, 'ping'));
+      await _notify(pingKey, 'ping');
 
       // Add the device to the base list
       devices.add(devicename.value as String);
@@ -607,6 +619,7 @@ class SSHNPImpl implements SSHNP {
   /// This function sends a notification given an atKey and value
   Future<void> _notify(AtKey atKey, String value,
       {String sessionId = ""}) async {
+    print('did notify');
     await atClient.notificationService
         .notify(NotificationParams.forUpdate(atKey, value: value),
             onSuccess: (notification) {
