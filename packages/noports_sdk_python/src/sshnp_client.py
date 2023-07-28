@@ -39,9 +39,10 @@ class SFTPClient(_SFTPClient):
             if path.isfile(path.join(source, item)):
                 self.put_item(source, target, item)
             elif path.isdir(path.join(source, item)):
-                self.mkdir(path.join(target, item))
                 if recursive:
                     self.put_dir(path.join(source, item), path.join(target, item))
+                else:
+                    self.mkdir(path.join(target, item))
 
 
 class SSHClient(_SSHClient):
@@ -180,7 +181,7 @@ class SSHNPClient:
         if not self.is_connected():
             raise Exception("SSHNPClient not connected to device")
 
-        # TODO read with SFTP
+        # TODO read with SFTP - don't forget to remove ~ when you do
         _, _out, _ = self.client.exec_command("cat ~/.sshnpd/.service_list")
         lines = _out.read().decode("utf-8").strip().split("\n")
         services = [tuple(line.strip().split()) for line in lines]
@@ -210,6 +211,7 @@ class SSHNPClient:
             if type(source) is GitPackageSource:
                 # TODO download Git repo
                 pass
+            print("Uploading package source to device...")
             source_path = path.join(source.path, "packages", "sshnoports")
             target_path = path.join(sftp.getcwd(), ".atsign", "temp", str(temp_path))
             sftp.mkdir(target_path)
@@ -239,6 +241,8 @@ class SSHNPClient:
                 path.join(source_path, "pubspec.lock"),
                 path.join(target_path, "pubspec.lock"),
             )
+            print("Uploaded package source to device\n")
+            print("Building package on device...")
 
             self.client.run_command(f"dart pub get -C {target_path}"),
             self.client.run_command(
@@ -275,13 +279,22 @@ class SSHNPClient:
         """
         if not self.is_connected():
             raise Exception("SSHNPClient not connected to device")
-        sftp = self.client.open_sftp()
-        main_binaries = ["sshnpd", "sshrv", "at_activate"]
-        for binary in main_binaries:
-            sftp.rename(
-                path.join(source, binary),
-                path.join("~/.local/bin", binary),
-            )
+
+        binaries = "{" + ",".join(["sshnpd", "sshrv", "at_activate"]) + "}"
+        self.client.exec_command(f"cp -f {source}/{binaries} ~/.local/bin/")
+        self.client.run_command(f"ls -l ~/.local/bin/")
+
+    def update_sshnpd(self, source: PackageSource) -> None:
+        """
+        Updates sshnpd on the device.
+
+        :param PackageSource source:
+            The package source to update sshnpd with.
+
+        Note: You must restart each sshnpd service for the new binary to take effect.
+        """
+        src = self.download_package_source(source)
+        self.setup_main_binaries(src)
 
     def restart_service(self, service_name: str):
         """
@@ -290,13 +303,18 @@ class SSHNPClient:
         :param str service_name:
             The name of the service to restart.
         """
+        if not self.is_connected():
+            raise Exception("SSHNPClient not connected to device")
+        print(f"Restarting service: {service_name}...")
         _, _out, _ = self.client.exec_command(
             f"pgrep -P $(pgrep -U $(whoami) -f bin/{service_name}$)"
         )
         sshnpd_pid = _out.read().decode("utf-8").strip()
-        self.client.exec_command(f"kill -9 {sshnpd_pid}")
+        self.client.run_command(f"kill -9 {sshnpd_pid}")
 
-    def update_service(self, service_name: str, source: PackageSource) -> None:
-        src = self.download_package_source(source)
-        self.setup_main_binaries(src)
-        self.restart_service(service_name)
+    def restart_all_services(self):
+        """
+        Restarts all services on the device.
+        """
+        for service in self.get_service_list():
+            self.restart_service(service[0])

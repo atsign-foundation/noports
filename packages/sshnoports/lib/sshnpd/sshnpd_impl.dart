@@ -167,9 +167,12 @@ class SSHNPDImpl implements SSHNPD {
           onDone: () => logger.info('Notification listener stopped'),
         );
 
-    unawaited(_refreshDeviceEntry());
-    // Refresh the device entry every hour
-    Timer.periodic(const Duration(hours: 1), (_) => _refreshDeviceEntry());
+    // Refresh the device entry now, and every hour
+    await _refreshDeviceEntry();
+    Timer.periodic(
+      const Duration(hours: 1),
+      (_) async => await _refreshDeviceEntry(),
+    );
 
     logger.info('Done');
   }
@@ -607,6 +610,7 @@ class SSHNPDImpl implements SSHNPD {
           'devicename': device,
           'version': version,
         }.toString(),
+        putRequestOptions: PutRequestOptions()..useRemoteAtServer = true,
       );
     } catch (e) {
       stderr.writeln(e.toString());
