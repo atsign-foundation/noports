@@ -25,6 +25,12 @@ dependencies:
   socket_connector: 1.0.10
   meta: ^1.9.1
 
+dependency_overrides:
+  at_client:
+    git:
+      url: https://github.com/atsign-foundation/at_client_sdk.git
+      path: packages/at_client
+      ref: gkc-runZonedGuarded-monitor-socket-listen
 dev_dependencies:
   lints: ^2.1.1
   test: ^1.24.3

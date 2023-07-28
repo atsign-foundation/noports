@@ -68,10 +68,11 @@ packages:
   at_client:
     dependency: "direct main"
     description:
-      name: at_client
-      sha256: "63652edf7f856b875b59002bd48c2df3a5848aab0ac34fea12f07b02d2036db3"
-      url: "https://pub.dev"
-    source: hosted
+      path: "packages/at_client"
+      ref: gkc-runZonedGuarded-monitor-socket-listen
+      resolved-ref: "14ffe9718047250e05d5a0397b9f611993f38e19"
+      url: "https://github.com/atsign-foundation/at_client_sdk.git"
+    source: git
     version: "3.0.63"
   at_commons:
     dependency: transitive
