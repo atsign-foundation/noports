@@ -600,6 +600,7 @@ class SSHNPDImpl implements SSHNPD {
       ..metadata = metaData;
 
     try {
+      logger.info('Updating device name for $device');
       await atClient.put(
         atKey,
         {
