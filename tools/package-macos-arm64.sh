@@ -21,7 +21,7 @@ else
   DART=$(which dart)
 fi
 
-eval "$DART pub upgrade -C $SRC_DIR"
+eval "$DART pub get -C $SRC_DIR"
 
 OUTPUT_DIR_PATH="$ROOT_DIRECTORY/build/macos-arm64"
 OUTPUT_DIR="$OUTPUT_DIR_PATH/sshnp"
