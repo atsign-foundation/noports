@@ -119,27 +119,25 @@ def reverse_ssh_client(ssh_list: list, private_key: str, ssh_path: str):
     
         
 def sshnp_callback(event: AtEvent, at_client: AtClient, private_key, manager_atsign, device_atsign, device, ssh_path):
-    uuid = uuid4()
+    uuid = event.event_data["id"]
     ssh_list = event.event_data["decryptedValue"].split(" ")
     metadata = Metadata(is_public=False, ttl=10000, ttr=-1,
                         is_encrypted=True, namespace_aware=True)
-    at_key = AtKey(f'{uuid}.{device}', device_atsign)
-    at_key.shared_with = manager_atsign
+    at_key = AtKey(f'{uuid}.', device_atsign)
+    at_key.shared_with = AtSign(manager_atsign)
     at_key.metadata = metadata
-    at_key.namespace = namespace
+    at_key.namespace = f".{device}.sshnp"
     if len(ssh_list) == 5:
         uuid = ssh_list[4]
         at_key = AtKey(f'{uuid}.{device}', device_atsign)
-        at_key.shared_with = manager_atsign
+        at_key.shared_with = AtSign(manager_atsign)
         at_key.metadata = metadata
         at_key.namespace = namespace
     
     ssh_auth = reverse_ssh_client(ssh_list, private_key,  ssh_path)
     if ssh_auth:
-        #encrypted_value = EncryptionUtil.
-        #command = f'notify:update:{at_key.shared_with}:{at_key.name}.{at_key.namespace}.{namespace}:{at_key.shared_by}:'
-        #at_client.secondary_connection.execute_command(command)
-        print("sent ssh notification to " + at_key.shared_with)
+        result = at_client.notify(at_key, "connected")
+        print("sent ssh notification to " + at_key.shared_with.to_string() + "\n result: " + result)
     else:
         print("ssh failed")
     
