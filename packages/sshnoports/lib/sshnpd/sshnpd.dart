@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:at_client/at_client.dart';
 import 'package:at_utils/at_logger.dart';
 import 'package:meta/meta.dart';
+import 'package:sshnoports/common/supported_ssh_clients.dart';
 import 'package:sshnoports/sshnpd/sshnpd_impl.dart';
 
 abstract class SSHNPD {
@@ -28,11 +29,12 @@ abstract class SSHNPD {
   String get deviceAtsign;
   abstract final String managerAtsign;
 
+  /// The ssh client to use when doing reverse ssh
+  abstract final SupportedSshClient sshClient;
+
   /// true once [init] has completed
   @visibleForTesting
   bool initialized = false;
-
-  static const String commandToSend = 'sshd';
 
   factory SSHNPD(
       {
@@ -40,15 +42,16 @@ abstract class SSHNPD {
       required AtClient atClient,
       required String username,
       required String homeDirectory,
-      // volatile fields
       required String device,
-      required String managerAtsign}) {
+      required String managerAtsign,
+      required SupportedSshClient sshClient}) {
     return SSHNPDImpl(
         atClient: atClient,
         username: username,
         homeDirectory: homeDirectory,
         device: device,
-        managerAtsign: managerAtsign);
+        managerAtsign: managerAtsign,
+        sshClient: sshClient);
   }
 
   static Future<SSHNPD> fromCommandLineArgs(List<String> args) async {

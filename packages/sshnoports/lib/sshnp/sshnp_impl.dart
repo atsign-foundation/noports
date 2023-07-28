@@ -114,8 +114,12 @@ class SSHNPImpl implements SSHNP {
   late final String namespace;
 
   /// When using sshrvd, this is fetched from sshrvd during [init]
+  /// This is only set when using sshrvd
+  /// (i.e. after [getHostAndPortFromSshrvd] has been called)
   @override
-  late final String sshrvdPort;
+  String get sshrvdPort => _sshrvdPort;
+
+  late String _sshrvdPort;
 
   /// Set to '$localPort $port $username $host $sessionId' during [init]
   @override
@@ -369,10 +373,13 @@ class SSHNPImpl implements SSHNP {
     // By removing the .pub extn
     if (!sshnpdAckErrors) {
       if (sendSshPublicKey != 'false') {
-        stdout.write(
-            "ssh -p $localPort $remoteUsername@localhost -i ${sendSshPublicKey.replaceFirst(RegExp(r'.pub$'), '')} ");
+        stdout.write('ssh -p $localPort $remoteUsername@localhost'
+            ' -o StrictHostKeyChecking=accept-new'
+            ' -o IdentitiesOnly=yes'
+            ' -i ${sendSshPublicKey.replaceFirst(RegExp(r'.pub$'), '')}');
       } else {
-        stdout.write("ssh -p $localPort $remoteUsername@localhost ");
+        stdout.write('ssh -p $localPort $remoteUsername@localhost '
+            ' -o StrictHostKeyChecking=accept-new');
       }
       // print out optional arguments
       for (var argument in localSshOptions) {
@@ -484,7 +491,7 @@ class SSHNPImpl implements SSHNP {
       List results = ipPorts.split(',');
       host = results[0];
       port = results[1];
-      sshrvdPort = results[2];
+      _sshrvdPort = results[2];
       sshrvdAck = true;
     });
 
@@ -525,7 +532,7 @@ class SSHNPImpl implements SSHNP {
 
     // Connect to rendezvous point using background process.
     // sshnp (this program) can then exit without issue.
-    unawaited(Process.run(getSshrvCommand(), [host, sshrvdPort]));
+    unawaited(Process.run(getSshrvCommand(), [host, _sshrvdPort]));
   }
 
   Future<void> generateSshKeys() async {

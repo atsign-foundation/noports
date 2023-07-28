@@ -1,4 +1,5 @@
 import 'package:args/args.dart';
+import 'package:sshnoports/common/supported_ssh_clients.dart';
 import 'package:sshnoports/common/utils.dart';
 
 class SSHNPDParams {
@@ -10,6 +11,7 @@ class SSHNPDParams {
   late final String sendSshPublicKey;
   late final String deviceAtsign;
   late final bool verbose;
+  late final SupportedSshClient sshClient;
 
   // Non param variables
   static final ArgParser parser = _createArgParser();
@@ -38,6 +40,9 @@ class SSHNPDParams {
         r['key-file'] ?? getDefaultAtKeysFilePath(homeDirectory, deviceAtsign);
 
     verbose = r['verbose'];
+
+    sshClient = SupportedSshClient.values
+        .firstWhere((c) => c.cliArg == r['ssh-client']);
   }
 
   static ArgParser _createArgParser() {
@@ -88,6 +93,12 @@ class SSHNPDParams {
       abbr: 'v',
       help: 'More logging',
     );
+
+    parser.addOption('ssh-client',
+        mandatory: false,
+        defaultsTo: SupportedSshClient.hostSsh.cliArg,
+        allowed: SupportedSshClient.values.map((c) => c.cliArg).toList(),
+        help: 'What to use for outbound ssh connections.');
 
     return parser;
   }

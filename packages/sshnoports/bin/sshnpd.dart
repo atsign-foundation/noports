@@ -1,7 +1,10 @@
 import 'dart:io';
+import 'package:at_utils/at_logger.dart';
 import 'package:sshnoports/sshnpd/sshnpd.dart';
 
 void main(List<String> args) async {
+  AtSignLogger.root_level = 'SHOUT';
+  AtSignLogger.defaultLoggingHandler = AtSignLogger.stdErrLoggingHandler;
   SSHNPD? sshnpd;
 
   try {
