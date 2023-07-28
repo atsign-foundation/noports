@@ -201,7 +201,7 @@ class SSHNPClient:
             raise Exception("SSHNPClient not connected to device")
 
         sftp = self.client.open_sftp()
-        
+        sftp.chdir(".")
 
         temp_path = int(datetime.utcnow().timestamp())
 
@@ -211,47 +211,47 @@ class SSHNPClient:
                 # TODO download Git repo
                 pass
             source_path = path.join(source.path, "packages", "sshnoports")
-            target = f"~/.atsign/temp/{temp_path}"
-            sftp.mkdir(target)
+            target_path = path.join(sftp.getcwd(), ".atsign", "temp", str(temp_path))
+            sftp.mkdir(target_path)
 
             sftp.put_dir(
                 path.join(source_path, "bin"),
-                path.join(target, "bin"),
+                path.join(target_path, "bin"),
             )
             sftp.put_dir(
                 path.join(source_path, "lib"),
-                path.join(target, "lib"),
+                path.join(target_path, "lib"),
             )
             sftp.put_dir(
                 path.join(source_path, "templates"),
-                path.join(target, "templates"),
+                path.join(target_path, "templates"),
             )
             sftp.put_dir(
                 path.join(source_path, "scripts"),
-                path.join(target, "scripts"),
+                path.join(target_path, "scripts"),
             )
 
             sftp.put(
                 path.join(source_path, "pubspec.yaml"),
-                path.join(target, "pubspec.yaml"),
+                path.join(target_path, "pubspec.yaml"),
             )
             sftp.put(
                 path.join(source_path, "pubspec.lock"),
-                path.join(target, "pubspec.lock"),
+                path.join(target_path, "pubspec.lock"),
             )
 
-            self.client.run_command(f"dart pub get -C {target}"),
+            self.client.run_command(f"dart pub get -C {target_path}"),
             self.client.run_command(
-                f"dart compile exe {target}/bin/sshnp.dart -o {target}/sshnp"
+                f"dart compile exe {target_path}/bin/sshnp.dart -o {target_path}/sshnp"
             )
             self.client.run_command(
-                f"dart compile exe {target}/bin/sshnpd.dart -o {target}/sshnpd"
+                f"dart compile exe {target_path}/bin/sshnpd.dart -o {target_path}/sshnpd"
             )
             self.client.run_command(
-                f"dart compile exe {target}/bin/sshrv.dart -o {target}/sshrv"
+                f"dart compile exe {target_path}/bin/sshrv.dart -o {target_path}/sshrv"
             )
             self.client.run_command(
-                f"dart compile exe {target}/bin/activate_cli.dart -o {target}/at_activate"
+                f"dart compile exe {target_path}/bin/activate_cli.dart -o {target_path}/at_activate"
             )
         # These types can be downloaded directly to the device
         elif (
@@ -264,7 +264,7 @@ class SSHNPClient:
             raise NotImplementedError
         else:
             raise TypeError
-        return target
+        return target_path
 
     def setup_main_binaries(self, source: str) -> None:
         """
@@ -273,13 +273,15 @@ class SSHNPClient:
         :param str source:
             The path to where the binaries are located.
         """
-        with self.client.open_sftp() as sftp:
-            main_binaries = ["sshnpd", "sshrv", "at_activate"]
-            for binary in main_binaries:
-                sftp.rename(
-                    path.join(source, binary),
-                    path.join("~/.local/bin", binary),
-                )
+        if not self.is_connected():
+            raise Exception("SSHNPClient not connected to device")
+        sftp = self.client.open_sftp()
+        main_binaries = ["sshnpd", "sshrv", "at_activate"]
+        for binary in main_binaries:
+            sftp.rename(
+                path.join(source, binary),
+                path.join("~/.local/bin", binary),
+            )
 
     def restart_service(self, service_name: str):
         """
