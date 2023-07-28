@@ -260,40 +260,50 @@ class SSHNPPartialParams {
     Map<String, dynamic> args = <String, dynamic>{};
 
     File file = File(fileName);
-    List<String> lines = file.readAsLinesSync();
 
-    for (String line in lines) {
-      if (line.startsWith('#')) continue;
-
-      var parts = line.split('=');
-      if (parts.length != 2) continue;
-
-      var key = parts[0].trim();
-      var value = parts[1].trim();
-
-      SSHNPArg arg = SSHNPArg.fromBashName(key);
-      if (arg.name.isEmpty) continue;
-
-      switch (arg.format) {
-        case ArgFormat.flag:
-          if (value.toLowerCase() == 'true') {
-            args[arg.name] = true;
-          }
-          continue;
-        case ArgFormat.multiOption:
-          var values = value.split(';');
-          args.putIfAbsent(arg.name, () => <String>[]);
-          for (String val in values) {
-            if (val.isEmpty) continue;
-            args[arg.name].add(val);
-          }
-          continue;
-        case ArgFormat.option:
-          if (value.isEmpty) continue;
-          args[arg.name] = value;
-          continue;
-      }
+    if (!file.existsSync()) {
+      throw Exception('Config file does not exist: $fileName');
     }
-    return args;
+    try {
+      List<String> lines = file.readAsLinesSync();
+
+      for (String line in lines) {
+        if (line.startsWith('#')) continue;
+
+        var parts = line.split('=');
+        if (parts.length != 2) continue;
+
+        var key = parts[0].trim();
+        var value = parts[1].trim();
+
+        SSHNPArg arg = SSHNPArg.fromBashName(key);
+        if (arg.name.isEmpty) continue;
+
+        switch (arg.format) {
+          case ArgFormat.flag:
+            if (value.toLowerCase() == 'true') {
+              args[arg.name] = true;
+            }
+            continue;
+          case ArgFormat.multiOption:
+            var values = value.split(';');
+            args.putIfAbsent(arg.name, () => <String>[]);
+            for (String val in values) {
+              if (val.isEmpty) continue;
+              args[arg.name].add(val);
+            }
+            continue;
+          case ArgFormat.option:
+            if (value.isEmpty) continue;
+            args[arg.name] = value;
+            continue;
+        }
+      }
+      return args;
+    } on FileSystemException {
+      throw Exception('Error reading config file: $fileName');
+    } catch (e) {
+      throw Exception('Error parsing config file: $fileName');
+    }
   }
 }
