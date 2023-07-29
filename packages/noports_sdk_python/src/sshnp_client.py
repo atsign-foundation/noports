@@ -282,7 +282,6 @@ class SSHNPClient:
 
         binaries = "{" + ",".join(["sshnpd", "sshrv", "at_activate"]) + "}"
         self.client.exec_command(f"cp -f {source}/{binaries} ~/.local/bin/")
-        self.client.run_command(f"ls -l ~/.local/bin/")
 
     def update_sshnpd(self, source: PackageSource) -> None:
         """
