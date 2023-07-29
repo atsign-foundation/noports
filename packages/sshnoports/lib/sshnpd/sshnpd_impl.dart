@@ -262,12 +262,14 @@ class SSHNPDImpl implements SSHNPD {
           ..metadata = metaData;
 
         /// send a heartbeat back
-        await _notify(
-          atKey,
-          {
-            'devicename': device,
-            'version': version,
-          }.toString(),
+        unawaited(
+          _notify(
+            atKey,
+            jsonEncode({
+              'devicename': device,
+              'version': version,
+            }),
+          ),
         );
         break;
     }
@@ -622,10 +624,10 @@ class SSHNPDImpl implements SSHNPD {
       logger.info('Updating device name for $device');
       await atClient.put(
         atKey,
-        {
-          'devicename': device,
-          'version': version,
-        }.toString(),
+        jsonEncode({
+          "devicename": device,
+          "version": version,
+        }),
         putRequestOptions: PutRequestOptions()..useRemoteAtServer = true,
       );
     } catch (e) {

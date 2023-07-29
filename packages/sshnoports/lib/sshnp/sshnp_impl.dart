@@ -17,6 +17,8 @@ import 'package:sshnoports/sshrvd/sshrvd.dart';
 import 'package:sshnoports/version.dart';
 import 'package:uuid/uuid.dart';
 
+import 'package:at_commons/at_builders.dart';
+
 class SSHNPImpl implements SSHNP {
   @override
   final AtSignLogger logger = AtSignLogger(' sshnp ');
@@ -540,19 +542,44 @@ class SSHNPImpl implements SSHNP {
         mode: FileMode.append);
   }
 
+  Future<List<AtKey>> _getAtKeysRemote(
+      {String? regex,
+      String? sharedBy,
+      String? sharedWith,
+      bool showHiddenKeys = false}) async {
+    var builder = ScanVerbBuilder()
+      ..sharedWith = sharedWith
+      ..sharedBy = sharedBy
+      ..regex = regex
+      ..showHiddenKeys = showHiddenKeys
+      ..auth = true;
+    var scanResult = await atClient.getRemoteSecondary()?.executeVerb(builder);
+    scanResult = scanResult?.replaceFirst('data:', '') ?? '';
+    var result = <AtKey?>[];
+    if (scanResult.isNotEmpty) {
+      result = List<String>.from(jsonDecode(scanResult)).map((key) {
+        try {
+          return AtKey.fromString(key);
+        } on InvalidSyntaxException {
+          logger.severe('$key is not a well-formed key');
+        } on Exception catch (e) {
+          logger.severe(
+              'Exception occurred: ${e.toString()}. Unable to form key $key');
+        }
+      }).toList();
+    }
+    result.removeWhere((element) => element == null);
+    return result.cast<AtKey>();
+  }
+
   @override
   Future<(Iterable<String>, Iterable<String>, Map<String, dynamic>)>
       listDevices() async {
     // get all the keys devicename.*.sshnpd
-    print('regex: devicename\\.$asciiMatcher\\.${SSHNPD.namespace}');
+    var scanRegex = 'devicename\\.$asciiMatcher\\.${SSHNPD.namespace}';
 
-    var pref = atClient.getPreferences() ?? AtClientPreference();
-    print('pref: ${pref.isLocalStoreRequired}');
-    pref.isLocalStoreRequired = false;
-    atClient.setPreferences(pref);
-
-    var atKeys = await atClient.getAtKeys(
-        regex: 'devicename\\.$asciiMatcher\\.${SSHNPD.namespace}');
+    var atKeys =
+        await _getAtKeysRemote(regex: scanRegex, sharedBy: sshnpdAtSign);
 
     var devices = <String>{};
     var heartbeats = <String>{};
@@ -566,24 +593,23 @@ class SSHNPImpl implements SSHNP {
       var devicename = deviceInfo['devicename'];
       if (devicename != null) {
         heartbeats.add(devicename);
-        info[devicename] = deviceInfo;
       }
     });
 
     // for each key, get the value
     for (var entryKey in atKeys) {
-      var deviceInfo = jsonDecode((await atClient.get(
-            entryKey,
-           getRequestOptions: GetRequestOptions()..bypassCache = true,
-          ))
-              .value ??
-          '{}');
-      var devicename = deviceInfo['devicename'];
-      // send a ping to the device
+      var atValue = await atClient.get(
+        entryKey,
+        getRequestOptions: GetRequestOptions()..bypassCache = true,
+      );
+      var deviceInfo = jsonDecode(atValue.value) ?? <String, dynamic>{};
 
-      if (devicename == null) {
+      if (deviceInfo['devicename'] == null) {
         continue;
       }
+
+      var devicename = deviceInfo['devicename'] as String;
+      info[devicename] = deviceInfo;
 
       var metaData = Metadata()
         ..isPublic = false
@@ -592,16 +618,16 @@ class SSHNPImpl implements SSHNP {
         ..namespaceAware = true;
 
       var pingKey = AtKey()
-        ..key = "heartbeat.$devicename"
+        ..key = "ping.$devicename"
         ..sharedBy = clientAtSign
         ..sharedWith = entryKey.sharedBy
         ..namespace = SSHNPD.namespace
         ..metadata = metaData;
 
-      await _notify(pingKey, 'ping');
+      unawaited(_notify(pingKey, 'ping'));
 
       // Add the device to the base list
-      devices.add(devicename.value as String);
+      devices.add(devicename);
     }
 
     // wait for 10 seconds in case any are being slow
@@ -619,7 +645,6 @@ class SSHNPImpl implements SSHNP {
   /// This function sends a notification given an atKey and value
   Future<void> _notify(AtKey atKey, String value,
       {String sessionId = ""}) async {
-    print('did notify');
     await atClient.notificationService
         .notify(NotificationParams.forUpdate(atKey, value: value),
             onSuccess: (notification) {

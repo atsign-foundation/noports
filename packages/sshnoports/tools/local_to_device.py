@@ -3,9 +3,12 @@
 
 from dotenv import load_dotenv
 from os import getenv
-from pathlib import Path
-from sys import path
 from importlib import import_module
+from pathlib import Path
+from sys import path as sys_path
+from os import path as os_path
+
+script_dir = os_path.dirname(os_path.realpath(__file__))
 
 
 def import_parents(level=1):
@@ -13,9 +16,9 @@ def import_parents(level=1):
     file = Path(__file__).resolve()
     parent, top = file.parent, file.parents[level]
 
-    path.append(str(top))
+    sys_path.append(str(top))
     try:
-        path.remove(str(parent))
+        sys_path.remove(str(parent))
     except ValueError:  # already removed
         pass
 
@@ -40,5 +43,5 @@ client = SSHNPClient(
 
 client.connect(getenv("DEVICE"))
 
-client.update_sshnpd(LocalPackageSource("/Users/chant/src/af/sshnoports"))
+client.update_sshnpd(LocalPackageSource(os_path.join(script_dir, "..", "..", "..")))
 client.restart_all_services()

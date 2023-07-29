@@ -25,7 +25,7 @@ Future<AtClient> createAtClientCli({
     ..namespace = namespace
     ..downloadPath = '$homeDirectory/$subDirectory/files'
         .replaceAll('/', Platform.pathSeparator)
-    ..isLocalStoreRequired = false
+    ..isLocalStoreRequired = true
     ..commitLogPath =
         '$pathBase/storage/commitLog'.replaceAll('/', Platform.pathSeparator)
     ..fetchOfflineNotifications = false
