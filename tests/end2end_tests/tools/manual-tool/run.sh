@@ -18,6 +18,8 @@ usage() {
     echo "  example: $0 -t sshnp -b trunk"
     echo "  example: $0 -t sshnpd -l"
     echo "  example: $0 -t sshrvd -r v3.3.0"
+    echo "  example: $0 -t sshnp --release"
+    echo "  example: $0 -t sshnp --blank"
     echo ""
 }
 

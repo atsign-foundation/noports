@@ -50,6 +50,7 @@ usage: ./run.sh
   -h|--help
   -t|--tag <sshnp/sshnpd/sshrvd> (required) - docker container tag
   --no-cache (optional) - docker build without cache
+  --rm (optional) - remove container after exit
   ONE OF THE FOLLOWING (required)
   -l|--local - build from local source
   -b|--branch <branch/commitid> - build from branch/commitid
@@ -59,6 +60,8 @@ usage: ./run.sh
   example: ./run.sh -t sshnp -b trunk
   example: ./run.sh -t sshnpd -l
   example: ./run.sh -t sshrvd -r v3.3.0
+  example: ./run.sh -t sshnp --release
+  example: ./run.sh -t sshnp --blank
 ```
 
 4. Example: spin up a container to run sshnp on latest release
@@ -86,7 +89,7 @@ git clone https://github.com/atsign-foundation/sshnoports.git
 2. Navigate to the `tools` directory
 
 ```sh
-cd tests/end2end_tests/tools
+cd tests/end2end_tests/tools/manual-tool
 ```
 
 3. Change directory into the image you want to build and run the appropriate docker compose commands.
