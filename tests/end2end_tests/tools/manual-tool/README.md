@@ -17,9 +17,10 @@ Currently, you can build and run the following docker image targets:
 ## Using the Tool
 
 You can use the tool with [docker commands manually](#using-docker-commands) or with the [custom shell script](#using-the-custom-shell-script) provided to make running the docker commands easier.
+
 ### Using the custom shell script
 
-TO use the shell script, you need to be able to run shell scripts. If you're on MacOS or Linux, you should be able to run them just fine by doing something similar to:
+To use the shell script, you need to be able to run shell scripts. If you're on MacOS or Linux, you should be able to run them just fine by doing something similar to:
 
 ```
 ./run.sh
