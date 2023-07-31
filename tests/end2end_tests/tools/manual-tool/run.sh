@@ -8,6 +8,7 @@ usage() {
     echo "  -h|--help"
     echo "  -t|--tag <sshnp/sshnpd/sshrvd> (required) - docker container tag"
     echo "  --no-cache (optional) - docker build without cache"
+    echo "  --rm (optional) - remove container after exit"
     echo "  ONE OF THE FOLLOWING (required)"
     echo "  -l|--local - build from local source"
     echo "  -b|--branch <branch/commitid> - build from branch/commitid"
@@ -41,6 +42,10 @@ parse_args() {
                 ;;
             --no-cache)
                 nocache=true
+                shift 1
+                ;;
+            --rm)
+                rm=true
                 shift 1
                 ;;
             -l|--local)
@@ -125,7 +130,10 @@ parse_args() {
 main() {
     command="cd $type"
     dockercmd1="sudo docker compose build"
-    dockercmd2="sudo docker compose run -it container-$tag"
+    dockercmd2="sudo docker compose run -it"
+
+    # build dockercmd1 (docker compose build)
+
     if [[ $type == "branch" ]];
     then
         dockercmd1="$dockercmd1 --build-arg branch=$branch"
@@ -139,13 +147,22 @@ main() {
         fi
     fi
 
-    command="$command ; $dockercmd1"
-
     if [[ ! -z $nocache ]];
     then
-        command="$command --no-cache"
+        dockercmd1="$dockercmd1 --no-cache"
     fi
 
+    # build dockercmd2 (docker compose run)
+
+    if [[ ! -z $rm ]];
+    then
+        dockercmd2="$dockercmd2 --rm"
+    fi
+    dockercmd2="$dockercmd2 container-$tag"
+
+    # build full command
+
+    command="$command ; $dockercmd1"
     command="$command ; $dockercmd2"
     command="$command ; cd .."
 
