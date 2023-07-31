@@ -38,7 +38,7 @@ git clone https://github.com/atsign-foundation/sshnoports.git
 2. Navigate to the `tools` directory
 
 ```sh
-cd sshnoports/test/end2end_tests/tools
+cd tests/end2end_tests/tools
 ```
 
 3. Use the script
@@ -58,7 +58,7 @@ usage: ./run.sh
 
   example: ./run.sh -t sshnp -b trunk
   example: ./run.sh -t sshnpd -l
-  example: ./run.sh -t sshrvd -r 3.3.0
+  example: ./run.sh -t sshrvd -r v3.3.0
 ```
 
 4. Example: spin up a container to run sshnp on latest release
@@ -86,7 +86,7 @@ git clone https://github.com/atsign-foundation/sshnoports.git
 2. Navigate to the `tools` directory
 
 ```sh
-cd sshnoports/test/end2end_tests/tools
+cd tests/end2end_tests/tools
 ```
 
 3. Change directory into the image you want to build and run the appropriate docker compose commands.
@@ -95,7 +95,7 @@ Example: build and run a container to run sshnp on a particular release
 
 ```
 cd release
-sudo docker-compose build --build-arg release=3.3.0
+sudo docker-compose build --build-arg release=v3.3.0
 sudo docker-compose run --rm -it container-sshnp
 ```
 
