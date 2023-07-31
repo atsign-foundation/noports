@@ -126,20 +126,22 @@ def sshnp_callback(event: AtEvent, at_client: AtClient, private_key, manager_ats
     at_key = AtKey(f'{uuid}.', device_atsign)
     at_key.shared_with = AtSign(manager_atsign)
     at_key.metadata = metadata
-    at_key.namespace = f".{device}.sshnp"
+    at_key.namespace = f"{device}.sshnp"
     if len(ssh_list) == 5:
         uuid = ssh_list[4]
-        at_key = AtKey(f'{uuid}.{device}', device_atsign)
+        at_key = AtKey(f'{uuid}', device_atsign)
         at_key.shared_with = AtSign(manager_atsign)
         at_key.metadata = metadata
-        at_key.namespace = namespace
+        at_key.namespace = f".{device}.sshnp"
     
     ssh_auth = reverse_ssh_client(ssh_list, private_key,  ssh_path)
     if ssh_auth:
         result = at_client.notify(at_key, "connected")
         print("sent ssh notification to " + at_key.shared_with.to_string() + "\n result: " + result)
+        return True
     else:
         print("ssh failed")
+        return False
     
 def main():
     parser = argparse.ArgumentParser("sshnpd")
@@ -167,8 +169,18 @@ def main():
     threading.Thread(target=client.start_monitor, args=(regex,)).start()
     threading.Thread(target=handle_events, args=(client.queue, client)).start()
     callbackArgs = handle_decryption(client.queue, client, ssh_path, args)
-    sshnp_callback(*callbackArgs)
-    while True:
-        sleep(1)
+    ssh_connection  = sshnp_callback(*callbackArgs) 
+    while not ssh_connection:
+        sleep(3)
+        callbackArgs = handle_decryption(client.queue, client, ssh_path, args)
+        ssh_connection  = sshnp_callback(*callbackArgs)
+    
+        
 if __name__ == "__main__":
     main()
+    
+    
+    
+    
+    
+    
