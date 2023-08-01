@@ -170,7 +170,9 @@ class SSHNPDImpl implements SSHNPD {
           ?.atLookUp
           .executeCommand('noop:0\n');
       if (resp == null || !resp.startsWith('data:ok')) {
-        logger.warning('connection lost');
+        if (lastHeartbeatOk) {
+          logger.warning('connection lost');
+        }
         lastHeartbeatOk = false;
       } else {
         if (!lastHeartbeatOk) {
