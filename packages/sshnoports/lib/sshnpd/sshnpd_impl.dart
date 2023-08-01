@@ -165,18 +165,21 @@ class SSHNPDImpl implements SSHNPD {
   void startHeartbeat() {
     bool lastHeartbeatOk = true;
     Timer.periodic(Duration(seconds: 15), (timer) async {
-      String? resp = await atClient
-          .getRemoteSecondary()
-          ?.atLookUp
-          .executeCommand('noop:0\n');
+      String? resp;
+      try {
+        resp = await atClient
+            .getRemoteSecondary()
+            ?.atLookUp
+            .executeCommand('noop:0\n');
+      } catch (_) {}
       if (resp == null || !resp.startsWith('data:ok')) {
         if (lastHeartbeatOk) {
-          logger.warning('connection lost');
+          logger.shout('connection lost');
         }
         lastHeartbeatOk = false;
       } else {
         if (!lastHeartbeatOk) {
-          logger.warning('connection available');
+          logger.shout('connection available');
         }
         lastHeartbeatOk = true;
       }
