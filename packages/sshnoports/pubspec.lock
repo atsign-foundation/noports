@@ -68,11 +68,10 @@ packages:
   at_client:
     dependency: "direct main"
     description:
-      path: "packages/at_client"
-      ref: trunk
-      resolved-ref: "65fb64b39d4eae484c342f23f4614df04d9cd397"
-      url: "https://github.com/atsign-foundation/at_client_sdk.git"
-    source: git
+      name: at_client
+      sha256: c7f8316fe97faf010e0698d7e0bd81e35cc39644bf2dcd69a22cf25ba914b8c5
+      url: "https://pub.dev"
+    source: hosted
     version: "3.0.64"
   at_commons:
     dependency: transitive
