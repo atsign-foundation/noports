@@ -169,7 +169,7 @@ class SSHNPDImpl implements SSHNPD {
           .getRemoteSecondary()
           ?.atLookUp
           .executeCommand('noop:0\n');
-      if (resp == null || !resp.startsWith('noop:0')) {
+      if (resp == null || !resp.startsWith('data:ok')) {
         logger.warning('connection lost');
         lastHeartbeatOk = false;
       } else {
