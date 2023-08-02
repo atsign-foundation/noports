@@ -1,0 +1,7 @@
+======
+
+Test Passed
+
+This is a text file in sshnpd to test that sshnp ssh'd correctly.
+
+======

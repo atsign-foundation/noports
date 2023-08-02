@@ -4,6 +4,7 @@
       - ../contexts/sshnpd/keys/:/atsign/.atsign/keys/ # mount keys
       - ../contexts/sshnpd/entrypoint.sh:/atsign/entrypoint.sh # mount entrypoint.sh
       - ../contexts/sshnpd/test.sh:/atsign/test.sh # mount test.sh
+      - ../contexts/sshnpd/test.txt/:/atsign/test.txt/ # mount test.txt
     networks:
       - sshnpd
     # auto added:
