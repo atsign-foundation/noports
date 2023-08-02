@@ -10,6 +10,7 @@ from paramiko.ed25519key import Ed25519Key
 
 from at_client import AtClient
 from at_client.common import AtSign
+from at_client.util import EncryptionUtil
 from at_client.common.keys import AtKey, Metadata
 from at_client.connections.notification.atevents import AtEvent, AtEventType
 
@@ -121,8 +122,9 @@ def reverse_ssh_client(ssh_list: list, private_key: str, ssh_path: str):
 def sshnp_callback(event: AtEvent, at_client: AtClient, private_key, manager_atsign, device_atsign, device, ssh_path):
     uuid = event.event_data["id"]
     ssh_list = event.event_data["decryptedValue"].split(" ")
+    iv_nonce = EncryptionUtil.generate_iv_nonce()
     metadata = Metadata(is_public=False, ttl=10000, ttr=-1,
-                        is_encrypted=True, namespace_aware=True)
+                        is_encrypted=True, namespace_aware=True, iv_nonce=iv_nonce)
     at_key = AtKey(f'{uuid}.', device_atsign)
     at_key.shared_with = AtSign(manager_atsign)
     at_key.metadata = metadata
@@ -136,7 +138,7 @@ def sshnp_callback(event: AtEvent, at_client: AtClient, private_key, manager_ats
     
     ssh_auth = reverse_ssh_client(ssh_list, private_key,  ssh_path)
     if ssh_auth:
-        result = at_client.notify(at_key, "connected")
+        result = at_client.notify(at_key, 'connected')
         print("sent ssh notification to " + at_key.shared_with.to_string() + "\n result: " + result)
         return True
     else:
