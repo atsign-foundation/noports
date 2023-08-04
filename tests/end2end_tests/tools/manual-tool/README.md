@@ -17,9 +17,10 @@ Currently, you can build and run the following docker image targets:
 ## Using the Tool
 
 You can use the tool with [docker commands manually](#using-docker-commands) or with the [custom shell script](#using-the-custom-shell-script) provided to make running the docker commands easier.
+
 ### Using the custom shell script
 
-TO use the shell script, you need to be able to run shell scripts. If you're on MacOS or Linux, you should be able to run them just fine by doing something similar to:
+To use the shell script, you need to be able to run shell scripts. If you're on MacOS or Linux, you should be able to run them just fine by doing something similar to:
 
 ```
 ./run.sh
@@ -38,7 +39,7 @@ git clone https://github.com/atsign-foundation/sshnoports.git
 2. Navigate to the `tools` directory
 
 ```sh
-cd sshnoports/test/end2end_tests/tools
+cd tests/end2end_tests/tools
 ```
 
 3. Use the script
@@ -50,6 +51,7 @@ usage: ./run.sh
   -h|--help
   -t|--tag <sshnp/sshnpd/sshrvd> (required) - docker container tag
   --no-cache (optional) - docker build without cache
+  --rm (optional) - remove container after exit
   ONE OF THE FOLLOWING (required)
   -l|--local - build from local source
   -b|--branch <branch/commitid> - build from branch/commitid
@@ -58,7 +60,9 @@ usage: ./run.sh
 
   example: ./run.sh -t sshnp -b trunk
   example: ./run.sh -t sshnpd -l
-  example: ./run.sh -t sshrvd -r 3.3.0
+  example: ./run.sh -t sshrvd -r v3.3.0
+  example: ./run.sh -t sshnp --release
+  example: ./run.sh -t sshnp --blank
 ```
 
 4. Example: spin up a container to run sshnp on latest release
@@ -86,7 +90,7 @@ git clone https://github.com/atsign-foundation/sshnoports.git
 2. Navigate to the `tools` directory
 
 ```sh
-cd sshnoports/test/end2end_tests/tools
+cd tests/end2end_tests/tools/manual-tool
 ```
 
 3. Change directory into the image you want to build and run the appropriate docker compose commands.
@@ -95,7 +99,7 @@ Example: build and run a container to run sshnp on a particular release
 
 ```
 cd release
-sudo docker-compose build --build-arg release=3.3.0
+sudo docker-compose build --build-arg release=v3.3.0
 sudo docker-compose run --rm -it container-sshnp
 ```
 

@@ -23,7 +23,7 @@ git clone https://github.com/atsign-foundation/sshnoports.git
 2. Change directory into `automated-tests-locally`
 
 ```sh
-cd test/end2end_tests/tools/automated-tests-locally
+cd tests/end2end_tests/tools/automated-tests-locally
 ```
 
 3. Run the `run-local.sh` script
