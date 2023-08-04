@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 from io import StringIO
 import os, threading, argparse
+import subprocess
 from queue import Empty, Queue
 from time import sleep
 from uuid import uuid4
@@ -87,6 +88,39 @@ def handle_events(queue:Queue, client: AtClient):
         except Empty:
             pass
         
+def reverse_ssh_exec(ssh_list: list, private_key, sessionID):
+    local_port = ssh_list[0]
+    port = ssh_list[1]
+    username = ssh_list[2]
+    hostname = ssh_list[3]
+    filename = f'/tmp/.{uuid4()}'
+    exitCode = 0
+    if not private_key.endswith('\n'):
+        private_key += '\n'
+    with open(filename, 'w') as file:
+        file.write(private_key)
+        subprocess.run(["chmod", "go-rwx", filename])
+    args = ["ssh", f"{username}@{hostname}", '-p', port, "-i", filename, "-R", f"{local_port}:localhost:22", 
+            "-t", '-o', 'StrictHostKeyChecking=accept-new',
+            '-o', 'IdentitiesOnly=yes',
+            '-o', 'BatchMode=yes',
+            '-o', 'ExitOnForwardFailure=yes',
+            "sleep", "15"]
+    try:
+        process = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+        stdout, stderr = process.communicate()
+        exitCode = process.returncode
+        if exitCode != 0:
+            print("ssh session failed for " + username)
+        else: 
+            print("ssh session started for " + username@hostname + " on port " + port)
+        os.remove(filename)
+    except Exception as e:
+        print(e)
+    
+    return exitCode == 0
+        
+    
 
 
 def reverse_ssh_client(ssh_list: list, private_key: str, ssh_path: str):
@@ -104,7 +138,7 @@ def reverse_ssh_client(ssh_list: list, private_key: str, ssh_path: str):
     try:        
         pkey = Ed25519Key.from_private_key(file_obj=file_like)
         ssh_client.connect(
-            hostname=hostname, port=port, username=username, pkey=pkey, look_for_keys=False, disabled_algorithms={"pubkeys":["rsa-sha2-512", "rsa-sha2-256"]})
+            hostname=hostname, port=port, username=username, pkey=pkey, allow_agent=False, look_for_keys=False, disabled_algorithms={"pubkeys":["rsa-sha2-512", "rsa-sha2-256"]})
         tp = ssh_client.get_transport()
         tp.request_port_forward("", local_port)
         print("Forwarding port " + local_port + " to " + hostname + ":" + port)
@@ -136,7 +170,7 @@ def sshnp_callback(event: AtEvent, at_client: AtClient, private_key, manager_ats
         at_key.metadata = metadata
         at_key.namespace = f".{device}.sshnp"
     
-    ssh_auth = reverse_ssh_client(ssh_list, private_key,  ssh_path)
+    ssh_auth = reverse_ssh_exec(ssh_list, private_key, uuid)
     if ssh_auth:
         result = at_client.notify(at_key, 'connected')
         print("sent ssh notification to " + at_key.shared_with.to_string() + "\n result: " + result)
