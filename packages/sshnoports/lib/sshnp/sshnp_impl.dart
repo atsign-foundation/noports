@@ -575,8 +575,8 @@ class SSHNPImpl implements SSHNP {
   @override
   Future<(Iterable<String>, Iterable<String>, Map<String, dynamic>)>
       listDevices() async {
-    // get all the keys devicename.*.sshnpd
-    var scanRegex = 'devicename\\.$asciiMatcher\\.${SSHNPD.namespace}';
+    // get all the keys device_info.*.sshnpd
+    var scanRegex = 'device_info\\.$asciiMatcher\\.${SSHNPD.namespace}';
 
     var atKeys =
         await _getAtKeysRemote(regex: scanRegex, sharedBy: sshnpdAtSign);
