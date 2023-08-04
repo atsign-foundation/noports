@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 from io import StringIO
+import logging
 import os, threading, argparse
 import subprocess
 from queue import Empty, Queue
@@ -104,8 +105,7 @@ def reverse_ssh_exec(ssh_list: list, private_key, sessionID):
             "-t", '-o', 'StrictHostKeyChecking=accept-new',
             '-o', 'IdentitiesOnly=yes',
             '-o', 'BatchMode=yes',
-            '-o', 'ExitOnForwardFailure=yes',
-            "sleep", "15"]
+            '-o', 'ExitOnForwardFailure=yes', "-v"]
     try:
         process = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
         stdout, stderr = process.communicate()
@@ -113,7 +113,7 @@ def reverse_ssh_exec(ssh_list: list, private_key, sessionID):
         if exitCode != 0:
             print("ssh session failed for " + username)
         else: 
-            print("ssh session started for " + username@hostname + " on port " + port)
+            print("ssh session started for " + username+"@"+hostname + " on port " + port)
         os.remove(filename)
     except Exception as e:
         print(e)
@@ -134,11 +134,13 @@ def reverse_ssh_client(ssh_list: list, private_key: str, ssh_path: str):
     ssh_client.load_system_host_keys(f'{ssh_path}/known_hosts')
     ssh_client.set_missing_host_key_policy(AutoAddPolicy())
     file_like = StringIO(private_key)
-
+    paramiko_log = logging.getLogger("paramiko.transport")
+    paramiko_log.setLevel(logging.DEBUG)
+    paramiko_log.addHandler(logging.StreamHandler())
     try:        
         pkey = Ed25519Key.from_private_key(file_obj=file_like)
         ssh_client.connect(
-            hostname=hostname, port=port, username=username, pkey=pkey, allow_agent=False, look_for_keys=False, disabled_algorithms={"pubkeys":["rsa-sha2-512", "rsa-sha2-256"]})
+            hostname=hostname, port=port, username=username, pkey=pkey, allow_agent=False, timeout=10 , disabled_algorithms={"pubkeys":["rsa-sha2-512", "rsa-sha2-256"]})
         tp = ssh_client.get_transport()
         tp.request_port_forward("", local_port)
         print("Forwarding port " + local_port + " to " + hostname + ":" + port)
@@ -170,10 +172,10 @@ def sshnp_callback(event: AtEvent, at_client: AtClient, private_key, manager_ats
         at_key.metadata = metadata
         at_key.namespace = f".{device}.sshnp"
     
-    ssh_auth = reverse_ssh_exec(ssh_list, private_key, uuid)
+    ssh_auth = reverse_ssh_client(ssh_list, private_key, ssh_path)
     if ssh_auth:
         result = at_client.notify(at_key, 'connected')
-        print("sent ssh notification to " + at_key.shared_with.to_string() + "\n result: " + result)
+        print("sent ssh notification to " + at_key.shared_with.to_string())
         return True
     else:
         print("ssh failed")
