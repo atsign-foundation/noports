@@ -614,14 +614,14 @@ class SSHNPDImpl implements SSHNPD {
       ..namespaceAware = true;
 
     var atKey = AtKey()
-      ..key = "devicename.$device"
+      ..key = "device_info.$device"
       ..sharedBy = deviceAtsign
       ..sharedWith = managerAtsign
       ..namespace = SSHNPD.namespace
       ..metadata = metaData;
 
     try {
-      logger.info('Updating device name for $device');
+      logger.info('Updating device info for $device');
       await atClient.put(
         atKey,
         jsonEncode({
