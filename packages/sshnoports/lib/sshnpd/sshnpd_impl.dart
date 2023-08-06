@@ -159,6 +159,14 @@ class SSHNPDImpl implements SSHNPD {
           onError: (e) => logger.severe('Notification Failed:$e'),
           onDone: () => logger.info('Notification listener stopped'),
         );
+
+    // Refresh the device entry now, and every hour
+    await _refreshDeviceEntry();
+    Timer.periodic(
+      const Duration(hours: 1),
+      (_) async => await _refreshDeviceEntry(),
+    );
+
     logger.info('Done');
   }
 
@@ -186,6 +194,7 @@ class SSHNPDImpl implements SSHNPD {
     });
   }
 
+  /// Notification handler for sshnpd
   void _notificationHandler(AtNotification notification) async {
     String notificationKey = notification.key
         .replaceAll('${notification.to}:', '')
@@ -237,9 +246,37 @@ class SSHNPDImpl implements SSHNPD {
         _sshCallback(notification, _privateKey, logger, managerAtsign,
             deviceAtsign, device);
         break;
+      case 'ping':
+        logger.info(
+            'ping received from ${notification.from} notification id : ${notification.id}');
+        var metaData = Metadata()
+          ..isPublic = false
+          ..isEncrypted = true
+          ..ttr = -1
+          ..namespaceAware = true;
+
+        var atKey = AtKey()
+          ..key = "heartbeat.$device"
+          ..sharedBy = deviceAtsign
+          ..sharedWith = managerAtsign
+          ..namespace = SSHNPD.namespace
+          ..metadata = metaData;
+
+        /// send a heartbeat back
+        unawaited(
+          _notify(
+            atKey,
+            jsonEncode({
+              'devicename': device,
+              'version': version,
+            }),
+          ),
+        );
+        break;
     }
   }
 
+  /// A callback which is called to start an sshnp session
   void _sshCallback(
       AtNotification notification,
       String privateKey,
@@ -554,17 +591,48 @@ class SSHNPDImpl implements SSHNPD {
     }
   }
 
+  /// This function sends a notification given an atKey and value
   Future<void> _notify(AtKey atKey, String value,
       {String sessionId = ""}) async {
-    AtClient atClient = AtClientManager.getInstance().atClient;
-    NotificationService notificationService = atClient.notificationService;
-
-    await notificationService
+    await atClient.notificationService
         .notify(NotificationParams.forUpdate(atKey, value: value),
             onSuccess: (notification) {
       logger.info('SUCCESS:$notification for: $sessionId with value: $value');
     }, onError: (notification) {
       logger.info('ERROR:$notification');
     });
+  }
+
+  /// This function creates an atKey which shares the device name with the client
+  Future<void> _refreshDeviceEntry() async {
+    const ttl = 1000 * 60 * 60 * 24 * 30; // 30 days
+    var metaData = Metadata()
+      ..isPublic = false
+      ..isEncrypted = true
+      ..ttr = -1
+      ..ttl = ttl
+      ..updatedAt = DateTime.now()
+      ..namespaceAware = true;
+
+    var atKey = AtKey()
+      ..key = "device_info.$device"
+      ..sharedBy = deviceAtsign
+      ..sharedWith = managerAtsign
+      ..namespace = SSHNPD.namespace
+      ..metadata = metaData;
+
+    try {
+      logger.info('Updating device info for $device');
+      await atClient.put(
+        atKey,
+        jsonEncode({
+          "devicename": device,
+          "version": version,
+        }),
+        putRequestOptions: PutRequestOptions()..useRemoteAtServer = true,
+      );
+    } catch (e) {
+      stderr.writeln(e.toString());
+    }
   }
 }
