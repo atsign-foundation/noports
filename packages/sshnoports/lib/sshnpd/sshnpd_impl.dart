@@ -255,20 +255,6 @@ class SSHNPDImpl implements SSHNPD {
     logger.shout(
         'Starting ssh session using ${sshClient.name} (${sshClient.cliArg}) from: $requestingAtSign session: $sessionId');
 
-    // We will send a response notification whether the ssh succeeds, or not.
-    // We'll construct the AtKey here so we can use it in the catch block.
-    var atKey = AtKey()
-      ..key = '$sessionId.$device'
-      ..sharedBy = deviceAtsign
-      ..sharedWith = managerAtsign
-      ..namespace = SSHNPD.namespace
-      ..metadata = (Metadata()
-        ..isPublic = false
-        ..isEncrypted = true
-        ..namespaceAware = true
-        ..ttr = -1
-        ..ttl = 10000);
-
     try {
       bool success = false;
       String? errorMessage;
@@ -289,24 +275,41 @@ class SSHNPDImpl implements SSHNPD {
         logger.warning(errorMessage);
         // Notify sshnp that this session is NOT connected
         await _notify(
-          atKey: atKey,
+          atKey: _createResponseAtKey(sessionId),
           value: '$errorMessage (use --local-port to specify unused port)',
           sessionId: sessionId,
         );
       } else {
         /// Notify sshnp that the connection has been made
-        logger.info(' sshnpd connected notification sent to:from "$atKey');
-        await _notify(atKey: atKey, value: 'connected', sessionId: sessionId);
+        await _notify(
+            atKey: _createResponseAtKey(sessionId),
+            value: 'connected',
+            sessionId: sessionId);
       }
     } catch (e) {
       logger.severe('SSH Client failure : $e');
       // Notify sshnp that this session is NOT connected
       await _notify(
-        atKey: atKey,
+        atKey: _createResponseAtKey(sessionId),
         value: 'Remote SSH Client failure : $e',
         sessionId: sessionId,
       );
     }
+  }
+
+  AtKey _createResponseAtKey(String sessionId) {
+    var atKey = AtKey()
+      ..key = '$sessionId.$device'
+      ..sharedBy = deviceAtsign
+      ..sharedWith = managerAtsign
+      ..namespace = SSHNPD.namespace
+      ..metadata = (Metadata()
+        ..isPublic = false
+        ..isEncrypted = true
+        ..namespaceAware = true
+        ..ttr = -1
+        ..ttl = 10000);
+    return atKey;
   }
 
   Future<void> _handlePublicKeyNotification(AtNotification notification) async {
