@@ -195,6 +195,13 @@ class SSHNPDImpl implements SSHNPD {
   }
 
   void _notificationHandler(AtNotification notification) async {
+    if (notification.from != managerAtsign) {
+      logger.shout('Notification ignored from ${notification.from}'
+          ' which is not in authorized list [$managerAtsign].'
+          ' Notification was ${jsonEncode(notification.toJson())}');
+      return;
+    }
+
     String notificationKey = notification.key
         .replaceAll('${notification.to}:', '')
         .replaceAll('.$device.${SSHNPD.namespace}${notification.from}', '')
@@ -210,127 +217,57 @@ class SSHNPDImpl implements SSHNPD {
         _privateKey = notification.value!;
         break;
       case 'sshpublickey':
-        late final String sshPublicKey;
-        try {
-          var sshHomeDirectory = "$homeDirectory/.ssh/";
-          if (Platform.isWindows) {
-            sshHomeDirectory = '$homeDirectory\\.ssh\\';
-          }
-          logger.info(
-              'ssh Public Key received from ${notification.from} notification id : ${notification.id}');
-          sshPublicKey = notification.value!;
-
-          // Check to see if the ssh public key looks like one!
-          if (!sshPublicKey.startsWith('ssh-')) {
-            throw ('$sshPublicKey does not look like a public key');
-          }
-
-          // Check to see if the ssh Publickey is already in the file if not append to the ~/.ssh/authorized_keys file
-          var authKeys = File('${sshHomeDirectory}authorized_keys');
-
-          var authKeysContent = await authKeys.readAsString();
-
-          if (!authKeysContent.contains(sshPublicKey)) {
-            authKeys.writeAsStringSync("\n$sshPublicKey",
-                mode: FileMode.append);
-          }
-        } catch (e) {
-          logger.severe(
-              'Error writing to $username .ssh/authorized_keys file : $e');
-        }
+        await _handlePublicKeyNotification(notification);
         break;
       case 'sshd':
         logger.info(
-            'ssh callback request received from ${notification.from} notification id : ${notification.id}');
-        _sshCallback(notification, _privateKey, logger, managerAtsign,
-            deviceAtsign, device);
+            '<3.4.0 request for (reverse) ssh received from ${notification.from}'
+            ' ( notification id : ${notification.id} )');
+        _handleLegacySshRequestNotification(notification);
         break;
       case 'ping':
-        logger.info(
-            'ping received from ${notification.from} notification id : ${notification.id}');
-        var metaData = Metadata()
-          ..isPublic = false
-          ..isEncrypted = true
-          ..ttr = -1
-          ..namespaceAware = true;
-
-        var atKey = AtKey()
-          ..key = "heartbeat.$device"
-          ..sharedBy = deviceAtsign
-          ..sharedWith = managerAtsign
-          ..namespace = SSHNPD.namespace
-          ..metadata = metaData;
-
-        /// send a heartbeat back
-        unawaited(
-          _notify(
-            atKey,
-            jsonEncode({
-              'devicename': device,
-              'version': version,
-            }),
-          ),
-        );
+        _handlePingNotification(notification);
         break;
     }
   }
 
-  /// A callback which is called to start an sshnp session
-  void _sshCallback(
-      AtNotification notification,
-      String privateKey,
-      AtSignLogger logger,
-      String managerAtsign,
-      String deviceAtsign,
-      String device) async {
-    // sessionId is local if we do not have a 2.0 client
-    var uuid = Uuid();
-    String sessionId = uuid.v4();
-    String sshString = notification.value!;
+  /// ssh through to the remote device with the information we've received
+  void _handleLegacySshRequestNotification(AtNotification notification) async {
+    String requestingAtSign = notification.from;
 
-    var metaData = Metadata()
-      ..isPublic = false
-      ..isEncrypted = true
-      ..namespaceAware = true
-      ..ttr = -1
-      ..ttl = 10000;
-
-    /// Setup an atKey to return a notification to the managerAtsign
-    var atKey = AtKey()
-      ..key = '$sessionId.$device'
-      ..sharedBy = deviceAtsign
-      ..sharedWith = managerAtsign
-      ..namespace = SSHNPD.namespace
-      ..metadata = metaData;
-
-    if (notification.from != managerAtsign) {
-      logger.shout(
-          'ssh session attempted from: ${notification.from} session: $sessionId and ignored');
-      return;
-    }
-
-    /// Local port, port of sshd, username, hostname
-    List<String> sshList = sshString.split(' ');
+    /// notification value is `$localPort $remotePort $username $remoteHost $sessionId`
+    List<String> sshList = notification.value!.split(' ');
     var localPort = sshList[0];
     var port = sshList[1];
     var username = sshList[2];
     var hostname = sshList[3];
-
-    /// Assure backward compatibility with 1.x clients
+    late String sessionId;
     if (sshList.length == 5) {
+      // sshnp >=2.0.0 clients send sessionId
       sessionId = sshList[4];
-      atKey = AtKey()
-        ..key = '$sessionId.$device'
-        ..sharedBy = deviceAtsign
-        ..sharedWith = managerAtsign
-        ..namespace = SSHNPD.namespace
-        ..metadata = metaData;
+    } else {
+      // sshnp <2.0.0 clients do not send sessionId, it's generated here
+      sessionId = Uuid().v4();
     }
 
     logger.info(
         'Starting ssh session for $username to $hostname on port $port using localhost:$localPort on $hostname ');
     logger.shout(
-        'Starting ssh session using ${sshClient.name} (${sshClient.cliArg}) from: ${notification.from} session: $sessionId');
+        'Starting ssh session using ${sshClient.name} (${sshClient.cliArg}) from: $requestingAtSign session: $sessionId');
+
+    // We will send a response notification whether the ssh succeeds, or not.
+    // We'll construct the AtKey here so we can use it in the catch block.
+    var atKey = AtKey()
+      ..key = '$sessionId.$device'
+      ..sharedBy = deviceAtsign
+      ..sharedWith = managerAtsign
+      ..namespace = SSHNPD.namespace
+      ..metadata = (Metadata()
+        ..isPublic = false
+        ..isEncrypted = true
+        ..namespaceAware = true
+        ..ttr = -1
+        ..ttl = 10000);
 
     try {
       bool success = false;
@@ -338,11 +275,11 @@ class SSHNPDImpl implements SSHNPD {
 
       switch (sshClient) {
         case SupportedSshClient.hostSsh:
-          (success, errorMessage) = await reverseSshViaExec(privateKey,
+          (success, errorMessage) = await reverseSshViaExec(_privateKey,
               username, hostname, port, localPort, logger, sessionId);
           break;
         case SupportedSshClient.pureDart:
-          (success, errorMessage) = await reverseSshViaSSHClient(privateKey,
+          (success, errorMessage) = await reverseSshViaSSHClient(_privateKey,
               username, hostname, port, localPort, logger, sessionId);
           break;
       }
@@ -352,24 +289,82 @@ class SSHNPDImpl implements SSHNPD {
         logger.warning(errorMessage);
         // Notify sshnp that this session is NOT connected
         await _notify(
-          atKey,
-          '$errorMessage (use --local-port to specify unused port)',
+          atKey: atKey,
+          value: '$errorMessage (use --local-port to specify unused port)',
           sessionId: sessionId,
         );
       } else {
         /// Notify sshnp that the connection has been made
         logger.info(' sshnpd connected notification sent to:from "$atKey');
-        await _notify(atKey, "connected", sessionId: sessionId);
+        await _notify(atKey: atKey, value: 'connected', sessionId: sessionId);
       }
     } catch (e) {
       logger.severe('SSH Client failure : $e');
       // Notify sshnp that this session is NOT connected
       await _notify(
-        atKey,
-        'Remote SSH Client failure : $e',
+        atKey: atKey,
+        value: 'Remote SSH Client failure : $e',
         sessionId: sessionId,
       );
     }
+  }
+
+  Future<void> _handlePublicKeyNotification(AtNotification notification) async {
+    late final String sshPublicKey;
+    try {
+      var sshHomeDirectory = "$homeDirectory/.ssh/";
+      if (Platform.isWindows) {
+        sshHomeDirectory = '$homeDirectory\\.ssh\\';
+      }
+      logger.info(
+          'ssh Public Key received from ${notification.from} notification id : ${notification.id}');
+      sshPublicKey = notification.value!;
+
+      // Check to see if the ssh public key looks like one!
+      if (!sshPublicKey.startsWith('ssh-')) {
+        throw ('$sshPublicKey does not look like a public key');
+      }
+
+      // Check to see if the ssh Publickey is already in the file if not append to the ~/.ssh/authorized_keys file
+      var authKeys = File('${sshHomeDirectory}authorized_keys');
+
+      var authKeysContent = await authKeys.readAsString();
+
+      if (!authKeysContent.contains(sshPublicKey)) {
+        authKeys.writeAsStringSync("\n$sshPublicKey", mode: FileMode.append);
+      }
+    } catch (e) {
+      logger
+          .severe('Error writing to $username .ssh/authorized_keys file : $e');
+    }
+  }
+
+  void _handlePingNotification(AtNotification notification) {
+    logger.info(
+        'ping received from ${notification.from} notification id : ${notification.id}');
+    var metaData = Metadata()
+      ..isPublic = false
+      ..isEncrypted = true
+      ..ttr = -1
+      ..namespaceAware = true;
+
+    var atKey = AtKey()
+      ..key = "heartbeat.$device"
+      ..sharedBy = deviceAtsign
+      ..sharedWith = managerAtsign
+      ..namespace = SSHNPD.namespace
+      ..metadata = metaData;
+
+    /// send a heartbeat back
+    unawaited(
+      _notify(
+        atKey: atKey,
+        value: jsonEncode({
+          'devicename': device,
+          'version': version,
+        }),
+      ),
+    );
   }
 
   /// Reverse ssh using SSHClient.
@@ -591,8 +586,10 @@ class SSHNPDImpl implements SSHNPD {
   }
 
   /// This function sends a notification given an atKey and value
-  Future<void> _notify(AtKey atKey, String value,
-      {String sessionId = ""}) async {
+  Future<void> _notify(
+      {required AtKey atKey,
+      required String value,
+      String sessionId = ""}) async {
     await atClient.notificationService
         .notify(NotificationParams.forUpdate(atKey, value: value),
             onSuccess: (notification) {
