@@ -35,6 +35,25 @@ void main(List<String> args) async {
   });
 
   await runZonedGuarded(() async {
+    if (params.listDevices) {
+      print('Searching for devices...');
+      var (active, off, info) = await sshnp.listDevices();
+      if (active.isEmpty && off.isEmpty) {
+        print('  No devices found\n');
+        print(
+            'Note: only devices with sshnpd version 3.5.0 or higher are supported by this command.');
+        print(
+            'Please update your devices to sshnpd version >= 3.5.0 and try again.');
+        exit(0);
+      }
+
+      print('Active Devices:');
+      _printDevices(active, info);
+      print('Inactive Devices:');
+      _printDevices(off, info);
+      exit(0);
+    }
+
     await sshnp.init();
     await sshnp.run();
     exit(0);
@@ -50,4 +69,14 @@ void main(List<String> args) async {
     await stderr.flush().timeout(Duration(milliseconds: 100));
     exit(1);
   });
+}
+
+void _printDevices(Iterable<String> devices, Map<String, dynamic> info) {
+  if (devices.isEmpty) {
+    print('None');
+    return;
+  }
+  for (var device in devices) {
+    print('  $device - v${info[device]?['version']}');
+  }
 }
