@@ -286,7 +286,8 @@ class SSHNPDImpl implements SSHNPD {
         port: int.parse(port),
         remoteForwardPort: int.parse(remoteForwardPort),
         requestingAtsign: requestingAtsign,
-        sessionId: sessionId);
+        sessionId: sessionId,
+        privateKey: _privateKey);
   }
 
   Future<void> startReverseSsh(
@@ -295,7 +296,8 @@ class SSHNPDImpl implements SSHNPD {
       required int port,
       required int remoteForwardPort,
       required String requestingAtsign,
-      required String sessionId}) async {
+      required String sessionId,
+      required String privateKey}) async {
     logger.info(
         'Starting ssh session for $username to $host on port $port with forwardRemote of $remoteForwardPort');
     logger.shout(
@@ -314,7 +316,7 @@ class SSHNPDImpl implements SSHNPD {
               remoteForwardPort: remoteForwardPort,
               requestingAtsign: requestingAtsign,
               sessionId: sessionId,
-              privateKey: _privateKey);
+              privateKey: privateKey);
           break;
         case SupportedSshClient.pureDart:
           (success, errorMessage) = await reverseSshViaSSHClient(
@@ -324,7 +326,7 @@ class SSHNPDImpl implements SSHNPD {
               remoteForwardPort: remoteForwardPort,
               requestingAtsign: requestingAtsign,
               sessionId: sessionId,
-              privateKey: _privateKey);
+              privateKey: privateKey);
           break;
       }
 
