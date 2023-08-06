@@ -27,6 +27,7 @@ class SSHNPParams {
   late final bool rsa;
   late final String? remoteUsername;
   late final bool verbose;
+  late final String rootDomain;
 
   SSHNPParams({
     required this.clientAtSign,
@@ -41,6 +42,7 @@ class SSHNPParams {
     this.rsa = false,
     this.remoteUsername,
     String? atKeysFilePath,
+    this.rootDomain = 'root.atsign.org',
   }) {
     // Do we have a username ?
     username = getUserName(throwIfNull: true)!;
@@ -76,6 +78,7 @@ class SSHNPParams {
       verbose: partial.verbose ?? false,
       remoteUsername: partial.remoteUsername,
       atKeysFilePath: partial.atKeysFilePath,
+      rootDomain: partial.rootDomain ?? 'root.atsign.org',
     );
   }
 }
@@ -96,6 +99,7 @@ class SSHNPPartialParams {
   late final bool? rsa;
   late final String? remoteUsername;
   late final bool? verbose;
+  late final String? rootDomain;
 
   // Non param variables
   static final ArgParser parser = _createArgParser();
@@ -113,6 +117,7 @@ class SSHNPPartialParams {
     this.rsa,
     this.remoteUsername,
     this.verbose,
+    this.rootDomain,
   });
 
   factory SSHNPPartialParams.empty() {
@@ -138,6 +143,7 @@ class SSHNPPartialParams {
       rsa: params2.rsa ?? params1.rsa,
       remoteUsername: params2.remoteUsername ?? params1.remoteUsername,
       verbose: params2.verbose ?? params1.verbose,
+      rootDomain: params2.rootDomain ?? params1.rootDomain,
     );
   }
 
@@ -155,6 +161,7 @@ class SSHNPPartialParams {
       rsa: args['rsa'],
       remoteUsername: args['remote-user-name'],
       verbose: args['verbose'],
+      rootDomain: args['root-domain'],
     );
   }
 

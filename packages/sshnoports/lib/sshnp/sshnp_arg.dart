@@ -118,5 +118,12 @@ class SSHNPArg {
       abbr: 'u',
       help: 'username to use in the ssh session on the remote host',
     ),
+    SSHNPArg(
+      name: 'root-domain',
+      help: 'atDirectory domain',
+      defaultsTo: 'root.atsign.org',
+      mandatory: false,
+      format: ArgFormat.option,
+    ),
   ];
 }
