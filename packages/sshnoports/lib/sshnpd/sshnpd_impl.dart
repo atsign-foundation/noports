@@ -251,8 +251,27 @@ class SSHNPDImpl implements SSHNPD {
           ' Notification was ${jsonEncode(notification.toJson())}');
       return;
     }
-    logger.shout('_handleSshRequestNotification not yet implemented');
-    // TODO implement
+
+    String requestingAtsign = notification.from;
+
+    Map params = jsonDecode(notification.value!);
+
+    if (params['direct'] == true) {
+      // direct ssh requested
+      logger.shout(
+          '_handleSshRequestNotification - direct ssh not yet implemented');
+      // TODO implement
+    } else {
+      // reverse ssh requested
+      await startReverseSsh(
+          host: params['host'],
+          port: params['port'],
+          sessionId: params['sessionId'],
+          username: params['username'],
+          remoteForwardPort: params['remoteForwardPort'],
+          requestingAtsign: requestingAtsign,
+          privateKey: params['privateKey']);
+    }
   }
 
   /// ssh through to the remote device with the information we've received
@@ -291,12 +310,12 @@ class SSHNPDImpl implements SSHNPD {
   }
 
   Future<void> startReverseSsh(
-      {required String username,
-      required String host,
+      {required String host,
       required int port,
+      required String sessionId,
+      required String username,
       required int remoteForwardPort,
       required String requestingAtsign,
-      required String sessionId,
       required String privateKey}) async {
     logger.info(
         'Starting ssh session for $username to $host on port $port with forwardRemote of $remoteForwardPort');
@@ -310,22 +329,22 @@ class SSHNPDImpl implements SSHNPD {
       switch (sshClient) {
         case SupportedSshClient.hostSsh:
           (success, errorMessage) = await reverseSshViaExec(
-              username: username,
               host: host,
               port: port,
+              sessionId: sessionId,
+              username: username,
               remoteForwardPort: remoteForwardPort,
               requestingAtsign: requestingAtsign,
-              sessionId: sessionId,
               privateKey: privateKey);
           break;
         case SupportedSshClient.pureDart:
           (success, errorMessage) = await reverseSshViaSSHClient(
-              username: username,
               host: host,
               port: port,
+              sessionId: sessionId,
+              username: username,
               remoteForwardPort: remoteForwardPort,
               requestingAtsign: requestingAtsign,
-              sessionId: sessionId,
               privateKey: privateKey);
           break;
       }
@@ -451,12 +470,12 @@ class SSHNPDImpl implements SSHNPD {
   /// We will ssh outwards with a remote port forwarding to allow a client on
   /// the other side to ssh to port 22 here.
   Future<(bool, String?)> reverseSshViaSSHClient(
-      {required String username,
-      required String host,
+      {required String host,
       required int port,
+      required String sessionId,
+      required String username,
       required int remoteForwardPort,
       required String requestingAtsign,
-      required String sessionId,
       required String privateKey}) async {
     late final SSHSocket socket;
     try {
@@ -542,12 +561,12 @@ class SSHNPDImpl implements SSHNPD {
   /// We will ssh outwards with a remote port forwarding to allow a client on
   /// the other side to ssh to port 22 here.
   Future<(bool, String?)> reverseSshViaExec(
-      {required String username,
-      required String host,
+      {required String host,
       required int port,
+      required String sessionId,
+      required String username,
       required int remoteForwardPort,
       required String requestingAtsign,
-      required String sessionId,
       required String privateKey}) async {
     final pemFile = File('/tmp/.${Uuid().v4()}');
     if (!privateKey.endsWith('\n')) {
