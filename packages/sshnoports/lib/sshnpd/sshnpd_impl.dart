@@ -194,6 +194,7 @@ class SSHNPDImpl implements SSHNPD {
     });
   }
 
+  /// Notification handler for sshnpd
   void _notificationHandler(AtNotification notification) async {
     if (notification.from != managerAtsign) {
       logger.shout('Notification ignored from ${notification.from}'
