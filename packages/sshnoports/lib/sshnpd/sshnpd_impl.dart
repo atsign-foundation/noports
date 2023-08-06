@@ -251,6 +251,12 @@ class SSHNPDImpl implements SSHNPD {
       sessionId = Uuid().v4();
     }
 
+    await startReverseSsh(
+        username, hostname, port, localPort, requestingAtSign, sessionId);
+  }
+
+  Future<void> startReverseSsh(String username, String hostname, String port,
+      String localPort, String requestingAtSign, String sessionId) async {
     logger.info(
         'Starting ssh session for $username to $hostname on port $port using localhost:$localPort on $hostname ');
     logger.shout(
