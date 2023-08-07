@@ -27,6 +27,7 @@ class SSHNPParams {
   late final bool rsa;
   late final String? remoteUsername;
   late final bool verbose;
+  late final String rootDomain;
 
   /// Special Arguments
   late final bool listDevices;
@@ -44,6 +45,7 @@ class SSHNPParams {
     this.rsa = false,
     this.remoteUsername,
     String? atKeysFilePath,
+    this.rootDomain = 'root.atsign.org',
     this.listDevices = false,
   }) {
     // Do we have a username ?
@@ -80,6 +82,7 @@ class SSHNPParams {
       verbose: partial.verbose ?? false,
       remoteUsername: partial.remoteUsername,
       atKeysFilePath: partial.atKeysFilePath,
+      rootDomain: partial.rootDomain ?? 'root.atsign.org',
       listDevices: partial.listDevices,
     );
   }
@@ -102,6 +105,7 @@ class SSHNPPartialParams {
   late final bool? rsa;
   late final String? remoteUsername;
   late final bool? verbose;
+  late final String? rootDomain;
 
   /// Special Params
   // N.B. config file is a meta param and doesn't need to be included
@@ -123,6 +127,7 @@ class SSHNPPartialParams {
     this.rsa,
     this.remoteUsername,
     this.verbose,
+    this.rootDomain,
     this.listDevices = false,
   });
 
@@ -149,6 +154,7 @@ class SSHNPPartialParams {
       rsa: params2.rsa ?? params1.rsa,
       remoteUsername: params2.remoteUsername ?? params1.remoteUsername,
       verbose: params2.verbose ?? params1.verbose,
+      rootDomain: params2.rootDomain ?? params1.rootDomain,
       listDevices: params2.listDevices || params1.listDevices,
     );
   }
@@ -167,6 +173,7 @@ class SSHNPPartialParams {
       rsa: args['rsa'],
       remoteUsername: args['remote-user-name'],
       verbose: args['verbose'],
+      rootDomain: args['root-domain'],
       listDevices: args['list-devices'] ?? false,
     );
   }

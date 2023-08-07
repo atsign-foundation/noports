@@ -80,6 +80,7 @@ class SSHNPDImpl implements SSHNPD {
         homeDirectory: p.homeDirectory,
         atsign: p.deviceAtsign,
         atKeysFilePath: p.atKeysFilePath,
+        rootDomain: p.rootDomain,
       );
 
       var sshnpd = SSHNPD(
