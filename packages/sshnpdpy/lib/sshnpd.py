@@ -22,7 +22,7 @@ def handle_decryption(queue:Queue, client:AtClient, ssh_path, args: argparse.Arg
     private_key = ""
     sshPublicKey = ""
     ssh_notification_recieved = False
-    while not ssh_notification_recieved:
+    while not ssh_notification_recieved or sshPublicKey == "" or private_key == "":
         try:
             at_event = queue.get(block=False)
             event_type = at_event.event_type
@@ -39,14 +39,14 @@ def handle_decryption(queue:Queue, client:AtClient, ssh_path, args: argparse.Arg
             key = event_data["key"].split(":")[1].split(".")[0]
             decrypted_value = str(event_data["decryptedValue"])
             if key == "privatekey":
-                print(
-                    f'private key received from ${event_data["from"]} notification id : ${event_data["id"]}')
+                # print(
+                #     f'private key received from ${event_data["from"]} notification id : ${event_data["id"]}')
                 private_key = decrypted_value
                 continue
 
             if key == "sshpublickey":
-                print(
-                    f'ssh Public Key received from ${event_data["from"]} notification id : ${event_data["id"]}')
+                #print(
+                   #f'ssh Public Key received from ${event_data["from"]} notification id : ${event_data["id"]}')
                 sshPublicKey = decrypted_value
                 # // Check to see if the ssh Publickey is already in the file if not append to the ~/.ssh/authorized_keys file
                 writeKey = False
@@ -61,14 +61,14 @@ def handle_decryption(queue:Queue, client:AtClient, ssh_path, args: argparse.Arg
                 continue
 
             if key == "sshd":
-                print(
-                    f'ssh callback requested from {event_data["from"]} notification id : {event_data["id"]}')
+                # print(
+                #     f'ssh callback requested from {event_data["from"]} notification id : {event_data["id"]}')
                 ssh_notification_recieved = True
                 callbackArgs = [at_event, client, private_key, args.manager_atsign, args.device_atsign, args.device, ssh_path]
-                return callbackArgs
-
+            
         except Empty:
             pass
+    return callbackArgs
 
 def handle_events(queue:Queue, client: AtClient):
     while(True):
@@ -82,7 +82,6 @@ def handle_events(queue:Queue, client: AtClient):
                 queue.put(at_event)
                 sleep(1) 
             else:
-                print("decrypting event")
                 if event_type == AtEventType.UPDATE_NOTIFICATION:
                     client.secondary_connection.execute_command("notify:remove:" + at_event.event_data["id"])
                 client.handle_event(queue, at_event)
@@ -199,7 +198,7 @@ def main():
     commit_log_path = os.path.dirname(
         f'{home_dir}/.sshnp/{args.device_atsign}/storage/commitLog')
     download_path = os.path.dirname(f'{home_dir}/.sshnp/files')
-    ssh_path = os.path.dirname(f'{home_dir}/.ssh/')
+    ssh_path = f'{home_dir}/.ssh'
     callbackArgs = []
     event_queue = Queue(maxsize=20)
     client = AtClient(AtSign(args.device_atsign), queue=event_queue)
@@ -212,6 +211,7 @@ def main():
         sleep(3)
         callbackArgs = handle_decryption(client.queue, client, ssh_path, args)
         ssh_connection  = sshnp_callback(*callbackArgs)
+    #TODO: clean up connections and threads lol ( i have lots of faith in the garbage collectors 
     
         
 if __name__ == "__main__":
