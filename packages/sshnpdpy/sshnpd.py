@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 import argparse
-from asyncio import sleep
+from time import sleep
 
 from lib import SSHNPDClient
 

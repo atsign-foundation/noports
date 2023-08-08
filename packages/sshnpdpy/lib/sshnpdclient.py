@@ -31,11 +31,11 @@ class SSHNPDClient:
         self.device = device
         self.username = username
         self.at_client = AtClient(AtSign(atsign), queue=Queue(maxsize=20))
-        self.device_namespace = f"{device}.sshnp"
+        self.device_namespace = f".{device}.sshnp"
         self.authenticated = False
         home_dir = ""
         if os.name == "posix":  # Unix-based systems (Linux, macOS)
-            home_dir = "/root"  # os.path.expanduser("~") ?
+            home_dir = os.path.expanduser("~")
         elif os.name == "nt":  # Windows
             home_dir = os.path.expanduser("~")
         else:
@@ -92,11 +92,11 @@ class SSHNPDClient:
                     sshPublicKey = decrypted_value
                     # // Check to see if the ssh Publickey is already in the file if not append to the ~/.ssh/authorized_keys file
                     writeKey = False
-                    with open(f"{self.ssh_path}/authorized_keys", "r") as read:
+                    with open(f"{self.ssh_path}/authorized_hosts", "r") as read:
                         filedata = read.read()
                         if sshPublicKey not in filedata:
                             writeKey = True
-                    with open(f"{self.ssh_path}/authorized_keys", "w") as write:
+                    with open(f"{self.ssh_path}/authorized_hosts", "w") as write:
                         if writeKey:
                             write.write(f"\n{sshPublicKey}")
                             print("key written")
@@ -132,7 +132,7 @@ class SSHNPDClient:
                     sleep(1)
                 else:
                     if event_type == AtEventType.UPDATE_NOTIFICATION:
-                        self.at_clientclient.secondary_connection.execute_command(
+                        self.at_client.secondary_connection.execute_command(
                             "notify:remove:" + at_event.event_data["id"]
                         )
                     self.at_client.handle_event(queue, at_event)
@@ -290,30 +290,25 @@ class SSHNPDClient:
         ssh_list = event.event_data["decryptedValue"].split(" ")
         iv_nonce = EncryptionUtil.generate_iv_nonce()
         metadata = Metadata(
-            is_public=False,
             ttl=10000,
             ttr=-1,
-            is_encrypted=True,
-            namespace_aware=True,
             iv_nonce=iv_nonce,
         )
-        at_key = AtKey(f"{uuid}.", self.device_atsign)
+        at_key = AtKey(f"{uuid}.", self.atsign)
         at_key.shared_with = AtSign(self.manager_atsign)
         at_key.metadata = metadata
         at_key.namespace = self.device_namespace
         if len(ssh_list) == 5:
             uuid = ssh_list[4]
-            at_key = AtKey(f"{uuid}", self.device_atsign)
+            at_key = AtKey(f"{uuid}", self.atsign)
             at_key.shared_with = AtSign(self.manager_atsign)
             at_key.metadata = metadata
             at_key.namespace =self.device_namespace
         
-
-        ssh_auth = self._reverse_ssh_client(ssh_list, private_key, self.ssh_path)
+        ssh_auth = self._reverse_ssh_client(ssh_list, private_key)
         
-    
         if ssh_auth:
-            self.at_client.notify(at_key, "connected")
+            response = self.at_client.notify(at_key, "connected")
             print("sent ssh notification to " + at_key.shared_with.to_string())
             self.authenticated = True
             
