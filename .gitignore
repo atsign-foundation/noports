@@ -7,7 +7,7 @@
 
 #Docker
 .devcontainer
-
+compose-dev.yaml
 
 # atPlatform stuff
 *.hive
@@ -22,3 +22,6 @@ build/
 
 # Macos
 .DS_Store
+
+# Python Related
+packages/sshnpdpy/lib/__pycache__
