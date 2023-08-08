@@ -60,6 +60,32 @@ class SSHNPParams {
         atKeysFilePath ?? getDefaultAtKeysFilePath(homeDirectory, clientAtSign);
   }
 
+  static Future<Iterable<SSHNPParams>> getConfigFilesFromDirectory(
+      [String? directory]) async {
+    var params = <SSHNPParams>[];
+
+    var homeDirectory = getHomeDirectory(throwIfNull: true)!;
+    directory ??= getDefaultSshnpConfigDirectory(homeDirectory);
+    var files = Directory(directory).list();
+
+    await files.forEach((file) {
+      if (file is! File) return;
+      try {
+        var p = SSHNPParams.fromConfigFile(file.path);
+        params.add(p);
+      } catch (e) {
+        print('Error reading config file: ${file.path}');
+        print(e);
+      }
+    });
+
+    return params;
+  }
+
+  factory SSHNPParams.fromConfigFile(String fileName) {
+    return SSHNPParams.fromPartial(SSHNPPartialParams.fromConfig(fileName));
+  }
+
   factory SSHNPParams.fromPartial(SSHNPPartialParams partial) {
     AtSignLogger logger = AtSignLogger(' SSHNPParams ');
 
