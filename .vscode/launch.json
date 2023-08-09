@@ -5,6 +5,7 @@
   "version": "0.2.0",
   "configurations": [
     {
+      // Since there are python tools in the repo, this allows you to run them faster in vscode
       "name": "Python: Current File",
       "type": "python",
       "request": "launch",
