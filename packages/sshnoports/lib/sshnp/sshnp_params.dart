@@ -86,6 +86,78 @@ class SSHNPParams {
       listDevices: partial.listDevices,
     );
   }
+
+  factory SSHNPParams.fromConfigFile(String fileName) {
+    return SSHNPParams.fromPartial(SSHNPPartialParams.fromConfig(fileName));
+  }
+
+  static Future<Iterable<SSHNPParams>> getConfigFilesFromDirectory(
+      [String? directory]) async {
+    var params = <SSHNPParams>[];
+
+    var homeDirectory = getHomeDirectory(throwIfNull: true)!;
+    directory ??= getDefaultSshnpConfigDirectory(homeDirectory);
+    var files = Directory(directory).list();
+
+    await files.forEach((file) {
+      if (file is! File) return;
+      try {
+        var p = SSHNPParams.fromConfigFile(file.path);
+        params.add(p);
+      } catch (e) {
+        print('Error reading config file: ${file.path}');
+        print(e);
+      }
+    });
+
+    return params;
+  }
+
+  Future<File> toFile(String fileName, {bool overwrite = false}) async {
+    var file = File(fileName);
+    var exists = await file.exists();
+
+    if (exists && !overwrite) {
+      print('Failed to write config file: $fileName already exists');
+      return file;
+    }
+
+    // FileMode.write will create the file if it does not exist
+    // and overwrite existing files if it does exist
+    return file.writeAsString(toConfig(), mode: FileMode.write);
+  }
+
+  Map<String, dynamic> toArgs() {
+    return {
+      'from': clientAtSign,
+      'to': sshnpdAtSign,
+      'host': host,
+      'device': device,
+      'port': port,
+      'local-port': localPort,
+      'key-file': atKeysFilePath,
+      'ssh-public-key': sendSshPublicKey,
+      'local-ssh-options': localSshOptions,
+      'rsa': rsa,
+      'remote-user-name': remoteUsername,
+      'verbose': verbose,
+      'root-domain': rootDomain,
+      'list-devices': listDevices,
+    };
+  }
+
+  String toConfig() {
+    var lines = <String>[];
+    for (var entry in toArgs().entries) {
+      var key = SSHNPArg.fromName(entry.key).bashName;
+      var value = entry.value;
+      if (value is List) {
+        value = value.join(';');
+      }
+      lines.add('$key=$value');
+    }
+    return lines.join('\n');
+  }
 }
 
 /// A class which contains a subset of the SSHNPParams

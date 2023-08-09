@@ -61,6 +61,14 @@ String getDefaultSshDirectory(String homeDirectory) {
   return '$homeDirectory/.ssh/'.replaceAll('/', Platform.pathSeparator);
 }
 
+String getDefaultSshnpDirectory(String homeDirectory) {
+  return '$homeDirectory/.sshnp/'.replaceAll('/', Platform.pathSeparator);
+}
+
+String getDefaultSshnpConfigDirectory(String homeDirectory) {
+  return '$homeDirectory/.sshnp/config'.replaceAll('/', Platform.pathSeparator);
+}
+
 /// Checks if the provided atSign's atServer has been properly activated with a public RSA key.
 /// `atClient` must be authenticated
 /// `atSign` is the atSign to check
