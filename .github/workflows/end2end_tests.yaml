@@ -74,11 +74,11 @@ jobs:
           ### BACKWARD TESTS WHICH NEED SYNC ###
           - np: local
             npd: v3.1.2
-            wait: 30
+            wait: 60
 
           - np: local
             npd: v3.2.0
-            wait: 30
+            wait: 60
 
           - np: v3.1.2
             npd: local
@@ -94,7 +94,7 @@ jobs:
           echo "np: ${{ matrix.np }}"
           echo "npd: ${{ matrix.npd }}"
           echo "rvd: ${{ matrix.rvd }}"
-          echo "rvd: ${{ matrix.rvd_atsign || env.DEFAULT_RVD_ATSIGN }}"
+          echo "rvd_atsign: ${{ matrix.rvd_atsign || env.DEFAULT_RVD_ATSIGN }}"
           echo "wait: ${{ matrix.wait }}"
 
       - uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9 # v3.5.3
