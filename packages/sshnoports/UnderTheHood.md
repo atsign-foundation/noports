@@ -26,7 +26,7 @@ In brief
   - and opens a socket to its local sshd port
   - and bridges the sockets together
   - and sends a response notification to the `sshnp` client
-- The cloent displays a message to the user that they may now `ssh -p $port $username@$host`, and exits
+- The client displays a message to the user that they may now `ssh -p $port $username@$host`, and exits
 
 This high-level flow is visualized in the diagram below.
 
