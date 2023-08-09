@@ -27,6 +27,10 @@ class SSHNPParams {
   late final bool rsa;
   late final String? remoteUsername;
   late final bool verbose;
+  late final String rootDomain;
+
+  /// Special Arguments
+  late final bool listDevices;
 
   SSHNPParams({
     required this.clientAtSign,
@@ -41,6 +45,8 @@ class SSHNPParams {
     this.rsa = false,
     this.remoteUsername,
     String? atKeysFilePath,
+    this.rootDomain = 'root.atsign.org',
+    this.listDevices = false,
   }) {
     // Do we have a username ?
     username = getUserName(throwIfNull: true)!;
@@ -76,7 +82,81 @@ class SSHNPParams {
       verbose: partial.verbose ?? false,
       remoteUsername: partial.remoteUsername,
       atKeysFilePath: partial.atKeysFilePath,
+      rootDomain: partial.rootDomain ?? 'root.atsign.org',
+      listDevices: partial.listDevices,
     );
+  }
+
+  factory SSHNPParams.fromConfigFile(String fileName) {
+    return SSHNPParams.fromPartial(SSHNPPartialParams.fromConfig(fileName));
+  }
+
+  static Future<Iterable<SSHNPParams>> getConfigFilesFromDirectory(
+      [String? directory]) async {
+    var params = <SSHNPParams>[];
+
+    var homeDirectory = getHomeDirectory(throwIfNull: true)!;
+    directory ??= getDefaultSshnpConfigDirectory(homeDirectory);
+    var files = Directory(directory).list();
+
+    await files.forEach((file) {
+      if (file is! File) return;
+      try {
+        var p = SSHNPParams.fromConfigFile(file.path);
+        params.add(p);
+      } catch (e) {
+        print('Error reading config file: ${file.path}');
+        print(e);
+      }
+    });
+
+    return params;
+  }
+
+  Future<File> toFile(String fileName, {bool overwrite = false}) async {
+    var file = File(fileName);
+    var exists = await file.exists();
+
+    if (exists && !overwrite) {
+      print('Failed to write config file: $fileName already exists');
+      return file;
+    }
+
+    // FileMode.write will create the file if it does not exist
+    // and overwrite existing files if it does exist
+    return file.writeAsString(toConfig(), mode: FileMode.write);
+  }
+
+  Map<String, dynamic> toArgs() {
+    return {
+      'from': clientAtSign,
+      'to': sshnpdAtSign,
+      'host': host,
+      'device': device,
+      'port': port,
+      'local-port': localPort,
+      'key-file': atKeysFilePath,
+      'ssh-public-key': sendSshPublicKey,
+      'local-ssh-options': localSshOptions,
+      'rsa': rsa,
+      'remote-user-name': remoteUsername,
+      'verbose': verbose,
+      'root-domain': rootDomain,
+      'list-devices': listDevices,
+    };
+  }
+
+  String toConfig() {
+    var lines = <String>[];
+    for (var entry in toArgs().entries) {
+      var key = SSHNPArg.fromName(entry.key).bashName;
+      var value = entry.value;
+      if (value is List) {
+        value = value.join(';');
+      }
+      lines.add('$key=$value');
+    }
+    return lines.join('\n');
   }
 }
 
@@ -84,6 +164,7 @@ class SSHNPParams {
 /// This may be used when part of the params come from separate sources
 /// e.g. default values from a config file and the rest from the command line
 class SSHNPPartialParams {
+  /// Main Params
   late final String? clientAtSign;
   late final String? sshnpdAtSign;
   late final String? host;
@@ -96,6 +177,11 @@ class SSHNPPartialParams {
   late final bool? rsa;
   late final String? remoteUsername;
   late final bool? verbose;
+  late final String? rootDomain;
+
+  /// Special Params
+  // N.B. config file is a meta param and doesn't need to be included
+  late final bool listDevices;
 
   // Non param variables
   static final ArgParser parser = _createArgParser();
@@ -113,6 +199,8 @@ class SSHNPPartialParams {
     this.rsa,
     this.remoteUsername,
     this.verbose,
+    this.rootDomain,
+    this.listDevices = false,
   });
 
   factory SSHNPPartialParams.empty() {
@@ -138,6 +226,8 @@ class SSHNPPartialParams {
       rsa: params2.rsa ?? params1.rsa,
       remoteUsername: params2.remoteUsername ?? params1.remoteUsername,
       verbose: params2.verbose ?? params1.verbose,
+      rootDomain: params2.rootDomain ?? params1.rootDomain,
+      listDevices: params2.listDevices || params1.listDevices,
     );
   }
 
@@ -155,6 +245,8 @@ class SSHNPPartialParams {
       rsa: args['rsa'],
       remoteUsername: args['remote-user-name'],
       verbose: args['verbose'],
+      rootDomain: args['root-domain'],
+      listDevices: args['list-devices'] ?? false,
     );
   }
 
@@ -189,8 +281,11 @@ class SSHNPPartialParams {
     );
   }
 
-  static ArgParser _createArgParser(
-      {bool withConfig = true, bool withDefaults = true}) {
+  static ArgParser _createArgParser({
+    bool withConfig = true,
+    bool withDefaults = true,
+    bool withListDevices = true,
+  }) {
     var parser = ArgParser();
     // Basic arguments
     for (SSHNPArg arg in SSHNPArg.args) {
@@ -227,6 +322,14 @@ class SSHNPPartialParams {
         'config-file',
         help:
             'Read args from a config file\nMandatory args are not required if already supplied in the config file',
+      );
+    }
+    if (withListDevices) {
+      parser.addFlag(
+        'list-devices',
+        aliases: ['ls'],
+        negatable: false,
+        help: 'List available devices',
       );
     }
     return parser;

@@ -67,6 +67,7 @@ class SSHRVDImpl implements SSHRVD {
         atsign: p.atSign,
         atKeysFilePath: p.atKeysFilePath,
         namespace: SSHRVD.namespace,
+        rootDomain: p.rootDomain,
       );
 
       var sshrvd = SSHRVD(

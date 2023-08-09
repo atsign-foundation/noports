@@ -10,6 +10,7 @@ class SSHRVDParams {
   late final String ipAddress;
   late final bool verbose;
   late final bool snoop;
+  late final String rootDomain;
 
   // Non param variables
   static final ArgParser parser = _createArgParser();
@@ -33,6 +34,7 @@ class SSHRVDParams {
 
     verbose = r['verbose'];
     snoop = r['snoop'];
+    rootDomain = r['root-domain'];
   }
 
   static ArgParser _createArgParser() {
@@ -76,6 +78,12 @@ class SSHRVDParams {
       abbr: 's',
       defaultsTo: false,
       help: 'Snoop on traffic passing through service',
+    );
+    parser.addOption(
+      'root-domain',
+      mandatory: false,
+      defaultsTo: 'root.atsign.org',
+      help: 'atDirectory domain',
     );
     return parser;
   }

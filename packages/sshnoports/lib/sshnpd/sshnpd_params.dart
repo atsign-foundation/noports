@@ -12,6 +12,7 @@ class SSHNPDParams {
   late final String deviceAtsign;
   late final bool verbose;
   late final SupportedSshClient sshClient;
+  late final String rootDomain;
 
   // Non param variables
   static final ArgParser parser = _createArgParser();
@@ -43,6 +44,8 @@ class SSHNPDParams {
 
     sshClient = SupportedSshClient.values
         .firstWhere((c) => c.cliArg == r['ssh-client']);
+
+    rootDomain = r['root-domain'];
   }
 
   static ArgParser _createArgParser() {
@@ -99,6 +102,12 @@ class SSHNPDParams {
         defaultsTo: SupportedSshClient.hostSsh.cliArg,
         allowed: SupportedSshClient.values.map((c) => c.cliArg).toList(),
         help: 'What to use for outbound ssh connections.');
+
+    parser.addOption('root-domain',
+        mandatory: false,
+        defaultsTo: 'root.atsign.org',
+        help: 'atDirectory domain',
+    );
 
     return parser;
   }

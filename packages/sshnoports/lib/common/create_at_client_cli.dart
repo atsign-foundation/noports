@@ -12,6 +12,7 @@ Future<AtClient> createAtClientCli({
   String? pathExtension,
   String subDirectory = '.sshnp',
   String namespace = 'sshnp',
+  String rootDomain = 'root.atsign.org',
 }) async {
   // Now on to the atPlatform startup
   //onboarding preference builder can be used to set onboardingService parameters
@@ -30,7 +31,9 @@ Future<AtClient> createAtClientCli({
         '$pathBase/storage/commitLog'.replaceAll('/', Platform.pathSeparator)
     ..fetchOfflineNotifications = false
     ..atKeysFilePath = atKeysFilePath
-    ..atProtocolEmitted = Version(2, 0, 0);
+    ..atProtocolEmitted = Version(2, 0, 0)
+    ..rootDomain = rootDomain
+    ;
 
   AtOnboardingService onboardingService = AtOnboardingServiceImpl(
       atsign, atOnboardingConfig,
