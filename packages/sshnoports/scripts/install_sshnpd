@@ -267,6 +267,16 @@ setup_main_binaries() {
   echo "Installed binaries: $MAIN_BINARIES";
 }
 
+# Kills the service outright
+kill_service() {
+  killall -q -u "$SSHNP_USER" -r "$BINARY_NAME$CLIENT_ATSIGN$"
+}
+
+# Kills the underlying instance, service will automatically restart
+restart_service() {
+  killall -q -u "$SSHNP_USER" -r "$BINARY_NAME$"
+}
+
 # Place custom user based scripts
 setup_service() {
   SSHNPD_SERVICE_BINARY_PATH="$HOME_PATH/.local/bin/$BINARY_NAME$CLIENT_ATSIGN";
@@ -309,18 +319,43 @@ setup_service() {
     fi
   fi
 
+  SERVICE_LIST_FILE="$HOME_PATH/.$BINARY_NAME/.service_list";
+
+  if [ ! -f "$SERVICE_LIST_FILE" ]; then
+    touch "$SERVICE_LIST_FILE";
+  fi
+
+  PREVIOUS_SERVICE_ENTRY=$(grep "$BINARY_NAME$CLIENT_ATSIGN " < "$SERVICE_LIST_FILE");
+  OTHER_SERVICE_ENTRIES=$(grep -v "$BINARY_NAME$CLIENT_ATSIGN " < "$SERVICE_LIST_FILE");
+
+  if [ -n "$PREVIOUS_SERVICE_ENTRY" ]; then
+    echo "Removing previous service entry: $PREVIOUS_SERVICE_ENTRY";
+    echo "$OTHER_SERVICE_ENTRIES" > "$SERVICE_LIST_FILE";
+  fi
+
+  echo "$BINARY_NAME$CLIENT_ATSIGN $SSHNPD_SERVICE_MECHANISM" >> "$SERVICE_LIST_FILE";
+
+  if [ -n "$PREVIOUS_SERVICE_ENTRY" ]; then
+    echo "Service entry updated: $BINARY_NAME$CLIENT_ATSIGN $SSHNPD_SERVICE_MECHANISM";
+    echo "Restarting service...";
+    NO_RUN='';
+    PREVIOUS_SERVICE_MECHANISM=$(echo "$PREVIOUS_SERVICE_ENTRY" | cut -d' ' -f2);
+    case "$PREVIOUS_SERVICE_MECHANISM" in
+      cron)
+         kill_service;
+        ;;
+      tmux)
+        tmux kill-session -t "$BINARY_NAME$CLIENT_ATSIGN";
+        ;;
+    esac
+  else
+    echo "Service entry added: $BINARY_NAME$CLIENT_ATSIGN $SSHNPD_SERVICE_MECHANISM";
+  fi
+
   if [ -z "$NO_RUN" ]; then
     echo "Starting $BINARY_NAME$CLIENT_ATSIGN service...";
     eval "$SSHNP_COMMAND &"
   fi
-
-  SERVICE_LIST_FILE="$HOME_PATH/.$BINARY_NAME/.service_list";
-  echo "$BINARY_NAME$CLIENT_ATSIGN $SSHNPD_SERVICE_MECHANISM" >> "$SERVICE_LIST_FILE";
-}
-
-# used to restart the service after an update
-restart_service() {
-  killall -q -u "$SSHNP_USER" -r "$BINARY_NAME$"
 }
 
 # Wrapping install steps prevents issues caused by interrupting the download
