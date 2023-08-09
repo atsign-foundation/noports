@@ -50,9 +50,6 @@ notifications" and "receiving notifications", and we made the statement that
 end-to-end encrypted"
 
 Here are some links to detailed diagrams covering
-- [how atClients authenticate](https://github.
-  com/atsign-foundation/at_protocol/blob/trunk/decisions/2023-01-pkam-per-app-and-device.md#appendix---current-flows) to their atServers
-- [how encrypted data is exchanged](https://github.
-  com/atsign-foundation/at_protocol/blob/trunk/usage-examples/how-to-exchange-encrypted-data.md) (including how keys are exchanged)
-- [how notifications work](https://github.
-  com/atsign-foundation/at_protocol/blob/trunk/usage-examples/how-notifications-work.md)
+- [how atClients authenticate to their atServers](https://github.com/atsign-foundation/at_protocol/blob/trunk/decisions/2023-01-pkam-per-app-and-device.md#appendix---current-flows)
+- [how encrypted data is exchanged](https://github.com/atsign-foundation/at_protocol/blob/trunk/usage-examples/how-to-exchange-encrypted-data.md) (including how keys are exchanged)
+- [how notifications work](https://github.com/atsign-foundation/at_protocol/blob/trunk/usage-examples/how-notifications-work.md)
