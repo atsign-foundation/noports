@@ -187,12 +187,16 @@ parse_env() {
   fi
 }
 
+cleanup() {
+  rm -rf "$HOME_PATH/.atsign/temp/$TEMP_PATH";
+}
+
 make_dirs() {
   rm -rf "$HOME_PATH/.atsign/temp/$TEMP_PATH";
   mkdir -p "$HOME_PATH/.ssh/" \
            "$HOME_PATH/.$BINARY_NAME/logs" \
            "$HOME_PATH/.atsign/keys" \
-           "$HOME_PATH/.atsign/temp" \
+           "$HOME_PATH/.atsign/temp/$TEMP_PATH" \
            "$HOME_PATH/.local/bin";
 
   if [ ! -f "$HOME_PATH/.ssh/authorized_keys" ]; then
@@ -213,6 +217,15 @@ download() {
 
     if [ ! -f "$HOME_PATH/.atsign/temp/$TEMP_PATH/$BINARY_NAME.$EXT" ]; then
       echo "Failed to download $BINARY_NAME";
+      echo;
+      echo "Please try again, or download manually from $DOWNLOAD";
+      echo "After downloading manually, run the following command to install:";
+      if [ "$0" == 'bash' ]; then
+        echo "bash -c \"\$(curl https://getsshnpd.noports.com)\" -- -l <path to $EXT file>";
+      else
+        echo "  $0 -l <path to $EXT file>";
+      fi
+      cleanup
       exit 1;
     fi
 
@@ -310,11 +323,6 @@ restart_service() {
   killall -q -u "$SSHNP_USER" -r "$BINARY_NAME$"
 }
 
-post_install() {
-  rm -rf "$HOME_PATH/.atsign/temp";
-  echo; echo "Installation complete!";
-}
-
 # Wrapping install steps prevents issues caused by interrupting the download
 main () {
   parse_env
@@ -327,7 +335,8 @@ main () {
     setup_service
   fi
 
-  post_install
+  cleanup
+  echo; echo "Installation complete!";
 
   if [ "$SSHNP_OP" = 'update' ]; then
     restart_service
