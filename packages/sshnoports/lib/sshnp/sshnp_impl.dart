@@ -201,7 +201,7 @@ class SSHNPImpl implements SSHNP {
     return fromParams(params);
   }
 
-  static Future<SSHNP> fromParams(SSHNPParams p) async {
+  static Future<SSHNP> fromParams(SSHNPParams p, {AtClient? atClient}) async {
     try {
       if (p.clientAtSign == null) {
         throw ArgumentError('Option from is mandatory.');
@@ -216,7 +216,7 @@ class SSHNPImpl implements SSHNP {
       }
 
       // Check atKeyFile selected exists
-      if (!await fileExists(p.atKeysFilePath)) {
+      if (atClient == null && !await fileExists(p.atKeysFilePath)) {
         throw ('\nUnable to find .atKeys file : ${p.atKeysFilePath}');
       }
 
@@ -227,13 +227,13 @@ class SSHNPImpl implements SSHNP {
         AtSignLogger.root_level = 'INFO';
       }
 
-      AtClient atClient = await createAtClientCli(
-          homeDirectory: p.homeDirectory,
-          atsign: p.clientAtSign!,
-          namespace: '${p.device}.sshnp',
-          pathExtension: sessionId,
-          atKeysFilePath: p.atKeysFilePath,
-          rootDomain: p.rootDomain
+      atClient ??= await createAtClientCli(
+        homeDirectory: p.homeDirectory,
+        atsign: p.clientAtSign!,
+        namespace: '${p.device}.sshnp',
+        pathExtension: sessionId,
+        atKeysFilePath: p.atKeysFilePath,
+        rootDomain: p.rootDomain,
       );
 
       var sshnp = SSHNP(
