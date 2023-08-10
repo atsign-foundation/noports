@@ -30,9 +30,10 @@ In brief
   - and sends a response notification to the `sshnp` client
 - The client
   - binds a local server socket
-  - and opens a socket to the rv_host:rv_port_2 
+  - and opens a socket to the rv_host:rv_port_2
   - and bridges them together
-- The user may now `ssh -p $local_port $username@$localhost`
+- The client displays a message to the user that they may now
+  `ssh -p $local_port $username@localhost`, and exits
 
 This high-level flow is visualized in the diagrams below.
 
