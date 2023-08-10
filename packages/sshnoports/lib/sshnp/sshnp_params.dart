@@ -142,7 +142,6 @@ class SSHNPParams {
       'remote-user-name': remoteUsername,
       'verbose': verbose,
       'root-domain': rootDomain,
-      'list-devices': listDevices,
     };
   }
 
@@ -152,7 +151,7 @@ class SSHNPParams {
       var key = SSHNPArg.fromName(entry.key).bashName;
       var value = entry.value;
       if (value is List) {
-        value = value.join(';');
+        value = value.join(',');
       }
       lines.add('$key=$value');
     }
@@ -365,7 +364,7 @@ class SSHNPPartialParams {
             }
             continue;
           case ArgFormat.multiOption:
-            var values = value.split(';');
+            var values = value.split(',');
             args.putIfAbsent(arg.name, () => <String>[]);
             for (String val in values) {
               if (val.isEmpty) continue;
