@@ -156,6 +156,9 @@ validate_args() {
 
 # Load requirements statuses into variables
 parse_requirements() {
+  REQ_SSH=$(command -v ssh)
+  REQ_SSHD=$(command -v sshd)
+  REQ_SSH0=$(ssh -o "StrictHostKeyChecking no" 0 exit 2>/dev/null; echo $?)
   REQ_CURL=$(command -v curl)
   REQ_CRON=$(command -v crontab)
   REQ_TMUX=$(command -v tmux)
@@ -164,6 +167,16 @@ parse_requirements() {
 
 # Check the script's requirements
 check_requirements() {
+  if [ -z "$REQ_SSH" ]; then
+    echo "  [X] Missing required dependency: ssh"
+  elif [ -z "$REQ_SSHD" ]; then
+    echo "  [X] Missing required dependency: sshd"
+  elif [ "$REQ_SSH0" != 0 ]; then
+    echo "  [X] sshd is not running"
+  fi
+  if [ -z "$REQ_CURL" ] && [ -z "$SSHNP_DEV_MODE" ] && [ -z "$SSHNP_LOCAL" ]; then
+    echo "  [X] Missing required dependency: curl"
+  fi
   if [ -z "$REQ_CURL" ] && [ -z "$SSHNP_DEV_MODE" ] && [ -z "$SSHNP_LOCAL" ]; then
     echo "  [X] Missing required dependency: curl"
   fi
@@ -264,18 +277,18 @@ make_dirs() {
 # Build the dart binaries from the provided repo
 build_dart_binaries() {
   echo "DEV MODE: Installing from local repo: $SSHNP_DEV_MODE";
-    mkdir -p "$HOME_PATH/.atsign/temp/$TEMP_PATH/$BINARY_NAME/templates/"
+  mkdir -p "$HOME_PATH/.atsign/temp/$TEMP_PATH/$BINARY_NAME/templates/"
 
-    cp -R "$SSHNP_DEV_MODE"/packages/sshnoports/templates/* "$HOME_PATH/.atsign/temp/$TEMP_PATH/$BINARY_NAME/templates/";
-    cp "$SSHNP_DEV_MODE"/packages/sshnoports/scripts/* "$HOME_PATH/.atsign/temp/$TEMP_PATH/$BINARY_NAME";
+  cp -R "$SSHNP_DEV_MODE"/packages/sshnoports/templates/* "$HOME_PATH/.atsign/temp/$TEMP_PATH/$BINARY_NAME/templates/";
+  cp "$SSHNP_DEV_MODE"/packages/sshnoports/scripts/* "$HOME_PATH/.atsign/temp/$TEMP_PATH/$BINARY_NAME";
 
-    dart pub get -C "$SSHNP_DEV_MODE/packages/sshnoports"
+  dart pub get -C "$SSHNP_DEV_MODE/packages/sshnoports"
 
-    dart compile exe "$SSHNP_DEV_MODE/packages/sshnoports/bin/sshnp.dart" -o "$HOME_PATH/.atsign/temp/$TEMP_PATH/$BINARY_NAME/sshnp";
-    dart compile exe "$SSHNP_DEV_MODE/packages/sshnoports/bin/sshnpd.dart" -o "$HOME_PATH/.atsign/temp/$TEMP_PATH/$BINARY_NAME/sshnpd";
-    dart compile exe "$SSHNP_DEV_MODE/packages/sshnoports/bin/sshrv.dart" -o "$HOME_PATH/.atsign/temp/$TEMP_PATH/$BINARY_NAME/sshrv";
-    dart compile exe "$SSHNP_DEV_MODE/packages/sshnoports/bin/sshrvd.dart" -o "$HOME_PATH/.atsign/temp/$TEMP_PATH/$BINARY_NAME/sshrvd";
-    dart compile exe "$SSHNP_DEV_MODE/packages/sshnoports/bin/activate_cli.dart" -o "$HOME_PATH/.atsign/temp/$TEMP_PATH/$BINARY_NAME/at_activate";
+  dart compile exe "$SSHNP_DEV_MODE/packages/sshnoports/bin/sshnp.dart" -o "$HOME_PATH/.atsign/temp/$TEMP_PATH/$BINARY_NAME/sshnp";
+  dart compile exe "$SSHNP_DEV_MODE/packages/sshnoports/bin/sshnpd.dart" -o "$HOME_PATH/.atsign/temp/$TEMP_PATH/$BINARY_NAME/sshnpd";
+  dart compile exe "$SSHNP_DEV_MODE/packages/sshnoports/bin/sshrv.dart" -o "$HOME_PATH/.atsign/temp/$TEMP_PATH/$BINARY_NAME/sshrv";
+  dart compile exe "$SSHNP_DEV_MODE/packages/sshnoports/bin/sshrvd.dart" -o "$HOME_PATH/.atsign/temp/$TEMP_PATH/$BINARY_NAME/sshrvd";
+  dart compile exe "$SSHNP_DEV_MODE/packages/sshnoports/bin/activate_cli.dart" -o "$HOME_PATH/.atsign/temp/$TEMP_PATH/$BINARY_NAME/at_activate";
 }
 
 # Make a copy of the locally provided archive
@@ -294,7 +307,7 @@ download_archive() {
     echo "Please try again, or download manually from $DOWNLOAD";
     echo "After downloading manually, run the following command to install:";
     if [ "$0" == 'bash' ]; then
-      echo "bash -c \"\$(curl https://getsshnpd.noports.com)\" -- -l <path to $EXT file>";
+      echo "bash -c \"\$(curl https://get$BINARY_NAME.noports.com)\" -- -l <path to $EXT file>";
     else
       echo "  $0 -l <path to $EXT file>";
     fi
@@ -371,7 +384,6 @@ setup_service_script() {
     sed -i "s/\"$OLD_DEVICE_NAME\"/\"$SSHNP_DEVICE_NAME\"/g" "$SSHNPD_SERVICE_BINARY_PATH"
   fi
 }
-
 
 # Setup the cron job part of the service setup
 setup_service_job() {
@@ -490,7 +502,7 @@ main () {
   parse_requirements
   REQ_ERRORS=$(check_requirements)
   if [ -n "$REQ_ERRORS" ] ; then
-    echo "System failed to meet installation requirements"
+    echo "[ERROR] System failed to meet the following requirements:"
     echo "$REQ_ERRORS"
     exit 1
   fi
