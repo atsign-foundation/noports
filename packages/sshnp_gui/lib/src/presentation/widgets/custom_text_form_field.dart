@@ -24,7 +24,7 @@ class CustomTextFormField extends StatelessWidget {
   Widget build(BuildContext context) {
     return SizedBox(
       width: width,
-      height: height,
+      // height: height,
       child: TextFormField(
         initialValue: initialValue,
         decoration: InputDecoration(

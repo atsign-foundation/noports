@@ -8,4 +8,14 @@ class Validator {
       return null;
     }
   }
+
+  static String? validateAtsignField(String? value) {
+    if (value!.isEmpty) {
+      return kEmptyFieldValidationError;
+    } else if (!value.startsWith('@')) {
+      return kAtsignFieldValidationError;
+    } else {
+      return null;
+    }
+  }
 }

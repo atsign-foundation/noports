@@ -37,7 +37,7 @@ class _NewConnectionScreenState extends State<NewConnectionScreen> {
                     style: Theme.of(context).textTheme.titleMedium,
                   ),
                   gapH10,
-                  const NewConnectionForm()
+                  const Expanded(child: NewConnectionForm())
                 ]),
               ),
             ),

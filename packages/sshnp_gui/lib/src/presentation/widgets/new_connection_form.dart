@@ -3,8 +3,10 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:go_router/go_router.dart';
 import 'package:sshnoports/common/utils.dart';
 import 'package:sshnoports/sshnp/sshnp_params.dart';
+import 'package:sshnp_gui/src/utils/app_router.dart';
 import 'package:sshnp_gui/src/utils/validator.dart';
 
 import '../../utils/sizes.dart';
@@ -60,25 +62,28 @@ class _NewConnectionFormState extends State<NewConnectionForm> {
       log(configDir);
       await Directory(configDir).create(recursive: true);
       //.env
-      sshnpParams.toFile('$configDir/$clientAtSign-$sshnpdAtSign-$device.env');
+      sshnpParams.toFile('$configDir/$clientAtSign-$sshnpdAtSign-$device.env', overwrite: true);
+
+      if (context.mounted) {
+        context.pushReplacementNamed(AppRoute.home.name);
+      }
     }
   }
 
   @override
   Widget build(BuildContext context) {
     final strings = AppLocalizations.of(context)!;
-    return Form(
-      key: _formkey,
-      child: Row(
-        children: [
-          SizedBox(
-            height: 400,
-            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+    return SingleChildScrollView(
+      child: Form(
+        key: _formkey,
+        child: Row(
+          children: [
+            Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
               CustomTextFormField(
                 initialValue: clientAtSign,
                 labelText: strings.clientAtsign,
                 onSaved: (value) => clientAtSign = value,
-                validator: Validator.validateRequiredField,
+                validator: Validator.validateAtsignField,
               ),
               gapH10,
               CustomTextFormField(
@@ -132,15 +137,13 @@ class _NewConnectionFormState extends State<NewConnectionForm> {
                 child: Text(strings.add),
               ),
             ]),
-          ),
-          gapW12,
-          SizedBox(
-            height: 400,
-            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            gapW12,
+            Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
               CustomTextFormField(
                 initialValue: sshnpdAtSign,
                 labelText: strings.sshnpdAtSign,
                 onSaved: (value) => sshnpdAtSign = value,
+                validator: Validator.validateAtsignField,
               ),
               gapH10,
               CustomTextFormField(
@@ -195,10 +198,14 @@ class _NewConnectionFormState extends State<NewConnectionForm> {
                 ],
               ),
               gapH20,
-              TextButton(onPressed: () {}, child: Text(strings.cancel))
+              TextButton(
+                  onPressed: () {
+                    context.pushReplacementNamed(AppRoute.home.name);
+                  },
+                  child: Text(strings.cancel))
             ]),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
