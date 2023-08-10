@@ -14,7 +14,7 @@ class Sizes {
   static const p20 = 20.0;
   static const p21 = 21.0;
   // static const p27 = 27.0;
-  // static const p24 = 24.0;
+  static const p24 = 24.0;
   // static const p32 = 32.0;
   static const p36 = 36.0;
   // static const p40 = 40.0;
@@ -42,7 +42,7 @@ const gapH10 = SizedBox(height: Sizes.p10);
 // const gapH12 = SizedBox(height: Sizes.p12);
 // const gapH16 = SizedBox(height: Sizes.p16);
 const gapH20 = SizedBox(height: Sizes.p20);
-// const gapH24 = SizedBox(height: Sizes.p24);
+const gapH24 = SizedBox(height: Sizes.p24);
 // const gapH32 = SizedBox(height: Sizes.p32);
 // const gapH48 = SizedBox(height: Sizes.p48);
 // const gapH64 = SizedBox(height: Sizes.p64);
