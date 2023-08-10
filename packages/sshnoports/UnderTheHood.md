@@ -19,7 +19,17 @@ In brief
 - The client (`sshnp`) creates a unique guid for the session
   - and sends a request notification to the `sshrvd` for a port1/port2 pair
     for this sessionId
-  - and receives a response notification (rv_host, rv_port_1, rv_port_2)
+- The sshrvd
+  - finds a pair of available ports
+  - opens server sockets for both of them
+    - **Note**: rvd will allow just a single client socket to connect to each 
+      server socket
+      - and will bridge them together once the rvd has received the 
+      sessionId on both sockets
+  - sends response to the client
+- The client
+  - receives the response notification from sshrvd (rv_host, rv_port_1, 
+    rv_port_2)
   - and sends a request notification to the `sshnpd` including the sessionId 
     and the rv_host:rv_port_1
 - The daemon (`sshnpd`)
@@ -31,7 +41,8 @@ In brief
 - The client
   - binds a local server socket
   - and opens a socket to the rv_host:rv_port_2
-  - and bridges them together
+  - and writes the sessionId on it
+  - and bridges the sockets together
 - The client displays a message to the user that they may now
   `ssh -p $local_port $username@localhost`, and exits
 
@@ -103,7 +114,7 @@ sequenceDiagram
     C->>R: (Spawned) Open socket $npc_to_rv to host:port_2
     C->>R: (Spawned) write "$sessionId\n" to $npc_to_rv socket
     C->>C: (Spawned) Create server socket $npc_local listening on $local_port
-    C->>C: (Spawned) Join $npd_to_rv and $npd_to_sshd <br> i/o streams, and vice versa
+    C->>C: (Spawned) Join $npc_local and $npc_to_rv  <br> i/o streams, and vice versa
     C->>C: If spawned successfully, Write to stdout: "ssh -p $local_port $username@localhost"
 ```
 
