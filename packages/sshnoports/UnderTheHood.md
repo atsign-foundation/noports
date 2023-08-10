@@ -50,6 +50,7 @@ reaching the daemon by using the atProtocol's `config:allow` list feature.
 ### Overview diagram
 ![](overview.png)
 
+### Control plane
 In the following sequence diagram, atServer address lookup flows, 
 authentication flows, key exchange flows, precise encryption mechanics and 
 notification transmission flows are not covered in detail; those details are 
@@ -61,7 +62,6 @@ message flows are abbreviated to `@atSign_1 -> @atSign_2` in the
 sequence diagram. Thus, for example, `sshnp (@client)` encapsulates both the 
 sshnp program and the sshnp atServer
 
-### Control plane
 ```mermaid
 sequenceDiagram
     participant C as sshnp (@client)
