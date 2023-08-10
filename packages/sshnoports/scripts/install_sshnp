@@ -2,6 +2,7 @@
 
 BINARY_NAME="sshnp";
 
+# Prepend an @ to the front of the atsign if missing
 norm_atsign() {
   KEY="$1" # Get the variable name
   INPUT=${!KEY} # Get the value of the variable
@@ -11,7 +12,10 @@ norm_atsign() {
   export "${KEY}"="$ATSIGN" # Set the variable to new value
 }
 
-norm_version() {
+# Normalize a version string to tags/vX.X.X
+# This is strictly used for formatting the download URL
+# Don't use this for formatting user-facing output
+norm_to_tag_version() {
   KEY="$1" # Get the variable name
   INPUT=${!KEY} # Get the value of the variable
   shopt -s extglob
@@ -21,6 +25,7 @@ norm_version() {
   export "${KEY}"="tags/v$OUTPUT" # Add full tags/v prefix
 }
 
+# Print the usage information
 usage() {
   echo "Usage: $0 [options]"
   echo "General options:"
@@ -36,12 +41,17 @@ usage() {
   echo "  -v, --version <version>     Version to install (default: latest)"
 }
 
+# Parse the command-line args
 parse_args() {
    SSHNP_OP="install"
   while [ $# -gt 0 ]; do
     case "$1" in
       -u|--update)
         SSHNP_OP="update"
+        shift 1
+      ;;
+      --cache-temp)
+        SSHNP_CACHE_TEMP=1
         shift 1
       ;;
       --help)
@@ -102,7 +112,8 @@ parse_args() {
       ;;
     esac
   done
-
+}
+validate_args () {
   if [ "$SSHNP_OP" = "install" ]; then
     while [ -z "$CLIENT_ATSIGN" ]; do
       read -rp "Client address (e.g. @alice_client): " CLIENT_ATSIGN;
@@ -144,6 +155,29 @@ parse_args() {
   fi
 }
 
+# Load requirements statuses into variables
+parse_requirements() {
+  REQ_SSH=$(command -v ssh)
+  REQ_SSHD=$(command -v sshd)
+  REQ_SSH0=$(ssh -o "StrictHostKeyChecking no" 0 exit 2>/dev/null; echo $?)
+  REQ_CURL=$(command -v curl)
+}
+
+# Check the script's requirements
+check_requirements() {
+  if [ -z "$REQ_SSH" ]; then
+    echo "  [X] Missing required dependency: ssh"
+  elif [ -z "$REQ_SSHD" ]; then
+    echo "  [X] Missing required dependency: sshd"
+  elif [ "$REQ_SSH0" != 0 ]; then
+    echo "  [X] sshd is not running"
+  fi
+  if [ -z "$REQ_CURL" ] && [ -z "$SSHNP_DEV_MODE" ] && [ -z "$SSHNP_LOCAL" ]; then
+    echo "  [X] Missing required dependency: curl"
+  fi
+}
+
+# Parse the system environment
 parse_env() {
   if [ -z "$SSHNP_USER" ]; then
     SSHNP_USER="$USER";
@@ -153,7 +187,7 @@ parse_env() {
   if [ -z "$SSHNP_VERSION" ]; then
     SSHNP_VERSION="latest";
   else
-    norm_version SSHNP_VERSION
+    norm_to_tag_version SSHNP_VERSION
   fi
   URL="https://api.github.com/repos/atsign-foundation/sshnoports/releases/$SSHNP_VERSION";
 
@@ -194,6 +228,14 @@ parse_env() {
   DOWNLOAD=$(echo "$DOWNLOADS" | grep "$PLATFORM" | grep "$ARCH" | cut -d\" -f4)
 }
 
+# Remove the temporary folder generated for processing the download/install
+cleanup() {
+  if [ -z "$SSHNP_CACHE_TEMP" ]; then
+    rm -rf "$HOME_PATH/.atsign/temp/$TEMP_PATH";
+  fi
+}
+
+# Make the necessary directories for sshnpd
 make_dirs() {
   rm -rf "$HOME_PATH/.atsign/temp";
   mkdir -p "$HOME_PATH/.ssh" \
@@ -203,20 +245,41 @@ make_dirs() {
            "$HOME_PATH/.local/bin";
 }
 
-download() {
-  if [ -n "$SSHNP_LOCAL" ]; then
-    echo "DEV MODE: Installing using local $EXT file: $SSHNP_LOCAL";
-    cp "$SSHNP_LOCAL" "$HOME_PATH/.atsign/temp/$BINARY_NAME.$EXT";
-  else
-    echo "Downloading $BINARY_NAME from $DOWNLOAD";
-    curl -sL "$DOWNLOAD" -o "$HOME_PATH/.atsign/temp/$BINARY_NAME.$EXT";
-  fi
+# Build the dart binaries from the provided repo
+build_dart_binaries() {
+  echo "DEV MODE: Installing from local repo: $SSHNP_DEV_MODE";
+  cp -R "$SSHNP_DEV_MODE/templates/" "$HOME_PATH/.atsign/temp/$BINARY_NAME/templates/";
+  cp "$SSHNP_DEV_MODE"/scripts/* "$HOME_PATH/.atsign/temp/$BINARY_NAME";
+}
 
-  if [ ! -f "$HOME_PATH/.atsign/temp/$BINARY_NAME.$EXT" ]; then
+# Make a copy of the locally provided archive
+copy_local_archive() {
+  echo "DEV MODE: Installing using local $EXT file: $SSHNP_LOCAL";
+  cp "$SSHNP_LOCAL" "$HOME_PATH/.atsign/temp/$BINARY_NAME.$EXT";
+  
+}
+
+# Download the release archive
+download_archive() {
+  echo "Downloading $BINARY_NAME from $DOWNLOAD";
+  curl -sL "$DOWNLOAD" -o "$HOME_PATH/.atsign/temp/$BINARY_NAME.$EXT";
+  if [ ! -f "$HOME_PATH/.atsign/temp/$TEMP_PATH/$BINARY_NAME.$EXT" ]; then
     echo "Failed to download $BINARY_NAME";
+    echo;
+    echo "Please try again, or download manually from $DOWNLOAD";
+    echo "After downloading manually, run the following command to install:";
+    if [ "$0" == 'bash' ]; then
+      echo "bash -c \"\$(curl https://get$BINARY_NAME.noports.com)\" -- -l <path to $EXT file>";
+    else
+      echo "  $0 -l <path to $EXT file>";
+    fi
+    cleanup
     exit 1;
   fi
+}
 
+# Unpack the downloaded / locally provided archive
+unpack_archive() {
   case "$EXT" in
     zip)
       unzip -qo "$HOME_PATH/.atsign/temp/$BINARY_NAME.$EXT" -d "$HOME_PATH/.atsign/temp";
@@ -225,12 +288,21 @@ download() {
       tar -zxf "$HOME_PATH/.atsign/temp/$BINARY_NAME.$EXT" -C "$HOME_PATH/.atsign/temp/";
       ;;
   esac
+  mv "$HOME_PATH/.atsign/temp/$TEMP_PATH/sshnp" "$HOME_PATH/.atsign/temp/$TEMP_PATH/$BINARY_NAME"; # Rename the extracted folder
+}
 
-  if [ -n "$SSHNP_DEV_MODE" ]; then
-    echo "DEV MODE: Installing from local repo: $SSHNP_DEV_MODE";
-    cp -R "$SSHNP_DEV_MODE/templates/" "$HOME_PATH/.atsign/temp/$BINARY_NAME/templates/";
-    cp "$SSHNP_DEV_MODE"/scripts/* "$HOME_PATH/.atsign/temp/$BINARY_NAME";
-  fi
+# Get the main binaries (branches based on the source: download/local/repo)
+get_main_binaries() {
+   if [ -n "$SSHNP_DEV_MODE" ]; then
+    build_dart_binaries
+   else
+    if [ -n "$SSHNP_LOCAL" ]; then
+      copy_local_archive
+    else
+      download_archive
+    fi
+    unpack_archive
+   fi
 }
 
 # Place the actual sshnp binary
@@ -261,12 +333,18 @@ setup_custom_binary() {
   chmod +x "$HOME_PATH/.local/bin/$BINARY_NAME$DEVICE_MANAGER_ATSIGN";
 }
 
-post_install() {
-  rm -rf "$HOME_PATH/.atsign/temp";
-  echo;
+
+
+do_install() {
+  make_dirs
+  get_main_binaries
+  setup_main_binaries
+
+  setup_custom_binary
 
   if ! echo "$PATH" | grep -q "$HOME_PATH/.local/bin"; then
     PATH="\$PATH:$HOME_PATH/.local/bin";
+    echo;
     echo "Added $HOME_PATH/.local/bin to your PATH."
     echo "Include the following line in your shell profile to persist across logins:"
     echo "  export PATH=\"\$PATH:$HOME_PATH/.local/bin\""
@@ -275,26 +353,37 @@ post_install() {
   echo; echo "Installation complete!";
 }
 
-# Wrapping install steps prevents issues caused by interrupting the download
-main () {
-  parse_env
+do_update() {
   make_dirs
-  download
-
+  get_main_binaries
   setup_main_binaries
 
+  echo; echo "Update complete!";
+}
+
+# Wrapping install steps prevents issues caused by interrupting the download
+main () {
+  parse_requirements
+  REQ_ERRORS=$(check_requirements)
+  if [ -n "$REQ_ERRORS" ] ; then
+    echo "[ERROR] System failed to meet the following requirements:"
+    echo "$REQ_ERRORS"
+    exit 1
+  fi
+  validate_args
+  parse_env
   case "$SSHNP_OP" in
     install)
-      setup_custom_binary
+      do_install
       ;;
-    update);;
+    update)
+      do_update
+      ;;
     *)
       echo "Invalid operation: $SSHNP_OP";
-      exit 0;
+      exit 1;
       ;;
   esac
-
-  post_install
 }
 
 parse_args "$@";
