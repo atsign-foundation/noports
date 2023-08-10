@@ -158,7 +158,7 @@ validate_args() {
 parse_requirements() {
   REQ_SSH=$(command -v ssh)
   REQ_SSHD=$(command -v sshd)
-  REQ_SSH0=$(ssh -o "StrictHostKeyChecking no" 0 exit 2>/dev/null; echo $?)
+  # REQ_SSH0=$(ssh -o "StrictHostKeyChecking no" -o "PasswordAuthentication no" 0 exit 2>/dev/null; echo $?)
   REQ_CURL=$(command -v curl)
   REQ_CRON=$(command -v crontab)
   REQ_TMUX=$(command -v tmux)
@@ -171,8 +171,8 @@ check_requirements() {
     echo "  [X] Missing required dependency: ssh"
   elif [ -z "$REQ_SSHD" ]; then
     echo "  [X] Missing required dependency: sshd"
-  elif [ "$REQ_SSH0" != 0 ]; then
-    echo "  [X] sshd is not running"
+  # elif [ "$REQ_SSH0" != 0 ]; then
+  #   echo "  [X] sshd is not running"
   fi
   if [ -z "$REQ_CURL" ] && [ -z "$SSHNP_DEV_MODE" ] && [ -z "$SSHNP_LOCAL" ]; then
     echo "  [X] Missing required dependency: curl"
