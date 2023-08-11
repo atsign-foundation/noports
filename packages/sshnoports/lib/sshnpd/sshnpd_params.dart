@@ -13,7 +13,7 @@ class SSHNPDParams {
   late final bool verbose;
   late final SupportedSshClient sshClient;
   late final String rootDomain;
-  late final bool shouldBroadcastInfo;
+  late final bool isPingable;
   // Non param variables
   static final ArgParser parser = _createArgParser();
 
@@ -46,7 +46,7 @@ class SSHNPDParams {
         .firstWhere((c) => c.cliArg == r['ssh-client']);
 
     rootDomain = r['root-domain'];
-    shouldBroadcastInfo = r['broadcast'];
+    isPingable = r['pingable'];
   }
 
   static ArgParser _createArgParser() {
@@ -99,9 +99,9 @@ class SSHNPDParams {
       help: 'More logging',
     );
     parser.addFlag(
-      'broadcast',
-      abbr: 'b',
-      help: 'Broadcast device info to the client and respond to pings'
+      'pingable',
+      abbr: 'p',
+      help: 'Whether to share device info to the client and respond to pings'
           '(i.e. make it discoverable to sshnpd --list-devices)',
     );
     parser.addOption(

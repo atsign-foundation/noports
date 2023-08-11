@@ -33,7 +33,7 @@ abstract class SSHNPD {
   abstract final SupportedSshClient sshClient;
 
   /// Whether this device should be hidden from sshnpd or not
-  abstract final bool shouldBroadcastInfo;
+  abstract final bool isPingable;
 
   /// true once [init] has completed
   @visibleForTesting
@@ -47,7 +47,7 @@ abstract class SSHNPD {
     required String device,
     required String managerAtsign,
     required SupportedSshClient sshClient,
-    bool shouldBroadcastInfo = false,
+    bool isPingable = false,
   }) {
     return SSHNPDImpl(
       atClient: atClient,
@@ -56,7 +56,7 @@ abstract class SSHNPD {
       device: device,
       managerAtsign: managerAtsign,
       sshClient: sshClient,
-      shouldBroadcastInfo: shouldBroadcastInfo,
+      isPingable: isPingable,
     );
   }
 

@@ -42,7 +42,7 @@ class SSHNPDImpl implements SSHNPD {
   final SupportedSshClient sshClient;
 
   @override
-  final bool shouldBroadcastInfo;
+  final bool isPingable;
 
   @override
   @visibleForTesting
@@ -59,7 +59,7 @@ class SSHNPDImpl implements SSHNPD {
     required this.device,
     required this.managerAtsign,
     required this.sshClient,
-    this.shouldBroadcastInfo = false,
+    this.isPingable = false,
   }) {
     logger.hierarchicalLoggingEnabled = true;
     logger.logger.level = Level.SHOUT;
@@ -93,7 +93,7 @@ class SSHNPDImpl implements SSHNPD {
         device: p.device,
         managerAtsign: p.managerAtsign,
         sshClient: p.sshClient,
-        shouldBroadcastInfo: p.shouldBroadcastInfo,
+        isPingable: p.isPingable,
       );
 
       if (p.verbose) {
