@@ -41,6 +41,12 @@ class SSHNPDImpl implements SSHNPD {
   final SupportedSshClient sshClient;
 
   @override
+  final bool makeDeviceInfoVisible;
+
+  @override
+  final bool addSshPublicKeys;
+
+  @override
   @visibleForTesting
   bool initialized = false;
 
@@ -57,7 +63,9 @@ class SSHNPDImpl implements SSHNPD {
       required this.homeDirectory,
       required this.device,
       required this.managerAtsign,
-      required this.sshClient}) {
+      required this.sshClient,
+      this.makeDeviceInfoVisible = false,
+      this.addSshPublicKeys = false}) {
     logger.hierarchicalLoggingEnabled = true;
     logger.logger.level = Level.SHOUT;
   }
@@ -89,7 +97,9 @@ class SSHNPDImpl implements SSHNPD {
           homeDirectory: p.homeDirectory,
           device: p.device,
           managerAtsign: p.managerAtsign,
-          sshClient: p.sshClient);
+          sshClient: p.sshClient,
+          makeDeviceInfoVisible: p.makeDeviceInfoVisible,
+          addSshPublicKeys: p.addSshPublicKeys);
 
       if (p.verbose) {
         sshnpd.logger.logger.level = Level.INFO;
@@ -121,7 +131,8 @@ class SSHNPDImpl implements SSHNPD {
 
     NotificationService notificationService = atClient.notificationService;
 
-    if (username != '') {
+    // Only share this information if configured to do so
+    if (makeDeviceInfoVisible) {
       var metaData = Metadata()
         ..isPublic = false
         ..isEncrypted = true
@@ -162,11 +173,13 @@ class SSHNPDImpl implements SSHNPD {
         );
 
     // Refresh the device entry now, and every hour
-    await _refreshDeviceEntry();
-    Timer.periodic(
-      const Duration(hours: 1),
-      (_) async => await _refreshDeviceEntry(),
-    );
+    if (makeDeviceInfoVisible) {
+      await _refreshDeviceEntry();
+      Timer.periodic(
+        const Duration(hours: 1),
+        (_) async => await _refreshDeviceEntry(),
+      );
+    }
 
     logger.info('Done');
   }
@@ -252,20 +265,21 @@ class SSHNPDImpl implements SSHNPD {
           ' Notification was ${jsonEncode(notification.toJson())}');
       return;
     }
+
     logger.info(
         'ping received from ${notification.from} notification id : ${notification.id}');
-    var metaData = Metadata()
-      ..isPublic = false
-      ..isEncrypted = true
-      ..ttr = -1
-      ..namespaceAware = true;
 
     var atKey = AtKey()
       ..key = 'heartbeat.$device'
       ..sharedBy = deviceAtsign
       ..sharedWith = notification.from
       ..namespace = SSHNPD.namespace
-      ..metadata = metaData;
+      ..metadata = (Metadata()
+        ..isPublic = false
+        ..isEncrypted = true
+        ..ttr = -1
+        ..ttl = 10000 // allow only ten seconds before this record expires
+        ..namespaceAware = true);
 
     /// send a heartbeat back
     unawaited(
@@ -284,6 +298,12 @@ class SSHNPDImpl implements SSHNPD {
       logger.shout('Notification ignored from ${notification.from}'
           ' which is not in authorized list [$managerAtsign].'
           ' Notification was ${jsonEncode(notification.toJson())}');
+      return;
+    }
+
+    if (!addSshPublicKeys) {
+      logger.info(
+          'Ignoring sshpublickey from ${notification.from} notification id : ${notification.id}');
       return;
     }
 
@@ -311,8 +331,8 @@ class SSHNPDImpl implements SSHNPD {
         authKeys.writeAsStringSync('\n$sshPublicKey', mode: FileMode.append);
       }
     } catch (e) {
-      logger
-          .severe('Error writing to $username .ssh/authorized_keys file : $e');
+      logger.severe("Error writing to"
+          " $username's .ssh/authorized_keys file : $e");
     }
   }
 
@@ -720,6 +740,10 @@ class SSHNPDImpl implements SSHNPD {
 
   /// This function creates an atKey which shares the device name with the client
   Future<void> _refreshDeviceEntry() async {
+    if (!makeDeviceInfoVisible) {
+      return;
+    }
+
     const ttl = 1000 * 60 * 60 * 24 * 30; // 30 days
     var metaData = Metadata()
       ..isPublic = false

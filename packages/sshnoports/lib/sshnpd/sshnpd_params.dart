@@ -11,6 +11,8 @@ class SSHNPDParams {
   late final String sendSshPublicKey;
   late final String deviceAtsign;
   late final bool verbose;
+  late final bool makeDeviceInfoVisible;
+  late final bool addSshPublicKeys;
   late final SupportedSshClient sshClient;
   late final String rootDomain;
 
@@ -46,6 +48,10 @@ class SSHNPDParams {
         .firstWhere((c) => c.cliArg == r['ssh-client']);
 
     rootDomain = r['root-domain'];
+
+    makeDeviceInfoVisible = r['un-hide'];
+
+    addSshPublicKeys = r['sshpublickey'];
   }
 
   static ArgParser _createArgParser() {
@@ -83,13 +89,17 @@ class SSHNPDParams {
     parser.addFlag(
       'sshpublickey',
       abbr: 's',
-      help: 'Update authorized_keys to include public key from sshnp',
+      defaultsTo: false,
+      help:
+          'When set, will update authorized_keys to include public key sent by manager',
     );
     parser.addFlag(
-      'username',
+      'un-hide',
       abbr: 'u',
+      aliases: const ['username'],
+      defaultsTo: false,
       help:
-          'Send username to the manager to allow sshnp to display username in command line',
+          'When set, makes various information visible to the manager atSign - e.g. username, version, etc',
     );
     parser.addFlag(
       'verbose',
