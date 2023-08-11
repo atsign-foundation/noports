@@ -1,5 +1,5 @@
 #!/bin/bash
-#v1.0.0
+#v2.0.0
 # allow machine to bring up network
 sleep 10
 USER=$(whoami)

@@ -292,11 +292,39 @@ restart_service() {
   killall -q -u "$SSHNP_USER" -r "$BINARY_NAME$"
 }
 
+rename_device() {
+  case "$SERVICE_RUN_VERSION" in
+    1.*)
+        echo 1
+        # Old format, no NAME= line
+        SERVICE_RUN_LINE=$(grep 'sshnpd ' < "$SSHNPD_SERVICE_BINARY_PATH")
+        OLD_DEVICE_NAME=$(echo "${SERVICE_RUN_LINE// -d /;/}" | cut -d';' -f2 | cut -d '"' -f2)
+
+        # This replace should be fine since it wraps the device name in quotes
+        # all other quotations in v1.0.0 start with a special character (either $ or @)
+        # these characters are not supported by device name format
+        # so this string will never match anything else in the file
+        sed -i '' "s/\"$OLD_DEVICE_NAME\"/\"$SSHNP_DEVICE_NAME\"/g" "$SSHNPD_SERVICE_BINARY_PATH"
+      ;;
+    2.*)
+        echo 2
+        # New format, NAME= line
+        SERVICE_RUN_LINE=$(grep 'NAME=' < "$SSHNPD_SERVICE_BINARY_PATH")
+        OLD_DEVICE_NAME=$(echo "$SERVICE_RUN_LINE" | cut -d'=' -f2 | cut -d'"' -f2)
+
+        # Since NAME= is on its own line, we can just replace the whole line
+        sed -i '' "s/NAME=\"$OLD_DEVICE_NAME\"/NAME=\"$SSHNP_DEVICE_NAME\"/g" "$SSHNPD_SERVICE_BINARY_PATH"
+      ;;
+  esac
+
+  echo "Renamed $OLD_DEVICE_NAME to $SSHNP_DEVICE_NAME"
+}
+
 # Place custom user based scripts
 setup_service() {
-
   SSHNPD_SERVICE_BINARY_PATH="$HOME_PATH/.local/bin/$BINARY_NAME$CLIENT_ATSIGN";
-  # = is used as the delimiter to avoid escaping / in the path
+  SERVICE_RUN_VERSION="$(sed '2!d' "$SSHNPD_SERVICE_BINARY_PATH" | cut -d'v' -f2)"
+
   if [ "$SSHNP_OP" = 'rename' ] && ! [ -f "$SSHNPD_SERVICE_BINARY_PATH" ]; then
     echo "Error: trying to rename service, but service binary not found";
     exit 1;
@@ -311,10 +339,7 @@ setup_service() {
     >"$SSHNPD_SERVICE_BINARY_PATH";
     chmod +x "$SSHNPD_SERVICE_BINARY_PATH";
   elif [ "$SSHNP_OP" = 'rename' ]; then
-    SERVICE_RUN_LINE=$(grep 'sshnpd ' < "$SSHNPD_SERVICE_BINARY_PATH")
-    OLD_DEVICE_NAME=$(echo "${SERVICE_RUN_LINE// -d /;/}" | cut -d';' -f2 | cut -d '"' -f2)
-    echo "Renaming $OLD_DEVICE_NAME to $SSHNP_DEVICE_NAME"
-    sed -i "s/\"$OLD_DEVICE_NAME\"/\"$SSHNP_DEVICE_NAME\"/g" "$SSHNPD_SERVICE_BINARY_PATH"
+    rename_device
   fi
 
   SSHNP_CRON_SCHEDULE="@reboot";
