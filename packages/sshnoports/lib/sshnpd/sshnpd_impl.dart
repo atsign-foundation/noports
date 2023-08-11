@@ -351,6 +351,10 @@ class SSHNPDImpl implements SSHNPD {
         ..metadata = metaData;
     }
 
+    await startReverseSsh(logger, username, hostname, port, localPort, notification, sessionId, privateKey, atKey);
+  }
+
+  Future<void> startReverseSsh(AtSignLogger logger, String username, String hostname, String port, String localPort, AtNotification notification, String sessionId, String privateKey, AtKey atKey) async {
     logger.info(
         'Starting ssh session for $username to $hostname on port $port using localhost:$localPort on $hostname ');
     logger.shout(
