@@ -218,69 +218,80 @@ class SSHNPDImpl implements SSHNPD {
             'Private Key received from ${notification.from} notification id : ${notification.id}');
         _privateKey = notification.value!;
         break;
+
       case 'sshpublickey':
-        late final String sshPublicKey;
-        try {
-          var sshHomeDirectory = "$homeDirectory/.ssh/";
-          if (Platform.isWindows) {
-            sshHomeDirectory = '$homeDirectory\\.ssh\\';
-          }
-          logger.info(
-              'ssh Public Key received from ${notification.from} notification id : ${notification.id}');
-          sshPublicKey = notification.value!;
-
-          // Check to see if the ssh public key looks like one!
-          if (!sshPublicKey.startsWith('ssh-')) {
-            throw ('$sshPublicKey does not look like a public key');
-          }
-
-          // Check to see if the ssh Publickey is already in the file if not append to the ~/.ssh/authorized_keys file
-          var authKeys = File('${sshHomeDirectory}authorized_keys');
-
-          var authKeysContent = await authKeys.readAsString();
-
-          if (!authKeysContent.contains(sshPublicKey)) {
-            authKeys.writeAsStringSync("\n$sshPublicKey",
-                mode: FileMode.append);
-          }
-        } catch (e) {
-          logger.severe(
-              'Error writing to $username .ssh/authorized_keys file : $e');
-        }
+        await _handlePublicKeyNotification(notification);
         break;
+
       case 'sshd':
         logger.info(
             'ssh callback request received from ${notification.from} notification id : ${notification.id}');
         _sshCallback(notification, _privateKey, logger, managerAtsign,
             deviceAtsign, device);
         break;
+
       case 'ping':
-        logger.info(
-            'ping received from ${notification.from} notification id : ${notification.id}');
-        var metaData = Metadata()
-          ..isPublic = false
-          ..isEncrypted = true
-          ..ttr = -1
-          ..namespaceAware = true;
-
-        var atKey = AtKey()
-          ..key = "heartbeat.$device"
-          ..sharedBy = deviceAtsign
-          ..sharedWith = managerAtsign
-          ..namespace = SSHNPD.namespace
-          ..metadata = metaData;
-
-        /// send a heartbeat back
-        unawaited(
-          _notify(
-            atKey,
-            jsonEncode({
-              'devicename': device,
-              'version': version,
-            }),
-          ),
-        );
+        _handlePingNotification(notification);
         break;
+    }
+  }
+
+  void _handlePingNotification(AtNotification notification) {
+    logger.info(
+        'ping received from ${notification.from} notification id : ${notification.id}');
+    var metaData = Metadata()
+      ..isPublic = false
+      ..isEncrypted = true
+      ..ttr = -1
+      ..namespaceAware = true;
+
+    var atKey = AtKey()
+      ..key = "heartbeat.$device"
+      ..sharedBy = deviceAtsign
+      ..sharedWith = managerAtsign
+      ..namespace = SSHNPD.namespace
+      ..metadata = metaData;
+
+    /// send a heartbeat back
+    unawaited(
+      _notify(
+        atKey,
+        jsonEncode({
+          'devicename': device,
+          'version': version,
+        }),
+      ),
+    );
+  }
+
+  Future<void> _handlePublicKeyNotification(AtNotification notification) async {
+    late final String sshPublicKey;
+    try {
+      var sshHomeDirectory = "$homeDirectory/.ssh/";
+      if (Platform.isWindows) {
+        sshHomeDirectory = '$homeDirectory\\.ssh\\';
+      }
+      logger.info(
+          'ssh Public Key received from ${notification.from} notification id : ${notification.id}');
+      sshPublicKey = notification.value!;
+
+      // Check to see if the ssh public key looks like one!
+      if (!sshPublicKey.startsWith('ssh-')) {
+        throw ('$sshPublicKey does not look like a public key');
+      }
+
+      // Check to see if the ssh Publickey is already in the file if not append to the ~/.ssh/authorized_keys file
+      var authKeys = File('${sshHomeDirectory}authorized_keys');
+
+      var authKeysContent = await authKeys.readAsString();
+
+      if (!authKeysContent.contains(sshPublicKey)) {
+        authKeys.writeAsStringSync("\n$sshPublicKey",
+            mode: FileMode.append);
+      }
+    } catch (e) {
+      logger.severe(
+          'Error writing to $username .ssh/authorized_keys file : $e');
     }
   }
 
