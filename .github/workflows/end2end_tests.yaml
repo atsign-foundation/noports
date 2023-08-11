@@ -79,11 +79,11 @@ jobs:
 
           - np: v3.1.2
             npd: local
-            wait: 30
+            wait: 60
 
           - np: v3.2.0
             npd: local
-            wait: 30
+            wait: 60
     steps:
       - name: Show Matrix Values
         run: |
