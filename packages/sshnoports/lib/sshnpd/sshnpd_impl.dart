@@ -45,7 +45,7 @@ class SSHNPDImpl implements SSHNPD {
   bool initialized = false;
 
   /// State variables used by [_notificationHandler]
-  String _privateKey = "";
+  String _privateKey = '';
 
   static const String commandToSend = 'sshd';
 
@@ -129,7 +129,7 @@ class SSHNPDImpl implements SSHNPD {
         ..namespaceAware = true;
 
       var atKey = AtKey()
-        ..key = "username.$device"
+        ..key = 'username.$device'
         ..sharedBy = deviceAtsign
         ..sharedWith = managerAtsign
         ..namespace = SSHNPD.namespace
@@ -255,7 +255,7 @@ class SSHNPDImpl implements SSHNPD {
       ..namespaceAware = true;
 
     var atKey = AtKey()
-      ..key = "heartbeat.$device"
+      ..key = 'heartbeat.$device'
       ..sharedBy = deviceAtsign
       ..sharedWith = notification.from
       ..namespace = SSHNPD.namespace
@@ -283,7 +283,7 @@ class SSHNPDImpl implements SSHNPD {
 
     late final String sshPublicKey;
     try {
-      var sshHomeDirectory = "$homeDirectory/.ssh/";
+      var sshHomeDirectory = '$homeDirectory/.ssh/';
       if (Platform.isWindows) {
         sshHomeDirectory = '$homeDirectory\\.ssh\\';
       }
@@ -302,7 +302,7 @@ class SSHNPDImpl implements SSHNPD {
       var authKeysContent = await authKeys.readAsString();
 
       if (!authKeysContent.contains(sshPublicKey)) {
-        authKeys.writeAsStringSync("\n$sshPublicKey", mode: FileMode.append);
+        authKeys.writeAsStringSync('\n$sshPublicKey', mode: FileMode.append);
       }
     } catch (e) {
       logger.severe(
@@ -400,7 +400,7 @@ class SSHNPDImpl implements SSHNPD {
         await _notify(
             atKey: _createResponseAtKey(
                 requestingAtsign: requestingAtsign, sessionId: sessionId),
-            value: "connected",
+            value: 'connected',
             sessionId: sessionId);
       }
     } catch (e) {
@@ -650,7 +650,7 @@ class SSHNPDImpl implements SSHNPD {
   Future<void> _notify(
       {required AtKey atKey,
         required String value,
-        String sessionId = ""}) async {
+        String sessionId = ''}) async {
     await atClient.notificationService
         .notify(NotificationParams.forUpdate(atKey, value: value),
         onSuccess: (notification) {
@@ -672,7 +672,7 @@ class SSHNPDImpl implements SSHNPD {
       ..namespaceAware = true;
 
     var atKey = AtKey()
-      ..key = "device_info.$device"
+      ..key = 'device_info.$device'
       ..sharedBy = deviceAtsign
       ..sharedWith = managerAtsign
       ..namespace = SSHNPD.namespace
@@ -683,8 +683,8 @@ class SSHNPDImpl implements SSHNPD {
       await atClient.put(
         atKey,
         jsonEncode({
-          "devicename": device,
-          "version": version,
+          'devicename': device,
+          'version': version,
         }),
         putRequestOptions: PutRequestOptions()..useRemoteAtServer = true,
       );
