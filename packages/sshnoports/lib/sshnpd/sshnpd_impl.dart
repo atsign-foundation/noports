@@ -257,7 +257,7 @@ class SSHNPDImpl implements SSHNPD {
     var atKey = AtKey()
       ..key = "heartbeat.$device"
       ..sharedBy = deviceAtsign
-      ..sharedWith = managerAtsign
+      ..sharedWith = notification.from
       ..namespace = SSHNPD.namespace
       ..metadata = metaData;
 
