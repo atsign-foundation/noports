@@ -13,7 +13,7 @@ class SSHNPDParams {
   late final bool verbose;
   late final SupportedSshClient sshClient;
   late final String rootDomain;
-  late final bool hidden;
+  late final bool shouldBroadcastInfo;
   // Non param variables
   static final ArgParser parser = _createArgParser();
 
@@ -46,7 +46,7 @@ class SSHNPDParams {
         .firstWhere((c) => c.cliArg == r['ssh-client']);
 
     rootDomain = r['root-domain'];
-    hidden = r['hidden'];
+    shouldBroadcastInfo = r['broadcast'];
   }
 
   static ArgParser _createArgParser() {
@@ -99,11 +99,10 @@ class SSHNPDParams {
       help: 'More logging',
     );
     parser.addFlag(
-      'hidden',
-      defaultsTo: true,
-      negatable: true,
-      help: 'Hide this device from "sshnp --list-devices" (default)'
-          'Use --no-hidden to show this device in "sshnp --list-devices"',
+      'broadcast',
+      abbr: 'b',
+      help: 'Broadcast device info to the client and respond to pings'
+          '(i.e. make it discoverable to sshnpd --list-devices)',
     );
     parser.addOption(
       'ssh-client',
