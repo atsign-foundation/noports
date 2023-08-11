@@ -237,6 +237,13 @@ class SSHNPDImpl implements SSHNPD {
   }
 
   void _handlePingNotification(AtNotification notification) {
+    if (!isFromAuthorizedAtsign(notification)) {
+      logger.shout('Notification ignored from ${notification.from}'
+          ' which is not in authorized list [$managerAtsign].'
+          ' Notification was ${jsonEncode(notification.toJson())}');
+      return;
+    }
+
     logger.info(
         'ping received from ${notification.from} notification id : ${notification.id}');
     var metaData = Metadata()
@@ -265,6 +272,13 @@ class SSHNPDImpl implements SSHNPD {
   }
 
   Future<void> _handlePublicKeyNotification(AtNotification notification) async {
+    if (!isFromAuthorizedAtsign(notification)) {
+      logger.shout('Notification ignored from ${notification.from}'
+          ' which is not in authorized list [$managerAtsign].'
+          ' Notification was ${jsonEncode(notification.toJson())}');
+      return;
+    }
+
     late final String sshPublicKey;
     try {
       var sshHomeDirectory = "$homeDirectory/.ssh/";
