@@ -255,8 +255,8 @@ class SSHNPDImpl implements SSHNPD {
     /// send a heartbeat back
     unawaited(
       _notify(
-        atKey,
-        jsonEncode({
+        atKey: atKey,
+        value: jsonEncode({
           'devicename': device,
           'version': version,
         }),
@@ -375,21 +375,24 @@ class SSHNPDImpl implements SSHNPD {
         logger.warning(errorMessage);
         // Notify sshnp that this session is NOT connected
         await _notify(
-          atKey,
-          '$errorMessage (use --local-port to specify unused port)',
+          atKey: atKey,
+          value: '$errorMessage (use --local-port to specify unused port)',
           sessionId: sessionId,
         );
       } else {
         /// Notify sshnp that the connection has been made
         logger.info(' sshnpd connected notification sent to:from "$atKey');
-        await _notify(atKey, "connected", sessionId: sessionId);
+        await _notify(
+            atKey: atKey,
+            value: "connected",
+            sessionId: sessionId);
       }
     } catch (e) {
       logger.severe('SSH Client failure : $e');
       // Notify sshnp that this session is NOT connected
       await _notify(
-        atKey,
-        'Remote SSH Client failure : $e',
+        atKey: atKey,
+        value: 'Remote SSH Client failure : $e',
         sessionId: sessionId,
       );
     }
@@ -614,8 +617,10 @@ class SSHNPDImpl implements SSHNPD {
   }
 
   /// This function sends a notification given an atKey and value
-  Future<void> _notify(AtKey atKey, String value,
-      {String sessionId = ""}) async {
+  Future<void> _notify(
+      {required AtKey atKey,
+        required String value,
+        String sessionId = ""}) async {
     await atClient.notificationService
         .notify(NotificationParams.forUpdate(atKey, value: value),
             onSuccess: (notification) {
