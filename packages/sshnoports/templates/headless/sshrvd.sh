@@ -4,9 +4,11 @@
 sleep 10
 USER=$(whoami) 
 export USER
+ATSIGN="$1"
+ADDRESS="$2"
 while true; do
   # -a = atSign
   # -i = FQDN/IP
-  $HOME/.local/bin/sshrvd -a "$1" -i "$2"
+  "$HOME"/.local/bin/sshrvd -a "$ATSIGN" -i "$ADDRESS"
   sleep 10
 done

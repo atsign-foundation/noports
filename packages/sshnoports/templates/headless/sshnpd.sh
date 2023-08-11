@@ -4,10 +4,13 @@
 sleep 10
 USER=$(whoami)
 export USER
+DEVICE="$1"
+CLIENT="$2"
+NAME="$3"
 while true; do
   # -a = device atSign
   # -m = client atSign
   # -d = device name
-  $HOME/.local/bin/sshnpd -a "$1" -m "$2"  -u  -d "$3" -v -s
+  "$HOME"/.local/bin/sshnpd -a "$DEVICE" -m "$CLIENT"  -u  -d "$NAME" -v -s "$@"
   sleep 10
 done

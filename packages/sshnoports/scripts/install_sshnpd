@@ -35,6 +35,7 @@ usage() {
   echo "  -d, --device <address>      Device address (e.g. @alice_device)"
   echo "  -n, --name <device name>    Name of the device"
   echo "  -v, --version <version>     Version to install (default: latest)"
+  echo "      --no-hidden             Make the device discoverable by the client"
   echo ""
   echo "Rename options:"
   echo "  -c, --client <address>      Client address (e.g. @alice_client)"
@@ -104,6 +105,10 @@ parse_args() {
         fi
         SSHNP_VERSION="$2"
         shift 2
+      ;;
+      --no-hidden)
+        SSHNP_SERVICE_ARGS="$SSHNP_SERVICE_ARGS --no-hidden"
+        shift 1
       ;;
       *)
         echo "Unknown argument: $1"
@@ -301,6 +306,7 @@ setup_service() {
       -e "s/\$1/$DEVICE_MANAGER_ATSIGN/g" \
       -e "s/\$2/$CLIENT_ATSIGN/g" \
       -e "s/\$3/$SSHNP_DEVICE_NAME/g" \
+      -e "s/\$@/$SSHNP_SERVICE_ARGS/g" \
     <"$HOME_PATH/.atsign/temp/$TEMP_PATH/$BINARY_NAME/templates/headless/sshnpd.sh" \
     >"$SSHNPD_SERVICE_BINARY_PATH";
     chmod +x "$SSHNPD_SERVICE_BINARY_PATH";
