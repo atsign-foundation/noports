@@ -17,7 +17,7 @@ inputs:
     required: true
   wait_time:
     description: Time to wait for sshnpd to start
-    default: "7"
+    default: "10"
 
 runs:
   using: composite
@@ -26,6 +26,6 @@ runs:
       shell: bash
       working-directory: tests/end2end_tests/tools/configuration
       run: |
-        ./setup-sshnp-entrypoint.sh ${{ inputs.devicename }} ${{ inputs.sshnp_atsign }} ${{ inputs.sshnpd_atsign }} ${{ inputs.sshrvd_atsign }} ${{ inputs.wait_time }}
+        ./setup-sshnp-entrypoint.sh ${{ inputs.devicename }} ${{ inputs.sshnp_atsign }} ${{ inputs.sshnpd_atsign }} ${{ inputs.sshrvd_atsign }} ${{ inputs.wait_time || 10 }}
         ./setup-sshnpd-entrypoint.sh ${{ inputs.devicename }} ${{ inputs.sshnp_atsign }} ${{ inputs.sshnpd_atsign }} ${{ inputs.sshrvd_atsign }}
         ./setup-sshrvd-entrypoint.sh ${{ inputs.sshrvd_atsign }}
