@@ -51,13 +51,13 @@ class SSHNPDImpl implements SSHNPD {
 
   SSHNPDImpl(
       {
-        // final fields
-        required this.atClient,
-        required this.username,
-        required this.homeDirectory,
-        required this.device,
-        required this.managerAtsign,
-        required this.sshClient}) {
+      // final fields
+      required this.atClient,
+      required this.username,
+      required this.homeDirectory,
+      required this.device,
+      required this.managerAtsign,
+      required this.sshClient}) {
     logger.hierarchicalLoggingEnabled = true;
     logger.logger.level = Level.SHOUT;
   }
@@ -156,16 +156,16 @@ class SSHNPDImpl implements SSHNPD {
     notificationService
         .subscribe(regex: '$device\\.${SSHNPD.namespace}@', shouldDecrypt: true)
         .listen(
-      _notificationHandler,
-      onError: (e) => logger.severe('Notification Failed:$e'),
-      onDone: () => logger.info('Notification listener stopped'),
-    );
+          _notificationHandler,
+          onError: (e) => logger.severe('Notification Failed:$e'),
+          onDone: () => logger.info('Notification listener stopped'),
+        );
 
     // Refresh the device entry now, and every hour
     await _refreshDeviceEntry();
     Timer.periodic(
       const Duration(hours: 1),
-          (_) async => await _refreshDeviceEntry(),
+      (_) async => await _refreshDeviceEntry(),
     );
 
     logger.info('Done');
@@ -207,8 +207,8 @@ class SSHNPDImpl implements SSHNPD {
     String notificationKey = notification.key
         .replaceAll('${notification.to}:', '')
         .replaceAll('.$device.${SSHNPD.namespace}${notification.from}', '')
-    // convert to lower case as the latest AtClient converts notification
-    // keys to lower case when received
+        // convert to lower case as the latest AtClient converts notification
+        // keys to lower case when received
         .toLowerCase();
 
     logger.info('Received: $notificationKey');
@@ -226,7 +226,7 @@ class SSHNPDImpl implements SSHNPD {
       case 'sshd':
         logger.info(
             '<3.5.0 request for (reverse) ssh received from ${notification.from}'
-                ' ( notification id : ${notification.id} )');
+            ' ( notification id : ${notification.id} )');
         _handleLegacySshRequestNotification(notification);
         break;
 
@@ -311,8 +311,8 @@ class SSHNPDImpl implements SSHNPD {
         authKeys.writeAsStringSync('\n$sshPublicKey', mode: FileMode.append);
       }
     } catch (e) {
-      logger.severe(
-          'Error writing to $username .ssh/authorized_keys file : $e');
+      logger
+          .severe('Error writing to $username .ssh/authorized_keys file : $e');
     }
   }
 
@@ -405,12 +405,12 @@ class SSHNPDImpl implements SSHNPD {
 
   Future<void> startReverseSsh(
       {required String host,
-        required int port,
-        required String sessionId,
-        required String username,
-        required int remoteForwardPort,
-        required String requestingAtsign,
-        required String privateKey}) async {
+      required int port,
+      required String sessionId,
+      required String username,
+      required int remoteForwardPort,
+      required String requestingAtsign,
+      required String privateKey}) async {
     logger.info(
         'Starting ssh session for $username to $host on port $port with forwardRemote of $remoteForwardPort');
     logger.shout(
@@ -494,12 +494,12 @@ class SSHNPDImpl implements SSHNPD {
   /// the other side to ssh to port 22 here.
   Future<(bool, String?)> reverseSshViaSSHClient(
       {required String host,
-        required int port,
-        required String sessionId,
-        required String username,
-        required int remoteForwardPort,
-        required String requestingAtsign,
-        required String privateKey}) async {
+      required int port,
+      required String sessionId,
+      required String username,
+      required int remoteForwardPort,
+      required String requestingAtsign,
+      required String privateKey}) async {
     late final SSHSocket socket;
     try {
       socket = await SSHSocket.connect(host, port);
@@ -519,8 +519,8 @@ class SSHNPDImpl implements SSHNPD {
       );
     } catch (e) {
       return (
-      false,
-      'Failed to create SSHClient for $username@$host:$port : $e'
+        false,
+        'Failed to create SSHClient for $username@$host:$port : $e'
       );
     }
 
@@ -564,7 +564,7 @@ class SSHNPDImpl implements SSHNPD {
 
         unawaited(
           connection.stream.cast<List<int>>().pipe(socket).whenComplete(
-                () async {
+            () async {
               counter--;
             },
           ),
@@ -585,12 +585,12 @@ class SSHNPDImpl implements SSHNPD {
   /// the other side to ssh to port 22 here.
   Future<(bool, String?)> reverseSshViaExec(
       {required String host,
-        required int port,
-        required String sessionId,
-        required String username,
-        required int remoteForwardPort,
-        required String requestingAtsign,
-        required String privateKey}) async {
+      required int port,
+      required String sessionId,
+      required String username,
+      required int remoteForwardPort,
+      required String requestingAtsign,
+      required String privateKey}) async {
     final pemFile = File('/tmp/.${Uuid().v4()}');
     if (!privateKey.endsWith('\n')) {
       privateKey += '\n';
@@ -637,17 +637,17 @@ class SSHNPDImpl implements SSHNPD {
     //     -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
     //     sleep 15
     List<String> args = '$username@$host'
-        ' -p $port'
-        ' -i ${pemFile.absolute.path}'
-        ' -R $remoteForwardPort:localhost:22'
-        ' -o LogLevel=VERBOSE'
-        ' -t -t'
-        ' -o StrictHostKeyChecking=accept-new'
-        ' -o IdentitiesOnly=yes'
-        ' -o BatchMode=yes'
-        ' -o ExitOnForwardFailure=yes'
-        ' -o ForkAfterAuthentication=yes'
-        ' sleep 15'
+            ' -p $port'
+            ' -i ${pemFile.absolute.path}'
+            ' -R $remoteForwardPort:localhost:22'
+            ' -o LogLevel=VERBOSE'
+            ' -t -t'
+            ' -o StrictHostKeyChecking=accept-new'
+            ' -o IdentitiesOnly=yes'
+            ' -o BatchMode=yes'
+            ' -o ExitOnForwardFailure=yes'
+            ' -o ForkAfterAuthentication=yes'
+            ' sleep 15'
         .split(' ');
     logger.info('$sessionId | Executing /usr/bin/ssh ${args.join(' ')}');
 
@@ -686,7 +686,7 @@ class SSHNPDImpl implements SSHNPD {
         logger.shout('$sessionId | Exit code $sshExitCode from'
             ' /usr/bin/ssh ${args.join(' ')}');
         errorMessage =
-        'Failed to establish connection - exit code $sshExitCode';
+            'Failed to establish connection - exit code $sshExitCode';
       }
     }
 
@@ -707,15 +707,15 @@ class SSHNPDImpl implements SSHNPD {
   /// This function sends a notification given an atKey and value
   Future<void> _notify(
       {required AtKey atKey,
-        required String value,
-        String sessionId = ''}) async {
+      required String value,
+      String sessionId = ''}) async {
     await atClient.notificationService
         .notify(NotificationParams.forUpdate(atKey, value: value),
-        onSuccess: (notification) {
-          logger.info('SUCCESS:$notification for: $sessionId with value: $value');
-        }, onError: (notification) {
-          logger.info('ERROR:$notification');
-        });
+            onSuccess: (notification) {
+      logger.info('SUCCESS:$notification for: $sessionId with value: $value');
+    }, onError: (notification) {
+      logger.info('ERROR:$notification');
+    });
   }
 
   /// This function creates an atKey which shares the device name with the client
