@@ -13,7 +13,7 @@ class SSHNPDParams {
   late final bool verbose;
   late final SupportedSshClient sshClient;
   late final String rootDomain;
-
+  late final bool hidden;
   // Non param variables
   static final ArgParser parser = _createArgParser();
 
@@ -46,6 +46,7 @@ class SSHNPDParams {
         .firstWhere((c) => c.cliArg == r['ssh-client']);
 
     rootDomain = r['root-domain'];
+    hidden = r['hidden'];
   }
 
   static ArgParser _createArgParser() {
@@ -80,6 +81,7 @@ class SSHNPDParams {
           'Send a trigger to this device, allows multiple devices share an atSign',
     );
 
+    // Customization Arguments
     parser.addFlag(
       'sshpublickey',
       abbr: 's',
@@ -96,17 +98,25 @@ class SSHNPDParams {
       abbr: 'v',
       help: 'More logging',
     );
-
-    parser.addOption('ssh-client',
-        mandatory: false,
-        defaultsTo: SupportedSshClient.hostSsh.cliArg,
-        allowed: SupportedSshClient.values.map((c) => c.cliArg).toList(),
-        help: 'What to use for outbound ssh connections.');
-
-    parser.addOption('root-domain',
-        mandatory: false,
-        defaultsTo: 'root.atsign.org',
-        help: 'atDirectory domain',
+    parser.addFlag(
+      'hidden',
+      defaultsTo: true,
+      negatable: true,
+      help: 'Hide this device from "sshnp --list-devices" (default)'
+          'Use --no-hidden to show this device in "sshnp --list-devices"',
+    );
+    parser.addOption(
+      'ssh-client',
+      mandatory: false,
+      defaultsTo: SupportedSshClient.hostSsh.cliArg,
+      allowed: SupportedSshClient.values.map((c) => c.cliArg).toList(),
+      help: 'What to use for outbound ssh connections.',
+    );
+    parser.addOption(
+      'root-domain',
+      mandatory: false,
+      defaultsTo: 'root.atsign.org',
+      help: 'atDirectory domain',
     );
 
     return parser;

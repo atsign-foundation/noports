@@ -16,6 +16,7 @@ import 'package:sshnoports/version.dart';
 import 'package:uuid/uuid.dart';
 
 class SSHNPDImpl implements SSHNPD {
+  static const String commandToSend = 'sshd';
   @override
   final AtSignLogger logger = AtSignLogger(' sshnpd ');
 
@@ -41,23 +42,25 @@ class SSHNPDImpl implements SSHNPD {
   final SupportedSshClient sshClient;
 
   @override
+  final bool isHidden;
+
+  @override
   @visibleForTesting
   bool initialized = false;
 
   /// State variables used by [_notificationHandler]
   String _privateKey = "";
 
-  static const String commandToSend = 'sshd';
-
-  SSHNPDImpl(
-      {
-      // final fields
-      required this.atClient,
-      required this.username,
-      required this.homeDirectory,
-      required this.device,
-      required this.managerAtsign,
-      required this.sshClient}) {
+  SSHNPDImpl({
+    // final fields
+    required this.atClient,
+    required this.username,
+    required this.homeDirectory,
+    required this.device,
+    required this.managerAtsign,
+    required this.sshClient,
+    this.isHidden = true,
+  }) {
     logger.hierarchicalLoggingEnabled = true;
     logger.logger.level = Level.SHOUT;
   }
@@ -84,12 +87,14 @@ class SSHNPDImpl implements SSHNPD {
       );
 
       var sshnpd = SSHNPD(
-          atClient: atClient,
-          username: p.username,
-          homeDirectory: p.homeDirectory,
-          device: p.device,
-          managerAtsign: p.managerAtsign,
-          sshClient: p.sshClient);
+        atClient: atClient,
+        username: p.username,
+        homeDirectory: p.homeDirectory,
+        device: p.device,
+        managerAtsign: p.managerAtsign,
+        sshClient: p.sshClient,
+        isHidden: p.hidden,
+      );
 
       if (p.verbose) {
         sshnpd.logger.logger.level = Level.INFO;
@@ -248,6 +253,8 @@ class SSHNPDImpl implements SSHNPD {
             deviceAtsign, device);
         break;
       case 'ping':
+        // If the device is set to hidden, ignore the ping
+        if (isHidden) break;
         logger.info(
             'ping received from ${notification.from} notification id : ${notification.id}');
         var metaData = Metadata()
@@ -606,6 +613,8 @@ class SSHNPDImpl implements SSHNPD {
 
   /// This function creates an atKey which shares the device name with the client
   Future<void> _refreshDeviceEntry() async {
+    // If the device is set to hidden, don't update the device info
+    if (isHidden) return;
     const ttl = 1000 * 60 * 60 * 24 * 30; // 30 days
     var metaData = Metadata()
       ..isPublic = false

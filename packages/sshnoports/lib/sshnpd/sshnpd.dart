@@ -32,26 +32,32 @@ abstract class SSHNPD {
   /// The ssh client to use when doing reverse ssh
   abstract final SupportedSshClient sshClient;
 
+  /// Whether this device should be hidden from sshnpd or not
+  abstract final bool isHidden;
+
   /// true once [init] has completed
   @visibleForTesting
   bool initialized = false;
 
-  factory SSHNPD(
-      {
-      // final fields
-      required AtClient atClient,
-      required String username,
-      required String homeDirectory,
-      required String device,
-      required String managerAtsign,
-      required SupportedSshClient sshClient}) {
+  factory SSHNPD({
+    // final fields
+    required AtClient atClient,
+    required String username,
+    required String homeDirectory,
+    required String device,
+    required String managerAtsign,
+    required SupportedSshClient sshClient,
+    bool isHidden = true,
+  }) {
     return SSHNPDImpl(
-        atClient: atClient,
-        username: username,
-        homeDirectory: homeDirectory,
-        device: device,
-        managerAtsign: managerAtsign,
-        sshClient: sshClient);
+      atClient: atClient,
+      username: username,
+      homeDirectory: homeDirectory,
+      device: device,
+      managerAtsign: managerAtsign,
+      sshClient: sshClient,
+      isHidden: isHidden,
+    );
   }
 
   static Future<SSHNPD> fromCommandLineArgs(List<String> args) async {
