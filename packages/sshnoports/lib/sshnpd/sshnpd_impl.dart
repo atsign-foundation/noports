@@ -233,6 +233,12 @@ class SSHNPDImpl implements SSHNPD {
       case 'ping':
         _handlePingNotification(notification);
         break;
+
+      case 'ssh_request':
+        logger.info('>=3.5.0 request for ssh received from ${notification.from}'
+            ' ( notification id : ${notification.id} )');
+        _handleSshRequestNotification(notification);
+        break;
     }
   }
 
@@ -307,6 +313,58 @@ class SSHNPDImpl implements SSHNPD {
     } catch (e) {
       logger.severe(
           'Error writing to $username .ssh/authorized_keys file : $e');
+    }
+  }
+
+  /// [notification] payload is json with the following structure
+  /// ```json
+  /// {
+  ///   "sessionId": $sessionId // must be provided
+  ///   "host": "$host", // must be provided
+  ///   "port": "$port", // must be provided
+  ///   "direct": "{true|false}", // must be provided
+  ///   "username" : "$username", // provided only if `direct` is false
+  ///   "remoteForwardPort" : 12345, // provided only if `direct` is false
+  ///   "privateKey" : "$privateKey", // provided only if `direct` is false
+  /// }
+  /// ```
+  ///
+  /// If json['direct'] is true, bridge the rvd connection to this device's
+  /// local port 22 so that the client can do a 'direct' ssh via the rvd
+  ///
+  /// If json['direct'] is false, start a reverse ssh to the client device
+  /// using the `username`, `host`, `port` and `privateKey` which are also
+  /// provided in the json payload, and requesting a remote port forwarding
+  /// of the provided `remoteForwardPort` to this device's local port 22.
+  /// Once this is running, the client user will then be able to ssh to
+  /// this device via `ssh -p $remoteForwardPort <some user>@localhost`
+  void _handleSshRequestNotification(AtNotification notification) async {
+    if (!isFromAuthorizedAtsign(notification)) {
+      logger.shout('Notification ignored from ${notification.from}'
+          ' which is not in authorized list [$managerAtsign].'
+          ' Notification was ${jsonEncode(notification.toJson())}');
+      return;
+    }
+
+    String requestingAtsign = notification.from;
+
+    Map params = jsonDecode(notification.value!);
+
+    if (params['direct'] == true) {
+      // direct ssh requested
+      logger.shout(
+          '_handleSshRequestNotification - direct ssh not yet implemented');
+      // TODO implement
+    } else {
+      // reverse ssh requested
+      await startReverseSsh(
+          host: params['host'],
+          port: params['port'],
+          sessionId: params['sessionId'],
+          username: params['username'],
+          remoteForwardPort: params['remoteForwardPort'],
+          requestingAtsign: requestingAtsign,
+          privateKey: params['privateKey']);
     }
   }
 
