@@ -254,7 +254,7 @@ class SSHNPDImpl implements SSHNPD {
         break;
       case 'ping':
         // Break if we shouldn't broadcast info
-        if (!shouldBroadcastInfo) break;
+        if (!isPingable) break;
         logger.info(
             'ping received from ${notification.from} notification id : ${notification.id}');
         var metaData = Metadata()
@@ -614,7 +614,7 @@ class SSHNPDImpl implements SSHNPD {
   /// This function creates an atKey which shares the device name with the client
   Future<void> _refreshDeviceEntry() async {
     // Return if we shouldn't broadcast info
-    if (!shouldBroadcastInfo) return;
+    if (!isPingable) return;
     const ttl = 1000 * 60 * 60 * 24 * 30; // 30 days
     var metaData = Metadata()
       ..isPublic = false
