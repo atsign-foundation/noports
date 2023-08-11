@@ -197,6 +197,13 @@ class SSHNPDImpl implements SSHNPD {
 
   /// Notification handler for sshnpd
   void _notificationHandler(AtNotification notification) async {
+    if (!isFromAuthorizedAtsign(notification)) {
+      logger.shout('Notification ignored from ${notification.from}'
+          ' which is not in authorized list [$managerAtsign].'
+          ' Notification was ${jsonEncode(notification.toJson())}');
+      return;
+    }
+
     String notificationKey = notification.key
         .replaceAll('${notification.to}:', '')
         .replaceAll('.$device.${SSHNPD.namespace}${notification.from}', '')
@@ -276,6 +283,9 @@ class SSHNPDImpl implements SSHNPD {
         break;
     }
   }
+
+  bool isFromAuthorizedAtsign(AtNotification notification) =>
+      notification.from == managerAtsign;
 
   /// A callback which is called to start an sshnp session
   void _sshCallback(
