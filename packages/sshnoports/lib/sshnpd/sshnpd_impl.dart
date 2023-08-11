@@ -225,8 +225,9 @@ class SSHNPDImpl implements SSHNPD {
 
       case 'sshd':
         logger.info(
-            'ssh callback request received from ${notification.from} notification id : ${notification.id}');
-        _sshCallback(notification, _privateKey, logger, managerAtsign,
+            '<3.5.0 request for (reverse) ssh received from ${notification.from}'
+                ' ( notification id : ${notification.id} )');
+        _handleLegacySshRequestNotification(notification, _privateKey, logger, managerAtsign,
             deviceAtsign, device);
         break;
 
@@ -299,7 +300,7 @@ class SSHNPDImpl implements SSHNPD {
       notification.from == managerAtsign;
 
   /// A callback which is called to start an sshnp session
-  void _sshCallback(
+  void _handleLegacySshRequestNotification(
       AtNotification notification,
       String privateKey,
       AtSignLogger logger,
