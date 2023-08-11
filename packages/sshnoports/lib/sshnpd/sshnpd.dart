@@ -27,10 +27,26 @@ abstract class SSHNPD {
   abstract final String device;
 
   String get deviceAtsign;
+
   abstract final String managerAtsign;
 
   /// The ssh client to use when doing reverse ssh
   abstract final SupportedSshClient sshClient;
+
+  /// Defaults to false.
+  ///
+  /// When true, sshnpd should
+  /// 1. notify a value for `@managerAtSign:username.$device.sshnp@deviceAtSign` when it starts
+  /// 2. create a `@managerAtSign:device_info.$device.sshnp@deviceAtSign` record when it starts
+  /// 3. respond to 'ping' notifications
+  ///
+  /// When false, none of the above should happen
+  abstract final bool makeDeviceInfoVisible;
+
+  /// When true, sshnpd will respond to requests to add public keys to its
+  /// authorized_keys file.
+  /// This flag should default to false.
+  abstract final bool addSshPublicKeys;
 
   /// true once [init] has completed
   @visibleForTesting
@@ -44,14 +60,18 @@ abstract class SSHNPD {
       required String homeDirectory,
       required String device,
       required String managerAtsign,
-      required SupportedSshClient sshClient}) {
+      required SupportedSshClient sshClient,
+      required bool makeDeviceInfoVisible,
+      required bool addSshPublicKeys}) {
     return SSHNPDImpl(
         atClient: atClient,
         username: username,
         homeDirectory: homeDirectory,
         device: device,
         managerAtsign: managerAtsign,
-        sshClient: sshClient);
+        sshClient: sshClient,
+        makeDeviceInfoVisible: makeDeviceInfoVisible,
+        addSshPublicKeys: addSshPublicKeys);
   }
 
   static Future<SSHNPD> fromCommandLineArgs(List<String> args) async {
