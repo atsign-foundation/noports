@@ -236,6 +236,9 @@ class SSHNPDImpl implements SSHNPD {
     }
   }
 
+  bool isFromAuthorizedAtsign(AtNotification notification) =>
+      notification.from == managerAtsign;
+
   void _handlePingNotification(AtNotification notification) {
     if (!isFromAuthorizedAtsign(notification)) {
       logger.shout('Notification ignored from ${notification.from}'
@@ -308,9 +311,6 @@ class SSHNPDImpl implements SSHNPD {
           'Error writing to $username .ssh/authorized_keys file : $e');
     }
   }
-
-  bool isFromAuthorizedAtsign(AtNotification notification) =>
-      notification.from == managerAtsign;
 
   /// ssh through to the remote device with the information we've received
   void _handleLegacySshRequestNotification(AtNotification notification) async {
