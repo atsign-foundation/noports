@@ -233,8 +233,7 @@ class SSHNPImpl implements SSHNP {
           namespace: '${p.device}.sshnp',
           pathExtension: sessionId,
           atKeysFilePath: p.atKeysFilePath,
-          rootDomain: p.rootDomain
-      );
+          rootDomain: p.rootDomain);
 
       var sshnp = SSHNP(
         atClient: atClient,

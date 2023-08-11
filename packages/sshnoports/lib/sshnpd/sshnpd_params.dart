@@ -103,10 +103,11 @@ class SSHNPDParams {
         allowed: SupportedSshClient.values.map((c) => c.cliArg).toList(),
         help: 'What to use for outbound ssh connections.');
 
-    parser.addOption('root-domain',
-        mandatory: false,
-        defaultsTo: 'root.atsign.org',
-        help: 'atDirectory domain',
+    parser.addOption(
+      'root-domain',
+      mandatory: false,
+      defaultsTo: 'root.atsign.org',
+      help: 'atDirectory domain',
     );
 
     return parser;
