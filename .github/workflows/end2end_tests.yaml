@@ -1,5 +1,8 @@
 name: end2end_tests
 
+permissions:
+  contents: read
+
 on:
   workflow_dispatch:
   push:
@@ -32,10 +35,10 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
+      max-parallel: 8
       matrix:
         np: [local, trunk]
         npd: [local, trunk]
-        wait: [4]
         exclude:
           # Don't run these against themselves, they're irrelevant
           - np: trunk
@@ -46,47 +49,41 @@ jobs:
           #   npd: local
           #   rvd: local
           #   rvd_atsign: "@8485wealthy51"
-          #   wait: 4
 
           - np: latest
             npd: latest
             rvd: local
             rvd_atsign: "@8485wealthy51"
-            wait: 4
 
           ### BACKWARD TESTS WITHOUT SYNC ###
           - np: local
             npd: latest
-            wait: 4
 
           - np: latest
             npd: local
-            wait: 4
 
           - np: local
             npd: v3.3.0
-            wait: 4
 
           - np: v3.3.0
             npd: local
-            wait: 4
 
           ### BACKWARD TESTS WHICH NEED SYNC ###
           - np: local
             npd: v3.1.2
-            wait: 60
+            wait: 120
 
           - np: local
             npd: v3.2.0
-            wait: 60
+            wait: 120
 
           - np: v3.1.2
             npd: local
-            wait: 30
+            wait: 60
 
           - np: v3.2.0
             npd: local
-            wait: 30
+            wait: 60
     steps:
       - name: Show Matrix Values
         run: |

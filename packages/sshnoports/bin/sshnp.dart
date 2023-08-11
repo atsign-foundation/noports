@@ -39,7 +39,7 @@ void main(List<String> args) async {
       print('Searching for devices...');
       var (active, off, info) = await sshnp.listDevices();
       if (active.isEmpty && off.isEmpty) {
-        print('  No devices found\n');
+        print('[X] No devices found\n');
         print(
             'Note: only devices with sshnpd version 3.5.0 or higher are supported by this command.');
         print(
@@ -73,7 +73,7 @@ void main(List<String> args) async {
 
 void _printDevices(Iterable<String> devices, Map<String, dynamic> info) {
   if (devices.isEmpty) {
-    print('None');
+    print('  [X] No devices found');
     return;
   }
   for (var device in devices) {
