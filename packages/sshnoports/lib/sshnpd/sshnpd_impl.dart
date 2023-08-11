@@ -227,8 +227,7 @@ class SSHNPDImpl implements SSHNPD {
         logger.info(
             '<3.5.0 request for (reverse) ssh received from ${notification.from}'
                 ' ( notification id : ${notification.id} )');
-        _handleLegacySshRequestNotification(notification, _privateKey, logger, managerAtsign,
-            deviceAtsign, device);
+        _handleLegacySshRequestNotification(notification);
         break;
 
       case 'ping':
@@ -299,66 +298,53 @@ class SSHNPDImpl implements SSHNPD {
   bool isFromAuthorizedAtsign(AtNotification notification) =>
       notification.from == managerAtsign;
 
-  /// A callback which is called to start an sshnp session
-  void _handleLegacySshRequestNotification(
-      AtNotification notification,
-      String privateKey,
-      AtSignLogger logger,
-      String managerAtsign,
-      String deviceAtsign,
-      String device) async {
-    // sessionId is local if we do not have a 2.0 client
-    var uuid = Uuid();
-    String sessionId = uuid.v4();
-    String sshString = notification.value!;
-
-    var metaData = Metadata()
-      ..isPublic = false
-      ..isEncrypted = true
-      ..namespaceAware = true
-      ..ttr = -1
-      ..ttl = 10000;
-
-    /// Setup an atKey to return a notification to the managerAtsign
-    var atKey = AtKey()
-      ..key = '$sessionId.$device'
-      ..sharedBy = deviceAtsign
-      ..sharedWith = managerAtsign
-      ..namespace = SSHNPD.namespace
-      ..metadata = metaData;
-
-    if (notification.from != managerAtsign) {
-      logger.shout(
-          'ssh session attempted from: ${notification.from} session: $sessionId and ignored');
+  /// ssh through to the remote device with the information we've received
+  void _handleLegacySshRequestNotification(AtNotification notification) async {
+    if (!isFromAuthorizedAtsign(notification)) {
+      logger.shout('Notification ignored from ${notification.from}'
+          ' which is not in authorized list [$managerAtsign].'
+          ' Notification was ${jsonEncode(notification.toJson())}');
       return;
     }
+    String requestingAtsign = notification.from;
 
-    /// Local port, port of sshd, username, hostname
-    List<String> sshList = sshString.split(' ');
-    var localPort = sshList[0];
+    /// notification value is `$remoteForwardPort $remotePort $username $remoteHost $sessionId`
+    List<String> sshList = notification.value!.split(' ');
+    var remoteForwardPort = sshList[0];
     var port = sshList[1];
     var username = sshList[2];
-    var hostname = sshList[3];
-
-    /// Assure backward compatibility with 1.x clients
+    var host = sshList[3];
+    late String sessionId;
     if (sshList.length == 5) {
+      // sshnp >=2.0.0 clients send sessionId
       sessionId = sshList[4];
-      atKey = AtKey()
-        ..key = '$sessionId.$device'
-        ..sharedBy = deviceAtsign
-        ..sharedWith = managerAtsign
-        ..namespace = SSHNPD.namespace
-        ..metadata = metaData;
+    } else {
+      // sshnp <2.0.0 clients do not send sessionId, it's generated here
+      sessionId = Uuid().v4();
     }
 
-    await startReverseSsh(logger, username, hostname, port, localPort, notification, sessionId, privateKey, atKey);
+    await startReverseSsh(
+        username: username,
+        host: host,
+        port: int.parse(port),
+        remoteForwardPort: int.parse(remoteForwardPort),
+        requestingAtsign: requestingAtsign,
+        sessionId: sessionId,
+        privateKey: _privateKey);
   }
 
-  Future<void> startReverseSsh(AtSignLogger logger, String username, String hostname, String port, String localPort, AtNotification notification, String sessionId, String privateKey, AtKey atKey) async {
+  Future<void> startReverseSsh(
+      {required String host,
+        required int port,
+        required String sessionId,
+        required String username,
+        required int remoteForwardPort,
+        required String requestingAtsign,
+        required String privateKey}) async {
     logger.info(
-        'Starting ssh session for $username to $hostname on port $port using localhost:$localPort on $hostname ');
+        'Starting ssh session for $username to $host on port $port with forwardRemote of $remoteForwardPort');
     logger.shout(
-        'Starting ssh session using ${sshClient.name} (${sshClient.cliArg}) from: ${notification.from} session: $sessionId');
+        'Starting ssh session using ${sshClient.name} (${sshClient.cliArg}) from: $requestingAtsign session: $sessionId');
 
     try {
       bool success = false;
@@ -366,29 +352,41 @@ class SSHNPDImpl implements SSHNPD {
 
       switch (sshClient) {
         case SupportedSshClient.hostSsh:
-          (success, errorMessage) = await reverseSshViaExec(privateKey,
-              username, hostname, port, localPort, logger, sessionId);
+          (success, errorMessage) = await reverseSshViaExec(
+              host: host,
+              port: port,
+              sessionId: sessionId,
+              username: username,
+              remoteForwardPort: remoteForwardPort,
+              requestingAtsign: requestingAtsign,
+              privateKey: privateKey);
           break;
         case SupportedSshClient.pureDart:
-          (success, errorMessage) = await reverseSshViaSSHClient(privateKey,
-              username, hostname, port, localPort, logger, sessionId);
+          (success, errorMessage) = await reverseSshViaSSHClient(
+              host: host,
+              port: port,
+              sessionId: sessionId,
+              username: username,
+              remoteForwardPort: remoteForwardPort,
+              requestingAtsign: requestingAtsign,
+              privateKey: privateKey);
           break;
       }
 
       if (!success) {
-        errorMessage ??= 'Failed to forward remote port $localPort';
+        errorMessage ??= 'Failed to forward remote port $remoteForwardPort';
         logger.warning(errorMessage);
         // Notify sshnp that this session is NOT connected
         await _notify(
-          atKey: atKey,
+          atKey: _createResponseAtKey(
+              requestingAtsign: requestingAtsign, sessionId: sessionId),
           value: '$errorMessage (use --local-port to specify unused port)',
           sessionId: sessionId,
         );
       } else {
-        /// Notify sshnp that the connection has been made
-        logger.info(' sshnpd connected notification sent to:from "$atKey');
         await _notify(
-            atKey: atKey,
+            atKey: _createResponseAtKey(
+                requestingAtsign: requestingAtsign, sessionId: sessionId),
             value: "connected",
             sessionId: sessionId);
       }
@@ -396,29 +394,46 @@ class SSHNPDImpl implements SSHNPD {
       logger.severe('SSH Client failure : $e');
       // Notify sshnp that this session is NOT connected
       await _notify(
-        atKey: atKey,
+        atKey: _createResponseAtKey(
+            requestingAtsign: requestingAtsign, sessionId: sessionId),
         value: 'Remote SSH Client failure : $e',
         sessionId: sessionId,
       );
     }
   }
 
+  AtKey _createResponseAtKey(
+      {required String requestingAtsign, required String sessionId}) {
+    var atKey = AtKey()
+      ..key = '$sessionId.$device'
+      ..sharedBy = deviceAtsign
+      ..sharedWith = requestingAtsign
+      ..namespace = SSHNPD.namespace
+      ..metadata = (Metadata()
+        ..isPublic = false
+        ..isEncrypted = true
+        ..namespaceAware = true
+        ..ttr = -1
+        ..ttl = 10000);
+    return atKey;
+  }
+
   /// Reverse ssh using SSHClient.
   /// We will ssh outwards with a remote port forwarding to allow a client on
   /// the other side to ssh to port 22 here.
   Future<(bool, String?)> reverseSshViaSSHClient(
-      String privateKey,
-      String username,
-      String hostname,
-      String port,
-      String localPort,
-      AtSignLogger logger,
-      String sessionId) async {
+      {required String host,
+        required int port,
+        required String sessionId,
+        required String username,
+        required int remoteForwardPort,
+        required String requestingAtsign,
+        required String privateKey}) async {
     late final SSHSocket socket;
     try {
-      socket = await SSHSocket.connect(hostname, int.parse(port));
+      socket = await SSHSocket.connect(host, port);
     } catch (e) {
-      return (false, 'Failed to open socket to $hostname:$port : $e');
+      return (false, 'Failed to open socket to $host:$port : $e');
     }
 
     late final SSHClient client;
@@ -434,7 +449,7 @@ class SSHNPDImpl implements SSHNPD {
     } catch (e) {
       return (
         false,
-        'Failed to create SSHClient for $username@$hostname:$port : $e'
+        'Failed to create SSHClient for $username@$host:$port : $e'
       );
     }
 
@@ -443,20 +458,20 @@ class SSHNPDImpl implements SSHNPD {
     } catch (e) {
       return (
         false,
-        'Failed to authenticate as $username@$hostname:$port : $e'
+        'Failed to authenticate as $username@$host:$port : $e'
       );
     }
 
     /// Do the port forwarding
     final SSHRemoteForward? forward;
     try {
-      forward = await client.forwardRemote(port: int.parse(localPort));
+      forward = await client.forwardRemote(port: remoteForwardPort);
     } catch (e) {
       return (false, 'Failed to request forwardRemote : $e');
     }
 
     if (forward == null) {
-      return (false, 'Failed to forward remote port $localPort');
+      return (false, 'Failed to forward remote port $remoteForwardPort');
     }
 
     int counter = 0;
@@ -500,14 +515,17 @@ class SSHNPDImpl implements SSHNPD {
   /// Reverse ssh by executing ssh directly on the host.
   /// We will ssh outwards with a remote port forwarding to allow a client on
   /// the other side to ssh to port 22 here.
+  /// Reverse ssh by executing ssh directly on the host.
+  /// We will ssh outwards with a remote port forwarding to allow a client on
+  /// the other side to ssh to port 22 here.
   Future<(bool, String?)> reverseSshViaExec(
-      String privateKey,
-      String username,
-      String hostname,
-      String port,
-      String localPort,
-      AtSignLogger logger,
-      String sessionId) async {
+      {required String host,
+        required int port,
+        required String sessionId,
+        required String username,
+        required int remoteForwardPort,
+        required String requestingAtsign,
+        required String privateKey}) async {
     final pemFile = File('/tmp/.${Uuid().v4()}');
     if (!privateKey.endsWith('\n')) {
       privateKey += '\n';
@@ -553,10 +571,10 @@ class SSHNPDImpl implements SSHNPD {
     // ssh username@targetHostName -p targetHostPort -i $pemFile -R clientForwardPort:localhost:22 \
     //     -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
     //     sleep 15
-    List<String> args = '$username@$hostname'
+    List<String> args = '$username@$host'
             ' -p $port'
             ' -i ${pemFile.absolute.path}'
-            ' -R $localPort:localhost:22'
+            ' -R $remoteForwardPort:localhost:22'
             ' -o LogLevel=VERBOSE'
             ' -t -t'
             ' -o StrictHostKeyChecking=accept-new'
