@@ -36,11 +36,12 @@ abstract class SSHNPD {
   /// Defaults to false.
   ///
   /// When true, sshnpd should
-  /// 1. notify a value for `@managerAtSign:username.$device.sshnp@deviceAtSign` when it starts
-  /// 2. create a `@managerAtSign:device_info.$device.sshnp@deviceAtSign` record when it starts
-  /// 3. respond to 'ping' notifications
+  /// 1. notify a value for `@managerAtSign:username.$device.sshnp@deviceAtSign`
+  /// when it starts
+  /// 2. create a `@managerAtSign:device_info.$device.sshnp@deviceAtSign`
+  /// record when it starts, and update it periodically thereafter
   ///
-  /// When false, none of the above should happen
+  /// When false, neither of the above should happen
   abstract final bool makeDeviceInfoVisible;
 
   /// When true, sshnpd will respond to requests to add public keys to its
