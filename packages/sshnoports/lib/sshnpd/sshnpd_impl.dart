@@ -368,23 +368,50 @@ class SSHNPDImpl implements SSHNPD {
 
     String requestingAtsign = notification.from;
 
-    Map params = jsonDecode(notification.value!);
+    late Map params;
+
+    // Validate the request payload.
+    //
+    // If a 'direct' ssh is being requested, then
+    // only sessionId, host (of the rvd) and port (of the rvd) are required.
+    //
+    // If a reverse ssh is being requested, then we also require
+    // a username (to ssh back to the client), a privateKey (for that
+    // ssh) and a remoteForwardPort, to set up the ssh tunnel back to this
+    // device from the client side.
+    try {
+      params = jsonDecode(notification.value!);
+      assertValidValue(params, 'sessionId', String);
+      assertValidValue(params, 'host', String);
+      assertValidValue(params, 'port', int);
+      if (params['direct'] != true) {
+        assertValidValue(params, 'username', String);
+        assertValidValue(params, 'remoteForwardPort', int);
+        assertValidValue(params, 'privateKey', String);
+      }
+    } catch (e) {
+      logger.warning(
+          'Failed to extract parameters from notification value "${notification.value}" with error : $e');
+      return;
+    }
 
     if (params['direct'] == true) {
       // direct ssh requested
-      logger.shout(
-          '_handleSshRequestNotification - direct ssh not yet implemented');
-      // TODO implement
+      await startDirectSsh(
+          requestingAtsign: requestingAtsign,
+          sessionId: params['sessionId'],
+          host: params['host'],
+          port: params['port']);
     } else {
       // reverse ssh requested
       await startReverseSsh(
+          requestingAtsign: requestingAtsign,
+          sessionId: params['sessionId'],
           host: params['host'],
           port: params['port'],
-          sessionId: params['sessionId'],
           username: params['username'],
-          remoteForwardPort: params['remoteForwardPort'],
-          requestingAtsign: requestingAtsign,
-          privateKey: params['privateKey']);
+          privateKey: params['privateKey'],
+          remoteForwardPort: params['remoteForwardPort']);
     }
   }
 
@@ -414,27 +441,37 @@ class SSHNPDImpl implements SSHNPD {
     }
 
     await startReverseSsh(
+        requestingAtsign: requestingAtsign,
+        sessionId: sessionId,
         username: username,
         host: host,
         port: int.parse(port),
-        remoteForwardPort: int.parse(remoteForwardPort),
-        requestingAtsign: requestingAtsign,
-        sessionId: sessionId,
-        privateKey: _privateKey);
+        privateKey: _privateKey,
+        remoteForwardPort: int.parse(remoteForwardPort));
+  }
+
+  Future<void> startDirectSsh(
+      {required String requestingAtsign,
+      required String sessionId,
+      required String host,
+      required int port}) async {
+    logger.shout(
+        'Setting up ports for direct ssh session using ${sshClient.name} (${sshClient.cliArg}) from: $requestingAtsign session: $sessionId');
+    // TODO Implement
   }
 
   Future<void> startReverseSsh(
-      {required String host,
-      required int port,
+      {required String requestingAtsign,
       required String sessionId,
+      required String host,
+      required int port,
       required String username,
-      required int remoteForwardPort,
-      required String requestingAtsign,
-      required String privateKey}) async {
+      required String privateKey,
+      required int remoteForwardPort}) async {
     logger.info(
-        'Starting ssh session for $username to $host on port $port with forwardRemote of $remoteForwardPort');
+        'Starting reverse ssh session for $username to $host on port $port with forwardRemote of $remoteForwardPort');
     logger.shout(
-        'Starting ssh session using ${sshClient.name} (${sshClient.cliArg}) from: $requestingAtsign session: $sessionId');
+        'Starting reverse ssh session using ${sshClient.name} (${sshClient.cliArg}) from: $requestingAtsign session: $sessionId');
 
     try {
       bool success = false;
