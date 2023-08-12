@@ -7,7 +7,6 @@ import 'package:at_utils/at_logger.dart';
 import 'package:logging/logging.dart';
 import 'package:meta/meta.dart';
 import 'package:sshnoports/common/create_at_client_cli.dart';
-import 'package:sshnoports/sshnp/get_sshrv_command.dart';
 import 'package:sshnoports/common/utils.dart';
 import 'package:sshnoports/sshnp/cleanup.dart';
 import 'package:sshnoports/sshnp/sshnp.dart';
