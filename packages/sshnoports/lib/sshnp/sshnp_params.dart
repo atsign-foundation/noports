@@ -86,7 +86,7 @@ class SSHNPParams {
       atKeysFilePath: partial.atKeysFilePath,
       rootDomain: partial.rootDomain ?? 'root.atsign.org',
       listDevices: partial.listDevices,
-      legacyDaemon: partial.legacyDaemon ?? false
+      legacyDaemon: partial.legacyDaemon ?? true
     );
   }
 
@@ -204,7 +204,7 @@ class SSHNPPartialParams {
     this.verbose,
     this.rootDomain,
     this.listDevices = false,
-    this.legacyDaemon = false
+    this.legacyDaemon = true
   });
 
   factory SSHNPPartialParams.empty() {
