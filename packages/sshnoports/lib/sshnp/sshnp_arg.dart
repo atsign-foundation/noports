@@ -125,5 +125,11 @@ class SSHNPArg {
       mandatory: false,
       format: ArgFormat.option,
     ),
+    SSHNPArg(
+      name: 'legacy-daemon',
+      defaultsTo: false,
+      help: 'Request is to a legacy (< 3.5.0) noports daemon',
+      format: ArgFormat.flag,
+    ),
   ];
 }

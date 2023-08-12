@@ -108,6 +108,8 @@ abstract class SSHNP {
   @visibleForTesting
   abstract bool sshrvdAck;
 
+  abstract final bool legacyDaemon;
+
   bool verbose = false;
 
   /// true once [init] has completed
@@ -131,6 +133,7 @@ abstract class SSHNP {
     required String localPort,
     String? remoteUsername,
     bool verbose = false,
+    bool legacyDaemon = false
   }) {
     return SSHNPImpl(
       atClient: atClient,
@@ -147,6 +150,7 @@ abstract class SSHNP {
       localPort: localPort,
       remoteUsername: remoteUsername,
       verbose: verbose,
+      legacyDaemon: legacyDaemon
     );
   }
 

@@ -160,6 +160,9 @@ class SSHNPImpl implements SSHNP {
   @override
   bool verbose = false;
 
+  @override
+  late final bool legacyDaemon;
+
   SSHNPImpl({
     // final fields
     required this.atClient,
@@ -177,6 +180,7 @@ class SSHNPImpl implements SSHNP {
     required this.localPort,
     this.remoteUsername,
     this.verbose = false,
+    required this.legacyDaemon
   }) {
     namespace = '$device.sshnp';
     clientAtSign = atClient.getCurrentAtSign()!;

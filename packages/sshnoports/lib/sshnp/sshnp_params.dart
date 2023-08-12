@@ -28,6 +28,7 @@ class SSHNPParams {
   late final String? remoteUsername;
   late final bool verbose;
   late final String rootDomain;
+  late final bool legacyDaemon;
 
   /// Special Arguments
   late final bool listDevices;
@@ -47,6 +48,7 @@ class SSHNPParams {
     String? atKeysFilePath,
     this.rootDomain = 'root.atsign.org',
     this.listDevices = false,
+    required this.legacyDaemon
   }) {
     // Do we have a username ?
     username = getUserName(throwIfNull: true)!;
@@ -84,6 +86,7 @@ class SSHNPParams {
       atKeysFilePath: partial.atKeysFilePath,
       rootDomain: partial.rootDomain ?? 'root.atsign.org',
       listDevices: partial.listDevices,
+      legacyDaemon: partial.legacyDaemon ?? false
     );
   }
 
@@ -177,6 +180,7 @@ class SSHNPPartialParams {
   late final String? remoteUsername;
   late final bool? verbose;
   late final String? rootDomain;
+  late final bool? legacyDaemon;
 
   /// Special Params
   // N.B. config file is a meta param and doesn't need to be included
@@ -200,6 +204,7 @@ class SSHNPPartialParams {
     this.verbose,
     this.rootDomain,
     this.listDevices = false,
+    this.legacyDaemon = false
   });
 
   factory SSHNPPartialParams.empty() {
@@ -227,6 +232,7 @@ class SSHNPPartialParams {
       verbose: params2.verbose ?? params1.verbose,
       rootDomain: params2.rootDomain ?? params1.rootDomain,
       listDevices: params2.listDevices || params1.listDevices,
+      legacyDaemon: params2.legacyDaemon ?? params1.legacyDaemon,
     );
   }
 
@@ -246,6 +252,7 @@ class SSHNPPartialParams {
       verbose: args['verbose'],
       rootDomain: args['root-domain'],
       listDevices: args['list-devices'] ?? false,
+      legacyDaemon: args['legacy-daemon'],
     );
   }
 
