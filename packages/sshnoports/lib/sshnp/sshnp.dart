@@ -30,7 +30,12 @@ abstract class SSHNP {
   /// The sessionId we will use
   abstract final String sessionId;
 
-  abstract final String sendSshPublicKey;
+  /// The name of the public key file from ~/.ssh which the client may request
+  /// be appended to authorized_hosts on the remote device. Note that if the
+  /// daemon on the remote device is not running with the `-s` flag, then it
+  /// ignores such requests.
+  abstract final String publicKeyFileName;
+
   abstract final List<String> localSshOptions;
 
   /// When false, we generate [sshPublicKey] and [sshPrivateKey] using ed25519.
@@ -89,9 +94,6 @@ abstract class SSHNP {
   /// When using sshrvd, this is fetched from sshrvd during [init]
   String get sshrvdPort;
 
-  /// Set to '$localPort $port $username $host $sessionId' during [init]
-  abstract final String sshString;
-
   /// Set by constructor to
   /// '$homeDirectory${Platform.pathSeparator}.ssh${Platform.pathSeparator}'
   abstract final String sshHomeDirectory;
@@ -113,8 +115,9 @@ abstract class SSHNP {
   bool verbose = false;
 
   /// true once [init] has completed
-  @visibleForTesting
   bool initialized = false;
+
+  abstract final bool direct;
 
   factory SSHNP({
     // final fields
@@ -133,7 +136,7 @@ abstract class SSHNP {
     required String localPort,
     String? remoteUsername,
     bool verbose = false,
-    bool legacyDaemon = false
+    required bool legacyDaemon
   }) {
     return SSHNPImpl(
       atClient: atClient,
