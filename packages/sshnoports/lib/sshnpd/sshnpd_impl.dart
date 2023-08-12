@@ -457,7 +457,66 @@ class SSHNPDImpl implements SSHNPD {
       required int port}) async {
     logger.shout(
         'Setting up ports for direct ssh session using ${sshClient.name} (${sshClient.cliArg}) from: $requestingAtsign session: $sessionId');
-    // TODO Implement
+
+    try {
+      final soutBuf = StringBuffer();
+      final serrBuf = StringBuffer();
+
+      // Start an sshrv process to connect localhost:22 to the rvd's host:port
+      Process process = await Process.start(getSshrvCommand(), [host, '$port']);
+      process.stdout.listen((List<int> l) {
+        var s = utf8.decode(l);
+        soutBuf.write(s);
+        logger.info('$sessionId | rv | StdOut | $s');
+      }, onError: (e) {});
+      process.stderr.listen((List<int> l) {
+        var s = utf8.decode(l);
+        serrBuf.write(s);
+        logger.info('$sessionId | rv | StdErr | $s');
+      }, onError: (e) {});
+
+      int? rvExitCode;
+      unawaited(process.exitCode.catchError((e) {
+        logger.shout('$sessionId | rv | error in execution: $e');
+        rvExitCode = -1;
+        return -1;
+      }));
+      unawaited(process.exitCode.then((ec) {
+        logger.info('$sessionId | rv | exit code $ec');
+        rvExitCode = ec;
+      }));
+
+      // Wait a second for the rv process to try to start up
+      await Future.delayed(Duration(seconds: 1));
+      if (rvExitCode == null) {
+        // This is fine, almost certainly means that the sshrv process is running
+        /// Notify sshnp that the connection has been made
+        await _notify(
+            atKey: _createResponseAtKey(
+                requestingAtsign: requestingAtsign, sessionId: sessionId),
+            value: 'connected',
+            sessionId: sessionId);
+      } else {
+        // The sshrv process has exited for some reason; this is not expected
+        // Notify sshnp that this session is NOT connected
+        await _notify(
+            atKey: _createResponseAtKey(
+                requestingAtsign: requestingAtsign, sessionId: sessionId),
+            value: 'Failed to start up the daemon side of the sshrv socket tunnel\n'
+                'rv stdOut: ${soutBuf.toString()}\n'
+                'rv stdErr: ${serrBuf.toString()}\n',
+            sessionId: sessionId);
+      }
+    } catch (e) {
+      logger.severe('startDirectSsh failed with unexpected error : $e');
+      // Notify sshnp that this session is NOT connected
+      await _notify(
+        atKey: _createResponseAtKey(
+            requestingAtsign: requestingAtsign, sessionId: sessionId),
+        value: 'Failed to start up the daemon side of the sshrv socket tunnel : $e',
+        sessionId: sessionId,
+      );
+    }
   }
 
   Future<void> startReverseSsh(
