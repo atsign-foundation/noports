@@ -117,7 +117,7 @@ void assertValidValue(Map m, String k, Type t) {
 String getSshrvCommand() {
   late String sshnpDir;
   List<String> pathList =
-  Platform.resolvedExecutable.split(Platform.pathSeparator);
+      Platform.resolvedExecutable.split(Platform.pathSeparator);
 
   String programName = pathList.last;
   if (programName == 'sshnp' || programName == 'sshnpd') {

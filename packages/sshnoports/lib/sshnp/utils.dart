@@ -24,8 +24,10 @@ Future<void> cleanUpAfterReverseSsh(SSHNP sshnp) async {
   sshnp.logger.info('Tidying up files');
 // Delete the generated RSA keys and remove the entry from ~/.ssh/authorized_keys
   await deleteFile('$sshHomeDirectory${sshnp.sessionId}_sshnp', sshnp.logger);
-  await deleteFile('$sshHomeDirectory${sshnp.sessionId}_sshnp.pub', sshnp.logger);
-  await removeFromAuthorizedKeys(sshHomeDirectory, sshnp.sessionId, sshnp.logger);
+  await deleteFile(
+      '$sshHomeDirectory${sshnp.sessionId}_sshnp.pub', sshnp.logger);
+  await removeFromAuthorizedKeys(
+      sshHomeDirectory, sshnp.sessionId, sshnp.logger);
 }
 
 Future<bool> deleteFile(String fileName, AtSignLogger logger) async {
@@ -56,7 +58,6 @@ Future<void> removeFromAuthorizedKeys(
   }
 }
 
-
 /// Figures out whether we are requesting a direct ssh or not, based on
 /// 1) are we talking to a legacy daemon or not?
 /// 2) is the host parameter supplied as an atSign or not?
@@ -69,7 +70,8 @@ Future<void> removeFromAuthorizedKeys(
 /// -   else
 /// -     return false (current daemon, but client not using rvd)
 bool useDirectSsh(bool legacyDaemon, String host) {
-  if (legacyDaemon) { // legacy daemons only handle reverse ssh
+  if (legacyDaemon) {
+    // legacy daemons only handle reverse ssh
     return false;
   } else {
     // Not a legacy daemon, so can handle direct or reverse ssh

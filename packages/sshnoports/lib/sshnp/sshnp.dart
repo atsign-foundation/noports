@@ -119,42 +119,41 @@ abstract class SSHNP {
 
   abstract final bool direct;
 
-  factory SSHNP({
-    // final fields
-    required AtClient atClient,
-    required String sshnpdAtSign,
-    required String device,
-    required String username,
-    required String homeDirectory,
-    required String sessionId,
-    String sendSshPublicKey = 'false',
-    required List<String> localSshOptions,
-    bool rsa = false,
-    // volatile fields
-    required String host,
-    required String port,
-    required String localPort,
-    String? remoteUsername,
-    bool verbose = false,
-    required bool legacyDaemon
-  }) {
+  factory SSHNP(
+      {
+      // final fields
+      required AtClient atClient,
+      required String sshnpdAtSign,
+      required String device,
+      required String username,
+      required String homeDirectory,
+      required String sessionId,
+      String sendSshPublicKey = 'false',
+      required List<String> localSshOptions,
+      bool rsa = false,
+      // volatile fields
+      required String host,
+      required String port,
+      required String localPort,
+      String? remoteUsername,
+      bool verbose = false,
+      required bool legacyDaemon}) {
     return SSHNPImpl(
-      atClient: atClient,
-      sshnpdAtSign: sshnpdAtSign,
-      device: device,
-      username: username,
-      homeDirectory: homeDirectory,
-      sessionId: sessionId,
-      sendSshPublicKey: sendSshPublicKey,
-      localSshOptions: localSshOptions,
-      rsa: rsa,
-      host: host,
-      port: port,
-      localPort: localPort,
-      remoteUsername: remoteUsername,
-      verbose: verbose,
-      legacyDaemon: legacyDaemon
-    );
+        atClient: atClient,
+        sshnpdAtSign: sshnpdAtSign,
+        device: device,
+        username: username,
+        homeDirectory: homeDirectory,
+        sessionId: sessionId,
+        sendSshPublicKey: sendSshPublicKey,
+        localSshOptions: localSshOptions,
+        rsa: rsa,
+        host: host,
+        port: port,
+        localPort: localPort,
+        remoteUsername: remoteUsername,
+        verbose: verbose,
+        legacyDaemon: legacyDaemon);
   }
 
   static Future<SSHNP> fromCommandLineArgs(List<String> args) async {

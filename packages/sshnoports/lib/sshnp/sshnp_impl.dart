@@ -396,11 +396,13 @@ class SSHNPImpl implements SSHNP {
             (success, errorMessage) = await directSshViaExec();
             break;
           case SupportedSshClient.pureDart:
-            throw UnimplementedError('start the direct ssh via pure dart client not yet implemented');
+            throw UnimplementedError(
+                'start the direct ssh via pure dart client not yet implemented');
         }
 
         if (!success) {
-          errorMessage ??= 'Failed to start ssh tunnel and / or forward local port $localPort';
+          errorMessage ??=
+              'Failed to start ssh tunnel and / or forward local port $localPort';
           throw errorMessage;
         } else {
           // All good - write the ssh command to stdout
@@ -414,17 +416,17 @@ class SSHNPImpl implements SSHNP {
 
   Future<(bool, String?)> directSshViaExec() async {
     List<String> args = '$remoteUsername@$host'
-        ' -p $_sshrvdPort'
-        ' -i ${publicKeyFileName.replaceFirst(RegExp(r'.pub$'), '')}'
-        ' -L $localPort:localhost:22'
-        ' -o LogLevel=VERBOSE'
-        ' -t -t'
-        ' -o StrictHostKeyChecking=accept-new'
-        ' -o IdentitiesOnly=yes'
-        ' -o BatchMode=yes'
-        ' -o ExitOnForwardFailure=yes'
-        ' -f' // fork after authentication - this is important
-        ' sleep 15'
+            ' -p $_sshrvdPort'
+            ' -i ${publicKeyFileName.replaceFirst(RegExp(r'.pub$'), '')}'
+            ' -L $localPort:localhost:22'
+            ' -o LogLevel=VERBOSE'
+            ' -t -t'
+            ' -o StrictHostKeyChecking=accept-new'
+            ' -o IdentitiesOnly=yes'
+            ' -o BatchMode=yes'
+            ' -o ExitOnForwardFailure=yes'
+            ' -f' // fork after authentication - this is important
+            ' sleep 15'
         .split(' ');
     logger.info('$sessionId | Executing /usr/bin/ssh ${args.join(' ')}');
 
@@ -462,7 +464,7 @@ class SSHNPImpl implements SSHNP {
         logger.shout('$sessionId | Exit code $sshExitCode from'
             ' /usr/bin/ssh ${args.join(' ')}');
         errorMessage =
-        'Failed to establish connection - exit code $sshExitCode';
+            'Failed to establish connection - exit code $sshExitCode';
       }
     }
 
@@ -513,7 +515,6 @@ class SSHNPImpl implements SSHNP {
     // Connect to rendezvous point using background process.
     // sshnp (this program) can then exit without issue.
     unawaited(Process.run(getSshrvCommand(), [host, _sshrvdPort]));
-
 
     // send request to the daemon via notification
     await _notify(

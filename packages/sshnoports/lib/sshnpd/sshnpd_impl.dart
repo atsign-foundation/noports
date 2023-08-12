@@ -460,7 +460,8 @@ class SSHNPDImpl implements SSHNPD {
     try {
       // Connect to rendezvous point using background process.
       // This program can then exit without causing an issue.
-      Process rv = await Process.start(getSshrvCommand(), [host, '$port'], mode:ProcessStartMode.detached);
+      Process rv = await Process.start(getSshrvCommand(), [host, '$port'],
+          mode: ProcessStartMode.detached);
       logger.info('Started rv - pid is ${rv.pid}');
 
       /// Notify sshnp that the connection has been made
@@ -475,7 +476,8 @@ class SSHNPDImpl implements SSHNPD {
       await _notify(
         atKey: _createResponseAtKey(
             requestingAtsign: requestingAtsign, sessionId: sessionId),
-        value: 'Failed to start up the daemon side of the sshrv socket tunnel : $e',
+        value:
+            'Failed to start up the daemon side of the sshrv socket tunnel : $e',
         sessionId: sessionId,
       );
     }
