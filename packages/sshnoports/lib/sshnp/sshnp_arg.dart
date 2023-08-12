@@ -127,7 +127,7 @@ class SSHNPArg {
     ),
     SSHNPArg(
       name: 'legacy-daemon',
-      defaultsTo: false,
+      defaultsTo: true,
       help: 'Request is to a legacy (< 3.5.0) noports daemon',
       format: ArgFormat.flag,
     ),
