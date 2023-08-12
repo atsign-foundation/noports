@@ -249,7 +249,7 @@ class SSHNPDImpl implements SSHNPD {
 
       case 'ssh_request':
         logger.info('>=3.5.0 request for ssh received from ${notification.from}'
-            ' ( notification id : ${notification.id} )');
+            ' ( $notification )');
         _handleSshRequestNotification(notification);
         break;
     }
@@ -368,8 +368,6 @@ class SSHNPDImpl implements SSHNPD {
 
     String requestingAtsign = notification.from;
 
-    late Map params;
-
     // Validate the request payload.
     //
     // If a 'direct' ssh is being requested, then
@@ -379,6 +377,7 @@ class SSHNPDImpl implements SSHNPD {
     // a username (to ssh back to the client), a privateKey (for that
     // ssh) and a remoteForwardPort, to set up the ssh tunnel back to this
     // device from the client side.
+    late Map params;
     try {
       params = jsonDecode(notification.value!);
       assertValidValue(params, 'sessionId', String);
@@ -459,54 +458,17 @@ class SSHNPDImpl implements SSHNPD {
         'Setting up ports for direct ssh session using ${sshClient.name} (${sshClient.cliArg}) from: $requestingAtsign session: $sessionId');
 
     try {
-      final soutBuf = StringBuffer();
-      final serrBuf = StringBuffer();
+      // Connect to rendezvous point using background process.
+      // This program can then exit without causing an issue.
+      Process rv = await Process.start(getSshrvCommand(), [host, '$port'], mode:ProcessStartMode.detached);
+      logger.info('Started rv - pid is ${rv.pid}');
 
-      // Start an sshrv process to connect localhost:22 to the rvd's host:port
-      Process process = await Process.start(getSshrvCommand(), [host, '$port']);
-      process.stdout.listen((List<int> l) {
-        var s = utf8.decode(l);
-        soutBuf.write(s);
-        logger.info('$sessionId | rv | StdOut | $s');
-      }, onError: (e) {});
-      process.stderr.listen((List<int> l) {
-        var s = utf8.decode(l);
-        serrBuf.write(s);
-        logger.info('$sessionId | rv | StdErr | $s');
-      }, onError: (e) {});
-
-      int? rvExitCode;
-      unawaited(process.exitCode.catchError((e) {
-        logger.shout('$sessionId | rv | error in execution: $e');
-        rvExitCode = -1;
-        return -1;
-      }));
-      unawaited(process.exitCode.then((ec) {
-        logger.info('$sessionId | rv | exit code $ec');
-        rvExitCode = ec;
-      }));
-
-      // Wait a second for the rv process to try to start up
-      await Future.delayed(Duration(seconds: 1));
-      if (rvExitCode == null) {
-        // This is fine, almost certainly means that the sshrv process is running
-        /// Notify sshnp that the connection has been made
-        await _notify(
-            atKey: _createResponseAtKey(
-                requestingAtsign: requestingAtsign, sessionId: sessionId),
-            value: 'connected',
-            sessionId: sessionId);
-      } else {
-        // The sshrv process has exited for some reason; this is not expected
-        // Notify sshnp that this session is NOT connected
-        await _notify(
-            atKey: _createResponseAtKey(
-                requestingAtsign: requestingAtsign, sessionId: sessionId),
-            value: 'Failed to start up the daemon side of the sshrv socket tunnel\n'
-                'rv stdOut: ${soutBuf.toString()}\n'
-                'rv stdErr: ${serrBuf.toString()}\n',
-            sessionId: sessionId);
-      }
+      /// Notify sshnp that the connection has been made
+      await _notify(
+          atKey: _createResponseAtKey(
+              requestingAtsign: requestingAtsign, sessionId: sessionId),
+          value: 'connected',
+          sessionId: sessionId);
     } catch (e) {
       logger.severe('startDirectSsh failed with unexpected error : $e');
       // Notify sshnp that this session is NOT connected

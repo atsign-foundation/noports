@@ -2,11 +2,12 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:at_client/at_client.dart';
+import 'package:at_client/at_client.dart' hide StringBuffer;
 import 'package:at_utils/at_logger.dart';
 import 'package:logging/logging.dart';
 import 'package:meta/meta.dart';
 import 'package:sshnoports/common/create_at_client_cli.dart';
+import 'package:sshnoports/common/supported_ssh_clients.dart';
 import 'package:sshnoports/common/utils.dart';
 import 'package:sshnoports/sshnp/utils.dart';
 import 'package:sshnoports/sshnp/sshnp.dart';
@@ -158,25 +159,27 @@ class SSHNPImpl implements SSHNP {
   @override
   late final bool direct;
 
-  SSHNPImpl({
-    // final fields
-    required this.atClient,
-    required this.sshnpdAtSign,
-    required this.device,
-    required this.username,
-    required this.homeDirectory,
-    required this.sessionId,
-    String sendSshPublicKey = 'false',
-    required this.localSshOptions,
-    this.rsa = false,
-    // volatile fields
-    required this.host,
-    required this.port,
-    required this.localPort,
-    this.remoteUsername,
-    this.verbose = false,
-    required this.legacyDaemon
-  }) {
+  final SupportedSshClient sshClient = SupportedSshClient.hostSsh;
+
+  SSHNPImpl(
+      {
+      // final fields
+      required this.atClient,
+      required this.sshnpdAtSign,
+      required this.device,
+      required this.username,
+      required this.homeDirectory,
+      required this.sessionId,
+      String sendSshPublicKey = 'false',
+      required this.localSshOptions,
+      this.rsa = false,
+      // volatile fields
+      required this.host,
+      required this.port,
+      required this.localPort,
+      this.remoteUsername,
+      this.verbose = false,
+      required this.legacyDaemon}) {
     namespace = '$device.sshnp';
     clientAtSign = atClient.getCurrentAtSign()!;
     logger.hierarchicalLoggingEnabled = true;
@@ -234,22 +237,21 @@ class SSHNPImpl implements SSHNP {
           rootDomain: p.rootDomain);
 
       var sshnp = SSHNP(
-        atClient: atClient,
-        sshnpdAtSign: p.sshnpdAtSign!,
-        username: p.username,
-        homeDirectory: p.homeDirectory,
-        sessionId: sessionId,
-        device: p.device,
-        host: p.host!,
-        port: p.port,
-        localPort: p.localPort,
-        localSshOptions: p.localSshOptions,
-        rsa: p.rsa,
-        sendSshPublicKey: p.sendSshPublicKey,
-        remoteUsername: p.remoteUsername,
-        verbose: p.verbose,
-        legacyDaemon: p.legacyDaemon
-      );
+          atClient: atClient,
+          sshnpdAtSign: p.sshnpdAtSign!,
+          username: p.username,
+          homeDirectory: p.homeDirectory,
+          sessionId: sessionId,
+          device: p.device,
+          host: p.host!,
+          port: p.port,
+          localPort: p.localPort,
+          localSshOptions: p.localSshOptions,
+          rsa: p.rsa,
+          sendSshPublicKey: p.sendSshPublicKey,
+          remoteUsername: p.remoteUsername,
+          verbose: p.verbose,
+          legacyDaemon: p.legacyDaemon);
       if (p.verbose) {
         sshnp.logger.logger.level = Level.INFO;
       }
@@ -282,6 +284,7 @@ class SSHNPImpl implements SSHNP {
 
     // determine the ssh direction
     direct = useDirectSsh(legacyDaemon, host);
+    logger.shout('useDirectSsh($legacyDaemon, $host) returned $direct');
 
     if (!(await atSignIsActivated(atClient, sshnpdAtSign))) {
       throw ('sshnpd atSign $sshnpdAtSign is not activated.');
@@ -343,7 +346,8 @@ class SSHNPImpl implements SSHNP {
       await legacyStartReverseSsh();
     } else {
       if (direct) {
-        logger.info('Requesting daemon to set up socket tunnel for direct ssh session');
+        logger.info(
+            'Requesting daemon to set up socket tunnel for direct ssh session');
         await startDirectSsh();
       } else {
         logger.info('Requesting daemon to start reverse ssh session');
@@ -352,11 +356,166 @@ class SSHNPImpl implements SSHNP {
     }
   }
 
-  Future<void> startDirectSsh() async {}
+  Future<void> startDirectSsh() async {
+    // send request to the daemon via notification
+    await _notify(
+        AtKey()
+          ..key = 'ssh_request'
+          ..namespace = namespace
+          ..sharedBy = clientAtSign
+          ..sharedWith = sshnpdAtSign
+          ..metadata = (Metadata()
+            ..ttr = -1
+            ..ttl = 10000),
+        jsonEncode({
+          'direct': true,
+          'sessionId': sessionId,
+          'host': host,
+          'port': int.parse(port)
+        }),
+        sessionId: sessionId);
 
-  Future<void> startReverseSsh() async {}
+    bool acked = await waitForDaemonResponse();
+    if (!acked) {
+      throw ('sshnp: connection timeout');
+    }
+
+    if (!sshnpdAckErrors) {
+      // 1) Execute an ssh command setting up local port forwarding.
+      //    Note that this is very similar to what the daemon does when we
+      //    ask for a reverse ssh
+      logger.info(
+          'Starting direct ssh session for $username to $host on port $_sshrvdPort with forwardLocal of $localPort');
+
+      try {
+        bool success = false;
+        String? errorMessage;
+
+        switch (sshClient) {
+          case SupportedSshClient.hostSsh:
+            (success, errorMessage) = await directSshViaExec();
+            break;
+          case SupportedSshClient.pureDart:
+            throw UnimplementedError('start the direct ssh via pure dart client not yet implemented');
+        }
+
+        if (!success) {
+          errorMessage ??= 'Failed to start ssh tunnel and / or forward local port $localPort';
+          throw errorMessage;
+        } else {
+          // All good - write the ssh command to stdout
+          stdout.writeln(getBaseSshCommand());
+        }
+      } catch (e) {
+        throw 'SSH Client failure : $e';
+      }
+    }
+  }
+
+  Future<(bool, String?)> directSshViaExec() async {
+    List<String> args = '$remoteUsername@$host'
+        ' -p $_sshrvdPort'
+        ' -i ${publicKeyFileName.replaceFirst(RegExp(r'.pub$'), '')}'
+        ' -L $localPort:localhost:22'
+        ' -o LogLevel=VERBOSE'
+        ' -t -t'
+        ' -o StrictHostKeyChecking=accept-new'
+        ' -o IdentitiesOnly=yes'
+        ' -o BatchMode=yes'
+        ' -o ExitOnForwardFailure=yes'
+        ' -f' // fork after authentication - this is important
+        ' sleep 15'
+        .split(' ');
+    logger.info('$sessionId | Executing /usr/bin/ssh ${args.join(' ')}');
+
+    // Because of the options we are using, we can wait for this process
+    // to complete, because it will exit with exitCode 0 once it has connected
+    // successfully
+    late int sshExitCode;
+    final soutBuf = StringBuffer();
+    final serrBuf = StringBuffer();
+    try {
+      Process process = await Process.start('/usr/bin/ssh', args);
+      process.stdout.listen((List<int> l) {
+        var s = utf8.decode(l);
+        soutBuf.write(s);
+        logger.info('$sessionId | sshStdOut | $s');
+      }, onError: (e) {});
+      process.stderr.listen((List<int> l) {
+        var s = utf8.decode(l);
+        serrBuf.write(s);
+        logger.info('$sessionId | sshStdErr | $s');
+      }, onError: (e) {});
+      sshExitCode = await process.exitCode.timeout(Duration(seconds: 10));
+      // ignore: unused_catch_clause
+    } on TimeoutException catch (e) {
+      sshExitCode = 6464;
+    }
+
+    String? errorMessage;
+    if (sshExitCode != 0) {
+      if (sshExitCode == 6464) {
+        logger.shout(
+            '$sessionId | Command timed out: /usr/bin/ssh ${args.join(' ')}');
+        errorMessage = 'Failed to establish connection - timed out';
+      } else {
+        logger.shout('$sessionId | Exit code $sshExitCode from'
+            ' /usr/bin/ssh ${args.join(' ')}');
+        errorMessage =
+        'Failed to establish connection - exit code $sshExitCode';
+      }
+    }
+
+    return (sshExitCode == 0, errorMessage);
+  }
+
+  /// Identical to [legacyStartReverseSsh] except for the request notification
+  Future<void> startReverseSsh() async {
+    // Connect to rendezvous point using background process.
+    // sshnp (this program) can then exit without issue.
+    unawaited(Process.run(getSshrvCommand(), [host, _sshrvdPort]));
+
+    // send request to the daemon via notification
+    await _notify(
+        AtKey()
+          ..key = 'ssh_request'
+          ..namespace = namespace
+          ..sharedBy = clientAtSign
+          ..sharedWith = sshnpdAtSign
+          ..metadata = (Metadata()
+            ..ttr = -1
+            ..ttl = 10000),
+        jsonEncode({
+          'direct': false,
+          'sessionId': sessionId,
+          'host': host,
+          'port': int.parse(port),
+          'username': username,
+          'remoteForwardPort': int.parse(localPort),
+          'privateKey': sshPrivateKey
+        }),
+        sessionId: sessionId);
+
+    bool acked = await waitForDaemonResponse();
+    await cleanUpAfterReverseSsh(this);
+    if (!acked) {
+      throw ('sshnp: connection timeout');
+    }
+
+    if (!sshnpdAckErrors) {
+      // If no ack errors, write the ssh command to stdout
+      stdout.write(getBaseSshCommand());
+    }
+    stdout.write('\n');
+  }
 
   Future<void> legacyStartReverseSsh() async {
+    // Connect to rendezvous point using background process.
+    // sshnp (this program) can then exit without issue.
+    unawaited(Process.run(getSshrvCommand(), [host, _sshrvdPort]));
+
+
+    // send request to the daemon via notification
     await _notify(
         AtKey()
           ..key = 'sshd'
@@ -369,43 +528,40 @@ class SSHNPImpl implements SSHNP {
         '$localPort $port $username $host $sessionId',
         sessionId: sessionId);
 
-    // Before we clean up we need to make sure that the reverse ssh made the connection.
-    // Or that if it had a problem what the problem was, or timeout and explain why.
-
-    int counter = 0;
-    // Timer to timeout after 10 Secs or after the Ack of connected/Errors
-    while (!sshnpdAck) {
-      await Future.delayed(Duration(milliseconds: 100));
-      counter++;
-      if (counter == 100) {
-        await cleanUpAfterReverseSsh(this);
-        throw ('sshnp: connection timeout');
-      }
-    }
-
-    // Clean Up the files we created
+    bool acked = await waitForDaemonResponse();
     await cleanUpAfterReverseSsh(this);
-
-    // print out base ssh command if we hit no Ack Errors
-    // If we had a Public key include the private key in the command line
-    // By removing the .pub extn
-    if (!sshnpdAckErrors) {
-      if (publicKeyFileName != 'false') {
-        stdout.write('ssh -p $localPort $remoteUsername@localhost'
-            ' -o StrictHostKeyChecking=accept-new'
-            ' -o IdentitiesOnly=yes'
-            ' -i ${publicKeyFileName.replaceFirst(RegExp(r'.pub$'), '')}');
-      } else {
-        stdout.write('ssh -p $localPort $remoteUsername@localhost '
-            ' -o StrictHostKeyChecking=accept-new');
-      }
-      // print out optional arguments
-      for (var argument in localSshOptions) {
-        stdout.write("$argument ");
-      }
+    if (!acked) {
+      throw ('sshnp: connection timeout');
     }
-    // Print the  return
+
+    if (!sshnpdAckErrors) {
+      // If no ack errors, write the ssh command to stdout
+      stdout.write(getBaseSshCommand());
+    }
     stdout.write('\n');
+  }
+
+  /// Generate the base ssh command which we will write to stdout.
+  /// If we had a Public key, include the private key in the command line
+  /// by removing the .pub extn.
+  String getBaseSshCommand() {
+    final StringBuffer sb = StringBuffer();
+
+    if (publicKeyFileName != 'false') {
+      sb.write('ssh -p $localPort $remoteUsername@localhost'
+          ' -o StrictHostKeyChecking=accept-new'
+          ' -o IdentitiesOnly=yes'
+          ' -i ${publicKeyFileName.replaceFirst(RegExp(r'.pub$'), '')}');
+    } else {
+      sb.write('ssh -p $localPort $remoteUsername@localhost '
+          ' -o StrictHostKeyChecking=accept-new');
+    }
+    // print out optional arguments
+    for (var argument in localSshOptions) {
+      sb.write(" $argument");
+    }
+
+    return sb.toString();
   }
 
   /// Function which the response subscription (created in the [init] method
@@ -517,10 +673,6 @@ class SSHNPImpl implements SSHNP {
         throw ('sshnp: connection timeout to sshrvd $host service');
       }
     }
-
-    // Connect to rendezvous point using background process.
-    // sshnp (this program) can then exit without issue.
-    unawaited(Process.run(getSshrvCommand(), [host, _sshrvdPort]));
   }
 
   Future<void> generateSshKeys() async {
@@ -677,5 +829,18 @@ class SSHNPImpl implements SSHNP {
     }, onError: (notification) {
       logger.info('ERROR:$notification');
     });
+  }
+
+  Future<bool> waitForDaemonResponse() async {
+    int counter = 0;
+    // Timer to timeout after 10 Secs or after the Ack of connected/Errors
+    while (!sshnpdAck) {
+      await Future.delayed(Duration(milliseconds: 100));
+      counter++;
+      if (counter == 100) {
+        return false;
+      }
+    }
+    return true;
   }
 }

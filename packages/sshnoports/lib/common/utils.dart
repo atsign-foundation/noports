@@ -118,13 +118,15 @@ String getSshrvCommand() {
   late String sshnpDir;
   List<String> pathList =
   Platform.resolvedExecutable.split(Platform.pathSeparator);
-  if (pathList.last == 'sshnp' || pathList.last == 'sshnp.exe') {
+
+  String programName = pathList.last;
+  if (programName == 'sshnp' || programName == 'sshnpd') {
     pathList.removeLast();
     sshnpDir = pathList.join(Platform.pathSeparator);
 
     return '$sshnpDir${Platform.pathSeparator}sshrv';
   } else {
     throw Exception(
-        'sshnp is expected to be run as a compiled executable, not via the dart command');
+        'noports programs are expected to be run from a compiled executable, not via the dart command');
   }
 }
