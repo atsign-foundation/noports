@@ -98,3 +98,13 @@ Future<bool> atSignIsActivated(final AtClient atClient, String atSign) async {
     rethrow;
   }
 }
+
+/// Assert that the value for key k in Map m is non-null and is of Type t.
+/// Throws an ArgumentError if the value is null, or is not of Type t.
+void assertValidValue(Map m, String k, Type t) {
+  var v = m[k];
+  if (v == null || v.runtimeType != t) {
+    throw ArgumentError(
+        'Parameter $k should be a $t but is actually a ${v.runtimeType} with value $v');
+  }
+}
