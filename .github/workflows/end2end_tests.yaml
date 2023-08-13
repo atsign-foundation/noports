@@ -176,7 +176,7 @@ jobs:
           cat service-image-runtime-sshnpd-installer.yaml >> docker-compose.yaml
           echo '        - client_atsign="${{ env.SSHNP_ATSIGN }}"' >> docker-compose.yaml
           echo '        - device_atsign="${{ env.SSHNPD_ATSIGN }}"' >> docker-compose.yaml
-          echo '        - device_name="${{ github.run_id }}${{ github.run_attempt }}${{ strategy.job-index }}"' >> docker-compose.yaml
+          echo '        - device_name=${{ github.run_id }}${{ github.run_attempt }}${{ strategy.job-index }}' >> docker-compose.yaml
           echo '    image: atsigncompany/sshnp-e2e-runtime:sshnpd-installer' >> docker-compose.yaml
 
       - name: Add container-sshnp to docker-compose.yaml
