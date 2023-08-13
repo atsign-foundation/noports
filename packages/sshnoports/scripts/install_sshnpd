@@ -325,8 +325,8 @@ setup_service() {
   fi
 
   CRONTAB_CONTENTS=$(crontab -l 2>/dev/null);
-  PREVIOUS_CRON_ENTRY=$(grep -Fxq "$SSHNP_CRON_SCHEDULE $SSHNP_COMMAND" <<< "$CRONTAB_CONTENTS")
-  if [ -z "$PREVIOUS_CRON_ENTRY" ]; then
+  PREVIOUS_CRON_ENTRY=$(echo "$CRONTAB_CONTENTS" | grep -Fxq "$SSHNP_CRON_SCHEDULE $SSHNP_COMMAND")
+  if [ -n "$PREVIOUS_CRON_ENTRY" ]; then
     NO_RUN=1;
     echo "Cron job already installed: '$SSHNP_CRON_SCHEDULE $SSHNP_COMMAND'";
   else
@@ -334,11 +334,14 @@ setup_service() {
     echo "Installed cron job: '$SSHNP_CRON_SCHEDULE $SSHNP_COMMAND'";
   fi
 
+  
   if [ "$SSHNPD_SERVICE_MECHANISM" = "cron" ]; then
-    if grep -Fxq "$LOGROTATE" <(crontab -l 2>/dev/null); then
+    CRONTAB_CONTENTS=$(crontab -l 2>/dev/null);
+    PREVIOUS_LOGROTATE_ENTRY=$(echo "$CRONTAB_CONTENTS" | grep -Fxq "$LOGROTATE")
+    if [ -n "$PREVIOUS_LOGROTATE_ENTRY" ]; then
       echo "Cron job already installed: '$LOGROTATE'";
     else
-      (crontab -l 2>/dev/null; echo "$LOGROTATE") | crontab -
+      (echo "$CRONTAB_CONTENTS"; echo "$LOGROTATE") | crontab -
       echo "Installed cron job: '$LOGROTATE'";
     fi
   fi
