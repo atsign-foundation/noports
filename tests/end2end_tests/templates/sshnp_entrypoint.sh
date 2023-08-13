@@ -5,7 +5,15 @@ if [ -z "$USE_INSTALLER" ]; then
     SSHNP_COMMAND="$HOME/.local/bin/sshnp -f @sshnpatsign -t @sshnpdatsign -d deviceName -h @sshrvdatsign -s id_ed25519.pub -v > logs.txt"
 else
     cat "$HOME/.local/bin/sshnp@sshnpdatsign"
-    SSHNP_COMMAND="$HOME/.local/bin/sshnp@sshnpdatsign -d deviceName -s id_ed25519.pub -v > logs.txt"
+    SSHNP_CUSTOM_FILE_VERSION="$(sed -e '2!d' "$HOME"/.local/bin/sshnp@sshnpdatsign | cut -d'v' -f2)"
+    case "$SSHNP_CUSTOM_FILE_VERSION" in
+    1*)
+        SSHNP_COMMAND="$HOME/.local/bin/sshnp@sshnpdatsign -h @sshrvdatsign deviceName -v > logs.txt"
+        ;;
+    *)
+        SSHNP_COMMAND="$HOME/.local/bin/sshnp@sshnpdatsign -h @sshrvdatsign -d deviceName -s id_ed25519.pub -v > logs.txt"
+        ;;
+    esac
 fi
 echo "Running: $SSHNP_COMMAND"
 eval "$SSHNP_COMMAND"
