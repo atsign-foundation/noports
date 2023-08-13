@@ -3,22 +3,14 @@
 BINARY_NAME="sshnp";
 
 norm_atsign() {
-  KEY="$1" # Get the variable name
-  eval INPUT="\$$KEY" # Get the value of the variable
-  shopt -s extglob
-  ATSIGN=${INPUT/#?(\@)/\@} # Add @ if missing
-  shopt -u extglob
-  export "${KEY}"="$ATSIGN" # Set the variable to new value
+  # shellcheck disable=SC2001
+  atsign="@$(echo "$1" | sed 's/^@//g')"
+  echo "$atsign"
 }
 
 norm_version() {
-  KEY="$1" # Get the variable name
-  INPUT=${!KEY} # Get the value of the variable
-  shopt -s extglob
-  OUTPUT=${INPUT#tags\/} # Remove tags prefix if present
-  OUTPUT=${OUTPUT#v} # Remove v prefix if present
-  shopt -u extglob
-  export "${KEY}"="tags/v$OUTPUT" # Add full tags/v prefix
+  version="tags/v$(echo "$1" | sed -e 's/^tags\///g' -e 's/^v//g')"
+  echo "$version"
 }
 
 usage() {
@@ -144,8 +136,8 @@ parse_args() {
       esac
     done
 
-    norm_atsign CLIENT_ATSIGN
-    norm_atsign DEVICE_MANAGER_ATSIGN
+    CLIENT_ATSIGN="$(norm_atsign CLIENT_ATSIGN)"
+    DEVICE_MANAGER_ATSIGN="$(norm_atsign DEVICE_MANAGER_ATSIGN)"
     echo;
   fi
 }
@@ -159,7 +151,7 @@ parse_env() {
   if [ -z "$SSHNP_VERSION" ]; then
     SSHNP_VERSION="latest";
   else
-    norm_version SSHNP_VERSION
+    SSHNP_VERSION="$(norm_version SSHNP_VERSION)"
   fi
   URL="https://api.github.com/repos/atsign-foundation/sshnoports/releases/$SSHNP_VERSION";
 
