@@ -8,7 +8,11 @@ else
     SSHNP_CUSTOM_FILE_VERSION="$(sed -e '2!d' "$HOME"/.local/bin/sshnp@sshnpdatsign | cut -d'v' -f2)"
     case "$SSHNP_CUSTOM_FILE_VERSION" in
     1*)
-        SSHNP_COMMAND="\$($HOME/.local/bin/sshnp@sshnpdatsign deviceName) > logs.txt"
+        # Version 1 of the file cannot be tested in this environment since the
+        # keys are cut separately and cannot be passed into this version of the file
+        # SSHNP_COMMAND="\$($HOME/.local/bin/sshnp@sshnpdatsign deviceName) > logs.txt"
+
+        SSHNP_COMMAND="$HOME/.local/bin/sshnp -f @sshnpatsign -t @sshnpdatsign -d deviceName -h @sshrvdatsign -s id_ed25519.pub -v > logs.txt"
         ;;
     *)
         SSHNP_COMMAND="$HOME/.local/bin/sshnp@sshnpdatsign -d deviceName -h @sshrvdatsign -s id_ed25519.pub -v > logs.txt"
