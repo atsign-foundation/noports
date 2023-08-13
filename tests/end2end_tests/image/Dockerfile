@@ -143,7 +143,7 @@ ARG HOST_ATSIGN
 
 RUN sudo service cron start && \
   sleep 2 && \
-  sh ${REPO_DIR}/packages/sshnoports/scripts/install_sshnp.sh \
+  sh ${REPO_DIR}/packages/sshnoports/scripts/install_sshnp \
   -c ${CLIENT_ATSIGN} \
   -d ${DEVICE_ATSIGN} \
   -h ${HOST_ATSIGN} \
@@ -167,7 +167,7 @@ ARG DEVICE_NAME
 
 RUN sudo service cron start && \
   sleep 2 && \
-  sh ${REPO_DIR}/packages/sshnoports/scripts/install_sshnp.sh \
+  sh ${REPO_DIR}/packages/sshnoports/scripts/install_sshnpd \
   -c ${CLIENT_ATSIGN} \
   -d ${DEVICE_ATSIGN} \
   -n ${DEVICE_NAME} \
