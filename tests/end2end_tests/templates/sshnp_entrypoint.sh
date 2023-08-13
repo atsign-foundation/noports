@@ -8,7 +8,7 @@ else
     SSHNP_CUSTOM_FILE_VERSION="$(sed -e '2!d' "$HOME"/.local/bin/sshnp@sshnpdatsign | cut -d'v' -f2)"
     case "$SSHNP_CUSTOM_FILE_VERSION" in
     1*)
-        SSHNP_COMMAND="$HOME/.local/bin/sshnp@sshnpdatsign deviceName -h @sshrvdatsign > logs.txt"
+        SSHNP_COMMAND="\$($HOME/.local/bin/sshnp@sshnpdatsign deviceName) > logs.txt"
         ;;
     *)
         SSHNP_COMMAND="$HOME/.local/bin/sshnp@sshnpdatsign -d deviceName -h @sshrvdatsign -s id_ed25519.pub -v > logs.txt"
