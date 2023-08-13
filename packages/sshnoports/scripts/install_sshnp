@@ -4,12 +4,12 @@ BINARY_NAME="sshnp";
 
 norm_atsign() {
   # shellcheck disable=SC2001
-  atsign="@$(echo "$1" | sed 's/^@//g')"
+  atsign="@$(echo "$1" | sed -e 's/"//g' -e 's/^@//g')"
   echo "$atsign"
 }
 
 norm_version() {
-  version="tags/v$(echo "$1" | sed -e 's/^tags\///g' -e 's/^v//g')"
+  version="tags/v$(echo "$1" | sed -e 's/"//g' -e 's/^tags\///g' -e 's/^v//g')"
   echo "$version"
 }
 
