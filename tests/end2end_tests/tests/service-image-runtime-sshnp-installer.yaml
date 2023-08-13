@@ -3,8 +3,8 @@
       mode: replicated
       replicas: 0
     build:
-      context: ../image/
-      dockerfile: ./Dockerfile
+      context: ../../../
+      dockerfile: ./tests/end2end_tests/image/Dockerfile
       target: runtime-sshnp-installer
       args:
         # auto added:
