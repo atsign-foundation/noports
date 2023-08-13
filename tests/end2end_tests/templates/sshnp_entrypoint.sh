@@ -4,7 +4,6 @@ sleep WAITING_TIME # time for sshnpd to share device name
 if [ -z "$USE_INSTALLER" ]; then
     SSHNP_COMMAND="$HOME/.local/bin/sshnp -f @sshnpatsign -t @sshnpdatsign -d deviceName -h @sshrvdatsign -s id_ed25519.pub -v > logs.txt"
 else
-    cat "$HOME/.local/bin/sshnp@sshnpdatsign"
     SSHNP_CUSTOM_FILE_VERSION="$(sed -e '2!d' "$HOME"/.local/bin/sshnp@sshnpdatsign | cut -d'v' -f2)"
     case "$SSHNP_CUSTOM_FILE_VERSION" in
     1*)
