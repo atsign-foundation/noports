@@ -257,8 +257,6 @@ setup_custom_binary() {
   <"$HOME_PATH/.atsign/temp/$BINARY_NAME/templates/client/sshnp-full.sh" \
   >"$HOME_PATH/.local/bin/$BINARY_NAME$DEVICE_MANAGER_ATSIGN"
   chmod +x "$HOME_PATH/.local/bin/$BINARY_NAME$DEVICE_MANAGER_ATSIGN";
-
-  cat "$HOME_PATH/.local/bin/$BINARY_NAME$DEVICE_MANAGER_ATSIGN";
 }
 
 post_install() {
