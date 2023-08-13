@@ -161,16 +161,22 @@ jobs:
 
       - name: Add runtime-sshnp-installer image to docker-compose.yaml
         working-directory: tests/end2end_tests/tests
-        if: ${{ matrix.np == 'installer' || matrix.npd == 'installer' }}
+        if: ${{ matrix.np == 'installer' }}
         run: |
           cat service-image-runtime-sshnp-installer.yaml >> docker-compose.yaml
+          echo '        - client_atsign=${{ env.SSHNP_ATSIGN }}' >> docker-compose.yaml
+          echo '        - device_atsign=${{ env.SSHNPD_ATSIGN }}' >> docker-compose.yaml
+          echo '        - host_atsign=${{ matrix.rvd_atsign || env.DEFAULT_RVD_ATSIGN }}' >> docker-compose.yaml
           echo '    image: atsigncompany/sshnp-e2e-runtime:sshnp-installer' >> docker-compose.yaml
 
       - name: Add runtime-sshnpd-installer image to docker-compose.yaml
         working-directory: tests/end2end_tests/tests
-        if: ${{ matrix.np == 'installer' || matrix.npd == 'installer' }}
+        if: ${{ matrix.npd == 'installer' }}
         run: |
           cat service-image-runtime-sshnpd-installer.yaml >> docker-compose.yaml
+          echo '        - client_atsign=${{ env.SSHNP_ATSIGN }}' >> docker-compose.yaml
+          echo '        - device_atsign=${{ env.SSHNPD_ATSIGN }}' >> docker-compose.yaml
+          echo '        - device_name=${{ github.run_id }}${{ github.run_attempt }}${{ strategy.job-index }}' >> docker-compose.yaml
           echo '    image: atsigncompany/sshnp-e2e-runtime:sshnpd-installer' >> docker-compose.yaml
 
       - name: Add container-sshnp to docker-compose.yaml
