@@ -141,12 +141,10 @@ ARG CLIENT_ATSIGN
 ARG DEVICE_ATSIGN
 ARG HOST_ATSIGN
 
-RUN sudo service cron start && \
-  sleep 2 && \
-  sh ${REPO_DIR}/packages/sshnoports/scripts/install_sshnp \
+RUN sh ${REPO_DIR}/packages/sshnoports/scripts/install_sshnp \
   -c ${CLIENT_ATSIGN} \
   -d ${DEVICE_ATSIGN} \
-  -h ${HOST_ATSIGN} \
+  -h ${HOST_ATSIGN}; \
   sed -i 's/USE_INSTALLER=0/USE_INSTALLER=1/g' ${HOMEDIR}/entrypoint.sh;
 
 ENTRYPOINT sudo service ssh start && sh ${HOMEDIR}/entrypoint.sh
@@ -165,12 +163,12 @@ ARG CLIENT_ATSIGN
 ARG DEVICE_ATSIGN
 ARG DEVICE_NAME
 
-RUN sudo service cron start && \
-  sleep 2 && \
+RUN sudo service cron start; \
+  sleep 2; \
   sh ${REPO_DIR}/packages/sshnoports/scripts/install_sshnpd \
   -c ${CLIENT_ATSIGN} \
   -d ${DEVICE_ATSIGN} \
-  -n ${DEVICE_NAME} \
+  -n ${DEVICE_NAME}; \
   sed -i 's/USE_INSTALLER=0/USE_INSTALLER=1/g' ${HOMEDIR}/entrypoint.sh;
 
 ENTRYPOINT sudo service ssh start && sh ${HOMEDIR}/entrypoint.sh
