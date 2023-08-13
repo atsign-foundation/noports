@@ -325,11 +325,12 @@ setup_service() {
   fi
 
   CRONTAB_CONTENTS=$(crontab -l 2>/dev/null);
-  if grep -Fxq "$SSHNP_CRON_SCHEDULE $SSHNP_COMMAND" <<< "$CRONTAB_CONTENTS"; then
+  PREVIOUS_CRON_ENTRY=$(grep -Fxq "$SSHNP_CRON_SCHEDULE $SSHNP_COMMAND" <<< "$CRONTAB_CONTENTS")
+  if [ -z "$PREVIOUS_CRON_ENTRY" ]; then
     NO_RUN=1;
     echo "Cron job already installed: '$SSHNP_CRON_SCHEDULE $SSHNP_COMMAND'";
   else
-    (crontab -l 2>/dev/null; echo "$SSHNP_CRON_SCHEDULE $SSHNP_COMMAND") | crontab -
+    (echo "$CRONTAB_CONTENTS"; echo "$SSHNP_CRON_SCHEDULE $SSHNP_COMMAND") | crontab -
     echo "Installed cron job: '$SSHNP_CRON_SCHEDULE $SSHNP_COMMAND'";
   fi
 

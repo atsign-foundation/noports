@@ -38,7 +38,8 @@ usage() {
 }
 
 parse_args() {
-   SSHNP_OP="install"
+  echo "ARGS: $*"
+  SSHNP_OP="install"
   while [ $# -gt 0 ]; do
     case "$1" in
       -u|--update)
