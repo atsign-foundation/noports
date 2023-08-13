@@ -151,13 +151,13 @@ String signAndWrapAndJsonEncode(AtClient atClient, Map payload) {
 Future<void> verifyEnvelopeSignature(AtClient atClient, String requestingAtsign,
     AtSignLogger logger, Map envelope) async {
   final String signature = envelope['signature'];
-  Map params = envelope['payload'];
+  Map payload = envelope['payload'];
   final hashingAlgo = HashingAlgoType.values.byName(envelope['hashingAlgo']);
   final signingAlgo = SigningAlgoType.values.byName(envelope['signingAlgo']);
   final pk = await getLocallyCachedPK(atClient, requestingAtsign,
       useFileStorage: true);
   AtSigningVerificationInput input = AtSigningVerificationInput(
-      jsonEncode(params), base64Decode(signature), pk)
+      jsonEncode(payload), base64Decode(signature), pk)
     ..signingMode = AtSigningMode.data
     ..signingAlgoType = signingAlgo
     ..hashingAlgoType = hashingAlgo;
@@ -176,9 +176,10 @@ Future<void> verifyEnvelopeSignature(AtClient atClient, String requestingAtsign,
 /// If it is not, then fetch it via the [atClient], and store it.
 ///
 /// The PK (for e.g. @alice) is stored
-/// - in the atClient's storage by default ([useFileStorage] == true) in a
+/// - in the atClient's storage if [useFileStorage] == false in a
 ///   "local" record like `local:alice.cached_pks.sshnp@<atClient's atSign>`
-/// - in file storage at `~/.atsign/sshnp/cached_pks/alice`
+/// - in file storage if [useFileStorage] == true (default) at
+///   `~/.atsign/sshnp/cached_pks/alice`
 ///
 /// Note that for storage, the leading `@` in the atSign is stripped off.
 Future<String> getLocallyCachedPK(AtClient atClient, String atSign,
