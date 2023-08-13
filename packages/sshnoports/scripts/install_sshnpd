@@ -38,7 +38,7 @@ usage() {
   echo "      --args <args>           Additional arguments to sshnpd ("-v" by default)"
   echo "      Possible args:"
   echo "        -s, --[no-]sshpublickey      Update authorized_keys to include public key from sshnp"
-  echo "        -u, --[no-]username          Send username to the manager to allow sshnp to display username in command line"
+  echo "        -u, --[no-]un-hide          When set, makes various information visible to the manager atSign - e.g. username, version, etc"
   echo "        -v, --[no-]verbose           More logging"
   echo ""
   echo "Rename options:"
