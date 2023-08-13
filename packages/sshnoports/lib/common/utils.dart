@@ -1,5 +1,8 @@
+import 'dart:convert';
 import 'dart:io';
+import 'package:at_chops/at_chops.dart';
 import 'package:at_client/at_client.dart';
+import 'package:at_utils/at_utils.dart';
 
 /// Get the home directory or null if unknown.
 String? getHomeDirectory({bool throwIfNull = false}) {
@@ -128,5 +131,124 @@ String getSshrvCommand() {
   } else {
     throw Exception(
         'noports programs are expected to be run from a compiled executable, not via the dart command');
+  }
+}
+
+String signAndWrapAndJsonEncode(AtClient atClient, Map payload) {
+  Map envelope = {'payload': payload};
+
+  final AtSigningInput signingInput = AtSigningInput(jsonEncode(payload))
+    ..signingMode = AtSigningMode.data;
+  final AtSigningResult sr = atClient.atChops!.sign(signingInput);
+
+  final String signature = sr.result.toString();
+  envelope['signature'] = signature;
+  envelope['hashingAlgo'] = sr.atSigningMetaData.hashingAlgoType!.name;
+  envelope['signingAlgo'] = sr.atSigningMetaData.signingAlgoType!.name;
+  return jsonEncode(envelope);
+}
+
+Future<void> verifyEnvelopeSignature(AtClient atClient, String requestingAtsign,
+    AtSignLogger logger, Map envelope) async {
+  final String signature = envelope['signature'];
+  Map params = envelope['payload'];
+  final hashingAlgo = HashingAlgoType.values.byName(envelope['hashingAlgo']);
+  final signingAlgo = SigningAlgoType.values.byName(envelope['signingAlgo']);
+  final pk = await getLocallyCachedPK(atClient, requestingAtsign,
+      useFileStorage: true);
+  AtSigningVerificationInput input = AtSigningVerificationInput(
+      jsonEncode(params), base64Decode(signature), pk)
+    ..signingMode = AtSigningMode.data
+    ..signingAlgoType = signingAlgo
+    ..hashingAlgoType = hashingAlgo;
+
+  AtSigningResult svr = atClient.atChops!.verify(input);
+  logger.info('Signing Verification Result: $svr');
+  logger.info('svr.result is a ${svr.result.runtimeType}');
+  logger.info('svr.result is ${svr.result}');
+  if (svr.result != true) {
+    throw AtSigningVerificationException(
+        'signature verification returned false using cached public key for $requestingAtsign $pk');
+  }
+}
+
+/// If the PK for [atSign] is in the sshnp local cache, then return it.
+/// If it is not, then fetch it via the [atClient], and store it.
+///
+/// The PK (for e.g. @alice) is stored
+/// - in the atClient's storage by default ([useFileStorage] == true) in a
+///   "local" record like `local:alice.cached_pks.sshnp@<atClient's atSign>`
+/// - in file storage at `~/.atsign/sshnp/cached_pks/alice`
+///
+/// Note that for storage, the leading `@` in the atSign is stripped off.
+Future<String> getLocallyCachedPK(AtClient atClient, String atSign,
+    {bool useFileStorage = true}) async {
+  atSign = AtUtils.fixAtSign(atSign);
+
+  String? cachedPK =
+      await _fetchFromLocalPKCache(atClient, atSign, useFileStorage);
+  if (cachedPK != null) {
+    return cachedPK;
+  }
+
+  var s = 'public:publickey$atSign';
+  final AtValue av = await atClient.get(AtKey.fromString(s));
+  if (av.value == null) {
+    throw AtPublicKeyNotFoundException('Failed to retrieve $s');
+  }
+
+  await _storeToLocalPKCache(av.value, atClient, atSign, useFileStorage);
+
+  return av.value;
+}
+
+Future<String?> _fetchFromLocalPKCache(
+    AtClient atClient, String atSign, bool useFileStorage) async {
+  String dontAtMe = atSign.substring(1);
+  if (useFileStorage) {
+    String fn = '${getHomeDirectory(throwIfNull: true)}'
+            '/.atsign/sshnp/cached_pks/$dontAtMe'
+        .replaceAll('/', Platform.pathSeparator);
+    File f = File(fn);
+    if (await f.exists()) {
+      return (await f.readAsString()).trim();
+    } else {
+      return null;
+    }
+  } else {
+    late final AtValue av;
+    try {
+      av = await atClient.get(AtKey.fromString(
+          'local:$dontAtMe.cached_pks.sshnp@${atClient.getCurrentAtSign()!}'));
+      return av.value;
+    } on AtKeyNotFoundException catch (_) {
+      return null;
+    }
+  }
+}
+
+Future<bool> _storeToLocalPKCache(
+    String pk, AtClient atClient, String atSign, bool useFileStorage) async {
+  String dontAtMe = atSign.substring(1);
+  if (useFileStorage) {
+    String dirName =
+        '${getHomeDirectory(throwIfNull: true)}/.atsign/sshnp/cached_pks'
+            .replaceAll('/', Platform.pathSeparator);
+    String fileName =
+        '$dirName/$dontAtMe'.replaceAll('/', Platform.pathSeparator);
+
+    File f = File(fileName);
+    if (!await f.exists()) {
+      await f.create(recursive: true);
+      await Process.run('chmod', ['-R', 'go-rwx', dirName]);
+    }
+    await f.writeAsString('$pk\n');
+    return true;
+  } else {
+    await atClient.put(
+        AtKey.fromString(
+            'local:$dontAtMe.cached_pks.sshnp@${atClient.getCurrentAtSign()!}'),
+        pk);
+    return true;
   }
 }

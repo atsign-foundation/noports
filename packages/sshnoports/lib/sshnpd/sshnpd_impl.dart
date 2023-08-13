@@ -377,9 +377,15 @@ class SSHNPDImpl implements SSHNPD {
     // a username (to ssh back to the client), a privateKey (for that
     // ssh) and a remoteForwardPort, to set up the ssh tunnel back to this
     // device from the client side.
-    late Map params;
+    late final Map envelope;
+    late final Map params;
     try {
-      params = jsonDecode(notification.value!);
+      envelope = jsonDecode(notification.value!);
+      assertValidValue(envelope, 'signature', String);
+      assertValidValue(envelope, 'hashingAlgo', String);
+      assertValidValue(envelope, 'signingAlgo', String);
+
+      params = envelope['payload'] as Map;
       assertValidValue(params, 'sessionId', String);
       assertValidValue(params, 'host', String);
       assertValidValue(params, 'port', int);
@@ -391,6 +397,16 @@ class SSHNPDImpl implements SSHNPD {
     } catch (e) {
       logger.warning(
           'Failed to extract parameters from notification value "${notification.value}" with error : $e');
+      return;
+    }
+
+    try {
+      await verifyEnvelopeSignature(
+          atClient, requestingAtsign, logger, envelope);
+    } catch (e) {
+      logger.shout('Failed to verify signature of msg from $requestingAtsign');
+      logger.shout('Exception: $e');
+      logger.shout('Notification value: ${notification.value}');
       return;
     }
 

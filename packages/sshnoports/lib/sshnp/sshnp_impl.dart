@@ -284,7 +284,6 @@ class SSHNPImpl implements SSHNP {
 
     // determine the ssh direction
     direct = useDirectSsh(legacyDaemon, host);
-    logger.shout('useDirectSsh($legacyDaemon, $host) returned $direct');
 
     if (!(await atSignIsActivated(atClient, sshnpdAtSign))) {
       throw ('sshnpd atSign $sshnpdAtSign is not activated.');
@@ -367,7 +366,7 @@ class SSHNPImpl implements SSHNP {
           ..metadata = (Metadata()
             ..ttr = -1
             ..ttl = 10000),
-        jsonEncode({
+        signAndWrapAndJsonEncode(atClient, {
           'direct': true,
           'sessionId': sessionId,
           'host': host,
@@ -487,7 +486,7 @@ class SSHNPImpl implements SSHNP {
           ..metadata = (Metadata()
             ..ttr = -1
             ..ttl = 10000),
-        jsonEncode({
+        signAndWrapAndJsonEncode(atClient, {
           'direct': false,
           'sessionId': sessionId,
           'host': host,
