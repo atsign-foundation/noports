@@ -4,7 +4,7 @@ BINARY_NAME="sshnp";
 
 norm_atsign() {
   KEY="$1" # Get the variable name
-  INPUT=${!KEY} # Get the value of the variable
+  eval INPUT="\$$KEY" # Get the value of the variable
   shopt -s extglob
   ATSIGN=${INPUT/#?(\@)/\@} # Add @ if missing
   shopt -u extglob
