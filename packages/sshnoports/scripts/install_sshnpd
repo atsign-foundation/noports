@@ -35,7 +35,11 @@ usage() {
   echo "  -d, --device <address>      Device address (e.g. @alice_device)"
   echo "  -n, --name <device name>    Name of the device"
   echo "  -v, --version <version>     Version to install (default: latest)"
-  echo "      --args <args>           Additional arguments to sshnpd (\"-v -s -u\" by default)"
+  echo "      --args <args>           Additional arguments to sshnpd ("-v" by default)"
+  echo "      Possible args:"
+  echo "        -s, --[no-]sshpublickey      Update authorized_keys to include public key from sshnp"
+  echo "        -u, --[no-]username          Send username to the manager to allow sshnp to display username in command line"
+  echo "        -v, --[no-]verbose           More logging"
   echo ""
   echo "Rename options:"
   echo "  -c, --client <address>      Client address (e.g. @alice_client)"
@@ -207,7 +211,7 @@ parse_env() {
   fi
 
   if [ -z "$SSHNP_SERVICE_ARGS_PARSED" ]; then
-    SSHNP_SERVICE_ARGS="-v -s -u";
+    SSHNP_SERVICE_ARGS="-v";
   fi
 }
 
