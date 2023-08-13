@@ -143,7 +143,8 @@ ARG host_atsign
 
 ENV USE_INSTALLER=1
 
-RUN sh ${REPO_DIR}/packages/sshnoports/scripts/install_sshnp \
+RUN set -eux; \
+  sh ${REPO_DIR}/packages/sshnoports/scripts/install_sshnp \
   -c ${client_atsign} \
   -d ${device_atsign} \
   -h ${host_atsign};
@@ -166,7 +167,8 @@ ARG device_name
 
 ENV USE_INSTALLER=1
 
-RUN sudo service cron start; \
+RUN set -eux ; \
+  sudo service cron start; \
   sleep 2; \
   sh ${REPO_DIR}/packages/sshnoports/scripts/install_sshnpd \
   -c ${client_atsign} \
@@ -190,10 +192,6 @@ ENTRYPOINT sudo service ssh start && bash
 FROM base AS manual-blank
 
 WORKDIR ${HOMEDIR}
-
-RUN set -eux ; \
-  apt-get update ; \
-  apt-get install -y curl ;
 
 USER ${USER}
 
