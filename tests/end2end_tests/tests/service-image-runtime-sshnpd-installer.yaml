@@ -1,4 +1,4 @@
-  image-runtime-release:
+  image-runtime-sshnpd-installer:
     deploy:
       mode: replicated
       replicas: 0

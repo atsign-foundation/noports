@@ -1,4 +1,4 @@
-  image-runtime-release:
+  image-runtime-sshnp-installer:
     deploy:
       mode: replicated
       replicas: 0
