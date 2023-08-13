@@ -12,6 +12,22 @@
       "program": "${file}",
       "console": "integratedTerminal",
       "justMyCode": true
+    },
+    {
+      "name": "Python: SSHNPD",
+      "type": "python",
+      "request": "launch",
+      "cwd": "packages/sshnpdpy/",
+      "program": "sshnpd.py",
+      "console": "integratedTerminal",
+      "justMyCode": true,
+      //replace your arguments with the ones you want to use
+      "args": [
+        "--atsign", "@chess69",
+        "--manager", "@chess69lovely",
+        "--device", "dev",
+        "--username", "xavier"
+      ]
     }
   ]
 }

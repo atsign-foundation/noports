@@ -3,7 +3,8 @@
 .packages
 
 #vscode
-.vscode
+.vscode/*
+!.vscode/launch.json
 
 #Docker
 .devcontainer
