@@ -1,0 +1,15 @@
+  image-runtime-release:
+    deploy:
+      mode: replicated
+      replicas: 0
+    build:
+      context: ../image/
+      dockerfile: ./Dockerfile
+      target: runtime-sshnp-installer
+      args:
+        # auto added:
+        # - client_atsign
+        # - device_atsign
+        # - host_atsign
+    # auto added:
+    # - image

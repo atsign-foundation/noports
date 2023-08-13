@@ -1,0 +1,15 @@
+  image-runtime-release:
+    deploy:
+      mode: replicated
+      replicas: 0
+    build:
+      context: ../image/
+      dockerfile: ./Dockerfile
+      target: runtime-sshnpd-installer
+      args:
+        # auto added:
+        # - client_atsign
+        # - device_atsign
+        # - device_name
+    # auto added:
+    # - image

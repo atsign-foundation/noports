@@ -20,8 +20,8 @@ then
     prefix="$prefix ''"
 fi
 
-eval $prefix "s/@sshnpatsign/${sshnp}/g" ../../contexts/sshnp/entrypoint.sh
-eval $prefix "s/@sshnpdatsign/${sshnpd}/g" ../../contexts/sshnp/entrypoint.sh
-eval $prefix "s/@sshrvdatsign/${sshrvd}/g" ../../contexts/sshnp/entrypoint.sh
-eval $prefix "s/deviceName/${device}/g" ../../contexts/sshnp/entrypoint.sh
-eval $prefix "s/WAITING_TIME/${waitingTime}/g" ../../contexts/sshnp/entrypoint.sh
+eval "$prefix" "s/@sshnpatsign/${sshnp}/g" ../../contexts/sshnp/entrypoint.sh
+eval "$prefix" "s/@sshnpdatsign/${sshnpd}/g" ../../contexts/sshnp/entrypoint.sh
+eval "$prefix" "s/@sshrvdatsign/${sshrvd}/g" ../../contexts/sshnp/entrypoint.sh
+eval "$prefix" "s/deviceName/${device}/g" ../../contexts/sshnp/entrypoint.sh
+eval "$prefix" "s/WAITING_TIME/${waitingTime}/g" ../../contexts/sshnp/entrypoint.sh

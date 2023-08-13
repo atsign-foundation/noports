@@ -18,6 +18,6 @@ then
     prefix="$prefix ''"
 fi
 
-eval $prefix "s/@sshnpatsign/${sshnp}/g" ../../contexts/sshnpd/entrypoint.sh
-eval $prefix "s/@sshnpdatsign/${sshnpd}/g" ../../contexts/sshnpd/entrypoint.sh
-eval $prefix "s/deviceName/${device}/g" ../../contexts/sshnpd/entrypoint.sh
+eval "$prefix" "s/@sshnpatsign/${sshnp}/g" ../../contexts/sshnpd/entrypoint.sh
+eval "$prefix" "s/@sshnpdatsign/${sshnpd}/g" ../../contexts/sshnpd/entrypoint.sh
+eval "$prefix" "s/deviceName/${device}/g" ../../contexts/sshnpd/entrypoint.sh

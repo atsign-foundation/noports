@@ -85,7 +85,7 @@ CMD sudo service ssh start
 
 RUN set -eux ; \
   apt-get update ; \
-  apt-get install -y openssh-server sudo vim nano iproute2 nmap tmux ; \
+  apt-get install -y openssh-server sudo vim nano iproute2 nmap tmux cron ; \
   groupadd --gid ${GROUP_ID} ${USER} ; \
   useradd --system --shell /bin/bash --home ${HOMEDIR} --uid ${USER_ID} --gid ${GROUP_ID} ${USER} ; \
   usermod -aG sudo ${USER} ; \
@@ -124,6 +124,54 @@ COPY --chown=${USER}:${USER} --from=build-local /app/output ${HOMEDIR}/.local/bi
 WORKDIR ${HOMEDIR}
 
 USER ${USER}
+
+ENTRYPOINT sudo service ssh start && sh ${HOMEDIR}/entrypoint.sh
+
+FROM base AS runtime-sshnp-installer
+
+WORKDIR ${HOMEDIR}
+USER ${USER}
+
+ENV REPO_DIR=/app/repo
+
+# context must be the root of the repo
+COPY . ${REPO_DIR}
+
+ARG CLIENT_ATSIGN
+ARG DEVICE_ATSIGN
+ARG HOST_ATSIGN
+
+RUN sudo service cron start && \
+  sleep 2 && \
+  sh ${REPO_DIR}/packages/sshnoports/scripts/install_sshnp.sh \
+  -c ${CLIENT_ATSIGN} \
+  -d ${DEVICE_ATSIGN} \
+  -h ${HOST_ATSIGN} \
+  sed -i 's/USE_INSTALLER=0/USE_INSTALLER=1/g' ${HOMEDIR}/entrypoint.sh;
+
+ENTRYPOINT sudo service ssh start && sh ${HOMEDIR}/entrypoint.sh
+
+FROM base AS runtime-sshnpd-installer
+
+WORKDIR ${HOMEDIR}
+USER ${USER}
+
+ENV REPO_DIR=/app/repo
+
+# context must be the root of the repo
+COPY . ${REPO_DIR}
+
+ARG CLIENT_ATSIGN
+ARG DEVICE_ATSIGN
+ARG DEVICE_NAME
+
+RUN sudo service cron start && \
+  sleep 2 && \
+  sh ${REPO_DIR}/packages/sshnoports/scripts/install_sshnp.sh \
+  -c ${CLIENT_ATSIGN} \
+  -d ${DEVICE_ATSIGN} \
+  -n ${DEVICE_NAME} \
+  sed -i 's/USE_INSTALLER=0/USE_INSTALLER=1/g' ${HOMEDIR}/entrypoint.sh;
 
 ENTRYPOINT sudo service ssh start && sh ${HOMEDIR}/entrypoint.sh
 

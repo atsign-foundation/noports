@@ -17,7 +17,7 @@ inputs:
     required: true
   wait_time:
     description: Time to wait for sshnpd to start
-    default: "10"
+    required: false
 
 runs:
   using: composite
