@@ -140,6 +140,10 @@ parse_args() {
     DEVICE_MANAGER_ATSIGN="$(norm_atsign "$DEVICE_MANAGER_ATSIGN")"
     echo;
   fi
+
+  echo "CLIENT_ATSIGN: $CLIENT_ATSIGN"
+  echo "DEVICE_MANAGER_ATSIGN: $DEVICE_MANAGER_ATSIGN"
+  echo "HOST_RENDEZVOUS_ATSIGN: $HOST_RENDEZVOUS_ATSIGN"
 }
 
 parse_env() {
