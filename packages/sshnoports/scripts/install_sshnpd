@@ -128,7 +128,7 @@ parse_args() {
 
       while [ -z "$SSHNP_DEVICE_NAME" ] ||
         [ "${#SSHNP_DEVICE_NAME}" -gt 15 ] ||
-        [[ "$SSHNP_DEVICE_NAME" =~ [^a-zA-Z0-9_] ]]; do
+        echo "$SSHNP_DEVICE_NAME" |  grep -Eq "[^a-zA-Z0-9_]"; do
           echo "Device name must be between 1 and 15 characters and only contain alphanumeric characters or \"_\"";
           read -rp "Device name: " SSHNP_DEVICE_NAME;
       done;
