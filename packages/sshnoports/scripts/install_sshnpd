@@ -125,8 +125,8 @@ parse_args() {
           read -rp "Device name: " SSHNP_DEVICE_NAME;
       done;
 
-      CLIENT_ATSIGN="$(norm_atsign CLIENT_ATSIGN)"
-      DEVICE_MANAGER_ATSIGN="$(norm_atsign DEVICE_MANAGER_ATSIGN)"
+      CLIENT_ATSIGN="$(norm_atsign "$CLIENT_ATSIGN")"
+      DEVICE_MANAGER_ATSIGN="$(norm_atsign "$DEVICE_MANAGER_ATSIGN")"
       echo;
   esac
 }
@@ -140,7 +140,7 @@ parse_env() {
   if [ -z "$SSHNP_VERSION" ]; then
     SSHNP_VERSION="latest";
   else
-    SSHNP_VERSION="$(norm_version SSHNP_VERSION)"
+    SSHNP_VERSION="$(norm_version "$SSHNP_VERSION")"
   fi
   URL="https://api.github.com/repos/atsign-foundation/sshnoports/releases/$SSHNP_VERSION";
 

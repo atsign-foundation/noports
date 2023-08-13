@@ -115,7 +115,7 @@ parse_args() {
       read -rp "> " HOST_RENDEZVOUS_ATSIGN;
     fi
 
-    while echo "$HOST_RENDEZVOUS_ATSIGN" | grep  -Eq "@.*"; do
+    while ! echo "$HOST_RENDEZVOUS_ATSIGN" | grep  -Eq "@.*"; do
       case "$HOST_RENDEZVOUS_ATSIGN" in
         [Aa][Mm]*)
           HOST_RENDEZVOUS_ATSIGN="@rv_am"
@@ -136,8 +136,8 @@ parse_args() {
       esac
     done
 
-    CLIENT_ATSIGN="$(norm_atsign CLIENT_ATSIGN)"
-    DEVICE_MANAGER_ATSIGN="$(norm_atsign DEVICE_MANAGER_ATSIGN)"
+    CLIENT_ATSIGN="$(norm_atsign "$CLIENT_ATSIGN")"
+    DEVICE_MANAGER_ATSIGN="$(norm_atsign "$DEVICE_MANAGER_ATSIGN")"
     echo;
   fi
 }
@@ -151,7 +151,7 @@ parse_env() {
   if [ -z "$SSHNP_VERSION" ]; then
     SSHNP_VERSION="latest";
   else
-    SSHNP_VERSION="$(norm_version SSHNP_VERSION)"
+    SSHNP_VERSION="$(norm_version "$SSHNP_VERSION")"
   fi
   URL="https://api.github.com/repos/atsign-foundation/sshnoports/releases/$SSHNP_VERSION";
 
