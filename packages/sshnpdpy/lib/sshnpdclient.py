@@ -25,14 +25,22 @@ class SSHNPDClient:
     #Current opened threads (TODO: clean up threads)
     threads = []
     
-    def __init__(self, atsign, manager_atsign, device, username):
+    def __init__(self, atsign, manager_atsign, device, username, verbose=False ):
+        #AtClient Stuff
         self.atsign = atsign
         self.manager_atsign = manager_atsign
         self.device = device
         self.username = username
-        self.at_client = AtClient(AtSign(atsign), queue=Queue(maxsize=20))
+        self.at_client = AtClient(AtSign(atsign), queue=Queue(maxsize=20), verbose=verbose)
         self.device_namespace = f".{device}.sshnp"
         self.authenticated = False
+        
+        #Logger
+        self.logger = logging.getLogger("sshnpd")
+        self.logger.setLevel((logging.DEBUG if verbose else logging.INFO))
+        self.logger.addHandler(logging.StreamHandler())
+        
+        #Directory Stuff
         home_dir = ""
         if os.name == "posix":  # Unix-based systems (Linux, macOS)
             home_dir = os.path.expanduser("~")
@@ -69,9 +77,7 @@ class SSHNPDClient:
                 event_type = at_event.event_type
                 event_data = at_event.event_data
 
-                # There's defintely a better way to do this
-                # oh well
-                # TODO: fix this
+                # TODO: There's defintely a better way to do this
                 
                 if event_type == AtEventType.UPDATE_NOTIFICATION:
                     queue.put(at_event)
@@ -81,14 +87,14 @@ class SSHNPDClient:
                 key = event_data["key"].split(":")[1].split(".")[0]
                 decrypted_value = str(event_data["decryptedValue"])
                 if key == "privatekey":
-                    # print(
-                    #     f'private key received from ${event_data["from"]} notification id : ${event_data["id"]}')
+                    self.logger.debug(
+                        f'private key received from ${event_data["from"]} notification id : ${event_data["id"]}')
                     private_key = decrypted_value
                     continue
 
                 if key == "sshpublickey":
-                    # print(
-                    # f'ssh Public Key received from ${event_data["from"]} notification id : ${event_data["id"]}')
+                    self.logger.debug(
+                    f'ssh Public Key received from ${event_data["from"]} notification id : ${event_data["id"]}')
                     sshPublicKey = decrypted_value
                     # // Check to see if the ssh Publickey is already in the file if not append to the ~/.ssh/authorized_keys file
                     writeKey = False
@@ -99,12 +105,12 @@ class SSHNPDClient:
                     with open(f"{self.ssh_path}/authorized_hosts", "w") as write:
                         if writeKey:
                             write.write(f"\n{sshPublicKey}")
-                            print("key written")
+                            self.logger.debug("key written")
                     continue
 
                 if key == "sshd":
-                    # print(
-                    #     f'ssh callback requested from {event_data["from"]} notification id : {event_data["id"]}')
+                    self.logger.debug(
+                        f'ssh callback requested from {event_data["from"]} notification id : {event_data["id"]}')
                     ssh_notification_recieved = True
                     callbackArgs = [
                         at_event,
@@ -124,8 +130,6 @@ class SSHNPDClient:
             try:
                 at_event = queue.get(block=False)
                 event_type = at_event.event_type
-                # Surely this can't be the best way to do this
-                # probably something involving locks because I think both threads are trying to access the queue
                 # the Main thread needs to access the queue AFTER the handle thread has finished with it
                 if event_type == AtEventType.DECRYPTED_UPDATE_NOTIFICATION:
                     queue.put(at_event)
@@ -201,10 +205,10 @@ class SSHNPDClient:
         try:
             sock.connect(dest)
         except Exception as e:
-            print(f"Forwarding request to {dest} failed: {e}")
+            self.logger.error(f"Forwarding request to {dest} failed: {e}")
             return
 
-        print(
+        self.logger.info(
             f"Connected!  Tunnel open {chan.origin_addr} -> {chan.getpeername()} -> {dest}"
         )
 
@@ -222,7 +226,7 @@ class SSHNPDClient:
                 sock.send(data)
         chan.close()
         sock.close()
-        print(f"Tunnel closed from {chan.origin_addr}")
+        self.logger.info(f"Tunnel closed from {chan.origin_addr}")
 
 
     def _forward_socket(self, tp, dest):
@@ -245,13 +249,13 @@ class SSHNPDClient:
         port = ssh_list[1]
         username = ssh_list[2]
         hostname = ssh_list[3]
-        print("ssh session started for " + username + " @ " + hostname + " on port " + port)
+        self.logger.info("ssh session started for " + username + " @ " + hostname + " on port " + port)
         ssh_client = SSHClient()
         ssh_client.load_system_host_keys(f"{self.ssh_path}/known_hosts")
         ssh_client.set_missing_host_key_policy(AutoAddPolicy())
         file_like = StringIO(private_key)
         paramiko_log = logging.getLogger("paramiko.transport")
-        paramiko_log.setLevel(logging.DEBUG)
+        paramiko_log.setLevel(self.logger.level)
         paramiko_log.addHandler(logging.StreamHandler())
         try:
             pkey = Ed25519Key.from_private_key(file_obj=file_like)
@@ -265,7 +269,7 @@ class SSHNPDClient:
                 disabled_algorithms={"pubkeys": ["rsa-sha2-512", "rsa-sha2-256"]},
             )
             tp = ssh_client.get_transport()
-            print("Forwarding port " + local_port + " to " + hostname + ":" + port)
+            self.logger.info("Forwarding port " + local_port + " to " + hostname + ":" + port)
             tp.request_port_forward("", int(local_port))
             thread = threading.Thread(
                 target=self._forward_socket,
@@ -309,6 +313,6 @@ class SSHNPDClient:
         
         if ssh_auth:
             response = self.at_client.notify(at_key, "connected")
-            print("sent ssh notification to " + at_key.shared_with.to_string())
+            self.logger.info("sent ssh notification to " + at_key.shared_with.to_string())
             self.authenticated = True
             
