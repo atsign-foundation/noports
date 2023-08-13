@@ -123,7 +123,7 @@ parse_args() {
       read -rp "> " HOST_RENDEZVOUS_ATSIGN;
     fi
 
-    while [[ "$HOST_RENDEZVOUS_ATSIGN" != @* ]]; do
+    while echo "$HOST_RENDEZVOUS_ATSIGN" | grep  -Eq "@.*"; do
       case "$HOST_RENDEZVOUS_ATSIGN" in
         [Aa][Mm]*)
           HOST_RENDEZVOUS_ATSIGN="@rv_am"
