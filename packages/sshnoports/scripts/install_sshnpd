@@ -158,7 +158,7 @@ parse_env() {
       ;;
   esac
 
-  if [ "$PLATFORM" == "Unknown" ]; then
+  if [ "$PLATFORM" = "Unknown" ]; then
     echo "Unsupported platform: $(uname)";
     exit 1;
   fi
@@ -172,7 +172,7 @@ parse_env() {
     *) ARCH="Unknown";;
   esac
 
-  if [ "$ARCH" == "Unknown" ]; then
+  if [ "$ARCH" = "Unknown" ]; then
     echo "Unsupported architecture: $(uname -m)";
     exit 1;
   fi
@@ -222,7 +222,7 @@ download() {
       echo;
       echo "Please try again, or download manually from $DOWNLOAD";
       echo "After downloading manually, run the following command to install:";
-      if [ "$0" == 'bash' ]; then
+      if [ "$0" = 'bash' ]; then
         echo "bash -c \"\$(curl https://getsshnpd.noports.com)\" -- -l <path to $EXT file>";
       else
         echo "  $0 -l <path to $EXT file>";

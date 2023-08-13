@@ -140,10 +140,6 @@ parse_args() {
     DEVICE_MANAGER_ATSIGN="$(norm_atsign "$DEVICE_MANAGER_ATSIGN")"
     echo;
   fi
-
-  echo "CLIENT_ATSIGN: $CLIENT_ATSIGN"
-  echo "DEVICE_MANAGER_ATSIGN: $DEVICE_MANAGER_ATSIGN"
-  echo "HOST_RENDEZVOUS_ATSIGN: $HOST_RENDEZVOUS_ATSIGN"
 }
 
 parse_env() {
@@ -173,7 +169,7 @@ parse_env() {
       ;;
   esac
 
-  if [ "$PLATFORM" == "Unknown" ]; then
+  if [ "$PLATFORM" = "Unknown" ]; then
     echo "Unsupported platform: $(uname)";
     exit 1;
   fi
@@ -187,7 +183,7 @@ parse_env() {
     *) ARCH="Unknown";;
   esac
 
-  if [ "$ARCH" == "Unknown" ]; then
+  if [ "$ARCH" = "Unknown" ]; then
     echo "Unsupported architecture: $(uname -m)";
     exit 1;
   fi
