@@ -183,7 +183,11 @@ jobs:
         working-directory: tests/end2end_tests/tests
         run: |
           cat service-container-sshnp.yaml >> docker-compose.yaml
-          echo '    image: atsigncompany/sshnp-e2e-runtime:${{ matrix.np }}' >> docker-compose.yaml
+          if [ "${{ matrix.np }}" = 'installer' ]; then
+            echo '    image: atsigncompany/sshnp-e2e-runtime:sshnp-installer' >> docker-compose.yaml
+          else
+            echo '    image: atsigncompany/sshnp-e2e-runtime:${{ matrix.np }}' >> docker-compose.yaml
+          fi
           echo '    depends_on:' >> docker-compose.yaml
           echo '      - container-sshnpd' >> docker-compose.yaml
           if [ "${{contains(env.RELEASES, matrix.np)}}" = true ]; then
@@ -200,7 +204,11 @@ jobs:
         working-directory: tests/end2end_tests/tests
         run: |
           cat service-container-sshnpd.yaml >> docker-compose.yaml
-          echo '    image: atsigncompany/sshnp-e2e-runtime:${{ matrix.npd }}' >> docker-compose.yaml
+          if [ "${{ matrix.npd }}" = 'installer' ]; then
+            echo '    image: atsigncompany/sshnp-e2e-runtime:sshnpd-installer' >> docker-compose.yaml
+          else
+            echo '    image: atsigncompany/sshnp-e2e-runtime:${{ matrix.npd }}' >> docker-compose.yaml
+          fi
           echo '    depends_on:' >> docker-compose.yaml
           if [ "${{ matrix.rvd }}" = true ]; then
             echo '      - container-sshrvd' >> docker-compose.yaml
