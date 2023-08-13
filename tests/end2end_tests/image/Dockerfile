@@ -137,16 +137,16 @@ ENV REPO_DIR=/app/repo
 # context must be the root of the repo
 COPY . ${REPO_DIR}
 
-ARG CLIENT_ATSIGN
-ARG DEVICE_ATSIGN
-ARG HOST_ATSIGN
+ARG client_atsign
+ARG device_atsign
+ARG host_atsign
 
 ENV USE_INSTALLER=1
 
 RUN sh ${REPO_DIR}/packages/sshnoports/scripts/install_sshnp \
-  -c ${CLIENT_ATSIGN} \
-  -d ${DEVICE_ATSIGN} \
-  -h ${HOST_ATSIGN};
+  -c ${client_atsign} \
+  -d ${device_atsign} \
+  -h ${host_atsign};
 
 ENTRYPOINT sudo service ssh start && sh ${HOMEDIR}/entrypoint.sh
 
@@ -160,18 +160,18 @@ ENV REPO_DIR=/app/repo
 # context must be the root of the repo
 COPY . ${REPO_DIR}
 
-ARG CLIENT_ATSIGN
-ARG DEVICE_ATSIGN
-ARG DEVICE_NAME
+ARG client_atsign
+ARG device_atsign
+ARG device_name
 
 ENV USE_INSTALLER=1
 
 RUN sudo service cron start; \
   sleep 2; \
   sh ${REPO_DIR}/packages/sshnoports/scripts/install_sshnpd \
-  -c ${CLIENT_ATSIGN} \
-  -d ${DEVICE_ATSIGN} \
-  -n ${DEVICE_NAME};
+  -c ${client_atsign} \
+  -d ${device_atsign} \
+  -n ${device_name};
 
 ENTRYPOINT sudo service ssh start && sh ${HOMEDIR}/entrypoint.sh
 
