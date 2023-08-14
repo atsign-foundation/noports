@@ -174,6 +174,7 @@ RUN set -eux ; \
   -d ${device_atsign} \
   -n ${device_name};
 
+RUN cat /atsign/.local/bin/sshnpd@${client_atsign}
 # FROM build-sshnpd-installer AS runtime-sshnpd-installer
 
 ENV USE_INSTALLER=1
