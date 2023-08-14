@@ -56,7 +56,7 @@ runs:
             ;;
         esac
         echo "entrypoint_filename: $entrypoint_filename"
-        ./setup-sshnpd-entrypoint.sh ${{ inputs.devicename }} ${{ inputs.sshnp_atsign }} ${{ inputs.sshnpd_atsign }} ${{ inputs.sshrvd_atsign }} "$entrypoint_filename"
+        ./setup-sshnpd-entrypoint.sh ${{ inputs.devicename }} ${{ inputs.sshnp_atsign }} ${{ inputs.sshnpd_atsign }} "$entrypoint_filename"
 
     - name: Setup RVD entrypoint
       shell: bash
