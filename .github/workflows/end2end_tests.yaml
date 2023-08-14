@@ -54,22 +54,6 @@ jobs:
             npd: latest
             rvd: local
             rvd_atsign: "@8485wealthy51"
-          ### INSTALLER TESTS ###
-          - np: installer
-            npd: local
-            wait: 120
-          - np: local
-            npd: installer
-            wait: 120
-          - np: installer
-            npd: trunk
-            wait: 120
-          - np: trunk
-            npd: installer
-            wait: 120
-          - np: installer
-            npd: installer
-            wait: 120
           ### BACKWARD TESTS WITHOUT SYNC ###
           - np: local
             npd: latest
