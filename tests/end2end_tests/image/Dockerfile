@@ -159,6 +159,7 @@ WORKDIR ${HOMEDIR}
 USER ${USER}
 
 ENV REPO_DIR=/app/repo
+ENV USE_INSTALLER=1
 
 # context must be the root of the repo
 COPY . ${REPO_DIR}
@@ -174,10 +175,7 @@ RUN set -eux ; \
   -d ${device_atsign} \
   -n ${device_name};
 
-RUN cat /atsign/.local/bin/sshnpd@${client_atsign}
-# FROM build-sshnpd-installer AS runtime-sshnpd-installer
-
-ENV USE_INSTALLER=1
+RUN cat /atsign/.local/bin/sshnpd@8incanteater
 
 ENTRYPOINT sudo service cron start && sudo service ssh start && sh ${HOMEDIR}/entrypoint.sh
 
