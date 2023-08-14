@@ -127,7 +127,7 @@ USER ${USER}
 
 ENTRYPOINT sudo service ssh start && sh ${HOMEDIR}/entrypoint.sh
 
-FROM base AS runtime-sshnp-installer
+FROM base AS build-sshnp-installer
 
 WORKDIR ${HOMEDIR}
 USER ${USER}
@@ -141,17 +141,19 @@ ARG client_atsign
 ARG device_atsign
 ARG host_atsign
 
-ENV USE_INSTALLER=1
-
 RUN set -eux; \
   sh ${REPO_DIR}/packages/sshnoports/scripts/install_sshnp \
   -c ${client_atsign} \
   -d ${device_atsign} \
   -h ${host_atsign};
 
+FROM build-sshnp-installer AS runtime-sshnp-installer
+
+ENV USE_INSTALLER=1
+
 ENTRYPOINT sudo service ssh start && sh ${HOMEDIR}/entrypoint.sh
 
-FROM base AS runtime-sshnpd-installer
+FROM base AS build-sshnpd-installer
 
 WORKDIR ${HOMEDIR}
 USER ${USER}
@@ -165,8 +167,6 @@ ARG client_atsign
 ARG device_atsign
 ARG device_name
 
-ENV USE_INSTALLER=1
-
 RUN set -eux ; \
   sudo service cron start; \
   sh ${REPO_DIR}/packages/sshnoports/scripts/install_sshnpd \
@@ -174,7 +174,11 @@ RUN set -eux ; \
   -d ${device_atsign} \
   -n ${device_name};
 
-ENTRYPOINT sudo service ssh start && sh ${HOMEDIR}/entrypoint.sh
+FROM build-sshnpd-installer AS runtime-sshnpd-installer
+
+ENV USE_INSTALLER=1
+
+ENTRYPOINT sudo service cron start && sudo service ssh start && sh ${HOMEDIR}/entrypoint.sh
 
 FROM runtime-branch AS manual-branch
 
