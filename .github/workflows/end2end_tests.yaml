@@ -37,8 +37,8 @@ jobs:
       fail-fast: false
       max-parallel: 8
       matrix:
-        np: [local, trunk, installer]
-        npd: [local, trunk, installer]
+        np: [local, trunk]
+        npd: [local, trunk]
         exclude:
           # Don't run these against themselves, they're irrelevant
           - np: trunk
@@ -54,7 +54,22 @@ jobs:
             npd: latest
             rvd: local
             rvd_atsign: "@8485wealthy51"
-
+          ### INSTALLER TESTS ###
+          - np: installer
+            npd: local
+            wait: 120
+          - np: local
+            npd: installer
+            wait: 120
+          - np: installer
+            npd: trunk
+            wait: 120
+          - np: trunk
+            npd: installer
+            wait: 120
+          - np: installer
+            npd: installer
+            wait: 120
           ### BACKWARD TESTS WITHOUT SYNC ###
           - np: local
             npd: latest
@@ -79,11 +94,11 @@ jobs:
 
           - np: v3.1.2
             npd: local
-            wait: 60
+            wait: 120
 
           - np: v3.2.0
             npd: local
-            wait: 60
+            wait: 120
     steps:
       - name: Show Matrix Values
         run: |
