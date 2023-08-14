@@ -300,7 +300,12 @@ setup_service() {
     SERVICE_RUN_LINE=$(grep 'sshnpd ' < "$SSHNPD_SERVICE_BINARY_PATH")
     OLD_DEVICE_NAME=$(echo "${SERVICE_RUN_LINE// -d /;/}" | cut -d';' -f2 | cut -d '"' -f2)
     echo "Renaming $OLD_DEVICE_NAME to $SSHNP_DEVICE_NAME"
-    sed -i "s/\"$OLD_DEVICE_NAME\"/\"$SSHNP_DEVICE_NAME\"/g" "$SSHNPD_SERVICE_BINARY_PATH"
+    if [[ "$PLATFORM" = "macos" ]];
+    then
+      sed -i '' "s/\"$OLD_DEVICE_NAME\"/\"$SSHNP_DEVICE_NAME\"/g" "$SSHNPD_SERVICE_BINARY_PATH"
+    else
+      sed -i "s/\"$OLD_DEVICE_NAME\"/\"$SSHNP_DEVICE_NAME\"/g" "$SSHNPD_SERVICE_BINARY_PATH"
+    fi
   fi
 
   SSHNP_CRON_SCHEDULE="@reboot";
@@ -326,7 +331,7 @@ setup_service() {
     echo "Installed cron job: '$SSHNP_CRON_SCHEDULE $SSHNP_COMMAND'";
   fi
 
-  
+
   if [ "$SSHNPD_SERVICE_MECHANISM" = "cron" ]; then
     CRONTAB_CONTENTS=$(crontab -l 2>/dev/null);
     PREVIOUS_LOGROTATE_ENTRY=$(echo "$CRONTAB_CONTENTS" | grep -Fxq "$LOGROTATE")

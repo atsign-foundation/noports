@@ -3,11 +3,14 @@ description: |
   Sets up the environment for e2e tests.
 
 inputs:
-  devicename:
-    description: Unique sshnp devicename
+  sshnp:
+    description: Source of the sshnp container
     required: true
   sshnp_atsign:
     description: sshnp atsign
+    required: true
+  sshnpd:
+    description: Source of the sshnpd container
     required: true
   sshnpd_atsign:
     description: sshnpd atsign
@@ -15,15 +18,12 @@ inputs:
   sshrvd_atsign:
     description: sshrvd atsign
     required: true
+  devicename:
+    description: Unique sshnp devicename
+    required: true
   wait_time:
     description: Time to wait for sshnpd to start
     required: false
-  sshnp:
-    description: Source of the sshnp container
-    required: true
-  sshnpd:
-    description: Source of the sshnpd container
-    required: true
 
 runs:
   using: composite
@@ -40,6 +40,7 @@ runs:
             entrypoint_filename="sshnp_entrypoint.sh"
             ;;
         esac
+        echo "entrypoint_filename: $entrypoint_filename"
         ./setup-sshnp-entrypoint.sh ${{ inputs.devicename }} ${{ inputs.sshnp_atsign }} ${{ inputs.sshnpd_atsign }} ${{ inputs.sshrvd_atsign }} ${{ inputs.wait_time || 10 }} "$entrypoint_filename"
 
     - name: Setup NPD entrypoint
@@ -54,6 +55,7 @@ runs:
             entrypoint_filename="sshnpd_entrypoint.sh"
             ;;
         esac
+        echo "entrypoint_filename: $entrypoint_filename"
         ./setup-sshnpd-entrypoint.sh ${{ inputs.devicename }} ${{ inputs.sshnp_atsign }} ${{ inputs.sshnpd_atsign }} ${{ inputs.sshrvd_atsign }} "$entrypoint_filename"
 
     - name: Setup RVD entrypoint
