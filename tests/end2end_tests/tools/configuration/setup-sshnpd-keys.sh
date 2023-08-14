@@ -5,7 +5,7 @@
 
 sshnpd=$1
 
-cp ~/.atsign/keys/${sshnpd}_key.atKeys ../../contexts/sshnpd/keys/${sshnpd}_key.atKeys
+cp ~/.atsign/keys/"$sshnpd"_key.atKeys ../../contexts/sshnpd/keys/"$sshnpd"_key.atKeys
 
 if [[ ! -f ../../contexts/sshnpd/keys/${sshnpd}_key.atKeys ]];
 then

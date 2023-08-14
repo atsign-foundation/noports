@@ -85,7 +85,7 @@ CMD sudo service ssh start
 
 RUN set -eux ; \
   apt-get update ; \
-  apt-get install -y openssh-server sudo vim nano iproute2 nmap tmux ; \
+  apt-get install -y openssh-server sudo vim nano iproute2 nmap tmux curl cron ; \
   groupadd --gid ${GROUP_ID} ${USER} ; \
   useradd --system --shell /bin/bash --home ${HOMEDIR} --uid ${USER_ID} --gid ${GROUP_ID} ${USER} ; \
   usermod -aG sudo ${USER} ; \
@@ -127,6 +127,66 @@ USER ${USER}
 
 ENTRYPOINT sudo service ssh start && sh ${HOMEDIR}/entrypoint.sh
 
+FROM base AS build-sshnp-installer
+
+USER ${USER}
+WORKDIR ${HOMEDIR}
+
+ENV REPO_DIR=/app/repo
+
+# context must be the root of the repo
+COPY . ${REPO_DIR}
+
+ARG client_atsign
+ARG device_atsign
+ARG host_atsign
+
+RUN set -eux; \
+  sh ${REPO_DIR}/packages/sshnoports/scripts/install_sshnp \
+  -c ${client_atsign} \
+  -d ${device_atsign} \
+  -h ${host_atsign};
+
+FROM build-sshnp-installer AS runtime-sshnp-installer
+
+USER ${USER}
+WORKDIR ${HOMEDIR}
+
+ENV USE_INSTALLER=1
+
+ENTRYPOINT sudo service ssh start && sh ${HOMEDIR}/entrypoint.sh
+
+FROM base AS build-sshnpd-installer
+
+USER ${USER}
+WORKDIR ${HOMEDIR}
+
+ENV REPO_DIR=/app/repo
+ENV USE_INSTALLER=1
+
+# context must be the root of the repo
+COPY . ${REPO_DIR}
+
+ARG client_atsign
+ARG device_atsign
+ARG device_name
+
+RUN set -eux ; \
+  sudo service cron start; \
+  sh ${REPO_DIR}/packages/sshnoports/scripts/install_sshnpd \
+  -c ${client_atsign} \
+  -d ${device_atsign} \
+  -n ${device_name};
+
+FROM build-sshnpd-installer AS runtime-sshnpd-installer
+
+USER ${USER}
+WORKDIR ${HOMEDIR}
+
+ENV USE_INSTALLER=1
+
+ENTRYPOINT sudo service ssh start && sh ${HOMEDIR}/entrypoint.sh
+
 FROM runtime-branch AS manual-branch
 
 ENTRYPOINT sudo service ssh start && bash
@@ -142,10 +202,6 @@ ENTRYPOINT sudo service ssh start && bash
 FROM base AS manual-blank
 
 WORKDIR ${HOMEDIR}
-
-RUN set -eux ; \
-  apt-get update ; \
-  apt-get install -y curl ;
 
 USER ${USER}
 
