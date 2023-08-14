@@ -153,7 +153,7 @@ ENV USE_INSTALLER=1
 
 ENTRYPOINT sudo service ssh start && sh ${HOMEDIR}/entrypoint.sh
 
-FROM base AS runtime-sshnpd-installer
+FROM base AS build-sshnpd-installer
 
 WORKDIR ${HOMEDIR}
 USER ${USER}
@@ -175,9 +175,11 @@ RUN set -eux ; \
   -d ${device_atsign} \
   -n ${device_name};
 
-RUN cat /atsign/.local/bin/sshnpd@8incanteater
+FROM base AS runtime-sshnpd-installer
 
-ENTRYPOINT sudo service cron start && sudo service ssh start && sh ${HOMEDIR}/entrypoint.sh
+ENV USE_INSTALLER=1
+
+ENTRYPOINT sudo service ssh start && sh ${HOMEDIR}/entrypoint.sh
 
 FROM runtime-branch AS manual-branch
 
