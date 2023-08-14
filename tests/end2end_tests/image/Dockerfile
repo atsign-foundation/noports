@@ -129,8 +129,8 @@ ENTRYPOINT sudo service ssh start && sh ${HOMEDIR}/entrypoint.sh
 
 FROM base AS build-sshnp-installer
 
-WORKDIR ${HOMEDIR}
 USER ${USER}
+WORKDIR ${HOMEDIR}
 
 ENV REPO_DIR=/app/repo
 
@@ -149,14 +149,17 @@ RUN set -eux; \
 
 FROM build-sshnp-installer AS runtime-sshnp-installer
 
+USER ${USER}
+WORKDIR ${HOMEDIR}
+
 ENV USE_INSTALLER=1
 
 ENTRYPOINT sudo service ssh start && sh ${HOMEDIR}/entrypoint.sh
 
 FROM base AS build-sshnpd-installer
 
-WORKDIR ${HOMEDIR}
 USER ${USER}
+WORKDIR ${HOMEDIR}
 
 ENV REPO_DIR=/app/repo
 ENV USE_INSTALLER=1
@@ -176,6 +179,9 @@ RUN set -eux ; \
   -n ${device_name};
 
 FROM base AS runtime-sshnpd-installer
+
+USER ${USER}
+WORKDIR ${HOMEDIR}
 
 ENV USE_INSTALLER=1
 
