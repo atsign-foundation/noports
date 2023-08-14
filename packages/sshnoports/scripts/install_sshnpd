@@ -314,7 +314,7 @@ rename_device() {
         then
           sed -i '' "s/\"$OLD_DEVICE_NAME\"/\"$SSHNP_DEVICE_NAME\"/g" "$SSHNPD_SERVICE_BINARY_PATH"
         else
-          sed -i '' "s/\"$OLD_DEVICE_NAME\"/\"$SSHNP_DEVICE_NAME\"/g" "$SSHNPD_SERVICE_BINARY_PATH"
+          sed -i "s/\"$OLD_DEVICE_NAME\"/\"$SSHNP_DEVICE_NAME\"/g" "$SSHNPD_SERVICE_BINARY_PATH"
         fi
       ;;
     2.*)
