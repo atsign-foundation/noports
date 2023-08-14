@@ -38,7 +38,7 @@ jobs:
       max-parallel: 8
       matrix:
         np: [local, trunk, installer]
-        npd: [local, trunk, installer]
+        npd: [local, trunk]
         exclude:
           # Don't run these against themselves, they're irrelevant
           - np: trunk
@@ -54,6 +54,16 @@ jobs:
             npd: latest
             rvd: local
             rvd_atsign: "@8485wealthy51"
+          ### INSTALLER TESTS ###
+          - np: local
+            npd: installer
+            wait: 30
+          - np: trunk
+            npd: installer
+            wait: 30
+          - np: installer
+            npd: installer
+            wait: 30
           ### BACKWARD TESTS WITHOUT SYNC ###
           - np: local
             npd: latest
