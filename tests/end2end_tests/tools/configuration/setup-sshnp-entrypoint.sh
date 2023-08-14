@@ -9,8 +9,9 @@ sshnp=$2 # e.g. @alice
 sshnpd=$3 # e.g. @alice
 sshrvd=$4 # e.g. @alice
 waitingTime=$5 # e.g. 30
+template_name=$6 # e.g. sshnp_entrypoint.sh
 
-cp ../../templates/sshnp_entrypoint.sh ../../contexts/sshnp/entrypoint.sh
+cp ../../templates/"$template_name" ../../contexts/sshnp/entrypoint.sh
 
 prefix="sed -i"
 

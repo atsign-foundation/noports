@@ -125,6 +125,8 @@ jobs:
           sshnpd_atsign: ${{ env.SSHNPD_ATSIGN }}
           sshrvd_atsign: ${{ matrix.rvd_atsign || env.DEFAULT_RVD_ATSIGN }}
           wait_time: ${{ matrix.wait }}
+          sshnp: ${{ matrix.np }}
+          sshnpd: ${{ matrix.npd }}
 
       - name: Ensure entrypoints exist
         working-directory: tests/end2end_tests/contexts

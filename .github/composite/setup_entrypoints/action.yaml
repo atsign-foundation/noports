@@ -18,6 +18,12 @@ inputs:
   wait_time:
     description: Time to wait for sshnpd to start
     required: false
+  sshnp:
+    description: Source of the sshnp container
+    required: true
+  sshnpd:
+    description: Source of the sshnpd container
+    required: true
 
 runs:
   using: composite
@@ -26,6 +32,32 @@ runs:
       shell: bash
       working-directory: tests/end2end_tests/tools/configuration
       run: |
-        ./setup-sshnp-entrypoint.sh ${{ inputs.devicename }} ${{ inputs.sshnp_atsign }} ${{ inputs.sshnpd_atsign }} ${{ inputs.sshrvd_atsign }} ${{ inputs.wait_time || 10 }}
-        ./setup-sshnpd-entrypoint.sh ${{ inputs.devicename }} ${{ inputs.sshnp_atsign }} ${{ inputs.sshnpd_atsign }} ${{ inputs.sshrvd_atsign }}
+        case "${{ inputs.sshnp }}" in
+          "installer")
+            entrypoint_filename="sshnp_installer_entrypoint.sh"
+            ;;
+          *)
+            entrypoint_filename="sshnp_entrypoint.sh"
+            ;;
+        esac
+        ./setup-sshnp-entrypoint.sh ${{ inputs.devicename }} ${{ inputs.sshnp_atsign }} ${{ inputs.sshnpd_atsign }} ${{ inputs.sshrvd_atsign }} ${{ inputs.wait_time || 10 }} "$entrypoint_filename"
+
+    - name: Setup NPD entrypoint
+      shell: bash
+      working-directory: tests/end2end_tests/tools/configuration
+      run: |
+        case "${{ inputs.sshnpd }}" in
+          "installer")
+            entrypoint_filename="sshnpd_installer_entrypoint.sh"
+            ;;
+          *)
+            entrypoint_filename="sshnpd_entrypoint.sh"
+            ;;
+        esac
+        ./setup-sshnpd-entrypoint.sh ${{ inputs.devicename }} ${{ inputs.sshnp_atsign }} ${{ inputs.sshnpd_atsign }} ${{ inputs.sshrvd_atsign }} "$entrypoint_filename"
+
+    - name: Setup RVD entrypoint
+      shell: bash
+      working-directory: tests/end2end_tests/tools/configuration
+      run: |
         ./setup-sshrvd-entrypoint.sh ${{ inputs.sshrvd_atsign }}
