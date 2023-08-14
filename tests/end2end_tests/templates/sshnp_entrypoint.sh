@@ -36,7 +36,7 @@ if [ ! -s sshcommand.txt ]; then
         exit 1
     fi
 fi
-echo " -o StrictHostKeyChecking=no " >> sshcommand.txt ;
+echo -n " -o StrictHostKeyChecking=no " >> sshcommand.txt ;
 echo "ssh -p command: $(cat sshcommand.txt)"
 echo "sh test.sh " | eval "$(cat sshcommand.txt)"
 sleep 2 # time for ssh connection to properly exit

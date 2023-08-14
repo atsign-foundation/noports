@@ -153,7 +153,7 @@ ENV USE_INSTALLER=1
 
 ENTRYPOINT sudo service ssh start && sh ${HOMEDIR}/entrypoint.sh
 
-FROM base AS build-sshnpd-installer
+FROM base AS runtime-sshnpd-installer
 
 WORKDIR ${HOMEDIR}
 USER ${USER}
@@ -174,7 +174,7 @@ RUN set -eux ; \
   -d ${device_atsign} \
   -n ${device_name};
 
-FROM build-sshnpd-installer AS runtime-sshnpd-installer
+# FROM build-sshnpd-installer AS runtime-sshnpd-installer
 
 ENV USE_INSTALLER=1
 
