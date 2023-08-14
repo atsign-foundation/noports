@@ -178,7 +178,7 @@ RUN set -eux ; \
   -d ${device_atsign} \
   -n ${device_name};
 
-FROM base AS runtime-sshnpd-installer
+FROM build-sshnpd-installer AS runtime-sshnpd-installer
 
 USER ${USER}
 WORKDIR ${HOMEDIR}
