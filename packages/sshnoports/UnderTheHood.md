@@ -1,7 +1,7 @@
 # What's happening under the hood?
 
-**Note**: This document describes version 3.5.0 or greater; v3.5.0 will be
-released mid-August 2023
+**Note**: This document describes version 4.0.0-rc.2 or greater; v4.0.0 will be
+released on or about Aug 20 2023.
 
 ## Overview
 There are three atSigns involved - one for each of
@@ -24,8 +24,7 @@ In brief
   - opens server sockets for both of them
     - **Note**: rvd will allow just a single client socket to connect to each 
       server socket
-      - and will bridge them together once the rvd has received the 
-      sessionId on both sockets
+      - and will bridge them together
   - sends response to the client
 - The client
   - receives the response notification from sshrvd (rv_host, rv_port_1, 
@@ -34,17 +33,22 @@ In brief
     and the rv_host:rv_port_1
 - The daemon (`sshnpd`)
   - opens a socket to the rv_host:rv_port_1
-  - and writes the sessionId on it
   - and opens a socket to its local sshd port
   - and bridges the sockets together
   - and sends a response notification to the `sshnp` client
 - The client
-  - binds a local server socket
-  - and opens a socket to the rv_host:rv_port_2
-  - and writes the sessionId on it
-  - and bridges the sockets together
+  - issues an ssh command like this to set up the ssh tunnel and do a local 
+    port forwarding
+    ```
+    /usr/bin/ssh gary@85.239.63.180 -p 40189 -i /Users/gary/.ssh/noports \
+      -L 58358:localhost:22 -t -t -f \
+      -o StrictHostKeyChecking=accept-new -o IdentitiesOnly=yes \
+      -o BatchMode=yes -o ExitOnForwardFailure=yes \
+      sleep 15
+    ```
 - The client displays a message to the user that they may now
-  `ssh -p $local_port $username@localhost`, and exits
+  `ssh -p $local_port $username@localhost`, i.e. `ssh -p 58358 
+  gary@localhost` in the example above, and exits
 
 This high-level flow is visualized in the diagrams below.
 
@@ -97,7 +101,7 @@ sequenceDiagram
     
     R->R: Decrypt request payload
     R->R: Find two unused ports
-    R->R: Create an isolate <br> which creates server sockets <br> on the ports, waits for connections, <br> and joins their i/o streams <br> ONCE BOTH CONNECTIONS have sent the sessionId
+    R->R: Create an isolate <br> which creates server sockets <br> on the ports, waits for connections, <br> and joins their i/o streams
     R->R: Create and encrypt <br> response message containing <br> sessionId, host, port_1, port_2
     R->>C: Send response notification <br> to @client
     
@@ -105,16 +109,11 @@ sequenceDiagram
     C->>D: Send request to sshnpd
     D->>D: SPAWN an sshrv process
     D->>R: (Spawned) Open socket $npd_to_rv to host:port_1
-    D->>R: (Spawned) write "$sessionId\n" to $npd_to_rv socket
     D->>D: (Spawned) Open socket $npd_to_sshd to localhost:22
     D->>D: (Spawned) Join $npd_to_rv and $npd_to_sshd <br> i/o streams, and vice versa
     D->>C: Send "connected" response notification if spawned successfully
-    C->>C: Find an available $local_port
-    C->>C: SPAWN an sshrv process
-    C->>R: (Spawned) Open socket $npc_to_rv to host:port_2
-    C->>R: (Spawned) write "$sessionId\n" to $npc_to_rv socket
-    C->>C: (Spawned) Create server socket $npc_local listening on $local_port
-    C->>C: (Spawned) Join $npc_local and $npc_to_rv  <br> i/o streams, and vice versa
+    C->>C: Find an available $local_port<br>or use one supplied by the user via the command line
+    C->>C: Spawn an initial ssh command to set up the local port forwarding tunnel
     C->>C: If spawned successfully, Write to stdout: "ssh -p $local_port $username@localhost"
 ```
 
@@ -123,11 +122,11 @@ Once the interactions above have completed
 - the sshnpd nor the sshnp programs are no longer involved
 - there is a new sshrv process running on the device host which pipes i/o 
   between device port 22 and $rv_host:$rv_port_1 
-- there is a new sshrv process running on the client host which pipes i/o
-  between client port $local_port and $rv_host:$rv_port_2
+- there is an ssh process running on the client host which provides the 
+  local port forwarding tunnel
 - User may now type "ssh -p $local_port username@localhost" with traffic flowing 
   - client ssh program <===>
-    - $client_localhost:$local_port <===> bridged by client-side sshrv to
+    - $client_localhost:$local_port <===> bridged by client-side ssh tunnel to
       - $rv_host:$rv_port_2 <===> bridged by sshrvd to
         - $rv_host:$rv_port_1 <===> bridged by device-side sshrv to
           - $device_host:22 <===>
@@ -146,7 +145,7 @@ sequenceDiagram
     note over rvp1, rvp2: rvd host
     note over dp22, sshd: device host
     
-    note over clp, rvp1: Bridged by <br> client sshrv
+    note over clp, rvp1: Bridged by <br> client ssh local port forward
     note over rvp1, rvp2: Bridged by <br> rvd
     note over rvp2, dp22: Bridged by <br> device sshrv
     
