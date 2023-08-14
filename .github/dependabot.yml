@@ -7,10 +7,18 @@ updates:
     schedule:
       interval: "daily"
   - package-ecosystem: "docker"
-    directory: "/"
+    directory: "/packages/sshnoports/"
+    schedule:
+      interval: "daily"
+  - package-ecosystem: "docker"
+    directory: "/tests/end2end_tests/image/"
     schedule:
       interval: "daily"
   - package-ecosystem: "pub"
-    directory: "/"
+    directory: "/packages/sshnoports/"
+    schedule:
+      interval: "daily"
+  - package-ecosystem: "pip"
+    directory: "/packages/noports_sdk_python/"
     schedule:
       interval: "daily"
