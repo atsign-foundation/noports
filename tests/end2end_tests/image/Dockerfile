@@ -169,7 +169,6 @@ ENV USE_INSTALLER=1
 
 RUN set -eux ; \
   sudo service cron start; \
-  sleep 2; \
   sh ${REPO_DIR}/packages/sshnoports/scripts/install_sshnpd \
   -c ${client_atsign} \
   -d ${device_atsign} \
