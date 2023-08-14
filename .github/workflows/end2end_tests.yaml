@@ -37,8 +37,8 @@ jobs:
       fail-fast: false
       max-parallel: 8
       matrix:
-        np: [local, trunk]
-        npd: [local, trunk]
+        np: [local, trunk, installer]
+        npd: [local, trunk, installer]
         exclude:
           # Don't run these against themselves, they're irrelevant
           - np: trunk
