@@ -113,7 +113,7 @@ abstract class SSHNP {
   abstract final String sshHomeDirectory;
 
   /// Function used to generate a [SSHRV] instance ([SSHRV.localBinary] by default)
-  abstract SSHRV Function(String, int) sshrvGenerator;
+  abstract final SSHRV Function(String, int) sshrvGenerator;
 
   /// true once we have received any response (success or error) from sshnpd
   @visibleForTesting
@@ -175,9 +175,16 @@ abstract class SSHNP {
     return SSHNPImpl.fromCommandLineArgs(args);
   }
 
-  static Future<SSHNP> fromParams(SSHNPParams p,
-      {SSHRV Function(String, int) sshrvGenerator = SSHRV.localBinary}) {
-    return SSHNPImpl.fromParams(p, sshrvGenerator: sshrvGenerator);
+  static Future<SSHNP> fromParams(
+    SSHNPParams p, {
+    AtClient? atClient,
+    SSHRV Function(String, int) sshrvGenerator = SSHRV.localBinary,
+  }) {
+    return SSHNPImpl.fromParams(
+      p,
+      atClient: atClient,
+      sshrvGenerator: sshrvGenerator,
+    );
   }
 
   /// Must be run after construction, to complete initialization
