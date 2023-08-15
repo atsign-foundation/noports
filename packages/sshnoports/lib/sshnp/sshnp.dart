@@ -112,6 +112,9 @@ abstract class SSHNP {
   /// '$homeDirectory${Platform.pathSeparator}.ssh${Platform.pathSeparator}'
   abstract final String sshHomeDirectory;
 
+  /// Function used to generate a [SSHRV] instance ([SSHRV.localBinary] by default)
+  abstract SSHRV Function(String, int) sshrvGenerator;
+
   /// true once we have received any response (success or error) from sshnpd
   @visibleForTesting
   abstract bool sshnpdAck;
@@ -147,6 +150,7 @@ abstract class SSHNP {
     required String localPort,
     String? remoteUsername,
     bool verbose = false,
+    SSHRV Function(String, int) sshrvGenerator = SSHRV.localBinary,
   }) {
     return SSHNPImpl(
       atClient: atClient,
@@ -163,6 +167,7 @@ abstract class SSHNP {
       localPort: localPort,
       remoteUsername: remoteUsername,
       verbose: verbose,
+      sshrvGenerator: sshrvGenerator,
     );
   }
 

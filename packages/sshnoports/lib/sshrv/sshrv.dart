@@ -23,14 +23,6 @@ abstract class SSHRV<T> {
     return SSHRVImplPureDart(host, streamingPort);
   }
 
-  static Future<SSHRV> preferLocalBinary(String host, int streamingPort) async {
-    String? localBinaryPath = await getLocalBinaryPath();
-    if (localBinaryPath != null) {
-      return localBinary(host, streamingPort);
-    }
-    return pureDart(host, streamingPort);
-  }
-
   static Future<String?> getLocalBinaryPath() async {
     String postfix = Platform.isWindows ? '.exe' : '';
     List<String> pathList =

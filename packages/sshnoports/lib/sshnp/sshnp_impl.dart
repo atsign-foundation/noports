@@ -116,6 +116,10 @@ class SSHNPImpl implements SSHNP {
   @override
   late final String sshHomeDirectory;
 
+  /// Function used to generate a [SSHRV] instance ([SSHRV.localbinary] by default)
+  @override
+  SSHRV Function(String, int) sshrvGenerator;
+
   /// true once we have received any response (success or error) from sshnpd
   @override
   @visibleForTesting
@@ -160,6 +164,7 @@ class SSHNPImpl implements SSHNP {
     required this.localPort,
     this.remoteUsername,
     this.verbose = false,
+    this.sshrvGenerator = SSHRV.localBinary,
   }) {
     namespace = '$device.sshnp';
     clientAtSign = atClient.getCurrentAtSign()!;
@@ -478,7 +483,7 @@ class SSHNPImpl implements SSHNP {
 
     // Connect to rendezvous point using background process.
     // sshnp (this program) can then exit without issue.
-    SSHRV sshrv = await SSHRV.preferLocalBinary(host, int.parse(_sshrvdPort));
+    SSHRV sshrv = sshrvGenerator(host, int.parse(_sshrvdPort));
     unawaited(sshrv.run());
   }
 

@@ -13,8 +13,12 @@ class SSHRVImpl implements SSHRV<ProcessResult> {
   @override
   Future<ProcessResult> run() async {
     String? command = await SSHRV.getLocalBinaryPath();
+    String postfix = Platform.isWindows ? '.exe' : '';
     if (command == null) {
-      throw Exception('sshrv binary not found');
+      throw Exception(
+        'Unable to locate sshrv$postfix binary.\n'
+        'N.B. sshnp is expected to be compiled and run from source, not via the dart command.',
+      );
     }
     return Process.run(command, [host, streamingPort.toString()]);
   }
