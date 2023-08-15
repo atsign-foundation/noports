@@ -24,5 +24,6 @@ build/
 # Macos
 .DS_Store
 
-# Python Related
-packages/sshnpdpy/lib/__pycache__
+# Python
+poetry.lock
+

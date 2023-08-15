@@ -3,28 +3,21 @@
 BINARY_NAME="sshnpd";
 
 norm_atsign() {
-  KEY="$1" # Get the variable name
-  INPUT=${!KEY} # Get the value of the variable
-  shopt -s extglob
-  ATSIGN=${INPUT/#?(\@)/\@} # Add @ if missing
-  shopt -u extglob
-  export "${KEY}"="$ATSIGN" # Set the variable to new value
+  # shellcheck disable=SC2001
+  atsign="@$(echo "$1" | sed -e 's/"//g' -e 's/^@//g')"
+  echo "$atsign"
 }
 
 norm_version() {
-  KEY="$1" # Get the variable name
-  INPUT=${!KEY} # Get the value of the variable
-  shopt -s extglob
-  OUTPUT=${INPUT#tags\/} # Remove tags prefix if present
-  OUTPUT=${OUTPUT#v} # Remove v prefix if present
-  shopt -u extglob
-  export "${KEY}"="tags/v$OUTPUT" # Add full tags/v prefix
+  version="tags/v$(echo "$1" | sed -e 's/"//g' -e 's/^tags\///g' -e 's/^v//g')"
+  echo "$version"
 }
 
 usage() {
   echo "Usage: $0 [options]"
   echo "General options:"
   echo "  -u, --update                Update all services instead of installing"
+  echo "      --rename                Rename device for client/device pair with the new name"
   echo "  -l, --local <path>          Install using local zip/tgz"
   echo "  -r, --repo <path>           Install using local repo"
   echo "  -h, --help                  Display this help message"
@@ -34,6 +27,15 @@ usage() {
   echo "  -d, --device <address>      Device address (e.g. @alice_device)"
   echo "  -n, --name <device name>    Name of the device"
   echo "  -v, --version <version>     Version to install (default: latest)"
+  echo "      --args <args>           Additional arguments to sshnpd (\"-v\" by default)"
+  echo "      Possible args:"
+  echo "        -s, --[no-]sshpublickey      Update authorized_keys to include public key from sshnp"
+  echo "        -u, --[no-]un-hide           When set, makes various information visible to the manager atSign - e.g. username, version, etc"
+  echo "        -v, --[no-]verbose           More logging"
+  echo ""
+  echo "Rename options:"
+  echo "  -c, --client <address>      Client address (e.g. @alice_client)"
+  echo "  -n, --name <device name>    New name of the device"
 }
 
 parse_args() {
@@ -42,6 +44,10 @@ parse_args() {
     case "$1" in
       -u|--update)
         SSHNP_OP="update"
+        shift 1
+      ;;
+      --rename)
+        SSHNP_OP="rename"
         shift 1
       ;;
       -h|--help)
@@ -96,6 +102,15 @@ parse_args() {
         SSHNP_VERSION="$2"
         shift 2
       ;;
+      --args)
+        if [ $# -lt 0 ]; then
+          echo "Missing argument for $1";
+          exit 1;
+        fi
+        SSHNP_SERVICE_ARGS="$2"
+        SSHNP_SERVICE_ARGS_PARSED=1
+        shift 2
+      ;;
       *)
         echo "Unknown argument: $1"
         exit 1
@@ -103,30 +118,31 @@ parse_args() {
     esac
   done
 
-  if [ "$SSHNP_OP" = "install" ]; then
-    if [ -z "$CLIENT_ATSIGN" ]; then
-      read -rp "Client address (e.g. @alice_client): " CLIENT_ATSIGN;
-    fi
+  case "$SSHNP_OP" in
+    install|rename)
+      if [ -z "$CLIENT_ATSIGN" ]; then
+        read -rp "Client address (e.g. @alice_client): " CLIENT_ATSIGN;
+      fi
 
-    if [ -z "$DEVICE_MANAGER_ATSIGN" ]; then
-      read -rp "Device address (e.g. @alice_device): " DEVICE_MANAGER_ATSIGN;
-    fi
+      if [ "$SSHNP_OP" != 'rename' ] && [ -z "$DEVICE_MANAGER_ATSIGN" ]; then
+        read -rp "Device address (e.g. @alice_device): " DEVICE_MANAGER_ATSIGN;
+      fi
 
-    if [ -z "$SSHNP_DEVICE_NAME" ]; then
-      read -rp "Device name: " SSHNP_DEVICE_NAME;
-    fi
-
-    while [ -z "$SSHNP_DEVICE_NAME" ] ||
-      [ "${#SSHNP_DEVICE_NAME}" -gt 15 ] ||
-      [[ "$SSHNP_DEVICE_NAME" =~ [^a-zA-Z0-9] ]]; do
-        echo "Device name must be between 1 and 15 characters and only contain alphanumeric characters";
+      if [ -z "$SSHNP_DEVICE_NAME" ]; then
         read -rp "Device name: " SSHNP_DEVICE_NAME;
-    done;
+      fi
 
-    norm_atsign CLIENT_ATSIGN
-    norm_atsign DEVICE_MANAGER_ATSIGN
-    echo;
-  fi
+      while [ -z "$SSHNP_DEVICE_NAME" ] ||
+        [ "${#SSHNP_DEVICE_NAME}" -gt 15 ] ||
+        echo "$SSHNP_DEVICE_NAME" |  grep -Eq "[^a-zA-Z0-9_]"; do
+          echo "Device name must be between 1 and 15 characters and only contain alphanumeric characters or \"_\"";
+          read -rp "Device name: " SSHNP_DEVICE_NAME;
+      done;
+
+      CLIENT_ATSIGN="$(norm_atsign "$CLIENT_ATSIGN")"
+      DEVICE_MANAGER_ATSIGN="$(norm_atsign "$DEVICE_MANAGER_ATSIGN")"
+      echo;
+  esac
 }
 
 parse_env() {
@@ -138,7 +154,7 @@ parse_env() {
   if [ -z "$SSHNP_VERSION" ]; then
     SSHNP_VERSION="latest";
   else
-    norm_version SSHNP_VERSION
+    SSHNP_VERSION="$(norm_version "$SSHNP_VERSION")"
   fi
   URL="https://api.github.com/repos/atsign-foundation/sshnoports/releases/$SSHNP_VERSION";
 
@@ -156,7 +172,7 @@ parse_env() {
       ;;
   esac
 
-  if [ "$PLATFORM" == "Unknown" ]; then
+  if [ "$PLATFORM" = "Unknown" ]; then
     echo "Unsupported platform: $(uname)";
     exit 1;
   fi
@@ -170,7 +186,7 @@ parse_env() {
     *) ARCH="Unknown";;
   esac
 
-  if [ "$ARCH" == "Unknown" ]; then
+  if [ "$ARCH" = "Unknown" ]; then
     echo "Unsupported architecture: $(uname -m)";
     exit 1;
   fi
@@ -184,6 +200,12 @@ parse_env() {
     TEMP_PATH=$(date +%s);
   else
     TEMP_PATH="$SSHNP_VERSION"
+  fi
+
+  if [ -z "$SSHNP_SERVICE_ARGS_PARSED" ]; then
+    SSHNP_SERVICE_ARGS="-v";
+  else
+    SSHNP_SERVICE_ARGS="${SSHNP_SERVICE_ARGS//\"/\\\"}";
   fi
 }
 
@@ -220,7 +242,7 @@ download() {
       echo;
       echo "Please try again, or download manually from $DOWNLOAD";
       echo "After downloading manually, run the following command to install:";
-      if [ "$0" == 'bash' ]; then
+      if [ "$0" = 'bash' ]; then
         echo "bash -c \"\$(curl https://getsshnpd.noports.com)\" -- -l <path to $EXT file>";
       else
         echo "  $0 -l <path to $EXT file>";
@@ -267,17 +289,77 @@ setup_main_binaries() {
   echo "Installed binaries: $MAIN_BINARIES";
 }
 
+# Kills the service outright
+kill_service() {
+  killall -q -u "$SSHNP_USER" -r "$BINARY_NAME$CLIENT_ATSIGN$"
+}
+
+# Kills the underlying instance, service will automatically restart
+restart_service() {
+  killall -q -u "$SSHNP_USER" -r "$BINARY_NAME$"
+}
+
+# Rename device given the version of the service file
+rename_device() {
+  case "$SERVICE_RUN_VERSION" in
+    1.*)
+        echo 1
+        # Old format, no NAME= line
+        SERVICE_RUN_LINE=$(grep 'sshnpd ' < "$SSHNPD_SERVICE_BINARY_PATH")
+        OLD_DEVICE_NAME=$(echo "${SERVICE_RUN_LINE// -d /;/}" | cut -d';' -f2 | cut -d '"' -f2)
+
+        # This replace should be fine since it wraps the device name in quotes
+        # all other quotations in v1.0.0 start with a special character (either $ or @)
+        # these characters are not supported by device name format
+        # so this string will never match anything else in the file
+        if [[ "$PLATFORM" = "macos" ]];
+        then
+          sed -i '' "s/\"$OLD_DEVICE_NAME\"/\"$SSHNP_DEVICE_NAME\"/g" "$SSHNPD_SERVICE_BINARY_PATH"
+        else
+          sed -i "s/\"$OLD_DEVICE_NAME\"/\"$SSHNP_DEVICE_NAME\"/g" "$SSHNPD_SERVICE_BINARY_PATH"
+        fi
+      ;;
+    2.*)
+        echo 2
+        # New format, NAME= line
+        SERVICE_RUN_LINE=$(grep 'NAME=' < "$SSHNPD_SERVICE_BINARY_PATH")
+        OLD_DEVICE_NAME=$(echo "$SERVICE_RUN_LINE" | cut -d'=' -f2 | cut -d'"' -f2)
+
+        # Since NAME= is on its own line, we can just replace the whole line
+        if [[ "$PLATFORM" = "macos" ]];
+        then
+          sed -i '' "s/NAME=\"$OLD_DEVICE_NAME\"/NAME=\"$SSHNP_DEVICE_NAME\"/g" "$SSHNPD_SERVICE_BINARY_PATH"
+        else
+          sed -i "s/NAME=\"$OLD_DEVICE_NAME\"/NAME=\"$SSHNP_DEVICE_NAME\"/g" "$SSHNPD_SERVICE_BINARY_PATH"
+        fi
+      ;;
+  esac
+
+  echo "Renamed $OLD_DEVICE_NAME to $SSHNP_DEVICE_NAME"
+}
+
 # Place custom user based scripts
 setup_service() {
   SSHNPD_SERVICE_BINARY_PATH="$HOME_PATH/.local/bin/$BINARY_NAME$CLIENT_ATSIGN";
-  # = is used as the delimiter to avoid escaping / in the path
-  sed -e "s=\$HOME=$HOME_PATH=g" \
-    -e "s/\$1/$DEVICE_MANAGER_ATSIGN/g" \
-    -e "s/\$2/$CLIENT_ATSIGN/g" \
-    -e "s/\$3/$SSHNP_DEVICE_NAME/g" \
-  <"$HOME_PATH/.atsign/temp/$TEMP_PATH/$BINARY_NAME/templates/headless/sshnpd.sh" \
-  >"$SSHNPD_SERVICE_BINARY_PATH";
-  chmod +x "$SSHNPD_SERVICE_BINARY_PATH";
+  SERVICE_RUN_VERSION="$(sed '2!d' "$SSHNPD_SERVICE_BINARY_PATH" | cut -d'v' -f2)"
+
+  if [ "$SSHNP_OP" = 'rename' ] && [ ! -f "$SSHNPD_SERVICE_BINARY_PATH" ]; then
+    echo "Error: trying to rename service, but service binary not found";
+    exit 1;
+  fi
+  if [ "$SSHNP_OP" = 'install' ]; then
+    # Set [SSHNP_SERVICE_ARGS] to include additional arguments to sshnpd
+    sed -e "s=\$HOME=$HOME_PATH=g" \
+      -e "s/\$1/$DEVICE_MANAGER_ATSIGN/g" \
+      -e "s/\$2/$CLIENT_ATSIGN/g" \
+      -e "s/\$3/$SSHNP_DEVICE_NAME/g" \
+      -e "s/\$\*/$SSHNP_SERVICE_ARGS/g" \
+    <"$HOME_PATH/.atsign/temp/$TEMP_PATH/$BINARY_NAME/templates/headless/sshnpd.sh" \
+    >"$SSHNPD_SERVICE_BINARY_PATH";
+    chmod +x "$SSHNPD_SERVICE_BINARY_PATH";
+  elif [ "$SSHNP_OP" = 'rename' ]; then
+    rename device
+  fi
 
   SSHNP_CRON_SCHEDULE="@reboot";
   if command -v tmux >/dev/null; then
@@ -292,55 +374,110 @@ setup_service() {
     LOGROTATE="40 6 * * * logrotate -f $HOME_PATH/.$BINARY_NAME/logs/$CLIENT_ATSIGN.log"
   fi
 
-  if grep -Fxq "$SSHNP_CRON_SCHEDULE $SSHNP_COMMAND" <(crontab -l 2>/dev/null); then
+  CRONTAB_CONTENTS=$(crontab -l 2>/dev/null);
+  PREVIOUS_CRON_ENTRY=$(echo "$CRONTAB_CONTENTS" | grep -Fxq "$SSHNP_CRON_SCHEDULE $SSHNP_COMMAND")
+  if [ -n "$PREVIOUS_CRON_ENTRY" ]; then
     NO_RUN=1;
     echo "Cron job already installed: '$SSHNP_CRON_SCHEDULE $SSHNP_COMMAND'";
   else
-    (crontab -l 2>/dev/null; echo "$SSHNP_CRON_SCHEDULE $SSHNP_COMMAND") | crontab -
+    (echo "$CRONTAB_CONTENTS"; echo "$SSHNP_CRON_SCHEDULE $SSHNP_COMMAND") | crontab -
     echo "Installed cron job: '$SSHNP_CRON_SCHEDULE $SSHNP_COMMAND'";
   fi
 
+
   if [ "$SSHNPD_SERVICE_MECHANISM" = "cron" ]; then
-    if grep -Fxq "$LOGROTATE" <(crontab -l 2>/dev/null); then
+    CRONTAB_CONTENTS=$(crontab -l 2>/dev/null);
+    PREVIOUS_LOGROTATE_ENTRY=$(echo "$CRONTAB_CONTENTS" | grep -Fxq "$LOGROTATE")
+    if [ -n "$PREVIOUS_LOGROTATE_ENTRY" ]; then
       echo "Cron job already installed: '$LOGROTATE'";
     else
-      (crontab -l 2>/dev/null; echo "$LOGROTATE") | crontab -
+      (echo "$CRONTAB_CONTENTS"; echo "$LOGROTATE") | crontab -
       echo "Installed cron job: '$LOGROTATE'";
     fi
+  fi
+
+  SERVICE_LIST_FILE="$HOME_PATH/.$BINARY_NAME/.service_list";
+
+  if [ ! -f "$SERVICE_LIST_FILE" ]; then
+    touch "$SERVICE_LIST_FILE";
+  fi
+
+  PREVIOUS_SERVICE_ENTRY=$(grep "$BINARY_NAME$CLIENT_ATSIGN " < "$SERVICE_LIST_FILE");
+  OTHER_SERVICE_ENTRIES=$(grep -v "$BINARY_NAME$CLIENT_ATSIGN " < "$SERVICE_LIST_FILE");
+
+  if [ -n "$PREVIOUS_SERVICE_ENTRY" ]; then
+    echo "Removing previous service entry: $PREVIOUS_SERVICE_ENTRY";
+    echo "$OTHER_SERVICE_ENTRIES" > "$SERVICE_LIST_FILE";
+  fi
+
+  if [ -n "$PREVIOUS_SERVICE_ENTRY" ] || [ "$SSHNP_OP" = 'install' ] ; then
+    echo "$BINARY_NAME$CLIENT_ATSIGN $SSHNPD_SERVICE_MECHANISM" >> "$SERVICE_LIST_FILE";
+  fi
+
+  if [ -n "$PREVIOUS_SERVICE_ENTRY" ]; then
+    echo "Service entry updated: $BINARY_NAME$CLIENT_ATSIGN $SSHNPD_SERVICE_MECHANISM";
+    echo "Restarting service...";
+    NO_RUN='';
+    PREVIOUS_SERVICE_MECHANISM=$(echo "$PREVIOUS_SERVICE_ENTRY" | cut -d' ' -f2);
+    case "$PREVIOUS_SERVICE_MECHANISM" in
+      cron)
+         kill_service;
+        ;;
+      tmux)
+        tmux kill-session -t "$BINARY_NAME$CLIENT_ATSIGN";
+        ;;
+    esac
+  else
+    echo "Service entry added: $BINARY_NAME$CLIENT_ATSIGN $SSHNPD_SERVICE_MECHANISM";
   fi
 
   if [ -z "$NO_RUN" ]; then
     echo "Starting $BINARY_NAME$CLIENT_ATSIGN service...";
     eval "$SSHNP_COMMAND &"
   fi
-
-  SERVICE_LIST_FILE="$HOME_PATH/.$BINARY_NAME/.service_list";
-  echo "$BINARY_NAME$CLIENT_ATSIGN $SSHNPD_SERVICE_MECHANISM" >> "$SERVICE_LIST_FILE";
 }
 
-# used to restart the service after an update
-restart_service() {
-  killall -q -u "$SSHNP_USER" -r "$BINARY_NAME$"
+do_install() {
+  make_dirs
+  download
+  setup_main_binaries
+  setup_service
+  cleanup
+  echo; echo "Installation complete!";
+}
+
+do_update() {
+  make_dirs
+  download
+  setup_main_binaries
+  cleanup
+  echo; echo "Update complete!";
+  restart_service
+}
+
+do_rename() {
+  setup_service
+  echo; echo "Rename complete!";
 }
 
 # Wrapping install steps prevents issues caused by interrupting the download
 main () {
   parse_env
-  make_dirs
-  download
-
-  setup_main_binaries
-
-  if [ "$SSHNP_OP" = 'install' ]; then
-    setup_service
-  fi
-
-  cleanup
-  echo; echo "Installation complete!";
-
-  if [ "$SSHNP_OP" = 'update' ]; then
-    restart_service
-  fi
+  case "$SSHNP_OP" in
+    install)
+      do_install
+      ;;
+    update)
+      do_update
+      ;;
+    rename)
+      do_rename
+      ;;
+    *)
+      echo "Invalid operation: $SSHNP_OP";
+      exit 1;
+      ;;
+  esac
 }
 
 parse_args "$@";
