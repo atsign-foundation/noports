@@ -1,5 +1,6 @@
 part of 'sshnp.dart';
 
+@visibleForTesting
 class SSHNPImpl implements SSHNP {
   @override
   final AtSignLogger logger = AtSignLogger(' sshnp ');

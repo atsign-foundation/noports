@@ -8,7 +8,6 @@ import 'package:at_utils/at_logger.dart';
 // local packages
 import 'package:sshnoports/sshnp/sshnp.dart';
 import 'package:sshnoports/sshnp/cleanup.dart';
-import 'package:sshnoports/sshnp/sshnp_params.dart';
 
 void main(List<String> args) async {
   AtSignLogger.root_level = 'SHOUT';

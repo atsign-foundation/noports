@@ -1,5 +1,6 @@
 part of 'sshrvd.dart';
 
+@visibleForTesting
 class SSHRVDImpl implements SSHRVD {
   @override
   final AtSignLogger logger = AtSignLogger(' sshrvd ');

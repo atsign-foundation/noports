@@ -1,5 +1,6 @@
 part of 'sshnpd.dart';
 
+@visibleForTesting
 class SSHNPDImpl implements SSHNPD {
   @override
   final AtSignLogger logger = AtSignLogger(' sshnpd ');
