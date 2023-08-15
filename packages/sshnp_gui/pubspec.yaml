@@ -7,35 +7,35 @@ environment:
   sdk: ">=2.17.1 <3.0.0"
 
 dependencies:
+  at_app_flutter: ^5.0.1
+  at_client_mobile: ^3.2.6
+  at_contact: ^3.0.7
+  at_contacts_flutter: ^4.0.5
+  at_onboarding_flutter: ^6.1.0
+  at_utils: ^3.0.11
+  biometric_storage: ^4.1.3
   flutter:
     sdk: flutter
-  at_client_mobile: ^3.2.6
-  at_utils: ^3.0.11
-  path_provider: ^2.0.11
   flutter_dotenv: ^5.0.2
-  at_app_flutter: ^5.0.1
-  at_onboarding_flutter: ^6.1.0
-  biometric_storage: ^4.1.3
-  intl: any
-  at_contacts_flutter: ^4.0.5
-  flutter_riverpod: ^2.3.6
-  go_router: ^9.0.3
   flutter_localizations:
     sdk: flutter
+  flutter_riverpod: ^2.3.6
   flutter_svg: ^2.0.7
-  at_contact: ^3.0.7
+  go_router: ^9.0.3
+  intl: any
+  page_transition: ^2.0.9
+  path_provider: ^2.0.11
   shared_preferences: ^2.2.0
   sshnoports:
     git:
       url: https://github.com/atsign-foundation/sshnoports.git
-      ref: trunk
+      ref: sshnp-with-atclient
       path: packages/sshnoports/
-  page_transition: ^2.0.9
 
 dev_dependencies:
+  flutter_lints: ^2.0.0
   flutter_test:
     sdk: flutter
-  flutter_lints: ^2.0.0
 
 dependency_overrides:
   intl: ^0.17.0-nullsafety.2
@@ -48,4 +48,3 @@ flutter:
     - .env
     - assets/images/nav_icons/
     - assets/images/
-

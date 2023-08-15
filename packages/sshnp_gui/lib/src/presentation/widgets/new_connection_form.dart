@@ -41,6 +41,7 @@ class _NewConnectionFormState extends State<NewConnectionForm> {
   void createNewConnection() async {
     if (_formkey.currentState!.validate()) {
       _formkey.currentState!.save();
+
       final sshnpParams = SSHNPParams(
           clientAtSign: clientAtSign,
           sshnpdAtSign: sshnpdAtSign,

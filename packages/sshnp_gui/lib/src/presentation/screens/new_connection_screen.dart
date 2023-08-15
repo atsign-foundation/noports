@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
-import 'package:sshnoports/sshnp/sshnp_params.dart';
 import 'package:sshnp_gui/src/presentation/widgets/new_connection_form.dart';
 
 import '../../utils/sizes.dart';
@@ -15,10 +14,6 @@ class NewConnectionScreen extends StatefulWidget {
 }
 
 class _NewConnectionScreenState extends State<NewConnectionScreen> {
-  final GlobalKey<FormState> _formkey = GlobalKey<FormState>();
-  bool isVerbose = false;
-  var sshnpParams = SSHNPParams(clientAtSign: '', sshnpdAtSign: '', host: '');
-
   @override
   Widget build(BuildContext context) {
     final strings = AppLocalizations.of(context)!;
