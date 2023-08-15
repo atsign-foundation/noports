@@ -1,20 +1,5 @@
 part of 'sshrv.dart';
 
-String _getSshrvCommand() {
-  late String sshnpDir;
-  List<String> pathList =
-      Platform.resolvedExecutable.split(Platform.pathSeparator);
-  if (pathList.last == 'sshnp' || pathList.last == 'sshnp.exe') {
-    pathList.removeLast();
-    sshnpDir = pathList.join(Platform.pathSeparator);
-
-    return '$sshnpDir${Platform.pathSeparator}sshrv';
-  } else {
-    throw Exception(
-        'sshnp is expected to be run as a compiled executable, not via the dart command, use SSHRV.pureDart() to create SSHRV instead');
-  }
-}
-
 @visibleForTesting
 class SSHRVImpl implements SSHRV<ProcessResult> {
   @override
@@ -26,8 +11,12 @@ class SSHRVImpl implements SSHRV<ProcessResult> {
   const SSHRVImpl(this.host, this.streamingPort);
 
   @override
-  Future<ProcessResult> run() {
-    return Process.run(_getSshrvCommand(), [host, streamingPort.toString()]);
+  Future<ProcessResult> run() async {
+    String? command = await SSHRV.getLocalBinaryPath();
+    if (command == null) {
+      throw Exception('sshrv binary not found');
+    }
+    return Process.run(command, [host, streamingPort.toString()]);
   }
 }
 

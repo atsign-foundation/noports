@@ -12,13 +12,37 @@ abstract class SSHRV<T> {
   /// The port of the host to connect to.
   abstract final int streamingPort;
 
-  static SSHRV<ProcessResult> localBinary(String host, int streamingPort) {
+  Future<T> run();
+
+  // Can't use factory functions since SSHRV contains a generic type
+  static SSHRV localBinary(String host, int streamingPort) {
     return SSHRVImpl(host, streamingPort);
   }
 
-  static SSHRV<SocketConnector> pureDart(String host, int streamingPort) {
+  static SSHRV pureDart(String host, int streamingPort) {
     return SSHRVImplPureDart(host, streamingPort);
   }
 
-  Future<T> run();
+  static Future<SSHRV> preferLocalBinary(String host, int streamingPort) async {
+    String? localBinaryPath = await getLocalBinaryPath();
+    if (localBinaryPath != null) {
+      return localBinary(host, streamingPort);
+    }
+    return pureDart(host, streamingPort);
+  }
+
+  static Future<String?> getLocalBinaryPath() async {
+    String postfix = Platform.isWindows ? '.exe' : '';
+    List<String> pathList =
+        Platform.resolvedExecutable.split(Platform.pathSeparator);
+    bool isExe = (pathList.last == 'sshnp$postfix');
+
+    pathList
+      ..removeLast()
+      ..add('sshrv$postfix');
+
+    File sshrvFile = File(pathList.join(Platform.pathSeparator));
+    bool sshrvExists = await sshrvFile.exists();
+    return (isExe && sshrvExists) ? sshrvFile.absolute.path : null;
+  }
 }
