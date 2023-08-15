@@ -31,7 +31,7 @@ usage() {
   echo "  -d, --device <address>      Device address (e.g. @alice_device)"
   echo "  -n, --name <device name>    Name of the device"
   echo "  -v, --version <version>     Version to install (default: latest)"
-  echo "      --args <args>           Additional arguments to sshnpd ("-v" by default)"
+  echo "      --args <args>           Additional arguments to sshnpd (\"-v\" by default)"
   echo "      Possible args:"
   echo "        -s, --[no-]sshpublickey      Update authorized_keys to include public key from sshnp"
   echo "        -u, --[no-]un-hide           When set, makes various information visible to the manager atSign - e.g. username, version, etc"
@@ -267,6 +267,8 @@ parse_env() {
 
   if [ -z "$SSHNP_SERVICE_ARGS_PARSED" ]; then
     SSHNP_SERVICE_ARGS="-v";
+  else
+    SSHNP_SERVICE_ARGS="${SSHNP_SERVICE_ARGS//\"/\\\"}";
   fi
 }
 

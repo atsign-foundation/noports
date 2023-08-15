@@ -666,7 +666,7 @@ class SSHNPDImpl implements SSHNPD {
             ' -o IdentitiesOnly=yes'
             ' -o BatchMode=yes'
             ' -o ExitOnForwardFailure=yes'
-            ' -o ForkAfterAuthentication=yes'
+            ' -f' // fork after authentication
             ' sleep 15'
         .split(' ');
     logger.info('$sessionId | Executing /usr/bin/ssh ${args.join(' ')}');

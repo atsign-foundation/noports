@@ -242,15 +242,14 @@ make_dirs() {
 # Build the dart binaries from the provided repo
 build_dart_binaries() {
   echo "DEV MODE: Installing from local repo: $SSHNP_DEV_MODE";
-  cp -R "$SSHNP_DEV_MODE/templates/" "$HOME_PATH/.atsign/temp/$BINARY_NAME/templates/";
-  cp "$SSHNP_DEV_MODE"/scripts/* "$HOME_PATH/.atsign/temp/$BINARY_NAME";
+  cp -R "$SSHNP_DEV_MODE/packages/sshnoports/templates/" "$HOME_PATH/.atsign/temp/$BINARY_NAME/templates/";
+  cp "$SSHNP_DEV_MODE"/packages/sshnoports/scripts/* "$HOME_PATH/.atsign/temp/$BINARY_NAME";
 }
 
 # Make a copy of the locally provided archive
 copy_local_archive() {
   echo "DEV MODE: Installing using local $EXT file: $SSHNP_LOCAL";
   cp "$SSHNP_LOCAL" "$HOME_PATH/.atsign/temp/$BINARY_NAME.$EXT";
-  
 }
 
 # Download the release archive
