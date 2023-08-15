@@ -5,7 +5,7 @@
 
 sshnp=$1
 
-cp ~/.atsign/keys/${sshnp}_key.atKeys ../../contexts/sshnp/keys/${sshnp}_key.atKeys
+cp ~/.atsign/keys/"$sshnp"_key.atKeys ../../contexts/sshnp/keys/"$sshnp"_key.atKeys
 
 if [[ ! -f ../../contexts/sshnp/keys/${sshnp}_key.atKeys ]];
 then

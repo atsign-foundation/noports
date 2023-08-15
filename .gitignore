@@ -12,3 +12,6 @@ build/
 
 # Macos
 .DS_Store
+
+# Python
+poetry.lock

@@ -1,4 +1,4 @@
-FROM dart:3.0.5@sha256:65e5f5d6d72ad2f7b32f402c01b5fe8a426455b1ede1e9f840f95a2a8c14afbd AS build-branch
+FROM dart:3.0.7@sha256:faf300f790cadb2e34182dd75c5f14642e21c625396055a16aa967170dfb71d7 AS build-branch
 
 ENV URL=https://github.com/atsign-foundation/sshnoports.git
 ENV REPO_DIR=/app/repo
@@ -20,7 +20,7 @@ RUN set -eux ; \
   dart compile exe ${REPO_DIR}/packages/sshnoports/bin/sshrvd.dart -o ${OUTPUT_DIR}/sshrvd ; \
   dart compile exe ${REPO_DIR}/packages/sshnoports/bin/activate_cli.dart -o ${OUTPUT_DIR}/at_activate ;
 
-FROM dart:3.0.5@sha256:65e5f5d6d72ad2f7b32f402c01b5fe8a426455b1ede1e9f840f95a2a8c14afbd AS build-local
+FROM dart:3.0.7@sha256:faf300f790cadb2e34182dd75c5f14642e21c625396055a16aa967170dfb71d7 AS build-local
 
 ENV REPO_DIR=/app/repo
 ENV OUTPUT_DIR=/app/output
@@ -39,7 +39,7 @@ RUN set -eux ; \
   dart compile exe ${REPO_DIR}/packages/sshnoports/bin/sshrvd.dart -o ${OUTPUT_DIR}/sshrvd ; \
   dart compile exe ${REPO_DIR}/packages/sshnoports/bin/activate_cli.dart -o ${OUTPUT_DIR}/at_activate ;
 
-FROM debian:stable-20230612-slim@sha256:b09f68bffcf9c14f3105f262e92321d05abaf48460d1f43f884325bcd4395b95 AS build-release
+FROM debian:stable-20230725-slim@sha256:c9e860b7a6d51a5f90f4fcb645d789c078f7b9d2cc6ebfd48792e0fea5739c04 AS build-release
 
 ARG release
 
@@ -74,7 +74,7 @@ RUN apt-get update ; \
   cd sshnp ; \
   mv sshnp sshnpd sshrv sshrvd at_activate ${OUTPUT_DIR} ;
 
-FROM debian:stable-20230612-slim@sha256:b09f68bffcf9c14f3105f262e92321d05abaf48460d1f43f884325bcd4395b95 AS base
+FROM debian:stable-20230725-slim@sha256:c9e860b7a6d51a5f90f4fcb645d789c078f7b9d2cc6ebfd48792e0fea5739c04 AS base
 
 ENV USER=atsign
 ENV HOMEDIR=/${USER}
@@ -85,7 +85,7 @@ CMD sudo service ssh start
 
 RUN set -eux ; \
   apt-get update ; \
-  apt-get install -y openssh-server sudo vim nano iproute2 nmap tmux ; \
+  apt-get install -y openssh-server sudo vim nano iproute2 nmap tmux curl cron ; \
   groupadd --gid ${GROUP_ID} ${USER} ; \
   useradd --system --shell /bin/bash --home ${HOMEDIR} --uid ${USER_ID} --gid ${GROUP_ID} ${USER} ; \
   usermod -aG sudo ${USER} ; \
@@ -127,6 +127,66 @@ USER ${USER}
 
 ENTRYPOINT sudo service ssh start && sh ${HOMEDIR}/entrypoint.sh
 
+FROM base AS build-sshnp-installer
+
+USER ${USER}
+WORKDIR ${HOMEDIR}
+
+ENV REPO_DIR=/app/repo
+
+# context must be the root of the repo
+COPY . ${REPO_DIR}
+
+ARG client_atsign
+ARG device_atsign
+ARG host_atsign
+
+RUN set -eux; \
+  sh ${REPO_DIR}/packages/sshnoports/scripts/install_sshnp \
+  -c ${client_atsign} \
+  -d ${device_atsign} \
+  -h ${host_atsign};
+
+FROM build-sshnp-installer AS runtime-sshnp-installer
+
+USER ${USER}
+WORKDIR ${HOMEDIR}
+
+ENV USE_INSTALLER=1
+
+ENTRYPOINT sudo service ssh start && sh ${HOMEDIR}/entrypoint.sh
+
+FROM base AS build-sshnpd-installer
+
+USER ${USER}
+WORKDIR ${HOMEDIR}
+
+ENV REPO_DIR=/app/repo
+ENV USE_INSTALLER=1
+
+# context must be the root of the repo
+COPY . ${REPO_DIR}
+
+ARG client_atsign
+ARG device_atsign
+ARG device_name
+
+RUN set -eux ; \
+  sudo service cron start; \
+  sh ${REPO_DIR}/packages/sshnoports/scripts/install_sshnpd \
+  -c ${client_atsign} \
+  -d ${device_atsign} \
+  -n ${device_name};
+
+FROM build-sshnpd-installer AS runtime-sshnpd-installer
+
+USER ${USER}
+WORKDIR ${HOMEDIR}
+
+ENV USE_INSTALLER=1
+
+ENTRYPOINT sudo service ssh start && sh ${HOMEDIR}/entrypoint.sh
+
 FROM runtime-branch AS manual-branch
 
 ENTRYPOINT sudo service ssh start && bash
@@ -142,10 +202,6 @@ ENTRYPOINT sudo service ssh start && bash
 FROM base AS manual-blank
 
 WORKDIR ${HOMEDIR}
-
-RUN set -eux ; \
-  apt-get update ; \
-  apt-get install -y curl ;
 
 USER ${USER}
 

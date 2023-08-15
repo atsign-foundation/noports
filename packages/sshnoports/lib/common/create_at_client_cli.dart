@@ -32,8 +32,7 @@ Future<AtClient> createAtClientCli({
     ..fetchOfflineNotifications = false
     ..atKeysFilePath = atKeysFilePath
     ..atProtocolEmitted = Version(2, 0, 0)
-    ..rootDomain = rootDomain
-    ;
+    ..rootDomain = rootDomain;
 
   AtOnboardingService onboardingService = AtOnboardingServiceImpl(
       atsign, atOnboardingConfig,
