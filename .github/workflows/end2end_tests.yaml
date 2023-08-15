@@ -267,15 +267,13 @@ jobs:
       max-parallel: 1
       matrix:
         # Leave these empty to avoid unwanted intellisense warnings
-        np: []
-        npd: []
-        rvd: []
-        rvd_atsign: []
-        wait: []
+        np: ["local"]
+        npd: ["v3.2.0"]
+        rvd: [""]
+        rvd_atsign: [""]
+        wait: [""]
 
         include:
-          - np: local
-            npd: v3.2.0
           - np: v3.2.0
             npd: local
     steps:
