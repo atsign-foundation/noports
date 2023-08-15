@@ -26,4 +26,4 @@ build/
 
 # Python
 poetry.lock
-
+__pycache__

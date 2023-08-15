@@ -5,7 +5,8 @@ import subprocess
 from queue import Empty, Queue
 from time import sleep
 from uuid import uuid4
-from paramiko import AutoAddPolicy, SSHClient
+from threading import Event
+from paramiko import SSHClient, WarningPolicy
 from paramiko.ed25519key import Ed25519Key
 
 
@@ -18,20 +19,22 @@ from at_client.util import EncryptionUtil
 from at_client.common.keys import AtKey, Metadata, SharedKey
 from at_client.connections.notification.atevents import AtEvent, AtEventType
 
-#TODO: Figure out all the exception stuff later
-
 
 class SSHNPDClient:
-    #Current opened threads (TODO: clean up threads)
+    #Current opened threads
     threads = []
     
-    def __init__(self, atsign, manager_atsign, device, username, verbose=False ):
+    def __init__(self, atsign, manager_atsign, device, username=None, verbose=False ):  
+        #Threading Stuff
+        self.closing = Event()
+        
         #AtClient Stuff
         self.atsign = atsign
         self.manager_atsign = manager_atsign
         self.device = device
         self.username = username
         self.at_client = AtClient(AtSign(atsign), queue=Queue(maxsize=20), verbose=verbose)
+        self.ssh_client = None
         self.device_namespace = f".{device}.sshnp"
         self.authenticated = False
         
@@ -51,8 +54,10 @@ class SSHNPDClient:
         self.ssh_path = f"{home_dir}/.ssh"
         
     def start(self):
-        username_key = SharedKey(
-        "username", AtSign(self.atsign), AtSign(self.manager_atsign))
+        if self.username:
+            username_key = SharedKey(
+            "username", AtSign(self.atsign), AtSign(self.manager_atsign))
+        
         self.at_client.put(username_key, self.username)
         threading.Thread(target=self.at_client.start_monitor, args=(self.device_namespace,)).start()
         event_thread = threading.Thread(target=self._handle_events, args=(self.at_client.queue,))
@@ -61,10 +66,16 @@ class SSHNPDClient:
         self._handle_notifications(self.at_client.queue, self.sshnp_callback)
         
         
-    def cleanup_threads(self):
-        self.at_client.stop_monitor()
-        for thread in self.threads:
-            thread.join()
+    def stop(self):
+       if not self.authenticated:
+           return
+       else:
+            self.ssh_client.close()
+            self.at_client.stop_monitor()
+            for thread in SSHNPDClient.threads:
+                thread.join()
+            SSHNPDClient.threads.clear()
+        
 
     
     def _handle_notifications(self, queue: Queue, callback):
@@ -125,8 +136,8 @@ class SSHNPDClient:
             raise e
 
 
-    def _handle_events(self, queue: Queue):
-        while True:
+    def _handle_events(self, queue: Queue):  
+        while self.closing:
             try:
                 at_event = queue.get(block=False)
                 event_type = at_event.event_type
@@ -230,7 +241,7 @@ class SSHNPDClient:
 
 
     def _forward_socket(self, tp, dest):
-        while True:
+        while self.closing:
             chan = tp.accept(1000)
             if chan is None:
                 continue
@@ -252,7 +263,7 @@ class SSHNPDClient:
         self.logger.info("ssh session started for " + username + " @ " + hostname + " on port " + port)
         ssh_client = SSHClient()
         ssh_client.load_system_host_keys(f"{self.ssh_path}/known_hosts")
-        ssh_client.set_missing_host_key_policy(AutoAddPolicy())
+        ssh_client.set_missing_host_key_policy(WarningPolicy())
         file_like = StringIO(private_key)
         paramiko_log = logging.getLogger("paramiko.transport")
         paramiko_log.setLevel(self.logger.level)
@@ -282,6 +293,7 @@ class SSHNPDClient:
         #I'll end up doing more with this I think
         except Exception as e:
             raise(e)
+        self.ssh_client = ssh_client
         return True
 
 
