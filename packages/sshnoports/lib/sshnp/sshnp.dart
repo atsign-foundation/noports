@@ -175,8 +175,9 @@ abstract class SSHNP {
     return SSHNPImpl.fromCommandLineArgs(args);
   }
 
-  static Future<SSHNP> fromParams(SSHNPParams p) {
-    return SSHNPImpl.fromParams(p);
+  static Future<SSHNP> fromParams(SSHNPParams p,
+      {SSHRV Function(String, int) sshrvGenerator = SSHRV.localBinary}) {
+    return SSHNPImpl.fromParams(p, sshrvGenerator: sshrvGenerator);
   }
 
   /// Must be run after construction, to complete initialization

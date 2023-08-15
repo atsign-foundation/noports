@@ -185,10 +185,12 @@ class SSHNPImpl implements SSHNP {
 
   static Future<SSHNP> fromCommandLineArgs(List<String> args) {
     var params = SSHNPParams.fromPartial(SSHNPPartialParams.fromArgs(args));
+    // This should never need sshrvGenerator to be set other than default, hence not passed in
     return fromParams(params);
   }
 
-  static Future<SSHNP> fromParams(SSHNPParams p) async {
+  static Future<SSHNP> fromParams(SSHNPParams p,
+      {SSHRV Function(String, int) sshrvGenerator = SSHRV.localBinary}) async {
     try {
       if (p.clientAtSign == null) {
         throw ArgumentError('Option from is mandatory.');
@@ -237,6 +239,7 @@ class SSHNPImpl implements SSHNP {
         sendSshPublicKey: p.sendSshPublicKey,
         remoteUsername: p.remoteUsername,
         verbose: p.verbose,
+        sshrvGenerator: sshrvGenerator,
       );
       if (p.verbose) {
         sshnp.logger.logger.level = Level.INFO;
