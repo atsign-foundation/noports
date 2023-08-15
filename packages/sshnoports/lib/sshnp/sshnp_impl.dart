@@ -477,7 +477,7 @@ class SSHNPImpl implements SSHNP {
 
     // Connect to rendezvous point using background process.
     // sshnp (this program) can then exit without issue.
-    unawaited(Process.run(getSshrvCommand(), [host, _sshrvdPort]));
+    unawaited(SSHRV.localBinary(host, int.parse(_sshrvdPort)).run());
   }
 
   Future<void> generateSshKeys() async {
