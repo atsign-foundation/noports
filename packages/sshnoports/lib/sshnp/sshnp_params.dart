@@ -1,9 +1,4 @@
-import 'dart:io';
-
-import 'package:args/args.dart';
-import 'package:at_utils/at_utils.dart';
-import 'package:sshnoports/common/utils.dart';
-import 'package:sshnoports/sshnp/sshnp_arg.dart';
+part of 'sshnp.dart';
 
 class SSHNPParams {
   /// Required Arguments

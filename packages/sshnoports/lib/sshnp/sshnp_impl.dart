@@ -1,23 +1,4 @@
-import 'dart:async';
-import 'dart:convert';
-import 'dart:io';
-
-import 'package:at_client/at_client.dart';
-import 'package:at_utils/at_logger.dart';
-import 'package:logging/logging.dart';
-import 'package:meta/meta.dart';
-import 'package:sshnoports/common/create_at_client_cli.dart';
-import 'package:sshnoports/sshnp/get_sshrv_command.dart';
-import 'package:sshnoports/common/utils.dart';
-import 'package:sshnoports/sshnp/cleanup.dart';
-import 'package:sshnoports/sshnp/sshnp.dart';
-import 'package:sshnoports/sshnp/sshnp_params.dart';
-import 'package:sshnoports/sshnpd/sshnpd.dart';
-import 'package:sshnoports/sshrvd/sshrvd.dart';
-import 'package:sshnoports/version.dart';
-import 'package:uuid/uuid.dart';
-
-import 'package:at_commons/at_builders.dart';
+part of 'sshnp.dart';
 
 class SSHNPImpl implements SSHNP {
   @override
