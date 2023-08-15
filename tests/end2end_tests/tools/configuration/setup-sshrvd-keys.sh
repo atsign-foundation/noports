@@ -5,7 +5,7 @@
 
 sshrvd=$1
 
-cp ~/.atsign/keys/${sshrvd}_key.atKeys ../../contexts/sshrvd/keys/${sshrvd}_key.atKeys
+cp ~/.atsign/keys/"$sshrvd"_key.atKeys ../../contexts/sshrvd/keys/"$sshrvd"_key.atKeys
 
 if [[ ! -f ../../contexts/sshrvd/keys/${sshrvd}_key.atKeys ]];
 then

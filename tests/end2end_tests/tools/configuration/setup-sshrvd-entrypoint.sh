@@ -16,4 +16,4 @@ then
     prefix="$prefix ''"
 fi
 
-eval $prefix "s/@sshrvdatsign/${sshrvd}/g" ../../contexts/sshrvd/entrypoint.sh
+eval "$prefix" "s/@sshrvdatsign/${sshrvd}/g" ../../contexts/sshrvd/entrypoint.sh
