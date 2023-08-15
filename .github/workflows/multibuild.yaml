@@ -1,9 +1,9 @@
 name: Multibuild
 
-on: 
+on:
   workflow_dispatch:
 
-permissions:  # added using https://github.com/step-security/secure-repo
+permissions: # added using https://github.com/step-security/secure-repo
   contents: read
 
 jobs:
@@ -34,32 +34,43 @@ jobs:
       - run: dart compile exe bin/sshrvd.dart -v -o sshnp/sshrvd
       - run: cp -r templates sshnp/templates
       - run: cp scripts/* sshnp
+      - run: cp LICENSE sshnp
       - run: tar -cvzf tarball/${{ matrix.output-name }}.tgz sshnp
       - uses: actions/upload-artifact@0b7f8abb1508181956e8e162db84b466c27e18ce # v3.1.2
         with:
           name: x64_binaries
-          path: tarball
-  
+          path: ./packages/sshnoports/tarball/${{ matrix.output-name }}.tgz
+          if-no-files-found: error
+
   other_build:
     runs-on: ubuntu-latest
     defaults:
       run:
         working-directory: ./packages/sshnoports
+    strategy:
+      matrix:
+        platform: [linux/arm/v7, linux/arm64, linux/riscv64]
+        include:
+          - platform: linux/arm/v7
+            output-name: sshnp-linux-arm
+          - platform: linux/arm64
+            output-name: sshnp-linux-arm64
+          - platform: linux/riscv64
+            output-name: sshnp-linux-riscv64
     steps:
       - uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9 # v3.5.3
       - uses: docker/setup-qemu-action@2b82ce82d56a2a04d2637cd93a637ae1b359c0a7 # v2.2.0
       - uses: docker/setup-buildx-action@4c0219f9ac95b02789c1075625400b2acbff50b1 # v2.9.1
       - run: |
           docker buildx build -t atsigncompany/sshnptarball -f Dockerfile.package \
-          --platform linux/arm/v7,linux/arm64,linux/riscv64 -o type=tar,dest=bins.tar .
+          --platform ${{ matrix.platform }} -o type=tar,dest=bins.tar .
       - run: mkdir tarballs
       - run: tar -xvf bins.tar -C tarballs
-      - run: mkdir upload
-      - run: cp tarballs/*/*.tgz upload/
       - uses: actions/upload-artifact@0b7f8abb1508181956e8e162db84b466c27e18ce # v3.1.2
         with:
           name: other_binaries
-          path: upload
+          path: ./packages/sshnoports/tarballs/${{ matrix.output-name }}.tgz
+          if-no-files-found: error
 
   notify_on_completion:
     needs: [x64_build, other_build]
@@ -69,5 +80,17 @@ jobs:
         uses: Co-qn/google-chat-notification@3691ccf4763537d6e544bc6cdcccc1965799d056 # v1
         with:
           name: SSH no ports binaries were built by GitHub Action ${{ github.run_number }}
+          url: ${{ secrets.GOOGLE_CHAT_WEBHOOK }}
+          status: ${{ job.status }}
+
+  notify_on_failure:
+    if: failure()
+    needs: [x64_build, other_build]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Google Chat Notification
+        uses: Co-qn/google-chat-notification@3691ccf4763537d6e544bc6cdcccc1965799d056 # v1
+        with:
+          name: SSH no ports binaries build FAILED by GitHub Action ${{ github.run_number }}
           url: ${{ secrets.GOOGLE_CHAT_WEBHOOK }}
           status: ${{ job.status }}

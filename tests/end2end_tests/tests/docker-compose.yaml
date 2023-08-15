@@ -1,0 +1,18 @@
+version: '3'
+networks:
+  sshnp:
+    driver: bridge
+    name: atsigncompany/sshnp-e2e-network-sshnp
+  sshnpd:
+    driver: bridge
+    name: atsigncompany/sshnp-e2e-network-sshnpd
+services:
+  image-runtime-local:
+    build:
+      context: ../../../
+      dockerfile: ./tests/end2end_tests/image/Dockerfile
+      target: runtime-local
+    image: atsigncompany/sshnp-e2e-runtime:local
+    deploy:
+      mode: replicated
+      replicas: 0

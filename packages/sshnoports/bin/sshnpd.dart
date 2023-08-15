@@ -1,21 +1,26 @@
-// dart packages
+import 'dart:async';
 import 'dart:io';
-
-// local packages
-import 'package:sshnoports/sshnpd.dart';
+import 'package:at_utils/at_logger.dart';
+import 'package:sshnoports/sshnpd/sshnpd.dart';
 
 void main(List<String> args) async {
-
-  SSHNPD sshnpd = await SSHNPD.fromCommandLineArgs(args);
+  AtSignLogger.root_level = 'SHOUT';
+  AtSignLogger.defaultLoggingHandler = AtSignLogger.stdErrLoggingHandler;
+  late final SSHNPD sshnpd;
 
   try {
-    await sshnpd.init();
-
-    await sshnpd.run();
-  } catch (error, stackTrace) {
-    stderr.writeln('sshnpd: ${error.toString()}');
-    stderr.writeln('stack trace: ${stackTrace.toString()}');
-    await stderr.flush().timeout(Duration(milliseconds: 100));
+    sshnpd = await SSHNPD.fromCommandLineArgs(args);
+  } on ArgumentError catch (_) {
     exit(1);
   }
+
+  await runZonedGuarded(() async {
+    await sshnpd.init();
+    await sshnpd.run();
+  }, (Object error, StackTrace stackTrace) async {
+    stderr.writeln('Error: ${error.toString()}');
+    stderr.writeln('Stack Trace: ${stackTrace.toString()}');
+    await stderr.flush().timeout(Duration(milliseconds: 100));
+    exit(1);
+  });
 }

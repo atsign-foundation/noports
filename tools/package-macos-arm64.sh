@@ -21,12 +21,12 @@ else
   DART=$(which dart)
 fi
 
-eval "$DART pub upgrade -C $SRC_DIR"
+eval "$DART pub get -C $SRC_DIR"
 
 OUTPUT_DIR_PATH="$ROOT_DIRECTORY/build/macos-arm64"
 OUTPUT_DIR="$OUTPUT_DIR_PATH/sshnp"
 
-rm -r "$OUTPUT_DIR" build/sshnp-macos-arm64.tgz
+rm -r "$OUTPUT_DIR"
 mkdir -p "$OUTPUT_DIR"
 
 eval "$DART compile exe -o $OUTPUT_DIR/sshnpd $SRC_DIR/bin/sshnpd.dart"
@@ -37,5 +37,4 @@ eval "$DART compile exe -o $OUTPUT_DIR/at_activate $SRC_DIR/bin/activate_cli.dar
 
 cp -r "$SRC_DIR/templates" "$OUTPUT_DIR/templates";
 cp "$SRC_DIR"/scripts/* "$OUTPUT_DIR/";
-
-tar czf build/sshnp-macos-arm64.tgz -C "$OUTPUT_DIR_PATH" sshnp
+cp "$SRC_DIR"/LICENSE "$OUTPUT_DIR/";

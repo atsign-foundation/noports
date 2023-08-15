@@ -1,34 +1,17 @@
 {
-    // Use IntelliSense to learn about possible attributes.
-    // Hover to view descriptions of existing attributes.
-    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
-    "version": "0.2.0",
-    "configurations": [
-        {
-            "name": "sshnoports",
-            "cwd": "packages/sshnoports",
-            "request": "launch",
-            "type": "dart"
-        },
-        {
-            "name": "sshnp_gui",
-            "cwd": "packages/sshnp_gui",
-            "request": "launch",
-            "type": "dart"
-        },
-        {
-            "name": "sshnp_gui (profile mode)",
-            "cwd": "packages/sshnp_gui",
-            "request": "launch",
-            "type": "dart",
-            "flutterMode": "profile"
-        },
-        {
-            "name": "sshnp_gui (release mode)",
-            "cwd": "packages/sshnp_gui",
-            "request": "launch",
-            "type": "dart",
-            "flutterMode": "release"
-        }
-    ]
+  // Use IntelliSense to learn about possible attributes.
+  // Hover to view descriptions of existing attributes.
+  // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+  "version": "0.2.0",
+  "configurations": [
+    {
+      // Since there are python tools in the repo, this allows you to run them faster in vscode
+      "name": "Python: Current File",
+      "type": "python",
+      "request": "launch",
+      "program": "${file}",
+      "console": "integratedTerminal",
+      "justMyCode": true
+    }
+  ]
 }

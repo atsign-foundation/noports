@@ -3,12 +3,14 @@
 BINARY_NAME="sshnp";
 
 norm_atsign() {
-  KEY="$1" # Get the variable name
-  INPUT=${!KEY} # Get the value of the variable
-  shopt -s extglob
-  ATSIGN=${INPUT/#?(\@)/\@} # Add @ if missing
-  shopt -u extglob
-  export "${KEY}"="$ATSIGN" # Set the variable to new value
+  # shellcheck disable=SC2001
+  atsign="@$(echo "$1" | sed -e 's/"//g' -e 's/^@//g')"
+  echo "$atsign"
+}
+
+norm_version() {
+  version="tags/v$(echo "$1" | sed -e 's/"//g' -e 's/^tags\///g' -e 's/^v//g')"
+  echo "$version"
 }
 
 usage() {
@@ -23,10 +25,12 @@ usage() {
   echo "  -c, --client <address>      Client address (e.g. @alice_client)"
   echo "  -d, --device <address>      Device address (e.g. @alice_device)"
   echo "  -h, --host <region code>    Default host rendezvous region code (am, eu, ap)"
+  echo "                              Specify an atSign to override with a custom host"
+  echo "  -v, --version <version>     Version to install (default: latest)"
 }
 
 parse_args() {
-   SSHNP_OP="install"
+  SSHNP_OP="install"
   while [ $# -gt 0 ]; do
     case "$1" in
       -u|--update)
@@ -77,6 +81,14 @@ parse_args() {
         HOST_RENDEZVOUS_ATSIGN="$2"
         shift 2
       ;;
+      -v|--version)
+        if [ $# -lt 0 ]; then
+          echo "Missing argument for $1";
+          exit 1;
+        fi
+        SSHNP_VERSION="$2"
+        shift 2
+      ;;
       *)
         echo "Unknown argument: $1"
         exit 1
@@ -95,13 +107,14 @@ parse_args() {
 
     if [ -z "$HOST_RENDEZVOUS_ATSIGN" ]; then
       echo Pick your default region:
-      echo "  am: Americas"
-      echo "  ap: Asia Pacific"
-      echo "  eu: Europe"
+      echo "  am   : Americas"
+      echo "  ap   : Asia Pacific"
+      echo "  eu   : Europe"
+      echo "  @___ : Specify a custom region atSign"
       read -rp "> " HOST_RENDEZVOUS_ATSIGN;
     fi
 
-    while [[ "$HOST_RENDEZVOUS_ATSIGN" != @rv_* ]]; do
+    while ! echo "$HOST_RENDEZVOUS_ATSIGN" | grep  -Eq "@.*"; do
       case "$HOST_RENDEZVOUS_ATSIGN" in
         [Aa][Mm]*)
           HOST_RENDEZVOUS_ATSIGN="@rv_am"
@@ -112,15 +125,18 @@ parse_args() {
         [Aa][Pp]*)
           HOST_RENDEZVOUS_ATSIGN="@rv_ap"
           ;;
+        @*)
+          # Do nothing for custom region
+          ;;
+        *)
+          echo "Invalid region: $HOST_RENDEZVOUS_ATSIGN"
+          read -rp "region: " HOST_RENDEZVOUS_ATSIGN;
+          ;;
       esac
-      if [[ "$HOST_RENDEZVOUS_ATSIGN" != @rv_* ]]; then
-        echo "Invalid region: $HOST_RENDEZVOUS_ATSIGN"
-        read -rp "region: " HOST_RENDEZVOUS_ATSIGN;
-      fi
     done
 
-    norm_atsign CLIENT_ATSIGN
-    norm_atsign DEVICE_MANAGER_ATSIGN
+    CLIENT_ATSIGN="$(norm_atsign "$CLIENT_ATSIGN")"
+    DEVICE_MANAGER_ATSIGN="$(norm_atsign "$DEVICE_MANAGER_ATSIGN")"
     echo;
   fi
 }
@@ -133,6 +149,8 @@ parse_env() {
 
   if [ -z "$SSHNP_VERSION" ]; then
     SSHNP_VERSION="latest";
+  else
+    SSHNP_VERSION="$(norm_version "$SSHNP_VERSION")"
   fi
   URL="https://api.github.com/repos/atsign-foundation/sshnoports/releases/$SSHNP_VERSION";
 
@@ -150,7 +168,7 @@ parse_env() {
       ;;
   esac
 
-  if [ "$PLATFORM" == "Unknown" ]; then
+  if [ "$PLATFORM" = "Unknown" ]; then
     echo "Unsupported platform: $(uname)";
     exit 1;
   fi
@@ -164,7 +182,7 @@ parse_env() {
     *) ARCH="Unknown";;
   esac
 
-  if [ "$ARCH" == "Unknown" ]; then
+  if [ "$ARCH" = "Unknown" ]; then
     echo "Unsupported architecture: $(uname -m)";
     exit 1;
   fi
