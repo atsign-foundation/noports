@@ -5,7 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:go_router/go_router.dart';
 import 'package:sshnoports/common/utils.dart';
-import 'package:sshnoports/sshnp/sshnp_params.dart';
+import 'package:sshnoports/sshnp/sshnp.dart';
 import 'package:sshnp_gui/src/utils/app_router.dart';
 import 'package:sshnp_gui/src/utils/validator.dart';
 

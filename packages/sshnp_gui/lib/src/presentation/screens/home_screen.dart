@@ -6,8 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:sshnoports/sshnp/sshnp.dart';
-import 'package:sshnoports/sshnp/sshnp_impl.dart';
-import 'package:sshnoports/sshnp/sshnp_params.dart';
+import 'package:sshnoports/sshrv/sshrv.dart';
 
 import '../../utils/sizes.dart';
 import '../widgets/app_navigation_rail.dart';
@@ -29,11 +28,13 @@ class _HomeScreenState extends State<HomeScreen> {
       try {
         final sshnpParms = await SSHNPParams.getConfigFilesFromDirectory();
         sshnpList = await Future.wait(sshnpParms
-            .map((e) => SSHNPImpl.fromParams(
+            .map((e) => SSHNP.fromParams(
                   e,
                   atClient: AtClientManager.getInstance().atClient,
+                  sshrvGenerator: SSHRV.pureDart,
                 ))
             .toList());
+
         setState(() {});
       } on PathNotFoundException {
         log('Path Not Found');

@@ -29,7 +29,8 @@ dependencies:
   sshnoports:
     git:
       url: https://github.com/atsign-foundation/sshnoports.git
-      ref: sshnp-with-atclient
+      # ref: sshnp-with-atclient
+      ref: sshrv-pure-dart
       path: packages/sshnoports/
 
 dev_dependencies:
