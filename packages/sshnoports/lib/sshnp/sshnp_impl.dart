@@ -208,7 +208,7 @@ class SSHNPImpl implements SSHNP {
       }
 
       // Check atKeyFile selected exists
-      if (!await fileExists(p.atKeysFilePath)) {
+      if (atClient == null && !await fileExists(p.atKeysFilePath)) {
         throw ('\nUnable to find .atKeys file : ${p.atKeysFilePath}');
       }
 
