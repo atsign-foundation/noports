@@ -2,6 +2,7 @@
 
 BINARY_NAME="sshnpd";
 
+# Prepend an @ to the front of the atsign if missing
 norm_atsign() {
   # shellcheck disable=SC2001
   atsign="@$(echo "$1" | sed -e 's/"//g' -e 's/^@//g')"
@@ -13,6 +14,7 @@ norm_version() {
   echo "$version"
 }
 
+# Print the usage information
 usage() {
   echo "Usage: $0 [options]"
   echo "General options:"
@@ -21,13 +23,15 @@ usage() {
   echo "  -l, --local <path>          Install using local zip/tgz"
   echo "  -r, --repo <path>           Install using local repo"
   echo "  -h, --help                  Display this help message"
+  # Intentionally hidden argument used for debugging
+  # echo "      --cache-temp            Keep the temporary cache created by this script"
   echo ""
   echo "Installation options:"
   echo "  -c, --client <address>      Client address (e.g. @alice_client)"
   echo "  -d, --device <address>      Device address (e.g. @alice_device)"
   echo "  -n, --name <device name>    Name of the device"
   echo "  -v, --version <version>     Version to install (default: latest)"
-  echo "      --args <args>           Additional arguments to sshnpd ("-v" by default)"
+  echo "      --args <args>           Additional arguments to sshnpd (\"-v\" by default)"
   echo "      Possible args:"
   echo "        -s, --[no-]sshpublickey      Update authorized_keys to include public key from sshnp"
   echo "        -u, --[no-]un-hide           When set, makes various information visible to the manager atSign - e.g. username, version, etc"
@@ -38,6 +42,7 @@ usage() {
   echo "  -n, --name <device name>    New name of the device"
 }
 
+# Parse the command-line args
 parse_args() {
   SSHNP_OP="install"
   while [ $# -gt 0 ]; do
@@ -48,6 +53,10 @@ parse_args() {
       ;;
       --rename)
         SSHNP_OP="rename"
+        shift 1
+      ;;
+      --cache-temp)
+        SSHNP_CACHE_TEMP=1
         shift 1
       ;;
       -h|--help)
@@ -117,7 +126,10 @@ parse_args() {
       ;;
     esac
   done
+}
 
+# Prompt for any missing but required arguments
+validate_args() {
   case "$SSHNP_OP" in
     install|rename)
       if [ -z "$CLIENT_ATSIGN" ]; then
@@ -145,6 +157,55 @@ parse_args() {
   esac
 }
 
+# Load requirements statuses into variables
+parse_requirements() {
+  REQ_SSH=$(command -v ssh)
+  REQ_SSHD=$(command -v sshd)
+  REQ_CRON=$(command -v crontab)
+  # REQ_SSH0=$(ssh -o "StrictHostKeyChecking no" -o "PasswordAuthentication no" 0 exit 2>/dev/null; echo $?)
+  if [ -n "$(command -v pgrep)" ]; then
+    REQ_SSHD_SERVICE=$(pgrep sshd)
+    REQ_CRON_SERVICE=$(pgrep cron)
+  else
+    # shellcheck disable=SC2009
+    REQ_SSHD_SERVICE=$(ps -ef | grep -v grep | grep sshd | awk '{print $2}')
+    # shellcheck disable=SC2009
+    REQ_CRON_SERVICE=$(ps -ef | grep -v grep | grep cron | awk '{print $2}')
+  fi
+  REQ_CURL=$(command -v curl)
+  REQ_TMUX=$(command -v tmux)
+  REQ_LOGR=$(command -v logrotate)
+}
+
+# Check the script's requirements
+check_requirements() {
+  if [ -z "$REQ_SSH" ]; then
+    echo "  [X] Missing required dependency: ssh"
+  elif [ -z "$REQ_SSHD" ]; then
+    echo "  [X] Missing required dependency: sshd"
+  elif [ -z "$REQ_SSHD_SERVICE" ]; then
+    echo "  [X] sshd is not running"
+  fi
+  if [ -z "$REQ_CURL" ] && [ -z "$SSHNP_DEV_MODE" ] && [ -z "$SSHNP_LOCAL" ]; then
+    echo "  [X] Missing required dependency: curl"
+  fi
+  if [ -z "$REQ_CURL" ] && [ -z "$SSHNP_DEV_MODE" ] && [ -z "$SSHNP_LOCAL" ]; then
+    echo "  [X] Missing required dependency: curl"
+  fi
+  if [ -z "$REQ_CRON" ]; then
+    echo "  [X] Missing required dependency: cron"
+  elif [ -z "$REQ_CRON_SERVICE" ]; then
+    echo "  [X] cron is not running"
+  fi
+  if [ -z "$REQ_TMUX" ] && [ -z "$REQ_LOGR" ]; then
+    echo "  [X] Missing required dependency"
+    echo "      One of the following dependencies must be installed:"
+    echo "        - tmux"
+    echo "        - logrotate"
+  fi
+}
+
+# Parse the system environment
 parse_env() {
   if [ -z "$SSHNP_USER" ]; then
     SSHNP_USER="$USER";
@@ -191,8 +252,10 @@ parse_env() {
     exit 1;
   fi
 
-  DOWNLOADS=$(curl -s "$URL" | grep browser_download_url | cut -d\" -f4);
-  DOWNLOAD=$(echo "$DOWNLOADS" | grep "$PLATFORM" | grep "$ARCH" | cut -d\" -f4)
+  if [ -z "$SSHNP_LOCAL" ] && [ -z "$SSHNP_DEV_MODE" ]; then
+    DOWNLOADS=$(curl -s "$URL" | grep browser_download_url | cut -d\" -f4);
+    DOWNLOAD=$(echo "$DOWNLOADS" | grep "$PLATFORM" | grep "$ARCH" | cut -d\" -f4)
+  fi
 
   if [ -n "$SSHNP_DEV_MODE" ]; then
     TEMP_PATH=$(date +%s);
@@ -204,13 +267,19 @@ parse_env() {
 
   if [ -z "$SSHNP_SERVICE_ARGS_PARSED" ]; then
     SSHNP_SERVICE_ARGS="-v";
+  else
+    SSHNP_SERVICE_ARGS="${SSHNP_SERVICE_ARGS//\"/\\\"}";
   fi
 }
 
+# Remove the temporary folder generated for processing the download/install
 cleanup() {
-  rm -rf "$HOME_PATH/.atsign/temp/$TEMP_PATH";
+  if [ -z "$SSHNP_CACHE_TEMP" ]; then
+    rm -rf "$HOME_PATH/.atsign/temp/$TEMP_PATH";
+  fi
 }
 
+# Make the necessary directories for sshnpd
 make_dirs() {
   rm -rf "$HOME_PATH/.atsign/temp/$TEMP_PATH";
   mkdir -p "$HOME_PATH/.ssh/" \
@@ -225,16 +294,50 @@ make_dirs() {
   fi
 }
 
-download() {
-  if [ -z "$SSHNP_DEV_MODE" ]; then
-    if [ -n "$SSHNP_LOCAL" ]; then
-      echo "DEV MODE: Installing using local $EXT file: $SSHNP_LOCAL";
-      cp "$SSHNP_LOCAL" "$HOME_PATH/.atsign/temp/$TEMP_PATH/$BINARY_NAME.$EXT";
-    else
-      echo "Downloading $BINARY_NAME from $DOWNLOAD";
-      curl -sL "$DOWNLOAD" -o "$HOME_PATH/.atsign/temp/$TEMP_PATH/$BINARY_NAME.$EXT";
-    fi
+# Build the dart binaries from the provided repo
+build_dart_binaries() {
+  echo "DEV MODE: Installing from local repo: $SSHNP_DEV_MODE";
+  mkdir -p "$HOME_PATH/.atsign/temp/$TEMP_PATH/$BINARY_NAME/templates/"
 
+  cp -R "$SSHNP_DEV_MODE"/packages/sshnoports/templates/* "$HOME_PATH/.atsign/temp/$TEMP_PATH/$BINARY_NAME/templates/";
+  cp "$SSHNP_DEV_MODE"/packages/sshnoports/scripts/* "$HOME_PATH/.atsign/temp/$TEMP_PATH/$BINARY_NAME";
+
+  dart pub get -C "$SSHNP_DEV_MODE/packages/sshnoports"
+
+  dart compile exe "$SSHNP_DEV_MODE/packages/sshnoports/bin/sshnp.dart" -o "$HOME_PATH/.atsign/temp/$TEMP_PATH/$BINARY_NAME/sshnp";
+  dart compile exe "$SSHNP_DEV_MODE/packages/sshnoports/bin/sshnpd.dart" -o "$HOME_PATH/.atsign/temp/$TEMP_PATH/$BINARY_NAME/sshnpd";
+  dart compile exe "$SSHNP_DEV_MODE/packages/sshnoports/bin/sshrv.dart" -o "$HOME_PATH/.atsign/temp/$TEMP_PATH/$BINARY_NAME/sshrv";
+  dart compile exe "$SSHNP_DEV_MODE/packages/sshnoports/bin/sshrvd.dart" -o "$HOME_PATH/.atsign/temp/$TEMP_PATH/$BINARY_NAME/sshrvd";
+  dart compile exe "$SSHNP_DEV_MODE/packages/sshnoports/bin/activate_cli.dart" -o "$HOME_PATH/.atsign/temp/$TEMP_PATH/$BINARY_NAME/at_activate";
+}
+
+# Make a copy of the locally provided archive
+copy_local_archive() {
+  echo "DEV MODE: Installing using local $EXT file: $SSHNP_LOCAL";
+  cp "$SSHNP_LOCAL" "$HOME_PATH/.atsign/temp/$TEMP_PATH/$BINARY_NAME.$EXT";
+}
+
+# Download the release archive
+download_archive() {
+  echo "Downloading $BINARY_NAME from $DOWNLOAD";
+  curl -sL "$DOWNLOAD" -o "$HOME_PATH/.atsign/temp/$TEMP_PATH/$BINARY_NAME.$EXT";
+  if [ ! -f "$HOME_PATH/.atsign/temp/$TEMP_PATH/$BINARY_NAME.$EXT" ]; then
+    echo "Failed to download $BINARY_NAME";
+    echo;
+    echo "Please try again, or download manually from $DOWNLOAD";
+    echo "After downloading manually, run the following command to install:";
+    if [ "$0" == 'bash' ]; then
+      echo "bash -c \"\$(curl https://get$BINARY_NAME.noports.com)\" -- -l <path to $EXT file>";
+    else
+      echo "  $0 -l <path to $EXT file>";
+    fi
+    cleanup
+    exit 1;
+  fi
+}
+
+# Unpack the downloaded / locally provided archive
+unpack_archive() {
     if [ ! -f "$HOME_PATH/.atsign/temp/$TEMP_PATH/$BINARY_NAME.$EXT" ]; then
       echo "Failed to download $BINARY_NAME";
       echo;
@@ -258,23 +361,20 @@ download() {
         ;;
     esac
     mv "$HOME_PATH/.atsign/temp/$TEMP_PATH/sshnp" "$HOME_PATH/.atsign/temp/$TEMP_PATH/$BINARY_NAME"; # Rename the extracted folder
-  fi
+}
 
-  if [ -n "$SSHNP_DEV_MODE" ]; then
-    echo "DEV MODE: Installing from local repo: $SSHNP_DEV_MODE";
-    mkdir -p "$HOME_PATH/.atsign/temp/$TEMP_PATH/$BINARY_NAME/templates/"
-    mkdir -p "$HOME_PATH/.atsign/temp/$TEMP_PATH/$BINARY_NAME/scripts/"
-
-    dart compile exe "$SSHNP_DEV_MODE/packages/sshnoports/bin/sshnp.dart" -o "$HOME_PATH/.atsign/temp/$TEMP_PATH/$BINARY_NAME/sshnp";
-    dart compile exe "$SSHNP_DEV_MODE/packages/sshnoports/bin/sshnpd.dart" -o "$HOME_PATH/.atsign/temp/$TEMP_PATH/$BINARY_NAME/sshnpd";
-    dart compile exe "$SSHNP_DEV_MODE/packages/sshnoports/bin/sshrv.dart" -o "$HOME_PATH/.atsign/temp/$TEMP_PATH/$BINARY_NAME/sshrv";
-    dart compile exe "$SSHNP_DEV_MODE/packages/sshnoports/bin/sshrvd.dart" -o "$HOME_PATH/.atsign/temp/$TEMP_PATH/$BINARY_NAME/sshrvd";
-    dart compile exe "$SSHNP_DEV_MODE/packages/sshnoports/bin/activate_cli.dart" -o "$HOME_PATH/.atsign/temp/$TEMP_PATH/$BINARY_NAME/at_activate";
-
-
-    cp -R "$SSHNP_DEV_MODE/packages/sshnoports/templates/" "$HOME_PATH/.atsign/temp/$TEMP_PATH/$BINARY_NAME/templates/";
-    cp "$SSHNP_DEV_MODE"/packages/sshnoports/scripts/* "$HOME_PATH/.atsign/temp/$TEMP_PATH/$BINARY_NAME";
-  fi
+# Get the main binaries (branches based on the source: download/local/repo)
+get_main_binaries() {
+   if [ -n "$SSHNP_DEV_MODE" ]; then
+    build_dart_binaries
+   else
+    if [ -n "$SSHNP_LOCAL" ]; then
+      copy_local_archive
+    else
+      download_archive
+    fi
+    unpack_archive
+   fi
 }
 
 # Place the actual sshnp binary
@@ -358,7 +458,10 @@ setup_service() {
   elif [ "$SSHNP_OP" = 'rename' ]; then
     rename device
   fi
+}
 
+# Setup the cron job part of the service setup
+setup_service_job() {
   SSHNP_CRON_SCHEDULE="@reboot";
   if command -v tmux >/dev/null; then
     SSHNPD_SERVICE_MECHANISM="tmux";
@@ -393,9 +496,10 @@ setup_service() {
       echo "Installed cron job: '$LOGROTATE'";
     fi
   fi
+}
 
-  SERVICE_LIST_FILE="$HOME_PATH/.$BINARY_NAME/.service_list";
-
+# Setup the service list entry part of the service setup
+setup_service_entry() {
   if [ ! -f "$SERVICE_LIST_FILE" ]; then
     touch "$SERVICE_LIST_FILE";
   fi
@@ -428,31 +532,46 @@ setup_service() {
   else
     echo "Service entry added: $BINARY_NAME$CLIENT_ATSIGN $SSHNPD_SERVICE_MECHANISM";
   fi
+}
 
+# Place custom user based scripts
+setup_service() {
+  # Files used by the setup functions below
+  SSHNPD_SERVICE_BINARY_PATH="$HOME_PATH/.local/bin/$BINARY_NAME$CLIENT_ATSIGN";
+  SERVICE_LIST_FILE="$HOME_PATH/.$BINARY_NAME/.service_list";
+
+  setup_service_script
+  setup_service_job
+  setup_service_entry
+
+  # Will start the service if needed (determine by the previous setup functions)
   if [ -z "$NO_RUN" ]; then
     echo "Starting $BINARY_NAME$CLIENT_ATSIGN service...";
     eval "$SSHNP_COMMAND &"
   fi
 }
 
+# Install a new sshnpd instance
 do_install() {
   make_dirs
-  download
+  get_main_binaries
   setup_main_binaries
   setup_service
   cleanup
   echo; echo "Installation complete!";
 }
 
+# Perform an update of all the sshnpd on the local user
 do_update() {
   make_dirs
-  download
+  get_main_binaries
   setup_main_binaries
   cleanup
   echo; echo "Update complete!";
   restart_service
 }
 
+# Perform a rename of an sshnpd instance
 do_rename() {
   setup_service
   echo; echo "Rename complete!";
@@ -460,6 +579,14 @@ do_rename() {
 
 # Wrapping install steps prevents issues caused by interrupting the download
 main () {
+  parse_requirements
+  REQ_ERRORS=$(check_requirements)
+  if [ -n "$REQ_ERRORS" ] ; then
+    echo "[ERROR] System failed to meet the following requirements:"
+    echo "$REQ_ERRORS"
+    exit 1
+  fi
+  validate_args
   parse_env
   case "$SSHNP_OP" in
     install)
