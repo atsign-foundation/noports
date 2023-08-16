@@ -1,4 +1,4 @@
-FROM dart:3.0.7@sha256:faf300f790cadb2e34182dd75c5f14642e21c625396055a16aa967170dfb71d7 AS build-branch
+FROM dart:3.0.7@sha256:3e69d201d73960f8a7e6fb0ee7467ade1495659676a7c09353a39fdb77852b97 AS build-branch
 
 ENV URL=https://github.com/atsign-foundation/sshnoports.git
 ENV REPO_DIR=/app/repo
@@ -20,7 +20,7 @@ RUN set -eux ; \
   dart compile exe ${REPO_DIR}/packages/sshnoports/bin/sshrvd.dart -o ${OUTPUT_DIR}/sshrvd ; \
   dart compile exe ${REPO_DIR}/packages/sshnoports/bin/activate_cli.dart -o ${OUTPUT_DIR}/at_activate ;
 
-FROM dart:3.0.7@sha256:faf300f790cadb2e34182dd75c5f14642e21c625396055a16aa967170dfb71d7 AS build-local
+FROM dart:3.0.7@sha256:3e69d201d73960f8a7e6fb0ee7467ade1495659676a7c09353a39fdb77852b97 AS build-local
 
 ENV REPO_DIR=/app/repo
 ENV OUTPUT_DIR=/app/output
