@@ -27,3 +27,5 @@ build/
 # Python
 poetry.lock
 __pycache__
+
+.env

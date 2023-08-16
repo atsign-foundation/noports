@@ -17,17 +17,19 @@
       "name": "Python: SSHNPD",
       "type": "python",
       "request": "launch",
-      "cwd": "packages/sshnpdpy/",
-      "program": "sshnpd.py",
+      "cwd": "",
+      "program": "packages/sshnpdpy/sshnpd.py",
       "console": "integratedTerminal",
       "justMyCode": true,
-      //replace your arguments with the ones you want to use
+      "envFile": "${workspaceFolder}/.env",
+      //put your args in a .env 
       "args": [
-        "--atsign", "@chess69",
-        "--manager", "@chess69lovely",
-        "--device", "dev",
-        "--username", "xavier"
-      ]
+        "--atsign", "${env:ATSIGN}",
+        "--manager", "${env:MANAGER}",
+        "--device", "${env:DEVICE}",
+        "--username", "${env:USERNAME}"
+      ],
+      
     }
   ]
 }
