@@ -39,7 +39,7 @@ RUN set -eux ; \
   dart compile exe ${REPO_DIR}/packages/sshnoports/bin/sshrvd.dart -o ${OUTPUT_DIR}/sshrvd ; \
   dart compile exe ${REPO_DIR}/packages/sshnoports/bin/activate_cli.dart -o ${OUTPUT_DIR}/at_activate ;
 
-FROM debian:stable-20230725-slim@sha256:c9e860b7a6d51a5f90f4fcb645d789c078f7b9d2cc6ebfd48792e0fea5739c04 AS build-release
+FROM debian:stable-20230814-slim@sha256:6fe30b9cb71d604a872557be086c74f95451fecd939d72afe3cffca3d9e60607 AS build-release
 
 ARG release
 
@@ -74,7 +74,7 @@ RUN apt-get update ; \
   cd sshnp ; \
   mv sshnp sshnpd sshrv sshrvd at_activate ${OUTPUT_DIR} ;
 
-FROM debian:stable-20230725-slim@sha256:c9e860b7a6d51a5f90f4fcb645d789c078f7b9d2cc6ebfd48792e0fea5739c04 AS base
+FROM debian:stable-20230814-slim@sha256:6fe30b9cb71d604a872557be086c74f95451fecd939d72afe3cffca3d9e60607 AS base
 
 ENV USER=atsign
 ENV HOMEDIR=/${USER}
