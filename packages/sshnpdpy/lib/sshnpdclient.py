@@ -1,6 +1,6 @@
 from io import StringIO
 import logging
-import os, threading
+import os, threading, getpass
 import subprocess
 from queue import Empty, Queue
 from time import sleep
@@ -55,10 +55,7 @@ class SSHNPDClient:
         
     def start(self):
         if self.username:
-            username_key = SharedKey(
-            "username", AtSign(self.atsign), AtSign(self.manager_atsign))
-        
-        self.at_client.put(username_key, self.username)
+            self._set_username()
         threading.Thread(target=self.at_client.start_monitor, args=(self.device_namespace,)).start()
         event_thread = threading.Thread(target=self._handle_events, args=(self.at_client.queue,))
         event_thread.start()
@@ -75,6 +72,14 @@ class SSHNPDClient:
             for thread in SSHNPDClient.threads:
                 thread.join()
             SSHNPDClient.threads.clear()
+            
+            
+    def _set_username(self):
+        username = getpass.getuser()
+        username_key = SharedKey(
+            "username", AtSign(self.atsign), AtSign(self.manager_atsign))
+        self.at_client.put(username_key, username)
+        self.username = username
         
 
     

@@ -9,7 +9,7 @@ def main():
     parser.add_argument("-m", "--manager", dest="manager_atsign", type=str, help="Client Atsign (sshnp's atsign)")
     parser.add_argument("-a", "--atsign", dest="atsign", type=str, help="Device Atsign (sshnpd's atsign)")
     parser.add_argument("-d", "--device", dest="device", type=str, help="Device Name")
-    parser.add_argument("-u", "--username", dest="username", type=str, help="Username", default="default")
+    parser.add_argument("-u",  action='store_true', dest="username",  help="Username", default="default")
     parser.add_argument("-v", action='store_true', dest="verbose", help="Verbose")
     
     args = parser.parse_args()
