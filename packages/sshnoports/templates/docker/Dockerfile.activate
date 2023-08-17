@@ -21,9 +21,6 @@ ENV GROUP_ID=1024
 COPY --from=buildimage --chown=${USER}:${USER} /usr/local/at/at_activate /usr/local/at/
 WORKDIR ${HOMEDIR}
 
-ARG ATSIGN
-ARG CRAMKEY
-
 RUN \
   set -eux ; \
   apt-get update ; \
@@ -35,6 +32,4 @@ RUN \
   usermod -aG sudo ${USER} ;
 
 USER ${USER}
-RUN /usr/local/at/at_activate -a "${ATSIGN}" -c "${CRAMKEY}" ;
-
-
+ENTRYPOINT [ "/usr/local/at/at_activate" ]

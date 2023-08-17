@@ -8,15 +8,13 @@ services:
     build:
       context: ../../
       dockerfile: ./templates/docker/Dockerfile.activate
-      args:
-        - ATSIGN=@sshnpdatsign
-        - CRAMKEY=from-my.atsign.com-under-advanced-settings
     volumes:
       - keys:/atsign/.atsign/keys
+    command: -a "@sshnpdatsign" -c "from-my.atsign.com-under-advanced-settings"
   sshnpd:
     image: atsigncompany/sshnpd:latest
-    command: -a "@sshnpdatsign" -m "@sshnpatsign" -d "devicename" -s -u -v
     volumes:
       - keys:/atsign/.atsign/keys
+    command: -a "@sshnpdatsign" -m "@sshnpatsign" -d "devicename" -s -u -v
     depends_on:
       - activate
