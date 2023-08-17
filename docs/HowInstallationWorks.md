@@ -1,6 +1,6 @@
-# Bash Installer
+# How Installation Works
 
-A look behind the scenes of the bash installers for sshnp and sshnpd.
+Installation spec for sshnp and sshnpd.
 
 ## Shared
 
