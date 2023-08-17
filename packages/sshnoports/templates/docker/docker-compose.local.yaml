@@ -9,13 +9,14 @@ services:
       dockerfile: ./templates/docker/Dockerfile.activate
     volumes:
       - keys:/atsign/.atsign/keys
-    command: -a "@sshnpdatsign" -c "from-my.atsign.com-under-advanced-settings"
+    command: -a "${TO}" -c "${TO_CRAM}"
   sshnpd:
     build:
       context: ../../
       dockerfile: ./templates/docker/Dockerfile
     volumes:
       - keys:/atsign/.atsign/keys
-    command: -a "@sshnpdatsign" -m "@sshnpatsign" -d "devicename" -s -u -v
+    command: -a "${TO}" -m "${FROM}" -d "${DEVICE}" -s -u -v
     depends_on:
-      - activate
+      activate:
+        condition: service_completed_successfully
