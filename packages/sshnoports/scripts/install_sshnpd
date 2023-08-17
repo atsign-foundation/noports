@@ -266,6 +266,12 @@ parse_env() {
   fi
 
   if [ -z "$SSHNP_SERVICE_ARGS_PARSED" ]; then
+    echo "Warning: For security reasons, as of v3.5.0 the installer no longer sets -u and -s"
+    echo "  -s when set, will update authorized_keys to include public key from sshnp"
+    echo "  -u when set, makes various information visible to the manager atSign - e.g. username, version, etc"
+    echo "  -v when set, enables more logging (on by default)"
+    echo "To pass additional arguments to sshnpd at install time, use --args"
+    echo "  e.g. <rest of install command> --args \"-s -u -v\""
     SSHNP_SERVICE_ARGS="-v";
   else
     SSHNP_SERVICE_ARGS="${SSHNP_SERVICE_ARGS//\"/\\\"}";
