@@ -37,7 +37,7 @@ a device atSign and a manager atSign, but each device can also have a unique
 device name using the --device argument.
 
 Once in place you can start up the daemon first on the remote device.
-Remember to start the daemon on start up using rc.local script or similar, examples can be found in the scripts directory in this repo and in the release tar files.
+Remember to start the daemon on start up using rc.local script or similar, examples can be found in the templates directory in this package and in the release tar files.
 The daemon machine has to be running sshd even if only listening on localhost on an open port.
 
 `sshnpd.sh` : bash script
@@ -107,7 +107,7 @@ to see the logs (-v).
 The daemon can also be deployed as part of a pre-built docker container,
 that also has a number of networking tools installed. The container image
 is located on Dockerhub as `atsigncompany/sshnpd:latest` or you can build
-your own using the Dockerfile in the root of the project.
+your own using the [Dockerfile](templates/docker/Dockerfile) in the templates folder.
 
 The image expects to have the atKeys for the atSign being used in the
 `/atsign/.atsign/keys` directory, this can be mounted as a volume at startup
