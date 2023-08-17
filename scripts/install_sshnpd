@@ -436,7 +436,7 @@ rename_device() {
 }
 
 # Place custom user based scripts
-setup_service() {
+setup_service_script() {
   SSHNPD_SERVICE_BINARY_PATH="$HOME_PATH/.local/bin/$BINARY_NAME$CLIENT_ATSIGN";
   SERVICE_RUN_VERSION="$(sed '2!d' "$SSHNPD_SERVICE_BINARY_PATH" | cut -d'v' -f2)"
 
