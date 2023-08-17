@@ -1,0 +1,22 @@
+version: "3.0"
+
+volumes:
+  keys:
+    driver: local
+services:
+  activate:
+    build:
+      context: ../../
+      dockerfile: ./templates/docker/Dockerfile.activate
+      args:
+        - ATSIGN=@sshnpdatsign
+        - CRAMKEY=from-my.atsign.com-under-advanced-settings
+    volumes:
+      - keys:/atsign/.atsign/keys
+  sshnpd:
+    image: atsigncompany/sshnpd:latest
+    command: -a "@sshnpdatsign" -m "@sshnpatsign" -d "devicename" -s -u -v
+    volumes:
+      - keys:/atsign/.atsign/keys
+    depends_on:
+      - activate
