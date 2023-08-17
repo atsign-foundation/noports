@@ -264,16 +264,15 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
-      max-parallel: 1
       matrix:
         # Leave these empty to avoid unwanted intellisense warnings
-        np: ["local"]
-        npd: ["v3.2.0"]
         rvd: [""]
         rvd_atsign: [""]
-        wait: [""]
-
         include:
+          - np: local
+            npd: v3.2.0
+            wait: 300
+
           - np: v3.2.0
             npd: local
     steps:

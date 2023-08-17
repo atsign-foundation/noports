@@ -28,26 +28,27 @@ class SSHNPParams {
   late final String? remoteUsername;
   late final bool verbose;
   late final String rootDomain;
+  late final bool legacyDaemon;
 
   /// Special Arguments
   late final bool listDevices;
 
-  SSHNPParams({
-    required this.clientAtSign,
-    required this.sshnpdAtSign,
-    required this.host,
-    this.device = 'default',
-    this.port = '22',
-    this.localPort = '0',
-    this.sendSshPublicKey = 'false',
-    this.localSshOptions = const [],
-    this.verbose = false,
-    this.rsa = false,
-    this.remoteUsername,
-    String? atKeysFilePath,
-    this.rootDomain = 'root.atsign.org',
-    this.listDevices = false,
-  }) {
+  SSHNPParams(
+      {required this.clientAtSign,
+      required this.sshnpdAtSign,
+      required this.host,
+      this.device = 'default',
+      this.port = '22',
+      this.localPort = '0',
+      this.sendSshPublicKey = 'false',
+      this.localSshOptions = const [],
+      this.verbose = false,
+      this.rsa = false,
+      this.remoteUsername,
+      String? atKeysFilePath,
+      this.rootDomain = 'root.atsign.org',
+      this.listDevices = false,
+      required this.legacyDaemon}) {
     // Do we have a username ?
     username = getUserName(throwIfNull: true)!;
 
@@ -70,21 +71,21 @@ class SSHNPParams {
     partial.host ?? (logger.severe('host is null'));
 
     return SSHNPParams(
-      clientAtSign: partial.clientAtSign,
-      sshnpdAtSign: partial.sshnpdAtSign,
-      host: partial.host,
-      device: partial.device ?? 'default',
-      port: partial.port ?? '22',
-      localPort: partial.localPort ?? '0',
-      sendSshPublicKey: partial.sendSshPublicKey ?? 'false',
-      localSshOptions: partial.localSshOptions,
-      rsa: partial.rsa ?? false,
-      verbose: partial.verbose ?? false,
-      remoteUsername: partial.remoteUsername,
-      atKeysFilePath: partial.atKeysFilePath,
-      rootDomain: partial.rootDomain ?? 'root.atsign.org',
-      listDevices: partial.listDevices,
-    );
+        clientAtSign: partial.clientAtSign,
+        sshnpdAtSign: partial.sshnpdAtSign,
+        host: partial.host,
+        device: partial.device ?? 'default',
+        port: partial.port ?? '22',
+        localPort: partial.localPort ?? '0',
+        sendSshPublicKey: partial.sendSshPublicKey ?? 'false',
+        localSshOptions: partial.localSshOptions,
+        rsa: partial.rsa ?? false,
+        verbose: partial.verbose ?? false,
+        remoteUsername: partial.remoteUsername,
+        atKeysFilePath: partial.atKeysFilePath,
+        rootDomain: partial.rootDomain ?? 'root.atsign.org',
+        listDevices: partial.listDevices,
+        legacyDaemon: partial.legacyDaemon ?? true);
   }
 
   factory SSHNPParams.fromConfigFile(String fileName) {
@@ -177,6 +178,7 @@ class SSHNPPartialParams {
   late final String? remoteUsername;
   late final bool? verbose;
   late final String? rootDomain;
+  late final bool? legacyDaemon;
 
   /// Special Params
   // N.B. config file is a meta param and doesn't need to be included
@@ -185,22 +187,22 @@ class SSHNPPartialParams {
   // Non param variables
   static final ArgParser parser = _createArgParser();
 
-  SSHNPPartialParams({
-    this.clientAtSign,
-    this.sshnpdAtSign,
-    this.host,
-    this.device,
-    this.port,
-    this.localPort,
-    this.atKeysFilePath,
-    this.sendSshPublicKey,
-    this.localSshOptions = const [],
-    this.rsa,
-    this.remoteUsername,
-    this.verbose,
-    this.rootDomain,
-    this.listDevices = false,
-  });
+  SSHNPPartialParams(
+      {this.clientAtSign,
+      this.sshnpdAtSign,
+      this.host,
+      this.device,
+      this.port,
+      this.localPort,
+      this.atKeysFilePath,
+      this.sendSshPublicKey,
+      this.localSshOptions = const [],
+      this.rsa,
+      this.remoteUsername,
+      this.verbose,
+      this.rootDomain,
+      this.listDevices = false,
+      this.legacyDaemon = true});
 
   factory SSHNPPartialParams.empty() {
     return SSHNPPartialParams();
@@ -227,6 +229,7 @@ class SSHNPPartialParams {
       verbose: params2.verbose ?? params1.verbose,
       rootDomain: params2.rootDomain ?? params1.rootDomain,
       listDevices: params2.listDevices || params1.listDevices,
+      legacyDaemon: params2.legacyDaemon ?? params1.legacyDaemon,
     );
   }
 
@@ -246,6 +249,7 @@ class SSHNPPartialParams {
       verbose: args['verbose'],
       rootDomain: args['root-domain'],
       listDevices: args['list-devices'] ?? false,
+      legacyDaemon: args['legacy-daemon'],
     );
   }
 
