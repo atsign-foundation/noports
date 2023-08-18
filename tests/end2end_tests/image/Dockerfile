@@ -142,7 +142,7 @@ ARG device_atsign
 ARG host_atsign
 
 RUN set -eux; \
-  sh ${REPO_DIR}/packages/sshnoports/scripts/install_sshnp \
+  sh ${REPO_DIR}/scripts/install_sshnp \
   -c ${client_atsign} \
   -d ${device_atsign} \
   -h ${host_atsign};
@@ -174,7 +174,7 @@ ARG device_name
 RUN set -eux ; \
   sudo service cron start; \
   sudo service ssh start; \
-  sh ${REPO_DIR}/packages/sshnoports/scripts/install_sshnpd \
+  sh ${REPO_DIR}/scripts/install_sshnpd \
   -c ${client_atsign} \
   -d ${device_atsign} \
   -n ${device_name};
