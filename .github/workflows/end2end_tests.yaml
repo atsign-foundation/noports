@@ -35,7 +35,6 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
-      max-parallel: 8
       matrix:
         np: [local, trunk, installer]
         npd: [local, trunk]
@@ -54,27 +53,37 @@ jobs:
             npd: latest
             rvd: local
             rvd_atsign: "@8485wealthy51"
-          ### INSTALLER TESTS ###
+          ### SSHNPD INSTALLER TESTS ###
           - np: local
             npd: installer
             wait: 30
+
           - np: trunk
             npd: installer
             wait: 30
+
           - np: installer
             npd: installer
+            wait: 30
+
+          - np: installer-trunk
+            npd: installer-trunk
             wait: 30
           ### BACKWARD TESTS WITHOUT SYNC ###
           - np: local
             npd: latest
-
           - np: latest
             npd: local
 
           - np: local
             npd: v3.3.0
-
           - np: v3.3.0
+            npd: local
+
+          ### BACKWARD TESTS WITH SYNC ###
+          - np: local
+            npd: v3.2.0
+          - np: v3.2.0
             npd: local
     steps:
       - name: Show Matrix Values
@@ -117,199 +126,6 @@ jobs:
           cat sshnp/entrypoint.sh
           cat sshnpd/entrypoint.sh
           cat sshrvd/entrypoint.sh
-
-      - name: Store lists in env
-        run: |
-
-      - name: Add runtime-release image to docker-compose.yaml
-        working-directory: tests/end2end_tests/tests
-        if: ${{ contains(env.RELEASES, matrix.np) || contains(env.RELEASES, matrix.npd) || (matrix.rvd && contains(env.RELEASES, matrix.rvd)) }}
-        run: |
-          cat service-image-runtime-release.yaml >> docker-compose.yaml
-          if [ "${{contains(env.RELEASES, matrix.np)}}" = true ]; then
-            echo '        - release=${{ matrix.np }}' >> docker-compose.yaml
-            echo '    image: atsigncompany/sshnp-e2e-runtime:${{ matrix.np }}' >> docker-compose.yaml
-          elif [ "${{contains(env.RELEASES, matrix.npd)}}" = true ]; then
-            echo '        - release=${{ matrix.npd }}' >> docker-compose.yaml
-            echo '    image: atsigncompany/sshnp-e2e-runtime:${{ matrix.npd }}' >> docker-compose.yaml
-          elif [ "${{contains(env.RELEASES, matrix.rvd)}}" = true ]; then
-            echo '        - release=${{ matrix.rvd }}' >> docker-compose.yaml
-            echo '    image: atsigncompany/sshnp-e2e-runtime:${{ matrix.rvd }}' >> docker-compose.yaml
-          fi
-
-      - name: Add runtime-branch image to docker-compose.yaml
-        working-directory: tests/end2end_tests/tests
-        if: ${{ contains(env.BRANCHES, matrix.np) || contains(env.BRANCHES, matrix.npd) || (matrix.rvd && contains(env.BRANCHES, matrix.rvd)) }}
-        run: |
-          cat service-image-runtime-branch.yaml >> docker-compose.yaml
-          if [ "${{contains(env.BRANCHES, matrix.np)}}" = true ]; then
-            echo '        - branch=${{ matrix.np }}' >> docker-compose.yaml
-            echo '    image: atsigncompany/sshnp-e2e-runtime:${{ matrix.np }}' >> docker-compose.yaml
-          elif [ "${{contains(env.BRANCHES, matrix.npd)}}" = true ]; then
-            echo '        - branch=${{ matrix.npd }}' >> docker-compose.yaml
-            echo '    image: atsigncompany/sshnp-e2e-runtime:${{ matrix.npd }}' >> docker-compose.yaml
-          elif [ "${{contains(env.BRANCHES, matrix.rvd)}}" = true ]; then
-            echo '        - branch=${{ matrix.rvd }}' >> docker-compose.yaml
-            echo '    image: atsigncompany/sshnp-e2e-runtime:${{ matrix.rvd }}' >> docker-compose.yaml
-          fi
-
-      - name: Add runtime-sshnp-installer image to docker-compose.yaml
-        working-directory: tests/end2end_tests/tests
-        if: ${{ matrix.np == 'installer' }}
-        run: |
-          cat service-image-runtime-sshnp-installer.yaml >> docker-compose.yaml
-          echo '        - client_atsign="${{ env.SSHNP_ATSIGN }}"' >> docker-compose.yaml
-          echo '        - device_atsign="${{ env.SSHNPD_ATSIGN }}"' >> docker-compose.yaml
-          echo '        - host_atsign="${{ matrix.rvd_atsign || env.DEFAULT_RVD_ATSIGN }}"' >> docker-compose.yaml
-          echo '    image: atsigncompany/sshnp-e2e-runtime:sshnp-installer' >> docker-compose.yaml
-
-      - name: Add runtime-sshnpd-installer image to docker-compose.yaml
-        working-directory: tests/end2end_tests/tests
-        if: ${{ matrix.npd == 'installer' }}
-        run: |
-          cat service-image-runtime-sshnpd-installer.yaml >> docker-compose.yaml
-          echo '        - client_atsign="${{ env.SSHNP_ATSIGN }}"' >> docker-compose.yaml
-          echo '        - device_atsign="${{ env.SSHNPD_ATSIGN }}"' >> docker-compose.yaml
-          echo '        - device_name=${{ github.run_id }}${{ github.run_attempt }}${{ strategy.job-index }}' >> docker-compose.yaml
-          echo '    image: atsigncompany/sshnp-e2e-runtime:sshnpd-installer' >> docker-compose.yaml
-
-      - name: Add container-sshnp to docker-compose.yaml
-        working-directory: tests/end2end_tests/tests
-        run: |
-          cat service-container-sshnp.yaml >> docker-compose.yaml
-          if [ "${{ matrix.np }}" = 'installer' ]; then
-            echo '    image: atsigncompany/sshnp-e2e-runtime:sshnp-installer' >> docker-compose.yaml
-          else
-            echo '    image: atsigncompany/sshnp-e2e-runtime:${{ matrix.np }}' >> docker-compose.yaml
-          fi
-          echo '    depends_on:' >> docker-compose.yaml
-          echo '      - container-sshnpd' >> docker-compose.yaml
-          if [ "${{contains(env.RELEASES, matrix.np)}}" = true ]; then
-            echo '      - image-runtime-release' >> docker-compose.yaml
-          elif [ "${{contains(env.BRANCHES, matrix.np)}}" = true ]; then
-            echo '      - image-runtime-branch' >> docker-compose.yaml
-          elif [ "${{ matrix.np }}" = 'installer' ]; then
-            echo '      - image-runtime-sshnp-installer' >> docker-compose.yaml
-          else
-            echo '      - image-runtime-local' >> docker-compose.yaml
-          fi
-
-      - name: Add container-sshnpd to docker-compose.yaml
-        working-directory: tests/end2end_tests/tests
-        run: |
-          cat service-container-sshnpd.yaml >> docker-compose.yaml
-          if [ "${{ matrix.npd }}" = 'installer' ]; then
-            echo '    image: atsigncompany/sshnp-e2e-runtime:sshnpd-installer' >> docker-compose.yaml
-          else
-            echo '    image: atsigncompany/sshnp-e2e-runtime:${{ matrix.npd }}' >> docker-compose.yaml
-          fi
-          echo '    depends_on:' >> docker-compose.yaml
-          if [ "${{ matrix.rvd }}" = true ]; then
-            echo '      - container-sshrvd' >> docker-compose.yaml
-          fi
-          if [ "${{contains(env.RELEASES, matrix.npd)}}" = true ]; then
-            echo '      - image-runtime-release' >> docker-compose.yaml
-          elif [ "${{contains(env.BRANCHES, matrix.npd)}}" = true ]; then
-            echo '      - image-runtime-branch' >> docker-compose.yaml
-          elif [ "${{ matrix.npd }}" = 'installer' ]; then
-            echo '      - image-runtime-sshnpd-installer' >> docker-compose.yaml
-          else
-            echo '      - image-runtime-local' >> docker-compose.yaml
-          fi
-
-      - name: Add container-sshrvd to docker-compose.yaml
-        working-directory: tests/end2end_tests/tests
-        if: matrix.rvd
-        run: |
-          cat service-container-sshrvd.yaml >> docker-compose.yaml
-          echo '    image: atsigncompany/sshnp-e2e-runtime:${{ matrix.rvd }}' >> docker-compose.yaml
-          echo '    depends_on:' >> docker-compose.yaml
-          if [ "${{contains(env.RELEASES, matrix.rvd)}}" = true ]; then
-            echo '      - image-runtime-release' >> docker-compose.yaml
-          elif [ "${{contains(env.BRANCHES, matrix.rvd)}}" = true ]; then
-            echo '      - image-runtime-branch' >> docker-compose.yaml
-          else
-            echo '      - image-runtime-local' >> docker-compose.yaml
-          fi
-
-      - name: docker-compose.yaml
-        if: always()
-        working-directory: tests/end2end_tests/tests
-        run: |
-          cat docker-compose.yaml
-
-      - name: Build
-        working-directory: tests/end2end_tests/tests
-        run: |
-          docker compose build
-
-      - name: Test
-        working-directory: tests/end2end_tests/tests
-        run: |
-          ${{ env.DOCKER_COMPOSE_UP_CMD }}
-
-      - name: Logs
-        if: always()
-        working-directory: tests/end2end_tests/tests
-        run: |
-          docker compose ps -a
-          docker compose logs --timestamps
-
-      - name: Tear down
-        if: always()
-        working-directory: tests/end2end_tests/tests
-        run: |
-          docker compose down
-  e2e_test_sync:
-    runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        # Leave these empty to avoid unwanted intellisense warnings
-        rvd: [""]
-        rvd_atsign: [""]
-        include:
-          - np: local
-            npd: v3.2.0
-            wait: 300
-
-          - np: v3.2.0
-            npd: local
-    steps:
-      - name: Show Matrix Values
-        run: |
-          echo "job index: ${{ strategy.job-index }}"
-          echo "np: ${{ matrix.np }}"
-          echo "npd: ${{ matrix.npd }}"
-
-      - uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9 # v3.5.3
-
-      - name: Copy NP/NPD keys
-        working-directory: tests/end2end_tests/contexts
-        run: |
-          echo "${{ secrets.ATKEYS_8INCANTEATER }}" > sshnp/keys/${{ env.SSHNP_ATSIGN }}_key.atKeys
-          echo "${{ secrets.ATKEYS_8052SIMPLE }}" > sshnpd/keys/${{ env.SSHNPD_ATSIGN }}_key.atKeys
-
-      - name: Set up entrypoints
-        uses: ./.github/composite/setup_entrypoints
-        with:
-          sshnp: ${{ matrix.np }}
-          sshnp_atsign: ${{ env.SSHNP_ATSIGN }}
-          sshnpd: ${{ matrix.npd }}
-          sshnpd_atsign: ${{ env.SSHNPD_ATSIGN }}
-          sshrvd_atsign: ${{ matrix.rvd_atsign || env.DEFAULT_RVD_ATSIGN }}
-          devicename: ${{ github.run_id }}${{ github.run_attempt }}${{ strategy.job-index }}
-          wait_time: ${{ matrix.wait }}
-
-      - name: Ensure entrypoints exist
-        working-directory: tests/end2end_tests/contexts
-        run: |
-          cat sshnp/entrypoint.sh
-          cat sshnpd/entrypoint.sh
-          cat sshrvd/entrypoint.sh
-
-      - name: Store lists in env
-        run: |
 
       - name: Add runtime-release image to docker-compose.yaml
         working-directory: tests/end2end_tests/tests
