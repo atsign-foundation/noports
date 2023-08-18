@@ -16,7 +16,7 @@ on:
 env:
   SSHNP_ATSIGN: "@8incanteater"
   SSHNPD_ATSIGN: "@8052simple"
-  DOCKER_COMPOSE_UP_CMD: "docker compose up"
+  DOCKER_COMPOSE_UP_CMD: "docker compose up --abort-on-container-exit"
 
   # Fallback values for missing matrix values
   DEFAULT_RVD_ATSIGN: "@rv_am"
