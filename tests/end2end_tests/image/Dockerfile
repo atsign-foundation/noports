@@ -194,7 +194,8 @@ RUN set -eux ; \
   sh ${REPO_DIR}/scripts/install_sshnpd \
   -c ${client_atsign} \
   -d ${device_atsign} \
-  -n ${device_name};
+  -n ${device_name} \
+  --args "-s -u -v" ;
 
 # RUNTIME SSHNPD INSTALLER
 FROM build-sshnpd-installer AS runtime-sshnpd-installer
