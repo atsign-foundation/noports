@@ -1,4 +1,4 @@
-FROM dart:3.0.7@sha256:faf300f790cadb2e34182dd75c5f14642e21c625396055a16aa967170dfb71d7 AS build-branch
+FROM dart:3.0.7@sha256:4dc0299dd863edbf81e0e43490fa9c610f6655b62a2e1bc0e0dc02dfea2105eb AS build-branch
 
 ENV URL=https://github.com/atsign-foundation/sshnoports.git
 ENV REPO_DIR=/app/repo
@@ -20,7 +20,7 @@ RUN set -eux ; \
   dart compile exe ${REPO_DIR}/packages/sshnoports/bin/sshrvd.dart -o ${OUTPUT_DIR}/sshrvd ; \
   dart compile exe ${REPO_DIR}/packages/sshnoports/bin/activate_cli.dart -o ${OUTPUT_DIR}/at_activate ;
 
-FROM dart:3.0.7@sha256:faf300f790cadb2e34182dd75c5f14642e21c625396055a16aa967170dfb71d7 AS build-local
+FROM dart:3.0.7@sha256:4dc0299dd863edbf81e0e43490fa9c610f6655b62a2e1bc0e0dc02dfea2105eb AS build-local
 
 ENV REPO_DIR=/app/repo
 ENV OUTPUT_DIR=/app/output
@@ -39,7 +39,7 @@ RUN set -eux ; \
   dart compile exe ${REPO_DIR}/packages/sshnoports/bin/sshrvd.dart -o ${OUTPUT_DIR}/sshrvd ; \
   dart compile exe ${REPO_DIR}/packages/sshnoports/bin/activate_cli.dart -o ${OUTPUT_DIR}/at_activate ;
 
-FROM debian:stable-20230725-slim@sha256:c9e860b7a6d51a5f90f4fcb645d789c078f7b9d2cc6ebfd48792e0fea5739c04 AS build-release
+FROM debian:stable-20230814-slim@sha256:6fe30b9cb71d604a872557be086c74f95451fecd939d72afe3cffca3d9e60607 AS build-release
 
 ARG release
 
@@ -74,7 +74,7 @@ RUN apt-get update ; \
   cd sshnp ; \
   mv sshnp sshnpd sshrv sshrvd at_activate ${OUTPUT_DIR} ;
 
-FROM debian:stable-20230725-slim@sha256:c9e860b7a6d51a5f90f4fcb645d789c078f7b9d2cc6ebfd48792e0fea5739c04 AS base
+FROM debian:stable-20230814-slim@sha256:6fe30b9cb71d604a872557be086c74f95451fecd939d72afe3cffca3d9e60607 AS base
 
 ENV USER=atsign
 ENV HOMEDIR=/${USER}
@@ -173,6 +173,7 @@ ARG device_name
 
 RUN set -eux ; \
   sudo service cron start; \
+  sudo service ssh start; \
   sh ${REPO_DIR}/packages/sshnoports/scripts/install_sshnpd \
   -c ${client_atsign} \
   -d ${device_atsign} \

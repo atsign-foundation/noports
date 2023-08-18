@@ -7,7 +7,7 @@ import 'package:at_utils/at_logger.dart';
 
 // local packages
 import 'package:sshnoports/sshnp/sshnp.dart';
-import 'package:sshnoports/sshnp/cleanup.dart';
+import 'package:sshnoports/sshnp/utils.dart';
 
 void main(List<String> args) async {
   AtSignLogger.root_level = 'SHOUT';
@@ -29,7 +29,7 @@ void main(List<String> args) async {
   }
 
   ProcessSignal.sigint.watch().listen((signal) async {
-    await cleanUp(sshnp.sessionId, sshnp.logger);
+    await cleanUpAfterReverseSsh(sshnp);
     exit(1);
   });
 
@@ -63,7 +63,7 @@ void main(List<String> args) async {
       stderr.writeln('\nStack Trace: ${stackTrace.toString()}');
     }
 
-    await cleanUp(sshnp.sessionId, sshnp.logger);
+    await cleanUpAfterReverseSsh(sshnp);
 
     await stderr.flush().timeout(Duration(milliseconds: 100));
     exit(1);
