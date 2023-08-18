@@ -57,15 +57,15 @@ jobs:
           ### SSHNPD INSTALLER TESTS ###
           - np: local
             npd: installer
-            wait: 30
+            wait: 45
 
           - np: trunk
             npd: installer
-            wait: 30
+            wait: 45
 
           - np: installer
             npd: installer
-            wait: 30
+            wait: 45
 
           ### BACKWARD TESTS WITHOUT SYNC ###
           - np: local
