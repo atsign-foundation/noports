@@ -24,10 +24,10 @@
       "envFile": "${workspaceFolder}/.env",
       //put your args in a .env 
       "args": [
-        "--atsign", "${env:ATSIGN}",
-        "--manager", "${env:MANAGER}",
+        "--atsign", "${env:TO}",
+        "--manager", "${env:FROM}",
         "--device", "${env:DEVICE}",
-        "--username", "${env:USERNAME}"
+        "-u"
       ],
       
     }
