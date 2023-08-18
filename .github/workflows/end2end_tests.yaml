@@ -73,6 +73,11 @@ jobs:
             npd: local
 
           - np: local
+            npd: v3.4.0
+          - np: v3.4.0
+            npd: local
+
+          - np: local
             npd: v3.3.0
           - np: v3.3.0
             npd: local
