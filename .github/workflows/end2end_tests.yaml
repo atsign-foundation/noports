@@ -26,6 +26,7 @@ env:
     v3.1.2
     v3.2.0
     v3.3.0
+    v3.4.0
 
   BRANCHES: |
     trunk
