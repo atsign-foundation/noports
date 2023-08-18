@@ -80,6 +80,7 @@ jobs:
           ### BACKWARD TESTS WITH SYNC ###
           - np: local
             npd: v3.2.0
+            wait: 200
           - np: v3.2.0
             npd: local
     steps:
