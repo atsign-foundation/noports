@@ -147,27 +147,26 @@ class SSHNPImpl implements SSHNP {
 
   final SupportedSshClient sshClient = SupportedSshClient.hostSsh;
 
-  SSHNPImpl(
-      {
-      // final fields
-      required this.atClient,
-      required this.sshnpdAtSign,
-      required this.device,
-      required this.username,
-      required this.homeDirectory,
-      required this.sessionId,
-      String sendSshPublicKey = 'false',
-      required this.localSshOptions,
-      this.rsa = false,
-      // volatile fields
-      required this.host,
-      required this.port,
-      required this.localPort,
-      this.remoteUsername,
-      this.verbose = false,
-      this.sshrvGenerator = SSHRV.localBinary,
-      required this.legacyDaemon,
-      }) {
+  SSHNPImpl({
+    // final fields
+    required this.atClient,
+    required this.sshnpdAtSign,
+    required this.device,
+    required this.username,
+    required this.homeDirectory,
+    required this.sessionId,
+    String sendSshPublicKey = 'false',
+    required this.localSshOptions,
+    this.rsa = false,
+    // volatile fields
+    required this.host,
+    required this.port,
+    required this.localPort,
+    this.remoteUsername,
+    this.verbose = false,
+    this.sshrvGenerator = SSHRV.localBinary,
+    required this.legacyDaemon,
+  }) {
     namespace = '$device.sshnp';
     clientAtSign = atClient.getCurrentAtSign()!;
     logger.hierarchicalLoggingEnabled = true;
@@ -331,27 +330,27 @@ class SSHNPImpl implements SSHNP {
   /// - If got a success response, print the ssh command to use to stdout
   /// - Clean up temporary files
   @override
-  Future<void> run() async {
+  Future<SSHNPResult> run() async {
     if (!initialized) {
       throw StateError('Cannot run() - not initialized');
     }
 
     if (legacyDaemon) {
       logger.info('Requesting legacy daemon to start reverse ssh session');
-      await legacyStartReverseSsh();
+      return await legacyStartReverseSsh();
     } else {
       if (direct) {
         logger.info(
             'Requesting daemon to set up socket tunnel for direct ssh session');
-        await startDirectSsh();
+        return await startDirectSsh();
       } else {
         logger.info('Requesting daemon to start reverse ssh session');
-        await startReverseSsh();
+        return await startReverseSsh();
       }
     }
   }
 
-  Future<void> startDirectSsh() async {
+  Future<SSHNPResult> startDirectSsh() async {
     // send request to the daemon via notification
     await _notify(
         AtKey()
@@ -401,12 +400,19 @@ class SSHNPImpl implements SSHNP {
           throw errorMessage;
         } else {
           // All good - write the ssh command to stdout
-          stdout.writeln(getBaseSshCommand());
+          return SSHCommand.base(
+            localPort: int.parse(localPort),
+            remoteUsername: username,
+            host: host,
+            privateKeyFileName: publicKeyFileName,
+          );
         }
       } catch (e) {
         throw 'SSH Client failure : $e';
       }
     }
+
+    return SSHNPFailed();
   }
 
   Future<(bool, String?)> directSshViaExec() async {
@@ -467,7 +473,7 @@ class SSHNPImpl implements SSHNP {
   }
 
   /// Identical to [legacyStartReverseSsh] except for the request notification
-  Future<void> startReverseSsh() async {
+  Future<SSHNPResult> startReverseSsh() async {
     // Connect to rendezvous point using background process.
     // sshnp (this program) can then exit without issue.
     unawaited(Process.run(getSshrvCommand(), [host, _sshrvdPort]));
@@ -501,12 +507,18 @@ class SSHNPImpl implements SSHNP {
 
     if (!sshnpdAckErrors) {
       // If no ack errors, write the ssh command to stdout
-      stdout.write(getBaseSshCommand());
+      return SSHCommand.base(
+        localPort: int.parse(localPort),
+        remoteUsername: username,
+        host: host,
+        privateKeyFileName: publicKeyFileName,
+      );
     }
-    stdout.write('\n');
+
+    return SSHNPFailed();
   }
 
-  Future<void> legacyStartReverseSsh() async {
+  Future<SSHNPResult> legacyStartReverseSsh() async {
     // Connect to rendezvous point using background process.
     // sshnp (this program) can then exit without issue.
     unawaited(Process.run(getSshrvCommand(), [host, _sshrvdPort]));
@@ -532,32 +544,14 @@ class SSHNPImpl implements SSHNP {
 
     if (!sshnpdAckErrors) {
       // If no ack errors, write the ssh command to stdout
-      stdout.write(getBaseSshCommand());
+      return SSHCommand.base(
+        localPort: int.parse(localPort),
+        remoteUsername: username,
+        host: host,
+        privateKeyFileName: publicKeyFileName,
+      );
     }
-    stdout.write('\n');
-  }
-
-  /// Generate the base ssh command which we will write to stdout.
-  /// If we had a Public key, include the private key in the command line
-  /// by removing the .pub extn.
-  String getBaseSshCommand() {
-    final StringBuffer sb = StringBuffer();
-
-    if (publicKeyFileName != 'false') {
-      sb.write('ssh -p $localPort $remoteUsername@localhost'
-          ' -o StrictHostKeyChecking=accept-new'
-          ' -o IdentitiesOnly=yes'
-          ' -i ${publicKeyFileName.replaceFirst(RegExp(r'.pub$'), '')}');
-    } else {
-      sb.write('ssh -p $localPort $remoteUsername@localhost '
-          ' -o StrictHostKeyChecking=accept-new');
-    }
-    // print out optional arguments
-    for (var argument in localSshOptions) {
-      sb.write(" $argument");
-    }
-
-    return sb.toString();
+    return SSHNPFailed();
   }
 
   /// Function which the response subscription (created in the [init] method

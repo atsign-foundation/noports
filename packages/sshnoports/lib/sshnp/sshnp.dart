@@ -22,6 +22,7 @@ import 'package:uuid/uuid.dart';
 
 part 'sshnp_impl.dart';
 part 'sshnp_params.dart';
+part 'sshnp_result.dart';
 
 abstract class SSHNP {
   abstract final AtSignLogger logger;
@@ -213,7 +214,7 @@ abstract class SSHNP {
   /// - Waits for success or error response, or time out after 10 secs
   /// - If got a success response, print the ssh command to use to stdout
   /// - Clean up temporary files
-  Future<void> run();
+  Future<SSHNPResult> run();
 
   /// Send a ping out to all sshnpd and listen for heartbeats
   /// Returns two Iterable<String>:
