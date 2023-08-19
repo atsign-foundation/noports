@@ -17,7 +17,7 @@ Future<void> main(List<String> args) async {
     // ignore: unused_local_variable
     var socketStream = await SocketConnector.socketToSocket(
         socketAddressA: InternetAddress.loopbackIPv4,
-        socketPortA: 22,
+        socketPortA: 8022,
         socketAddressB: hosts[0],
         socketPortB: int.parse(streamingPort),
         verbose: false);

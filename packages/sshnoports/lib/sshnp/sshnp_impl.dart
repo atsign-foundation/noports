@@ -417,7 +417,7 @@ class SSHNPImpl implements SSHNP {
     List<String> args = '$remoteUsername@$host'
             ' -p $_sshrvdPort'
             ' -i ${publicKeyFileName.replaceFirst(RegExp(r'.pub$'), '')}'
-            ' -L $localPort:localhost:22'
+            ' -L $localPort:localhost:8022'
             ' -o LogLevel=VERBOSE'
             ' -t -t'
             ' -o StrictHostKeyChecking=accept-new'
@@ -715,7 +715,7 @@ class SSHNPImpl implements SSHNP {
 
     // Set up a safe authorized_keys file, for the reverse ssh tunnel
     File('${sshHomeDirectory}authorized_keys').writeAsStringSync(
-        'command="echo \\"ssh session complete\\";sleep 20",PermitOpen="localhost:22" ${sshPublicKey.trim()} $sessionId\n',
+        'command="echo \\"ssh session complete\\";sleep 20",PermitOpen="localhost:8022" ${sshPublicKey.trim()} $sessionId\n',
         mode: FileMode.append);
   }
 
