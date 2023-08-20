@@ -28,6 +28,7 @@ class SSHNPParams {
   late final String? remoteUsername;
   late final bool verbose;
   late final String rootDomain;
+  late final String localSshdPort;
   late final bool legacyDaemon;
 
   /// Special Arguments
@@ -47,6 +48,7 @@ class SSHNPParams {
       this.remoteUsername,
       String? atKeysFilePath,
       this.rootDomain = 'root.atsign.org',
+      this.localSshdPort = '22',
       this.listDevices = false,
       required this.legacyDaemon}) {
     // Do we have a username ?
@@ -84,6 +86,7 @@ class SSHNPParams {
         remoteUsername: partial.remoteUsername,
         atKeysFilePath: partial.atKeysFilePath,
         rootDomain: partial.rootDomain ?? 'root.atsign.org',
+        localSshdPort: partial.localSshdPort ?? '22',
         listDevices: partial.listDevices,
         legacyDaemon: partial.legacyDaemon ?? true);
   }
@@ -143,6 +146,7 @@ class SSHNPParams {
       'remote-user-name': remoteUsername,
       'verbose': verbose,
       'root-domain': rootDomain,
+      'local-sshd-port': localSshdPort
     };
   }
 
@@ -178,6 +182,7 @@ class SSHNPPartialParams {
   late final String? remoteUsername;
   late final bool? verbose;
   late final String? rootDomain;
+  late final String? localSshdPort;
   late final bool? legacyDaemon;
 
   /// Special Params
@@ -201,6 +206,7 @@ class SSHNPPartialParams {
       this.remoteUsername,
       this.verbose,
       this.rootDomain,
+      this.localSshdPort,
       this.listDevices = false,
       this.legacyDaemon = true});
 
@@ -228,6 +234,7 @@ class SSHNPPartialParams {
       remoteUsername: params2.remoteUsername ?? params1.remoteUsername,
       verbose: params2.verbose ?? params1.verbose,
       rootDomain: params2.rootDomain ?? params1.rootDomain,
+      localSshdPort: params1.localSshdPort ?? params2.localSshdPort,
       listDevices: params2.listDevices || params1.listDevices,
       legacyDaemon: params2.legacyDaemon ?? params1.legacyDaemon,
     );
@@ -248,6 +255,7 @@ class SSHNPPartialParams {
       remoteUsername: args['remote-user-name'],
       verbose: args['verbose'],
       rootDomain: args['root-domain'],
+      localSshdPort: args['local-sshd-port'],
       listDevices: args['list-devices'] ?? false,
       legacyDaemon: args['legacy-daemon'],
     );

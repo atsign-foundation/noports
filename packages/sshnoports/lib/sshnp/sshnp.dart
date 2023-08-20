@@ -63,6 +63,11 @@ abstract class SSHNP {
   /// is set to '0' then
   abstract String localPort;
 
+  /// Port that local sshd is listening on localhost interface
+  /// Default set to 22
+
+  abstract String localSshdPort;
+
   // ====================================================================
   // Derived final instance variables, set during construction or init
   // ====================================================================
@@ -137,6 +142,7 @@ abstract class SSHNP {
       required String localPort,
       String? remoteUsername,
       bool verbose = false,
+      required String localSshdPort,
       required bool legacyDaemon}) {
     return SSHNPImpl(
         atClient: atClient,
@@ -151,6 +157,7 @@ abstract class SSHNP {
         host: host,
         port: port,
         localPort: localPort,
+        localSshdPort: localSshdPort,
         remoteUsername: remoteUsername,
         verbose: verbose,
         legacyDaemon: legacyDaemon);

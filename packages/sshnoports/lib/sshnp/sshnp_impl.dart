@@ -56,6 +56,9 @@ class SSHNPImpl implements SSHNP {
   @override
   final List<String> localSshOptions;
 
+  @override
+  late final String localSshdPort;
+
   /// When false, we generate [sshPublicKey] and [sshPrivateKey] using ed25519.
   /// When true, we generate [sshPublicKey] and [sshPrivateKey] using RSA.
   /// Defaults to false
@@ -179,7 +182,8 @@ class SSHNPImpl implements SSHNP {
       required this.localPort,
       this.remoteUsername,
       this.verbose = false,
-      required this.legacyDaemon}) {
+      required this.legacyDaemon,
+      required this.localSshdPort}) {
     namespace = '$device.sshnp';
     clientAtSign = atClient.getCurrentAtSign()!;
     logger.hierarchicalLoggingEnabled = true;
@@ -247,6 +251,7 @@ class SSHNPImpl implements SSHNP {
           port: p.port,
           localPort: p.localPort,
           localSshOptions: p.localSshOptions,
+          localSshdPort: p.localSshdPort,
           rsa: p.rsa,
           sendSshPublicKey: p.sendSshPublicKey,
           remoteUsername: p.remoteUsername,
@@ -417,7 +422,7 @@ class SSHNPImpl implements SSHNP {
     List<String> args = '$remoteUsername@$host'
             ' -p $_sshrvdPort'
             ' -i ${publicKeyFileName.replaceFirst(RegExp(r'.pub$'), '')}'
-            ' -L $localPort:localhost:8022'
+            ' -L $localPort:localhost:$localSshdPort'
             ' -o LogLevel=VERBOSE'
             ' -t -t'
             ' -o StrictHostKeyChecking=accept-new'
@@ -715,7 +720,7 @@ class SSHNPImpl implements SSHNP {
 
     // Set up a safe authorized_keys file, for the reverse ssh tunnel
     File('${sshHomeDirectory}authorized_keys').writeAsStringSync(
-        'command="echo \\"ssh session complete\\";sleep 20",PermitOpen="localhost:8022" ${sshPublicKey.trim()} $sessionId\n',
+        'command="echo \\"ssh session complete\\";sleep 20",PermitOpen="localhost:$localSshdPort" ${sshPublicKey.trim()} $sessionId\n',
         mode: FileMode.append);
   }
 
