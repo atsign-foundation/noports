@@ -479,7 +479,7 @@ class SSHNPImpl implements SSHNP {
   Future<void> startReverseSsh() async {
     // Connect to rendezvous point using background process.
     // sshnp (this program) can then exit without issue.
-    unawaited(Process.run(getSshrvCommand(), [host, _sshrvdPort]));
+    unawaited(Process.run(getSshrvCommand(), [host, _sshrvdPort, localSshdPort]));
 
     // send request to the daemon via notification
     await _notify(
