@@ -13,7 +13,7 @@ Future<void> main(List<String> args) async {
   String streamingPort = args[1];
   String localSshPort ="22";
   if (args.length == 3) {
-    localSshPort = args[3];
+    localSshPort = args[2];
   }
     
   
