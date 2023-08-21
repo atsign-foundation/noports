@@ -6,7 +6,7 @@ import 'package:socket_connector/socket_connector.dart';
 
 Future<void> main(List<String> args) async {
   if (args.length < 2 || args.length > 3) {
-    print('sshrv <host> <port> [<local ssh port>]');
+    print('sshrv <host> <port> [localhost sshd port, defaults to 22]');
     exit(-1);
   }
   String host = args[0];
