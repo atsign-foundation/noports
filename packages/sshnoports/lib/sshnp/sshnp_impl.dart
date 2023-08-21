@@ -225,7 +225,13 @@ class SSHNPImpl implements SSHNP {
       if (!await fileExists(p.atKeysFilePath)) {
         throw ArgumentError('\nUnable to find .atKeys file : ${p.atKeysFilePath}');
       }
+     
+     // Check to see if localSshdPort has been set as a number
+      if (int.tryParse(p.localSshdPort) == null ) {
+        throw ArgumentError('\nInvalid port number for sshd (1-65535) : ${p.localSshdPort}');
+      }
 
+     // Check to see if the port number is in range for TCP ports
       if (int.parse(p.localSshdPort) > 65535 ||
           int.parse(p.localSshdPort) < 1) {
         throw ArgumentError('\nInvalid port number for sshd (1-65535) : ${p.localSshdPort}');
