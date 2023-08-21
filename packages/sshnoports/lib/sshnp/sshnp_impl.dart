@@ -183,7 +183,8 @@ class SSHNPImpl implements SSHNP {
       this.remoteUsername,
       this.verbose = false,
       required this.legacyDaemon,
-      required this.localSshdPort}) {
+      this.localSshdPort = '22'
+    }) {
     namespace = '$device.sshnp';
     clientAtSign = atClient.getCurrentAtSign()!;
     logger.hierarchicalLoggingEnabled = true;
