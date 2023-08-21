@@ -222,7 +222,12 @@ class SSHNPImpl implements SSHNP {
 
       // Check atKeyFile selected exists
       if (!await fileExists(p.atKeysFilePath)) {
-        throw ('\nUnable to find .atKeys file : ${p.atKeysFilePath}');
+        throw ArgumentError('\nUnable to find .atKeys file : ${p.atKeysFilePath}');
+      }
+
+      if (int.parse(p.localSshdPort) > 65535 ||
+          int.parse(p.localSshdPort) < 1) {
+        throw ArgumentError('\nInvalid port number for sshd (1-65535) : ${p.localSshdPort}');
       }
 
       String sessionId = Uuid().v4();
@@ -520,8 +525,9 @@ class SSHNPImpl implements SSHNP {
   Future<void> legacyStartReverseSsh() async {
     // Connect to rendezvous point using background process.
     // sshnp (this program) can then exit without issue.
-    
-    unawaited(Process.run(getSshrvCommand(), [host, _sshrvdPort, localSshdPort]));
+
+    unawaited(
+        Process.run(getSshrvCommand(), [host, _sshrvdPort, localSshdPort]));
 
     // send request to the daemon via notification
     await _notify(
