@@ -142,7 +142,7 @@ abstract class SSHNP {
       required String localPort,
       String? remoteUsername,
       bool verbose = false,
-      required String localSshdPort,
+      String localSshdPort = '22',
       required bool legacyDaemon}) {
     return SSHNPImpl(
         atClient: atClient,
