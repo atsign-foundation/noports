@@ -12,15 +12,35 @@ abstract class SSHRV<T> {
   /// The port of the host to connect to.
   abstract final int streamingPort;
 
+  /// The local sshd port
+  /// Defaults to 22
+  abstract final int localSshdPort;
+
   Future<T> run();
 
   // Can't use factory functions since SSHRV contains a generic type
-  static SSHRV localBinary(String host, int streamingPort) {
-    return SSHRVImpl(host, streamingPort);
+  static SSHRV localBinary(
+    String host,
+    int streamingPort, {
+    int localSshdPort = 22,
+  }) {
+    return SSHRVImpl(
+      host,
+      streamingPort,
+      localSshdPort: localSshdPort,
+    );
   }
 
-  static SSHRV pureDart(String host, int streamingPort) {
-    return SSHRVImplPureDart(host, streamingPort);
+  static SSHRV pureDart(
+    String host,
+    int streamingPort, {
+    int localSshdPort = 22,
+  }) {
+    return SSHRVImplPureDart(
+      host,
+      streamingPort,
+      localSshdPort: localSshdPort,
+    );
   }
 
   static Future<String?> getLocalBinaryPath() async {

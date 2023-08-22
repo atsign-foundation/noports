@@ -8,7 +8,14 @@ class SSHRVImpl implements SSHRV<ProcessResult> {
   @override
   final int streamingPort;
 
-  const SSHRVImpl(this.host, this.streamingPort);
+  @override
+  final int localSshdPort;
+
+  const SSHRVImpl(
+    this.host,
+    this.streamingPort, {
+    this.localSshdPort = 22,
+  });
 
   @override
   Future<ProcessResult> run() async {
@@ -20,7 +27,8 @@ class SSHRVImpl implements SSHRV<ProcessResult> {
         'N.B. sshnp is expected to be compiled and run from source, not via the dart command.',
       );
     }
-    return Process.run(command, [host, streamingPort.toString()]);
+    return Process.run(
+        command, [host, streamingPort.toString(), localSshdPort.toString()]);
   }
 }
 
@@ -32,7 +40,14 @@ class SSHRVImplPureDart implements SSHRV<SocketConnector> {
   @override
   final int streamingPort;
 
-  const SSHRVImplPureDart(this.host, this.streamingPort);
+  @override
+  final int localSshdPort;
+
+  const SSHRVImplPureDart(
+    this.host,
+    this.streamingPort, {
+    this.localSshdPort = 22,
+  });
 
   @override
   Future<SocketConnector> run() async {
@@ -41,7 +56,7 @@ class SSHRVImplPureDart implements SSHRV<SocketConnector> {
 
       return await SocketConnector.socketToSocket(
         socketAddressA: InternetAddress.loopbackIPv4,
-        socketPortA: 22,
+        socketPortA: localSshdPort,
         socketAddressB: hosts[0],
         socketPortB: streamingPort,
         verbose: false,

@@ -29,23 +29,24 @@ class SSHNPParams {
   /// Special Arguments
   late final bool listDevices;
 
-  SSHNPParams(
-      {required this.clientAtSign,
-      required this.sshnpdAtSign,
-      required this.host,
-      this.device = 'default',
-      this.port = '22',
-      this.localPort = '0',
-      this.sendSshPublicKey = 'false',
-      this.localSshOptions = const [],
-      this.verbose = false,
-      this.rsa = false,
-      this.remoteUsername,
-      String? atKeysFilePath,
-      this.rootDomain = 'root.atsign.org',
-      this.localSshdPort = '22',
-      this.listDevices = false,
-      required this.legacyDaemon}) {
+  SSHNPParams({
+    required this.clientAtSign,
+    required this.sshnpdAtSign,
+    required this.host,
+    this.device = 'default',
+    this.port = '22',
+    this.localPort = '0',
+    this.sendSshPublicKey = 'false',
+    this.localSshOptions = const [],
+    this.verbose = false,
+    this.rsa = false,
+    this.remoteUsername,
+    String? atKeysFilePath,
+    this.rootDomain = 'root.atsign.org',
+    this.localSshdPort = SSHNP.defaultLocalSshdPort,
+    this.legacyDaemon = SSHNP.defaultLegacyDaemon,
+    this.listDevices = false,
+  }) {
     // Do we have a username ?
     username = getUserName(throwIfNull: true)!;
 
