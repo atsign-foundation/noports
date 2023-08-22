@@ -1110,8 +1110,8 @@ packages:
     dependency: "direct main"
     description:
       path: "packages/sshnoports"
-      ref: sshrv-pure-dart
-      resolved-ref: fcc590616e4bd6e0821b24c1bb3c3acb9fecf0f2
+      ref: sshnp-changes-for-gui
+      resolved-ref: "2ad4b653ccb087af918ad13e9110dbff9480c0e4"
       url: "https://github.com/atsign-foundation/sshnoports.git"
     source: git
     version: "3.4.0"

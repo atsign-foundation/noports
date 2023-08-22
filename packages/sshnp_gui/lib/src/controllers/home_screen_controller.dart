@@ -1,55 +1,75 @@
-// import 'dart:developer';
-// import 'dart:io';
+import 'dart:developer';
+import 'dart:io';
 
-// import 'package:at_client_mobile/at_client_mobile.dart';
-// import 'package:flutter_riverpod/flutter_riverpod.dart';
-// import 'package:sshnoports/common/utils.dart';
-// import 'package:sshnoports/sshnp/sshnp.dart';
+import 'package:at_client_mobile/at_client_mobile.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:sshnoports/common/utils.dart';
+import 'package:sshnoports/sshnp/sshnp.dart';
+import 'package:sshnoports/sshrv/sshrv.dart';
 
-// /// A Controller class that controls the UI update when the [AtDataRepository] methods are called.
-// class HomeScreenController extends StateNotifier<AsyncValue<List<SSHNP>>> {
-//   final Ref ref;
+/// A Controller class that controls the UI update when the [AtDataRepository] methods are called.
+class HomeScreenController extends StateNotifier<AsyncValue<List<SSHNP>>> {
+  final Ref ref;
 
-//   HomeScreenController({required this.ref}) : super(const AsyncValue.loading());
+  HomeScreenController({required this.ref}) : super(const AsyncValue.loading());
 
-//   /// Get list of [AtData] associated with the current astign.
-//   Future<void> getConfigFiles() async {
-//     state = const AsyncValue.loading();
-//     state = await AsyncValue.guard(() async {
-//       try {
-//         final sshnpParms = await SSHNPParams.getConfigFilesFromDirectory();
-//         final sshnpList = await Future.wait(sshnpParms
-//             .map((e) => SSHNP.fromParams(
-//                   e,
-//                   // atClient: AtClientManager.getInstance().atClient,
-//                 ))
-//             .toList());
-//         return sshnpList;
-//       } on PathNotFoundException {
-//         log('Path Not Found');
-//         return [];
-//       }
-//     });
-//   }
+  late Iterable<SSHNPParams> sshnpParams;
 
-//   /// Deletes the [AtKey] associated with the [AtData].
-//   Future<bool> delete(AtData atData) async {
-//     state = const AsyncValue.loading();
-//     final directory = getDefaultSshnpConfigDirectory(getHomeDirectory()!);
-//     var files = Directory(directory).list().firstWhere((element) => element.path.contains(atData.atKey.toString()));
-//     await getConfigFiles();
+  /// Get list of config files associated with the current astign.
+  Future<void> getConfigFiles() async {
+    state = const AsyncValue.loading();
+    state = await AsyncValue.guard(() async {
+      try {
+        sshnpParams = await SSHNPParams.getConfigFilesFromDirectory();
 
-//     return result;
-//   }
+        final sshnpList = await Future.wait(sshnpParams
+            .map((e) => SSHNP.fromParams(
+                  e,
+                  atClient: AtClientManager.getInstance().atClient,
+                  sshrvGenerator: SSHRV.pureDart,
+                ))
+            .toList());
+        return sshnpList;
+      } on PathNotFoundException {
+        log('Path Not Found');
+        return [];
+      }
+    });
+  }
 
-//   /// Deletes all [AtData] associated with the current atsign.
-//   Future<void> deleteAllData() async {
-//     state = const AsyncValue.loading();
-//     await ref.watch(dataRepositoryProvider).deleteAllData();
-//     state = await AsyncValue.guard(() async => await ref.watch(dataRepositoryProvider).getData());
-//   }
-// }
+  /// Deletes the [AtKey] associated with the [AtData].
+  Future<void> delete(int index) async {
+    state = const AsyncValue.loading();
+    final directory = getDefaultSshnpConfigDirectory(getHomeDirectory()!);
+    var configDir = await Directory(directory).list().toList();
+    configDir[index].delete();
+    await getConfigFiles();
+  }
 
-// /// A provider that exposes the [HomeScreenController] to the app.
-// final atDataControllerProvider =
-//     StateNotifierProvider<HomeScreenController, AsyncValue<List<SSHNP>>>((ref) => HomeScreenController(ref: ref));
+  /// Deletes all [AtData] associated with the current atsign.
+  Future<void> deleteAllData() async {
+    state = const AsyncValue.loading();
+    final directory = getDefaultSshnpConfigDirectory(getHomeDirectory()!);
+    var configDir = await Directory(directory).list().toList();
+    configDir.map((e) => e.delete());
+    await getConfigFiles();
+  }
+
+  /// create or update config files.
+  Future<void> createConfigFile(SSHNPParams sshnpParams, {bool update = false}) async {
+    state = const AsyncValue.loading();
+    final homeDir = getHomeDirectory()!;
+    log(homeDir);
+    final configDir = getDefaultSshnpConfigDirectory(homeDir);
+    log(configDir);
+    await Directory(configDir).create(recursive: true);
+    //.env
+    sshnpParams.toFile('$configDir/${sshnpParams.clientAtSign}-${sshnpParams.sshnpdAtSign}-${sshnpParams.device}.env',
+        overwrite: update);
+    await getConfigFiles();
+  }
+}
+
+/// A provider that exposes the [HomeScreenController] to the app.
+final homeScreenControllerProvider =
+    StateNotifierProvider<HomeScreenController, AsyncValue<List<SSHNP>>>((ref) => HomeScreenController(ref: ref));

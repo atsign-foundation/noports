@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
+import 'package:sshnoports/sshnp/sshnp.dart';
 import 'package:sshnp_gui/src/controllers/current_nav_index_provider.dart';
 
+import '../../controllers/minor_providers.dart';
 import '../../utils/app_router.dart';
 
 class AppNavigationRail extends ConsumerWidget {
@@ -51,6 +53,11 @@ class AppNavigationRail extends ConsumerWidget {
               context.goNamed(AppRoute.home.name);
               break;
             case 1:
+              // set value to default create to trigger the create functionality on
+              ref
+                  .read(sshnpParamsProvider.notifier)
+                  .update((state) => SSHNPParams(clientAtSign: '', sshnpdAtSign: '', host: '', legacyDaemon: true));
+
               context.goNamed(AppRoute.newConnection.name);
               break;
             default:

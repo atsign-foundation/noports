@@ -1,43 +1,70 @@
 import 'dart:developer';
-import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:sshnoports/common/utils.dart';
 import 'package:sshnoports/sshnp/sshnp.dart';
+import 'package:sshnp_gui/src/controllers/home_screen_controller.dart';
+import 'package:sshnp_gui/src/controllers/minor_providers.dart';
 import 'package:sshnp_gui/src/utils/app_router.dart';
+import 'package:sshnp_gui/src/utils/enum.dart';
 import 'package:sshnp_gui/src/utils/validator.dart';
 
 import '../../utils/sizes.dart';
 import 'custom_text_form_field.dart';
 
-class NewConnectionForm extends StatefulWidget {
+class NewConnectionForm extends ConsumerStatefulWidget {
   const NewConnectionForm({super.key});
 
   @override
-  State<NewConnectionForm> createState() => _NewConnectionFormState();
+  ConsumerState<NewConnectionForm> createState() => _NewConnectionFormState();
 }
 
-class _NewConnectionFormState extends State<NewConnectionForm> {
+class _NewConnectionFormState extends ConsumerState<NewConnectionForm> {
   final GlobalKey<FormState> _formkey = GlobalKey<FormState>();
-
-  String? clientAtSign;
-  String? sshnpdAtSign;
-  String? host;
+  late String? clientAtSign;
+  late String? sshnpdAtSign;
+  late String? host;
 
   /// Optional Arguments
-  String device = 'default';
-  String port = '22';
-  String localPort = '0';
-  String sendSshPublicKey = 'false';
-  List<String> localSshOptions = [];
-  bool verbose = false;
-  bool rsa = false;
-  String? remoteUsername;
-  String? atKeysFilePath;
-  String rootDomain = 'root.atsign.org';
-  bool listDevices = false;
+  late String device;
+  late String port;
+  late String localPort;
+  late String sendSshPublicKey;
+  late List<String> localSshOptions;
+  late bool verbose;
+  late bool rsa;
+  late String? remoteUsername;
+  late String? atKeysFilePath;
+  late String rootDomain;
+  late bool listDevices;
+  late bool legacyDaemon;
+  @override
+  void initState() {
+    super.initState();
+
+    final oldConfig = ref.read(sshnpParamsProvider);
+    log(oldConfig.port.toString());
+    clientAtSign = oldConfig.clientAtSign;
+    sshnpdAtSign = oldConfig.sshnpdAtSign;
+    host = oldConfig.host;
+
+    /// Optional Arguments
+    device = oldConfig.device;
+    port = oldConfig.port;
+    localPort = oldConfig.localPort;
+    sendSshPublicKey = oldConfig.sendSshPublicKey;
+    localSshOptions = oldConfig.localSshOptions;
+    verbose = oldConfig.verbose;
+    rsa = oldConfig.rsa;
+    remoteUsername = oldConfig.remoteUsername;
+    atKeysFilePath = oldConfig.atKeysFilePath;
+    rootDomain = oldConfig.rootDomain;
+    listDevices = oldConfig.listDevices;
+    legacyDaemon = oldConfig.legacyDaemon;
+  }
+
   void createNewConnection() async {
     if (_formkey.currentState!.validate()) {
       _formkey.currentState!.save();
@@ -56,16 +83,25 @@ class _NewConnectionFormState extends State<NewConnectionForm> {
           remoteUsername: remoteUsername,
           atKeysFilePath: atKeysFilePath,
           rootDomain: rootDomain,
-          listDevices: listDevices);
-      final homeDir = getHomeDirectory()!;
-      log(homeDir);
-      final configDir = getDefaultSshnpConfigDirectory(homeDir);
-      log(configDir);
-      await Directory(configDir).create(recursive: true);
-      //.env
-      sshnpParams.toFile('$configDir/$clientAtSign-$sshnpdAtSign-$device.env', overwrite: true);
-
+          listDevices: listDevices,
+          legacyDaemon: legacyDaemon);
+      switch (ref.read(configFileWriteStateProvider)) {
+        case ConfigFileWriteState.create:
+          await ref.read(homeScreenControllerProvider.notifier).createConfigFile(sshnpParams);
+          break;
+        case ConfigFileWriteState.update:
+          log('update_worked');
+          await ref.read(homeScreenControllerProvider.notifier).createConfigFile(sshnpParams, update: true);
+          // set value to default create so trigger the create functionality on
+          ref.read(configFileWriteStateProvider.notifier).update((state) => ConfigFileWriteState.create);
+          break;
+      }
+      // Reset value to default value.
+      ref
+          .read(sshnpParamsProvider.notifier)
+          .update((state) => SSHNPParams(clientAtSign: '', sshnpdAtSign: '', host: '', legacyDaemon: true));
       if (context.mounted) {
+        log('about to transition');
         context.pushReplacementNamed(AppRoute.home.name);
       }
     }
