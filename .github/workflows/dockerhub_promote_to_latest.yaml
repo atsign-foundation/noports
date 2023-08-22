@@ -8,6 +8,10 @@ permissions: # added using https://github.com/step-security/secure-workflows
 
 jobs:
   docker:
+    strategy:
+      matrix:
+        include:
+          - name: [sshnpd, activate_sshnpd]
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -25,4 +29,4 @@ jobs:
       - name: Get version
         run: echo "VERSION=${GITHUB_REF##*/}" >> $GITHUB_ENV
       - name: Promote image to latest
-        run: docker buildx imagetools create -t atsigncompany/sshnpd:latest atsigncompany/sshnpd:release-${{ env.VERSION }}
+        run: docker buildx imagetools create -t atsigncompany/${{ matrix.name }}:latest atsigncompany/${{ matrix.name }}:release-${{ env.VERSION }}

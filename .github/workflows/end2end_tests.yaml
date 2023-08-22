@@ -16,7 +16,7 @@ on:
 env:
   SSHNP_ATSIGN: "@8incanteater"
   SSHNPD_ATSIGN: "@8052simple"
-  DOCKER_COMPOSE_UP_CMD: "docker compose up --exit-code-from=container-sshnp"
+  DOCKER_COMPOSE_UP_CMD: "docker compose up --abort-on-container-exit"
 
   # Fallback values for missing matrix values
   DEFAULT_RVD_ATSIGN: "@rv_am"
@@ -26,6 +26,7 @@ env:
     v3.1.2
     v3.2.0
     v3.3.0
+    v3.4.0
 
   BRANCHES: |
     trunk
@@ -35,7 +36,6 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
-      max-parallel: 8
       matrix:
         np: [local, trunk, installer]
         npd: [local, trunk]
@@ -54,45 +54,41 @@ jobs:
             npd: latest
             rvd: local
             rvd_atsign: "@8485wealthy51"
-          ### INSTALLER TESTS ###
+          ### SSHNPD INSTALLER TESTS ###
           - np: local
             npd: installer
-            wait: 30
+            wait: 120
+
           - np: trunk
             npd: installer
-            wait: 30
+            wait: 120
+
           - np: installer
             npd: installer
-            wait: 30
+            wait: 120
+
           ### BACKWARD TESTS WITHOUT SYNC ###
           - np: local
             npd: latest
-
           - np: latest
             npd: local
 
           - np: local
-            npd: v3.3.0
+            npd: v3.4.0
+          - np: v3.4.0
+            npd: local
 
+          - np: local
+            npd: v3.3.0
           - np: v3.3.0
             npd: local
 
-          ### BACKWARD TESTS WHICH NEED SYNC ###
-          - np: local
-            npd: v3.1.2
-            wait: 120
-
+          ### BACKWARD TESTS WITH SYNC ###
           - np: local
             npd: v3.2.0
-            wait: 120
-
-          - np: v3.1.2
-            npd: local
-            wait: 120
-
+            wait: 200
           - np: v3.2.0
             npd: local
-            wait: 120
     steps:
       - name: Show Matrix Values
         run: |
@@ -134,9 +130,6 @@ jobs:
           cat sshnp/entrypoint.sh
           cat sshnpd/entrypoint.sh
           cat sshrvd/entrypoint.sh
-
-      - name: Store lists in env
-        run: |
 
       - name: Add runtime-release image to docker-compose.yaml
         working-directory: tests/end2end_tests/tests

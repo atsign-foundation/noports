@@ -125,5 +125,20 @@ class SSHNPArg {
       mandatory: false,
       format: ArgFormat.option,
     ),
+    SSHNPArg(
+      name: 'local-sshd-port',
+      help: 'port sshd is listening locally on localhost',
+      defaultsTo: '22',
+      abbr: 'P',
+      mandatory: false,
+      format: ArgFormat.option,
+    ),
+
+    SSHNPArg(
+      name: 'legacy-daemon',
+      defaultsTo: true,
+      help: 'Request is to a legacy (< 3.5.0) noports daemon',
+      format: ArgFormat.flag,
+    ),
   ];
 }

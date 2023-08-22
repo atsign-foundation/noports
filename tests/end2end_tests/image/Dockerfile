@@ -1,4 +1,31 @@
-FROM dart:3.0.7@sha256:faf300f790cadb2e34182dd75c5f14642e21c625396055a16aa967170dfb71d7 AS build-branch
+# BASE
+FROM debian:stable-20230814-slim@sha256:6fe30b9cb71d604a872557be086c74f95451fecd939d72afe3cffca3d9e60607 AS base
+
+ENV USER=atsign
+ENV HOMEDIR=/${USER}
+ENV USER_ID=1024
+ENV GROUP_ID=1024
+
+CMD sudo service ssh start
+
+RUN set -eux ; \
+  apt-get update ; \
+  apt-get install -y openssh-server sudo vim nano iproute2 nmap tmux curl cron ; \
+  groupadd --gid ${GROUP_ID} ${USER} ; \
+  useradd --system --shell /bin/bash --home ${HOMEDIR} --uid ${USER_ID} --gid ${GROUP_ID} ${USER} ; \
+  usermod -aG sudo ${USER} ; \
+  mkdir -p ${HOMEDIR}/.ssh ${HOMEDIR}/.atsign/keys ${HOMEDIR}/.local/bin ; \
+  touch ${HOMEDIR}/.ssh/authorized_keys ; \
+  ssh-keygen -t ed25519 -a 100 -f ${HOMEDIR}/.ssh/id_ed25519 -q -N '' ; \
+  chown -R ${USER}:${USER} ${HOMEDIR} ; \
+  ex +"%s/^%sudo.*$/%sudo ALL=(ALL:ALL) NOPASSWD:ALL/g" -scwq! /etc/sudoers ; \
+  sed -E -i 's|^#?(PasswordAuthentication)\s.*|\1 no|' /etc/ssh/sshd_config ; \
+  sed -i 's/#ListenAddress 0.0.0.0/ListenAddress 127.0.0.1/g' /etc/ssh/sshd_config ;
+# END BASE
+
+# BRANCH
+# BUILD BRANCH
+FROM dart:3.0.7@sha256:4dc0299dd863edbf81e0e43490fa9c610f6655b62a2e1bc0e0dc02dfea2105eb AS build-branch
 
 ENV URL=https://github.com/atsign-foundation/sshnoports.git
 ENV REPO_DIR=/app/repo
@@ -20,7 +47,21 @@ RUN set -eux ; \
   dart compile exe ${REPO_DIR}/packages/sshnoports/bin/sshrvd.dart -o ${OUTPUT_DIR}/sshrvd ; \
   dart compile exe ${REPO_DIR}/packages/sshnoports/bin/activate_cli.dart -o ${OUTPUT_DIR}/at_activate ;
 
-FROM dart:3.0.7@sha256:faf300f790cadb2e34182dd75c5f14642e21c625396055a16aa967170dfb71d7 AS build-local
+# RUNTIME BRANCH
+FROM base AS runtime-branch
+
+COPY --chown=${USER}:${USER} --from=build-branch /app/output ${HOMEDIR}/.local/bin
+
+WORKDIR ${HOMEDIR}
+
+USER ${USER}
+
+ENTRYPOINT sudo service ssh start && sh ${HOMEDIR}/entrypoint.sh
+# END BRANCH
+
+# LOCAL
+# BUILD LOCAL
+FROM dart:3.0.7@sha256:4dc0299dd863edbf81e0e43490fa9c610f6655b62a2e1bc0e0dc02dfea2105eb AS build-local
 
 ENV REPO_DIR=/app/repo
 ENV OUTPUT_DIR=/app/output
@@ -39,7 +80,21 @@ RUN set -eux ; \
   dart compile exe ${REPO_DIR}/packages/sshnoports/bin/sshrvd.dart -o ${OUTPUT_DIR}/sshrvd ; \
   dart compile exe ${REPO_DIR}/packages/sshnoports/bin/activate_cli.dart -o ${OUTPUT_DIR}/at_activate ;
 
-FROM debian:stable-20230725-slim@sha256:c9e860b7a6d51a5f90f4fcb645d789c078f7b9d2cc6ebfd48792e0fea5739c04 AS build-release
+# RUNTIME LOCAL
+FROM base AS runtime-local
+
+COPY --chown=${USER}:${USER} --from=build-local /app/output ${HOMEDIR}/.local/bin
+
+WORKDIR ${HOMEDIR}
+
+USER ${USER}
+
+ENTRYPOINT sudo service ssh start && sh ${HOMEDIR}/entrypoint.sh
+# END LOCAL
+
+# RELEASE
+# BUILD RELEASE
+FROM debian:stable-20230814-slim@sha256:6fe30b9cb71d604a872557be086c74f95451fecd939d72afe3cffca3d9e60607 AS build-release
 
 ARG release
 
@@ -74,39 +129,7 @@ RUN apt-get update ; \
   cd sshnp ; \
   mv sshnp sshnpd sshrv sshrvd at_activate ${OUTPUT_DIR} ;
 
-FROM debian:stable-20230725-slim@sha256:c9e860b7a6d51a5f90f4fcb645d789c078f7b9d2cc6ebfd48792e0fea5739c04 AS base
-
-ENV USER=atsign
-ENV HOMEDIR=/${USER}
-ENV USER_ID=1024
-ENV GROUP_ID=1024
-
-CMD sudo service ssh start
-
-RUN set -eux ; \
-  apt-get update ; \
-  apt-get install -y openssh-server sudo vim nano iproute2 nmap tmux curl cron ; \
-  groupadd --gid ${GROUP_ID} ${USER} ; \
-  useradd --system --shell /bin/bash --home ${HOMEDIR} --uid ${USER_ID} --gid ${GROUP_ID} ${USER} ; \
-  usermod -aG sudo ${USER} ; \
-  mkdir -p ${HOMEDIR}/.ssh ${HOMEDIR}/.atsign/keys ${HOMEDIR}/.local/bin ; \
-  touch ${HOMEDIR}/.ssh/authorized_keys ; \
-  ssh-keygen -t ed25519 -a 100 -f ${HOMEDIR}/.ssh/id_ed25519 -q -N '' ; \
-  chown -R ${USER}:${USER} ${HOMEDIR} ; \
-  ex +"%s/^%sudo.*$/%sudo ALL=(ALL:ALL) NOPASSWD:ALL/g" -scwq! /etc/sudoers ; \
-  sed -E -i 's|^#?(PasswordAuthentication)\s.*|\1 no|' /etc/ssh/sshd_config ; \
-  sed -i 's/#ListenAddress 0.0.0.0/ListenAddress 127.0.0.1/g' /etc/ssh/sshd_config ;
-
-FROM base AS runtime-branch
-
-COPY --chown=${USER}:${USER} --from=build-branch /app/output ${HOMEDIR}/.local/bin
-
-WORKDIR ${HOMEDIR}
-
-USER ${USER}
-
-ENTRYPOINT sudo service ssh start && sh ${HOMEDIR}/entrypoint.sh
-
+# RUNTIME RELEASE
 FROM base AS runtime-release
 
 COPY --chown=${USER}:${USER} --from=build-release /app/output ${HOMEDIR}/.local/bin
@@ -116,17 +139,10 @@ WORKDIR ${HOMEDIR}
 USER ${USER}
 
 ENTRYPOINT sudo service ssh start && sh ${HOMEDIR}/entrypoint.sh
+# END RELEASE
 
-FROM base AS runtime-local
-
-COPY --chown=${USER}:${USER} --from=build-local /app/output ${HOMEDIR}/.local/bin
-
-WORKDIR ${HOMEDIR}
-
-USER ${USER}
-
-ENTRYPOINT sudo service ssh start && sh ${HOMEDIR}/entrypoint.sh
-
+# SSHNP INSTALLER
+# BUILD SSHNP INSTALLER
 FROM base AS build-sshnp-installer
 
 USER ${USER}
@@ -142,27 +158,28 @@ ARG device_atsign
 ARG host_atsign
 
 RUN set -eux; \
-  sh ${REPO_DIR}/packages/sshnoports/scripts/install_sshnp \
+  sh ${REPO_DIR}/scripts/install_sshnp \
   -c ${client_atsign} \
   -d ${device_atsign} \
   -h ${host_atsign};
 
+# RUNTIME SSHNP INSTALLER
 FROM build-sshnp-installer AS runtime-sshnp-installer
 
 USER ${USER}
 WORKDIR ${HOMEDIR}
 
-ENV USE_INSTALLER=1
-
 ENTRYPOINT sudo service ssh start && sh ${HOMEDIR}/entrypoint.sh
+# END SSHNP INSTALLER
 
+# SSHNPD INSTALLER
+# BUILD SSHNPD INSTALLER
 FROM base AS build-sshnpd-installer
 
 USER ${USER}
 WORKDIR ${HOMEDIR}
 
 ENV REPO_DIR=/app/repo
-ENV USE_INSTALLER=1
 
 # context must be the root of the repo
 COPY . ${REPO_DIR}
@@ -173,20 +190,23 @@ ARG device_name
 
 RUN set -eux ; \
   sudo service cron start; \
-  sh ${REPO_DIR}/packages/sshnoports/scripts/install_sshnpd \
+  sudo service ssh start; \
+  sh ${REPO_DIR}/scripts/install_sshnpd \
   -c ${client_atsign} \
   -d ${device_atsign} \
-  -n ${device_name};
+  -n ${device_name} \
+  --args "-s -u -v" ;
 
+# RUNTIME SSHNPD INSTALLER
 FROM build-sshnpd-installer AS runtime-sshnpd-installer
 
 USER ${USER}
 WORKDIR ${HOMEDIR}
 
-ENV USE_INSTALLER=1
-
 ENTRYPOINT sudo service ssh start && sh ${HOMEDIR}/entrypoint.sh
+# END SSHNPD INSTALLER
 
+# MANUAL
 FROM runtime-branch AS manual-branch
 
 ENTRYPOINT sudo service ssh start && bash
@@ -206,3 +226,4 @@ WORKDIR ${HOMEDIR}
 USER ${USER}
 
 ENTRYPOINT sudo service ssh start && bash
+# END MANUAL
