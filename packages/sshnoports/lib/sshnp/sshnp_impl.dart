@@ -493,7 +493,8 @@ class SSHNPImpl implements SSHNP {
   Future<SSHNPResult> startReverseSsh() async {
     // Connect to rendezvous point using background process.
     // sshnp (this program) can then exit without issue.
-    unawaited(SSHRV.localBinary(host, _sshrvdPort, localSshdPort: localSshdPort).run());
+    SSHRV sshrv = sshrvGenerator(host, _sshrvdPort, localSshdPort: localSshdPort);
+    unawaited(sshrv.run());
 
     // send request to the daemon via notification
     await _notify(
@@ -538,7 +539,8 @@ class SSHNPImpl implements SSHNP {
   Future<SSHNPResult> legacyStartReverseSsh() async {
     // Connect to rendezvous point using background process.
     // sshnp (this program) can then exit without issue.
-    unawaited(SSHRV.localBinary(host, _sshrvdPort, localSshdPort: localSshdPort).run());
+    SSHRV sshrv = sshrvGenerator(host, _sshrvdPort, localSshdPort: localSshdPort);
+    unawaited(sshrv.run());
 
     // send request to the daemon via notification
     await _notify(
