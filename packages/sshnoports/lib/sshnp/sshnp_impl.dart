@@ -203,7 +203,6 @@ class SSHNPImpl implements SSHNP {
       if (p.clientAtSign == null) {
         throw ArgumentError('Option from is mandatory.');
       }
-
       if (p.sshnpdAtSign == null) {
         throw ArgumentError('Option to is mandatory.');
       }
@@ -212,20 +211,23 @@ class SSHNPImpl implements SSHNP {
         throw ArgumentError('Option host is mandatory.');
       }
 
-      // Check atKeyFile selected exists
-      if (!await fileExists(p.atKeysFilePath)) {
-        throw ArgumentError(
-            '\nUnable to find .atKeys file : ${p.atKeysFilePath}');
+      if (atClient != null) {
+        if (p.clientAtSign != atClient.getCurrentAtSign()) {
+          throw ArgumentError(
+              'Option from must match the current atSign of the AtClient');
+        }
+      } else {
+        // Check atKeyFile selected exists
+        if (!await fileExists(p.atKeysFilePath)) {
+          throw ArgumentError(
+              '\nUnable to find .atKeys file : ${p.atKeysFilePath}');
+        }
       }
 
       // Check to see if localSshdPort has been set as a number
-      if (int.tryParse(p.localSshdPort) == null) {
-        throw ArgumentError(
-            '\nInvalid port number for sshd (1-65535) : ${p.localSshdPort}');
-      }
-
       // Check to see if the port number is in range for TCP ports
-      if (int.parse(p.localSshdPort) > 65535 ||
+      if (int.tryParse(p.localSshdPort) == null ||
+          int.parse(p.localSshdPort) > 65535 ||
           int.parse(p.localSshdPort) < 1) {
         throw ArgumentError(
             '\nInvalid port number for sshd (1-65535) : ${p.localSshdPort}');
