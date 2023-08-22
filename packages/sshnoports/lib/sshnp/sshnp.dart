@@ -81,6 +81,11 @@ abstract class SSHNP {
   /// is set to '0' then
   abstract String localPort;
 
+  /// Port that local sshd is listening on localhost interface
+  /// Default set to 22
+
+  abstract String localSshdPort;
+
   // ====================================================================
   // Derived final instance variables, set during construction or init
   // ====================================================================
@@ -140,6 +145,10 @@ abstract class SSHNP {
 
   abstract final bool direct;
 
+  static const defaultSshrvGenerator = SSHRV.localBinary;
+  static const defaultLocalSshdPort = '22';
+  static const defaultLegacyDaemon = true;
+
   factory SSHNP({
     // final fields
     required AtClient atClient,
@@ -157,8 +166,9 @@ abstract class SSHNP {
     required String localPort,
     String? remoteUsername,
     bool verbose = false,
-    SSHRV Function(String, int) sshrvGenerator = SSHRV.localBinary,
-    required bool legacyDaemon,
+    SSHRV Function(String, int) sshrvGenerator = defaultSshrvGenerator,
+    String localSshdPort = defaultLocalSshdPort,
+    bool legacyDaemon = defaultLegacyDaemon,
   }) {
     return SSHNPImpl(
       atClient: atClient,
@@ -176,6 +186,7 @@ abstract class SSHNP {
       remoteUsername: remoteUsername,
       verbose: verbose,
       sshrvGenerator: sshrvGenerator,
+      localSshdPort: localSshdPort,
       legacyDaemon: legacyDaemon,
     );
   }

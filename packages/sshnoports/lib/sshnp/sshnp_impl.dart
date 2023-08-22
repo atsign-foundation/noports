@@ -38,6 +38,9 @@ class SSHNPImpl implements SSHNP {
   @override
   final List<String> localSshOptions;
 
+  @override
+  late final String localSshdPort;
+
   /// When false, we generate [sshPublicKey] and [sshPrivateKey] using ed25519.
   /// When true, we generate [sshPublicKey] and [sshPrivateKey] using RSA.
   /// Defaults to false
@@ -164,8 +167,9 @@ class SSHNPImpl implements SSHNP {
     required this.localPort,
     this.remoteUsername,
     this.verbose = false,
-    this.sshrvGenerator = SSHRV.localBinary,
-    required this.legacyDaemon,
+    this.sshrvGenerator = SSHNP.defaultSshrvGenerator,
+    this.localSshdPort = SSHNP.defaultLocalSshdPort,
+    this.legacyDaemon = SSHNP.defaultLegacyDaemon,
   }) {
     namespace = '$device.sshnp';
     clientAtSign = atClient.getCurrentAtSign()!;
@@ -209,8 +213,22 @@ class SSHNPImpl implements SSHNP {
       }
 
       // Check atKeyFile selected exists
-      if (atClient == null && !await fileExists(p.atKeysFilePath)) {
-        throw ('\nUnable to find .atKeys file : ${p.atKeysFilePath}');
+      if (!await fileExists(p.atKeysFilePath)) {
+        throw ArgumentError(
+            '\nUnable to find .atKeys file : ${p.atKeysFilePath}');
+      }
+
+      // Check to see if localSshdPort has been set as a number
+      if (int.tryParse(p.localSshdPort) == null) {
+        throw ArgumentError(
+            '\nInvalid port number for sshd (1-65535) : ${p.localSshdPort}');
+      }
+
+      // Check to see if the port number is in range for TCP ports
+      if (int.parse(p.localSshdPort) > 65535 ||
+          int.parse(p.localSshdPort) < 1) {
+        throw ArgumentError(
+            '\nInvalid port number for sshd (1-65535) : ${p.localSshdPort}');
       }
 
       String sessionId = Uuid().v4();
@@ -245,6 +263,7 @@ class SSHNPImpl implements SSHNP {
         remoteUsername: p.remoteUsername,
         verbose: p.verbose,
         sshrvGenerator: sshrvGenerator,
+        localSshdPort: p.localSshdPort,
         legacyDaemon: p.legacyDaemon,
       );
       if (p.verbose) {
@@ -419,7 +438,7 @@ class SSHNPImpl implements SSHNP {
     List<String> args = '$remoteUsername@$host'
             ' -p $_sshrvdPort'
             ' -i ${publicKeyFileName.replaceFirst(RegExp(r'.pub$'), '')}'
-            ' -L $localPort:localhost:22'
+            ' -L $localPort:localhost:$localSshdPort'
             ' -o LogLevel=VERBOSE'
             ' -t -t'
             ' -o StrictHostKeyChecking=accept-new'
@@ -476,7 +495,9 @@ class SSHNPImpl implements SSHNP {
   Future<SSHNPResult> startReverseSsh() async {
     // Connect to rendezvous point using background process.
     // sshnp (this program) can then exit without issue.
-    unawaited(Process.run(getSshrvCommand(), [host, _sshrvdPort]));
+
+    unawaited(
+        Process.run(getSshrvCommand(), [host, _sshrvdPort, localSshdPort]));
 
     // send request to the daemon via notification
     await _notify(
@@ -521,7 +542,9 @@ class SSHNPImpl implements SSHNP {
   Future<SSHNPResult> legacyStartReverseSsh() async {
     // Connect to rendezvous point using background process.
     // sshnp (this program) can then exit without issue.
-    unawaited(Process.run(getSshrvCommand(), [host, _sshrvdPort]));
+
+    unawaited(
+        Process.run(getSshrvCommand(), [host, _sshrvdPort, localSshdPort]));
 
     // send request to the daemon via notification
     await _notify(
@@ -710,7 +733,7 @@ class SSHNPImpl implements SSHNP {
 
     // Set up a safe authorized_keys file, for the reverse ssh tunnel
     File('${sshHomeDirectory}authorized_keys').writeAsStringSync(
-        'command="echo \\"ssh session complete\\";sleep 20",PermitOpen="localhost:22" ${sshPublicKey.trim()} $sessionId\n',
+        'command="echo \\"ssh session complete\\";sleep 20",PermitOpen="localhost:$localSshdPort" ${sshPublicKey.trim()} $sessionId\n',
         mode: FileMode.append);
   }
 
