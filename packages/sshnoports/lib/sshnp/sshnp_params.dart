@@ -12,8 +12,8 @@ class SSHNPParams {
 
   /// Optional Arguments
   late final String device;
-  late final String port;
-  late final String localPort;
+  late final int port;
+  late final int localPort;
   late final String username;
   late final String homeDirectory;
   late final String atKeysFilePath;
@@ -23,7 +23,7 @@ class SSHNPParams {
   late final String? remoteUsername;
   late final bool verbose;
   late final String rootDomain;
-  late final String localSshdPort;
+  late final int localSshdPort;
   late final bool legacyDaemon;
 
   /// Special Arguments
@@ -33,19 +33,19 @@ class SSHNPParams {
     required this.clientAtSign,
     required this.sshnpdAtSign,
     required this.host,
-    this.device = 'default',
-    this.port = '22',
-    this.localPort = '0',
-    this.sendSshPublicKey = 'false',
-    this.localSshOptions = const [],
-    this.verbose = false,
-    this.rsa = false,
+    this.device = SSHNP.defaultDevice,
+    this.port = SSHNP.defaultPort,
+    this.localPort = SSHNP.defaultLocalPort,
+    this.sendSshPublicKey = SSHNP.defaultSendSshPublicKey,
+    this.localSshOptions = SSHNP.defaultLocalSshOptions,
+    this.verbose = SSHNP.defaultVerbose,
+    this.rsa = SSHNP.defaultRsa,
     this.remoteUsername,
     String? atKeysFilePath,
-    this.rootDomain = 'root.atsign.org',
+    this.rootDomain = SSHNP.defaultRootDomain,
     this.localSshdPort = SSHNP.defaultLocalSshdPort,
     this.legacyDaemon = SSHNP.defaultLegacyDaemon,
-    this.listDevices = false,
+    this.listDevices = SSHNP.defaultListDevices,
   }) {
     // Do we have a username ?
     username = getUserName(throwIfNull: true)!;
@@ -69,22 +69,24 @@ class SSHNPParams {
     partial.host ?? (logger.severe('host is null'));
 
     return SSHNPParams(
-        clientAtSign: partial.clientAtSign,
-        sshnpdAtSign: partial.sshnpdAtSign,
-        host: partial.host,
-        device: partial.device ?? 'default',
-        port: partial.port ?? '22',
-        localPort: partial.localPort ?? '0',
-        sendSshPublicKey: partial.sendSshPublicKey ?? 'false',
-        localSshOptions: partial.localSshOptions,
-        rsa: partial.rsa ?? false,
-        verbose: partial.verbose ?? false,
-        remoteUsername: partial.remoteUsername,
-        atKeysFilePath: partial.atKeysFilePath,
-        rootDomain: partial.rootDomain ?? 'root.atsign.org',
-        localSshdPort: partial.localSshdPort ?? '22',
-        listDevices: partial.listDevices,
-        legacyDaemon: partial.legacyDaemon ?? true);
+      clientAtSign: partial.clientAtSign,
+      sshnpdAtSign: partial.sshnpdAtSign,
+      host: partial.host,
+      device: partial.device ?? SSHNP.defaultDevice,
+      port: partial.port ?? SSHNP.defaultPort,
+      localPort: partial.localPort ?? SSHNP.defaultLocalPort,
+      sendSshPublicKey:
+          partial.sendSshPublicKey ?? SSHNP.defaultSendSshPublicKey,
+      localSshOptions: partial.localSshOptions,
+      rsa: partial.rsa ?? SSHNP.defaultRsa,
+      verbose: partial.verbose ?? SSHNP.defaultRsa,
+      remoteUsername: partial.remoteUsername,
+      atKeysFilePath: partial.atKeysFilePath,
+      rootDomain: partial.rootDomain ?? SSHNP.defaultRootDomain,
+      localSshdPort: partial.localSshdPort ?? SSHNP.defaultLocalSshdPort,
+      listDevices: partial.listDevices,
+      legacyDaemon: partial.legacyDaemon ?? SSHNP.defaultLegacyDaemon,
+    );
   }
 
   factory SSHNPParams.fromConfigFile(String fileName) {
@@ -101,6 +103,7 @@ class SSHNPParams {
 
     await files.forEach((file) {
       if (file is! File) return;
+      if (path.extension(file.path) != '.env') return;
       try {
         var p = SSHNPParams.fromConfigFile(file.path);
         params.add(p);
@@ -169,8 +172,9 @@ class SSHNPPartialParams {
   late final String? sshnpdAtSign;
   late final String? host;
   late final String? device;
-  late final String? port;
-  late final String? localPort;
+  late final int? port;
+  late final int? localPort;
+  late final int? localSshdPort;
   late final String? atKeysFilePath;
   late final String? sendSshPublicKey;
   late final List<String> localSshOptions;
@@ -178,7 +182,6 @@ class SSHNPPartialParams {
   late final String? remoteUsername;
   late final bool? verbose;
   late final String? rootDomain;
-  late final String? localSshdPort;
   late final bool? legacyDaemon;
 
   /// Special Params
@@ -246,13 +249,14 @@ class SSHNPPartialParams {
       localPort: args['local-port'],
       atKeysFilePath: args['key-file'],
       sendSshPublicKey: args['ssh-public-key'],
-      localSshOptions: args['local-ssh-options'] ?? [],
+      localSshOptions:
+          args['local-ssh-options'] ?? SSHNP.defaultLocalSshOptions,
       rsa: args['rsa'],
       remoteUsername: args['remote-user-name'],
       verbose: args['verbose'],
       rootDomain: args['root-domain'],
       localSshdPort: args['local-sshd-port'],
-      listDevices: args['list-devices'] ?? false,
+      listDevices: args['list-devices'] ?? SSHNP.defaultListDevices,
       legacyDaemon: args['legacy-daemon'],
     );
   }
@@ -381,7 +385,11 @@ class SSHNPPartialParams {
             continue;
           case ArgFormat.option:
             if (value.isEmpty) continue;
-            args[arg.name] = value;
+            if (arg.type == ArgType.integer) {
+              args[arg.name] = int.parse(value);
+            } else {
+              args[arg.name] = value;
+            }
             continue;
         }
       }

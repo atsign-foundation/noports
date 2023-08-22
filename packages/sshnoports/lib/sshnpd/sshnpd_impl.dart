@@ -462,8 +462,7 @@ class SSHNPDImpl implements SSHNPD {
     try {
       // Connect to rendezvous point using background process.
       // This program can then exit without causing an issue.
-      Process rv = await Process.start(getSshrvCommand(), [host, '$port'],
-          mode: ProcessStartMode.detached);
+      Process rv = await SSHRV.localBinary(host, port).run();
       logger.info('Started rv - pid is ${rv.pid}');
 
       /// Notify sshnp that the connection has been made

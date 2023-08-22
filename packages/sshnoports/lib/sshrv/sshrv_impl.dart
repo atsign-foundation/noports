@@ -1,7 +1,7 @@
 part of 'sshrv.dart';
 
 @visibleForTesting
-class SSHRVImpl implements SSHRV<ProcessResult> {
+class SSHRVImpl implements SSHRV<Process> {
   @override
   final String host;
 
@@ -14,11 +14,11 @@ class SSHRVImpl implements SSHRV<ProcessResult> {
   const SSHRVImpl(
     this.host,
     this.streamingPort, {
-    this.localSshdPort = 22,
+    this.localSshdPort = SSHNP.defaultLocalSshdPort,
   });
 
   @override
-  Future<ProcessResult> run() async {
+  Future<Process> run() async {
     String? command = await SSHRV.getLocalBinaryPath();
     String postfix = Platform.isWindows ? '.exe' : '';
     if (command == null) {
@@ -27,8 +27,11 @@ class SSHRVImpl implements SSHRV<ProcessResult> {
         'N.B. sshnp is expected to be compiled and run from source, not via the dart command.',
       );
     }
-    return Process.run(
-        command, [host, streamingPort.toString(), localSshdPort.toString()]);
+    return Process.start(
+      command,
+      [host, streamingPort.toString(), localSshdPort.toString()],
+      mode: ProcessStartMode.detached,
+    );
   }
 }
 

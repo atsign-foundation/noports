@@ -9,6 +9,7 @@ import 'package:at_utils/at_logger.dart';
 import 'package:at_utils/at_utils.dart';
 import 'package:logging/logging.dart';
 import 'package:meta/meta.dart';
+import 'package:path/path.dart' as path;
 import 'package:sshnoports/common/create_at_client_cli.dart';
 import 'package:sshnoports/common/supported_ssh_clients.dart';
 import 'package:sshnoports/common/utils.dart';
@@ -75,16 +76,16 @@ abstract class SSHNP {
   /// Required if we are not using sshrvd.
   /// If using sshrvd then initial port value will be ignored and instead we
   /// will fetch the port from sshrvd.
-  abstract String port;
+  abstract int port;
 
   /// Port to which sshnpd will forwardRemote its [SSHClient]. If localPort
   /// is set to '0' then
-  abstract String localPort;
+  abstract int localPort;
 
   /// Port that local sshd is listening on localhost interface
   /// Default set to 22
 
-  abstract String localSshdPort;
+  abstract int localSshdPort;
 
   // ====================================================================
   // Derived final instance variables, set during construction or init
@@ -115,7 +116,7 @@ abstract class SSHNP {
   abstract final String namespace;
 
   /// When using sshrvd, this is fetched from sshrvd during [init]
-  String get sshrvdPort;
+  int get sshrvdPort;
 
   /// Set by constructor to
   /// '$homeDirectory${Platform.pathSeparator}.ssh${Platform.pathSeparator}'
@@ -145,9 +146,19 @@ abstract class SSHNP {
 
   abstract final bool direct;
 
+  /// Default parameters for sshnp
+  static const defaultDevice = 'default';
+  static const defaultPort = 22;
+  static const defaultLocalPort = 0;
+  static const defaultSendSshPublicKey = 'false';
+  static const defaultLocalSshOptions = <String>[];
+  static const defaultVerbose = false;
+  static const defaultRsa = false;
+  static const defaultRootDomain = 'root.atsign.org';
   static const defaultSshrvGenerator = SSHRV.localBinary;
-  static const defaultLocalSshdPort = '22';
+  static const defaultLocalSshdPort = 22;
   static const defaultLegacyDaemon = true;
+  static const defaultListDevices = false;
 
   factory SSHNP({
     // final fields
@@ -162,12 +173,12 @@ abstract class SSHNP {
     bool rsa = false,
     // volatile fields
     required String host,
-    required String port,
-    required String localPort,
+    required int port,
+    required int localPort,
     String? remoteUsername,
     bool verbose = false,
-    SSHRV Function(String, int) sshrvGenerator = defaultSshrvGenerator,
-    String localSshdPort = defaultLocalSshdPort,
+    SSHRVGenerator sshrvGenerator = defaultSshrvGenerator,
+    int localSshdPort = defaultLocalSshdPort,
     bool legacyDaemon = defaultLegacyDaemon,
   }) {
     return SSHNPImpl(
@@ -198,7 +209,7 @@ abstract class SSHNP {
   static Future<SSHNP> fromParams(
     SSHNPParams p, {
     AtClient? atClient,
-    SSHRV Function(String, int) sshrvGenerator = SSHRV.localBinary,
+    SSHRVGenerator sshrvGenerator = SSHRV.localBinary,
   }) {
     return SSHNPImpl.fromParams(
       p,

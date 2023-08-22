@@ -2,8 +2,11 @@ import 'dart:io';
 
 import 'package:meta/meta.dart';
 import 'package:socket_connector/socket_connector.dart';
+import 'package:sshnoports/sshnp/sshnp.dart';
 
 part 'sshrv_impl.dart';
+
+typedef SSHRVGenerator = SSHRV Function(String, int, {int localSshdPort});
 
 abstract class SSHRV<T> {
   /// The internet address of the host to connect to.
@@ -19,10 +22,10 @@ abstract class SSHRV<T> {
   Future<T> run();
 
   // Can't use factory functions since SSHRV contains a generic type
-  static SSHRV localBinary(
+  static SSHRV<Process> localBinary(
     String host,
     int streamingPort, {
-    int localSshdPort = 22,
+    int localSshdPort = SSHNP.defaultLocalSshdPort,
   }) {
     return SSHRVImpl(
       host,
@@ -31,7 +34,7 @@ abstract class SSHRV<T> {
     );
   }
 
-  static SSHRV pureDart(
+  static SSHRV<SocketConnector> pureDart(
     String host,
     int streamingPort, {
     int localSshdPort = 22,
