@@ -32,7 +32,7 @@ String? getHomeDirectory({bool throwIfNull = false}) {
 /// Get the local username or null if unknown
 String? getUserName({bool throwIfNull = false}) {
   Map<String, String> envVars = Platform.environment;
-  if (Platform.isLinux || Platform.isMacOS) {
+  if (!Platform.isWindows) {
     return envVars['USER'];
   } else if (Platform.isWindows) {
     return envVars['USERPROFILE'];
