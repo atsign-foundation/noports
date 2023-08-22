@@ -29,8 +29,8 @@ class _NewConnectionFormState extends ConsumerState<NewConnectionForm> {
 
   /// Optional Arguments
   late String device;
-  late String port;
-  late String localPort;
+  late int port;
+  late int localPort;
   late String sendSshPublicKey;
   late List<String> localSshOptions;
   late bool verbose;
@@ -131,9 +131,9 @@ class _NewConnectionFormState extends ConsumerState<NewConnectionForm> {
               ),
               gapH10,
               CustomTextFormField(
-                initialValue: port,
+                initialValue: port.toString(),
                 labelText: strings.port,
-                onSaved: (value) => port = value!,
+                onSaved: (value) => port = int.parse(value!),
                 validator: Validator.validateRequiredField,
               ),
               gapH10,
@@ -190,9 +190,9 @@ class _NewConnectionFormState extends ConsumerState<NewConnectionForm> {
               ),
               gapH10,
               CustomTextFormField(
-                initialValue: localPort,
+                initialValue: localPort.toString(),
                 labelText: strings.localPort,
-                onSaved: (value) => localPort = value!,
+                onSaved: (value) => localPort = int.parse(value!),
               ),
               gapH10,
               CustomTextFormField(

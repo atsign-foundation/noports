@@ -5,31 +5,21 @@ import 'package:at_client_mobile/at_client_mobile.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sshnoports/common/utils.dart';
 import 'package:sshnoports/sshnp/sshnp.dart';
-import 'package:sshnoports/sshrv/sshrv.dart';
 
 /// A Controller class that controls the UI update when the [AtDataRepository] methods are called.
-class HomeScreenController extends StateNotifier<AsyncValue<List<SSHNP>>> {
+class HomeScreenController extends StateNotifier<AsyncValue<List<SSHNPParams>>> {
   final Ref ref;
 
   HomeScreenController({required this.ref}) : super(const AsyncValue.loading());
-
-  late Iterable<SSHNPParams> sshnpParams;
 
   /// Get list of config files associated with the current astign.
   Future<void> getConfigFiles() async {
     state = const AsyncValue.loading();
     state = await AsyncValue.guard(() async {
       try {
-        sshnpParams = await SSHNPParams.getConfigFilesFromDirectory();
+        var sshnpParams = await SSHNPParams.getConfigFilesFromDirectory();
 
-        final sshnpList = await Future.wait(sshnpParams
-            .map((e) => SSHNP.fromParams(
-                  e,
-                  atClient: AtClientManager.getInstance().atClient,
-                  sshrvGenerator: SSHRV.pureDart,
-                ))
-            .toList());
-        return sshnpList;
+        return sshnpParams.toList();
       } on PathNotFoundException {
         log('Path Not Found');
         return [];
@@ -72,4 +62,4 @@ class HomeScreenController extends StateNotifier<AsyncValue<List<SSHNP>>> {
 
 /// A provider that exposes the [HomeScreenController] to the app.
 final homeScreenControllerProvider =
-    StateNotifierProvider<HomeScreenController, AsyncValue<List<SSHNP>>>((ref) => HomeScreenController(ref: ref));
+    StateNotifierProvider<HomeScreenController, AsyncValue<List<SSHNPParams>>>((ref) => HomeScreenController(ref: ref));

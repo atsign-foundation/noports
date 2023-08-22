@@ -1,11 +1,14 @@
+import 'package:at_client_mobile/at_client_mobile.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
 import 'package:sshnoports/sshnp/sshnp.dart';
+import 'package:sshnoports/sshrv/sshrv.dart';
 import 'package:sshnp_gui/src/controllers/current_nav_index_provider.dart';
 import 'package:sshnp_gui/src/controllers/minor_providers.dart';
+import 'package:sshnp_gui/src/presentation/widgets/sshnp_result_alert_dialog.dart';
 import 'package:sshnp_gui/src/utils/enum.dart';
 
 import '../../controllers/home_screen_controller.dart';
@@ -29,13 +32,24 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       await ref.read(homeScreenControllerProvider.notifier).getConfigFiles();
     });
-
     super.initState();
   }
 
-  Future<void> ssh(SSHNP sshnp) async {
+  Future<void> ssh(SSHNPParams sshnpParams) async {
+    final sshnp = await SSHNP.fromParams(
+      sshnpParams,
+      atClient: AtClientManager.getInstance().atClient,
+      sshrvGenerator: SSHRV.pureDart,
+    );
     await sshnp.init();
-    await sshnp.run();
+    final sshnpResult = await sshnp.run();
+    if (mounted) {
+      showDialog<void>(
+        context: context,
+        barrierDismissible: false,
+        builder: (BuildContext context) => SSHNPResultAlertDialog(sshnpResult: sshnpResult),
+      );
+    }
   }
 
   void updateConfigFile(SSHNPParams sshnpParams) {
@@ -89,9 +103,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                                     4: IntrinsicColumnWidth(),
                                     5: IntrinsicColumnWidth(),
                                     6: IntrinsicColumnWidth(),
-                                    7: FixedColumnWidth(200),
+                                    7: FixedColumnWidth(150),
                                     8: FixedColumnWidth(150),
-                                    9: FixedColumnWidth(150),
                                   },
                                   children: [
                                     TableRow(
@@ -106,7 +119,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                                         CustomTableCell.text(text: strings.localPort),
                                         CustomTableCell.text(text: strings.username),
                                         CustomTableCell.text(text: strings.homeDirectory),
-                                        CustomTableCell.text(text: strings.sessionId),
                                         CustomTableCell.text(text: strings.localSshOptions),
                                       ],
                                     ),
@@ -136,24 +148,19 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                                                   ),
                                                   IconButton(
                                                     onPressed: () {
-                                                      updateConfigFile(ref
-                                                          .read(homeScreenControllerProvider.notifier)
-                                                          .sshnpParams
-                                                          .elementAt(state.value!.indexOf(e)));
+                                                      updateConfigFile(e);
                                                     },
                                                     icon: const Icon(Icons.edit),
                                                   ),
                                                 ],
                                               )),
-                                              CustomTableCell.text(text: e.sshnpdAtSign),
-                                              CustomTableCell.text(text: e.sshnpdAtSign),
+                                              CustomTableCell.text(text: e.clientAtSign ?? ''),
+                                              CustomTableCell.text(text: e.sshnpdAtSign ?? ''),
                                               CustomTableCell.text(text: e.device),
-                                              CustomTableCell.text(text: e.port),
-                                              CustomTableCell.text(text: e.localPort),
+                                              CustomTableCell.text(text: e.port.toString()),
+                                              CustomTableCell.text(text: e.localPort.toString()),
                                               CustomTableCell.text(text: e.username),
                                               CustomTableCell.text(text: e.homeDirectory),
-                                              CustomTableCell.text(text: e.sessionId),
-
                                               CustomTableCell.text(text: e.localSshOptions.join(',')),
                                               // CustomTableCell(
                                               //     child: Row(

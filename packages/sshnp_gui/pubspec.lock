@@ -1111,7 +1111,7 @@ packages:
     description:
       path: "packages/sshnoports"
       ref: sshnp-changes-for-gui
-      resolved-ref: "2ad4b653ccb087af918ad13e9110dbff9480c0e4"
+      resolved-ref: "0a136266db44e601d91689d4503529c401dcef4e"
       url: "https://github.com/atsign-foundation/sshnoports.git"
     source: git
     version: "3.4.0"
