@@ -151,22 +151,20 @@ class SSHNPImpl implements SSHNP {
   final SupportedSshClient sshClient = SupportedSshClient.hostSsh;
 
   SSHNPImpl({
-    // final fields
     required this.atClient,
     required this.sshnpdAtSign,
     required this.device,
     required this.username,
     required this.homeDirectory,
     required this.sessionId,
-    String sendSshPublicKey = 'false',
+    String sendSshPublicKey = SSHNP.defaultSendSshPublicKey,
     required this.localSshOptions,
-    this.rsa = false,
-    // volatile fields
+    this.rsa = SSHNP.defaultRsa,
     required this.host,
     required this.port,
     required this.localPort,
     this.remoteUsername,
-    this.verbose = false,
+    this.verbose = SSHNP.defaultVerbose,
     this.sshrvGenerator = SSHNP.defaultSshrvGenerator,
     this.localSshdPort = SSHNP.defaultLocalSshdPort,
     this.legacyDaemon = SSHNP.defaultLegacyDaemon,

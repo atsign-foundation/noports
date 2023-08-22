@@ -41,17 +41,17 @@ class SSHNPDImpl implements SSHNPD {
 
   static const String commandToSend = 'sshd';
 
-  SSHNPDImpl(
-      {
-      // final fields
-      required this.atClient,
-      required this.username,
-      required this.homeDirectory,
-      required this.device,
-      required this.managerAtsign,
-      required this.sshClient,
-      this.makeDeviceInfoVisible = false,
-      this.addSshPublicKeys = false}) {
+  SSHNPDImpl({
+    // final fields
+    required this.atClient,
+    required this.username,
+    required this.homeDirectory,
+    required this.device,
+    required this.managerAtsign,
+    required this.sshClient,
+    this.makeDeviceInfoVisible = false,
+    this.addSshPublicKeys = false,
+  }) {
     logger.hierarchicalLoggingEnabled = true;
     logger.logger.level = Level.SHOUT;
   }

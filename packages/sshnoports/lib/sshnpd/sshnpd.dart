@@ -65,17 +65,17 @@ abstract class SSHNPD {
   @visibleForTesting
   bool initialized = false;
 
-  factory SSHNPD(
-      {
-      // final fields
-      required AtClient atClient,
-      required String username,
-      required String homeDirectory,
-      required String device,
-      required String managerAtsign,
-      required SupportedSshClient sshClient,
-      required bool makeDeviceInfoVisible,
-      required bool addSshPublicKeys}) {
+  factory SSHNPD({
+    // final fields
+    required AtClient atClient,
+    required String username,
+    required String homeDirectory,
+    required String device,
+    required String managerAtsign,
+    required SupportedSshClient sshClient,
+    required bool makeDeviceInfoVisible,
+    required bool addSshPublicKeys,
+  }) {
     return SSHNPDImpl(
         atClient: atClient,
         username: username,
