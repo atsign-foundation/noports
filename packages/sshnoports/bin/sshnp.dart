@@ -41,9 +41,9 @@ void main(List<String> args) async {
       if (active.isEmpty && off.isEmpty) {
         print('[X] No devices found\n');
         print(
-            'Note: only devices with sshnpd version 3.5.0 or higher are supported by this command.');
+            'Note: only devices with sshnpd version 3.4.0 or higher are supported by this command.');
         print(
-            'Please update your devices to sshnpd version >= 3.5.0 and try again.');
+            'Please update your devices to sshnpd version >= 3.4.0 and try again.');
         exit(0);
       }
 
