@@ -653,8 +653,8 @@ class SSHNPImpl implements SSHNP {
       String ipPorts = notification.value.toString();
       List results = ipPorts.split(',');
       host = results[0];
-      port = results[1];
-      _sshrvdPort = results[2];
+      port = int.parse(results[1]);
+      _sshrvdPort = int.parse(results[2]);
       sshrvdAck = true;
     });
 
