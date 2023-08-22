@@ -3,7 +3,7 @@ description: Encrypted/Secure control plane for ssh/d or other commands in the f
 
 # NOTE: If you update the version number here, you
 # must also update it in version.dart
-version: 3.4.0
+version: 3.4.1
 
 homepage: https://docs.atsign.com/
 

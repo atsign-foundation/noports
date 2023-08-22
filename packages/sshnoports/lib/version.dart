@@ -1,6 +1,7 @@
 import 'dart:io';
 
-const String version = "3.4.0";
+// Note: if you update this version also update pubspec.yaml
+const String version = "3.4.1";
 
 /// Print version number
 void printVersion() {
