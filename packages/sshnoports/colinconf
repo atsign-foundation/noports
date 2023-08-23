@@ -1,0 +1,44 @@
+### Template Config File for SSH No Ports ###
+##
+## Entries do not require "" e.g
+## FROM=@alice
+
+# Sending atSign's atKeys file if not in ~/.atsign/keys/
+KEY_FILE=
+
+# Sending (a.k.a. client) atSign
+FROM=@cconstab
+
+# Receiving (a.k.a. remote) device atSign
+TO=@ssh_1
+
+# Receiving (a.k.a. remote) device name
+DEVICE=iot_device01
+
+# atSign of sshrvd daemon or FQDN/IP address to connect back to
+HOST=@rv_am
+
+# TCP port to connect back to (only required if --host specified a FQDN/IP)
+PORT=
+
+# Reverse ssh port to listen on, on your local machine, by sshnp default finds a spare port
+LOCAL_PORT=
+
+# Public key file from ~/.ssh to be appended to authorized_hosts on the remote device
+SSH_PUBLIC_KEY=
+
+# Add these commands to the local ssh command
+# Use "," to separate your options
+LOCAL_SSH_OPTIONS=
+
+# More logging (true/false)
+VERBOSE=
+
+# Use RSA 4096 keys rather than the default ED25519 keys (true/false)
+RSA=
+
+# username to use in the ssh session on the remote host
+REMOTE_USER_NAME=
+
+# local sshd port number
+LOCAL_SSHD_PORT=22
