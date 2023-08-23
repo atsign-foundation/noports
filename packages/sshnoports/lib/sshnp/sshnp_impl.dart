@@ -307,6 +307,7 @@ class SSHNPImpl implements SSHNP {
     }
 
     logger.info('Subscribing to notifications on $sessionId.$namespace@');
+    logger.finer('test');
     // Start listening for response notifications from sshnpd
     atClient.notificationService
         .subscribe(regex: '$sessionId.$namespace@', shouldDecrypt: true)
