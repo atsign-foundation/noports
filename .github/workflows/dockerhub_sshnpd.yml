@@ -4,42 +4,44 @@ on:
   workflow_dispatch:
   push:
     tags:
-      - 'v*.*.*'
+      - "v*.*.*"
 
-permissions:  # added using https://github.com/step-security/secure-workflows
+permissions: # added using https://github.com/step-security/secure-workflows
   contents: read
 
 jobs:
   docker:
+    strategy:
+      matrix:
+        include:
+          - name: sshnpd
+            dockerfile: ./packages/sshnoports/templates/docker/Dockerfile
+          - name: activate_sshnpd
+            dockerfile: ./packages/sshnoports/templates/docker/Dockerfile.activate
     runs-on: ubuntu-latest
     steps:
-      -
-        name: Checkout
+      - name: Checkout
         uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9 # v3.5.3
-      -
-        name: Set up QEMU
+      - name: Set up QEMU
         uses: docker/setup-qemu-action@2b82ce82d56a2a04d2637cd93a637ae1b359c0a7 # v2.2.0
-      -
-        name: Set up Docker Buildx
+      - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@4c0219f9ac95b02789c1075625400b2acbff50b1 # v2.9.1
-      -
-        name: Login to Docker Hub
+      - name: Login to Docker Hub
         uses: docker/login-action@465a07811f14bebb1938fbed4728c6a1ff8901fc # v2.2.0
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
- # Extract version for docker tag
-      -
-        name: Get version
+      # Extract version for docker tag
+      - name: Get version
         run: echo "VERSION=${GITHUB_REF##*/}" >> $GITHUB_ENV
-      -
-        name: Build and push
+      - name: Build and push
         uses: docker/build-push-action@2eb1c1961a95fc15694676618e422e8ba1d63825 # v4.1.1
         with:
           context: ./packages/sshnoports
+          file: ${{ matrix.dockerfile }}
           platforms: linux/amd64,linux/arm64,linux/arm/v7
           push: true
           provenance: false
           tags: |
-            atsigncompany/sshnpd:${{ env.VERSION }}
-            atsigncompany/sshnpd:release-${{ env.VERSION }}
+            atsigncompany/${{ matrix.name }}:${{ env.VERSION }}
+            atsigncompany/${{ matrix.name }}:release-${{ env.VERSION }}

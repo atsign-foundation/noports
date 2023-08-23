@@ -7,7 +7,7 @@ import 'package:at_utils/at_logger.dart';
 
 // local packages
 import 'package:sshnoports/sshnp/sshnp.dart';
-import 'package:sshnoports/sshnp/cleanup.dart';
+import 'package:sshnoports/sshnp/utils.dart';
 import 'package:sshnoports/sshnp/sshnp_params.dart';
 
 void main(List<String> args) async {
@@ -30,7 +30,7 @@ void main(List<String> args) async {
   }
 
   ProcessSignal.sigint.watch().listen((signal) async {
-    await cleanUp(sshnp.sessionId, sshnp.logger);
+    await cleanUpAfterReverseSsh(sshnp);
     exit(1);
   });
 
@@ -41,9 +41,9 @@ void main(List<String> args) async {
       if (active.isEmpty && off.isEmpty) {
         print('[X] No devices found\n');
         print(
-            'Note: only devices with sshnpd version 3.5.0 or higher are supported by this command.');
+            'Note: only devices with sshnpd version 3.4.0 or higher are supported by this command.');
         print(
-            'Please update your devices to sshnpd version >= 3.5.0 and try again.');
+            'Please update your devices to sshnpd version >= 3.4.0 and try again.');
         exit(0);
       }
 
@@ -64,7 +64,7 @@ void main(List<String> args) async {
       stderr.writeln('\nStack Trace: ${stackTrace.toString()}');
     }
 
-    await cleanUp(sshnp.sessionId, sshnp.logger);
+    await cleanUpAfterReverseSsh(sshnp);
 
     await stderr.flush().timeout(Duration(milliseconds: 100));
     exit(1);

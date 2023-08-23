@@ -30,7 +30,12 @@ abstract class SSHNP {
   /// The sessionId we will use
   abstract final String sessionId;
 
-  abstract final String sendSshPublicKey;
+  /// The name of the public key file from ~/.ssh which the client may request
+  /// be appended to authorized_hosts on the remote device. Note that if the
+  /// daemon on the remote device is not running with the `-s` flag, then it
+  /// ignores such requests.
+  abstract final String publicKeyFileName;
+
   abstract final List<String> localSshOptions;
 
   /// When false, we generate [sshPublicKey] and [sshPrivateKey] using ed25519.
@@ -57,6 +62,11 @@ abstract class SSHNP {
   /// Port to which sshnpd will forwardRemote its [SSHClient]. If localPort
   /// is set to '0' then
   abstract String localPort;
+
+  /// Port that local sshd is listening on localhost interface
+  /// Default set to 22
+
+  abstract String localSshdPort;
 
   // ====================================================================
   // Derived final instance variables, set during construction or init
@@ -89,9 +99,6 @@ abstract class SSHNP {
   /// When using sshrvd, this is fetched from sshrvd during [init]
   String get sshrvdPort;
 
-  /// Set to '$localPort $port $username $host $sessionId' during [init]
-  abstract final String sshString;
-
   /// Set by constructor to
   /// '$homeDirectory${Platform.pathSeparator}.ssh${Platform.pathSeparator}'
   abstract final String sshHomeDirectory;
@@ -108,46 +115,52 @@ abstract class SSHNP {
   @visibleForTesting
   abstract bool sshrvdAck;
 
+  abstract final bool legacyDaemon;
+
   bool verbose = false;
 
   /// true once [init] has completed
-  @visibleForTesting
   bool initialized = false;
 
-  factory SSHNP({
-    // final fields
-    required AtClient atClient,
-    required String sshnpdAtSign,
-    required String device,
-    required String username,
-    required String homeDirectory,
-    required String sessionId,
-    String sendSshPublicKey = 'false',
-    required List<String> localSshOptions,
-    bool rsa = false,
-    // volatile fields
-    required String host,
-    required String port,
-    required String localPort,
-    String? remoteUsername,
-    bool verbose = false,
-  }) {
+  abstract final bool direct;
+
+  factory SSHNP(
+      {
+      // final fields
+      required AtClient atClient,
+      required String sshnpdAtSign,
+      required String device,
+      required String username,
+      required String homeDirectory,
+      required String sessionId,
+      String sendSshPublicKey = 'false',
+      required List<String> localSshOptions,
+      bool rsa = false,
+      // volatile fields
+      required String host,
+      required String port,
+      required String localPort,
+      String? remoteUsername,
+      bool verbose = false,
+      String localSshdPort = '22',
+      required bool legacyDaemon}) {
     return SSHNPImpl(
-      atClient: atClient,
-      sshnpdAtSign: sshnpdAtSign,
-      device: device,
-      username: username,
-      homeDirectory: homeDirectory,
-      sessionId: sessionId,
-      sendSshPublicKey: sendSshPublicKey,
-      localSshOptions: localSshOptions,
-      rsa: rsa,
-      host: host,
-      port: port,
-      localPort: localPort,
-      remoteUsername: remoteUsername,
-      verbose: verbose,
-    );
+        atClient: atClient,
+        sshnpdAtSign: sshnpdAtSign,
+        device: device,
+        username: username,
+        homeDirectory: homeDirectory,
+        sessionId: sessionId,
+        sendSshPublicKey: sendSshPublicKey,
+        localSshOptions: localSshOptions,
+        rsa: rsa,
+        host: host,
+        port: port,
+        localPort: localPort,
+        localSshdPort: localSshdPort,
+        remoteUsername: remoteUsername,
+        verbose: verbose,
+        legacyDaemon: legacyDaemon);
   }
 
   static Future<SSHNP> fromCommandLineArgs(List<String> args) async {
