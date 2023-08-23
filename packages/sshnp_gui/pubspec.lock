@@ -734,7 +734,7 @@ packages:
     source: hosted
     version: "2.0.9"
   path:
-    dependency: transitive
+    dependency: "direct main"
     description:
       name: path
       sha256: "8829d8a55c13fc0e37127c29fedf290c102f4e40ae94ada574091fe0ff96c917"
@@ -1110,11 +1110,11 @@ packages:
     dependency: "direct main"
     description:
       path: "packages/sshnoports"
-      ref: sshnp-changes-for-gui
-      resolved-ref: "0a136266db44e601d91689d4503529c401dcef4e"
+      ref: HEAD
+      resolved-ref: "3b97fcecb023d14f20a0b908b618d36ba29d1a50"
       url: "https://github.com/atsign-foundation/sshnoports.git"
     source: git
-    version: "3.4.0"
+    version: "3.4.1"
   stack_trace:
     dependency: transitive
     description:

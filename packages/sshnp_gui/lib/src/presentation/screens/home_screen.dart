@@ -148,6 +148,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                                                   ),
                                                   IconButton(
                                                     onPressed: () {
+                                                      // get the index of the config file so it can be updated
+                                                      ref
+                                                          .read(sshnpParamsUpdateIndexProvider.notifier)
+                                                          .update((value) => state.value!.indexOf(e));
                                                       updateConfigFile(e);
                                                     },
                                                     icon: const Icon(Icons.edit),

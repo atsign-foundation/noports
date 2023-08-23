@@ -3,8 +3,10 @@ import 'dart:io';
 
 import 'package:at_client_mobile/at_client_mobile.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:path/path.dart' as path;
 import 'package:sshnoports/common/utils.dart';
 import 'package:sshnoports/sshnp/sshnp.dart';
+import 'package:sshnp_gui/src/controllers/minor_providers.dart';
 
 /// A Controller class that controls the UI update when the [AtDataRepository] methods are called.
 class HomeScreenController extends StateNotifier<AsyncValue<List<SSHNPParams>>> {
@@ -18,7 +20,9 @@ class HomeScreenController extends StateNotifier<AsyncValue<List<SSHNPParams>>> 
     state = await AsyncValue.guard(() async {
       try {
         var sshnpParams = await SSHNPParams.getConfigFilesFromDirectory();
-
+        for (var element in sshnpParams.toList()) {
+          log(element.sshnpdAtSign.toString());
+        }
         return sshnpParams.toList();
       } on PathNotFoundException {
         log('Path Not Found');
@@ -32,21 +36,25 @@ class HomeScreenController extends StateNotifier<AsyncValue<List<SSHNPParams>>> 
     state = const AsyncValue.loading();
     final directory = getDefaultSshnpConfigDirectory(getHomeDirectory()!);
     var configDir = await Directory(directory).list().toList();
+    // remove non env file so the index of the config file in the UI matches the index of the configDir env files.
+    configDir.removeWhere((element) => path.extension(element.path) != '.env');
     configDir[index].delete();
     await getConfigFiles();
   }
 
-  /// Deletes all [AtData] associated with the current atsign.
-  Future<void> deleteAllData() async {
-    state = const AsyncValue.loading();
-    final directory = getDefaultSshnpConfigDirectory(getHomeDirectory()!);
-    var configDir = await Directory(directory).list().toList();
-    configDir.map((e) => e.delete());
-    await getConfigFiles();
-  }
+  // /// Deletes all [AtData] associated with the current atsign.
+  // Future<void> deleteAllData() async {
+  //   state = const AsyncValue.loading();
+  //   final directory = getDefaultSshnpConfigDirectory(getHomeDirectory()!);
+  //   var configDir = await Directory(directory).list().toList();
+  //   configDir.map((e) => e.delete());
+  //   await getConfigFiles();
+  // }
 
   /// create or update config files.
-  Future<void> createConfigFile(SSHNPParams sshnpParams, {bool update = false}) async {
+  Future<void> createConfigFile(
+    SSHNPParams sshnpParams,
+  ) async {
     state = const AsyncValue.loading();
     final homeDir = getHomeDirectory()!;
     log(homeDir);
@@ -54,8 +62,22 @@ class HomeScreenController extends StateNotifier<AsyncValue<List<SSHNPParams>>> 
     log(configDir);
     await Directory(configDir).create(recursive: true);
     //.env
-    sshnpParams.toFile('$configDir/${sshnpParams.clientAtSign}-${sshnpParams.sshnpdAtSign}-${sshnpParams.device}.env',
-        overwrite: update);
+    sshnpParams.toFile('$configDir/${DateTime.now().millisecondsSinceEpoch}.env', overwrite: false);
+    await getConfigFiles();
+  }
+
+  /// create or update config files.
+  Future<void> updateConfigFile({required SSHNPParams sshnpParams}) async {
+    state = const AsyncValue.loading();
+
+    final directory = getDefaultSshnpConfigDirectory(getHomeDirectory()!);
+    var configDir = await Directory(directory).list().toList();
+    configDir.removeWhere((element) => path.extension(element.path) != '.env');
+    final index = ref.read(sshnpParamsUpdateIndexProvider);
+    log('path is:${configDir[index].path}');
+    // await Directory(configDir).create(recursive: true);
+    //.env
+    sshnpParams.toFile(configDir[index].path, overwrite: true);
     await getConfigFiles();
   }
 }

@@ -24,14 +24,12 @@ dependencies:
   go_router: ^9.0.3
   intl: any
   page_transition: ^2.0.9
+  path: ^1.8.3
   path_provider: ^2.0.11
   shared_preferences: ^2.2.0
   sshnoports:
     git:
       url: https://github.com/atsign-foundation/sshnoports.git
-      # ref: sshnp-with-atclient
-      # ref: sshrv-pure-dart
-      ref: sshnp-changes-for-gui
       path: packages/sshnoports/
 
 dev_dependencies:

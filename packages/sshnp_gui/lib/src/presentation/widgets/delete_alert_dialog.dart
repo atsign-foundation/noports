@@ -1,3 +1,5 @@
+import 'dart:developer';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -16,6 +18,7 @@ class DeleteAlertDialog extends ConsumerWidget {
   ) {
     final strings = AppLocalizations.of(context)!;
     final data = ref.watch(homeScreenControllerProvider);
+    log(index.toString());
 
     return Padding(
       padding: const EdgeInsets.only(left: 0),

@@ -91,7 +91,7 @@ class _NewConnectionFormState extends ConsumerState<NewConnectionForm> {
           break;
         case ConfigFileWriteState.update:
           log('update_worked');
-          await ref.read(homeScreenControllerProvider.notifier).createConfigFile(sshnpParams, update: true);
+          await ref.read(homeScreenControllerProvider.notifier).updateConfigFile(sshnpParams: sshnpParams);
           // set value to default create so trigger the create functionality on
           ref.read(configFileWriteStateProvider.notifier).update((state) => ConfigFileWriteState.create);
           break;
