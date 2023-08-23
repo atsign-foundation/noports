@@ -1,5 +1,5 @@
 import 'package:sshnoports/common/supported_ssh_clients.dart';
-import 'package:sshnoports/sshnpd/sshnpd_params.dart';
+import 'package:sshnoports/sshnpd/sshnpd.dart';
 import 'package:test/test.dart';
 import 'package:args/args.dart';
 import 'package:sshnoports/common/utils.dart';

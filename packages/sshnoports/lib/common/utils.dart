@@ -112,28 +112,6 @@ void assertValidValue(Map m, String k, Type t) {
   }
 }
 
-/// Return the command which this program should execute in order to start the
-/// sshrv program.
-/// - In normal usage, sshnp and sshrv are compiled to exe before use, thus the
-/// path is [Platform.resolvedExecutable] but with the last part (`sshnp` in
-/// this case) replaced with `sshrv`
-String getSshrvCommand() {
-  late String sshnpDir;
-  List<String> pathList =
-      Platform.resolvedExecutable.split(Platform.pathSeparator);
-
-  String programName = pathList.last;
-  if (programName == 'sshnp' || programName == 'sshnpd') {
-    pathList.removeLast();
-    sshnpDir = pathList.join(Platform.pathSeparator);
-
-    return '$sshnpDir${Platform.pathSeparator}sshrv';
-  } else {
-    throw Exception(
-        'noports programs are expected to be run from a compiled executable, not via the dart command');
-  }
-}
-
 String signAndWrapAndJsonEncode(AtClient atClient, Map payload) {
   Map envelope = {'payload': payload};
 
