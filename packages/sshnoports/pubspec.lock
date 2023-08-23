@@ -61,10 +61,10 @@ packages:
     dependency: transitive
     description:
       name: at_chops
-      sha256: "4bd63f0bb9b61ad8087455f5ab303101cbc07b6b87892d4a7dba197ca2b3eb6c"
+      sha256: "9d825e909eb5dcd1bf79554640860193488de7b2db07275692b0167bb80f2ca2"
       url: "https://pub.dev"
     source: hosted
-    version: "1.0.3"
+    version: "1.0.4"
   at_client:
     dependency: "direct main"
     description:
@@ -85,10 +85,10 @@ packages:
     dependency: "direct main"
     description:
       name: at_lookup
-      sha256: a12dd6996ab586b096cccfec1df0dc7a256cc6ae3ff684644c59e73725d95687
+      sha256: "5b4354bbcb933dfb6e174cd9c40f47ee1bbd182743ebb1303b145cc3b51e0020"
       url: "https://pub.dev"
     source: hosted
-    version: "3.0.38"
+    version: "3.0.39"
   at_onboarding_cli:
     dependency: "direct main"
     description:
@@ -225,6 +225,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "0.2.9"
+  dart_periphery:
+    dependency: transitive
+    description:
+      name: dart_periphery
+      sha256: "537d346bcb02bde2dc6b67efaa2e85e124e1b078088e9502d463e98ef3b93ba0"
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.9.5"
   dartssh2:
     dependency: "direct main"
     description:
@@ -257,14 +265,22 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "5.0.1"
+  ffi:
+    dependency: transitive
+    description:
+      name: ffi
+      sha256: "7bf0adc28a23d395f19f3f1eb21dd7cfd1dd9f8e1c50051c069122e6853bc878"
+      url: "https://pub.dev"
+    source: hosted
+    version: "2.1.0"
   file:
     dependency: transitive
     description:
       name: file
-      sha256: "5fc22d7c25582e38ad9a8515372cd9a93834027aacf1801cf01164dac0ffa08c"
+      sha256: "1b92bec4fc2a72f59a8e15af5f52cd441e4a7860b49499d69dfa817af20e925d"
       url: "https://pub.dev"
     source: hosted
-    version: "7.0.0"
+    version: "6.1.4"
   fixnum:
     dependency: transitive
     description:
@@ -465,6 +481,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "0.5.1"
+  platform:
+    dependency: transitive
+    description:
+      name: platform
+      sha256: "57c07bf82207aee366dfaa3867b3164e4f03a238a461a11b0e8a3a510d51203d"
+      url: "https://pub.dev"
+    source: hosted
+    version: "3.1.1"
   pointycastle:
     dependency: transitive
     description:
@@ -481,6 +505,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.5.1"
+  process:
+    dependency: transitive
+    description:
+      name: process
+      sha256: "53fd8db9cec1d37b0574e12f07520d582019cb6c44abf5479a01505099a34a09"
+      url: "https://pub.dev"
+    source: hosted
+    version: "4.2.4"
   pub_semver:
     dependency: transitive
     description:
