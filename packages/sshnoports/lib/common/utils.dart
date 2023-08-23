@@ -32,7 +32,7 @@ String? getHomeDirectory({bool throwIfNull = false}) {
 /// Get the local username or null if unknown
 String? getUserName({bool throwIfNull = false}) {
   Map<String, String> envVars = Platform.environment;
-  if (Platform.isLinux || Platform.isMacOS) {
+  if (!Platform.isWindows) {
     return envVars['USER'];
   } else if (Platform.isWindows) {
     return envVars['USERPROFILE'];
@@ -109,28 +109,6 @@ void assertValidValue(Map m, String k, Type t) {
   if (v == null || v.runtimeType != t) {
     throw ArgumentError(
         'Parameter $k should be a $t but is actually a ${v.runtimeType} with value $v');
-  }
-}
-
-/// Return the command which this program should execute in order to start the
-/// sshrv program.
-/// - In normal usage, sshnp and sshrv are compiled to exe before use, thus the
-/// path is [Platform.resolvedExecutable] but with the last part (`sshnp` in
-/// this case) replaced with `sshrv`
-String getSshrvCommand() {
-  late String sshnpDir;
-  List<String> pathList =
-      Platform.resolvedExecutable.split(Platform.pathSeparator);
-
-  String programName = pathList.last;
-  if (programName == 'sshnp' || programName == 'sshnpd') {
-    pathList.removeLast();
-    sshnpDir = pathList.join(Platform.pathSeparator);
-
-    return '$sshnpDir${Platform.pathSeparator}sshrv';
-  } else {
-    throw Exception(
-        'noports programs are expected to be run from a compiled executable, not via the dart command');
   }
 }
 

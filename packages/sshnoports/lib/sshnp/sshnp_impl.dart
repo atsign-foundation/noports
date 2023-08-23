@@ -1,24 +1,6 @@
-import 'dart:async';
-import 'dart:convert';
-import 'dart:io';
+part of 'sshnp.dart';
 
-import 'package:at_client/at_client.dart' hide StringBuffer;
-import 'package:at_utils/at_logger.dart';
-import 'package:logging/logging.dart';
-import 'package:meta/meta.dart';
-import 'package:sshnoports/common/create_at_client_cli.dart';
-import 'package:sshnoports/common/supported_ssh_clients.dart';
-import 'package:sshnoports/common/utils.dart';
-import 'package:sshnoports/sshnp/utils.dart';
-import 'package:sshnoports/sshnp/sshnp.dart';
-import 'package:sshnoports/sshnp/sshnp_params.dart';
-import 'package:sshnoports/sshnpd/sshnpd.dart';
-import 'package:sshnoports/sshrvd/sshrvd.dart';
-import 'package:sshnoports/version.dart';
-import 'package:uuid/uuid.dart';
-
-import 'package:at_commons/at_builders.dart';
-
+@visibleForTesting
 class SSHNPImpl implements SSHNP {
   @override
   final AtSignLogger logger = AtSignLogger(' sshnp ');
@@ -56,6 +38,9 @@ class SSHNPImpl implements SSHNP {
   @override
   final List<String> localSshOptions;
 
+  @override
+  late final int localSshdPort;
+
   /// When false, we generate [sshPublicKey] and [sshPrivateKey] using ed25519.
   /// When true, we generate [sshPublicKey] and [sshPrivateKey] using RSA.
   /// Defaults to false
@@ -78,12 +63,12 @@ class SSHNPImpl implements SSHNP {
   /// If using sshrvd then initial port value will be ignored and instead we
   /// will fetch the port from sshrvd.
   @override
-  String port;
+  int port;
 
   /// Port to which sshnpd will forwardRemote its [SSHClient]. If localPort
   /// is set to '0' then
   @override
-  String localPort;
+  int localPort;
 
   // ====================================================================
   // Derived final instance variables, set during construction or init
@@ -122,14 +107,18 @@ class SSHNPImpl implements SSHNP {
   /// This is only set when using sshrvd
   /// (i.e. after [getHostAndPortFromSshrvd] has been called)
   @override
-  String get sshrvdPort => _sshrvdPort;
+  int get sshrvdPort => _sshrvdPort;
 
-  late String _sshrvdPort;
+  late int _sshrvdPort;
 
   /// Set by constructor to
   /// '$homeDirectory${Platform.pathSeparator}.ssh${Platform.pathSeparator}'
   @override
   late final String sshHomeDirectory;
+
+  /// Function used to generate a [SSHRV] instance ([SSHRV.localbinary] by default)
+  @override
+  SSHRVGenerator sshrvGenerator;
 
   /// true once we have received any response (success or error) from sshnpd
   @override
@@ -161,25 +150,25 @@ class SSHNPImpl implements SSHNP {
 
   final SupportedSshClient sshClient = SupportedSshClient.hostSsh;
 
-  SSHNPImpl(
-      {
-      // final fields
-      required this.atClient,
-      required this.sshnpdAtSign,
-      required this.device,
-      required this.username,
-      required this.homeDirectory,
-      required this.sessionId,
-      String sendSshPublicKey = 'false',
-      required this.localSshOptions,
-      this.rsa = false,
-      // volatile fields
-      required this.host,
-      required this.port,
-      required this.localPort,
-      this.remoteUsername,
-      this.verbose = false,
-      required this.legacyDaemon}) {
+  SSHNPImpl({
+    required this.atClient,
+    required this.sshnpdAtSign,
+    required this.device,
+    required this.username,
+    required this.homeDirectory,
+    required this.sessionId,
+    String sendSshPublicKey = SSHNP.defaultSendSshPublicKey,
+    required this.localSshOptions,
+    this.rsa = SSHNP.defaultRsa,
+    required this.host,
+    required this.port,
+    required this.localPort,
+    this.remoteUsername,
+    this.verbose = SSHNP.defaultVerbose,
+    this.sshrvGenerator = SSHNP.defaultSshrvGenerator,
+    this.localSshdPort = SSHNP.defaultLocalSshdPort,
+    this.legacyDaemon = SSHNP.defaultLegacyDaemon,
+  }) {
     namespace = '$device.sshnp';
     clientAtSign = atClient.getCurrentAtSign()!;
     logger.hierarchicalLoggingEnabled = true;
@@ -199,15 +188,19 @@ class SSHNPImpl implements SSHNP {
 
   static Future<SSHNP> fromCommandLineArgs(List<String> args) {
     var params = SSHNPParams.fromPartial(SSHNPPartialParams.fromArgs(args));
+    // This should never need sshrvGenerator to be set other than default, hence not passed in
     return fromParams(params);
   }
 
-  static Future<SSHNP> fromParams(SSHNPParams p) async {
+  static Future<SSHNP> fromParams(
+    SSHNPParams p, {
+    AtClient? atClient,
+    SSHRVGenerator sshrvGenerator = SSHRV.localBinary,
+  }) async {
     try {
       if (p.clientAtSign == null) {
         throw ArgumentError('Option from is mandatory.');
       }
-
       if (p.sshnpdAtSign == null) {
         throw ArgumentError('Option to is mandatory.');
       }
@@ -216,9 +209,24 @@ class SSHNPImpl implements SSHNP {
         throw ArgumentError('Option host is mandatory.');
       }
 
-      // Check atKeyFile selected exists
-      if (!await fileExists(p.atKeysFilePath)) {
-        throw ('\nUnable to find .atKeys file : ${p.atKeysFilePath}');
+      if (atClient != null) {
+        if (p.clientAtSign != atClient.getCurrentAtSign()) {
+          throw ArgumentError(
+              'Option from must match the current atSign of the AtClient');
+        }
+      } else {
+        // Check atKeyFile selected exists
+        if (!await fileExists(p.atKeysFilePath)) {
+          throw ArgumentError(
+              '\nUnable to find .atKeys file : ${p.atKeysFilePath}');
+        }
+      }
+
+      // Check to see if the port number is in range for TCP ports
+      if (p.localSshdPort > 65535 ||
+          p.localSshdPort < 1) {
+        throw ArgumentError(
+            '\nInvalid port number for sshd (1-65535) : ${p.localSshdPort}');
       }
 
       String sessionId = Uuid().v4();
@@ -228,30 +236,34 @@ class SSHNPImpl implements SSHNP {
         AtSignLogger.root_level = 'INFO';
       }
 
-      AtClient atClient = await createAtClientCli(
-          homeDirectory: p.homeDirectory,
-          atsign: p.clientAtSign!,
-          namespace: '${p.device}.sshnp',
-          pathExtension: sessionId,
-          atKeysFilePath: p.atKeysFilePath,
-          rootDomain: p.rootDomain);
+      atClient ??= await createAtClientCli(
+        homeDirectory: p.homeDirectory,
+        atsign: p.clientAtSign!,
+        namespace: '${p.device}.sshnp',
+        pathExtension: sessionId,
+        atKeysFilePath: p.atKeysFilePath,
+        rootDomain: p.rootDomain,
+      );
 
       var sshnp = SSHNP(
-          atClient: atClient,
-          sshnpdAtSign: p.sshnpdAtSign!,
-          username: p.username,
-          homeDirectory: p.homeDirectory,
-          sessionId: sessionId,
-          device: p.device,
-          host: p.host!,
-          port: p.port,
-          localPort: p.localPort,
-          localSshOptions: p.localSshOptions,
-          rsa: p.rsa,
-          sendSshPublicKey: p.sendSshPublicKey,
-          remoteUsername: p.remoteUsername,
-          verbose: p.verbose,
-          legacyDaemon: p.legacyDaemon);
+        atClient: atClient,
+        sshnpdAtSign: p.sshnpdAtSign!,
+        username: p.username,
+        homeDirectory: p.homeDirectory,
+        sessionId: sessionId,
+        device: p.device,
+        host: p.host!,
+        port: p.port,
+        localPort: p.localPort,
+        localSshOptions: p.localSshOptions,
+        rsa: p.rsa,
+        sendSshPublicKey: p.sendSshPublicKey,
+        remoteUsername: p.remoteUsername,
+        verbose: p.verbose,
+        sshrvGenerator: sshrvGenerator,
+        localSshdPort: p.localSshdPort,
+        legacyDaemon: p.legacyDaemon,
+      );
       if (p.verbose) {
         sshnp.logger.logger.level = Level.INFO;
       }
@@ -302,10 +314,10 @@ class SSHNPImpl implements SSHNP {
     remoteUsername ?? await fetchRemoteUserName();
 
     // find a spare local port
-    if (localPort == '0') {
+    if (localPort == 0) {
       ServerSocket serverSocket =
           await ServerSocket.bind(InternetAddress.loopbackIPv4, 0);
-      localPort = serverSocket.port.toString();
+      localPort = serverSocket.port;
       await serverSocket.close();
     }
 
@@ -335,27 +347,27 @@ class SSHNPImpl implements SSHNP {
   /// - If got a success response, print the ssh command to use to stdout
   /// - Clean up temporary files
   @override
-  Future<void> run() async {
+  Future<SSHNPResult> run() async {
     if (!initialized) {
       throw StateError('Cannot run() - not initialized');
     }
 
     if (legacyDaemon) {
       logger.info('Requesting legacy daemon to start reverse ssh session');
-      await legacyStartReverseSsh();
+      return await legacyStartReverseSsh();
     } else {
       if (direct) {
         logger.info(
             'Requesting daemon to set up socket tunnel for direct ssh session');
-        await startDirectSsh();
+        return await startDirectSsh();
       } else {
         logger.info('Requesting daemon to start reverse ssh session');
-        await startReverseSsh();
+        return await startReverseSsh();
       }
     }
   }
 
-  Future<void> startDirectSsh() async {
+  Future<SSHNPResult> startDirectSsh() async {
     // send request to the daemon via notification
     await _notify(
         AtKey()
@@ -370,7 +382,7 @@ class SSHNPImpl implements SSHNP {
           'direct': true,
           'sessionId': sessionId,
           'host': host,
-          'port': int.parse(port)
+          'port': port
         }),
         sessionId: sessionId);
 
@@ -405,19 +417,26 @@ class SSHNPImpl implements SSHNP {
           throw errorMessage;
         } else {
           // All good - write the ssh command to stdout
-          stdout.writeln(getBaseSshCommand());
+          return SSHCommand.base(
+            localPort: localPort,
+            remoteUsername: username,
+            host: host,
+            privateKeyFileName: publicKeyFileName,
+          );
         }
       } catch (e) {
         throw 'SSH Client failure : $e';
       }
     }
+
+    return SSHNPFailed();
   }
 
   Future<(bool, String?)> directSshViaExec() async {
     List<String> args = '$remoteUsername@$host'
             ' -p $_sshrvdPort'
             ' -i ${publicKeyFileName.replaceFirst(RegExp(r'.pub$'), '')}'
-            ' -L $localPort:localhost:22'
+            ' -L $localPort:localhost:$localSshdPort'
             ' -o LogLevel=VERBOSE'
             ' -t -t'
             ' -o StrictHostKeyChecking=accept-new'
@@ -471,10 +490,11 @@ class SSHNPImpl implements SSHNP {
   }
 
   /// Identical to [legacyStartReverseSsh] except for the request notification
-  Future<void> startReverseSsh() async {
+  Future<SSHNPResult> startReverseSsh() async {
     // Connect to rendezvous point using background process.
     // sshnp (this program) can then exit without issue.
-    unawaited(Process.run(getSshrvCommand(), [host, _sshrvdPort]));
+    SSHRV sshrv = sshrvGenerator(host, _sshrvdPort, localSshdPort: localSshdPort);
+    unawaited(sshrv.run());
 
     // send request to the daemon via notification
     await _notify(
@@ -490,9 +510,9 @@ class SSHNPImpl implements SSHNP {
           'direct': false,
           'sessionId': sessionId,
           'host': host,
-          'port': int.parse(port),
+          'port': port,
           'username': username,
-          'remoteForwardPort': int.parse(localPort),
+          'remoteForwardPort': localPort,
           'privateKey': sshPrivateKey
         }),
         sessionId: sessionId);
@@ -505,15 +525,22 @@ class SSHNPImpl implements SSHNP {
 
     if (!sshnpdAckErrors) {
       // If no ack errors, write the ssh command to stdout
-      stdout.write(getBaseSshCommand());
+      return SSHCommand.base(
+        localPort: localPort,
+        remoteUsername: username,
+        host: host,
+        privateKeyFileName: publicKeyFileName,
+      );
     }
-    stdout.write('\n');
+
+    return SSHNPFailed();
   }
 
-  Future<void> legacyStartReverseSsh() async {
+  Future<SSHNPResult> legacyStartReverseSsh() async {
     // Connect to rendezvous point using background process.
     // sshnp (this program) can then exit without issue.
-    unawaited(Process.run(getSshrvCommand(), [host, _sshrvdPort]));
+    SSHRV sshrv = sshrvGenerator(host, _sshrvdPort, localSshdPort: localSshdPort);
+    unawaited(sshrv.run());
 
     // send request to the daemon via notification
     await _notify(
@@ -536,32 +563,14 @@ class SSHNPImpl implements SSHNP {
 
     if (!sshnpdAckErrors) {
       // If no ack errors, write the ssh command to stdout
-      stdout.write(getBaseSshCommand());
+      return SSHCommand.base(
+        localPort: localPort,
+        remoteUsername: username,
+        host: host,
+        privateKeyFileName: publicKeyFileName,
+      );
     }
-    stdout.write('\n');
-  }
-
-  /// Generate the base ssh command which we will write to stdout.
-  /// If we had a Public key, include the private key in the command line
-  /// by removing the .pub extn.
-  String getBaseSshCommand() {
-    final StringBuffer sb = StringBuffer();
-
-    if (publicKeyFileName != 'false') {
-      sb.write('ssh -p $localPort $remoteUsername@localhost'
-          ' -o StrictHostKeyChecking=accept-new'
-          ' -o IdentitiesOnly=yes'
-          ' -i ${publicKeyFileName.replaceFirst(RegExp(r'.pub$'), '')}');
-    } else {
-      sb.write('ssh -p $localPort $remoteUsername@localhost '
-          ' -o StrictHostKeyChecking=accept-new');
-    }
-    // print out optional arguments
-    for (var argument in localSshOptions) {
-      sb.write(" $argument");
-    }
-
-    return sb.toString();
+    return SSHNPFailed();
   }
 
   /// Function which the response subscription (created in the [init] method
@@ -646,8 +655,8 @@ class SSHNPImpl implements SSHNP {
       String ipPorts = notification.value.toString();
       List results = ipPorts.split(',');
       host = results[0];
-      port = results[1];
-      _sshrvdPort = results[2];
+      port = int.parse(results[1]);
+      _sshrvdPort = int.parse(results[2]);
       sshrvdAck = true;
     });
 
@@ -673,6 +682,11 @@ class SSHNPImpl implements SSHNP {
         throw ('sshnp: connection timeout to sshrvd $host service');
       }
     }
+
+    // Connect to rendezvous point using background process.
+    // sshnp (this program) can then exit without issue.
+    SSHRV sshrv = sshrvGenerator(host, _sshrvdPort, localSshdPort: localSshdPort);
+    unawaited(sshrv.run());
   }
 
   Future<void> generateSshKeys() async {
@@ -715,7 +729,7 @@ class SSHNPImpl implements SSHNP {
 
     // Set up a safe authorized_keys file, for the reverse ssh tunnel
     File('${sshHomeDirectory}authorized_keys').writeAsStringSync(
-        'command="echo \\"ssh session complete\\";sleep 20",PermitOpen="localhost:22" ${sshPublicKey.trim()} $sessionId\n',
+        'command="echo \\"ssh session complete\\";sleep 20",PermitOpen="localhost:$localSshdPort" ${sshPublicKey.trim()} $sessionId\n',
         mode: FileMode.append);
   }
 

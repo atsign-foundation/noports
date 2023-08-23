@@ -1,10 +1,29 @@
 import 'dart:async';
+import 'dart:convert';
+import 'dart:io';
 
-import 'package:at_client/at_client.dart';
+import 'package:args/args.dart';
+import 'package:at_client/at_client.dart' hide StringBuffer;
+import 'package:at_commons/at_builders.dart';
 import 'package:at_utils/at_logger.dart';
+import 'package:at_utils/at_utils.dart';
+import 'package:logging/logging.dart';
 import 'package:meta/meta.dart';
-import 'package:sshnoports/sshnp/sshnp_impl.dart';
-import 'package:sshnoports/sshnp/sshnp_params.dart';
+import 'package:path/path.dart' as path;
+import 'package:sshnoports/common/create_at_client_cli.dart';
+import 'package:sshnoports/common/supported_ssh_clients.dart';
+import 'package:sshnoports/common/utils.dart';
+import 'package:sshnoports/sshnp/sshnp_arg.dart';
+import 'package:sshnoports/sshnp/utils.dart';
+import 'package:sshnoports/sshnpd/sshnpd.dart';
+import 'package:sshnoports/sshrv/sshrv.dart';
+import 'package:sshnoports/sshrvd/sshrvd.dart';
+import 'package:sshnoports/version.dart';
+import 'package:uuid/uuid.dart';
+
+part 'sshnp_impl.dart';
+part 'sshnp_params.dart';
+part 'sshnp_result.dart';
 
 abstract class SSHNP {
   abstract final AtSignLogger logger;
@@ -57,11 +76,16 @@ abstract class SSHNP {
   /// Required if we are not using sshrvd.
   /// If using sshrvd then initial port value will be ignored and instead we
   /// will fetch the port from sshrvd.
-  abstract String port;
+  abstract int port;
 
   /// Port to which sshnpd will forwardRemote its [SSHClient]. If localPort
   /// is set to '0' then
-  abstract String localPort;
+  abstract int localPort;
+
+  /// Port that local sshd is listening on localhost interface
+  /// Default set to 22
+
+  abstract int localSshdPort;
 
   // ====================================================================
   // Derived final instance variables, set during construction or init
@@ -92,11 +116,14 @@ abstract class SSHNP {
   abstract final String namespace;
 
   /// When using sshrvd, this is fetched from sshrvd during [init]
-  String get sshrvdPort;
+  int get sshrvdPort;
 
   /// Set by constructor to
   /// '$homeDirectory${Platform.pathSeparator}.ssh${Platform.pathSeparator}'
   abstract final String sshHomeDirectory;
+
+  /// Function used to generate a [SSHRV] instance ([SSHRV.localBinary] by default)
+  abstract final SSHRV Function(String, int) sshrvGenerator;
 
   /// true once we have received any response (success or error) from sshnpd
   @visibleForTesting
@@ -119,49 +146,76 @@ abstract class SSHNP {
 
   abstract final bool direct;
 
-  factory SSHNP(
-      {
-      // final fields
-      required AtClient atClient,
-      required String sshnpdAtSign,
-      required String device,
-      required String username,
-      required String homeDirectory,
-      required String sessionId,
-      String sendSshPublicKey = 'false',
-      required List<String> localSshOptions,
-      bool rsa = false,
-      // volatile fields
-      required String host,
-      required String port,
-      required String localPort,
-      String? remoteUsername,
-      bool verbose = false,
-      required bool legacyDaemon}) {
+  /// Default parameters for sshnp
+  static const defaultDevice = 'default';
+  static const defaultPort = 22;
+  static const defaultLocalPort = 0;
+  static const defaultSendSshPublicKey = 'false';
+  static const defaultLocalSshOptions = <String>[];
+  static const defaultVerbose = false;
+  static const defaultRsa = false;
+  static const defaultRootDomain = 'root.atsign.org';
+  static const defaultSshrvGenerator = SSHRV.localBinary;
+  static const defaultLocalSshdPort = 22;
+  static const defaultLegacyDaemon = true;
+  static const defaultListDevices = false;
+
+  factory SSHNP({
+    // final fields
+    required AtClient atClient,
+    required String sshnpdAtSign,
+    required String device,
+    required String username,
+    required String homeDirectory,
+    required String sessionId,
+    String sendSshPublicKey = 'false',
+    required List<String> localSshOptions,
+    bool rsa = false,
+    // volatile fields
+    required String host,
+    required int port,
+    required int localPort,
+    String? remoteUsername,
+    bool verbose = false,
+    SSHRVGenerator sshrvGenerator = defaultSshrvGenerator,
+    int localSshdPort = defaultLocalSshdPort,
+    bool legacyDaemon = defaultLegacyDaemon,
+  }) {
     return SSHNPImpl(
-        atClient: atClient,
-        sshnpdAtSign: sshnpdAtSign,
-        device: device,
-        username: username,
-        homeDirectory: homeDirectory,
-        sessionId: sessionId,
-        sendSshPublicKey: sendSshPublicKey,
-        localSshOptions: localSshOptions,
-        rsa: rsa,
-        host: host,
-        port: port,
-        localPort: localPort,
-        remoteUsername: remoteUsername,
-        verbose: verbose,
-        legacyDaemon: legacyDaemon);
+      atClient: atClient,
+      sshnpdAtSign: sshnpdAtSign,
+      device: device,
+      username: username,
+      homeDirectory: homeDirectory,
+      sessionId: sessionId,
+      sendSshPublicKey: sendSshPublicKey,
+      localSshOptions: localSshOptions,
+      rsa: rsa,
+      host: host,
+      port: port,
+      localPort: localPort,
+      remoteUsername: remoteUsername,
+      verbose: verbose,
+      sshrvGenerator: sshrvGenerator,
+      localSshdPort: localSshdPort,
+      legacyDaemon: legacyDaemon,
+    );
   }
 
   static Future<SSHNP> fromCommandLineArgs(List<String> args) async {
     return SSHNPImpl.fromCommandLineArgs(args);
   }
 
-  static Future<SSHNP> fromParams(SSHNPParams p) {
-    return SSHNPImpl.fromParams(p);
+  static Future<SSHNP> fromParams(
+    SSHNPParams p, {
+    AtClient? atClient,
+    SSHRVGenerator sshrvGenerator = SSHRV.localBinary,
+  }) {
+    return SSHNPImpl.fromParams(
+      p,
+      atClient: atClient,
+      sshrvGenerator: sshrvGenerator,
+    );
   }
 
   /// Must be run after construction, to complete initialization
@@ -182,7 +236,7 @@ abstract class SSHNP {
   /// - Waits for success or error response, or time out after 10 secs
   /// - If got a success response, print the ssh command to use to stdout
   /// - Clean up temporary files
-  Future<void> run();
+  Future<SSHNPResult> run();
 
   /// Send a ping out to all sshnpd and listen for heartbeats
   /// Returns two Iterable<String>:

@@ -8,7 +8,6 @@ import 'package:at_utils/at_logger.dart';
 // local packages
 import 'package:sshnoports/sshnp/sshnp.dart';
 import 'package:sshnoports/sshnp/utils.dart';
-import 'package:sshnoports/sshnp/sshnp_params.dart';
 
 void main(List<String> args) async {
   AtSignLogger.root_level = 'SHOUT';
@@ -41,9 +40,9 @@ void main(List<String> args) async {
       if (active.isEmpty && off.isEmpty) {
         print('[X] No devices found\n');
         print(
-            'Note: only devices with sshnpd version 3.5.0 or higher are supported by this command.');
+            'Note: only devices with sshnpd version 3.4.0 or higher are supported by this command.');
         print(
-            'Please update your devices to sshnpd version >= 3.5.0 and try again.');
+            'Please update your devices to sshnpd version >= 3.4.0 and try again.');
         exit(0);
       }
 
@@ -55,7 +54,13 @@ void main(List<String> args) async {
     }
 
     await sshnp.init();
-    await sshnp.run();
+    SSHNPResult res = await sshnp.run();
+    if (res is SSHNPFailed) {
+      exit(1);
+    }
+    if (res is SSHCommand) {
+      stdout.write('$res\n');
+    }
     exit(0);
   }, (Object error, StackTrace stackTrace) async {
     stderr.writeln(error.toString());
