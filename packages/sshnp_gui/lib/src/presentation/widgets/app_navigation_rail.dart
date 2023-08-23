@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
 import 'package:sshnoports/sshnp/sshnp.dart';
-import 'package:sshnp_gui/src/controllers/current_nav_index_provider.dart';
 
 import '../../controllers/minor_providers.dart';
 import '../../utils/app_router.dart';

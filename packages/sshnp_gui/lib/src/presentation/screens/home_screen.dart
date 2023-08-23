@@ -6,7 +6,6 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
 import 'package:sshnoports/sshnp/sshnp.dart';
 import 'package:sshnoports/sshrv/sshrv.dart';
-import 'package:sshnp_gui/src/controllers/current_nav_index_provider.dart';
 import 'package:sshnp_gui/src/controllers/minor_providers.dart';
 import 'package:sshnp_gui/src/presentation/widgets/sshnp_result_alert_dialog.dart';
 import 'package:sshnp_gui/src/utils/enum.dart';
@@ -55,7 +54,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   void updateConfigFile(SSHNPParams sshnpParams) {
     ref.read(sshnpParamsProvider.notifier).update((state) => sshnpParams);
     // change value to 1 to update navigation rail selcted icon.
-    ref.read(currentNavIndexProvider.notifier).update((state) => 1);
+    ref.read(currentNavIndexProvider.notifier).update((state) => AppRoute.newConnection.index - 1);
     // Change value to update to trigger the update functionality on the new connection form.
     ref.read(configFileWriteStateProvider.notifier).update((state) => ConfigFileWriteState.update);
     context.replaceNamed(
