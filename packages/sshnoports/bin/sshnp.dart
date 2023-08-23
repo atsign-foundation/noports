@@ -55,6 +55,9 @@ void main(List<String> args) async {
 
     await sshnp.init();
     SSHNPResult res = await sshnp.run();
+    if (res is SSHNPFailed) {
+      exit(1);
+    }
     if (res is SSHCommand) {
       stdout.write('$res\n');
     }
