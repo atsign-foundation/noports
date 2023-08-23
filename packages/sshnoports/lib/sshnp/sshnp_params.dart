@@ -234,7 +234,7 @@ class SSHNPPartialParams {
       remoteUsername: params2.remoteUsername ?? params1.remoteUsername,
       verbose: params2.verbose ?? params1.verbose,
       rootDomain: params2.rootDomain ?? params1.rootDomain,
-      localSshdPort: params1.localSshdPort ?? params2.localSshdPort,
+      localSshdPort: params2.localSshdPort ?? params1.localSshdPort,
       listDevices: params2.listDevices || params1.listDevices,
       legacyDaemon: params2.legacyDaemon ?? params1.legacyDaemon,
     );
