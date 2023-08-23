@@ -192,23 +192,24 @@ class SSHNPPartialParams {
   // Non param variables
   static final ArgParser parser = _createArgParser();
 
-  SSHNPPartialParams(
-      {this.clientAtSign,
-      this.sshnpdAtSign,
-      this.host,
-      this.device,
-      this.port,
-      this.localPort,
-      this.atKeysFilePath,
-      this.sendSshPublicKey,
-      this.localSshOptions = const [],
-      this.rsa,
-      this.remoteUsername,
-      this.verbose,
-      this.rootDomain,
-      this.localSshdPort,
-      this.listDevices = false,
-      this.legacyDaemon = true});
+  SSHNPPartialParams({
+    this.clientAtSign,
+    this.sshnpdAtSign,
+    this.host,
+    this.device,
+    this.port,
+    this.localPort,
+    this.atKeysFilePath,
+    this.sendSshPublicKey,
+    this.localSshOptions = const [],
+    this.rsa,
+    this.remoteUsername,
+    this.verbose,
+    this.rootDomain,
+    this.localSshdPort,
+    this.listDevices = false,
+    this.legacyDaemon = true,
+  });
 
   factory SSHNPPartialParams.empty() {
     return SSHNPPartialParams();
