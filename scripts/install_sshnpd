@@ -42,6 +42,66 @@ usage() {
   echo "  -n, --name <device name>    New name of the device"
 }
 
+check_basic_requirements() {
+  REQ_PS=$(command -v ps)
+  REQ_GREP=$(command -v grep)
+  REQ_AWK=$(command -v awk)
+  REQ_SED=$(command -v sed)
+  REQ_UNAME=$(command -v uname)
+  REQ_TOUCH=$(command -v touch)
+  REQ_CHMOD=$(command -v chmod)
+  REQ_MKDIR=$(command -v mkdir)
+  REQ_UNZIP=$(command -v unzip)
+  REQ_TAR=$(command -v tar)
+  REQ_DATE=$(command -v date)
+  REQ_CP=$(command -v cp)
+  REQ_KILLALL=$(command -v killall)
+  REQ_EVAL=$(command -v eval)
+
+  if [ -z "$REQ_PS" ]; then
+    echo "  [X] Missing required dependency: ps"
+  fi
+  if [ -z "$REQ_GREP" ]; then
+    echo "  [X] Missing required dependency: grep"
+  fi
+  if [ -z "$REQ_AWK" ]; then
+    echo "  [X] Missing required dependency: awk"
+  fi
+  if [ -z "$REQ_SED" ]; then
+    echo "  [X] Missing required dependency: sed"
+  fi
+  if [ -z "$REQ_UNAME" ]; then
+    echo "  [X] Missing required dependency: uname"
+  fi
+  if [ -z "$REQ_TOUCH" ]; then
+    echo "  [X] Missing required dependency: touch"
+  fi
+  if [ -z "$REQ_CHMOD" ]; then
+    echo "  [X] Missing required dependency: chmod"
+  fi
+  if [ -z "$REQ_MKDIR" ]; then
+    echo "  [X] Missing required dependency: mkdir"
+  fi
+  if [ -z "$REQ_UNZIP" ]; then
+    echo "  [X] Missing required dependency: unzip"
+  fi
+  if [ -z "$REQ_TAR" ]; then
+    echo "  [X] Missing required dependency: tar"
+  fi
+  if [ -z "$REQ_DATE" ]; then
+    echo "  [X] Missing required dependency: date"
+  fi
+  if [ -z "$REQ_CP" ]; then
+    echo "  [X] Missing required dependency: cp"
+  fi
+  if [ -z "$REQ_KILLALL" ]; then
+    echo "  [X] Missing required dependency: killall"
+  fi
+  if [ -z "$REQ_EVAL" ]; then
+    echo "  [X] Missing required dependency: eval"
+  fi
+}
+
 # Parse the command-line args
 parse_args() {
   SSHNP_OP="install"
@@ -159,14 +219,17 @@ validate_args() {
 
 # Load requirements statuses into variables
 parse_requirements() {
+  REQ_DART=$(command -v dart)
   REQ_SSH=$(command -v ssh)
-  REQ_SSHD=$(command -v sshd)
+  if [ -f "/usr/sbin/sshd" ]; then 
+    REQ_SSHD=true
+  fi
   REQ_CRON=$(command -v crontab)
   # REQ_SSH0=$(ssh -o "StrictHostKeyChecking no" -o "PasswordAuthentication no" 0 exit 2>/dev/null; echo $?)
   if [ -n "$(command -v pgrep)" ]; then
     REQ_SSHD_SERVICE=$(pgrep sshd)
     REQ_CRON_SERVICE=$(pgrep cron)
-  else
+  elif [ -n  "$REQ_PS" ] && [ -n "$REQ_GREP" ] && [ -n "$REQ_AWK" ]; then
     # shellcheck disable=SC2009
     REQ_SSHD_SERVICE=$(ps -ef | grep -v grep | grep sshd | awk '{print $2}')
     # shellcheck disable=SC2009
@@ -179,15 +242,15 @@ parse_requirements() {
 
 # Check the script's requirements
 check_requirements() {
+  if [ -z "$REQ_DART" ] && [ -n "$SSHNP_DEV_MODE" ]; then
+    echo "  [X] Missing required dependency: dart"
+  fi
   if [ -z "$REQ_SSH" ]; then
     echo "  [X] Missing required dependency: ssh"
   elif [ -z "$REQ_SSHD" ]; then
     echo "  [X] Missing required dependency: sshd"
   elif [ -z "$REQ_SSHD_SERVICE" ]; then
     echo "  [X] sshd is not running"
-  fi
-  if [ -z "$REQ_CURL" ] && [ -z "$SSHNP_DEV_MODE" ] && [ -z "$SSHNP_LOCAL" ]; then
-    echo "  [X] Missing required dependency: curl"
   fi
   if [ -z "$REQ_CURL" ] && [ -z "$SSHNP_DEV_MODE" ] && [ -z "$SSHNP_LOCAL" ]; then
     echo "  [X] Missing required dependency: curl"
@@ -453,7 +516,7 @@ setup_service_script() {
     >"$SSHNPD_SERVICE_BINARY_PATH";
     chmod +x "$SSHNPD_SERVICE_BINARY_PATH";
   elif [ "$SSHNP_OP" = 'rename' ]; then
-    rename device
+    rename_device
   fi
 }
 
@@ -602,5 +665,6 @@ main () {
   esac
 }
 
+check_basic_requirements
 parse_args "$@";
 main
