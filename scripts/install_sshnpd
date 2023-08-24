@@ -249,9 +249,6 @@ check_requirements() {
   if [ -z "$REQ_CURL" ] && [ -z "$SSHNP_DEV_MODE" ] && [ -z "$SSHNP_LOCAL" ]; then
     echo "  [X] Missing required dependency: curl"
   fi
-  if [ -z "$REQ_CURL" ] && [ -z "$SSHNP_DEV_MODE" ] && [ -z "$SSHNP_LOCAL" ]; then
-    echo "  [X] Missing required dependency: curl"
-  fi
   if [ -z "$REQ_CRON" ]; then
     echo "  [X] Missing required dependency: cron"
   elif [ -z "$REQ_CRON_SERVICE" ]; then
