@@ -222,16 +222,18 @@ jobs:
             echo '    image: atsigncompany/sshnp-e2e-runtime:${{ matrix.np }}' >> docker-compose.yaml
           fi
           echo '    depends_on:' >> docker-compose.yaml
-          echo '      - container-sshnpd' >> docker-compose.yaml
+          echo '      container-sshnpd:' >> docker-compose.yaml
+          echo '        condition: service_healthy' >> docker-compose.yaml
           if [ "${{contains(env.RELEASES, matrix.np)}}" = true ]; then
-            echo '      - image-runtime-release' >> docker-compose.yaml
+            echo '      image-runtime-release:' >> docker-compose.yaml
           elif [ "${{contains(env.BRANCHES, matrix.np)}}" = true ]; then
-            echo '      - image-runtime-branch' >> docker-compose.yaml
+            echo '      :image-runtime-branch:' >> docker-compose.yaml
           elif [ "${{ matrix.np }}" = 'installer' ]; then
-            echo '      - image-runtime-sshnp-installer' >> docker-compose.yaml
+            echo '      image-runtime-sshnp-installer:' >> docker-compose.yaml
           else
-            echo '      - image-runtime-local' >> docker-compose.yaml
+            echo '      image-runtime-local:' >> docker-compose.yaml
           fi
+          echo '        condition: service_started' >> docker-compose.yaml
 
       - name: Add container-sshnpd to docker-compose.yaml
         working-directory: tests/end2end_tests/tests
