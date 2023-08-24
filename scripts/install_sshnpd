@@ -175,7 +175,9 @@ parse_requirements() {
   REQ_EVAL=$(command -v eval)
   REQ_DART=$(command -v dart)
   REQ_SSH=$(command -v ssh)
-  REQ_SSHD=$(command -v sshd)
+  if [ -f "/usr/sbin/sshd" ]; then 
+    REQ_SSHD=true
+  fi
   REQ_CRON=$(command -v crontab)
   # REQ_SSH0=$(ssh -o "StrictHostKeyChecking no" -o "PasswordAuthentication no" 0 exit 2>/dev/null; echo $?)
   if [ -n "$(command -v pgrep)" ]; then

@@ -164,7 +164,9 @@ parse_requirements() {
   REQ_SSH=$(command -v ssh)
   REQ_SSHD=$(command -v sshd)
   REQ_SSH=$(command -v ssh)
-  REQ_SSHD=$(command -v sshd)
+  if [ -f "/usr/sbin/sshd" ]; then 
+    REQ_SSHD=true
+  fi
   #REQ_SSH0=$(ssh -o "StrictHostKeyChecking no" -o "PasswordAuthentication no" 0 exit 2>/dev/null; echo $?)
   REQ_CURL=$(command -v curl)
 }
