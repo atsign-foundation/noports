@@ -204,7 +204,7 @@ parse_requirements() {
 
 # Check the script's requirements
 check_requirements() {
-  if [ -z "$REQ_DART" ] && [ -z "$SSHNP_DEV_MODE" ]; then
+  if [ -z "$REQ_DART" ] && [ -n "$SSHNP_DEV_MODE" ]; then
     echo "  [X] Missing required dependency: dart"
   fi
   if [ -z "$REQ_SSH" ]; then
