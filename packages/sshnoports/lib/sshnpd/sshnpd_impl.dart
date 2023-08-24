@@ -159,8 +159,8 @@ class SSHNPDImpl implements SSHNPD {
         );
 
     // Refresh the device entry now, and every hour
+    await _refreshDeviceEntry();
     if (makeDeviceInfoVisible) {
-      await _refreshDeviceEntry();
       Timer.periodic(
         const Duration(hours: 1),
         (_) async => await _refreshDeviceEntry(),
@@ -801,10 +801,6 @@ class SSHNPDImpl implements SSHNPD {
 
   /// This function creates an atKey which shares the device name with the client
   Future<void> _refreshDeviceEntry() async {
-    if (!makeDeviceInfoVisible) {
-      return;
-    }
-
     const ttl = 1000 * 60 * 60 * 24 * 30; // 30 days
     var metaData = Metadata()
       ..isPublic = false
@@ -820,6 +816,20 @@ class SSHNPDImpl implements SSHNPD {
       ..sharedWith = managerAtsign
       ..namespace = SSHNPD.namespace
       ..metadata = metaData;
+
+    if (!makeDeviceInfoVisible) {
+      logger.info('Deleting old device info for $device (if it exists)');
+      try {
+        await atClient.delete(
+          atKey,
+          deleteRequestOptions: DeleteRequestOptions()
+            ..useRemoteAtServer = true,
+        );
+      } catch (e) {
+        stderr.writeln(e.toString());
+      }
+      return;
+    }
 
     try {
       logger.info('Updating device info for $device');
