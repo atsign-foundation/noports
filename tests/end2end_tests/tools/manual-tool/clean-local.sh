@@ -1,5 +1,5 @@
 #!/bin/bash
-cd branch ; sudo docker compose down --rmi=local --remove-orphans ; cd ..
-cd release ; sudo docker compose down --rmi=local --remove-orphans ; cd ..
-cd local ; sudo docker compose down --rmi=local --remove-orphans ; cd ..
-cd blank ; sudo docker compose down --rmi=local --remove-orphans ; cd ..
+sudo docker compose --project-directory branch down --rmi=local --remove-orphans
+sudo docker compose --project-directory release down --rmi=local --remove-orphans
+sudo docker compose --project-directory local down --rmi=local --remove-orphans
+sudo docker compose --project-directory blank down --rmi=local --remove-orphans

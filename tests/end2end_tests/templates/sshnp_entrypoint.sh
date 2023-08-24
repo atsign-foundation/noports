@@ -1,4 +1,5 @@
 #!/bin/bash
+echo "ENTRY"
 sleep WAITING_TIME # time for sshnpd to share device name
 
 SSHNP_COMMAND="$HOME/.local/bin/sshnp -f @sshnpatsign -t @sshnpdatsign -d deviceName -h @sshrvdatsign -s id_ed25519.pub -v > logs.txt"

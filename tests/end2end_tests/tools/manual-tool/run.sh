@@ -66,7 +66,7 @@ parse_args() {
                     shift 1
                 fi
 
-                if [[ ! -z $release ]];
+                if [[ -n $release ]];
                 then
                     shift 2
                 fi
@@ -107,22 +107,22 @@ parse_args() {
         exit 1
     fi
 
-    if [[ ! -z $local ]];
+    if [[ -n $local ]];
     then
         type=local
     fi
 
-    if [[ ! -z $branch ]];
+    if [[ -n $branch ]];
     then
         type=branch
     fi
 
-    if [[ ! -z $release ]];
+    if [[ -n $release ]];
     then
         type=release
     fi
 
-    if [[ ! -z $blank ]];
+    if [[ -n $blank ]];
     then
         type=blank
     fi
@@ -149,14 +149,14 @@ main() {
         fi
     fi
 
-    if [[ ! -z $nocache ]];
+    if [[ -n $nocache ]];
     then
         dockercmd1="$dockercmd1 --no-cache"
     fi
 
     # build dockercmd2 (docker compose run)
 
-    if [[ ! -z $rm ]];
+    if [[ -n $rm ]];
     then
         dockercmd2="$dockercmd2 --rm"
     fi
@@ -170,8 +170,10 @@ main() {
 
     # execute command
     echo "Executing command: $command"
+    # shellcheck disable=SC2086
     eval $command
 }
 
+# shellcheck disable=SC2068
 parse_args $@
 main
