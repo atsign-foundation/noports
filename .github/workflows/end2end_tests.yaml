@@ -227,7 +227,7 @@ jobs:
           if [ "${{contains(env.RELEASES, matrix.np)}}" = true ]; then
             echo '      image-runtime-release:' >> docker-compose.yaml
           elif [ "${{contains(env.BRANCHES, matrix.np)}}" = true ]; then
-            echo '      :image-runtime-branch:' >> docker-compose.yaml
+            echo '      image-runtime-branch:' >> docker-compose.yaml
           elif [ "${{ matrix.np }}" = 'installer' ]; then
             echo '      image-runtime-sshnp-installer:' >> docker-compose.yaml
           else
