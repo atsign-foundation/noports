@@ -4,7 +4,7 @@ version: '3.8'
 services:
   image-manual-local:
     build:
-      context: ../../../../../
+      context: ../../../
       dockerfile: tests/end2end_tests/image/Dockerfile
       target: manual-local
     image: atsigncompany/sshnp-e2e-manual:local
