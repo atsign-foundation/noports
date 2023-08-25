@@ -528,7 +528,7 @@ class SSHNPImpl implements SSHNP {
       return SSHCommand.base(
         localPort: localPort,
         remoteUsername: username,
-        host: InternetAddress.loopbackIPv4.address,
+        host: 'localhost',
         privateKeyFileName: publicKeyFileName,
       );
     }
@@ -566,7 +566,7 @@ class SSHNPImpl implements SSHNP {
       return SSHCommand.base(
         localPort: localPort,
         remoteUsername: username,
-        host: InternetAddress.loopbackIPv4.address,
+        host: 'localhost',
         privateKeyFileName: publicKeyFileName,
       );
     }
