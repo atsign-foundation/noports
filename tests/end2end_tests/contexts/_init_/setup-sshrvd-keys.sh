@@ -5,10 +5,10 @@
 
 sshrvd=$1
 
-cp ~/.atsign/keys/"$sshrvd"_key.atKeys ../sshrvd/keys/"$sshrvd"_key.atKeys
+cp ~/.atsign/keys/"$sshrvd"_key.atKeys ../sshrvd/.atsign/keys/"$sshrvd"_key.atKeys
 
-if [[ ! -f ../sshrvd/keys/${sshrvd}_key.atKeys ]];
+if [[ ! -f ../sshrvd/.atsign/keys/${sshrvd}_key.atKeys ]];
 then
-    echo "Could not copy ${sshrvd}_key.atKeys to ../sshrvd/keys/${sshrvd}_key.atKeys"
+    echo "Could not copy ${sshrvd}_key.atKeys to ../sshrvd/.atsign/keys/${sshrvd}_key.atKeys"
     exit 1
 fi

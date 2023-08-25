@@ -5,10 +5,10 @@
 
 sshnpd=$1
 
-cp ~/.atsign/keys/"$sshnpd"_key.atKeys ../sshnpd/keys/"$sshnpd"_key.atKeys
+cp ~/.atsign/keys/"$sshnpd"_key.atKeys ../sshnpd/.atsign/keys/"$sshnpd"_key.atKeys
 
-if [[ ! -f ../sshnpd/keys/${sshnpd}_key.atKeys ]];
+if [[ ! -f ../sshnpd/.atsign/keys/${sshnpd}_key.atKeys ]];
 then
-    echo "Could not copy ${sshnpd}_key.atKeys to ../sshnpd/keys/${sshnpd}_key.atKeys"
+    echo "Could not copy ${sshnpd}_key.atKeys to ../sshnpd/.atsign/keys/${sshnpd}_key.atKeys"
     exit 1
 fi

@@ -133,14 +133,14 @@ jobs:
       - name: Copy NP/NPD keys
         working-directory: tests/end2end_tests/contexts
         run: |
-          echo "${{ secrets[format('ATKEYS_{0}', env.NORMED_SSHNP_ATSIGN)] }}" > sshnp/keys/${{ env.SSHNP_ATSIGN }}_key.atKeys
-          echo "${{ secrets[format('ATKEYS_{0}', env.NORMED_SSHNPD_ATSIGN)] }}" > sshnpd/keys/${{ env.SSHNPD_ATSIGN }}_key.atKeys
+          echo "${{ secrets[format('ATKEYS_{0}', env.NORMED_SSHNP_ATSIGN)] }}" > sshnp/.atsign/keys/${{ env.SSHNP_ATSIGN }}_key.atKeys
+          echo "${{ secrets[format('ATKEYS_{0}', env.NORMED_SSHNPD_ATSIGN)] }}" > sshnpd/.atsign/keys/${{ env.SSHNPD_ATSIGN }}_key.atKeys
 
       - name: Copy RVD keys
         working-directory: tests/end2end_tests/contexts
         if: matrix.rvd
         run: |
-          echo "${{ secrets[format('ATKEYS_{0}', env.NORMED_SSHRVD_ATSIGN)] }}" > sshrvd/keys/${{ env[matrix.rvd_atsign] }}_key.atKeys
+          echo "${{ secrets[format('ATKEYS_{0}', env.NORMED_SSHRVD_ATSIGN)] }}" > sshrvd/.atsign/keys/${{ env[matrix.rvd_atsign] }}_key.atKeys
 
       - name: Set up entrypoints
         uses: ./.github/composite/setup_entrypoints
@@ -297,7 +297,9 @@ jobs:
           docker compose logs --timestamps
 
       - name: Tear down
-        if: always()
+        # Always tear down outside of the act environment
+        # but don't tear down on failure in the act environment
+        if: ${{ !github.event.act || success() }}
         working-directory: tests/end2end_tests/tests
         run: |
           docker compose down

@@ -5,10 +5,10 @@
 
 sshnp=$1
 
-cp ~/.atsign/keys/"$sshnp"_key.atKeys ../sshnp/keys/"$sshnp"_key.atKeys
+cp ~/.atsign/keys/"$sshnp"_key.atKeys ../sshnp/.atsign/keys/"$sshnp"_key.atKeys
 
-if [[ ! -f ../sshnp/keys/${sshnp}_key.atKeys ]];
+if [[ ! -f ../sshnp/.atsign/keys/${sshnp}_key.atKeys ]];
 then
-    echo "Could not copy ${sshnp}_key.atKeys to ../sshnp/keys/${sshnp}_key.atKeys"
+    echo "Could not copy ${sshnp}_key.atKeys to ../sshnp/.atsign/keys/${sshnp}_key.atKeys"
     exit 1
 fi
