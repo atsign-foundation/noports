@@ -1,7 +1,7 @@
   container-sshrvd:
     container_name: sshrvd
     volumes:
-      - ../contexts/sshrvd/:/atsign/
+      - ../contexts/sshrvd:/mount
     network_mode: host
     # auto added:
     # - image

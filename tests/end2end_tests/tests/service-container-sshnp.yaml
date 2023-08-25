@@ -1,7 +1,7 @@
   container-sshnp:
     container_name: sshnp
     volumes:
-      - ../contexts/sshnp/:/atsign/
+      - ../contexts/sshnp:/mount
     networks:
       - sshnp
     # auto added:

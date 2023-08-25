@@ -89,7 +89,7 @@ WORKDIR ${HOMEDIR}
 
 USER ${USER}
 
-ENTRYPOINT sudo service ssh start && sh ${HOMEDIR}/entrypoint.sh
+ENTRYPOINT cp -r /mount/. /atsign && sudo service ssh start && sh ${HOMEDIR}/entrypoint.sh
 # END LOCAL
 
 # RELEASE

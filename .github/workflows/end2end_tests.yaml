@@ -160,6 +160,11 @@ jobs:
           cat sshnpd/entrypoint.sh
           cat sshrvd/entrypoint.sh
 
+      - name: Create docker-compose.yaml
+        working-directory: tests/end2end_tests/tests
+        run: |
+          cat docker-compose-base.yaml > docker-compose.yaml
+
       - name: Add runtime-release image to docker-compose.yaml
         working-directory: tests/end2end_tests/tests
         if: ${{ contains(env.RELEASES, matrix.np) || contains(env.RELEASES, matrix.npd) || (matrix.rvd && contains(env.RELEASES, matrix.rvd)) }}
@@ -299,7 +304,7 @@ jobs:
       - name: Tear down
         # Always tear down outside of the act environment
         # but don't tear down on failure in the act environment
-        if: ${{ !github.event.act || success() }}
+        if: ${{ !env.ACT }} || success()
         working-directory: tests/end2end_tests/tests
         run: |
           docker compose down
