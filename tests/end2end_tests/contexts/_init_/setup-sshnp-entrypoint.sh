@@ -8,8 +8,7 @@ device=$1 # e.g. e2e
 sshnp=$2 # e.g. @alice
 sshnpd=$3 # e.g. @alice
 sshrvd=$4 # e.g. @alice
-waitingTime=$5 # e.g. 30
-template_name=$6 # e.g. sshnp_entrypoint.sh
+template_name=$5 # e.g. sshnp_entrypoint.sh
 
 cp ../../entrypoints/"$template_name" ../sshnp/entrypoint.sh
 

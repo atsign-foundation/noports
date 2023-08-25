@@ -21,9 +21,6 @@ inputs:
   devicename:
     description: Unique sshnp devicename
     required: true
-  wait_time:
-    description: Time to wait for sshnpd to start
-    required: false
 
 runs:
   using: composite
@@ -41,7 +38,7 @@ runs:
             ;;
         esac
         echo "entrypoint_filename: $entrypoint_filename"
-        ./setup-sshnp-entrypoint.sh ${{ inputs.devicename }} ${{ inputs.sshnp_atsign }} ${{ inputs.sshnpd_atsign }} ${{ inputs.sshrvd_atsign }} ${{ inputs.wait_time || 10 }} "$entrypoint_filename"
+        ./setup-sshnp-entrypoint.sh ${{ inputs.devicename }} ${{ inputs.sshnp_atsign }} ${{ inputs.sshnpd_atsign }} ${{ inputs.sshrvd_atsign }} "$entrypoint_filename"
 
     - name: Setup NPD entrypoint
       shell: bash

@@ -59,15 +59,12 @@ jobs:
           ### SSHNPD INSTALLER TESTS ###
           - np: local
             npd: installer
-            wait: 120
 
           - np: trunk
             npd: installer
-            wait: 120
 
           - np: installer
             npd: installer
-            wait: 120
 
           ### BACKWARD TESTS WITHOUT SYNC ###
           - np: local
@@ -88,7 +85,6 @@ jobs:
           ### BACKWARD TESTS WITH SYNC ###
           - np: local
             npd: v3.2.0
-            wait: 200
           - np: v3.2.0
             npd: local
     steps:
@@ -99,7 +95,6 @@ jobs:
           echo "npd: ${{ matrix.npd }}"
           echo "rvd: ${{ matrix.rvd }}"
           echo "rvd_atsign: ${{ env[matrix.rvd_atsign] || env.PROD_RVD_ATSIGN }}"
-          echo "wait: ${{ matrix.wait }}"
 
       - uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9 # v3.5.3
 
@@ -151,7 +146,6 @@ jobs:
           sshnpd_atsign: ${{ env.SSHNPD_ATSIGN }}
           sshrvd_atsign: ${{ env[matrix.rvd_atsign] || env.PROD_RVD_ATSIGN }}
           devicename: ${{ github.run_id }}${{ github.run_attempt }}${{ strategy.job-index }}
-          wait_time: ${{ matrix.wait }}
 
       - name: Ensure entrypoints exist
         working-directory: tests/end2end_tests/contexts
