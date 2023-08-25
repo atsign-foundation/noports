@@ -35,19 +35,45 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   }
 
   Future<void> ssh(SSHNPParams sshnpParams) async {
-    final sshnp = await SSHNP.fromParams(
-      sshnpParams,
-      atClient: AtClientManager.getInstance().atClient,
-      sshrvGenerator: SSHRV.pureDart,
-    );
-    await sshnp.init();
-    final sshnpResult = await sshnp.run();
     if (mounted) {
       showDialog<void>(
         context: context,
         barrierDismissible: false,
-        builder: (BuildContext context) => SSHNPResultAlertDialog(sshnpResult: sshnpResult),
+        builder: (BuildContext context) => const Center(child: CircularProgressIndicator()),
       );
+    }
+
+    try {
+      final sshnp = await SSHNP.fromParams(
+        sshnpParams,
+        atClient: AtClientManager.getInstance().atClient,
+        sshrvGenerator: SSHRV.pureDart,
+      );
+      await sshnp.init();
+      final sshnpResult = await sshnp.run();
+      context.pop();
+      if (mounted) {
+        showDialog<void>(
+          context: context,
+          barrierDismissible: false,
+          builder: (BuildContext context) => SSHNPResultAlertDialog(
+            result: sshnpResult.toString(),
+            title: 'Success',
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        context.pop();
+        showDialog<void>(
+          context: context,
+          barrierDismissible: false,
+          builder: (BuildContext context) => SSHNPResultAlertDialog(
+            result: e.toString(),
+            title: 'Failure',
+          ),
+        );
+      }
     }
   }
 

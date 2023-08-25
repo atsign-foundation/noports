@@ -1,13 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:sshnoports/sshnp/sshnp.dart';
-
-import '../../utils/sizes.dart';
 
 class SSHNPResultAlertDialog extends ConsumerWidget {
-  const SSHNPResultAlertDialog({required this.sshnpResult, super.key});
-  final SSHNPResult sshnpResult;
+  const SSHNPResultAlertDialog({required this.result, required this.title, super.key});
+
+  final String result;
+  final String title;
 
   @override
   Widget build(
@@ -20,17 +19,15 @@ class SSHNPResultAlertDialog extends ConsumerWidget {
       padding: const EdgeInsets.only(left: 72),
       child: Center(
         child: AlertDialog(
-          title: Text(strings.result),
+          title: Center(child: Text(title)),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Text(strings.success),
-              gapH12,
               Text.rich(
                 TextSpan(
                   children: [
                     TextSpan(
-                      text: sshnpResult.toString(),
+                      text: result,
                       style: Theme.of(context).textTheme.bodyLarge!.copyWith(fontWeight: FontWeight.w700),
                     ),
                   ],
