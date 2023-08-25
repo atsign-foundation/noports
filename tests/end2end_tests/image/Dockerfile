@@ -17,6 +17,7 @@ RUN set -eux ; \
   mkdir -p ${HOMEDIR}/.ssh ${HOMEDIR}/.atsign/keys ${HOMEDIR}/.local/bin ; \
   touch ${HOMEDIR}/.ssh/authorized_keys ; \
   ssh-keygen -t ed25519 -a 100 -f ${HOMEDIR}/.ssh/id_ed25519 -q -N '' ; \
+  chmod 600 ${HOMEDIR}/.ssh/id_ed25519 ; \
   chown -R ${USER}:${USER} ${HOMEDIR} ; \
   ex +"%s/^%sudo.*$/%sudo ALL=(ALL:ALL) NOPASSWD:ALL/g" -scwq! /etc/sudoers ; \
   sed -E -i 's|^#?(PasswordAuthentication)\s.*|\1 no|' /etc/ssh/sshd_config ; \
