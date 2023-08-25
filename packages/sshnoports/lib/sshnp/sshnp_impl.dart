@@ -529,7 +529,7 @@ class SSHNPImpl implements SSHNP {
         localPort: localPort,
         remoteUsername: username,
         host: 'localhost',
-        privateKeyFileName: publicKeyFileName,
+        privateKeyFileName: publicKeyFileName.replaceAll('.pub', ''),
       );
     }
 
@@ -567,7 +567,7 @@ class SSHNPImpl implements SSHNP {
         localPort: localPort,
         remoteUsername: username,
         host: 'localhost',
-        privateKeyFileName: publicKeyFileName,
+        privateKeyFileName: publicKeyFileName.replaceAll('.pub', ''),
       );
     }
     return SSHNPFailed();
