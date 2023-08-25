@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# this script copies the template sshnp entrypoint to ../../contexts/sshnp/entrypoint.sh
+# this script copies the template sshnp entrypoint to ../sshnp/entrypoint.sh
 # then also replaces the device name, sshnp atSign, sshnpd atSign, and sshrvd atSign with the provided arguments
 # example usage: ./setup-sshnp-entrypoint.sh e2e @alice @alice @alice
 
@@ -11,7 +11,7 @@ sshrvd=$4 # e.g. @alice
 waitingTime=$5 # e.g. 30
 template_name=$6 # e.g. sshnp_entrypoint.sh
 
-cp ../../templates/"$template_name" ../../contexts/sshnp/entrypoint.sh
+cp ../../entrypoints/"$template_name" ../sshnp/entrypoint.sh
 
 prefix="sed -i"
 
@@ -21,8 +21,8 @@ then
     prefix="$prefix ''"
 fi
 
-eval "$prefix" "s/@sshnpatsign/${sshnp}/g" ../../contexts/sshnp/entrypoint.sh
-eval "$prefix" "s/@sshnpdatsign/${sshnpd}/g" ../../contexts/sshnp/entrypoint.sh
-eval "$prefix" "s/@sshrvdatsign/${sshrvd}/g" ../../contexts/sshnp/entrypoint.sh
-eval "$prefix" "s/deviceName/${device}/g" ../../contexts/sshnp/entrypoint.sh
-eval "$prefix" "s/WAITING_TIME/${waitingTime}/g" ../../contexts/sshnp/entrypoint.sh
+eval "$prefix" "s/@sshnpatsign/${sshnp}/g" ../sshnp/entrypoint.sh
+eval "$prefix" "s/@sshnpdatsign/${sshnpd}/g" ../sshnp/entrypoint.sh
+eval "$prefix" "s/@sshrvdatsign/${sshrvd}/g" ../sshnp/entrypoint.sh
+eval "$prefix" "s/deviceName/${device}/g" ../sshnp/entrypoint.sh
+eval "$prefix" "s/WAITING_TIME/${waitingTime}/g" ../sshnp/entrypoint.sh

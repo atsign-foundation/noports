@@ -30,7 +30,7 @@ runs:
   steps:
     - name: Setup NP entrypoint
       shell: bash
-      working-directory: tests/end2end_tests/tools/configuration
+      working-directory: tests/end2end_tests/context/_init_
       run: |
         case "${{ inputs.sshnp }}" in
           "installer")
@@ -45,7 +45,7 @@ runs:
 
     - name: Setup NPD entrypoint
       shell: bash
-      working-directory: tests/end2end_tests/tools/configuration
+      working-directory: tests/end2end_tests/context/_init_
       run: |
         case "${{ inputs.sshnpd }}" in
           "installer")
@@ -60,6 +60,6 @@ runs:
 
     - name: Setup RVD entrypoint
       shell: bash
-      working-directory: tests/end2end_tests/tools/configuration
+      working-directory: tests/end2end_tests/context/_init_
       run: |
         ./setup-sshrvd-entrypoint.sh ${{ inputs.sshrvd_atsign }}

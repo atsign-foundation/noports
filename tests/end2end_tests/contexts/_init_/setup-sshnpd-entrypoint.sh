@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# this script copies the template entrypoint to ../../contexts/sshnpd/entrypoint.sh
+# this script copies the template entrypoint to ../sshnpd/entrypoint.sh
 # then also replaces the @sshnpatsign, @sshnpdatsign and device name with the provided arguments
 # example usage: ./setup-sshnpd-entrypoint.sh e2e @alice @alice
 
@@ -9,7 +9,7 @@ sshnp=$2 # e.g. @alice
 sshnpd=$3 # e.g. @alice
 template_name=$4 # e.g. sshnpd_entrypoint.sh
 
-cp ../../templates/"$template_name" ../../contexts/sshnpd/entrypoint.sh
+cp ../../entrypoints/"$template_name" ../sshnpd/entrypoint.sh
 
 prefix="sed -i"
 
@@ -19,6 +19,6 @@ then
     prefix="$prefix ''"
 fi
 
-eval "$prefix" "s/@sshnpatsign/${sshnp}/g" ../../contexts/sshnpd/entrypoint.sh
-eval "$prefix" "s/@sshnpdatsign/${sshnpd}/g" ../../contexts/sshnpd/entrypoint.sh
-eval "$prefix" "s/deviceName/${device}/g" ../../contexts/sshnpd/entrypoint.sh
+eval "$prefix" "s/@sshnpatsign/${sshnp}/g" ../sshnpd/entrypoint.sh
+eval "$prefix" "s/@sshnpdatsign/${sshnpd}/g" ../sshnpd/entrypoint.sh
+eval "$prefix" "s/deviceName/${device}/g" ../sshnpd/entrypoint.sh
