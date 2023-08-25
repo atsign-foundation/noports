@@ -301,6 +301,12 @@ jobs:
           docker compose ps -a
           docker compose logs --timestamps
 
+      - name: Found "Test Passed" in Logs
+        if: always()
+        working-directory: tests/end2end_tests/tests
+        run: |
+          docker compose logs --timestamps | grep -q "Test Passed$"
+
       - name: Tear down
         # Always tear down outside of the act environment
         # but don't tear down on failure in the act environment
