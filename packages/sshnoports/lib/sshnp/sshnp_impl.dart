@@ -377,7 +377,7 @@ class SSHNPImpl implements SSHNP {
       }
       // print out optional arguments
       for (var argument in localSshOptions) {
-        stdout.write("$argument ");
+        stdout.write(" $argument");
       }
     }
     // Print the  return
