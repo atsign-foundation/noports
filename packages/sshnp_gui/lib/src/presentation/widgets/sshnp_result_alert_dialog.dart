@@ -1,12 +1,37 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+
+import '../../controllers/minor_providers.dart';
+import '../../utils/app_router.dart';
 
 class SSHNPResultAlertDialog extends ConsumerWidget {
   const SSHNPResultAlertDialog({required this.result, required this.title, super.key});
 
   final String result;
   final String title;
+
+  void copyToClipBoard({
+    required BuildContext context,
+    required String clipboardSuccessText,
+  }) {
+    Clipboard.setData(ClipboardData(text: result)).then((value) => ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(clipboardSuccessText),
+          ),
+        ));
+  }
+
+  void ssh({
+    required WidgetRef ref,
+    required BuildContext context,
+  }) {
+    ref.read(currentNavIndexProvider.notifier).update((state) => AppRoute.terminal.index - 1);
+    ref.read(terminalSSHCommandProvider.notifier).update((state) => result);
+    context.pushReplacementNamed(AppRoute.terminal.name);
+  }
 
   @override
   Widget build(
@@ -19,7 +44,21 @@ class SSHNPResultAlertDialog extends ConsumerWidget {
       padding: const EdgeInsets.only(left: 72),
       child: Center(
         child: AlertDialog(
-          title: Center(child: Text(title)),
+          title: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Expanded(child: Center(child: Text(title))),
+              result.contains('ssh')
+                  ? IconButton(
+                      icon: const Icon(Icons.copy_outlined),
+                      onPressed: () => copyToClipBoard(
+                        context: context,
+                        clipboardSuccessText: strings.copiedToClipboard,
+                      ),
+                    )
+                  : const SizedBox.shrink()
+            ],
+          ),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -38,9 +77,16 @@ class SSHNPResultAlertDialog extends ConsumerWidget {
           actions: [
             OutlinedButton(
               onPressed: () => Navigator.of(context).pop(false),
-              child: Text(strings.okButton,
+              child: Text(strings.closeButton,
                   style: Theme.of(context).textTheme.bodyLarge!.copyWith(decoration: TextDecoration.underline)),
             ),
+            result.contains('ssh')
+                ? OutlinedButton(
+                    onPressed: () => ssh(context: context, ref: ref),
+                    child: Text(strings.sshButton,
+                        style: Theme.of(context).textTheme.bodyLarge!.copyWith(decoration: TextDecoration.underline)),
+                  )
+                : const SizedBox.shrink(),
           ],
         ),
       ),

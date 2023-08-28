@@ -101,7 +101,6 @@ class _NewConnectionFormState extends ConsumerState<NewConnectionForm> {
           .read(sshnpParamsProvider.notifier)
           .update((state) => SSHNPParams(clientAtSign: '', sshnpdAtSign: '', host: '', legacyDaemon: true));
       if (context.mounted) {
-        ref.read(currentNavIndexProvider.notifier).update((state) => 1);
         ref.read(currentNavIndexProvider.notifier).update((state) => AppRoute.home.index - 1);
         context.pushReplacementNamed(AppRoute.home.name);
       }
@@ -238,6 +237,7 @@ class _NewConnectionFormState extends ConsumerState<NewConnectionForm> {
               gapH20,
               TextButton(
                   onPressed: () {
+                    ref.read(currentNavIndexProvider.notifier).update((state) => AppRoute.home.index - 1);
                     context.pushReplacementNamed(AppRoute.home.name);
                   },
                   child: Text(strings.cancel))

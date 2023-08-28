@@ -51,8 +51,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       );
       await sshnp.init();
       final sshnpResult = await sshnp.run();
-      context.pop();
+
       if (mounted) {
+        // pop to remove circular progress indicator
+        context.pop();
         showDialog<void>(
           context: context,
           barrierDismissible: false,
@@ -70,7 +72,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           barrierDismissible: false,
           builder: (BuildContext context) => SSHNPResultAlertDialog(
             result: e.toString(),
-            title: 'Failure',
+            title: 'Failed',
           ),
         );
       }

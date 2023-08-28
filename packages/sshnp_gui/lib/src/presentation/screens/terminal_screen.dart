@@ -5,6 +5,7 @@ import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:flutter_pty/flutter_pty.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:sshnp_gui/src/controllers/minor_providers.dart';
 import 'package:xterm/xterm.dart';
 
 import '../../controllers/home_screen_controller.dart';
@@ -52,6 +53,11 @@ class _TerminalScreenState extends ConsumerState<TerminalScreen> {
     terminal.onResize = (w, h, pw, ph) {
       pty.resize(h, w);
     };
+
+    // write ssh result command to terminal
+    pty.write(const Utf8Encoder().convert(ref.watch(terminalSSHCommandProvider)));
+    // reset provider
+    ref.read(terminalSSHCommandProvider.notifier).update((state) => '');
   }
 
   @override
@@ -75,18 +81,19 @@ class _TerminalScreenState extends ConsumerState<TerminalScreen> {
             const AppNavigationRail(),
             Expanded(
               child: Padding(
-                padding: const EdgeInsets.only(left: Sizes.p36, top: Sizes.p21),
+                padding: const EdgeInsets.only(left: Sizes.p36, top: Sizes.p21, right: Sizes.p36),
                 child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                   SvgPicture.asset(
                     'assets/images/noports_light.svg',
                   ),
                   gapH24,
                   Expanded(
-                      child: TerminalView(
-                    terminal,
-                    controller: terminalController,
-                    autofocus: true,
-                  )),
+                    child: TerminalView(
+                      terminal,
+                      controller: terminalController,
+                      autofocus: true,
+                    ),
+                  ),
                 ]),
               ),
             ),

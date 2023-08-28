@@ -46,7 +46,10 @@
     "cancelButton":"Cancel",
     "deleteButton" : "Delete",
     "okButton" : "Ok",
+    "sshButton" : "ssh",
+    "closeButton" : "Close",
     "success": "Success",
     "failed": "Failed",
-    "result" : "Result"
+    "result" : "Result",
+    "copiedToClipboard": "Copied to Clipboard"
 }
