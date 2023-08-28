@@ -1,20 +1,6 @@
-import 'dart:async';
-import 'dart:convert';
-import 'dart:io';
+part of 'sshnpd.dart';
 
-import 'package:at_client/at_client.dart' hide StringBuffer;
-import 'package:at_utils/at_logger.dart';
-import 'package:dartssh2/dartssh2.dart';
-import 'package:logging/logging.dart';
-import 'package:meta/meta.dart';
-import 'package:sshnoports/common/create_at_client_cli.dart';
-import 'package:sshnoports/common/supported_ssh_clients.dart';
-import 'package:sshnoports/common/utils.dart';
-import 'package:sshnoports/sshnpd/sshnpd.dart';
-import 'package:sshnoports/sshnpd/sshnpd_params.dart';
-import 'package:sshnoports/version.dart';
-import 'package:uuid/uuid.dart';
-
+@visibleForTesting
 class SSHNPDImpl implements SSHNPD {
   @override
   final AtSignLogger logger = AtSignLogger(' sshnpd ');
@@ -55,17 +41,17 @@ class SSHNPDImpl implements SSHNPD {
 
   static const String commandToSend = 'sshd';
 
-  SSHNPDImpl(
-      {
-      // final fields
-      required this.atClient,
-      required this.username,
-      required this.homeDirectory,
-      required this.device,
-      required this.managerAtsign,
-      required this.sshClient,
-      this.makeDeviceInfoVisible = false,
-      this.addSshPublicKeys = false}) {
+  SSHNPDImpl({
+    // final fields
+    required this.atClient,
+    required this.username,
+    required this.homeDirectory,
+    required this.device,
+    required this.managerAtsign,
+    required this.sshClient,
+    this.makeDeviceInfoVisible = false,
+    this.addSshPublicKeys = false,
+  }) {
     logger.hierarchicalLoggingEnabled = true;
     logger.logger.level = Level.SHOUT;
   }
@@ -173,8 +159,8 @@ class SSHNPDImpl implements SSHNPD {
         );
 
     // Refresh the device entry now, and every hour
+    await _refreshDeviceEntry();
     if (makeDeviceInfoVisible) {
-      await _refreshDeviceEntry();
       Timer.periodic(
         const Duration(hours: 1),
         (_) async => await _refreshDeviceEntry(),
@@ -476,8 +462,7 @@ class SSHNPDImpl implements SSHNPD {
     try {
       // Connect to rendezvous point using background process.
       // This program can then exit without causing an issue.
-      Process rv = await Process.start(getSshrvCommand(), [host, '$port'],
-          mode: ProcessStartMode.detached);
+      Process rv = await SSHRV.localBinary(host, port).run();
       logger.info('Started rv - pid is ${rv.pid}');
 
       /// Notify sshnp that the connection has been made
@@ -816,10 +801,6 @@ class SSHNPDImpl implements SSHNPD {
 
   /// This function creates an atKey which shares the device name with the client
   Future<void> _refreshDeviceEntry() async {
-    if (!makeDeviceInfoVisible) {
-      return;
-    }
-
     const ttl = 1000 * 60 * 60 * 24 * 30; // 30 days
     var metaData = Metadata()
       ..isPublic = false
@@ -835,6 +816,20 @@ class SSHNPDImpl implements SSHNPD {
       ..sharedWith = managerAtsign
       ..namespace = SSHNPD.namespace
       ..metadata = metaData;
+
+    if (!makeDeviceInfoVisible) {
+      logger.info('Deleting old device info for $device (if it exists)');
+      try {
+        await atClient.delete(
+          atKey,
+          deleteRequestOptions: DeleteRequestOptions()
+            ..useRemoteAtServer = true,
+        );
+      } catch (e) {
+        stderr.writeln(e.toString());
+      }
+      return;
+    }
 
     try {
       logger.info('Updating device info for $device');
