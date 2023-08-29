@@ -1,4 +1,5 @@
 import 'package:at_app_flutter/at_app_flutter.dart';
+import 'package:at_contacts_flutter/utils/init_contacts_service.dart';
 import 'package:at_onboarding_flutter/at_onboarding_flutter.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
@@ -32,6 +33,7 @@ class OnboardingScreen extends StatelessWidget {
               switch (onboardingResult.status) {
                 case AtOnboardingResultStatus.success:
                   if (context.mounted) {
+                    initializeContactsService(rootDomain: AtEnv.rootDomain);
                     context.goNamed(AppRoute.home.name);
                   }
                   break;

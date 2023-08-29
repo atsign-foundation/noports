@@ -51,5 +51,18 @@
     "success": "Success",
     "failed": "Failed",
     "result" : "Result",
-    "copiedToClipboard": "Copied to Clipboard"
+    "copiedToClipboard": "Copied to Clipboard",
+    "settings" : "Settings",
+    "backupYourKeys" : "BackupYourKeys",
+    "switchAtsign" : "Switch atSign",
+    "faq" : "FAQ",
+    "contactUs" : "Contact Us",
+    "privacyPolicy" : "Privacy Policy",
+    "reset" : "Reset",
+    "resetDescription":"This will remove the selected atSign and its details from this app only.",
+    "noAtsignToReset": "No atSigns are paired to reset.",
+    "resetErrorText":"Please select atleast one atSign to reset",
+    "resetWarningText":"Warning: This action cannot be undone",
+    "removeButton":"Remove",
+    "error" : "Error"
 }

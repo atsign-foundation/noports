@@ -32,6 +32,7 @@ dependencies:
     git:
       url: https://github.com/atsign-foundation/sshnoports.git
       path: packages/sshnoports/
+      ref: fix/sshnp-result
   xterm: ^3.5.0
 
 dev_dependencies:
