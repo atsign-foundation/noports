@@ -223,8 +223,7 @@ class SSHNPImpl implements SSHNP {
       }
 
       // Check to see if the port number is in range for TCP ports
-      if (p.localSshdPort > 65535 ||
-          p.localSshdPort < 1) {
+      if (p.localSshdPort > 65535 || p.localSshdPort < 1) {
         throw ArgumentError(
             '\nInvalid port number for sshd (1-65535) : ${p.localSshdPort}');
       }
@@ -349,22 +348,22 @@ class SSHNPImpl implements SSHNP {
   @override
   Future<SSHNPResult> run() async {
     if (!initialized) {
-      throw StateError('Cannot run() - not initialized');
+      return SSHNPFailed('Cannot run() - not initialized');
     }
 
     if (legacyDaemon) {
       logger.info('Requesting legacy daemon to start reverse ssh session');
       return await legacyStartReverseSsh();
-    } else {
-      if (direct) {
-        logger.info(
-            'Requesting daemon to set up socket tunnel for direct ssh session');
-        return await startDirectSsh();
-      } else {
-        logger.info('Requesting daemon to start reverse ssh session');
-        return await startReverseSsh();
-      }
     }
+
+    if (direct) {
+      logger.info(
+          'Requesting daemon to set up socket tunnel for direct ssh session');
+      return await startDirectSsh();
+    }
+
+    logger.info('Requesting daemon to start reverse ssh session');
+    return await startReverseSsh();
   }
 
   Future<SSHNPResult> startDirectSsh() async {
@@ -388,48 +387,51 @@ class SSHNPImpl implements SSHNP {
 
     bool acked = await waitForDaemonResponse();
     if (!acked) {
-      throw ('sshnp: connection timeout');
+      return SSHNPFailed(
+          'sshnp connection timeout: waiting for daemon response');
     }
 
-    if (!sshnpdAckErrors) {
-      // 1) Execute an ssh command setting up local port forwarding.
-      //    Note that this is very similar to what the daemon does when we
-      //    ask for a reverse ssh
-      logger.info(
-          'Starting direct ssh session for $username to $host on port $_sshrvdPort with forwardLocal of $localPort');
+    if (sshnpdAckErrors) {
+      return SSHNPFailed('sshnp failed: with sshnpd acknowledgement errors');
+    }
+    // 1) Execute an ssh command setting up local port forwarding.
+    //    Note that this is very similar to what the daemon does when we
+    //    ask for a reverse ssh
+    logger.info(
+        'Starting direct ssh session for $username to $host on port $_sshrvdPort with forwardLocal of $localPort');
 
-      try {
-        bool success = false;
-        String? errorMessage;
+    try {
+      bool success = false;
+      String? errorMessage;
 
-        switch (sshClient) {
-          case SupportedSshClient.hostSsh:
-            (success, errorMessage) = await directSshViaExec();
-            break;
-          case SupportedSshClient.pureDart:
-            throw UnimplementedError(
-                'start the direct ssh via pure dart client not yet implemented');
-        }
-
-        if (!success) {
-          errorMessage ??=
-              'Failed to start ssh tunnel and / or forward local port $localPort';
-          throw errorMessage;
-        } else {
-          // All good - write the ssh command to stdout
-          return SSHCommand.base(
-            localPort: localPort,
-            remoteUsername: username,
-            host: host,
-            privateKeyFileName: publicKeyFileName,
+      switch (sshClient) {
+        case SupportedSshClient.hostSsh:
+          (success, errorMessage) = await directSshViaExec();
+          break;
+        case SupportedSshClient.pureDart:
+          const message =
+              'start the direct ssh via pure dart client not yet implemented';
+          return SSHNPFailed(
+            message,
+            UnimplementedError(message),
           );
-        }
-      } catch (e) {
-        throw 'SSH Client failure : $e';
       }
-    }
 
-    return SSHNPFailed();
+      if (!success) {
+        errorMessage ??=
+            'Failed to start ssh tunnel and / or forward local port $localPort';
+        return SSHNPFailed(errorMessage);
+      }
+      // All good - write the ssh command to stdout
+      return SSHCommand.base(
+        localPort: localPort,
+        remoteUsername: username,
+        host: host,
+        privateKeyFileName: publicKeyFileName,
+      );
+    } catch (e, s) {
+      return SSHNPFailed('SSH Client failure : $e', e, s);
+    }
   }
 
   Future<(bool, String?)> directSshViaExec() async {
@@ -493,7 +495,8 @@ class SSHNPImpl implements SSHNP {
   Future<SSHNPResult> startReverseSsh() async {
     // Connect to rendezvous point using background process.
     // sshnp (this program) can then exit without issue.
-    SSHRV sshrv = sshrvGenerator(host, _sshrvdPort, localSshdPort: localSshdPort);
+    SSHRV sshrv =
+        sshrvGenerator(host, _sshrvdPort, localSshdPort: localSshdPort);
     unawaited(sshrv.run());
 
     // send request to the daemon via notification
@@ -520,26 +523,26 @@ class SSHNPImpl implements SSHNP {
     bool acked = await waitForDaemonResponse();
     await cleanUpAfterReverseSsh(this);
     if (!acked) {
-      throw ('sshnp: connection timeout');
+      return SSHNPFailed(
+          'sshnp connection timeout: waiting for daemon response');
+    }
+    if (sshnpdAckErrors) {
+      return SSHNPFailed('sshnp failed: with sshnpd acknowledgement errors');
     }
 
-    if (!sshnpdAckErrors) {
-      // If no ack errors, write the ssh command to stdout
-      return SSHCommand.base(
-        localPort: localPort,
-        remoteUsername: username,
-        host: host,
-        privateKeyFileName: publicKeyFileName,
-      );
-    }
-
-    return SSHNPFailed();
+    return SSHCommand.base(
+      localPort: localPort,
+      remoteUsername: username,
+      host: host,
+      privateKeyFileName: publicKeyFileName,
+    );
   }
 
   Future<SSHNPResult> legacyStartReverseSsh() async {
     // Connect to rendezvous point using background process.
     // sshnp (this program) can then exit without issue.
-    SSHRV sshrv = sshrvGenerator(host, _sshrvdPort, localSshdPort: localSshdPort);
+    SSHRV sshrv =
+        sshrvGenerator(host, _sshrvdPort, localSshdPort: localSshdPort);
     unawaited(sshrv.run());
 
     // send request to the daemon via notification
@@ -558,19 +561,17 @@ class SSHNPImpl implements SSHNP {
     bool acked = await waitForDaemonResponse();
     await cleanUpAfterReverseSsh(this);
     if (!acked) {
-      throw ('sshnp: connection timeout');
+      return SSHNPFailed('sshnp timed out: waiting for daemon response');
     }
-
-    if (!sshnpdAckErrors) {
-      // If no ack errors, write the ssh command to stdout
-      return SSHCommand.base(
-        localPort: localPort,
-        remoteUsername: username,
-        host: host,
-        privateKeyFileName: publicKeyFileName,
-      );
+    if (sshnpdAckErrors) {
+      return SSHNPFailed('sshnp failed: with sshnpd acknowledgement errors');
     }
-    return SSHNPFailed();
+    return SSHCommand.base(
+      localPort: localPort,
+      remoteUsername: username,
+      host: host,
+      privateKeyFileName: publicKeyFileName,
+    );
   }
 
   /// Function which the response subscription (created in the [init] method
@@ -685,7 +686,8 @@ class SSHNPImpl implements SSHNP {
 
     // Connect to rendezvous point using background process.
     // sshnp (this program) can then exit without issue.
-    SSHRV sshrv = sshrvGenerator(host, _sshrvdPort, localSshdPort: localSshdPort);
+    SSHRV sshrv =
+        sshrvGenerator(host, _sshrvdPort, localSshdPort: localSshdPort);
     unawaited(sshrv.run());
   }
 

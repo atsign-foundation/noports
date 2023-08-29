@@ -9,8 +9,10 @@ const _optionsWithPrivateKey = [
 
 class SSHNPFailed extends SSHNPResult {
   final String message;
+  final Object? exception;
+  final StackTrace? stackTrace;
 
-  SSHNPFailed(this.message);
+  SSHNPFailed(this.message, [this.exception, this.stackTrace]);
 
   @override
   String toString() {
