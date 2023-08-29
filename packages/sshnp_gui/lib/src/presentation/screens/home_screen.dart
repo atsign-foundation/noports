@@ -163,6 +163,16 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                                                     icon: const Icon(Icons.connect_without_contact_outlined),
                                                   ),
                                                   IconButton(
+                                                    onPressed: () {
+                                                      // get the index of the config file so it can be updated
+                                                      ref
+                                                          .read(sshnpParamsUpdateIndexProvider.notifier)
+                                                          .update((value) => state.value!.indexOf(e));
+                                                      updateConfigFile(e);
+                                                    },
+                                                    icon: const Icon(Icons.edit),
+                                                  ),
+                                                  IconButton(
                                                     onPressed: () async {
                                                       showDialog<void>(
                                                         context: context,
@@ -172,16 +182,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                                                       );
                                                     },
                                                     icon: const Icon(Icons.delete_forever),
-                                                  ),
-                                                  IconButton(
-                                                    onPressed: () {
-                                                      // get the index of the config file so it can be updated
-                                                      ref
-                                                          .read(sshnpParamsUpdateIndexProvider.notifier)
-                                                          .update((value) => state.value!.indexOf(e));
-                                                      updateConfigFile(e);
-                                                    },
-                                                    icon: const Icon(Icons.edit),
                                                   ),
                                                 ],
                                               )),
