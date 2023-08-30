@@ -1,6 +1,4 @@
-import 'package:args/args.dart';
-import 'package:sshnoports/common/supported_ssh_clients.dart';
-import 'package:sshnoports/common/utils.dart';
+part of 'sshnpd.dart';
 
 class SSHNPDParams {
   late final String device;

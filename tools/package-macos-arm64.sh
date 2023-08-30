@@ -36,5 +36,4 @@ eval "$DART compile exe -o $OUTPUT_DIR/sshrv $SRC_DIR/bin/sshrv.dart"
 eval "$DART compile exe -o $OUTPUT_DIR/at_activate $SRC_DIR/bin/activate_cli.dart"
 
 cp -r "$SRC_DIR/templates" "$OUTPUT_DIR/templates";
-cp "$SRC_DIR"/scripts/* "$OUTPUT_DIR/";
 cp "$SRC_DIR"/LICENSE "$OUTPUT_DIR/";
