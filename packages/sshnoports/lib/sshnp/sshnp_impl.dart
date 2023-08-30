@@ -184,12 +184,11 @@ class SSHNPImpl implements SSHNP {
     // search for a public key file called 'false'
     if (sendSshPublicKey == 'false' || sendSshPublicKey.isEmpty) {
       publicKeyFileName = '';
-    } else if (path
-        .normalize(sendSshPublicKey)
-        .contains(Platform.pathSeparator)) {
-      publicKeyFileName = sendSshPublicKey;
+    } else if (path.normalize(sendSshPublicKey).contains('/') ||
+        path.normalize(sendSshPublicKey).contains(r'\')) {
+      publicKeyFileName = path.normalize(path.absolute(sendSshPublicKey));
     } else {
-      publicKeyFileName = '$sshHomeDirectory$sendSshPublicKey';
+      publicKeyFileName = path.normalize('$sshHomeDirectory$sendSshPublicKey');
     }
   }
 
