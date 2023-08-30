@@ -1,21 +1,18 @@
 version: "3.0"
-volumes:
-  keys:
-    driver: local
 services:
   activate:
     build:
       context: ../../
       dockerfile: ./templates/docker/Dockerfile.activate
     volumes:
-      - keys:/atsign/.atsign/keys
+      - ${HOME}/.atsign/keys:/atsign/.atsign/keys
     command: -a "${TO}" -c "${TO_CRAM}"
   sshnpd:
     build:
       context: ../../
       dockerfile: ./templates/docker/Dockerfile
     volumes:
-      - keys:/atsign/.atsign/keys
+      - ${HOME}/.atsign/keys:/atsign/.atsign/keys
     command: -a "${TO}" -m "${FROM}" -d "${DEVICE}" -s -u -v
     depends_on:
       activate:
