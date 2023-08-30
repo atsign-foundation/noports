@@ -526,6 +526,7 @@ class SSHNPImpl implements SSHNP {
       return SSHNPFailed(
           'sshnp connection timeout: waiting for daemon response');
     }
+    
     if (sshnpdAckErrors) {
       return SSHNPFailed('sshnp failed: with sshnpd acknowledgement errors');
     }
@@ -533,8 +534,8 @@ class SSHNPImpl implements SSHNP {
     return SSHCommand.base(
       localPort: localPort,
       remoteUsername: username,
-      host: host,
-      privateKeyFileName: publicKeyFileName,
+      host: 'localhost',
+      privateKeyFileName: publicKeyFileName.replaceAll('.pub', ''),
     );
   }
 
@@ -563,14 +564,15 @@ class SSHNPImpl implements SSHNP {
     if (!acked) {
       return SSHNPFailed('sshnp timed out: waiting for daemon response');
     }
+
     if (sshnpdAckErrors) {
       return SSHNPFailed('sshnp failed: with sshnpd acknowledgement errors');
     }
     return SSHCommand.base(
       localPort: localPort,
       remoteUsername: username,
-      host: host,
-      privateKeyFileName: publicKeyFileName,
+      host: 'localhost',
+      privateKeyFileName: publicKeyFileName.replaceAll('.pub', ''),
     );
   }
 
