@@ -11,6 +11,7 @@ act \
 -j e2e_test \
 --env-file "$SCRIPT_DIRECTORY/.env" \
 --secret-file "$SCRIPT_DIRECTORY/.secrets" \
---container-architecture linux/amd64 \
 --bind \
+--matrix np:local \
+--matrix npd:local \
 "$@"
