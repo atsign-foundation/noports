@@ -12,6 +12,24 @@
       "program": "${file}",
       "console": "integratedTerminal",
       "justMyCode": true
+    },
+    {
+      "name": "Python: SSHNPD",
+      "type": "python",
+      "request": "launch",
+      "cwd": "",
+      "program": "packages/sshnpdpy/sshnpd.py",
+      "console": "integratedTerminal",
+      "justMyCode": true,
+      "envFile": "${workspaceFolder}/.env",
+      //put your args in a .env 
+      "args": [
+        "--atsign", "${env:TO}",
+        "--manager", "${env:FROM}",
+        "--device", "${env:DEVICE}",
+        "-u"
+      ],
+      
     }
   ]
 }
