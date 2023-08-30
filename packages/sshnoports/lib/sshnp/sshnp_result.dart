@@ -3,11 +3,22 @@ part of 'sshnp.dart';
 abstract class SSHNPResult {}
 
 const _optionsWithPrivateKey = [
-  'StrictHostKeyChecking=accept-new',
-  'IdentitiesOnly=yes'
+  '-o StrictHostKeyChecking=accept-new',
+  '-o IdentitiesOnly=yes'
 ];
 
-class SSHNPFailed extends SSHNPResult {}
+class SSHNPFailed extends SSHNPResult {
+  final String message;
+  final Object? exception;
+  final StackTrace? stackTrace;
+
+  SSHNPFailed(this.message, [this.exception, this.stackTrace]);
+
+  @override
+  String toString() {
+    return message;
+  }
+}
 
 class SSHCommand extends SSHNPResult {
   static const String command = 'ssh';
@@ -24,7 +35,14 @@ class SSHCommand extends SSHNPResult {
     required this.remoteUsername,
     required this.host,
     this.privateKeyFileName,
-  }) : sshOptions = (privateKeyFileName == null ? [] : _optionsWithPrivateKey);
+  }) : sshOptions = (shouldIncludePrivateKey(privateKeyFileName)
+            ? _optionsWithPrivateKey
+            : []);
+
+  static bool shouldIncludePrivateKey(String? privateKeyFileName) =>
+      privateKeyFileName != null &&
+      privateKeyFileName.isNotEmpty &&
+      privateKeyFileName != 'false';
 
   @override
   String toString() {
@@ -33,14 +51,13 @@ class SSHCommand extends SSHNPResult {
     sb.write(' ');
     sb.write('-p $localPort');
     sb.write(' ');
-    sb.write(sshOptions.map((e) => '-o $e').join(' '));
+    sb.write(sshOptions.join(' '));
     sb.write(' ');
     sb.write('$remoteUsername@$host');
-    if (privateKeyFileName != null) {
+    if (shouldIncludePrivateKey(privateKeyFileName)) {
       sb.write(' ');
       sb.write('-i $privateKeyFileName');
     }
     return sb.toString();
   }
 }
-
