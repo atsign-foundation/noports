@@ -150,7 +150,7 @@ abstract class SSHNP {
   static const defaultDevice = 'default';
   static const defaultPort = 22;
   static const defaultLocalPort = 0;
-  static const defaultSendSshPublicKey = 'false';
+  static const defaultSendSshPublicKey = '';
   static const defaultLocalSshOptions = <String>[];
   static const defaultVerbose = false;
   static const defaultRsa = false;
@@ -168,7 +168,7 @@ abstract class SSHNP {
     required String username,
     required String homeDirectory,
     required String sessionId,
-    String sendSshPublicKey = 'false',
+    String sendSshPublicKey = SSHNP.defaultSendSshPublicKey,
     required List<String> localSshOptions,
     bool rsa = false,
     // volatile fields
