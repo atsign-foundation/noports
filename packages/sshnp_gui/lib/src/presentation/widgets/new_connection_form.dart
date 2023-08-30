@@ -76,7 +76,7 @@ class _NewConnectionFormState extends ConsumerState<NewConnectionForm> {
           device: device,
           port: port,
           localPort: localPort,
-          sendSshPublicKey: sendSshPublicKey,
+          sendSshPublicKey: await ref.read(homeScreenControllerProvider.notifier).getPublicKeyFromDirectory(),
           localSshOptions: localSshOptions,
           verbose: verbose,
           rsa: rsa,
@@ -135,12 +135,6 @@ class _NewConnectionFormState extends ConsumerState<NewConnectionForm> {
                 labelText: strings.port,
                 onSaved: (value) => port = int.parse(value!),
                 validator: Validator.validateRequiredField,
-              ),
-              gapH10,
-              CustomTextFormField(
-                initialValue: sendSshPublicKey,
-                labelText: strings.sendSshPublicKey,
-                onSaved: (value) => sendSshPublicKey = value!,
               ),
               gapH10,
               Row(
@@ -213,12 +207,6 @@ class _NewConnectionFormState extends ConsumerState<NewConnectionForm> {
                         });
                       }),
                 ],
-              ),
-              gapH10,
-              CustomTextFormField(
-                initialValue: atKeysFilePath,
-                labelText: strings.atKeysFilePath,
-                onSaved: (value) => atKeysFilePath = value,
               ),
               gapH10,
               Row(

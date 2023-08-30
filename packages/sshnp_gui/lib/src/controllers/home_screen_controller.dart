@@ -31,6 +31,15 @@ class HomeScreenController extends StateNotifier<AsyncValue<List<SSHNPParams>>> 
     });
   }
 
+  Future<String> getPublicKeyFromDirectory() async {
+    var homeDirectory = getHomeDirectory(throwIfNull: true)!;
+
+    var files = Directory('$homeDirectory/.ssh').list();
+    final publickey = await files.firstWhere((element) => element.path.contains('.pub'));
+
+    return publickey.path;
+  }
+
   /// Deletes the [AtKey] associated with the [AtData].
   Future<void> delete(int index) async {
     state = const AsyncValue.loading();
@@ -57,6 +66,7 @@ class HomeScreenController extends StateNotifier<AsyncValue<List<SSHNPParams>>> 
   ) async {
     state = const AsyncValue.loading();
     final homeDir = getHomeDirectory()!;
+
     log(homeDir);
     final configDir = getDefaultSshnpConfigDirectory(homeDir);
     log(configDir);
