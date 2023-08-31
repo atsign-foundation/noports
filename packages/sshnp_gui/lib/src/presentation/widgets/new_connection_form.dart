@@ -26,6 +26,7 @@ class _NewConnectionFormState extends ConsumerState<NewConnectionForm> {
   late String? clientAtSign;
   late String? sshnpdAtSign;
   late String? host;
+  late String profileName;
 
   /// Optional Arguments
   late String device;
@@ -70,6 +71,7 @@ class _NewConnectionFormState extends ConsumerState<NewConnectionForm> {
       _formkey.currentState!.save();
 
       final sshnpParams = SSHNPParams(
+          profileName: profileName,
           clientAtSign: clientAtSign,
           sshnpdAtSign: sshnpdAtSign,
           host: host,
@@ -116,6 +118,9 @@ class _NewConnectionFormState extends ConsumerState<NewConnectionForm> {
         child: Row(
           children: [
             Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              // TODO @CurtlyCritchlow
+              // * remove clientAtSign from the form (if clientAtsign is null then use the AtClient.getCurrentAtSign)
+              // * add profileName to the form
               CustomTextFormField(
                 initialValue: clientAtSign,
                 labelText: strings.clientAtsign,
@@ -163,6 +168,7 @@ class _NewConnectionFormState extends ConsumerState<NewConnectionForm> {
                 onSaved: (value) => rootDomain = value!,
               ),
               gapH20,
+              // TODO the edit screen also says "add", can we change the wording to be dynamic, or use "submit"
               ElevatedButton(
                 onPressed: createNewConnection,
                 child: Text(strings.add),
@@ -189,6 +195,7 @@ class _NewConnectionFormState extends ConsumerState<NewConnectionForm> {
                 onSaved: (value) => localPort = int.parse(value!),
               ),
               gapH10,
+              // TODO add a note that says multiple options can be specified by separating them with a comma.
               CustomTextFormField(
                 initialValue: localSshOptions.join(','),
                 labelText: strings.localSshOptions,
@@ -209,6 +216,13 @@ class _NewConnectionFormState extends ConsumerState<NewConnectionForm> {
                 ],
               ),
               gapH10,
+              CustomTextFormField(
+                initialValue: atKeysFilePath,
+                labelText: strings.atKeysFilePath,
+                onSaved: (value) => atKeysFilePath = value,
+              ),
+              gapH10,
+              // TODO remove listDevices from the form
               Row(
                 children: [
                   Text(strings.listDevices),

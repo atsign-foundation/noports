@@ -34,10 +34,10 @@ class _TerminalScreenState extends ConsumerState<TerminalScreen> {
     });
   }
 
-  void _startPty() {
-    Platform.environment['SHELL'];
+  void _startPty({String? command, List<String>? args}) {
     pty = Pty.start(
-      'bash',
+      command ?? Platform.environment['SHELL'] ?? 'bash',
+      arguments: args ?? [],
       columns: terminal.viewWidth,
       rows: terminal.viewHeight,
     );

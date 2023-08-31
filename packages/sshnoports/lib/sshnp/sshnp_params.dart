@@ -27,12 +27,15 @@ class SSHNPParams {
   late final bool legacyDaemon;
 
   /// Special Arguments
+  late final String?
+      profileName; // automatically populated with the filename if from a configFile
   late final bool listDevices;
 
   SSHNPParams({
     required this.clientAtSign,
     required this.sshnpdAtSign,
     required this.host,
+    this.profileName,
     this.device = SSHNP.defaultDevice,
     this.port = SSHNP.defaultPort,
     this.localPort = SSHNP.defaultLocalPort,
@@ -69,6 +72,7 @@ class SSHNPParams {
     partial.host ?? (logger.severe('host is null'));
 
     return SSHNPParams(
+      profileName: partial.profileName,
       clientAtSign: partial.clientAtSign,
       sshnpdAtSign: partial.sshnpdAtSign,
       host: partial.host,
@@ -106,6 +110,7 @@ class SSHNPParams {
       if (path.extension(file.path) != '.env') return;
       try {
         var p = SSHNPParams.fromConfigFile(file.path);
+
         params.add(p);
       } catch (e) {
         print('Error reading config file: ${file.path}');
@@ -116,13 +121,23 @@ class SSHNPParams {
     return params;
   }
 
-  Future<File> toFile(String fileName, {bool overwrite = false}) async {
-    var file = File(fileName);
+  Future<File> toFile({String? directory, bool overwrite = false}) async {
+    if (profileName == null || profileName!.isEmpty) {
+      throw Exception('profileName is null or empty');
+    }
+
+    var fileName = profileName!.replaceAll(' ', '_');
+
+    var file = File(path.join(
+      directory ?? getDefaultSshnpConfigDirectory(homeDirectory),
+      '$fileName.env',
+    ));
+
     var exists = await file.exists();
 
     if (exists && !overwrite) {
-      print('Failed to write config file: $fileName already exists');
-      return file;
+      throw Exception(
+          'Failed to write config file: ${file.path} already exists');
     }
 
     // FileMode.write will create the file if it does not exist
@@ -130,8 +145,30 @@ class SSHNPParams {
     return file.writeAsString(toConfig(), mode: FileMode.write);
   }
 
+  Future<FileSystemEntity> deleteFile({String? directory, bool overwrite = false}) async {
+    if (profileName == null || profileName!.isEmpty) {
+      throw Exception('profileName is null or empty');
+    }
+
+    var fileName = profileName!.replaceAll(' ', '_');
+
+    var file = File(path.join(
+      directory ?? getDefaultSshnpConfigDirectory(homeDirectory),
+      '$fileName.env',
+    ));
+
+    var exists = await file.exists();
+
+    if (!exists) {
+      throw Exception('Cannot delete ${file.path}, file does not exist');
+    }
+
+    return file.delete();
+  }
+
   Map<String, dynamic> toArgs() {
     return {
+      'profile-name': profileName,
       'from': clientAtSign,
       'to': sshnpdAtSign,
       'host': host,
@@ -168,6 +205,7 @@ class SSHNPParams {
 /// e.g. default values from a config file and the rest from the command line
 class SSHNPPartialParams {
   /// Main Params
+  late final String? profileName;
   late final String? clientAtSign;
   late final String? sshnpdAtSign;
   late final String? host;
@@ -192,6 +230,7 @@ class SSHNPPartialParams {
   static final ArgParser parser = _createArgParser();
 
   SSHNPPartialParams({
+    this.profileName,
     this.clientAtSign,
     this.sshnpdAtSign,
     this.host,
@@ -221,6 +260,7 @@ class SSHNPPartialParams {
       [SSHNPPartialParams? params2]) {
     params2 ??= SSHNPPartialParams.empty();
     return SSHNPPartialParams(
+      profileName: params2.profileName ?? params1.profileName,
       clientAtSign: params2.clientAtSign ?? params1.clientAtSign,
       sshnpdAtSign: params2.sshnpdAtSign ?? params1.sshnpdAtSign,
       host: params2.host ?? params1.host,
@@ -242,6 +282,7 @@ class SSHNPPartialParams {
 
   factory SSHNPPartialParams.fromArgMap(Map<String, dynamic> args) {
     return SSHNPPartialParams(
+      profileName: args['profile-name'],
       clientAtSign: args['from'],
       sshnpdAtSign: args['to'],
       host: args['host'],
@@ -264,6 +305,8 @@ class SSHNPPartialParams {
 
   factory SSHNPPartialParams.fromConfig(String fileName) {
     var args = _parseConfigFile(fileName);
+    args['profile-name'] =
+        path.basenameWithoutExtension(fileName).replaceAll('_', ' ');
     return SSHNPPartialParams.fromArgMap(args);
   }
 
