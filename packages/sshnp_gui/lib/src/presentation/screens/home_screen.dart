@@ -130,9 +130,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                                     3: IntrinsicColumnWidth(),
                                     4: IntrinsicColumnWidth(),
                                     5: IntrinsicColumnWidth(),
-                                    6: IntrinsicColumnWidth(),
-                                    7: FixedColumnWidth(150),
-                                    8: FixedColumnWidth(150),
+                                    6: FixedColumnWidth(150),
                                   },
                                   children: [
                                     TableRow(
@@ -140,13 +138,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                                           const BoxDecoration(border: Border(bottom: BorderSide(color: Colors.white))),
                                       children: <Widget>[
                                         CustomTableCell.text(text: strings.actions),
-                                        CustomTableCell.text(text: strings.clientAtsign),
+                                        CustomTableCell.text(text: strings.clientAtsign), // todo change this to strings.profileName
                                         CustomTableCell.text(text: strings.sshnpdAtSign),
                                         CustomTableCell.text(text: strings.device),
                                         CustomTableCell.text(text: strings.port),
                                         CustomTableCell.text(text: strings.localPort),
-                                        CustomTableCell.text(text: strings.username),
-                                        CustomTableCell.text(text: strings.homeDirectory),
                                         CustomTableCell.text(text: strings.localSshOptions),
                                       ],
                                     ),
@@ -186,13 +182,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                                                   ),
                                                 ],
                                               )),
-                                              CustomTableCell.text(text: e.clientAtSign ?? ''),
+                                              CustomTableCell.text(text: e.profileName ?? ''),
                                               CustomTableCell.text(text: e.sshnpdAtSign ?? ''),
                                               CustomTableCell.text(text: e.device),
                                               CustomTableCell.text(text: e.port.toString()),
                                               CustomTableCell.text(text: e.localPort.toString()),
-                                              CustomTableCell.text(text: e.username),
-                                              CustomTableCell.text(text: e.homeDirectory),
                                               CustomTableCell.text(text: e.localSshOptions.join(',')),
                                               // CustomTableCell(
                                               //     child: Row(
