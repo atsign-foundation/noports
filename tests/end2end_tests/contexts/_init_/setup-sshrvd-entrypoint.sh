@@ -6,7 +6,7 @@
 
 sshrvd=$1 # e.g. @alice
 
-cp ../../entrypoints/sshrvd_entrypoint.sh ../sshrvd/entrypoint.sh
+cp ../../entrypoints/sshrvd_entrypoint.sh ../sshrvd/entrypoint.sh # copy template to the mounted folder
 
 prefix="sed -i"
 
