@@ -18,7 +18,6 @@ env:
   SSHNPD_ATSIGN: "@8052simple"
   SSHRVD_ATSIGN: "@8485wealthy51"
 
-
   PROD_AM_RVD_ATSIGN: "@rv_am"
   PROD_AP_RVD_ATSIGN: "@rv_ap"
   PROD_EU_RVD_ATSIGN: "@rv_eu"
@@ -37,7 +36,6 @@ env:
     trunk
 
 jobs:
-
   # Test suite 1
   # Main tests of local and trunk
   e2e_test:
@@ -68,15 +66,18 @@ jobs:
         run: |
           echo "DEVICENAME=${{ github.run_id }}${{ github.run_attempt }}1${{ strategy.job-index }}" >> $GITHUB_ENV
 
-      - name: Setup NP/NPD keys
-        working-directory: tests/end2end_tests/contexts
+      - name: Setup NP/NPD key env
         run: |
           SSHNP_ATKEYS="$(tr '[:lower:]' '[:upper:]' <<< '${{ env.SSHNP_ATSIGN }}')"
           echo "SSHNP_ATKEYS=ATKEYS_${SSHNP_ATKEYS:1}" >> $GITHUB_ENV
-          echo "${{ secrets[env.SSHNP_ATKEYS] }}" > sshnp/.atsign/keys/${{ env.SSHNP_ATSIGN }}_key.atKeys
 
           SSHNPD_ATKEYS="$(tr '[:lower:]' '[:upper:]' <<< '${{ env.SSHNPD_ATSIGN }}')"
           echo "SSHNPD_ATKEYS=ATKEYS_${SSHNPD_ATKEYS:1}" >> $GITHUB_ENV
+
+      - name: Setup NP/NPD keys
+        working-directory: tests/end2end_tests/contexts
+        run: |
+          echo "${{ secrets[env.SSHNP_ATKEYS] }}" > sshnp/.atsign/keys/${{ env.SSHNP_ATSIGN }}_key.atKeys
           echo "${{ secrets[env.SSHNPD_ATKEYS] }}" > sshnpd/.atsign/keys/${{ env.SSHNPD_ATSIGN }}_key.atKeys
 
       - name: Set up entrypoints
@@ -221,15 +222,18 @@ jobs:
         run: |
           echo "DEVICENAME=${{ github.run_id }}${{ github.run_attempt }}2${{ strategy.job-index }}" >> $GITHUB_ENV
 
-      - name: Setup NP/NPD keys
-        working-directory: tests/end2end_tests/contexts
+      - name: Setup NP/NPD key env
         run: |
           SSHNP_ATKEYS="$(tr '[:lower:]' '[:upper:]' <<< '${{ env.SSHNP_ATSIGN }}')"
           echo "SSHNP_ATKEYS=ATKEYS_${SSHNP_ATKEYS:1}" >> $GITHUB_ENV
-          echo "${{ secrets[env.SSHNP_ATKEYS] }}" > sshnp/.atsign/keys/${{ env.SSHNP_ATSIGN }}_key.atKeys
 
           SSHNPD_ATKEYS="$(tr '[:lower:]' '[:upper:]' <<< '${{ env.SSHNPD_ATSIGN }}')"
           echo "SSHNPD_ATKEYS=ATKEYS_${SSHNPD_ATKEYS:1}" >> $GITHUB_ENV
+
+      - name: Setup NP/NPD keys
+        working-directory: tests/end2end_tests/contexts
+        run: |
+          echo "${{ secrets[env.SSHNP_ATKEYS] }}" > sshnp/.atsign/keys/${{ env.SSHNP_ATSIGN }}_key.atKeys
           echo "${{ secrets[env.SSHNPD_ATKEYS] }}" > sshnpd/.atsign/keys/${{ env.SSHNPD_ATSIGN }}_key.atKeys
 
       - name: Set up entrypoints
@@ -395,15 +399,18 @@ jobs:
         run: |
           echo "DEVICENAME=${{ github.run_id }}${{ github.run_attempt }}3${{ strategy.job-index }}" >> $GITHUB_ENV
 
-      - name: Setup NP/NPD keys
-        working-directory: tests/end2end_tests/contexts
+      - name: Setup NP/NPD key env
         run: |
           SSHNP_ATKEYS="$(tr '[:lower:]' '[:upper:]' <<< '${{ env.SSHNP_ATSIGN }}')"
           echo "SSHNP_ATKEYS=ATKEYS_${SSHNP_ATKEYS:1}" >> $GITHUB_ENV
-          echo "${{ secrets[env.SSHNP_ATKEYS] }}" > sshnp/.atsign/keys/${{ env.SSHNP_ATSIGN }}_key.atKeys
 
           SSHNPD_ATKEYS="$(tr '[:lower:]' '[:upper:]' <<< '${{ env.SSHNPD_ATSIGN }}')"
           echo "SSHNPD_ATKEYS=ATKEYS_${SSHNPD_ATKEYS:1}" >> $GITHUB_ENV
+
+      - name: Setup NP/NPD keys
+        working-directory: tests/end2end_tests/contexts
+        run: |
+          echo "${{ secrets[env.SSHNP_ATKEYS] }}" > sshnp/.atsign/keys/${{ env.SSHNP_ATSIGN }}_key.atKeys
           echo "${{ secrets[env.SSHNPD_ATKEYS] }}" > sshnpd/.atsign/keys/${{ env.SSHNPD_ATSIGN }}_key.atKeys
 
       - name: Set up entrypoints
