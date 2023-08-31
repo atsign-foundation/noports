@@ -35,7 +35,7 @@ class HomeScreenController extends StateNotifier<AsyncValue<List<SSHNPParams>>> 
     var homeDirectory = getHomeDirectory(throwIfNull: true)!;
 
     var files = Directory('$homeDirectory/.ssh').list();
-    final publickey = await files.firstWhere((element) => element.path.contains('.pub'));
+    final publickey = await files.firstWhere((element) => element.path.contains('sshnp.pub'));
 
     return publickey.path.split('.ssh/').last;
   }

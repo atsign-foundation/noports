@@ -138,7 +138,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                                           const BoxDecoration(border: Border(bottom: BorderSide(color: Colors.white))),
                                       children: <Widget>[
                                         CustomTableCell.text(text: strings.actions),
-                                        CustomTableCell.text(text: strings.clientAtsign), // todo change this to strings.profileName
+                                        CustomTableCell.text(
+                                            text: strings.clientAtsign), // todo change this to strings.profileName
                                         CustomTableCell.text(text: strings.sshnpdAtSign),
                                         CustomTableCell.text(text: strings.device),
                                         CustomTableCell.text(text: strings.port),

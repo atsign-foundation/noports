@@ -71,7 +71,7 @@ class _NewConnectionFormState extends ConsumerState<NewConnectionForm> {
       _formkey.currentState!.save();
 
       final sshnpParams = SSHNPParams(
-          profileName: profileName,
+          profileName: 'default_profile',
           clientAtSign: clientAtSign,
           sshnpdAtSign: sshnpdAtSign,
           host: host,
