@@ -49,7 +49,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         atClient: AtClientManager.getInstance().atClient,
         sshrvGenerator: SSHRV.pureDart,
       );
-      print('sshnpParams.legacyDaemon: ${sshnpParams.legacyDaemon}');
+
       await sshnp.init();
       final sshnpResult = await sshnp.run();
 
