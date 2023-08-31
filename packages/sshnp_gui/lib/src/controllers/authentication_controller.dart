@@ -9,19 +9,16 @@ class AuthenticationController extends StateNotifier<AsyncValue<List<String>?>> 
   AuthenticationController({required this.ref}) : super(const AsyncValue.loading());
 
   /// Get list of contacts atsign for the current atsign.
-  // Future<void> getAtSignList() async {
-  //   state = const AsyncValue.loading();
+  Future<void> getAtSignList() async {
+    state = const AsyncValue.loading();
 
-  //   state = await AsyncValue.guard(() async =>
-  //       await ref.watch(authenticationRepositoryProvider).getAtsignList());
-  // }
+    state = await AsyncValue.guard(() async => await ref.watch(authenticationRepositoryProvider).getAtsignList());
+  }
 
   /// Get the [AtContact] associated with the input atsign.
-  // Future<AtContact> getAtContact(String atSign) async {
-  //   return await ref
-  //       .watch(authenticationRepositoryProvider)
-  //       .getAtContact(atSign);
-  // }
+  Future<AtContact> getAtContact(String atSign) async {
+    return await ref.watch(authenticationRepositoryProvider).getAtContact(atSign);
+  }
 
   /// Get the current atsign.
   Future<String?> getCurrentAtSign() async {

@@ -6,8 +6,16 @@ import 'package:sshnp_gui/src/repository/navigation_service.dart';
 
 import '../presentation/screens/home_screen.dart';
 import '../presentation/screens/onboarding_screen.dart';
+import '../presentation/screens/settings_screen.dart';
+import '../presentation/screens/terminal_screen.dart';
 
-enum AppRoute { onboarding, home, newConnection }
+enum AppRoute {
+  onboarding,
+  home,
+  newConnection,
+  terminal,
+  settings,
+}
 
 final goRouterProvider = Provider<GoRouter>((ref) => GoRouter(
       navigatorKey: NavigationService.navKey,
@@ -36,7 +44,25 @@ final goRouterProvider = Provider<GoRouter>((ref) => GoRouter(
                     child: const NewConnectionScreen(),
                     transitionsBuilder: ((context, animation, secondaryAnimation, child) =>
                         FadeTransition(opacity: animation, child: child))),
-              )
+              ),
+              GoRoute(
+                path: 'terminal',
+                name: AppRoute.terminal.name,
+                pageBuilder: (context, state) => CustomTransitionPage<void>(
+                    key: state.pageKey,
+                    child: const TerminalScreen(),
+                    transitionsBuilder: ((context, animation, secondaryAnimation, child) =>
+                        FadeTransition(opacity: animation, child: child))),
+              ),
+              GoRoute(
+                path: 'settings',
+                name: AppRoute.settings.name,
+                pageBuilder: (context, state) => CustomTransitionPage<void>(
+                    key: state.pageKey,
+                    child: const SettingsScreen(),
+                    transitionsBuilder: ((context, animation, secondaryAnimation, child) =>
+                        FadeTransition(opacity: animation, child: child))),
+              ),
             ]),
       ],
     ));

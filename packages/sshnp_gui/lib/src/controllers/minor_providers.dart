@@ -16,3 +16,6 @@ final sshnpParamsUpdateIndexProvider = StateProvider<int>(
 final configFileWriteStateProvider = StateProvider<ConfigFileWriteState>(
   (ref) => ConfigFileWriteState.create,
 );
+final terminalSSHCommandProvider = StateProvider<String>(
+  (ref) => '',
+);

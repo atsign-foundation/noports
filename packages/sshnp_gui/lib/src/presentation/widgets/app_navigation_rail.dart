@@ -59,7 +59,12 @@ class AppNavigationRail extends ConsumerWidget {
 
               context.goNamed(AppRoute.newConnection.name);
               break;
-            default:
+            case 2:
+              context.goNamed(AppRoute.terminal.name);
+              break;
+            case 3:
+              context.goNamed(AppRoute.settings.name);
+              break;
           }
         });
   }

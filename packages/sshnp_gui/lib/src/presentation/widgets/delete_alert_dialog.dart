@@ -24,7 +24,7 @@ class DeleteAlertDialog extends ConsumerWidget {
       padding: const EdgeInsets.only(left: 0),
       child: Center(
         child: AlertDialog(
-          title: Text(strings.warning),
+          title: Center(child: Text(strings.warning)),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
