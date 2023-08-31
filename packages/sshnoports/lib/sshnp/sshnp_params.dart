@@ -307,7 +307,7 @@ class SSHNPPartialParams {
             arg.name,
             abbr: arg.abbr,
             mandatory: arg.mandatory,
-            defaultsTo: withDefaults ? arg.defaultsTo : null,
+            defaultsTo: withDefaults ? (arg.defaultsTo != null ? '${arg.defaultsTo}' : null) : null,
             help: arg.help,
           );
           break;
