@@ -23,10 +23,10 @@ You can use the tool with [docker commands manually](#using-docker-commands) or 
 To use the shell script, you need to be able to run shell scripts. If you're on MacOS or Linux, you should be able to run them just fine by doing something similar to:
 
 ```
-./run.sh
+./run-manual-docker.sh
 ```
 
-However, you may need to `chmod +x run.sh` to give yourself permission to run the script.
+However, you may need to `chmod +x run-manual-docker.sh` to give yourself permission to run the script.
 
 If you are on Windows, you may need to use [WSL]().
 
@@ -45,9 +45,9 @@ cd tests/end2end_tests/tools
 3. Use the script
 
 ```sh
-$ ./run.sh
+$ ./run-manual-docker.sh
 
-usage: ./run.sh
+usage: ./run-manual-docker.sh
   -h|--help
   -t|--tag <sshnp/sshnpd/sshrvd> (required) - docker container tag
   --no-cache (optional) - docker build without cache
@@ -58,23 +58,23 @@ usage: ./run.sh
   -r|--release [release] - build from a sshnoports release, latest release by default
   --blank - build container with no binaries
 
-  example: ./run.sh -t sshnp -b trunk
-  example: ./run.sh -t sshnpd -l
-  example: ./run.sh -t sshrvd -r v3.3.0
-  example: ./run.sh -t sshnp --release
-  example: ./run.sh -t sshnp --blank
+  example: ./run-manual-docker.sh -t sshnp -b trunk
+  example: ./run-manual-docker.sh -t sshnpd -l
+  example: ./run-manual-docker.sh -t sshrvd -r v3.3.0
+  example: ./run-manual-docker.sh -t sshnp --release
+  example: ./run-manual-docker.sh -t sshnp --blank
 ```
 
 4. Example: spin up a container to run sshnp on latest release
 
 ```
-./run.sh -t sshnp --release
+./run-manual-docker.sh -t sshnp --release
 ```
 
 5. Another example: spin up a container with the intention to run sshnpd on a particular commit id
 
 ```
-./run.sh -t sshnpd --branch 1234567890
+./run-manual-docker.sh -t sshnpd --branch 1234567890
 ```
 
 ### Using Docker Commands

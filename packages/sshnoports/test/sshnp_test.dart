@@ -41,13 +41,13 @@ void main() {
       expect(p.host, 'host.subdomain.test');
 
       expect(p.device, 'default');
-      expect(p.port, '22');
-      expect(p.localPort, '0');
+      expect(p.port, 22);
+      expect(p.localPort, 0);
       expect(p.username, getUserName(throwIfNull: true));
       expect(p.homeDirectory, getHomeDirectory(throwIfNull: true));
       expect(p.atKeysFilePath,
           getDefaultAtKeysFilePath(p.homeDirectory, p.clientAtSign ?? ''));
-      expect(p.sendSshPublicKey, 'false');
+      expect(p.sendSshPublicKey, '');
       expect(p.localSshOptions, []);
       expect(p.rsa, false);
       expect(p.verbose, false);

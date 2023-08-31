@@ -3,7 +3,7 @@
       mode: replicated
       replicas: 0
     build:
-      context: ../../../
+      context: ../../../ # the root of the repository
       dockerfile: ./tests/end2end_tests/image/Dockerfile
       target: runtime-sshnp-installer
       args:

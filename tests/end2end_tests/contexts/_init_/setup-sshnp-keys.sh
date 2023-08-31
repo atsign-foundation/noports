@@ -5,7 +5,7 @@
 
 sshnp=$1
 
-cp ~/.atsign/keys/"$sshnp"_key.atKeys ../sshnp/.atsign/keys/"$sshnp"_key.atKeys
+cp ~/.atsign/keys/"$sshnp"_key.atKeys ../sshnp/.atsign/keys/"$sshnp"_key.atKeys # copy keys to the mounted folder
 
 if [[ ! -f ../sshnp/.atsign/keys/${sshnp}_key.atKeys ]];
 then
