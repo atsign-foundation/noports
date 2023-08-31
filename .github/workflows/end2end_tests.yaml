@@ -45,8 +45,6 @@ jobs:
       matrix:
         np: [local, trunk]
         npd: [local, trunk]
-        rvd: ['']
-        rvd_atsign: ['PROD_AM_RVD_ATSIGN'] # The name of the env var containing the atsign for the rvd
         exclude:
           # Don't run these against themselves, pointless to test
           - np: trunk
@@ -179,3 +177,159 @@ jobs:
         working-directory: tests/end2end_tests/tests
         run: |
           docker compose down
+
+  e2e_installer_test:
+    # Don't run this test on push or pull_request events
+    # It's only meant to be run manually
+    if: ${{ github.event_name != 'push' && github.event_name != 'pull_request' }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        np: [local, installer]
+        npd: [local, installer]
+        exclude:
+          # Don't run these against themselves, pointless to test
+          - np: local
+            npd: local
+    steps:
+      - name: Show Matrix Values
+        run: |
+          echo "job index: ${{ strategy.job-index }}"
+          echo "np: ${{ matrix.np }}"
+          echo "npd: ${{ matrix.npd }}"
+
+      - uses: actions/checkout@f43a0e5ff2bd294095638e18286ca9a3d1956744 # v3.6.0
+
+      - name: Setup NP/NPD keys
+        working-directory: tests/end2end_tests/contexts
+        run: |
+          SSHNP_ATKEYS="$(tr '[:lower:]' '[:upper:]' <<< '${{ env.SSHNP_ATSIGN }}')"
+          echo "SSHNP_ATKEYS=ATKEYS_${SSHNP_ATKEYS:1}" >> $GITHUB_ENV
+          echo "${{ secrets[env.SSHNP_ATKEYS] }}" > sshnp/.atsign/keys/${{ env.SSHNP_ATSIGN }}_key.atKeys
+
+          SSHNPD_ATKEYS="$(tr '[:lower:]' '[:upper:]' <<< '${{ env.SSHNPD_ATSIGN }}')"
+          echo "SSHNPD_ATKEYS=ATKEYS_${SSHNPD_ATKEYS:1}" >> $GITHUB_ENV
+          echo "${{ secrets[env.SSHNPD_ATKEYS] }}" > sshnpd/.atsign/keys/${{ env.SSHNPD_ATSIGN }}_key.atKeys
+
+      - name: Set up entrypoints
+        uses: ./.github/composite/setup_entrypoints
+        with:
+          sshnp: ${{ matrix.np }}
+          sshnp_atsign: ${{ env.SSHNP_ATSIGN }}
+          sshnpd: ${{ matrix.npd }}
+          sshnpd_atsign: ${{ env.SSHNPD_ATSIGN }}
+          devicename: 2${{ github.run_id }}${{ github.run_attempt }}${{ strategy.job-index }}
+
+      - name: Ensure entrypoints exist
+        working-directory: tests/end2end_tests/contexts
+        run: |
+          cat sshnp/entrypoint.sh
+          cat sshnpd/entrypoint.sh
+          cat sshrvd/entrypoint.sh
+
+      - name: Create docker-compose.yaml
+        working-directory: tests/end2end_tests/tests
+        run: |
+          cat docker-compose-base.yaml > docker-compose.yaml
+
+      - name: Add runtime-sshnp-installer image to docker-compose.yaml
+        working-directory: tests/end2end_tests/tests
+        if: ${{ matrix.np == 'installer' }}
+        run: |
+          cat service-image-runtime-sshnp-installer.yaml >> docker-compose.yaml
+          echo '        - client_atsign="${{ env.SSHNP_ATSIGN }}"' >> docker-compose.yaml
+          echo '        - device_atsign="${{ env.SSHNPD_ATSIGN }}"' >> docker-compose.yaml
+          echo '        - host_atsign="${{ env[matrix.rvd_atsign] || env.PROD_AM_RVD_ATSIGN }}"' >> docker-compose.yaml
+          echo '    image: atsigncompany/sshnp-e2e-runtime:sshnp-installer' >> docker-compose.yaml
+
+      - name: Add runtime-sshnpd-installer image to docker-compose.yaml
+        working-directory: tests/end2end_tests/tests
+        if: ${{ matrix.npd == 'installer' }}
+        run: |
+          cat service-image-runtime-sshnpd-installer.yaml >> docker-compose.yaml
+          echo '        - client_atsign="${{ env.SSHNP_ATSIGN }}"' >> docker-compose.yaml
+          echo '        - device_atsign="${{ env.SSHNPD_ATSIGN }}"' >> docker-compose.yaml
+          echo '        - device_name=${{ github.run_id }}${{ github.run_attempt }}${{ strategy.job-index }}' >> docker-compose.yaml
+          echo '    image: atsigncompany/sshnp-e2e-runtime:sshnpd-installer' >> docker-compose.yaml
+
+      - name: Add container-sshnp to docker-compose.yaml
+        working-directory: tests/end2end_tests/tests
+        run: |
+          # Add the base service
+          cat service-container-sshnp.yaml >> docker-compose.yaml
+          # Add the runtime
+          if [ "${{ matrix.np }}" = 'installer' ]; then
+            echo '    image: atsigncompany/sshnp-e2e-runtime:sshnp-installer' >> docker-compose.yaml
+          else
+            echo '    image: atsigncompany/sshnp-e2e-runtime:${{ matrix.np }}' >> docker-compose.yaml
+          fi
+
+          # Add the dependencies
+          echo '    depends_on:' >> docker-compose.yaml
+          echo '      container-sshnpd:' >> docker-compose.yaml
+          echo '        condition: service_healthy' >> docker-compose.yaml
+          if [ "${{ matrix.np }}" = 'installer' ]; then
+            echo '      image-runtime-sshnp-installer:' >> docker-compose.yaml
+          else
+            echo '      image-runtime-local:' >> docker-compose.yaml
+          fi
+          echo '        condition: service_started' >> docker-compose.yaml
+
+      - name: Add container-sshnpd to docker-compose.yaml
+        working-directory: tests/end2end_tests/tests
+        run: |
+          # Add the base service
+          cat service-container-sshnpd.yaml >> docker-compose.yaml
+          # Add the runtime
+          if [ "${{ matrix.npd }}" = 'installer' ]; then
+            echo '    image: atsigncompany/sshnp-e2e-runtime:sshnpd-installer' >> docker-compose.yaml
+          else
+            echo '    image: atsigncompany/sshnp-e2e-runtime:${{ matrix.npd }}' >> docker-compose.yaml
+          fi
+
+          # Add the dependencies
+          echo '    depends_on:' >> docker-compose.yaml
+          if [ "${{ matrix.npd }}" = 'installer' ]; then
+            echo '      - image-runtime-sshnpd-installer' >> docker-compose.yaml
+          else
+            echo '      - image-runtime-local' >> docker-compose.yaml
+          fi
+
+      - name: docker-compose.yaml
+        if: always()
+        working-directory: tests/end2end_tests/tests
+        run: |
+          cat docker-compose.yaml
+
+      - name: Build
+        working-directory: tests/end2end_tests/tests
+        run: |
+          docker compose build
+
+      - name: Test
+        working-directory: tests/end2end_tests/tests
+        run: |
+          ${{ env.DOCKER_COMPOSE_UP_CMD }}
+
+      - name: Logs
+        if: always()
+        working-directory: tests/end2end_tests/tests
+        run: |
+          docker compose ps -a
+          docker compose logs --timestamps
+
+      - name: Found "Test Passed" in Logs
+        if: always()
+        working-directory: tests/end2end_tests/tests
+        run: |
+          docker compose logs --timestamps | grep -q "Test Passed$"
+
+      - name: Tear down
+        # Always tear down outside of the act environment
+        # but don't tear down on failure in the act environment
+        if: ${{ !env.ACT }} || success()
+        working-directory: tests/end2end_tests/tests
+        run: |
+          docker compose down
+
