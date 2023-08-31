@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:macos_ui/macos_ui.dart';
 import 'package:sshnp_gui/src/utils/sizes.dart';
 
 import 'constants.dart';
@@ -257,5 +258,9 @@ class AppTheme {
         backgroundColor: kPrimaryColor,
       ),
     );
+  }
+
+  static MacosThemeData macosDark() {
+    return MacosThemeData(brightness: Brightness.dark, primaryColor: kPrimaryColor);
   }
 }
