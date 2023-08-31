@@ -170,10 +170,11 @@ main() {
 
     # execute command
     echo "Executing command: $command"
-    # shellcheck disable=SC2086
-    eval $command
+    eval "$command"
 }
 
+# Ignore the shell check warning for the following line
+# We actually want array expansion here in order to parse the arguments correctly
 # shellcheck disable=SC2068
 parse_args $@
 main
