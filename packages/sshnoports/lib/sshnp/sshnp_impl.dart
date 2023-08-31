@@ -179,10 +179,16 @@ class SSHNPImpl implements SSHNP {
       Directory(sshHomeDirectory).createSync();
     }
 
-    if (sendSshPublicKey != 'false') {
-      publicKeyFileName = '$sshHomeDirectory$sendSshPublicKey';
+    // previously, the default value for sendSshPublicKey was 'false' instead of ''
+    // immediately set it to '' to avoid the program from attempting to
+    // search for a public key file called 'false'
+    if (sendSshPublicKey == 'false' || sendSshPublicKey.isEmpty) {
+      publicKeyFileName = '';
+    } else if (path.normalize(sendSshPublicKey).contains('/') ||
+        path.normalize(sendSshPublicKey).contains(r'\')) {
+      publicKeyFileName = path.normalize(path.absolute(sendSshPublicKey));
     } else {
-      publicKeyFileName = 'false';
+      publicKeyFileName = path.normalize('$sshHomeDirectory$sendSshPublicKey');
     }
   }
 
@@ -306,8 +312,13 @@ class SSHNPImpl implements SSHNP {
         .subscribe(regex: '$sessionId.$namespace@', shouldDecrypt: true)
         .listen(handleSshnpdResponses);
 
-    if (publicKeyFileName != 'false' && !File(publicKeyFileName).existsSync()) {
+    if (publicKeyFileName.isNotEmpty && !File(publicKeyFileName).existsSync()) {
       throw ('\n Unable to find ssh public key file : $publicKeyFileName');
+    }
+
+    if (publicKeyFileName.isNotEmpty &&
+        !File(publicKeyFileName.replaceAll('.pub', '')).existsSync()) {
+      throw ('\n Unable to find matching ssh private key for public key : $publicKeyFileName');
     }
 
     remoteUsername ?? await fetchRemoteUserName();
@@ -526,7 +537,7 @@ class SSHNPImpl implements SSHNP {
       return SSHNPFailed(
           'sshnp connection timeout: waiting for daemon response');
     }
-    
+
     if (sshnpdAckErrors) {
       return SSHNPFailed('sshnp failed: with sshnpd acknowledgement errors');
     }
@@ -615,26 +626,26 @@ class SSHNPImpl implements SSHNP {
   }
 
   Future<void> sharePublicKeyWithSshnpdIfRequired() async {
-    if (publicKeyFileName != 'false') {
-      try {
-        String toSshPublicKey = await File(publicKeyFileName).readAsString();
-        if (!toSshPublicKey.startsWith('ssh-')) {
-          throw ('$publicKeyFileName does not look like a public key file');
-        }
-        AtKey sendOurPublicKeyToSshnpd = AtKey()
-          ..key = 'sshpublickey'
-          ..sharedBy = clientAtSign
-          ..sharedWith = sshnpdAtSign
-          ..metadata = (Metadata()
-            ..ttr = -1
-            ..ttl = 10000);
-        await _notify(sendOurPublicKeyToSshnpd, toSshPublicKey);
-      } catch (e) {
-        stderr.writeln(
-            "Error opening or validating public key file or sending to remote atSign: $e");
-        await cleanUpAfterReverseSsh(this);
-        rethrow;
+    if (publicKeyFileName.isEmpty) return;
+
+    try {
+      String toSshPublicKey = await File(publicKeyFileName).readAsString();
+      if (!toSshPublicKey.startsWith('ssh-')) {
+        throw ('$publicKeyFileName does not look like a public key file');
       }
+      AtKey sendOurPublicKeyToSshnpd = AtKey()
+        ..key = 'sshpublickey'
+        ..sharedBy = clientAtSign
+        ..sharedWith = sshnpdAtSign
+        ..metadata = (Metadata()
+          ..ttr = -1
+          ..ttl = 10000);
+      await _notify(sendOurPublicKeyToSshnpd, toSshPublicKey);
+    } catch (e) {
+      stderr.writeln(
+          "Error opening or validating public key file or sending to remote atSign: $e");
+      await cleanUpAfterReverseSsh(this);
+      rethrow;
     }
   }
 
