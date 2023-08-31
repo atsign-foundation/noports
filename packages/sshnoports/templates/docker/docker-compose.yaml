@@ -1,0 +1,19 @@
+version: "3.0"
+
+volumes:
+  keys:
+    driver: local
+services:
+  activate:
+    image: atsigncompany/activate_sshnpd:latest
+    volumes:
+      - keys:/atsign/.atsign/keys
+    command: -a "${TO}" -c "${TO_CRAM}"
+  sshnpd:
+    image: atsigncompany/sshnpd:latest
+    volumes:
+      - keys:/atsign/.atsign/keys
+    command: -a "${TO}" -m "${FROM}" -d "${DEVICE}" -s -u -v
+    depends_on:
+      activate:
+        condition: service_completed_successfully

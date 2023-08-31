@@ -1,20 +1,6 @@
-import 'dart:async';
-import 'dart:convert';
-import 'dart:io';
+part of 'sshnpd.dart';
 
-import 'package:at_client/at_client.dart' hide StringBuffer;
-import 'package:at_utils/at_logger.dart';
-import 'package:dartssh2/dartssh2.dart';
-import 'package:logging/logging.dart';
-import 'package:meta/meta.dart';
-import 'package:sshnoports/common/create_at_client_cli.dart';
-import 'package:sshnoports/common/supported_ssh_clients.dart';
-import 'package:sshnoports/common/utils.dart';
-import 'package:sshnoports/sshnpd/sshnpd.dart';
-import 'package:sshnoports/sshnpd/sshnpd_params.dart';
-import 'package:sshnoports/version.dart';
-import 'package:uuid/uuid.dart';
-
+@visibleForTesting
 class SSHNPDImpl implements SSHNPD {
   @override
   final AtSignLogger logger = AtSignLogger(' sshnpd ');
@@ -55,17 +41,17 @@ class SSHNPDImpl implements SSHNPD {
 
   static const String commandToSend = 'sshd';
 
-  SSHNPDImpl(
-      {
-      // final fields
-      required this.atClient,
-      required this.username,
-      required this.homeDirectory,
-      required this.device,
-      required this.managerAtsign,
-      required this.sshClient,
-      this.makeDeviceInfoVisible = false,
-      this.addSshPublicKeys = false}) {
+  SSHNPDImpl({
+    // final fields
+    required this.atClient,
+    required this.username,
+    required this.homeDirectory,
+    required this.device,
+    required this.managerAtsign,
+    required this.sshClient,
+    this.makeDeviceInfoVisible = false,
+    this.addSshPublicKeys = false,
+  }) {
     logger.hierarchicalLoggingEnabled = true;
     logger.logger.level = Level.SHOUT;
   }
@@ -173,8 +159,8 @@ class SSHNPDImpl implements SSHNPD {
         );
 
     // Refresh the device entry now, and every hour
+    await _refreshDeviceEntry();
     if (makeDeviceInfoVisible) {
-      await _refreshDeviceEntry();
       Timer.periodic(
         const Duration(hours: 1),
         (_) async => await _refreshDeviceEntry(),
@@ -238,7 +224,7 @@ class SSHNPDImpl implements SSHNPD {
 
       case 'sshd':
         logger.info(
-            '<3.5.0 request for (reverse) ssh received from ${notification.from}'
+            '<3.4.0 request for (reverse) ssh received from ${notification.from}'
             ' ( notification id : ${notification.id} )');
         _handleLegacySshRequestNotification(notification);
         break;
@@ -249,7 +235,7 @@ class SSHNPDImpl implements SSHNPD {
 
       case 'ssh_request':
         logger.info('>=3.5.0 request for ssh received from ${notification.from}'
-            ' ( notification id : ${notification.id} )');
+            ' ( $notification )');
         _handleSshRequestNotification(notification);
         break;
     }
@@ -368,23 +354,65 @@ class SSHNPDImpl implements SSHNPD {
 
     String requestingAtsign = notification.from;
 
-    Map params = jsonDecode(notification.value!);
+    // Validate the request payload.
+    //
+    // If a 'direct' ssh is being requested, then
+    // only sessionId, host (of the rvd) and port (of the rvd) are required.
+    //
+    // If a reverse ssh is being requested, then we also require
+    // a username (to ssh back to the client), a privateKey (for that
+    // ssh) and a remoteForwardPort, to set up the ssh tunnel back to this
+    // device from the client side.
+    late final Map envelope;
+    late final Map params;
+    try {
+      envelope = jsonDecode(notification.value!);
+      assertValidValue(envelope, 'signature', String);
+      assertValidValue(envelope, 'hashingAlgo', String);
+      assertValidValue(envelope, 'signingAlgo', String);
+
+      params = envelope['payload'] as Map;
+      assertValidValue(params, 'sessionId', String);
+      assertValidValue(params, 'host', String);
+      assertValidValue(params, 'port', int);
+      if (params['direct'] != true) {
+        assertValidValue(params, 'username', String);
+        assertValidValue(params, 'remoteForwardPort', int);
+        assertValidValue(params, 'privateKey', String);
+      }
+    } catch (e) {
+      logger.warning(
+          'Failed to extract parameters from notification value "${notification.value}" with error : $e');
+      return;
+    }
+
+    try {
+      await verifyEnvelopeSignature(
+          atClient, requestingAtsign, logger, envelope);
+    } catch (e) {
+      logger.shout('Failed to verify signature of msg from $requestingAtsign');
+      logger.shout('Exception: $e');
+      logger.shout('Notification value: ${notification.value}');
+      return;
+    }
 
     if (params['direct'] == true) {
       // direct ssh requested
-      logger.shout(
-          '_handleSshRequestNotification - direct ssh not yet implemented');
-      // TODO implement
+      await startDirectSsh(
+          requestingAtsign: requestingAtsign,
+          sessionId: params['sessionId'],
+          host: params['host'],
+          port: params['port']);
     } else {
       // reverse ssh requested
       await startReverseSsh(
+          requestingAtsign: requestingAtsign,
+          sessionId: params['sessionId'],
           host: params['host'],
           port: params['port'],
-          sessionId: params['sessionId'],
           username: params['username'],
-          remoteForwardPort: params['remoteForwardPort'],
-          requestingAtsign: requestingAtsign,
-          privateKey: params['privateKey']);
+          privateKey: params['privateKey'],
+          remoteForwardPort: params['remoteForwardPort']);
     }
   }
 
@@ -414,27 +442,60 @@ class SSHNPDImpl implements SSHNPD {
     }
 
     await startReverseSsh(
+        requestingAtsign: requestingAtsign,
+        sessionId: sessionId,
         username: username,
         host: host,
         port: int.parse(port),
-        remoteForwardPort: int.parse(remoteForwardPort),
-        requestingAtsign: requestingAtsign,
+        privateKey: _privateKey,
+        remoteForwardPort: int.parse(remoteForwardPort));
+  }
+
+  Future<void> startDirectSsh(
+      {required String requestingAtsign,
+      required String sessionId,
+      required String host,
+      required int port}) async {
+    logger.shout(
+        'Setting up ports for direct ssh session using ${sshClient.name} (${sshClient.cliArg}) from: $requestingAtsign session: $sessionId');
+
+    try {
+      // Connect to rendezvous point using background process.
+      // This program can then exit without causing an issue.
+      Process rv = await SSHRV.localBinary(host, port).run();
+      logger.info('Started rv - pid is ${rv.pid}');
+
+      /// Notify sshnp that the connection has been made
+      await _notify(
+          atKey: _createResponseAtKey(
+              requestingAtsign: requestingAtsign, sessionId: sessionId),
+          value: 'connected',
+          sessionId: sessionId);
+    } catch (e) {
+      logger.severe('startDirectSsh failed with unexpected error : $e');
+      // Notify sshnp that this session is NOT connected
+      await _notify(
+        atKey: _createResponseAtKey(
+            requestingAtsign: requestingAtsign, sessionId: sessionId),
+        value:
+            'Failed to start up the daemon side of the sshrv socket tunnel : $e',
         sessionId: sessionId,
-        privateKey: _privateKey);
+      );
+    }
   }
 
   Future<void> startReverseSsh(
-      {required String host,
-      required int port,
+      {required String requestingAtsign,
       required String sessionId,
+      required String host,
+      required int port,
       required String username,
-      required int remoteForwardPort,
-      required String requestingAtsign,
-      required String privateKey}) async {
+      required String privateKey,
+      required int remoteForwardPort}) async {
     logger.info(
-        'Starting ssh session for $username to $host on port $port with forwardRemote of $remoteForwardPort');
+        'Starting reverse ssh session for $username to $host on port $port with forwardRemote of $remoteForwardPort');
     logger.shout(
-        'Starting ssh session using ${sshClient.name} (${sshClient.cliArg}) from: $requestingAtsign session: $sessionId');
+        'Starting reverse ssh session using ${sshClient.name} (${sshClient.cliArg}) from: $requestingAtsign session: $sessionId');
 
     try {
       bool success = false;
@@ -740,10 +801,6 @@ class SSHNPDImpl implements SSHNPD {
 
   /// This function creates an atKey which shares the device name with the client
   Future<void> _refreshDeviceEntry() async {
-    if (!makeDeviceInfoVisible) {
-      return;
-    }
-
     const ttl = 1000 * 60 * 60 * 24 * 30; // 30 days
     var metaData = Metadata()
       ..isPublic = false
@@ -759,6 +816,20 @@ class SSHNPDImpl implements SSHNPD {
       ..sharedWith = managerAtsign
       ..namespace = SSHNPD.namespace
       ..metadata = metaData;
+
+    if (!makeDeviceInfoVisible) {
+      logger.info('Deleting old device info for $device (if it exists)');
+      try {
+        await atClient.delete(
+          atKey,
+          deleteRequestOptions: DeleteRequestOptions()
+            ..useRemoteAtServer = true,
+        );
+      } catch (e) {
+        stderr.writeln(e.toString());
+      }
+      return;
+    }
 
     try {
       logger.info('Updating device info for $device');
