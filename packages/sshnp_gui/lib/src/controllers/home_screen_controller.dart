@@ -37,7 +37,7 @@ class HomeScreenController extends StateNotifier<AsyncValue<List<SSHNPParams>>> 
     var files = Directory('$homeDirectory/.ssh').list();
     final publickey = await files.firstWhere((element) => element.path.contains('.pub'));
 
-    return publickey.path;
+    return publickey.path.split('.ssh/').last;
   }
 
   /// Deletes the [AtKey] associated with the [AtData].

@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
@@ -34,6 +35,7 @@ class _TerminalScreenState extends ConsumerState<TerminalScreen> {
   }
 
   void _startPty() {
+    Platform.environment['SHELL'];
     pty = Pty.start(
       'bash',
       columns: terminal.viewWidth,

@@ -10,6 +10,10 @@ PODS:
   - flutter_pty (0.0.1):
     - FlutterMacOS
   - FlutterMacOS (1.0.0)
+  - macos_ui (0.1.0):
+    - FlutterMacOS
+  - macos_window_utils (1.0.0):
+    - FlutterMacOS
   - package_info_plus (0.0.1):
     - FlutterMacOS
   - path_provider_foundation (0.0.1):
@@ -30,6 +34,8 @@ DEPENDENCIES:
   - file_selector_macos (from `Flutter/ephemeral/.symlinks/plugins/file_selector_macos/macos`)
   - flutter_pty (from `Flutter/ephemeral/.symlinks/plugins/flutter_pty/macos`)
   - FlutterMacOS (from `Flutter/ephemeral`)
+  - macos_ui (from `Flutter/ephemeral/.symlinks/plugins/macos_ui/macos`)
+  - macos_window_utils (from `Flutter/ephemeral/.symlinks/plugins/macos_window_utils/macos`)
   - package_info_plus (from `Flutter/ephemeral/.symlinks/plugins/package_info_plus/macos`)
   - path_provider_foundation (from `Flutter/ephemeral/.symlinks/plugins/path_provider_foundation/darwin`)
   - share_plus_macos (from `Flutter/ephemeral/.symlinks/plugins/share_plus_macos/macos`)
@@ -49,6 +55,10 @@ EXTERNAL SOURCES:
     :path: Flutter/ephemeral/.symlinks/plugins/flutter_pty/macos
   FlutterMacOS:
     :path: Flutter/ephemeral
+  macos_ui:
+    :path: Flutter/ephemeral/.symlinks/plugins/macos_ui/macos
+  macos_window_utils:
+    :path: Flutter/ephemeral/.symlinks/plugins/macos_window_utils/macos
   package_info_plus:
     :path: Flutter/ephemeral/.symlinks/plugins/package_info_plus/macos
   path_provider_foundation:
@@ -67,12 +77,14 @@ SPEC CHECKSUMS:
   file_selector_macos: f1b08a781e66103e3ba279fd5d4024a2478b3af6
   flutter_pty: 41b6f848ade294be726a6b94cdd4a67c3bc52f59
   FlutterMacOS: 8f6f14fa908a6fb3fba0cd85dbd81ec4b251fb24
+  macos_ui: 6229a8922cd97bafb7d9636c8eb8dfb0744183ca
+  macos_window_utils: 933f91f64805e2eb91a5bd057cf97cd097276663
   package_info_plus: 02d7a575e80f194102bef286361c6c326e4c29ce
   path_provider_foundation: 29f094ae23ebbca9d3d0cec13889cd9060c0e943
   share_plus_macos: 853ee48e7dce06b633998ca0735d482dd671ade4
   shared_preferences_foundation: 5b919d13b803cadd15ed2dc053125c68730e5126
   url_launcher_macos: d2691c7dd33ed713bf3544850a623080ec693d95
 
-PODFILE CHECKSUM: 236401fc2c932af29a9fcf0e97baeeb2d750d367
+PODFILE CHECKSUM: 9ebaf0ce3d369aaa26a9ea0e159195ed94724cf3
 
 COCOAPODS: 1.12.1
