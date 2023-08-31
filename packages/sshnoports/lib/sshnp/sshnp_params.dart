@@ -126,15 +126,18 @@ class SSHNPParams {
       throw Exception('profileName is null or empty');
     }
 
-    var file = File(
-      path.join(directory ?? getDefaultSshnpConfigDirectory(homeDirectory),
-          '$profileName.env'),
-    );
+    var fileName = profileName!.replaceAll(' ', '_');
+
+    var file = File(path.join(
+      directory ?? getDefaultSshnpConfigDirectory(homeDirectory),
+      '$fileName.env',
+    ));
+
     var exists = await file.exists();
 
     if (exists && !overwrite) {
-      print('Failed to write config file: ${file.path} already exists');
-      return file;
+      throw Exception(
+          'Failed to write config file: ${file.path} already exists');
     }
 
     // FileMode.write will create the file if it does not exist
@@ -281,7 +284,8 @@ class SSHNPPartialParams {
 
   factory SSHNPPartialParams.fromConfig(String fileName) {
     var args = _parseConfigFile(fileName);
-    args['profile-name'] = path.basenameWithoutExtension(fileName);
+    args['profile-name'] =
+        path.basenameWithoutExtension(fileName).replaceAll('_', ' ');
     return SSHNPPartialParams.fromArgMap(args);
   }
 
