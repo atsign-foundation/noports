@@ -5,7 +5,7 @@
 
 sshrvd=$1
 
-cp ~/.atsign/keys/"$sshrvd"_key.atKeys ../sshrvd/.atsign/keys/"$sshrvd"_key.atKeys
+cp ~/.atsign/keys/"$sshrvd"_key.atKeys ../sshrvd/.atsign/keys/"$sshrvd"_key.atKeys # copy keys to the mounted folder
 
 if [[ ! -f ../sshrvd/.atsign/keys/${sshrvd}_key.atKeys ]];
 then

@@ -4,7 +4,6 @@ BINARY_NAME="sshnp";
 
 # Prepend an @ to the front of the atsign if missing
 norm_atsign() {
-  # shellcheck disable=SC2001
   atsign="@$(echo "$1" | sed -e 's/"//g' -e 's/^@//g')"
   echo "$atsign"
 }

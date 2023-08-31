@@ -4,7 +4,6 @@ BINARY_NAME="sshnpd";
 
 # Prepend an @ to the front of the atsign if missing
 norm_atsign() {
-  # shellcheck disable=SC2001
   atsign="@$(echo "$1" | sed -e 's/"//g' -e 's/^@//g')"
   echo "$atsign"
 }
@@ -230,6 +229,9 @@ parse_requirements() {
     REQ_SSHD_SERVICE=$(pgrep sshd)
     REQ_CRON_SERVICE=$(pgrep cron)
   elif [ -n  "$REQ_PS" ] && [ -n "$REQ_GREP" ] && [ -n "$REQ_AWK" ]; then
+    # Disable shellcheck warning for the following lines
+    # It recommends using pgrep, but we have already tried that above
+    # this is the fallback approach
     # shellcheck disable=SC2009
     REQ_SSHD_SERVICE=$(ps -ef | grep -v grep | grep sshd | awk '{print $2}')
     # shellcheck disable=SC2009

@@ -3,7 +3,7 @@
       mode: replicated
       replicas: 0
     build:
-      context: ../image/
+      context: ../image/ # the path to the directory containing the main image Dockerfile
       dockerfile: ./Dockerfile
       target: runtime-release
       args:

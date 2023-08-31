@@ -10,7 +10,7 @@ sshnpd=$3 # e.g. @alice
 sshrvd=$4 # e.g. @alice
 template_name=$5 # e.g. sshnp_entrypoint.sh
 
-cp ../../entrypoints/"$template_name" ../sshnp/entrypoint.sh
+cp ../../entrypoints/"$template_name" ../sshnp/entrypoint.sh # copy template to the mounted folder
 
 prefix="sed -i"
 
