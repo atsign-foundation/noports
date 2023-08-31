@@ -427,7 +427,7 @@ class SSHNPImpl implements SSHNP {
         localPort: localPort,
         remoteUsername: username,
         host: host,
-        privateKeyFileName: publicKeyFileName,
+        privateKeyFileName: publicKeyFileName.replaceAll('.pub', ''),
       );
     } catch (e, s) {
       return SSHNPFailed('SSH Client failure : $e', e, s);
@@ -526,7 +526,7 @@ class SSHNPImpl implements SSHNP {
       return SSHNPFailed(
           'sshnp connection timeout: waiting for daemon response');
     }
-    
+
     if (sshnpdAckErrors) {
       return SSHNPFailed('sshnp failed: with sshnpd acknowledgement errors');
     }
