@@ -425,7 +425,7 @@ class SSHNPImpl implements SSHNP {
       // All good - write the ssh command to stdout
       return SSHCommand.base(
         localPort: localPort,
-        remoteUsername: username,
+        remoteUsername: remoteUsername,
         host: host,
         privateKeyFileName: publicKeyFileName.replaceAll('.pub', ''),
       );
@@ -533,7 +533,7 @@ class SSHNPImpl implements SSHNP {
 
     return SSHCommand.base(
       localPort: localPort,
-      remoteUsername: username,
+      remoteUsername: remoteUsername,
       host: 'localhost',
       privateKeyFileName: publicKeyFileName.replaceAll('.pub', ''),
     );
@@ -568,9 +568,10 @@ class SSHNPImpl implements SSHNP {
     if (sshnpdAckErrors) {
       return SSHNPFailed('sshnp failed: with sshnpd acknowledgement errors');
     }
+
     return SSHCommand.base(
       localPort: localPort,
-      remoteUsername: username,
+      remoteUsername: remoteUsername,
       host: 'localhost',
       privateKeyFileName: publicKeyFileName.replaceAll('.pub', ''),
     );

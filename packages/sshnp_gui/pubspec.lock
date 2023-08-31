@@ -1165,11 +1165,9 @@ packages:
   sshnoports:
     dependency: "direct main"
     description:
-      path: "packages/sshnoports"
-      ref: "fix/sshnp-result"
-      resolved-ref: "580c9dfbcb8c9213099ee272a0a10ba75909c50c"
-      url: "https://github.com/atsign-foundation/sshnoports.git"
-    source: git
+      path: "../sshnoports"
+      relative: true
+    source: path
     version: "3.4.1"
   stack_trace:
     dependency: transitive

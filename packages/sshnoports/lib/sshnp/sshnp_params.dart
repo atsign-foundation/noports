@@ -145,6 +145,27 @@ class SSHNPParams {
     return file.writeAsString(toConfig(), mode: FileMode.write);
   }
 
+  Future<FileSystemEntity> deleteFile({String? directory, bool overwrite = false}) async {
+    if (profileName == null || profileName!.isEmpty) {
+      throw Exception('profileName is null or empty');
+    }
+
+    var fileName = profileName!.replaceAll(' ', '_');
+
+    var file = File(path.join(
+      directory ?? getDefaultSshnpConfigDirectory(homeDirectory),
+      '$fileName.env',
+    ));
+
+    var exists = await file.exists();
+
+    if (!exists) {
+      throw Exception('Cannot delete ${file.path}, file does not exist');
+    }
+
+    return file.delete();
+  }
+
   Map<String, dynamic> toArgs() {
     return {
       'profile-name': profileName,

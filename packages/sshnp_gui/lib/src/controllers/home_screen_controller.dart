@@ -37,6 +37,7 @@ class HomeScreenController extends StateNotifier<AsyncValue<List<SSHNPParams>>> 
     final directory = getDefaultSshnpConfigDirectory(getHomeDirectory()!);
     var configDir = await Directory(directory).list().toList();
     // remove non env file so the index of the config file in the UI matches the index of the configDir env files.
+    //TODO @CurtlyCritchlow this is no longer needed, you can now use [SSHNPParams.deleteFile()]
     configDir.removeWhere((element) => path.extension(element.path) != '.env');
     configDir[index].delete();
     await getConfigFiles();
@@ -62,7 +63,7 @@ class HomeScreenController extends StateNotifier<AsyncValue<List<SSHNPParams>>> 
     log(configDir);
     await Directory(configDir).create(recursive: true);
     //.env
-    sshnpParams.toFile('$configDir/${DateTime.now().millisecondsSinceEpoch}.env', overwrite: false);
+    sshnpParams.toFile(overwrite: false);
     await getConfigFiles();
   }
 
@@ -77,7 +78,7 @@ class HomeScreenController extends StateNotifier<AsyncValue<List<SSHNPParams>>> 
     log('path is:${configDir[index].path}');
     // await Directory(configDir).create(recursive: true);
     //.env
-    sshnpParams.toFile(configDir[index].path, overwrite: true);
+    sshnpParams.toFile(overwrite: true);
     await getConfigFiles();
   }
 }
