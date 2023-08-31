@@ -200,14 +200,14 @@ class SSHNPPartialParams {
     this.localPort,
     this.atKeysFilePath,
     this.sendSshPublicKey,
-    this.localSshOptions = const [],
+    this.localSshOptions = SSHNP.defaultLocalSshOptions,
     this.rsa,
     this.remoteUsername,
     this.verbose,
     this.rootDomain,
     this.localSshdPort,
-    this.listDevices = false,
-    this.legacyDaemon = true,
+    this.listDevices = SSHNP.defaultListDevices,
+    this.legacyDaemon = SSHNP.defaultLegacyDaemon,
   });
 
   factory SSHNPPartialParams.empty() {

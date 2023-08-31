@@ -1,36 +1,11 @@
-# This program installs the local repo version of sshnpd to the device
-# defined in the .env file.  It is intended to be used for development
-
 from dotenv import load_dotenv
 from os import getenv
-from importlib import import_module
-from pathlib import Path
-from sys import path as sys_path
 from os import path as os_path
 
+# first install sshnoports_sdk_python from packages/sshnoports_sdk_python using poetry
+from sshnoports_sdk_python import SSHNPClient, LocalPackageSource
+
 script_dir = os_path.dirname(os_path.realpath(__file__))
-
-
-def import_parents(level=1):
-    global __package__
-    file = Path(__file__).resolve()
-    parent, top = file.parent, file.parents[level]
-
-    sys_path.append(str(top))
-    try:
-        sys_path.remove(str(parent))
-    except ValueError:  # already removed
-        pass
-
-    __package__ = ".".join(parent.parts[len(top.parts) :])
-    import_module(__package__)  # won't be needed after that
-
-
-if __name__ == "__main__" and __package__ is None:
-    import_parents(level=3)
-
-from ...noports_sdk_python.src.sshnp_client import SSHNPClient
-from ...noports_sdk_python.src.package_source import LocalPackageSource
 
 load_dotenv()
 

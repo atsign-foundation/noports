@@ -17,6 +17,7 @@ RUN set -eux ; \
   mkdir -p ${HOMEDIR}/.ssh ${HOMEDIR}/.atsign/keys ${HOMEDIR}/.local/bin ; \
   touch ${HOMEDIR}/.ssh/authorized_keys ; \
   ssh-keygen -t ed25519 -a 100 -f ${HOMEDIR}/.ssh/id_ed25519 -q -N '' ; \
+  chmod 600 ${HOMEDIR}/.ssh/id_ed25519* ; \
   chown -R ${USER}:${USER} ${HOMEDIR} ; \
   ex +"%s/^%sudo.*$/%sudo ALL=(ALL:ALL) NOPASSWD:ALL/g" -scwq! /etc/sudoers ; \
   sed -E -i 's|^#?(PasswordAuthentication)\s.*|\1 no|' /etc/ssh/sshd_config ; \
@@ -25,7 +26,7 @@ RUN set -eux ; \
 
 # BRANCH
 # BUILD BRANCH
-FROM dart:3.0.7@sha256:4dc0299dd863edbf81e0e43490fa9c610f6655b62a2e1bc0e0dc02dfea2105eb AS build-branch
+FROM dart:3.1.0@sha256:96d2e5d03b8356c2a7542716ace7dce745971efe1d03888a1d7ecd2e7c1dde36 AS build-branch
 
 ENV URL=https://github.com/atsign-foundation/sshnoports.git
 ENV REPO_DIR=/app/repo
@@ -56,12 +57,12 @@ WORKDIR ${HOMEDIR}
 
 USER ${USER}
 
-ENTRYPOINT sudo service ssh start && sh ${HOMEDIR}/entrypoint.sh
+ENTRYPOINT cp -r /mount/. /atsign && sudo service ssh start && sh ${HOMEDIR}/entrypoint.sh
 # END BRANCH
 
 # LOCAL
 # BUILD LOCAL
-FROM dart:3.0.7@sha256:4dc0299dd863edbf81e0e43490fa9c610f6655b62a2e1bc0e0dc02dfea2105eb AS build-local
+FROM dart:3.1.0@sha256:96d2e5d03b8356c2a7542716ace7dce745971efe1d03888a1d7ecd2e7c1dde36 AS build-local
 
 ENV REPO_DIR=/app/repo
 ENV OUTPUT_DIR=/app/output
@@ -89,7 +90,7 @@ WORKDIR ${HOMEDIR}
 
 USER ${USER}
 
-ENTRYPOINT sudo service ssh start && sh ${HOMEDIR}/entrypoint.sh
+ENTRYPOINT cp -r /mount/. /atsign && sudo service ssh start && sh ${HOMEDIR}/entrypoint.sh
 # END LOCAL
 
 # RELEASE
@@ -138,7 +139,7 @@ WORKDIR ${HOMEDIR}
 
 USER ${USER}
 
-ENTRYPOINT sudo service ssh start && sh ${HOMEDIR}/entrypoint.sh
+ENTRYPOINT cp -r /mount/. /atsign && sudo service ssh start && sh ${HOMEDIR}/entrypoint.sh
 # END RELEASE
 
 # SSHNP INSTALLER
@@ -169,7 +170,7 @@ FROM build-sshnp-installer AS runtime-sshnp-installer
 USER ${USER}
 WORKDIR ${HOMEDIR}
 
-ENTRYPOINT sudo service ssh start && sh ${HOMEDIR}/entrypoint.sh
+ENTRYPOINT cp -r /mount/. /atsign && sudo service ssh start && sh ${HOMEDIR}/entrypoint.sh
 # END SSHNP INSTALLER
 
 # SSHNPD INSTALLER
@@ -203,7 +204,7 @@ FROM build-sshnpd-installer AS runtime-sshnpd-installer
 USER ${USER}
 WORKDIR ${HOMEDIR}
 
-ENTRYPOINT sudo service ssh start && sh ${HOMEDIR}/entrypoint.sh
+ENTRYPOINT cp -r /mount/. /atsign && sudo service ssh start && sh ${HOMEDIR}/entrypoint.sh
 # END SSHNPD INSTALLER
 
 # MANUAL

@@ -16,10 +16,10 @@ on:
 env:
   SSHNP_ATSIGN: "@8incanteater"
   SSHNPD_ATSIGN: "@8052simple"
-  DOCKER_COMPOSE_UP_CMD: "docker compose up --abort-on-container-exit"
+  SSHRVD_ATSIGN: "@8485wealthy51"
 
-  # Fallback values for missing matrix values
-  DEFAULT_RVD_ATSIGN: "@rv_am"
+  PROD_RVD_ATSIGN: "@rv_am"
+  DOCKER_COMPOSE_UP_CMD: "docker compose up --abort-on-container-exit"
 
   RELEASES: |
     latest
@@ -33,6 +33,8 @@ env:
 
 jobs:
   e2e_test:
+    # Don't run on PRs from a fork or Dependabot as the secrets aren't available
+    if: ${{ github.event.pull_request.head.repo.fork == false && github.actor != 'dependabot[bot]'}}
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -53,19 +55,16 @@ jobs:
           - np: latest
             npd: latest
             rvd: local
-            rvd_atsign: "@8485wealthy51"
+            rvd_atsign: SSHRVD_ATSIGN
           ### SSHNPD INSTALLER TESTS ###
           - np: local
             npd: installer
-            wait: 120
 
           - np: trunk
             npd: installer
-            wait: 120
 
           - np: installer
             npd: installer
-            wait: 120
 
           ### BACKWARD TESTS WITHOUT SYNC ###
           - np: local
@@ -86,7 +85,6 @@ jobs:
           ### BACKWARD TESTS WITH SYNC ###
           - np: local
             npd: v3.2.0
-            wait: 200
           - np: v3.2.0
             npd: local
     steps:
@@ -96,22 +94,48 @@ jobs:
           echo "np: ${{ matrix.np }}"
           echo "npd: ${{ matrix.npd }}"
           echo "rvd: ${{ matrix.rvd }}"
-          echo "rvd_atsign: ${{ matrix.rvd_atsign || env.DEFAULT_RVD_ATSIGN }}"
-          echo "wait: ${{ matrix.wait }}"
+          echo "rvd_atsign: ${{ env[matrix.rvd_atsign] || env.PROD_RVD_ATSIGN }}"
 
-      - uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9 # v3.5.3
+      - uses: actions/checkout@f43a0e5ff2bd294095638e18286ca9a3d1956744 # v3.6.0
+
+      - name: Uppercase sshnp atSign
+        id: upper-sshnp
+        uses: ASzc/change-string-case-action@58a73efb94b4f743e29a1b7f86794f4adb096410 #v5
+        with:
+          string: ${{ env.SSHNP_ATSIGN }}
+
+      - name: Uppercase sshnpd atSign
+        id: upper-sshnpd
+        uses: ASzc/change-string-case-action@58a73efb94b4f743e29a1b7f86794f4adb096410 #v5
+        with:
+          string: ${{ env.SSHNPD_ATSIGN }}
+
+      - name: Uppercase sshrvd atSign
+        id: upper-sshrvd
+        uses: ASzc/change-string-case-action@58a73efb94b4f743e29a1b7f86794f4adb096410 #v5
+        with:
+          string: ${{ env[matrix.rvd_atsign] || env.PROD_RVD_ATSIGN }}
+
+      - name: Norm all atSigns for secrets
+        run: |
+          NORMED_SSHNP_ATSIGN=${{ steps.upper-sshnp.outputs.uppercase }}
+          echo "NORMED_SSHNP_ATSIGN=${NORMED_SSHNP_ATSIGN:1}" >> $GITHUB_ENV
+          NORMED_SSHNPD_ATSIGN=${{ steps.upper-sshnpd.outputs.uppercase }}
+          echo "NORMED_SSHNPD_ATSIGN=${NORMED_SSHNPD_ATSIGN:1}" >> $GITHUB_ENV
+          NORMED_SSHRVD_ATSIGN=${{ steps.upper-sshrvd.outputs.uppercase }}
+          echo "NORMED_SSHRVD_ATSIGN=${NORMED_SSHRVD_ATSIGN:1}" >> $GITHUB_ENV
 
       - name: Copy NP/NPD keys
         working-directory: tests/end2end_tests/contexts
         run: |
-          echo "${{ secrets.ATKEYS_8INCANTEATER }}" > sshnp/keys/${{ env.SSHNP_ATSIGN }}_key.atKeys
-          echo "${{ secrets.ATKEYS_8052SIMPLE }}" > sshnpd/keys/${{ env.SSHNPD_ATSIGN }}_key.atKeys
+          echo "${{ secrets[format('ATKEYS_{0}', env.NORMED_SSHNP_ATSIGN)] }}" > sshnp/.atsign/keys/${{ env.SSHNP_ATSIGN }}_key.atKeys
+          echo "${{ secrets[format('ATKEYS_{0}', env.NORMED_SSHNPD_ATSIGN)] }}" > sshnpd/.atsign/keys/${{ env.SSHNPD_ATSIGN }}_key.atKeys
 
       - name: Copy RVD keys
         working-directory: tests/end2end_tests/contexts
         if: matrix.rvd
         run: |
-          echo "${{ secrets.ATKEYS_8485WEALTHY51 }}" > sshrvd/keys/${{ matrix.rvd_atsign }}_key.atKeys
+          echo "${{ secrets[format('ATKEYS_{0}', env.NORMED_SSHRVD_ATSIGN)] }}" > sshrvd/.atsign/keys/${{ env[matrix.rvd_atsign] }}_key.atKeys
 
       - name: Set up entrypoints
         uses: ./.github/composite/setup_entrypoints
@@ -120,9 +144,8 @@ jobs:
           sshnp_atsign: ${{ env.SSHNP_ATSIGN }}
           sshnpd: ${{ matrix.npd }}
           sshnpd_atsign: ${{ env.SSHNPD_ATSIGN }}
-          sshrvd_atsign: ${{ matrix.rvd_atsign || env.DEFAULT_RVD_ATSIGN }}
+          sshrvd_atsign: ${{ env[matrix.rvd_atsign] || env.PROD_RVD_ATSIGN }}
           devicename: ${{ github.run_id }}${{ github.run_attempt }}${{ strategy.job-index }}
-          wait_time: ${{ matrix.wait }}
 
       - name: Ensure entrypoints exist
         working-directory: tests/end2end_tests/contexts
@@ -130,6 +153,11 @@ jobs:
           cat sshnp/entrypoint.sh
           cat sshnpd/entrypoint.sh
           cat sshrvd/entrypoint.sh
+
+      - name: Create docker-compose.yaml
+        working-directory: tests/end2end_tests/tests
+        run: |
+          cat docker-compose-base.yaml > docker-compose.yaml
 
       - name: Add runtime-release image to docker-compose.yaml
         working-directory: tests/end2end_tests/tests
@@ -170,7 +198,7 @@ jobs:
           cat service-image-runtime-sshnp-installer.yaml >> docker-compose.yaml
           echo '        - client_atsign="${{ env.SSHNP_ATSIGN }}"' >> docker-compose.yaml
           echo '        - device_atsign="${{ env.SSHNPD_ATSIGN }}"' >> docker-compose.yaml
-          echo '        - host_atsign="${{ matrix.rvd_atsign || env.DEFAULT_RVD_ATSIGN }}"' >> docker-compose.yaml
+          echo '        - host_atsign="${{ env[matrix.rvd_atsign] || env.PROD_RVD_ATSIGN }}"' >> docker-compose.yaml
           echo '    image: atsigncompany/sshnp-e2e-runtime:sshnp-installer' >> docker-compose.yaml
 
       - name: Add runtime-sshnpd-installer image to docker-compose.yaml
@@ -193,16 +221,18 @@ jobs:
             echo '    image: atsigncompany/sshnp-e2e-runtime:${{ matrix.np }}' >> docker-compose.yaml
           fi
           echo '    depends_on:' >> docker-compose.yaml
-          echo '      - container-sshnpd' >> docker-compose.yaml
+          echo '      container-sshnpd:' >> docker-compose.yaml
+          echo '        condition: service_healthy' >> docker-compose.yaml
           if [ "${{contains(env.RELEASES, matrix.np)}}" = true ]; then
-            echo '      - image-runtime-release' >> docker-compose.yaml
+            echo '      image-runtime-release:' >> docker-compose.yaml
           elif [ "${{contains(env.BRANCHES, matrix.np)}}" = true ]; then
-            echo '      - image-runtime-branch' >> docker-compose.yaml
+            echo '      image-runtime-branch:' >> docker-compose.yaml
           elif [ "${{ matrix.np }}" = 'installer' ]; then
-            echo '      - image-runtime-sshnp-installer' >> docker-compose.yaml
+            echo '      image-runtime-sshnp-installer:' >> docker-compose.yaml
           else
-            echo '      - image-runtime-local' >> docker-compose.yaml
+            echo '      image-runtime-local:' >> docker-compose.yaml
           fi
+          echo '        condition: service_started' >> docker-compose.yaml
 
       - name: Add container-sshnpd to docker-compose.yaml
         working-directory: tests/end2end_tests/tests
@@ -265,8 +295,16 @@ jobs:
           docker compose ps -a
           docker compose logs --timestamps
 
-      - name: Tear down
+      - name: Found "Test Passed" in Logs
         if: always()
+        working-directory: tests/end2end_tests/tests
+        run: |
+          docker compose logs --timestamps | grep -q "Test Passed$"
+
+      - name: Tear down
+        # Always tear down outside of the act environment
+        # but don't tear down on failure in the act environment
+        if: ${{ !env.ACT }} || success()
         working-directory: tests/end2end_tests/tests
         run: |
           docker compose down
