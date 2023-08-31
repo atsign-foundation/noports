@@ -18,7 +18,7 @@ env:
   SSHNPD_ATSIGN: "@8052simple"
   SSHRVD_ATSIGN: "@8485wealthy51"
 
-  PROD_RVD_ATSIGN: "@rv_am"
+  PROD_AM_RVD_ATSIGN: "@rv_am"
   DOCKER_COMPOSE_UP_CMD: "docker compose up --abort-on-container-exit"
 
   RELEASES: |
@@ -32,6 +32,10 @@ env:
     trunk
 
 jobs:
+  # Basic tests to run often
+  # local - local
+  # local - trunk
+  # trunk - local
   e2e_test:
     # Don't run on PRs from a fork or Dependabot as the secrets aren't available
     if: ${{ github.event.pull_request.head.repo.fork == false && github.actor != 'dependabot[bot]'}}
@@ -39,103 +43,33 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        np: [local, trunk, installer]
+        np: [local, trunk]
         npd: [local, trunk]
+        rvd: ['']
+        rvd_atsign: ['PROD_AM_RVD_ATSIGN'] # The name of the env var containing the atsign for the rvd
         exclude:
-          # Don't run these against themselves, they're irrelevant
+          # Don't run these against themselves, pointless to test
           - np: trunk
             npd: trunk
-        include:
-          ### RVD TESTS ###
-          # - np: local
-          #   npd: local
-          #   rvd: local
-          #   rvd_atsign: "@8485wealthy51"
-
-          - np: latest
-            npd: latest
-            rvd: local
-            rvd_atsign: SSHRVD_ATSIGN
-          ### SSHNPD INSTALLER TESTS ###
-          - np: local
-            npd: installer
-
-          - np: trunk
-            npd: installer
-
-          - np: installer
-            npd: installer
-
-          ### BACKWARD TESTS WITHOUT SYNC ###
-          - np: local
-            npd: latest
-          - np: latest
-            npd: local
-
-          - np: local
-            npd: v3.4.0
-          - np: v3.4.0
-            npd: local
-
-          - np: local
-            npd: v3.3.0
-          - np: v3.3.0
-            npd: local
-
-          ### BACKWARD TESTS WITH SYNC ###
-          - np: local
-            npd: v3.2.0
-          - np: v3.2.0
-            npd: local
     steps:
       - name: Show Matrix Values
         run: |
           echo "job index: ${{ strategy.job-index }}"
           echo "np: ${{ matrix.np }}"
           echo "npd: ${{ matrix.npd }}"
-          echo "rvd: ${{ matrix.rvd }}"
-          echo "rvd_atsign: ${{ env[matrix.rvd_atsign] || env.PROD_RVD_ATSIGN }}"
 
       - uses: actions/checkout@f43a0e5ff2bd294095638e18286ca9a3d1956744 # v3.6.0
 
-      - name: Uppercase sshnp atSign
-        id: upper-sshnp
-        uses: ASzc/change-string-case-action@58a73efb94b4f743e29a1b7f86794f4adb096410 #v5
-        with:
-          string: ${{ env.SSHNP_ATSIGN }}
-
-      - name: Uppercase sshnpd atSign
-        id: upper-sshnpd
-        uses: ASzc/change-string-case-action@58a73efb94b4f743e29a1b7f86794f4adb096410 #v5
-        with:
-          string: ${{ env.SSHNPD_ATSIGN }}
-
-      - name: Uppercase sshrvd atSign
-        id: upper-sshrvd
-        uses: ASzc/change-string-case-action@58a73efb94b4f743e29a1b7f86794f4adb096410 #v5
-        with:
-          string: ${{ env[matrix.rvd_atsign] || env.PROD_RVD_ATSIGN }}
-
-      - name: Norm all atSigns for secrets
-        run: |
-          NORMED_SSHNP_ATSIGN=${{ steps.upper-sshnp.outputs.uppercase }}
-          echo "NORMED_SSHNP_ATSIGN=${NORMED_SSHNP_ATSIGN:1}" >> $GITHUB_ENV
-          NORMED_SSHNPD_ATSIGN=${{ steps.upper-sshnpd.outputs.uppercase }}
-          echo "NORMED_SSHNPD_ATSIGN=${NORMED_SSHNPD_ATSIGN:1}" >> $GITHUB_ENV
-          NORMED_SSHRVD_ATSIGN=${{ steps.upper-sshrvd.outputs.uppercase }}
-          echo "NORMED_SSHRVD_ATSIGN=${NORMED_SSHRVD_ATSIGN:1}" >> $GITHUB_ENV
-
-      - name: Copy NP/NPD keys
+      - name: Setup NP/NPD keys
         working-directory: tests/end2end_tests/contexts
         run: |
-          echo "${{ secrets[format('ATKEYS_{0}', env.NORMED_SSHNP_ATSIGN)] }}" > sshnp/.atsign/keys/${{ env.SSHNP_ATSIGN }}_key.atKeys
-          echo "${{ secrets[format('ATKEYS_{0}', env.NORMED_SSHNPD_ATSIGN)] }}" > sshnpd/.atsign/keys/${{ env.SSHNPD_ATSIGN }}_key.atKeys
+          SSHNP_ATKEYS="$(tr '[:lower:]' '[:upper:]' <<< '${{ env.SSHNP_ATSIGN }}')"
+          echo "SSHNP_ATKEYS=ATKEYS_${SSHNP_ATKEYS:1}" >> $GITHUB_ENV
+          echo "${{ secrets[env.SSHNP_ATKEYS] }}" > sshnp/.atsign/keys/${{ env.SSHNP_ATSIGN }}_key.atKeys
 
-      - name: Copy RVD keys
-        working-directory: tests/end2end_tests/contexts
-        if: matrix.rvd
-        run: |
-          echo "${{ secrets[format('ATKEYS_{0}', env.NORMED_SSHRVD_ATSIGN)] }}" > sshrvd/.atsign/keys/${{ env[matrix.rvd_atsign] }}_key.atKeys
+          SSHNPD_ATKEYS="$(tr '[:lower:]' '[:upper:]' <<< '${{ env.SSHNPD_ATSIGN }}')"
+          echo "SSHNPD_ATKEYS=ATKEYS_${SSHNPD_ATKEYS:1}" >> $GITHUB_ENV
+          echo "${{ secrets[env.SSHNPD_ATKEYS] }}" > sshnpd/.atsign/keys/${{ env.SSHNPD_ATSIGN }}_key.atKeys
 
       - name: Set up entrypoints
         uses: ./.github/composite/setup_entrypoints
@@ -144,7 +78,7 @@ jobs:
           sshnp_atsign: ${{ env.SSHNP_ATSIGN }}
           sshnpd: ${{ matrix.npd }}
           sshnpd_atsign: ${{ env.SSHNPD_ATSIGN }}
-          sshrvd_atsign: ${{ env[matrix.rvd_atsign] || env.PROD_RVD_ATSIGN }}
+          sshrvd_atsign: ${{ env[matrix.rvd_atsign] || env.PROD_AM_RVD_ATSIGN }}
           devicename: ${{ github.run_id }}${{ github.run_attempt }}${{ strategy.job-index }}
 
       - name: Ensure entrypoints exist
@@ -159,25 +93,9 @@ jobs:
         run: |
           cat docker-compose-base.yaml > docker-compose.yaml
 
-      - name: Add runtime-release image to docker-compose.yaml
-        working-directory: tests/end2end_tests/tests
-        if: ${{ contains(env.RELEASES, matrix.np) || contains(env.RELEASES, matrix.npd) || (matrix.rvd && contains(env.RELEASES, matrix.rvd)) }}
-        run: |
-          cat service-image-runtime-release.yaml >> docker-compose.yaml
-          if [ "${{contains(env.RELEASES, matrix.np)}}" = true ]; then
-            echo '        - release=${{ matrix.np }}' >> docker-compose.yaml
-            echo '    image: atsigncompany/sshnp-e2e-runtime:${{ matrix.np }}' >> docker-compose.yaml
-          elif [ "${{contains(env.RELEASES, matrix.npd)}}" = true ]; then
-            echo '        - release=${{ matrix.npd }}' >> docker-compose.yaml
-            echo '    image: atsigncompany/sshnp-e2e-runtime:${{ matrix.npd }}' >> docker-compose.yaml
-          elif [ "${{contains(env.RELEASES, matrix.rvd)}}" = true ]; then
-            echo '        - release=${{ matrix.rvd }}' >> docker-compose.yaml
-            echo '    image: atsigncompany/sshnp-e2e-runtime:${{ matrix.rvd }}' >> docker-compose.yaml
-          fi
-
       - name: Add runtime-branch image to docker-compose.yaml
         working-directory: tests/end2end_tests/tests
-        if: ${{ contains(env.BRANCHES, matrix.np) || contains(env.BRANCHES, matrix.npd) || (matrix.rvd && contains(env.BRANCHES, matrix.rvd)) }}
+        if: ${{ contains(env.BRANCHES, matrix.np) || contains(env.BRANCHES, matrix.npd) }}
         run: |
           cat service-image-runtime-branch.yaml >> docker-compose.yaml
           if [ "${{contains(env.BRANCHES, matrix.np)}}" = true ]; then
@@ -186,30 +104,7 @@ jobs:
           elif [ "${{contains(env.BRANCHES, matrix.npd)}}" = true ]; then
             echo '        - branch=${{ matrix.npd }}' >> docker-compose.yaml
             echo '    image: atsigncompany/sshnp-e2e-runtime:${{ matrix.npd }}' >> docker-compose.yaml
-          elif [ "${{contains(env.BRANCHES, matrix.rvd)}}" = true ]; then
-            echo '        - branch=${{ matrix.rvd }}' >> docker-compose.yaml
-            echo '    image: atsigncompany/sshnp-e2e-runtime:${{ matrix.rvd }}' >> docker-compose.yaml
           fi
-
-      - name: Add runtime-sshnp-installer image to docker-compose.yaml
-        working-directory: tests/end2end_tests/tests
-        if: ${{ matrix.np == 'installer' }}
-        run: |
-          cat service-image-runtime-sshnp-installer.yaml >> docker-compose.yaml
-          echo '        - client_atsign="${{ env.SSHNP_ATSIGN }}"' >> docker-compose.yaml
-          echo '        - device_atsign="${{ env.SSHNPD_ATSIGN }}"' >> docker-compose.yaml
-          echo '        - host_atsign="${{ env[matrix.rvd_atsign] || env.PROD_RVD_ATSIGN }}"' >> docker-compose.yaml
-          echo '    image: atsigncompany/sshnp-e2e-runtime:sshnp-installer' >> docker-compose.yaml
-
-      - name: Add runtime-sshnpd-installer image to docker-compose.yaml
-        working-directory: tests/end2end_tests/tests
-        if: ${{ matrix.npd == 'installer' }}
-        run: |
-          cat service-image-runtime-sshnpd-installer.yaml >> docker-compose.yaml
-          echo '        - client_atsign="${{ env.SSHNP_ATSIGN }}"' >> docker-compose.yaml
-          echo '        - device_atsign="${{ env.SSHNPD_ATSIGN }}"' >> docker-compose.yaml
-          echo '        - device_name=${{ github.run_id }}${{ github.run_attempt }}${{ strategy.job-index }}' >> docker-compose.yaml
-          echo '    image: atsigncompany/sshnp-e2e-runtime:sshnpd-installer' >> docker-compose.yaml
 
       - name: Add container-sshnp to docker-compose.yaml
         working-directory: tests/end2end_tests/tests
@@ -253,21 +148,6 @@ jobs:
             echo '      - image-runtime-branch' >> docker-compose.yaml
           elif [ "${{ matrix.npd }}" = 'installer' ]; then
             echo '      - image-runtime-sshnpd-installer' >> docker-compose.yaml
-          else
-            echo '      - image-runtime-local' >> docker-compose.yaml
-          fi
-
-      - name: Add container-sshrvd to docker-compose.yaml
-        working-directory: tests/end2end_tests/tests
-        if: matrix.rvd
-        run: |
-          cat service-container-sshrvd.yaml >> docker-compose.yaml
-          echo '    image: atsigncompany/sshnp-e2e-runtime:${{ matrix.rvd }}' >> docker-compose.yaml
-          echo '    depends_on:' >> docker-compose.yaml
-          if [ "${{contains(env.RELEASES, matrix.rvd)}}" = true ]; then
-            echo '      - image-runtime-release' >> docker-compose.yaml
-          elif [ "${{contains(env.BRANCHES, matrix.rvd)}}" = true ]; then
-            echo '      - image-runtime-branch' >> docker-compose.yaml
           else
             echo '      - image-runtime-local' >> docker-compose.yaml
           fi
