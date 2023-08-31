@@ -78,15 +78,13 @@ jobs:
           sshnp_atsign: ${{ env.SSHNP_ATSIGN }}
           sshnpd: ${{ matrix.npd }}
           sshnpd_atsign: ${{ env.SSHNPD_ATSIGN }}
-          sshrvd_atsign: ${{ env[matrix.rvd_atsign] || env.PROD_AM_RVD_ATSIGN }}
-          devicename: ${{ github.run_id }}${{ github.run_attempt }}${{ strategy.job-index }}
+          devicename: 1${{ github.run_id }}${{ github.run_attempt }}${{ strategy.job-index }}
 
       - name: Ensure entrypoints exist
         working-directory: tests/end2end_tests/contexts
         run: |
           cat sshnp/entrypoint.sh
           cat sshnpd/entrypoint.sh
-          cat sshrvd/entrypoint.sh
 
       - name: Create docker-compose.yaml
         working-directory: tests/end2end_tests/tests
@@ -97,7 +95,9 @@ jobs:
         working-directory: tests/end2end_tests/tests
         if: ${{ contains(env.BRANCHES, matrix.np) || contains(env.BRANCHES, matrix.npd) }}
         run: |
+          # Add the base service
           cat service-image-runtime-branch.yaml >> docker-compose.yaml
+          # Add the branch name and runtime
           if [ "${{contains(env.BRANCHES, matrix.np)}}" = true ]; then
             echo '        - branch=${{ matrix.np }}' >> docker-compose.yaml
             echo '    image: atsigncompany/sshnp-e2e-runtime:${{ matrix.np }}' >> docker-compose.yaml
@@ -109,21 +109,18 @@ jobs:
       - name: Add container-sshnp to docker-compose.yaml
         working-directory: tests/end2end_tests/tests
         run: |
+          # Add the base service
           cat service-container-sshnp.yaml >> docker-compose.yaml
-          if [ "${{ matrix.np }}" = 'installer' ]; then
-            echo '    image: atsigncompany/sshnp-e2e-runtime:sshnp-installer' >> docker-compose.yaml
-          else
-            echo '    image: atsigncompany/sshnp-e2e-runtime:${{ matrix.np }}' >> docker-compose.yaml
-          fi
+          # Add the runtime
+          echo '    image: atsigncompany/sshnp-e2e-runtime:${{ matrix.np }}' >> docker-compose.yaml
+
+          # Add the dependencies
           echo '    depends_on:' >> docker-compose.yaml
           echo '      container-sshnpd:' >> docker-compose.yaml
           echo '        condition: service_healthy' >> docker-compose.yaml
-          if [ "${{contains(env.RELEASES, matrix.np)}}" = true ]; then
-            echo '      image-runtime-release:' >> docker-compose.yaml
-          elif [ "${{contains(env.BRANCHES, matrix.np)}}" = true ]; then
+
+          if [ "${{contains(env.BRANCHES, matrix.np)}}" = true ]; then
             echo '      image-runtime-branch:' >> docker-compose.yaml
-          elif [ "${{ matrix.np }}" = 'installer' ]; then
-            echo '      image-runtime-sshnp-installer:' >> docker-compose.yaml
           else
             echo '      image-runtime-local:' >> docker-compose.yaml
           fi
@@ -132,22 +129,16 @@ jobs:
       - name: Add container-sshnpd to docker-compose.yaml
         working-directory: tests/end2end_tests/tests
         run: |
+          # Add the base service
           cat service-container-sshnpd.yaml >> docker-compose.yaml
-          if [ "${{ matrix.npd }}" = 'installer' ]; then
-            echo '    image: atsigncompany/sshnp-e2e-runtime:sshnpd-installer' >> docker-compose.yaml
-          else
-            echo '    image: atsigncompany/sshnp-e2e-runtime:${{ matrix.npd }}' >> docker-compose.yaml
-          fi
+          # Add the runtime
+          echo '    image: atsigncompany/sshnp-e2e-runtime:${{ matrix.npd }}' >> docker-compose.yaml
+
+          # Add the dependencies
           echo '    depends_on:' >> docker-compose.yaml
-          if [ "${{ matrix.rvd }}" = true ]; then
-            echo '      - container-sshrvd' >> docker-compose.yaml
-          fi
-          if [ "${{contains(env.RELEASES, matrix.npd)}}" = true ]; then
-            echo '      - image-runtime-release' >> docker-compose.yaml
-          elif [ "${{contains(env.BRANCHES, matrix.npd)}}" = true ]; then
+
+          if [ "${{contains(env.BRANCHES, matrix.npd)}}" = true ]; then
             echo '      - image-runtime-branch' >> docker-compose.yaml
-          elif [ "${{ matrix.npd }}" = 'installer' ]; then
-            echo '      - image-runtime-sshnpd-installer' >> docker-compose.yaml
           else
             echo '      - image-runtime-local' >> docker-compose.yaml
           fi
