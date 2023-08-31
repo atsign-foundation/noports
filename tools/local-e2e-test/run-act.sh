@@ -8,10 +8,10 @@ DOCKER_HOST="$(docker context inspect -f '{{.Endpoints.docker.Host}}')"
 env DOCKER_HOST="$DOCKER_HOST" \
 act \
 -W "$PROJECT_ROOT/.github/workflows/end2end_tests.yaml" \
--j e2e_test \
 --env-file "$SCRIPT_DIRECTORY/.env" \
 --secret-file "$SCRIPT_DIRECTORY/.secrets" \
 --bind \
+--job e2e_test \
 --matrix np:local \
 --matrix npd:local \
 "$@"
