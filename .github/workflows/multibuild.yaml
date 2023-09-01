@@ -30,7 +30,7 @@ jobs:
         run: |
           # check version.dart
           REF=${{ github.ref }}
-          TAG=${REF:11}
+          TAG=${REF:10}
           DART_TAG="v$(grep -Po '^const String version = "(.*)";' lib/version.dart | cut -d'"' -f2)"
           if [ "$TAG" != "$DART_TAG" ]; then
             echo "Tag $TAG does not match version in version.dart: $DART_TAG"
@@ -79,7 +79,7 @@ jobs:
         run: |
           # check version.dart
           REF=${{ github.ref }}
-          TAG=${REF:11}
+          TAG=${REF:10}
           DART_TAG="v$(grep -Po '^const String version = "(.*)";' lib/version.dart | cut -d'"' -f2)"
           if [ "$TAG" != "$DART_TAG" ]; then
             echo "Tag $TAG does not match version in version.dart: $DART_TAG"
