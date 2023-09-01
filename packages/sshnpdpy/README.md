@@ -13,6 +13,13 @@ DNS and Internet access, you will be able to connect to it.
 
 This version is SSHNP Daemon written in Python, it is still in it's beta stage of developement.
 
+# Prerequisites
+
+SSHNDPython Python requires the following:
+
+ - 2 atsigns, one for the client and one for the device
+ - any machine with sshd running and python3 installed
+
 # Installation
 
 We need to manually install the at_python package as it is not yet available on pypi.
