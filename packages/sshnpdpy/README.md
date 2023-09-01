@@ -15,6 +15,7 @@ This version is SSHNP Daemon written in Python, it is still in it's beta stage o
 
 # Installation
 
+We need to manually install the at_python package as it is not yet available on pypi.
 
 ```
 1. git clone https://github.com/atsign-foundation/sshnoports.git
