@@ -153,4 +153,9 @@ class SSHNPArg {
       format: ArgFormat.flag,
     ),
   ];
+
+  @override
+  String toString() {
+    return 'SSHNPArg{format: $format, name: $name, abbr: $abbr, help: $help, mandatory: $mandatory, defaultsTo: $defaultsTo, type: $type}';
+  }
 }
