@@ -12,6 +12,7 @@
     "connect" : "Connect",
     "cancel" : "Cancel",
     "newText" : "New",
+    "profileName" : "Profile Name",
     "clientAtsign" : "Client atsign",
     "sshnpdAtSign" : "SSHNP atsign",
     "sshnpdAtSignHint" : "The atSign of the sshnpd we wish to communicate with",

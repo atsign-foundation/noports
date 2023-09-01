@@ -1,5 +1,6 @@
 import 'dart:developer';
 
+import 'package:at_client_mobile/at_client_mobile.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -23,10 +24,9 @@ class NewConnectionForm extends ConsumerStatefulWidget {
 
 class _NewConnectionFormState extends ConsumerState<NewConnectionForm> {
   final GlobalKey<FormState> _formkey = GlobalKey<FormState>();
-  late String? clientAtSign;
   late String? sshnpdAtSign;
   late String? host;
-  late String profileName;
+  late String? profileName;
 
   /// Optional Arguments
   late String device;
@@ -46,10 +46,10 @@ class _NewConnectionFormState extends ConsumerState<NewConnectionForm> {
     super.initState();
 
     final oldConfig = ref.read(sshnpParamsProvider);
-    log(oldConfig.port.toString());
-    clientAtSign = oldConfig.clientAtSign;
+
     sshnpdAtSign = oldConfig.sshnpdAtSign;
     host = oldConfig.host;
+    profileName = oldConfig.profileName;
 
     /// Optional Arguments
     device = oldConfig.device;
@@ -72,13 +72,13 @@ class _NewConnectionFormState extends ConsumerState<NewConnectionForm> {
 
       final sshnpParams = SSHNPParams(
           profileName: 'default_profile',
-          clientAtSign: clientAtSign,
+          clientAtSign: AtClientManager.getInstance().atClient.getCurrentAtSign(),
           sshnpdAtSign: sshnpdAtSign,
           host: host,
           device: device,
           port: port,
           localPort: localPort,
-          sendSshPublicKey: await ref.read(homeScreenControllerProvider.notifier).getPublicKeyFromDirectory(),
+          sendSshPublicKey: sendSshPublicKey,
           localSshOptions: localSshOptions,
           verbose: verbose,
           rsa: rsa,
@@ -122,10 +122,10 @@ class _NewConnectionFormState extends ConsumerState<NewConnectionForm> {
               // * remove clientAtSign from the form (if clientAtsign is null then use the AtClient.getCurrentAtSign)
               // * add profileName to the form
               CustomTextFormField(
-                initialValue: clientAtSign,
-                labelText: strings.clientAtsign,
-                onSaved: (value) => clientAtSign = value,
-                validator: Validator.validateAtsignField,
+                initialValue: profileName,
+                labelText: strings.profileName,
+                onSaved: (value) => profileName = value!,
+                validator: Validator.validateRequiredField,
               ),
               gapH10,
               CustomTextFormField(
@@ -139,6 +139,13 @@ class _NewConnectionFormState extends ConsumerState<NewConnectionForm> {
                 initialValue: port.toString(),
                 labelText: strings.port,
                 onSaved: (value) => port = int.parse(value!),
+                validator: Validator.validateRequiredField,
+              ),
+              gapH10,
+              CustomTextFormField(
+                initialValue: sendSshPublicKey,
+                labelText: strings.sendSshPublicKey,
+                onSaved: (value) => sendSshPublicKey = value!,
                 validator: Validator.validateRequiredField,
               ),
               gapH10,
