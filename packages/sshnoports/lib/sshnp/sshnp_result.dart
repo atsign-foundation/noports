@@ -24,7 +24,7 @@ class SSHCommand extends SSHNPResult {
   static const String command = 'ssh';
 
   final int localPort;
-  final String remoteUsername;
+  final String? remoteUsername;
   final String host;
   final String? privateKeyFileName;
 
@@ -52,7 +52,10 @@ class SSHCommand extends SSHNPResult {
     sb.write(' ');
     sb.write(sshOptions.join(' '));
     sb.write(' ');
-    sb.write('$remoteUsername@$host');
+    if (remoteUsername != null) {
+      sb.write('$remoteUsername@');
+    }
+    sb.write(host);
     if (shouldIncludePrivateKey(privateKeyFileName)) {
       sb.write(' ');
       sb.write('-i $privateKeyFileName');
