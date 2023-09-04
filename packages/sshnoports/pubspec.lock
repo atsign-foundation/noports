@@ -85,10 +85,10 @@ packages:
     dependency: "direct main"
     description:
       name: at_lookup
-      sha256: "5b4354bbcb933dfb6e174cd9c40f47ee1bbd182743ebb1303b145cc3b51e0020"
+      sha256: "9a0db434b98a855b06dc90dcffa96667cd4ede21230449fdd9046c77ec4bb822"
       url: "https://pub.dev"
     source: hosted
-    version: "3.0.39"
+    version: "3.0.40"
   at_onboarding_cli:
     dependency: "direct main"
     description:
