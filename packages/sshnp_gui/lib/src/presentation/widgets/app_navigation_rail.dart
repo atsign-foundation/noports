@@ -53,9 +53,7 @@ class AppNavigationRail extends ConsumerWidget {
               break;
             case 1:
               // set value to default create to trigger the create functionality on
-              ref
-                  .read(sshnpParamsProvider.notifier)
-                  .update((state) => SSHNPParams(clientAtSign: '', sshnpdAtSign: '', host: '', legacyDaemon: true));
+              ref.read(sshnpPartialParamsProvider.notifier).update((state) => SSHNPPartialParams.empty());
 
               context.goNamed(AppRoute.newConnection.name);
               break;

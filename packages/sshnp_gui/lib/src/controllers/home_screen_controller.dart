@@ -3,10 +3,8 @@ import 'dart:io';
 
 import 'package:at_client_mobile/at_client_mobile.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:path/path.dart' as path;
 import 'package:sshnoports/common/utils.dart';
 import 'package:sshnoports/sshnp/sshnp.dart';
-import 'package:sshnp_gui/src/controllers/minor_providers.dart';
 
 /// A Controller class that controls the UI update when the [AtDataRepository] methods are called.
 class HomeScreenController extends StateNotifier<AsyncValue<List<SSHNPParams>>> {
@@ -41,14 +39,10 @@ class HomeScreenController extends StateNotifier<AsyncValue<List<SSHNPParams>>> 
   }
 
   /// Deletes the [AtKey] associated with the [AtData].
-  Future<void> delete(int index) async {
+  Future<void> delete(SSHNPParams sshnpParams) async {
     state = const AsyncValue.loading();
-    final directory = getDefaultSshnpConfigDirectory(getHomeDirectory()!);
-    var configDir = await Directory(directory).list().toList();
-    // remove non env file so the index of the config file in the UI matches the index of the configDir env files.
-    //TODO @CurtlyCritchlow this is no longer needed, you can now use [SSHNPParams.deleteFile()]
-    configDir.removeWhere((element) => path.extension(element.path) != '.env');
-    configDir[index].delete();
+
+    sshnpParams.deleteFile();
     await getConfigFiles();
   }
 
@@ -81,11 +75,11 @@ class HomeScreenController extends StateNotifier<AsyncValue<List<SSHNPParams>>> 
   Future<void> updateConfigFile({required SSHNPParams sshnpParams}) async {
     state = const AsyncValue.loading();
 
-    final directory = getDefaultSshnpConfigDirectory(getHomeDirectory()!);
-    var configDir = await Directory(directory).list().toList();
-    configDir.removeWhere((element) => path.extension(element.path) != '.env');
-    final index = ref.read(sshnpParamsUpdateIndexProvider);
-    log('path is:${configDir[index].path}');
+    // final directory = getDefaultSshnpConfigDirectory(getHomeDirectory()!);
+    // var configDir = await Directory(directory).list().toList();
+    // configDir.removeWhere((element) => path.extension(element.path) != '.env');
+    // final index = ref.read(sshnpParamsUpdateIndexProvider);
+    // log('path is:${configDir[index].path}');
     // await Directory(configDir).create(recursive: true);
     //.env
     sshnpParams.toFile(overwrite: true);

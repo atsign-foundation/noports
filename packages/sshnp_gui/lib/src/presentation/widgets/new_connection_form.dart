@@ -24,69 +24,21 @@ class NewConnectionForm extends ConsumerStatefulWidget {
 
 class _NewConnectionFormState extends ConsumerState<NewConnectionForm> {
   final GlobalKey<FormState> _formkey = GlobalKey<FormState>();
-  late String? sshnpdAtSign;
-  late String? host;
-  late String? profileName;
-
-  /// Optional Arguments
-  late String device;
-  late int port;
-  late int localPort;
-  late String sendSshPublicKey;
-  late List<String> localSshOptions;
-  late bool verbose;
-  late bool rsa;
-  late String? remoteUsername;
-  late String? atKeysFilePath;
-  late String rootDomain;
-  late bool listDevices;
-  late bool legacyDaemon;
+  late SSHNPPartialParams oldConfig;
   @override
   void initState() {
     super.initState();
-
-    final oldConfig = ref.read(sshnpParamsProvider);
-
-    sshnpdAtSign = oldConfig.sshnpdAtSign;
-    host = oldConfig.host;
-    profileName = oldConfig.profileName;
-
-    /// Optional Arguments
-    device = oldConfig.device;
-    port = oldConfig.port;
-    localPort = oldConfig.localPort;
-    sendSshPublicKey = oldConfig.sendSshPublicKey;
-    localSshOptions = oldConfig.localSshOptions;
-    verbose = oldConfig.verbose;
-    rsa = oldConfig.rsa;
-    remoteUsername = oldConfig.remoteUsername;
-    atKeysFilePath = oldConfig.atKeysFilePath;
-    rootDomain = oldConfig.rootDomain;
-    listDevices = oldConfig.listDevices;
-    legacyDaemon = oldConfig.legacyDaemon;
+    oldConfig = ref.read(sshnpPartialParamsProvider);
   }
 
   void createNewConnection() async {
     if (_formkey.currentState!.validate()) {
       _formkey.currentState!.save();
+      oldConfig.clientAtSign ??= AtClientManager.getInstance().atClient.getCurrentAtSign();
+      // reset the partial params to empty so that the next time the user clicks on new connection the form is empty.
+      ref.read(sshnpPartialParamsProvider.notifier).update((state) => SSHNPPartialParams.empty());
 
-      final sshnpParams = SSHNPParams(
-          profileName: 'default_profile',
-          clientAtSign: AtClientManager.getInstance().atClient.getCurrentAtSign(),
-          sshnpdAtSign: sshnpdAtSign,
-          host: host,
-          device: device,
-          port: port,
-          localPort: localPort,
-          sendSshPublicKey: sendSshPublicKey,
-          localSshOptions: localSshOptions,
-          verbose: verbose,
-          rsa: rsa,
-          remoteUsername: remoteUsername,
-          atKeysFilePath: atKeysFilePath,
-          rootDomain: rootDomain,
-          listDevices: listDevices,
-          legacyDaemon: legacyDaemon);
+      final sshnpParams = SSHNPParams.fromPartial(oldConfig);
       switch (ref.read(configFileWriteStateProvider)) {
         case ConfigFileWriteState.create:
           await ref.read(homeScreenControllerProvider.notifier).createConfigFile(sshnpParams);
@@ -98,10 +50,6 @@ class _NewConnectionFormState extends ConsumerState<NewConnectionForm> {
           ref.read(configFileWriteStateProvider.notifier).update((state) => ConfigFileWriteState.create);
           break;
       }
-      // Reset value to default value.
-      ref
-          .read(sshnpParamsProvider.notifier)
-          .update((state) => SSHNPParams(clientAtSign: '', sshnpdAtSign: '', host: '', legacyDaemon: true));
       if (context.mounted) {
         ref.read(currentNavIndexProvider.notifier).update((state) => AppRoute.home.index - 1);
         context.pushReplacementNamed(AppRoute.home.name);
@@ -118,130 +66,127 @@ class _NewConnectionFormState extends ConsumerState<NewConnectionForm> {
         child: Row(
           children: [
             Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              // TODO @CurtlyCritchlow
-              // * remove clientAtSign from the form (if clientAtsign is null then use the AtClient.getCurrentAtSign)
-              // * add profileName to the form
               CustomTextFormField(
-                initialValue: profileName,
+                initialValue: oldConfig.profileName,
                 labelText: strings.profileName,
-                onSaved: (value) => profileName = value!,
+                onSaved: (value) =>
+                    oldConfig = SSHNPPartialParams.merge(oldConfig, SSHNPPartialParams(profileName: value!)),
                 validator: Validator.validateRequiredField,
               ),
               gapH10,
               CustomTextFormField(
-                initialValue: host,
+                initialValue: oldConfig.host,
                 labelText: strings.host,
-                onSaved: (value) => host = value,
+                onSaved: (value) => oldConfig = SSHNPPartialParams.merge(oldConfig, SSHNPPartialParams(host: value!)),
                 validator: Validator.validateRequiredField,
               ),
               gapH10,
               CustomTextFormField(
-                initialValue: port.toString(),
+                initialValue: oldConfig.port.toString(),
                 labelText: strings.port,
-                onSaved: (value) => port = int.parse(value!),
+                onSaved: (value) =>
+                    oldConfig = SSHNPPartialParams.merge(oldConfig, SSHNPPartialParams(port: int.parse(value!))),
                 validator: Validator.validateRequiredField,
               ),
               gapH10,
               CustomTextFormField(
-                initialValue: sendSshPublicKey,
+                initialValue: oldConfig.sendSshPublicKey,
                 labelText: strings.sendSshPublicKey,
-                onSaved: (value) => sendSshPublicKey = value!,
+                onSaved: (value) =>
+                    oldConfig = SSHNPPartialParams.merge(oldConfig, SSHNPPartialParams(sendSshPublicKey: value!)),
                 validator: Validator.validateRequiredField,
               ),
               gapH10,
               Row(
                 children: [
                   Text(strings.verbose),
-                  gapW12,
+                  gapW8,
                   Switch(
-                      value: verbose,
+                      value: oldConfig.verbose ?? false,
                       onChanged: (newValue) {
                         setState(() {
-                          verbose = newValue;
+                          oldConfig = SSHNPPartialParams.merge(oldConfig, SSHNPPartialParams(verbose: newValue));
                         });
                       }),
                 ],
               ),
               gapH10,
               CustomTextFormField(
-                initialValue: remoteUsername,
+                initialValue: oldConfig.remoteUsername,
                 labelText: strings.remoteUserName,
-                onSaved: (value) => remoteUsername = value!,
+                onSaved: (value) =>
+                    oldConfig = SSHNPPartialParams.merge(oldConfig, SSHNPPartialParams(remoteUsername: value!)),
               ),
               gapH10,
               CustomTextFormField(
-                initialValue: rootDomain,
+                initialValue: oldConfig.rootDomain,
                 labelText: strings.rootDomain,
-                onSaved: (value) => rootDomain = value!,
+                onSaved: (value) =>
+                    oldConfig = SSHNPPartialParams.merge(oldConfig, SSHNPPartialParams(rootDomain: value!)),
               ),
               gapH20,
-              // TODO the edit screen also says "add", can we change the wording to be dynamic, or use "submit"
               ElevatedButton(
                 onPressed: createNewConnection,
-                child: Text(strings.add),
+                child: Text(strings.submit),
               ),
             ]),
             gapW12,
             Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
               CustomTextFormField(
-                initialValue: sshnpdAtSign,
+                initialValue: oldConfig.sshnpdAtSign,
                 labelText: strings.sshnpdAtSign,
-                onSaved: (value) => sshnpdAtSign = value,
+                onSaved: (value) =>
+                    oldConfig = SSHNPPartialParams.merge(oldConfig, SSHNPPartialParams(sshnpdAtSign: value!)),
                 validator: Validator.validateAtsignField,
               ),
               gapH10,
               CustomTextFormField(
-                initialValue: device,
+                initialValue: oldConfig.device,
                 labelText: strings.device,
-                onSaved: (value) => device = value!,
+                onSaved: (value) => oldConfig = SSHNPPartialParams.merge(oldConfig, SSHNPPartialParams(device: value!)),
               ),
               gapH10,
               CustomTextFormField(
-                initialValue: localPort.toString(),
+                initialValue: oldConfig.localPort.toString(),
                 labelText: strings.localPort,
-                onSaved: (value) => localPort = int.parse(value!),
+                onSaved: (value) =>
+                    oldConfig = SSHNPPartialParams.merge(oldConfig, SSHNPPartialParams(localPort: int.parse(value!))),
               ),
               gapH10,
-              // TODO add a note that says multiple options can be specified by separating them with a comma.
               CustomTextFormField(
-                initialValue: localSshOptions.join(','),
+                initialValue: oldConfig.localSshOptions.join(','),
+                hintText: strings.localSshOptionsHint,
                 labelText: strings.localSshOptions,
-                onSaved: (value) => localSshOptions = value!.split(','),
+                onSaved: (value) => oldConfig =
+                    SSHNPPartialParams.merge(oldConfig, SSHNPPartialParams(localSshOptions: value!.split(','))),
               ),
               gapH10,
               Row(
                 children: [
                   Text(strings.rsa),
-                  gapW12,
+                  gapW8,
                   Switch(
-                      value: rsa,
+                      value: oldConfig.rsa ?? false,
                       onChanged: (newValue) {
                         setState(() {
-                          rsa = newValue;
+                          oldConfig = SSHNPPartialParams.merge(oldConfig, SSHNPPartialParams(rsa: newValue));
                         });
                       }),
                 ],
               ),
               gapH10,
               CustomTextFormField(
-                initialValue: atKeysFilePath,
+                initialValue: oldConfig.atKeysFilePath,
                 labelText: strings.atKeysFilePath,
-                onSaved: (value) => atKeysFilePath = value,
+                onSaved: (value) =>
+                    oldConfig = SSHNPPartialParams.merge(oldConfig, SSHNPPartialParams(atKeysFilePath: value!)),
               ),
               gapH10,
-              // TODO remove listDevices from the form
-              Row(
-                children: [
-                  Text(strings.listDevices),
-                  gapW12,
-                  Switch(
-                      value: listDevices,
-                      onChanged: (newValue) {
-                        setState(() {
-                          listDevices = newValue;
-                        });
-                      }),
-                ],
+              CustomTextFormField(
+                initialValue: oldConfig.localSshdPort.toString(),
+                labelText: strings.localSshdPort,
+                onSaved: (value) => oldConfig =
+                    SSHNPPartialParams.merge(oldConfig, SSHNPPartialParams(localSshdPort: int.parse(value!))),
               ),
               gapH20,
               TextButton(

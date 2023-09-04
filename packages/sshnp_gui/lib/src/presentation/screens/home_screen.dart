@@ -81,7 +81,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   }
 
   void updateConfigFile(SSHNPParams sshnpParams) {
-    ref.read(sshnpParamsProvider.notifier).update((state) => sshnpParams);
+    ref
+        .read(sshnpPartialParamsProvider.notifier)
+        .update((state) => SSHNPPartialParams.fromArgMap(sshnpParams.toArgs()));
     // change value to 1 to update navigation rail selcted icon.
     ref.read(currentNavIndexProvider.notifier).update((state) => AppRoute.newConnection.index - 1);
     // Change value to update to trigger the update functionality on the new connection form.
@@ -129,8 +131,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                                     2: IntrinsicColumnWidth(),
                                     3: IntrinsicColumnWidth(),
                                     4: IntrinsicColumnWidth(),
-                                    5: IntrinsicColumnWidth(),
-                                    6: FixedColumnWidth(150),
                                   },
                                   children: [
                                     TableRow(
@@ -138,13 +138,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                                           const BoxDecoration(border: Border(bottom: BorderSide(color: Colors.white))),
                                       children: <Widget>[
                                         CustomTableCell.text(text: strings.actions),
-                                        CustomTableCell.text(
-                                            text: strings.clientAtsign), // todo change this to strings.profileName
+                                        CustomTableCell.text(text: strings.profileName),
                                         CustomTableCell.text(text: strings.sshnpdAtSign),
                                         CustomTableCell.text(text: strings.device),
-                                        CustomTableCell.text(text: strings.port),
-                                        CustomTableCell.text(text: strings.localPort),
-                                        CustomTableCell.text(text: strings.localSshOptions),
+                                        CustomTableCell.text(text: strings.host),
                                       ],
                                     ),
                                     ...state.value!
@@ -162,10 +159,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                                                   ),
                                                   IconButton(
                                                     onPressed: () {
-                                                      // get the index of the config file so it can be updated
-                                                      ref
-                                                          .read(sshnpParamsUpdateIndexProvider.notifier)
-                                                          .update((value) => state.value!.indexOf(e));
                                                       updateConfigFile(e);
                                                     },
                                                     icon: const Icon(Icons.edit),
@@ -176,7 +169,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                                                         context: context,
                                                         barrierDismissible: false,
                                                         builder: (BuildContext context) =>
-                                                            DeleteAlertDialog(index: state.value!.indexOf(e)),
+                                                            DeleteAlertDialog(sshnpParams: e),
                                                       );
                                                     },
                                                     icon: const Icon(Icons.delete_forever),
@@ -186,20 +179,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                                               CustomTableCell.text(text: e.profileName ?? ''),
                                               CustomTableCell.text(text: e.sshnpdAtSign ?? ''),
                                               CustomTableCell.text(text: e.device),
-                                              CustomTableCell.text(text: e.port.toString()),
-                                              CustomTableCell.text(text: e.localPort.toString()),
-                                              CustomTableCell.text(text: e.localSshOptions.join(',')),
-                                              // CustomTableCell(
-                                              //     child: Row(
-                                              //   children: [
-                                              //     TextButton.icon(
-                                              //         onPressed: () {
-                                              //           context.pushNamed(StudentRoute.details.name, params: {'id': e.id});
-                                              //         },
-                                              //         icon: const Icon(Icons.visibility_outlined),
-                                              //         label: Text(strings.view)),
-                                              //   ],
-                                              // ))
+                                              CustomTableCell.text(text: e.host ?? ''),
                                             ],
                                           ),
                                         )

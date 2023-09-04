@@ -1,15 +1,14 @@
-import 'dart:developer';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:sshnoports/sshnp/sshnp.dart';
 import 'package:sshnp_gui/src/controllers/home_screen_controller.dart';
 
 import '../../utils/sizes.dart';
 
 class DeleteAlertDialog extends ConsumerWidget {
-  const DeleteAlertDialog({required this.index, super.key});
-  final int index;
+  const DeleteAlertDialog({required this.sshnpParams, super.key});
+  final SSHNPParams sshnpParams;
 
   @override
   Widget build(
@@ -18,7 +17,6 @@ class DeleteAlertDialog extends ConsumerWidget {
   ) {
     final strings = AppLocalizations.of(context)!;
     final data = ref.watch(homeScreenControllerProvider);
-    log(index.toString());
 
     return Padding(
       padding: const EdgeInsets.only(left: 0),
@@ -53,7 +51,7 @@ class DeleteAlertDialog extends ConsumerWidget {
             ),
             ElevatedButton(
                 onPressed: () async {
-                  await ref.read(homeScreenControllerProvider.notifier).delete(index);
+                  await ref.read(homeScreenControllerProvider.notifier).delete(sshnpParams);
 
                   if (context.mounted) Navigator.of(context).pop();
                 },
