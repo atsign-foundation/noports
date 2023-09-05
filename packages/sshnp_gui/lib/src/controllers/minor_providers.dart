@@ -4,10 +4,6 @@ import 'package:sshnp_gui/src/utils/enum.dart';
 
 final currentNavIndexProvider = StateProvider<int>((ref) => 0);
 
-final sshnpPartialParamsProvider = StateProvider<SSHNPPartialParams>(
-  (ref) => SSHNPPartialParams(),
-);
-
 final configFileWriteStateProvider = StateProvider<ConfigFileWriteState>(
   (ref) => ConfigFileWriteState.create,
 );
