@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sshnoports/sshnp/sshnp.dart';
-import 'package:sshnp_gui/src/controllers/home_screen_controller.dart';
+import 'package:sshnp_gui/src/controllers/sshnp_config_controller.dart';
 
 import '../../utils/sizes.dart';
 
@@ -16,7 +16,6 @@ class DeleteAlertDialog extends ConsumerWidget {
     WidgetRef ref,
   ) {
     final strings = AppLocalizations.of(context)!;
-    final data = ref.watch(homeScreenControllerProvider);
 
     return Padding(
       padding: const EdgeInsets.only(left: 0),
@@ -33,7 +32,10 @@ class DeleteAlertDialog extends ConsumerWidget {
                   children: [
                     TextSpan(
                       text: strings.note,
-                      style: Theme.of(context).textTheme.bodyLarge!.copyWith(fontWeight: FontWeight.w700),
+                      style: Theme.of(context)
+                          .textTheme
+                          .bodyLarge!
+                          .copyWith(fontWeight: FontWeight.w700),
                     ),
                     TextSpan(
                       text: strings.noteMessage,
@@ -47,28 +49,30 @@ class DeleteAlertDialog extends ConsumerWidget {
             OutlinedButton(
               onPressed: () => Navigator.of(context).pop(false),
               child: Text(strings.cancelButton,
-                  style: Theme.of(context).textTheme.bodyLarge!.copyWith(decoration: TextDecoration.underline)),
+                  style: Theme.of(context)
+                      .textTheme
+                      .bodyLarge!
+                      .copyWith(decoration: TextDecoration.underline)),
             ),
             ElevatedButton(
-                onPressed: () async {
-                  await ref.read(homeScreenControllerProvider.notifier).delete(sshnpParams);
-
-                  if (context.mounted) Navigator.of(context).pop();
-                },
-                style: Theme.of(context).elevatedButtonTheme.style!.copyWith(
-                      backgroundColor: MaterialStateProperty.all(Colors.black),
-                    ),
-                child: !data.isLoading
-                    ? Text(
-                        strings.deleteButton,
-                        style: Theme.of(context)
-                            .textTheme
-                            .bodyLarge!
-                            .copyWith(fontWeight: FontWeight.w700, color: Colors.white),
-                      )
-                    : const CircularProgressIndicator(
-                        color: Colors.white,
-                      )),
+              onPressed: () async {
+                await ref
+                    .read(paramsFamilyController(sshnpParams.profileName!)
+                        .notifier)
+                    .delete();
+                if (context.mounted) Navigator.of(context).pop();
+              },
+              style: Theme.of(context).elevatedButtonTheme.style!.copyWith(
+                    backgroundColor: MaterialStateProperty.all(Colors.black),
+                  ),
+              child: Text(
+                strings.deleteButton,
+                style: Theme.of(context)
+                    .textTheme
+                    .bodyLarge!
+                    .copyWith(fontWeight: FontWeight.w700, color: Colors.white),
+              ),
+            )
           ],
         ),
       ),

@@ -2,14 +2,12 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
-import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:flutter_pty/flutter_pty.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:sshnp_gui/src/controllers/minor_providers.dart';
 import 'package:xterm/xterm.dart';
 
-import '../../controllers/home_screen_controller.dart';
 import '../../utils/sizes.dart';
 import '../widgets/app_navigation_rail.dart';
 
@@ -59,7 +57,7 @@ class _TerminalScreenState extends ConsumerState<TerminalScreen> {
     // write ssh result command to terminal
     pty.write(const Utf8Encoder().convert(ref.watch(terminalSSHCommandProvider)));
     // reset provider
-    ref.read(terminalSSHCommandProvider.notifier).update((state) => '');
+    ref.watch(terminalSSHCommandProvider.notifier).update((state) => '');
   }
 
   @override
@@ -71,9 +69,6 @@ class _TerminalScreenState extends ConsumerState<TerminalScreen> {
   @override
   Widget build(BuildContext context) {
     // * Getting the AtClientManager instance to use below
-
-    final strings = AppLocalizations.of(context)!;
-    final state = ref.watch(homeScreenControllerProvider);
 
     return Scaffold(
       body: SafeArea(
