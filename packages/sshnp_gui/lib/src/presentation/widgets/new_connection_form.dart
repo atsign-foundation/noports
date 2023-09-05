@@ -71,14 +71,12 @@ class _NewConnectionFormState extends ConsumerState<NewConnectionForm> {
     final strings = AppLocalizations.of(context)!;
     currentProfile = ref.watch(currentParamsController);
 
-    final oldConfig =
+    final asyncOldConfig =
         ref.watch(paramsFamilyController(currentProfile.profileName));
-    final configController =
-        ref.watch(paramsFamilyController(currentProfile.profileName).notifier);
-    return oldConfig.when(
+    return asyncOldConfig.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (error, stack) => Center(child: Text(error.toString())),
-        data: (config) {
+        data: (oldConfig) {
           return SingleChildScrollView(
             child: Form(
               key: _formkey,
@@ -88,7 +86,7 @@ class _NewConnectionFormState extends ConsumerState<NewConnectionForm> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         CustomTextFormField(
-                          initialValue: config.profileName,
+                          initialValue: oldConfig.profileName,
                           labelText: strings.profileName,
                           onChanged: (value) {
                             newConfig = SSHNPPartialParams.merge(newConfig,
@@ -98,7 +96,7 @@ class _NewConnectionFormState extends ConsumerState<NewConnectionForm> {
                         ),
                         gapH10,
                         CustomTextFormField(
-                          initialValue: config.host,
+                          initialValue: oldConfig.host,
                           labelText: strings.host,
                           onChanged: (value) => newConfig =
                               SSHNPPartialParams.merge(
@@ -107,7 +105,7 @@ class _NewConnectionFormState extends ConsumerState<NewConnectionForm> {
                         ),
                         gapH10,
                         CustomTextFormField(
-                          initialValue: config.port.toString(),
+                          initialValue: oldConfig.port.toString(),
                           labelText: strings.port,
                           onChanged: (value) => newConfig =
                               SSHNPPartialParams.merge(newConfig,
@@ -116,7 +114,7 @@ class _NewConnectionFormState extends ConsumerState<NewConnectionForm> {
                         ),
                         gapH10,
                         CustomTextFormField(
-                          initialValue: config.sendSshPublicKey,
+                          initialValue: oldConfig.sendSshPublicKey,
                           labelText: strings.sendSshPublicKey,
                           onChanged: (value) => newConfig =
                               SSHNPPartialParams.merge(newConfig,
@@ -129,7 +127,7 @@ class _NewConnectionFormState extends ConsumerState<NewConnectionForm> {
                             Text(strings.verbose),
                             gapW8,
                             Switch(
-                                value: config.verbose,
+                                value: oldConfig.verbose,
                                 onChanged: (newValue) {
                                   setState(() {
                                     newConfig = SSHNPPartialParams.merge(
@@ -141,7 +139,7 @@ class _NewConnectionFormState extends ConsumerState<NewConnectionForm> {
                         ),
                         gapH10,
                         CustomTextFormField(
-                          initialValue: config.remoteUsername,
+                          initialValue: oldConfig.remoteUsername,
                           labelText: strings.remoteUserName,
                           onChanged: (value) => newConfig =
                               SSHNPPartialParams.merge(newConfig,
@@ -149,7 +147,7 @@ class _NewConnectionFormState extends ConsumerState<NewConnectionForm> {
                         ),
                         gapH10,
                         CustomTextFormField(
-                          initialValue: config.rootDomain,
+                          initialValue: oldConfig.rootDomain,
                           labelText: strings.rootDomain,
                           onChanged: (value) => newConfig =
                               SSHNPPartialParams.merge(newConfig,
@@ -157,7 +155,7 @@ class _NewConnectionFormState extends ConsumerState<NewConnectionForm> {
                         ),
                         gapH20,
                         ElevatedButton(
-                          onPressed: () => onSubmit(config, newConfig),
+                          onPressed: () => onSubmit(oldConfig, newConfig),
                           child: Text(strings.submit),
                         ),
                       ]),
@@ -166,7 +164,7 @@ class _NewConnectionFormState extends ConsumerState<NewConnectionForm> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         CustomTextFormField(
-                          initialValue: config.sshnpdAtSign,
+                          initialValue: oldConfig.sshnpdAtSign,
                           labelText: strings.sshnpdAtSign,
                           onChanged: (value) => newConfig =
                               SSHNPPartialParams.merge(newConfig,
@@ -175,7 +173,7 @@ class _NewConnectionFormState extends ConsumerState<NewConnectionForm> {
                         ),
                         gapH10,
                         CustomTextFormField(
-                          initialValue: config.device,
+                          initialValue: oldConfig.device,
                           labelText: strings.device,
                           onChanged: (value) => newConfig =
                               SSHNPPartialParams.merge(newConfig,
@@ -183,7 +181,7 @@ class _NewConnectionFormState extends ConsumerState<NewConnectionForm> {
                         ),
                         gapH10,
                         CustomTextFormField(
-                          initialValue: config.localPort.toString(),
+                          initialValue: oldConfig.localPort.toString(),
                           labelText: strings.localPort,
                           onChanged: (value) => newConfig =
                               SSHNPPartialParams.merge(
@@ -193,7 +191,7 @@ class _NewConnectionFormState extends ConsumerState<NewConnectionForm> {
                         ),
                         gapH10,
                         CustomTextFormField(
-                          initialValue: config.localSshOptions.join(','),
+                          initialValue: oldConfig.localSshOptions.join(','),
                           hintText: strings.localSshOptionsHint,
                           labelText: strings.localSshOptions,
                           onChanged: (value) => newConfig =
@@ -208,7 +206,7 @@ class _NewConnectionFormState extends ConsumerState<NewConnectionForm> {
                             Text(strings.rsa),
                             gapW8,
                             Switch(
-                                value: config.rsa,
+                                value: oldConfig.rsa,
                                 onChanged: (newValue) {
                                   setState(() {
                                     newConfig = SSHNPPartialParams.merge(
@@ -220,7 +218,7 @@ class _NewConnectionFormState extends ConsumerState<NewConnectionForm> {
                         ),
                         gapH10,
                         CustomTextFormField(
-                          initialValue: config.atKeysFilePath,
+                          initialValue: oldConfig.atKeysFilePath,
                           labelText: strings.atKeysFilePath,
                           onChanged: (value) => newConfig =
                               SSHNPPartialParams.merge(newConfig,
@@ -228,7 +226,7 @@ class _NewConnectionFormState extends ConsumerState<NewConnectionForm> {
                         ),
                         gapH10,
                         CustomTextFormField(
-                          initialValue: config.localSshdPort.toString(),
+                          initialValue: oldConfig.localSshdPort.toString(),
                           labelText: strings.localSshdPort,
                           onChanged: (value) => newConfig =
                               SSHNPPartialParams.merge(
