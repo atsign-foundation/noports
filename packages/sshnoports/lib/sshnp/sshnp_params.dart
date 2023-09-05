@@ -258,26 +258,26 @@ class SSHNPParams {
 /// e.g. default values from a config file and the rest from the command line
 class SSHNPPartialParams {
   /// Main Params
-  String? profileName;
-  String? clientAtSign;
-  String? sshnpdAtSign;
-  String? host;
-  String? device;
-  int? port;
-  int? localPort;
-  int? localSshdPort;
-  String? atKeysFilePath;
-  String? sendSshPublicKey;
-  List<String> localSshOptions;
-  bool? rsa;
-  String? remoteUsername;
-  bool? verbose;
-  String? rootDomain;
-  bool? legacyDaemon;
+  final String? profileName;
+  final String? clientAtSign;
+  final String? sshnpdAtSign;
+  final String? host;
+  final String? device;
+  final int? port;
+  final int? localPort;
+  final int? localSshdPort;
+  final String? atKeysFilePath;
+  final String? sendSshPublicKey;
+  final List<String> localSshOptions;
+  final bool? rsa;
+  final String? remoteUsername;
+  final bool? verbose;
+  final String? rootDomain;
+  final bool? legacyDaemon;
 
   /// Special Params
   // N.B. config file is a meta param and doesn't need to be included
-  bool? listDevices;
+  final bool? listDevices;
 
   // Non param variables
   static final ArgParser parser = _createArgParser();
