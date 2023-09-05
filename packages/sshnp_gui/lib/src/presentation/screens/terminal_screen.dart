@@ -57,7 +57,7 @@ class _TerminalScreenState extends ConsumerState<TerminalScreen> {
     // write ssh result command to terminal
     pty.write(const Utf8Encoder().convert(ref.watch(terminalSSHCommandProvider)));
     // reset provider
-    ref.read(terminalSSHCommandProvider.notifier).update((state) => '');
+    ref.watch(terminalSSHCommandProvider.notifier).update((state) => '');
   }
 
   @override

@@ -55,15 +55,12 @@ class DeleteAlertDialog extends ConsumerWidget {
                       .copyWith(decoration: TextDecoration.underline)),
             ),
             ElevatedButton(
-              onPressed: () {
-                ref
-                    .read(paramsFamilyController(sshnpParams.profileName!))
-                    .whenData(
-                  (value) async {
-                    await value.deleteFile();
-                    if (context.mounted) Navigator.of(context).pop();
-                  },
-                );
+              onPressed: () async {
+                await ref
+                    .read(paramsFamilyController(sshnpParams.profileName!)
+                        .notifier)
+                    .delete();
+                if (context.mounted) Navigator.of(context).pop();
               },
               style: Theme.of(context).elevatedButtonTheme.style!.copyWith(
                     backgroundColor: MaterialStateProperty.all(Colors.black),

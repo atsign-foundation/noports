@@ -14,8 +14,7 @@ class HomeScreenRunAction extends StatefulWidget {
 }
 
 class _HomeScreenRunActionState extends State<HomeScreenRunAction> {
-
-Future<void> onPressed(SSHNPParams sshnpParams) async {
+  Future<void> onPressed(SSHNPParams sshnpParams) async {
     if (mounted) {
       showDialog<void>(
         context: context,

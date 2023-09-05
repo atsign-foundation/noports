@@ -1,6 +1,6 @@
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:flutter/material.dart';
-import 'package:sshnp_gui/src/presentation/widgets/custom_table_cell.dart';
+import 'package:sshnp_gui/src/presentation/widgets/home_screen_table/custom_table_cell.dart';
 
 TableRow getHomeScreenTableHeader(AppLocalizations strings) => TableRow(
       decoration: const BoxDecoration(

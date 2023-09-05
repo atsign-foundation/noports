@@ -6,7 +6,7 @@ class CustomTextFormField extends StatelessWidget {
     required this.labelText,
     this.initialValue,
     this.validator,
-    this.onSaved,
+    this.onChanged,
     this.hintText,
     this.width = 192,
     this.height = 33,
@@ -17,7 +17,7 @@ class CustomTextFormField extends StatelessWidget {
   final String? initialValue;
   final double width;
   final double height;
-  final void Function(String?)? onSaved;
+  final void Function(String?)? onChanged;
   final String? Function(String?)? validator;
 
   @override
@@ -35,7 +35,7 @@ class CustomTextFormField extends StatelessWidget {
           hintText: hintText,
           hintStyle: Theme.of(context).textTheme.bodyLarge,
         ),
-        onSaved: onSaved,
+        onChanged: onChanged,
         validator: validator,
       ),
     );

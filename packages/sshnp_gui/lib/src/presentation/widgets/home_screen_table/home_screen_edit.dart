@@ -18,18 +18,18 @@ class HomeScreenEditAction extends ConsumerStatefulWidget {
 }
 
 class _HomeScreenEditActionState extends ConsumerState<HomeScreenEditAction> {
-  void updateConfigFile(SSHNPParams sshnpParams) {
+  void updateConfigFile(SSHNPParams params) {
     // Change value to update to trigger the update functionality on the new connection form.
-    ref.read(currentParamsController.notifier).update(
+    ref.watch(currentParamsController.notifier).setState(
           CurrentSSHNPParamsModel(
-            profileName: sshnpParams.profileName!,
+            profileName: params.profileName!,
             configFileWriteState: ConfigFileWriteState.update,
           ),
         );
     // change value to 1 to update navigation rail selcted icon.
     ref
-        .read(currentNavIndexProvider.notifier)
-        .update((state) => AppRoute.newConnection.index - 1);
+        .watch(currentNavIndexProvider.notifier)
+        .update((_) => AppRoute.newConnection.index - 1);
     context.replaceNamed(
       AppRoute.newConnection.name,
     );

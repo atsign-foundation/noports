@@ -19,13 +19,6 @@ class HomeScreen extends ConsumerStatefulWidget {
 }
 
 class _HomeScreenState extends ConsumerState<HomeScreen> {
-  @override
-  void initState() {
-    WidgetsBinding.instance.addPostFrameCallback((_) async {
-      await ref.read(paramsListController.notifier).refresh();
-    });
-    super.initState();
-  }
 
   @override
   Widget build(BuildContext context) {
