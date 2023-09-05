@@ -88,9 +88,9 @@ class SSHNPParams {
 
   factory SSHNPParams.empty() {
     return SSHNPParams(
-      clientAtSign: null,
-      sshnpdAtSign: null,
-      host: null,
+      clientAtSign: '',
+      sshnpdAtSign: '',
+      host: '',
     );
   }
 
@@ -129,9 +129,8 @@ class SSHNPParams {
     return SSHNPParams.fromPartial(SSHNPPartialParams.fromConfig(fileName));
   }
 
-  static Future<Iterable<SSHNPParams>> getConfigFilesFromDirectory(
-      [String? directory]) async {
-    var params = <SSHNPParams>[];
+  static Future<Iterable<String>> listFiles([String? directory]) async {
+    var fileNames = <String>{};
 
     var homeDirectory = getHomeDirectory(throwIfNull: true)!;
     directory ??= getDefaultSshnpConfigDirectory(homeDirectory);
@@ -140,17 +139,38 @@ class SSHNPParams {
     await files.forEach((file) {
       if (file is! File) return;
       if (path.extension(file.path) != '.env') return;
+      fileNames.add(_fileToProfileName(file.path));
       try {
         var p = SSHNPParams.fromConfigFile(file.path);
-
-        params.add(p);
+        fileNames.add(p.profileName!);
       } catch (e) {
         print('Error reading config file: ${file.path}');
         print(e);
       }
     });
 
-    return params;
+    return fileNames;
+  }
+
+  static Future<SSHNPParams> fromFile(String profileName,
+      [String? directory]) async {
+    var homeDirectory = getHomeDirectory(throwIfNull: true)!;
+    directory ??= getDefaultSshnpConfigDirectory(homeDirectory);
+    var fileName = path.join(
+      directory,
+      '$profileName.env',
+    );
+    return SSHNPParams.fromConfigFile(fileName);
+  }
+
+  static Future<bool> fileExists(String profileName, [String? directory]) {
+    var homeDirectory = getHomeDirectory(throwIfNull: true)!;
+    directory ??= getDefaultSshnpConfigDirectory(homeDirectory);
+    var fileName = path.join(
+      directory,
+      '$profileName.env',
+    );
+    return File(fileName).exists();
   }
 
   Future<File> toFile({String? directory, bool overwrite = false}) async {
@@ -338,8 +358,7 @@ class SSHNPPartialParams {
 
   factory SSHNPPartialParams.fromConfig(String fileName) {
     var args = _parseConfigFile(fileName);
-    args['profile-name'] =
-        path.basenameWithoutExtension(fileName).replaceAll('_', ' ');
+    args['profile-name'] = _fileToProfileName(fileName);
     return SSHNPPartialParams.fromArgMap(args);
   }
 
@@ -480,3 +499,6 @@ class SSHNPPartialParams {
     }
   }
 }
+
+String _fileToProfileName(String fileName) =>
+    path.basenameWithoutExtension(fileName).replaceAll('_', ' ');

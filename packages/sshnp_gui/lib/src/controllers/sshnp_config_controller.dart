@@ -1,55 +1,72 @@
 import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:sshnoports/common/utils.dart';
 import 'package:sshnoports/sshnp/sshnp.dart';
+import 'package:sshnp_gui/src/utils/enum.dart';
 
-final sshnpConfigController = AutoDisposeAsyncNotifierProviderFamily<
-    SSHNPConfigContoller,
-    Map<String, SSHNPParams>,
-    String>(SSHNPConfigContoller.new);
+/// Controller instance for the current [SSHNPParams] being edited
+final currentParamsController = AutoDisposeNotifierProvider<
+    CurrentSSHNPParamsController, CurrentSSHNPParamsModel>(
+  () => CurrentSSHNPParamsController(),
+);
 
-class SSHNPConfigContoller
-    extends AutoDisposeFamilyAsyncNotifier<Map<String, SSHNPParams>, String> {
+/// Controller instance for the list of all profileNames for each config file
+final paramsListController = AutoDisposeAsyncNotifierProvider<
+    SSHNPParamsListController, Iterable<String>>(SSHNPParamsListController.new);
+
+/// Controller instance for the family of [SSHNPParams] controllers
+final paramsFamilyController = AutoDisposeAsyncNotifierProviderFamily<
+    SSHNPParamsFamilyController,
+    SSHNPParams,
+    String>(SSHNPParamsFamilyController.new);
+
+/// Holder model for the current [SSHNPParams] being edited
+class CurrentSSHNPParamsModel {
+  final String profileName;
+  final ConfigFileWriteState configFileWriteState;
+
+  CurrentSSHNPParamsModel(
+      {required this.profileName, required this.configFileWriteState});
+}
+
+/// Controller for the current [SSHNPParams] being edited
+class CurrentSSHNPParamsController
+    extends AutoDisposeNotifier<CurrentSSHNPParamsModel> {
   @override
-  Future<Map<String, SSHNPParams>> build(String arg) async {
-    return Map.fromIterable(
-      await SSHNPParams.getConfigFilesFromDirectory(),
-      key: (e) => e
-          .profileName!, // Profile name should never be null when using getConfigFilesFromDirectory
+  CurrentSSHNPParamsModel build() {
+    return CurrentSSHNPParamsModel(
+      profileName: '',
+      configFileWriteState: ConfigFileWriteState.create,
     );
   }
 
-  void addConfig(SSHNPParams params) {
-    update((p0) async {
-      if (p0.containsKey(params.profileName!)) {
-        throw Exception('Profile ${params.profileName} already exists');
-      }
-      await params.toFile();
-      p0[params.profileName!] = params;
-      return p0;
-    });
+  void update(CurrentSSHNPParamsModel model) {
+    state = model;
+  }
+}
+
+/// Controller for the family of [SSHNPParams] controllers
+class SSHNPParamsFamilyController
+    extends AutoDisposeFamilyAsyncNotifier<SSHNPParams, String> {
+  @override
+  Future<SSHNPParams> build(String arg) async {
+    return (await SSHNPParams.fileExists(arg))
+        ? await SSHNPParams.fromFile(arg)
+        : SSHNPParams.empty();
+  }
+}
+
+/// Controller for the list of all profileNames for each config file
+class SSHNPParamsListController
+    extends AutoDisposeAsyncNotifier<Iterable<String>> {
+  @override
+  Future<Iterable<String>> build() {
+    return SSHNPParams.listFiles();
   }
 
-  void updateConfig(String profileName, SSHNPPartialParams newParams) {
-    update((p0) async {
-      if (!p0.containsKey(profileName)) {
-        throw Exception('Profile $profileName does not exist');
-      }
-      var params = SSHNPParams.merge(p0[profileName]!, newParams);
-      await params.toFile(overwrite: true);
-      p0[profileName] = params;
-      return p0;
-    });
-  }
-
-  void deleteConfig(String profileName) {
-    update((p0) async {
-      if (!p0.containsKey(profileName)) {
-        throw Exception('Profile $profileName does not exist');
-      }
-      await p0[profileName]!.deleteFile();
-      p0.remove(profileName);
-      return p0;
-    });
+  Future<void> refresh() async {
+    state = const AsyncLoading();
+    state = await AsyncValue.guard(() => build());
   }
 }

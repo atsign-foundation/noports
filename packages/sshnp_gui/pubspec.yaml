@@ -31,7 +31,6 @@ dependencies:
   shared_preferences: ^2.2.0
   sshnoports:
     path: ../sshnoports/
-    
   xterm: ^3.5.0
 
 dev_dependencies:
