@@ -62,16 +62,21 @@ class SSHNPDClient:
         SSHNPDClient.threads.append(event_thread)
         self._handle_notifications(self.at_client.queue, self.sshnp_callback)
         
-        
-    def stop(self):
+    def is_alive(self):
        if not self.authenticated:
-           return
-       else:
-            self.ssh_client.close()
-            self.at_client.stop_monitor()
-            for thread in SSHNPDClient.threads:
-                thread.join()
-            SSHNPDClient.threads.clear()
+           return False
+       elif len(SSHNPDClient.threads) > 2:
+           return False    
+       else: 
+           return True
+    
+    def join(self):
+        self.closing.set()
+        self.ssh_client.close()
+        self.at_client.stop_monitor()
+        for thread in SSHNPDClient.threads:
+            thread.join()
+        SSHNPDClient.threads.clear()
             
             
     def _set_username(self):
@@ -140,7 +145,7 @@ class SSHNPDClient:
         except Exception as e:
             raise e
 
-
+    #Running in a thread
     def _handle_events(self, queue: Queue):  
         while self.closing:
             try:
@@ -215,7 +220,7 @@ class SSHNPDClient:
 
         return exitCode == 0
 
-
+    #Running in a thread
     def _forward_socket_handler(self, chan, dest):
         sock = socket()
         try:
@@ -228,7 +233,7 @@ class SSHNPDClient:
             f"Connected!  Tunnel open {chan.origin_addr} -> {chan.getpeername()} -> {dest}"
         )
 
-        while True:
+        while self.closing:
             r, w, x = select([sock, chan], [], [])
             if sock in r:
                 data = sock.recv(1024)
@@ -244,7 +249,7 @@ class SSHNPDClient:
         sock.close()
         self.logger.info(f"Tunnel closed from {chan.origin_addr}")
 
-
+    #running in a threads
     def _forward_socket(self, tp, dest):
         while self.closing:
             chan = tp.accept(1000)
