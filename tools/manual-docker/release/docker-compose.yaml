@@ -15,7 +15,7 @@ services:
     image: atsigncompany/sshnp-e2e-manual:release
     container_name: manual_release_sshnp
     volumes:
-      - ../../../contexts/sshnp/keys/:/atsign/.atsign/keys/ # mount keys
+      - ../../../tests/end2end_tests/contexts/sshnp/.atsign/keys/:/atsign/.atsign/keys/ # mount keys
     networks:
       - sshnp
     depends_on:
@@ -24,7 +24,7 @@ services:
     image: atsigncompany/sshnp-e2e-manual:release
     container_name: manual_release_sshnpd
     volumes:
-      - ../../../contexts/sshnpd/keys/:/atsign/.atsign/keys/ # mount keys
+      - ../../../tests/end2end_tests/contexts/sshnpd/.atsign/keys/:/atsign/.atsign/keys/ # mount keys
     networks:
       - sshnpd
     depends_on:
@@ -33,7 +33,7 @@ services:
     image: atsigncompany/sshnp-e2e-manual:release
     container_name: manual_release_sshnp
     volumes:
-      - ../../../contexts/sshrvd/keys/:/atsign/.atsign/keys/ # mount keys
+      - ../../../tests/end2end_tests/contexts/sshrvd/keys/:/atsign/.atsign/keys/ # mount keys
     network_mode: host
     depends_on:
       - image-manual-release
