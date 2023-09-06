@@ -31,6 +31,9 @@ fi
 
 # Get the environment variables
 set -o allexport
+# Disable SC1091 because we don't want to pass the env file as an argument to this script
+# we instead assume that it is in the same directory as this script
+# shellcheck disable=SC1091
 source "$SCRIPT_DIRECTORY"/macos-signing.env
 set +o allexport
 
@@ -39,7 +42,7 @@ if [ -z "$SIGNING_IDENTITY" ]; then
   exit 1
 fi
 
-if [ -z "$KEYCHAIN_PROFILE" ] && ([ -z "$APPLE_ID" ]||[ -z "$TEAM_ID" ]||[ -z "$PASSWORD" ]); then
+if [ -z "$KEYCHAIN_PROFILE" ] && [[ -z "$APPLE_ID" || -z "$TEAM_ID" || -z "$PASSWORD" ]]; then
   echo "You must set either KEYCHAIN_PROFILE or APPLE_ID, TEAM_ID, and PASSWORD in macos-signing.env"
   exit 1
 fi

@@ -1,11 +1,22 @@
 # Files and directories created by pub.
 .dart_tool/
 .packages
+
+#vscode
+.vscode/*
+!.vscode/launch.json
+
+#Docker
+.devcontainer
+compose-dev.yaml
+
 # atPlatform stuff
 *.hive
 *.hash
 *.atKeys
 
+# Ignore pubspec.lock
+pubspec.lock
 
 # Conventional directory for build output.
 build/
@@ -15,3 +26,7 @@ build/
 
 # Python
 poetry.lock
+pyproject.toml
+__pycache__
+
+.env

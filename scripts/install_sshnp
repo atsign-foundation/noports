@@ -4,7 +4,6 @@ BINARY_NAME="sshnp";
 
 # Prepend an @ to the front of the atsign if missing
 norm_atsign() {
-  # shellcheck disable=SC2001
   atsign="@$(echo "$1" | sed -e 's/"//g' -e 's/^@//g')"
   echo "$atsign"
 }
@@ -29,6 +28,46 @@ usage() {
   echo "  -h, --host <region code>    Default host rendezvous region code (am, eu, ap)"
   echo "                              Specify an atSign to override with a custom host"
   echo "  -v, --version <version>     Version to install (default: latest)"
+}
+
+check_basic_requirements() {
+  REQ_GREP=$(command -v grep)
+  REQ_SED=$(command -v sed)
+  REQ_UNAME=$(command -v uname)
+  REQ_CHMOD=$(command -v chmod)
+  REQ_MKDIR=$(command -v mkdir)
+  REQ_UNZIP=$(command -v unzip)
+  REQ_TAR=$(command -v tar)
+  REQ_CP=$(command -v cp)
+  REQ_EVAL=$(command -v eval)
+
+  if [ -z "$REQ_GREP" ]; then
+    echo "  [X] Missing required dependency: grep"
+  fi
+  if [ -z "$REQ_SED" ]; then
+    echo "  [X] Missing required dependency: sed"
+  fi
+  if [ -z "$REQ_UNAME" ]; then
+    echo "  [X] Missing required dependency: uname"
+  fi
+  if [ -z "$REQ_CHMOD" ]; then
+    echo "  [X] Missing required dependency: chmod"
+  fi
+  if [ -z "$REQ_MKDIR" ]; then
+    echo "  [X] Missing required dependency: mkdir"
+  fi
+  if [ -z "$REQ_UNZIP" ]; then
+    echo "  [X] Missing required dependency: unzip"
+  fi
+  if [ -z "$REQ_TAR" ]; then
+    echo "  [X] Missing required dependency: tar"
+  fi
+  if [ -z "$REQ_CP" ]; then
+    echo "  [X] Missing required dependency: cp"
+  fi
+  if [ -z "$REQ_EVAL" ]; then
+    echo "  [X] Missing required dependency: eval"
+  fi
 }
 
 # Parse the command-line args
@@ -151,14 +190,22 @@ validate_args () {
 
 # Load requirements statuses into variables
 parse_requirements() {
+  REQ_DART=$(command -v dart)
   REQ_SSH=$(command -v ssh)
   REQ_SSHD=$(command -v sshd)
+  REQ_SSH=$(command -v ssh)
+  if [ -f "/usr/sbin/sshd" ]; then 
+    REQ_SSHD=true
+  fi
   #REQ_SSH0=$(ssh -o "StrictHostKeyChecking no" -o "PasswordAuthentication no" 0 exit 2>/dev/null; echo $?)
   REQ_CURL=$(command -v curl)
 }
 
 # Check the script's requirements
 check_requirements() {
+  if [ -z "$REQ_DART" ] && [ -n "$SSHNP_DEV_MODE" ]; then
+    echo "  [X] Missing required dependency: dart"
+  fi
   if [ -z "$REQ_SSH" ]; then
     echo "  [X] Missing required dependency: ssh"
   elif [ -z "$REQ_SSHD" ]; then
@@ -242,7 +289,17 @@ make_dirs() {
 # Build the dart binaries from the provided repo
 build_dart_binaries() {
   echo "DEV MODE: Installing from local repo: $SSHNP_DEV_MODE";
-  cp -R "$SSHNP_DEV_MODE/packages/sshnoports/templates/" "$HOME_PATH/.atsign/temp/$BINARY_NAME/templates/";
+  mkdir -p "$HOME_PATH/.atsign/temp/$BINARY_NAME/templates/"
+
+  cp -R "$SSHNP_DEV_MODE"/packages/sshnoports/templates/* "$HOME_PATH/.atsign/temp/$BINARY_NAME/templates/";
+
+  dart pub get -C "$SSHNP_DEV_MODE/packages/sshnoports"
+
+  dart compile exe "$SSHNP_DEV_MODE/packages/sshnoports/bin/sshnp.dart" -o "$HOME_PATH/.atsign/temp/$BINARY_NAME/sshnp";
+  dart compile exe "$SSHNP_DEV_MODE/packages/sshnoports/bin/sshnpd.dart" -o "$HOME_PATH/.atsign/temp/$BINARY_NAME/sshnpd";
+  dart compile exe "$SSHNP_DEV_MODE/packages/sshnoports/bin/sshrv.dart" -o "$HOME_PATH/.atsign/temp/$BINARY_NAME/sshrv";
+  dart compile exe "$SSHNP_DEV_MODE/packages/sshnoports/bin/sshrvd.dart" -o "$HOME_PATH/.atsign/temp/$BINARY_NAME/sshrvd";
+  dart compile exe "$SSHNP_DEV_MODE/packages/sshnoports/bin/activate_cli.dart" -o "$HOME_PATH/.atsign/temp/$BINARY_NAME/at_activate";
 }
 
 # Make a copy of the locally provided archive
@@ -378,5 +435,6 @@ main () {
   esac
 }
 
+check_basic_requirements
 parse_args "$@";
 main

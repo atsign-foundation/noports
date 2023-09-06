@@ -27,12 +27,14 @@ class SSHNPParams {
   late final bool legacyDaemon;
 
   /// Special Arguments
+  late final String? profileName; // automatically populated with the filename if from a configFile
   late final bool listDevices;
 
   SSHNPParams({
     required this.clientAtSign,
     required this.sshnpdAtSign,
     required this.host,
+    this.profileName,
     this.device = SSHNP.defaultDevice,
     this.port = SSHNP.defaultPort,
     this.localPort = SSHNP.defaultLocalPort,
@@ -55,8 +57,7 @@ class SSHNPParams {
 
     // Use default atKeysFilePath if not provided
 
-    this.atKeysFilePath =
-        atKeysFilePath ?? getDefaultAtKeysFilePath(homeDirectory, clientAtSign);
+    this.atKeysFilePath = atKeysFilePath ?? getDefaultAtKeysFilePath(homeDirectory, clientAtSign);
   }
 
   factory SSHNPParams.fromPartial(SSHNPPartialParams partial) {
@@ -69,14 +70,14 @@ class SSHNPParams {
     partial.host ?? (logger.severe('host is null'));
 
     return SSHNPParams(
+      profileName: partial.profileName,
       clientAtSign: partial.clientAtSign,
       sshnpdAtSign: partial.sshnpdAtSign,
       host: partial.host,
       device: partial.device ?? SSHNP.defaultDevice,
       port: partial.port ?? SSHNP.defaultPort,
       localPort: partial.localPort ?? SSHNP.defaultLocalPort,
-      sendSshPublicKey:
-          partial.sendSshPublicKey ?? SSHNP.defaultSendSshPublicKey,
+      sendSshPublicKey: partial.sendSshPublicKey ?? SSHNP.defaultSendSshPublicKey,
       localSshOptions: partial.localSshOptions,
       rsa: partial.rsa ?? SSHNP.defaultRsa,
       verbose: partial.verbose ?? SSHNP.defaultRsa,
@@ -93,8 +94,7 @@ class SSHNPParams {
     return SSHNPParams.fromPartial(SSHNPPartialParams.fromConfig(fileName));
   }
 
-  static Future<Iterable<SSHNPParams>> getConfigFilesFromDirectory(
-      [String? directory]) async {
+  static Future<Iterable<SSHNPParams>> getConfigFilesFromDirectory([String? directory]) async {
     var params = <SSHNPParams>[];
 
     var homeDirectory = getHomeDirectory(throwIfNull: true)!;
@@ -106,6 +106,7 @@ class SSHNPParams {
       if (path.extension(file.path) != '.env') return;
       try {
         var p = SSHNPParams.fromConfigFile(file.path);
+
         params.add(p);
       } catch (e) {
         print('Error reading config file: ${file.path}');
@@ -116,13 +117,22 @@ class SSHNPParams {
     return params;
   }
 
-  Future<File> toFile(String fileName, {bool overwrite = false}) async {
-    var file = File(fileName);
+  Future<File> toFile({String? directory, bool overwrite = false}) async {
+    if (profileName == null || profileName!.isEmpty) {
+      throw Exception('profileName is null or empty');
+    }
+
+    var fileName = profileName!.replaceAll(' ', '_');
+
+    var file = File(path.join(
+      directory ?? getDefaultSshnpConfigDirectory(homeDirectory),
+      '$fileName.env',
+    ));
+
     var exists = await file.exists();
 
     if (exists && !overwrite) {
-      print('Failed to write config file: $fileName already exists');
-      return file;
+      throw Exception('Failed to write config file: ${file.path} already exists');
     }
 
     // FileMode.write will create the file if it does not exist
@@ -130,8 +140,30 @@ class SSHNPParams {
     return file.writeAsString(toConfig(), mode: FileMode.write);
   }
 
+  Future<FileSystemEntity> deleteFile({String? directory, bool overwrite = false}) async {
+    if (profileName == null || profileName!.isEmpty) {
+      throw Exception('profileName is null or empty');
+    }
+
+    var fileName = profileName!.replaceAll(' ', '_');
+
+    var file = File(path.join(
+      directory ?? getDefaultSshnpConfigDirectory(homeDirectory),
+      '$fileName.env',
+    ));
+
+    var exists = await file.exists();
+
+    if (!exists) {
+      throw Exception('Cannot delete ${file.path}, file does not exist');
+    }
+
+    return file.delete();
+  }
+
   Map<String, dynamic> toArgs() {
     return {
+      'profile-name': profileName,
       'from': clientAtSign,
       'to': sshnpdAtSign,
       'host': host,
@@ -153,6 +185,7 @@ class SSHNPParams {
     var lines = <String>[];
     for (var entry in toArgs().entries) {
       var key = SSHNPArg.fromName(entry.key).bashName;
+      if (key.isEmpty) continue;
       var value = entry.value;
       if (value is List) {
         value = value.join(',');
@@ -168,6 +201,7 @@ class SSHNPParams {
 /// e.g. default values from a config file and the rest from the command line
 class SSHNPPartialParams {
   /// Main Params
+  late final String? profileName;
   late final String? clientAtSign;
   late final String? sshnpdAtSign;
   late final String? host;
@@ -192,6 +226,7 @@ class SSHNPPartialParams {
   static final ArgParser parser = _createArgParser();
 
   SSHNPPartialParams({
+    this.profileName,
     this.clientAtSign,
     this.sshnpdAtSign,
     this.host,
@@ -200,14 +235,14 @@ class SSHNPPartialParams {
     this.localPort,
     this.atKeysFilePath,
     this.sendSshPublicKey,
-    this.localSshOptions = const [],
+    this.localSshOptions = SSHNP.defaultLocalSshOptions,
     this.rsa,
     this.remoteUsername,
     this.verbose,
     this.rootDomain,
     this.localSshdPort,
-    this.listDevices = false,
-    this.legacyDaemon = true,
+    this.listDevices = SSHNP.defaultListDevices,
+    this.legacyDaemon = SSHNP.defaultLegacyDaemon,
   });
 
   factory SSHNPPartialParams.empty() {
@@ -217,10 +252,10 @@ class SSHNPPartialParams {
   /// Merge two SSHNPPartialParams objects together
   /// Params in params2 take precedence over params1
   /// - localSshOptions are concatenated together as (params1 + params2)
-  factory SSHNPPartialParams.merge(SSHNPPartialParams params1,
-      [SSHNPPartialParams? params2]) {
+  factory SSHNPPartialParams.merge(SSHNPPartialParams params1, [SSHNPPartialParams? params2]) {
     params2 ??= SSHNPPartialParams.empty();
     return SSHNPPartialParams(
+      profileName: params2.profileName ?? params1.profileName,
       clientAtSign: params2.clientAtSign ?? params1.clientAtSign,
       sshnpdAtSign: params2.sshnpdAtSign ?? params1.sshnpdAtSign,
       host: params2.host ?? params1.host,
@@ -242,6 +277,7 @@ class SSHNPPartialParams {
 
   factory SSHNPPartialParams.fromArgMap(Map<String, dynamic> args) {
     return SSHNPPartialParams(
+      profileName: args['profile-name'],
       clientAtSign: args['from'],
       sshnpdAtSign: args['to'],
       host: args['host'],
@@ -250,8 +286,7 @@ class SSHNPPartialParams {
       localPort: args['local-port'],
       atKeysFilePath: args['key-file'],
       sendSshPublicKey: args['ssh-public-key'],
-      localSshOptions:
-          args['local-ssh-options'] ?? SSHNP.defaultLocalSshOptions,
+      localSshOptions: args['local-ssh-options'] ?? SSHNP.defaultLocalSshOptions,
       rsa: args['rsa'],
       remoteUsername: args['remote-user-name'],
       verbose: args['verbose'],
@@ -264,6 +299,7 @@ class SSHNPPartialParams {
 
   factory SSHNPPartialParams.fromConfig(String fileName) {
     var args = _parseConfigFile(fileName);
+    args['profile-name'] = path.basenameWithoutExtension(fileName).replaceAll('_', ' ');
     return SSHNPPartialParams.fromArgMap(args);
   }
 
@@ -283,9 +319,7 @@ class SSHNPPartialParams {
     }
 
     // THIS IS A WORKAROUND IN ORDER TO BE TYPE SAFE IN SSHNPPartialParams.fromArgMap
-    Map<String, dynamic> parsedArgsMap = {
-      for (var e in (parsedArgs.options)) e: parsedArgs[e]
-    };
+    Map<String, dynamic> parsedArgsMap = {for (var e in (parsedArgs.options)) e: parsedArgs[e]};
 
     return SSHNPPartialParams.merge(
       params,
@@ -307,7 +341,7 @@ class SSHNPPartialParams {
             arg.name,
             abbr: arg.abbr,
             mandatory: arg.mandatory,
-            defaultsTo: withDefaults ? arg.defaultsTo as String? : null,
+            defaultsTo: withDefaults ? (arg.defaultsTo != null ? '${arg.defaultsTo}' : null) : null,
             help: arg.help,
           );
           break;
@@ -332,8 +366,7 @@ class SSHNPPartialParams {
     if (withConfig) {
       parser.addOption(
         'config-file',
-        help:
-            'Read args from a config file\nMandatory args are not required if already supplied in the config file',
+        help: 'Read args from a config file\nMandatory args are not required if already supplied in the config file',
       );
     }
     if (withListDevices) {
