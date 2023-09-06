@@ -6,7 +6,7 @@ from queue import Empty, Queue
 from time import sleep
 from uuid import uuid4
 from threading import Event
-from paramiko import SSHClient, WarningPolicy
+from paramiko import SSHClient, SSHException, WarningPolicy
 from paramiko.ed25519key import Ed25519Key
 
 
@@ -301,6 +301,8 @@ class SSHNPDClient:
             SSHNPDClient.threads.append(thread)
         
         #I'll end up doing more with this I think
+        except  SSHException as e:
+            raise(f'SSHError (Make sure you do not have another sshnpd running): $e')
         except Exception as e:
             raise(e)
         self.ssh_client = ssh_client
