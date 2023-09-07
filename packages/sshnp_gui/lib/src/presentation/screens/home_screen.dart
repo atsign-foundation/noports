@@ -55,9 +55,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       if (profiles.isEmpty) {
                         return const Text('No SSHNP Configurations Found');
                       }
+                      final sortedProfiles = profiles.toList();
+                      sortedProfiles.sort();
                       return Expanded(
                         child: ListView(
-                          children: profiles.map((profileName) => ProfileBar(profileName)).toList(),
+                          children: sortedProfiles.map((profileName) => ProfileBar(profileName)).toList(),
                         ),
                       );
                     },
