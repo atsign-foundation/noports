@@ -144,27 +144,17 @@ class SSHNPParams {
         print(e);
       }
     });
-
+    print('fileNames: $fileNames');
     return fileNames;
   }
 
   static Future<SSHNPParams> fromFile(String profileName, [String? directory]) async {
-    var homeDirectory = getHomeDirectory(throwIfNull: true)!;
-    directory ??= getDefaultSshnpConfigDirectory(homeDirectory);
-    var fileName = path.join(
-      directory,
-      '$profileName.env',
-    );
+    var fileName = _profileToFileName(profileName, directory);
     return SSHNPParams.fromConfigFile(fileName);
   }
 
   static Future<bool> fileExists(String profileName, [String? directory]) {
-    var homeDirectory = getHomeDirectory(throwIfNull: true)!;
-    directory ??= getDefaultSshnpConfigDirectory(homeDirectory);
-    var fileName = path.join(
-      directory,
-      '$profileName.env',
-    );
+    var fileName = _profileToFileName(profileName, directory);
     return File(fileName).exists();
   }
 
@@ -173,12 +163,8 @@ class SSHNPParams {
       throw Exception('profileName is null or empty');
     }
 
-    var fileName = profileName!.replaceAll(' ', '_');
-
-    var file = File(path.join(
-      directory ?? getDefaultSshnpConfigDirectory(homeDirectory),
-      '$fileName.env',
-    ));
+    var fileName = _profileToFileName(profileName!, directory);
+    var file = File(fileName);
 
     var exists = await file.exists();
 
@@ -196,12 +182,8 @@ class SSHNPParams {
       throw Exception('profileName is null or empty');
     }
 
-    var fileName = profileName!.replaceAll(' ', '_');
-
-    var file = File(path.join(
-      directory ?? getDefaultSshnpConfigDirectory(homeDirectory),
-      '$fileName.env',
-    ));
+    var fileName = _profileToFileName(profileName!, directory);
+    var file = File(fileName);
 
     var exists = await file.exists();
 
@@ -489,3 +471,10 @@ class SSHNPPartialParams {
 }
 
 String _fileToProfileName(String fileName) => path.basenameWithoutExtension(fileName).replaceAll('_', ' ');
+String _profileToFileName(String profileName, [String? directory]) {
+  var fileName = profileName.replaceAll(' ', '_');
+  return path.join(
+    directory ?? getDefaultSshnpConfigDirectory(getHomeDirectory(throwIfNull: true)!),
+    '$fileName.env',
+  );
+}
