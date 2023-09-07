@@ -1,11 +1,9 @@
-import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_pty/flutter_pty.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-import 'package:sshnp_gui/src/controllers/nav_route_controller.dart';
 import 'package:sshnp_gui/src/controllers/terminal_session_controller.dart';
 import 'package:sshnp_gui/src/presentation/widgets/navigation/app_navigation_rail.dart';
 import 'package:sshnp_gui/src/utils/sizes.dart';
@@ -45,6 +43,10 @@ class _TerminalScreenState extends ConsumerState<TerminalScreen> {
     // * Getting the AtClientManager instance to use below
     final sessionId = ref.watch(terminalSessionController);
     final terminalSession = ref.watch(terminalSessionFamilyController(sessionId));
+    if (sessionId.isEmpty) {
+      // for now, just return a normal shell prompt
+      terminalSession.command = Platform.environment['SHELL'] ?? 'bash';
+    }
     return Scaffold(
       body: SafeArea(
         child: Row(

@@ -2,20 +2,20 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
-import 'package:sshnp_gui/src/controllers/nav_route_controller.dart';
+import 'package:sshnp_gui/src/controllers/nav_rail_controller.dart';
 import 'package:sshnp_gui/src/utils/app_router.dart';
 
 class AppNavigationRail extends ConsumerWidget {
   const AppNavigationRail({super.key});
 
-  static const indexedRoutes = [
+  static const routes = [
     AppRoute.home,
     AppRoute.terminal,
     AppRoute.settings,
   ];
 
   static int getRouteIndex(AppRoute route) {
-    return indexedRoutes.indexOf(route);
+    return routes.indexOf(route);
   }
 
   static var activatedIcons = [
@@ -32,10 +32,10 @@ class AppNavigationRail extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final currentIndex = getRouteIndex(ref.watch(navRouteController));
+    final currentIndex = getRouteIndex(ref.watch(navRailController));
 
     return NavigationRail(
-      destinations: indexedRoutes
+      destinations: routes
           .map(
             (i) => NavigationRailDestination(
               icon: (currentIndex == getRouteIndex(i))
@@ -45,10 +45,10 @@ class AppNavigationRail extends ConsumerWidget {
             ),
           )
           .toList(),
-      selectedIndex: indexedRoutes.indexOf(ref.watch(navRouteController)),
+      selectedIndex: routes.indexOf(ref.watch(navRailController)),
       onDestinationSelected: (int selectedIndex) {
-        ref.read(navRouteController.notifier).goTo(indexedRoutes[selectedIndex]);
-        context.goNamed(indexedRoutes[selectedIndex].name);
+        ref.read(navRailController.notifier).setRoute(routes[selectedIndex]);
+        context.goNamed(routes[selectedIndex].name);
       },
     );
   }

@@ -3,7 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:sshnp_gui/src/controllers/nav_route_controller.dart';
+import 'package:sshnp_gui/src/controllers/nav_rail_controller.dart';
 import 'package:sshnp_gui/src/controllers/terminal_session_controller.dart';
 import 'package:sshnp_gui/src/utils/app_router.dart';
 
@@ -31,7 +31,7 @@ class SSHNPResultAlertDialog extends ConsumerWidget {
     final sessionId = ref.read(terminalSessionController.notifier).createSession();
     final sessionController = ref.read(terminalSessionFamilyController(sessionId).notifier);
     sessionController.setProcess();
-    ref.read(navRouteController.notifier).goTo(AppRoute.terminal);
+    ref.read(navRailController.notifier).setRoute(AppRoute.terminal);
     context.pushReplacementNamed(AppRoute.terminal.name);
   }
 

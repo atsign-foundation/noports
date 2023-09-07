@@ -4,7 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:sshnoports/sshnp/sshnp.dart';
 import 'package:sshnoports/sshrv/sshrv.dart';
-import 'package:sshnp_gui/src/controllers/nav_route_controller.dart';
+import 'package:sshnp_gui/src/controllers/nav_rail_controller.dart';
 import 'package:sshnp_gui/src/controllers/terminal_session_controller.dart';
 import 'package:sshnp_gui/src/presentation/widgets/dialog/sshnp_result_alert_dialog.dart';
 import 'package:sshnp_gui/src/utils/app_router.dart';
@@ -49,7 +49,7 @@ class _ProfileTerminalActionState extends ConsumerState<ProfileTerminalAction> {
       if (result is SSHNPCommandResult) {
         /// Set the command for the new session
         sessionController.setProcess(command: result.command, args: result.args);
-        ref.read(navRouteController.notifier).goTo(AppRoute.terminal);
+        ref.read(navRailController.notifier).setRoute(AppRoute.terminal);
         if (mounted) {
           context.pushReplacementNamed(AppRoute.terminal.name);
         }
