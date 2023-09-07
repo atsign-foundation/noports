@@ -5,18 +5,21 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sshnoports/sshnp/sshnp.dart';
 import 'package:sshnp_gui/src/utils/enum.dart';
 
-/// Controller instance for the current [SSHNPParams] being edited
-final sshnpParamsController =
-    AutoDisposeNotifierProvider<SSHNPParamsController, CurrentSSHNPParamsModel>(SSHNPParamsController.new);
+/// A provider that exposes the [SSHNPParamsController] to the app.
+final sshnpParamsController = AutoDisposeNotifierProvider<SSHNPParamsController, CurrentSSHNPParamsModel>(
+  SSHNPParamsController.new,
+);
 
-/// Controller instance for the list of all profileNames for each config file
-final sshnpParamsListController =
-    AutoDisposeAsyncNotifierProvider<SSHNPParamsListController, Set<String>>(SSHNPParamsListController.new);
+/// A provider that exposes the [SSHNPParamsListController] to the app.
+final sshnpParamsListController = AutoDisposeAsyncNotifierProvider<SSHNPParamsListController, Set<String>>(
+  SSHNPParamsListController.new,
+);
 
-/// Controller instance for the family of [SSHNPParams] controllers
+/// A provider that exposes the [SSHNPParamsFamilyController] to the app.
 final sshnpParamsFamilyController =
     AutoDisposeAsyncNotifierProviderFamily<SSHNPParamsFamilyController, SSHNPParams, String>(
-        SSHNPParamsFamilyController.new);
+  SSHNPParamsFamilyController.new,
+);
 
 /// Holder model for the current [SSHNPParams] being edited
 class CurrentSSHNPParamsModel {
