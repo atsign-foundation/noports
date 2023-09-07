@@ -2,6 +2,10 @@ import 'package:at_contact/at_contact.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sshnp_gui/src/repository/authentication_repository.dart';
 
+/// A provider that exposes the [AuthenticationController] to the app.
+final authenticationController = StateNotifierProvider<AuthenticationController, AsyncValue<List<String>?>>(
+    (ref) => AuthenticationController(ref: ref));
+
 /// A controller class that controls the UI update when the [AuthenticationRepository] methods are called.
 class AuthenticationController extends StateNotifier<AsyncValue<List<String>?>> {
   final Ref ref;
@@ -29,7 +33,3 @@ class AuthenticationController extends StateNotifier<AsyncValue<List<String>?>> 
     return await ref.watch(authenticationRepositoryProvider).getCurrentAtContact();
   }
 }
-
-/// A provider that exposes the [AuthenticationController] to the app.
-final authenticationController = StateNotifierProvider<AuthenticationController, AsyncValue<List<String>?>>(
-    (ref) => AuthenticationController(ref: ref));

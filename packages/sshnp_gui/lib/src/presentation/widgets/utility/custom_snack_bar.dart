@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:sshnp_gui/src/repository/navigation_service.dart';
+import 'package:sshnp_gui/src/repository/navigation_repository.dart';
 
 class CustomSnackBar {
   static void error({
     required String content,
   }) {
-    final context = NavigationService.navKey.currentContext!;
+    final context = NavigationRepository.navKey.currentContext!;
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
       content: Text(
         content,
@@ -18,7 +18,7 @@ class CustomSnackBar {
   static void success({
     required String content,
   }) {
-    final context = NavigationService.navKey.currentContext!;
+    final context = NavigationRepository.navKey.currentContext!;
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
       content: Text(
         content,
@@ -33,7 +33,7 @@ class CustomSnackBar {
     SnackBarAction? action,
     Duration duration = const Duration(seconds: 2),
   }) {
-    final context = NavigationService.navKey.currentContext!;
+    final context = NavigationRepository.navKey.currentContext!;
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
       content: Text(
         content,

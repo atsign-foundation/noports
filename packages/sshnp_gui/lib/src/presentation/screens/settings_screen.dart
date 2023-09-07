@@ -6,7 +6,7 @@ import 'package:sshnp_gui/src/presentation/widgets/navigation/app_navigation_rai
 import 'package:sshnp_gui/src/presentation/widgets/utility/reset_app_button.dart';
 import 'package:sshnp_gui/src/presentation/widgets/utility/settings_button.dart';
 import 'package:sshnp_gui/src/presentation/widgets/utility/switch_atsign.dart';
-import 'package:sshnp_gui/src/repository/navigation_service.dart';
+import 'package:sshnp_gui/src/repository/navigation_repository.dart';
 import 'package:sshnp_gui/src/utils/sizes.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -73,7 +73,7 @@ class SettingsScreen extends StatelessWidget {
                     title: strings.switchAtsign,
                     onTap: () async {
                       await showModalBottomSheet(
-                          context: NavigationService.navKey.currentContext!,
+                          context: NavigationRepository.navKey.currentContext!,
                           builder: (context) => const AtSignBottomSheet());
                     },
                   ),

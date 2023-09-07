@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
-import 'package:sshnp_gui/src/controllers/minor_providers.dart';
+import 'package:sshnp_gui/src/controllers/nav_index_controller.dart';
 import 'package:sshnp_gui/src/utils/app_router.dart';
 
 class AppNavigationRail extends ConsumerWidget {
@@ -10,7 +10,7 @@ class AppNavigationRail extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final currentIndex = ref.watch(currentNavIndexProvider);
+    final currentIndex = ref.watch(navIndexProvider);
 
     return NavigationRail(
         destinations: [
@@ -35,10 +35,9 @@ class AppNavigationRail extends ConsumerWidget {
             label: const Text(''),
           ),
         ],
-        selectedIndex: ref.watch(currentNavIndexProvider),
+        selectedIndex: ref.watch(navIndexProvider),
         onDestinationSelected: (int selectedIndex) {
-          ref.read(currentNavIndexProvider.notifier).update((state) => selectedIndex);
-
+          ref.read(navIndexProvider.notifier).goToIndex(selectedIndex);
           switch (selectedIndex) {
             case 0:
               context.goNamed(AppRoute.home.name);

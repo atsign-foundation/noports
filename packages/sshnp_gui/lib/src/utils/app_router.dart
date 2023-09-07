@@ -6,7 +6,7 @@ import 'package:sshnp_gui/src/presentation/screens/onboarding_screen.dart';
 import 'package:sshnp_gui/src/presentation/screens/profile_editor_screen.dart';
 import 'package:sshnp_gui/src/presentation/screens/settings_screen.dart';
 import 'package:sshnp_gui/src/presentation/screens/terminal_screen.dart';
-import 'package:sshnp_gui/src/repository/navigation_service.dart';
+import 'package:sshnp_gui/src/repository/navigation_repository.dart';
 
 enum AppRoute {
   onboarding,
@@ -17,7 +17,7 @@ enum AppRoute {
 }
 
 final goRouterProvider = Provider<GoRouter>((ref) => GoRouter(
-      navigatorKey: NavigationService.navKey,
+      navigatorKey: NavigationRepository.navKey,
       initialLocation: '/',
       debugLogDiagnostics: false,
       routes: [

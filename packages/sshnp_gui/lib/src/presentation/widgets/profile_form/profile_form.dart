@@ -4,7 +4,7 @@ import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:sshnoports/sshnp/sshnp.dart';
-import 'package:sshnp_gui/src/controllers/minor_providers.dart';
+import 'package:sshnp_gui/src/controllers/nav_index_controller.dart';
 import 'package:sshnp_gui/src/controllers/sshnp_config_controller.dart';
 import 'package:sshnp_gui/src/presentation/widgets/profile_form/custom_text_form_field.dart';
 import 'package:sshnp_gui/src/utils/app_router.dart';
@@ -51,7 +51,7 @@ class _ProfileFormState extends ConsumerState<ProfileForm> {
         await controller.create(config);
       }
       if (context.mounted) {
-        ref.read(currentNavIndexProvider.notifier).update((state) => AppRoute.home.index - 1);
+        ref.read(navIndexProvider.notifier).goTo(AppRoute.home);
         context.pushReplacementNamed(AppRoute.home.name);
       }
     }
@@ -258,7 +258,7 @@ class _ProfileFormState extends ConsumerState<ProfileForm> {
                       gapW8,
                       TextButton(
                         onPressed: () {
-                          ref.read(currentNavIndexProvider.notifier).update((state) => AppRoute.home.index - 1);
+                          ref.read(navIndexProvider.notifier).goTo(AppRoute.home);
                           context.pushReplacementNamed(AppRoute.home.name);
                         },
                         child: Text(strings.cancel),
