@@ -4,7 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import 'package:sshnoports/sshnp/sshnp.dart';
 import 'package:sshnp_gui/src/controllers/nav_index_controller.dart';
-import 'package:sshnp_gui/src/controllers/sshnp_config_controller.dart';
+import 'package:sshnp_gui/src/controllers/sshnp_params_controller.dart';
 import 'package:sshnp_gui/src/utils/app_router.dart';
 import 'package:sshnp_gui/src/utils/enum.dart';
 
@@ -19,7 +19,7 @@ class ProfileEditAction extends ConsumerStatefulWidget {
 class _ProfileEditActionState extends ConsumerState<ProfileEditAction> {
   void onPressed() {
     // Change value to update to trigger the update functionality on the new connection form.
-    ref.watch(currentParamsController.notifier).setState(
+    ref.watch(sshnpParamsController.notifier).setState(
           CurrentSSHNPParamsModel(
             profileName: widget.params.profileName!,
             configFileWriteState: ConfigFileWriteState.update,

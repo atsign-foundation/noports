@@ -6,16 +6,17 @@ import 'package:sshnoports/sshnp/sshnp.dart';
 import 'package:sshnp_gui/src/utils/enum.dart';
 
 /// Controller instance for the current [SSHNPParams] being edited
-final currentParamsController = AutoDisposeNotifierProvider<CurrentSSHNPParamsController, CurrentSSHNPParamsModel>(
-    CurrentSSHNPParamsController.new);
+final sshnpParamsController =
+    AutoDisposeNotifierProvider<SSHNPParamsController, CurrentSSHNPParamsModel>(SSHNPParamsController.new);
 
 /// Controller instance for the list of all profileNames for each config file
-final paramsListController =
+final sshnpParamsListController =
     AutoDisposeAsyncNotifierProvider<SSHNPParamsListController, Set<String>>(SSHNPParamsListController.new);
 
 /// Controller instance for the family of [SSHNPParams] controllers
-final paramsFamilyController = AutoDisposeAsyncNotifierProviderFamily<SSHNPParamsFamilyController, SSHNPParams, String>(
-    SSHNPParamsFamilyController.new);
+final sshnpParamsFamilyController =
+    AutoDisposeAsyncNotifierProviderFamily<SSHNPParamsFamilyController, SSHNPParams, String>(
+        SSHNPParamsFamilyController.new);
 
 /// Holder model for the current [SSHNPParams] being edited
 class CurrentSSHNPParamsModel {
@@ -26,7 +27,7 @@ class CurrentSSHNPParamsModel {
 }
 
 /// Controller for the current [SSHNPParams] being edited
-class CurrentSSHNPParamsController extends AutoDisposeNotifier<CurrentSSHNPParamsModel> {
+class SSHNPParamsController extends AutoDisposeNotifier<CurrentSSHNPParamsModel> {
   @override
   CurrentSSHNPParamsModel build() {
     return CurrentSSHNPParamsModel(
@@ -60,7 +61,7 @@ class SSHNPParamsFamilyController extends AutoDisposeFamilyAsyncNotifier<SSHNPPa
   Future<void> create(SSHNPParams params) async {
     await params.toFile();
     state = AsyncValue.data(params);
-    ref.read(paramsListController.notifier).add(params.profileName!);
+    ref.read(sshnpParamsListController.notifier).add(params.profileName!);
   }
 
   Future<void> edit(SSHNPParams params) async {
@@ -71,7 +72,7 @@ class SSHNPParamsFamilyController extends AutoDisposeFamilyAsyncNotifier<SSHNPPa
   Future<void> delete() async {
     await state.value?.deleteFile();
     state = const AsyncError('File deleted', StackTrace.empty);
-    ref.read(paramsListController.notifier).remove(state.value!.profileName!);
+    ref.read(sshnpParamsListController.notifier).remove(state.value!.profileName!);
   }
 }
 

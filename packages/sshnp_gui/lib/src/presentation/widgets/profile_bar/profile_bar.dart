@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:sshnp_gui/src/controllers/sshnp_config_controller.dart';
+import 'package:sshnp_gui/src/controllers/sshnp_params_controller.dart';
 import 'package:sshnp_gui/src/presentation/widgets/profile_bar/actions/profile_actions.dart';
 
 class ProfileBar extends ConsumerStatefulWidget {
@@ -14,7 +14,7 @@ class ProfileBar extends ConsumerStatefulWidget {
 class _ProfileBarState extends ConsumerState<ProfileBar> {
   @override
   Widget build(BuildContext context) {
-    final controller = ref.watch(paramsFamilyController(widget.profileName));
+    final controller = ref.watch(sshnpParamsFamilyController(widget.profileName));
     return controller.when(
       error: (error, stackTrace) => Container(),
       loading: () => const LinearProgressIndicator(),
