@@ -32,7 +32,7 @@ class _NewConnectionScreenState extends State<NewConnectionScreen> {
                     style: Theme.of(context).textTheme.titleMedium,
                   ),
                   gapH10,
-                  const Expanded(child: NewProfileForm())
+                  const Expanded(child: ProfileForm())
                 ]),
               ),
             ),

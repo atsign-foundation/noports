@@ -14,14 +14,14 @@ import 'package:sshnp_gui/src/utils/validator.dart';
 import '../../../utils/sizes.dart';
 import '../home_screen_table/custom_text_form_field.dart';
 
-class NewProfileForm extends ConsumerStatefulWidget {
-  const NewProfileForm({super.key});
+class ProfileForm extends ConsumerStatefulWidget {
+  const ProfileForm({super.key});
 
   @override
-  ConsumerState<NewProfileForm> createState() => _NewProfileFormState();
+  ConsumerState<ProfileForm> createState() => _ProfileFormState();
 }
 
-class _NewProfileFormState extends ConsumerState<NewProfileForm> {
+class _ProfileFormState extends ConsumerState<ProfileForm> {
   final GlobalKey<FormState> _formkey = GlobalKey<FormState>();
   late CurrentSSHNPParamsModel currentProfile;
   SSHNPPartialParams newConfig = SSHNPPartialParams.empty();
