@@ -57,7 +57,7 @@ class TerminalSession {
   String? command;
   List<String> args = const [];
 
-  TerminalSession(this.sessionId) : terminal = Terminal();
+  TerminalSession(this.sessionId) : terminal = Terminal(maxLines: 10000);
 }
 
 /// Controller for the family of terminal session [TerminalController]s
