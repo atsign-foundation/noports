@@ -41,6 +41,27 @@ class SSHNPParamsController extends AutoDisposeNotifier<CurrentSSHNPParamsModel>
   }
 }
 
+/// Controller for the list of all profileNames for each config file
+class SSHNPParamsListController extends AutoDisposeAsyncNotifier<Set<String>> {
+  @override
+  Future<Set<String>> build() async {
+    return (await SSHNPParams.listFiles()).toSet();
+  }
+
+  Future<void> refresh() async {
+    state = const AsyncLoading();
+    state = await AsyncValue.guard(() => build());
+  }
+
+  void add(String profileName) {
+    state = AsyncValue.data({...state.value ?? [], profileName});
+  }
+
+  void remove(String profileName) {
+    state = AsyncData(state.value?.difference({profileName}) ?? {});
+  }
+}
+
 /// Controller for the family of [SSHNPParams] controllers
 class SSHNPParamsFamilyController extends AutoDisposeFamilyAsyncNotifier<SSHNPParams, String> {
   @override
@@ -73,26 +94,5 @@ class SSHNPParamsFamilyController extends AutoDisposeFamilyAsyncNotifier<SSHNPPa
     await state.value?.deleteFile();
     state = const AsyncError('File deleted', StackTrace.empty);
     ref.read(sshnpParamsListController.notifier).remove(state.value!.profileName!);
-  }
-}
-
-/// Controller for the list of all profileNames for each config file
-class SSHNPParamsListController extends AutoDisposeAsyncNotifier<Set<String>> {
-  @override
-  Future<Set<String>> build() async {
-    return (await SSHNPParams.listFiles()).toSet();
-  }
-
-  Future<void> refresh() async {
-    state = const AsyncLoading();
-    state = await AsyncValue.guard(() => build());
-  }
-
-  void add(String profileName) {
-    state = AsyncValue.data({...state.value ?? [], profileName});
-  }
-
-  void remove(String profileName) {
-    state = AsyncData(state.value?.difference({profileName}) ?? {});
   }
 }
