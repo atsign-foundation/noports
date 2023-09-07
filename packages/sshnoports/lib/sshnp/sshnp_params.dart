@@ -27,8 +27,7 @@ class SSHNPParams {
   final bool legacyDaemon;
 
   /// Special Arguments
-  late final String?
-      profileName; // automatically populated with the filename if from a configFile
+  late final String? profileName; // automatically populated with the filename if from a configFile
   late final bool listDevices;
 
   SSHNPParams({
@@ -58,12 +57,10 @@ class SSHNPParams {
 
     // Use default atKeysFilePath if not provided
 
-    this.atKeysFilePath =
-        atKeysFilePath ?? getDefaultAtKeysFilePath(homeDirectory, clientAtSign);
+    this.atKeysFilePath = atKeysFilePath ?? getDefaultAtKeysFilePath(homeDirectory, clientAtSign);
   }
 
-  factory SSHNPParams.merge(SSHNPParams params1,
-      [SSHNPPartialParams? params2]) {
+  factory SSHNPParams.merge(SSHNPParams params1, [SSHNPPartialParams? params2]) {
     params2 ??= SSHNPPartialParams.empty();
     return SSHNPParams(
       profileName: params2.profileName ?? params1.profileName,
@@ -111,8 +108,7 @@ class SSHNPParams {
       device: partial.device ?? SSHNP.defaultDevice,
       port: partial.port ?? SSHNP.defaultPort,
       localPort: partial.localPort ?? SSHNP.defaultLocalPort,
-      sendSshPublicKey:
-          partial.sendSshPublicKey ?? SSHNP.defaultSendSshPublicKey,
+      sendSshPublicKey: partial.sendSshPublicKey ?? SSHNP.defaultSendSshPublicKey,
       localSshOptions: partial.localSshOptions,
       rsa: partial.rsa ?? SSHNP.defaultRsa,
       verbose: partial.verbose ?? SSHNP.defaultRsa,
@@ -152,8 +148,7 @@ class SSHNPParams {
     return fileNames;
   }
 
-  static Future<SSHNPParams> fromFile(String profileName,
-      [String? directory]) async {
+  static Future<SSHNPParams> fromFile(String profileName, [String? directory]) async {
     var homeDirectory = getHomeDirectory(throwIfNull: true)!;
     directory ??= getDefaultSshnpConfigDirectory(homeDirectory);
     var fileName = path.join(
@@ -188,8 +183,7 @@ class SSHNPParams {
     var exists = await file.exists();
 
     if (exists && !overwrite) {
-      throw Exception(
-          'Failed to write config file: ${file.path} already exists');
+      throw Exception('Failed to write config file: ${file.path} already exists');
     }
 
     // FileMode.write will create the file if it does not exist
@@ -309,8 +303,7 @@ class SSHNPPartialParams {
   /// Merge two SSHNPPartialParams objects together
   /// Params in params2 take precedence over params1
   /// - localSshOptions are concatenated together as (params1 + params2)
-  factory SSHNPPartialParams.merge(SSHNPPartialParams params1,
-      [SSHNPPartialParams? params2]) {
+  factory SSHNPPartialParams.merge(SSHNPPartialParams params1, [SSHNPPartialParams? params2]) {
     params2 ??= SSHNPPartialParams.empty();
     return SSHNPPartialParams(
       profileName: params2.profileName ?? params1.profileName,
@@ -344,8 +337,7 @@ class SSHNPPartialParams {
       localPort: args['local-port'],
       atKeysFilePath: args['key-file'],
       sendSshPublicKey: args['ssh-public-key'],
-      localSshOptions:
-          args['local-ssh-options'] ?? SSHNP.defaultLocalSshOptions,
+      localSshOptions: args['local-ssh-options'] ?? SSHNP.defaultLocalSshOptions,
       rsa: args['rsa'],
       remoteUsername: args['remote-user-name'],
       verbose: args['verbose'],
@@ -359,6 +351,7 @@ class SSHNPPartialParams {
   factory SSHNPPartialParams.fromConfig(String fileName) {
     var args = _parseConfigFile(fileName);
     args['profile-name'] = _fileToProfileName(fileName);
+    print('profile-name: ${args['profile-name']}');
     return SSHNPPartialParams.fromArgMap(args);
   }
 
@@ -378,9 +371,7 @@ class SSHNPPartialParams {
     }
 
     // THIS IS A WORKAROUND IN ORDER TO BE TYPE SAFE IN SSHNPPartialParams.fromArgMap
-    Map<String, dynamic> parsedArgsMap = {
-      for (var e in (parsedArgs.options)) e: parsedArgs[e]
-    };
+    Map<String, dynamic> parsedArgsMap = {for (var e in (parsedArgs.options)) e: parsedArgs[e]};
 
     return SSHNPPartialParams.merge(
       params,
@@ -402,9 +393,7 @@ class SSHNPPartialParams {
             arg.name,
             abbr: arg.abbr,
             mandatory: arg.mandatory,
-            defaultsTo: withDefaults
-                ? (arg.defaultsTo != null ? '${arg.defaultsTo}' : null)
-                : null,
+            defaultsTo: withDefaults ? (arg.defaultsTo != null ? '${arg.defaultsTo}' : null) : null,
             help: arg.help,
           );
           break;
@@ -429,8 +418,7 @@ class SSHNPPartialParams {
     if (withConfig) {
       parser.addOption(
         'config-file',
-        help:
-            'Read args from a config file\nMandatory args are not required if already supplied in the config file',
+        help: 'Read args from a config file\nMandatory args are not required if already supplied in the config file',
       );
     }
     if (withListDevices) {
@@ -500,5 +488,4 @@ class SSHNPPartialParams {
   }
 }
 
-String _fileToProfileName(String fileName) =>
-    path.basenameWithoutExtension(fileName).replaceAll('_', ' ');
+String _fileToProfileName(String fileName) => path.basenameWithoutExtension(fileName).replaceAll('_', ' ');

@@ -6,15 +6,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../controllers/authentication_controller.dart';
-import '../../repository/authentication_repository.dart';
-import 'snackbars.dart';
+import '../../../controllers/authentication_controller.dart';
+import '../../../repository/authentication_repository.dart';
+import 'custom_snack_bar.dart';
 
 class AtSignBottomSheet extends ConsumerStatefulWidget {
   const AtSignBottomSheet({Key? key}) : super(key: key);
 
   @override
-  _AtSignBottomSheetState createState() => _AtSignBottomSheetState();
+  ConsumerState<AtSignBottomSheet> createState() => _AtSignBottomSheetState();
 }
 
 class _AtSignBottomSheetState extends ConsumerState<AtSignBottomSheet> {
@@ -91,7 +91,7 @@ class _AtSignBottomSheetState extends ConsumerState<AtSignBottomSheet> {
                                           } else if (!snapshot.hasData) {
                                             return const CircularProgressIndicator();
                                           } else {
-                                            SnackBars.errorSnackBar(content: strings.error);
+                                            CustomSnackBar.error(content: strings.error);
                                             return const SizedBox();
                                           }
                                         }));

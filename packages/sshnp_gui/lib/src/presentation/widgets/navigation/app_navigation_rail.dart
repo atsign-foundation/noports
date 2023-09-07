@@ -3,8 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../controllers/minor_providers.dart';
-import '../../utils/app_router.dart';
+import '../../../controllers/minor_providers.dart';
+import '../../../utils/app_router.dart';
 
 class AppNavigationRail extends ConsumerWidget {
   const AppNavigationRail({super.key});

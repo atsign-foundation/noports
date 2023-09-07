@@ -13,7 +13,7 @@ import 'package:go_router/go_router.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-import '../presentation/widgets/snackbars.dart';
+import '../presentation/widgets/utility/custom_snack_bar.dart';
 // import '../utils/my_sync_progress_listener.dart';
 import '../utils/app_router.dart';
 import 'navigation_service.dart';
@@ -94,7 +94,7 @@ class AuthenticationRepository {
 
       case AtOnboardingResultStatus.error:
         _logger.severe('Onboarding throws ${result.message} error');
-        SnackBars.errorSnackBar(content: result.message ?? '');
+        CustomSnackBar.error(content: result.message ?? '');
         break;
 
       case AtOnboardingResultStatus.cancel:

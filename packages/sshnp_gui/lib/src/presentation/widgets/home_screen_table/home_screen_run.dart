@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:sshnoports/sshnp/sshnp.dart';
 import 'package:sshnoports/sshrv/sshrv.dart';
-import 'package:sshnp_gui/src/presentation/widgets/sshnp_result_alert_dialog.dart';
+import 'package:sshnp_gui/src/presentation/widgets/dialog/sshnp_result_alert_dialog.dart';
 
 class HomeScreenRunAction extends StatefulWidget {
   final SSHNPParams params;

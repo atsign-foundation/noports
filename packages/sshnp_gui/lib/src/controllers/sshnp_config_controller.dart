@@ -1,37 +1,32 @@
 import 'dart:async';
 
+import 'package:at_onboarding_flutter/at_onboarding_flutter.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sshnoports/sshnp/sshnp.dart';
 import 'package:sshnp_gui/src/utils/enum.dart';
 
 /// Controller instance for the current [SSHNPParams] being edited
-final currentParamsController = AutoDisposeNotifierProvider<
-    CurrentSSHNPParamsController,
-    CurrentSSHNPParamsModel>(CurrentSSHNPParamsController.new);
+final currentParamsController = AutoDisposeNotifierProvider<CurrentSSHNPParamsController, CurrentSSHNPParamsModel>(
+    CurrentSSHNPParamsController.new);
 
 /// Controller instance for the list of all profileNames for each config file
 final paramsListController =
-    AutoDisposeAsyncNotifierProvider<SSHNPParamsListController, Set<String>>(
-        SSHNPParamsListController.new);
+    AutoDisposeAsyncNotifierProvider<SSHNPParamsListController, Set<String>>(SSHNPParamsListController.new);
 
 /// Controller instance for the family of [SSHNPParams] controllers
-final paramsFamilyController = AutoDisposeAsyncNotifierProviderFamily<
-    SSHNPParamsFamilyController,
-    SSHNPParams,
-    String>(SSHNPParamsFamilyController.new);
+final paramsFamilyController = AutoDisposeAsyncNotifierProviderFamily<SSHNPParamsFamilyController, SSHNPParams, String>(
+    SSHNPParamsFamilyController.new);
 
 /// Holder model for the current [SSHNPParams] being edited
 class CurrentSSHNPParamsModel {
   final String profileName;
   final ConfigFileWriteState configFileWriteState;
 
-  CurrentSSHNPParamsModel(
-      {required this.profileName, required this.configFileWriteState});
+  CurrentSSHNPParamsModel({required this.profileName, required this.configFileWriteState});
 }
 
 /// Controller for the current [SSHNPParams] being edited
-class CurrentSSHNPParamsController
-    extends AutoDisposeNotifier<CurrentSSHNPParamsModel> {
+class CurrentSSHNPParamsController extends AutoDisposeNotifier<CurrentSSHNPParamsModel> {
   @override
   CurrentSSHNPParamsModel build() {
     return CurrentSSHNPParamsModel(
@@ -46,13 +41,15 @@ class CurrentSSHNPParamsController
 }
 
 /// Controller for the family of [SSHNPParams] controllers
-class SSHNPParamsFamilyController
-    extends AutoDisposeFamilyAsyncNotifier<SSHNPParams, String> {
+class SSHNPParamsFamilyController extends AutoDisposeFamilyAsyncNotifier<SSHNPParams, String> {
   @override
   Future<SSHNPParams> build(String arg) async {
     return (await SSHNPParams.fileExists(arg))
         ? await SSHNPParams.fromFile(arg)
-        : SSHNPParams.empty();
+        : SSHNPParams.merge(
+            SSHNPParams.empty(),
+            SSHNPPartialParams(clientAtSign: AtClientManager.getInstance().atClient.getCurrentAtSign()!),
+          );
   }
 
   Future<void> refresh(String arg) async {
@@ -61,14 +58,12 @@ class SSHNPParamsFamilyController
   }
 
   Future<void> create(SSHNPParams params) async {
-    print('create');
     await params.toFile();
     state = AsyncValue.data(params);
     ref.read(paramsListController.notifier).add(params.profileName!);
   }
 
   Future<void> edit(SSHNPParams params) async {
-    print('edit');
     await params.toFile(overwrite: true);
     state = AsyncValue.data(params);
   }

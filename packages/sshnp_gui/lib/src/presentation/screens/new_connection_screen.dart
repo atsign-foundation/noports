@@ -3,7 +3,7 @@ import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:sshnp_gui/src/presentation/widgets/new_connection_form.dart';
 
 import '../../utils/sizes.dart';
-import '../widgets/app_navigation_rail.dart';
+import '../widgets/navigation/app_navigation_rail.dart';
 
 // * Once the onboarding process is completed you will be taken to this screen
 class NewConnectionScreen extends StatefulWidget {

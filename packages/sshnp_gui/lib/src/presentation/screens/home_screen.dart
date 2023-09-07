@@ -8,7 +8,7 @@ import 'package:sshnp_gui/src/presentation/widgets/home_screen_table/home_screen
 import 'package:sshnp_gui/src/presentation/widgets/home_screen_table/home_screen_table_text.dart';
 
 import '../../utils/sizes.dart';
-import '../widgets/app_navigation_rail.dart';
+import '../widgets/navigation/app_navigation_rail.dart';
 
 // * Once the onboarding process is completed you will be taken to this screen
 class HomeScreen extends ConsumerStatefulWidget {

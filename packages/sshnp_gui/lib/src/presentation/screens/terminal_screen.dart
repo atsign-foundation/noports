@@ -9,7 +9,7 @@ import 'package:sshnp_gui/src/controllers/minor_providers.dart';
 import 'package:xterm/xterm.dart';
 
 import '../../utils/sizes.dart';
-import '../widgets/app_navigation_rail.dart';
+import '../widgets/navigation/app_navigation_rail.dart';
 
 // * Once the onboarding process is completed you will be taken to this screen
 class TerminalScreen extends ConsumerStatefulWidget {

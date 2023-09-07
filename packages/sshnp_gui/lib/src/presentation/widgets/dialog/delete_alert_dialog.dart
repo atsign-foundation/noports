@@ -4,7 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sshnoports/sshnp/sshnp.dart';
 import 'package:sshnp_gui/src/controllers/sshnp_config_controller.dart';
 
-import '../../utils/sizes.dart';
+import '../../../utils/sizes.dart';
 
 class DeleteAlertDialog extends ConsumerWidget {
   const DeleteAlertDialog({required this.sshnpParams, super.key});
