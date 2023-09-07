@@ -3,10 +3,7 @@ import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:sshnp_gui/src/controllers/sshnp_config_controller.dart';
-import 'package:sshnp_gui/src/presentation/widgets/profile/actions/profile_actions.dart';
-import 'package:sshnp_gui/src/presentation/widgets/home_screen_table/home_screen_table_header.dart';
-import 'package:sshnp_gui/src/presentation/widgets/home_screen_table/home_screen_table_text.dart';
-import 'package:sshnp_gui/src/presentation/widgets/profile/profile_bar.dart';
+import 'package:sshnp_gui/src/presentation/widgets/profile_bar/profile_bar.dart';
 
 import '../../utils/sizes.dart';
 import '../widgets/navigation/app_navigation_rail.dart';

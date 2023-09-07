@@ -7,12 +7,12 @@ import 'package:go_router/go_router.dart';
 import 'package:sshnoports/sshnp/sshnp.dart';
 import 'package:sshnp_gui/src/controllers/minor_providers.dart';
 import 'package:sshnp_gui/src/controllers/sshnp_config_controller.dart';
+import 'package:sshnp_gui/src/presentation/widgets/profile_form/custom_text_form_field.dart';
 import 'package:sshnp_gui/src/utils/app_router.dart';
 import 'package:sshnp_gui/src/utils/enum.dart';
 import 'package:sshnp_gui/src/utils/validator.dart';
+import 'package:sshnp_gui/src/utils/sizes.dart';
 
-import '../../../utils/sizes.dart';
-import '../home_screen_table/custom_text_form_field.dart';
 
 class ProfileForm extends ConsumerStatefulWidget {
   const ProfileForm({super.key});
