@@ -1,19 +1,23 @@
 import 'package:at_client_mobile/at_client_mobile.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:sshnoports/sshnp/sshnp.dart';
 import 'package:sshnoports/sshrv/sshrv.dart';
+import 'package:sshnp_gui/src/controllers/nav_route_controller.dart';
+import 'package:sshnp_gui/src/controllers/terminal_session_controller.dart';
 import 'package:sshnp_gui/src/presentation/widgets/dialog/sshnp_result_alert_dialog.dart';
+import 'package:sshnp_gui/src/utils/app_router.dart';
 
-class ProfileTerminalAction extends StatefulWidget {
+class ProfileTerminalAction extends ConsumerStatefulWidget {
   final SSHNPParams params;
   const ProfileTerminalAction(this.params, {Key? key}) : super(key: key);
 
   @override
-  State<ProfileTerminalAction> createState() => _ProfileTerminalActionState();
+  ConsumerState<ProfileTerminalAction> createState() => _ProfileTerminalActionState();
 }
 
-class _ProfileTerminalActionState extends State<ProfileTerminalAction> {
+class _ProfileTerminalActionState extends ConsumerState<ProfileTerminalAction> {
   Future<void> onPressed() async {
     if (mounted) {
       showDialog<void>(
@@ -31,19 +35,25 @@ class _ProfileTerminalActionState extends State<ProfileTerminalAction> {
       );
 
       await sshnp.init();
-      final sshnpResult = await sshnp.run();
+      final result = await sshnp.run();
+      if (result is SSHNPFailed) {
+        throw result;
+      }
 
-      if (mounted) {
-        // pop to remove circular progress indicator
-        context.pop();
-        showDialog<void>(
-          context: context,
-          barrierDismissible: false,
-          builder: (BuildContext context) => SSHNPResultAlertDialog(
-            result: sshnpResult.toString(),
-            title: 'Success',
-          ),
-        );
+      /// Issue a new session id
+      final sessionId = ref.watch(terminalSessionController.notifier).createSession();
+      print('sessionId in onPressed: $sessionId');
+
+      /// Create the session controller for the new session id
+      final sessionController = ref.watch(terminalSessionFamilyController(sessionId).notifier);
+
+      if (result is SSHNPCommandResult) {
+        /// Set the command for the new session
+        sessionController.setProcess(command: result.command, args: result.args);
+        ref.read(navRouteController.notifier).goTo(AppRoute.terminal);
+        if (mounted) {
+          context.pushReplacementNamed(AppRoute.terminal.name);
+        }
       }
     } catch (e) {
       if (mounted) {
@@ -53,7 +63,7 @@ class _ProfileTerminalActionState extends State<ProfileTerminalAction> {
           barrierDismissible: false,
           builder: (BuildContext context) => SSHNPResultAlertDialog(
             result: e.toString(),
-            title: 'Failed',
+            title: 'SSHNP Failed',
           ),
         );
       }

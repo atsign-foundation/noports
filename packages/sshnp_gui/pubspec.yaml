@@ -34,6 +34,7 @@ dependencies:
   sshnoports:
     path: ../sshnoports/
   url_launcher: ^6.1.14
+  uuid: ^4.0.0
   xterm: ^3.5.0
 
 dev_dependencies:
