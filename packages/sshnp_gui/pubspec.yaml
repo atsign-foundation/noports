@@ -8,6 +8,7 @@ environment:
 
 dependencies:
   at_app_flutter: ^5.0.1
+  at_backupkey_flutter: ^4.0.10
   at_client_mobile: ^3.2.6
   at_common_flutter: ^2.0.12
   at_contact: ^3.0.7
@@ -32,6 +33,7 @@ dependencies:
   shared_preferences: ^2.2.0
   sshnoports:
     path: ../sshnoports/
+  url_launcher: ^6.1.14
   xterm: ^3.5.0
 
 dev_dependencies:

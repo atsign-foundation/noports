@@ -1,11 +1,10 @@
 import 'package:at_onboarding_flutter/services/sdk_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
-
-import '../../../../main.dart';
-import '../../../utils/at_error_dialog.dart';
-import '../../../utils/sizes.dart';
-import 'settings_button.dart';
+import 'package:sshnp_gui/main.dart';
+import 'package:sshnp_gui/src/presentation/widgets/utility/settings_button.dart';
+import 'package:sshnp_gui/src/utils/at_error_dialog.dart';
+import 'package:sshnp_gui/src/utils/sizes.dart';
 
 /// Custom reset button widget is to reset an atsign from keychain list,
 

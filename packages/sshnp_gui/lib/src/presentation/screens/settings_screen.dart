@@ -4,12 +4,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:sshnp_gui/src/presentation/widgets/navigation/app_navigation_rail.dart';
 import 'package:sshnp_gui/src/presentation/widgets/utility/reset_app_button.dart';
+import 'package:sshnp_gui/src/presentation/widgets/utility/settings_button.dart';
+import 'package:sshnp_gui/src/presentation/widgets/utility/switch_atsign.dart';
+import 'package:sshnp_gui/src/repository/navigation_service.dart';
+import 'package:sshnp_gui/src/utils/sizes.dart';
 import 'package:url_launcher/url_launcher.dart';
-
-import '../../repository/navigation_service.dart';
-import '../../utils/sizes.dart';
-import '../widgets/utility/settings_button.dart';
-import '../widgets/utility/switch_atsign.dart';
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({Key? key}) : super(key: key);

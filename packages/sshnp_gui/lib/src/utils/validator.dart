@@ -1,4 +1,4 @@
-import 'constants.dart';
+import 'package:sshnp_gui/src/utils/constants.dart';
 
 class Validator {
   static String? validateRequiredField(String? value) {

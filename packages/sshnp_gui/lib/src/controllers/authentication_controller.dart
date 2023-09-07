@@ -1,7 +1,6 @@
 import 'package:at_contact/at_contact.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-
-import '../repository/authentication_repository.dart';
+import 'package:sshnp_gui/src/repository/authentication_repository.dart';
 
 /// A controller class that controls the UI update when the [AuthenticationRepository] methods are called.
 class AuthenticationController extends StateNotifier<AsyncValue<List<String>?>> {

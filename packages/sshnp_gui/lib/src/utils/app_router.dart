@@ -1,13 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:sshnp_gui/src/presentation/screens/home_screen.dart';
+import 'package:sshnp_gui/src/presentation/screens/onboarding_screen.dart';
 import 'package:sshnp_gui/src/presentation/screens/profile_editor_screen.dart';
+import 'package:sshnp_gui/src/presentation/screens/settings_screen.dart';
+import 'package:sshnp_gui/src/presentation/screens/terminal_screen.dart';
 import 'package:sshnp_gui/src/repository/navigation_service.dart';
-
-import '../presentation/screens/home_screen.dart';
-import '../presentation/screens/onboarding_screen.dart';
-import '../presentation/screens/settings_screen.dart';
-import '../presentation/screens/terminal_screen.dart';
 
 enum AppRoute {
   onboarding,

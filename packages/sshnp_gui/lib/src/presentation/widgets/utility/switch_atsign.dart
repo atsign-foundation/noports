@@ -1,14 +1,12 @@
 import 'package:at_common_flutter/services/size_config.dart';
 import 'package:at_contact/at_contact.dart';
 import 'package:at_contacts_flutter/widgets/circular_contacts.dart';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-
-import '../../../controllers/authentication_controller.dart';
-import '../../../repository/authentication_repository.dart';
-import 'custom_snack_bar.dart';
+import 'package:sshnp_gui/src/controllers/authentication_controller.dart';
+import 'package:sshnp_gui/src/presentation/widgets/utility/custom_snack_bar.dart';
+import 'package:sshnp_gui/src/repository/authentication_repository.dart';
 
 class AtSignBottomSheet extends ConsumerStatefulWidget {
   const AtSignBottomSheet({Key? key}) : super(key: key);

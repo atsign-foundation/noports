@@ -1,4 +1,3 @@
-// 🎯 Dart imports:
 import 'dart:async';
 
 import 'package:at_app_flutter/at_app_flutter.dart';
@@ -12,11 +11,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-
-import '../presentation/widgets/utility/custom_snack_bar.dart';
-// import '../utils/my_sync_progress_listener.dart';
-import '../utils/app_router.dart';
-import 'navigation_service.dart';
+import 'package:sshnp_gui/src/presentation/widgets/utility/custom_snack_bar.dart';
+import 'package:sshnp_gui/src/repository/navigation_service.dart';
+import 'package:sshnp_gui/src/utils/app_router.dart';
 
 /// A singleton that makes all the network calls to the @platform.
 class AuthenticationRepository {
