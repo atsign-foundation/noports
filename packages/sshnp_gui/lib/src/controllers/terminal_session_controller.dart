@@ -83,7 +83,11 @@ class TerminalSessionFamilyController extends AutoDisposeFamilyNotifier<Terminal
       workingDirectory: Platform.environment['HOME'],
     );
 
-    state.terminal.setTitle('${state.pty.executable} ${state.pty.arguments.join(' ')}');
+    final command = '${state.pty.executable} ${state.pty.arguments.join(' ')}';
+    state.terminal.setTitle(command);
+
+    // Write the command to the terminal
+    state.terminal.write('$command\n');
 
     // Write stdout of the process to the terminal
     state.pty.output.cast<List<int>>().transform(const Utf8Decoder()).listen(state.terminal.write);
