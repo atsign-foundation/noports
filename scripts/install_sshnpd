@@ -240,6 +240,7 @@ parse_requirements() {
   REQ_CURL=$(command -v curl)
   REQ_TMUX=$(command -v tmux)
   REQ_LOGR=$(command -v logrotate)
+  REQ_NOHUP=$(command -v nohup)
 }
 
 # Check the script's requirements
@@ -262,11 +263,11 @@ check_requirements() {
   # elif [ -z "$REQ_CRON_SERVICE" ]; then
   #   echo "  [X] cron is not running"
   fi
-  if [ -z "$REQ_TMUX" ] && [ -z "$REQ_LOGR" ]; then
+  if [ -z "$REQ_TMUX" ] && [[ -z "$REQ_LOGR" || -z "$REQ_NOHUP" ]]; then
     echo "  [X] Missing required dependency"
-    echo "      One of the following dependencies must be installed:"
-    echo "        - tmux"
-    echo "        - logrotate"
+    echo "      One of the following dependency groups must be installed:"
+    echo "        A) tmux"
+    echo "        B) logrotate, nohup"
   fi
 }
 
