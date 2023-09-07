@@ -43,6 +43,7 @@ class _TerminalScreenState extends ConsumerState<TerminalScreen> {
     // * Getting the AtClientManager instance to use below
     final sessionId = ref.watch(terminalSessionController);
     final terminalSession = ref.watch(terminalSessionFamilyController(sessionId));
+    final terminalList = ref.watch(terminalSessionListController);
     if (sessionId.isEmpty) {
       // for now, just return a normal shell prompt
       terminalSession.command = Platform.environment['SHELL'] ?? 'bash';
@@ -56,19 +57,56 @@ class _TerminalScreenState extends ConsumerState<TerminalScreen> {
             Expanded(
               child: Padding(
                 padding: const EdgeInsets.only(left: Sizes.p36, top: Sizes.p21, right: Sizes.p36),
-                child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  SvgPicture.asset(
-                    'assets/images/noports_light.svg',
-                  ),
-                  gapH24,
-                  Expanded(
-                    child: TerminalView(
-                      terminalSession.terminal,
-                      controller: terminalController,
-                      autofocus: true,
+                child: DefaultTabController(
+                  length: terminalList.length,
+                  child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                    SvgPicture.asset(
+                      'assets/images/noports_light.svg',
                     ),
-                  ),
-                ]),
+                    gapH24,
+                    TabBar(
+                      isScrollable: true,
+                      tabs: terminalList
+                          .map(
+                            (e) => Tab(
+                                // text: e,
+                                child: Row(
+                              children: [
+                                Text(e),
+                                IconButton(
+                                  icon: const Icon(Icons.close),
+                                  onPressed: () {
+                                    ref.read(terminalSessionListController.notifier).remove(e);
+                                    setState(() {});
+                                  },
+                                )
+                              ],
+                            )),
+                          )
+                          .toList(),
+                    ),
+                    Expanded(
+                      child: TabBarView(
+                        children: terminalList.map((e) {
+                          return TerminalView(
+                            terminalSession.terminal,
+                            // ref.read(terminalSessionFamilyController(e).terminal),
+                            controller: terminalController,
+                            autofocus: true,
+                          );
+                        }).toList(),
+                      ),
+                    ),
+                    // SizedBox(
+                    //   height: MediaQuery.of(context).size.height - 200,
+                    //   child: TerminalView(
+                    //     terminalSession.terminal,
+                    //     controller: terminalController,
+                    //     autofocus: true,
+                    //   ),
+                    // ),
+                  ]),
+                ),
               ),
             ),
           ],
