@@ -6,10 +6,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:macos_ui/macos_ui.dart';
-
-import 'src/utils/app_router.dart';
-import 'src/utils/theme.dart';
-import 'src/utils/util.dart';
+import 'package:sshnp_gui/src/utils/app_router.dart';
+import 'package:sshnp_gui/src/utils/theme.dart';
+import 'package:sshnp_gui/src/utils/util.dart';
 
 final AtSignLogger _logger = AtSignLogger(AtEnv.appNamespace);
 

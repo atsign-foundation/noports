@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
 
-class NavigationService {
+class NavigationRepository {
   static GlobalKey<NavigatorState> navKey = GlobalKey();
-
-  static GlobalKey<NavigatorState> nesteNavKey = GlobalKey();
 }

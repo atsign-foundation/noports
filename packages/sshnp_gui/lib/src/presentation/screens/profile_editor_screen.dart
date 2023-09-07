@@ -1,19 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
-import 'package:sshnp_gui/src/presentation/widgets/new_connection_form.dart';
-
-import '../../utils/sizes.dart';
-import '../widgets/app_navigation_rail.dart';
+import 'package:sshnp_gui/src/presentation/widgets/navigation/app_navigation_rail.dart';
+import 'package:sshnp_gui/src/presentation/widgets/profile_form/profile_form.dart';
+import 'package:sshnp_gui/src/utils/sizes.dart';
 
 // * Once the onboarding process is completed you will be taken to this screen
-class NewConnectionScreen extends StatefulWidget {
-  const NewConnectionScreen({Key? key}) : super(key: key);
+class ProfileEditorScreen extends StatefulWidget {
+  const ProfileEditorScreen({Key? key}) : super(key: key);
 
   @override
-  State<NewConnectionScreen> createState() => _NewConnectionScreenState();
+  State<ProfileEditorScreen> createState() => _ProfileEditorScreenState();
 }
 
-class _NewConnectionScreenState extends State<NewConnectionScreen> {
+class _ProfileEditorScreenState extends State<ProfileEditorScreen> {
   @override
   Widget build(BuildContext context) {
     final strings = AppLocalizations.of(context)!;
@@ -32,7 +31,7 @@ class _NewConnectionScreenState extends State<NewConnectionScreen> {
                     style: Theme.of(context).textTheme.titleMedium,
                   ),
                   gapH10,
-                  const Expanded(child: NewConnectionForm())
+                  const Expanded(child: ProfileForm())
                 ]),
               ),
             ),

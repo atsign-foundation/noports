@@ -1,4 +1,3 @@
-// 🎯 Dart imports:
 import 'dart:async';
 
 import 'package:at_app_flutter/at_app_flutter.dart';
@@ -12,11 +11,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-
-import '../presentation/widgets/snackbars.dart';
-// import '../utils/my_sync_progress_listener.dart';
-import '../utils/app_router.dart';
-import 'navigation_service.dart';
+import 'package:sshnp_gui/src/presentation/widgets/utility/custom_snack_bar.dart';
+import 'package:sshnp_gui/src/repository/navigation_repository.dart';
+import 'package:sshnp_gui/src/utils/app_router.dart';
 
 /// A singleton that makes all the network calls to the @platform.
 class AuthenticationRepository {
@@ -69,7 +66,7 @@ class AuthenticationRepository {
   /// Signs user into the @platform.
   void handleSwitchAtsign(String? atsign) async {
     final result = await AtOnboarding.onboard(
-      context: NavigationService.navKey.currentContext!,
+      context: NavigationRepository.navKey.currentContext!,
       isSwitchingAtsign: true,
       atsign: atsign,
       config: AtOnboardingConfig(
@@ -85,7 +82,7 @@ class AuthenticationRepository {
         // DudeService.getInstance().monitorNotifications(NavigationService.navKey.currentContext!);
         // AtClientManager.getInstance().atClient.syncService.addProgressListener(MySyncProgressListener());
         initializeContactsService(rootDomain: AtEnv.rootDomain);
-        final context = NavigationService.navKey.currentContext!;
+        final context = NavigationRepository.navKey.currentContext!;
         if (context.mounted) {
           context.goNamed(AppRoute.home.name);
         }
@@ -94,7 +91,7 @@ class AuthenticationRepository {
 
       case AtOnboardingResultStatus.error:
         _logger.severe('Onboarding throws ${result.message} error');
-        SnackBars.errorSnackBar(content: result.message ?? '');
+        CustomSnackBar.error(content: result.message ?? '');
         break;
 
       case AtOnboardingResultStatus.cancel:

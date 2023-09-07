@@ -17,7 +17,7 @@ class CustomTextFormField extends StatelessWidget {
   final String? initialValue;
   final double width;
   final double height;
-  final void Function(String?)? onChanged;
+  final void Function(String)? onChanged;
   final String? Function(String?)? validator;
 
   @override

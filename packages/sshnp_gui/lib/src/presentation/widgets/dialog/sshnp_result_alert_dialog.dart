@@ -3,9 +3,9 @@ import 'package:flutter/services.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-
-import '../../controllers/minor_providers.dart';
-import '../../utils/app_router.dart';
+import 'package:sshnp_gui/src/controllers/nav_rail_controller.dart';
+import 'package:sshnp_gui/src/controllers/terminal_session_controller.dart';
+import 'package:sshnp_gui/src/utils/app_router.dart';
 
 class SSHNPResultAlertDialog extends ConsumerWidget {
   const SSHNPResultAlertDialog({required this.result, required this.title, super.key});
@@ -28,8 +28,10 @@ class SSHNPResultAlertDialog extends ConsumerWidget {
     required WidgetRef ref,
     required BuildContext context,
   }) {
-    ref.read(currentNavIndexProvider.notifier).update((state) => AppRoute.terminal.index - 1);
-    ref.read(terminalSSHCommandProvider.notifier).update((state) => result);
+    final sessionId = ref.read(terminalSessionController.notifier).createSession();
+    final sessionController = ref.read(terminalSessionFamilyController(sessionId).notifier);
+    sessionController.setProcess();
+    ref.read(navRailController.notifier).setRoute(AppRoute.terminal);
     context.pushReplacementNamed(AppRoute.terminal.name);
   }
 

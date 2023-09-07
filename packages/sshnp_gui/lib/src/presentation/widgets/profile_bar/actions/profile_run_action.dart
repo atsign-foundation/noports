@@ -3,30 +3,29 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:sshnoports/sshnp/sshnp.dart';
 import 'package:sshnoports/sshrv/sshrv.dart';
-import 'package:sshnp_gui/src/presentation/widgets/sshnp_result_alert_dialog.dart';
+import 'package:sshnp_gui/src/presentation/widgets/dialog/sshnp_result_alert_dialog.dart';
 
-class HomeScreenRunAction extends StatefulWidget {
+class ProfileRunAction extends StatefulWidget {
   final SSHNPParams params;
-  const HomeScreenRunAction(this.params, {Key? key}) : super(key: key);
+  const ProfileRunAction(this.params, {Key? key}) : super(key: key);
 
   @override
-  State<HomeScreenRunAction> createState() => _HomeScreenRunActionState();
+  State<ProfileRunAction> createState() => _ProfileRunActionState();
 }
 
-class _HomeScreenRunActionState extends State<HomeScreenRunAction> {
-  Future<void> onPressed(SSHNPParams sshnpParams) async {
+class _ProfileRunActionState extends State<ProfileRunAction> {
+  Future<void> onPressed() async {
     if (mounted) {
       showDialog<void>(
         context: context,
         barrierDismissible: false,
-        builder: (BuildContext context) =>
-            const Center(child: CircularProgressIndicator()),
+        builder: (BuildContext context) => const Center(child: CircularProgressIndicator()),
       );
     }
 
     try {
       final sshnp = await SSHNP.fromParams(
-        sshnpParams,
+        widget.params,
         atClient: AtClientManager.getInstance().atClient,
         sshrvGenerator: SSHRV.pureDart,
       );
@@ -65,7 +64,7 @@ class _HomeScreenRunActionState extends State<HomeScreenRunAction> {
   Widget build(BuildContext context) {
     return IconButton(
       onPressed: () async {
-        await onPressed(widget.params);
+        await onPressed();
       },
       icon: const Icon(Icons.play_arrow),
     );

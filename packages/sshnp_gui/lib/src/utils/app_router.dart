@@ -1,24 +1,23 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:sshnp_gui/src/presentation/screens/new_connection_screen.dart';
-import 'package:sshnp_gui/src/repository/navigation_service.dart';
-
-import '../presentation/screens/home_screen.dart';
-import '../presentation/screens/onboarding_screen.dart';
-import '../presentation/screens/settings_screen.dart';
-import '../presentation/screens/terminal_screen.dart';
+import 'package:sshnp_gui/src/presentation/screens/home_screen.dart';
+import 'package:sshnp_gui/src/presentation/screens/onboarding_screen.dart';
+import 'package:sshnp_gui/src/presentation/screens/profile_editor_screen.dart';
+import 'package:sshnp_gui/src/presentation/screens/settings_screen.dart';
+import 'package:sshnp_gui/src/presentation/screens/terminal_screen.dart';
+import 'package:sshnp_gui/src/repository/navigation_repository.dart';
 
 enum AppRoute {
   onboarding,
   home,
-  newConnection,
+  profileForm,
   terminal,
   settings,
 }
 
 final goRouterProvider = Provider<GoRouter>((ref) => GoRouter(
-      navigatorKey: NavigationService.navKey,
+      navigatorKey: NavigationRepository.navKey,
       initialLocation: '/',
       debugLogDiagnostics: false,
       routes: [
@@ -38,10 +37,10 @@ final goRouterProvider = Provider<GoRouter>((ref) => GoRouter(
               ),
               GoRoute(
                 path: 'new',
-                name: AppRoute.newConnection.name,
+                name: AppRoute.profileForm.name,
                 pageBuilder: (context, state) => CustomTransitionPage<void>(
                     key: state.pageKey,
-                    child: const NewConnectionScreen(),
+                    child: const ProfileEditorScreen(),
                     transitionsBuilder: ((context, animation, secondaryAnimation, child) =>
                         FadeTransition(opacity: animation, child: child))),
               ),
