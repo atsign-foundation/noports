@@ -319,7 +319,12 @@ class SSHNPPartialParams {
     }
 
     // THIS IS A WORKAROUND IN ORDER TO BE TYPE SAFE IN SSHNPPartialParams.fromArgMap
-    Map<String, dynamic> parsedArgsMap = {for (var e in (parsedArgs.options)) e: parsedArgs[e]};
+    Map<String, dynamic> parsedArgsMap = {
+      for (var e in parsedArgs.options)
+        e: SSHNPArg.fromName(e).type == ArgType.integer
+            ? int.parse(parsedArgs[e])
+            : parsedArgs[e]
+    };
 
     return SSHNPPartialParams.merge(
       params,
