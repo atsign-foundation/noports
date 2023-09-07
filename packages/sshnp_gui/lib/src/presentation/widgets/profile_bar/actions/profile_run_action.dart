@@ -14,7 +14,7 @@ class ProfileRunAction extends StatefulWidget {
 }
 
 class _ProfileRunActionState extends State<ProfileRunAction> {
-  Future<void> onPressed(SSHNPParams sshnpParams) async {
+  Future<void> onPressed() async {
     if (mounted) {
       showDialog<void>(
         context: context,
@@ -25,7 +25,7 @@ class _ProfileRunActionState extends State<ProfileRunAction> {
 
     try {
       final sshnp = await SSHNP.fromParams(
-        sshnpParams,
+        widget.params,
         atClient: AtClientManager.getInstance().atClient,
         sshrvGenerator: SSHRV.pureDart,
       );
@@ -64,7 +64,7 @@ class _ProfileRunActionState extends State<ProfileRunAction> {
   Widget build(BuildContext context) {
     return IconButton(
       onPressed: () async {
-        await onPressed(widget.params);
+        await onPressed();
       },
       icon: const Icon(Icons.play_arrow),
     );

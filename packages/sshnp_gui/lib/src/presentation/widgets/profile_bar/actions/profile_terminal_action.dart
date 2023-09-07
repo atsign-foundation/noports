@@ -14,7 +14,7 @@ class ProfileTerminalAction extends StatefulWidget {
 }
 
 class _ProfileTerminalActionState extends State<ProfileTerminalAction> {
-  Future<void> onPressed(SSHNPParams sshnpParams) async {
+  Future<void> onPressed() async {
     if (mounted) {
       showDialog<void>(
         context: context,
@@ -25,7 +25,7 @@ class _ProfileTerminalActionState extends State<ProfileTerminalAction> {
 
     try {
       final sshnp = await SSHNP.fromParams(
-        sshnpParams,
+        widget.params,
         atClient: AtClientManager.getInstance().atClient,
         sshrvGenerator: SSHRV.pureDart,
       );
@@ -64,7 +64,7 @@ class _ProfileTerminalActionState extends State<ProfileTerminalAction> {
   Widget build(BuildContext context) {
     return IconButton(
       onPressed: () async {
-        await onPressed(widget.params);
+        await onPressed();
       },
       icon: const Icon(Icons.terminal),
     );

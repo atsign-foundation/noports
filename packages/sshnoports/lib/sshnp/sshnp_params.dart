@@ -72,7 +72,7 @@ class SSHNPParams {
       localPort: params2.localPort ?? params1.localPort,
       atKeysFilePath: params2.atKeysFilePath ?? params1.atKeysFilePath,
       sendSshPublicKey: params2.sendSshPublicKey ?? params1.sendSshPublicKey,
-      localSshOptions: params1.localSshOptions + params2.localSshOptions,
+      localSshOptions: params2.localSshOptions ?? params1.localSshOptions,
       rsa: params2.rsa ?? params1.rsa,
       remoteUsername: params2.remoteUsername ?? params1.remoteUsername,
       verbose: params2.verbose ?? params1.verbose,
@@ -109,7 +109,7 @@ class SSHNPParams {
       port: partial.port ?? SSHNP.defaultPort,
       localPort: partial.localPort ?? SSHNP.defaultLocalPort,
       sendSshPublicKey: partial.sendSshPublicKey ?? SSHNP.defaultSendSshPublicKey,
-      localSshOptions: partial.localSshOptions,
+      localSshOptions: partial.localSshOptions ?? SSHNP.defaultLocalSshOptions,
       rsa: partial.rsa ?? SSHNP.defaultRsa,
       verbose: partial.verbose ?? SSHNP.defaultRsa,
       remoteUsername: partial.remoteUsername,
@@ -221,6 +221,7 @@ class SSHNPParams {
       var key = SSHNPArg.fromName(entry.key).bashName;
       if (key.isEmpty) continue;
       var value = entry.value;
+      if (value == null) continue;
       if (value is List) {
         value = value.join(',');
       }
@@ -245,7 +246,7 @@ class SSHNPPartialParams {
   final int? localSshdPort;
   final String? atKeysFilePath;
   final String? sendSshPublicKey;
-  final List<String> localSshOptions;
+  final List<String>? localSshOptions;
   final bool? rsa;
   final String? remoteUsername;
   final bool? verbose;
@@ -269,7 +270,7 @@ class SSHNPPartialParams {
     this.localPort,
     this.atKeysFilePath,
     this.sendSshPublicKey,
-    this.localSshOptions = SSHNP.defaultLocalSshOptions,
+    this.localSshOptions,
     this.rsa,
     this.remoteUsername,
     this.verbose,
@@ -298,7 +299,7 @@ class SSHNPPartialParams {
       localPort: params2.localPort ?? params1.localPort,
       atKeysFilePath: params2.atKeysFilePath ?? params1.atKeysFilePath,
       sendSshPublicKey: params2.sendSshPublicKey ?? params1.sendSshPublicKey,
-      localSshOptions: params1.localSshOptions + params2.localSshOptions,
+      localSshOptions: params2.localSshOptions ?? params1.localSshOptions,
       rsa: params2.rsa ?? params1.rsa,
       remoteUsername: params2.remoteUsername ?? params1.remoteUsername,
       verbose: params2.verbose ?? params1.verbose,

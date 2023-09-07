@@ -12,7 +12,6 @@ import 'package:sshnp_gui/src/utils/enum.dart';
 import 'package:sshnp_gui/src/utils/sizes.dart';
 import 'package:sshnp_gui/src/utils/validator.dart';
 
-
 class ProfileForm extends ConsumerStatefulWidget {
   const ProfileForm({super.key});
 
@@ -71,142 +70,201 @@ class _ProfileFormState extends ConsumerState<ProfileForm> {
           return SingleChildScrollView(
             child: Form(
               key: _formkey,
-              child: Row(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                    CustomTextFormField(
-                      initialValue: oldConfig.profileName,
-                      labelText: strings.profileName,
-                      onChanged: (value) {
-                        newConfig = SSHNPPartialParams.merge(newConfig, SSHNPPartialParams(profileName: value!));
-                      },
-                      validator: Validator.validateRequiredField,
+                  Row(
+                    children: [
+                      CustomTextFormField(
+                        initialValue: oldConfig.profileName ?? '',
+                        labelText: strings.profileName,
+                        onChanged: (value) {
+                          newConfig = SSHNPPartialParams.merge(
+                            newConfig,
+                            SSHNPPartialParams(profileName: value),
+                          );
+                        },
+                        validator: Validator.validateRequiredField,
+                      ),
+                      gapW8,
+                      CustomTextFormField(
+                        initialValue: oldConfig.device,
+                        labelText: strings.device,
+                        onChanged: (value) => newConfig = SSHNPPartialParams.merge(
+                          newConfig,
+                          SSHNPPartialParams(device: value),
+                        ),
+                      ),
+                    ],
+                  ),
+                  gapH10,
+                  Row(
+                    children: [
+                      CustomTextFormField(
+                        initialValue: oldConfig.sshnpdAtSign ?? '',
+                        labelText: strings.sshnpdAtSign,
+                        onChanged: (value) => newConfig = SSHNPPartialParams.merge(
+                          newConfig,
+                          SSHNPPartialParams(sshnpdAtSign: value),
+                        ),
+                        validator: Validator.validateAtsignField,
+                      ),
+                      gapW8,
+                      CustomTextFormField(
+                        initialValue: oldConfig.host ?? '',
+                        labelText: strings.host,
+                        onChanged: (value) => newConfig = SSHNPPartialParams.merge(
+                          newConfig,
+                          SSHNPPartialParams(host: value),
+                        ),
+                        validator: Validator.validateRequiredField,
+                      ),
+                    ],
+                  ),
+                  gapH10,
+                  Row(
+                    children: [
+                      CustomTextFormField(
+                        initialValue: oldConfig.sendSshPublicKey,
+                        labelText: strings.sendSshPublicKey,
+                        onChanged: (value) => newConfig = SSHNPPartialParams.merge(
+                          newConfig,
+                          SSHNPPartialParams(sendSshPublicKey: value),
+                        ),
+                        validator: Validator.validateRequiredField,
+                      ),
+                      gapW8,
+                      Row(
+                        children: [
+                          Text(strings.rsa),
+                          gapW8,
+                          Switch(
+                              value: newConfig.rsa ?? oldConfig.rsa,
+                              onChanged: (newValue) {
+                                setState(() {
+                                  newConfig = SSHNPPartialParams.merge(
+                                    newConfig,
+                                    SSHNPPartialParams(rsa: newValue),
+                                  );
+                                });
+                              }),
+                        ],
+                      ),
+                    ],
+                  ),
+                  gapH10,
+                  Row(
+                    children: [
+                      CustomTextFormField(
+                          initialValue: oldConfig.remoteUsername ?? '',
+                          labelText: strings.remoteUserName,
+                          onChanged: (value) {
+                            print('remoteUsername: $value');
+                            newConfig = SSHNPPartialParams.merge(
+                              newConfig,
+                              SSHNPPartialParams(remoteUsername: value),
+                            );
+                          }),
+                      gapW8,
+                      CustomTextFormField(
+                        initialValue: oldConfig.port.toString(),
+                        labelText: strings.port,
+                        onChanged: (value) => newConfig = SSHNPPartialParams.merge(
+                          newConfig,
+                          SSHNPPartialParams(port: int.tryParse(value)),
+                        ),
+                        validator: Validator.validateRequiredField,
+                      ),
+                    ],
+                  ),
+                  gapH10,
+                  Row(
+                    children: [
+                      CustomTextFormField(
+                        initialValue: oldConfig.localPort.toString(),
+                        labelText: strings.localPort,
+                        onChanged: (value) => newConfig = SSHNPPartialParams.merge(
+                          newConfig,
+                          SSHNPPartialParams(localPort: int.tryParse(value)),
+                        ),
+                      ),
+                      gapW8,
+                      CustomTextFormField(
+                        initialValue: oldConfig.localSshdPort.toString(),
+                        labelText: strings.localSshdPort,
+                        onChanged: (value) => newConfig = SSHNPPartialParams.merge(
+                          newConfig,
+                          SSHNPPartialParams(localSshdPort: int.tryParse(value)),
+                        ),
+                      ),
+                    ],
+                  ),
+                  gapH10,
+                  CustomTextFormField(
+                    initialValue: oldConfig.localSshOptions.join(','),
+                    hintText: strings.localSshOptionsHint,
+                    labelText: strings.localSshOptions,
+                    width: 192 * 2 + 10,
+                    onChanged: (value) => newConfig = SSHNPPartialParams.merge(
+                      newConfig,
+                      SSHNPPartialParams(localSshOptions: value.split(',')),
                     ),
-                    gapH10,
-                    CustomTextFormField(
-                      initialValue: oldConfig.host,
-                      labelText: strings.host,
-                      onChanged: (value) =>
-                          newConfig = SSHNPPartialParams.merge(newConfig, SSHNPPartialParams(host: value!)),
-                      validator: Validator.validateRequiredField,
-                    ),
-                    gapH10,
-                    CustomTextFormField(
-                      initialValue: oldConfig.port.toString(),
-                      labelText: strings.port,
-                      onChanged: (value) =>
-                          newConfig = SSHNPPartialParams.merge(newConfig, SSHNPPartialParams(port: int.parse(value!))),
-                      validator: Validator.validateRequiredField,
-                    ),
-                    gapH10,
-                    CustomTextFormField(
-                      initialValue: oldConfig.sendSshPublicKey,
-                      labelText: strings.sendSshPublicKey,
-                      onChanged: (value) =>
-                          newConfig = SSHNPPartialParams.merge(newConfig, SSHNPPartialParams(sendSshPublicKey: value!)),
-                      validator: Validator.validateRequiredField,
-                    ),
-                    gapH10,
-                    Row(
-                      children: [
-                        Text(strings.verbose),
-                        gapW8,
-                        Switch(
-                            value: oldConfig.verbose,
-                            onChanged: (newValue) {
-                              setState(() {
-                                newConfig = SSHNPPartialParams.merge(newConfig, SSHNPPartialParams(verbose: newValue));
-                              });
-                            }),
-                      ],
-                    ),
-                    gapH10,
-                    CustomTextFormField(
-                      initialValue: oldConfig.remoteUsername,
-                      labelText: strings.remoteUserName,
-                      onChanged: (value) =>
-                          newConfig = SSHNPPartialParams.merge(newConfig, SSHNPPartialParams(remoteUsername: value!)),
-                    ),
-                    gapH10,
-                    CustomTextFormField(
-                      initialValue: oldConfig.rootDomain,
-                      labelText: strings.rootDomain,
-                      onChanged: (value) =>
-                          newConfig = SSHNPPartialParams.merge(newConfig, SSHNPPartialParams(rootDomain: value!)),
-                    ),
-                    gapH20,
-                    ElevatedButton(
-                      onPressed: () => onSubmit(oldConfig, newConfig),
-                      child: Text(strings.submit),
-                    ),
-                  ]),
-                  gapW12,
-                  Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                    CustomTextFormField(
-                      initialValue: oldConfig.sshnpdAtSign,
-                      labelText: strings.sshnpdAtSign,
-                      onChanged: (value) =>
-                          newConfig = SSHNPPartialParams.merge(newConfig, SSHNPPartialParams(sshnpdAtSign: value!)),
-                      validator: Validator.validateAtsignField,
-                    ),
-                    gapH10,
-                    CustomTextFormField(
-                      initialValue: oldConfig.device,
-                      labelText: strings.device,
-                      onChanged: (value) =>
-                          newConfig = SSHNPPartialParams.merge(newConfig, SSHNPPartialParams(device: value!)),
-                    ),
-                    gapH10,
-                    CustomTextFormField(
-                      initialValue: oldConfig.localPort.toString(),
-                      labelText: strings.localPort,
-                      onChanged: (value) => newConfig =
-                          SSHNPPartialParams.merge(newConfig, SSHNPPartialParams(localPort: int.parse(value!))),
-                    ),
-                    gapH10,
-                    CustomTextFormField(
-                      initialValue: oldConfig.localSshOptions.join(','),
-                      hintText: strings.localSshOptionsHint,
-                      labelText: strings.localSshOptions,
-                      onChanged: (value) => newConfig =
-                          SSHNPPartialParams.merge(newConfig, SSHNPPartialParams(localSshOptions: value!.split(','))),
-                    ),
-                    gapH10,
-                    Row(
-                      children: [
-                        Text(strings.rsa),
-                        gapW8,
-                        Switch(
-                            value: oldConfig.rsa,
-                            onChanged: (newValue) {
-                              setState(() {
-                                newConfig = SSHNPPartialParams.merge(newConfig, SSHNPPartialParams(rsa: newValue));
-                              });
-                            }),
-                      ],
-                    ),
-                    gapH10,
-                    CustomTextFormField(
-                      initialValue: oldConfig.atKeysFilePath,
-                      labelText: strings.atKeysFilePath,
-                      onChanged: (value) =>
-                          newConfig = SSHNPPartialParams.merge(newConfig, SSHNPPartialParams(atKeysFilePath: value!)),
-                    ),
-                    gapH10,
-                    CustomTextFormField(
-                      initialValue: oldConfig.localSshdPort.toString(),
-                      labelText: strings.localSshdPort,
-                      onChanged: (value) => newConfig =
-                          SSHNPPartialParams.merge(newConfig, SSHNPPartialParams(localSshdPort: int.parse(value!))),
-                    ),
-                    gapH20,
-                    TextButton(
+                  ),
+                  gapH10,
+                  Row(
+                    children: [
+                      CustomTextFormField(
+                        initialValue: oldConfig.atKeysFilePath,
+                        labelText: strings.atKeysFilePath,
+                        onChanged: (value) => newConfig = SSHNPPartialParams.merge(
+                          newConfig,
+                          SSHNPPartialParams(atKeysFilePath: value),
+                        ),
+                      ),
+                      gapW8,
+                      CustomTextFormField(
+                        initialValue: oldConfig.rootDomain,
+                        labelText: strings.rootDomain,
+                        onChanged: (value) => newConfig = SSHNPPartialParams.merge(
+                          newConfig,
+                          SSHNPPartialParams(rootDomain: value),
+                        ),
+                      ),
+                    ],
+                  ),
+                  gapH10,
+                  Row(
+                    children: [
+                      Text(strings.verbose),
+                      gapW8,
+                      Switch(
+                          value: newConfig.verbose ?? oldConfig.verbose,
+                          onChanged: (newValue) {
+                            setState(() {
+                              newConfig = SSHNPPartialParams.merge(
+                                newConfig,
+                                SSHNPPartialParams(verbose: newValue),
+                              );
+                            });
+                          }),
+                    ],
+                  ),
+                  Row(
+                    children: [
+                      ElevatedButton(
+                        onPressed: () => onSubmit(oldConfig, newConfig),
+                        child: Text(strings.submit),
+                      ),
+                      gapW8,
+                      TextButton(
                         onPressed: () {
                           ref.read(currentNavIndexProvider.notifier).update((state) => AppRoute.home.index - 1);
                           context.pushReplacementNamed(AppRoute.home.name);
                         },
-                        child: Text(strings.cancel))
-                  ]),
+                        child: Text(strings.cancel),
+                      ),
+                    ],
+                  ),
                 ],
               ),
             ),

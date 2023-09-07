@@ -11,7 +11,7 @@ import 'package:sshnp_gui/src/repository/navigation_service.dart';
 enum AppRoute {
   onboarding,
   home,
-  newConnection,
+  profileForm,
   terminal,
   settings,
 }
@@ -37,7 +37,7 @@ final goRouterProvider = Provider<GoRouter>((ref) => GoRouter(
               ),
               GoRoute(
                 path: 'new',
-                name: AppRoute.newConnection.name,
+                name: AppRoute.profileForm.name,
                 pageBuilder: (context, state) => CustomTransitionPage<void>(
                     key: state.pageKey,
                     child: const ProfileEditorScreen(),

@@ -24,18 +24,12 @@ class AppNavigationRail extends ConsumerWidget {
           ),
           NavigationRailDestination(
             icon: currentIndex == 1
-                ? SvgPicture.asset('assets/images/nav_icons/new_selected.svg')
-                : SvgPicture.asset('assets/images/nav_icons/new_unselected.svg'),
-            label: const Text(''),
-          ),
-          NavigationRailDestination(
-            icon: currentIndex == 2
                 ? SvgPicture.asset('assets/images/nav_icons/pican_selected.svg')
                 : SvgPicture.asset('assets/images/nav_icons/pican_unselected.svg'),
             label: const Text(''),
           ),
           NavigationRailDestination(
-            icon: currentIndex == 3
+            icon: currentIndex == 2
                 ? SvgPicture.asset('assets/images/nav_icons/settings_selected.svg')
                 : SvgPicture.asset('assets/images/nav_icons/settings_unselected.svg'),
             label: const Text(''),
@@ -50,12 +44,9 @@ class AppNavigationRail extends ConsumerWidget {
               context.goNamed(AppRoute.home.name);
               break;
             case 1:
-              context.goNamed(AppRoute.newConnection.name);
-              break;
-            case 2:
               context.goNamed(AppRoute.terminal.name);
               break;
-            case 3:
+            case 2:
               context.goNamed(AppRoute.settings.name);
               break;
           }
