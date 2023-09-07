@@ -49,7 +49,7 @@ class SSHCommand implements SSHNPCommandResult {
         ...sshOptions,
         if (remoteUsername != null) '$remoteUsername@$host',
         if (remoteUsername == null) host,
-        if (shouldIncludePrivateKey(privateKeyFileName)) '-i $privateKeyFileName',
+        if (shouldIncludePrivateKey(privateKeyFileName)) ...['-i', '$privateKeyFileName'],
       ];
 
   @override
