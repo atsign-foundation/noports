@@ -6,14 +6,14 @@ import '../../utils/sizes.dart';
 import '../widgets/navigation/app_navigation_rail.dart';
 
 // * Once the onboarding process is completed you will be taken to this screen
-class NewConnectionScreen extends StatefulWidget {
-  const NewConnectionScreen({Key? key}) : super(key: key);
+class ProfileEditorScreen extends StatefulWidget {
+  const ProfileEditorScreen({Key? key}) : super(key: key);
 
   @override
-  State<NewConnectionScreen> createState() => _NewConnectionScreenState();
+  State<ProfileEditorScreen> createState() => _ProfileEditorScreenState();
 }
 
-class _NewConnectionScreenState extends State<NewConnectionScreen> {
+class _ProfileEditorScreenState extends State<ProfileEditorScreen> {
   @override
   Widget build(BuildContext context) {
     final strings = AppLocalizations.of(context)!;

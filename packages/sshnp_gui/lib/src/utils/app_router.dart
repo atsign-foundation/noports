@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:sshnp_gui/src/presentation/screens/new_connection_screen.dart';
+import 'package:sshnp_gui/src/presentation/screens/profile_editor_screen.dart';
 import 'package:sshnp_gui/src/repository/navigation_service.dart';
 
 import '../presentation/screens/home_screen.dart';
@@ -41,7 +41,7 @@ final goRouterProvider = Provider<GoRouter>((ref) => GoRouter(
                 name: AppRoute.newConnection.name,
                 pageBuilder: (context, state) => CustomTransitionPage<void>(
                     key: state.pageKey,
-                    child: const NewConnectionScreen(),
+                    child: const ProfileEditorScreen(),
                     transitionsBuilder: ((context, animation, secondaryAnimation, child) =>
                         FadeTransition(opacity: animation, child: child))),
               ),
