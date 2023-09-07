@@ -135,6 +135,7 @@ class SSHNPParams {
     await files.forEach((file) {
       if (file is! File) return;
       if (path.extension(file.path) != '.env') return;
+      if (path.basenameWithoutExtension(file.path).isEmpty) return; // ignore '.env' file - empty profileName
       fileNames.add(_fileToProfileName(file.path));
       try {
         var p = SSHNPParams.fromConfigFile(file.path);
