@@ -16,14 +16,13 @@ class HomeScreenTableActions extends StatelessWidget {
       data: (p) => CustomTableCell(
         child: Row(
           children: [
-            HomeScreenRunAction(p),
-            HomeScreenEditAction(p),
-            HomeScreenDeleteAction(p),
+            ProfileRunAction(p),
+            ProfileEditAction(p),
+            ProfileDeleteAction(p),
           ],
         ),
       ),
-      error: (e, s) =>
-          const CustomTableCell.text(text: 'Error fetching data...'),
+      error: (e, s) => const CustomTableCell.text(text: 'Error fetching data...'),
       loading: () => const CustomTableCell.text(text: '...'),
     );
   }

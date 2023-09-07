@@ -5,22 +5,21 @@ import 'package:sshnoports/sshnp/sshnp.dart';
 import 'package:sshnoports/sshrv/sshrv.dart';
 import 'package:sshnp_gui/src/presentation/widgets/dialog/sshnp_result_alert_dialog.dart';
 
-class HomeScreenRunAction extends StatefulWidget {
+class ProfileRunAction extends StatefulWidget {
   final SSHNPParams params;
-  const HomeScreenRunAction(this.params, {Key? key}) : super(key: key);
+  const ProfileRunAction(this.params, {Key? key}) : super(key: key);
 
   @override
-  State<HomeScreenRunAction> createState() => _HomeScreenRunActionState();
+  State<ProfileRunAction> createState() => _ProfileRunActionState();
 }
 
-class _HomeScreenRunActionState extends State<HomeScreenRunAction> {
+class _ProfileRunActionState extends State<ProfileRunAction> {
   Future<void> onPressed(SSHNPParams sshnpParams) async {
     if (mounted) {
       showDialog<void>(
         context: context,
         barrierDismissible: false,
-        builder: (BuildContext context) =>
-            const Center(child: CircularProgressIndicator()),
+        builder: (BuildContext context) => const Center(child: CircularProgressIndicator()),
       );
     }
 

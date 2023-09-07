@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:sshnoports/sshnp/sshnp.dart';
 import 'package:sshnp_gui/src/presentation/widgets/dialog/delete_alert_dialog.dart';
 
-class HomeScreenDeleteAction extends StatelessWidget {
+class ProfileDeleteAction extends StatelessWidget {
   final SSHNPParams params;
-  const HomeScreenDeleteAction(this.params, {Key? key}) : super(key: key);
+  const ProfileDeleteAction(this.params, {Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {

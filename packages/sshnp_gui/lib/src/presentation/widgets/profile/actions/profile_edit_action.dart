@@ -8,16 +8,15 @@ import 'package:sshnp_gui/src/controllers/sshnp_config_controller.dart';
 import 'package:sshnp_gui/src/utils/app_router.dart';
 import 'package:sshnp_gui/src/utils/enum.dart';
 
-class HomeScreenEditAction extends ConsumerStatefulWidget {
+class ProfileEditAction extends ConsumerStatefulWidget {
   final SSHNPParams params;
-  const HomeScreenEditAction(this.params, {Key? key}) : super(key: key);
+  const ProfileEditAction(this.params, {Key? key}) : super(key: key);
 
   @override
-  ConsumerState<HomeScreenEditAction> createState() =>
-      _HomeScreenEditActionState();
+  ConsumerState<ProfileEditAction> createState() => _ProfileEditActionState();
 }
 
-class _HomeScreenEditActionState extends ConsumerState<HomeScreenEditAction> {
+class _ProfileEditActionState extends ConsumerState<ProfileEditAction> {
   void updateConfigFile(SSHNPParams params) {
     // Change value to update to trigger the update functionality on the new connection form.
     ref.watch(currentParamsController.notifier).setState(
@@ -27,9 +26,7 @@ class _HomeScreenEditActionState extends ConsumerState<HomeScreenEditAction> {
           ),
         );
     // change value to 1 to update navigation rail selcted icon.
-    ref
-        .watch(currentNavIndexProvider.notifier)
-        .update((_) => AppRoute.newConnection.index - 1);
+    ref.watch(currentNavIndexProvider.notifier).update((_) => AppRoute.newConnection.index - 1);
     context.replaceNamed(
       AppRoute.newConnection.name,
     );
