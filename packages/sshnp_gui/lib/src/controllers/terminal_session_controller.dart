@@ -7,23 +7,23 @@ import 'package:uuid/uuid.dart';
 import 'package:xterm/xterm.dart';
 
 /// A provider that exposes the [TerminalSessionController] to the app.
-final terminalSessionController = AutoDisposeNotifierProvider<TerminalSessionController, String>(
+final terminalSessionController = NotifierProvider<TerminalSessionController, String>(
   TerminalSessionController.new,
 );
 
 /// A provider that exposes the [TerminalSessionListController] to the app.
-final terminalSessionListController = AutoDisposeNotifierProvider<TerminalSessionListController, Set<String>>(
+final terminalSessionListController = NotifierProvider<TerminalSessionListController, List<String>>(
   TerminalSessionListController.new,
 );
 
 /// A provider that exposes the [TerminalSessionFamilyController] to the app.
 final terminalSessionFamilyController =
-    AutoDisposeNotifierProviderFamily<TerminalSessionFamilyController, TerminalSession, String>(
+    NotifierProviderFamily<TerminalSessionFamilyController, TerminalSession, String>(
   TerminalSessionFamilyController.new,
 );
 
 /// Controller for the id of the currently active terminal session
-class TerminalSessionController extends AutoDisposeNotifier<String> {
+class TerminalSessionController extends Notifier<String> {
   @override
   String build() => '';
 
@@ -35,9 +35,9 @@ class TerminalSessionController extends AutoDisposeNotifier<String> {
 }
 
 /// Controller for the list of all terminal session ids
-class TerminalSessionListController extends AutoDisposeNotifier<Set<String>> {
+class TerminalSessionListController extends Notifier<List<String>> {
   @override
-  Set<String> build() => {};
+  List<String> build() => [];
 
   void add(String sessionId) {
     state.add(sessionId);
@@ -61,7 +61,7 @@ class TerminalSession {
 }
 
 /// Controller for the family of terminal session [TerminalController]s
-class TerminalSessionFamilyController extends AutoDisposeFamilyNotifier<TerminalSession, String> {
+class TerminalSessionFamilyController extends FamilyNotifier<TerminalSession, String> {
   @override
   TerminalSession build(String arg) {
     return TerminalSession(arg);
@@ -73,6 +73,7 @@ class TerminalSessionFamilyController extends AutoDisposeFamilyNotifier<Terminal
   }
 
   void startProcess() {
+    if (state.isRunning) return;
     state.isRunning = true;
     state.pty = Pty.start(
       state.command ?? Platform.environment['SHELL'] ?? 'bash',
