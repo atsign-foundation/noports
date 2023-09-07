@@ -65,7 +65,7 @@ class SSHRVImplPureDart implements SSHRV<SocketConnector> {
         verbose: false,
       );
     } catch (e) {
-      print('sshrv error: ${e.toString()}');
+      AtSignLogger('sshrv').severe(e.toString());
       rethrow;
     }
   }

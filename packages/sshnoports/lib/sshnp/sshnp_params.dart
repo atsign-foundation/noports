@@ -141,11 +141,10 @@ class SSHNPParams {
         var p = SSHNPParams.fromConfigFile(file.path);
         fileNames.add(p.profileName!);
       } catch (e) {
-        print('Error reading config file: ${file.path}');
-        print(e);
+        stderr.writeln('Error reading config file: ${file.path}');
+        stderr.writeln(e);
       }
     });
-    print('fileNames: $fileNames');
     return fileNames;
   }
 
@@ -335,7 +334,6 @@ class SSHNPPartialParams {
   factory SSHNPPartialParams.fromConfig(String fileName) {
     var args = _parseConfigFile(fileName);
     args['profile-name'] = _fileToProfileName(fileName);
-    print('profile-name: ${args['profile-name']}');
     return SSHNPPartialParams.fromArgMap(args);
   }
 

@@ -7,7 +7,7 @@ Future<void> main(List<String> args) async {
   try {
     await activate_cli.main(args);
   } catch (e) {
-    print(e.toString());
+    stdout.writeln(e.toString());
   }
   exit(0);
 }

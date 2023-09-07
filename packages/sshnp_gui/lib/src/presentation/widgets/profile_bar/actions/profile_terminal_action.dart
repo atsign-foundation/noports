@@ -42,7 +42,6 @@ class _ProfileTerminalActionState extends ConsumerState<ProfileTerminalAction> {
 
       /// Issue a new session id
       final sessionId = ref.watch(terminalSessionController.notifier).createSession();
-      print('sessionId in onPressed: $sessionId');
 
       /// Create the session controller for the new session id
       final sessionController = ref.watch(terminalSessionFamilyController(sessionId).notifier);

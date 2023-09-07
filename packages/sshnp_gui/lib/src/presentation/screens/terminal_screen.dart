@@ -27,7 +27,6 @@ class _TerminalScreenState extends ConsumerState<TerminalScreen> {
   void initState() {
     super.initState();
     final sessionId = ref.read(terminalSessionController);
-    print('sessionId in initState: $sessionId');
 
     final sessionController = ref.read(terminalSessionFamilyController(sessionId).notifier);
     WidgetsBinding.instance.endOfFrame.then((value) {
@@ -45,7 +44,6 @@ class _TerminalScreenState extends ConsumerState<TerminalScreen> {
   Widget build(BuildContext context) {
     // * Getting the AtClientManager instance to use below
     final sessionId = ref.watch(terminalSessionController);
-    print('sessionId in build: $sessionId');
     final terminalSession = ref.watch(terminalSessionFamilyController(sessionId));
     return Scaffold(
       body: SafeArea(

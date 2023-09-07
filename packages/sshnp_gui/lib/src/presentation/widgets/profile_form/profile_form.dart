@@ -160,7 +160,6 @@ class _ProfileFormState extends ConsumerState<ProfileForm> {
                           initialValue: oldConfig.remoteUsername ?? '',
                           labelText: strings.remoteUserName,
                           onChanged: (value) {
-                            print('remoteUsername: $value');
                             newConfig = SSHNPPartialParams.merge(
                               newConfig,
                               SSHNPPartialParams(remoteUsername: value),

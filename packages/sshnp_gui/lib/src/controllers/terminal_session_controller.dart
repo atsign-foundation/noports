@@ -74,7 +74,6 @@ class TerminalSessionFamilyController extends AutoDisposeFamilyNotifier<Terminal
 
   void startProcess() {
     state.isRunning = true;
-    print('running ${state.command!} ${state.args.join(' ')}');
     state.pty = Pty.start(
       state.command ?? Platform.environment['SHELL'] ?? 'bash',
       arguments: state.args,
