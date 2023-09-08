@@ -519,3 +519,81 @@ jobs:
         working-directory: tests/end2end_tests/tests
         run: |
           docker compose down
+  # Test suite 4
+  # Use alternative port on local
+  e2e_alternate_port_test:
+    if: ${{ github.event_name != 'push' && github.event_name != 'pull_request' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3df4ab11eba7bda6032a0b82a6bb43b11571feac # v4.0.0
+
+      - name: Setup Devicename
+        # First two guarantee a unique # per workflow call
+        # Last two guarantee  a unique # per job per strategy in matrix
+        run: |
+          echo "DEVICENAME=${{ github.run_id }}${{ github.run_attempt }}4${{ strategy.job-index }}" >> $GITHUB_ENV
+
+      - name: Setup NP/NPD key env
+        run: |
+          SSHNP_ATKEYS="$(tr '[:lower:]' '[:upper:]' <<< '${{ env.SSHNP_ATSIGN }}')"
+          echo "SSHNP_ATKEYS=ATKEYS_${SSHNP_ATKEYS:1}" >> $GITHUB_ENV
+
+          SSHNPD_ATKEYS="$(tr '[:lower:]' '[:upper:]' <<< '${{ env.SSHNPD_ATSIGN }}')"
+          echo "SSHNPD_ATKEYS=ATKEYS_${SSHNPD_ATKEYS:1}" >> $GITHUB_ENV
+
+      - name: Setup NP/NPD keys
+        working-directory: tests/end2end_tests/contexts
+        run: |
+          echo "${{ secrets[env.SSHNP_ATKEYS] }}" > sshnp/.atsign/keys/${{ env.SSHNP_ATSIGN }}_key.atKeys
+          echo "${{ secrets[env.SSHNPD_ATKEYS] }}" > sshnpd/.atsign/keys/${{ env.SSHNPD_ATSIGN }}_key.atKeys
+
+      - name: Set up entrypoints
+        working-directory: tests/end2end_tests/contexts
+        run: |
+          ./setup-sshnp-entrypoint.sh \
+            $DEVICE_NAME \
+            ${{ env.SSHNP_ATSIGN }} \
+            ${{ env.SSHNPD_ATSIGN }} \
+            ${{ env[env.PROD_RVD_ATSIGN] }} \
+            "alternate_port_test/sshnp_entrypoint.sh"
+          ./setup-sshnpd-entrypoint.sh \
+            $DEVICE_NAME \
+            ${{ env.SSHNP_ATSIGN }} \
+            ${{ env.SSHNPD_ATSIGN }} \
+            "alternate_port_test/sshnpd_entrypoint.sh"
+
+      - name: Ensure entrypoints exist
+        working-directory: tests/end2end_tests/contexts
+        run: |
+          cat sshnp/entrypoint.sh
+          cat sshnpd/entrypoint.sh
+
+      - name: Build
+        working-directory: tests/end2end_tests/tests/alternate_port_test
+        run: docker compose build
+
+      - name: Test
+        working-directory: tests/end2end_tests/tests/alternate_port_test
+        run: |
+          ${{ env.DOCKER_COMPOSE_UP_CMD }}
+
+      - name: Logs
+        if: always()
+        working-directory: tests/end2end_tests/tests
+        run: |
+          docker compose ps -a
+          docker compose logs --timestamps
+
+      - name: Found "Test Passed" in Logs
+        if: always()
+        working-directory: tests/end2end_tests/tests
+        run: |
+          docker compose logs --timestamps | grep -q "Test Passed$"
+
+      - name: Tear down
+        # Always tear down outside of the act environment
+        # but don't tear down on failure in the act environment
+        if: ${{ !env.ACT }} || success()
+        working-directory: tests/end2end_tests/tests
+        run: |
+          docker compose down
