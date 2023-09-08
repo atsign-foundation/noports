@@ -20,7 +20,7 @@ class _ProfileRunActionState extends ConsumerState<ProfileRunAction> {
   SSHNP? sshnp;
 
   @override
-  void initState() async {
+  void initState() {
     super.initState();
   }
 
