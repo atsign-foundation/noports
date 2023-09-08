@@ -1,11 +1,7 @@
-import 'package:at_backupkey_flutter/at_backupkey_flutter.dart';
-import 'package:at_contacts_flutter/services/contact_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:sshnp_gui/src/presentation/navigation/app_navigation_rail.dart';
 import 'package:sshnp_gui/src/presentation/widgets/settings_actions/settings_actions.dart';
-import 'package:sshnp_gui/src/presentation/widgets/settings_actions/settings_action_button.dart';
-import 'package:sshnp_gui/src/repository/navigation_repository.dart';
 import 'package:sshnp_gui/src/utils/sizes.dart';
 
 class SettingsScreen extends StatelessWidget {
