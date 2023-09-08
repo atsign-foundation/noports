@@ -22,7 +22,7 @@ services:
       - ../../contexts/sshnp:/mount
     networks:
       - sshnp
-    image: image-runtime-local
+    image: atsigncompany/sshnp-e2e-runtime:local
     depends_on:
       - image-runtime-local
       - container-sshnpd
@@ -32,6 +32,6 @@ services:
       - ../../contexts/sshnpd:/mount
     networks:
       - sshnpd
-    image: image-runtime-local
+    image: atsigncompany/sshnp-e2e-runtime:local
     depends_on:
       - image-runtime-local
