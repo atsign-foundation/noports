@@ -6,6 +6,7 @@ import 'package:sshnp_gui/src/controllers/terminal_session_controller.dart';
 import 'package:sshnp_gui/src/presentation/widgets/navigation/app_navigation_rail.dart';
 import 'package:sshnp_gui/src/utility/sizes.dart';
 import 'package:xterm/xterm.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 // * Once the onboarding process is completed you will be taken to this screen
 class TerminalScreen extends ConsumerStatefulWidget {
@@ -63,7 +64,7 @@ class _TerminalScreenState extends ConsumerState<TerminalScreen> with TickerProv
 
   @override
   Widget build(BuildContext context) {
-    // * Getting the AtClientManager instance to use below
+    final strings = AppLocalizations.of(context)!;
     final terminalList = ref.watch(terminalSessionListController);
     final currentSessionId = ref.watch(terminalSessionController);
     late final int currentIndex;
@@ -90,40 +91,45 @@ class _TerminalScreenState extends ConsumerState<TerminalScreen> with TickerProv
                       'assets/images/noports_light.svg',
                     ),
                     gapH24,
-                    TabBar(
-                      controller: tabController,
-                      isScrollable: true,
-                      onTap: (index) {
-                        ref.read(terminalSessionController.notifier).setSession(terminalList[index]);
-                      },
-                      tabs: terminalList.map((String sessionId) {
-                        final displayName = ref.read(terminalSessionFamilyController(sessionId).notifier).displayName;
-                        return Tab(
-                          // text: e,
-                          child: Row(
-                            children: [
-                              Text(displayName),
-                              IconButton(
-                                icon: const Icon(Icons.close),
-                                onPressed: () => deleteTab(sessionId),
-                              )
-                            ],
-                          ),
-                        );
-                      }).toList(),
-                    ),
-                    Expanded(
-                      child: TabBarView(
+                    if (terminalList.isEmpty) Text(strings.noTerminalSessions, textScaleFactor: 2),
+                    if (terminalList.isEmpty) Text(strings.noTerminalSessionsHelp),
+                    if (terminalList.isNotEmpty)
+                      TabBar(
                         controller: tabController,
-                        children: terminalList.map((String sessionId) {
-                          return TerminalView(
-                            ref.watch(terminalSessionFamilyController(sessionId)).terminal,
-                            controller: terminalController,
-                            autofocus: true,
+                        isScrollable: true,
+                        onTap: (index) {
+                          ref.read(terminalSessionController.notifier).setSession(terminalList[index]);
+                        },
+                        tabs: terminalList.map((String sessionId) {
+                          final displayName = ref.read(terminalSessionFamilyController(sessionId).notifier).displayName;
+                          return Tab(
+                            // text: e,
+                            child: Row(
+                              children: [
+                                Text(displayName),
+                                IconButton(
+                                  icon: const Icon(Icons.close),
+                                  onPressed: () => deleteTab(sessionId),
+                                )
+                              ],
+                            ),
                           );
                         }).toList(),
                       ),
-                    ),
+                    if (terminalList.isNotEmpty) gapH24,
+                    if (terminalList.isNotEmpty)
+                      Expanded(
+                        child: TabBarView(
+                          controller: tabController,
+                          children: terminalList.map((String sessionId) {
+                            return TerminalView(
+                              ref.watch(terminalSessionFamilyController(sessionId)).terminal,
+                              controller: terminalController,
+                              autofocus: true,
+                            );
+                          }).toList(),
+                        ),
+                      ),
                     // SizedBox(
                     //   height: MediaQuery.of(context).size.height - 200,
                     //   child: TerminalView(

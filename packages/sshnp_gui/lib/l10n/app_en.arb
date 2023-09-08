@@ -68,5 +68,7 @@
     "resetErrorText":"Please select atleast one atSign to reset",
     "resetWarningText":"Warning: This action cannot be undone",
     "removeButton":"Remove",
-    "error" : "Error"
+    "error" : "Error",
+    "noTerminalSessions" : "No active terminal sessions",
+    "noTerminalSessionsHelp" : "Create a new session from the home screen"
 }
