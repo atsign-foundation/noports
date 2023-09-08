@@ -548,7 +548,7 @@ jobs:
           echo "${{ secrets[env.SSHNPD_ATKEYS] }}" > sshnpd/.atsign/keys/${{ env.SSHNPD_ATSIGN }}_key.atKeys
 
       - name: Set up entrypoints
-        working-directory: tests/end2end_tests/contexts
+        working-directory: tests/end2end_tests/contexts/_init_
         run: |
           ./setup-sshnp-entrypoint.sh \
             $DEVICE_NAME \
