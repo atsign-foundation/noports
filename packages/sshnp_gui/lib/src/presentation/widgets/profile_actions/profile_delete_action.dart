@@ -4,7 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sshnoports/sshnp/sshnp.dart';
 import 'package:sshnp_gui/src/controllers/sshnp_params_controller.dart';
 import 'package:sshnp_gui/src/presentation/widgets/profile_actions/profile_action_button.dart';
-import 'package:sshnp_gui/src/utils/sizes.dart';
+import 'package:sshnp_gui/src/utility/sizes.dart';
 
 class ProfileDeleteAction extends StatelessWidget {
   final SSHNPParams params;

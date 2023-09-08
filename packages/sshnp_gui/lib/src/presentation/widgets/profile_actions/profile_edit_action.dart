@@ -6,7 +6,6 @@ import 'package:sshnoports/sshnp/sshnp.dart';
 import 'package:sshnp_gui/src/controllers/sshnp_params_controller.dart';
 import 'package:sshnp_gui/src/presentation/widgets/profile_actions/profile_action_button.dart';
 import 'package:sshnp_gui/src/controllers/navigation_controller.dart';
-import 'package:sshnp_gui/src/utils/enum.dart';
 
 class ProfileEditAction extends ConsumerStatefulWidget {
   final SSHNPParams params;

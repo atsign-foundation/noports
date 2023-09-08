@@ -1,6 +1,6 @@
-import 'package:sshnp_gui/src/utils/constants.dart';
+import 'package:sshnp_gui/src/utility/constants.dart';
 
-class Validator {
+class FormValidator {
   static String? validateRequiredField(String? value) {
     if (value!.isEmpty) {
       return kEmptyFieldValidationError;

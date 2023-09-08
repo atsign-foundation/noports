@@ -22,6 +22,11 @@ final terminalSessionFamilyController =
   TerminalSessionFamilyController.new,
 );
 
+final terminalSessionProfileNameFamilyCounter =
+    NotifierProviderFamily<TerminalSessionProfileNameFamilyCounter, int, String>(
+  TerminalSessionProfileNameFamilyCounter.new,
+);
+
 /// Controller for the id of the currently active terminal session
 class TerminalSessionController extends Notifier<String> {
   @override
@@ -29,8 +34,12 @@ class TerminalSessionController extends Notifier<String> {
 
   String createSession() {
     state = const Uuid().v4();
-    ref.read(terminalSessionListController.notifier).add(state);
+    ref.read(terminalSessionListController.notifier)._add(state);
     return state;
+  }
+
+  void setSession(String sessionId) {
+    state = sessionId;
   }
 }
 
@@ -39,11 +48,11 @@ class TerminalSessionListController extends Notifier<List<String>> {
   @override
   List<String> build() => [];
 
-  void add(String sessionId) {
+  void _add(String sessionId) {
     state.add(sessionId);
   }
 
-  void remove(String sessionId) {
+  void _remove(String sessionId) {
     state.remove(sessionId);
   }
 }
@@ -52,12 +61,17 @@ class TerminalSession {
   final String sessionId;
   final Terminal terminal;
 
+  String? _profileName;
+  String displayName;
+
   late Pty pty;
   bool isRunning = false;
   String? command;
   List<String> args = const [];
 
-  TerminalSession(this.sessionId) : terminal = Terminal(maxLines: 10000);
+  TerminalSession(this.sessionId)
+      : terminal = Terminal(maxLines: 10000),
+        displayName = sessionId;
 }
 
 /// Controller for the family of terminal session [TerminalController]s
@@ -65,6 +79,14 @@ class TerminalSessionFamilyController extends FamilyNotifier<TerminalSession, St
   @override
   TerminalSession build(String arg) {
     return TerminalSession(arg);
+  }
+
+  String get displayName => state.displayName;
+
+  void issueDisplayName(String profileName) {
+    state._profileName = profileName;
+    state.displayName =
+        ref.read(terminalSessionProfileNameFamilyCounter(profileName).notifier)._addSession(state.sessionId);
   }
 
   void setProcess({String? command, List<String> args = const []}) {
@@ -107,8 +129,47 @@ class TerminalSessionFamilyController extends FamilyNotifier<TerminalSession, St
     };
   }
 
-  void killProcess() {
+  void _killProcess() {
     state.pty.kill();
     state.isRunning = false;
+  }
+
+  void dispose() {
+    _killProcess();
+    ref.read(terminalSessionListController.notifier)._remove(state.sessionId);
+    if (state._profileName != null) {
+      ref.read(terminalSessionProfileNameFamilyCounter(state._profileName!).notifier)._removeSession(state.sessionId);
+    }
+  }
+}
+
+/// Counter for the number of terminal sessions by profileName - issues and tracks the display name for each session
+class TerminalSessionProfileNameFamilyCounter extends FamilyNotifier<int, String> {
+  @override
+  int build(String arg) => 0;
+
+  final List<String?> _sessionQueue = [];
+
+  String _addSession(String sessionId) {
+    state++;
+    for (int i = 0; i < _sessionQueue.length; i++) {
+      if (_sessionQueue[i] == null) {
+        _sessionQueue[i] = sessionId;
+        return '$arg-${i + 1}';
+      }
+    }
+    _sessionQueue.add(sessionId);
+    return '$arg-${_sessionQueue.length}';
+  }
+
+  bool _removeSession(String sessionId) {
+    for (int i = 0; i < _sessionQueue.length; i++) {
+      if (_sessionQueue[i] == sessionId) {
+        _sessionQueue[i] = null;
+        state--;
+        return true;
+      }
+    }
+    return false;
   }
 }

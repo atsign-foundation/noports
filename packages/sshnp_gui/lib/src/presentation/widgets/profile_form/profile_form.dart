@@ -8,9 +8,8 @@ import 'package:sshnp_gui/src/controllers/navigation_rail_controller.dart';
 import 'package:sshnp_gui/src/controllers/sshnp_params_controller.dart';
 import 'package:sshnp_gui/src/presentation/widgets/profile_form/custom_text_form_field.dart';
 import 'package:sshnp_gui/src/controllers/navigation_controller.dart';
-import 'package:sshnp_gui/src/utils/enum.dart';
-import 'package:sshnp_gui/src/utils/sizes.dart';
-import 'package:sshnp_gui/src/utils/validator.dart';
+import 'package:sshnp_gui/src/utility/sizes.dart';
+import 'package:sshnp_gui/src/utility/form_validator.dart';
 
 class ProfileForm extends ConsumerStatefulWidget {
   const ProfileForm({super.key});
@@ -85,7 +84,7 @@ class _ProfileFormState extends ConsumerState<ProfileForm> {
                             SSHNPPartialParams(profileName: value),
                           );
                         },
-                        validator: Validator.validateRequiredField,
+                        validator: FormValidator.validateRequiredField,
                       ),
                       gapW8,
                       CustomTextFormField(
@@ -108,7 +107,7 @@ class _ProfileFormState extends ConsumerState<ProfileForm> {
                           newConfig,
                           SSHNPPartialParams(sshnpdAtSign: value),
                         ),
-                        validator: Validator.validateAtsignField,
+                        validator: FormValidator.validateAtsignField,
                       ),
                       gapW8,
                       CustomTextFormField(
@@ -118,7 +117,7 @@ class _ProfileFormState extends ConsumerState<ProfileForm> {
                           newConfig,
                           SSHNPPartialParams(host: value),
                         ),
-                        validator: Validator.validateRequiredField,
+                        validator: FormValidator.validateRequiredField,
                       ),
                     ],
                   ),
@@ -132,7 +131,7 @@ class _ProfileFormState extends ConsumerState<ProfileForm> {
                           newConfig,
                           SSHNPPartialParams(sendSshPublicKey: value),
                         ),
-                        validator: Validator.validateRequiredField,
+                        validator: FormValidator.validateRequiredField,
                       ),
                       gapW8,
                       Row(
@@ -173,7 +172,7 @@ class _ProfileFormState extends ConsumerState<ProfileForm> {
                           newConfig,
                           SSHNPPartialParams(port: int.tryParse(value)),
                         ),
-                        validator: Validator.validateRequiredField,
+                        validator: FormValidator.validateRequiredField,
                       ),
                     ],
                   ),

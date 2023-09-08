@@ -50,6 +50,7 @@ class _ProfileTerminalActionState extends ConsumerState<ProfileTerminalAction> {
       if (result is SSHNPCommandResult) {
         /// Set the command for the new session
         sessionController.setProcess(command: result.command, args: result.args);
+        sessionController.issueDisplayName(widget.params.profileName!);
         ref.read(navigationRailController.notifier).setRoute(AppRoute.terminal);
         if (mounted) {
           context.pushReplacementNamed(AppRoute.terminal.name);

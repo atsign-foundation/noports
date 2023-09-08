@@ -3,7 +3,9 @@ import 'dart:async';
 import 'package:at_onboarding_flutter/at_onboarding_flutter.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sshnoports/sshnp/sshnp.dart';
-import 'package:sshnp_gui/src/utils/enum.dart';
+
+enum ConfigFileWriteState { create, update }
+
 
 /// A provider that exposes the [SSHNPParamsController] to the app.
 final sshnpParamsController = AutoDisposeNotifierProvider<SSHNPParamsController, CurrentSSHNPParamsModel>(

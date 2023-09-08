@@ -4,9 +4,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:sshnp_gui/src/controllers/sshnp_params_controller.dart';
 import 'package:sshnp_gui/src/presentation/widgets/home_screen_actions/home_screen_actions.dart';
-import 'package:sshnp_gui/src/navigation/app_navigation_rail.dart';
+import 'package:sshnp_gui/src/presentation/widgets/navigation/app_navigation_rail.dart';
 import 'package:sshnp_gui/src/presentation/widgets/profile_bar/profile_bar.dart';
-import 'package:sshnp_gui/src/utils/sizes.dart';
+import 'package:sshnp_gui/src/utility/sizes.dart';
 
 // * Once the onboarding process is completed you will be taken to this screen
 class HomeScreen extends ConsumerStatefulWidget {

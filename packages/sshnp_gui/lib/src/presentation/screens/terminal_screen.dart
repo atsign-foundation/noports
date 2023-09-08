@@ -5,8 +5,8 @@ import 'package:flutter_pty/flutter_pty.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:sshnp_gui/src/controllers/terminal_session_controller.dart';
-import 'package:sshnp_gui/src/navigation/app_navigation_rail.dart';
-import 'package:sshnp_gui/src/utils/sizes.dart';
+import 'package:sshnp_gui/src/presentation/widgets/navigation/app_navigation_rail.dart';
+import 'package:sshnp_gui/src/utility/sizes.dart';
 import 'package:xterm/xterm.dart';
 
 // * Once the onboarding process is completed you will be taken to this screen
@@ -17,7 +17,7 @@ class TerminalScreen extends ConsumerStatefulWidget {
   ConsumerState<TerminalScreen> createState() => _TerminalScreenState();
 }
 
-class _TerminalScreenState extends ConsumerState<TerminalScreen> {
+class _TerminalScreenState extends ConsumerState<TerminalScreen> with TickerProviderStateMixin {
   final terminalController = TerminalController();
   late final Pty pty;
 
@@ -38,16 +38,44 @@ class _TerminalScreenState extends ConsumerState<TerminalScreen> {
     super.dispose();
   }
 
+  void deleteTab(String sessionId) {
+    final controller = ref.read(terminalSessionFamilyController(sessionId).notifier);
+    final terminalList = ref.watch(terminalSessionListController);
+    final currentSessionId = ref.read(terminalSessionController);
+    final currentIndex = terminalList.indexOf(currentSessionId);
+
+    // If the session we are deleting is the active session
+    // we need to set a new active session
+    if (currentSessionId == sessionId) {
+      if (currentIndex > 0) {
+        // set active terminal to the one immediately to the left
+        ref.read(terminalSessionController.notifier).setSession(terminalList[currentIndex - 1]);
+      } else if (terminalList.length > 1) {
+        // set active terminal to the one immediately to the right
+        ref.read(terminalSessionController.notifier).setSession(terminalList[currentIndex + 1]);
+      } else {
+        // no other sessions available, set active terminal to empty string
+        ref.read(terminalSessionController.notifier).setSession('');
+      }
+    }
+
+    controller.dispose();
+    setState(() {});
+  }
+
   @override
   Widget build(BuildContext context) {
     // * Getting the AtClientManager instance to use below
-    final sessionId = ref.watch(terminalSessionController);
-    final terminalSession = ref.watch(terminalSessionFamilyController(sessionId));
     final terminalList = ref.watch(terminalSessionListController);
-    if (sessionId.isEmpty) {
-      // for now, just return a normal shell prompt
-      terminalSession.command = Platform.environment['SHELL'] ?? 'bash';
+    final currentSessionId = ref.watch(terminalSessionController);
+    late final int currentIndex;
+    if (terminalList.isEmpty) {
+      currentIndex = 0;
+    } else {
+      currentIndex = terminalList.indexOf(currentSessionId);
     }
+    final tabController = TabController(initialIndex: currentIndex, length: terminalList.length, vsync: this);
+
     return Scaffold(
       body: SafeArea(
         child: Row(
@@ -65,32 +93,33 @@ class _TerminalScreenState extends ConsumerState<TerminalScreen> {
                     ),
                     gapH24,
                     TabBar(
+                      controller: tabController,
                       isScrollable: true,
-                      tabs: terminalList
-                          .map(
-                            (e) => Tab(
-                                // text: e,
-                                child: Row(
-                              children: [
-                                Text(e),
-                                IconButton(
-                                  icon: const Icon(Icons.close),
-                                  onPressed: () {
-                                    ref.read(terminalSessionListController.notifier).remove(e);
-                                    setState(() {});
-                                  },
-                                )
-                              ],
-                            )),
-                          )
-                          .toList(),
+                      onTap: (index) {
+                        ref.read(terminalSessionController.notifier).setSession(terminalList[index]);
+                      },
+                      tabs: terminalList.map((String sessionId) {
+                        final displayName = ref.read(terminalSessionFamilyController(sessionId).notifier).displayName;
+                        return Tab(
+                          // text: e,
+                          child: Row(
+                            children: [
+                              Text(displayName),
+                              IconButton(
+                                icon: const Icon(Icons.close),
+                                onPressed: () => deleteTab(sessionId),
+                              )
+                            ],
+                          ),
+                        );
+                      }).toList(),
                     ),
                     Expanded(
                       child: TabBarView(
-                        children: terminalList.map((e) {
+                        controller: tabController,
+                        children: terminalList.map((String sessionId) {
                           return TerminalView(
-                            terminalSession.terminal,
-                            // ref.read(terminalSessionFamilyController(e).terminal),
+                            ref.watch(terminalSessionFamilyController(sessionId)).terminal,
                             controller: terminalController,
                             autofocus: true,
                           );

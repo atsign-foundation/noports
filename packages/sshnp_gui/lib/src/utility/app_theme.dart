@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:macos_ui/macos_ui.dart';
-import 'package:sshnp_gui/src/utils/constants.dart';
-import 'package:sshnp_gui/src/utils/sizes.dart';
+import 'package:sshnp_gui/src/utility/constants.dart';
+import 'package:sshnp_gui/src/utility/sizes.dart';
 
 class AppTheme {
+  
   static TextTheme lightTextTheme = const TextTheme(
     // displayLarge: TextStyle(
     //   fontSize: 80,

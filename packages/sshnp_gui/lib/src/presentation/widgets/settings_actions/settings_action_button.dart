@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:sshnp_gui/src/utils/constants.dart';
-import 'package:sshnp_gui/src/utils/sizes.dart';
+import 'package:sshnp_gui/src/utility/constants.dart';
+import 'package:sshnp_gui/src/utility/sizes.dart';
 
 class SettingsActionButton extends StatelessWidget {
   const SettingsActionButton({

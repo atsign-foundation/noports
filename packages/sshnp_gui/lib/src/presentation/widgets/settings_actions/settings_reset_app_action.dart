@@ -1,10 +1,10 @@
 import 'package:at_onboarding_flutter/services/sdk_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
-import 'package:sshnp_gui/main.dart';
 import 'package:sshnp_gui/src/presentation/widgets/settings_actions/settings_action_button.dart';
-import 'package:sshnp_gui/src/utils/at_error_dialog.dart';
-import 'package:sshnp_gui/src/utils/sizes.dart';
+import 'package:sshnp_gui/src/presentation/widgets/utility/at_error_dialog.dart';
+import 'package:sshnp_gui/src/utility/platform_utility/platform_utililty.dart';
+import 'package:sshnp_gui/src/utility/sizes.dart';
 
 /// Custom reset button widget is to reset an atsign from keychain list,
 
@@ -212,9 +212,10 @@ class _SettingsResetAppActionState extends State<SettingsResetAppAction> {
       List<String>? atsignsList = await SDKService().getAtsignList();
       if (atsignsList == null || atsignsList.length < 2) {
         if (mounted) {
+          PlatformUtility platformUtility = PlatformUtility.current();
           await Navigator.of(context).pushReplacement(
             MaterialPageRoute<void>(
-              builder: (BuildContext context) => const MyApp(),
+              builder: (BuildContext context) => platformUtility.app,
             ),
           );
         }
@@ -232,4 +233,3 @@ class _SettingsResetAppActionState extends State<SettingsResetAppAction> {
     });
   }
 }
-
