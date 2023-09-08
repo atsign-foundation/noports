@@ -11,6 +11,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:sshnoports/sshnpd/sshnpd.dart';
 import 'package:sshnp_gui/src/presentation/widgets/utility/custom_snack_bar.dart';
 import 'package:sshnp_gui/src/controllers/navigation_controller.dart';
 import 'package:sshnp_gui/src/repository/navigation_repository.dart';
@@ -53,14 +54,10 @@ class AuthenticationRepository {
 
     return AtClientPreference()
       ..rootDomain = AtEnv.rootDomain
-      ..namespace = AtEnv.appNamespace
+      ..namespace = SSHNPD.namespace
       ..hiveStoragePath = dir.path
       ..commitLogPath = dir.path
       ..isLocalStoreRequired = true;
-    // TODO
-    // * By default, this configuration is suitable for most applications
-    // * In advanced cases you may need to modify [AtClientPreference]
-    // * Read more here: https://pub.dev/documentation/at_client/latest/at_client/AtClientPreference-class.html
   }
 
   /// Signs user into the @platform.
