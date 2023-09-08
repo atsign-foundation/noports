@@ -40,9 +40,11 @@ class _ProfileRunActionState extends ConsumerState<ProfileRunAction> {
         sshrvGenerator: SSHRV.pureDart,
       );
 
+      // TODO set --single-session, --timeout
+
       await sshnp!.init();
       final sshnpResult = await sshnp!.run();
-      // TODO
+      // TODO throw away bad results
     } catch (e) {
       if (mounted) {
         CustomSnackBar.error(content: e.toString());
@@ -55,6 +57,7 @@ class _ProfileRunActionState extends ConsumerState<ProfileRunAction> {
   }
 
   Future<void> onStop() async {
+    // need to implement SSHNP.stop
   }
 
   static const Map<BackgroundSessionStatus, Widget> _iconMap = {
