@@ -1,21 +1,30 @@
 import 'package:at_client_mobile/at_client_mobile.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:sshnoports/sshnp/sshnp.dart';
 import 'package:sshnoports/sshrv/sshrv.dart';
+import 'package:sshnp_gui/src/controllers/background_session_controller.dart';
 import 'package:sshnp_gui/src/presentation/widgets/profile_actions/profile_action_button.dart';
 import 'package:sshnp_gui/src/presentation/widgets/utility/custom_snack_bar.dart';
 
-class ProfileRunAction extends StatefulWidget {
+class ProfileRunAction extends ConsumerStatefulWidget {
   final SSHNPParams params;
   const ProfileRunAction(this.params, {Key? key}) : super(key: key);
 
   @override
-  State<ProfileRunAction> createState() => _ProfileRunActionState();
+  ConsumerState<ProfileRunAction> createState() => _ProfileRunActionState();
 }
 
-class _ProfileRunActionState extends State<ProfileRunAction> {
-  Future<void> onPressed() async {
+class _ProfileRunActionState extends ConsumerState<ProfileRunAction> {
+  SSHNP? sshnp;
+
+  @override
+  void initState() async {
+    super.initState();
+  }
+
+  Future<void> onStart() async {
     if (mounted) {
       showDialog<void>(
         context: context,
@@ -25,14 +34,14 @@ class _ProfileRunActionState extends State<ProfileRunAction> {
     }
 
     try {
-      final sshnp = await SSHNP.fromParams(
+      sshnp = await SSHNP.fromParams(
         widget.params,
         atClient: AtClientManager.getInstance().atClient,
         sshrvGenerator: SSHRV.pureDart,
       );
 
-      await sshnp.init();
-      final sshnpResult = await sshnp.run();
+      await sshnp!.init();
+      final sshnpResult = await sshnp!.run();
       // TODO
     } catch (e) {
       if (mounted) {
@@ -45,13 +54,32 @@ class _ProfileRunActionState extends State<ProfileRunAction> {
     }
   }
 
+  Future<void> onStop() async {
+  }
+
+  static const Map<BackgroundSessionStatus, Widget> _iconMap = {
+    BackgroundSessionStatus.stopped: Icon(Icons.play_arrow),
+    BackgroundSessionStatus.loading: CircularProgressIndicator(),
+    BackgroundSessionStatus.running: Icon(Icons.stop),
+  };
+
   @override
   Widget build(BuildContext context) {
+    final status = ref.watch(backgroundSessionFamilyController(widget.params.profileName!)).status;
     return ProfileActionButton(
       onPressed: () async {
-        await onPressed();
+        switch (status) {
+          case BackgroundSessionStatus.stopped:
+            await onStart();
+            break;
+          case BackgroundSessionStatus.loading:
+            break;
+          case BackgroundSessionStatus.running:
+            await onStop();
+            break;
+        }
       },
-      icon: const Icon(Icons.play_arrow),
+      icon: _iconMap[status]!,
     );
   }
 }
