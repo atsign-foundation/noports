@@ -10,7 +10,7 @@ class ProfileBarActions extends StatelessWidget {
   Widget build(BuildContext context) {
     return Row(
       children: [
-        ProfileRunAction(params),
+        // ProfileRunAction(params),
         ProfileTerminalAction(params),
         ProfileEditAction(params),
         ProfileDeleteAction(params),
