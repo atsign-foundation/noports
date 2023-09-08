@@ -6,7 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:macos_ui/macos_ui.dart';
-import 'package:sshnp_gui/src/utils/app_router.dart';
+import 'package:sshnp_gui/src/controllers/navigation_controller.dart';
 import 'package:sshnp_gui/src/utils/theme.dart';
 import 'package:sshnp_gui/src/utils/util.dart';
 
@@ -45,7 +45,7 @@ class MyApp extends ConsumerWidget {
       title: 'SSHNP',
       localizationsDelegates: AppLocalizations.localizationsDelegates,
       supportedLocales: AppLocalizations.supportedLocales,
-      routerConfig: ref.watch(goRouterProvider),
+      routerConfig: ref.watch(navigationController),
       theme: AppTheme.dark(),
       // * The onboarding screen (first screen)p[]
     );
@@ -61,7 +61,7 @@ class MyMacApp extends ConsumerWidget {
       title: 'SSHNP',
       localizationsDelegates: AppLocalizations.localizationsDelegates,
       supportedLocales: AppLocalizations.supportedLocales,
-      routerConfig: ref.watch(goRouterProvider),
+      routerConfig: ref.watch(navigationController),
       theme: AppTheme.macosDark(),
       darkTheme: AppTheme.macosDark(),
       themeMode: ThemeMode.dark,
