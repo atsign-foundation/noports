@@ -22,7 +22,7 @@ jobs:
             output-name: sshnp-macos-x64
 
     steps:
-      - uses: actions/checkout@f43a0e5ff2bd294095638e18286ca9a3d1956744 # v3.6.0
+      - uses: actions/checkout@3df4ab11eba7bda6032a0b82a6bb43b11571feac # v4.0.0
 
       - name: Ensure version matches tag
         if: startsWith(github.ref, 'refs/tags/v')
@@ -49,7 +49,7 @@ jobs:
       - run: cp -r templates sshnp/templates
       - run: cp LICENSE sshnp
       - run: tar -cvzf tarball/${{ matrix.output-name }}.tgz sshnp
-      - uses: actions/upload-artifact@0b7f8abb1508181956e8e162db84b466c27e18ce # v3.1.2
+      - uses: actions/upload-artifact@a8a3f3ad30e3422c9c7b888a15615d19a852ae32 # v3.1.3
         with:
           name: x64_binaries
           path: ./packages/sshnoports/tarball/${{ matrix.output-name }}.tgz
@@ -71,7 +71,7 @@ jobs:
           - platform: linux/riscv64
             output-name: sshnp-linux-riscv64
     steps:
-      - uses: actions/checkout@f43a0e5ff2bd294095638e18286ca9a3d1956744 # v3.6.0
+      - uses: actions/checkout@3df4ab11eba7bda6032a0b82a6bb43b11571feac # v4.0.0
 
       - name: Ensure version matches tag
         if: startsWith(github.ref, 'refs/tags/v')
@@ -93,7 +93,7 @@ jobs:
           --platform ${{ matrix.platform }} -o type=tar,dest=bins.tar .
       - run: mkdir tarballs
       - run: tar -xvf bins.tar -C tarballs
-      - uses: actions/upload-artifact@0b7f8abb1508181956e8e162db84b466c27e18ce # v3.1.2
+      - uses: actions/upload-artifact@a8a3f3ad30e3422c9c7b888a15615d19a852ae32 # v3.1.3
         with:
           name: other_binaries
           path: ./packages/sshnoports/tarballs/${{ matrix.output-name }}.tgz

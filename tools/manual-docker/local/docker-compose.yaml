@@ -15,7 +15,7 @@ services:
     image: atsigncompany/sshnp-e2e-manual:local
     container_name: manual_local_sshnpd
     volumes:
-      - ../../../contexts/sshnpd/keys/:/atsign/.atsign/keys/ # mount keys
+      - ../../../../contexts/sshnpd/keys/:/atsign/.atsign/keys/ # mount keys
     networks:
       - sshnpd
     depends_on:
@@ -24,7 +24,7 @@ services:
     image: atsigncompany/sshnp-e2e-manual:local
     container_name: manual_local_sshnp
     volumes:
-      - ../../../contexts/sshnp/keys/:/atsign/.atsign/keys/ # mount keys
+      - ../../../../contexts/sshnp/keys/:/atsign/.atsign/keys/ # mount keys
     networks:
       - sshnp
     depends_on:
@@ -33,7 +33,7 @@ services:
     image: atsigncompany/sshnp-e2e-manual:local
     container_name: manual_local_sshrvd
     volumes:
-      - ../../../contexts/sshrvd/keys/:/atsign/.atsign/keys/ # mount keys
+      - ../../../../contexts/sshrvd/keys/:/atsign/.atsign/keys/ # mount keys
     network_mode: host
     depends_on:
       - image-manual-local

@@ -295,10 +295,6 @@ class SSHNPDImpl implements SSHNPD {
 
     late final String sshPublicKey;
     try {
-      var sshHomeDirectory = '$homeDirectory/.ssh/';
-      if (Platform.isWindows) {
-        sshHomeDirectory = '$homeDirectory\\.ssh\\';
-      }
       logger.info(
           'ssh Public Key received from ${notification.from} notification id : ${notification.id}');
       sshPublicKey = notification.value!;
@@ -309,7 +305,9 @@ class SSHNPDImpl implements SSHNPD {
       }
 
       // Check to see if the ssh Publickey is already in the file if not append to the ~/.ssh/authorized_keys file
-      var authKeys = File('${sshHomeDirectory}authorized_keys');
+      var authKeysFilePath = [homeDirectory, '.ssh', 'authorized_keys']
+          .join(Platform.pathSeparator);
+      var authKeys = File(authKeysFilePath);
 
       var authKeysContent = await authKeys.readAsString();
 

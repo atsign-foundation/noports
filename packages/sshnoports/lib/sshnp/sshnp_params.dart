@@ -353,7 +353,10 @@ class SSHNPPartialParams {
     }
 
     // THIS IS A WORKAROUND IN ORDER TO BE TYPE SAFE IN SSHNPPartialParams.fromArgMap
-    Map<String, dynamic> parsedArgsMap = {for (var e in (parsedArgs.options)) e: parsedArgs[e]};
+    Map<String, dynamic> parsedArgsMap = {
+      for (var e in parsedArgs.options)
+        e: SSHNPArg.fromName(e).type == ArgType.integer ? int.tryParse(parsedArgs[e]) : parsedArgs[e]
+    };
 
     return SSHNPPartialParams.merge(
       params,
@@ -375,7 +378,7 @@ class SSHNPPartialParams {
             arg.name,
             abbr: arg.abbr,
             mandatory: arg.mandatory,
-            defaultsTo: withDefaults ? (arg.defaultsTo != null ? '${arg.defaultsTo}' : null) : null,
+            defaultsTo: withDefaults ? arg.defaultsTo?.toString() : null,
             help: arg.help,
           );
           break;
@@ -454,7 +457,7 @@ class SSHNPPartialParams {
           case ArgFormat.option:
             if (value.isEmpty) continue;
             if (arg.type == ArgType.integer) {
-              args[arg.name] = int.parse(value);
+              args[arg.name] = int.tryParse(value);
             } else {
               args[arg.name] = value;
             }
