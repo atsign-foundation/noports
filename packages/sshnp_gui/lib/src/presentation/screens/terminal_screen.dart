@@ -27,7 +27,9 @@ class _TerminalScreenState extends ConsumerState<TerminalScreen> with TickerProv
 
     final sessionController = ref.read(terminalSessionFamilyController(sessionId).notifier);
     WidgetsBinding.instance.endOfFrame.then((value) {
-      sessionController.startProcess();
+      sessionController.startProcess(exitCallback: (int exitCode) {
+        setState(() {});
+      });
     });
   }
 
@@ -104,6 +106,7 @@ class _TerminalScreenState extends ConsumerState<TerminalScreen> with TickerProv
                           final displayName = ref.read(terminalSessionFamilyController(sessionId).notifier).displayName;
                           return Tab(
                             // text: e,
+                            key: Key('terminal-tab-$sessionId'),
                             child: Row(
                               children: [
                                 Text(displayName),
@@ -123,6 +126,7 @@ class _TerminalScreenState extends ConsumerState<TerminalScreen> with TickerProv
                           controller: tabController,
                           children: terminalList.map((String sessionId) {
                             return TerminalView(
+                              key: Key('terminal-view-$sessionId'),
                               ref.watch(terminalSessionFamilyController(sessionId)).terminal,
                               controller: terminalController,
                               autofocus: true,

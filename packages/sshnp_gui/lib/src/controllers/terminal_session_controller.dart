@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:flutter/material.dart';
 import 'package:flutter_pty/flutter_pty.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uuid/uuid.dart';
@@ -49,7 +50,7 @@ class TerminalSessionListController extends Notifier<List<String>> {
   List<String> build() => [];
 
   void _add(String sessionId) {
-    state.add(sessionId);
+    state = state + [sessionId];
   }
 
   void _remove(String sessionId) {
@@ -94,7 +95,7 @@ class TerminalSessionFamilyController extends FamilyNotifier<TerminalSession, St
     state.args = args;
   }
 
-  void startProcess() {
+  void startProcess({void Function(int)? exitCallback}) {
     if (state.isRunning) return;
     state.isRunning = true;
     state.pty = Pty.start(
@@ -116,7 +117,23 @@ class TerminalSessionFamilyController extends FamilyNotifier<TerminalSession, St
     state.pty.output.cast<List<int>>().transform(const Utf8Decoder()).listen(state.terminal.write);
 
     // Write exit code of the process to the terminal
-    state.pty.exitCode.then((code) => state.terminal.write('The process exited with code: $code'));
+    state.pty.exitCode.then((code) async {
+      state.terminal.write('The process exited with code: $code');
+      int delay = 5;
+
+      /// Count down to closing the terminal
+      for (int i = 0; i < delay; i++) {
+        state.terminal.write('Closing the terminal in ${delay - i} seconds...');
+        await Future.delayed(const Duration(seconds: 1), () {
+          state.terminal.eraseLine();
+        });
+      }
+
+      /// Close the terminal after [delay] seconds
+      state.isRunning = false;
+      dispose();
+      exitCallback?.call(code);
+    });
 
     // Write the terminal output to the process
     state.terminal.onOutput = (data) {
@@ -135,7 +152,7 @@ class TerminalSessionFamilyController extends FamilyNotifier<TerminalSession, St
   }
 
   void dispose() {
-    _killProcess();
+    if (state.isRunning) _killProcess();
     ref.read(terminalSessionListController.notifier)._remove(state.sessionId);
     if (state._profileName != null) {
       ref.read(terminalSessionProfileNameFamilyCounter(state._profileName!).notifier)._removeSession(state.sessionId);
