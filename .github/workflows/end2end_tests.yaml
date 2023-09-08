@@ -555,12 +555,12 @@ jobs:
             ${{ env.SSHNP_ATSIGN }} \
             ${{ env.SSHNPD_ATSIGN }} \
             ${{ env[env.PROD_RVD_ATSIGN] }} \
-            "alternate_port_test/sshnp_entrypoint.sh"
+            alternate_port_test/sshnp_entrypoint.sh
           ./setup-sshnpd-entrypoint.sh \
             $DEVICE_NAME \
             ${{ env.SSHNP_ATSIGN }} \
             ${{ env.SSHNPD_ATSIGN }} \
-            "alternate_port_test/sshnpd_entrypoint.sh"
+            alternate_port_test/sshnpd_entrypoint.sh
 
       - name: Ensure entrypoints exist
         working-directory: tests/end2end_tests/contexts
