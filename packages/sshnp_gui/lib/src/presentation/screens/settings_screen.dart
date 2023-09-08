@@ -2,13 +2,11 @@ import 'package:at_backupkey_flutter/at_backupkey_flutter.dart';
 import 'package:at_contacts_flutter/services/contact_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
-import 'package:sshnp_gui/src/presentation/widgets/navigation/app_navigation_rail.dart';
-import 'package:sshnp_gui/src/presentation/widgets/utility/reset_app_button.dart';
-import 'package:sshnp_gui/src/presentation/widgets/utility/settings_button.dart';
-import 'package:sshnp_gui/src/presentation/widgets/utility/switch_atsign.dart';
+import 'package:sshnp_gui/src/presentation/navigation/app_navigation_rail.dart';
+import 'package:sshnp_gui/src/presentation/widgets/settings_actions/settings_actions.dart';
+import 'package:sshnp_gui/src/presentation/widgets/settings_actions/settings_action_button.dart';
 import 'package:sshnp_gui/src/repository/navigation_repository.dart';
 import 'package:sshnp_gui/src/utils/sizes.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({Key? key}) : super(key: key);
@@ -39,82 +37,20 @@ class SettingsScreen extends StatelessWidget {
                       style: Theme.of(context).textTheme.headlineMedium,
                     ),
                   ),
-                  // Text(
-                  //   ContactService().currentAtsign,
-                  //   style: Theme.of(context).textTheme.bodyLarge,
-                  // ),
-                  // Text(
-                  //   ContactService().loggedInUserDetails!.tags!['name'] ?? '',
-                  //   style: Theme.of(context).textTheme.displaySmall,
-                  // ),
-                  // const SizedBox(
-                  //   height: 30,
-                  // ),
-                  // SettingsButton(
-                  //   icon: Icons.block_outlined,
-                  //   title: 'Blocked Contacts',
-                  //   onTap: () {
-                  //     Navigator.of(context).pushNamed(CustomBlockedScreen.routeName);
-                  //   },
-                  // ),
                   const SizedBox(
                     height: 59,
                   ),
-                  SettingsButton(
-                    icon: Icons.bookmark_outline,
-                    title: strings.backupYourKeys,
-                    onTap: () {
-                      BackupKeyWidget(atsign: ContactService().currentAtsign).showBackupDialog(context);
-                    },
-                  ),
+                  const SettingsBackupKeyAction(),
                   gapH16,
-                  SettingsButton(
-                    icon: Icons.logout_rounded,
-                    title: strings.switchAtsign,
-                    onTap: () async {
-                      await showModalBottomSheet(
-                          context: NavigationRepository.navKey.currentContext!,
-                          builder: (context) => const AtSignBottomSheet());
-                    },
-                  ),
+                  const SettingsSwitchAtsignAction(),
                   gapH16,
-                  const ResetAppButton(),
+                  const SettingsResetAppAction(),
                   gapH36,
-                  SettingsButton(
-                    icon: Icons.help_center_outlined,
-                    title: strings.faq,
-                    onTap: () async {
-                      final Uri url = Uri.parse('https://atsign.com/faqs/');
-                      if (!await launchUrl(url)) {
-                        throw Exception('Could not launch $url');
-                      }
-                    },
-                  ),
+                  const SettingsFaqAction(),
                   gapH16,
-                  SettingsButton(
-                    icon: Icons.forum_outlined,
-                    title: strings.contactUs,
-                    onTap: () async {
-                      Uri emailUri = Uri(
-                        scheme: 'mailto',
-                        path: 'atDataBrowser@atsign.com',
-                      );
-                      if (!await launchUrl(emailUri)) {
-                        throw Exception('Could not launch $emailUri');
-                      }
-                    },
-                  ),
+                  const SettingsContactAction(),
                   gapH16,
-                  SettingsButton(
-                    icon: Icons.account_balance_wallet_outlined,
-                    title: strings.privacyPolicy,
-                    onTap: () async {
-                      final Uri url = Uri.parse('https://atsign.com/apps/atdatabrowser-privacy-policy/');
-                      if (!await launchUrl(url)) {
-                        throw Exception('Could not launch $url');
-                      }
-                    },
-                  ),
+                  const SettingsPrivacyPolicyAction(),
                 ],
               ),
             ),

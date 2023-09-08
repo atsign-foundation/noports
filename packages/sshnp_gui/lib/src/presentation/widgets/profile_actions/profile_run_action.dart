@@ -3,7 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:sshnoports/sshnp/sshnp.dart';
 import 'package:sshnoports/sshrv/sshrv.dart';
-import 'package:sshnp_gui/src/presentation/widgets/dialog/sshnp_result_alert_dialog.dart';
+import 'package:sshnp_gui/src/presentation/widgets/profile_actions/profile_action_button.dart';
+import 'package:sshnp_gui/src/presentation/widgets/utility/custom_snack_bar.dart';
 
 class ProfileRunAction extends StatefulWidget {
   final SSHNPParams params;
@@ -32,37 +33,21 @@ class _ProfileRunActionState extends State<ProfileRunAction> {
 
       await sshnp.init();
       final sshnpResult = await sshnp.run();
-
-      if (mounted) {
-        // pop to remove circular progress indicator
-        context.pop();
-        showDialog<void>(
-          context: context,
-          barrierDismissible: false,
-          builder: (BuildContext context) => SSHNPResultAlertDialog(
-            result: sshnpResult.toString(),
-            title: 'Success',
-          ),
-        );
-      }
+      // TODO
     } catch (e) {
       if (mounted) {
+        CustomSnackBar.error(content: e.toString());
+      }
+    } finally {
+      if (mounted) {
         context.pop();
-        showDialog<void>(
-          context: context,
-          barrierDismissible: false,
-          builder: (BuildContext context) => SSHNPResultAlertDialog(
-            result: e.toString(),
-            title: 'Failed',
-          ),
-        );
       }
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    return IconButton(
+    return ProfileActionButton(
       onPressed: () async {
         await onPressed();
       },

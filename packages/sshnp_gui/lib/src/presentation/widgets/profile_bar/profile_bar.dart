@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sshnp_gui/src/controllers/sshnp_params_controller.dart';
-import 'package:sshnp_gui/src/presentation/widgets/profile_bar/actions/profile_actions.dart';
+import 'package:sshnp_gui/src/presentation/widgets/profile_bar/profile_bar_actions.dart';
+import 'package:sshnp_gui/src/presentation/widgets/profile_bar/profile_bar_stats.dart';
 
 class ProfileBar extends ConsumerStatefulWidget {
   final String profileName;
@@ -30,7 +31,8 @@ class _ProfileBarState extends ConsumerState<ProfileBar> {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Text(params.profileName ?? ''),
-            ProfileActions(params),
+            const ProfileBarStats(),
+            ProfileBarActions(params),
           ],
         ),
       ),

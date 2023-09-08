@@ -2,33 +2,33 @@ import 'package:at_onboarding_flutter/services/sdk_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:sshnp_gui/main.dart';
-import 'package:sshnp_gui/src/presentation/widgets/utility/settings_button.dart';
+import 'package:sshnp_gui/src/presentation/widgets/settings_actions/settings_action_button.dart';
 import 'package:sshnp_gui/src/utils/at_error_dialog.dart';
 import 'package:sshnp_gui/src/utils/sizes.dart';
 
 /// Custom reset button widget is to reset an atsign from keychain list,
 
-class ResetAppButton extends StatefulWidget {
+class SettingsResetAppAction extends StatefulWidget {
   final String? buttonText;
   final bool isOnboardingScreen;
 
-  const ResetAppButton({
+  const SettingsResetAppAction({
     Key? key,
     this.buttonText,
     this.isOnboardingScreen = false,
   }) : super(key: key);
 
   @override
-  State<ResetAppButton> createState() => _ResetAppButtonState();
+  State<SettingsResetAppAction> createState() => _SettingsResetAppActionState();
 }
 
-class _ResetAppButtonState extends State<ResetAppButton> {
+class _SettingsResetAppActionState extends State<SettingsResetAppAction> {
   bool? loading = false;
 
   @override
   Widget build(BuildContext context) {
     if (!widget.isOnboardingScreen) {
-      return SettingsButton(
+      return SettingsActionButton(
         icon: Icons.restart_alt_outlined,
         title: 'Reset atsign',
         onTap: _showResetDialog,
@@ -232,3 +232,4 @@ class _ResetAppButtonState extends State<ResetAppButton> {
     });
   }
 }
+

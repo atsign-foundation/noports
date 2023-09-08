@@ -6,7 +6,8 @@ import 'package:sshnoports/sshnp/sshnp.dart';
 import 'package:sshnoports/sshrv/sshrv.dart';
 import 'package:sshnp_gui/src/controllers/nav_rail_controller.dart';
 import 'package:sshnp_gui/src/controllers/terminal_session_controller.dart';
-import 'package:sshnp_gui/src/presentation/widgets/dialog/sshnp_result_alert_dialog.dart';
+import 'package:sshnp_gui/src/presentation/widgets/profile_actions/profile_action_button.dart';
+import 'package:sshnp_gui/src/presentation/widgets/utility/custom_snack_bar.dart';
 import 'package:sshnp_gui/src/utils/app_router.dart';
 
 class ProfileTerminalAction extends ConsumerStatefulWidget {
@@ -57,21 +58,14 @@ class _ProfileTerminalActionState extends ConsumerState<ProfileTerminalAction> {
     } catch (e) {
       if (mounted) {
         context.pop();
-        showDialog<void>(
-          context: context,
-          barrierDismissible: false,
-          builder: (BuildContext context) => SSHNPResultAlertDialog(
-            result: e.toString(),
-            title: 'SSHNP Failed',
-          ),
-        );
+        CustomSnackBar.error(content: e.toString());
       }
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    return IconButton(
+    return ProfileActionButton(
       onPressed: () async {
         await onPressed();
       },

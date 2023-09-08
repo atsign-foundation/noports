@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import 'package:sshnoports/sshnp/sshnp.dart';
 import 'package:sshnp_gui/src/controllers/sshnp_params_controller.dart';
+import 'package:sshnp_gui/src/presentation/widgets/profile_actions/profile_action_button.dart';
 import 'package:sshnp_gui/src/utils/app_router.dart';
 import 'package:sshnp_gui/src/utils/enum.dart';
 
@@ -31,10 +32,8 @@ class _ProfileEditActionState extends ConsumerState<ProfileEditAction> {
 
   @override
   Widget build(BuildContext context) {
-    return IconButton(
-      onPressed: () {
-        onPressed();
-      },
+    return ProfileActionButton(
+      onPressed: onPressed,
       icon: const Icon(Icons.edit),
     );
   }
