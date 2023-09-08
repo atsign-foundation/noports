@@ -44,7 +44,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     ],
                   ),
                   gapH24,
-                  Text(strings.availableConnections),
+                  Text(strings.availableConnections, textScaleFactor: 2),
                   gapH8,
                   profileNames.when(
                     loading: () => const Center(
