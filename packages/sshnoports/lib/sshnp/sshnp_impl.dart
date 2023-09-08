@@ -638,6 +638,7 @@ class SSHNPImpl implements SSHNP {
         ..key = 'sshpublickey'
         ..sharedBy = clientAtSign
         ..sharedWith = sshnpdAtSign
+        ..namespace = namespace
         ..metadata = (Metadata()
           ..ttr = -1
           ..ttl = 10000);
