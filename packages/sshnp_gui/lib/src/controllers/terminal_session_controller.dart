@@ -66,6 +66,7 @@ class TerminalSession {
 
   late Pty pty;
   bool isRunning = false;
+  bool isDisposed = true;
   String? command;
   List<String> args = const [];
 
@@ -94,9 +95,10 @@ class TerminalSessionFamilyController extends FamilyNotifier<TerminalSession, St
     state.args = args;
   }
 
-  void startProcess({void Function(int)? exitCallback}) {
+  void startProcess() {
     if (state.isRunning) return;
     state.isRunning = true;
+    state.isDisposed = false;
     state.pty = Pty.start(
       state.command ?? Platform.environment['SHELL'] ?? 'bash',
       arguments: state.args,
@@ -110,28 +112,27 @@ class TerminalSessionFamilyController extends FamilyNotifier<TerminalSession, St
     state.terminal.setTitle(command);
 
     // Write the command to the terminal
-    state.terminal.write('$command\n');
+    state.terminal.write('[Process: $command]\r\n\n');
 
     // Write stdout of the process to the terminal
     state.pty.output.cast<List<int>>().transform(const Utf8Decoder()).listen(state.terminal.write);
 
     // Write exit code of the process to the terminal
     state.pty.exitCode.then((code) async {
-      state.terminal.write('The process exited with code: $code');
+      state.terminal.write('\n[The process exited with code: $code]\r\n\n');
+
       int delay = 5;
 
       /// Count down to closing the terminal
       for (int i = 0; i < delay; i++) {
-        state.terminal.write('Closing the terminal in ${delay - i} seconds...');
-        await Future.delayed(const Duration(seconds: 1), () {
-          state.terminal.eraseLine();
-        });
+        String message = 'Closing terminal session in ${delay - i} seconds...\r';
+        state.terminal.write(message);
+        await Future.delayed(const Duration(seconds: 1));
       }
 
       /// Close the terminal after [delay] seconds
       state.isRunning = false;
       dispose();
-      exitCallback?.call(code);
     });
 
     // Write the terminal output to the process
@@ -141,7 +142,7 @@ class TerminalSessionFamilyController extends FamilyNotifier<TerminalSession, St
 
     // Resize the terminal when the window is resized
     state.terminal.onResize = (w, h, pw, ph) {
-      state.pty.resize(h, w);
+      state.pty.resize((h / ph).floor(), (w / pw).floor());
     };
   }
 
@@ -151,8 +152,34 @@ class TerminalSessionFamilyController extends FamilyNotifier<TerminalSession, St
   }
 
   void dispose() {
+    /// If the session is already disposed, return null
+    if (state.isDisposed) return;
+
+    /// 1. Set the session to disposed
     if (state.isRunning) _killProcess();
+
+    // 2. Find a new session to set as the active one
+    final terminalList = ref.read(terminalSessionListController);
+    final currentSessionId = ref.read(terminalSessionController);
+    final currentIndex = terminalList.indexOf(currentSessionId);
+    if (currentSessionId == state.sessionId) {
+      // Find a new terminal tab to set as the active one
+      if (currentIndex > 0) {
+        // set active terminal to the one immediately to the left
+        ref.read(terminalSessionController.notifier).setSession(terminalList[currentIndex - 1]);
+      } else if (terminalList.length > 1) {
+        // set active terminal to the one immediately to the right
+        ref.read(terminalSessionController.notifier).setSession(terminalList[currentIndex + 1]);
+      } else {
+        // no other sessions available, set active terminal to empty string
+        ref.read(terminalSessionController.notifier).setSession('');
+      }
+    }
+
+    /// 3. Remove the session from the list of sessions
     ref.read(terminalSessionListController.notifier)._remove(state.sessionId);
+
+    /// 4. Remove the session from the profile name counter
     if (state._profileName != null) {
       ref.read(terminalSessionProfileNameFamilyCounter(state._profileName!).notifier)._removeSession(state.sessionId);
     }
