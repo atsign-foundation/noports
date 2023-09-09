@@ -120,6 +120,7 @@ class TerminalSessionFamilyController extends FamilyNotifier<TerminalSession, St
     // Write exit code of the process to the terminal
     state.pty.exitCode.then((code) async {
       state.terminal.write('\n[The process exited with code: $code]\r\n\n');
+      state.terminal.setCursorVisibleMode(false);
 
       int delay = 5;
 
