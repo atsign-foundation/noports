@@ -34,4 +34,4 @@ jobs:
       - name: Get version
         run: echo "VERSION=${GITHUB_REF##*/}" >> $GITHUB_ENV
       - name: Promote image to latest
-        run: docker buildx imagetools create -t atsigncompany/${{ inputs.name }}:latest atsigncompany/${{ matrix.name }}:release-${{ env.VERSION }}
+        run: docker buildx imagetools create -t atsigncompany/${{ inputs.name }}:latest atsigncompany/${{ inputs.name }}:release-${{ env.VERSION }}
