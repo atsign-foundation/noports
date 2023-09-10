@@ -155,7 +155,7 @@ Future<void> addPublicKeyToAuthorizedKeys(
     {required String sshPublicKey,
     required int localSshdPort,
     String? homeDirectory,
-    String keyName = '',
+    String sessionId = '',
     String permissions = ''}) async {
   // Check to see if the ssh public key looks like one!
   if (!sshPublicKey.startsWith('ssh-')) {
@@ -175,18 +175,23 @@ Future<void> addPublicKeyToAuthorizedKeys(
   var authKeys = File('${sshHomeDirectory}authorized_keys');
 
   var authKeysContent = await authKeys.readAsString();
+  if (!authKeysContent.endsWith('\n')) {
+    await authKeys.writeAsString('\n', mode: FileMode.append);
+  }
 
   if (!authKeysContent.contains(sshPublicKey)) {
     if (permissions.isNotEmpty && !permissions.startsWith(',')) {
       permissions = ',$permissions';
     }
+    // Set up a safe authorized_keys file, for the reverse ssh tunnel
     await authKeys.writeAsString(
-        '\n'
-        'command="echo ssh session complete; sleep 20"'
+        'command="echo \\"ssh session complete\\";sleep 20"'
         ',PermitOpen="localhost:$localSshdPort"'
         '$permissions'
-        ' ${sshPublicKey.trim()}'
-        ' $keyName\n',
+        ' '
+        '${sshPublicKey.trim()}'
+        ' '
+        '$sessionId\n',
         mode: FileMode.append);
   }
 }

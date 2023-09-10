@@ -482,7 +482,7 @@ class SSHNPDImpl implements SSHNPD {
       await addPublicKeyToAuthorizedKeys(
           sshPublicKey: ephemeralPublicKey,
           localSshdPort: localSshdPort,
-          keyName: sessionId,
+          sessionId: sessionId,
           permissions: ephemeralPermissions);
 
       /// - Send response message to the sshnp client which includes the
