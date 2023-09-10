@@ -155,7 +155,7 @@ Future<void> addPublicKeyToAuthorizedKeys(
     {required String sshPublicKey,
     required int localSshdPort,
     String? homeDirectory,
-    String keyName = 'client-public-key',
+    String keyName = '',
     String permissions = ''}) async {
   // Check to see if the ssh public key looks like one!
   if (!sshPublicKey.startsWith('ssh-')) {
@@ -175,15 +175,13 @@ Future<void> addPublicKeyToAuthorizedKeys(
   var authKeys = File('${sshHomeDirectory}authorized_keys');
 
   var authKeysContent = await authKeys.readAsString();
-  if (!authKeysContent.endsWith('\n')) {
-    await authKeys.writeAsString('\n', mode: FileMode.append);
-  }
 
   if (!authKeysContent.contains(sshPublicKey)) {
     if (permissions.isNotEmpty && !permissions.startsWith(',')) {
       permissions = ',$permissions';
     }
     await authKeys.writeAsString(
+        '\n'
         'command="echo ssh session complete; sleep 20"'
         ',PermitOpen="localhost:$localSshdPort"'
         '$permissions'
