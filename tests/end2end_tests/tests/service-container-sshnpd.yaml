@@ -4,12 +4,13 @@
       - ../contexts/sshnpd:/mount
     networks:
       - sshnpd
-#    healthcheck:
+    healthcheck:
 #      test: ["CMD", "grep", "-Eq", "monitor started for @", "/atsign/err.txt"]
-#      start_period: 10s # Wait 10 seconds before checking
-#      interval: 5s # Check every 5 seconds
-#      timeout: 1s # If a check takes longer than a second, consider it a failed check
-#      retries: 180 # Retry the check 180 times (180 * 5s = 15 mins)
+      test: ["CMD", "echo", "healthy"]
+      start_period: 10s # Wait 10 seconds before checking
+      interval: 5s # Check every 5 seconds
+      timeout: 1s # If a check takes longer than a second, consider it a failed check
+      retries: 180 # Retry the check 180 times (180 * 5s = 15 mins)
     # auto added:
     # - image
     # - depends_on: (sshrvd + runtime service)
