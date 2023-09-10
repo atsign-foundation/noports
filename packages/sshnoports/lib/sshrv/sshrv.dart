@@ -2,7 +2,8 @@ import 'dart:io';
 
 import 'package:meta/meta.dart';
 import 'package:socket_connector/socket_connector.dart';
-import 'package:sshnoports/sshnp/sshnp.dart';
+
+import '../common/defaults.dart' as defaults;
 
 part 'sshrv_impl.dart';
 
@@ -25,7 +26,7 @@ abstract class SSHRV<T> {
   static SSHRV<Process> localBinary(
     String host,
     int streamingPort, {
-    int localSshdPort = SSHNP.defaultLocalSshdPort,
+    int localSshdPort = defaults.defaultLocalSshdPort,
   }) {
     return SSHRVImpl(
       host,
@@ -50,7 +51,8 @@ abstract class SSHRV<T> {
     String postfix = Platform.isWindows ? '.exe' : '';
     List<String> pathList =
         Platform.resolvedExecutable.split(Platform.pathSeparator);
-    bool isExe = (pathList.last == 'sshnp$postfix');
+    bool isExe =
+        (pathList.last == 'sshnp$postfix' || pathList.last == 'sshnpd$postfix');
 
     pathList
       ..removeLast()

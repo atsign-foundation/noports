@@ -7,6 +7,7 @@ import 'package:at_client/at_client.dart' hide StringBuffer;
 import 'package:at_commons/at_builders.dart';
 import 'package:at_utils/at_logger.dart';
 import 'package:at_utils/at_utils.dart';
+import 'package:dartssh2/dartssh2.dart';
 import 'package:logging/logging.dart';
 import 'package:meta/meta.dart';
 import 'package:path/path.dart' as path;
@@ -20,6 +21,8 @@ import 'package:sshnoports/sshrv/sshrv.dart';
 import 'package:sshnoports/sshrvd/sshrvd.dart';
 import 'package:sshnoports/version.dart';
 import 'package:uuid/uuid.dart';
+
+import '../common/defaults.dart' as defaults;
 
 part 'sshnp_impl.dart';
 part 'sshnp_params.dart';
@@ -83,9 +86,12 @@ abstract class SSHNP {
   abstract int localPort;
 
   /// Port that local sshd is listening on localhost interface
-  /// Default set to 22
-
+  /// Default set to [defaultLocalSshdPort]
   abstract int localSshdPort;
+
+  /// Port that the remote sshd is listening on localhost interface
+  /// Default set to [defaultRemoteSshdPort]
+  abstract int remoteSshdPort;
 
   // ====================================================================
   // Derived final instance variables, set during construction or init
@@ -146,17 +152,17 @@ abstract class SSHNP {
 
   abstract final bool direct;
 
+  /// If ssh tunnel is unused (no active connections via port forwards) for
+  /// longer than this many seconds, then the connection will be closed.
+  /// Defaults to [defaults.defaultIdleTimeout]
+  abstract int idleTimeout;
+
   /// Default parameters for sshnp
   static const defaultDevice = 'default';
   static const defaultPort = 22;
   static const defaultLocalPort = 0;
   static const defaultSendSshPublicKey = '';
   static const defaultLocalSshOptions = <String>[];
-  static const defaultVerbose = false;
-  static const defaultRsa = false;
-  static const defaultRootDomain = 'root.atsign.org';
-  static const defaultSshrvGenerator = SSHRV.localBinary;
-  static const defaultLocalSshdPort = 22;
   static const defaultLegacyDaemon = true;
   static const defaultListDevices = false;
 
@@ -177,9 +183,11 @@ abstract class SSHNP {
     required int localPort,
     String? remoteUsername,
     bool verbose = false,
-    SSHRVGenerator sshrvGenerator = defaultSshrvGenerator,
-    int localSshdPort = defaultLocalSshdPort,
+    SSHRVGenerator sshrvGenerator = defaults.defaultSshrvGenerator,
+    int localSshdPort = defaults.defaultLocalSshdPort,
     bool legacyDaemon = defaultLegacyDaemon,
+    int remoteSshdPort = defaults.defaultRemoteSshdPort,
+    int idleTimeout = defaults.defaultIdleTimeout,
   }) {
     return SSHNPImpl(
       atClient: atClient,
@@ -199,6 +207,8 @@ abstract class SSHNP {
       sshrvGenerator: sshrvGenerator,
       localSshdPort: localSshdPort,
       legacyDaemon: legacyDaemon,
+      remoteSshdPort: remoteSshdPort,
+      idleTimeout: idleTimeout,
     );
   }
 

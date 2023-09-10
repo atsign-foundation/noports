@@ -21,7 +21,7 @@ class SSHNPDImpl implements SSHNPD {
   String get deviceAtsign => atClient.getCurrentAtSign()!;
 
   @override
-  late final String managerAtsign;
+  final String managerAtsign;
 
   @override
   final SupportedSshClient sshClient;
@@ -33,6 +33,15 @@ class SSHNPDImpl implements SSHNPD {
   final bool addSshPublicKeys;
 
   @override
+  final int localSshdPort;
+
+  @override
+  final String ephemeralPermissions;
+
+  @override
+  final bool rsa;
+
+  @override
   @visibleForTesting
   bool initialized = false;
 
@@ -41,17 +50,20 @@ class SSHNPDImpl implements SSHNPD {
 
   static const String commandToSend = 'sshd';
 
-  SSHNPDImpl({
-    // final fields
-    required this.atClient,
-    required this.username,
-    required this.homeDirectory,
-    required this.device,
-    required this.managerAtsign,
-    required this.sshClient,
-    this.makeDeviceInfoVisible = false,
-    this.addSshPublicKeys = false,
-  }) {
+  SSHNPDImpl(
+      {
+      // final fields
+      required this.atClient,
+      required this.username,
+      required this.homeDirectory,
+      required this.device,
+      required this.managerAtsign,
+      required this.sshClient,
+      this.makeDeviceInfoVisible = false,
+      this.addSshPublicKeys = false,
+      this.localSshdPort = defaults.defaultLocalSshdPort,
+      required this.ephemeralPermissions,
+      required this.rsa}) {
     logger.hierarchicalLoggingEnabled = true;
     logger.logger.level = Level.SHOUT;
   }
@@ -85,7 +97,10 @@ class SSHNPDImpl implements SSHNPD {
           managerAtsign: p.managerAtsign,
           sshClient: p.sshClient,
           makeDeviceInfoVisible: p.makeDeviceInfoVisible,
-          addSshPublicKeys: p.addSshPublicKeys);
+          addSshPublicKeys: p.addSshPublicKeys,
+          localSshdPort: p.localSshdPort,
+          ephemeralPermissions: p.ephemeralPermissions,
+          rsa: p.rsa);
 
       if (p.verbose) {
         sshnpd.logger.logger.level = Level.INFO;
@@ -293,27 +308,14 @@ class SSHNPDImpl implements SSHNPD {
       return;
     }
 
-    late final String sshPublicKey;
     try {
+      final String sshPublicKey;
       logger.info(
           'ssh Public Key received from ${notification.from} notification id : ${notification.id}');
       sshPublicKey = notification.value!;
 
-      // Check to see if the ssh public key looks like one!
-      if (!sshPublicKey.startsWith('ssh-')) {
-        throw ('$sshPublicKey does not look like a public key');
-      }
-
-      // Check to see if the ssh Publickey is already in the file if not append to the ~/.ssh/authorized_keys file
-      var authKeysFilePath = [homeDirectory, '.ssh', 'authorized_keys']
-          .join(Platform.pathSeparator);
-      var authKeys = File(authKeysFilePath);
-
-      var authKeysContent = await authKeys.readAsString();
-
-      if (!authKeysContent.contains(sshPublicKey)) {
-        authKeys.writeAsStringSync('\n$sshPublicKey', mode: FileMode.append);
-      }
+      await addPublicKeyToAuthorizedKeys(
+          sshPublicKey: sshPublicKey, localSshdPort: localSshdPort);
     } catch (e) {
       logger.severe("Error writing to"
           " $username's .ssh/authorized_keys file : $e");
@@ -334,12 +336,12 @@ class SSHNPDImpl implements SSHNPD {
   /// ```
   ///
   /// If json['direct'] is true, bridge the rvd connection to this device's
-  /// local port 22 so that the client can do a 'direct' ssh via the rvd
+  /// [localSshdPort] so that the client can do a 'direct' ssh via the rvd
   ///
   /// If json['direct'] is false, start a reverse ssh to the client device
   /// using the `username`, `host`, `port` and `privateKey` which are also
   /// provided in the json payload, and requesting a remote port forwarding
-  /// of the provided `remoteForwardPort` to this device's local port 22.
+  /// of the provided `remoteForwardPort` to this device's [localSshdPort].
   /// Once this is running, the client user will then be able to ssh to
   /// this device via `ssh -p $remoteForwardPort <some user>@localhost`
   void _handleSshRequestNotification(AtNotification notification) async {
@@ -449,6 +451,12 @@ class SSHNPDImpl implements SSHNPD {
         remoteForwardPort: int.parse(remoteForwardPort));
   }
 
+  /// - Starts an sshrv process bridging the rvd to localhost:$localSshdPort
+  /// - Generates an ephemeral keypair and adds its public key to the
+  ///   `authorized_keys` file, limiting permissions (e.g. hosts and ports
+  ///   which can be forwarded to) as per the `--ephemeral-permissions` option
+  /// - Sends response message to the sshnp client which includes the
+  ///   ephemeral private key
   Future<void> startDirectSsh(
       {required String requestingAtsign,
       required String sessionId,
@@ -460,14 +468,33 @@ class SSHNPDImpl implements SSHNPD {
     try {
       // Connect to rendezvous point using background process.
       // This program can then exit without causing an issue.
-      Process rv = await SSHRV.localBinary(host, port).run();
+      Process rv = await SSHRV
+          .localBinary(host, port, localSshdPort: localSshdPort)
+          .run();
       logger.info('Started rv - pid is ${rv.pid}');
 
-      /// Notify sshnp that the connection has been made
+      /// - Generate an ephemeral keypair and adds its public key to the
+      ///   `authorized_keys` file, limiting permissions (e.g. hosts and ports
+      ///   which can be forwarded to) as per the `--ephemeral-permissions` option
+      var (String ephemeralPublicKey, String ephemeralPrivateKey) =
+          await generateSshKeys(rsa: rsa, sessionId: sessionId);
+
+      await addPublicKeyToAuthorizedKeys(
+          sshPublicKey: ephemeralPublicKey,
+          localSshdPort: localSshdPort,
+          keyName: sessionId,
+          permissions: ephemeralPermissions);
+
+      /// - Send response message to the sshnp client which includes the
+      ///   ephemeral private key
       await _notify(
           atKey: _createResponseAtKey(
               requestingAtsign: requestingAtsign, sessionId: sessionId),
-          value: 'connected',
+          value: signAndWrapAndJsonEncode(atClient, {
+            'status': 'connected',
+            'sessionId': sessionId,
+            'ephemeralPrivateKey': ephemeralPrivateKey
+          }),
           sessionId: sessionId);
     } catch (e) {
       logger.severe('startDirectSsh failed with unexpected error : $e');
@@ -570,7 +597,7 @@ class SSHNPDImpl implements SSHNPD {
 
   /// Reverse ssh using SSHClient.
   /// We will ssh outwards with a remote port forwarding to allow a client on
-  /// the other side to ssh to port 22 here.
+  /// the other side to ssh to [localSshdPort] here.
   Future<(bool, String?)> reverseSshViaSSHClient(
       {required String host,
       required int port,
@@ -639,7 +666,7 @@ class SSHNPDImpl implements SSHNPD {
     unawaited(Future.delayed(Duration(milliseconds: 0), () async {
       await for (final connection in forward!.connections) {
         counter++;
-        final socket = await Socket.connect('localhost', 22);
+        final socket = await Socket.connect('localhost', localSshdPort);
 
         unawaited(
           connection.stream.cast<List<int>>().pipe(socket).whenComplete(
@@ -661,7 +688,7 @@ class SSHNPDImpl implements SSHNPD {
 
   /// Reverse ssh by executing ssh directly on the host.
   /// We will ssh outwards with a remote port forwarding to allow a client on
-  /// the other side to ssh to port 22 here.
+  /// the other side to ssh to [localSshdPort] here.
   Future<(bool, String?)> reverseSshViaExec(
       {required String host,
       required int port,
@@ -687,8 +714,8 @@ class SSHNPDImpl implements SSHNPD {
     // This is done by adding '-i <pemFile>' to the ssh command
     //
     // When we make the connection (remember we are the client) we want to tell the client
-    // to listen on some port and forward all connections to that port to port 22 on sshnpd's host.
-    // The incantation for that is -R clientHostPort:localhost:22
+    // to listen on some port and forward all connections to that port to sshnpd's [localSshdPort]
+    // The incantation for that is -R $clientHostPort:localhost:$localSshdPort
     //
     // We will disable strict host checking since we don't know what hosts we're going to be
     // connecting to. Instead, we'll accept new hostnames but the checks will still be executed
@@ -709,16 +736,10 @@ class SSHNPDImpl implements SSHNPD {
     // Lastly, we want to ensure that if the connection isn't used then it closes after 15 seconds
     // or once the last connection via the remote port has ended. For that we append 'sleep 15' to
     // the ssh command.
-    //
-    // Final command will look like this:
-    //
-    // ssh username@targetHostName -p targetHostPort -i $pemFile -R clientForwardPort:localhost:22 \
-    //     -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
-    //     sleep 15
     List<String> args = '$username@$host'
             ' -p $port'
             ' -i ${pemFile.absolute.path}'
-            ' -R $remoteForwardPort:localhost:22'
+            ' -R $remoteForwardPort:localhost:$localSshdPort'
             ' -o LogLevel=VERBOSE'
             ' -t -t'
             ' -o StrictHostKeyChecking=accept-new'

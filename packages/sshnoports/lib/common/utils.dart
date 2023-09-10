@@ -112,6 +112,103 @@ void assertValidValue(Map m, String k, Type t) {
   }
 }
 
+Future<(String, String)> generateSshKeys(
+    {required bool rsa,
+    required String sessionId,
+    String? sshHomeDirectory}) async {
+  sshHomeDirectory ??=
+      getDefaultSshDirectory(getHomeDirectory(throwIfNull: true)!);
+  if (!Directory(sshHomeDirectory).existsSync()) {
+    Directory(sshHomeDirectory).createSync();
+  }
+
+  if (rsa) {
+    await Process.run('ssh-keygen',
+        ['-t', 'rsa', '-b', '4096', '-f', '${sessionId}_sshnp', '-q', '-N', ''],
+        workingDirectory: sshHomeDirectory);
+  } else {
+    await Process.run(
+        'ssh-keygen',
+        [
+          '-t',
+          'ed25519',
+          '-a',
+          '100',
+          '-f',
+          '${sessionId}_sshnp',
+          '-q',
+          '-N',
+          ''
+        ],
+        workingDirectory: sshHomeDirectory);
+  }
+
+  String sshPublicKey =
+      await File('$sshHomeDirectory${sessionId}_sshnp.pub').readAsString();
+  String sshPrivateKey =
+      await File('$sshHomeDirectory${sessionId}_sshnp').readAsString();
+
+  return (sshPublicKey, sshPrivateKey);
+}
+
+Future<void> addPublicKeyToAuthorizedKeys(
+    {required String sshPublicKey,
+    required int localSshdPort,
+    String? homeDirectory,
+    String keyName = 'client-public-key',
+    String permissions = ''}) async {
+  // Check to see if the ssh public key looks like one!
+  if (!sshPublicKey.startsWith('ssh-')) {
+    throw ('$sshPublicKey does not look like a public key');
+  }
+
+  homeDirectory ??= getHomeDirectory(throwIfNull: true)!;
+
+  var sshHomeDirectory =
+      '$homeDirectory/.ssh/'.replaceAll('/', Platform.pathSeparator);
+  if (!Directory(sshHomeDirectory).existsSync()) {
+    Directory(sshHomeDirectory).createSync();
+  }
+
+  // Check to see if the ssh Publickey is already in the authorized_keys file.
+  // If not, then append it.
+  var authKeys = File('${sshHomeDirectory}authorized_keys');
+
+  var authKeysContent = await authKeys.readAsString();
+  if (!authKeysContent.endsWith('\n')) {
+    await authKeys.writeAsString('\n', mode: FileMode.append);
+  }
+
+  if (!authKeysContent.contains(sshPublicKey)) {
+    if (permissions.isNotEmpty && !permissions.startsWith(',')) {
+      permissions = ',$permissions';
+    }
+    await authKeys.writeAsString(
+        'command="echo ssh session complete; sleep 20"'
+        ',PermitOpen="localhost:$localSshdPort"'
+        '$permissions'
+        ' ${sshPublicKey.trim()}'
+        ' $keyName\n',
+        mode: FileMode.append);
+  }
+}
+
+Future<void> removeFromAuthorizedKeys(
+    String sshHomeDirectory, String sessionId, AtSignLogger logger) async {
+  try {
+    final File file = File('${sshHomeDirectory}authorized_keys');
+    // read into List of strings
+    final List<String> lines = await file.readAsLines();
+    // find the line we want to remove
+    lines.removeWhere((element) => element.contains(sessionId));
+    // Write back the file and add a \n
+    await file.writeAsString(lines.join('\n'));
+    await file.writeAsString('\n', mode: FileMode.writeOnlyAppend);
+  } catch (e) {
+    logger.severe('Unable to tidy up ${sshHomeDirectory}authorized_keys');
+  }
+}
+
 String signAndWrapAndJsonEncode(AtClient atClient, Map payload) {
   Map envelope = {'payload': payload};
 

@@ -13,6 +13,9 @@ class SSHNPDParams {
   late final bool addSshPublicKeys;
   late final SupportedSshClient sshClient;
   late final String rootDomain;
+  late final int localSshdPort;
+  late final String ephemeralPermissions;
+  late final bool rsa;
 
   // Non param variables
   static final ArgParser parser = _createArgParser();
@@ -50,6 +53,13 @@ class SSHNPDParams {
     makeDeviceInfoVisible = r['un-hide'];
 
     addSshPublicKeys = r['sshpublickey'];
+
+    localSshdPort =
+        int.tryParse(r['local-sshd-port']) ?? defaults.defaultLocalSshdPort;
+
+    ephemeralPermissions = r['ephemeral-permissions'];
+
+    rsa = r['rsa'];
   }
 
   static ArgParser _createArgParser() {
@@ -116,6 +126,28 @@ class SSHNPDParams {
       mandatory: false,
       defaultsTo: 'root.atsign.org',
       help: 'atDirectory domain',
+    );
+
+    parser.addOption(
+      'local-sshd-port',
+      help: 'port on which sshd is listening locally on localhost',
+      defaultsTo: defaults.defaultLocalSshdPort.toString(),
+      mandatory: false,
+    );
+
+    parser.addOption('ephemeral-permissions',
+        help: 'The permissions which will be added to the authorized_keys file'
+            ' for the ephemeral public keys which are generated when a client'
+            ' is connecting via forward ssh'
+            ' e.g. PermitOpen="host-1:3389",PermitOpen="localhost:80"',
+        defaultsTo: '',
+        mandatory: false);
+
+    parser.addFlag(
+      'rsa',
+      abbr: 'r',
+      defaultsTo: defaults.defaultRsa,
+      help: 'Use RSA 4096 keys rather than the default ED25519 keys',
     );
 
     return parser;

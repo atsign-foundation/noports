@@ -1,3 +1,4 @@
+import '../common/defaults.dart';
 import 'sshnp.dart';
 
 enum ArgFormat {
@@ -90,13 +91,12 @@ class SSHNPArg {
       type: ArgType.integer,
     ),
     SSHNPArg(
-      name: 'local-port',
-      abbr: 'l',
-      help:
-          'Reverse ssh port to listen on, on your local machine, by sshnp default finds a spare port',
-      defaultsTo: SSHNP.defaultLocalPort,
-      type: ArgType.integer
-    ),
+        name: 'local-port',
+        abbr: 'l',
+        help:
+            'Reverse ssh port to listen on, on your local machine, by sshnp default finds a spare port',
+        defaultsTo: SSHNP.defaultLocalPort,
+        type: ArgType.integer),
     SSHNPArg(
       name: 'ssh-public-key',
       abbr: 's',
@@ -113,14 +113,14 @@ class SSHNPArg {
     SSHNPArg(
       name: 'verbose',
       abbr: 'v',
-      defaultsTo: SSHNP.defaultVerbose,
+      defaultsTo: defaultVerbose,
       help: 'More logging',
       format: ArgFormat.flag,
     ),
     SSHNPArg(
       name: 'rsa',
       abbr: 'r',
-      defaultsTo: SSHNP.defaultRsa,
+      defaultsTo: defaultRsa,
       help: 'Use RSA 4096 keys rather than the default ED25519 keys',
       format: ArgFormat.flag,
     ),
@@ -132,25 +132,41 @@ class SSHNPArg {
     SSHNPArg(
       name: 'root-domain',
       help: 'atDirectory domain',
-      defaultsTo: SSHNP.defaultRootDomain,
+      defaultsTo: defaultRootDomain,
       mandatory: false,
       format: ArgFormat.option,
     ),
     SSHNPArg(
       name: 'local-sshd-port',
-      help: 'port sshd is listening locally on localhost',
-      defaultsTo: SSHNP.defaultLocalSshdPort,
+      help: 'port on which sshd is listening locally on the client host',
+      defaultsTo: defaultLocalSshdPort,
       abbr: 'P',
       mandatory: false,
       format: ArgFormat.option,
       type: ArgType.integer,
     ),
-
     SSHNPArg(
       name: 'legacy-daemon',
       defaultsTo: SSHNP.defaultLegacyDaemon,
       help: 'Request is to a legacy (< 3.5.0) noports daemon',
       format: ArgFormat.flag,
+    ),
+    SSHNPArg(
+      name: 'remote-sshd-port',
+      help: 'port on which sshd is listening locally on the device host',
+      defaultsTo: defaultRemoteSshdPort,
+      mandatory: false,
+      format: ArgFormat.option,
+      type: ArgType.integer,
+    ),
+    SSHNPArg(
+      name: 'idle-timeout',
+      help:
+          'number of seconds after which inactive ssh connections will be closed',
+      defaultsTo: defaultIdleTimeout,
+      mandatory: false,
+      format: ArgFormat.option,
+      type: ArgType.integer,
     ),
   ];
 

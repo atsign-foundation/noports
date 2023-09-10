@@ -42,22 +42,6 @@ Future<bool> deleteFile(String fileName, AtSignLogger logger) async {
   }
 }
 
-Future<void> removeFromAuthorizedKeys(
-    String sshHomeDirectory, String sessionId, AtSignLogger logger) async {
-  try {
-    final File file = File('${sshHomeDirectory}authorized_keys');
-    // read into List of strings
-    final List<String> lines = await file.readAsLines();
-    // find the line we want to remove
-    lines.removeWhere((element) => element.contains(sessionId));
-    // Write back the file and add a \n
-    await file.writeAsString(lines.join('\n'));
-    await file.writeAsString('\n', mode: FileMode.writeOnlyAppend);
-  } catch (e) {
-    logger.severe('Unable to tidy up ${sshHomeDirectory}authorized_keys');
-  }
-}
-
 /// Figures out whether we are requesting a direct ssh or not, based on
 /// 1) are we talking to a legacy daemon or not?
 /// 2) is the host parameter supplied as an atSign or not?
