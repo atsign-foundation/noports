@@ -194,8 +194,7 @@ jobs:
   # Test suite 2
   # Installer tests (local vs installer)
   e2e_installer_test:
-    # Don't run this test on push or pull_request events
-    # It's only meant to be run manually
+    # Don't run on forks (cause no secrets), don't run if dependebot (cause no secrets)
     if: ${{ github.event.pull_request.head.repo.fork == false && github.actor != 'dependabot[bot]'}}
     runs-on: ubuntu-latest
     strategy:
@@ -361,7 +360,7 @@ jobs:
   # Test suite 3
   # Backward compatibility tests
   e2e_release_test:
-    # Don't run on PRs from a fork or Dependabot as the secrets aren't available
+    # Don't run on push and on pull, meant to be ran manually (workflow dispatch)
     if: ${{ github.event_name != 'push' && github.event_name != 'pull_request' }}
     runs-on: ubuntu-latest
     strategy:
