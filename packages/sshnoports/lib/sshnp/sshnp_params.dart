@@ -27,6 +27,7 @@ class SSHNPParams {
   late final bool legacyDaemon;
   late final int remoteSshdPort;
   late final int idleTimeout;
+  late final String sshClient;
 
   /// Special Arguments
   late final String?
@@ -53,6 +54,7 @@ class SSHNPParams {
     this.listDevices = SSHNP.defaultListDevices,
     this.remoteSshdPort = defaults.defaultRemoteSshdPort,
     this.idleTimeout = defaults.defaultIdleTimeout,
+    String? sshClient,
   }) {
     // Do we have a username ?
     username = getUserName(throwIfNull: true)!;
@@ -64,6 +66,8 @@ class SSHNPParams {
 
     this.atKeysFilePath =
         atKeysFilePath ?? getDefaultAtKeysFilePath(homeDirectory, clientAtSign);
+
+    this.sshClient = sshClient ?? SSHNP.defaultSshClient.cliArg;
   }
 
   factory SSHNPParams.fromPartial(SSHNPPartialParams partial) {
@@ -96,6 +100,7 @@ class SSHNPParams {
       legacyDaemon: partial.legacyDaemon ?? SSHNP.defaultLegacyDaemon,
       remoteSshdPort: partial.remoteSshdPort ?? defaults.defaultRemoteSshdPort,
       idleTimeout: partial.idleTimeout ?? defaults.defaultIdleTimeout,
+      sshClient: partial.sshClient ?? SSHNP.defaultSshClient.cliArg,
     );
   }
 
@@ -233,6 +238,7 @@ class SSHNPPartialParams {
   late final bool? legacyDaemon;
   late final int? remoteSshdPort;
   late final int? idleTimeout;
+  late final String? sshClient;
 
   /// Special Params
   // N.B. config file is a meta param and doesn't need to be included
@@ -261,6 +267,7 @@ class SSHNPPartialParams {
     this.legacyDaemon = SSHNP.defaultLegacyDaemon,
     this.remoteSshdPort,
     this.idleTimeout,
+    this.sshClient,
   });
 
   factory SSHNPPartialParams.empty() {
@@ -293,6 +300,7 @@ class SSHNPPartialParams {
       legacyDaemon: params2.legacyDaemon ?? params1.legacyDaemon,
       remoteSshdPort: params2.remoteSshdPort ?? params1.remoteSshdPort,
       idleTimeout: params2.idleTimeout ?? params1.idleTimeout,
+      sshClient: params2.sshClient ?? params1.sshClient,
     );
   }
 
@@ -318,6 +326,7 @@ class SSHNPPartialParams {
       legacyDaemon: args['legacy-daemon'],
       remoteSshdPort: args['remote-sshd-port'],
       idleTimeout: args['idle-timeout'],
+      sshClient: args['ssh-client'],
     );
   }
 
@@ -372,6 +381,7 @@ class SSHNPPartialParams {
             abbr: arg.abbr,
             mandatory: arg.mandatory,
             defaultsTo: withDefaults ? arg.defaultsTo?.toString() : null,
+            allowed: arg.allowed,
             help: arg.help,
           );
           break;
@@ -380,6 +390,7 @@ class SSHNPPartialParams {
             arg.name,
             abbr: arg.abbr,
             defaultsTo: withDefaults ? arg.defaultsTo as List<String>? : null,
+            allowed: arg.allowed,
             help: arg.help,
           );
           break;

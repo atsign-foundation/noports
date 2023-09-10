@@ -154,10 +154,16 @@ class SSHNPImpl implements SSHNP {
   @override
   late final bool direct;
 
-  final SupportedSshClient sshClient = SupportedSshClient.hostSsh;
+  @override
+  late final SupportedSshClient sshClient;
 
   @override
   late final int idleTimeout;
+
+  final _doneCompleter = Completer<void>();
+
+  @override
+  Future<void> get done => _doneCompleter.future;
 
   SSHNPImpl({
     required this.atClient,
@@ -179,6 +185,7 @@ class SSHNPImpl implements SSHNP {
     this.legacyDaemon = SSHNP.defaultLegacyDaemon,
     this.remoteSshdPort = defaults.defaultRemoteSshdPort,
     this.idleTimeout = defaults.defaultIdleTimeout,
+    required this.sshClient,
   }) {
     namespace = '$device.sshnp';
     clientAtSign = atClient.getCurrentAtSign()!;
@@ -280,7 +287,9 @@ class SSHNPImpl implements SSHNP {
           localSshdPort: p.localSshdPort,
           legacyDaemon: p.legacyDaemon,
           remoteSshdPort: p.remoteSshdPort,
-          idleTimeout: p.idleTimeout);
+          idleTimeout: p.idleTimeout,
+          sshClient: SupportedSshClient.values
+              .firstWhere((c) => c.cliArg == p.sshClient));
       if (p.verbose) {
         sshnp.logger.logger.level = Level.INFO;
       }
@@ -384,19 +393,34 @@ class SSHNPImpl implements SSHNP {
       return SSHNPFailed('Cannot run() - not initialized');
     }
 
+    late SSHNPResult res;
     if (legacyDaemon) {
       logger.info('Requesting legacy daemon to start reverse ssh session');
-      return await legacyStartReverseSsh();
+      res = await legacyStartReverseSsh();
+      _doneCompleter.complete();
     }
 
     if (direct) {
+      // Note that when direct, this client is initiating the tunnel ssh.
+      //
+      // If tunnel is created using /usr/bin/ssh then it is exec'd in the
+      // background, and the `directSshViaExec` method will call
+      // _doneCompleter.complete() before it returns.
+      //
+      // However if tunnel is created using pure dart SSHClient then the
+      // tunnel is being managed by the SSHNP instance. In that case,
+      // _doneCompleter.complete() is called once the tunnel determines
+      // that there are no more active connections.
       logger.info(
           'Requesting daemon to set up socket tunnel for direct ssh session');
-      return await startDirectSsh();
+      res = await startDirectSsh();
+    } else {
+      logger.info('Requesting daemon to start reverse ssh session');
+      res = await startReverseSsh();
+      _doneCompleter.complete();
     }
 
-    logger.info('Requesting daemon to start reverse ssh session');
-    return await startReverseSsh();
+    return res;
   }
 
   Future<SSHNPResult> startDirectSsh() async {
@@ -420,8 +444,7 @@ class SSHNPImpl implements SSHNP {
 
     bool acked = await waitForDaemonResponse();
     if (!acked) {
-      return SSHNPFailed(
-          'sshnp connection timeout: waiting for daemon response');
+      return SSHNPFailed('sshnp timed out: waiting for daemon response');
     }
 
     if (sshnpdAckErrors) {
@@ -440,6 +463,7 @@ class SSHNPImpl implements SSHNP {
       switch (sshClient) {
         case SupportedSshClient.hostSsh:
           (success, errorMessage) = await directSshViaExec();
+          _doneCompleter.complete();
           break;
         case SupportedSshClient.pureDart:
           (success, errorMessage) = await directSshViaSSHClient();
@@ -466,7 +490,7 @@ class SSHNPImpl implements SSHNP {
   Future<(bool, String?)> directSshViaSSHClient() async {
     late final SSHSocket socket;
     try {
-      socket = await SSHSocket.connect(host, port);
+      socket = await SSHSocket.connect(host, _sshrvdPort);
     } catch (e) {
       return (false, 'Failed to open socket to $host:$port : $e');
     }
@@ -474,7 +498,7 @@ class SSHNPImpl implements SSHNP {
     late final SSHClient client;
     try {
       client = SSHClient(socket,
-          username: username,
+          username: remoteUsername!,
           identities: [
             // A single private key file may contain multiple keys.
             ...SSHKeyPair.fromPem(ephemeralPrivateKey)
@@ -498,8 +522,9 @@ class SSHNPImpl implements SSHNP {
 
     int counter = 0;
 
-    logger.info(
-        'Started port forwarding from localhost:$localPort to port $remoteSshdPort on remote host');
+    logger.info('Started port forwarding'
+        ' from localhost:$localPort'
+        ' to port $remoteSshdPort on remote host');
 
     /// Set up timer to check to see if all connections are down
     Timer.periodic(Duration(seconds: idleTimeout), (timer) async {
@@ -507,6 +532,7 @@ class SSHNPImpl implements SSHNP {
         timer.cancel();
         client.close();
         await client.done;
+        _doneCompleter.complete();
         logger.shout('$sessionId | ssh session complete');
       }
     });
@@ -539,13 +565,14 @@ class SSHNPImpl implements SSHNP {
     var tmpFileName = '/tmp/ephemeral_$sessionId';
     File tmpFile = File(tmpFileName);
     await tmpFile.create(recursive: true);
-    await tmpFile.writeAsString(ephemeralPrivateKey, mode: FileMode.write, flush: true);
+    await tmpFile.writeAsString(ephemeralPrivateKey,
+        mode: FileMode.write, flush: true);
     await Process.run('chmod', ['go-rwx', tmpFileName]);
 
     List<String> args = '$remoteUsername@$host'
             ' -p $_sshrvdPort'
             ' -i $tmpFileName'
-            ' -L $localPort:localhost:$localSshdPort'
+            ' -L $localPort:localhost:$remoteSshdPort'
             ' -o LogLevel=VERBOSE'
             ' -t -t'
             ' -o StrictHostKeyChecking=accept-new'
@@ -733,8 +760,8 @@ class SSHNPImpl implements SSHNP {
         return;
       }
 
-      connected = true;
       ephemeralPrivateKey = daemonResponse['ephemeralPrivateKey'];
+      connected = true;
     }
 
     if (connected) {

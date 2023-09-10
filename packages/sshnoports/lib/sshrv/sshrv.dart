@@ -3,7 +3,7 @@ import 'dart:io';
 import 'package:meta/meta.dart';
 import 'package:socket_connector/socket_connector.dart';
 
-import '../common/defaults.dart' as defaults;
+import 'package:sshnoports/common/defaults.dart' as defaults;
 
 part 'sshrv_impl.dart';
 

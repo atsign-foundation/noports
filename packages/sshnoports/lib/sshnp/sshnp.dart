@@ -22,7 +22,7 @@ import 'package:sshnoports/sshrvd/sshrvd.dart';
 import 'package:sshnoports/version.dart';
 import 'package:uuid/uuid.dart';
 
-import '../common/defaults.dart' as defaults;
+import 'package:sshnoports/common/defaults.dart' as defaults;
 
 part 'sshnp_impl.dart';
 part 'sshnp_params.dart';
@@ -157,6 +157,13 @@ abstract class SSHNP {
   /// Defaults to [defaults.defaultIdleTimeout]
   abstract int idleTimeout;
 
+  /// The ssh client to use when doing outbound ssh within this program
+  abstract SupportedSshClient sshClient;
+
+  /// Completes when the SSHNP instance is no longer doing anything
+  /// e.g. controlling a direct ssh tunnel using the pure-dart SSHClient
+  Future<void> get done;
+
   /// Default parameters for sshnp
   static const defaultDevice = 'default';
   static const defaultPort = 22;
@@ -165,6 +172,7 @@ abstract class SSHNP {
   static const defaultLocalSshOptions = <String>[];
   static const defaultLegacyDaemon = true;
   static const defaultListDevices = false;
+  static const defaultSshClient = SupportedSshClient.hostSsh;
 
   factory SSHNP({
     // final fields
@@ -188,6 +196,7 @@ abstract class SSHNP {
     bool legacyDaemon = defaultLegacyDaemon,
     int remoteSshdPort = defaults.defaultRemoteSshdPort,
     int idleTimeout = defaults.defaultIdleTimeout,
+    required SupportedSshClient sshClient,
   }) {
     return SSHNPImpl(
       atClient: atClient,
@@ -209,6 +218,7 @@ abstract class SSHNP {
       legacyDaemon: legacyDaemon,
       remoteSshdPort: remoteSshdPort,
       idleTimeout: idleTimeout,
+      sshClient: sshClient,
     );
   }
 

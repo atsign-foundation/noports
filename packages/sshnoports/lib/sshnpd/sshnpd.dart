@@ -15,7 +15,7 @@ import 'package:sshnoports/sshrv/sshrv.dart';
 import 'package:sshnoports/version.dart';
 import 'package:uuid/uuid.dart';
 
-import '../common/defaults.dart' as defaults;
+import 'package:sshnoports/common/defaults.dart' as defaults;
 
 part 'sshnpd_impl.dart';
 part 'sshnpd_params.dart';
