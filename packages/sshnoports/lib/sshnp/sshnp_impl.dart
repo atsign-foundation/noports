@@ -532,9 +532,18 @@ class SSHNPImpl implements SSHNP {
   }
 
   Future<(bool, String?)> directSshViaExec() async {
+    // If using exec then we can assume we're on something unix-y
+    // So we can write the ephemeralPrivateKey to a tmp file,
+    // set its permissions appropriately, and remove it after we've
+    // executed the command
+    var tmpFileName = '/tmp/ephemeral_$sessionId';
+    File tmpFile = File(tmpFileName);
+    await tmpFile.create(recursive: true);
+    await tmpFile.writeAsString(ephemeralPrivateKey, mode: FileMode.write, flush: true);
+
     List<String> args = '$remoteUsername@$host'
             ' -p $_sshrvdPort'
-            ' -i ${publicKeyFileName.replaceFirst(RegExp(r'.pub$'), '')}'
+            ' -i $tmpFileName'
             ' -L $localPort:localhost:$localSshdPort'
             ' -o LogLevel=VERBOSE'
             ' -t -t'
@@ -570,6 +579,8 @@ class SSHNPImpl implements SSHNP {
     } on TimeoutException catch (e) {
       sshExitCode = 6464;
     }
+
+    await tmpFile.delete();
 
     String? errorMessage;
     if (sshExitCode != 0) {
