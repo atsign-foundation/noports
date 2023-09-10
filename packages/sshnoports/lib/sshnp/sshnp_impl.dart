@@ -540,6 +540,7 @@ class SSHNPImpl implements SSHNP {
     File tmpFile = File(tmpFileName);
     await tmpFile.create(recursive: true);
     await tmpFile.writeAsString(ephemeralPrivateKey, mode: FileMode.write, flush: true);
+    await Process.run('chmod', ['go-rwx', tmpFileName]);
 
     List<String> args = '$remoteUsername@$host'
             ' -p $_sshrvdPort'
