@@ -1,4 +1,5 @@
 #!/bin/bash
 echo "SSHNPD START ENTRY"
-set -x
-$HOME/.local/bin/sshnpd -a @sshnpdatsign -m @sshnpatsign -d deviceName -s -u -v
+SSHNPD_COMMAND="$HOME/.local/bin/sshnpd -a @sshnpdatsign -m @sshnpatsign -d deviceName -s -u -v 2> err.txt"
+echo "Running: $SSHNPD_COMMAND"
+eval "$SSHNPD_COMMAND"
