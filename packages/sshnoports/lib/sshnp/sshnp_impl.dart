@@ -398,26 +398,26 @@ class SSHNPImpl implements SSHNP {
       logger.info('Requesting legacy daemon to start reverse ssh session');
       res = await legacyStartReverseSsh();
       _doneCompleter.complete();
-    }
-
-    if (direct) {
-      // Note that when direct, this client is initiating the tunnel ssh.
-      //
-      // If tunnel is created using /usr/bin/ssh then it is exec'd in the
-      // background, and the `directSshViaExec` method will call
-      // _doneCompleter.complete() before it returns.
-      //
-      // However if tunnel is created using pure dart SSHClient then the
-      // tunnel is being managed by the SSHNP instance. In that case,
-      // _doneCompleter.complete() is called once the tunnel determines
-      // that there are no more active connections.
-      logger.info(
-          'Requesting daemon to set up socket tunnel for direct ssh session');
-      res = await startDirectSsh();
     } else {
-      logger.info('Requesting daemon to start reverse ssh session');
-      res = await startReverseSsh();
-      _doneCompleter.complete();
+      if (direct) {
+        // Note that when direct, this client is initiating the tunnel ssh.
+        //
+        // If tunnel is created using /usr/bin/ssh then it is exec'd in the
+        // background, and the `directSshViaExec` method will call
+        // _doneCompleter.complete() before it returns.
+        //
+        // However if tunnel is created using pure dart SSHClient then the
+        // tunnel is being managed by the SSHNP instance. In that case,
+        // _doneCompleter.complete() is called once the tunnel determines
+        // that there are no more active connections.
+        logger.info(
+            'Requesting daemon to set up socket tunnel for direct ssh session');
+        res = await startDirectSsh();
+      } else {
+        logger.info('Requesting daemon to start reverse ssh session');
+        res = await startReverseSsh();
+        _doneCompleter.complete();
+      }
     }
 
     return res;
