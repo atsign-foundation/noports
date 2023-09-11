@@ -50,20 +50,20 @@ class SSHNPDImpl implements SSHNPD {
 
   static const String commandToSend = 'sshd';
 
-  SSHNPDImpl(
-      {
-      // final fields
-      required this.atClient,
-      required this.username,
-      required this.homeDirectory,
-      required this.device,
-      required this.managerAtsign,
-      required this.sshClient,
-      this.makeDeviceInfoVisible = false,
-      this.addSshPublicKeys = false,
-      this.localSshdPort = defaults.defaultLocalSshdPort,
-      required this.ephemeralPermissions,
-      required this.rsa}) {
+  SSHNPDImpl({
+    // final fields
+    required this.atClient,
+    required this.username,
+    required this.homeDirectory,
+    required this.device,
+    required this.managerAtsign,
+    required this.sshClient,
+    this.makeDeviceInfoVisible = false,
+    this.addSshPublicKeys = false,
+    this.localSshdPort = defaults.defaultLocalSshdPort,
+    required this.ephemeralPermissions,
+    required this.rsa,
+  }) {
     logger.hierarchicalLoggingEnabled = true;
     logger.logger.level = Level.SHOUT;
   }
@@ -90,17 +90,18 @@ class SSHNPDImpl implements SSHNPD {
       );
 
       var sshnpd = SSHNPD(
-          atClient: atClient,
-          username: p.username,
-          homeDirectory: p.homeDirectory,
-          device: p.device,
-          managerAtsign: p.managerAtsign,
-          sshClient: p.sshClient,
-          makeDeviceInfoVisible: p.makeDeviceInfoVisible,
-          addSshPublicKeys: p.addSshPublicKeys,
-          localSshdPort: p.localSshdPort,
-          ephemeralPermissions: p.ephemeralPermissions,
-          rsa: p.rsa);
+        atClient: atClient,
+        username: p.username,
+        homeDirectory: p.homeDirectory,
+        device: p.device,
+        managerAtsign: p.managerAtsign,
+        sshClient: p.sshClient,
+        makeDeviceInfoVisible: p.makeDeviceInfoVisible,
+        addSshPublicKeys: p.addSshPublicKeys,
+        localSshdPort: p.localSshdPort,
+        ephemeralPermissions: p.ephemeralPermissions,
+        rsa: p.rsa,
+      );
 
       if (p.verbose) {
         sshnpd.logger.logger.level = Level.INFO;
