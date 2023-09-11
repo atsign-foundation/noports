@@ -31,9 +31,6 @@ class SocketConnector:
             t2 = threading.Thread(target=self.transfer, args=(self.portB, client_socket))
             t1.start()
             t2.start()
-            t1.join()
-            t2.join()
-            logging.info(f"Connection closed from {client_address}")
         except Exception as e:
             logging.debug(f"Error: {e}")
             

@@ -19,6 +19,8 @@ from at_client.util import EncryptionUtil
 from at_client.common.keys import AtKey, Metadata, SharedKey
 from at_client.connections.notification.atevents import AtEvent, AtEventType
 
+from packages.sshnpdpy.lib.sshrv import SSHRV
+
 
 class SSHNPDClient:
     #Current opened threads
@@ -163,7 +165,17 @@ class SSHNPDClient:
                     self.at_client.handle_event(queue, at_event)
             except Empty:
                 pass
-
+            
+            
+    def _direct_ssh(self, ssh_list: list):
+        local_port = ssh_list[0]
+        port = ssh_list[1]
+        username = ssh_list[2]
+        hostname = ssh_list[3]
+        sshrv = SSHRV(hostname, port, local_port)
+        sshrv.run()
+        return True
+        
 
     def _reverse_ssh_exec(self, ssh_list: list, private_key, sessionID):
         local_port = ssh_list[0]
