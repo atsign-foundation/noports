@@ -518,6 +518,7 @@ jobs:
         working-directory: tests/end2end_tests/tests
         run: |
           docker compose down
+
   # Test suite 4
   # Use alternative port on local
   e2e_alternate_port_test:
