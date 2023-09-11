@@ -371,7 +371,7 @@ class SSHNPImpl implements SSHNP {
       sshPublicKey = ephemeralPublicKey;
       sshPrivateKey = ephemeralPrivateKey;
 
-      await addPublicKeyToAuthorizedKeys(
+      await addEphemeralKeyToAuthorizedKeys(
           sshPublicKey: sshPublicKey,
           localSshdPort: localSshdPort,
           sessionId: sessionId);

@@ -151,7 +151,7 @@ Future<(String, String)> generateSshKeys(
   return (sshPublicKey, sshPrivateKey);
 }
 
-Future<void> addPublicKeyToAuthorizedKeys(
+Future<void> addEphemeralKeyToAuthorizedKeys(
     {required String sshPublicKey,
     required int localSshdPort,
     String? homeDirectory,
@@ -183,7 +183,7 @@ Future<void> addPublicKeyToAuthorizedKeys(
     if (permissions.isNotEmpty && !permissions.startsWith(',')) {
       permissions = ',$permissions';
     }
-    // Set up a safe authorized_keys file, for the reverse ssh tunnel
+    // Set up a safe authorized_keys file, for the ssh tunnel
     await authKeys.writeAsString(
         'command="echo \\"ssh session complete\\";sleep 20"'
         ',PermitOpen="localhost:$localSshdPort"'
@@ -196,7 +196,7 @@ Future<void> addPublicKeyToAuthorizedKeys(
   }
 }
 
-Future<void> removeFromAuthorizedKeys(
+Future<void> removeEphemeralKeyFromAuthorizedKeys(
     String sshHomeDirectory, String sessionId, AtSignLogger logger) async {
   try {
     final File file = File('${sshHomeDirectory}authorized_keys');

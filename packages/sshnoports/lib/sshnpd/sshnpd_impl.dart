@@ -314,8 +314,21 @@ class SSHNPDImpl implements SSHNPD {
           'ssh Public Key received from ${notification.from} notification id : ${notification.id}');
       sshPublicKey = notification.value!;
 
-      await addPublicKeyToAuthorizedKeys(
-          sshPublicKey: sshPublicKey, localSshdPort: localSshdPort);
+      // Check to see if the ssh public key looks like one!
+      if (!sshPublicKey.startsWith('ssh-')) {
+        throw ('$sshPublicKey does not look like a public key');
+      }
+
+      // Check to see if the ssh Publickey is already in the file if not append to the ~/.ssh/authorized_keys file
+      var authKeysFilePath = [homeDirectory, '.ssh', 'authorized_keys']
+          .join(Platform.pathSeparator);
+      var authKeys = File(authKeysFilePath);
+
+      var authKeysContent = await authKeys.readAsString();
+
+      if (!authKeysContent.contains(sshPublicKey)) {
+        authKeys.writeAsStringSync('\n$sshPublicKey', mode: FileMode.append);
+      }
     } catch (e) {
       logger.severe("Error writing to"
           " $username's .ssh/authorized_keys file : $e");
@@ -479,7 +492,7 @@ class SSHNPDImpl implements SSHNPD {
       var (String ephemeralPublicKey, String ephemeralPrivateKey) =
           await generateSshKeys(rsa: rsa, sessionId: sessionId);
 
-      await addPublicKeyToAuthorizedKeys(
+      await addEphemeralKeyToAuthorizedKeys(
           sshPublicKey: ephemeralPublicKey,
           localSshdPort: localSshdPort,
           sessionId: sessionId,
