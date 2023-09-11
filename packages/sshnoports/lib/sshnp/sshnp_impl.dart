@@ -269,27 +269,28 @@ class SSHNPImpl implements SSHNP {
       );
 
       var sshnp = SSHNP(
-          atClient: atClient,
-          sshnpdAtSign: p.sshnpdAtSign!,
-          username: p.username,
-          homeDirectory: p.homeDirectory,
-          sessionId: sessionId,
-          device: p.device,
-          host: p.host!,
-          port: p.port,
-          localPort: p.localPort,
-          localSshOptions: p.localSshOptions,
-          rsa: p.rsa,
-          sendSshPublicKey: p.sendSshPublicKey,
-          remoteUsername: p.remoteUsername,
-          verbose: p.verbose,
-          sshrvGenerator: sshrvGenerator,
-          localSshdPort: p.localSshdPort,
-          legacyDaemon: p.legacyDaemon,
-          remoteSshdPort: p.remoteSshdPort,
-          idleTimeout: p.idleTimeout,
-          sshClient: SupportedSshClient.values
-              .firstWhere((c) => c.cliArg == p.sshClient));
+        atClient: atClient,
+        sshnpdAtSign: p.sshnpdAtSign!,
+        username: p.username,
+        homeDirectory: p.homeDirectory,
+        sessionId: sessionId,
+        device: p.device,
+        host: p.host!,
+        port: p.port,
+        localPort: p.localPort,
+        localSshOptions: p.localSshOptions,
+        rsa: p.rsa,
+        sendSshPublicKey: p.sendSshPublicKey,
+        remoteUsername: p.remoteUsername,
+        verbose: p.verbose,
+        sshrvGenerator: sshrvGenerator,
+        localSshdPort: p.localSshdPort,
+        legacyDaemon: p.legacyDaemon,
+        remoteSshdPort: p.remoteSshdPort,
+        idleTimeout: p.idleTimeout,
+        sshClient: SupportedSshClient.values
+            .firstWhere((c) => c.cliArg == p.sshClient),
+      );
       if (p.verbose) {
         sshnp.logger.logger.level = Level.INFO;
       }
