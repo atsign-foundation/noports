@@ -578,7 +578,6 @@ jobs:
 
       - name: Found "Test Passed" in Logs
         if: always()
-        continue-on-error: true # failing this step does not fail the entire job
         working-directory: tests/end2end_tests/tests/alternate_port_test
         run: |
           docker compose logs --timestamps | grep -q "Test Passed$"
