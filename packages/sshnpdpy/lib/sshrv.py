@@ -2,7 +2,7 @@ import logging
 import socket
 import threading
 
-from packages.sshnpdpy.lib.socket_connector import SocketConnector
+from .socket_connector import SocketConnector
 
 
 class SSHRV:
