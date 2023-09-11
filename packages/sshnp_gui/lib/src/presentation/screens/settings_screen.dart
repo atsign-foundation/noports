@@ -22,9 +22,7 @@ class SettingsScreen extends StatelessWidget {
           Expanded(
             child: Padding(
               padding: const EdgeInsets.only(left: Sizes.p36, top: Sizes.p21),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.start,
-                crossAxisAlignment: CrossAxisAlignment.center,
+              child: ListView(
                 children: [
                   Padding(
                     padding: const EdgeInsets.symmetric(vertical: Sizes.p20),
@@ -36,17 +34,17 @@ class SettingsScreen extends StatelessWidget {
                   const SizedBox(
                     height: 59,
                   ),
-                  const SettingsBackupKeyAction(),
+                  const Center(child: SettingsBackupKeyAction()),
                   gapH16,
-                  const SettingsSwitchAtsignAction(),
+                  const Center(child: SettingsSwitchAtsignAction()),
                   gapH16,
-                  const SettingsResetAppAction(),
+                  const Center(child: SettingsResetAppAction()),
                   gapH36,
-                  const SettingsFaqAction(),
+                  const Center(child: SettingsFaqAction()),
                   gapH16,
-                  const SettingsContactAction(),
+                  const Center(child: SettingsContactAction()),
                   gapH16,
-                  const SettingsPrivacyPolicyAction(),
+                  const Center(child: SettingsPrivacyPolicyAction()),
                 ],
               ),
             ),

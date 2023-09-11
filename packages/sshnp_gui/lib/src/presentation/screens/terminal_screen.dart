@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:flutter_pty/flutter_pty.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
@@ -6,7 +7,6 @@ import 'package:sshnp_gui/src/controllers/terminal_session_controller.dart';
 import 'package:sshnp_gui/src/presentation/widgets/navigation/app_navigation_rail.dart';
 import 'package:sshnp_gui/src/utility/sizes.dart';
 import 'package:xterm/xterm.dart';
-import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 // * Once the onboarding process is completed you will be taken to this screen
 class TerminalScreen extends ConsumerStatefulWidget {
