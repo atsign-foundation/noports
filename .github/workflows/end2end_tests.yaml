@@ -360,8 +360,8 @@ jobs:
   # Test suite 3
   # Backward compatibility tests
   e2e_release_test:
-    # Don't run on push and on pull, meant to be ran manually (workflow dispatch)
-    if: ${{ github.event_name != 'push' && github.event_name != 'pull_request' }}
+    # Don't run on forks (cause no secrets), don't run if dependebot (cause no secrets)
+    if: ${{ github.event.pull_request.head.repo.fork == false && github.actor != 'dependabot[bot]'}}
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
