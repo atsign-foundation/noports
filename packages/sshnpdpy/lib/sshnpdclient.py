@@ -60,7 +60,7 @@ class SSHNPDClient:
         event_thread = threading.Thread(target=self._handle_events, args=(self.at_client.queue,))
         event_thread.start()
         SSHNPDClient.threads.append(event_thread)
-        self._handle_notifications(self.at_client.queue, self.sshnp_callback)
+        self._handle_notifications(self.at_client.queue)
         
     def is_alive(self):
        if not self.authenticated:
@@ -88,7 +88,7 @@ class SSHNPDClient:
         
 
     
-    def _handle_notifications(self, queue: Queue, callback):
+    def _handle_notifications(self, queue: Queue):
         private_key = ""
         sshPublicKey = ""
         ssh_notification_recieved = False
@@ -141,7 +141,7 @@ class SSHNPDClient:
             except Empty:
                 pass
         try:
-            callback(*callbackArgs)
+            self.sshnp_callback(*callbackArgs)
         except Exception as e:
             raise e
 
