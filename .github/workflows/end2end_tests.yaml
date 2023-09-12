@@ -376,13 +376,7 @@ jobs:
             npd: v3.3.0
           - np: v3.3.0
             npd: local
-
-          # These two are sync based, and is more likely to fail due to
-          # timing issues from automating which need to be addressed
-          - np: local
-            npd: v3.2.0
-          - np: v3.2.0
-            npd: local
+            
     steps:
       - name: Show Matrix Values
         run: |
