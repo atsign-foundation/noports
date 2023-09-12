@@ -121,11 +121,13 @@ class SSHNPParams {
     );
   }
 
+  factory SSHNPParams.fromJson(String json) => SSHNPParams.fromPartial(SSHNPPartialParams.fromJson(json));
+
   factory SSHNPParams.fromConfigFile(String fileName) {
     return SSHNPParams.fromPartial(SSHNPPartialParams.fromConfig(fileName));
   }
 
-  static Future<Iterable<String>> listFiles([String? directory]) async {
+  static Future<Iterable<String>> listFiles({String? directory}) async {
     var fileNames = <String>{};
 
     var homeDirectory = getHomeDirectory(throwIfNull: true)!;
@@ -148,14 +150,22 @@ class SSHNPParams {
     return fileNames;
   }
 
-  static Future<SSHNPParams> fromFile(String profileName, [String? directory]) async {
-    var fileName = _profileToFileName(profileName, directory);
+  static Future<SSHNPParams> fromFile(String profileName, {String? directory}) async {
+    var fileName = getFileName(profileName, directory: directory);
     return SSHNPParams.fromConfigFile(fileName);
   }
 
-  static Future<bool> fileExists(String profileName, [String? directory]) {
-    var fileName = _profileToFileName(profileName, directory);
+  static Future<bool> fileExists(String profileName, {String? directory}) {
+    var fileName = getFileName(profileName, directory: directory);
     return File(fileName).exists();
+  }
+
+  static String getFileName(String profileName, {String? directory, bool replaceSpaces = true}) {
+    var fileName = profileName.replaceAll(' ', '_');
+    return path.join(
+      directory ?? getDefaultSshnpConfigDirectory(getHomeDirectory(throwIfNull: true)!),
+      '$fileName.env',
+    );
   }
 
   Future<File> toFile({String? directory, bool overwrite = false}) async {
@@ -163,7 +173,7 @@ class SSHNPParams {
       throw Exception('profileName is null or empty');
     }
 
-    var fileName = _profileToFileName(profileName!, directory);
+    var fileName = getFileName(profileName!, directory: directory);
     var file = File(fileName);
 
     var exists = await file.exists();
@@ -182,7 +192,7 @@ class SSHNPParams {
       throw Exception('profileName is null or empty');
     }
 
-    var fileName = _profileToFileName(profileName!, directory);
+    var fileName = getFileName(profileName!, directory: directory);
     var file = File(fileName);
 
     var exists = await file.exists();
@@ -212,6 +222,10 @@ class SSHNPParams {
       'root-domain': rootDomain,
       'local-sshd-port': localSshdPort
     };
+  }
+
+  String toJson() {
+    return jsonEncode(toArgs());
   }
 
   String toConfig() {
@@ -330,6 +344,8 @@ class SSHNPPartialParams {
       legacyDaemon: args['legacy-daemon'],
     );
   }
+
+  factory SSHNPPartialParams.fromJson(String json) => SSHNPPartialParams.fromArgMap(jsonDecode(json));
 
   factory SSHNPPartialParams.fromConfig(String fileName) {
     var args = _parseConfigFile(fileName);
@@ -474,10 +490,3 @@ class SSHNPPartialParams {
 }
 
 String _fileToProfileName(String fileName) => path.basenameWithoutExtension(fileName).replaceAll('_', ' ');
-String _profileToFileName(String profileName, [String? directory]) {
-  var fileName = profileName.replaceAll(' ', '_');
-  return path.join(
-    directory ?? getDefaultSshnpConfigDirectory(getHomeDirectory(throwIfNull: true)!),
-    '$fileName.env',
-  );
-}
