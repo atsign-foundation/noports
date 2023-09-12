@@ -12,7 +12,7 @@ class ConfigFileSource implements ConfigSource {
   @override
   SSHNPParams get params => _params ?? SSHNPParams.empty();
 
-  ConfigFileSource._(this.profileName, {this.directory, this.fileName})
+  ConfigFileSource(this.profileName, {this.directory, this.fileName})
       : file = File(
           profileNameToConfigFileName(
             fileName ?? profileName,
@@ -20,21 +20,22 @@ class ConfigFileSource implements ConfigSource {
             replaceSpaces: (fileName == null), // only replace spaces for [profileName] not [fileName]
           ),
         );
+
   @override
-  DateTime get lastModified => file.lastModifiedSync();
+  DateTime getLastModified({bool refresh = true}) => file.lastModifiedSync();
 
   @override
   Future<void> create(SSHNPParams params) async {
     if (params.profileName != profileName) {
       throw ArgumentError.value(params.profileName, 'params.profileName', 'must be $profileName');
     }
-    await params.toFile(directory: directory);
+    await sshnpParamsToFile(params, directory: directory);
   }
 
   @override
   Future<SSHNPParams> read() async {
     try {
-      var params = SSHNPParams.fromConfig(file.path);
+      var params = SSHNPParams.fromConfigFile(file.path);
       _params = params;
     } catch (e) {
       _params = null;
@@ -44,11 +45,11 @@ class ConfigFileSource implements ConfigSource {
 
   @override
   Future<void> update(SSHNPParams params) async {
-    await params.toFile(directory: directory, overwrite: true);
+    await sshnpParamsToFile(params, directory: directory, overwrite: true);
   }
 
   @override
-  Future<void> delete(SSHNPParams params) async {
+  Future<void> delete() async {
     await file.delete();
   }
 }

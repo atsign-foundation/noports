@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:at_onboarding_flutter/at_onboarding_flutter.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:sshnoports/sshnp/config_manager.dart';
 import 'package:sshnoports/sshnp/sshnp.dart';
 
 enum ConfigFileWriteState { create, update }
@@ -12,12 +13,17 @@ final currentConfigController = AutoDisposeNotifierProvider<CurrentConfigControl
 );
 
 /// A provider that exposes the [ConfigListController] to the app.
-final configListController = AutoDisposeAsyncNotifierProvider<ConfigListController, Set<String>>(
+final configListController = AutoDisposeAsyncNotifierProvider<ConfigListController, Iterable<String>>(
   ConfigListController.new,
 );
 
+final configManagerProvider = Provider<ConfigManager>((ref) {
+  return ConfigManager(AtClientManager.getInstance().atClient);
+});
+
 /// A provider that exposes the [ConfigFamilyController] to the app.
-final configFamilyController = AutoDisposeAsyncNotifierProviderFamily<ConfigFamilyController, SSHNPParams, String>(
+final configFamilyController =
+    AutoDisposeAsyncNotifierProviderFamily<ConfigFamilyController, ConfigFamilyManager, String>(
   ConfigFamilyController.new,
 );
 
@@ -45,10 +51,11 @@ class CurrentConfigController extends AutoDisposeNotifier<CurrentConfigState> {
 }
 
 /// Controller for the list of all profileNames for each config file
-class ConfigListController extends AutoDisposeAsyncNotifier<Set<String>> {
+class ConfigListController extends AutoDisposeAsyncNotifier<Iterable<String>> {
   @override
-  Future<Set<String>> build() async {
-    return (await SSHNPParams.listFiles()).toSet();
+  Future<Iterable<String>> build() async {
+    await ref.read(configManagerProvider).initialized;
+    return (ref.read(configManagerProvider).managers.keys).toSet();
   }
 
   Future<void> refresh() async {
@@ -61,41 +68,28 @@ class ConfigListController extends AutoDisposeAsyncNotifier<Set<String>> {
   }
 
   void remove(String profileName) {
-    state = AsyncData(state.value?.difference({profileName}) ?? {});
+    state = AsyncData(state.value?.where((e) => e != profileName) ?? []);
   }
 }
 
 /// Controller for the family of [SSHNPParams] controllers
-class ConfigFamilyController extends AutoDisposeFamilyAsyncNotifier<SSHNPParams, String> {
+class ConfigFamilyController extends AutoDisposeFamilyAsyncNotifier<ConfigFamilyManager, String> {
   @override
-  Future<SSHNPParams> build(String arg) async {
-    return (await SSHNPParams.fileExists(arg))
-        ? await SSHNPParams.fromFile(arg)
-        : SSHNPParams.merge(
-            SSHNPParams.empty(),
-            SSHNPPartialParams(clientAtSign: AtClientManager.getInstance().atClient.getCurrentAtSign()!),
-          );
+  Future<ConfigFamilyManager> build(String arg) {
+    return ref.read(configManagerProvider)[arg];
   }
 
-  Future<void> refresh(String arg) async {
-    state = const AsyncLoading();
-    state = await AsyncValue.guard(() => build(arg));
-  }
-
-  Future<void> create(SSHNPParams params) async {
-    await params.toFile();
-    state = AsyncValue.data(params);
+  Future<void> createConfig(SSHNPParams params) async {
+    await state.value?.create(params);
     ref.read(configListController.notifier).add(params.profileName!);
   }
 
-  Future<void> edit(SSHNPParams params) async {
-    await params.toFile(overwrite: true);
-    state = AsyncValue.data(params);
+  Future<void> updateConfig(SSHNPParams params) async {
+    await state.value?.update(params);
   }
 
-  Future<void> delete() async {
-    await state.value?.deleteFile();
-    state = const AsyncError('File deleted', StackTrace.empty);
-    ref.read(configListController.notifier).remove(state.value!.profileName!);
+  Future<void> deleteConfig() async {
+    await state.value?.delete();
+    ref.read(configListController.notifier).remove(state.value!.profileName);
   }
 }

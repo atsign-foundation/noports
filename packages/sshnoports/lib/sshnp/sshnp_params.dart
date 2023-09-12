@@ -68,8 +68,8 @@ class SSHNPParams {
     );
   }
 
-  factory SSHNPParams.fromConfig(String fileName) {
-    return SSHNPParams.fromPartial(SSHNPPartialParams.fromConfig(fileName));
+  factory SSHNPParams.fromConfigFile(String fileName) {
+    return SSHNPParams.fromPartial(SSHNPPartialParams.fromConfigFile(fileName));
   }
 
   factory SSHNPParams.fromJson(String json) => SSHNPParams.fromPartial(SSHNPPartialParams.fromJson(json));
@@ -127,23 +127,6 @@ class SSHNPParams {
     );
   }
 
-  Future<FileSystemEntity> deleteFile({String? directory}) async {
-    if (profileName == null || profileName!.isEmpty) {
-      throw Exception('profileName is null or empty');
-    }
-
-    var fileName = profileNameToConfigFileName(profileName!, directory: directory);
-    var file = File(fileName);
-
-    var exists = await file.exists();
-
-    if (!exists) {
-      throw Exception('Cannot delete ${file.path}, file does not exist');
-    }
-
-    return file.delete();
-  }
-
   Map<String, dynamic> toArgs() {
     return {
       'profile-name': profileName,
@@ -179,60 +162,8 @@ class SSHNPParams {
     return lines.join('\n');
   }
 
-  Future<File> toFile({String? directory, bool overwrite = false}) async {
-    if (profileName == null || profileName!.isEmpty) {
-      throw Exception('profileName is null or empty');
-    }
-
-    var fileName = profileNameToConfigFileName(profileName!, directory: directory);
-    var file = File(fileName);
-
-    var exists = await file.exists();
-
-    if (exists && !overwrite) {
-      throw Exception('Failed to write config file: ${file.path} already exists');
-    }
-
-    // FileMode.write will create the file if it does not exist
-    // and overwrite existing files if it does exist
-    return file.writeAsString(toConfig(), mode: FileMode.write);
-  }
-
   String toJson() {
     return jsonEncode(toArgs());
-  }
-
-  static Future<bool> fileExists(String profileName, {String? directory}) {
-    var fileName = profileNameToConfigFileName(profileName, directory: directory);
-    return File(fileName).exists();
-  }
-
-  static Future<SSHNPParams> fromFile(String profileName, {String? directory}) async {
-    var fileName = profileNameToConfigFileName(profileName, directory: directory);
-    return SSHNPParams.fromConfig(fileName);
-  }
-
-  static Future<Iterable<String>> listFiles({String? directory}) async {
-    var fileNames = <String>{};
-
-    var homeDirectory = getHomeDirectory(throwIfNull: true)!;
-    directory ??= getDefaultSshnpConfigDirectory(homeDirectory);
-    var files = Directory(directory).list();
-
-    await files.forEach((file) {
-      if (file is! File) return;
-      if (path.extension(file.path) != '.env') return;
-      if (path.basenameWithoutExtension(file.path).isEmpty) return; // ignore '.env' file - empty profileName
-      fileNames.add(configFileNameToProfileName(file.path));
-      try {
-        var p = SSHNPParams.fromConfig(file.path);
-        fileNames.add(p.profileName!);
-      } catch (e) {
-        stderr.writeln('Error reading config file: ${file.path}');
-        stderr.writeln(e);
-      }
-    });
-    return fileNames;
   }
 }
 
@@ -241,7 +172,7 @@ class SSHNPParams {
 /// e.g. default values from a config file and the rest from the command line
 class SSHNPPartialParams {
   // Non param variables
-  static final ArgParser parser = _createArgParser();
+  static final ArgParser parser = createArgParser();
 
   /// Main Params
   final String? profileName;
@@ -295,13 +226,13 @@ class SSHNPPartialParams {
   factory SSHNPPartialParams.fromArgs(List<String> args) {
     var params = SSHNPPartialParams.empty();
 
-    var parsedArgs = _createArgParser(withDefaults: false).parse(args);
+    var parsedArgs = createArgParser(withDefaults: false).parse(args);
 
     if (parsedArgs.wasParsed('config-file')) {
       var configFileName = parsedArgs['config-file'] as String;
       params = SSHNPPartialParams.merge(
         params,
-        SSHNPPartialParams.fromConfig(configFileName),
+        SSHNPPartialParams.fromConfigFile(configFileName),
       );
     }
 
@@ -317,8 +248,8 @@ class SSHNPPartialParams {
     );
   }
 
-  factory SSHNPPartialParams.fromConfig(String fileName) {
-    var args = _parseConfigFile(fileName);
+  factory SSHNPPartialParams.fromConfigFile(String fileName) {
+    var args = parseConfigFile(fileName);
     args['profile-name'] = configFileNameToProfileName(fileName);
     return SSHNPPartialParams.fromMap(args);
   }
@@ -371,113 +302,5 @@ class SSHNPPartialParams {
       listDevices: params2.listDevices ?? params1.listDevices,
       legacyDaemon: params2.legacyDaemon ?? params1.legacyDaemon,
     );
-  }
-
-  static ArgParser _createArgParser({
-    bool withConfig = true,
-    bool withDefaults = true,
-    bool withListDevices = true,
-  }) {
-    var parser = ArgParser();
-    // Basic arguments
-    for (SSHNPArg arg in SSHNPArg.args) {
-      switch (arg.format) {
-        case ArgFormat.option:
-          parser.addOption(
-            arg.name,
-            abbr: arg.abbr,
-            mandatory: arg.mandatory,
-            defaultsTo: withDefaults ? arg.defaultsTo?.toString() : null,
-            help: arg.help,
-          );
-          break;
-        case ArgFormat.multiOption:
-          parser.addMultiOption(
-            arg.name,
-            abbr: arg.abbr,
-            defaultsTo: withDefaults ? arg.defaultsTo as List<String>? : null,
-            help: arg.help,
-          );
-          break;
-        case ArgFormat.flag:
-          parser.addFlag(
-            arg.name,
-            abbr: arg.abbr,
-            defaultsTo: withDefaults ? arg.defaultsTo as bool? : null,
-            help: arg.help,
-          );
-          break;
-      }
-    }
-    if (withConfig) {
-      parser.addOption(
-        'config-file',
-        help: 'Read args from a config file\nMandatory args are not required if already supplied in the config file',
-      );
-    }
-    if (withListDevices) {
-      parser.addFlag(
-        'list-devices',
-        aliases: ['ls'],
-        negatable: false,
-        help: 'List available devices',
-      );
-    }
-    return parser;
-  }
-
-  static Map<String, dynamic> _parseConfigFile(String fileName) {
-    Map<String, dynamic> args = <String, dynamic>{};
-
-    File file = File(fileName);
-
-    if (!file.existsSync()) {
-      throw Exception('Config file does not exist: $fileName');
-    }
-    try {
-      List<String> lines = file.readAsLinesSync();
-
-      for (String line in lines) {
-        if (line.startsWith('#')) continue;
-
-        var parts = line.split('=');
-        if (parts.length != 2) continue;
-
-        var key = parts[0].trim();
-        var value = parts[1].trim();
-
-        SSHNPArg arg = SSHNPArg.fromBashName(key);
-        if (arg.name.isEmpty) continue;
-
-        switch (arg.format) {
-          case ArgFormat.flag:
-            if (value.toLowerCase() == 'true') {
-              args[arg.name] = true;
-            }
-            continue;
-          case ArgFormat.multiOption:
-            var values = value.split(',');
-            args.putIfAbsent(arg.name, () => <String>[]);
-            for (String val in values) {
-              if (val.isEmpty) continue;
-              args[arg.name].add(val);
-            }
-            continue;
-          case ArgFormat.option:
-            if (value.isEmpty) continue;
-            if (arg.type == ArgType.integer) {
-              args[arg.name] = int.tryParse(value);
-            } else {
-              args[arg.name] = value;
-            }
-            continue;
-        }
-      }
-      return args;
-    } on FileSystemException {
-      throw Exception('Error reading config file: $fileName');
-    } catch (e) {
-      throw Exception('Error parsing config file: $fileName');
-    }
   }
 }

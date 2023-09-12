@@ -12,13 +12,9 @@ class ConfigSyncSource implements ConfigSource {
 
   ConfigSyncSource._(this.atKey, this.atClient);
 
-  factory ConfigSyncSource.synced(String profileName, {AtClient? atClient}) {
-    AtKey atKey = AtKey.self(
-      'profile_$profileName',
-      namespace: SSHNPD.namespace,
-    ).build();
-
-    atClient ??= AtClientManager.getInstance().atClient;
+  factory ConfigSyncSource(String profileName, AtClient atClient) {
+    AtKey atKey = profileNameToAtKey(profileName, sharedBy: atClient.getCurrentAtSign()!);
+    print('sync src: $profileName, $atKey');
     return ConfigSyncSource._(atKey, atClient);
   }
 
@@ -27,17 +23,22 @@ class ConfigSyncSource implements ConfigSource {
   }
 
   @override
-  DateTime get lastModified => atKey.metadata?.updatedAt ?? DateTime(0);
+  Future<DateTime> getLastModified({bool refresh = true}) async {
+    if (refresh) await atClient.get(atKey);
+    return atKey.metadata?.updatedAt ?? DateTime(0);
+  }
 
   @override
   Future<void> create(SSHNPParams params) => update(params);
 
   @override
   Future<SSHNPParams> read() async {
-    var atValue = await atClient.get(atKey, getRequestOptions: GetRequestOptions()..bypassCache);
-
+    print('called read for $atKey');
+    var atValue = await atClient.get(atKey);
+    print('done read');
     try {
-      _params = SSHNPParams.fromJson(atValue.value);
+      print("json: ${atValue.value}");
+      _params = SSHNPParams.fromJson(atValue.value!);
     } catch (e) {
       _params = SSHNPParams.empty();
     }
@@ -52,7 +53,7 @@ class ConfigSyncSource implements ConfigSource {
   }
 
   @override
-  Future<void> delete(SSHNPParams params) {
-    return atClient.delete(atKey, deleteRequestOptions: DeleteRequestOptions()..useRemoteAtServer = true);
+  Future<void> delete() {
+    return atClient.delete(atKey);
   }
 }

@@ -2,7 +2,6 @@ import 'dart:io';
 import 'package:sshnoports/common/utils.dart';
 import 'package:at_utils/at_logger.dart';
 import 'package:sshnoports/sshnp/sshnp.dart';
-import 'package:path/path.dart' as path;
 
 Future<void> cleanUpAfterReverseSsh(SSHNP sshnp) async {
   if (!sshnp.initialized) {
@@ -83,14 +82,4 @@ bool useDirectSsh(bool legacyDaemon, String host) {
       return false;
     }
   }
-}
-
-String configFileNameToProfileName(String fileName) => path.basenameWithoutExtension(fileName).replaceAll('_', ' ');
-
-String profileNameToConfigFileName(String profileName, {String? directory, bool replaceSpaces = true}) {
-  var fileName = profileName.replaceAll(' ', '_');
-  return path.join(
-    directory ?? getDefaultSshnpConfigDirectory(getHomeDirectory(throwIfNull: true)!),
-    '$fileName.env',
-  );
 }

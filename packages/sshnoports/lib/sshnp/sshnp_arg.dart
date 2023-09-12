@@ -1,3 +1,5 @@
+import 'package:args/args.dart';
+
 import 'sshnp.dart';
 
 enum ArgFormat {
@@ -84,24 +86,20 @@ class SSHNPArg {
     SSHNPArg(
       name: 'port',
       abbr: 'p',
-      help:
-          'TCP port to connect back to (only required if --host specified a FQDN/IP)',
+      help: 'TCP port to connect back to (only required if --host specified a FQDN/IP)',
       defaultsTo: SSHNP.defaultPort,
       type: ArgType.integer,
     ),
     SSHNPArg(
-      name: 'local-port',
-      abbr: 'l',
-      help:
-          'Reverse ssh port to listen on, on your local machine, by sshnp default finds a spare port',
-      defaultsTo: SSHNP.defaultLocalPort,
-      type: ArgType.integer
-    ),
+        name: 'local-port',
+        abbr: 'l',
+        help: 'Reverse ssh port to listen on, on your local machine, by sshnp default finds a spare port',
+        defaultsTo: SSHNP.defaultLocalPort,
+        type: ArgType.integer),
     SSHNPArg(
       name: 'ssh-public-key',
       abbr: 's',
-      help:
-          'Public key file from ~/.ssh to be appended to authorized_hosts on the remote device',
+      help: 'Public key file from ~/.ssh to be appended to authorized_hosts on the remote device',
       defaultsTo: SSHNP.defaultSendSshPublicKey,
     ),
     SSHNPArg(
@@ -145,7 +143,6 @@ class SSHNPArg {
       format: ArgFormat.option,
       type: ArgType.integer,
     ),
-
     SSHNPArg(
       name: 'legacy-daemon',
       defaultsTo: SSHNP.defaultLegacyDaemon,
@@ -158,4 +155,57 @@ class SSHNPArg {
   String toString() {
     return 'SSHNPArg{format: $format, name: $name, abbr: $abbr, help: $help, mandatory: $mandatory, defaultsTo: $defaultsTo, type: $type}';
   }
+}
+
+ArgParser createArgParser({
+  bool withConfig = true,
+  bool withDefaults = true,
+  bool withListDevices = true,
+}) {
+  var parser = ArgParser();
+  // Basic arguments
+  for (SSHNPArg arg in SSHNPArg.args) {
+    switch (arg.format) {
+      case ArgFormat.option:
+        parser.addOption(
+          arg.name,
+          abbr: arg.abbr,
+          mandatory: arg.mandatory,
+          defaultsTo: withDefaults ? arg.defaultsTo?.toString() : null,
+          help: arg.help,
+        );
+        break;
+      case ArgFormat.multiOption:
+        parser.addMultiOption(
+          arg.name,
+          abbr: arg.abbr,
+          defaultsTo: withDefaults ? arg.defaultsTo as List<String>? : null,
+          help: arg.help,
+        );
+        break;
+      case ArgFormat.flag:
+        parser.addFlag(
+          arg.name,
+          abbr: arg.abbr,
+          defaultsTo: withDefaults ? arg.defaultsTo as bool? : null,
+          help: arg.help,
+        );
+        break;
+    }
+  }
+  if (withConfig) {
+    parser.addOption(
+      'config-file',
+      help: 'Read args from a config file\nMandatory args are not required if already supplied in the config file',
+    );
+  }
+  if (withListDevices) {
+    parser.addFlag(
+      'list-devices',
+      aliases: ['ls'],
+      negatable: false,
+      help: 'List available devices',
+    );
+  }
+  return parser;
 }
