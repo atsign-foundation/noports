@@ -189,7 +189,7 @@ class SSHNPImpl implements SSHNP {
     this.remoteSshdPort = defaults.defaultRemoteSshdPort,
     this.idleTimeout = defaults.defaultIdleTimeout,
     required this.sshClient,
-    this.addForwardsToTunnel = false
+    this.addForwardsToTunnel = false,
   }) {
     namespace = '$device.sshnp';
     clientAtSign = atClient.getCurrentAtSign()!;
@@ -294,7 +294,7 @@ class SSHNPImpl implements SSHNP {
         idleTimeout: p.idleTimeout,
         sshClient: SupportedSshClient.values
             .firstWhere((c) => c.cliArg == p.sshClient),
-        addForwardsToTunnel: p.addForwardsToTunnel
+        addForwardsToTunnel: p.addForwardsToTunnel,
       );
       if (p.verbose) {
         sshnp.logger.logger.level = Level.INFO;
@@ -578,17 +578,17 @@ class SSHNPImpl implements SSHNP {
     await Process.run('chmod', ['go-rwx', tmpFileName]);
 
     String argsString = '$remoteUsername@$host'
-            ' -p $_sshrvdPort'
-            ' -i $tmpFileName'
-            ' -L $localPort:localhost:$remoteSshdPort'
-            ' -o LogLevel=VERBOSE'
-            ' -t -t'
-            ' -o StrictHostKeyChecking=accept-new'
-            ' -o IdentitiesOnly=yes'
-            ' -o BatchMode=yes'
-            ' -o ExitOnForwardFailure=yes'
-            ' -f' // fork after authentication - this is important
-    ;
+        ' -p $_sshrvdPort'
+        ' -i $tmpFileName'
+        ' -L $localPort:localhost:$remoteSshdPort'
+        ' -o LogLevel=VERBOSE'
+        ' -t -t'
+        ' -o StrictHostKeyChecking=accept-new'
+        ' -o IdentitiesOnly=yes'
+        ' -o BatchMode=yes'
+        ' -o ExitOnForwardFailure=yes'
+        ' -f' // fork after authentication - this is important
+        ;
     if (addForwardsToTunnel) {
       argsString += ' $localSshOptions';
     }

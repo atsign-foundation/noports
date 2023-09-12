@@ -308,7 +308,8 @@ class SSHNPPartialParams {
       remoteSshdPort: params2.remoteSshdPort ?? params1.remoteSshdPort,
       idleTimeout: params2.idleTimeout ?? params1.idleTimeout,
       sshClient: params2.sshClient ?? params1.sshClient,
-      addForwardsToTunnel: params2.addForwardsToTunnel ?? params1.addForwardsToTunnel,
+      addForwardsToTunnel:
+          params2.addForwardsToTunnel ?? params1.addForwardsToTunnel,
     );
   }
 
