@@ -62,14 +62,15 @@ class SSHNPParams {
 
   factory SSHNPParams.empty() {
     return SSHNPParams(
+      profileName: '',
       clientAtSign: '',
       sshnpdAtSign: '',
       host: '',
     );
   }
 
-  factory SSHNPParams.fromConfigFile(String fileName) {
-    return SSHNPParams.fromPartial(SSHNPPartialParams.fromConfigFile(fileName));
+  factory SSHNPParams.fromFile(String fileName) {
+    return SSHNPParams.fromPartial(SSHNPPartialParams.fromFile(fileName));
   }
 
   factory SSHNPParams.fromJson(String json) => SSHNPParams.fromPartial(SSHNPPartialParams.fromJson(json));
@@ -232,7 +233,7 @@ class SSHNPPartialParams {
       var configFileName = parsedArgs['config-file'] as String;
       params = SSHNPPartialParams.merge(
         params,
-        SSHNPPartialParams.fromConfigFile(configFileName),
+        SSHNPPartialParams.fromFile(configFileName),
       );
     }
 
@@ -248,9 +249,9 @@ class SSHNPPartialParams {
     );
   }
 
-  factory SSHNPPartialParams.fromConfigFile(String fileName) {
-    var args = parseConfigFile(fileName);
-    args['profile-name'] = configFileNameToProfileName(fileName);
+  factory SSHNPPartialParams.fromFile(String fileName) {
+    var args = ConfigFileRepository.parseConfigFile(fileName);
+    args['profile-name'] = ConfigFileRepository.toProfileName(fileName);
     return SSHNPPartialParams.fromMap(args);
   }
 

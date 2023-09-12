@@ -13,7 +13,7 @@ import 'package:path/path.dart' as path;
 import 'package:sshnoports/common/create_at_client_cli.dart';
 import 'package:sshnoports/common/supported_ssh_clients.dart';
 import 'package:sshnoports/common/utils.dart';
-import 'package:sshnoports/sshnp/config_file_utils.dart';
+import 'package:sshnoports/sshnp/config_repository/config_file_repository.dart';
 import 'package:sshnoports/sshnp/sshnp_arg.dart';
 import 'package:sshnoports/sshnp/utils.dart';
 import 'package:sshnoports/sshnpd/sshnpd.dart';

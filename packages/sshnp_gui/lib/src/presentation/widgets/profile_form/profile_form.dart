@@ -31,7 +31,6 @@ class _ProfileFormState extends ConsumerState<ProfileForm> {
     if (_formkey.currentState!.validate()) {
       _formkey.currentState!.save();
       final controller = ref.read(configFamilyController(newConfig.profileName ?? oldConfig.profileName!).notifier);
-      bool overwrite = currentProfile.configFileWriteState == ConfigFileWriteState.update;
       bool rename = newConfig.profileName.isNotNull &&
           newConfig.profileName!.isNotEmpty &&
           oldConfig.profileName.isNotNull &&
@@ -41,13 +40,10 @@ class _ProfileFormState extends ConsumerState<ProfileForm> {
       if (rename) {
         // delete old config file and write the new one
         await ref.read(configFamilyController(oldConfig.profileName!).notifier).deleteConfig();
-        await controller.createConfig(config);
-      } else if (overwrite) {
-        // overwrite the existing file
-        await controller.updateConfig(config);
+        await controller.putConfig(config);
       } else {
         // create new config file
-        await controller.createConfig(config);
+        await controller.putConfig(config);
       }
       if (context.mounted) {
         ref.read(navigationRailController.notifier).setRoute(AppRoute.home);
