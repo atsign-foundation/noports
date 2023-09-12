@@ -160,6 +160,10 @@ abstract class SSHNP {
   /// The ssh client to use when doing outbound ssh within this program
   abstract SupportedSshClient sshClient;
 
+  /// When true, any local forwarding directives included in [localSshOptions]
+  /// will be added to the initial tunnel ssh request
+  abstract bool addForwardsToTunnel;
+
   /// Completes when the SSHNP instance is no longer doing anything
   /// e.g. controlling a direct ssh tunnel using the pure-dart SSHClient
   Future<void> get done;
@@ -197,6 +201,7 @@ abstract class SSHNP {
     int remoteSshdPort = defaults.defaultRemoteSshdPort,
     int idleTimeout = defaults.defaultIdleTimeout,
     required SupportedSshClient sshClient,
+    required bool addForwardsToTunnel,
   }) {
     return SSHNPImpl(
       atClient: atClient,
@@ -219,6 +224,7 @@ abstract class SSHNP {
       remoteSshdPort: remoteSshdPort,
       idleTimeout: idleTimeout,
       sshClient: sshClient,
+      addForwardsToTunnel: addForwardsToTunnel,
     );
   }
 

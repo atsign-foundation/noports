@@ -180,6 +180,13 @@ class SSHNPArg {
         format: ArgFormat.option,
         type: ArgType.string,
         allowed: SupportedSshClient.values.map((c) => c.cliArg).toList()),
+    SSHNPArg(
+      name: 'add-forwards-to-tunnel',
+      defaultsTo: false,
+      help: 'When true, any local forwarding directives provided in'
+          '--local-ssh-options will be added to the initial tunnel ssh request',
+      format: ArgFormat.flag,
+    ),
   ];
 
   @override

@@ -160,6 +160,9 @@ class SSHNPImpl implements SSHNP {
   @override
   late final int idleTimeout;
 
+  @override
+  late final bool addForwardsToTunnel;
+
   final _doneCompleter = Completer<void>();
 
   @override
@@ -186,6 +189,7 @@ class SSHNPImpl implements SSHNP {
     this.remoteSshdPort = defaults.defaultRemoteSshdPort,
     this.idleTimeout = defaults.defaultIdleTimeout,
     required this.sshClient,
+    this.addForwardsToTunnel = false
   }) {
     namespace = '$device.sshnp';
     clientAtSign = atClient.getCurrentAtSign()!;
@@ -290,6 +294,7 @@ class SSHNPImpl implements SSHNP {
         idleTimeout: p.idleTimeout,
         sshClient: SupportedSshClient.values
             .firstWhere((c) => c.cliArg == p.sshClient),
+        addForwardsToTunnel: p.addForwardsToTunnel
       );
       if (p.verbose) {
         sshnp.logger.logger.level = Level.INFO;

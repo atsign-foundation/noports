@@ -28,6 +28,7 @@ class SSHNPParams {
   late final int remoteSshdPort;
   late final int idleTimeout;
   late final String sshClient;
+  late final bool addForwardsToTunnel;
 
   /// Special Arguments
   late final String?
@@ -55,6 +56,7 @@ class SSHNPParams {
     this.remoteSshdPort = defaults.defaultRemoteSshdPort,
     this.idleTimeout = defaults.defaultIdleTimeout,
     String? sshClient,
+    this.addForwardsToTunnel = false,
   }) {
     // Do we have a username ?
     username = getUserName(throwIfNull: true)!;
@@ -101,6 +103,7 @@ class SSHNPParams {
       remoteSshdPort: partial.remoteSshdPort ?? defaults.defaultRemoteSshdPort,
       idleTimeout: partial.idleTimeout ?? defaults.defaultIdleTimeout,
       sshClient: partial.sshClient ?? SSHNP.defaultSshClient.cliArg,
+      addForwardsToTunnel: partial.addForwardsToTunnel ?? false,
     );
   }
 
@@ -197,6 +200,8 @@ class SSHNPParams {
       'local-sshd-port': localSshdPort,
       'remote-sshd-port': remoteSshdPort,
       'idle-timeout': idleTimeout,
+      'ssh-client': sshClient,
+      'add-forwards-to-tunnel': addForwardsToTunnel,
     };
   }
 
@@ -239,6 +244,7 @@ class SSHNPPartialParams {
   late final int? remoteSshdPort;
   late final int? idleTimeout;
   late final String? sshClient;
+  late final bool? addForwardsToTunnel;
 
   /// Special Params
   // N.B. config file is a meta param and doesn't need to be included
@@ -268,6 +274,7 @@ class SSHNPPartialParams {
     this.remoteSshdPort,
     this.idleTimeout,
     this.sshClient,
+    this.addForwardsToTunnel,
   });
 
   factory SSHNPPartialParams.empty() {
@@ -301,6 +308,7 @@ class SSHNPPartialParams {
       remoteSshdPort: params2.remoteSshdPort ?? params1.remoteSshdPort,
       idleTimeout: params2.idleTimeout ?? params1.idleTimeout,
       sshClient: params2.sshClient ?? params1.sshClient,
+      addForwardsToTunnel: params2.addForwardsToTunnel ?? params1.addForwardsToTunnel,
     );
   }
 
@@ -327,6 +335,7 @@ class SSHNPPartialParams {
       remoteSshdPort: args['remote-sshd-port'],
       idleTimeout: args['idle-timeout'],
       sshClient: args['ssh-client'],
+      addForwardsToTunnel: args['add-forwards-to-tunnel'],
     );
   }
 
