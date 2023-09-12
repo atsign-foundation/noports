@@ -19,7 +19,7 @@ class _ProfileBarState extends ConsumerState<ProfileBar> {
     return controller.when(
       error: (error, stackTrace) => Container(),
       loading: () => const LinearProgressIndicator(),
-      data: (manager) => Container(
+      data: (profile) => Container(
         decoration: BoxDecoration(
           border: Border(
             top: BorderSide(
@@ -30,9 +30,9 @@ class _ProfileBarState extends ConsumerState<ProfileBar> {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text(manager.profileName),
+            Text(profile.profileName!),
             const ProfileBarStats(),
-            ProfileBarActions(manager.params),
+            ProfileBarActions(profile),
           ],
         ),
       ),

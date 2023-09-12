@@ -17,13 +17,8 @@ final configListController = AutoDisposeAsyncNotifierProvider<ConfigListControll
   ConfigListController.new,
 );
 
-final configManagerProvider = Provider<ConfigManager>((ref) {
-  return ConfigManager(AtClientManager.getInstance().atClient);
-});
-
 /// A provider that exposes the [ConfigFamilyController] to the app.
-final configFamilyController =
-    AutoDisposeAsyncNotifierProviderFamily<ConfigFamilyController, ConfigFamilyManager, String>(
+final configFamilyController = AutoDisposeAsyncNotifierProviderFamily<ConfigFamilyController, SSHNPParams, String>(
   ConfigFamilyController.new,
 );
 
@@ -54,8 +49,7 @@ class CurrentConfigController extends AutoDisposeNotifier<CurrentConfigState> {
 class ConfigListController extends AutoDisposeAsyncNotifier<Iterable<String>> {
   @override
   Future<Iterable<String>> build() async {
-    await ref.read(configManagerProvider).initialized;
-    return (ref.read(configManagerProvider).managers.keys).toSet();
+    return []; // TODO
   }
 
   Future<void> refresh() async {
@@ -73,23 +67,23 @@ class ConfigListController extends AutoDisposeAsyncNotifier<Iterable<String>> {
 }
 
 /// Controller for the family of [SSHNPParams] controllers
-class ConfigFamilyController extends AutoDisposeFamilyAsyncNotifier<ConfigFamilyManager, String> {
+class ConfigFamilyController extends AutoDisposeFamilyAsyncNotifier<SSHNPParams, String> {
   @override
-  Future<ConfigFamilyManager> build(String arg) {
-    return ref.read(configManagerProvider)[arg];
+  Future<SSHNPParams> build(String arg) async {
+    return SSHNPParams.empty(); // TODO
   }
 
   Future<void> createConfig(SSHNPParams params) async {
-    await state.value?.create(params);
+    // TODO
     ref.read(configListController.notifier).add(params.profileName!);
   }
 
   Future<void> updateConfig(SSHNPParams params) async {
-    await state.value?.update(params);
+    // TODO
   }
 
   Future<void> deleteConfig() async {
-    await state.value?.delete();
-    ref.read(configListController.notifier).remove(state.value!.profileName);
+    // TODO
+    ref.read(configListController.notifier).remove(state.value!.profileName!);
   }
 }
