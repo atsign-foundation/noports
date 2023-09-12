@@ -552,14 +552,16 @@ class SSHNPImpl implements SSHNP {
         ' to port $remoteSshdPort on remote host');
 
     /// Set up timer to check to see if all connections are down
-    logger.info('ssh session will terminate after $idleTimeout seconds if it is not being used');
+    logger.info('ssh session will terminate after $idleTimeout seconds'
+        ' if it is not being used');
     Timer.periodic(Duration(seconds: idleTimeout), (timer) async {
       if (counter == 0) {
         timer.cancel();
         client.close();
         await client.done;
         _doneCompleter.complete();
-        logger.shout('$sessionId | no active connections - ssh session complete');
+        logger.shout('$sessionId | no active connections'
+            ' - ssh session complete');
       }
     });
 
