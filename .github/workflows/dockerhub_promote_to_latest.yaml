@@ -2,16 +2,21 @@ name: dockerhub_promote_to_latest
 
 on:
   workflow_dispatch:
+    inputs:
+      name:
+        description: "Name of the image to promote"
+        required: true
+        default: sshnpd
+        type: choice
+        options:
+          - sshnpd
+          - activate_sshnpd
 
 permissions: # added using https://github.com/step-security/secure-workflows
   contents: read
 
 jobs:
   docker:
-    strategy:
-      matrix:
-        include:
-          - name: [sshnpd, activate_sshnpd]
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -29,4 +34,4 @@ jobs:
       - name: Get version
         run: echo "VERSION=${GITHUB_REF##*/}" >> $GITHUB_ENV
       - name: Promote image to latest
-        run: docker buildx imagetools create -t atsigncompany/${{ matrix.name }}:latest atsigncompany/${{ matrix.name }}:release-${{ env.VERSION }}
+        run: docker buildx imagetools create -t atsigncompany/${{ inputs.name }}:latest atsigncompany/${{ inputs.name }}:release-${{ env.VERSION }}
