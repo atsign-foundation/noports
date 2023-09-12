@@ -593,7 +593,7 @@ class SSHNPImpl implements SSHNP {
         ' -f' // fork after authentication - this is important
         ;
     if (addForwardsToTunnel) {
-      argsString += ' $localSshOptions';
+      argsString += ' ${localSshOptions.join(' ')}';
     }
     argsString += ' sleep 15';
 
