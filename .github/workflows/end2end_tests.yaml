@@ -561,14 +561,14 @@ jobs:
         run: |
           cat docker-compose-base.yaml > docker-compose.yaml
           cat service-container-sshnp.yaml >> docker-compose.yaml
-          cat '    image: atsigncompany/sshnp-e2e-runtime:local' >> docker-compose.yaml
-          cat '    depends_on:' >> docker-compose.yaml
-          cat '      - image-runtime-local:' >> docker-compose.yaml
-          cat '      - container-sshnpd:' >> docker-compose.yaml
+          echo '    image: atsigncompany/sshnp-e2e-runtime:local' >> docker-compose.yaml
+          echo '    depends_on:' >> docker-compose.yaml
+          echo '      - image-runtime-local:' >> docker-compose.yaml
+          echo '      - container-sshnpd:' >> docker-compose.yaml
           cat service-container-sshnpd.yaml >> docker-compose.yaml
-          cat '    image: atsigncompany/sshnp-e2e-runtime:local' >> docker-compose.yaml
-          cat '    depends_on:' >> docker-compose.yaml
-          cat '      - image-runtime-local:' >> docker-compose.yaml
+          echo '    image: atsigncompany/sshnp-e2e-runtime:local' >> docker-compose.yaml
+          echo '    depends_on:' >> docker-compose.yaml
+          echo '      - image-runtime-local:' >> docker-compose.yaml
 
       - name: docker-compose.yaml
         if: always()
