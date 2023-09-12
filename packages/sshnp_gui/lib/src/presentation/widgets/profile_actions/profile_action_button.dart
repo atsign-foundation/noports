@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:sshnp_gui/src/utility/sizes.dart';
 
 class ProfileActionButton extends StatelessWidget {
   final void Function() onPressed;

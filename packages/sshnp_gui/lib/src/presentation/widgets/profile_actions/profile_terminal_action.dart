@@ -6,7 +6,7 @@ import 'package:sshnoports/sshnp/sshnp.dart';
 import 'package:sshnoports/sshrv/sshrv.dart';
 import 'package:sshnp_gui/src/controllers/navigation_rail_controller.dart';
 import 'package:sshnp_gui/src/controllers/terminal_session_controller.dart';
-import 'package:sshnp_gui/src/presentation/widgets/profile_actions/profile_widgets.dart';
+import 'package:sshnp_gui/src/presentation/widgets/profile_actions/profile_action_button.dart';
 import 'package:sshnp_gui/src/presentation/widgets/utility/custom_snack_bar.dart';
 import 'package:sshnp_gui/src/controllers/navigation_controller.dart';
 
