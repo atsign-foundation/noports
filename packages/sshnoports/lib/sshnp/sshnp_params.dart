@@ -1,5 +1,7 @@
 part of 'sshnp.dart';
 
+String _fileToProfileName(String fileName) => path.basenameWithoutExtension(fileName).replaceAll('_', ' ');
+
 class SSHNPParams {
   /// Required Arguments
   /// These arguments do not have fallback values and must be provided.
@@ -60,29 +62,6 @@ class SSHNPParams {
     this.atKeysFilePath = atKeysFilePath ?? getDefaultAtKeysFilePath(homeDirectory, clientAtSign);
   }
 
-  factory SSHNPParams.merge(SSHNPParams params1, [SSHNPPartialParams? params2]) {
-    params2 ??= SSHNPPartialParams.empty();
-    return SSHNPParams(
-      profileName: params2.profileName ?? params1.profileName,
-      clientAtSign: params2.clientAtSign ?? params1.clientAtSign,
-      sshnpdAtSign: params2.sshnpdAtSign ?? params1.sshnpdAtSign,
-      host: params2.host ?? params1.host,
-      device: params2.device ?? params1.device,
-      port: params2.port ?? params1.port,
-      localPort: params2.localPort ?? params1.localPort,
-      atKeysFilePath: params2.atKeysFilePath ?? params1.atKeysFilePath,
-      sendSshPublicKey: params2.sendSshPublicKey ?? params1.sendSshPublicKey,
-      localSshOptions: params2.localSshOptions ?? params1.localSshOptions,
-      rsa: params2.rsa ?? params1.rsa,
-      remoteUsername: params2.remoteUsername ?? params1.remoteUsername,
-      verbose: params2.verbose ?? params1.verbose,
-      rootDomain: params2.rootDomain ?? params1.rootDomain,
-      localSshdPort: params2.localSshdPort ?? params1.localSshdPort,
-      listDevices: params2.listDevices ?? params1.listDevices,
-      legacyDaemon: params2.legacyDaemon ?? params1.legacyDaemon,
-    );
-  }
-
   factory SSHNPParams.empty() {
     return SSHNPParams(
       clientAtSign: '',
@@ -90,6 +69,12 @@ class SSHNPParams {
       host: '',
     );
   }
+
+  factory SSHNPParams.fromConfig(String fileName) {
+    return SSHNPParams.fromPartial(SSHNPPartialParams.fromConfig(fileName));
+  }
+
+  factory SSHNPParams.fromJson(String json) => SSHNPParams.fromPartial(SSHNPPartialParams.fromJson(json));
 
   factory SSHNPParams.fromPartial(SSHNPPartialParams partial) {
     AtSignLogger logger = AtSignLogger(' SSHNPParams ');
@@ -121,70 +106,27 @@ class SSHNPParams {
     );
   }
 
-  factory SSHNPParams.fromJson(String json) => SSHNPParams.fromPartial(SSHNPPartialParams.fromJson(json));
-
-  factory SSHNPParams.fromConfigFile(String fileName) {
-    return SSHNPParams.fromPartial(SSHNPPartialParams.fromConfig(fileName));
-  }
-
-  static Future<Iterable<String>> listFiles({String? directory}) async {
-    var fileNames = <String>{};
-
-    var homeDirectory = getHomeDirectory(throwIfNull: true)!;
-    directory ??= getDefaultSshnpConfigDirectory(homeDirectory);
-    var files = Directory(directory).list();
-
-    await files.forEach((file) {
-      if (file is! File) return;
-      if (path.extension(file.path) != '.env') return;
-      if (path.basenameWithoutExtension(file.path).isEmpty) return; // ignore '.env' file - empty profileName
-      fileNames.add(_fileToProfileName(file.path));
-      try {
-        var p = SSHNPParams.fromConfigFile(file.path);
-        fileNames.add(p.profileName!);
-      } catch (e) {
-        stderr.writeln('Error reading config file: ${file.path}');
-        stderr.writeln(e);
-      }
-    });
-    return fileNames;
-  }
-
-  static Future<SSHNPParams> fromFile(String profileName, {String? directory}) async {
-    var fileName = getFileName(profileName, directory: directory);
-    return SSHNPParams.fromConfigFile(fileName);
-  }
-
-  static Future<bool> fileExists(String profileName, {String? directory}) {
-    var fileName = getFileName(profileName, directory: directory);
-    return File(fileName).exists();
-  }
-
-  static String getFileName(String profileName, {String? directory, bool replaceSpaces = true}) {
-    var fileName = profileName.replaceAll(' ', '_');
-    return path.join(
-      directory ?? getDefaultSshnpConfigDirectory(getHomeDirectory(throwIfNull: true)!),
-      '$fileName.env',
+  factory SSHNPParams.merge(SSHNPParams params1, [SSHNPPartialParams? params2]) {
+    params2 ??= SSHNPPartialParams.empty();
+    return SSHNPParams(
+      profileName: params2.profileName ?? params1.profileName,
+      clientAtSign: params2.clientAtSign ?? params1.clientAtSign,
+      sshnpdAtSign: params2.sshnpdAtSign ?? params1.sshnpdAtSign,
+      host: params2.host ?? params1.host,
+      device: params2.device ?? params1.device,
+      port: params2.port ?? params1.port,
+      localPort: params2.localPort ?? params1.localPort,
+      atKeysFilePath: params2.atKeysFilePath ?? params1.atKeysFilePath,
+      sendSshPublicKey: params2.sendSshPublicKey ?? params1.sendSshPublicKey,
+      localSshOptions: params2.localSshOptions ?? params1.localSshOptions,
+      rsa: params2.rsa ?? params1.rsa,
+      remoteUsername: params2.remoteUsername ?? params1.remoteUsername,
+      verbose: params2.verbose ?? params1.verbose,
+      rootDomain: params2.rootDomain ?? params1.rootDomain,
+      localSshdPort: params2.localSshdPort ?? params1.localSshdPort,
+      listDevices: params2.listDevices ?? params1.listDevices,
+      legacyDaemon: params2.legacyDaemon ?? params1.legacyDaemon,
     );
-  }
-
-  Future<File> toFile({String? directory, bool overwrite = false}) async {
-    if (profileName == null || profileName!.isEmpty) {
-      throw Exception('profileName is null or empty');
-    }
-
-    var fileName = getFileName(profileName!, directory: directory);
-    var file = File(fileName);
-
-    var exists = await file.exists();
-
-    if (exists && !overwrite) {
-      throw Exception('Failed to write config file: ${file.path} already exists');
-    }
-
-    // FileMode.write will create the file if it does not exist
-    // and overwrite existing files if it does exist
-    return file.writeAsString(toConfig(), mode: FileMode.write);
   }
 
   Future<FileSystemEntity> deleteFile({String? directory}) async {
@@ -224,10 +166,6 @@ class SSHNPParams {
     };
   }
 
-  String toJson() {
-    return jsonEncode(toArgs());
-  }
-
   String toConfig() {
     var lines = <String>[];
     for (var entry in toArgs().entries) {
@@ -242,12 +180,79 @@ class SSHNPParams {
     }
     return lines.join('\n');
   }
+
+  Future<File> toFile({String? directory, bool overwrite = false}) async {
+    if (profileName == null || profileName!.isEmpty) {
+      throw Exception('profileName is null or empty');
+    }
+
+    var fileName = getFileName(profileName!, directory: directory);
+    var file = File(fileName);
+
+    var exists = await file.exists();
+
+    if (exists && !overwrite) {
+      throw Exception('Failed to write config file: ${file.path} already exists');
+    }
+
+    // FileMode.write will create the file if it does not exist
+    // and overwrite existing files if it does exist
+    return file.writeAsString(toConfig(), mode: FileMode.write);
+  }
+
+  String toJson() {
+    return jsonEncode(toArgs());
+  }
+
+  static Future<bool> fileExists(String profileName, {String? directory}) {
+    var fileName = getFileName(profileName, directory: directory);
+    return File(fileName).exists();
+  }
+
+  static Future<SSHNPParams> fromFile(String profileName, {String? directory}) async {
+    var fileName = getFileName(profileName, directory: directory);
+    return SSHNPParams.fromConfig(fileName);
+  }
+
+  static String getFileName(String profileName, {String? directory, bool replaceSpaces = true}) {
+    var fileName = profileName.replaceAll(' ', '_');
+    return path.join(
+      directory ?? getDefaultSshnpConfigDirectory(getHomeDirectory(throwIfNull: true)!),
+      '$fileName.env',
+    );
+  }
+
+  static Future<Iterable<String>> listFiles({String? directory}) async {
+    var fileNames = <String>{};
+
+    var homeDirectory = getHomeDirectory(throwIfNull: true)!;
+    directory ??= getDefaultSshnpConfigDirectory(homeDirectory);
+    var files = Directory(directory).list();
+
+    await files.forEach((file) {
+      if (file is! File) return;
+      if (path.extension(file.path) != '.env') return;
+      if (path.basenameWithoutExtension(file.path).isEmpty) return; // ignore '.env' file - empty profileName
+      fileNames.add(_fileToProfileName(file.path));
+      try {
+        var p = SSHNPParams.fromConfig(file.path);
+        fileNames.add(p.profileName!);
+      } catch (e) {
+        stderr.writeln('Error reading config file: ${file.path}');
+        stderr.writeln(e);
+      }
+    });
+    return fileNames;
+  }
 }
 
 /// A class which contains a subset of the SSHNPParams
 /// This may be used when part of the params come from separate sources
 /// e.g. default values from a config file and the rest from the command line
 class SSHNPPartialParams {
+  // Non param variables
+  static final ArgParser parser = _createArgParser();
+
   /// Main Params
   final String? profileName;
   final String? clientAtSign;
@@ -264,14 +269,12 @@ class SSHNPPartialParams {
   final String? remoteUsername;
   final bool? verbose;
   final String? rootDomain;
+
   final bool? legacyDaemon;
 
   /// Special Params
   // N.B. config file is a meta param and doesn't need to be included
   final bool? listDevices;
-
-  // Non param variables
-  static final ArgParser parser = _createArgParser();
 
   SSHNPPartialParams({
     this.profileName,
@@ -297,62 +300,6 @@ class SSHNPPartialParams {
     return SSHNPPartialParams();
   }
 
-  /// Merge two SSHNPPartialParams objects together
-  /// Params in params2 take precedence over params1
-  /// - localSshOptions are concatenated together as (params1 + params2)
-  factory SSHNPPartialParams.merge(SSHNPPartialParams params1, [SSHNPPartialParams? params2]) {
-    params2 ??= SSHNPPartialParams.empty();
-    return SSHNPPartialParams(
-      profileName: params2.profileName ?? params1.profileName,
-      clientAtSign: params2.clientAtSign ?? params1.clientAtSign,
-      sshnpdAtSign: params2.sshnpdAtSign ?? params1.sshnpdAtSign,
-      host: params2.host ?? params1.host,
-      device: params2.device ?? params1.device,
-      port: params2.port ?? params1.port,
-      localPort: params2.localPort ?? params1.localPort,
-      atKeysFilePath: params2.atKeysFilePath ?? params1.atKeysFilePath,
-      sendSshPublicKey: params2.sendSshPublicKey ?? params1.sendSshPublicKey,
-      localSshOptions: params2.localSshOptions ?? params1.localSshOptions,
-      rsa: params2.rsa ?? params1.rsa,
-      remoteUsername: params2.remoteUsername ?? params1.remoteUsername,
-      verbose: params2.verbose ?? params1.verbose,
-      rootDomain: params2.rootDomain ?? params1.rootDomain,
-      localSshdPort: params2.localSshdPort ?? params1.localSshdPort,
-      listDevices: params2.listDevices ?? params1.listDevices,
-      legacyDaemon: params2.legacyDaemon ?? params1.legacyDaemon,
-    );
-  }
-
-  factory SSHNPPartialParams.fromArgMap(Map<String, dynamic> args) {
-    return SSHNPPartialParams(
-      profileName: args['profile-name'],
-      clientAtSign: args['from'],
-      sshnpdAtSign: args['to'],
-      host: args['host'],
-      device: args['device'],
-      port: args['port'],
-      localPort: args['local-port'],
-      atKeysFilePath: args['key-file'],
-      sendSshPublicKey: args['ssh-public-key'],
-      localSshOptions: args['local-ssh-options'] ?? SSHNP.defaultLocalSshOptions,
-      rsa: args['rsa'],
-      remoteUsername: args['remote-user-name'],
-      verbose: args['verbose'],
-      rootDomain: args['root-domain'],
-      localSshdPort: args['local-sshd-port'],
-      listDevices: args['list-devices'] ?? SSHNP.defaultListDevices,
-      legacyDaemon: args['legacy-daemon'],
-    );
-  }
-
-  factory SSHNPPartialParams.fromJson(String json) => SSHNPPartialParams.fromArgMap(jsonDecode(json));
-
-  factory SSHNPPartialParams.fromConfig(String fileName) {
-    var args = _parseConfigFile(fileName);
-    args['profile-name'] = _fileToProfileName(fileName);
-    return SSHNPPartialParams.fromArgMap(args);
-  }
-
   /// Parses args from command line
   /// first merges from a config file if provided via --config-file
   factory SSHNPPartialParams.fromArgs(List<String> args) {
@@ -376,7 +323,63 @@ class SSHNPPartialParams {
 
     return SSHNPPartialParams.merge(
       params,
-      SSHNPPartialParams.fromArgMap(parsedArgsMap),
+      SSHNPPartialParams.fromMap(parsedArgsMap),
+    );
+  }
+
+  factory SSHNPPartialParams.fromConfig(String fileName) {
+    var args = _parseConfigFile(fileName);
+    args['profile-name'] = _fileToProfileName(fileName);
+    return SSHNPPartialParams.fromMap(args);
+  }
+
+  factory SSHNPPartialParams.fromJson(String json) => SSHNPPartialParams.fromMap(jsonDecode(json));
+
+  factory SSHNPPartialParams.fromMap(Map<String, dynamic> args) {
+    return SSHNPPartialParams(
+      profileName: args['profile-name'],
+      clientAtSign: args['from'],
+      sshnpdAtSign: args['to'],
+      host: args['host'],
+      device: args['device'],
+      port: args['port'],
+      localPort: args['local-port'],
+      atKeysFilePath: args['key-file'],
+      sendSshPublicKey: args['ssh-public-key'],
+      localSshOptions: args['local-ssh-options'] ?? SSHNP.defaultLocalSshOptions,
+      rsa: args['rsa'],
+      remoteUsername: args['remote-user-name'],
+      verbose: args['verbose'],
+      rootDomain: args['root-domain'],
+      localSshdPort: args['local-sshd-port'],
+      listDevices: args['list-devices'] ?? SSHNP.defaultListDevices,
+      legacyDaemon: args['legacy-daemon'],
+    );
+  }
+
+  /// Merge two SSHNPPartialParams objects together
+  /// Params in params2 take precedence over params1
+  /// - localSshOptions are concatenated together as (params1 + params2)
+  factory SSHNPPartialParams.merge(SSHNPPartialParams params1, [SSHNPPartialParams? params2]) {
+    params2 ??= SSHNPPartialParams.empty();
+    return SSHNPPartialParams(
+      profileName: params2.profileName ?? params1.profileName,
+      clientAtSign: params2.clientAtSign ?? params1.clientAtSign,
+      sshnpdAtSign: params2.sshnpdAtSign ?? params1.sshnpdAtSign,
+      host: params2.host ?? params1.host,
+      device: params2.device ?? params1.device,
+      port: params2.port ?? params1.port,
+      localPort: params2.localPort ?? params1.localPort,
+      atKeysFilePath: params2.atKeysFilePath ?? params1.atKeysFilePath,
+      sendSshPublicKey: params2.sendSshPublicKey ?? params1.sendSshPublicKey,
+      localSshOptions: params2.localSshOptions ?? params1.localSshOptions,
+      rsa: params2.rsa ?? params1.rsa,
+      remoteUsername: params2.remoteUsername ?? params1.remoteUsername,
+      verbose: params2.verbose ?? params1.verbose,
+      rootDomain: params2.rootDomain ?? params1.rootDomain,
+      localSshdPort: params2.localSshdPort ?? params1.localSshdPort,
+      listDevices: params2.listDevices ?? params1.listDevices,
+      legacyDaemon: params2.legacyDaemon ?? params1.legacyDaemon,
     );
   }
 
@@ -488,5 +491,3 @@ class SSHNPPartialParams {
     }
   }
 }
-
-String _fileToProfileName(String fileName) => path.basenameWithoutExtension(fileName).replaceAll('_', ' ');
