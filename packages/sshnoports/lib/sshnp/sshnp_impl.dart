@@ -525,31 +525,83 @@ class SSHNPImpl implements SSHNP {
       return (false, 'Failed to authenticate as $username@$host:$port : $e');
     }
 
-    /// Do the port forwarding for sshd
-    final serverSocket = await ServerSocket.bind('localhost', localPort);
-
     int counter = 0;
 
-    serverSocket.listen((socket) async {
-      counter++;
-      final forward = await client.forwardLocal('localhost', remoteSshdPort);
-      unawaited(
-        forward.stream.cast<List<int>>().pipe(socket).whenComplete(
-          () async {
-            counter--;
-          },
-        ),
-      );
-      unawaited(socket.pipe(forward.sink));
-    }, onError: (Object error) {
-      counter = 0;
-    }, onDone: () {
-      counter = 0;
-    });
+    Future<void> startForwarding(
+        {required int fLocalPort,
+        required String fRemoteHost,
+        required int fRemotePort}) async {
+      logger.info('Starting port forwarding'
+          ' from port $fLocalPort on localhost'
+          ' to $fRemoteHost:$fRemotePort on remote side');
 
-    logger.info('Started port forwarding'
-        ' from localhost:$localPort'
-        ' to port $remoteSshdPort on remote host');
+      /// Do the port forwarding for sshd
+      final serverSocket = await ServerSocket.bind('localhost', fLocalPort);
+
+      serverSocket.listen((socket) async {
+        counter++;
+        final forward = await client.forwardLocal(fRemoteHost, fRemotePort);
+        unawaited(
+          forward.stream.cast<List<int>>().pipe(socket).whenComplete(
+            () async {
+              counter--;
+            },
+          ),
+        );
+        unawaited(socket.pipe(forward.sink));
+      }, onError: (Object error) {
+        counter = 0;
+      }, onDone: () {
+        counter = 0;
+      });
+    }
+
+    // Start local forwarding to the remote sshd
+    await startForwarding(
+        fLocalPort: localPort,
+        fRemoteHost: 'localhost',
+        fRemotePort: remoteSshdPort);
+
+    if (addForwardsToTunnel) {
+      var optionsSplitBySpace = localSshOptions.join(' ').split(' ');
+      logger.info('addForwardsToTunnel is true;'
+          ' localSshOptions split by space is $optionsSplitBySpace');
+      // parse the localSshOptions, extract all of the local port forwarding
+      // directives and act on all of them
+      var lsoIter = optionsSplitBySpace.iterator;
+      while (lsoIter.moveNext()) {
+        if (lsoIter.current == '-L') {
+          // we expect the args next
+          bool hasArgs = lsoIter.moveNext();
+          if (!hasArgs) {
+            logger.warning('localSshOptions has -L with no args');
+            continue;
+          }
+          String argString = lsoIter.current;
+          // We expect args like $localPort:$remoteHost:$remotePort
+          List<String> args = argString.split(':');
+          if (args.length != 3) {
+            logger.warning('localSshOptions has -L with bad args $argString');
+            continue;
+          }
+          int? fLocalPort = int.tryParse(args[0]);
+          String fRemoteHost = args[1];
+          int? fRemotePort = int.tryParse(args[2]);
+          if (fLocalPort == null ||
+              fRemoteHost.isEmpty ||
+              fRemotePort == null) {
+            logger.warning('localSshOptions has -L with bad args $argString');
+            continue;
+          }
+
+          // Start the forwarding
+          await startForwarding(
+              fLocalPort: fLocalPort,
+              fRemoteHost: fRemoteHost,
+              fRemotePort: fRemotePort);
+        }
+      }
+    }
 
     /// Set up timer to check to see if all connections are down
     logger.info('ssh session will terminate after $idleTimeout seconds'
