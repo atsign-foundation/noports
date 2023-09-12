@@ -577,7 +577,7 @@ class SSHNPImpl implements SSHNP {
         mode: FileMode.write, flush: true);
     await Process.run('chmod', ['go-rwx', tmpFileName]);
 
-    List<String> args = '$remoteUsername@$host'
+    String argsString = '$remoteUsername@$host'
             ' -p $_sshrvdPort'
             ' -i $tmpFileName'
             ' -L $localPort:localhost:$remoteSshdPort'
@@ -588,8 +588,14 @@ class SSHNPImpl implements SSHNP {
             ' -o BatchMode=yes'
             ' -o ExitOnForwardFailure=yes'
             ' -f' // fork after authentication - this is important
-            ' sleep 15'
-        .split(' ');
+    ;
+    if (addForwardsToTunnel) {
+      argsString += ' $localSshOptions';
+    }
+    argsString += ' sleep 15';
+
+    List<String> args = argsString.split(' ');
+
     logger.info('$sessionId | Executing /usr/bin/ssh ${args.join(' ')}');
 
     // Because of the options we are using, we can wait for this process
