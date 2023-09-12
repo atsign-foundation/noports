@@ -40,8 +40,7 @@ class SSHCommand extends SSHNPResult {
             : []);
 
   static bool shouldIncludePrivateKey(String? privateKeyFileName) =>
-      privateKeyFileName != null &&
-      privateKeyFileName.isNotEmpty;
+      privateKeyFileName != null && privateKeyFileName.isNotEmpty;
 
   @override
   String toString() {

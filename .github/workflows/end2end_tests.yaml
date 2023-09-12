@@ -500,6 +500,7 @@ jobs:
 
       - name: Logs
         if: always()
+        continue-on-error: true # failing this step does not fail the entire job
         working-directory: tests/end2end_tests/tests
         run: |
           docker compose ps -a
@@ -515,6 +516,7 @@ jobs:
         # Always tear down outside of the act environment
         # but don't tear down on failure in the act environment
         if: ${{ !env.ACT }} || success()
+        continue-on-error: true # failing this step does not fail the entire job
         working-directory: tests/end2end_tests/tests
         run: |
           docker compose down
@@ -522,7 +524,8 @@ jobs:
   # Test suite 4
   # Use alternative port on local
   e2e_alternate_port_test:
-    if: ${{ github.event_name == 'push' || github.event_name == 'pull_request' }}
+    # Don't run on forks (cause no secrets), don't run if dependebot (cause no secrets)
+    if: ${{ github.event.pull_request.head.repo.fork == false && github.actor != 'dependabot[bot]'}}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3df4ab11eba7bda6032a0b82a6bb43b11571feac # v4.0.0

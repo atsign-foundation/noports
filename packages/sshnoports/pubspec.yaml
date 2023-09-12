@@ -3,7 +3,7 @@ description: Encrypted/Secure control plane for ssh/d or other commands in the f
 
 # NOTE: If you update the version number here, you
 # must also update it in version.dart
-version: 3.4.1
+version: 4.0.0-rc.3
 
 homepage: https://docs.atsign.com/
 
@@ -11,6 +11,7 @@ environment:
   sdk: ">=3.0.0 <4.0.0"
 
 dependencies:
+  archive: ^3.3.8
   args: 2.4.2
   at_client: 3.0.64
   at_lookup: 3.0.40
