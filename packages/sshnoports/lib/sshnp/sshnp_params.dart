@@ -1,7 +1,5 @@
 part of 'sshnp.dart';
 
-String _fileToProfileName(String fileName) => path.basenameWithoutExtension(fileName).replaceAll('_', ' ');
-
 class SSHNPParams {
   /// Required Arguments
   /// These arguments do not have fallback values and must be provided.
@@ -134,7 +132,7 @@ class SSHNPParams {
       throw Exception('profileName is null or empty');
     }
 
-    var fileName = getFileName(profileName!, directory: directory);
+    var fileName = profileNameToConfigFileName(profileName!, directory: directory);
     var file = File(fileName);
 
     var exists = await file.exists();
@@ -186,7 +184,7 @@ class SSHNPParams {
       throw Exception('profileName is null or empty');
     }
 
-    var fileName = getFileName(profileName!, directory: directory);
+    var fileName = profileNameToConfigFileName(profileName!, directory: directory);
     var file = File(fileName);
 
     var exists = await file.exists();
@@ -205,21 +203,13 @@ class SSHNPParams {
   }
 
   static Future<bool> fileExists(String profileName, {String? directory}) {
-    var fileName = getFileName(profileName, directory: directory);
+    var fileName = profileNameToConfigFileName(profileName, directory: directory);
     return File(fileName).exists();
   }
 
   static Future<SSHNPParams> fromFile(String profileName, {String? directory}) async {
-    var fileName = getFileName(profileName, directory: directory);
+    var fileName = profileNameToConfigFileName(profileName, directory: directory);
     return SSHNPParams.fromConfig(fileName);
-  }
-
-  static String getFileName(String profileName, {String? directory, bool replaceSpaces = true}) {
-    var fileName = profileName.replaceAll(' ', '_');
-    return path.join(
-      directory ?? getDefaultSshnpConfigDirectory(getHomeDirectory(throwIfNull: true)!),
-      '$fileName.env',
-    );
   }
 
   static Future<Iterable<String>> listFiles({String? directory}) async {
@@ -233,7 +223,7 @@ class SSHNPParams {
       if (file is! File) return;
       if (path.extension(file.path) != '.env') return;
       if (path.basenameWithoutExtension(file.path).isEmpty) return; // ignore '.env' file - empty profileName
-      fileNames.add(_fileToProfileName(file.path));
+      fileNames.add(configFileNameToProfileName(file.path));
       try {
         var p = SSHNPParams.fromConfig(file.path);
         fileNames.add(p.profileName!);
@@ -329,7 +319,7 @@ class SSHNPPartialParams {
 
   factory SSHNPPartialParams.fromConfig(String fileName) {
     var args = _parseConfigFile(fileName);
-    args['profile-name'] = _fileToProfileName(fileName);
+    args['profile-name'] = configFileNameToProfileName(fileName);
     return SSHNPPartialParams.fromMap(args);
   }
 

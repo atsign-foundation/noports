@@ -44,7 +44,7 @@ class ConfigFileSource implements ConfigSource {
 
   @override
   Future<void> update(SSHNPParams params) async {
-    params.toFile(directory: directory, overwrite: true);
+    await params.toFile(directory: directory, overwrite: true);
   }
 
   @override
