@@ -71,6 +71,7 @@ class ConfigListController extends AutoDisposeAsyncNotifier<Iterable<String>> {
 class ConfigFamilyController extends AutoDisposeFamilyAsyncNotifier<SSHNPParams, String> {
   @override
   Future<SSHNPParams> build(String arg) async {
+    if (arg.isEmpty) return SSHNPParams.empty();
     return ConfigKeyRepository.getParams(arg, atClient: AtClientManager.getInstance().atClient);
   }
 
