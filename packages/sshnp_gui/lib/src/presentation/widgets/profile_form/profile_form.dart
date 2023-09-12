@@ -5,7 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:sshnoports/sshnp/sshnp.dart';
 import 'package:sshnp_gui/src/controllers/navigation_rail_controller.dart';
-import 'package:sshnp_gui/src/controllers/sshnp_params_controller.dart';
+import 'package:sshnp_gui/src/controllers/config_controller.dart';
 import 'package:sshnp_gui/src/presentation/widgets/profile_form/custom_text_form_field.dart';
 import 'package:sshnp_gui/src/controllers/navigation_controller.dart';
 import 'package:sshnp_gui/src/utility/sizes.dart';

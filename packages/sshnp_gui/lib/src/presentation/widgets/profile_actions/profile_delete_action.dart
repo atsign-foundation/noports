@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sshnoports/sshnp/sshnp.dart';
-import 'package:sshnp_gui/src/controllers/sshnp_params_controller.dart';
+import 'package:sshnp_gui/src/controllers/config_controller.dart';
 import 'package:sshnp_gui/src/presentation/widgets/profile_actions/profile_action_button.dart';
 import 'package:sshnp_gui/src/utility/sizes.dart';
 
