@@ -20,7 +20,7 @@ class ProfileForm extends ConsumerStatefulWidget {
 
 class _ProfileFormState extends ConsumerState<ProfileForm> {
   final GlobalKey<FormState> _formkey = GlobalKey<FormState>();
-  late CurrentSSHNPParamsModel currentProfile;
+  late CurrentConfigState currentProfile;
   SSHNPPartialParams newConfig = SSHNPPartialParams.empty();
   @override
   void initState() {
@@ -30,8 +30,7 @@ class _ProfileFormState extends ConsumerState<ProfileForm> {
   void onSubmit(SSHNPParams oldConfig, SSHNPPartialParams newConfig) async {
     if (_formkey.currentState!.validate()) {
       _formkey.currentState!.save();
-      final controller =
-          ref.read(sshnpParamsFamilyController(newConfig.profileName ?? oldConfig.profileName!).notifier);
+      final controller = ref.read(configFamilyController(newConfig.profileName ?? oldConfig.profileName!).notifier);
       bool overwrite = currentProfile.configFileWriteState == ConfigFileWriteState.update;
       bool rename = newConfig.profileName.isNotNull &&
           newConfig.profileName!.isNotEmpty &&
@@ -41,7 +40,7 @@ class _ProfileFormState extends ConsumerState<ProfileForm> {
       SSHNPParams config = SSHNPParams.merge(oldConfig, newConfig);
       if (rename) {
         // delete old config file and write the new one
-        await ref.read(sshnpParamsFamilyController(oldConfig.profileName!).notifier).delete();
+        await ref.read(configFamilyController(oldConfig.profileName!).notifier).delete();
         await controller.create(config);
       } else if (overwrite) {
         // overwrite the existing file
@@ -60,9 +59,9 @@ class _ProfileFormState extends ConsumerState<ProfileForm> {
   @override
   Widget build(BuildContext context) {
     final strings = AppLocalizations.of(context)!;
-    currentProfile = ref.watch(sshnpParamsController);
+    currentProfile = ref.watch(currentConfigController);
 
-    final asyncOldConfig = ref.watch(sshnpParamsFamilyController(currentProfile.profileName));
+    final asyncOldConfig = ref.watch(configFamilyController(currentProfile.profileName));
     return asyncOldConfig.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (error, stack) => Center(child: Text(error.toString())),

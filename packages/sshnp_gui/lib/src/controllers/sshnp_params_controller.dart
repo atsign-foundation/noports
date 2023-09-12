@@ -6,48 +6,46 @@ import 'package:sshnoports/sshnp/sshnp.dart';
 
 enum ConfigFileWriteState { create, update }
 
-
-/// A provider that exposes the [SSHNPParamsController] to the app.
-final sshnpParamsController = AutoDisposeNotifierProvider<SSHNPParamsController, CurrentSSHNPParamsModel>(
-  SSHNPParamsController.new,
+/// A provider that exposes the [CurrentConfigController] to the app.
+final currentConfigController = AutoDisposeNotifierProvider<CurrentConfigController, CurrentConfigState>(
+  CurrentConfigController.new,
 );
 
-/// A provider that exposes the [SSHNPParamsListController] to the app.
-final sshnpParamsListController = AutoDisposeAsyncNotifierProvider<SSHNPParamsListController, Set<String>>(
-  SSHNPParamsListController.new,
+/// A provider that exposes the [ConfigListController] to the app.
+final configListController = AutoDisposeAsyncNotifierProvider<ConfigListController, Set<String>>(
+  ConfigListController.new,
 );
 
-/// A provider that exposes the [SSHNPParamsFamilyController] to the app.
-final sshnpParamsFamilyController =
-    AutoDisposeAsyncNotifierProviderFamily<SSHNPParamsFamilyController, SSHNPParams, String>(
-  SSHNPParamsFamilyController.new,
+/// A provider that exposes the [ConfigFamilyController] to the app.
+final configFamilyController = AutoDisposeAsyncNotifierProviderFamily<ConfigFamilyController, SSHNPParams, String>(
+  ConfigFamilyController.new,
 );
 
 /// Holder model for the current [SSHNPParams] being edited
-class CurrentSSHNPParamsModel {
+class CurrentConfigState {
   final String profileName;
   final ConfigFileWriteState configFileWriteState;
 
-  CurrentSSHNPParamsModel({required this.profileName, required this.configFileWriteState});
+  CurrentConfigState({required this.profileName, required this.configFileWriteState});
 }
 
 /// Controller for the current [SSHNPParams] being edited
-class SSHNPParamsController extends AutoDisposeNotifier<CurrentSSHNPParamsModel> {
+class CurrentConfigController extends AutoDisposeNotifier<CurrentConfigState> {
   @override
-  CurrentSSHNPParamsModel build() {
-    return CurrentSSHNPParamsModel(
+  CurrentConfigState build() {
+    return CurrentConfigState(
       profileName: '',
       configFileWriteState: ConfigFileWriteState.create,
     );
   }
 
-  void setState(CurrentSSHNPParamsModel model) {
+  void setState(CurrentConfigState model) {
     state = model;
   }
 }
 
 /// Controller for the list of all profileNames for each config file
-class SSHNPParamsListController extends AutoDisposeAsyncNotifier<Set<String>> {
+class ConfigListController extends AutoDisposeAsyncNotifier<Set<String>> {
   @override
   Future<Set<String>> build() async {
     return (await SSHNPParams.listFiles()).toSet();
@@ -68,7 +66,7 @@ class SSHNPParamsListController extends AutoDisposeAsyncNotifier<Set<String>> {
 }
 
 /// Controller for the family of [SSHNPParams] controllers
-class SSHNPParamsFamilyController extends AutoDisposeFamilyAsyncNotifier<SSHNPParams, String> {
+class ConfigFamilyController extends AutoDisposeFamilyAsyncNotifier<SSHNPParams, String> {
   @override
   Future<SSHNPParams> build(String arg) async {
     return (await SSHNPParams.fileExists(arg))
@@ -87,7 +85,7 @@ class SSHNPParamsFamilyController extends AutoDisposeFamilyAsyncNotifier<SSHNPPa
   Future<void> create(SSHNPParams params) async {
     await params.toFile();
     state = AsyncValue.data(params);
-    ref.read(sshnpParamsListController.notifier).add(params.profileName!);
+    ref.read(configListController.notifier).add(params.profileName!);
   }
 
   Future<void> edit(SSHNPParams params) async {
@@ -98,6 +96,6 @@ class SSHNPParamsFamilyController extends AutoDisposeFamilyAsyncNotifier<SSHNPPa
   Future<void> delete() async {
     await state.value?.deleteFile();
     state = const AsyncError('File deleted', StackTrace.empty);
-    ref.read(sshnpParamsListController.notifier).remove(state.value!.profileName!);
+    ref.read(configListController.notifier).remove(state.value!.profileName!);
   }
 }

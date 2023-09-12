@@ -22,7 +22,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     // * Getting the AtClientManager instance to use below
 
     final strings = AppLocalizations.of(context)!;
-    final profileNames = ref.watch(sshnpParamsListController);
+    final profileNames = ref.watch(configListController);
 
     return Scaffold(
       body: SafeArea(

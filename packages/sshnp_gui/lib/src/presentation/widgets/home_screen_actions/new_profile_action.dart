@@ -14,8 +14,8 @@ class NewProfileAction extends ConsumerStatefulWidget {
 class _NewProfileActionState extends ConsumerState<NewProfileAction> {
   void onPressed() {
     // Change value to update to trigger the update functionality on the new connection form.
-    ref.watch(sshnpParamsController.notifier).setState(
-          CurrentSSHNPParamsModel(
+    ref.watch(currentConfigController.notifier).setState(
+          CurrentConfigState(
             profileName: '',
             configFileWriteState: ConfigFileWriteState.create,
           ),

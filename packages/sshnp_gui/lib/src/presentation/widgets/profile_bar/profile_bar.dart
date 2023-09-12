@@ -15,7 +15,7 @@ class ProfileBar extends ConsumerStatefulWidget {
 class _ProfileBarState extends ConsumerState<ProfileBar> {
   @override
   Widget build(BuildContext context) {
-    final controller = ref.watch(sshnpParamsFamilyController(widget.profileName));
+    final controller = ref.watch(configFamilyController(widget.profileName));
     return controller.when(
       error: (error, stackTrace) => Container(),
       loading: () => const LinearProgressIndicator(),
