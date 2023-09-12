@@ -15,6 +15,8 @@ import 'package:sshnoports/sshrv/sshrv.dart';
 import 'package:sshnoports/version.dart';
 import 'package:uuid/uuid.dart';
 
+import 'package:sshnoports/common/defaults.dart' as defaults;
+
 part 'sshnpd_impl.dart';
 part 'sshnpd_params.dart';
 
@@ -65,17 +67,36 @@ abstract class SSHNPD {
   @visibleForTesting
   bool initialized = false;
 
-  factory SSHNPD({
-    // final fields
-    required AtClient atClient,
-    required String username,
-    required String homeDirectory,
-    required String device,
-    required String managerAtsign,
-    required SupportedSshClient sshClient,
-    required bool makeDeviceInfoVisible,
-    required bool addSshPublicKeys,
-  }) {
+  /// Port that local sshd is listening on localhost interface
+  /// Default set to [defaultLocalSshdPort]
+  abstract final int localSshdPort;
+
+  /// Permissions which are added to the authorized_keys file when adding
+  /// a newly-generated ephemeral public key.
+  /// e.g. PermitOpen="host-1:3389",PermitOpen="localhost:80"
+  ///
+  /// Note that PermitOpen="localhost:localSshdPort" will always be added
+  abstract final String ephemeralPermissions;
+
+  /// When false, we generate [sshPublicKey] and [sshPrivateKey] using ed25519.
+  /// When true, we generate [sshPublicKey] and [sshPrivateKey] using RSA.
+  /// Defaults to false
+  abstract final bool rsa;
+
+  factory SSHNPD(
+      {
+      // final fields
+      required AtClient atClient,
+      required String username,
+      required String homeDirectory,
+      required String device,
+      required String managerAtsign,
+      required SupportedSshClient sshClient,
+      required bool makeDeviceInfoVisible,
+      required bool addSshPublicKeys,
+      required int localSshdPort,
+      required String ephemeralPermissions,
+      required bool rsa}) {
     return SSHNPDImpl(
         atClient: atClient,
         username: username,
@@ -84,7 +105,10 @@ abstract class SSHNPD {
         managerAtsign: managerAtsign,
         sshClient: sshClient,
         makeDeviceInfoVisible: makeDeviceInfoVisible,
-        addSshPublicKeys: addSshPublicKeys);
+        addSshPublicKeys: addSshPublicKeys,
+        localSshdPort: localSshdPort,
+        ephemeralPermissions: ephemeralPermissions,
+        rsa: rsa);
   }
 
   static Future<SSHNPD> fromCommandLineArgs(List<String> args) async {
