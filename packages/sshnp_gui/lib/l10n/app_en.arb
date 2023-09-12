@@ -12,6 +12,7 @@
     "connect" : "Connect",
     "contactUs" : "Contact Us",
     "copiedToClipboard": "Copied to Clipboard",
+    "corruptedProfile": "Status: profile is corrupted",
     "currentConnections" : "Current Connections",
     "deleteButton" : "Delete",
     "dest" : "Dest.",

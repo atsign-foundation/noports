@@ -25,6 +25,9 @@ class SSHNPArg {
   final dynamic defaultsTo;
   final ArgType type;
   final Iterable<String>? allowed;
+  final bool commandLineOnly;
+  final List<String>? aliases;
+  final bool negatable;
 
   const SSHNPArg({
     required this.name,
@@ -35,6 +38,9 @@ class SSHNPArg {
     this.defaultsTo,
     this.type = ArgType.string,
     this.allowed,
+    this.commandLineOnly = false,
+    this.aliases,
+    this.negatable = true,
   });
 
   String get bashName => name.replaceAll('-', '_').toUpperCase();
@@ -58,87 +64,88 @@ class SSHNPArg {
   }
 
   static List<SSHNPArg> args = [
-    SSHNPArg(
+    const SSHNPArg(
       name: 'key-file',
       abbr: 'k',
       help: 'Sending atSign\'s atKeys file if not in ~/.atsign/keys/',
     ),
-    SSHNPArg(
+    const SSHNPArg(
       name: 'from',
       abbr: 'f',
       help: 'Sending (a.k.a. client) atSign',
       mandatory: true,
     ),
-    SSHNPArg(
+    const SSHNPArg(
       name: 'to',
       abbr: 't',
       help: 'Receiving device atSign',
       mandatory: true,
     ),
-    SSHNPArg(
+    const SSHNPArg(
       name: 'device',
       abbr: 'd',
       help: 'Receiving device name',
       defaultsTo: SSHNP.defaultDevice,
     ),
-    SSHNPArg(
+    const SSHNPArg(
       name: 'host',
       abbr: 'h',
       help: 'atSign of sshrvd daemon or FQDN/IP address to connect back to',
       mandatory: true,
     ),
-    SSHNPArg(
+    const SSHNPArg(
       name: 'port',
       abbr: 'p',
       help: 'TCP port to connect back to (only required if --host specified a FQDN/IP)',
       defaultsTo: SSHNP.defaultPort,
       type: ArgType.integer,
     ),
-    SSHNPArg(
-        name: 'local-port',
-        abbr: 'l',
-        help: 'Reverse ssh port to listen on, on your local machine, by sshnp default finds a spare port',
-        defaultsTo: SSHNP.defaultLocalPort,
-        type: ArgType.integer),
-    SSHNPArg(
+    const SSHNPArg(
+      name: 'local-port',
+      abbr: 'l',
+      help: 'Reverse ssh port to listen on, on your local machine, by sshnp default finds a spare port',
+      defaultsTo: SSHNP.defaultLocalPort,
+      type: ArgType.integer,
+    ),
+    const SSHNPArg(
       name: 'ssh-public-key',
       abbr: 's',
       help: 'Public key file from ~/.ssh to be appended to authorized_hosts on the remote device',
       defaultsTo: SSHNP.defaultSendSshPublicKey,
     ),
-    SSHNPArg(
+    const SSHNPArg(
       name: 'local-ssh-options',
       abbr: 'o',
       help: 'Add these commands to the local ssh command',
       format: ArgFormat.multiOption,
     ),
-    SSHNPArg(
+    const SSHNPArg(
       name: 'verbose',
       abbr: 'v',
       defaultsTo: defaultVerbose,
       help: 'More logging',
       format: ArgFormat.flag,
     ),
-    SSHNPArg(
+    const SSHNPArg(
       name: 'rsa',
       abbr: 'r',
       defaultsTo: defaultRsa,
       help: 'Use RSA 4096 keys rather than the default ED25519 keys',
       format: ArgFormat.flag,
     ),
-    SSHNPArg(
+    const SSHNPArg(
       name: 'remote-user-name',
       abbr: 'u',
       help: 'username to use in the ssh session on the remote host',
     ),
-    SSHNPArg(
+    const SSHNPArg(
       name: 'root-domain',
       help: 'atDirectory domain',
       defaultsTo: defaultRootDomain,
       mandatory: false,
       format: ArgFormat.option,
     ),
-    SSHNPArg(
+    const SSHNPArg(
       name: 'local-sshd-port',
       help: 'port on which sshd is listening locally on the client host',
       defaultsTo: defaultLocalSshdPort,
@@ -147,13 +154,13 @@ class SSHNPArg {
       format: ArgFormat.option,
       type: ArgType.integer,
     ),
-    SSHNPArg(
+    const SSHNPArg(
       name: 'legacy-daemon',
       defaultsTo: SSHNP.defaultLegacyDaemon,
       help: 'Request is to a legacy (< 3.5.0) noports daemon',
       format: ArgFormat.flag,
     ),
-    SSHNPArg(
+    const SSHNPArg(
       name: 'remote-sshd-port',
       help: 'port on which sshd is listening locally on the device host',
       defaultsTo: defaultRemoteSshdPort,
@@ -161,29 +168,44 @@ class SSHNPArg {
       format: ArgFormat.option,
       type: ArgType.integer,
     ),
-    SSHNPArg(
+    const SSHNPArg(
       name: 'idle-timeout',
-      help:
-          'number of seconds after which inactive ssh connections will be closed',
+      help: 'number of seconds after which inactive ssh connections will be closed',
       defaultsTo: defaultIdleTimeout,
       mandatory: false,
       format: ArgFormat.option,
       type: ArgType.integer,
+      commandLineOnly: true,
     ),
     SSHNPArg(
-        name: 'ssh-client',
-        help: 'What to use for outbound ssh connections',
-        defaultsTo: SupportedSshClient.hostSsh.cliArg,
-        mandatory: false,
-        format: ArgFormat.option,
-        type: ArgType.string,
-        allowed: SupportedSshClient.values.map((c) => c.cliArg).toList()),
-    SSHNPArg(
+      name: 'ssh-client',
+      help: 'What to use for outbound ssh connections',
+      defaultsTo: SupportedSshClient.hostSsh.cliArg,
+      mandatory: false,
+      format: ArgFormat.option,
+      type: ArgType.string,
+      allowed: SupportedSshClient.values.map((c) => c.cliArg).toList(),
+      commandLineOnly: true,
+    ),
+    const SSHNPArg(
       name: 'add-forwards-to-tunnel',
       defaultsTo: false,
       help: 'When true, any local forwarding directives provided in'
           '--local-ssh-options will be added to the initial tunnel ssh request',
       format: ArgFormat.flag,
+      commandLineOnly: true,
+    ),
+    const SSHNPArg(
+      name: 'config-file',
+      help: 'Read args from a config file\nMandatory args are not required if already supplied in the config file',
+      commandLineOnly: true,
+    ),
+    const SSHNPArg(
+      name: 'list-devices',
+      aliases: ['ls'],
+      negatable: false,
+      help: 'List available devices',
+      commandLineOnly: true,
     ),
   ];
 
@@ -194,13 +216,15 @@ class SSHNPArg {
 }
 
 ArgParser createArgParser({
-  bool withConfig = true,
+  bool isCommandLine = true,
   bool withDefaults = true,
-  bool withListDevices = true,
 }) {
   var parser = ArgParser();
   // Basic arguments
   for (SSHNPArg arg in SSHNPArg.args) {
+    if (arg.commandLineOnly && !isCommandLine) {
+      continue;
+    }
     switch (arg.format) {
       case ArgFormat.option:
         parser.addOption(
@@ -209,6 +233,8 @@ ArgParser createArgParser({
           mandatory: arg.mandatory,
           defaultsTo: withDefaults ? arg.defaultsTo?.toString() : null,
           help: arg.help,
+          allowed: arg.allowed,
+          aliases: arg.aliases ?? const [],
         );
         break;
       case ArgFormat.multiOption:
@@ -225,23 +251,10 @@ ArgParser createArgParser({
           abbr: arg.abbr,
           defaultsTo: withDefaults ? arg.defaultsTo as bool? : null,
           help: arg.help,
+          negatable: arg.negatable,
         );
         break;
     }
-  }
-  if (withConfig) {
-    parser.addOption(
-      'config-file',
-      help: 'Read args from a config file\nMandatory args are not required if already supplied in the config file',
-    );
-  }
-  if (withListDevices) {
-    parser.addFlag(
-      'list-devices',
-      aliases: ['ls'],
-      negatable: false,
-      help: 'List available devices',
-    );
   }
   return parser;
 }

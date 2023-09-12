@@ -80,7 +80,7 @@ class ConfigFamilyController extends AutoDisposeFamilyAsyncNotifier<SSHNPParams,
   }
 
   Future<void> deleteConfig() async {
-    await ConfigKeyRepository.deleteParams(state.value!, atClient: AtClientManager.getInstance().atClient);
-    ref.read(configListController.notifier).remove(state.value!.profileName!);
+    await ConfigKeyRepository.deleteParams(arg, atClient: AtClientManager.getInstance().atClient);
+    ref.read(configListController.notifier).remove(arg);
   }
 }

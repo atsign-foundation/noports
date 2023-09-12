@@ -23,13 +23,14 @@ class ConfigKeyRepository {
   }
 
   static Future<Iterable<String>> listProfiles(AtClient atClient) async {
-    var keys = await atClient.getAtKeys(regex: namespace);
+    var keys = await atClient.getAtKeys(regex: _configNamespace);
     return keys.map((e) => toProfileName(e));
   }
 
   static Future<SSHNPParams> getParams(String profileName,
       {required AtClient atClient, GetRequestOptions? options}) async {
     AtKey key = fromProfileName(profileName);
+    key.sharedBy = atClient.getCurrentAtSign()!;
     AtValue value = await atClient.get(key, getRequestOptions: options);
     if (value.value == null) return SSHNPParams.empty();
     return SSHNPParams.fromJson(value.value!);
@@ -37,12 +38,14 @@ class ConfigKeyRepository {
 
   static Future<void> putParams(SSHNPParams params, {required AtClient atClient, PutRequestOptions? options}) async {
     AtKey key = fromProfileName(params.profileName!);
+    key.sharedBy = atClient.getCurrentAtSign()!;
     await atClient.put(key, params.toJson(), putRequestOptions: options);
   }
 
-  static Future<void> deleteParams(SSHNPParams params,
+  static Future<void> deleteParams(String profileName,
       {required AtClient atClient, DeleteRequestOptions? options}) async {
-    AtKey key = fromProfileName(params.profileName!);
+    AtKey key = fromProfileName(profileName);
+    key.sharedBy = atClient.getCurrentAtSign()!;
     await atClient.delete(key, deleteRequestOptions: options);
   }
 }

@@ -13,7 +13,7 @@ class ProfileBarActions extends StatelessWidget {
         // ProfileRunAction(params),
         ProfileTerminalAction(params),
         ProfileEditAction(params),
-        ProfileDeleteAction(params),
+        ProfileDeleteAction(params.profileName!),
       ],
     );
   }

@@ -554,6 +554,7 @@ class SSHNPImpl implements SSHNP {
       }, onDone: () {
         counter = 0;
       });
+      return null;
     }
 
     // Start local forwarding to the remote sshd
