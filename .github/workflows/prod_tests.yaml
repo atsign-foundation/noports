@@ -2,11 +2,11 @@ name: prod_tests
 
 on:
   workflow_dispatch:
-  pull_request:
+  schedule:
+    - cron: "2 * * * *" # “At minute 2.” https://crontab.guru
+  pull_request: # temporary
     branches:
       - trunk
-  schedule:
-    - cron: "53 2 * * 1-5" # “At 02:53 on every day-of-week from Monday through Friday.” https://crontab.guru/#53_22_*_*_2,4
 
 env:
   SSHNP_ATSIGN: "@8incanteater"
@@ -18,7 +18,6 @@ env:
   SSHRVD_AM_ATSIGN: "@rv_am"
   SSHRVD_AP_ATSIGN: "@rv_ap"
   SSHRVD_EU_ATSIGN: "@rv_eu"
-  WAITING_TIME: 5
   DOCKER_COMPOSE_BUILD_CMD: "docker compose build"
   DOCKER_COMPOSE_UP_CMD: "docker compose up --abort-on-container-exit --timeout 900"
 
@@ -28,12 +27,14 @@ jobs:
     strategy:
       matrix:
         rvd:
-          [
-            "${{ env.SSHRVD_ATSIGN }}",
-            "${{ env.SSHRVD_AM_ATSIGN }}",
-            "${{ env.SSHRVD_AP_ATSIGN }}",
-            "${{ env.SSHRVD_EU_ATSIGN }}",
-          ]
+          # - ${{ env.SSHRVD_ATSIGN }}
+          # - ${{ env.SSHRVD_AM_ATSIGN }}
+          # - ${{ env.SSHRVD_AP_ATSIGN }}
+          # - ${{ env.SSHRVD_EU_ATSIGN }}
+          - "@8485wealthy51"
+          - "@rv_am"
+          - "@rv_ap"
+          - "@rv_eu"
 
     steps:
       - name: Show Matrix Values
@@ -102,6 +103,11 @@ jobs:
           echo "    depends_on:" >> docker-compose.yaml
           echo "      - image-runtime-release" >> docker-compose.yaml
           echo "      - container-sshrvd" >> docker-compose.yaml
+
+      - name: Add RVD service to docker-compose.yaml
+        if: matrix.rvd == env.SSHRVD_ATSIGN
+        working-directory: tests/end2end_tests/tests
+        run: |
           cat service-container-sshrvd.yaml >> docker-compose.yaml
           echo "    image: atsigncompany/sshnpd-e2e-runtime:latest" >> docker-compose.yaml
           echo "    depends_on:" >> docker-compose.yaml
@@ -120,14 +126,18 @@ jobs:
         working-directory: tests/end2end_tests/tests
         run: |
           ${{ env.DOCKER_COMPOSE_UP_CMD }}
+
       - name: Logs
         if: always()
+        continue-on-error: true # if this fails, do not fail the job
         working-directory: tests/end2end_tests/tests
         run: |
           docker compose ps -a
           docker compose logs --timestamps
+
       - name: Tear down
         if: always()
+        continue-on-error: true # if this fails, do not fail the job
         working-directory: tests/end2end_tests/tests
         run: |
           docker compose down
