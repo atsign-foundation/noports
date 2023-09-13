@@ -10,11 +10,8 @@ on:
 
 env:
   SSHNP_ATSIGN: "@8incanteater"
-  SSHNP_ATSIGN_KEYS: ${{ secrets.ATKEYS_8INCANTEATER }}
   SSHNPD_ATSIGN: "@8052simple"
-  SSHNPD_ATSIGN_KEYS: ${{ secrets.ATKEYS_8052SIMPLE }}
   SSHRVD_ATSIGN: "@8485wealthy51"
-  SSHRVD_ATSIGN_KEYS: ${{ secrets.ATKEYS_8485WEALTHY51 }}
   SSHRVD_AM_ATSIGN: "@rv_am"
   SSHRVD_AP_ATSIGN: "@rv_ap"
   SSHRVD_EU_ATSIGN: "@rv_eu"
@@ -51,6 +48,9 @@ jobs:
           SSHNPD_ATKEYS="$(tr '[:lower:]' '[:upper:]' <<< '${{ env.SSHNPD_ATSIGN }}')"
           echo "SSHNPD_ATKEYS=ATKEYS_${SSHNPD_ATKEYS:1}" >> $GITHUB_ENV
 
+          SSHRVD_ATKEYS="$(tr '[:lower:]' '[:upper:]' <<< '${{ env.SSHRVD_ATSIGN }}')"
+          echo "SSHRVD_ATKEYS=ATKEYS_${SSHRVD_ATKEYS:1}" >> $GITHUB_ENV
+
       - name: Setup NP/NPD keys
         working-directory: tests/end2end_tests/contexts
         run: |
@@ -78,7 +78,7 @@ jobs:
         working-directory: tests/end2end_tests
         run: |
           # setup keys
-          echo "${{ env.SSHRVD_ATSIGN_KEYS }}" > contexts/sshrvd/.atsign/keys/${{ env.SSHRVD_ATSIGN }}_key.atKeys
+          echo "${{ secrets[env.SSHRVD_ATKEYS] }}" > contexts/sshrvd/.atsign/keys/${{ env.SSHRVD_ATSIGN }}_key.atKeys
 
           # set up sshrvd entrypoint
           cd contexts/_init_
