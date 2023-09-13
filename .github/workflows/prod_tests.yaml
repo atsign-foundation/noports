@@ -1,4 +1,4 @@
-name: prod_tests
+name: prod_rvd_tests
 
 on:
   workflow_dispatch:
@@ -19,7 +19,7 @@ env:
   DOCKER_COMPOSE_UP_CMD: "docker compose up --abort-on-container-exit --timeout 900"
 
 jobs:
-  e2e_test:
+  prod_rvd_test:
     runs-on: ubuntu-latest
     strategy:
       matrix:
