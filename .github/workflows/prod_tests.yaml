@@ -102,7 +102,7 @@ jobs:
           echo "      - release=latest" >> docker-compose.yaml
           echo "    image: atsigncompany/sshnp-e2e-runtime:latest" >> docker-compose.yaml
           cat service-container-sshnp.yaml >> docker-compose.yaml
-          echo "    image: atsigncompany/sshnpd-e2e-runtime:latest" >> docker-compose.yaml
+          echo "    image: atsigncompany/sshnp-e2e-runtime:latest" >> docker-compose.yaml
           echo "    depends_on:" >> docker-compose.yaml
           echo "      - image-runtime-release" >> docker-compose.yaml
           echo "      - container-sshnpd" >> docker-compose.yaml
@@ -110,7 +110,7 @@ jobs:
             echo "      - container-sshrvd" >> docker-compose.yaml
           fi
           cat service-container-sshnpd.yaml >> docker-compose.yaml
-          echo "    image: atsigncompany/sshnpd-e2e-runtime:latest" >> docker-compose.yaml
+          echo "    image: atsigncompany/sshnp-e2e-runtime:latest" >> docker-compose.yaml
           echo "    depends_on:" >> docker-compose.yaml
           echo "      - image-runtime-release" >> docker-compose.yaml
           if [ "${{ matrix.rvd }}" == "@8485wealthy51" ]; then
@@ -122,7 +122,7 @@ jobs:
         working-directory: tests/end2end_tests/tests
         run: |
           cat service-container-sshrvd.yaml >> docker-compose.yaml
-          echo "    image: atsigncompany/sshnpd-e2e-runtime:latest" >> docker-compose.yaml
+          echo "    image: atsigncompany/sshnp-e2e-runtime:latest" >> docker-compose.yaml
           echo "    depends_on:" >> docker-compose.yaml
           echo "      - image-runtime-release" >> docker-compose.yaml
 
