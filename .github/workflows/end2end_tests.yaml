@@ -548,7 +548,7 @@ jobs:
         working-directory: tests/end2end_tests/contexts/_init_
         run: |
           ./setup-sshnp-entrypoint.sh ${{ env.DEVICENAME }} ${{ env.SSHNP_ATSIGN }} ${{ env.SSHNPD_ATSIGN }} ${{ env[env.PROD_RVD_ATSIGN] }} alternate_port_test/sshnp_entrypoint.sh
-          ./setup-sshnpd-entrypoint.sh ${{ env.DEVICENAME }} ${{ env.SSHNP_ATSIGN }} ${{ env.SSHNPD_ATSIGN }} alternate_port_test/sshnpd_entrypoint.sh
+          ./setup-sshnpd-entrypoint.sh ${{ env.DEVICENAME }} ${{ env.SSHNP_ATSIGN }} ${{ env.SSHNPD_ATSIGN }} sshnpd_entrypoint.sh
 
       - name: Ensure entrypoints exist
         working-directory: tests/end2end_tests/contexts
