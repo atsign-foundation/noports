@@ -67,7 +67,7 @@ jobs:
         working-directory: tests/end2end_tests/contexts/_init_
         run: |
           ./setup-sshnp-entrypoint.sh \
-          ${{ env.DEVICENAME }} \
+            ${{ env.DEVICENAME }} \
             ${{ env.SSHNP_ATSIGN }} \
             ${{ env.SSHNPD_ATSIGN }} \
             ${{ matrix.rvd }} \
