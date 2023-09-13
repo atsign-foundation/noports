@@ -4,7 +4,7 @@
       - ../contexts/sshrvd:/mount
     network_mode: host
     healthcheck:
-      test: ["CMD", "grep", "-Eq", "\"monitor started for @\"", "/atsign/sshrvd.log"]
+      test: ["CMD", "grep", "-Eq", "monitor started for @", "/atsign/sshrvd.log"]
       start_period: 10s # Wait 10 seconds before checking
       interval: 5s # Check every 5 seconds
       timeout: 1s # If a check takes longer than a second, consider it a failed check
