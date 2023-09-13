@@ -28,5 +28,27 @@
 	<string>MainMenu</string>
 	<key>NSPrincipalClass</key>
 	<string>NSApplication</string>
+	<key>UTImportedTypeDeclarations</key>
+	<array>
+		<dict>
+			<key>UTTypeIdentifier</key>
+			<string>com.atsign.atkeys</string>
+			<key>UTTypeConformsTo</key>
+			<array>
+				<string>public.json</string>
+			</array>
+			<key>UTTypeDescription</key>
+			<string>Atsign Cryptographic Key File</string>
+			<key>UTTypeTagSpecification</key>
+			<dict>
+				<key>public.filename-extension</key>
+				<array>
+					<string>atkeys</string>
+				</array>
+			</dict>
+			<key>UTTypeReferenceURL</key>
+			<string>https://github.com/atsign-foundation/at_protocol</string>
+		</dict>
+	</array>
 </dict>
 </plist>
