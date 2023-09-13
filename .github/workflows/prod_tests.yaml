@@ -85,8 +85,8 @@ jobs:
           ./setup-sshrvd-entrypoint.sh \
             ${{ matrix.rvd }} \
             sshrvd_entrypoint.sh
-          cd ../
-          cat sshrvd/entrypoint.sh
+          cd ../sshrvd
+          cat entrypoint.sh
 
       - name: Ensure entrypoints exist
         working-directory: tests/end2end_tests/contexts
