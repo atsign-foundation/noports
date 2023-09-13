@@ -6,10 +6,10 @@
       - sshnpd
     healthcheck:
       test: ["CMD", "grep", "-Eq", "\"monitor started for @\"", "/atsign/sshnpd.log"]
-      start_period: 1s # Wait 10 seconds before checking
-      interval: 1s # Check every 5 seconds
+      start_period: 10s # Wait 10 seconds before checking
+      interval: 1s # Check every second
       timeout: 1s # If a check takes longer than a second, consider it a failed check
-      retries: 180 # Retry the check 180 times (180 * 1s = 2 mins)
+      retries: 900 # Retry the check n times (900 * 1s = 15 mins)
     # auto added:
     # - image
     # - depends_on: (sshrvd + runtime service)
