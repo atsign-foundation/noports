@@ -59,4 +59,4 @@ runs:
       shell: bash
       working-directory: tests/end2end_tests/contexts/_init_
       run: |
-        ./setup-sshrvd-entrypoint.sh ${{ inputs.sshrvd_atsign }}
+        ./setup-sshrvd-entrypoint.sh ${{ inputs.sshrvd_atsign }} "sshrvd_entrypoint.sh"

@@ -25,9 +25,14 @@ class SSHNPParams {
   late final String rootDomain;
   late final int localSshdPort;
   late final bool legacyDaemon;
+  late final int remoteSshdPort;
+  late final int idleTimeout;
+  late final String sshClient;
+  late final bool addForwardsToTunnel;
 
   /// Special Arguments
-  late final String? profileName; // automatically populated with the filename if from a configFile
+  late final String?
+      profileName; // automatically populated with the filename if from a configFile
   late final bool listDevices;
 
   SSHNPParams({
@@ -40,14 +45,18 @@ class SSHNPParams {
     this.localPort = SSHNP.defaultLocalPort,
     this.sendSshPublicKey = SSHNP.defaultSendSshPublicKey,
     this.localSshOptions = SSHNP.defaultLocalSshOptions,
-    this.verbose = SSHNP.defaultVerbose,
-    this.rsa = SSHNP.defaultRsa,
+    this.verbose = defaults.defaultVerbose,
+    this.rsa = defaults.defaultRsa,
     this.remoteUsername,
     String? atKeysFilePath,
-    this.rootDomain = SSHNP.defaultRootDomain,
-    this.localSshdPort = SSHNP.defaultLocalSshdPort,
+    this.rootDomain = defaults.defaultRootDomain,
+    this.localSshdPort = defaults.defaultLocalSshdPort,
     this.legacyDaemon = SSHNP.defaultLegacyDaemon,
     this.listDevices = SSHNP.defaultListDevices,
+    this.remoteSshdPort = defaults.defaultRemoteSshdPort,
+    this.idleTimeout = defaults.defaultIdleTimeout,
+    String? sshClient,
+    this.addForwardsToTunnel = false,
   }) {
     // Do we have a username ?
     username = getUserName(throwIfNull: true)!;
@@ -57,7 +66,10 @@ class SSHNPParams {
 
     // Use default atKeysFilePath if not provided
 
-    this.atKeysFilePath = atKeysFilePath ?? getDefaultAtKeysFilePath(homeDirectory, clientAtSign);
+    this.atKeysFilePath =
+        atKeysFilePath ?? getDefaultAtKeysFilePath(homeDirectory, clientAtSign);
+
+    this.sshClient = sshClient ?? SSHNP.defaultSshClient.cliArg;
   }
 
   factory SSHNPParams.fromPartial(SSHNPPartialParams partial) {
@@ -77,16 +89,21 @@ class SSHNPParams {
       device: partial.device ?? SSHNP.defaultDevice,
       port: partial.port ?? SSHNP.defaultPort,
       localPort: partial.localPort ?? SSHNP.defaultLocalPort,
-      sendSshPublicKey: partial.sendSshPublicKey ?? SSHNP.defaultSendSshPublicKey,
+      sendSshPublicKey:
+          partial.sendSshPublicKey ?? SSHNP.defaultSendSshPublicKey,
       localSshOptions: partial.localSshOptions,
-      rsa: partial.rsa ?? SSHNP.defaultRsa,
-      verbose: partial.verbose ?? SSHNP.defaultRsa,
+      rsa: partial.rsa ?? defaults.defaultRsa,
+      verbose: partial.verbose ?? defaults.defaultVerbose,
       remoteUsername: partial.remoteUsername,
       atKeysFilePath: partial.atKeysFilePath,
-      rootDomain: partial.rootDomain ?? SSHNP.defaultRootDomain,
-      localSshdPort: partial.localSshdPort ?? SSHNP.defaultLocalSshdPort,
+      rootDomain: partial.rootDomain ?? defaults.defaultRootDomain,
+      localSshdPort: partial.localSshdPort ?? defaults.defaultLocalSshdPort,
       listDevices: partial.listDevices,
       legacyDaemon: partial.legacyDaemon ?? SSHNP.defaultLegacyDaemon,
+      remoteSshdPort: partial.remoteSshdPort ?? defaults.defaultRemoteSshdPort,
+      idleTimeout: partial.idleTimeout ?? defaults.defaultIdleTimeout,
+      sshClient: partial.sshClient ?? SSHNP.defaultSshClient.cliArg,
+      addForwardsToTunnel: partial.addForwardsToTunnel ?? false,
     );
   }
 
@@ -94,7 +111,8 @@ class SSHNPParams {
     return SSHNPParams.fromPartial(SSHNPPartialParams.fromConfig(fileName));
   }
 
-  static Future<Iterable<SSHNPParams>> getConfigFilesFromDirectory([String? directory]) async {
+  static Future<Iterable<SSHNPParams>> getConfigFilesFromDirectory(
+      [String? directory]) async {
     var params = <SSHNPParams>[];
 
     var homeDirectory = getHomeDirectory(throwIfNull: true)!;
@@ -132,7 +150,8 @@ class SSHNPParams {
     var exists = await file.exists();
 
     if (exists && !overwrite) {
-      throw Exception('Failed to write config file: ${file.path} already exists');
+      throw Exception(
+          'Failed to write config file: ${file.path} already exists');
     }
 
     // FileMode.write will create the file if it does not exist
@@ -140,7 +159,8 @@ class SSHNPParams {
     return file.writeAsString(toConfig(), mode: FileMode.write);
   }
 
-  Future<FileSystemEntity> deleteFile({String? directory, bool overwrite = false}) async {
+  Future<FileSystemEntity> deleteFile(
+      {String? directory, bool overwrite = false}) async {
     if (profileName == null || profileName!.isEmpty) {
       throw Exception('profileName is null or empty');
     }
@@ -177,7 +197,11 @@ class SSHNPParams {
       'remote-user-name': remoteUsername,
       'verbose': verbose,
       'root-domain': rootDomain,
-      'local-sshd-port': localSshdPort
+      'local-sshd-port': localSshdPort,
+      'remote-sshd-port': remoteSshdPort,
+      'idle-timeout': idleTimeout,
+      'ssh-client': sshClient,
+      'add-forwards-to-tunnel': addForwardsToTunnel,
     };
   }
 
@@ -217,6 +241,10 @@ class SSHNPPartialParams {
   late final bool? verbose;
   late final String? rootDomain;
   late final bool? legacyDaemon;
+  late final int? remoteSshdPort;
+  late final int? idleTimeout;
+  late final String? sshClient;
+  late final bool? addForwardsToTunnel;
 
   /// Special Params
   // N.B. config file is a meta param and doesn't need to be included
@@ -243,6 +271,10 @@ class SSHNPPartialParams {
     this.localSshdPort,
     this.listDevices = SSHNP.defaultListDevices,
     this.legacyDaemon = SSHNP.defaultLegacyDaemon,
+    this.remoteSshdPort,
+    this.idleTimeout,
+    this.sshClient,
+    this.addForwardsToTunnel,
   });
 
   factory SSHNPPartialParams.empty() {
@@ -252,7 +284,8 @@ class SSHNPPartialParams {
   /// Merge two SSHNPPartialParams objects together
   /// Params in params2 take precedence over params1
   /// - localSshOptions are concatenated together as (params1 + params2)
-  factory SSHNPPartialParams.merge(SSHNPPartialParams params1, [SSHNPPartialParams? params2]) {
+  factory SSHNPPartialParams.merge(SSHNPPartialParams params1,
+      [SSHNPPartialParams? params2]) {
     params2 ??= SSHNPPartialParams.empty();
     return SSHNPPartialParams(
       profileName: params2.profileName ?? params1.profileName,
@@ -272,6 +305,11 @@ class SSHNPPartialParams {
       localSshdPort: params2.localSshdPort ?? params1.localSshdPort,
       listDevices: params2.listDevices || params1.listDevices,
       legacyDaemon: params2.legacyDaemon ?? params1.legacyDaemon,
+      remoteSshdPort: params2.remoteSshdPort ?? params1.remoteSshdPort,
+      idleTimeout: params2.idleTimeout ?? params1.idleTimeout,
+      sshClient: params2.sshClient ?? params1.sshClient,
+      addForwardsToTunnel:
+          params2.addForwardsToTunnel ?? params1.addForwardsToTunnel,
     );
   }
 
@@ -286,7 +324,8 @@ class SSHNPPartialParams {
       localPort: args['local-port'],
       atKeysFilePath: args['key-file'],
       sendSshPublicKey: args['ssh-public-key'],
-      localSshOptions: args['local-ssh-options'] ?? SSHNP.defaultLocalSshOptions,
+      localSshOptions:
+          args['local-ssh-options'] ?? SSHNP.defaultLocalSshOptions,
       rsa: args['rsa'],
       remoteUsername: args['remote-user-name'],
       verbose: args['verbose'],
@@ -294,12 +333,17 @@ class SSHNPPartialParams {
       localSshdPort: args['local-sshd-port'],
       listDevices: args['list-devices'] ?? SSHNP.defaultListDevices,
       legacyDaemon: args['legacy-daemon'],
+      remoteSshdPort: args['remote-sshd-port'],
+      idleTimeout: args['idle-timeout'],
+      sshClient: args['ssh-client'],
+      addForwardsToTunnel: args['add-forwards-to-tunnel'],
     );
   }
 
   factory SSHNPPartialParams.fromConfig(String fileName) {
     var args = _parseConfigFile(fileName);
-    args['profile-name'] = path.basenameWithoutExtension(fileName).replaceAll('_', ' ');
+    args['profile-name'] =
+        path.basenameWithoutExtension(fileName).replaceAll('_', ' ');
     return SSHNPPartialParams.fromArgMap(args);
   }
 
@@ -321,7 +365,9 @@ class SSHNPPartialParams {
     // THIS IS A WORKAROUND IN ORDER TO BE TYPE SAFE IN SSHNPPartialParams.fromArgMap
     Map<String, dynamic> parsedArgsMap = {
       for (var e in parsedArgs.options)
-        e: SSHNPArg.fromName(e).type == ArgType.integer ? int.tryParse(parsedArgs[e]) : parsedArgs[e]
+        e: SSHNPArg.fromName(e).type == ArgType.integer
+            ? int.tryParse(parsedArgs[e])
+            : parsedArgs[e]
     };
 
     return SSHNPPartialParams.merge(
@@ -345,6 +391,7 @@ class SSHNPPartialParams {
             abbr: arg.abbr,
             mandatory: arg.mandatory,
             defaultsTo: withDefaults ? arg.defaultsTo?.toString() : null,
+            allowed: arg.allowed,
             help: arg.help,
           );
           break;
@@ -353,6 +400,7 @@ class SSHNPPartialParams {
             arg.name,
             abbr: arg.abbr,
             defaultsTo: withDefaults ? arg.defaultsTo as List<String>? : null,
+            allowed: arg.allowed,
             help: arg.help,
           );
           break;
@@ -369,7 +417,8 @@ class SSHNPPartialParams {
     if (withConfig) {
       parser.addOption(
         'config-file',
-        help: 'Read args from a config file\nMandatory args are not required if already supplied in the config file',
+        help:
+            'Read args from a config file\nMandatory args are not required if already supplied in the config file',
       );
     }
     if (withListDevices) {

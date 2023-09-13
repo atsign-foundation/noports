@@ -22,7 +22,10 @@ def main():
     try:
         sshnpd.start()
         while len(SSHNPDClient.threads) > 0:
-            sleep(1)
+            if not sshnpd.is_alive():
+                sshnpd.join()
+            else:
+                sleep(10)
         
             
     except Exception as e:
