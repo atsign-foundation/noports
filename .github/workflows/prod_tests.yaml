@@ -104,17 +104,22 @@ jobs:
           cat service-container-sshnp.yaml >> docker-compose.yaml
           echo "    image: atsigncompany/sshnp-e2e-runtime:latest" >> docker-compose.yaml
           echo "    depends_on:" >> docker-compose.yaml
-          echo "      - image-runtime-release" >> docker-compose.yaml
-          echo "      - container-sshnpd" >> docker-compose.yaml
+          echo "      image-runtime-release:" >> docker-compose.yaml
+          echo "        condition: service_started" >> docker-compose.yaml
+          echo "      container-sshnpd:" >> docker-compose.yaml
+          echo "        condition: service_healthy" >> docker-compose.yaml
           if [ "${{ matrix.rvd }}" == "@8485wealthy51" ]; then
-            echo "      - container-sshrvd" >> docker-compose.yaml
+            echo "      container-sshrvd:" >> docker-compose.yaml
+            echo "        condition: service_started" >> docker-compose.yaml
           fi
           cat service-container-sshnpd.yaml >> docker-compose.yaml
           echo "    image: atsigncompany/sshnp-e2e-runtime:latest" >> docker-compose.yaml
           echo "    depends_on:" >> docker-compose.yaml
-          echo "      - image-runtime-release" >> docker-compose.yaml
+          echo "      image-runtime-release:" >> docker-compose.yaml
+          echo "        condition: service_started" >> docker-compose.yaml
           if [ "${{ matrix.rvd }}" == "@8485wealthy51" ]; then
-            echo "      - container-sshrvd" >> docker-compose.yaml
+            echo "      container-sshrvd:" >> docker-compose.yaml
+            echo "        condition: service_started" >> docker-compose.yaml
           fi
 
       - name: Add RVD service to docker-compose.yaml
@@ -124,7 +129,8 @@ jobs:
           cat service-container-sshrvd.yaml >> docker-compose.yaml
           echo "    image: atsigncompany/sshnp-e2e-runtime:latest" >> docker-compose.yaml
           echo "    depends_on:" >> docker-compose.yaml
-          echo "      - image-runtime-release" >> docker-compose.yaml
+          echo "      image-runtime-release:" >> docker-compose.yaml
+          echo "        condition: service_started" >> docker-compose.yaml
 
       - name: docker-compose.yaml
         working-directory: tests/end2end_tests/tests

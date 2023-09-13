@@ -563,12 +563,15 @@ jobs:
           cat service-container-sshnp.yaml >> docker-compose.yaml
           echo '    image: atsigncompany/sshnp-e2e-runtime:local' >> docker-compose.yaml
           echo '    depends_on:' >> docker-compose.yaml
-          echo '      - image-runtime-local' >> docker-compose.yaml
-          echo '      - container-sshnpd' >> docker-compose.yaml
+          echo '      image-runtime-local:' >> docker-compose.yaml
+          echo '       condition: service_healthy' >> docker-compose.yaml
+          echo '      container-sshnpd:' >> docker-compose.yaml
+          echo '       condition: service_healthy' >> docker-compose.yaml
           cat service-container-sshnpd.yaml >> docker-compose.yaml
           echo '    image: atsigncompany/sshnp-e2e-runtime:local' >> docker-compose.yaml
           echo '    depends_on:' >> docker-compose.yaml
-          echo '      - image-runtime-local' >> docker-compose.yaml
+          echo '      image-runtime-local:' >> docker-compose.yaml
+          echo '       condition: service_healthy' >> docker-compose.yaml
 
       - name: docker-compose.yaml
         if: always()
