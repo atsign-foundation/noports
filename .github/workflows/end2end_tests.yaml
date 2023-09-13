@@ -589,14 +589,14 @@ jobs:
       - name: Logs
         if: always()
         continue-on-error: true # failing this step does not fail the entire job
-        working-directory: tests/end2end_tests/tests/alternate_port_test
+        working-directory: tests/end2end_tests/tests
         run: |
           docker compose ps -a
           docker compose logs --timestamps
 
       - name: Found "Test Passed" in Logs
         if: always()
-        working-directory: tests/end2end_tests/tests/alternate_port_test
+        working-directory: tests/end2end_tests/tests
         run: |
           docker compose logs --timestamps | grep -q "Test Passed$"
 
@@ -605,6 +605,6 @@ jobs:
         # but don't tear down on failure in the act environment
         if: ${{ !env.ACT }} || success()
         continue-on-error: true # failing this step does not fail the entire job
-        working-directory: tests/end2end_tests/tests/alternate_port_test
+        working-directory: tests/end2end_tests/tests
         run: |
           docker compose down
