@@ -58,7 +58,7 @@ jobs:
           echo "${{ secrets[env.SSHNPD_ATKEYS] }}" > sshnpd/.atsign/keys/${{ env.SSHNPD_ATSIGN }}_key.atKeys
 
       - name: Set up NP/NPD entrypoints
-        working-directory: tests/end2end_tests/tools/configuration
+        working-directory: tests/end2end_tests/contexts/_init_
         run: |
           ./setup-sshnp-entrypoint.sh \
             ${{ github.run_id }}${{ github.run_attempt }}${{ strategy.job-index }} \
