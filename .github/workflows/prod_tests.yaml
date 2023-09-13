@@ -1,4 +1,4 @@
-name: prod_rvd_tests
+name: prod_tests
 
 on:
   workflow_dispatch:
@@ -16,7 +16,7 @@ env:
   SSHRVD_AP_ATSIGN: "@rv_ap"
   SSHRVD_EU_ATSIGN: "@rv_eu"
   DOCKER_COMPOSE_BUILD_CMD: "docker compose build"
-  DOCKER_COMPOSE_UP_CMD: "docker compose up --abort-on-container-exit --timeout 900"
+  DOCKER_COMPOSE_UP_CMD: "docker compose up --abort-on-container-exit"
 
 jobs:
   prod_rvd_test:
