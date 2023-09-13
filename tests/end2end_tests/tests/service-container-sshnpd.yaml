@@ -4,6 +4,7 @@
       - ../contexts/sshnpd:/mount
     networks:
       - sshnpd
+    condition: service_healthy
     healthcheck:
       test: ["CMD", "grep", "-Eq", "\"monitor started for @\"", "/atsign/sshnpd.log"]
       start_period: 10s # Wait 10 seconds before checking
