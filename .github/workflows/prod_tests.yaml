@@ -85,7 +85,7 @@ jobs:
           ./setup-sshrvd-entrypoint.sh \
             ${{ matrix.rvd }} \
             sshrvd_entrypoint.sh
-          cd ../..
+          cd ../
           cat sshrvd/entrypoint.sh
 
       - name: Ensure entrypoints exist
