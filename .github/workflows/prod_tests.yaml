@@ -57,18 +57,24 @@ jobs:
           echo "${{ secrets[env.SSHNP_ATKEYS] }}" > sshnp/.atsign/keys/${{ env.SSHNP_ATSIGN }}_key.atKeys
           echo "${{ secrets[env.SSHNPD_ATKEYS] }}" > sshnpd/.atsign/keys/${{ env.SSHNPD_ATSIGN }}_key.atKeys
 
+      - name: Setup Devicename
+        # First two guarantee a unique # per workflow call
+        # Last two guarantee  a unique # per job per strategy in matrix
+        run: |
+          echo "DEVICENAME=${{ github.run_id }}${{ github.run_attempt }}p${{ strategy.job-index }}" >> $GITHUB_ENV
+
       - name: Set up NP/NPD entrypoints
         working-directory: tests/end2end_tests/contexts/_init_
         run: |
           ./setup-sshnp-entrypoint.sh \
-            ${{ github.run_id }}${{ github.run_attempt }}p${{ strategy.job-index }} \
+          ${{ env.DEVICENAME }} \
             ${{ env.SSHNP_ATSIGN }} \
             ${{ env.SSHNPD_ATSIGN }} \
             ${{ matrix.rvd }} \
             sshnp_entrypoint.sh
 
           ./setup-sshnpd-entrypoint.sh \
-            ${{ github.run_id }}${{ github.run_attempt }}p${{ strategy.job-index }} \
+            ${{ env.DEVICENAME }} \
             ${{ env.SSHNP_ATSIGN }} \
             ${{ env.SSHNPD_ATSIGN }} \
             sshnpd_entrypoint.sh
