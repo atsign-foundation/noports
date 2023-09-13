@@ -71,12 +71,27 @@ class ConfigListController extends AutoDisposeAsyncNotifier<Iterable<String>> {
 class ConfigFamilyController extends AutoDisposeFamilyAsyncNotifier<SSHNPParams, String> {
   @override
   Future<SSHNPParams> build(String arg) async {
-    if (arg.isEmpty) return SSHNPParams.empty();
-    return ConfigKeyRepository.getParams(arg, atClient: AtClientManager.getInstance().atClient);
+    AtClient atClient = AtClientManager.getInstance().atClient;
+    if (arg.isEmpty) {
+      return SSHNPParams.merge(
+        SSHNPParams.empty(),
+        SSHNPPartialParams()..clientAtSign = atClient.getCurrentAtSign()!,
+      );
+    }
+    return ConfigKeyRepository.getParams(arg, atClient: atClient);
   }
 
   Future<void> putConfig(SSHNPParams params) async {
-    await ConfigKeyRepository.putParams(params, atClient: AtClientManager.getInstance().atClient);
+    AtClient atClient = AtClientManager.getInstance().atClient;
+    if (params.clientAtSign != atClient.getCurrentAtSign()) {
+      params = SSHNPParams.merge(
+        params,
+        SSHNPPartialParams(
+          clientAtSign: atClient.getCurrentAtSign(),
+        ),
+      );
+    }
+    await ConfigKeyRepository.putParams(params, atClient: atClient);
     ref.read(configListController.notifier).add(params.profileName!);
   }
 
