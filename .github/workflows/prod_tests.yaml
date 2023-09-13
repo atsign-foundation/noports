@@ -81,10 +81,11 @@ jobs:
           echo "${{ env.SSHRVD_ATSIGN_KEYS }}" > contexts/sshrvd/.atsign/keys/${{ env.SSHRVD_ATSIGN }}_key.atKeys
 
           # set up sshrvd entrypoint
-          ./contexts/_init_/setup-sshrvd-entrypoint.sh \
+          cd contexts/_init_
+          ./setup-sshrvd-entrypoint.sh \
             ${{ matrix.rvd }} \
             sshrvd_entrypoint.sh
-
+          cd ../..
           cat sshrvd/entrypoint.sh
 
       - name: Ensure entrypoints exist
