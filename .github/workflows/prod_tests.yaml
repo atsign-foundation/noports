@@ -61,14 +61,14 @@ jobs:
         working-directory: tests/end2end_tests/contexts/_init_
         run: |
           ./setup-sshnp-entrypoint.sh \
-            ${{ github.run_id }}${{ github.run_attempt }}a${{ strategy.job-index }} \
+            ${{ github.run_id }}${{ github.run_attempt }}p${{ strategy.job-index }} \
             ${{ env.SSHNP_ATSIGN }} \
             ${{ env.SSHNPD_ATSIGN }} \
             ${{ matrix.rvd }} \
             sshnp_entrypoint.sh
 
           ./setup-sshnpd-entrypoint.sh \
-            ${{ github.run_id }}${{ github.run_attempt }}a${{ strategy.job-index }} \
+            ${{ github.run_id }}${{ github.run_attempt }}p${{ strategy.job-index }} \
             ${{ env.SSHNP_ATSIGN }} \
             ${{ env.SSHNPD_ATSIGN }} \
             sshnpd_entrypoint.sh
