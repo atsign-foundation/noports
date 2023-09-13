@@ -110,7 +110,7 @@ jobs:
           echo "        condition: service_healthy" >> docker-compose.yaml
           if [ "${{ matrix.rvd }}" == "@8485wealthy51" ]; then
             echo "      container-sshrvd:" >> docker-compose.yaml
-            echo "        condition: service_started" >> docker-compose.yaml
+            echo "        condition: service_healthy" >> docker-compose.yaml
           fi
           cat service-container-sshnpd.yaml >> docker-compose.yaml
           echo "    image: atsigncompany/sshnp-e2e-runtime:latest" >> docker-compose.yaml
@@ -119,7 +119,7 @@ jobs:
           echo "        condition: service_started" >> docker-compose.yaml
           if [ "${{ matrix.rvd }}" == "@8485wealthy51" ]; then
             echo "      container-sshrvd:" >> docker-compose.yaml
-            echo "        condition: service_started" >> docker-compose.yaml
+            echo "        condition: service_healthy" >> docker-compose.yaml
           fi
 
       - name: Add RVD service to docker-compose.yaml
