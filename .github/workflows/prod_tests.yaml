@@ -141,6 +141,12 @@ jobs:
         run: |
           ${{ env.DOCKER_COMPOSE_UP_CMD }}
 
+      - name: Found "Test Passed" in Logs
+        if: always()
+        working-directory: tests/end2end_tests/tests
+        run: |
+          docker compose logs --timestamps | grep -q "Test Passed$"
+
       - name: Logs
         if: always()
         continue-on-error: true # if this fails, do not fail the job
