@@ -43,11 +43,20 @@ jobs:
 
       - uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9 # v3.5.3
 
-      - name: Copy NP/NPD keys
+      - name: Setup NP/NPD key env
+        run: |
+          SSHNP_ATKEYS="$(tr '[:lower:]' '[:upper:]' <<< '${{ env.SSHNP_ATSIGN }}')"
+          echo "SSHNP_ATKEYS=ATKEYS_${SSHNP_ATKEYS:1}" >> $GITHUB_ENV
+
+          SSHNPD_ATKEYS="$(tr '[:lower:]' '[:upper:]' <<< '${{ env.SSHNPD_ATSIGN }}')"
+          echo "SSHNPD_ATKEYS=ATKEYS_${SSHNPD_ATKEYS:1}" >> $GITHUB_ENV
+
+      - name: Setup NP/NPD keys
         working-directory: tests/end2end_tests/contexts
         run: |
-          echo "${{ env.SSHNP_ATSIGN_KEYS }}" > sshnp/keys/${{ env.SSHNP_ATSIGN }}_key.atKeys
-          echo "${{ env.SSHNPD_ATSIGN_KEYS }}" > sshnpd/keys/${{ env.SSHNPD_ATSIGN }}_key.atKeys
+          echo "${{ secrets[env.SSHNP_ATKEYS] }}" > sshnp/.atsign/keys/${{ env.SSHNP_ATSIGN }}_key.atKeys
+          echo "${{ secrets[env.SSHNPD_ATKEYS] }}" > sshnpd/.atsign/keys/${{ env.SSHNPD_ATSIGN }}_key.atKeys
+
       - name: Set up NP/NPD entrypoints
         working-directory: tests/end2end_tests/tools/configuration
         run: |
@@ -56,7 +65,6 @@ jobs:
             ${{ env.SSHNP_ATSIGN }} \
             ${{ env.SSHNPD_ATSIGN }} \
             ${{ matrix.rvd }} \
-            ${{ env.WAITING_TIME }} \
             sshnp_entrypoint.sh
 
           ./setup-sshnpd-entrypoint.sh \
@@ -65,7 +73,7 @@ jobs:
             ${{ env.SSHNPD_ATSIGN }} \
             sshnpd_entrypoint.sh
 
-      - name: Set up RVD stuff
+      - name: Set up RVD keys and entrypoint
         if: matrix.rvd == env.SSHRVD_ATSIGN
         working-directory: tests/end2end_tests
         run: |
