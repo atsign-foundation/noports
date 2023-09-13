@@ -500,6 +500,7 @@ jobs:
 
       - name: Logs
         if: always()
+        continue-on-error: true # failing this step does not fail the entire job
         working-directory: tests/end2end_tests/tests
         run: |
           docker compose ps -a
@@ -515,6 +516,7 @@ jobs:
         # Always tear down outside of the act environment
         # but don't tear down on failure in the act environment
         if: ${{ !env.ACT }} || success()
+        continue-on-error: true # failing this step does not fail the entire job
         working-directory: tests/end2end_tests/tests
         run: |
           docker compose down
