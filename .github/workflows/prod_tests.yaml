@@ -1,0 +1,133 @@
+name: prod_tests
+
+on:
+  workflow_dispatch:
+  pull_request:
+    branches:
+      - trunk
+  schedule:
+    - cron: "53 2 * * 1-5" # “At 02:53 on every day-of-week from Monday through Friday.” https://crontab.guru/#53_22_*_*_2,4
+
+env:
+  SSHNP_ATSIGN: "@8incanteater"
+  SSHNP_ATSIGN_KEYS: ${{ secrets.ATKEYS_8INCANTEATER }}
+  SSHNPD_ATSIGN: "@8052simple"
+  SSHNPD_ATSIGN_KEYS: ${{ secrets.ATKEYS_8052SIMPLE }}
+  SSHRVD_ATSIGN: "@8485wealthy51"
+  SSHRVD_ATSIGN_KEYS: ${{ secrets.ATKEYS_8485WEALTHY51 }}
+  SSHRVD_AM_ATSIGN: "@rv_am"
+  SSHRVD_AP_ATSIGN: "@rv_ap"
+  SSHRVD_EU_ATSIGN: "@rv_eu"
+  WAITING_TIME: 5
+  DOCKER_COMPOSE_BUILD_CMD: "docker compose build"
+  DOCKER_COMPOSE_UP_CMD: "docker compose up --abort-on-container-exit --timeout 900"
+
+jobs:
+  e2e_test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        rvd:
+          [
+            "${{ env.SSHRVD_ATSIGN }}",
+            "${{ env.SSHRVD_AM_ATSIGN }}",
+            "${{ env.SSHRVD_AP_ATSIGN }}",
+            "${{ env.SSHRVD_EU_ATSIGN }}",
+          ]
+
+    steps:
+      - name: Show Matrix Values
+        run: |
+          echo "rvd: ${{ matrix.rvd }}"
+
+      - uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9 # v3.5.3
+
+      - name: Copy NP/NPD keys
+        working-directory: tests/end2end_tests/contexts
+        run: |
+          echo "${{ env.SSHNP_ATSIGN_KEYS }}" > sshnp/keys/${{ env.SSHNP_ATSIGN }}_key.atKeys
+          echo "${{ env.SSHNPD_ATSIGN_KEYS }}" > sshnpd/keys/${{ env.SSHNPD_ATSIGN }}_key.atKeys
+      - name: Set up NP/NPD entrypoints
+        working-directory: tests/end2end_tests/tools/configuration
+        run: |
+          ./setup-sshnp-entrypoint.sh \
+            ${{ github.run_id }}${{ github.run_attempt }}${{ strategy.job-index }} \
+            ${{ env.SSHNP_ATSIGN }} \
+            ${{ env.SSHNPD_ATSIGN }} \
+            ${{ matrix.rvd }} \
+            ${{ env.WAITING_TIME }} \
+            sshnp_entrypoint.sh
+
+          ./setup-sshnpd-entrypoint.sh \
+            ${{ github.run_id }}${{ github.run_attempt }}${{ strategy.job-index }} \
+            ${{ env.SSHNP_ATSIGN }} \
+            ${{ env.SSHNPD_ATSIGN }} \
+            sshnpd_entrypoint.sh
+
+      - name: Set up RVD stuff
+        if: matrix.rvd == env.SSHRVD_ATSIGN
+        working-directory: tests/end2end_tests
+        run: |
+          # setup keys
+          echo "${{ env.SSHRVD_ATSIGN_KEYS }}" > contexts/sshrvd/.atsign/keys/${{ env.SSHRVD_ATSIGN }}_key.atKeys
+
+          # set up sshrvd entrypoint
+          ./contexts/_init_/setup-sshrvd-entrypoint.sh \
+            ${{ matrix.rvd }} \
+            sshrvd_entrypoint.sh
+
+          cat sshrvd/entrypoint.sh
+
+      - name: Ensure entrypoints exist
+        working-directory: tests/end2end_tests/contexts
+        run: |
+          cat sshnp/entrypoint.sh
+          cat sshnpd/entrypoint.sh
+
+      - name: Build docker-compose.yaml
+        working-directory: tests/end2end_tests/tests
+        run: |
+          cat docker-compose-base.yaml > docker-compose.yaml
+          cat service-image-runtime-release.yaml >> docker-compose.yaml
+          echo "      - release=latest"
+          echo "    image: atsigncompany/sshnp-e2e-runtime:latest" >> docker-compose.yaml
+          cat service-container-sshnp.yaml >> docker-compose.yaml
+          echo "    image: atsigncompany/sshnpd-e2e-runtime:latest" >> docker-compose.yaml
+          echo "    depends_on:" >> docker-compose.yaml
+          echo "      - image-runtime-release" >> docker-compose.yaml
+          echo "      - container-sshnpd" >> docker-compose.yaml
+          echo "      - container-sshrvd" >> docker-compose.yaml
+          cat service-container-sshnpd.yaml >> docker-compose.yaml
+          echo "    image: atsigncompany/sshnpd-e2e-runtime:latest" >> docker-compose.yaml
+          echo "    depends_on:" >> docker-compose.yaml
+          echo "      - image-runtime-release" >> docker-compose.yaml
+          echo "      - container-sshrvd" >> docker-compose.yaml
+          cat service-container-sshrvd.yaml >> docker-compose.yaml
+          echo "    image: atsigncompany/sshnpd-e2e-runtime:latest" >> docker-compose.yaml
+          echo "    depends_on:" >> docker-compose.yaml
+          echo "      - image-runtime-release" >> docker-compose.yaml
+
+      - name: docker-compose.yaml
+        working-directory: tests/end2end_tests/tests
+        run: |
+          cat docker-compose.yaml
+
+      - name: Build
+        working-directory: tests/end2end_tests/tests
+        run: |
+          ${{ env.DOCKER_COMPOSE_BUILD_CMD }}
+      - name: Test
+        working-directory: tests/end2end_tests/tests
+        run: |
+          ${{ env.DOCKER_COMPOSE_UP_CMD }}
+      - name: Logs
+        if: always()
+        working-directory: tests/end2end_tests/tests
+        run: |
+          docker compose ps -a
+          docker compose logs --timestamps
+      - name: Tear down
+        if: always()
+        working-directory: tests/end2end_tests/tests
+        run: |
+          docker compose down
