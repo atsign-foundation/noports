@@ -4,9 +4,9 @@ on:
   workflow_dispatch:
   schedule:
     - cron: "2 * * * *" # “At minute 2.” https://crontab.guru
-  pull_request: # temporary
-    branches:
-      - trunk
+  # pull_request: # temporary
+  #   branches:
+  #     - trunk
 
 env:
   SSHNP_ATSIGN: "@8incanteater"
