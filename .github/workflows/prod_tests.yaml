@@ -108,7 +108,7 @@ jobs:
           echo "        condition: service_started" >> docker-compose.yaml
           echo "      container-sshnpd:" >> docker-compose.yaml
           echo "        condition: service_healthy" >> docker-compose.yaml
-          if [ "${{ matrix.rvd }}" == "@8485wealthy51" ]; then
+          if [ "${{ matrix.rvd }}" == "${{ env.SSHRVD_ATSIGN }}" ]; then
             echo "      container-sshrvd:" >> docker-compose.yaml
             echo "        condition: service_healthy" >> docker-compose.yaml
           fi
@@ -117,7 +117,7 @@ jobs:
           echo "    depends_on:" >> docker-compose.yaml
           echo "      image-runtime-release:" >> docker-compose.yaml
           echo "        condition: service_started" >> docker-compose.yaml
-          if [ "${{ matrix.rvd }}" == "@8485wealthy51" ]; then
+          if [ "${{ matrix.rvd }}" == "${{ env.SSHRVD_ATSIGN }}" ]; then
             echo "      container-sshrvd:" >> docker-compose.yaml
             echo "        condition: service_healthy" >> docker-compose.yaml
           fi
