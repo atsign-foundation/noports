@@ -97,7 +97,7 @@ jobs:
       - name: Build docker-compose.yaml
         working-directory: tests/end2end_tests/tests
         run: |
-          cat docker-compose-base.yaml > docker-compose.yaml
+          cat docker-compose-blank-base.yaml > docker-compose.yaml
           cat service-image-runtime-release.yaml >> docker-compose.yaml
           echo "      - release=latest" >> docker-compose.yaml
           echo "    image: atsigncompany/sshnp-e2e-runtime:latest" >> docker-compose.yaml
