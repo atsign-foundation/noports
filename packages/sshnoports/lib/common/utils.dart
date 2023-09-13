@@ -154,7 +154,6 @@ Future<(String, String)> generateSshKeys(
 Future<void> addEphemeralKeyToAuthorizedKeys(
     {required String sshPublicKey,
     required int localSshdPort,
-    String? homeDirectory,
     String sessionId = '',
     String permissions = ''}) async {
   // Check to see if the ssh public key looks like one!
@@ -162,7 +161,7 @@ Future<void> addEphemeralKeyToAuthorizedKeys(
     throw ('$sshPublicKey does not look like a public key');
   }
 
-  homeDirectory ??= getHomeDirectory(throwIfNull: true)!;
+  String homeDirectory = getHomeDirectory(throwIfNull: true)!;
 
   var sshHomeDirectory =
       '$homeDirectory/.ssh/'.replaceAll('/', Platform.pathSeparator);
@@ -191,15 +190,20 @@ Future<void> addEphemeralKeyToAuthorizedKeys(
         ' '
         '${sshPublicKey.trim()}'
         ' '
-        '$sessionId\n',
+        'sshnp_ephemeral_$sessionId\n',
         mode: FileMode.append);
   }
 }
 
 Future<void> removeEphemeralKeyFromAuthorizedKeys(
-    String sshHomeDirectory, String sessionId, AtSignLogger logger) async {
+    String sessionId, AtSignLogger logger,
+    {String? sshHomeDirectory}) async {
   try {
+    sshHomeDirectory ??=
+        getDefaultSshDirectory(getHomeDirectory(throwIfNull: true)!);
     final File file = File('${sshHomeDirectory}authorized_keys');
+    logger.info('Removing ephemeral key for session $sessionId'
+        ' from ${file.absolute.path}');
     // read into List of strings
     final List<String> lines = await file.readAsLines();
     // find the line we want to remove
