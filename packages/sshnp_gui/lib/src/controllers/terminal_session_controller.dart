@@ -143,7 +143,7 @@ class TerminalSessionFamilyController extends FamilyNotifier<TerminalSession, St
 
     // Resize the terminal when the window is resized
     state.terminal.onResize = (w, h, pw, ph) {
-      state.pty.resize((h / ph).floor(), (w / pw).floor());
+      state.pty.resize(h, w);
     };
   }
 
