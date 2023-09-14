@@ -69,6 +69,7 @@ class _ProfileFormState extends ConsumerState<ProfileForm> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       CustomTextFormField(
                         initialValue: oldConfig.profileName,
@@ -94,6 +95,7 @@ class _ProfileFormState extends ConsumerState<ProfileForm> {
                   ),
                   gapH10,
                   Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       CustomTextFormField(
                         initialValue: oldConfig.sshnpdAtSign ?? '',
@@ -118,6 +120,7 @@ class _ProfileFormState extends ConsumerState<ProfileForm> {
                   ),
                   gapH10,
                   Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       CustomTextFormField(
                         initialValue: oldConfig.sendSshPublicKey,
@@ -126,14 +129,16 @@ class _ProfileFormState extends ConsumerState<ProfileForm> {
                           newConfig,
                           SSHNPPartialParams(sendSshPublicKey: value),
                         ),
-                        validator: FormValidator.validateRequiredField,
                       ),
                       gapW8,
-                      Row(
-                        children: [
-                          Text(strings.rsa),
-                          gapW8,
-                          Switch(
+                      SizedBox(
+                        width: CustomTextFormField.defaultWidth,
+                        height: CustomTextFormField.defaultHeight,
+                        child: Row(
+                          children: [
+                            Text(strings.rsa),
+                            gapW8,
+                            Switch(
                               value: newConfig.rsa ?? oldConfig.rsa,
                               onChanged: (newValue) {
                                 setState(() {
@@ -142,13 +147,16 @@ class _ProfileFormState extends ConsumerState<ProfileForm> {
                                     SSHNPPartialParams(rsa: newValue),
                                   );
                                 });
-                              }),
-                        ],
+                              },
+                            ),
+                          ],
+                        ),
                       ),
                     ],
                   ),
                   gapH10,
                   Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       CustomTextFormField(
                           initialValue: oldConfig.remoteUsername ?? '',
@@ -173,6 +181,7 @@ class _ProfileFormState extends ConsumerState<ProfileForm> {
                   ),
                   gapH10,
                   Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       CustomTextFormField(
                         initialValue: oldConfig.localPort.toString(),
@@ -198,7 +207,8 @@ class _ProfileFormState extends ConsumerState<ProfileForm> {
                     initialValue: oldConfig.localSshOptions.join(','),
                     hintText: strings.localSshOptionsHint,
                     labelText: strings.localSshOptions,
-                    width: 192 * 2 + 10,
+                    //Double the width of the text field (+8 for the gapW8)
+                    width: CustomTextFormField.defaultWidth * 2 + 8,
                     onChanged: (value) => newConfig = SSHNPPartialParams.merge(
                       newConfig,
                       SSHNPPartialParams(localSshOptions: value.split(',')),
@@ -206,6 +216,7 @@ class _ProfileFormState extends ConsumerState<ProfileForm> {
                   ),
                   gapH10,
                   Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       CustomTextFormField(
                         initialValue: oldConfig.atKeysFilePath,
@@ -228,22 +239,33 @@ class _ProfileFormState extends ConsumerState<ProfileForm> {
                   ),
                   gapH10,
                   Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(strings.verbose),
-                      gapW8,
-                      Switch(
-                          value: newConfig.verbose ?? oldConfig.verbose,
-                          onChanged: (newValue) {
-                            setState(() {
-                              newConfig = SSHNPPartialParams.merge(
-                                newConfig,
-                                SSHNPPartialParams(verbose: newValue),
-                              );
-                            });
-                          }),
+                      SizedBox(
+                        width: CustomTextFormField.defaultWidth,
+                        height: CustomTextFormField.defaultHeight,
+                        child: Row(
+                          children: [
+                            Text(strings.verbose),
+                            gapW8,
+                            Switch(
+                              value: newConfig.verbose ?? oldConfig.verbose,
+                              onChanged: (newValue) {
+                                setState(() {
+                                  newConfig = SSHNPPartialParams.merge(
+                                    newConfig,
+                                    SSHNPPartialParams(verbose: newValue),
+                                  );
+                                });
+                              },
+                            ),
+                          ],
+                        ),
+                      ),
                     ],
                   ),
                   Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       ElevatedButton(
                         onPressed: () => onSubmit(oldConfig, newConfig),
