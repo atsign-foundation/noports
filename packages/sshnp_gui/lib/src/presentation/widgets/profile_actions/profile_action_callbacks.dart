@@ -1,9 +1,17 @@
+import 'dart:io';
+import 'dart:typed_data';
+
+import 'package:file_selector/file_selector.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:sshnoports/common/utils.dart';
+import 'package:sshnoports/sshnp/config_repository/config_file_repository.dart';
 import 'package:sshnp_gui/src/controllers/config_controller.dart';
 import 'package:sshnp_gui/src/controllers/navigation_controller.dart';
 import 'package:sshnp_gui/src/presentation/widgets/profile_actions/profile_delete_dialog.dart';
+import 'package:sshnp_gui/src/presentation/widgets/utility/custom_snack_bar.dart';
+import 'package:path/path.dart' as path;
 
 class ProfileActionCallbacks {
   static void edit(WidgetRef ref, BuildContext context, String profileName) {
@@ -25,5 +33,40 @@ class ProfileActionCallbacks {
       barrierDismissible: false,
       builder: (_) => ProfileDeleteDialog(profileName: profileName),
     );
+  }
+
+  static Future<void> export(WidgetRef ref, BuildContext context, String profileName) async {
+    if (Platform.isMacOS || Platform.isLinux || Platform.isWindows) {
+      return _exportDesktop(ref, context, profileName);
+    }
+    CustomSnackBar.error(content: 'Unable to export profile:\nUnsupported platform');
+  }
+
+  static Future<void> _exportDesktop(WidgetRef ref, BuildContext context, String profileName) async {
+    try {
+      final suggestedName = ConfigFileRepository.fromProfileName(profileName, basenameOnly: true);
+      final initialDirectory = getDefaultSshnpConfigDirectory(getHomeDirectory(throwIfNull: true)!);
+      const String mimeType = 'text/plain';
+
+      final FileSaveLocation? saveLocation = await getSaveLocation(
+        suggestedName: suggestedName,
+        initialDirectory: initialDirectory,
+        acceptedTypeGroups: [
+          const XTypeGroup(extensions: ['env']),
+        ],
+      );
+      if (saveLocation == null) return;
+      final params = ref.read(configFamilyController(profileName));
+      final fileData = Uint8List.fromList(params.requireValue.toConfig().codeUnits);
+      final XFile textFile = XFile.fromData(
+        fileData,
+        mimeType: mimeType,
+        name: path.basename(saveLocation.path),
+      );
+
+      await textFile.saveTo(saveLocation.path);
+    } catch (e) {
+      CustomSnackBar.error(content: 'Unable to export profile:\n${e.toString()}');
+    }
   }
 }

@@ -12,12 +12,15 @@ class ConfigFileRepository {
     return profileName;
   }
 
-  static String fromProfileName(String profileName, {String? directory, bool replaceSpaces = true}) {
+  static String fromProfileName(String profileName,
+      {String? directory, bool replaceSpaces = true, bool basenameOnly = false}) {
     var fileName = profileName;
     if (replaceSpaces) fileName = fileName.replaceAll(' ', '_');
+    final basename = '$fileName.env';
+    if (basenameOnly) return basename;
     return path.join(
       directory ?? getDefaultSshnpConfigDirectory(getHomeDirectory(throwIfNull: true)!),
-      '$fileName.env',
+      basename,
     );
   }
 

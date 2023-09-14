@@ -19,6 +19,10 @@ class _ProfileMenuBarState extends ConsumerState<ProfileMenuButton> {
     return PopupMenuButton(
       itemBuilder: (context) => [
         PopupMenuItem(
+          child: ProfileMenuItem(const Icon(Icons.download), strings.export),
+          onTap: () => ProfileActionCallbacks.export(ref, context, widget.profileName),
+        ),
+        PopupMenuItem(
           child: ProfileMenuItem(const Icon(Icons.edit), strings.edit),
           onTap: () => ProfileActionCallbacks.edit(ref, context, widget.profileName),
         ),
