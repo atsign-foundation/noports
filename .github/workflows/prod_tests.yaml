@@ -22,6 +22,7 @@ jobs:
   prod_rvd_test:
     runs-on: ubuntu-latest
     strategy:
+      fail-fast: false # if one job fails, do not fail the others
       matrix:
         rvd:
           # - ${{ env.SSHRVD_ATSIGN }}
@@ -38,7 +39,7 @@ jobs:
         run: |
           echo "rvd: ${{ matrix.rvd }}"
 
-      - uses: actions/checkout@3df4ab11eba7bda6032a0b82a6bb43b11571feac # v4.0.0
+      - uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9 # v3.5.3
 
       - name: Setup NP/NPD key env
         run: |
