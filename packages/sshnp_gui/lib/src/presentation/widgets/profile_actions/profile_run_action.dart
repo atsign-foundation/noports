@@ -50,12 +50,13 @@ class _ProfileRunActionState extends ConsumerState<ProfileRunAction> {
       if (sshnpResult is SSHNPFailed) {
         throw sshnpResult!;
       }
+      ref.read(backgroundSessionFamilyController(widget.params.profileName!).notifier).endStartUp();
     } catch (e) {
+      Future stop = onStop();
       if (mounted) {
         CustomSnackBar.error(content: e.toString());
       }
-    } finally {
-      ref.read(backgroundSessionFamilyController(widget.params.profileName!).notifier).endStartUp();
+      await stop;
     }
   }
 

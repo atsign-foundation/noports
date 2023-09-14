@@ -303,7 +303,6 @@ class SSHNPPartialParams {
   factory SSHNPPartialParams.fromJson(String json) => SSHNPPartialParams.fromMap(jsonDecode(json));
 
   factory SSHNPPartialParams.fromMap(Map<String, dynamic> args) {
-    print(args['local-ssh-options']);
     return SSHNPPartialParams(
       profileName: args['profile-name'],
       clientAtSign: args['from'],
