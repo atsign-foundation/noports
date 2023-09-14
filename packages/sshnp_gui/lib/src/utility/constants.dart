@@ -7,7 +7,8 @@ const kBackGroundColorDark = Color(0xFF222222);
 
 const kEmptyFieldValidationError = 'Field cannot be left blank';
 const kAtsignFieldValidationError = 'Field must start with @';
-const kProfileNameFieldValidationError = 'Field cannot contain any of ".@:_"';
+const kProfileNameFieldValidationError =
+    'Field must only use alphanumeric characters and spaces';
 
 const String dotEnvMimeType = 'text/plain';
 const XTypeGroup dotEnvTypeGroup = XTypeGroup(

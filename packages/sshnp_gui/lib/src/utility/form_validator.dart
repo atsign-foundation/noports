@@ -18,10 +18,10 @@ class FormValidator {
   }
 
   static String? validateProfileNameField(String? value) {
-    String invalidChars = '.@:_';
+    String invalid = '[^a-zA-Z0-9 ]';
     if (value?.isEmpty ?? true) {
       return kEmptyFieldValidationError;
-    } else if (value!.contains(RegExp('[$invalidChars]'))) {
+    } else if (value!.contains(RegExp(invalid))) {
       return kProfileNameFieldValidationError;
     }
     return null;
