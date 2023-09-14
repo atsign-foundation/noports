@@ -2,7 +2,7 @@ import 'dart:io';
 import 'package:at_client/at_client.dart';
 import 'package:at_onboarding_cli/at_onboarding_cli.dart';
 import 'package:version/version.dart';
-
+import 'package:path/path.dart' as path;
 import 'service_factories.dart';
 
 Future<AtClient> createAtClientCli({
@@ -21,22 +21,18 @@ Future<AtClient> createAtClientCli({
     pathBase += '$pathExtension${Platform.pathSeparator}';
   }
   AtOnboardingPreference atOnboardingConfig = AtOnboardingPreference()
-    ..hiveStoragePath =
-        '$pathBase/storage'.replaceAll('/', Platform.pathSeparator)
+    ..hiveStoragePath = path.normalize('$pathBase/storage')
     ..namespace = namespace
-    ..downloadPath = '$homeDirectory/$subDirectory/files'
-        .replaceAll('/', Platform.pathSeparator)
+    ..downloadPath = path.normalize('$homeDirectory/$subDirectory/files')
     ..isLocalStoreRequired = true
-    ..commitLogPath =
-        '$pathBase/storage/commitLog'.replaceAll('/', Platform.pathSeparator)
+    ..commitLogPath = path.normalize('$pathBase/storage/commitLog')
     ..fetchOfflineNotifications = false
     ..atKeysFilePath = atKeysFilePath
     ..atProtocolEmitted = Version(2, 0, 0)
     ..rootDomain = rootDomain;
 
-  AtOnboardingService onboardingService = AtOnboardingServiceImpl(
-      atsign, atOnboardingConfig,
-      atServiceFactory: ServiceFactoryWithNoOpSyncService());
+  AtOnboardingService onboardingService =
+      AtOnboardingServiceImpl(atsign, atOnboardingConfig, atServiceFactory: ServiceFactoryWithNoOpSyncService());
 
   await onboardingService.authenticate();
 

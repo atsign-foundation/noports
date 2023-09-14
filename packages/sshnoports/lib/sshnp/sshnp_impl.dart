@@ -218,7 +218,7 @@ class SSHNPImpl implements SSHNP {
     } else if (path.normalize(sendSshPublicKey).contains('/') || path.normalize(sendSshPublicKey).contains(r'\')) {
       publicKeyFileName = path.normalize(path.absolute(sendSshPublicKey));
     } else {
-      publicKeyFileName = path.normalize('$sshHomeDirectory$sendSshPublicKey');
+      publicKeyFileName = path.normalize('$sshHomeDirectory/$sendSshPublicKey');
     }
   }
 
@@ -625,7 +625,7 @@ class SSHNPImpl implements SSHNP {
     // So we can write the ephemeralPrivateKey to a tmp file,
     // set its permissions appropriately, and remove it after we've
     // executed the command
-    var tmpFileName = '/tmp/ephemeral_$sessionId';
+    var tmpFileName = path.normalize('$sshHomeDirectory/tmp/ephemeral_$sessionId');
     File tmpFile = File(tmpFileName);
     await tmpFile.create(recursive: true);
     await tmpFile.writeAsString(ephemeralPrivateKey, mode: FileMode.write, flush: true);
