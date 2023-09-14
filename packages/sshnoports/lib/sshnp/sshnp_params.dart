@@ -14,25 +14,28 @@ class SSHNPParams {
   final String device;
   final int port;
   final int localPort;
+  final String sendSshPublicKey;
+  final List<String> localSshOptions;
+  final bool rsa;
+  final String? remoteUsername;
+  final bool verbose;
+  final String rootDomain;
+  final int localSshdPort;
+  final bool legacyDaemon;
+  final int remoteSshdPort;
+  final int idleTimeout;
+  final bool addForwardsToTunnel;
+
+  /// Late variables
   late final String username;
   late final String homeDirectory;
   late final String atKeysFilePath;
-  late final String sendSshPublicKey;
-  late final List<String> localSshOptions;
-  late final bool rsa;
-  late final String? remoteUsername;
-  late final bool verbose;
-  late final String rootDomain;
-  late final int localSshdPort;
-  late final bool legacyDaemon;
-  late final int remoteSshdPort;
-  late final int idleTimeout;
   late final String sshClient;
-  late final bool addForwardsToTunnel;
 
   /// Special Arguments
-  late final String? profileName; // automatically populated with the filename if from a configFile
-  late final bool listDevices;
+  final String?
+      profileName; // automatically populated with the filename if from a configFile
+  final bool listDevices;
 
   SSHNPParams({
     required this.clientAtSign,
@@ -131,7 +134,8 @@ class SSHNPParams {
       device: partial.device ?? SSHNP.defaultDevice,
       port: partial.port ?? SSHNP.defaultPort,
       localPort: partial.localPort ?? SSHNP.defaultLocalPort,
-      sendSshPublicKey: partial.sendSshPublicKey ?? SSHNP.defaultSendSshPublicKey,
+      sendSshPublicKey:
+          partial.sendSshPublicKey ?? SSHNP.defaultSendSshPublicKey,
       localSshOptions: partial.localSshOptions ?? SSHNP.defaultLocalSshOptions,
       rsa: partial.rsa ?? defaults.defaultRsa,
       verbose: partial.verbose ?? defaults.defaultVerbose,
@@ -204,26 +208,26 @@ class SSHNPPartialParams {
   static final ArgParser parser = createArgParser();
 
   /// Main Params
-  late final String? profileName;
-  late final String? clientAtSign;
-  late final String? sshnpdAtSign;
-  late final String? host;
-  late final String? device;
-  late final int? port;
-  late final int? localPort;
-  late final int? localSshdPort;
-  late final String? atKeysFilePath;
-  late final String? sendSshPublicKey;
-  late final List<String>? localSshOptions;
-  late final bool? rsa;
-  late final String? remoteUsername;
-  late final bool? verbose;
-  late final String? rootDomain;
-  late final bool? legacyDaemon;
-  late final int? remoteSshdPort;
-  late final int? idleTimeout;
-  late final String? sshClient;
-  late final bool? addForwardsToTunnel;
+  final String? profileName;
+  final String? clientAtSign;
+  final String? sshnpdAtSign;
+  final String? host;
+  final String? device;
+  final int? port;
+  final int? localPort;
+  final int? localSshdPort;
+  final String? atKeysFilePath;
+  final String? sendSshPublicKey;
+  final List<String>? localSshOptions;
+  final bool? rsa;
+  final String? remoteUsername;
+  final bool? verbose;
+  final String? rootDomain;
+  final bool? legacyDaemon;
+  final int? remoteSshdPort;
+  final int? idleTimeout;
+  final bool? addForwardsToTunnel;
+  final String? sshClient;
 
   /// Special Params
   // N.B. config file is a meta param and doesn't need to be included
