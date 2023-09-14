@@ -41,11 +41,15 @@ class SSHCommand implements SSHNPCommandResult {
     required this.localPort,
     required this.remoteUsername,
     required this.host,
+    List<String>? localSshOptions,
     this.privateKeyFileName,
     this.sshrvResult,
     this.sshProcess,
     this.sshClient,
-  }) : sshOptions = (shouldIncludePrivateKey(privateKeyFileName) ? _optionsWithPrivateKey : []);
+  }) : sshOptions = [
+          if (shouldIncludePrivateKey(privateKeyFileName)) ..._optionsWithPrivateKey,
+          ...(localSshOptions ?? [])
+        ];
 
   static bool shouldIncludePrivateKey(String? privateKeyFileName) =>
       privateKeyFileName != null && privateKeyFileName.isNotEmpty;
