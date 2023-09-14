@@ -1,9 +1,11 @@
 import 'dart:async';
 
 import 'package:at_client_mobile/at_client_mobile.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sshnoports/sshnp/sshnp.dart';
 import 'package:sshnoports/sshnp/config_repository/config_key_repository.dart';
+import 'package:sshnp_gui/src/presentation/widgets/utility/custom_snack_bar.dart';
 
 enum ConfigFileWriteState { create, update }
 
@@ -81,8 +83,12 @@ class ConfigFamilyController extends AutoDisposeFamilyAsyncNotifier<SSHNPParams,
     return ConfigKeyRepository.getParams(arg, atClient: atClient);
   }
 
-  Future<void> putConfig(SSHNPParams params) async {
+  Future<void> putConfig(SSHNPParams params, {String? oldProfileName, BuildContext? context}) async {
     AtClient atClient = AtClientManager.getInstance().atClient;
+    SSHNPParams oldParams = state.value ?? SSHNPParams.empty();
+    if (oldProfileName != null) {
+      ref.read(configFamilyController(oldProfileName).notifier).deleteConfig(context: context);
+    }
     if (params.clientAtSign != atClient.getCurrentAtSign()) {
       params = SSHNPParams.merge(
         params,
@@ -91,12 +97,27 @@ class ConfigFamilyController extends AutoDisposeFamilyAsyncNotifier<SSHNPParams,
         ),
       );
     }
-    await ConfigKeyRepository.putParams(params, atClient: atClient);
+    state = AsyncValue.data(params);
+    try {
+      await ConfigKeyRepository.putParams(params, atClient: atClient);
+    } catch (e) {
+      if (context?.mounted ?? false) {
+        CustomSnackBar.error(content: 'Failed to update profile: $arg');
+      }
+      state = AsyncValue.data(oldParams);
+    }
     ref.read(configListController.notifier).add(params.profileName!);
   }
 
-  Future<void> deleteConfig() async {
-    await ConfigKeyRepository.deleteParams(arg, atClient: AtClientManager.getInstance().atClient);
-    ref.read(configListController.notifier).remove(arg);
+  Future<void> deleteConfig({BuildContext? context}) async {
+    try {
+      await ConfigKeyRepository.deleteParams(arg, atClient: AtClientManager.getInstance().atClient);
+      ref.read(configListController.notifier).remove(arg);
+      state = AsyncValue.error('SSHNPParams has been disposed', StackTrace.current);
+    } catch (e) {
+      if (context?.mounted ?? false) {
+        CustomSnackBar.error(content: 'Failed to delete profile: $arg');
+      }
+    }
   }
 }

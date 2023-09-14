@@ -48,7 +48,7 @@ class ProfileDeleteDialog extends ConsumerWidget {
             ),
             ElevatedButton(
               onPressed: () async {
-                await ref.read(configFamilyController(profileName).notifier).deleteConfig();
+                await ref.read(configFamilyController(profileName).notifier).deleteConfig(context: context);
                 if (context.mounted) Navigator.of(context).pop();
               },
               style: Theme.of(context).elevatedButtonTheme.style!.copyWith(

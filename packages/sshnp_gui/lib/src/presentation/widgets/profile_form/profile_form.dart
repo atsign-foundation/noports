@@ -37,15 +37,15 @@ class _ProfileFormState extends ConsumerState<ProfileForm> {
           oldConfig.profileName!.isNotEmpty &&
           newConfig.profileName != oldConfig.profileName;
       SSHNPParams config = SSHNPParams.merge(oldConfig, newConfig);
+
       if (rename) {
         // delete old config file and write the new one
-        await ref.read(configFamilyController(oldConfig.profileName!).notifier).deleteConfig();
-        await controller.putConfig(config);
+        await controller.putConfig(config, oldProfileName: oldConfig.profileName!, context: context);
       } else {
         // create new config file
-        await controller.putConfig(config);
+        await controller.putConfig(config, context: context);
       }
-      if (context.mounted) {
+      if (mounted) {
         ref.read(navigationRailController.notifier).setRoute(AppRoute.home);
         context.pushReplacementNamed(AppRoute.home.name);
       }
