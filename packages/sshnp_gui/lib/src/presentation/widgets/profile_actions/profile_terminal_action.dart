@@ -15,7 +15,8 @@ class ProfileTerminalAction extends ConsumerStatefulWidget {
   const ProfileTerminalAction(this.params, {Key? key}) : super(key: key);
 
   @override
-  ConsumerState<ProfileTerminalAction> createState() => _ProfileTerminalActionState();
+  ConsumerState<ProfileTerminalAction> createState() =>
+      _ProfileTerminalActionState();
 }
 
 class _ProfileTerminalActionState extends ConsumerState<ProfileTerminalAction> {
@@ -24,7 +25,8 @@ class _ProfileTerminalActionState extends ConsumerState<ProfileTerminalAction> {
       showDialog<void>(
         context: context,
         barrierDismissible: false,
-        builder: (BuildContext context) => const Center(child: CircularProgressIndicator()),
+        builder: (BuildContext context) =>
+            const Center(child: CircularProgressIndicator()),
       );
     }
 
@@ -33,6 +35,7 @@ class _ProfileTerminalActionState extends ConsumerState<ProfileTerminalAction> {
         widget.params,
         SSHNPPartialParams(
           legacyDaemon: false,
+          sshClient: 'pure-dart',
         ),
       );
 
@@ -49,14 +52,17 @@ class _ProfileTerminalActionState extends ConsumerState<ProfileTerminalAction> {
       }
 
       /// Issue a new session id
-      final sessionId = ref.watch(terminalSessionController.notifier).createSession();
+      final sessionId =
+          ref.watch(terminalSessionController.notifier).createSession();
 
       /// Create the session controller for the new session id
-      final sessionController = ref.watch(terminalSessionFamilyController(sessionId).notifier);
+      final sessionController =
+          ref.watch(terminalSessionFamilyController(sessionId).notifier);
 
       if (result is SSHNPCommandResult) {
         /// Set the command for the new session
-        sessionController.setProcess(command: result.command, args: result.args);
+        sessionController.setProcess(
+            command: result.command, args: result.args);
         sessionController.issueDisplayName(widget.params.profileName!);
         ref.read(navigationRailController.notifier).setRoute(AppRoute.terminal);
         if (mounted) {

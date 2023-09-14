@@ -36,6 +36,7 @@ class _ProfileRunActionState extends ConsumerState<ProfileRunAction> {
           idleTimeout: 120, // 120 / 60 = 2 minutes
           addForwardsToTunnel: true,
           legacyDaemon: false,
+          sshClient: 'pure-dart',
         ),
       );
 
