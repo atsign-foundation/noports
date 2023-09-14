@@ -33,8 +33,9 @@ class _ProfileRunActionState extends ConsumerState<ProfileRunAction> {
       SSHNPParams params = SSHNPParams.merge(
         widget.params,
         SSHNPPartialParams(
-          idleTimeout: 60,
+          idleTimeout: 120, // 120 / 60 = 2 minutes
           addForwardsToTunnel: true,
+          legacyDaemon: false,
         ),
       );
 

@@ -29,8 +29,15 @@ class _ProfileTerminalActionState extends ConsumerState<ProfileTerminalAction> {
     }
 
     try {
-      final sshnp = await SSHNP.fromParams(
+      SSHNPParams params = SSHNPParams.merge(
         widget.params,
+        SSHNPPartialParams(
+          legacyDaemon: false,
+        ),
+      );
+
+      final sshnp = await SSHNP.fromParams(
+        params,
         atClient: AtClientManager.getInstance().atClient,
         sshrvGenerator: SSHRV.pureDart,
       );
