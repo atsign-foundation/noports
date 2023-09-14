@@ -462,7 +462,7 @@ class SSHNPImpl implements SSHNP {
 
     bool acked = await waitForDaemonResponse();
     if (!acked) {
-      return SSHNPFailed('sshnp timed out: waiting for daemon response');
+      return SSHNPFailed('sshnp timed out: waiting for daemon response\nhint: make sure the device is online');
     }
 
     if (sshnpdAckErrors) {
@@ -762,7 +762,7 @@ class SSHNPImpl implements SSHNP {
     bool acked = await waitForDaemonResponse();
     await cleanUpAfterReverseSsh(this);
     if (!acked) {
-      return SSHNPFailed('sshnp timed out: waiting for daemon response');
+      return SSHNPFailed('sshnp timed out: waiting for daemon response\nhint: make sure the device is online');
     }
 
     if (sshnpdAckErrors) {
