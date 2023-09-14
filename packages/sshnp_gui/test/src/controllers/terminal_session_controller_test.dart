@@ -16,15 +16,25 @@ void main() {
         controller = container.read(terminalSessionController.notifier);
       });
       test(
-        'createSession',
+        '''
+      Given no argument
+      When createSession is called
+      Then return a String
+      ''',
         () {
           expect(controller.createSession(), isA<String>());
         },
       );
       test(
-        'setSession',
+        '''
+      Given test
+      When setSession is called
+      Then state is test
+      And state is not exam
+      ''',
         () {
           controller.setSession('test');
+          expect(controller.state, 'test');
           expect(controller.state, isNot('exam'));
         },
       );
@@ -44,7 +54,14 @@ void main() {
       });
 
       test(
-        'issueDisplayName success',
+        '''
+      Given TestProfile
+      When issueDisplayName is called the first time
+      Then state.displayName is TestProfile-1
+      When issueDisplayName is called the second time
+      Then state.displayName is TestProfile-2
+      And displayName is TestProfile-2
+      ''',
         () {
           controller.issueDisplayName('TestProfile');
           expect(controller.state.displayName, 'TestProfile-1');
@@ -54,7 +71,15 @@ void main() {
         },
       );
       test(
-        'setProcess success',
+        '''
+      Given no arguments
+      When setProcess is called
+      Then state.command is null
+      And stat.args is empty list
+      When setProcess is called with arguments
+      Then state.command is test
+      And state.args is a list with test
+      ''',
         () {
           controller.setProcess();
           expect(controller.state.command, null);
