@@ -1,34 +1,26 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:sshnp_gui/src/presentation/widgets/home_screen_actions/home_screen_action_callbacks.dart';
 import 'package:sshnp_gui/src/presentation/widgets/profile_actions/profile_action_callbacks.dart';
 import 'package:sshnp_gui/src/utility/sizes.dart';
 
-class ProfileMenuButton extends ConsumerStatefulWidget {
-  final String profileName;
-  const ProfileMenuButton(this.profileName, {Key? key}) : super(key: key);
+class HomeScreenMenuButton extends ConsumerStatefulWidget {
+  const HomeScreenMenuButton({Key? key}) : super(key: key);
 
   @override
-  ConsumerState<ProfileMenuButton> createState() => _ProfileMenuBarState();
+  ConsumerState<HomeScreenMenuButton> createState() => _ProfileMenuBarState();
 }
 
-class _ProfileMenuBarState extends ConsumerState<ProfileMenuButton> {
+class _ProfileMenuBarState extends ConsumerState<HomeScreenMenuButton> {
   @override
   Widget build(BuildContext context) {
     final strings = AppLocalizations.of(context)!;
     return PopupMenuButton(
       itemBuilder: (context) => [
         PopupMenuItem(
-          child: ProfileMenuItem(const Icon(Icons.download), strings.export),
-          onTap: () => ProfileActionCallbacks.export(ref, context, widget.profileName),
-        ),
-        PopupMenuItem(
-          child: ProfileMenuItem(const Icon(Icons.edit), strings.edit),
-          onTap: () => ProfileActionCallbacks.edit(ref, context, widget.profileName),
-        ),
-        PopupMenuItem(
-          child: const ProfileMenuItem(Icon(Icons.delete_forever), 'Delete'),
-          onTap: () => ProfileActionCallbacks.delete(context, widget.profileName),
+          child: ProfileMenuItem(const Icon(Icons.upload), strings.import),
+          onTap: () => HomeScreenActionCallbacks.import(ref, context),
         ),
       ],
       padding: EdgeInsets.zero,

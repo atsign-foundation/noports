@@ -50,7 +50,7 @@ class ConfigListController extends AutoDisposeAsyncNotifier<Iterable<String>> {
   @override
   Future<Iterable<String>> build() async {
     AtClient atClient = AtClientManager.getInstance().atClient;
-    return ConfigKeyRepository.listProfiles(atClient);
+    return Set.from(await ConfigKeyRepository.listProfiles(atClient));
   }
 
   Future<void> refresh() async {

@@ -49,6 +49,25 @@
 			<key>UTTypeReferenceURL</key>
 			<string>https://github.com/atsign-foundation/at_protocol</string>
 		</dict>
+		<dict>
+			<key>UTTypeIdentifier</key>
+			<string>com.atsign.sshnp-config</string>
+			<key>UTTypeConformsTo</key>
+			<array>
+				<string>public.plain-text</string>
+			</array>
+			<key>UTTypeDescription</key>
+			<string>Dotenv File</string>
+			<key>UTTypeTagSpecification</key>
+			<dict>
+				<key>public.filename-extension</key>
+				<array>
+					<string>env</string>
+				</array>
+			</dict>
+			<key>UTTypeReferenceURL</key>
+			<string>https://12factor.net/</string>
+		</dict>
 	</array>
 </dict>
 </plist>

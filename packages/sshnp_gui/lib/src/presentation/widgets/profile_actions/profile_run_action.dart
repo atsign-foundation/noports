@@ -34,17 +34,22 @@ class _ProfileRunActionState extends ConsumerState<ProfileRunAction> {
     }
 
     try {
-      sshnp = await SSHNP.fromParams(
+      SSHNPParams params = SSHNPParams.merge(
         widget.params,
+        SSHNPPartialParams(
+          idleTimeout: 60,
+          addForwardsToTunnel: true,
+        ),
+      );
+
+      sshnp = await SSHNP.fromParams(
+        params,
         atClient: AtClientManager.getInstance().atClient,
         sshrvGenerator: SSHRV.pureDart,
       );
 
-      // TODO set --single-session, --timeout
-
       await sshnp!.init();
       final sshnpResult = await sshnp!.run();
-      // TODO throw away bad results
     } catch (e) {
       if (mounted) {
         CustomSnackBar.error(content: e.toString());
@@ -57,7 +62,7 @@ class _ProfileRunActionState extends ConsumerState<ProfileRunAction> {
   }
 
   Future<void> onStop() async {
-    // need to implement SSHNP.stop
+    // TODO need to implement SSHNP.stop
   }
 
   static const Map<BackgroundSessionStatus, Widget> _iconMap = {

@@ -12,12 +12,15 @@ class ConfigFileRepository {
     return profileName;
   }
 
-  static String fromProfileName(String profileName, {String? directory, bool replaceSpaces = true}) {
+  static String fromProfileName(String profileName,
+      {String? directory, bool replaceSpaces = true, bool basenameOnly = false}) {
     var fileName = profileName;
     if (replaceSpaces) fileName = fileName.replaceAll(' ', '_');
+    final basename = '$fileName.env';
+    if (basenameOnly) return basename;
     return path.join(
       directory ?? getDefaultSshnpConfigDirectory(getHomeDirectory(throwIfNull: true)!),
-      '$fileName.env',
+      basename,
     );
   }
 
@@ -88,15 +91,6 @@ class ConfigFileRepository {
   }
 
   static Map<String, dynamic> parseConfigFile(String fileName) {
-    Map<String, dynamic> args = <String, dynamic>{};
-
-    if (path.normalize(fileName).contains('/') || path.normalize(fileName).contains(r'\')) {
-      fileName = path.normalize(path.absolute(fileName));
-    } else {
-      fileName =
-          path.normalize(path.absolute(getDefaultSshnpConfigDirectory(getHomeDirectory(throwIfNull: true)!), fileName));
-    }
-
     File file = File(fileName);
 
     if (!file.existsSync()) {
@@ -104,7 +98,16 @@ class ConfigFileRepository {
     }
     try {
       List<String> lines = file.readAsLinesSync();
+      return parseConfigFileContents(lines);
+    } on FileSystemException {
+      throw Exception('Error reading config file: $fileName');
+    }
+  }
 
+  static Map<String, dynamic> parseConfigFileContents(List<String> lines) {
+    Map<String, dynamic> args = <String, dynamic>{};
+
+    try {
       for (String line in lines) {
         if (line.startsWith('#')) continue;
 
@@ -142,10 +145,8 @@ class ConfigFileRepository {
         }
       }
       return args;
-    } on FileSystemException {
-      throw Exception('Error reading config file: $fileName');
     } catch (e) {
-      throw Exception('Error parsing config file: $fileName');
+      throw Exception('Error parsing config file');
     }
   }
 }
