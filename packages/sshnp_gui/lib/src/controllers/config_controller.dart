@@ -75,7 +75,7 @@ class ConfigFamilyController extends AutoDisposeFamilyAsyncNotifier<SSHNPParams,
     if (arg.isEmpty) {
       return SSHNPParams.merge(
         SSHNPParams.empty(),
-        SSHNPPartialParams()..clientAtSign = atClient.getCurrentAtSign()!,
+        SSHNPPartialParams(clientAtSign: atClient.getCurrentAtSign()!),
       );
     }
     return ConfigKeyRepository.getParams(arg, atClient: atClient);
