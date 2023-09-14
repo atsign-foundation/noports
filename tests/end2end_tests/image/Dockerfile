@@ -57,7 +57,7 @@ WORKDIR ${HOMEDIR}
 
 USER ${USER}
 
-ENTRYPOINT cp -r /mount/. /atsign && sudo service ssh start && sh ${HOMEDIR}/entrypoint.sh
+ENTRYPOINT cp -r /mount/. ${HOMEDIR} && sudo service ssh start && sh ${HOMEDIR}/entrypoint.sh
 # END BRANCH
 
 # LOCAL
@@ -90,7 +90,7 @@ WORKDIR ${HOMEDIR}
 
 USER ${USER}
 
-ENTRYPOINT cp -r /mount/. /atsign && sudo service ssh start && sh ${HOMEDIR}/entrypoint.sh
+ENTRYPOINT cp -r /mount/. ${HOMEDIR} && sudo service ssh start && sh ${HOMEDIR}/entrypoint.sh
 # END LOCAL
 
 # RELEASE
@@ -139,7 +139,7 @@ WORKDIR ${HOMEDIR}
 
 USER ${USER}
 
-ENTRYPOINT cp -r /mount/. /atsign && sudo service ssh start && sh ${HOMEDIR}/entrypoint.sh
+ENTRYPOINT cp -r /mount/. ${HOMEDIR} && sudo service ssh start && sh ${HOMEDIR}/entrypoint.sh
 # END RELEASE
 
 # SSHNP INSTALLER
@@ -170,7 +170,7 @@ FROM build-sshnp-installer AS runtime-sshnp-installer
 USER ${USER}
 WORKDIR ${HOMEDIR}
 
-ENTRYPOINT cp -r /mount/. /atsign && sudo service ssh start && sh ${HOMEDIR}/entrypoint.sh
+ENTRYPOINT cp -r /mount/. ${HOMEDIR} && sudo service ssh start && sh ${HOMEDIR}/entrypoint.sh
 # END SSHNP INSTALLER
 
 # SSHNPD INSTALLER
@@ -204,7 +204,7 @@ FROM build-sshnpd-installer AS runtime-sshnpd-installer
 USER ${USER}
 WORKDIR ${HOMEDIR}
 
-ENTRYPOINT cp -r /mount/. /atsign && sudo service ssh start && sh ${HOMEDIR}/entrypoint.sh
+ENTRYPOINT cp -r /mount/. ${HOMEDIR} && sudo service ssh start && sh ${HOMEDIR}/entrypoint.sh
 # END SSHNPD INSTALLER
 
 # MANUAL

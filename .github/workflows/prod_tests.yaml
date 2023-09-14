@@ -10,19 +10,16 @@ on:
 
 env:
   SSHNP_ATSIGN: "@8incanteater"
-  SSHNP_ATSIGN_KEYS: ${{ secrets.ATKEYS_8INCANTEATER }}
   SSHNPD_ATSIGN: "@8052simple"
-  SSHNPD_ATSIGN_KEYS: ${{ secrets.ATKEYS_8052SIMPLE }}
   SSHRVD_ATSIGN: "@8485wealthy51"
-  SSHRVD_ATSIGN_KEYS: ${{ secrets.ATKEYS_8485WEALTHY51 }}
   SSHRVD_AM_ATSIGN: "@rv_am"
   SSHRVD_AP_ATSIGN: "@rv_ap"
   SSHRVD_EU_ATSIGN: "@rv_eu"
   DOCKER_COMPOSE_BUILD_CMD: "docker compose build"
-  DOCKER_COMPOSE_UP_CMD: "docker compose up --abort-on-container-exit --timeout 900"
+  DOCKER_COMPOSE_UP_CMD: "docker compose up --abort-on-container-exit"
 
 jobs:
-  e2e_test:
+  prod_rvd_test:
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -51,24 +48,33 @@ jobs:
           SSHNPD_ATKEYS="$(tr '[:lower:]' '[:upper:]' <<< '${{ env.SSHNPD_ATSIGN }}')"
           echo "SSHNPD_ATKEYS=ATKEYS_${SSHNPD_ATKEYS:1}" >> $GITHUB_ENV
 
+          SSHRVD_ATKEYS="$(tr '[:lower:]' '[:upper:]' <<< '${{ env.SSHRVD_ATSIGN }}')"
+          echo "SSHRVD_ATKEYS=ATKEYS_${SSHRVD_ATKEYS:1}" >> $GITHUB_ENV
+
       - name: Setup NP/NPD keys
         working-directory: tests/end2end_tests/contexts
         run: |
           echo "${{ secrets[env.SSHNP_ATKEYS] }}" > sshnp/.atsign/keys/${{ env.SSHNP_ATSIGN }}_key.atKeys
           echo "${{ secrets[env.SSHNPD_ATKEYS] }}" > sshnpd/.atsign/keys/${{ env.SSHNPD_ATSIGN }}_key.atKeys
 
+      - name: Setup Devicename
+        # First two guarantee a unique # per workflow call
+        # Last two guarantee  a unique # per job per strategy in matrix
+        run: |
+          echo "DEVICENAME=${{ github.run_id }}${{ github.run_attempt }}p${{ strategy.job-index }}" >> $GITHUB_ENV
+
       - name: Set up NP/NPD entrypoints
         working-directory: tests/end2end_tests/contexts/_init_
         run: |
           ./setup-sshnp-entrypoint.sh \
-            ${{ github.run_id }}${{ github.run_attempt }}${{ strategy.job-index }} \
+            ${{ env.DEVICENAME }} \
             ${{ env.SSHNP_ATSIGN }} \
             ${{ env.SSHNPD_ATSIGN }} \
             ${{ matrix.rvd }} \
             sshnp_entrypoint.sh
 
           ./setup-sshnpd-entrypoint.sh \
-            ${{ github.run_id }}${{ github.run_attempt }}${{ strategy.job-index }} \
+            ${{ env.DEVICENAME }} \
             ${{ env.SSHNP_ATSIGN }} \
             ${{ env.SSHNPD_ATSIGN }} \
             sshnpd_entrypoint.sh
@@ -78,7 +84,7 @@ jobs:
         working-directory: tests/end2end_tests
         run: |
           # setup keys
-          echo "${{ env.SSHRVD_ATSIGN_KEYS }}" > contexts/sshrvd/.atsign/keys/${{ env.SSHRVD_ATSIGN }}_key.atKeys
+          echo "${{ secrets[env.SSHRVD_ATKEYS] }}" > contexts/sshrvd/.atsign/keys/${{ env.SSHRVD_ATSIGN }}_key.atKeys
 
           # set up sshrvd entrypoint
           cd contexts/_init_
@@ -104,17 +110,22 @@ jobs:
           cat service-container-sshnp.yaml >> docker-compose.yaml
           echo "    image: atsigncompany/sshnp-e2e-runtime:latest" >> docker-compose.yaml
           echo "    depends_on:" >> docker-compose.yaml
-          echo "      - image-runtime-release" >> docker-compose.yaml
-          echo "      - container-sshnpd" >> docker-compose.yaml
-          if [ "${{ matrix.rvd }}" == "@8485wealthy51" ]; then
-            echo "      - container-sshrvd" >> docker-compose.yaml
+          echo "      image-runtime-release:" >> docker-compose.yaml
+          echo "        condition: service_started" >> docker-compose.yaml
+          echo "      container-sshnpd:" >> docker-compose.yaml
+          echo "        condition: service_healthy" >> docker-compose.yaml
+          if [ "${{ matrix.rvd }}" == "${{ env.SSHRVD_ATSIGN }}" ]; then
+            echo "      container-sshrvd:" >> docker-compose.yaml
+            echo "        condition: service_healthy" >> docker-compose.yaml
           fi
           cat service-container-sshnpd.yaml >> docker-compose.yaml
           echo "    image: atsigncompany/sshnp-e2e-runtime:latest" >> docker-compose.yaml
           echo "    depends_on:" >> docker-compose.yaml
-          echo "      - image-runtime-release" >> docker-compose.yaml
-          if [ "${{ matrix.rvd }}" == "@8485wealthy51" ]; then
-            echo "      - container-sshrvd" >> docker-compose.yaml
+          echo "      image-runtime-release:" >> docker-compose.yaml
+          echo "        condition: service_started" >> docker-compose.yaml
+          if [ "${{ matrix.rvd }}" == "${{ env.SSHRVD_ATSIGN }}" ]; then
+            echo "      container-sshrvd:" >> docker-compose.yaml
+            echo "        condition: service_healthy" >> docker-compose.yaml
           fi
 
       - name: Add RVD service to docker-compose.yaml
@@ -124,7 +135,8 @@ jobs:
           cat service-container-sshrvd.yaml >> docker-compose.yaml
           echo "    image: atsigncompany/sshnp-e2e-runtime:latest" >> docker-compose.yaml
           echo "    depends_on:" >> docker-compose.yaml
-          echo "      - image-runtime-release" >> docker-compose.yaml
+          echo "      image-runtime-release:" >> docker-compose.yaml
+          echo "        condition: service_started" >> docker-compose.yaml
 
       - name: docker-compose.yaml
         working-directory: tests/end2end_tests/tests
