@@ -26,8 +26,8 @@ Future<void> cleanUpAfterReverseSsh(SSHNP sshnp) async {
   await deleteFile('$sshHomeDirectory${sshnp.sessionId}_sshnp', sshnp.logger);
   await deleteFile(
       '$sshHomeDirectory${sshnp.sessionId}_sshnp.pub', sshnp.logger);
-  await removeEphemeralKeyFromAuthorizedKeys(
-      sshHomeDirectory, sshnp.sessionId, sshnp.logger);
+  await removeEphemeralKeyFromAuthorizedKeys(sshnp.sessionId, sshnp.logger,
+      sshHomeDirectory: sshHomeDirectory);
 }
 
 Future<bool> deleteFile(String fileName, AtSignLogger logger) async {

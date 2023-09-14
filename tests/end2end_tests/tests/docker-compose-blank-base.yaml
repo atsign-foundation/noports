@@ -1,0 +1,9 @@
+version: '3'
+networks:
+  sshnp:
+    driver: bridge
+    name: atsigncompany/sshnp-e2e-network-sshnp
+  sshnpd:
+    driver: bridge
+    name: atsigncompany/sshnp-e2e-network-sshnpd
+services:

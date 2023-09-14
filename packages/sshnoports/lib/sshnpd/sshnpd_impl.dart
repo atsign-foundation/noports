@@ -471,6 +471,8 @@ class SSHNPDImpl implements SSHNPD {
   ///   which can be forwarded to) as per the `--ephemeral-permissions` option
   /// - Sends response message to the sshnp client which includes the
   ///   ephemeral private key
+  /// - starts a timer to remove the ephemeral key from `authorized_keys`
+  ///   after 15 seconds
   Future<void> startDirectSsh(
       {required String requestingAtsign,
       required String sessionId,
@@ -510,6 +512,11 @@ class SSHNPDImpl implements SSHNPD {
             'ephemeralPrivateKey': ephemeralPrivateKey
           }),
           sessionId: sessionId);
+
+      /// - start a timer to remove the ephemeral key from `authorized_keys`
+      ///   after 15 seconds
+      Timer(const Duration(seconds: 15),
+          () => removeEphemeralKeyFromAuthorizedKeys(sessionId, logger));
     } catch (e) {
       logger.severe('startDirectSsh failed with unexpected error : $e');
       // Notify sshnp that this session is NOT connected
