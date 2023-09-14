@@ -5,7 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:sshnoports/sshnp/sshnp.dart';
 import 'package:sshnp_gui/src/controllers/navigation_rail_controller.dart';
-import 'package:sshnp_gui/src/controllers/sshnp_params_controller.dart';
+import 'package:sshnp_gui/src/controllers/config_controller.dart';
 import 'package:sshnp_gui/src/presentation/widgets/profile_form/custom_text_form_field.dart';
 import 'package:sshnp_gui/src/controllers/navigation_controller.dart';
 import 'package:sshnp_gui/src/utility/sizes.dart';
@@ -20,7 +20,7 @@ class ProfileForm extends ConsumerStatefulWidget {
 
 class _ProfileFormState extends ConsumerState<ProfileForm> {
   final GlobalKey<FormState> _formkey = GlobalKey<FormState>();
-  late CurrentSSHNPParamsModel currentProfile;
+  late CurrentConfigState currentProfile;
   SSHNPPartialParams newConfig = SSHNPPartialParams.empty();
   @override
   void initState() {
@@ -30,9 +30,7 @@ class _ProfileFormState extends ConsumerState<ProfileForm> {
   void onSubmit(SSHNPParams oldConfig, SSHNPPartialParams newConfig) async {
     if (_formkey.currentState!.validate()) {
       _formkey.currentState!.save();
-      final controller =
-          ref.read(sshnpParamsFamilyController(newConfig.profileName ?? oldConfig.profileName!).notifier);
-      bool overwrite = currentProfile.configFileWriteState == ConfigFileWriteState.update;
+      final controller = ref.read(configFamilyController(newConfig.profileName ?? oldConfig.profileName!).notifier);
       bool rename = newConfig.profileName.isNotNull &&
           newConfig.profileName!.isNotEmpty &&
           oldConfig.profileName.isNotNull &&
@@ -41,14 +39,11 @@ class _ProfileFormState extends ConsumerState<ProfileForm> {
       SSHNPParams config = SSHNPParams.merge(oldConfig, newConfig);
       if (rename) {
         // delete old config file and write the new one
-        await ref.read(sshnpParamsFamilyController(oldConfig.profileName!).notifier).delete();
-        await controller.create(config);
-      } else if (overwrite) {
-        // overwrite the existing file
-        await controller.edit(config);
+        await ref.read(configFamilyController(oldConfig.profileName!).notifier).deleteConfig();
+        await controller.putConfig(config);
       } else {
         // create new config file
-        await controller.create(config);
+        await controller.putConfig(config);
       }
       if (context.mounted) {
         ref.read(navigationRailController.notifier).setRoute(AppRoute.home);
@@ -60,9 +55,9 @@ class _ProfileFormState extends ConsumerState<ProfileForm> {
   @override
   Widget build(BuildContext context) {
     final strings = AppLocalizations.of(context)!;
-    currentProfile = ref.watch(sshnpParamsController);
+    currentProfile = ref.watch(currentConfigController);
 
-    final asyncOldConfig = ref.watch(sshnpParamsFamilyController(currentProfile.profileName));
+    final asyncOldConfig = ref.watch(configFamilyController(currentProfile.profileName));
     return asyncOldConfig.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (error, stack) => Center(child: Text(error.toString())),
@@ -76,7 +71,7 @@ class _ProfileFormState extends ConsumerState<ProfileForm> {
                   Row(
                     children: [
                       CustomTextFormField(
-                        initialValue: oldConfig.profileName ?? '',
+                        initialValue: oldConfig.profileName,
                         labelText: strings.profileName,
                         onChanged: (value) {
                           newConfig = SSHNPPartialParams.merge(

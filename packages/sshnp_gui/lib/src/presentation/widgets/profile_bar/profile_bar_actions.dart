@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:sshnoports/sshnp/sshnp.dart';
 import 'package:sshnp_gui/src/presentation/widgets/profile_actions/profile_actions.dart';
+import 'package:sshnp_gui/src/presentation/widgets/profile_actions/profile_menu_button.dart';
 
 class ProfileBarActions extends StatelessWidget {
   final SSHNPParams params;
@@ -12,8 +13,7 @@ class ProfileBarActions extends StatelessWidget {
       children: [
         // ProfileRunAction(params),
         ProfileTerminalAction(params),
-        ProfileEditAction(params),
-        ProfileDeleteAction(params),
+        ProfileMenuButton(params.profileName!),
       ],
     );
   }

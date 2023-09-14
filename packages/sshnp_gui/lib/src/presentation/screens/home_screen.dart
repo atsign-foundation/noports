@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
+
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-import 'package:sshnp_gui/src/controllers/sshnp_params_controller.dart';
+import 'package:sshnp_gui/src/controllers/config_controller.dart';
 import 'package:sshnp_gui/src/presentation/widgets/home_screen_actions/home_screen_actions.dart';
 import 'package:sshnp_gui/src/presentation/widgets/navigation/app_navigation_rail.dart';
 import 'package:sshnp_gui/src/presentation/widgets/profile_bar/profile_bar.dart';
@@ -22,8 +23,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     // * Getting the AtClientManager instance to use below
 
     final strings = AppLocalizations.of(context)!;
-    final profileNames = ref.watch(sshnpParamsListController);
-
+    final profileNames = ref.watch(configListController);
     return Scaffold(
       body: SafeArea(
         child: Row(
