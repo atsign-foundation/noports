@@ -250,7 +250,7 @@ class SSHNPDImpl implements SSHNPD {
         break;
 
       case 'ssh_request':
-        logger.info('>=3.5.0 request for ssh received from ${notification.from}'
+        logger.info('>=3.4.0 request for ssh received from ${notification.from}'
             ' ( $notification )');
         _handleSshRequestNotification(notification);
         break;

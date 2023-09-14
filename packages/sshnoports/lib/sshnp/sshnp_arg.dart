@@ -157,7 +157,7 @@ class SSHNPArg {
     const SSHNPArg(
       name: 'legacy-daemon',
       defaultsTo: SSHNP.defaultLegacyDaemon,
-      help: 'Request is to a legacy (< 3.5.0) noports daemon',
+      help: 'Request is to a legacy (< 3.4.0) noports daemon',
       format: ArgFormat.flag,
     ),
     const SSHNPArg(
