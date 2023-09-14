@@ -22,6 +22,7 @@ jobs:
   prod_rvd_test:
     runs-on: ubuntu-latest
     strategy:
+      fail-fast: false # if one job fails, do not fail the others
       matrix:
         rvd:
           # - ${{ env.SSHRVD_ATSIGN }}
