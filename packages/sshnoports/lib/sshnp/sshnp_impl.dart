@@ -523,7 +523,7 @@ class SSHNPImpl implements SSHNP {
         remoteUsername: remoteUsername,
         host: 'localhost',
         privateKeyFileName: publicKeyFileName.replaceAll('.pub', ''),
-        localSshOptions: (addForwardsToTunnel) ? localSshOptions : null,
+        localSshOptions: (addForwardsToTunnel) ? null : localSshOptions,
         sshProcess: process,
         sshClient: client,
       );
@@ -826,7 +826,7 @@ class SSHNPImpl implements SSHNP {
       remoteUsername: remoteUsername,
       host: 'localhost',
       privateKeyFileName: publicKeyFileName.replaceAll('.pub', ''),
-      localSshOptions: (addForwardsToTunnel) ? localSshOptions : null,
+      localSshOptions: (addForwardsToTunnel) ? null : localSshOptions,
       sshrvResult: sshrvResult,
     );
   }
