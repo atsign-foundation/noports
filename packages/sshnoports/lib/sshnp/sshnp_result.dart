@@ -33,11 +33,18 @@ class SSHCommand implements SSHNPCommandResult {
 
   final List<String> sshOptions;
 
+  Future? sshrvResult;
+  Process? sshProcess;
+  SSHClient? sshClient;
+
   SSHCommand.base({
     required this.localPort,
     required this.remoteUsername,
     required this.host,
     this.privateKeyFileName,
+    this.sshrvResult,
+    this.sshProcess,
+    this.sshClient,
   }) : sshOptions = (shouldIncludePrivateKey(privateKeyFileName) ? _optionsWithPrivateKey : []);
 
   static bool shouldIncludePrivateKey(String? privateKeyFileName) =>

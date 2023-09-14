@@ -1021,22 +1021,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "3.3.0"
-  share_plus_web:
-    dependency: transitive
-    description:
-      name: share_plus_web
-      sha256: eaef05fa8548b372253e772837dd1fbe4ce3aca30ea330765c945d7d4f7c9935
-      url: "https://pub.dev"
-    source: hosted
-    version: "3.1.0"
-  share_plus_windows:
-    dependency: transitive
-    description:
-      name: share_plus_windows
-      sha256: "3a21515ae7d46988d42130cd53294849e280a5de6ace24bae6912a1bffd757d4"
-      url: "https://pub.dev"
-    source: hosted
-    version: "3.0.1"
   shared_preferences:
     dependency: "direct main"
     description:
@@ -1139,13 +1123,14 @@ packages:
     source: sdk
     version: "0.0.99"
   socket_connector:
-    dependency: transitive
+    dependency: "direct main"
     description:
-      name: socket_connector
-      sha256: f461da716d74eb6fda80efea98244ef467363d69eb6bb307c43722389e70d7b1
-      url: "https://pub.dev"
-    source: hosted
-    version: "1.0.10"
+      path: "."
+      ref: main
+      resolved-ref: "2efb79d3c223a62e4886690afb8fa82b3cb8a662"
+      url: "https://github.com/xavierchanth/socket_connector/"
+    source: git
+    version: "1.0.11"
   source_map_stack_trace:
     dependency: transitive
     description:
