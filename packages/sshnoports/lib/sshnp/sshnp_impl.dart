@@ -542,13 +542,15 @@ class SSHNPImpl implements SSHNP {
 
     late final SSHClient client;
     try {
-      client = SSHClient(socket,
-          username: remoteUsername!,
-          identities: [
-            // A single private key file may contain multiple keys.
-            ...SSHKeyPair.fromPem(ephemeralPrivateKey)
-          ],
-          keepAliveInterval: Duration(seconds: 15));
+      client = SSHClient(
+        socket,
+        username: remoteUsername!,
+        identities: [
+          // A single private key file may contain multiple keys.
+          ...SSHKeyPair.fromPem(ephemeralPrivateKey)
+        ],
+        keepAliveInterval: Duration(seconds: 15),
+      );
     } catch (e) {
       return (
         false,
@@ -704,7 +706,7 @@ class SSHNPImpl implements SSHNP {
     final serrBuf = StringBuffer();
     Process? process;
     try {
-      process = await Process.start('ssh', args);
+      process = await Process.start('/usr/bin/ssh', args);
       process.stdout.transform(Utf8Decoder()).listen((String s) {
         soutBuf.write(s);
         logger.info('$sessionId | sshStdOut | $s');

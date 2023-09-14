@@ -107,41 +107,63 @@ Future<bool> atSignIsActivated(final AtClient atClient, String atSign) async {
 void assertValidValue(Map m, String k, Type t) {
   var v = m[k];
   if (v == null || v.runtimeType != t) {
-    throw ArgumentError('Parameter $k should be a $t but is actually a ${v.runtimeType} with value $v');
+    throw ArgumentError(
+        'Parameter $k should be a $t but is actually a ${v.runtimeType} with value $v');
   }
 }
 
 Future<(String, String)> generateSshKeys(
-    {required bool rsa, required String sessionId, String? sshHomeDirectory}) async {
-  sshHomeDirectory ??= getDefaultSshDirectory(getHomeDirectory(throwIfNull: true)!);
+    {required bool rsa,
+    required String sessionId,
+    String? sshHomeDirectory}) async {
+  sshHomeDirectory ??=
+      getDefaultSshDirectory(getHomeDirectory(throwIfNull: true)!);
   if (!Directory(sshHomeDirectory).existsSync()) {
     Directory(sshHomeDirectory).createSync();
   }
 
   if (rsa) {
-    await Process.run('ssh-keygen', ['-t', 'rsa', '-b', '4096', '-f', '${sessionId}_sshnp', '-q', '-N', ''],
+    await Process.run('ssh-keygen',
+        ['-t', 'rsa', '-b', '4096', '-f', '${sessionId}_sshnp', '-q', '-N', ''],
         workingDirectory: sshHomeDirectory);
   } else {
-    await Process.run('ssh-keygen', ['-t', 'ed25519', '-a', '100', '-f', '${sessionId}_sshnp', '-q', '-N', ''],
+    await Process.run(
+        'ssh-keygen',
+        [
+          '-t',
+          'ed25519',
+          '-a',
+          '100',
+          '-f',
+          '${sessionId}_sshnp',
+          '-q',
+          '-N',
+          ''
+        ],
         workingDirectory: sshHomeDirectory);
   }
 
-  String sshPublicKey = await File('$sshHomeDirectory/${sessionId}_sshnp.pub').readAsString();
-  String sshPrivateKey = await File('$sshHomeDirectory/${sessionId}_sshnp').readAsString();
+  String sshPublicKey =
+      await File('$sshHomeDirectory/${sessionId}_sshnp.pub').readAsString();
+  String sshPrivateKey =
+      await File('$sshHomeDirectory/${sessionId}_sshnp').readAsString();
 
   return (sshPublicKey, sshPrivateKey);
 }
 
 Future<void> addEphemeralKeyToAuthorizedKeys(
-    {required String sshPublicKey, required int localSshdPort, String sessionId = '', String permissions = ''}) async {
+    {required String sshPublicKey,
+    required int localSshdPort,
+    String sessionId = '',
+    String permissions = ''}) async {
   // Check to see if the ssh public key looks like one!
   if (!sshPublicKey.startsWith('ssh-')) {
     throw ('$sshPublicKey does not look like a public key');
   }
 
   String homeDirectory = getHomeDirectory(throwIfNull: true)!;
+  var sshHomeDirectory = getDefaultSshDirectory(homeDirectory);
 
-  var sshHomeDirectory = path.normalize('$homeDirectory/.ssh');
   if (!Directory(sshHomeDirectory).existsSync()) {
     Directory(sshHomeDirectory).createSync();
   }
@@ -169,14 +191,17 @@ Future<void> addEphemeralKeyToAuthorizedKeys(
       ' '
       'sshnp_ephemeral_$sessionId\n',
       mode: FileMode.append,
+      flush: true,
     );
   }
 }
 
-Future<void> removeEphemeralKeyFromAuthorizedKeys(String sessionId, AtSignLogger logger,
+Future<void> removeEphemeralKeyFromAuthorizedKeys(
+    String sessionId, AtSignLogger logger,
     {String? sshHomeDirectory}) async {
   try {
-    sshHomeDirectory ??= getDefaultSshDirectory(getHomeDirectory(throwIfNull: true)!);
+    sshHomeDirectory ??=
+        getDefaultSshDirectory(getHomeDirectory(throwIfNull: true)!);
     final File file = File(path.normalize('$sshHomeDirectory/authorized_keys'));
     logger.info('Removing ephemeral key for session $sessionId'
         ' from ${file.absolute.path}');
@@ -188,14 +213,16 @@ Future<void> removeEphemeralKeyFromAuthorizedKeys(String sessionId, AtSignLogger
     await file.writeAsString(lines.join('\n'));
     await file.writeAsString('\n', mode: FileMode.writeOnlyAppend);
   } catch (e) {
-    logger.severe('Unable to tidy up ${path.normalize('sshHomeDirectory/authorized_keys')}');
+    logger.severe(
+        'Unable to tidy up ${path.normalize('$sshHomeDirectory/authorized_keys')}');
   }
 }
 
 String signAndWrapAndJsonEncode(AtClient atClient, Map payload) {
   Map envelope = {'payload': payload};
 
-  final AtSigningInput signingInput = AtSigningInput(jsonEncode(payload))..signingMode = AtSigningMode.data;
+  final AtSigningInput signingInput = AtSigningInput(jsonEncode(payload))
+    ..signingMode = AtSigningMode.data;
   final AtSigningResult sr = atClient.atChops!.sign(signingInput);
 
   final String signature = sr.result.toString();
@@ -205,14 +232,16 @@ String signAndWrapAndJsonEncode(AtClient atClient, Map payload) {
   return jsonEncode(envelope);
 }
 
-Future<void> verifyEnvelopeSignature(
-    AtClient atClient, String requestingAtsign, AtSignLogger logger, Map envelope) async {
+Future<void> verifyEnvelopeSignature(AtClient atClient, String requestingAtsign,
+    AtSignLogger logger, Map envelope) async {
   final String signature = envelope['signature'];
   Map payload = envelope['payload'];
   final hashingAlgo = HashingAlgoType.values.byName(envelope['hashingAlgo']);
   final signingAlgo = SigningAlgoType.values.byName(envelope['signingAlgo']);
-  final pk = await getLocallyCachedPK(atClient, requestingAtsign, useFileStorage: true);
-  AtSigningVerificationInput input = AtSigningVerificationInput(jsonEncode(payload), base64Decode(signature), pk)
+  final pk = await getLocallyCachedPK(atClient, requestingAtsign,
+      useFileStorage: true);
+  AtSigningVerificationInput input = AtSigningVerificationInput(
+      jsonEncode(payload), base64Decode(signature), pk)
     ..signingMode = AtSigningMode.data
     ..signingAlgoType = signingAlgo
     ..hashingAlgoType = hashingAlgo;
@@ -237,10 +266,12 @@ Future<void> verifyEnvelopeSignature(
 ///   `~/.atsign/sshnp/cached_pks/alice`
 ///
 /// Note that for storage, the leading `@` in the atSign is stripped off.
-Future<String> getLocallyCachedPK(AtClient atClient, String atSign, {bool useFileStorage = true}) async {
+Future<String> getLocallyCachedPK(AtClient atClient, String atSign,
+    {bool useFileStorage = true}) async {
   atSign = AtUtils.fixAtSign(atSign);
 
-  String? cachedPK = await _fetchFromLocalPKCache(atClient, atSign, useFileStorage);
+  String? cachedPK =
+      await _fetchFromLocalPKCache(atClient, atSign, useFileStorage);
   if (cachedPK != null) {
     return cachedPK;
   }
@@ -256,10 +287,12 @@ Future<String> getLocallyCachedPK(AtClient atClient, String atSign, {bool useFil
   return av.value;
 }
 
-Future<String?> _fetchFromLocalPKCache(AtClient atClient, String atSign, bool useFileStorage) async {
+Future<String?> _fetchFromLocalPKCache(
+    AtClient atClient, String atSign, bool useFileStorage) async {
   String dontAtMe = atSign.substring(1);
   if (useFileStorage) {
-    String fn = path.normalize('${getHomeDirectory(throwIfNull: true)}/.atsign/sshnp/cached_pks/$dontAtMe');
+    String fn = path.normalize(
+        '${getHomeDirectory(throwIfNull: true)}/.atsign/sshnp/cached_pks/$dontAtMe');
     File f = File(fn);
     if (await f.exists()) {
       return (await f.readAsString()).trim();
@@ -269,7 +302,8 @@ Future<String?> _fetchFromLocalPKCache(AtClient atClient, String atSign, bool us
   } else {
     late final AtValue av;
     try {
-      av = await atClient.get(AtKey.fromString('local:$dontAtMe.cached_pks.sshnp@${atClient.getCurrentAtSign()!}'));
+      av = await atClient.get(AtKey.fromString(
+          'local:$dontAtMe.cached_pks.sshnp@${atClient.getCurrentAtSign()!}'));
       return av.value;
     } on AtKeyNotFoundException catch (_) {
       return null;
@@ -277,11 +311,12 @@ Future<String?> _fetchFromLocalPKCache(AtClient atClient, String atSign, bool us
   }
 }
 
-Future<bool> _storeToLocalPKCache(String pk, AtClient atClient, String atSign, bool useFileStorage) async {
+Future<bool> _storeToLocalPKCache(
+    String pk, AtClient atClient, String atSign, bool useFileStorage) async {
   String dontAtMe = atSign.substring(1);
   if (useFileStorage) {
-    String dirName =
-        path.normalize('${getHomeDirectory(throwIfNull: true)}/.atsign/sshnp/cached_pks');
+    String dirName = path.normalize(
+        '${getHomeDirectory(throwIfNull: true)}/.atsign/sshnp/cached_pks');
     String fileName = path.normalize('$dirName/$dontAtMe');
 
     File f = File(fileName);
@@ -292,7 +327,10 @@ Future<bool> _storeToLocalPKCache(String pk, AtClient atClient, String atSign, b
     await f.writeAsString('$pk\n');
     return true;
   } else {
-    await atClient.put(AtKey.fromString('local:$dontAtMe.cached_pks.sshnp@${atClient.getCurrentAtSign()!}'), pk);
+    await atClient.put(
+        AtKey.fromString(
+            'local:$dontAtMe.cached_pks.sshnp@${atClient.getCurrentAtSign()!}'),
+        pk);
     return true;
   }
 }
