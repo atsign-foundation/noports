@@ -31,6 +31,8 @@
     "host" : "Host",
     "host" : "Host",
     "hostSelection" : "Host Selection",
+    "import" : "Import",
+    "importProfile" : "Import Profile",
     "keyFile" : "Key File",
     "listDevices" : "List Devices",
     "localPort": "Local Port",

@@ -33,8 +33,7 @@ class SSHNPParams {
   late final String sshClient;
 
   /// Special Arguments
-  final String?
-      profileName; // automatically populated with the filename if from a configFile
+  final String? profileName; // automatically populated with the filename if from a configFile
   final bool listDevices;
 
   SSHNPParams({
@@ -68,8 +67,7 @@ class SSHNPParams {
 
     // Use default atKeysFilePath if not provided
 
-    this.atKeysFilePath =
-        atKeysFilePath ?? getDefaultAtKeysFilePath(homeDirectory, clientAtSign);
+    this.atKeysFilePath = atKeysFilePath ?? getDefaultAtKeysFilePath(homeDirectory, clientAtSign);
 
     this.sshClient = sshClient ?? SSHNP.defaultSshClient.cliArg;
   }
@@ -85,8 +83,7 @@ class SSHNPParams {
 
   /// Merge an SSHNPPartialParams objects into an SSHNPParams
   /// Params in params2 take precedence over params1
-  factory SSHNPParams.merge(SSHNPParams params1,
-      [SSHNPPartialParams? params2]) {
+  factory SSHNPParams.merge(SSHNPParams params1, [SSHNPPartialParams? params2]) {
     params2 ??= SSHNPPartialParams.empty();
     return SSHNPParams(
       profileName: params2.profileName ?? params1.profileName,
@@ -109,8 +106,7 @@ class SSHNPParams {
       remoteSshdPort: params2.remoteSshdPort ?? params1.remoteSshdPort,
       idleTimeout: params2.idleTimeout ?? params1.idleTimeout,
       sshClient: params2.sshClient ?? params1.sshClient,
-      addForwardsToTunnel:
-          params2.addForwardsToTunnel ?? params1.addForwardsToTunnel,
+      addForwardsToTunnel: params2.addForwardsToTunnel ?? params1.addForwardsToTunnel,
     );
   }
 
@@ -118,8 +114,7 @@ class SSHNPParams {
     return SSHNPParams.fromPartial(SSHNPPartialParams.fromFile(fileName));
   }
 
-  factory SSHNPParams.fromJson(String json) =>
-      SSHNPParams.fromPartial(SSHNPPartialParams.fromJson(json));
+  factory SSHNPParams.fromJson(String json) => SSHNPParams.fromPartial(SSHNPPartialParams.fromJson(json));
 
   factory SSHNPParams.fromPartial(SSHNPPartialParams partial) {
     AtSignLogger logger = AtSignLogger(' SSHNPParams ');
@@ -138,8 +133,7 @@ class SSHNPParams {
       device: partial.device ?? SSHNP.defaultDevice,
       port: partial.port ?? SSHNP.defaultPort,
       localPort: partial.localPort ?? SSHNP.defaultLocalPort,
-      sendSshPublicKey:
-          partial.sendSshPublicKey ?? SSHNP.defaultSendSshPublicKey,
+      sendSshPublicKey: partial.sendSshPublicKey ?? SSHNP.defaultSendSshPublicKey,
       localSshOptions: partial.localSshOptions ?? SSHNP.defaultLocalSshOptions,
       rsa: partial.rsa ?? defaults.defaultRsa,
       verbose: partial.verbose ?? defaults.defaultVerbose,
@@ -156,8 +150,8 @@ class SSHNPParams {
     );
   }
 
-  factory SSHNPParams.fromConfigFile(String fileName) {
-    return SSHNPParams.fromPartial(SSHNPPartialParams.fromConfig(fileName));
+  factory SSHNPParams.fromConfig(String profileName, List<String> lines) {
+    return SSHNPParams.fromPartial(SSHNPPartialParams.fromConfig(profileName, lines));
   }
 
   Map<String, dynamic> toArgs() {
@@ -267,8 +261,7 @@ class SSHNPPartialParams {
 
   /// Merge two SSHNPPartialParams objects together
   /// Params in params2 take precedence over params1
-  factory SSHNPPartialParams.merge(SSHNPPartialParams params1,
-      [SSHNPPartialParams? params2]) {
+  factory SSHNPPartialParams.merge(SSHNPPartialParams params1, [SSHNPPartialParams? params2]) {
     params2 ??= SSHNPPartialParams.empty();
     return SSHNPPartialParams(
       profileName: params2.profileName ?? params1.profileName,
@@ -291,8 +284,7 @@ class SSHNPPartialParams {
       remoteSshdPort: params2.remoteSshdPort ?? params1.remoteSshdPort,
       idleTimeout: params2.idleTimeout ?? params1.idleTimeout,
       sshClient: params2.sshClient ?? params1.sshClient,
-      addForwardsToTunnel:
-          params2.addForwardsToTunnel ?? params1.addForwardsToTunnel,
+      addForwardsToTunnel: params2.addForwardsToTunnel ?? params1.addForwardsToTunnel,
     );
   }
 
@@ -302,8 +294,13 @@ class SSHNPPartialParams {
     return SSHNPPartialParams.fromMap(args);
   }
 
-  factory SSHNPPartialParams.fromJson(String json) =>
-      SSHNPPartialParams.fromMap(jsonDecode(json));
+  factory SSHNPPartialParams.fromConfig(String profileName, List<String> lines) {
+    var args = ConfigFileRepository.parseConfigFileContents(lines);
+    args['profile-name'] = profileName;
+    return SSHNPPartialParams.fromMap(args);
+  }
+
+  factory SSHNPPartialParams.fromJson(String json) => SSHNPPartialParams.fromMap(jsonDecode(json));
 
   factory SSHNPPartialParams.fromMap(Map<String, dynamic> args) {
     print(args['local-ssh-options']);
@@ -332,12 +329,6 @@ class SSHNPPartialParams {
     );
   }
 
-  factory SSHNPPartialParams.fromConfig(String fileName) {
-    var args = _parseConfigFile(fileName);
-    args['profile-name'] = ConfigFileRepository.toProfileName(fileName);
-    return SSHNPPartialParams.fromMap(args);
-  }
-
   /// Parses args from command line
   /// first merges from a config file if provided via --config-file
   factory SSHNPPartialParams.fromArgs(List<String> args) {
@@ -349,76 +340,19 @@ class SSHNPPartialParams {
       var configFileName = parsedArgs['config-file'] as String;
       params = SSHNPPartialParams.merge(
         params,
-        SSHNPPartialParams.fromConfig(configFileName),
+        SSHNPPartialParams.fromFile(configFileName),
       );
     }
 
     // THIS IS A WORKAROUND IN ORDER TO BE TYPE SAFE IN SSHNPPartialParams.fromArgMap
     Map<String, dynamic> parsedArgsMap = {
       for (var e in parsedArgs.options)
-        e: SSHNPArg.fromName(e).type == ArgType.integer
-            ? int.tryParse(parsedArgs[e])
-            : parsedArgs[e]
+        e: SSHNPArg.fromName(e).type == ArgType.integer ? int.tryParse(parsedArgs[e]) : parsedArgs[e]
     };
 
     return SSHNPPartialParams.merge(
       params,
       SSHNPPartialParams.fromMap(parsedArgsMap),
     );
-  }
-
-  static Map<String, dynamic> _parseConfigFile(String fileName) {
-    Map<String, dynamic> args = <String, dynamic>{};
-
-    File file = File(fileName);
-
-    if (!file.existsSync()) {
-      throw Exception('Config file does not exist: $fileName');
-    }
-    try {
-      List<String> lines = file.readAsLinesSync();
-
-      for (String line in lines) {
-        if (line.startsWith('#')) continue;
-
-        var parts = line.split('=');
-        if (parts.length != 2) continue;
-
-        var key = parts[0].trim();
-        var value = parts[1].trim();
-
-        SSHNPArg arg = SSHNPArg.fromBashName(key);
-        if (arg.name.isEmpty) continue;
-
-        switch (arg.format) {
-          case ArgFormat.flag:
-            if (value.toLowerCase() == 'true') {
-              args[arg.name] = true;
-            }
-            continue;
-          case ArgFormat.multiOption:
-            var values = value.split(',');
-            args.putIfAbsent(arg.name, () => <String>[]);
-            for (String val in values) {
-              if (val.isEmpty) continue;
-              args[arg.name].add(val);
-            }
-            continue;
-          case ArgFormat.option:
-            if (value.isEmpty) continue;
-            if (arg.type == ArgType.integer) {
-              args[arg.name] = int.tryParse(value);
-            } else {
-              args[arg.name] = value;
-            }
-            continue;
-        }
-      }
-      return args;
-    } on FileSystemException {
-      throw Exception('Error reading config file: $fileName');
-    } catch (e) {
-      throw Exception('Error parsing config file: $fileName');
-    }
   }
 }

@@ -12,6 +12,7 @@ import 'package:sshnp_gui/src/controllers/navigation_controller.dart';
 import 'package:sshnp_gui/src/presentation/widgets/profile_actions/profile_delete_dialog.dart';
 import 'package:sshnp_gui/src/presentation/widgets/utility/custom_snack_bar.dart';
 import 'package:path/path.dart' as path;
+import 'package:sshnp_gui/src/utility/constants.dart';
 
 class ProfileActionCallbacks {
   static void edit(WidgetRef ref, BuildContext context, String profileName) {
@@ -46,21 +47,18 @@ class ProfileActionCallbacks {
     try {
       final suggestedName = ConfigFileRepository.fromProfileName(profileName, basenameOnly: true);
       final initialDirectory = getDefaultSshnpConfigDirectory(getHomeDirectory(throwIfNull: true)!);
-      const String mimeType = 'text/plain';
 
       final FileSaveLocation? saveLocation = await getSaveLocation(
         suggestedName: suggestedName,
         initialDirectory: initialDirectory,
-        acceptedTypeGroups: [
-          const XTypeGroup(extensions: ['env']),
-        ],
+        acceptedTypeGroups: [dotEnvTypeGroup],
       );
       if (saveLocation == null) return;
       final params = ref.read(configFamilyController(profileName));
       final fileData = Uint8List.fromList(params.requireValue.toConfig().codeUnits);
       final XFile textFile = XFile.fromData(
         fileData,
-        mimeType: mimeType,
+        mimeType: dotEnvMimeType,
         name: path.basename(saveLocation.path),
       );
 
