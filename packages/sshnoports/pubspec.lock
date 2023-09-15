@@ -549,10 +549,10 @@ packages:
     dependency: "direct main"
     description:
       name: socket_connector
-      sha256: f461da716d74eb6fda80efea98244ef467363d69eb6bb307c43722389e70d7b1
+      sha256: "8a5b67ae79e232186caa166ae640fac2247db390d4f5d11ed8975f95527fd355"
       url: "https://pub.dev"
     source: hosted
-    version: "1.0.10"
+    version: "1.0.11"
   source_map_stack_trace:
     dependency: transitive
     description:

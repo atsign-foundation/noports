@@ -23,7 +23,7 @@ dependencies:
   uuid: 3.0.7
   logging: 1.2.0
   version: 3.0.2
-  socket_connector: 1.0.10
+  socket_connector: 1.0.11
   meta: ^1.9.1
 
 dev_dependencies:
