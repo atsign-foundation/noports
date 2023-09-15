@@ -30,6 +30,7 @@ def main():
             
     except Exception as e:
         print(e)
+        sshnpd.join()
 
 
 if __name__ == "__main__":

@@ -64,11 +64,11 @@ class SSHNPDClient:
         
     def is_alive(self):
        if not self.authenticated:
-           return False
-       elif len(SSHNPDClient.threads) > 2:
-           return False    
-       else: 
            return True
+       elif len(SSHNPDClient.threads) >= 2 and self.ssh_client.get_transport().is_active():
+           return True    
+       else: 
+           return False
     
     def join(self):
         self.closing.set()
