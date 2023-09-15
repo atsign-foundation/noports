@@ -54,12 +54,14 @@ void main(List<String> args) async {
     await sshnp.init();
     SSHNPResult res = await sshnp.run();
     if (res is SSHNPFailed) {
+      stderr.write('$res\n');
       exit(1);
     }
     if (res is SSHCommand) {
       stdout.write('$res\n');
+      await sshnp.done;
+      exit(0);
     }
-    exit(0);
   }, (Object error, StackTrace stackTrace) async {
     stderr.writeln(error.toString());
 

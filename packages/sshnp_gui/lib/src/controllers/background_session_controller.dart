@@ -3,26 +3,19 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 enum BackgroundSessionStatus { stopped, loading, running }
 
 final backgroundSessionFamilyController =
-    NotifierProviderFamily<BackgroundSessionFamilyController, BackgroundSession, String>(
+    NotifierProviderFamily<BackgroundSessionFamilyController, BackgroundSessionStatus, String>(
   BackgroundSessionFamilyController.new,
 );
 
-class BackgroundSession {
-  final String profileName;
-  BackgroundSessionStatus status = BackgroundSessionStatus.stopped;
-
-  BackgroundSession(this.profileName);
-}
-
-class BackgroundSessionFamilyController extends FamilyNotifier<BackgroundSession, String> {
+class BackgroundSessionFamilyController extends FamilyNotifier<BackgroundSessionStatus, String> {
   @override
-  BackgroundSession build(String arg) {
-    return BackgroundSession(arg);
+  BackgroundSessionStatus build(String arg) {
+    return BackgroundSessionStatus.stopped;
   }
 
-  BackgroundSessionStatus get status => state.status;
-
-  void setStatus(BackgroundSessionStatus status) => state.status = status;
+  void setStatus(BackgroundSessionStatus status) {
+    state = status;
+  }
 
   void start() => setStatus(BackgroundSessionStatus.loading);
   void endStartUp() => setStatus(BackgroundSessionStatus.running);

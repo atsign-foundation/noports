@@ -21,10 +21,10 @@ packages:
     dependency: transitive
     description:
       name: archive
-      sha256: "49b1fad315e57ab0bbc15bcbb874e83116a1d78f77ebd500a4af6c9407d6b28e"
+      sha256: e0902a06f0e00414e4e3438a084580161279f137aeb862274710f29ec10cf01e
       url: "https://pub.dev"
     source: hosted
-    version: "3.3.8"
+    version: "3.3.9"
   args:
     dependency: transitive
     description:
@@ -109,10 +109,10 @@ packages:
     dependency: transitive
     description:
       name: at_commons
-      sha256: f56c1828705593662060d9ba1fbc909f50e7f4e109fbc41482a5901232c260de
+      sha256: "091ca795288910f7d426ab4534e5e0e6e1fae3a12e2c65a578f1244d1f3d67bc"
       url: "https://pub.dev"
     source: hosted
-    version: "3.0.54"
+    version: "3.0.55"
   at_contact:
     dependency: "direct main"
     description:
@@ -410,7 +410,7 @@ packages:
     source: hosted
     version: "5.3.3"
   file_selector:
-    dependency: transitive
+    dependency: "direct main"
     description:
       name: file_selector
       sha256: "1d2fde93dddf634a9c3c0faa748169d7ac0d83757135555707e52f02c017ad4f"
@@ -793,10 +793,10 @@ packages:
     dependency: "direct main"
     description:
       name: page_transition
-      sha256: a7694bc120b7064a7f57c336914bb8885acf4f70bb3772c30c2fcfe6a85e43ff
+      sha256: dee976b1f23de9bbef5cd512fe567e9f6278caee11f5eaca9a2115c19dc49ef6
       url: "https://pub.dev"
     source: hosted
-    version: "2.0.9"
+    version: "2.1.0"
   path:
     dependency: "direct main"
     description:
@@ -1123,13 +1123,14 @@ packages:
     source: sdk
     version: "0.0.99"
   socket_connector:
-    dependency: transitive
+    dependency: "direct main"
     description:
-      name: socket_connector
-      sha256: f461da716d74eb6fda80efea98244ef467363d69eb6bb307c43722389e70d7b1
-      url: "https://pub.dev"
-    source: hosted
-    version: "1.0.10"
+      path: "."
+      ref: main
+      resolved-ref: "2efb79d3c223a62e4886690afb8fa82b3cb8a662"
+      url: "https://github.com/xavierchanth/socket_connector/"
+    source: git
+    version: "1.0.11"
   source_map_stack_trace:
     dependency: transitive
     description:
@@ -1168,7 +1169,7 @@ packages:
       path: "../sshnoports"
       relative: true
     source: path
-    version: "3.4.1"
+    version: "4.0.0-rc.4"
   stack_trace:
     dependency: transitive
     description:
@@ -1421,10 +1422,10 @@ packages:
     dependency: transitive
     description:
       name: webview_flutter_android
-      sha256: "0d8f5ac96a155e672129bf94c7abf625de01241d44d269dbaff083f1b4deb1aa"
+      sha256: "9427774649fd3c8b7ff53523051395d13aed2ca355822b822e6493d79f5fc05a"
       url: "https://pub.dev"
     source: hosted
-    version: "3.9.5"
+    version: "3.10.0"
   webview_flutter_platform_interface:
     dependency: transitive
     description:

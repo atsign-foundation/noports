@@ -19,7 +19,6 @@ class TerminalScreen extends ConsumerStatefulWidget {
 class _TerminalScreenState extends ConsumerState<TerminalScreen> with TickerProviderStateMixin {
   final terminalController = TerminalController();
   late final Pty pty;
-
   @override
   void initState() {
     super.initState();
@@ -27,9 +26,7 @@ class _TerminalScreenState extends ConsumerState<TerminalScreen> with TickerProv
 
     final sessionController = ref.read(terminalSessionFamilyController(sessionId).notifier);
     WidgetsBinding.instance.endOfFrame.then((value) {
-      sessionController.startProcess(exitCallback: (int exitCode) {
-        setState(() {});
-      });
+      sessionController.startProcess();
     });
   }
 
@@ -39,29 +36,10 @@ class _TerminalScreenState extends ConsumerState<TerminalScreen> with TickerProv
     super.dispose();
   }
 
-  void deleteTab(String sessionId) {
+  void closeSession(String sessionId) {
+    // Remove the session from the list of sessions
     final controller = ref.read(terminalSessionFamilyController(sessionId).notifier);
-    final terminalList = ref.watch(terminalSessionListController);
-    final currentSessionId = ref.read(terminalSessionController);
-    final currentIndex = terminalList.indexOf(currentSessionId);
-
-    // If the session we are deleting is the active session
-    // we need to set a new active session
-    if (currentSessionId == sessionId) {
-      if (currentIndex > 0) {
-        // set active terminal to the one immediately to the left
-        ref.read(terminalSessionController.notifier).setSession(terminalList[currentIndex - 1]);
-      } else if (terminalList.length > 1) {
-        // set active terminal to the one immediately to the right
-        ref.read(terminalSessionController.notifier).setSession(terminalList[currentIndex + 1]);
-      } else {
-        // no other sessions available, set active terminal to empty string
-        ref.read(terminalSessionController.notifier).setSession('');
-      }
-    }
-
     controller.dispose();
-    setState(() {});
   }
 
   @override
@@ -69,12 +47,7 @@ class _TerminalScreenState extends ConsumerState<TerminalScreen> with TickerProv
     final strings = AppLocalizations.of(context)!;
     final terminalList = ref.watch(terminalSessionListController);
     final currentSessionId = ref.watch(terminalSessionController);
-    late final int currentIndex;
-    if (terminalList.isEmpty) {
-      currentIndex = 0;
-    } else {
-      currentIndex = terminalList.indexOf(currentSessionId);
-    }
+    final int currentIndex = (terminalList.isEmpty) ? 0 : terminalList.indexOf(currentSessionId);
     final tabController = TabController(initialIndex: currentIndex, length: terminalList.length, vsync: this);
 
     return Scaffold(
@@ -112,7 +85,7 @@ class _TerminalScreenState extends ConsumerState<TerminalScreen> with TickerProv
                                 Text(displayName),
                                 IconButton(
                                   icon: const Icon(Icons.close),
-                                  onPressed: () => deleteTab(sessionId),
+                                  onPressed: () => closeSession(sessionId),
                                 )
                               ],
                             ),
@@ -130,18 +103,11 @@ class _TerminalScreenState extends ConsumerState<TerminalScreen> with TickerProv
                               ref.watch(terminalSessionFamilyController(sessionId)).terminal,
                               controller: terminalController,
                               autofocus: true,
+                              autoResize: true,
                             );
                           }).toList(),
                         ),
                       ),
-                    // SizedBox(
-                    //   height: MediaQuery.of(context).size.height - 200,
-                    //   child: TerminalView(
-                    //     terminalSession.terminal,
-                    //     controller: terminalController,
-                    //     autofocus: true,
-                    //   ),
-                    // ),
                   ]),
                 ),
               ),

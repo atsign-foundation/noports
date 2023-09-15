@@ -1,7 +1,9 @@
+import 'dart:io';
+
 import 'package:at_client_mobile/at_client_mobile.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
+import 'package:socket_connector/socket_connector.dart';
 import 'package:sshnoports/sshnp/sshnp.dart';
 import 'package:sshnoports/sshrv/sshrv.dart';
 import 'package:sshnp_gui/src/controllers/background_session_controller.dart';
@@ -18,6 +20,7 @@ class ProfileRunAction extends ConsumerStatefulWidget {
 
 class _ProfileRunActionState extends ConsumerState<ProfileRunAction> {
   SSHNP? sshnp;
+  SSHNPResult? sshnpResult;
 
   @override
   void initState() {
@@ -25,50 +28,69 @@ class _ProfileRunActionState extends ConsumerState<ProfileRunAction> {
   }
 
   Future<void> onStart() async {
-    if (mounted) {
-      showDialog<void>(
-        context: context,
-        barrierDismissible: false,
-        builder: (BuildContext context) => const Center(child: CircularProgressIndicator()),
-      );
-    }
-
+    ref.read(backgroundSessionFamilyController(widget.params.profileName!).notifier).start();
     try {
-      sshnp = await SSHNP.fromParams(
+      SSHNPParams params = SSHNPParams.merge(
         widget.params,
+        SSHNPPartialParams(
+          idleTimeout: 120, // 120 / 60 = 2 minutes
+          addForwardsToTunnel: true,
+          legacyDaemon: false,
+          sshClient: 'pure-dart',
+        ),
+      );
+
+      sshnp = await SSHNP.fromParams(
+        params,
         atClient: AtClientManager.getInstance().atClient,
         sshrvGenerator: SSHRV.pureDart,
       );
 
-      // TODO set --single-session, --timeout
-
       await sshnp!.init();
-      final sshnpResult = await sshnp!.run();
-      // TODO throw away bad results
+      sshnpResult = await sshnp!.run();
+
+      if (sshnpResult is SSHNPFailed) {
+        throw sshnpResult!;
+      }
+      ref.read(backgroundSessionFamilyController(widget.params.profileName!).notifier).endStartUp();
     } catch (e) {
+      Future stop = onStop();
       if (mounted) {
         CustomSnackBar.error(content: e.toString());
       }
-    } finally {
-      if (mounted) {
-        context.pop();
-      }
+      await stop;
     }
   }
 
   Future<void> onStop() async {
-    // need to implement SSHNP.stop
+    if (sshnpResult is SSHCommand) {
+      (sshnpResult as SSHCommand).sshProcess?.kill(); // DirectSSHViaExec
+      (sshnpResult as SSHCommand).sshClient?.close(); // DirectSSHViaClient
+      var sshrvResult = await (sshnpResult as SSHCommand).sshrvResult;
+      if (sshrvResult is Process) sshrvResult.kill(); // SSHRV via local binary
+      if (sshrvResult is SocketConnector) sshrvResult.close(); // SSHRV via pure dart
+    }
+    ref.read(backgroundSessionFamilyController(widget.params.profileName!).notifier).stop();
   }
 
-  static const Map<BackgroundSessionStatus, Widget> _iconMap = {
-    BackgroundSessionStatus.stopped: Icon(Icons.play_arrow),
-    BackgroundSessionStatus.loading: CircularProgressIndicator(),
-    BackgroundSessionStatus.running: Icon(Icons.stop),
-  };
+  static Widget getIconFromStatus(BackgroundSessionStatus status, BuildContext context) {
+    switch (status) {
+      case BackgroundSessionStatus.stopped:
+        return const Icon(Icons.play_arrow);
+      case BackgroundSessionStatus.running:
+        return const Icon(Icons.stop);
+      case BackgroundSessionStatus.loading:
+        return SizedBox(
+          width: IconTheme.of(context).size,
+          height: IconTheme.of(context).size,
+          child: const CircularProgressIndicator(),
+        );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
-    final status = ref.watch(backgroundSessionFamilyController(widget.params.profileName!)).status;
+    final status = ref.watch(backgroundSessionFamilyController(widget.params.profileName!));
     return ProfileActionButton(
       onPressed: () async {
         switch (status) {
@@ -82,7 +104,7 @@ class _ProfileRunActionState extends ConsumerState<ProfileRunAction> {
             break;
         }
       },
-      icon: _iconMap[status]!,
+      icon: getIconFromStatus(status, context),
     );
   }
 }

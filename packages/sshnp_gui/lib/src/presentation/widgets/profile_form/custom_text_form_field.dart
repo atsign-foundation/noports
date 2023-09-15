@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
 class CustomTextFormField extends StatelessWidget {
+  static const defaultWidth = 192.0;
+  static const defaultHeight = 33.0;
   const CustomTextFormField({
     super.key,
     required this.labelText,
@@ -8,8 +10,8 @@ class CustomTextFormField extends StatelessWidget {
     this.validator,
     this.onChanged,
     this.hintText,
-    this.width = 192,
-    this.height = 33,
+    this.width = defaultWidth,
+    this.height = defaultHeight,
   });
 
   final String labelText;
