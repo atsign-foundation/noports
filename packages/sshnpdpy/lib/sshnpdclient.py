@@ -1,4 +1,5 @@
 from io import StringIO
+import json
 import logging
 import os, threading, getpass
 import subprocess
@@ -19,7 +20,7 @@ from at_client.util import EncryptionUtil
 from at_client.common.keys import AtKey, Metadata, SharedKey
 from at_client.connections.notification.atevents import AtEvent, AtEventType
 
-from packages.sshnpdpy.lib.sshrv import SSHRV
+from .sshrv import SSHRV
 
 
 class SSHNPDClient:
@@ -66,11 +67,11 @@ class SSHNPDClient:
         
     def is_alive(self):
        if not self.authenticated:
-           return False
-       elif len(SSHNPDClient.threads) > 2:
-           return False    
-       else: 
            return True
+       elif len(SSHNPDClient.threads) >= 2 and self.ssh_client.get_transport().is_active():
+           return True    
+       else: 
+           return False
     
     def join(self):
         self.closing.set()
@@ -107,8 +108,10 @@ class SSHNPDClient:
                     sleep(1)
                 if event_type != AtEventType.DECRYPTED_UPDATE_NOTIFICATION:
                     continue
+                
                 key = event_data["key"].split(":")[1].split(".")[0]
                 decrypted_value = str(event_data["decryptedValue"])
+                
                 if key == "privatekey":
                     self.logger.debug(
                         f'private key received from ${event_data["from"]} notification id : ${event_data["id"]}')
@@ -138,8 +141,17 @@ class SSHNPDClient:
                     callbackArgs = [
                         at_event,
                         private_key,
+                        False
                     ]
-
+                if key == 'ssh_request':
+                    self.logger.debug(
+                        f'ssh callback requested from {event_data["from"]} notification id : {event_data["id"]}')
+                    callbackArgs = [
+                        at_event,
+                        "",
+                        True
+                    ]
+                    break
             except Empty:
                 pass
         try:
@@ -167,13 +179,10 @@ class SSHNPDClient:
                 pass
             
             
-    def _direct_ssh(self, ssh_list: list):
-        local_port = ssh_list[0]
-        port = ssh_list[1]
-        username = ssh_list[2]
-        hostname = ssh_list[3]
-        sshrv = SSHRV(hostname, port, local_port)
+    def _direct_ssh(self, hostname, port):
+        sshrv = SSHRV(hostname, port)
         sshrv.run()
+        self.logger.info("sshrv started @ "  + hostname + " on port " + str(port))
         return True
         
 
@@ -324,10 +333,14 @@ class SSHNPDClient:
     def sshnp_callback(
         self,
         event: AtEvent,
-        private_key,
+        private_key="",
+        direct=False,
     ):
         uuid = event.event_data["id"]
-        ssh_list = event.event_data["decryptedValue"].split(" ")
+        if direct:
+            ssh_list = json.loads(event.event_data["decryptedValue"])['payload']
+        else:
+            ssh_list = event.event_data["decryptedValue"].split(" ")
         iv_nonce = EncryptionUtil.generate_iv_nonce()
         metadata = Metadata(
             ttl=10000,
@@ -338,14 +351,17 @@ class SSHNPDClient:
         at_key.shared_with = AtSign(self.manager_atsign)
         at_key.metadata = metadata
         at_key.namespace = self.device_namespace
-        if len(ssh_list) == 5:
-            uuid = ssh_list[4]
+        if len(ssh_list) == 5 or direct:
+            uuid =  ssh_list['sessionId'] if direct else ssh_list[4]
             at_key = AtKey(f"{uuid}", self.atsign)
             at_key.shared_with = AtSign(self.manager_atsign)
             at_key.metadata = metadata
             at_key.namespace =self.device_namespace
         
-        ssh_auth = self._reverse_ssh_client(ssh_list, private_key)
+        if direct:
+            ssh_auth = self._direct_ssh(ssh_list['host'], ssh_list['port'])
+        else:
+            ssh_auth = self._reverse_ssh_client(ssh_list, private_key)
         
         if ssh_auth:
             response = self.at_client.notify(at_key, "connected")

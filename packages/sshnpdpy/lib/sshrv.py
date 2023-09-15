@@ -6,11 +6,11 @@ from .socket_connector import SocketConnector
 
 
 class SSHRV:
-    def __init__(self, destination, port, local_port):
+    def __init__(self, destination, port, local_port = 22):
         self.logger = logging.getLogger("sshrv")
         self.host = ""
         self.destination = destination
-        self.local_ssh_port = 22
+        self.local_ssh_port = local_port
         self.streaming_port = port
 
     
@@ -22,4 +22,4 @@ class SSHRV:
             return True
                 
         except Exception as e:
-            logging.error("SSHRV Error: ", e)
+            logging.error("SSHRV Error: " + str(e))

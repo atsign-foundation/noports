@@ -32,7 +32,7 @@ class SocketConnector:
             t1.start()
             t2.start()
         except Exception as e:
-            logging.debug(f"Error: {e}")
+            raise(e)
             
     def transfer(self, source_socket, destination_socket):
         while True:
