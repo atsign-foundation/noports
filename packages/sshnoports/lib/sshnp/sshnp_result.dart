@@ -2,12 +2,14 @@ part of 'sshnp.dart';
 
 abstract class SSHNPResult {}
 
-const _optionsWithPrivateKey = [
-  '-o StrictHostKeyChecking=accept-new',
-  '-o IdentitiesOnly=yes'
-];
+abstract class SSHNPCommandResult implements SSHNPResult {
+  String get command;
+  List<String> get args;
+}
 
-class SSHNPFailed extends SSHNPResult {
+const _optionsWithPrivateKey = ['-o StrictHostKeyChecking=accept-new', '-o IdentitiesOnly=yes'];
+
+class SSHNPFailed implements SSHNPResult {
   final String message;
   final Object? exception;
   final StackTrace? stackTrace;
@@ -20,8 +22,9 @@ class SSHNPFailed extends SSHNPResult {
   }
 }
 
-class SSHCommand extends SSHNPResult {
-  static const String command = 'ssh';
+class SSHCommand implements SSHNPCommandResult {
+  @override
+  final String command = 'ssh';
 
   final int localPort;
   final String? remoteUsername;
@@ -30,35 +33,42 @@ class SSHCommand extends SSHNPResult {
 
   final List<String> sshOptions;
 
+  Future? sshrvResult;
+  Process? sshProcess;
+  SSHClient? sshClient;
+
   SSHCommand.base({
     required this.localPort,
     required this.remoteUsername,
     required this.host,
+    List<String>? localSshOptions,
     this.privateKeyFileName,
-  }) : sshOptions = (shouldIncludePrivateKey(privateKeyFileName)
-            ? _optionsWithPrivateKey
-            : []);
+    this.sshrvResult,
+    this.sshProcess,
+    this.sshClient,
+  }) : sshOptions = [
+          if (shouldIncludePrivateKey(privateKeyFileName)) ..._optionsWithPrivateKey,
+          ...(localSshOptions ?? [])
+        ];
 
   static bool shouldIncludePrivateKey(String? privateKeyFileName) =>
       privateKeyFileName != null && privateKeyFileName.isNotEmpty;
+
+  @override
+  List<String> get args => [
+        '-p $localPort',
+        ...sshOptions,
+        if (remoteUsername != null) '$remoteUsername@$host',
+        if (remoteUsername == null) host,
+        if (shouldIncludePrivateKey(privateKeyFileName)) ...['-i', '$privateKeyFileName'],
+      ];
 
   @override
   String toString() {
     final sb = StringBuffer();
     sb.write(command);
     sb.write(' ');
-    sb.write('-p $localPort');
-    sb.write(' ');
-    sb.write(sshOptions.join(' '));
-    sb.write(' ');
-    if (remoteUsername != null) {
-      sb.write('$remoteUsername@');
-    }
-    sb.write(host);
-    if (shouldIncludePrivateKey(privateKeyFileName)) {
-      sb.write(' ');
-      sb.write('-i $privateKeyFileName');
-    }
+    sb.write(args.join(' '));
     return sb.toString();
   }
 }

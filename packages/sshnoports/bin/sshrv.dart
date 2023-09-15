@@ -4,7 +4,7 @@ import 'package:sshnoports/sshrv/sshrv.dart';
 
 Future<void> main(List<String> args) async {
   if (args.length < 2 || args.length > 3) {
-    print('sshrv <host> <port> [localhost sshd port, defaults to 22]');
+    stdout.writeln('sshrv <host> <port> [localhost sshd port, defaults to 22]');
     exit(-1);
   }
 

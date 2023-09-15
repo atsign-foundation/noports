@@ -240,7 +240,7 @@ class SSHNPDImpl implements SSHNPD {
 
       case 'sshd':
         logger.info(
-            '<3.4.0 request for (reverse) ssh received from ${notification.from}'
+            '<4.0.0 request for (reverse) ssh received from ${notification.from}'
             ' ( notification id : ${notification.id} )');
         _handleLegacySshRequestNotification(notification);
         break;
@@ -250,7 +250,7 @@ class SSHNPDImpl implements SSHNPD {
         break;
 
       case 'ssh_request':
-        logger.info('>=3.5.0 request for ssh received from ${notification.from}'
+        logger.info('>=4.0.0 request for ssh received from ${notification.from}'
             ' ( $notification )');
         _handleSshRequestNotification(notification);
         break;

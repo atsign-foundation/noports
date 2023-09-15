@@ -17,17 +17,12 @@ Future<void> cleanUpAfterReverseSsh(SSHNP sshnp) async {
   if (homeDirectory == null) {
     return;
   }
-  var sshHomeDirectory = "$homeDirectory/.ssh/";
-  if (Platform.isWindows) {
-    sshHomeDirectory = r'$homeDirectory\.ssh\';
-  }
+  var sshHomeDirectory = getDefaultSshDirectory(homeDirectory);
   sshnp.logger.info('Tidying up files');
 // Delete the generated RSA keys and remove the entry from ~/.ssh/authorized_keys
-  await deleteFile('$sshHomeDirectory${sshnp.sessionId}_sshnp', sshnp.logger);
-  await deleteFile(
-      '$sshHomeDirectory${sshnp.sessionId}_sshnp.pub', sshnp.logger);
-  await removeEphemeralKeyFromAuthorizedKeys(sshnp.sessionId, sshnp.logger,
-      sshHomeDirectory: sshHomeDirectory);
+  await deleteFile('$sshHomeDirectory/${sshnp.sessionId}_sshnp', sshnp.logger);
+  await deleteFile('$sshHomeDirectory/${sshnp.sessionId}_sshnp.pub', sshnp.logger);
+  await removeEphemeralKeyFromAuthorizedKeys(sshnp.sessionId, sshnp.logger, sshHomeDirectory: sshHomeDirectory);
 }
 
 Future<bool> deleteFile(String fileName, AtSignLogger logger) async {

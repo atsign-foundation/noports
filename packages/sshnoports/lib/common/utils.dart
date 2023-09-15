@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:at_chops/at_chops.dart';
 import 'package:at_client/at_client.dart';
 import 'package:at_utils/at_utils.dart';
+import 'package:path/path.dart' as path;
 
 /// Get the home directory or null if unknown.
 String? getHomeDirectory({bool throwIfNull = false}) {
@@ -56,20 +57,19 @@ bool checkNonAscii(String test) {
 
 String getDefaultAtKeysFilePath(String homeDirectory, String? atSign) {
   if (atSign == null) return '';
-  return '$homeDirectory/.atsign/keys/${atSign}_key.atKeys'
-      .replaceAll('/', Platform.pathSeparator);
+  return path.normalize('$homeDirectory/.atsign/keys/${atSign}_key.atKeys');
 }
 
 String getDefaultSshDirectory(String homeDirectory) {
-  return '$homeDirectory/.ssh/'.replaceAll('/', Platform.pathSeparator);
+  return path.normalize('$homeDirectory/.ssh/');
 }
 
 String getDefaultSshnpDirectory(String homeDirectory) {
-  return '$homeDirectory/.sshnp/'.replaceAll('/', Platform.pathSeparator);
+  return path.normalize('$homeDirectory/.sshnp/');
 }
 
 String getDefaultSshnpConfigDirectory(String homeDirectory) {
-  return '$homeDirectory/.sshnp/config'.replaceAll('/', Platform.pathSeparator);
+  return path.normalize('$homeDirectory/.sshnp/config');
 }
 
 /// Checks if the provided atSign's atServer has been properly activated with a public RSA key.
@@ -144,9 +144,9 @@ Future<(String, String)> generateSshKeys(
   }
 
   String sshPublicKey =
-      await File('$sshHomeDirectory${sessionId}_sshnp.pub').readAsString();
+      await File('$sshHomeDirectory/${sessionId}_sshnp.pub').readAsString();
   String sshPrivateKey =
-      await File('$sshHomeDirectory${sessionId}_sshnp').readAsString();
+      await File('$sshHomeDirectory/${sessionId}_sshnp').readAsString();
 
   return (sshPublicKey, sshPrivateKey);
 }
@@ -162,16 +162,15 @@ Future<void> addEphemeralKeyToAuthorizedKeys(
   }
 
   String homeDirectory = getHomeDirectory(throwIfNull: true)!;
+  var sshHomeDirectory = getDefaultSshDirectory(homeDirectory);
 
-  var sshHomeDirectory =
-      '$homeDirectory/.ssh/'.replaceAll('/', Platform.pathSeparator);
   if (!Directory(sshHomeDirectory).existsSync()) {
     Directory(sshHomeDirectory).createSync();
   }
 
   // Check to see if the ssh Publickey is already in the authorized_keys file.
   // If not, then append it.
-  var authKeys = File('${sshHomeDirectory}authorized_keys');
+  var authKeys = File(path.normalize('$sshHomeDirectory/authorized_keys'));
 
   var authKeysContent = await authKeys.readAsString();
   if (!authKeysContent.endsWith('\n')) {
@@ -184,14 +183,16 @@ Future<void> addEphemeralKeyToAuthorizedKeys(
     }
     // Set up a safe authorized_keys file, for the ssh tunnel
     await authKeys.writeAsString(
-        'command="echo \\"ssh session complete\\";sleep 20"'
-        ',PermitOpen="localhost:$localSshdPort"'
-        '$permissions'
-        ' '
-        '${sshPublicKey.trim()}'
-        ' '
-        'sshnp_ephemeral_$sessionId\n',
-        mode: FileMode.append);
+      'command="echo \\"ssh session complete\\";sleep 20"'
+      ',PermitOpen="localhost:$localSshdPort"'
+      '$permissions'
+      ' '
+      '${sshPublicKey.trim()}'
+      ' '
+      'sshnp_ephemeral_$sessionId\n',
+      mode: FileMode.append,
+      flush: true,
+    );
   }
 }
 
@@ -201,7 +202,7 @@ Future<void> removeEphemeralKeyFromAuthorizedKeys(
   try {
     sshHomeDirectory ??=
         getDefaultSshDirectory(getHomeDirectory(throwIfNull: true)!);
-    final File file = File('${sshHomeDirectory}authorized_keys');
+    final File file = File(path.normalize('$sshHomeDirectory/authorized_keys'));
     logger.info('Removing ephemeral key for session $sessionId'
         ' from ${file.absolute.path}');
     // read into List of strings
@@ -212,7 +213,8 @@ Future<void> removeEphemeralKeyFromAuthorizedKeys(
     await file.writeAsString(lines.join('\n'));
     await file.writeAsString('\n', mode: FileMode.writeOnlyAppend);
   } catch (e) {
-    logger.severe('Unable to tidy up ${sshHomeDirectory}authorized_keys');
+    logger.severe(
+        'Unable to tidy up ${path.normalize('$sshHomeDirectory/authorized_keys')}');
   }
 }
 
@@ -289,9 +291,8 @@ Future<String?> _fetchFromLocalPKCache(
     AtClient atClient, String atSign, bool useFileStorage) async {
   String dontAtMe = atSign.substring(1);
   if (useFileStorage) {
-    String fn = '${getHomeDirectory(throwIfNull: true)}'
-            '/.atsign/sshnp/cached_pks/$dontAtMe'
-        .replaceAll('/', Platform.pathSeparator);
+    String fn = path.normalize(
+        '${getHomeDirectory(throwIfNull: true)}/.atsign/sshnp/cached_pks/$dontAtMe');
     File f = File(fn);
     if (await f.exists()) {
       return (await f.readAsString()).trim();
@@ -314,11 +315,9 @@ Future<bool> _storeToLocalPKCache(
     String pk, AtClient atClient, String atSign, bool useFileStorage) async {
   String dontAtMe = atSign.substring(1);
   if (useFileStorage) {
-    String dirName =
-        '${getHomeDirectory(throwIfNull: true)}/.atsign/sshnp/cached_pks'
-            .replaceAll('/', Platform.pathSeparator);
-    String fileName =
-        '$dirName/$dontAtMe'.replaceAll('/', Platform.pathSeparator);
+    String dirName = path.normalize(
+        '${getHomeDirectory(throwIfNull: true)}/.atsign/sshnp/cached_pks');
+    String fileName = path.normalize('$dirName/$dontAtMe');
 
     File f = File(fileName);
     if (!await f.exists()) {

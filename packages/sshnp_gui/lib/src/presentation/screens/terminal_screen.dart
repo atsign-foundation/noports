@@ -1,17 +1,12 @@
-import 'dart:convert';
-import 'dart:io';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:flutter_pty/flutter_pty.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-import 'package:sshnp_gui/src/controllers/minor_providers.dart';
+import 'package:sshnp_gui/src/controllers/terminal_session_controller.dart';
+import 'package:sshnp_gui/src/presentation/widgets/navigation/app_navigation_rail.dart';
+import 'package:sshnp_gui/src/utility/sizes.dart';
 import 'package:xterm/xterm.dart';
-
-import '../../controllers/home_screen_controller.dart';
-import '../../utils/sizes.dart';
-import '../widgets/app_navigation_rail.dart';
 
 // * Once the onboarding process is completed you will be taken to this screen
 class TerminalScreen extends ConsumerStatefulWidget {
@@ -21,45 +16,18 @@ class TerminalScreen extends ConsumerStatefulWidget {
   ConsumerState<TerminalScreen> createState() => _TerminalScreenState();
 }
 
-class _TerminalScreenState extends ConsumerState<TerminalScreen> {
-  var terminal = Terminal();
+class _TerminalScreenState extends ConsumerState<TerminalScreen> with TickerProviderStateMixin {
   final terminalController = TerminalController();
   late final Pty pty;
-
   @override
   void initState() {
     super.initState();
+    final sessionId = ref.read(terminalSessionController);
+
+    final sessionController = ref.read(terminalSessionFamilyController(sessionId).notifier);
     WidgetsBinding.instance.endOfFrame.then((value) {
-      if (mounted) _startPty();
+      sessionController.startProcess();
     });
-  }
-
-  void _startPty({String? command, List<String>? args}) {
-    pty = Pty.start(
-      command ?? Platform.environment['SHELL'] ?? 'bash',
-      arguments: args ?? [],
-      columns: terminal.viewWidth,
-      rows: terminal.viewHeight,
-    );
-
-    pty.output.cast<List<int>>().transform(const Utf8Decoder()).listen(terminal.write);
-
-    pty.exitCode.then(
-      (code) => terminal.write('the process exited with code $code'),
-    );
-
-    terminal.onOutput = (data) {
-      pty.write(const Utf8Encoder().convert(data));
-    };
-
-    terminal.onResize = (w, h, pw, ph) {
-      pty.resize(h, w);
-    };
-
-    // write ssh result command to terminal
-    pty.write(const Utf8Encoder().convert(ref.watch(terminalSSHCommandProvider)));
-    // reset provider
-    ref.read(terminalSSHCommandProvider.notifier).update((state) => '');
   }
 
   @override
@@ -68,12 +36,19 @@ class _TerminalScreenState extends ConsumerState<TerminalScreen> {
     super.dispose();
   }
 
+  void closeSession(String sessionId) {
+    // Remove the session from the list of sessions
+    final controller = ref.read(terminalSessionFamilyController(sessionId).notifier);
+    controller.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
-    // * Getting the AtClientManager instance to use below
-
     final strings = AppLocalizations.of(context)!;
-    final state = ref.watch(homeScreenControllerProvider);
+    final terminalList = ref.watch(terminalSessionListController);
+    final currentSessionId = ref.watch(terminalSessionController);
+    final int currentIndex = (terminalList.isEmpty) ? 0 : terminalList.indexOf(currentSessionId);
+    final tabController = TabController(initialIndex: currentIndex, length: terminalList.length, vsync: this);
 
     return Scaffold(
       body: SafeArea(
@@ -84,19 +59,57 @@ class _TerminalScreenState extends ConsumerState<TerminalScreen> {
             Expanded(
               child: Padding(
                 padding: const EdgeInsets.only(left: Sizes.p36, top: Sizes.p21, right: Sizes.p36),
-                child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  SvgPicture.asset(
-                    'assets/images/noports_light.svg',
-                  ),
-                  gapH24,
-                  Expanded(
-                    child: TerminalView(
-                      terminal,
-                      controller: terminalController,
-                      autofocus: true,
+                child: DefaultTabController(
+                  length: terminalList.length,
+                  child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                    SvgPicture.asset(
+                      'assets/images/noports_light.svg',
                     ),
-                  ),
-                ]),
+                    gapH24,
+                    if (terminalList.isEmpty) Text(strings.noTerminalSessions, textScaleFactor: 2),
+                    if (terminalList.isEmpty) Text(strings.noTerminalSessionsHelp),
+                    if (terminalList.isNotEmpty)
+                      TabBar(
+                        controller: tabController,
+                        isScrollable: true,
+                        onTap: (index) {
+                          ref.read(terminalSessionController.notifier).setSession(terminalList[index]);
+                        },
+                        tabs: terminalList.map((String sessionId) {
+                          final displayName = ref.read(terminalSessionFamilyController(sessionId).notifier).displayName;
+                          return Tab(
+                            // text: e,
+                            key: Key('terminal-tab-$sessionId'),
+                            child: Row(
+                              children: [
+                                Text(displayName),
+                                IconButton(
+                                  icon: const Icon(Icons.close),
+                                  onPressed: () => closeSession(sessionId),
+                                )
+                              ],
+                            ),
+                          );
+                        }).toList(),
+                      ),
+                    if (terminalList.isNotEmpty) gapH24,
+                    if (terminalList.isNotEmpty)
+                      Expanded(
+                        child: TabBarView(
+                          controller: tabController,
+                          children: terminalList.map((String sessionId) {
+                            return TerminalView(
+                              key: Key('terminal-view-$sessionId'),
+                              ref.watch(terminalSessionFamilyController(sessionId)).terminal,
+                              controller: terminalController,
+                              autofocus: true,
+                              autoResize: true,
+                            );
+                          }).toList(),
+                        ),
+                      ),
+                  ]),
+                ),
               ),
             ),
           ],
