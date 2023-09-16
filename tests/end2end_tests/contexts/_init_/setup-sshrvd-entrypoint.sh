@@ -5,8 +5,9 @@
 # example usage: ./setup-sshrvd-entrypoint.sh @alice
 
 sshrvd=$1 # e.g. @alice
+template_name=$2 # e.g. "sshrvd_entrypoint.sh"
 
-cp ../../entrypoints/sshrvd_entrypoint.sh ../sshrvd/entrypoint.sh # copy template to the mounted folder
+cp ../../entrypoints/"$template_name" ../sshrvd/entrypoint.sh # copy template to the mounted folder
 
 prefix="sed -i"
 

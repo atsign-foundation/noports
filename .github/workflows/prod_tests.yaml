@@ -1,0 +1,176 @@
+name: prod_tests
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "2 * * * *" # “At minute 2.” https://crontab.guru
+  # pull_request: # temporary
+  #   branches:
+  #     - trunk
+
+env:
+  SSHNP_ATSIGN: "@8incanteater"
+  SSHNPD_ATSIGN: "@8052simple"
+  SSHRVD_ATSIGN: "@8485wealthy51"
+  SSHRVD_AM_ATSIGN: "@rv_am"
+  SSHRVD_AP_ATSIGN: "@rv_ap"
+  SSHRVD_EU_ATSIGN: "@rv_eu"
+  DOCKER_COMPOSE_BUILD_CMD: "docker compose build"
+  DOCKER_COMPOSE_UP_CMD: "docker compose up --abort-on-container-exit"
+
+jobs:
+  prod_rvd_test:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false # if one job fails, do not fail the others
+      matrix:
+        rvd:
+          # - ${{ env.SSHRVD_ATSIGN }}
+          # - ${{ env.SSHRVD_AM_ATSIGN }}
+          # - ${{ env.SSHRVD_AP_ATSIGN }}
+          # - ${{ env.SSHRVD_EU_ATSIGN }}
+          - "@8485wealthy51"
+          - "@rv_am"
+          - "@rv_ap"
+          - "@rv_eu"
+
+    steps:
+      - name: Show Matrix Values
+        run: |
+          echo "rvd: ${{ matrix.rvd }}"
+
+      - uses: actions/checkout@3df4ab11eba7bda6032a0b82a6bb43b11571feac # v4.0.0
+
+      - name: Setup NP/NPD key env
+        run: |
+          SSHNP_ATKEYS="$(tr '[:lower:]' '[:upper:]' <<< '${{ env.SSHNP_ATSIGN }}')"
+          echo "SSHNP_ATKEYS=ATKEYS_${SSHNP_ATKEYS:1}" >> $GITHUB_ENV
+
+          SSHNPD_ATKEYS="$(tr '[:lower:]' '[:upper:]' <<< '${{ env.SSHNPD_ATSIGN }}')"
+          echo "SSHNPD_ATKEYS=ATKEYS_${SSHNPD_ATKEYS:1}" >> $GITHUB_ENV
+
+          SSHRVD_ATKEYS="$(tr '[:lower:]' '[:upper:]' <<< '${{ env.SSHRVD_ATSIGN }}')"
+          echo "SSHRVD_ATKEYS=ATKEYS_${SSHRVD_ATKEYS:1}" >> $GITHUB_ENV
+
+      - name: Setup NP/NPD keys
+        working-directory: tests/end2end_tests/contexts
+        run: |
+          echo "${{ secrets[env.SSHNP_ATKEYS] }}" > sshnp/.atsign/keys/${{ env.SSHNP_ATSIGN }}_key.atKeys
+          echo "${{ secrets[env.SSHNPD_ATKEYS] }}" > sshnpd/.atsign/keys/${{ env.SSHNPD_ATSIGN }}_key.atKeys
+
+      - name: Setup Devicename
+        # First two guarantee a unique # per workflow call
+        # Last two guarantee  a unique # per job per strategy in matrix
+        run: |
+          echo "DEVICENAME=${{ github.run_id }}${{ github.run_attempt }}p${{ strategy.job-index }}" >> $GITHUB_ENV
+
+      - name: Set up NP/NPD entrypoints
+        working-directory: tests/end2end_tests/contexts/_init_
+        run: |
+          ./setup-sshnp-entrypoint.sh \
+            ${{ env.DEVICENAME }} \
+            ${{ env.SSHNP_ATSIGN }} \
+            ${{ env.SSHNPD_ATSIGN }} \
+            ${{ matrix.rvd }} \
+            sshnp_entrypoint.sh
+
+          ./setup-sshnpd-entrypoint.sh \
+            ${{ env.DEVICENAME }} \
+            ${{ env.SSHNP_ATSIGN }} \
+            ${{ env.SSHNPD_ATSIGN }} \
+            sshnpd_entrypoint.sh
+
+      - name: Set up RVD keys and entrypoint
+        if: matrix.rvd == env.SSHRVD_ATSIGN
+        working-directory: tests/end2end_tests
+        run: |
+          # setup keys
+          echo "${{ secrets[env.SSHRVD_ATKEYS] }}" > contexts/sshrvd/.atsign/keys/${{ env.SSHRVD_ATSIGN }}_key.atKeys
+
+          # set up sshrvd entrypoint
+          cd contexts/_init_
+          ./setup-sshrvd-entrypoint.sh \
+            ${{ matrix.rvd }} \
+            sshrvd_entrypoint.sh
+          cd ../sshrvd
+          cat entrypoint.sh
+
+      - name: Ensure entrypoints exist
+        working-directory: tests/end2end_tests/contexts
+        run: |
+          cat sshnp/entrypoint.sh
+          cat sshnpd/entrypoint.sh
+
+      - name: Build docker-compose.yaml
+        working-directory: tests/end2end_tests/tests
+        run: |
+          cat docker-compose-blank-base.yaml > docker-compose.yaml
+          cat service-image-runtime-release.yaml >> docker-compose.yaml
+          echo "      - release=latest" >> docker-compose.yaml
+          echo "    image: atsigncompany/sshnp-e2e-runtime:latest" >> docker-compose.yaml
+          cat service-container-sshnp.yaml >> docker-compose.yaml
+          echo "    image: atsigncompany/sshnp-e2e-runtime:latest" >> docker-compose.yaml
+          echo "    depends_on:" >> docker-compose.yaml
+          echo "      image-runtime-release:" >> docker-compose.yaml
+          echo "        condition: service_started" >> docker-compose.yaml
+          echo "      container-sshnpd:" >> docker-compose.yaml
+          echo "        condition: service_healthy" >> docker-compose.yaml
+          if [ "${{ matrix.rvd }}" == "${{ env.SSHRVD_ATSIGN }}" ]; then
+            echo "      container-sshrvd:" >> docker-compose.yaml
+            echo "        condition: service_healthy" >> docker-compose.yaml
+          fi
+          cat service-container-sshnpd.yaml >> docker-compose.yaml
+          echo "    image: atsigncompany/sshnp-e2e-runtime:latest" >> docker-compose.yaml
+          echo "    depends_on:" >> docker-compose.yaml
+          echo "      image-runtime-release:" >> docker-compose.yaml
+          echo "        condition: service_started" >> docker-compose.yaml
+          if [ "${{ matrix.rvd }}" == "${{ env.SSHRVD_ATSIGN }}" ]; then
+            echo "      container-sshrvd:" >> docker-compose.yaml
+            echo "        condition: service_healthy" >> docker-compose.yaml
+          fi
+
+      - name: Add RVD service to docker-compose.yaml
+        if: matrix.rvd == env.SSHRVD_ATSIGN
+        working-directory: tests/end2end_tests/tests
+        run: |
+          cat service-container-sshrvd.yaml >> docker-compose.yaml
+          echo "    image: atsigncompany/sshnp-e2e-runtime:latest" >> docker-compose.yaml
+          echo "    depends_on:" >> docker-compose.yaml
+          echo "      image-runtime-release:" >> docker-compose.yaml
+          echo "        condition: service_started" >> docker-compose.yaml
+
+      - name: docker-compose.yaml
+        working-directory: tests/end2end_tests/tests
+        run: |
+          cat docker-compose.yaml
+
+      - name: Build
+        working-directory: tests/end2end_tests/tests
+        run: |
+          ${{ env.DOCKER_COMPOSE_BUILD_CMD }}
+
+      - name: Test
+        working-directory: tests/end2end_tests/tests
+        run: |
+          ${{ env.DOCKER_COMPOSE_UP_CMD }}
+
+      - name: Found "Test Passed" in Logs
+        if: always()
+        working-directory: tests/end2end_tests/tests
+        run: |
+          docker compose logs --timestamps | grep -q "Test Passed$"
+
+      - name: Logs
+        if: always()
+        continue-on-error: true # if this fails, do not fail the job
+        working-directory: tests/end2end_tests/tests
+        run: |
+          docker compose ps -a
+          docker compose logs --timestamps
+
+      - name: Tear down
+        if: always()
+        continue-on-error: true # if this fails, do not fail the job
+        working-directory: tests/end2end_tests/tests
+        run: |
+          docker compose down

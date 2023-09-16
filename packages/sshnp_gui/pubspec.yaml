@@ -8,12 +8,15 @@ environment:
 
 dependencies:
   at_app_flutter: ^5.0.1
-  at_client_mobile: ^3.2.6
+  at_backupkey_flutter: ^4.0.10
+  at_client_mobile: ^3.2.11
+  at_common_flutter: ^2.0.12
   at_contact: ^3.0.7
   at_contacts_flutter: ^4.0.5
-  at_onboarding_flutter: ^6.1.0
+  at_onboarding_flutter: ^6.1.3
   at_utils: ^3.0.11
-  biometric_storage: ^4.1.3
+  biometric_storage: ^5.0.0+4
+  file_selector: ^0.9.5
   flutter:
     sdk: flutter
   flutter_dotenv: ^5.0.2
@@ -29,9 +32,11 @@ dependencies:
   path: ^1.8.3
   path_provider: ^2.0.11
   shared_preferences: ^2.2.0
+  socket_connector: ^1.0.10
   sshnoports:
     path: ../sshnoports/
-    
+  url_launcher: ^6.1.14
+  uuid: ^3.0.7
   xterm: ^3.5.0
 
 dev_dependencies:
@@ -41,8 +46,12 @@ dev_dependencies:
 
 dependency_overrides:
   intl: ^0.17.0-nullsafety.2
-  image: ^3.1.3
+  # image: ^3.1.3
   zxing2: ^0.2.0
+  socket_connector:
+    git:
+      url: https://github.com/xavierchanth/socket_connector/
+      ref: main
 flutter:
   uses-material-design: true
   generate: true

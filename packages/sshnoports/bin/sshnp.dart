@@ -35,20 +35,18 @@ void main(List<String> args) async {
 
   await runZonedGuarded(() async {
     if (params.listDevices) {
-      print('Searching for devices...');
+      stdout.writeln('Searching for devices...');
       var (active, off, info) = await sshnp.listDevices();
       if (active.isEmpty && off.isEmpty) {
-        print('[X] No devices found\n');
-        print(
-            'Note: only devices with sshnpd version 3.4.0 or higher are supported by this command.');
-        print(
-            'Please update your devices to sshnpd version >= 3.4.0 and try again.');
+        stdout.writeln('[X] No devices found\n');
+        stdout.writeln('Note: only devices with sshnpd version 3.4.0 or higher are supported by this command.');
+        stdout.writeln('Please update your devices to sshnpd version >= 3.4.0 and try again.');
         exit(0);
       }
 
-      print('Active Devices:');
+      stdout.writeln('Active Devices:');
       _printDevices(active, info);
-      print('Inactive Devices:');
+      stdout.writeln('Inactive Devices:');
       _printDevices(off, info);
       exit(0);
     }
@@ -56,12 +54,14 @@ void main(List<String> args) async {
     await sshnp.init();
     SSHNPResult res = await sshnp.run();
     if (res is SSHNPFailed) {
+      stderr.write('$res\n');
       exit(1);
     }
     if (res is SSHCommand) {
       stdout.write('$res\n');
+      await sshnp.done;
+      exit(0);
     }
-    exit(0);
   }, (Object error, StackTrace stackTrace) async {
     stderr.writeln(error.toString());
 
@@ -78,10 +78,10 @@ void main(List<String> args) async {
 
 void _printDevices(Iterable<String> devices, Map<String, dynamic> info) {
   if (devices.isEmpty) {
-    print('  [X] No devices found');
+    stdout.writeln('  [X] No devices found');
     return;
   }
   for (var device in devices) {
-    print('  $device - v${info[device]?['version']}');
+    stdout.writeln('  $device - v${info[device]?['version']}');
   }
 }

@@ -8,7 +8,7 @@ import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:go_router/go_router.dart';
 import 'package:macos_ui/macos_ui.dart';
 import 'package:path_provider/path_provider.dart' show getApplicationSupportDirectory;
-import 'package:sshnp_gui/src/utils/app_router.dart';
+import 'package:sshnp_gui/src/controllers/navigation_controller.dart';
 
 class OnboardingScreen extends StatefulWidget {
   const OnboardingScreen({super.key});

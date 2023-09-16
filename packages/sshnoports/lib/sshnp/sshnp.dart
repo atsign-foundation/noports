@@ -7,12 +7,14 @@ import 'package:at_client/at_client.dart' hide StringBuffer;
 import 'package:at_commons/at_builders.dart';
 import 'package:at_utils/at_logger.dart';
 import 'package:at_utils/at_utils.dart';
+import 'package:dartssh2/dartssh2.dart';
 import 'package:logging/logging.dart';
 import 'package:meta/meta.dart';
 import 'package:path/path.dart' as path;
 import 'package:sshnoports/common/create_at_client_cli.dart';
 import 'package:sshnoports/common/supported_ssh_clients.dart';
 import 'package:sshnoports/common/utils.dart';
+import 'package:sshnoports/sshnp/config_repository/config_file_repository.dart';
 import 'package:sshnoports/sshnp/sshnp_arg.dart';
 import 'package:sshnoports/sshnp/utils.dart';
 import 'package:sshnoports/sshnpd/sshnpd.dart';
@@ -20,6 +22,8 @@ import 'package:sshnoports/sshrv/sshrv.dart';
 import 'package:sshnoports/sshrvd/sshrvd.dart';
 import 'package:sshnoports/version.dart';
 import 'package:uuid/uuid.dart';
+
+import 'package:sshnoports/common/defaults.dart' as defaults;
 
 part 'sshnp_impl.dart';
 part 'sshnp_params.dart';
@@ -83,9 +87,12 @@ abstract class SSHNP {
   abstract int localPort;
 
   /// Port that local sshd is listening on localhost interface
-  /// Default set to 22
-
+  /// Default set to [defaultLocalSshdPort]
   abstract int localSshdPort;
+
+  /// Port that the remote sshd is listening on localhost interface
+  /// Default set to [defaultRemoteSshdPort]
+  abstract int remoteSshdPort;
 
   // ====================================================================
   // Derived final instance variables, set during construction or init
@@ -146,19 +153,31 @@ abstract class SSHNP {
 
   abstract final bool direct;
 
+  /// If ssh tunnel is unused (no active connections via port forwards) for
+  /// longer than this many seconds, then the connection will be closed.
+  /// Defaults to [defaults.defaultIdleTimeout]
+  abstract int idleTimeout;
+
+  /// The ssh client to use when doing outbound ssh within this program
+  abstract SupportedSshClient sshClient;
+
+  /// When true, any local forwarding directives included in [localSshOptions]
+  /// will be added to the initial tunnel ssh request
+  abstract bool addForwardsToTunnel;
+
+  /// Completes when the SSHNP instance is no longer doing anything
+  /// e.g. controlling a direct ssh tunnel using the pure-dart SSHClient
+  Future<void> get done;
+
   /// Default parameters for sshnp
   static const defaultDevice = 'default';
   static const defaultPort = 22;
   static const defaultLocalPort = 0;
   static const defaultSendSshPublicKey = '';
   static const defaultLocalSshOptions = <String>[];
-  static const defaultVerbose = false;
-  static const defaultRsa = false;
-  static const defaultRootDomain = 'root.atsign.org';
-  static const defaultSshrvGenerator = SSHRV.localBinary;
-  static const defaultLocalSshdPort = 22;
   static const defaultLegacyDaemon = true;
   static const defaultListDevices = false;
+  static const defaultSshClient = SupportedSshClient.hostSsh;
 
   factory SSHNP({
     // final fields
@@ -177,9 +196,13 @@ abstract class SSHNP {
     required int localPort,
     String? remoteUsername,
     bool verbose = false,
-    SSHRVGenerator sshrvGenerator = defaultSshrvGenerator,
-    int localSshdPort = defaultLocalSshdPort,
+    SSHRVGenerator sshrvGenerator = defaults.defaultSshrvGenerator,
+    int localSshdPort = defaults.defaultLocalSshdPort,
     bool legacyDaemon = defaultLegacyDaemon,
+    int remoteSshdPort = defaults.defaultRemoteSshdPort,
+    int idleTimeout = defaults.defaultIdleTimeout,
+    required SupportedSshClient sshClient,
+    required bool addForwardsToTunnel,
   }) {
     return SSHNPImpl(
       atClient: atClient,
@@ -199,6 +222,10 @@ abstract class SSHNP {
       sshrvGenerator: sshrvGenerator,
       localSshdPort: localSshdPort,
       legacyDaemon: legacyDaemon,
+      remoteSshdPort: remoteSshdPort,
+      idleTimeout: idleTimeout,
+      sshClient: sshClient,
+      addForwardsToTunnel: addForwardsToTunnel,
     );
   }
 
@@ -242,6 +269,5 @@ abstract class SSHNP {
   /// Returns two Iterable<String>:
   /// - Iterable<String> of atSigns of sshnpd that responded
   /// - Iterable<String> of atSigns of sshnpd that did not respond
-  Future<(Iterable<String>, Iterable<String>, Map<String, dynamic>)>
-      listDevices();
+  Future<(Iterable<String>, Iterable<String>, Map<String, dynamic>)> listDevices();
 }

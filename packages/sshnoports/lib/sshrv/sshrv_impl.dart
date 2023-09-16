@@ -14,7 +14,7 @@ class SSHRVImpl implements SSHRV<Process> {
   const SSHRVImpl(
     this.host,
     this.streamingPort, {
-    this.localSshdPort = SSHNP.defaultLocalSshdPort,
+    this.localSshdPort = defaults.defaultLocalSshdPort,
   });
 
   @override
@@ -62,10 +62,10 @@ class SSHRVImplPureDart implements SSHRV<SocketConnector> {
         socketPortA: localSshdPort,
         socketAddressB: hosts[0],
         socketPortB: streamingPort,
-        verbose: false,
+        verbose: true,
       );
     } catch (e) {
-      print('sshrv error: ${e.toString()}');
+      AtSignLogger('sshrv').severe(e.toString());
       rethrow;
     }
   }
