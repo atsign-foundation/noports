@@ -37,7 +37,7 @@ jobs:
             exit 1
           fi
 
-      - uses: dart-lang/setup-dart@d6a63dab3335f427404425de0fbfed4686d93c4f # v1.5.0
+      - uses: dart-lang/setup-dart@8a4b97ea2017cc079571daec46542f76189836b1 # v1.5.1
       - run: mkdir sshnp
       - run: mkdir tarball
       - run: dart pub get
