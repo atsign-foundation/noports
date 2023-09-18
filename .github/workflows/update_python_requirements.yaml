@@ -1,0 +1,50 @@
+name: Bump requirements.txt
+on:
+  pull_request:
+    paths:
+      - 'pyproject.toml'
+  workflow_dispatch:
+
+permissions:
+  pull-requests: write
+  
+jobs:
+  bump_requirements:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout this repo
+      if: ${{ github.actor == 'dependabot[bot]' }}
+      uses: actions/checkout@3df4ab11eba7bda6032a0b82a6bb43b11571feac # v4.0.0
+      with:
+        fetch-depth: 0
+        ref: ${{ github.event.pull_request.head.ref }}
+        token: ${{ secrets.MY_GITHUB_TOKEN }}
+
+    - name: Set up Python
+      if: ${{ github.actor == 'dependabot[bot]' }}
+      uses: actions/setup-python@61a6322f88396a6271a6ee3565807d608ecaddd1 # v4.7.0
+      with:
+          python-version: '3.11'
+
+    - name: Install Poetry
+      if: ${{ github.actor == 'dependabot[bot]' }}
+      uses: abatilo/actions-poetry@192395c0d10c082a7c62294ab5d9a9de40e48974 # v2.3.0
+      with:
+        poetry-version: '1.6.1'
+    
+    - name: Bump Python dependencies
+      if: ${{ github.actor == 'dependabot[bot]' }}
+      run: |
+        poetry update
+        poetry export --format requirements.txt --output requirements.txt
+        git config --global user.name 'dependabot[bot]'
+        git config --global user.email 'dependabot[bot]@users.noreply.github.com'
+        git add requirements.txt
+        if [ -z "$(git status --porcelain)" ]; then 
+          echo 'No changes to commit on this run'
+          exit 0
+        else
+          git commit -m "build(deps): Bump requirements.txt"
+          git push
+        fi

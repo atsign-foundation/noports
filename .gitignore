@@ -26,7 +26,6 @@ build/
 
 # Python
 poetry.lock
-pyproject.toml
 __pycache__
 
 .env
