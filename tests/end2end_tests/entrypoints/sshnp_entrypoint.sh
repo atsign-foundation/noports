@@ -14,7 +14,7 @@ run_test()
         echo "sshcommand.txt is empty"
         return 1
     fi
-    
+
     sed '1!d' sshcommand.txt
     echo "ssh -p command: $(cat sshcommand.txt)"
     echo "./test.sh " | eval "$(cat sshcommand.txt)"
@@ -31,6 +31,7 @@ main()
             echo "Test Passed"
             exit 0
         fi
+        sleep 5
     done
 }
 
