@@ -19,7 +19,7 @@ if [ ! -s sshcommand.txt ]; then
         exit 1
     fi
 fi
-echo "$(sed '1!d' sshcommand.txt) -o StrictHostKeyChecking=no " > sshcommand.txt ;
+echo "$(sed '1!d' sshcommand.txt)" > sshcommand.txt ;
 echo "ssh -p command: $(cat sshcommand.txt)"
 echo "sh test.sh " | eval "$(cat sshcommand.txt)"
 sleep 2 # time for ssh connection to properly exit
