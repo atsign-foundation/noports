@@ -19,6 +19,7 @@ run_test()
     echo "ssh -p command: $(cat sshcommand.txt)"
     echo "./test.sh " | eval "$(cat sshcommand.txt)"
     sleep 2 # time for ssh connection to properly exit
+    return 0
 }
 
 main()
@@ -32,6 +33,7 @@ main()
         fi
         sleep 5
     done
+    exit 1
 }
 
 main
