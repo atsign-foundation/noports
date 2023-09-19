@@ -372,7 +372,7 @@ class SSHNPDClient:
         self.ssh_client = ssh_client
         return True
 
-    def generateSSHKeys(self, session_id):
+    def generate_ssh_keys(self, session_id):
         # Generate SSH Keys
         self.logger.info("Generating SSH Keys")
         ssh_keygen = subprocess.Popen(
