@@ -12,14 +12,22 @@ class SSHRV:
         self.destination = destination
         self.local_ssh_port = local_port
         self.streaming_port = port
+        self.socket_connector = None
 
     
     def run(self):
         try:
             self.host = socket.gethostbyname(socket.gethostname())
-            socket_connector = SocketConnector(self.host, self.local_ssh_port, self.destination, self.streaming_port)
-            socket_connector.connect()
+            socket_connector = SocketConnector(self.host, self.local_ssh_port, self.destination, self.streaming_port, reuse_port=True)
+            t1 = threading.Thread(target=socket_connector.connect)
+            t1.start()
+            self.socket_connector = t1
             return True
                 
         except Exception as e:
             logging.error("SSHRV Error: " + str(e))
+            
+    def is_alive(self):
+        return self.socket_connector.is_alive()
+            
+            
