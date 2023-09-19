@@ -40,6 +40,7 @@ class SSHNPDClient:
         self.ssh_client = None
         self.device_namespace = f".{device}.sshnp"
         self.authenticated = False
+        self.rv = None
         
         #Logger
         self.logger = logging.getLogger("sshnpd")
@@ -70,12 +71,15 @@ class SSHNPDClient:
            return True
        elif len(SSHNPDClient.threads) >= 2 and self.ssh_client.get_transport().is_active():
            return True    
+       elif self.rv.is_alive():
+           return True
        else: 
            return False
     
     def join(self):
         self.closing.set()
-        self.ssh_client.close()
+        if self.ssh_client:
+            self.ssh_client.close()
         self.at_client.stop_monitor()
         for thread in SSHNPDClient.threads:
             thread.join()
@@ -142,7 +146,7 @@ class SSHNPDClient:
                         at_event,
                         private_key,
                         False
-                    ]
+                    ] 
                 if key == 'ssh_request':
                     self.logger.debug(
                         f'ssh callback requested from {event_data["from"]} notification id : {event_data["id"]}')
@@ -179,12 +183,51 @@ class SSHNPDClient:
                 pass
             
             
-    def _direct_ssh(self, hostname, port):
+    def _direct_ssh(self, hostname, port, sessionId):
         sshrv = SSHRV(hostname, port)
         sshrv.run()
+        self.rv = sshrv
         self.logger.info("sshrv started @ "  + hostname + " on port " + str(port))
+        self.generateSSHKeys(sessionId)
         return True
         
+    def sshnp_callback(
+        self,
+        event: AtEvent,
+        private_key="",
+        direct=False,
+    ):
+        uuid = event.event_data["id"]
+        if direct:
+            ssh_list = json.loads(event.event_data["decryptedValue"])['payload']
+        else:
+            ssh_list = event.event_data["decryptedValue"].split(" ")
+        iv_nonce = EncryptionUtil.generate_iv_nonce()
+        metadata = Metadata(
+            ttl=10000,
+            ttr=-1,
+            iv_nonce=iv_nonce,
+        )
+        at_key = AtKey(f"{uuid}.", self.atsign)
+        at_key.shared_with = AtSign(self.manager_atsign)
+        at_key.metadata = metadata
+        at_key.namespace = self.device_namespace
+        if len(ssh_list) == 5 or direct:
+            uuid =  ssh_list['sessionId'] if direct else ssh_list[4]
+            at_key = AtKey(f"{uuid}", self.atsign)
+            at_key.shared_with = AtSign(self.manager_atsign)
+            at_key.metadata = metadata
+            at_key.namespace =self.device_namespace
+        
+        if direct:
+            ssh_auth = self._direct_ssh(ssh_list['host'], ssh_list['port'], ssh_list['sessionId'])
+        else:
+            ssh_auth = self._reverse_ssh_client(ssh_list, private_key)
+        
+        if ssh_auth:
+            response = self.at_client.notify(at_key, "connected")
+            self.logger.info("sent ssh notification to " + at_key.shared_with.to_string())
+            self.authenticated = True
 
     def _reverse_ssh_exec(self, ssh_list: list, private_key, sessionID):
         local_port = ssh_list[0]
@@ -329,42 +372,36 @@ class SSHNPDClient:
         self.ssh_client = ssh_client
         return True
 
-
-    def sshnp_callback(
-        self,
-        event: AtEvent,
-        private_key="",
-        direct=False,
-    ):
-        uuid = event.event_data["id"]
-        if direct:
-            ssh_list = json.loads(event.event_data["decryptedValue"])['payload']
-        else:
-            ssh_list = event.event_data["decryptedValue"].split(" ")
-        iv_nonce = EncryptionUtil.generate_iv_nonce()
-        metadata = Metadata(
-            ttl=10000,
-            ttr=-1,
-            iv_nonce=iv_nonce,
+    def generateSSHKeys(self, session_id):
+        # Generate SSH Keys
+        self.logger.info("Generating SSH Keys")
+        ssh_keygen = subprocess.Popen(
+            ["ssh-keygen", "-t", "rsa", "-b", "4096", "-f", f"{session_id}_sshnp", "-q", "-N", ""],
+            cwd=f'{self.ssh_path}/tmp/',
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
         )
-        at_key = AtKey(f"{uuid}.", self.atsign)
-        at_key.shared_with = AtSign(self.manager_atsign)
-        at_key.metadata = metadata
-        at_key.namespace = self.device_namespace
-        if len(ssh_list) == 5 or direct:
-            uuid =  ssh_list['sessionId'] if direct else ssh_list[4]
-            at_key = AtKey(f"{uuid}", self.atsign)
-            at_key.shared_with = AtSign(self.manager_atsign)
-            at_key.metadata = metadata
-            at_key.namespace =self.device_namespace
         
-        if direct:
-            ssh_auth = self._direct_ssh(ssh_list['host'], ssh_list['port'])
-        else:
-            ssh_auth = self._reverse_ssh_client(ssh_list, private_key)
+        stdout, stderr = ssh_keygen.communicate()
+        if ssh_keygen.returncode != 0:
+            self.logger.error("SSH Key generation failed")
+            self.logger.error(stderr.decode("utf-8"))
+            return False
         
-        if ssh_auth:
-            response = self.at_client.notify(at_key, "connected")
-            self.logger.info("sent ssh notification to " + at_key.shared_with.to_string())
-            self.authenticated = True
+        self.logger.info("SSH Keys Generated")
+        ssh_public_key = ""
+        ssh_private_key = ""
+        try:
+            with open(f"{self.ssh_path}/{session_id}_sshnp.pub", 'r') as public_key_file:
+                ssh_public_key = public_key_file.read()
+
+            with open(f"{self.ssh_path}/{session_id}_sshnp", 'r') as private_key_file:
+                ssh_private_key = private_key_file.read()
+                
+        except Exception as e:
+            self.logger.error(e)
+            return False
+        
+        return (ssh_public_key, ssh_private_key)
+        
             
