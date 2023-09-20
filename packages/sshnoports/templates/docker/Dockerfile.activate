@@ -11,7 +11,7 @@ RUN \
   dart compile exe bin/activate_cli.dart -o ${BINARYDIR}/at_activate
 
 # Second stage of build FROM debian-slim
-FROM debian:stable-20230904-slim@sha256:0941f9e9cc96c4106845a381fb6fca98393f5f659f3eba6a64e9f79219165cfc
+FROM debian:stable-20230919-slim@sha256:397590fb6229b2a89ee101344e7a489e393ee734fdbd376f6667a4b25d1be914
 ENV USER=atsign
 ENV HOMEDIR=/${USER}
 ENV BINARYDIR=/usr/local/at
