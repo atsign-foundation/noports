@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
@@ -24,6 +23,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
     final strings = AppLocalizations.of(context)!;
     final profileNames = ref.watch(configListController);
+
     return Scaffold(
       body: SafeArea(
         child: Row(
@@ -50,7 +50,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     loading: () => const Center(
                       child: CircularProgressIndicator(),
                     ),
-                    error: (e, s) => Text(e.toString()),
+                    error: (e, s) {
+                      return Text(e.toString());
+                    },
                     data: (profiles) {
                       if (profiles.isEmpty) {
                         return const Text('No SSHNP Configurations Found');
