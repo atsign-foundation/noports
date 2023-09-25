@@ -35,7 +35,7 @@ dependencies:
   socket_connector: ^1.0.10
   sshnoports:
     path: ../sshnoports/
-  url_launcher: ^6.1.14
+  url_launcher: ^6.1.11
   uuid: ^3.0.7
   xterm: ^3.5.0
   mocktail: ^1.0.0
