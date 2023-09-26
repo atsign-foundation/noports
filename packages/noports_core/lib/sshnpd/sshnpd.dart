@@ -8,14 +8,15 @@ import 'package:at_utils/at_logger.dart';
 import 'package:dartssh2/dartssh2.dart';
 import 'package:logging/logging.dart';
 import 'package:meta/meta.dart';
-import 'package:sshnoports/common/create_at_client_cli.dart';
-import 'package:sshnoports/common/supported_ssh_clients.dart';
-import 'package:sshnoports/common/utils.dart';
-import 'package:sshnoports/sshrv/sshrv.dart';
-import 'package:sshnoports/version.dart';
+
+import 'package:noports_core/common/supported_ssh_clients.dart';
+import 'package:noports_core/common/utils.dart';
+import 'package:noports_core/sshrv/sshrv.dart';
+import 'package:noports_core/version.dart';
+
 import 'package:uuid/uuid.dart';
 
-import 'package:sshnoports/common/defaults.dart' as defaults;
+import 'package:noports_core/common/defaults.dart' as defaults;
 
 part 'sshnpd_impl.dart';
 part 'sshnpd_params.dart';
@@ -111,8 +112,14 @@ abstract class SSHNPD {
         rsa: rsa);
   }
 
-  static Future<SSHNPD> fromCommandLineArgs(List<String> args) async {
-    return SSHNPDImpl.fromCommandLineArgs(args);
+  static Future<SSHNPD> fromCommandLineArgs(List<String> args,
+      {AtClient? atClient,
+      FutureOr<AtClient> Function(SSHNPDParams)? atClientGenerator}) async {
+    return SSHNPDImpl.fromCommandLineArgs(
+      args,
+      atClient: atClient,
+      atClientGenerator: atClientGenerator,
+    );
   }
 
   /// Must be run after construction, to complete initialization

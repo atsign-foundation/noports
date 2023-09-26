@@ -1,6 +1,6 @@
 import 'package:at_client/at_client.dart';
-import 'package:sshnoports/sshnp/sshnp.dart';
-import 'package:sshnoports/sshnpd/sshnpd.dart';
+import 'package:noports_core/sshnp/sshnp.dart';
+import 'package:noports_core/sshnpd/sshnpd.dart';
 
 class ConfigKeyRepository {
   static const String _keyPrefix = 'profile_';
