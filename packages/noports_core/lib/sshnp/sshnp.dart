@@ -231,12 +231,14 @@ abstract class SSHNP {
     SSHNPParams p, {
     AtClient? atClient,
     FutureOr<AtClient> Function(SSHNPParams, String)? atClientGenerator,
+    void Function(Object, StackTrace)? usageCallback,
     SSHRVGenerator sshrvGenerator = SSHRV.localBinary,
   }) {
     return SSHNPImpl.fromParams(
       p,
       atClient: atClient,
       atClientGenerator: atClientGenerator,
+      usageCallback: usageCallback,
       sshrvGenerator: sshrvGenerator,
     );
   }

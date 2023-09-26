@@ -227,6 +227,7 @@ class SSHNPImpl implements SSHNP {
     SSHNPParams p, {
     AtClient? atClient,
     FutureOr<AtClient> Function(SSHNPParams, String)? atClientGenerator,
+    void Function(Object, StackTrace)? usageCallback,
     SSHRVGenerator sshrvGenerator = SSHRV.localBinary,
   }) async {
     try {
@@ -294,8 +295,7 @@ class SSHNPImpl implements SSHNP {
 
       return sshnp;
     } catch (e, s) {
-      stdout.writeln(SSHNPPartialParams.parser.usage);
-      stderr.writeln('\n$e');
+      usageCallback?.call(e, s);
       if (e is SSHNPFailed) {
         rethrow;
       }

@@ -53,11 +53,13 @@ abstract class SSHRVD {
 
   static Future<SSHRVD> fromCommandLineArgs(List<String> args,
       {AtClient? atClient,
-      FutureOr<AtClient> Function(SSHRVDParams)? atClientGenerator}) async {
+      FutureOr<AtClient> Function(SSHRVDParams)? atClientGenerator,
+      void Function(Object, StackTrace)? usageCallback}) async {
     return SSHRVDImpl.fromCommandLineArgs(
       args,
       atClient: atClient,
       atClientGenerator: atClientGenerator,
+      usageCallback: usageCallback
     );
   }
 

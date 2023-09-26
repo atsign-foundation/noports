@@ -70,7 +70,8 @@ class SSHNPDImpl implements SSHNPD {
 
   static Future<SSHNPD> fromCommandLineArgs(List<String> args,
       {AtClient? atClient,
-      FutureOr<AtClient> Function(SSHNPDParams)? atClientGenerator}) async {
+      FutureOr<AtClient> Function(SSHNPDParams)? atClientGenerator,
+      void Function(Object, StackTrace)? usageCallback}) async {
     try {
       var p = SSHNPDParams.fromArgs(args);
 
@@ -109,10 +110,8 @@ class SSHNPDImpl implements SSHNPD {
       }
 
       return sshnpd;
-    } catch (e) {
-      printVersion();
-      stdout.writeln(SSHNPDParams.parser.usage);
-      stderr.writeln('\n$e');
+    } catch (e, s) {
+      usageCallback?.call(e, s);
       rethrow;
     }
   }

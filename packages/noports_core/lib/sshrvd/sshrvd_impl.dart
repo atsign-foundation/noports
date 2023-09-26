@@ -38,7 +38,8 @@ class SSHRVDImpl implements SSHRVD {
 
   static Future<SSHRVD> fromCommandLineArgs(List<String> args,
       {AtClient? atClient,
-      FutureOr<AtClient> Function(SSHRVDParams)? atClientGenerator}) async {
+      FutureOr<AtClient> Function(SSHRVDParams)? atClientGenerator,
+      void Function(Object, StackTrace)? usageCallback}) async {
     try {
       var p = SSHRVDParams.fromArgs(args);
 
@@ -71,9 +72,8 @@ class SSHRVDImpl implements SSHRVD {
         sshrvd.logger.logger.level = Level.INFO;
       }
       return sshrvd;
-    } catch (e) {
-      stdout.writeln(SSHRVDParams.parser.usage);
-      stderr.writeln('\n$e');
+    } catch (e, s) {
+      usageCallback?.call(e, s);
       rethrow;
     }
   }

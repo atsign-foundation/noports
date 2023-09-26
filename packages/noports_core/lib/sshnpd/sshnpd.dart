@@ -114,11 +114,13 @@ abstract class SSHNPD {
 
   static Future<SSHNPD> fromCommandLineArgs(List<String> args,
       {AtClient? atClient,
-      FutureOr<AtClient> Function(SSHNPDParams)? atClientGenerator}) async {
+      FutureOr<AtClient> Function(SSHNPDParams)? atClientGenerator,
+      void Function(Object, StackTrace)? usageCallback}) async {
     return SSHNPDImpl.fromCommandLineArgs(
       args,
       atClient: atClient,
       atClientGenerator: atClientGenerator,
+      usageCallback: usageCallback,
     );
   }
 
