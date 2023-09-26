@@ -1,6 +1,9 @@
+import 'dart:io';
+
 import 'package:args/args.dart';
 import 'package:sshnoports/common/utils.dart';
 import 'package:sshnoports/sshnp/sshnp.dart';
+import 'package:path/path.dart' show dirname;
 import 'package:test/test.dart';
 
 void main() {
@@ -84,13 +87,12 @@ void main() {
       expect(p.host, 'host.subdomain.test');
 
       expect(p.device, 'ancient_pc');
-      expect(p.port, '56789');
-      expect(p.localPort, '98765');
+      expect(p.port, 56789);
+      expect(p.localPort, 98765);
       expect(p.username, getUserName(throwIfNull: true));
       expect(p.homeDirectory, getHomeDirectory(throwIfNull: true));
       expect(p.atKeysFilePath, '/tmp/temp_keys.json');
-      expect(p.sendSshPublicKey,
-          '${getDefaultSshDirectory(p.homeDirectory)}sekrit.pub');
+      expect(p.sendSshPublicKey, 'sekrit.pub');
       expect(p.localSshOptions, ['--arg 2 --arg 4 foo bar -x']);
       expect(p.rsa, true);
       expect(p.verbose, true);
