@@ -16,7 +16,7 @@ from select import select
 
 from at_client import AtClient
 from at_client.common import AtSign
-from at_client.util import EncryptionUtil
+from at_client.util import EncryptionUtil, KeysUtil
 from at_client.common.keys import AtKey, Metadata, SharedKey
 from at_client.connections.notification.atevents import AtEvent, AtEventType
 
@@ -27,20 +27,24 @@ class SSHNPDClient:
     #Current opened threads
     threads = []
     
-    def __init__(self, atsign, manager_atsign, device, username=None, verbose=False ):  
+    def __init__(self, atsign, manager_atsign, device, username=None, verbose=False, expecting_ssh_keys = False):  
         #Threading Stuff
         self.closing = Event()
+        self.closing.clear()
         
         #AtClient Stuff
         self.atsign = atsign
         self.manager_atsign = manager_atsign
         self.device = device
         self.username = username
-        self.at_client = AtClient(AtSign(atsign), queue=Queue(maxsize=20), verbose=verbose)
-        self.ssh_client = None
         self.device_namespace = f".{device}.sshnp"
+        self.at_client = AtClient(AtSign(atsign), queue=Queue(maxsize=20), verbose=verbose)
+        
+        #SSH Stuff
+        self.ssh_client = None
         self.authenticated = False
         self.rv = None
+        self.expecting_ssh_keys = expecting_ssh_keys
         
         #Logger
         self.logger = logging.getLogger("sshnpd")
@@ -93,13 +97,25 @@ class SSHNPDClient:
         self.at_client.put(username_key, username)
         self.username = username
         
-
+    def _handle_ssh_public_key(self, ssh_public_key):
+        # // Check to see if the ssh Publickey is already in the file if not append to the ~/.ssh/authorized_keys file
+        writeKey = False
+        with open(f"{self.ssh_path}/authorized_hosts", "r") as read:
+            filedata = read.read()
+            if ssh_public_key not in filedata:
+                writeKey = True
+        with open(f"{self.ssh_path}/authorized_hosts", "w") as write:
+            if writeKey:
+                write.write(f"\n{ssh_public_key}")
+                self.logger.debug("key written")
+    
     
     def _handle_notifications(self, queue: Queue):
         private_key = ""
-        sshPublicKey = ""
+        ssh_public_key_received = True if not self.expecting_ssh_keys else (False if "" else True) #sorry for making this so cursed
         ssh_notification_recieved = False
-        while not ssh_notification_recieved or sshPublicKey == "" or private_key == "":
+        
+        while not ssh_notification_recieved or not ssh_public_key_received or private_key == "":
             try:
                 at_event = queue.get(block=False)
                 event_type = at_event.event_type
@@ -123,19 +139,8 @@ class SSHNPDClient:
                     continue
 
                 if key == "sshpublickey":
-                    self.logger.debug(
-                    f'ssh Public Key received from ${event_data["from"]} notification id : ${event_data["id"]}')
-                    sshPublicKey = decrypted_value
-                    # // Check to see if the ssh Publickey is already in the file if not append to the ~/.ssh/authorized_keys file
-                    writeKey = False
-                    with open(f"{self.ssh_path}/authorized_hosts", "r") as read:
-                        filedata = read.read()
-                        if sshPublicKey not in filedata:
-                            writeKey = True
-                    with open(f"{self.ssh_path}/authorized_hosts", "w") as write:
-                        if writeKey:
-                            write.write(f"\n{sshPublicKey}")
-                            self.logger.debug("key written")
+                    self.logger.debug(f'ssh Public Key received from ${event_data["from"]} notification id : ${event_data["id"]}')
+                    self._handle_ssh_public_key(decrypted_value)
                     continue
 
                 if key == "sshd":
@@ -188,9 +193,14 @@ class SSHNPDClient:
         sshrv.run()
         self.rv = sshrv
         self.logger.info("sshrv started @ "  + hostname + " on port " + str(port))
-        self.generateSSHKeys(sessionId)
-        return True
-        
+        (public_key, private_key)= self._generate_ssh_keys(sessionId)
+        self._handle_ssh_public_key(public_key)
+        data = json.dumps({'status' : 'connected', 'sessionId': sessionId, 'ephemeralPrivateKey': private_key})
+        signature =  EncryptionUtil.sign_sha256_rsa(data, self.at_client.keys[KeysUtil.encryption_private_key_name])
+        envelope = {'payload': json.loads(data), 'signature': signature, 'signingAlgo':"rsa2048", 'hashingAlgo':"sha256"}
+        a =  json.dumps(envelope)
+        return a
+    
     def sshnp_callback(
         self,
         event: AtEvent,
@@ -218,71 +228,18 @@ class SSHNPDClient:
             at_key.shared_with = AtSign(self.manager_atsign)
             at_key.metadata = metadata
             at_key.namespace =self.device_namespace
+        ssh_response = None
         
         if direct:
-            ssh_auth = self._direct_ssh(ssh_list['host'], ssh_list['port'], ssh_list['sessionId'])
+            ssh_response = self._direct_ssh(ssh_list['host'], ssh_list['port'], ssh_list['sessionId'])
         else:
-            ssh_auth = self._reverse_ssh_client(ssh_list, private_key)
-        
-        if ssh_auth:
-            response = self.at_client.notify(at_key, "connected")
+            ssh_response = self._reverse_ssh_client(ssh_list, private_key)
+       
+        if ssh_response:
+            notify_response = self.at_client.notify(at_key, ssh_response)
             self.logger.info("sent ssh notification to " + at_key.shared_with.to_string())
             self.authenticated = True
 
-    def _reverse_ssh_exec(self, ssh_list: list, private_key, sessionID):
-        local_port = ssh_list[0]
-        port = ssh_list[1]
-        username = ssh_list[2]
-        hostname = ssh_list[3]
-        filename = f"/tmp/.{uuid4()}"
-        exitCode = 0
-        if not private_key.endswith("\n"):
-            private_key += "\n"
-        with open(filename, "w") as file:
-            file.write(private_key)
-            subprocess.run(["chmod", "go-rwx", filename])
-        args = [
-            "ssh",
-            f"{username}@{hostname}",
-            "-p",
-            port,
-            "-i",
-            filename,
-            "-R",
-            f"{local_port}:localhost:22",
-            "-t",
-            "-o",
-            "StrictHostKeyChecking=accept-new",
-            "-o",
-            "IdentitiesOnly=yes",
-            "-o",
-            "BatchMode=yes",
-            "-o",
-            "ExitOnForwardFailure=yes",
-            "-v",
-        ]
-        try:
-            process = subprocess.Popen(
-                args, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True
-            )
-            stdout, stderr = process.communicate()
-            exitCode = process.returncode
-            if exitCode != 0:
-                print("ssh session failed for " + username)
-            else:
-                print(
-                    "ssh session started for "
-                    + username
-                    + "@"
-                    + hostname
-                    + " on port "
-                    + port
-                )
-            os.remove(filename)
-        except Exception as e:
-            print(e)
-
-        return exitCode == 0
 
     #Running in a thread
     def _forward_socket_handler(self, chan, dest):
@@ -334,6 +291,8 @@ class SSHNPDClient:
         port = ssh_list[1]
         username = ssh_list[2]
         hostname = ssh_list[3]
+        if "\\" in username:
+            username = username.split("/")[-1]
         self.logger.info("ssh session started for " + username + " @ " + hostname + " on port " + port)
         ssh_client = SSHClient()
         ssh_client.load_system_host_keys(f"{self.ssh_path}/known_hosts")
@@ -342,6 +301,7 @@ class SSHNPDClient:
         paramiko_log = logging.getLogger("paramiko.transport")
         paramiko_log.setLevel(self.logger.level)
         paramiko_log.addHandler(logging.StreamHandler())
+        
         try:
             pkey = Ed25519Key.from_private_key(file_obj=file_like)
             ssh_client.connect(
@@ -370,11 +330,14 @@ class SSHNPDClient:
         except Exception as e:
             raise(e)
         self.ssh_client = ssh_client
-        return True
+        return "connected"
 
-    def generate_ssh_keys(self, session_id):
+    def _generate_ssh_keys(self, session_id):
         # Generate SSH Keys
         self.logger.info("Generating SSH Keys")
+        if not os.path.exists(f"{self.ssh_path}/tmp/"):
+            os.makedirs(f"{self.ssh_path}/tmp/")
+            
         ssh_keygen = subprocess.Popen(
             ["ssh-keygen", "-t", "rsa", "-b", "4096", "-f", f"{session_id}_sshnp", "-q", "-N", ""],
             cwd=f'{self.ssh_path}/tmp/',
@@ -392,10 +355,10 @@ class SSHNPDClient:
         ssh_public_key = ""
         ssh_private_key = ""
         try:
-            with open(f"{self.ssh_path}/{session_id}_sshnp.pub", 'r') as public_key_file:
+            with open(f"{self.ssh_path}/tmp/{session_id}_sshnp.pub", 'r') as public_key_file:
                 ssh_public_key = public_key_file.read()
 
-            with open(f"{self.ssh_path}/{session_id}_sshnp", 'r') as private_key_file:
+            with open(f"{self.ssh_path}/tmp/{session_id}_sshnp", 'r') as private_key_file:
                 ssh_private_key = private_key_file.read()
                 
         except Exception as e:
@@ -403,5 +366,4 @@ class SSHNPDClient:
             return False
         
         return (ssh_public_key, ssh_private_key)
-        
-            
+    
