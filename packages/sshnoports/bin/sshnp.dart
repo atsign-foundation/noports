@@ -77,7 +77,7 @@ void main(List<String> args) async {
       stderr.write('$res\n');
       exit(1);
     }
-    if (res is SSHCommand) {
+    if (res is SSHNPSuccess) {
       stdout.write('$res\n');
       await sshnp.done;
       exit(0);

@@ -500,7 +500,7 @@ class SSHNPImpl implements SSHNP {
         return SSHNPFailed(errorMessage);
       }
       // All good - write the ssh command to stdout
-      return SSHCommand.base(
+      return SSHNPSuccess.base(
         localPort: localPort,
         remoteUsername: remoteUsername,
         host: 'localhost',
@@ -762,7 +762,7 @@ class SSHNPImpl implements SSHNP {
       return SSHNPFailed('sshnp failed: with sshnpd acknowledgement errors');
     }
 
-    return SSHCommand.base(
+    return SSHNPSuccess.base(
       localPort: localPort,
       remoteUsername: remoteUsername,
       host: 'localhost',
@@ -803,7 +803,7 @@ class SSHNPImpl implements SSHNP {
       return SSHNPFailed('sshnp failed: with sshnpd acknowledgement errors');
     }
 
-    return SSHCommand.base(
+    return SSHNPSuccess.base(
       localPort: localPort,
       remoteUsername: remoteUsername,
       host: 'localhost',
