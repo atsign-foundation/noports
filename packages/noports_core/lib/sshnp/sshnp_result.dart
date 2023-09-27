@@ -2,12 +2,10 @@ part of 'sshnp.dart';
 
 abstract class SSHNPResult {}
 
-abstract class SSHNPCommandResult implements SSHNPResult {
-  String get command;
-  List<String> get args;
-}
-
-const _optionsWithPrivateKey = ['-o StrictHostKeyChecking=accept-new', '-o IdentitiesOnly=yes'];
+const _optionsWithPrivateKey = [
+  '-o StrictHostKeyChecking=accept-new',
+  '-o IdentitiesOnly=yes'
+];
 
 class SSHNPFailed implements SSHNPResult {
   final String message;
@@ -22,8 +20,7 @@ class SSHNPFailed implements SSHNPResult {
   }
 }
 
-class SSHCommand implements SSHNPCommandResult {
-  @override
+class SSHNPSuccess implements SSHNPResult {
   final String command = 'ssh';
 
   final int localPort;
@@ -37,7 +34,7 @@ class SSHCommand implements SSHNPCommandResult {
   Process? sshProcess;
   SSHClient? sshClient;
 
-  SSHCommand.base({
+  SSHNPSuccess.base({
     required this.localPort,
     required this.remoteUsername,
     required this.host,
@@ -47,20 +44,23 @@ class SSHCommand implements SSHNPCommandResult {
     this.sshProcess,
     this.sshClient,
   }) : sshOptions = [
-          if (shouldIncludePrivateKey(privateKeyFileName)) ..._optionsWithPrivateKey,
+          if (shouldIncludePrivateKey(privateKeyFileName))
+            ..._optionsWithPrivateKey,
           ...(localSshOptions ?? [])
         ];
 
   static bool shouldIncludePrivateKey(String? privateKeyFileName) =>
       privateKeyFileName != null && privateKeyFileName.isNotEmpty;
 
-  @override
   List<String> get args => [
         '-p $localPort',
         ...sshOptions,
         if (remoteUsername != null) '$remoteUsername@$host',
         if (remoteUsername == null) host,
-        if (shouldIncludePrivateKey(privateKeyFileName)) ...['-i', '$privateKeyFileName'],
+        if (shouldIncludePrivateKey(privateKeyFileName)) ...[
+          '-i',
+          '$privateKeyFileName'
+        ],
       ];
 
   @override
