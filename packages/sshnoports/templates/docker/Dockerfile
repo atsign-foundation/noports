@@ -2,7 +2,6 @@ FROM dart:3.1.2@sha256:05f1c1035f0090f8fcc340630f09782215ae2dfc6c17941756d3a716b
 ENV BINARYDIR=/usr/local/at
 SHELL ["/bin/bash", "-c"]
 WORKDIR /app
-COPY ../noports_core ../noports_core
 COPY . .
 RUN \
   set -eux ; \
