@@ -9,8 +9,7 @@ environment:
   sdk: ">=3.0.0 <4.0.0"
 
 dependencies:
-  noports_core:
-    path: ../noports_core
+  noports_core: 4.0.0-dev.1
   at_onboarding_cli: 1.3.0
 
 dependency_overrides:
