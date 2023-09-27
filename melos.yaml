@@ -1,0 +1,6 @@
+name: sshnoports
+
+packages:
+  - packages/noports_core
+  - packages/sshnoports
+  - packages/sshnp_gui

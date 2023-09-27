@@ -1,7 +1,7 @@
 import 'dart:io';
-import 'package:sshnoports/common/utils.dart';
+import 'package:noports_core/common/utils.dart';
 import 'package:at_utils/at_logger.dart';
-import 'package:sshnoports/sshnp/sshnp.dart';
+import 'package:noports_core/sshnp/sshnp.dart';
 
 Future<void> cleanUpAfterReverseSsh(SSHNP sshnp) async {
   if (!sshnp.initialized) {

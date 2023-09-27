@@ -1,4 +1,4 @@
-import 'package:sshnoports/sshrv/sshrv.dart';
+import 'package:noports_core/sshrv/sshrv.dart';
 
 const defaultVerbose = false;
 const defaultRsa = false;

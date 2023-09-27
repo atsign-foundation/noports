@@ -1,8 +1,8 @@
-import 'package:sshnoports/common/supported_ssh_clients.dart';
-import 'package:sshnoports/sshnpd/sshnpd.dart';
+import 'package:noports_core/common/supported_ssh_clients.dart';
+import 'package:noports_core/sshnpd/sshnpd.dart';
 import 'package:test/test.dart';
 import 'package:args/args.dart';
-import 'package:sshnoports/common/utils.dart';
+import 'package:noports_core/common/utils.dart';
 
 void main() {
   group('args parser test', () {

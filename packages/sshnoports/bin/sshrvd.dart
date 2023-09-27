@@ -1,7 +1,9 @@
 import 'dart:async';
 import 'dart:io';
 import 'package:at_utils/at_logger.dart';
-import 'package:sshnoports/sshrvd/sshrvd.dart';
+import 'package:noports_core/sshrvd/sshrvd.dart';
+import 'package:sshnoports/create_at_client_cli.dart';
+import 'package:sshnoports/version.dart';
 
 void main(List<String> args) async {
   AtSignLogger.root_level = 'SHOUT';
@@ -9,7 +11,22 @@ void main(List<String> args) async {
   late final SSHRVD sshrvd;
 
   try {
-    sshrvd = await SSHRVD.fromCommandLineArgs(args);
+    sshrvd = await SSHRVD.fromCommandLineArgs(
+      args,
+      atClientGenerator: (SSHRVDParams p) => createAtClientCli(
+        homeDirectory: p.homeDirectory,
+        subDirectory: '.sshrvd',
+        atsign: p.atSign,
+        atKeysFilePath: p.atKeysFilePath,
+        namespace: SSHRVD.namespace,
+        rootDomain: p.rootDomain,
+      ),
+      usageCallback: (e, s) {
+        printVersion();
+        stdout.writeln(SSHRVDParams.parser.usage);
+        stderr.writeln('\n$e');
+      },
+    );
   } on ArgumentError catch (_) {
     exit(1);
   }

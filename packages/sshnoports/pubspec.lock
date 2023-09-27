@@ -18,15 +18,15 @@ packages:
     source: hosted
     version: "6.2.0"
   archive:
-    dependency: "direct main"
+    dependency: "direct overridden"
     description:
       name: archive
-      sha256: "20071638cbe4e5964a427cfa0e86dce55d060bc7d82d56f3554095d7239a8765"
+      sha256: e0902a06f0e00414e4e3438a084580161279f137aeb862274710f29ec10cf01e
       url: "https://pub.dev"
     source: hosted
-    version: "3.4.2"
+    version: "3.3.9"
   args:
-    dependency: "direct main"
+    dependency: "direct overridden"
     description:
       name: args
       sha256: eef6c46b622e0494a36c5a12d10d77fb4e855501a91c1b9ef9339326e58f0596
@@ -66,7 +66,7 @@ packages:
     source: hosted
     version: "1.0.4"
   at_client:
-    dependency: "direct main"
+    dependency: "direct overridden"
     description:
       name: at_client
       sha256: d96bc7fe7f66419c41281627ff1f221e4fc4296847d4d7f90999c5aa6ecaddfd
@@ -82,7 +82,7 @@ packages:
     source: hosted
     version: "3.0.55"
   at_lookup:
-    dependency: "direct main"
+    dependency: "direct overridden"
     description:
       name: at_lookup
       sha256: "9a0db434b98a855b06dc90dcffa96667cd4ede21230449fdd9046c77ec4bb822"
@@ -130,7 +130,7 @@ packages:
     source: hosted
     version: "1.0.0"
   at_utils:
-    dependency: "direct main"
+    dependency: "direct overridden"
     description:
       name: at_utils
       sha256: "7033979de6e6b023cb86405039e3316b8f25c184c0985dfbd3a690d8bc3b8812"
@@ -210,7 +210,7 @@ packages:
     source: hosted
     version: "3.0.3"
   crypton:
-    dependency: "direct main"
+    dependency: "direct overridden"
     description:
       name: crypton
       sha256: "886462e83bf642ba10f5382002654d27da8c2e6e1f42d928f12764cfa204f124"
@@ -226,7 +226,7 @@ packages:
     source: hosted
     version: "0.9.5"
   dartssh2:
-    dependency: "direct main"
+    dependency: "direct overridden"
     description:
       name: dartssh2
       sha256: "53a230c7dd6f487b704ceef1b29323ad64d19be89e786ccbc81e157a70417a56"
@@ -333,10 +333,10 @@ packages:
     dependency: transitive
     description:
       name: image
-      sha256: a72242c9a0ffb65d03de1b7113bc4e189686fc07c7147b8b41811d0dd0e0d9bf
+      sha256: "028f61960d56f26414eb616b48b04eb37d700cbe477b7fb09bf1d7ce57fd9271"
       url: "https://pub.dev"
     source: hosted
-    version: "4.0.17"
+    version: "4.1.3"
   internet_connection_checker:
     dependency: transitive
     description:
@@ -378,7 +378,7 @@ packages:
     source: hosted
     version: "2.1.1"
   logging:
-    dependency: "direct main"
+    dependency: "direct overridden"
     description:
       name: logging
       sha256: "623a88c9594aa774443aa3eb2d41807a48486b5613e67599fb4c41c0ad47c340"
@@ -394,13 +394,13 @@ packages:
     source: hosted
     version: "0.12.16"
   meta:
-    dependency: "direct main"
+    dependency: "direct overridden"
     description:
       name: meta
-      sha256: a6e590c838b18133bb482a2745ad77c5bb7715fb0451209e1a7567d416678b8e
+      sha256: "3c74dbf8763d36539f114c799d8a2d87343b5067e9d796ca22b5eb8437090ee3"
       url: "https://pub.dev"
     source: hosted
-    version: "1.10.0"
+    version: "1.9.1"
   mime:
     dependency: transitive
     description:
@@ -441,6 +441,13 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.0.2"
+  noports_core:
+    dependency: "direct main"
+    description:
+      path: "../noports_core"
+      relative: true
+    source: path
+    version: "1.0.0-dev.1"
   package_config:
     dependency: transitive
     description:
@@ -546,7 +553,7 @@ packages:
     source: hosted
     version: "1.0.4"
   socket_connector:
-    dependency: "direct main"
+    dependency: "direct overridden"
     description:
       name: socket_connector
       sha256: "8a5b67ae79e232186caa166ae640fac2247db390d4f5d11ed8975f95527fd355"
@@ -578,7 +585,7 @@ packages:
     source: hosted
     version: "1.10.0"
   ssh_key:
-    dependency: "direct main"
+    dependency: "direct overridden"
     description:
       name: ssh_key
       sha256: ded1af84f2c34748c000101940e7b9a63a077c9a136aaab85dbf54a6e9d19ec8
@@ -658,7 +665,7 @@ packages:
     source: hosted
     version: "1.3.2"
   uuid:
-    dependency: "direct main"
+    dependency: "direct overridden"
     description:
       name: uuid
       sha256: "648e103079f7c64a36dc7d39369cabb358d377078a051d6ae2ad3aa539519313"
@@ -666,7 +673,7 @@ packages:
     source: hosted
     version: "3.0.7"
   version:
-    dependency: "direct main"
+    dependency: "direct overridden"
     description:
       name: version
       sha256: "3d4140128e6ea10d83da32fef2fa4003fccbf6852217bb854845802f04191f94"

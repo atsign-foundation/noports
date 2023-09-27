@@ -6,8 +6,10 @@ import 'dart:io';
 import 'package:at_utils/at_logger.dart';
 
 // local packages
-import 'package:sshnoports/sshnp/sshnp.dart';
-import 'package:sshnoports/sshnp/utils.dart';
+import 'package:noports_core/sshnp/sshnp.dart';
+import 'package:noports_core/sshnp/utils.dart';
+import 'package:sshnoports/create_at_client_cli.dart';
+import 'package:sshnoports/version.dart';
 
 void main(List<String> args) async {
   AtSignLogger.root_level = 'SHOUT';
@@ -23,7 +25,23 @@ void main(List<String> args) async {
   }
 
   try {
-    sshnp = await SSHNP.fromParams(params);
+    sshnp = await SSHNP.fromParams(
+      params,
+      atClientGenerator: (SSHNPParams params, String sessionId) =>
+          createAtClientCli(
+        homeDirectory: params.homeDirectory,
+        atsign: params.clientAtSign!,
+        namespace: '${params.device}.sshnp',
+        pathExtension: sessionId,
+        atKeysFilePath: params.atKeysFilePath,
+        rootDomain: params.rootDomain,
+      ),
+      usageCallback: (e, s) {
+        printVersion();
+        stdout.writeln(SSHNPPartialParams.parser.usage);
+        stderr.writeln('\n$e');
+      },
+    );
   } on ArgumentError catch (_) {
     exit(1);
   }
@@ -39,8 +57,10 @@ void main(List<String> args) async {
       var (active, off, info) = await sshnp.listDevices();
       if (active.isEmpty && off.isEmpty) {
         stdout.writeln('[X] No devices found\n');
-        stdout.writeln('Note: only devices with sshnpd version 3.4.0 or higher are supported by this command.');
-        stdout.writeln('Please update your devices to sshnpd version >= 3.4.0 and try again.');
+        stdout.writeln(
+            'Note: only devices with sshnpd version 3.4.0 or higher are supported by this command.');
+        stdout.writeln(
+            'Please update your devices to sshnpd version >= 3.4.0 and try again.');
         exit(0);
       }
 

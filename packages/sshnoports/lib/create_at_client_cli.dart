@@ -3,7 +3,7 @@ import 'package:at_client/at_client.dart';
 import 'package:at_onboarding_cli/at_onboarding_cli.dart';
 import 'package:version/version.dart';
 import 'package:path/path.dart' as path;
-import 'service_factories.dart';
+import 'package:noports_core/common/service_factories.dart';
 
 Future<AtClient> createAtClientCli({
   required String homeDirectory,

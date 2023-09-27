@@ -1,8 +1,8 @@
 import 'dart:io';
 
 import 'package:args/args.dart';
-import 'package:sshnoports/common/utils.dart';
-import 'package:sshnoports/sshnp/sshnp.dart';
+import 'package:noports_core/common/utils.dart';
+import 'package:noports_core/sshnp/sshnp.dart';
 import 'package:path/path.dart' show dirname;
 import 'package:test/test.dart';
 

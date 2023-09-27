@@ -36,7 +36,10 @@ class SSHRVDImpl implements SSHRVD {
     logger.logger.level = Level.SHOUT;
   }
 
-  static Future<SSHRVD> fromCommandLineArgs(List<String> args) async {
+  static Future<SSHRVD> fromCommandLineArgs(List<String> args,
+      {AtClient? atClient,
+      FutureOr<AtClient> Function(SSHRVDParams)? atClientGenerator,
+      void Function(Object, StackTrace)? usageCallback}) async {
     try {
       var p = SSHRVDParams.fromArgs(args);
 
@@ -49,14 +52,11 @@ class SSHRVDImpl implements SSHRVD {
         AtSignLogger.root_level = 'INFO';
       }
 
-      AtClient atClient = await createAtClientCli(
-        homeDirectory: p.homeDirectory,
-        subDirectory: '.sshrvd',
-        atsign: p.atSign,
-        atKeysFilePath: p.atKeysFilePath,
-        namespace: SSHRVD.namespace,
-        rootDomain: p.rootDomain,
-      );
+      if (atClient == null && atClientGenerator == null) {
+        throw StateError('atClient and atClientGenerator are both null');
+      }
+
+      atClient ??= await atClientGenerator!(p);
 
       var sshrvd = SSHRVD(
         atClient: atClient,
@@ -72,10 +72,8 @@ class SSHRVDImpl implements SSHRVD {
         sshrvd.logger.logger.level = Level.INFO;
       }
       return sshrvd;
-    } catch (e) {
-      printVersion();
-      stdout.writeln(SSHRVDParams.parser.usage);
-      stderr.writeln('\n$e');
+    } catch (e, s) {
+      usageCallback?.call(e, s);
       rethrow;
     }
   }
