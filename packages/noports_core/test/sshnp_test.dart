@@ -46,7 +46,7 @@ void main() {
       expect(p.username, getUserName(throwIfNull: true));
       expect(p.homeDirectory, getHomeDirectory(throwIfNull: true));
       expect(p.atKeysFilePath,
-          getDefaultAtKeysFilePath(p.homeDirectory, p.clientAtSign ?? ''));
+          getDefaultAtKeysFilePath(p.homeDirectory, p.clientAtSign));
       expect(p.sendSshPublicKey, '');
       expect(p.localSshOptions, []);
       expect(p.rsa, false);

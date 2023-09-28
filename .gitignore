@@ -1,6 +1,13 @@
+# Melos
+*.iml
+pubspec_overrides.yaml
+
 # Files and directories created by pub.
 .dart_tool/
 .packages
+
+# Jetbrains
+.idea/*
 
 #vscode
 .vscode/*
