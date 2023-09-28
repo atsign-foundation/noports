@@ -1,4 +1,8 @@
-part of 'sshnp.dart';
+
+
+import 'dart:io';
+
+import 'package:dartssh2/dartssh2.dart';
 
 abstract class SSHNPResult {}
 
