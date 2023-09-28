@@ -1,6 +1,22 @@
-part of 'sshnpd.dart';
+import 'dart:async';
+import 'dart:convert';
+import 'dart:io';
 
-@visibleForTesting
+import 'package:at_client/at_client.dart' hide StringBuffer;
+import 'package:at_utils/at_logger.dart';
+import 'package:dartssh2/dartssh2.dart';
+import 'package:logging/logging.dart';
+import 'package:meta/meta.dart';
+import 'package:noports_core/src/common/default_args.dart';
+import 'package:noports_core/src/common/supported_ssh_clients.dart';
+import 'package:noports_core/src/common/utils.dart';
+import 'package:noports_core/src/sshrv/sshrv.dart';
+import 'package:noports_core/sshnpd.dart';
+import 'package:noports_core/version.dart';
+import 'package:uuid/uuid.dart';
+
+
+@protected
 class SSHNPDImpl implements SSHNPD {
   @override
   final AtSignLogger logger = AtSignLogger(' sshnpd ');

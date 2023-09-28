@@ -1,4 +1,11 @@
-part of 'sshrv.dart';
+import 'dart:io';
+
+import 'package:at_utils/at_utils.dart';
+import 'package:meta/meta.dart';
+import 'package:noports_core/sshrv.dart';
+import 'package:socket_connector/socket_connector.dart';
+
+import 'package:noports_core/src/common/default_args.dart';
 
 @visibleForTesting
 class SSHRVImpl implements SSHRV<Process> {

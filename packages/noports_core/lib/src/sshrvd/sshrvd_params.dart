@@ -1,4 +1,5 @@
-part of 'sshrvd.dart';
+import 'package:args/args.dart';
+import 'package:noports_core/src/common/utils.dart';
 
 class SSHRVDParams {
   late final String username;
