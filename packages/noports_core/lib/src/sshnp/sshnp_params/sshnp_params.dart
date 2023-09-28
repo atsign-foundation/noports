@@ -3,8 +3,8 @@ import 'dart:convert';
 import 'package:args/args.dart';
 import 'package:at_utils/at_logger.dart';
 import 'package:noports_core/src/common/utils.dart';
-import 'package:noports_core/src/sshnp/params/config_file_repository.dart';
-import 'package:noports_core/src/sshnp/params/sshnp_arg.dart';
+import 'package:noports_core/src/sshnp/sshnp_params/config_file_repository.dart';
+import 'package:noports_core/src/sshnp/sshnp_params/sshnp_arg.dart';
 import 'package:noports_core/src/common/default_args.dart';
 
 class SSHNPParams {

@@ -11,7 +11,7 @@ import 'package:meta/meta.dart';
 import 'package:noports_core/src/common/default_args.dart';
 import 'package:noports_core/src/common/supported_ssh_clients.dart';
 import 'package:noports_core/src/common/utils.dart';
-import 'package:noports_core/src/sshnp/params/sshnp_params.dart';
+import 'package:noports_core/src/sshnp/sshnp_params/sshnp_params.dart';
 import 'package:noports_core/src/sshnp/sshnp.dart';
 import 'package:noports_core/src/sshnp/sshnp_result.dart';
 import 'package:noports_core/src/sshrv/sshrv.dart';
