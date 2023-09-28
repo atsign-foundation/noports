@@ -33,7 +33,8 @@ class SSHNPParams {
   late final String sshClient;
 
   /// Special Arguments
-  final String? profileName; // automatically populated with the filename if from a configFile
+  final String?
+      profileName; // automatically populated with the filename if from a configFile
   final bool listDevices;
 
   SSHNPParams({
@@ -67,7 +68,8 @@ class SSHNPParams {
 
     // Use default atKeysFilePath if not provided
 
-    this.atKeysFilePath = atKeysFilePath ?? getDefaultAtKeysFilePath(homeDirectory, clientAtSign);
+    this.atKeysFilePath =
+        atKeysFilePath ?? getDefaultAtKeysFilePath(homeDirectory, clientAtSign);
 
     this.sshClient = sshClient ?? SSHNP.defaultSshClient.cliArg;
   }
@@ -83,7 +85,8 @@ class SSHNPParams {
 
   /// Merge an SSHNPPartialParams objects into an SSHNPParams
   /// Params in params2 take precedence over params1
-  factory SSHNPParams.merge(SSHNPParams params1, [SSHNPPartialParams? params2]) {
+  factory SSHNPParams.merge(SSHNPParams params1,
+      [SSHNPPartialParams? params2]) {
     params2 ??= SSHNPPartialParams.empty();
     return SSHNPParams(
       profileName: params2.profileName ?? params1.profileName,
@@ -106,7 +109,8 @@ class SSHNPParams {
       remoteSshdPort: params2.remoteSshdPort ?? params1.remoteSshdPort,
       idleTimeout: params2.idleTimeout ?? params1.idleTimeout,
       sshClient: params2.sshClient ?? params1.sshClient,
-      addForwardsToTunnel: params2.addForwardsToTunnel ?? params1.addForwardsToTunnel,
+      addForwardsToTunnel:
+          params2.addForwardsToTunnel ?? params1.addForwardsToTunnel,
     );
   }
 
@@ -114,7 +118,8 @@ class SSHNPParams {
     return SSHNPParams.fromPartial(SSHNPPartialParams.fromFile(fileName));
   }
 
-  factory SSHNPParams.fromJson(String json) => SSHNPParams.fromPartial(SSHNPPartialParams.fromJson(json));
+  factory SSHNPParams.fromJson(String json) =>
+      SSHNPParams.fromPartial(SSHNPPartialParams.fromJson(json));
 
   factory SSHNPParams.fromPartial(SSHNPPartialParams partial) {
     AtSignLogger logger = AtSignLogger(' SSHNPParams ');
@@ -133,7 +138,8 @@ class SSHNPParams {
       device: partial.device ?? SSHNP.defaultDevice,
       port: partial.port ?? SSHNP.defaultPort,
       localPort: partial.localPort ?? SSHNP.defaultLocalPort,
-      sendSshPublicKey: partial.sendSshPublicKey ?? SSHNP.defaultSendSshPublicKey,
+      sendSshPublicKey:
+          partial.sendSshPublicKey ?? SSHNP.defaultSendSshPublicKey,
       localSshOptions: partial.localSshOptions ?? SSHNP.defaultLocalSshOptions,
       rsa: partial.rsa ?? defaults.defaultRsa,
       verbose: partial.verbose ?? defaults.defaultVerbose,
@@ -151,7 +157,8 @@ class SSHNPParams {
   }
 
   factory SSHNPParams.fromConfig(String profileName, List<String> lines) {
-    return SSHNPParams.fromPartial(SSHNPPartialParams.fromConfig(profileName, lines));
+    return SSHNPParams.fromPartial(
+        SSHNPPartialParams.fromConfig(profileName, lines));
   }
 
   Map<String, dynamic> toArgs() {
@@ -203,7 +210,7 @@ class SSHNPParams {
 /// e.g. default values from a config file and the rest from the command line
 class SSHNPPartialParams {
   // Non param variables
-  static final ArgParser parser = createArgParser();
+  static final ArgParser parser = SSHNPArg.createArgParser();
 
   /// Main Params
   final String? profileName;
@@ -261,7 +268,8 @@ class SSHNPPartialParams {
 
   /// Merge two SSHNPPartialParams objects together
   /// Params in params2 take precedence over params1
-  factory SSHNPPartialParams.merge(SSHNPPartialParams params1, [SSHNPPartialParams? params2]) {
+  factory SSHNPPartialParams.merge(SSHNPPartialParams params1,
+      [SSHNPPartialParams? params2]) {
     params2 ??= SSHNPPartialParams.empty();
     return SSHNPPartialParams(
       profileName: params2.profileName ?? params1.profileName,
@@ -284,7 +292,8 @@ class SSHNPPartialParams {
       remoteSshdPort: params2.remoteSshdPort ?? params1.remoteSshdPort,
       idleTimeout: params2.idleTimeout ?? params1.idleTimeout,
       sshClient: params2.sshClient ?? params1.sshClient,
-      addForwardsToTunnel: params2.addForwardsToTunnel ?? params1.addForwardsToTunnel,
+      addForwardsToTunnel:
+          params2.addForwardsToTunnel ?? params1.addForwardsToTunnel,
     );
   }
 
@@ -294,13 +303,15 @@ class SSHNPPartialParams {
     return SSHNPPartialParams.fromMap(args);
   }
 
-  factory SSHNPPartialParams.fromConfig(String profileName, List<String> lines) {
+  factory SSHNPPartialParams.fromConfig(
+      String profileName, List<String> lines) {
     var args = ConfigFileRepository.parseConfigFileContents(lines);
     args['profile-name'] = profileName;
     return SSHNPPartialParams.fromMap(args);
   }
 
-  factory SSHNPPartialParams.fromJson(String json) => SSHNPPartialParams.fromMap(jsonDecode(json));
+  factory SSHNPPartialParams.fromJson(String json) =>
+      SSHNPPartialParams.fromMap(jsonDecode(json));
 
   factory SSHNPPartialParams.fromMap(Map<String, dynamic> args) {
     return SSHNPPartialParams(
@@ -333,7 +344,7 @@ class SSHNPPartialParams {
   factory SSHNPPartialParams.fromArgs(List<String> args) {
     var params = SSHNPPartialParams.empty();
 
-    var parsedArgs = createArgParser(withDefaults: false).parse(args);
+    var parsedArgs = SSHNPArg.createArgParser(withDefaults: false).parse(args);
 
     if (parsedArgs.wasParsed('config-file')) {
       var configFileName = parsedArgs['config-file'] as String;
@@ -346,7 +357,9 @@ class SSHNPPartialParams {
     // THIS IS A WORKAROUND IN ORDER TO BE TYPE SAFE IN SSHNPPartialParams.fromArgMap
     Map<String, dynamic> parsedArgsMap = {
       for (var e in parsedArgs.options)
-        e: SSHNPArg.fromName(e).type == ArgType.integer ? int.tryParse(parsedArgs[e]) : parsedArgs[e]
+        e: SSHNPArg.fromName(e).type == ArgType.integer
+            ? int.tryParse(parsedArgs[e])
+            : parsedArgs[e]
     };
 
     return SSHNPPartialParams.merge(

@@ -96,21 +96,24 @@ class SSHNPArg {
     const SSHNPArg(
       name: 'port',
       abbr: 'p',
-      help: 'TCP port to connect back to (only required if --host specified a FQDN/IP)',
+      help:
+          'TCP port to connect back to (only required if --host specified a FQDN/IP)',
       defaultsTo: SSHNP.defaultPort,
       type: ArgType.integer,
     ),
     const SSHNPArg(
       name: 'local-port',
       abbr: 'l',
-      help: 'Reverse ssh port to listen on, on your local machine, by sshnp default finds a spare port',
+      help:
+          'Reverse ssh port to listen on, on your local machine, by sshnp default finds a spare port',
       defaultsTo: SSHNP.defaultLocalPort,
       type: ArgType.integer,
     ),
     const SSHNPArg(
       name: 'ssh-public-key',
       abbr: 's',
-      help: 'Public key file from ~/.ssh to be appended to authorized_hosts on the remote device',
+      help:
+          'Public key file from ~/.ssh to be appended to authorized_hosts on the remote device',
       defaultsTo: SSHNP.defaultSendSshPublicKey,
     ),
     const SSHNPArg(
@@ -170,7 +173,8 @@ class SSHNPArg {
     ),
     const SSHNPArg(
       name: 'idle-timeout',
-      help: 'number of seconds after which inactive ssh connections will be closed',
+      help:
+          'number of seconds after which inactive ssh connections will be closed',
       defaultsTo: defaultIdleTimeout,
       mandatory: false,
       format: ArgFormat.option,
@@ -197,7 +201,8 @@ class SSHNPArg {
     ),
     const SSHNPArg(
       name: 'config-file',
-      help: 'Read args from a config file\nMandatory args are not required if already supplied in the config file',
+      help:
+          'Read args from a config file\nMandatory args are not required if already supplied in the config file',
       commandLineOnly: true,
     ),
     const SSHNPArg(
@@ -213,48 +218,48 @@ class SSHNPArg {
   String toString() {
     return 'SSHNPArg{format: $format, name: $name, abbr: $abbr, help: $help, mandatory: $mandatory, defaultsTo: $defaultsTo, type: $type}';
   }
-}
 
-ArgParser createArgParser({
-  bool isCommandLine = true,
-  bool withDefaults = true,
-}) {
-  var parser = ArgParser();
-  // Basic arguments
-  for (SSHNPArg arg in SSHNPArg.args) {
-    if (arg.commandLineOnly && !isCommandLine) {
-      continue;
+  static ArgParser createArgParser({
+    bool isCommandLine = true,
+    bool withDefaults = true,
+  }) {
+    var parser = ArgParser();
+    // Basic arguments
+    for (SSHNPArg arg in SSHNPArg.args) {
+      if (arg.commandLineOnly && !isCommandLine) {
+        continue;
+      }
+      switch (arg.format) {
+        case ArgFormat.option:
+          parser.addOption(
+            arg.name,
+            abbr: arg.abbr,
+            mandatory: arg.mandatory,
+            defaultsTo: withDefaults ? arg.defaultsTo?.toString() : null,
+            help: arg.help,
+            allowed: arg.allowed,
+            aliases: arg.aliases ?? const [],
+          );
+          break;
+        case ArgFormat.multiOption:
+          parser.addMultiOption(
+            arg.name,
+            abbr: arg.abbr,
+            defaultsTo: withDefaults ? arg.defaultsTo as List<String>? : null,
+            help: arg.help,
+          );
+          break;
+        case ArgFormat.flag:
+          parser.addFlag(
+            arg.name,
+            abbr: arg.abbr,
+            defaultsTo: withDefaults ? arg.defaultsTo as bool? : null,
+            help: arg.help,
+            negatable: arg.negatable,
+          );
+          break;
+      }
     }
-    switch (arg.format) {
-      case ArgFormat.option:
-        parser.addOption(
-          arg.name,
-          abbr: arg.abbr,
-          mandatory: arg.mandatory,
-          defaultsTo: withDefaults ? arg.defaultsTo?.toString() : null,
-          help: arg.help,
-          allowed: arg.allowed,
-          aliases: arg.aliases ?? const [],
-        );
-        break;
-      case ArgFormat.multiOption:
-        parser.addMultiOption(
-          arg.name,
-          abbr: arg.abbr,
-          defaultsTo: withDefaults ? arg.defaultsTo as List<String>? : null,
-          help: arg.help,
-        );
-        break;
-      case ArgFormat.flag:
-        parser.addFlag(
-          arg.name,
-          abbr: arg.abbr,
-          defaultsTo: withDefaults ? arg.defaultsTo as bool? : null,
-          help: arg.help,
-          negatable: arg.negatable,
-        );
-        break;
-    }
+    return parser;
   }
-  return parser;
 }
