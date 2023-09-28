@@ -8,16 +8,16 @@ import 'package:at_utils/at_logger.dart';
 import 'package:dartssh2/dartssh2.dart';
 import 'package:logging/logging.dart';
 import 'package:meta/meta.dart';
-import 'package:noports_core/common/default_args.dart';
-import 'package:noports_core/common/supported_ssh_clients.dart';
-import 'package:noports_core/common/utils.dart';
-import 'package:noports_core/sshnp/sshnp.dart';
-import 'package:noports_core/sshnp/sshnp_result.dart';
-import 'package:noports_core/sshrv/sshrv.dart';
+import 'package:noports_core/src/common/default_args.dart';
+import 'package:noports_core/src/common/supported_ssh_clients.dart';
+import 'package:noports_core/src/common/utils.dart';
+import 'package:noports_core/src/sshnp/params/sshnp_params.dart';
+import 'package:noports_core/src/sshnp/sshnp.dart';
+import 'package:noports_core/src/sshnp/sshnp_result.dart';
+import 'package:noports_core/src/sshrv/sshrv.dart';
+import 'package:noports_core/src/sshrvd/sshrvd.dart';
 import 'package:path/path.dart' as path;
-import 'package:noports_core/sshnp/utils.dart';
-import 'package:noports_core/sshnpd/sshnpd.dart';
-import 'package:noports_core/sshrvd/sshrvd.dart';
+import 'package:noports_core/src/sshnp/utils.dart';
 import 'package:uuid/uuid.dart';
 
 @protected
@@ -1025,7 +1025,7 @@ class SSHNPImpl implements SSHNP {
   Future<(Iterable<String>, Iterable<String>, Map<String, dynamic>)>
       listDevices() async {
     // get all the keys device_info.*.sshnpd
-    var scanRegex = 'device_info\\.$asciiMatcher\\.${SSHNPD.namespace}';
+    var scanRegex = 'device_info\\.$asciiMatcher\\.${DefaultArgs.namespace}';
 
     var atKeys =
         await _getAtKeysRemote(regex: scanRegex, sharedBy: sshnpdAtSign);
@@ -1070,7 +1070,7 @@ class SSHNPImpl implements SSHNP {
         ..key = "ping.$devicename"
         ..sharedBy = clientAtSign
         ..sharedWith = entryKey.sharedBy
-        ..namespace = SSHNPD.namespace
+        ..namespace = DefaultArgs.namespace
         ..metadata = metaData;
 
       unawaited(_notify(pingKey, 'ping'));

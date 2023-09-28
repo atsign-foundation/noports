@@ -1,8 +1,10 @@
-import 'package:noports_core/common/supported_ssh_clients.dart';
-import 'package:noports_core/sshrv/sshrv.dart';
+import 'package:noports_core/src/common/supported_ssh_clients.dart';
+import 'package:noports_core/sshrv.dart';
 
 class DefaultArgs {
   const DefaultArgs();
+
+  static const namespace = 'sshnp';
 
   static const verbose = false;
   static const rsa = false;

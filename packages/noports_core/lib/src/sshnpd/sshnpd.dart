@@ -9,21 +9,19 @@ import 'package:dartssh2/dartssh2.dart';
 import 'package:logging/logging.dart';
 import 'package:meta/meta.dart';
 
-import 'package:noports_core/common/supported_ssh_clients.dart';
-import 'package:noports_core/common/utils.dart';
-import 'package:noports_core/sshrv/sshrv.dart';
+import 'package:noports_core/src/common/supported_ssh_clients.dart';
+import 'package:noports_core/src/common/utils.dart';
+import 'package:noports_core/src/sshrv/sshrv.dart';
 import 'package:noports_core/version.dart';
 
 import 'package:uuid/uuid.dart';
 
-import 'package:noports_core/common/default_args.dart';
+import 'package:noports_core/src/common/default_args.dart';
 
 part 'sshnpd_impl.dart';
 part 'sshnpd_params.dart';
 
 abstract class SSHNPD {
-  static const String namespace = 'sshnp';
-
   abstract final AtSignLogger logger;
 
   /// The [AtClient] used to communicate with sshnpd and sshrvd

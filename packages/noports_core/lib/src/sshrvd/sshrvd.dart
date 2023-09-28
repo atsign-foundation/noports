@@ -8,8 +8,8 @@ import 'package:at_utils/at_logger.dart';
 import 'package:logging/logging.dart';
 import 'package:meta/meta.dart';
 
-import 'package:noports_core/common/utils.dart';
-import 'package:noports_core/sshrvd/socket_connector.dart';
+import 'package:noports_core/src/common/utils.dart';
+import 'package:noports_core/src/sshrvd/socket_connector.dart';
 
 part 'sshrvd_impl.dart';
 part 'sshrvd_params.dart';

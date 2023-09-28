@@ -4,11 +4,10 @@ import 'dart:io';
 
 // atPlatform packages
 import 'package:at_utils/at_logger.dart';
-import 'package:noports_core/sshnp/params/sshnp_params.dart';
 
 // local packages
-import 'package:noports_core/sshnp/sshnp.dart';
-import 'package:noports_core/sshnp/utils.dart';
+import 'package:noports_core/sshnp.dart';
+import 'package:noports_core/utils.dart';
 import 'package:sshnoports/create_at_client_cli.dart';
 import 'package:sshnoports/version.dart';
 

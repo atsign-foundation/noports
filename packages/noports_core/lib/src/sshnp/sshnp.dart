@@ -5,16 +5,13 @@ import 'package:at_utils/at_logger.dart';
 import 'package:at_utils/at_utils.dart';
 import 'package:dartssh2/dartssh2.dart';
 import 'package:meta/meta.dart';
-import 'package:noports_core/common/default_args.dart';
-import 'package:noports_core/sshnp/params/sshnp_params.dart';
-import 'package:noports_core/common/supported_ssh_clients.dart';
-import 'package:noports_core/common/utils.dart';
-import 'package:noports_core/sshnp/sshnp_impl.dart';
-import 'package:noports_core/sshnp/sshnp_result.dart';
-import 'package:noports_core/sshrv/sshrv.dart';
-
-export 'params/sshnp_params.dart';
-export 'sshnp_result.dart';
+import 'package:noports_core/src/common/default_args.dart';
+import 'package:noports_core/src/sshnp/params/sshnp_params.dart';
+import 'package:noports_core/src/common/supported_ssh_clients.dart';
+import 'package:noports_core/src/common/utils.dart';
+import 'package:noports_core/src/sshnp/sshnp_impl.dart';
+import 'package:noports_core/src/sshnp/sshnp_result.dart';
+import 'package:noports_core/src/sshrv/sshrv.dart';
 
 abstract class SSHNP {
   abstract final AtSignLogger logger;

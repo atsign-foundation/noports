@@ -1,6 +1,6 @@
 import 'dart:io';
 
-import 'package:noports_core/sshrv/sshrv.dart';
+import 'package:noports_core/sshrv.dart';
 
 Future<void> main(List<String> args) async {
   if (args.length < 2 || args.length > 3) {

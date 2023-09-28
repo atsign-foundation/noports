@@ -1,10 +1,10 @@
 import 'package:at_client/at_client.dart';
-import 'package:noports_core/sshnp/params/sshnp_params.dart';
-import 'package:noports_core/sshnpd/sshnpd.dart';
+import 'package:noports_core/src/common/default_args.dart';
+import 'package:noports_core/src/sshnp/params/sshnp_params.dart';
 
 class ConfigKeyRepository {
   static const String _keyPrefix = 'profile_';
-  static const String _configNamespace = 'profiles.${SSHNPD.namespace}';
+  static const String _configNamespace = 'profiles.${DefaultArgs.namespace}';
 
   static String toProfileName(AtKey atKey, {bool replaceSpaces = true}) {
     var profileName = atKey.key!.split('.').first;

@@ -2,10 +2,10 @@ import 'dart:convert';
 
 import 'package:args/args.dart';
 import 'package:at_utils/at_logger.dart';
-import 'package:noports_core/common/utils.dart';
-import 'package:noports_core/sshnp/config_repository/config_file_repository.dart';
-import 'package:noports_core/sshnp/sshnp_arg.dart';
-import 'package:noports_core/common/default_args.dart';
+import 'package:noports_core/src/common/utils.dart';
+import 'package:noports_core/src/sshnp/params/config_file_repository.dart';
+import 'package:noports_core/src/sshnp/params/sshnp_arg.dart';
+import 'package:noports_core/src/common/default_args.dart';
 
 class SSHNPParams {
   /// Required Arguments
@@ -147,7 +147,8 @@ class SSHNPParams {
       localPort: partial.localPort ?? DefaultSSHNPArgs.localPort,
       sendSshPublicKey:
           partial.sendSshPublicKey ?? DefaultSSHNPArgs.sendSshPublicKey,
-      localSshOptions: partial.localSshOptions ?? DefaultSSHNPArgs.localSshOptions,
+      localSshOptions:
+          partial.localSshOptions ?? DefaultSSHNPArgs.localSshOptions,
       rsa: partial.rsa ?? DefaultArgs.rsa,
       verbose: partial.verbose ?? DefaultArgs.verbose,
       remoteUsername: partial.remoteUsername,

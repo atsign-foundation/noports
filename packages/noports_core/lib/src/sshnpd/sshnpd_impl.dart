@@ -145,7 +145,7 @@ class SSHNPDImpl implements SSHNPD {
         ..key = 'username.$device'
         ..sharedBy = deviceAtsign
         ..sharedWith = managerAtsign
-        ..namespace = SSHNPD.namespace
+        ..namespace = DefaultArgs.namespace
         ..metadata = metaData;
 
       try {
@@ -165,9 +165,9 @@ class SSHNPDImpl implements SSHNPD {
     logger.info('Starting heartbeat');
     startHeartbeat();
 
-    logger.info('Subscribing to $device\\.${SSHNPD.namespace}@');
+    logger.info('Subscribing to $device\\.${DefaultArgs.namespace}@');
     notificationService
-        .subscribe(regex: '$device\\.${SSHNPD.namespace}@', shouldDecrypt: true)
+        .subscribe(regex: '$device\\.${DefaultArgs.namespace}@', shouldDecrypt: true)
         .listen(
           _notificationHandler,
           onError: (e) => logger.severe('Notification Failed:$e'),
@@ -221,7 +221,7 @@ class SSHNPDImpl implements SSHNPD {
 
     String notificationKey = notification.key
         .replaceAll('${notification.to}:', '')
-        .replaceAll('.$device.${SSHNPD.namespace}${notification.from}', '')
+        .replaceAll('.$device.${DefaultArgs.namespace}${notification.from}', '')
         // convert to lower case as the latest AtClient converts notification
         // keys to lower case when received
         .toLowerCase();
@@ -275,7 +275,7 @@ class SSHNPDImpl implements SSHNPD {
       ..key = 'heartbeat.$device'
       ..sharedBy = deviceAtsign
       ..sharedWith = notification.from
-      ..namespace = SSHNPD.namespace
+      ..namespace = DefaultArgs.namespace
       ..metadata = (Metadata()
         ..isPublic = false
         ..isEncrypted = true
@@ -606,7 +606,7 @@ class SSHNPDImpl implements SSHNPD {
       ..key = '$sessionId.$device'
       ..sharedBy = deviceAtsign
       ..sharedWith = requestingAtsign
-      ..namespace = SSHNPD.namespace
+      ..namespace = DefaultArgs.namespace
       ..metadata = (Metadata()
         ..isPublic = false
         ..isEncrypted = true
@@ -854,7 +854,7 @@ class SSHNPDImpl implements SSHNPD {
       ..key = 'device_info.$device'
       ..sharedBy = deviceAtsign
       ..sharedWith = managerAtsign
-      ..namespace = SSHNPD.namespace
+      ..namespace = DefaultArgs.namespace
       ..metadata = metaData;
 
     if (!makeDeviceInfoVisible) {
