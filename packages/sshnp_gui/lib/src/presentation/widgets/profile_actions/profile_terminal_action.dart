@@ -42,12 +42,12 @@ class _ProfileTerminalActionState extends ConsumerState<ProfileTerminalAction> {
       final sshnp = await SSHNP.fromParams(
         params,
         atClient: AtClientManager.getInstance().atClient,
-        sshrvGenerator: SSHRV.pureDart,
+        sshrvGenerator: SSHRV.dart,
       );
 
       await sshnp.init();
       final result = await sshnp.run();
-      if (result is SSHNPFailed) {
+      if (result is SSHNPError) {
         throw result;
       }
 

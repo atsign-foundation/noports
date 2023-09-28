@@ -9,7 +9,7 @@ class DefaultArgs {
   static const verbose = false;
   static const rsa = false;
   static const rootDomain = 'root.atsign.org';
-  static const sshrvGenerator = SSHRV.localBinary;
+  static const sshrvGenerator = SSHRV.exec;
   static const localSshdPort = 22;
   static const remoteSshdPort = 22;
 
@@ -25,5 +25,5 @@ class DefaultSSHNPArgs {
   static const localSshOptions = <String>[];
   static const legacyDaemon = true;
   static const listDevices = false;
-  static const sshClient = SupportedSshClient.hostSsh;
+  static const sshClient = SupportedSshClient.exec;
 }

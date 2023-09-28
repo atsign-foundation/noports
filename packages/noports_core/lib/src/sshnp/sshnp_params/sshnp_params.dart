@@ -1,7 +1,6 @@
 import 'dart:convert';
 
 import 'package:args/args.dart';
-import 'package:at_utils/at_logger.dart';
 import 'package:noports_core/src/common/utils.dart';
 import 'package:noports_core/src/sshnp/sshnp_params/config_file_repository.dart';
 import 'package:noports_core/src/sshnp/sshnp_params/sshnp_arg.dart';
@@ -13,9 +12,9 @@ class SSHNPParams {
   /// Since there are multiple sources for these values, we cannot validate
   /// that they will be provided. If any are null, then the caller must
   /// handle the error.
-  final String? clientAtSign;
-  final String? sshnpdAtSign;
-  final String? host;
+  final String clientAtSign;
+  final String sshnpdAtSign;
+  final String host;
 
   /// Optional Arguments
   final String device;
@@ -129,19 +128,15 @@ class SSHNPParams {
       SSHNPParams.fromPartial(SSHNPPartialParams.fromJson(json));
 
   factory SSHNPParams.fromPartial(SSHNPPartialParams partial) {
-    AtSignLogger logger = AtSignLogger(' SSHNPParams ');
-
-    /// If any required params are null log severe, but do not throw
-    /// The caller must handle the error if any required params are null
-    partial.clientAtSign ?? (logger.severe('clientAtSign is null'));
-    partial.sshnpdAtSign ?? (logger.severe('sshnpdAtSign is null'));
-    partial.host ?? (logger.severe('host is null'));
+    partial.clientAtSign ?? (throw ArgumentError('clientAtSign is mandatory'));
+    partial.sshnpdAtSign ?? (throw ArgumentError('sshnpdAtSign is mandatory'));
+    partial.host ?? (throw ArgumentError('host is mandatory'));
 
     return SSHNPParams(
       profileName: partial.profileName,
-      clientAtSign: partial.clientAtSign,
-      sshnpdAtSign: partial.sshnpdAtSign,
-      host: partial.host,
+      clientAtSign: partial.clientAtSign!,
+      sshnpdAtSign: partial.sshnpdAtSign!,
+      host: partial.host!,
       device: partial.device ?? DefaultSSHNPArgs.device,
       port: partial.port ?? DefaultSSHNPArgs.port,
       localPort: partial.localPort ?? DefaultSSHNPArgs.localPort,

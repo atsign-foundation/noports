@@ -183,7 +183,7 @@ class SSHNPArg {
     SSHNPArg(
       name: 'ssh-client',
       help: 'What to use for outbound ssh connections',
-      defaultsTo: SupportedSshClient.hostSsh.cliArg,
+      defaultsTo: SupportedSshClient.exec.cliArg,
       mandatory: false,
       format: ArgFormat.option,
       type: ArgType.string,

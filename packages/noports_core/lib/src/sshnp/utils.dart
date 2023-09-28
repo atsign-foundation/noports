@@ -1,15 +1,22 @@
+import 'dart:async';
 import 'dart:io';
 import 'package:noports_core/src/common/utils.dart';
 import 'package:at_utils/at_logger.dart';
 import 'package:noports_core/src/sshnp/sshnp.dart';
+import 'package:noports_core/src/sshnp/sshnp_impl/sshnp_impl_mixin.dart';
+
+Completer<T> wrapInCompleter<T>(Future<T> future) {
+  final completer = Completer<T>();
+  unawaited(
+    future.then(completer.complete).catchError(completer.completeError),
+  );
+  return completer;
+}
 
 Future<void> cleanUpAfterReverseSsh(SSHNP sshnp) async {
-  if (!sshnp.initialized) {
-    // never got started, nothing to clean up
-    return;
-  }
-  if (sshnp.direct) {
-    // did a direct ssh, not a reverse one - nothing to clean up
+  if (!wrapInCompleter(sshnp.initialized).isCompleted ||
+      sshnp is! SSHNPReverseDirection) {
+    // nothing to clean up
     return;
   }
 
@@ -21,8 +28,10 @@ Future<void> cleanUpAfterReverseSsh(SSHNP sshnp) async {
   sshnp.logger.info('Tidying up files');
 // Delete the generated RSA keys and remove the entry from ~/.ssh/authorized_keys
   await deleteFile('$sshHomeDirectory/${sshnp.sessionId}_sshnp', sshnp.logger);
-  await deleteFile('$sshHomeDirectory/${sshnp.sessionId}_sshnp.pub', sshnp.logger);
-  await removeEphemeralKeyFromAuthorizedKeys(sshnp.sessionId, sshnp.logger, sshHomeDirectory: sshHomeDirectory);
+  await deleteFile(
+      '$sshHomeDirectory/${sshnp.sessionId}_sshnp.pub', sshnp.logger);
+  await removeEphemeralKeyFromAuthorizedKeys(sshnp.sessionId, sshnp.logger,
+      sshHomeDirectory: sshHomeDirectory);
 }
 
 Future<bool> deleteFile(String fileName, AtSignLogger logger) async {

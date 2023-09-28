@@ -120,7 +120,7 @@ class SSHNPDParams {
 
     parser.addOption('ssh-client',
         mandatory: false,
-        defaultsTo: SupportedSshClient.hostSsh.cliArg,
+        defaultsTo: SupportedSshClient.exec.cliArg,
         allowed: SupportedSshClient.values.map((c) => c.cliArg).toList(),
         help: 'What to use for outbound ssh connections.');
 

@@ -8,7 +8,7 @@ import 'package:socket_connector/socket_connector.dart';
 import 'package:noports_core/src/common/default_args.dart';
 
 @visibleForTesting
-class SSHRVImpl implements SSHRV<Process> {
+class SSHRVImplExec implements SSHRV<Process> {
   @override
   final String host;
 
@@ -18,7 +18,7 @@ class SSHRVImpl implements SSHRV<Process> {
   @override
   final int localSshdPort;
 
-  const SSHRVImpl(
+  const SSHRVImplExec(
     this.host,
     this.streamingPort, {
     this.localSshdPort = DefaultArgs.localSshdPort,
@@ -43,7 +43,7 @@ class SSHRVImpl implements SSHRV<Process> {
 }
 
 @visibleForTesting
-class SSHRVImplPureDart implements SSHRV<SocketConnector> {
+class SSHRVImplDart implements SSHRV<SocketConnector> {
   @override
   final String host;
 
@@ -53,7 +53,7 @@ class SSHRVImplPureDart implements SSHRV<SocketConnector> {
   @override
   final int localSshdPort;
 
-  const SSHRVImplPureDart(
+  const SSHRVImplDart(
     this.host,
     this.streamingPort, {
     this.localSshdPort = 22,

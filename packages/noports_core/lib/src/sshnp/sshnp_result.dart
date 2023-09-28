@@ -1,5 +1,3 @@
-
-
 import 'dart:io';
 
 import 'package:dartssh2/dartssh2.dart';
@@ -11,16 +9,30 @@ const _optionsWithPrivateKey = [
   '-o IdentitiesOnly=yes'
 ];
 
-class SSHNPFailed implements SSHNPResult {
-  final String message;
-  final Object? exception;
+class SSHNPError implements SSHNPResult, Exception {
+  final Object message;
+  final Object? error;
   final StackTrace? stackTrace;
 
-  SSHNPFailed(this.message, [this.exception, this.stackTrace]);
+  SSHNPError(this.message, {this.error, this.stackTrace});
 
   @override
   String toString() {
-    return message;
+    return message.toString();
+  }
+
+  String toVerboseString() {
+    final sb = StringBuffer();
+    sb.write(message);
+    if (error != null) {
+      sb.write('\n');
+      sb.write('Error: $error');
+    }
+    if (stackTrace != null) {
+      sb.write('\n');
+      sb.write('Stack Trace: $stackTrace');
+    }
+    return sb.toString();
   }
 }
 

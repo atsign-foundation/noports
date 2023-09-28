@@ -15,7 +15,6 @@ import 'package:noports_core/sshnpd.dart';
 import 'package:noports_core/version.dart';
 import 'package:uuid/uuid.dart';
 
-
 @protected
 class SSHNPDImpl implements SSHNPD {
   @override
@@ -101,7 +100,7 @@ class SSHNPDImpl implements SSHNPD {
         AtSignLogger.root_level = 'INFO';
       }
 
-       if (atClient == null && atClientGenerator == null) {
+      if (atClient == null && atClientGenerator == null) {
         throw StateError('atClient and atClientGenerator are both null');
       }
 
@@ -183,7 +182,8 @@ class SSHNPDImpl implements SSHNPD {
 
     logger.info('Subscribing to $device\\.${DefaultArgs.namespace}@');
     notificationService
-        .subscribe(regex: '$device\\.${DefaultArgs.namespace}@', shouldDecrypt: true)
+        .subscribe(
+            regex: '$device\\.${DefaultArgs.namespace}@', shouldDecrypt: true)
         .listen(
           _notificationHandler,
           onError: (e) => logger.severe('Notification Failed:$e'),
@@ -500,9 +500,8 @@ class SSHNPDImpl implements SSHNPD {
     try {
       // Connect to rendezvous point using background process.
       // This program can then exit without causing an issue.
-      Process rv = await SSHRV
-          .localBinary(host, port, localSshdPort: localSshdPort)
-          .run();
+      Process rv =
+          await SSHRV.exec(host, port, localSshdPort: localSshdPort).run();
       logger.info('Started rv - pid is ${rv.pid}');
 
       /// - Generate an ephemeral keypair and adds its public key to the
@@ -564,7 +563,7 @@ class SSHNPDImpl implements SSHNPD {
       String? errorMessage;
 
       switch (sshClient) {
-        case SupportedSshClient.hostSsh:
+        case SupportedSshClient.exec:
           (success, errorMessage) = await reverseSshViaExec(
               host: host,
               port: port,
@@ -574,7 +573,7 @@ class SSHNPDImpl implements SSHNPD {
               requestingAtsign: requestingAtsign,
               privateKey: privateKey);
           break;
-        case SupportedSshClient.pureDart:
+        case SupportedSshClient.dart:
           (success, errorMessage) = await reverseSshViaSSHClient(
               host: host,
               port: port,

@@ -46,13 +46,13 @@ class _ProfileRunActionState extends ConsumerState<ProfileRunAction> {
       sshnp = await SSHNP.fromParams(
         params,
         atClient: AtClientManager.getInstance().atClient,
-        sshrvGenerator: SSHRV.pureDart,
+        sshrvGenerator: SSHRV.dart,
       );
 
       await sshnp!.init();
       sshnpResult = await sshnp!.run();
 
-      if (sshnpResult is SSHNPFailed) {
+      if (sshnpResult is SSHNPError) {
         throw sshnpResult!;
       }
       ref
@@ -74,8 +74,9 @@ class _ProfileRunActionState extends ConsumerState<ProfileRunAction> {
       (sshnpResult as SSHNPSuccess).sshClient?.close(); // DirectSSHViaClient
       var sshrvResult = await (sshnpResult as SSHNPSuccess).sshrvResult;
       if (sshrvResult is Process) sshrvResult.kill(); // SSHRV via local binary
-      if (sshrvResult is SocketConnector)
+      if (sshrvResult is SocketConnector) {
         sshrvResult.close(); // SSHRV via pure dart
+      }
     }
     ref
         .read(backgroundSessionFamilyController(widget.params.profileName!)

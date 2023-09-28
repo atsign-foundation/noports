@@ -17,32 +17,34 @@ void main(List<String> args) async {
   late final SSHNP sshnp;
   late final SSHNPParams params;
 
-  try {
-    params = SSHNPParams.fromPartial(SSHNPPartialParams.fromArgs(args));
-  } catch (error) {
+  try {} catch (error) {
     stderr.writeln(error.toString());
     exit(1);
   }
 
+  usageCallback(e, s) {
+    printVersion();
+    stdout.writeln(SSHNPPartialParams.parser.usage);
+    stderr.writeln('\n$e');
+  }
+
   try {
+    params = SSHNPParams.fromPartial(SSHNPPartialParams.fromArgs(args));
     sshnp = await SSHNP.fromParams(
       params,
       atClientGenerator: (SSHNPParams params, String sessionId) =>
           createAtClientCli(
         homeDirectory: params.homeDirectory,
-        atsign: params.clientAtSign!,
+        atsign: params.clientAtSign,
         namespace: '${params.device}.sshnp',
         pathExtension: sessionId,
         atKeysFilePath: params.atKeysFilePath,
         rootDomain: params.rootDomain,
       ),
-      usageCallback: (e, s) {
-        printVersion();
-        stdout.writeln(SSHNPPartialParams.parser.usage);
-        stderr.writeln('\n$e');
-      },
+      usageCallback: usageCallback,
     );
-  } on ArgumentError catch (_) {
+  } on ArgumentError catch (e, s) {
+    usageCallback(e, s);
     exit(1);
   }
 
@@ -73,7 +75,7 @@ void main(List<String> args) async {
 
     await sshnp.init();
     SSHNPResult res = await sshnp.run();
-    if (res is SSHNPFailed) {
+    if (res is SSHNPError) {
       stderr.write('$res\n');
       exit(1);
     }

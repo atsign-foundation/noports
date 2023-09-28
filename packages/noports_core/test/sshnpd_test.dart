@@ -40,19 +40,19 @@ void main() {
 
     test('test --ssh-client arg', () {
       expect(SSHNPDParams.fromArgs('-a @bob -m @alice'.split(' ')).sshClient,
-          SupportedSshClient.hostSsh);
+          SupportedSshClient.exec);
 
       expect(
           SSHNPDParams.fromArgs(
                   '-a @bob -m @alice --ssh-client pure-dart'.split(' '))
               .sshClient,
-          SupportedSshClient.pureDart);
+          SupportedSshClient.dart);
 
       expect(
           SSHNPDParams.fromArgs(
                   '-a @bob -m @alice --ssh-client /usr/bin/ssh'.split(' '))
               .sshClient,
-          SupportedSshClient.hostSsh);
+          SupportedSshClient.exec);
 
       expect(
           () => SSHNPDParams.fromArgs(

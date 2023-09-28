@@ -20,24 +20,24 @@ abstract class SSHRV<T> {
   Future<T> run();
 
   // Can't use factory functions since SSHRV contains a generic type
-  static SSHRV<Process> localBinary(
+  static SSHRV<Process> exec(
     String host,
     int streamingPort, {
     int localSshdPort = DefaultArgs.localSshdPort,
   }) {
-    return SSHRVImpl(
+    return SSHRVImplExec(
       host,
       streamingPort,
       localSshdPort: localSshdPort,
     );
   }
 
-  static SSHRV<SocketConnector> pureDart(
+  static SSHRV<SocketConnector> dart(
     String host,
     int streamingPort, {
     int localSshdPort = 22,
   }) {
-    return SSHRVImplPureDart(
+    return SSHRVImplDart(
       host,
       streamingPort,
       localSshdPort: localSshdPort,
