@@ -55,7 +55,7 @@ class SSHNPDParams {
     addSshPublicKeys = r['sshpublickey'];
 
     localSshdPort =
-        int.tryParse(r['local-sshd-port']) ?? defaults.defaultLocalSshdPort;
+        int.tryParse(r['local-sshd-port']) ?? DefaultArgs.localSshdPort;
 
     ephemeralPermissions = r['ephemeral-permissions'];
 
@@ -131,7 +131,7 @@ class SSHNPDParams {
     parser.addOption(
       'local-sshd-port',
       help: 'port on which sshd is listening locally on localhost',
-      defaultsTo: defaults.defaultLocalSshdPort.toString(),
+      defaultsTo: DefaultArgs.localSshdPort.toString(),
       mandatory: false,
     );
 
@@ -146,7 +146,7 @@ class SSHNPDParams {
     parser.addFlag(
       'rsa',
       abbr: 'r',
-      defaultsTo: defaults.defaultRsa,
+      defaultsTo: DefaultArgs.rsa,
       help: 'Use RSA 4096 keys rather than the default ED25519 keys',
     );
 

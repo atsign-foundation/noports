@@ -14,7 +14,7 @@ class SSHRVImpl implements SSHRV<Process> {
   const SSHRVImpl(
     this.host,
     this.streamingPort, {
-    this.localSshdPort = defaults.defaultLocalSshdPort,
+    this.localSshdPort = DefaultArgs.localSshdPort,
   });
 
   @override

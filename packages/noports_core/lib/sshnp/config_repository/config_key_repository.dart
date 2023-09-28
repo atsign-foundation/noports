@@ -1,5 +1,5 @@
 import 'package:at_client/at_client.dart';
-import 'package:noports_core/sshnp/sshnp.dart';
+import 'package:noports_core/sshnp/params/sshnp_params.dart';
 import 'package:noports_core/sshnpd/sshnpd.dart';
 
 class ConfigKeyRepository {

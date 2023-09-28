@@ -60,7 +60,7 @@ class SSHNPDImpl implements SSHNPD {
     required this.sshClient,
     this.makeDeviceInfoVisible = false,
     this.addSshPublicKeys = false,
-    this.localSshdPort = defaults.defaultLocalSshdPort,
+    this.localSshdPort = DefaultArgs.localSshdPort,
     required this.ephemeralPermissions,
     required this.rsa,
   }) {

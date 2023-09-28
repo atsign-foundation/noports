@@ -1,7 +1,7 @@
 import 'dart:io';
 
 import 'package:noports_core/common/utils.dart';
-import 'package:noports_core/sshnp/sshnp.dart';
+import 'package:noports_core/sshnp/params/sshnp_params.dart';
 import 'package:noports_core/sshnp/sshnp_arg.dart';
 import 'package:path/path.dart' as path;
 

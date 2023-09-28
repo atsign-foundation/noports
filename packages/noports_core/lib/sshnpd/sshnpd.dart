@@ -16,7 +16,7 @@ import 'package:noports_core/version.dart';
 
 import 'package:uuid/uuid.dart';
 
-import 'package:noports_core/common/defaults.dart' as defaults;
+import 'package:noports_core/common/default_args.dart';
 
 part 'sshnpd_impl.dart';
 part 'sshnpd_params.dart';

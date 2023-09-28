@@ -1,4 +1,12 @@
-part of 'sshnp.dart';
+import 'dart:convert';
+
+import 'package:args/args.dart';
+import 'package:at_utils/at_logger.dart';
+import 'package:noports_core/common/utils.dart';
+import 'package:noports_core/sshnp/config_repository/config_file_repository.dart';
+import 'package:noports_core/sshnp/sshnp.dart';
+import 'package:noports_core/sshnp/sshnp_arg.dart';
+import 'package:noports_core/common/default_args.dart';
 
 class SSHNPParams {
   /// Required Arguments
@@ -42,21 +50,21 @@ class SSHNPParams {
     required this.sshnpdAtSign,
     required this.host,
     this.profileName,
-    this.device = SSHNP.defaultDevice,
-    this.port = SSHNP.defaultPort,
-    this.localPort = SSHNP.defaultLocalPort,
-    this.sendSshPublicKey = SSHNP.defaultSendSshPublicKey,
-    this.localSshOptions = SSHNP.defaultLocalSshOptions,
-    this.verbose = defaults.defaultVerbose,
-    this.rsa = defaults.defaultRsa,
+    this.device = DefaultSSHNPArgs.device,
+    this.port = DefaultSSHNPArgs.port,
+    this.localPort = DefaultSSHNPArgs.localPort,
+    this.sendSshPublicKey = DefaultSSHNPArgs.sendSshPublicKey,
+    this.localSshOptions = DefaultSSHNPArgs.localSshOptions,
+    this.verbose = DefaultArgs.verbose,
+    this.rsa = DefaultArgs.rsa,
     this.remoteUsername,
     String? atKeysFilePath,
-    this.rootDomain = defaults.defaultRootDomain,
-    this.localSshdPort = defaults.defaultLocalSshdPort,
-    this.legacyDaemon = SSHNP.defaultLegacyDaemon,
-    this.listDevices = SSHNP.defaultListDevices,
-    this.remoteSshdPort = defaults.defaultRemoteSshdPort,
-    this.idleTimeout = defaults.defaultIdleTimeout,
+    this.rootDomain = DefaultArgs.rootDomain,
+    this.localSshdPort = DefaultArgs.localSshdPort,
+    this.legacyDaemon = DefaultSSHNPArgs.legacyDaemon,
+    this.listDevices = DefaultSSHNPArgs.listDevices,
+    this.remoteSshdPort = DefaultArgs.remoteSshdPort,
+    this.idleTimeout = DefaultArgs.idleTimeout,
     String? sshClient,
     this.addForwardsToTunnel = false,
   }) {
@@ -71,7 +79,7 @@ class SSHNPParams {
     this.atKeysFilePath =
         atKeysFilePath ?? getDefaultAtKeysFilePath(homeDirectory, clientAtSign);
 
-    this.sshClient = sshClient ?? SSHNP.defaultSshClient.cliArg;
+    this.sshClient = sshClient ?? DefaultSSHNPArgs.sshClient.cliArg;
   }
 
   factory SSHNPParams.empty() {
@@ -135,23 +143,23 @@ class SSHNPParams {
       clientAtSign: partial.clientAtSign,
       sshnpdAtSign: partial.sshnpdAtSign,
       host: partial.host,
-      device: partial.device ?? SSHNP.defaultDevice,
-      port: partial.port ?? SSHNP.defaultPort,
-      localPort: partial.localPort ?? SSHNP.defaultLocalPort,
+      device: partial.device ?? DefaultSSHNPArgs.device,
+      port: partial.port ?? DefaultSSHNPArgs.port,
+      localPort: partial.localPort ?? DefaultSSHNPArgs.localPort,
       sendSshPublicKey:
-          partial.sendSshPublicKey ?? SSHNP.defaultSendSshPublicKey,
-      localSshOptions: partial.localSshOptions ?? SSHNP.defaultLocalSshOptions,
-      rsa: partial.rsa ?? defaults.defaultRsa,
-      verbose: partial.verbose ?? defaults.defaultVerbose,
+          partial.sendSshPublicKey ?? DefaultSSHNPArgs.sendSshPublicKey,
+      localSshOptions: partial.localSshOptions ?? DefaultSSHNPArgs.localSshOptions,
+      rsa: partial.rsa ?? DefaultArgs.rsa,
+      verbose: partial.verbose ?? DefaultArgs.verbose,
       remoteUsername: partial.remoteUsername,
       atKeysFilePath: partial.atKeysFilePath,
-      rootDomain: partial.rootDomain ?? defaults.defaultRootDomain,
-      localSshdPort: partial.localSshdPort ?? defaults.defaultLocalSshdPort,
-      listDevices: partial.listDevices ?? SSHNP.defaultListDevices,
-      legacyDaemon: partial.legacyDaemon ?? SSHNP.defaultLegacyDaemon,
-      remoteSshdPort: partial.remoteSshdPort ?? defaults.defaultRemoteSshdPort,
-      idleTimeout: partial.idleTimeout ?? defaults.defaultIdleTimeout,
-      sshClient: partial.sshClient ?? SSHNP.defaultSshClient.cliArg,
+      rootDomain: partial.rootDomain ?? DefaultArgs.rootDomain,
+      localSshdPort: partial.localSshdPort ?? DefaultArgs.localSshdPort,
+      listDevices: partial.listDevices ?? DefaultSSHNPArgs.listDevices,
+      legacyDaemon: partial.legacyDaemon ?? DefaultSSHNPArgs.legacyDaemon,
+      remoteSshdPort: partial.remoteSshdPort ?? DefaultArgs.remoteSshdPort,
+      idleTimeout: partial.idleTimeout ?? DefaultArgs.idleTimeout,
+      sshClient: partial.sshClient ?? DefaultSSHNPArgs.sshClient.cliArg,
       addForwardsToTunnel: partial.addForwardsToTunnel ?? false,
     );
   }
@@ -254,8 +262,8 @@ class SSHNPPartialParams {
     this.verbose,
     this.rootDomain,
     this.localSshdPort,
-    this.listDevices = SSHNP.defaultListDevices,
-    this.legacyDaemon = SSHNP.defaultLegacyDaemon,
+    this.listDevices = DefaultSSHNPArgs.listDevices,
+    this.legacyDaemon = DefaultSSHNPArgs.legacyDaemon,
     this.remoteSshdPort,
     this.idleTimeout,
     this.sshClient,

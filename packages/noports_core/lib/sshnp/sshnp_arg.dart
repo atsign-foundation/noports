@@ -1,7 +1,7 @@
 import 'package:args/args.dart';
 import 'package:noports_core/common/supported_ssh_clients.dart';
 
-import 'package:noports_core/common/defaults.dart';
+import 'package:noports_core/common/default_args.dart';
 import 'sshnp.dart';
 
 enum ArgFormat {
@@ -85,7 +85,7 @@ class SSHNPArg {
       name: 'device',
       abbr: 'd',
       help: 'Receiving device name',
-      defaultsTo: SSHNP.defaultDevice,
+      defaultsTo: DefaultSSHNPArgs.device,
     ),
     const SSHNPArg(
       name: 'host',
@@ -98,7 +98,7 @@ class SSHNPArg {
       abbr: 'p',
       help:
           'TCP port to connect back to (only required if --host specified a FQDN/IP)',
-      defaultsTo: SSHNP.defaultPort,
+      defaultsTo: DefaultSSHNPArgs.port,
       type: ArgType.integer,
     ),
     const SSHNPArg(
@@ -106,7 +106,7 @@ class SSHNPArg {
       abbr: 'l',
       help:
           'Reverse ssh port to listen on, on your local machine, by sshnp default finds a spare port',
-      defaultsTo: SSHNP.defaultLocalPort,
+      defaultsTo: DefaultSSHNPArgs.localPort,
       type: ArgType.integer,
     ),
     const SSHNPArg(
@@ -114,7 +114,7 @@ class SSHNPArg {
       abbr: 's',
       help:
           'Public key file from ~/.ssh to be appended to authorized_hosts on the remote device',
-      defaultsTo: SSHNP.defaultSendSshPublicKey,
+      defaultsTo: DefaultSSHNPArgs.sendSshPublicKey,
     ),
     const SSHNPArg(
       name: 'local-ssh-options',
@@ -125,14 +125,14 @@ class SSHNPArg {
     const SSHNPArg(
       name: 'verbose',
       abbr: 'v',
-      defaultsTo: defaultVerbose,
+      defaultsTo: DefaultArgs.verbose,
       help: 'More logging',
       format: ArgFormat.flag,
     ),
     const SSHNPArg(
       name: 'rsa',
       abbr: 'r',
-      defaultsTo: defaultRsa,
+      defaultsTo: DefaultArgs.rsa,
       help: 'Use RSA 4096 keys rather than the default ED25519 keys',
       format: ArgFormat.flag,
     ),
@@ -144,14 +144,14 @@ class SSHNPArg {
     const SSHNPArg(
       name: 'root-domain',
       help: 'atDirectory domain',
-      defaultsTo: defaultRootDomain,
+      defaultsTo: DefaultArgs.rootDomain,
       mandatory: false,
       format: ArgFormat.option,
     ),
     const SSHNPArg(
       name: 'local-sshd-port',
       help: 'port on which sshd is listening locally on the client host',
-      defaultsTo: defaultLocalSshdPort,
+      defaultsTo: DefaultArgs.localSshdPort,
       abbr: 'P',
       mandatory: false,
       format: ArgFormat.option,
@@ -159,14 +159,14 @@ class SSHNPArg {
     ),
     const SSHNPArg(
       name: 'legacy-daemon',
-      defaultsTo: SSHNP.defaultLegacyDaemon,
+      defaultsTo: DefaultSSHNPArgs.legacyDaemon,
       help: 'Request is to a legacy (< 4.0.0) noports daemon',
       format: ArgFormat.flag,
     ),
     const SSHNPArg(
       name: 'remote-sshd-port',
       help: 'port on which sshd is listening locally on the device host',
-      defaultsTo: defaultRemoteSshdPort,
+      defaultsTo: DefaultArgs.remoteSshdPort,
       mandatory: false,
       format: ArgFormat.option,
       type: ArgType.integer,
@@ -175,7 +175,7 @@ class SSHNPArg {
       name: 'idle-timeout',
       help:
           'number of seconds after which inactive ssh connections will be closed',
-      defaultsTo: defaultIdleTimeout,
+      defaultsTo: DefaultArgs.idleTimeout,
       mandatory: false,
       format: ArgFormat.option,
       type: ArgType.integer,

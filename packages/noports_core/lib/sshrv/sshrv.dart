@@ -4,7 +4,7 @@ import 'package:at_utils/at_utils.dart';
 import 'package:meta/meta.dart';
 import 'package:socket_connector/socket_connector.dart';
 
-import 'package:noports_core/common/defaults.dart' as defaults;
+import 'package:noports_core/common/default_args.dart';
 
 part 'sshrv_impl.dart';
 
@@ -27,7 +27,7 @@ abstract class SSHRV<T> {
   static SSHRV<Process> localBinary(
     String host,
     int streamingPort, {
-    int localSshdPort = defaults.defaultLocalSshdPort,
+    int localSshdPort = DefaultArgs.localSshdPort,
   }) {
     return SSHRVImpl(
       host,

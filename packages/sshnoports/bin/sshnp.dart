@@ -4,6 +4,7 @@ import 'dart:io';
 
 // atPlatform packages
 import 'package:at_utils/at_logger.dart';
+import 'package:noports_core/sshnp/params/sshnp_params.dart';
 
 // local packages
 import 'package:noports_core/sshnp/sshnp.dart';

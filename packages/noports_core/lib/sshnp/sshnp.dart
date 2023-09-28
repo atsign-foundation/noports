@@ -2,7 +2,6 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:args/args.dart';
 import 'package:at_client/at_client.dart' hide StringBuffer;
 import 'package:at_commons/at_builders.dart';
 import 'package:at_utils/at_logger.dart';
@@ -10,21 +9,18 @@ import 'package:at_utils/at_utils.dart';
 import 'package:dartssh2/dartssh2.dart';
 import 'package:logging/logging.dart';
 import 'package:meta/meta.dart';
+import 'package:noports_core/common/default_args.dart';
+import 'package:noports_core/sshnp/params/sshnp_params.dart';
 import 'package:path/path.dart' as path;
 import 'package:noports_core/common/supported_ssh_clients.dart';
 import 'package:noports_core/common/utils.dart';
-import 'package:noports_core/sshnp/config_repository/config_file_repository.dart';
-import 'package:noports_core/sshnp/sshnp_arg.dart';
 import 'package:noports_core/sshnp/utils.dart';
 import 'package:noports_core/sshnpd/sshnpd.dart';
 import 'package:noports_core/sshrv/sshrv.dart';
 import 'package:noports_core/sshrvd/sshrvd.dart';
 import 'package:uuid/uuid.dart';
 
-import 'package:noports_core/common/defaults.dart' as defaults;
-
 part 'sshnp_impl.dart';
-part 'sshnp_params.dart';
 part 'sshnp_result.dart';
 
 abstract class SSHNP {
@@ -167,16 +163,6 @@ abstract class SSHNP {
   /// e.g. controlling a direct ssh tunnel using the pure-dart SSHClient
   Future<void> get done;
 
-  /// Default parameters for sshnp
-  static const defaultDevice = 'default';
-  static const defaultPort = 22;
-  static const defaultLocalPort = 0;
-  static const defaultSendSshPublicKey = '';
-  static const defaultLocalSshOptions = <String>[];
-  static const defaultLegacyDaemon = true;
-  static const defaultListDevices = false;
-  static const defaultSshClient = SupportedSshClient.hostSsh;
-
   factory SSHNP({
     // final fields
     required AtClient atClient,
@@ -185,7 +171,7 @@ abstract class SSHNP {
     required String username,
     required String homeDirectory,
     required String sessionId,
-    String sendSshPublicKey = SSHNP.defaultSendSshPublicKey,
+    String sendSshPublicKey = DefaultSSHNPArgs.sendSshPublicKey,
     required List<String> localSshOptions,
     bool rsa = false,
     // volatile fields
@@ -194,11 +180,11 @@ abstract class SSHNP {
     required int localPort,
     String? remoteUsername,
     bool verbose = false,
-    SSHRVGenerator sshrvGenerator = defaults.defaultSshrvGenerator,
-    int localSshdPort = defaults.defaultLocalSshdPort,
-    bool legacyDaemon = defaultLegacyDaemon,
-    int remoteSshdPort = defaults.defaultRemoteSshdPort,
-    int idleTimeout = defaults.defaultIdleTimeout,
+    SSHRVGenerator sshrvGenerator = DefaultArgs.sshrvGenerator,
+    int localSshdPort = DefaultArgs.localSshdPort,
+    bool legacyDaemon = DefaultSSHNPArgs.legacyDaemon,
+    int remoteSshdPort = DefaultArgs.remoteSshdPort,
+    int idleTimeout = DefaultArgs.idleTimeout,
     required SupportedSshClient sshClient,
     required bool addForwardsToTunnel,
   }) {
