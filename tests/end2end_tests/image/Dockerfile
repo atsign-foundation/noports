@@ -42,7 +42,7 @@ RUN set -eux ; \
   cd ${REPO_DIR} ; \
   git clone -b ${branch} --single-branch ${URL} . ; \
   dart pub get; \
-  dart run melos bootstrap; \
+  dart run melos bootstrap --scope="noports_core" --scope="sshnoports"; \
   cd packages/sshnoports ; \
   dart pub get ; \
   dart compile exe ${REPO_DIR}/packages/sshnoports/bin/sshnp.dart -o ${OUTPUT_DIR}/sshnp ; \
@@ -78,7 +78,7 @@ COPY . ${REPO_DIR}
 RUN set -eux ; \
   cd ${REPO_DIR}; \
   dart pub get; \
-  dart run melos bootstrap; \
+  dart run melos bootstrap --scope="noports_core" --scope="sshnoports"; \
   cd packages/sshnoports ; \
   dart pub get ; \
   dart compile exe ${REPO_DIR}/packages/sshnoports/bin/sshnp.dart -o ${OUTPUT_DIR}/sshnp ; \
