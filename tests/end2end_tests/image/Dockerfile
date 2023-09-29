@@ -34,12 +34,15 @@ ENV OUTPUT_DIR=/app/output
 
 ARG branch=trunk
 
+# Builds using the noports_core package available on the branch specified
 RUN set -eux ; \
   mkdir -p ${REPO_DIR} ${OUTPUT_DIR} ; \
   apt-get update ; \
   apt-get install -y git ; \
   cd ${REPO_DIR} ; \
   git clone -b ${branch} --single-branch ${URL} . ; \
+  dart pub get; \
+  dart run melos bootstrap; \
   cd packages/sshnoports ; \
   dart pub get ; \
   dart compile exe ${REPO_DIR}/packages/sshnoports/bin/sshnp.dart -o ${OUTPUT_DIR}/sshnp ; \
@@ -73,7 +76,10 @@ RUN mkdir -p ${REPO_DIR} ${OUTPUT_DIR} ;
 COPY . ${REPO_DIR}
 
 RUN set -eux ; \
-  cd ${REPO_DIR}/packages/sshnoports ; \
+  cd ${REPO_DIR}; \
+  dart pub get; \
+  dart run melos bootstrap; \
+  cd packages/sshnoports ; \
   dart pub get ; \
   dart compile exe ${REPO_DIR}/packages/sshnoports/bin/sshnp.dart -o ${OUTPUT_DIR}/sshnp ; \
   dart compile exe ${REPO_DIR}/packages/sshnoports/bin/sshnpd.dart -o ${OUTPUT_DIR}/sshnpd ; \

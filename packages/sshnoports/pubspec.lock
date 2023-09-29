@@ -447,7 +447,7 @@ packages:
       path: "../noports_core"
       relative: true
     source: path
-    version: "4.0.0-dev.1"
+    version: "4.0.0"
   package_config:
     dependency: transitive
     description:

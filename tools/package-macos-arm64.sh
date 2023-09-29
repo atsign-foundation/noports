@@ -21,7 +21,13 @@ else
   DART=$(which dart)
 fi
 
-eval "$DART pub get -C $SRC_DIR"
+restore_backup() {
+  mv "$SRC_DIR/pubspec_overrides.back.yaml" "$SRC_DIR/pubspec_overrides.yaml"
+}
+
+mv "$SRC_DIR/pubspec_overrides.yaml" "$SRC_DIR/pubspec_overrides.back.yaml"
+eval "$DART pub get -C $SRC_DIR" || restore_backup
+restore_backup
 
 OUTPUT_DIR_PATH="$ROOT_DIRECTORY/build/macos-arm64"
 OUTPUT_DIR="$OUTPUT_DIR_PATH/sshnp"
