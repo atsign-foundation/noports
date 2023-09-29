@@ -12,6 +12,7 @@ import 'package:noports_core/sshrv.dart';
 import 'package:noports_core/sshrvd.dart';
 import 'package:noports_core/utils.dart';
 import 'package:uuid/uuid.dart';
+import 'package:path/path.dart' as path;
 
 // If you've never seen an abstract implementation before, here it is :P
 @protected
@@ -137,6 +138,20 @@ abstract class SSHNPImpl implements SSHNP {
         atClient.getPreferences() ?? AtClientPreference();
     preference.namespace = '${params.device}.sshnp';
     atClient.setPreferences(preference);
+
+    // previously, the default value for sendSshPublicKey was 'false' instead of ''
+    // immediately set it to '' to avoid the program from attempting to
+    // search for a public key file called 'false'
+    if (params.sendSshPublicKey == 'false' || params.sendSshPublicKey.isEmpty) {
+      publicKeyFileName = '';
+    } else if (path.normalize(params.sendSshPublicKey).contains('/') ||
+        path.normalize(params.sendSshPublicKey).contains(r'\')) {
+      publicKeyFileName =
+          path.normalize(path.absolute(params.sendSshPublicKey));
+    } else {
+      publicKeyFileName =
+          path.normalize('$sshHomeDirectory/${params.sendSshPublicKey}');
+    }
 
     /// Also call init
     if (shouldInitialize) init();
