@@ -66,7 +66,7 @@ abstract class SSHNPImpl implements SSHNP {
   /// When using sshrvd, this is fetched from sshrvd during [init]
   /// This is only set when using sshrvd
   /// (i.e. after [getHostAndPortFromSshrvd] has been called)
-  late int sshrvdPort;
+  int? sshrvdPort;
 
   // ====================================================================
   // Status indicators (Available in the public API)
@@ -139,6 +139,7 @@ abstract class SSHNPImpl implements SSHNP {
     preference.namespace = '${params.device}.sshnp';
     atClient.setPreferences(preference);
 
+    // Set the file name for the public key based on the value of sendSshPublicKey
     // previously, the default value for sendSshPublicKey was 'false' instead of ''
     // immediately set it to '' to avoid the program from attempting to
     // search for a public key file called 'false'
@@ -324,6 +325,8 @@ abstract class SSHNPImpl implements SSHNP {
       host = results[0];
       port = int.parse(results[1]);
       sshrvdPort = int.parse(results[2]);
+      logger.info('Received host and port from sshrvd: $host:$port');
+      logger.info('Set sshrvdPort to: $sshrvdPort');
       sshrvdAck = true;
     });
 

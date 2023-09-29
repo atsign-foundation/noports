@@ -56,6 +56,17 @@ mixin SSHNPReverseDirection on SSHNPImpl {
     await cleanUpAfterReverseSsh(this);
     super.cleanUp();
   }
+
+  bool get usingSshrv => sshrvdPort != null;
 }
 
-mixin SSHNPForwardDirection on SSHNPImpl {}
+mixin SSHNPForwardDirection on SSHNPImpl {
+  // Direct ssh is only ever done with a sshrvd host
+  // So we should expect that sshrvdPort is never null
+  // Hence overriding the getter and setter to make it non-nullable
+  late int _sshrvdPort;
+  @override
+  int get sshrvdPort => _sshrvdPort;
+  @override
+  set sshrvdPort(int? port) => _sshrvdPort = port!;
+}

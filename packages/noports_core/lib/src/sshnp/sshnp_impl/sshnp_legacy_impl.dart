@@ -42,11 +42,14 @@ class SSHNPLegacyImpl extends SSHNPImpl with SSHNPReverseDirection {
       await initialized;
     }
 
-    // Connect to rendezvous point using background process.
-    // sshnp (this program) can then exit without issue.
-    SSHRV sshrv =
-        sshrvGenerator(host, sshrvdPort, localSshdPort: params.localSshdPort);
-    Future sshrvResult = sshrv.run();
+    Future? sshrvResult;
+    if(usingSshrv) {
+      // Connect to rendezvous point using background process.
+      // sshnp (this program) can then exit without issue.
+      SSHRV sshrv =
+          sshrvGenerator(host, sshrvdPort!, localSshdPort: params.localSshdPort);
+      sshrvResult = sshrv.run();
+    }
 
     // send request to the daemon via notification
     await notify(
