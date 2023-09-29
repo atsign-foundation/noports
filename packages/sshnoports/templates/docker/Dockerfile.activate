@@ -1,4 +1,4 @@
-FROM dart:3.1.2@sha256:05f1c1035f0090f8fcc340630f09782215ae2dfc6c17941756d3a716b16f8ec5 AS buildimage
+FROM dart:3.1.3@sha256:97cc20588eb7171f611606fff26bc04fb2aec5e68f7341060252a409bf7a86ce AS buildimage
 ENV BINARYDIR=/usr/local/at
 SHELL ["/bin/bash", "-c"]
 WORKDIR /app
