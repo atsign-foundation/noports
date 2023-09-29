@@ -198,14 +198,14 @@ class SSHNPForwardDartImpl extends SSHNPImpl with SSHNPForwardDirection {
       });
 
       // All good - write the ssh command to stdout
-      return SSHNPSuccess.base(
+      return SSHNPSuccess<SSHClient>(
         localPort: localPort,
         remoteUsername: remoteUsername,
         host: 'localhost',
         privateKeyFileName: publicKeyFileName.replaceAll('.pub', ''),
         localSshOptions:
             (params.addForwardsToTunnel) ? null : params.localSshOptions,
-        sshClient: client,
+        connectionBean: client,
       );
     } on SSHNPError catch (e, s) {
       doneCompleter.completeError(e, s);

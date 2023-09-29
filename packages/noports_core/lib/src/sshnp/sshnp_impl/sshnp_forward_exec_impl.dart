@@ -130,14 +130,14 @@ class SSHNPForwardExecImpl extends SSHNPImpl with SSHNPForwardDirection {
       doneCompleter.complete();
 
       // All good - write the ssh command to stdout
-      return SSHNPSuccess.base(
+      return SSHNPSuccess<Process>(
         localPort: localPort,
         remoteUsername: remoteUsername,
         host: 'localhost',
         privateKeyFileName: publicKeyFileName.replaceAll('.pub', ''),
         localSshOptions:
             (params.addForwardsToTunnel) ? null : params.localSshOptions,
-        sshProcess: process,
+        connectionBean: process,
       );
     } on SSHNPError catch (e) {
       doneCompleter.completeError(e, e.stackTrace);

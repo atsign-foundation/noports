@@ -1,7 +1,3 @@
-import 'dart:io';
-
-import 'package:dartssh2/dartssh2.dart';
-
 abstract class SSHNPResult {}
 
 const _optionsWithPrivateKey = [
@@ -36,7 +32,7 @@ class SSHNPError implements SSHNPResult, Exception {
   }
 }
 
-class SSHNPSuccess implements SSHNPResult {
+class SSHNPSuccess<ConnectionBean> implements SSHNPResult {
   final String command = 'ssh';
 
   final int localPort;
@@ -46,19 +42,15 @@ class SSHNPSuccess implements SSHNPResult {
 
   final List<String> sshOptions;
 
-  Future? sshrvResult;
-  Process? sshProcess;
-  SSHClient? sshClient;
+  ConnectionBean? connectionBean;
 
-  SSHNPSuccess.base({
+  SSHNPSuccess({
     required this.localPort,
     required this.remoteUsername,
     required this.host,
     List<String>? localSshOptions,
     this.privateKeyFileName,
-    this.sshrvResult,
-    this.sshProcess,
-    this.sshClient,
+    this.connectionBean
   }) : sshOptions = [
           if (shouldIncludePrivateKey(privateKeyFileName))
             ..._optionsWithPrivateKey,

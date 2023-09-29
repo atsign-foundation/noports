@@ -70,12 +70,23 @@ class _ProfileRunActionState extends ConsumerState<ProfileRunAction> {
 
   Future<void> onStop() async {
     if (sshnpResult is SSHNPSuccess) {
-      (sshnpResult as SSHNPSuccess).sshProcess?.kill(); // DirectSSHViaExec
-      (sshnpResult as SSHNPSuccess).sshClient?.close(); // DirectSSHViaClient
-      var sshrvResult = await (sshnpResult as SSHNPSuccess).sshrvResult;
-      if (sshrvResult is Process) sshrvResult.kill(); // SSHRV via local binary
-      if (sshrvResult is SocketConnector) {
-        sshrvResult.close(); // SSHRV via pure dart
+      var res = sshnpResult as SSHNPSuccess;
+      if(res.connectionBean is Process) {
+        res.connectionBean.kill();
+      }
+      if(res.connectionBean is SocketConnector) {
+        res.connectionBean.close();
+      }
+
+      if (res.connectionBean is Future) {
+        await (res.connectionBean as Future).then((value) {
+          if (value is Process) {
+            value.kill();
+          }
+          if (value is SocketConnector) {
+            value.close();
+          }
+        });
       }
     }
     ref

@@ -10,7 +10,8 @@ class SSHNPReverseImpl extends SSHNPImpl with SSHNPReverseDirection {
     required AtClient atClient,
     required SSHNPParams params,
     SSHRVGenerator? sshrvGenerator,
-  }) : super(atClient: atClient, params: params, sshrvGenerator: sshrvGenerator);
+  }) : super(
+            atClient: atClient, params: params, sshrvGenerator: sshrvGenerator);
 
   @override
   Future<SSHNPResult> run() async {
@@ -60,14 +61,14 @@ class SSHNPReverseImpl extends SSHNPImpl with SSHNPReverseDirection {
     }
 
     doneCompleter.complete();
-    return SSHNPSuccess.base(
+    return SSHNPSuccess(
       localPort: localPort,
       remoteUsername: remoteUsername,
       host: 'localhost',
       privateKeyFileName: publicKeyFileName.replaceAll('.pub', ''),
       localSshOptions:
           (params.addForwardsToTunnel) ? null : params.localSshOptions,
-      sshrvResult: sshrvResult,
+      connectionBean: sshrvResult,
     );
   }
 }
