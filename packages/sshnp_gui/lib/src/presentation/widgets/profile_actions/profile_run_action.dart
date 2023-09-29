@@ -70,24 +70,7 @@ class _ProfileRunActionState extends ConsumerState<ProfileRunAction> {
 
   Future<void> onStop() async {
     if (sshnpResult is SSHNPSuccess) {
-      var res = sshnpResult as SSHNPSuccess;
-      if(res.connectionBean is Process) {
-        res.connectionBean.kill();
-      }
-      if(res.connectionBean is SocketConnector) {
-        res.connectionBean.close();
-      }
-
-      if (res.connectionBean is Future) {
-        await (res.connectionBean as Future).then((value) {
-          if (value is Process) {
-            value.kill();
-          }
-          if (value is SocketConnector) {
-            value.close();
-          }
-        });
-      }
+      await (sshnpResult as SSHNPSuccess).killConnectionBean();
     }
     ref
         .read(backgroundSessionFamilyController(widget.params.profileName!)

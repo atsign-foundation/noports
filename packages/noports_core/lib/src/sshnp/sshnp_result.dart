@@ -1,3 +1,7 @@
+import 'dart:io';
+
+import 'package:socket_connector/socket_connector.dart';
+
 abstract class SSHNPResult {}
 
 const _optionsWithPrivateKey = [
@@ -44,14 +48,14 @@ class SSHNPSuccess<ConnectionBean> implements SSHNPResult {
 
   ConnectionBean? connectionBean;
 
-  SSHNPSuccess({
-    required this.localPort,
-    required this.remoteUsername,
-    required this.host,
-    List<String>? localSshOptions,
-    this.privateKeyFileName,
-    this.connectionBean
-  }) : sshOptions = [
+  SSHNPSuccess(
+      {required this.localPort,
+      required this.remoteUsername,
+      required this.host,
+      List<String>? localSshOptions,
+      this.privateKeyFileName,
+      this.connectionBean})
+      : sshOptions = [
           if (shouldIncludePrivateKey(privateKeyFileName))
             ..._optionsWithPrivateKey,
           ...(localSshOptions ?? [])
@@ -78,5 +82,26 @@ class SSHNPSuccess<ConnectionBean> implements SSHNPResult {
     sb.write(' ');
     sb.write(args.join(' '));
     return sb.toString();
+  }
+
+  Future<void> killConnectionBean() async {
+    if (connectionBean is Process) {
+      (connectionBean as Process).kill();
+    }
+
+    if (connectionBean is SocketConnector) {
+      (connectionBean as SocketConnector).close();
+    }
+
+    if (connectionBean is Future) {
+      await (connectionBean as Future).then((value) {
+        if (value is Process) {
+          value.kill();
+        }
+        if (value is SocketConnector) {
+          value.close();
+        }
+      });
+    }
   }
 }

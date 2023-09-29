@@ -102,7 +102,7 @@ class _ProfileFormState extends ConsumerState<ProfileForm> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       CustomTextFormField(
-                        initialValue: oldConfig.sshnpdAtSign ?? '',
+                        initialValue: oldConfig.sshnpdAtSign,
                         labelText: strings.sshnpdAtSign,
                         onChanged: (value) =>
                             newConfig = SSHNPPartialParams.merge(
@@ -113,7 +113,7 @@ class _ProfileFormState extends ConsumerState<ProfileForm> {
                       ),
                       gapW8,
                       CustomTextFormField(
-                        initialValue: oldConfig.host ?? '',
+                        initialValue: oldConfig.host,
                         labelText: strings.host,
                         onChanged: (value) =>
                             newConfig = SSHNPPartialParams.merge(
