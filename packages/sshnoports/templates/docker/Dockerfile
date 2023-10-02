@@ -20,7 +20,7 @@ ENV BINARYDIR=/usr/local/at
 ENV USER_ID=1024
 ENV GROUP_ID=1024
 
-COPY --from=buildimage /app/templates/docker/.startup.sh ${HOMEDIR}/
+COPY --from=buildimage /app/packages/sshnoports/templates/docker/.startup.sh ${HOMEDIR}/
 RUN \
   set -eux ; \
   apt-get update ; \
