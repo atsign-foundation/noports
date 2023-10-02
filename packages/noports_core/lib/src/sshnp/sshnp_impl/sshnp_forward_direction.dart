@@ -5,8 +5,6 @@ import 'package:noports_core/src/sshnp/sshnp_impl/sshnp_impl.dart';
 import 'package:noports_core/src/sshnp/sshnp_result.dart';
 import 'package:noports_core/utils.dart';
 
-
-
 mixin SSHNPForwardDirection on SSHNPImpl {
   // Direct ssh is only ever done with a sshrvd host
   // So we should expect that sshrvdPort is never null
