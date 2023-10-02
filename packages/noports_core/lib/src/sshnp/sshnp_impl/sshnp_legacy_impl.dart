@@ -2,7 +2,7 @@ import 'dart:async';
 
 import 'package:at_client/at_client.dart';
 import 'package:noports_core/src/sshnp/sshnp_impl/sshnp_impl.dart';
-import 'package:noports_core/src/sshnp/sshnp_impl/sshnp_impl_mixin.dart';
+import 'package:noports_core/src/sshnp/sshnp_impl/sshnp_reverse_direction.dart';
 import 'package:noports_core/sshnp.dart';
 import 'package:noports_core/sshrv.dart';
 

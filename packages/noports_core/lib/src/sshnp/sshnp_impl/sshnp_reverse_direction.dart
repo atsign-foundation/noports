@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:noports_core/src/sshnp/sshnp_impl/sshnp_impl.dart';
 import 'package:noports_core/src/sshnp/sshnp_result.dart';
 import 'package:noports_core/utils.dart';
@@ -37,7 +39,6 @@ mixin SSHNPReverseDirection on SSHNPImpl {
       );
     }
 
-
     try {
       logger.info('Adding ephemeral key to authorized_keys');
       await addEphemeralKeyToAuthorizedKeys(
@@ -62,15 +63,4 @@ mixin SSHNPReverseDirection on SSHNPImpl {
   }
 
   bool get usingSshrv => sshrvdPort != null;
-}
-
-mixin SSHNPForwardDirection on SSHNPImpl {
-  // Direct ssh is only ever done with a sshrvd host
-  // So we should expect that sshrvdPort is never null
-  // Hence overriding the getter and setter to make it non-nullable
-  late int _sshrvdPort;
-  @override
-  int get sshrvdPort => _sshrvdPort;
-  @override
-  set sshrvdPort(int? port) => _sshrvdPort = port!;
 }

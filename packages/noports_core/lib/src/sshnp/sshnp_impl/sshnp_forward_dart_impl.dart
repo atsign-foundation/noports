@@ -3,9 +3,9 @@ import 'dart:io';
 
 import 'package:at_client/at_client.dart';
 import 'package:dartssh2/dartssh2.dart';
-import 'package:noports_core/src/common/utils.dart';
+import 'package:noports_core/src/sshnp/sshnp_impl/sshnp_forward_direction.dart';
 import 'package:noports_core/src/sshnp/sshnp_impl/sshnp_impl.dart';
-import 'package:noports_core/src/sshnp/sshnp_impl/sshnp_impl_mixin.dart';
+
 import 'package:noports_core/sshnp.dart';
 
 class SSHNPForwardDartImpl extends SSHNPImpl with SSHNPForwardDirection {
@@ -16,46 +16,13 @@ class SSHNPForwardDartImpl extends SSHNPImpl with SSHNPForwardDirection {
 
   @override
   Future<SSHNPResult> run() async {
-    logger.info(
-        'Requesting daemon to set up socket tunnel for direct ssh session');
-// send request to the daemon via notification
-    await notify(
-        AtKey()
-          ..key = 'ssh_request'
-          ..namespace = namespace
-          ..sharedBy = clientAtSign
-          ..sharedWith = sshnpdAtSign
-          ..metadata = (Metadata()
-            ..ttr = -1
-            ..ttl = 10000),
-        signAndWrapAndJsonEncode(atClient, {
-          'direct': true,
-          'sessionId': sessionId,
-          'host': host,
-          'port': port
-        }),
-        sessionId: sessionId);
-
-    bool acked = await waitForDaemonResponse();
-    if (!acked) {
-      var error = SSHNPError(
-          'sshnp timed out: waiting for daemon response\nhint: make sure the device is online');
-      doneCompleter.completeError(error);
+    var error = await requestSocketTunnelFromDaemon();
+    if (error != null) {
       return error;
     }
 
-    if (sshnpdAckErrors) {
-      var error =
-          SSHNPError('sshnp failed: with sshnpd acknowledgement errors');
-      doneCompleter.completeError(error);
-      return error;
-    }
-    // 1) Execute an ssh command setting up local port forwarding.
-    //    Note that this is very similar to what the daemon does when we
-    //    ask for a reverse ssh
     logger.info(
         'Starting direct ssh session for ${params.username} to $host on port $sshrvdPort with forwardLocal of $localPort');
-
     try {
       late final SSHClient client;
 

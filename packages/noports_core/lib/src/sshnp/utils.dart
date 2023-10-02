@@ -3,7 +3,7 @@ import 'dart:io';
 import 'package:noports_core/src/common/utils.dart';
 import 'package:at_utils/at_logger.dart';
 import 'package:noports_core/src/sshnp/sshnp.dart';
-import 'package:noports_core/src/sshnp/sshnp_impl/sshnp_impl_mixin.dart';
+import 'package:noports_core/src/sshnp/sshnp_impl/sshnp_reverse_direction.dart';
 
 Completer<T> wrapInCompleter<T>(Future<T> future) {
   final completer = Completer<T>();
