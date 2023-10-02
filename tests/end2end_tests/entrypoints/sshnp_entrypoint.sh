@@ -1,6 +1,7 @@
 #!/bin/bash
 echo "SSHNP START ENTRY"
-SSHNP_COMMAND="$HOME/.local/bin/sshnp -f @sshnpatsign -t @sshnpdatsign -d deviceName -h @sshrvdatsign -s id_ed25519.pub -v > sshnp.log"
+ARGS=""
+SSHNP_COMMAND="$HOME/.local/bin/sshnp -f @sshnpatsign -t @sshnpdatsign -d deviceName -h @sshrvdatsign -s id_ed25519.pub -v $ARGS > sshnp.log"
 
 run_test()
 {
