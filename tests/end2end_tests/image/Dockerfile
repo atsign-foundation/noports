@@ -30,6 +30,7 @@ FROM dart:3.1.2@sha256:05f1c1035f0090f8fcc340630f09782215ae2dfc6c17941756d3a716b
 
 ENV URL=https://github.com/atsign-foundation/sshnoports.git
 ENV REPO_DIR=/app/repo
+ENV PACKAGE_DIR=${REPO_DIR}/packages/sshnoports
 ENV OUTPUT_DIR=/app/output
 
 ARG branch=trunk
@@ -43,13 +44,12 @@ RUN set -eux ; \
   git clone -b ${branch} --single-branch ${URL} . ; \
   dart pub get; \
   dart run melos bootstrap --scope="noports_core" --scope="sshnoports"; \
-  cd packages/sshnoports ; \
-  dart pub get ; \
-  dart compile exe ${REPO_DIR}/packages/sshnoports/bin/sshnp.dart -o ${OUTPUT_DIR}/sshnp ; \
-  dart compile exe ${REPO_DIR}/packages/sshnoports/bin/sshnpd.dart -o ${OUTPUT_DIR}/sshnpd ; \
-  dart compile exe ${REPO_DIR}/packages/sshnoports/bin/sshrv.dart -o ${OUTPUT_DIR}/sshrv ; \
-  dart compile exe ${REPO_DIR}/packages/sshnoports/bin/sshrvd.dart -o ${OUTPUT_DIR}/sshrvd ; \
-  dart compile exe ${REPO_DIR}/packages/sshnoports/bin/activate_cli.dart -o ${OUTPUT_DIR}/at_activate ;
+  dart pub get -C ${PACKAGE_DIR}; \
+  dart compile exe ${PACKAGE_DIR}/bin/sshnp.dart -o ${OUTPUT_DIR}/sshnp ; \
+  dart compile exe ${PACKAGE_DIR}/bin/sshnpd.dart -o ${OUTPUT_DIR}/sshnpd ; \
+  dart compile exe ${PACKAGE_DIR}/bin/sshrv.dart -o ${OUTPUT_DIR}/sshrv ; \
+  dart compile exe ${PACKAGE_DIR}/bin/sshrvd.dart -o ${OUTPUT_DIR}/sshrvd ; \
+  dart compile exe ${PACKAGE_DIR}/bin/activate_cli.dart -o ${OUTPUT_DIR}/at_activate ;
 
 # RUNTIME BRANCH
 FROM base AS runtime-branch
@@ -68,6 +68,7 @@ ENTRYPOINT cp -r /mount/. ${HOMEDIR} && sudo service ssh start && sh ${HOMEDIR}/
 FROM dart:3.1.2@sha256:05f1c1035f0090f8fcc340630f09782215ae2dfc6c17941756d3a716b16f8ec5 AS build-local
 
 ENV REPO_DIR=/app/repo
+ENV PACKAGE_DIR=${REPO_DIR}/packages/sshnoports
 ENV OUTPUT_DIR=/app/output
 
 RUN mkdir -p ${REPO_DIR} ${OUTPUT_DIR} ;
@@ -79,13 +80,12 @@ RUN set -eux ; \
   cd ${REPO_DIR}; \
   dart pub get; \
   dart run melos bootstrap --scope="noports_core" --scope="sshnoports"; \
-  cd packages/sshnoports ; \
-  dart pub get ; \
-  dart compile exe ${REPO_DIR}/packages/sshnoports/bin/sshnp.dart -o ${OUTPUT_DIR}/sshnp ; \
-  dart compile exe ${REPO_DIR}/packages/sshnoports/bin/sshnpd.dart -o ${OUTPUT_DIR}/sshnpd ; \
-  dart compile exe ${REPO_DIR}/packages/sshnoports/bin/sshrv.dart -o ${OUTPUT_DIR}/sshrv ; \
-  dart compile exe ${REPO_DIR}/packages/sshnoports/bin/sshrvd.dart -o ${OUTPUT_DIR}/sshrvd ; \
-  dart compile exe ${REPO_DIR}/packages/sshnoports/bin/activate_cli.dart -o ${OUTPUT_DIR}/at_activate ;
+  dart pub get -C ${PACKAGE_DIR}; \
+  dart compile exe ${PACKAGE_DIR}/bin/sshnp.dart -o ${OUTPUT_DIR}/sshnp ; \
+  dart compile exe ${PACKAGE_DIR}/bin/sshnpd.dart -o ${OUTPUT_DIR}/sshnpd ; \
+  dart compile exe ${PACKAGE_DIR}/bin/sshrv.dart -o ${OUTPUT_DIR}/sshrv ; \
+  dart compile exe ${PACKAGE_DIR}/bin/sshrvd.dart -o ${OUTPUT_DIR}/sshrvd ; \
+  dart compile exe ${PACKAGE_DIR}/bin/activate_cli.dart -o ${OUTPUT_DIR}/at_activate ;
 
 # RUNTIME LOCAL
 FROM base AS runtime-local

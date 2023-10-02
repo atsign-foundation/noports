@@ -7,7 +7,7 @@ on:
 
 permissions:
   pull-requests: write
-  
+
 jobs:
   bump_requirements:
     runs-on: ubuntu-latest
@@ -32,7 +32,7 @@ jobs:
       uses: abatilo/actions-poetry@192395c0d10c082a7c62294ab5d9a9de40e48974 # v2.3.0
       with:
         poetry-version: '1.6.1'
-    
+
     - name: Bump Python dependencies
       if: ${{ github.actor == 'dependabot[bot]' }}
       run: |

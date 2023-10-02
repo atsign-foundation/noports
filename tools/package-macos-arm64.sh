@@ -21,13 +21,13 @@ else
   DART=$(which dart)
 fi
 
-restore_backup() {
+restore_backup_and_exit() {
   mv "$SRC_DIR/pubspec_overrides.back.yaml" "$SRC_DIR/pubspec_overrides.yaml"
+  exit "$1"
 }
 
 mv "$SRC_DIR/pubspec_overrides.yaml" "$SRC_DIR/pubspec_overrides.back.yaml"
-eval "$DART pub get -C $SRC_DIR" || restore_backup
-restore_backup
+eval "$DART pub get -C $SRC_DIR" || restore_backup_and_exit 1
 
 OUTPUT_DIR_PATH="$ROOT_DIRECTORY/build/macos-arm64"
 OUTPUT_DIR="$OUTPUT_DIR_PATH/sshnp"
@@ -43,3 +43,5 @@ eval "$DART compile exe -o $OUTPUT_DIR/at_activate $SRC_DIR/bin/activate_cli.dar
 
 cp -r "$SRC_DIR/templates" "$OUTPUT_DIR/templates";
 cp "$SRC_DIR"/LICENSE "$OUTPUT_DIR/";
+
+restore_backup_and_exit 0

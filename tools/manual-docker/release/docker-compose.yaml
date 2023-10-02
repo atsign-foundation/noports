@@ -4,8 +4,8 @@ version: '3.8'
 services:
   image-manual-release:
     build:
-      context: ../../../tests/end2end_tests/image/
-      dockerfile: ./Dockerfile
+      context: ../../../
+      dockerfile: ./tests/end2end_tests/image/Dockerfile
       target: manual-release
     image: atsigncompany/sshnp-e2e-manual:release
     deploy:

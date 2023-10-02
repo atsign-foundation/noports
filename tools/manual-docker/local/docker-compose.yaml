@@ -5,7 +5,7 @@ services:
   image-manual-local:
     build:
       context: ../../../
-      dockerfile: tests/end2end_tests/image/Dockerfile
+      dockerfile: ./tests/end2end_tests/image/Dockerfile
       target: manual-local
     image: atsigncompany/sshnp-e2e-manual:local
     deploy:

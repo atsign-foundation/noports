@@ -1,4 +1,5 @@
 FROM dart:3.1.2@sha256:05f1c1035f0090f8fcc340630f09782215ae2dfc6c17941756d3a716b16f8ec5 AS buildimage
+ENV PACKAGEDIR=packages/sshnoports
 ENV BINARYDIR=/usr/local/at
 SHELL ["/bin/bash", "-c"]
 WORKDIR /app
@@ -6,10 +7,10 @@ COPY . .
 RUN \
   set -eux ; \
   mkdir -p ${BINARYDIR} ; \
-  dart pub get ; \
-  dart pub update ; \
-  dart compile exe bin/sshnpd.dart -o ${BINARYDIR}/sshnpd ; \
-  dart compile exe bin/sshrv.dart -o ${BINARYDIR}/sshrv
+  dart pub get -C ${PACKAGEDIR}; \
+  dart pub update -C ${PACKAGEDIR}; \
+  dart compile exe ${PACKAGEDIR}/bin/sshnpd.dart -o ${BINARYDIR}/sshnpd ; \
+  dart compile exe ${PACKAGEDIR}/bin/sshrv.dart -o ${BINARYDIR}/sshrv
 
 # Second stage of build FROM debian-slim
 FROM debian:stable-20230919-slim@sha256:149e944a6f4855f9738baf4ddd79fc2f218e6440218223fa9017aebc1e45f1f5
