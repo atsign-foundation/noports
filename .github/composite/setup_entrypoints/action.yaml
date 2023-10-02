@@ -44,8 +44,7 @@ runs:
         if [ "${{ inputs.legacy_daemon }}" = "true" ]; then
           ARGS="$ARGS --legacy-daemon"
         fi
-        sed -i "s/ARGS=.*/ARGS=\"$ARGS\"/" "$entrypoint_filename"
-        ./setup-sshnp-entrypoint.sh ${{ inputs.devicename }} ${{ inputs.sshnp_atsign }} ${{ inputs.sshnpd_atsign }} ${{ inputs.sshrvd_atsign }} "$entrypoint_filename"
+        ./setup-sshnp-entrypoint.sh ${{ inputs.devicename }} ${{ inputs.sshnp_atsign }} ${{ inputs.sshnpd_atsign }} ${{ inputs.sshrvd_atsign }} "$entrypoint_filename" "$ARGS"
 
     - name: Setup NPD entrypoint
       shell: bash
