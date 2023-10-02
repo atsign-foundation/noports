@@ -554,15 +554,10 @@ jobs:
           echo "${{ secrets[env.SSHNPD_ATKEYS] }}" > sshnpd/.atsign/keys/${{ env.SSHNPD_ATSIGN }}_key.atKeys
 
       - name: Set up entrypoints
-        uses: ./.github/composite/setup_entrypoints
-        with:
-          sshnp: "local"
-          sshnp_atsign: ${{ env.SSHNP_ATSIGN }}
-          sshnpd: "local"
-          sshnpd_atsign: ${{ env.SSHNPD_ATSIGN }}
-          sshrvd_atsign: ${{ env[env.PROD_RVD_ATSIGN] }}
-          devicename: ${{ env.DEVICENAME }}
-          legacy_daemon: false
+        working-directory: tests/end2end_tests/contexts/_init_
+        run: |
+          ./setup-sshnp-entrypoint.sh ${{ env.DEVICENAME }} ${{ env.SSHNP_ATSIGN }} ${{ env.SSHNPD_ATSIGN }} ${{ env[env.PROD_RVD_ATSIGN] }} alternate_port_test/sshnp_entrypoint.sh
+          ./setup-sshnpd-entrypoint.sh ${{ env.DEVICENAME }} ${{ env.SSHNP_ATSIGN }} ${{ env.SSHNPD_ATSIGN }} sshnpd_entrypoint.sh
 
       - name: Ensure entrypoints exist
         working-directory: tests/end2end_tests/contexts

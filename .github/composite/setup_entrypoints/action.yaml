@@ -24,9 +24,6 @@ inputs:
   legacy_daemon:
     description: Legacy daemon
     required: false
-  alternate_port:
-    description: Alternate port
-    required: false
 
 runs:
   using: composite
@@ -43,14 +40,12 @@ runs:
             entrypoint_filename="sshnp_entrypoint.sh"
             ;;
         esac
-        ARGS="-v"
+        ARGS=""
         if [ "${{ inputs.legacy_daemon }}" = "true" ]; then
           ARGS="$ARGS --legacy-daemon"
         fi
-        if [ "${{ inputs.alternate_port }}" = "true" ]; then
-          ARGS="$ARGS -P 55"
-        fi
-        ./setup-sshnp-entrypoint.sh ${{ inputs.devicename }} ${{ inputs.sshnp_atsign }} ${{ inputs.sshnpd_atsign }} ${{ inputs.sshrvd_atsign }} "$entrypoint_filename" "$ARGS"
+        sed -i "s/ARGS=.*/ARGS=\"$ARGS\"/" "$entrypoint_filename"
+        ./setup-sshnp-entrypoint.sh ${{ inputs.devicename }} ${{ inputs.sshnp_atsign }} ${{ inputs.sshnpd_atsign }} ${{ inputs.sshrvd_atsign }} "$entrypoint_filename"
 
     - name: Setup NPD entrypoint
       shell: bash
