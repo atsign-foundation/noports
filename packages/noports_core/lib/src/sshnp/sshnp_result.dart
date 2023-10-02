@@ -124,7 +124,13 @@ class SSHNPCommand<Bean> extends SSHNPSuccess with SSHNPConnectionBean<Bean> {
 
 class SSHNPNoOpSuccess<Bean> extends SSHNPSuccess
     with SSHNPConnectionBean<Bean> {
-  SSHNPNoOpSuccess({Bean? connectionBean}) {
+  String? message;
+  SSHNPNoOpSuccess({this.message, Bean? connectionBean}) {
     this.connectionBean = connectionBean;
+  }
+
+  @override
+  String toString() {
+    return message ?? 'Connection Established';
   }
 }

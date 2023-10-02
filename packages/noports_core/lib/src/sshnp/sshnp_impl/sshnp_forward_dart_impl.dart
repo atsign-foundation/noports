@@ -152,9 +152,10 @@ class SSHNPForwardDartImpl extends SSHNPImpl with SSHNPForwardDirection {
       }
 
       /// Set up timer to check to see if all connections are down
-      logger
-          .info('ssh session will terminate after ${params.idleTimeout} seconds'
-              ' if it is not being used');
+      String terminateMessage =
+          'ssh session will terminate after ${params.idleTimeout} seconds'
+          ' if it is not being used';
+      logger.info(terminateMessage);
       Timer.periodic(Duration(seconds: params.idleTimeout), (timer) async {
         if (counter == 0 || client.isClosed) {
           timer.cancel();
@@ -166,7 +167,9 @@ class SSHNPForwardDartImpl extends SSHNPImpl with SSHNPForwardDirection {
         }
       });
 
-      return SSHNPNoOpSuccess<SSHClient>(connectionBean: client);
+      return SSHNPNoOpSuccess<SSHClient>(
+          message: 'Connection established:\n$terminateMessage',
+          connectionBean: client);
     } on SSHNPError catch (e, s) {
       doneCompleter.completeError(e, s);
       return e;
