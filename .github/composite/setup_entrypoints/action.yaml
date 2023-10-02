@@ -40,11 +40,7 @@ runs:
             entrypoint_filename="sshnp_entrypoint.sh"
             ;;
         esac
-        ARGS=""
-        if [ "${{ inputs.legacy_daemon }}" = "true" ]; then
-          ARGS="$ARGS --legacy-daemon"
-        fi
-        ./setup-sshnp-entrypoint.sh ${{ inputs.devicename }} ${{ inputs.sshnp_atsign }} ${{ inputs.sshnpd_atsign }} ${{ inputs.sshrvd_atsign }} "$entrypoint_filename" "$ARGS"
+        ./setup-sshnp-entrypoint.sh ${{ inputs.devicename }} ${{ inputs.sshnp_atsign }} ${{ inputs.sshnpd_atsign }} ${{ inputs.sshrvd_atsign }} "$entrypoint_filename" ${{ inputs.legacy_daemon || false }}
 
     - name: Setup NPD entrypoint
       shell: bash
