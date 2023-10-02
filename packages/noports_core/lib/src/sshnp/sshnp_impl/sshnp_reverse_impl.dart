@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:at_client/at_client.dart';
 import 'package:noports_core/src/common/utils.dart';
 import 'package:noports_core/src/sshnp/sshnp_impl/sshnp_impl.dart';
@@ -14,7 +16,15 @@ class SSHNPReverseImpl extends SSHNPImpl with SSHNPReverseDirection {
             atClient: atClient, params: params, sshrvGenerator: sshrvGenerator);
 
   @override
+  Future<void> init() async {
+    await super.init();
+    initializedCompleter.complete();
+  }
+
+  @override
   Future<SSHNPResult> run() async {
+    await startAndWaitForInit();
+
     logger.info('Requesting daemon to start reverse ssh session');
 
     Future? sshrvResult;
@@ -29,7 +39,7 @@ class SSHNPReverseImpl extends SSHNPImpl with SSHNPReverseDirection {
     await notify(
         AtKey()
           ..key = 'ssh_request'
-          ..namespace = namespace
+          ..namespace = this.namespace
           ..sharedBy = clientAtSign
           ..sharedWith = sshnpdAtSign
           ..metadata = (Metadata()
@@ -63,7 +73,7 @@ class SSHNPReverseImpl extends SSHNPImpl with SSHNPReverseDirection {
     }
 
     doneCompleter.complete();
-    return SSHNPSuccess(
+    return SSHNPCommand(
       localPort: localPort,
       remoteUsername: remoteUsername,
       host: 'localhost',

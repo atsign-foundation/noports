@@ -69,8 +69,8 @@ class _ProfileRunActionState extends ConsumerState<ProfileRunAction> {
   }
 
   Future<void> onStop() async {
-    if (sshnpResult is SSHNPSuccess) {
-      await (sshnpResult as SSHNPSuccess).killConnectionBean();
+    if (sshnpResult is SSHNPCommand) {
+      await (sshnpResult as SSHNPCommand).killConnectionBean();
     }
     ref
         .read(backgroundSessionFamilyController(widget.params.profileName!)

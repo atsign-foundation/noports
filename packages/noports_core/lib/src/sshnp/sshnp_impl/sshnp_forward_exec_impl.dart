@@ -16,6 +16,8 @@ class SSHNPForwardExecImpl extends SSHNPImpl with SSHNPForwardDirection {
 
   @override
   Future<SSHNPResult> run() async {
+    await startAndWaitForInit();
+
     var error = await requestSocketTunnelFromDaemon();
     if (error != null) {
       return error;
@@ -100,9 +102,7 @@ class SSHNPForwardExecImpl extends SSHNPImpl with SSHNPForwardDirection {
       }
 
       doneCompleter.complete();
-
-      // All good - write the ssh command to stdout
-      return SSHNPSuccess<Process>(
+      return SSHNPCommand<Process>(
         localPort: localPort,
         remoteUsername: remoteUsername,
         host: 'localhost',

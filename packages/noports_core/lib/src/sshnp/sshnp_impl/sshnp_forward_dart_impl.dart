@@ -15,6 +15,8 @@ class SSHNPForwardDartImpl extends SSHNPImpl with SSHNPForwardDirection {
 
   @override
   Future<SSHNPResult> run() async {
+    await startAndWaitForInit();
+
     var error = await requestSocketTunnelFromDaemon();
     if (error != null) {
       return error;
@@ -77,7 +79,7 @@ class SSHNPForwardDartImpl extends SSHNPImpl with SSHNPForwardDirection {
           required String fRemoteHost,
           required int fRemotePort}) async {
         logger.info('Starting port forwarding'
-            ' from port $fLocalPort on localhost'
+            ' from localhost:$fLocalPort on local side'
             ' to $fRemoteHost:$fRemotePort on remote side');
 
         /// Do the port forwarding for sshd
@@ -141,9 +143,10 @@ class SSHNPForwardDartImpl extends SSHNPImpl with SSHNPForwardDirection {
 
             // Start the forwarding
             await startForwarding(
-                fLocalPort: fLocalPort,
-                fRemoteHost: fRemoteHost,
-                fRemotePort: fRemotePort);
+              fLocalPort: fLocalPort,
+              fRemoteHost: fRemoteHost,
+              fRemotePort: fRemotePort,
+            );
           }
         }
       }
@@ -153,26 +156,17 @@ class SSHNPForwardDartImpl extends SSHNPImpl with SSHNPForwardDirection {
           .info('ssh session will terminate after ${params.idleTimeout} seconds'
               ' if it is not being used');
       Timer.periodic(Duration(seconds: params.idleTimeout), (timer) async {
-        if (counter == 0) {
+        if (counter == 0 || client.isClosed) {
           timer.cancel();
-          client.close();
+          if (!client.isClosed) client.close();
           await client.done;
           doneCompleter.complete();
-          logger.shout('$sessionId | no active connections'
-              ' - ssh session complete');
+          logger.shout(
+              '$sessionId | no active connections - ssh session complete');
         }
       });
 
-      // All good - write the ssh command to stdout
-      return SSHNPSuccess<SSHClient>(
-        localPort: localPort,
-        remoteUsername: remoteUsername,
-        host: 'localhost',
-        privateKeyFileName: publicKeyFileName.replaceAll('.pub', ''),
-        localSshOptions:
-            (params.addForwardsToTunnel) ? null : params.localSshOptions,
-        connectionBean: client,
-      );
+      return SSHNPNoOpSuccess<SSHClient>(connectionBean: client);
     } on SSHNPError catch (e, s) {
       doneCompleter.completeError(e, s);
       return e;

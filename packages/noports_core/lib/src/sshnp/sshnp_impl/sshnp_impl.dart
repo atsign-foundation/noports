@@ -298,6 +298,16 @@ abstract class SSHNPImpl implements SSHNP {
   // Internal methods
   // ====================================================================
 
+  Future<void> startAndWaitForInit() async {
+    if (!initializedCompleter.isCompleted) {
+      // Call init in case it hasn't been called yet
+      unawaited(init());
+      // Wait for init to complete
+      // N.B. must be called this way in case the init call above is not the first init call
+      await initialized;
+    }
+  }
+
   @protected
   Future<void> notify(AtKey atKey, String value,
       {String sessionId = ""}) async {
@@ -366,9 +376,11 @@ abstract class SSHNPImpl implements SSHNP {
     logger.info('Waiting for sshrvd response');
     int counter = 0;
     while (!sshrvdAck) {
+      logger.info('Waiting for sshrvd response: $counter');
       await Future.delayed(Duration(milliseconds: 100));
       counter++;
       if (counter == 100) {
+        logger.warning('Timed out waiting for sshrvd response');
         await cleanUp();
         throw ('Connection timeout to sshrvd $host service\nhint: make sure host is valid and online');
       }

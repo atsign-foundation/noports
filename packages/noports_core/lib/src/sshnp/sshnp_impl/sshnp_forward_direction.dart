@@ -15,6 +15,12 @@ mixin SSHNPForwardDirection on SSHNPImpl {
   @override
   set sshrvdPort(int? port) => _sshrvdPort = port!;
 
+  @override
+  Future<void> init() async {
+    await super.init();
+    initializedCompleter.complete();
+  }
+
   Future<SSHNPResult?> requestSocketTunnelFromDaemon() async {
     logger.info(
         'Requesting daemon to set up socket tunnel for direct ssh session');
@@ -22,7 +28,7 @@ mixin SSHNPForwardDirection on SSHNPImpl {
     await notify(
         AtKey()
           ..key = 'ssh_request'
-          ..namespace = namespace
+          ..namespace = this.namespace
           ..sharedBy = clientAtSign
           ..sharedWith = sshnpdAtSign
           ..metadata = (Metadata()
@@ -39,14 +45,15 @@ mixin SSHNPForwardDirection on SSHNPImpl {
     bool acked = await waitForDaemonResponse();
     if (!acked) {
       var error = SSHNPError(
-          'sshnp timed out: waiting for daemon response\nhint: make sure the device is online');
+          'sshnp timed out: waiting for daemon response\nhint: make sure the device is online',
+          stackTrace: StackTrace.current);
       doneCompleter.completeError(error);
       return error;
     }
 
     if (sshnpdAckErrors) {
-      var error =
-          SSHNPError('sshnp failed: with sshnpd acknowledgement errors');
+      var error = SSHNPError('sshnp failed: with sshnpd acknowledgement errors',
+          stackTrace: StackTrace.current);
       doneCompleter.completeError(error);
       return error;
     }

@@ -23,31 +23,27 @@ class SSHNPLegacyImpl extends SSHNPImpl with SSHNPReverseDirection {
       ..key = 'privatekey'
       ..sharedBy = clientAtSign
       ..sharedWith = sshnpdAtSign
-      ..namespace = namespace
+      ..namespace = this.namespace
       ..metadata = (Metadata()
         ..ttr = -1
         ..ttl = 10000);
     await notify(sendOurPrivateKeyToSshnpd, sshPrivateKey);
+
+    initializedCompleter.complete();
   }
 
   @override
   Future<SSHNPResult> run() async {
+    await startAndWaitForInit();
+
     logger.info('Requesting legacy daemon to start reverse ssh session');
 
-    if (!initializedCompleter.isCompleted) {
-      // Call init in case it hasn't been called yet
-      unawaited(init());
-      // Wait for init to complete
-      // N.B. must be called this way in case the init call above is not the first init call
-      await initialized;
-    }
-
     Future? sshrvResult;
-    if(usingSshrv) {
+    if (usingSshrv) {
       // Connect to rendezvous point using background process.
       // sshnp (this program) can then exit without issue.
-      SSHRV sshrv =
-          sshrvGenerator(host, sshrvdPort!, localSshdPort: params.localSshdPort);
+      SSHRV sshrv = sshrvGenerator(host, sshrvdPort!,
+          localSshdPort: params.localSshdPort);
       sshrvResult = sshrv.run();
     }
 
@@ -55,7 +51,7 @@ class SSHNPLegacyImpl extends SSHNPImpl with SSHNPReverseDirection {
     await notify(
       AtKey()
         ..key = 'sshd'
-        ..namespace = namespace
+        ..namespace = this.namespace
         ..sharedBy = clientAtSign
         ..sharedWith = sshnpdAtSign
         ..metadata = (Metadata()
@@ -86,7 +82,7 @@ class SSHNPLegacyImpl extends SSHNPImpl with SSHNPReverseDirection {
     }
 
     doneCompleter.complete();
-    return SSHNPSuccess(
+    return SSHNPCommand(
       localPort: localPort,
       remoteUsername: remoteUsername,
       host: 'localhost',

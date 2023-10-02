@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:at_client/at_client.dart';
 import 'package:at_onboarding_cli/at_onboarding_cli.dart';
+import 'package:noports_core/utils.dart';
 import 'package:version/version.dart';
 import 'package:path/path.dart' as path;
 import 'service_factories.dart';
@@ -11,8 +12,8 @@ Future<AtClient> createAtClientCli({
   required String atKeysFilePath,
   String? pathExtension,
   String subDirectory = '.sshnp',
-  String namespace = 'sshnp',
-  String rootDomain = 'root.atsign.org',
+  String namespace = DefaultArgs.namespace,
+  String rootDomain = DefaultArgs.rootDomain,
 }) async {
   // Now on to the atPlatform startup
   //onboarding preference builder can be used to set onboardingService parameters

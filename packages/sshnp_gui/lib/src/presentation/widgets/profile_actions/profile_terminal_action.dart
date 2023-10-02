@@ -59,7 +59,7 @@ class _ProfileTerminalActionState extends ConsumerState<ProfileTerminalAction> {
       final sessionController =
           ref.watch(terminalSessionFamilyController(sessionId).notifier);
 
-      if (result is SSHNPSuccess) {
+      if (result is SSHNPCommand) {
         /// Set the command for the new session
         sessionController.setProcess(
             command: result.command, args: result.args);

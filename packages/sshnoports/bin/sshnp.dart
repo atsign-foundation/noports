@@ -57,7 +57,7 @@ void main(List<String> args) async {
         if (e.stackTrace != null) {
           Error.throwWithStackTrace(e, e.stackTrace!);
         }
-        throw e; 
+        throw e;
       });
 
       if (params.listDevices) {
@@ -77,7 +77,7 @@ void main(List<String> args) async {
         }
         throw res;
       }
-      if (res is SSHNPSuccess) {
+      if (res is SSHNPCommand) {
         stdout.write('$res\n');
         await sshnp!.done;
         exit(0);

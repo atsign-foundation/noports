@@ -1,15 +1,52 @@
 import 'dart:io';
 
+import 'package:meta/meta.dart';
 import 'package:socket_connector/socket_connector.dart';
 
 abstract class SSHNPResult {}
+
+class SSHNPSuccess implements SSHNPResult {}
+
+class SSHNPFailure implements SSHNPResult {}
+
+mixin SSHNPConnectionBean<Bean> on SSHNPResult {
+  Bean? _connectionBean;
+
+  @protected
+  set connectionBean(Bean? connectionBean) {
+    _connectionBean = connectionBean;
+  }
+
+  Bean? get connectionBean => _connectionBean;
+
+  Future<void> killConnectionBean() async {
+    if (_connectionBean is Process) {
+      (_connectionBean as Process).kill();
+    }
+
+    if (_connectionBean is SocketConnector) {
+      (_connectionBean as SocketConnector).close();
+    }
+
+    if (_connectionBean is Future) {
+      await (_connectionBean as Future).then((value) {
+        if (value is Process) {
+          value.kill();
+        }
+        if (value is SocketConnector) {
+          value.close();
+        }
+      });
+    }
+  }
+}
 
 const _optionsWithPrivateKey = [
   '-o StrictHostKeyChecking=accept-new',
   '-o IdentitiesOnly=yes'
 ];
 
-class SSHNPError implements SSHNPResult, Exception {
+class SSHNPError implements SSHNPFailure, Exception {
   final Object message;
   final Object? error;
   final StackTrace? stackTrace;
@@ -36,9 +73,8 @@ class SSHNPError implements SSHNPResult, Exception {
   }
 }
 
-class SSHNPSuccess<ConnectionBean> implements SSHNPResult {
-  final String command = 'ssh';
-
+class SSHNPCommand<Bean> extends SSHNPSuccess with SSHNPConnectionBean<Bean> {
+  final String command;
   final int localPort;
   final String? remoteUsername;
   final String host;
@@ -46,20 +82,21 @@ class SSHNPSuccess<ConnectionBean> implements SSHNPResult {
 
   final List<String> sshOptions;
 
-  ConnectionBean? connectionBean;
-
-  SSHNPSuccess(
+  SSHNPCommand(
       {required this.localPort,
       required this.remoteUsername,
       required this.host,
+      this.command = 'ssh',
       List<String>? localSshOptions,
       this.privateKeyFileName,
-      this.connectionBean})
+      Bean? connectionBean})
       : sshOptions = [
           if (shouldIncludePrivateKey(privateKeyFileName))
             ..._optionsWithPrivateKey,
           ...(localSshOptions ?? [])
-        ];
+        ] {
+    this.connectionBean = connectionBean;
+  }
 
   static bool shouldIncludePrivateKey(String? privateKeyFileName) =>
       privateKeyFileName != null && privateKeyFileName.isNotEmpty;
@@ -83,25 +120,11 @@ class SSHNPSuccess<ConnectionBean> implements SSHNPResult {
     sb.write(args.join(' '));
     return sb.toString();
   }
+}
 
-  Future<void> killConnectionBean() async {
-    if (connectionBean is Process) {
-      (connectionBean as Process).kill();
-    }
-
-    if (connectionBean is SocketConnector) {
-      (connectionBean as SocketConnector).close();
-    }
-
-    if (connectionBean is Future) {
-      await (connectionBean as Future).then((value) {
-        if (value is Process) {
-          value.kill();
-        }
-        if (value is SocketConnector) {
-          value.close();
-        }
-      });
-    }
+class SSHNPNoOpSuccess<Bean> extends SSHNPSuccess
+    with SSHNPConnectionBean<Bean> {
+  SSHNPNoOpSuccess({Bean? connectionBean}) {
+    this.connectionBean = connectionBean;
   }
 }

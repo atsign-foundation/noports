@@ -24,7 +24,7 @@ class DefaultSSHNPArgs {
   static const localPort = 0;
   static const sendSshPublicKey = '';
   static const localSshOptions = <String>[];
-  static const legacyDaemon = true;
+  static const legacyDaemon = false;
   static const listDevices = false;
   static const sshClient = SupportedSshClient.exec;
 }

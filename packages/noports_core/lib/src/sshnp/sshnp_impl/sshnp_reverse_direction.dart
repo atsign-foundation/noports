@@ -52,8 +52,6 @@ mixin SSHNPReverseDirection on SSHNPImpl {
         stackTrace: s,
       );
     }
-
-    initializedCompleter.complete();
   }
 
   @override
