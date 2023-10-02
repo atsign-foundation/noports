@@ -11,7 +11,12 @@ class SSHNPForwardDartImpl extends SSHNPImpl with SSHNPForwardDirection {
   SSHNPForwardDartImpl({
     required AtClient atClient,
     required SSHNPParams params,
-  }) : super(atClient: atClient, params: params);
+    bool? shouldInitialize,
+  }) : super(
+          atClient: atClient,
+          params: params,
+          shouldInitialize: shouldInitialize,
+        );
 
   @override
   Future<SSHNPResult> run() async {

@@ -12,8 +12,13 @@ class SSHNPReverseImpl extends SSHNPImpl with SSHNPReverseDirection {
     required AtClient atClient,
     required SSHNPParams params,
     SSHRVGenerator? sshrvGenerator,
+    bool? shouldInitialize,
   }) : super(
-            atClient: atClient, params: params, sshrvGenerator: sshrvGenerator);
+          atClient: atClient,
+          params: params,
+          sshrvGenerator: sshrvGenerator,
+          shouldInitialize: shouldInitialize,
+        );
 
   @override
   Future<void> init() async {

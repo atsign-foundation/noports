@@ -122,7 +122,7 @@ abstract class SSHNPImpl implements SSHNP {
     required this.atClient,
     required this.params,
     SSHRVGenerator? sshrvGenerator,
-    bool shouldInitialize = true,
+    bool? shouldInitialize = true,
   })  : sessionId = Uuid().v4(),
         host = params.host,
         port = params.port,
@@ -164,7 +164,7 @@ abstract class SSHNPImpl implements SSHNP {
     }
 
     /// Also call init
-    if (shouldInitialize) init();
+    if (shouldInitialize ?? true) init();
   }
 
   @override
@@ -302,10 +302,10 @@ abstract class SSHNPImpl implements SSHNP {
     if (!initializedCompleter.isCompleted) {
       // Call init in case it hasn't been called yet
       unawaited(init());
-      // Wait for init to complete
-      // N.B. must be called this way in case the init call above is not the first init call
-      await initialized;
     }
+    // Wait for init to complete
+    // N.B. must be called this way in case the init call above is not the first init call
+    return await initialized;
   }
 
   @protected

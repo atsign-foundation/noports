@@ -22,6 +22,7 @@ abstract class SSHNP {
     AtClient? atClient,
     AtClientGenerator? atClientGenerator,
     SSHRVGenerator? sshrvGenerator,
+    bool? shouldInitialize,
   }) async {
     atClient ??= await atClientGenerator?.call(
         params, SSHNPImpl.getNamespace(params.device));
@@ -33,19 +34,35 @@ abstract class SSHNP {
 
     if (params.legacyDaemon) {
       return SSHNP.legacy(
-          atClient: atClient, params: params, sshrvGenerator: sshrvGenerator);
+        atClient: atClient,
+        params: params,
+        sshrvGenerator: sshrvGenerator,
+        shouldInitialize: shouldInitialize,
+      );
     }
 
     if (!params.host.startsWith('@')) {
       return SSHNP.reverse(
-          atClient: atClient, params: params, sshrvGenerator: sshrvGenerator);
+        atClient: atClient,
+        params: params,
+        sshrvGenerator: sshrvGenerator,
+        shouldInitialize: shouldInitialize,
+      );
     }
 
     switch (SupportedSshClient.fromCliArg(params.sshClient)) {
       case SupportedSshClient.exec:
-        return SSHNP.forwardExec(atClient: atClient, params: params);
+        return SSHNP.forwardExec(
+          atClient: atClient,
+          params: params,
+          shouldInitialize: shouldInitialize,
+        );
       case SupportedSshClient.dart:
-        return SSHNP.forwardDart(atClient: atClient, params: params);
+        return SSHNP.forwardDart(
+          atClient: atClient,
+          params: params,
+          shouldInitialize: shouldInitialize,
+        );
       default:
         throw ArgumentError('Unsupported ssh client: ${params.sshClient}');
     }
@@ -56,11 +73,13 @@ abstract class SSHNP {
     required AtClient atClient,
     required SSHNPParams params,
     SSHRVGenerator? sshrvGenerator,
+    bool? shouldInitialize,
   }) =>
       SSHNPLegacyImpl(
         atClient: atClient,
         params: params,
         sshrvGenerator: sshrvGenerator,
+        shouldInitialize: shouldInitialize,
       );
 
   /// Creates an SSHNP instance that is configured to use reverse ssh tunneling
@@ -68,31 +87,37 @@ abstract class SSHNP {
     required AtClient atClient,
     required SSHNPParams params,
     SSHRVGenerator? sshrvGenerator,
+    bool? shouldInitialize,
   }) =>
       SSHNPReverseImpl(
         atClient: atClient,
         params: params,
         sshrvGenerator: sshrvGenerator,
+        shouldInitialize: shouldInitialize,
       );
 
   /// Creates an SSHNP instance that is configured to use direct ssh tunneling by executing the ssh command
   factory SSHNP.forwardExec({
     required AtClient atClient,
     required SSHNPParams params,
+    bool? shouldInitialize,
   }) =>
       SSHNPForwardExecImpl(
         atClient: atClient,
         params: params,
+        shouldInitialize: shouldInitialize,
       );
 
   /// Creates an SSHNP instance that is configured to use direct ssh tunneling using a pure-dart SSHClient
   factory SSHNP.forwardDart({
     required AtClient atClient,
     required SSHNPParams params,
+    bool? shouldInitialize,
   }) =>
       SSHNPForwardDartImpl(
         atClient: atClient,
         params: params,
+        shouldInitialize: shouldInitialize,
       );
 
   /// The atClient to use for communicating with the atsign's secondary server
