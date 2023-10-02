@@ -21,7 +21,6 @@ abstract class SSHNP {
     SSHNPParams params, {
     AtClient? atClient,
     AtClientGenerator? atClientGenerator,
-    UsageCallback? usageCallback,
     SSHRVGenerator? sshrvGenerator,
   }) async {
     atClient ??= await atClientGenerator?.call(
@@ -33,27 +32,73 @@ abstract class SSHNP {
     }
 
     if (params.legacyDaemon) {
-      return SSHNPLegacyImpl(
+      return SSHNP.legacy(
           atClient: atClient, params: params, sshrvGenerator: sshrvGenerator);
     }
 
     if (!params.host.startsWith('@')) {
-      return SSHNPReverseImpl(
+      return SSHNP.reverse(
           atClient: atClient, params: params, sshrvGenerator: sshrvGenerator);
     }
 
     switch (SupportedSshClient.fromCliArg(params.sshClient)) {
       case SupportedSshClient.exec:
-        return SSHNPForwardExecImpl(atClient: atClient, params: params);
+        return SSHNP.forwardExec(atClient: atClient, params: params);
       case SupportedSshClient.dart:
-        return SSHNPForwardDartImpl(atClient: atClient, params: params);
+        return SSHNP.forwardDart(atClient: atClient, params: params);
       default:
         throw ArgumentError('Unsupported ssh client: ${params.sshClient}');
     }
   }
 
+  /// Creates an SSHNP instance that is configured to communicate with legacy >= 3.0.0 <4.0.0 daemons
+  factory SSHNP.legacy({
+    required AtClient atClient,
+    required SSHNPParams params,
+    SSHRVGenerator? sshrvGenerator,
+  }) =>
+      SSHNPLegacyImpl(
+        atClient: atClient,
+        params: params,
+        sshrvGenerator: sshrvGenerator,
+      );
+
+  /// Creates an SSHNP instance that is configured to use reverse ssh tunneling
+  factory SSHNP.reverse({
+    required AtClient atClient,
+    required SSHNPParams params,
+    SSHRVGenerator? sshrvGenerator,
+  }) =>
+      SSHNPReverseImpl(
+        atClient: atClient,
+        params: params,
+        sshrvGenerator: sshrvGenerator,
+      );
+
+  /// Creates an SSHNP instance that is configured to use direct ssh tunneling by executing the ssh command
+  factory SSHNP.forwardExec({
+    required AtClient atClient,
+    required SSHNPParams params,
+  }) =>
+      SSHNPForwardExecImpl(
+        atClient: atClient,
+        params: params,
+      );
+
+  /// Creates an SSHNP instance that is configured to use direct ssh tunneling using a pure-dart SSHClient
+  factory SSHNP.forwardDart({
+    required AtClient atClient,
+    required SSHNPParams params,
+  }) =>
+      SSHNPForwardDartImpl(
+        atClient: atClient,
+        params: params,
+      );
+
+  /// The atClient to use for communicating with the atsign's secondary server
   AtClient get atClient;
 
+  /// The parameters used to configure this SSHNP instance
   SSHNPParams get params;
 
   /// Completes when the SSHNP instance is no longer doing anything

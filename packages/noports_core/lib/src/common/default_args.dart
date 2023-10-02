@@ -15,6 +15,7 @@ class DefaultArgs {
 
   /// value in seconds after which idle ssh tunnels will be closed
   static const idleTimeout = 15;
+  static const help = false;
 }
 
 class DefaultSSHNPArgs {

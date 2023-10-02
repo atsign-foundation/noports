@@ -44,6 +44,8 @@ class SSHNPArg {
 
   String get bashName => name.replaceAll('-', '_').toUpperCase();
 
+  List<String> get aliasList => ['--$name', ...aliases?.map((e) => '--$e') ?? [], '-$abbr'];
+
   factory SSHNPArg.noArg() {
     return SSHNPArg(name: '');
   }
@@ -63,6 +65,13 @@ class SSHNPArg {
   }
 
   static List<SSHNPArg> args = [
+    const SSHNPArg(
+      name: 'help',
+      help: 'Print this usage information',
+      defaultsTo: DefaultArgs.help,
+      format: ArgFormat.flag,
+      commandLineOnly: true,
+    ),
     const SSHNPArg(
       name: 'key-file',
       abbr: 'k',
@@ -114,6 +123,7 @@ class SSHNPArg {
       help:
           'Public key file from ~/.ssh to be appended to authorized_hosts on the remote device',
       defaultsTo: DefaultSSHNPArgs.sendSshPublicKey,
+      commandLineOnly: true,
     ),
     const SSHNPArg(
       name: 'local-ssh-options',
@@ -221,10 +231,14 @@ class SSHNPArg {
   static ArgParser createArgParser({
     bool isCommandLine = true,
     bool withDefaults = true,
+    Iterable<String>? includeList,
   }) {
     var parser = ArgParser();
     // Basic arguments
     for (SSHNPArg arg in SSHNPArg.args) {
+      if (includeList != null && !includeList.contains(arg.name)) {
+        continue;
+      }
       if (arg.commandLineOnly && !isCommandLine) {
         continue;
       }

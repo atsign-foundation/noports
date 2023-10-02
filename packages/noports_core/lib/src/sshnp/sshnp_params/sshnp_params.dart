@@ -128,8 +128,8 @@ class SSHNPParams {
       SSHNPParams.fromPartial(SSHNPPartialParams.fromJson(json));
 
   factory SSHNPParams.fromPartial(SSHNPPartialParams partial) {
-    partial.clientAtSign ?? (throw ArgumentError('clientAtSign is mandatory'));
-    partial.sshnpdAtSign ?? (throw ArgumentError('sshnpdAtSign is mandatory'));
+    partial.clientAtSign ?? (throw ArgumentError('from is mandatory'));
+    partial.sshnpdAtSign ?? (throw ArgumentError('to is mandatory'));
     partial.host ?? (throw ArgumentError('host is mandatory'));
 
     return SSHNPParams(

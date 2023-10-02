@@ -3,7 +3,7 @@ import 'dart:async';
 import 'package:at_client_mobile/at_client_mobile.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:noports_core/config_repository.dart';
+import 'package:noports_core/sshnp_params.dart';
 import 'package:sshnp_gui/src/presentation/widgets/utility/custom_snack_bar.dart';
 
 enum ConfigFileWriteState { create, update }

@@ -7,100 +7,135 @@ import 'package:at_utils/at_logger.dart';
 
 // local packages
 import 'package:noports_core/sshnp.dart';
-import 'package:noports_core/utils.dart';
+import 'package:noports_core/sshnp_params.dart' show SSHNPArg;
 import 'package:sshnoports/create_at_client_cli.dart';
 import 'package:sshnoports/version.dart';
 
 void main(List<String> args) async {
   AtSignLogger.root_level = 'SHOUT';
   AtSignLogger.defaultLoggingHandler = AtSignLogger.stdErrLoggingHandler;
-  late final SSHNP sshnp;
+
   late final SSHNPParams params;
+  SSHNP? sshnp;
 
-  try {} catch (error) {
-    stderr.writeln(error.toString());
-    exit(1);
-  }
+  // Manually check if the verbose flag is set
+  Set<String> verboseSet = SSHNPArg.fromName('verbose').aliasList.toSet();
+  final bool verbose = args.toSet().intersection(verboseSet).isNotEmpty;
 
-  usageCallback(e, s) {
+  // Manually check if the help flag is set
+  Set<String> helpSet = SSHNPArg.fromName('help').aliasList.toSet();
+  final bool help = args.toSet().intersection(helpSet).isNotEmpty;
+
+  if (help) {
     printVersion();
     stdout.writeln(SSHNPPartialParams.parser.usage);
-    stderr.writeln('\n$e');
-  }
-
-  try {
-    params = SSHNPParams.fromPartial(SSHNPPartialParams.fromArgs(args));
-    sshnp = await SSHNP.fromParams(
-      params,
-      atClientGenerator: (SSHNPParams params, String sessionId) =>
-          createAtClientCli(
-        homeDirectory: params.homeDirectory,
-        atsign: params.clientAtSign,
-        namespace: '${params.device}.sshnp',
-        pathExtension: sessionId,
-        atKeysFilePath: params.atKeysFilePath,
-        rootDomain: params.rootDomain,
-      ),
-      usageCallback: usageCallback,
-    );
-  } on ArgumentError catch (e, s) {
-    usageCallback(e, s);
-    exit(1);
+    exit(0);
   }
 
   ProcessSignal.sigint.watch().listen((signal) async {
-    await cleanUpAfterReverseSsh(sshnp);
+    await sshnp?.cleanUp();
     exit(1);
   });
 
   await runZonedGuarded(() async {
-    if (params.listDevices) {
-      stdout.writeln('Searching for devices...');
-      var (active, off, info) = await sshnp.listDevices();
-      if (active.isEmpty && off.isEmpty) {
-        stdout.writeln('[X] No devices found\n');
-        stdout.writeln(
-            'Note: only devices with sshnpd version 3.4.0 or higher are supported by this command.');
-        stdout.writeln(
-            'Please update your devices to sshnpd version >= 3.4.0 and try again.');
+    try {
+      params = SSHNPParams.fromPartial(SSHNPPartialParams.fromArgs(args));
+      sshnp = await SSHNP
+          .fromParams(
+        params,
+        atClientGenerator: (SSHNPParams params, String sessionId) =>
+            createAtClientCli(
+          homeDirectory: params.homeDirectory,
+          atsign: params.clientAtSign,
+          namespace: '${params.device}.sshnp',
+          pathExtension: sessionId,
+          atKeysFilePath: params.atKeysFilePath,
+          rootDomain: params.rootDomain,
+        ),
+      )
+          .catchError((e) {
+        if (e.stackTrace != null) {
+          Error.throwWithStackTrace(e, e.stackTrace!);
+        }
+        throw e; 
+      });
+
+      if (params.listDevices) {
+        stdout.writeln('Searching for devices...');
+        var (active, off, info) = await sshnp!.listDevices();
+        printDevices(active, off, info);
         exit(0);
       }
 
-      stdout.writeln('Active Devices:');
-      _printDevices(active, info);
-      stdout.writeln('Inactive Devices:');
-      _printDevices(off, info);
-      exit(0);
-    }
+      await sshnp!.initialized;
 
-    await sshnp.init();
-    SSHNPResult res = await sshnp.run();
-    if (res is SSHNPError) {
-      stderr.write('$res\n');
+      SSHNPResult res = await sshnp!.run();
+
+      if (res is SSHNPError) {
+        if (res.stackTrace != null) {
+          Error.throwWithStackTrace(res, res.stackTrace!);
+        }
+        throw res;
+      }
+      if (res is SSHNPSuccess) {
+        stdout.write('$res\n');
+        await sshnp!.done;
+        exit(0);
+      }
+    } on ArgumentError catch (error, stackTrace) {
+      usageCallback(error, stackTrace);
+      exit(1);
+    } on SSHNPError catch (error, stackTrace) {
+      stderr.writeln(error.toString());
+      if (verbose) {
+        stderr.writeln('\nStack Trace: ${stackTrace.toString()}');
+      }
+
+      await sshnp?.cleanUp();
       exit(1);
     }
-    if (res is SSHNPSuccess) {
-      stdout.write('$res\n');
-      await sshnp.done;
-      exit(0);
-    }
   }, (Object error, StackTrace stackTrace) async {
-    stderr.writeln(error.toString());
-
-    if (params.verbose) {
+    if (error is ArgumentError) return;
+    if (error is SSHNPError) return;
+    stderr.writeln('Unknown error: ${error.toString()}');
+    if (verbose) {
       stderr.writeln('\nStack Trace: ${stackTrace.toString()}');
     }
 
-    await cleanUpAfterReverseSsh(sshnp);
-
-    await stderr.flush().timeout(Duration(milliseconds: 100));
+    await sshnp?.cleanUp();
     exit(1);
   });
 }
 
-void _printDevices(Iterable<String> devices, Map<String, dynamic> info) {
+void usageCallback(Object e, StackTrace s) {
+  printVersion();
+  stdout.writeln(SSHNPPartialParams.parser.usage);
+  stderr.writeln('\n$e');
+}
+
+void printDevices(
+  Iterable<String> active,
+  Iterable<String> off,
+  Map<String, dynamic> info,
+) {
+  if (active.isEmpty && off.isEmpty) {
+    stdout.writeln('[X] No devices found\n');
+    stdout.writeln(
+        'Note: only devices with sshnpd version 3.4.0 or higher are supported by this command.');
+    stdout.writeln(
+        'Please update your devices to sshnpd version >= 3.4.0 and try again.');
+    exit(0);
+  }
+
+  stdout.writeln('Active Devices:');
+  printDeviceList(active, info);
+  stdout.writeln('Inactive Devices:');
+  printDeviceList(off, info);
+}
+
+void printDeviceList(Iterable<String> devices, Map<String, dynamic> info) {
   if (devices.isEmpty) {
-    stdout.writeln('  [X] No devices found');
+    stdout.writeln('  No devices found');
     return;
   }
   for (var device in devices) {

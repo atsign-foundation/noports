@@ -18,6 +18,7 @@ mixin SSHNPReverseDirection on SSHNPImpl {
   @override
   Future<void> init() async {
     await super.init();
+    logger.info('Generating ephemeral keypair');
     try {
       var (String ephemeralPublicKey, String ephemeralPrivateKey) =
           await generateSshKeys(
@@ -28,6 +29,7 @@ mixin SSHNPReverseDirection on SSHNPImpl {
       sshPublicKey = ephemeralPublicKey;
       sshPrivateKey = ephemeralPrivateKey;
     } catch (e, s) {
+      logger.info('Failed to generate ephemeral keypair');
       throw SSHNPError(
         'Failed to generate ephemeral keypair',
         error: e,
@@ -35,7 +37,9 @@ mixin SSHNPReverseDirection on SSHNPImpl {
       );
     }
 
+
     try {
+      logger.info('Adding ephemeral key to authorized_keys');
       await addEphemeralKeyToAuthorizedKeys(
           sshPublicKey: sshPublicKey,
           localSshdPort: params.localSshdPort,

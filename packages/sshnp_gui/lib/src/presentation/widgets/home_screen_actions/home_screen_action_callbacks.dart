@@ -3,7 +3,7 @@ import 'dart:io';
 import 'package:file_selector/file_selector.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:noports_core/config_repository.dart';
+import 'package:noports_core/sshnp_params.dart';
 import 'package:sshnp_gui/src/controllers/config_controller.dart';
 import 'package:sshnp_gui/src/presentation/widgets/home_screen_actions/home_screen_import_dialog.dart';
 import 'package:sshnp_gui/src/presentation/widgets/utility/custom_snack_bar.dart';
