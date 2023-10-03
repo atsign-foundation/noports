@@ -28,7 +28,7 @@ class SSHNPForwardDartImpl extends SSHNPImpl with SSHNPForwardDirection {
     }
 
     logger.info(
-        'Starting direct ssh session for ${params.username} to $host on port $sshrvdPort with forwardLocal of $localPort');
+        'Starting direct ssh session to $host on port $sshrvdPort with forwardLocal of $localPort');
     try {
       late final SSHClient client;
 
@@ -57,7 +57,7 @@ class SSHNPForwardDartImpl extends SSHNPImpl with SSHNPForwardDirection {
         );
       } catch (e, s) {
         var error = SSHNPError(
-          'Failed to create SSHClient for ${params.username}@$host:$port : $e',
+          'Failed to create SSHClient for ${params.remoteUsername}@$host:$port : $e',
           error: e,
           stackTrace: s,
         );
@@ -69,7 +69,7 @@ class SSHNPForwardDartImpl extends SSHNPImpl with SSHNPForwardDirection {
         await client.authenticated;
       } catch (e, s) {
         var error = SSHNPError(
-          'Failed to authenticate as ${params.username}@$host:$port : $e',
+          'Failed to authenticate as ${params.remoteUsername}@$host:$port : $e',
           error: e,
           stackTrace: s,
         );

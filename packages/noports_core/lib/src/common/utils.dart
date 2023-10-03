@@ -5,8 +5,10 @@ import 'package:at_client/at_client.dart';
 import 'package:at_utils/at_utils.dart';
 import 'package:path/path.dart' as path;
 
+import 'package:path_provider/path_provider.dart' as path_provider;
+
 /// Get the home directory or null if unknown.
-String? getHomeDirectory({bool throwIfNull = false}) {
+Future<String> getHomeDirectory() async {
   String? homeDir;
   switch (Platform.operatingSystem) {
     case 'linux':
@@ -15,19 +17,20 @@ String? getHomeDirectory({bool throwIfNull = false}) {
     case 'windows':
       homeDir = Platform.environment['USERPROFILE'];
     case 'android':
-      // Probably want internal storage.
-      homeDir = '/storage/sdcard0';
+      // android to try external storage first and fallback to the ApplicationSupportDirectory
+      homeDir = await path_provider
+          .getExternalStorageDirectory()
+          .then((dir) => dir?.path);
     case 'ios':
-    // iOS doesn't really have a home directory.
     case 'fuchsia':
-    // I have no idea.
     default:
+      // ios and fuchsia to use the ApplicationSupportDirectory
       homeDir = null;
   }
-  if (throwIfNull && homeDir == null) {
-    throw ('\nUnable to determine your home directory: please set environment variable\n\n');
-  }
-  return homeDir;
+  return homeDir ??
+      await path_provider
+          .getApplicationSupportDirectory()
+          .then((dir) => dir.path);
 }
 
 /// Get the local username or null if unknown
@@ -116,8 +119,7 @@ Future<(String, String)> generateSshKeys(
     {required bool rsa,
     required String sessionId,
     String? sshHomeDirectory}) async {
-  sshHomeDirectory ??=
-      getDefaultSshDirectory(getHomeDirectory(throwIfNull: true)!);
+  sshHomeDirectory ??= getDefaultSshDirectory(await getHomeDirectory());
   if (!Directory(sshHomeDirectory).existsSync()) {
     Directory(sshHomeDirectory).createSync();
   }
@@ -161,7 +163,7 @@ Future<void> addEphemeralKeyToAuthorizedKeys(
     throw ('$sshPublicKey does not look like a public key');
   }
 
-  String homeDirectory = getHomeDirectory(throwIfNull: true)!;
+  String homeDirectory = await getHomeDirectory();
   var sshHomeDirectory = getDefaultSshDirectory(homeDirectory);
 
   if (!Directory(sshHomeDirectory).existsSync()) {
@@ -200,8 +202,7 @@ Future<void> removeEphemeralKeyFromAuthorizedKeys(
     String sessionId, AtSignLogger logger,
     {String? sshHomeDirectory}) async {
   try {
-    sshHomeDirectory ??=
-        getDefaultSshDirectory(getHomeDirectory(throwIfNull: true)!);
+    sshHomeDirectory ??= getDefaultSshDirectory(await getHomeDirectory());
     final File file = File(path.normalize('$sshHomeDirectory/authorized_keys'));
     logger.info('Removing ephemeral key for session $sessionId'
         ' from ${file.absolute.path}');
@@ -292,7 +293,7 @@ Future<String?> _fetchFromLocalPKCache(
   String dontAtMe = atSign.substring(1);
   if (useFileStorage) {
     String fn = path.normalize(
-        '${getHomeDirectory(throwIfNull: true)}/.atsign/sshnp/cached_pks/$dontAtMe');
+        '${await getHomeDirectory()}/.atsign/sshnp/cached_pks/$dontAtMe');
     File f = File(fn);
     if (await f.exists()) {
       return (await f.readAsString()).trim();
@@ -315,8 +316,8 @@ Future<bool> _storeToLocalPKCache(
     String pk, AtClient atClient, String atSign, bool useFileStorage) async {
   String dontAtMe = atSign.substring(1);
   if (useFileStorage) {
-    String dirName = path.normalize(
-        '${getHomeDirectory(throwIfNull: true)}/.atsign/sshnp/cached_pks');
+    String dirName =
+        path.normalize('${await getHomeDirectory()}/.atsign/sshnp/cached_pks');
     String fileName = path.normalize('$dirName/$dontAtMe');
 
     File f = File(fileName);

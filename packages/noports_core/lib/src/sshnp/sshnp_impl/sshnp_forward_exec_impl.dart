@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:at_client/at_client.dart' hide StringBuffer;
+
 import 'package:noports_core/src/sshnp/sshnp_impl/sshnp_forward_direction.dart';
 import 'package:noports_core/src/sshnp/sshnp_impl/sshnp_impl.dart';
 import 'package:noports_core/sshnp.dart';
@@ -29,7 +30,7 @@ class SSHNPForwardExecImpl extends SSHNPImpl with SSHNPForwardDirection {
     }
 
     logger.info(
-        'Starting direct ssh session for ${params.username} to $host on port $sshrvdPort with forwardLocal of $localPort');
+        'Starting direct ssh session to $host on port $sshrvdPort with forwardLocal of $localPort');
 
     try {
       String? errorMessage;

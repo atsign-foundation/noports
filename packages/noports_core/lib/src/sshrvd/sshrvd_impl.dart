@@ -52,7 +52,7 @@ class SSHRVDImpl implements SSHRVD {
       FutureOr<AtClient> Function(SSHRVDParams)? atClientGenerator,
       void Function(Object, StackTrace)? usageCallback}) async {
     try {
-      var p = SSHRVDParams.fromArgs(args);
+      var p = await SSHRVDParams.fromArgs(args);
 
       if (!await fileExists(p.atKeysFilePath)) {
         throw ('\n Unable to find .atKeys file : ${p.atKeysFilePath}');
@@ -69,7 +69,7 @@ class SSHRVDImpl implements SSHRVD {
 
       atClient ??= await atClientGenerator!(p);
 
-      var sshrvd = SSHRVD(
+      var sshrvd = SSHRVDImpl(
         atClient: atClient,
         atSign: p.atSign,
         homeDirectory: p.homeDirectory,

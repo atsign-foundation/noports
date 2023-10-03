@@ -17,9 +17,14 @@ mixin SSHNPReverseDirection on SSHNPImpl {
   /// [sshPrivateKey] to sshnpd
   late final String sshPrivateKey;
 
+  /// Local username, set by [init]
+  late final String localUsername;
+
   @override
   Future<void> init() async {
     await super.init();
+    localUsername = getUserName(throwIfNull: true)!;
+
     logger.info('Generating ephemeral keypair');
     try {
       var (String ephemeralPublicKey, String ephemeralPrivateKey) =

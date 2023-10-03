@@ -88,7 +88,7 @@ class SSHNPDImpl implements SSHNPD {
       FutureOr<AtClient> Function(SSHNPDParams)? atClientGenerator,
       void Function(Object, StackTrace)? usageCallback}) async {
     try {
-      var p = SSHNPDParams.fromArgs(args);
+      var p = await SSHNPDParams.fromArgs(args);
 
       // Check atKeyFile selected exists
       if (!await fileExists(p.atKeysFilePath)) {
@@ -106,7 +106,7 @@ class SSHNPDImpl implements SSHNPD {
 
       atClient ??= await atClientGenerator!(p);
 
-      var sshnpd = SSHNPD(
+      var sshnpd = SSHNPDImpl(
         atClient: atClient,
         username: p.username,
         homeDirectory: p.homeDirectory,

@@ -1,7 +1,6 @@
 import 'dart:convert';
 
 import 'package:args/args.dart';
-import 'package:noports_core/src/common/utils.dart';
 import 'package:noports_core/src/sshnp/sshnp_params/config_file_repository.dart';
 import 'package:noports_core/src/sshnp/sshnp_params/sshnp_arg.dart';
 import 'package:noports_core/src/common/default_args.dart';
@@ -31,11 +30,9 @@ class SSHNPParams {
   final int remoteSshdPort;
   final int idleTimeout;
   final bool addForwardsToTunnel;
+  final String? atKeysFilePath;
 
   /// Late variables
-  late final String username;
-  late final String homeDirectory;
-  late final String atKeysFilePath;
   late final String sshClient;
 
   /// Special Arguments
@@ -56,29 +53,16 @@ class SSHNPParams {
     this.verbose = DefaultArgs.verbose,
     this.rsa = DefaultArgs.rsa,
     this.remoteUsername,
-    String? atKeysFilePath,
+    this.atKeysFilePath,
     this.rootDomain = DefaultArgs.rootDomain,
     this.localSshdPort = DefaultArgs.localSshdPort,
     this.legacyDaemon = DefaultSSHNPArgs.legacyDaemon,
     this.listDevices = DefaultSSHNPArgs.listDevices,
     this.remoteSshdPort = DefaultArgs.remoteSshdPort,
     this.idleTimeout = DefaultArgs.idleTimeout,
-    String? sshClient,
     this.addForwardsToTunnel = false,
-  }) {
-    // Do we have a username ?
-    username = getUserName(throwIfNull: true)!;
-
-    // Do we have a 'home' directory?
-    homeDirectory = getHomeDirectory(throwIfNull: true)!;
-
-    // Use default atKeysFilePath if not provided
-
-    this.atKeysFilePath =
-        atKeysFilePath ?? getDefaultAtKeysFilePath(homeDirectory, clientAtSign);
-
-    this.sshClient = sshClient ?? DefaultSSHNPArgs.sshClient.cliArg;
-  }
+    String? sshClient,
+  }) : sshClient = sshClient ?? DefaultSSHNPArgs.sshClient.cliArg;
 
   factory SSHNPParams.empty() {
     return SSHNPParams(

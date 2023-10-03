@@ -68,34 +68,6 @@ abstract class SSHNPD {
   /// Defaults to false
   abstract final bool rsa;
 
-  factory SSHNPD(
-      {
-      // final fields
-      required AtClient atClient,
-      required String username,
-      required String homeDirectory,
-      required String device,
-      required String managerAtsign,
-      required SupportedSshClient sshClient,
-      required bool makeDeviceInfoVisible,
-      required bool addSshPublicKeys,
-      required int localSshdPort,
-      required String ephemeralPermissions,
-      required bool rsa}) {
-    return SSHNPDImpl(
-        atClient: atClient,
-        username: username,
-        homeDirectory: homeDirectory,
-        device: device,
-        managerAtsign: managerAtsign,
-        sshClient: sshClient,
-        makeDeviceInfoVisible: makeDeviceInfoVisible,
-        addSshPublicKeys: addSshPublicKeys,
-        localSshdPort: localSshdPort,
-        ephemeralPermissions: ephemeralPermissions,
-        rsa: rsa);
-  }
-
   static Future<SSHNPD> fromCommandLineArgs(List<String> args,
       {AtClient? atClient,
       FutureOr<AtClient> Function(SSHNPDParams)? atClientGenerator,

@@ -2,39 +2,50 @@ import 'package:args/args.dart';
 import 'package:noports_core/src/common/utils.dart';
 
 class SSHRVDParams {
-  late final String username;
-  late final String atSign;
-  late final String homeDirectory;
-  late final String atKeysFilePath;
-  late final String managerAtsign;
-  late final String ipAddress;
-  late final bool verbose;
-  late final bool snoop;
-  late final String rootDomain;
+  final String username;
+  final String atSign;
+  final String homeDirectory;
+  final String atKeysFilePath;
+  final String managerAtsign;
+  final String ipAddress;
+  final bool verbose;
+  final bool snoop;
+  final String rootDomain;
 
   // Non param variables
   static final ArgParser parser = _createArgParser();
 
-  SSHRVDParams.fromArgs(List<String> args) {
+  SSHRVDParams({
+    required this.username,
+    required this.atSign,
+    required this.homeDirectory,
+    required this.atKeysFilePath,
+    required this.managerAtsign,
+    required this.ipAddress,
+    required this.verbose,
+    required this.snoop,
+    required this.rootDomain,
+  });
+
+  static Future<SSHRVDParams> fromArgs(List<String> args) async {
     // Arg check
     ArgResults r = parser.parse(args);
 
-    // Do we have a username ?
-    username = getUserName(throwIfNull: true)!;
+    String atSign = r['atsign'];
+    String homeDirectory = await getHomeDirectory();
 
-    // Do we have a 'home' directory?
-    homeDirectory = getHomeDirectory(throwIfNull: true)!;
-
-    atSign = r['atsign'];
-    managerAtsign = r['manager'];
-    atKeysFilePath =
-        r['key-file'] ?? getDefaultAtKeysFilePath(homeDirectory, atSign);
-
-    ipAddress = r['ip'];
-
-    verbose = r['verbose'];
-    snoop = r['snoop'];
-    rootDomain = r['root-domain'];
+    return SSHRVDParams(
+      username: getUserName(throwIfNull: true)!,
+      atSign: atSign,
+      homeDirectory: homeDirectory,
+      atKeysFilePath:
+          r['key-file'] ?? getDefaultAtKeysFilePath(homeDirectory, atSign),
+      managerAtsign: r['manager'],
+      ipAddress: r['ip'],
+      verbose: r['verbose'],
+      snoop: r['snoop'],
+      rootDomain: r['root-domain'],
+    );
   }
 
   static ArgParser _createArgParser() {

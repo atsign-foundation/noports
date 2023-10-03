@@ -22,27 +22,6 @@ abstract class SSHRVD {
   @visibleForTesting
   bool initialized = false;
 
-  factory SSHRVD(
-      {
-      // final fields
-      required AtClient atClient,
-      required String atSign,
-      required String homeDirectory,
-      required String atKeysFilePath,
-      required String managerAtsign,
-      required String ipAddress,
-      required bool snoop}) {
-    return SSHRVDImpl(
-      atClient: atClient,
-      atSign: atSign,
-      homeDirectory: homeDirectory,
-      atKeysFilePath: atKeysFilePath,
-      managerAtsign: managerAtsign,
-      ipAddress: ipAddress,
-      snoop: snoop,
-    );
-  }
-
   static Future<SSHRVD> fromCommandLineArgs(List<String> args,
       {AtClient? atClient,
       FutureOr<AtClient> Function(SSHRVDParams)? atClientGenerator,

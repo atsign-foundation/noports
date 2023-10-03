@@ -48,10 +48,11 @@ class ProfileActionCallbacks {
   static Future<void> _exportDesktop(
       WidgetRef ref, BuildContext context, String profileName) async {
     try {
-      final suggestedName =
-          ConfigFileRepository.fromProfileName(profileName, basenameOnly: true);
+      final suggestedName = await ConfigFileRepository.fromProfileName(
+          profileName,
+          basenameOnly: true);
       final initialDirectory =
-          getDefaultSshnpConfigDirectory(getHomeDirectory(throwIfNull: true)!);
+          getDefaultSshnpConfigDirectory(await getHomeDirectory());
 
       final FileSaveLocation? saveLocation = await getSaveLocation(
         suggestedName: suggestedName,

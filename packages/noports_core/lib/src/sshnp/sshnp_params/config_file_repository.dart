@@ -12,20 +12,22 @@ class ConfigFileRepository {
     return profileName;
   }
 
-  static String fromProfileName(String profileName,
-      {String? directory, bool replaceSpaces = true, bool basenameOnly = false}) {
+  static Future<String> fromProfileName(String profileName,
+      {String? directory,
+      bool replaceSpaces = true,
+      bool basenameOnly = false}) async {
     var fileName = profileName;
     if (replaceSpaces) fileName = fileName.replaceAll(' ', '_');
     final basename = '$fileName.env';
     if (basenameOnly) return basename;
     return path.join(
-      directory ?? getDefaultSshnpConfigDirectory(getHomeDirectory(throwIfNull: true)!),
+      directory ?? getDefaultSshnpConfigDirectory(await getHomeDirectory()),
       basename,
     );
   }
 
   static Future<Directory> createConfigDirectory({String? directory}) async {
-    directory ??= getDefaultSshnpConfigDirectory(getHomeDirectory(throwIfNull: true)!);
+    directory ??= getDefaultSshnpConfigDirectory(await getHomeDirectory());
     var dir = Directory(directory);
     if (!await dir.exists()) {
       await dir.create(recursive: true);
@@ -35,37 +37,42 @@ class ConfigFileRepository {
 
   static Future<Iterable<String>> listProfiles({String? directory}) async {
     var profileNames = <String>{};
-
-    var homeDirectory = getHomeDirectory(throwIfNull: true)!;
-    directory ??= getDefaultSshnpConfigDirectory(homeDirectory);
+    directory ??= getDefaultSshnpConfigDirectory(await getHomeDirectory());
     var files = Directory(directory).list();
 
     await files.forEach((file) {
       if (file is! File) return;
       if (path.extension(file.path) != '.env') return;
-      if (path.basenameWithoutExtension(file.path).isEmpty) return; // ignore '.env' file - empty profileName
+      if (path.basenameWithoutExtension(file.path).isEmpty) {
+        // ignore '.env' file - empty profileName
+        return;
+      }
       profileNames.add(toProfileName(file.path));
     });
     return profileNames;
   }
 
-  static Future<SSHNPParams> getParams(String profileName, {String? directory}) async {
-    var fileName = fromProfileName(profileName, directory: directory);
+  static Future<SSHNPParams> getParams(String profileName,
+      {String? directory}) async {
+    var fileName = await fromProfileName(profileName, directory: directory);
     return SSHNPParams.fromFile(fileName);
   }
 
-  static Future<File> putParams(SSHNPParams params, {String? directory, bool overwrite = false}) async {
+  static Future<File> putParams(SSHNPParams params,
+      {String? directory, bool overwrite = false}) async {
     if (params.profileName == null || params.profileName!.isEmpty) {
       throw Exception('profileName is null or empty');
     }
 
-    var fileName = fromProfileName(params.profileName!, directory: directory);
+    var fileName =
+        await fromProfileName(params.profileName!, directory: directory);
     var file = File(fileName);
 
     var exists = await file.exists();
 
     if (exists && !overwrite) {
-      throw Exception('Failed to write config file: ${file.path} already exists');
+      throw Exception(
+          'Failed to write config file: ${file.path} already exists');
     }
 
     // FileMode.write will create the file if it does not exist
@@ -73,12 +80,14 @@ class ConfigFileRepository {
     return file.writeAsString(params.toConfig(), mode: FileMode.write);
   }
 
-  static Future<FileSystemEntity> deleteParams(SSHNPParams params, {String? directory}) async {
+  static Future<FileSystemEntity> deleteParams(SSHNPParams params,
+      {String? directory}) async {
     if (params.profileName == null || params.profileName!.isEmpty) {
       throw Exception('profileName is null or empty');
     }
 
-    var fileName = fromProfileName(params.profileName!, directory: directory);
+    var fileName =
+        await fromProfileName(params.profileName!, directory: directory);
     var file = File(fileName);
 
     var exists = await file.exists();

@@ -55,7 +55,7 @@ class SSHNPReverseImpl extends SSHNPImpl with SSHNPReverseDirection {
           'sessionId': sessionId,
           'host': host,
           'port': port,
-          'username': params.username,
+          'username': localUsername,
           'remoteForwardPort': localPort,
           'privateKey': sshPrivateKey
         }),

@@ -62,7 +62,7 @@ class SSHNPLegacyImpl extends SSHNPImpl with SSHNPReverseDirection {
         ..metadata = (Metadata()
           ..ttr = -1
           ..ttl = 10000),
-      '$localPort $port ${params.username} $host $sessionId',
+      '$localPort $port $localUsername $host $sessionId',
       sessionId: sessionId,
     );
 

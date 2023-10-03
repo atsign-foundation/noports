@@ -20,10 +20,7 @@ Future<void> cleanUpAfterReverseSsh(SSHNP sshnp) async {
     return;
   }
 
-  String? homeDirectory = getHomeDirectory();
-  if (homeDirectory == null) {
-    return;
-  }
+  String homeDirectory = await getHomeDirectory();
   var sshHomeDirectory = getDefaultSshDirectory(homeDirectory);
   sshnp.logger.info('Tidying up files');
 // Delete the generated RSA keys and remove the entry from ~/.ssh/authorized_keys

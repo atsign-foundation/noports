@@ -8,6 +8,7 @@ import 'package:at_utils/at_logger.dart';
 // local packages
 import 'package:noports_core/sshnp.dart';
 import 'package:noports_core/sshnp_params.dart' show SSHNPArg;
+import 'package:noports_core/utils.dart';
 import 'package:sshnoports/create_at_client_cli.dart';
 import 'package:sshnoports/version.dart';
 
@@ -40,16 +41,18 @@ void main(List<String> args) async {
   await runZonedGuarded(() async {
     try {
       params = SSHNPParams.fromPartial(SSHNPPartialParams.fromArgs(args));
+      String homeDirectory = await getHomeDirectory();
       sshnp = await SSHNP
           .fromParams(
         params,
         atClientGenerator: (SSHNPParams params, String sessionId) =>
             createAtClientCli(
-          homeDirectory: params.homeDirectory,
+          homeDirectory: homeDirectory,
           atsign: params.clientAtSign,
           namespace: '${params.device}.sshnp',
           pathExtension: sessionId,
-          atKeysFilePath: params.atKeysFilePath,
+          atKeysFilePath: params.atKeysFilePath ??
+              getDefaultAtKeysFilePath(homeDirectory, params.clientAtSign),
           rootDomain: params.rootDomain,
         ),
       )

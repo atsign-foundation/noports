@@ -33,7 +33,7 @@ abstract class SSHNPImpl implements SSHNP {
   /// Function used to generate a [SSHRV] instance ([SSHRV.localbinary] by default)
   final SSHRVGenerator sshrvGenerator;
 
-  final String sshHomeDirectory;
+  late final String sshHomeDirectory;
 
   // ====================================================================
   // Final instance variables, derived during initialization
@@ -127,8 +127,7 @@ abstract class SSHNPImpl implements SSHNP {
         host = params.host,
         port = params.port,
         localPort = params.localPort,
-        sshrvGenerator = sshrvGenerator ?? DefaultArgs.sshrvGenerator,
-        sshHomeDirectory = getDefaultSshDirectory(params.homeDirectory) {
+        sshrvGenerator = sshrvGenerator ?? DefaultArgs.sshrvGenerator {
     /// Set the logger level to shout
     logger.hierarchicalLoggingEnabled = true;
     logger.logger.level = Level.SHOUT;
@@ -176,6 +175,9 @@ abstract class SSHNPImpl implements SSHNP {
     } else {
       _initializeStarted = true;
     }
+
+    String homeDirectory = await getHomeDirectory();
+    sshHomeDirectory  = getDefaultSshDirectory(homeDirectory);
 
     try {
       if (!(await atSignIsActivated(atClient, sshnpdAtSign))) {

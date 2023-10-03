@@ -39,14 +39,9 @@ void main() {
       expect(p.clientAtSign, '@alice');
       expect(p.sshnpdAtSign, '@bob');
       expect(p.host, 'host.subdomain.test');
-
       expect(p.device, 'default');
       expect(p.port, 22);
       expect(p.localPort, 0);
-      expect(p.username, getUserName(throwIfNull: true));
-      expect(p.homeDirectory, getHomeDirectory(throwIfNull: true));
-      expect(p.atKeysFilePath,
-          getDefaultAtKeysFilePath(p.homeDirectory, p.clientAtSign));
       expect(p.sendSshPublicKey, '');
       expect(p.localSshOptions, []);
       expect(p.rsa, false);
@@ -86,8 +81,6 @@ void main() {
       expect(p.device, 'ancient_pc');
       expect(p.port, 56789);
       expect(p.localPort, 98765);
-      expect(p.username, getUserName(throwIfNull: true));
-      expect(p.homeDirectory, getHomeDirectory(throwIfNull: true));
       expect(p.atKeysFilePath, '/tmp/temp_keys.json');
       expect(p.sendSshPublicKey, 'sekrit.pub');
       expect(p.localSshOptions, ['--arg 2 --arg 4 foo bar -x']);

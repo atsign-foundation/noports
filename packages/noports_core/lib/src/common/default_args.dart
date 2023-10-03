@@ -28,3 +28,7 @@ class DefaultSSHNPArgs {
   static const listDevices = false;
   static const sshClient = SupportedSshClient.exec;
 }
+
+class DefaultSSHNPDArgs {
+  static const sshClient = SupportedSshClient.exec;
+}
