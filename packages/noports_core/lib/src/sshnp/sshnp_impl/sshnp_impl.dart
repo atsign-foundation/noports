@@ -529,7 +529,7 @@ abstract class SSHNPImpl implements SSHNP {
     }
 
     // wait for 10 seconds in case any are being slow
-    await Future.delayed(const Duration(seconds: 5));
+    await Future.delayed(const Duration(seconds: 10));
 
     // The intersection is in place on the off chance that some random device
     // sends a heartbeat notification, but is not on the list of devices
