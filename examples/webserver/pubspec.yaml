@@ -19,7 +19,7 @@ dependencies:
   flutter_dotenv: ^5.0.2
   http2: ^2.2.0
   noports_core:
-    path: ../../../packages/noports_core
+    path: ../../packages/noports_core
   path_provider: ^2.0.11
 
 dev_dependencies:
