@@ -202,6 +202,7 @@ jobs:
       matrix:
         np: [local, installer]
         npd: [local, installer]
+        legacy_daemon: [false]
         exclude:
           # Don't run these against themselves, pointless to test
           - np: local
