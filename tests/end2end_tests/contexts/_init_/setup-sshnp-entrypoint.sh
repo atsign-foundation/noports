@@ -29,6 +29,6 @@ legacy_sub=''
 if [ "$legacy" ]; then
     legacy_sub="s/legacy/--legacy-daemon/g"
 else
-    legacy_sub='s/legacy/--no-legacy-daemon/g'
+    legacy_sub='s/legacy//g'
 fi
 eval "$prefix" "$legacy_sub" ../sshnp/entrypoint.sh
