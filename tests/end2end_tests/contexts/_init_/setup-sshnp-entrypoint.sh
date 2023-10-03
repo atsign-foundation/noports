@@ -26,7 +26,7 @@ eval "$prefix" "s/@sshnpdatsign/${sshnpd}/g" ../sshnp/entrypoint.sh
 eval "$prefix" "s/@sshrvdatsign/${sshrvd}/g" ../sshnp/entrypoint.sh
 eval "$prefix" "s/deviceName/${device}/g" ../sshnp/entrypoint.sh
 legacy_sub=''
-if [ "$legacy" ]; then
+if [ "$legacy" == 'true' ]; then
     legacy_sub="s/legacy/--legacy-daemon/g"
 else
     legacy_sub='s/legacy//g'
