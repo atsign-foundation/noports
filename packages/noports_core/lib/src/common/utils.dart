@@ -49,10 +49,10 @@ Future<bool> fileExists(String file) async {
   return f;
 }
 
-const String asciiMatcher = r'[a-zA-Z0-9_]{0,15}';
+const String sshnpDeviceNameRegex = r'[a-zA-Z0-9_]{0,15}';
 
 bool checkNonAscii(String test) {
-  return RegExp(asciiMatcher).allMatches(test).first.group(0) != test;
+  return RegExp(sshnpDeviceNameRegex).allMatches(test).first.group(0) != test;
 }
 
 String getDefaultAtKeysFilePath(String homeDirectory, String? atSign) {

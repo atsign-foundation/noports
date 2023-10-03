@@ -472,7 +472,8 @@ abstract class SSHNPImpl implements SSHNP {
   Future<(Iterable<String>, Iterable<String>, Map<String, dynamic>)>
       listDevices() async {
     // get all the keys device_info.*.sshnpd
-    var scanRegex = 'device_info\\.$asciiMatcher\\.${DefaultArgs.namespace}';
+    var scanRegex =
+        'device_info\\.$sshnpDeviceNameRegex\\.${DefaultArgs.namespace}';
 
     var atKeys =
         await _getAtKeysRemote(regex: scanRegex, sharedBy: sshnpdAtSign);
@@ -483,7 +484,8 @@ abstract class SSHNPImpl implements SSHNP {
 
     // Listen for heartbeat notifications
     atClient.notificationService
-        .subscribe(regex: 'heartbeat\\.$asciiMatcher', shouldDecrypt: true)
+        .subscribe(
+            regex: 'heartbeat\\.$sshnpDeviceNameRegex', shouldDecrypt: true)
         .listen((notification) {
       var deviceInfo = jsonDecode(notification.value ?? '{}');
       var devicename = deviceInfo['devicename'];
