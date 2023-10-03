@@ -1,10 +1,13 @@
 version: "3.0"
 services:
   sshnpd:
-    build:
-      context: ../..
-      dockerfile: examples/webserver/server/Dockerfile
+    image: sshnpd_webserver:local
     volumes:
       - ${HOME}/.atsign/keys:/atsign/.atsign/keys
-      - ./server/mount/var/www/html:/var/www/html
+      - type: bind # binded mount for demo purposes
+        source: ./server/mount/var/www/html
+        target: /var/www/html
+      - type: bind # binded mount for demo purposes
+        source: ./server/mount/var/www/html/api
+        target: /var/www/html/api
     command: -a "${TO}" -m "${FROM}" -d "${DEVICE}" -s -u -v
