@@ -1,6 +1,5 @@
 #!/bin/bash
-ARGS=""
-SSHNP_COMMAND="$HOME/.local/bin/sshnp -f @sshnpatsign -t @sshnpdatsign -d deviceName -h @sshrvdatsign -s id_ed25519.pub -v $ARGS > sshnp.log"
+SSHNP_COMMAND="$HOME/.local/bin/sshnp -f @sshnpatsign -t @sshnpdatsign -d deviceName -h @sshrvdatsign -s id_ed25519.pub -v legacy > sshnp.log"
 echo "Running: $SSHNP_COMMAND"
 eval "$SSHNP_COMMAND"
 cat sshnp.log
