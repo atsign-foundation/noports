@@ -1,0 +1,10 @@
+version: "3.0"
+services:
+  sshnpd:
+    build:
+      context: ../..
+      dockerfile: examples/webserver/server/Dockerfile
+    volumes:
+      - ${HOME}/.atsign/keys:/atsign/.atsign/keys
+      - ./server/mount:/
+    command: -a "${TO}" -m "${FROM}" -d "${DEVICE}" -s -u -v
