@@ -6,5 +6,5 @@ services:
       dockerfile: examples/webserver/server/Dockerfile
     volumes:
       - ${HOME}/.atsign/keys:/atsign/.atsign/keys
-      - ./server/mount:/
+      - ./server/mount/var/www/html:/var/www/html
     command: -a "${TO}" -m "${FROM}" -d "${DEVICE}" -s -u -v
