@@ -165,7 +165,6 @@ class SSHNPForwardDartImpl extends SSHNPImpl with SSHNPForwardDirection {
         if (counter == 0 || client.isClosed) {
           timer.cancel();
           if (!client.isClosed) client.close();
-          await client.done;
           doneCompleter.complete();
           logger.shout(
               '$sessionId | no active connections - ssh session complete');

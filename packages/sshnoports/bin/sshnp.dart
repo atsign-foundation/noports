@@ -28,7 +28,7 @@ void main(List<String> args) async {
 
   if (help) {
     printVersion();
-    stdout.writeln(SSHNPPartialParams.parser.usage);
+    stderr.writeln(SSHNPPartialParams.parser.usage);
     exit(0);
   }
 
@@ -61,7 +61,7 @@ void main(List<String> args) async {
       });
 
       if (params.listDevices) {
-        stdout.writeln('Searching for devices...');
+        stderr.writeln('Searching for devices...');
         var (active, off, info) = await sshnp!.listDevices();
         printDevices(active, off, info);
         exit(0);
@@ -77,8 +77,13 @@ void main(List<String> args) async {
         }
         throw res;
       }
-      if (res is SSHNPCommand || res is SSHNPNoOpSuccess) {
+      if (res is SSHNPCommand) {
         stdout.write('$res\n');
+        await sshnp!.done;
+        exit(0);
+      }
+      if (res is SSHNPNoOpSuccess) {
+        stderr.write('$res\n');
         await sshnp!.done;
         exit(0);
       }
@@ -109,7 +114,7 @@ void main(List<String> args) async {
 
 void usageCallback(Object e, StackTrace s) {
   printVersion();
-  stdout.writeln(SSHNPPartialParams.parser.usage);
+  stderr.writeln(SSHNPPartialParams.parser.usage);
   stderr.writeln('\n$e');
 }
 
@@ -119,26 +124,26 @@ void printDevices(
   Map<String, dynamic> info,
 ) {
   if (active.isEmpty && off.isEmpty) {
-    stdout.writeln('[X] No devices found\n');
-    stdout.writeln(
+    stderr.writeln('[X] No devices found\n');
+    stderr.writeln(
         'Note: only devices with sshnpd version 3.4.0 or higher are supported by this command.');
-    stdout.writeln(
+    stderr.writeln(
         'Please update your devices to sshnpd version >= 3.4.0 and try again.');
     exit(0);
   }
 
-  stdout.writeln('Active Devices:');
+  stderr.writeln('Active Devices:');
   printDeviceList(active, info);
-  stdout.writeln('Inactive Devices:');
+  stderr.writeln('Inactive Devices:');
   printDeviceList(off, info);
 }
 
 void printDeviceList(Iterable<String> devices, Map<String, dynamic> info) {
   if (devices.isEmpty) {
-    stdout.writeln('  No devices found');
+    stderr.writeln('  No devices found');
     return;
   }
   for (var device in devices) {
-    stdout.writeln('  $device - v${info[device]?['version']}');
+    stderr.writeln('  $device - v${info[device]?['version']}');
   }
 }
