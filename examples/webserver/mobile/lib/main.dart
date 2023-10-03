@@ -4,7 +4,8 @@ import 'package:at_app_flutter/at_app_flutter.dart' show AtEnv;
 import 'package:at_onboarding_flutter/at_onboarding_flutter.dart';
 import 'package:at_utils/at_logger.dart' show AtSignLogger;
 import 'package:flutter/material.dart';
-import 'package:path_provider/path_provider.dart' show getApplicationSupportDirectory;
+import 'package:path_provider/path_provider.dart'
+    show getApplicationSupportDirectory;
 
 import 'home_screen.dart';
 
@@ -39,7 +40,7 @@ Future<AtClientPreference> loadAtClientPreference() async {
 class MyApp extends StatefulWidget {
   const MyApp({Key? key}) : super(key: key);
   @override
-  _MyAppState createState() => _MyAppState();
+  State<MyApp> createState() => _MyAppState();
 }
 
 class _MyAppState extends State<MyApp> {
@@ -58,7 +59,8 @@ class _MyAppState extends State<MyApp> {
           builder: (context) => Center(
             child: ElevatedButton(
               onPressed: () async {
-                AtOnboardingResult onboardingResult = await AtOnboarding.onboard(
+                AtOnboardingResult onboardingResult =
+                    await AtOnboarding.onboard(
                   context: context,
                   config: AtOnboardingConfig(
                     atClientPreference: await futurePreference,
@@ -69,15 +71,22 @@ class _MyAppState extends State<MyApp> {
                 );
                 switch (onboardingResult.status) {
                   case AtOnboardingResultStatus.success:
-                    Navigator.push(context, MaterialPageRoute(builder: (_) => const HomeScreen()));
+                    if (context.mounted) {
+                      Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                              builder: (_) => const HomeScreen()));
+                    }
                     break;
                   case AtOnboardingResultStatus.error:
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        backgroundColor: Colors.red,
-                        content: Text('An error has occurred'),
-                      ),
-                    );
+                    if (context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          backgroundColor: Colors.red,
+                          content: Text('An error has occurred'),
+                        ),
+                      );
+                    }
                     break;
                   case AtOnboardingResultStatus.cancel:
                     break;
