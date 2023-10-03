@@ -1,9 +1,6 @@
-import 'dart:io';
-
 import 'package:at_client_mobile/at_client_mobile.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:socket_connector/socket_connector.dart';
 import 'package:noports_core/sshnp.dart';
 import 'package:noports_core/sshrv.dart';
 import 'package:sshnp_gui/src/controllers/background_session_controller.dart';
