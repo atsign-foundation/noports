@@ -1,7 +1,7 @@
 import 'dart:async';
 
 import 'package:at_client/at_client.dart';
-import 'package:noports_core/src/common/utils.dart';
+import 'package:noports_core/src/common/validation_utils.dart';
 import 'package:noports_core/src/sshnp/sshnp_impl/sshnp_impl.dart';
 import 'package:noports_core/src/sshnp/sshnp_impl/sshnp_local_file_mixin.dart';
 import 'package:noports_core/src/sshnp/sshnp_impl/sshnp_reverse_mixin.dart';

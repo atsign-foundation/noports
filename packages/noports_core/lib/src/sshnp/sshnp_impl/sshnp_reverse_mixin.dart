@@ -1,5 +1,7 @@
 import 'dart:async';
+import 'dart:io';
 
+import 'package:noports_core/src/common/file_system_utils.dart';
 import 'package:noports_core/src/sshnp/sshnp_impl/sshnp_local_file_mixin.dart';
 import 'package:noports_core/src/sshnp/sshnp_result.dart';
 import 'package:noports_core/utils.dart';
@@ -66,8 +68,26 @@ mixin SSHNPReverseMixin on SSHNPLocalFileMixin {
 
   @override
   Future<void> cleanUp() async {
-    await cleanUpAfterReverseSsh(this);
+    String homeDirectory = getHomeDirectory()!;
+    var sshHomeDirectory = getDefaultSshDirectory(homeDirectory);
+    logger.info('Tidying up files');
+// Delete the generated RSA keys and remove the entry from ~/.ssh/authorized_keys
+    await _deleteFile('$sshHomeDirectory/${sessionId}_sshnp');
+    await _deleteFile('$sshHomeDirectory/${sessionId}_sshnp.pub');
+    await removeEphemeralKeyFromAuthorizedKeys(sessionId, logger,
+        sshHomeDirectory: sshHomeDirectory);
     super.cleanUp();
+  }
+
+  Future<bool> _deleteFile(String fileName) async {
+    try {
+      final file = File(fileName);
+      await file.delete();
+      return true;
+    } catch (e) {
+      logger.severe("Error deleting file : $fileName");
+      return false;
+    }
   }
 
   bool get usingSshrv => sshrvdPort != null;

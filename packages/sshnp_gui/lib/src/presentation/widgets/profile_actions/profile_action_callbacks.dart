@@ -52,7 +52,7 @@ class ProfileActionCallbacks {
           profileName,
           basenameOnly: true);
       final initialDirectory =
-          getDefaultSshnpConfigDirectory(await getHomeDirectory());
+          getDefaultSshnpConfigDirectory(getHomeDirectory()!);
 
       final FileSaveLocation? saveLocation = await getSaveLocation(
         suggestedName: suggestedName,

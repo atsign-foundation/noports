@@ -1,5 +1,5 @@
 import 'package:args/args.dart';
-import 'package:noports_core/src/common/utils.dart';
+import 'package:noports_core/src/common/file_system_utils.dart';
 
 class SSHRVDParams {
   final String username;
@@ -32,7 +32,7 @@ class SSHRVDParams {
     ArgResults r = parser.parse(args);
 
     String atSign = r['atsign'];
-    String homeDirectory = await getHomeDirectory();
+    String homeDirectory = getHomeDirectory()!;
 
     return SSHRVDParams(
       username: getUserName(throwIfNull: true)!,

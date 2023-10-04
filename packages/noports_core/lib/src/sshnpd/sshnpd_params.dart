@@ -1,7 +1,8 @@
 import 'package:args/args.dart';
 import 'package:noports_core/src/common/default_args.dart';
+import 'package:noports_core/src/common/file_system_utils.dart';
 import 'package:noports_core/src/common/supported_ssh_clients.dart';
-import 'package:noports_core/src/common/utils.dart';
+import 'package:noports_core/src/common/validation_utils.dart';
 
 class SSHNPDParams {
   final String device;
@@ -44,7 +45,7 @@ class SSHNPDParams {
 
     String deviceAtsign = r['atsign'];
     String managerAtsign = r['manager'];
-    String homeDirectory = await getHomeDirectory();
+    String homeDirectory = getHomeDirectory()!;
 
     // Do we have a device ?
     String device = r['device'];

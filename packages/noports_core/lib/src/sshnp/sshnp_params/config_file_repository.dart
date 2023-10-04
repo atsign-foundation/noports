@@ -1,6 +1,6 @@
 import 'dart:io';
 
-import 'package:noports_core/src/common/utils.dart';
+import 'package:noports_core/src/common/file_system_utils.dart';
 import 'package:noports_core/src/sshnp/sshnp_params/sshnp_params.dart';
 import 'package:noports_core/src/sshnp/sshnp_params/sshnp_arg.dart';
 import 'package:path/path.dart' as path;
@@ -21,13 +21,13 @@ class ConfigFileRepository {
     final basename = '$fileName.env';
     if (basenameOnly) return basename;
     return path.join(
-      directory ?? getDefaultSshnpConfigDirectory(await getHomeDirectory()),
+      directory ?? getDefaultSshnpConfigDirectory(getHomeDirectory()!),
       basename,
     );
   }
 
   static Future<Directory> createConfigDirectory({String? directory}) async {
-    directory ??= getDefaultSshnpConfigDirectory(await getHomeDirectory());
+    directory ??= getDefaultSshnpConfigDirectory(getHomeDirectory()!);
     var dir = Directory(directory);
     if (!await dir.exists()) {
       await dir.create(recursive: true);
@@ -37,7 +37,7 @@ class ConfigFileRepository {
 
   static Future<Iterable<String>> listProfiles({String? directory}) async {
     var profileNames = <String>{};
-    directory ??= getDefaultSshnpConfigDirectory(await getHomeDirectory());
+    directory ??= getDefaultSshnpConfigDirectory(getHomeDirectory()!);
     var files = Directory(directory).list();
 
     await files.forEach((file) {

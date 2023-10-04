@@ -6,7 +6,7 @@ import 'package:at_client/at_client.dart';
 import 'package:at_utils/at_logger.dart';
 import 'package:logging/logging.dart';
 import 'package:meta/meta.dart';
-import 'package:noports_core/src/common/utils.dart';
+import 'package:noports_core/src/common/file_system_utils.dart';
 import 'package:noports_core/src/sshrvd/socket_connector.dart';
 import 'package:noports_core/src/sshrvd/sshrvd.dart';
 import 'package:noports_core/src/sshrvd/sshrvd_params.dart';
