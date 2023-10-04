@@ -18,6 +18,7 @@ mixin SSHNPForwardDirection on SSHNPImpl {
   @override
   Future<void> init() async {
     await super.init();
+    if (initializedCompleter.isCompleted) return;
     initializedCompleter.complete();
   }
 

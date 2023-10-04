@@ -22,6 +22,7 @@ class SSHNPLegacyImpl extends SSHNPImpl with SSHNPReverseDirection {
   @override
   Future<void> init() async {
     await super.init();
+    if (initializedCompleter.isCompleted) return;
 
     // Share our private key with sshnpd
     AtKey sendOurPrivateKeyToSshnpd = AtKey()

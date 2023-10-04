@@ -15,7 +15,7 @@ dependencies:
   args: ^2.4.2
   at_chops: ^1.0.4
   at_client: ^3.0.65
-  at_commons: ^3.0.55
+  at_commons: ^3.0.56
   at_lookup: ^3.0.40
   at_utils: ^3.0.15
   crypton: ^2.1.0

@@ -23,6 +23,8 @@ mixin SSHNPReverseDirection on SSHNPImpl {
   @override
   Future<void> init() async {
     await super.init();
+    if (initializedCompleter.isCompleted) return;
+
     localUsername = getUserName(throwIfNull: true)!;
 
     logger.info('Generating ephemeral keypair');

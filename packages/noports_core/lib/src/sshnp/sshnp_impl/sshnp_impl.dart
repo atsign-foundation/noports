@@ -177,7 +177,7 @@ abstract class SSHNPImpl implements SSHNP {
     }
 
     String homeDirectory = await getHomeDirectory();
-    sshHomeDirectory  = getDefaultSshDirectory(homeDirectory);
+    sshHomeDirectory = getDefaultSshDirectory(homeDirectory);
 
     try {
       if (!(await atSignIsActivated(atClient, sshnpdAtSign))) {
