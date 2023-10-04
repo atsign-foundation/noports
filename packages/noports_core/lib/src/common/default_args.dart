@@ -6,35 +6,36 @@ import 'package:noports_core/sshrv.dart';
 class DefaultArgs {
   const DefaultArgs();
 
-  static const namespace = 'sshnp';
+  static const String namespace = 'sshnp';
 
-  static const verbose = false;
-  static const rsa = false;
-  static const rootDomain = 'root.atsign.org';
-  static const sshrvGenerator = SSHRV.exec;
-  static const localSshdPort = 22;
-  static const remoteSshdPort = 22;
+  static const bool verbose = false;
+  static const bool rsa = false;
+  static const String rootDomain = 'root.atsign.org';
+  static const SSHRVGenerator sshrvGenerator = SSHRV.exec;
+  static const int localSshdPort = 22;
+  static const int remoteSshdPort = 22;
 
   /// value in seconds after which idle ssh tunnels will be closed
-  static const idleTimeout = 15;
-  static const help = false;
-  static const addForwardsToTunnel = false;
-  static final allowLocalFileSystem =
+  static const int idleTimeout = 15;
+  static const bool help = false;
+  static const bool addForwardsToTunnel = false;
+  static final bool allowLocalFileSystem =
       Platform.isLinux || Platform.isMacOS || Platform.isWindows;
 }
 
 class DefaultSSHNPArgs {
-  static const device = 'default';
-  static const port = 22;
-  static const localPort = 0;
-  static const sendSshPublicKey = false;
-  static const localSshOptions = <String>[];
-  static const legacyDaemon = false;
-  static const listDevices = false;
-  static getSshClient(bool allowLocalFileSystem) =>
-      allowLocalFileSystem ? SupportedSshClient.exec : SupportedSshClient.dart;
+  static const String device = 'default';
+  static const int port = 22;
+  static const int localPort = 0;
+  static const bool sendSshPublicKey = false;
+  static const List<String> localSshOptions = <String>[];
+  static const bool legacyDaemon = false;
+  static const bool listDevices = false;
+  static String getSshClient(bool allowLocalFileSystem) => allowLocalFileSystem
+      ? SupportedSshClient.exec.cliArg
+      : SupportedSshClient.dart.cliArg;
 }
 
 class DefaultSSHNPDArgs {
-  static const sshClient = SupportedSshClient.exec;
+  static const SupportedSshClient sshClient = SupportedSshClient.exec;
 }
