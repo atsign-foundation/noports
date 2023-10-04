@@ -13,6 +13,7 @@ dependencies:
   at_onboarding_flutter: ^6.1.0
   at_utils: ^3.0.11
   biometric_storage: ^5.0.0
+  cryptography_flutter: ^2.3.2
   dartssh2: ^2.8.2
   flutter:
     sdk: flutter
@@ -33,4 +34,4 @@ dependency_overrides:
 flutter:
   uses-material-design: true
   assets:
-    - ../.env
+    - .env

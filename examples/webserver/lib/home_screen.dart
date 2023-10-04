@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter/material.dart';
 import 'package:sshnp_webserver_demo/api/mobile_endpoint.dart';
 
@@ -12,28 +13,27 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  final TextEditingController _deviceAtSignController = TextEditingController();
-  final TextEditingController _deviceNameController = TextEditingController();
-  final TextEditingController _hostController = TextEditingController();
-
   Map<String, dynamic> headers = {};
   String message = '';
 
   Future<void> onPressed() async {
-    String deviceAtSign = _deviceAtSignController.text;
-    String deviceName = _deviceNameController.text;
-    String host = _hostController.text;
+    await dotenv.load();
+    String deviceAtSign = dotenv.get('TO');
+    String host = dotenv.get('HOST');
+    String deviceName = dotenv.get('DEVICE');
+    if (context.mounted) {
+      var (String message, Map<String, dynamic> headers) = await mobileEndpoint(
+        deviceAtSign: deviceAtSign,
+        deviceName: deviceName,
+        host: host,
+        context: context,
+      );
 
-    var (String message, Map<String, dynamic> headers) = await mobileEndpoint(
-      deviceAtSign: deviceAtSign,
-      deviceName: deviceName,
-      host: host,
-    );
-
-    setState(() {
-      message = message;
-      headers = headers;
-    });
+      setState(() {
+        message = message;
+        headers = headers;
+      });
+    }
   }
 
   @override
@@ -45,38 +45,18 @@ class _HomeScreenState extends State<HomeScreen> {
       body: Padding(
         padding: const EdgeInsets.all(24.0),
         child: Column(children: [
-          TextField(
-            controller: _deviceAtSignController,
-            decoration: const InputDecoration(
-              border: OutlineInputBorder(),
-              labelText: 'Device AtSign',
-            ),
-          ),
-          const SizedBox(height: 8),
-          TextField(
-            controller: _deviceNameController,
-            decoration: const InputDecoration(
-              border: OutlineInputBorder(),
-              labelText: 'Device Name',
-            ),
-          ),
-          const SizedBox(height: 8),
-          TextField(
-            controller: _hostController,
-            decoration: const InputDecoration(
-              border: OutlineInputBorder(),
-              labelText: 'Host',
-            ),
-          ),
-          const SizedBox(height: 8),
-          ElevatedButton(
-            onPressed: onPressed,
-            child: const Text('Load Data'),
-          ),
-          const SizedBox(height: 16),
-          const Text(
-            'Data',
-            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text(
+                'Data',
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20),
+              ),
+              IconButton(
+                onPressed: onPressed,
+                icon: const Icon(Icons.refresh, size: 20),
+              ),
+            ],
           ),
           Expanded(
             child: Container(

@@ -2,14 +2,17 @@ import 'dart:convert';
 
 import 'package:at_client_mobile/at_client_mobile.dart' hide StringBuffer;
 import 'package:dartssh2/dartssh2.dart';
+import 'package:flutter/material.dart';
 import 'package:http2/http2.dart';
 import 'package:noports_core/sshnp.dart';
 import 'package:noports_core/sshrv.dart';
+import 'package:sshnp_webserver_demo/widgets/custom_snack_bar.dart';
 
 Future<(String, Map<String, dynamic>)> mobileEndpoint({
   required String deviceAtSign,
   required String deviceName,
   required String host,
+  required BuildContext context,
 }) async {
   AtClient atClient = AtClientManager.getInstance().atClient;
   String clientAtSign = atClient.getCurrentAtSign()!;
@@ -25,6 +28,7 @@ Future<(String, Map<String, dynamic>)> mobileEndpoint({
     device: deviceName,
     idleTimeout: 30,
     sshClient: SupportedSshClient.dart.cliArg,
+    verbose: true,
   );
 
   SSHNP sshnp = await SSHNP.fromParams(
@@ -35,11 +39,19 @@ Future<(String, Map<String, dynamic>)> mobileEndpoint({
 
   await sshnp.init();
   SSHNPResult result = await sshnp.run();
+
   if (result is! SSHNPCommand<SSHClient>) {
-    throw ('Unexpected result type: result is not a SSHNPCommand<SSHClient>');
+    if (context.mounted) {
+      CustomSnackBar.error(context: context, content: result.toString());
+    }
+    throw ('Unexpected value: result is not SSHNPCommand<SSHClient>, result is ${result.runtimeType}');
   }
 
   if (result.connectionBean == null) {
+    if (context.mounted) {
+      CustomSnackBar.error(
+          context: context, content: 'Connection bean is null');
+    }
     throw ('Unexpected value: result.connectionBean is null');
   }
 
