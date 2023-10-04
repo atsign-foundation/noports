@@ -39,7 +39,7 @@ class SSHNPParams {
 
   /// Late variables
   late final String sshClient;
-  late final SSHKeyPair? sshKeyPair;
+  SSHKeyPair? sshKeyPair;
 
   /// Special Arguments
   final String?
@@ -73,6 +73,7 @@ class SSHNPParams {
     this.addForwardsToTunnel = false,
     bool? allowLocalFileSystem,
     String? sshClient,
+    this.sshKeyPair
   }) : allowLocalFileSystem =
             allowLocalFileSystem ?? DefaultArgs.allowLocalFileSystem {
     sshClient =
@@ -130,6 +131,7 @@ class SSHNPParams {
       remoteSshdPort: params2.remoteSshdPort ?? params1.remoteSshdPort,
       idleTimeout: params2.idleTimeout ?? params1.idleTimeout,
       sshClient: params2.sshClient ?? params1.sshClient,
+      sshKeyPair: params2.sshKeyPair ?? params1.sshKeyPair,
       addForwardsToTunnel:
           params2.addForwardsToTunnel ?? params1.addForwardsToTunnel,
     );
@@ -174,6 +176,7 @@ class SSHNPParams {
       sshClient: partial.sshClient ??
           DefaultSSHNPArgs.getSshClient(
               partial.allowLocalFileSystem ?? DefaultArgs.allowLocalFileSystem),
+      sshKeyPair: partial.sshKeyPair,
       addForwardsToTunnel: partial.addForwardsToTunnel ?? false,
     );
   }
@@ -220,6 +223,7 @@ class SSHNPParams {
       'remote-sshd-port': remoteSshdPort,
       'idle-timeout': idleTimeout,
       'ssh-client': sshClient,
+      'ssh-key-pair-pem': sshKeyPair?.toPem(),
       'add-forwards-to-tunnel': addForwardsToTunnel,
     };
   }
@@ -259,6 +263,7 @@ class SSHNPPartialParams {
   final int? idleTimeout;
   final bool? addForwardsToTunnel;
   final String? sshClient;
+  final SSHKeyPair? sshKeyPair;
   final bool? allowLocalFileSystem;
 
   /// Operation flags
@@ -287,6 +292,7 @@ class SSHNPPartialParams {
     this.remoteSshdPort,
     this.idleTimeout,
     this.sshClient,
+    this.sshKeyPair,
     this.addForwardsToTunnel,
     this.allowLocalFileSystem,
   });
@@ -324,6 +330,7 @@ class SSHNPPartialParams {
       remoteSshdPort: params2.remoteSshdPort ?? params1.remoteSshdPort,
       idleTimeout: params2.idleTimeout ?? params1.idleTimeout,
       sshClient: params2.sshClient ?? params1.sshClient,
+      sshKeyPair: params2.sshKeyPair ?? params1.sshKeyPair,
       addForwardsToTunnel:
           params2.addForwardsToTunnel ?? params1.addForwardsToTunnel,
       allowLocalFileSystem:
@@ -371,6 +378,9 @@ class SSHNPPartialParams {
       remoteSshdPort: args['remote-sshd-port'],
       idleTimeout: args['idle-timeout'],
       sshClient: args['ssh-client'],
+      sshKeyPair: args['ssh-key-pair-pem'] == null
+          ? null
+          : SSHKeyPair.fromPem(args['ssh-key-pair-pem']).firstOrNull,
       addForwardsToTunnel: args['add-forwards-to-tunnel'],
       allowLocalFileSystem: args['allow-local-file-system'],
     );

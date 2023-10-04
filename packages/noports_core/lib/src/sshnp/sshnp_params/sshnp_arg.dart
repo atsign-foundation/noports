@@ -27,6 +27,7 @@ class SSHNPArg {
   final bool commandLineOnly;
   final List<String>? aliases;
   final bool negatable;
+  final bool hide;
 
   const SSHNPArg({
     required this.name,
@@ -40,6 +41,7 @@ class SSHNPArg {
     this.commandLineOnly = false,
     this.aliases,
     this.negatable = true,
+    this.hide = false,
   });
 
   String get bashName => name.replaceAll('-', '_').toUpperCase();
@@ -214,6 +216,13 @@ class SSHNPArg {
       commandLineOnly: true,
     ),
     const SSHNPArg(
+      name: 'ssh-key-pair-pem',
+      help: 'The pem file contents of the ssh key pair',
+      commandLineOnly: true,
+      format: ArgFormat.option,
+      hide: true,
+    ),
+    const SSHNPArg(
       name: 'add-forwards-to-tunnel',
       defaultsTo: false,
       help: 'When true, any local forwarding directives provided in'
@@ -263,6 +272,7 @@ class SSHNPArg {
             mandatory: arg.mandatory,
             defaultsTo: withDefaults ? arg.defaultsTo?.toString() : null,
             help: arg.help,
+            hide: arg.hide,
             allowed: arg.allowed,
             aliases: arg.aliases ?? const [],
           );
@@ -273,6 +283,7 @@ class SSHNPArg {
             abbr: arg.abbr,
             defaultsTo: withDefaults ? arg.defaultsTo as List<String>? : null,
             help: arg.help,
+            hide: arg.hide,
           );
           break;
         case ArgFormat.flag:
@@ -281,6 +292,7 @@ class SSHNPArg {
             abbr: arg.abbr,
             defaultsTo: withDefaults ? arg.defaultsTo as bool? : null,
             help: arg.help,
+            hide: arg.hide,
             negatable: arg.negatable,
           );
           break;
