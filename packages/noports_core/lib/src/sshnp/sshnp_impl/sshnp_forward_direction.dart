@@ -15,12 +15,6 @@ mixin SSHNPForwardDirection on SSHNPImpl {
   @override
   set sshrvdPort(int? port) => _sshrvdPort = port!;
 
-  @override
-  Future<void> init() async {
-    await super.init();
-    if (initializedCompleter.isCompleted) return;
-    initializedCompleter.complete();
-  }
 
   Future<SSHNPResult?> requestSocketTunnelFromDaemon() async {
     logger.info(

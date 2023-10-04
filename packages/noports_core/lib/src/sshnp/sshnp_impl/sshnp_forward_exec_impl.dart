@@ -6,10 +6,12 @@ import 'package:at_client/at_client.dart' hide StringBuffer;
 
 import 'package:noports_core/src/sshnp/sshnp_impl/sshnp_forward_direction.dart';
 import 'package:noports_core/src/sshnp/sshnp_impl/sshnp_impl.dart';
+import 'package:noports_core/src/sshnp/sshnp_impl/sshnp_local_file_mixin.dart';
 import 'package:noports_core/sshnp.dart';
 import 'package:path/path.dart' as path;
 
-class SSHNPForwardExecImpl extends SSHNPImpl with SSHNPForwardDirection {
+class SSHNPForwardExecImpl extends SSHNPImpl
+    with SSHNPForwardDirection, SSHNPLocalFileMixin {
   SSHNPForwardExecImpl({
     required AtClient atClient,
     required SSHNPParams params,
@@ -19,6 +21,13 @@ class SSHNPForwardExecImpl extends SSHNPImpl with SSHNPForwardDirection {
           params: params,
           shouldInitialize: shouldInitialize,
         );
+
+  @override
+  Future<void> init() async {
+    await super.init();
+    if (initializedCompleter.isCompleted) return;
+    initializedCompleter.complete();
+  }
 
   @override
   Future<SSHNPResult> run() async {
@@ -112,7 +121,7 @@ class SSHNPForwardExecImpl extends SSHNPImpl with SSHNPForwardDirection {
         localPort: localPort,
         remoteUsername: remoteUsername,
         host: 'localhost',
-        privateKeyFileName: publicKeyFileName.replaceAll('.pub', ''),
+        privateKeyFileName: params.identityFile?.replaceAll('.pub', ''),
         localSshOptions:
             (params.addForwardsToTunnel) ? null : params.localSshOptions,
         connectionBean: process,

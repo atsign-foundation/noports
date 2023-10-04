@@ -61,8 +61,8 @@ class ProfileActionCallbacks {
       );
       if (saveLocation == null) return;
       final params = ref.read(configFamilyController(profileName));
-      final fileData =
-          Uint8List.fromList(params.requireValue.toConfig().codeUnits);
+      final fileData = Uint8List.fromList(
+          params.requireValue.toConfigLines().join('\n').codeUnits);
       final XFile textFile = XFile.fromData(
         fileData,
         mimeType: dotEnvMimeType,

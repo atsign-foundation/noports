@@ -128,15 +128,16 @@ class _ProfileFormState extends ConsumerState<ProfileForm> {
                   Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      CustomTextFormField(
-                        initialValue: oldConfig.sendSshPublicKey,
-                        labelText: strings.sendSshPublicKey,
-                        onChanged: (value) =>
-                            newConfig = SSHNPPartialParams.merge(
-                          newConfig,
-                          SSHNPPartialParams(sendSshPublicKey: value),
-                        ),
-                      ),
+                      // TODO replace this with a file selector which populates SSHNPParams.sshKeyPair using SSHKeyPair.fromPem
+                      // CustomTextFormField(
+                      //   initialValue: oldConfig.sendSshPublicKey,
+                      //   labelText: strings.sendSshPublicKey,
+                      //   onChanged: (value) =>
+                      //       newConfig = SSHNPPartialParams.merge(
+                      //     newConfig,
+                      //     SSHNPPartialParams(sendSshPublicKey: value),
+                      //   ),
+                      // ),
                       gapW8,
                       SizedBox(
                         width: CustomTextFormField.defaultWidth,

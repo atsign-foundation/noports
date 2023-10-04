@@ -2,11 +2,13 @@ import 'dart:async';
 
 import 'package:at_client/at_client.dart';
 import 'package:noports_core/src/sshnp/sshnp_impl/sshnp_impl.dart';
-import 'package:noports_core/src/sshnp/sshnp_impl/sshnp_reverse_direction.dart';
+import 'package:noports_core/src/sshnp/sshnp_impl/sshnp_local_file_mixin.dart';
+import 'package:noports_core/src/sshnp/sshnp_impl/sshnp_reverse_mixin.dart';
 import 'package:noports_core/sshnp.dart';
 import 'package:noports_core/sshrv.dart';
 
-class SSHNPLegacyImpl extends SSHNPImpl with SSHNPReverseDirection {
+class SSHNPLegacyImpl extends SSHNPImpl
+    with SSHNPLocalFileMixin, SSHNPReverseMixin {
   SSHNPLegacyImpl({
     required AtClient atClient,
     required SSHNPParams params,
@@ -92,7 +94,7 @@ class SSHNPLegacyImpl extends SSHNPImpl with SSHNPReverseDirection {
       localPort: localPort,
       remoteUsername: remoteUsername,
       host: 'localhost',
-      privateKeyFileName: publicKeyFileName.replaceAll('.pub', ''),
+      privateKeyFileName: params.identityFile?.replaceAll('.pub', ''),
       localSshOptions:
           (params.addForwardsToTunnel) ? null : params.localSshOptions,
       connectionBean: sshrvResult,

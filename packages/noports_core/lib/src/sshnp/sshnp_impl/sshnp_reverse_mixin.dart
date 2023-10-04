@@ -1,10 +1,13 @@
 import 'dart:async';
 
-import 'package:noports_core/src/sshnp/sshnp_impl/sshnp_impl.dart';
+import 'package:noports_core/src/sshnp/sshnp_impl/sshnp_local_file_mixin.dart';
 import 'package:noports_core/src/sshnp/sshnp_result.dart';
 import 'package:noports_core/utils.dart';
 
-mixin SSHNPReverseDirection on SSHNPImpl {
+/// Users of this mixin must also use [SSHNPLocalFileMixin]
+/// e.g. class [SSHNPReverseImpl] extends [SSHNPImpl] with [SSHNPLocalFileMixin], [SSHNPReverseMixin]
+/// Note that the order of mixins is important here.
+mixin SSHNPReverseMixin on SSHNPLocalFileMixin {
   /// Set by [generateSshKeys] during [init], if we're not doing direct ssh.
   /// sshnp generates a new keypair for each ssh session, using ed25519 by
   /// default but rsa if the [rsa] flag is set to true. sshnp will write

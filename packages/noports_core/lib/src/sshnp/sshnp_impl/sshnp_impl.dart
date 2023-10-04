@@ -12,7 +12,6 @@ import 'package:noports_core/sshrv.dart';
 import 'package:noports_core/sshrvd.dart';
 import 'package:noports_core/utils.dart';
 import 'package:uuid/uuid.dart';
-import 'package:path/path.dart' as path;
 
 // If you've never seen an abstract implementation before, here it is :P
 @protected
@@ -33,15 +32,11 @@ abstract class SSHNPImpl implements SSHNP {
   /// Function used to generate a [SSHRV] instance ([SSHRV.localbinary] by default)
   final SSHRVGenerator sshrvGenerator;
 
-  late final String sshHomeDirectory;
-
   // ====================================================================
   // Final instance variables, derived during initialization
   // ====================================================================
 
   late final String remoteUsername;
-
-  late final String publicKeyFileName;
 
   // ====================================================================
   // Volatile instance variables, injected via constructor
@@ -142,26 +137,6 @@ abstract class SSHNPImpl implements SSHNP {
     preference.namespace = '${params.device}.sshnp';
     atClient.setPreferences(preference);
 
-    // Set the file name for the public key based on the value of sendSshPublicKey
-    // previously, the default value for sendSshPublicKey was 'false' instead of ''
-    // immediately set it to '' to avoid the program from attempting to
-    // search for a public key file called 'false'
-    if (params.sendSshPublicKey == 'false' || params.sendSshPublicKey.isEmpty) {
-      logger.warning('No ssh public key file will be sent to sshnpd');
-      publicKeyFileName = '';
-    } else if (path.normalize(params.sendSshPublicKey).contains('/') ||
-        path.normalize(params.sendSshPublicKey).contains(r'\')) {
-      publicKeyFileName =
-          path.normalize(path.absolute(params.sendSshPublicKey));
-      logger.info(
-          'Using absolute path for ssh public key file: $publicKeyFileName');
-    } else {
-      publicKeyFileName =
-          path.normalize('$sshHomeDirectory/${params.sendSshPublicKey}');
-      logger.info(
-          'Using default .ssh path for ssh public key file: $publicKeyFileName');
-    }
-
     /// Also call init
     if (shouldInitialize ?? true) init();
   }
@@ -175,9 +150,6 @@ abstract class SSHNPImpl implements SSHNP {
     } else {
       _initializeStarted = true;
     }
-
-    String homeDirectory = await getHomeDirectory();
-    sshHomeDirectory = getDefaultSshDirectory(homeDirectory);
 
     try {
       if (!(await atSignIsActivated(atClient, sshnpdAtSign))) {
@@ -194,19 +166,8 @@ abstract class SSHNPImpl implements SSHNP {
         .subscribe(regex: '$sessionId.$namespace@', shouldDecrypt: true)
         .listen(handleSshnpdResponses);
 
-    // Check that the public key file exists
-    if (publicKeyFileName.isNotEmpty && !File(publicKeyFileName).existsSync()) {
-      logger.info('Unable to find ssh public key file');
-      throw ('Unable to find ssh public key file : $publicKeyFileName');
-    }
-
-    // Check that the private key file exists
-    if (publicKeyFileName.isNotEmpty &&
-        !File(publicKeyFileName.replaceAll('.pub', '')).existsSync()) {
-      logger.info(
-          'Unable to find matching ssh private key for public key: $publicKeyFileName');
-      throw ('Unable to find matching ssh private key for public key : $publicKeyFileName');
-    }
+    // TODO write the identityFile
+    if (params.allowLocalFileSystem) {}
 
     remoteUsername = params.remoteUsername ?? await fetchRemoteUserName();
 
@@ -390,18 +351,24 @@ abstract class SSHNPImpl implements SSHNP {
   }
 
   Future<void> sharePublicKeyWithSshnpdIfRequired() async {
-    if (publicKeyFileName.isEmpty) {
+    if (!params.sendSshPublicKey) {
+      logger.info(
+          'Skipped sharing public key with sshnpd: sendSshPublicKey=false');
+      return;
+    }
+
+    if (params.sshKeyPair == null) {
       logger.info('Skipped sharing public key with sshnpd: none provided');
       return;
     }
 
-    logger.info('Sharing public key with sshnpd: $publicKeyFileName');
+    logger.info('Sharing public key with sshnpd');
     try {
-      String toSshPublicKey = await File(publicKeyFileName).readAsString();
+      String toSshPublicKey =
+          utf8.decode(params.sshKeyPair!.toPublicKey().encode().toList());
       if (!toSshPublicKey.startsWith('ssh-')) {
-        logger
-            .severe('$publicKeyFileName does not look like a public key file');
-        throw ('$publicKeyFileName does not look like a public key file');
+        logger.severe('SSH Public Key does not look like a public key file');
+        throw ('SSH Public Key does not look like a public key file');
       }
       AtKey sendOurPublicKeyToSshnpd = AtKey()
         ..key = 'sshpublickey'

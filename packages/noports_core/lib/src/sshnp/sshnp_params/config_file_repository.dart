@@ -77,7 +77,10 @@ class ConfigFileRepository {
 
     // FileMode.write will create the file if it does not exist
     // and overwrite existing files if it does exist
-    return file.writeAsString(params.toConfig(), mode: FileMode.write);
+    return file.writeAsString(
+      params.toConfigLines().join('\n'),
+      mode: FileMode.write,
+    );
   }
 
   static Future<FileSystemEntity> deleteParams(SSHNPParams params,

@@ -34,7 +34,7 @@ void main() {
       args.addAll(['-f', '@alice']);
       args.addAll(['-t', '@bob']);
       args.addAll(['-h', 'host.subdomain.test']);
-      var p = SSHNPParams.fromPartial(SSHNPPartialParams.fromArgs(args));
+      var p = SSHNPParams.fromPartial(SSHNPPartialParams.fromArgList(args));
       expect(p.clientAtSign, '@alice');
       expect(p.sshnpdAtSign, '@bob');
       expect(p.host, 'host.subdomain.test');
@@ -72,7 +72,7 @@ void main() {
         '-v',
         '-r'
       ]);
-      var p = SSHNPParams.fromPartial(SSHNPPartialParams.fromArgs(args));
+      var p = SSHNPParams.fromPartial(SSHNPPartialParams.fromArgList(args));
       expect(p.clientAtSign, '@alice');
       expect(p.sshnpdAtSign, '@bob');
       expect(p.host, 'host.subdomain.test');

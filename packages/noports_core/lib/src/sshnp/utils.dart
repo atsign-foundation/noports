@@ -3,7 +3,7 @@ import 'dart:io';
 import 'package:noports_core/src/common/utils.dart';
 import 'package:at_utils/at_logger.dart';
 import 'package:noports_core/src/sshnp/sshnp.dart';
-import 'package:noports_core/src/sshnp/sshnp_impl/sshnp_reverse_direction.dart';
+import 'package:noports_core/src/sshnp/sshnp_impl/sshnp_reverse_mixin.dart';
 
 Completer<T> wrapInCompleter<T>(Future<T> future) {
   final completer = Completer<T>();
@@ -15,7 +15,7 @@ Completer<T> wrapInCompleter<T>(Future<T> future) {
 
 Future<void> cleanUpAfterReverseSsh(SSHNP sshnp) async {
   if (!wrapInCompleter(sshnp.initialized).isCompleted ||
-      sshnp is! SSHNPReverseDirection) {
+      sshnp is! SSHNPReverseMixin) {
     // nothing to clean up
     return;
   }

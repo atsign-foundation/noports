@@ -1,6 +1,8 @@
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:args/args.dart';
+import 'package:dartssh2/dartssh2.dart';
 import 'package:noports_core/src/sshnp/sshnp_params/config_file_repository.dart';
 import 'package:noports_core/src/sshnp/sshnp_params/sshnp_arg.dart';
 import 'package:noports_core/src/common/default_args.dart';
@@ -19,7 +21,9 @@ class SSHNPParams {
   final String device;
   final int port;
   final int localPort;
-  final String sendSshPublicKey;
+  final String? identityFile;
+  final String? identityPassphrase;
+  final bool sendSshPublicKey;
   final List<String> localSshOptions;
   final bool rsa;
   final String? remoteUsername;
@@ -31,13 +35,17 @@ class SSHNPParams {
   final int idleTimeout;
   final bool addForwardsToTunnel;
   final String? atKeysFilePath;
+  final bool allowLocalFileSystem;
 
   /// Late variables
   late final String sshClient;
+  late final SSHKeyPair? sshKeyPair;
 
   /// Special Arguments
   final String?
       profileName; // automatically populated with the filename if from a configFile
+
+  /// Operation flags
   final bool listDevices;
 
   SSHNPParams({
@@ -48,6 +56,8 @@ class SSHNPParams {
     this.device = DefaultSSHNPArgs.device,
     this.port = DefaultSSHNPArgs.port,
     this.localPort = DefaultSSHNPArgs.localPort,
+    this.identityFile,
+    this.identityPassphrase,
     this.sendSshPublicKey = DefaultSSHNPArgs.sendSshPublicKey,
     this.localSshOptions = DefaultSSHNPArgs.localSshOptions,
     this.verbose = DefaultArgs.verbose,
@@ -61,8 +71,26 @@ class SSHNPParams {
     this.remoteSshdPort = DefaultArgs.remoteSshdPort,
     this.idleTimeout = DefaultArgs.idleTimeout,
     this.addForwardsToTunnel = false,
+    bool? allowLocalFileSystem,
     String? sshClient,
-  }) : sshClient = sshClient ?? DefaultSSHNPArgs.sshClient.cliArg;
+  }) : allowLocalFileSystem =
+            allowLocalFileSystem ?? DefaultArgs.allowLocalFileSystem {
+    sshClient =
+        sshClient ?? DefaultSSHNPArgs.getSshClient(this.allowLocalFileSystem);
+    if (sshKeyPair == null && identityFile != null) {
+      if (!this.allowLocalFileSystem) {
+        throw ArgumentError('identity-file is not allowed');
+      }
+      // N.B. the alternative to reading the file synchronously is to
+      // use a completer and provide a Future to the caller
+      // this seems like unnecessary complexity unless a use case arises
+      // instead, we will guard against sshKeyPair identityFile is ignored
+      // (and the file is not read) if sshKeyPair is already set
+      var pemContents = File(identityFile!).readAsStringSync();
+      sshKeyPair =
+          SSHKeyPair.fromPem(pemContents, identityPassphrase).firstOrNull;
+    }
+  }
 
   factory SSHNPParams.empty() {
     return SSHNPParams(
@@ -87,6 +115,9 @@ class SSHNPParams {
       port: params2.port ?? params1.port,
       localPort: params2.localPort ?? params1.localPort,
       atKeysFilePath: params2.atKeysFilePath ?? params1.atKeysFilePath,
+      identityFile: params2.identityFile ?? params1.identityFile,
+      identityPassphrase:
+          params2.identityPassphrase ?? params1.identityPassphrase,
       sendSshPublicKey: params2.sendSshPublicKey ?? params1.sendSshPublicKey,
       localSshOptions: params2.localSshOptions ?? params1.localSshOptions,
       rsa: params2.rsa ?? params1.rsa,
@@ -124,6 +155,8 @@ class SSHNPParams {
       device: partial.device ?? DefaultSSHNPArgs.device,
       port: partial.port ?? DefaultSSHNPArgs.port,
       localPort: partial.localPort ?? DefaultSSHNPArgs.localPort,
+      identityFile: partial.identityFile,
+      identityPassphrase: partial.identityPassphrase,
       sendSshPublicKey:
           partial.sendSshPublicKey ?? DefaultSSHNPArgs.sendSshPublicKey,
       localSshOptions:
@@ -138,17 +171,34 @@ class SSHNPParams {
       legacyDaemon: partial.legacyDaemon ?? DefaultSSHNPArgs.legacyDaemon,
       remoteSshdPort: partial.remoteSshdPort ?? DefaultArgs.remoteSshdPort,
       idleTimeout: partial.idleTimeout ?? DefaultArgs.idleTimeout,
-      sshClient: partial.sshClient ?? DefaultSSHNPArgs.sshClient.cliArg,
+      sshClient: partial.sshClient ??
+          DefaultSSHNPArgs.getSshClient(
+              partial.allowLocalFileSystem ?? DefaultArgs.allowLocalFileSystem),
       addForwardsToTunnel: partial.addForwardsToTunnel ?? false,
     );
   }
 
-  factory SSHNPParams.fromConfig(String profileName, List<String> lines) {
+  factory SSHNPParams.fromConfigLines(String profileName, List<String> lines) {
     return SSHNPParams.fromPartial(
-        SSHNPPartialParams.fromConfig(profileName, lines));
+        SSHNPPartialParams.fromConfigLines(profileName, lines));
   }
 
-  Map<String, dynamic> toArgs() {
+  List<String> toConfigLines() {
+    var lines = <String>[];
+    for (var entry in toArgMap().entries) {
+      var key = SSHNPArg.fromName(entry.key).bashName;
+      if (key.isEmpty) continue;
+      var value = entry.value;
+      if (value == null) continue;
+      if (value is List) {
+        value = value.join(',');
+      }
+      lines.add('$key=$value');
+    }
+    return lines;
+  }
+
+  Map<String, dynamic> toArgMap() {
     return {
       'profile-name': profileName,
       'from': clientAtSign,
@@ -158,6 +208,8 @@ class SSHNPParams {
       'port': port,
       'local-port': localPort,
       'key-file': atKeysFilePath,
+      'identity-file': identityFile,
+      'identity-passphrase': identityPassphrase,
       'ssh-public-key': sendSshPublicKey,
       'local-ssh-options': localSshOptions,
       'rsa': rsa,
@@ -172,23 +224,8 @@ class SSHNPParams {
     };
   }
 
-  String toConfig() {
-    var lines = <String>[];
-    for (var entry in toArgs().entries) {
-      var key = SSHNPArg.fromName(entry.key).bashName;
-      if (key.isEmpty) continue;
-      var value = entry.value;
-      if (value == null) continue;
-      if (value is List) {
-        value = value.join(',');
-      }
-      lines.add('$key=$value');
-    }
-    return lines.join('\n');
-  }
-
   String toJson() {
-    return jsonEncode(toArgs());
+    return jsonEncode(toArgMap());
   }
 }
 
@@ -209,7 +246,9 @@ class SSHNPPartialParams {
   final int? localPort;
   final int? localSshdPort;
   final String? atKeysFilePath;
-  final String? sendSshPublicKey;
+  final String? identityFile;
+  final String? identityPassphrase;
+  final bool? sendSshPublicKey;
   final List<String>? localSshOptions;
   final bool? rsa;
   final String? remoteUsername;
@@ -220,9 +259,9 @@ class SSHNPPartialParams {
   final int? idleTimeout;
   final bool? addForwardsToTunnel;
   final String? sshClient;
+  final bool? allowLocalFileSystem;
 
-  /// Special Params
-  // N.B. config file is a meta param and doesn't need to be included
+  /// Operation flags
   final bool? listDevices;
 
   SSHNPPartialParams({
@@ -234,6 +273,8 @@ class SSHNPPartialParams {
     this.port,
     this.localPort,
     this.atKeysFilePath,
+    this.identityFile,
+    this.identityPassphrase,
     this.sendSshPublicKey,
     this.localSshOptions,
     this.rsa,
@@ -247,6 +288,7 @@ class SSHNPPartialParams {
     this.idleTimeout,
     this.sshClient,
     this.addForwardsToTunnel,
+    this.allowLocalFileSystem,
   });
 
   factory SSHNPPartialParams.empty() {
@@ -267,6 +309,9 @@ class SSHNPPartialParams {
       port: params2.port ?? params1.port,
       localPort: params2.localPort ?? params1.localPort,
       atKeysFilePath: params2.atKeysFilePath ?? params1.atKeysFilePath,
+      identityFile: params2.identityFile ?? params1.identityFile,
+      identityPassphrase:
+          params2.identityPassphrase ?? params1.identityPassphrase,
       sendSshPublicKey: params2.sendSshPublicKey ?? params1.sendSshPublicKey,
       localSshOptions: params2.localSshOptions ?? params1.localSshOptions,
       rsa: params2.rsa ?? params1.rsa,
@@ -281,26 +326,28 @@ class SSHNPPartialParams {
       sshClient: params2.sshClient ?? params1.sshClient,
       addForwardsToTunnel:
           params2.addForwardsToTunnel ?? params1.addForwardsToTunnel,
+      allowLocalFileSystem:
+          params2.allowLocalFileSystem ?? params1.allowLocalFileSystem,
     );
   }
 
   factory SSHNPPartialParams.fromFile(String fileName) {
     var args = ConfigFileRepository.parseConfigFile(fileName);
     args['profile-name'] = ConfigFileRepository.toProfileName(fileName);
-    return SSHNPPartialParams.fromMap(args);
+    return SSHNPPartialParams.fromArgMap(args);
   }
 
-  factory SSHNPPartialParams.fromConfig(
+  factory SSHNPPartialParams.fromConfigLines(
       String profileName, List<String> lines) {
     var args = ConfigFileRepository.parseConfigFileContents(lines);
     args['profile-name'] = profileName;
-    return SSHNPPartialParams.fromMap(args);
+    return SSHNPPartialParams.fromArgMap(args);
   }
 
   factory SSHNPPartialParams.fromJson(String json) =>
-      SSHNPPartialParams.fromMap(jsonDecode(json));
+      SSHNPPartialParams.fromArgMap(jsonDecode(json));
 
-  factory SSHNPPartialParams.fromMap(Map<String, dynamic> args) {
+  factory SSHNPPartialParams.fromArgMap(Map<String, dynamic> args) {
     return SSHNPPartialParams(
       profileName: args['profile-name'],
       clientAtSign: args['from'],
@@ -310,6 +357,8 @@ class SSHNPPartialParams {
       port: args['port'],
       localPort: args['local-port'],
       atKeysFilePath: args['key-file'],
+      identityFile: args['identity-file'],
+      identityPassphrase: args['identity-passphrase'],
       sendSshPublicKey: args['ssh-public-key'],
       localSshOptions: List<String>.from(args['local-ssh-options'] ?? []),
       rsa: args['rsa'],
@@ -323,12 +372,13 @@ class SSHNPPartialParams {
       idleTimeout: args['idle-timeout'],
       sshClient: args['ssh-client'],
       addForwardsToTunnel: args['add-forwards-to-tunnel'],
+      allowLocalFileSystem: args['allow-local-file-system'],
     );
   }
 
   /// Parses args from command line
   /// first merges from a config file if provided via --config-file
-  factory SSHNPPartialParams.fromArgs(List<String> args) {
+  factory SSHNPPartialParams.fromArgList(List<String> args) {
     var params = SSHNPPartialParams.empty();
 
     var parsedArgs = SSHNPArg.createArgParser(withDefaults: false).parse(args);
@@ -351,7 +401,7 @@ class SSHNPPartialParams {
 
     return SSHNPPartialParams.merge(
       params,
-      SSHNPPartialParams.fromMap(parsedArgsMap),
+      SSHNPPartialParams.fromArgMap(parsedArgsMap),
     );
   }
 }

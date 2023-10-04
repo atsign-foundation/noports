@@ -44,7 +44,8 @@ class SSHNPArg {
 
   String get bashName => name.replaceAll('-', '_').toUpperCase();
 
-  List<String> get aliasList => ['--$name', ...aliases?.map((e) => '--$e') ?? [], '-$abbr'];
+  List<String> get aliasList =>
+      ['--$name', ...aliases?.map((e) => '--$e') ?? [], '-$abbr'];
 
   factory SSHNPArg.noArg() {
     return SSHNPArg(name: '');
@@ -118,11 +119,23 @@ class SSHNPArg {
       type: ArgType.integer,
     ),
     const SSHNPArg(
+      name: 'identity-file',
+      abbr: 'i',
+      help: 'Identity file to use for ssh connection',
+      commandLineOnly: true,
+    ),
+    const SSHNPArg(
+      name: 'identity-passphrase',
+      help: 'Passphrase for identity file',
+      commandLineOnly: true,
+    ),
+    const SSHNPArg(
       name: 'ssh-public-key',
       abbr: 's',
       help:
-          'Public key file from ~/.ssh to be appended to authorized_hosts on the remote device',
+          'When true, the ssh public key will be sent to the remote host for use in the ssh session',
       defaultsTo: DefaultSSHNPArgs.sendSshPublicKey,
+      format: ArgFormat.flag,
       commandLineOnly: true,
     ),
     const SSHNPArg(

@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:noports_core/src/common/supported_ssh_clients.dart';
 import 'package:noports_core/sshrv.dart';
 
@@ -16,17 +18,21 @@ class DefaultArgs {
   /// value in seconds after which idle ssh tunnels will be closed
   static const idleTimeout = 15;
   static const help = false;
+  static const addForwardsToTunnel = false;
+  static final allowLocalFileSystem =
+      Platform.isLinux || Platform.isMacOS || Platform.isWindows;
 }
 
 class DefaultSSHNPArgs {
   static const device = 'default';
   static const port = 22;
   static const localPort = 0;
-  static const sendSshPublicKey = '';
+  static const sendSshPublicKey = false;
   static const localSshOptions = <String>[];
   static const legacyDaemon = false;
   static const listDevices = false;
-  static const sshClient = SupportedSshClient.exec;
+  static getSshClient(bool allowLocalFileSystem) =>
+      allowLocalFileSystem ? SupportedSshClient.exec : SupportedSshClient.dart;
 }
 
 class DefaultSSHNPDArgs {

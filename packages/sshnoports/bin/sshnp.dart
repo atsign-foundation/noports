@@ -40,7 +40,7 @@ void main(List<String> args) async {
 
   await runZonedGuarded(() async {
     try {
-      params = SSHNPParams.fromPartial(SSHNPPartialParams.fromArgs(args));
+      params = SSHNPParams.fromPartial(SSHNPPartialParams.fromArgList(args));
       String homeDirectory = await getHomeDirectory();
       sshnp = await SSHNP
           .fromParams(
