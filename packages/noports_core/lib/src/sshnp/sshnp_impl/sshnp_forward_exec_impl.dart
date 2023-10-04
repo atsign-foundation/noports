@@ -12,6 +12,7 @@ import 'package:path/path.dart' as path;
 
 class SSHNPForwardExecImpl extends SSHNPImpl
     with SSHNPForwardDirection, SSHNPLocalFileMixin {
+  late String ephemeralPrivateKeyPath;
   SSHNPForwardExecImpl({
     required AtClient atClient,
     required SSHNPParams params,
@@ -45,21 +46,17 @@ class SSHNPForwardExecImpl extends SSHNPImpl
       String? errorMessage;
       Process? process;
 
-      // If using exec then we can assume we're on something unix-y
-      // So we can write the ephemeralPrivateKey to a tmp file,
-      // set its permissions appropriately, and remove it after we've
-      // executed the command
-      var tmpFileName =
-          path.normalize('$sshHomeDirectory/tmp/ephemeral_$sessionId');
-      File tmpFile = File(tmpFileName);
+      var ephemeralPrivateKeyPath = path.normalize(
+          '$sshnpHomeDirectory/sessions/$sessionId/ephemeral_private_key');
+      File tmpFile = File(ephemeralPrivateKeyPath);
       await tmpFile.create(recursive: true);
       await tmpFile.writeAsString(ephemeralPrivateKey,
           mode: FileMode.write, flush: true);
-      await Process.run('chmod', ['go-rwx', tmpFileName]);
+      await Process.run('chmod', ['go-rwx', ephemeralPrivateKeyPath]);
 
       String argsString = '$remoteUsername@$host'
           ' -p $sshrvdPort'
-          ' -i $tmpFileName'
+          ' -i $ephemeralPrivateKeyPath'
           ' -L $localPort:localhost:${params.remoteSshdPort}'
           ' -o LogLevel=VERBOSE'
           ' -t -t'
@@ -137,5 +134,11 @@ class SSHNPForwardExecImpl extends SSHNPImpl
         stackTrace: s,
       );
     }
+  }
+
+  @override
+  Future<void> cleanUp() async {
+    await deleteFile(ephemeralPrivateKeyPath);
+    super.cleanUp();
   }
 }

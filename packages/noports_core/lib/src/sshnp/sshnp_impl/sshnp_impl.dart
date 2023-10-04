@@ -151,6 +151,12 @@ abstract class SSHNPImpl implements SSHNP {
       _initializeStarted = true;
     }
 
+    // Schedule a cleanup on exit
+    unawaited(doneCompleter.future.then((_) async {
+      logger.info('SSHNPImpl done');
+      await cleanUp();
+    }));
+
     try {
       if (!(await atSignIsActivated(atClient, sshnpdAtSign))) {
         logger.severe('Device address $sshnpdAtSign is not activated.');
@@ -297,7 +303,6 @@ abstract class SSHNPImpl implements SSHNP {
     try {
       return (await atClient.get(userNameRecordID)).value as String;
     } catch (e, s) {
-      await cleanUp();
       throw SSHNPError(
         "Device unknown, or username not shared\n"
         "hint: make sure the device shares username or set remote username manually",
@@ -344,7 +349,6 @@ abstract class SSHNPImpl implements SSHNP {
       counter++;
       if (counter == 100) {
         logger.warning('Timed out waiting for sshrvd response');
-        await cleanUp();
         throw ('Connection timeout to sshrvd $host service\nhint: make sure host is valid and online');
       }
     }
@@ -379,7 +383,6 @@ abstract class SSHNPImpl implements SSHNP {
           ..ttl = 10000);
       await notify(sendOurPublicKeyToSshnpd, toSshPublicKey);
     } catch (e, s) {
-      await cleanUp();
       throw SSHNPError(
         'Error opening or validating public key file or sending to remote atSign',
         error: e,

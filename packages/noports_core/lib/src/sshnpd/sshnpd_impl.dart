@@ -509,7 +509,7 @@ class SSHNPDImpl implements SSHNPD {
       ///   `authorized_keys` file, limiting permissions (e.g. hosts and ports
       ///   which can be forwarded to) as per the `--ephemeral-permissions` option
       var (String ephemeralPublicKey, String ephemeralPrivateKey) =
-          await generateSshKeys(rsa: rsa, sessionId: sessionId);
+          await generateEphemeralSshKeys(rsa: rsa, sessionId: sessionId);
 
       await addEphemeralKeyToAuthorizedKeys(
           sshPublicKey: ephemeralPublicKey,

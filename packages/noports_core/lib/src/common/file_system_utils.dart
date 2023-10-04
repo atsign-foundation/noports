@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 import 'package:at_utils/at_utils.dart';
 import 'package:path/path.dart' as path;
@@ -60,14 +61,27 @@ String getDefaultSshnpConfigDirectory(String homeDirectory) {
   return path.normalize('$homeDirectory/.sshnp/config');
 }
 
-Future<(String, String)> generateSshKeys(
-    {required bool rsa,
-    required String sessionId,
-    String? sshHomeDirectory}) async {
+(String, String, String) _getEphemeralKeysPath(
+    String? sshHomeDirectory, String sessionId) {
   sshHomeDirectory ??= getDefaultSshDirectory(getHomeDirectory()!);
   if (!Directory(sshHomeDirectory).existsSync()) {
     Directory(sshHomeDirectory).createSync();
   }
+
+  return (
+    sshHomeDirectory,
+    '$sshHomeDirectory/${sessionId}_sshnp.pub',
+    '$sshHomeDirectory/${sessionId}_sshnp'
+  );
+}
+
+Future<(String, String)> generateEphemeralSshKeys(
+    {required bool rsa,
+    required String sessionId,
+    String? sshHomeDirectory}) async {
+  var (normalizedSshHomeDirectory, sshPublicKeyPath, sshPrivateKeyPath) =
+      _getEphemeralKeysPath(sshHomeDirectory, sessionId);
+  sshHomeDirectory = normalizedSshHomeDirectory;
 
   if (rsa) {
     await Process.run('ssh-keygen',
@@ -90,12 +104,24 @@ Future<(String, String)> generateSshKeys(
         workingDirectory: sshHomeDirectory);
   }
 
-  String sshPublicKey =
-      await File('$sshHomeDirectory/${sessionId}_sshnp.pub').readAsString();
-  String sshPrivateKey =
-      await File('$sshHomeDirectory/${sessionId}_sshnp').readAsString();
+  var keys = await Future.wait([
+    File(sshPublicKeyPath).readAsString(),
+    File(sshPrivateKeyPath).readAsString()
+  ]);
 
-  return (sshPublicKey, sshPrivateKey);
+  return (keys[0], keys[1]);
+}
+
+Future<void> cleanUpEphemeralSshKeys({
+  required String sessionId,
+  String? sshHomeDirectory,
+}) async {
+  var (_, sshPublicKeyPath, sshPrivateKeyPath) =
+      _getEphemeralKeysPath(sshHomeDirectory, sessionId);
+  await Future.wait([
+    File(sshPublicKeyPath).delete(),
+    File(sshPrivateKeyPath).delete(),
+  ]);
 }
 
 Future<void> addEphemeralKeyToAuthorizedKeys(

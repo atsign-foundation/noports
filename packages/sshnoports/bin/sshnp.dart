@@ -33,11 +33,6 @@ void main(List<String> args) async {
     exit(0);
   }
 
-  ProcessSignal.sigint.watch().listen((signal) async {
-    await sshnp?.cleanUp();
-    exit(1);
-  });
-
   await runZonedGuarded(() async {
     try {
       params = SSHNPParams.fromPartial(SSHNPPartialParams.fromArgList(args));
@@ -98,8 +93,6 @@ void main(List<String> args) async {
       if (verbose) {
         stderr.writeln('\nStack Trace: ${stackTrace.toString()}');
       }
-
-      await sshnp?.cleanUp();
       exit(1);
     }
   }, (Object error, StackTrace stackTrace) async {
@@ -109,8 +102,6 @@ void main(List<String> args) async {
     if (verbose) {
       stderr.writeln('\nStack Trace: ${stackTrace.toString()}');
     }
-
-    await sshnp?.cleanUp();
     exit(1);
   });
 }

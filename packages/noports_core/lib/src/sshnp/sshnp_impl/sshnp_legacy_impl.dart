@@ -70,7 +70,6 @@ class SSHNPLegacyImpl extends SSHNPImpl
     );
 
     bool acked = await waitForDaemonResponse();
-    await cleanUp();
     if (!acked) {
       var error = SSHNPError(
         'sshnp timed out: waiting for daemon response\nhint: make sure the device is online',

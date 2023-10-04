@@ -66,7 +66,6 @@ class SSHNPReverseImpl extends SSHNPImpl
         sessionId: sessionId);
 
     bool acked = await waitForDaemonResponse();
-    await cleanUp();
     if (!acked) {
       var error =
           SSHNPError('sshnp connection timeout: waiting for daemon response');
