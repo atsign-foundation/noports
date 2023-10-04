@@ -48,36 +48,36 @@ class SSHNPParams {
   /// Operation flags
   final bool listDevices;
 
-  SSHNPParams({
-    required this.clientAtSign,
-    required this.sshnpdAtSign,
-    required this.host,
-    this.profileName,
-    this.device = DefaultSSHNPArgs.device,
-    this.port = DefaultSSHNPArgs.port,
-    this.localPort = DefaultSSHNPArgs.localPort,
-    this.identityFile,
-    this.identityPassphrase,
-    this.sendSshPublicKey = DefaultSSHNPArgs.sendSshPublicKey,
-    this.localSshOptions = DefaultSSHNPArgs.localSshOptions,
-    this.verbose = DefaultArgs.verbose,
-    this.rsa = DefaultArgs.rsa,
-    this.remoteUsername,
-    this.atKeysFilePath,
-    this.rootDomain = DefaultArgs.rootDomain,
-    this.localSshdPort = DefaultArgs.localSshdPort,
-    this.legacyDaemon = DefaultSSHNPArgs.legacyDaemon,
-    this.listDevices = DefaultSSHNPArgs.listDevices,
-    this.remoteSshdPort = DefaultArgs.remoteSshdPort,
-    this.idleTimeout = DefaultArgs.idleTimeout,
-    this.addForwardsToTunnel = false,
-    bool? allowLocalFileSystem,
-    String? sshClient,
-    this.sshKeyPair
-  }) : allowLocalFileSystem =
-            allowLocalFileSystem ?? DefaultArgs.allowLocalFileSystem {
-    sshClient =
-        sshClient ?? DefaultSSHNPArgs.getSshClient(this.allowLocalFileSystem);
+  SSHNPParams(
+      {required this.clientAtSign,
+      required this.sshnpdAtSign,
+      required this.host,
+      this.profileName,
+      this.device = DefaultSSHNPArgs.device,
+      this.port = DefaultSSHNPArgs.port,
+      this.localPort = DefaultSSHNPArgs.localPort,
+      this.identityFile,
+      this.identityPassphrase,
+      this.sendSshPublicKey = DefaultSSHNPArgs.sendSshPublicKey,
+      this.localSshOptions = DefaultSSHNPArgs.localSshOptions,
+      this.verbose = DefaultArgs.verbose,
+      this.rsa = DefaultArgs.rsa,
+      this.remoteUsername,
+      this.atKeysFilePath,
+      this.rootDomain = DefaultArgs.rootDomain,
+      this.localSshdPort = DefaultArgs.localSshdPort,
+      this.legacyDaemon = DefaultSSHNPArgs.legacyDaemon,
+      this.listDevices = DefaultSSHNPArgs.listDevices,
+      this.remoteSshdPort = DefaultArgs.remoteSshdPort,
+      this.idleTimeout = DefaultArgs.idleTimeout,
+      this.addForwardsToTunnel = false,
+      bool? allowLocalFileSystem,
+      String? sshClient,
+      this.sshKeyPair})
+      : allowLocalFileSystem =
+            allowLocalFileSystem ?? DefaultArgs.allowLocalFileSystem,
+        sshClient =
+            sshClient ?? DefaultSSHNPArgs.getSshClient(allowLocalFileSystem) {
     if (sshKeyPair == null && identityFile != null) {
       if (!this.allowLocalFileSystem) {
         throw ArgumentError('identity-file is not allowed');
