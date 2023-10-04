@@ -23,7 +23,6 @@ dependencies:
   logging: ^1.2.0
   meta: ^1.9.1
   path: ^1.8.3
-  path_provider: ^2.1.1
   socket_connector: ^1.0.11
   ssh_key: ">=0.7.1 <0.9.0"
   uuid: ^3.0.7
