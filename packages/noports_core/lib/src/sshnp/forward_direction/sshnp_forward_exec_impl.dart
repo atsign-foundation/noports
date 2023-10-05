@@ -4,14 +4,13 @@ import 'dart:io';
 
 import 'package:at_client/at_client.dart' hide StringBuffer;
 
-import 'package:noports_core/src/sshnp/sshnp_impl/sshnp_forward_direction.dart';
-import 'package:noports_core/src/sshnp/sshnp_impl/sshnp_impl.dart';
-import 'package:noports_core/src/sshnp/sshnp_impl/sshnp_local_file_mixin.dart';
+import 'package:noports_core/src/sshnp/forward_direction/sshnp_forward_direction.dart';
+import 'package:noports_core/src/sshnp/sshnp_local_file_mixin.dart';
 import 'package:noports_core/sshnp.dart';
 import 'package:path/path.dart' as path;
 
-class SSHNPForwardExecImpl extends SSHNPImpl
-    with SSHNPForwardDirection, SSHNPLocalFileMixin {
+class SSHNPForwardExecImpl extends SSHNPForwardDirection
+    with SSHNPLocalFileMixin {
   late String ephemeralPrivateKeyPath;
   SSHNPForwardExecImpl({
     required AtClient atClient,
@@ -137,7 +136,6 @@ class SSHNPForwardExecImpl extends SSHNPImpl
 
   @override
   Future<void> cleanUp() async {
-    await deleteFile(ephemeralPrivateKeyPath);
-    super.cleanUp();
+    await super.cleanUp();
   }
 }

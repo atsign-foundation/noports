@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
-import 'dart:typed_data';
 
 import 'package:at_client/at_client.dart' hide StringBuffer;
 import 'package:at_commons/at_builders.dart';
@@ -12,10 +11,15 @@ import 'package:noports_core/sshnp.dart';
 import 'package:noports_core/sshrv.dart';
 import 'package:noports_core/sshrvd.dart';
 import 'package:noports_core/utils.dart';
-import 'package:ssh_key/ssh_key.dart';
-import 'package:ssh_key/ssh_key_bin.dart';
-import 'package:ssh_key/ssh_key_txt.dart';
 import 'package:uuid/uuid.dart';
+
+export 'forward_direction/sshnp_forward_direction.dart';
+export 'forward_direction/sshnp_forward_dart_impl.dart';
+export 'forward_direction/sshnp_forward_exec_impl.dart';
+
+export 'reverse_direction/sshnp_reverse_direction.dart';
+export 'reverse_direction/sshnp_reverse_impl.dart';
+export 'reverse_direction/sshnp_legacy_impl.dart';
 
 // If you've never seen an abstract implementation before, here it is :P
 @protected
@@ -32,9 +36,6 @@ abstract class SSHNPImpl implements SSHNP {
   final SSHNPParams params;
 
   final String sessionId;
-
-  /// Function used to generate a [SSHRV] instance ([SSHRV.localbinary] by default)
-  final SSHRVGenerator sshrvGenerator;
 
   // ====================================================================
   // Final instance variables, derived during initialization
@@ -125,8 +126,7 @@ abstract class SSHNPImpl implements SSHNP {
   })  : sessionId = Uuid().v4(),
         host = params.host,
         port = params.port,
-        localPort = params.localPort,
-        sshrvGenerator = sshrvGenerator ?? DefaultArgs.sshrvGenerator {
+        localPort = params.localPort {
     /// Set the logger level to shout
     logger.hierarchicalLoggingEnabled = true;
     logger.logger.level = Level.SHOUT;
@@ -381,19 +381,9 @@ abstract class SSHNPImpl implements SSHNP {
       return;
     }
 
-    if (params.sshKeyPair == null) {
-      logger.info('Skipped sharing public key with sshnpd: none provided');
-      return;
-    }
-    // TODO
     logger.info('Sharing public key with sshnpd');
     try {
-      var privKey = privateKeyDecode(params.sshKeyPair!.toPem());
-      if (privKey is! OpenSshPrivateKey) {
-        throw ('SSH Key is not an OpenSSH private key');
-      }
-      var pubKey = privKey as OpenSshPrivateKey;
-      var publicKeyContents = pubKey.encode();
+      String publicKeyContents = '';
       logger.info('sharing ssh public key: $publicKeyContents');
       if (!publicKeyContents.startsWith('ssh-')) {
         logger.severe('SSH Public Key does not look like a public key file');

@@ -4,56 +4,35 @@
 
 ```mermaid
 classDiagram
-    class SSHNP{
-        <<abstract interface>>
-      Exports public API
-    }
-    class SSHNPImpl{
-        <<abstract>>
-      Implements common code between all implementations
-    }
+  SSHNP <|.. SSHNPImpl
 
-    class SSHNPForwardDartImpl {
-        forward pure-dart client
-    }
-    class SSHNPForwardExecImpl {
-        forward ssh exec client
-    }
-    class SSHNPReverseImpl {
-        reverse ssh client for non-sshrvd hosts
-    }
-    class SSHNPLegacyImpl {
-        reverse ssh client for <4.0.0 daemons
-    }
+  SSHNPImpl <|.. SSHNPForwardDirection
+  SSHNPImpl <|.. SSHNPReverseDirection
 
-    class SSHNPForwardMixin{
-      <<mixin>>
-      Implements common forward code
-    }
-    class SSHNPReverseMixin{
-      <<mixin>>
-      Implements common reverse code
-    }
-    class SSHNPLocalFileMixin{
-      <<mixin>>
-      Implements file system bindings for support client types
-    }
-    SSHNP <|.. SSHNPImpl
+  SSHNPForwardDirection <|.. SSHNPForwardDartImpl
+  SSHNPForwardDirection <|.. SSHNPForwardExecImpl
 
-    SSHNPImpl <|.. SSHNPForwardDartImpl
-    SSHNPImpl <|.. SSHNPForwardExecImpl
-    SSHNPImpl <|.. SSHNPReverseImpl
-    SSHNPImpl <|.. SSHNPLegacyImpl
+  SSHNPReverseDirection <|.. SSHNPReverseImpl
+  SSHNPReverseDirection <|.. SSHNPLegacyImpl
 
-    SSHNPForwardDartImpl *-- SSHNPForwardMixin
-    SSHNPForwardExecImpl *-- SSHNPForwardMixin
+  SSHNPLocalFileMixin --* SSHNPReverseDirection
+  SSHNPLocalFileMixin --* SSHNPForwardExecImpl
 
-    SSHNPForwardExecImpl *-- SSHNPLocalFileMixin
-    SSHNPReverseImpl *-- SSHNPLocalFileMixin
-    SSHNPLegacyImpl *-- SSHNPLocalFileMixin
-
-    SSHNPReverseImpl *-- SSHNPReverseMixin
-    SSHNPLegacyImpl *-- SSHNPReverseMixin
+  class SSHNP{
+    <<abstract interface>>
+  }
+  class SSHNPImpl{
+    <<abstract>>
+  }
+  class SSHNPForwardDirection{
+    <<abstract>>
+  }
+  class SSHNPReverseDirection{
+    <<abstract>>
+  }
+  class SSHNPLocalFileMixin{
+    <<mixin>>
+  }
 ```
 
 ## SSHNPResult Family

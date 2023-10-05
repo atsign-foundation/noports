@@ -1,14 +1,23 @@
 import 'dart:async';
 
-import 'package:noports_core/src/common/file_system_utils.dart';
-import 'package:noports_core/src/sshnp/sshnp_impl/sshnp_local_file_mixin.dart';
-import 'package:noports_core/src/sshnp/sshnp_result.dart';
+import 'package:noports_core/src/sshnp/sshnp_impl.dart';
+import 'package:noports_core/src/sshnp/sshnp_local_file_mixin.dart';
+import 'package:noports_core/sshnp.dart';
+import 'package:noports_core/sshrv.dart';
 import 'package:noports_core/utils.dart';
 
-/// Users of this mixin must also use [SSHNPLocalFileMixin]
-/// e.g. class [SSHNPReverseImpl] extends [SSHNPImpl] with [SSHNPLocalFileMixin], [SSHNPReverseMixin]
-/// Note that the order of mixins is important here.
-mixin SSHNPReverseMixin on SSHNPLocalFileMixin {
+abstract class SSHNPReverseDirection extends SSHNPImpl
+    with SSHNPLocalFileMixin {
+  SSHNPReverseDirection({
+    required super.atClient,
+    required super.params,
+    SSHRVGenerator? sshrvGenerator,
+    super.shouldInitialize,
+  }) : sshrvGenerator = sshrvGenerator ?? DefaultArgs.sshrvGenerator;
+
+  /// Function used to generate a [SSHRV] instance ([SSHRV.localbinary] by default)
+  final SSHRVGenerator sshrvGenerator;
+
   /// Set by [generateEphemeralSshKeys] during [init], if we're not doing direct ssh.
   /// sshnp generates a new keypair for each ssh session, using ed25519 by
   /// default but rsa if the [rsa] flag is set to true. sshnp will write
@@ -75,7 +84,7 @@ mixin SSHNPReverseMixin on SSHNPLocalFileMixin {
         sessionId: sessionId, sshHomeDirectory: sshHomeDirectory);
     await removeEphemeralKeyFromAuthorizedKeys(sessionId, logger,
         sshHomeDirectory: sshHomeDirectory);
-    super.cleanUp();
+    await super.cleanUp();
   }
 
   bool get usingSshrv => sshrvdPort != null;

@@ -31,10 +31,6 @@ class DefaultSSHNPArgs {
   static const List<String> localSshOptions = <String>[];
   static const bool legacyDaemon = false;
   static const bool listDevices = false;
-  static String getSshClient(bool? allowLocalFileSystem) =>
-      allowLocalFileSystem ?? DefaultArgs.allowLocalFileSystem
-          ? SupportedSshClient.exec.cliArg
-          : SupportedSshClient.dart.cliArg;
 }
 
 class DefaultSSHNPDArgs {

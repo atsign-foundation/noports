@@ -1,20 +1,26 @@
 import 'dart:async';
 
 import 'package:at_client/at_client.dart';
-import 'package:noports_core/src/sshnp/sshnp_impl/sshnp_impl.dart';
+import 'package:noports_core/src/sshnp/sshnp_impl.dart';
 import 'package:noports_core/src/sshnp/sshnp_result.dart';
 import 'package:noports_core/utils.dart';
 
-mixin SSHNPForwardDirection on SSHNPImpl {
+abstract class SSHNPForwardDirection extends SSHNPImpl {
+  SSHNPForwardDirection({
+    required super.atClient,
+    required super.params,
+    super.shouldInitialize,
+  });
+
   // Direct ssh is only ever done with a sshrvd host
   // So we should expect that sshrvdPort is never null
   // Hence overriding the getter and setter to make it non-nullable
   late int _sshrvdPort;
+
   @override
   int get sshrvdPort => _sshrvdPort;
   @override
   set sshrvdPort(int? port) => _sshrvdPort = port!;
-
 
   Future<SSHNPResult?> requestSocketTunnelFromDaemon() async {
     logger.info(
