@@ -25,4 +25,9 @@ eval "$prefix" "s/@sshnpatsign/${sshnp}/g" ../sshnp/entrypoint.sh
 eval "$prefix" "s/@sshnpdatsign/${sshnpd}/g" ../sshnp/entrypoint.sh
 eval "$prefix" "s/@sshrvdatsign/${sshrvd}/g" ../sshnp/entrypoint.sh
 eval "$prefix" "s/deviceName/${device}/g" ../sshnp/entrypoint.sh
-eval "$prefix" "s|args|$args|g" ../sshnp/entrypoint.sh
+if [[ $(uname) == "Darwin" ]];
+then
+    sed -i '' "s|args|$args|g" ../sshnp/entrypoint.sh
+else
+    sed -i "s|args|$args|g" ../sshnp/entrypoint.sh
+fi
