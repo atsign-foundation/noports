@@ -34,6 +34,7 @@ runs:
       run: |
         case "${{ inputs.sshnp }}" in
           installer|v3.*.*)
+            # legacy client
             args="-s id_ed25519.pub -v"
             entrypoint_filename="sshnp_installer_entrypoint.sh"
             ;;
@@ -41,9 +42,11 @@ runs:
             entrypoint_filename="sshnp_entrypoint.sh"
             case "${{inputs.sshnpd}}" in
               installer|v3.*.*)
-                args="-i id_ed25519.pub -s -v --legacy-daemon"
+                # v4 client, legacy daemon
+                args="-i ~/.ssh/id_ed25519 -s -v --legacy-daemon"
                 ;;
               *)
+                # v4 client, v4 daemon
                 args="-i ~/.ssh/id_ed25519 -s -v"
                 ;;
             esac
