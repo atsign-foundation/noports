@@ -25,4 +25,4 @@ eval "$prefix" "s/@sshnpatsign/${sshnp}/g" ../sshnp/entrypoint.sh
 eval "$prefix" "s/@sshnpdatsign/${sshnpd}/g" ../sshnp/entrypoint.sh
 eval "$prefix" "s/@sshrvdatsign/${sshrvd}/g" ../sshnp/entrypoint.sh
 eval "$prefix" "s/deviceName/${device}/g" ../sshnp/entrypoint.sh
-eval "$prefix" "s/args/$args/g" ../sshnp/entrypoint.sh
+eval "$prefix" -e "s/args/$args/g" ../sshnp/entrypoint.sh
