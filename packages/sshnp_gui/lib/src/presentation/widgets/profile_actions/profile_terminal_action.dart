@@ -2,8 +2,8 @@ import 'package:at_client_mobile/at_client_mobile.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:noports_core/sshnp/sshnp.dart';
-import 'package:noports_core/sshrv/sshrv.dart';
+import 'package:noports_core/sshnp.dart';
+import 'package:noports_core/sshrv.dart';
 import 'package:sshnp_gui/src/controllers/navigation_rail_controller.dart';
 import 'package:sshnp_gui/src/controllers/terminal_session_controller.dart';
 import 'package:sshnp_gui/src/presentation/widgets/profile_actions/profile_action_button.dart';
@@ -42,12 +42,12 @@ class _ProfileTerminalActionState extends ConsumerState<ProfileTerminalAction> {
       final sshnp = await SSHNP.fromParams(
         params,
         atClient: AtClientManager.getInstance().atClient,
-        sshrvGenerator: SSHRV.pureDart,
+        sshrvGenerator: SSHRV.dart,
       );
 
       await sshnp.init();
       final result = await sshnp.run();
-      if (result is SSHNPFailed) {
+      if (result is SSHNPError) {
         throw result;
       }
 
@@ -59,7 +59,7 @@ class _ProfileTerminalActionState extends ConsumerState<ProfileTerminalAction> {
       final sessionController =
           ref.watch(terminalSessionFamilyController(sessionId).notifier);
 
-      if (result is SSHNPCommandResult) {
+      if (result is SSHNPCommand) {
         /// Set the command for the new session
         sessionController.setProcess(
             command: result.command, args: result.args);

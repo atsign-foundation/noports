@@ -21,6 +21,9 @@ inputs:
   devicename:
     description: Unique sshnp devicename
     required: true
+  legacy_daemon:
+    description: Legacy daemon
+    required: false
 
 runs:
   using: composite
@@ -37,8 +40,7 @@ runs:
             entrypoint_filename="sshnp_entrypoint.sh"
             ;;
         esac
-        echo "entrypoint_filename: $entrypoint_filename"
-        ./setup-sshnp-entrypoint.sh ${{ inputs.devicename }} ${{ inputs.sshnp_atsign }} ${{ inputs.sshnpd_atsign }} ${{ inputs.sshrvd_atsign }} "$entrypoint_filename"
+        ./setup-sshnp-entrypoint.sh ${{ inputs.devicename }} ${{ inputs.sshnp_atsign }} ${{ inputs.sshnpd_atsign }} ${{ inputs.sshrvd_atsign }} "$entrypoint_filename" ${{ inputs.legacy_daemon || false }}
 
     - name: Setup NPD entrypoint
       shell: bash

@@ -28,7 +28,7 @@ dependencies:
   go_router: ^9.0.3
   intl: any
   macos_ui: ^2.0.0
-  noports_core: ^4.0.0-dev.1
+  noports_core: ^4.0.0
   page_transition: ^2.0.9
   path: ^1.8.3
   path_provider: ^2.0.11

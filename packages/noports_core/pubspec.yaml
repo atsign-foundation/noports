@@ -3,7 +3,7 @@ description: Core library code for sshnoports
 
 # NOTE: If you update the version number here, you
 # must also update it in version.dart
-version: 4.0.0-dev.1
+version: 4.0.0
 
 homepage: https://docs.atsign.com/
 

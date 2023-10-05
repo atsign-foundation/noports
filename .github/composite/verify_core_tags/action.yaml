@@ -1,0 +1,17 @@
+name: verify_core_tags
+description: |
+  Ensures that the tag of noports_core matches the tag of the composite.
+
+runs:
+  using: composite
+  steps:
+    - name: Ensure pubspec.yaml matches version.dart
+      shell: bash
+      working-directory: ./packages/noports_core
+      run: |
+        DART_TAG="v$(grep -Po '^const String version = "(.*)";' lib/version.dart | cut -d'"' -f2)"
+        PUBSPEC_TAG="v$(egrep -o '^version: (.*)$' pubspec.yaml | cut -d':' -f2 | tr -d '[:space:]')"
+        if [ "$PUBSPEC_TAG" != "$DART_TAG" ]; then
+          echo "Tag $PUBSPEC_TAG does not match version in version.dart: $DART_TAG"
+          exit 1
+        fi

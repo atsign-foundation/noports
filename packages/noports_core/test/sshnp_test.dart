@@ -1,6 +1,6 @@
 import 'package:args/args.dart';
-import 'package:noports_core/common/utils.dart';
-import 'package:noports_core/sshnp/sshnp.dart';
+import 'package:noports_core/src/common/utils.dart';
+import 'package:noports_core/src/sshnp/sshnp_params/sshnp_params.dart';
 import 'package:test/test.dart';
 
 void main() {
@@ -46,7 +46,7 @@ void main() {
       expect(p.username, getUserName(throwIfNull: true));
       expect(p.homeDirectory, getHomeDirectory(throwIfNull: true));
       expect(p.atKeysFilePath,
-          getDefaultAtKeysFilePath(p.homeDirectory, p.clientAtSign ?? ''));
+          getDefaultAtKeysFilePath(p.homeDirectory, p.clientAtSign));
       expect(p.sendSshPublicKey, '');
       expect(p.localSshOptions, []);
       expect(p.rsa, false);

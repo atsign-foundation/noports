@@ -1,8 +1,8 @@
-import 'package:noports_core/common/supported_ssh_clients.dart';
-import 'package:noports_core/sshnpd/sshnpd.dart';
+import 'package:noports_core/src/common/supported_ssh_clients.dart';
+import 'package:noports_core/sshnpd.dart';
 import 'package:test/test.dart';
 import 'package:args/args.dart';
-import 'package:noports_core/common/utils.dart';
+import 'package:noports_core/src/common/utils.dart';
 
 void main() {
   group('args parser test', () {
@@ -40,19 +40,19 @@ void main() {
 
     test('test --ssh-client arg', () {
       expect(SSHNPDParams.fromArgs('-a @bob -m @alice'.split(' ')).sshClient,
-          SupportedSshClient.hostSsh);
+          SupportedSshClient.exec);
 
       expect(
           SSHNPDParams.fromArgs(
                   '-a @bob -m @alice --ssh-client pure-dart'.split(' '))
               .sshClient,
-          SupportedSshClient.pureDart);
+          SupportedSshClient.dart);
 
       expect(
           SSHNPDParams.fromArgs(
                   '-a @bob -m @alice --ssh-client /usr/bin/ssh'.split(' '))
               .sshClient,
-          SupportedSshClient.hostSsh);
+          SupportedSshClient.exec);
 
       expect(
           () => SSHNPDParams.fromArgs(

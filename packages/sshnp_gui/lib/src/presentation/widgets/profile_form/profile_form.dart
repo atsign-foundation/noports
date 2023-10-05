@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:noports_core/sshnp/sshnp.dart';
+import 'package:noports_core/sshnp.dart';
 import 'package:sshnp_gui/src/controllers/navigation_rail_controller.dart';
 import 'package:sshnp_gui/src/controllers/config_controller.dart';
 import 'package:sshnp_gui/src/presentation/widgets/profile_form/custom_text_form_field.dart';
@@ -102,7 +102,7 @@ class _ProfileFormState extends ConsumerState<ProfileForm> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       CustomTextFormField(
-                        initialValue: oldConfig.sshnpdAtSign ?? '',
+                        initialValue: oldConfig.sshnpdAtSign,
                         labelText: strings.sshnpdAtSign,
                         onChanged: (value) =>
                             newConfig = SSHNPPartialParams.merge(
@@ -113,7 +113,7 @@ class _ProfileFormState extends ConsumerState<ProfileForm> {
                       ),
                       gapW8,
                       CustomTextFormField(
-                        initialValue: oldConfig.host ?? '',
+                        initialValue: oldConfig.host,
                         labelText: strings.host,
                         onChanged: (value) =>
                             newConfig = SSHNPPartialParams.merge(

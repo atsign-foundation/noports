@@ -244,6 +244,7 @@ jobs:
           sshnpd_atsign: ${{ env.SSHNPD_ATSIGN }}
           sshrvd_atsign: ${{ env[env.PROD_RVD_ATSIGN] }}
           devicename: ${{ env.DEVICENAME }}
+          legacy_daemon: ${{ matrix.np == 'local' && matrix.npd == 'installer' }}
 
       - name: Ensure entrypoints exist
         working-directory: tests/end2end_tests/contexts
@@ -368,12 +369,14 @@ jobs:
       matrix:
         include:
           - np: local
-            npd: latest
-          - np: latest
+            npd: v3.4.2
+            legacy_daemon: true
+          - np: v3.4.2
             npd: local
 
           - np: local
             npd: v3.3.0
+            legacy_daemon: true
           - np: v3.3.0
             npd: local
 
@@ -415,6 +418,7 @@ jobs:
           sshnpd_atsign: ${{ env.SSHNPD_ATSIGN }}
           sshrvd_atsign: ${{ env[env.PROD_RVD_ATSIGN] }}
           devicename: ${{ env.DEVICENAME }}
+          legacy_daemon: ${{ matrix.legacy_daemon || false }}
 
       - name: Ensure entrypoints exist
         working-directory: tests/end2end_tests/contexts
