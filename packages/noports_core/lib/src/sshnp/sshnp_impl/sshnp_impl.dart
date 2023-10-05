@@ -205,6 +205,13 @@ abstract class SSHNPImpl implements SSHNP {
     // This is in case they need to implement further initialization steps
   }
 
+  @protected
+  void completeInitialization() {
+    if (initializedCompleter.isCompleted) return;
+    logger.info('Completing initialization');
+    initializedCompleter.complete();
+  }
+
   @visibleForTesting
   void handleSshnpdResponses(AtNotification notification) async {
     String notificationKey = notification.key

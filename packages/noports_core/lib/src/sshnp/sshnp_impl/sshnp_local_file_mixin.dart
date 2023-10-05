@@ -15,6 +15,8 @@ mixin SSHNPLocalFileMixin on SSHNPImpl {
 
   @override
   Future<void> init() async {
+    await super.init();
+
     if (!params.allowLocalFileSystem) {
       throw SSHNPError(
           'The current client type requires allowLocalFileSystem to be true: $runtimeType');
@@ -23,17 +25,16 @@ mixin SSHNPLocalFileMixin on SSHNPImpl {
       throw SSHNPError(
           'The current platform is not supported: ${Platform.operatingSystem}');
     }
+    logger.info('Initializing local file system');
     try {
       homeDirectory = getHomeDirectory(throwIfNull: true)!;
+    logger.info('got homeDirectory: $homeDirectory');
     } catch (e, s) {
       throw SSHNPError('Unable to determine the home directory',
           error: e, stackTrace: s);
     }
     sshHomeDirectory = getDefaultSshDirectory(homeDirectory);
     sshnpHomeDirectory = getDefaultSshnpDirectory(homeDirectory);
-
-    await super.init();
-    if (initializedCompleter.isCompleted) return;
   }
 
   @protected

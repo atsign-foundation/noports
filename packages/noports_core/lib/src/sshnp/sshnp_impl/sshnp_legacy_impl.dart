@@ -24,7 +24,6 @@ class SSHNPLegacyImpl extends SSHNPImpl
   @override
   Future<void> init() async {
     await super.init();
-    if (initializedCompleter.isCompleted) return;
 
     // Share our private key with sshnpd
     AtKey sendOurPrivateKeyToSshnpd = AtKey()
@@ -37,7 +36,7 @@ class SSHNPLegacyImpl extends SSHNPImpl
         ..ttl = 10000);
     await notify(sendOurPrivateKeyToSshnpd, sshPrivateKey);
 
-    initializedCompleter.complete();
+    completeInitialization();
   }
 
   @override

@@ -21,8 +21,7 @@ class SSHNPForwardDartImpl extends SSHNPImpl with SSHNPForwardDirection {
   @override
   Future<void> init() async {
     await super.init();
-    if (initializedCompleter.isCompleted) return;
-    initializedCompleter.complete();
+    completeInitialization();
   }
 
   @override

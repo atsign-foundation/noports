@@ -26,8 +26,7 @@ class SSHNPForwardExecImpl extends SSHNPImpl
   @override
   Future<void> init() async {
     await super.init();
-    if (initializedCompleter.isCompleted) return;
-    initializedCompleter.complete();
+    completeInitialization();
   }
 
   @override
@@ -46,7 +45,7 @@ class SSHNPForwardExecImpl extends SSHNPImpl
       String? errorMessage;
       Process? process;
 
-      var ephemeralPrivateKeyPath = path.normalize(
+      ephemeralPrivateKeyPath = path.normalize(
           '$sshnpHomeDirectory/sessions/$sessionId/ephemeral_private_key');
       File tmpFile = File(ephemeralPrivateKeyPath);
       await tmpFile.create(recursive: true);

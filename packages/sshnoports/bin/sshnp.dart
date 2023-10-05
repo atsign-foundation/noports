@@ -37,6 +37,7 @@ void main(List<String> args) async {
     try {
       params = SSHNPParams.fromPartial(SSHNPPartialParams.fromArgList(args));
       String homeDirectory = getHomeDirectory()!;
+      print('E');
       sshnp = await SSHNP
           .fromParams(
         params,
@@ -65,9 +66,29 @@ void main(List<String> args) async {
         exit(0);
       }
 
-      await sshnp!.initialized;
+      print('F');
 
-      SSHNPResult res = await sshnp!.run();
+      await sshnp!.initialized.catchError((e) {
+        if (e.stackTrace != null) {
+          Error.throwWithStackTrace(e, e.stackTrace!);
+        }
+        throw e;
+      });
+
+      print('G');
+
+      FutureOr<SSHNPResult> runner = sshnp!.run();
+      if (runner is Future<SSHNPResult>) {
+        await runner.catchError((e) {
+          if (e.stackTrace != null) {
+            Error.throwWithStackTrace(e, e.stackTrace!);
+          }
+          throw e;
+        });
+      }
+      SSHNPResult res = await runner;
+
+      print('H');
 
       if (res is SSHNPError) {
         if (res.stackTrace != null) {

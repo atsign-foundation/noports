@@ -132,7 +132,7 @@ class SSHNPArg {
       commandLineOnly: true,
     ),
     const SSHNPArg(
-      name: 'ssh-public-key',
+      name: 'send-ssh-public-key',
       abbr: 's',
       help:
           'When true, the ssh public key will be sent to the remote host for use in the ssh session',

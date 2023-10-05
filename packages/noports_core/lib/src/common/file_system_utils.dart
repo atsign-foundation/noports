@@ -19,8 +19,9 @@ String? getHomeDirectory({bool throwIfNull = false}) {
       homeDir = null;
       break;
   }
-  if (throwIfNull) {
-    throw ('\nUnable to determine your username: please set environment variable\n\n');
+  print('homeDir: $homeDir');
+  if (throwIfNull && homeDir == null) {
+    throw ('Unable to determine your username: please set environment variable');
   }
   return homeDir;
 }
@@ -28,13 +29,21 @@ String? getHomeDirectory({bool throwIfNull = false}) {
 /// Get the local username or null if unknown
 String? getUserName({bool throwIfNull = false}) {
   Map<String, String> envVars = Platform.environment;
-  if (!Platform.isWindows) {
-    return envVars['USER'];
-  } else if (Platform.isWindows) {
-    return envVars['USERPROFILE'];
+  String? userName;
+  switch (Platform.operatingSystem) {
+    case 'linux':
+    case 'macos':
+      userName = envVars['USER'];
+      break;
+    case 'windows':
+      userName = envVars['USERNAME'];
+      break;
+    default:
+      userName = null;
+      break;
   }
-  if (throwIfNull) {
-    throw ('\nUnable to determine your username: please set environment variable\n\n');
+  if (throwIfNull && userName == null) {
+    throw ('Unable to determine your username: please set environment variable');
   }
   return null;
 }
