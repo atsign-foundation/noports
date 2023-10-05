@@ -21,8 +21,8 @@ inputs:
   devicename:
     description: Unique sshnp devicename
     required: true
-  legacy_daemon:
-    description: Legacy daemon
+  args:
+    description: Arguments to pass to the entrypoint
     required: false
 
 runs:
@@ -33,14 +33,23 @@ runs:
       working-directory: tests/end2end_tests/contexts/_init_
       run: |
         case "${{ inputs.sshnp }}" in
-          "installer")
+          installer|v3.*.*)
+            args="-s id_ed25519.pub -v"
             entrypoint_filename="sshnp_installer_entrypoint.sh"
             ;;
           *)
             entrypoint_filename="sshnp_entrypoint.sh"
+            case "${{inputs.sshnpd}}" in
+              installer|v3.*.*)
+                args="-i id_ed25519.pub -s -v --legacy-daemon"
+                ;;
+              *)
+                args="-i ~/.ssh/id_ed25519 -s -v"
+                ;;
+            esac
             ;;
         esac
-        ./setup-sshnp-entrypoint.sh ${{ inputs.devicename }} ${{ inputs.sshnp_atsign }} ${{ inputs.sshnpd_atsign }} ${{ inputs.sshrvd_atsign }} "$entrypoint_filename" ${{ inputs.legacy_daemon || false }}
+        ./setup-sshnp-entrypoint.sh ${{ inputs.devicename }} ${{ inputs.sshnp_atsign }} ${{ inputs.sshnpd_atsign }} ${{ inputs.sshrvd_atsign }} "$entrypoint_filename" "$args ${{ inputs.args }}"
 
     - name: Setup NPD entrypoint
       shell: bash
