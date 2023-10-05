@@ -41,11 +41,10 @@ String? getUserName({bool throwIfNull = false}) {
       userName = null;
       break;
   }
-  print('username: $userName');
   if (throwIfNull && userName == null) {
     throw ('Unable to determine your username: please set environment variable');
   }
-  return null;
+  return userName;
 }
 
 Future<bool> fileExists(String file) async {
