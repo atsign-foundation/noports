@@ -19,7 +19,6 @@ String? getHomeDirectory({bool throwIfNull = false}) {
       homeDir = null;
       break;
   }
-  print('homeDir: $homeDir');
   if (throwIfNull && homeDir == null) {
     throw ('Unable to determine your username: please set environment variable');
   }
@@ -42,6 +41,7 @@ String? getUserName({bool throwIfNull = false}) {
       userName = null;
       break;
   }
+  print('username: $userName');
   if (throwIfNull && userName == null) {
     throw ('Unable to determine your username: please set environment variable');
   }

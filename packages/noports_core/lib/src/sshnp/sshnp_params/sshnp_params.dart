@@ -78,7 +78,6 @@ class SSHNPParams {
             allowLocalFileSystem ?? DefaultArgs.allowLocalFileSystem,
         sshClient =
             sshClient ?? DefaultSSHNPArgs.getSshClient(allowLocalFileSystem) {
-    print('C');
     if (sshKeyPair == null && identityFile != null) {
       if (!this.allowLocalFileSystem) {
         throw ArgumentError('identity-file is not allowed');
@@ -92,7 +91,6 @@ class SSHNPParams {
       sshKeyPair =
           SSHKeyPair.fromPem(pemContents, identityPassphrase).firstOrNull;
     }
-    print('D');
   }
 
   factory SSHNPParams.empty() {
@@ -150,7 +148,6 @@ class SSHNPParams {
     partial.clientAtSign ?? (throw ArgumentError('from is mandatory'));
     partial.sshnpdAtSign ?? (throw ArgumentError('to is mandatory'));
     partial.host ?? (throw ArgumentError('host is mandatory'));
-    print('B');
     return SSHNPParams(
       profileName: partial.profileName,
       clientAtSign: partial.clientAtSign!,
@@ -394,7 +391,6 @@ class SSHNPPartialParams {
   /// first merges from a config file if provided via --config-file
   factory SSHNPPartialParams.fromArgList(List<String> args) {
     var params = SSHNPPartialParams.empty();
-    print('A');
     var parsedArgs = SSHNPArg.createArgParser(withDefaults: false).parse(args);
 
     if (parsedArgs.wasParsed('config-file')) {
