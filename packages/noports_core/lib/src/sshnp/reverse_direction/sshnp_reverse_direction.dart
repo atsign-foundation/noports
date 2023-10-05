@@ -44,7 +44,7 @@ abstract class SSHNPReverseDirection extends SSHNPImpl
     try {
       var (String ephemeralPublicKey, String ephemeralPrivateKey) =
           await generateEphemeralSshKeys(
-        rsa: params.rsa,
+        algorithm: params.sshAlgorithm,
         sessionId: sessionId,
         sshHomeDirectory: sshHomeDirectory,
       );

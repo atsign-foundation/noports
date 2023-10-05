@@ -4,8 +4,6 @@ import 'package:noports_core/src/sshrv/sshrv_impl.dart';
 import 'package:socket_connector/socket_connector.dart';
 import 'package:noports_core/src/common/default_args.dart';
 
-typedef SSHRVGenerator = SSHRV Function(String, int, {int localSshdPort});
-
 abstract class SSHRV<T> {
   /// The internet address of the host to connect to.
   abstract final String host;

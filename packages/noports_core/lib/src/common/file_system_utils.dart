@@ -1,8 +1,8 @@
 import 'dart:async';
 import 'dart:io';
-import 'dart:typed_data';
 import 'package:at_utils/at_utils.dart';
 import 'package:dartssh2/dartssh2.dart';
+import 'package:noports_core/sshnp.dart';
 import 'package:path/path.dart' as path;
 
 /// Get the home directory or null if unknown.
@@ -104,7 +104,7 @@ Future<(String, String)> writeEphemeralSshKeys({
 }
 
 Future<(String, String)> generateEphemeralSshKeys({
-  required bool rsa,
+  required SupportedSSHAlgorithm algorithm,
   required String sessionId,
   String? sshHomeDirectory,
   String? prefix,
@@ -113,12 +113,26 @@ Future<(String, String)> generateEphemeralSshKeys({
       _getEphemeralKeysPath(sshHomeDirectory, sessionId);
   sshHomeDirectory = normalizedSshHomeDirectory;
 
-  if (rsa) {
-    await Process.run('ssh-keygen',
-        ['-t', 'rsa', '-b', '4096', '-f', '${sessionId}_sshnp', '-q', '-N', ''],
-        workingDirectory: sshHomeDirectory);
-  } else {
-    await Process.run(
+  switch (algorithm) {
+    case (SupportedSSHAlgorithm.rsa):
+      await Process.run(
+        'ssh-keygen',
+        [
+          '-t',
+          'rsa',
+          '-b',
+          '4096',
+          '-f',
+          '${sessionId}_sshnp',
+          '-q',
+          '-N',
+          '',
+        ],
+        workingDirectory: sshHomeDirectory,
+      );
+      break;
+    case (SupportedSSHAlgorithm.ed25519):
+      await Process.run(
         'ssh-keygen',
         [
           '-t',
@@ -129,9 +143,11 @@ Future<(String, String)> generateEphemeralSshKeys({
           '${sessionId}_sshnp',
           '-q',
           '-N',
-          ''
+          '',
         ],
-        workingDirectory: sshHomeDirectory);
+        workingDirectory: sshHomeDirectory,
+      );
+      break;
   }
 
   var keys = await Future.wait([
@@ -218,31 +234,5 @@ Future<void> removeEphemeralKeyFromAuthorizedKeys(
   } catch (e) {
     logger.severe(
         'Unable to tidy up ${path.normalize('$sshHomeDirectory/authorized_keys')}');
-  }
-}
-
-class SSHKeyReader {
-  /// Message data.
-  final Uint8List data;
-
-  SSHKeyReader(this.data) : _byteData = ByteData.sublistView(data);
-
-  /// ByteData view of [data], used for reading numbers.
-  final ByteData _byteData;
-
-  /// The current position in the message.
-  var _offset = 0;
-
-  int readUint32() {
-    final value = _byteData.getUint32(_offset);
-    _offset += 4;
-    return value;
-  }
-
-  Uint8List readString() {
-    final length = readUint32();
-    final value = Uint8List.sublistView(data, _offset, _offset + length);
-    _offset += length;
-    return value;
   }
 }

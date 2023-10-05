@@ -1,7 +1,7 @@
 import 'dart:async';
 
 import 'package:at_client/at_client.dart' hide StringBuffer;
-import 'package:noports_core/src/common/supported_ssh_clients.dart';
+import 'package:noports_core/src/common/types.dart';
 import 'package:noports_core/src/sshnp/sshnp_impl.dart';
 import 'package:noports_core/src/sshnp/sshnp_params/sshnp_params.dart';
 import 'package:noports_core/src/sshrv/sshrv.dart';

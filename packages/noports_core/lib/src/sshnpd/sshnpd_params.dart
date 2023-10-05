@@ -1,7 +1,7 @@
 import 'package:args/args.dart';
 import 'package:noports_core/src/common/default_args.dart';
 import 'package:noports_core/src/common/file_system_utils.dart';
-import 'package:noports_core/src/common/supported_ssh_clients.dart';
+import 'package:noports_core/src/common/types.dart';
 import 'package:noports_core/src/common/validation_utils.dart';
 
 class SSHNPDParams {
@@ -18,7 +18,7 @@ class SSHNPDParams {
   final String rootDomain;
   final int localSshdPort;
   final String ephemeralPermissions;
-  final bool rsa;
+  final SupportedSSHAlgorithm sshAlgorithm;
 
   // Non param variables
   static final ArgParser parser = _createArgParser();
@@ -36,7 +36,7 @@ class SSHNPDParams {
     required this.rootDomain,
     required this.localSshdPort,
     required this.ephemeralPermissions,
-    required this.rsa,
+    required this.sshAlgorithm,
   });
 
   static Future<SSHNPDParams> fromArgs(List<String> args) async {
@@ -75,7 +75,7 @@ class SSHNPDParams {
       localSshdPort:
           int.tryParse(r['local-sshd-port']) ?? DefaultArgs.localSshdPort,
       ephemeralPermissions: r['ephemeral-permissions'],
-      rsa: r['rsa'],
+      sshAlgorithm: r['ssh-algorithm'],
     );
   }
 
@@ -164,11 +164,11 @@ class SSHNPDParams {
         defaultsTo: '',
         mandatory: false);
 
-    parser.addFlag(
-      'rsa',
-      abbr: 'r',
-      defaultsTo: DefaultArgs.rsa,
+    parser.addOption(
+      'ssh-algorithm',
+      defaultsTo: DefaultArgs.sshAlgorithm.toString(),
       help: 'Use RSA 4096 keys rather than the default ED25519 keys',
+      allowed: SupportedSSHAlgorithm.values.map((c) => c.toString()).toList(),
     );
 
     return parser;

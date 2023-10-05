@@ -146,6 +146,7 @@ abstract class SSHNPImpl implements SSHNP {
   }
 
   @override
+  @mustCallSuper
   Future<void> init() async {
     logger.info('Initializing SSHNPImpl');
     if (_initializeStarted) {

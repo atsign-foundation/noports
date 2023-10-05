@@ -9,7 +9,7 @@ import 'package:logging/logging.dart';
 import 'package:meta/meta.dart';
 import 'package:noports_core/src/common/default_args.dart';
 import 'package:noports_core/src/common/file_system_utils.dart';
-import 'package:noports_core/src/common/supported_ssh_clients.dart';
+import 'package:noports_core/src/common/types.dart';
 import 'package:noports_core/src/common/validation_utils.dart';
 import 'package:noports_core/src/sshrv/sshrv.dart';
 import 'package:noports_core/sshnpd.dart';
@@ -55,7 +55,7 @@ class SSHNPDImpl implements SSHNPD {
   final String ephemeralPermissions;
 
   @override
-  final bool rsa;
+  final SupportedSSHAlgorithm sshAlgorithm;
 
   @override
   @visibleForTesting
@@ -78,7 +78,7 @@ class SSHNPDImpl implements SSHNPD {
     this.addSshPublicKeys = false,
     this.localSshdPort = DefaultArgs.localSshdPort,
     required this.ephemeralPermissions,
-    required this.rsa,
+    required this.sshAlgorithm,
   }) {
     logger.hierarchicalLoggingEnabled = true;
     logger.logger.level = Level.SHOUT;
@@ -118,7 +118,7 @@ class SSHNPDImpl implements SSHNPD {
         addSshPublicKeys: p.addSshPublicKeys,
         localSshdPort: p.localSshdPort,
         ephemeralPermissions: p.ephemeralPermissions,
-        rsa: p.rsa,
+        sshAlgorithm: p.sshAlgorithm,
       );
 
       if (p.verbose) {
@@ -509,7 +509,7 @@ class SSHNPDImpl implements SSHNPD {
       ///   `authorized_keys` file, limiting permissions (e.g. hosts and ports
       ///   which can be forwarded to) as per the `--ephemeral-permissions` option
       var (String ephemeralPublicKey, String ephemeralPrivateKey) =
-          await generateEphemeralSshKeys(rsa: rsa, sessionId: sessionId);
+          await generateEphemeralSshKeys(algorithm: sshAlgorithm, sessionId: sessionId);
 
       await addEphemeralKeyToAuthorizedKeys(
           sshPublicKey: ephemeralPublicKey,

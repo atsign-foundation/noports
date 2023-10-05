@@ -1,15 +1,15 @@
 import 'dart:io';
 
-import 'package:noports_core/src/common/supported_ssh_clients.dart';
+import 'package:noports_core/src/common/types.dart';
 import 'package:noports_core/sshrv.dart';
 
 class DefaultArgs {
-  const DefaultArgs();
 
   static const String namespace = 'sshnp';
-
+  static const SupportedSSHAlgorithm sshAlgorithm =
+      SupportedSSHAlgorithm.ed25519;
   static const bool verbose = false;
-  static const bool rsa = false;
+  static const bool algorithm = false;
   static const String rootDomain = 'root.atsign.org';
   static const SSHRVGenerator sshrvGenerator = SSHRV.exec;
   static const int localSshdPort = 22;

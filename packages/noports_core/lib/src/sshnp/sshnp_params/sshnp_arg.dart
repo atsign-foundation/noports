@@ -1,7 +1,7 @@
 import 'package:args/args.dart';
-import 'package:noports_core/src/common/supported_ssh_clients.dart';
 
 import 'package:noports_core/src/common/default_args.dart';
+import 'package:noports_core/src/common/types.dart';
 
 enum ArgFormat {
   option,
@@ -169,13 +169,6 @@ class SSHNPArg {
       format: ArgFormat.flag,
     ),
     const SSHNPArg(
-      name: 'rsa',
-      abbr: 'r',
-      defaultsTo: DefaultArgs.rsa,
-      help: 'Use RSA 4096 keys rather than the default ED25519 keys',
-      format: ArgFormat.flag,
-    ),
-    const SSHNPArg(
       name: 'remote-user-name',
       abbr: 'u',
       help: 'username to use in the ssh session on the remote host',
@@ -224,11 +217,16 @@ class SSHNPArg {
       name: 'ssh-client',
       help: 'What to use for outbound ssh connections',
       defaultsTo: DefaultSSHNPArgs.sshClient.toString(),
-      mandatory: false,
-      format: ArgFormat.option,
-      type: ArgType.string,
       allowed: SupportedSshClient.values.map((c) => c.toString()).toList(),
       parseWhen: ParseWhen.commandLine,
+    ),
+    SSHNPArg(
+      name: 'ssh-algorithm',
+      help: 'SSH algorithm to use',
+      defaultsTo: DefaultArgs.sshAlgorithm.toString(),
+      allowed: SupportedSSHAlgorithm.values.map((c) => c.toString()).toList(),
+      parseWhen: ParseWhen.commandLine,
+
     ),
     const SSHNPArg(
       name: 'add-forwards-to-tunnel',
