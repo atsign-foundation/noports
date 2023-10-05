@@ -25,6 +25,8 @@ eval "$prefix" "s/@sshnpatsign/${sshnp}/g" ../sshnp/entrypoint.sh
 eval "$prefix" "s/@sshnpdatsign/${sshnpd}/g" ../sshnp/entrypoint.sh
 eval "$prefix" "s/@sshrvdatsign/${sshrvd}/g" ../sshnp/entrypoint.sh
 eval "$prefix" "s/deviceName/${device}/g" ../sshnp/entrypoint.sh
+
+# Don't use eval for this one, because it will try to evaluate the args stored in $args
 if [[ $(uname) == "Darwin" ]];
 then
     sed -i '' "s|args|$args|g" ../sshnp/entrypoint.sh
