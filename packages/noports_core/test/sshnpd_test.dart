@@ -6,6 +6,8 @@ import 'package:args/args.dart';
 
 void main() {
   group('args parser test', () {
+    // TODO fix these params with new public API
+
     test('test mandatory args', () {
       ArgParser parser = SSHNPDParams.parser;
 

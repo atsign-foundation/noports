@@ -125,7 +125,7 @@ class _ProfileFormState extends ConsumerState<ProfileForm> {
                     ],
                   ),
                   gapH10,
-                  Row(
+                  const Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       // TODO replace this with a file selector which populates SSHNPParams.sshKeyPair using SSHKeyPair.fromPem
@@ -139,27 +139,28 @@ class _ProfileFormState extends ConsumerState<ProfileForm> {
                       //   ),
                       // ),
                       gapW8,
-                      SizedBox(
-                        width: CustomTextFormField.defaultWidth,
-                        height: CustomTextFormField.defaultHeight,
-                        child: Row(
-                          children: [
-                            Text(strings.rsa),
-                            gapW8,
-                            Switch(
-                              value: newConfig.rsa ?? oldConfig.rsa,
-                              onChanged: (newValue) {
-                                setState(() {
-                                  newConfig = SSHNPPartialParams.merge(
-                                    newConfig,
-                                    SSHNPPartialParams(rsa: newValue),
-                                  );
-                                });
-                              },
-                            ),
-                          ],
-                        ),
-                      ),
+                      // TODO replace this switch with a dropdown with options for SupportedSSHAlgorithm.values
+                      // SizedBox(
+                      //   width: CustomTextFormField.defaultWidth,
+                      //   height: CustomTextFormField.defaultHeight,
+                      //   child: Row(
+                      //     children: [
+                      //       Text(strings.rsa),
+                      //       gapW8,
+                      //       Switch(
+                      //         value: newConfig.rsa ?? oldConfig.rsa,
+                      //         onChanged: (newValue) {
+                      //           setState(() {
+                      //             newConfig = SSHNPPartialParams.merge(
+                      //               newConfig,
+                      //               SSHNPPartialParams(rsa: newValue),
+                      //             );
+                      //           });
+                      //         },
+                      //       ),
+                      //     ],
+                      //   ),
+                      // ),
                     ],
                   ),
                   gapH10,
