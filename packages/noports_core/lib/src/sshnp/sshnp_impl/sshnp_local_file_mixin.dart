@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:meta/meta.dart';
@@ -6,6 +7,7 @@ import 'package:noports_core/src/sshnp/sshnp_impl/sshnp_impl.dart';
 import 'package:noports_core/src/sshnp/sshnp_result.dart';
 
 mixin SSHNPLocalFileMixin on SSHNPImpl {
+  String? identityFile;
   late final String homeDirectory;
   late final String sshHomeDirectory;
   late final String sshnpHomeDirectory;
@@ -28,11 +30,25 @@ mixin SSHNPLocalFileMixin on SSHNPImpl {
     logger.info('Initializing local file system');
     try {
       homeDirectory = getHomeDirectory(throwIfNull: true)!;
-    logger.info('got homeDirectory: $homeDirectory');
+      logger.info('got homeDirectory: $homeDirectory');
     } catch (e, s) {
       throw SSHNPError('Unable to determine the home directory',
           error: e, stackTrace: s);
     }
+
+    if (params.allowLocalFileSystem &&
+        params.identityFile == null &&
+        params.sshKeyPair != null) {
+      logger.info('Writing identity file');
+      var (_, privateKey) = await writeEphemeralSshKeys(
+        keyPair: params.sshKeyPair!,
+        sessionId: sessionId,
+        prefix: 'identity_',
+      );
+
+      identityFile = privateKey;
+    }
+
     sshHomeDirectory = getDefaultSshDirectory(homeDirectory);
     sshnpHomeDirectory = getDefaultSshnpDirectory(homeDirectory);
   }
@@ -46,6 +62,18 @@ mixin SSHNPLocalFileMixin on SSHNPImpl {
     } catch (e) {
       logger.severe("Error deleting file : $fileName");
       return false;
+    }
+  }
+
+  @override
+  Future<void> cleanUp() async {
+    await super.cleanUp();
+    logger.info('Cleaning up local file system');
+    if (params.allowLocalFileSystem &&
+        params.identityFile == null &&
+        params.sshKeyPair != null) {
+      logger.info('Deleting identity file');
+      await cleanUpEphemeralSshKeys(sessionId: sessionId, prefix: 'identity_');
     }
   }
 }

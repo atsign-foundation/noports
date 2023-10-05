@@ -212,7 +212,7 @@ class SSHNPParams {
       'key-file': atKeysFilePath,
       'identity-file': identityFile,
       'identity-passphrase': identityPassphrase,
-      'ssh-public-key': sendSshPublicKey,
+      'send-ssh-public-key': sendSshPublicKey,
       'local-ssh-options': localSshOptions,
       'rsa': rsa,
       'remote-user-name': remoteUsername,
@@ -365,7 +365,7 @@ class SSHNPPartialParams {
       atKeysFilePath: args['key-file'],
       identityFile: args['identity-file'],
       identityPassphrase: args['identity-passphrase'],
-      sendSshPublicKey: args['ssh-public-key'],
+      sendSshPublicKey: args['send-ssh-public-key'],
       localSshOptions: args['local-ssh-options'] == null
           ? null
           : List<String>.from(args['local-ssh-options']),

@@ -1,6 +1,8 @@
 import 'dart:async';
 import 'dart:io';
+import 'dart:typed_data';
 import 'package:at_utils/at_utils.dart';
+import 'package:dartssh2/dartssh2.dart';
 import 'package:path/path.dart' as path;
 
 /// Get the home directory or null if unknown.
@@ -70,7 +72,9 @@ String getDefaultSshnpConfigDirectory(String homeDirectory) {
 }
 
 (String, String, String) _getEphemeralKeysPath(
-    String? sshHomeDirectory, String sessionId) {
+    String? sshHomeDirectory, String sessionId,
+    [String? prefix]) {
+  prefix ??= 'ephemeral_';
   sshHomeDirectory ??= getDefaultSshDirectory(getHomeDirectory()!);
   if (!Directory(sshHomeDirectory).existsSync()) {
     Directory(sshHomeDirectory).createSync();
@@ -78,15 +82,33 @@ String getDefaultSshnpConfigDirectory(String homeDirectory) {
 
   return (
     sshHomeDirectory,
-    '$sshHomeDirectory/${sessionId}_sshnp.pub',
-    '$sshHomeDirectory/${sessionId}_sshnp'
+    '$sshHomeDirectory/$prefix${sessionId}_sshnp.pub',
+    '$sshHomeDirectory/$prefix${sessionId}_sshnp'
   );
 }
 
-Future<(String, String)> generateEphemeralSshKeys(
-    {required bool rsa,
-    required String sessionId,
-    String? sshHomeDirectory}) async {
+Future<(String, String)> writeEphemeralSshKeys({
+  required SSHKeyPair keyPair,
+  required String sessionId,
+  String? sshHomeDirectory,
+  String? prefix,
+}) {
+  var (normalizedSshHomeDirectory, sshPublicKeyPath, sshPrivateKeyPath) =
+      _getEphemeralKeysPath(sshHomeDirectory, sessionId, prefix);
+  sshHomeDirectory = normalizedSshHomeDirectory;
+
+  return Future.wait([
+    File(sshPublicKeyPath).writeAsBytes(keyPair.toPublicKey().encode()),
+    File(sshPrivateKeyPath).writeAsString(keyPair.toPem())
+  ]).then((_) => (sshPublicKeyPath, sshPrivateKeyPath));
+}
+
+Future<(String, String)> generateEphemeralSshKeys({
+  required bool rsa,
+  required String sessionId,
+  String? sshHomeDirectory,
+  String? prefix,
+}) async {
   var (normalizedSshHomeDirectory, sshPublicKeyPath, sshPrivateKeyPath) =
       _getEphemeralKeysPath(sshHomeDirectory, sessionId);
   sshHomeDirectory = normalizedSshHomeDirectory;
@@ -123,9 +145,10 @@ Future<(String, String)> generateEphemeralSshKeys(
 Future<void> cleanUpEphemeralSshKeys({
   required String sessionId,
   String? sshHomeDirectory,
+  String? prefix,
 }) async {
   var (_, sshPublicKeyPath, sshPrivateKeyPath) =
-      _getEphemeralKeysPath(sshHomeDirectory, sessionId);
+      _getEphemeralKeysPath(sshHomeDirectory, sessionId, prefix);
   await Future.wait([
     File(sshPublicKeyPath).delete(),
     File(sshPrivateKeyPath).delete(),
@@ -195,5 +218,31 @@ Future<void> removeEphemeralKeyFromAuthorizedKeys(
   } catch (e) {
     logger.severe(
         'Unable to tidy up ${path.normalize('$sshHomeDirectory/authorized_keys')}');
+  }
+}
+
+class SSHKeyReader {
+  /// Message data.
+  final Uint8List data;
+
+  SSHKeyReader(this.data) : _byteData = ByteData.sublistView(data);
+
+  /// ByteData view of [data], used for reading numbers.
+  final ByteData _byteData;
+
+  /// The current position in the message.
+  var _offset = 0;
+
+  int readUint32() {
+    final value = _byteData.getUint32(_offset);
+    _offset += 4;
+    return value;
+  }
+
+  Uint8List readString() {
+    final length = readUint32();
+    final value = Uint8List.sublistView(data, _offset, _offset + length);
+    _offset += length;
+    return value;
   }
 }

@@ -1,8 +1,9 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
+import 'dart:typed_data';
 
-import 'package:at_client/at_client.dart';
+import 'package:at_client/at_client.dart' hide StringBuffer;
 import 'package:at_commons/at_builders.dart';
 import 'package:at_utils/at_logger.dart';
 import 'package:logging/logging.dart';
@@ -11,6 +12,9 @@ import 'package:noports_core/sshnp.dart';
 import 'package:noports_core/sshrv.dart';
 import 'package:noports_core/sshrvd.dart';
 import 'package:noports_core/utils.dart';
+import 'package:ssh_key/ssh_key.dart';
+import 'package:ssh_key/ssh_key_bin.dart';
+import 'package:ssh_key/ssh_key_txt.dart';
 import 'package:uuid/uuid.dart';
 
 // If you've never seen an abstract implementation before, here it is :P
@@ -172,9 +176,6 @@ abstract class SSHNPImpl implements SSHNP {
         .subscribe(regex: '$sessionId.$namespace@', shouldDecrypt: true)
         .listen(handleSshnpdResponses);
 
-    // TODO write the identityFile
-    if (params.allowLocalFileSystem) {}
-
     remoteUsername = params.remoteUsername ?? await fetchRemoteUserName();
 
     // find a spare local port
@@ -192,12 +193,24 @@ abstract class SSHNPImpl implements SSHNP {
       }
     }
 
-    await sharePublicKeyWithSshnpdIfRequired();
+    await sharePublicKeyWithSshnpdIfRequired().catchError((e, s) {
+      throw SSHNPError(
+        'Unable to share ssh public key with sshnpd',
+        error: e,
+        stackTrace: s,
+      );
+    });
 
     // If host has an @ then contact the sshrvd service for some ports
     if (host.startsWith('@')) {
       logger.info('Host is an atSign, fetching host and port from sshrvd');
-      await getHostAndPortFromSshrvd();
+      await getHostAndPortFromSshrvd().catchError((e, s) {
+        throw SSHNPError(
+          'Unable to get host and port from sshrvd',
+          error: e,
+          stackTrace: s,
+        );
+      });
     }
 
     logger.finer('Base initialization complete');
@@ -372,12 +385,17 @@ abstract class SSHNPImpl implements SSHNP {
       logger.info('Skipped sharing public key with sshnpd: none provided');
       return;
     }
-
+    // TODO
     logger.info('Sharing public key with sshnpd');
     try {
-      String toSshPublicKey =
-          utf8.decode(params.sshKeyPair!.toPublicKey().encode().toList());
-      if (!toSshPublicKey.startsWith('ssh-')) {
+      var privKey = privateKeyDecode(params.sshKeyPair!.toPem());
+      if (privKey is! OpenSshPrivateKey) {
+        throw ('SSH Key is not an OpenSSH private key');
+      }
+      var pubKey = privKey as OpenSshPrivateKey;
+      var publicKeyContents = pubKey.encode();
+      logger.info('sharing ssh public key: $publicKeyContents');
+      if (!publicKeyContents.startsWith('ssh-')) {
         logger.severe('SSH Public Key does not look like a public key file');
         throw ('SSH Public Key does not look like a public key file');
       }
@@ -388,7 +406,7 @@ abstract class SSHNPImpl implements SSHNP {
         ..metadata = (Metadata()
           ..ttr = -1
           ..ttl = 10000);
-      await notify(sendOurPublicKeyToSshnpd, toSshPublicKey);
+      await notify(sendOurPublicKeyToSshnpd, publicKeyContents);
     } catch (e, s) {
       throw SSHNPError(
         'Error opening or validating public key file or sending to remote atSign',
