@@ -33,9 +33,7 @@ class SSHNPParams {
   final int idleTimeout;
   final bool addForwardsToTunnel;
   final String? atKeysFilePath;
-
-  /// Late variables
-  late final SupportedSshClient sshClient;
+  final SupportedSshClient sshClient;
 
   /// Special Arguments
   final String?
