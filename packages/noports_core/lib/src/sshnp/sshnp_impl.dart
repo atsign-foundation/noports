@@ -8,7 +8,6 @@ import 'package:at_utils/at_logger.dart';
 import 'package:logging/logging.dart';
 import 'package:meta/meta.dart';
 import 'package:noports_core/sshnp.dart';
-import 'package:noports_core/sshrv.dart';
 import 'package:noports_core/sshrvd.dart';
 import 'package:noports_core/utils.dart';
 import 'package:uuid/uuid.dart';
@@ -90,7 +89,7 @@ abstract class SSHNPImpl implements SSHNP {
   // ====================================================================
 
   /// true once we have received any response (success or error) from sshnpd
-  @visibleForTesting
+  @protected
   bool sshnpdAck = false;
 
   /// true once we have received an error response from sshnpd
@@ -100,9 +99,6 @@ abstract class SSHNPImpl implements SSHNP {
   /// true once we have received a response from sshrvd
   @visibleForTesting
   bool sshrvdAck = false;
-
-  @protected
-  late String ephemeralPrivateKey;
 
   // ====================================================================
   // Getters for derived values
@@ -236,44 +232,7 @@ abstract class SSHNPImpl implements SSHNP {
         .toLowerCase();
     logger.info('Received $notificationKey notification');
 
-    bool connected = false;
-
-    if (notification.value == 'connected') {
-      connected = true;
-    } else if (notification.value?.startsWith('{') ?? false) {
-      late final Map envelope;
-      late final Map daemonResponse;
-      try {
-        envelope = jsonDecode(notification.value!);
-        assertValidValue(envelope, 'signature', String);
-        assertValidValue(envelope, 'hashingAlgo', String);
-        assertValidValue(envelope, 'signingAlgo', String);
-
-        daemonResponse = envelope['payload'] as Map;
-        assertValidValue(daemonResponse, 'sessionId', String);
-        assertValidValue(daemonResponse, 'ephemeralPrivateKey', String);
-      } catch (e) {
-        logger.warning(
-            'Failed to extract parameters from notification value "${notification.value}" with error : $e');
-        sshnpdAck = true;
-        sshnpdAckErrors = true;
-        return;
-      }
-
-      try {
-        await verifyEnvelopeSignature(atClient, sshnpdAtSign, logger, envelope);
-      } catch (e) {
-        logger.shout('Failed to verify signature of msg from $sshnpdAtSign');
-        logger.shout('Exception: $e');
-        logger.shout('Notification value: ${notification.value}');
-        sshnpdAck = true;
-        sshnpdAckErrors = true;
-        return;
-      }
-
-      ephemeralPrivateKey = daemonResponse['ephemeralPrivateKey'];
-      connected = true;
-    }
+    bool connected = await handleSshnpdPayload(notification);
 
     if (connected) {
       logger.info('Session $sessionId connected successfully');
@@ -284,10 +243,14 @@ abstract class SSHNPImpl implements SSHNP {
     }
   }
 
+  @protected
+  FutureOr<bool> handleSshnpdPayload(AtNotification notification);
+
   // ====================================================================
   // Internal methods
   // ====================================================================
 
+  @protected
   Future<void> startAndWaitForInit() async {
     if (!initializedCompleter.isCompleted) {
       // Call init in case it hasn't been called yet
@@ -375,6 +338,7 @@ abstract class SSHNPImpl implements SSHNP {
     }
   }
 
+  @protected
   Future<void> sharePublicKeyWithSshnpdIfRequired() async {
     if (!params.sendSshPublicKey) {
       logger.info(

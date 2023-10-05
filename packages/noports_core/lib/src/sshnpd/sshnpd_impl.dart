@@ -509,25 +509,28 @@ class SSHNPDImpl implements SSHNPD {
       ///   `authorized_keys` file, limiting permissions (e.g. hosts and ports
       ///   which can be forwarded to) as per the `--ephemeral-permissions` option
       var (String ephemeralPublicKey, String ephemeralPrivateKey) =
-          await generateEphemeralSshKeys(algorithm: sshAlgorithm, sessionId: sessionId);
+          await generateEphemeralSshKeys(
+              algorithm: sshAlgorithm, sessionId: sessionId);
 
       await addEphemeralKeyToAuthorizedKeys(
-          sshPublicKey: ephemeralPublicKey,
-          localSshdPort: localSshdPort,
-          sessionId: sessionId,
-          permissions: ephemeralPermissions);
+        sshPublicKey: ephemeralPublicKey,
+        localSshdPort: localSshdPort,
+        sessionId: sessionId,
+        permissions: ephemeralPermissions,
+      );
 
       /// - Send response message to the sshnp client which includes the
       ///   ephemeral private key
       await _notify(
-          atKey: _createResponseAtKey(
-              requestingAtsign: requestingAtsign, sessionId: sessionId),
-          value: signAndWrapAndJsonEncode(atClient, {
-            'status': 'connected',
-            'sessionId': sessionId,
-            'ephemeralPrivateKey': ephemeralPrivateKey
-          }),
-          sessionId: sessionId);
+        atKey: _createResponseAtKey(
+            requestingAtsign: requestingAtsign, sessionId: sessionId),
+        value: signAndWrapAndJsonEncode(atClient, {
+          'status': 'connected',
+          'sessionId': sessionId,
+          'ephemeralPrivateKey': ephemeralPrivateKey
+        }),
+        sessionId: sessionId,
+      );
 
       /// - start a timer to remove the ephemeral key from `authorized_keys`
       ///   after 15 seconds

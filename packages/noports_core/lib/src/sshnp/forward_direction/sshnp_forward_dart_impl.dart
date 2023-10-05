@@ -4,9 +4,10 @@ import 'dart:io';
 import 'package:at_client/at_client.dart';
 import 'package:dartssh2/dartssh2.dart';
 import 'package:noports_core/src/sshnp/forward_direction/sshnp_forward_direction.dart';
+import 'package:noports_core/src/sshnp/mixins/sshnpd_payload_handler.dart';
 import 'package:noports_core/sshnp.dart';
 
-class SSHNPForwardDartImpl extends SSHNPForwardDirection {
+class SSHNPForwardDartImpl extends SSHNPForwardDirection with DefaultSSHNPDPayloadHandler {
   SSHNPForwardDartImpl({
     required AtClient atClient,
     required SSHNPParams params,
