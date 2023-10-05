@@ -14,6 +14,21 @@ enum ArgType {
   integer,
 }
 
+enum ParseWhen {
+  normal,
+  commandLine,
+  configFile,
+
+  always,
+  never,
+}
+
+enum ParserType {
+  normal,
+  commandLine,
+  configFile,
+}
+
 class SSHNPArg {
   final ArgFormat format;
 
@@ -24,7 +39,7 @@ class SSHNPArg {
   final dynamic defaultsTo;
   final ArgType type;
   final Iterable<String>? allowed;
-  final bool commandLineOnly;
+  final ParseWhen parseWhen;
   final List<String>? aliases;
   final bool negatable;
   final bool hide;
@@ -38,7 +53,7 @@ class SSHNPArg {
     this.defaultsTo,
     this.type = ArgType.string,
     this.allowed,
-    this.commandLineOnly = false,
+    this.parseWhen = ParseWhen.normal,
     this.aliases,
     this.negatable = true,
     this.hide = false,
@@ -69,16 +84,16 @@ class SSHNPArg {
 
   static List<SSHNPArg> args = [
     const SSHNPArg(
-      name: 'help',
-      help: 'Print this usage information',
-      defaultsTo: DefaultArgs.help,
-      format: ArgFormat.flag,
-      commandLineOnly: true,
-    ),
+        name: 'help',
+        help: 'Print this usage information',
+        defaultsTo: DefaultArgs.help,
+        format: ArgFormat.flag,
+        parseWhen: ParseWhen.commandLine),
     const SSHNPArg(
       name: 'key-file',
       abbr: 'k',
       help: 'Sending atSign\'s atKeys file if not in ~/.atsign/keys/',
+      parseWhen: ParseWhen.commandLine,
     ),
     const SSHNPArg(
       name: 'from',
@@ -124,12 +139,12 @@ class SSHNPArg {
       name: 'identity-file',
       abbr: 'i',
       help: 'Identity file to use for ssh connection',
-      commandLineOnly: true,
+      parseWhen: ParseWhen.commandLine,
     ),
     const SSHNPArg(
       name: 'identity-passphrase',
       help: 'Passphrase for identity file',
-      commandLineOnly: true,
+      parseWhen: ParseWhen.commandLine,
     ),
     const SSHNPArg(
       name: 'send-ssh-public-key',
@@ -138,11 +153,11 @@ class SSHNPArg {
           'When true, the ssh public key will be sent to the remote host for use in the ssh session',
       defaultsTo: DefaultSSHNPArgs.sendSshPublicKey,
       format: ArgFormat.flag,
-      commandLineOnly: true,
     ),
     const SSHNPArg(
       name: 'local-ssh-options',
       abbr: 'o',
+      defaultsTo: DefaultSSHNPArgs.localSshOptions,
       help: 'Add these commands to the local ssh command',
       format: ArgFormat.multiOption,
     ),
@@ -183,8 +198,8 @@ class SSHNPArg {
     ),
     const SSHNPArg(
       name: 'legacy-daemon',
-      defaultsTo: DefaultSSHNPArgs.legacyDaemon,
       help: 'Request is to a legacy (< 4.0.0) noports daemon',
+      defaultsTo: DefaultSSHNPArgs.legacyDaemon,
       format: ArgFormat.flag,
     ),
     const SSHNPArg(
@@ -203,45 +218,39 @@ class SSHNPArg {
       mandatory: false,
       format: ArgFormat.option,
       type: ArgType.integer,
-      commandLineOnly: true,
+      parseWhen: ParseWhen.commandLine,
     ),
     SSHNPArg(
       name: 'ssh-client',
       help: 'What to use for outbound ssh connections',
-      defaultsTo: SupportedSshClient.exec.cliArg,
+      defaultsTo: DefaultSSHNPArgs.sshClient.toString(),
       mandatory: false,
       format: ArgFormat.option,
       type: ArgType.string,
-      allowed: SupportedSshClient.values.map((c) => c.cliArg).toList(),
-      commandLineOnly: true,
-    ),
-    const SSHNPArg(
-      name: 'ssh-key-pair-pem',
-      help: 'The pem file contents of the ssh key pair',
-      commandLineOnly: true,
-      format: ArgFormat.option,
-      hide: true,
+      allowed: SupportedSshClient.values.map((c) => c.toString()).toList(),
+      parseWhen: ParseWhen.commandLine,
     ),
     const SSHNPArg(
       name: 'add-forwards-to-tunnel',
-      defaultsTo: false,
       help: 'When true, any local forwarding directives provided in'
           '--local-ssh-options will be added to the initial tunnel ssh request',
+      defaultsTo: DefaultArgs.addForwardsToTunnel,
       format: ArgFormat.flag,
-      commandLineOnly: true,
+      parseWhen: ParseWhen.commandLine,
     ),
     const SSHNPArg(
       name: 'config-file',
       help:
           'Read args from a config file\nMandatory args are not required if already supplied in the config file',
-      commandLineOnly: true,
+      parseWhen: ParseWhen.commandLine,
     ),
     const SSHNPArg(
       name: 'list-devices',
+      help: 'List available devices',
+      defaultsTo: DefaultSSHNPArgs.listDevices,
       aliases: ['ls'],
       negatable: false,
-      help: 'List available devices',
-      commandLineOnly: true,
+      parseWhen: ParseWhen.commandLine,
     ),
   ];
 
@@ -251,19 +260,39 @@ class SSHNPArg {
   }
 
   static ArgParser createArgParser({
-    bool isCommandLine = true,
+    ParserType parserType = ParserType.normal,
     bool withDefaults = true,
     Iterable<String>? includeList,
+    Iterable<String>? excludeList,
   }) {
     var parser = ArgParser();
     // Basic arguments
     for (SSHNPArg arg in SSHNPArg.args) {
-      if (includeList != null && !includeList.contains(arg.name)) {
+      bool isParseNever = arg.parseWhen == ParseWhen.never;
+      bool isParseAlways = arg.parseWhen == ParseWhen.always;
+
+      bool isIncludeList =
+          includeList != null && includeList.contains(arg.name);
+      bool isExcludeList =
+          excludeList != null && excludeList.contains(arg.name);
+
+      bool shouldParse =
+          isParseAlways || (!isParseNever && (isIncludeList || !isExcludeList));
+
+      if (!shouldParse) {
         continue;
       }
-      if (arg.commandLineOnly && !isCommandLine) {
+
+      if (arg.parseWhen == ParseWhen.commandLine &&
+          parserType != ParserType.commandLine) {
         continue;
       }
+
+      if (arg.parseWhen == ParseWhen.configFile &&
+          parserType != ParserType.configFile) {
+        continue;
+      }
+
       switch (arg.format) {
         case ArgFormat.option:
           parser.addOption(

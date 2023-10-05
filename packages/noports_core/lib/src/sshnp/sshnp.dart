@@ -46,7 +46,7 @@ abstract class SSHNP {
       );
     }
 
-    switch (SupportedSshClient.fromCliArg(params.sshClient)) {
+    switch (params.sshClient) {
       case SupportedSshClient.exec:
         return SSHNP.forwardExec(
           atClient: atClient,
@@ -59,8 +59,6 @@ abstract class SSHNP {
           params: params,
           shouldInitialize: shouldInitialize,
         );
-      default:
-        throw ArgumentError('Unsupported ssh client: ${params.sshClient}');
     }
   }
 

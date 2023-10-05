@@ -31,6 +31,7 @@ class DefaultSSHNPArgs {
   static const List<String> localSshOptions = <String>[];
   static const bool legacyDaemon = false;
   static const bool listDevices = false;
+  static const SupportedSshClient sshClient = SupportedSshClient.exec;
 }
 
 class DefaultSSHNPDArgs {

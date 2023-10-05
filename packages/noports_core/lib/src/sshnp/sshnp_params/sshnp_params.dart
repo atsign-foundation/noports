@@ -1,11 +1,9 @@
 import 'dart:convert';
-import 'dart:io';
 
-import 'package:args/args.dart';
-import 'package:dartssh2/dartssh2.dart';
 import 'package:noports_core/src/sshnp/sshnp_params/config_file_repository.dart';
 import 'package:noports_core/src/sshnp/sshnp_params/sshnp_arg.dart';
 import 'package:noports_core/src/common/default_args.dart';
+import 'package:noports_core/sshnp.dart';
 
 class SSHNPParams {
   /// Required Arguments
@@ -37,7 +35,7 @@ class SSHNPParams {
   final String? atKeysFilePath;
 
   /// Late variables
-  late final String sshClient;
+  late final SupportedSshClient sshClient;
 
   /// Special Arguments
   final String?
@@ -68,8 +66,8 @@ class SSHNPParams {
     this.listDevices = DefaultSSHNPArgs.listDevices,
     this.remoteSshdPort = DefaultArgs.remoteSshdPort,
     this.idleTimeout = DefaultArgs.idleTimeout,
-    this.addForwardsToTunnel = false,
-    String? sshClient, // TODO figure out how to deal with ssh-client
+    this.addForwardsToTunnel = DefaultArgs.addForwardsToTunnel,
+    this.sshClient = DefaultSSHNPArgs.sshClient,
   });
 
   factory SSHNPParams.empty() {
@@ -209,9 +207,6 @@ class SSHNPParams {
 /// This may be used when part of the params come from separate sources
 /// e.g. default values from a config file and the rest from the command line
 class SSHNPPartialParams {
-  // Non param variables
-  static final ArgParser parser = SSHNPArg.createArgParser();
-
   /// Main Params
   final String? profileName;
   final String? clientAtSign;
@@ -234,7 +229,7 @@ class SSHNPPartialParams {
   final int? remoteSshdPort;
   final int? idleTimeout;
   final bool? addForwardsToTunnel;
-  final String? sshClient;
+  final SupportedSshClient? sshClient;
 
   /// Operation flags
   final bool? listDevices;

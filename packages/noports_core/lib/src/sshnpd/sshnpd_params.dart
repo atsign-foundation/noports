@@ -51,7 +51,7 @@ class SSHNPDParams {
     String device = r['device'];
 
     SupportedSshClient sshClient = SupportedSshClient.values.firstWhere(
-        (c) => c.cliArg == r['ssh-client'],
+        (c) => c.toString() == r['ssh-client'],
         orElse: () => DefaultSSHNPDArgs.sshClient);
 
     // Do we have an ASCII ?
@@ -134,8 +134,12 @@ class SSHNPDParams {
 
     parser.addOption('ssh-client',
         mandatory: false,
-        defaultsTo: SupportedSshClient.exec.cliArg,
-        allowed: SupportedSshClient.values.map((c) => c.cliArg).toList(),
+        defaultsTo: DefaultSSHNPDArgs.sshClient.toString(),
+        allowed: SupportedSshClient.values
+            .map(
+              (c) => c.toString(),
+            )
+            .toList(),
         help: 'What to use for outbound ssh connections.');
 
     parser.addOption(

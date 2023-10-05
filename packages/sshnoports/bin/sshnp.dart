@@ -7,7 +7,7 @@ import 'package:at_utils/at_logger.dart';
 
 // local packages
 import 'package:noports_core/sshnp.dart';
-import 'package:noports_core/sshnp_params.dart' show SSHNPArg;
+import 'package:noports_core/sshnp_params.dart' show ParserType, SSHNPArg;
 import 'package:noports_core/utils.dart';
 import 'package:sshnoports/create_at_client_cli.dart';
 import 'package:sshnoports/version.dart';
@@ -29,7 +29,8 @@ void main(List<String> args) async {
 
   if (help) {
     printVersion();
-    stderr.writeln(SSHNPPartialParams.parser.usage);
+    stderr.writeln(
+        SSHNPArg.createArgParser(parserType: ParserType.commandLine).usage);
     exit(0);
   }
 
@@ -65,14 +66,12 @@ void main(List<String> args) async {
         exit(0);
       }
 
-
       await sshnp!.initialized.catchError((e) {
         if (e.stackTrace != null) {
           Error.throwWithStackTrace(e, e.stackTrace!);
         }
         throw e;
       });
-
 
       FutureOr<SSHNPResult> runner = sshnp!.run();
       if (runner is Future<SSHNPResult>) {
@@ -124,7 +123,8 @@ void main(List<String> args) async {
 
 void usageCallback(Object e, StackTrace s) {
   printVersion();
-  stderr.writeln(SSHNPPartialParams.parser.usage);
+  stderr.writeln(
+      SSHNPArg.createArgParser(parserType: ParserType.commandLine).usage);
   stderr.writeln('\n$e');
 }
 

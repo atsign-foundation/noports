@@ -496,7 +496,7 @@ class SSHNPDImpl implements SSHNPD {
       required String host,
       required int port}) async {
     logger.shout(
-        'Setting up ports for direct ssh session using ${sshClient.name} (${sshClient.cliArg}) from: $requestingAtsign session: $sessionId');
+        'Setting up ports for direct ssh session using ${sshClient.name} ($sshClient) from: $requestingAtsign session: $sessionId');
 
     try {
       // Connect to rendezvous point using background process.
@@ -557,7 +557,7 @@ class SSHNPDImpl implements SSHNPD {
     logger.info(
         'Starting reverse ssh session for $username to $host on port $port with forwardRemote of $remoteForwardPort');
     logger.shout(
-        'Starting reverse ssh session using ${sshClient.name} (${sshClient.cliArg}) from: $requestingAtsign session: $sessionId');
+        'Starting reverse ssh session using ${sshClient.name} ($sshClient) from: $requestingAtsign session: $sessionId');
 
     try {
       bool success = false;

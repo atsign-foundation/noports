@@ -1,11 +1,12 @@
 import 'package:args/args.dart';
-import 'package:noports_core/src/sshnp/sshnp_params/sshnp_params.dart';
+import 'package:noports_core/sshnp_params.dart';
 import 'package:test/test.dart';
 
 void main() {
   group('args parser tests', () {
     test('test mandatory args', () {
-      ArgParser parser = SSHNPPartialParams.parser;
+      ArgParser parser =
+          SSHNPArg.createArgParser(parserType: ParserType.commandLine);
       // As of version 2.4.2 of the args package, exceptions regarding
       // mandatory options are not thrown when the args are parsed,
       // but when trying to retrieve a mandatory option.

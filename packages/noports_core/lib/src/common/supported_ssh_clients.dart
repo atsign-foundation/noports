@@ -2,17 +2,16 @@ enum SupportedSshClient {
   exec(cliArg: '/usr/bin/ssh'),
   dart(cliArg: 'pure-dart');
 
-  final String cliArg;
-  const SupportedSshClient({required this.cliArg});
+  final String _cliArg;
+  const SupportedSshClient({required String cliArg}) : _cliArg = cliArg;
 
-  factory SupportedSshClient.fromCliArg(String cliArg) {
-    switch (cliArg) {
-      case '/usr/bin/ssh':
-        return SupportedSshClient.exec;
-      case 'pure-dart':
-        return SupportedSshClient.dart;
-      default:
-        throw ArgumentError('Unsupported SSH client: $cliArg');
-    }
+  factory SupportedSshClient.fromString(String cliArg) {
+    return SupportedSshClient.values.firstWhere(
+      (arg) => arg._cliArg == cliArg,
+      orElse: () => throw ArgumentError('Unsupported SSH client: $cliArg'),
+    );
   }
+
+  @override
+  String toString() => _cliArg;
 }

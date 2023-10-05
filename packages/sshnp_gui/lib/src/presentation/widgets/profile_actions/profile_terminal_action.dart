@@ -35,7 +35,7 @@ class _ProfileTerminalActionState extends ConsumerState<ProfileTerminalAction> {
         widget.params,
         SSHNPPartialParams(
           legacyDaemon: false,
-          sshClient: 'pure-dart',
+          sshClient: SupportedSshClient.dart,
         ),
       );
 
