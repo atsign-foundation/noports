@@ -30,6 +30,7 @@ class SSHNPForwardDartPureImpl extends SSHNPForwardDart
   @override
   Future<SSHNPResult> run() async {
     SSHClient client = await startInitialTunnel();
+    // Todo: consider returning a SSHNPCommand<SSHClient> instead of a SSHNPNoOpSuccess<SSHClient>
     return SSHNPNoOpSuccess<SSHClient>(
       message: 'Connection established:\n$terminateMessage',
       connectionBean: client,
