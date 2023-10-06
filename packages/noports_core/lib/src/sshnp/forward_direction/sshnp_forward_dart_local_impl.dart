@@ -22,6 +22,7 @@ class SSHNPForwardDartLocalImpl extends SSHNPForwardDart
 
   @override
   Future<SSHNPResult> run() async {
+    // TODO consider starting the tunnel in a separate isolate
     SSHClient client = await startInitialTunnel();
 
     return SSHNPCommand<SSHClient>(
