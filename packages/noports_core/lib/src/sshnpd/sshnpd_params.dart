@@ -75,7 +75,7 @@ class SSHNPDParams {
       localSshdPort:
           int.tryParse(r['local-sshd-port']) ?? DefaultArgs.localSshdPort,
       ephemeralPermissions: r['ephemeral-permissions'],
-      sshAlgorithm: r['ssh-algorithm'],
+      sshAlgorithm: SupportedSSHAlgorithm.fromString(r['ssh-algorithm']),
     );
   }
 

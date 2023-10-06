@@ -194,8 +194,8 @@ class SSHNPParams {
       'remote-sshd-port': remoteSshdPort,
       'idle-timeout': idleTimeout,
       'add-forwards-to-tunnel': addForwardsToTunnel,
-      'ssh-client': sshClient,
-      'ssh-algorithm': sshAlgorithm,
+      'ssh-client': sshClient.toString(),
+      'ssh-algorithm': sshAlgorithm.toString(),
     };
   }
 
@@ -340,8 +340,8 @@ class SSHNPPartialParams {
       remoteSshdPort: args['remote-sshd-port'],
       idleTimeout: args['idle-timeout'],
       addForwardsToTunnel: args['add-forwards-to-tunnel'],
-      sshClient: args['ssh-client'],
-      sshAlgorithm: args['ssh-algorithm'],
+      sshClient: SupportedSshClient.fromString(args['ssh-client']),
+      sshAlgorithm: SupportedSSHAlgorithm.fromString(args['ssh-algorithm']),
     );
   }
 
