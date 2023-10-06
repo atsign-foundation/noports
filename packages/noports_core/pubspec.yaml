@@ -12,11 +12,13 @@ environment:
 
 dependencies:
   args: ^2.4.2
+  at_chops: ^1.0.4
   at_client: ^3.0.65
   at_utils: ^3.0.15
   cryptography: ^2.7.0
   dartssh2: ^2.8.2
   meta: ^1.9.1
+  openssh_ed25519: ^1.1.0
   path: ^1.8.3
   socket_connector: ^1.0.11
   ssh_key: ^0.8.0

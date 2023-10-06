@@ -175,14 +175,16 @@ abstract class SSHNPImpl implements SSHNP {
 
     remoteUsername = params.remoteUsername ?? await fetchRemoteUserName();
 
+    // TODO investigate if this is a problem on mobile
     // find a spare local port
     if (localPort == 0) {
       logger.info('Finding a spare local port');
       try {
         ServerSocket serverSocket =
-            await ServerSocket.bind(InternetAddress.loopbackIPv4, 0);
+            await ServerSocket.bind(InternetAddress.loopbackIPv4, 0)
+                .catchError((e) => throw e);
         localPort = serverSocket.port;
-        await serverSocket.close();
+        await serverSocket.close().catchError((e) => throw e);
       } catch (e, s) {
         logger.info('Unable to find a spare local port');
         throw SSHNPError('Unable to find a spare local port',
@@ -262,8 +264,10 @@ abstract class SSHNPImpl implements SSHNP {
   }
 
   @protected
-  Future<void> notify(AtKey atKey, String value,
-      {String sessionId = ""}) async {
+  Future<void> notify(
+    AtKey atKey,
+    String value,
+  ) async {
     await atClient.notificationService
         .notify(NotificationParams.forUpdate(atKey, value: value),
             onSuccess: (NotificationResult notification) {
@@ -386,6 +390,13 @@ abstract class SSHNPImpl implements SSHNP {
     return true;
   }
 
+  @protected
+  @mustCallSuper
+  FutureOr<void> cleanUp() {
+    logger.info('Cleaning up SSHNPImpl');
+    // This is an intentional no-op to allow overrides to safely call super.cleanUp()
+  }
+
   Future<List<AtKey>> _getAtKeysRemote(
       {String? regex,
       String? sharedBy,
@@ -490,11 +501,5 @@ abstract class SSHNPImpl implements SSHNP {
       devices.difference(heartbeats),
       info,
     );
-  }
-
-  @override
-  FutureOr<void> cleanUp() {
-    logger.info('Cleaning up SSHNPImpl');
-    // This is an intentional no-op to allow overrides to safely call super.cleanUp()
   }
 }

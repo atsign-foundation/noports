@@ -27,21 +27,24 @@ abstract class SSHNPForwardDirection extends SSHNPImpl {
         'Requesting daemon to set up socket tunnel for direct ssh session');
 // send request to the daemon via notification
     await notify(
-        AtKey()
-          ..key = 'ssh_request'
-          ..namespace = this.namespace
-          ..sharedBy = clientAtSign
-          ..sharedWith = sshnpdAtSign
-          ..metadata = (Metadata()
-            ..ttr = -1
-            ..ttl = 10000),
-        signAndWrapAndJsonEncode(atClient, {
+      AtKey()
+        ..key = 'ssh_request'
+        ..namespace = this.namespace
+        ..sharedBy = clientAtSign
+        ..sharedWith = sshnpdAtSign
+        ..metadata = (Metadata()
+          ..ttr = -1
+          ..ttl = 10000),
+      signAndWrapAndJsonEncode(
+        atClient,
+        {
           'direct': true,
           'sessionId': sessionId,
           'host': host,
-          'port': port
-        }),
-        sessionId: sessionId);
+          'port': port,
+        },
+      ),
+    );
 
     bool acked = await waitForDaemonResponse();
     if (!acked) {

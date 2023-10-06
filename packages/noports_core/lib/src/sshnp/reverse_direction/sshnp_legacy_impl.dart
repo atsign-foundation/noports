@@ -65,7 +65,6 @@ class SSHNPLegacyImpl extends SSHNPReverseDirection
           ..ttr = -1
           ..ttl = 10000),
       '$localPort $port $localUsername $host $sessionId',
-      sessionId: sessionId,
     );
 
     bool acked = await waitForDaemonResponse();

@@ -11,7 +11,7 @@ typedef AtClientGenerator = FutureOr<AtClient> Function(
 
 typedef UsageCallback = void Function(Object error, StackTrace stackTrace);
 
-abstract class SSHNP {
+abstract interface class SSHNP {
   static Future<SSHNP> fromParams(
     SSHNPParams params, {
     AtClient? atClient,
@@ -153,8 +153,4 @@ abstract class SSHNP {
   /// - Map<String, dynamic> where the keys are all atSigns included in the maps, and the values being their device info
   FutureOr<(Iterable<String>, Iterable<String>, Map<String, dynamic>)>
       listDevices();
-
-  /// - Dispose of any resources used by this SSHNP instance
-  /// - Clean up temporary files
-  FutureOr<void> cleanUp();
 }

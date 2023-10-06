@@ -7,7 +7,8 @@ import 'package:noports_core/src/sshnp/reverse_direction/sshnp_reverse_direction
 import 'package:noports_core/sshnp.dart';
 import 'package:noports_core/sshrv.dart';
 
-class SSHNPReverseImpl extends SSHNPReverseDirection with DefaultSSHNPDPayloadHandler {
+class SSHNPReverseImpl extends SSHNPReverseDirection
+    with DefaultSSHNPDPayloadHandler {
   SSHNPReverseImpl({
     required AtClient atClient,
     required SSHNPParams params,
@@ -42,24 +43,27 @@ class SSHNPReverseImpl extends SSHNPReverseDirection with DefaultSSHNPDPayloadHa
     }
     // send request to the daemon via notification
     await notify(
-        AtKey()
-          ..key = 'ssh_request'
-          ..namespace = this.namespace
-          ..sharedBy = clientAtSign
-          ..sharedWith = sshnpdAtSign
-          ..metadata = (Metadata()
-            ..ttr = -1
-            ..ttl = 10000),
-        signAndWrapAndJsonEncode(atClient, {
+      AtKey()
+        ..key = 'ssh_request'
+        ..namespace = this.namespace
+        ..sharedBy = clientAtSign
+        ..sharedWith = sshnpdAtSign
+        ..metadata = (Metadata()
+          ..ttr = -1
+          ..ttl = 10000),
+      signAndWrapAndJsonEncode(
+        atClient,
+        {
           'direct': false,
           'sessionId': sessionId,
           'host': host,
           'port': port,
           'username': localUsername,
           'remoteForwardPort': localPort,
-          'privateKey': sshPrivateKey
-        }),
-        sessionId: sessionId);
+          'privateKey': sshPrivateKey,
+        },
+      ),
+    );
 
     bool acked = await waitForDaemonResponse();
     if (!acked) {

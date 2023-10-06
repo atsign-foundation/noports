@@ -5,7 +5,7 @@ import 'package:noports_core/src/common/file_system_utils.dart';
 import 'package:noports_core/src/sshnp/sshnp_impl.dart';
 import 'package:noports_core/src/sshnp/sshnp_result.dart';
 
-mixin SSHNPLocalFileMixin on SSHNPImpl {
+mixin SSHNPLocalFileHandler on SSHNPImpl {
   String? identityFile;
   late final String homeDirectory;
   late final String sshHomeDirectory;
@@ -35,6 +35,10 @@ mixin SSHNPLocalFileMixin on SSHNPImpl {
 
     sshHomeDirectory = getDefaultSshDirectory(homeDirectory);
     sshnpHomeDirectory = getDefaultSshnpDirectory(homeDirectory);
+  }
+
+  void queueFileForCleanup(String fileName) {
+    _cleanUpQueue.add(fileName);
   }
 
   @override

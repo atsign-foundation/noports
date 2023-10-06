@@ -103,6 +103,7 @@ Future<(String, String)> writeEphemeralSshKeys({
   ]).then((_) => (sshPublicKeyPath, sshPrivateKeyPath));
 }
 
+// TODO delete this
 Future<(String, String)> generateEphemeralSshKeys({
   required SupportedSSHAlgorithm algorithm,
   required String sessionId,

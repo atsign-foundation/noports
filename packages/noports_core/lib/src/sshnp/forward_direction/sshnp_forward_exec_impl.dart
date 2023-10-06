@@ -6,12 +6,12 @@ import 'package:at_client/at_client.dart' hide StringBuffer;
 
 import 'package:noports_core/src/sshnp/forward_direction/sshnp_forward_direction.dart';
 import 'package:noports_core/src/sshnp/mixins/sshnpd_payload_handler.dart';
-import 'package:noports_core/src/sshnp/sshnp_local_file_mixin.dart';
+import 'package:noports_core/src/sshnp/mixins/sshnp_local_file_handler.dart';
 import 'package:noports_core/sshnp.dart';
 import 'package:path/path.dart' as path;
 
 class SSHNPForwardExecImpl extends SSHNPForwardDirection
-    with SSHNPLocalFileMixin, DefaultSSHNPDPayloadHandler {
+    with SSHNPLocalFileHandler, DefaultSSHNPDPayloadHandler {
   late String ephemeralPrivateKeyPath;
   SSHNPForwardExecImpl({
     required AtClient atClient,
