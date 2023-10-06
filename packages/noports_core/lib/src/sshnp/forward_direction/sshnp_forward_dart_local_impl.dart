@@ -15,6 +15,7 @@ class SSHNPForwardDartLocalImpl extends SSHNPForwardDart
 
   @override
   Future<void> init() async {
+    logger.info('Initializing SSHNPForwardDartLocalImpl');
     await super.init();
     completeInitialization();
   }

@@ -22,6 +22,7 @@ class SSHNPReverseImpl extends SSHNPReverse with DefaultSSHNPDPayloadHandler {
 
   @override
   Future<void> init() async {
+    logger.info('Initializing SSHNPReverseImpl');
     await super.init();
     completeInitialization();
   }

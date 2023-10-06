@@ -26,6 +26,7 @@ class SSHNPForwardExecImpl extends SSHNPForward
 
   @override
   Future<void> init() async {
+    logger.info('Initializing SSHNPForwardExecImpl');
     await super.init();
     completeInitialization();
   }

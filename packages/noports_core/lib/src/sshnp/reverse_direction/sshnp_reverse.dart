@@ -30,6 +30,7 @@ abstract class SSHNPReverse extends SSHNPCore with SSHNPLocalSSHKeyHandler {
 
   @override
   Future<void> init() async {
+    logger.info('Initializing SSHNPReverse');
     await super.init();
     if (initializedCompleter.isCompleted) return;
 

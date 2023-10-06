@@ -153,7 +153,7 @@ abstract class SSHNPCore implements SSHNP {
   @override
   @mustCallSuper
   Future<void> init() async {
-    logger.info('Initializing SSHNPCore');
+    logger.info('Initializing $runtimeType');
     if (_initializeStarted) {
       logger.warning('Cancelling initialization: Already started');
       return;

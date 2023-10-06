@@ -21,6 +21,7 @@ class SSHNPLegacyImpl extends SSHNPReverse with LegacySSHNPDPayloadHandler {
 
   @override
   Future<void> init() async {
+    logger.info('Initializing SSHNPLegacyImpl');
     await super.init();
     if (initializedCompleter.isCompleted) return;
 
