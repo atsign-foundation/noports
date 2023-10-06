@@ -3,7 +3,7 @@ import 'dart:async';
 import 'package:dartssh2/dartssh2.dart';
 import 'package:noports_core/src/sshnp/mixins/sshnp_ssh_key_handler.dart';
 import 'package:noports_core/src/sshnp/sshnp_result.dart';
-import 'package:noports_core/sshnp_impl.dart';
+import 'package:noports_core/sshnp_core.dart';
 import 'package:noports_core/utils.dart';
 
 class SSHNPForwardDartPureImpl extends SSHNPForwardDart

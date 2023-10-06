@@ -4,7 +4,7 @@ import 'dart:convert';
 import 'package:at_client/at_client.dart';
 import 'package:meta/meta.dart';
 import 'package:noports_core/src/sshnp/mixins/sshnp_ssh_key_handler.dart';
-import 'package:noports_core/sshnp_impl.dart';
+import 'package:noports_core/sshnp_core.dart';
 import 'package:noports_core/utils.dart';
 
 mixin DefaultSSHNPDPayloadHandler on SSHNPCore {
