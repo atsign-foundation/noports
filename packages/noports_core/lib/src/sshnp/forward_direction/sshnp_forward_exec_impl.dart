@@ -35,16 +35,16 @@ class SSHNPForwardExecImpl extends SSHNPForward
   Future<SSHNPResult> run() async {
     await startAndWaitForInit();
 
+    var error = await requestSocketTunnelFromDaemon();
+    if (error != null) {
+      return error;
+    }
+
     ephemeralKeyPair = AtSSHKeyPair.fromPem(
       ephemeralPrivateKey,
       identifier: 'ephemeral_$sessionId',
       directory: keyUtil.sshnpHomeDirectory,
     );
-
-    var error = await requestSocketTunnelFromDaemon();
-    if (error != null) {
-      return error;
-    }
 
     logger.info(
         'Starting direct ssh session to $host on port $sshrvdPort with forwardLocal of $localPort');

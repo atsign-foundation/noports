@@ -9,7 +9,7 @@ import 'package:noports_core/utils.dart';
 
 mixin DefaultSSHNPDPayloadHandler on SSHNPCore {
   @protected
-  late String ephemeralPrivateKey;
+  late final String ephemeralPrivateKey;
 
   @protected
   bool get useLocalFileStorage => (this is SSHNPLocalSSHKeyHandler);
@@ -17,7 +17,7 @@ mixin DefaultSSHNPDPayloadHandler on SSHNPCore {
   @override
   FutureOr<bool> handleSshnpdPayload(AtNotification notification) async {
     logger.info(
-        'Received notification from $sshnpdAtSign: ${notification.key} - ${notification.value}');
+        'Handling SSHNPD payload $sshnpdAtSign : ${notification.key} : ${notification.value}');
     if (notification.value?.startsWith('{') ?? false) {
       late final Map envelope;
       late final Map daemonResponse;

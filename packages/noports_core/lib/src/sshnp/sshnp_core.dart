@@ -153,7 +153,7 @@ abstract class SSHNPCore implements SSHNP {
   @override
   @mustCallSuper
   Future<void> init() async {
-    logger.info('Initializing $runtimeType');
+    logger.info('Initializing SSHNPCore');
     if (_initializeStarted) {
       logger.warning('Cancelling initialization: Already started');
       return;
@@ -234,7 +234,7 @@ abstract class SSHNPCore implements SSHNP {
   }
 
   @visibleForTesting
-  void handleSshnpdResponses(AtNotification notification) async {
+  Future<void> handleSshnpdResponses(AtNotification notification) async {
     String notificationKey = notification.key
         .replaceAll('${notification.to}:', '')
         .replaceAll('.$namespace${notification.from}', '')

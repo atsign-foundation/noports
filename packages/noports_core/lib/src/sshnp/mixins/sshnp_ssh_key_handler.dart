@@ -17,8 +17,6 @@ mixin SSHNPLocalSSHKeyHandler on SSHNPCore {
 
   @override
   Future<void> init() async {
-    await super.init();
-
     if (!keyUtil.isValidPlatform) {
       throw SSHNPError(
           'The current platform is not supported: ${Platform.operatingSystem}');
@@ -30,6 +28,10 @@ mixin SSHNPLocalSSHKeyHandler on SSHNPCore {
         passphrase: params.identityPassphrase,
       );
     }
+
+    /// Make sure we set the keyPair before calling [super.init()]
+    /// so that the keyPair is available in [SSHNPCore] to share to the daemon
+    await super.init();
   }
 }
 
