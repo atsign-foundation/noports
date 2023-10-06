@@ -35,9 +35,10 @@ class AtSSHKeyPair {
   String get privateKeyFileName => identifier;
   String get publicKeyFileName => '$privateKeyFileName.pub';
 
-  void destroy() {
-    throw UnimplementedError();
-  }
+  // TODO consider adding this function
+  // void destroy() {
+  //   throw UnimplementedError();
+  // }
 }
 
 abstract interface class AtSSHKeyUtil {
