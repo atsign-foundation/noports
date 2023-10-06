@@ -347,11 +347,17 @@ class SSHNPPartialParams {
 
   /// Parses args from command line
   /// first merges from a config file if provided via --config-file
-  factory SSHNPPartialParams.fromArgList(List<String> args) {
+  factory SSHNPPartialParams.fromArgList(List<String> args,
+      {ParserType parserType = ParserType.normal}) {
     var params = SSHNPPartialParams.empty();
-    var parsedArgs = SSHNPArg.createArgParser(withDefaults: false).parse(args);
+    var parser = SSHNPArg.createArgParser(
+      withDefaults: false,
+      parserType: parserType,
+    );
+    var parsedArgs = parser.parse(args);
 
-    if (parsedArgs.wasParsed('config-file')) {
+    if (parser.options.keys.contains('config-file') &&
+        parsedArgs.wasParsed('config-file')) {
       var configFileName = parsedArgs['config-file'] as String;
       params = SSHNPPartialParams.merge(
         params,
