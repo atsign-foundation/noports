@@ -8,7 +8,7 @@ import 'package:noports_core/src/sshnp/forward_direction/sshnp_forward_direction
 import 'package:noports_core/src/sshnp/mixins/sshnpd_payload_handler.dart';
 import 'package:noports_core/src/sshnp/mixins/sshnp_local_file_handler.dart';
 import 'package:noports_core/sshnp.dart';
-import 'package:path/path.dart' as path;
+import 'package:noports_core/utils.dart';
 
 class SSHNPForwardExecImpl extends SSHNPForwardDirection
     with SSHNPLocalFileHandler, DefaultSSHNPDPayloadHandler {
@@ -45,17 +45,21 @@ class SSHNPForwardExecImpl extends SSHNPForwardDirection
       String? errorMessage;
       Process? process;
 
-      ephemeralPrivateKeyPath = path.normalize(
-          '$sshnpHomeDirectory/sessions/$sessionId/ephemeral_private_key');
-      File tmpFile = File(ephemeralPrivateKeyPath);
-      await tmpFile.create(recursive: true);
-      await tmpFile.writeAsString(ephemeralPrivateKey,
-          mode: FileMode.write, flush: true);
-      await Process.run('chmod', ['go-rwx', ephemeralPrivateKeyPath]);
+      AtSSHKeyPair keyPair = AtSSHKeyPair.fromPem(
+        ephemeralPrivateKey,
+        identifier: 'ephemeral_$sessionId',
+        directory: keyUtil.sshnpHomeDirectory,
+      );
+
+      await keyUtil.writeKeyPair(
+        keyPair: keyPair,
+        identifier: keyPair.identifier!,
+        directory: keyPair.directory!,
+      );
 
       String argsString = '$remoteUsername@$host'
           ' -p $sshrvdPort'
-          ' -i $ephemeralPrivateKeyPath'
+          ' -i ${keyPair.privateKeyFileName}'
           ' -L $localPort:localhost:${params.remoteSshdPort}'
           ' -o LogLevel=VERBOSE'
           ' -t -t'
@@ -96,7 +100,8 @@ class SSHNPForwardExecImpl extends SSHNPForwardDirection
         sshExitCode = 6464;
       }
 
-      await tmpFile.delete();
+      await keyUtil.deleteKeyPair(
+          identifier: keyPair.identifier!, directory: keyPair.directory!);
 
       if (sshExitCode != 0) {
         if (sshExitCode == 6464) {

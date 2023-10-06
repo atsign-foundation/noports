@@ -19,16 +19,12 @@ abstract class SSHNPReverseDirection extends SSHNPImpl
   final SSHRVGenerator sshrvGenerator;
 
   /// Set by [generateEphemeralSshKeys] during [init], if we're not doing direct ssh.
-  /// sshnp generates a new keypair for each ssh session, using ed25519 by
-  /// default but rsa if the [rsa] flag is set to true. sshnp will write
-  /// [sshPublicKey] to ~/.ssh/authorized_keys
-  late final String sshPublicKey;
-
-  /// Set by [generateEphemeralSshKeys] during [init].
-  /// sshnp generates a new keypair for each ssh session, using ed25519 by
-  /// default but rsa if the [rsa] flag is set to true. sshnp will send the
-  /// [sshPrivateKey] to sshnpd
-  late final String sshPrivateKey;
+  /// sshnp generates a new keypair for each ssh session, using the algorithm specified
+  /// in [params.sshAlgorithm].
+  /// sshnp will write [ephemeralKeyPair] to ~/.ssh/ephemeral_$sessionId
+  /// sshnp will write [ephemeralKeyPair.publicKey] to ~/.ssh/authorized_keys
+  /// sshnp will send the [ephemeralKeyPair.privateKey] to sshnpd
+  late final AtSSHKeyPair ephemeralKeyPair;
 
   /// Local username, set by [init]
   late final String localUsername;
@@ -42,14 +38,11 @@ abstract class SSHNPReverseDirection extends SSHNPImpl
 
     logger.info('Generating ephemeral keypair');
     try {
-      var (String ephemeralPublicKey, String ephemeralPrivateKey) =
-          await generateEphemeralSshKeys(
+      ephemeralKeyPair = await keyUtil.generateKeyPair(
         algorithm: params.sshAlgorithm,
-        sessionId: sessionId,
-        sshHomeDirectory: sshHomeDirectory,
+        identifier: 'ephemeral_$sessionId',
+        directory: keyUtil.sshnpHomeDirectory,
       );
-      sshPublicKey = ephemeralPublicKey;
-      sshPrivateKey = ephemeralPrivateKey;
     } catch (e, s) {
       logger.info('Failed to generate ephemeral keypair');
       throw SSHNPError(
@@ -61,10 +54,11 @@ abstract class SSHNPReverseDirection extends SSHNPImpl
 
     try {
       logger.info('Adding ephemeral key to authorized_keys');
-      await addEphemeralKeyToAuthorizedKeys(
-          sshPublicKey: sshPublicKey,
-          localSshdPort: params.localSshdPort,
-          sessionId: sessionId);
+      await keyUtil.authorizePublicKey(
+        sshPublicKey: ephemeralKeyPair.publicKeyContents,
+        localSshdPort: params.localSshdPort,
+        sessionId: sessionId,
+      );
     } catch (e, s) {
       throw SSHNPError(
         'Failed to add ephemeral key to authorized_keys',
@@ -76,14 +70,10 @@ abstract class SSHNPReverseDirection extends SSHNPImpl
 
   @override
   Future<void> cleanUp() async {
-    String homeDirectory = getHomeDirectory()!;
-    var sshHomeDirectory = getDefaultSshDirectory(homeDirectory);
     logger.info('Tidying up files');
 // Delete the generated RSA keys and remove the entry from ~/.ssh/authorized_keys
-    await cleanUpEphemeralSshKeys(
-        sessionId: sessionId, sshHomeDirectory: sshHomeDirectory);
-    await removeEphemeralKeyFromAuthorizedKeys(sessionId, logger,
-        sshHomeDirectory: sshHomeDirectory);
+    await keyUtil.deleteKeyPair(identifier: ephemeralKeyPair.identifier!);
+    await keyUtil.deauthorizePublicKey(sessionId);
     await super.cleanUp();
   }
 

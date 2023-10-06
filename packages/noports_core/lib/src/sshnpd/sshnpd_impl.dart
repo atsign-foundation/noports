@@ -13,6 +13,7 @@ import 'package:noports_core/src/common/types.dart';
 import 'package:noports_core/src/common/validation_utils.dart';
 import 'package:noports_core/src/sshrv/sshrv.dart';
 import 'package:noports_core/sshnpd.dart';
+import 'package:noports_core/utils.dart';
 import 'package:noports_core/version.dart';
 import 'package:uuid/uuid.dart';
 
@@ -92,7 +93,7 @@ class SSHNPDImpl implements SSHNPD {
       var p = await SSHNPDParams.fromArgs(args);
 
       // Check atKeyFile selected exists
-      if (!await fileExists(p.atKeysFilePath)) {
+      if (!await File(p.atKeysFilePath).exists()) {
         throw ('\n Unable to find .atKeys file : ${p.atKeysFilePath}');
       }
 
@@ -505,15 +506,13 @@ class SSHNPDImpl implements SSHNPD {
           await SSHRV.exec(host, port, localSshdPort: localSshdPort).run();
       logger.info('Started rv - pid is ${rv.pid}');
 
-      /// - Generate an ephemeral keypair and adds its public key to the
-      ///   `authorized_keys` file, limiting permissions (e.g. hosts and ports
-      ///   which can be forwarded to) as per the `--ephemeral-permissions` option
-      var (String ephemeralPublicKey, String ephemeralPrivateKey) =
-          await generateEphemeralSshKeys(
-              algorithm: sshAlgorithm, sessionId: sessionId);
+      LocalSSHKeyUtil keyUtil = LocalSSHKeyUtil();
 
-      await addEphemeralKeyToAuthorizedKeys(
-        sshPublicKey: ephemeralPublicKey,
+      AtSSHKeyPair keyPair = await keyUtil.generateKeyPair(
+          algorithm: sshAlgorithm, identifier: 'ephemeral_$sessionId');
+
+      await keyUtil.authorizePublicKey(
+        sshPublicKey: keyPair.publicKeyContents,
         localSshdPort: localSshdPort,
         sessionId: sessionId,
         permissions: ephemeralPermissions,
@@ -527,7 +526,7 @@ class SSHNPDImpl implements SSHNPD {
         value: signAndWrapAndJsonEncode(atClient, {
           'status': 'connected',
           'sessionId': sessionId,
-          'ephemeralPrivateKey': ephemeralPrivateKey
+          'ephemeralPrivateKey': keyPair.privateKeyContents,
         }),
         sessionId: sessionId,
       );
@@ -535,7 +534,7 @@ class SSHNPDImpl implements SSHNPD {
       /// - start a timer to remove the ephemeral key from `authorized_keys`
       ///   after 15 seconds
       Timer(const Duration(seconds: 15),
-          () => removeEphemeralKeyFromAuthorizedKeys(sessionId, logger));
+          () => keyUtil.deauthorizePublicKey(sessionId));
     } catch (e) {
       logger.severe('startDirectSsh failed with unexpected error : $e');
       // Notify sshnp that this session is NOT connected

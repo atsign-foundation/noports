@@ -60,7 +60,7 @@ class SSHNPReverseImpl extends SSHNPReverseDirection
           'port': port,
           'username': localUsername,
           'remoteForwardPort': localPort,
-          'privateKey': sshPrivateKey,
+          'privateKey': ephemeralKeyPair.privateKeyContents,
         },
       ),
     );
@@ -85,7 +85,7 @@ class SSHNPReverseImpl extends SSHNPReverseDirection
       localPort: localPort,
       remoteUsername: remoteUsername,
       host: 'localhost',
-      privateKeyFileName: params.identityFile?.replaceAll('.pub', ''),
+      privateKeyFileName: ephemeralKeyPair.privateKeyFileName,
       localSshOptions:
           (params.addForwardsToTunnel) ? null : params.localSshOptions,
       connectionBean: sshrvResult,

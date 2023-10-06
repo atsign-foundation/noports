@@ -6,8 +6,13 @@ import 'package:dartssh2/dartssh2.dart';
 import 'package:noports_core/src/sshnp/forward_direction/sshnp_forward_direction.dart';
 import 'package:noports_core/src/sshnp/mixins/sshnpd_payload_handler.dart';
 import 'package:noports_core/sshnp.dart';
+import 'package:noports_core/utils.dart';
 
 class SSHNPForwardDartImpl extends SSHNPForwardDirection with DefaultSSHNPDPayloadHandler {
+  final DartSSHKeyUtil _sshKeyUtil = DartSSHKeyUtil();
+  @override
+  DartSSHKeyUtil get keyUtil => _sshKeyUtil;
+
   SSHNPForwardDartImpl({
     required AtClient atClient,
     required SSHNPParams params,

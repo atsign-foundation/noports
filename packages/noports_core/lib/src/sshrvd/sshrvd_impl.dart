@@ -54,7 +54,7 @@ class SSHRVDImpl implements SSHRVD {
     try {
       var p = await SSHRVDParams.fromArgs(args);
 
-      if (!await fileExists(p.atKeysFilePath)) {
+      if (!await File(p.atKeysFilePath).exists()) {
         throw ('\n Unable to find .atKeys file : ${p.atKeysFilePath}');
       }
 

@@ -111,6 +111,13 @@ abstract class SSHNPImpl implements SSHNP {
   String get namespace => getNamespace(params.device);
 
   // ====================================================================
+  // Auxiliary
+  // ====================================================================
+
+  @protected
+  AtSSHKeyUtil get keyUtil;
+
+  // ====================================================================
   // Constructor and Initialization
   // ====================================================================
 

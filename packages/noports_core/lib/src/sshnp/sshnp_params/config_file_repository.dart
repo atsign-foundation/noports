@@ -6,6 +6,10 @@ import 'package:noports_core/src/sshnp/sshnp_params/sshnp_arg.dart';
 import 'package:path/path.dart' as path;
 
 class ConfigFileRepository {
+  static String getDefaultSshnpConfigDirectory(String homeDirectory) {
+    return path.normalize('$homeDirectory/.sshnp/config');
+  }
+
   static String toProfileName(String fileName, {bool replaceSpaces = true}) {
     var profileName = path.basenameWithoutExtension(fileName);
     if (replaceSpaces) profileName = profileName.replaceAll('_', ' ');

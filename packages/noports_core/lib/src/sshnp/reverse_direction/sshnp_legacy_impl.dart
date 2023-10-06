@@ -34,7 +34,8 @@ class SSHNPLegacyImpl extends SSHNPReverseDirection
       ..metadata = (Metadata()
         ..ttr = -1
         ..ttl = 10000);
-    await notify(sendOurPrivateKeyToSshnpd, sshPrivateKey);
+    await notify(
+        sendOurPrivateKeyToSshnpd, ephemeralKeyPair.privateKeyContents);
 
     completeInitialization();
   }
@@ -91,7 +92,7 @@ class SSHNPLegacyImpl extends SSHNPReverseDirection
       localPort: localPort,
       remoteUsername: remoteUsername,
       host: 'localhost',
-      privateKeyFileName: params.identityFile?.replaceAll('.pub', ''),
+      privateKeyFileName: ephemeralKeyPair.privateKeyFileName,
       localSshOptions:
           (params.addForwardsToTunnel) ? null : params.localSshOptions,
       connectionBean: sshrvResult,
