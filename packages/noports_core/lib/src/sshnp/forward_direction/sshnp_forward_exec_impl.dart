@@ -8,6 +8,7 @@ import 'package:noports_core/src/sshnp/forward_direction/sshnp_forward.dart';
 import 'package:noports_core/src/sshnp/mixins/sshnpd_payload_handler.dart';
 import 'package:noports_core/src/sshnp/mixins/sshnp_ssh_key_handler.dart';
 import 'package:noports_core/sshnp.dart';
+import 'package:noports_core/sshnp_params.dart';
 import 'package:noports_core/utils.dart';
 
 class SSHNPForwardExecImpl extends SSHNPForward
@@ -27,6 +28,7 @@ class SSHNPForwardExecImpl extends SSHNPForward
   @override
   Future<void> init() async {
     logger.info('Initializing SSHNPForwardExecImpl');
+    logger.info('params: ${params.toJson(parserType: ParserType.commandLine)}');
     await super.init();
     completeInitialization();
   }
