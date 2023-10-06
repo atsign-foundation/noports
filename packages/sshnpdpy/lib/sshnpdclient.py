@@ -65,10 +65,10 @@ class SSHNPDClient:
         if self.username:
             self._set_username()
         threading.Thread(target=self.at_client.start_monitor, args=(self.device_namespace,)).start()
+        threading.Thread(target=self._handle_notifications, args=(self.at_client.queue,), daemon=True).start()
         event_thread = threading.Thread(target=self._handle_events, args=(self.at_client.queue,))
         event_thread.start()
         SSHNPDClient.threads.append(event_thread)
-        self._handle_notifications(self.at_client.queue)
         
     def is_alive(self):
        if not self.authenticated:
@@ -100,11 +100,11 @@ class SSHNPDClient:
     def _handle_ssh_public_key(self, ssh_public_key):
         # // Check to see if the ssh Publickey is already in the file if not append to the ~/.ssh/authorized_keys file
         writeKey = False
-        with open(f"{self.ssh_path}/authorized_hosts", "r") as read:
+        with open(f"{self.ssh_path}/authorized_keys", "r") as read:
             filedata = read.read()
             if ssh_public_key not in filedata:
                 writeKey = True
-        with open(f"{self.ssh_path}/authorized_hosts", "w") as write:
+        with open(f"{self.ssh_path}/authorized_keys", "w") as write:
             if writeKey:
                 write.write(f"\n{ssh_public_key}")
                 self.logger.debug("key written")
@@ -115,7 +115,7 @@ class SSHNPDClient:
         ssh_public_key_received = True if not self.expecting_ssh_keys else (False if "" else True) #sorry for making this so cursed
         ssh_notification_recieved = False
         
-        while not ssh_notification_recieved or not ssh_public_key_received or private_key == "":
+        while not self.closing.is_set():
             try:
                 at_event = queue.get(block=False)
                 event_type = at_event.event_type
@@ -160,17 +160,17 @@ class SSHNPDClient:
                         "",
                         True
                     ]
-                    break
+                    try:
+                        threading.Thread(target=self.sshnp_callback, args=(callbackArgs)).start()
+                    except Exception as e:
+                        raise e
             except Empty:
                 pass
-        try:
-            self.sshnp_callback(*callbackArgs)
-        except Exception as e:
-            raise e
+        
 
     #Running in a thread
     def _handle_events(self, queue: Queue):  
-        while self.closing:
+        while not self.closing.is_set():
             try:
                 at_event = queue.get(block=False)
                 event_type = at_event.event_type
@@ -254,7 +254,7 @@ class SSHNPDClient:
             f"Connected!  Tunnel open {chan.origin_addr} -> {chan.getpeername()} -> {dest}"
         )
 
-        while self.closing:
+        while not self.closing.is_set():
             r, w, x = select([sock, chan], [], [])
             if sock in r:
                 data = sock.recv(1024)
@@ -272,7 +272,7 @@ class SSHNPDClient:
 
     #running in a threads
     def _forward_socket(self, tp, dest):
-        while self.closing:
+        while not self.closing.is_set():
             chan = tp.accept(1000)
             if chan is None:
                 continue
