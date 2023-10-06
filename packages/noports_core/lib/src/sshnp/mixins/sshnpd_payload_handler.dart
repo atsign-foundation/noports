@@ -50,6 +50,8 @@ mixin DefaultSSHNPDPayloadHandler on SSHNPCore {
         return false;
       }
 
+      logger.info('Verified signature of msg from $sshnpdAtSign');
+      logger.info('Setting ephemeralPrivateKey');
       ephemeralPrivateKey = daemonResponse['ephemeralPrivateKey'];
       return true;
     }
