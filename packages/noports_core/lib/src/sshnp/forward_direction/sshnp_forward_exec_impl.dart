@@ -27,19 +27,18 @@ class SSHNPForwardExecImpl extends SSHNPForward
   @override
   Future<void> init() async {
     await super.init();
-
-    ephemeralKeyPair = AtSSHKeyPair.fromPem(
-      ephemeralPrivateKey,
-      identifier: 'ephemeral_$sessionId',
-      directory: keyUtil.sshnpHomeDirectory,
-    );
-
     completeInitialization();
   }
 
   @override
   Future<SSHNPResult> run() async {
     await startAndWaitForInit();
+
+    ephemeralKeyPair = AtSSHKeyPair.fromPem(
+      ephemeralPrivateKey,
+      identifier: 'ephemeral_$sessionId',
+      directory: keyUtil.sshnpHomeDirectory,
+    );
 
     var error = await requestSocketTunnelFromDaemon();
     if (error != null) {
