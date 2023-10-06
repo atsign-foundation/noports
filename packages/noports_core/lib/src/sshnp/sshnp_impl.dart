@@ -359,6 +359,7 @@ abstract class SSHNPImpl implements SSHNP {
 
     logger.info('Sharing public key with sshnpd');
     try {
+      // TODO implement a way of getting the appropriate key
       String publicKeyContents = '';
       logger.info('sharing ssh public key: $publicKeyContents');
       if (!publicKeyContents.startsWith('ssh-')) {
