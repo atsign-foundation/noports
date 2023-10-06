@@ -4,7 +4,7 @@ typedef SSHRVGenerator = SSHRV Function(String, int, {int localSshdPort});
 
 enum SupportedSshClient {
   exec(cliArg: '/usr/bin/ssh'),
-  dart(cliArg: 'pure-dart');
+  dart(cliArg: 'dart');
 
   final String _cliArg;
   const SupportedSshClient({required String cliArg}) : _cliArg = cliArg;
