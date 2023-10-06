@@ -4,14 +4,12 @@ import 'dart:io';
 import 'package:at_client/at_client.dart';
 import 'package:dartssh2/dartssh2.dart';
 import 'package:noports_core/src/sshnp/forward_direction/sshnp_forward_direction.dart';
+import 'package:noports_core/src/sshnp/mixins/sshnp_ssh_key_handler.dart';
 import 'package:noports_core/src/sshnp/mixins/sshnpd_payload_handler.dart';
 import 'package:noports_core/sshnp.dart';
-import 'package:noports_core/utils.dart';
 
-class SSHNPForwardDartImpl extends SSHNPForwardDirection with DefaultSSHNPDPayloadHandler {
-  final DartSSHKeyUtil _sshKeyUtil = DartSSHKeyUtil();
-  @override
-  DartSSHKeyUtil get keyUtil => _sshKeyUtil;
+class SSHNPForwardDartImpl extends SSHNPForwardDirection
+    with SSHNPDartSSHKeyHandler, DefaultSSHNPDPayloadHandler {
 
   SSHNPForwardDartImpl({
     required AtClient atClient,
@@ -37,6 +35,8 @@ class SSHNPForwardDartImpl extends SSHNPForwardDirection with DefaultSSHNPDPaylo
     if (error != null) {
       return error;
     }
+    // TODO set identity file
+    // - if identityFile is set, try to use it to get the keyPair
 
     logger.info(
         'Starting direct ssh session to $host on port $sshrvdPort with forwardLocal of $localPort');

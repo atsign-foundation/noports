@@ -161,7 +161,10 @@ class SSHNPParams {
   List<String> toConfigLines() {
     var lines = <String>[];
     for (var entry in toArgMap().entries) {
-      var key = SSHNPArg.fromName(entry.key).bashName;
+      var arg = SSHNPArg.fromName(entry.key);
+      if (arg.parseWhen == ParseWhen.never ||
+          arg.parseWhen == ParseWhen.commandLine) continue;
+      var key = arg.bashName;
       if (key.isEmpty) continue;
       var value = entry.value;
       if (value == null) continue;

@@ -136,7 +136,7 @@ class SSHNPArg {
       type: ArgType.integer,
     ),
     const SSHNPArg(
-      name: 'identity-file',
+      name: 'identity',
       abbr: 'i',
       help: 'Identity file to use for ssh connection',
       parseWhen: ParseWhen.commandLine,
@@ -145,6 +145,15 @@ class SSHNPArg {
       name: 'identity-passphrase',
       help: 'Passphrase for identity file',
       parseWhen: ParseWhen.commandLine,
+    ),
+    SSHNPArg(
+      name: 'identity-type',
+      help: 'Type of identity input',
+      defaultsTo: DefaultSSHNPArgs.identityType.toString(),
+      allowed: SupportedIdentityType.values.map((c) => c.toString()).toList(),
+      // parse only from command line, but make it hidden, it should always use default from the commandline
+      parseWhen: ParseWhen.commandLine,
+      hide: true,
     ),
     const SSHNPArg(
       name: 'send-ssh-public-key',
@@ -226,7 +235,6 @@ class SSHNPArg {
       defaultsTo: DefaultArgs.sshAlgorithm.toString(),
       allowed: SupportedSSHAlgorithm.values.map((c) => c.toString()).toList(),
       parseWhen: ParseWhen.commandLine,
-
     ),
     const SSHNPArg(
       name: 'add-forwards-to-tunnel',

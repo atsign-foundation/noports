@@ -4,7 +4,6 @@ import 'package:noports_core/src/common/types.dart';
 import 'package:noports_core/sshrv.dart';
 
 class DefaultArgs {
-
   static const String namespace = 'sshnp';
   static const SupportedSSHAlgorithm sshAlgorithm =
       SupportedSSHAlgorithm.ed25519;
@@ -32,6 +31,7 @@ class DefaultSSHNPArgs {
   static const bool legacyDaemon = false;
   static const bool listDevices = false;
   static const SupportedSshClient sshClient = SupportedSshClient.exec;
+  static const SupportedIdentityType identityType = SupportedIdentityType.file;
 }
 
 class DefaultSSHNPDArgs {

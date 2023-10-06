@@ -6,12 +6,12 @@ import 'package:at_client/at_client.dart' hide StringBuffer;
 
 import 'package:noports_core/src/sshnp/forward_direction/sshnp_forward_direction.dart';
 import 'package:noports_core/src/sshnp/mixins/sshnpd_payload_handler.dart';
-import 'package:noports_core/src/sshnp/mixins/sshnp_local_file_handler.dart';
+import 'package:noports_core/src/sshnp/mixins/sshnp_ssh_key_handler.dart';
 import 'package:noports_core/sshnp.dart';
 import 'package:noports_core/utils.dart';
 
 class SSHNPForwardExecImpl extends SSHNPForwardDirection
-    with SSHNPLocalFileHandler, DefaultSSHNPDPayloadHandler {
+    with SSHNPLocalSSHKeyHandler, DefaultSSHNPDPayloadHandler {
   late String ephemeralPrivateKeyPath;
   SSHNPForwardExecImpl({
     required AtClient atClient,
@@ -51,10 +51,9 @@ class SSHNPForwardExecImpl extends SSHNPForwardDirection
         directory: keyUtil.sshnpHomeDirectory,
       );
 
-      await keyUtil.writeKeyPair(
+      await keyUtil.addKeyPair(
         keyPair: keyPair,
-        identifier: keyPair.identifier!,
-        directory: keyPair.directory!,
+        identifier: keyPair.identifier,
       );
 
       String argsString = '$remoteUsername@$host'
@@ -101,7 +100,8 @@ class SSHNPForwardExecImpl extends SSHNPForwardDirection
       }
 
       await keyUtil.deleteKeyPair(
-          identifier: keyPair.identifier!, directory: keyPair.directory!);
+        identifier: keyPair.identifier,
+      );
 
       if (sshExitCode != 0) {
         if (sshExitCode == 6464) {

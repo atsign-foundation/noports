@@ -1,13 +1,13 @@
 import 'dart:async';
 
 import 'package:noports_core/src/sshnp/sshnp_impl.dart';
-import 'package:noports_core/src/sshnp/mixins/sshnp_local_file_handler.dart';
+import 'package:noports_core/src/sshnp/mixins/sshnp_ssh_key_handler.dart';
 import 'package:noports_core/sshnp.dart';
 import 'package:noports_core/sshrv.dart';
 import 'package:noports_core/utils.dart';
 
 abstract class SSHNPReverseDirection extends SSHNPImpl
-    with SSHNPLocalFileHandler {
+    with SSHNPLocalSSHKeyHandler {
   SSHNPReverseDirection({
     required super.atClient,
     required super.params,
@@ -72,7 +72,7 @@ abstract class SSHNPReverseDirection extends SSHNPImpl
   Future<void> cleanUp() async {
     logger.info('Tidying up files');
 // Delete the generated RSA keys and remove the entry from ~/.ssh/authorized_keys
-    await keyUtil.deleteKeyPair(identifier: ephemeralKeyPair.identifier!);
+    await keyUtil.deleteKeyPair(identifier: ephemeralKeyPair.identifier);
     await keyUtil.deauthorizePublicKey(sessionId);
     await super.cleanUp();
   }
