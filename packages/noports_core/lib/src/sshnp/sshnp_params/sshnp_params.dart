@@ -340,8 +340,12 @@ class SSHNPPartialParams {
       remoteSshdPort: args['remote-sshd-port'],
       idleTimeout: args['idle-timeout'],
       addForwardsToTunnel: args['add-forwards-to-tunnel'],
-      sshClient: SupportedSshClient.fromString(args['ssh-client']),
-      sshAlgorithm: SupportedSSHAlgorithm.fromString(args['ssh-algorithm']),
+      sshClient: args['ssh-client'] == null
+          ? null
+          : SupportedSshClient.fromString(args['ssh-client']),
+      sshAlgorithm: args['ssh-algorithm'] == null
+          ? null
+          : SupportedSSHAlgorithm.fromString(args['ssh-algorithm']),
     );
   }
 
