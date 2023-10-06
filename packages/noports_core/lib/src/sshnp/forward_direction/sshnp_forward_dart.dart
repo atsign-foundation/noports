@@ -3,15 +3,17 @@ import 'dart:io';
 
 import 'package:at_client/at_client.dart';
 import 'package:dartssh2/dartssh2.dart';
-import 'package:noports_core/src/sshnp/forward_direction/sshnp_forward_direction.dart';
-import 'package:noports_core/src/sshnp/mixins/sshnp_ssh_key_handler.dart';
+import 'package:meta/meta.dart';
+import 'package:noports_core/src/sshnp/forward_direction/sshnp_forward.dart';
 import 'package:noports_core/src/sshnp/mixins/sshnpd_payload_handler.dart';
 import 'package:noports_core/sshnp.dart';
+import 'package:noports_core/utils.dart';
 
-class SSHNPForwardDartImpl extends SSHNPForwardDirection
-    with SSHNPDartSSHKeyHandler, DefaultSSHNPDPayloadHandler {
+abstract class SSHNPForwardDart extends SSHNPForward
+    with DefaultSSHNPDPayloadHandler {
+  AtSSHKeyPair get identityKeyPair;
 
-  SSHNPForwardDartImpl({
+  SSHNPForwardDart({
     required AtClient atClient,
     required SSHNPParams params,
     bool? shouldInitialize,
@@ -21,22 +23,20 @@ class SSHNPForwardDartImpl extends SSHNPForwardDirection
           shouldInitialize: shouldInitialize,
         );
 
-  @override
-  Future<void> init() async {
-    await super.init();
-    completeInitialization();
-  }
+  /// Set up timer to check to see if all connections are down
+  @protected
+  String get terminateMessage =>
+      'ssh session will terminate after ${params.idleTimeout} seconds'
+      ' if it is not being used';
 
-  @override
-  Future<SSHNPResult> run() async {
+  @protected
+  Future<SSHClient> startInitialTunnel() async {
     await startAndWaitForInit();
 
     var error = await requestSocketTunnelFromDaemon();
     if (error != null) {
-      return error;
+      throw error;
     }
-    // TODO set identity file
-    // - if identityFile is set, try to use it to get the keyPair
 
     logger.info(
         'Starting direct ssh session to $host on port $sshrvdPort with forwardLocal of $localPort');
@@ -53,7 +53,7 @@ class SSHNPForwardDartImpl extends SSHNPForwardDirection
           stackTrace: s,
         );
         doneCompleter.completeError(error);
-        return error;
+        throw error;
       }
 
       try {
@@ -73,7 +73,7 @@ class SSHNPForwardDartImpl extends SSHNPForwardDirection
           stackTrace: s,
         );
         doneCompleter.completeError(error);
-        return error;
+        throw error;
       }
 
       try {
@@ -85,7 +85,7 @@ class SSHNPForwardDartImpl extends SSHNPForwardDirection
           stackTrace: s,
         );
         doneCompleter.completeError(error);
-        return error;
+        throw error;
       }
 
       int counter = 0;
@@ -167,10 +167,6 @@ class SSHNPForwardDartImpl extends SSHNPForwardDirection
         }
       }
 
-      /// Set up timer to check to see if all connections are down
-      String terminateMessage =
-          'ssh session will terminate after ${params.idleTimeout} seconds'
-          ' if it is not being used';
       logger.info(terminateMessage);
       Timer.periodic(Duration(seconds: params.idleTimeout), (timer) async {
         if (counter == 0 || client.isClosed) {
@@ -181,16 +177,13 @@ class SSHNPForwardDartImpl extends SSHNPForwardDirection
               '$sessionId | no active connections - ssh session complete');
         }
       });
-
-      return SSHNPNoOpSuccess<SSHClient>(
-          message: 'Connection established:\n$terminateMessage',
-          connectionBean: client);
+      return client;
     } on SSHNPError catch (e, s) {
       doneCompleter.completeError(e, s);
-      return e;
+      rethrow;
     } catch (e, s) {
       doneCompleter.completeError(e, s);
-      return SSHNPError(
+      throw SSHNPError(
         'SSH Client failure : $e',
         error: e,
         stackTrace: s,

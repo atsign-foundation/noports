@@ -1,3 +1,3 @@
 library noports_core_sshnp;
 
-export 'src/sshnp/sshnp_impl.dart';
+export 'src/sshnp/sshnp_core.dart';

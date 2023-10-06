@@ -7,7 +7,7 @@ import 'package:noports_core/src/sshnp/mixins/sshnp_ssh_key_handler.dart';
 import 'package:noports_core/sshnp_impl.dart';
 import 'package:noports_core/utils.dart';
 
-mixin DefaultSSHNPDPayloadHandler on SSHNPImpl {
+mixin DefaultSSHNPDPayloadHandler on SSHNPCore {
   @protected
   late String ephemeralPrivateKey;
 
@@ -55,7 +55,7 @@ mixin DefaultSSHNPDPayloadHandler on SSHNPImpl {
   }
 }
 
-mixin LegacySSHNPDPayloadHandler on SSHNPImpl {
+mixin LegacySSHNPDPayloadHandler on SSHNPCore {
   @override
   bool handleSshnpdPayload(AtNotification notification) {
     return (notification.value == 'connected');

@@ -1,14 +1,13 @@
 import 'dart:async';
 
-import 'package:noports_core/src/sshnp/sshnp_impl.dart';
+import 'package:noports_core/src/sshnp/sshnp_core.dart';
 import 'package:noports_core/src/sshnp/mixins/sshnp_ssh_key_handler.dart';
 import 'package:noports_core/sshnp.dart';
 import 'package:noports_core/sshrv.dart';
 import 'package:noports_core/utils.dart';
 
-abstract class SSHNPReverseDirection extends SSHNPImpl
-    with SSHNPLocalSSHKeyHandler {
-  SSHNPReverseDirection({
+abstract class SSHNPReverse extends SSHNPCore with SSHNPLocalSSHKeyHandler {
+  SSHNPReverse({
     required super.atClient,
     required super.params,
     SSHRVGenerator? sshrvGenerator,

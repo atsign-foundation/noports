@@ -1,12 +1,12 @@
 import 'dart:async';
 
 import 'package:at_client/at_client.dart';
-import 'package:noports_core/src/sshnp/sshnp_impl.dart';
+import 'package:noports_core/src/sshnp/sshnp_core.dart';
 import 'package:noports_core/src/sshnp/sshnp_result.dart';
 import 'package:noports_core/utils.dart';
 
-abstract class SSHNPForwardDirection extends SSHNPImpl {
-  SSHNPForwardDirection({
+abstract class SSHNPForward extends SSHNPCore {
+  SSHNPForward({
     required super.atClient,
     required super.params,
     super.shouldInitialize,

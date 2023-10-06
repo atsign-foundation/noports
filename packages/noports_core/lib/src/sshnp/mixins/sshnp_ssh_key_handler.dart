@@ -1,14 +1,20 @@
 import 'dart:async';
 import 'dart:io';
 
-import 'package:noports_core/src/sshnp/sshnp_impl.dart';
+import 'package:noports_core/src/sshnp/sshnp_core.dart';
 import 'package:noports_core/src/sshnp/sshnp_result.dart';
 import 'package:noports_core/utils.dart';
 
-mixin SSHNPLocalSSHKeyHandler on SSHNPImpl {
+mixin SSHNPLocalSSHKeyHandler on SSHNPCore {
   final LocalSSHKeyUtil _sshKeyUtil = LocalSSHKeyUtil();
   @override
   LocalSSHKeyUtil get keyUtil => _sshKeyUtil;
+
+  @override
+  Future<String?> get publicKeyContents async => params.identityFile == null
+      ? null
+      : (await keyUtil.getKeyPair(identifier: params.identityFile!))
+          .publicKeyContents;
 
   @override
   Future<void> init() async {
@@ -21,7 +27,7 @@ mixin SSHNPLocalSSHKeyHandler on SSHNPImpl {
   }
 }
 
-mixin SSHNPDartSSHKeyHandler on SSHNPImpl {
+mixin SSHNPDartSSHKeyHandler on SSHNPForwardDart {
   final DartSSHKeyUtil _sshKeyUtil = DartSSHKeyUtil();
   @override
   DartSSHKeyUtil get keyUtil => _sshKeyUtil;

@@ -2,9 +2,12 @@ import 'dart:async';
 
 import 'package:at_client/at_client.dart' hide StringBuffer;
 import 'package:noports_core/src/common/types.dart';
-import 'package:noports_core/src/sshnp/sshnp_impl.dart';
+import 'package:noports_core/src/sshnp/forward_direction/sshnp_forward_dart_local_impl.dart';
+import 'package:noports_core/src/sshnp/forward_direction/sshnp_forward_dart_pure_impl.dart';
+import 'package:noports_core/src/sshnp/sshnp_core.dart';
 import 'package:noports_core/src/sshnp/sshnp_params/sshnp_params.dart';
 import 'package:noports_core/src/sshnp/sshnp_result.dart';
+import 'package:noports_core/utils.dart';
 
 typedef AtClientGenerator = FutureOr<AtClient> Function(
     SSHNPParams params, String namespace);
@@ -20,7 +23,7 @@ abstract interface class SSHNP {
     bool? shouldInitialize,
   }) async {
     atClient ??= await atClientGenerator?.call(
-        params, SSHNPImpl.getNamespace(params.device));
+        params, SSHNPCore.getNamespace(params.device));
 
     if (atClient == null) {
       throw ArgumentError(
@@ -101,16 +104,31 @@ abstract interface class SSHNP {
         shouldInitialize: shouldInitialize,
       );
 
-  /// Creates an SSHNP instance that is configured to use direct ssh tunneling using a pure-dart SSHClient
+  /// Creates an SSHNP instance that is configured to use direct ssh tunneling using a dart SSHClient
   factory SSHNP.forwardDart({
     required AtClient atClient,
     required SSHNPParams params,
     bool? shouldInitialize,
   }) =>
-      SSHNPForwardDartImpl(
+      SSHNPForwardDartLocalImpl(
         atClient: atClient,
         params: params,
         shouldInitialize: shouldInitialize,
+      );
+
+  /// Creates an SSHNP instance that is configured to use direct ssh tunneling using a pure-dart SSHClient
+  /// This class has absolutely zero dependencies on the local file system
+  factory SSHNP.forwardPureDart({
+    required AtClient atClient,
+    required SSHNPParams params,
+    required AtSSHKeyPair identityKeyPair,
+    bool? shouldInitialize,
+  }) =>
+      SSHNPForwardDartPureImpl(
+        atClient: atClient,
+        params: params,
+        shouldInitialize: shouldInitialize,
+        identityKeyPair: identityKeyPair,
       );
 
   /// The atClient to use for communicating with the atsign's secondary server

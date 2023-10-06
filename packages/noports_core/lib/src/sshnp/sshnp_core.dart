@@ -12,17 +12,17 @@ import 'package:noports_core/sshrvd.dart';
 import 'package:noports_core/utils.dart';
 import 'package:uuid/uuid.dart';
 
-export 'forward_direction/sshnp_forward_direction.dart';
-export 'forward_direction/sshnp_forward_dart_impl.dart';
+export 'forward_direction/sshnp_forward.dart';
+export 'forward_direction/sshnp_forward_dart.dart';
 export 'forward_direction/sshnp_forward_exec_impl.dart';
 
-export 'reverse_direction/sshnp_reverse_direction.dart';
+export 'reverse_direction/sshnp_reverse.dart';
 export 'reverse_direction/sshnp_reverse_impl.dart';
 export 'reverse_direction/sshnp_legacy_impl.dart';
 
 // If you've never seen an abstract implementation before, here it is :P
 @protected
-abstract class SSHNPImpl implements SSHNP {
+abstract class SSHNPCore implements SSHNP {
   final AtSignLogger logger = AtSignLogger(' sshnp ');
 
   // ====================================================================
@@ -110,6 +110,8 @@ abstract class SSHNPImpl implements SSHNP {
   static String getNamespace(String device) => '$device.sshnp';
   String get namespace => getNamespace(params.device);
 
+  FutureOr<String?> get publicKeyContents;
+
   // ====================================================================
   // Auxiliary
   // ====================================================================
@@ -121,7 +123,7 @@ abstract class SSHNPImpl implements SSHNP {
   // Constructor and Initialization
   // ====================================================================
 
-  SSHNPImpl({
+  SSHNPCore({
     required this.atClient,
     required this.params,
     SSHRVGenerator? sshrvGenerator,
@@ -357,10 +359,16 @@ abstract class SSHNPImpl implements SSHNP {
       return;
     }
 
+    String? publicKeyContents = await this.publicKeyContents;
+
+    if (publicKeyContents == null) {
+      logger.info(
+          'Skipped sharing public key with sshnpd: sendSshPublicKey=false');
+      return;
+    }
+
     logger.info('Sharing public key with sshnpd');
     try {
-      // TODO implement a way of getting the appropriate key
-      String publicKeyContents = '';
       logger.info('sharing ssh public key: $publicKeyContents');
       if (!publicKeyContents.startsWith('ssh-')) {
         logger.severe('SSH Public Key does not look like a public key file');

@@ -4,15 +4,16 @@ import 'dart:io';
 
 import 'package:at_client/at_client.dart' hide StringBuffer;
 
-import 'package:noports_core/src/sshnp/forward_direction/sshnp_forward_direction.dart';
+import 'package:noports_core/src/sshnp/forward_direction/sshnp_forward.dart';
 import 'package:noports_core/src/sshnp/mixins/sshnpd_payload_handler.dart';
 import 'package:noports_core/src/sshnp/mixins/sshnp_ssh_key_handler.dart';
 import 'package:noports_core/sshnp.dart';
 import 'package:noports_core/utils.dart';
 
-class SSHNPForwardExecImpl extends SSHNPForwardDirection
+class SSHNPForwardExecImpl extends SSHNPForward
     with SSHNPLocalSSHKeyHandler, DefaultSSHNPDPayloadHandler {
-  late String ephemeralPrivateKeyPath;
+  late AtSSHKeyPair ephemeralKeyPair;
+
   SSHNPForwardExecImpl({
     required AtClient atClient,
     required SSHNPParams params,
@@ -26,6 +27,13 @@ class SSHNPForwardExecImpl extends SSHNPForwardDirection
   @override
   Future<void> init() async {
     await super.init();
+
+    ephemeralKeyPair = AtSSHKeyPair.fromPem(
+      ephemeralPrivateKey,
+      identifier: 'ephemeral_$sessionId',
+      directory: keyUtil.sshnpHomeDirectory,
+    );
+
     completeInitialization();
   }
 
@@ -45,20 +53,14 @@ class SSHNPForwardExecImpl extends SSHNPForwardDirection
       String? errorMessage;
       Process? process;
 
-      AtSSHKeyPair keyPair = AtSSHKeyPair.fromPem(
-        ephemeralPrivateKey,
-        identifier: 'ephemeral_$sessionId',
-        directory: keyUtil.sshnpHomeDirectory,
-      );
-
       await keyUtil.addKeyPair(
-        keyPair: keyPair,
-        identifier: keyPair.identifier,
+        keyPair: ephemeralKeyPair,
+        identifier: ephemeralKeyPair.identifier,
       );
 
       String argsString = '$remoteUsername@$host'
           ' -p $sshrvdPort'
-          ' -i ${keyPair.privateKeyFileName}'
+          ' -i ${ephemeralKeyPair.privateKeyFileName}'
           ' -L $localPort:localhost:${params.remoteSshdPort}'
           ' -o LogLevel=VERBOSE'
           ' -t -t'
@@ -100,7 +102,7 @@ class SSHNPForwardExecImpl extends SSHNPForwardDirection
       }
 
       await keyUtil.deleteKeyPair(
-        identifier: keyPair.identifier,
+        identifier: ephemeralKeyPair.identifier,
       );
 
       if (sshExitCode != 0) {
@@ -138,10 +140,5 @@ class SSHNPForwardExecImpl extends SSHNPForwardDirection
         stackTrace: s,
       );
     }
-  }
-
-  @override
-  Future<void> cleanUp() async {
-    await super.cleanUp();
   }
 }

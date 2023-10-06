@@ -32,8 +32,8 @@ class AtSSHKeyPair {
   String get publicKeyContents =>
       '$type ${base64.encode(keyPair.toPublicKey().encode())}';
 
-  String? get privateKeyFileName => identifier;
-  String? get publicKeyFileName => '${privateKeyFileName!}.pub';
+  String get privateKeyFileName => identifier;
+  String get publicKeyFileName => '$privateKeyFileName.pub';
 
   void destroy() {
     throw UnimplementedError();

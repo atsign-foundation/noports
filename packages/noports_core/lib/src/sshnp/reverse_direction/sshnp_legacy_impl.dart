@@ -2,12 +2,11 @@ import 'dart:async';
 
 import 'package:at_client/at_client.dart';
 import 'package:noports_core/src/sshnp/mixins/sshnpd_payload_handler.dart';
-import 'package:noports_core/src/sshnp/reverse_direction/sshnp_reverse_direction.dart';
+import 'package:noports_core/src/sshnp/reverse_direction/sshnp_reverse.dart';
 import 'package:noports_core/sshnp.dart';
 import 'package:noports_core/sshrv.dart';
 
-class SSHNPLegacyImpl extends SSHNPReverseDirection
-    with LegacySSHNPDPayloadHandler {
+class SSHNPLegacyImpl extends SSHNPReverse with LegacySSHNPDPayloadHandler {
   SSHNPLegacyImpl({
     required AtClient atClient,
     required SSHNPParams params,
