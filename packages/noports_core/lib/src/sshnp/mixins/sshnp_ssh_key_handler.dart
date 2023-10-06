@@ -17,12 +17,14 @@ mixin SSHNPLocalSSHKeyHandler on SSHNPCore {
 
   @override
   Future<void> init() async {
+    logger.info('Initializing SSHNPLocalSSHKeyHandler');
     if (!keyUtil.isValidPlatform) {
       throw SSHNPError(
           'The current platform is not supported: ${Platform.operatingSystem}');
     }
 
     if (params.identityFile != null) {
+      logger.info('Loading identity key pair from ${params.identityFile}');
       _identityKeyPair = await keyUtil.getKeyPair(
         identifier: params.identityFile!,
         passphrase: params.identityPassphrase,
