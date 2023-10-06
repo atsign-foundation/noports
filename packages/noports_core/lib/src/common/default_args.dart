@@ -31,7 +31,6 @@ class DefaultSSHNPArgs {
   static const bool legacyDaemon = false;
   static const bool listDevices = false;
   static const SupportedSshClient sshClient = SupportedSshClient.exec;
-  static const SupportedIdentityType identityType = SupportedIdentityType.file;
 }
 
 class DefaultSSHNPDArgs {

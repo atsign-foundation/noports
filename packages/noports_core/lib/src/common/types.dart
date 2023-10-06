@@ -38,20 +38,3 @@ enum SupportedSSHAlgorithm {
   String toString() => _cliArg;
 }
 
-enum SupportedIdentityType {
-  file(cliArg: 'file'),
-  ephemeral(cliArg: 'ephemeral');
-
-  final String _cliArg;
-  const SupportedIdentityType({required String cliArg}) : _cliArg = cliArg;
-
-  factory SupportedIdentityType.fromString(String cliArg) {
-    return SupportedIdentityType.values.firstWhere(
-      (arg) => arg._cliArg == cliArg,
-      orElse: () => throw ArgumentError('Unsupported Identity Type: $cliArg'),
-    );
-  }
-
-  @override
-  String toString() => _cliArg;
-}
