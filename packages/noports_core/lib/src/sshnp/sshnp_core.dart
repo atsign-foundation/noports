@@ -153,7 +153,7 @@ abstract class SSHNPCore implements SSHNP {
   @override
   @mustCallSuper
   Future<void> init() async {
-    logger.info('Initializing SSHNPImpl');
+    logger.info('Initializing SSHNPCore');
     if (_initializeStarted) {
       logger.warning('Cancelling initialization: Already started');
       return;
@@ -163,7 +163,7 @@ abstract class SSHNPCore implements SSHNP {
 
     // Schedule a cleanup on exit
     unawaited(doneCompleter.future.then((_) async {
-      logger.info('SSHNPImpl done');
+      logger.info('SSHNPCore done');
       await cleanUp();
     }));
 
