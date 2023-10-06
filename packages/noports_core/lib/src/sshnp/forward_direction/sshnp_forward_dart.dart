@@ -7,11 +7,9 @@ import 'package:meta/meta.dart';
 import 'package:noports_core/src/sshnp/forward_direction/sshnp_forward.dart';
 import 'package:noports_core/src/sshnp/mixins/sshnpd_payload_handler.dart';
 import 'package:noports_core/sshnp.dart';
-import 'package:noports_core/utils.dart';
 
 abstract class SSHNPForwardDart extends SSHNPForward
     with DefaultSSHNPDPayloadHandler {
-  AtSSHKeyPair get identityKeyPair;
 
   SSHNPForwardDart({
     required AtClient atClient,

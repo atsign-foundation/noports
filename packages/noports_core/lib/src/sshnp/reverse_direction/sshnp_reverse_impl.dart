@@ -84,7 +84,7 @@ class SSHNPReverseImpl extends SSHNPReverse with DefaultSSHNPDPayloadHandler {
       localPort: localPort,
       remoteUsername: remoteUsername,
       host: 'localhost',
-      privateKeyFileName: ephemeralKeyPair.privateKeyFileName,
+      privateKeyFileName: identityKeyPair?.privateKeyFileName,
       localSshOptions:
           (params.addForwardsToTunnel) ? null : params.localSshOptions,
       connectionBean: sshrvResult,

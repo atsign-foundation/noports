@@ -2,7 +2,7 @@ import 'package:at_client_mobile/at_client_mobile.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:noports_core/sshnp.dart';
-import 'package:noports_core/sshrv.dart';
+import 'package:noports_core/utils.dart';
 import 'package:sshnp_gui/src/controllers/background_session_controller.dart';
 import 'package:sshnp_gui/src/presentation/widgets/profile_actions/profile_action_button.dart';
 import 'package:sshnp_gui/src/presentation/widgets/utility/custom_snack_bar.dart';
@@ -40,10 +40,18 @@ class _ProfileRunActionState extends ConsumerState<ProfileRunAction> {
         ),
       );
 
-      sshnp = await SSHNP.fromParams(
-        params,
-        atClient: AtClientManager.getInstance().atClient,
-        sshrvGenerator: SSHRV.dart,
+      // TODO this keyPair should be allowed to be uploaded
+      AtClient atClient = AtClientManager.getInstance().atClient;
+      DartSSHKeyUtil keyUtil = DartSSHKeyUtil();
+      AtSSHKeyPair keyPair = await keyUtil.getKeyPair(
+        identifier: params.identityFile ??
+            'id_${atClient.getCurrentAtSign()!.replaceAll('@', '')}',
+      );
+
+      sshnp = SSHNP.forwardPureDart(
+        params: params,
+        atClient: atClient,
+        identityKeyPair: keyPair,
       );
 
       await sshnp!.init();

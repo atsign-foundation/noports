@@ -1,25 +1,24 @@
 import 'dart:async';
 
 import 'package:dartssh2/dartssh2.dart';
-import 'package:noports_core/src/common/ssh_key_utils.dart';
 import 'package:noports_core/src/sshnp/mixins/sshnp_ssh_key_handler.dart';
 import 'package:noports_core/src/sshnp/sshnp_result.dart';
 import 'package:noports_core/sshnp_impl.dart';
+import 'package:noports_core/utils.dart';
 
 class SSHNPForwardDartPureImpl extends SSHNPForwardDart
     with SSHNPDartSSHKeyHandler {
-  @override
-  AtSSHKeyPair identityKeyPair;
+  final AtSSHKeyPair _identityKeyPair;
 
   @override
-  String get publicKeyContents => identityKeyPair.publicKeyContents;
+  AtSSHKeyPair get identityKeyPair => _identityKeyPair;
 
   SSHNPForwardDartPureImpl({
     required super.atClient,
     required super.params,
-    required this.identityKeyPair,
+    required AtSSHKeyPair identityKeyPair,
     super.shouldInitialize,
-  });
+  }) : _identityKeyPair = identityKeyPair;
 
   @override
   Future<void> init() async {

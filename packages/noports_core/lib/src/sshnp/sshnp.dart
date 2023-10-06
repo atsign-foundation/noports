@@ -1,7 +1,6 @@
 import 'dart:async';
 
 import 'package:at_client/at_client.dart' hide StringBuffer;
-import 'package:noports_core/src/common/types.dart';
 import 'package:noports_core/src/sshnp/forward_direction/sshnp_forward_dart_local_impl.dart';
 import 'package:noports_core/src/sshnp/forward_direction/sshnp_forward_dart_pure_impl.dart';
 import 'package:noports_core/src/sshnp/sshnp_core.dart';
@@ -15,7 +14,7 @@ typedef AtClientGenerator = FutureOr<AtClient> Function(
 typedef UsageCallback = void Function(Object error, StackTrace stackTrace);
 
 abstract interface class SSHNP {
-  static Future<SSHNP> fromParams(
+  static Future<SSHNP> fromParamsWithFileBindings(
     SSHNPParams params, {
     AtClient? atClient,
     AtClientGenerator? atClientGenerator,

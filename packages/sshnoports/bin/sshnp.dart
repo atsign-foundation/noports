@@ -44,7 +44,7 @@ void main(List<String> args) async {
       );
       String homeDirectory = getHomeDirectory()!;
       sshnp = await SSHNP
-          .fromParams(
+          .fromParamsWithFileBindings(
         params,
         atClientGenerator: (SSHNPParams params, String sessionId) =>
             createAtClientCli(

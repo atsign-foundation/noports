@@ -124,7 +124,7 @@ class SSHNPForwardExecImpl extends SSHNPForward
         localPort: localPort,
         remoteUsername: remoteUsername,
         host: 'localhost',
-        privateKeyFileName: params.identityFile?.replaceAll('.pub', ''),
+        privateKeyFileName: identityKeyPair?.privateKeyFileName,
         localSshOptions:
             (params.addForwardsToTunnel) ? null : params.localSshOptions,
         connectionBean: process,

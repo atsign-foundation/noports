@@ -10,11 +10,10 @@ mixin SSHNPLocalSSHKeyHandler on SSHNPCore {
   @override
   LocalSSHKeyUtil get keyUtil => _sshKeyUtil;
 
+  AtSSHKeyPair? _identityKeyPair;
+
   @override
-  Future<String?> get publicKeyContents async => params.identityFile == null
-      ? null
-      : (await keyUtil.getKeyPair(identifier: params.identityFile!))
-          .publicKeyContents;
+  AtSSHKeyPair? get identityKeyPair => _identityKeyPair;
 
   @override
   Future<void> init() async {
@@ -23,6 +22,13 @@ mixin SSHNPLocalSSHKeyHandler on SSHNPCore {
     if (!keyUtil.isValidPlatform) {
       throw SSHNPError(
           'The current platform is not supported: ${Platform.operatingSystem}');
+    }
+
+    if (params.identityFile != null) {
+      _identityKeyPair = await keyUtil.getKeyPair(
+        identifier: params.identityFile!,
+        passphrase: params.identityPassphrase,
+      );
     }
   }
 }

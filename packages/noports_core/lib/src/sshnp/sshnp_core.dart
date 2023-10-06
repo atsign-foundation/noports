@@ -110,7 +110,7 @@ abstract class SSHNPCore implements SSHNP {
   static String getNamespace(String device) => '$device.sshnp';
   String get namespace => getNamespace(params.device);
 
-  FutureOr<String?> get publicKeyContents;
+  FutureOr<AtSSHKeyPair?> identityKeyPair;
 
   // ====================================================================
   // Auxiliary
@@ -359,13 +359,13 @@ abstract class SSHNPCore implements SSHNP {
       return;
     }
 
-    String? publicKeyContents = await this.publicKeyContents;
-
-    if (publicKeyContents == null) {
+    if (identityKeyPair == null) {
       logger.info(
-          'Skipped sharing public key with sshnpd: sendSshPublicKey=false');
+          'Skipped sharing public key with sshnpd: no identity key pair set');
       return;
     }
+
+    var publicKeyContents = (await identityKeyPair)!.publicKeyContents;
 
     logger.info('Sharing public key with sshnpd');
     try {
