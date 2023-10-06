@@ -25,7 +25,7 @@ const Map<ParserType, Set<ParseWhen>> _allowListMap = {
   ParserType.all: {
     ParseWhen.always,
     ParseWhen.commandLine,
-    ParseWhen.configFile
+    ParseWhen.configFile,
   },
   ParserType.commandLine: {ParseWhen.always, ParseWhen.commandLine},
   ParserType.configFile: {ParseWhen.always, ParseWhen.configFile},
@@ -99,182 +99,32 @@ class SSHNPArg {
     );
   }
 
-  static List<SSHNPArg> args = [
-    const SSHNPArg(
-        name: 'help',
-        help: 'Print this usage information',
-        defaultsTo: DefaultArgs.help,
-        format: ArgFormat.flag,
-        parseWhen: ParseWhen.commandLine),
-    const SSHNPArg(
-      name: 'key-file',
-      abbr: 'k',
-      help: 'Sending atSign\'s atKeys file if not in ~/.atsign/keys/',
-      parseWhen: ParseWhen.commandLine,
-    ),
-    const SSHNPArg(
-      name: 'from',
-      abbr: 'f',
-      help: 'Sending (a.k.a. client) atSign',
-      mandatory: true,
-    ),
-    const SSHNPArg(
-      name: 'to',
-      abbr: 't',
-      help: 'Receiving device atSign',
-      mandatory: true,
-    ),
-    const SSHNPArg(
-      name: 'device',
-      abbr: 'd',
-      help: 'Receiving device name',
-      defaultsTo: DefaultSSHNPArgs.device,
-    ),
-    const SSHNPArg(
-      name: 'host',
-      abbr: 'h',
-      help: 'atSign of sshrvd daemon or FQDN/IP address to connect back to',
-      mandatory: true,
-    ),
-    const SSHNPArg(
-      name: 'port',
-      abbr: 'p',
-      help:
-          'TCP port to connect back to (only required if --host specified a FQDN/IP)',
-      defaultsTo: DefaultSSHNPArgs.port,
-      type: ArgType.integer,
-    ),
-    const SSHNPArg(
-      name: 'local-port',
-      abbr: 'l',
-      help:
-          'Reverse ssh port to listen on, on your local machine, by sshnp default finds a spare port',
-      defaultsTo: DefaultSSHNPArgs.localPort,
-      type: ArgType.integer,
-    ),
-    const SSHNPArg(
-      name: 'identity',
-      abbr: 'i',
-      help: 'Identity file to use for ssh connection',
-      parseWhen: ParseWhen.commandLine,
-    ),
-    const SSHNPArg(
-      name: 'identity-passphrase',
-      help: 'Passphrase for identity file',
-      parseWhen: ParseWhen.commandLine,
-    ),
-    SSHNPArg(
-      name: 'identity-type',
-      help: 'Type of identity input',
-      defaultsTo: DefaultSSHNPArgs.identityType.toString(),
-      allowed: SupportedIdentityType.values.map((c) => c.toString()).toList(),
-      // parse only from command line, but make it hidden, it should always use default from the commandline
-      parseWhen: ParseWhen.commandLine,
-      hide: true,
-    ),
-    const SSHNPArg(
-      name: 'send-ssh-public-key',
-      abbr: 's',
-      help:
-          'When true, the ssh public key will be sent to the remote host for use in the ssh session',
-      defaultsTo: DefaultSSHNPArgs.sendSshPublicKey,
-      format: ArgFormat.flag,
-    ),
-    const SSHNPArg(
-      name: 'local-ssh-options',
-      abbr: 'o',
-      defaultsTo: DefaultSSHNPArgs.localSshOptions,
-      help: 'Add these commands to the local ssh command',
-      format: ArgFormat.multiOption,
-    ),
-    const SSHNPArg(
-      name: 'verbose',
-      abbr: 'v',
-      defaultsTo: DefaultArgs.verbose,
-      help: 'More logging',
-      format: ArgFormat.flag,
-    ),
-    const SSHNPArg(
-      name: 'remote-user-name',
-      abbr: 'u',
-      help: 'username to use in the ssh session on the remote host',
-    ),
-    const SSHNPArg(
-      name: 'root-domain',
-      help: 'atDirectory domain',
-      defaultsTo: DefaultArgs.rootDomain,
-      mandatory: false,
-      format: ArgFormat.option,
-    ),
-    const SSHNPArg(
-      name: 'local-sshd-port',
-      help: 'port on which sshd is listening locally on the client host',
-      defaultsTo: DefaultArgs.localSshdPort,
-      abbr: 'P',
-      mandatory: false,
-      format: ArgFormat.option,
-      type: ArgType.integer,
-    ),
-    const SSHNPArg(
-      name: 'legacy-daemon',
-      help: 'Request is to a legacy (< 4.0.0) noports daemon',
-      defaultsTo: DefaultSSHNPArgs.legacyDaemon,
-      format: ArgFormat.flag,
-    ),
-    const SSHNPArg(
-      name: 'remote-sshd-port',
-      help: 'port on which sshd is listening locally on the device host',
-      defaultsTo: DefaultArgs.remoteSshdPort,
-      mandatory: false,
-      format: ArgFormat.option,
-      type: ArgType.integer,
-    ),
-    const SSHNPArg(
-      name: 'idle-timeout',
-      help:
-          'number of seconds after which inactive ssh connections will be closed',
-      defaultsTo: DefaultArgs.idleTimeout,
-      mandatory: false,
-      format: ArgFormat.option,
-      type: ArgType.integer,
-      parseWhen: ParseWhen.commandLine,
-    ),
-    SSHNPArg(
-      name: 'ssh-client',
-      help: 'What to use for outbound ssh connections',
-      defaultsTo: DefaultSSHNPArgs.sshClient.toString(),
-      allowed: SupportedSshClient.values.map((c) => c.toString()).toList(),
-      parseWhen: ParseWhen.commandLine,
-    ),
-    SSHNPArg(
-      name: 'ssh-algorithm',
-      help: 'SSH algorithm to use',
-      defaultsTo: DefaultArgs.sshAlgorithm.toString(),
-      allowed: SupportedSSHAlgorithm.values.map((c) => c.toString()).toList(),
-      parseWhen: ParseWhen.commandLine,
-    ),
-    const SSHNPArg(
-      name: 'add-forwards-to-tunnel',
-      help: 'When true, any local forwarding directives provided in'
-          '--local-ssh-options will be added to the initial tunnel ssh request',
-      defaultsTo: DefaultArgs.addForwardsToTunnel,
-      format: ArgFormat.flag,
-      parseWhen: ParseWhen.commandLine,
-    ),
-    const SSHNPArg(
-      name: 'config-file',
-      help:
-          'Read args from a config file\nMandatory args are not required if already supplied in the config file',
-      parseWhen: ParseWhen.commandLine,
-    ),
-    const SSHNPArg(
-      name: 'list-devices',
-      help: 'List available devices',
-      defaultsTo: DefaultSSHNPArgs.listDevices,
-      aliases: ['ls'],
-      negatable: false,
-      parseWhen: ParseWhen.commandLine,
-    ),
+  static final List<SSHNPArg> args = [
+    profileNameArg,
+    helpArg,
+    keyFileArg,
+    fromArg,
+    toArg,
+    deviceArg,
+    hostArg,
+    portArg,
+    localPortArg,
+    identityFileArg,
+    identityPassphraseArg,
+    sendSshPublicKeyArg,
+    localSshOptionsArg,
+    verboseArg,
+    remoteUserNameArg,
+    rootDomainArg,
+    localSshdPortArg,
+    legacyDaemonArg,
+    remoteSshdPortArg,
+    idleTimeoutArg,
+    sshClientArg,
+    ssHAlgorithmArg,
+    addForwardsToTunnelArg,
+    configFileArg,
+    listDevicesArg,
   ];
 
   @override
@@ -331,4 +181,177 @@ class SSHNPArg {
     }
     return parser;
   }
+
+  static const profileNameArg = SSHNPArg(
+    name: 'profile-name',
+    help: 'Name of the profile to use',
+    parseWhen: ParseWhen.configFile,
+  );
+  static const helpArg = SSHNPArg(
+    name: 'help',
+    help: 'Print this usage information',
+    defaultsTo: DefaultArgs.help,
+    format: ArgFormat.flag,
+    parseWhen: ParseWhen.commandLine,
+  );
+  static const keyFileArg = SSHNPArg(
+    name: 'key-file',
+    abbr: 'k',
+    help: 'Sending atSign\'s atKeys file if not in ~/.atsign/keys/',
+    parseWhen: ParseWhen.commandLine,
+  );
+  static const fromArg = SSHNPArg(
+    name: 'from',
+    abbr: 'f',
+    help: 'Sending (a.k.a. client) atSign',
+    mandatory: true,
+  );
+  static const toArg = SSHNPArg(
+    name: 'to',
+    abbr: 't',
+    help: 'Receiving device atSign',
+    mandatory: true,
+  );
+  static const deviceArg = SSHNPArg(
+    name: 'device',
+    abbr: 'd',
+    help: 'Receiving device name',
+    defaultsTo: DefaultSSHNPArgs.device,
+  );
+  static const hostArg = SSHNPArg(
+    name: 'host',
+    abbr: 'h',
+    help: 'atSign of sshrvd daemon or FQDN/IP address to connect back to',
+    mandatory: true,
+  );
+  static const portArg = SSHNPArg(
+    name: 'port',
+    abbr: 'p',
+    help:
+        'TCP port to connect back to (only required if --host specified a FQDN/IP)',
+    defaultsTo: DefaultSSHNPArgs.port,
+    type: ArgType.integer,
+  );
+  static const localPortArg = SSHNPArg(
+    name: 'local-port',
+    abbr: 'l',
+    help:
+        'Reverse ssh port to listen on, on your local machine, by sshnp default finds a spare port',
+    defaultsTo: DefaultSSHNPArgs.localPort,
+    type: ArgType.integer,
+  );
+  static const identityFileArg = SSHNPArg(
+    name: 'identity-file',
+    abbr: 'i',
+    help: 'Identity file to use for ssh connection',
+    parseWhen: ParseWhen.commandLine,
+  );
+  static const identityPassphraseArg = SSHNPArg(
+    name: 'identity-passphrase',
+    help: 'Passphrase for identity file',
+    parseWhen: ParseWhen.commandLine,
+  );
+  static const sendSshPublicKeyArg = SSHNPArg(
+    name: 'send-ssh-public-key',
+    abbr: 's',
+    help:
+        'When true, the ssh public key will be sent to the remote host for use in the ssh session',
+    defaultsTo: DefaultSSHNPArgs.sendSshPublicKey,
+    format: ArgFormat.flag,
+  );
+  static const localSshOptionsArg = SSHNPArg(
+    name: 'local-ssh-options',
+    abbr: 'o',
+    defaultsTo: DefaultSSHNPArgs.localSshOptions,
+    help: 'Add these commands to the local ssh command',
+    format: ArgFormat.multiOption,
+  );
+  static const verboseArg = SSHNPArg(
+    name: 'verbose',
+    abbr: 'v',
+    defaultsTo: DefaultArgs.verbose,
+    help: 'More logging',
+    format: ArgFormat.flag,
+  );
+  static const remoteUserNameArg = SSHNPArg(
+    name: 'remote-user-name',
+    abbr: 'u',
+    help: 'username to use in the ssh session on the remote host',
+  );
+  static const rootDomainArg = SSHNPArg(
+    name: 'root-domain',
+    help: 'atDirectory domain',
+    defaultsTo: DefaultArgs.rootDomain,
+    mandatory: false,
+    format: ArgFormat.option,
+  );
+  static const localSshdPortArg = SSHNPArg(
+    name: 'local-sshd-port',
+    help: 'port on which sshd is listening locally on the client host',
+    defaultsTo: DefaultArgs.localSshdPort,
+    abbr: 'P',
+    mandatory: false,
+    format: ArgFormat.option,
+    type: ArgType.integer,
+  );
+  static const legacyDaemonArg = SSHNPArg(
+    name: 'legacy-daemon',
+    help: 'Request is to a legacy (< 4.0.0) noports daemon',
+    defaultsTo: DefaultSSHNPArgs.legacyDaemon,
+    format: ArgFormat.flag,
+  );
+  static const remoteSshdPortArg = SSHNPArg(
+    name: 'remote-sshd-port',
+    help: 'port on which sshd is listening locally on the device host',
+    defaultsTo: DefaultArgs.remoteSshdPort,
+    mandatory: false,
+    format: ArgFormat.option,
+    type: ArgType.integer,
+  );
+  static const idleTimeoutArg = SSHNPArg(
+    name: 'idle-timeout',
+    help:
+        'number of seconds after which inactive ssh connections will be closed',
+    defaultsTo: DefaultArgs.idleTimeout,
+    mandatory: false,
+    format: ArgFormat.option,
+    type: ArgType.integer,
+    parseWhen: ParseWhen.commandLine,
+  );
+  static final sshClientArg = SSHNPArg(
+    name: 'ssh-client',
+    help: 'What to use for outbound ssh connections',
+    defaultsTo: DefaultSSHNPArgs.sshClient.toString(),
+    allowed: SupportedSshClient.values.map((c) => c.toString()).toList(),
+    parseWhen: ParseWhen.commandLine,
+  );
+  static final ssHAlgorithmArg = SSHNPArg(
+    name: 'ssh-algorithm',
+    help: 'SSH algorithm to use',
+    defaultsTo: DefaultArgs.sshAlgorithm.toString(),
+    allowed: SupportedSSHAlgorithm.values.map((c) => c.toString()).toList(),
+    parseWhen: ParseWhen.commandLine,
+  );
+  static const addForwardsToTunnelArg = SSHNPArg(
+    name: 'add-forwards-to-tunnel',
+    help: 'When true, any local forwarding directives provided in'
+        '--local-ssh-options will be added to the initial tunnel ssh request',
+    defaultsTo: DefaultArgs.addForwardsToTunnel,
+    format: ArgFormat.flag,
+    parseWhen: ParseWhen.commandLine,
+  );
+  static const configFileArg = SSHNPArg(
+    name: 'config-file',
+    help:
+        'Read args from a config file\nMandatory args are not required if already supplied in the config file',
+    parseWhen: ParseWhen.commandLine,
+  );
+  static const listDevicesArg = SSHNPArg(
+    name: 'list-devices',
+    help: 'List available devices',
+    defaultsTo: DefaultSSHNPArgs.listDevices,
+    aliases: ['ls'],
+    negatable: false,
+    parseWhen: ParseWhen.commandLine,
+  );
 }

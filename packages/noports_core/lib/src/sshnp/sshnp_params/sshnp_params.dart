@@ -177,27 +177,27 @@ class SSHNPParams {
 
   Map<String, dynamic> toArgMap({ParserType parserType = ParserType.all}) {
     var args = {
-      'profile-name': profileName,
-      'from': clientAtSign,
-      'to': sshnpdAtSign,
-      'host': host,
-      'device': device,
-      'port': port,
-      'local-port': localPort,
-      'key-file': atKeysFilePath,
-      'identity-file': identityFile,
-      'identity-passphrase': identityPassphrase,
-      'send-ssh-public-key': sendSshPublicKey,
-      'local-ssh-options': localSshOptions,
-      'remote-user-name': remoteUsername,
-      'verbose': verbose,
-      'root-domain': rootDomain,
-      'local-sshd-port': localSshdPort,
-      'remote-sshd-port': remoteSshdPort,
-      'idle-timeout': idleTimeout,
-      'add-forwards-to-tunnel': addForwardsToTunnel,
-      'ssh-client': sshClient.toString(),
-      'ssh-algorithm': sshAlgorithm.toString(),
+      SSHNPArg.profileNameArg.name: profileName,
+      SSHNPArg.fromArg.name: clientAtSign,
+      SSHNPArg.toArg.name: sshnpdAtSign,
+      SSHNPArg.hostArg.name: host,
+      SSHNPArg.deviceArg.name: device,
+      SSHNPArg.portArg.name: port,
+      SSHNPArg.localPortArg.name: localPort,
+      SSHNPArg.keyFileArg.name: atKeysFilePath,
+      SSHNPArg.identityFileArg.name: identityFile,
+      SSHNPArg.identityPassphraseArg.name: identityPassphrase,
+      SSHNPArg.sendSshPublicKeyArg.name: sendSshPublicKey,
+      SSHNPArg.localSshOptionsArg.name: localSshOptions,
+      SSHNPArg.remoteUserNameArg.name: remoteUsername,
+      SSHNPArg.verboseArg.name: verbose,
+      SSHNPArg.rootDomainArg.name: rootDomain,
+      SSHNPArg.localSshdPortArg.name: localSshdPort,
+      SSHNPArg.remoteSshdPortArg.name: remoteSshdPort,
+      SSHNPArg.idleTimeoutArg.name: idleTimeout,
+      SSHNPArg.addForwardsToTunnelArg.name: addForwardsToTunnel,
+      SSHNPArg.sshClientArg.name: sshClient.toString(),
+      SSHNPArg.ssHAlgorithmArg.name: sshAlgorithm.toString(),
     };
     args.removeWhere(
       (key, value) => !parserType.shouldParse(SSHNPArg.fromName(key).parseWhen),
@@ -307,14 +307,15 @@ class SSHNPPartialParams {
 
   factory SSHNPPartialParams.fromFile(String fileName) {
     var args = ConfigFileRepository.parseConfigFile(fileName);
-    args['profile-name'] = ConfigFileRepository.toProfileName(fileName);
+    args[SSHNPArg.profileNameArg.name] =
+        ConfigFileRepository.toProfileName(fileName);
     return SSHNPPartialParams.fromArgMap(args);
   }
 
   factory SSHNPPartialParams.fromConfigLines(
       String profileName, List<String> lines) {
     var args = ConfigFileRepository.parseConfigFileContents(lines);
-    args['profile-name'] = profileName;
+    args[SSHNPArg.profileNameArg.name] = profileName;
     return SSHNPPartialParams.fromArgMap(args);
   }
 
@@ -323,35 +324,36 @@ class SSHNPPartialParams {
 
   factory SSHNPPartialParams.fromArgMap(Map<String, dynamic> args) {
     return SSHNPPartialParams(
-      profileName: args['profile-name'],
-      clientAtSign: args['from'],
-      sshnpdAtSign: args['to'],
-      host: args['host'],
-      device: args['device'],
-      port: args['port'],
-      localPort: args['local-port'],
-      atKeysFilePath: args['key-file'],
-      identityFile: args['identity-file'],
-      identityPassphrase: args['identity-passphrase'],
-      sendSshPublicKey: args['send-ssh-public-key'],
-      localSshOptions: args['local-ssh-options'] == null
+      profileName: args[SSHNPArg.profileNameArg.name],
+      clientAtSign: args[SSHNPArg.fromArg.name],
+      sshnpdAtSign: args[SSHNPArg.toArg.name],
+      host: args[SSHNPArg.hostArg.name],
+      device: args[SSHNPArg.deviceArg.name],
+      port: args[SSHNPArg.portArg.name],
+      localPort: args[SSHNPArg.localPortArg.name],
+      atKeysFilePath: args[SSHNPArg.keyFileArg.name],
+      identityFile: args[SSHNPArg.identityFileArg.name],
+      identityPassphrase: args[SSHNPArg.identityPassphraseArg.name],
+      sendSshPublicKey: args[SSHNPArg.sendSshPublicKeyArg.name],
+      localSshOptions: args[SSHNPArg.localSshOptionsArg.name] == null
           ? null
-          : List<String>.from(args['local-ssh-options']),
-      remoteUsername: args['remote-user-name'],
-      verbose: args['verbose'],
-      rootDomain: args['root-domain'],
-      localSshdPort: args['local-sshd-port'],
-      listDevices: args['list-devices'],
-      legacyDaemon: args['legacy-daemon'],
-      remoteSshdPort: args['remote-sshd-port'],
-      idleTimeout: args['idle-timeout'],
-      addForwardsToTunnel: args['add-forwards-to-tunnel'],
-      sshClient: args['ssh-client'] == null
+          : List<String>.from(args[SSHNPArg.localSshOptionsArg.name]),
+      remoteUsername: args[SSHNPArg.remoteUserNameArg.name],
+      verbose: args[SSHNPArg.verboseArg.name],
+      rootDomain: args[SSHNPArg.rootDomainArg.name],
+      localSshdPort: args[SSHNPArg.localSshdPortArg.name],
+      listDevices: args[SSHNPArg.listDevicesArg.name],
+      legacyDaemon: args[SSHNPArg.legacyDaemonArg.name],
+      remoteSshdPort: args[SSHNPArg.remoteSshdPortArg.name],
+      idleTimeout: args[SSHNPArg.idleTimeoutArg.name],
+      addForwardsToTunnel: args[SSHNPArg.addForwardsToTunnelArg.name],
+      sshClient: args[SSHNPArg.sshClientArg.name] == null
           ? null
-          : SupportedSshClient.fromString(args['ssh-client']),
-      sshAlgorithm: args['ssh-algorithm'] == null
+          : SupportedSshClient.fromString(args[SSHNPArg.sshClientArg.name]),
+      sshAlgorithm: args[SSHNPArg.ssHAlgorithmArg.name] == null
           ? null
-          : SupportedSSHAlgorithm.fromString(args['ssh-algorithm']),
+          : SupportedSSHAlgorithm.fromString(
+              args[SSHNPArg.ssHAlgorithmArg.name]),
     );
   }
 
@@ -366,9 +368,9 @@ class SSHNPPartialParams {
     );
     var parsedArgs = parser.parse(args);
 
-    if (parser.options.keys.contains('config-file') &&
-        parsedArgs.wasParsed('config-file')) {
-      var configFileName = parsedArgs['config-file'] as String;
+    if (parser.options.keys.contains(SSHNPArg.configFileArg.name) &&
+        parsedArgs.wasParsed(SSHNPArg.configFileArg.name)) {
+      var configFileName = parsedArgs[SSHNPArg.configFileArg.name] as String;
       params = SSHNPPartialParams.merge(
         params,
         SSHNPPartialParams.fromFile(configFileName),
