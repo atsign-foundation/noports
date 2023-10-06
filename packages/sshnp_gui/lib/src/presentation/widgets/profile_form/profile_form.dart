@@ -128,7 +128,7 @@ class _ProfileFormState extends ConsumerState<ProfileForm> {
                   const Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // TODO replace this with a file selector which populates SSHNPParams.sshKeyPair using SSHKeyPair.fromPem
+                      // TODO replace this with a drop down of available keyPairs (and buttons to upload / generate a new one, and button to delete)
                       // CustomTextFormField(
                       //   initialValue: oldConfig.sendSshPublicKey,
                       //   labelText: strings.sendSshPublicKey,

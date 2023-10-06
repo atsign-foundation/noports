@@ -40,7 +40,7 @@ class _ProfileRunActionState extends ConsumerState<ProfileRunAction> {
         ),
       );
 
-      // TODO this keyPair should be allowed to be uploaded
+      // TODO ensure that this keyPair gets uploaded to the app first
       AtClient atClient = AtClientManager.getInstance().atClient;
       DartSSHKeyUtil keyUtil = DartSSHKeyUtil();
       AtSSHKeyPair keyPair = await keyUtil.getKeyPair(
