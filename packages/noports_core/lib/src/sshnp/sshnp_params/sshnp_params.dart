@@ -158,12 +158,11 @@ class SSHNPParams {
         SSHNPPartialParams.fromConfigLines(profileName, lines));
   }
 
-  List<String> toConfigLines() {
+  List<String> toConfigLines({ParserType parserType = ParserType.configFile}) {
     var lines = <String>[];
     for (var entry in toArgMap().entries) {
       var arg = SSHNPArg.fromName(entry.key);
-      if (arg.parseWhen == ParseWhen.never ||
-          arg.parseWhen == ParseWhen.commandLine) continue;
+      if (!parserType.shouldParse(arg.parseWhen)) continue;
       var key = arg.bashName;
       if (key.isEmpty) continue;
       var value = entry.value;
@@ -176,8 +175,8 @@ class SSHNPParams {
     return lines;
   }
 
-  Map<String, dynamic> toArgMap() {
-    return {
+  Map<String, dynamic> toArgMap({ParserType parserType = ParserType.all}) {
+    var args = {
       'profile-name': profileName,
       'from': clientAtSign,
       'to': sshnpdAtSign,
@@ -200,10 +199,14 @@ class SSHNPParams {
       'ssh-client': sshClient.toString(),
       'ssh-algorithm': sshAlgorithm.toString(),
     };
+    args.removeWhere(
+      (key, value) => !parserType.shouldParse(SSHNPArg.fromName(key).parseWhen),
+    );
+    return args;
   }
 
-  String toJson() {
-    return jsonEncode(toArgMap());
+  String toJson({ParserType parserType = ParserType.all}) {
+    return jsonEncode(toArgMap(parserType: parserType));
   }
 }
 
@@ -355,7 +358,7 @@ class SSHNPPartialParams {
   /// Parses args from command line
   /// first merges from a config file if provided via --config-file
   factory SSHNPPartialParams.fromArgList(List<String> args,
-      {ParserType parserType = ParserType.normal}) {
+      {ParserType parserType = ParserType.all}) {
     var params = SSHNPPartialParams.empty();
     var parser = SSHNPArg.createArgParser(
       withDefaults: false,

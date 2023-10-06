@@ -15,18 +15,35 @@ enum ArgType {
 }
 
 enum ParseWhen {
-  normal,
+  always,
   commandLine,
   configFile,
-
-  always,
   never,
 }
 
+const Map<ParserType, Set<ParseWhen>> _allowListMap = {
+  ParserType.all: {
+    ParseWhen.always,
+    ParseWhen.commandLine,
+    ParseWhen.configFile
+  },
+  ParserType.commandLine: {ParseWhen.always, ParseWhen.commandLine},
+  ParserType.configFile: {ParseWhen.always, ParseWhen.configFile},
+};
+
 enum ParserType {
-  normal,
+  all,
   commandLine,
-  configFile,
+  configFile;
+
+  Iterable<ParseWhen> get allowList => _allowListMap[this]!;
+
+  Iterable<ParseWhen> get denyList =>
+      ParseWhen.values.toSet().difference(allowList as Set);
+
+  bool shouldParse(ParseWhen parseWhen) {
+    return allowList.contains(parseWhen);
+  }
 }
 
 class SSHNPArg {
@@ -53,7 +70,7 @@ class SSHNPArg {
     this.defaultsTo,
     this.type = ArgType.string,
     this.allowed,
-    this.parseWhen = ParseWhen.normal,
+    this.parseWhen = ParseWhen.always,
     this.aliases,
     this.negatable = true,
     this.hide = false,
@@ -266,7 +283,7 @@ class SSHNPArg {
   }
 
   static ArgParser createArgParser({
-    ParserType parserType = ParserType.normal,
+    ParserType parserType = ParserType.all,
     bool withDefaults = true,
     Iterable<String>? includeList,
     Iterable<String>? excludeList,
@@ -274,28 +291,7 @@ class SSHNPArg {
     var parser = ArgParser();
     // Basic arguments
     for (SSHNPArg arg in SSHNPArg.args) {
-      bool isParseNever = arg.parseWhen == ParseWhen.never;
-      bool isParseAlways = arg.parseWhen == ParseWhen.always;
-
-      bool isIncludeList =
-          includeList != null && includeList.contains(arg.name);
-      bool isExcludeList =
-          excludeList != null && excludeList.contains(arg.name);
-
-      bool shouldParse =
-          isParseAlways || (!isParseNever && (isIncludeList || !isExcludeList));
-
-      if (!shouldParse) {
-        continue;
-      }
-
-      if (arg.parseWhen == ParseWhen.commandLine &&
-          parserType != ParserType.commandLine) {
-        continue;
-      }
-
-      if (arg.parseWhen == ParseWhen.configFile &&
-          parserType != ParserType.configFile) {
+      if (!parserType.shouldParse(arg.parseWhen)) {
         continue;
       }
 

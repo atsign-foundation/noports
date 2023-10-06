@@ -3,12 +3,16 @@ import 'dart:convert';
 
 import 'package:at_client/at_client.dart';
 import 'package:meta/meta.dart';
+import 'package:noports_core/src/sshnp/mixins/sshnp_ssh_key_handler.dart';
 import 'package:noports_core/sshnp_impl.dart';
 import 'package:noports_core/utils.dart';
 
 mixin DefaultSSHNPDPayloadHandler on SSHNPImpl {
   @protected
   late String ephemeralPrivateKey;
+
+  @protected
+  bool get useLocalFileStorage => (this is SSHNPLocalSSHKeyHandler);
 
   @override
   FutureOr<bool> handleSshnpdPayload(AtNotification notification) async {
@@ -33,7 +37,8 @@ mixin DefaultSSHNPDPayloadHandler on SSHNPImpl {
       }
 
       try {
-        await verifyEnvelopeSignature(atClient, sshnpdAtSign, logger, envelope);
+        await verifyEnvelopeSignature(atClient, sshnpdAtSign, logger, envelope,
+            useFileStorage: useLocalFileStorage);
       } catch (e) {
         logger.shout('Failed to verify signature of msg from $sshnpdAtSign');
         logger.shout('Exception: $e');

@@ -135,8 +135,7 @@ class ConfigFileRepository {
 
         SSHNPArg arg = SSHNPArg.fromBashName(key);
         if (arg.name.isEmpty) continue;
-        if (![ParseWhen.always, ParseWhen.normal, ParseWhen.commandLine]
-            .contains(arg.parseWhen)) continue;
+        if (!ParserType.configFile.shouldParse(arg.parseWhen)) continue;
         switch (arg.format) {
           case ArgFormat.flag:
             if (value.toLowerCase() == 'true') {
