@@ -1,23 +1,20 @@
 import 'dart:async';
 
 import 'package:at_client/at_client.dart' hide StringBuffer;
-import 'package:noports_core/src/common/supported_ssh_clients.dart';
-import 'package:noports_core/src/sshnp/sshnp_impl/sshnp_forward_dart_impl.dart';
-import 'package:noports_core/src/sshnp/sshnp_impl/sshnp_forward_exec_impl.dart';
-import 'package:noports_core/src/sshnp/sshnp_impl/sshnp_impl.dart';
-import 'package:noports_core/src/sshnp/sshnp_impl/sshnp_legacy_impl.dart';
-import 'package:noports_core/src/sshnp/sshnp_impl/sshnp_reverse_impl.dart';
+import 'package:noports_core/src/sshnp/forward_direction/sshnp_forward_dart_local_impl.dart';
+import 'package:noports_core/src/sshnp/forward_direction/sshnp_forward_dart_pure_impl.dart';
+import 'package:noports_core/src/sshnp/sshnp_core.dart';
 import 'package:noports_core/src/sshnp/sshnp_params/sshnp_params.dart';
-import 'package:noports_core/src/sshrv/sshrv.dart';
 import 'package:noports_core/src/sshnp/sshnp_result.dart';
+import 'package:noports_core/utils.dart';
 
 typedef AtClientGenerator = FutureOr<AtClient> Function(
     SSHNPParams params, String namespace);
 
 typedef UsageCallback = void Function(Object error, StackTrace stackTrace);
 
-abstract class SSHNP {
-  static Future<SSHNP> fromParams(
+abstract interface class SSHNP {
+  static Future<SSHNP> fromParamsWithFileBindings(
     SSHNPParams params, {
     AtClient? atClient,
     AtClientGenerator? atClientGenerator,
@@ -25,7 +22,7 @@ abstract class SSHNP {
     bool? shouldInitialize,
   }) async {
     atClient ??= await atClientGenerator?.call(
-        params, SSHNPImpl.getNamespace(params.device));
+        params, SSHNPCore.getNamespace(params.device));
 
     if (atClient == null) {
       throw ArgumentError(
@@ -50,7 +47,7 @@ abstract class SSHNP {
       );
     }
 
-    switch (SupportedSshClient.fromCliArg(params.sshClient)) {
+    switch (params.sshClient) {
       case SupportedSshClient.exec:
         return SSHNP.forwardExec(
           atClient: atClient,
@@ -63,8 +60,6 @@ abstract class SSHNP {
           params: params,
           shouldInitialize: shouldInitialize,
         );
-      default:
-        throw ArgumentError('Unsupported ssh client: ${params.sshClient}');
     }
   }
 
@@ -108,16 +103,31 @@ abstract class SSHNP {
         shouldInitialize: shouldInitialize,
       );
 
-  /// Creates an SSHNP instance that is configured to use direct ssh tunneling using a pure-dart SSHClient
+  /// Creates an SSHNP instance that is configured to use direct ssh tunneling using a dart SSHClient
   factory SSHNP.forwardDart({
     required AtClient atClient,
     required SSHNPParams params,
     bool? shouldInitialize,
   }) =>
-      SSHNPForwardDartImpl(
+      SSHNPForwardDartLocalImpl(
         atClient: atClient,
         params: params,
         shouldInitialize: shouldInitialize,
+      );
+
+  /// Creates an SSHNP instance that is configured to use direct ssh tunneling using a pure-dart SSHClient
+  /// This class has absolutely zero dependencies on the local file system
+  factory SSHNP.forwardPureDart({
+    required AtClient atClient,
+    required SSHNPParams params,
+    required AtSSHKeyPair identityKeyPair,
+    bool? shouldInitialize,
+  }) =>
+      SSHNPForwardDartPureImpl(
+        atClient: atClient,
+        params: params,
+        shouldInitialize: shouldInitialize,
+        identityKeyPair: identityKeyPair,
       );
 
   /// The atClient to use for communicating with the atsign's secondary server
@@ -160,8 +170,4 @@ abstract class SSHNP {
   /// - Map<String, dynamic> where the keys are all atSigns included in the maps, and the values being their device info
   FutureOr<(Iterable<String>, Iterable<String>, Map<String, dynamic>)>
       listDevices();
-
-  /// - Dispose of any resources used by this SSHNP instance
-  /// - Clean up temporary files
-  FutureOr<void> cleanUp();
 }

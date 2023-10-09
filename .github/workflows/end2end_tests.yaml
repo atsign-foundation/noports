@@ -26,11 +26,11 @@ env:
   DOCKER_COMPOSE_UP_CMD: "docker compose up --abort-on-container-exit"
 
   RELEASES: |
-    latest
     v3.1.2
     v3.2.0
     v3.3.0
     v3.4.0
+    v3.4.2
 
   BRANCHES: |
     trunk
@@ -244,7 +244,6 @@ jobs:
           sshnpd_atsign: ${{ env.SSHNPD_ATSIGN }}
           sshrvd_atsign: ${{ env[env.PROD_RVD_ATSIGN] }}
           devicename: ${{ env.DEVICENAME }}
-          legacy_daemon: ${{ matrix.np == 'local' && matrix.npd == 'installer' }}
 
       - name: Ensure entrypoints exist
         working-directory: tests/end2end_tests/contexts
@@ -370,13 +369,11 @@ jobs:
         include:
           - np: local
             npd: v3.4.2
-            legacy_daemon: true
           - np: v3.4.2
             npd: local
 
           - np: local
             npd: v3.3.0
-            legacy_daemon: true
           - np: v3.3.0
             npd: local
 
@@ -418,7 +415,7 @@ jobs:
           sshnpd_atsign: ${{ env.SSHNPD_ATSIGN }}
           sshrvd_atsign: ${{ env[env.PROD_RVD_ATSIGN] }}
           devicename: ${{ env.DEVICENAME }}
-          legacy_daemon: ${{ matrix.legacy_daemon || false }}
+          args: "-P 55"
 
       - name: Ensure entrypoints exist
         working-directory: tests/end2end_tests/contexts
@@ -551,7 +548,7 @@ jobs:
       - name: Set up entrypoints
         working-directory: tests/end2end_tests/contexts/_init_
         run: |
-          ./setup-sshnp-entrypoint.sh ${{ env.DEVICENAME }} ${{ env.SSHNP_ATSIGN }} ${{ env.SSHNPD_ATSIGN }} ${{ env[env.PROD_RVD_ATSIGN] }} alternate_port_test/sshnp_entrypoint.sh
+          ./setup-sshnp-entrypoint.sh ${{ env.DEVICENAME }} ${{ env.SSHNP_ATSIGN }} ${{ env.SSHNPD_ATSIGN }} ${{ env[env.PROD_RVD_ATSIGN] }} sshnp_entrypoint.sh "-i ~/.ssh/id_ed25519 -s -v -P 55"
           ./setup-sshnpd-entrypoint.sh ${{ env.DEVICENAME }} ${{ env.SSHNP_ATSIGN }} ${{ env.SSHNPD_ATSIGN }} sshnpd_entrypoint.sh
 
       - name: Ensure entrypoints exist

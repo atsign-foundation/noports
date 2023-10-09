@@ -9,7 +9,7 @@ sshnp=$2 # e.g. @alice
 sshnpd=$3 # e.g. @alice
 sshrvd=$4 # e.g. @alice
 template_name=$5 # e.g. sshnp_entrypoint.sh
-legacy=$6 # e.g. "arg1 arg2 arg3"
+args="$6" # e.g. "arg1 arg2 arg3"
 
 cp ../../entrypoints/"$template_name" ../sshnp/entrypoint.sh # copy template to the mounted folder
 
@@ -25,10 +25,11 @@ eval "$prefix" "s/@sshnpatsign/${sshnp}/g" ../sshnp/entrypoint.sh
 eval "$prefix" "s/@sshnpdatsign/${sshnpd}/g" ../sshnp/entrypoint.sh
 eval "$prefix" "s/@sshrvdatsign/${sshrvd}/g" ../sshnp/entrypoint.sh
 eval "$prefix" "s/deviceName/${device}/g" ../sshnp/entrypoint.sh
-legacy_sub=''
-if [ "$legacy" == 'true' ]; then
-    legacy_sub="s/legacy/--legacy-daemon/g"
+
+# Don't use eval for this one, because it will try to evaluate the args stored in $args
+if [[ $(uname) == "Darwin" ]];
+then
+    sed -i '' "s|args|$args|g" ../sshnp/entrypoint.sh
 else
-    legacy_sub='s/legacy//g'
+    sed -i "s|args|$args|g" ../sshnp/entrypoint.sh
 fi
-eval "$prefix" "$legacy_sub" ../sshnp/entrypoint.sh

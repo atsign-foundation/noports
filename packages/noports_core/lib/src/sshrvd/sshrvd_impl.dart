@@ -6,7 +6,6 @@ import 'package:at_client/at_client.dart';
 import 'package:at_utils/at_logger.dart';
 import 'package:logging/logging.dart';
 import 'package:meta/meta.dart';
-import 'package:noports_core/src/common/utils.dart';
 import 'package:noports_core/src/sshrvd/socket_connector.dart';
 import 'package:noports_core/src/sshrvd/sshrvd.dart';
 import 'package:noports_core/src/sshrvd/sshrvd_params.dart';
@@ -52,9 +51,9 @@ class SSHRVDImpl implements SSHRVD {
       FutureOr<AtClient> Function(SSHRVDParams)? atClientGenerator,
       void Function(Object, StackTrace)? usageCallback}) async {
     try {
-      var p = SSHRVDParams.fromArgs(args);
+      var p = await SSHRVDParams.fromArgs(args);
 
-      if (!await fileExists(p.atKeysFilePath)) {
+      if (!await File(p.atKeysFilePath).exists()) {
         throw ('\n Unable to find .atKeys file : ${p.atKeysFilePath}');
       }
 
@@ -69,7 +68,7 @@ class SSHRVDImpl implements SSHRVD {
 
       atClient ??= await atClientGenerator!(p);
 
-      var sshrvd = SSHRVD(
+      var sshrvd = SSHRVDImpl(
         atClient: atClient,
         atSign: p.atSign,
         homeDirectory: p.homeDirectory,

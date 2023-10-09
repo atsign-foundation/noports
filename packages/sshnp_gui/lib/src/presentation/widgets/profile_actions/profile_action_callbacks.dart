@@ -48,10 +48,12 @@ class ProfileActionCallbacks {
   static Future<void> _exportDesktop(
       WidgetRef ref, BuildContext context, String profileName) async {
     try {
-      final suggestedName =
-          ConfigFileRepository.fromProfileName(profileName, basenameOnly: true);
+      final suggestedName = await ConfigFileRepository.fromProfileName(
+          profileName,
+          basenameOnly: true);
       final initialDirectory =
-          getDefaultSshnpConfigDirectory(getHomeDirectory(throwIfNull: true)!);
+          ConfigFileRepository.getDefaultSshnpConfigDirectory(
+              getHomeDirectory()!);
 
       final FileSaveLocation? saveLocation = await getSaveLocation(
         suggestedName: suggestedName,
@@ -60,8 +62,8 @@ class ProfileActionCallbacks {
       );
       if (saveLocation == null) return;
       final params = ref.read(configFamilyController(profileName));
-      final fileData =
-          Uint8List.fromList(params.requireValue.toConfig().codeUnits);
+      final fileData = Uint8List.fromList(
+          params.requireValue.toConfigLines().join('\n').codeUnits);
       final XFile textFile = XFile.fromData(
         fileData,
         mimeType: dotEnvMimeType,

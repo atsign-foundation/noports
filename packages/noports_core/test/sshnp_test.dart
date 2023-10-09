@@ -1,12 +1,12 @@
 import 'package:args/args.dart';
-import 'package:noports_core/src/common/utils.dart';
-import 'package:noports_core/src/sshnp/sshnp_params/sshnp_params.dart';
+import 'package:noports_core/sshnp_params.dart';
 import 'package:test/test.dart';
 
 void main() {
   group('args parser tests', () {
     test('test mandatory args', () {
-      ArgParser parser = SSHNPPartialParams.parser;
+      ArgParser parser =
+          SSHNPArg.createArgParser(parserType: ParserType.commandLine);
       // As of version 2.4.2 of the args package, exceptions regarding
       // mandatory options are not thrown when the args are parsed,
       // but when trying to retrieve a mandatory option.
@@ -31,25 +31,22 @@ void main() {
     });
 
     test('test parsed args with only mandatory provided', () {
+      // TODO fix these params with new public API
+
       List<String> args = [];
       args.addAll(['-f', '@alice']);
       args.addAll(['-t', '@bob']);
       args.addAll(['-h', 'host.subdomain.test']);
-      var p = SSHNPParams.fromPartial(SSHNPPartialParams.fromArgs(args));
+      var p = SSHNPParams.fromPartial(SSHNPPartialParams.fromArgList(args));
       expect(p.clientAtSign, '@alice');
       expect(p.sshnpdAtSign, '@bob');
       expect(p.host, 'host.subdomain.test');
-
       expect(p.device, 'default');
       expect(p.port, 22);
       expect(p.localPort, 0);
-      expect(p.username, getUserName(throwIfNull: true));
-      expect(p.homeDirectory, getHomeDirectory(throwIfNull: true));
-      expect(p.atKeysFilePath,
-          getDefaultAtKeysFilePath(p.homeDirectory, p.clientAtSign));
       expect(p.sendSshPublicKey, '');
       expect(p.localSshOptions, []);
-      expect(p.rsa, false);
+      expect(p.sshAlgorithm, SupportedSSHAlgorithm.ed25519);
       expect(p.verbose, false);
       expect(p.remoteUsername, null);
     });
@@ -60,6 +57,7 @@ void main() {
       args.addAll(['-t', '@bob']);
       args.addAll(['-h', 'host.subdomain.test']);
 
+      // TODO fix these params with new public API
       args.addAll([
         '--device',
         'ancient_pc',
@@ -76,9 +74,10 @@ void main() {
         '--remote-user-name',
         'gary',
         '-v',
-        '-r'
+        '--ssh-algorithm',
+        'ssh-rsa'
       ]);
-      var p = SSHNPParams.fromPartial(SSHNPPartialParams.fromArgs(args));
+      var p = SSHNPParams.fromPartial(SSHNPPartialParams.fromArgList(args));
       expect(p.clientAtSign, '@alice');
       expect(p.sshnpdAtSign, '@bob');
       expect(p.host, 'host.subdomain.test');
@@ -86,12 +85,10 @@ void main() {
       expect(p.device, 'ancient_pc');
       expect(p.port, 56789);
       expect(p.localPort, 98765);
-      expect(p.username, getUserName(throwIfNull: true));
-      expect(p.homeDirectory, getHomeDirectory(throwIfNull: true));
       expect(p.atKeysFilePath, '/tmp/temp_keys.json');
       expect(p.sendSshPublicKey, 'sekrit.pub');
       expect(p.localSshOptions, ['--arg 2 --arg 4 foo bar -x']);
-      expect(p.rsa, true);
+      expect(p.sshAlgorithm, SupportedSSHAlgorithm.rsa);
       expect(p.verbose, true);
       expect(p.remoteUsername, 'gary');
     });

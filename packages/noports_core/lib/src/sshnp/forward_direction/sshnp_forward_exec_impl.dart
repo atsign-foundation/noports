@@ -3,12 +3,18 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:at_client/at_client.dart' hide StringBuffer;
-import 'package:noports_core/src/sshnp/sshnp_impl/sshnp_forward_direction.dart';
-import 'package:noports_core/src/sshnp/sshnp_impl/sshnp_impl.dart';
-import 'package:noports_core/sshnp.dart';
-import 'package:path/path.dart' as path;
 
-class SSHNPForwardExecImpl extends SSHNPImpl with SSHNPForwardDirection {
+import 'package:noports_core/src/sshnp/forward_direction/sshnp_forward.dart';
+import 'package:noports_core/src/sshnp/mixins/sshnpd_payload_handler.dart';
+import 'package:noports_core/src/sshnp/mixins/sshnp_ssh_key_handler.dart';
+import 'package:noports_core/sshnp.dart';
+import 'package:noports_core/sshnp_params.dart';
+import 'package:noports_core/utils.dart';
+
+class SSHNPForwardExecImpl extends SSHNPForward
+    with SSHNPLocalSSHKeyHandler, DefaultSSHNPDPayloadHandler {
+  late AtSSHKeyPair ephemeralKeyPair;
+
   SSHNPForwardExecImpl({
     required AtClient atClient,
     required SSHNPParams params,
@@ -20,6 +26,14 @@ class SSHNPForwardExecImpl extends SSHNPImpl with SSHNPForwardDirection {
         );
 
   @override
+  Future<void> init() async {
+    logger.info('Initializing SSHNPForwardExecImpl');
+    logger.info('params: ${params.toJson(parserType: ParserType.commandLine)}');
+    await super.init();
+    completeInitialization();
+  }
+
+  @override
   Future<SSHNPResult> run() async {
     await startAndWaitForInit();
 
@@ -28,28 +42,27 @@ class SSHNPForwardExecImpl extends SSHNPImpl with SSHNPForwardDirection {
       return error;
     }
 
+    ephemeralKeyPair = AtSSHKeyPair.fromPem(
+      ephemeralPrivateKey,
+      identifier: 'ephemeral_$sessionId',
+      directory: keyUtil.sshnpHomeDirectory,
+    );
+
     logger.info(
-        'Starting direct ssh session for ${params.username} to $host on port $sshrvdPort with forwardLocal of $localPort');
+        'Starting direct ssh session to $host on port $sshrvdPort with forwardLocal of $localPort');
 
     try {
       String? errorMessage;
       Process? process;
 
-      // If using exec then we can assume we're on something unix-y
-      // So we can write the ephemeralPrivateKey to a tmp file,
-      // set its permissions appropriately, and remove it after we've
-      // executed the command
-      var tmpFileName =
-          path.normalize('$sshHomeDirectory/tmp/ephemeral_$sessionId');
-      File tmpFile = File(tmpFileName);
-      await tmpFile.create(recursive: true);
-      await tmpFile.writeAsString(ephemeralPrivateKey,
-          mode: FileMode.write, flush: true);
-      await Process.run('chmod', ['go-rwx', tmpFileName]);
+      await keyUtil.addKeyPair(
+        keyPair: ephemeralKeyPair,
+        identifier: ephemeralKeyPair.identifier,
+      );
 
       String argsString = '$remoteUsername@$host'
           ' -p $sshrvdPort'
-          ' -i $tmpFileName'
+          ' -i ${ephemeralKeyPair.privateKeyFileName}'
           ' -L $localPort:localhost:${params.remoteSshdPort}'
           ' -o LogLevel=VERBOSE'
           ' -t -t'
@@ -90,7 +103,9 @@ class SSHNPForwardExecImpl extends SSHNPImpl with SSHNPForwardDirection {
         sshExitCode = 6464;
       }
 
-      await tmpFile.delete();
+      await keyUtil.deleteKeyPair(
+        identifier: ephemeralKeyPair.identifier,
+      );
 
       if (sshExitCode != 0) {
         if (sshExitCode == 6464) {
@@ -111,7 +126,7 @@ class SSHNPForwardExecImpl extends SSHNPImpl with SSHNPForwardDirection {
         localPort: localPort,
         remoteUsername: remoteUsername,
         host: 'localhost',
-        privateKeyFileName: publicKeyFileName.replaceAll('.pub', ''),
+        privateKeyFileName: identityKeyPair?.privateKeyFileName,
         localSshOptions:
             (params.addForwardsToTunnel) ? null : params.localSshOptions,
         connectionBean: process,

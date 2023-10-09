@@ -1,12 +1,12 @@
 import 'dart:async';
 
 import 'package:at_client/at_client.dart';
-import 'package:noports_core/src/sshnp/sshnp_impl/sshnp_impl.dart';
-import 'package:noports_core/src/sshnp/sshnp_impl/sshnp_reverse_direction.dart';
+import 'package:noports_core/src/sshnp/mixins/sshnpd_payload_handler.dart';
+import 'package:noports_core/src/sshnp/reverse_direction/sshnp_reverse.dart';
 import 'package:noports_core/sshnp.dart';
 import 'package:noports_core/sshrv.dart';
 
-class SSHNPLegacyImpl extends SSHNPImpl with SSHNPReverseDirection {
+class SSHNPLegacyImpl extends SSHNPReverse with LegacySSHNPDPayloadHandler {
   SSHNPLegacyImpl({
     required AtClient atClient,
     required SSHNPParams params,
@@ -21,7 +21,9 @@ class SSHNPLegacyImpl extends SSHNPImpl with SSHNPReverseDirection {
 
   @override
   Future<void> init() async {
+    logger.info('Initializing SSHNPLegacyImpl');
     await super.init();
+    if (initializedCompleter.isCompleted) return;
 
     // Share our private key with sshnpd
     AtKey sendOurPrivateKeyToSshnpd = AtKey()
@@ -32,9 +34,10 @@ class SSHNPLegacyImpl extends SSHNPImpl with SSHNPReverseDirection {
       ..metadata = (Metadata()
         ..ttr = -1
         ..ttl = 10000);
-    await notify(sendOurPrivateKeyToSshnpd, sshPrivateKey);
+    await notify(
+        sendOurPrivateKeyToSshnpd, ephemeralKeyPair.privateKeyContents);
 
-    initializedCompleter.complete();
+    completeInitialization();
   }
 
   @override
@@ -62,12 +65,10 @@ class SSHNPLegacyImpl extends SSHNPImpl with SSHNPReverseDirection {
         ..metadata = (Metadata()
           ..ttr = -1
           ..ttl = 10000),
-      '$localPort $port ${params.username} $host $sessionId',
-      sessionId: sessionId,
+      '$localPort $port $localUsername $host $sessionId',
     );
 
     bool acked = await waitForDaemonResponse();
-    await cleanUp();
     if (!acked) {
       var error = SSHNPError(
         'sshnp timed out: waiting for daemon response\nhint: make sure the device is online',
@@ -91,7 +92,7 @@ class SSHNPLegacyImpl extends SSHNPImpl with SSHNPReverseDirection {
       localPort: localPort,
       remoteUsername: remoteUsername,
       host: 'localhost',
-      privateKeyFileName: publicKeyFileName.replaceAll('.pub', ''),
+      privateKeyFileName: identityKeyPair?.privateKeyFileName,
       localSshOptions:
           (params.addForwardsToTunnel) ? null : params.localSshOptions,
       connectionBean: sshrvResult,

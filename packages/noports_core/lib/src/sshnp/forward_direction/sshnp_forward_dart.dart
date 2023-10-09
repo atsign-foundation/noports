@@ -3,12 +3,15 @@ import 'dart:io';
 
 import 'package:at_client/at_client.dart';
 import 'package:dartssh2/dartssh2.dart';
-import 'package:noports_core/src/sshnp/sshnp_impl/sshnp_forward_direction.dart';
-import 'package:noports_core/src/sshnp/sshnp_impl/sshnp_impl.dart';
+import 'package:meta/meta.dart';
+import 'package:noports_core/src/sshnp/forward_direction/sshnp_forward.dart';
+import 'package:noports_core/src/sshnp/mixins/sshnpd_payload_handler.dart';
 import 'package:noports_core/sshnp.dart';
 
-class SSHNPForwardDartImpl extends SSHNPImpl with SSHNPForwardDirection {
-  SSHNPForwardDartImpl({
+abstract class SSHNPForwardDart extends SSHNPForward
+    with DefaultSSHNPDPayloadHandler {
+
+  SSHNPForwardDart({
     required AtClient atClient,
     required SSHNPParams params,
     bool? shouldInitialize,
@@ -18,17 +21,23 @@ class SSHNPForwardDartImpl extends SSHNPImpl with SSHNPForwardDirection {
           shouldInitialize: shouldInitialize,
         );
 
-  @override
-  Future<SSHNPResult> run() async {
+  /// Set up timer to check to see if all connections are down
+  @protected
+  String get terminateMessage =>
+      'ssh session will terminate after ${params.idleTimeout} seconds'
+      ' if it is not being used';
+
+  @protected
+  Future<SSHClient> startInitialTunnel() async {
     await startAndWaitForInit();
 
     var error = await requestSocketTunnelFromDaemon();
     if (error != null) {
-      return error;
+      throw error;
     }
 
     logger.info(
-        'Starting direct ssh session for ${params.username} to $host on port $sshrvdPort with forwardLocal of $localPort');
+        'Starting direct ssh session to $host on port $sshrvdPort with forwardLocal of $localPort');
     try {
       late final SSHClient client;
 
@@ -42,7 +51,7 @@ class SSHNPForwardDartImpl extends SSHNPImpl with SSHNPForwardDirection {
           stackTrace: s,
         );
         doneCompleter.completeError(error);
-        return error;
+        throw error;
       }
 
       try {
@@ -57,24 +66,24 @@ class SSHNPForwardDartImpl extends SSHNPImpl with SSHNPForwardDirection {
         );
       } catch (e, s) {
         var error = SSHNPError(
-          'Failed to create SSHClient for ${params.username}@$host:$port : $e',
+          'Failed to create SSHClient for ${params.remoteUsername}@$host:$port : $e',
           error: e,
           stackTrace: s,
         );
         doneCompleter.completeError(error);
-        return error;
+        throw error;
       }
 
       try {
         await client.authenticated;
       } catch (e, s) {
         var error = SSHNPError(
-          'Failed to authenticate as ${params.username}@$host:$port : $e',
+          'Failed to authenticate as ${params.remoteUsername}@$host:$port : $e',
           error: e,
           stackTrace: s,
         );
         doneCompleter.completeError(error);
-        return error;
+        throw error;
       }
 
       int counter = 0;
@@ -156,10 +165,6 @@ class SSHNPForwardDartImpl extends SSHNPImpl with SSHNPForwardDirection {
         }
       }
 
-      /// Set up timer to check to see if all connections are down
-      String terminateMessage =
-          'ssh session will terminate after ${params.idleTimeout} seconds'
-          ' if it is not being used';
       logger.info(terminateMessage);
       Timer.periodic(Duration(seconds: params.idleTimeout), (timer) async {
         if (counter == 0 || client.isClosed) {
@@ -170,16 +175,13 @@ class SSHNPForwardDartImpl extends SSHNPImpl with SSHNPForwardDirection {
               '$sessionId | no active connections - ssh session complete');
         }
       });
-
-      return SSHNPNoOpSuccess<SSHClient>(
-          message: 'Connection established:\n$terminateMessage',
-          connectionBean: client);
+      return client;
     } on SSHNPError catch (e, s) {
       doneCompleter.completeError(e, s);
-      return e;
+      rethrow;
     } catch (e, s) {
       doneCompleter.completeError(e, s);
-      return SSHNPError(
+      throw SSHNPError(
         'SSH Client failure : $e',
         error: e,
         stackTrace: s,

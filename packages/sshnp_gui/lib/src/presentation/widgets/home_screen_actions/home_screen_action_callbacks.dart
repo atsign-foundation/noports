@@ -33,7 +33,7 @@ class HomeScreenActionCallbacks {
         final lines = (await file.readAsString()).split('\n');
         ref
             .read(configFamilyController(profileName).notifier)
-            .putConfig(SSHNPParams.fromConfig(profileName, lines));
+            .putConfig(SSHNPParams.fromConfigLines(profileName, lines));
       }
     } catch (e) {
       CustomSnackBar.error(

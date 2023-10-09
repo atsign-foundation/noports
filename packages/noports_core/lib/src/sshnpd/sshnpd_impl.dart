@@ -7,11 +7,9 @@ import 'package:at_utils/at_logger.dart';
 import 'package:dartssh2/dartssh2.dart';
 import 'package:logging/logging.dart';
 import 'package:meta/meta.dart';
-import 'package:noports_core/src/common/default_args.dart';
-import 'package:noports_core/src/common/supported_ssh_clients.dart';
-import 'package:noports_core/src/common/utils.dart';
 import 'package:noports_core/src/sshrv/sshrv.dart';
 import 'package:noports_core/sshnpd.dart';
+import 'package:noports_core/utils.dart';
 import 'package:noports_core/version.dart';
 import 'package:uuid/uuid.dart';
 
@@ -54,7 +52,7 @@ class SSHNPDImpl implements SSHNPD {
   final String ephemeralPermissions;
 
   @override
-  final bool rsa;
+  final SupportedSSHAlgorithm sshAlgorithm;
 
   @override
   @visibleForTesting
@@ -77,7 +75,7 @@ class SSHNPDImpl implements SSHNPD {
     this.addSshPublicKeys = false,
     this.localSshdPort = DefaultArgs.localSshdPort,
     required this.ephemeralPermissions,
-    required this.rsa,
+    required this.sshAlgorithm,
   }) {
     logger.hierarchicalLoggingEnabled = true;
     logger.logger.level = Level.SHOUT;
@@ -88,10 +86,10 @@ class SSHNPDImpl implements SSHNPD {
       FutureOr<AtClient> Function(SSHNPDParams)? atClientGenerator,
       void Function(Object, StackTrace)? usageCallback}) async {
     try {
-      var p = SSHNPDParams.fromArgs(args);
+      var p = await SSHNPDParams.fromArgs(args);
 
       // Check atKeyFile selected exists
-      if (!await fileExists(p.atKeysFilePath)) {
+      if (!await File(p.atKeysFilePath).exists()) {
         throw ('\n Unable to find .atKeys file : ${p.atKeysFilePath}');
       }
 
@@ -106,7 +104,7 @@ class SSHNPDImpl implements SSHNPD {
 
       atClient ??= await atClientGenerator!(p);
 
-      var sshnpd = SSHNPD(
+      var sshnpd = SSHNPDImpl(
         atClient: atClient,
         username: p.username,
         homeDirectory: p.homeDirectory,
@@ -117,7 +115,7 @@ class SSHNPDImpl implements SSHNPD {
         addSshPublicKeys: p.addSshPublicKeys,
         localSshdPort: p.localSshdPort,
         ephemeralPermissions: p.ephemeralPermissions,
-        rsa: p.rsa,
+        sshAlgorithm: p.sshAlgorithm,
       );
 
       if (p.verbose) {
@@ -495,7 +493,7 @@ class SSHNPDImpl implements SSHNPD {
       required String host,
       required int port}) async {
     logger.shout(
-        'Setting up ports for direct ssh session using ${sshClient.name} (${sshClient.cliArg}) from: $requestingAtsign session: $sessionId');
+        'Setting up ports for direct ssh session using ${sshClient.name} ($sshClient) from: $requestingAtsign session: $sessionId');
 
     try {
       // Connect to rendezvous point using background process.
@@ -504,34 +502,35 @@ class SSHNPDImpl implements SSHNPD {
           await SSHRV.exec(host, port, localSshdPort: localSshdPort).run();
       logger.info('Started rv - pid is ${rv.pid}');
 
-      /// - Generate an ephemeral keypair and adds its public key to the
-      ///   `authorized_keys` file, limiting permissions (e.g. hosts and ports
-      ///   which can be forwarded to) as per the `--ephemeral-permissions` option
-      var (String ephemeralPublicKey, String ephemeralPrivateKey) =
-          await generateSshKeys(rsa: rsa, sessionId: sessionId);
+      LocalSSHKeyUtil keyUtil = LocalSSHKeyUtil();
 
-      await addEphemeralKeyToAuthorizedKeys(
-          sshPublicKey: ephemeralPublicKey,
-          localSshdPort: localSshdPort,
-          sessionId: sessionId,
-          permissions: ephemeralPermissions);
+      AtSSHKeyPair keyPair = await keyUtil.generateKeyPair(
+          algorithm: sshAlgorithm, identifier: 'ephemeral_$sessionId');
+
+      await keyUtil.authorizePublicKey(
+        sshPublicKey: keyPair.publicKeyContents,
+        localSshdPort: localSshdPort,
+        sessionId: sessionId,
+        permissions: ephemeralPermissions,
+      );
 
       /// - Send response message to the sshnp client which includes the
       ///   ephemeral private key
       await _notify(
-          atKey: _createResponseAtKey(
-              requestingAtsign: requestingAtsign, sessionId: sessionId),
-          value: signAndWrapAndJsonEncode(atClient, {
-            'status': 'connected',
-            'sessionId': sessionId,
-            'ephemeralPrivateKey': ephemeralPrivateKey
-          }),
-          sessionId: sessionId);
+        atKey: _createResponseAtKey(
+            requestingAtsign: requestingAtsign, sessionId: sessionId),
+        value: signAndWrapAndJsonEncode(atClient, {
+          'status': 'connected',
+          'sessionId': sessionId,
+          'ephemeralPrivateKey': keyPair.privateKeyContents,
+        }),
+        sessionId: sessionId,
+      );
 
       /// - start a timer to remove the ephemeral key from `authorized_keys`
       ///   after 15 seconds
       Timer(const Duration(seconds: 15),
-          () => removeEphemeralKeyFromAuthorizedKeys(sessionId, logger));
+          () => keyUtil.deauthorizePublicKey(sessionId));
     } catch (e) {
       logger.severe('startDirectSsh failed with unexpected error : $e');
       // Notify sshnp that this session is NOT connected
@@ -556,7 +555,7 @@ class SSHNPDImpl implements SSHNPD {
     logger.info(
         'Starting reverse ssh session for $username to $host on port $port with forwardRemote of $remoteForwardPort');
     logger.shout(
-        'Starting reverse ssh session using ${sshClient.name} (${sshClient.cliArg}) from: $requestingAtsign session: $sessionId');
+        'Starting reverse ssh session using ${sshClient.name} ($sshClient) from: $requestingAtsign session: $sessionId');
 
     try {
       bool success = false;

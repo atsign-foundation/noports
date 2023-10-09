@@ -3,7 +3,7 @@ import 'dart:async';
 import 'package:at_client/at_client.dart' hide StringBuffer;
 import 'package:at_utils/at_logger.dart';
 import 'package:meta/meta.dart';
-import 'package:noports_core/src/common/supported_ssh_clients.dart';
+import 'package:noports_core/src/common/types.dart';
 import 'package:noports_core/src/sshnpd/sshnpd_impl.dart';
 import 'package:noports_core/src/sshnpd/sshnpd_params.dart';
 
@@ -63,38 +63,11 @@ abstract class SSHNPD {
   /// Note that PermitOpen="localhost:localSshdPort" will always be added
   abstract final String ephemeralPermissions;
 
-  /// When false, we generate [sshPublicKey] and [sshPrivateKey] using ed25519.
-  /// When true, we generate [sshPublicKey] and [sshPrivateKey] using RSA.
-  /// Defaults to false
-  abstract final bool rsa;
-
-  factory SSHNPD(
-      {
-      // final fields
-      required AtClient atClient,
-      required String username,
-      required String homeDirectory,
-      required String device,
-      required String managerAtsign,
-      required SupportedSshClient sshClient,
-      required bool makeDeviceInfoVisible,
-      required bool addSshPublicKeys,
-      required int localSshdPort,
-      required String ephemeralPermissions,
-      required bool rsa}) {
-    return SSHNPDImpl(
-        atClient: atClient,
-        username: username,
-        homeDirectory: homeDirectory,
-        device: device,
-        managerAtsign: managerAtsign,
-        sshClient: sshClient,
-        makeDeviceInfoVisible: makeDeviceInfoVisible,
-        addSshPublicKeys: addSshPublicKeys,
-        localSshdPort: localSshdPort,
-        ephemeralPermissions: ephemeralPermissions,
-        rsa: rsa);
-  }
+  /// The algorithm to use for ssh encryption
+  /// Can be one of [SupportedSSHAlgorithm.values]:
+  /// - [SupportedSSHAlgorithm.ed25519]
+  /// - [SupportedSSHAlgorithm.rsa]
+  abstract final SupportedSSHAlgorithm sshAlgorithm;
 
   static Future<SSHNPD> fromCommandLineArgs(List<String> args,
       {AtClient? atClient,

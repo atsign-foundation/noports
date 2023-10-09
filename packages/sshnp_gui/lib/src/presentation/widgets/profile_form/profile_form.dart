@@ -125,40 +125,42 @@ class _ProfileFormState extends ConsumerState<ProfileForm> {
                     ],
                   ),
                   gapH10,
-                  Row(
+                  const Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      CustomTextFormField(
-                        initialValue: oldConfig.sendSshPublicKey,
-                        labelText: strings.sendSshPublicKey,
-                        onChanged: (value) =>
-                            newConfig = SSHNPPartialParams.merge(
-                          newConfig,
-                          SSHNPPartialParams(sendSshPublicKey: value),
-                        ),
-                      ),
+                      // TODO replace this with a drop down of available keyPairs (and buttons to upload / generate a new one, and button to delete)
+                      // CustomTextFormField(
+                      //   initialValue: oldConfig.sendSshPublicKey,
+                      //   labelText: strings.sendSshPublicKey,
+                      //   onChanged: (value) =>
+                      //       newConfig = SSHNPPartialParams.merge(
+                      //     newConfig,
+                      //     SSHNPPartialParams(sendSshPublicKey: value),
+                      //   ),
+                      // ),
                       gapW8,
-                      SizedBox(
-                        width: CustomTextFormField.defaultWidth,
-                        height: CustomTextFormField.defaultHeight,
-                        child: Row(
-                          children: [
-                            Text(strings.rsa),
-                            gapW8,
-                            Switch(
-                              value: newConfig.rsa ?? oldConfig.rsa,
-                              onChanged: (newValue) {
-                                setState(() {
-                                  newConfig = SSHNPPartialParams.merge(
-                                    newConfig,
-                                    SSHNPPartialParams(rsa: newValue),
-                                  );
-                                });
-                              },
-                            ),
-                          ],
-                        ),
-                      ),
+                      // TODO replace this switch with a dropdown with options for SupportedSSHAlgorithm.values
+                      // SizedBox(
+                      //   width: CustomTextFormField.defaultWidth,
+                      //   height: CustomTextFormField.defaultHeight,
+                      //   child: Row(
+                      //     children: [
+                      //       Text(strings.rsa),
+                      //       gapW8,
+                      //       Switch(
+                      //         value: newConfig.rsa ?? oldConfig.rsa,
+                      //         onChanged: (newValue) {
+                      //           setState(() {
+                      //             newConfig = SSHNPPartialParams.merge(
+                      //               newConfig,
+                      //               SSHNPPartialParams(rsa: newValue),
+                      //             );
+                      //           });
+                      //         },
+                      //       ),
+                      //     ],
+                      //   ),
+                      // ),
                     ],
                   ),
                   gapH10,

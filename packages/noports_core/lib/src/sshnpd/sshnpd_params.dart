@@ -1,68 +1,82 @@
 import 'package:args/args.dart';
 import 'package:noports_core/src/common/default_args.dart';
-import 'package:noports_core/src/common/supported_ssh_clients.dart';
-import 'package:noports_core/src/common/utils.dart';
+import 'package:noports_core/src/common/file_system_utils.dart';
+import 'package:noports_core/src/common/types.dart';
+import 'package:noports_core/src/common/validation_utils.dart';
 
 class SSHNPDParams {
-  late final String device;
-  late final String username;
-  late final String homeDirectory;
-  late final String managerAtsign;
-  late final String atKeysFilePath;
-  late final String sendSshPublicKey;
-  late final String deviceAtsign;
-  late final bool verbose;
-  late final bool makeDeviceInfoVisible;
-  late final bool addSshPublicKeys;
-  late final SupportedSshClient sshClient;
-  late final String rootDomain;
-  late final int localSshdPort;
-  late final String ephemeralPermissions;
-  late final bool rsa;
+  final String device;
+  final String username;
+  final String homeDirectory;
+  final String managerAtsign;
+  final String atKeysFilePath;
+  final String deviceAtsign;
+  final bool verbose;
+  final bool makeDeviceInfoVisible;
+  final bool addSshPublicKeys;
+  final SupportedSshClient sshClient;
+  final String rootDomain;
+  final int localSshdPort;
+  final String ephemeralPermissions;
+  final SupportedSSHAlgorithm sshAlgorithm;
 
   // Non param variables
   static final ArgParser parser = _createArgParser();
+  SSHNPDParams({
+    required this.device,
+    required this.username,
+    required this.homeDirectory,
+    required this.managerAtsign,
+    required this.atKeysFilePath,
+    required this.deviceAtsign,
+    required this.verbose,
+    required this.makeDeviceInfoVisible,
+    required this.addSshPublicKeys,
+    required this.sshClient,
+    required this.rootDomain,
+    required this.localSshdPort,
+    required this.ephemeralPermissions,
+    required this.sshAlgorithm,
+  });
 
-  SSHNPDParams.fromArgs(List<String> args) {
+  static Future<SSHNPDParams> fromArgs(List<String> args) async {
     // Arg check
     ArgResults r = parser.parse(args);
 
-    // Do we have a username ?
-    username = getUserName(throwIfNull: true)!;
-
-    // Do we have a 'home' directory?
-    homeDirectory = getHomeDirectory(throwIfNull: true)!;
+    String deviceAtsign = r['atsign'];
+    String managerAtsign = r['manager'];
+    String homeDirectory = getHomeDirectory()!;
 
     // Do we have a device ?
-    device = r['device'];
+    String device = r['device'];
+
+    SupportedSshClient sshClient = SupportedSshClient.values.firstWhere(
+        (c) => c.toString() == r['ssh-client'],
+        orElse: () => DefaultSSHNPDArgs.sshClient);
 
     // Do we have an ASCII ?
     if (checkNonAscii(device)) {
       throw ('\nDevice name can only contain alphanumeric characters with a max length of 15');
     }
 
-    deviceAtsign = r['atsign'];
-    managerAtsign = r['manager'];
-    atKeysFilePath =
-        r['key-file'] ?? getDefaultAtKeysFilePath(homeDirectory, deviceAtsign);
-
-    verbose = r['verbose'];
-
-    sshClient = SupportedSshClient.values
-        .firstWhere((c) => c.cliArg == r['ssh-client']);
-
-    rootDomain = r['root-domain'];
-
-    makeDeviceInfoVisible = r['un-hide'];
-
-    addSshPublicKeys = r['sshpublickey'];
-
-    localSshdPort =
-        int.tryParse(r['local-sshd-port']) ?? DefaultArgs.localSshdPort;
-
-    ephemeralPermissions = r['ephemeral-permissions'];
-
-    rsa = r['rsa'];
+    return SSHNPDParams(
+      device: r['device'],
+      username: getUserName(throwIfNull: true)!,
+      homeDirectory: homeDirectory,
+      managerAtsign: managerAtsign,
+      atKeysFilePath: r['key-file'] ??
+          getDefaultAtKeysFilePath(homeDirectory, deviceAtsign),
+      deviceAtsign: deviceAtsign,
+      verbose: r['verbose'],
+      makeDeviceInfoVisible: r['un-hide'],
+      addSshPublicKeys: r['sshpublickey'],
+      sshClient: sshClient,
+      rootDomain: r['root-domain'],
+      localSshdPort:
+          int.tryParse(r['local-sshd-port']) ?? DefaultArgs.localSshdPort,
+      ephemeralPermissions: r['ephemeral-permissions'],
+      sshAlgorithm: SupportedSSHAlgorithm.fromString(r['ssh-algorithm']),
+    );
   }
 
   static ArgParser _createArgParser() {
@@ -120,8 +134,12 @@ class SSHNPDParams {
 
     parser.addOption('ssh-client',
         mandatory: false,
-        defaultsTo: SupportedSshClient.exec.cliArg,
-        allowed: SupportedSshClient.values.map((c) => c.cliArg).toList(),
+        defaultsTo: DefaultSSHNPDArgs.sshClient.toString(),
+        allowed: SupportedSshClient.values
+            .map(
+              (c) => c.toString(),
+            )
+            .toList(),
         help: 'What to use for outbound ssh connections.');
 
     parser.addOption(
@@ -146,11 +164,11 @@ class SSHNPDParams {
         defaultsTo: '',
         mandatory: false);
 
-    parser.addFlag(
-      'rsa',
-      abbr: 'r',
-      defaultsTo: DefaultArgs.rsa,
+    parser.addOption(
+      'ssh-algorithm',
+      defaultsTo: DefaultArgs.sshAlgorithm.toString(),
       help: 'Use RSA 4096 keys rather than the default ED25519 keys',
+      allowed: SupportedSSHAlgorithm.values.map((c) => c.toString()).toList(),
     );
 
     return parser;

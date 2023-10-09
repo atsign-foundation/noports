@@ -7,7 +7,8 @@ import 'package:at_utils/at_logger.dart';
 
 // local packages
 import 'package:noports_core/sshnp.dart';
-import 'package:noports_core/sshnp_params.dart' show SSHNPArg;
+import 'package:noports_core/sshnp_params.dart' show ParserType, SSHNPArg;
+import 'package:noports_core/utils.dart';
 import 'package:sshnoports/create_at_client_cli.dart';
 import 'package:sshnoports/version.dart';
 
@@ -28,28 +29,31 @@ void main(List<String> args) async {
 
   if (help) {
     printVersion();
-    stderr.writeln(SSHNPPartialParams.parser.usage);
+    stderr.writeln(
+        SSHNPArg.createArgParser(parserType: ParserType.commandLine).usage);
     exit(0);
   }
 
-  ProcessSignal.sigint.watch().listen((signal) async {
-    await sshnp?.cleanUp();
-    exit(1);
-  });
-
   await runZonedGuarded(() async {
     try {
-      params = SSHNPParams.fromPartial(SSHNPPartialParams.fromArgs(args));
+      params = SSHNPParams.fromPartial(
+        SSHNPPartialParams.fromArgList(
+          args,
+          parserType: ParserType.commandLine,
+        ),
+      );
+      String homeDirectory = getHomeDirectory()!;
       sshnp = await SSHNP
-          .fromParams(
+          .fromParamsWithFileBindings(
         params,
         atClientGenerator: (SSHNPParams params, String sessionId) =>
             createAtClientCli(
-          homeDirectory: params.homeDirectory,
+          homeDirectory: homeDirectory,
           atsign: params.clientAtSign,
           namespace: '${params.device}.sshnp',
           pathExtension: sessionId,
-          atKeysFilePath: params.atKeysFilePath,
+          atKeysFilePath: params.atKeysFilePath ??
+              getDefaultAtKeysFilePath(homeDirectory, params.clientAtSign),
           rootDomain: params.rootDomain,
         ),
       )
@@ -67,9 +71,23 @@ void main(List<String> args) async {
         exit(0);
       }
 
-      await sshnp!.initialized;
+      await sshnp!.initialized.catchError((e) {
+        if (e.stackTrace != null) {
+          Error.throwWithStackTrace(e, e.stackTrace!);
+        }
+        throw e;
+      });
 
-      SSHNPResult res = await sshnp!.run();
+      FutureOr<SSHNPResult> runner = sshnp!.run();
+      if (runner is Future<SSHNPResult>) {
+        await runner.catchError((e) {
+          if (e.stackTrace != null) {
+            Error.throwWithStackTrace(e, e.stackTrace!);
+          }
+          throw e;
+        });
+      }
+      SSHNPResult res = await runner;
 
       if (res is SSHNPError) {
         if (res.stackTrace != null) {
@@ -95,8 +113,6 @@ void main(List<String> args) async {
       if (verbose) {
         stderr.writeln('\nStack Trace: ${stackTrace.toString()}');
       }
-
-      await sshnp?.cleanUp();
       exit(1);
     }
   }, (Object error, StackTrace stackTrace) async {
@@ -106,15 +122,14 @@ void main(List<String> args) async {
     if (verbose) {
       stderr.writeln('\nStack Trace: ${stackTrace.toString()}');
     }
-
-    await sshnp?.cleanUp();
     exit(1);
   });
 }
 
 void usageCallback(Object e, StackTrace s) {
   printVersion();
-  stderr.writeln(SSHNPPartialParams.parser.usage);
+  stderr.writeln(
+      SSHNPArg.createArgParser(parserType: ParserType.commandLine).usage);
   stderr.writeln('\n$e');
 }
 

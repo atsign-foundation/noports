@@ -1,13 +1,13 @@
 import 'dart:async';
 
 import 'package:at_client/at_client.dart';
-import 'package:noports_core/src/common/utils.dart';
-import 'package:noports_core/src/sshnp/sshnp_impl/sshnp_impl.dart';
-import 'package:noports_core/src/sshnp/sshnp_impl/sshnp_reverse_direction.dart';
+import 'package:noports_core/src/common/validation_utils.dart';
+import 'package:noports_core/src/sshnp/mixins/sshnpd_payload_handler.dart';
+import 'package:noports_core/src/sshnp/reverse_direction/sshnp_reverse.dart';
 import 'package:noports_core/sshnp.dart';
 import 'package:noports_core/sshrv.dart';
 
-class SSHNPReverseImpl extends SSHNPImpl with SSHNPReverseDirection {
+class SSHNPReverseImpl extends SSHNPReverse with DefaultSSHNPDPayloadHandler {
   SSHNPReverseImpl({
     required AtClient atClient,
     required SSHNPParams params,
@@ -22,8 +22,9 @@ class SSHNPReverseImpl extends SSHNPImpl with SSHNPReverseDirection {
 
   @override
   Future<void> init() async {
+    logger.info('Initializing SSHNPReverseImpl');
     await super.init();
-    initializedCompleter.complete();
+    completeInitialization();
   }
 
   @override
@@ -42,27 +43,29 @@ class SSHNPReverseImpl extends SSHNPImpl with SSHNPReverseDirection {
     }
     // send request to the daemon via notification
     await notify(
-        AtKey()
-          ..key = 'ssh_request'
-          ..namespace = this.namespace
-          ..sharedBy = clientAtSign
-          ..sharedWith = sshnpdAtSign
-          ..metadata = (Metadata()
-            ..ttr = -1
-            ..ttl = 10000),
-        signAndWrapAndJsonEncode(atClient, {
+      AtKey()
+        ..key = 'ssh_request'
+        ..namespace = this.namespace
+        ..sharedBy = clientAtSign
+        ..sharedWith = sshnpdAtSign
+        ..metadata = (Metadata()
+          ..ttr = -1
+          ..ttl = 10000),
+      signAndWrapAndJsonEncode(
+        atClient,
+        {
           'direct': false,
           'sessionId': sessionId,
           'host': host,
           'port': port,
-          'username': params.username,
+          'username': localUsername,
           'remoteForwardPort': localPort,
-          'privateKey': sshPrivateKey
-        }),
-        sessionId: sessionId);
+          'privateKey': ephemeralKeyPair.privateKeyContents,
+        },
+      ),
+    );
 
     bool acked = await waitForDaemonResponse();
-    await cleanUp();
     if (!acked) {
       var error =
           SSHNPError('sshnp connection timeout: waiting for daemon response');
@@ -82,7 +85,7 @@ class SSHNPReverseImpl extends SSHNPImpl with SSHNPReverseDirection {
       localPort: localPort,
       remoteUsername: remoteUsername,
       host: 'localhost',
-      privateKeyFileName: publicKeyFileName.replaceAll('.pub', ''),
+      privateKeyFileName: identityKeyPair?.privateKeyFileName,
       localSshOptions:
           (params.addForwardsToTunnel) ? null : params.localSshOptions,
       connectionBean: sshrvResult,

@@ -2,21 +2,27 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:at_client/at_client.dart';
+import 'package:at_client/at_client.dart' hide StringBuffer;
 import 'package:at_commons/at_builders.dart';
 import 'package:at_utils/at_logger.dart';
 import 'package:logging/logging.dart';
 import 'package:meta/meta.dart';
 import 'package:noports_core/sshnp.dart';
-import 'package:noports_core/sshrv.dart';
 import 'package:noports_core/sshrvd.dart';
 import 'package:noports_core/utils.dart';
 import 'package:uuid/uuid.dart';
-import 'package:path/path.dart' as path;
+
+export 'forward_direction/sshnp_forward.dart';
+export 'forward_direction/sshnp_forward_dart.dart';
+export 'forward_direction/sshnp_forward_exec_impl.dart';
+
+export 'reverse_direction/sshnp_reverse.dart';
+export 'reverse_direction/sshnp_reverse_impl.dart';
+export 'reverse_direction/sshnp_legacy_impl.dart';
 
 // If you've never seen an abstract implementation before, here it is :P
 @protected
-abstract class SSHNPImpl implements SSHNP {
+abstract class SSHNPCore implements SSHNP {
   final AtSignLogger logger = AtSignLogger(' sshnp ');
 
   // ====================================================================
@@ -30,18 +36,11 @@ abstract class SSHNPImpl implements SSHNP {
 
   final String sessionId;
 
-  /// Function used to generate a [SSHRV] instance ([SSHRV.localbinary] by default)
-  final SSHRVGenerator sshrvGenerator;
-
-  final String sshHomeDirectory;
-
   // ====================================================================
   // Final instance variables, derived during initialization
   // ====================================================================
 
   late final String remoteUsername;
-
-  late final String publicKeyFileName;
 
   // ====================================================================
   // Volatile instance variables, injected via constructor
@@ -90,7 +89,7 @@ abstract class SSHNPImpl implements SSHNP {
   // ====================================================================
 
   /// true once we have received any response (success or error) from sshnpd
-  @visibleForTesting
+  @protected
   bool sshnpdAck = false;
 
   /// true once we have received an error response from sshnpd
@@ -100,9 +99,6 @@ abstract class SSHNPImpl implements SSHNP {
   /// true once we have received a response from sshrvd
   @visibleForTesting
   bool sshrvdAck = false;
-
-  @protected
-  late String ephemeralPrivateKey;
 
   // ====================================================================
   // Getters for derived values
@@ -114,11 +110,20 @@ abstract class SSHNPImpl implements SSHNP {
   static String getNamespace(String device) => '$device.sshnp';
   String get namespace => getNamespace(params.device);
 
+  FutureOr<AtSSHKeyPair?> identityKeyPair;
+
+  // ====================================================================
+  // Auxiliary
+  // ====================================================================
+
+  @protected
+  AtSSHKeyUtil get keyUtil;
+
   // ====================================================================
   // Constructor and Initialization
   // ====================================================================
 
-  SSHNPImpl({
+  SSHNPCore({
     required this.atClient,
     required this.params,
     SSHRVGenerator? sshrvGenerator,
@@ -126,9 +131,7 @@ abstract class SSHNPImpl implements SSHNP {
   })  : sessionId = Uuid().v4(),
         host = params.host,
         port = params.port,
-        localPort = params.localPort,
-        sshrvGenerator = sshrvGenerator ?? DefaultArgs.sshrvGenerator,
-        sshHomeDirectory = getDefaultSshDirectory(params.homeDirectory) {
+        localPort = params.localPort {
     /// Set the logger level to shout
     logger.hierarchicalLoggingEnabled = true;
     logger.logger.level = Level.SHOUT;
@@ -143,39 +146,26 @@ abstract class SSHNPImpl implements SSHNP {
     preference.namespace = '${params.device}.sshnp';
     atClient.setPreferences(preference);
 
-    // Set the file name for the public key based on the value of sendSshPublicKey
-    // previously, the default value for sendSshPublicKey was 'false' instead of ''
-    // immediately set it to '' to avoid the program from attempting to
-    // search for a public key file called 'false'
-    if (params.sendSshPublicKey == 'false' || params.sendSshPublicKey.isEmpty) {
-      logger.warning('No ssh public key file will be sent to sshnpd');
-      publicKeyFileName = '';
-    } else if (path.normalize(params.sendSshPublicKey).contains('/') ||
-        path.normalize(params.sendSshPublicKey).contains(r'\')) {
-      publicKeyFileName =
-          path.normalize(path.absolute(params.sendSshPublicKey));
-      logger.info(
-          'Using absolute path for ssh public key file: $publicKeyFileName');
-    } else {
-      publicKeyFileName =
-          path.normalize('$sshHomeDirectory/${params.sendSshPublicKey}');
-      logger.info(
-          'Using default .ssh path for ssh public key file: $publicKeyFileName');
-    }
-
     /// Also call init
     if (shouldInitialize ?? true) init();
   }
 
   @override
+  @mustCallSuper
   Future<void> init() async {
-    logger.info('Initializing SSHNPImpl');
+    logger.info('Initializing SSHNPCore');
     if (_initializeStarted) {
       logger.warning('Cancelling initialization: Already started');
       return;
     } else {
       _initializeStarted = true;
     }
+
+    // Schedule a cleanup on exit
+    unawaited(doneCompleter.future.then((_) async {
+      logger.info('SSHNPCore done');
+      await cleanUp();
+    }));
 
     try {
       if (!(await atSignIsActivated(atClient, sshnpdAtSign))) {
@@ -192,30 +182,18 @@ abstract class SSHNPImpl implements SSHNP {
         .subscribe(regex: '$sessionId.$namespace@', shouldDecrypt: true)
         .listen(handleSshnpdResponses);
 
-    // Check that the public key file exists
-    if (publicKeyFileName.isNotEmpty && !File(publicKeyFileName).existsSync()) {
-      logger.info('Unable to find ssh public key file');
-      throw ('Unable to find ssh public key file : $publicKeyFileName');
-    }
-
-    // Check that the private key file exists
-    if (publicKeyFileName.isNotEmpty &&
-        !File(publicKeyFileName.replaceAll('.pub', '')).existsSync()) {
-      logger.info(
-          'Unable to find matching ssh private key for public key: $publicKeyFileName');
-      throw ('Unable to find matching ssh private key for public key : $publicKeyFileName');
-    }
-
     remoteUsername = params.remoteUsername ?? await fetchRemoteUserName();
 
+    // TODO investigate if this is a problem on mobile
     // find a spare local port
     if (localPort == 0) {
       logger.info('Finding a spare local port');
       try {
         ServerSocket serverSocket =
-            await ServerSocket.bind(InternetAddress.loopbackIPv4, 0);
+            await ServerSocket.bind(InternetAddress.loopbackIPv4, 0)
+                .catchError((e) => throw e);
         localPort = serverSocket.port;
-        await serverSocket.close();
+        await serverSocket.close().catchError((e) => throw e);
       } catch (e, s) {
         logger.info('Unable to find a spare local port');
         throw SSHNPError('Unable to find a spare local port',
@@ -223,12 +201,24 @@ abstract class SSHNPImpl implements SSHNP {
       }
     }
 
-    await sharePublicKeyWithSshnpdIfRequired();
+    await sharePublicKeyWithSshnpdIfRequired().catchError((e, s) {
+      throw SSHNPError(
+        'Unable to share ssh public key with sshnpd',
+        error: e,
+        stackTrace: s,
+      );
+    });
 
     // If host has an @ then contact the sshrvd service for some ports
     if (host.startsWith('@')) {
       logger.info('Host is an atSign, fetching host and port from sshrvd');
-      await getHostAndPortFromSshrvd();
+      await getHostAndPortFromSshrvd().catchError((e, s) {
+        throw SSHNPError(
+          'Unable to get host and port from sshrvd',
+          error: e,
+          stackTrace: s,
+        );
+      });
     }
 
     logger.finer('Base initialization complete');
@@ -236,8 +226,15 @@ abstract class SSHNPImpl implements SSHNP {
     // This is in case they need to implement further initialization steps
   }
 
+  @protected
+  void completeInitialization() {
+    if (initializedCompleter.isCompleted) return;
+    logger.info('Completing initialization');
+    initializedCompleter.complete();
+  }
+
   @visibleForTesting
-  void handleSshnpdResponses(AtNotification notification) async {
+  Future<void> handleSshnpdResponses(AtNotification notification) async {
     String notificationKey = notification.key
         .replaceAll('${notification.to}:', '')
         .replaceAll('.$namespace${notification.from}', '')
@@ -246,44 +243,7 @@ abstract class SSHNPImpl implements SSHNP {
         .toLowerCase();
     logger.info('Received $notificationKey notification');
 
-    bool connected = false;
-
-    if (notification.value == 'connected') {
-      connected = true;
-    } else if (notification.value?.startsWith('{') ?? false) {
-      late final Map envelope;
-      late final Map daemonResponse;
-      try {
-        envelope = jsonDecode(notification.value!);
-        assertValidValue(envelope, 'signature', String);
-        assertValidValue(envelope, 'hashingAlgo', String);
-        assertValidValue(envelope, 'signingAlgo', String);
-
-        daemonResponse = envelope['payload'] as Map;
-        assertValidValue(daemonResponse, 'sessionId', String);
-        assertValidValue(daemonResponse, 'ephemeralPrivateKey', String);
-      } catch (e) {
-        logger.warning(
-            'Failed to extract parameters from notification value "${notification.value}" with error : $e');
-        sshnpdAck = true;
-        sshnpdAckErrors = true;
-        return;
-      }
-
-      try {
-        await verifyEnvelopeSignature(atClient, sshnpdAtSign, logger, envelope);
-      } catch (e) {
-        logger.shout('Failed to verify signature of msg from $sshnpdAtSign');
-        logger.shout('Exception: $e');
-        logger.shout('Notification value: ${notification.value}');
-        sshnpdAck = true;
-        sshnpdAckErrors = true;
-        return;
-      }
-
-      ephemeralPrivateKey = daemonResponse['ephemeralPrivateKey'];
-      connected = true;
-    }
+    bool connected = await handleSshnpdPayload(notification);
 
     if (connected) {
       logger.info('Session $sessionId connected successfully');
@@ -294,10 +254,14 @@ abstract class SSHNPImpl implements SSHNP {
     }
   }
 
+  @protected
+  FutureOr<bool> handleSshnpdPayload(AtNotification notification);
+
   // ====================================================================
   // Internal methods
   // ====================================================================
 
+  @protected
   Future<void> startAndWaitForInit() async {
     if (!initializedCompleter.isCompleted) {
       // Call init in case it hasn't been called yet
@@ -309,8 +273,10 @@ abstract class SSHNPImpl implements SSHNP {
   }
 
   @protected
-  Future<void> notify(AtKey atKey, String value,
-      {String sessionId = ""}) async {
+  Future<void> notify(
+    AtKey atKey,
+    String value,
+  ) async {
     await atClient.notificationService
         .notify(NotificationParams.forUpdate(atKey, value: value),
             onSuccess: (NotificationResult notification) {
@@ -334,7 +300,6 @@ abstract class SSHNPImpl implements SSHNP {
     try {
       return (await atClient.get(userNameRecordID)).value as String;
     } catch (e, s) {
-      await cleanUp();
       throw SSHNPError(
         "Device unknown, or username not shared\n"
         "hint: make sure the device shares username or set remote username manually",
@@ -381,25 +346,33 @@ abstract class SSHNPImpl implements SSHNP {
       counter++;
       if (counter == 100) {
         logger.warning('Timed out waiting for sshrvd response');
-        await cleanUp();
         throw ('Connection timeout to sshrvd $host service\nhint: make sure host is valid and online');
       }
     }
   }
 
+  @protected
   Future<void> sharePublicKeyWithSshnpdIfRequired() async {
-    if (publicKeyFileName.isEmpty) {
-      logger.info('Skipped sharing public key with sshnpd: none provided');
+    if (!params.sendSshPublicKey) {
+      logger.info(
+          'Skipped sharing public key with sshnpd: sendSshPublicKey=false');
       return;
     }
 
-    logger.info('Sharing public key with sshnpd: $publicKeyFileName');
+    if (identityKeyPair == null) {
+      logger.info(
+          'Skipped sharing public key with sshnpd: no identity key pair set');
+      return;
+    }
+
+    var publicKeyContents = (await identityKeyPair)!.publicKeyContents;
+
+    logger.info('Sharing public key with sshnpd');
     try {
-      String toSshPublicKey = await File(publicKeyFileName).readAsString();
-      if (!toSshPublicKey.startsWith('ssh-')) {
-        logger
-            .severe('$publicKeyFileName does not look like a public key file');
-        throw ('$publicKeyFileName does not look like a public key file');
+      logger.info('sharing ssh public key: $publicKeyContents');
+      if (!publicKeyContents.startsWith('ssh-')) {
+        logger.severe('SSH Public Key does not look like a public key file');
+        throw ('SSH Public Key does not look like a public key file');
       }
       AtKey sendOurPublicKeyToSshnpd = AtKey()
         ..key = 'sshpublickey'
@@ -408,9 +381,8 @@ abstract class SSHNPImpl implements SSHNP {
         ..metadata = (Metadata()
           ..ttr = -1
           ..ttl = 10000);
-      await notify(sendOurPublicKeyToSshnpd, toSshPublicKey);
+      await notify(sendOurPublicKeyToSshnpd, publicKeyContents);
     } catch (e, s) {
-      await cleanUp();
       throw SSHNPError(
         'Error opening or validating public key file or sending to remote atSign',
         error: e,
@@ -432,6 +404,13 @@ abstract class SSHNPImpl implements SSHNP {
       }
     }
     return true;
+  }
+
+  @protected
+  @mustCallSuper
+  FutureOr<void> cleanUp() {
+    logger.info('Cleaning up SSHNPImpl');
+    // This is an intentional no-op to allow overrides to safely call super.cleanUp()
   }
 
   Future<List<AtKey>> _getAtKeysRemote(
@@ -538,11 +517,5 @@ abstract class SSHNPImpl implements SSHNP {
       devices.difference(heartbeats),
       info,
     );
-  }
-
-  @override
-  FutureOr<void> cleanUp() {
-    logger.info('Cleaning up SSHNPImpl');
-    // This is an intentional no-op to allow overrides to safely call super.cleanUp()
   }
 }
