@@ -33,7 +33,7 @@ jobs:
       - run: mkdir sshnp
       - run: mkdir tarball
       - run: dart pub get
-      - run: dart run build_runner build
+      - run: dart run build_runner build --delete-conflicting-outputs
       - run: dart compile exe bin/activate_cli.dart -v -o sshnp/at_activate
       - run: dart compile exe bin/sshnp.dart -v -o sshnp/sshnp
       - run: dart compile exe bin/sshnpd.dart -v -o sshnp/sshnpd
