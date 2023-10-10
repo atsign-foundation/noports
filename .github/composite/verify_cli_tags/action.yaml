@@ -10,7 +10,6 @@ runs:
       if: startsWith(github.ref, 'refs/tags/v')
       working-directory: ./packages/sshnoports
       run: |
-        # check version.dart
         REF=${{ github.ref }}
         TAG=${REF:10}
         PUBSPEC_TAG="v$(egrep -o '^version: (.*)$' pubspec.yaml | cut -d':' -f2 | tr -d '[:space:]')"
