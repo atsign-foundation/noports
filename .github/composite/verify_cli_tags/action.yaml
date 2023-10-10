@@ -9,7 +9,7 @@ runs:
       shell: bash
       working-directory: ./packages/sshnoports
       run: |
-        DART_TAG="v$(egrep -o '^const String version = "(.*)";' lib/version.dart | cut -d'"' -f2)"
+        DART_TAG="v$(egrep -o '^const String version = "(.*)";' lib/src/version.dart | cut -d'"' -f2)"
         PUBSPEC_TAG="v$(egrep -o '^version: (.*)$' pubspec.yaml | cut -d':' -f2 | tr -d '[:space:]')"
         if [ "$PUBSPEC_TAG" != "$DART_TAG" ]; then
           echo "Tag $PUBSPEC_TAG does not match version in version.dart: $DART_TAG"
@@ -23,7 +23,7 @@ runs:
         # check version.dart
         REF=${{ github.ref }}
         TAG=${REF:10}
-        DART_TAG="v$(egrep -o '^const String version = "(.*)";' lib/version.dart | cut -d'"' -f2)"
+        DART_TAG="v$(egrep -o '^const String version = "(.*)";' lib/src/version.dart | cut -d'"' -f2)"
         if [ "$TAG" != "$DART_TAG" ]; then
           echo "Tag $TAG does not match version in version.dart: $DART_TAG"
           exit 1

@@ -1,11 +1,8 @@
 name: noports_core
 description: Core library code for sshnoports
-
-# NOTE: If you update the version number here, you
-# must also update it in version.dart
-version: 4.0.0
-
 homepage: https://docs.atsign.com/
+
+version: 4.0.0-dev.3
 
 environment:
   sdk: ">=3.0.0 <4.0.0"
@@ -28,3 +25,5 @@ dev_dependencies:
   lints: ^2.1.1
   mocktail: ^0.3.0
   test: ^1.24.4
+  build_runner: ^2.4.6
+  build_version: ^2.1.1
