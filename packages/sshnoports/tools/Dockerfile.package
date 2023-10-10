@@ -12,6 +12,7 @@ RUN set -eux; \
     mkdir sshnp; \
     mkdir tarball; \
     dart pub get; \
+    dart run build_runner build --delete-conflicting-outputs; \
     dart compile exe bin/activate_cli.dart -v -o sshnp/at_activate; \
     dart compile exe bin/sshnp.dart -v -o sshnp/sshnp; \
     dart compile exe bin/sshnpd.dart -v -o sshnp/sshnpd; \
