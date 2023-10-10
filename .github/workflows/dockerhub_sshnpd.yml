@@ -25,7 +25,6 @@ jobs:
 
       # verify tags
       - uses: ./.github/composite/verify_cli_tags
-      - uses: ./.github/composite/verify_core_tags
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@68827325e0b33c7199eb31dd4e31fbe9023e06e3 # v3.0.0
