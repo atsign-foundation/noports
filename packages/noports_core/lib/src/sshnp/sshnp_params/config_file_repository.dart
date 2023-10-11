@@ -17,9 +17,7 @@ class ConfigFileRepository {
   }
 
   static Future<String> fromProfileName(String profileName,
-      {String? directory,
-      bool replaceSpaces = true,
-      bool basenameOnly = false}) async {
+      {String? directory, bool replaceSpaces = true, bool basenameOnly = false}) async {
     var fileName = profileName;
     if (replaceSpaces) fileName = fileName.replaceAll(' ', '_');
     final basename = '$fileName.env';
@@ -56,27 +54,23 @@ class ConfigFileRepository {
     return profileNames;
   }
 
-  static Future<SSHNPParams> getParams(String profileName,
-      {String? directory}) async {
+  static Future<SSHNPParams> getParams(String profileName, {String? directory}) async {
     var fileName = await fromProfileName(profileName, directory: directory);
     return SSHNPParams.fromFile(fileName);
   }
 
-  static Future<File> putParams(SSHNPParams params,
-      {String? directory, bool overwrite = false}) async {
+  static Future<File> putParams(SSHNPParams params, {String? directory, bool overwrite = false}) async {
     if (params.profileName == null || params.profileName!.isEmpty) {
       throw Exception('profileName is null or empty');
     }
 
-    var fileName =
-        await fromProfileName(params.profileName!, directory: directory);
+    var fileName = await fromProfileName(params.profileName!, directory: directory);
     var file = File(fileName);
 
     var exists = await file.exists();
 
     if (exists && !overwrite) {
-      throw Exception(
-          'Failed to write config file: ${file.path} already exists');
+      throw Exception('Failed to write config file: ${file.path} already exists');
     }
 
     // FileMode.write will create the file if it does not exist
@@ -87,14 +81,12 @@ class ConfigFileRepository {
     );
   }
 
-  static Future<FileSystemEntity> deleteParams(SSHNPParams params,
-      {String? directory}) async {
+  static Future<FileSystemEntity> deleteParams(SSHNPParams params, {String? directory}) async {
     if (params.profileName == null || params.profileName!.isEmpty) {
       throw Exception('profileName is null or empty');
     }
 
-    var fileName =
-        await fromProfileName(params.profileName!, directory: directory);
+    var fileName = await fromProfileName(params.profileName!, directory: directory);
     var file = File(fileName);
 
     var exists = await file.exists();

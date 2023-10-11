@@ -1,14 +1,18 @@
 import 'package:at_client/at_client.dart';
+import 'package:meta/meta.dart';
 import 'package:noports_core/src/common/default_args.dart';
 import 'package:noports_core/src/sshnp/sshnp_params/sshnp_params.dart';
 
 class ConfigKeyRepository {
-  static const String _keyPrefix = 'profile_';
-  static const String _configNamespace = 'profiles.${DefaultArgs.namespace}';
+  @visibleForTesting
+  static const String keyPrefix = 'profile_';
+
+  @visibleForTesting
+  static const String configNamespace = 'profiles.${DefaultArgs.namespace}';
 
   static String toProfileName(AtKey atKey, {bool replaceSpaces = true}) {
     var profileName = atKey.key!.split('.').first;
-    profileName = profileName.replaceFirst(_keyPrefix, '');
+    profileName = profileName.replaceFirst(keyPrefix, '');
     if (replaceSpaces) profileName = profileName.replaceAll('_', ' ');
     return profileName;
   }
@@ -16,14 +20,14 @@ class ConfigKeyRepository {
   static AtKey fromProfileName(String profileName, {String sharedBy = '', bool replaceSpaces = true}) {
     if (replaceSpaces) profileName = profileName.replaceAll(' ', '_');
     return AtKey.self(
-      '$_keyPrefix$profileName',
-      namespace: _configNamespace,
+      '$keyPrefix$profileName',
+      namespace: configNamespace,
       sharedBy: sharedBy,
     ).build();
   }
 
   static Future<Iterable<String>> listProfiles(AtClient atClient) async {
-    var keys = await atClient.getAtKeys(regex: _configNamespace);
+    var keys = await atClient.getAtKeys(regex: configNamespace);
     return keys.map((e) => toProfileName(e));
   }
 
