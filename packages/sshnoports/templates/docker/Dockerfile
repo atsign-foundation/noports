@@ -9,7 +9,6 @@ RUN \
   mkdir -p ${BINARYDIR} ; \
   cd ${PACKAGEDIR}; \
   dart pub get ; \
-  dart pub update ; \
   dart run build_runner build --delete-conflicting-outputs ; \
   dart compile exe bin/sshnpd.dart -o ${BINARYDIR}/sshnpd ; \
   dart compile exe bin/sshrv.dart -o ${BINARYDIR}/sshrv
