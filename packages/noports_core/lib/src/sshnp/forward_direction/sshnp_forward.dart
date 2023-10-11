@@ -19,6 +19,7 @@ abstract class SSHNPForward extends SSHNPCore {
 
   @override
   int get sshrvdPort => _sshrvdPort;
+
   @override
   set sshrvdPort(int? port) => _sshrvdPort = port!;
 
@@ -32,9 +33,7 @@ abstract class SSHNPForward extends SSHNPCore {
         ..namespace = this.namespace
         ..sharedBy = clientAtSign
         ..sharedWith = sshnpdAtSign
-        ..metadata = (Metadata()
-          ..ttr = -1
-          ..ttl = 10000),
+        ..metadata = (Metadata()..ttl = 10000),
       signAndWrapAndJsonEncode(
         atClient,
         {

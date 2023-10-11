@@ -151,7 +151,6 @@ class SSHNPDImpl implements SSHNPD {
       var metaData = Metadata()
         ..isPublic = false
         ..isEncrypted = true
-        ..ttr = -1
         ..namespaceAware = true;
 
       var atKey = AtKey()
@@ -293,7 +292,6 @@ class SSHNPDImpl implements SSHNPD {
       ..metadata = (Metadata()
         ..isPublic = false
         ..isEncrypted = true
-        ..ttr = -1
         ..ttl = 10000 // allow only ten seconds before this record expires
         ..namespaceAware = true);
 
@@ -625,7 +623,6 @@ class SSHNPDImpl implements SSHNPD {
         ..isPublic = false
         ..isEncrypted = true
         ..namespaceAware = true
-        ..ttr = -1
         ..ttl = 10000);
     return atKey;
   }
@@ -859,7 +856,6 @@ class SSHNPDImpl implements SSHNPD {
     var metaData = Metadata()
       ..isPublic = false
       ..isEncrypted = true
-      ..ttr = -1
       ..ttl = ttl
       ..updatedAt = DateTime.now()
       ..namespaceAware = true;
