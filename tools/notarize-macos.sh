@@ -77,6 +77,3 @@ else
   --password "$PASSWORD" \
   --wait
 fi
-
-
-
