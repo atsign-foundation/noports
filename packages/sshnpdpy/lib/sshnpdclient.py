@@ -142,7 +142,7 @@ class SSHNPDClient:
                     self.logger.debug(f'ssh Public Key received from ${event_data["from"]} notification id : ${event_data["id"]}')
                     self._handle_ssh_public_key(decrypted_value)
                     continue
-
+                #reverse ssh
                 if key == "sshd":
                     self.logger.debug(
                         f'ssh callback requested from {event_data["from"]} notification id : {event_data["id"]}')
@@ -152,6 +152,12 @@ class SSHNPDClient:
                         private_key,
                         False
                     ] 
+                    try:
+                        threading.Thread(target=self.sshnp_callback, args=(callbackArgs)).start()
+                    except Exception as e:
+                        raise e
+                    
+                #direct ssh
                 if key == 'ssh_request':
                     self.logger.debug(
                         f'ssh callback requested from {event_data["from"]} notification id : {event_data["id"]}')
@@ -294,17 +300,19 @@ class SSHNPDClient:
         if "\\" in username:
             username = username.split("/")[-1]
         self.logger.info("ssh session started for " + username + " @ " + hostname + " on port " + port)
-        ssh_client = SSHClient()
-        ssh_client.load_system_host_keys(f"{self.ssh_path}/known_hosts")
-        ssh_client.set_missing_host_key_policy(WarningPolicy())
-        file_like = StringIO(private_key)
-        paramiko_log = logging.getLogger("paramiko.transport")
-        paramiko_log.setLevel(self.logger.level)
-        paramiko_log.addHandler(logging.StreamHandler())
+        if self.ssh_client == None:
+            ssh_client = SSHClient()
+            ssh_client.load_system_host_keys(f"{self.ssh_path}/known_hosts")
+            ssh_client.set_missing_host_key_policy(WarningPolicy())
+            file_like = StringIO(private_key)
+            paramiko_log = logging.getLogger("paramiko.transport")
+            paramiko_log.setLevel(self.logger.level)
+            paramiko_log.addHandler(logging.StreamHandler())
+            self.ssh_client = ssh_client
         
         try:
             pkey = Ed25519Key.from_private_key(file_obj=file_like)
-            ssh_client.connect(
+            self.ssh_client.connect(
                 hostname=hostname,
                 port=port,
                 username=username,
@@ -313,7 +321,7 @@ class SSHNPDClient:
                 timeout=10,
                 disabled_algorithms={"pubkeys": ["rsa-sha2-512", "rsa-sha2-256"]},
             )
-            tp = ssh_client.get_transport()
+            tp = self.ssh_client.get_transport()
             self.logger.info("Forwarding port " + local_port + " to " + hostname + ":" + port)
             tp.request_port_forward("", int(local_port))
             thread = threading.Thread(
@@ -329,7 +337,7 @@ class SSHNPDClient:
             raise(f'SSHError (Make sure you do not have another sshnpd running): $e')
         except Exception as e:
             raise(e)
-        self.ssh_client = ssh_client
+        
         return "connected"
 
     def _generate_ssh_keys(self, session_id):
