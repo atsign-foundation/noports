@@ -12,7 +12,6 @@ jobs:
     steps:
       - uses: actions/checkout@8ade135a41bc03ea155e62e844d188df1ea18608 # v4.1.0
       - uses: ./.github/composite/verify_cli_tags
-      - uses: ./.github/composite/verify_core_tags
   x64_build:
     needs: verify_tags
     runs-on: ${{ matrix.os }}
@@ -34,6 +33,7 @@ jobs:
       - run: mkdir sshnp
       - run: mkdir tarball
       - run: dart pub get
+      - run: dart run build_runner build --delete-conflicting-outputs
       - run: dart compile exe bin/activate_cli.dart -v -o sshnp/at_activate
       - run: dart compile exe bin/sshnp.dart -v -o sshnp/sshnp
       - run: dart compile exe bin/sshnpd.dart -v -o sshnp/sshnpd

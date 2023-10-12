@@ -7,10 +7,11 @@ COPY . .
 RUN \
   set -eux ; \
   mkdir -p ${BINARYDIR} ; \
-  dart pub get -C ${PACKAGEDIR}; \
-  dart pub update -C ${PACKAGEDIR}; \
-  dart compile exe ${PACKAGEDIR}/bin/sshnpd.dart -o ${BINARYDIR}/sshnpd ; \
-  dart compile exe ${PACKAGEDIR}/bin/sshrv.dart -o ${BINARYDIR}/sshrv
+  cd ${PACKAGEDIR}; \
+  dart pub get ; \
+  dart run build_runner build --delete-conflicting-outputs ; \
+  dart compile exe bin/sshnpd.dart -o ${BINARYDIR}/sshnpd ; \
+  dart compile exe bin/sshrv.dart -o ${BINARYDIR}/sshrv
 
 # Second stage of build FROM debian-slim
 FROM debian:stable-20230919-slim@sha256:149e944a6f4855f9738baf4ddd79fc2f218e6440218223fa9017aebc1e45f1f5

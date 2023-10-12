@@ -10,7 +10,7 @@ import 'package:meta/meta.dart';
 import 'package:noports_core/src/sshrv/sshrv.dart';
 import 'package:noports_core/sshnpd.dart';
 import 'package:noports_core/utils.dart';
-import 'package:noports_core/version.dart';
+import 'package:noports_core/src/version.dart';
 import 'package:uuid/uuid.dart';
 
 @protected
@@ -303,7 +303,7 @@ class SSHNPDImpl implements SSHNPD {
         atKey: atKey,
         value: jsonEncode({
           'devicename': device,
-          'version': version,
+          'version': packageVersion,
         }),
       ),
     );
@@ -891,7 +891,7 @@ class SSHNPDImpl implements SSHNPD {
         atKey,
         jsonEncode({
           'devicename': device,
-          'version': version,
+          'version': packageVersion,
         }),
         putRequestOptions: PutRequestOptions()..useRemoteAtServer = true,
       );

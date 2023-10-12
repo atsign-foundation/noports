@@ -1,4 +1,4 @@
-FROM atsigncompany/buildimage:3.0.7_3.1.0-262.3.beta@sha256:5dcd09ca4f95b1d65ba9fb299d1d3ac2bda3a71cd83aedcfc2f16d3e937da235 AS build
+FROM atsigncompany/buildimage:3.1.3_3.2.0-210.2.beta@sha256:38fabc1bb15a57a08ecc0484b0309c6a7cf689e58c1b04499750a69ae2d57d55 AS build
 # Using atsigncompany/buildimage until official dart image has RISC-V support
 WORKDIR /sshnoports
 COPY . .
@@ -12,6 +12,7 @@ RUN set -eux; \
     mkdir sshnp; \
     mkdir tarball; \
     dart pub get; \
+    dart run build_runner build --delete-conflicting-outputs; \
     dart compile exe bin/activate_cli.dart -v -o sshnp/at_activate; \
     dart compile exe bin/sshnp.dart -v -o sshnp/sshnp; \
     dart compile exe bin/sshnpd.dart -v -o sshnp/sshnpd; \
