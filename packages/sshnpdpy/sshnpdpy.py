@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+import argparse
 from io import StringIO
 import logging
 import os, threading, getpass
@@ -9,7 +11,6 @@ from threading import Event
 from paramiko import SSHClient, SSHException, WarningPolicy
 from paramiko.ed25519key import Ed25519Key
 
-
 from socket import socket
 from select import select
 
@@ -19,15 +20,14 @@ from at_client.util import EncryptionUtil
 from at_client.common.keys import AtKey, Metadata, SharedKey
 from at_client.connections.notification.atevents import AtEvent, AtEventType
 
-
 class SSHNPDClient:
     #Current opened threads
     threads = []
-    
-    def __init__(self, atsign, manager_atsign, device, username=None, verbose=False ):  
+
+    def __init__(self, atsign, manager_atsign, device, username=None, verbose=False ):
         #Threading Stuff
         self.closing = Event()
-        
+
         #AtClient Stuff
         self.atsign = atsign
         self.manager_atsign = manager_atsign
@@ -37,12 +37,12 @@ class SSHNPDClient:
         self.ssh_client = None
         self.device_namespace = f".{device}.sshnp"
         self.authenticated = False
-        
+
         #Logger
         self.logger = logging.getLogger("sshnpd")
         self.logger.setLevel((logging.DEBUG if verbose else logging.INFO))
         self.logger.addHandler(logging.StreamHandler())
-        
+
         #Directory Stuff
         home_dir = ""
         if os.name == "posix":  # Unix-based systems (Linux, macOS)
@@ -52,7 +52,7 @@ class SSHNPDClient:
         else:
             raise NotImplementedError("Unsupported operating system")
         self.ssh_path = f"{home_dir}/.ssh"
-        
+
     def start(self):
         if self.username:
             self._set_username()
@@ -61,15 +61,15 @@ class SSHNPDClient:
         event_thread.start()
         SSHNPDClient.threads.append(event_thread)
         self._handle_notifications(self.at_client.queue, self.sshnp_callback)
-        
+
     def is_alive(self):
        if not self.authenticated:
            return True
        elif len(SSHNPDClient.threads) >= 2 and self.ssh_client.get_transport().is_active():
-           return True    
-       else: 
+           return True
+       else:
            return False
-    
+
     def join(self):
         self.closing.set()
         self.ssh_client.close()
@@ -77,17 +77,17 @@ class SSHNPDClient:
         for thread in SSHNPDClient.threads:
             thread.join()
         SSHNPDClient.threads.clear()
-            
-            
+
+
     def _set_username(self):
         username = getpass.getuser()
         username_key = SharedKey(
             "username", AtSign(self.atsign), AtSign(self.manager_atsign))
         self.at_client.put(username_key, username)
         self.username = username
-        
 
-    
+
+
     def _handle_notifications(self, queue: Queue, callback):
         private_key = ""
         sshPublicKey = ""
@@ -99,7 +99,7 @@ class SSHNPDClient:
                 event_data = at_event.event_data
 
                 # TODO: There's defintely a better way to do this
-                
+
                 if event_type == AtEventType.UPDATE_NOTIFICATION:
                     queue.put(at_event)
                     sleep(1)
@@ -146,7 +146,7 @@ class SSHNPDClient:
             raise e
 
     #Running in a thread
-    def _handle_events(self, queue: Queue):  
+    def _handle_events(self, queue: Queue):
         while self.closing:
             try:
                 at_event = queue.get(block=False)
@@ -255,7 +255,7 @@ class SSHNPDClient:
             chan = tp.accept(1000)
             if chan is None:
                 continue
-            
+
             thread = threading.Thread(
                 target=self._forward_socket_handler,
                 args=(chan, dest),
@@ -299,7 +299,7 @@ class SSHNPDClient:
             )
             thread.start()
             SSHNPDClient.threads.append(thread)
-        
+
         #I'll end up doing more with this I think
         except  SSHException as e:
             raise(f'SSHError (Make sure you do not have another sshnpd running): $e')
@@ -332,11 +332,42 @@ class SSHNPDClient:
             at_key.shared_with = AtSign(self.manager_atsign)
             at_key.metadata = metadata
             at_key.namespace =self.device_namespace
-        
+
         ssh_auth = self._reverse_ssh_client(ssh_list, private_key)
-        
+
         if ssh_auth:
             response = self.at_client.notify(at_key, "connected")
             self.logger.info("sent ssh notification to " + at_key.shared_with.to_string())
             self.authenticated = True
+
+def main():
+    parser = argparse.ArgumentParser("sshnpd")
+    requiredNamed = parser.add_argument_group('required named arguments')
+    requiredNamed.add_argument("-m", "--manager", dest="manager_atsign", type=str, help="Client Atsign (sshnp's atsign)", required=True)
+    requiredNamed.add_argument("-a", "--atsign", dest="atsign", type=str, help="Device Atsign (sshnpd's atsign)", required=True)
+    requiredNamed.add_argument("-d", "--device", dest="device", type=str, help="Device Name", required=True)
+    optional = parser.add_argument_group('optional arguments')
+    optional.add_argument("-u",  action='store_true', dest="username",  help="Username", default="default")
+    optional.add_argument("-v", action='store_true', dest="verbose", help="Verbose")
+    
+    
+    args = parser.parse_args()
+
+    sshnpd = SSHNPDClient(args.atsign, args.manager_atsign, args.device, args.username, args.verbose)
+    
+    try:
+        sshnpd.start()
+        while len(SSHNPDClient.threads) > 0:
+            if not sshnpd.is_alive():
+                sshnpd.join()
+            else:
+                sleep(10)
+        
             
+    except Exception as e:
+        print(e)
+        sshnpd.join()
+
+
+if __name__ == "__main__":
+    main()

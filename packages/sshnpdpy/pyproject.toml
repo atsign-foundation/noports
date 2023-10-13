@@ -1,9 +1,12 @@
 [tool.poetry]
 name = "sshnpdpy"
-version = "0.1.0"
-description = ""
-authors = [""]
+version = "0.3.0"
+description = "Python implementation of Atsign SSH No Ports daemon"
+authors = ["Xavier Lin <@Xlin123>"]
 readme = "README.md"
+
+[tool.poetry.scripts]
+sshnpdpy = 'sshnpdpy:main'
 
 [tool.poetry.dependencies]
 python = "^3.10"
