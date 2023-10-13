@@ -34,5 +34,6 @@ build/
 # Python
 poetry.lock
 __pycache__
+dist/
 
 .env
