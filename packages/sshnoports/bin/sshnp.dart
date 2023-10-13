@@ -10,7 +10,7 @@ import 'package:noports_core/sshnp.dart';
 import 'package:noports_core/sshnp_params.dart' show ParserType, SSHNPArg;
 import 'package:noports_core/utils.dart';
 import 'package:sshnoports/create_at_client_cli.dart';
-import 'package:sshnoports/version.dart';
+import 'package:sshnoports/print_version.dart';
 
 void main(List<String> args) async {
   AtSignLogger.root_level = 'SHOUT';

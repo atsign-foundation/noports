@@ -1,4 +1,4 @@
-FROM dart:3.1.3@sha256:97cc20588eb7171f611606fff26bc04fb2aec5e68f7341060252a409bf7a86ce AS buildimage
+FROM dart:3.1.3@sha256:1521c3d4e9e077a306e6af0857f49dd9465333cd0d140677c99a73c81582a63f AS buildimage
 ENV PACKAGEDIR=packages/sshnoports
 ENV BINARYDIR=/usr/local/at
 SHELL ["/bin/bash", "-c"]
@@ -7,13 +7,14 @@ COPY . .
 RUN \
   set -eux ; \
   mkdir -p ${BINARYDIR} ; \
-  dart pub get -C ${PACKAGEDIR}; \
-  dart pub update -C ${PACKAGEDIR}; \
-  dart compile exe ${PACKAGEDIR}/bin/sshnpd.dart -o ${BINARYDIR}/sshnpd ; \
-  dart compile exe ${PACKAGEDIR}/bin/sshrv.dart -o ${BINARYDIR}/sshrv
+  cd ${PACKAGEDIR}; \
+  dart pub get ; \
+  dart run build_runner build --delete-conflicting-outputs ; \
+  dart compile exe bin/sshnpd.dart -o ${BINARYDIR}/sshnpd ; \
+  dart compile exe bin/sshrv.dart -o ${BINARYDIR}/sshrv
 
 # Second stage of build FROM debian-slim
-FROM debian:stable-20230919-slim@sha256:149e944a6f4855f9738baf4ddd79fc2f218e6440218223fa9017aebc1e45f1f5
+FROM debian:stable-20231009-slim@sha256:8cfbea7c925801b678943e59e3ae6fc5b925e8bfe0243f4e724e180edb5aabcd
 ENV USER=atsign
 ENV HOMEDIR=/${USER}
 ENV BINARYDIR=/usr/local/at

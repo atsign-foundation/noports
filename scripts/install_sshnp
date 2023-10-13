@@ -337,7 +337,6 @@ unpack_archive() {
       tar -zxf "$HOME_PATH/.atsign/temp/$BINARY_NAME.$EXT" -C "$HOME_PATH/.atsign/temp/";
       ;;
   esac
-  mv "$HOME_PATH/.atsign/temp/sshnp" "$HOME_PATH/.atsign/temp/$BINARY_NAME"; # Rename the extracted folder
 }
 
 # Get the main binaries (branches based on the source: download/local/repo)

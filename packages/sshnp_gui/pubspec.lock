@@ -297,6 +297,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "3.0.3"
+  cryptography:
+    dependency: transitive
+    description:
+      name: cryptography
+      sha256: d146b76d33d94548cf035233fbc2f4338c1242fa119013bead807d033fc4ae05
+      url: "https://pub.dev"
+    source: hosted
+    version: "2.7.0"
   crypton:
     dependency: transitive
     description:
@@ -763,7 +771,15 @@ packages:
       path: "../noports_core"
       relative: true
     source: path
-    version: "4.0.0"
+    version: "4.0.0-dev.3"
+  openssh_ed25519:
+    dependency: transitive
+    description:
+      name: openssh_ed25519
+      sha256: eb65bfb9158c05c294d653f639bb9b4b18aca6dfd010986e4f325e439a93655f
+      url: "https://pub.dev"
+    source: hosted
+    version: "1.1.0"
   package_config:
     dependency: transitive
     description:
@@ -964,6 +980,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.5.1"
+  posix:
+    dependency: transitive
+    description:
+      name: posix
+      sha256: "3ad26924254fd2354b0e2b95fc8b45ac392ad87434f8e64807b3a1ac077f2256"
+      url: "https://pub.dev"
+    source: hosted
+    version: "5.0.0"
   process:
     dependency: transitive
     description:
@@ -1154,14 +1178,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.10.0"
-  ssh_key:
-    dependency: transitive
-    description:
-      name: ssh_key
-      sha256: ded1af84f2c34748c000101940e7b9a63a077c9a136aaab85dbf54a6e9d19ec8
-      url: "https://pub.dev"
-    source: hosted
-    version: "0.8.0"
   stack_trace:
     dependency: transitive
     description:
@@ -1226,14 +1242,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "0.5.3"
-  tuple:
-    dependency: transitive
-    description:
-      name: tuple
-      sha256: a97ce2013f240b2f3807bcbaf218765b6f301c3eff91092bcfa23a039e7dd151
-      url: "https://pub.dev"
-    source: hosted
-    version: "2.0.2"
   tutorial_coach_mark:
     dependency: transitive
     description:

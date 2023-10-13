@@ -24,8 +24,7 @@ jobs:
         uses: actions/checkout@8ade135a41bc03ea155e62e844d188df1ea18608 # v4.1.0
 
       # verify tags
-      - uses: ./.github/workflows/verify_cli_tags
-      - uses: ./.github/workflows/verify_core_tags
+      - uses: ./.github/composite/verify_cli_tags
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@68827325e0b33c7199eb31dd4e31fbe9023e06e3 # v3.0.0
