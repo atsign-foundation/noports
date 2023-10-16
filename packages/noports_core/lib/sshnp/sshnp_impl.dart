@@ -223,15 +223,11 @@ class SSHNPImpl implements SSHNP {
     }
   }
 
-  static Future<SSHNP> fromCommandLineArgs(List<String> args) {
-    var params = SSHNPParams.fromPartial(SSHNPPartialParams.fromArgs(args));
-    // This should never need sshrvGenerator to be set other than default, hence not passed in
-    return fromParams(params);
-  }
-
   static Future<SSHNP> fromParams(
     SSHNPParams p, {
     AtClient? atClient,
+    FutureOr<AtClient> Function(SSHNPParams, String)? atClientGenerator,
+    void Function(Object, StackTrace)? usageCallback,
     SSHRVGenerator sshrvGenerator = SSHRV.localBinary,
   }) async {
     try {
@@ -246,17 +242,16 @@ class SSHNPImpl implements SSHNP {
         throw ArgumentError('Option host is mandatory.');
       }
 
-      if (atClient != null) {
-        if (p.clientAtSign != atClient.getCurrentAtSign()) {
-          throw ArgumentError(
-              'Option from must match the current atSign of the AtClient');
-        }
-      } else {
-        // Check atKeyFile selected exists
-        if (!await fileExists(p.atKeysFilePath)) {
-          throw ArgumentError(
-              '\nUnable to find .atKeys file : ${p.atKeysFilePath}');
-        }
+      if (atClient == null && atClientGenerator == null) {
+        throw StateError('atClient adn atClientGenerator are both null');
+      }
+
+      String sessionId = Uuid().v4();
+      atClient ??= await atClientGenerator!(p, sessionId);
+
+      if (p.clientAtSign != atClient.getCurrentAtSign()) {
+        throw ArgumentError(
+            'Option from must match the current atSign of the AtClient');
       }
 
       // Check to see if the port number is in range for TCP ports
@@ -265,21 +260,10 @@ class SSHNPImpl implements SSHNP {
             '\nInvalid port number for sshd (1-65535) : ${p.localSshdPort}');
       }
 
-      String sessionId = Uuid().v4();
-
       AtSignLogger.root_level = 'SHOUT';
       if (p.verbose) {
         AtSignLogger.root_level = 'INFO';
       }
-
-      atClient ??= await createAtClientCli(
-        homeDirectory: p.homeDirectory,
-        atsign: p.clientAtSign!,
-        namespace: '${p.device}.sshnp',
-        pathExtension: sessionId,
-        atKeysFilePath: p.atKeysFilePath,
-        rootDomain: p.rootDomain,
-      );
 
       var sshnp = SSHNP(
         atClient: atClient,
@@ -311,9 +295,7 @@ class SSHNPImpl implements SSHNP {
 
       return sshnp;
     } catch (e, s) {
-      printVersion();
-      stdout.writeln(SSHNPPartialParams.parser.usage);
-      stderr.writeln('\n$e');
+      usageCallback?.call(e, s);
       if (e is SSHNPFailed) {
         rethrow;
       }

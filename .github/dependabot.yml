@@ -26,3 +26,7 @@ updates:
     directory: "/packages/sshnoports_sdk_python/"
     schedule:
       interval: "daily"
+  - package-ecosystem: "pip"
+    directory: "/packages/sshnpdpy/"
+    schedule:
+      interval: "daily"

@@ -4,7 +4,7 @@ import 'package:at_utils/at_utils.dart';
 import 'package:meta/meta.dart';
 import 'package:socket_connector/socket_connector.dart';
 
-import 'package:sshnoports/common/defaults.dart' as defaults;
+import 'package:noports_core/common/defaults.dart' as defaults;
 
 part 'sshrv_impl.dart';
 

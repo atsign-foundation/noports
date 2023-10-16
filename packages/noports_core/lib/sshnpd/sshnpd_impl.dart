@@ -68,7 +68,10 @@ class SSHNPDImpl implements SSHNPD {
     logger.logger.level = Level.SHOUT;
   }
 
-  static Future<SSHNPD> fromCommandLineArgs(List<String> args) async {
+  static Future<SSHNPD> fromCommandLineArgs(List<String> args,
+      {AtClient? atClient,
+      FutureOr<AtClient> Function(SSHNPDParams)? atClientGenerator,
+      void Function(Object, StackTrace)? usageCallback}) async {
     try {
       var p = SSHNPDParams.fromArgs(args);
 
@@ -82,12 +85,11 @@ class SSHNPDImpl implements SSHNPD {
         AtSignLogger.root_level = 'INFO';
       }
 
-      AtClient atClient = await createAtClientCli(
-        homeDirectory: p.homeDirectory,
-        atsign: p.deviceAtsign,
-        atKeysFilePath: p.atKeysFilePath,
-        rootDomain: p.rootDomain,
-      );
+       if (atClient == null && atClientGenerator == null) {
+        throw StateError('atClient and atClientGenerator are both null');
+      }
+
+      atClient ??= await atClientGenerator!(p);
 
       var sshnpd = SSHNPD(
         atClient: atClient,
@@ -108,10 +110,8 @@ class SSHNPDImpl implements SSHNPD {
       }
 
       return sshnpd;
-    } catch (e) {
-      printVersion();
-      stdout.writeln(SSHNPDParams.parser.usage);
-      stderr.writeln('\n$e');
+    } catch (e, s) {
+      usageCallback?.call(e, s);
       rethrow;
     }
   }

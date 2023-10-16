@@ -1,7 +1,9 @@
 import 'dart:async';
 import 'dart:io';
 import 'package:at_utils/at_logger.dart';
-import 'package:sshnoports/sshnpd/sshnpd.dart';
+import 'package:noports_core/sshnpd/sshnpd.dart';
+import 'package:sshnoports/create_at_client_cli.dart';
+import 'package:sshnoports/version.dart';
 
 void main(List<String> args) async {
   AtSignLogger.root_level = 'SHOUT';
@@ -9,7 +11,20 @@ void main(List<String> args) async {
   late final SSHNPD sshnpd;
 
   try {
-    sshnpd = await SSHNPD.fromCommandLineArgs(args);
+    sshnpd = await SSHNPD.fromCommandLineArgs(
+      args,
+      atClientGenerator: (SSHNPDParams p) => createAtClientCli(
+        homeDirectory: p.homeDirectory,
+        atsign: p.deviceAtsign,
+        atKeysFilePath: p.atKeysFilePath,
+        rootDomain: p.rootDomain,
+      ),
+      usageCallback: (e, s) {
+        printVersion();
+        stdout.writeln(SSHNPDParams.parser.usage);
+        stderr.writeln('\n$e');
+      },
+    );
   } on ArgumentError catch (_) {
     exit(1);
   }

@@ -1,7 +1,7 @@
 import 'package:args/args.dart';
-import 'package:sshnoports/common/supported_ssh_clients.dart';
+import 'package:noports_core/common/supported_ssh_clients.dart';
 
-import 'package:sshnoports/common/defaults.dart';
+import 'package:noports_core/common/defaults.dart';
 import 'sshnp.dart';
 
 enum ArgFormat {

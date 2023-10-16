@@ -7,10 +7,9 @@ import 'package:at_client/at_client.dart';
 import 'package:at_utils/at_logger.dart';
 import 'package:logging/logging.dart';
 import 'package:meta/meta.dart';
-import 'package:sshnoports/common/create_at_client_cli.dart';
-import 'package:sshnoports/common/utils.dart';
-import 'package:sshnoports/sshrvd/socket_connector.dart';
-import 'package:sshnoports/version.dart';
+
+import 'package:noports_core/common/utils.dart';
+import 'package:noports_core/sshrvd/socket_connector.dart';
 
 part 'sshrvd_impl.dart';
 part 'sshrvd_params.dart';
@@ -52,8 +51,16 @@ abstract class SSHRVD {
     );
   }
 
-  static Future<SSHRVD> fromCommandLineArgs(List<String> args) async {
-    return SSHRVDImpl.fromCommandLineArgs(args);
+  static Future<SSHRVD> fromCommandLineArgs(List<String> args,
+      {AtClient? atClient,
+      FutureOr<AtClient> Function(SSHRVDParams)? atClientGenerator,
+      void Function(Object, StackTrace)? usageCallback}) async {
+    return SSHRVDImpl.fromCommandLineArgs(
+      args,
+      atClient: atClient,
+      atClientGenerator: atClientGenerator,
+      usageCallback: usageCallback
+    );
   }
 
   Future<void> init();

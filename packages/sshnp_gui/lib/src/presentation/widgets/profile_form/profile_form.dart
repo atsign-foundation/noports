@@ -1,9 +1,8 @@
-import 'package:at_client_mobile/at_client_mobile.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:sshnoports/sshnp/sshnp.dart';
+import 'package:noports_core/sshnp/sshnp.dart';
 import 'package:sshnp_gui/src/controllers/navigation_rail_controller.dart';
 import 'package:sshnp_gui/src/controllers/config_controller.dart';
 import 'package:sshnp_gui/src/presentation/widgets/profile_form/custom_text_form_field.dart';
@@ -33,9 +32,9 @@ class _ProfileFormState extends ConsumerState<ProfileForm> {
       final controller = ref.read(configFamilyController(
               newConfig.profileName ?? oldConfig.profileName!)
           .notifier);
-      bool rename = newConfig.profileName.isNotNull &&
+      bool rename = newConfig.profileName != null &&
           newConfig.profileName!.isNotEmpty &&
-          oldConfig.profileName.isNotNull &&
+          oldConfig.profileName != null &&
           oldConfig.profileName!.isNotEmpty &&
           newConfig.profileName != oldConfig.profileName;
       SSHNPParams config = SSHNPParams.merge(oldConfig, newConfig);

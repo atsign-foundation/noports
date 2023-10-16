@@ -11,19 +11,17 @@ import 'package:dartssh2/dartssh2.dart';
 import 'package:logging/logging.dart';
 import 'package:meta/meta.dart';
 import 'package:path/path.dart' as path;
-import 'package:sshnoports/common/create_at_client_cli.dart';
-import 'package:sshnoports/common/supported_ssh_clients.dart';
-import 'package:sshnoports/common/utils.dart';
-import 'package:sshnoports/sshnp/config_repository/config_file_repository.dart';
-import 'package:sshnoports/sshnp/sshnp_arg.dart';
-import 'package:sshnoports/sshnp/utils.dart';
-import 'package:sshnoports/sshnpd/sshnpd.dart';
-import 'package:sshnoports/sshrv/sshrv.dart';
-import 'package:sshnoports/sshrvd/sshrvd.dart';
-import 'package:sshnoports/version.dart';
+import 'package:noports_core/common/supported_ssh_clients.dart';
+import 'package:noports_core/common/utils.dart';
+import 'package:noports_core/sshnp/config_repository/config_file_repository.dart';
+import 'package:noports_core/sshnp/sshnp_arg.dart';
+import 'package:noports_core/sshnp/utils.dart';
+import 'package:noports_core/sshnpd/sshnpd.dart';
+import 'package:noports_core/sshrv/sshrv.dart';
+import 'package:noports_core/sshrvd/sshrvd.dart';
 import 'package:uuid/uuid.dart';
 
-import 'package:sshnoports/common/defaults.dart' as defaults;
+import 'package:noports_core/common/defaults.dart' as defaults;
 
 part 'sshnp_impl.dart';
 part 'sshnp_params.dart';
@@ -229,18 +227,18 @@ abstract class SSHNP {
     );
   }
 
-  static Future<SSHNP> fromCommandLineArgs(List<String> args) async {
-    return SSHNPImpl.fromCommandLineArgs(args);
-  }
-
   static Future<SSHNP> fromParams(
     SSHNPParams p, {
     AtClient? atClient,
+    FutureOr<AtClient> Function(SSHNPParams, String)? atClientGenerator,
+    void Function(Object, StackTrace)? usageCallback,
     SSHRVGenerator sshrvGenerator = SSHRV.localBinary,
   }) {
     return SSHNPImpl.fromParams(
       p,
       atClient: atClient,
+      atClientGenerator: atClientGenerator,
+      usageCallback: usageCallback,
       sshrvGenerator: sshrvGenerator,
     );
   }
@@ -269,5 +267,6 @@ abstract class SSHNP {
   /// Returns two Iterable<String>:
   /// - Iterable<String> of atSigns of sshnpd that responded
   /// - Iterable<String> of atSigns of sshnpd that did not respond
-  Future<(Iterable<String>, Iterable<String>, Map<String, dynamic>)> listDevices();
+  Future<(Iterable<String>, Iterable<String>, Map<String, dynamic>)>
+      listDevices();
 }

@@ -22,7 +22,7 @@ jobs:
             output-name: sshnp-macos-x64
 
     steps:
-      - uses: actions/checkout@3df4ab11eba7bda6032a0b82a6bb43b11571feac # v4.0.0
+      - uses: actions/checkout@8ade135a41bc03ea155e62e844d188df1ea18608 # v4.1.0
 
       - name: Ensure version matches tag
         if: startsWith(github.ref, 'refs/tags/v')
@@ -31,13 +31,13 @@ jobs:
           # check version.dart
           REF=${{ github.ref }}
           TAG=${REF:10}
-          DART_TAG="v$(grep -Po '^const String version = "(.*)";' lib/version.dart | cut -d'"' -f2)"
+          DART_TAG="v$(egrep -o '^const String version = "(.*)";' lib/version.dart | cut -d'"' -f2)"
           if [ "$TAG" != "$DART_TAG" ]; then
             echo "Tag $TAG does not match version in version.dart: $DART_TAG"
             exit 1
           fi
 
-      - uses: dart-lang/setup-dart@d6a63dab3335f427404425de0fbfed4686d93c4f # v1.5.0
+      - uses: dart-lang/setup-dart@8a4b97ea2017cc079571daec46542f76189836b1 # v1.5.1
       - run: mkdir sshnp
       - run: mkdir tarball
       - run: dart pub get
@@ -71,7 +71,7 @@ jobs:
           - platform: linux/riscv64
             output-name: sshnp-linux-riscv64
     steps:
-      - uses: actions/checkout@3df4ab11eba7bda6032a0b82a6bb43b11571feac # v4.0.0
+      - uses: actions/checkout@8ade135a41bc03ea155e62e844d188df1ea18608 # v4.1.0
 
       - name: Ensure version matches tag
         if: startsWith(github.ref, 'refs/tags/v')
