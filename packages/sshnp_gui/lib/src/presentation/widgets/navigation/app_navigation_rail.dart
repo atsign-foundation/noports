@@ -4,6 +4,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
 import 'package:sshnp_gui/src/controllers/navigation_controller.dart';
 import 'package:sshnp_gui/src/controllers/navigation_rail_controller.dart';
+import 'package:sshnp_gui/src/utility/constants.dart';
 
 class AppNavigationRail extends ConsumerWidget {
   const AppNavigationRail({super.key});
@@ -25,31 +26,45 @@ class AppNavigationRail extends ConsumerWidget {
     final controller = ref.watch(navigationRailController.notifier);
     final currentIndex = controller.getCurrentIndex();
 
-    return SingleChildScrollView(
-      child: ConstrainedBox(
-        constraints: BoxConstraints(
-          minHeight: MediaQuery.of(context).size.height,
+    return Column(
+      children: [
+        Container(
+          height: 12,
+          width: 80,
+          color: kPrimaryColor,
         ),
-        child: IntrinsicHeight(
-          child: NavigationRail(
-            destinations: controller.routes
-                .map(
-                  (AppRoute route) => NavigationRailDestination(
-                    icon: (controller.isCurrentIndex(route))
-                        ? activatedIcons[controller.indexOf(route)]
-                        : deactivatedIcons[controller.indexOf(route)],
-                    label: const Text(''),
-                  ),
-                )
-                .toList(),
-            selectedIndex: currentIndex,
-            onDestinationSelected: (int selectedIndex) {
-              controller.setIndex(selectedIndex);
-              context.goNamed(controller.getCurrentRoute().name);
-            },
+        Container(
+          color: kPrimaryColor,
+          width: 80,
+          child: SvgPicture.asset('assets/images/logo.svg'),
+        ),
+        SingleChildScrollView(
+          child: ConstrainedBox(
+            constraints: BoxConstraints(
+              minHeight: MediaQuery.of(context).size.height - (35 + 12),
+            ),
+            child: IntrinsicHeight(
+              child: NavigationRail(
+                destinations: controller.routes
+                    .map(
+                      (AppRoute route) => NavigationRailDestination(
+                        icon: (controller.isCurrentIndex(route))
+                            ? activatedIcons[controller.indexOf(route)]
+                            : deactivatedIcons[controller.indexOf(route)],
+                        label: const Text(''),
+                      ),
+                    )
+                    .toList(),
+                selectedIndex: currentIndex,
+                onDestinationSelected: (int selectedIndex) {
+                  controller.setIndex(selectedIndex);
+                  context.goNamed(controller.getCurrentRoute().name);
+                },
+              ),
+            ),
           ),
         ),
-      ),
+      ],
     );
   }
 }
