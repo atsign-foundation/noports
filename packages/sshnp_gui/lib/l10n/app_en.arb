@@ -1,5 +1,4 @@
-{
-    "actions" : "Actions",
+   { "actions" : "Actions",
     "add" : "Add",
     "addNewConnection" : "Add New Connection",
     "atKeysFilePath" : "atKeys File",
@@ -9,20 +8,22 @@
     "cancelButton":"Cancel",
     "clientAtsign" : "Client atsign",
     "closeButton" : "Close",
+    "commands": "Commands",
     "connect" : "Connect",
     "contactUs" : "Contact Us",
     "copiedToClipboard": "Copied to Clipboard",
     "corruptedProfile": "Status: profile is corrupted",
     "currentConnections" : "Current Connections",
-    "deleteButton" : "Delete",
+    "currentConnectionsDescription" : "Toggle, configure and create connection profiles",
     "delete" : "Delete",
+    "deleteButton" : "Delete",
     "dest" : "Dest.",
     "destination" : "Destination",
     "device" : "Device Name",
     "deviceHint" : "The device name of the sshnpd we wish to communicate with",
     "edit" : "Edit",
-    "export" : "Export",
     "error" : "Error",
+    "export" : "Export",
     "failed": "Failed",
     "faq" : "FAQ",
     "from" : "From",
@@ -77,4 +78,4 @@
     "verbose" : "Verbose Logging",
     "warning": "Warning",
     "warningMessage" : " Are you sure you want to delete this configuration"
-}
+   }

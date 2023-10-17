@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:sshnp_gui/src/presentation/widgets/home_screen_actions/home_screen_menu_button.dart';
+import 'package:sshnp_gui/src/presentation/widgets/home_screen_actions/import_profile_action.dart';
 import 'package:sshnp_gui/src/presentation/widgets/home_screen_actions/new_profile_action.dart';
+import 'package:sshnp_gui/src/utility/sizes.dart';
 
 class HomeScreenActions extends StatelessWidget {
   const HomeScreenActions({Key? key}) : super(key: key);
@@ -8,7 +9,11 @@ class HomeScreenActions extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return const Row(
-      children: [NewProfileAction(), HomeScreenMenuButton()],
+      children: [
+        ImportProfileAction(),
+        gapW8,
+        NewProfileAction(),
+      ],
     );
   }
 }

@@ -27,11 +27,11 @@ class _NewProfileActionState extends ConsumerState<NewProfileAction> {
 
   @override
   Widget build(BuildContext context) {
-    return IconButton(
+    return FilledButton(
       onPressed: () {
         onPressed();
       },
-      icon: const Icon(Icons.add),
+      child: const Icon(Icons.add_circle_outline),
     );
   }
 }
