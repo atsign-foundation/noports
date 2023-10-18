@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 import 'package:sshnp_gui/src/controllers/config_controller.dart';
 import 'package:sshnp_gui/src/presentation/widgets/home_screen_actions/home_screen_actions.dart';
 import 'package:sshnp_gui/src/presentation/widgets/navigation/app_navigation_rail.dart';
@@ -37,14 +36,20 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      SvgPicture.asset(
-                        'assets/images/noports_light.svg',
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            strings.currentConnections,
+                            style: Theme.of(context).textTheme.titleLarge,
+                          ),
+                          Text(strings.currentConnectionsDescription),
+                        ],
                       ),
                       const HomeScreenActions(),
                     ],
                   ),
                   gapH24,
-                  Text(strings.availableConnections, textScaleFactor: 2),
                   gapH8,
                   profileNames.when(
                     loading: () => const Center(
@@ -60,8 +65,25 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       final sortedProfiles = profiles.toList();
                       sortedProfiles.sort();
                       return Expanded(
-                        child: ListView(
-                          children: sortedProfiles.map((profileName) => ProfileBar(profileName)).toList(),
+                        child: Column(
+                          children: [
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Text(strings.profileName),
+                                Padding(
+                                  padding: const EdgeInsets.only(right: Sizes.p36),
+                                  child: Text(strings.commands),
+                                ),
+                              ],
+                            ),
+                            const Divider(),
+                            Expanded(
+                              child: ListView(
+                                children: sortedProfiles.map((profileName) => ProfileBar(profileName)).toList(),
+                              ),
+                            ),
+                          ],
                         ),
                       );
                     },

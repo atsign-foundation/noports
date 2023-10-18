@@ -9,14 +9,14 @@ class AppNavigationRail extends ConsumerWidget {
   const AppNavigationRail({super.key});
 
   static var activatedIcons = [
-    SvgPicture.asset('assets/images/nav_icons/home_selected.svg'),
-    SvgPicture.asset('assets/images/nav_icons/pican_selected.svg'),
+    SvgPicture.asset('assets/images/nav_icons/current_connection_selected.svg'),
+    SvgPicture.asset('assets/images/nav_icons/terminal_selected.svg'),
     SvgPicture.asset('assets/images/nav_icons/settings_selected.svg')
   ];
 
   static var deactivatedIcons = [
-    SvgPicture.asset('assets/images/nav_icons/home_unselected.svg'),
-    SvgPicture.asset('assets/images/nav_icons/pican_unselected.svg'),
+    SvgPicture.asset('assets/images/nav_icons/current_connection_unselected.svg'),
+    SvgPicture.asset('assets/images/nav_icons/terminal_unselected.svg'),
     SvgPicture.asset('assets/images/nav_icons/settings_unselected.svg'),
   ];
 
@@ -25,31 +25,37 @@ class AppNavigationRail extends ConsumerWidget {
     final controller = ref.watch(navigationRailController.notifier);
     final currentIndex = controller.getCurrentIndex();
 
-    return SingleChildScrollView(
-      child: ConstrainedBox(
-        constraints: BoxConstraints(
-          minHeight: MediaQuery.of(context).size.height,
-        ),
-        child: IntrinsicHeight(
-          child: NavigationRail(
-            destinations: controller.routes
-                .map(
-                  (AppRoute route) => NavigationRailDestination(
-                    icon: (controller.isCurrentIndex(route))
-                        ? activatedIcons[controller.indexOf(route)]
-                        : deactivatedIcons[controller.indexOf(route)],
-                    label: const Text(''),
-                  ),
-                )
-                .toList(),
-            selectedIndex: currentIndex,
-            onDestinationSelected: (int selectedIndex) {
-              controller.setIndex(selectedIndex);
-              context.goNamed(controller.getCurrentRoute().name);
-            },
+    return Column(
+      children: [
+        SingleChildScrollView(
+          child: ConstrainedBox(
+            constraints: BoxConstraints(
+              minHeight: MediaQuery.of(context).size.height,
+            ),
+            child: IntrinsicHeight(
+              child: NavigationRail(
+                groupAlignment: -1,
+                leading: SvgPicture.asset('assets/images/logo.svg'),
+                destinations: controller.routes
+                    .map(
+                      (AppRoute route) => NavigationRailDestination(
+                        icon: (controller.isCurrentIndex(route))
+                            ? activatedIcons[controller.indexOf(route)]
+                            : deactivatedIcons[controller.indexOf(route)],
+                        label: const Text(''),
+                      ),
+                    )
+                    .toList(),
+                selectedIndex: currentIndex,
+                onDestinationSelected: (int selectedIndex) {
+                  controller.setIndex(selectedIndex);
+                  context.goNamed(controller.getCurrentRoute().name);
+                },
+              ),
+            ),
           ),
         ),
-      ),
+      ],
     );
   }
 }

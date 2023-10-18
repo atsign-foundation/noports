@@ -17,5 +17,3 @@ class ProfileActionButton extends StatelessWidget {
     );
   }
 }
-
-

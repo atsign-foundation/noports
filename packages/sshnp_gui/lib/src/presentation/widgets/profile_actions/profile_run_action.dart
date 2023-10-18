@@ -76,7 +76,10 @@ class _ProfileRunActionState extends ConsumerState<ProfileRunAction> {
   static Widget getIconFromStatus(BackgroundSessionStatus status, BuildContext context) {
     switch (status) {
       case BackgroundSessionStatus.stopped:
-        return const Icon(Icons.play_arrow);
+        return const Icon(
+          Icons.play_arrow_outlined,
+          color: Colors.green,
+        );
       case BackgroundSessionStatus.running:
         return const Icon(Icons.stop);
       case BackgroundSessionStatus.loading:
