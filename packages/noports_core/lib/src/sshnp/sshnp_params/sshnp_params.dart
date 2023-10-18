@@ -188,7 +188,7 @@ class SSHNPParams {
       SSHNPArg.idleTimeoutArg.name: idleTimeout,
       SSHNPArg.addForwardsToTunnelArg.name: addForwardsToTunnel,
       SSHNPArg.sshClientArg.name: sshClient.toString(),
-      SSHNPArg.ssHAlgorithmArg.name: sshAlgorithm.toString(),
+      SSHNPArg.sshAlgorithmArg.name: sshAlgorithm.toString(),
     };
     args.removeWhere(
       (key, value) => !parserType.shouldParse(SSHNPArg.fromName(key).parseWhen),
@@ -335,9 +335,9 @@ class SSHNPPartialParams {
       sshClient: args[SSHNPArg.sshClientArg.name] == null
           ? null
           : SupportedSshClient.fromString(args[SSHNPArg.sshClientArg.name]),
-      sshAlgorithm: args[SSHNPArg.ssHAlgorithmArg.name] == null
+      sshAlgorithm: args[SSHNPArg.sshAlgorithmArg.name] == null
           ? null
-          : SupportedSSHAlgorithm.fromString(args[SSHNPArg.ssHAlgorithmArg.name]),
+          : SupportedSSHAlgorithm.fromString(args[SSHNPArg.sshAlgorithmArg.name]),
     );
   }
 

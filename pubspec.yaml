@@ -5,3 +5,5 @@ environment:
 
 dev_dependencies:
   melos: ^3.1.1
+dependencies:
+  test: ^1.24.8

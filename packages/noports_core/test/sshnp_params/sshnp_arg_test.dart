@@ -4,7 +4,7 @@ import 'package:test/test.dart';
 
 void main() {
   group('ParserType', () {
-    test('ParserType public API test', () {
+    test('public API test', () {
       // abitrary values
       ParserType parserType = ParserType.all;
       ParseWhen parseWhen = ParseWhen.always;
@@ -76,134 +76,136 @@ void main() {
     });
   });
 
-  test('SSHNPArg public API test', () {
-    SSHNPArg sshnpArg = SSHNPArg(name: 'name');
-
-    expect(sshnpArg.format, isA<ArgFormat>());
-    expect(sshnpArg.name, isA<String>());
-    expect(sshnpArg.abbr, isA<String?>());
-    expect(sshnpArg.help, isA<String?>());
-    expect(sshnpArg.mandatory, isA<bool>());
-    expect(sshnpArg.defaultsTo, isA<dynamic>());
-    expect(sshnpArg.type, isA<ArgType>());
-    expect(sshnpArg.allowed, isA<Iterable<String>?>());
-    expect(sshnpArg.parseWhen, isA<ParseWhen>());
-    expect(sshnpArg.aliases, isA<List<String>?>());
-
-    expect(sshnpArg.bashName, isA<String>());
-
-    expect(SSHNPArg.args, isA<List<SSHNPArg>>());
-    expect(SSHNPArg.createArgParser(), isA<ArgParser>());
-  });
-
-  group('SSHNPArg final variables', () {
-    test('SSHNPArg.name test', () {
+  group('SSHNPArg', () {
+    test('public API test', () {
       SSHNPArg sshnpArg = SSHNPArg(name: 'name');
-      expect(sshnpArg.name, equals('name'));
+
+      expect(sshnpArg.format, isA<ArgFormat>());
+      expect(sshnpArg.name, isA<String>());
+      expect(sshnpArg.abbr, isA<String?>());
+      expect(sshnpArg.help, isA<String?>());
+      expect(sshnpArg.mandatory, isA<bool>());
+      expect(sshnpArg.defaultsTo, isA<dynamic>());
+      expect(sshnpArg.type, isA<ArgType>());
+      expect(sshnpArg.allowed, isA<Iterable<String>?>());
+      expect(sshnpArg.parseWhen, isA<ParseWhen>());
+      expect(sshnpArg.aliases, isA<List<String>?>());
+
+      expect(sshnpArg.bashName, isA<String>());
+
+      expect(SSHNPArg.args, isA<List<SSHNPArg>>());
+      expect(SSHNPArg.createArgParser(), isA<ArgParser>());
     });
 
-    test('SSHNPArg.abbr test', () {
-      SSHNPArg sshnpArg = SSHNPArg(name: 'name', abbr: 'n');
-      expect(sshnpArg.abbr, equals('n'));
+    group('SSHNPArg final variables', () {
+      test('SSHNPArg.name test', () {
+        SSHNPArg sshnpArg = SSHNPArg(name: 'name');
+        expect(sshnpArg.name, equals('name'));
+      });
+
+      test('SSHNPArg.abbr test', () {
+        SSHNPArg sshnpArg = SSHNPArg(name: 'name', abbr: 'n');
+        expect(sshnpArg.abbr, equals('n'));
+      });
+
+      test('SSHNPArg.help test', () {
+        SSHNPArg sshnpArg = SSHNPArg(name: 'name', help: 'help');
+        expect(sshnpArg.help, equals('help'));
+      });
+
+      test('SSHNPArg.mandatory test', () {
+        SSHNPArg sshnpArg = SSHNPArg(name: 'name', mandatory: true);
+        expect(sshnpArg.mandatory, isTrue);
+      });
+
+      test('SSHNPArg.defaultsTo test', () {
+        SSHNPArg sshnpArg = SSHNPArg(name: 'name', defaultsTo: 'default');
+        expect(sshnpArg.defaultsTo, equals('default'));
+      });
+
+      test('SSHNPArg.type test', () {
+        SSHNPArg sshnpArg = SSHNPArg(name: 'name', type: ArgType.string);
+        expect(sshnpArg.type, equals(ArgType.string));
+      });
+
+      test('SSHNPArg.allowed test', () {
+        SSHNPArg sshnpArg = SSHNPArg(name: 'name', allowed: ['allowed']);
+        expect(sshnpArg.allowed, equals(['allowed']));
+      });
+
+      test('SSHNPArg.parseWhen test', () {
+        SSHNPArg sshnpArg = SSHNPArg(name: 'name', parseWhen: ParseWhen.always);
+        expect(sshnpArg.parseWhen, equals(ParseWhen.always));
+      });
+
+      test('SSHNPArg.aliases test', () {
+        SSHNPArg sshnpArg = SSHNPArg(name: 'name', aliases: ['alias']);
+        expect(sshnpArg.aliases, equals(['alias']));
+      });
+
+      test('SSHNPArg.negatable test', () {
+        SSHNPArg sshnpArg = SSHNPArg(name: 'name', negatable: false);
+        expect(sshnpArg.negatable, isFalse);
+      });
+
+      test('SSHNPArg.hide test', () {
+        SSHNPArg sshnpArg = SSHNPArg(name: 'name', hide: true);
+        expect(sshnpArg.hide, isTrue);
+      });
+
+      test('SSHNPArg default values test', () {
+        SSHNPArg sshnpArg = SSHNPArg(name: 'name');
+        expect(sshnpArg.abbr, isNull);
+        expect(sshnpArg.help, isNull);
+        expect(sshnpArg.mandatory, isFalse);
+        expect(sshnpArg.format, equals(ArgFormat.option));
+        expect(sshnpArg.defaultsTo, isNull);
+        expect(sshnpArg.type, equals(ArgType.string));
+        expect(sshnpArg.allowed, isNull);
+        expect(sshnpArg.parseWhen, equals(ParseWhen.always));
+        expect(sshnpArg.aliases, isNull);
+        expect(sshnpArg.negatable, isTrue);
+        expect(sshnpArg.hide, isFalse);
+      });
     });
 
-    test('SSHNPArg.help test', () {
-      SSHNPArg sshnpArg = SSHNPArg(name: 'name', help: 'help');
-      expect(sshnpArg.help, equals('help'));
+    group('SSHNPArg getters', () {
+      test('SSHNPArg.bashName test', () {
+        SSHNPArg sshnpArg = SSHNPArg(name: 'name');
+        expect(sshnpArg.bashName, equals('NAME'));
+      });
+
+      test('SSHNPArg.alistList test', () {
+        SSHNPArg sshnpArg = SSHNPArg(name: 'name', aliases: ['alias'], abbr: 'a');
+        expect(sshnpArg.aliasList, equals(['--name', '--alias', '-a']));
+      });
     });
 
-    test('SSHNPArg.mandatory test', () {
-      SSHNPArg sshnpArg = SSHNPArg(name: 'name', mandatory: true);
-      expect(sshnpArg.mandatory, isTrue);
-    });
+    group('SSHNPArg factory', () {
+      test('SSHNPArg.noArg test', () {
+        SSHNPArg sshnpArg = SSHNPArg.noArg();
+        expect(sshnpArg.name, equals(''));
+      });
 
-    test('SSHNPArg.defaultsTo test', () {
-      SSHNPArg sshnpArg = SSHNPArg(name: 'name', defaultsTo: 'default');
-      expect(sshnpArg.defaultsTo, equals('default'));
-    });
+      test('SSHNPArg.fromName test', () {
+        SSHNPArg sshnpArg = SSHNPArg.fromName(SSHNPArg.fromArg.name);
+        expect(sshnpArg.name, equals(SSHNPArg.fromArg.name));
+      });
 
-    test('SSHNPArg.type test', () {
-      SSHNPArg sshnpArg = SSHNPArg(name: 'name', type: ArgType.string);
-      expect(sshnpArg.type, equals(ArgType.string));
-    });
+      test('SSHNPArg.fromBashName test', () {
+        SSHNPArg sshnpArg = SSHNPArg.fromBashName(SSHNPArg.fromArg.bashName);
+        expect(sshnpArg.name, equals(SSHNPArg.fromArg.name));
+      });
 
-    test('SSHNPArg.allowed test', () {
-      SSHNPArg sshnpArg = SSHNPArg(name: 'name', allowed: ['allowed']);
-      expect(sshnpArg.allowed, equals(['allowed']));
-    });
+      test('SSHNPArg.fromName no match test', () {
+        SSHNPArg sshnpArg = SSHNPArg.fromName('no match');
+        expect(sshnpArg.name, equals(''));
+      });
 
-    test('SSHNPArg.parseWhen test', () {
-      SSHNPArg sshnpArg = SSHNPArg(name: 'name', parseWhen: ParseWhen.always);
-      expect(sshnpArg.parseWhen, equals(ParseWhen.always));
-    });
-
-    test('SSHNPArg.aliases test', () {
-      SSHNPArg sshnpArg = SSHNPArg(name: 'name', aliases: ['alias']);
-      expect(sshnpArg.aliases, equals(['alias']));
-    });
-
-    test('SSHNPArg.negatable test', () {
-      SSHNPArg sshnpArg = SSHNPArg(name: 'name', negatable: false);
-      expect(sshnpArg.negatable, isFalse);
-    });
-
-    test('SSHNPArg.hide test', () {
-      SSHNPArg sshnpArg = SSHNPArg(name: 'name', hide: true);
-      expect(sshnpArg.hide, isTrue);
-    });
-
-    test('SSHNPArg default values test', () {
-      SSHNPArg sshnpArg = SSHNPArg(name: 'name');
-      expect(sshnpArg.abbr, isNull);
-      expect(sshnpArg.help, isNull);
-      expect(sshnpArg.mandatory, isFalse);
-      expect(sshnpArg.format, equals(ArgFormat.option));
-      expect(sshnpArg.defaultsTo, isNull);
-      expect(sshnpArg.type, equals(ArgType.string));
-      expect(sshnpArg.allowed, isNull);
-      expect(sshnpArg.parseWhen, equals(ParseWhen.always));
-      expect(sshnpArg.aliases, isNull);
-      expect(sshnpArg.negatable, isTrue);
-      expect(sshnpArg.hide, isFalse);
-    });
-  });
-
-  group('SSHNPArg getters', () {
-    test('SSHNPArg.bashName test', () {
-      SSHNPArg sshnpArg = SSHNPArg(name: 'name');
-      expect(sshnpArg.bashName, equals('NAME'));
-    });
-
-    test('SSHNPArg.alistList test', () {
-      SSHNPArg sshnpArg = SSHNPArg(name: 'name', aliases: ['alias'], abbr: 'a');
-      expect(sshnpArg.aliasList, equals(['--name', '--alias', '-a']));
-    });
-  });
-
-  group('SSHNPArg factory', () {
-    test('SSHNPArg.noArg test', () {
-      SSHNPArg sshnpArg = SSHNPArg.noArg();
-      expect(sshnpArg.name, equals(''));
-    });
-
-    test('SSHNPArg.fromName test', () {
-      SSHNPArg sshnpArg = SSHNPArg.fromName(SSHNPArg.fromArg.name);
-      expect(sshnpArg.name, equals(SSHNPArg.fromArg.name));
-    });
-
-    test('SSHNPArg.fromBashName test', () {
-      SSHNPArg sshnpArg = SSHNPArg.fromBashName(SSHNPArg.fromArg.bashName);
-      expect(sshnpArg.name, equals(SSHNPArg.fromArg.name));
-    });
-
-    test('SSHNPArg.fromName no match test', () {
-      SSHNPArg sshnpArg = SSHNPArg.fromName('no match');
-      expect(sshnpArg.name, equals(''));
-    });
-
-    test('SSHNPArg.fromBashName no match test', () {
-      SSHNPArg sshnpArg = SSHNPArg.fromBashName('no match');
-      expect(sshnpArg.name, equals(''));
+      test('SSHNPArg.fromBashName no match test', () {
+        SSHNPArg sshnpArg = SSHNPArg.fromBashName('no match');
+        expect(sshnpArg.name, equals(''));
+      });
     });
   });
 }

@@ -121,7 +121,7 @@ class SSHNPArg {
     remoteSshdPortArg,
     idleTimeoutArg,
     sshClientArg,
-    ssHAlgorithmArg,
+    sshAlgorithmArg,
     addForwardsToTunnelArg,
     configFileArg,
     listDevicesArg,
@@ -325,7 +325,7 @@ class SSHNPArg {
     allowed: SupportedSshClient.values.map((c) => c.toString()).toList(),
     parseWhen: ParseWhen.commandLine,
   );
-  static final ssHAlgorithmArg = SSHNPArg(
+  static final sshAlgorithmArg = SSHNPArg(
     name: 'ssh-algorithm',
     help: 'SSH algorithm to use',
     defaultsTo: DefaultArgs.sshAlgorithm.toString(),

@@ -1,4 +1,3 @@
-import 'package:noports_core/src/common/types.dart';
 import 'package:noports_core/sshnpd.dart';
 import 'package:noports_core/utils.dart';
 import 'package:test/test.dart';
