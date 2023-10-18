@@ -71,7 +71,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
                                 Text(strings.profileName),
-                                Text(strings.commands),
+                                Padding(
+                                  padding: const EdgeInsets.only(right: Sizes.p36),
+                                  child: Text(strings.commands),
+                                ),
                               ],
                             ),
                             const Divider(),
