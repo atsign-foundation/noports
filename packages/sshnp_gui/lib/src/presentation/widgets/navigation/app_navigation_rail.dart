@@ -4,20 +4,19 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
 import 'package:sshnp_gui/src/controllers/navigation_controller.dart';
 import 'package:sshnp_gui/src/controllers/navigation_rail_controller.dart';
-import 'package:sshnp_gui/src/utility/constants.dart';
 
 class AppNavigationRail extends ConsumerWidget {
   const AppNavigationRail({super.key});
 
   static var activatedIcons = [
-    SvgPicture.asset('assets/images/nav_icons/home_selected.svg'),
-    SvgPicture.asset('assets/images/nav_icons/pican_selected.svg'),
+    SvgPicture.asset('assets/images/nav_icons/current_connection_selected.svg'),
+    SvgPicture.asset('assets/images/nav_icons/terminal_selected.svg'),
     SvgPicture.asset('assets/images/nav_icons/settings_selected.svg')
   ];
 
   static var deactivatedIcons = [
-    SvgPicture.asset('assets/images/nav_icons/home_unselected.svg'),
-    SvgPicture.asset('assets/images/nav_icons/pican_unselected.svg'),
+    SvgPicture.asset('assets/images/nav_icons/current_connection_unselected.svg'),
+    SvgPicture.asset('assets/images/nav_icons/terminal_unselected.svg'),
     SvgPicture.asset('assets/images/nav_icons/settings_unselected.svg'),
   ];
 
@@ -28,23 +27,15 @@ class AppNavigationRail extends ConsumerWidget {
 
     return Column(
       children: [
-        Container(
-          height: 12,
-          width: 80,
-          color: kPrimaryColor,
-        ),
-        Container(
-          color: kPrimaryColor,
-          width: 80,
-          child: SvgPicture.asset('assets/images/logo.svg'),
-        ),
         SingleChildScrollView(
           child: ConstrainedBox(
             constraints: BoxConstraints(
-              minHeight: MediaQuery.of(context).size.height - (35 + 12),
+              minHeight: MediaQuery.of(context).size.height,
             ),
             child: IntrinsicHeight(
               child: NavigationRail(
+                groupAlignment: -1,
+                leading: SvgPicture.asset('assets/images/logo.svg'),
                 destinations: controller.routes
                     .map(
                       (AppRoute route) => NavigationRailDestination(
