@@ -7,7 +7,13 @@ permissions: # added using https://github.com/step-security/secure-repo
   contents: read
 
 jobs:
+  verify_tags:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
+      - uses: ./.github/composite/verify_cli_tags
   x64_build:
+    needs: verify_tags
     runs-on: ${{ matrix.os }}
     defaults:
       run:
@@ -22,25 +28,12 @@ jobs:
             output-name: sshnp-macos-x64
 
     steps:
-      - uses: actions/checkout@3df4ab11eba7bda6032a0b82a6bb43b11571feac # v4.0.0
-
-      - name: Ensure version matches tag
-        if: startsWith(github.ref, 'refs/tags/v')
-        working-directory: ./packages/sshnoports
-        run: |
-          # check version.dart
-          REF=${{ github.ref }}
-          TAG=${REF:10}
-          DART_TAG="v$(grep -Po '^const String version = "(.*)";' lib/version.dart | cut -d'"' -f2)"
-          if [ "$TAG" != "$DART_TAG" ]; then
-            echo "Tag $TAG does not match version in version.dart: $DART_TAG"
-            exit 1
-          fi
-
-      - uses: dart-lang/setup-dart@d6a63dab3335f427404425de0fbfed4686d93c4f # v1.5.0
+      - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
+      - uses: dart-lang/setup-dart@b64355ae6ca0b5d484f0106a033dd1388965d06d # v1.6.0
       - run: mkdir sshnp
       - run: mkdir tarball
       - run: dart pub get
+      - run: dart run build_runner build --delete-conflicting-outputs
       - run: dart compile exe bin/activate_cli.dart -v -o sshnp/at_activate
       - run: dart compile exe bin/sshnp.dart -v -o sshnp/sshnp
       - run: dart compile exe bin/sshnpd.dart -v -o sshnp/sshnpd
@@ -56,6 +49,7 @@ jobs:
           if-no-files-found: error
 
   other_build:
+    needs: verify_tags
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -71,21 +65,7 @@ jobs:
           - platform: linux/riscv64
             output-name: sshnp-linux-riscv64
     steps:
-      - uses: actions/checkout@3df4ab11eba7bda6032a0b82a6bb43b11571feac # v4.0.0
-
-      - name: Ensure version matches tag
-        if: startsWith(github.ref, 'refs/tags/v')
-        working-directory: ./packages/sshnoports
-        run: |
-          # check version.dart
-          REF=${{ github.ref }}
-          TAG=${REF:10}
-          DART_TAG="v$(grep -Po '^const String version = "(.*)";' lib/version.dart | cut -d'"' -f2)"
-          if [ "$TAG" != "$DART_TAG" ]; then
-            echo "Tag $TAG does not match version in version.dart: $DART_TAG"
-            exit 1
-          fi
-
+      - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
       - uses: docker/setup-qemu-action@68827325e0b33c7199eb31dd4e31fbe9023e06e3 # v3.0.0
       - uses: docker/setup-buildx-action@f95db51fddba0c2d1ec667646a06c2ce06100226 # v3.0.0
       - run: |

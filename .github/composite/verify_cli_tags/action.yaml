@@ -1,0 +1,19 @@
+name: verify_cli_tags
+description: |
+  Ensures that the tag of sshnoports matches the tag of the git ref.
+
+runs:
+  using: composite
+  steps:
+    - name: Ensure pubspec.yaml matches git ref (if current git ref is a version tag)
+      shell: bash
+      if: startsWith(github.ref, 'refs/tags/v')
+      working-directory: ./packages/sshnoports
+      run: |
+        REF=${{ github.ref }}
+        TAG=${REF:10}
+        PUBSPEC_TAG="v$(egrep -o '^version: (.*)$' pubspec.yaml | cut -d':' -f2 | tr -d '[:space:]')"
+        if [ "$TAG" != "$PUBSPEC_TAG" ]; then
+          echo "Tag $TAG does not match version in pubspec.yaml: $PUBSPEC_TAG"
+          exit 1
+        fi

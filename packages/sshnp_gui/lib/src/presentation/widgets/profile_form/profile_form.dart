@@ -1,11 +1,11 @@
-import 'package:at_client_mobile/at_client_mobile.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:sshnoports/sshnp/sshnp.dart';
+import 'package:noports_core/sshnp.dart';
 import 'package:sshnp_gui/src/controllers/config_controller.dart';
 import 'package:sshnp_gui/src/controllers/navigation_controller.dart';
+import 'package:sshnp_gui/src/controllers/navigation_rail_controller.dart';
 import 'package:sshnp_gui/src/controllers/navigation_rail_controller.dart';
 import 'package:sshnp_gui/src/presentation/widgets/profile_form/custom_text_form_field.dart';
 import 'package:sshnp_gui/src/utility/form_validator.dart';
@@ -31,9 +31,9 @@ class _ProfileFormState extends ConsumerState<ProfileForm> {
     if (_formkey.currentState!.validate()) {
       _formkey.currentState!.save();
       final controller = ref.read(configFamilyController(newConfig.profileName ?? oldConfig.profileName!).notifier);
-      bool rename = newConfig.profileName.isNotNull &&
+      bool rename = newConfig.profileName != null &&
           newConfig.profileName!.isNotEmpty &&
-          oldConfig.profileName.isNotNull &&
+          oldConfig.profileName != null &&
           oldConfig.profileName!.isNotEmpty &&
           newConfig.profileName != oldConfig.profileName;
       SSHNPParams config = SSHNPParams.merge(oldConfig, newConfig);
@@ -98,7 +98,7 @@ class _ProfileFormState extends ConsumerState<ProfileForm> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       CustomTextFormField(
-                        initialValue: oldConfig.sshnpdAtSign ?? '',
+                        initialValue: oldConfig.sshnpdAtSign,
                         labelText: strings.sshnpdAtSign,
                         onChanged: (value) => newConfig = SSHNPPartialParams.merge(
                           newConfig,
@@ -108,7 +108,7 @@ class _ProfileFormState extends ConsumerState<ProfileForm> {
                       ),
                       gapW8,
                       CustomTextFormField(
-                        initialValue: oldConfig.host ?? '',
+                        initialValue: oldConfig.host,
                         labelText: strings.host,
                         onChanged: (value) => newConfig = SSHNPPartialParams.merge(
                           newConfig,
@@ -119,33 +119,42 @@ class _ProfileFormState extends ConsumerState<ProfileForm> {
                     ],
                   ),
                   gapH10,
-                  Row(
+                  const Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      CustomTextFormField(
-                        initialValue: oldConfig.sendSshPublicKey,
-                        labelText: strings.sendSshPublicKey,
-                        onChanged: (value) => newConfig = SSHNPPartialParams.merge(
-                          newConfig,
-                          SSHNPPartialParams(sendSshPublicKey: value),
-                        ),
-                      ),
+                      // TODO replace this with a drop down of available keyPairs (and buttons to upload / generate a new one, and button to delete)
+                      // CustomTextFormField(
+                      //   initialValue: oldConfig.sendSshPublicKey,
+                      //   labelText: strings.sendSshPublicKey,
+                      //   onChanged: (value) =>
+                      //       newConfig = SSHNPPartialParams.merge(
+                      //     newConfig,
+                      //     SSHNPPartialParams(sendSshPublicKey: value),
+                      //   ),
+                      // ),
                       gapW8,
-                      SizedBox(
-                        width: CustomTextFormField.defaultWidth,
-                        height: CustomTextFormField.defaultHeight,
-                        child: CustomSwitchWidget(
-                            labelText: strings.rsa,
-                            value: newConfig.rsa ?? oldConfig.rsa,
-                            onChanged: (newValue) {
-                              setState(() {
-                                newConfig = SSHNPPartialParams.merge(
-                                  newConfig,
-                                  SSHNPPartialParams(rsa: newValue),
-                                );
-                              });
-                            }),
-                      ),
+                      // TODO replace this switch with a dropdown with options for SupportedSSHAlgorithm.values
+                      // SizedBox(
+                      //   width: CustomTextFormField.defaultWidth,
+                      //   height: CustomTextFormField.defaultHeight,
+                      //   child: Row(
+                      //     children: [
+                      //       Text(strings.rsa),
+                      //       gapW8,
+                      //       Switch(
+                      //         value: newConfig.rsa ?? oldConfig.rsa,
+                      //         onChanged: (newValue) {
+                      //           setState(() {
+                      //             newConfig = SSHNPPartialParams.merge(
+                      //               newConfig,
+                      //               SSHNPPartialParams(rsa: newValue),
+                      //             );
+                      //           });
+                      //         },
+                      //       ),
+                      //     ],
+                      //   ),
+                      // ),
                     ],
                   ),
                   gapH10,

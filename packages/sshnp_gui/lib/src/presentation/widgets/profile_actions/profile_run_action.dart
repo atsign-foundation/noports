@@ -1,11 +1,8 @@
-import 'dart:io';
-
 import 'package:at_client_mobile/at_client_mobile.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:socket_connector/socket_connector.dart';
-import 'package:sshnoports/sshnp/sshnp.dart';
-import 'package:sshnoports/sshrv/sshrv.dart';
+import 'package:noports_core/sshnp.dart';
+import 'package:noports_core/utils.dart';
 import 'package:sshnp_gui/src/controllers/background_session_controller.dart';
 import 'package:sshnp_gui/src/presentation/widgets/profile_actions/profile_action_button.dart';
 import 'package:sshnp_gui/src/presentation/widgets/utility/custom_snack_bar.dart';
@@ -28,7 +25,10 @@ class _ProfileRunActionState extends ConsumerState<ProfileRunAction> {
   }
 
   Future<void> onStart() async {
-    ref.read(backgroundSessionFamilyController(widget.params.profileName!).notifier).start();
+    ref
+        .read(backgroundSessionFamilyController(widget.params.profileName!)
+            .notifier)
+        .start();
     try {
       SSHNPParams params = SSHNPParams.merge(
         widget.params,
@@ -36,23 +36,34 @@ class _ProfileRunActionState extends ConsumerState<ProfileRunAction> {
           idleTimeout: 120, // 120 / 60 = 2 minutes
           addForwardsToTunnel: true,
           legacyDaemon: false,
-          sshClient: 'pure-dart',
+          sshClient: SupportedSshClient.dart,
         ),
       );
 
-      sshnp = await SSHNP.fromParams(
-        params,
-        atClient: AtClientManager.getInstance().atClient,
-        sshrvGenerator: SSHRV.pureDart,
+      // TODO ensure that this keyPair gets uploaded to the app first
+      AtClient atClient = AtClientManager.getInstance().atClient;
+      DartSSHKeyUtil keyUtil = DartSSHKeyUtil();
+      AtSSHKeyPair keyPair = await keyUtil.getKeyPair(
+        identifier: params.identityFile ??
+            'id_${atClient.getCurrentAtSign()!.replaceAll('@', '')}',
+      );
+
+      sshnp = SSHNP.forwardPureDart(
+        params: params,
+        atClient: atClient,
+        identityKeyPair: keyPair,
       );
 
       await sshnp!.init();
       sshnpResult = await sshnp!.run();
 
-      if (sshnpResult is SSHNPFailed) {
+      if (sshnpResult is SSHNPError) {
         throw sshnpResult!;
       }
-      ref.read(backgroundSessionFamilyController(widget.params.profileName!).notifier).endStartUp();
+      ref
+          .read(backgroundSessionFamilyController(widget.params.profileName!)
+              .notifier)
+          .endStartUp();
     } catch (e) {
       Future stop = onStop();
       if (mounted) {
@@ -63,17 +74,17 @@ class _ProfileRunActionState extends ConsumerState<ProfileRunAction> {
   }
 
   Future<void> onStop() async {
-    if (sshnpResult is SSHCommand) {
-      (sshnpResult as SSHCommand).sshProcess?.kill(); // DirectSSHViaExec
-      (sshnpResult as SSHCommand).sshClient?.close(); // DirectSSHViaClient
-      var sshrvResult = await (sshnpResult as SSHCommand).sshrvResult;
-      if (sshrvResult is Process) sshrvResult.kill(); // SSHRV via local binary
-      if (sshrvResult is SocketConnector) sshrvResult.close(); // SSHRV via pure dart
+    if (sshnpResult is SSHNPCommand) {
+      await (sshnpResult as SSHNPCommand).killConnectionBean();
     }
-    ref.read(backgroundSessionFamilyController(widget.params.profileName!).notifier).stop();
+    ref
+        .read(backgroundSessionFamilyController(widget.params.profileName!)
+            .notifier)
+        .stop();
   }
 
-  static Widget getIconFromStatus(BackgroundSessionStatus status, BuildContext context) {
+  static Widget getIconFromStatus(
+      BackgroundSessionStatus status, BuildContext context) {
     switch (status) {
       case BackgroundSessionStatus.stopped:
         return const Icon(
@@ -93,7 +104,8 @@ class _ProfileRunActionState extends ConsumerState<ProfileRunAction> {
 
   @override
   Widget build(BuildContext context) {
-    final status = ref.watch(backgroundSessionFamilyController(widget.params.profileName!));
+    final status = ref
+        .watch(backgroundSessionFamilyController(widget.params.profileName!));
     return ProfileActionButton(
       onPressed: () async {
         switch (status) {

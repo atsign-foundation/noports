@@ -26,11 +26,11 @@ env:
   DOCKER_COMPOSE_UP_CMD: "docker compose up --abort-on-container-exit"
 
   RELEASES: |
-    latest
     v3.1.2
     v3.2.0
     v3.3.0
     v3.4.0
+    v3.4.2
 
   BRANCHES: |
     trunk
@@ -58,7 +58,7 @@ jobs:
           echo "np: ${{ matrix.np }}"
           echo "npd: ${{ matrix.npd }}"
 
-      - uses: actions/checkout@3df4ab11eba7bda6032a0b82a6bb43b11571feac # v4.0.0
+      - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
 
       - name: Setup Devicename
         # First two guarantee a unique # per workflow call
@@ -213,7 +213,7 @@ jobs:
           echo "np: ${{ matrix.np }}"
           echo "npd: ${{ matrix.npd }}"
 
-      - uses: actions/checkout@3df4ab11eba7bda6032a0b82a6bb43b11571feac # v4.0.0
+      - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
 
       - name: Setup Devicename
         # First two guarantee a unique # per workflow call
@@ -368,8 +368,8 @@ jobs:
       matrix:
         include:
           - np: local
-            npd: latest
-          - np: latest
+            npd: v3.4.2
+          - np: v3.4.2
             npd: local
 
           - np: local
@@ -384,7 +384,7 @@ jobs:
           echo "np: ${{ matrix.np }}"
           echo "npd: ${{ matrix.npd }}"
 
-      - uses: actions/checkout@3df4ab11eba7bda6032a0b82a6bb43b11571feac # v4.0.0
+      - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
 
       - name: Setup Devicename
         # First two guarantee a unique # per workflow call
@@ -415,6 +415,7 @@ jobs:
           sshnpd_atsign: ${{ env.SSHNPD_ATSIGN }}
           sshrvd_atsign: ${{ env[env.PROD_RVD_ATSIGN] }}
           devicename: ${{ env.DEVICENAME }}
+          args: "-P 55"
 
       - name: Ensure entrypoints exist
         working-directory: tests/end2end_tests/contexts
@@ -522,7 +523,7 @@ jobs:
     if: ${{ github.event.pull_request.head.repo.fork == false && github.actor != 'dependabot[bot]'}}
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@3df4ab11eba7bda6032a0b82a6bb43b11571feac # v4.0.0
+      - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
 
       - name: Setup Devicename
         # First two guarantee a unique # per workflow call
@@ -547,7 +548,7 @@ jobs:
       - name: Set up entrypoints
         working-directory: tests/end2end_tests/contexts/_init_
         run: |
-          ./setup-sshnp-entrypoint.sh ${{ env.DEVICENAME }} ${{ env.SSHNP_ATSIGN }} ${{ env.SSHNPD_ATSIGN }} ${{ env[env.PROD_RVD_ATSIGN] }} alternate_port_test/sshnp_entrypoint.sh
+          ./setup-sshnp-entrypoint.sh ${{ env.DEVICENAME }} ${{ env.SSHNP_ATSIGN }} ${{ env.SSHNPD_ATSIGN }} ${{ env[env.PROD_RVD_ATSIGN] }} sshnp_entrypoint.sh "-i ~/.ssh/id_ed25519 -s -v -P 55"
           ./setup-sshnpd-entrypoint.sh ${{ env.DEVICENAME }} ${{ env.SSHNP_ATSIGN }} ${{ env.SSHNPD_ATSIGN }} sshnpd_entrypoint.sh
 
       - name: Ensure entrypoints exist
@@ -563,12 +564,15 @@ jobs:
           cat service-container-sshnp.yaml >> docker-compose.yaml
           echo '    image: atsigncompany/sshnp-e2e-runtime:local' >> docker-compose.yaml
           echo '    depends_on:' >> docker-compose.yaml
-          echo '      - image-runtime-local' >> docker-compose.yaml
-          echo '      - container-sshnpd' >> docker-compose.yaml
+          echo '      image-runtime-local:' >> docker-compose.yaml
+          echo '       condition: service_started' >> docker-compose.yaml
+          echo '      container-sshnpd:' >> docker-compose.yaml
+          echo '       condition: service_healthy' >> docker-compose.yaml
           cat service-container-sshnpd.yaml >> docker-compose.yaml
           echo '    image: atsigncompany/sshnp-e2e-runtime:local' >> docker-compose.yaml
           echo '    depends_on:' >> docker-compose.yaml
-          echo '      - image-runtime-local' >> docker-compose.yaml
+          echo '      image-runtime-local:' >> docker-compose.yaml
+          echo '       condition: service_started' >> docker-compose.yaml
 
       - name: docker-compose.yaml
         if: always()

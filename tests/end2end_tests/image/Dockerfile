@@ -1,5 +1,5 @@
 # BASE
-FROM debian:stable-20230904-slim@sha256:0941f9e9cc96c4106845a381fb6fca98393f5f659f3eba6a64e9f79219165cfc AS base
+FROM debian:stable-20231009-slim@sha256:8cfbea7c925801b678943e59e3ae6fc5b925e8bfe0243f4e724e180edb5aabcd AS base
 
 ENV USER=atsign
 ENV HOMEDIR=/${USER}
@@ -26,27 +26,30 @@ RUN set -eux ; \
 
 # BRANCH
 # BUILD BRANCH
-FROM dart:3.1.2@sha256:a57751bdedde962da08789236b12fd3793c10d43a473ef3e73c894d61740fb2c AS build-branch
+FROM dart:3.1.3@sha256:1521c3d4e9e077a306e6af0857f49dd9465333cd0d140677c99a73c81582a63f AS build-branch
 
 ENV URL=https://github.com/atsign-foundation/sshnoports.git
 ENV REPO_DIR=/app/repo
+ENV PACKAGE_DIR=${REPO_DIR}/packages/sshnoports
 ENV OUTPUT_DIR=/app/output
 
 ARG branch=trunk
 
+# Builds using the noports_core package available on the branch specified
 RUN set -eux ; \
   mkdir -p ${REPO_DIR} ${OUTPUT_DIR} ; \
   apt-get update ; \
   apt-get install -y git ; \
   cd ${REPO_DIR} ; \
   git clone -b ${branch} --single-branch ${URL} . ; \
-  cd packages/sshnoports ; \
-  dart pub get ; \
-  dart compile exe ${REPO_DIR}/packages/sshnoports/bin/sshnp.dart -o ${OUTPUT_DIR}/sshnp ; \
-  dart compile exe ${REPO_DIR}/packages/sshnoports/bin/sshnpd.dart -o ${OUTPUT_DIR}/sshnpd ; \
-  dart compile exe ${REPO_DIR}/packages/sshnoports/bin/sshrv.dart -o ${OUTPUT_DIR}/sshrv ; \
-  dart compile exe ${REPO_DIR}/packages/sshnoports/bin/sshrvd.dart -o ${OUTPUT_DIR}/sshrvd ; \
-  dart compile exe ${REPO_DIR}/packages/sshnoports/bin/activate_cli.dart -o ${OUTPUT_DIR}/at_activate ;
+  dart pub get; \
+  dart run melos bootstrap --scope="noports_core" --scope="sshnoports"; \
+  dart pub get -C ${PACKAGE_DIR}; \
+  dart compile exe ${PACKAGE_DIR}/bin/sshnp.dart -o ${OUTPUT_DIR}/sshnp ; \
+  dart compile exe ${PACKAGE_DIR}/bin/sshnpd.dart -o ${OUTPUT_DIR}/sshnpd ; \
+  dart compile exe ${PACKAGE_DIR}/bin/sshrv.dart -o ${OUTPUT_DIR}/sshrv ; \
+  dart compile exe ${PACKAGE_DIR}/bin/sshrvd.dart -o ${OUTPUT_DIR}/sshrvd ; \
+  dart compile exe ${PACKAGE_DIR}/bin/activate_cli.dart -o ${OUTPUT_DIR}/at_activate ;
 
 # RUNTIME BRANCH
 FROM base AS runtime-branch
@@ -57,14 +60,15 @@ WORKDIR ${HOMEDIR}
 
 USER ${USER}
 
-ENTRYPOINT cp -r /mount/. /atsign && sudo service ssh start && sh ${HOMEDIR}/entrypoint.sh
+ENTRYPOINT cp -r /mount/. ${HOMEDIR} && sudo service ssh start && sh ${HOMEDIR}/entrypoint.sh
 # END BRANCH
 
 # LOCAL
 # BUILD LOCAL
-FROM dart:3.1.2@sha256:a57751bdedde962da08789236b12fd3793c10d43a473ef3e73c894d61740fb2c AS build-local
+FROM dart:3.1.3@sha256:1521c3d4e9e077a306e6af0857f49dd9465333cd0d140677c99a73c81582a63f AS build-local
 
 ENV REPO_DIR=/app/repo
+ENV PACKAGE_DIR=${REPO_DIR}/packages/sshnoports
 ENV OUTPUT_DIR=/app/output
 
 RUN mkdir -p ${REPO_DIR} ${OUTPUT_DIR} ;
@@ -73,13 +77,15 @@ RUN mkdir -p ${REPO_DIR} ${OUTPUT_DIR} ;
 COPY . ${REPO_DIR}
 
 RUN set -eux ; \
-  cd ${REPO_DIR}/packages/sshnoports ; \
-  dart pub get ; \
-  dart compile exe ${REPO_DIR}/packages/sshnoports/bin/sshnp.dart -o ${OUTPUT_DIR}/sshnp ; \
-  dart compile exe ${REPO_DIR}/packages/sshnoports/bin/sshnpd.dart -o ${OUTPUT_DIR}/sshnpd ; \
-  dart compile exe ${REPO_DIR}/packages/sshnoports/bin/sshrv.dart -o ${OUTPUT_DIR}/sshrv ; \
-  dart compile exe ${REPO_DIR}/packages/sshnoports/bin/sshrvd.dart -o ${OUTPUT_DIR}/sshrvd ; \
-  dart compile exe ${REPO_DIR}/packages/sshnoports/bin/activate_cli.dart -o ${OUTPUT_DIR}/at_activate ;
+  cd ${REPO_DIR}; \
+  dart pub get; \
+  dart run melos bootstrap --scope="noports_core" --scope="sshnoports"; \
+  dart pub get -C ${PACKAGE_DIR}; \
+  dart compile exe ${PACKAGE_DIR}/bin/sshnp.dart -o ${OUTPUT_DIR}/sshnp ; \
+  dart compile exe ${PACKAGE_DIR}/bin/sshnpd.dart -o ${OUTPUT_DIR}/sshnpd ; \
+  dart compile exe ${PACKAGE_DIR}/bin/sshrv.dart -o ${OUTPUT_DIR}/sshrv ; \
+  dart compile exe ${PACKAGE_DIR}/bin/sshrvd.dart -o ${OUTPUT_DIR}/sshrvd ; \
+  dart compile exe ${PACKAGE_DIR}/bin/activate_cli.dart -o ${OUTPUT_DIR}/at_activate ;
 
 # RUNTIME LOCAL
 FROM base AS runtime-local
@@ -90,12 +96,12 @@ WORKDIR ${HOMEDIR}
 
 USER ${USER}
 
-ENTRYPOINT cp -r /mount/. /atsign && sudo service ssh start && sh ${HOMEDIR}/entrypoint.sh
+ENTRYPOINT cp -r /mount/. ${HOMEDIR} && sudo service ssh start && sh ${HOMEDIR}/entrypoint.sh
 # END LOCAL
 
 # RELEASE
 # BUILD RELEASE
-FROM debian:stable-20230904-slim@sha256:0941f9e9cc96c4106845a381fb6fca98393f5f659f3eba6a64e9f79219165cfc AS build-release
+FROM debian:stable-20231009-slim@sha256:8cfbea7c925801b678943e59e3ae6fc5b925e8bfe0243f4e724e180edb5aabcd AS build-release
 
 ARG release
 
@@ -139,7 +145,7 @@ WORKDIR ${HOMEDIR}
 
 USER ${USER}
 
-ENTRYPOINT cp -r /mount/. /atsign && sudo service ssh start && sh ${HOMEDIR}/entrypoint.sh
+ENTRYPOINT cp -r /mount/. ${HOMEDIR} && sudo service ssh start && sh ${HOMEDIR}/entrypoint.sh
 # END RELEASE
 
 # SSHNP INSTALLER
@@ -170,7 +176,7 @@ FROM build-sshnp-installer AS runtime-sshnp-installer
 USER ${USER}
 WORKDIR ${HOMEDIR}
 
-ENTRYPOINT cp -r /mount/. /atsign && sudo service ssh start && sh ${HOMEDIR}/entrypoint.sh
+ENTRYPOINT cp -r /mount/. ${HOMEDIR} && sudo service ssh start && sh ${HOMEDIR}/entrypoint.sh
 # END SSHNP INSTALLER
 
 # SSHNPD INSTALLER
@@ -204,7 +210,7 @@ FROM build-sshnpd-installer AS runtime-sshnpd-installer
 USER ${USER}
 WORKDIR ${HOMEDIR}
 
-ENTRYPOINT cp -r /mount/. /atsign && sudo service ssh start && sh ${HOMEDIR}/entrypoint.sh
+ENTRYPOINT cp -r /mount/. ${HOMEDIR} && sudo service ssh start && sh ${HOMEDIR}/entrypoint.sh
 # END SSHNPD INSTALLER
 
 # MANUAL
