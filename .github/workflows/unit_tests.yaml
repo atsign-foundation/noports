@@ -19,3 +19,18 @@ jobs:
     steps:
       - uses: actions/checkout@8ade135a41bc03ea155e62e844d188df1ea18608 # v4.1.0
       - uses: ./.github/composite/verify_cli_tags
+  noports_core-unit_tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@8ade135a41bc03ea155e62e844d188df1ea18608 # v4.1.0
+      - uses: dart-lang/setup-dart@b64355ae6ca0b5d484f0106a033dd1388965d06d # v1.6.0
+      - name: dart pub get
+        working-directory: packages/noports_core
+        run: dart pub get
+      - name: dart analyze
+        working-directory: packages/noports_core
+        run: dart analyze
+      - name: dart test
+        working-directory: packages/noports_core
+        run: dart test
+

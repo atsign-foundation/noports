@@ -13,7 +13,7 @@ void main() {
       expect(ConfigFileRepository.fromProfileName(profileName), completes);
       expect(
         await ConfigFileRepository.fromProfileName(profileName, basenameOnly: false),
-        equals(path.join(getHomeDirectory()!, '.sshnp', '$profileName.env')),
+        equals(path.join(getHomeDirectory()!, '.sshnp', 'config', '$profileName.env')),
       );
       expect(await ConfigFileRepository.fromProfileName(profileName, basenameOnly: true), equals('$profileName.env'));
     });
