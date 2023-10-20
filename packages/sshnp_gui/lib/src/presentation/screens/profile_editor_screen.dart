@@ -31,6 +31,10 @@ class _ProfileEditorScreenState extends State<ProfileEditorScreen> {
                     style: Theme.of(context).textTheme.titleMedium,
                   ),
                   gapH10,
+                  const LinearProgressIndicator(
+                    value: 0.5,
+                  ),
+                  gapH10,
                   const Expanded(child: ProfileForm())
                 ]),
               ),

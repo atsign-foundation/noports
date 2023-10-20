@@ -6,8 +6,8 @@ import 'package:noports_core/sshnp.dart';
 import 'package:sshnp_gui/src/controllers/config_controller.dart';
 import 'package:sshnp_gui/src/controllers/navigation_controller.dart';
 import 'package:sshnp_gui/src/controllers/navigation_rail_controller.dart';
-import 'package:sshnp_gui/src/controllers/navigation_rail_controller.dart';
 import 'package:sshnp_gui/src/presentation/widgets/profile_form/custom_text_form_field.dart';
+import 'package:sshnp_gui/src/presentation/widgets/profile_form/profile_form_card.dart';
 import 'package:sshnp_gui/src/utility/form_validator.dart';
 import 'package:sshnp_gui/src/utility/sizes.dart';
 
@@ -83,6 +83,12 @@ class _ProfileFormState extends ConsumerState<ProfileForm> {
                         validator: FormValidator.validateProfileNameField,
                       ),
                       gapW8,
+                    ],
+                  ),
+                  gapH10,
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
                       CustomTextFormField(
                         initialValue: oldConfig.device,
                         labelText: strings.device,
@@ -91,12 +97,7 @@ class _ProfileFormState extends ConsumerState<ProfileForm> {
                           SSHNPPartialParams(device: value),
                         ),
                       ),
-                    ],
-                  ),
-                  gapH10,
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
+                      gapW38,
                       CustomTextFormField(
                         initialValue: oldConfig.sshnpdAtSign,
                         labelText: strings.sshnpdAtSign,
@@ -106,19 +107,21 @@ class _ProfileFormState extends ConsumerState<ProfileForm> {
                         ),
                         validator: FormValidator.validateAtsignField,
                       ),
-                      gapW8,
-                      CustomTextFormField(
-                        initialValue: oldConfig.host,
-                        labelText: strings.host,
-                        onChanged: (value) => newConfig = SSHNPPartialParams.merge(
-                          newConfig,
-                          SSHNPPartialParams(host: value),
-                        ),
-                        validator: FormValidator.validateRequiredField,
-                      ),
                     ],
                   ),
                   gapH10,
+                  CustomTextFormField(
+                    initialValue: oldConfig.host,
+                    labelText: strings.host,
+                    onChanged: (value) => newConfig = SSHNPPartialParams.merge(
+                      newConfig,
+                      SSHNPPartialParams(host: value),
+                    ),
+                    validator: FormValidator.validateRequiredField,
+                  ),
+                  gapH20,
+                  Text(strings.sshKeyManagement, style: Theme.of(context).textTheme.titleMedium),
+                  const ProfileFormCard(formFields: []),
                   const Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -158,9 +161,10 @@ class _ProfileFormState extends ConsumerState<ProfileForm> {
                     ],
                   ),
                   gapH10,
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
+                  Text(strings.connectionConfiguration, style: Theme.of(context).textTheme.titleMedium),
+                  gapH20,
+                  ProfileFormCard(
+                    formFields: [
                       CustomTextFormField(
                           initialValue: oldConfig.remoteUsername ?? '',
                           labelText: strings.remoteUserName,
@@ -170,7 +174,7 @@ class _ProfileFormState extends ConsumerState<ProfileForm> {
                               SSHNPPartialParams(remoteUsername: value),
                             );
                           }),
-                      gapW8,
+                      gapH10,
                       CustomTextFormField(
                         initialValue: oldConfig.port.toString(),
                         labelText: strings.port,
@@ -180,12 +184,7 @@ class _ProfileFormState extends ConsumerState<ProfileForm> {
                         ),
                         validator: FormValidator.validateRequiredField,
                       ),
-                    ],
-                  ),
-                  gapH10,
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
+                      gapH10,
                       CustomTextFormField(
                         initialValue: oldConfig.localPort.toString(),
                         labelText: strings.localPort,
@@ -194,42 +193,35 @@ class _ProfileFormState extends ConsumerState<ProfileForm> {
                           SSHNPPartialParams(localPort: int.tryParse(value)),
                         ),
                       ),
-                      gapW8,
+                      gapH10,
                       CustomTextFormField(
-                        initialValue: oldConfig.localSshdPort.toString(),
-                        labelText: strings.localSshdPort,
+                        initialValue: oldConfig.remoteSshdPort.toString(),
+                        labelText: strings.remoteSshdPort,
                         onChanged: (value) => newConfig = SSHNPPartialParams.merge(
                           newConfig,
-                          SSHNPPartialParams(localSshdPort: int.tryParse(value)),
+                          SSHNPPartialParams(remoteSshdPort: int.tryParse(value)),
                         ),
                       ),
+                      gapH12,
                     ],
                   ),
-                  gapH10,
-                  CustomTextFormField(
-                    initialValue: oldConfig.localSshOptions.join(','),
-                    hintText: strings.localSshOptionsHint,
-                    labelText: strings.localSshOptions,
-                    //Double the width of the text field (+8 for the gapW8)
-                    width: CustomTextFormField.defaultWidth * 2 + 8,
-                    onChanged: (value) => newConfig = SSHNPPartialParams.merge(
-                      newConfig,
-                      SSHNPPartialParams(localSshOptions: value.split(',')),
-                    ),
-                  ),
-                  gapH10,
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
+                  gapH20,
+                  Text(strings.advancedConfiguration, style: Theme.of(context).textTheme.titleMedium),
+                  gapH20,
+                  ProfileFormCard(
+                    formFields: [
                       CustomTextFormField(
-                        initialValue: oldConfig.atKeysFilePath,
-                        labelText: strings.atKeysFilePath,
+                        initialValue: oldConfig.localSshOptions.join(','),
+                        hintText: strings.localSshOptionsHint,
+                        labelText: strings.localSshOptions,
+                        //Double the width of the text field (+8 for the gapW8)
+                        width: CustomTextFormField.defaultWidth * 2 + 8,
                         onChanged: (value) => newConfig = SSHNPPartialParams.merge(
                           newConfig,
-                          SSHNPPartialParams(atKeysFilePath: value),
+                          SSHNPPartialParams(localSshOptions: value.split(',')),
                         ),
                       ),
-                      gapW8,
+                      gapH10,
                       CustomTextFormField(
                         initialValue: oldConfig.rootDomain,
                         labelText: strings.rootDomain,
@@ -244,28 +236,25 @@ class _ProfileFormState extends ConsumerState<ProfileForm> {
                   Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      SizedBox(
-                          width: CustomTextFormField.defaultWidth,
-                          height: CustomTextFormField.defaultHeight,
-                          child: CustomSwitchWidget(
-                              labelText: strings.verbose,
-                              value: newConfig.verbose ?? oldConfig.verbose,
-                              onChanged: (newValue) {
-                                setState(() {
-                                  newConfig = SSHNPPartialParams.merge(
-                                    newConfig,
-                                    SSHNPPartialParams(verbose: newValue),
-                                  );
-                                });
-                              })),
+                      CustomTextFormField(
+                        initialValue: oldConfig.atKeysFilePath,
+                        labelText: strings.atKeysFilePath,
+                        onChanged: (value) => newConfig = SSHNPPartialParams.merge(
+                          newConfig,
+                          SSHNPPartialParams(atKeysFilePath: value),
+                        ),
+                      ),
+                      gapW8,
                     ],
                   ),
+                  gapH10,
                   Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       ElevatedButton(
                         onPressed: () => onSubmit(oldConfig, newConfig),
-                        child: Text(strings.submit),
+                        child: Text(strings.connect),
                       ),
                       gapW8,
                       TextButton(
@@ -282,27 +271,5 @@ class _ProfileFormState extends ConsumerState<ProfileForm> {
             ),
           );
         });
-  }
-}
-
-class CustomSwitchWidget extends StatelessWidget {
-  const CustomSwitchWidget({required this.labelText, required this.value, required this.onChanged, super.key});
-
-  final String labelText;
-  final bool value;
-  final void Function(bool)? onChanged;
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      children: [
-        Expanded(child: Text(labelText)),
-        gapW8,
-        Switch(
-          value: value,
-          onChanged: onChanged,
-        ),
-      ],
-    );
   }
 }
