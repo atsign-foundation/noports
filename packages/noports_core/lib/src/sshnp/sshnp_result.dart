@@ -41,7 +41,8 @@ mixin SSHNPConnectionBean<Bean> on SSHNPResult {
   }
 }
 
-const _optionsWithPrivateKey = [
+@visibleForTesting
+const optionsWithPrivateKey = [
   '-o StrictHostKeyChecking=accept-new',
   '-o IdentitiesOnly=yes'
 ];
@@ -82,17 +83,17 @@ class SSHNPCommand<Bean> extends SSHNPSuccess with SSHNPConnectionBean<Bean> {
 
   final List<String> sshOptions;
 
-  SSHNPCommand(
-      {required this.localPort,
-      required this.remoteUsername,
-      required this.host,
-      this.command = 'ssh',
-      List<String>? localSshOptions,
-      this.privateKeyFileName,
-      Bean? connectionBean})
-      : sshOptions = [
+  SSHNPCommand({
+    required this.localPort,
+    required this.host,
+    this.remoteUsername,
+    this.command = 'ssh',
+    List<String>? localSshOptions,
+    this.privateKeyFileName,
+    Bean? connectionBean,
+  }) : sshOptions = [
           if (shouldIncludePrivateKey(privateKeyFileName))
-            ..._optionsWithPrivateKey,
+            ...optionsWithPrivateKey,
           ...(localSshOptions ?? [])
         ] {
     this.connectionBean = connectionBean;
