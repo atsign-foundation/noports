@@ -9,10 +9,12 @@ class SSHNPSuccess implements SSHNPResult {}
 
 class SSHNPFailure implements SSHNPResult {}
 
-mixin SSHNPConnectionBean<Bean> on SSHNPResult {
+// This is a mixin class instead of a mixin on SSHNPResult so that it can be tested independently
+mixin class SSHNPConnectionBean<Bean> {
   Bean? _connectionBean;
 
   @protected
+  @visibleForTesting
   set connectionBean(Bean? connectionBean) {
     _connectionBean = connectionBean;
   }
@@ -29,14 +31,15 @@ mixin SSHNPConnectionBean<Bean> on SSHNPResult {
     }
 
     if (_connectionBean is Future) {
-      await (_connectionBean as Future).then((value) {
-        if (value is Process) {
-          value.kill();
-        }
-        if (value is SocketConnector) {
-          value.close();
-        }
-      });
+      final value = await (_connectionBean as Future);
+
+      if (value is Process) {
+        value.kill();
+      }
+
+      if (value is SocketConnector) {
+        value.close();
+      }
     }
   }
 }
