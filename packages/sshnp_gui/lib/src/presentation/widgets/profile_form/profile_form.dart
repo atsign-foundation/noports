@@ -4,9 +4,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:noports_core/sshnp.dart';
 import 'package:sshnp_gui/src/controllers/config_controller.dart';
+import 'package:sshnp_gui/src/controllers/form_controllers.dart';
 import 'package:sshnp_gui/src/controllers/navigation_controller.dart';
 import 'package:sshnp_gui/src/controllers/navigation_rail_controller.dart';
 import 'package:sshnp_gui/src/presentation/widgets/profile_form/custom_text_form_field.dart';
+import 'package:sshnp_gui/src/presentation/widgets/profile_form/file_picker_field.dart';
 import 'package:sshnp_gui/src/presentation/widgets/profile_form/profile_form_card.dart';
 import 'package:sshnp_gui/src/utility/form_validator.dart';
 import 'package:sshnp_gui/src/utility/sizes.dart';
@@ -79,6 +81,7 @@ class _ProfileFormState extends ConsumerState<ProfileForm> {
                             newConfig,
                             SSHNPPartialParams(profileName: value),
                           );
+                          ref.read(formProfileNameController.notifier).state = value;
                         },
                         validator: FormValidator.validateProfileNameField,
                       ),
@@ -121,7 +124,20 @@ class _ProfileFormState extends ConsumerState<ProfileForm> {
                   ),
                   gapH20,
                   Text(strings.sshKeyManagement, style: Theme.of(context).textTheme.titleMedium),
-                  const ProfileFormCard(formFields: []),
+                  ProfileFormCard(formFields: [
+                    const FilePickerField(),
+                    gapH10,
+                    CustomTextFormField(
+                      labelText: 'SSH Key Password',
+                      initialValue: oldConfig.identityPassphrase,
+                      isPasswordField: true,
+                      onChanged: (value) => newConfig = SSHNPPartialParams.merge(
+                        newConfig,
+                        SSHNPPartialParams(identityPassphrase: value),
+                      ),
+                    )
+                  ]),
+                  gapH20,
                   const Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [

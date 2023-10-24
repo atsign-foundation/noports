@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:sshnp_gui/src/utility/constants.dart';
 
-class CustomTextFormField extends StatelessWidget {
+class CustomTextFormField extends StatefulWidget {
   static const defaultWidth = 192.0;
   static const defaultHeight = 33.0;
   const CustomTextFormField({
@@ -12,6 +13,7 @@ class CustomTextFormField extends StatelessWidget {
     this.hintText,
     this.width = defaultWidth,
     this.height = defaultHeight,
+    this.isPasswordField = false,
   });
 
   final String labelText;
@@ -21,24 +23,47 @@ class CustomTextFormField extends StatelessWidget {
   final double height;
   final void Function(String)? onChanged;
   final String? Function(String?)? validator;
+  final bool isPasswordField;
+
+  @override
+  State<CustomTextFormField> createState() => _CustomTextFormFieldState();
+}
+
+class _CustomTextFormFieldState extends State<CustomTextFormField> {
+  bool _isPasswordVisible = false;
+
+  void _setPasswordVisability() {
+    setState(() {
+      _isPasswordVisible = !_isPasswordVisible;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      width: width,
+      width: widget.width,
       // height: height,
       child: TextFormField(
-        initialValue: initialValue,
+        initialValue: widget.initialValue,
+        obscureText: widget.isPasswordField && !_isPasswordVisible,
         decoration: InputDecoration(
-          border: const OutlineInputBorder(
-            borderRadius: BorderRadius.all(Radius.circular(2)),
+          filled: true,
+          fillColor: kProfileFormFieldColor,
+          border: UnderlineInputBorder(
+            borderRadius: BorderRadius.circular(2),
           ),
-          labelText: labelText,
-          hintText: hintText,
+          labelText: widget.labelText,
+          hintText: widget.hintText,
           hintStyle: Theme.of(context).textTheme.bodyLarge,
+          suffixIcon: widget.isPasswordField
+              ? InkWell(
+                  onTap: _setPasswordVisability,
+                  child: Icon(_isPasswordVisible ? Icons.visibility_outlined : Icons.visibility_off_outlined),
+                )
+              : null,
         ),
-        onChanged: onChanged,
-        validator: validator,
+        onChanged: widget.onChanged,
+        validator: widget.validator,
       ),
     );
   }
