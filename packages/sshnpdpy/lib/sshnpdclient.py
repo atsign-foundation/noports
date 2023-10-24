@@ -201,14 +201,13 @@ class SSHNPDClient:
         self.logger.info("sshrv started @ "  + hostname + " on port " + str(port))
         (public_key, private_key)= self._generate_ssh_keys(sessionId)
         self._handle_ssh_public_key(public_key)
-        data = json.dumps({'status' : 'connected', 'sessionId': sessionId, 'ephemeralPrivateKey': private_key})
+        data = json.dumps({'status':'connected','sessionId':sessionId,'ephemeralPrivateKey':private_key}).trim()
         signature =  EncryptionUtil.sign_sha256_rsa(data, self.at_client.keys[KeysUtil.encryption_private_key_name])
-        envelope = {'payload': json.loads(data), 'signature': signature, 'signingAlgo':"rsa2048", 'hashingAlgo':"sha256"}
-        a =  json.dumps(envelope)
-        return a
+        envelope = f'{{"payload":{data},"signature":"{signature}","hashingAlgo":"sha256","signingAlgo":"rsa2048"}}'
+        return envelope
     
     def sshnp_callback(
-        self,
+        self,   
         event: AtEvent,
         private_key="",
         direct=False,
@@ -224,7 +223,7 @@ class SSHNPDClient:
             ttr=-1,
             iv_nonce=iv_nonce,
         )
-        at_key = AtKey(f"{uuid}.", self.atsign)
+        at_key = AtKey(f"{uuid}.{self.device}", self.atsign)
         at_key.shared_with = AtSign(self.manager_atsign)
         at_key.metadata = metadata
         at_key.namespace = self.device_namespace
@@ -242,7 +241,7 @@ class SSHNPDClient:
             ssh_response = self._reverse_ssh_client(ssh_list, private_key)
        
         if ssh_response:
-            notify_response = self.at_client.notify(at_key, ssh_response)
+            notify_response = self.at_client.notify(at_key, ssh_response, session_id=uuid)
             self.logger.info("sent ssh notification to " + at_key.shared_with.to_string())
             self.authenticated = True
 
