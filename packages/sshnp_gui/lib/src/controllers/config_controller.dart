@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:developer';
 
 import 'package:at_client_mobile/at_client_mobile.dart';
 import 'package:flutter/material.dart';
@@ -79,7 +80,12 @@ class ConfigFamilyController extends AutoDisposeFamilyAsyncNotifier<SSHNPParams,
         SSHNPPartialParams(clientAtSign: atClient.getCurrentAtSign()!),
       );
     }
-    return ConfigKeyRepository.getParams(arg, atClient: atClient);
+    try {
+      return ConfigKeyRepository.getParams(arg, atClient: atClient);
+    } catch (e) {
+      log(e.toString());
+      return SSHNPParams.empty();
+    }
   }
 
   Future<void> putConfig(SSHNPParams params, {String? oldProfileName, BuildContext? context}) async {

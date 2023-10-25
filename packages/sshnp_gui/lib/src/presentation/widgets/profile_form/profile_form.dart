@@ -1,3 +1,5 @@
+import 'dart:developer';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -29,6 +31,9 @@ class _ProfileFormState extends ConsumerState<ProfileForm> {
   SSHNPPartialParams newConfig = SSHNPPartialParams.empty();
   @override
   void initState() {
+    WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
+      ref.read(formProfileNameController.notifier).state = currentProfile.profileName;
+    });
     super.initState();
   }
 
@@ -63,6 +68,7 @@ class _ProfileFormState extends ConsumerState<ProfileForm> {
     currentProfile = ref.watch(currentConfigController);
 
     final asyncOldConfig = ref.watch(configFamilyController(currentProfile.profileName));
+
     return asyncOldConfig.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (error, stack) => Center(child: Text(error.toString())),
@@ -85,6 +91,7 @@ class _ProfileFormState extends ConsumerState<ProfileForm> {
                             SSHNPPartialParams(profileName: value),
                           );
                           ref.read(formProfileNameController.notifier).state = value;
+                          log(ref.read(formProfileNameController));
                         },
                         validator: FormValidator.validateProfileNameField,
                       ),
@@ -128,7 +135,9 @@ class _ProfileFormState extends ConsumerState<ProfileForm> {
                   gapH20,
                   Text(strings.sshKeyManagement, style: Theme.of(context).textTheme.titleMedium),
                   ProfileFormCard(formFields: [
-                    const FilePickerField(),
+                    FilePickerField(
+                      initialValue: oldConfig.identityFile,
+                    ),
                     gapH10,
                     CustomTextFormField(
                       labelText: 'SSH Key Password',

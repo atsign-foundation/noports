@@ -19,12 +19,11 @@ const XTypeGroup dotEnvTypeGroup = XTypeGroup(
   mimeTypes: [dotEnvMimeType],
   uniformTypeIdentifiers: ['com.atsign.sshnp-config'],
 );
-const String dotPubMimeType = 'application/x-pem-file';
-const XTypeGroup dotPubTypeGroup = XTypeGroup(
-  label: 'dotpub',
-  extensions: ['.pub'],
-  mimeTypes: [dotEnvMimeType],
-  uniformTypeIdentifiers: ['com.atsign.pubkey'],
+const String dotPrivateMimeType = 'application/x-pem-file';
+const XTypeGroup dotPrivateTypeGroup = XTypeGroup(
+  label: 'sshPrivateKey',
+  // mimeTypes: [dotPrivateMimeType],
+  // extensions: ['pem', ''],
 );
 
 // Form Field Constants
