@@ -26,3 +26,7 @@ const XTypeGroup dotPubTypeGroup = XTypeGroup(
   mimeTypes: [dotEnvMimeType],
   uniformTypeIdentifiers: ['com.atsign.pubkey'],
 );
+
+// Form Field Constants
+const kFieldDefaultWidth = 192.0;
+const kFieldDefaultHeight = 33.0;

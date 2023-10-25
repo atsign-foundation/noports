@@ -2,8 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:sshnp_gui/src/utility/constants.dart';
 
 class CustomTextFormField extends StatefulWidget {
-  static const defaultWidth = 192.0;
-  static const defaultHeight = 33.0;
   const CustomTextFormField({
     super.key,
     required this.labelText,
@@ -11,8 +9,8 @@ class CustomTextFormField extends StatefulWidget {
     this.validator,
     this.onChanged,
     this.hintText,
-    this.width = defaultWidth,
-    this.height = defaultHeight,
+    this.width = kFieldDefaultWidth,
+    this.height = kFieldDefaultHeight,
     this.isPasswordField = false,
   });
 
@@ -32,7 +30,7 @@ class CustomTextFormField extends StatefulWidget {
 class _CustomTextFormFieldState extends State<CustomTextFormField> {
   bool _isPasswordVisible = false;
 
-  void _setPasswordVisability() {
+  void _setPasswordVisibility() {
     setState(() {
       _isPasswordVisible = !_isPasswordVisible;
     });
@@ -57,7 +55,7 @@ class _CustomTextFormFieldState extends State<CustomTextFormField> {
           hintStyle: Theme.of(context).textTheme.bodyLarge,
           suffixIcon: widget.isPasswordField
               ? InkWell(
-                  onTap: _setPasswordVisability,
+                  onTap: _setPasswordVisibility,
                   child: Icon(_isPasswordVisible ? Icons.visibility_outlined : Icons.visibility_off_outlined),
                 )
               : null,

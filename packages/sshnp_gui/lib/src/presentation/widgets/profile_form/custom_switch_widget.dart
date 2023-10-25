@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:sshnp_gui/src/utility/constants.dart';
 
 import '../../../utility/sizes.dart';
 
@@ -11,15 +12,24 @@ class CustomSwitchWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      children: [
-        Expanded(child: Text(labelText)),
-        gapW8,
-        Switch(
-          value: value,
-          onChanged: onChanged,
-        ),
-      ],
+    return SizedBox(
+      width: kFieldDefaultWidth,
+      child: Row(
+        children: [
+          Expanded(
+              child: Text(
+            labelText,
+            style: Theme.of(context).textTheme.bodyLarge,
+          )),
+          gapW8,
+          Switch(
+            activeColor: Colors.white,
+            activeTrackColor: kPrimaryColor,
+            value: value,
+            onChanged: onChanged,
+          ),
+        ],
+      ),
     );
   }
 }
