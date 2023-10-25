@@ -24,9 +24,17 @@ class DartSSHKeyUtil implements AtSSHKeyUtil {
     return keyPair;
   }
 
+  Future<void> addKeyPair({
+    required AtSSHKeyPair keyPair,
+    required String identifier,
+  }) async {
+    _keyPairCache[identifier] = keyPair;
+  }
+
   @override
   Future<AtSSHKeyPair> getKeyPair({required String identifier}) async {
-    return _keyPairCache[identifier] ?? await generateKeyPair(identifier: identifier);
+    return _keyPairCache[identifier] ??
+        await generateKeyPair(identifier: identifier);
   }
 
   AtSSHKeyPair _generateRSAKeyPair(String identifier) => AtSSHKeyPair.fromPem(
