@@ -73,14 +73,17 @@ abstract class SSHNPCore implements SSHNP {
 
   @protected
   final Completer<void> doneCompleter = Completer<void>();
+
   @override
   Future<void> get done => doneCompleter.future;
 
   bool _initializeStarted = false;
+
   @protected
   bool get initializeStarted => _initializeStarted;
   @protected
   final Completer<void> initializedCompleter = Completer<void>();
+
   @override
   Future<void> get initialized => initializedCompleter.future;
 
@@ -105,9 +108,11 @@ abstract class SSHNPCore implements SSHNP {
   // ====================================================================
 
   String get clientAtSign => atClient.getCurrentAtSign()!;
+
   String get sshnpdAtSign => params.sshnpdAtSign;
 
   static String getNamespace(String device) => '$device.sshnp';
+
   String get namespace => getNamespace(params.device);
 
   FutureOr<AtSSHKeyPair?> identityKeyPair;
@@ -333,7 +338,6 @@ abstract class SSHNPCore implements SSHNP {
         // as we are sending a notification to the sshrvd namespace,
         // we don't want to append our namespace
         ..namespaceAware = false
-        ..ttr = -1
         ..ttl = 10000);
     logger.info('Sending notification to sshrvd: $ourSshrvdIdKey');
     await notify(ourSshrvdIdKey, sessionId);
@@ -378,9 +382,7 @@ abstract class SSHNPCore implements SSHNP {
         ..key = 'sshpublickey'
         ..sharedBy = clientAtSign
         ..sharedWith = sshnpdAtSign
-        ..metadata = (Metadata()
-          ..ttr = -1
-          ..ttl = 10000);
+        ..metadata = (Metadata()..ttl = 10000);
       await notify(sendOurPublicKeyToSshnpd, publicKeyContents);
     } catch (e, s) {
       throw SSHNPError(
@@ -491,7 +493,6 @@ abstract class SSHNPCore implements SSHNP {
       var metaData = Metadata()
         ..isPublic = false
         ..isEncrypted = true
-        ..ttr = -1
         ..namespaceAware = true;
 
       var pingKey = AtKey()

@@ -151,7 +151,7 @@ class SSHNPDImpl implements SSHNPD {
       var metaData = Metadata()
         ..isPublic = false
         ..isEncrypted = true
-        ..ttr = -1
+        ..ttr = -1 // we want this to be cacheable by managerAtsign
         ..namespaceAware = true;
 
       var atKey = AtKey()
@@ -293,7 +293,6 @@ class SSHNPDImpl implements SSHNPD {
       ..metadata = (Metadata()
         ..isPublic = false
         ..isEncrypted = true
-        ..ttr = -1
         ..ttl = 10000 // allow only ten seconds before this record expires
         ..namespaceAware = true);
 
@@ -625,7 +624,6 @@ class SSHNPDImpl implements SSHNPD {
         ..isPublic = false
         ..isEncrypted = true
         ..namespaceAware = true
-        ..ttr = -1
         ..ttl = 10000);
     return atKey;
   }
@@ -859,8 +857,8 @@ class SSHNPDImpl implements SSHNPD {
     var metaData = Metadata()
       ..isPublic = false
       ..isEncrypted = true
-      ..ttr = -1
-      ..ttl = ttl
+      ..ttr = -1 // we want this to be cacheable by managerAtsign
+      ..ttl = ttl // but to expire after 30 days
       ..updatedAt = DateTime.now()
       ..namespaceAware = true;
 
