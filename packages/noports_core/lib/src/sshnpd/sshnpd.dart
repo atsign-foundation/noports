@@ -48,6 +48,11 @@ abstract class SSHNPD {
   /// This flag should default to false.
   abstract final bool addSshPublicKeys;
 
+  /// When true, sshnpd will listen for messages from multiple atSigns
+  /// but check with the [managerAtsign] if this particular client atSign
+  /// is currently authorized to connect to this device.
+  abstract final bool delegateAuthChecks;
+
   /// true once [init] has completed
   @visibleForTesting
   bool initialized = false;

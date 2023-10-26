@@ -46,6 +46,9 @@ class SSHNPDImpl implements SSHNPD {
   final bool addSshPublicKeys;
 
   @override
+  final bool delegateAuthChecks;
+
+  @override
   final int localSshdPort;
 
   @override
@@ -73,6 +76,7 @@ class SSHNPDImpl implements SSHNPD {
     required this.sshClient,
     this.makeDeviceInfoVisible = false,
     this.addSshPublicKeys = false,
+    this.delegateAuthChecks = false,
     this.localSshdPort = DefaultArgs.localSshdPort,
     required this.ephemeralPermissions,
     required this.sshAlgorithm,
@@ -113,6 +117,7 @@ class SSHNPDImpl implements SSHNPD {
         sshClient: p.sshClient,
         makeDeviceInfoVisible: p.makeDeviceInfoVisible,
         addSshPublicKeys: p.addSshPublicKeys,
+        delegateAuthChecks: p.delegateAuthChecks,
         localSshdPort: p.localSshdPort,
         ephemeralPermissions: p.ephemeralPermissions,
         sshAlgorithm: p.sshAlgorithm,

@@ -14,6 +14,7 @@ class SSHNPDParams {
   final bool verbose;
   final bool makeDeviceInfoVisible;
   final bool addSshPublicKeys;
+  final bool delegateAuthChecks;
   final SupportedSshClient sshClient;
   final String rootDomain;
   final int localSshdPort;
@@ -32,6 +33,7 @@ class SSHNPDParams {
     required this.verbose,
     required this.makeDeviceInfoVisible,
     required this.addSshPublicKeys,
+    required this.delegateAuthChecks,
     required this.sshClient,
     required this.rootDomain,
     required this.localSshdPort,
@@ -70,6 +72,7 @@ class SSHNPDParams {
       verbose: r['verbose'],
       makeDeviceInfoVisible: r['un-hide'],
       addSshPublicKeys: r['sshpublickey'],
+      delegateAuthChecks: r['delegate-auth-checks'],
       sshClient: sshClient,
       rootDomain: r['root-domain'],
       localSshdPort:
@@ -110,13 +113,20 @@ class SSHNPDParams {
       help:
           'Send a trigger to this device, allows multiple devices share an atSign',
     );
-
     parser.addFlag(
       'sshpublickey',
       abbr: 's',
       defaultsTo: false,
       help:
           'When set, will update authorized_keys to include public key sent by manager',
+    );
+    parser.addFlag(
+      'delegate-auth-checks',
+      defaultsTo: false,
+      help:
+          'When set, sshnpd will listen for messages from multiple atSigns '
+          'but check with the [managerAtsign] if this particular client atSign '
+          'is currently authorized to connect to this device.',
     );
     parser.addFlag(
       'un-hide',
