@@ -45,7 +45,7 @@ void main(List<String> args) async {
 class AlwaysApproveHandler implements SSHNPARequestHandler {
   @override
   Future<SSHNPAAuthCheckResponse> handleRequest(SSHNPAAuthCheckRequest authCheckRequest) async {
-    return SSHNPAAuthCheckResponse(authorized: false, message: 'Computer says "No..."');
+    return SSHNPAAuthCheckResponse(authorized: true, message: 'Heck yeah');
   }
 
 }
