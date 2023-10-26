@@ -231,7 +231,7 @@ class SSHNPDImpl implements SSHNPD {
 
   /// Notification handler for sshnpd
   void _notificationHandler(AtNotification notification) async {
-    if (!isFromAuthorizedAtsign(notification)) {
+    if (!await isFromAuthorizedAtsign(notification)) {
       logger.shout('Notification ignored from ${notification.from}'
           ' which is not in authorized list [$managerAtsign].'
           ' Notification was ${jsonEncode(notification.toJson())}');
@@ -276,11 +276,16 @@ class SSHNPDImpl implements SSHNPD {
     }
   }
 
-  bool isFromAuthorizedAtsign(AtNotification notification) =>
-      notification.from == managerAtsign;
+  Future<bool> isFromAuthorizedAtsign(AtNotification notification) async {
+    if (delegateAuthChecks) {
+      return false;
+    } else {
+      return notification.from == managerAtsign;
+    }
+  }
 
-  void _handlePingNotification(AtNotification notification) {
-    if (!isFromAuthorizedAtsign(notification)) {
+  void _handlePingNotification(AtNotification notification) async {
+    if (!await isFromAuthorizedAtsign(notification)) {
       logger.shout('Notification ignored from ${notification.from}'
           ' which is not in authorized list [$managerAtsign].'
           ' Notification was ${jsonEncode(notification.toJson())}');
@@ -314,7 +319,7 @@ class SSHNPDImpl implements SSHNPD {
   }
 
   Future<void> _handlePublicKeyNotification(AtNotification notification) async {
-    if (!isFromAuthorizedAtsign(notification)) {
+    if (!await isFromAuthorizedAtsign(notification)) {
       logger.shout('Notification ignored from ${notification.from}'
           ' which is not in authorized list [$managerAtsign].'
           ' Notification was ${jsonEncode(notification.toJson())}');
@@ -377,7 +382,7 @@ class SSHNPDImpl implements SSHNPD {
   /// Once this is running, the client user will then be able to ssh to
   /// this device via `ssh -p $remoteForwardPort <some user>@localhost`
   void _handleSshRequestNotification(AtNotification notification) async {
-    if (!isFromAuthorizedAtsign(notification)) {
+    if (!await isFromAuthorizedAtsign(notification)) {
       logger.shout('Notification ignored from ${notification.from}'
           ' which is not in authorized list [$managerAtsign].'
           ' Notification was ${jsonEncode(notification.toJson())}');
@@ -450,7 +455,7 @@ class SSHNPDImpl implements SSHNPD {
 
   /// ssh through to the remote device with the information we've received
   void _handleLegacySshRequestNotification(AtNotification notification) async {
-    if (!isFromAuthorizedAtsign(notification)) {
+    if (!await isFromAuthorizedAtsign(notification)) {
       logger.shout('Notification ignored from ${notification.from}'
           ' which is not in authorized list [$managerAtsign].'
           ' Notification was ${jsonEncode(notification.toJson())}');
