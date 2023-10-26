@@ -9,6 +9,7 @@ import 'package:logging/logging.dart';
 import 'package:meta/meta.dart';
 import 'package:noports_core/src/sshrv/sshrv.dart';
 import 'package:noports_core/sshnpd.dart';
+import 'package:noports_core/sshnpa.dart';
 import 'package:noports_core/utils.dart';
 import 'package:noports_core/src/version.dart';
 import 'package:uuid/uuid.dart';
@@ -65,6 +66,8 @@ class SSHNPDImpl implements SSHNPD {
   String _privateKey = '';
 
   static const String commandToSend = 'sshd';
+
+  AuthChecker? authChecker;
 
   SSHNPDImpl({
     // final fields
@@ -147,6 +150,10 @@ class SSHNPDImpl implements SSHNPD {
   Future<void> run() async {
     if (!initialized) {
       throw StateError('Cannot run() - not initialized');
+    }
+
+    if (delegateAuthChecks) {
+      authChecker = AuthChecker(this);
     }
 
     NotificationService notificationService = atClient.notificationService;
@@ -277,8 +284,19 @@ class SSHNPDImpl implements SSHNPD {
   }
 
   Future<bool> isFromAuthorizedAtsign(AtNotification notification) async {
+    const seconds = 5;
     if (delegateAuthChecks) {
-      return false;
+      try {
+        SSHNPAAuthCheckResponse resp = await authChecker!.check(
+            clientAtsign: notification.from).timeout(
+            const Duration(seconds: seconds));
+        return resp.authorized;
+      } on TimeoutException {
+        logger.warning('isFromAuthorizedAtsign sent auth check request'
+            ' but did not receive a response within $seconds seconds'
+            ' - returning false');
+        return false;
+      }
     } else {
       return notification.from == managerAtsign;
     }
@@ -905,6 +923,69 @@ class SSHNPDImpl implements SSHNPD {
       );
     } catch (e) {
       stderr.writeln(e.toString());
+    }
+  }
+}
+
+class AuthChecker implements AtRpcCallbacks {
+  final SSHNPD sshnpd;
+  late final AtRpc rpc;
+
+  AuthChecker(this.sshnpd) {
+    rpc = AtRpc(
+      atClient: sshnpd.atClient,
+      baseNameSpace: DefaultArgs.namespace,
+      domainNameSpace: 'auth_checks',
+      allowList: {sshnpd.managerAtsign},
+      callbacks: this,
+    );
+    rpc.start();
+  }
+
+  Map<int, Completer<SSHNPAAuthCheckResponse>> completerMap = {};
+
+  Future<SSHNPAAuthCheckResponse> check ({required String clientAtsign}) async {
+    AtRpcReq request = AtRpcReq.create(SSHNPAAuthCheckRequest(
+            daemonAtsign: sshnpd.deviceAtsign,
+            daemonDeviceName: sshnpd.device,
+            clientAtsign: clientAtsign)
+        .toJson());
+    completerMap[request.reqId] = Completer<SSHNPAAuthCheckResponse>();
+    sshnpd.logger.info('Sending auth check request to sshnpa at ${sshnpd.managerAtsign} : $request');
+    await rpc.sendRequest(toAtSign: sshnpd.managerAtsign, request: request);
+    return completerMap[request.reqId]!.future;
+  }
+
+  /// Not handling requests via AtRpc as yet
+  @override
+  Future<AtRpcResp> handleRequest(AtRpcReq request, String fromAtSign) async {
+    // TODO: implement handleRequest
+    throw UnimplementedError();
+  }
+
+  @override
+  Future<void> handleResponse(AtRpcResp response) async {
+    sshnpd.logger.info('Got response ${response.payload}');
+
+    Completer<SSHNPAAuthCheckResponse> completer = completerMap[response.reqId]!;
+
+    switch (response.respType) {
+      case AtRpcRespType.ack:
+        sshnpd.logger.info(
+            'Got ack from ${sshnpd.managerAtsign}'
+                ' : $response');
+      case AtRpcRespType.success:
+        sshnpd.logger.info(
+            'Got auth check response from ${sshnpd.managerAtsign}'
+                ' : $response');
+        completer.complete(SSHNPAAuthCheckResponse.fromJson(response.payload));
+      default:
+        sshnpd.logger.warning(
+            'Got non-success auth check response from ${sshnpd.managerAtsign}'
+                ' : $response');
+        completer.complete(SSHNPAAuthCheckResponse(
+            authorized: false,
+            message: response.message ?? 'Got non-success response $response'));
     }
   }
 }
