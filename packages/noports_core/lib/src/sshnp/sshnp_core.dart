@@ -397,11 +397,11 @@ abstract class SSHNPCore implements SSHNP {
   Future<bool> waitForDaemonResponse() async {
     logger.finer('Waiting for daemon response');
     int counter = 0;
-    // Timer to timeout after 10 Secs or after the Ack of connected/Errors
+    // Timer to timeout after 15 Secs or after the Ack of connected/Errors
     while (!sshnpdAck) {
       await Future.delayed(Duration(milliseconds: 100));
       counter++;
-      if (counter == 100) {
+      if (counter == 150) {
         return false;
       }
     }
