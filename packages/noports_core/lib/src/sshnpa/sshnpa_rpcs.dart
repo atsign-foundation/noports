@@ -27,7 +27,7 @@ class SSHNPAAuthCheckRequest {
 
 class SSHNPAAuthCheckResponse {
   final bool authorized;
-  final String message;
+  final String? message;
 
   SSHNPAAuthCheckResponse({required this.authorized, required this.message});
 
