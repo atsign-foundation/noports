@@ -1,11 +1,17 @@
+import 'dart:convert';
+
+const JsonEncoder jsonPrettyPrinter = JsonEncoder.withIndent('    ');
+
 class SSHNPAAuthCheckRequest {
   final String daemonAtsign;
   final String daemonDeviceName;
+  final String daemonDeviceGroupName;
   final String clientAtsign;
 
   SSHNPAAuthCheckRequest({
     required this.daemonAtsign,
     required this.daemonDeviceName,
+    required this.daemonDeviceGroupName,
     required this.clientAtsign,
   });
 
@@ -13,6 +19,7 @@ class SSHNPAAuthCheckRequest {
     return SSHNPAAuthCheckRequest(
       daemonAtsign: json['daemonAtsign'],
       daemonDeviceName: json['daemonDeviceName'],
+      daemonDeviceGroupName: json['daemonDeviceGroupName'],
       clientAtsign: json['clientAtsign'],
     );
   }
@@ -21,8 +28,12 @@ class SSHNPAAuthCheckRequest {
       {
         'daemonAtsign': daemonAtsign,
         'daemonDeviceName': daemonDeviceName,
+        'daemonDeviceGroupName': daemonDeviceGroupName,
         'clientAtsign': clientAtsign,
       };
+
+  @override
+  String toString() => jsonPrettyPrinter.convert(toJson());
 }
 
 class SSHNPAAuthCheckResponse {
@@ -43,4 +54,7 @@ class SSHNPAAuthCheckResponse {
         'authorized': authorized,
         'message': message
       };
+
+  @override
+  String toString() => jsonPrettyPrinter.convert(toJson());
 }

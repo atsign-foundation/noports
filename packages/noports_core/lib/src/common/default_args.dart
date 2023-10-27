@@ -35,4 +35,5 @@ class DefaultSSHNPArgs {
 
 class DefaultSSHNPDArgs {
   static const SupportedSshClient sshClient = SupportedSshClient.exec;
+  static const String deviceGroupName = '__none__';
 }

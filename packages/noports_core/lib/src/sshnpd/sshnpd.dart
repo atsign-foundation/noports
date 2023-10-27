@@ -74,6 +74,12 @@ abstract class SSHNPD {
   /// - [SupportedSSHAlgorithm.rsa]
   abstract final SupportedSSHAlgorithm sshAlgorithm;
 
+  /// The name of this device's "group".
+  /// When delegated authorization is being used then the group name is sent
+  //  to the authorizer service as well as the device name, this daemon's
+  //  atSign, and the atSign of the client which is requesting a connection'
+  abstract final String deviceGroup;
+
   static Future<SSHNPD> fromCommandLineArgs(List<String> args,
       {AtClient? atClient,
       FutureOr<AtClient> Function(SSHNPDParams)? atClientGenerator,

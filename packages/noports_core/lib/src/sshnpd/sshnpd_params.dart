@@ -20,6 +20,7 @@ class SSHNPDParams {
   final int localSshdPort;
   final String ephemeralPermissions;
   final SupportedSSHAlgorithm sshAlgorithm;
+  final String deviceGroup;
 
   // Non param variables
   static final ArgParser parser = _createArgParser();
@@ -39,6 +40,7 @@ class SSHNPDParams {
     required this.localSshdPort,
     required this.ephemeralPermissions,
     required this.sshAlgorithm,
+    required this.deviceGroup,
   });
 
   static Future<SSHNPDParams> fromArgs(List<String> args) async {
@@ -79,6 +81,7 @@ class SSHNPDParams {
           int.tryParse(r['local-sshd-port']) ?? DefaultArgs.localSshdPort,
       ephemeralPermissions: r['ephemeral-permissions'],
       sshAlgorithm: SupportedSSHAlgorithm.fromString(r['ssh-algorithm']),
+      deviceGroup: r['device-group'],
     );
   }
 
@@ -157,6 +160,16 @@ class SSHNPDParams {
       mandatory: false,
       defaultsTo: 'root.atsign.org',
       help: 'atDirectory domain',
+    );
+
+    parser.addOption(
+      'device-group',
+      mandatory: false,
+      defaultsTo: DefaultSSHNPDArgs.deviceGroupName,
+      help: 'The name of this device\'s group. When delegated authorization'
+          ' is being used then the group name is sent to the authorizer'
+          ' service as well as the device name, this daemon\'s atSign, '
+          ' and the client atSign which is requesting a connection',
     );
 
     parser.addOption(

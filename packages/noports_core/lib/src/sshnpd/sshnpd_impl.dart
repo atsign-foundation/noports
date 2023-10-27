@@ -59,6 +59,9 @@ class SSHNPDImpl implements SSHNPD {
   final SupportedSSHAlgorithm sshAlgorithm;
 
   @override
+  final String deviceGroup;
+
+  @override
   @visibleForTesting
   bool initialized = false;
 
@@ -83,6 +86,7 @@ class SSHNPDImpl implements SSHNPD {
     this.localSshdPort = DefaultArgs.localSshdPort,
     required this.ephemeralPermissions,
     required this.sshAlgorithm,
+    required this.deviceGroup,
   }) {
     logger.hierarchicalLoggingEnabled = true;
     logger.logger.level = Level.SHOUT;
@@ -124,6 +128,7 @@ class SSHNPDImpl implements SSHNPD {
         localSshdPort: p.localSshdPort,
         ephemeralPermissions: p.ephemeralPermissions,
         sshAlgorithm: p.sshAlgorithm,
+        deviceGroup: p.deviceGroup,
       );
 
       if (p.verbose) {
@@ -948,6 +953,7 @@ class AuthChecker implements AtRpcCallbacks {
     AtRpcReq request = AtRpcReq.create(SSHNPAAuthCheckRequest(
             daemonAtsign: sshnpd.deviceAtsign,
             daemonDeviceName: sshnpd.device,
+            daemonDeviceGroupName: sshnpd.deviceGroup,
             clientAtsign: clientAtsign)
         .toJson());
     completerMap[request.reqId] = Completer<SSHNPAAuthCheckResponse>();
