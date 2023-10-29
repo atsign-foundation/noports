@@ -244,6 +244,8 @@ class SSHNPDImpl implements SSHNPD {
   /// Notification handler for sshnpd
   void _notificationHandler(AtNotification notification) async {
     if (!await isFromAuthorizedAtsign(notification)) {
+      // TODO IF $someConditions apply then send a 'nice' error
+      // TODO message notification back to the requester
       return;
     }
 
@@ -958,7 +960,7 @@ class AuthChecker implements AtRpcCallbacks {
     Completer<SSHNPAAuthCheckResponse> completer = completerMap[response.reqId]!;
 
     if (completer.isCompleted) {
-      sshnpd.logger.info(
+      sshnpd.logger.warning(
           'Ignoring auth check response (received after future completion)'
               ' from ${sshnpd.managerAtsign}'
               ' : $response');
