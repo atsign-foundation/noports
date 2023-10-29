@@ -7,7 +7,7 @@ import 'package:noports_core/src/sshnpa/sshnpa_impl.dart';
 import 'package:noports_core/src/sshnpa/sshnpa_rpcs.dart';
 
 abstract class SSHNPARequestHandler {
-  Future<SSHNPAAuthCheckResponse> handleRequest(SSHNPAAuthCheckRequest authCheckRequest);
+  Future<SSHNPAAuthCheckResponse> doAuthCheck(SSHNPAAuthCheckRequest authCheckRequest);
 }
 
 /// - Listens for authorization check requests from sshnp daemons

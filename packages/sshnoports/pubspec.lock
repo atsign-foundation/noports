@@ -61,34 +61,35 @@ packages:
     dependency: transitive
     description:
       name: at_chops
-      sha256: "9d825e909eb5dcd1bf79554640860193488de7b2db07275692b0167bb80f2ca2"
+      sha256: "30863a74e38abc88258b8506ec1495ee6dc6bb95c1ab11d2d37fdbe455d93f82"
       url: "https://pub.dev"
     source: hosted
-    version: "1.0.4"
+    version: "1.0.5"
   at_client:
     dependency: "direct overridden"
     description:
-      name: at_client
-      sha256: d96bc7fe7f66419c41281627ff1f221e4fc4296847d4d7f90999c5aa6ecaddfd
-      url: "https://pub.dev"
-    source: hosted
-    version: "3.0.65"
+      path: "packages/at_client"
+      ref: "gkc/feat/make-atRpc-use-ephemeral-notifications"
+      resolved-ref: "8e40ba737a423da16979746457d10e1722b2309a"
+      url: "https://github.com/atsign-foundation/at_client_sdk.git"
+    source: git
+    version: "3.0.68"
   at_commons:
     dependency: transitive
     description:
       name: at_commons
-      sha256: "02844803a417ef2c80f86a7385281ef65075ae935ae7770b299ba7d35ed90ed3"
+      sha256: a3b5c171c0a7a7cbfd334302df7670f831f00b9b701d8bec9ebbc1765e69f489
       url: "https://pub.dev"
     source: hosted
-    version: "3.0.56"
+    version: "3.0.57"
   at_lookup:
     dependency: "direct overridden"
     description:
       name: at_lookup
-      sha256: "9a0db434b98a855b06dc90dcffa96667cd4ede21230449fdd9046c77ec4bb822"
+      sha256: "75f1e8e0445295c6b649aa04a95275f51d79cd18aa83a9d0c207f10604cc17b1"
       url: "https://pub.dev"
     source: hosted
-    version: "3.0.40"
+    version: "3.0.41"
   at_onboarding_cli:
     dependency: "direct main"
     description:
@@ -101,10 +102,10 @@ packages:
     dependency: transitive
     description:
       name: at_persistence_secondary_server
-      sha256: "016a98b48d43db19dcb8601c43cdecbcbe0ed60c298d1cfd3d6425f7439e7c30"
+      sha256: "8dd493beaa10b42f42c47405884b926a01c07c345b53f25fa82383907880e24a"
       url: "https://pub.dev"
     source: hosted
-    version: "3.0.57"
+    version: "3.0.59"
   at_persistence_spec:
     dependency: transitive
     description:

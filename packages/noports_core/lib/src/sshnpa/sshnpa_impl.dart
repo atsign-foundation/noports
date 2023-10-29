@@ -106,12 +106,21 @@ class SSHNPAImpl implements SSHNPA {
 
     SSHNPAAuthCheckRequest authCheckRequest =
         SSHNPAAuthCheckRequest.fromJson(request.payload);
-    var authCheckResponse = await handler.handleRequest(authCheckRequest);
-
-    return AtRpcResp(
-        reqId: request.reqId,
-        respType: AtRpcRespType.success,
-        payload: authCheckResponse.toJson());
+    try {
+      var authCheckResponse = await handler.doAuthCheck(authCheckRequest);
+      return AtRpcResp(
+          reqId: request.reqId,
+          respType: AtRpcRespType.success,
+          payload: authCheckResponse.toJson());
+    } catch (e, st) {
+      logger.shout('Exception: $e : StackTrace : \n$st');
+      return AtRpcResp(
+          reqId: request.reqId,
+          respType: AtRpcRespType.success,
+          payload: SSHNPAAuthCheckResponse(
+                  authorized: false, message: 'Exception: $e')
+              .toJson());
+    }
   }
 
   /// We're not sending any RPCs so we don't implement `handleResponse`

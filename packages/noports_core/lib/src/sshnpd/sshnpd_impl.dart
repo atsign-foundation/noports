@@ -244,17 +244,14 @@ class SSHNPDImpl implements SSHNPD {
   /// Notification handler for sshnpd
   void _notificationHandler(AtNotification notification) async {
     if (!await isFromAuthorizedAtsign(notification)) {
-      logger.shout('Notification ignored from ${notification.from}'
-          ' which is not in authorized list [$managerAtsign].'
-          ' Notification was ${jsonEncode(notification.toJson())}');
       return;
     }
 
     String notificationKey = notification.key
         .replaceAll('${notification.to}:', '')
         .replaceAll('.$device.${DefaultArgs.namespace}${notification.from}', '')
-        // convert to lower case as the latest AtClient converts notification
-        // keys to lower case when received
+    // convert to lower case as the latest AtClient converts notification
+    // keys to lower case when received
         .toLowerCase();
 
     logger.info('Received: $notificationKey');
@@ -289,32 +286,37 @@ class SSHNPDImpl implements SSHNPD {
   }
 
   Future<bool> isFromAuthorizedAtsign(AtNotification notification) async {
-    const seconds = 5;
+    const authTimeoutSeconds = 10;
+    late bool authed;
+    late String message;
     if (delegateAuthChecks) {
       try {
         SSHNPAAuthCheckResponse resp = await authChecker!.check(
             clientAtsign: notification.from).timeout(
-            const Duration(seconds: seconds));
-        return resp.authorized;
+            const Duration(seconds: authTimeoutSeconds));
+        authed = resp.authorized;
+        message = resp.message ?? '';
       } on TimeoutException {
-        logger.warning('isFromAuthorizedAtsign sent auth check request'
-            ' but did not receive a response within $seconds seconds'
-            ' - returning false');
-        return false;
+        authed = false;
+        message = 'No response from authorizer after $authTimeoutSeconds seconds';
       }
     } else {
-      return notification.from == managerAtsign;
+      authed = notification.from == managerAtsign;
+      message = 'client atSign ${notification.from} ${authed ? 'matches' : 'does NOT match'} managerAtsign';
     }
+
+    if (authed) {
+      logger.info(
+          'Notification from ${notification.from} was authorized: $message');
+    } else {
+      logger.shout('Notification from ${notification.from} was not authorized: $message.'
+          ' Notification was ${jsonEncode(notification.toJson())}');
+    }
+
+    return authed;
   }
 
   void _handlePingNotification(AtNotification notification) async {
-    if (!await isFromAuthorizedAtsign(notification)) {
-      logger.shout('Notification ignored from ${notification.from}'
-          ' which is not in authorized list [$managerAtsign].'
-          ' Notification was ${jsonEncode(notification.toJson())}');
-      return;
-    }
-
     logger.info(
         'ping received from ${notification.from} notification id : ${notification.id}');
 
@@ -342,13 +344,6 @@ class SSHNPDImpl implements SSHNPD {
   }
 
   Future<void> _handlePublicKeyNotification(AtNotification notification) async {
-    if (!await isFromAuthorizedAtsign(notification)) {
-      logger.shout('Notification ignored from ${notification.from}'
-          ' which is not in authorized list [$managerAtsign].'
-          ' Notification was ${jsonEncode(notification.toJson())}');
-      return;
-    }
-
     if (!addSshPublicKeys) {
       logger.info(
           'Ignoring sshpublickey from ${notification.from} notification id : ${notification.id}');
@@ -405,13 +400,6 @@ class SSHNPDImpl implements SSHNPD {
   /// Once this is running, the client user will then be able to ssh to
   /// this device via `ssh -p $remoteForwardPort <some user>@localhost`
   void _handleSshRequestNotification(AtNotification notification) async {
-    if (!await isFromAuthorizedAtsign(notification)) {
-      logger.shout('Notification ignored from ${notification.from}'
-          ' which is not in authorized list [$managerAtsign].'
-          ' Notification was ${jsonEncode(notification.toJson())}');
-      return;
-    }
-
     String requestingAtsign = notification.from;
 
     // Validate the request payload.
@@ -478,12 +466,6 @@ class SSHNPDImpl implements SSHNPD {
 
   /// ssh through to the remote device with the information we've received
   void _handleLegacySshRequestNotification(AtNotification notification) async {
-    if (!await isFromAuthorizedAtsign(notification)) {
-      logger.shout('Notification ignored from ${notification.from}'
-          ' which is not in authorized list [$managerAtsign].'
-          ' Notification was ${jsonEncode(notification.toJson())}');
-      return;
-    }
     String requestingAtsign = notification.from;
 
     /// notification value is `$remoteForwardPort $remotePort $username $remoteHost $sessionId`
@@ -975,16 +957,26 @@ class AuthChecker implements AtRpcCallbacks {
 
     Completer<SSHNPAAuthCheckResponse> completer = completerMap[response.reqId]!;
 
+    if (completer.isCompleted) {
+      sshnpd.logger.info(
+          'Ignoring auth check response (received after future completion)'
+              ' from ${sshnpd.managerAtsign}'
+              ' : $response');
+      return;
+    }
     switch (response.respType) {
       case AtRpcRespType.ack:
+        // We don't complete the future when we get an ack
         sshnpd.logger.info(
             'Got ack from ${sshnpd.managerAtsign}'
                 ' : $response');
+        break;
       case AtRpcRespType.success:
         sshnpd.logger.info(
             'Got auth check response from ${sshnpd.managerAtsign}'
                 ' : $response');
         completer.complete(SSHNPAAuthCheckResponse.fromJson(response.payload));
+        break;
       default:
         sshnpd.logger.warning(
             'Got non-success auth check response from ${sshnpd.managerAtsign}'
@@ -992,6 +984,7 @@ class AuthChecker implements AtRpcCallbacks {
         completer.complete(SSHNPAAuthCheckResponse(
             authorized: false,
             message: response.message ?? 'Got non-success response $response'));
+        break;
     }
   }
 }
