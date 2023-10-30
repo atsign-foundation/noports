@@ -31,9 +31,7 @@ class SSHNPLegacyImpl extends SSHNPReverse with LegacySSHNPDPayloadHandler {
       ..sharedBy = clientAtSign
       ..sharedWith = sshnpdAtSign
       ..namespace = this.namespace
-      ..metadata = (Metadata()
-        ..ttr = -1
-        ..ttl = 10000);
+      ..metadata = (Metadata()..ttl = 10000);
     await notify(
         sendOurPrivateKeyToSshnpd, ephemeralKeyPair.privateKeyContents);
 
@@ -62,9 +60,7 @@ class SSHNPLegacyImpl extends SSHNPReverse with LegacySSHNPDPayloadHandler {
         ..namespace = this.namespace
         ..sharedBy = clientAtSign
         ..sharedWith = sshnpdAtSign
-        ..metadata = (Metadata()
-          ..ttr = -1
-          ..ttl = 10000),
+        ..metadata = (Metadata()..ttl = 10000),
       '$localPort $port $localUsername $host $sessionId',
     );
 

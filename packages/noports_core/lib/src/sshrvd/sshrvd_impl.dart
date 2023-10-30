@@ -132,7 +132,6 @@ class SSHRVDImpl implements SSHRVD {
     var metaData = Metadata()
       ..isPublic = false
       ..isEncrypted = true
-      ..ttr = -1
       ..ttl = 10000
       ..namespaceAware = true;
 

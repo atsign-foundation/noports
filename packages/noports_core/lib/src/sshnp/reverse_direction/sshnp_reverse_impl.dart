@@ -49,7 +49,6 @@ class SSHNPReverseImpl extends SSHNPReverse with DefaultSSHNPDPayloadHandler {
         ..sharedBy = clientAtSign
         ..sharedWith = sshnpdAtSign
         ..metadata = (Metadata()
-          ..ttr = -1
           ..ttl = 10000),
       signAndWrapAndJsonEncode(
         atClient,
