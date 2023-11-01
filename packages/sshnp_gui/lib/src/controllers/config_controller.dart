@@ -22,11 +22,11 @@ final configListController =
 
 /// A provider that exposes the [ConfigFamilyController] to the app.
 final configFamilyController = AutoDisposeAsyncNotifierProviderFamily<
-    ConfigFamilyController, SSHNPParams, String>(
+    ConfigFamilyController, SshnpParams, String>(
   ConfigFamilyController.new,
 );
 
-/// Holder model for the current [SSHNPParams] being edited
+/// Holder model for the current [SshnpParams] being edited
 class CurrentConfigState {
   final String profileName;
   final ConfigFileWriteState configFileWriteState;
@@ -35,7 +35,7 @@ class CurrentConfigState {
       {required this.profileName, required this.configFileWriteState});
 }
 
-/// Controller for the current [SSHNPParams] being edited
+/// Controller for the current [SshnpParams] being edited
 class CurrentConfigController extends AutoDisposeNotifier<CurrentConfigState> {
   @override
   CurrentConfigState build() {
@@ -72,34 +72,34 @@ class ConfigListController extends AutoDisposeAsyncNotifier<Iterable<String>> {
   }
 }
 
-/// Controller for the family of [SSHNPParams] controllers
+/// Controller for the family of [SshnpParams] controllers
 class ConfigFamilyController
-    extends AutoDisposeFamilyAsyncNotifier<SSHNPParams, String> {
+    extends AutoDisposeFamilyAsyncNotifier<SshnpParams, String> {
   @override
-  Future<SSHNPParams> build(String arg) async {
+  Future<SshnpParams> build(String arg) async {
     AtClient atClient = AtClientManager.getInstance().atClient;
     if (arg.isEmpty) {
-      return SSHNPParams.merge(
-        SSHNPParams.empty(),
-        SSHNPPartialParams(clientAtSign: atClient.getCurrentAtSign()!),
+      return SshnpParams.merge(
+        SshnpParams.empty(),
+        SshnpPartialParams(clientAtSign: atClient.getCurrentAtSign()!),
       );
     }
     return ConfigKeyRepository.getParams(arg, atClient: atClient);
   }
 
-  Future<void> putConfig(SSHNPParams params,
+  Future<void> putConfig(SshnpParams params,
       {String? oldProfileName, BuildContext? context}) async {
     AtClient atClient = AtClientManager.getInstance().atClient;
-    SSHNPParams oldParams = state.value ?? SSHNPParams.empty();
+    SshnpParams oldParams = state.value ?? SshnpParams.empty();
     if (oldProfileName != null) {
       ref
           .read(configFamilyController(oldProfileName).notifier)
           .deleteConfig(context: context);
     }
     if (params.clientAtSign != atClient.getCurrentAtSign()) {
-      params = SSHNPParams.merge(
+      params = SshnpParams.merge(
         params,
-        SSHNPPartialParams(
+        SshnpPartialParams(
           clientAtSign: atClient.getCurrentAtSign(),
         ),
       );

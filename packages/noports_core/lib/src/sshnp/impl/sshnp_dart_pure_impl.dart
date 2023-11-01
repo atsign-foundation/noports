@@ -1,37 +1,36 @@
 import 'dart:async';
 
 import 'package:dartssh2/dartssh2.dart';
-import 'package:noports_core/src/sshnp/mixins/sshnp_ssh_key_handler.dart';
+import 'package:noports_core/src/sshnp/brn/sshnp_ssh_key_handler.dart';
 import 'package:noports_core/src/sshnp/sshnp_result.dart';
 import 'package:noports_core/sshnp_core.dart';
 import 'package:noports_core/utils.dart';
 
-class SSHNPForwardDartPureImpl extends SSHNPForwardDart
-    with SSHNPDartSSHKeyHandler {
-  final AtSSHKeyPair _identityKeyPair;
+class SSHNPDartPureImpl extends SshnpCore with SSHNPDartSSHKeyHandler {
+  final AtSshKeyPair _identityKeyPair;
 
   @override
-  AtSSHKeyPair get identityKeyPair => _identityKeyPair;
+  AtSshKeyPair get identityKeyPair => _identityKeyPair;
 
-  SSHNPForwardDartPureImpl({
+  SSHNPDartPureImpl({
     required super.atClient,
     required super.params,
-    required AtSSHKeyPair identityKeyPair,
+    required AtSshKeyPair identityKeyPair,
     super.shouldInitialize,
   }) : _identityKeyPair = identityKeyPair;
 
   @override
-  Future<void> init() async {
+  Future<void> initialize() async {
     logger.info('Initializing SSHNPForwardDartPureImpl');
-    await super.init();
+    await super.initialize();
     completeInitialization();
   }
 
   @override
-  Future<SSHNPResult> run() async {
+  Future<SshnpResult> run() async {
     SSHClient client = await startInitialTunnel();
     // Todo: consider returning a SSHNPCommand<SSHClient> instead of a SSHNPNoOpSuccess<SSHClient>
-    return SSHNPNoOpSuccess<SSHClient>(
+    return SshnpNoOpSuccess<SSHClient>(
       message: 'Connection established:\n$terminateMessage',
       connectionBean: client,
     );

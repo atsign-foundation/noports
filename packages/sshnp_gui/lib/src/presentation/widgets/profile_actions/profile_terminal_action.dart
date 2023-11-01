@@ -11,7 +11,7 @@ import 'package:sshnp_gui/src/presentation/widgets/utility/custom_snack_bar.dart
 import 'package:sshnp_gui/src/controllers/navigation_controller.dart';
 
 class ProfileTerminalAction extends ConsumerStatefulWidget {
-  final SSHNPParams params;
+  final SshnpParams params;
   const ProfileTerminalAction(this.params, {Key? key}) : super(key: key);
 
   @override
@@ -31,9 +31,9 @@ class _ProfileTerminalActionState extends ConsumerState<ProfileTerminalAction> {
     }
 
     try {
-      SSHNPParams params = SSHNPParams.merge(
+      SshnpParams params = SshnpParams.merge(
         widget.params,
-        SSHNPPartialParams(
+        SshnpPartialParams(
           legacyDaemon: false,
           sshClient: SupportedSshClient.dart,
         ),
@@ -42,20 +42,20 @@ class _ProfileTerminalActionState extends ConsumerState<ProfileTerminalAction> {
       // TODO ensure that this keyPair gets uploaded to the app first
       AtClient atClient = AtClientManager.getInstance().atClient;
       DartSSHKeyUtil keyUtil = DartSSHKeyUtil();
-      AtSSHKeyPair keyPair = await keyUtil.getKeyPair(
+      AtSshKeyPair keyPair = await keyUtil.getKeyPair(
         identifier: params.identityFile ??
             'id_${atClient.getCurrentAtSign()!.replaceAll('@', '')}',
       );
 
-      final sshnp = SSHNP.forwardPureDart(
+      final sshnp = Sshnp.forwardPureDart(
         params: params,
         atClient: atClient,
         identityKeyPair: keyPair,
       );
 
-      await sshnp.init();
+      await sshnp.initialize();
       final result = await sshnp.run();
-      if (result is SSHNPError) {
+      if (result is SshnpError) {
         throw result;
       }
 
@@ -67,7 +67,7 @@ class _ProfileTerminalActionState extends ConsumerState<ProfileTerminalAction> {
       final sessionController =
           ref.watch(terminalSessionFamilyController(sessionId).notifier);
 
-      if (result is SSHNPCommand) {
+      if (result is SshnpCommand) {
         /// Set the command for the new session
         sessionController.setProcess(
             command: result.command, args: result.args);

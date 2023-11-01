@@ -36,20 +36,26 @@ void main() {
     group('ParserType.commandLine', () {
       test('ParserType.commandLine allowList test', () {
         expect(ParserType.commandLine.allowList, contains(ParseWhen.always));
-        expect(ParserType.commandLine.allowList, contains(ParseWhen.commandLine));
-        expect(ParserType.commandLine.allowList, isNot(contains(ParseWhen.configFile)));
+        expect(
+            ParserType.commandLine.allowList, contains(ParseWhen.commandLine));
+        expect(ParserType.commandLine.allowList,
+            isNot(contains(ParseWhen.configFile)));
       });
 
       test('ParserType.commandLine denyList test', () {
-        expect(ParserType.commandLine.denyList, isNot(contains(ParseWhen.always)));
-        expect(ParserType.commandLine.denyList, isNot(contains(ParseWhen.commandLine)));
+        expect(
+            ParserType.commandLine.denyList, isNot(contains(ParseWhen.always)));
+        expect(ParserType.commandLine.denyList,
+            isNot(contains(ParseWhen.commandLine)));
         expect(ParserType.commandLine.denyList, contains(ParseWhen.configFile));
       });
 
       test('ParserType.commandLine shouldParse test', () {
         expect(ParserType.commandLine.shouldParse(ParseWhen.always), isTrue);
-        expect(ParserType.commandLine.shouldParse(ParseWhen.commandLine), isTrue);
-        expect(ParserType.commandLine.shouldParse(ParseWhen.configFile), isFalse);
+        expect(
+            ParserType.commandLine.shouldParse(ParseWhen.commandLine), isTrue);
+        expect(
+            ParserType.commandLine.shouldParse(ParseWhen.configFile), isFalse);
         expect(ParserType.commandLine.shouldParse(ParseWhen.never), isFalse);
       });
     });
@@ -58,18 +64,22 @@ void main() {
       test('ParserType.configFile allowList test', () {
         expect(ParserType.configFile.allowList, contains(ParseWhen.always));
         expect(ParserType.configFile.allowList, contains(ParseWhen.configFile));
-        expect(ParserType.configFile.allowList, isNot(contains(ParseWhen.commandLine)));
+        expect(ParserType.configFile.allowList,
+            isNot(contains(ParseWhen.commandLine)));
       });
 
       test('ParserType.configFile denyList test', () {
-        expect(ParserType.configFile.denyList, isNot(contains(ParseWhen.always)));
-        expect(ParserType.configFile.denyList, isNot(contains(ParseWhen.configFile)));
+        expect(
+            ParserType.configFile.denyList, isNot(contains(ParseWhen.always)));
+        expect(ParserType.configFile.denyList,
+            isNot(contains(ParseWhen.configFile)));
         expect(ParserType.configFile.denyList, contains(ParseWhen.commandLine));
       });
 
       test('ParserType.configFile shouldParse test', () {
         expect(ParserType.configFile.shouldParse(ParseWhen.always), isTrue);
-        expect(ParserType.configFile.shouldParse(ParseWhen.commandLine), isFalse);
+        expect(
+            ParserType.configFile.shouldParse(ParseWhen.commandLine), isFalse);
         expect(ParserType.configFile.shouldParse(ParseWhen.configFile), isTrue);
         expect(ParserType.configFile.shouldParse(ParseWhen.never), isFalse);
       });
@@ -78,7 +88,7 @@ void main() {
 
   group('SSHNPArg', () {
     test('public API test', () {
-      SSHNPArg sshnpArg = SSHNPArg(name: 'name');
+      SshnpArg sshnpArg = SshnpArg(name: 'name');
 
       expect(sshnpArg.format, isA<ArgFormat>());
       expect(sshnpArg.name, isA<String>());
@@ -93,68 +103,68 @@ void main() {
 
       expect(sshnpArg.bashName, isA<String>());
 
-      expect(SSHNPArg.args, isA<List<SSHNPArg>>());
-      expect(SSHNPArg.createArgParser(), isA<ArgParser>());
+      expect(SshnpArg.args, isA<List<SshnpArg>>());
+      expect(SshnpArg.createArgParser(), isA<ArgParser>());
     });
 
     group('SSHNPArg final variables', () {
       test('SSHNPArg.name test', () {
-        SSHNPArg sshnpArg = SSHNPArg(name: 'name');
+        SshnpArg sshnpArg = SshnpArg(name: 'name');
         expect(sshnpArg.name, equals('name'));
       });
 
       test('SSHNPArg.abbr test', () {
-        SSHNPArg sshnpArg = SSHNPArg(name: 'name', abbr: 'n');
+        SshnpArg sshnpArg = SshnpArg(name: 'name', abbr: 'n');
         expect(sshnpArg.abbr, equals('n'));
       });
 
       test('SSHNPArg.help test', () {
-        SSHNPArg sshnpArg = SSHNPArg(name: 'name', help: 'help');
+        SshnpArg sshnpArg = SshnpArg(name: 'name', help: 'help');
         expect(sshnpArg.help, equals('help'));
       });
 
       test('SSHNPArg.mandatory test', () {
-        SSHNPArg sshnpArg = SSHNPArg(name: 'name', mandatory: true);
+        SshnpArg sshnpArg = SshnpArg(name: 'name', mandatory: true);
         expect(sshnpArg.mandatory, isTrue);
       });
 
       test('SSHNPArg.defaultsTo test', () {
-        SSHNPArg sshnpArg = SSHNPArg(name: 'name', defaultsTo: 'default');
+        SshnpArg sshnpArg = SshnpArg(name: 'name', defaultsTo: 'default');
         expect(sshnpArg.defaultsTo, equals('default'));
       });
 
       test('SSHNPArg.type test', () {
-        SSHNPArg sshnpArg = SSHNPArg(name: 'name', type: ArgType.string);
+        SshnpArg sshnpArg = SshnpArg(name: 'name', type: ArgType.string);
         expect(sshnpArg.type, equals(ArgType.string));
       });
 
       test('SSHNPArg.allowed test', () {
-        SSHNPArg sshnpArg = SSHNPArg(name: 'name', allowed: ['allowed']);
+        SshnpArg sshnpArg = SshnpArg(name: 'name', allowed: ['allowed']);
         expect(sshnpArg.allowed, equals(['allowed']));
       });
 
       test('SSHNPArg.parseWhen test', () {
-        SSHNPArg sshnpArg = SSHNPArg(name: 'name', parseWhen: ParseWhen.always);
+        SshnpArg sshnpArg = SshnpArg(name: 'name', parseWhen: ParseWhen.always);
         expect(sshnpArg.parseWhen, equals(ParseWhen.always));
       });
 
       test('SSHNPArg.aliases test', () {
-        SSHNPArg sshnpArg = SSHNPArg(name: 'name', aliases: ['alias']);
+        SshnpArg sshnpArg = SshnpArg(name: 'name', aliases: ['alias']);
         expect(sshnpArg.aliases, equals(['alias']));
       });
 
       test('SSHNPArg.negatable test', () {
-        SSHNPArg sshnpArg = SSHNPArg(name: 'name', negatable: false);
+        SshnpArg sshnpArg = SshnpArg(name: 'name', negatable: false);
         expect(sshnpArg.negatable, isFalse);
       });
 
       test('SSHNPArg.hide test', () {
-        SSHNPArg sshnpArg = SSHNPArg(name: 'name', hide: true);
+        SshnpArg sshnpArg = SshnpArg(name: 'name', hide: true);
         expect(sshnpArg.hide, isTrue);
       });
 
       test('SSHNPArg default values test', () {
-        SSHNPArg sshnpArg = SSHNPArg(name: 'name');
+        SshnpArg sshnpArg = SshnpArg(name: 'name');
         expect(sshnpArg.abbr, isNull);
         expect(sshnpArg.help, isNull);
         expect(sshnpArg.mandatory, isFalse);
@@ -171,39 +181,40 @@ void main() {
 
     group('SSHNPArg getters', () {
       test('SSHNPArg.bashName test', () {
-        SSHNPArg sshnpArg = SSHNPArg(name: 'name');
+        SshnpArg sshnpArg = SshnpArg(name: 'name');
         expect(sshnpArg.bashName, equals('NAME'));
       });
 
       test('SSHNPArg.alistList test', () {
-        SSHNPArg sshnpArg = SSHNPArg(name: 'name', aliases: ['alias'], abbr: 'a');
+        SshnpArg sshnpArg =
+            SshnpArg(name: 'name', aliases: ['alias'], abbr: 'a');
         expect(sshnpArg.aliasList, equals(['--name', '--alias', '-a']));
       });
     });
 
     group('SSHNPArg factory', () {
       test('SSHNPArg.noArg test', () {
-        SSHNPArg sshnpArg = SSHNPArg.noArg();
+        SshnpArg sshnpArg = SshnpArg.noArg();
         expect(sshnpArg.name, equals(''));
       });
 
       test('SSHNPArg.fromName test', () {
-        SSHNPArg sshnpArg = SSHNPArg.fromName(SSHNPArg.fromArg.name);
-        expect(sshnpArg.name, equals(SSHNPArg.fromArg.name));
+        SshnpArg sshnpArg = SshnpArg.fromName(SshnpArg.fromArg.name);
+        expect(sshnpArg.name, equals(SshnpArg.fromArg.name));
       });
 
       test('SSHNPArg.fromBashName test', () {
-        SSHNPArg sshnpArg = SSHNPArg.fromBashName(SSHNPArg.fromArg.bashName);
-        expect(sshnpArg.name, equals(SSHNPArg.fromArg.name));
+        SshnpArg sshnpArg = SshnpArg.fromBashName(SshnpArg.fromArg.bashName);
+        expect(sshnpArg.name, equals(SshnpArg.fromArg.name));
       });
 
       test('SSHNPArg.fromName no match test', () {
-        SSHNPArg sshnpArg = SSHNPArg.fromName('no match');
+        SshnpArg sshnpArg = SshnpArg.fromName('no match');
         expect(sshnpArg.name, equals(''));
       });
 
       test('SSHNPArg.fromBashName no match test', () {
-        SSHNPArg sshnpArg = SSHNPArg.fromBashName('no match');
+        SshnpArg sshnpArg = SshnpArg.fromBashName('no match');
         expect(sshnpArg.name, equals(''));
       });
     });

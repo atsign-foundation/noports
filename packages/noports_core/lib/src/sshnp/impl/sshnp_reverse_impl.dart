@@ -1,13 +1,14 @@
 import 'dart:async';
 
 import 'package:at_client/at_client.dart';
+import 'package:noports_core/src/common/validation_utils.dart';
 import 'package:noports_core/src/sshnp/mixins/sshnpd_payload_handler.dart';
 import 'package:noports_core/src/sshnp/reverse_direction/sshnp_reverse.dart';
 import 'package:noports_core/sshnp.dart';
 import 'package:noports_core/sshrv.dart';
 
-class SSHNPLegacyImpl extends SSHNPReverse with SSHNPDVersion3PayloadHandler {
-  SSHNPLegacyImpl({
+class SSHNPReverseImpl extends SSHNPReverse with SSHNPDDefaultPayloadHandler {
+  SSHNPReverseImpl({
     required AtClient atClient,
     required SshnpParams params,
     SshrvGenerator? sshrvGenerator,
@@ -20,29 +21,17 @@ class SSHNPLegacyImpl extends SSHNPReverse with SSHNPDVersion3PayloadHandler {
         );
 
   @override
-  Future<void> init() async {
-    logger.info('Initializing SSHNPLegacyImpl');
-    await super.init();
-    if (initializedCompleter.isCompleted) return;
-
-    // Share our private key with sshnpd
-    AtKey sendOurPrivateKeyToSshnpd = AtKey()
-      ..key = 'privatekey'
-      ..sharedBy = clientAtSign
-      ..sharedWith = sshnpdAtSign
-      ..namespace = this.namespace
-      ..metadata = (Metadata()..ttl = 10000);
-    await notify(
-        sendOurPrivateKeyToSshnpd, ephemeralKeyPair.privateKeyContents);
-
+  Future<void> initialize() async {
+    logger.info('Initializing SSHNPReverseImpl');
+    await super.initialize();
     completeInitialization();
   }
 
   @override
   Future<SshnpResult> run() async {
-    await startAndWaitForInit();
+    await callInitialization();
 
-    logger.info('Requesting legacy daemon to start reverse ssh session');
+    logger.info('Requesting daemon to start reverse ssh session');
 
     Future? sshrvResult;
     if (usingSshrv) {
@@ -52,33 +41,41 @@ class SSHNPLegacyImpl extends SSHNPReverse with SSHNPDVersion3PayloadHandler {
           localSshdPort: params.localSshdPort);
       sshrvResult = sshrv.run();
     }
-
     // send request to the daemon via notification
     await notify(
       AtKey()
-        ..key = 'sshd'
+        ..key = 'ssh_request'
         ..namespace = this.namespace
         ..sharedBy = clientAtSign
         ..sharedWith = sshnpdAtSign
-        ..metadata = (Metadata()..ttl = 10000),
-      '$localPort $port $localUsername $host $sessionId',
+        ..metadata = (Metadata()
+          ..ttr = -1
+          ..ttl = 10000),
+      signAndWrapAndJsonEncode(
+        atClient,
+        {
+          'direct': false,
+          'sessionId': sessionId,
+          'host': host,
+          'port': port,
+          'username': localUsername,
+          'remoteForwardPort': localPort,
+          'privateKey': ephemeralKeyPair.privateKeyContents,
+        },
+      ),
     );
 
     bool acked = await waitForDaemonResponse();
     if (!acked) {
-      var error = SshnpError(
-        'sshnp timed out: waiting for daemon response\nhint: make sure the device is online',
-        stackTrace: StackTrace.current,
-      );
+      var error =
+          SshnpError('sshnp connection timeout: waiting for daemon response');
       doneCompleter.completeError(error);
       return error;
     }
 
     if (sshnpdAckErrors) {
-      var error = SshnpError(
-        'sshnp failed: with sshnpd acknowledgement errors',
-        stackTrace: StackTrace.current,
-      );
+      var error =
+          SshnpError('sshnp failed: with sshnpd acknowledgement errors');
       doneCompleter.completeError(error);
       return error;
     }

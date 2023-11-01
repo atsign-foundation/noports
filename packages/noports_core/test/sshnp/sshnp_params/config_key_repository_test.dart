@@ -14,10 +14,13 @@ void main() {
       String sharedBy = '@owner';
 
       expect(ConfigKeyRepository.fromProfileName(profileName), isA<AtKey>());
-      expect(ConfigKeyRepository.fromProfileName(profileName, sharedBy: sharedBy).sharedBy, equals(sharedBy));
-
       expect(
-          ConfigKeyRepository.fromProfileName(profileName).key, equals('${ConfigKeyRepository.keyPrefix}$profileName'));
+          ConfigKeyRepository.fromProfileName(profileName, sharedBy: sharedBy)
+              .sharedBy,
+          equals(sharedBy));
+
+      expect(ConfigKeyRepository.fromProfileName(profileName).key,
+          equals('${ConfigKeyRepository.keyPrefix}$profileName'));
     });
 
     group('[depends on ConfigKeyRepository.atKeyFromProfileName]', () {
@@ -29,7 +32,9 @@ void main() {
         registerFallbackValue(AtKey());
 
         /// Called by [ConfigKeyRepository.listProfiles]
-        when(() => atClient.getAtKeys(regex: ConfigKeyRepository.configNamespace)).thenAnswer(
+        when(() =>
+                atClient.getAtKeys(regex: ConfigKeyRepository.configNamespace))
+            .thenAnswer(
           (_) => Future.value(<AtKey>[
             ConfigKeyRepository.fromProfileName('profileName1'),
             ConfigKeyRepository.fromProfileName('profileName2'),
@@ -42,20 +47,28 @@ void main() {
 
         /// Called by [ConfigKeyRepository.getParams]
         when(() => atClient.get(
-              ConfigKeyRepository.fromProfileName('profileName1', sharedBy: '@owner'),
+              ConfigKeyRepository.fromProfileName('profileName1',
+                  sharedBy: '@owner'),
               getRequestOptions: any(named: 'getRequestOptions'),
             )).thenAnswer(
           (_) => Future.value(
-            AtValue()..value = SSHNPParams(clientAtSign: '@owner', sshnpdAtSign: '@device', host: '@host').toJson(),
+            AtValue()
+              ..value = SshnpParams(
+                      clientAtSign: '@owner',
+                      sshnpdAtSign: '@device',
+                      host: '@host')
+                  .toJson(),
           ),
         );
 
         /// Called by [ConfigKeyRepository.putParams]
-        when(() => atClient.put(any<AtKey>(), any<dynamic>(), putRequestOptions: any(named: 'putRequestOptions')))
+        when(() => atClient.put(any<AtKey>(), any<dynamic>(),
+                putRequestOptions: any(named: 'putRequestOptions')))
             .thenAnswer((_) => Future.value(true));
 
         /// Called by [ConfigKeyRepository.deleteParams]
-        when(() => atClient.delete(any<AtKey>(), deleteRequestOptions: any(named: 'deleteRequestOptions')))
+        when(() => atClient.delete(any<AtKey>(),
+                deleteRequestOptions: any(named: 'deleteRequestOptions')))
             .thenAnswer((_) => Future.value(true));
       });
 
@@ -63,20 +76,25 @@ void main() {
         String profileName = 'my_profile_name';
         AtKey atKey = ConfigKeyRepository.fromProfileName(profileName);
 
-        expect(ConfigKeyRepository.toProfileName(atKey), equals(profileName.replaceAll('_', ' ')));
-        expect(ConfigKeyRepository.toProfileName(atKey, replaceSpaces: false), equals(profileName));
-        expect(ConfigKeyRepository.toProfileName(atKey, replaceSpaces: true), equals(profileName.replaceAll('_', ' ')));
+        expect(ConfigKeyRepository.toProfileName(atKey),
+            equals(profileName.replaceAll('_', ' ')));
+        expect(ConfigKeyRepository.toProfileName(atKey, replaceSpaces: false),
+            equals(profileName));
+        expect(ConfigKeyRepository.toProfileName(atKey, replaceSpaces: true),
+            equals(profileName.replaceAll('_', ' ')));
       });
 
       test('ConfigKeyRepository.listProfiles test', () async {
-        expect(await ConfigKeyRepository.listProfiles(atClient), isA<Iterable<String>>());
+        expect(await ConfigKeyRepository.listProfiles(atClient),
+            isA<Iterable<String>>());
         expect(await ConfigKeyRepository.listProfiles(atClient),
             equals(<String>['profileName1', 'profileName2', 'profileName3']));
       });
 
       test('ConfigKeyRepository.getParams test', () async {
-        var params = await ConfigKeyRepository.getParams('profileName1', atClient: atClient);
-        expect(params, isA<SSHNPParams>());
+        var params = await ConfigKeyRepository.getParams('profileName1',
+            atClient: atClient);
+        expect(params, isA<SshnpParams>());
         expect(params.clientAtSign, equals('@owner'));
         expect(params.sshnpdAtSign, equals('@device'));
         expect(params.host, equals('@host'));
@@ -85,7 +103,8 @@ void main() {
       test('ConfigKeyRepository.putParams test', () async {
         when(
           () => atClient.put(
-            ConfigKeyRepository.fromProfileName('profileName2', sharedBy: '@owner'),
+            ConfigKeyRepository.fromProfileName('profileName2',
+                sharedBy: '@owner'),
             any(),
             putRequestOptions: any(named: 'putRequestOptions'),
           ),
@@ -93,7 +112,8 @@ void main() {
 
         verifyNever(
           () => atClient.put(
-            ConfigKeyRepository.fromProfileName('profileName2', sharedBy: '@owner'),
+            ConfigKeyRepository.fromProfileName('profileName2',
+                sharedBy: '@owner'),
             any(),
             putRequestOptions: any(named: 'putRequestOptions'),
           ),
@@ -101,14 +121,19 @@ void main() {
 
         expect(
             ConfigKeyRepository.putParams(
-              SSHNPParams(clientAtSign: '@owner', sshnpdAtSign: '@device', host: '@host', profileName: 'profileName2'),
+              SshnpParams(
+                  clientAtSign: '@owner',
+                  sshnpdAtSign: '@device',
+                  host: '@host',
+                  profileName: 'profileName2'),
               atClient: atClient,
             ),
             completes);
 
         verify(
           () => atClient.put(
-            ConfigKeyRepository.fromProfileName('profileName2', sharedBy: '@owner'),
+            ConfigKeyRepository.fromProfileName('profileName2',
+                sharedBy: '@owner'),
             any(),
             putRequestOptions: any(named: 'putRequestOptions'),
           ),
@@ -118,14 +143,16 @@ void main() {
       test('ConfigKeyRepository.deleteParams test', () async {
         when(
           () => atClient.delete(
-            ConfigKeyRepository.fromProfileName('profileName2', sharedBy: '@owner'),
+            ConfigKeyRepository.fromProfileName('profileName2',
+                sharedBy: '@owner'),
             deleteRequestOptions: any(named: 'deleteRequestOptions'),
           ),
         ).thenAnswer((_) => Future.value(true));
 
         verifyNever(
           () => atClient.delete(
-            ConfigKeyRepository.fromProfileName('profileName2', sharedBy: '@owner'),
+            ConfigKeyRepository.fromProfileName('profileName2',
+                sharedBy: '@owner'),
             deleteRequestOptions: any(named: 'deleteRequestOptions'),
           ),
         );
@@ -139,7 +166,8 @@ void main() {
 
         verify(
           () => atClient.delete(
-            ConfigKeyRepository.fromProfileName('profileName2', sharedBy: '@owner'),
+            ConfigKeyRepository.fromProfileName('profileName2',
+                sharedBy: '@owner'),
             deleteRequestOptions: any(named: 'deleteRequestOptions'),
           ),
         ).called(1);

@@ -4,20 +4,19 @@ import 'dart:io';
 
 import 'package:at_client/at_client.dart' hide StringBuffer;
 
-import 'package:noports_core/src/sshnp/forward_direction/sshnp_forward.dart';
 import 'package:noports_core/src/sshnp/mixins/sshnpd_payload_handler.dart';
-import 'package:noports_core/src/sshnp/mixins/sshnp_ssh_key_handler.dart';
+import 'package:noports_core/src/sshnp/brn/sshnp_ssh_key_handler.dart';
+import 'package:noports_core/src/sshnp/sshnp_core.dart';
 import 'package:noports_core/sshnp.dart';
-import 'package:noports_core/sshnp_params.dart';
 import 'package:noports_core/utils.dart';
 
-class SSHNPForwardExecImpl extends SSHNPForward
-    with SSHNPLocalSSHKeyHandler, DefaultSSHNPDPayloadHandler {
-  late AtSSHKeyPair ephemeralKeyPair;
+class SSHNPExecImpl extends SshnpCore
+    with SshnpLocalSSHKeyHandler, SSHNPDDefaultPayloadHandler {
+  late AtSshKeyPair ephemeralKeyPair;
 
-  SSHNPForwardExecImpl({
+  SSHNPExecImpl({
     required AtClient atClient,
-    required SSHNPParams params,
+    required SshnpParams params,
     bool? shouldInitialize,
   }) : super(
           atClient: atClient,
@@ -26,23 +25,15 @@ class SSHNPForwardExecImpl extends SSHNPForward
         );
 
   @override
-  Future<void> init() async {
-    logger.info('Initializing SSHNPForwardExecImpl');
-    logger.info('params: ${params.toJson(parserType: ParserType.commandLine)}');
-    await super.init();
-    completeInitialization();
-  }
-
-  @override
-  Future<SSHNPResult> run() async {
-    await startAndWaitForInit();
+  Future<SshnpResult> run() async {
+    await callInitialization();
 
     var error = await requestSocketTunnelFromDaemon();
     if (error != null) {
       return error;
     }
 
-    ephemeralKeyPair = AtSSHKeyPair.fromPem(
+    ephemeralKeyPair = AtSshKeyPair.fromPem(
       ephemeralPrivateKey,
       identifier: 'ephemeral_$sessionId',
       directory: keyUtil.sshnpHomeDirectory,
@@ -118,11 +109,11 @@ class SSHNPForwardExecImpl extends SSHNPForward
           errorMessage =
               'Failed to establish connection - exit code $sshExitCode';
         }
-        throw SSHNPError(errorMessage);
+        throw SshnpError(errorMessage);
       }
 
       doneCompleter.complete();
-      return SSHNPCommand<Process>(
+      return SshnpCommand<Process>(
         localPort: localPort,
         remoteUsername: remoteUsername,
         host: 'localhost',
@@ -131,12 +122,12 @@ class SSHNPForwardExecImpl extends SSHNPForward
             (params.addForwardsToTunnel) ? null : params.localSshOptions,
         connectionBean: process,
       );
-    } on SSHNPError catch (e) {
+    } on SshnpError catch (e) {
       doneCompleter.completeError(e, e.stackTrace);
       return e;
     } catch (e, s) {
       doneCompleter.completeError(e, s);
-      return SSHNPError(
+      return SshnpError(
         'SSH Client failure : $e',
         error: e,
         stackTrace: s,

@@ -6,8 +6,8 @@ import 'package:noports_core/src/sshnp/reverse_direction/sshnp_reverse.dart';
 import 'package:noports_core/sshnp.dart';
 import 'package:noports_core/sshrv.dart';
 
-class SSHNPLegacyImpl extends SSHNPReverse with SSHNPDVersion3PayloadHandler {
-  SSHNPLegacyImpl({
+class SSHNPVersion3Impl extends SSHNPReverse with SSHNPDVersion3PayloadHandler {
+  SSHNPVersion3Impl({
     required AtClient atClient,
     required SshnpParams params,
     SshrvGenerator? sshrvGenerator,
@@ -20,10 +20,10 @@ class SSHNPLegacyImpl extends SSHNPReverse with SSHNPDVersion3PayloadHandler {
         );
 
   @override
-  Future<void> init() async {
+  Future<void> initialize() async {
     logger.info('Initializing SSHNPLegacyImpl');
-    await super.init();
-    if (initializedCompleter.isCompleted) return;
+    await super.initialize();
+    if (!isSafeToInitialize) return;
 
     // Share our private key with sshnpd
     AtKey sendOurPrivateKeyToSshnpd = AtKey()
@@ -31,7 +31,9 @@ class SSHNPLegacyImpl extends SSHNPReverse with SSHNPDVersion3PayloadHandler {
       ..sharedBy = clientAtSign
       ..sharedWith = sshnpdAtSign
       ..namespace = this.namespace
-      ..metadata = (Metadata()..ttl = 10000);
+      ..metadata = (Metadata()
+        ..ttr = -1
+        ..ttl = 10000);
     await notify(
         sendOurPrivateKeyToSshnpd, ephemeralKeyPair.privateKeyContents);
 
@@ -40,7 +42,7 @@ class SSHNPLegacyImpl extends SSHNPReverse with SSHNPDVersion3PayloadHandler {
 
   @override
   Future<SshnpResult> run() async {
-    await startAndWaitForInit();
+    await callInitialization();
 
     logger.info('Requesting legacy daemon to start reverse ssh session');
 
@@ -60,7 +62,9 @@ class SSHNPLegacyImpl extends SSHNPReverse with SSHNPDVersion3PayloadHandler {
         ..namespace = this.namespace
         ..sharedBy = clientAtSign
         ..sharedWith = sshnpdAtSign
-        ..metadata = (Metadata()..ttl = 10000),
+        ..metadata = (Metadata()
+          ..ttr = -1
+          ..ttl = 10000),
       '$localPort $port $localUsername $host $sessionId',
     );
 

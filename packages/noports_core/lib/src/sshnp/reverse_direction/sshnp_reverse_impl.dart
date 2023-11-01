@@ -7,11 +7,11 @@ import 'package:noports_core/src/sshnp/reverse_direction/sshnp_reverse.dart';
 import 'package:noports_core/sshnp.dart';
 import 'package:noports_core/sshrv.dart';
 
-class SSHNPReverseImpl extends SSHNPReverse with DefaultSSHNPDPayloadHandler {
+class SSHNPReverseImpl extends SSHNPReverse with SSHNPDDefaultPayloadHandler {
   SSHNPReverseImpl({
     required AtClient atClient,
-    required SSHNPParams params,
-    SSHRVGenerator? sshrvGenerator,
+    required SshnpParams params,
+    SshrvGenerator? sshrvGenerator,
     bool? shouldInitialize,
   }) : super(
           atClient: atClient,
@@ -28,7 +28,7 @@ class SSHNPReverseImpl extends SSHNPReverse with DefaultSSHNPDPayloadHandler {
   }
 
   @override
-  Future<SSHNPResult> run() async {
+  Future<SshnpResult> run() async {
     await startAndWaitForInit();
 
     logger.info('Requesting daemon to start reverse ssh session');
@@ -48,8 +48,7 @@ class SSHNPReverseImpl extends SSHNPReverse with DefaultSSHNPDPayloadHandler {
         ..namespace = this.namespace
         ..sharedBy = clientAtSign
         ..sharedWith = sshnpdAtSign
-        ..metadata = (Metadata()
-          ..ttl = 10000),
+        ..metadata = (Metadata()..ttl = 10000),
       signAndWrapAndJsonEncode(
         atClient,
         {
@@ -67,20 +66,20 @@ class SSHNPReverseImpl extends SSHNPReverse with DefaultSSHNPDPayloadHandler {
     bool acked = await waitForDaemonResponse();
     if (!acked) {
       var error =
-          SSHNPError('sshnp connection timeout: waiting for daemon response');
+          SshnpError('sshnp connection timeout: waiting for daemon response');
       doneCompleter.completeError(error);
       return error;
     }
 
     if (sshnpdAckErrors) {
       var error =
-          SSHNPError('sshnp failed: with sshnpd acknowledgement errors');
+          SshnpError('sshnp failed: with sshnpd acknowledgement errors');
       doneCompleter.completeError(error);
       return error;
     }
 
     doneCompleter.complete();
-    return SSHNPCommand(
+    return SshnpCommand(
       localPort: localPort,
       remoteUsername: remoteUsername,
       host: 'localhost',

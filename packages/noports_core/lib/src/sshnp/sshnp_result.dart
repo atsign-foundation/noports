@@ -3,14 +3,14 @@ import 'dart:io';
 import 'package:meta/meta.dart';
 import 'package:socket_connector/socket_connector.dart';
 
-abstract class SSHNPResult {}
+abstract class SshnpResult {}
 
-class SSHNPSuccess implements SSHNPResult {}
+class SshnpSuccess implements SshnpResult {}
 
-class SSHNPFailure implements SSHNPResult {}
+class SshnpFailure implements SshnpResult {}
 
 // This is a mixin class instead of a mixin on SSHNPResult so that it can be tested independently
-mixin class SSHNPConnectionBean<Bean> {
+mixin class SshnpConnectionBean<Bean> {
   Bean? _connectionBean;
 
   @protected
@@ -50,12 +50,12 @@ const optionsWithPrivateKey = [
   '-o IdentitiesOnly=yes'
 ];
 
-class SSHNPError implements SSHNPFailure, Exception {
+class SshnpError implements SshnpFailure, Exception {
   final Object message;
   final Object? error;
   final StackTrace? stackTrace;
 
-  SSHNPError(this.message, {this.error, this.stackTrace});
+  SshnpError(this.message, {this.error, this.stackTrace});
 
   @override
   String toString() {
@@ -77,7 +77,7 @@ class SSHNPError implements SSHNPFailure, Exception {
   }
 }
 
-class SSHNPCommand<Bean> extends SSHNPSuccess with SSHNPConnectionBean<Bean> {
+class SshnpCommand<Bean> extends SshnpSuccess with SshnpConnectionBean<Bean> {
   final String command;
   final int localPort;
   final String? remoteUsername;
@@ -86,7 +86,7 @@ class SSHNPCommand<Bean> extends SSHNPSuccess with SSHNPConnectionBean<Bean> {
 
   final List<String> sshOptions;
 
-  SSHNPCommand({
+  SshnpCommand({
     required this.localPort,
     required this.host,
     this.remoteUsername,
@@ -126,10 +126,10 @@ class SSHNPCommand<Bean> extends SSHNPSuccess with SSHNPConnectionBean<Bean> {
   }
 }
 
-class SSHNPNoOpSuccess<Bean> extends SSHNPSuccess
-    with SSHNPConnectionBean<Bean> {
+class SshnpNoOpSuccess<Bean> extends SshnpSuccess
+    with SshnpConnectionBean<Bean> {
   String? message;
-  SSHNPNoOpSuccess({this.message, Bean? connectionBean}) {
+  SshnpNoOpSuccess({this.message, Bean? connectionBean}) {
     this.connectionBean = connectionBean;
   }
 

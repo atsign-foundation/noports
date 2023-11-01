@@ -1,38 +1,38 @@
 import 'dart:async';
 
 import 'package:noports_core/src/sshnp/sshnp_core.dart';
-import 'package:noports_core/src/sshnp/mixins/sshnp_ssh_key_handler.dart';
+import 'package:noports_core/src/sshnp/brn/sshnp_ssh_key_handler.dart';
 import 'package:noports_core/sshnp.dart';
 import 'package:noports_core/sshrv.dart';
 import 'package:noports_core/utils.dart';
 
-abstract class SSHNPReverse extends SSHNPCore with SSHNPLocalSSHKeyHandler {
+abstract class SSHNPReverse extends SshnpCore with SshnpLocalSSHKeyHandler {
   SSHNPReverse({
     required super.atClient,
     required super.params,
-    SSHRVGenerator? sshrvGenerator,
+    SshrvGenerator? sshrvGenerator,
     super.shouldInitialize,
   }) : sshrvGenerator = sshrvGenerator ?? DefaultArgs.sshrvGenerator;
 
   /// Function used to generate a [SSHRV] instance ([SSHRV.localbinary] by default)
-  final SSHRVGenerator sshrvGenerator;
+  final SshrvGenerator sshrvGenerator;
 
-  /// Set by [generateEphemeralSshKeys] during [init], if we're not doing direct ssh.
+  /// Set by [generateEphemeralSshKeys] during [initialize], if we're not doing direct ssh.
   /// sshnp generates a new keypair for each ssh session, using the algorithm specified
   /// in [params.sshAlgorithm].
   /// sshnp will write [ephemeralKeyPair] to ~/.ssh/ephemeral_$sessionId
   /// sshnp will write [ephemeralKeyPair.publicKey] to ~/.ssh/authorized_keys
   /// sshnp will send the [ephemeralKeyPair.privateKey] to sshnpd
-  late final AtSSHKeyPair ephemeralKeyPair;
+  late final AtSshKeyPair ephemeralKeyPair;
 
-  /// Local username, set by [init]
+  /// Local username, set by [initialize]
   late final String localUsername;
 
   @override
-  Future<void> init() async {
+  Future<void> initialize() async {
     logger.info('Initializing SSHNPReverse');
-    await super.init();
-    if (initializedCompleter.isCompleted) return;
+    await super.initialize();
+    if (!isSafeToInitialize) return;
 
     localUsername = getUserName(throwIfNull: true)!;
 
@@ -45,7 +45,7 @@ abstract class SSHNPReverse extends SSHNPCore with SSHNPLocalSSHKeyHandler {
       );
     } catch (e, s) {
       logger.info('Failed to generate ephemeral keypair');
-      throw SSHNPError(
+      throw SshnpError(
         'Failed to generate ephemeral keypair',
         error: e,
         stackTrace: s,
@@ -60,7 +60,7 @@ abstract class SSHNPReverse extends SSHNPCore with SSHNPLocalSSHKeyHandler {
         sessionId: sessionId,
       );
     } catch (e, s) {
-      throw SSHNPError(
+      throw SshnpError(
         'Failed to add ephemeral key to authorized_keys',
         error: e,
         stackTrace: s,
@@ -76,6 +76,4 @@ abstract class SSHNPReverse extends SSHNPCore with SSHNPLocalSSHKeyHandler {
     await keyUtil.deauthorizePublicKey(sessionId);
     await super.cleanUp();
   }
-
-  bool get usingSshrv => sshrvdPort != null;
 }

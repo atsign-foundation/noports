@@ -1,31 +1,30 @@
 import 'dart:async';
 
 import 'package:dartssh2/dartssh2.dart';
-import 'package:noports_core/src/sshnp/mixins/sshnp_ssh_key_handler.dart';
+import 'package:noports_core/src/sshnp/brn/sshnp_ssh_key_handler.dart';
 import 'package:noports_core/src/sshnp/sshnp_result.dart';
 import 'package:noports_core/sshnp_core.dart';
 
-class SSHNPForwardDartLocalImpl extends SSHNPForwardDart
-    with SSHNPLocalSSHKeyHandler {
-  SSHNPForwardDartLocalImpl({
+class SSHNPDartLocalImpl extends SshnpCore with SshnpLocalSSHKeyHandler {
+  SSHNPDartLocalImpl({
     required super.atClient,
     required super.params,
     super.shouldInitialize,
   });
 
   @override
-  Future<void> init() async {
+  Future<void> initialize() async {
     logger.info('Initializing SSHNPForwardDartLocalImpl');
-    await super.init();
+    await super.initialize();
     completeInitialization();
   }
 
   @override
-  Future<SSHNPResult> run() async {
+  Future<SshnpResult> run() async {
     // TODO consider starting the tunnel in a separate isolate
     SSHClient client = await startInitialTunnel();
 
-    return SSHNPCommand<SSHClient>(
+    return SshnpCommand<SSHClient>(
       localPort: localPort,
       remoteUsername: remoteUsername,
       host: 'localhost',

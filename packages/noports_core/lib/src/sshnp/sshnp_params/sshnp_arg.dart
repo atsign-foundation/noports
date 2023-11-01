@@ -46,7 +46,7 @@ enum ParserType {
   }
 }
 
-class SSHNPArg {
+class SshnpArg {
   final ArgFormat format;
 
   final String name;
@@ -61,7 +61,7 @@ class SSHNPArg {
   final bool negatable;
   final bool hide;
 
-  const SSHNPArg({
+  const SshnpArg({
     required this.name,
     this.abbr,
     this.help,
@@ -81,25 +81,25 @@ class SSHNPArg {
   List<String> get aliasList =>
       ['--$name', ...aliases?.map((e) => '--$e') ?? [], '-$abbr'];
 
-  factory SSHNPArg.noArg() {
-    return SSHNPArg(name: '');
+  factory SshnpArg.noArg() {
+    return SshnpArg(name: '');
   }
 
-  factory SSHNPArg.fromName(String name) {
+  factory SshnpArg.fromName(String name) {
     return args.firstWhere(
       (arg) => arg.name == name,
-      orElse: () => SSHNPArg.noArg(),
+      orElse: () => SshnpArg.noArg(),
     );
   }
 
-  factory SSHNPArg.fromBashName(String bashName) {
+  factory SshnpArg.fromBashName(String bashName) {
     return args.firstWhere(
       (arg) => arg.bashName == bashName,
-      orElse: () => SSHNPArg.noArg(),
+      orElse: () => SshnpArg.noArg(),
     );
   }
 
-  static final List<SSHNPArg> args = [
+  static final List<SshnpArg> args = [
     profileNameArg,
     helpArg,
     keyFileArg,
@@ -140,7 +140,7 @@ class SSHNPArg {
   }) {
     var parser = ArgParser();
     // Basic arguments
-    for (SSHNPArg arg in SSHNPArg.args) {
+    for (SshnpArg arg in SshnpArg.args) {
       if (!parserType.shouldParse(arg.parseWhen)) {
         continue;
       }
@@ -182,49 +182,49 @@ class SSHNPArg {
     return parser;
   }
 
-  static const profileNameArg = SSHNPArg(
+  static const profileNameArg = SshnpArg(
     name: 'profile-name',
     help: 'Name of the profile to use',
     parseWhen: ParseWhen.configFile,
   );
-  static const helpArg = SSHNPArg(
+  static const helpArg = SshnpArg(
     name: 'help',
     help: 'Print this usage information',
     defaultsTo: DefaultArgs.help,
     format: ArgFormat.flag,
     parseWhen: ParseWhen.commandLine,
   );
-  static const keyFileArg = SSHNPArg(
+  static const keyFileArg = SshnpArg(
     name: 'key-file',
     abbr: 'k',
     help: 'Sending atSign\'s atKeys file if not in ~/.atsign/keys/',
     parseWhen: ParseWhen.commandLine,
   );
-  static const fromArg = SSHNPArg(
+  static const fromArg = SshnpArg(
     name: 'from',
     abbr: 'f',
     help: 'Sending (a.k.a. client) atSign',
     mandatory: true,
   );
-  static const toArg = SSHNPArg(
+  static const toArg = SshnpArg(
     name: 'to',
     abbr: 't',
     help: 'Receiving device atSign',
     mandatory: true,
   );
-  static const deviceArg = SSHNPArg(
+  static const deviceArg = SshnpArg(
     name: 'device',
     abbr: 'd',
     help: 'Receiving device name',
     defaultsTo: DefaultSSHNPArgs.device,
   );
-  static const hostArg = SSHNPArg(
+  static const hostArg = SshnpArg(
     name: 'host',
     abbr: 'h',
     help: 'atSign of sshrvd daemon or FQDN/IP address to connect back to',
     mandatory: true,
   );
-  static const portArg = SSHNPArg(
+  static const portArg = SshnpArg(
     name: 'port',
     abbr: 'p',
     help:
@@ -232,7 +232,7 @@ class SSHNPArg {
     defaultsTo: DefaultSSHNPArgs.port,
     type: ArgType.integer,
   );
-  static const localPortArg = SSHNPArg(
+  static const localPortArg = SshnpArg(
     name: 'local-port',
     abbr: 'l',
     help:
@@ -240,18 +240,18 @@ class SSHNPArg {
     defaultsTo: DefaultSSHNPArgs.localPort,
     type: ArgType.integer,
   );
-  static const identityFileArg = SSHNPArg(
+  static const identityFileArg = SshnpArg(
     name: 'identity-file',
     abbr: 'i',
     help: 'Identity file to use for ssh connection',
     parseWhen: ParseWhen.commandLine,
   );
-  static const identityPassphraseArg = SSHNPArg(
+  static const identityPassphraseArg = SshnpArg(
     name: 'identity-passphrase',
     help: 'Passphrase for identity file',
     parseWhen: ParseWhen.commandLine,
   );
-  static const sendSshPublicKeyArg = SSHNPArg(
+  static const sendSshPublicKeyArg = SshnpArg(
     name: 'send-ssh-public-key',
     abbr: 's',
     help:
@@ -259,33 +259,33 @@ class SSHNPArg {
     defaultsTo: DefaultSSHNPArgs.sendSshPublicKey,
     format: ArgFormat.flag,
   );
-  static const localSshOptionsArg = SSHNPArg(
+  static const localSshOptionsArg = SshnpArg(
     name: 'local-ssh-options',
     abbr: 'o',
     defaultsTo: DefaultSSHNPArgs.localSshOptions,
     help: 'Add these commands to the local ssh command',
     format: ArgFormat.multiOption,
   );
-  static const verboseArg = SSHNPArg(
+  static const verboseArg = SshnpArg(
     name: 'verbose',
     abbr: 'v',
     defaultsTo: DefaultArgs.verbose,
     help: 'More logging',
     format: ArgFormat.flag,
   );
-  static const remoteUserNameArg = SSHNPArg(
+  static const remoteUserNameArg = SshnpArg(
     name: 'remote-user-name',
     abbr: 'u',
     help: 'username to use in the ssh session on the remote host',
   );
-  static const rootDomainArg = SSHNPArg(
+  static const rootDomainArg = SshnpArg(
     name: 'root-domain',
     help: 'atDirectory domain',
     defaultsTo: DefaultArgs.rootDomain,
     mandatory: false,
     format: ArgFormat.option,
   );
-  static const localSshdPortArg = SSHNPArg(
+  static const localSshdPortArg = SshnpArg(
     name: 'local-sshd-port',
     help: 'port on which sshd is listening locally on the client host',
     defaultsTo: DefaultArgs.localSshdPort,
@@ -294,13 +294,13 @@ class SSHNPArg {
     format: ArgFormat.option,
     type: ArgType.integer,
   );
-  static const legacyDaemonArg = SSHNPArg(
+  static const legacyDaemonArg = SshnpArg(
     name: 'legacy-daemon',
     help: 'Request is to a legacy (< 4.0.0) noports daemon',
     defaultsTo: DefaultSSHNPArgs.legacyDaemon,
     format: ArgFormat.flag,
   );
-  static const remoteSshdPortArg = SSHNPArg(
+  static const remoteSshdPortArg = SshnpArg(
     name: 'remote-sshd-port',
     help: 'port on which sshd is listening locally on the device host',
     defaultsTo: DefaultArgs.remoteSshdPort,
@@ -308,7 +308,7 @@ class SSHNPArg {
     format: ArgFormat.option,
     type: ArgType.integer,
   );
-  static const idleTimeoutArg = SSHNPArg(
+  static const idleTimeoutArg = SshnpArg(
     name: 'idle-timeout',
     help:
         'number of seconds after which inactive ssh connections will be closed',
@@ -318,21 +318,21 @@ class SSHNPArg {
     type: ArgType.integer,
     parseWhen: ParseWhen.commandLine,
   );
-  static final sshClientArg = SSHNPArg(
+  static final sshClientArg = SshnpArg(
     name: 'ssh-client',
     help: 'What to use for outbound ssh connections',
     defaultsTo: DefaultSSHNPArgs.sshClient.toString(),
     allowed: SupportedSshClient.values.map((c) => c.toString()).toList(),
     parseWhen: ParseWhen.commandLine,
   );
-  static final sshAlgorithmArg = SSHNPArg(
+  static final sshAlgorithmArg = SshnpArg(
     name: 'ssh-algorithm',
     help: 'SSH algorithm to use',
     defaultsTo: DefaultArgs.sshAlgorithm.toString(),
     allowed: SupportedSSHAlgorithm.values.map((c) => c.toString()).toList(),
     parseWhen: ParseWhen.commandLine,
   );
-  static const addForwardsToTunnelArg = SSHNPArg(
+  static const addForwardsToTunnelArg = SshnpArg(
     name: 'add-forwards-to-tunnel',
     help: 'When true, any local forwarding directives provided in'
         '--local-ssh-options will be added to the initial tunnel ssh request',
@@ -340,13 +340,13 @@ class SSHNPArg {
     format: ArgFormat.flag,
     parseWhen: ParseWhen.commandLine,
   );
-  static const configFileArg = SSHNPArg(
+  static const configFileArg = SshnpArg(
     name: 'config-file',
     help:
         'Read args from a config file\nMandatory args are not required if already supplied in the config file',
     parseWhen: ParseWhen.commandLine,
   );
-  static const listDevicesArg = SSHNPArg(
+  static const listDevicesArg = SshnpArg(
     name: 'list-devices',
     help: 'List available devices',
     defaultsTo: DefaultSSHNPArgs.listDevices,

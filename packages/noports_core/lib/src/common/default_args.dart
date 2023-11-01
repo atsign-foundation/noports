@@ -10,7 +10,7 @@ class DefaultArgs {
   static const bool verbose = false;
   static const SupportedSSHAlgorithm algorithm = SupportedSSHAlgorithm.ed25519;
   static const String rootDomain = 'root.atsign.org';
-  static const SSHRVGenerator sshrvGenerator = SSHRV.exec;
+  static const SshrvGenerator sshrvGenerator = SSHRV.exec;
   static const int localSshdPort = 22;
   static const int remoteSshdPort = 22;
 

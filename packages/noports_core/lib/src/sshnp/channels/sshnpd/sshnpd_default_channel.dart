@@ -3,19 +3,29 @@ import 'dart:convert';
 
 import 'package:at_client/at_client.dart';
 import 'package:meta/meta.dart';
-import 'package:noports_core/src/sshnp/mixins/sshnp_ssh_key_handler.dart';
-import 'package:noports_core/sshnp_core.dart';
+import 'package:noports_core/src/sshnp/brn/sshnp_ssh_key_handler.dart';
+import 'package:noports_core/src/sshnp/channels/sshnpd/sshnpd_channel.dart';
 import 'package:noports_core/utils.dart';
 
-mixin DefaultSSHNPDPayloadHandler on SSHNPCore {
+class SshnpdDefaultChannel extends SshnpdChannel
+    with SshnpdDefaultPayloadHandler {
+  SshnpdDefaultChannel({
+    required super.atClient,
+    required super.params,
+    required super.sessionId,
+    required super.namespace,
+  });
+}
+
+abstract mixin class SshnpdDefaultPayloadHandler implements SshnpdChannel {
   @protected
   late final String ephemeralPrivateKey;
 
   @protected
-  bool get useLocalFileStorage => (this is SSHNPLocalSSHKeyHandler);
+  bool get useLocalFileStorage => (this is SshnpLocalSSHKeyHandler);
 
   @override
-  FutureOr<bool> handleSshnpdPayload(AtNotification notification) async {
+  Future<bool> handleSshnpdPayload(AtNotification notification) async {
     if (notification.value?.startsWith('{') ?? false) {
       late final Map envelope;
       late final Map daemonResponse;
@@ -31,35 +41,32 @@ mixin DefaultSSHNPDPayloadHandler on SSHNPCore {
       } catch (e) {
         logger.warning(
             'Failed to extract parameters from notification value "${notification.value}" with error : $e');
-        sshnpdAck = true;
-        sshnpdAckErrors = true;
+        sshnpdAck = SshnpdAck.acknowledgedWithErrors;
         return false;
       }
 
       try {
-        await verifyEnvelopeSignature(atClient, sshnpdAtSign, logger, envelope,
-            useFileStorage: useLocalFileStorage);
+        await verifyEnvelopeSignature(
+          atClient,
+          params.sshnpdAtSign,
+          logger,
+          envelope,
+          useFileStorage: useLocalFileStorage,
+        );
       } catch (e) {
-        logger.shout('Failed to verify signature of msg from $sshnpdAtSign');
+        logger.shout(
+            'Failed to verify signature of msg from ${params.sshnpdAtSign}');
         logger.shout('Exception: $e');
         logger.shout('Notification value: ${notification.value}');
-        sshnpdAck = true;
-        sshnpdAckErrors = true;
+        sshnpdAck = SshnpdAck.acknowledgedWithErrors;
         return false;
       }
 
-      logger.info('Verified signature of msg from $sshnpdAtSign');
+      logger.info('Verified signature of msg from ${params.sshnpdAtSign}');
       logger.info('Setting ephemeralPrivateKey');
       ephemeralPrivateKey = daemonResponse['ephemeralPrivateKey'];
       return true;
     }
     return false;
-  }
-}
-
-mixin LegacySSHNPDPayloadHandler on SSHNPCore {
-  @override
-  bool handleSshnpdPayload(AtNotification notification) {
-    return (notification.value == 'connected');
   }
 }

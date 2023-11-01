@@ -5,7 +5,7 @@ import 'package:noports_core/src/sshnp/sshnp_core.dart';
 import 'package:noports_core/src/sshnp/sshnp_result.dart';
 import 'package:noports_core/utils.dart';
 
-abstract class SSHNPForward extends SSHNPCore {
+abstract class SSHNPForward extends SshnpCore {
   SSHNPForward({
     required super.atClient,
     required super.params,
@@ -23,7 +23,7 @@ abstract class SSHNPForward extends SSHNPCore {
   @override
   set sshrvdPort(int? port) => _sshrvdPort = port!;
 
-  Future<SSHNPResult?> requestSocketTunnelFromDaemon() async {
+  Future<SshnpResult?> requestSocketTunnelFromDaemon() async {
     logger.info(
         'Requesting daemon to set up socket tunnel for direct ssh session');
 // send request to the daemon via notification
@@ -47,7 +47,7 @@ abstract class SSHNPForward extends SSHNPCore {
 
     bool acked = await waitForDaemonResponse();
     if (!acked) {
-      var error = SSHNPError(
+      var error = SshnpError(
           'sshnp timed out: waiting for daemon response\nhint: make sure the device is online',
           stackTrace: StackTrace.current);
       doneCompleter.completeError(error);
@@ -55,7 +55,7 @@ abstract class SSHNPForward extends SSHNPCore {
     }
 
     if (sshnpdAckErrors) {
-      var error = SSHNPError('sshnp failed: with sshnpd acknowledgement errors',
+      var error = SshnpError('sshnp failed: with sshnpd acknowledgement errors',
           stackTrace: StackTrace.current);
       doneCompleter.completeError(error);
       return error;

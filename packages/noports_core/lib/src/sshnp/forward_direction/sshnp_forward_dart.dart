@@ -9,11 +9,10 @@ import 'package:noports_core/src/sshnp/mixins/sshnpd_payload_handler.dart';
 import 'package:noports_core/sshnp.dart';
 
 abstract class SSHNPForwardDart extends SSHNPForward
-    with DefaultSSHNPDPayloadHandler {
-
+    with SSHNPDDefaultPayloadHandler {
   SSHNPForwardDart({
     required AtClient atClient,
-    required SSHNPParams params,
+    required SshnpParams params,
     bool? shouldInitialize,
   }) : super(
           atClient: atClient,
@@ -29,7 +28,7 @@ abstract class SSHNPForwardDart extends SSHNPForward
 
   @protected
   Future<SSHClient> startInitialTunnel() async {
-    await startAndWaitForInit();
+    await callInitialization();
 
     var error = await requestSocketTunnelFromDaemon();
     if (error != null) {
@@ -45,7 +44,7 @@ abstract class SSHNPForwardDart extends SSHNPForward
       try {
         socket = await SSHSocket.connect(host, sshrvdPort);
       } catch (e, s) {
-        var error = SSHNPError(
+        var error = SshnpError(
           'Failed to open socket to $host:$port : $e',
           error: e,
           stackTrace: s,
@@ -65,7 +64,7 @@ abstract class SSHNPForwardDart extends SSHNPForward
           keepAliveInterval: Duration(seconds: 15),
         );
       } catch (e, s) {
-        var error = SSHNPError(
+        var error = SshnpError(
           'Failed to create SSHClient for ${params.remoteUsername}@$host:$port : $e',
           error: e,
           stackTrace: s,
@@ -77,7 +76,7 @@ abstract class SSHNPForwardDart extends SSHNPForward
       try {
         await client.authenticated;
       } catch (e, s) {
-        var error = SSHNPError(
+        var error = SshnpError(
           'Failed to authenticate as ${params.remoteUsername}@$host:$port : $e',
           error: e,
           stackTrace: s,
@@ -176,12 +175,12 @@ abstract class SSHNPForwardDart extends SSHNPForward
         }
       });
       return client;
-    } on SSHNPError catch (e, s) {
+    } on SshnpError catch (e, s) {
       doneCompleter.completeError(e, s);
       rethrow;
     } catch (e, s) {
       doneCompleter.completeError(e, s);
-      throw SSHNPError(
+      throw SshnpError(
         'SSH Client failure : $e',
         error: e,
         stackTrace: s,

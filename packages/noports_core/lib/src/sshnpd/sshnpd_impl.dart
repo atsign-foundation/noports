@@ -501,9 +501,9 @@ class SSHNPDImpl implements SSHNPD {
           await SSHRV.exec(host, port, localSshdPort: localSshdPort).run();
       logger.info('Started rv - pid is ${rv.pid}');
 
-      LocalSSHKeyUtil keyUtil = LocalSSHKeyUtil();
+      LocalSshKeyUtil keyUtil = LocalSshKeyUtil();
 
-      AtSSHKeyPair keyPair = await keyUtil.generateKeyPair(
+      AtSshKeyPair keyPair = await keyUtil.generateKeyPair(
           algorithm: sshAlgorithm, identifier: 'ephemeral_$sessionId');
 
       await keyUtil.authorizePublicKey(

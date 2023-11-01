@@ -10,12 +10,12 @@ import 'package:path/path.dart' as path;
 export 'ssh_key_utils/dart_ssh_key_util.dart';
 export 'ssh_key_utils/local_ssh_key_util.dart';
 
-class AtSSHKeyPair {
+class AtSshKeyPair {
   @protected
   final SSHKeyPair keyPair;
   final String identifier;
 
-  AtSSHKeyPair.fromPem(
+  AtSshKeyPair.fromPem(
     String pemText, {
     required String identifier,
     String? directory,
@@ -42,12 +42,12 @@ class AtSSHKeyPair {
 }
 
 abstract interface class AtSSHKeyUtil {
-  FutureOr<AtSSHKeyPair> generateKeyPair({
+  FutureOr<AtSshKeyPair> generateKeyPair({
     required String identifier,
     SupportedSSHAlgorithm algorithm,
   });
 
-  FutureOr<AtSSHKeyPair> getKeyPair({
+  FutureOr<AtSshKeyPair> getKeyPair({
     required String identifier,
   });
 }

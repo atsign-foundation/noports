@@ -5,7 +5,7 @@ import 'package:test/test.dart';
 void main() {
   group('SSHNPParams', () {
     test('public API test', () {
-      final params = SSHNPParams(clientAtSign: '', sshnpdAtSign: '', host: '');
+      final params = SshnpParams(clientAtSign: '', sshnpdAtSign: '', host: '');
       expect(params, isNotNull);
       expect(params.clientAtSign, isA<String>());
       expect(params.sshnpdAtSign, isA<String>());
@@ -37,22 +37,22 @@ void main() {
 
     group('SSHNPParams final variables', () {
       test('SSHNPParams.clientAtSign test', () {
-        final params = SSHNPParams(
+        final params = SshnpParams(
             clientAtSign: '@myClientAtSign', sshnpdAtSign: '', host: '');
         expect(params.clientAtSign, equals('@myClientAtSign'));
       });
       test('SSHNPParams.sshnpdAtSign test', () {
-        final params = SSHNPParams(
+        final params = SshnpParams(
             clientAtSign: '', sshnpdAtSign: '@mySshnpdAtSign', host: '');
         expect(params.sshnpdAtSign, equals('@mySshnpdAtSign'));
       });
       test('SSHNPParams.host test', () {
         final params =
-            SSHNPParams(clientAtSign: '', sshnpdAtSign: '', host: '@myHost');
+            SshnpParams(clientAtSign: '', sshnpdAtSign: '', host: '@myHost');
         expect(params.host, equals('@myHost'));
       });
       test('SSHNPParams.device test', () {
-        final params = SSHNPParams(
+        final params = SshnpParams(
             clientAtSign: '',
             sshnpdAtSign: '',
             host: '',
@@ -60,17 +60,17 @@ void main() {
         expect(params.device, equals('myDeviceName'));
       });
       test('SSHNPParams.port test', () {
-        final params = SSHNPParams(
+        final params = SshnpParams(
             clientAtSign: '', sshnpdAtSign: '', host: '', port: 1234);
         expect(params.port, equals(1234));
       });
       test('SSHNPParams.localPort test', () {
-        final params = SSHNPParams(
+        final params = SshnpParams(
             clientAtSign: '', sshnpdAtSign: '', host: '', localPort: 2345);
         expect(params.localPort, equals(2345));
       });
       test('SSHNPParams.identityFile test', () {
-        final params = SSHNPParams(
+        final params = SshnpParams(
             clientAtSign: '',
             sshnpdAtSign: '',
             host: '',
@@ -78,7 +78,7 @@ void main() {
         expect(params.identityFile, equals('.ssh/id_ed25519'));
       });
       test('SSHNPParams.identityPassphrase test', () {
-        final params = SSHNPParams(
+        final params = SshnpParams(
             clientAtSign: '',
             sshnpdAtSign: '',
             host: '',
@@ -86,7 +86,7 @@ void main() {
         expect(params.identityPassphrase, equals('myPassphrase'));
       });
       test('SSHNPParams.sendSshPublicKey test', () {
-        final params = SSHNPParams(
+        final params = SshnpParams(
             clientAtSign: '',
             sshnpdAtSign: '',
             host: '',
@@ -94,16 +94,16 @@ void main() {
         expect(params.sendSshPublicKey, equals(true));
       });
       test('SSHNPParams.localSshOptions test', () {
-        final params = SSHNPParams(
+        final params = SshnpParams(
             clientAtSign: '',
             sshnpdAtSign: '',
             host: '',
             localSshOptions: ['-L 127.0.01:8080:127.0.0.1:80']);
-        expect(params.localSshOptions,
-            equals(['-L 127.0.01:8080:127.0.0.1:80']));
+        expect(
+            params.localSshOptions, equals(['-L 127.0.01:8080:127.0.0.1:80']));
       });
       test('SSHNPParams.remoteUsername test', () {
-        final params = SSHNPParams(
+        final params = SshnpParams(
             clientAtSign: '',
             sshnpdAtSign: '',
             host: '',
@@ -111,12 +111,12 @@ void main() {
         expect(params.remoteUsername, equals('myUsername'));
       });
       test('SSHNPParams.verbose test', () {
-        final params = SSHNPParams(
+        final params = SshnpParams(
             clientAtSign: '', sshnpdAtSign: '', host: '', verbose: true);
         expect(params.verbose, equals(true));
       });
       test('SSHNPParams.rootDomain test', () {
-        final params = SSHNPParams(
+        final params = SshnpParams(
             clientAtSign: '',
             sshnpdAtSign: '',
             host: '',
@@ -124,27 +124,27 @@ void main() {
         expect(params.rootDomain, equals('root.atsign.wtf'));
       });
       test('SSHNPParams.localSshdPort test', () {
-        final params = SSHNPParams(
+        final params = SshnpParams(
             clientAtSign: '', sshnpdAtSign: '', host: '', localSshdPort: 4567);
         expect(params.localSshdPort, equals(4567));
       });
       test('SSHNPParams.legacyDaemon test', () {
-        final params = SSHNPParams(
+        final params = SshnpParams(
             clientAtSign: '', sshnpdAtSign: '', host: '', legacyDaemon: true);
         expect(params.legacyDaemon, equals(true));
       });
       test('SSHNPParams.remoteSshdPort test', () {
-        final params = SSHNPParams(
+        final params = SshnpParams(
             clientAtSign: '', sshnpdAtSign: '', host: '', remoteSshdPort: 2222);
         expect(params.remoteSshdPort, equals(2222));
       });
       test('SSHNPParams.idleTimeout test', () {
-        final params = SSHNPParams(
+        final params = SshnpParams(
             clientAtSign: '', sshnpdAtSign: '', host: '', idleTimeout: 120);
         expect(params.idleTimeout, equals(120));
       });
       test('SSHNPParams.addForwardsToTunnel test', () {
-        final params = SSHNPParams(
+        final params = SshnpParams(
             clientAtSign: '',
             sshnpdAtSign: '',
             host: '',
@@ -152,7 +152,7 @@ void main() {
         expect(params.addForwardsToTunnel, equals(true));
       });
       test('SSHNPParams.atKeysFilePath test', () {
-        final params = SSHNPParams(
+        final params = SshnpParams(
             clientAtSign: '',
             sshnpdAtSign: '',
             host: '',
@@ -161,7 +161,7 @@ void main() {
             params.atKeysFilePath, equals('~/.atsign/@myAtsign_keys.atKeys'));
       });
       test('SSHNPParams.sshClient test', () {
-        final params = SSHNPParams(
+        final params = SshnpParams(
             clientAtSign: '',
             sshnpdAtSign: '',
             host: '',
@@ -169,7 +169,7 @@ void main() {
         expect(params.sshClient, equals(SupportedSshClient.dart));
       });
       test('SSHNPParams.sshAlgorithm test', () {
-        final params = SSHNPParams(
+        final params = SshnpParams(
             clientAtSign: '',
             sshnpdAtSign: '',
             host: '',
@@ -177,7 +177,7 @@ void main() {
         expect(params.sshAlgorithm, equals(SupportedSSHAlgorithm.rsa));
       });
       test('SSHNPParams.profileName test', () {
-        final params = SSHNPParams(
+        final params = SshnpParams(
             clientAtSign: '',
             sshnpdAtSign: '',
             host: '',
@@ -185,7 +185,7 @@ void main() {
         expect(params.profileName, equals('myProfile'));
       });
       test('SSHNPParams.listDevices test', () {
-        final params = SSHNPParams(
+        final params = SshnpParams(
             clientAtSign: '', sshnpdAtSign: '', host: '', listDevices: true);
         expect(params.listDevices, equals(true));
       });
@@ -193,7 +193,7 @@ void main() {
 
     group('SSHNPParams factories', () {
       test('SSHNPParams.empty() test', () {
-        final params = SSHNPParams.empty();
+        final params = SshnpParams.empty();
         expect(params.profileName, equals(''));
         expect(params.clientAtSign, equals(''));
         expect(params.sshnpdAtSign, equals(''));
@@ -222,9 +222,9 @@ void main() {
         expect(params.sshAlgorithm, equals(DefaultArgs.sshAlgorithm));
       });
       test('SSHNPParams.merge() test (overrides take priority)', () {
-        final params = SSHNPParams.merge(
-          SSHNPParams.empty(),
-          SSHNPPartialParams(
+        final params = SshnpParams.merge(
+          SshnpParams.empty(),
+          SshnpPartialParams(
             clientAtSign: '@myClientAtSign',
             sshnpdAtSign: '@mySshnpdAtSign',
             host: '@myHost',
@@ -257,8 +257,8 @@ void main() {
         expect(params.identityFile, equals('.ssh/id_ed25519'));
         expect(params.identityPassphrase, equals('myPassphrase'));
         expect(params.sendSshPublicKey, equals(true));
-        expect(params.localSshOptions,
-            equals(['-L 127.0.01:8080:127.0.0.1:80']));
+        expect(
+            params.localSshOptions, equals(['-L 127.0.01:8080:127.0.0.1:80']));
         expect(params.remoteUsername, equals('myUsername'));
         expect(params.verbose, equals(true));
         expect(params.rootDomain, equals('root.atsign.wtf'));
@@ -274,7 +274,7 @@ void main() {
       });
       test('SSHNPParams.merge() test (null coalesce values)', () {
         final params =
-            SSHNPParams.merge(SSHNPParams.empty(), SSHNPPartialParams());
+            SshnpParams.merge(SshnpParams.empty(), SshnpPartialParams());
         expect(params.profileName, equals(''));
         expect(params.clientAtSign, equals(''));
         expect(params.sshnpdAtSign, equals(''));
@@ -304,31 +304,31 @@ void main() {
       });
       test('SSHNPParams.fromJson() test', () {
         String json = '{'
-            '"${SSHNPArg.profileNameArg.name}": "myProfile",'
-            '"${SSHNPArg.fromArg.name}": "@myClientAtSign",'
-            '"${SSHNPArg.toArg.name}": "@mySshnpdAtSign",'
-            '"${SSHNPArg.hostArg.name}": "@myHost",'
-            '"${SSHNPArg.deviceArg.name}": "myDeviceName",'
-            '"${SSHNPArg.portArg.name}": 1234,'
-            '"${SSHNPArg.localPortArg.name}": 2345,'
-            '"${SSHNPArg.identityFileArg.name}": ".ssh/id_ed25519",'
-            '"${SSHNPArg.identityPassphraseArg.name}": "myPassphrase",'
-            '"${SSHNPArg.sendSshPublicKeyArg.name}": true,'
-            '"${SSHNPArg.localSshOptionsArg.name}": ["-L 127.0.01:8080:127.0.0.1:80"],'
-            '"${SSHNPArg.remoteUserNameArg.name}": "myUsername",'
-            '"${SSHNPArg.verboseArg.name}": true,'
-            '"${SSHNPArg.rootDomainArg.name}": "root.atsign.wtf",'
-            '"${SSHNPArg.localSshdPortArg.name}": 4567,'
-            '"${SSHNPArg.legacyDaemonArg.name}": true,'
-            '"${SSHNPArg.remoteSshdPortArg.name}": 2222,'
-            '"${SSHNPArg.idleTimeoutArg.name}": 120,'
-            '"${SSHNPArg.addForwardsToTunnelArg.name}": true,'
-            '"${SSHNPArg.keyFileArg.name}": "~/.atsign/@myAtsign_keys.atKeys",'
-            '"${SSHNPArg.sshClientArg.name}": "${SupportedSshClient.dart.toString()}",'
-            '"${SSHNPArg.sshAlgorithmArg.name}": "${SupportedSSHAlgorithm.rsa.toString()}"'
+            '"${SshnpArg.profileNameArg.name}": "myProfile",'
+            '"${SshnpArg.fromArg.name}": "@myClientAtSign",'
+            '"${SshnpArg.toArg.name}": "@mySshnpdAtSign",'
+            '"${SshnpArg.hostArg.name}": "@myHost",'
+            '"${SshnpArg.deviceArg.name}": "myDeviceName",'
+            '"${SshnpArg.portArg.name}": 1234,'
+            '"${SshnpArg.localPortArg.name}": 2345,'
+            '"${SshnpArg.identityFileArg.name}": ".ssh/id_ed25519",'
+            '"${SshnpArg.identityPassphraseArg.name}": "myPassphrase",'
+            '"${SshnpArg.sendSshPublicKeyArg.name}": true,'
+            '"${SshnpArg.localSshOptionsArg.name}": ["-L 127.0.01:8080:127.0.0.1:80"],'
+            '"${SshnpArg.remoteUserNameArg.name}": "myUsername",'
+            '"${SshnpArg.verboseArg.name}": true,'
+            '"${SshnpArg.rootDomainArg.name}": "root.atsign.wtf",'
+            '"${SshnpArg.localSshdPortArg.name}": 4567,'
+            '"${SshnpArg.legacyDaemonArg.name}": true,'
+            '"${SshnpArg.remoteSshdPortArg.name}": 2222,'
+            '"${SshnpArg.idleTimeoutArg.name}": 120,'
+            '"${SshnpArg.addForwardsToTunnelArg.name}": true,'
+            '"${SshnpArg.keyFileArg.name}": "~/.atsign/@myAtsign_keys.atKeys",'
+            '"${SshnpArg.sshClientArg.name}": "${SupportedSshClient.dart.toString()}",'
+            '"${SshnpArg.sshAlgorithmArg.name}": "${SupportedSSHAlgorithm.rsa.toString()}"'
             '}';
 
-        final params = SSHNPParams.fromJson(json);
+        final params = SshnpParams.fromJson(json);
         expect(params.profileName, equals('myProfile'));
         expect(params.clientAtSign, equals('@myClientAtSign'));
         expect(params.sshnpdAtSign, equals('@mySshnpdAtSign'));
@@ -339,8 +339,8 @@ void main() {
         expect(params.identityFile, equals('.ssh/id_ed25519'));
         expect(params.identityPassphrase, equals('myPassphrase'));
         expect(params.sendSshPublicKey, equals(true));
-        expect(params.localSshOptions,
-            equals(['-L 127.0.01:8080:127.0.0.1:80']));
+        expect(
+            params.localSshOptions, equals(['-L 127.0.01:8080:127.0.0.1:80']));
         expect(params.remoteUsername, equals('myUsername'));
         expect(params.verbose, equals(true));
         expect(params.rootDomain, equals('root.atsign.wtf'));
@@ -355,41 +355,41 @@ void main() {
         expect(params.sshAlgorithm, equals(SupportedSSHAlgorithm.rsa));
       });
       test('SSHNPParams.fromPartial() test', () {
-        final partial = SSHNPPartialParams(
+        final partial = SshnpPartialParams(
           clientAtSign: '@myClientAtSign',
           sshnpdAtSign: '@mySshnpdAtSign',
           host: '@myHost',
         );
-        final params = SSHNPParams.fromPartial(partial);
+        final params = SshnpParams.fromPartial(partial);
         expect(params.clientAtSign, equals('@myClientAtSign'));
         expect(params.sshnpdAtSign, equals('@mySshnpdAtSign'));
         expect(params.host, equals('@myHost'));
       });
       test('SSHNPParams.fromConfigLines() test', () {
         final configLines = [
-          '${SSHNPArg.fromArg.bashName} = @myClientAtSign',
-          '${SSHNPArg.toArg.bashName} = @mySshnpdAtSign',
-          '${SSHNPArg.hostArg.bashName} = @myHost',
-          '${SSHNPArg.deviceArg.bashName} = myDeviceName',
-          '${SSHNPArg.portArg.bashName} = 1234',
-          '${SSHNPArg.localPortArg.bashName} = 2345',
-          '${SSHNPArg.identityFileArg.bashName} = .ssh/id_ed25519',
-          '${SSHNPArg.identityPassphraseArg.bashName} = myPassphrase',
-          '${SSHNPArg.sendSshPublicKeyArg.bashName} = true',
-          '${SSHNPArg.localSshOptionsArg.bashName} = -L 127.0.01:8080:127.0.0.1:80',
-          '${SSHNPArg.remoteUserNameArg.bashName} = myUsername',
-          '${SSHNPArg.verboseArg.bashName} = true',
-          '${SSHNPArg.rootDomainArg.bashName} = root.atsign.wtf',
-          '${SSHNPArg.localSshdPortArg.bashName} = 4567',
-          '${SSHNPArg.legacyDaemonArg.bashName} = true',
-          '${SSHNPArg.remoteSshdPortArg.bashName} = 2222',
-          '${SSHNPArg.idleTimeoutArg.bashName} = 120',
-          '${SSHNPArg.addForwardsToTunnelArg.bashName} = true',
-          '${SSHNPArg.keyFileArg.bashName} = ~/.atsign/@myAtsign_keys.atKeys',
-          '${SSHNPArg.sshClientArg.bashName} = ${SupportedSshClient.dart.toString()}',
-          '${SSHNPArg.sshAlgorithmArg.bashName} = ${SupportedSSHAlgorithm.rsa.toString()}',
+          '${SshnpArg.fromArg.bashName} = @myClientAtSign',
+          '${SshnpArg.toArg.bashName} = @mySshnpdAtSign',
+          '${SshnpArg.hostArg.bashName} = @myHost',
+          '${SshnpArg.deviceArg.bashName} = myDeviceName',
+          '${SshnpArg.portArg.bashName} = 1234',
+          '${SshnpArg.localPortArg.bashName} = 2345',
+          '${SshnpArg.identityFileArg.bashName} = .ssh/id_ed25519',
+          '${SshnpArg.identityPassphraseArg.bashName} = myPassphrase',
+          '${SshnpArg.sendSshPublicKeyArg.bashName} = true',
+          '${SshnpArg.localSshOptionsArg.bashName} = -L 127.0.01:8080:127.0.0.1:80',
+          '${SshnpArg.remoteUserNameArg.bashName} = myUsername',
+          '${SshnpArg.verboseArg.bashName} = true',
+          '${SshnpArg.rootDomainArg.bashName} = root.atsign.wtf',
+          '${SshnpArg.localSshdPortArg.bashName} = 4567',
+          '${SshnpArg.legacyDaemonArg.bashName} = true',
+          '${SshnpArg.remoteSshdPortArg.bashName} = 2222',
+          '${SshnpArg.idleTimeoutArg.bashName} = 120',
+          '${SshnpArg.addForwardsToTunnelArg.bashName} = true',
+          '${SshnpArg.keyFileArg.bashName} = ~/.atsign/@myAtsign_keys.atKeys',
+          '${SshnpArg.sshClientArg.bashName} = ${SupportedSshClient.dart.toString()}',
+          '${SshnpArg.sshAlgorithmArg.bashName} = ${SupportedSSHAlgorithm.rsa.toString()}',
         ];
-        final params = SSHNPParams.fromConfigLines('myProfile', configLines);
+        final params = SshnpParams.fromConfigLines('myProfile', configLines);
         expect(params.profileName, equals('myProfile'));
         expect(params.clientAtSign, equals('@myClientAtSign'));
         expect(params.sshnpdAtSign, equals('@mySshnpdAtSign'));
@@ -398,8 +398,8 @@ void main() {
         expect(params.port, equals(1234));
         expect(params.localPort, equals(2345));
         expect(params.sendSshPublicKey, equals(true));
-        expect(params.localSshOptions,
-            equals(['-L 127.0.01:8080:127.0.0.1:80']));
+        expect(
+            params.localSshOptions, equals(['-L 127.0.01:8080:127.0.0.1:80']));
         expect(params.remoteUsername, equals('myUsername'));
         expect(params.verbose, equals(true));
         expect(params.rootDomain, equals('root.atsign.wtf'));
@@ -410,7 +410,7 @@ void main() {
     }); // group('SSHNPParams factories')
     group('SSHNPParams functions', () {
       test('SSHNPParams.toConfigLines', () {
-        final params = SSHNPParams(
+        final params = SshnpParams(
           clientAtSign: '@myClientAtSign',
           sshnpdAtSign: '@mySshnpdAtSign',
           host: '@myHost',
@@ -437,7 +437,7 @@ void main() {
         // it is safer to trust that the parser works as expected
         // and just check that the lines are present
         final parsedParams =
-            SSHNPParams.fromConfigLines('myProfile', configLines);
+            SshnpParams.fromConfigLines('myProfile', configLines);
         expect(parsedParams.profileName, equals('myProfile'));
         expect(parsedParams.clientAtSign, equals('@myClientAtSign'));
         expect(parsedParams.sshnpdAtSign, equals('@mySshnpdAtSign'));
@@ -455,7 +455,7 @@ void main() {
         expect(parsedParams.remoteSshdPort, equals(2222));
       });
       test('SSHNPParams.toArgMap', () {
-        final params = SSHNPParams(
+        final params = SshnpParams(
           clientAtSign: '@myClientAtSign',
           sshnpdAtSign: '@mySshnpdAtSign',
           host: '@myHost',
@@ -478,35 +478,35 @@ void main() {
           sshAlgorithm: SupportedSSHAlgorithm.rsa,
         );
         final argMap = params.toArgMap();
-        expect(argMap[SSHNPArg.fromArg.name], equals('@myClientAtSign'));
-        expect(argMap[SSHNPArg.toArg.name], equals('@mySshnpdAtSign'));
-        expect(argMap[SSHNPArg.hostArg.name], equals('@myHost'));
-        expect(argMap[SSHNPArg.deviceArg.name], equals('myDeviceName'));
-        expect(argMap[SSHNPArg.portArg.name], equals(1234));
-        expect(argMap[SSHNPArg.localPortArg.name], equals(2345));
+        expect(argMap[SshnpArg.fromArg.name], equals('@myClientAtSign'));
+        expect(argMap[SshnpArg.toArg.name], equals('@mySshnpdAtSign'));
+        expect(argMap[SshnpArg.hostArg.name], equals('@myHost'));
+        expect(argMap[SshnpArg.deviceArg.name], equals('myDeviceName'));
+        expect(argMap[SshnpArg.portArg.name], equals(1234));
+        expect(argMap[SshnpArg.localPortArg.name], equals(2345));
         expect(
-            argMap[SSHNPArg.identityFileArg.name], equals('.ssh/id_ed25519'));
-        expect(argMap[SSHNPArg.identityPassphraseArg.name],
+            argMap[SshnpArg.identityFileArg.name], equals('.ssh/id_ed25519'));
+        expect(argMap[SshnpArg.identityPassphraseArg.name],
             equals('myPassphrase'));
-        expect(argMap[SSHNPArg.sendSshPublicKeyArg.name], equals(true));
-        expect(argMap[SSHNPArg.localSshOptionsArg.name],
+        expect(argMap[SshnpArg.sendSshPublicKeyArg.name], equals(true));
+        expect(argMap[SshnpArg.localSshOptionsArg.name],
             equals(['-L 127.0.01:8080:127.0.0.1:80']));
-        expect(argMap[SSHNPArg.remoteUserNameArg.name], equals('myUsername'));
-        expect(argMap[SSHNPArg.verboseArg.name], equals(true));
-        expect(argMap[SSHNPArg.rootDomainArg.name], equals('root.atsign.wtf'));
-        expect(argMap[SSHNPArg.localSshdPortArg.name], equals(4567));
-        expect(argMap[SSHNPArg.remoteSshdPortArg.name], equals(2222));
-        expect(argMap[SSHNPArg.idleTimeoutArg.name], equals(120));
-        expect(argMap[SSHNPArg.addForwardsToTunnelArg.name], equals(true));
-        expect(argMap[SSHNPArg.keyFileArg.name],
+        expect(argMap[SshnpArg.remoteUserNameArg.name], equals('myUsername'));
+        expect(argMap[SshnpArg.verboseArg.name], equals(true));
+        expect(argMap[SshnpArg.rootDomainArg.name], equals('root.atsign.wtf'));
+        expect(argMap[SshnpArg.localSshdPortArg.name], equals(4567));
+        expect(argMap[SshnpArg.remoteSshdPortArg.name], equals(2222));
+        expect(argMap[SshnpArg.idleTimeoutArg.name], equals(120));
+        expect(argMap[SshnpArg.addForwardsToTunnelArg.name], equals(true));
+        expect(argMap[SshnpArg.keyFileArg.name],
             equals('~/.atsign/@myAtsign_keys.atKeys'));
-        expect(argMap[SSHNPArg.sshClientArg.name],
+        expect(argMap[SshnpArg.sshClientArg.name],
             equals(SupportedSshClient.dart.toString()));
-        expect(argMap[SSHNPArg.sshAlgorithmArg.name],
+        expect(argMap[SshnpArg.sshAlgorithmArg.name],
             equals(SupportedSSHAlgorithm.rsa.toString()));
       });
       test('SSHNPParams.toJson', () {
-        final params = SSHNPParams(
+        final params = SshnpParams(
           clientAtSign: '@myClientAtSign',
           sshnpdAtSign: '@mySshnpdAtSign',
           host: '@myHost',
@@ -529,7 +529,7 @@ void main() {
           sshAlgorithm: SupportedSSHAlgorithm.rsa,
         );
         final json = params.toJson();
-        final parsedParams = SSHNPParams.fromJson(json);
+        final parsedParams = SshnpParams.fromJson(json);
         expect(parsedParams.clientAtSign, equals('@myClientAtSign'));
         expect(parsedParams.sshnpdAtSign, equals('@mySshnpdAtSign'));
         expect(parsedParams.host, equals('@myHost'));
@@ -558,7 +558,7 @@ void main() {
 
   group('SSHNPPartialParams', () {
     test('public API test', () {
-      final partialParams = SSHNPPartialParams();
+      final partialParams = SshnpPartialParams();
       expect(partialParams, isNotNull);
       expect(partialParams.clientAtSign, isA<String?>());
       expect(partialParams.sshnpdAtSign, isA<String?>());
@@ -587,106 +587,106 @@ void main() {
 
     group('SSHNPPartialParams final variables', () {
       test('SSHNPPartialParams.clientAtSign test', () {
-        final params = SSHNPPartialParams(clientAtSign: '@myClientAtSign');
+        final params = SshnpPartialParams(clientAtSign: '@myClientAtSign');
         expect(params.clientAtSign, equals('@myClientAtSign'));
       });
       test('SSHNPPartialParams.sshnpdAtSign test', () {
-        final params = SSHNPPartialParams(sshnpdAtSign: '@mySshnpdAtSign');
+        final params = SshnpPartialParams(sshnpdAtSign: '@mySshnpdAtSign');
         expect(params.sshnpdAtSign, equals('@mySshnpdAtSign'));
       });
       test('SSHNPPartialParams.host test', () {
-        final params = SSHNPPartialParams(host: '@myHost');
+        final params = SshnpPartialParams(host: '@myHost');
         expect(params.host, equals('@myHost'));
       });
       test('SSHNPPartialParams.device test', () {
-        final params = SSHNPPartialParams(device: 'myDeviceName');
+        final params = SshnpPartialParams(device: 'myDeviceName');
         expect(params.device, equals('myDeviceName'));
       });
       test('SSHNPPartialParams.port test', () {
-        final params = SSHNPPartialParams(port: 1234);
+        final params = SshnpPartialParams(port: 1234);
         expect(params.port, equals(1234));
       });
       test('SSHNPPartialParams.localPort test', () {
-        final params = SSHNPPartialParams(localPort: 2345);
+        final params = SshnpPartialParams(localPort: 2345);
         expect(params.localPort, equals(2345));
       });
       test('SSHNPPartialParams.identityFile test', () {
-        final params = SSHNPPartialParams(identityFile: '.ssh/id_ed25519');
+        final params = SshnpPartialParams(identityFile: '.ssh/id_ed25519');
         expect(params.identityFile, equals('.ssh/id_ed25519'));
       });
       test('SSHNPPartialParams.identityPassphrase test', () {
-        final params = SSHNPPartialParams(identityPassphrase: 'myPassphrase');
+        final params = SshnpPartialParams(identityPassphrase: 'myPassphrase');
         expect(params.identityPassphrase, equals('myPassphrase'));
       });
       test('SSHNPPartialParams.sendSshPublicKey test', () {
-        final params = SSHNPPartialParams(sendSshPublicKey: true);
+        final params = SshnpPartialParams(sendSshPublicKey: true);
         expect(params.sendSshPublicKey, equals(true));
       });
       test('SSHNPPartialParams.localSshOptions test', () {
-        final params = SSHNPPartialParams(
+        final params = SshnpPartialParams(
             localSshOptions: ['-L 127.0.01:8080:127.0.0.1:80']);
-        expect(params.localSshOptions,
-            equals(['-L 127.0.01:8080:127.0.0.1:80']));
+        expect(
+            params.localSshOptions, equals(['-L 127.0.01:8080:127.0.0.1:80']));
       });
       test('SSHNPPartialParams.remoteUsername test', () {
-        final params = SSHNPPartialParams(remoteUsername: 'myUsername');
+        final params = SshnpPartialParams(remoteUsername: 'myUsername');
         expect(params.remoteUsername, equals('myUsername'));
       });
       test('SSHNPPartialParams.verbose test', () {
-        final params = SSHNPPartialParams(verbose: true);
+        final params = SshnpPartialParams(verbose: true);
         expect(params.verbose, equals(true));
       });
       test('SSHNPPartialParams.rootDomain test', () {
-        final params = SSHNPPartialParams(rootDomain: 'root.atsign.wtf');
+        final params = SshnpPartialParams(rootDomain: 'root.atsign.wtf');
         expect(params.rootDomain, equals('root.atsign.wtf'));
       });
       test('SSHNPPartialParams.localSshdPort test', () {
-        final params = SSHNPPartialParams(localSshdPort: 4567);
+        final params = SshnpPartialParams(localSshdPort: 4567);
         expect(params.localSshdPort, equals(4567));
       });
       test('SSHNPPartialParams.legacyDaemon test', () {
-        final params = SSHNPPartialParams(legacyDaemon: true);
+        final params = SshnpPartialParams(legacyDaemon: true);
         expect(params.legacyDaemon, equals(true));
       });
       test('SSHNPPartialParams.remoteSshdPort test', () {
-        final params = SSHNPPartialParams(remoteSshdPort: 2222);
+        final params = SshnpPartialParams(remoteSshdPort: 2222);
         expect(params.remoteSshdPort, equals(2222));
       });
       test('SSHNPPartialParams.idleTimeout test', () {
-        final params = SSHNPPartialParams(idleTimeout: 120);
+        final params = SshnpPartialParams(idleTimeout: 120);
         expect(params.idleTimeout, equals(120));
       });
       test('SSHNPPartialParams.addForwardsToTunnel test', () {
-        final params = SSHNPPartialParams(addForwardsToTunnel: true);
+        final params = SshnpPartialParams(addForwardsToTunnel: true);
         expect(params.addForwardsToTunnel, equals(true));
       });
       test('SSHNPPartialParams.atKeysFilePath test', () {
-        final params = SSHNPPartialParams(
+        final params = SshnpPartialParams(
             atKeysFilePath: '~/.atsign/@myAtsign_keys.atKeys');
         expect(
             params.atKeysFilePath, equals('~/.atsign/@myAtsign_keys.atKeys'));
       });
       test('SSHNPPartialParams.sshClient test', () {
-        final params = SSHNPPartialParams(sshClient: SupportedSshClient.dart);
+        final params = SshnpPartialParams(sshClient: SupportedSshClient.dart);
         expect(params.sshClient, equals(SupportedSshClient.dart));
       });
       test('SSHNPPartialParams.sshAlgorithm test', () {
         final params =
-            SSHNPPartialParams(sshAlgorithm: SupportedSSHAlgorithm.rsa);
+            SshnpPartialParams(sshAlgorithm: SupportedSSHAlgorithm.rsa);
         expect(params.sshAlgorithm, equals(SupportedSSHAlgorithm.rsa));
       });
       test('SSHNPPartialParams.profileName test', () {
-        final params = SSHNPPartialParams(profileName: 'myProfile');
+        final params = SshnpPartialParams(profileName: 'myProfile');
         expect(params.profileName, equals('myProfile'));
       });
       test('SSHNPPartialParams.listDevices test', () {
-        final params = SSHNPPartialParams(listDevices: true);
+        final params = SshnpPartialParams(listDevices: true);
         expect(params.listDevices, equals(true));
       });
     }); // group('SSHNPPartialParams final variables')
     group('SSHNPPartialParams factories', () {
       test('SSHNPPartialParams.empty() test', () {
-        final params = SSHNPPartialParams.empty();
+        final params = SshnpPartialParams.empty();
         expect(params.profileName, isNull);
         expect(params.clientAtSign, isNull);
         expect(params.sshnpdAtSign, isNull);
@@ -712,9 +712,9 @@ void main() {
         expect(params.listDevices, isNull);
       });
       test('SSHNPPartialParams.merge() test (overrides take priority)', () {
-        final params = SSHNPPartialParams.merge(
-          SSHNPPartialParams.empty(),
-          SSHNPPartialParams(
+        final params = SshnpPartialParams.merge(
+          SshnpPartialParams.empty(),
+          SshnpPartialParams(
             clientAtSign: '@myClientAtSign',
             sshnpdAtSign: '@mySshnpdAtSign',
             host: '@myHost',
@@ -746,8 +746,8 @@ void main() {
         expect(params.identityFile, equals('.ssh/id_ed25519'));
         expect(params.identityPassphrase, equals('myPassphrase'));
         expect(params.sendSshPublicKey, equals(true));
-        expect(params.localSshOptions,
-            equals(['-L 127.0.01:8080:127.0.0.1:80']));
+        expect(
+            params.localSshOptions, equals(['-L 127.0.01:8080:127.0.0.1:80']));
         expect(params.remoteUsername, equals('myUsername'));
         expect(params.verbose, equals(true));
         expect(params.rootDomain, equals('root.atsign.wtf'));
@@ -761,8 +761,8 @@ void main() {
         expect(params.sshAlgorithm, equals(SupportedSSHAlgorithm.rsa));
       });
       test('SSHNPPartialParams.merge() test (null coalesce values)', () {
-        final params = SSHNPPartialParams.merge(
-          SSHNPPartialParams(
+        final params = SshnpPartialParams.merge(
+          SshnpPartialParams(
             clientAtSign: '@myClientAtSign',
             sshnpdAtSign: '@mySshnpdAtSign',
             host: '@myHost',
@@ -784,7 +784,7 @@ void main() {
             sshClient: SupportedSshClient.dart,
             sshAlgorithm: SupportedSSHAlgorithm.rsa,
           ),
-          SSHNPPartialParams.empty(),
+          SshnpPartialParams.empty(),
         );
         expect(params.clientAtSign, equals('@myClientAtSign'));
         expect(params.sshnpdAtSign, equals('@mySshnpdAtSign'));
@@ -795,8 +795,8 @@ void main() {
         expect(params.identityFile, equals('.ssh/id_ed25519'));
         expect(params.identityPassphrase, equals('myPassphrase'));
         expect(params.sendSshPublicKey, equals(true));
-        expect(params.localSshOptions,
-            equals(['-L 127.0.01:8080:127.0.0.1:80']));
+        expect(
+            params.localSshOptions, equals(['-L 127.0.01:8080:127.0.0.1:80']));
         expect(params.remoteUsername, equals('myUsername'));
         expect(params.verbose, equals(true));
         expect(params.rootDomain, equals('root.atsign.wtf'));
@@ -811,7 +811,7 @@ void main() {
       });
       // TODO write tests for SSHNPPartialParams.fromFile()
       test('SSHNPPartial.fromConfigLines() test', () {
-        final params = SSHNPParams(
+        final params = SshnpParams(
           clientAtSign: '@myClientAtSign',
           sshnpdAtSign: '@mySshnpdAtSign',
           host: '@myHost',
@@ -838,7 +838,7 @@ void main() {
         // it is safer to trust that the parser works as expected
         // and just check that the lines are present
         final parsedParams =
-            SSHNPPartialParams.fromConfigLines('myProfile', configLines);
+            SshnpPartialParams.fromConfigLines('myProfile', configLines);
         expect(parsedParams.profileName, equals('myProfile'));
         expect(parsedParams.clientAtSign, equals('@myClientAtSign'));
         expect(parsedParams.sshnpdAtSign, equals('@mySshnpdAtSign'));
@@ -857,31 +857,31 @@ void main() {
       });
       test('SSHNPPartialParams.fromJson() test', () {
         String json = '{'
-            '"${SSHNPArg.profileNameArg.name}": "myProfile",'
-            '"${SSHNPArg.fromArg.name}": "@myClientAtSign",'
-            '"${SSHNPArg.toArg.name}": "@mySshnpdAtSign",'
-            '"${SSHNPArg.hostArg.name}": "@myHost",'
-            '"${SSHNPArg.deviceArg.name}": "myDeviceName",'
-            '"${SSHNPArg.portArg.name}": 1234,'
-            '"${SSHNPArg.localPortArg.name}": 2345,'
-            '"${SSHNPArg.identityFileArg.name}": ".ssh/id_ed25519",'
-            '"${SSHNPArg.identityPassphraseArg.name}": "myPassphrase",'
-            '"${SSHNPArg.sendSshPublicKeyArg.name}": true,'
-            '"${SSHNPArg.localSshOptionsArg.name}": ["-L 127.0.01:8080:127.0.0.1:80"],'
-            '"${SSHNPArg.remoteUserNameArg.name}": "myUsername",'
-            '"${SSHNPArg.verboseArg.name}": true,'
-            '"${SSHNPArg.rootDomainArg.name}": "root.atsign.wtf",'
-            '"${SSHNPArg.localSshdPortArg.name}": 4567,'
-            '"${SSHNPArg.legacyDaemonArg.name}": true,'
-            '"${SSHNPArg.remoteSshdPortArg.name}": 2222,'
-            '"${SSHNPArg.idleTimeoutArg.name}": 120,'
-            '"${SSHNPArg.addForwardsToTunnelArg.name}": true,'
-            '"${SSHNPArg.keyFileArg.name}": "~/.atsign/@myAtsign_keys.atKeys",'
-            '"${SSHNPArg.sshClientArg.name}": "${SupportedSshClient.dart.toString()}",'
-            '"${SSHNPArg.sshAlgorithmArg.name}": "${SupportedSSHAlgorithm.rsa.toString()}"'
+            '"${SshnpArg.profileNameArg.name}": "myProfile",'
+            '"${SshnpArg.fromArg.name}": "@myClientAtSign",'
+            '"${SshnpArg.toArg.name}": "@mySshnpdAtSign",'
+            '"${SshnpArg.hostArg.name}": "@myHost",'
+            '"${SshnpArg.deviceArg.name}": "myDeviceName",'
+            '"${SshnpArg.portArg.name}": 1234,'
+            '"${SshnpArg.localPortArg.name}": 2345,'
+            '"${SshnpArg.identityFileArg.name}": ".ssh/id_ed25519",'
+            '"${SshnpArg.identityPassphraseArg.name}": "myPassphrase",'
+            '"${SshnpArg.sendSshPublicKeyArg.name}": true,'
+            '"${SshnpArg.localSshOptionsArg.name}": ["-L 127.0.01:8080:127.0.0.1:80"],'
+            '"${SshnpArg.remoteUserNameArg.name}": "myUsername",'
+            '"${SshnpArg.verboseArg.name}": true,'
+            '"${SshnpArg.rootDomainArg.name}": "root.atsign.wtf",'
+            '"${SshnpArg.localSshdPortArg.name}": 4567,'
+            '"${SshnpArg.legacyDaemonArg.name}": true,'
+            '"${SshnpArg.remoteSshdPortArg.name}": 2222,'
+            '"${SshnpArg.idleTimeoutArg.name}": 120,'
+            '"${SshnpArg.addForwardsToTunnelArg.name}": true,'
+            '"${SshnpArg.keyFileArg.name}": "~/.atsign/@myAtsign_keys.atKeys",'
+            '"${SshnpArg.sshClientArg.name}": "${SupportedSshClient.dart.toString()}",'
+            '"${SshnpArg.sshAlgorithmArg.name}": "${SupportedSSHAlgorithm.rsa.toString()}"'
             '}';
 
-        final params = SSHNPPartialParams.fromJson(json);
+        final params = SshnpPartialParams.fromJson(json);
         expect(params.profileName, equals('myProfile'));
         expect(params.clientAtSign, equals('@myClientAtSign'));
         expect(params.sshnpdAtSign, equals('@mySshnpdAtSign'));
@@ -892,8 +892,8 @@ void main() {
         expect(params.identityFile, equals('.ssh/id_ed25519'));
         expect(params.identityPassphrase, equals('myPassphrase'));
         expect(params.sendSshPublicKey, equals(true));
-        expect(params.localSshOptions,
-            equals(['-L 127.0.01:8080:127.0.0.1:80']));
+        expect(
+            params.localSshOptions, equals(['-L 127.0.01:8080:127.0.0.1:80']));
         expect(params.remoteUsername, equals('myUsername'));
         expect(params.verbose, equals(true));
         expect(params.rootDomain, equals('root.atsign.wtf'));
@@ -908,31 +908,29 @@ void main() {
         expect(params.sshAlgorithm, equals(SupportedSSHAlgorithm.rsa));
       });
       test('SSHNPPartialParams.fromArgMap() test', () {
-        final params = SSHNPPartialParams.fromArgMap({
-          SSHNPArg.profileNameArg.name: 'myProfile',
-          SSHNPArg.fromArg.name: '@myClientAtSign',
-          SSHNPArg.toArg.name: '@mySshnpdAtSign',
-          SSHNPArg.hostArg.name: '@myHost',
-          SSHNPArg.deviceArg.name: 'myDeviceName',
-          SSHNPArg.portArg.name: 1234,
-          SSHNPArg.localPortArg.name: 2345,
-          SSHNPArg.identityFileArg.name: '.ssh/id_ed25519',
-          SSHNPArg.identityPassphraseArg.name: 'myPassphrase',
-          SSHNPArg.sendSshPublicKeyArg.name: true,
-          SSHNPArg.localSshOptionsArg.name: [
-            '-L 127.0.01:8080:127.0.0.1:80'
-          ],
-          SSHNPArg.remoteUserNameArg.name: 'myUsername',
-          SSHNPArg.verboseArg.name: true,
-          SSHNPArg.rootDomainArg.name: 'root.atsign.wtf',
-          SSHNPArg.localSshdPortArg.name: 4567,
-          SSHNPArg.legacyDaemonArg.name: true,
-          SSHNPArg.remoteSshdPortArg.name: 2222,
-          SSHNPArg.idleTimeoutArg.name: 120,
-          SSHNPArg.addForwardsToTunnelArg.name: true,
-          SSHNPArg.keyFileArg.name: '~/.atsign/@myAtsign_keys.atKeys',
-          SSHNPArg.sshClientArg.name: SupportedSshClient.dart.toString(),
-          SSHNPArg.sshAlgorithmArg.name: SupportedSSHAlgorithm.rsa.toString(),
+        final params = SshnpPartialParams.fromArgMap({
+          SshnpArg.profileNameArg.name: 'myProfile',
+          SshnpArg.fromArg.name: '@myClientAtSign',
+          SshnpArg.toArg.name: '@mySshnpdAtSign',
+          SshnpArg.hostArg.name: '@myHost',
+          SshnpArg.deviceArg.name: 'myDeviceName',
+          SshnpArg.portArg.name: 1234,
+          SshnpArg.localPortArg.name: 2345,
+          SshnpArg.identityFileArg.name: '.ssh/id_ed25519',
+          SshnpArg.identityPassphraseArg.name: 'myPassphrase',
+          SshnpArg.sendSshPublicKeyArg.name: true,
+          SshnpArg.localSshOptionsArg.name: ['-L 127.0.01:8080:127.0.0.1:80'],
+          SshnpArg.remoteUserNameArg.name: 'myUsername',
+          SshnpArg.verboseArg.name: true,
+          SshnpArg.rootDomainArg.name: 'root.atsign.wtf',
+          SshnpArg.localSshdPortArg.name: 4567,
+          SshnpArg.legacyDaemonArg.name: true,
+          SshnpArg.remoteSshdPortArg.name: 2222,
+          SshnpArg.idleTimeoutArg.name: 120,
+          SshnpArg.addForwardsToTunnelArg.name: true,
+          SshnpArg.keyFileArg.name: '~/.atsign/@myAtsign_keys.atKeys',
+          SshnpArg.sshClientArg.name: SupportedSshClient.dart.toString(),
+          SshnpArg.sshAlgorithmArg.name: SupportedSSHAlgorithm.rsa.toString(),
         });
         expect(params.profileName, equals('myProfile'));
         expect(params.clientAtSign, equals('@myClientAtSign'));
@@ -944,8 +942,8 @@ void main() {
         expect(params.identityFile, equals('.ssh/id_ed25519'));
         expect(params.identityPassphrase, equals('myPassphrase'));
         expect(params.sendSshPublicKey, equals(true));
-        expect(params.localSshOptions,
-            equals(['-L 127.0.01:8080:127.0.0.1:80']));
+        expect(
+            params.localSshOptions, equals(['-L 127.0.01:8080:127.0.0.1:80']));
         expect(params.remoteUsername, equals('myUsername'));
         expect(params.verbose, equals(true));
         expect(params.rootDomain, equals('root.atsign.wtf'));
@@ -960,53 +958,53 @@ void main() {
         expect(params.sshAlgorithm, equals(SupportedSSHAlgorithm.rsa));
       });
       test('SSHNPPartialParams.fromArgList() test', () {
-       final argList = [
-          '--${SSHNPArg.profileNameArg.name}',
+        final argList = [
+          '--${SshnpArg.profileNameArg.name}',
           'myProfile',
-          '--${SSHNPArg.fromArg.name}',
+          '--${SshnpArg.fromArg.name}',
           '@myClientAtSign',
-          '--${SSHNPArg.toArg.name}',
+          '--${SshnpArg.toArg.name}',
           '@mySshnpdAtSign',
-          '--${SSHNPArg.hostArg.name}',
+          '--${SshnpArg.hostArg.name}',
           '@myHost',
-          '--${SSHNPArg.deviceArg.name}',
+          '--${SshnpArg.deviceArg.name}',
           'myDeviceName',
-          '--${SSHNPArg.portArg.name}',
+          '--${SshnpArg.portArg.name}',
           '1234',
-          '--${SSHNPArg.localPortArg.name}',
+          '--${SshnpArg.localPortArg.name}',
           '2345',
-          '--${SSHNPArg.identityFileArg.name}',
+          '--${SshnpArg.identityFileArg.name}',
           '.ssh/id_ed25519',
-          '--${SSHNPArg.identityPassphraseArg.name}',
+          '--${SshnpArg.identityPassphraseArg.name}',
           'myPassphrase',
-          '--${SSHNPArg.sendSshPublicKeyArg.name}',
+          '--${SshnpArg.sendSshPublicKeyArg.name}',
           'true',
-          '--${SSHNPArg.localSshOptionsArg.name}',
+          '--${SshnpArg.localSshOptionsArg.name}',
           '-L 127.0.01:8080:127.0.0.1:80',
-          '--${SSHNPArg.remoteUserNameArg.name}',
+          '--${SshnpArg.remoteUserNameArg.name}',
           'myUsername',
-          '--${SSHNPArg.verboseArg.name}',
+          '--${SshnpArg.verboseArg.name}',
           'true',
-          '--${SSHNPArg.rootDomainArg.name}',
+          '--${SshnpArg.rootDomainArg.name}',
           'root.atsign.wtf',
-          '--${SSHNPArg.localSshdPortArg.name}',
+          '--${SshnpArg.localSshdPortArg.name}',
           '4567',
-          '--${SSHNPArg.legacyDaemonArg.name}',
+          '--${SshnpArg.legacyDaemonArg.name}',
           'true',
-          '--${SSHNPArg.remoteSshdPortArg.name}',
+          '--${SshnpArg.remoteSshdPortArg.name}',
           '2222',
-          '--${SSHNPArg.idleTimeoutArg.name}',
+          '--${SshnpArg.idleTimeoutArg.name}',
           '120',
-          '--${SSHNPArg.addForwardsToTunnelArg.name}',
+          '--${SshnpArg.addForwardsToTunnelArg.name}',
           'true',
-          '--${SSHNPArg.keyFileArg.name}',
+          '--${SshnpArg.keyFileArg.name}',
           '~/.atsign/@myAtsign_keys.atKeys',
-          '--${SSHNPArg.sshClientArg.name}',
+          '--${SshnpArg.sshClientArg.name}',
           SupportedSshClient.dart.toString(),
-          '--${SSHNPArg.sshAlgorithmArg.name}',
+          '--${SshnpArg.sshAlgorithmArg.name}',
           SupportedSSHAlgorithm.rsa.toString(),
-       ];
-       final params = SSHNPPartialParams.fromArgList(argList);
+        ];
+        final params = SshnpPartialParams.fromArgList(argList);
         expect(params.profileName, equals('myProfile'));
         expect(params.clientAtSign, equals('@myClientAtSign'));
         expect(params.sshnpdAtSign, equals('@mySshnpdAtSign'));
@@ -1017,8 +1015,8 @@ void main() {
         expect(params.identityFile, equals('.ssh/id_ed25519'));
         expect(params.identityPassphrase, equals('myPassphrase'));
         expect(params.sendSshPublicKey, equals(true));
-        expect(params.localSshOptions,
-            equals(['-L 127.0.01:8080:127.0.0.1:80']));
+        expect(
+            params.localSshOptions, equals(['-L 127.0.01:8080:127.0.0.1:80']));
         expect(params.remoteUsername, equals('myUsername'));
         expect(params.verbose, equals(true));
         expect(params.rootDomain, equals('root.atsign.wtf'));

@@ -6,14 +6,14 @@ import 'package:noports_core/utils.dart';
 import 'package:openssh_ed25519/openssh_ed25519.dart';
 
 class DartSSHKeyUtil implements AtSSHKeyUtil {
-  static final Map<String, AtSSHKeyPair> _keyPairCache = {};
+  static final Map<String, AtSshKeyPair> _keyPairCache = {};
 
   @override
-  Future<AtSSHKeyPair> generateKeyPair({
+  Future<AtSshKeyPair> generateKeyPair({
     required String identifier,
     SupportedSSHAlgorithm algorithm = DefaultArgs.sshAlgorithm,
   }) async {
-    AtSSHKeyPair keyPair;
+    AtSshKeyPair keyPair;
     switch (algorithm) {
       case SupportedSSHAlgorithm.rsa:
         keyPair = _generateRSAKeyPair(identifier);
@@ -25,22 +25,23 @@ class DartSSHKeyUtil implements AtSSHKeyUtil {
   }
 
   @override
-  Future<AtSSHKeyPair> getKeyPair({required String identifier}) async {
-    return _keyPairCache[identifier] ?? await generateKeyPair(identifier: identifier);
+  Future<AtSshKeyPair> getKeyPair({required String identifier}) async {
+    return _keyPairCache[identifier] ??
+        await generateKeyPair(identifier: identifier);
   }
 
-  AtSSHKeyPair _generateRSAKeyPair(String identifier) => AtSSHKeyPair.fromPem(
+  AtSshKeyPair _generateRSAKeyPair(String identifier) => AtSshKeyPair.fromPem(
         AtChopsUtil.generateRSAKeyPair(keySize: 4096).privateKey.toPEM(),
         identifier: identifier,
       );
 
-  Future<AtSSHKeyPair> _generateEd25519KeyPair(String identifier) async {
+  Future<AtSshKeyPair> _generateEd25519KeyPair(String identifier) async {
     var keyPair2 = await Ed25519().newKeyPair();
     var pemText = encodeEd25519Private(
       privateBytes: await keyPair2.extractPrivateKeyBytes(),
       publicBytes: (await keyPair2.extractPublicKey()).bytes,
     );
-    return AtSSHKeyPair.fromPem(
+    return AtSshKeyPair.fromPem(
       pemText,
       identifier: identifier,
     );

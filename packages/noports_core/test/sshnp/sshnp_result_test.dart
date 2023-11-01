@@ -6,39 +6,40 @@ import 'package:socket_connector/socket_connector.dart';
 import 'package:test/test.dart';
 
 class MockProcess extends Mock implements Process {}
+
 class MockSocketConnector extends Mock implements SocketConnector {}
 
 void main() {
   group('SSHNPResult', () {
     group('Subclass Confirmation', () {
       test('SSHNPSuccess test', () {
-        expect(SSHNPSuccess(), isA<SSHNPResult>());
+        expect(SshnpSuccess(), isA<SshnpResult>());
       });
       test('SSHNPCommand test', () {
-        final res = SSHNPCommand(host: 'localhost', localPort: 22);
-        expect(res, isA<SSHNPSuccess>());
+        final res = SshnpCommand(host: 'localhost', localPort: 22);
+        expect(res, isA<SshnpSuccess>());
       });
       test('SSHNPNoOpSuccess test', () {
-        final res = SSHNPNoOpSuccess();
-        expect(res, isA<SSHNPResult>());
-        expect(res, isA<SSHNPSuccess>());
+        final res = SshnpNoOpSuccess();
+        expect(res, isA<SshnpResult>());
+        expect(res, isA<SshnpSuccess>());
       });
       test('SSHNPFailure test', () {
-        expect(SSHNPFailure(), isA<SSHNPResult>());
+        expect(SshnpFailure(), isA<SshnpResult>());
       });
       test('SSHNPError test', () {
-        final res = SSHNPError('error message');
-        expect(res, isA<SSHNPResult>());
-        expect(res, isA<SSHNPFailure>());
+        final res = SshnpError('error message');
+        expect(res, isA<SshnpResult>());
+        expect(res, isA<SshnpFailure>());
       });
     }); // group('Subclass Confirmation')
     group('SSHNPError', () {
       late StackTrace stackTrace;
-      late SSHNPError error;
+      late SshnpError error;
       setUp(() {
         stackTrace = StackTrace.current;
         error =
-            SSHNPError('myMessage', error: 'myError', stackTrace: stackTrace);
+            SshnpError('myMessage', error: 'myError', stackTrace: stackTrace);
       });
       test('SSHNPError.toString() test', () {
         expect(error.toString(), equals('myMessage'));
@@ -52,7 +53,7 @@ void main() {
     }); // group('SSHNPError')
     group('SSHNPCommand', () {
       test('SSHNPCommand.toString() test', () {
-        final command = SSHNPCommand(
+        final command = SshnpCommand(
           localPort: 22,
           host: 'localhost',
           remoteUsername: 'myUsername',
@@ -70,7 +71,7 @@ void main() {
         );
       });
       test('SSHNPCommand.connectionBean test', () {
-        SSHNPCommand<String> command = SSHNPCommand(
+        SshnpCommand<String> command = SshnpCommand(
           host: 'localhost',
           localPort: 22,
           connectionBean: 'myBean',
@@ -78,14 +79,14 @@ void main() {
         expect(command.connectionBean, equals('myBean'));
       });
       test('static SSHNPCommand.shouldIncludePrivateKey test', () {
-        expect(SSHNPCommand.shouldIncludePrivateKey(null), isFalse);
-        expect(SSHNPCommand.shouldIncludePrivateKey(''), isFalse);
+        expect(SshnpCommand.shouldIncludePrivateKey(null), isFalse);
+        expect(SshnpCommand.shouldIncludePrivateKey(''), isFalse);
         // it is not the responsibility of this class to validate whether the private key file name is valid
         // it purely wants to know whether there is a value or not
-        expect(SSHNPCommand.shouldIncludePrivateKey('asdfkjsdflkjd'), isTrue);
+        expect(SshnpCommand.shouldIncludePrivateKey('asdfkjsdflkjd'), isTrue);
       });
       test('SSHNPCommand.args test', () {
-        final command = SSHNPCommand(
+        final command = SshnpCommand(
           localPort: 22,
           host: 'localhost',
           remoteUsername: 'myUsername',
@@ -107,18 +108,18 @@ void main() {
     }); // group('SSHNPCommand')
     group('SSHNPNoOpSuccess', () {
       test('SSHNPNoOpSuccess.toString() test', () {
-        expect(SSHNPNoOpSuccess().toString(), equals('Connection Established'));
+        expect(SshnpNoOpSuccess().toString(), equals('Connection Established'));
       });
       test('SSHNPNoOpSuccess.connectionBean test', () {
-        SSHNPNoOpSuccess<String> success =
-            SSHNPNoOpSuccess(connectionBean: 'myBean');
+        SshnpNoOpSuccess<String> success =
+            SshnpNoOpSuccess(connectionBean: 'myBean');
         expect(success.connectionBean, equals('myBean'));
       });
     }); // group('SSHNPNoOpSuccess')
   });
   group('SSHNPConnectionBean', () {
     test('SSHNPConnectionBean<Process>.killConnectionBean() test', () {
-      final bean = SSHNPConnectionBean<Process>();
+      final bean = SshnpConnectionBean<Process>();
       final process = MockProcess();
       when(() => process.kill()).thenReturn(true);
       bean.connectionBean = process;
@@ -130,7 +131,7 @@ void main() {
 
     test('SSHNPConnectionBean<Future<Process>>.killConnectionBean() test',
         () async {
-      final bean = SSHNPConnectionBean<Future<Process>>();
+      final bean = SshnpConnectionBean<Future<Process>>();
       final process = MockProcess();
       when(() => process.kill()).thenReturn(true);
       final fProcess = Future.value(process);
@@ -141,7 +142,7 @@ void main() {
       verify(() => process.kill()).called(1);
     });
     test('SSHNPConnectionBean<SocketConnector>.killConnectionBean() test', () {
-      final bean = SSHNPConnectionBean<SocketConnector>();
+      final bean = SshnpConnectionBean<SocketConnector>();
       final socketConnector = MockSocketConnector();
       when(() => socketConnector.close()).thenReturn(null);
       bean.connectionBean = socketConnector;
@@ -153,7 +154,7 @@ void main() {
     test(
         'SSHNPConnectionBean<Future<SocketConnector>>.killConnectionBean() test',
         () async {
-      final bean = SSHNPConnectionBean<Future<SocketConnector>>();
+      final bean = SshnpConnectionBean<Future<SocketConnector>>();
       final socketConnector = MockSocketConnector();
       final fSocketConnector = Future.value(socketConnector);
       when(() => socketConnector.close()).thenReturn(null);

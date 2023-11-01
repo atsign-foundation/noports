@@ -6,17 +6,17 @@ import 'package:noports_core/utils.dart';
 import 'package:path/path.dart' as path;
 import 'package:posix/posix.dart' show chmod;
 
-class LocalSSHKeyUtil implements AtSSHKeyUtil {
+class LocalSshKeyUtil implements AtSSHKeyUtil {
   static const _sshKeygenArgMap = {
     SupportedSSHAlgorithm.rsa: ['-t', 'rsa', '-b', '4096'],
     SupportedSSHAlgorithm.ed25519: ['-t', 'ed25519', '-a', '100'],
   };
 
-  static final Map<String, AtSSHKeyPair> _keyPairCache = {};
+  static final Map<String, AtSshKeyPair> _keyPairCache = {};
 
   final String homeDirectory;
   bool cacheKeys;
-  LocalSSHKeyUtil({String? homeDirectory, this.cacheKeys = true})
+  LocalSshKeyUtil({String? homeDirectory, this.cacheKeys = true})
       : homeDirectory = homeDirectory ?? getHomeDirectory(throwIfNull: true)!;
 
   bool get isValidPlatform =>
@@ -35,7 +35,7 @@ class LocalSSHKeyUtil implements AtSSHKeyUtil {
   }
 
   Future<List<File>> addKeyPair({
-    required AtSSHKeyPair keyPair,
+    required AtSshKeyPair keyPair,
     required String identifier,
   }) async {
     var files = _filesFromIdentifier(identifier: identifier);
@@ -51,13 +51,13 @@ class LocalSSHKeyUtil implements AtSSHKeyUtil {
   }
 
   @override
-  Future<AtSSHKeyPair> getKeyPair(
+  Future<AtSshKeyPair> getKeyPair(
       {required String identifier, String? passphrase}) async {
     if (_keyPairCache.containsKey((identifier))) {
       return _keyPairCache[(identifier)]!;
     }
     var files = _filesFromIdentifier(identifier: identifier);
-    var keyPair = AtSSHKeyPair.fromPem(
+    var keyPair = AtSshKeyPair.fromPem(
       await files[0].readAsString(),
       identifier: identifier,
       passphrase: passphrase,
@@ -79,7 +79,7 @@ class LocalSSHKeyUtil implements AtSSHKeyUtil {
   }
 
   @override
-  Future<AtSSHKeyPair> generateKeyPair({
+  Future<AtSshKeyPair> generateKeyPair({
     required String identifier,
     SupportedSSHAlgorithm algorithm = DefaultArgs.sshAlgorithm,
     String? directory,
@@ -96,7 +96,7 @@ class LocalSSHKeyUtil implements AtSSHKeyUtil {
     String pemText =
         await File(path.join(workingDirectory, identifier)).readAsString();
 
-    return AtSSHKeyPair.fromPem(
+    return AtSshKeyPair.fromPem(
       pemText,
       passphrase: passphrase,
       directory: directory,
@@ -160,7 +160,7 @@ class LocalSSHKeyUtil implements AtSSHKeyUtil {
       await file.writeAsString(lines.join('\n'));
       await file.writeAsString('\n', mode: FileMode.writeOnlyAppend);
     } catch (e) {
-      throw SSHNPError(
+      throw SshnpError(
         'Failed to remove ephemeral key from authorized_keys',
         error: e,
       );
