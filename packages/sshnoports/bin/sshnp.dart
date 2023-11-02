@@ -11,6 +11,7 @@ import 'package:noports_core/sshnp_params.dart' show ParserType, SshnpArg;
 import 'package:noports_core/utils.dart';
 import 'package:sshnoports/create_at_client_cli.dart';
 import 'package:sshnoports/print_version.dart';
+import 'package:sshnoports/sshnp.dart';
 
 void main(List<String> args) async {
   AtSignLogger.root_level = 'SHOUT';
@@ -43,14 +44,12 @@ void main(List<String> args) async {
         ),
       );
       String homeDirectory = getHomeDirectory()!;
-      sshnp = await Sshnp.fromParamsWithFileBindings(
+      sshnp = await sshnpFromParamsWithFileBindings(
         params,
-        atClientGenerator: (SshnpParams params, String sessionId) =>
-            createAtClientCli(
+        atClientGenerator: (SshnpParams params) => createAtClientCli(
           homeDirectory: homeDirectory,
           atsign: params.clientAtSign,
           namespace: '${params.device}.sshnp',
-          pathExtension: sessionId,
           atKeysFilePath: params.atKeysFilePath ??
               getDefaultAtKeysFilePath(homeDirectory, params.clientAtSign),
           rootDomain: params.rootDomain,
@@ -64,17 +63,10 @@ void main(List<String> args) async {
 
       if (params.listDevices) {
         stderr.writeln('Searching for devices...');
-        var (active, off, info) = await sshnp!.listDevices();
-        printDevices(active, off, info);
+        var deviceList = await sshnp!.listDevices();
+        printDevices(deviceList);
         exit(0);
       }
-
-      await sshnp!.initialized.catchError((e) {
-        if (e.stackTrace != null) {
-          Error.throwWithStackTrace(e, e.stackTrace!);
-        }
-        throw e;
-      });
 
       FutureOr<SshnpResult> runner = sshnp!.run();
       if (runner is Future<SshnpResult>) {
@@ -93,14 +85,8 @@ void main(List<String> args) async {
         }
         throw res;
       }
-      if (res is SshnpCommand) {
+      if (res is SshnpCommand || res is SshnpNoOpSuccess) {
         stdout.write('$res\n');
-        await sshnp!.done;
-        exit(0);
-      }
-      if (res is SshnpNoOpSuccess) {
-        stderr.write('$res\n');
-        await sshnp!.done;
         exit(0);
       }
     } on ArgumentError catch (error, stackTrace) {
@@ -131,12 +117,8 @@ void usageCallback(Object e, StackTrace s) {
   stderr.writeln('\n$e');
 }
 
-void printDevices(
-  Iterable<String> active,
-  Iterable<String> off,
-  Map<String, dynamic> info,
-) {
-  if (active.isEmpty && off.isEmpty) {
+void printDevices(SshnpDeviceList deviceList) {
+  if (deviceList.activeDevices.isEmpty && deviceList.inactiveDevices.isEmpty) {
     stderr.writeln('[X] No devices found\n');
     stderr.writeln(
         'Note: only devices with sshnpd version 3.4.0 or higher are supported by this command.');
@@ -146,9 +128,9 @@ void printDevices(
   }
 
   stderr.writeln('Active Devices:');
-  printDeviceList(active, info);
+  printDeviceList(deviceList.activeDevices, deviceList.info);
   stderr.writeln('Inactive Devices:');
-  printDeviceList(off, info);
+  printDeviceList(deviceList.inactiveDevices, deviceList.info);
 }
 
 void printDeviceList(Iterable<String> devices, Map<String, dynamic> info) {

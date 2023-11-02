@@ -48,13 +48,12 @@ class _ProfileRunActionState extends ConsumerState<ProfileRunAction> {
             'id_${atClient.getCurrentAtSign()!.replaceAll('@', '')}',
       );
 
-      sshnp = Sshnp.forwardPureDart(
+      sshnp = Sshnp.dartPure(
         params: params,
         atClient: atClient,
         identityKeyPair: keyPair,
       );
 
-      await sshnp!.initialize();
       sshnpResult = await sshnp!.run();
 
       if (sshnpResult is SshnpError) {

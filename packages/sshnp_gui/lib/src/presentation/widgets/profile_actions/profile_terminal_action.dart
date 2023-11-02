@@ -47,13 +47,12 @@ class _ProfileTerminalActionState extends ConsumerState<ProfileTerminalAction> {
             'id_${atClient.getCurrentAtSign()!.replaceAll('@', '')}',
       );
 
-      final sshnp = Sshnp.forwardPureDart(
+      final sshnp = Sshnp.dartPure(
         params: params,
         atClient: atClient,
         identityKeyPair: keyPair,
       );
 
-      await sshnp.initialize();
       final result = await sshnp.run();
       if (result is SshnpError) {
         throw result;

@@ -10,6 +10,6 @@ class SshnpDeviceList {
     }
   }
 
-  Set<String> get inActiveDevices =>
+  Set<String> get inactiveDevices =>
       info.keys.toSet().difference(activeDevices);
 }

@@ -1,132 +1,51 @@
 import 'dart:async';
 
 import 'package:at_client/at_client.dart' hide StringBuffer;
-import 'package:noports_core/src/sshnp/models/sshnp_device_list.dart';
-import 'package:noports_core/src/sshnp/models/sshnp_params.dart';
-import 'package:noports_core/src/sshnp/models/sshnp_result.dart';
-
-typedef AtClientGenerator = FutureOr<AtClient> Function(SshnpParams params);
-
-typedef UsageCallback = void Function(Object error, StackTrace stackTrace);
+import 'package:noports_core/sshnp_foundation.dart';
 
 abstract interface class Sshnp {
-  // TODO new constructors
-  // static Future<SSHNP> fromParamsWithFileBindings(
-  //   SSHNPParams params, {
-  //   AtClient? atClient,
-  //   AtClientGenerator? atClientGenerator,
-  //   SSHRVGenerator? sshrvGenerator,
-  //   bool? shouldInitialize,
-  // }) async {
-  //   atClient ??= await atClientGenerator?.call(params);
+  /// Legacy v3.x.x client
+  factory Sshnp.unsigned({
+    required AtClient atClient,
+    required SshnpParams params,
+  }) {
+    return SshnpUnsignedImpl(atClient: atClient, params: params);
+  }
 
-  //   if (atClient == null) {
-  //     throw ArgumentError(
-  //         'atClient must be provided or atClientGenerator must be provided');
-  //   }
+  /// Think of this as the "default" client - calls /usr/bin/ssh
+  factory Sshnp.execLocal({
+    required AtClient atClient,
+    required SshnpParams params,
+  }) {
+    return SshnpExecLocalImpl(atClient: atClient, params: params);
+  }
 
-  //   if (params.legacyDaemon) {
-  //     return SSHNP.legacy(
-  //       atClient: atClient,
-  //       params: params,
-  //       sshrvGenerator: sshrvGenerator,
-  //       shouldInitialize: shouldInitialize,
-  //     );
-  //   }
+  /// Uses a dartssh2 ssh client - still expects local ssh keys
+  factory Sshnp.dartLocal({
+    required AtClient atClient,
+    required SshnpParams params,
+  }) {
+    return SshnpDartLocalImpl(atClient: atClient, params: params);
+  }
 
-  //   if (!params.host.startsWith('@')) {
-  //     return SSHNP.reverse(
-  //       atClient: atClient,
-  //       params: params,
-  //       sshrvGenerator: sshrvGenerator,
-  //       shouldInitialize: shouldInitialize,
-  //     );
-  //   }
-
-  //   switch (params.sshClient) {
-  //     case SupportedSshClient.exec:
-  //       return SSHNP.forwardExec(
-  //         atClient: atClient,
-  //         params: params,
-  //         shouldInitialize: shouldInitialize,
-  //       );
-  //     case SupportedSshClient.dart:
-  //       return SSHNP.forwardDart(
-  //         atClient: atClient,
-  //         params: params,
-  //         shouldInitialize: shouldInitialize,
-  //       );
-  //   }
-  // }
-
-  // /// Creates an SSHNP instance that is configured to communicate with legacy >= 3.0.0 <4.0.0 daemons
-  // factory SSHNP.legacy({
-  //   required AtClient atClient,
-  //   required SSHNPParams params,
-  //   SSHRVGenerator? sshrvGenerator,
-  //   bool? shouldInitialize,
-  // }) =>
-  //     SSHNPLegacyImpl(
-  //       atClient: atClient,
-  //       params: params,
-  //       sshrvGenerator: sshrvGenerator,
-  //       shouldInitialize: shouldInitialize,
-  //     );
-
-  // /// Creates an SSHNP instance that is configured to use reverse ssh tunneling
-  // factory SSHNP.reverse({
-  //   required AtClient atClient,
-  //   required SSHNPParams params,
-  //   SSHRVGenerator? sshrvGenerator,
-  //   bool? shouldInitialize,
-  // }) =>
-  //     SSHNPReverseImpl(
-  //       atClient: atClient,
-  //       params: params,
-  //       sshrvGenerator: sshrvGenerator,
-  //       shouldInitialize: shouldInitialize,
-  //     );
-
-  // /// Creates an SSHNP instance that is configured to use direct ssh tunneling by executing the ssh command
-  // factory SSHNP.forwardExec({
-  //   required AtClient atClient,
-  //   required SSHNPParams params,
-  //   bool? shouldInitialize,
-  // }) =>
-  //     SSHNPExecImpl(
-  //       atClient: atClient,
-  //       params: params,
-  //       shouldInitialize: shouldInitialize,
-  //     );
-
-  // /// Creates an SSHNP instance that is configured to use direct ssh tunneling using a dart SSHClient
-  // factory SSHNP.forwardDart({
-  //   required AtClient atClient,
-  //   required SSHNPParams params,
-  //   bool? shouldInitialize,
-  // }) =>
-  //     SSHNPDartLocalImpl(
-  //       atClient: atClient,
-  //       params: params,
-  //       shouldInitialize: shouldInitialize,
-  //     );
-
-  // /// Creates an SSHNP instance that is configured to use direct ssh tunneling using a pure-dart SSHClient
-  // /// This class has absolutely zero dependencies on the local file system
-  // factory SSHNP.forwardPureDart({
-  //   required AtClient atClient,
-  //   required SSHNPParams params,
-  //   required AtSSHKeyPair identityKeyPair,
-  //   bool? shouldInitialize,
-  // }) =>
-  //     SSHNPDartPureImpl(
-  //       atClient: atClient,
-  //       params: params,
-  //       shouldInitialize: shouldInitialize,
-  //       identityKeyPair: identityKeyPair,
-  //     );
-
-  // TODO new public Interface
+  /// Uses a dartssh2 ssh client - requires that you pass in the identity keypair
+  factory Sshnp.dartPure({
+    required AtClient atClient,
+    required SshnpParams params,
+    required AtSshKeyPair? identityKeyPair,
+  }) {
+    var sshnp = SshnpDartPureImpl(
+      atClient: atClient,
+      params: params,
+    );
+    if (identityKeyPair != null) {
+      sshnp.keyUtil.addKeyPair(
+        keyPair: identityKeyPair,
+        identifier: identityKeyPair.identifier,
+      );
+    }
+    return sshnp;
+  }
 
   /// The atClient to use for communicating with the atsign's secondary server
   AtClient get atClient;
