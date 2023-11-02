@@ -1,11 +1,11 @@
 import 'dart:async';
 
 import 'package:at_client/at_client.dart';
-import 'package:noports_core/src/sshnp/channels/sshnpd/sshnpd_channel.dart';
+import 'package:noports_core/src/sshnp/util/sshnpd_channel/sshnpd_channel.dart';
 
-class SshnpdVersion3Channel extends SshnpdChannel
-    with SshnpdVersion3PayloadHandler {
-  SshnpdVersion3Channel({
+class SshnpdUnsignedChannel extends SshnpdChannel
+    with SshnpdUnsignedPayloadHandler {
+  SshnpdUnsignedChannel({
     required super.atClient,
     required super.params,
     required super.sessionId,
@@ -13,7 +13,7 @@ class SshnpdVersion3Channel extends SshnpdChannel
   });
 }
 
-abstract mixin class SshnpdVersion3PayloadHandler implements SshnpdChannel {
+mixin SshnpdUnsignedPayloadHandler on SshnpdChannel {
   @override
   Future<bool> handleSshnpdPayload(AtNotification notification) async {
     return (notification.value == 'connected');

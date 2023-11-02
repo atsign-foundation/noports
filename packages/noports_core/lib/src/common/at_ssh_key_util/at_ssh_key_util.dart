@@ -2,16 +2,34 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:dartssh2/dartssh2.dart';
-import 'package:meta/meta.dart';
 import 'package:noports_core/sshnp.dart';
 import 'package:noports_core/utils.dart';
 import 'package:path/path.dart' as path;
 
-export 'ssh_key_utils/dart_ssh_key_util.dart';
-export 'ssh_key_utils/local_ssh_key_util.dart';
+export 'dart_ssh_key_util.dart';
+export 'local_ssh_key_util.dart';
+
+abstract interface class AtSshKeyUtil {
+  FutureOr<AtSshKeyPair> generateKeyPair({
+    required String identifier,
+    SupportedSshAlgorithm algorithm,
+  });
+
+  FutureOr<AtSshKeyPair> getKeyPair({
+    required String identifier,
+  });
+
+  FutureOr<dynamic> addKeyPair({
+    required AtSshKeyPair keyPair,
+    required String identifier,
+  });
+
+  FutureOr<dynamic> deleteKeyPair({
+    required String identifier,
+  });
+}
 
 class AtSshKeyPair {
-  @protected
   final SSHKeyPair keyPair;
   final String identifier;
 
@@ -34,20 +52,4 @@ class AtSshKeyPair {
 
   String get privateKeyFileName => identifier;
   String get publicKeyFileName => '$privateKeyFileName.pub';
-
-  // TODO consider adding this function
-  // void destroy() {
-  //   throw UnimplementedError();
-  // }
-}
-
-abstract interface class AtSSHKeyUtil {
-  FutureOr<AtSshKeyPair> generateKeyPair({
-    required String identifier,
-    SupportedSSHAlgorithm algorithm,
-  });
-
-  FutureOr<AtSshKeyPair> getKeyPair({
-    required String identifier,
-  });
 }

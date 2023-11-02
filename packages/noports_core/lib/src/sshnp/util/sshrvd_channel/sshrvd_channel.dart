@@ -3,8 +3,8 @@ import 'dart:async';
 import 'package:at_client/at_client.dart';
 import 'package:at_utils/at_utils.dart';
 import 'package:meta/meta.dart';
-import 'package:noports_core/src/common/async_initialization.dart';
-import 'package:noports_core/src/common/at_client_bindings.dart';
+import 'package:noports_core/src/common/mixins/async_initialization.dart';
+import 'package:noports_core/src/common/mixins/at_client_bindings.dart';
 import 'package:noports_core/sshnp.dart';
 import 'package:noports_core/sshrv.dart';
 import 'package:noports_core/sshrvd.dart';
@@ -57,17 +57,18 @@ abstract class SshrvdChannel<T> with AsyncInitialization, AtClientBindings {
     required this.sshrvGenerator,
   });
 
-  bool get usingSshrv => params.host.startsWith('@');
-
   @override
   Future<void> initialize() async {
-    await getHostAndPortFromSshrvd();
+    if (params.host.startsWith('@')) {
+      await getHostAndPortFromSshrvd();
+    } else {
+      _host = params.host;
+      _port = params.port;
+    }
     completeInitialization();
   }
 
-  Future<T?> run() async {
-    if (!usingSshrv) return null;
-
+  Future<T?> runSshrv() async {
     await callInitialization();
     if (_sshrvdPort == null) throw Exception('sshrvdPort is null');
 

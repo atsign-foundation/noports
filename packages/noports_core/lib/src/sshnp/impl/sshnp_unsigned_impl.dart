@@ -1,19 +1,16 @@
 import 'dart:async';
 
 import 'package:at_client/at_client.dart';
-import 'package:dartssh2/dartssh2.dart';
-import 'package:noports_core/src/sshnp/util/sshnp_initial_tunnel_handler.dart';
 import 'package:noports_core/src/sshnp/util/sshnp_ssh_key_handler.dart';
 import 'package:noports_core/src/sshnp/util/sshnpd_channel/sshnpd_default_channel.dart';
-import 'package:noports_core/src/sshnp/util/sshrvd_channel/sshrvd_channel.dart';
-import 'package:noports_core/src/sshnp/util/sshrvd_channel/sshrvd_dart_channel.dart';
+import 'package:noports_core/src/sshnp/util/sshrvd_channel/sshrvd_exec_channel.dart';
 import 'package:noports_core/src/sshnp/models/sshnp_result.dart';
 import 'package:noports_core/sshnp_foundation.dart';
 import 'package:noports_core/utils.dart';
 
-class SshnpDartLocalImpl extends SshnpCore
-    with SshnpLocalSshKeyHandler, SshnpDartInitialTunnelHandler {
-  SshnpDartLocalImpl({
+class SshnpUnsignedImpl extends SshnpCore
+    with SshnpLocalSshKeyHandler {
+  SshnpUnsignedImpl({
     required super.atClient,
     required super.params,
   });
@@ -27,7 +24,7 @@ class SshnpDartLocalImpl extends SshnpCore
       );
 
   @override
-  SshrvdChannel get sshrvdChannel => SshrvdDartChannel(
+  SshrvdExecChannel get sshrvdChannel => SshrvdExecChannel(
         atClient: atClient,
         params: params,
         sessionId: sessionId,
@@ -37,6 +34,32 @@ class SshnpDartLocalImpl extends SshnpCore
   Future<void> initialize() async {
     if (!isSafeToInitialize) return;
     await super.initialize();
+
+    /// Generate an ephemeral key pair for this session
+    AtSshKeyPair ephemeralKeyPair = await keyUtil.generateKeyPair(
+      identifier: 'ephemeral_$sessionId',
+      directory: keyUtil.sshnpHomeDirectory,
+    );
+
+    /// Authorize the public key so sshnpd can connect to us
+    await keyUtil.authorizePublicKey(
+      sshPublicKey: ephemeralKeyPair.publicKeyContents,
+      localSshdPort: params.localSshdPort,
+      sessionId: sessionId,
+    );
+
+    /// Share our private key with sshnpd so it can connect to us
+    AtKey sendOurPrivateKeyToSshnpd = AtKey()
+      ..key = 'privatekey'
+      ..sharedBy = params.clientAtSign
+      ..sharedWith = params.sshnpdAtSign
+      ..namespace = this.namespace
+      ..metadata = (Metadata()..ttl = 10000);
+    await notify(
+      sendOurPrivateKeyToSshnpd,
+      ephemeralKeyPair.privateKeyContents,
+    );
+
     completeInitialization();
   }
 
@@ -45,44 +68,23 @@ class SshnpDartLocalImpl extends SshnpCore
     /// Ensure that sshnp is initialized
     await callInitialization();
 
-    /// Send an ssh request to sshnpd
+    /// Start sshrv
+    var bean = await sshrvdChannel.runSshrv();
+
+    /// Send an sshd request to sshnpd
+    /// This will notify it that it can now connect to us
     await notify(
       AtKey()
-        ..key = 'ssh_request'
+        ..key = 'sshd'
         ..namespace = this.namespace
         ..sharedBy = params.clientAtSign
         ..sharedWith = params.sshnpdAtSign
         ..metadata = (Metadata()..ttl = 10000),
-      signAndWrapAndJsonEncode(atClient, {
-        'direct': true,
-        'sessionId': sessionId,
-        'host': sshrvdChannel.host,
-        'port': sshrvdChannel.port,
-      }),
+      '$localPort ${sshrvdChannel.port} ${keyUtil.username} ${sshrvdChannel.host} $sessionId',
     );
 
     /// Wait for a response from sshnpd
     await sshnpdChannel.waitForDaemonResponse();
-
-    /// Load the ephemeral private key into a key pair
-    AtSshKeyPair ephemeralKeyPair = AtSshKeyPair.fromPem(
-      sshnpdChannel.ephemeralPrivateKey,
-      identifier: 'ephemeral_$sessionId',
-      directory: keyUtil.sshnpHomeDirectory,
-    );
-
-    /// Add the key pair to the key utility
-    await keyUtil.addKeyPair(
-      keyPair: ephemeralKeyPair,
-      identifier: ephemeralKeyPair.identifier,
-    );
-
-    /// Start the initial tunnel
-    SSHClient bean =
-        await startInitialTunnel(identifier: ephemeralKeyPair.identifier);
-
-    /// Remove the key pair from the key utility
-    await keyUtil.deleteKeyPair(identifier: ephemeralKeyPair.identifier);
 
     /// Ensure that we clean up after ourselves
     await callDisposal();

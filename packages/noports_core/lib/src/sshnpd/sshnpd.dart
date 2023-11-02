@@ -65,9 +65,9 @@ abstract class SSHNPD {
 
   /// The algorithm to use for ssh encryption
   /// Can be one of [SupportedSSHAlgorithm.values]:
-  /// - [SupportedSSHAlgorithm.ed25519]
-  /// - [SupportedSSHAlgorithm.rsa]
-  abstract final SupportedSSHAlgorithm sshAlgorithm;
+  /// - [SupportedSshAlgorithm.ed25519]
+  /// - [SupportedSshAlgorithm.rsa]
+  abstract final SupportedSshAlgorithm sshAlgorithm;
 
   static Future<SSHNPD> fromCommandLineArgs(List<String> args,
       {AtClient? atClient,

@@ -1,4 +1,4 @@
-import 'package:noports_core/src/sshnp/channels/sshrvd/sshrvd_channel.dart';
+import 'package:noports_core/src/sshnp/util/sshrvd_channel/sshrvd_channel.dart';
 import 'package:noports_core/sshrv.dart';
 
 class SshrvdExecChannel extends SshrvdChannel {

@@ -5,9 +5,9 @@ import 'package:at_client/at_client.dart';
 import 'package:at_commons/at_builders.dart';
 import 'package:at_utils/at_logger.dart';
 import 'package:meta/meta.dart';
-import 'package:noports_core/src/common/async_initialization.dart';
-import 'package:noports_core/src/common/at_client_bindings.dart';
-import 'package:noports_core/src/sshnp/sshnp_device_list.dart';
+import 'package:noports_core/src/common/mixins/async_initialization.dart';
+import 'package:noports_core/src/common/mixins/at_client_bindings.dart';
+import 'package:noports_core/src/sshnp/models/sshnp_device_list.dart';
 import 'package:noports_core/sshnp.dart';
 import 'package:noports_core/utils.dart';
 

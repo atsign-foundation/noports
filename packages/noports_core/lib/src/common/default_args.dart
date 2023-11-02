@@ -5,10 +5,10 @@ import 'package:noports_core/sshrv.dart';
 
 class DefaultArgs {
   static const String namespace = 'sshnp';
-  static const SupportedSSHAlgorithm sshAlgorithm =
-      SupportedSSHAlgorithm.ed25519;
+  static const SupportedSshAlgorithm sshAlgorithm =
+      SupportedSshAlgorithm.ed25519;
   static const bool verbose = false;
-  static const SupportedSSHAlgorithm algorithm = SupportedSSHAlgorithm.ed25519;
+  static const SupportedSshAlgorithm algorithm = SupportedSshAlgorithm.ed25519;
   static const String rootDomain = 'root.atsign.org';
   static const SshrvGenerator sshrvGenerator = SSHRV.exec;
   static const int localSshdPort = 22;
@@ -22,7 +22,7 @@ class DefaultArgs {
       Platform.isLinux || Platform.isMacOS || Platform.isWindows;
 }
 
-class DefaultSSHNPArgs {
+class DefaultSshnpArgs {
   static const String device = 'default';
   static const int port = 22;
   static const int localPort = 0;

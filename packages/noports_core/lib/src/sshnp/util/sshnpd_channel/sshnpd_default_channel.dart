@@ -3,8 +3,8 @@ import 'dart:convert';
 
 import 'package:at_client/at_client.dart';
 import 'package:meta/meta.dart';
-import 'package:noports_core/src/sshnp/brn/sshnp_ssh_key_handler.dart';
-import 'package:noports_core/src/sshnp/channels/sshnpd/sshnpd_channel.dart';
+import 'package:noports_core/src/sshnp/util/sshnp_ssh_key_handler.dart';
+import 'package:noports_core/src/sshnp/util/sshnpd_channel/sshnpd_channel.dart';
 import 'package:noports_core/utils.dart';
 
 class SshnpdDefaultChannel extends SshnpdChannel
@@ -17,12 +17,11 @@ class SshnpdDefaultChannel extends SshnpdChannel
   });
 }
 
-abstract mixin class SshnpdDefaultPayloadHandler implements SshnpdChannel {
-  @protected
+mixin SshnpdDefaultPayloadHandler on SshnpdChannel {
   late final String ephemeralPrivateKey;
 
   @protected
-  bool get useLocalFileStorage => (this is SshnpLocalSSHKeyHandler);
+  bool get useLocalFileStorage => (this is SshnpLocalSshKeyHandler);
 
   @override
   Future<bool> handleSshnpdPayload(AtNotification notification) async {

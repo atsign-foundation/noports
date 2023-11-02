@@ -18,7 +18,7 @@ class SSHNPDParams {
   final String rootDomain;
   final int localSshdPort;
   final String ephemeralPermissions;
-  final SupportedSSHAlgorithm sshAlgorithm;
+  final SupportedSshAlgorithm sshAlgorithm;
 
   // Non param variables
   static final ArgParser parser = _createArgParser();
@@ -75,7 +75,7 @@ class SSHNPDParams {
       localSshdPort:
           int.tryParse(r['local-sshd-port']) ?? DefaultArgs.localSshdPort,
       ephemeralPermissions: r['ephemeral-permissions'],
-      sshAlgorithm: SupportedSSHAlgorithm.fromString(r['ssh-algorithm']),
+      sshAlgorithm: SupportedSshAlgorithm.fromString(r['ssh-algorithm']),
     );
   }
 
@@ -168,7 +168,7 @@ class SSHNPDParams {
       'ssh-algorithm',
       defaultsTo: DefaultArgs.sshAlgorithm.toString(),
       help: 'Use RSA 4096 keys rather than the default ED25519 keys',
-      allowed: SupportedSSHAlgorithm.values.map((c) => c.toString()).toList(),
+      allowed: SupportedSshAlgorithm.values.map((c) => c.toString()).toList(),
     );
 
     return parser;

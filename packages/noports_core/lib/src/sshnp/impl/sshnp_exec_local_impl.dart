@@ -1,19 +1,19 @@
 import 'dart:async';
+import 'dart:io';
 
 import 'package:at_client/at_client.dart';
-import 'package:dartssh2/dartssh2.dart';
 import 'package:noports_core/src/sshnp/util/sshnp_initial_tunnel_handler.dart';
 import 'package:noports_core/src/sshnp/util/sshnp_ssh_key_handler.dart';
 import 'package:noports_core/src/sshnp/util/sshnpd_channel/sshnpd_default_channel.dart';
 import 'package:noports_core/src/sshnp/util/sshrvd_channel/sshrvd_channel.dart';
-import 'package:noports_core/src/sshnp/util/sshrvd_channel/sshrvd_dart_channel.dart';
+import 'package:noports_core/src/sshnp/util/sshrvd_channel/sshrvd_exec_channel.dart';
 import 'package:noports_core/src/sshnp/models/sshnp_result.dart';
 import 'package:noports_core/sshnp_foundation.dart';
 import 'package:noports_core/utils.dart';
 
-class SshnpDartLocalImpl extends SshnpCore
-    with SshnpLocalSshKeyHandler, SshnpDartInitialTunnelHandler {
-  SshnpDartLocalImpl({
+class SshnpExecLocalImpl extends SshnpCore
+    with SshnpLocalSshKeyHandler, SshnpExecInitialTunnelHandler {
+  SshnpExecLocalImpl({
     required super.atClient,
     required super.params,
   });
@@ -27,7 +27,7 @@ class SshnpDartLocalImpl extends SshnpCore
       );
 
   @override
-  SshrvdChannel get sshrvdChannel => SshrvdDartChannel(
+  SshrvdChannel get sshrvdChannel => SshrvdExecChannel(
         atClient: atClient,
         params: params,
         sessionId: sessionId,
@@ -78,7 +78,7 @@ class SshnpDartLocalImpl extends SshnpCore
     );
 
     /// Start the initial tunnel
-    SSHClient bean =
+    Process bean =
         await startInitialTunnel(identifier: ephemeralKeyPair.identifier);
 
     /// Remove the key pair from the key utility

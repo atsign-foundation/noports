@@ -1,9 +1,9 @@
 import 'dart:async';
 
 import 'package:at_client/at_client.dart' hide StringBuffer;
-import 'package:noports_core/src/sshnp/sshnp_device_list.dart';
-import 'package:noports_core/src/sshnp/sshnp_params/sshnp_params.dart';
-import 'package:noports_core/src/sshnp/sshnp_result.dart';
+import 'package:noports_core/src/sshnp/models/sshnp_device_list.dart';
+import 'package:noports_core/src/sshnp/models/sshnp_params.dart';
+import 'package:noports_core/src/sshnp/models/sshnp_result.dart';
 
 typedef AtClientGenerator = FutureOr<AtClient> Function(SshnpParams params);
 

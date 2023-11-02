@@ -7,53 +7,58 @@ import 'package:at_client/at_client.dart' hide StringBuffer;
 import 'package:at_utils/at_logger.dart';
 import 'package:logging/logging.dart';
 import 'package:meta/meta.dart';
-import 'package:noports_core/src/common/async_completion.dart';
-import 'package:noports_core/src/common/async_initialization.dart';
-import 'package:noports_core/src/common/at_client_bindings.dart';
-import 'package:noports_core/src/sshnp/channels/sshnpd/sshnpd_channel.dart';
-import 'package:noports_core/src/sshnp/channels/sshrvd/sshrvd_channel.dart';
-import 'package:noports_core/src/sshnp/sshnp_device_list.dart';
+import 'package:noports_core/src/common/mixins/async_completion.dart';
+import 'package:noports_core/src/common/mixins/async_initialization.dart';
+import 'package:noports_core/src/common/mixins/at_client_bindings.dart';
+import 'package:noports_core/src/sshnp/util/sshnp_ssh_key_handler.dart';
+import 'package:noports_core/src/sshnp/util/sshnpd_channel/sshnpd_channel.dart';
+import 'package:noports_core/src/sshnp/util/sshrvd_channel/sshrvd_channel.dart';
+import 'package:noports_core/src/sshnp/models/sshnp_device_list.dart';
 
 import 'package:noports_core/sshnp.dart';
-
-import 'package:noports_core/utils.dart';
 import 'package:uuid/uuid.dart';
-
-export 'forward_direction/sshnp_forward.dart';
-export 'forward_direction/sshnp_forward_dart.dart';
-
-export 'reverse_direction/sshnp_reverse.dart';
-export 'reverse_direction/sshnp_reverse_impl.dart';
-export 'reverse_direction/sshnp_legacy_impl.dart';
 
 // If you've never seen an abstract implementation before, here it is :P
 @protected
 abstract class SshnpCore
-    with AsyncInitialization, AsyncDisposal, AtClientBindings
+    with AsyncInitialization, AsyncDisposal, AtClientBindings, SshnpKeyHandler
     implements Sshnp {
   // * AtClientBindings members
+  /// The logger for this class
   @override
-  final AtSignLogger logger = AtSignLogger(' sshnp ');
+  final AtSignLogger logger = AtSignLogger(' SshnpCore ');
+
+  /// The [AtClient] to use for this instance
   @override
   final AtClient atClient;
 
   // * Main Parameters
+
+  /// The parameters supplied for this instance
   @override
   final SshnpParams params;
+
+  /// The session ID for this instance (UUID v4)
   final String sessionId;
+
+  /// The namespace for this instance ('[params.device].sshnp')
   final String namespace;
 
   // * Volatile State
+  /// The local port to use for the initial tunnel's sshd forwarding
+  /// If this is 0, then a spare port will be found and set
   int localPort;
-  AtSshKeyPair? identityKeyPair;
 
-  // * Auxiliary classes
+  /// The remote username to use for the ssh session
+  String? remoteUsername;
+
+  // * Communication Channels
+
+  /// The channel to communicate with the sshrvd (host)
   @protected
-  AtSSHKeyUtil get keyUtil;
+  SshrvdChannel? get sshrvdChannel;
 
-  @protected
-  SshrvdChannel get sshrvdChannel;
-
+  /// The channel to communicate with the sshnpd (daemon)
   @protected
   SshnpdChannel get sshnpdChannel;
 
@@ -84,19 +89,23 @@ abstract class SshnpCore
     if (!isSafeToInitialize) return;
     logger.info('Initializing SSHNPCore');
 
-    try {
-      if (!(await atSignIsActivated(atClient, params.sshnpdAtSign))) {
-        logger
-            .severe('Device address ${params.sshnpdAtSign} is not activated.');
-        throw ('Device address ${params.sshnpdAtSign} is not activated.');
-      }
-    } catch (e, s) {
-      throw SshnpError(e, stackTrace: s);
-    }
+    /// Start the sshnpd payload handler
+    await sshnpdChannel.callInitialization();
 
-    // Start listening for response notifications from sshnpd
-    logger.info('Subscribing to notifications on $sessionId.$namespace@');
+    /// Set the remote username to use for the ssh session
+    remoteUsername = await sshnpdChannel.resolveRemoteUsername();
 
+    /// Find a spare local port if required
+    await _findLocalPortIfRequired();
+
+    /// Shares the public key if required
+    await sshnpdChannel.sharePublicKeyIfRequired(identityKeyPair);
+
+    /// Retrieve the sshrvd host and port pair
+    await sshrvdChannel?.callInitialization();
+  }
+
+  Future<void> _findLocalPortIfRequired() async {
     // TODO investigate if this is a problem on mobile
     // find a spare local port
     if (localPort == 0) {
@@ -113,30 +122,6 @@ abstract class SshnpCore
             error: e, stackTrace: s);
       }
     }
-
-    // await sharePublicKeyWithSshnpdIfRequired().catchError((e, s) {
-    //   throw SSHNPError(
-    //     'Unable to share ssh public key with sshnpd',
-    //     error: e,
-    //     stackTrace: s,
-    //   );
-    // });
-
-    // If host has an @ then contact the sshrvd service for some ports
-    // if (host.startsWith('@')) {
-    //   logger.info('Host is an atSign, fetching host and port from sshrvd');
-    //   await getHostAndPortFromSshrvd().catchError((e, s) {
-    //     throw SSHNPError(
-    //       'Unable to get host and port from sshrvd',
-    //       error: e,
-    //       stackTrace: s,
-    //     );
-    //   });
-    // }
-
-    logger.finer('Base initialization complete');
-    // N.B. Don't complete initialization here, subclasses will do that
-    // This is in case they need to implement further initialization steps
   }
 
   @override

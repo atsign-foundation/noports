@@ -1,8 +1,8 @@
 import 'dart:convert';
 
 import 'package:noports_core/src/common/types.dart';
-import 'package:noports_core/src/sshnp/sshnp_params/config_file_repository.dart';
-import 'package:noports_core/src/sshnp/sshnp_params/sshnp_arg.dart';
+import 'package:noports_core/src/sshnp/models/config_file_repository.dart';
+import 'package:noports_core/src/sshnp/models/sshnp_arg.dart';
 import 'package:noports_core/src/common/default_args.dart';
 import 'package:noports_core/sshnp.dart';
 
@@ -34,7 +34,7 @@ class SshnpParams {
   final bool addForwardsToTunnel;
   final String? atKeysFilePath;
   final SupportedSshClient sshClient;
-  final SupportedSSHAlgorithm sshAlgorithm;
+  final SupportedSshAlgorithm sshAlgorithm;
 
   /// Special Arguments
   final String?
@@ -48,24 +48,24 @@ class SshnpParams {
     required this.sshnpdAtSign,
     required this.host,
     this.profileName,
-    this.device = DefaultSSHNPArgs.device,
-    this.port = DefaultSSHNPArgs.port,
-    this.localPort = DefaultSSHNPArgs.localPort,
+    this.device = DefaultSshnpArgs.device,
+    this.port = DefaultSshnpArgs.port,
+    this.localPort = DefaultSshnpArgs.localPort,
     this.identityFile,
     this.identityPassphrase,
-    this.sendSshPublicKey = DefaultSSHNPArgs.sendSshPublicKey,
-    this.localSshOptions = DefaultSSHNPArgs.localSshOptions,
+    this.sendSshPublicKey = DefaultSshnpArgs.sendSshPublicKey,
+    this.localSshOptions = DefaultSshnpArgs.localSshOptions,
     this.verbose = DefaultArgs.verbose,
     this.remoteUsername,
     this.atKeysFilePath,
     this.rootDomain = DefaultArgs.rootDomain,
     this.localSshdPort = DefaultArgs.localSshdPort,
-    this.legacyDaemon = DefaultSSHNPArgs.legacyDaemon,
-    this.listDevices = DefaultSSHNPArgs.listDevices,
+    this.legacyDaemon = DefaultSshnpArgs.legacyDaemon,
+    this.listDevices = DefaultSshnpArgs.listDevices,
     this.remoteSshdPort = DefaultArgs.remoteSshdPort,
     this.idleTimeout = DefaultArgs.idleTimeout,
     this.addForwardsToTunnel = DefaultArgs.addForwardsToTunnel,
-    this.sshClient = DefaultSSHNPArgs.sshClient,
+    this.sshClient = DefaultSshnpArgs.sshClient,
     this.sshAlgorithm = DefaultArgs.sshAlgorithm,
   });
 
@@ -128,27 +128,27 @@ class SshnpParams {
       clientAtSign: partial.clientAtSign!,
       sshnpdAtSign: partial.sshnpdAtSign!,
       host: partial.host!,
-      device: partial.device ?? DefaultSSHNPArgs.device,
-      port: partial.port ?? DefaultSSHNPArgs.port,
-      localPort: partial.localPort ?? DefaultSSHNPArgs.localPort,
+      device: partial.device ?? DefaultSshnpArgs.device,
+      port: partial.port ?? DefaultSshnpArgs.port,
+      localPort: partial.localPort ?? DefaultSshnpArgs.localPort,
       identityFile: partial.identityFile,
       identityPassphrase: partial.identityPassphrase,
       sendSshPublicKey:
-          partial.sendSshPublicKey ?? DefaultSSHNPArgs.sendSshPublicKey,
+          partial.sendSshPublicKey ?? DefaultSshnpArgs.sendSshPublicKey,
       localSshOptions:
-          partial.localSshOptions ?? DefaultSSHNPArgs.localSshOptions,
+          partial.localSshOptions ?? DefaultSshnpArgs.localSshOptions,
       verbose: partial.verbose ?? DefaultArgs.verbose,
       remoteUsername: partial.remoteUsername,
       atKeysFilePath: partial.atKeysFilePath,
       rootDomain: partial.rootDomain ?? DefaultArgs.rootDomain,
       localSshdPort: partial.localSshdPort ?? DefaultArgs.localSshdPort,
-      listDevices: partial.listDevices ?? DefaultSSHNPArgs.listDevices,
-      legacyDaemon: partial.legacyDaemon ?? DefaultSSHNPArgs.legacyDaemon,
+      listDevices: partial.listDevices ?? DefaultSshnpArgs.listDevices,
+      legacyDaemon: partial.legacyDaemon ?? DefaultSshnpArgs.legacyDaemon,
       remoteSshdPort: partial.remoteSshdPort ?? DefaultArgs.remoteSshdPort,
       idleTimeout: partial.idleTimeout ?? DefaultArgs.idleTimeout,
       addForwardsToTunnel:
           partial.addForwardsToTunnel ?? DefaultArgs.addForwardsToTunnel,
-      sshClient: partial.sshClient ?? DefaultSSHNPArgs.sshClient,
+      sshClient: partial.sshClient ?? DefaultSshnpArgs.sshClient,
       sshAlgorithm: partial.sshAlgorithm ?? DefaultArgs.sshAlgorithm,
     );
   }
@@ -236,7 +236,7 @@ class SshnpPartialParams {
   final int? idleTimeout;
   final bool? addForwardsToTunnel;
   final SupportedSshClient? sshClient;
-  final SupportedSSHAlgorithm? sshAlgorithm;
+  final SupportedSshAlgorithm? sshAlgorithm;
 
   /// Operation flags
   final bool? listDevices;
@@ -352,7 +352,7 @@ class SshnpPartialParams {
           : SupportedSshClient.fromString(args[SshnpArg.sshClientArg.name]),
       sshAlgorithm: args[SshnpArg.sshAlgorithmArg.name] == null
           ? null
-          : SupportedSSHAlgorithm.fromString(
+          : SupportedSshAlgorithm.fromString(
               args[SshnpArg.sshAlgorithmArg.name]),
     );
   }

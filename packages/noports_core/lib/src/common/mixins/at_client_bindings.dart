@@ -1,7 +1,7 @@
 import 'package:at_client/at_client.dart';
 import 'package:at_utils/at_utils.dart';
 
-abstract mixin class AtClientBindings {
+mixin AtClientBindings {
   AtClient get atClient;
   AtSignLogger get logger;
 

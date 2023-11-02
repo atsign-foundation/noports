@@ -1,8 +1,8 @@
 import 'dart:io';
 
 import 'package:noports_core/src/common/file_system_utils.dart';
-import 'package:noports_core/src/sshnp/sshnp_params/sshnp_params.dart';
-import 'package:noports_core/src/sshnp/sshnp_params/sshnp_arg.dart';
+import 'package:noports_core/src/sshnp/models/sshnp_params.dart';
+import 'package:noports_core/src/sshnp/models/sshnp_arg.dart';
 import 'package:path/path.dart' as path;
 
 class ConfigFileRepository {

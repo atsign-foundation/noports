@@ -52,7 +52,7 @@ class SSHNPDImpl implements SSHNPD {
   final String ephemeralPermissions;
 
   @override
-  final SupportedSSHAlgorithm sshAlgorithm;
+  final SupportedSshAlgorithm sshAlgorithm;
 
   @override
   @visibleForTesting

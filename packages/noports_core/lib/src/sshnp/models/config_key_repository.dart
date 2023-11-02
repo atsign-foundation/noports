@@ -1,7 +1,7 @@
 import 'package:at_client/at_client.dart';
 import 'package:meta/meta.dart';
 import 'package:noports_core/src/common/default_args.dart';
-import 'package:noports_core/src/sshnp/sshnp_params/sshnp_params.dart';
+import 'package:noports_core/src/sshnp/models/sshnp_params.dart';
 
 class ConfigKeyRepository {
   @visibleForTesting

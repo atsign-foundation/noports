@@ -5,19 +5,19 @@ import 'package:cryptography/cryptography.dart';
 import 'package:noports_core/utils.dart';
 import 'package:openssh_ed25519/openssh_ed25519.dart';
 
-class DartSSHKeyUtil implements AtSSHKeyUtil {
+class DartSshKeyUtil implements AtSshKeyUtil {
   static final Map<String, AtSshKeyPair> _keyPairCache = {};
 
   @override
   Future<AtSshKeyPair> generateKeyPair({
     required String identifier,
-    SupportedSSHAlgorithm algorithm = DefaultArgs.sshAlgorithm,
+    SupportedSshAlgorithm algorithm = DefaultArgs.sshAlgorithm,
   }) async {
     AtSshKeyPair keyPair;
     switch (algorithm) {
-      case SupportedSSHAlgorithm.rsa:
+      case SupportedSshAlgorithm.rsa:
         keyPair = _generateRSAKeyPair(identifier);
-      case SupportedSSHAlgorithm.ed25519:
+      case SupportedSshAlgorithm.ed25519:
         keyPair = await _generateEd25519KeyPair(identifier);
     }
     _keyPairCache[identifier] = keyPair;
@@ -45,5 +45,18 @@ class DartSSHKeyUtil implements AtSSHKeyUtil {
       pemText,
       identifier: identifier,
     );
+  }
+
+  @override
+  FutureOr addKeyPair({
+    required AtSshKeyPair keyPair,
+    required String identifier,
+  }) {
+    _keyPairCache[identifier] = keyPair;
+  }
+
+  @override
+  FutureOr deleteKeyPair({required String identifier}) {
+    _keyPairCache.remove(identifier);
   }
 }

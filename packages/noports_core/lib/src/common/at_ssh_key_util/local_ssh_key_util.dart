@@ -6,10 +6,10 @@ import 'package:noports_core/utils.dart';
 import 'package:path/path.dart' as path;
 import 'package:posix/posix.dart' show chmod;
 
-class LocalSshKeyUtil implements AtSSHKeyUtil {
+class LocalSshKeyUtil implements AtSshKeyUtil {
   static const _sshKeygenArgMap = {
-    SupportedSSHAlgorithm.rsa: ['-t', 'rsa', '-b', '4096'],
-    SupportedSSHAlgorithm.ed25519: ['-t', 'ed25519', '-a', '100'],
+    SupportedSshAlgorithm.rsa: ['-t', 'rsa', '-b', '4096'],
+    SupportedSshAlgorithm.ed25519: ['-t', 'ed25519', '-a', '100'],
   };
 
   static final Map<String, AtSshKeyPair> _keyPairCache = {};
@@ -27,6 +27,8 @@ class LocalSshKeyUtil implements AtSSHKeyUtil {
 
   String get _defaultDirectory => sshnpHomeDirectory;
 
+  String get username => getUserName(throwIfNull: true)!;
+
   List<File> _filesFromIdentifier({required String identifier}) {
     return [
       File(path.normalize(identifier)),
@@ -34,6 +36,7 @@ class LocalSshKeyUtil implements AtSSHKeyUtil {
     ];
   }
 
+  @override
   Future<List<File>> addKeyPair({
     required AtSshKeyPair keyPair,
     required String identifier,
@@ -69,6 +72,7 @@ class LocalSshKeyUtil implements AtSSHKeyUtil {
     return keyPair;
   }
 
+  @override
   Future<List<FileSystemEntity>> deleteKeyPair(
       {required String identifier}) async {
     var files = _filesFromIdentifier(identifier: identifier);
@@ -81,7 +85,7 @@ class LocalSshKeyUtil implements AtSSHKeyUtil {
   @override
   Future<AtSshKeyPair> generateKeyPair({
     required String identifier,
-    SupportedSSHAlgorithm algorithm = DefaultArgs.sshAlgorithm,
+    SupportedSshAlgorithm algorithm = DefaultArgs.sshAlgorithm,
     String? directory,
     String? passphrase,
   }) async {

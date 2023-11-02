@@ -41,7 +41,7 @@ class _ProfileTerminalActionState extends ConsumerState<ProfileTerminalAction> {
 
       // TODO ensure that this keyPair gets uploaded to the app first
       AtClient atClient = AtClientManager.getInstance().atClient;
-      DartSSHKeyUtil keyUtil = DartSSHKeyUtil();
+      DartSshKeyUtil keyUtil = DartSshKeyUtil();
       AtSshKeyPair keyPair = await keyUtil.getKeyPair(
         identifier: params.identityFile ??
             'id_${atClient.getCurrentAtSign()!.replaceAll('@', '')}',

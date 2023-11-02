@@ -216,7 +216,7 @@ class SshnpArg {
     name: 'device',
     abbr: 'd',
     help: 'Receiving device name',
-    defaultsTo: DefaultSSHNPArgs.device,
+    defaultsTo: DefaultSshnpArgs.device,
   );
   static const hostArg = SshnpArg(
     name: 'host',
@@ -229,7 +229,7 @@ class SshnpArg {
     abbr: 'p',
     help:
         'TCP port to connect back to (only required if --host specified a FQDN/IP)',
-    defaultsTo: DefaultSSHNPArgs.port,
+    defaultsTo: DefaultSshnpArgs.port,
     type: ArgType.integer,
   );
   static const localPortArg = SshnpArg(
@@ -237,7 +237,7 @@ class SshnpArg {
     abbr: 'l',
     help:
         'Reverse ssh port to listen on, on your local machine, by sshnp default finds a spare port',
-    defaultsTo: DefaultSSHNPArgs.localPort,
+    defaultsTo: DefaultSshnpArgs.localPort,
     type: ArgType.integer,
   );
   static const identityFileArg = SshnpArg(
@@ -256,13 +256,13 @@ class SshnpArg {
     abbr: 's',
     help:
         'When true, the ssh public key will be sent to the remote host for use in the ssh session',
-    defaultsTo: DefaultSSHNPArgs.sendSshPublicKey,
+    defaultsTo: DefaultSshnpArgs.sendSshPublicKey,
     format: ArgFormat.flag,
   );
   static const localSshOptionsArg = SshnpArg(
     name: 'local-ssh-options',
     abbr: 'o',
-    defaultsTo: DefaultSSHNPArgs.localSshOptions,
+    defaultsTo: DefaultSshnpArgs.localSshOptions,
     help: 'Add these commands to the local ssh command',
     format: ArgFormat.multiOption,
   );
@@ -297,7 +297,7 @@ class SshnpArg {
   static const legacyDaemonArg = SshnpArg(
     name: 'legacy-daemon',
     help: 'Request is to a legacy (< 4.0.0) noports daemon',
-    defaultsTo: DefaultSSHNPArgs.legacyDaemon,
+    defaultsTo: DefaultSshnpArgs.legacyDaemon,
     format: ArgFormat.flag,
   );
   static const remoteSshdPortArg = SshnpArg(
@@ -321,7 +321,7 @@ class SshnpArg {
   static final sshClientArg = SshnpArg(
     name: 'ssh-client',
     help: 'What to use for outbound ssh connections',
-    defaultsTo: DefaultSSHNPArgs.sshClient.toString(),
+    defaultsTo: DefaultSshnpArgs.sshClient.toString(),
     allowed: SupportedSshClient.values.map((c) => c.toString()).toList(),
     parseWhen: ParseWhen.commandLine,
   );
@@ -329,7 +329,7 @@ class SshnpArg {
     name: 'ssh-algorithm',
     help: 'SSH algorithm to use',
     defaultsTo: DefaultArgs.sshAlgorithm.toString(),
-    allowed: SupportedSSHAlgorithm.values.map((c) => c.toString()).toList(),
+    allowed: SupportedSshAlgorithm.values.map((c) => c.toString()).toList(),
     parseWhen: ParseWhen.commandLine,
   );
   static const addForwardsToTunnelArg = SshnpArg(
@@ -349,7 +349,7 @@ class SshnpArg {
   static const listDevicesArg = SshnpArg(
     name: 'list-devices',
     help: 'List available devices',
-    defaultsTo: DefaultSSHNPArgs.listDevices,
+    defaultsTo: DefaultSshnpArgs.listDevices,
     aliases: ['ls'],
     negatable: false,
     parseWhen: ParseWhen.commandLine,
