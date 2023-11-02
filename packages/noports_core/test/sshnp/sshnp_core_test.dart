@@ -15,6 +15,7 @@ void main() {
     setUp(() {
       atClient = MockAtClient();
       params = MockSSHNPParams();
+      registerFallbackValue(AtClientPreference());
     });
 
     test('Constructor - expect that the namespace is set based on params', () {
