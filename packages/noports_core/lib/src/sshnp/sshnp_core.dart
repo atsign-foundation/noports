@@ -13,8 +13,6 @@ import 'package:noports_core/src/common/mixins/at_client_bindings.dart';
 import 'package:noports_core/src/sshnp/util/sshnp_ssh_key_handler.dart';
 import 'package:noports_core/src/sshnp/util/sshnpd_channel/sshnpd_channel.dart';
 import 'package:noports_core/src/sshnp/util/sshrvd_channel/sshrvd_channel.dart';
-import 'package:noports_core/src/sshnp/models/sshnp_device_list.dart';
-
 import 'package:noports_core/sshnp.dart';
 import 'package:uuid/uuid.dart';
 

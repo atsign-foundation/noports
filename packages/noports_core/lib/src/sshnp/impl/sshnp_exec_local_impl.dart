@@ -2,14 +2,7 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:at_client/at_client.dart';
-import 'package:noports_core/src/sshnp/util/sshnp_initial_tunnel_handler.dart';
-import 'package:noports_core/src/sshnp/util/sshnp_ssh_key_handler.dart';
-import 'package:noports_core/src/sshnp/util/sshnpd_channel/sshnpd_default_channel.dart';
-import 'package:noports_core/src/sshnp/util/sshrvd_channel/sshrvd_channel.dart';
-import 'package:noports_core/src/sshnp/util/sshrvd_channel/sshrvd_exec_channel.dart';
-import 'package:noports_core/src/sshnp/models/sshnp_result.dart';
 import 'package:noports_core/sshnp_foundation.dart';
-import 'package:noports_core/utils.dart';
 
 class SshnpExecLocalImpl extends SshnpCore
     with SshnpLocalSshKeyHandler, SshnpExecInitialTunnelHandler {
