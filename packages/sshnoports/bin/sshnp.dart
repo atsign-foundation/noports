@@ -68,16 +68,7 @@ void main(List<String> args) async {
         exit(0);
       }
 
-      FutureOr<SshnpResult> runner = sshnp!.run();
-      if (runner is Future<SshnpResult>) {
-        await runner.catchError((e) {
-          if (e.stackTrace != null) {
-            Error.throwWithStackTrace(e, e.stackTrace!);
-          }
-          throw e;
-        });
-      }
-      SshnpResult res = await runner;
+      SshnpResult res = await sshnp!.run();
 
       if (res is SshnpError) {
         if (res.stackTrace != null) {

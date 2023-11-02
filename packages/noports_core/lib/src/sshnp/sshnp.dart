@@ -58,12 +58,12 @@ abstract interface class Sshnp {
   /// - Waits for success or error response, or time out after 10 secs
   /// - If got a success response, print the ssh command to use to stdout
   /// - Clean up temporary files
-  FutureOr<SshnpResult> run();
+  Future<SshnpResult> run();
 
   /// Send a ping out to all sshnpd and listen for heartbeats
   /// Returns two Iterable<String> and a Map<String, dynamic>:
   /// - Iterable<String> of atSigns of sshnpd that responded
   /// - Iterable<String> of atSigns of sshnpd that did not respond
   /// - Map<String, dynamic> where the keys are all atSigns included in the maps, and the values being their device info
-  FutureOr<SshnpDeviceList> listDevices();
+  Future<SshnpDeviceList> listDevices();
 }

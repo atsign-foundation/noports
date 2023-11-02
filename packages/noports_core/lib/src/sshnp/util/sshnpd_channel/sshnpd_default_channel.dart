@@ -24,7 +24,13 @@ mixin SshnpdDefaultPayloadHandler on SshnpdChannel {
   bool get useLocalFileStorage => (this is SshnpLocalSshKeyHandler);
 
   @override
-  Future<bool> handleSshnpdPayload(AtNotification notification) async {
+  Future<void> initialize() async {
+    await super.initialize();
+    completeInitialization();
+  }
+
+  @override
+  Future<SshnpdAck> handleSshnpdPayload(AtNotification notification) async {
     if (notification.value?.startsWith('{') ?? false) {
       late final Map envelope;
       late final Map daemonResponse;
@@ -40,8 +46,7 @@ mixin SshnpdDefaultPayloadHandler on SshnpdChannel {
       } catch (e) {
         logger.warning(
             'Failed to extract parameters from notification value "${notification.value}" with error : $e');
-        sshnpdAck = SshnpdAck.acknowledgedWithErrors;
-        return false;
+        return SshnpdAck.acknowledgedWithErrors;
       }
 
       try {
@@ -57,15 +62,14 @@ mixin SshnpdDefaultPayloadHandler on SshnpdChannel {
             'Failed to verify signature of msg from ${params.sshnpdAtSign}');
         logger.shout('Exception: $e');
         logger.shout('Notification value: ${notification.value}');
-        sshnpdAck = SshnpdAck.acknowledgedWithErrors;
-        return false;
+        return SshnpdAck.acknowledgedWithErrors;
       }
 
       logger.info('Verified signature of msg from ${params.sshnpdAtSign}');
       logger.info('Setting ephemeralPrivateKey');
       ephemeralPrivateKey = daemonResponse['ephemeralPrivateKey'];
-      return true;
+      return SshnpdAck.acknowledged;
     }
-    return false;
+    return SshnpdAck.acknowledgedWithErrors;
   }
 }

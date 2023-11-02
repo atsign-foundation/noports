@@ -7,7 +7,6 @@ import 'package:at_utils/at_logger.dart';
 import 'package:meta/meta.dart';
 import 'package:noports_core/src/common/mixins/async_initialization.dart';
 import 'package:noports_core/src/common/mixins/at_client_bindings.dart';
-import 'package:noports_core/src/sshnp/models/sshnp_device_list.dart';
 import 'package:noports_core/sshnp.dart';
 import 'package:noports_core/utils.dart';
 
@@ -28,7 +27,7 @@ enum SshnpdAck {
 /// receiving the response from the daemon.
 abstract class SshnpdChannel with AsyncInitialization, AtClientBindings {
   @override
-  final logger = AtSignLogger('SSHNPDChannel');
+  final logger = AtSignLogger(' SshnpdChannel ');
   @override
   final AtClient atClient;
 
@@ -53,57 +52,52 @@ abstract class SshnpdChannel with AsyncInitialization, AtClientBindings {
   /// Initialization starts the subscription to notifications from the daemon.
   @override
   Future<void> initialize() async {
-    final namespace = atClient.getPreferences()!.namespace;
+    String regex = '$sessionId.$namespace${params.sshnpdAtSign}';
+    logger.info('Starting monitor for notifications with regex: "$regex"');
     atClient.notificationService
         .subscribe(
-          regex: '$sessionId.$namespace@${params.sshnpdAtSign}',
+          regex: regex,
           shouldDecrypt: true,
         )
         .listen(_handleSshnpdResponses);
-    completeInitialization();
   }
 
   /// Main reponse handler for the daemon's notifications.
   Future<void> _handleSshnpdResponses(AtNotification notification) async {
     String notificationKey = notification.key
         .replaceAll('${notification.to}:', '')
-        .replaceAll('.$namespace${notification.from}', '')
+        .replaceAll('.$namespace@${notification.from}', '')
         // convert to lower case as the latest AtClient converts notification
         // keys to lower case when received
         .toLowerCase();
     logger.info('Received $notificationKey notification');
 
-    bool connected = await handleSshnpdPayload(notification);
+    sshnpdAck = await handleSshnpdPayload(notification);
 
-    if (connected) {
+    if (sshnpdAck == SshnpdAck.acknowledged) {
       logger.info('Session $sessionId connected successfully');
-      sshnpdAck = SshnpdAck.acknowledged;
-    } else {
-      sshnpdAck = SshnpdAck.acknowledgedWithErrors;
     }
   }
 
   /// This method is responsible for handling and validating the payload
   /// received from the daemon and setting the [ephemeralPrivateKey] field.
-  /// Returns true if the daemon is connected, false otherwise.
+  /// Returns acknowledgement state.
   @protected
-  Future<bool> handleSshnpdPayload(AtNotification notification);
+  Future<SshnpdAck> handleSshnpdPayload(AtNotification notification);
 
   /// Wait until we've received an acknowledgement from the daemon.
   /// Returns true if the deamon acknowledged our request.
   /// Returns false if a timeout occurred.
-  Future<bool> waitForDaemonResponse() async {
-    logger.finer('Waiting for daemon response');
+  Future<SshnpdAck> waitForDaemonResponse() async {
     int counter = 0;
     // Timer to timeout after 10 Secs or after the Ack of connected/Errors
-    while (sshnpdAck == SshnpdAck.notAcknowledged) {
+    for (int i = 0; i < 100; i++) {
+      logger.info('Waiting for sshnpd response: $counter');
+      logger.info('sshnpdAck: $sshnpdAck');
       await Future.delayed(Duration(milliseconds: 100));
-      counter++;
-      if (counter == 100) {
-        return false;
-      }
+      if (sshnpdAck != SshnpdAck.notAcknowledged) break;
     }
-    return true;
+    return sshnpdAck;
   }
 
   /// Send a notification to the daemon with our shared public key.

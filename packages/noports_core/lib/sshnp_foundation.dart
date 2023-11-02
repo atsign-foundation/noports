@@ -31,7 +31,6 @@ export 'src/sshnp/util/sshnp_ssh_key_handler.dart';
 export 'src/sshnp/impl/sshnp_dart_local_impl.dart';
 export 'src/sshnp/impl/sshnp_dart_pure_impl.dart';
 export 'src/sshnp/impl/sshnp_exec_local_impl.dart';
-export 'src/sshnp/impl/sshnp_reverse_impl.dart';
 export 'src/sshnp/impl/sshnp_unsigned_impl.dart';
 
 // Common

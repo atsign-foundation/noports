@@ -20,8 +20,8 @@ mixin SshnpExecInitialTunnelHandler on SshnpCore
     Process? process;
     // If we are starting an initial tunnel, it should be to sshrvd,
     // so it is safe to assume that sshrvdChannel is not null here
-    String argsString = '$remoteUsername@${sshrvdChannel?.host ?? params.host}'
-        ' -p ${sshrvdChannel!.port}'
+    String argsString = '$remoteUsername@${sshrvdChannel!.host}'
+        ' -p ${sshrvdChannel!.sshrvdPort}'
         ' -i $identifier'
         ' -L $localPort:localhost:${params.remoteSshdPort}'
         ' -o LogLevel=VERBOSE'
@@ -30,6 +30,7 @@ mixin SshnpExecInitialTunnelHandler on SshnpCore
         ' -o IdentitiesOnly=yes'
         ' -o BatchMode=yes'
         ' -o ExitOnForwardFailure=yes'
+        ' -n'
         ' -f' // fork after authentication - this is important
         ;
     if (params.addForwardsToTunnel) {
@@ -50,11 +51,11 @@ mixin SshnpExecInitialTunnelHandler on SshnpCore
       process = await Process.start('/usr/bin/ssh', args);
       process.stdout.transform(Utf8Decoder()).listen((String s) {
         soutBuf.write(s);
-        logger.info('$sessionId | sshStdOut | $s');
+        logger.info(' $sessionId | sshStdOut | $s');
       }, onError: (e) {});
       process.stderr.transform(Utf8Decoder()).listen((String s) {
         serrBuf.write(s);
-        logger.info('$sessionId | sshStdErr | $s');
+        logger.info(' $sessionId | sshStdErr | $s');
       }, onError: (e) {});
       await process.exitCode.timeout(Duration(seconds: 10));
     } on TimeoutException catch (e) {
@@ -86,12 +87,13 @@ mixin SshnpDartInitialTunnelHandler on SshnpCore
 
       late final SSHSocket socket;
       try {
-        socket =
-            await SSHSocket.connect(sshrvdChannel!.host, sshrvdChannel!.port)
-                .catchError((e) => throw e);
+        socket = await SSHSocket.connect(
+          sshrvdChannel!.host,
+          sshrvdChannel!.sshrvdPort!,
+        ).catchError((e) => throw e);
       } catch (e, s) {
         var error = SshnpError(
-          'Failed to open socket to ${sshrvdChannel!.host}:${sshrvdChannel!.port} : $e',
+          'Failed to open socket to ${sshrvdChannel!.host}:${sshrvdChannel!.sshrvdPort} : $e',
           error: e,
           stackTrace: s,
         );
@@ -108,7 +110,7 @@ mixin SshnpDartInitialTunnelHandler on SshnpCore
         );
       } catch (e, s) {
         throw SshnpError(
-          'Failed to create SSHClient for ${params.remoteUsername}@${sshrvdChannel!.host}:${sshrvdChannel!.port} : $e',
+          'Failed to create SSHClient for ${params.remoteUsername}@${sshrvdChannel!.host}:${sshrvdChannel!.sshrvdPort} : $e',
           error: e,
           stackTrace: s,
         );
@@ -118,7 +120,7 @@ mixin SshnpDartInitialTunnelHandler on SshnpCore
         await client.authenticated.catchError((e) => throw e);
       } catch (e, s) {
         throw SshnpError(
-          'Failed to authenticate as ${params.remoteUsername}@${sshrvdChannel!.host}:${sshrvdChannel!.port} : $e',
+          'Failed to authenticate as ${params.remoteUsername}@${sshrvdChannel!.host}:${sshrvdChannel!.sshrvdPort} : $e',
           error: e,
           stackTrace: s,
         );

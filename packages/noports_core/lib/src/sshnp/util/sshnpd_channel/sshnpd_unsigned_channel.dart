@@ -15,7 +15,15 @@ class SshnpdUnsignedChannel extends SshnpdChannel
 
 mixin SshnpdUnsignedPayloadHandler on SshnpdChannel {
   @override
-  Future<bool> handleSshnpdPayload(AtNotification notification) async {
-    return (notification.value == 'connected');
+  Future<void> initialize() async {
+    await super.initialize();
+    completeInitialization();
+  }
+
+  @override
+  Future<SshnpdAck> handleSshnpdPayload(AtNotification notification) async {
+    return (notification.value == 'connected')
+        ? SshnpdAck.acknowledged
+        : SshnpdAck.acknowledgedWithErrors;
   }
 }

@@ -7,22 +7,27 @@ class SshnpUnsignedImpl extends SshnpCore with SshnpLocalSshKeyHandler {
   SshnpUnsignedImpl({
     required super.atClient,
     required super.params,
-  });
+  }) {
+    _sshnpdChannel = SshnpdUnsignedChannel(
+      atClient: atClient,
+      params: params,
+      sessionId: sessionId,
+      namespace: this.namespace,
+    );
+    _sshrvdChannel = SshrvdExecChannel(
+      atClient: atClient,
+      params: params,
+      sessionId: sessionId,
+    );
+  }
 
   @override
-  SshnpdDefaultChannel get sshnpdChannel => SshnpdDefaultChannel(
-        atClient: atClient,
-        params: params,
-        sessionId: sessionId,
-        namespace: this.namespace,
-      );
+  SshnpdUnsignedChannel get sshnpdChannel => _sshnpdChannel;
+  late final SshnpdUnsignedChannel _sshnpdChannel;
 
   @override
-  SshrvdExecChannel get sshrvdChannel => SshrvdExecChannel(
-        atClient: atClient,
-        params: params,
-        sessionId: sessionId,
-      );
+  SshrvdExecChannel get sshrvdChannel => _sshrvdChannel;
+  late final SshrvdExecChannel _sshrvdChannel;
 
   @override
   Future<void> initialize() async {
@@ -78,7 +83,10 @@ class SshnpUnsignedImpl extends SshnpCore with SshnpLocalSshKeyHandler {
     );
 
     /// Wait for a response from sshnpd
-    await sshnpdChannel.waitForDaemonResponse();
+    var acked = await sshnpdChannel.waitForDaemonResponse();
+    if (acked != SshnpdAck.acknowledged) {
+      throw SshnpError('sshnpd did not acknowledge the request');
+    }
 
     /// Ensure that we clean up after ourselves
     await callDisposal();
@@ -86,7 +94,7 @@ class SshnpUnsignedImpl extends SshnpCore with SshnpLocalSshKeyHandler {
     /// Return the command to be executed externally
     return SshnpCommand(
       localPort: localPort,
-      host: sshrvdChannel.host,
+      host: 'localhost',
       remoteUsername: remoteUsername,
       localSshOptions:
           (params.addForwardsToTunnel) ? null : params.localSshOptions,

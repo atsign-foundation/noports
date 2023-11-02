@@ -23,7 +23,7 @@ enum SshrvdAck {
 
 abstract class SshrvdChannel<T> with AsyncInitialization, AtClientBindings {
   @override
-  final logger = AtSignLogger('SSHRVDChannel');
+  final logger = AtSignLogger(' SshrvdChannel ');
 
   @override
   final AtClient atClient;
@@ -49,6 +49,7 @@ abstract class SshrvdChannel<T> with AsyncInitialization, AtClientBindings {
 
   /// The port sshrvd is listening on
   int? _sshrvdPort;
+  int? get sshrvdPort => _sshrvdPort;
 
   SshrvdChannel({
     required this.atClient,
@@ -111,7 +112,6 @@ abstract class SshrvdChannel<T> with AsyncInitialization, AtClientBindings {
     logger.info('Sending notification to sshrvd: $ourSshrvdIdKey');
     await notify(ourSshrvdIdKey, sessionId);
 
-    logger.info('Waiting for sshrvd response');
     int counter = 0;
     while (sshrvdAck == SshrvdAck.notAcknowledged) {
       logger.info('Waiting for sshrvd response: $counter');

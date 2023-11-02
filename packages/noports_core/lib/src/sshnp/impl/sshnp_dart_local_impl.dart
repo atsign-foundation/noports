@@ -9,22 +9,27 @@ class SshnpDartLocalImpl extends SshnpCore
   SshnpDartLocalImpl({
     required super.atClient,
     required super.params,
-  });
+  }) {
+    _sshnpdChannel = SshnpdDefaultChannel(
+      atClient: atClient,
+      params: params,
+      sessionId: sessionId,
+      namespace: this.namespace,
+    );
+    _sshrvdChannel = SshrvdDartChannel(
+      atClient: atClient,
+      params: params,
+      sessionId: sessionId,
+    );
+  }
 
   @override
-  SshnpdDefaultChannel get sshnpdChannel => SshnpdDefaultChannel(
-        atClient: atClient,
-        params: params,
-        sessionId: sessionId,
-        namespace: this.namespace,
-      );
+  SshnpdDefaultChannel get sshnpdChannel => _sshnpdChannel;
+  late final SshnpdDefaultChannel _sshnpdChannel;
 
   @override
-  SshrvdChannel get sshrvdChannel => SshrvdDartChannel(
-        atClient: atClient,
-        params: params,
-        sessionId: sessionId,
-      );
+  SshrvdDartChannel get sshrvdChannel => _sshrvdChannel;
+  late final SshrvdDartChannel _sshrvdChannel;
 
   @override
   Future<void> initialize() async {
@@ -55,7 +60,10 @@ class SshnpDartLocalImpl extends SshnpCore
     );
 
     /// Wait for a response from sshnpd
-    await sshnpdChannel.waitForDaemonResponse();
+    var acked = await sshnpdChannel.waitForDaemonResponse();
+    if (acked != SshnpdAck.acknowledged) {
+      throw SshnpError('sshnpd did not acknowledge the request');
+    }
 
     /// Load the ephemeral private key into a key pair
     AtSshKeyPair ephemeralKeyPair = AtSshKeyPair.fromPem(
@@ -83,7 +91,7 @@ class SshnpDartLocalImpl extends SshnpCore
     /// Return the command to be executed externally
     return SshnpCommand(
       localPort: localPort,
-      host: sshrvdChannel.host,
+      host: 'localhost',
       remoteUsername: remoteUsername,
       localSshOptions:
           (params.addForwardsToTunnel) ? null : params.localSshOptions,

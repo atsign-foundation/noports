@@ -72,6 +72,7 @@ abstract class SshnpCore
 
     if (params.verbose) {
       logger.logger.level = Level.INFO;
+      AtSignLogger.root_level = 'info';
     }
 
     /// Set the namespace to the device's namespace
@@ -101,6 +102,11 @@ abstract class SshnpCore
 
     /// Retrieve the sshrvd host and port pair
     await sshrvdChannel?.callInitialization();
+  }
+
+  @override
+  Future<void> dispose() async {
+    completeDisposal();
   }
 
   Future<void> _findLocalPortIfRequired() async {
