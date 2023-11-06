@@ -2,16 +2,11 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:noports_core/src/common/openssh_binary_path.dart';
 import 'package:noports_core/sshnp_foundation.dart';
-
-const String _windowsOpensshPath = r'C:\Windows\System32\OpenSSH\ssh.exe';
-const String _unixOpensshPath = '/usr/bin/ssh';
 
 mixin SshnpOpensshInitialTunnelHandler on SshnpCore
     implements SshnpInitialTunnelHandler<Process> {
-  String get opensshBinaryPath =>
-      Platform.isWindows ? _windowsOpensshPath : _unixOpensshPath;
-
   @override
   Future<Process> startInitialTunnel({required String identifier}) async {
     Process? process;
