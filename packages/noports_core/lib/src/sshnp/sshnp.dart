@@ -12,12 +12,12 @@ abstract interface class Sshnp {
     return SshnpUnsignedImpl(atClient: atClient, params: params);
   }
 
-  /// Think of this as the "default" client - calls /usr/bin/ssh
-  factory Sshnp.execLocal({
+  /// Think of this as the "default" client - calls openssh
+  factory Sshnp.openssh({
     required AtClient atClient,
     required SshnpParams params,
   }) {
-    return SshnpExecLocalImpl(atClient: atClient, params: params);
+    return SshnpOpensshLocalImpl(atClient: atClient, params: params);
   }
 
   /// Uses a dartssh2 ssh client - still expects local ssh keys

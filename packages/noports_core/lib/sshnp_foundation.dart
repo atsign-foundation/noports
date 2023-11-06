@@ -24,13 +24,16 @@ export 'src/sshnp/util/sshrvd_channel/sshrvd_channel.dart';
 export 'src/sshnp/util/sshrvd_channel/sshrvd_dart_channel.dart';
 export 'src/sshnp/util/sshrvd_channel/sshrvd_exec_channel.dart';
 
-export 'src/sshnp/util/sshnp_initial_tunnel_handler.dart';
+export 'src/sshnp/util/sshnp_initial_tunnel_handler/sshnp_initial_tunnel_handler.dart';
+export 'src/sshnp/util/sshnp_initial_tunnel_handler/sshnp_dart_initial_tunnel_handler.dart';
+export 'src/sshnp/util/sshnp_initial_tunnel_handler/sshnp_openssh_initial_tunnel_handler.dart';
+
 export 'src/sshnp/util/sshnp_ssh_key_handler.dart';
 
 // Impl
 export 'src/sshnp/impl/sshnp_dart_local_impl.dart';
 export 'src/sshnp/impl/sshnp_dart_pure_impl.dart';
-export 'src/sshnp/impl/sshnp_exec_local_impl.dart';
+export 'src/sshnp/impl/sshnp_openssh_local_impl.dart';
 export 'src/sshnp/impl/sshnp_unsigned_impl.dart';
 
 // Common

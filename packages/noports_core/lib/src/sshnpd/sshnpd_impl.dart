@@ -561,7 +561,7 @@ class SshnpdImpl implements Sshnpd {
       String? errorMessage;
 
       switch (sshClient) {
-        case SupportedSshClient.exec:
+        case SupportedSshClient.openssh:
           (success, errorMessage) = await reverseSshViaExec(
               host: host,
               port: port,
