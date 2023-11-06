@@ -79,7 +79,7 @@ class SshnpOpensshLocalImpl extends SshnpCore
     );
 
     /// Start the initial tunnel
-    Process bean =
+    Process? bean =
         await startInitialTunnel(identifier: ephemeralKeyPair.identifier);
 
     /// Remove the key pair from the key utility

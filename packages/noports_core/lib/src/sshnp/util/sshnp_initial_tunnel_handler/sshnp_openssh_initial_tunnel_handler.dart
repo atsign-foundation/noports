@@ -6,9 +6,9 @@ import 'package:noports_core/src/common/openssh_binary_path.dart';
 import 'package:noports_core/sshnp_foundation.dart';
 
 mixin SshnpOpensshInitialTunnelHandler on SshnpCore
-    implements SshnpInitialTunnelHandler<Process> {
+    implements SshnpInitialTunnelHandler<Process?> {
   @override
-  Future<Process> startInitialTunnel({required String identifier}) async {
+  Future<Process?> startInitialTunnel({required String identifier}) async {
     Process? process;
     // If we are starting an initial tunnel, it should be to sshrvd,
     // so it is safe to assume that sshrvdChannel is not null here
@@ -40,19 +40,40 @@ mixin SshnpOpensshInitialTunnelHandler on SshnpCore
     final soutBuf = StringBuffer();
     final serrBuf = StringBuffer();
     try {
-      process = await Process.start(opensshBinaryPath, args);
-      process.stdout.transform(Utf8Decoder()).listen((String s) {
-        soutBuf.write(s);
-        logger.info(' $sessionId | sshStdOut | $s');
-      }, onError: (e) {});
-      process.stderr.transform(Utf8Decoder()).listen((String s) {
-        serrBuf.write(s);
-        logger.info(' $sessionId | sshStdErr | $s');
-      }, onError: (e) {});
-      await process.exitCode.timeout(Duration(seconds: 10));
+      if (Platform.isWindows) {
+        // We have to do special stuff on Windows because -f doesn't fork
+        // properly in the Windows OpenSSH client:
+        // This incantation opens the initial tunnel in a separate powershell
+        // window. It's not necessary (and currently not possible) to capture
+        // the process since there is a physical window the user can close to
+        // end the session
+        unawaited(Process.start(
+          'powershell.exe',
+          [
+            '-command',
+            opensshBinaryPath,
+            ...args,
+          ],
+          runInShell: true,
+          mode: ProcessStartMode.detachedWithStdio,
+        ));
+        // Delay to allow the detached session to pick up the keys
+        await Future.delayed(Duration(seconds: 1));
+      } else {
+        process = await Process.start(opensshBinaryPath, args);
+        process.stdout.transform(Utf8Decoder()).listen((String s) {
+          soutBuf.write(s);
+          logger.info(' $sessionId | sshStdOut | $s');
+        }, onError: (e) {});
+        process.stderr.transform(Utf8Decoder()).listen((String s) {
+          serrBuf.write(s);
+          logger.info(' $sessionId | sshStdErr | $s');
+        }, onError: (e) {});
+        await process.exitCode.timeout(Duration(seconds: 10));
+      }
     } on TimeoutException catch (e) {
       throw SshnpError(
-        'ssh process timed out after 10 seconds',
+        'SSHNP failed to start the initial tunnel',
         error: e,
       );
     }
