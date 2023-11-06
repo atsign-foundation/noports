@@ -50,7 +50,7 @@ abstract interface class Sshnp {
   /// The atClient to use for communicating with the atsign's secondary server
   AtClient get atClient;
 
-  /// The parameters used to configure this SSHNP instance
+  /// The parameters used to configure this Sshnp instance
   SshnpParams get params;
 
   /// May only be run after [initialize] has been run.

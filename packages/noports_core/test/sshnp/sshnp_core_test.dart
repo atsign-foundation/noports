@@ -5,16 +5,16 @@ import 'package:mocktail/mocktail.dart';
 
 class MockAtClient extends Mock implements AtClient {}
 
-class MockSSHNPParams extends Mock implements SshnpParams {}
+class MockSshnpParams extends Mock implements SshnpParams {}
 
 void main() {
-  group('SSHNP Core', () {
+  group('Sshnp Core', () {
     late AtClient atClient;
     late SshnpParams params;
 
     setUp(() {
       atClient = MockAtClient();
-      params = MockSSHNPParams();
+      params = MockSshnpParams();
       registerFallbackValue(AtClientPreference());
     });
 
@@ -27,8 +27,8 @@ void main() {
       when(() => params.device).thenReturn('mydevice');
       when(() => atClient.setPreferences(any())).thenReturn(null);
 
-// TODO write a new MYSSHNPCore class
-      // final sshnpCore = MySSHNPCore(atClient: atClient, params: params);
+// TODO write a new MYSshnpCore class
+      // final sshnpCore = MySshnpCore(atClient: atClient, params: params);
 
       // verify(() => atClient.getPreferences()).called(1);
       // verify(() => params.device).called(1);

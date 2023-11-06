@@ -129,7 +129,7 @@ class SshnpArg {
 
   @override
   String toString() {
-    return 'SSHNPArg{format: $format, name: $name, abbr: $abbr, help: $help, mandatory: $mandatory, defaultsTo: $defaultsTo, type: $type}';
+    return 'SshnpArg{format: $format, name: $name, abbr: $abbr, help: $help, mandatory: $mandatory, defaultsTo: $defaultsTo, type: $type}';
   }
 
   static ArgParser createArgParser({

@@ -75,7 +75,7 @@ abstract class SshrvdChannel<T> with AsyncInitialization, AtClientBindings {
 
     // Connect to rendezvous point using background process.
     // sshnp (this program) can then exit without issue.
-    SSHRV<T> sshrv = sshrvGenerator(
+    Sshrv<T> sshrv = sshrvGenerator(
       params.host,
       _sshrvdPort!,
       localSshdPort: params.localSshdPort,
@@ -88,7 +88,7 @@ abstract class SshrvdChannel<T> with AsyncInitialization, AtClientBindings {
     sshrvdAck = SshrvdAck.notAcknowledged;
     atClient.notificationService
         .subscribe(
-            regex: '$sessionId.${SSHRVD.namespace}@', shouldDecrypt: true)
+            regex: '$sessionId.${Sshrvd.namespace}@', shouldDecrypt: true)
         .listen((notification) async {
       String ipPorts = notification.value.toString();
       List results = ipPorts.split(',');
@@ -101,7 +101,7 @@ abstract class SshrvdChannel<T> with AsyncInitialization, AtClientBindings {
     });
     logger.info('Started listening for sshrvd response');
     AtKey ourSshrvdIdKey = AtKey()
-      ..key = '${params.device}.${SSHRVD.namespace}'
+      ..key = '${params.device}.${Sshrvd.namespace}'
       ..sharedBy = params.clientAtSign // shared by us
       ..sharedWith = host // shared with the sshrvd host
       ..metadata = (Metadata()

@@ -6,5 +6,5 @@ class SshrvdExecChannel extends SshrvdChannel {
     required super.atClient,
     required super.params,
     required super.sessionId,
-  }) : super(sshrvGenerator: SSHRV.exec);
+  }) : super(sshrvGenerator: Sshrv.exec);
 }

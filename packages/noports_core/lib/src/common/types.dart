@@ -1,6 +1,6 @@
 import 'package:noports_core/sshrv.dart';
 
-typedef SshrvGenerator<T> = SSHRV<T> Function(String, int, {int localSshdPort});
+typedef SshrvGenerator<T> = Sshrv<T> Function(String, int, {int localSshdPort});
 
 enum SupportedSshClient {
   exec(cliArg: '/usr/bin/ssh'),

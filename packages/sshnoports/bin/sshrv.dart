@@ -17,5 +17,5 @@ Future<void> main(List<String> args) async {
     localSshdPort = int.parse(args[2]);
   }
 
-  await SSHRV.dart(host, streamingPort, localSshdPort: localSshdPort).run();
+  await Sshrv.dart(host, streamingPort, localSshdPort: localSshdPort).run();
 }

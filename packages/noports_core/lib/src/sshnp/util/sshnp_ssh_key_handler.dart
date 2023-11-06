@@ -26,7 +26,7 @@ mixin SshnpLocalSshKeyHandler on SshnpCore implements SshnpKeyHandler {
   @override
   Future<void> initialize() async {
     if (!isSafeToInitialize) return;
-    logger.info('Initializing SSHNPLocalSSHKeyHandler');
+    logger.info('Initializing SshnpLocalSshKeyHandler');
 
     if (!keyUtil.isValidPlatform) {
       throw SshnpError(

@@ -122,7 +122,7 @@ class ConfigFamilyController
           atClient: AtClientManager.getInstance().atClient);
       ref.read(configListController.notifier).remove(arg);
       state =
-          AsyncValue.error('SSHNPParams has been disposed', StackTrace.current);
+          AsyncValue.error('SshnpParams has been disposed', StackTrace.current);
     } catch (e) {
       if (context?.mounted ?? false) {
         CustomSnackBar.error(content: 'Failed to delete profile: $arg');

@@ -133,9 +133,9 @@ class _ProfileFormState extends ConsumerState<ProfileForm> {
                       //   initialValue: oldConfig.sendSshPublicKey,
                       //   labelText: strings.sendSshPublicKey,
                       //   onChanged: (value) =>
-                      //       newConfig = SSHNPPartialParams.merge(
+                      //       newConfig = SshnpPartialParams.merge(
                       //     newConfig,
-                      //     SSHNPPartialParams(sendSshPublicKey: value),
+                      //     SshnpPartialParams(sendSshPublicKey: value),
                       //   ),
                       // ),
                       gapW8,
@@ -151,9 +151,9 @@ class _ProfileFormState extends ConsumerState<ProfileForm> {
                       //         value: newConfig.rsa ?? oldConfig.rsa,
                       //         onChanged: (newValue) {
                       //           setState(() {
-                      //             newConfig = SSHNPPartialParams.merge(
+                      //             newConfig = SshnpPartialParams.merge(
                       //               newConfig,
-                      //               SSHNPPartialParams(rsa: newValue),
+                      //               SshnpPartialParams(rsa: newValue),
                       //             );
                       //           });
                       //         },

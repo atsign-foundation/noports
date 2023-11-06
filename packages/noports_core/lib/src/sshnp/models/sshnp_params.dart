@@ -78,7 +78,7 @@ class SshnpParams {
     );
   }
 
-  /// Merge an SSHNPPartialParams objects into an SSHNPParams
+  /// Merge an SshnpPartialParams objects into an SshnpParams
   /// Params in params2 take precedence over params1
   factory SshnpParams.merge(SshnpParams params1,
       [SshnpPartialParams? params2]) {
@@ -210,7 +210,7 @@ class SshnpParams {
   }
 }
 
-/// A class which contains a subset of the SSHNPParams
+/// A class which contains a subset of the SshnpParams
 /// This may be used when part of the params come from separate sources
 /// e.g. default values from a config file and the rest from the command line
 class SshnpPartialParams {
@@ -271,7 +271,7 @@ class SshnpPartialParams {
     return SshnpPartialParams();
   }
 
-  /// Merge two SSHNPPartialParams objects together
+  /// Merge two SshnpPartialParams objects together
   /// Params in params2 take precedence over params1
   factory SshnpPartialParams.merge(SshnpPartialParams params1,
       [SshnpPartialParams? params2]) {
@@ -377,7 +377,7 @@ class SshnpPartialParams {
       );
     }
 
-    // THIS IS A WORKAROUND IN ORDER TO BE TYPE SAFE IN SSHNPPartialParams.fromArgMap
+    // THIS IS A WORKAROUND IN ORDER TO BE TYPE SAFE IN SshnpPartialParams.fromArgMap
     Map<String, dynamic> parsedArgsMap = {
       for (var e in parsedArgs.options)
         e: SshnpArg.fromName(e).type == ArgType.integer

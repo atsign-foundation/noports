@@ -6,5 +6,5 @@ class SshrvdDartChannel extends SshrvdChannel {
     required super.atClient,
     required super.params,
     required super.sessionId,
-  }) : super(sshrvGenerator: SSHRV.dart);
+  }) : super(sshrvGenerator: Sshrv.dart);
 }

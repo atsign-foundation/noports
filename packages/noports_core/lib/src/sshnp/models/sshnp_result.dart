@@ -9,7 +9,7 @@ class SshnpSuccess implements SshnpResult {}
 
 class SshnpFailure implements SshnpResult {}
 
-// This is a mixin class instead of a mixin on SSHNPResult so that it can be tested independently
+// This is a mixin class instead of a mixin on SshnpResult so that it can be tested independently
 mixin class SshnpConnectionBean<Bean> {
   Bean? _connectionBean;
 

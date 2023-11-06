@@ -15,7 +15,7 @@ export 'src/sshnp/models/sshnp_params.dart';
 export 'src/sshnp/models/sshnp_result.dart';
 export 'src/sshnp/models/sshnp_device_list.dart';
 
-// SSHNP Utils
+// Sshnp Utils
 export 'src/sshnp/util/sshnpd_channel/sshnpd_channel.dart';
 export 'src/sshnp/util/sshnpd_channel/sshnpd_default_channel.dart';
 export 'src/sshnp/util/sshnpd_channel/sshnpd_unsigned_channel.dart';

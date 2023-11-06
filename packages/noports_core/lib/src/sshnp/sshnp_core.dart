@@ -86,7 +86,7 @@ abstract class SshnpCore
   @mustCallSuper
   Future<void> initialize() async {
     if (!isSafeToInitialize) return;
-    logger.info('Initializing SSHNPCore');
+    logger.info('Initializing SshnpCore');
 
     /// Start the sshnpd payload handler
     await sshnpdChannel.callInitialization();
