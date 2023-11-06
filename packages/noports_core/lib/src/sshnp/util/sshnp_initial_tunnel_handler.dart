@@ -81,7 +81,7 @@ mixin SshnpDartInitialTunnelHandler on SshnpCore
     // If we are starting an initial tunnel, it should be to sshrvd,
     // so it is safe to assume that sshrvdChannel is not null here
     logger.info(
-        'Starting direct ssh session to ${sshrvdChannel!.host} on port ${sshrvdChannel!.port} with forwardLocal of $localPort');
+        'Starting direct ssh session to ${sshrvdChannel!.host} on port ${sshrvdChannel!.sshrvdPort} with forwardLocal of $localPort');
     try {
       late final SSHClient client;
 
