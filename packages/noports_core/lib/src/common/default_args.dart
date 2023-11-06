@@ -8,7 +8,6 @@ class DefaultArgs {
   static const SupportedSshAlgorithm sshAlgorithm =
       SupportedSshAlgorithm.ed25519;
   static const bool verbose = false;
-  static const SupportedSshAlgorithm algorithm = SupportedSshAlgorithm.ed25519;
   static const String rootDomain = 'root.atsign.org';
   static const SshrvGenerator sshrvGenerator = Sshrv.exec;
   static const int localSshdPort = 22;
