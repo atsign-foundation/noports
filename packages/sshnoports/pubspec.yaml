@@ -8,7 +8,7 @@ environment:
 
 dependencies:
   noports_core: 4.0.0-dev.3
-  at_onboarding_cli: 1.3.0
+  at_onboarding_cli: 1.4.0
 
 dependency_overrides:
   # Pin the dependencies of noports_core
