@@ -20,11 +20,12 @@ final configListController = AutoDisposeAsyncNotifierProvider<ConfigListControll
 );
 
 /// A provider that exposes the [ConfigFamilyController] to the app.
-final configFamilyController = AutoDisposeAsyncNotifierProviderFamily<ConfigFamilyController, SSHNPParams, String>(
+final configFamilyController = AutoDisposeAsyncNotifierProviderFamily<
+    ConfigFamilyController, SshnpParams, String>(
   ConfigFamilyController.new,
 );
 
-/// Holder model for the current [SSHNPParams] being edited
+/// Holder model for the current [SshnpParams] being edited
 class CurrentConfigState {
   final String profileName;
   final ConfigFileWriteState configFileWriteState;
@@ -32,7 +33,7 @@ class CurrentConfigState {
   CurrentConfigState({required this.profileName, required this.configFileWriteState});
 }
 
-/// Controller for the current [SSHNPParams] being edited
+/// Controller for the current [SshnpParams] being edited
 class CurrentConfigController extends AutoDisposeNotifier<CurrentConfigState> {
   @override
   CurrentConfigState build() {
@@ -69,35 +70,37 @@ class ConfigListController extends AutoDisposeAsyncNotifier<Iterable<String>> {
   }
 }
 
-/// Controller for the family of [SSHNPParams] controllers
-class ConfigFamilyController extends AutoDisposeFamilyAsyncNotifier<SSHNPParams, String> {
+/// Controller for the family of [SshnpParams] controllers
+class ConfigFamilyController
+    extends AutoDisposeFamilyAsyncNotifier<SshnpParams, String> {
   @override
-  Future<SSHNPParams> build(String arg) async {
+  Future<SshnpParams> build(String arg) async {
     AtClient atClient = AtClientManager.getInstance().atClient;
     if (arg.isEmpty) {
-      return SSHNPParams.merge(
-        SSHNPParams.empty(),
-        SSHNPPartialParams(clientAtSign: atClient.getCurrentAtSign()!),
+      return SshnpParams.merge(
+        SshnpParams.empty(),
+        SshnpPartialParams(clientAtSign: atClient.getCurrentAtSign()!),
       );
     }
     try {
       return ConfigKeyRepository.getParams(arg, atClient: atClient);
     } catch (e) {
       log(e.toString());
-      return SSHNPParams.empty();
+      return SshnpParams.empty();
     }
   }
 
-  Future<void> putConfig(SSHNPParams params, {String? oldProfileName, BuildContext? context}) async {
+  Future<void> putConfig(SshnpParams params,
+      {String? oldProfileName, BuildContext? context}) async {
     AtClient atClient = AtClientManager.getInstance().atClient;
-    SSHNPParams oldParams = state.value ?? SSHNPParams.empty();
+    SshnpParams oldParams = state.value ?? SshnpParams.empty();
     if (oldProfileName != null) {
       ref.read(configFamilyController(oldProfileName).notifier).deleteConfig(context: context);
     }
     if (params.clientAtSign != atClient.getCurrentAtSign()) {
-      params = SSHNPParams.merge(
+      params = SshnpParams.merge(
         params,
-        SSHNPPartialParams(
+        SshnpPartialParams(
           clientAtSign: atClient.getCurrentAtSign(),
         ),
       );
@@ -118,7 +121,8 @@ class ConfigFamilyController extends AutoDisposeFamilyAsyncNotifier<SSHNPParams,
     try {
       await ConfigKeyRepository.deleteParams(arg, atClient: AtClientManager.getInstance().atClient);
       ref.read(configListController.notifier).remove(arg);
-      state = AsyncValue.error('SSHNPParams has been disposed', StackTrace.current);
+      state =
+          AsyncValue.error('SshnpParams has been disposed', StackTrace.current);
     } catch (e) {
       if (context?.mounted ?? false) {
         CustomSnackBar.error(content: 'Failed to delete profile: $arg');

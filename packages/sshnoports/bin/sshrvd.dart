@@ -8,22 +8,22 @@ import 'package:sshnoports/print_version.dart';
 void main(List<String> args) async {
   AtSignLogger.root_level = 'SHOUT';
   AtSignLogger.defaultLoggingHandler = AtSignLogger.stdErrLoggingHandler;
-  late final SSHRVD sshrvd;
+  late final Sshrvd sshrvd;
 
   try {
-    sshrvd = await SSHRVD.fromCommandLineArgs(
+    sshrvd = await Sshrvd.fromCommandLineArgs(
       args,
-      atClientGenerator: (SSHRVDParams p) => createAtClientCli(
+      atClientGenerator: (SshrvdParams p) => createAtClientCli(
         homeDirectory: p.homeDirectory,
         subDirectory: '.sshrvd',
         atsign: p.atSign,
         atKeysFilePath: p.atKeysFilePath,
-        namespace: SSHRVD.namespace,
+        namespace: Sshrvd.namespace,
         rootDomain: p.rootDomain,
       ),
       usageCallback: (e, s) {
         printVersion();
-        stdout.writeln(SSHRVDParams.parser.usage);
+        stdout.writeln(SshrvdParams.parser.usage);
         stderr.writeln('\n$e');
       },
     );

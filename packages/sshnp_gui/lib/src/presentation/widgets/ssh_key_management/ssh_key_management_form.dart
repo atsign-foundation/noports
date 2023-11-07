@@ -30,7 +30,7 @@ class SSHKeyManagementForm extends ConsumerStatefulWidget {
 class _SSHKeyManagementFormState extends ConsumerState<SSHKeyManagementForm> {
   final GlobalKey<FormState> _formkey = GlobalKey<FormState>();
   late CurrentConfigState currentProfile;
-  AtSSHKeyPair newAtSSHKeyPair = AtSSHKeyPair.empty();
+  AtSshKeyPair newAtSshKeyPair = AtSshKeyPair.empty();
   @override
   void initState() {
     WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
@@ -39,7 +39,7 @@ class _SSHKeyManagementFormState extends ConsumerState<SSHKeyManagementForm> {
     super.initState();
   }
 
-  void onSubmit(AtSSHKeyPair oldKeyPair, AtSSHKeyPair newKeyPair) async {
+  void onSubmit(AtSshKeyPair oldKeyPair, AtSshKeyPair newKeyPair) async {
     if (_formkey.currentState!.validate()) {
       _formkey.currentState!.save();
       final controller = ref.read(atSSHKeyPairFamilyController(newKeyPair.identifier).notifier);
@@ -48,11 +48,11 @@ class _SSHKeyManagementFormState extends ConsumerState<SSHKeyManagementForm> {
 
       if (rename) {
         // delete old config file and write the new one
-        await controller.deleteAtSSHKeyPair(identifier: newKeyPair.identifier);
-        await controller.saveAtSSHKeyPair(atSSHKeyPair: newKeyPair);
+        await controller.deleteAtSshKeyPair(identifier: newKeyPair.identifier);
+        await controller.saveAtSshKeyPair(atSSHKeyPair: newKeyPair);
       } else {
         // create new config file
-        await controller.saveAtSSHKeyPair(atSSHKeyPair: newKeyPair);
+        await controller.saveAtSshKeyPair(atSSHKeyPair: newKeyPair);
       }
       if (mounted) {
         ref.read(navigationRailController.notifier).setRoute(AppRoute.home);
@@ -71,7 +71,7 @@ class _SSHKeyManagementFormState extends ConsumerState<SSHKeyManagementForm> {
     return asyncOldConfig.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (error, stack) => Center(child: Text(error.toString())),
-        data: (oldAtSSHKeyPair) {
+        data: (oldAtSshKeyPair) {
           return SingleChildScrollView(
             child: Form(
               key: _formkey,
@@ -82,10 +82,10 @@ class _SSHKeyManagementFormState extends ConsumerState<SSHKeyManagementForm> {
                   Text(strings.sshKeyManagement, style: Theme.of(context).textTheme.titleMedium),
                   ProfileFormCard(formFields: [
                     CustomTextFormField(
-                      initialValue: oldAtSSHKeyPair.identifier,
+                      initialValue: oldAtSshKeyPair.identifier,
                       labelText: strings.nickName,
                       onChanged: (value) {
-                        newAtSSHKeyPair.identifier = newAtSSHKeyPair.identifier;
+                        newAtSshKeyPair.identifier = newAtSshKeyPair.identifier;
                         ref.read(formProfileNameController.notifier).state = value;
                         log(ref.read(formProfileNameController));
                       },
@@ -93,15 +93,15 @@ class _SSHKeyManagementFormState extends ConsumerState<SSHKeyManagementForm> {
                     ),
                     gapH10,
                     FilePickerField(
-                      initialValue: oldAtSSHKeyPair.identifier,
+                      initialValue: oldAtSshKeyPair.identifier,
                     ),
                     gapH10,
                     const CustomTextFormField(
                       labelText: 'SSH Key Password',
                       // TODO Fix this
-                      // initialValue: oldAtSSHKeyPair.identityPassphrase,
+                      // initialValue: oldAtSshKeyPair.identityPassphrase,
                       isPasswordField: true,
-                      // onChanged: (value) => newAtSSHKeyPair.identityPassPhrase = newAtSSHKeyPair.identityPassPhrase,
+                      // onChanged: (value) => newAtSshKeyPair.identityPassPhrase = newAtSshKeyPair.identityPassPhrase,
                     ),
                     gapH10,
                     CustomDropdownFormField<SupportedSSHAlgorithm>(
@@ -114,8 +114,8 @@ class _SSHKeyManagementFormState extends ConsumerState<SSHKeyManagementForm> {
                               ))
                           .toList(),
                       // TODO Fix this
-                      // onChanged: ((value) => newAtSSHKeyPair =
-                      //     SSHNPPartialParams.merge(newAtSSHKeyPair, SSHNPPartialParams(sshAlgorithm: value))
+                      // onChanged: ((value) => newAtSshKeyPair =
+                      //     SSHNPPartialParams.merge(newAtSshKeyPair, SSHNPPartialParams(sshAlgorithm: value))
                       //     ),
                     ),
                     gapH10,
@@ -124,11 +124,11 @@ class _SSHKeyManagementFormState extends ConsumerState<SSHKeyManagementForm> {
                       // TODO Fix this
                       value: false,
                       onChanged: (a) {},
-                      // value: newAtSSHKeyPair.sendSshPublicKey ?? oldAtSSHKeyPair.sendSshPublicKey,
+                      // value: newAtSshKeyPair.sendSshPublicKey ?? oldAtSshKeyPair.sendSshPublicKey,
                       // onChanged: (newValue) {
                       //   setState(() {
-                      //     newAtSSHKeyPair = SSHNPPartialParams.merge(
-                      //       newAtSSHKeyPair,
+                      //     newAtSshKeyPair = SSHNPPartialParams.merge(
+                      //       newAtSshKeyPair,
                       //       SSHNPPartialParams(sendSshPublicKey: newValue),
                       //     );
                       //   });
@@ -144,7 +144,7 @@ class _SSHKeyManagementFormState extends ConsumerState<SSHKeyManagementForm> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         ElevatedButton(
-                          onPressed: () => onSubmit(oldAtSSHKeyPair, newAtSSHKeyPair),
+                          onPressed: () => onSubmit(oldAtSshKeyPair, newAtSshKeyPair),
                           child: Text(strings.connect),
                         ),
                         gapW8,

@@ -8,7 +8,7 @@ import 'package:sshnp_gui/src/presentation/widgets/profile_actions/profile_actio
 import 'package:sshnp_gui/src/presentation/widgets/utility/custom_snack_bar.dart';
 
 class ProfileRunAction extends ConsumerStatefulWidget {
-  final SSHNPParams params;
+  final SshnpParams params;
   const ProfileRunAction(this.params, {Key? key}) : super(key: key);
 
   @override
@@ -16,8 +16,8 @@ class ProfileRunAction extends ConsumerStatefulWidget {
 }
 
 class _ProfileRunActionState extends ConsumerState<ProfileRunAction> {
-  SSHNP? sshnp;
-  SSHNPResult? sshnpResult;
+  Sshnp? sshnp;
+  SshnpResult? sshnpResult;
 
   @override
   void initState() {
@@ -30,9 +30,9 @@ class _ProfileRunActionState extends ConsumerState<ProfileRunAction> {
             .notifier)
         .start();
     try {
-      SSHNPParams params = SSHNPParams.merge(
+      SshnpParams params = SshnpParams.merge(
         widget.params,
-        SSHNPPartialParams(
+        SshnpPartialParams(
           idleTimeout: 120, // 120 / 60 = 2 minutes
           addForwardsToTunnel: true,
           legacyDaemon: false,
@@ -42,22 +42,21 @@ class _ProfileRunActionState extends ConsumerState<ProfileRunAction> {
 
       // TODO ensure that this keyPair gets uploaded to the app first
       AtClient atClient = AtClientManager.getInstance().atClient;
-      DartSSHKeyUtil keyUtil = DartSSHKeyUtil();
-      AtSSHKeyPair keyPair = await keyUtil.getKeyPair(
+      DartSshKeyUtil keyUtil = DartSshKeyUtil();
+      AtSshKeyPair keyPair = await keyUtil.getKeyPair(
         identifier: params.identityFile ??
             'id_${atClient.getCurrentAtSign()!.replaceAll('@', '')}',
       );
 
-      sshnp = SSHNP.forwardPureDart(
+      sshnp = Sshnp.dartPure(
         params: params,
         atClient: atClient,
         identityKeyPair: keyPair,
       );
 
-      await sshnp!.init();
       sshnpResult = await sshnp!.run();
 
-      if (sshnpResult is SSHNPError) {
+      if (sshnpResult is SshnpError) {
         throw sshnpResult!;
       }
       ref
@@ -74,8 +73,8 @@ class _ProfileRunActionState extends ConsumerState<ProfileRunAction> {
   }
 
   Future<void> onStop() async {
-    if (sshnpResult is SSHNPCommand) {
-      await (sshnpResult as SSHNPCommand).killConnectionBean();
+    if (sshnpResult is SshnpCommand) {
+      await (sshnpResult as SshnpCommand).killConnectionBean();
     }
     ref
         .read(backgroundSessionFamilyController(widget.params.profileName!)

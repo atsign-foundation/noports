@@ -1,7 +1,7 @@
 import 'package:args/args.dart';
 import 'package:noports_core/src/common/file_system_utils.dart';
 
-class SSHRVDParams {
+class SshrvdParams {
   final String username;
   final String atSign;
   final String homeDirectory;
@@ -15,7 +15,7 @@ class SSHRVDParams {
   // Non param variables
   static final ArgParser parser = _createArgParser();
 
-  SSHRVDParams({
+  SshrvdParams({
     required this.username,
     required this.atSign,
     required this.homeDirectory,
@@ -27,14 +27,14 @@ class SSHRVDParams {
     required this.rootDomain,
   });
 
-  static Future<SSHRVDParams> fromArgs(List<String> args) async {
+  static Future<SshrvdParams> fromArgs(List<String> args) async {
     // Arg check
     ArgResults r = parser.parse(args);
 
     String atSign = r['atsign'];
     String homeDirectory = getHomeDirectory()!;
 
-    return SSHRVDParams(
+    return SshrvdParams(
       username: getUserName(throwIfNull: true)!,
       atSign: atSign,
       homeDirectory: homeDirectory,

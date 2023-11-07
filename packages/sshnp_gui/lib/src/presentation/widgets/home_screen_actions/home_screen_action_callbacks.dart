@@ -29,7 +29,7 @@ class HomeScreenActionCallbacks {
         final lines = (await file.readAsString()).split('\n');
         ref
             .read(configFamilyController(profileName).notifier)
-            .putConfig(SSHNPParams.fromConfigLines(profileName, lines));
+            .putConfig(SshnpParams.fromConfigLines(profileName, lines));
       }
     } catch (e) {
       CustomSnackBar.error(content: 'Unable to import profile:\n${e.toString()}');

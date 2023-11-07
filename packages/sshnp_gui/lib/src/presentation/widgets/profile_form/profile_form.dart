@@ -28,7 +28,7 @@ class ProfileForm extends ConsumerStatefulWidget {
 class _ProfileFormState extends ConsumerState<ProfileForm> {
   final GlobalKey<FormState> _formkey = GlobalKey<FormState>();
   late CurrentConfigState currentProfile;
-  SSHNPPartialParams newConfig = SSHNPPartialParams.empty();
+  SshnpPartialParams newConfig = SshnpPartialParams.empty();
   @override
   void initState() {
     WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
@@ -37,7 +37,7 @@ class _ProfileFormState extends ConsumerState<ProfileForm> {
     super.initState();
   }
 
-  void onSubmit(SSHNPParams oldConfig, SSHNPPartialParams newConfig) async {
+  void onSubmit(SshnpParams oldConfig, SshnpPartialParams newConfig) async {
     if (_formkey.currentState!.validate()) {
       _formkey.currentState!.save();
       final controller = ref.read(configFamilyController(newConfig.profileName ?? oldConfig.profileName!).notifier);
@@ -46,7 +46,7 @@ class _ProfileFormState extends ConsumerState<ProfileForm> {
           oldConfig.profileName != null &&
           oldConfig.profileName!.isNotEmpty &&
           newConfig.profileName != oldConfig.profileName;
-      SSHNPParams config = SSHNPParams.merge(oldConfig, newConfig);
+      SshnpParams config = SshnpParams.merge(oldConfig, newConfig);
 
       if (rename) {
         // delete old config file and write the new one
@@ -86,9 +86,9 @@ class _ProfileFormState extends ConsumerState<ProfileForm> {
                         initialValue: oldConfig.profileName,
                         labelText: strings.profileName,
                         onChanged: (value) {
-                          newConfig = SSHNPPartialParams.merge(
+                          newConfig = SshnpPartialParams.merge(
                             newConfig,
-                            SSHNPPartialParams(profileName: value),
+                            SshnpPartialParams(profileName: value),
                           );
                           ref.read(formProfileNameController.notifier).state = value;
                           log(ref.read(formProfileNameController));
@@ -105,18 +105,19 @@ class _ProfileFormState extends ConsumerState<ProfileForm> {
                       CustomTextFormField(
                         initialValue: oldConfig.device,
                         labelText: strings.device,
-                        onChanged: (value) => newConfig = SSHNPPartialParams.merge(
+                        onChanged: (value) => newConfig = SshnpPartialParams.merge(
                           newConfig,
-                          SSHNPPartialParams(device: value),
+                          SshnpPartialParams(device: value),
                         ),
                       ),
                       gapW38,
                       CustomTextFormField(
                         initialValue: oldConfig.sshnpdAtSign,
                         labelText: strings.sshnpdAtSign,
-                        onChanged: (value) => newConfig = SSHNPPartialParams.merge(
+                        onChanged: (value) =>
+                            newConfig = SshnpPartialParams.merge(
                           newConfig,
-                          SSHNPPartialParams(sshnpdAtSign: value),
+                          SshnpPartialParams(sshnpdAtSign: value),
                         ),
                         validator: FormValidator.validateAtsignField,
                       ),
@@ -126,9 +127,9 @@ class _ProfileFormState extends ConsumerState<ProfileForm> {
                   CustomTextFormField(
                     initialValue: oldConfig.host,
                     labelText: strings.host,
-                    onChanged: (value) => newConfig = SSHNPPartialParams.merge(
+                    onChanged: (value) => newConfig = SshnpPartialParams.merge(
                       newConfig,
-                      SSHNPPartialParams(host: value),
+                      SshnpPartialParams(host: value),
                     ),
                     validator: FormValidator.validateRequiredField,
                   ),
@@ -143,23 +144,23 @@ class _ProfileFormState extends ConsumerState<ProfileForm> {
                       labelText: 'SSH Key Password',
                       initialValue: oldConfig.identityPassphrase,
                       isPasswordField: true,
-                      onChanged: (value) => newConfig = SSHNPPartialParams.merge(
+                      onChanged: (value) => newConfig = SshnpPartialParams.merge(
                         newConfig,
-                        SSHNPPartialParams(identityPassphrase: value),
+                        SshnpPartialParams(identityPassphrase: value),
                       ),
                     ),
                     gapH10,
-                    CustomDropdownFormField<SupportedSSHAlgorithm>(
+                    CustomDropdownFormField<SupportedSshAlgorithm>(
                       label: strings.sshAlgorithm,
                       hintText: strings.select,
-                      items: SupportedSSHAlgorithm.values
-                          .map((e) => DropdownMenuItem<SupportedSSHAlgorithm>(
+                      items: SupportedSshAlgorithm.values
+                          .map((e) => DropdownMenuItem<SupportedSshAlgorithm>(
                                 value: e,
                                 child: Text(e.name),
                               ))
                           .toList(),
                       onChanged: ((value) =>
-                          newConfig = SSHNPPartialParams.merge(newConfig, SSHNPPartialParams(sshAlgorithm: value))),
+                          newConfig = SshnpPartialParams.merge(newConfig, SshnpPartialParams(sshAlgorithm: value))),
                     ),
                     gapH10,
                     CustomSwitchWidget(
@@ -167,9 +168,9 @@ class _ProfileFormState extends ConsumerState<ProfileForm> {
                         value: newConfig.sendSshPublicKey ?? oldConfig.sendSshPublicKey,
                         onChanged: (newValue) {
                           setState(() {
-                            newConfig = SSHNPPartialParams.merge(
+                            newConfig = SshnpPartialParams.merge(
                               newConfig,
-                              SSHNPPartialParams(sendSshPublicKey: newValue),
+                              SshnpPartialParams(sendSshPublicKey: newValue),
                             );
                           });
                         }),
@@ -183,13 +184,13 @@ class _ProfileFormState extends ConsumerState<ProfileForm> {
                       //   initialValue: oldConfig.sendSshPublicKey,
                       //   labelText: strings.sendSshPublicKey,
                       //   onChanged: (value) =>
-                      //       newConfig = SSHNPPartialParams.merge(
+                      //       newConfig = SshnpPartialParams.merge(
                       //     newConfig,
-                      //     SSHNPPartialParams(sendSshPublicKey: value),
+                      //     SshnpPartialParams(sendSshPublicKey: value),
                       //   ),
                       // ),
                       gapW8,
-                      // TODO replace this switch with a dropdown with options for SupportedSSHAlgorithm.values
+                      // TODO replace this switch with a dropdown with options for SupportedSshAlgorithm.values
                       // SizedBox(
                       //   width: CustomTextFormField.defaultWidth,
                       //   height: CustomTextFormField.defaultHeight,
@@ -201,9 +202,9 @@ class _ProfileFormState extends ConsumerState<ProfileForm> {
                       //         value: newConfig.rsa ?? oldConfig.rsa,
                       //         onChanged: (newValue) {
                       //           setState(() {
-                      //             newConfig = SSHNPPartialParams.merge(
+                      //             newConfig = SshnpPartialParams.merge(
                       //               newConfig,
-                      //               SSHNPPartialParams(rsa: newValue),
+                      //               SshnpPartialParams(rsa: newValue),
                       //             );
                       //           });
                       //         },
@@ -222,18 +223,19 @@ class _ProfileFormState extends ConsumerState<ProfileForm> {
                           initialValue: oldConfig.remoteUsername ?? '',
                           labelText: strings.remoteUserName,
                           onChanged: (value) {
-                            newConfig = SSHNPPartialParams.merge(
+                            newConfig = SshnpPartialParams.merge(
                               newConfig,
-                              SSHNPPartialParams(remoteUsername: value),
+                              SshnpPartialParams(remoteUsername: value),
                             );
                           }),
                       gapH10,
                       CustomTextFormField(
                         initialValue: oldConfig.port.toString(),
                         labelText: strings.port,
-                        onChanged: (value) => newConfig = SSHNPPartialParams.merge(
+                        onChanged: (value) =>
+                            newConfig = SshnpPartialParams.merge(
                           newConfig,
-                          SSHNPPartialParams(port: int.tryParse(value)),
+                          SshnpPartialParams(port: int.tryParse(value)),
                         ),
                         validator: FormValidator.validateRequiredField,
                       ),
@@ -241,18 +243,21 @@ class _ProfileFormState extends ConsumerState<ProfileForm> {
                       CustomTextFormField(
                         initialValue: oldConfig.localPort.toString(),
                         labelText: strings.localPort,
-                        onChanged: (value) => newConfig = SSHNPPartialParams.merge(
+                        onChanged: (value) =>
+                            newConfig = SshnpPartialParams.merge(
                           newConfig,
-                          SSHNPPartialParams(localPort: int.tryParse(value)),
+                          SshnpPartialParams(localPort: int.tryParse(value)),
                         ),
                       ),
                       gapH10,
                       CustomTextFormField(
-                        initialValue: oldConfig.remoteSshdPort.toString(),
-                        labelText: strings.remoteSshdPort,
-                        onChanged: (value) => newConfig = SSHNPPartialParams.merge(
+                        initialValue: oldConfig.localSshdPort.toString(),
+                        labelText: strings.localSshdPort,
+                        onChanged: (value) =>
+                            newConfig = SshnpPartialParams.merge(
                           newConfig,
-                          SSHNPPartialParams(remoteSshdPort: int.tryParse(value)),
+                          SshnpPartialParams(
+                              localSshdPort: int.tryParse(value)),
                         ),
                       ),
                       gapH12,
@@ -269,18 +274,19 @@ class _ProfileFormState extends ConsumerState<ProfileForm> {
                         labelText: strings.localSshOptions,
                         //Double the width of the text field (+8 for the gapW8)
                         // width: kFieldDefaultWidth * 2 + 8,
-                        onChanged: (value) => newConfig = SSHNPPartialParams.merge(
+                        onChanged: (value) => newConfig = SshnpPartialParams.merge(
                           newConfig,
-                          SSHNPPartialParams(localSshOptions: value.split(',')),
+                          SshnpPartialParams(localSshOptions: value.split(',')),
                         ),
                       ),
                       gapH10,
                       CustomTextFormField(
                         initialValue: oldConfig.rootDomain,
                         labelText: strings.rootDomain,
-                        onChanged: (value) => newConfig = SSHNPPartialParams.merge(
+                        onChanged: (value) =>
+                            newConfig = SshnpPartialParams.merge(
                           newConfig,
-                          SSHNPPartialParams(rootDomain: value),
+                          SshnpPartialParams(rootDomain: value),
                         ),
                       ),
                     ],

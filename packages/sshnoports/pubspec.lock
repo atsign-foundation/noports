@@ -485,10 +485,10 @@ packages:
     dependency: "direct dev"
     description:
       name: lints
-      sha256: "0a217c6c989d21039f1498c3ed9f3ed71b354e69873f13a8dfc3c9fe76f1b452"
+      sha256: cbf8d4b858bb0134ef3ef87841abdf8d63bfc255c266b7bf6b39daa1085c4290
       url: "https://pub.dev"
     source: hosted
-    version: "2.1.1"
+    version: "3.0.0"
   logging:
     dependency: "direct overridden"
     description:
@@ -556,10 +556,9 @@ packages:
   noports_core:
     dependency: "direct main"
     description:
-      name: noports_core
-      sha256: "02331701ef45e985a637d17319e9969deaa6d53b9b171bb234d47e9c60aee94e"
-      url: "https://pub.dev"
-    source: hosted
+      path: "../noports_core"
+      relative: true
+    source: path
     version: "4.0.0-dev.3"
   openssh_ed25519:
     dependency: transitive
@@ -781,10 +780,10 @@ packages:
     dependency: "direct dev"
     description:
       name: test
-      sha256: d983a57c33dde6d44b1fb8635f67c91f4b41d26cf227c147963affa97d63563d
+      sha256: a1f7595805820fcc05e5c52e3a231aedd0b72972cb333e8c738a8b1239448b6f
       url: "https://pub.dev"
     source: hosted
-    version: "1.24.8"
+    version: "1.24.9"
   test_api:
     dependency: transitive
     description:
@@ -797,10 +796,10 @@ packages:
     dependency: transitive
     description:
       name: test_core
-      sha256: "2f866bf4b20c11327ac166ee6036bddafb7fe9e35505ff8324f788e66913f967"
+      sha256: a757b14fc47507060a162cc2530d9a4a2f92f5100a952c7443b5cad5ef5b106a
       url: "https://pub.dev"
     source: hosted
-    version: "0.5.8"
+    version: "0.5.9"
   timing:
     dependency: transitive
     description:

@@ -11,7 +11,7 @@ import 'package:noports_core/src/sshrvd/sshrvd.dart';
 import 'package:noports_core/src/sshrvd/sshrvd_params.dart';
 
 @protected
-class SSHRVDImpl implements SSHRVD {
+class SshrvdImpl implements Sshrvd {
   @override
   final AtSignLogger logger = AtSignLogger(' sshrvd ');
   @override
@@ -33,7 +33,7 @@ class SSHRVDImpl implements SSHRVD {
   @visibleForTesting
   bool initialized = false;
 
-  SSHRVDImpl({
+  SshrvdImpl({
     required this.atClient,
     required this.atSign,
     required this.homeDirectory,
@@ -46,12 +46,12 @@ class SSHRVDImpl implements SSHRVD {
     logger.logger.level = Level.SHOUT;
   }
 
-  static Future<SSHRVD> fromCommandLineArgs(List<String> args,
+  static Future<Sshrvd> fromCommandLineArgs(List<String> args,
       {AtClient? atClient,
-      FutureOr<AtClient> Function(SSHRVDParams)? atClientGenerator,
+      FutureOr<AtClient> Function(SshrvdParams)? atClientGenerator,
       void Function(Object, StackTrace)? usageCallback}) async {
     try {
-      var p = await SSHRVDParams.fromArgs(args);
+      var p = await SshrvdParams.fromArgs(args);
 
       if (!await File(p.atKeysFilePath).exists()) {
         throw ('\n Unable to find .atKeys file : ${p.atKeysFilePath}');
@@ -68,7 +68,7 @@ class SSHRVDImpl implements SSHRVD {
 
       atClient ??= await atClientGenerator!(p);
 
-      var sshrvd = SSHRVDImpl(
+      var sshrvd = SshrvdImpl(
         atClient: atClient,
         atSign: p.atSign,
         homeDirectory: p.homeDirectory,
@@ -105,12 +105,12 @@ class SSHRVDImpl implements SSHRVD {
     NotificationService notificationService = atClient.notificationService;
 
     notificationService
-        .subscribe(regex: '${SSHRVD.namespace}@', shouldDecrypt: true)
+        .subscribe(regex: '${Sshrvd.namespace}@', shouldDecrypt: true)
         .listen(_notificationHandler);
   }
 
   void _notificationHandler(AtNotification notification) async {
-    if (!notification.key.contains(SSHRVD.namespace)) {
+    if (!notification.key.contains(Sshrvd.namespace)) {
       // ignore notifications not for this namespace
       return;
     }
@@ -132,7 +132,6 @@ class SSHRVDImpl implements SSHRVD {
     var metaData = Metadata()
       ..isPublic = false
       ..isEncrypted = true
-      ..ttr = -1
       ..ttl = 10000
       ..namespaceAware = true;
 
@@ -140,7 +139,7 @@ class SSHRVDImpl implements SSHRVD {
       ..key = notification.value
       ..sharedBy = atSign
       ..sharedWith = notification.from
-      ..namespace = SSHRVD.namespace
+      ..namespace = Sshrvd.namespace
       ..metadata = metaData;
 
     String data = '$ipAddress,$portA,$portB';

@@ -32,64 +32,64 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             Expanded(
               child: Padding(
                 padding: const EdgeInsets.only(left: Sizes.p36, top: Sizes.p21),
-                child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          strings.currentConnections,
+                          style: Theme.of(context).textTheme.titleLarge,
+                        ),
+                        Text(strings.currentConnectionsDescription),
+                      ],
+                    ),
+                    const HomeScreenActions(),
+                  ],
+                ),
+              ),
+            ),
+            gapH24,
+            gapH8,
+            profileNames.when(
+              loading: () => const Center(
+                child: CircularProgressIndicator(),
+              ),
+              error: (e, s) {
+                return Text(e.toString());
+              },
+              data: (profiles) {
+                if (profiles.isEmpty) {
+                  return const Text('No SSHNP Configurations Found');
+                }
+                final sortedProfiles = profiles.toList();
+                sortedProfiles.sort();
+                return Expanded(
+                  child: Column(
                     children: [
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Text(
-                            strings.currentConnections,
-                            style: Theme.of(context).textTheme.titleLarge,
+                          Text(strings.profileName),
+                          Padding(
+                            padding: const EdgeInsets.only(right: Sizes.p36),
+                            child: Text(strings.commands),
                           ),
-                          Text(strings.currentConnectionsDescription),
                         ],
                       ),
-                      const HomeScreenActions(),
+                      const Divider(),
+                      Expanded(
+                        child: ListView(
+                          children: sortedProfiles
+                              .map((profileName) => ProfileBar(profileName))
+                              .toList(),
+                        ),
+                      ),
                     ],
                   ),
-                  gapH24,
-                  gapH8,
-                  profileNames.when(
-                    loading: () => const Center(
-                      child: CircularProgressIndicator(),
-                    ),
-                    error: (e, s) {
-                      return Text(e.toString());
-                    },
-                    data: (profiles) {
-                      if (profiles.isEmpty) {
-                        return const Text('No SSHNP Configurations Found');
-                      }
-                      final sortedProfiles = profiles.toList();
-                      sortedProfiles.sort();
-                      return Expanded(
-                        child: Column(
-                          children: [
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                Text(strings.profileName),
-                                Padding(
-                                  padding: const EdgeInsets.only(right: Sizes.p36),
-                                  child: Text(strings.commands),
-                                ),
-                              ],
-                            ),
-                            const Divider(),
-                            Expanded(
-                              child: ListView(
-                                children: sortedProfiles.map((profileName) => ProfileBar(profileName)).toList(),
-                              ),
-                            ),
-                          ],
-                        ),
-                      );
-                    },
-                  )
-                ]),
-              ),
+                );
+              },
             ),
           ],
         ),
