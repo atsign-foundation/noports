@@ -1,16 +1,9 @@
-import 'dart:developer';
-import 'dart:io';
-
 import 'package:dotted_border/dotted_border.dart';
 import 'package:file_selector/file_selector.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:path/path.dart';
-import 'package:path_provider/path_provider.dart';
 import 'package:sshnp_gui/src/utility/constants.dart';
-
-import '../../../controllers/form_controllers.dart';
 
 class FilePickerField extends ConsumerStatefulWidget {
   static const defaultWidth = 192.0;
@@ -58,18 +51,22 @@ class _FilePickerFieldState extends ConsumerState<FilePickerField> {
     } catch (e) {}
   }
 
+  // Future<void> onSaved(String? baseFile) async {
+  //   if (file == null) return;
+  //   final dir = await getApplicationSupportDirectory();
+  //   final sshDir = Directory(join(dir.path, '.ssh', ref.read(formProfileNameController).replaceAll(' ', '_')));
+
+  //   final path = join(sshDir.path, file!.name);
+  //   log(path);
+  //   final bytes = await file!.readAsBytes();
+  //   final targetFile = File(path);
+  //   targetFile.readAsString();
+  //   await targetFile.create(recursive: true);
+  //   await targetFile.writeAsBytes(bytes);
+  //   // await file!.saveTo(path);
+  // }
   Future<void> onSaved(String? baseFile) async {
     if (file == null) return;
-    final dir = await getApplicationSupportDirectory();
-    final sshDir = Directory(join(dir.path, '.ssh', ref.read(formProfileNameController).replaceAll(' ', '_')));
-
-    final path = join(sshDir.path, file!.name);
-    log(path);
-    final bytes = await file!.readAsBytes();
-    final targetFile = File(path);
-    await targetFile.create(recursive: true);
-    await targetFile.writeAsBytes(bytes);
-    // await file!.saveTo(path);
   }
 
   @override
@@ -89,7 +86,7 @@ class _FilePickerFieldState extends ConsumerState<FilePickerField> {
             filled: true,
             fillColor: kProfileFormFieldColor,
             border: InputBorder.none,
-            hintText: AppLocalizations.of(context)!.selectAFile,
+            hintText: AppLocalizations.of(context)!.selectPrivateKey,
             hintStyle: Theme.of(context).textTheme.bodyLarge,
           ),
           onTap: _filePickerResult,

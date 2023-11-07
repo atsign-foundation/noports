@@ -14,20 +14,16 @@ class HomeScreenActionCallbacks {
     if (Platform.isMacOS || Platform.isLinux || Platform.isWindows) {
       return _importDesktop(ref, context);
     }
-    CustomSnackBar.error(
-        content: 'Unable to import profile:\nUnsupported platform');
+    CustomSnackBar.error(content: 'Unable to import profile:\nUnsupported platform');
   }
 
-  static Future<void> _importDesktop(
-      WidgetRef ref, BuildContext context) async {
+  static Future<void> _importDesktop(WidgetRef ref, BuildContext context) async {
     try {
-      final XFile? file =
-          await openFile(acceptedTypeGroups: <XTypeGroup>[dotEnvTypeGroup]);
+      final XFile? file = await openFile(acceptedTypeGroups: <XTypeGroup>[dotEnvTypeGroup]);
       if (file == null) return;
       if (context.mounted) {
         String initialName = ConfigFileRepository.toProfileName(file.path);
-        String? profileName =
-            await _getProfileNameFromUser(context, initialName: initialName);
+        String? profileName = await _getProfileNameFromUser(context, initialName: initialName);
         if (profileName == null) return;
         if (profileName.isEmpty) profileName = initialName;
         final lines = (await file.readAsString()).split('\n');
@@ -36,19 +32,16 @@ class HomeScreenActionCallbacks {
             .putConfig(SSHNPParams.fromConfigLines(profileName, lines));
       }
     } catch (e) {
-      CustomSnackBar.error(
-          content: 'Unable to import profile:\n${e.toString()}');
+      CustomSnackBar.error(content: 'Unable to import profile:\n${e.toString()}');
     }
   }
 
-  static Future<String?> _getProfileNameFromUser(BuildContext context,
-      {String? initialName}) async {
+  static Future<String?> _getProfileNameFromUser(BuildContext context, {String? initialName}) async {
     String? profileName;
     setProfileName(String? p) => profileName = p;
     await showDialog(
       context: context,
-      builder: (_) =>
-          HomeScreenImportDialog(setProfileName, initialName: initialName),
+      builder: (_) => HomeScreenImportDialog(setProfileName, initialName: initialName),
     );
     return profileName;
   }

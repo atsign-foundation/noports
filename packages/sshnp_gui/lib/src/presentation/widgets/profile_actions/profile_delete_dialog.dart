@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sshnp_gui/src/controllers/config_controller.dart';
 import 'package:sshnp_gui/src/utility/sizes.dart';
-import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 class ProfileDeleteDialog extends ConsumerWidget {
   const ProfileDeleteDialog({required this.profileName, super.key});

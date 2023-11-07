@@ -19,7 +19,8 @@ class ProfileFormRobot {
     await tester.pumpWidget(ProviderScope(
         overrides: [
           if (mockConfigListController != null) configListController.overrideWith(() => mockConfigListController),
-          if (mockConfigFamilyController != null) configFamilyController.overrideWith(() => mockConfigFamilyController)
+          if (mockConfigFamilyController != null)
+            atSSHKeyPairFamilyController.overrideWith(() => mockConfigFamilyController)
         ],
         child: const MaterialApp(
           localizationsDelegates: AppLocalizations.localizationsDelegates,
