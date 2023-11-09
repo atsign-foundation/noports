@@ -24,7 +24,7 @@ abstract class SshnpCore
   // * AtClientBindings members
   /// The logger for this class
   @override
-  final AtSignLogger logger;
+  final AtSignLogger logger = AtSignLogger('Sshnp');
 
   /// The [AtClient] to use for this instance
   @override
@@ -63,13 +63,11 @@ abstract class SshnpCore
   SshnpCore({
     required this.atClient,
     required this.params,
-    @visibleForTesting AtSignLogger? logger,
   })  : sessionId = Uuid().v4(),
         namespace = '${params.device}.sshnp',
-        localPort = params.localPort,
-        logger = logger ?? AtSignLogger('SshnpCore') {
-    this.logger.logger.level = params.verbose ? Level.INFO : Level.SHOUT;
-    this.logger.hierarchicalLoggingEnabled = true;
+        localPort = params.localPort {
+    logger.logger.level = params.verbose ? Level.INFO : Level.SHOUT;
+    logger.hierarchicalLoggingEnabled = true;
 
     /// Set the namespace to the device's namespace
     AtClientPreference preference =
