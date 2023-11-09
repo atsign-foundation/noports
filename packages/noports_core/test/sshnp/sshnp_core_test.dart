@@ -5,81 +5,163 @@ import 'package:noports_core/sshnp_foundation.dart';
 import 'package:test/test.dart';
 import 'package:mocktail/mocktail.dart';
 
-class MockAtClient extends Mock implements AtClient {}
-
-class MockSshnpParams extends Mock implements SshnpParams {}
-
-class MySshnpCore extends SshnpCore {
-  MySshnpCore({
-    required super.atClient,
-    required super.params,
-  });
-
-  @override
-  AtSshKeyPair? get identityKeyPair => throw UnimplementedError();
-
-  @override
-  AtSshKeyUtil get keyUtil => throw UnimplementedError();
-
-  @override
-  Future<SshnpResult> run() => throw UnimplementedError();
-
-  @override
-  SshnpdChannel get sshnpdChannel => throw UnimplementedError();
-
-  @override
-  SshrvdChannel? get sshrvdChannel => throw UnimplementedError();
-}
+import 'sshnp_core_mocks.dart';
 
 void main() {
-  group('Sshnp Core', () {
+  group('SshnpCore', () {
+    /// Creation mocks
     late AtClient mockAtClient;
     late SshnpParams mockParams;
+    late SshnpdChannel mockSshnpdChannel;
+    late SshrvdChannel mockSshrvdChannel;
+
+    /// Initialization stubs
+    late FunctionStub stubbedCallInitialization;
+    late FunctionStub stubbedInitialize;
+    late FunctionStub stubbedCompleteInitialization;
+    late FunctionStub stubbedFindLocalPortIfRequired;
 
     setUp(() {
+      /// Creation
       mockAtClient = MockAtClient();
       mockParams = MockSshnpParams();
+      mockSshnpdChannel = MockSshnpdChannel();
+      mockSshrvdChannel = MockSshrvdChannel();
       registerFallbackValue(AtClientPreference());
+
+      /// Initialization
+      stubbedCallInitialization = FunctionStub();
+      stubbedInitialize = FunctionStub();
+      stubbedCompleteInitialization = FunctionStub();
+      stubbedFindLocalPortIfRequired = FunctionStub();
     });
 
-    test('Constructor', () {
+    /// When declaration setup for the constructor of [StubbedSshnpCore]
+    whenConstructor({bool verbose = false}) {
       when(() => mockParams.device).thenReturn('mydevice');
       when(() => mockParams.localPort).thenReturn(0);
-      when(() => mockParams.verbose).thenReturn(false);
-
+      when(() => mockParams.verbose).thenReturn(verbose);
       when(() => mockAtClient.getPreferences()).thenReturn(null);
       when(() => mockAtClient.setPreferences(any())).thenReturn(null);
+    }
 
-      final sshnpCore = MySshnpCore(atClient: mockAtClient, params: mockParams);
+    /// When declaration setup for the initialization of [StubbedSshnpCore]
+    whenInitialization({AtSshKeyPair? identityKeyPair}) {
+      when(() => stubbedCallInitialization.call()).thenAnswer((_) async {});
+      when(() => stubbedInitialize.call()).thenAnswer((_) async {});
+      when(() => stubbedCompleteInitialization.call()).thenReturn(null);
+      when(() => stubbedFindLocalPortIfRequired.call()).thenReturn(null);
 
-      /// Expect that the namespace is set in the preferences
-      verify(() => mockAtClient.getPreferences()).called(1);
-      verify(() => mockParams.device).called(1);
-      verify(() => mockAtClient.setPreferences(any())).called(1);
+      when(() => mockSshnpdChannel.callInitialization())
+          .thenAnswer((_) async {});
+      when(() => mockSshnpdChannel.resolveRemoteUsername())
+          .thenAnswer((_) async => 'myRemoteUsername');
+      when(() => mockSshnpdChannel.sharePublicKeyIfRequired(
+          identityKeyPair ?? any())).thenAnswer((_) async {});
+      when(() => mockSshrvdChannel.callInitialization())
+          .thenAnswer((_) async {});
+    }
 
-      /// Expect that the logger is configured correctly
-      expect(sshnpCore.logger.logger.level, Level.SHOUT);
-      expect(AtSignLogger.root_level, 'info');
-    });
+    group('Constructor', () {
+      test('verbose=false', () {
+        whenConstructor(verbose: false);
 
-    test('Constructor - verbose logger', () {
-      when(() => mockParams.device).thenReturn('mydevice');
-      when(() => mockParams.localPort).thenReturn(0);
-      when(() => mockParams.verbose).thenReturn(true);
+        final sshnpCore =
+            StubbedSshnpCore(atClient: mockAtClient, params: mockParams);
 
-      when(() => mockAtClient.getPreferences()).thenReturn(null);
-      when(() => mockAtClient.setPreferences(any())).thenReturn(null);
+        /// Expect that the namespace is set in the preferences
+        verify(() => mockAtClient.getPreferences()).called(1);
+        verify(() => mockParams.device).called(1);
+        verify(() => mockAtClient.setPreferences(any())).called(1);
 
-      final sshnpCore = MySshnpCore(atClient: mockAtClient, params: mockParams);
+        /// Expect that the logger is configured correctly
+        expect(sshnpCore.logger.logger.level, Level.SHOUT);
+        expect(AtSignLogger.root_level, 'info');
+      }); // test verbose=false
 
-      /// Expect that the namespace is set in the preferences
-      verify(() => mockAtClient.getPreferences()).called(1);
-      verify(() => mockParams.device).called(1);
-      verify(() => mockAtClient.setPreferences(any())).called(1);
+      test('verbose=true', () {
+        whenConstructor(verbose: true);
 
-      /// Expect that the logger is configured correctly
-      expect(sshnpCore.logger.logger.level, Level.INFO);
-      expect(AtSignLogger.root_level, 'info');
-    });
-  });
+        final sshnpCore =
+            StubbedSshnpCore(atClient: mockAtClient, params: mockParams);
+
+        /// Expect that the namespace is set in the preferences
+        verify(() => mockAtClient.getPreferences()).called(1);
+        verify(() => mockParams.device).called(1);
+        verify(() => mockAtClient.setPreferences(any())).called(1);
+
+        /// Expect that the logger is configured correctly
+        expect(sshnpCore.logger.logger.level, Level.INFO);
+        expect(AtSignLogger.root_level, 'info');
+      }); // test verbose=true
+    }); // group Constructor
+
+    group('Initialization', () {
+      setUp(() {});
+      test('AsyncInitialization', () async {
+        whenConstructor();
+
+        final sshnpCore = StubbedSshnpCore(
+          atClient: mockAtClient,
+          params: mockParams,
+          sshnpdChannel: mockSshnpdChannel,
+          sshrvdChannel: mockSshrvdChannel,
+        );
+
+        /// Setup stubs for the mocks that are part of [MockAsyncInitializationMixin]
+        sshnpCore.stubAsyncInitialization(
+          mockCallInitialization: stubbedCallInitialization,
+          mockCompleteInitialization: stubbedCompleteInitialization,
+          mockInitialize: stubbedInitialize,
+        );
+
+        /// Setup stub for [SshnpCore.findLocalPortIfRequired()]
+        sshnpCore.stubFindLocalPortIfRequired(stubbedFindLocalPortIfRequired);
+
+        whenInitialization(identityKeyPair: sshnpCore.identityKeyPair);
+
+        verifyNever(() => stubbedCallInitialization.call());
+        verifyNever(() => stubbedInitialize.call());
+        verifyNever(() => stubbedCompleteInitialization.call());
+        verifyNever(() => stubbedFindLocalPortIfRequired.call());
+
+        await expectLater(sshnpCore.callInitialization(), completes);
+
+        /// Using verify in order to guarantee that init cycle is correct
+        /// Some of the middle steps may be valid in another, but this tests
+        /// against the current implementation's order
+        verifyInOrder([
+          () => stubbedCallInitialization.call(),
+          () => stubbedInitialize.call(),
+          () => mockSshnpdChannel.callInitialization(),
+          () => mockSshnpdChannel.resolveRemoteUsername(),
+          () => stubbedFindLocalPortIfRequired.call(),
+          () => mockSshnpdChannel
+              .sharePublicKeyIfRequired(sshnpCore.identityKeyPair),
+          () => mockSshrvdChannel.callInitialization(),
+          () => stubbedCompleteInitialization.call(),
+        ]);
+
+        /// Ensure that no initialization steps are called twice
+        verifyNever(() => stubbedCallInitialization.call());
+        verifyNever(() => stubbedInitialize.call());
+        verifyNever(() => mockSshnpdChannel.callInitialization());
+        verifyNever(() => mockSshnpdChannel.resolveRemoteUsername());
+        verifyNever(() => stubbedFindLocalPortIfRequired.call());
+        verifyNever(() => mockSshnpdChannel
+            .sharePublicKeyIfRequired(sshnpCore.identityKeyPair));
+        verifyNever(() => mockSshrvdChannel.callInitialization());
+        verifyNever(() => stubbedCompleteInitialization.call());
+
+        /// Ensure [initialize()] is not ran a second time if we call
+        /// [callInitialization()] a second time
+        await expectLater(sshnpCore.callInitialization(), completes);
+        verify(() => stubbedCallInitialization.call()).called(1);
+        verifyNever(() => stubbedInitialize.call());
+        verifyNever(() => stubbedCompleteInitialization.call());
+        verifyNever(() => stubbedFindLocalPortIfRequired.call());
+        verifyNever(() => mockSshrvdChannel.callInitialization());
+      });
+    }); // group Initialization
+  }); // group SshnpCore
 }
