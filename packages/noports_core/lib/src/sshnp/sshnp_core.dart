@@ -63,20 +63,13 @@ abstract class SshnpCore
   SshnpCore({
     required this.atClient,
     required this.params,
-    @visibleForTesting
-    AtSignLogger? logger,
+    @visibleForTesting AtSignLogger? logger,
   })  : sessionId = Uuid().v4(),
         namespace = '${params.device}.sshnp',
         localPort = params.localPort,
         logger = logger ?? AtSignLogger('SshnpCore') {
-    /// Set the logger level to shout
+    this.logger.logger.level = params.verbose ? Level.INFO : Level.SHOUT;
     this.logger.hierarchicalLoggingEnabled = true;
-    this.logger.logger.level = Level.SHOUT;
-
-    if (params.verbose) {
-      this.logger.logger.level = Level.INFO;
-      AtSignLogger.root_level = 'info';
-    }
 
     /// Set the namespace to the device's namespace
     AtClientPreference preference =
