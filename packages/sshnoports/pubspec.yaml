@@ -18,16 +18,11 @@ dependency_overrides:
   # Pin the dependencies of noports_core
   archive: 3.3.9
   args: 2.4.2
-  at_client: # will be 3.0.68
-    git:
-      url: https://github.com/atsign-foundation/at_client_sdk.git
-      ref: gkc/feat/make-atRpc-use-ephemeral-notifications
-      path: packages/at_client
+  at_client: 3.0.68
   at_lookup: 3.0.41
   at_utils: 3.0.15
   crypton: 2.1.0
   dartssh2: 2.8.2
-  http: 1.1.0
   ssh_key: 0.8.0
   uuid: 3.0.7
   logging: 1.2.0
