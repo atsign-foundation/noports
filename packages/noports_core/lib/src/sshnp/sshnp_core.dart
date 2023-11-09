@@ -5,7 +5,6 @@ import 'dart:io';
 import 'package:at_client/at_client.dart' hide StringBuffer;
 
 import 'package:at_utils/at_logger.dart';
-import 'package:logging/logging.dart';
 import 'package:meta/meta.dart';
 import 'package:noports_core/src/common/mixins/async_completion.dart';
 import 'package:noports_core/src/common/mixins/async_initialization.dart';
