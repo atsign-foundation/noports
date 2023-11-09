@@ -65,7 +65,6 @@ abstract class SshnpCore
   })  : sessionId = Uuid().v4(),
         namespace = '${params.device}.sshnp',
         localPort = params.localPort {
-    logger.hierarchicalLoggingEnabled = true;
     logger.level = params.verbose ? 'info' : 'shout';
 
     /// Set the namespace to the device's namespace

@@ -58,9 +58,8 @@ void main() {
       verify(() => mockAtClient.setPreferences(any())).called(1);
 
       /// Expect that the logger is configured correctly
-      expect(sshnpCore.logger.level, 'shout');
+      expect(sshnpCore.logger.logger.level, Level.SHOUT);
       expect(AtSignLogger.root_level, 'info');
-      expect(sshnpCore.logger.hierarchicalLoggingEnabled, true);
     });
 
     test('Constructor - verbose logger', () {
@@ -79,9 +78,8 @@ void main() {
       verify(() => mockAtClient.setPreferences(any())).called(1);
 
       /// Expect that the logger is configured correctly
-      expect(sshnpCore.logger.level, 'info');
+      expect(sshnpCore.logger.logger.level, Level.INFO);
       expect(AtSignLogger.root_level, 'info');
-      expect(sshnpCore.logger.hierarchicalLoggingEnabled, true);
     });
   });
 }
