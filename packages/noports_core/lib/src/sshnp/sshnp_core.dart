@@ -53,7 +53,7 @@ abstract class SshnpCore
 
   /// The channel to communicate with the sshrvd (host)
   @protected
-  SshrvdChannel? get sshrvdChannel;
+  SshrvdChannel get sshrvdChannel;
 
   /// The channel to communicate with the sshnpd (daemon)
   @protected
@@ -87,13 +87,13 @@ abstract class SshnpCore
     remoteUsername = await sshnpdChannel.resolveRemoteUsername();
 
     /// Find a spare local port if required
-    await _findLocalPortIfRequired();
+    await findLocalPortIfRequired();
 
     /// Shares the public key if required
     await sshnpdChannel.sharePublicKeyIfRequired(identityKeyPair);
 
     /// Retrieve the sshrvd host and port pair
-    await sshrvdChannel?.callInitialization();
+    await sshrvdChannel.callInitialization();
   }
 
   @override
@@ -101,7 +101,8 @@ abstract class SshnpCore
     completeDisposal();
   }
 
-  Future<void> _findLocalPortIfRequired() async {
+  @visibleForTesting
+  Future<void> findLocalPortIfRequired() async {
     // TODO investigate if this is a problem on mobile
     // find a spare local port
     if (localPort == 0) {
