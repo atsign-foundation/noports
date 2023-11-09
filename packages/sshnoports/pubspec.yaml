@@ -12,7 +12,7 @@ dependencies:
       url: https://github.com/atsign-foundation/sshnoports.git
       path: packages/noports_core
       ref: gkc/feat/teams-enterprise-mdp
-  at_onboarding_cli: 1.3.0
+  at_onboarding_cli: 1.4.0
 
 dependency_overrides:
   # Pin the dependencies of noports_core
