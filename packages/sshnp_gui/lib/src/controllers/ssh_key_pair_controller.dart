@@ -1,13 +1,13 @@
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:at_client_mobile/at_client_mobile.dart';
 import 'package:biometric_storage/biometric_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:noports_core/sshnp_params.dart';
-import 'package:noports_core/utils.dart';
+import 'package:sshnp_gui/src/application/at_ssh_key_pair_manager.dart';
 import 'package:sshnp_gui/src/presentation/widgets/utility/custom_snack_bar.dart';
-import 'package:sshnp_gui/src/repository/at_ssh_key_pair_repository.dart';
+import 'package:sshnp_gui/src/repository/at_ssh_key_manager_pair_repository.dart';
 
 enum AtSSHKeyPairFileWriteState { create, update }
 
@@ -17,15 +17,16 @@ final currentAtSSHKeyPairController =
   CurrentAtSSHKeyPairController.new,
 );
 
-/// A provider that exposes the [ConfigListController] to the app.
-final AtSSHKeyPairListController = AutoDisposeAsyncNotifierProvider<ConfigListController, Iterable<String>>(
-  ConfigListController.new,
+/// A provider that exposes the [AtSshKeyPairListController] to the app.
+final AtSshKeyPairListController =
+    AutoDisposeAsyncNotifierProvider<AtSshKeyPairManagerListController, Iterable<String>>(
+  AtSshKeyPairManagerListController.new,
 );
 
-/// A provider that exposes the [AtSSHKeyPairFamilyController] to the app.
-final atSSHKeyPairFamilyController =
-    AutoDisposeAsyncNotifierProviderFamily<AtSSHKeyPairFamilyController, AtSSHKeyPair, String>(
-  AtSSHKeyPairFamilyController.new,
+/// A provider that exposes the [AtSshKeyPairManagerFamilyController] to the app.
+final atSSHKeyPairManagerFamilyController =
+    AutoDisposeAsyncNotifierProviderFamily<AtSshKeyPairManagerFamilyController, AtSshKeyPairManager, String>(
+  AtSshKeyPairManagerFamilyController.new,
 );
 
 /// Holder model for the current [SSHNPParams] being edited
@@ -52,10 +53,10 @@ class CurrentAtSSHKeyPairController extends AutoDisposeNotifier<CurrentAtSSHKeyP
 }
 
 /// Controller for the list of all profileNames for each config file
-class ConfigListController extends AutoDisposeAsyncNotifier<Iterable<String>> {
+class AtSshKeyPairManagerListController extends AutoDisposeAsyncNotifier<Iterable<String>> {
   @override
   Future<Iterable<String>> build() async {
-    return await AtSSHKeyPairRepository.listAtSSHKeyPairIdentities();
+    return await AtSshKeyPairManagerRepository.listAtSshKeyPairIdentities();
   }
 
   Future<void> refresh() async {
@@ -65,7 +66,7 @@ class ConfigListController extends AutoDisposeAsyncNotifier<Iterable<String>> {
 
   void add(String identity) async {
     state = AsyncValue.data({...state.value ?? [], identity});
-    await AtSSHKeyPairRepository.writeAtSSHKeyPairIdentities(state.value!.toList());
+    await AtSshKeyPairManagerRepository.writeAtSshKeyPairIdentities(state.value!.toList());
   }
 
   void remove(String identity) {
@@ -74,25 +75,28 @@ class ConfigListController extends AutoDisposeAsyncNotifier<Iterable<String>> {
   }
 }
 
-/// Controller for the family of [AtSSHKeyPair] controllers
-class AtSSHKeyPairFamilyController extends AutoDisposeFamilyAsyncNotifier<AtSSHKeyPair, String> {
+/// Controller for the family of [AtSSHKeyPairManager] controllers
+class AtSshKeyPairManagerFamilyController extends AutoDisposeFamilyAsyncNotifier<AtSshKeyPairManager, String> {
   @override
-  Future<AtSSHKeyPair> build(String arg) async {
+  Future<AtSshKeyPairManager> build(String arg) async {
     if (arg.isEmpty) {
-      AtSSHKeyPair.fromPem('', identifier: '');
+      AtSshKeyPairManager.empty();
     }
     final store = await BiometricStorage().getStorage('com.atsign.sshnoports.ssh-$arg');
     final data = await store.read();
+    if (data.isNull || data!.isEmpty) {
+      return AtSshKeyPairManager.empty();
+    }
 
-    // TODO: implement code to get atsshkeypair.
-    return AtSSHKeyPair.fromJson(jsonDecode(data!));
+    return AtSshKeyPairManager.fromJson(jsonDecode(data));
   }
 
-  Future<void> saveAtSSHKeyPair({required AtSSHKeyPair atSSHKeyPair, BuildContext? context}) async {
+  Future<void> saveAtSshKeyPairManager(
+      {required AtSshKeyPairManager atSshKeyPairManager, BuildContext? context}) async {
     try {
-      AtSSHKeyPairRepository.writeAtSSHKeyPair(atSSHKeyPair);
-      state = AsyncValue.data(atSSHKeyPair);
-      ref.read(AtSSHKeyPairListController.notifier).add(atSSHKeyPair.identifier);
+      AtSshKeyPairManagerRepository.writeAtSshKeyPair(atSshKeyPairManager);
+      state = AsyncValue.data(atSshKeyPairManager);
+      ref.read(AtSshKeyPairListController.notifier).add(atSshKeyPairManager.nickname);
     } catch (e) {
       if (context?.mounted ?? false) {
         CustomSnackBar.error(content: 'Failed to update AtSSHKeyPair: $arg');
@@ -100,10 +104,10 @@ class AtSSHKeyPairFamilyController extends AutoDisposeFamilyAsyncNotifier<AtSSHK
     }
   }
 
-  Future<void> deleteAtSSHKeyPair({required String identifier, BuildContext? context}) async {
+  Future<void> deleteAtSSHKeyPairManager({required String identifier, BuildContext? context}) async {
     try {
-      AtSSHKeyPairRepository.deleteAtSSHKeyPair(arg);
-      ref.read(AtSSHKeyPairListController.notifier).remove(arg);
+      AtSshKeyPairManagerRepository.deleteAtSshKeyPair(arg);
+      ref.read(AtSshKeyPairListController.notifier).remove(arg);
       state = AsyncValue.error('SSHNPParams has been disposed', StackTrace.current);
     } catch (e) {
       if (context?.mounted ?? false) {

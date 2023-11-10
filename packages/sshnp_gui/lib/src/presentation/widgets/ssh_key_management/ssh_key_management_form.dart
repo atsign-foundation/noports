@@ -1,23 +1,23 @@
 import 'dart:developer';
 
+import 'package:file_selector/file_selector.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:noports_core/utils.dart';
 import 'package:sshnp_gui/src/controllers/config_controller.dart';
 import 'package:sshnp_gui/src/controllers/form_controllers.dart';
 import 'package:sshnp_gui/src/controllers/navigation_controller.dart';
 import 'package:sshnp_gui/src/controllers/navigation_rail_controller.dart';
 import 'package:sshnp_gui/src/controllers/ssh_key_pair_controller.dart';
-import 'package:sshnp_gui/src/presentation/widgets/profile_form/custom_dropdown_form_field.dart';
-import 'package:sshnp_gui/src/presentation/widgets/profile_form/custom_switch_widget.dart';
 import 'package:sshnp_gui/src/presentation/widgets/profile_form/custom_text_form_field.dart';
 import 'package:sshnp_gui/src/presentation/widgets/ssh_key_management/file_picker_field.dart';
 import 'package:sshnp_gui/src/utility/constants.dart';
 import 'package:sshnp_gui/src/utility/form_validator.dart';
 import 'package:sshnp_gui/src/utility/sizes.dart';
 
+import '../../../application/at_ssh_key_pair_manager.dart';
+import '../../../controllers/file_picker_controller.dart';
 import '../profile_form/profile_form_card.dart';
 
 class SSHKeyManagementForm extends ConsumerStatefulWidget {
@@ -30,30 +30,59 @@ class SSHKeyManagementForm extends ConsumerStatefulWidget {
 class _SSHKeyManagementFormState extends ConsumerState<SSHKeyManagementForm> {
   final GlobalKey<FormState> _formkey = GlobalKey<FormState>();
   late CurrentConfigState currentProfile;
-  AtSshKeyPair newAtSshKeyPair = AtSshKeyPair.empty();
+  late String nickname;
+  String? passPhrase;
+  late String content;
+  String privateKeyFileName = '';
+  XFile? file;
+  // late TextEditingController filePickerController;
+
   @override
   void initState() {
+    super.initState();
     WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
       ref.read(formProfileNameController.notifier).state = currentProfile.profileName;
     });
-    super.initState();
   }
 
-  void onSubmit(AtSshKeyPair oldKeyPair, AtSshKeyPair newKeyPair) async {
+  @override
+  void dispose() {
+    // filePickerController.dispose();
+    super.dispose();
+  }
+
+  Future<void> getPrivateKey() async {
+    try {
+      file = await openFile(acceptedTypeGroups: <XTypeGroup>[dotPrivateTypeGroup]);
+      if (file == null) return;
+      content = await file!.readAsString();
+      setState(() {
+        privateKeyFileName = file!.name;
+
+        // log(filePickerController.text);
+      });
+      setState(() {});
+    } catch (e) {
+      log(e.toString());
+    }
+  }
+
+  void onSubmit() async {
+    final fileDetails = ref.read(filePickerController.notifier);
     if (_formkey.currentState!.validate()) {
       _formkey.currentState!.save();
-      final controller = ref.read(atSSHKeyPairFamilyController(newKeyPair.identifier).notifier);
 
-      bool rename = newKeyPair.identifier == oldKeyPair.identifier;
+      final atSshKeyPairManager = AtSshKeyPairManager(
+          nickname: nickname,
+          content: await fileDetails.content,
+          privateKeyFileName: fileDetails.fileName,
+          passPhrase: passPhrase);
+      fileDetails.clearFileDetails();
+      final controller = ref.read(atSSHKeyPairManagerFamilyController(nickname).notifier);
+      await controller.deleteAtSSHKeyPairManager(identifier: 'test');
 
-      if (rename) {
-        // delete old config file and write the new one
-        await controller.deleteAtSshKeyPair(identifier: newKeyPair.identifier);
-        await controller.saveAtSshKeyPair(atSSHKeyPair: newKeyPair);
-      } else {
-        // create new config file
-        await controller.saveAtSshKeyPair(atSSHKeyPair: newKeyPair);
-      }
+      await controller.saveAtSshKeyPairManager(atSshKeyPairManager: atSshKeyPairManager);
+
       if (mounted) {
         ref.read(navigationRailController.notifier).setRoute(AppRoute.home);
         context.pushReplacementNamed(AppRoute.home.name);
@@ -66,12 +95,17 @@ class _SSHKeyManagementFormState extends ConsumerState<SSHKeyManagementForm> {
     final strings = AppLocalizations.of(context)!;
     currentProfile = ref.watch(currentConfigController);
 
-    final asyncOldConfig = ref.watch(atSSHKeyPairFamilyController(currentProfile.profileName));
+    final asyncOldConfig = ref.watch(atSSHKeyPairManagerFamilyController(currentProfile.profileName));
 
     return asyncOldConfig.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (error, stack) => Center(child: Text(error.toString())),
-        data: (oldAtSshKeyPair) {
+        data: (oldAtSshKeyPairManager) {
+          nickname = oldAtSshKeyPairManager.nickname;
+          passPhrase = oldAtSshKeyPairManager.passPhrase;
+          content = oldAtSshKeyPairManager.content;
+          privateKeyFileName = oldAtSshKeyPairManager.privateKeyFileName;
+
           return SingleChildScrollView(
             child: Form(
               key: _formkey,
@@ -82,10 +116,10 @@ class _SSHKeyManagementFormState extends ConsumerState<SSHKeyManagementForm> {
                   Text(strings.sshKeyManagement, style: Theme.of(context).textTheme.titleMedium),
                   ProfileFormCard(formFields: [
                     CustomTextFormField(
-                      initialValue: oldAtSshKeyPair.identifier,
+                      initialValue: nickname,
                       labelText: strings.nickName,
-                      onChanged: (value) {
-                        newAtSshKeyPair.identifier = newAtSshKeyPair.identifier;
+                      onSaved: (value) {
+                        nickname = value!;
                         ref.read(formProfileNameController.notifier).state = value;
                         log(ref.read(formProfileNameController));
                       },
@@ -93,47 +127,21 @@ class _SSHKeyManagementFormState extends ConsumerState<SSHKeyManagementForm> {
                     ),
                     gapH10,
                     FilePickerField(
-                      initialValue: oldAtSshKeyPair.identifier,
+                      fileName: privateKeyFileName,
+                      onTap: () async {
+                        await getPrivateKey();
+                      },
+                      initialValue: privateKeyFileName,
+                      validator: FormValidator.validateRequiredField,
                     ),
                     gapH10,
-                    const CustomTextFormField(
+                    CustomTextFormField(
                       labelText: 'SSH Key Password',
-                      // TODO Fix this
-                      // initialValue: oldAtSshKeyPair.identityPassphrase,
+                      initialValue: passPhrase,
                       isPasswordField: true,
-                      // onChanged: (value) => newAtSshKeyPair.identityPassPhrase = newAtSshKeyPair.identityPassPhrase,
+                      onSaved: (value) => passPhrase = value,
                     ),
                     gapH10,
-                    CustomDropdownFormField<SupportedSSHAlgorithm>(
-                      label: strings.sshAlgorithm,
-                      hintText: strings.select,
-                      items: SupportedSSHAlgorithm.values
-                          .map((e) => DropdownMenuItem<SupportedSSHAlgorithm>(
-                                value: e,
-                                child: Text(e.name),
-                              ))
-                          .toList(),
-                      // TODO Fix this
-                      // onChanged: ((value) => newAtSshKeyPair =
-                      //     SSHNPPartialParams.merge(newAtSshKeyPair, SSHNPPartialParams(sshAlgorithm: value))
-                      //     ),
-                    ),
-                    gapH10,
-                    CustomSwitchWidget(
-                      labelText: strings.sendSshPublicKey,
-                      // TODO Fix this
-                      value: false,
-                      onChanged: (a) {},
-                      // value: newAtSshKeyPair.sendSshPublicKey ?? oldAtSshKeyPair.sendSshPublicKey,
-                      // onChanged: (newValue) {
-                      //   setState(() {
-                      //     newAtSshKeyPair = SSHNPPartialParams.merge(
-                      //       newAtSshKeyPair,
-                      //       SSHNPPartialParams(sendSshPublicKey: newValue),
-                      //     );
-                      //   });
-                      // }
-                    ),
                   ]),
                   gapH20,
                   gapH10,
@@ -144,7 +152,7 @@ class _SSHKeyManagementFormState extends ConsumerState<SSHKeyManagementForm> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         ElevatedButton(
-                          onPressed: () => onSubmit(oldAtSshKeyPair, newAtSshKeyPair),
+                          onPressed: () => onSubmit(),
                           child: Text(strings.connect),
                         ),
                         gapW8,

@@ -1,8 +1,8 @@
 import 'package:dotted_border/dotted_border.dart';
-import 'package:file_selector/file_selector.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:sshnp_gui/src/controllers/file_picker_controller.dart';
 import 'package:sshnp_gui/src/utility/constants.dart';
 
 class FilePickerField extends ConsumerStatefulWidget {
@@ -12,15 +12,18 @@ class FilePickerField extends ConsumerStatefulWidget {
     super.key,
     this.initialValue,
     this.validator,
-    this.onChanged,
     this.width = defaultWidth,
     this.height = defaultHeight,
+    required this.onTap,
+    required this.fileName,
   });
 
   final String? initialValue;
   final double width;
   final double height;
-  final void Function(String)? onChanged;
+
+  final String fileName;
+  final void Function() onTap;
   final String? Function(String?)? validator;
 
   @override
@@ -28,45 +31,27 @@ class FilePickerField extends ConsumerStatefulWidget {
 }
 
 class _FilePickerFieldState extends ConsumerState<FilePickerField> {
-  late TextEditingController _controller;
-  XFile? file;
-
+  late TextEditingController controller;
   @override
   void initState() {
     super.initState();
-    _controller = TextEditingController(text: widget.initialValue);
+    controller = TextEditingController(text: ref.read(filePickerController.notifier).fileName);
+
+    controller.addListener(
+      () {
+        setState(
+          () {
+            controller.text = ref.read(filePickerController.notifier).fileName;
+          },
+        );
+      },
+    );
   }
 
   @override
   void dispose() {
-    _controller.dispose();
+    controller.dispose();
     super.dispose();
-  }
-
-  Future<void> _filePickerResult() async {
-    try {
-      file = await openFile(acceptedTypeGroups: <XTypeGroup>[dotPrivateTypeGroup]);
-      if (file == null) return;
-      _controller.text = file!.name;
-    } catch (e) {}
-  }
-
-  // Future<void> onSaved(String? baseFile) async {
-  //   if (file == null) return;
-  //   final dir = await getApplicationSupportDirectory();
-  //   final sshDir = Directory(join(dir.path, '.ssh', ref.read(formProfileNameController).replaceAll(' ', '_')));
-
-  //   final path = join(sshDir.path, file!.name);
-  //   log(path);
-  //   final bytes = await file!.readAsBytes();
-  //   final targetFile = File(path);
-  //   targetFile.readAsString();
-  //   await targetFile.create(recursive: true);
-  //   await targetFile.writeAsBytes(bytes);
-  //   // await file!.saveTo(path);
-  // }
-  Future<void> onSaved(String? baseFile) async {
-    if (file == null) return;
   }
 
   @override
@@ -79,7 +64,7 @@ class _FilePickerFieldState extends ConsumerState<FilePickerField> {
         color: kPrimaryColor,
         radius: const Radius.circular(2),
         child: TextFormField(
-          controller: _controller,
+          controller: controller,
           textAlign: TextAlign.center,
           readOnly: true,
           decoration: InputDecoration(
@@ -89,8 +74,11 @@ class _FilePickerFieldState extends ConsumerState<FilePickerField> {
             hintText: AppLocalizations.of(context)!.selectPrivateKey,
             hintStyle: Theme.of(context).textTheme.bodyLarge,
           ),
-          onTap: _filePickerResult,
-          onSaved: onSaved,
+          onTap: () async {
+            await ref.read(filePickerController.notifier).getFileDetails();
+            controller.notifyListeners();
+          },
+
           // validator: FormValidator.validateOptio,
         ),
       ),

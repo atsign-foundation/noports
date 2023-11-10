@@ -1,18 +1,29 @@
 import 'dart:convert';
+import 'dart:developer';
 
 import 'package:at_client_mobile/at_client_mobile.dart';
 import 'package:biometric_storage/biometric_storage.dart';
-import 'package:noports_core/utils.dart';
 
-class AtSSHKeyPairRepository {
-  static Future<void> writeAtSSHKeyPair(AtSSHKeyPair atSSHKeyPair) async {
+import '../application/at_ssh_key_pair_manager.dart';
+
+class AtSshKeyPairManagerRepository {
+  static Future<void> writeAtSshKeyPair(AtSshKeyPairManager manager) async {
     BiometricStorage biometricStorage = BiometricStorage();
-    final storage = await biometricStorage.getStorage('com.atsign.sshnoports.ssh-${atSSHKeyPair.identifier}');
+    final storage = await biometricStorage.getStorage('com.atsign.sshnoports.ssh-${manager.nickname}');
 
-    await storage.write(jsonEncode(atSSHKeyPair.toJson));
+    await storage.write(jsonEncode(manager.toMap()));
+    final data = await readAtSshKeyPair(manager.nickname);
+    if (data == null) {
+      log('no data');
+    } else {
+      log('nickName: ${data.nickname}');
+      log('passPhrase: ${data.passPhrase}');
+      log('file: ${data.privateKeyFileName}');
+      log('content: ${data.content}');
+    }
   }
 
-  static Future<AtSSHKeyPair?> readAtSSHKeyPair(String identifier) async {
+  static Future<AtSshKeyPairManager?> readAtSshKeyPair(String identifier) async {
     BiometricStorage biometricStorage = BiometricStorage();
     final data = await biometricStorage.getStorage('com.atsign.sshnoports.ssh-$identifier').then(
           (value) => value.read(),
@@ -20,23 +31,23 @@ class AtSSHKeyPairRepository {
     if (data.isNull || data!.isEmpty) {
       return null;
     } else {
-      return AtSSHKeyPair.fromJson(jsonDecode(data));
+      return AtSshKeyPairManager.fromJson(jsonDecode(data));
     }
   }
 
-  static Future<void> deleteAtSSHKeyPair(String identifier) async {
+  static Future<void> deleteAtSshKeyPair(String identifier) async {
     BiometricStorage biometricStorage = BiometricStorage();
     final storage = await biometricStorage.getStorage('com.atsign.sshnoports.ssh-$identifier');
     await storage.delete();
   }
 
-  static Future<Iterable<String>> listAtSSHKeyPairIdentities() async {
+  static Future<Iterable<String>> listAtSshKeyPairIdentities() async {
     final decodedData =
         await BiometricStorage().getStorage('com.atsign.sshnoports.nicknames').then((value) => value.read());
-    return jsonDecode(decodedData!);
+    return [...jsonDecode(decodedData!)];
   }
 
-  static Future<void> writeAtSSHKeyPairIdentities(
+  static Future<void> writeAtSshKeyPairIdentities(
     List<String> identities,
   ) async {
     BiometricStorage biometricStorage = BiometricStorage();

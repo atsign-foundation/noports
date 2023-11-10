@@ -8,6 +8,7 @@ class CustomTextFormField extends StatefulWidget {
     this.initialValue,
     this.validator,
     this.onChanged,
+    this.onSaved,
     this.hintText,
     this.width = kFieldDefaultWidth,
     this.height = kFieldDefaultHeight,
@@ -20,6 +21,7 @@ class CustomTextFormField extends StatefulWidget {
   final double width;
   final double height;
   final void Function(String)? onChanged;
+  final void Function(String?)? onSaved;
   final String? Function(String?)? validator;
   final bool isPasswordField;
 
@@ -61,6 +63,7 @@ class _CustomTextFormFieldState extends State<CustomTextFormField> {
               : null,
         ),
         onChanged: widget.onChanged,
+        onSaved: widget.onSaved,
         validator: widget.validator,
       ),
     );

@@ -13,7 +13,6 @@ import 'package:sshnp_gui/src/presentation/widgets/profile_form/custom_dropdown_
 import 'package:sshnp_gui/src/presentation/widgets/profile_form/custom_switch_widget.dart';
 import 'package:sshnp_gui/src/presentation/widgets/profile_form/custom_text_form_field.dart';
 import 'package:sshnp_gui/src/presentation/widgets/profile_form/profile_form_card.dart';
-import 'package:sshnp_gui/src/presentation/widgets/ssh_key_management/file_picker_field.dart';
 import 'package:sshnp_gui/src/utility/constants.dart';
 import 'package:sshnp_gui/src/utility/form_validator.dart';
 import 'package:sshnp_gui/src/utility/sizes.dart';
@@ -105,7 +104,7 @@ class _ProfileFormState extends ConsumerState<ProfileForm> {
                       CustomTextFormField(
                         initialValue: oldConfig.device,
                         labelText: strings.device,
-                        onChanged: (value) => newConfig = SshnpPartialParams.merge(
+                        onSaved: (value) => newConfig = SshnpPartialParams.merge(
                           newConfig,
                           SshnpPartialParams(device: value),
                         ),
@@ -114,8 +113,7 @@ class _ProfileFormState extends ConsumerState<ProfileForm> {
                       CustomTextFormField(
                         initialValue: oldConfig.sshnpdAtSign,
                         labelText: strings.sshnpdAtSign,
-                        onChanged: (value) =>
-                            newConfig = SshnpPartialParams.merge(
+                        onSaved: (value) => newConfig = SshnpPartialParams.merge(
                           newConfig,
                           SshnpPartialParams(sshnpdAtSign: value),
                         ),
@@ -127,7 +125,7 @@ class _ProfileFormState extends ConsumerState<ProfileForm> {
                   CustomTextFormField(
                     initialValue: oldConfig.host,
                     labelText: strings.host,
-                    onChanged: (value) => newConfig = SshnpPartialParams.merge(
+                    onSaved: (value) => newConfig = SshnpPartialParams.merge(
                       newConfig,
                       SshnpPartialParams(host: value),
                     ),
@@ -136,15 +134,13 @@ class _ProfileFormState extends ConsumerState<ProfileForm> {
                   gapH20,
                   Text(strings.sshKeyManagement, style: Theme.of(context).textTheme.titleMedium),
                   ProfileFormCard(formFields: [
-                    FilePickerField(
-                      initialValue: oldConfig.identityFile,
-                    ),
+                    // TODO: Add key management dropdown here
                     gapH10,
                     CustomTextFormField(
                       labelText: 'SSH Key Password',
                       initialValue: oldConfig.identityPassphrase,
                       isPasswordField: true,
-                      onChanged: (value) => newConfig = SshnpPartialParams.merge(
+                      onSaved: (value) => newConfig = SshnpPartialParams.merge(
                         newConfig,
                         SshnpPartialParams(identityPassphrase: value),
                       ),
@@ -222,7 +218,7 @@ class _ProfileFormState extends ConsumerState<ProfileForm> {
                       CustomTextFormField(
                           initialValue: oldConfig.remoteUsername ?? '',
                           labelText: strings.remoteUserName,
-                          onChanged: (value) {
+                          onSaved: (value) {
                             newConfig = SshnpPartialParams.merge(
                               newConfig,
                               SshnpPartialParams(remoteUsername: value),
@@ -232,8 +228,7 @@ class _ProfileFormState extends ConsumerState<ProfileForm> {
                       CustomTextFormField(
                         initialValue: oldConfig.port.toString(),
                         labelText: strings.port,
-                        onChanged: (value) =>
-                            newConfig = SshnpPartialParams.merge(
+                        onChanged: (value) => newConfig = SshnpPartialParams.merge(
                           newConfig,
                           SshnpPartialParams(port: int.tryParse(value)),
                         ),
@@ -243,8 +238,7 @@ class _ProfileFormState extends ConsumerState<ProfileForm> {
                       CustomTextFormField(
                         initialValue: oldConfig.localPort.toString(),
                         labelText: strings.localPort,
-                        onChanged: (value) =>
-                            newConfig = SshnpPartialParams.merge(
+                        onChanged: (value) => newConfig = SshnpPartialParams.merge(
                           newConfig,
                           SshnpPartialParams(localPort: int.tryParse(value)),
                         ),
@@ -253,11 +247,9 @@ class _ProfileFormState extends ConsumerState<ProfileForm> {
                       CustomTextFormField(
                         initialValue: oldConfig.localSshdPort.toString(),
                         labelText: strings.localSshdPort,
-                        onChanged: (value) =>
-                            newConfig = SshnpPartialParams.merge(
+                        onChanged: (value) => newConfig = SshnpPartialParams.merge(
                           newConfig,
-                          SshnpPartialParams(
-                              localSshdPort: int.tryParse(value)),
+                          SshnpPartialParams(localSshdPort: int.tryParse(value)),
                         ),
                       ),
                       gapH12,
@@ -283,8 +275,7 @@ class _ProfileFormState extends ConsumerState<ProfileForm> {
                       CustomTextFormField(
                         initialValue: oldConfig.rootDomain,
                         labelText: strings.rootDomain,
-                        onChanged: (value) =>
-                            newConfig = SshnpPartialParams.merge(
+                        onSaved: (value) => newConfig = SshnpPartialParams.merge(
                           newConfig,
                           SshnpPartialParams(rootDomain: value),
                         ),
