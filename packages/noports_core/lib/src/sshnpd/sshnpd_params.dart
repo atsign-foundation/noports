@@ -4,7 +4,7 @@ import 'package:noports_core/src/common/file_system_utils.dart';
 import 'package:noports_core/src/common/types.dart';
 import 'package:noports_core/src/common/validation_utils.dart';
 
-class SSHNPDParams {
+class SshnpdParams {
   final String device;
   final String username;
   final String homeDirectory;
@@ -18,11 +18,11 @@ class SSHNPDParams {
   final String rootDomain;
   final int localSshdPort;
   final String ephemeralPermissions;
-  final SupportedSSHAlgorithm sshAlgorithm;
+  final SupportedSshAlgorithm sshAlgorithm;
 
   // Non param variables
   static final ArgParser parser = _createArgParser();
-  SSHNPDParams({
+  SshnpdParams({
     required this.device,
     required this.username,
     required this.homeDirectory,
@@ -39,7 +39,7 @@ class SSHNPDParams {
     required this.sshAlgorithm,
   });
 
-  static Future<SSHNPDParams> fromArgs(List<String> args) async {
+  static Future<SshnpdParams> fromArgs(List<String> args) async {
     // Arg check
     ArgResults r = parser.parse(args);
 
@@ -52,14 +52,14 @@ class SSHNPDParams {
 
     SupportedSshClient sshClient = SupportedSshClient.values.firstWhere(
         (c) => c.toString() == r['ssh-client'],
-        orElse: () => DefaultSSHNPDArgs.sshClient);
+        orElse: () => DefaultSshnpdArgs.sshClient);
 
     // Do we have an ASCII ?
     if (checkNonAscii(device)) {
       throw ('\nDevice name can only contain alphanumeric characters with a max length of 15');
     }
 
-    return SSHNPDParams(
+    return SshnpdParams(
       device: r['device'],
       username: getUserName(throwIfNull: true)!,
       homeDirectory: homeDirectory,
@@ -75,7 +75,7 @@ class SSHNPDParams {
       localSshdPort:
           int.tryParse(r['local-sshd-port']) ?? DefaultArgs.localSshdPort,
       ephemeralPermissions: r['ephemeral-permissions'],
-      sshAlgorithm: SupportedSSHAlgorithm.fromString(r['ssh-algorithm']),
+      sshAlgorithm: SupportedSshAlgorithm.fromString(r['ssh-algorithm']),
     );
   }
 
@@ -134,7 +134,7 @@ class SSHNPDParams {
 
     parser.addOption('ssh-client',
         mandatory: false,
-        defaultsTo: DefaultSSHNPDArgs.sshClient.toString(),
+        defaultsTo: DefaultSshnpdArgs.sshClient.toString(),
         allowed: SupportedSshClient.values
             .map(
               (c) => c.toString(),
@@ -168,7 +168,7 @@ class SSHNPDParams {
       'ssh-algorithm',
       defaultsTo: DefaultArgs.sshAlgorithm.toString(),
       help: 'Use RSA 4096 keys rather than the default ED25519 keys',
-      allowed: SupportedSSHAlgorithm.values.map((c) => c.toString()).toList(),
+      allowed: SupportedSshAlgorithm.values.map((c) => c.toString()).toList(),
     );
 
     return parser;

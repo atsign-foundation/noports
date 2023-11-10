@@ -3,7 +3,7 @@ import 'package:noports_core/sshnp.dart';
 import 'package:sshnp_gui/src/presentation/widgets/profile_actions/profile_actions.dart';
 
 class ProfileBarActions extends StatelessWidget {
-  final SSHNPParams params;
+  final SshnpParams params;
   const ProfileBarActions(this.params, {Key? key}) : super(key: key);
 
   @override

@@ -14,7 +14,7 @@ import 'package:noports_core/src/version.dart';
 import 'package:uuid/uuid.dart';
 
 @protected
-class SSHNPDImpl implements SSHNPD {
+class SshnpdImpl implements Sshnpd {
   @override
   final AtSignLogger logger = AtSignLogger(' sshnpd ');
 
@@ -52,7 +52,7 @@ class SSHNPDImpl implements SSHNPD {
   final String ephemeralPermissions;
 
   @override
-  final SupportedSSHAlgorithm sshAlgorithm;
+  final SupportedSshAlgorithm sshAlgorithm;
 
   @override
   @visibleForTesting
@@ -63,7 +63,7 @@ class SSHNPDImpl implements SSHNPD {
 
   static const String commandToSend = 'sshd';
 
-  SSHNPDImpl({
+  SshnpdImpl({
     // final fields
     required this.atClient,
     required this.username,
@@ -81,12 +81,12 @@ class SSHNPDImpl implements SSHNPD {
     logger.logger.level = Level.SHOUT;
   }
 
-  static Future<SSHNPD> fromCommandLineArgs(List<String> args,
+  static Future<Sshnpd> fromCommandLineArgs(List<String> args,
       {AtClient? atClient,
-      FutureOr<AtClient> Function(SSHNPDParams)? atClientGenerator,
+      FutureOr<AtClient> Function(SshnpdParams)? atClientGenerator,
       void Function(Object, StackTrace)? usageCallback}) async {
     try {
-      var p = await SSHNPDParams.fromArgs(args);
+      var p = await SshnpdParams.fromArgs(args);
 
       // Check atKeyFile selected exists
       if (!await File(p.atKeysFilePath).exists()) {
@@ -104,7 +104,7 @@ class SSHNPDImpl implements SSHNPD {
 
       atClient ??= await atClientGenerator!(p);
 
-      var sshnpd = SSHNPDImpl(
+      var sshnpd = SshnpdImpl(
         atClient: atClient,
         username: p.username,
         homeDirectory: p.homeDirectory,
@@ -498,12 +498,12 @@ class SSHNPDImpl implements SSHNPD {
       // Connect to rendezvous point using background process.
       // This program can then exit without causing an issue.
       Process rv =
-          await SSHRV.exec(host, port, localSshdPort: localSshdPort).run();
+          await Sshrv.exec(host, port, localSshdPort: localSshdPort).run();
       logger.info('Started rv - pid is ${rv.pid}');
 
-      LocalSSHKeyUtil keyUtil = LocalSSHKeyUtil();
+      LocalSshKeyUtil keyUtil = LocalSshKeyUtil();
 
-      AtSSHKeyPair keyPair = await keyUtil.generateKeyPair(
+      AtSshKeyPair keyPair = await keyUtil.generateKeyPair(
           algorithm: sshAlgorithm, identifier: 'ephemeral_$sessionId');
 
       await keyUtil.authorizePublicKey(
@@ -757,7 +757,7 @@ class SSHNPDImpl implements SSHNPD {
     //
     // We don't want keyboard interactive: we add -o BatchMode=yes
     //
-    // For convenience of this SSHNPD, we would like to know as quickly
+    // For convenience of this Sshnpd, we would like to know as quickly
     // as possible if the ssh connection has succeeded or not.
     // So we will add options 'ForkAfterAuthentication=yes' and also
     // 'ExitOnForwardFailure=yes' so that it won't fork until after
