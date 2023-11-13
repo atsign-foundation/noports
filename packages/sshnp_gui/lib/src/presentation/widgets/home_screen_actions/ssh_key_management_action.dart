@@ -19,9 +19,7 @@ class _SSHKeyManagementActionState extends ConsumerState<SSHKeyManagementAction>
     //         configFileWriteState: ConfigFileWriteState.create,
     //       ),
     //     );
-    context.replaceNamed(
-      AppRoute.sshKeyManagement.name,
-    );
+    context.replaceNamed(AppRoute.sskKeyManagement.name);
   }
 
   @override

@@ -18,7 +18,7 @@ final currentAtSSHKeyPairController =
 );
 
 /// A provider that exposes the [AtSshKeyPairListController] to the app.
-final AtSshKeyPairListController =
+final atSshKeyPairListController =
     AutoDisposeAsyncNotifierProvider<AtSshKeyPairManagerListController, Iterable<String>>(
   AtSshKeyPairManagerListController.new,
 );
@@ -96,7 +96,7 @@ class AtSshKeyPairManagerFamilyController extends AutoDisposeFamilyAsyncNotifier
     try {
       AtSshKeyPairManagerRepository.writeAtSshKeyPair(atSshKeyPairManager);
       state = AsyncValue.data(atSshKeyPairManager);
-      ref.read(AtSshKeyPairListController.notifier).add(atSshKeyPairManager.nickname);
+      ref.read(atSshKeyPairListController.notifier).add(atSshKeyPairManager.nickname);
     } catch (e) {
       if (context?.mounted ?? false) {
         CustomSnackBar.error(content: 'Failed to update AtSSHKeyPair: $arg');
@@ -107,7 +107,7 @@ class AtSshKeyPairManagerFamilyController extends AutoDisposeFamilyAsyncNotifier
   Future<void> deleteAtSSHKeyPairManager({required String identifier, BuildContext? context}) async {
     try {
       AtSshKeyPairManagerRepository.deleteAtSshKeyPair(arg);
-      ref.read(AtSshKeyPairListController.notifier).remove(arg);
+      ref.read(atSshKeyPairListController.notifier).remove(arg);
       state = AsyncValue.error('SSHNPParams has been disposed', StackTrace.current);
     } catch (e) {
       if (context?.mounted ?? false) {

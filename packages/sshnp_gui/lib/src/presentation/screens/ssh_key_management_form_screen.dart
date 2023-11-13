@@ -5,14 +5,14 @@ import 'package:sshnp_gui/src/presentation/widgets/ssh_key_management/ssh_key_ma
 import 'package:sshnp_gui/src/utility/sizes.dart';
 
 // * Once the onboarding process is completed you will be taken to this screen
-class SSHKeyManagementScreen extends StatefulWidget {
-  const SSHKeyManagementScreen({Key? key}) : super(key: key);
+class SSHKeyManagementFormScreen extends StatefulWidget {
+  const SSHKeyManagementFormScreen({Key? key}) : super(key: key);
 
   @override
-  State<SSHKeyManagementScreen> createState() => _SSHKeyManagementScreenState();
+  State<SSHKeyManagementFormScreen> createState() => _SSHKeyManagementFormScreenState();
 }
 
-class _SSHKeyManagementScreenState extends State<SSHKeyManagementScreen> {
+class _SSHKeyManagementFormScreenState extends State<SSHKeyManagementFormScreen> {
   @override
   Widget build(BuildContext context) {
     final strings = AppLocalizations.of(context)!;

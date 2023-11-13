@@ -1,10 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:sshnp_gui/src/controllers/config_controller.dart';
-import 'package:sshnp_gui/src/presentation/widgets/home_screen_actions/home_screen_actions.dart';
+import 'package:sshnp_gui/src/controllers/ssh_key_pair_controller.dart';
 import 'package:sshnp_gui/src/presentation/widgets/navigation/app_navigation_rail.dart';
-import 'package:sshnp_gui/src/presentation/widgets/profile_bar/profile_bar.dart';
+import 'package:sshnp_gui/src/presentation/widgets/ssh_key_management/at_ssh_key_pair_bar.dart';
 import 'package:sshnp_gui/src/utility/sizes.dart';
 
 // * Once the onboarding process is completed you will be taken to this screen
@@ -21,7 +20,7 @@ class _SshKeyManagementScreenState extends ConsumerState<SshKeyManagementScreen>
     // * Getting the AtClientManager instance to use below
 
     final strings = AppLocalizations.of(context)!;
-    final profileNames = ref.watch(configListController);
+    final atSshKeyPairs = ref.watch(atSshKeyPairListController);
 
     return Scaffold(
       body: SafeArea(
@@ -41,18 +40,25 @@ class _SshKeyManagementScreenState extends ConsumerState<SshKeyManagementScreen>
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              strings.currentConnections,
+                              strings.privateKeyManagement,
                               style: Theme.of(context).textTheme.titleLarge,
                             ),
-                            Text(strings.currentConnectionsDescription),
+                            Text(strings.privateKeyManagementDescription),
                           ],
                         ),
                         gapW16,
-                        const HomeScreenActions(),
+                        Row(
+                          children: [
+                            FilledButton(
+                              onPressed: () {},
+                              child: const Icon(Icons.add),
+                            ),
+                          ],
+                        )
                       ],
                     ),
                     gapH8,
-                    profileNames.when(
+                    atSshKeyPairs.when(
                       loading: () => const Center(
                         child: CircularProgressIndicator(),
                       ),
@@ -81,7 +87,7 @@ class _SshKeyManagementScreenState extends ConsumerState<SshKeyManagementScreen>
                               const Divider(),
                               Expanded(
                                 child: ListView(
-                                  children: sortedProfiles.map((profileName) => ProfileBar(profileName)).toList(),
+                                  children: sortedProfiles.map((profileName) => SshKeyPairBar(profileName)).toList(),
                                 ),
                               ),
                             ],
