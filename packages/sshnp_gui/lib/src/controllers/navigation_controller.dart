@@ -8,7 +8,7 @@ import 'package:sshnp_gui/src/presentation/screens/settings_screen.dart';
 import 'package:sshnp_gui/src/presentation/screens/terminal_screen.dart';
 import 'package:sshnp_gui/src/repository/navigation_repository.dart';
 
-import '../presentation/screens/ssh_key_management_screen.dart';
+import '../presentation/screens/ssh_key_management_form_screen.dart';
 
 enum AppRoute {
   onboarding,

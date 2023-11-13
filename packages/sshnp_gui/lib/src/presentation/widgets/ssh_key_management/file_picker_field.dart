@@ -15,14 +15,12 @@ class FilePickerField extends ConsumerStatefulWidget {
     this.width = defaultWidth,
     this.height = defaultHeight,
     required this.onTap,
-    required this.fileName,
   });
 
   final String? initialValue;
   final double width;
   final double height;
 
-  final String fileName;
   final void Function() onTap;
   final String? Function(String?)? validator;
 

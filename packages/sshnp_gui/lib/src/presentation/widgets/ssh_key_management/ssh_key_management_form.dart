@@ -31,6 +31,7 @@ class _SSHKeyManagementFormState extends ConsumerState<SSHKeyManagementForm> {
   final GlobalKey<FormState> _formkey = GlobalKey<FormState>();
   late CurrentConfigState currentProfile;
   late String nickname;
+  // TODO: Handle olde passPhrase and content info and clean up this form
   String? passPhrase;
   late String content;
   String privateKeyFileName = '';
@@ -127,7 +128,6 @@ class _SSHKeyManagementFormState extends ConsumerState<SSHKeyManagementForm> {
                     ),
                     gapH10,
                     FilePickerField(
-                      fileName: privateKeyFileName,
                       onTap: () async {
                         await getPrivateKey();
                       },
