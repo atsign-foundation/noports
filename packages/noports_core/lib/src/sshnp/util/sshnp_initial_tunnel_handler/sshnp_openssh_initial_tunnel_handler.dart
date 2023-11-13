@@ -58,7 +58,7 @@ mixin SshnpOpensshInitialTunnelHandler on SshnpCore
           mode: ProcessStartMode.detachedWithStdio,
         ));
         // Delay to allow the detached session to pick up the keys
-        await Future.delayed(Duration(seconds: 1));
+        await Future.delayed(Duration(seconds: 3));
       } else {
         process = await Process.start(opensshBinaryPath, args);
         process.stdout.transform(Utf8Decoder()).listen((String s) {
