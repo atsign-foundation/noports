@@ -33,7 +33,6 @@ export 'src/sshnp/util/sshnp_ssh_key_handler/sshnp_local_ssh_key_handler.dart';
 export 'src/sshnp/util/sshnp_ssh_key_handler/sshnp_dart_ssh_key_handler.dart';
 
 // Impl
-export 'src/sshnp/impl/sshnp_dart_local_impl.dart';
 export 'src/sshnp/impl/sshnp_dart_pure_impl.dart';
 export 'src/sshnp/impl/sshnp_openssh_local_impl.dart';
 export 'src/sshnp/impl/sshnp_unsigned_impl.dart';
