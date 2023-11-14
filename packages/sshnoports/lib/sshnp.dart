@@ -23,8 +23,8 @@ Future<Sshnp> sshnpFromParamsWithFileBindings(
   }
 
   switch (params.sshClient) {
-    case SupportedSshClient.exec:
-      return Sshnp.execLocal(
+    case SupportedSshClient.openssh:
+      return Sshnp.openssh(
         atClient: atClient,
         params: params,
       );

@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:at_client/at_client.dart';
 import 'package:meta/meta.dart';
@@ -55,7 +56,8 @@ mixin SshnpdDefaultPayloadHandler on SshnpdChannel {
           params.sshnpdAtSign,
           logger,
           envelope,
-          useFileStorage: useLocalFileStorage,
+          useFileStorage: useLocalFileStorage &&
+              !Platform.isWindows, // disable publickey cache on windows
         );
       } catch (e) {
         logger.shout(
