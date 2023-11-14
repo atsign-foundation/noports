@@ -4,9 +4,7 @@ import 'dart:io';
 
 import 'package:at_client/at_client.dart';
 import 'package:meta/meta.dart';
-import 'package:noports_core/src/sshnp/util/sshnp_ssh_key_handler.dart';
-import 'package:noports_core/src/sshnp/util/sshnpd_channel/sshnpd_channel.dart';
-import 'package:noports_core/utils.dart';
+import 'package:noports_core/sshnp_foundation.dart';
 
 class SshnpdDefaultChannel extends SshnpdChannel
     with SshnpdDefaultPayloadHandler {

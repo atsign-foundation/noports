@@ -28,7 +28,9 @@ export 'src/sshnp/util/sshnp_initial_tunnel_handler/sshnp_initial_tunnel_handler
 export 'src/sshnp/util/sshnp_initial_tunnel_handler/sshnp_dart_initial_tunnel_handler.dart';
 export 'src/sshnp/util/sshnp_initial_tunnel_handler/sshnp_openssh_initial_tunnel_handler.dart';
 
-export 'src/sshnp/util/sshnp_ssh_key_handler.dart';
+export 'src/sshnp/util/sshnp_ssh_key_handler/sshnp_ssh_key_handler.dart';
+export 'src/sshnp/util/sshnp_ssh_key_handler/sshnp_local_ssh_key_handler.dart';
+export 'src/sshnp/util/sshnp_ssh_key_handler/sshnp_dart_ssh_key_handler.dart';
 
 // Impl
 export 'src/sshnp/impl/sshnp_dart_local_impl.dart';
