@@ -18,19 +18,19 @@ mixin SshnpDartInitialTunnelHandler on SshnpCore
     // If we are starting an initial tunnel, it should be to sshrvd,
     // so it is safe to assume that sshrvdChannel is not null here
     logger.info(
-        'Starting direct ssh session to ${sshrvdChannel!.host} on port ${sshrvdChannel!.sshrvdPort} with forwardLocal of $localPort');
+        'Starting direct ssh session to ${sshrvdChannel.host} on port ${sshrvdChannel.sshrvdPort} with forwardLocal of $localPort');
     try {
       late final SSHClient client;
 
       late final SSHSocket socket;
       try {
         socket = await SSHSocket.connect(
-          sshrvdChannel!.host,
-          sshrvdChannel!.sshrvdPort!,
+          sshrvdChannel.host,
+          sshrvdChannel.sshrvdPort!,
         ).catchError((e) => throw e);
       } catch (e, s) {
         var error = SshnpError(
-          'Failed to open socket to ${sshrvdChannel!.host}:${sshrvdChannel!.sshrvdPort} : $e',
+          'Failed to open socket to ${sshrvdChannel.host}:${sshrvdChannel.sshrvdPort} : $e',
           error: e,
           stackTrace: s,
         );
@@ -47,7 +47,7 @@ mixin SshnpDartInitialTunnelHandler on SshnpCore
         );
       } catch (e, s) {
         throw SshnpError(
-          'Failed to create SSHClient for ${params.remoteUsername}@${sshrvdChannel!.host}:${sshrvdChannel!.sshrvdPort} : $e',
+          'Failed to create SSHClient for ${params.remoteUsername}@${sshrvdChannel.host}:${sshrvdChannel.sshrvdPort} : $e',
           error: e,
           stackTrace: s,
         );
@@ -57,7 +57,7 @@ mixin SshnpDartInitialTunnelHandler on SshnpCore
         await client.authenticated.catchError((e) => throw e);
       } catch (e, s) {
         throw SshnpError(
-          'Failed to authenticate as ${params.remoteUsername}@${sshrvdChannel!.host}:${sshrvdChannel!.sshrvdPort} : $e',
+          'Failed to authenticate as ${params.remoteUsername}@${sshrvdChannel.host}:${sshrvdChannel.sshrvdPort} : $e',
           error: e,
           stackTrace: s,
         );
