@@ -20,14 +20,6 @@ abstract interface class Sshnp {
     return SshnpOpensshLocalImpl(atClient: atClient, params: params);
   }
 
-  /// Uses a dartssh2 ssh client - still expects local ssh keys
-  factory Sshnp.dartLocal({
-    required AtClient atClient,
-    required SshnpParams params,
-  }) {
-    return SshnpDartLocalImpl(atClient: atClient, params: params);
-  }
-
   /// Uses a dartssh2 ssh client - requires that you pass in the identity keypair
   factory Sshnp.dartPure({
     required AtClient atClient,
