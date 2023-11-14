@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 
 import 'package:at_client/at_client.dart';
 import 'package:noports_core/sshnp_foundation.dart';
@@ -8,6 +9,11 @@ class SshnpUnsignedImpl extends SshnpCore with SshnpLocalSshKeyHandler {
     required super.atClient,
     required super.params,
   }) {
+    if (Platform.isWindows) {
+      throw SshnpError(
+        'Windows is not supported by unsigned sshnp clients.',
+      );
+    }
     _sshnpdChannel = SshnpdUnsignedChannel(
       atClient: atClient,
       params: params,

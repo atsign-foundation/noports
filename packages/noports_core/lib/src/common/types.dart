@@ -3,7 +3,7 @@ import 'package:noports_core/sshrv.dart';
 typedef SshrvGenerator<T> = Sshrv<T> Function(String, int, {int localSshdPort});
 
 enum SupportedSshClient {
-  exec(cliArg: '/usr/bin/ssh'),
+  openssh(cliArg: 'openssh'),
   dart(cliArg: 'dart');
 
   final String _cliArg;
@@ -11,7 +11,7 @@ enum SupportedSshClient {
 
   factory SupportedSshClient.fromString(String cliArg) {
     return SupportedSshClient.values.firstWhere(
-      (arg) => arg._cliArg == cliArg,
+      (arg) => arg._cliArg == cliArg.toLowerCase(),
       orElse: () => throw ArgumentError('Unsupported SSH client: $cliArg'),
     );
   }
