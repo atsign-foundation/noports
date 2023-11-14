@@ -7,6 +7,7 @@ import 'package:at_utils/at_logger.dart';
 import 'package:dartssh2/dartssh2.dart';
 import 'package:logging/logging.dart';
 import 'package:meta/meta.dart';
+import 'package:noports_core/src/common/openssh_binary_path.dart';
 import 'package:noports_core/src/sshrv/sshrv.dart';
 import 'package:noports_core/sshnpd.dart';
 import 'package:noports_core/utils.dart';
@@ -561,7 +562,7 @@ class SshnpdImpl implements Sshnpd {
       String? errorMessage;
 
       switch (sshClient) {
-        case SupportedSshClient.exec:
+        case SupportedSshClient.openssh:
           (success, errorMessage) = await reverseSshViaExec(
               host: host,
               port: port,
@@ -782,7 +783,7 @@ class SshnpdImpl implements Sshnpd {
             ' -f' // fork after authentication
             ' sleep 15'
         .split(' ');
-    logger.info('$sessionId | Executing /usr/bin/ssh ${args.join(' ')}');
+    logger.info('$sessionId | Executing $opensshBinaryPath ${args.join(' ')}');
 
     // Because of the options we are using, we can wait for this process
     // to complete, because it will exit with exitCode 0 once it has connected
@@ -791,7 +792,7 @@ class SshnpdImpl implements Sshnpd {
     final soutBuf = StringBuffer();
     final serrBuf = StringBuffer();
     try {
-      Process process = await Process.start('/usr/bin/ssh', args);
+      Process process = await Process.start(opensshBinaryPath, args);
       process.stdout.listen((List<int> l) {
         var s = utf8.decode(l);
         soutBuf.write(s);
@@ -813,11 +814,11 @@ class SshnpdImpl implements Sshnpd {
     if (sshExitCode != 0) {
       if (sshExitCode == 6464) {
         logger.shout(
-            '$sessionId | Command timed out: /usr/bin/ssh ${args.join(' ')}');
+            '$sessionId | Command timed out: $opensshBinaryPath ${args.join(' ')}');
         errorMessage = 'Failed to establish connection - timed out';
       } else {
         logger.shout('$sessionId | Exit code $sshExitCode from'
-            ' /usr/bin/ssh ${args.join(' ')}');
+            ' $opensshBinaryPath ${args.join(' ')}');
         errorMessage =
             'Failed to establish connection - exit code $sshExitCode';
       }

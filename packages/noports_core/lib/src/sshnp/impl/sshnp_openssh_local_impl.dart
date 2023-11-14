@@ -4,9 +4,9 @@ import 'dart:io';
 import 'package:at_client/at_client.dart';
 import 'package:noports_core/sshnp_foundation.dart';
 
-class SshnpExecLocalImpl extends SshnpCore
-    with SshnpLocalSshKeyHandler, SshnpExecInitialTunnelHandler {
-  SshnpExecLocalImpl({
+class SshnpOpensshLocalImpl extends SshnpCore
+    with SshnpLocalSshKeyHandler, SshnpOpensshInitialTunnelHandler {
+  SshnpOpensshLocalImpl({
     required super.atClient,
     required super.params,
   }) {
@@ -79,7 +79,7 @@ class SshnpExecLocalImpl extends SshnpCore
     );
 
     /// Start the initial tunnel
-    Process bean =
+    Process? bean =
         await startInitialTunnel(identifier: ephemeralKeyPair.identifier);
 
     /// Remove the key pair from the key utility

@@ -47,8 +47,10 @@ class LocalSshKeyUtil implements AtSshKeyUtil {
       files[1].writeAsString(keyPair.publicKeyContents),
     ]).catchError((e) => throw e);
 
-    chmod(files[0].path, '600');
-    chmod(files[1].path, '644');
+    if (!Platform.isWindows) {
+      chmod(files[0].path, '600');
+      chmod(files[1].path, '644');
+    }
 
     return files;
   }
