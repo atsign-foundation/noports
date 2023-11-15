@@ -1,7 +1,8 @@
 import 'dart:async';
-import 'dart:io';
 
 import 'package:at_client/at_client.dart';
+import 'package:meta/meta.dart';
+import 'package:noports_core/src/common/io_types.dart';
 import 'package:noports_core/sshnp_foundation.dart';
 
 class SshnpOpensshLocalImpl extends SshnpCore
@@ -34,8 +35,28 @@ class SshnpOpensshLocalImpl extends SshnpCore
   @override
   Future<void> initialize() async {
     if (!isSafeToInitialize) return;
+    await findLocalPortIfRequired();
     await super.initialize();
     completeInitialization();
+  }
+
+  @visibleForTesting
+  Future<void> findLocalPortIfRequired() async {
+    // find a spare local port
+    if (localPort == 0) {
+      logger.info('Finding a spare local port');
+      try {
+        ServerSocket serverSocket =
+            await ServerSocket.bind(InternetAddress.loopbackIPv4, 0)
+                .catchError((e) => throw e);
+        localPort = serverSocket.port;
+        await serverSocket.close().catchError((e) => throw e);
+      } catch (e, s) {
+        logger.info('Unable to find a spare local port');
+        throw SshnpError('Unable to find a spare local port',
+            error: e, stackTrace: s);
+      }
+    }
   }
 
   @override

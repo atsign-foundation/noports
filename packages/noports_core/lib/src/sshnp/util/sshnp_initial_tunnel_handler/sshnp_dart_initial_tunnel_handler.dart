@@ -1,5 +1,7 @@
 import 'dart:async';
-import 'dart:io';
+// Current implementation uses ServerSocket, which will be replaced with an
+// internal Dart stream at a later time
+import 'dart:io' show ServerSocket;
 
 import 'package:dartssh2/dartssh2.dart';
 import 'package:meta/meta.dart';
@@ -73,6 +75,7 @@ mixin SshnpDartInitialTunnelHandler on SshnpCore
             ' from localhost:$fLocalPort on local side'
             ' to $fRemoteHost:$fRemotePort on remote side');
 
+        // TODO remove local dependency on ServerSockets
         /// Do the port forwarding for sshd
         final serverSocket = await ServerSocket.bind('localhost', fLocalPort);
 

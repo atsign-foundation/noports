@@ -1,4 +1,4 @@
-import 'dart:io';
+import 'package:noports_core/src/common/io_types.dart';
 import 'package:path/path.dart' as path;
 
 /// Get the home directory or null if unknown.
