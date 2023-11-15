@@ -1,6 +1,7 @@
 import 'dart:async';
-import 'dart:io';
 
+import 'package:meta/meta.dart';
+import 'package:noports_core/src/common/io_types.dart';
 import 'package:noports_core/sshnp.dart';
 import 'package:noports_core/utils.dart';
 import 'package:path/path.dart' as path;
@@ -14,10 +15,17 @@ class LocalSshKeyUtil implements AtSshKeyUtil {
 
   static final Map<String, AtSshKeyPair> _keyPairCache = {};
 
+  @visibleForTesting
+  final FileSystem fs;
+
   final String homeDirectory;
   bool cacheKeys;
-  LocalSshKeyUtil({String? homeDirectory, this.cacheKeys = true})
-      : homeDirectory = homeDirectory ?? getHomeDirectory(throwIfNull: true)!;
+
+  LocalSshKeyUtil({
+    String? homeDirectory,
+    this.cacheKeys = true,
+    @visibleForTesting this.fs = const LocalFileSystem(),
+  }) : homeDirectory = homeDirectory ?? getHomeDirectory(throwIfNull: true)!;
 
   bool get isValidPlatform =>
       Platform.isLinux || Platform.isMacOS || Platform.isWindows;
@@ -31,8 +39,8 @@ class LocalSshKeyUtil implements AtSshKeyUtil {
 
   List<File> _filesFromIdentifier({required String identifier}) {
     return [
-      File(path.normalize(identifier)),
-      File(path.normalize('$identifier.pub')),
+      fs.file(path.normalize(identifier)),
+      fs.file(path.normalize('$identifier.pub')),
     ];
   }
 
@@ -90,17 +98,18 @@ class LocalSshKeyUtil implements AtSshKeyUtil {
     SupportedSshAlgorithm algorithm = DefaultArgs.sshAlgorithm,
     String? directory,
     String? passphrase,
+    @visibleForTesting ProcessRunner processRunner = Process.run,
   }) async {
     String workingDirectory = directory ?? _defaultDirectory;
 
-    await Process.run(
+    await processRunner(
       'ssh-keygen',
       [..._sshKeygenArgMap[algorithm]!, '-f', identifier, '-q', '-N', ''],
       workingDirectory: workingDirectory,
     );
 
     String pemText =
-        await File(path.join(workingDirectory, identifier)).readAsString();
+        await fs.file(path.join(workingDirectory, identifier)).readAsString();
 
     return AtSshKeyPair.fromPem(
       pemText,
@@ -122,13 +131,13 @@ class LocalSshKeyUtil implements AtSshKeyUtil {
       throw ('$sshPublicKey does not look like a public key');
     }
 
-    if (!Directory(sshHomeDirectory).existsSync()) {
-      Directory(sshHomeDirectory).createSync();
+    if (!fs.directory(sshHomeDirectory).existsSync()) {
+      fs.directory(sshHomeDirectory).createSync();
     }
 
     // Check to see if the ssh Publickey is already in the authorized_keys file.
     // If not, then append it.
-    var authKeys = File(path.normalize('$sshHomeDirectory/authorized_keys'));
+    var authKeys = fs.file(path.normalize('$sshHomeDirectory/authorized_keys'));
 
     var authKeysContent = await authKeys.readAsString();
     if (!authKeysContent.endsWith('\n')) {
@@ -157,7 +166,7 @@ class LocalSshKeyUtil implements AtSshKeyUtil {
   Future<void> deauthorizePublicKey(String sessionId) async {
     try {
       final File file =
-          File(path.normalize('$sshHomeDirectory/authorized_keys'));
+          fs.file(path.normalize('$sshHomeDirectory/authorized_keys'));
       // read into List of strings
       final List<String> lines = await file.readAsLines();
       // find the line we want to remove

@@ -1,7 +1,7 @@
 import 'dart:async';
-import 'dart:io';
 
 import 'package:at_client/at_client.dart';
+import 'package:noports_core/src/common/io_types.dart';
 import 'package:noports_core/sshnp_foundation.dart';
 
 class SshnpUnsignedImpl extends SshnpCore with SshnpLocalSshKeyHandler {

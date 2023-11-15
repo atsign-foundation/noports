@@ -15,6 +15,7 @@ dependencies:
   at_utils: ^3.0.15
   cryptography: ^2.7.0
   dartssh2: ^2.8.2
+  file: ^6.0.0
   logging: ^1.2.0
   meta: ^1.9.1
   openssh_ed25519: ^1.1.0

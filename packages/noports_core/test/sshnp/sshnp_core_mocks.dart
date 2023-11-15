@@ -22,14 +22,6 @@ class MockSshrvdChannel extends Mock implements SshrvdChannel {}
 
 /// Stubbed [SshnpCore] (minimum viable implementation of [SshnpCore])
 class StubbedSshnpCore extends SshnpCore with StubbedAsyncInitializationMixin {
-  FunctionStub? _stubbedFindLocalPortIfRequired;
-
-  void stubFindLocalPortIfRequired(
-    FunctionStub stubbedFindLocalPortIfRequired,
-  ) {
-    _stubbedFindLocalPortIfRequired = stubbedFindLocalPortIfRequired;
-  }
-
   StubbedSshnpCore({
     required super.atClient,
     required super.params,
@@ -64,12 +56,6 @@ class StubbedSshnpCore extends SshnpCore with StubbedAsyncInitializationMixin {
   SshrvdChannel get sshrvdChannel =>
       _sshrvdChannel ?? (throw UnimplementedError());
   final SshrvdChannel? _sshrvdChannel;
-
-  @override
-  Future<void> findLocalPortIfRequired() {
-    _stubbedFindLocalPortIfRequired?.call();
-    return super.findLocalPortIfRequired();
-  }
 }
 
 /// Stubbed mixin wrapper

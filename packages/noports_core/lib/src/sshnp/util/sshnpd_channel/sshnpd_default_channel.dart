@@ -1,10 +1,9 @@
 import 'dart:async';
 import 'dart:convert';
-import 'dart:io';
 
 import 'package:at_client/at_client.dart';
 import 'package:meta/meta.dart';
-import 'package:noports_core/src/sshnp/util/sshnp_ssh_key_handler.dart';
+import 'package:noports_core/src/common/io_types.dart';
 import 'package:noports_core/src/sshnp/util/sshnpd_channel/sshnpd_channel.dart';
 import 'package:noports_core/utils.dart';
 
@@ -21,8 +20,9 @@ class SshnpdDefaultChannel extends SshnpdChannel
 mixin SshnpdDefaultPayloadHandler on SshnpdChannel {
   late final String ephemeralPrivateKey;
 
-  @protected
-  bool get useLocalFileStorage => (this is SshnpLocalSshKeyHandler);
+  @visibleForTesting
+  // disable publickey cache on windows
+  FileSystem? fs = Platform.isWindows ? null : LocalFileSystem();
 
   @override
   Future<void> initialize() async {
@@ -56,8 +56,7 @@ mixin SshnpdDefaultPayloadHandler on SshnpdChannel {
           params.sshnpdAtSign,
           logger,
           envelope,
-          useFileStorage: useLocalFileStorage &&
-              !Platform.isWindows, // disable publickey cache on windows
+          fs: fs,
         );
       } catch (e) {
         logger.shout(
