@@ -19,7 +19,6 @@ void main() {
     late FunctionStub stubbedCallInitialization;
     late FunctionStub stubbedInitialize;
     late FunctionStub stubbedCompleteInitialization;
-    late FunctionStub stubbedFindLocalPortIfRequired;
 
     setUp(() {
       /// Creation
@@ -33,7 +32,6 @@ void main() {
       stubbedCallInitialization = FunctionStub();
       stubbedInitialize = FunctionStub();
       stubbedCompleteInitialization = FunctionStub();
-      stubbedFindLocalPortIfRequired = FunctionStub();
     });
 
     /// When declaration setup for the constructor of [StubbedSshnpCore]
@@ -50,7 +48,6 @@ void main() {
       when(() => stubbedCallInitialization.call()).thenAnswer((_) async {});
       when(() => stubbedInitialize.call()).thenAnswer((_) async {});
       when(() => stubbedCompleteInitialization.call()).thenReturn(null);
-      when(() => stubbedFindLocalPortIfRequired.call()).thenReturn(null);
 
       when(() => mockSshnpdChannel.callInitialization())
           .thenAnswer((_) async {});
@@ -115,15 +112,11 @@ void main() {
           mockInitialize: stubbedInitialize,
         );
 
-        /// Setup stub for [SshnpCore.findLocalPortIfRequired()]
-        sshnpCore.stubFindLocalPortIfRequired(stubbedFindLocalPortIfRequired);
-
         whenInitialization(identityKeyPair: sshnpCore.identityKeyPair);
 
         verifyNever(() => stubbedCallInitialization.call());
         verifyNever(() => stubbedInitialize.call());
         verifyNever(() => stubbedCompleteInitialization.call());
-        verifyNever(() => stubbedFindLocalPortIfRequired.call());
 
         await expectLater(sshnpCore.callInitialization(), completes);
 
@@ -135,7 +128,6 @@ void main() {
           () => stubbedInitialize.call(),
           () => mockSshnpdChannel.callInitialization(),
           () => mockSshnpdChannel.resolveRemoteUsername(),
-          () => stubbedFindLocalPortIfRequired.call(),
           () => mockSshnpdChannel
               .sharePublicKeyIfRequired(sshnpCore.identityKeyPair),
           () => mockSshrvdChannel.callInitialization(),
@@ -147,7 +139,6 @@ void main() {
         verifyNever(() => stubbedInitialize.call());
         verifyNever(() => mockSshnpdChannel.callInitialization());
         verifyNever(() => mockSshnpdChannel.resolveRemoteUsername());
-        verifyNever(() => stubbedFindLocalPortIfRequired.call());
         verifyNever(() => mockSshnpdChannel
             .sharePublicKeyIfRequired(sshnpCore.identityKeyPair));
         verifyNever(() => mockSshrvdChannel.callInitialization());
@@ -159,7 +150,6 @@ void main() {
         verify(() => stubbedCallInitialization.call()).called(1);
         verifyNever(() => stubbedInitialize.call());
         verifyNever(() => stubbedCompleteInitialization.call());
-        verifyNever(() => stubbedFindLocalPortIfRequired.call());
         verifyNever(() => mockSshrvdChannel.callInitialization());
       });
     }); // group Initialization

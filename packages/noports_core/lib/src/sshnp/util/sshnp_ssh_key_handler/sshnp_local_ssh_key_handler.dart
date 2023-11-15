@@ -1,5 +1,4 @@
-import 'dart:io';
-
+import 'package:noports_core/src/common/io_types.dart';
 import 'package:noports_core/sshnp_foundation.dart';
 
 mixin SshnpLocalSshKeyHandler on SshnpCore implements SshnpKeyHandler {

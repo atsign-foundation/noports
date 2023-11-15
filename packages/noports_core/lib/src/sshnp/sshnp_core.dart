@@ -1,9 +1,6 @@
 import 'dart:async';
 
-import 'dart:io';
-
 import 'package:at_client/at_client.dart' hide StringBuffer;
-
 import 'package:at_utils/at_logger.dart';
 import 'package:meta/meta.dart';
 import 'package:noports_core/src/common/mixins/async_completion.dart';
@@ -86,9 +83,6 @@ abstract class SshnpCore
     /// Set the remote username to use for the ssh session
     remoteUsername = await sshnpdChannel.resolveRemoteUsername();
 
-    /// Find a spare local port if required
-    await findLocalPortIfRequired();
-
     /// Shares the public key if required
     await sshnpdChannel.sharePublicKeyIfRequired(identityKeyPair);
 
@@ -99,26 +93,6 @@ abstract class SshnpCore
   @override
   Future<void> dispose() async {
     completeDisposal();
-  }
-
-  @visibleForTesting
-  Future<void> findLocalPortIfRequired() async {
-    // TODO investigate if this is a problem on mobile
-    // find a spare local port
-    if (localPort == 0) {
-      logger.info('Finding a spare local port');
-      try {
-        ServerSocket serverSocket =
-            await ServerSocket.bind(InternetAddress.loopbackIPv4, 0)
-                .catchError((e) => throw e);
-        localPort = serverSocket.port;
-        await serverSocket.close().catchError((e) => throw e);
-      } catch (e, s) {
-        logger.info('Unable to find a spare local port');
-        throw SshnpError('Unable to find a spare local port',
-            error: e, stackTrace: s);
-      }
-    }
   }
 
   @override
