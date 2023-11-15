@@ -1,25 +1,9 @@
-import 'package:at_client/at_client.dart';
-import 'package:mocktail/mocktail.dart';
 import 'package:noports_core/sshnp_foundation.dart';
 
+import 'sshnp_mocks.dart';
 import 'sshnp_core_constants.dart';
 
-/// Function Stubbing
-abstract class FunctionCaller {
-  void call();
-}
-
-class FunctionStub extends Mock implements FunctionCaller {}
-
 /// Mocked Classes
-class MockAtClient extends Mock implements AtClient {}
-
-class MockSshnpParams extends Mock implements SshnpParams {}
-
-class MockSshnpdChannel extends Mock implements SshnpdChannel {}
-
-class MockSshrvdChannel extends Mock implements SshrvdChannel {}
-
 /// Stubbed [SshnpCore] (minimum viable implementation of [SshnpCore])
 class StubbedSshnpCore extends SshnpCore with StubbedAsyncInitializationMixin {
   StubbedSshnpCore({

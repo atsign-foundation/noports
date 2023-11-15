@@ -5,6 +5,7 @@ import 'package:mocktail/mocktail.dart';
 import 'package:noports_core/sshnp_foundation.dart';
 import 'package:test/test.dart';
 
+import '../../sshnp_mocks.dart';
 import 'sshnp_openssh_initial_tunnel_handler_mocks.dart';
 
 void main() {

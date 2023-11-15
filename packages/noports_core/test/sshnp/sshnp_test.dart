@@ -1,13 +1,10 @@
-import 'package:at_client/at_client.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:noports_core/sshnp_foundation.dart';
 import 'package:test/test.dart';
 
+import 'sshnp_mocks.dart';
+
 class StubbedSshnp extends Mock implements Sshnp {}
-
-class MockAtClient extends Mock implements AtClient {}
-
-class MockSshnpParams extends Mock implements SshnpParams {}
 
 class MySshnpResult extends SshnpResult {}
 

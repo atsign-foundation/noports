@@ -5,9 +5,7 @@ import 'package:noports_core/sshnp.dart';
 import 'package:socket_connector/socket_connector.dart';
 import 'package:test/test.dart';
 
-class MockProcess extends Mock implements Process {}
-
-class MockSocketConnector extends Mock implements SocketConnector {}
+import '../sshnp_mocks.dart';
 
 void main() {
   group('SshnpResult', () {

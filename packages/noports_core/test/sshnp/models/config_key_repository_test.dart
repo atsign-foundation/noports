@@ -3,7 +3,7 @@ import 'package:noports_core/sshnp_params.dart';
 import 'package:test/test.dart';
 import 'package:mocktail/mocktail.dart';
 
-class MockAtClient extends Mock implements AtClient {}
+import '../sshnp_mocks.dart';
 
 void main() {
   group('ConfigKeyRepository', () {
