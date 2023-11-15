@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:meta/meta.dart';
 import 'package:noports_core/src/common/io_types.dart';
 import 'package:noports_core/src/common/openssh_binary_path.dart';
 import 'package:noports_core/sshnp_foundation.dart';
@@ -8,7 +9,10 @@ import 'package:noports_core/sshnp_foundation.dart';
 mixin SshnpOpensshInitialTunnelHandler on SshnpCore
     implements SshnpInitialTunnelHandler<Process?> {
   @override
-  Future<Process?> startInitialTunnel({required String identifier}) async {
+  Future<Process?> startInitialTunnel({
+    required String identifier,
+    @visibleForTesting ProcessStarter startProcess = Process.start,
+  }) async {
     Process? process;
     // If we are starting an initial tunnel, it should be to sshrvd,
     // so it is safe to assume that sshrvdChannel is not null here
@@ -47,7 +51,7 @@ mixin SshnpOpensshInitialTunnelHandler on SshnpCore
         // window. It's not necessary (and currently not possible) to capture
         // the process since there is a physical window the user can close to
         // end the session
-        unawaited(Process.start(
+        unawaited(startProcess(
           'powershell.exe',
           [
             '-command',
@@ -60,7 +64,7 @@ mixin SshnpOpensshInitialTunnelHandler on SshnpCore
         // Delay to allow the detached session to pick up the keys
         await Future.delayed(Duration(seconds: 3));
       } else {
-        process = await Process.start(opensshBinaryPath, args);
+        process = await startProcess(opensshBinaryPath, args);
         process.stdout.transform(Utf8Decoder()).listen((String s) {
           soutBuf.write(s);
           logger.info(' $sessionId | sshStdOut | $s');
