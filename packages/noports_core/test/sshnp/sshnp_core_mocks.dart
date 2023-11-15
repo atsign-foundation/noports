@@ -60,35 +60,35 @@ class StubbedSshnpCore extends SshnpCore with StubbedAsyncInitializationMixin {
 
 /// Stubbed mixin wrapper
 mixin StubbedAsyncInitializationMixin on AsyncInitialization {
-  late FunctionStub _mockCallInitialization;
-  late FunctionStub _mockInitialize;
-  late FunctionStub _mockCompleteInitialization;
+  late FunctionStub _stubbedCallInitialization;
+  late FunctionStub _stubbedInitialize;
+  late FunctionStub _stubbedCompleteInitialization;
 
   void stubAsyncInitialization({
-    required FunctionStub mockCallInitialization,
-    required FunctionStub mockInitialize,
-    required FunctionStub mockCompleteInitialization,
+    required FunctionStub stubbedCallInitialization,
+    required FunctionStub stubbedInitialize,
+    required FunctionStub stubbedCompleteInitialization,
   }) {
-    _mockCallInitialization = mockCallInitialization;
-    _mockInitialize = mockInitialize;
-    _mockCompleteInitialization = mockCompleteInitialization;
+    _stubbedCallInitialization = stubbedCallInitialization;
+    _stubbedInitialize = stubbedInitialize;
+    _stubbedCompleteInitialization = stubbedCompleteInitialization;
   }
 
   @override
   Future<void> callInitialization() async {
-    _mockCallInitialization.call();
+    _stubbedCallInitialization.call();
     return super.callInitialization();
   }
 
   @override
   Future<void> initialize() async {
-    _mockInitialize.call();
+    _stubbedInitialize.call();
     await super.initialize();
   }
 
   @override
   void completeInitialization() {
-    _mockCompleteInitialization.call();
+    _stubbedCompleteInitialization.call();
     super.completeInitialization();
   }
 }

@@ -107,9 +107,9 @@ void main() {
 
         /// Setup stubs for the mocks that are part of [MockAsyncInitializationMixin]
         sshnpCore.stubAsyncInitialization(
-          mockCallInitialization: stubbedCallInitialization,
-          mockCompleteInitialization: stubbedCompleteInitialization,
-          mockInitialize: stubbedInitialize,
+          stubbedCallInitialization: stubbedCallInitialization,
+          stubbedCompleteInitialization: stubbedCompleteInitialization,
+          stubbedInitialize: stubbedInitialize,
         );
 
         whenInitialization(identityKeyPair: sshnpCore.identityKeyPair);
