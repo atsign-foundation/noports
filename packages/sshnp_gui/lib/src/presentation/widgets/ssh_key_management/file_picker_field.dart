@@ -57,28 +57,39 @@ class _FilePickerFieldState extends ConsumerState<FilePickerField> {
     return SizedBox(
       width: widget.width,
       // height: height,
-      child: DottedBorder(
-        dashPattern: const [10, 10],
-        color: kPrimaryColor,
-        radius: const Radius.circular(2),
-        child: TextFormField(
-          controller: controller,
-          textAlign: TextAlign.center,
-          readOnly: true,
-          decoration: InputDecoration(
-            filled: true,
-            fillColor: kProfileFormFieldColor,
-            border: InputBorder.none,
-            hintText: AppLocalizations.of(context)!.selectPrivateKey,
-            hintStyle: Theme.of(context).textTheme.bodyLarge,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            AppLocalizations.of(context)!.privateKey,
+            style: Theme.of(context).textTheme.bodyLarge!.copyWith(
+                  color: Colors.grey,
+                ),
           ),
-          onTap: () async {
-            await ref.read(filePickerController.notifier).getFileDetails();
-            controller.notifyListeners();
-          },
+          DottedBorder(
+            dashPattern: const [10, 10],
+            color: kPrimaryColor,
+            radius: const Radius.circular(2),
+            child: TextFormField(
+              controller: controller,
+              textAlign: TextAlign.center,
+              readOnly: true,
+              decoration: InputDecoration(
+                filled: true,
+                fillColor: kProfileFormFieldColor,
+                border: InputBorder.none,
+                hintText: AppLocalizations.of(context)!.selectAFile,
+                hintStyle: Theme.of(context).textTheme.bodyLarge,
+              ),
+              onTap: () async {
+                await ref.read(filePickerController.notifier).getFileDetails();
+                controller.notifyListeners();
+              },
 
-          // validator: FormValidator.validateOptio,
-        ),
+              // validator: FormValidator.validateOptio,
+            ),
+          ),
+        ],
       ),
     );
   }

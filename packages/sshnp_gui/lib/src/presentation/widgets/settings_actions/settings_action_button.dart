@@ -29,7 +29,7 @@ class SettingsActionButton extends StatelessWidget {
           ),
           title: Text(
             title,
-            style: Theme.of(context).textTheme.bodyMedium!.copyWith(fontSize: 18, color: Colors.white),
+            style: Theme.of(context).textTheme.bodyLarge!.copyWith(fontSize: 18, color: Colors.white),
           ),
           onTap: onTap,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),

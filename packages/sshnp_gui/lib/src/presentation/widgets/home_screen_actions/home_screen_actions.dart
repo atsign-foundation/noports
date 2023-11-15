@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:sshnp_gui/src/presentation/widgets/home_screen_actions/import_profile_action.dart';
 import 'package:sshnp_gui/src/presentation/widgets/home_screen_actions/new_profile_action.dart';
-import 'package:sshnp_gui/src/presentation/widgets/home_screen_actions/ssh_key_management_action.dart';
 import 'package:sshnp_gui/src/utility/sizes.dart';
 
 class HomeScreenActions extends StatelessWidget {
@@ -15,7 +14,6 @@ class HomeScreenActions extends StatelessWidget {
         gapW8,
         NewProfileAction(),
         gapW8,
-        SSHKeyManagementAction(),
       ],
     );
   }

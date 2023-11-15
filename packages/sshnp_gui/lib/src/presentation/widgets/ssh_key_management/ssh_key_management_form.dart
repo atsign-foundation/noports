@@ -18,7 +18,6 @@ import 'package:sshnp_gui/src/utility/sizes.dart';
 
 import '../../../application/at_ssh_key_pair_manager.dart';
 import '../../../controllers/file_picker_controller.dart';
-import '../profile_form/profile_form_card.dart';
 
 class SSHKeyManagementForm extends ConsumerStatefulWidget {
   const SSHKeyManagementForm({super.key});
@@ -107,66 +106,74 @@ class _SSHKeyManagementFormState extends ConsumerState<SSHKeyManagementForm> {
           content = oldAtSshKeyPairManager.content;
           privateKeyFileName = oldAtSshKeyPairManager.privateKeyFileName;
 
-          return SingleChildScrollView(
-            child: Form(
-              key: _formkey,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  gapH20,
-                  Text(strings.sshKeyManagement, style: Theme.of(context).textTheme.titleMedium),
-                  ProfileFormCard(formFields: [
-                    CustomTextFormField(
-                      initialValue: nickname,
-                      labelText: strings.nickName,
-                      onSaved: (value) {
-                        nickname = value!;
-                        ref.read(formProfileNameController.notifier).state = value;
-                        log(ref.read(formProfileNameController));
-                      },
-                      validator: FormValidator.validateProfileNameField,
-                    ),
-                    gapH10,
-                    FilePickerField(
-                      onTap: () async {
-                        await getPrivateKey();
-                      },
-                      initialValue: privateKeyFileName,
-                      validator: FormValidator.validateRequiredField,
-                    ),
-                    gapH10,
-                    CustomTextFormField(
-                      labelText: 'SSH Key Password',
-                      initialValue: passPhrase,
-                      isPasswordField: true,
-                      onSaved: (value) => passPhrase = value,
-                    ),
-                    gapH10,
-                  ]),
-                  gapH20,
-                  gapH10,
-                  SizedBox(
-                    width: kFieldDefaultWidth + Sizes.p233,
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        ElevatedButton(
-                          onPressed: () => onSubmit(),
-                          child: Text(strings.connect),
+          return Dialog(
+            child: Padding(
+              padding: const EdgeInsets.all(Sizes.p21),
+              child: SingleChildScrollView(
+                child: Form(
+                  key: _formkey,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      gapH20,
+                      Text(strings.sshKeyManagement('no'), style: Theme.of(context).textTheme.titleMedium),
+                      gapH20,
+                      FilePickerField(
+                        onTap: () async {
+                          await getPrivateKey();
+                        },
+                        initialValue: privateKeyFileName,
+                        validator: FormValidator.validateRequiredField,
+                      ),
+                      gapH10,
+                      CustomTextFormField(
+                        initialValue: nickname,
+                        labelText: strings.nickName,
+                        onSaved: (value) {
+                          nickname = value!;
+                          ref.read(formProfileNameController.notifier).state = value;
+                          log(ref.read(formProfileNameController));
+                        },
+                        validator: FormValidator.validateProfileNameField,
+                      ),
+                      gapH10,
+                      CustomTextFormField(
+                        labelText: 'SSH Key Password',
+                        initialValue: passPhrase,
+                        isPasswordField: true,
+                        onSaved: (value) => passPhrase = value,
+                      ),
+                      gapH10,
+                      gapH20,
+                      gapH10,
+                      SizedBox(
+                        width: kFieldDefaultWidth + Sizes.p233,
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            TextButton(
+                              onPressed: () {
+                                ref.read(navigationRailController.notifier).setRoute(AppRoute.home);
+                                context.pop();
+                              },
+                              child: Text(strings.cancel,
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .bodyLarge!
+                                      .copyWith(decoration: TextDecoration.underline)),
+                            ),
+                            gapW8,
+                            ElevatedButton(
+                              onPressed: () => onSubmit(),
+                              child: Text(strings.addKey),
+                            ),
+                          ],
                         ),
-                        gapW8,
-                        TextButton(
-                          onPressed: () {
-                            ref.read(navigationRailController.notifier).setRoute(AppRoute.home);
-                            context.pushReplacementNamed(AppRoute.home.name);
-                          },
-                          child: Text(strings.cancel),
-                        ),
-                      ],
-                    ),
+                      ),
+                    ],
                   ),
-                ],
+                ),
               ),
             ),
           );

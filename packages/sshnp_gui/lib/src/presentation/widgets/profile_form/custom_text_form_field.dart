@@ -43,28 +43,38 @@ class _CustomTextFormFieldState extends State<CustomTextFormField> {
     return SizedBox(
       width: widget.width,
       // height: height,
-      child: TextFormField(
-        initialValue: widget.initialValue,
-        obscureText: widget.isPasswordField && !_isPasswordVisible,
-        decoration: InputDecoration(
-          filled: true,
-          fillColor: kProfileFormFieldColor,
-          border: UnderlineInputBorder(
-            borderRadius: BorderRadius.circular(2),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            widget.labelText,
+            style: Theme.of(context).textTheme.bodyLarge!.copyWith(
+                  color: Colors.grey,
+                ),
           ),
-          labelText: widget.labelText,
-          hintText: widget.hintText,
-          hintStyle: Theme.of(context).textTheme.bodyLarge,
-          suffixIcon: widget.isPasswordField
-              ? InkWell(
-                  onTap: _setPasswordVisibility,
-                  child: Icon(_isPasswordVisible ? Icons.visibility_outlined : Icons.visibility_off_outlined),
-                )
-              : null,
-        ),
-        onChanged: widget.onChanged,
-        onSaved: widget.onSaved,
-        validator: widget.validator,
+          TextFormField(
+            initialValue: widget.initialValue,
+            obscureText: widget.isPasswordField && !_isPasswordVisible,
+            decoration: InputDecoration(
+              filled: true,
+              fillColor: kProfileFormFieldColor,
+              border: UnderlineInputBorder(
+                borderRadius: BorderRadius.circular(2),
+              ),
+              hintText: widget.hintText,
+              hintStyle: Theme.of(context).textTheme.bodyLarge,
+              suffixIcon: widget.isPasswordField
+                  ? InkWell(
+                      onTap: _setPasswordVisibility,
+                      child: Icon(_isPasswordVisible ? Icons.visibility_outlined : Icons.visibility_off_outlined),
+                    )
+                  : null,
+            ),
+            onChanged: widget.onChanged,
+            onSaved: widget.onSaved,
+            validator: widget.validator,
+          ),
+        ],
       ),
     );
   }

@@ -13,9 +13,12 @@ import 'package:sshnp_gui/src/presentation/widgets/profile_form/custom_dropdown_
 import 'package:sshnp_gui/src/presentation/widgets/profile_form/custom_switch_widget.dart';
 import 'package:sshnp_gui/src/presentation/widgets/profile_form/custom_text_form_field.dart';
 import 'package:sshnp_gui/src/presentation/widgets/profile_form/profile_form_card.dart';
+import 'package:sshnp_gui/src/presentation/widgets/ssh_key_management/ssh_key_management_form.dart';
 import 'package:sshnp_gui/src/utility/constants.dart';
 import 'package:sshnp_gui/src/utility/form_validator.dart';
 import 'package:sshnp_gui/src/utility/sizes.dart';
+
+import '../../../controllers/ssh_key_pair_controller.dart';
 
 class ProfileForm extends ConsumerStatefulWidget {
   const ProfileForm({super.key});
@@ -48,6 +51,7 @@ class _ProfileFormState extends ConsumerState<ProfileForm> {
       SshnpParams config = SshnpParams.merge(oldConfig, newConfig);
 
       if (rename) {
+        await controller.deleteConfig(context: context);
         // delete old config file and write the new one
         await controller.putConfig(config, oldProfileName: oldConfig.profileName!, context: context);
       } else {
@@ -65,6 +69,7 @@ class _ProfileFormState extends ConsumerState<ProfileForm> {
   Widget build(BuildContext context) {
     final strings = AppLocalizations.of(context)!;
     currentProfile = ref.watch(currentConfigController);
+    final atSshKeyPairs = ref.watch(atSshKeyPairListController);
 
     final asyncOldConfig = ref.watch(configFamilyController(currentProfile.profileName));
 
@@ -132,19 +137,56 @@ class _ProfileFormState extends ConsumerState<ProfileForm> {
                     validator: FormValidator.validateRequiredField,
                   ),
                   gapH20,
-                  Text(strings.sshKeyManagement, style: Theme.of(context).textTheme.titleMedium),
+                  Text(strings.sshKeyManagement('yes'), style: Theme.of(context).textTheme.titleMedium),
                   ProfileFormCard(formFields: [
+                    atSshKeyPairs.when(
+                        loading: () => const Center(child: CircularProgressIndicator()),
+                        error: (error, stack) => Center(child: Text(error.toString())),
+                        data: (atSshKeyPairs) {
+                          final atSshKeyPairsList = atSshKeyPairs.toList();
+                          atSshKeyPairsList.add('Select a new file');
+                          return CustomDropdownFormField<String>(
+                            initialValue: oldConfig.identityFile,
+                            label: strings.privateKey,
+                            hintText: strings.select,
+                            items: atSshKeyPairsList.map((e) {
+                              if (e == 'Select a new file') {
+                                return DropdownMenuItem<String>(
+                                  value: e,
+                                  child: Text(
+                                    e,
+                                    style: Theme.of(context).textTheme.bodyLarge!.copyWith(color: kPrimaryColor),
+                                  ),
+                                );
+                              } else {
+                                return DropdownMenuItem<String>(
+                                  value: e,
+                                  child: Text(e),
+                                );
+                              }
+                            }).toList(),
+                            onChanged: (value) {
+                              if (value == 'Select a new file') {
+                                // TODO: add dialog for key management
+                                showDialog(context: context, builder: ((context) => const SSHKeyManagementForm()));
+                              }
+                            },
+                            onSaved: (value) {
+                              final atSsshKeyPair = ref.read(atSSHKeyPairManagerFamilyController(value!));
+                              atSsshKeyPair.when(
+                                  data: (data) => newConfig = SshnpPartialParams.merge(
+                                      newConfig,
+                                      SshnpPartialParams(
+                                          identityFile: data.nickname, identityPassphrase: data.passPhrase)),
+                                  error: ((error, stackTrace) => log(error.toString())),
+                                  loading: () => const CircularProgressIndicator());
+                            },
+                          );
+                        }),
+
                     // TODO: Add key management dropdown here
                     gapH10,
-                    CustomTextFormField(
-                      labelText: 'SSH Key Password',
-                      initialValue: oldConfig.identityPassphrase,
-                      isPasswordField: true,
-                      onSaved: (value) => newConfig = SshnpPartialParams.merge(
-                        newConfig,
-                        SshnpPartialParams(identityPassphrase: value),
-                      ),
-                    ),
+
                     gapH10,
                     CustomDropdownFormField<SupportedSshAlgorithm>(
                       label: strings.sshAlgorithm,

@@ -8,17 +8,14 @@ import 'package:sshnp_gui/src/presentation/screens/settings_screen.dart';
 import 'package:sshnp_gui/src/presentation/screens/terminal_screen.dart';
 import 'package:sshnp_gui/src/repository/navigation_repository.dart';
 
-import '../presentation/screens/ssh_key_management_form_screen.dart';
-import '../presentation/screens/ssh_key_management_screen.dart';
-
 enum AppRoute {
   onboarding,
   home,
   profileForm,
   terminal,
   settings,
-  sshKeyManagementForm,
-  sskKeyManagement,
+  // sshKeyManagementForm,
+  // sskKeyManagement,
 }
 
 final navigationController = Provider<GoRouter>(
@@ -72,26 +69,26 @@ final navigationController = Provider<GoRouter>(
                   FadeTransition(opacity: animation, child: child)),
             ),
           ),
-          GoRoute(
-            path: 'key-management-form',
-            name: AppRoute.sshKeyManagementForm.name,
-            pageBuilder: (context, state) => CustomTransitionPage<void>(
-              key: state.pageKey,
-              child: const SSHKeyManagementFormScreen(),
-              transitionsBuilder: ((context, animation, secondaryAnimation, child) =>
-                  FadeTransition(opacity: animation, child: child)),
-            ),
-          ),
-          GoRoute(
-            path: 'key-management',
-            name: AppRoute.sskKeyManagement.name,
-            pageBuilder: (context, state) => CustomTransitionPage<void>(
-              key: state.pageKey,
-              child: const SshKeyManagementScreen(),
-              transitionsBuilder: ((context, animation, secondaryAnimation, child) =>
-                  FadeTransition(opacity: animation, child: child)),
-            ),
-          )
+          // GoRoute(
+          //   path: 'key-management-form',
+          //   name: AppRoute.sshKeyManagementForm.name,
+          //   pageBuilder: (context, state) => CustomTransitionPage<void>(
+          //     key: state.pageKey,
+          //     child: const SSHKeyManagementFormScreen(),
+          //     transitionsBuilder: ((context, animation, secondaryAnimation, child) =>
+          //         FadeTransition(opacity: animation, child: child)),
+          //   ),
+          // ),
+          // GoRoute(
+          //   path: 'key-management',
+          //   name: AppRoute.sskKeyManagement.name,
+          //   pageBuilder: (context, state) => CustomTransitionPage<void>(
+          //     key: state.pageKey,
+          //     child: const SshKeyManagementScreen(),
+          //     transitionsBuilder: ((context, animation, secondaryAnimation, child) =>
+          //         FadeTransition(opacity: animation, child: child)),
+          //   ),
+          // )
         ],
       ),
     ],
