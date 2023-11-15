@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:at_client/at_client.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:noports_core/sshnp_foundation.dart';
 import 'package:test/test.dart';
@@ -8,11 +9,11 @@ import 'sshnp_openssh_initial_tunnel_handler_mocks.dart';
 
 void main() {
   group('SshnpOpensshInitialTunnelHandler', () {
-    late final MockAtClient mockAtClient;
-    late final MockSshnpParams mockParams;
-    late final MockSshnpdChannel mockSshnpChannel;
-    late final MockSshrvdChannel mockSshrvdChannel;
-    late final StubbedSshnp stubbedSshnp;
+    late MockAtClient mockAtClient;
+    late MockSshnpParams mockParams;
+    late MockSshnpdChannel mockSshnpChannel;
+    late MockSshrvdChannel mockSshrvdChannel;
+    late StubbedSshnp stubbedSshnp;
 
     setUp(() {
       mockAtClient = MockAtClient();
@@ -21,6 +22,7 @@ void main() {
       mockSshrvdChannel = MockSshrvdChannel();
 
       // Mocked SshnpCore Constructor calls
+      registerFallbackValue(AtClientPreference());
       when(() => mockParams.device).thenReturn('mydevice');
       when(() => mockParams.localPort).thenReturn(0);
       when(() => mockParams.verbose).thenReturn(false);
