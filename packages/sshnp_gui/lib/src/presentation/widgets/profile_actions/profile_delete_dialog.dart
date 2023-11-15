@@ -30,7 +30,7 @@ class ProfileDeleteDialog extends ConsumerWidget {
                   children: [
                     TextSpan(
                       text: strings.note,
-                      style: Theme.of(context).textTheme.bodyLarge!.copyWith(fontWeight: FontWeight.w700),
+                      style: Theme.of(context).textTheme.bodySmall!.copyWith(fontWeight: FontWeight.w700),
                     ),
                     TextSpan(
                       text: strings.noteMessage,
@@ -44,7 +44,7 @@ class ProfileDeleteDialog extends ConsumerWidget {
             OutlinedButton(
               onPressed: () => Navigator.of(context).pop(false),
               child: Text(strings.cancelButton,
-                  style: Theme.of(context).textTheme.bodyLarge!.copyWith(decoration: TextDecoration.underline)),
+                  style: Theme.of(context).textTheme.bodySmall!.copyWith(decoration: TextDecoration.underline)),
             ),
             ElevatedButton(
               onPressed: () async {
@@ -57,7 +57,7 @@ class ProfileDeleteDialog extends ConsumerWidget {
               child: Text(
                 strings.deleteButton,
                 style:
-                    Theme.of(context).textTheme.bodyLarge!.copyWith(fontWeight: FontWeight.w700, color: Colors.white),
+                    Theme.of(context).textTheme.bodySmall!.copyWith(fontWeight: FontWeight.w700, color: Colors.white),
               ),
             )
           ],

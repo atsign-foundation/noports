@@ -26,4 +26,13 @@ class FormValidator {
     }
     return null;
   }
+
+  static String? validatePrivateKeyField(String? value) {
+    if (value?.isEmpty ?? true) {
+      return kEmptyFieldValidationError;
+    } else if (value! == kPrivateKeyDropDownOption) {
+      return kPrivateKeyFieldValidationError;
+    }
+    return null;
+  }
 }

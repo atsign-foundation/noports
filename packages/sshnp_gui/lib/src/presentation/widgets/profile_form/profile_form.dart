@@ -1,5 +1,6 @@
 import 'dart:developer';
 
+import 'package:dotted_border/dotted_border.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -144,18 +145,24 @@ class _ProfileFormState extends ConsumerState<ProfileForm> {
                         error: (error, stack) => Center(child: Text(error.toString())),
                         data: (atSshKeyPairs) {
                           final atSshKeyPairsList = atSshKeyPairs.toList();
-                          atSshKeyPairsList.add('Select a new file');
+                          atSshKeyPairsList.add(kPrivateKeyDropDownOption);
                           return CustomDropdownFormField<String>(
                             initialValue: oldConfig.identityFile,
                             label: strings.privateKey,
                             hintText: strings.select,
                             items: atSshKeyPairsList.map((e) {
-                              if (e == 'Select a new file') {
+                              if (e == kPrivateKeyDropDownOption) {
                                 return DropdownMenuItem<String>(
                                   value: e,
-                                  child: Text(
-                                    e,
-                                    style: Theme.of(context).textTheme.bodyLarge!.copyWith(color: kPrimaryColor),
+                                  child: DottedBorder(
+                                    dashPattern: const [10, 10],
+                                    color: kPrimaryColor,
+                                    radius: const Radius.circular(2),
+                                    padding: const EdgeInsets.all(Sizes.p12),
+                                    child: Text(
+                                      e,
+                                      style: Theme.of(context).textTheme.bodySmall!.copyWith(color: kPrimaryColor),
+                                    ),
                                   ),
                                 );
                               } else {
@@ -166,8 +173,7 @@ class _ProfileFormState extends ConsumerState<ProfileForm> {
                               }
                             }).toList(),
                             onChanged: (value) {
-                              if (value == 'Select a new file') {
-                                // TODO: add dialog for key management
+                              if (value == kPrivateKeyDropDownOption) {
                                 showDialog(context: context, builder: ((context) => const SSHKeyManagementForm()));
                               }
                             },
@@ -181,6 +187,7 @@ class _ProfileFormState extends ConsumerState<ProfileForm> {
                                   error: ((error, stackTrace) => log(error.toString())),
                                   loading: () => const CircularProgressIndicator());
                             },
+                            onValidator: FormValidator.validatePrivateKeyField,
                           );
                         }),
 

@@ -48,7 +48,7 @@ class _CustomTextFormFieldState extends State<CustomTextFormField> {
         children: [
           Text(
             widget.labelText,
-            style: Theme.of(context).textTheme.bodyLarge!.copyWith(
+            style: Theme.of(context).textTheme.bodySmall!.copyWith(
                   color: Colors.grey,
                 ),
           ),
@@ -62,13 +62,14 @@ class _CustomTextFormFieldState extends State<CustomTextFormField> {
                 borderRadius: BorderRadius.circular(2),
               ),
               hintText: widget.hintText,
-              hintStyle: Theme.of(context).textTheme.bodyLarge,
+              hintStyle: Theme.of(context).textTheme.bodySmall,
               suffixIcon: widget.isPasswordField
                   ? InkWell(
                       onTap: _setPasswordVisibility,
                       child: Icon(_isPasswordVisible ? Icons.visibility_outlined : Icons.visibility_off_outlined),
                     )
                   : null,
+              errorMaxLines: 3,
             ),
             onChanged: widget.onChanged,
             onSaved: widget.onSaved,

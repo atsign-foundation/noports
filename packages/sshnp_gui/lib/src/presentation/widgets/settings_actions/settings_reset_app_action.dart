@@ -39,7 +39,7 @@ class _SettingsResetAppActionState extends State<SettingsResetAppAction> {
           child: Text(AppLocalizations.of(context)!.reset,
               style: Theme.of(context)
                   .textTheme
-                  .bodyLarge!
+                  .bodySmall!
                   .copyWith(fontSize: Sizes.p18, color: Colors.black, decoration: TextDecoration.underline)));
     }
   }

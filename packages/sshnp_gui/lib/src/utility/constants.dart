@@ -11,6 +11,9 @@ const kProfileFormFieldColor = Color(0xff303030);
 const kEmptyFieldValidationError = 'Field cannot be left blank';
 const kAtsignFieldValidationError = 'Field must start with @';
 const kProfileNameFieldValidationError = 'Field must only use alphanumeric characters and spaces';
+const kPrivateKeyFieldValidationError = 'Field must be a valid private key';
+
+const kPrivateKeyDropDownOption = 'Create a new private key';
 
 const String dotEnvMimeType = 'text/plain';
 const XTypeGroup dotEnvTypeGroup = XTypeGroup(

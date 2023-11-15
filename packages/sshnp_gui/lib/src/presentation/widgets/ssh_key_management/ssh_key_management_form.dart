@@ -164,7 +164,7 @@ class _SSHKeyManagementFormState extends ConsumerState<SSHKeyManagementForm> {
                               child: Text(strings.cancel,
                                   style: Theme.of(context)
                                       .textTheme
-                                      .bodyLarge!
+                                      .bodySmall!
                                       .copyWith(decoration: TextDecoration.underline)),
                             ),
                             gapW8,

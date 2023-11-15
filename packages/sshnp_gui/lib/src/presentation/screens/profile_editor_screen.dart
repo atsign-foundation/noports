@@ -63,7 +63,7 @@ class _ProfileEditorScreenState extends State<ProfileEditorScreen> {
 //         decoration: InputDecoration(
 //           labelText: strings.sshnpdAtSign,
 //           hintText: strings.sshnpdAtSignHint,
-//           hintStyle: Theme.of(context).textTheme.bodyLarge,
+//           hintStyle: Theme.of(context).textTheme.bodySmall,
 //         ),
 //       ),
 //     );

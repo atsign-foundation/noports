@@ -62,7 +62,7 @@ class _FilePickerFieldState extends ConsumerState<FilePickerField> {
         children: [
           Text(
             AppLocalizations.of(context)!.privateKey,
-            style: Theme.of(context).textTheme.bodyLarge!.copyWith(
+            style: Theme.of(context).textTheme.bodySmall!.copyWith(
                   color: Colors.grey,
                 ),
           ),
@@ -79,7 +79,7 @@ class _FilePickerFieldState extends ConsumerState<FilePickerField> {
                 fillColor: kProfileFormFieldColor,
                 border: InputBorder.none,
                 hintText: AppLocalizations.of(context)!.selectAFile,
-                hintStyle: Theme.of(context).textTheme.bodyLarge,
+                hintStyle: Theme.of(context).textTheme.bodySmall,
               ),
               validator: widget.validator,
               onTap: () async {

@@ -19,7 +19,7 @@ class CustomSwitchWidget extends StatelessWidget {
           Expanded(
               child: Text(
             labelText,
-            style: Theme.of(context).textTheme.bodyLarge,
+            style: Theme.of(context).textTheme.bodySmall,
           )),
           gapW8,
           Switch(

@@ -39,7 +39,7 @@ class _HomeScreenImportDialogState extends State<HomeScreenImportDialog> {
             Navigator.of(context).pop(false);
           },
           child: Text(strings.cancelButton,
-              style: Theme.of(context).textTheme.bodyLarge!.copyWith(decoration: TextDecoration.underline)),
+              style: Theme.of(context).textTheme.bodySmall!.copyWith(decoration: TextDecoration.underline)),
         ),
         ElevatedButton(
           onPressed: () {
@@ -53,7 +53,7 @@ class _HomeScreenImportDialogState extends State<HomeScreenImportDialog> {
               ),
           child: Text(
             strings.submit,
-            style: Theme.of(context).textTheme.bodyLarge!.copyWith(fontWeight: FontWeight.w700, color: Colors.white),
+            style: Theme.of(context).textTheme.bodySmall!.copyWith(fontWeight: FontWeight.w700, color: Colors.white),
           ),
         )
       ],
