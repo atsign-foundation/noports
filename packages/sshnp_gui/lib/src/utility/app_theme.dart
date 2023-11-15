@@ -88,24 +88,24 @@ class AppTheme {
       // letterSpacing: 0.1,
     ),
     bodyLarge: TextStyle(
-      fontSize: 16,
-      fontWeight: FontWeight.w400,
+      fontSize: 14,
+      fontWeight: FontWeight.w500,
       // letterSpacing: 0.5,
     ),
     bodyMedium: TextStyle(
-      fontSize: 14,
+      fontSize: 12,
       fontWeight: FontWeight.w400,
       // letterSpacing: 0.25,
-    ),
-    labelLarge: TextStyle(
-      fontSize: 14,
-      fontWeight: FontWeight.w500,
-      // letterSpacing: 1.25,
     ),
     bodySmall: TextStyle(
       fontSize: 12,
       fontWeight: FontWeight.w400,
       // letterSpacing: 0.4,
+    ),
+    labelLarge: TextStyle(
+      fontSize: 14,
+      fontWeight: FontWeight.w500,
+      // letterSpacing: 1.25,
     ),
     labelSmall: TextStyle(
       fontSize: 10,

@@ -81,6 +81,7 @@ class _FilePickerFieldState extends ConsumerState<FilePickerField> {
                 hintText: AppLocalizations.of(context)!.selectAFile,
                 hintStyle: Theme.of(context).textTheme.bodyLarge,
               ),
+              validator: widget.validator,
               onTap: () async {
                 await ref.read(filePickerController.notifier).getFileDetails();
                 controller.notifyListeners();

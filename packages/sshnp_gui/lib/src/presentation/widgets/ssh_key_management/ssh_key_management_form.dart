@@ -67,7 +67,7 @@ class _SSHKeyManagementFormState extends ConsumerState<SSHKeyManagementForm> {
     }
   }
 
-  void onSubmit() async {
+  void onSubmit(BuildContext context) async {
     final fileDetails = ref.read(filePickerController.notifier);
     if (_formkey.currentState!.validate()) {
       _formkey.currentState!.save();
@@ -85,7 +85,7 @@ class _SSHKeyManagementFormState extends ConsumerState<SSHKeyManagementForm> {
 
       if (mounted) {
         ref.read(navigationRailController.notifier).setRoute(AppRoute.home);
-        context.pushReplacementNamed(AppRoute.home.name);
+        context.pop();
       }
     }
   }
@@ -117,7 +117,13 @@ class _SSHKeyManagementFormState extends ConsumerState<SSHKeyManagementForm> {
                     children: [
                       gapH20,
                       Text(strings.sshKeyManagement('no'), style: Theme.of(context).textTheme.titleMedium),
-                      gapH20,
+                      Text(
+                        strings.privateKeyManagementDescription,
+                        style: Theme.of(context).textTheme.bodySmall!.copyWith(color: Colors.white),
+                      ),
+                      gapH16,
+                      Text(strings.newSshKeyCreation),
+                      gapH4,
                       FilePickerField(
                         onTap: () async {
                           await getPrivateKey();
@@ -128,7 +134,7 @@ class _SSHKeyManagementFormState extends ConsumerState<SSHKeyManagementForm> {
                       gapH10,
                       CustomTextFormField(
                         initialValue: nickname,
-                        labelText: strings.nickName,
+                        labelText: strings.privateKeyNickname,
                         onSaved: (value) {
                           nickname = value!;
                           ref.read(formProfileNameController.notifier).state = value;
@@ -138,14 +144,12 @@ class _SSHKeyManagementFormState extends ConsumerState<SSHKeyManagementForm> {
                       ),
                       gapH10,
                       CustomTextFormField(
-                        labelText: 'SSH Key Password',
+                        labelText: strings.privateKeyPassphrase,
                         initialValue: passPhrase,
                         isPasswordField: true,
                         onSaved: (value) => passPhrase = value,
                       ),
-                      gapH10,
-                      gapH20,
-                      gapH10,
+                      gapH36,
                       SizedBox(
                         width: kFieldDefaultWidth + Sizes.p233,
                         child: Row(
@@ -165,7 +169,7 @@ class _SSHKeyManagementFormState extends ConsumerState<SSHKeyManagementForm> {
                             ),
                             gapW8,
                             ElevatedButton(
-                              onPressed: () => onSubmit(),
+                              onPressed: () => onSubmit(context),
                               child: Text(strings.addKey),
                             ),
                           ],
