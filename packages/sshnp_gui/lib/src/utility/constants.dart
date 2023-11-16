@@ -7,6 +7,9 @@ const kBackGroundColorDark = Color(0xFF222222);
 const kProfileBarColor = Color(0xff3a3a3a);
 const kProfileFormCardColor = Color(0xff262626);
 const kProfileFormFieldColor = Color(0xff303030);
+const kTextColorDark = Color(0xffB3B3B3);
+const kIconColorDark = Color(0xff585858);
+const kIconColorBackground = Color(0xffDCDCDC);
 
 const kEmptyFieldValidationError = 'Field cannot be left blank';
 const kAtsignFieldValidationError = 'Field must start with @';

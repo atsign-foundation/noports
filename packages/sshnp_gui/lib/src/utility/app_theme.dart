@@ -87,6 +87,10 @@ class AppTheme {
       fontWeight: FontWeight.w500,
       // letterSpacing: 0.1,
     ),
+    headlineLarge: TextStyle(
+      fontSize: 22,
+      fontWeight: FontWeight.w600,
+    ),
     bodyLarge: TextStyle(
       fontSize: 14,
       fontWeight: FontWeight.w500,
@@ -227,7 +231,7 @@ class AppTheme {
         foregroundColor: Color(0xFFF8C630),
         backgroundColor: Colors.black,
       ),
-      textTheme: lightTextTheme,
+      textTheme: darkTextTheme,
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ButtonStyle(
           shape: MaterialStateProperty.all<RoundedRectangleBorder>(

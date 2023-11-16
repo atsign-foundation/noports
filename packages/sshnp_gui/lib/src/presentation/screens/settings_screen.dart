@@ -28,7 +28,7 @@ class SettingsScreen extends StatelessWidget {
                     padding: const EdgeInsets.symmetric(vertical: Sizes.p20),
                     child: Text(
                       strings.settings,
-                      style: Theme.of(context).textTheme.headlineMedium,
+                      style: Theme.of(context).textTheme.headlineLarge,
                     ),
                   ),
                   const SizedBox(

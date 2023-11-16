@@ -147,6 +147,7 @@ class _ProfileFormState extends ConsumerState<ProfileForm> {
                           final atSshKeyPairsList = atSshKeyPairs.toList();
                           atSshKeyPairsList.add(kPrivateKeyDropDownOption);
                           return CustomDropdownFormField<String>(
+                            width: kFieldDefaultWidth + Sizes.p5,
                             initialValue: oldConfig.identityFile,
                             label: strings.privateKey,
                             hintText: strings.select,

@@ -8,11 +8,15 @@ import 'package:sshnp_gui/src/presentation/screens/settings_screen.dart';
 import 'package:sshnp_gui/src/presentation/screens/terminal_screen.dart';
 import 'package:sshnp_gui/src/repository/navigation_repository.dart';
 
+import '../presentation/screens/support_screen.dart';
+
 enum AppRoute {
   onboarding,
   home,
   profileForm,
   terminal,
+  blank, // This is a pace holder
+  support,
   settings,
   // sshKeyManagementForm,
   // sskKeyManagement,
@@ -69,15 +73,16 @@ final navigationController = Provider<GoRouter>(
                   FadeTransition(opacity: animation, child: child)),
             ),
           ),
-          // GoRoute(
-          //   path: 'key-management-form',
-          //   name: AppRoute.sshKeyManagementForm.name,
-          //   pageBuilder: (context, state) => CustomTransitionPage<void>(
-          //     key: state.pageKey,
-          //     child: const SSHKeyManagementFormScreen(),
-          //     transitionsBuilder: ((context, animation, secondaryAnimation, child) =>
-          //         FadeTransition(opacity: animation, child: child)),
-          //   ),
+          GoRoute(
+            path: 'support',
+            name: AppRoute.support.name,
+            pageBuilder: (context, state) => CustomTransitionPage<void>(
+              key: state.pageKey,
+              child: const SupportScreen(),
+              transitionsBuilder: ((context, animation, secondaryAnimation, child) =>
+                  FadeTransition(opacity: animation, child: child)),
+            ),
+          ),
           // ),
           // GoRoute(
           //   path: 'key-management',

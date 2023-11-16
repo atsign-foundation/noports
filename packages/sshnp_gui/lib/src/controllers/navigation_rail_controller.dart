@@ -11,6 +11,8 @@ class NavigationRailController extends AutoDisposeNotifier<AppRoute> {
   final routes = [
     AppRoute.home,
     AppRoute.terminal,
+    AppRoute.blank,
+    AppRoute.support,
     AppRoute.settings,
   ];
 
