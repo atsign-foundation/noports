@@ -200,10 +200,12 @@ class SSHNPDClient:
         self.rv = sshrv
         self.logger.info("sshrv started @ "  + hostname + " on port " + str(port))
         (public_key, private_key)= self._generate_ssh_keys(sessionId)
+        private_key = private_key.replace("\n", "\\n")
         self._handle_ssh_public_key(public_key)
-        data = json.dumps({'status':'connected','sessionId':sessionId,'ephemeralPrivateKey':private_key}).trim()
+        data = f'{{"status":"connected","sessionId":"{sessionId}","ephemeralPrivateKey":"{private_key}"}}'
         signature =  EncryptionUtil.sign_sha256_rsa(data, self.at_client.keys[KeysUtil.encryption_private_key_name])
         envelope = f'{{"payload":{data},"signature":"{signature}","hashingAlgo":"sha256","signingAlgo":"rsa2048"}}'
+
         return envelope
     
     def sshnp_callback(
