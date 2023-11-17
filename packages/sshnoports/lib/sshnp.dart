@@ -18,6 +18,7 @@ Future<Sshnp> sshnpFromParamsWithFileBindings(
   }
 
   if (params.legacyDaemon) {
+    // ignore: deprecated_member_use
     return Sshnp.unsigned(
       atClient: atClient,
       params: params,

@@ -6,11 +6,11 @@ import 'package:noports_core/sshnp_foundation.dart';
 import 'package:socket_connector/socket_connector.dart';
 
 /// A  [void Function()] stub
-abstract class FunctionCaller {
+abstract class FunctionCaller<T> {
   void call();
 }
 
-class FunctionStub extends Mock implements FunctionCaller {}
+class FunctionStub<T> extends Mock implements FunctionCaller<T> {}
 
 /// The basic mocks that are repeated countless times throughout the test suite
 

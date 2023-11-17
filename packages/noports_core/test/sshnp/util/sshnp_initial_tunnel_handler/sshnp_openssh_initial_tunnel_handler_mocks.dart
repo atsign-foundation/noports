@@ -30,7 +30,7 @@ mixin StubbedSshnpOpensshInitialTunnelHandler
     required String identifier,
     ProcessStarter startProcess = Process.start,
   }) {
-    _stubbedStartInitialTunnel.call();
+    _stubbedStartInitialTunnel();
     return super.startInitialTunnel(
       identifier: identifier,
       startProcess: _stubbedStartProcess.call,

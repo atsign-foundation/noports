@@ -44,14 +44,14 @@ class StubbedSshnpCore extends SshnpCore with StubbedAsyncInitializationMixin {
 
 /// Stubbed mixin wrapper
 mixin StubbedAsyncInitializationMixin on AsyncInitialization {
-  late FunctionStub _stubbedCallInitialization;
-  late FunctionStub _stubbedInitialize;
-  late FunctionStub _stubbedCompleteInitialization;
+  late FunctionStub<Future<void>> _stubbedCallInitialization;
+  late FunctionStub<Future<void>> _stubbedInitialize;
+  late FunctionStub<void> _stubbedCompleteInitialization;
 
   void stubAsyncInitialization({
-    required FunctionStub stubbedCallInitialization,
-    required FunctionStub stubbedInitialize,
-    required FunctionStub stubbedCompleteInitialization,
+    required FunctionStub<Future<void>> stubbedCallInitialization,
+    required FunctionStub<Future<void>> stubbedInitialize,
+    required FunctionStub<void> stubbedCompleteInitialization,
   }) {
     _stubbedCallInitialization = stubbedCallInitialization;
     _stubbedInitialize = stubbedInitialize;
@@ -60,19 +60,18 @@ mixin StubbedAsyncInitializationMixin on AsyncInitialization {
 
   @override
   Future<void> callInitialization() async {
-    _stubbedCallInitialization.call();
+    _stubbedCallInitialization();
     return super.callInitialization();
   }
 
   @override
   Future<void> initialize() async {
-    _stubbedInitialize.call();
+    _stubbedInitialize();
     await super.initialize();
   }
 
   @override
   void completeInitialization() {
-    _stubbedCompleteInitialization.call();
-    super.completeInitialization();
+    return _stubbedCompleteInitialization();
   }
 }
