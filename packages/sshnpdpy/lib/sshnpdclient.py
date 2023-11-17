@@ -1,15 +1,11 @@
+import os, threading, getpass, json, logging, subprocess
 from io import StringIO
-import json
-import logging
-import os, threading, getpass
-import subprocess
 from queue import Empty, Queue
 from time import sleep
 from uuid import uuid4
 from threading import Event
 from paramiko import SSHClient, SSHException, WarningPolicy
 from paramiko.ed25519key import Ed25519Key
-
 
 from socket import socket
 from select import select
@@ -104,8 +100,8 @@ class SSHNPDClient:
             filedata = read.read()
             if ssh_public_key not in filedata:
                 writeKey = True
-        with open(f"{self.ssh_path}/authorized_keys", "w") as write:
-            if writeKey:
+        if writeKey:
+            with open(f"{self.ssh_path}/authorized_keys", "w") as write:
                 write.write(f"\n{ssh_public_key}")
                 self.logger.debug("key written")
     
@@ -348,7 +344,7 @@ class SSHNPDClient:
             os.makedirs(f"{self.ssh_path}/tmp/")
             
         ssh_keygen = subprocess.Popen(
-            ["ssh-keygen", "-t", "rsa", "-b", "4096", "-f", f"{session_id}_sshnp", "-q", "-N", ""],
+            ["ssh-keygen", "-t", "ed25519", "-a", "100", "-f", f"{session_id}_sshnp", "-q", "-N", ""],
             cwd=f'{self.ssh_path}/tmp/',
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
