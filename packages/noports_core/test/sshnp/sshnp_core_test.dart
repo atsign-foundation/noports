@@ -17,8 +17,8 @@ void main() {
     late SshrvdChannel mockSshrvdChannel;
 
     /// Initialization stubs
-    late FunctionStub<Future<void>> stubbedCallInitialization;
-    late FunctionStub<Future<void>> stubbedInitialize;
+    late FunctionStub<void> stubbedCallInitialization;
+    late FunctionStub<void> stubbedInitialize;
     late FunctionStub<void> stubbedCompleteInitialization;
 
     setUp(() {

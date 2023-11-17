@@ -44,13 +44,13 @@ class StubbedSshnpCore extends SshnpCore with StubbedAsyncInitializationMixin {
 
 /// Stubbed mixin wrapper
 mixin StubbedAsyncInitializationMixin on AsyncInitialization {
-  late FunctionStub<Future<void>> _stubbedCallInitialization;
-  late FunctionStub<Future<void>> _stubbedInitialize;
+  late FunctionStub<void> _stubbedCallInitialization;
+  late FunctionStub<void> _stubbedInitialize;
   late FunctionStub<void> _stubbedCompleteInitialization;
 
   void stubAsyncInitialization({
-    required FunctionStub<Future<void>> stubbedCallInitialization,
-    required FunctionStub<Future<void>> stubbedInitialize,
+    required FunctionStub<void> stubbedCallInitialization,
+    required FunctionStub<void> stubbedInitialize,
     required FunctionStub<void> stubbedCompleteInitialization,
   }) {
     _stubbedCallInitialization = stubbedCallInitialization;
@@ -72,6 +72,7 @@ mixin StubbedAsyncInitializationMixin on AsyncInitialization {
 
   @override
   void completeInitialization() {
+    super.completeInitialization();
     return _stubbedCompleteInitialization();
   }
 }
