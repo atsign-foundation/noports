@@ -17,20 +17,22 @@ void main() {
     late SshrvGeneratorStub<String> sshrvGeneratorStub;
     late MockAtClient mockAtClient;
     late MockNotificationService mockNotificationService;
-    late StreamController<AtNotification> notificationController;
+    late StreamController<AtNotification> notificationStreamController;
     late FunctionStub notifyStub;
     late MockSshnpParams mockParams;
     late String sessionId;
     late StubbedSshrvdChannel stubbedSshrvdChannel;
+    late MockSshrv<String> mockSshrv;
 
     setUp(() {
       sshrvGeneratorStub = SshrvGeneratorStub();
       mockAtClient = MockAtClient();
       mockNotificationService = MockNotificationService();
-      notificationController = StreamController();
+      notificationStreamController = StreamController();
       notifyStub = FunctionStub();
       mockParams = MockSshnpParams();
       sessionId = Uuid().v4();
+      mockSshrv = MockSshrv();
 
       stubbedSshrvdChannel = StubbedSshrvdChannel<String>(
           atClient: mockAtClient,
@@ -42,7 +44,7 @@ void main() {
             final portA = 10456;
             final portB = 10789;
 
-            notificationController.add(
+            notificationStreamController.add(
               AtNotification.empty()
                 ..id = Uuid().v4()
                 ..key = '$sessionId.${Sshrvd.namespace}'
@@ -78,44 +80,45 @@ void main() {
       expect(stubbedSshrvdChannel.sessionId, sessionId);
     }); // test public API
 
-    test('Initialization - sshrvd host', () async {
-      /// Set the required parameters
+    notificationSubscribeInvocation() => mockNotificationService.subscribe(
+          regex: any(named: 'regex'),
+          shouldDecrypt: any(named: 'shouldDecrypt'),
+        );
+
+    notificationServiceGetter() => mockAtClient.notificationService;
+
+    notifyInvocation() => notifyStub();
+
+    whenInitializationWithSshrvdHost() {
       when(() => mockParams.host).thenReturn('@sshrvd');
       when(() => mockParams.device).thenReturn('mydevice');
       when(() => mockParams.clientAtSign).thenReturn('@client');
 
-      when(
-        () => mockNotificationService.subscribe(
-          regex: any(named: 'regex'),
-          shouldDecrypt: any(named: 'shouldDecrypt'),
-        ),
-      ).thenAnswer((_) => notificationController.stream);
+      when(notificationSubscribeInvocation)
+          .thenAnswer((_) => notificationStreamController.stream);
 
-      when(() => mockAtClient.notificationService)
-          .thenReturn(mockNotificationService);
+      when(notificationServiceGetter).thenReturn(mockNotificationService);
+    }
+
+    test('Initialization - sshrvd host', () async {
+      /// Set the required parameters
+      whenInitializationWithSshrvdHost();
 
       expect(stubbedSshrvdChannel.sshrvdAck, SshrvdAck.notAcknowledged);
       expect(stubbedSshrvdChannel.initalizeStarted, false);
 
-      verifyNever(
-        () => mockNotificationService.subscribe(
-          regex: any(named: 'regex'),
-          shouldDecrypt: any(named: 'shouldDecrypt'),
-        ),
-      );
-      verifyNever(
-        () => mockNotificationService.notify(any()),
-      );
+      verifyNever(notificationSubscribeInvocation);
+      verifyNever(notifyInvocation);
 
       await expectLater(stubbedSshrvdChannel.callInitialization(), completes);
 
       verifyInOrder([
-        () => mockNotificationService.subscribe(
-              regex: any(named: 'regex'),
-              shouldDecrypt: any(named: 'shouldDecrypt'),
-            ),
-        () => notifyStub.call(),
+        notificationSubscribeInvocation,
+        notifyInvocation,
       ]);
+
+      verifyNever(notificationSubscribeInvocation);
+      verifyNever(notifyInvocation);
 
       expect(stubbedSshrvdChannel.sshrvdAck, SshrvdAck.acknowledged);
       expect(stubbedSshrvdChannel.host, '123.123.123.123');
@@ -132,5 +135,41 @@ void main() {
       expect(stubbedSshrvdChannel.host, '234.234.234.234');
       expect(stubbedSshrvdChannel.port, 135);
     }); // test Initialization - non-sshrvd host
+
+    test('runSshrv', () async {
+      whenInitializationWithSshrvdHost();
+
+      await expectLater(stubbedSshrvdChannel.callInitialization(), completes);
+      expect(stubbedSshrvdChannel.sshrvdAck, SshrvdAck.acknowledged);
+      await expectLater(stubbedSshrvdChannel.initialized, completes);
+      // Initialization should be complete
+      // Begin test for [runSshrv()]
+
+      when(() => mockParams.localSshdPort).thenReturn(23);
+
+      sshrvGeneratorInvocation() => sshrvGeneratorStub.call(
+            any(),
+            any(),
+            localSshdPort: any(named: 'localSshdPort'),
+          );
+
+      sshrvRunInvocation() => mockSshrv.run();
+
+      when(sshrvGeneratorInvocation).thenReturn(mockSshrv);
+      when(sshrvRunInvocation).thenAnswer((_) async => 'called sshrv run');
+
+      verifyNever(sshrvGeneratorInvocation);
+      verifyNever(sshrvRunInvocation);
+
+      await expectLater(
+        await stubbedSshrvdChannel.runSshrv(),
+        'called sshrv run',
+      );
+
+      verifyInOrder([sshrvGeneratorInvocation, sshrvRunInvocation]);
+
+      verifyNever(sshrvGeneratorInvocation);
+      verifyNever(sshrvRunInvocation);
+    }); // test runSshrv
   }); // group SshrvdChannel
 }

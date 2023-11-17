@@ -10,6 +10,8 @@ abstract class SshrvGeneratorCaller<T> {
 
 class SshrvGeneratorStub<T> extends Mock implements SshrvGeneratorCaller<T> {}
 
+class MockSshrv<T> extends Mock implements Sshrv<T> {}
+
 /// Stubbed [SshrvdChannel] which we are testing
 class StubbedSshrvdChannel<T> extends SshrvdChannel<T> {
   final Future<void> Function(AtKey, String)? _notify;
