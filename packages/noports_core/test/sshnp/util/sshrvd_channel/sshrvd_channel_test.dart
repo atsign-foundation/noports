@@ -24,6 +24,21 @@ void main() {
     late StubbedSshrvdChannel stubbedSshrvdChannel;
     late MockSshrv<String> mockSshrv;
 
+    // Invocation patterns as closures so they can be referred to by name
+    // instead of explicitly writing these calls several times in the test
+    notificationSubscribeInvocation() => mockNotificationService.subscribe(
+          regex: any(named: 'regex'),
+          shouldDecrypt: any(named: 'shouldDecrypt'),
+        );
+    notificationServiceGetter() => mockAtClient.notificationService;
+    notifyInvocation() => notifyStub();
+    sshrvGeneratorInvocation() => sshrvGeneratorStub(
+          any(),
+          any(),
+          localSshdPort: any(named: 'localSshdPort'),
+        );
+    sshrvRunInvocation() => mockSshrv.run();
+
     setUp(() {
       sshrvGeneratorStub = SshrvGeneratorStub();
       mockAtClient = MockAtClient();
@@ -53,7 +68,7 @@ void main() {
                 ..epochMillis = DateTime.now().millisecondsSinceEpoch
                 ..value = '$testIp,$portA,$portB',
             );
-            notifyStub.call();
+            notifyStub();
           });
 
       registerFallbackValue(AtKey());
@@ -79,15 +94,6 @@ void main() {
       expect(stubbedSshrvdChannel.params, mockParams);
       expect(stubbedSshrvdChannel.sessionId, sessionId);
     }); // test public API
-
-    notificationSubscribeInvocation() => mockNotificationService.subscribe(
-          regex: any(named: 'regex'),
-          shouldDecrypt: any(named: 'shouldDecrypt'),
-        );
-
-    notificationServiceGetter() => mockAtClient.notificationService;
-
-    notifyInvocation() => notifyStub();
 
     whenInitializationWithSshrvdHost() {
       when(() => mockParams.host).thenReturn('@sshrvd');
@@ -146,15 +152,6 @@ void main() {
       // Begin test for [runSshrv()]
 
       when(() => mockParams.localSshdPort).thenReturn(23);
-
-      sshrvGeneratorInvocation() => sshrvGeneratorStub.call(
-            any(),
-            any(),
-            localSshdPort: any(named: 'localSshdPort'),
-          );
-
-      sshrvRunInvocation() => mockSshrv.run();
-
       when(sshrvGeneratorInvocation).thenReturn(mockSshrv);
       when(sshrvRunInvocation).thenAnswer((_) async => 'called sshrv run');
 
@@ -166,7 +163,10 @@ void main() {
         'called sshrv run',
       );
 
-      verifyInOrder([sshrvGeneratorInvocation, sshrvRunInvocation]);
+      verifyInOrder([
+        sshrvGeneratorInvocation,
+        sshrvRunInvocation,
+      ]);
 
       verifyNever(sshrvGeneratorInvocation);
       verifyNever(sshrvRunInvocation);
