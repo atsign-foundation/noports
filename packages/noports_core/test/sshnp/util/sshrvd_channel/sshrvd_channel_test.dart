@@ -122,5 +122,15 @@ void main() {
       expect(stubbedSshrvdChannel.port, 10456);
       expect(stubbedSshrvdChannel.sshrvdPort, 10789);
     }); // test Initialization - sshrvd host
+
+    test('Initialization - non-sshrvd host', () async {
+      when(() => mockParams.host).thenReturn('234.234.234.234');
+      when(() => mockParams.port).thenReturn(135);
+
+      await expectLater(stubbedSshrvdChannel.callInitialization(), completes);
+
+      expect(stubbedSshrvdChannel.host, '234.234.234.234');
+      expect(stubbedSshrvdChannel.port, 135);
+    }); // test Initialization - non-sshrvd host
   }); // group SshrvdChannel
 }
