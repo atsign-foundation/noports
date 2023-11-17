@@ -76,7 +76,7 @@ abstract class SshrvdChannel<T> with AsyncInitialization, AtClientBindings {
     // Connect to rendezvous point using background process.
     // sshnp (this program) can then exit without issue.
     Sshrv<T> sshrv = sshrvGenerator(
-      params.host,
+      host,
       _sshrvdPort!,
       localSshdPort: params.localSshdPort,
     );
