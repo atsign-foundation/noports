@@ -53,10 +53,10 @@ packages:
     dependency: transitive
     description:
       name: at_auth
-      sha256: "762ff58fa533bc0d683bd106a2646980eb43080c6d1f415554f987e894a80926"
+      sha256: "00b148933d004f893a4e07bb0fb96d2f6bb5960694f35b4424ee187e32c6bd33"
       url: "https://pub.dev"
     source: hosted
-    version: "1.0.0"
+    version: "1.0.1"
   at_base2e15:
     dependency: transitive
     description:
@@ -69,10 +69,10 @@ packages:
     dependency: transitive
     description:
       name: at_chops
-      sha256: "30863a74e38abc88258b8506ec1495ee6dc6bb95c1ab11d2d37fdbe455d93f82"
+      sha256: d7e0b2d0b644adfd90593bbf56c1b98d499c41b97518a806ad881a90032f3f37
       url: "https://pub.dev"
     source: hosted
-    version: "1.0.5"
+    version: "1.0.6"
   at_client:
     dependency: "direct overridden"
     description:
@@ -89,6 +89,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "3.0.57"
+  at_demo_data:
+    dependency: transitive
+    description:
+      name: at_demo_data
+      sha256: "837fa84f105eedafb2f7a072c20bcb4752fd7a97a9cb419e7cd632003ddb7e25"
+      url: "https://pub.dev"
+    source: hosted
+    version: "1.0.2"
   at_lookup:
     dependency: "direct overridden"
     description:

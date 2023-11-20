@@ -166,7 +166,7 @@ class SshnpdParams {
     parser.addOption(
       'device-group',
       mandatory: false,
-      defaultsTo: DefaultSSHNPDArgs.deviceGroupName,
+      defaultsTo: DefaultSshnpdArgs.deviceGroupName,
       help: 'The name of this device\'s group. When delegated authorization'
           ' is being used then the group name is sent to the authorizer'
           ' service as well as the device name, this daemon\'s atSign, '

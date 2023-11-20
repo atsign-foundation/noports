@@ -918,7 +918,7 @@ class SshnpdImpl implements Sshnpd {
 }
 
 class AuthChecker implements AtRpcCallbacks {
-  final SSHNPD sshnpd;
+  final Sshnpd sshnpd;
   late final AtRpc rpc;
 
   AuthChecker(this.sshnpd) {
