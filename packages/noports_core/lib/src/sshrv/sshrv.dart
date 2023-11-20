@@ -4,7 +4,7 @@ import 'package:noports_core/src/sshrv/sshrv_impl.dart';
 import 'package:socket_connector/socket_connector.dart';
 import 'package:noports_core/src/common/default_args.dart';
 
-abstract class SSHRV<T> {
+abstract class Sshrv<T> {
   /// The internet address of the host to connect to.
   abstract final String host;
 
@@ -18,24 +18,24 @@ abstract class SSHRV<T> {
   Future<T> run();
 
   // Can't use factory functions since SSHRV contains a generic type
-  static SSHRV<Process> exec(
+  static Sshrv<Process> exec(
     String host,
     int streamingPort, {
     int localSshdPort = DefaultArgs.localSshdPort,
   }) {
-    return SSHRVImplExec(
+    return SshrvImplExec(
       host,
       streamingPort,
       localSshdPort: localSshdPort,
     );
   }
 
-  static SSHRV<SocketConnector> dart(
+  static Sshrv<SocketConnector> dart(
     String host,
     int streamingPort, {
     int localSshdPort = 22,
   }) {
-    return SSHRVImplDart(
+    return SshrvImplDart(
       host,
       streamingPort,
       localSshdPort: localSshdPort,

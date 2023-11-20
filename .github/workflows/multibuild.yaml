@@ -20,12 +20,14 @@ jobs:
         working-directory: ./packages/sshnoports
     strategy:
       matrix:
-        os: [ubuntu-latest, macOS-latest]
+        os: [ubuntu-latest, macOS-latest, windows-latest]
         include:
           - os: ubuntu-latest
             output-name: sshnp-linux-x64
           - os: macOS-latest
             output-name: sshnp-macos-x64
+          - os: windows-latest
+            output-name: sshnp-windows-x64
 
     steps:
       - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1

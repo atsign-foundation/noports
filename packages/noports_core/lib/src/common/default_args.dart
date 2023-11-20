@@ -1,16 +1,14 @@
-import 'dart:io';
-
+import 'package:noports_core/src/common/io_types.dart';
 import 'package:noports_core/src/common/types.dart';
 import 'package:noports_core/sshrv.dart';
 
 class DefaultArgs {
   static const String namespace = 'sshnp';
-  static const SupportedSSHAlgorithm sshAlgorithm =
-      SupportedSSHAlgorithm.ed25519;
+  static const SupportedSshAlgorithm sshAlgorithm =
+      SupportedSshAlgorithm.ed25519;
   static const bool verbose = false;
-  static const bool algorithm = false;
   static const String rootDomain = 'root.atsign.org';
-  static const SSHRVGenerator sshrvGenerator = SSHRV.exec;
+  static const SshrvGenerator sshrvGenerator = Sshrv.exec;
   static const int localSshdPort = 22;
   static const int remoteSshdPort = 22;
 
@@ -22,7 +20,7 @@ class DefaultArgs {
       Platform.isLinux || Platform.isMacOS || Platform.isWindows;
 }
 
-class DefaultSSHNPArgs {
+class DefaultSshnpArgs {
   static const String device = 'default';
   static const int port = 22;
   static const int localPort = 0;
@@ -30,10 +28,10 @@ class DefaultSSHNPArgs {
   static const List<String> localSshOptions = <String>[];
   static const bool legacyDaemon = false;
   static const bool listDevices = false;
-  static const SupportedSshClient sshClient = SupportedSshClient.exec;
+  static const SupportedSshClient sshClient = SupportedSshClient.openssh;
 }
 
-class DefaultSSHNPDArgs {
-  static const SupportedSshClient sshClient = SupportedSshClient.exec;
+class DefaultSshnpdArgs {
+  static const SupportedSshClient sshClient = SupportedSshClient.openssh;
   static const String deviceGroupName = '__none__';
 }

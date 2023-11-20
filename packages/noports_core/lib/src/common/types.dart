@@ -1,9 +1,9 @@
 import 'package:noports_core/sshrv.dart';
 
-typedef SSHRVGenerator = SSHRV Function(String, int, {int localSshdPort});
+typedef SshrvGenerator<T> = Sshrv<T> Function(String, int, {int localSshdPort});
 
 enum SupportedSshClient {
-  exec(cliArg: '/usr/bin/ssh'),
+  openssh(cliArg: 'openssh'),
   dart(cliArg: 'dart');
 
   final String _cliArg;
@@ -11,7 +11,7 @@ enum SupportedSshClient {
 
   factory SupportedSshClient.fromString(String cliArg) {
     return SupportedSshClient.values.firstWhere(
-      (arg) => arg._cliArg == cliArg,
+      (arg) => arg._cliArg == cliArg.toLowerCase(),
       orElse: () => throw ArgumentError('Unsupported SSH client: $cliArg'),
     );
   }
@@ -20,15 +20,15 @@ enum SupportedSshClient {
   String toString() => _cliArg;
 }
 
-enum SupportedSSHAlgorithm {
+enum SupportedSshAlgorithm {
   ed25519(cliArg: 'ssh-ed25519'),
   rsa(cliArg: 'ssh-rsa');
 
   final String _cliArg;
-  const SupportedSSHAlgorithm({required String cliArg}) : _cliArg = cliArg;
+  const SupportedSshAlgorithm({required String cliArg}) : _cliArg = cliArg;
 
-  factory SupportedSSHAlgorithm.fromString(String cliArg) {
-    return SupportedSSHAlgorithm.values.firstWhere(
+  factory SupportedSshAlgorithm.fromString(String cliArg) {
+    return SupportedSshAlgorithm.values.firstWhere(
       (arg) => arg._cliArg == cliArg,
       orElse: () => throw ArgumentError('Unsupported SSH algorithm: $cliArg'),
     );
@@ -37,4 +37,3 @@ enum SupportedSSHAlgorithm {
   @override
   String toString() => _cliArg;
 }
-

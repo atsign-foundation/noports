@@ -1,9 +1,11 @@
 import 'dart:convert';
-import 'dart:io';
+
 import 'package:at_chops/at_chops.dart';
 import 'package:at_client/at_client.dart';
 import 'package:at_utils/at_utils.dart';
+
 import 'package:noports_core/src/common/file_system_utils.dart';
+import 'package:noports_core/src/common/io_types.dart';
 import 'package:path/path.dart' as path;
 
 const String sshnpDeviceNameRegex = r'[a-zA-Z0-9_]{0,15}';
@@ -66,15 +68,18 @@ String signAndWrapAndJsonEncode(AtClient atClient, Map payload) {
   return jsonEncode(envelope);
 }
 
-Future<void> verifyEnvelopeSignature(AtClient atClient, String requestingAtsign,
-    AtSignLogger logger, Map envelope,
-    {bool useFileStorage = true}) async {
+Future<void> verifyEnvelopeSignature(
+  AtClient atClient,
+  String requestingAtsign,
+  AtSignLogger logger,
+  Map envelope, {
+  FileSystem? fs,
+}) async {
   final String signature = envelope['signature'];
   Map payload = envelope['payload'];
   final hashingAlgo = HashingAlgoType.values.byName(envelope['hashingAlgo']);
   final signingAlgo = SigningAlgoType.values.byName(envelope['signingAlgo']);
-  final pk = await getLocallyCachedPK(atClient, requestingAtsign,
-      useFileStorage: useFileStorage);
+  final pk = await getLocallyCachedPK(atClient, requestingAtsign, fs: fs);
   AtSigningVerificationInput input = AtSigningVerificationInput(
       jsonEncode(payload), base64Decode(signature), pk)
     ..signingMode = AtSigningMode.data
@@ -101,12 +106,14 @@ Future<void> verifyEnvelopeSignature(AtClient atClient, String requestingAtsign,
 ///   `~/.atsign/sshnp/cached_pks/alice`
 ///
 /// Note that for storage, the leading `@` in the atSign is stripped off.
-Future<String> getLocallyCachedPK(AtClient atClient, String atSign,
-    {bool useFileStorage = true}) async {
+Future<String> getLocallyCachedPK(
+  AtClient atClient,
+  String atSign, {
+  FileSystem? fs,
+}) async {
   atSign = AtUtils.fixAtSign(atSign);
 
-  String? cachedPK =
-      await _fetchFromLocalPKCache(atClient, atSign, useFileStorage);
+  String? cachedPK = await _fetchFromLocalPKCache(atClient, atSign, fs: fs);
   if (cachedPK != null) {
     return cachedPK;
   }
@@ -117,18 +124,21 @@ Future<String> getLocallyCachedPK(AtClient atClient, String atSign,
     throw AtPublicKeyNotFoundException('Failed to retrieve $s');
   }
 
-  await _storeToLocalPKCache(av.value, atClient, atSign, useFileStorage);
+  await _storeToLocalPKCache(av.value, atClient, atSign, fs: fs);
 
   return av.value;
 }
 
 Future<String?> _fetchFromLocalPKCache(
-    AtClient atClient, String atSign, bool useFileStorage) async {
+  AtClient atClient,
+  String atSign, {
+  FileSystem? fs,
+}) async {
   String dontAtMe = atSign.substring(1);
-  if (useFileStorage) {
+  if (fs != null) {
     String fn = path
         .normalize('${getHomeDirectory()}/.atsign/sshnp/cached_pks/$dontAtMe');
-    File f = File(fn);
+    File f = fs.file(fn);
     if (await f.exists()) {
       return (await f.readAsString()).trim();
     } else {
@@ -147,14 +157,18 @@ Future<String?> _fetchFromLocalPKCache(
 }
 
 Future<bool> _storeToLocalPKCache(
-    String pk, AtClient atClient, String atSign, bool useFileStorage) async {
+  String pk,
+  AtClient atClient,
+  String atSign, {
+  FileSystem? fs,
+}) async {
   String dontAtMe = atSign.substring(1);
-  if (useFileStorage) {
+  if (fs != null) {
     String dirName =
         path.normalize('${getHomeDirectory()}/.atsign/sshnp/cached_pks');
     String fileName = path.normalize('$dirName/$dontAtMe');
 
-    File f = File(fileName);
+    File f = fs.file(fileName);
     if (!await f.exists()) {
       await f.create(recursive: true);
       await Process.run('chmod', ['-R', 'go-rwx', dirName]);

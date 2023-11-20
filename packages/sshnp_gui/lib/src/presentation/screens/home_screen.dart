@@ -33,38 +33,42 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             Expanded(
               child: Padding(
                 padding: const EdgeInsets.only(left: Sizes.p36, top: Sizes.p21),
-                child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      SvgPicture.asset(
-                        'assets/images/noports_light.svg',
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          SvgPicture.asset(
+                            'assets/images/noports_light.svg',
+                          ),
+                          const HomeScreenActions(),
+                        ],
                       ),
-                      const HomeScreenActions(),
-                    ],
-                  ),
-                  gapH24,
-                  Text(strings.availableConnections, textScaleFactor: 2),
-                  gapH8,
-                  profileNames.when(
-                    loading: () => const Center(
-                      child: CircularProgressIndicator(),
-                    ),
-                    error: (e, s) => Text(e.toString()),
-                    data: (profiles) {
-                      if (profiles.isEmpty) {
-                        return const Text('No SSHNP Configurations Found');
-                      }
-                      final sortedProfiles = profiles.toList();
-                      sortedProfiles.sort();
-                      return Expanded(
-                        child: ListView(
-                          children: sortedProfiles.map((profileName) => ProfileBar(profileName)).toList(),
+                      gapH24,
+                      Text(strings.availableConnections, textScaleFactor: 2),
+                      gapH8,
+                      profileNames.when(
+                        loading: () => const Center(
+                          child: CircularProgressIndicator(),
                         ),
-                      );
-                    },
-                  )
-                ]),
+                        error: (e, s) => Text(e.toString()),
+                        data: (profiles) {
+                          if (profiles.isEmpty) {
+                            return const Text('No Sshnp Configurations Found');
+                          }
+                          final sortedProfiles = profiles.toList();
+                          sortedProfiles.sort();
+                          return Expanded(
+                            child: ListView(
+                              children: sortedProfiles
+                                  .map((profileName) => ProfileBar(profileName))
+                                  .toList(),
+                            ),
+                          );
+                        },
+                      )
+                    ]),
               ),
             ),
           ],

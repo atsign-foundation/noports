@@ -23,16 +23,16 @@ dependency_overrides:
   at_utils: 3.0.15
   crypton: 2.1.0
   dartssh2: 2.8.2
+  logging: 1.2.0
+  meta: 1.9.1
+  socket_connector: 1.0.11
   ssh_key: 0.8.0
   uuid: 3.0.7
-  logging: 1.2.0
   version: 3.0.2
-  socket_connector: 1.0.11
-  meta: 1.9.1
 
 dev_dependencies:
   lints: ^3.0.0
   test: ^1.24.9
-  mocktail: ^0.3.0
+  mocktail: ^1.0.1
   build_runner: ^2.4.6
   build_version: ^2.1.1
