@@ -16,9 +16,9 @@ void main() {
   group('SshrvdChannel', () {
     late SshrvGeneratorStub<String> sshrvGeneratorStub;
     late MockAtClient mockAtClient;
-    late MockNotificationService mockNotificationService;
     late StreamController<AtNotification> notificationStreamController;
     late FunctionStub notifyStub;
+    late SubscribeStub subscribeStub;
     late MockSshnpParams mockParams;
     late String sessionId;
     late StubbedSshrvdChannel stubbedSshrvdChannel;
@@ -26,12 +26,8 @@ void main() {
 
     // Invocation patterns as closures so they can be referred to by name
     // instead of explicitly writing these calls several times in the test
-    notificationSubscribeInvocation() => mockNotificationService.subscribe(
-          regex: any(named: 'regex'),
-          shouldDecrypt: any(named: 'shouldDecrypt'),
-        );
-    notificationServiceGetter() => mockAtClient.notificationService;
     notifyInvocation() => notifyStub();
+    subscribeInvocation() => subscribeStub();
     sshrvGeneratorInvocation() => sshrvGeneratorStub(
           any(),
           any(),
@@ -42,34 +38,38 @@ void main() {
     setUp(() {
       sshrvGeneratorStub = SshrvGeneratorStub();
       mockAtClient = MockAtClient();
-      mockNotificationService = MockNotificationService();
       notificationStreamController = StreamController();
       notifyStub = FunctionStub();
+      subscribeStub = SubscribeStub();
       mockParams = MockSshnpParams();
       sessionId = Uuid().v4();
       mockSshrv = MockSshrv();
 
       stubbedSshrvdChannel = StubbedSshrvdChannel<String>(
-          atClient: mockAtClient,
-          params: mockParams,
-          sessionId: sessionId,
-          sshrvGenerator: sshrvGeneratorStub,
-          notify: (_, __) async {
-            final testIp = '123.123.123.123';
-            final portA = 10456;
-            final portB = 10789;
+        atClient: mockAtClient,
+        params: mockParams,
+        sessionId: sessionId,
+        sshrvGenerator: sshrvGeneratorStub,
+        notify: (_, __) async {
+          final testIp = '123.123.123.123';
+          final portA = 10456;
+          final portB = 10789;
 
-            notificationStreamController.add(
-              AtNotification.empty()
-                ..id = Uuid().v4()
-                ..key = '$sessionId.${Sshrvd.namespace}'
-                ..from = '@sshrvd'
-                ..to = '@client'
-                ..epochMillis = DateTime.now().millisecondsSinceEpoch
-                ..value = '$testIp,$portA,$portB',
-            );
-            notifyStub();
-          });
+          notificationStreamController.add(
+            AtNotification.empty()
+              ..id = Uuid().v4()
+              ..key = '$sessionId.${Sshrvd.namespace}'
+              ..from = '@sshrvd'
+              ..to = '@client'
+              ..epochMillis = DateTime.now().millisecondsSinceEpoch
+              ..value = '$testIp,$portA,$portB',
+          );
+          notifyStub();
+        },
+        subscribe: ({regex, shouldDecrypt = false}) {
+          return subscribeStub();
+        },
+      );
 
       registerFallbackValue(AtKey());
       registerFallbackValue(NotificationParams.forUpdate(AtKey()));
@@ -100,10 +100,8 @@ void main() {
       when(() => mockParams.device).thenReturn('mydevice');
       when(() => mockParams.clientAtSign).thenReturn('@client');
 
-      when(notificationSubscribeInvocation)
+      when(subscribeInvocation)
           .thenAnswer((_) => notificationStreamController.stream);
-
-      when(notificationServiceGetter).thenReturn(mockNotificationService);
     }
 
     test('Initialization - sshrvd host', () async {
@@ -113,17 +111,17 @@ void main() {
       expect(stubbedSshrvdChannel.sshrvdAck, SshrvdAck.notAcknowledged);
       expect(stubbedSshrvdChannel.initalizeStarted, false);
 
-      verifyNever(notificationSubscribeInvocation);
+      verifyNever(subscribeInvocation);
       verifyNever(notifyInvocation);
 
       await expectLater(stubbedSshrvdChannel.callInitialization(), completes);
 
       verifyInOrder([
-        notificationSubscribeInvocation,
+        subscribeInvocation,
         notifyInvocation,
       ]);
 
-      verifyNever(notificationSubscribeInvocation);
+      verifyNever(subscribeInvocation);
       verifyNever(notifyInvocation);
 
       expect(stubbedSshrvdChannel.sshrvdAck, SshrvdAck.acknowledged);

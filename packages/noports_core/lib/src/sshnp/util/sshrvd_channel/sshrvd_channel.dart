@@ -86,9 +86,7 @@ abstract class SshrvdChannel<T> with AsyncInitialization, AtClientBindings {
   @protected
   Future<void> getHostAndPortFromSshrvd() async {
     sshrvdAck = SshrvdAck.notAcknowledged;
-    atClient.notificationService
-        .subscribe(
-            regex: '$sessionId.${Sshrvd.namespace}@', shouldDecrypt: true)
+    subscribe(regex: '$sessionId.${Sshrvd.namespace}@', shouldDecrypt: true)
         .listen((notification) async {
       String ipPorts = notification.value.toString();
       List results = ipPorts.split(',');

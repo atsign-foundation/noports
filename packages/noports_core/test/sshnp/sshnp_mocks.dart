@@ -7,10 +7,16 @@ import 'package:socket_connector/socket_connector.dart';
 
 /// A  [void Function()] stub
 abstract class FunctionCaller<T> {
-  void call();
+  T call();
 }
 
 class FunctionStub<T> extends Mock implements FunctionCaller<T> {}
+
+abstract class SubscribeCaller {
+  Stream<AtNotification> call({String? regex, bool shouldDecrypt});
+}
+
+class SubscribeStub extends Mock implements SubscribeCaller {}
 
 /// The basic mocks that are repeated countless times throughout the test suite
 
@@ -41,16 +47,3 @@ abstract class StartProcessCaller {
 
 class StartProcessStub extends Mock implements StartProcessCaller {}
 
-/// Silent Logger to suppress logs during unit tests
-class SilentAtSignLogger extends Mock implements AtSignLogger {}
-
-SilentAtSignLogger getSilentAtSignLogger() {
-  final logger = SilentAtSignLogger();
-  when(() => logger.shout(any())).thenReturn(null);
-  when(() => logger.severe(any())).thenReturn(null);
-  when(() => logger.warning(any())).thenReturn(null);
-  when(() => logger.info(any())).thenReturn(null);
-  when(() => logger.finer(any())).thenReturn(null);
-  when(() => logger.finest(any())).thenReturn(null);
-  return logger;
-}
