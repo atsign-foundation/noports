@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
-import 'package:sshnp_gui/src/presentation/widgets/contact_tile/support_list_tile.dart';
+import 'package:sshnp_gui/src/presentation/widgets/custom_list_tile.dart';
 import 'package:sshnp_gui/src/presentation/widgets/navigation/app_navigation_rail.dart';
 import 'package:sshnp_gui/src/utility/constants.dart';
 import 'package:sshnp_gui/src/utility/sizes.dart';
@@ -38,7 +38,7 @@ class SupportScreen extends StatelessWidget {
                     style: Theme.of(context).textTheme.bodyMedium!.copyWith(color: kTextColorDark),
                   ),
                   gapH30,
-                  SupportListTile.discord(
+                  CustomListTile.discord(
                     onTap: () async {
                       {
                         final Uri url = Uri.parse('https://discord.gg/atsign-778383211214536722');
@@ -48,7 +48,7 @@ class SupportScreen extends StatelessWidget {
                       }
                     },
                   ),
-                  SupportListTile.email(
+                  CustomListTile.email(
                     onTap: () async {
                       Uri emailUri = Uri(
                         scheme: 'mailto',

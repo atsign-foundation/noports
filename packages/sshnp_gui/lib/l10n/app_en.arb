@@ -1,4 +1,5 @@
    { 
+   "accounts" : "Accounts",
     "actions" : "Actions",
     "add" : "Add",
     "addKey" : "Add Key",
