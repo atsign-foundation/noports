@@ -14,7 +14,7 @@ RUN \
   dart compile exe bin/sshrv.dart -o ${BINARYDIR}/sshrv
 
 # Second stage of build FROM debian-slim
-FROM debian:stable-20231030-slim@sha256:1529b15b786397b4695b1685d4e37b3dde62420862c0546fa364d0e889473c20
+FROM debian:stable-20231120-slim@sha256:7ebe82aa01819fc3ad4ec991b843b48cf546941d99f49e086686377b45817436
 ENV USER=atsign
 ENV HOMEDIR=/${USER}
 ENV BINARYDIR=/usr/local/at
