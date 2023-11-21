@@ -2,6 +2,7 @@
 
 [![GitHub License](https://img.shields.io/badge/license-BSD3-blue.svg)](./LICENSE)
 [![OpenSSF Scorecard](https://api.securityscorecards.dev/projects/github.com/atsign-foundation/sshnoports/badge)](https://api.securityscorecards.dev/projects/github.com/atsign-foundation/sshnoports)
+[![OpenSSF Best Practices](https://www.bestpractices.dev/projects/8102/badge)](https://www.bestpractices.dev/projects/8102)
 
 # noports
 This repo contains the open source code of the Atsign's No Ports suite. Check out our product site at [noports.com](https://noports.com).
