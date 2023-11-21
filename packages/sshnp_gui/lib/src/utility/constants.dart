@@ -10,7 +10,10 @@ const kProfileFormFieldColor = Color(0xff303030);
 const kTextColorDark = Color(0xffB3B3B3);
 const kIconColorDark = Color(0xff585858);
 const kIconColorBackground = Color(0xffDCDCDC);
+const kIconColorBackgroundDark = Color(0xff888888);
 const kListTileColor = Color(0x70bcbcbc);
+const kSSHKeyManagementCardColor = Color(0xff3e3e3e);
+const kSshKeyManagementBarColor = Color(0xff505050);
 
 const kEmptyFieldValidationError = 'Field cannot be left blank';
 const kAtsignFieldValidationError = 'Field must start with @';

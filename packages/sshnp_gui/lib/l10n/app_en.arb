@@ -58,6 +58,7 @@
     "port" : "Remote Port",
     "privacyPolicy" : "Privacy Policy",
     "privateKey" : "SSH Private Key",
+    "privateKeyNotFound": "No Private Key Found",
     "privateKeyNickname": "Private Key Nickname",
     "privateKeyManagement" : "Private Key Management",
     "privateKeyManagementDescription" : "Create and Configure your private key",
@@ -103,8 +104,10 @@
     "to" : "To",
     "username" : "Username",
     "usernameHint": "The user name on this host",
+    "uploadNewKey" : "Upload New Key",
     "verbose" : "Verbose Logging",
     "warning": "Warning",
-    "warningMessage" : " Are you sure you want to delete this configuration"
+    "warningMessage" : " Are you sure you want to delete this configuration",
+    "yourKeys" : "Your Keys"
     
    }

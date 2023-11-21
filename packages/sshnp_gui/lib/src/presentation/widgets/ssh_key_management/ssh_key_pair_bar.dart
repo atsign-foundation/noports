@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sshnp_gui/src/controllers/ssh_key_pair_controller.dart';
+import 'package:sshnp_gui/src/presentation/widgets/ssh_key_management/ssh_key_pair_bar_actions.dart';
 import 'package:sshnp_gui/src/utility/constants.dart';
 import 'package:sshnp_gui/src/utility/sizes.dart';
 
@@ -36,17 +37,16 @@ class _SskKeyPairBarState extends ConsumerState<SshKeyPairBar> {
         );
       },
       data: (atSshKeyPairManager) => Card(
-        color: kProfileBarColor,
+        color: kSshKeyManagementBarColor,
         child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          mainAxisAlignment: MainAxisAlignment.spaceAround,
           children: [
-            gapW16,
-            Text(atSshKeyPairManager.nickname),
-            gapW8,
-
-            Expanded(child: Container()),
-            // const ProfileBarStats(),
-            // ProfileBarActions(profile),
+            Text(
+              atSshKeyPairManager.nickname,
+            ),
+            SshKeyPairBarActions(
+              identifier: widget.identifier,
+            ),
           ],
         ),
       ),

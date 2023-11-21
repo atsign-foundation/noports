@@ -6,6 +6,8 @@ import 'package:sshnp_gui/src/presentation/widgets/navigation/app_navigation_rai
 import 'package:sshnp_gui/src/utility/constants.dart';
 import 'package:sshnp_gui/src/utility/sizes.dart';
 
+import '../widgets/ssh_key_management/ssh_key_management_dialog.dart';
+
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({Key? key}) : super(key: key);
   static String route = 'settingsScreen';
@@ -53,7 +55,9 @@ class SettingsScreen extends StatelessWidget {
                       child: Row(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Expanded(child: CustomListTile.keyManagement(onTap: () {})),
+                          Flexible(child: CustomListTile.keyManagement(onTap: () {
+                            showDialog(context: context, builder: ((context) => const SshKeyManagementDialog()));
+                          })),
                           // Expanded(child: CustomListTile.deleteYourKey(onTap: () {})),
                         ],
                       ),

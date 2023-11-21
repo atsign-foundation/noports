@@ -14,7 +14,7 @@ import 'package:sshnp_gui/src/presentation/widgets/profile_form/custom_dropdown_
 import 'package:sshnp_gui/src/presentation/widgets/profile_form/custom_switch_widget.dart';
 import 'package:sshnp_gui/src/presentation/widgets/profile_form/custom_text_form_field.dart';
 import 'package:sshnp_gui/src/presentation/widgets/profile_form/profile_form_card.dart';
-import 'package:sshnp_gui/src/presentation/widgets/ssh_key_management/ssh_key_management_form.dart';
+import 'package:sshnp_gui/src/presentation/widgets/ssh_key_management/ssh_key_management_form_dialog.dart';
 import 'package:sshnp_gui/src/utility/constants.dart';
 import 'package:sshnp_gui/src/utility/form_validator.dart';
 import 'package:sshnp_gui/src/utility/sizes.dart';
@@ -175,7 +175,8 @@ class _ProfileFormState extends ConsumerState<ProfileForm> {
                             }).toList(),
                             onChanged: (value) {
                               if (value == kPrivateKeyDropDownOption) {
-                                showDialog(context: context, builder: ((context) => const SSHKeyManagementForm()));
+                                showDialog(
+                                    context: context, builder: ((context) => const SSHKeyManagementFormDialog()));
                               }
                             },
                             onSaved: (value) {

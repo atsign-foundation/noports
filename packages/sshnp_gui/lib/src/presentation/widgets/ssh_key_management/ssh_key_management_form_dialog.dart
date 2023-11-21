@@ -19,14 +19,16 @@ import 'package:sshnp_gui/src/utility/sizes.dart';
 import '../../../application/at_ssh_key_pair_manager.dart';
 import '../../../controllers/file_picker_controller.dart';
 
-class SSHKeyManagementForm extends ConsumerStatefulWidget {
-  const SSHKeyManagementForm({super.key});
+class SSHKeyManagementFormDialog extends ConsumerStatefulWidget {
+  const SSHKeyManagementFormDialog({this.identifier, super.key});
+
+  final String? identifier;
 
   @override
-  ConsumerState<SSHKeyManagementForm> createState() => _SSHKeyManagementFormState();
+  ConsumerState<SSHKeyManagementFormDialog> createState() => _SSHKeyManagementFormState();
 }
 
-class _SSHKeyManagementFormState extends ConsumerState<SSHKeyManagementForm> {
+class _SSHKeyManagementFormState extends ConsumerState<SSHKeyManagementFormDialog> {
   final GlobalKey<FormState> _formkey = GlobalKey<FormState>();
   late CurrentConfigState currentProfile;
   late String nickname;
@@ -95,7 +97,7 @@ class _SSHKeyManagementFormState extends ConsumerState<SSHKeyManagementForm> {
     final strings = AppLocalizations.of(context)!;
     currentProfile = ref.watch(currentConfigController);
 
-    final asyncOldConfig = ref.watch(atSSHKeyPairManagerFamilyController(currentProfile.profileName));
+    final asyncOldConfig = ref.watch(atSSHKeyPairManagerFamilyController(widget.identifier ?? ''));
 
     return asyncOldConfig.when(
         loading: () => const Center(child: CircularProgressIndicator()),

@@ -65,13 +65,14 @@ class AtSshKeyPairManagerListController extends AutoDisposeAsyncNotifier<Iterabl
   }
 
   void add(String identity) async {
-    state = AsyncValue.data({...state.value ?? [], identity});
     await AtSshKeyPairManagerRepository.writeAtSshKeyPairIdentities(state.value!.toList());
+    state = AsyncValue.data({...state.value ?? [], identity});
   }
 
-  void remove(String identity) {
-    // TODO: implement remove
-    // state = AsyncData(state.value?.where((e) => e != profileName) ?? []);
+  Future<void> remove(String identity) async {
+    final newState = state.value?.where((e) => e != identity) ?? [];
+    await AtSshKeyPairManagerRepository.writeAtSshKeyPairIdentities(newState.toList());
+    state = AsyncData(newState);
   }
 }
 
@@ -106,7 +107,7 @@ class AtSshKeyPairManagerFamilyController extends AutoDisposeFamilyAsyncNotifier
 
   Future<void> deleteAtSSHKeyPairManager({required String identifier, BuildContext? context}) async {
     try {
-      AtSshKeyPairManagerRepository.deleteAtSshKeyPair(arg);
+      await AtSshKeyPairManagerRepository.deleteAtSshKeyPair(arg);
       ref.read(atSshKeyPairListController.notifier).remove(arg);
       state = AsyncValue.error('SSHNPParams has been disposed', StackTrace.current);
     } catch (e) {
