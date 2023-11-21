@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:noports_core/sshnp_foundation.dart';
 import 'package:at_client/at_client.dart';
 
@@ -16,6 +18,7 @@ Future<Sshnp> sshnpFromParamsWithFileBindings(
   }
 
   if (params.legacyDaemon) {
+    // ignore: deprecated_member_use
     return Sshnp.unsigned(
       atClient: atClient,
       params: params,
@@ -29,9 +32,20 @@ Future<Sshnp> sshnpFromParamsWithFileBindings(
         params: params,
       );
     case SupportedSshClient.dart:
-      return Sshnp.dartLocal(
+      String identityFile = params.identityFile ??
+          (throw SshnpError(
+            'Identity file is mandatory when using the dart client.',
+          ));
+      String pemText = await File(identityFile).readAsString();
+      AtSshKeyPair identityKeyPair = AtSshKeyPair.fromPem(
+        pemText,
+        identifier: params.identityFile!,
+        passphrase: params.identityPassphrase,
+      );
+      return Sshnp.dartPure(
         atClient: atClient,
         params: params,
+        identityKeyPair: identityKeyPair,
       );
   }
 }

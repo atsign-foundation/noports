@@ -17,4 +17,13 @@ mixin AtClientBindings {
       logger.info('ERROR:$notification');
     });
   }
+
+  Stream<AtNotification> subscribe(
+      {String? regex, bool shouldDecrypt = false}) {
+    logger.info('Subscribing to notifications with regex: "$regex"');
+    return atClient.notificationService.subscribe(
+      regex: regex,
+      shouldDecrypt: shouldDecrypt,
+    );
+  }
 }
