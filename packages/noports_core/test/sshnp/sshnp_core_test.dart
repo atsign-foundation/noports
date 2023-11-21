@@ -35,7 +35,7 @@ void main() {
       stubbedCompleteInitialization = FunctionStub();
     });
 
-    /// When declaration setup for the constructor of [StubbedSshnpCore]
+    /// When declaration setup for the constructor of [StubbedSshnp]
     whenConstructor({bool verbose = false}) {
       when(() => mockParams.device).thenReturn('mydevice');
       when(() => mockParams.localPort).thenReturn(0);
@@ -44,7 +44,7 @@ void main() {
       when(() => mockAtClient.setPreferences(any())).thenReturn(null);
     }
 
-    /// When declaration setup for the initialization of [StubbedSshnpCore]
+    /// When declaration setup for the initialization of [StubbedSshnp]
     whenInitialization({AtSshKeyPair? identityKeyPair}) {
       when(() => stubbedCallInitialization()).thenAnswer((_) async {});
       when(() => stubbedInitialize()).thenAnswer((_) async {});
@@ -65,7 +65,7 @@ void main() {
         whenConstructor(verbose: false);
 
         final sshnpCore =
-            StubbedSshnpCore(atClient: mockAtClient, params: mockParams);
+            StubbedSshnp(atClient: mockAtClient, params: mockParams);
 
         /// Expect that the namespace is set in the preferences
         verify(() => mockAtClient.getPreferences()).called(1);
@@ -81,7 +81,7 @@ void main() {
         whenConstructor(verbose: true);
 
         final sshnpCore =
-            StubbedSshnpCore(atClient: mockAtClient, params: mockParams);
+            StubbedSshnp(atClient: mockAtClient, params: mockParams);
 
         /// Expect that the namespace is set in the preferences
         verify(() => mockAtClient.getPreferences()).called(1);
@@ -99,7 +99,7 @@ void main() {
       test('AsyncInitialization', () async {
         whenConstructor();
 
-        final sshnpCore = StubbedSshnpCore(
+        final sshnpCore = StubbedSshnp(
           atClient: mockAtClient,
           params: mockParams,
           sshnpdChannel: mockSshnpdChannel,
