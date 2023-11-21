@@ -76,7 +76,7 @@ abstract class SshrvdChannel<T> with AsyncInitialization, AtClientBindings {
     // Connect to rendezvous point using background process.
     // sshnp (this program) can then exit without issue.
     Sshrv<T> sshrv = sshrvGenerator(
-      params.host,
+      host,
       _sshrvdPort!,
       localSshdPort: params.localSshdPort,
     );
@@ -86,9 +86,7 @@ abstract class SshrvdChannel<T> with AsyncInitialization, AtClientBindings {
   @protected
   Future<void> getHostAndPortFromSshrvd() async {
     sshrvdAck = SshrvdAck.notAcknowledged;
-    atClient.notificationService
-        .subscribe(
-            regex: '$sessionId.${Sshrvd.namespace}@', shouldDecrypt: true)
+    subscribe(regex: '$sessionId.${Sshrvd.namespace}@', shouldDecrypt: true)
         .listen((notification) async {
       String ipPorts = notification.value.toString();
       List results = ipPorts.split(',');

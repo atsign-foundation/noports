@@ -1,25 +1,9 @@
-import 'package:at_client/at_client.dart';
-import 'package:mocktail/mocktail.dart';
 import 'package:noports_core/sshnp_foundation.dart';
 
+import 'sshnp_mocks.dart';
 import 'sshnp_core_constants.dart';
 
-/// Function Stubbing
-abstract class FunctionCaller {
-  void call();
-}
-
-class FunctionStub extends Mock implements FunctionCaller {}
-
 /// Mocked Classes
-class MockAtClient extends Mock implements AtClient {}
-
-class MockSshnpParams extends Mock implements SshnpParams {}
-
-class MockSshnpdChannel extends Mock implements SshnpdChannel {}
-
-class MockSshrvdChannel extends Mock implements SshrvdChannel {}
-
 /// Stubbed [SshnpCore] (minimum viable implementation of [SshnpCore])
 class StubbedSshnpCore extends SshnpCore with StubbedAsyncInitializationMixin {
   StubbedSshnpCore({
@@ -60,35 +44,35 @@ class StubbedSshnpCore extends SshnpCore with StubbedAsyncInitializationMixin {
 
 /// Stubbed mixin wrapper
 mixin StubbedAsyncInitializationMixin on AsyncInitialization {
-  late FunctionStub _mockCallInitialization;
-  late FunctionStub _mockInitialize;
-  late FunctionStub _mockCompleteInitialization;
+  late FunctionStub<void> _stubbedCallInitialization;
+  late FunctionStub<void> _stubbedInitialize;
+  late FunctionStub<void> _stubbedCompleteInitialization;
 
   void stubAsyncInitialization({
-    required FunctionStub mockCallInitialization,
-    required FunctionStub mockInitialize,
-    required FunctionStub mockCompleteInitialization,
+    required FunctionStub<void> stubbedCallInitialization,
+    required FunctionStub<void> stubbedInitialize,
+    required FunctionStub<void> stubbedCompleteInitialization,
   }) {
-    _mockCallInitialization = mockCallInitialization;
-    _mockInitialize = mockInitialize;
-    _mockCompleteInitialization = mockCompleteInitialization;
+    _stubbedCallInitialization = stubbedCallInitialization;
+    _stubbedInitialize = stubbedInitialize;
+    _stubbedCompleteInitialization = stubbedCompleteInitialization;
   }
 
   @override
   Future<void> callInitialization() async {
-    _mockCallInitialization.call();
+    _stubbedCallInitialization();
     return super.callInitialization();
   }
 
   @override
   Future<void> initialize() async {
-    _mockInitialize.call();
+    _stubbedInitialize();
     await super.initialize();
   }
 
   @override
   void completeInitialization() {
-    _mockCompleteInitialization.call();
     super.completeInitialization();
+    return _stubbedCompleteInitialization();
   }
 }

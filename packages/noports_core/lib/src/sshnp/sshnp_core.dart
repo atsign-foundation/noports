@@ -6,7 +6,7 @@ import 'package:meta/meta.dart';
 import 'package:noports_core/src/common/mixins/async_completion.dart';
 import 'package:noports_core/src/common/mixins/async_initialization.dart';
 import 'package:noports_core/src/common/mixins/at_client_bindings.dart';
-import 'package:noports_core/src/sshnp/util/sshnp_ssh_key_handler.dart';
+import 'package:noports_core/src/sshnp/util/sshnp_ssh_key_handler/sshnp_ssh_key_handler.dart';
 import 'package:noports_core/src/sshnp/util/sshnpd_channel/sshnpd_channel.dart';
 import 'package:noports_core/src/sshnp/util/sshrvd_channel/sshrvd_channel.dart';
 import 'package:noports_core/sshnp.dart';

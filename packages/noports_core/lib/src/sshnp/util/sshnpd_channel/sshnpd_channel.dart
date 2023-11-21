@@ -54,12 +54,10 @@ abstract class SshnpdChannel with AsyncInitialization, AtClientBindings {
   Future<void> initialize() async {
     String regex = '$sessionId.$namespace${params.sshnpdAtSign}';
     logger.info('Starting monitor for notifications with regex: "$regex"');
-    atClient.notificationService
-        .subscribe(
-          regex: regex,
-          shouldDecrypt: true,
-        )
-        .listen(_handleSshnpdResponses);
+    subscribe(
+      regex: regex,
+      shouldDecrypt: true,
+    ).listen(_handleSshnpdResponses);
   }
 
   /// Main reponse handler for the daemon's notifications.
@@ -178,9 +176,7 @@ abstract class SshnpdChannel with AsyncInitialization, AtClientBindings {
     SshnpDeviceList deviceList = SshnpDeviceList();
 
     // Listen for heartbeat notifications
-    atClient.notificationService
-        .subscribe(
-            regex: 'heartbeat\\.$sshnpDeviceNameRegex', shouldDecrypt: true)
+    subscribe(regex: 'heartbeat\\.$sshnpDeviceNameRegex', shouldDecrypt: true)
         .listen((notification) {
       var deviceInfo = jsonDecode(notification.value ?? '{}');
       var devicename = deviceInfo['devicename'];

@@ -3,7 +3,8 @@
 import 'dart:io' show Process, ProcessResult, ProcessStartMode;
 import 'package:meta/meta.dart';
 
-export 'dart:io' show Platform, Process, ProcessStartMode, ServerSocket, InternetAddress;
+export 'dart:io'
+    show Platform, Process, ProcessStartMode, ServerSocket, InternetAddress;
 export 'package:file/file.dart';
 export 'package:file/local.dart' show LocalFileSystem;
 
@@ -13,6 +14,7 @@ typedef ProcessRunner = Future<ProcessResult> Function(
   List<String> arguments, {
   String? workingDirectory,
 });
+
 
 @internal
 typedef ProcessStarter = Future<Process> Function(

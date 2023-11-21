@@ -5,6 +5,7 @@ import 'package:noports_core/sshnp_foundation.dart';
 import 'package:test/test.dart';
 import 'package:mocktail/mocktail.dart';
 
+import 'sshnp_mocks.dart';
 import 'sshnp_core_mocks.dart';
 
 void main() {
@@ -16,9 +17,9 @@ void main() {
     late SshrvdChannel mockSshrvdChannel;
 
     /// Initialization stubs
-    late FunctionStub stubbedCallInitialization;
-    late FunctionStub stubbedInitialize;
-    late FunctionStub stubbedCompleteInitialization;
+    late FunctionStub<void> stubbedCallInitialization;
+    late FunctionStub<void> stubbedInitialize;
+    late FunctionStub<void> stubbedCompleteInitialization;
 
     setUp(() {
       /// Creation
@@ -45,9 +46,9 @@ void main() {
 
     /// When declaration setup for the initialization of [StubbedSshnpCore]
     whenInitialization({AtSshKeyPair? identityKeyPair}) {
-      when(() => stubbedCallInitialization.call()).thenAnswer((_) async {});
-      when(() => stubbedInitialize.call()).thenAnswer((_) async {});
-      when(() => stubbedCompleteInitialization.call()).thenReturn(null);
+      when(() => stubbedCallInitialization()).thenAnswer((_) async {});
+      when(() => stubbedInitialize()).thenAnswer((_) async {});
+      when(() => stubbedCompleteInitialization()).thenReturn(null);
 
       when(() => mockSshnpdChannel.callInitialization())
           .thenAnswer((_) async {});
@@ -107,16 +108,16 @@ void main() {
 
         /// Setup stubs for the mocks that are part of [MockAsyncInitializationMixin]
         sshnpCore.stubAsyncInitialization(
-          mockCallInitialization: stubbedCallInitialization,
-          mockCompleteInitialization: stubbedCompleteInitialization,
-          mockInitialize: stubbedInitialize,
+          stubbedCallInitialization: stubbedCallInitialization,
+          stubbedCompleteInitialization: stubbedCompleteInitialization,
+          stubbedInitialize: stubbedInitialize,
         );
 
         whenInitialization(identityKeyPair: sshnpCore.identityKeyPair);
 
-        verifyNever(() => stubbedCallInitialization.call());
-        verifyNever(() => stubbedInitialize.call());
-        verifyNever(() => stubbedCompleteInitialization.call());
+        verifyNever(() => stubbedCallInitialization());
+        verifyNever(() => stubbedInitialize());
+        verifyNever(() => stubbedCompleteInitialization());
 
         await expectLater(sshnpCore.callInitialization(), completes);
 
@@ -124,32 +125,32 @@ void main() {
         /// Some of the middle steps may be valid in another, but this tests
         /// against the current implementation's order
         verifyInOrder([
-          () => stubbedCallInitialization.call(),
-          () => stubbedInitialize.call(),
+          () => stubbedCallInitialization(),
+          () => stubbedInitialize(),
           () => mockSshnpdChannel.callInitialization(),
           () => mockSshnpdChannel.resolveRemoteUsername(),
           () => mockSshnpdChannel
               .sharePublicKeyIfRequired(sshnpCore.identityKeyPair),
           () => mockSshrvdChannel.callInitialization(),
-          () => stubbedCompleteInitialization.call(),
+          () => stubbedCompleteInitialization(),
         ]);
 
         /// Ensure that no initialization steps are called twice
-        verifyNever(() => stubbedCallInitialization.call());
-        verifyNever(() => stubbedInitialize.call());
+        verifyNever(() => stubbedCallInitialization());
+        verifyNever(() => stubbedInitialize());
         verifyNever(() => mockSshnpdChannel.callInitialization());
         verifyNever(() => mockSshnpdChannel.resolveRemoteUsername());
         verifyNever(() => mockSshnpdChannel
             .sharePublicKeyIfRequired(sshnpCore.identityKeyPair));
         verifyNever(() => mockSshrvdChannel.callInitialization());
-        verifyNever(() => stubbedCompleteInitialization.call());
+        verifyNever(() => stubbedCompleteInitialization());
 
         /// Ensure [initialize()] is not ran a second time if we call
         /// [callInitialization()] a second time
         await expectLater(sshnpCore.callInitialization(), completes);
-        verify(() => stubbedCallInitialization.call()).called(1);
-        verifyNever(() => stubbedInitialize.call());
-        verifyNever(() => stubbedCompleteInitialization.call());
+        verify(() => stubbedCallInitialization()).called(1);
+        verifyNever(() => stubbedInitialize());
+        verifyNever(() => stubbedCompleteInitialization());
         verifyNever(() => mockSshrvdChannel.callInitialization());
       });
     }); // group Initialization

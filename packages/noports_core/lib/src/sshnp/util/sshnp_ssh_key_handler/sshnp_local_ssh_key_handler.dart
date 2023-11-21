@@ -1,18 +1,5 @@
-import 'dart:async';
-
-import 'package:meta/meta.dart';
 import 'package:noports_core/src/common/io_types.dart';
-import 'package:noports_core/src/sshnp/sshnp_core.dart';
-import 'package:noports_core/src/sshnp/models/sshnp_result.dart';
-import 'package:noports_core/utils.dart';
-
-mixin SshnpKeyHandler {
-  @protected
-  AtSshKeyUtil get keyUtil;
-
-  @protected
-  AtSshKeyPair? get identityKeyPair;
-}
+import 'package:noports_core/sshnp_foundation.dart';
 
 mixin SshnpLocalSshKeyHandler on SshnpCore implements SshnpKeyHandler {
   @override
@@ -43,14 +30,4 @@ mixin SshnpLocalSshKeyHandler on SshnpCore implements SshnpKeyHandler {
 
     await super.initialize();
   }
-}
-
-mixin SshnpDartSshKeyHandler on SshnpCore implements SshnpKeyHandler {
-  @override
-  DartSshKeyUtil get keyUtil => _sshKeyUtil;
-  final DartSshKeyUtil _sshKeyUtil = DartSshKeyUtil();
-
-  @override
-  AtSshKeyPair? get identityKeyPair => _identityKeyPair;
-  AtSshKeyPair? _identityKeyPair;
 }
