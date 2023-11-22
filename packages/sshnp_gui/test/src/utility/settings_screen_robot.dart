@@ -33,7 +33,7 @@ class SettingsScreenRobot {
   }
 
   void findSettingsSwitchAtsignActionButton() {
-    final finder = find.byType(SettingsSwitchAtsignAction);
+    final finder = find.byType(SettingsSwitchAtsignActionMobile);
     expect(finder, findsWidgets);
   }
 

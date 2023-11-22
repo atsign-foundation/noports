@@ -6,8 +6,6 @@ import 'package:sshnp_gui/src/presentation/widgets/navigation/app_navigation_rai
 import 'package:sshnp_gui/src/utility/constants.dart';
 import 'package:sshnp_gui/src/utility/sizes.dart';
 
-import '../widgets/ssh_key_management/ssh_key_management_dialog.dart';
-
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({Key? key}) : super(key: key);
   static String route = 'settingsScreen';
@@ -46,22 +44,28 @@ class SettingsScreen extends StatelessWidget {
                   Align(
                     alignment: Alignment.centerLeft,
                     child: Container(
-                      height: 133,
-                      width: 540,
-                      decoration: BoxDecoration(
-                        color: kProfileFormCardColor,
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Flexible(child: CustomListTile.keyManagement(onTap: () {
-                            showDialog(context: context, builder: ((context) => const SshKeyManagementDialog()));
-                          })),
-                          // Expanded(child: CustomListTile.deleteYourKey(onTap: () {})),
-                        ],
-                      ),
-                    ),
+                        height: 180,
+                        width: 540,
+                        decoration: BoxDecoration(
+                          color: kProfileFormCardColor,
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: GridView.count(childAspectRatio: 202 / 60, crossAxisCount: 2, children: const [
+                          CustomListTile.keyManagement(),
+                          CustomListTile.backUpYourKey(),
+                          CustomListTile.switchAtsign(),
+                          CustomListTile.resetAtsign(),
+                        ])
+                        // child: Row(
+                        //   crossAxisAlignment: CrossAxisAlignment.start,
+                        //   children: [
+                        //     Flexible(child: CustomListTile.keyManagement(onTap: () {
+                        //       showDialog(context: context, builder: ((context) => const SshKeyManagementDialog()));
+                        //     })),
+                        //     // Expanded(child: CustomListTile.deleteYourKey(onTap: () {})),
+                        //   ],
+                        // ),
+                        ),
                   ),
 
                   // const Center(child: SettingsBackupKeyAction()),
