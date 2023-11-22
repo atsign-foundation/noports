@@ -10,7 +10,7 @@ mixin class AsyncInitialization {
   // * Public members
 
   /// Used to check if initialization has started
-  bool get initalizeStarted => _initializeStarted;
+  bool get initializeStarted => _initializeStarted;
 
   /// Used to check if initialization has completed
   Future<void> get initialized => _initializedCompleter.future;
