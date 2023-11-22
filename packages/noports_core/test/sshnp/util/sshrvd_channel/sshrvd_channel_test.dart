@@ -112,12 +112,12 @@ void main() {
       /// Set the required parameters
       whenInitializationWithSshrvdHost();
       expect(stubbedSshrvdChannel.sshrvdAck, SshrvdAck.notAcknowledged);
-      expect(stubbedSshrvdChannel.initalizeStarted, false);
+      expect(stubbedSshrvdChannel.initializeStarted, false);
 
       verifyNever(subscribeInvocation);
       verifyNever(notifyInvocation);
 
-      await expectLater(stubbedSshrvdChannel.callInitialization(), completes);
+      await expectLater(stubbedSshrvdChannel.initialize(), completes);
 
       verifyInOrder([
         () => subscribeStub(
@@ -152,10 +152,25 @@ void main() {
       when(() => mockParams.host).thenReturn('234.234.234.234');
       when(() => mockParams.port).thenReturn(135);
 
-      await expectLater(stubbedSshrvdChannel.callInitialization(), completes);
+      await expectLater(stubbedSshrvdChannel.initialize(), completes);
 
       expect(stubbedSshrvdChannel.host, '234.234.234.234');
       expect(stubbedSshrvdChannel.port, 135);
+    }); // test Initialization - non-sshrvd host
+
+    test('Initialization completes - sshrvd host', () async {
+      /// Set the required parameters
+      whenInitializationWithSshrvdHost();
+      await expectLater(stubbedSshrvdChannel.callInitialization(), completes);
+      await expectLater(stubbedSshrvdChannel.initialized, completes);
+    });
+
+    test('Initialization completes - non-sshrvd host', () async {
+      when(() => mockParams.host).thenReturn('234.234.234.234');
+      when(() => mockParams.port).thenReturn(135);
+
+      await expectLater(stubbedSshrvdChannel.callInitialization(), completes);
+      await expectLater(stubbedSshrvdChannel.initialized, completes);
     }); // test Initialization - non-sshrvd host
 
     test('runSshrv', () async {
