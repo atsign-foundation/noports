@@ -87,7 +87,8 @@ abstract class SshnpCore
     remoteUsername = await sshnpdChannel.resolveRemoteUsername();
 
     /// Set the username to use for the initial ssh tunnel
-    tunnelUsername = await sshnpdChannel.resolveTunnelUsername(remoteUsername);
+    tunnelUsername = await sshnpdChannel.resolveTunnelUsername(
+        remoteUsername: remoteUsername);
 
     /// Shares the public key if required
     await sshnpdChannel.sharePublicKeyIfRequired(identityKeyPair);

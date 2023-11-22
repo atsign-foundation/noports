@@ -512,7 +512,8 @@ void main() {
         expect(argMap[SshnpArg.localSshOptionsArg.name],
             equals(['-L 127.0.01:8080:127.0.0.1:80']));
         expect(argMap[SshnpArg.remoteUserNameArg.name], equals('myUsername'));
-        expect(argMap[SshnpArg.tunnelUserNameArg.name], equals('myTunnelUsername'));
+        expect(argMap[SshnpArg.tunnelUserNameArg.name],
+            equals('myTunnelUsername'));
         expect(argMap[SshnpArg.verboseArg.name], equals(true));
         expect(argMap[SshnpArg.rootDomainArg.name], equals('root.atsign.wtf'));
         expect(argMap[SshnpArg.localSshdPortArg.name], equals(4567));

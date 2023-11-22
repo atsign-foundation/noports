@@ -38,8 +38,9 @@ class SshnpParams {
   final SupportedSshAlgorithm sshAlgorithm;
 
   /// Special Arguments
-  final String?
-  profileName; // automatically populated with the filename if from a configFile
+
+  /// automatically populated with the filename if from a configFile
+  final String? profileName;
 
   /// Operation flags
   final bool listDevices;
@@ -96,7 +97,7 @@ class SshnpParams {
       atKeysFilePath: params2.atKeysFilePath ?? params1.atKeysFilePath,
       identityFile: params2.identityFile ?? params1.identityFile,
       identityPassphrase:
-      params2.identityPassphrase ?? params1.identityPassphrase,
+          params2.identityPassphrase ?? params1.identityPassphrase,
       sendSshPublicKey: params2.sendSshPublicKey ?? params1.sendSshPublicKey,
       localSshOptions: params2.localSshOptions ?? params1.localSshOptions,
       remoteUsername: params2.remoteUsername ?? params1.remoteUsername,
@@ -109,7 +110,7 @@ class SshnpParams {
       remoteSshdPort: params2.remoteSshdPort ?? params1.remoteSshdPort,
       idleTimeout: params2.idleTimeout ?? params1.idleTimeout,
       addForwardsToTunnel:
-      params2.addForwardsToTunnel ?? params1.addForwardsToTunnel,
+          params2.addForwardsToTunnel ?? params1.addForwardsToTunnel,
       sshClient: params2.sshClient ?? params1.sshClient,
       sshAlgorithm: params2.sshAlgorithm ?? params1.sshAlgorithm,
     );
@@ -137,9 +138,9 @@ class SshnpParams {
       identityFile: partial.identityFile,
       identityPassphrase: partial.identityPassphrase,
       sendSshPublicKey:
-      partial.sendSshPublicKey ?? DefaultSshnpArgs.sendSshPublicKey,
+          partial.sendSshPublicKey ?? DefaultSshnpArgs.sendSshPublicKey,
       localSshOptions:
-      partial.localSshOptions ?? DefaultSshnpArgs.localSshOptions,
+          partial.localSshOptions ?? DefaultSshnpArgs.localSshOptions,
       verbose: partial.verbose ?? DefaultArgs.verbose,
       remoteUsername: partial.remoteUsername,
       tunnelUsername: partial.tunnelUsername,
@@ -151,7 +152,7 @@ class SshnpParams {
       remoteSshdPort: partial.remoteSshdPort ?? DefaultArgs.remoteSshdPort,
       idleTimeout: partial.idleTimeout ?? DefaultArgs.idleTimeout,
       addForwardsToTunnel:
-      partial.addForwardsToTunnel ?? DefaultArgs.addForwardsToTunnel,
+          partial.addForwardsToTunnel ?? DefaultArgs.addForwardsToTunnel,
       sshClient: partial.sshClient ?? DefaultSshnpArgs.sshClient,
       sshAlgorithm: partial.sshAlgorithm ?? DefaultArgs.sshAlgorithm,
     );
@@ -205,7 +206,7 @@ class SshnpParams {
       SshnpArg.sshAlgorithmArg.name: sshAlgorithm.toString(),
     };
     args.removeWhere(
-          (key, value) => !parserType.shouldParse(SshnpArg.fromName(key).parseWhen),
+      (key, value) => !parserType.shouldParse(SshnpArg.fromName(key).parseWhen),
     );
     return args;
   }
@@ -294,7 +295,7 @@ class SshnpPartialParams {
       atKeysFilePath: params2.atKeysFilePath ?? params1.atKeysFilePath,
       identityFile: params2.identityFile ?? params1.identityFile,
       identityPassphrase:
-      params2.identityPassphrase ?? params1.identityPassphrase,
+          params2.identityPassphrase ?? params1.identityPassphrase,
       sendSshPublicKey: params2.sendSshPublicKey ?? params1.sendSshPublicKey,
       localSshOptions: params2.localSshOptions ?? params1.localSshOptions,
       remoteUsername: params2.remoteUsername ?? params1.remoteUsername,
@@ -307,7 +308,7 @@ class SshnpPartialParams {
       remoteSshdPort: params2.remoteSshdPort ?? params1.remoteSshdPort,
       idleTimeout: params2.idleTimeout ?? params1.idleTimeout,
       addForwardsToTunnel:
-      params2.addForwardsToTunnel ?? params1.addForwardsToTunnel,
+          params2.addForwardsToTunnel ?? params1.addForwardsToTunnel,
       sshClient: params2.sshClient ?? params1.sshClient,
       sshAlgorithm: params2.sshAlgorithm ?? params1.sshAlgorithm,
     );
@@ -362,7 +363,7 @@ class SshnpPartialParams {
       sshAlgorithm: args[SshnpArg.sshAlgorithmArg.name] == null
           ? null
           : SupportedSshAlgorithm.fromString(
-          args[SshnpArg.sshAlgorithmArg.name]),
+              args[SshnpArg.sshAlgorithmArg.name]),
     );
   }
 
