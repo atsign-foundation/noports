@@ -8,14 +8,23 @@ void main() {
     test('ConfigFileRepository.atKeyFromProfileName test', () async {
       String profileName = 'myProfileName';
 
-      expect(ConfigFileRepository.getDefaultSshnpConfigDirectory(getHomeDirectory()!), isA<String>());
-      expect(ConfigFileRepository.fromProfileName(profileName), isA<Future<String>>());
+      expect(
+          ConfigFileRepository.getDefaultSshnpConfigDirectory(
+              getHomeDirectory()!),
+          isA<String>());
+      expect(ConfigFileRepository.fromProfileName(profileName),
+          isA<Future<String>>());
       expect(ConfigFileRepository.fromProfileName(profileName), completes);
       expect(
-        await ConfigFileRepository.fromProfileName(profileName, basenameOnly: false),
-        equals(path.join(getHomeDirectory()!, '.sshnp', 'config', '$profileName.env')),
+        await ConfigFileRepository.fromProfileName(profileName,
+            basenameOnly: false),
+        equals(path.join(
+            getHomeDirectory()!, '.sshnp', 'config', '$profileName.env')),
       );
-      expect(await ConfigFileRepository.fromProfileName(profileName, basenameOnly: true), equals('$profileName.env'));
+      expect(
+          await ConfigFileRepository.fromProfileName(profileName,
+              basenameOnly: true),
+          equals('$profileName.env'));
     });
 
     group('[depends on ConfigFileRepository.atKeyFromProfileName]', () {

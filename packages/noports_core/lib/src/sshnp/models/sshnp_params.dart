@@ -25,6 +25,7 @@ class SshnpParams {
   final bool sendSshPublicKey;
   final List<String> localSshOptions;
   final String? remoteUsername;
+  final String? tunnelUsername;
   final bool verbose;
   final String rootDomain;
   final int localSshdPort;
@@ -37,8 +38,9 @@ class SshnpParams {
   final SupportedSshAlgorithm sshAlgorithm;
 
   /// Special Arguments
-  final String?
-      profileName; // automatically populated with the filename if from a configFile
+
+  /// automatically populated with the filename if from a configFile
+  final String? profileName;
 
   /// Operation flags
   final bool listDevices;
@@ -57,6 +59,7 @@ class SshnpParams {
     this.localSshOptions = DefaultSshnpArgs.localSshOptions,
     this.verbose = DefaultArgs.verbose,
     this.remoteUsername,
+    this.tunnelUsername,
     this.atKeysFilePath,
     this.rootDomain = DefaultArgs.rootDomain,
     this.localSshdPort = DefaultArgs.localSshdPort,
@@ -98,6 +101,7 @@ class SshnpParams {
       sendSshPublicKey: params2.sendSshPublicKey ?? params1.sendSshPublicKey,
       localSshOptions: params2.localSshOptions ?? params1.localSshOptions,
       remoteUsername: params2.remoteUsername ?? params1.remoteUsername,
+      tunnelUsername: params2.tunnelUsername ?? params1.tunnelUsername,
       verbose: params2.verbose ?? params1.verbose,
       rootDomain: params2.rootDomain ?? params1.rootDomain,
       localSshdPort: params2.localSshdPort ?? params1.localSshdPort,
@@ -139,6 +143,7 @@ class SshnpParams {
           partial.localSshOptions ?? DefaultSshnpArgs.localSshOptions,
       verbose: partial.verbose ?? DefaultArgs.verbose,
       remoteUsername: partial.remoteUsername,
+      tunnelUsername: partial.tunnelUsername,
       atKeysFilePath: partial.atKeysFilePath,
       rootDomain: partial.rootDomain ?? DefaultArgs.rootDomain,
       localSshdPort: partial.localSshdPort ?? DefaultArgs.localSshdPort,
@@ -190,6 +195,7 @@ class SshnpParams {
       SshnpArg.sendSshPublicKeyArg.name: sendSshPublicKey,
       SshnpArg.localSshOptionsArg.name: localSshOptions,
       SshnpArg.remoteUserNameArg.name: remoteUsername,
+      SshnpArg.tunnelUserNameArg.name: tunnelUsername,
       SshnpArg.verboseArg.name: verbose,
       SshnpArg.rootDomainArg.name: rootDomain,
       SshnpArg.localSshdPortArg.name: localSshdPort,
@@ -229,6 +235,7 @@ class SshnpPartialParams {
   final bool? sendSshPublicKey;
   final List<String>? localSshOptions;
   final String? remoteUsername;
+  final String? tunnelUsername;
   final bool? verbose;
   final String? rootDomain;
   final bool? legacyDaemon;
@@ -255,6 +262,7 @@ class SshnpPartialParams {
     this.sendSshPublicKey,
     this.localSshOptions,
     this.remoteUsername,
+    this.tunnelUsername,
     this.verbose,
     this.rootDomain,
     this.localSshdPort,
@@ -291,6 +299,7 @@ class SshnpPartialParams {
       sendSshPublicKey: params2.sendSshPublicKey ?? params1.sendSshPublicKey,
       localSshOptions: params2.localSshOptions ?? params1.localSshOptions,
       remoteUsername: params2.remoteUsername ?? params1.remoteUsername,
+      tunnelUsername: params2.tunnelUsername ?? params1.tunnelUsername,
       verbose: params2.verbose ?? params1.verbose,
       rootDomain: params2.rootDomain ?? params1.rootDomain,
       localSshdPort: params2.localSshdPort ?? params1.localSshdPort,
@@ -339,6 +348,7 @@ class SshnpPartialParams {
           ? null
           : List<String>.from(args[SshnpArg.localSshOptionsArg.name]),
       remoteUsername: args[SshnpArg.remoteUserNameArg.name],
+      tunnelUsername: args[SshnpArg.tunnelUserNameArg.name],
       verbose: args[SshnpArg.verboseArg.name],
       rootDomain: args[SshnpArg.rootDomainArg.name],
       localSshdPort: args[SshnpArg.localSshdPortArg.name],

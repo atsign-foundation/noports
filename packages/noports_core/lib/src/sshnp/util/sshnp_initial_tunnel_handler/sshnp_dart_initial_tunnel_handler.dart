@@ -39,17 +39,18 @@ mixin SshnpDartInitialTunnelHandler on SshnpCore
         throw error;
       }
 
+      var usernameForTunnel = tunnelUsername ?? getUserName(throwIfNull: true)!;
       try {
         AtSshKeyPair keyPair = await keyUtil.getKeyPair(identifier: identifier);
         client = SSHClient(
           socket,
-          username: remoteUsername ?? getUserName(throwIfNull: true)!,
+          username: usernameForTunnel,
           identities: [keyPair.keyPair],
           keepAliveInterval: Duration(seconds: 15),
         );
       } catch (e, s) {
         throw SshnpError(
-          'Failed to create SSHClient for ${params.remoteUsername}@${sshrvdChannel.host}:${sshrvdChannel.sshrvdPort} : $e',
+          'Failed to create SSHClient for $usernameForTunnel@${sshrvdChannel.host}:${sshrvdChannel.sshrvdPort} : $e',
           error: e,
           stackTrace: s,
         );
@@ -59,7 +60,7 @@ mixin SshnpDartInitialTunnelHandler on SshnpCore
         await client.authenticated.catchError((e) => throw e);
       } catch (e, s) {
         throw SshnpError(
-          'Failed to authenticate as ${params.remoteUsername}@${sshrvdChannel.host}:${sshrvdChannel.sshrvdPort} : $e',
+          'Failed to authenticate as $usernameForTunnel@${sshrvdChannel.host}:${sshrvdChannel.sshrvdPort} : $e',
           error: e,
           stackTrace: s,
         );

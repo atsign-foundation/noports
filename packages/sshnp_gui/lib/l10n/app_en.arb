@@ -72,6 +72,7 @@
     "success": "Success",
     "switchAtsign" : "Switch atSign",
     "to" : "To",
+    "tunnelUserName" : "Remote Username to use for initial ssh tunnel",
     "username" : "Username",
     "usernameHint": "The user name on this host",
     "verbose" : "Verbose Logging",
