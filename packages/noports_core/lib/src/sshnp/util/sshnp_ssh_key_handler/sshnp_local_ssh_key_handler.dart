@@ -1,6 +1,8 @@
 import 'package:noports_core/src/common/io_types.dart';
 import 'package:noports_core/sshnp_foundation.dart';
 
+/// [SshnpLocalSshKeyHandler] uses variables from [SshnpCore] so it is a mixin
+/// on [SshnpCore]
 mixin SshnpLocalSshKeyHandler on SshnpCore implements SshnpKeyHandler {
   @override
   LocalSshKeyUtil get keyUtil => _sshKeyUtil;
