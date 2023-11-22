@@ -90,7 +90,7 @@ void main() {
           .thenAnswer((_) => notificationStreamController.stream);
 
       when(notifyInvocation).thenAnswer(
-        (invocation) async {
+        (_) async {
           final testIp = '123.123.123.123';
           final portA = 10456;
           final portB = 10789;
@@ -120,8 +120,23 @@ void main() {
       await expectLater(stubbedSshrvdChannel.callInitialization(), completes);
 
       verifyInOrder([
-        subscribeInvocation,
-        notifyInvocation,
+        () => subscribeStub(
+            regex: '$sessionId.${Sshrvd.namespace}@', shouldDecrypt: true),
+        () => notifyStub(
+              any<AtKey>(
+                that: predicate(
+                  // Predicate matching specifically the sshrvdIdKey format
+                  (AtKey key) =>
+                      key.key == 'mydevice.${Sshrvd.namespace}' &&
+                      key.sharedBy == '@client' &&
+                      key.sharedWith == '@sshrvd' &&
+                      key.metadata != null &&
+                      key.metadata!.namespaceAware == false &&
+                      key.metadata!.ttl == 10000,
+                ),
+              ),
+              any(),
+            ),
       ]);
 
       verifyNever(subscribeInvocation);
