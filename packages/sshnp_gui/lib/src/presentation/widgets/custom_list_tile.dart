@@ -88,7 +88,7 @@ class CustomListTile extends StatelessWidget {
         case CustomListTileType.email:
           Uri emailUri = Uri(
             scheme: 'mailto',
-            path: 'atDataBrowser@atsign.com',
+            path: 'info@noports.com',
           );
           if (!await launchUrl(emailUri)) {
             throw Exception('Could not launch $emailUri');
