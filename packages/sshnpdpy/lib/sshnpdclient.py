@@ -96,14 +96,15 @@ class SSHNPDClient:
     def _handle_ssh_public_key(self, ssh_public_key):
         # // Check to see if the ssh Publickey is already in the file if not append to the ~/.ssh/authorized_keys file
         writeKey = False
+        filedata = ""
         with open(f"{self.ssh_path}/authorized_keys", "r") as read:
             filedata = read.read()
             if ssh_public_key not in filedata:
                 writeKey = True
         if writeKey:
             with open(f"{self.ssh_path}/authorized_keys", "w") as write:
-                write.write(f"\n{ssh_public_key}")
-                self.logger.debug("key written")
+                write.write(f"{filedata}\n{ssh_public_key}")
+            self.logger.debug("key written" )
     
     
     def _handle_notifications(self, queue: Queue):
@@ -116,8 +117,6 @@ class SSHNPDClient:
                 at_event = queue.get(block=False)
                 event_type = at_event.event_type
                 event_data = at_event.event_data
-
-                # TODO: There's defintely a better way to do this
                 
                 if event_type == AtEventType.UPDATE_NOTIFICATION:
                     queue.put(at_event)
@@ -191,7 +190,7 @@ class SSHNPDClient:
             
             
     def _direct_ssh(self, hostname, port, sessionId):
-        sshrv = SSHRV(hostname, port)
+        sshrv = SSHRV(hostname, port, verbose=True)
         sshrv.run()
         self.rv = sshrv
         self.logger.info("sshrv started @ "  + hostname + " on port " + str(port))
@@ -240,7 +239,7 @@ class SSHNPDClient:
        
         if ssh_response:
             notify_response = self.at_client.notify(at_key, ssh_response, session_id=uuid)
-            self.logger.info("sent ssh notification to " + at_key.shared_with.to_string())
+            self.logger.info("sent ssh notification to " + at_key.shared_with.to_string() + "with id:" + uuid)
             self.authenticated = True
 
 
