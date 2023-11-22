@@ -37,8 +37,22 @@ class SupportScreen extends StatelessWidget {
                     style: Theme.of(context).textTheme.bodyMedium!.copyWith(color: kTextColorDark),
                   ),
                   gapH30,
-                  const CustomListTile.discord(),
-                  const CustomListTile.email(),
+                  const Flexible(
+                    child: Row(
+                      children: [
+                        Flexible(child: CustomListTile.discord()),
+                        Flexible(child: CustomListTile.email()),
+                      ],
+                    ),
+                  ),
+                  const Flexible(
+                    child: Row(
+                      children: [
+                        Flexible(child: CustomListTile.faq()),
+                        Flexible(child: CustomListTile.privacyPolicy()),
+                      ],
+                    ),
+                  )
                 ],
               ),
             ),

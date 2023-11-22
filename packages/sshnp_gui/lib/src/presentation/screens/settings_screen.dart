@@ -55,30 +55,8 @@ class SettingsScreen extends StatelessWidget {
                           CustomListTile.backUpYourKey(),
                           CustomListTile.switchAtsign(),
                           CustomListTile.resetAtsign(),
-                        ])
-                        // child: Row(
-                        //   crossAxisAlignment: CrossAxisAlignment.start,
-                        //   children: [
-                        //     Flexible(child: CustomListTile.keyManagement(onTap: () {
-                        //       showDialog(context: context, builder: ((context) => const SshKeyManagementDialog()));
-                        //     })),
-                        //     // Expanded(child: CustomListTile.deleteYourKey(onTap: () {})),
-                        //   ],
-                        // ),
-                        ),
+                        ])),
                   ),
-
-                  // const Center(child: SettingsBackupKeyAction()),
-                  // gapH16,
-                  // const Center(child: SettingsSwitchAtsignAction()),
-                  // gapH16,
-                  // const Center(child: SettingsResetAppAction()),
-                  // gapH36,
-                  // const Center(child: SettingsFaqAction()),
-                  // gapH16,
-                  // const Center(child: SettingsContactAction()),
-                  // gapH16,
-                  // const Center(child: SettingsPrivacyPolicyAction()),
                 ],
               ),
             ),
