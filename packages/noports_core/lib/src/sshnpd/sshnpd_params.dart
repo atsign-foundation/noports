@@ -127,8 +127,7 @@ class SshnpdParams {
     parser.addFlag(
       'delegate-auth-checks',
       defaultsTo: false,
-      help:
-          'When set, sshnpd will listen for messages from multiple atSigns '
+      help: 'When set, sshnpd will listen for messages from multiple atSigns '
           'but check with the [managerAtsign] if this particular client atSign '
           'is currently authorized to connect to this device.',
     );

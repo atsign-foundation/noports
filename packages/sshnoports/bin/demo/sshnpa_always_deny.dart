@@ -8,8 +8,9 @@ void main(List<String> args) async {
 
 class AlwaysDeny implements SSHNPARequestHandler {
   @override
-  Future<SSHNPAAuthCheckResponse> doAuthCheck(SSHNPAAuthCheckRequest authCheckRequest) async {
-    return SSHNPAAuthCheckResponse(authorized: false, message: 'Computer says "Noooo..."');
+  Future<SSHNPAAuthCheckResponse> doAuthCheck(
+      SSHNPAAuthCheckRequest authCheckRequest) async {
+    return SSHNPAAuthCheckResponse(
+        authorized: false, message: 'Computer says "Noooo..."');
   }
-
 }

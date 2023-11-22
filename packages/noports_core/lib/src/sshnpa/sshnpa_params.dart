@@ -52,8 +52,7 @@ class SSHNPAParams {
     parser.addOption(
       'daemon-atsigns',
       mandatory: true,
-      help:
-          'Comma-separated list of daemon atSigns which use this authorizer',
+      help: 'Comma-separated list of daemon atSigns which use this authorizer',
     );
 
     parser.addOption(

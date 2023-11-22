@@ -5,7 +5,8 @@ import 'package:noports_core/sshnpa.dart';
 import 'package:sshnoports/create_at_client_cli.dart';
 import 'package:sshnoports/print_version.dart';
 
-Future<void> run(SSHNPARequestHandler handler, List<String> commandLineArgs) async {
+Future<void> run(
+    SSHNPARequestHandler handler, List<String> commandLineArgs) async {
   AtSignLogger.root_level = 'SHOUT';
   AtSignLogger.defaultLoggingHandler = AtSignLogger.stdErrLoggingHandler;
   late final SSHNPA sshnpa;

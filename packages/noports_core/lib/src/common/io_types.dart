@@ -15,7 +15,6 @@ typedef ProcessRunner = Future<ProcessResult> Function(
   String? workingDirectory,
 });
 
-
 @internal
 typedef ProcessStarter = Future<Process> Function(
   String executable,

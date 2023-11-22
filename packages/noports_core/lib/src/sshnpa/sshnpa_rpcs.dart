@@ -24,8 +24,7 @@ class SSHNPAAuthCheckRequest {
     );
   }
 
-  Map<String, dynamic> toJson() =>
-      {
+  Map<String, dynamic> toJson() => {
         'daemonAtsign': daemonAtsign,
         'daemonDeviceName': daemonDeviceName,
         'daemonDeviceGroupName': daemonDeviceGroupName,
@@ -50,10 +49,7 @@ class SSHNPAAuthCheckResponse {
   }
 
   Map<String, dynamic> toJson() =>
-      {
-        'authorized': authorized,
-        'message': message
-      };
+      {'authorized': authorized, 'message': message};
 
   @override
   String toString() => jsonPrettyPrinter.convert(toJson());

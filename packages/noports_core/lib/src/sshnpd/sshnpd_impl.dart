@@ -253,8 +253,8 @@ class SshnpdImpl implements Sshnpd {
     String notificationKey = notification.key
         .replaceAll('${notification.to}:', '')
         .replaceAll('.$device.${DefaultArgs.namespace}${notification.from}', '')
-    // convert to lower case as the latest AtClient converts notification
-    // keys to lower case when received
+        // convert to lower case as the latest AtClient converts notification
+        // keys to lower case when received
         .toLowerCase();
 
     logger.info('Received: $notificationKey');
@@ -294,25 +294,28 @@ class SshnpdImpl implements Sshnpd {
     late String message;
     if (delegateAuthChecks) {
       try {
-        SSHNPAAuthCheckResponse resp = await authChecker!.check(
-            clientAtsign: notification.from).timeout(
-            const Duration(seconds: authTimeoutSeconds));
+        SSHNPAAuthCheckResponse resp = await authChecker!
+            .check(clientAtsign: notification.from)
+            .timeout(const Duration(seconds: authTimeoutSeconds));
         authed = resp.authorized;
         message = resp.message ?? '';
       } on TimeoutException {
         authed = false;
-        message = 'No response from authorizer after $authTimeoutSeconds seconds';
+        message =
+            'No response from authorizer after $authTimeoutSeconds seconds';
       }
     } else {
       authed = notification.from == managerAtsign;
-      message = 'client atSign ${notification.from} ${authed ? 'matches' : 'does NOT match'} managerAtsign';
+      message =
+          'client atSign ${notification.from} ${authed ? 'matches' : 'does NOT match'} managerAtsign';
     }
 
     if (authed) {
       logger.info(
           'Notification from ${notification.from} was authorized: $message');
     } else {
-      logger.shout('Notification from ${notification.from} was not authorized: $message.'
+      logger.shout(
+          'Notification from ${notification.from} was not authorized: $message.'
           ' Notification was ${jsonEncode(notification.toJson())}');
     }
 
@@ -934,7 +937,7 @@ class AuthChecker implements AtRpcCallbacks {
 
   Map<int, Completer<SSHNPAAuthCheckResponse>> completerMap = {};
 
-  Future<SSHNPAAuthCheckResponse> check ({required String clientAtsign}) async {
+  Future<SSHNPAAuthCheckResponse> check({required String clientAtsign}) async {
     AtRpcReq request = AtRpcReq.create(SSHNPAAuthCheckRequest(
             daemonAtsign: sshnpd.deviceAtsign,
             daemonDeviceName: sshnpd.device,
@@ -942,7 +945,8 @@ class AuthChecker implements AtRpcCallbacks {
             clientAtsign: clientAtsign)
         .toJson());
     completerMap[request.reqId] = Completer<SSHNPAAuthCheckResponse>();
-    sshnpd.logger.info('Sending auth check request to sshnpa at ${sshnpd.managerAtsign} : $request');
+    sshnpd.logger.info(
+        'Sending auth check request to sshnpa at ${sshnpd.managerAtsign} : $request');
     await rpc.sendRequest(toAtSign: sshnpd.managerAtsign, request: request);
     return completerMap[request.reqId]!.future;
   }
@@ -958,32 +962,32 @@ class AuthChecker implements AtRpcCallbacks {
   Future<void> handleResponse(AtRpcResp response) async {
     sshnpd.logger.info('Got response ${response.payload}');
 
-    Completer<SSHNPAAuthCheckResponse> completer = completerMap[response.reqId]!;
+    Completer<SSHNPAAuthCheckResponse> completer =
+        completerMap[response.reqId]!;
 
     if (completer.isCompleted) {
       sshnpd.logger.warning(
           'Ignoring auth check response (received after future completion)'
-              ' from ${sshnpd.managerAtsign}'
-              ' : $response');
+          ' from ${sshnpd.managerAtsign}'
+          ' : $response');
       return;
     }
     switch (response.respType) {
       case AtRpcRespType.ack:
         // We don't complete the future when we get an ack
-        sshnpd.logger.info(
-            'Got ack from ${sshnpd.managerAtsign}'
-                ' : $response');
+        sshnpd.logger.info('Got ack from ${sshnpd.managerAtsign}'
+            ' : $response');
         break;
       case AtRpcRespType.success:
-        sshnpd.logger.info(
-            'Got auth check response from ${sshnpd.managerAtsign}'
+        sshnpd.logger
+            .info('Got auth check response from ${sshnpd.managerAtsign}'
                 ' : $response');
         completer.complete(SSHNPAAuthCheckResponse.fromJson(response.payload));
         break;
       default:
         sshnpd.logger.warning(
             'Got non-success auth check response from ${sshnpd.managerAtsign}'
-                ' : $response');
+            ' : $response');
         completer.complete(SSHNPAAuthCheckResponse(
             authorized: false,
             message: response.message ?? 'Got non-success response $response'));
