@@ -25,6 +25,7 @@ class SshnpParams {
   final bool sendSshPublicKey;
   final List<String> localSshOptions;
   final String? remoteUsername;
+  final String? tunnelUsername;
   final bool verbose;
   final String rootDomain;
   final int localSshdPort;
@@ -38,7 +39,7 @@ class SshnpParams {
 
   /// Special Arguments
   final String?
-      profileName; // automatically populated with the filename if from a configFile
+  profileName; // automatically populated with the filename if from a configFile
 
   /// Operation flags
   final bool listDevices;
@@ -57,6 +58,7 @@ class SshnpParams {
     this.localSshOptions = DefaultSshnpArgs.localSshOptions,
     this.verbose = DefaultArgs.verbose,
     this.remoteUsername,
+    this.tunnelUsername,
     this.atKeysFilePath,
     this.rootDomain = DefaultArgs.rootDomain,
     this.localSshdPort = DefaultArgs.localSshdPort,
@@ -94,10 +96,11 @@ class SshnpParams {
       atKeysFilePath: params2.atKeysFilePath ?? params1.atKeysFilePath,
       identityFile: params2.identityFile ?? params1.identityFile,
       identityPassphrase:
-          params2.identityPassphrase ?? params1.identityPassphrase,
+      params2.identityPassphrase ?? params1.identityPassphrase,
       sendSshPublicKey: params2.sendSshPublicKey ?? params1.sendSshPublicKey,
       localSshOptions: params2.localSshOptions ?? params1.localSshOptions,
       remoteUsername: params2.remoteUsername ?? params1.remoteUsername,
+      tunnelUsername: params2.tunnelUsername ?? params1.tunnelUsername,
       verbose: params2.verbose ?? params1.verbose,
       rootDomain: params2.rootDomain ?? params1.rootDomain,
       localSshdPort: params2.localSshdPort ?? params1.localSshdPort,
@@ -106,7 +109,7 @@ class SshnpParams {
       remoteSshdPort: params2.remoteSshdPort ?? params1.remoteSshdPort,
       idleTimeout: params2.idleTimeout ?? params1.idleTimeout,
       addForwardsToTunnel:
-          params2.addForwardsToTunnel ?? params1.addForwardsToTunnel,
+      params2.addForwardsToTunnel ?? params1.addForwardsToTunnel,
       sshClient: params2.sshClient ?? params1.sshClient,
       sshAlgorithm: params2.sshAlgorithm ?? params1.sshAlgorithm,
     );
@@ -134,11 +137,12 @@ class SshnpParams {
       identityFile: partial.identityFile,
       identityPassphrase: partial.identityPassphrase,
       sendSshPublicKey:
-          partial.sendSshPublicKey ?? DefaultSshnpArgs.sendSshPublicKey,
+      partial.sendSshPublicKey ?? DefaultSshnpArgs.sendSshPublicKey,
       localSshOptions:
-          partial.localSshOptions ?? DefaultSshnpArgs.localSshOptions,
+      partial.localSshOptions ?? DefaultSshnpArgs.localSshOptions,
       verbose: partial.verbose ?? DefaultArgs.verbose,
       remoteUsername: partial.remoteUsername,
+      tunnelUsername: partial.tunnelUsername,
       atKeysFilePath: partial.atKeysFilePath,
       rootDomain: partial.rootDomain ?? DefaultArgs.rootDomain,
       localSshdPort: partial.localSshdPort ?? DefaultArgs.localSshdPort,
@@ -147,7 +151,7 @@ class SshnpParams {
       remoteSshdPort: partial.remoteSshdPort ?? DefaultArgs.remoteSshdPort,
       idleTimeout: partial.idleTimeout ?? DefaultArgs.idleTimeout,
       addForwardsToTunnel:
-          partial.addForwardsToTunnel ?? DefaultArgs.addForwardsToTunnel,
+      partial.addForwardsToTunnel ?? DefaultArgs.addForwardsToTunnel,
       sshClient: partial.sshClient ?? DefaultSshnpArgs.sshClient,
       sshAlgorithm: partial.sshAlgorithm ?? DefaultArgs.sshAlgorithm,
     );
@@ -190,6 +194,7 @@ class SshnpParams {
       SshnpArg.sendSshPublicKeyArg.name: sendSshPublicKey,
       SshnpArg.localSshOptionsArg.name: localSshOptions,
       SshnpArg.remoteUserNameArg.name: remoteUsername,
+      SshnpArg.tunnelUserNameArg.name: tunnelUsername,
       SshnpArg.verboseArg.name: verbose,
       SshnpArg.rootDomainArg.name: rootDomain,
       SshnpArg.localSshdPortArg.name: localSshdPort,
@@ -200,7 +205,7 @@ class SshnpParams {
       SshnpArg.sshAlgorithmArg.name: sshAlgorithm.toString(),
     };
     args.removeWhere(
-      (key, value) => !parserType.shouldParse(SshnpArg.fromName(key).parseWhen),
+          (key, value) => !parserType.shouldParse(SshnpArg.fromName(key).parseWhen),
     );
     return args;
   }
@@ -229,6 +234,7 @@ class SshnpPartialParams {
   final bool? sendSshPublicKey;
   final List<String>? localSshOptions;
   final String? remoteUsername;
+  final String? tunnelUsername;
   final bool? verbose;
   final String? rootDomain;
   final bool? legacyDaemon;
@@ -255,6 +261,7 @@ class SshnpPartialParams {
     this.sendSshPublicKey,
     this.localSshOptions,
     this.remoteUsername,
+    this.tunnelUsername,
     this.verbose,
     this.rootDomain,
     this.localSshdPort,
@@ -287,10 +294,11 @@ class SshnpPartialParams {
       atKeysFilePath: params2.atKeysFilePath ?? params1.atKeysFilePath,
       identityFile: params2.identityFile ?? params1.identityFile,
       identityPassphrase:
-          params2.identityPassphrase ?? params1.identityPassphrase,
+      params2.identityPassphrase ?? params1.identityPassphrase,
       sendSshPublicKey: params2.sendSshPublicKey ?? params1.sendSshPublicKey,
       localSshOptions: params2.localSshOptions ?? params1.localSshOptions,
       remoteUsername: params2.remoteUsername ?? params1.remoteUsername,
+      tunnelUsername: params2.tunnelUsername ?? params1.tunnelUsername,
       verbose: params2.verbose ?? params1.verbose,
       rootDomain: params2.rootDomain ?? params1.rootDomain,
       localSshdPort: params2.localSshdPort ?? params1.localSshdPort,
@@ -299,7 +307,7 @@ class SshnpPartialParams {
       remoteSshdPort: params2.remoteSshdPort ?? params1.remoteSshdPort,
       idleTimeout: params2.idleTimeout ?? params1.idleTimeout,
       addForwardsToTunnel:
-          params2.addForwardsToTunnel ?? params1.addForwardsToTunnel,
+      params2.addForwardsToTunnel ?? params1.addForwardsToTunnel,
       sshClient: params2.sshClient ?? params1.sshClient,
       sshAlgorithm: params2.sshAlgorithm ?? params1.sshAlgorithm,
     );
@@ -339,6 +347,7 @@ class SshnpPartialParams {
           ? null
           : List<String>.from(args[SshnpArg.localSshOptionsArg.name]),
       remoteUsername: args[SshnpArg.remoteUserNameArg.name],
+      tunnelUsername: args[SshnpArg.tunnelUserNameArg.name],
       verbose: args[SshnpArg.verboseArg.name],
       rootDomain: args[SshnpArg.rootDomainArg.name],
       localSshdPort: args[SshnpArg.localSshdPortArg.name],
@@ -353,7 +362,7 @@ class SshnpPartialParams {
       sshAlgorithm: args[SshnpArg.sshAlgorithmArg.name] == null
           ? null
           : SupportedSshAlgorithm.fromString(
-              args[SshnpArg.sshAlgorithmArg.name]),
+          args[SshnpArg.sshAlgorithmArg.name]),
     );
   }
 

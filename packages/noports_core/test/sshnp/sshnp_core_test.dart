@@ -54,6 +54,8 @@ void main() {
           .thenAnswer((_) async {});
       when(() => mockSshnpdChannel.resolveRemoteUsername())
           .thenAnswer((_) async => 'myRemoteUsername');
+      when(() => mockSshnpdChannel.resolveTunnelUsername(any()))
+          .thenAnswer((_) async => 'myTunnelUsername');
       when(() => mockSshnpdChannel.sharePublicKeyIfRequired(
           identityKeyPair ?? any())).thenAnswer((_) async {});
       when(() => mockSshrvdChannel.callInitialization())

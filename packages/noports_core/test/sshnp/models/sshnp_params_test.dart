@@ -18,6 +18,7 @@ void main() {
       expect(params.sendSshPublicKey, isA<bool>());
       expect(params.localSshOptions, isA<List<String>>());
       expect(params.remoteUsername, isA<String?>());
+      expect(params.tunnelUsername, isA<String?>());
       expect(params.verbose, isA<bool>());
       expect(params.rootDomain, isA<String>());
       expect(params.localSshdPort, isA<int>());
@@ -109,6 +110,14 @@ void main() {
             host: '',
             remoteUsername: 'myUsername');
         expect(params.remoteUsername, equals('myUsername'));
+      });
+      test('SshnpParams.tunnelUsername test', () {
+        final params = SshnpParams(
+            clientAtSign: '',
+            sshnpdAtSign: '',
+            host: '',
+            tunnelUsername: 'myTunnelUsername');
+        expect(params.tunnelUsername, equals('myTunnelUsername'));
       });
       test('SshnpParams.verbose test', () {
         final params = SshnpParams(
@@ -209,6 +218,7 @@ void main() {
             params.localSshOptions, equals(DefaultSshnpArgs.localSshOptions));
         expect(params.verbose, equals(DefaultArgs.verbose));
         expect(params.remoteUsername, isNull);
+        expect(params.tunnelUsername, isNull);
         expect(params.atKeysFilePath, isNull);
         expect(params.rootDomain, equals(DefaultArgs.rootDomain));
         expect(params.localSshdPort, equals(DefaultArgs.localSshdPort));
@@ -236,6 +246,7 @@ void main() {
             sendSshPublicKey: true,
             localSshOptions: ['-L 127.0.01:8080:127.0.0.1:80'],
             remoteUsername: 'myUsername',
+            tunnelUsername: 'myTunnelUsername',
             verbose: true,
             rootDomain: 'root.atsign.wtf',
             localSshdPort: 4567,
@@ -260,6 +271,7 @@ void main() {
         expect(
             params.localSshOptions, equals(['-L 127.0.01:8080:127.0.0.1:80']));
         expect(params.remoteUsername, equals('myUsername'));
+        expect(params.tunnelUsername, equals('myTunnelUsername'));
         expect(params.verbose, equals(true));
         expect(params.rootDomain, equals('root.atsign.wtf'));
         expect(params.localSshdPort, equals(4567));
@@ -290,6 +302,7 @@ void main() {
             params.localSshOptions, equals(DefaultSshnpArgs.localSshOptions));
         expect(params.verbose, equals(DefaultArgs.verbose));
         expect(params.remoteUsername, isNull);
+        expect(params.tunnelUsername, isNull);
         expect(params.atKeysFilePath, isNull);
         expect(params.rootDomain, equals(DefaultArgs.rootDomain));
         expect(params.localSshdPort, equals(DefaultArgs.localSshdPort));
@@ -316,6 +329,7 @@ void main() {
             '"${SshnpArg.sendSshPublicKeyArg.name}": true,'
             '"${SshnpArg.localSshOptionsArg.name}": ["-L 127.0.01:8080:127.0.0.1:80"],'
             '"${SshnpArg.remoteUserNameArg.name}": "myUsername",'
+            '"${SshnpArg.tunnelUserNameArg.name}": "myTunnelUsername",'
             '"${SshnpArg.verboseArg.name}": true,'
             '"${SshnpArg.rootDomainArg.name}": "root.atsign.wtf",'
             '"${SshnpArg.localSshdPortArg.name}": 4567,'
@@ -342,6 +356,7 @@ void main() {
         expect(
             params.localSshOptions, equals(['-L 127.0.01:8080:127.0.0.1:80']));
         expect(params.remoteUsername, equals('myUsername'));
+        expect(params.tunnelUsername, equals('myTunnelUsername'));
         expect(params.verbose, equals(true));
         expect(params.rootDomain, equals('root.atsign.wtf'));
         expect(params.localSshdPort, equals(4567));
@@ -378,6 +393,7 @@ void main() {
           '${SshnpArg.sendSshPublicKeyArg.bashName} = true',
           '${SshnpArg.localSshOptionsArg.bashName} = -L 127.0.01:8080:127.0.0.1:80',
           '${SshnpArg.remoteUserNameArg.bashName} = myUsername',
+          '${SshnpArg.tunnelUserNameArg.bashName} = myTunnelUsername',
           '${SshnpArg.verboseArg.bashName} = true',
           '${SshnpArg.rootDomainArg.bashName} = root.atsign.wtf',
           '${SshnpArg.localSshdPortArg.bashName} = 4567',
@@ -401,6 +417,7 @@ void main() {
         expect(
             params.localSshOptions, equals(['-L 127.0.01:8080:127.0.0.1:80']));
         expect(params.remoteUsername, equals('myUsername'));
+        expect(params.tunnelUsername, equals('myTunnelUsername'));
         expect(params.verbose, equals(true));
         expect(params.rootDomain, equals('root.atsign.wtf'));
         expect(params.localSshdPort, equals(4567));
@@ -422,6 +439,7 @@ void main() {
           sendSshPublicKey: true,
           localSshOptions: ['-L 127.0.01:8080:127.0.0.1:80'],
           remoteUsername: 'myUsername',
+          tunnelUsername: 'myTunnelUsername',
           verbose: true,
           rootDomain: 'root.atsign.wtf',
           localSshdPort: 4567,
@@ -449,6 +467,7 @@ void main() {
         expect(parsedParams.localSshOptions,
             equals(['-L 127.0.01:8080:127.0.0.1:80']));
         expect(parsedParams.remoteUsername, equals('myUsername'));
+        expect(parsedParams.tunnelUsername, equals('myTunnelUsername'));
         expect(parsedParams.verbose, equals(true));
         expect(parsedParams.rootDomain, equals('root.atsign.wtf'));
         expect(parsedParams.localSshdPort, equals(4567));
@@ -467,6 +486,7 @@ void main() {
           sendSshPublicKey: true,
           localSshOptions: ['-L 127.0.01:8080:127.0.0.1:80'],
           remoteUsername: 'myUsername',
+          tunnelUsername: 'myTunnelUsername',
           verbose: true,
           rootDomain: 'root.atsign.wtf',
           localSshdPort: 4567,
@@ -492,6 +512,7 @@ void main() {
         expect(argMap[SshnpArg.localSshOptionsArg.name],
             equals(['-L 127.0.01:8080:127.0.0.1:80']));
         expect(argMap[SshnpArg.remoteUserNameArg.name], equals('myUsername'));
+        expect(argMap[SshnpArg.tunnelUserNameArg.name], equals('myTunnelUsername'));
         expect(argMap[SshnpArg.verboseArg.name], equals(true));
         expect(argMap[SshnpArg.rootDomainArg.name], equals('root.atsign.wtf'));
         expect(argMap[SshnpArg.localSshdPortArg.name], equals(4567));
@@ -518,6 +539,7 @@ void main() {
           sendSshPublicKey: true,
           localSshOptions: ['-L 127.0.01:8080:127.0.0.1:80'],
           remoteUsername: 'myUsername',
+          tunnelUsername: 'myTunnelUsername',
           verbose: true,
           rootDomain: 'root.atsign.wtf',
           localSshdPort: 4567,
@@ -542,6 +564,7 @@ void main() {
         expect(parsedParams.localSshOptions,
             equals(['-L 127.0.01:8080:127.0.0.1:80']));
         expect(parsedParams.remoteUsername, equals('myUsername'));
+        expect(parsedParams.tunnelUsername, equals('myTunnelUsername'));
         expect(parsedParams.verbose, equals(true));
         expect(parsedParams.rootDomain, equals('root.atsign.wtf'));
         expect(parsedParams.localSshdPort, equals(4567));
@@ -571,6 +594,7 @@ void main() {
       expect(partialParams.sendSshPublicKey, isA<bool?>());
       expect(partialParams.localSshOptions, isA<List<String>?>());
       expect(partialParams.remoteUsername, isA<String?>());
+      expect(partialParams.tunnelUsername, isA<String?>());
       expect(partialParams.verbose, isA<bool?>());
       expect(partialParams.rootDomain, isA<String?>());
       expect(partialParams.localSshdPort, isA<int?>());
@@ -631,6 +655,10 @@ void main() {
       test('SshnpPartialParams.remoteUsername test', () {
         final params = SshnpPartialParams(remoteUsername: 'myUsername');
         expect(params.remoteUsername, equals('myUsername'));
+      });
+      test('SshnpPartialParams.tunnelUsername test', () {
+        final params = SshnpPartialParams(tunnelUsername: 'myTunnelUsername');
+        expect(params.tunnelUsername, equals('myTunnelUsername'));
       });
       test('SshnpPartialParams.verbose test', () {
         final params = SshnpPartialParams(verbose: true);
@@ -700,6 +728,7 @@ void main() {
         expect(params.localSshOptions, isNull);
         expect(params.verbose, isNull);
         expect(params.remoteUsername, isNull);
+        expect(params.tunnelUsername, isNull);
         expect(params.rootDomain, isNull);
         expect(params.localSshdPort, isNull);
         expect(params.legacyDaemon, isNull);
@@ -726,6 +755,7 @@ void main() {
             sendSshPublicKey: true,
             localSshOptions: ['-L 127.0.01:8080:127.0.0.1:80'],
             remoteUsername: 'myUsername',
+            tunnelUsername: 'myTunnelUsername',
             verbose: true,
             rootDomain: 'root.atsign.wtf',
             localSshdPort: 4567,
@@ -749,6 +779,7 @@ void main() {
         expect(
             params.localSshOptions, equals(['-L 127.0.01:8080:127.0.0.1:80']));
         expect(params.remoteUsername, equals('myUsername'));
+        expect(params.tunnelUsername, equals('myTunnelUsername'));
         expect(params.verbose, equals(true));
         expect(params.rootDomain, equals('root.atsign.wtf'));
         expect(params.localSshdPort, equals(4567));
@@ -774,6 +805,7 @@ void main() {
             sendSshPublicKey: true,
             localSshOptions: ['-L 127.0.01:8080:127.0.0.1:80'],
             remoteUsername: 'myUsername',
+            tunnelUsername: 'myTunnelUsername',
             verbose: true,
             rootDomain: 'root.atsign.wtf',
             localSshdPort: 4567,
@@ -798,6 +830,7 @@ void main() {
         expect(
             params.localSshOptions, equals(['-L 127.0.01:8080:127.0.0.1:80']));
         expect(params.remoteUsername, equals('myUsername'));
+        expect(params.tunnelUsername, equals('myTunnelUsername'));
         expect(params.verbose, equals(true));
         expect(params.rootDomain, equals('root.atsign.wtf'));
         expect(params.localSshdPort, equals(4567));
@@ -823,6 +856,7 @@ void main() {
           sendSshPublicKey: true,
           localSshOptions: ['-L 127.0.01:8080:127.0.0.1:80'],
           remoteUsername: 'myUsername',
+          tunnelUsername: 'myTunnelUsername',
           verbose: true,
           rootDomain: 'root.atsign.wtf',
           localSshdPort: 4567,
@@ -850,6 +884,7 @@ void main() {
         expect(parsedParams.localSshOptions,
             equals(['-L 127.0.01:8080:127.0.0.1:80']));
         expect(parsedParams.remoteUsername, equals('myUsername'));
+        expect(parsedParams.tunnelUsername, equals('myTunnelUsername'));
         expect(parsedParams.verbose, equals(true));
         expect(parsedParams.rootDomain, equals('root.atsign.wtf'));
         expect(parsedParams.localSshdPort, equals(4567));
@@ -869,6 +904,7 @@ void main() {
             '"${SshnpArg.sendSshPublicKeyArg.name}": true,'
             '"${SshnpArg.localSshOptionsArg.name}": ["-L 127.0.01:8080:127.0.0.1:80"],'
             '"${SshnpArg.remoteUserNameArg.name}": "myUsername",'
+            '"${SshnpArg.tunnelUserNameArg.name}": "myTunnelUsername",'
             '"${SshnpArg.verboseArg.name}": true,'
             '"${SshnpArg.rootDomainArg.name}": "root.atsign.wtf",'
             '"${SshnpArg.localSshdPortArg.name}": 4567,'
@@ -895,6 +931,7 @@ void main() {
         expect(
             params.localSshOptions, equals(['-L 127.0.01:8080:127.0.0.1:80']));
         expect(params.remoteUsername, equals('myUsername'));
+        expect(params.tunnelUsername, equals('myTunnelUsername'));
         expect(params.verbose, equals(true));
         expect(params.rootDomain, equals('root.atsign.wtf'));
         expect(params.localSshdPort, equals(4567));
@@ -921,6 +958,7 @@ void main() {
           SshnpArg.sendSshPublicKeyArg.name: true,
           SshnpArg.localSshOptionsArg.name: ['-L 127.0.01:8080:127.0.0.1:80'],
           SshnpArg.remoteUserNameArg.name: 'myUsername',
+          SshnpArg.tunnelUserNameArg.name: 'myTunnelUsername',
           SshnpArg.verboseArg.name: true,
           SshnpArg.rootDomainArg.name: 'root.atsign.wtf',
           SshnpArg.localSshdPortArg.name: 4567,
@@ -945,6 +983,7 @@ void main() {
         expect(
             params.localSshOptions, equals(['-L 127.0.01:8080:127.0.0.1:80']));
         expect(params.remoteUsername, equals('myUsername'));
+        expect(params.tunnelUsername, equals('myTunnelUsername'));
         expect(params.verbose, equals(true));
         expect(params.rootDomain, equals('root.atsign.wtf'));
         expect(params.localSshdPort, equals(4567));
@@ -983,6 +1022,8 @@ void main() {
           '-L 127.0.01:8080:127.0.0.1:80',
           '--${SshnpArg.remoteUserNameArg.name}',
           'myUsername',
+          '--${SshnpArg.tunnelUserNameArg.name}',
+          'myTunnelUsername',
           '--${SshnpArg.verboseArg.name}',
           'true',
           '--${SshnpArg.rootDomainArg.name}',
@@ -1018,6 +1059,7 @@ void main() {
         expect(
             params.localSshOptions, equals(['-L 127.0.01:8080:127.0.0.1:80']));
         expect(params.remoteUsername, equals('myUsername'));
+        expect(params.tunnelUsername, equals('myTunnelUsername'));
         expect(params.verbose, equals(true));
         expect(params.rootDomain, equals('root.atsign.wtf'));
         expect(params.localSshdPort, equals(4567));

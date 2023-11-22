@@ -46,6 +46,9 @@ abstract class SshnpCore
   /// The remote username to use for the ssh session
   String? remoteUsername;
 
+  /// The username to use for the initial ssh tunnel session
+  String? tunnelUsername;
+
   // * Communication Channels
 
   /// The channel to communicate with the sshrvd (host)
@@ -82,6 +85,9 @@ abstract class SshnpCore
 
     /// Set the remote username to use for the ssh session
     remoteUsername = await sshnpdChannel.resolveRemoteUsername();
+
+    /// Set the username to use for the initial ssh tunnel
+    tunnelUsername = await sshnpdChannel.resolveTunnelUsername(remoteUsername);
 
     /// Shares the public key if required
     await sshnpdChannel.sharePublicKeyIfRequired(identityKeyPair);

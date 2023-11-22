@@ -161,6 +161,17 @@ abstract class SshnpdChannel with AsyncInitialization, AtClientBindings {
     }
   }
 
+  /// Resolve the username to use in the initial ssh tunnel
+  /// If [params.tunnelUsername] is set, it will be used.
+  /// Otherwise, the username will be set to [remoteUsername]
+  Future<String?> resolveTunnelUsername(String? remoteUsername) async {
+    if (params.tunnelUsername != null) {
+      return params.tunnelUsername!;
+    } else {
+      return remoteUsername;
+    }
+  }
+
   /// List all available devices from the daemon.
   /// Returns a [SSHPNPDeviceList] object which contains a map of device names
   /// and corresponding info, and a list of active devices (devices which also
