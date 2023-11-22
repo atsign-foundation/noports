@@ -54,6 +54,9 @@ void main() {
           .thenAnswer((_) async {});
       when(() => mockSshnpdChannel.resolveRemoteUsername())
           .thenAnswer((_) async => 'myRemoteUsername');
+      when(() => mockSshnpdChannel.resolveTunnelUsername(
+              remoteUsername: any(named: 'remoteUsername')))
+          .thenAnswer((_) async => 'myTunnelUsername');
       when(() => mockSshnpdChannel.sharePublicKeyIfRequired(
           identityKeyPair ?? any())).thenAnswer((_) async {});
       when(() => mockSshrvdChannel.callInitialization())
@@ -129,6 +132,8 @@ void main() {
           () => stubbedInitialize(),
           () => mockSshnpdChannel.callInitialization(),
           () => mockSshnpdChannel.resolveRemoteUsername(),
+          () => mockSshnpdChannel.resolveTunnelUsername(
+              remoteUsername: 'myRemoteUsername'),
           () => mockSshnpdChannel
               .sharePublicKeyIfRequired(sshnpCore.identityKeyPair),
           () => mockSshrvdChannel.callInitialization(),
@@ -140,6 +145,8 @@ void main() {
         verifyNever(() => stubbedInitialize());
         verifyNever(() => mockSshnpdChannel.callInitialization());
         verifyNever(() => mockSshnpdChannel.resolveRemoteUsername());
+        verifyNever(() => mockSshnpdChannel.resolveTunnelUsername(
+            remoteUsername: 'myRemoteUsername'));
         verifyNever(() => mockSshnpdChannel
             .sharePublicKeyIfRequired(sshnpCore.identityKeyPair));
         verifyNever(() => mockSshrvdChannel.callInitialization());
@@ -152,6 +159,41 @@ void main() {
         verifyNever(() => stubbedInitialize());
         verifyNever(() => stubbedCompleteInitialization());
         verifyNever(() => mockSshrvdChannel.callInitialization());
+      });
+      test('tunnelUsername not supplied', () async {
+        final params = SshnpParams(
+            clientAtSign: '@client',
+            sshnpdAtSign: '@daemon',
+            host: 'foo.bar.test',
+            remoteUsername: 'alice');
+        final channel = SshnpdDefaultChannel(
+            atClient: mockAtClient,
+            params: params,
+            sessionId: 'test_tunnelUsername_not_supplied',
+            namespace: 'test');
+        final remoteUsername = await channel.resolveRemoteUsername();
+        expect(remoteUsername, 'alice');
+        expect(
+            await channel.resolveTunnelUsername(remoteUsername: remoteUsername),
+            'alice');
+      });
+      test('tunnelUsername supplied', () async {
+        final params = SshnpParams(
+            clientAtSign: '@client',
+            sshnpdAtSign: '@daemon',
+            host: 'foo.bar.test',
+            remoteUsername: 'alice',
+            tunnelUsername: 'bob');
+        final channel = SshnpdDefaultChannel(
+            atClient: mockAtClient,
+            params: params,
+            sessionId: 'test_tunnelUsername_supplied',
+            namespace: 'test');
+        final remoteUsername = await channel.resolveRemoteUsername();
+        expect(remoteUsername, 'alice');
+        expect(
+            await channel.resolveTunnelUsername(remoteUsername: remoteUsername),
+            'bob');
       });
     }); // group Initialization
   }); // group SshnpCore

@@ -16,7 +16,7 @@ mixin SshnpOpensshInitialTunnelHandler on SshnpCore
     Process? process;
     // If we are starting an initial tunnel, it should be to sshrvd,
     // so it is safe to assume that sshrvdChannel is not null here
-    String argsString = '$remoteUsername@${sshrvdChannel.host}'
+    String argsString = '$tunnelUsername@${sshrvdChannel.host}'
         ' -p ${sshrvdChannel.sshrvdPort}'
         ' -i $identifier'
         ' -L $localPort:localhost:${params.remoteSshdPort}'

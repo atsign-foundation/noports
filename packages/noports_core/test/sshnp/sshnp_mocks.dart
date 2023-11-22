@@ -45,4 +45,3 @@ abstract class StartProcessCaller {
 }
 
 class StartProcessStub extends Mock implements StartProcessCaller {}
-
