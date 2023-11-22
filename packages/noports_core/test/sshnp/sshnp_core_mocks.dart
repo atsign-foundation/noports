@@ -5,8 +5,8 @@ import 'sshnp_core_constants.dart';
 
 /// Mocked Classes
 /// Stubbed [SshnpCore] (minimum viable implementation of [SshnpCore])
-class StubbedSshnpCore extends SshnpCore with StubbedAsyncInitializationMixin {
-  StubbedSshnpCore({
+class StubbedSshnp extends SshnpCore with StubbedAsyncInitializationMixin {
+  StubbedSshnp({
     required super.atClient,
     required super.params,
     SshnpdChannel? sshnpdChannel,
