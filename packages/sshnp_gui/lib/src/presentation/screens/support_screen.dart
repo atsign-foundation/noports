@@ -22,7 +22,7 @@ class SupportScreen extends StatelessWidget {
           const AppNavigationRail(),
           Expanded(
             child: Padding(
-              padding: const EdgeInsets.only(left: Sizes.p36, top: Sizes.p21),
+              padding: const EdgeInsets.only(left: Sizes.p36, top: Sizes.p21, right: Sizes.p36),
               child: ListView(
                 children: [
                   Padding(
@@ -45,6 +45,11 @@ class SupportScreen extends StatelessWidget {
                       ],
                     ),
                   ),
+                  gapH20,
+                  const Divider(
+                    color: kProfileFormFieldColor,
+                  ),
+                  gapH20,
                   const Flexible(
                     child: Row(
                       children: [

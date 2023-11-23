@@ -16,6 +16,7 @@ class CustomListTile extends StatelessWidget {
     required this.title,
     required this.subtitle,
     required this.type,
+    required this.tileColor,
   });
 
   const CustomListTile.email(
@@ -23,6 +24,7 @@ class CustomListTile extends StatelessWidget {
       this.title = 'Email',
       this.subtitle = 'Guranteed quick response',
       this.type = CustomListTileType.email,
+      this.tileColor = kProfileBackgroundColor,
       Key? key})
       : super(key: key);
   const CustomListTile.discord({
@@ -30,6 +32,7 @@ class CustomListTile extends StatelessWidget {
     this.title = 'Discord',
     this.subtitle = 'Join our server for help',
     this.type = CustomListTileType.discord,
+    this.tileColor = kProfileBackgroundColor,
     Key? key,
   }) : super(key: key);
   const CustomListTile.faq({
@@ -37,6 +40,7 @@ class CustomListTile extends StatelessWidget {
     this.title = 'FAQ',
     this.subtitle = 'Frequently asked questions',
     this.type = CustomListTileType.faq,
+    this.tileColor = kProfileBackgroundColor,
     Key? key,
   }) : super(key: key);
   const CustomListTile.privacyPolicy({
@@ -44,6 +48,7 @@ class CustomListTile extends StatelessWidget {
     this.title = 'FAQ',
     this.subtitle = 'Frequently asked questions',
     this.type = CustomListTileType.faq,
+    this.tileColor = kProfileBackgroundColor,
     Key? key,
   }) : super(key: key);
   const CustomListTile.keyManagement(
@@ -51,6 +56,7 @@ class CustomListTile extends StatelessWidget {
       this.title = 'SSH Key Management',
       this.subtitle = 'Edit, add and delete SSH Keys',
       this.type = CustomListTileType.sshKeyManagement,
+      this.tileColor = kProfileBackgroundColor,
       Key? key})
       : super(key: key);
   const CustomListTile.switchAtsign(
@@ -58,6 +64,7 @@ class CustomListTile extends StatelessWidget {
       this.title = 'Switch atsign',
       this.subtitle = 'Edit, add and delete SSH Keys',
       this.type = CustomListTileType.sshKeyManagement,
+      this.tileColor = kProfileBackgroundColor,
       Key? key})
       : super(key: key);
   const CustomListTile.backUpYourKey(
@@ -65,6 +72,7 @@ class CustomListTile extends StatelessWidget {
       this.title = 'Backup Your Keys',
       this.subtitle = 'Save a pair of your atKeys',
       this.type = CustomListTileType.resetAtsign,
+      this.tileColor = kProfileBackgroundColor,
       Key? key})
       : super(key: key);
   const CustomListTile.resetAtsign(
@@ -72,6 +80,7 @@ class CustomListTile extends StatelessWidget {
       this.title = 'Reset App',
       this.subtitle = 'App will be reset and you will be logged out',
       this.type = CustomListTileType.resetAtsign,
+      this.tileColor = kProfileBackgroundColor,
       Key? key})
       : super(key: key);
 
@@ -80,6 +89,7 @@ class CustomListTile extends StatelessWidget {
   final String subtitle;
 
   final CustomListTileType type;
+  final Color? tileColor;
 
   @override
   Widget build(BuildContext context) {
@@ -130,13 +140,14 @@ class CustomListTile extends StatelessWidget {
         case CustomListTileType.resetAtsign:
           if (context.mounted) {
             AtOnboarding.reset(
-                context: context,
-                config: AtOnboardingConfig(
-                  atClientPreference: await loadAtClientPreference(),
-                  rootEnvironment: AtEnv.rootEnvironment,
-                  domain: AtEnv.rootDomain,
-                  appAPIKey: AtEnv.appApiKey,
-                ));
+              context: context,
+              config: AtOnboardingConfig(
+                atClientPreference: await loadAtClientPreference(),
+                rootEnvironment: AtEnv.rootEnvironment,
+                domain: AtEnv.rootDomain,
+                appAPIKey: AtEnv.appApiKey,
+              ),
+            );
           }
           break;
       }
@@ -159,6 +170,7 @@ class CustomListTile extends StatelessWidget {
       onTap: () async {
         await onTap();
       },
+      tileColor: tileColor,
     );
   }
 }

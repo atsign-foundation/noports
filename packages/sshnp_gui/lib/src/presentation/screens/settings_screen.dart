@@ -47,7 +47,7 @@ class SettingsScreen extends StatelessWidget {
                         height: 180,
                         width: 540,
                         decoration: BoxDecoration(
-                          color: kProfileFormCardColor,
+                          color: kProfileBackgroundColor,
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: GridView.count(childAspectRatio: 202 / 60, crossAxisCount: 2, children: const [

@@ -11,7 +11,7 @@ class ProfileFormCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: kProfileFormCardColor,
+      color: kProfileBackgroundColor,
       elevation: 5,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(Sizes.p10),
