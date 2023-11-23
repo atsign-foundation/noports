@@ -116,18 +116,20 @@ class SshrvdImpl implements Sshrvd {
     }
 
     String session = notification.value!;
-    String forAtsign = notification.from;
+    String atSignA = notification.from;
+    // TODO Jagan
+    String atSignB = atSignA;
 
-    if (managerAtsign != 'open' && managerAtsign != forAtsign) {
-      logger.shout('Session $session for $forAtsign denied');
+    if (managerAtsign != 'open' && managerAtsign != atSignA) {
+      logger.shout('Session $session for $atSignA to $atSignB denied');
       return;
     }
 
     (int, int) ports =
-        await _spawnSocketConnector(0, 0, session, forAtsign, snoop);
+        await _spawnSocketConnector(0, 0, session, atSignA, atSignB, snoop);
     var (portA, portB) = ports;
     logger
-        .warning('Starting session $session for $forAtsign using ports $ports');
+        .warning('Starting session $session for $atSignA to $atSignB using ports $ports');
 
     var metaData = Metadata()
       ..isPublic = false
@@ -162,14 +164,15 @@ class SshrvdImpl implements Sshrvd {
     int portA,
     int portB,
     String session,
-    String forAtsign,
+    String atSignA,
+    String atSignB,
     bool snoop,
   ) async {
     /// Spawn an isolate and wait for it to send back the issued port numbers
     ReceivePort receivePort = ReceivePort(session);
 
     ConnectorParams parameters =
-        (receivePort.sendPort, portA, portB, session, forAtsign, snoop);
+        (receivePort.sendPort, portA, portB, session, atSignA, atSignB, snoop);
 
     logger
         .info("Spawning socket connector isolate with parameters $parameters");

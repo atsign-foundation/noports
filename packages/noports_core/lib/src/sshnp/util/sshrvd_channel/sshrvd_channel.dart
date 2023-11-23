@@ -108,6 +108,10 @@ abstract class SshrvdChannel<T> with AsyncInitialization, AtClientBindings {
         ..namespaceAware = false
         ..ttl = 10000);
     logger.info('Sending notification to sshrvd: $ourSshrvdIdKey');
+
+    // TODO Jagan We need to send not just the sessionId but other metaData
+    // especially, the atSign on the other end
+    // In the rvd we need to figure out backwards compatibility.
     await notify(ourSshrvdIdKey, sessionId);
 
     int counter = 0;
