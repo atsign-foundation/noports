@@ -1,5 +1,5 @@
 # BASE
-FROM debian:stable-20230919-slim@sha256:149e944a6f4855f9738baf4ddd79fc2f218e6440218223fa9017aebc1e45f1f5 AS base
+FROM debian:stable-20231120-slim@sha256:375fb84f3c64691a1b9a9ff5ff3905173dcd0c5e11bc2aebd5c3472a139fa2b4 AS base
 
 ENV USER=atsign
 ENV HOMEDIR=/${USER}
@@ -26,27 +26,30 @@ RUN set -eux ; \
 
 # BRANCH
 # BUILD BRANCH
-FROM dart:3.1.3@sha256:97cc20588eb7171f611606fff26bc04fb2aec5e68f7341060252a409bf7a86ce AS build-branch
+FROM dart:3.1.5@sha256:2432c3e2162542ee9d701b9d8524a3220f0182d37407382efa8fd782d1273e82 AS build-branch
 
 ENV URL=https://github.com/atsign-foundation/sshnoports.git
 ENV REPO_DIR=/app/repo
+ENV PACKAGE_DIR=${REPO_DIR}/packages/sshnoports
 ENV OUTPUT_DIR=/app/output
 
 ARG branch=trunk
 
+# Builds using the noports_core package available on the branch specified
 RUN set -eux ; \
   mkdir -p ${REPO_DIR} ${OUTPUT_DIR} ; \
   apt-get update ; \
   apt-get install -y git ; \
   cd ${REPO_DIR} ; \
   git clone -b ${branch} --single-branch ${URL} . ; \
-  cd packages/sshnoports ; \
-  dart pub get ; \
-  dart compile exe ${REPO_DIR}/packages/sshnoports/bin/sshnp.dart -o ${OUTPUT_DIR}/sshnp ; \
-  dart compile exe ${REPO_DIR}/packages/sshnoports/bin/sshnpd.dart -o ${OUTPUT_DIR}/sshnpd ; \
-  dart compile exe ${REPO_DIR}/packages/sshnoports/bin/sshrv.dart -o ${OUTPUT_DIR}/sshrv ; \
-  dart compile exe ${REPO_DIR}/packages/sshnoports/bin/sshrvd.dart -o ${OUTPUT_DIR}/sshrvd ; \
-  dart compile exe ${REPO_DIR}/packages/sshnoports/bin/activate_cli.dart -o ${OUTPUT_DIR}/at_activate ;
+  dart pub get; \
+  dart run melos bootstrap --scope="noports_core" --scope="sshnoports"; \
+  dart pub get -C ${PACKAGE_DIR}; \
+  dart compile exe ${PACKAGE_DIR}/bin/sshnp.dart -o ${OUTPUT_DIR}/sshnp ; \
+  dart compile exe ${PACKAGE_DIR}/bin/sshnpd.dart -o ${OUTPUT_DIR}/sshnpd ; \
+  dart compile exe ${PACKAGE_DIR}/bin/sshrv.dart -o ${OUTPUT_DIR}/sshrv ; \
+  dart compile exe ${PACKAGE_DIR}/bin/sshrvd.dart -o ${OUTPUT_DIR}/sshrvd ; \
+  dart compile exe ${PACKAGE_DIR}/bin/activate_cli.dart -o ${OUTPUT_DIR}/at_activate ;
 
 # RUNTIME BRANCH
 FROM base AS runtime-branch
@@ -62,9 +65,10 @@ ENTRYPOINT cp -r /mount/. ${HOMEDIR} && sudo service ssh start && sh ${HOMEDIR}/
 
 # LOCAL
 # BUILD LOCAL
-FROM dart:3.1.3@sha256:97cc20588eb7171f611606fff26bc04fb2aec5e68f7341060252a409bf7a86ce AS build-local
+FROM dart:3.1.5@sha256:2432c3e2162542ee9d701b9d8524a3220f0182d37407382efa8fd782d1273e82 AS build-local
 
 ENV REPO_DIR=/app/repo
+ENV PACKAGE_DIR=${REPO_DIR}/packages/sshnoports
 ENV OUTPUT_DIR=/app/output
 
 RUN mkdir -p ${REPO_DIR} ${OUTPUT_DIR} ;
@@ -73,13 +77,15 @@ RUN mkdir -p ${REPO_DIR} ${OUTPUT_DIR} ;
 COPY . ${REPO_DIR}
 
 RUN set -eux ; \
-  cd ${REPO_DIR}/packages/sshnoports ; \
-  dart pub get ; \
-  dart compile exe ${REPO_DIR}/packages/sshnoports/bin/sshnp.dart -o ${OUTPUT_DIR}/sshnp ; \
-  dart compile exe ${REPO_DIR}/packages/sshnoports/bin/sshnpd.dart -o ${OUTPUT_DIR}/sshnpd ; \
-  dart compile exe ${REPO_DIR}/packages/sshnoports/bin/sshrv.dart -o ${OUTPUT_DIR}/sshrv ; \
-  dart compile exe ${REPO_DIR}/packages/sshnoports/bin/sshrvd.dart -o ${OUTPUT_DIR}/sshrvd ; \
-  dart compile exe ${REPO_DIR}/packages/sshnoports/bin/activate_cli.dart -o ${OUTPUT_DIR}/at_activate ;
+  cd ${REPO_DIR}; \
+  dart pub get; \
+  dart run melos bootstrap --scope="noports_core" --scope="sshnoports"; \
+  dart pub get -C ${PACKAGE_DIR}; \
+  dart compile exe ${PACKAGE_DIR}/bin/sshnp.dart -o ${OUTPUT_DIR}/sshnp ; \
+  dart compile exe ${PACKAGE_DIR}/bin/sshnpd.dart -o ${OUTPUT_DIR}/sshnpd ; \
+  dart compile exe ${PACKAGE_DIR}/bin/sshrv.dart -o ${OUTPUT_DIR}/sshrv ; \
+  dart compile exe ${PACKAGE_DIR}/bin/sshrvd.dart -o ${OUTPUT_DIR}/sshrvd ; \
+  dart compile exe ${PACKAGE_DIR}/bin/activate_cli.dart -o ${OUTPUT_DIR}/at_activate ;
 
 # RUNTIME LOCAL
 FROM base AS runtime-local
@@ -95,7 +101,7 @@ ENTRYPOINT cp -r /mount/. ${HOMEDIR} && sudo service ssh start && sh ${HOMEDIR}/
 
 # RELEASE
 # BUILD RELEASE
-FROM debian:stable-20230919-slim@sha256:149e944a6f4855f9738baf4ddd79fc2f218e6440218223fa9017aebc1e45f1f5 AS build-release
+FROM debian:stable-20231120-slim@sha256:375fb84f3c64691a1b9a9ff5ff3905173dcd0c5e11bc2aebd5c3472a139fa2b4 AS build-release
 
 ARG release
 

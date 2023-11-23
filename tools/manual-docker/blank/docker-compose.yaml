@@ -4,8 +4,8 @@ version: '3.8'
 services:
   image-manual-blank:
     build:
-      context: ../../../tests/end2end_tests/image/
-      dockerfile: ./Dockerfile
+      context: ../../../
+      dockerfile: ./tests/end2end_tests/image/Dockerfile
       target: manual-blank
     image: atsigncompany/sshnp-e2e-manual:blank
     deploy:

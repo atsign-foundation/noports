@@ -5,9 +5,17 @@
 
 # No Ports Core
 
-Abstractions of the original sshnoports core code used for building No Ports
-enabled applications. Currently in development, more documentation to come with
-the official release.
+No Ports Core is the underlying library used to enable sshnoports and the rest of the No Ports suite.
+
+## Examples
+
+### CLI Example
+
+See the [sshnoports](https://github.com/atsign-foundation/sshnoports/tree/trunk/packages/sshnoports) project.
+
+### Flutter Example
+
+See the [sshnp_gui](https://github.com/atsign-foundation/sshnoports/tree/trunk/packages/sshnp_gui) project.
 
 ## Maintainers
 

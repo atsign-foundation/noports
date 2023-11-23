@@ -6,102 +6,130 @@ import 'dart:io';
 import 'package:at_utils/at_logger.dart';
 
 // local packages
-import 'package:noports_core/sshnp/sshnp.dart';
-import 'package:noports_core/sshnp/utils.dart';
+import 'package:noports_core/sshnp.dart';
+import 'package:noports_core/sshnp_params.dart' show ParserType, SshnpArg;
+import 'package:noports_core/utils.dart';
 import 'package:sshnoports/create_at_client_cli.dart';
-import 'package:sshnoports/version.dart';
+import 'package:sshnoports/print_version.dart';
+import 'package:sshnoports/sshnp.dart';
 
 void main(List<String> args) async {
   AtSignLogger.root_level = 'SHOUT';
   AtSignLogger.defaultLoggingHandler = AtSignLogger.stdErrLoggingHandler;
-  late final SSHNP sshnp;
-  late final SSHNPParams params;
 
-  try {
-    params = SSHNPParams.fromPartial(SSHNPPartialParams.fromArgs(args));
-  } catch (error) {
-    stderr.writeln(error.toString());
-    exit(1);
+  late final SshnpParams params;
+  Sshnp? sshnp;
+
+  // Manually check if the verbose flag is set
+  Set<String> verboseSet = SshnpArg.fromName('verbose').aliasList.toSet();
+  final bool verbose = args.toSet().intersection(verboseSet).isNotEmpty;
+
+  // Manually check if the help flag is set
+  Set<String> helpSet = SshnpArg.fromName('help').aliasList.toSet();
+  final bool help = args.toSet().intersection(helpSet).isNotEmpty;
+
+  if (help) {
+    printVersion();
+    stderr.writeln(
+        SshnpArg.createArgParser(parserType: ParserType.commandLine).usage);
+    exit(0);
   }
-
-  try {
-    sshnp = await SSHNP.fromParams(
-      params,
-      atClientGenerator: (SSHNPParams params, String sessionId) =>
-          createAtClientCli(
-        homeDirectory: params.homeDirectory,
-        atsign: params.clientAtSign!,
-        namespace: '${params.device}.sshnp',
-        pathExtension: sessionId,
-        atKeysFilePath: params.atKeysFilePath,
-        rootDomain: params.rootDomain,
-      ),
-      usageCallback: (e, s) {
-        printVersion();
-        stdout.writeln(SSHNPPartialParams.parser.usage);
-        stderr.writeln('\n$e');
-      },
-    );
-  } on ArgumentError catch (_) {
-    exit(1);
-  }
-
-  ProcessSignal.sigint.watch().listen((signal) async {
-    await cleanUpAfterReverseSsh(sshnp);
-    exit(1);
-  });
 
   await runZonedGuarded(() async {
-    if (params.listDevices) {
-      stdout.writeln('Searching for devices...');
-      var (active, off, info) = await sshnp.listDevices();
-      if (active.isEmpty && off.isEmpty) {
-        stdout.writeln('[X] No devices found\n');
-        stdout.writeln(
-            'Note: only devices with sshnpd version 3.4.0 or higher are supported by this command.');
-        stdout.writeln(
-            'Please update your devices to sshnpd version >= 3.4.0 and try again.');
+    try {
+      params = SshnpParams.fromPartial(
+        SshnpPartialParams.fromArgList(
+          args,
+          parserType: ParserType.commandLine,
+        ),
+      );
+      String homeDirectory = getHomeDirectory()!;
+      sshnp = await sshnpFromParamsWithFileBindings(
+        params,
+        atClientGenerator: (SshnpParams params) => createAtClientCli(
+          homeDirectory: homeDirectory,
+          atsign: params.clientAtSign,
+          namespace: '${params.device}.sshnp',
+          atKeysFilePath: params.atKeysFilePath ??
+              getDefaultAtKeysFilePath(homeDirectory, params.clientAtSign),
+          rootDomain: params.rootDomain,
+        ),
+      ).catchError((e) {
+        if (e.stackTrace != null) {
+          Error.throwWithStackTrace(e, e.stackTrace!);
+        }
+        throw e;
+      });
+
+      if (params.listDevices) {
+        stderr.writeln('Searching for devices...');
+        var deviceList = await sshnp!.listDevices();
+        printDevices(deviceList);
         exit(0);
       }
 
-      stdout.writeln('Active Devices:');
-      _printDevices(active, info);
-      stdout.writeln('Inactive Devices:');
-      _printDevices(off, info);
-      exit(0);
-    }
+      SshnpResult res = await sshnp!.run();
 
-    await sshnp.init();
-    SSHNPResult res = await sshnp.run();
-    if (res is SSHNPFailed) {
-      stderr.write('$res\n');
+      if (res is SshnpError) {
+        if (res.stackTrace != null) {
+          Error.throwWithStackTrace(res, res.stackTrace!);
+        }
+        throw res;
+      }
+      if (res is SshnpCommand || res is SshnpNoOpSuccess) {
+        stdout.write('$res\n');
+        exit(0);
+      }
+    } on ArgumentError catch (error, stackTrace) {
+      usageCallback(error, stackTrace);
+      exit(1);
+    } on SshnpError catch (error, stackTrace) {
+      stderr.writeln(error.toString());
+      if (verbose) {
+        stderr.writeln('\nStack Trace: ${stackTrace.toString()}');
+      }
       exit(1);
     }
-    if (res is SSHCommand) {
-      stdout.write('$res\n');
-      await sshnp.done;
-      exit(0);
-    }
   }, (Object error, StackTrace stackTrace) async {
-    stderr.writeln(error.toString());
-
-    if (params.verbose) {
+    if (error is ArgumentError) return;
+    if (error is SshnpError) return;
+    stderr.writeln('Unknown error: ${error.toString()}');
+    if (verbose) {
       stderr.writeln('\nStack Trace: ${stackTrace.toString()}');
     }
-
-    await cleanUpAfterReverseSsh(sshnp);
-
-    await stderr.flush().timeout(Duration(milliseconds: 100));
     exit(1);
   });
 }
 
-void _printDevices(Iterable<String> devices, Map<String, dynamic> info) {
+void usageCallback(Object e, StackTrace s) {
+  printVersion();
+  stderr.writeln(
+      SshnpArg.createArgParser(parserType: ParserType.commandLine).usage);
+  stderr.writeln('\n$e');
+}
+
+void printDevices(SshnpDeviceList deviceList) {
+  if (deviceList.activeDevices.isEmpty && deviceList.inactiveDevices.isEmpty) {
+    stderr.writeln('[X] No devices found\n');
+    stderr.writeln(
+        'Note: only devices with sshnpd version 3.4.0 or higher are supported by this command.');
+    stderr.writeln(
+        'Please update your devices to sshnpd version >= 3.4.0 and try again.');
+    exit(0);
+  }
+
+  stderr.writeln('Active Devices:');
+  printDeviceList(deviceList.activeDevices, deviceList.info);
+  stderr.writeln('Inactive Devices:');
+  printDeviceList(deviceList.inactiveDevices, deviceList.info);
+}
+
+void printDeviceList(Iterable<String> devices, Map<String, dynamic> info) {
   if (devices.isEmpty) {
-    stdout.writeln('  [X] No devices found');
+    stderr.writeln('  No devices found');
     return;
   }
   for (var device in devices) {
-    stdout.writeln('  $device - v${info[device]?['version']}');
+    stderr.writeln('  $device - v${info[device]?['version']}');
   }
 }

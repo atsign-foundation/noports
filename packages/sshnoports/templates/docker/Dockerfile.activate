@@ -1,4 +1,5 @@
-FROM dart:3.1.3@sha256:97cc20588eb7171f611606fff26bc04fb2aec5e68f7341060252a409bf7a86ce AS buildimage
+FROM dart:3.1.5@sha256:397caa91d0df783fd86c1e543eb65e0bcbf3c1b2e21be2d7e2e23fa079924f3b AS buildimage
+ENV PACKAGEDIR=packages/sshnoports
 ENV BINARYDIR=/usr/local/at
 SHELL ["/bin/bash", "-c"]
 WORKDIR /app
@@ -6,12 +7,13 @@ COPY . .
 RUN \
   set -eux ; \
   mkdir -p ${BINARYDIR} ; \
+  cd ${PACKAGEDIR}; \
   dart pub get ; \
-  dart pub update ; \
+  dart run build_runner build --delete-conflicting-outputs ; \
   dart compile exe bin/activate_cli.dart -o ${BINARYDIR}/at_activate
 
 # Second stage of build FROM debian-slim
-FROM debian:stable-20230919-slim@sha256:149e944a6f4855f9738baf4ddd79fc2f218e6440218223fa9017aebc1e45f1f5
+FROM debian:stable-20231120-slim@sha256:375fb84f3c64691a1b9a9ff5ff3905173dcd0c5e11bc2aebd5c3472a139fa2b4
 ENV USER=atsign
 ENV HOMEDIR=/${USER}
 ENV BINARYDIR=/usr/local/at

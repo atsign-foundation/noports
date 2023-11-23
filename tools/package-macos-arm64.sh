@@ -1,9 +1,19 @@
 #!/bin/bash
 
+# This script is used to package the macOS arm64 binaries for sshnoports.
+# It first builds the binaries using dart compile, then copies the templates
+# and LICENSE file to the output directory.
+# Then it calls the notarize-macos.sh script to notarize the binaries
+
 FULL_PATH_TO_SCRIPT="$(realpath "${BASH_SOURCE[0]}")"
 SCRIPT_DIRECTORY="$(dirname "$FULL_PATH_TO_SCRIPT")"
 ROOT_DIRECTORY="$SCRIPT_DIRECTORY/.."
 SRC_DIR="$ROOT_DIRECTORY/packages/sshnoports"
+
+if [ "$#" -ne 0 ]; then
+  echo "Usage: $0"
+  exit 1
+fi
 
 if [ "$(uname)" != "Darwin" ]; then
   echo "This script is only for macOS";
@@ -11,7 +21,7 @@ if [ "$(uname)" != "Darwin" ]; then
 fi
 
 if [ "$(uname -m)" != "arm64" ]; then
-  echo "This script is only for Apple Silicon";
+  echo "This script can only be run on an Apple Silicon device";
   exit 1;
 fi
 
@@ -21,12 +31,18 @@ else
   DART=$(which dart)
 fi
 
-eval "$DART pub get -C $SRC_DIR"
+restore_backup_and_exit() {
+  mv "$SRC_DIR/pubspec_overrides.back.yaml" "$SRC_DIR/pubspec_overrides.yaml"
+  exit "$1"
+}
+
+mv "$SRC_DIR/pubspec_overrides.yaml" "$SRC_DIR/pubspec_overrides.back.yaml"
+eval "$DART pub get -C $SRC_DIR" || restore_backup_and_exit 1
 
 OUTPUT_DIR_PATH="$ROOT_DIRECTORY/build/macos-arm64"
 OUTPUT_DIR="$OUTPUT_DIR_PATH/sshnp"
 
-rm -r "$OUTPUT_DIR"
+rm -r "$OUTPUT_DIR_PATH"
 mkdir -p "$OUTPUT_DIR"
 
 eval "$DART compile exe -o $OUTPUT_DIR/sshnpd $SRC_DIR/bin/sshnpd.dart"
@@ -37,3 +53,7 @@ eval "$DART compile exe -o $OUTPUT_DIR/at_activate $SRC_DIR/bin/activate_cli.dar
 
 cp -r "$SRC_DIR/templates" "$OUTPUT_DIR/templates";
 cp "$SRC_DIR"/LICENSE "$OUTPUT_DIR/";
+
+"$SCRIPT_DIRECTORY/notarize-macos.sh" "$OUTPUT_DIR_PATH" sshnp-macos-arm64
+
+restore_backup_and_exit 0
