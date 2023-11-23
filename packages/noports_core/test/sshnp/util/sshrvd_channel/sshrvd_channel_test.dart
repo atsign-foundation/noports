@@ -17,7 +17,7 @@ void main() {
     late SshrvGeneratorStub<String> sshrvGeneratorStub;
     late MockAtClient mockAtClient;
     late StreamController<AtNotification> notificationStreamController;
-    late FunctionStub notifyStub;
+    late NotifyStub notifyStub;
     late SubscribeStub subscribeStub;
     late MockSshnpParams mockParams;
     late String sessionId;
@@ -26,8 +26,11 @@ void main() {
 
     // Invocation patterns as closures so they can be referred to by name
     // instead of explicitly writing these calls several times in the test
-    notifyInvocation() => notifyStub();
-    subscribeInvocation() => subscribeStub();
+    notifyInvocation() => notifyStub(any(), any());
+    subscribeInvocation() => subscribeStub(
+          regex: any(named: 'regex'),
+          shouldDecrypt: any(named: 'shouldDecrypt'),
+        );
     sshrvGeneratorInvocation() => sshrvGeneratorStub(
           any(),
           any(),
@@ -39,7 +42,7 @@ void main() {
       sshrvGeneratorStub = SshrvGeneratorStub();
       mockAtClient = MockAtClient();
       notificationStreamController = StreamController();
-      notifyStub = FunctionStub();
+      notifyStub = NotifyStub();
       subscribeStub = SubscribeStub();
       mockParams = MockSshnpParams();
       sessionId = Uuid().v4();
@@ -50,25 +53,8 @@ void main() {
         params: mockParams,
         sessionId: sessionId,
         sshrvGenerator: sshrvGeneratorStub,
-        notify: (_, __) async {
-          final testIp = '123.123.123.123';
-          final portA = 10456;
-          final portB = 10789;
-
-          notificationStreamController.add(
-            AtNotification.empty()
-              ..id = Uuid().v4()
-              ..key = '$sessionId.${Sshrvd.namespace}'
-              ..from = '@sshrvd'
-              ..to = '@client'
-              ..epochMillis = DateTime.now().millisecondsSinceEpoch
-              ..value = '$testIp,$portA,$portB',
-          );
-          notifyStub();
-        },
-        subscribe: ({regex, shouldDecrypt = false}) {
-          return subscribeStub();
-        },
+        notify: notifyStub,
+        subscribe: subscribeStub,
       );
 
       registerFallbackValue(AtKey());
@@ -102,23 +88,55 @@ void main() {
 
       when(subscribeInvocation)
           .thenAnswer((_) => notificationStreamController.stream);
+
+      when(notifyInvocation).thenAnswer(
+        (_) async {
+          final testIp = '123.123.123.123';
+          final portA = 10456;
+          final portB = 10789;
+
+          notificationStreamController.add(
+            AtNotification.empty()
+              ..id = Uuid().v4()
+              ..key = '$sessionId.${Sshrvd.namespace}'
+              ..from = '@sshrvd'
+              ..to = '@client'
+              ..epochMillis = DateTime.now().millisecondsSinceEpoch
+              ..value = '$testIp,$portA,$portB',
+          );
+        },
+      );
     }
 
     test('Initialization - sshrvd host', () async {
       /// Set the required parameters
       whenInitializationWithSshrvdHost();
-
       expect(stubbedSshrvdChannel.sshrvdAck, SshrvdAck.notAcknowledged);
-      expect(stubbedSshrvdChannel.initalizeStarted, false);
+      expect(stubbedSshrvdChannel.initializeStarted, false);
 
       verifyNever(subscribeInvocation);
       verifyNever(notifyInvocation);
 
-      await expectLater(stubbedSshrvdChannel.callInitialization(), completes);
+      await expectLater(stubbedSshrvdChannel.initialize(), completes);
 
       verifyInOrder([
-        subscribeInvocation,
-        notifyInvocation,
+        () => subscribeStub(
+            regex: '$sessionId.${Sshrvd.namespace}@', shouldDecrypt: true),
+        () => notifyStub(
+              any<AtKey>(
+                that: predicate(
+                  // Predicate matching specifically the sshrvdIdKey format
+                  (AtKey key) =>
+                      key.key == 'mydevice.${Sshrvd.namespace}' &&
+                      key.sharedBy == '@client' &&
+                      key.sharedWith == '@sshrvd' &&
+                      key.metadata != null &&
+                      key.metadata!.namespaceAware == false &&
+                      key.metadata!.ttl == 10000,
+                ),
+              ),
+              any(),
+            ),
       ]);
 
       verifyNever(subscribeInvocation);
@@ -134,10 +152,25 @@ void main() {
       when(() => mockParams.host).thenReturn('234.234.234.234');
       when(() => mockParams.port).thenReturn(135);
 
-      await expectLater(stubbedSshrvdChannel.callInitialization(), completes);
+      await expectLater(stubbedSshrvdChannel.initialize(), completes);
 
       expect(stubbedSshrvdChannel.host, '234.234.234.234');
       expect(stubbedSshrvdChannel.port, 135);
+    }); // test Initialization - non-sshrvd host
+
+    test('Initialization completes - sshrvd host', () async {
+      /// Set the required parameters
+      whenInitializationWithSshrvdHost();
+      await expectLater(stubbedSshrvdChannel.callInitialization(), completes);
+      await expectLater(stubbedSshrvdChannel.initialized, completes);
+    });
+
+    test('Initialization completes - non-sshrvd host', () async {
+      when(() => mockParams.host).thenReturn('234.234.234.234');
+      when(() => mockParams.port).thenReturn(135);
+
+      await expectLater(stubbedSshrvdChannel.callInitialization(), completes);
+      await expectLater(stubbedSshrvdChannel.initialized, completes);
     }); // test Initialization - non-sshrvd host
 
     test('runSshrv', () async {

@@ -115,6 +115,7 @@ class SshnpArg {
     localSshOptionsArg,
     verboseArg,
     remoteUserNameArg,
+    tunnelUserNameArg,
     rootDomainArg,
     localSshdPortArg,
     legacyDaemonArg,
@@ -277,6 +278,11 @@ class SshnpArg {
     name: 'remote-user-name',
     abbr: 'u',
     help: 'username to use in the ssh session on the remote host',
+  );
+  static const tunnelUserNameArg = SshnpArg(
+    name: 'tunnel-user-name',
+    abbr: 'U',
+    help: 'username to use for the initial ssh tunnel',
   );
   static const rootDomainArg = SshnpArg(
     name: 'root-domain',
