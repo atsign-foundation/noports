@@ -33,14 +33,14 @@ class SocketConnector:
                 for sock in sockets_to_monitor:
                     try:
                         data = sock.recv(1024)
-                        # if not data and timeout > 10:
-                        #     print("Connection closed.")
-                        #     sockets_to_monitor.remove(sock)
-                        #     sock.close()
-                        # elif not data: 
-                        #     timeout += 1
-                        #     sleep(1)
-                        if data == b'' or not data:
+                        if not data and timeout > 100:
+                            print("Connection closed.")
+                            sockets_to_monitor.remove(sock)
+                            sock.close()
+                        elif not data: 
+                            timeout += 1
+                            sleep(0.1)
+                        if data == b'':
                             continue
                         else:
                             # Forward data to the other server
@@ -64,7 +64,4 @@ class SocketConnector:
     def close(self):
         self.socketA.close()
         self.socketB.close()
-        
-        
-        
         

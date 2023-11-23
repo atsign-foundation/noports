@@ -92,19 +92,6 @@ class SSHNPDClient:
             "username", AtSign(self.atsign), AtSign(self.manager_atsign))
         self.at_client.put(username_key, username)
         self.username = username
-        
-    def _handle_ssh_public_key(self, ssh_public_key):
-        # // Check to see if the ssh Publickey is already in the file if not append to the ~/.ssh/authorized_keys file
-        writeKey = False
-        filedata = ""
-        with open(f"{self.ssh_path}/authorized_keys", "r") as read:
-            filedata = read.read()
-            if ssh_public_key not in filedata:
-                writeKey = True
-        if writeKey:
-            with open(f"{self.ssh_path}/authorized_keys", "w") as write:
-                write.write(f"{filedata}\n{ssh_public_key}")
-            self.logger.debug("key written" )
     
     
     def _handle_notifications(self, queue: Queue):
@@ -190,7 +177,7 @@ class SSHNPDClient:
             
             
     def _direct_ssh(self, hostname, port, sessionId):
-        sshrv = SSHRV(hostname, port, verbose=True)
+        sshrv = SSHRV(hostname, port)
         sshrv.run()
         self.rv = sshrv
         self.logger.info("sshrv started @ "  + hostname + " on port " + str(port))
@@ -241,6 +228,8 @@ class SSHNPDClient:
             notify_response = self.at_client.notify(at_key, ssh_response, session_id=uuid)
             self.logger.info("sent ssh notification to " + at_key.shared_with.to_string() + "with id:" + uuid)
             self.authenticated = True
+        if direct:
+            self._ephemeral_cleanup(uuid)
 
 
     #Running in a thread
@@ -370,4 +359,24 @@ class SSHNPDClient:
             return False
         
         return (ssh_public_key, ssh_private_key)
-    
+
+    def _ephemeral_cleanup(self, session_id):
+        try:
+            os.remove(f"{self.ssh_path}/tmp/{session_id}_sshnp.pub")
+            os.remove(f"{self.ssh_path}/tmp/{session_id}_sshnp")
+            self.logger.info("ephemeral ssh keys cleaned up")
+        except Exception as e:
+            self.logger.error(e)
+
+    def _handle_ssh_public_key(self, ssh_public_key):
+        # // Check to see if the ssh Publickey is already in the file if not append to the ~/.ssh/authorized_keys file
+        writeKey = False
+        filedata = ""
+        with open(f"{self.ssh_path}/authorized_keys", "r") as read:
+            filedata = read.read()
+            if ssh_public_key not in filedata:
+                writeKey = True
+        if writeKey:
+            with open(f"{self.ssh_path}/authorized_keys", "w") as write:
+                write.write(f"{filedata}\n{ssh_public_key}")
+            self.logger.debug("key written" )
