@@ -13,11 +13,12 @@ def main():
     optional = parser.add_argument_group('optional arguments')
     optional.add_argument("-u",  action='store_true', dest="username",  help="Username", default="default")
     optional.add_argument("-v", action='store_true', dest="verbose", help="Verbose")
+    optional.add_argument("-s", action="store_true", dest="expecting_ssh_keys", help="SSH Keypair, use this if you want to use your own ssh keypair")
     
     
     args = parser.parse_args()
 
-    sshnpd = SSHNPDClient(args.atsign, args.manager_atsign, args.device, args.username, args.verbose)
+    sshnpd = SSHNPDClient(args.atsign, args.manager_atsign, args.device, args.username, args.verbose, args.expecting_ssh_keys)
     
     try:
         sshnpd.start()
