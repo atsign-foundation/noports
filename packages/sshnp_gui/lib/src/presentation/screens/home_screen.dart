@@ -36,18 +36,21 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
                               strings.currentConnections,
-                              style: Theme.of(context).textTheme.titleLarge,
+                              style: Theme.of(context).textTheme.headlineLarge,
                             ),
-                            Text(strings.currentConnectionsDescription),
+                            Text(
+                              strings.currentConnectionsDescription,
+                              style: Theme.of(context).textTheme.bodySmall,
+                            ),
                           ],
                         ),
-                        gapW16,
                         const HomeScreenActions(),
                       ],
                     ),
