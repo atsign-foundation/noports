@@ -138,7 +138,8 @@ class _ProfileFormState extends ConsumerState<ProfileForm> {
                     validator: FormValidator.validateRequiredField,
                   ),
                   gapH20,
-                  Text(strings.sshKeyManagement('yes'), style: Theme.of(context).textTheme.titleMedium),
+                  Text(strings.sshKeyManagement('yes'), style: Theme.of(context).textTheme.bodyLarge),
+                  gapH16,
                   ProfileFormCard(formFields: [
                     atSshKeyPairs.when(
                         loading: () => const Center(child: CircularProgressIndicator()),
@@ -222,47 +223,8 @@ class _ProfileFormState extends ConsumerState<ProfileForm> {
                           });
                         }),
                   ]),
-                  gapH20,
-                  const Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // TODO replace this with a drop down of available keyPairs (and buttons to upload / generate a new one, and button to delete)
-                      // CustomTextFormField(
-                      //   initialValue: oldConfig.sendSshPublicKey,
-                      //   labelText: strings.sendSshPublicKey,
-                      //   onChanged: (value) =>
-                      //       newConfig = SshnpPartialParams.merge(
-                      //     newConfig,
-                      //     SshnpPartialParams(sendSshPublicKey: value),
-                      //   ),
-                      // ),
-                      gapW8,
-                      // TODO replace this switch with a dropdown with options for SupportedSshAlgorithm.values
-                      // SizedBox(
-                      //   width: CustomTextFormField.defaultWidth,
-                      //   height: CustomTextFormField.defaultHeight,
-                      //   child: Row(
-                      //     children: [
-                      //       Text(strings.rsa),
-                      //       gapW8,
-                      //       Switch(
-                      //         value: newConfig.rsa ?? oldConfig.rsa,
-                      //         onChanged: (newValue) {
-                      //           setState(() {
-                      //             newConfig = SshnpPartialParams.merge(
-                      //               newConfig,
-                      //               SshnpPartialParams(rsa: newValue),
-                      //             );
-                      //           });
-                      //         },
-                      //       ),
-                      //     ],
-                      //   ),
-                      // ),
-                    ],
-                  ),
-                  gapH10,
-                  Text(strings.connectionConfiguration, style: Theme.of(context).textTheme.titleMedium),
+                  gapH30,
+                  Text(strings.connectionConfiguration, style: Theme.of(context).textTheme.bodyLarge),
                   gapH20,
                   ProfileFormCard(
                     formFields: [
@@ -307,7 +269,7 @@ class _ProfileFormState extends ConsumerState<ProfileForm> {
                     ],
                   ),
                   gapH20,
-                  Text(strings.advancedConfiguration, style: Theme.of(context).textTheme.titleMedium),
+                  Text(strings.advancedConfiguration, style: Theme.of(context).textTheme.bodyMedium),
                   gapH20,
                   ProfileFormCard(
                     formFields: [
@@ -342,7 +304,7 @@ class _ProfileFormState extends ConsumerState<ProfileForm> {
                       children: [
                         ElevatedButton(
                           onPressed: () => onSubmit(oldConfig, newConfig),
-                          child: Text(strings.connect),
+                          child: Text(strings.submit),
                         ),
                         gapW8,
                         TextButton(

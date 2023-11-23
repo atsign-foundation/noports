@@ -4,6 +4,7 @@
     "add" : "Add",
     "addKey" : "Add Key",
     "addNewConnection" : "Add New Connection",
+    "addNewConnectionDescription" : "To create a new connection as fast as possible, only fill in required fields, the rest will auto populate by default. You can always change your configurations later.",
     "advancedConfiguration": "Advanced \nConfiguration",
     "atKeysFilePath" : "atKeys File",
     "availableConnections" : "Available Connections",

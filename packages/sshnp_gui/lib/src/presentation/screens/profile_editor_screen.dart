@@ -24,17 +24,26 @@ class _ProfileEditorScreenState extends State<ProfileEditorScreen> {
             const AppNavigationRail(),
             Expanded(
               child: Padding(
-                padding: const EdgeInsets.only(left: Sizes.p36, top: Sizes.p21),
+                padding: const EdgeInsets.only(
+                  left: Sizes.p36,
+                  top: Sizes.p21,
+                  right: Sizes.p48,
+                ),
                 child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                   Text(
                     strings.addNewConnection,
-                    style: Theme.of(context).textTheme.titleMedium,
+                    style: Theme.of(context).textTheme.headlineLarge,
                   ),
                   gapH10,
                   const LinearProgressIndicator(
                     value: 0.5,
                   ),
                   gapH10,
+                  Text(
+                    strings.addNewConnectionDescription,
+                    style: Theme.of(context).textTheme.bodySmall!,
+                  ),
+                  gapH16,
                   const Expanded(child: ProfileForm())
                 ]),
               ),
