@@ -115,6 +115,16 @@ class SshrvdImpl implements Sshrvd {
       return;
     }
 
+    // TODO Jagan Extract the 'message' type from the notification key
+    //      like we do in sshnpd_impl's _notificationHandler
+    // Then switch on the 'message' type
+    // - If it's legacy (just looks like deviceName.sshrvd) then handle like
+    //   we currently do
+    // - If it's new (e.g. 'request_ports.deviceName.sshrvd') then we expect
+    //   the notification to be JSON which contains sessionId, atSignA, atSignB
+    //   and a flag (or a flag for each side) stating whether we want the
+    //   socket connections to be authenticated via challenge-response or not.
+    //   e.g. authenticateSocketsA, authenticateSocketsB
     String session = notification.value!;
     String atSignA = notification.from;
     // TODO Jagan
