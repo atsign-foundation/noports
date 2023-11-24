@@ -55,3 +55,49 @@ class StubbedSshnpdChannel extends SshnpdChannel {
 }
 
 class MockRemoteSecondary extends Mock implements RemoteSecondary {}
+
+class StubbedSshnpdDefaultChannel extends SshnpdDefaultChannel {
+  final Stream<AtNotification> Function({String? regex, bool shouldDecrypt})?
+      _subscribe;
+
+  StubbedSshnpdDefaultChannel({
+    required super.atClient,
+    required super.params,
+    required super.sessionId,
+    required super.namespace,
+    Stream<AtNotification> Function({String? regex, bool shouldDecrypt})?
+        subscribe,
+  }) : _subscribe = subscribe;
+
+  @override
+  Stream<AtNotification> subscribe({
+    String? regex,
+    bool shouldDecrypt = false,
+  }) {
+    return _subscribe?.call(regex: regex, shouldDecrypt: shouldDecrypt) ??
+        Stream.empty();
+  }
+}
+
+class StubbedSshnpdUnsignedChannel extends SshnpdUnsignedChannel {
+  final Stream<AtNotification> Function({String? regex, bool shouldDecrypt})?
+      _subscribe;
+
+  StubbedSshnpdUnsignedChannel({
+    required super.atClient,
+    required super.params,
+    required super.sessionId,
+    required super.namespace,
+    Stream<AtNotification> Function({String? regex, bool shouldDecrypt})?
+        subscribe,
+  }) : _subscribe = subscribe;
+
+  @override
+  Stream<AtNotification> subscribe({
+    String? regex,
+    bool shouldDecrypt = false,
+  }) {
+    return _subscribe?.call(regex: regex, shouldDecrypt: shouldDecrypt) ??
+        Stream.empty();
+  }
+}
