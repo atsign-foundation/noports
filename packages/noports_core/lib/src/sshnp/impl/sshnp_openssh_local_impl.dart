@@ -86,9 +86,15 @@ class SshnpOpensshLocalImpl extends SshnpCore
       throw SshnpError('sshnpd did not acknowledge the request');
     }
 
+    if (sshnpdChannel.ephemeralPrivateKey == null) {
+      throw SshnpError(
+        'Expected an ephemeral private key from sshnpd, but it was not set',
+      );
+    }
+
     /// Load the ephemeral private key into a key pair
     AtSshKeyPair ephemeralKeyPair = AtSshKeyPair.fromPem(
-      sshnpdChannel.ephemeralPrivateKey,
+      sshnpdChannel.ephemeralPrivateKey!,
       identifier: 'ephemeral_$sessionId',
       directory: keyUtil.sshnpHomeDirectory,
     );
