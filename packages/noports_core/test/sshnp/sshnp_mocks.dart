@@ -11,6 +11,12 @@ abstract class FunctionCaller<T> {
 
 class FunctionStub<T> extends Mock implements FunctionCaller<T> {}
 
+abstract class NotifyCaller {
+  Future<void> call(AtKey key, String value);
+}
+
+class NotifyStub extends Mock implements NotifyCaller {}
+
 abstract class SubscribeCaller {
   Stream<AtNotification> call({String? regex, bool shouldDecrypt});
 }

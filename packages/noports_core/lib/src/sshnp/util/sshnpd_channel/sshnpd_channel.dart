@@ -57,11 +57,12 @@ abstract class SshnpdChannel with AsyncInitialization, AtClientBindings {
     subscribe(
       regex: regex,
       shouldDecrypt: true,
-    ).listen(_handleSshnpdResponses);
+    ).listen(handleSshnpdResponses);
   }
 
   /// Main reponse handler for the daemon's notifications.
-  Future<void> _handleSshnpdResponses(AtNotification notification) async {
+  @visibleForTesting
+  Future<void> handleSshnpdResponses(AtNotification notification) async {
     String notificationKey = notification.key
         .replaceAll('${notification.to}:', '')
         .replaceAll('.$namespace@${notification.from}', '')
@@ -183,7 +184,7 @@ abstract class SshnpdChannel with AsyncInitialization, AtClientBindings {
         'device_info\\.$sshnpDeviceNameRegex\\.${DefaultArgs.namespace}';
 
     var atKeys =
-        await _getAtKeysRemote(regex: scanRegex, sharedBy: params.sshnpdAtSign);
+        await getAtKeysRemote(regex: scanRegex, sharedBy: params.sshnpdAtSign);
 
     SshnpDeviceList deviceList = SshnpDeviceList();
 
@@ -234,7 +235,8 @@ abstract class SshnpdChannel with AsyncInitialization, AtClientBindings {
   }
 
   /// A custom implementation of AtClient.getAtKeys which bypasses the cache
-  Future<List<AtKey>> _getAtKeysRemote(
+  @visibleForTesting
+  Future<List<AtKey>> getAtKeysRemote(
       {String? regex,
       String? sharedBy,
       String? sharedWith,
