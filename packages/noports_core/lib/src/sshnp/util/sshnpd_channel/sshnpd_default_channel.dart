@@ -17,7 +17,7 @@ class SshnpdDefaultChannel extends SshnpdChannel
 }
 
 mixin SshnpdDefaultPayloadHandler on SshnpdChannel {
-  late final String ephemeralPrivateKey;
+  String? ephemeralPrivateKey;
 
   @visibleForTesting
   // disable publickey cache on windows
