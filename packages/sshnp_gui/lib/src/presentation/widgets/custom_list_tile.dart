@@ -2,6 +2,8 @@ import 'package:at_app_flutter/at_app_flutter.dart';
 import 'package:at_contacts_flutter/services/contact_service.dart';
 import 'package:at_onboarding_flutter/at_onboarding_flutter.dart';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
+import 'package:sshnp_gui/src/controllers/navigation_controller.dart';
 import 'package:sshnp_gui/src/presentation/screens/onboarding_screen.dart';
 import 'package:sshnp_gui/src/utility/constants.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -45,8 +47,8 @@ class CustomListTile extends StatelessWidget {
   }) : super(key: key);
   const CustomListTile.privacyPolicy({
     this.iconData = Icons.account_balance_wallet_outlined,
-    this.title = 'FAQ',
-    this.subtitle = 'Frequently asked questions',
+    this.title = 'Privacy Policy',
+    this.subtitle = 'Check our terms of service',
     this.type = CustomListTileType.faq,
     this.tileColor = kProfileBackgroundColor,
     Key? key,
@@ -139,7 +141,7 @@ class CustomListTile extends StatelessWidget {
           break;
         case CustomListTileType.resetAtsign:
           if (context.mounted) {
-            AtOnboarding.reset(
+            await AtOnboarding.reset(
               context: context,
               config: AtOnboardingConfig(
                 atClientPreference: await loadAtClientPreference(),
@@ -148,6 +150,9 @@ class CustomListTile extends StatelessWidget {
                 appAPIKey: AtEnv.appApiKey,
               ),
             );
+          }
+          if (context.mounted) {
+            context.goNamed(AppRoute.onboarding.name);
           }
           break;
       }

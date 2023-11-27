@@ -3,11 +3,14 @@ import 'dart:io';
 import 'package:file_selector/file_selector.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:noports_core/sshnp_params.dart';
 import 'package:sshnp_gui/src/controllers/config_controller.dart';
-import 'package:sshnp_gui/src/presentation/widgets/home_screen_actions/home_screen_import_dialog.dart';
+import 'package:sshnp_gui/src/presentation/widgets/homescreen/home_screen_actions/home_screen_import_dialog.dart';
 import 'package:sshnp_gui/src/presentation/widgets/utility/custom_snack_bar.dart';
 import 'package:sshnp_gui/src/utility/constants.dart';
+
+import '../../../../controllers/navigation_controller.dart';
 
 class HomeScreenActionCallbacks {
   static Future<void> import(WidgetRef ref, BuildContext context) async {
@@ -44,5 +47,18 @@ class HomeScreenActionCallbacks {
       builder: (_) => HomeScreenImportDialog(setProfileName, initialName: initialName),
     );
     return profileName;
+  }
+
+  static void newProfileAction(WidgetRef ref, BuildContext context) {
+    // Change value to update to trigger the update functionality on the new connection form.
+    ref.watch(currentConfigController.notifier).setState(
+          CurrentConfigState(
+            profileName: '',
+            configFileWriteState: ConfigFileWriteState.create,
+          ),
+        );
+    context.replaceNamed(
+      AppRoute.profileForm.name,
+    );
   }
 }

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:macos_ui/macos_ui.dart';
 import 'package:sshnp_gui/src/utility/constants.dart';
 import 'package:sshnp_gui/src/utility/sizes.dart';
@@ -198,6 +199,7 @@ class AppTheme {
   // 4
   static ThemeData dark() {
     return ThemeData(
+      visualDensity: VisualDensity.adaptivePlatformDensity,
       useMaterial3: true,
       colorScheme: const ColorScheme.dark().copyWith(primary: kPrimaryColor, background: kBackGroundColorDark
           // onPrimary: kOnPrimaryColor,
@@ -227,10 +229,8 @@ class AppTheme {
           },
         ),
       ),
-      floatingActionButtonTheme: const FloatingActionButtonThemeData(
-        foregroundColor: Color(0xFFF8C630),
-        backgroundColor: Colors.black,
-      ),
+      floatingActionButtonTheme:
+          const FloatingActionButtonThemeData(foregroundColor: Colors.white, backgroundColor: kPrimaryColor),
       textTheme: darkTextTheme,
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ButtonStyle(
@@ -275,6 +275,7 @@ class AppTheme {
           // maximumSize: const Size(48, 43),
         ),
       ),
+      appBarTheme: const AppBarTheme(backgroundColor: kPrimaryColor, systemOverlayStyle: SystemUiOverlayStyle.light),
     );
   }
 

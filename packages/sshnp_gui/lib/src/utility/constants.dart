@@ -12,6 +12,7 @@ const kIconColorDark = Color(0xff585858);
 const kIconColorBackground = Color(0xffDCDCDC);
 const kIconColorBackgroundDark = Color(0xff888888);
 const kListTileColor = Color(0x70bcbcbc);
+const kListTileTitleColorDark = Color(0xff252525);
 const kSSHKeyManagementCardColor = Color(0xff3e3e3e);
 const kSshKeyManagementBarColor = Color(0xff505050);
 
