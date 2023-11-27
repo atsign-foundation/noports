@@ -29,8 +29,8 @@ class SshnpParams {
   final bool verbose;
   final String rootDomain;
   final int localSshdPort;
-  final int idleTimeout;
   final int remoteSshdPort;
+  final int idleTimeout;
   final bool addForwardsToTunnel;
   final String? atKeysFilePath;
   final SupportedSshAlgorithm sshAlgorithm;
