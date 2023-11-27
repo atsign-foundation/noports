@@ -9,51 +9,62 @@ import 'package:at_utils/at_logger.dart';
 import 'package:noports_core/sshnp.dart';
 import 'package:noports_core/sshnp_params.dart' show ParserType, SshnpArg;
 import 'package:noports_core/utils.dart';
-import 'package:sshnoports/create_at_client_cli.dart';
-import 'package:sshnoports/print_version.dart';
-import 'package:sshnoports/sshnp.dart';
+import 'package:sshnoports/src/extended_arg_parser.dart';
+import 'package:sshnoports/src/create_at_client_cli.dart';
+import 'package:sshnoports/src/print_devices.dart';
+import 'package:sshnoports/src/print_version.dart';
+import 'package:sshnoports/src/create_sshnp.dart';
 
 void main(List<String> args) async {
   AtSignLogger.root_level = 'SHOUT';
   AtSignLogger.defaultLoggingHandler = AtSignLogger.stdErrLoggingHandler;
 
-  late final SshnpParams params;
-  Sshnp? sshnp;
+  ExtendedArgParser parser = ExtendedArgParser();
 
-  // Manually check if the verbose flag is set
-  Set<String> verboseSet = SshnpArg.fromName('verbose').aliasList.toSet();
-  final bool verbose = args.toSet().intersection(verboseSet).isNotEmpty;
-
-  // Manually check if the help flag is set
-  Set<String> helpSet = SshnpArg.fromName('help').aliasList.toSet();
-  final bool help = args.toSet().intersection(helpSet).isNotEmpty;
-
-  if (help) {
+  // Create the printUsage closure
+  void printUsage({Object? error, StackTrace? stackTrace}) {
     printVersion();
-    stderr.writeln(
-        SshnpArg.createArgParser(parserType: ParserType.commandLine).usage);
+    stderr.writeln(parser.usage);
+    if (error != null) {
+      stderr.writeln('\n$error');
+    }
+    if (stackTrace != null) {
+      stderr.writeln('\n$stackTrace');
+    }
+  }
+
+  // Manually check if the help flag is set and print usage
+  Set<String> helpSet = SshnpArg.fromName('help').aliasList.toSet();
+  if (args.toSet().intersection(helpSet).isNotEmpty) {
+    printUsage();
     exit(0);
   }
 
   await runZonedGuarded(() async {
+    final String homeDirectory = getHomeDirectory()!;
+
     try {
-      params = SshnpParams.fromPartial(
+      final argResults = parser.parse(args);
+      final coreArgs = parser.extractCoreArgs(args);
+
+      final params = SshnpParams.fromPartial(
         SshnpPartialParams.fromArgList(
-          args,
+          coreArgs,
           parserType: ParserType.commandLine,
         ),
       );
-      String homeDirectory = getHomeDirectory()!;
-      sshnp = await sshnpFromParamsWithFileBindings(
+
+      final sshnp = await createSshnp(
         params,
         atClientGenerator: (SshnpParams params) => createAtClientCli(
           homeDirectory: homeDirectory,
           atsign: params.clientAtSign,
-          namespace: '${params.device}.sshnp',
           atKeysFilePath: params.atKeysFilePath ??
               getDefaultAtKeysFilePath(homeDirectory, params.clientAtSign),
           rootDomain: params.rootDomain,
         ),
+        legacyDaemon: argResults['legacy-daemon'],
+        sshClient: argResults['ssh-client'],
       ).catchError((e) {
         if (e.stackTrace != null) {
           Error.throwWithStackTrace(e, e.stackTrace!);
@@ -63,12 +74,12 @@ void main(List<String> args) async {
 
       if (params.listDevices) {
         stderr.writeln('Searching for devices...');
-        var deviceList = await sshnp!.listDevices();
+        var deviceList = await sshnp.listDevices();
         printDevices(deviceList);
         exit(0);
       }
 
-      SshnpResult res = await sshnp!.run();
+      final res = await sshnp.run();
 
       if (res is SshnpError) {
         if (res.stackTrace != null) {
@@ -81,55 +92,18 @@ void main(List<String> args) async {
         exit(0);
       }
     } on ArgumentError catch (error, stackTrace) {
-      usageCallback(error, stackTrace);
+      printUsage(error: error, stackTrace: stackTrace);
       exit(1);
     } on SshnpError catch (error, stackTrace) {
       stderr.writeln(error.toString());
-      if (verbose) {
-        stderr.writeln('\nStack Trace: ${stackTrace.toString()}');
-      }
+      stderr.writeln('\nStack Trace: ${stackTrace.toString()}');
       exit(1);
     }
   }, (Object error, StackTrace stackTrace) async {
     if (error is ArgumentError) return;
     if (error is SshnpError) return;
     stderr.writeln('Unknown error: ${error.toString()}');
-    if (verbose) {
-      stderr.writeln('\nStack Trace: ${stackTrace.toString()}');
-    }
+    stderr.writeln('\nStack Trace: ${stackTrace.toString()}');
     exit(1);
   });
-}
-
-void usageCallback(Object e, StackTrace s) {
-  printVersion();
-  stderr.writeln(
-      SshnpArg.createArgParser(parserType: ParserType.commandLine).usage);
-  stderr.writeln('\n$e');
-}
-
-void printDevices(SshnpDeviceList deviceList) {
-  if (deviceList.activeDevices.isEmpty && deviceList.inactiveDevices.isEmpty) {
-    stderr.writeln('[X] No devices found\n');
-    stderr.writeln(
-        'Note: only devices with sshnpd version 3.4.0 or higher are supported by this command.');
-    stderr.writeln(
-        'Please update your devices to sshnpd version >= 3.4.0 and try again.');
-    exit(0);
-  }
-
-  stderr.writeln('Active Devices:');
-  printDeviceList(deviceList.activeDevices, deviceList.info);
-  stderr.writeln('Inactive Devices:');
-  printDeviceList(deviceList.inactiveDevices, deviceList.info);
-}
-
-void printDeviceList(Iterable<String> devices, Map<String, dynamic> info) {
-  if (devices.isEmpty) {
-    stderr.writeln('  No devices found');
-    return;
-  }
-  for (var device in devices) {
-    stderr.writeln('  $device - v${info[device]?['version']}');
-  }
 }
