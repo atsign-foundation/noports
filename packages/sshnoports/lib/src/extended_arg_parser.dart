@@ -15,7 +15,7 @@ class ExtendedArgParser {
     parser.addOption(
       'ssh-client',
       help: 'What to use for outbound ssh connections',
-      allowed: SupportedSshClient.values as Iterable<String>,
+      allowed: SupportedSshClient.values.map((e) => e.toString()),
       defaultsTo: DefaultExtendedArgs.sshClient.toString(),
     );
 
