@@ -118,10 +118,8 @@ class SshnpArg {
     tunnelUserNameArg,
     rootDomainArg,
     localSshdPortArg,
-    legacyDaemonArg,
     remoteSshdPortArg,
     idleTimeoutArg,
-    sshClientArg,
     sshAlgorithmArg,
     addForwardsToTunnelArg,
     configFileArg,
@@ -300,12 +298,6 @@ class SshnpArg {
     format: ArgFormat.option,
     type: ArgType.integer,
   );
-  static const legacyDaemonArg = SshnpArg(
-    name: 'legacy-daemon',
-    help: 'Request is to a legacy (< 4.0.0) noports daemon',
-    defaultsTo: DefaultSshnpArgs.legacyDaemon,
-    format: ArgFormat.flag,
-  );
   static const remoteSshdPortArg = SshnpArg(
     name: 'remote-sshd-port',
     help: 'port on which sshd is listening locally on the device host',
@@ -322,13 +314,6 @@ class SshnpArg {
     mandatory: false,
     format: ArgFormat.option,
     type: ArgType.integer,
-    parseWhen: ParseWhen.commandLine,
-  );
-  static final sshClientArg = SshnpArg(
-    name: 'ssh-client',
-    help: 'What to use for outbound ssh connections',
-    defaultsTo: DefaultSshnpArgs.sshClient.toString(),
-    allowed: SupportedSshClient.values.map((c) => c.toString()).toList(),
     parseWhen: ParseWhen.commandLine,
   );
   static final sshAlgorithmArg = SshnpArg(
