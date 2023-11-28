@@ -63,8 +63,8 @@ void main(List<String> args) async {
               getDefaultAtKeysFilePath(homeDirectory, params.clientAtSign),
           rootDomain: params.rootDomain,
         ),
-        legacyDaemon: argResults['legacy-daemon'],
-        sshClient: argResults['ssh-client'],
+        legacyDaemon: argResults['legacy-daemon'] as bool,
+        sshClient: SupportedSshClient.fromString(argResults['ssh-client'] as String),
       ).catchError((e) {
         if (e.stackTrace != null) {
           Error.throwWithStackTrace(e, e.stackTrace!);
