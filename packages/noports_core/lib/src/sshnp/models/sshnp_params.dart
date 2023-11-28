@@ -102,12 +102,10 @@ class SshnpParams {
       rootDomain: params2.rootDomain ?? params1.rootDomain,
       localSshdPort: params2.localSshdPort ?? params1.localSshdPort,
       listDevices: params2.listDevices ?? params1.listDevices,
-      // legacyDaemon: params2.legacyDaemon ?? params1.legacyDaemon,
       remoteSshdPort: params2.remoteSshdPort ?? params1.remoteSshdPort,
       idleTimeout: params2.idleTimeout ?? params1.idleTimeout,
       addForwardsToTunnel:
           params2.addForwardsToTunnel ?? params1.addForwardsToTunnel,
-      // sshClient: params2.sshClient ?? params1.sshClient,
       sshAlgorithm: params2.sshAlgorithm ?? params1.sshAlgorithm,
     );
   }
