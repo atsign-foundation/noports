@@ -37,15 +37,20 @@ jobs:
       - uses: dart-lang/setup-dart@b64355ae6ca0b5d484f0106a033dd1388965d06d # v1.6.0
       - run: mkdir sshnp
       - run: mkdir tarball
-      - run: mkdir sshnp/debug
+      - if: ${{ matrix.os === 'windows-latest' }
+        run: mkdir sshnp/debug
       - run: dart pub get
       - run: dart run build_runner build --delete-conflicting-outputs
       - run: dart compile exe bin/activate_cli.dart -v -o sshnp/at_activate${{ matrix.ext }}
       - run: dart compile exe bin/sshnp.dart -v -o sshnp/sshnp${{ matrix.ext }}
-      - run: dart compile exe bin/sshnpd.dart -v -o sshnp/sshnpd${{ matrix.ext }}
-      - run: dart compile exe bin/sshrv.dart -v -o sshnp/sshrv${{ matrix.ext }}
-      - run: dart compile exe bin/sshrvd.dart -v -o sshnp/sshrvd${{ matrix.ext }}
-      - run: dart compile exe bin/sshrvd.dart -D ENABLE_SNOOP=true -v -o sshnp/debug/sshrvd-debug${{ matrix.ext }}
+      - if: ${{ matrix.os != 'windows-latest' }}
+        run: dart compile exe bin/sshnpd.dart -v -o sshnp/sshnpd${{ matrix.ext }}
+      - if: ${{ matrix.os != 'windows-latest' }
+        run: dart compile exe bin/sshrv.dart -v -o sshnp/sshrv${{ matrix.ext }}
+      - if: ${{ matrix.os != 'windows-latest' }
+        run: dart compile exe bin/sshrvd.dart -v -o sshnp/sshrvd${{ matrix.ext }}
+      - if: ${{ matrix.os != 'windows-latest' }
+        run: dart compile exe bin/sshrvd.dart -D ENABLE_SNOOP=true -v -o sshnp/debug/sshrvd${{ matrix.ext }}
       - run: cp -r templates sshnp/templates
       - run: cp LICENSE sshnp
       - run: tar -cvzf tarball/${{ matrix.output-name }}.tgz sshnp
