@@ -24,10 +24,13 @@ jobs:
         include:
           - os: ubuntu-latest
             output-name: sshnp-linux-x64
+            ext: ''
           - os: macOS-latest
             output-name: sshnp-macos-x64
+            ext: ''
           - os: windows-latest
             output-name: sshnp-windows-x64
+            ext: '.exe'
 
     steps:
       - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
@@ -36,11 +39,11 @@ jobs:
       - run: mkdir tarball
       - run: dart pub get
       - run: dart run build_runner build --delete-conflicting-outputs
-      - run: dart compile exe bin/activate_cli.dart -v -o sshnp/at_activate
-      - run: dart compile exe bin/sshnp.dart -v -o sshnp/sshnp
-      - run: dart compile exe bin/sshnpd.dart -v -o sshnp/sshnpd
-      - run: dart compile exe bin/sshrv.dart -v -o sshnp/sshrv
-      - run: dart compile exe bin/sshrvd.dart -v -o sshnp/sshrvd
+      - run: dart compile exe bin/activate_cli.dart -v -o sshnp/at_activate${{ matrix.ext }}
+      - run: dart compile exe bin/sshnp.dart -v -o sshnp/sshnp${{ matrix.ext }}
+      - run: dart compile exe bin/sshnpd.dart -v -o sshnp/sshnpd${{ matrix.ext }}
+      - run: dart compile exe bin/sshrv.dart -v -o sshnp/sshrv${{ matrix.ext }}
+      - run: dart compile exe bin/sshrvd.dart -v -o sshnp/sshrvd${{ matrix.ext }}
       - run: cp -r templates sshnp/templates
       - run: cp LICENSE sshnp
       - run: tar -cvzf tarball/${{ matrix.output-name }}.tgz sshnp
