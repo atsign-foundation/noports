@@ -2,13 +2,16 @@ import 'dart:io';
 
 import 'package:noports_core/sshnp_foundation.dart';
 import 'package:at_client/at_client.dart';
+import 'package:sshnoports/src/extended_arg_parser.dart';
 
 typedef AtClientGenerator = Future<AtClient> Function(SshnpParams params);
 
-Future<Sshnp> sshnpFromParamsWithFileBindings(
+Future<Sshnp> createSshnp(
   SshnpParams params, {
   AtClient? atClient,
   AtClientGenerator? atClientGenerator,
+  SupportedSshClient sshClient = DefaultExtendedArgs.sshClient,
+  bool legacyDaemon = DefaultExtendedArgs.legacyDaemon,
 }) async {
   atClient ??= await atClientGenerator?.call(params);
 
@@ -17,7 +20,7 @@ Future<Sshnp> sshnpFromParamsWithFileBindings(
         'atClient must be provided or atClientGenerator must be provided');
   }
 
-  if (params.legacyDaemon) {
+  if (legacyDaemon) {
     // ignore: deprecated_member_use
     return Sshnp.unsigned(
       atClient: atClient,
@@ -25,7 +28,7 @@ Future<Sshnp> sshnpFromParamsWithFileBindings(
     );
   }
 
-  switch (params.sshClient) {
+  switch (sshClient) {
     case SupportedSshClient.openssh:
       return Sshnp.openssh(
         atClient: atClient,
