@@ -6,7 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:noports_core/sshnp_params.dart';
 import 'package:sshnp_gui/src/controllers/config_controller.dart';
-import 'package:sshnp_gui/src/presentation/widgets/homescreen/home_screen_actions/home_screen_import_dialog.dart';
+import 'package:sshnp_gui/src/presentation/widgets/home_screen_widgets/home_screen_actions/home_screen_import_dialog.dart';
 import 'package:sshnp_gui/src/presentation/widgets/utility/custom_snack_bar.dart';
 import 'package:sshnp_gui/src/utility/constants.dart';
 

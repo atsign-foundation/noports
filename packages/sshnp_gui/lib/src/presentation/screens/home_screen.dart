@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sshnp_gui/src/presentation/widgets/utility/responsive_widget.dart';
 
-import '../widgets/homescreen/home_screen_desktop.dart';
-import '../widgets/homescreen/home_screen_mobile.dart';
+import '../widgets/home_screen_widgets/home_screen_desktop.dart';
+import '../widgets/home_screen_widgets/home_screen_mobile.dart';
 
 // * Once the onboarding process is completed you will be taken to this screen
 class HomeScreen extends ConsumerStatefulWidget {

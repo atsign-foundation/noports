@@ -4,7 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:sshnp_gui/src/controllers/config_controller.dart';
 import 'package:sshnp_gui/src/presentation/screens/settings_screen.dart';
-import 'package:sshnp_gui/src/presentation/widgets/settings_actions/settings_actions.dart';
+import 'package:sshnp_gui/src/presentation/widgets/settings_screen_widgets/settings_actions/settings_actions.dart';
 
 class SettingsScreenRobot {
   SettingsScreenRobot(this.tester);

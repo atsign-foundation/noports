@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:sshnp_gui/src/presentation/widgets/homescreen/home_screen_actions/home_screen_action_callbacks.dart';
+import 'package:sshnp_gui/src/presentation/widgets/home_screen_widgets/home_screen_actions/home_screen_action_callbacks.dart';
 import 'package:sshnp_gui/src/utility/sizes.dart';
 
 class HomeScreenMenuButton extends ConsumerStatefulWidget {

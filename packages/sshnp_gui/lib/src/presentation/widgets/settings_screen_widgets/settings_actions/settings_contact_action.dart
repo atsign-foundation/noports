@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:sshnp_gui/src/presentation/widgets/settings_actions/settings_action_button.dart';
-import 'package:url_launcher/url_launcher.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:sshnp_gui/src/presentation/widgets/settings_screen_widgets/settings_actions/settings_action_button.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class SettingsContactAction extends StatelessWidget {
   const SettingsContactAction({Key? key}) : super(key: key);

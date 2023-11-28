@@ -8,7 +8,7 @@ import 'package:sshnp_gui/src/presentation/screens/onboarding_screen.dart';
 import 'package:sshnp_gui/src/utility/constants.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-import 'settings_actions/settings_switch_atsign_action.dart';
+import 'settings_screen_widgets/settings_actions/settings_switch_atsign_action.dart';
 import 'ssh_key_management/ssh_key_management_dialog.dart';
 
 class CustomListTile extends StatelessWidget {

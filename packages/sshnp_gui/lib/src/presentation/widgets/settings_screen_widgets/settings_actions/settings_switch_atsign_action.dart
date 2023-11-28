@@ -5,7 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sshnp_gui/src/controllers/authentication_controller.dart';
-import 'package:sshnp_gui/src/presentation/widgets/settings_actions/settings_action_button.dart';
+import 'package:sshnp_gui/src/presentation/widgets/settings_screen_widgets/settings_actions/settings_action_button.dart';
 import 'package:sshnp_gui/src/presentation/widgets/utility/custom_snack_bar.dart';
 import 'package:sshnp_gui/src/repository/authentication_repository.dart';
 import 'package:sshnp_gui/src/repository/navigation_repository.dart';
