@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:sshnp_gui/src/presentation/widgets/profile_actions/profile_action_callbacks.dart';
+import 'package:sshnp_gui/src/presentation/widgets/profile_screen_widgets/profile_actions/profile_action_callbacks.dart';
 import 'package:sshnp_gui/src/utility/sizes.dart';
 
 class ProfileMenuButton extends ConsumerStatefulWidget {

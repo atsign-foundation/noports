@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
-import '../../../utility/constants.dart';
-import '../../../utility/sizes.dart';
+import '../../../../utility/constants.dart';
+import '../../../../utility/sizes.dart';
 
 class ProfileFormCard extends StatelessWidget {
   const ProfileFormCard({required this.formFields, super.key});
@@ -26,9 +26,9 @@ class ProfileFormCard extends StatelessWidget {
           ),
         ),
         child: Padding(
-          padding: const EdgeInsets.only(
+          padding: EdgeInsets.only(
             left: Sizes.p28,
-            right: Sizes.p233,
+            right: MediaQuery.of(context).size.width < 600 ? Sizes.p32 : Sizes.p233,
             top: Sizes.p21,
             bottom: Sizes.p32,
           ),

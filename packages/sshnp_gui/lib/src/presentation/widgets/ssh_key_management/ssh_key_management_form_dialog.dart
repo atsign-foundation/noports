@@ -10,7 +10,7 @@ import 'package:sshnp_gui/src/controllers/form_controllers.dart';
 import 'package:sshnp_gui/src/controllers/navigation_controller.dart';
 import 'package:sshnp_gui/src/controllers/navigation_rail_controller.dart';
 import 'package:sshnp_gui/src/controllers/ssh_key_pair_controller.dart';
-import 'package:sshnp_gui/src/presentation/widgets/profile_form/custom_text_form_field.dart';
+import 'package:sshnp_gui/src/presentation/widgets/profile_screen_widgets/profile_form/custom_text_form_field.dart';
 import 'package:sshnp_gui/src/presentation/widgets/ssh_key_management/file_picker_field.dart';
 import 'package:sshnp_gui/src/utility/constants.dart';
 import 'package:sshnp_gui/src/utility/form_validator.dart';

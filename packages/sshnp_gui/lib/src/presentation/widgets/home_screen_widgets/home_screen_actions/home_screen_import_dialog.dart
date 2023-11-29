@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
-import 'package:sshnp_gui/src/presentation/widgets/profile_form/custom_text_form_field.dart';
+import 'package:sshnp_gui/src/presentation/widgets/profile_screen_widgets/profile_form/custom_text_form_field.dart';
 import 'package:sshnp_gui/src/utility/form_validator.dart';
 
 class HomeScreenImportDialog extends StatefulWidget {

@@ -10,7 +10,7 @@ import 'package:noports_core/utils.dart';
 import 'package:path/path.dart' as path;
 import 'package:sshnp_gui/src/controllers/config_controller.dart';
 import 'package:sshnp_gui/src/controllers/navigation_controller.dart';
-import 'package:sshnp_gui/src/presentation/widgets/profile_actions/profile_delete_dialog.dart';
+import 'package:sshnp_gui/src/presentation/widgets/profile_screen_widgets/profile_actions/profile_delete_dialog.dart';
 import 'package:sshnp_gui/src/presentation/widgets/utility/custom_snack_bar.dart';
 import 'package:sshnp_gui/src/utility/constants.dart';
 

@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_gen/gen_l10n/app_localizations.dart';
-import 'package:sshnp_gui/src/presentation/widgets/navigation/app_navigation_rail.dart';
-import 'package:sshnp_gui/src/presentation/widgets/profile_form/profile_form.dart';
-import 'package:sshnp_gui/src/utility/sizes.dart';
+import 'package:sshnp_gui/src/presentation/widgets/utility/responsive_widget.dart';
+
+import '../widgets/profile_screen_widgets/profile_editor_screen_desktop_view.dart';
+import '../widgets/profile_screen_widgets/profile_editor_screen_mobile_view.dart';
 
 // * Once the onboarding process is completed you will be taken to this screen
 class ProfileEditorScreen extends StatefulWidget {
@@ -15,45 +15,14 @@ class ProfileEditorScreen extends StatefulWidget {
 class _ProfileEditorScreenState extends State<ProfileEditorScreen> {
   @override
   Widget build(BuildContext context) {
-    final strings = AppLocalizations.of(context)!;
-
-    return Scaffold(
-      body: SafeArea(
-        child: Row(
-          children: [
-            const AppNavigationRail(),
-            Expanded(
-              child: Padding(
-                padding: const EdgeInsets.only(
-                  left: Sizes.p36,
-                  top: Sizes.p21,
-                  right: Sizes.p48,
-                ),
-                child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  Text(
-                    strings.addNewConnection,
-                    style: Theme.of(context).textTheme.headlineLarge,
-                  ),
-                  gapH10,
-                  const LinearProgressIndicator(
-                    value: 0.5,
-                  ),
-                  gapH10,
-                  Text(
-                    strings.addNewConnectionDescription,
-                    style: Theme.of(context).textTheme.bodySmall!,
-                  ),
-                  gapH16,
-                  const Expanded(child: ProfileForm())
-                ]),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
+    return const ResponsiveWidget(
+        mobileScreen: ProfileEditorScreenMobileView(),
+        largeScreen: ProfileEditorScreenDesktopView(),
+        tabletScreen: ProfileEditorScreenDesktopView());
   }
 }
+
+
 
 
 

@@ -4,7 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:sshnp_gui/src/controllers/config_controller.dart';
 import 'package:sshnp_gui/src/presentation/screens/home_screen.dart';
-import 'package:sshnp_gui/src/presentation/widgets/profile_bar/profile_bar.dart';
+import 'package:sshnp_gui/src/presentation/widgets/profile_screen_widgets/profile_bar/profile_bar.dart';
 
 class HomeScreenRobot {
   HomeScreenRobot(this.tester);

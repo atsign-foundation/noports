@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:sshnp_gui/src/presentation/widgets/profile_actions/profile_action_callbacks.dart';
-import 'package:sshnp_gui/src/presentation/widgets/profile_actions/profile_action_button.dart';
+import 'package:sshnp_gui/src/presentation/widgets/profile_screen_widgets/profile_actions/profile_action_button.dart';
+import 'package:sshnp_gui/src/presentation/widgets/profile_screen_widgets/profile_actions/profile_action_callbacks.dart';
 
 class ProfileDeleteAction extends StatelessWidget {
   final String profileName;

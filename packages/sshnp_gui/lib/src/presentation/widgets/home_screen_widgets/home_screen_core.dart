@@ -4,7 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../controllers/config_controller.dart';
 import '../../../utility/sizes.dart';
-import '../profile_bar/profile_bar.dart';
+import '../profile_screen_widgets/profile_bar/profile_bar.dart';
 
 class HomeScreenCore extends ConsumerStatefulWidget {
   const HomeScreenCore({super.key});

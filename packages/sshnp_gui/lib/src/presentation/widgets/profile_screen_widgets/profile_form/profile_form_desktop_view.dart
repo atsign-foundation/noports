@@ -10,25 +10,25 @@ import 'package:sshnp_gui/src/controllers/config_controller.dart';
 import 'package:sshnp_gui/src/controllers/form_controllers.dart';
 import 'package:sshnp_gui/src/controllers/navigation_controller.dart';
 import 'package:sshnp_gui/src/controllers/navigation_rail_controller.dart';
-import 'package:sshnp_gui/src/presentation/widgets/profile_form/custom_dropdown_form_field.dart';
-import 'package:sshnp_gui/src/presentation/widgets/profile_form/custom_switch_widget.dart';
-import 'package:sshnp_gui/src/presentation/widgets/profile_form/custom_text_form_field.dart';
-import 'package:sshnp_gui/src/presentation/widgets/profile_form/profile_form_card.dart';
+import 'package:sshnp_gui/src/presentation/widgets/profile_screen_widgets/profile_form/custom_dropdown_form_field.dart';
+import 'package:sshnp_gui/src/presentation/widgets/profile_screen_widgets/profile_form/custom_switch_widget.dart';
+import 'package:sshnp_gui/src/presentation/widgets/profile_screen_widgets/profile_form/custom_text_form_field.dart';
+import 'package:sshnp_gui/src/presentation/widgets/profile_screen_widgets/profile_form/profile_form_card.dart';
 import 'package:sshnp_gui/src/presentation/widgets/ssh_key_management/ssh_key_management_form_dialog.dart';
 import 'package:sshnp_gui/src/utility/constants.dart';
 import 'package:sshnp_gui/src/utility/form_validator.dart';
 import 'package:sshnp_gui/src/utility/sizes.dart';
 
-import '../../../controllers/ssh_key_pair_controller.dart';
+import '../../../../controllers/ssh_key_pair_controller.dart';
 
-class ProfileForm extends ConsumerStatefulWidget {
-  const ProfileForm({super.key});
+class ProfileFormDesktopView extends ConsumerStatefulWidget {
+  const ProfileFormDesktopView({super.key});
 
   @override
-  ConsumerState<ProfileForm> createState() => _ProfileFormState();
+  ConsumerState<ProfileFormDesktopView> createState() => _ProfileFormState();
 }
 
-class _ProfileFormState extends ConsumerState<ProfileForm> {
+class _ProfileFormState extends ConsumerState<ProfileFormDesktopView> {
   final GlobalKey<FormState> _formkey = GlobalKey<FormState>();
   late CurrentConfigState currentProfile;
   SshnpPartialParams newConfig = SshnpPartialParams.empty();

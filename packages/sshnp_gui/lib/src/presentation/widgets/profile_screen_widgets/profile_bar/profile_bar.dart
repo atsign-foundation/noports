@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sshnp_gui/src/controllers/config_controller.dart';
-import 'package:sshnp_gui/src/presentation/widgets/profile_actions/profile_actions.dart';
-import 'package:sshnp_gui/src/presentation/widgets/profile_bar/profile_bar_stats.dart';
+import 'package:sshnp_gui/src/presentation/widgets/profile_screen_widgets/profile_actions/profile_actions.dart';
+import 'package:sshnp_gui/src/presentation/widgets/profile_screen_widgets/profile_bar/profile_bar_stats.dart';
 import 'package:sshnp_gui/src/utility/constants.dart';
 import 'package:sshnp_gui/src/utility/sizes.dart';
 

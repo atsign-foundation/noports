@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:sshnp_gui/src/utility/constants.dart';
 
-import '../../../utility/sizes.dart';
+import '../../../../utility/sizes.dart';
 
 class CustomSwitchWidget extends StatelessWidget {
   const CustomSwitchWidget({required this.labelText, required this.value, required this.onChanged, super.key});

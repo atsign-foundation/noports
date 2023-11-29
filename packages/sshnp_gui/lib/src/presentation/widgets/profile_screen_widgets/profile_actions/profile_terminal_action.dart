@@ -4,19 +4,18 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:noports_core/sshnp.dart';
 import 'package:noports_core/utils.dart';
+import 'package:sshnp_gui/src/controllers/navigation_controller.dart';
 import 'package:sshnp_gui/src/controllers/navigation_rail_controller.dart';
 import 'package:sshnp_gui/src/controllers/terminal_session_controller.dart';
-import 'package:sshnp_gui/src/presentation/widgets/profile_actions/profile_action_button.dart';
+import 'package:sshnp_gui/src/presentation/widgets/profile_screen_widgets/profile_actions/profile_action_button.dart';
 import 'package:sshnp_gui/src/presentation/widgets/utility/custom_snack_bar.dart';
-import 'package:sshnp_gui/src/controllers/navigation_controller.dart';
 
 class ProfileTerminalAction extends ConsumerStatefulWidget {
   final SshnpParams params;
   const ProfileTerminalAction(this.params, {Key? key}) : super(key: key);
 
   @override
-  ConsumerState<ProfileTerminalAction> createState() =>
-      _ProfileTerminalActionState();
+  ConsumerState<ProfileTerminalAction> createState() => _ProfileTerminalActionState();
 }
 
 class _ProfileTerminalActionState extends ConsumerState<ProfileTerminalAction> {
@@ -25,8 +24,7 @@ class _ProfileTerminalActionState extends ConsumerState<ProfileTerminalAction> {
       showDialog<void>(
         context: context,
         barrierDismissible: false,
-        builder: (BuildContext context) =>
-            const Center(child: CircularProgressIndicator()),
+        builder: (BuildContext context) => const Center(child: CircularProgressIndicator()),
       );
     }
 
@@ -43,8 +41,7 @@ class _ProfileTerminalActionState extends ConsumerState<ProfileTerminalAction> {
       AtClient atClient = AtClientManager.getInstance().atClient;
       DartSshKeyUtil keyUtil = DartSshKeyUtil();
       AtSshKeyPair keyPair = await keyUtil.getKeyPair(
-        identifier: params.identityFile ??
-            'id_${atClient.getCurrentAtSign()!.replaceAll('@', '')}',
+        identifier: params.identityFile ?? 'id_${atClient.getCurrentAtSign()!.replaceAll('@', '')}',
       );
 
       final sshnp = Sshnp.dartPure(
@@ -59,17 +56,14 @@ class _ProfileTerminalActionState extends ConsumerState<ProfileTerminalAction> {
       }
 
       /// Issue a new session id
-      final sessionId =
-          ref.watch(terminalSessionController.notifier).createSession();
+      final sessionId = ref.watch(terminalSessionController.notifier).createSession();
 
       /// Create the session controller for the new session id
-      final sessionController =
-          ref.watch(terminalSessionFamilyController(sessionId).notifier);
+      final sessionController = ref.watch(terminalSessionFamilyController(sessionId).notifier);
 
       if (result is SshnpCommand) {
         /// Set the command for the new session
-        sessionController.setProcess(
-            command: result.command, args: result.args);
+        sessionController.setProcess(command: result.command, args: result.args);
         sessionController.issueDisplayName(widget.params.profileName!);
         ref.read(navigationRailController.notifier).setRoute(AppRoute.terminal);
         if (mounted) {
