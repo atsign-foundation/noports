@@ -189,10 +189,10 @@ packages:
     dependency: "direct dev"
     description:
       name: build_runner
-      sha256: "10c6bcdbf9d049a0b666702cf1cee4ddfdc38f02a19d35ae392863b47519848b"
+      sha256: "67d591d602906ef9201caf93452495ad1812bea2074f04e25dbd7c133785821b"
       url: "https://pub.dev"
     source: hosted
-    version: "2.4.6"
+    version: "2.4.7"
   build_runner_core:
     dependency: transitive
     description:
@@ -564,9 +564,10 @@ packages:
   noports_core:
     dependency: "direct main"
     description:
-      path: "../noports_core"
-      relative: true
-    source: path
+      name: noports_core
+      sha256: "6929f39f9d2cefc4dd06dbb5834a7632f6d8bc4bb3e378dd4b06f07ed98dc3fb"
+      url: "https://pub.dev"
+    source: hosted
     version: "4.0.0-dev.4"
   openssh_ed25519:
     dependency: transitive
