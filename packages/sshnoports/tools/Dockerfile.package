@@ -9,7 +9,7 @@ RUN set -eux; \
         arm64) ARCH="arm64";; \
         riscv64) ARCH="riscv64";; \
     esac; \
-    mkdir sshnp; \
+    mkdir -p sshnp/debug; \
     mkdir tarball; \
     dart pub get; \
     dart run build_runner build --delete-conflicting-outputs; \
@@ -18,6 +18,7 @@ RUN set -eux; \
     dart compile exe bin/sshnpd.dart -v -o sshnp/sshnpd; \
     dart compile exe bin/sshrv.dart -v -o sshnp/sshrv; \
     dart compile exe bin/sshrvd.dart -v -o sshnp/sshrvd; \
+    dart compile exe bin/sshrvd.dart -D ENABLE_SNOOP=true -v -o sshnp/debug/sshrvd \
     cp -r templates sshnp/templates; \
     cp LICENSE sshnp/; \
     tar -cvzf tarball/sshnp-linux-${ARCH}.tgz sshnp
