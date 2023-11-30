@@ -14,7 +14,7 @@ Type=simple
 Restart=always
 RestartSec=3
 ExecStartPre=/bin/sleep 10
-ExecStart=/usr/local/bin/sshnpd -a <@device atsign> -m <@client/manager atsign> -d <device name> -v
+ExecStart=/usr/local/bin/sshnpd -a <@device_atsign> -m <@manager_atsign> -d <device_name> -v
 
 [Install]
 WantedBy=multi-user.target
