@@ -7,7 +7,28 @@ define_env() {
 }
 
 usage() {
-  true
+  echo "${arg_zero || 'install.sh' } [command]"
+  echo "Available commands:"
+  echo "at_activate     - install at_activate"
+  echo "sshnp           - install sshnp"
+  echo "sshnpd          - install sshnpd"
+  echo "sshrv           - install sshrv"
+  echo "sshrvd          - install sshrvd"
+  echo "binaries        - install all base binaries"
+  echo ""
+  echo "debug_sshrvd    - install sshrvd with debugging enabled"
+  echo "debug           - install all debug binaries"
+  echo ""
+  echo "all             - install all binaries (base and debug)"
+  echo ""
+  echo "systemd [unit]  - install a systemd unit"
+  echo "                  available units: [sshnpd, sshrvd]"
+  echo ""
+  echo "headless [job]  - install a headless cron job"
+  echo "                  available jobs: [sshnpd, sshrvd]"
+  echo ""
+  echo "tmux [service]  - install a service in a tmux session"
+  echo "                  available services: [sshnpd, sshrvd]"
 }
 
 make_bin_dir() {
@@ -49,7 +70,7 @@ install_binaries() {
 
 install_debug_sshrvd() {
   make_debug_dir
-  cp "$script_dir/debug/sshrvd" "$bin_dir/sshrvd-debug"
+  cp "$script_dir/debug/sshrvd" "$bin_dir/debug_sshrvd"
 }
 
 install_debug_binaries() {
@@ -134,6 +155,8 @@ tmux() {
 }
 
 main() {
+  arg_zero="$0"
+
   if [ $# -lt 1 ]; then
     usage
     exit 0
@@ -149,6 +172,7 @@ main() {
     sshrv) install_sshrv;;
     sshrvd) install_sshrvd;;
     binaries) install_binaries;;
+    debug_sshrvd) install_debug_sshrvd;;
     debug) install_debug_binaries;;
     all) install_all_binaries;;
     systemd) systemd "$2";;
