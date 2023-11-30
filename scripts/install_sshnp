@@ -417,7 +417,7 @@ deprecation_msg() {
     ;;
     *)
       echo "[!!!] WARNING:"
-      echo "This method is deprecated as of v4.0.0, please follow the latest instructions included with the release."
+      echo "This installation script is deprecated as of v4.0.0, please follow the latest installation instructions included in the release download."
     ;;
   esac
 }
