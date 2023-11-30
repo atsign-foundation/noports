@@ -1,14 +1,20 @@
 [Unit]
-Description=Ssh! No Ports Daemon
+Description=Ssh No Ports Daemon
 After=network-online.target
+
+# Uncomment the following line to make this unit fail if sshd isn't started
+# Requisite=sshd.service
+
+# Uncomment the following line to make this unit auto-start sshd if it isn't started
+# Requires=sshd.service
 
 [Service]
 User=<username>
 Type=simple
 Restart=always
-ExecStartPre=/bin/sleep 10
 RestartSec=3
-ExecStart=/usr/bin/screen -DmS sshnpd %h/.local/bin/sshnpd -a <@client_atsign> -m <@device_manager_atsign> -u -d <device_name> -s -v
+ExecStartPre=/bin/sleep 10
+ExecStart=/usr/local/bin/sshnpd -a <@device atsign> -m <@client/manager atsign> -d <device name> -v
 
 [Install]
 WantedBy=multi-user.target
