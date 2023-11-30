@@ -409,6 +409,19 @@ do_update() {
   echo; echo "Update complete!";
 }
 
+deprecation_msg() {
+  case "$SSHNP_VERSION" in
+    # TODO remove latest to signify deprecation on the launch of v4.0.0
+    latest|1.*|2.*|3.*|4.0.0-test.*|4.0.0-rc.*)
+      # no message, this group is expected to use this script
+    ;;
+    *)
+      echo "[!!!] WARNING:"
+      echo "This method is deprecated as of v4.0.0, please follow the latest instructions included with the release."
+    ;;
+  esac
+}
+
 # Wrapping install steps prevents issues caused by interrupting the download
 main () {
   parse_requirements
@@ -420,6 +433,7 @@ main () {
   fi
   validate_args
   parse_env
+  deprecation_msg
   case "$SSHNP_OP" in
     install)
       do_install
