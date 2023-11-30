@@ -102,6 +102,8 @@
     "submit" : "Submit",
     "success": "Success",
     "switchAtsign" : "Switch atSign",
+    "terminal" : "Terminal",
+    "terminalDescription" : "Connections currently running",
     "to" : "To",
     "username" : "Username",
     "usernameHint": "The user name on this host",

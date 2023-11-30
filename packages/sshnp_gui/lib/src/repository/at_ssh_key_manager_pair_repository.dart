@@ -44,7 +44,11 @@ class AtSshKeyPairManagerRepository {
   static Future<Iterable<String>> listAtSshKeyPairIdentities() async {
     final decodedData =
         await BiometricStorage().getStorage('com.atsign.sshnoports.nicknames').then((value) => value.read());
-    return [...jsonDecode(decodedData!)];
+    if (decodedData == null) {
+      return [];
+    } else {
+      return [...jsonDecode(decodedData)];
+    }
   }
 
   static Future<void> writeAtSshKeyPairIdentities(
