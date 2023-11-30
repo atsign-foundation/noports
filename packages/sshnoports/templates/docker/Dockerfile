@@ -1,4 +1,4 @@
-FROM dart:3.1.5@sha256:397caa91d0df783fd86c1e543eb65e0bcbf3c1b2e21be2d7e2e23fa079924f3b AS buildimage
+FROM dart:3.2.2@sha256:a719c761acc751554a81f71ed78bff3ff3525b7df5e78e95d2a1c6403b663d4b AS buildimage
 ENV PACKAGEDIR=packages/sshnoports
 ENV BINARYDIR=/usr/local/at
 SHELL ["/bin/bash", "-c"]
