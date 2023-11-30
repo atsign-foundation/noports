@@ -1,3 +1,5 @@
+# Dockerfile.activate
+# Build image for a containerized call of the at_activate binary
 FROM dart:3.1.5@sha256:397caa91d0df783fd86c1e543eb65e0bcbf3c1b2e21be2d7e2e23fa079924f3b AS buildimage
 ENV PACKAGEDIR=packages/sshnoports
 ENV BINARYDIR=/usr/local/at
@@ -10,8 +12,7 @@ RUN \
   cd ${PACKAGEDIR}; \
   dart pub get ; \
   dart run build_runner build --delete-conflicting-outputs ; \
-  dart compile exe bin/sshnpd.dart -o ${BINARYDIR}/sshnpd ; \
-  dart compile exe bin/sshrv.dart -o ${BINARYDIR}/sshrv
+  dart compile exe bin/activate_cli.dart -o ${BINARYDIR}/at_activate
 
 # Second stage of build FROM debian-slim
 FROM debian:stable-20231120-slim@sha256:375fb84f3c64691a1b9a9ff5ff3905173dcd0c5e11bc2aebd5c3472a139fa2b4
@@ -21,23 +22,18 @@ ENV BINARYDIR=/usr/local/at
 ENV USER_ID=1024
 ENV GROUP_ID=1024
 
-COPY --from=buildimage /app/packages/sshnoports/templates/docker/.startup.sh ${HOMEDIR}/
+COPY --from=buildimage --chown=${USER}:${USER} /usr/local/at/at_activate /usr/local/at/
+WORKDIR ${HOMEDIR}
+
 RUN \
   set -eux ; \
   apt-get update ; \
-  apt-get install -y openssh-server sudo iputils-ping iproute2 ncat telnet net-tools nmap iperf3 traceroute vim ; \
+  apt-get install -y sudo ; \
   addgroup --gid ${GROUP_ID} ${USER} ; \
   useradd --system --uid ${USER_ID} --gid ${GROUP_ID} --shell /bin/bash --home ${HOMEDIR} ${USER} ; \
   mkdir -p ${HOMEDIR}/.atsign/keys ; \
-  mkdir -p ${HOMEDIR}/.ssh ; \
-  touch ${HOMEDIR}/.ssh/authorized_keys ; \
   chown -R ${USER}:${USER} ${HOMEDIR} ; \
-  chmod 600 ${HOMEDIR}/.ssh/authorized_keys ; \
-  usermod -aG sudo ${USER} ; \
-  mkdir /run/sshd ; \
-  chmod 755 /${USER}/.startup.sh
+  usermod -aG sudo ${USER} ;
 
-COPY --from=buildimage --chown=${USER}:${USER} /usr/local/at/sshnpd /usr/local/at/
-COPY --from=buildimage --chown=${USER}:${USER} /usr/local/at/sshrv /usr/local/at/
-WORKDIR ${HOMEDIR}
-ENTRYPOINT ["/atsign/.startup.sh"]
+USER ${USER}
+ENTRYPOINT [ "/usr/local/at/at_activate" ]

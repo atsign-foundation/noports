@@ -2,15 +2,15 @@ version: "3.0"
 services:
   activate:
     build:
-      context: ../../../../
-      dockerfile: ./packages/sshnoports/templates/docker/Dockerfile.activate
+      context: ../../../ # root of the repo
+      dockerfile: ./packages/sshnoports/tools/Dockerfile.activate
     volumes:
       - ${HOME}/.atsign/keys:/atsign/.atsign/keys
     command: -a "${TO}" -c "${TO_CRAM}"
   sshnpd:
     build:
-      context: ../../../../
-      dockerfile: ./packages/sshnoports/templates/docker/Dockerfile
+      context: ../../../ # root of the repo
+      dockerfile: ./packages/sshnoports/tools/Dockerfile
     volumes:
       - ${HOME}/.atsign/keys:/atsign/.atsign/keys
     command: -a "${TO}" -m "${FROM}" -d "${DEVICE}" -s -u -v
