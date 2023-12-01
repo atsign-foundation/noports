@@ -7,7 +7,7 @@ from paramiko import SSHClient, SSHException, WarningPolicy
 from paramiko.ed25519key import Ed25519Key
 
 from select import select
-from socket import socket, gethostbyname, gethostname
+from socket import socket, gethostbyname, gethostname, createconnection
 
 from at_client import AtClient
 from at_client.common import AtSign
