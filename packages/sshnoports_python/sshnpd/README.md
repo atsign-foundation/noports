@@ -19,29 +19,40 @@ SSHNDPython Python requires the following:
 
  - 2 atsigns, one for the client and one for the device
  - any machine with sshd running and python3 installed
+ - at_python installed
+
+## at_python install instructions
+```
+We need to manually install the at_python package as it is not yet available on pypi.
+
+1.  git clone https://github.com/atsign-foundation/at_python.git
+    cd at_python
+    pip install -r requirements.txt
+    pip install .
+```
+
+
 
 # Installation
 
-We need to manually install the at_python package as it is not yet available on pypi.
+
 
 ```
 1. git clone https://github.com/atsign-foundation/sshnoports.git
 
-2.  cd sshnoports/packages/sshnpdpy
-    pip install -r requirements.txt
+2. cd sshnoports/packages/sshnoports_python/sshnpd
+    
+3. poetry build
+   pip install dist/sshnpdpy-x.x.x-py3-none-any.whl  (x.x replace w/ version #)
 
-    *You should do this step outside the repo*
-3.  git clone https://github.com/atsign-foundation/at_python.git
-    cd at_python
-    pip install .
+      Ex. pip install dist/sshnpdpy-0.3.0-py3-none-any.whl
 ```
 
 
 # Running the program
 
 ```
-1. cd packages/sshnpdpy
-2. ./sshnpd.py -m @{clientAtsign} -a @{deviceAtsign} -d {deviceName} -u
+1. sshnpdpy -m @{clientAtsign} -a @{deviceAtsign} -d {deviceName} -u
 ```
 
 
