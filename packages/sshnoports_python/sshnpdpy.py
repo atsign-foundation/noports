@@ -1,4 +1,4 @@
-import os, threading, getpass, json, logging, subprocess, argparse, errno
+import os, threading, getpass, json, logging, subprocess, argparse, errno, socket
 from io import StringIO
 from queue import Empty, Queue
 from time import sleep
@@ -6,7 +6,6 @@ from threading import Event
 from paramiko import SSHClient, SSHException, WarningPolicy
 from paramiko.ed25519key import Ed25519Key
 
-from socket import socket
 from select import select
 
 from at_client import AtClient
@@ -24,8 +23,8 @@ class SocketConnector:
             self._logger.setLevel(logging.DEBUG)
         
         # Create sockets for both servers
-        self.socketA = socket.create_connection((server1_ip, server1_port))
-        self.socketB = socket.create_connection((server2_ip, server2_port))
+        self.socketA = socket.socket.create_connection((server1_ip, server1_port))
+        self.socketB = socket.socket.create_connection((server2_ip, server2_port))
         self.socketA.setblocking(0)
         self.socketB.setblocking(0)
         self._logger.info("Sockets connected.")
@@ -322,7 +321,7 @@ class SSHNPDClient:
 
     #Running in a thread
     def _forward_socket_handler(self, chan, dest):
-        sock = socket()
+        sock = socket.socket()
         try:
             sock.connect(dest)
         except Exception as e:
