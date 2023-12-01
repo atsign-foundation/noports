@@ -1,14 +1,13 @@
-import os, threading, getpass, json, logging, subprocess
+import os, threading, getpass, json, logging, subprocess, argparse, errno
 from io import StringIO
 from queue import Empty, Queue
 from time import sleep
-from uuid import uuid4
 from threading import Event
 from paramiko import SSHClient, SSHException, WarningPolicy
 from paramiko.ed25519key import Ed25519Key
 
-from socket import socket
 from select import select
+from socket import socket, gethostbyname, gethostname, create_connection, error
 
 from at_client import AtClient
 from at_client.common import AtSign
@@ -16,7 +15,98 @@ from at_client.util import EncryptionUtil, KeysUtil
 from at_client.common.keys import AtKey, Metadata, SharedKey
 from at_client.connections.notification.atevents import AtEvent, AtEventType
 
-from .sshrv import SSHRV
+class SocketConnector:
+    _logger = logging.getLogger("sshrv | socket_connector")
+    def __init__(self, server1_ip, server1_port, server2_ip, server2_port, verbose = False):
+        self._logger.setLevel(logging.INFO)
+        self._logger.addHandler(logging.StreamHandler())
+        if verbose:
+            self._logger.setLevel(logging.DEBUG)
+        
+        # Create sockets for both servers
+        self.socketA = create_connection((server1_ip, server1_port))
+        self.socketB = create_connection((server2_ip, server2_port))
+        self.socketA.setblocking(0)
+        self.socketB.setblocking(0)
+        self._logger.info("Sockets connected.")
+        self._logger.debug(f"Created sockets for {server1_ip}:{server1_port} and {server2_ip}:{server2_port}")
+        self.server1_ip = server1_ip
+        self.server1_port = server1_port
+        self.server2_ip = server2_ip
+        self.server2_port = server2_port
+        
+        
+        
+        
+    def connect(self):
+        sockets_to_monitor = [self.socketA, self.socketB]
+        timeout = 0
+        try:
+            while True:
+                for sock in sockets_to_monitor:
+                    try:
+                        data = sock.recv(1024)
+                        if not data and timeout > 100:
+                            print("Connection closed.")
+                            sockets_to_monitor.remove(sock)
+                            sock.close()
+                        elif not data: 
+                            timeout += 1
+                            sleep(0.1)
+                        if data == b'':
+                            continue
+                        else:
+                            # Forward data to the other server
+                            if sock is self.socketA:
+                                self._logger.debug("SEND A -> B : " + str(data))
+                                self.socketB.send(data)
+                            elif sock is self.socketB:
+                                self._logger.debug("RECV B -> A : " + str(data))
+                                self.socketA.send(data)
+                            timeout = 0
+                                
+                    except error as e:
+                        if e.errno == errno.EWOULDBLOCK:
+                            pass  # No data available, continue
+                        else:
+                            raise        
+        except Exception as e:
+            raise(e)
+        
+            
+    def close(self):
+        self.socketA.close()
+        self.socketB.close()
+        
+
+
+
+class SSHRV:
+    def __init__(self, destination, port, local_port = 22, verbose = False):
+        self.logger = logging.getLogger("sshrv")
+        self.host = ""
+        self.destination = destination
+        self.local_ssh_port = local_port
+        self.streaming_port = port
+        self.socket_connector = None
+        self.verbose = verbose
+
+    
+    def run(self):
+        try:
+            self.host = gethostbyname(gethostname())
+            socket_connector = SocketConnector(self.host, self.local_ssh_port, self.destination, self.streaming_port, verbose=self.verbose)
+            t1 = threading.Thread(target=socket_connector.connect)
+            t1.start()
+            self.socket_connector = t1
+            return True
+                
+        except Exception as e:
+            logging.error("SSHRV Error: " + str(e))
+            
+    def is_alive(self):
+        return self.socket_connector.is_alive()
+
 
 
 class SSHNPDClient:
@@ -93,7 +183,6 @@ class SSHNPDClient:
         self.at_client.put(username_key, username)
         self.username = username
     
-    
     def _handle_notifications(self, queue: Queue):
         private_key = ""
         ssh_public_key_received = True if not self.expecting_ssh_keys else (False if "" else True) #sorry for making this so cursed
@@ -155,7 +244,6 @@ class SSHNPDClient:
             except Empty:
                 pass
         
-
     #Running in a thread
     def _handle_events(self, queue: Queue):  
         while not self.closing.is_set():
@@ -173,8 +261,7 @@ class SSHNPDClient:
                         )
                     self.at_client.handle_event(queue, at_event)
             except Empty:
-                pass
-            
+                pass  
             
     def _direct_ssh(self, hostname, port, sessionId):
         sshrv = SSHRV(hostname, port)
@@ -231,7 +318,6 @@ class SSHNPDClient:
         if direct:
             self._ephemeral_cleanup(uuid)
 
-
     #Running in a thread
     def _forward_socket_handler(self, chan, dest):
         sock = socket()
@@ -275,7 +361,6 @@ class SSHNPDClient:
             )
             thread.start()
             SSHNPDClient.threads.append(thread)
-
 
     def _reverse_ssh_client(self, ssh_list: list, private_key: str):
         local_port = ssh_list[0]
@@ -380,3 +465,37 @@ class SSHNPDClient:
             with open(f"{self.ssh_path}/authorized_keys", "w") as write:
                 write.write(f"{filedata}\n{ssh_public_key}")
             self.logger.debug("key written" )
+                
+            
+def main():
+    parser = argparse.ArgumentParser("sshnpd")
+    requiredNamed = parser.add_argument_group('required named arguments')
+    requiredNamed.add_argument("-m", "--manager", dest="manager_atsign", type=str, help="Client Atsign (sshnp's atsign)", required=True)
+    requiredNamed.add_argument("-a", "--atsign", dest="atsign", type=str, help="Device Atsign (sshnpd's atsign)", required=True)
+    requiredNamed.add_argument("-d", "--device", dest="device", type=str, help="Device Name", required=True)
+    optional = parser.add_argument_group('optional arguments')
+    optional.add_argument("-u",  action='store_true', dest="username",  help="Username", default="default")
+    optional.add_argument("-v", action='store_true', dest="verbose", help="Verbose")
+    optional.add_argument("-s", action="store_true", dest="expecting_ssh_keys", help="SSH Keypair, use this if you want to use your own ssh keypair")
+    
+    
+    args = parser.parse_args()
+
+    sshnpd = SSHNPDClient(args.atsign, args.manager_atsign, args.device, args.username, args.verbose, args.expecting_ssh_keys)
+    
+    try:
+        threading.Thread(target=sshnpd.start).start()
+        while len(SSHNPDClient.threads) > 0:
+            if not sshnpd.is_alive():
+                sshnpd.join()
+            else:
+                sleep(10)
+        
+            
+    except Exception as e:
+        print(e)
+        sshnpd.join()
+
+
+if __name__ == "__main__":
+    main()
