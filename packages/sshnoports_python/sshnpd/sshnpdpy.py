@@ -7,7 +7,7 @@ from paramiko import SSHClient, SSHException, WarningPolicy
 from paramiko.ed25519key import Ed25519Key
 
 from select import select
-from socket import socket, gethostbyname, gethostname, createconnection
+from socket import socket, gethostbyname, gethostname, create_connection
 
 from at_client import AtClient
 from at_client.common import AtSign
@@ -17,15 +17,15 @@ from at_client.connections.notification.atevents import AtEvent, AtEventType
 
 class SocketConnector:
     _logger = logging.getLogger("sshrv | socket_connector")
-    def __init__(self, server1_ip, server1_port, server2_ip, server2_port, reuse_port = False, verbose = False):
+    def __init__(self, server1_ip, server1_port, server2_ip, server2_port, verbose = False):
         self._logger.setLevel(logging.INFO)
         self._logger.addHandler(logging.StreamHandler())
         if verbose:
             self._logger.setLevel(logging.DEBUG)
         
         # Create sockets for both servers
-        self.socketA = socket.create_connection((server1_ip, server1_port))
-        self.socketB = socket.create_connection((server2_ip, server2_port))
+        self.socketA = create_connection((server1_ip, server1_port))
+        self.socketB = create_connection((server2_ip, server2_port))
         self.socketA.setblocking(0)
         self.socketB.setblocking(0)
         self._logger.info("Sockets connected.")
@@ -35,9 +35,7 @@ class SocketConnector:
         self.server2_ip = server2_ip
         self.server2_port = server2_port
         
-        if reuse_port:
-            self.socketA.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-            self.socketA.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEPORT, 1)
+        
         
         
     def connect(self):
@@ -97,7 +95,7 @@ class SSHRV:
     def run(self):
         try:
             self.host = gethostbyname(gethostname())
-            socket_connector = SocketConnector(self.host, self.local_ssh_port, self.destination, self.streaming_port, reuse_port=True, verbose=self.verbose)
+            socket_connector = SocketConnector(self.host, self.local_ssh_port, self.destination, self.streaming_port, verbose=self.verbose)
             t1 = threading.Thread(target=socket_connector.connect)
             t1.start()
             self.socket_connector = t1
