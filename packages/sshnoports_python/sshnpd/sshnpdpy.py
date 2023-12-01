@@ -1,4 +1,4 @@
-import os, threading, getpass, json, logging, subprocess, argparse, errno, socket
+import os, threading, getpass, json, logging, subprocess, argparse, errno
 from io import StringIO
 from queue import Empty, Queue
 from time import sleep
@@ -7,6 +7,7 @@ from paramiko import SSHClient, SSHException, WarningPolicy
 from paramiko.ed25519key import Ed25519Key
 
 from select import select
+from socket import socket, gethostbyname, gethostname
 
 from at_client import AtClient
 from at_client.common import AtSign
@@ -23,8 +24,8 @@ class SocketConnector:
             self._logger.setLevel(logging.DEBUG)
         
         # Create sockets for both servers
-        self.socketA = socket.socket.create_connection((server1_ip, server1_port))
-        self.socketB = socket.socket.create_connection((server2_ip, server2_port))
+        self.socketA = socket.create_connection((server1_ip, server1_port))
+        self.socketB = socket.create_connection((server2_ip, server2_port))
         self.socketA.setblocking(0)
         self.socketB.setblocking(0)
         self._logger.info("Sockets connected.")
@@ -95,7 +96,7 @@ class SSHRV:
     
     def run(self):
         try:
-            self.host = socket.gethostbyname(socket.gethostname())
+            self.host = gethostbyname(gethostname())
             socket_connector = SocketConnector(self.host, self.local_ssh_port, self.destination, self.streaming_port, reuse_port=True, verbose=self.verbose)
             t1 = threading.Thread(target=socket_connector.connect)
             t1.start()
@@ -321,7 +322,7 @@ class SSHNPDClient:
 
     #Running in a thread
     def _forward_socket_handler(self, chan, dest):
-        sock = socket.socket()
+        sock = socket()
         try:
             sock.connect(dest)
         except Exception as e:
