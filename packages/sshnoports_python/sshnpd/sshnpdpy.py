@@ -7,7 +7,7 @@ from paramiko import SSHClient, SSHException, WarningPolicy
 from paramiko.ed25519key import Ed25519Key
 
 from select import select
-from socket import socket, gethostbyname, gethostname, create_connection
+from socket import socket, gethostbyname, gethostname, create_connection, error
 
 from at_client import AtClient
 from at_client.common import AtSign
@@ -65,7 +65,7 @@ class SocketConnector:
                                 self.socketA.send(data)
                             timeout = 0
                                 
-                    except socket.error as e:
+                    except error as e:
                         if e.errno == errno.EWOULDBLOCK:
                             pass  # No data available, continue
                         else:
