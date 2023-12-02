@@ -22,7 +22,8 @@ RUN set -eux; \
     dart compile exe bin/sshrv.dart -v -o sshnp/sshrv; \
     dart compile exe bin/sshrvd.dart -v -o sshnp/sshrvd; \
     dart compile exe bin/sshrvd.dart -D ENABLE_SNOOP=true -v -o sshnp/debug/sshrvd; \
-    cp -r templates sshnp/templates; \
+    cp -r bundles/core/ sshnp/; \
+    cp -r bundles/shell/ sshnp/; \
     cp LICENSE sshnp/; \
     tar -cvzf tarball/sshnp-linux-${ARCH}.tgz sshnp
 
