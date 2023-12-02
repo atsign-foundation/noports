@@ -6,6 +6,7 @@ import 'package:at_client/at_client.dart';
 import 'package:at_utils/at_logger.dart';
 import 'package:logging/logging.dart';
 import 'package:meta/meta.dart';
+import 'package:noports_core/src/sshrvd/build_env.dart';
 import 'package:noports_core/src/sshrvd/socket_connector.dart';
 import 'package:noports_core/src/sshrvd/sshrvd.dart';
 import 'package:noports_core/src/sshrvd/sshrvd_params.dart';
@@ -168,8 +169,14 @@ class SshrvdImpl implements Sshrvd {
     /// Spawn an isolate and wait for it to send back the issued port numbers
     ReceivePort receivePort = ReceivePort(session);
 
-    ConnectorParams parameters =
-        (receivePort.sendPort, portA, portB, session, forAtsign, snoop);
+    ConnectorParams parameters = (
+      receivePort.sendPort,
+      portA,
+      portB,
+      session,
+      forAtsign,
+      BuildEnv.enableSnoop && snoop,
+    );
 
     logger
         .info("Spawning socket connector isolate with parameters $parameters");
