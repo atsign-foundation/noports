@@ -22,12 +22,10 @@ void main() {
       expect(params.verbose, isA<bool>());
       expect(params.rootDomain, isA<String>());
       expect(params.localSshdPort, isA<int>());
-      expect(params.legacyDaemon, isA<bool>());
       expect(params.remoteSshdPort, isA<int>());
       expect(params.idleTimeout, isA<int>());
       expect(params.addForwardsToTunnel, isA<bool>());
       expect(params.atKeysFilePath, isA<String?>());
-      expect(params.sshClient, isA<SupportedSshClient>());
       expect(params.sshAlgorithm, isA<SupportedSshAlgorithm>());
       expect(params.profileName, isA<String?>());
       expect(params.listDevices, isA<bool>());
@@ -137,11 +135,6 @@ void main() {
             clientAtSign: '', sshnpdAtSign: '', host: '', localSshdPort: 4567);
         expect(params.localSshdPort, equals(4567));
       });
-      test('SshnpParams.legacyDaemon test', () {
-        final params = SshnpParams(
-            clientAtSign: '', sshnpdAtSign: '', host: '', legacyDaemon: true);
-        expect(params.legacyDaemon, equals(true));
-      });
       test('SshnpParams.remoteSshdPort test', () {
         final params = SshnpParams(
             clientAtSign: '', sshnpdAtSign: '', host: '', remoteSshdPort: 2222);
@@ -168,14 +161,6 @@ void main() {
             atKeysFilePath: '~/.atsign/@myAtsign_keys.atKeys');
         expect(
             params.atKeysFilePath, equals('~/.atsign/@myAtsign_keys.atKeys'));
-      });
-      test('SshnpParams.sshClient test', () {
-        final params = SshnpParams(
-            clientAtSign: '',
-            sshnpdAtSign: '',
-            host: '',
-            sshClient: SupportedSshClient.dart);
-        expect(params.sshClient, equals(SupportedSshClient.dart));
       });
       test('SshnpParams.sshAlgorithm test', () {
         final params = SshnpParams(
@@ -222,13 +207,11 @@ void main() {
         expect(params.atKeysFilePath, isNull);
         expect(params.rootDomain, equals(DefaultArgs.rootDomain));
         expect(params.localSshdPort, equals(DefaultArgs.localSshdPort));
-        expect(params.legacyDaemon, equals(DefaultSshnpArgs.legacyDaemon));
         expect(params.listDevices, equals(DefaultSshnpArgs.listDevices));
         expect(params.remoteSshdPort, equals(DefaultArgs.remoteSshdPort));
         expect(params.idleTimeout, equals(DefaultArgs.idleTimeout));
         expect(params.addForwardsToTunnel,
             equals(DefaultArgs.addForwardsToTunnel));
-        expect(params.sshClient, equals(DefaultSshnpArgs.sshClient));
         expect(params.sshAlgorithm, equals(DefaultArgs.sshAlgorithm));
       });
       test('SshnpParams.merge() test (overrides take priority)', () {
@@ -250,12 +233,10 @@ void main() {
             verbose: true,
             rootDomain: 'root.atsign.wtf',
             localSshdPort: 4567,
-            legacyDaemon: true,
             remoteSshdPort: 2222,
             idleTimeout: 120,
             addForwardsToTunnel: true,
             atKeysFilePath: '~/.atsign/@myAtsign_keys.atKeys',
-            sshClient: SupportedSshClient.dart,
             sshAlgorithm: SupportedSshAlgorithm.rsa,
           ),
         );
@@ -275,13 +256,11 @@ void main() {
         expect(params.verbose, equals(true));
         expect(params.rootDomain, equals('root.atsign.wtf'));
         expect(params.localSshdPort, equals(4567));
-        expect(params.legacyDaemon, equals(true));
         expect(params.remoteSshdPort, equals(2222));
         expect(params.idleTimeout, equals(120));
         expect(params.addForwardsToTunnel, equals(true));
         expect(
             params.atKeysFilePath, equals('~/.atsign/@myAtsign_keys.atKeys'));
-        expect(params.sshClient, equals(SupportedSshClient.dart));
         expect(params.sshAlgorithm, equals(SupportedSshAlgorithm.rsa));
       });
       test('SshnpParams.merge() test (null coalesce values)', () {
@@ -306,13 +285,11 @@ void main() {
         expect(params.atKeysFilePath, isNull);
         expect(params.rootDomain, equals(DefaultArgs.rootDomain));
         expect(params.localSshdPort, equals(DefaultArgs.localSshdPort));
-        expect(params.legacyDaemon, equals(DefaultSshnpArgs.legacyDaemon));
         expect(params.listDevices, equals(DefaultSshnpArgs.listDevices));
         expect(params.remoteSshdPort, equals(DefaultArgs.remoteSshdPort));
         expect(params.idleTimeout, equals(DefaultArgs.idleTimeout));
         expect(params.addForwardsToTunnel,
             equals(DefaultArgs.addForwardsToTunnel));
-        expect(params.sshClient, equals(DefaultSshnpArgs.sshClient));
         expect(params.sshAlgorithm, equals(DefaultArgs.sshAlgorithm));
       });
       test('SshnpParams.fromJson() test', () {
@@ -333,12 +310,10 @@ void main() {
             '"${SshnpArg.verboseArg.name}": true,'
             '"${SshnpArg.rootDomainArg.name}": "root.atsign.wtf",'
             '"${SshnpArg.localSshdPortArg.name}": 4567,'
-            '"${SshnpArg.legacyDaemonArg.name}": true,'
             '"${SshnpArg.remoteSshdPortArg.name}": 2222,'
             '"${SshnpArg.idleTimeoutArg.name}": 120,'
             '"${SshnpArg.addForwardsToTunnelArg.name}": true,'
             '"${SshnpArg.keyFileArg.name}": "~/.atsign/@myAtsign_keys.atKeys",'
-            '"${SshnpArg.sshClientArg.name}": "${SupportedSshClient.dart.toString()}",'
             '"${SshnpArg.sshAlgorithmArg.name}": "${SupportedSshAlgorithm.rsa.toString()}"'
             '}';
 
@@ -360,13 +335,11 @@ void main() {
         expect(params.verbose, equals(true));
         expect(params.rootDomain, equals('root.atsign.wtf'));
         expect(params.localSshdPort, equals(4567));
-        expect(params.legacyDaemon, equals(true));
         expect(params.remoteSshdPort, equals(2222));
         expect(params.idleTimeout, equals(120));
         expect(params.addForwardsToTunnel, equals(true));
         expect(
             params.atKeysFilePath, equals('~/.atsign/@myAtsign_keys.atKeys'));
-        expect(params.sshClient, equals(SupportedSshClient.dart));
         expect(params.sshAlgorithm, equals(SupportedSshAlgorithm.rsa));
       });
       test('SshnpParams.fromPartial() test', () {
@@ -397,12 +370,10 @@ void main() {
           '${SshnpArg.verboseArg.bashName} = true',
           '${SshnpArg.rootDomainArg.bashName} = root.atsign.wtf',
           '${SshnpArg.localSshdPortArg.bashName} = 4567',
-          '${SshnpArg.legacyDaemonArg.bashName} = true',
           '${SshnpArg.remoteSshdPortArg.bashName} = 2222',
           '${SshnpArg.idleTimeoutArg.bashName} = 120',
           '${SshnpArg.addForwardsToTunnelArg.bashName} = true',
           '${SshnpArg.keyFileArg.bashName} = ~/.atsign/@myAtsign_keys.atKeys',
-          '${SshnpArg.sshClientArg.bashName} = ${SupportedSshClient.dart.toString()}',
           '${SshnpArg.sshAlgorithmArg.bashName} = ${SupportedSshAlgorithm.rsa.toString()}',
         ];
         final params = SshnpParams.fromConfigLines('myProfile', configLines);
@@ -421,7 +392,6 @@ void main() {
         expect(params.verbose, equals(true));
         expect(params.rootDomain, equals('root.atsign.wtf'));
         expect(params.localSshdPort, equals(4567));
-        expect(params.legacyDaemon, equals(true));
         expect(params.remoteSshdPort, equals(2222));
       });
     }); // group('SshnpParams factories')
@@ -447,7 +417,6 @@ void main() {
           idleTimeout: 120,
           addForwardsToTunnel: true,
           atKeysFilePath: '~/.atsign/@myAtsign_keys.atKeys',
-          sshClient: SupportedSshClient.dart,
           sshAlgorithm: SupportedSshAlgorithm.rsa,
         );
         final configLines = params.toConfigLines();
@@ -494,7 +463,6 @@ void main() {
           idleTimeout: 120,
           addForwardsToTunnel: true,
           atKeysFilePath: '~/.atsign/@myAtsign_keys.atKeys',
-          sshClient: SupportedSshClient.dart,
           sshAlgorithm: SupportedSshAlgorithm.rsa,
         );
         final argMap = params.toArgMap();
@@ -522,8 +490,6 @@ void main() {
         expect(argMap[SshnpArg.addForwardsToTunnelArg.name], equals(true));
         expect(argMap[SshnpArg.keyFileArg.name],
             equals('~/.atsign/@myAtsign_keys.atKeys'));
-        expect(argMap[SshnpArg.sshClientArg.name],
-            equals(SupportedSshClient.dart.toString()));
         expect(argMap[SshnpArg.sshAlgorithmArg.name],
             equals(SupportedSshAlgorithm.rsa.toString()));
       });
@@ -548,7 +514,6 @@ void main() {
           idleTimeout: 120,
           addForwardsToTunnel: true,
           atKeysFilePath: '~/.atsign/@myAtsign_keys.atKeys',
-          sshClient: SupportedSshClient.dart,
           sshAlgorithm: SupportedSshAlgorithm.rsa,
         );
         final json = params.toJson();
@@ -574,7 +539,6 @@ void main() {
         expect(parsedParams.addForwardsToTunnel, equals(true));
         expect(parsedParams.atKeysFilePath,
             equals('~/.atsign/@myAtsign_keys.atKeys'));
-        expect(parsedParams.sshClient, equals(SupportedSshClient.dart));
         expect(parsedParams.sshAlgorithm, equals(SupportedSshAlgorithm.rsa));
       });
     }); // group('SshnpParams functions')
@@ -599,12 +563,10 @@ void main() {
       expect(partialParams.verbose, isA<bool?>());
       expect(partialParams.rootDomain, isA<String?>());
       expect(partialParams.localSshdPort, isA<int?>());
-      expect(partialParams.legacyDaemon, isA<bool?>());
       expect(partialParams.remoteSshdPort, isA<int?>());
       expect(partialParams.idleTimeout, isA<int?>());
       expect(partialParams.addForwardsToTunnel, isA<bool?>());
       expect(partialParams.atKeysFilePath, isA<String?>());
-      expect(partialParams.sshClient, isA<SupportedSshClient?>());
       expect(partialParams.sshAlgorithm, isA<SupportedSshAlgorithm?>());
       expect(partialParams.profileName, isA<String?>());
       expect(partialParams.listDevices, isA<bool?>());
@@ -673,10 +635,6 @@ void main() {
         final params = SshnpPartialParams(localSshdPort: 4567);
         expect(params.localSshdPort, equals(4567));
       });
-      test('SshnpPartialParams.legacyDaemon test', () {
-        final params = SshnpPartialParams(legacyDaemon: true);
-        expect(params.legacyDaemon, equals(true));
-      });
       test('SshnpPartialParams.remoteSshdPort test', () {
         final params = SshnpPartialParams(remoteSshdPort: 2222);
         expect(params.remoteSshdPort, equals(2222));
@@ -694,10 +652,6 @@ void main() {
             atKeysFilePath: '~/.atsign/@myAtsign_keys.atKeys');
         expect(
             params.atKeysFilePath, equals('~/.atsign/@myAtsign_keys.atKeys'));
-      });
-      test('SshnpPartialParams.sshClient test', () {
-        final params = SshnpPartialParams(sshClient: SupportedSshClient.dart);
-        expect(params.sshClient, equals(SupportedSshClient.dart));
       });
       test('SshnpPartialParams.sshAlgorithm test', () {
         final params =
@@ -732,12 +686,10 @@ void main() {
         expect(params.tunnelUsername, isNull);
         expect(params.rootDomain, isNull);
         expect(params.localSshdPort, isNull);
-        expect(params.legacyDaemon, isNull);
         expect(params.remoteSshdPort, isNull);
         expect(params.idleTimeout, isNull);
         expect(params.addForwardsToTunnel, isNull);
         expect(params.atKeysFilePath, isNull);
-        expect(params.sshClient, isNull);
         expect(params.sshAlgorithm, isNull);
         expect(params.listDevices, isNull);
       });
@@ -764,7 +716,6 @@ void main() {
             idleTimeout: 120,
             addForwardsToTunnel: true,
             atKeysFilePath: '~/.atsign/@myAtsign_keys.atKeys',
-            sshClient: SupportedSshClient.dart,
             sshAlgorithm: SupportedSshAlgorithm.rsa,
           ),
         );
@@ -789,7 +740,6 @@ void main() {
         expect(params.addForwardsToTunnel, equals(true));
         expect(
             params.atKeysFilePath, equals('~/.atsign/@myAtsign_keys.atKeys'));
-        expect(params.sshClient, equals(SupportedSshClient.dart));
         expect(params.sshAlgorithm, equals(SupportedSshAlgorithm.rsa));
       });
       test('SshnpPartialParams.merge() test (null coalesce values)', () {
@@ -814,7 +764,6 @@ void main() {
             idleTimeout: 120,
             addForwardsToTunnel: true,
             atKeysFilePath: '~/.atsign/@myAtsign_keys.atKeys',
-            sshClient: SupportedSshClient.dart,
             sshAlgorithm: SupportedSshAlgorithm.rsa,
           ),
           SshnpPartialParams.empty(),
@@ -840,7 +789,6 @@ void main() {
         expect(params.addForwardsToTunnel, equals(true));
         expect(
             params.atKeysFilePath, equals('~/.atsign/@myAtsign_keys.atKeys'));
-        expect(params.sshClient, equals(SupportedSshClient.dart));
         expect(params.sshAlgorithm, equals(SupportedSshAlgorithm.rsa));
       });
       // TODO write tests for SshnpPartialParams.fromFile()
@@ -865,7 +813,6 @@ void main() {
           idleTimeout: 120,
           addForwardsToTunnel: true,
           atKeysFilePath: '~/.atsign/@myAtsign_keys.atKeys',
-          sshClient: SupportedSshClient.dart,
           sshAlgorithm: SupportedSshAlgorithm.rsa,
         );
         final configLines = params.toConfigLines();
@@ -909,12 +856,10 @@ void main() {
             '"${SshnpArg.verboseArg.name}": true,'
             '"${SshnpArg.rootDomainArg.name}": "root.atsign.wtf",'
             '"${SshnpArg.localSshdPortArg.name}": 4567,'
-            '"${SshnpArg.legacyDaemonArg.name}": true,'
             '"${SshnpArg.remoteSshdPortArg.name}": 2222,'
             '"${SshnpArg.idleTimeoutArg.name}": 120,'
             '"${SshnpArg.addForwardsToTunnelArg.name}": true,'
             '"${SshnpArg.keyFileArg.name}": "~/.atsign/@myAtsign_keys.atKeys",'
-            '"${SshnpArg.sshClientArg.name}": "${SupportedSshClient.dart.toString()}",'
             '"${SshnpArg.sshAlgorithmArg.name}": "${SupportedSshAlgorithm.rsa.toString()}"'
             '}';
 
@@ -936,13 +881,11 @@ void main() {
         expect(params.verbose, equals(true));
         expect(params.rootDomain, equals('root.atsign.wtf'));
         expect(params.localSshdPort, equals(4567));
-        expect(params.legacyDaemon, equals(true));
         expect(params.remoteSshdPort, equals(2222));
         expect(params.idleTimeout, equals(120));
         expect(params.addForwardsToTunnel, equals(true));
         expect(
             params.atKeysFilePath, equals('~/.atsign/@myAtsign_keys.atKeys'));
-        expect(params.sshClient, equals(SupportedSshClient.dart));
         expect(params.sshAlgorithm, equals(SupportedSshAlgorithm.rsa));
       });
       test('SshnpPartialParams.fromArgMap() test', () {
@@ -963,12 +906,10 @@ void main() {
           SshnpArg.verboseArg.name: true,
           SshnpArg.rootDomainArg.name: 'root.atsign.wtf',
           SshnpArg.localSshdPortArg.name: 4567,
-          SshnpArg.legacyDaemonArg.name: true,
           SshnpArg.remoteSshdPortArg.name: 2222,
           SshnpArg.idleTimeoutArg.name: 120,
           SshnpArg.addForwardsToTunnelArg.name: true,
           SshnpArg.keyFileArg.name: '~/.atsign/@myAtsign_keys.atKeys',
-          SshnpArg.sshClientArg.name: SupportedSshClient.dart.toString(),
           SshnpArg.sshAlgorithmArg.name: SupportedSshAlgorithm.rsa.toString(),
         });
         expect(params.profileName, equals('myProfile'));
@@ -988,13 +929,11 @@ void main() {
         expect(params.verbose, equals(true));
         expect(params.rootDomain, equals('root.atsign.wtf'));
         expect(params.localSshdPort, equals(4567));
-        expect(params.legacyDaemon, equals(true));
         expect(params.remoteSshdPort, equals(2222));
         expect(params.idleTimeout, equals(120));
         expect(params.addForwardsToTunnel, equals(true));
         expect(
             params.atKeysFilePath, equals('~/.atsign/@myAtsign_keys.atKeys'));
-        expect(params.sshClient, equals(SupportedSshClient.dart));
         expect(params.sshAlgorithm, equals(SupportedSshAlgorithm.rsa));
       });
       test('SshnpPartialParams.fromArgList() test', () {
@@ -1031,8 +970,6 @@ void main() {
           'root.atsign.wtf',
           '--${SshnpArg.localSshdPortArg.name}',
           '4567',
-          '--${SshnpArg.legacyDaemonArg.name}',
-          'true',
           '--${SshnpArg.remoteSshdPortArg.name}',
           '2222',
           '--${SshnpArg.idleTimeoutArg.name}',
@@ -1041,8 +978,6 @@ void main() {
           'true',
           '--${SshnpArg.keyFileArg.name}',
           '~/.atsign/@myAtsign_keys.atKeys',
-          '--${SshnpArg.sshClientArg.name}',
-          SupportedSshClient.dart.toString(),
           '--${SshnpArg.sshAlgorithmArg.name}',
           SupportedSshAlgorithm.rsa.toString(),
         ];
@@ -1064,11 +999,9 @@ void main() {
         expect(params.verbose, equals(true));
         expect(params.rootDomain, equals('root.atsign.wtf'));
         expect(params.localSshdPort, equals(4567));
-        expect(params.legacyDaemon, equals(true));
         expect(params.remoteSshdPort, equals(2222));
         expect(params.idleTimeout, equals(120));
         expect(params.addForwardsToTunnel, equals(true));
-        expect(params.sshClient, equals(SupportedSshClient.dart));
         expect(params.sshAlgorithm, equals(SupportedSshAlgorithm.rsa));
       });
     }); // group('SshnpPartialParams factories')
