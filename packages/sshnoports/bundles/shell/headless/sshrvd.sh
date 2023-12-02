@@ -1,12 +1,8 @@
-#!/bin/bash
-# v2.0.0
-# allow machine to bring up network
-sleep 10
-USER=$(whoami)
-export USER
-ATSIGN="$1"
-IPADDRESS="$2"
+#!/bin/sh
+sleep 10; # allow machine to bring up network
 while true; do
-  "$HOME"/.local/bin/sshrvd -a "$ATSIGN" -i "$IPADDRESS"
+  # disable "var is referenced but not assigned" warning for template
+  # shellcheck disable=SC2154
+  "$HOME"/.local/bin/sshrvd -a "$atsign" -i "$internet_address"
   sleep 10
 done

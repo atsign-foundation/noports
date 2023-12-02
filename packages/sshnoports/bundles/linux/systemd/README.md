@@ -1,7 +1,7 @@
 # Systemd Units
 
 This directory contains systemd unit definitions for running various components
-of the Ssh No Ports suite.
+of the SSH No Ports suite.
 
 ## sshnpd
 
@@ -14,24 +14,29 @@ Modify the `sshnpd.service` unit to use the appropriate host and client atSigns,
 Also change the username and make sure that username running sshnpd has the
 .atkeys file in place at '~/.atsign/keys'.
 
-Then:
-
-```bash
-sudo systemctl enable sshnpd.service
-```
-
-The services will then start at the next reboot, or can be started manually
-with:
-
-```bash
-sudo systemctl start sshnpd.service
+Run the following command to view full usage information of the sshnpd binary:
+```sh
+/usr/local/bin/sshnpd
 ```
 
 ### Usage
 
+To enable the service:
+
+```sh
+sudo systemctl enable sshnpd.service
+```
+
+The services will then start at the next reboot, or can be started immediately
+with:
+
+```sh
+sudo systemctl start sshnpd.service
+```
+
 To view the realtime logs, use journalctl:
 
-```bash
+```sh
 sudo journalctl -u sshnpd.service
 ```
 
@@ -46,23 +51,28 @@ Modify the `sshrvd.service` unit to use the appropriate atSign,
 Also change the username and make sure that username running sshrvd has the
 .atkeys file in place at '~/.atsign/keys'.
 
-Then:
-
-```bash
-sudo systemctl enable sshrvd.service
-```
-
-The services will then start at the next reboot, or can be started manually
-with:
-
-```bash
-sudo systemctl start sshrvd.service
+Run the following command to view full usage information of the sshrvd binary:
+```sh
+/usr/local/bin/sshrvd
 ```
 
 ### Usage
 
+To enable the service use:
+
+```sh
+sudo systemctl enable sshrvd.service
+```
+
+The services will then start at the next reboot, or can be started immediately
+with:
+
+```sh
+sudo systemctl start sshrvd.service
+```
+
 To view the realtime logs, use journalctl:
 
-```bash
+```sh
 sudo journalctl -u sshrvd.service
 ```
