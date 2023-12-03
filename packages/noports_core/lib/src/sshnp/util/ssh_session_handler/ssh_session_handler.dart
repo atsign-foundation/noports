@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'package:meta/meta.dart';
 
-mixin SshnpSshSessionHandler<T> {
+mixin SshSessionHandler<T> {
   @protected
   @visibleForTesting
   Future<T> startInitialTunnelSession({required String keyPairIdentifier});

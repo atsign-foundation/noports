@@ -6,7 +6,7 @@ import 'package:noports_core/src/common/io_types.dart';
 import 'package:noports_core/sshnp_foundation.dart';
 
 class SshnpOpensshLocalImpl extends SshnpCore
-    with SshnpLocalSshKeyHandler, SshnpOpensshSshSessionHandler {
+    with SshnpLocalSshKeyHandler, OpensshSshSessionHandler {
   SshnpOpensshLocalImpl({
     required super.atClient,
     required super.params,
