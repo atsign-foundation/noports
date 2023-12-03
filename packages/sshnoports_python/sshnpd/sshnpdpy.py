@@ -3,6 +3,7 @@ from io import StringIO
 from queue import Empty, Queue
 from time import sleep
 from threading import Event
+import time
 from paramiko import SSHClient, SSHException, WarningPolicy
 from paramiko.ed25519key import Ed25519Key
 
@@ -34,8 +35,6 @@ class SocketConnector:
         self.server1_port = server1_port
         self.server2_ip = server2_ip
         self.server2_port = server2_port
-        
-        
         
         
     def connect(self):
@@ -109,7 +108,7 @@ class SSHRV:
 
 
 
-class SSHNPDClient:
+class SSHNPD:
     #Current opened threads
     threads = []
     
@@ -150,30 +149,31 @@ class SSHNPDClient:
     def start(self):
         if self.username:
             self._set_username()
-        threading.Thread(target=self.at_client.start_monitor, args=(self.device_namespace,)).start()
-        threading.Thread(target=self._handle_notifications, args=(self.at_client.queue,), daemon=True).start()
-        event_thread = threading.Thread(target=self._handle_events, args=(self.at_client.queue,))
+        
+        threading.Thread(target=self.at_client.start_monitor, args=(self.device_namespace,)).start()    
+        event_thread = threading.Thread(target=self._handle_notifications, args=(self._sshnp_callback,))
+        SSHNPD.threads.append(event_thread)
         event_thread.start()
-        SSHNPDClient.threads.append(event_thread)
+
         
     def is_alive(self):
        if not self.authenticated:
            return True
-       elif len(SSHNPDClient.threads) >= 2 and self.ssh_client.get_transport().is_active():
+       elif self.ssh_client.get_transport().is_active():
            return True    
        elif self.rv.is_alive():
            return True
        else: 
-           return False
+           raise Exception("SSHRV (4.0) / SSH Reverse Tunnel (Legacy) is not alive")
     
     def join(self):
         self.closing.set()
         if self.ssh_client:
             self.ssh_client.close()
         self.at_client.stop_monitor()
-        for thread in SSHNPDClient.threads:
+        for thread in SSHNPD.threads:
             thread.join()
-        SSHNPDClient.threads.clear()
+        SSHNPD.threads.clear()
             
             
     def _set_username(self):
@@ -183,23 +183,14 @@ class SSHNPDClient:
         self.at_client.put(username_key, username)
         self.username = username
     
-    def _handle_notifications(self, queue: Queue):
+    def _handle_notifications(self, sshnp_callback):
         private_key = ""
         ssh_public_key_received = True if not self.expecting_ssh_keys else (False if "" else True) #sorry for making this so cursed
         ssh_notification_recieved = False
         
         while not self.closing.is_set():
-            try:
-                at_event = queue.get(block=False)
-                event_type = at_event.event_type
+            for at_event in self.at_client.get_decrypted_events():
                 event_data = at_event.event_data
-                
-                if event_type == AtEventType.UPDATE_NOTIFICATION:
-                    queue.put(at_event)
-                    sleep(1)
-                if event_type != AtEventType.DECRYPTED_UPDATE_NOTIFICATION:
-                    continue
-                
                 key = event_data["key"].split(":")[1].split(".")[0]
                 decrypted_value = str(event_data["decryptedValue"])
                 
@@ -224,9 +215,9 @@ class SSHNPDClient:
                         False
                     ] 
                     try:
-                        threading.Thread(target=self.sshnp_callback, args=(callbackArgs)).start()
-                    except Exception as e:
-                        raise e
+                        threading.Thread(target=sshnp_callback, args=(callbackArgs)).start()
+                    except:
+                        raise
                     
                 #direct ssh
                 if key == 'ssh_request':
@@ -236,39 +227,23 @@ class SSHNPDClient:
                         at_event,
                         "",
                         True
-                    ]
+                    ]   
                     try:
-                        threading.Thread(target=self.sshnp_callback, args=(callbackArgs)).start()
-                    except Exception as e:
-                        raise e
-            except Empty:
-                pass
+                        threading.Thread(target=sshnp_callback, args=(callbackArgs)).start()
+                    except:
+                        raise 
         
-    #Running in a thread
-    def _handle_events(self, queue: Queue):  
-        while not self.closing.is_set():
-            try:
-                at_event = queue.get(block=False)
-                event_type = at_event.event_type
-                # the Main thread needs to access the queue AFTER the handle thread has finished with it
-                if event_type == AtEventType.DECRYPTED_UPDATE_NOTIFICATION:
-                    queue.put(at_event)
-                    sleep(1)
-                else:
-                    if event_type == AtEventType.UPDATE_NOTIFICATION:
-                        self.at_client.secondary_connection.execute_command(
-                            "notify:remove:" + at_event.event_data["id"]
-                        )
-                    self.at_client.handle_event(queue, at_event)
-            except Empty:
-                pass  
             
     def _direct_ssh(self, hostname, port, sessionId):
         sshrv = SSHRV(hostname, port)
         sshrv.run()
         self.rv = sshrv
         self.logger.info("sshrv started @ "  + hostname + " on port " + str(port))
-        (public_key, private_key)= self._generate_ssh_keys(sessionId)
+        try:
+            (public_key, private_key)= self._generate_ssh_keys(sessionId)
+        except Exception as e:
+            self.logger.error(e)
+            raise
         private_key = private_key.replace("\n", "\\n")
         self._handle_ssh_public_key(public_key)
         data = f'{{"status":"connected","sessionId":"{sessionId}","ephemeralPrivateKey":"{private_key}"}}'
@@ -277,7 +252,7 @@ class SSHNPDClient:
 
         return envelope
     
-    def sshnp_callback(
+    def _sshnp_callback(
         self,   
         event: AtEvent,
         private_key="",
@@ -305,18 +280,25 @@ class SSHNPDClient:
             at_key.metadata = metadata
             at_key.namespace =self.device_namespace
         ssh_response = None
+        try: 
+            if direct:
+                ssh_response = self._direct_ssh(ssh_list['host'], ssh_list['port'], ssh_list['sessionId'])
+            else:
+                ssh_response = self._reverse_ssh_client(ssh_list, private_key)
+        except Exception as e:
+            self.logger.error(e)
+            raise
         
-        if direct:
-            ssh_response = self._direct_ssh(ssh_list['host'], ssh_list['port'], ssh_list['sessionId'])
-        else:
-            ssh_response = self._reverse_ssh_client(ssh_list, private_key)
-       
         if ssh_response:
             notify_response = self.at_client.notify(at_key, ssh_response, session_id=uuid)
             self.logger.info("sent ssh notification to " + at_key.shared_with.to_string() + "with id:" + uuid)
             self.authenticated = True
         if direct:
-            self._ephemeral_cleanup(uuid)
+            try:
+                self._ephemeral_cleanup(uuid)
+            except: 
+                self.logger.error("ephemeral cleanup failed")
+                raise
 
     #Running in a thread
     def _forward_socket_handler(self, chan, dest):
@@ -325,7 +307,7 @@ class SSHNPDClient:
             sock.connect(dest)
         except Exception as e:
             self.logger.error(f"Forwarding request to {dest} failed: {e}")
-            return
+            raise
 
         self.logger.info(
             f"Connected!  Tunnel open {chan.origin_addr} -> {chan.getpeername()} -> {dest}"
@@ -360,7 +342,7 @@ class SSHNPDClient:
                 daemon=True,
             )
             thread.start()
-            SSHNPDClient.threads.append(thread)
+            SSHNPD.threads.append(thread)
 
     def _reverse_ssh_client(self, ssh_list: list, private_key: str):
         local_port = ssh_list[0]
@@ -400,13 +382,14 @@ class SSHNPDClient:
                 daemon=True,
             )
             thread.start()
-            SSHNPDClient.threads.append(thread)
-        
-        #I'll end up doing more with this I think
+            SSHNPD.threads.append(thread)
+
         except  SSHException as e:
-            raise(f'SSHError (Make sure you do not have another sshnpd running): $e')
+            self.logger.error(f'SSHError (Make sure you do not have another sshnpd running): $e')
+            raise
         except Exception as e:
-            raise(e)
+            self.logger.error(e)
+            raise
         
         return "connected"
 
@@ -441,7 +424,7 @@ class SSHNPDClient:
                 
         except Exception as e:
             self.logger.error(e)
-            return False
+            raise
         
         return (ssh_public_key, ssh_private_key)
 
@@ -452,6 +435,7 @@ class SSHNPDClient:
             self.logger.info("ephemeral ssh keys cleaned up")
         except Exception as e:
             self.logger.error(e)
+            raise
 
     def _handle_ssh_public_key(self, ssh_public_key):
         # // Check to see if the ssh Publickey is already in the file if not append to the ~/.ssh/authorized_keys file
@@ -481,21 +465,12 @@ def main():
     
     args = parser.parse_args()
 
-    sshnpd = SSHNPDClient(args.atsign, args.manager_atsign, args.device, args.username, args.verbose, args.expecting_ssh_keys)
-    
+    sshnpd = SSHNPD(args.atsign, args.manager_atsign, args.device, args.username, args.verbose, args.expecting_ssh_keys)
     try:
-        threading.Thread(target=sshnpd.start).start()
-        while len(SSHNPDClient.threads) > 0:
-            if not sshnpd.is_alive():
-                sshnpd.join()
-            else:
-                sleep(10)
-        
-            
+        sshnpd.start()    
     except Exception as e:
         print(e)
         sshnpd.join()
-
-
+        
 if __name__ == "__main__":
     main()
