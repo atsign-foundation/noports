@@ -12,7 +12,7 @@ abstract class StartInitialTunnelCaller {
 class StartInitialTunnelStub extends Mock implements StartInitialTunnelCaller {}
 
 /// Stubbed Mixin that we are testing
-mixin StubbedSshnpOpensshSshSessionHandler on SshnpOpensshSshSessionHandler {
+mixin StubbedSshnpOpensshSshSessionHandler on OpensshSshSessionHandler {
   late StartInitialTunnelStub _stubbedStartInitialTunnel;
   late StartProcessStub _stubbedStartProcess;
 
@@ -39,9 +39,7 @@ mixin StubbedSshnpOpensshSshSessionHandler on SshnpOpensshSshSessionHandler {
 
 /// Stubbed Sshnp instance with the mixin
 class StubbedSshnp extends SshnpCore
-    with
-        SshnpOpensshSshSessionHandler,
-        StubbedSshnpOpensshSshSessionHandler {
+    with OpensshSshSessionHandler, StubbedSshnpOpensshSshSessionHandler {
   StubbedSshnp({
     required super.atClient,
     required super.params,

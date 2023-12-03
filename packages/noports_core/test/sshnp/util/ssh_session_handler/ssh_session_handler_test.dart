@@ -3,7 +3,7 @@ import 'package:test/test.dart';
 import 'package:mocktail/mocktail.dart';
 
 class StubbedSshnpSshSessionHandler extends Mock
-    with SshnpSshSessionHandler<String> {}
+    with SshSessionHandler<String> {}
 
 void main() {
   group('SshnpSshSessionHandler', () {

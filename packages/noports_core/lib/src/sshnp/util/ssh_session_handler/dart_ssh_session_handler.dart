@@ -9,8 +9,8 @@ import 'package:dartssh2/dartssh2.dart';
 import 'package:meta/meta.dart';
 import 'package:noports_core/sshnp_foundation.dart';
 
-mixin SshnpDartSshSessionHandler on SshnpCore
-    implements SshnpSshSessionHandler<SSHClient> {
+mixin DartSshSessionHandler on SshnpCore
+    implements SshSessionHandler<SSHClient> {
   /// Set up timer to check to see if all connections are down
   @visibleForTesting
   String get terminateMessage =>
@@ -69,8 +69,7 @@ mixin SshnpDartSshSessionHandler on SshnpCore
   }
 
   @override
-  Future<SSHClient> startUserSession(
-      {required SSHClient tunnelSession}) async {
+  Future<SSHClient> startUserSession({required SSHClient tunnelSession}) async {
     throw UnimplementedError();
     // TODO v similar to startInitialTunnelSession
   }
