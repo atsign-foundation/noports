@@ -10,7 +10,7 @@ mixin OpensshSshSessionHandler on SshnpCore
     implements SshSessionHandler<Process?> {
   @override
   Future<Process?> startInitialTunnelSession({
-    required String keyPairIdentifier,
+    required String ephemeralKeyPairIdentifier,
     @visibleForTesting ProcessStarter startProcess = Process.start,
   }) async {
     Process? process;
@@ -18,7 +18,7 @@ mixin OpensshSshSessionHandler on SshnpCore
     // so it is safe to assume that sshrvdChannel is not null here
     String argsString = '$tunnelUsername@${sshrvdChannel.host}'
         ' -p ${sshrvdChannel.sshrvdPort}'
-        ' -i $keyPairIdentifier'
+        ' -i $ephemeralKeyPairIdentifier'
         ' -L $localPort:localhost:${params.remoteSshdPort}'
         ' -o LogLevel=VERBOSE'
         ' -t -t'
@@ -85,7 +85,9 @@ mixin OpensshSshSessionHandler on SshnpCore
   }
 
   @override
-  Future<Process?> startUserSession({required Process? tunnelSession}) async {
+  Future<Process?> startUserSession({
+    required Process? tunnelSession,
+  }) async {
     throw UnimplementedError();
   }
 }

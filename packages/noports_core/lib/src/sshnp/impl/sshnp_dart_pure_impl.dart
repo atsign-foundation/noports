@@ -9,7 +9,6 @@ class SshnpDartPureImpl extends SshnpCore
   SshnpDartPureImpl({
     required super.atClient,
     required super.params,
-    required super.userKeyPairIdentifier,
   }) {
     _sshnpdChannel = SshnpdDefaultChannel(
       atClient: atClient,
@@ -36,6 +35,10 @@ class SshnpDartPureImpl extends SshnpCore
   Future<void> initialize() async {
     if (!isSafeToInitialize) return;
     await super.initialize();
+    if (params.identityFile != null) {
+      identityKeyPair =
+          await keyUtil.getKeyPair(identifier: params.identityFile!);
+    }
     completeInitialization();
   }
 
@@ -81,14 +84,11 @@ class SshnpDartPureImpl extends SshnpCore
     );
 
     /// Add the key pair to the key utility
-    await keyUtil.addKeyPair(
-      keyPair: ephemeralKeyPair,
-      identifier: ephemeralKeyPair.identifier,
-    );
+    await keyUtil.addKeyPair(keyPair: ephemeralKeyPair);
 
     /// Start the initial tunnel
     tunnelSshClient = await startInitialTunnelSession(
-        keyPairIdentifier: ephemeralKeyPair.identifier);
+        ephemeralKeyPairIdentifier: ephemeralKeyPair.identifier);
 
     /// Remove the key pair from the key utility
     await keyUtil.deleteKeyPair(identifier: ephemeralKeyPair.identifier);

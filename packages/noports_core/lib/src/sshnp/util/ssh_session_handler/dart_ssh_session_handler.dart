@@ -19,14 +19,14 @@ mixin DartSshSessionHandler on SshnpCore
 
   @override
   Future<SSHClient> startInitialTunnelSession(
-      {required String keyPairIdentifier}) async {
+      {required String ephemeralKeyPairIdentifier}) async {
     // If we are starting an initial tunnel, it should be to sshrvd,
     // so it is safe to assume that sshrvdChannel is not null here
-    logger.info(
-        'Starting tunnel ssh session to ${sshrvdChannel.host} on port ${sshrvdChannel.sshrvdPort!} with forwardLocal of $localPort');
+    logger.info('Starting tunnel ssh session to ${sshrvdChannel.host} on port '
+        '${sshrvdChannel.sshrvdPort!} with forwardLocal of $localPort');
 
     AtSshKeyPair keyPair =
-        await keyUtil.getKeyPair(identifier: keyPairIdentifier);
+        await keyUtil.getKeyPair(identifier: ephemeralKeyPairIdentifier);
 
     SshClientHelper helper = SshClientHelper(logger);
     SSHClient tunnelSshClient = await helper.createSshClient(
@@ -37,15 +37,15 @@ mixin DartSshSessionHandler on SshnpCore
     );
 
     // Start local forwarding to the remote sshd
-    logger.info('Starting port forwarding'
-        ' from localhost:$localPort on local side'
-        ' to localhost:${params.remoteSshdPort} on remote side');
-
-    await helper.startForwarding(
+    localPort = await helper.startForwarding(
       fLocalPort: localPort,
       fRemoteHost: 'localhost',
       fRemotePort: params.remoteSshdPort,
     );
+
+    logger.info('Started port forwarding'
+        ' from localhost:$localPort on local side'
+        ' to localhost:${params.remoteSshdPort} on remote side');
 
     if (params.addForwardsToTunnel) {
       var optionsSplitBySpace = params.localSshOptions.join(' ').split(' ');
@@ -69,12 +69,33 @@ mixin DartSshSessionHandler on SshnpCore
   }
 
   @override
-  Future<SSHClient> startUserSession({required SSHClient tunnelSession}) async {
-    throw UnimplementedError();
-    // TODO v similar to startInitialTunnelSession
+  Future<SSHClient> startUserSession({
+    required SSHClient tunnelSession,
+  }) async {
+    if (identityKeyPair == null) {
+      throw SshnpError('Identity Key pair is mandatory with the dart client.');
+    }
+
+    SshClientHelper helper = SshClientHelper(logger);
+    SSHClient userSshClient = await helper.createSshClient(
+      host: 'localhost',
+      port: localPort,
+      username: remoteUsername ?? getUserName(throwIfNull: true)!,
+      keyPair: identityKeyPair!,
+    );
+
+    if (!params.addForwardsToTunnel) {
+      var optionsSplitBySpace = params.localSshOptions.join(' ').split(' ');
+      logger.info('addForwardsToTunnel is true;'
+          ' localSshOptions split by space is $optionsSplitBySpace');
+      await helper.addForwards(optionsSplitBySpace);
+    }
+
+    return userSshClient;
   }
 }
 
+@visibleForTesting
 class SshClientHelper {
   // TODO get rid of this
   final AtSignLogger logger;
@@ -145,7 +166,7 @@ class SshClientHelper {
     }
   }
 
-  Future<void> startForwarding(
+  Future<int> startForwarding(
       {required int fLocalPort,
       required String fRemoteHost,
       required int fRemotePort}) async {
@@ -169,6 +190,8 @@ class SshClientHelper {
     }, onDone: () {
       counter = 0;
     });
+
+    return serverSocket.port;
   }
 
   Future<void> addForwards(List<String> optionsSplitBySpace) async {

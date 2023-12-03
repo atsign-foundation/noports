@@ -32,10 +32,6 @@ abstract class SshnpCore
   @override
   final SshnpParams params;
 
-  /// the identifier of the keypair to be used for the user session
-  @override
-  final String? userKeyPairIdentifier;
-
   /// The session ID for this instance (UUID v4)
   final String sessionId;
 
@@ -66,7 +62,6 @@ abstract class SshnpCore
   SshnpCore({
     required this.atClient,
     required this.params,
-    required this.userKeyPairIdentifier,
   })  : sessionId = Uuid().v4(),
         namespace = '${params.device}.sshnp',
         localPort = params.localPort {
