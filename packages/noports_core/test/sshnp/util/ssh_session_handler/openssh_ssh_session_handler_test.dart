@@ -33,7 +33,6 @@ void main() {
       stubbedSshnp = StubbedSshnp(
         atClient: mockAtClient,
         params: mockParams,
-        userKeyPairIdentifier: null,
         sshnpdChannel: mockSshnpChannel,
         sshrvdChannel: mockSshrvdChannel,
       );

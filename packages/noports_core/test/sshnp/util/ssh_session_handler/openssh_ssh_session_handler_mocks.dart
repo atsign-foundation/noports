@@ -43,7 +43,6 @@ class StubbedSshnp extends SshnpCore
   StubbedSshnp({
     required super.atClient,
     required super.params,
-    required super.userKeyPairIdentifier,
     required SshnpdChannel sshnpdChannel,
     required SshrvdChannel sshrvdChannel,
   })  : _sshnpdChannel = sshnpdChannel,
