@@ -18,7 +18,7 @@
       "type": "python",
       "request": "launch",
       "cwd": "",
-      "program": "packages/sshnpdpy/sshnpd.py",
+      "program": "packages/sshnoports_python/sshnpd/sshnpdpy.py",
       "console": "integratedTerminal",
       "justMyCode": true,
       "envFile": "${workspaceFolder}/.env",
