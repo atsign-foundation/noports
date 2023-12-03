@@ -6,8 +6,8 @@ import 'package:noports_core/src/common/io_types.dart';
 import 'package:noports_core/src/common/openssh_binary_path.dart';
 import 'package:noports_core/sshnp_foundation.dart';
 
-mixin OpensshSshSessionHandler on SshnpCore
-    implements SshSessionHandler<Process?> {
+mixin SshnpOpensshSshSessionHandler on SshnpCore
+    implements SshnpSshSessionHandler<Process?> {
   @override
   Future<Process?> startInitialTunnelSession({
     required String keyPairIdentifier,
