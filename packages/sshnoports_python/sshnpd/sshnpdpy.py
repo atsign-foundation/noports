@@ -150,7 +150,7 @@ class SSHNPD:
         if self.username:
             self._set_username()
         
-        threading.Thread(target=self.at_client.start_monitor, args=(self.device_namespace,)).start()    
+        self.at_client.start_monitor(self.device_namespace,)
         event_thread = threading.Thread(target=self._handle_notifications, args=(self._sshnp_callback,))
         SSHNPD.threads.append(event_thread)
         event_thread.start()
