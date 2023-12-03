@@ -6,9 +6,7 @@ import 'dart:io';
 import 'package:at_utils/at_logger.dart';
 
 // local packages
-import 'package:noports_core/sshnp.dart';
-import 'package:noports_core/sshnp_params.dart' show ParserType, SshnpArg;
-import 'package:noports_core/utils.dart';
+import 'package:noports_core/sshnp_foundation.dart';
 import 'package:sshnoports/src/extended_arg_parser.dart';
 import 'package:sshnoports/src/create_at_client_cli.dart';
 import 'package:sshnoports/src/print_devices.dart';
@@ -87,9 +85,20 @@ void main(List<String> args) async {
         }
         throw res;
       }
-      if (res is SshnpCommand || res is SshnpNoOpSuccess) {
+      if (res is SshnpNoOpSuccess) {
         stdout.write('$res\n');
         exit(0);
+      }
+      if (res is SshnpCommand) {
+        if (sshnp.canRunShell) {
+          // ignore: unused_local_variable
+          SshnpRemoteProcess shell = await sshnp.runShell();
+          // TODO hook something up to the SshnpRemoteShell's stdin, stdout, stderr
+          exit(0);
+        } else {
+            stdout.write('$res\n');
+            exit(0);
+        }
       }
     } on ArgumentError catch (error, stackTrace) {
       printUsage(error: error, stackTrace: stackTrace);

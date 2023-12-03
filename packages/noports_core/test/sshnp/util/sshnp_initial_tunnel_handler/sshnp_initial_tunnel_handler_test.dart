@@ -2,23 +2,23 @@ import 'package:noports_core/sshnp_foundation.dart';
 import 'package:test/test.dart';
 import 'package:mocktail/mocktail.dart';
 
-class StubbedSshnpInitialTunnelHandler extends Mock
-    with SshnpInitialTunnelHandler<String> {}
+class StubbedSshnpSshSessionHandler extends Mock
+    with SshnpSshSessionHandler<String> {}
 
 void main() {
-  group('SshnpInitialTunnelHandler', () {
-    late final StubbedSshnpInitialTunnelHandler handler;
+  group('SshnpSshSessionHandler', () {
+    late final StubbedSshnpSshSessionHandler handler;
     setUp(() {
-      handler = StubbedSshnpInitialTunnelHandler();
+      handler = StubbedSshnpSshSessionHandler();
     });
     test('public API', () async {
-      when(() => handler.startInitialTunnel(identifier: 'asdf'))
+      when(() => handler.startInitialTunnelSession(keyPairIdentifier: 'asdf'))
           .thenAnswer((invocation) async => 'Called');
 
       await expectLater(
-        await handler.startInitialTunnel(identifier: 'asdf'),
+        await handler.startInitialTunnelSession(keyPairIdentifier: 'asdf'),
         'Called',
       );
     }); // test public API
-  }); // group SshnpInitialTunnelHandler
+  }); // group SshnpSshSessionHandler
 }

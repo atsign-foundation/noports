@@ -52,9 +52,9 @@ void main() {
     test('public API', () {
       whenConstructor();
       final sshnp = StubbedSshnp(
-        atClient: mockAtClient,
-        params: mockParams,
-      );
+          atClient: mockAtClient,
+          params: mockParams,
+          userKeyPairIdentifier: null);
       expect(sshnp, isA<SshnpKeyHandler>());
     }); // test public API
 
@@ -64,6 +64,7 @@ void main() {
       final sshnp = StubbedSshnp(
         atClient: mockAtClient,
         params: mockParams,
+        userKeyPairIdentifier: null,
         sshKeyUtil: keyUtil,
         sshnpdChannel: mockSshnpdChannel,
         sshrvdChannel: mockSshrvdChannel,
@@ -92,6 +93,7 @@ void main() {
       final sshnp = StubbedSshnp(
         atClient: mockAtClient,
         params: mockParams,
+        userKeyPairIdentifier: null,
         sshKeyUtil: keyUtil,
         sshnpdChannel: mockSshnpdChannel,
         sshrvdChannel: mockSshrvdChannel,
@@ -121,6 +123,7 @@ void main() {
       final sshnp = StubbedSshnp(
         atClient: mockAtClient,
         params: mockParams,
+        userKeyPairIdentifier: null,
         sshKeyUtil: keyUtil,
         sshnpdChannel: mockSshnpdChannel,
         sshrvdChannel: mockSshrvdChannel,

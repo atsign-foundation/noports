@@ -9,7 +9,7 @@ import '../../sshnp_mocks.dart';
 import 'sshnp_openssh_initial_tunnel_handler_mocks.dart';
 
 void main() {
-  group('SshnpOpensshInitialTunnelHandler', () {
+  group('SshnpOpensshSshSessionHandler', () {
     late MockAtClient mockAtClient;
     late MockSshnpParams mockParams;
     late MockSshnpdChannel mockSshnpChannel;
@@ -33,6 +33,7 @@ void main() {
       stubbedSshnp = StubbedSshnp(
         atClient: mockAtClient,
         params: mockParams,
+        userKeyPairIdentifier: null,
         sshnpdChannel: mockSshnpChannel,
         sshrvdChannel: mockSshrvdChannel,
       );
@@ -42,9 +43,9 @@ void main() {
       // TODO sshnpd channel mock calls
     });
 
-    test('implements SshnpInitialTunnelHandler<Process?>', () {
-      expect(stubbedSshnp, isA<SshnpInitialTunnelHandler<Process?>>());
+    test('implements SshnpSshSessionHandler<Process?>', () {
+      expect(stubbedSshnp, isA<SshnpSshSessionHandler<Process?>>());
     }); // test public API
     test('startInitialTunnel', () {}); // test startInitialTunnel
-  }); // group SshnpOpensshInitialTunnelHandler
+  }); // group SshnpOpensshSshSessionHandler
 }

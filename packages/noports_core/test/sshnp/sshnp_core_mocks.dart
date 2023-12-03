@@ -9,6 +9,7 @@ class StubbedSshnp extends SshnpCore with StubbedAsyncInitializationMixin {
   StubbedSshnp({
     required super.atClient,
     required super.params,
+    required super.userKeyPairIdentifier,
     SshnpdChannel? sshnpdChannel,
     SshrvdChannel? sshrvdChannel,
   })  : _sshnpdChannel = sshnpdChannel,
@@ -40,6 +41,14 @@ class StubbedSshnp extends SshnpCore with StubbedAsyncInitializationMixin {
   SshrvdChannel get sshrvdChannel =>
       _sshrvdChannel ?? (throw UnimplementedError());
   final SshrvdChannel? _sshrvdChannel;
+
+  @override
+  bool get canRunShell => throw UnimplementedError();
+
+  @override
+  Future<SshnpRemoteProcess> runShell() {
+    throw UnimplementedError();
+  }
 }
 
 /// Stubbed mixin wrapper

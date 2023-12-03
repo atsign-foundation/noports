@@ -5,10 +5,11 @@ import 'package:dartssh2/dartssh2.dart';
 import 'package:noports_core/sshnp_foundation.dart';
 
 class SshnpDartPureImpl extends SshnpCore
-    with SshnpDartSshKeyHandler, SshnpDartInitialTunnelHandler {
+    with SshnpDartSshKeyHandler, SshnpDartSshSessionHandler {
   SshnpDartPureImpl({
     required super.atClient,
     required super.params,
+    required super.userKeyPairIdentifier,
   }) {
     _sshnpdChannel = SshnpdDefaultChannel(
       atClient: atClient,
@@ -37,6 +38,8 @@ class SshnpDartPureImpl extends SshnpCore
     await super.initialize();
     completeInitialization();
   }
+
+  SSHClient? tunnelSshClient;
 
   @override
   Future<SshnpResult> run() async {
@@ -84,8 +87,8 @@ class SshnpDartPureImpl extends SshnpCore
     );
 
     /// Start the initial tunnel
-    SSHClient bean =
-        await startInitialTunnel(identifier: ephemeralKeyPair.identifier);
+    tunnelSshClient = await startInitialTunnelSession(
+        keyPairIdentifier: ephemeralKeyPair.identifier);
 
     /// Remove the key pair from the key utility
     await keyUtil.deleteKeyPair(identifier: ephemeralKeyPair.identifier);
@@ -101,7 +104,37 @@ class SshnpDartPureImpl extends SshnpCore
       localSshOptions:
           (params.addForwardsToTunnel) ? null : params.localSshOptions,
       privateKeyFileName: identityKeyPair?.identifier,
-      connectionBean: bean,
+      connectionBean: tunnelSshClient,
     );
   }
+
+  @override
+  bool get canRunShell => true;
+
+  @override
+  Future<SshnpRemoteProcess> runShell() async {
+    if (tunnelSshClient == null) {
+      throw StateError('Cannot execute runShell, tunnel has not yet been created');
+    }
+
+    SSHClient userSession = await startUserSession(tunnelSession: tunnelSshClient!);
+
+    SSHSession shell = await userSession.shell();
+
+    return SSHSessionAsSshnpRemoteProcess(shell);
+  }
+}
+
+class SSHSessionAsSshnpRemoteProcess implements SshnpRemoteProcess {
+  SSHSession sshSession;
+  SSHSessionAsSshnpRemoteProcess(this.sshSession);
+
+  @override
+  Stream<List<int>> get stderr => sshSession.stderr;
+
+  @override
+  StreamSink<List<int>> get stdin => sshSession.stdin;
+
+  @override
+  Stream<List<int>> get stdout => throw UnimplementedError();
 }

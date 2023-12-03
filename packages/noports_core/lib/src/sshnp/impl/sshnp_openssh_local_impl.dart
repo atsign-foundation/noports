@@ -6,10 +6,11 @@ import 'package:noports_core/src/common/io_types.dart';
 import 'package:noports_core/sshnp_foundation.dart';
 
 class SshnpOpensshLocalImpl extends SshnpCore
-    with SshnpLocalSshKeyHandler, SshnpOpensshInitialTunnelHandler {
+    with SshnpLocalSshKeyHandler, SshnpOpensshSshSessionHandler {
   SshnpOpensshLocalImpl({
     required super.atClient,
     required super.params,
+    required super.userKeyPairIdentifier,
   }) {
     _sshnpdChannel = SshnpdDefaultChannel(
       atClient: atClient,
@@ -106,8 +107,8 @@ class SshnpOpensshLocalImpl extends SshnpCore
     );
 
     /// Start the initial tunnel
-    Process? bean =
-        await startInitialTunnel(identifier: ephemeralKeyPair.identifier);
+    Process? bean = await startInitialTunnelSession(
+        keyPairIdentifier: ephemeralKeyPair.identifier);
 
     /// Remove the key pair from the key utility
     await keyUtil.deleteKeyPair(identifier: ephemeralKeyPair.identifier);
@@ -125,5 +126,13 @@ class SshnpOpensshLocalImpl extends SshnpCore
       privateKeyFileName: identityKeyPair?.identifier,
       connectionBean: bean,
     );
+  }
+
+  @override
+  bool get canRunShell => false;
+
+  @override
+  Future<SshnpRemoteProcess> runShell() {
+    throw UnimplementedError('$runtimeType does not implement runShell');
   }
 }

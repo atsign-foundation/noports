@@ -67,8 +67,10 @@ void main() {
       test('verbose=false', () {
         whenConstructor(verbose: false);
 
-        final sshnpCore =
-            StubbedSshnp(atClient: mockAtClient, params: mockParams);
+        final sshnpCore = StubbedSshnp(
+            atClient: mockAtClient,
+            params: mockParams,
+            userKeyPairIdentifier: null);
 
         /// Expect that the namespace is set in the preferences
         verify(() => mockAtClient.getPreferences()).called(1);
@@ -83,8 +85,10 @@ void main() {
       test('verbose=true', () {
         whenConstructor(verbose: true);
 
-        final sshnpCore =
-            StubbedSshnp(atClient: mockAtClient, params: mockParams);
+        final sshnpCore = StubbedSshnp(
+            atClient: mockAtClient,
+            params: mockParams,
+            userKeyPairIdentifier: null);
 
         /// Expect that the namespace is set in the preferences
         verify(() => mockAtClient.getPreferences()).called(1);
@@ -105,6 +109,7 @@ void main() {
         final sshnpCore = StubbedSshnp(
           atClient: mockAtClient,
           params: mockParams,
+          userKeyPairIdentifier: null,
           sshnpdChannel: mockSshnpdChannel,
           sshrvdChannel: mockSshrvdChannel,
         );
