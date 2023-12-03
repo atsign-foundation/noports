@@ -5,7 +5,7 @@ import 'package:dartssh2/dartssh2.dart';
 import 'package:noports_core/sshnp_foundation.dart';
 
 class SshnpDartPureImpl extends SshnpCore
-    with SshnpDartSshKeyHandler, DartSshSessionHandler {
+    with SshnpDartSshKeyHandler, SshnpDartSshSessionHandler {
   SshnpDartPureImpl({
     required super.atClient,
     required super.params,
@@ -114,12 +114,10 @@ class SshnpDartPureImpl extends SshnpCore
   @override
   Future<SshnpRemoteProcess> runShell() async {
     if (tunnelSshClient == null) {
-      throw StateError(
-          'Cannot execute runShell, tunnel has not yet been created');
+      throw StateError('Cannot execute runShell, tunnel has not yet been created');
     }
 
-    SSHClient userSession =
-        await startUserSession(tunnelSession: tunnelSshClient!);
+    SSHClient userSession = await startUserSession(tunnelSession: tunnelSshClient!);
 
     SSHSession shell = await userSession.shell();
 

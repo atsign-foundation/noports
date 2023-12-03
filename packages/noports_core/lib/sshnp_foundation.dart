@@ -24,9 +24,9 @@ export 'src/sshnp/util/sshrvd_channel/sshrvd_channel.dart';
 export 'src/sshnp/util/sshrvd_channel/sshrvd_dart_channel.dart';
 export 'src/sshnp/util/sshrvd_channel/sshrvd_exec_channel.dart';
 
-export 'src/sshnp/util/ssh_session_handler/ssh_session_handler.dart';
-export 'src/sshnp/util/ssh_session_handler/dart_ssh_session_handler.dart';
-export 'src/sshnp/util/ssh_session_handler/openssh_ssh_session_handler.dart';
+export 'src/sshnp/util/sshnp_initial_tunnel_handler/sshnp_initial_tunnel_handler.dart';
+export 'src/sshnp/util/sshnp_initial_tunnel_handler/sshnp_dart_initial_tunnel_handler.dart';
+export 'src/sshnp/util/sshnp_initial_tunnel_handler/sshnp_openssh_initial_tunnel_handler.dart';
 
 export 'src/sshnp/util/sshnp_ssh_key_handler/sshnp_ssh_key_handler.dart';
 export 'src/sshnp/util/sshnp_ssh_key_handler/sshnp_local_ssh_key_handler.dart';

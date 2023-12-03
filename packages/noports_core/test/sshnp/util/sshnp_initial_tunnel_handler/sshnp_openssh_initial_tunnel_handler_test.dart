@@ -6,7 +6,7 @@ import 'package:noports_core/sshnp_foundation.dart';
 import 'package:test/test.dart';
 
 import '../../sshnp_mocks.dart';
-import 'openssh_ssh_session_handler_mocks.dart';
+import 'sshnp_openssh_initial_tunnel_handler_mocks.dart';
 
 void main() {
   group('SshnpOpensshSshSessionHandler', () {
@@ -44,7 +44,7 @@ void main() {
     });
 
     test('implements SshnpSshSessionHandler<Process?>', () {
-      expect(stubbedSshnp, isA<SshSessionHandler<Process?>>());
+      expect(stubbedSshnp, isA<SshnpSshSessionHandler<Process?>>());
     }); // test public API
     test('startInitialTunnel', () {}); // test startInitialTunnel
   }); // group SshnpOpensshSshSessionHandler
