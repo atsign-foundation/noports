@@ -18,8 +18,7 @@ abstract interface class Sshnp {
     required AtClient atClient,
     required SshnpParams params,
   }) {
-    return SshnpUnsignedImpl(
-        atClient: atClient, params: params);
+    return SshnpUnsignedImpl(atClient: atClient, params: params);
   }
 
   /// Think of this as the "default" client - calls openssh
@@ -27,8 +26,7 @@ abstract interface class Sshnp {
     required AtClient atClient,
     required SshnpParams params,
   }) {
-    return SshnpOpensshLocalImpl(
-        atClient: atClient, params: params);
+    return SshnpOpensshLocalImpl(atClient: atClient, params: params);
   }
 
   /// Uses a dartssh2 ssh client - requires that you pass in the identity keypair
@@ -38,10 +36,7 @@ abstract interface class Sshnp {
     required AtSshKeyPair? identityKeyPair,
   }) {
     var sshnp = SshnpDartPureImpl(
-      atClient: atClient,
-      params: params,
-      identityKeyPair: identityKeyPair
-    );
+        atClient: atClient, params: params, identityKeyPair: identityKeyPair);
     if (identityKeyPair != null) {
       sshnp.keyUtil.addKeyPair(keyPair: identityKeyPair);
     }

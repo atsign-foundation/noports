@@ -6,11 +6,10 @@ import 'package:noports_core/sshnp_foundation.dart';
 
 class SshnpDartPureImpl extends SshnpCore
     with SshnpDartSshKeyHandler, DartSshSessionHandler {
-  SshnpDartPureImpl({
-    required super.atClient,
-    required super.params,
-    required AtSshKeyPair? identityKeyPair
-  }) {
+  SshnpDartPureImpl(
+      {required super.atClient,
+      required super.params,
+      required AtSshKeyPair? identityKeyPair}) {
     this.identityKeyPair = identityKeyPair;
     _sshnpdChannel = SshnpdDefaultChannel(
       atClient: atClient,
@@ -52,6 +51,7 @@ class SshnpDartPureImpl extends SshnpCore
     await callInitialization();
 
     logger.info('Sending request to sshnpd');
+
     /// Send an ssh request to sshnpd
     await notify(
       AtKey()
