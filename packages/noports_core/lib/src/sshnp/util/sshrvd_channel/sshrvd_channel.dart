@@ -107,8 +107,8 @@ abstract class SshrvdChannel<T> with AsyncInitialization, AtClientBindings {
       ..sharedBy = params.clientAtSign // shared by us
       ..sharedWith = host // shared with the sshrvd host
       ..metadata = (Metadata()
-      // as we are sending a notification to the sshrvd namespace,
-      // we don't want to append our namespace
+        // as we are sending a notification to the sshrvd namespace,
+        // we don't want to append our namespace
         ..namespaceAware = false
         ..ttl = 10000);
     logger.info('Sending notification to sshrvd: $ourSshrvdIdKey');
@@ -116,7 +116,7 @@ abstract class SshrvdChannel<T> with AsyncInitialization, AtClientBindings {
 
     int counter = 0;
     while (sshrvdAck == SshrvdAck.notAcknowledged) {
-      if ((counter+1) % 20 == 0) {
+      if ((counter + 1) % 20 == 0) {
         logger.info('Waiting for sshrvd response: $counter');
       }
       await Future.delayed(Duration(milliseconds: 100));
