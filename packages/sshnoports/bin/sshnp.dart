@@ -62,7 +62,8 @@ void main(List<String> args) async {
           rootDomain: params.rootDomain,
         ),
         legacyDaemon: argResults['legacy-daemon'] as bool,
-        sshClient: SupportedSshClient.fromString(argResults['ssh-client'] as String),
+        sshClient:
+            SupportedSshClient.fromString(argResults['ssh-client'] as String),
       ).catchError((e) {
         if (e.stackTrace != null) {
           Error.throwWithStackTrace(e, e.stackTrace!);
@@ -93,11 +94,13 @@ void main(List<String> args) async {
         if (sshnp.canRunShell) {
           // ignore: unused_local_variable
           SshnpRemoteProcess shell = await sshnp.runShell();
-          // TODO hook something up to the SshnpRemoteShell's stdin, stdout, stderr
+          shell.stdout.listen(stdout.add);
+          shell.stderr.listen(stderr.add);
+          stdin.listen(shell.stdin.add);
           exit(0);
         } else {
-            stdout.write('$res\n');
-            exit(0);
+          stdout.write('$res\n');
+          exit(0);
         }
       }
     } on ArgumentError catch (error, stackTrace) {

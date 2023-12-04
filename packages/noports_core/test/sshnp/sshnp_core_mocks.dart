@@ -9,7 +9,6 @@ class StubbedSshnp extends SshnpCore with StubbedAsyncInitializationMixin {
   StubbedSshnp({
     required super.atClient,
     required super.params,
-    required super.userKeyPairIdentifier,
     SshnpdChannel? sshnpdChannel,
     SshrvdChannel? sshrvdChannel,
   })  : _sshnpdChannel = sshnpdChannel,

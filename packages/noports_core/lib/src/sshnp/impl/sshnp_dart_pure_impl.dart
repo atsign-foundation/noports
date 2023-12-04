@@ -5,11 +5,10 @@ import 'package:dartssh2/dartssh2.dart';
 import 'package:noports_core/sshnp_foundation.dart';
 
 class SshnpDartPureImpl extends SshnpCore
-    with SshnpDartSshKeyHandler, SshnpDartSshSessionHandler {
+    with SshnpDartSshKeyHandler, DartSshSessionHandler {
   SshnpDartPureImpl({
     required super.atClient,
     required super.params,
-    required super.userKeyPairIdentifier,
   }) {
     _sshnpdChannel = SshnpdDefaultChannel(
       atClient: atClient,
@@ -36,6 +35,10 @@ class SshnpDartPureImpl extends SshnpCore
   Future<void> initialize() async {
     if (!isSafeToInitialize) return;
     await super.initialize();
+    if (params.identityFile != null) {
+      identityKeyPair =
+          await keyUtil.getKeyPair(identifier: params.identityFile!);
+    }
     completeInitialization();
   }
 
@@ -81,14 +84,11 @@ class SshnpDartPureImpl extends SshnpCore
     );
 
     /// Add the key pair to the key utility
-    await keyUtil.addKeyPair(
-      keyPair: ephemeralKeyPair,
-      identifier: ephemeralKeyPair.identifier,
-    );
+    await keyUtil.addKeyPair(keyPair: ephemeralKeyPair);
 
     /// Start the initial tunnel
     tunnelSshClient = await startInitialTunnelSession(
-        keyPairIdentifier: ephemeralKeyPair.identifier);
+        ephemeralKeyPairIdentifier: ephemeralKeyPair.identifier);
 
     /// Remove the key pair from the key utility
     await keyUtil.deleteKeyPair(identifier: ephemeralKeyPair.identifier);
@@ -114,10 +114,12 @@ class SshnpDartPureImpl extends SshnpCore
   @override
   Future<SshnpRemoteProcess> runShell() async {
     if (tunnelSshClient == null) {
-      throw StateError('Cannot execute runShell, tunnel has not yet been created');
+      throw StateError(
+          'Cannot execute runShell, tunnel has not yet been created');
     }
 
-    SSHClient userSession = await startUserSession(tunnelSession: tunnelSshClient!);
+    SSHClient userSession =
+        await startUserSession(tunnelSession: tunnelSshClient!);
 
     SSHSession shell = await userSession.shell();
 

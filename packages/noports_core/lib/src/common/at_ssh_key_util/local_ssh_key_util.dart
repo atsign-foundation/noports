@@ -47,9 +47,10 @@ class LocalSshKeyUtil implements AtSshKeyUtil {
   @override
   Future<List<File>> addKeyPair({
     required AtSshKeyPair keyPair,
-    required String identifier,
+    String? identifier,
   }) async {
-    var files = _filesFromIdentifier(identifier: identifier);
+    var files =
+        _filesFromIdentifier(identifier: identifier ?? keyPair.identifier);
     await Future.wait([
       files[0].writeAsString(keyPair.privateKeyContents),
       files[1].writeAsString(keyPair.publicKeyContents),

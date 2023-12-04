@@ -8,7 +8,6 @@ class SshnpUnsignedImpl extends SshnpCore with SshnpLocalSshKeyHandler {
   SshnpUnsignedImpl({
     required super.atClient,
     required super.params,
-    required super.userKeyPairIdentifier,
   }) {
     if (Platform.isWindows) {
       throw SshnpError(

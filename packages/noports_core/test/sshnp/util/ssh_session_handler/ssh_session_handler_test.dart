@@ -3,7 +3,7 @@ import 'package:test/test.dart';
 import 'package:mocktail/mocktail.dart';
 
 class StubbedSshnpSshSessionHandler extends Mock
-    with SshnpSshSessionHandler<String> {}
+    with SshSessionHandler<String> {}
 
 void main() {
   group('SshnpSshSessionHandler', () {
@@ -12,11 +12,13 @@ void main() {
       handler = StubbedSshnpSshSessionHandler();
     });
     test('public API', () async {
-      when(() => handler.startInitialTunnelSession(keyPairIdentifier: 'asdf'))
+      when(() => handler.startInitialTunnelSession(
+              ephemeralKeyPairIdentifier: 'asdf'))
           .thenAnswer((invocation) async => 'Called');
 
       await expectLater(
-        await handler.startInitialTunnelSession(keyPairIdentifier: 'asdf'),
+        await handler.startInitialTunnelSession(
+            ephemeralKeyPairIdentifier: 'asdf'),
         'Called',
       );
     }); // test public API

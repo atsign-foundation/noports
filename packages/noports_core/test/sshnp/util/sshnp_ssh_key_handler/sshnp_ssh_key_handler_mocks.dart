@@ -17,7 +17,6 @@ class StubbedSshnp extends SshnpCore with SshnpLocalSshKeyHandler {
   StubbedSshnp({
     required super.atClient,
     required super.params,
-    required super.userKeyPairIdentifier,
     LocalSshKeyUtil? sshKeyUtil,
     SshnpdChannel? sshnpdChannel,
     SshrvdChannel? sshrvdChannel,

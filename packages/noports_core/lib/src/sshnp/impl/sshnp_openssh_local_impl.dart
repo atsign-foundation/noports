@@ -6,11 +6,10 @@ import 'package:noports_core/src/common/io_types.dart';
 import 'package:noports_core/sshnp_foundation.dart';
 
 class SshnpOpensshLocalImpl extends SshnpCore
-    with SshnpLocalSshKeyHandler, SshnpOpensshSshSessionHandler {
+    with SshnpLocalSshKeyHandler, OpensshSshSessionHandler {
   SshnpOpensshLocalImpl({
     required super.atClient,
     required super.params,
-    required super.userKeyPairIdentifier,
   }) {
     _sshnpdChannel = SshnpdDefaultChannel(
       atClient: atClient,
@@ -101,14 +100,11 @@ class SshnpOpensshLocalImpl extends SshnpCore
     );
 
     /// Add the key pair to the key utility
-    await keyUtil.addKeyPair(
-      keyPair: ephemeralKeyPair,
-      identifier: ephemeralKeyPair.identifier,
-    );
+    await keyUtil.addKeyPair(keyPair: ephemeralKeyPair);
 
     /// Start the initial tunnel
     Process? bean = await startInitialTunnelSession(
-        keyPairIdentifier: ephemeralKeyPair.identifier);
+        ephemeralKeyPairIdentifier: ephemeralKeyPair.identifier);
 
     /// Remove the key pair from the key utility
     await keyUtil.deleteKeyPair(identifier: ephemeralKeyPair.identifier);

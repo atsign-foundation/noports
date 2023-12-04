@@ -12,7 +12,7 @@ abstract class StartInitialTunnelCaller {
 class StartInitialTunnelStub extends Mock implements StartInitialTunnelCaller {}
 
 /// Stubbed Mixin that we are testing
-mixin StubbedSshnpOpensshSshSessionHandler on SshnpOpensshSshSessionHandler {
+mixin StubbedSshnpOpensshSshSessionHandler on OpensshSshSessionHandler {
   late StartInitialTunnelStub _stubbedStartInitialTunnel;
   late StartProcessStub _stubbedStartProcess;
 
@@ -26,12 +26,12 @@ mixin StubbedSshnpOpensshSshSessionHandler on SshnpOpensshSshSessionHandler {
 
   @override
   Future<Process?> startInitialTunnelSession({
-    required String keyPairIdentifier,
+    required String ephemeralKeyPairIdentifier,
     ProcessStarter startProcess = Process.start,
   }) {
     _stubbedStartInitialTunnel();
     return super.startInitialTunnelSession(
-      keyPairIdentifier: keyPairIdentifier,
+      ephemeralKeyPairIdentifier: ephemeralKeyPairIdentifier,
       startProcess: _stubbedStartProcess.call,
     );
   }
@@ -39,13 +39,10 @@ mixin StubbedSshnpOpensshSshSessionHandler on SshnpOpensshSshSessionHandler {
 
 /// Stubbed Sshnp instance with the mixin
 class StubbedSshnp extends SshnpCore
-    with
-        SshnpOpensshSshSessionHandler,
-        StubbedSshnpOpensshSshSessionHandler {
+    with OpensshSshSessionHandler, StubbedSshnpOpensshSshSessionHandler {
   StubbedSshnp({
     required super.atClient,
     required super.params,
-    required super.userKeyPairIdentifier,
     required SshnpdChannel sshnpdChannel,
     required SshrvdChannel sshrvdChannel,
   })  : _sshnpdChannel = sshnpdChannel,
