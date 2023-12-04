@@ -114,14 +114,14 @@ abstract class SshrvdChannel<T> with AsyncInitialization, AtClientBindings {
     logger.info('Sending notification to sshrvd: $ourSshrvdIdKey');
     await notify(ourSshrvdIdKey, sessionId);
 
-    int counter = 0;
+    int counter = 1;
     while (sshrvdAck == SshrvdAck.notAcknowledged) {
-      if ((counter + 1) % 20 == 0) {
-        logger.info('Waiting for sshrvd response: $counter');
+      if (counter % 20 == 0) {
+        logger.info('Still waiting for sshrvd response');
       }
       await Future.delayed(Duration(milliseconds: 100));
       counter++;
-      if (counter == 100) {
+      if (counter > 100) {
         logger.warning('Timed out waiting for sshrvd response');
         throw ('Connection timeout to sshrvd $host service\nhint: make sure host is valid and online');
       }
