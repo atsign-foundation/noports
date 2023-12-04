@@ -4,6 +4,7 @@ import 'package:at_client/at_client.dart' hide StringBuffer;
 import 'package:noports_core/sshnp_foundation.dart';
 
 abstract interface class SshnpRemoteProcess {
+  Future<void> get done;
   Stream<List<int>> get stderr;
   StreamSink<List<int>> get stdin;
   Stream<List<int>> get stdout;
@@ -39,6 +40,7 @@ abstract interface class Sshnp {
     var sshnp = SshnpDartPureImpl(
       atClient: atClient,
       params: params,
+      identityKeyPair: identityKeyPair
     );
     if (identityKeyPair != null) {
       sshnp.keyUtil.addKeyPair(keyPair: identityKeyPair);

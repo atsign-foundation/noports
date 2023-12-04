@@ -64,6 +64,7 @@ class SshnpOpensshLocalImpl extends SshnpCore
     /// Ensure that sshnp is initialized
     await callInitialization();
 
+    logger.info('Sending request to sshnpd');
     /// Send an ssh request to sshnpd
     await notify(
       AtKey()

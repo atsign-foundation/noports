@@ -22,8 +22,11 @@ mixin DartSshSessionHandler on SshnpCore
       {required String ephemeralKeyPairIdentifier}) async {
     // If we are starting an initial tunnel, it should be to sshrvd,
     // so it is safe to assume that sshrvdChannel is not null here
-    logger.info('Starting tunnel ssh session to ${sshrvdChannel.host} on port '
-        '${sshrvdChannel.sshrvdPort!} with forwardLocal of $localPort');
+
+    var username = tunnelUsername ?? getUserName(throwIfNull: true)!;
+
+    logger.info('Starting tunnel ssh session as $username'
+        ' to ${sshrvdChannel.host} on port ${sshrvdChannel.sshrvdPort!}');
 
     AtSshKeyPair keyPair =
         await keyUtil.getKeyPair(identifier: ephemeralKeyPairIdentifier);
@@ -32,9 +35,13 @@ mixin DartSshSessionHandler on SshnpCore
     SSHClient tunnelSshClient = await helper.createSshClient(
       host: sshrvdChannel.host,
       port: sshrvdChannel.sshrvdPort!,
-      username: tunnelUsername ?? getUserName(throwIfNull: true)!,
+      username: username,
       keyPair: keyPair,
     );
+
+    logger.info('Starting port forwarding'
+        ' from localhost:$localPort on local side'
+        ' to localhost:${params.remoteSshdPort} on remote side');
 
     // Start local forwarding to the remote sshd
     localPort = await helper.startForwarding(
@@ -49,7 +56,7 @@ mixin DartSshSessionHandler on SshnpCore
 
     if (params.addForwardsToTunnel) {
       var optionsSplitBySpace = params.localSshOptions.join(' ').split(' ');
-      logger.info('addForwardsToTunnel is true;'
+      logger.finer('addForwardsToTunnel is true, adding them;'
           ' localSshOptions split by space is $optionsSplitBySpace');
       await helper.addForwards(optionsSplitBySpace);
     }
@@ -76,17 +83,23 @@ mixin DartSshSessionHandler on SshnpCore
       throw SshnpError('Identity Key pair is mandatory with the dart client.');
     }
 
+    var username = remoteUsername ?? getUserName(throwIfNull: true)!;
+
+    logger
+        .info('Starting user ssh session as $username to localhost:$localPort');
+
     SshClientHelper helper = SshClientHelper(logger);
     SSHClient userSshClient = await helper.createSshClient(
       host: 'localhost',
       port: localPort,
-      username: remoteUsername ?? getUserName(throwIfNull: true)!,
+      username: username,
       keyPair: identityKeyPair!,
     );
 
     if (!params.addForwardsToTunnel) {
       var optionsSplitBySpace = params.localSshOptions.join(' ').split(' ');
-      logger.info('addForwardsToTunnel is true;'
+      logger.finer('addForwardsToTunnel was false,'
+          ' so adding them to user session instead;'
           ' localSshOptions split by space is $optionsSplitBySpace');
       await helper.addForwards(optionsSplitBySpace);
     }

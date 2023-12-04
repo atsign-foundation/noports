@@ -9,7 +9,9 @@ class SshnpDartPureImpl extends SshnpCore
   SshnpDartPureImpl({
     required super.atClient,
     required super.params,
+    required AtSshKeyPair? identityKeyPair
   }) {
+    this.identityKeyPair = identityKeyPair;
     _sshnpdChannel = SshnpdDefaultChannel(
       atClient: atClient,
       params: params,
@@ -49,6 +51,7 @@ class SshnpDartPureImpl extends SshnpCore
     /// Ensure that sshnp is initialized
     await callInitialization();
 
+    logger.info('Sending request to sshnpd');
     /// Send an ssh request to sshnpd
     await notify(
       AtKey()
@@ -129,14 +132,18 @@ class SshnpDartPureImpl extends SshnpCore
 
 class SSHSessionAsSshnpRemoteProcess implements SshnpRemoteProcess {
   SSHSession sshSession;
+
   SSHSessionAsSshnpRemoteProcess(this.sshSession);
 
   @override
-  Stream<List<int>> get stderr => sshSession.stderr;
+  Future<void> get done => sshSession.done;
 
   @override
   StreamSink<List<int>> get stdin => sshSession.stdin;
 
   @override
-  Stream<List<int>> get stdout => throw UnimplementedError();
+  Stream<List<int>> get stdout => sshSession.stdout;
+
+  @override
+  Stream<List<int>> get stderr => sshSession.stderr;
 }

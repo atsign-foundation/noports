@@ -56,7 +56,9 @@ abstract class SshrvdChannel<T> with AsyncInitialization, AtClientBindings {
     required this.params,
     required this.sessionId,
     required this.sshrvGenerator,
-  });
+  }) {
+    logger.level = params.verbose ? 'info' : 'shout';
+  }
 
   @override
   Future<void> initialize() async {

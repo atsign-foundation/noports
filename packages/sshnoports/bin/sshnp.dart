@@ -1,6 +1,7 @@
 // dart packages
 import 'dart:async';
 import 'dart:io';
+import 'dart:typed_data';
 
 // atPlatform packages
 import 'package:at_utils/at_logger.dart';
@@ -94,9 +95,22 @@ void main(List<String> args) async {
         if (sshnp.canRunShell) {
           // ignore: unused_local_variable
           SshnpRemoteProcess shell = await sshnp.runShell();
+
           shell.stdout.listen(stdout.add);
           shell.stderr.listen(stderr.add);
+
+          // don't wait for a newline before sending to remote stdin
+          stdin.lineMode = false;
+          // echo only what is sent back from the other side
+          stdin.echoMode = false;
           stdin.listen(shell.stdin.add);
+
+          // catch local ctrl-c's and forward to remote
+          ProcessSignal.sigint.watch().listen((signal) {
+            shell.stdin.add(Uint8List.fromList([3]));
+          });
+
+          await shell.done;
           exit(0);
         } else {
           stdout.write('$res\n');

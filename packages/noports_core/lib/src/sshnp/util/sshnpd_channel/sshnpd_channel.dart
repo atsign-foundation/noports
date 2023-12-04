@@ -47,7 +47,9 @@ abstract class SshnpdChannel with AsyncInitialization, AtClientBindings {
     required this.params,
     required this.sessionId,
     required this.namespace,
-  });
+  }) {
+    logger.level = params.verbose ? 'info' : 'shout';
+  }
 
   /// Initialization starts the subscription to notifications from the daemon.
   @override
@@ -225,6 +227,7 @@ abstract class SshnpdChannel with AsyncInitialization, AtClientBindings {
         ..namespace = DefaultArgs.namespace
         ..metadata = metaData;
 
+      logger.info('Sending ping to sshnpd');
       unawaited(notify(pingKey, 'ping'));
     }
 
