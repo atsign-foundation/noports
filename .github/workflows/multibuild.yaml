@@ -2,6 +2,12 @@ name: Multibuild
 
 on:
   workflow_dispatch:
+    inputs:
+      x64_only:
+        description: "Run x64 builds only"
+        required: true
+        default: false
+        type: boolean
 
 permissions: # added using https://github.com/step-security/secure-repo
   contents: read
