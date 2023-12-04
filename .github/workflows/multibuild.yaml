@@ -71,6 +71,7 @@ jobs:
           if-no-files-found: error
 
   other_build:
+    if: ${{ ! inputs.x64_only }}
     needs: verify_tags
     runs-on: ubuntu-latest
     defaults:
