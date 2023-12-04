@@ -45,6 +45,7 @@ void main() {
       notifyStub = NotifyStub();
       subscribeStub = SubscribeStub();
       mockParams = MockSshnpParams();
+      when(() => mockParams.verbose).thenReturn(false);
       sessionId = Uuid().v4();
       mockSshrv = MockSshrv();
 
