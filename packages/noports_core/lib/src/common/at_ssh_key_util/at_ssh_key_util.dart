@@ -21,7 +21,7 @@ abstract interface class AtSshKeyUtil {
 
   FutureOr<dynamic> addKeyPair({
     required AtSshKeyPair keyPair,
-    required String identifier,
+    String? identifier,
   });
 
   FutureOr<dynamic> deleteKeyPair({

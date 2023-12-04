@@ -1,3 +1,4 @@
+import 'package:mocktail/mocktail.dart';
 import 'package:noports_core/sshnp_foundation.dart';
 import 'package:socket_connector/socket_connector.dart';
 import 'package:test/test.dart';
@@ -14,6 +15,7 @@ void main() {
     setUp(() {
       mockAtClient = MockAtClient();
       mockSshnpParams = MockSshnpParams();
+      when(() => mockSshnpParams.verbose).thenReturn(false);
       sessionId = Uuid().v4();
     });
     test('public API', () {

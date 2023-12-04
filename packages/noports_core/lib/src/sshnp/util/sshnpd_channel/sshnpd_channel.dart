@@ -47,7 +47,9 @@ abstract class SshnpdChannel with AsyncInitialization, AtClientBindings {
     required this.params,
     required this.sessionId,
     required this.namespace,
-  });
+  }) {
+    logger.level = params.verbose ? 'info' : 'shout';
+  }
 
   /// Initialization starts the subscription to notifications from the daemon.
   @override
@@ -88,11 +90,12 @@ abstract class SshnpdChannel with AsyncInitialization, AtClientBindings {
   /// Returns true if the deamon acknowledged our request.
   /// Returns false if a timeout occurred.
   Future<SshnpdAck> waitForDaemonResponse() async {
-    int counter = 0;
     // Timer to timeout after 10 Secs or after the Ack of connected/Errors
-    for (int i = 0; i < 100; i++) {
-      logger.info('Waiting for sshnpd response: $counter');
-      logger.info('sshnpdAck: $sshnpdAck');
+    for (int counter = 1; counter <= 100; counter++) {
+      if (counter % 20 == 0) {
+        logger.info('Still waiting for sshnpd response');
+        logger.info('sshnpdAck: $sshnpdAck');
+      }
       await Future.delayed(Duration(milliseconds: 100));
       if (sshnpdAck != SshnpdAck.notAcknowledged) break;
     }
@@ -225,6 +228,7 @@ abstract class SshnpdChannel with AsyncInitialization, AtClientBindings {
         ..namespace = DefaultArgs.namespace
         ..metadata = metaData;
 
+      logger.info('Sending ping to sshnpd');
       unawaited(notify(pingKey, 'ping'));
     }
 

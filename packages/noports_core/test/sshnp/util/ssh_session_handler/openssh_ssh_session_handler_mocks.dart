@@ -12,12 +12,11 @@ abstract class StartInitialTunnelCaller {
 class StartInitialTunnelStub extends Mock implements StartInitialTunnelCaller {}
 
 /// Stubbed Mixin that we are testing
-mixin StubbedSshnpOpensshInitialTunnelHandler
-    on SshnpOpensshInitialTunnelHandler {
+mixin StubbedSshnpOpensshSshSessionHandler on OpensshSshSessionHandler {
   late StartInitialTunnelStub _stubbedStartInitialTunnel;
   late StartProcessStub _stubbedStartProcess;
 
-  void stubSshnpOpensshInitialTunnelHandler({
+  void stubSshnpOpensshSshSessionHandler({
     required StartInitialTunnelStub stubbedStartInitialTunnel,
     required StartProcessStub stubbedStartProcess,
   }) {
@@ -26,13 +25,13 @@ mixin StubbedSshnpOpensshInitialTunnelHandler
   }
 
   @override
-  Future<Process?> startInitialTunnel({
-    required String identifier,
+  Future<Process?> startInitialTunnelSession({
+    required String ephemeralKeyPairIdentifier,
     ProcessStarter startProcess = Process.start,
   }) {
     _stubbedStartInitialTunnel();
-    return super.startInitialTunnel(
-      identifier: identifier,
+    return super.startInitialTunnelSession(
+      ephemeralKeyPairIdentifier: ephemeralKeyPairIdentifier,
       startProcess: _stubbedStartProcess.call,
     );
   }
@@ -40,9 +39,7 @@ mixin StubbedSshnpOpensshInitialTunnelHandler
 
 /// Stubbed Sshnp instance with the mixin
 class StubbedSshnp extends SshnpCore
-    with
-        SshnpOpensshInitialTunnelHandler,
-        StubbedSshnpOpensshInitialTunnelHandler {
+    with OpensshSshSessionHandler, StubbedSshnpOpensshSshSessionHandler {
   StubbedSshnp({
     required super.atClient,
     required super.params,
@@ -67,4 +64,17 @@ class StubbedSshnp extends SshnpCore
   @override
   SshrvdChannel get sshrvdChannel => _sshrvdChannel;
   final SshrvdChannel _sshrvdChannel;
+
+  @override
+  Future<Process?> startUserSession({required Process? tunnelSession}) {
+    throw UnimplementedError();
+  }
+
+  @override
+  bool get canRunShell => false;
+
+  @override
+  Future<SshnpRemoteProcess> runShell() {
+    throw UnimplementedError();
+  }
 }

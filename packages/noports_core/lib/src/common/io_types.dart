@@ -1,5 +1,5 @@
 /// This file contains all of the dart:io calls in noports_core
-/// All io used should be wrapped for the sake of testing and compatibilty
+/// All io used should be wrapped for the sake of testing and compatibility
 import 'dart:io' show Process, ProcessResult, ProcessStartMode;
 import 'package:meta/meta.dart';
 
@@ -14,7 +14,6 @@ typedef ProcessRunner = Future<ProcessResult> Function(
   List<String> arguments, {
   String? workingDirectory,
 });
-
 
 @internal
 typedef ProcessStarter = Future<Process> Function(

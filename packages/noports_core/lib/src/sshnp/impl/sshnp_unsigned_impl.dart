@@ -108,4 +108,12 @@ class SshnpUnsignedImpl extends SshnpCore with SshnpLocalSshKeyHandler {
       connectionBean: bean,
     );
   }
+
+  @override
+  bool get canRunShell => false;
+
+  @override
+  Future<SshnpRemoteProcess> runShell() {
+    throw UnimplementedError('$runtimeType does not implement runShell');
+  }
 }

@@ -6,11 +6,11 @@ import 'package:noports_core/src/common/io_types.dart';
 import 'package:noports_core/src/common/openssh_binary_path.dart';
 import 'package:noports_core/sshnp_foundation.dart';
 
-mixin SshnpOpensshInitialTunnelHandler on SshnpCore
-    implements SshnpInitialTunnelHandler<Process?> {
+mixin OpensshSshSessionHandler on SshnpCore
+    implements SshSessionHandler<Process?> {
   @override
-  Future<Process?> startInitialTunnel({
-    required String identifier,
+  Future<Process?> startInitialTunnelSession({
+    required String ephemeralKeyPairIdentifier,
     @visibleForTesting ProcessStarter startProcess = Process.start,
   }) async {
     Process? process;
@@ -18,7 +18,7 @@ mixin SshnpOpensshInitialTunnelHandler on SshnpCore
     // so it is safe to assume that sshrvdChannel is not null here
     String argsString = '$tunnelUsername@${sshrvdChannel.host}'
         ' -p ${sshrvdChannel.sshrvdPort}'
-        ' -i $identifier'
+        ' -i $ephemeralKeyPairIdentifier'
         ' -L $localPort:localhost:${params.remoteSshdPort}'
         ' -o LogLevel=VERBOSE'
         ' -t -t'
@@ -82,5 +82,12 @@ mixin SshnpOpensshInitialTunnelHandler on SshnpCore
       );
     }
     return process;
+  }
+
+  @override
+  Future<Process?> startUserSession({
+    required Process? tunnelSession,
+  }) async {
+    throw UnimplementedError();
   }
 }
