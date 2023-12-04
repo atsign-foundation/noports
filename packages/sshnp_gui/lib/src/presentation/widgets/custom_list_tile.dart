@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:sshnp_gui/src/controllers/navigation_controller.dart';
 import 'package:sshnp_gui/src/presentation/screens/onboarding_screen.dart';
+import 'package:sshnp_gui/src/presentation/widgets/utility/custom_snack_bar.dart';
 import 'package:sshnp_gui/src/utility/constants.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -103,7 +104,8 @@ class CustomListTile extends StatelessWidget {
             path: 'info@noports.com',
           );
           if (!await launchUrl(emailUri)) {
-            throw Exception('Could not launch $emailUri');
+            CustomSnackBar.notification(content: 'No email client available');
+            // throw Exception('Could not launch $emailUri');
           }
           break;
         case CustomListTileType.discord:
