@@ -1,13 +1,13 @@
 name: sshnoports
 publish_to: none
 
-version: 4.0.0-rc.8
+version: 4.0.0
 
 environment:
   sdk: ">=3.0.0 <4.0.0"
 
 dependencies:
-  noports_core: 4.0.0-dev.4
+  noports_core: 4.0.0
   at_onboarding_cli: 1.4.0
 
 dependency_overrides:
