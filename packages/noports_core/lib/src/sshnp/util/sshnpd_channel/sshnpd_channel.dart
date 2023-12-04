@@ -93,8 +93,10 @@ abstract class SshnpdChannel with AsyncInitialization, AtClientBindings {
     int counter = 0;
     // Timer to timeout after 10 Secs or after the Ack of connected/Errors
     for (int i = 0; i < 100; i++) {
-      logger.info('Waiting for sshnpd response: $counter');
-      logger.info('sshnpdAck: $sshnpdAck');
+      if ((counter+1) % 20 == 0) {
+        logger.info('Waiting for sshnpd response: $counter');
+        logger.info('sshnpdAck: $sshnpdAck');
+      }
       await Future.delayed(Duration(milliseconds: 100));
       if (sshnpdAck != SshnpdAck.notAcknowledged) break;
     }

@@ -39,6 +39,7 @@ abstract class SshrvdChannel<T> with AsyncInitialization, AtClientBindings {
   int? _port;
 
   String get host => _host ?? params.host;
+
   int get port => _port ?? params.port;
 
   // * Volatile fields set at runtime
@@ -49,6 +50,7 @@ abstract class SshrvdChannel<T> with AsyncInitialization, AtClientBindings {
 
   /// The port sshrvd is listening on
   int? _sshrvdPort;
+
   int? get sshrvdPort => _sshrvdPort;
 
   SshrvdChannel({
@@ -105,8 +107,8 @@ abstract class SshrvdChannel<T> with AsyncInitialization, AtClientBindings {
       ..sharedBy = params.clientAtSign // shared by us
       ..sharedWith = host // shared with the sshrvd host
       ..metadata = (Metadata()
-        // as we are sending a notification to the sshrvd namespace,
-        // we don't want to append our namespace
+      // as we are sending a notification to the sshrvd namespace,
+      // we don't want to append our namespace
         ..namespaceAware = false
         ..ttl = 10000);
     logger.info('Sending notification to sshrvd: $ourSshrvdIdKey');
@@ -114,7 +116,9 @@ abstract class SshrvdChannel<T> with AsyncInitialization, AtClientBindings {
 
     int counter = 0;
     while (sshrvdAck == SshrvdAck.notAcknowledged) {
-      logger.info('Waiting for sshrvd response: $counter');
+      if ((counter+1) % 20 == 0) {
+        logger.info('Waiting for sshrvd response: $counter');
+      }
       await Future.delayed(Duration(milliseconds: 100));
       counter++;
       if (counter == 100) {
@@ -123,4 +127,4 @@ abstract class SshrvdChannel<T> with AsyncInitialization, AtClientBindings {
       }
     }
   }
-}
+}}
