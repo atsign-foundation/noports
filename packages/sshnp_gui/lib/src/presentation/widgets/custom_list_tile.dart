@@ -49,7 +49,7 @@ class CustomListTile extends StatelessWidget {
     this.iconData = Icons.account_balance_wallet_outlined,
     this.title = 'Privacy Policy',
     this.subtitle = 'Check our terms of service',
-    this.type = CustomListTileType.faq,
+    this.type = CustomListTileType.privacyPolicy,
     this.tileColor = kProfileBackgroundColor,
     Key? key,
   }) : super(key: key);
@@ -119,7 +119,7 @@ class CustomListTile extends StatelessWidget {
           }
           break;
         case CustomListTileType.privacyPolicy:
-          final Uri url = Uri.parse('https://atsign.com/apps/atdatabrowser-privacy-policy/');
+          final Uri url = Uri.parse('https://www.noports.com/ssh-no-ports-privacy-policy');
           if (!await launchUrl(url)) {
             throw Exception('Could not launch $url');
           }

@@ -47,10 +47,13 @@ class SupportScreenMobileView extends StatelessWidget {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Flexible(
-                        child: CustomListTile.discord(
-                      tileColor: kProfileBarColor,
-                    )),
-                    Flexible(child: CustomListTile.email(tileColor: kProfileBarColor)),
+                      child: CustomListTile.discord(
+                        tileColor: kProfileBarColor,
+                      ),
+                    ),
+                    Flexible(
+                      child: CustomListTile.email(tileColor: kProfileBarColor),
+                    ),
                   ],
                 ),
               ),
@@ -71,8 +74,12 @@ class SupportScreenMobileView extends StatelessWidget {
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Flexible(child: CustomListTile.faq(tileColor: kProfileBarColor)),
-                    Flexible(child: CustomListTile.privacyPolicy(tileColor: kProfileBarColor)),
+                    Flexible(
+                      child: CustomListTile.faq(tileColor: kProfileBarColor),
+                    ),
+                    Flexible(
+                      child: CustomListTile.privacyPolicy(tileColor: kProfileBarColor),
+                    ),
                   ],
                 ),
               ),

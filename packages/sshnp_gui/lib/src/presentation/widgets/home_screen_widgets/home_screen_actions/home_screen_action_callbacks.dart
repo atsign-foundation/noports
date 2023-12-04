@@ -8,6 +8,7 @@ import 'package:noports_core/sshnp_params.dart';
 import 'package:sshnp_gui/src/controllers/config_controller.dart';
 import 'package:sshnp_gui/src/presentation/widgets/home_screen_widgets/home_screen_actions/home_screen_import_dialog.dart';
 import 'package:sshnp_gui/src/presentation/widgets/utility/custom_snack_bar.dart';
+import 'package:sshnp_gui/src/presentation/widgets/utility/responsive_widget.dart';
 import 'package:sshnp_gui/src/utility/constants.dart';
 
 import '../../../../controllers/navigation_controller.dart';
@@ -57,8 +58,15 @@ class HomeScreenActionCallbacks {
             configFileWriteState: ConfigFileWriteState.create,
           ),
         );
-    context.replaceNamed(
-      AppRoute.profileForm.name,
-    );
+
+    if (ResponsiveWidget.isMobileScreen(context)) {
+      context.goNamed(
+        AppRoute.profileForm.name,
+      );
+    } else {
+      context.replaceNamed(
+        AppRoute.profileForm.name,
+      );
+    }
   }
 }
