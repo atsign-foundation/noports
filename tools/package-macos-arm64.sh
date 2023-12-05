@@ -52,8 +52,8 @@ eval "$DART compile exe -o $OUTPUT_DIR/sshrv $SRC_DIR/bin/sshrv.dart"
 eval "$DART compile exe -o $OUTPUT_DIR/at_activate $SRC_DIR/bin/activate_cli.dart"
 eval "$DART compile exe -o $OUTPUT_DIR/debug/sshrvd -D ENABLE_SNOOP=true $SRC_DIR/bin/sshrvd.dart"
 
-cp -r "$SRC_DIR/bundles/core/*" "$OUTPUT_DIR/";
-cp -r "$SRC_DIR/bundles/shell/*" "$OUTPUT_DIR/";
+cp -r "$SRC_DIR/bundles/core"/* "$OUTPUT_DIR/";
+cp -r "$SRC_DIR/bundles/shell"/* "$OUTPUT_DIR/";
 cp "$SRC_DIR"/LICENSE "$OUTPUT_DIR/";
 
 "$SCRIPT_DIRECTORY/notarize-macos.sh" "$OUTPUT_DIR_PATH" sshnp-macos-arm64
