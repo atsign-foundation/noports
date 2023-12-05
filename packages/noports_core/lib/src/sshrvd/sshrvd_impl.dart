@@ -1,14 +1,17 @@
 import 'dart:async';
 import 'dart:io';
 import 'dart:isolate';
-
+import 'dart:convert';
 import 'package:at_client/at_client.dart';
+import 'package:at_lookup/at_lookup.dart';
 import 'package:at_utils/at_logger.dart';
 import 'package:logging/logging.dart';
 import 'package:meta/meta.dart';
+import 'package:noports_core/src/sshrvd/signature_verifying_socket_authenticator.dart';
 import 'package:noports_core/src/sshrvd/socket_connector.dart';
 import 'package:noports_core/src/sshrvd/sshrvd.dart';
 import 'package:noports_core/src/sshrvd/sshrvd_params.dart';
+import 'package:socket_connector/socket_connector.dart';
 
 @protected
 class SshrvdImpl implements Sshrvd {
@@ -32,6 +35,8 @@ class SshrvdImpl implements Sshrvd {
   @override
   @visibleForTesting
   bool initialized = false;
+
+  static final String subscriptionRegex = '${Sshrvd.namespace}@';
 
   SshrvdImpl({
     required this.atClient,
@@ -105,38 +110,35 @@ class SshrvdImpl implements Sshrvd {
     NotificationService notificationService = atClient.notificationService;
 
     notificationService
-        .subscribe(regex: '${Sshrvd.namespace}@', shouldDecrypt: true)
+        .subscribe(regex: subscriptionRegex, shouldDecrypt: true)
         .listen(_notificationHandler);
   }
 
   void _notificationHandler(AtNotification notification) async {
-    if (!notification.key.contains(Sshrvd.namespace)) {
-      // ignore notifications not for this namespace
+    if (!SshrvdUtil.accept(notification)) {
       return;
     }
+    late String session;
+    late String atSignA;
+    String? atSignB;
+    SocketAuthenticator? socketAuthenticatorA;
+    SocketAuthenticator? socketAuthenticatorB;
 
-    // TODO Jagan Extract the 'message' type from the notification key
-    //      like we do in sshnpd_impl's _notificationHandler
-    // Then switch on the 'message' type
-    // - If it's legacy (just looks like deviceName.sshrvd) then handle like
-    //   we currently do
-    // - If it's new (e.g. 'request_ports.deviceName.sshrvd') then we expect
-    //   the notification to be JSON which contains sessionId, atSignA, atSignB
-    //   and a flag (or a flag for each side) stating whether we want the
-    //   socket connections to be authenticated via challenge-response or not.
-    //   e.g. authenticateSocketsA, authenticateSocketsB
-    String session = notification.value!;
-    String atSignA = notification.from;
-    // TODO Jagan
-    String atSignB = atSignA;
+    try {
+      (session, atSignA, atSignB, socketAuthenticatorA, socketAuthenticatorB) = await SshrvdUtil.getParams(notification);
 
-    if (managerAtsign != 'open' && managerAtsign != atSignA) {
-      logger.shout('Session $session for $atSignA to $atSignB denied');
+      if (managerAtsign != 'open' && managerAtsign != atSignA) {
+        logger.shout('Session $session for $atSignA is denied');
+        return;
+      }
+
+    }catch(e) {
+      logger.shout(
+          'Unable to provide the socket pair due to: $e');
       return;
     }
-
     (int, int) ports =
-        await _spawnSocketConnector(0, 0, session, atSignA, atSignB, snoop);
+        await _spawnSocketConnector(0, 0, session, atSignA, atSignB, socketAuthenticatorA, socketAuthenticatorB, snoop);
     var (portA, portB) = ports;
     logger
         .warning('Starting session $session for $atSignA to $atSignB using ports $ports');
@@ -175,14 +177,15 @@ class SshrvdImpl implements Sshrvd {
     int portB,
     String session,
     String atSignA,
-    String atSignB,
+    String? atSignB, SocketAuthenticator? socketAuthenticatorA,
+      SocketAuthenticator? socketAuthenticatorB,
     bool snoop,
   ) async {
     /// Spawn an isolate and wait for it to send back the issued port numbers
     ReceivePort receivePort = ReceivePort(session);
 
     ConnectorParams parameters =
-        (receivePort.sendPort, portA, portB, session, atSignA, atSignB, snoop);
+        (receivePort.sendPort, portA, portB, session, atSignA, atSignB, socketAuthenticatorA, socketAuthenticatorB, snoop);
 
     logger
         .info("Spawning socket connector isolate with parameters $parameters");
@@ -194,5 +197,100 @@ class SshrvdImpl implements Sshrvd {
     logger.info('Received ports $ports in main isolate for session $session');
 
     return ports;
+  }
+}
+
+class SshrvdUtil {
+  static bool accept(AtNotification notification) {
+    return notification.key.contains(Sshrvd.namespace);
+  }
+
+  static Future<(String, String, String?, SocketAuthenticator?, SocketAuthenticator?)> getParams(AtNotification notification)  async {
+    if(notification.key.contains('request_ports') && notification.key.contains(Sshrvd.namespace)) {
+      return await _processJSONRequest(notification);
+    }
+    return _processLegacyRequest(notification);;
+  }
+
+
+  static (String, String, String?, SocketAuthenticator?, SocketAuthenticator?) _processLegacyRequest(AtNotification notification) {
+    return (notification.value!, notification.from, null, null, null);
+  }
+
+  static Future<(String, String, String?, SocketAuthenticator?, SocketAuthenticator?)> _processJSONRequest(AtNotification notification) async {
+    String session = '';
+    String atSignA = '';
+    String atSignB = '';
+    bool authenticateSocketA = false;
+    bool authenticateSocketB = false;
+    SocketAuthenticator? socketAuthenticatorA;
+    SocketAuthenticator? socketAuthenticatorB;
+
+    dynamic jsonValue = jsonDecode(notification.value ?? '');
+
+    if(jsonValue['session'] == null || jsonValue['atSignA'] == null || jsonValue['atSignB'] == null) {
+      throw Exception('session, atSignA and atSignB cannot be empty');
+    }
+
+    session = jsonValue['session'];
+    atSignA = jsonValue['atSignA'];
+    atSignB = jsonValue['atSignB'];
+    authenticateSocketA = jsonValue['authenticateSocketA'];
+    authenticateSocketB = jsonValue['authenticateSocketB'];
+
+    if(authenticateSocketA) {
+      String? pkAtSignA = await _fetchPublicKey(atSignA);
+      if(pkAtSignA == null) {
+        logger.shout(
+            'Cannot spawn socket connector. Authenticator for $atSignA could not be created as PublicKey could not be fetched from the secondary server.');
+        throw Exception('Unable to create SocketAuthenticator for $atSignA due to not able to get public key for $atSignA');
+      }
+      socketAuthenticatorA = SignatureVerifyingSocketAuthenticator(pkAtSignA, session);
+    }
+
+    if(authenticateSocketB) {
+      String? pkAtSignB = await _fetchPublicKey(atSignB);
+      if(pkAtSignB == null) {
+        logger.shout(
+            'Cannot spawn socket connector. Authenticator for $atSignB could not be created as PublicKey could not be fetched from the secondary server.');
+        throw Exception('Unable to create SocketAuthenticator for $atSignB due to not able to get public key for $atSignB');
+      }
+      socketAuthenticatorB = SignatureVerifyingSocketAuthenticator(pkAtSignB, session);
+    }
+
+    return (session, atSignA, atSignB, socketAuthenticatorA, socketAuthenticatorB);
+  }
+
+  static Future<String?> _fetchPublicKey(String atSign,
+      {int secondsToWait = 10}) async {
+    String? publicKey;
+    AtLookupImpl atLookupImpl = AtLookupImpl(atSign, 'root.atsign.org', 64);
+    SecondaryAddress secondaryAddress =
+    await atLookupImpl.secondaryAddressFinder.findSecondary(atSign);
+
+    SecureSocket secureSocket = await SecureSocket.connect(
+        secondaryAddress.host, secondaryAddress.port);
+
+    secureSocket.listen((event) {
+      String serverResponse = utf8.decode(event);
+      if (serverResponse == '@') {
+        secureSocket.write('lookup:publickey$atSign\n');
+      } else if (serverResponse.startsWith('data:')) {
+        publicKey = serverResponse.replaceFirst('data:', '');
+        publicKey = publicKey?.substring(0, publicKey?.indexOf('\n')).trim();
+      }
+    });
+
+
+    int totalSecondsWaited = 0;
+    while (totalSecondsWaited < secondsToWait) {
+      await Future.delayed(Duration(seconds: 1));
+      totalSecondsWaited = totalSecondsWaited + 1;
+      if (publicKey != null) {
+        break;
+      }
+    }
+    await secureSocket.close();
+    return publicKey;
   }
 }
