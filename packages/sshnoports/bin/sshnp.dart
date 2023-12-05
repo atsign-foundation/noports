@@ -130,7 +130,7 @@ void main(List<String> args) async {
   }, (Object error, StackTrace stackTrace) async {
     if (error is ArgumentError) return;
     if (error is SshnpError) return;
-    stderr.writeln('Unknown error: ${error.toString()}');
+    stderr.writeln('Error: ${error.toString()}');
     stderr.writeln('\nStack Trace: ${stackTrace.toString()}');
     exit(1);
   });
