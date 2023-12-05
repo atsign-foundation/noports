@@ -1,8 +1,9 @@
 #!/bin/bash
 
-# This script is used to package the macOS x64 binaries for sshnoports.
-# It first unpacks the prebuilt binaries, then it calls the notarize-macos.sh
-# script to notarize the binaries
+# This script is used to package the windows x64 binaries for sshnoports.
+# It first unpacks the tgz archive of binaries, then it repacks them as a .zip
+# This script requires that you do this packaging on a mac, since it is expected
+# that you do it while notarizing the macos binaries to save time
 
 # This script expects the path to the tgz archive as an argument
 
@@ -22,11 +23,12 @@ fi
 
 TAR_FILE="$1"
 
-OUTPUT_DIR_PATH="$ROOT_DIRECTORY/build/macos-x64"
+OUTPUT_DIR_PATH="$ROOT_DIRECTORY/build/windows-x64"
 OUTPUT_DIR="$OUTPUT_DIR_PATH/sshnp"
 
 rm -r "$OUTPUT_DIR_PATH"
 mkdir -p "$OUTPUT_DIR"
 tar -xvf "$TAR_FILE" -C "$OUTPUT_DIR_PATH"
 
-"$SCRIPT_DIRECTORY/notarize-macos.sh" "$OUTPUT_DIR_PATH" sshnp-macos-x64
+# Zip the signed binaries
+ditto -c -k --keepParent "$OUTPUT_DIR_PATH"/sshnp "$OUTPUT_DIR_PATH/sshnp-windows-x64".zip
