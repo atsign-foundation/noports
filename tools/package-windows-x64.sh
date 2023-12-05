@@ -1,8 +1,11 @@
 #!/bin/bash
 
-# This script is used to package the macOS x64 binaries for sshnoports.
-# It first unpacks the prebuilt binaries, then it calls the notarize-macos.sh
-# script to notarize the binaries
+# This script is used to package the windows x64 binaries for sshnoports.
+# It first unpacks the tgz archive of binaries, then it repacks them as a .zip
+# This script requires that you do this packaging on a mac, since it is expected
+# that you do it while notarizing the macos binaries to save time
+
+# This script expects the path to the tgz archive as an argument
 
 FULL_PATH_TO_SCRIPT="$(realpath "${BASH_SOURCE[0]}")"
 SCRIPT_DIRECTORY="$(dirname "$FULL_PATH_TO_SCRIPT")"
