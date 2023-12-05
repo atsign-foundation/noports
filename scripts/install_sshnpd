@@ -642,8 +642,7 @@ do_rename() {
 
 deprecation_msg() {
   case "$SSHNP_VERSION" in
-    # TODO remove latest to signify deprecation on the launch of v4.0.0
-    latest|1.*|2.*|3.*|4.0.0-test.*|4.0.0-rc.*)
+    1.*|2.*|3.*|4.0.0-test.*|4.0.0-rc.*)
       # no message, this group is expected to use this script
     ;;
     *)
