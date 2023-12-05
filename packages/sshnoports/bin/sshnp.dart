@@ -21,14 +21,11 @@ void main(List<String> args) async {
   ExtendedArgParser parser = ExtendedArgParser();
 
   // Create the printUsage closure
-  void printUsage({Object? error, StackTrace? stackTrace}) {
+  void printUsage({Object? error}) {
     printVersion();
     stderr.writeln(parser.usage);
     if (error != null) {
       stderr.writeln('\n$error');
-    }
-    if (stackTrace != null) {
-      stderr.writeln('\n$stackTrace');
     }
   }
 
@@ -117,8 +114,8 @@ void main(List<String> args) async {
           exit(0);
         }
       }
-    } on ArgumentError catch (error, stackTrace) {
-      printUsage(error: error, stackTrace: stackTrace);
+    } on ArgumentError catch (error) {
+      printUsage(error: error);
       exit(1);
     } on SshnpError catch (error, stackTrace) {
       stderr.writeln(error.toString());
