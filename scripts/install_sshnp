@@ -194,7 +194,7 @@ parse_requirements() {
   REQ_SSH=$(command -v ssh)
   REQ_SSHD=$(command -v sshd)
   REQ_SSH=$(command -v ssh)
-  if [ -f "/usr/sbin/sshd" ]; then 
+  if [ -f "/usr/sbin/sshd" ]; then
     REQ_SSHD=true
   fi
   #REQ_SSH0=$(ssh -o "StrictHostKeyChecking no" -o "PasswordAuthentication no" 0 exit 2>/dev/null; echo $?)
@@ -411,8 +411,7 @@ do_update() {
 
 deprecation_msg() {
   case "$SSHNP_VERSION" in
-    # TODO remove latest to signify deprecation on the launch of v4.0.0
-    latest|1.*|2.*|3.*|4.0.0-test.*|4.0.0-rc.*)
+    1.*|2.*|3.*|4.0.0-test.*|4.0.0-rc.*)
       # no message, this group is expected to use this script
     ;;
     *)
