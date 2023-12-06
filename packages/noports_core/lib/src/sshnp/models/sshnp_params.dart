@@ -25,20 +25,20 @@ class SshnpParams {
   final bool sendSshPublicKey;
   final List<String> localSshOptions;
   final String? remoteUsername;
+  final String? tunnelUsername;
   final bool verbose;
   final String rootDomain;
   final int localSshdPort;
-  final bool legacyDaemon;
   final int remoteSshdPort;
   final int idleTimeout;
   final bool addForwardsToTunnel;
   final String? atKeysFilePath;
-  final SupportedSshClient sshClient;
   final SupportedSshAlgorithm sshAlgorithm;
 
   /// Special Arguments
-  final String?
-      profileName; // automatically populated with the filename if from a configFile
+
+  /// automatically populated with the filename if from a configFile
+  final String? profileName;
 
   /// Operation flags
   final bool listDevices;
@@ -57,15 +57,14 @@ class SshnpParams {
     this.localSshOptions = DefaultSshnpArgs.localSshOptions,
     this.verbose = DefaultArgs.verbose,
     this.remoteUsername,
+    this.tunnelUsername,
     this.atKeysFilePath,
     this.rootDomain = DefaultArgs.rootDomain,
     this.localSshdPort = DefaultArgs.localSshdPort,
-    this.legacyDaemon = DefaultSshnpArgs.legacyDaemon,
     this.listDevices = DefaultSshnpArgs.listDevices,
     this.remoteSshdPort = DefaultArgs.remoteSshdPort,
     this.idleTimeout = DefaultArgs.idleTimeout,
     this.addForwardsToTunnel = DefaultArgs.addForwardsToTunnel,
-    this.sshClient = DefaultSshnpArgs.sshClient,
     this.sshAlgorithm = DefaultArgs.sshAlgorithm,
   });
 
@@ -98,16 +97,15 @@ class SshnpParams {
       sendSshPublicKey: params2.sendSshPublicKey ?? params1.sendSshPublicKey,
       localSshOptions: params2.localSshOptions ?? params1.localSshOptions,
       remoteUsername: params2.remoteUsername ?? params1.remoteUsername,
+      tunnelUsername: params2.tunnelUsername ?? params1.tunnelUsername,
       verbose: params2.verbose ?? params1.verbose,
       rootDomain: params2.rootDomain ?? params1.rootDomain,
       localSshdPort: params2.localSshdPort ?? params1.localSshdPort,
       listDevices: params2.listDevices ?? params1.listDevices,
-      legacyDaemon: params2.legacyDaemon ?? params1.legacyDaemon,
       remoteSshdPort: params2.remoteSshdPort ?? params1.remoteSshdPort,
       idleTimeout: params2.idleTimeout ?? params1.idleTimeout,
       addForwardsToTunnel:
           params2.addForwardsToTunnel ?? params1.addForwardsToTunnel,
-      sshClient: params2.sshClient ?? params1.sshClient,
       sshAlgorithm: params2.sshAlgorithm ?? params1.sshAlgorithm,
     );
   }
@@ -139,16 +137,15 @@ class SshnpParams {
           partial.localSshOptions ?? DefaultSshnpArgs.localSshOptions,
       verbose: partial.verbose ?? DefaultArgs.verbose,
       remoteUsername: partial.remoteUsername,
+      tunnelUsername: partial.tunnelUsername,
       atKeysFilePath: partial.atKeysFilePath,
       rootDomain: partial.rootDomain ?? DefaultArgs.rootDomain,
       localSshdPort: partial.localSshdPort ?? DefaultArgs.localSshdPort,
       listDevices: partial.listDevices ?? DefaultSshnpArgs.listDevices,
-      legacyDaemon: partial.legacyDaemon ?? DefaultSshnpArgs.legacyDaemon,
       remoteSshdPort: partial.remoteSshdPort ?? DefaultArgs.remoteSshdPort,
       idleTimeout: partial.idleTimeout ?? DefaultArgs.idleTimeout,
       addForwardsToTunnel:
           partial.addForwardsToTunnel ?? DefaultArgs.addForwardsToTunnel,
-      sshClient: partial.sshClient ?? DefaultSshnpArgs.sshClient,
       sshAlgorithm: partial.sshAlgorithm ?? DefaultArgs.sshAlgorithm,
     );
   }
@@ -190,13 +187,13 @@ class SshnpParams {
       SshnpArg.sendSshPublicKeyArg.name: sendSshPublicKey,
       SshnpArg.localSshOptionsArg.name: localSshOptions,
       SshnpArg.remoteUserNameArg.name: remoteUsername,
+      SshnpArg.tunnelUserNameArg.name: tunnelUsername,
       SshnpArg.verboseArg.name: verbose,
       SshnpArg.rootDomainArg.name: rootDomain,
       SshnpArg.localSshdPortArg.name: localSshdPort,
       SshnpArg.remoteSshdPortArg.name: remoteSshdPort,
       SshnpArg.idleTimeoutArg.name: idleTimeout,
       SshnpArg.addForwardsToTunnelArg.name: addForwardsToTunnel,
-      SshnpArg.sshClientArg.name: sshClient.toString(),
       SshnpArg.sshAlgorithmArg.name: sshAlgorithm.toString(),
     };
     args.removeWhere(
@@ -229,13 +226,12 @@ class SshnpPartialParams {
   final bool? sendSshPublicKey;
   final List<String>? localSshOptions;
   final String? remoteUsername;
+  final String? tunnelUsername;
   final bool? verbose;
   final String? rootDomain;
-  final bool? legacyDaemon;
   final int? remoteSshdPort;
   final int? idleTimeout;
   final bool? addForwardsToTunnel;
-  final SupportedSshClient? sshClient;
   final SupportedSshAlgorithm? sshAlgorithm;
 
   /// Operation flags
@@ -255,15 +251,14 @@ class SshnpPartialParams {
     this.sendSshPublicKey,
     this.localSshOptions,
     this.remoteUsername,
+    this.tunnelUsername,
     this.verbose,
     this.rootDomain,
     this.localSshdPort,
     this.listDevices,
-    this.legacyDaemon,
     this.remoteSshdPort,
     this.idleTimeout,
     this.addForwardsToTunnel,
-    this.sshClient,
     this.sshAlgorithm,
   });
 
@@ -291,16 +286,15 @@ class SshnpPartialParams {
       sendSshPublicKey: params2.sendSshPublicKey ?? params1.sendSshPublicKey,
       localSshOptions: params2.localSshOptions ?? params1.localSshOptions,
       remoteUsername: params2.remoteUsername ?? params1.remoteUsername,
+      tunnelUsername: params2.tunnelUsername ?? params1.tunnelUsername,
       verbose: params2.verbose ?? params1.verbose,
       rootDomain: params2.rootDomain ?? params1.rootDomain,
       localSshdPort: params2.localSshdPort ?? params1.localSshdPort,
       listDevices: params2.listDevices ?? params1.listDevices,
-      legacyDaemon: params2.legacyDaemon ?? params1.legacyDaemon,
       remoteSshdPort: params2.remoteSshdPort ?? params1.remoteSshdPort,
       idleTimeout: params2.idleTimeout ?? params1.idleTimeout,
       addForwardsToTunnel:
           params2.addForwardsToTunnel ?? params1.addForwardsToTunnel,
-      sshClient: params2.sshClient ?? params1.sshClient,
       sshAlgorithm: params2.sshAlgorithm ?? params1.sshAlgorithm,
     );
   }
@@ -339,17 +333,14 @@ class SshnpPartialParams {
           ? null
           : List<String>.from(args[SshnpArg.localSshOptionsArg.name]),
       remoteUsername: args[SshnpArg.remoteUserNameArg.name],
+      tunnelUsername: args[SshnpArg.tunnelUserNameArg.name],
       verbose: args[SshnpArg.verboseArg.name],
       rootDomain: args[SshnpArg.rootDomainArg.name],
       localSshdPort: args[SshnpArg.localSshdPortArg.name],
       listDevices: args[SshnpArg.listDevicesArg.name],
-      legacyDaemon: args[SshnpArg.legacyDaemonArg.name],
       remoteSshdPort: args[SshnpArg.remoteSshdPortArg.name],
       idleTimeout: args[SshnpArg.idleTimeoutArg.name],
       addForwardsToTunnel: args[SshnpArg.addForwardsToTunnelArg.name],
-      sshClient: args[SshnpArg.sshClientArg.name] == null
-          ? null
-          : SupportedSshClient.fromString(args[SshnpArg.sshClientArg.name]),
       sshAlgorithm: args[SshnpArg.sshAlgorithmArg.name] == null
           ? null
           : SupportedSshAlgorithm.fromString(

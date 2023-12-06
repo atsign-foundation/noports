@@ -49,6 +49,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.11.0"
+  at_auth:
+    dependency: transitive
+    description:
+      name: at_auth
+      sha256: "762ff58fa533bc0d683bd106a2646980eb43080c6d1f415554f987e894a80926"
+      url: "https://pub.dev"
+    source: hosted
+    version: "1.0.0"
   at_base2e15:
     dependency: transitive
     description:
@@ -61,50 +69,50 @@ packages:
     dependency: transitive
     description:
       name: at_chops
-      sha256: "9d825e909eb5dcd1bf79554640860193488de7b2db07275692b0167bb80f2ca2"
+      sha256: "30863a74e38abc88258b8506ec1495ee6dc6bb95c1ab11d2d37fdbe455d93f82"
       url: "https://pub.dev"
     source: hosted
-    version: "1.0.4"
+    version: "1.0.5"
   at_client:
     dependency: "direct overridden"
     description:
       name: at_client
-      sha256: d96bc7fe7f66419c41281627ff1f221e4fc4296847d4d7f90999c5aa6ecaddfd
+      sha256: b25f991409efa860a6196399c20bbebb8e763695197996ea4013789b4b96f297
       url: "https://pub.dev"
     source: hosted
-    version: "3.0.65"
+    version: "3.0.68"
   at_commons:
     dependency: transitive
     description:
       name: at_commons
-      sha256: "02844803a417ef2c80f86a7385281ef65075ae935ae7770b299ba7d35ed90ed3"
+      sha256: a3b5c171c0a7a7cbfd334302df7670f831f00b9b701d8bec9ebbc1765e69f489
       url: "https://pub.dev"
     source: hosted
-    version: "3.0.56"
+    version: "3.0.57"
   at_lookup:
     dependency: "direct overridden"
     description:
       name: at_lookup
-      sha256: "9a0db434b98a855b06dc90dcffa96667cd4ede21230449fdd9046c77ec4bb822"
+      sha256: "75f1e8e0445295c6b649aa04a95275f51d79cd18aa83a9d0c207f10604cc17b1"
       url: "https://pub.dev"
     source: hosted
-    version: "3.0.40"
+    version: "3.0.41"
   at_onboarding_cli:
     dependency: "direct main"
     description:
       name: at_onboarding_cli
-      sha256: "847cf4511276651346c5334daa9e209656f778010491fe33843a5e1d5861689e"
+      sha256: "7d2425dee2349e7e14cf395e7438c6a34581b640a5528d798cde86c0a56b50b3"
       url: "https://pub.dev"
     source: hosted
-    version: "1.3.0"
+    version: "1.4.0"
   at_persistence_secondary_server:
     dependency: transitive
     description:
       name: at_persistence_secondary_server
-      sha256: "016a98b48d43db19dcb8601c43cdecbcbe0ed60c298d1cfd3d6425f7439e7c30"
+      sha256: "8dd493beaa10b42f42c47405884b926a01c07c345b53f25fa82383907880e24a"
       url: "https://pub.dev"
     source: hosted
-    version: "3.0.57"
+    version: "3.0.59"
   at_persistence_spec:
     dependency: transitive
     description:
@@ -181,10 +189,10 @@ packages:
     dependency: "direct dev"
     description:
       name: build_runner
-      sha256: "10c6bcdbf9d049a0b666702cf1cee4ddfdc38f02a19d35ae392863b47519848b"
+      sha256: "67d591d602906ef9201caf93452495ad1812bea2074f04e25dbd7c133785821b"
       url: "https://pub.dev"
     source: hosted
-    version: "2.4.6"
+    version: "2.4.7"
   build_runner_core:
     dependency: transitive
     description:
@@ -421,10 +429,10 @@ packages:
     dependency: transitive
     description:
       name: http
-      sha256: "5895291c13fa8a3bd82e76d5627f69e0d85ca6a30dcac95c4ea19a5d555879c2"
+      sha256: "759d1a329847dd0f39226c688d3e06a6b8679668e350e2891a6474f8b4bb8525"
       url: "https://pub.dev"
     source: hosted
-    version: "0.13.6"
+    version: "1.1.0"
   http_multi_server:
     dependency: transitive
     description:
@@ -525,10 +533,10 @@ packages:
     dependency: "direct dev"
     description:
       name: mocktail
-      sha256: "80a996cd9a69284b3dc521ce185ffe9150cde69767c2d3a0720147d93c0cef53"
+      sha256: bac151b31e4ed78bd59ab89aa4c0928f297b1180186d5daf03734519e5f596c1
       url: "https://pub.dev"
     source: hosted
-    version: "0.3.0"
+    version: "1.0.1"
   mutex:
     dependency: transitive
     description:
@@ -556,10 +564,11 @@ packages:
   noports_core:
     dependency: "direct main"
     description:
-      path: "../noports_core"
-      relative: true
-    source: path
-    version: "4.0.0-dev.3"
+      name: noports_core
+      sha256: "795bca376f4169c5313439fdf21274f3d82fa2bec2c88b4909f27fadd7053d0a"
+      url: "https://pub.dev"
+    source: hosted
+    version: "4.0.0"
   openssh_ed25519:
     dependency: transitive
     description:

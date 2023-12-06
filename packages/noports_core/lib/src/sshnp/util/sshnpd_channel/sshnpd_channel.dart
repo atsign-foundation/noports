@@ -47,23 +47,24 @@ abstract class SshnpdChannel with AsyncInitialization, AtClientBindings {
     required this.params,
     required this.sessionId,
     required this.namespace,
-  });
+  }) {
+    logger.level = params.verbose ? 'info' : 'shout';
+  }
 
   /// Initialization starts the subscription to notifications from the daemon.
   @override
   Future<void> initialize() async {
     String regex = '$sessionId.$namespace${params.sshnpdAtSign}';
     logger.info('Starting monitor for notifications with regex: "$regex"');
-    atClient.notificationService
-        .subscribe(
-          regex: regex,
-          shouldDecrypt: true,
-        )
-        .listen(_handleSshnpdResponses);
+    subscribe(
+      regex: regex,
+      shouldDecrypt: true,
+    ).listen(handleSshnpdResponses);
   }
 
   /// Main reponse handler for the daemon's notifications.
-  Future<void> _handleSshnpdResponses(AtNotification notification) async {
+  @visibleForTesting
+  Future<void> handleSshnpdResponses(AtNotification notification) async {
     String notificationKey = notification.key
         .replaceAll('${notification.to}:', '')
         .replaceAll('.$namespace@${notification.from}', '')
@@ -89,11 +90,12 @@ abstract class SshnpdChannel with AsyncInitialization, AtClientBindings {
   /// Returns true if the deamon acknowledged our request.
   /// Returns false if a timeout occurred.
   Future<SshnpdAck> waitForDaemonResponse() async {
-    int counter = 0;
     // Timer to timeout after 10 Secs or after the Ack of connected/Errors
-    for (int i = 0; i < 100; i++) {
-      logger.info('Waiting for sshnpd response: $counter');
-      logger.info('sshnpdAck: $sshnpdAck');
+    for (int counter = 1; counter <= 100; counter++) {
+      if (counter % 20 == 0) {
+        logger.info('Still waiting for sshnpd response');
+        logger.info('sshnpdAck: $sshnpdAck');
+      }
       await Future.delayed(Duration(milliseconds: 100));
       if (sshnpdAck != SshnpdAck.notAcknowledged) break;
     }
@@ -163,6 +165,18 @@ abstract class SshnpdChannel with AsyncInitialization, AtClientBindings {
     }
   }
 
+  /// Resolve the username to use in the initial ssh tunnel
+  /// If [params.tunnelUsername] is set, it will be used.
+  /// Otherwise, the username will be set to [remoteUsername]
+  Future<String?> resolveTunnelUsername(
+      {required String? remoteUsername}) async {
+    if (params.tunnelUsername != null) {
+      return params.tunnelUsername!;
+    } else {
+      return remoteUsername;
+    }
+  }
+
   /// List all available devices from the daemon.
   /// Returns a [SSHPNPDeviceList] object which contains a map of device names
   /// and corresponding info, and a list of active devices (devices which also
@@ -173,14 +187,12 @@ abstract class SshnpdChannel with AsyncInitialization, AtClientBindings {
         'device_info\\.$sshnpDeviceNameRegex\\.${DefaultArgs.namespace}';
 
     var atKeys =
-        await _getAtKeysRemote(regex: scanRegex, sharedBy: params.sshnpdAtSign);
+        await getAtKeysRemote(regex: scanRegex, sharedBy: params.sshnpdAtSign);
 
     SshnpDeviceList deviceList = SshnpDeviceList();
 
     // Listen for heartbeat notifications
-    atClient.notificationService
-        .subscribe(
-            regex: 'heartbeat\\.$sshnpDeviceNameRegex', shouldDecrypt: true)
+    subscribe(regex: 'heartbeat\\.$sshnpDeviceNameRegex', shouldDecrypt: true)
         .listen((notification) {
       var deviceInfo = jsonDecode(notification.value ?? '{}');
       var devicename = deviceInfo['devicename'];
@@ -216,6 +228,7 @@ abstract class SshnpdChannel with AsyncInitialization, AtClientBindings {
         ..namespace = DefaultArgs.namespace
         ..metadata = metaData;
 
+      logger.info('Sending ping to sshnpd');
       unawaited(notify(pingKey, 'ping'));
     }
 
@@ -226,7 +239,8 @@ abstract class SshnpdChannel with AsyncInitialization, AtClientBindings {
   }
 
   /// A custom implementation of AtClient.getAtKeys which bypasses the cache
-  Future<List<AtKey>> _getAtKeysRemote(
+  @visibleForTesting
+  Future<List<AtKey>> getAtKeysRemote(
       {String? regex,
       String? sharedBy,
       String? sharedWith,

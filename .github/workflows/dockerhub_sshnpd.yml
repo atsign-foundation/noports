@@ -15,9 +15,9 @@ jobs:
       matrix:
         include:
           - name: sshnpd
-            dockerfile: ./packages/sshnoports/templates/docker/Dockerfile
+            dockerfile: ./packages/sshnoports/tools/Dockerfile
           - name: activate_sshnpd
-            dockerfile: ./packages/sshnoports/templates/docker/Dockerfile.activate
+            dockerfile: ./packages/sshnoports/tools/Dockerfile.activate
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -39,7 +39,7 @@ jobs:
       - name: Get version
         run: echo "VERSION=${GITHUB_REF##*/}" >> $GITHUB_ENV
       - name: Build and push
-        uses: docker/build-push-action@0565240e2d4ab88bba5387d719585280857ece09 # v5.0.0
+        uses: docker/build-push-action@4a13e500e55cf31b7a5d59a38ab2040ab0f42f56 # v5.1.0
         with:
           context: .
           file: ${{ matrix.dockerfile }}

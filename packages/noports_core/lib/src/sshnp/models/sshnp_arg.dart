@@ -115,12 +115,11 @@ class SshnpArg {
     localSshOptionsArg,
     verboseArg,
     remoteUserNameArg,
+    tunnelUserNameArg,
     rootDomainArg,
     localSshdPortArg,
-    legacyDaemonArg,
     remoteSshdPortArg,
     idleTimeoutArg,
-    sshClientArg,
     sshAlgorithmArg,
     addForwardsToTunnelArg,
     configFileArg,
@@ -278,6 +277,11 @@ class SshnpArg {
     abbr: 'u',
     help: 'username to use in the ssh session on the remote host',
   );
+  static const tunnelUserNameArg = SshnpArg(
+    name: 'tunnel-user-name',
+    abbr: 'U',
+    help: 'username to use for the initial ssh tunnel',
+  );
   static const rootDomainArg = SshnpArg(
     name: 'root-domain',
     help: 'atDirectory domain',
@@ -293,12 +297,6 @@ class SshnpArg {
     mandatory: false,
     format: ArgFormat.option,
     type: ArgType.integer,
-  );
-  static const legacyDaemonArg = SshnpArg(
-    name: 'legacy-daemon',
-    help: 'Request is to a legacy (< 4.0.0) noports daemon',
-    defaultsTo: DefaultSshnpArgs.legacyDaemon,
-    format: ArgFormat.flag,
   );
   static const remoteSshdPortArg = SshnpArg(
     name: 'remote-sshd-port',
@@ -316,13 +314,6 @@ class SshnpArg {
     mandatory: false,
     format: ArgFormat.option,
     type: ArgType.integer,
-    parseWhen: ParseWhen.commandLine,
-  );
-  static final sshClientArg = SshnpArg(
-    name: 'ssh-client',
-    help: 'What to use for outbound ssh connections',
-    defaultsTo: DefaultSshnpArgs.sshClient.toString(),
-    allowed: SupportedSshClient.values.map((c) => c.toString()).toList(),
     parseWhen: ParseWhen.commandLine,
   );
   static final sshAlgorithmArg = SshnpArg(

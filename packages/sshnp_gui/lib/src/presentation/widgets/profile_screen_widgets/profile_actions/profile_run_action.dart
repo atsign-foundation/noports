@@ -32,8 +32,6 @@ class _ProfileRunActionState extends ConsumerState<ProfileRunAction> {
         SshnpPartialParams(
           idleTimeout: 120, // 120 / 60 = 2 minutes
           addForwardsToTunnel: true,
-          legacyDaemon: false,
-          sshClient: SupportedSshClient.dart,
         ),
       );
 

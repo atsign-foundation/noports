@@ -1,16 +1,12 @@
 import 'dart:async';
 
-import 'dart:io';
-
 import 'package:at_client/at_client.dart' hide StringBuffer;
-
 import 'package:at_utils/at_logger.dart';
-import 'package:logging/logging.dart';
 import 'package:meta/meta.dart';
 import 'package:noports_core/src/common/mixins/async_completion.dart';
 import 'package:noports_core/src/common/mixins/async_initialization.dart';
 import 'package:noports_core/src/common/mixins/at_client_bindings.dart';
-import 'package:noports_core/src/sshnp/util/sshnp_ssh_key_handler.dart';
+import 'package:noports_core/src/sshnp/util/sshnp_ssh_key_handler/sshnp_ssh_key_handler.dart';
 import 'package:noports_core/src/sshnp/util/sshnpd_channel/sshnpd_channel.dart';
 import 'package:noports_core/src/sshnp/util/sshrvd_channel/sshrvd_channel.dart';
 import 'package:noports_core/sshnp.dart';
@@ -24,7 +20,7 @@ abstract class SshnpCore
   // * AtClientBindings members
   /// The logger for this class
   @override
-  final AtSignLogger logger = AtSignLogger(' SshnpCore ');
+  final AtSignLogger logger = AtSignLogger('Sshnp');
 
   /// The [AtClient] to use for this instance
   @override
@@ -50,11 +46,14 @@ abstract class SshnpCore
   /// The remote username to use for the ssh session
   String? remoteUsername;
 
+  /// The username to use for the initial ssh tunnel session
+  String? tunnelUsername;
+
   // * Communication Channels
 
   /// The channel to communicate with the sshrvd (host)
   @protected
-  SshrvdChannel? get sshrvdChannel;
+  SshrvdChannel get sshrvdChannel;
 
   /// The channel to communicate with the sshnpd (daemon)
   @protected
@@ -66,14 +65,7 @@ abstract class SshnpCore
   })  : sessionId = Uuid().v4(),
         namespace = '${params.device}.sshnp',
         localPort = params.localPort {
-    /// Set the logger level to shout
-    logger.hierarchicalLoggingEnabled = true;
-    logger.logger.level = Level.SHOUT;
-
-    if (params.verbose) {
-      logger.logger.level = Level.INFO;
-      AtSignLogger.root_level = 'info';
-    }
+    logger.level = params.verbose ? 'info' : 'shout';
 
     /// Set the namespace to the device's namespace
     AtClientPreference preference =
@@ -94,38 +86,20 @@ abstract class SshnpCore
     /// Set the remote username to use for the ssh session
     remoteUsername = await sshnpdChannel.resolveRemoteUsername();
 
-    /// Find a spare local port if required
-    await _findLocalPortIfRequired();
+    /// Set the username to use for the initial ssh tunnel
+    tunnelUsername = await sshnpdChannel.resolveTunnelUsername(
+        remoteUsername: remoteUsername);
 
     /// Shares the public key if required
     await sshnpdChannel.sharePublicKeyIfRequired(identityKeyPair);
 
     /// Retrieve the sshrvd host and port pair
-    await sshrvdChannel?.callInitialization();
+    await sshrvdChannel.callInitialization();
   }
 
   @override
   Future<void> dispose() async {
     completeDisposal();
-  }
-
-  Future<void> _findLocalPortIfRequired() async {
-    // TODO investigate if this is a problem on mobile
-    // find a spare local port
-    if (localPort == 0) {
-      logger.info('Finding a spare local port');
-      try {
-        ServerSocket serverSocket =
-            await ServerSocket.bind(InternetAddress.loopbackIPv4, 0)
-                .catchError((e) => throw e);
-        localPort = serverSocket.port;
-        await serverSocket.close().catchError((e) => throw e);
-      } catch (e, s) {
-        logger.info('Unable to find a spare local port');
-        throw SshnpError('Unable to find a spare local port',
-            error: e, stackTrace: s);
-      }
-    }
   }
 
   @override

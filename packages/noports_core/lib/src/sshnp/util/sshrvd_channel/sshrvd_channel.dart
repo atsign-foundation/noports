@@ -39,6 +39,7 @@ abstract class SshrvdChannel<T> with AsyncInitialization, AtClientBindings {
   int? _port;
 
   String get host => _host ?? params.host;
+
   int get port => _port ?? params.port;
 
   // * Volatile fields set at runtime
@@ -49,6 +50,7 @@ abstract class SshrvdChannel<T> with AsyncInitialization, AtClientBindings {
 
   /// The port sshrvd is listening on
   int? _sshrvdPort;
+
   int? get sshrvdPort => _sshrvdPort;
 
   SshrvdChannel({
@@ -56,7 +58,9 @@ abstract class SshrvdChannel<T> with AsyncInitialization, AtClientBindings {
     required this.params,
     required this.sessionId,
     required this.sshrvGenerator,
-  });
+  }) {
+    logger.level = params.verbose ? 'info' : 'shout';
+  }
 
   @override
   Future<void> initialize() async {
@@ -76,7 +80,7 @@ abstract class SshrvdChannel<T> with AsyncInitialization, AtClientBindings {
     // Connect to rendezvous point using background process.
     // sshnp (this program) can then exit without issue.
     Sshrv<T> sshrv = sshrvGenerator(
-      params.host,
+      host,
       _sshrvdPort!,
       localSshdPort: params.localSshdPort,
     );
@@ -86,9 +90,7 @@ abstract class SshrvdChannel<T> with AsyncInitialization, AtClientBindings {
   @protected
   Future<void> getHostAndPortFromSshrvd() async {
     sshrvdAck = SshrvdAck.notAcknowledged;
-    atClient.notificationService
-        .subscribe(
-            regex: '$sessionId.${Sshrvd.namespace}@', shouldDecrypt: true)
+    subscribe(regex: '$sessionId.${Sshrvd.namespace}@', shouldDecrypt: true)
         .listen((notification) async {
       String ipPorts = notification.value.toString();
       List results = ipPorts.split(',');
@@ -112,12 +114,14 @@ abstract class SshrvdChannel<T> with AsyncInitialization, AtClientBindings {
     logger.info('Sending notification to sshrvd: $ourSshrvdIdKey');
     await notify(ourSshrvdIdKey, sessionId);
 
-    int counter = 0;
+    int counter = 1;
     while (sshrvdAck == SshrvdAck.notAcknowledged) {
-      logger.info('Waiting for sshrvd response: $counter');
+      if (counter % 20 == 0) {
+        logger.info('Still waiting for sshrvd response');
+      }
       await Future.delayed(Duration(milliseconds: 100));
       counter++;
-      if (counter == 100) {
+      if (counter > 100) {
         logger.warning('Timed out waiting for sshrvd response');
         throw ('Connection timeout to sshrvd $host service\nhint: make sure host is valid and online');
       }

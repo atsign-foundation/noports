@@ -29,23 +29,15 @@ class _ProfileTerminalActionState extends ConsumerState<ProfileTerminalAction> {
     }
 
     try {
-      SshnpParams params = SshnpParams.merge(
-        widget.params,
-        SshnpPartialParams(
-          legacyDaemon: false,
-          sshClient: SupportedSshClient.dart,
-        ),
-      );
-
       // TODO ensure that this keyPair gets uploaded to the app first
       AtClient atClient = AtClientManager.getInstance().atClient;
       DartSshKeyUtil keyUtil = DartSshKeyUtil();
       AtSshKeyPair keyPair = await keyUtil.getKeyPair(
-        identifier: params.identityFile ?? 'id_${atClient.getCurrentAtSign()!.replaceAll('@', '')}',
+        identifier: widget.params.identityFile ?? 'id_${atClient.getCurrentAtSign()!.replaceAll('@', '')}',
       );
 
       final sshnp = Sshnp.dartPure(
-        params: params,
+        params: widget.params,
         atClient: atClient,
         identityKeyPair: keyPair,
       );

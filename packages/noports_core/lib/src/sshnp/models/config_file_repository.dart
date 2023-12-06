@@ -1,6 +1,6 @@
-import 'dart:io';
-
+import 'package:meta/meta.dart';
 import 'package:noports_core/src/common/file_system_utils.dart';
+import 'package:noports_core/src/common/io_types.dart';
 import 'package:noports_core/src/sshnp/models/sshnp_params.dart';
 import 'package:noports_core/src/sshnp/models/sshnp_arg.dart';
 import 'package:path/path.dart' as path;
@@ -30,19 +30,25 @@ class ConfigFileRepository {
     );
   }
 
-  static Future<Directory> createConfigDirectory({String? directory}) async {
+  static Future<Directory> createConfigDirectory({
+    String? directory,
+    @visibleForTesting FileSystem fs = const LocalFileSystem(),
+  }) async {
     directory ??= getDefaultSshnpConfigDirectory(getHomeDirectory()!);
-    var dir = Directory(directory);
+    var dir = fs.directory(directory);
     if (!await dir.exists()) {
       await dir.create(recursive: true);
     }
     return dir;
   }
 
-  static Future<Iterable<String>> listProfiles({String? directory}) async {
+  static Future<Iterable<String>> listProfiles({
+    String? directory,
+    @visibleForTesting FileSystem fs = const LocalFileSystem(),
+  }) async {
     var profileNames = <String>{};
     directory ??= getDefaultSshnpConfigDirectory(getHomeDirectory()!);
-    var files = Directory(directory).list();
+    var files = fs.directory(directory).list();
 
     await files.forEach((file) {
       if (file is! File) return;
@@ -62,15 +68,19 @@ class ConfigFileRepository {
     return SshnpParams.fromFile(fileName);
   }
 
-  static Future<File> putParams(SshnpParams params,
-      {String? directory, bool overwrite = false}) async {
+  static Future<File> putParams(
+    SshnpParams params, {
+    String? directory,
+    bool overwrite = false,
+    @visibleForTesting FileSystem fs = const LocalFileSystem(),
+  }) async {
     if (params.profileName == null || params.profileName!.isEmpty) {
       throw Exception('profileName is null or empty');
     }
 
     var fileName =
         await fromProfileName(params.profileName!, directory: directory);
-    var file = File(fileName);
+    var file = fs.file(fileName);
 
     var exists = await file.exists();
 
@@ -87,15 +97,18 @@ class ConfigFileRepository {
     );
   }
 
-  static Future<FileSystemEntity> deleteParams(SshnpParams params,
-      {String? directory}) async {
+  static Future<FileSystemEntity> deleteParams(
+    SshnpParams params, {
+    String? directory,
+    @visibleForTesting FileSystem fs = const LocalFileSystem(),
+  }) async {
     if (params.profileName == null || params.profileName!.isEmpty) {
       throw Exception('profileName is null or empty');
     }
 
     var fileName =
         await fromProfileName(params.profileName!, directory: directory);
-    var file = File(fileName);
+    var file = fs.file(fileName);
 
     var exists = await file.exists();
 
@@ -106,8 +119,11 @@ class ConfigFileRepository {
     return file.delete();
   }
 
-  static Map<String, dynamic> parseConfigFile(String fileName) {
-    File file = File(fileName);
+  static Map<String, dynamic> parseConfigFile(
+    String fileName, {
+    @visibleForTesting FileSystem fs = const LocalFileSystem(),
+  }) {
+    File file = fs.file(fileName);
 
     if (!file.existsSync()) {
       throw Exception('Config file does not exist: $fileName');

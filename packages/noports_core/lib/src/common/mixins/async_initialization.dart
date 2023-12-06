@@ -10,7 +10,7 @@ mixin class AsyncInitialization {
   // * Public members
 
   /// Used to check if initialization has started
-  bool get initalizeStarted => _initializeStarted;
+  bool get initializeStarted => _initializeStarted;
 
   /// Used to check if initialization has completed
   Future<void> get initialized => _initializedCompleter.future;
@@ -24,6 +24,7 @@ mixin class AsyncInitialization {
 
   /// To be called by the class that implements this mixin
   /// to ensure that [initialize] is only called once
+  @visibleForTesting
   @protected
   Future<void> callInitialization() async {
     if (!_initializeStarted) {
@@ -43,6 +44,7 @@ mixin class AsyncInitialization {
   ///
   /// hint: call [isSafeToInitialize] at the beginning of this method
   /// to ensure that initialization is not done more than once
+  @visibleForTesting
   @visibleForOverriding
   @protected
   Future<void> initialize() async {}
@@ -50,6 +52,7 @@ mixin class AsyncInitialization {
   /// To be called by the class that implements this mixin
   /// to signal completion of the initialization process
   /// hint: call this in the last line of [initialize]
+  @visibleForTesting
   @protected
   void completeInitialization() {
     if (isSafeToInitialize) _initializedCompleter.complete();

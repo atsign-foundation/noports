@@ -1,6 +1,5 @@
-import 'dart:io';
-
 import 'package:meta/meta.dart';
+import 'package:noports_core/src/common/io_types.dart';
 import 'package:socket_connector/socket_connector.dart';
 
 abstract class SshnpResult {}

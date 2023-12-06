@@ -1,0 +1,14 @@
+class TestingKeyPair {
+  static const public = 'ssh-ed25519 '
+      'AAAAC3NzaC1lZDI1NTE5AAAAIGoKAULs01V4Lqwdyz+IZLXkSfI+6HBJmFoAzCpRvoda '
+      'for-testing-do-not-use';
+
+  static const private = '''-----BEGIN OPENSSH PRIVATE KEY-----
+b3BlbnNzaC1rZXktdjEAAAAABG5vbmUAAAAEbm9uZQAAAAAAAAABAAAAMwAAAAtzc2gtZW
+QyNTUxOQAAACBqCgFC7NNVeC6sHcs/iGS15EnyPuhwSZhaAMwqUb6HWgAAAKBJvoc+Sb6H
+PgAAAAtzc2gtZWQyNTUxOQAAACBqCgFC7NNVeC6sHcs/iGS15EnyPuhwSZhaAMwqUb6HWg
+AAAEBnVg+o0CCLV0NqeXy6A1+w236zA8D6lqFe2mmyZbRqpWoKAULs01V4Lqwdyz+IZLXk
+SfI+6HBJmFoAzCpRvodaAAAAFmZvci10ZXN0aW5nLWRvLW5vdC11c2UBAgMEBQYH
+-----END OPENSSH PRIVATE KEY-----
+''';
+}

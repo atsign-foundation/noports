@@ -105,6 +105,7 @@
     "terminal" : "Terminal",
     "terminalDescription" : "Connections currently running",
     "to" : "To",
+    "tunnelUserName" : "Remote Username to use for initial ssh tunnel",
     "username" : "Username",
     "usernameHint": "The user name on this host",
     "uploadNewKey" : "Upload New Key",

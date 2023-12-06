@@ -1,5 +1,4 @@
-import 'dart:io';
-
+import 'package:noports_core/src/common/io_types.dart';
 import 'package:noports_core/src/common/types.dart';
 import 'package:noports_core/sshrv.dart';
 
@@ -29,9 +28,9 @@ class DefaultSshnpArgs {
   static const List<String> localSshOptions = <String>[];
   static const bool legacyDaemon = false;
   static const bool listDevices = false;
-  static const SupportedSshClient sshClient = SupportedSshClient.exec;
+  static const SupportedSshClient sshClient = SupportedSshClient.openssh;
 }
 
 class DefaultSshnpdArgs {
-  static const SupportedSshClient sshClient = SupportedSshClient.exec;
+  static const SupportedSshClient sshClient = SupportedSshClient.openssh;
 }
