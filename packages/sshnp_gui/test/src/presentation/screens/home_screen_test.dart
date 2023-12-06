@@ -1,7 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 
-import '../../home_screen_robot.dart';
-import '../../mocks.dart';
+import '../../../robots/home_screen_robot.dart';
+import '../../../robots/mocks.dart';
 
 void main() {
   testWidgets(
@@ -9,7 +9,9 @@ void main() {
     (tester) async {
       final r = HomeScreenRobot(tester);
       await r.pumpHomeScreen();
-      r.findAvaiableConnectionWidget();
+      r.findCurrentConnectionWidget();
+      r.findCurrentConnectionsDescriptionWidget();
+      r.findHomeActionsWidget();
     },
   );
   testWidgets(
