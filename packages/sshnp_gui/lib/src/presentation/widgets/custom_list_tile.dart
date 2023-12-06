@@ -25,7 +25,7 @@ class CustomListTile extends StatelessWidget {
   const CustomListTile.email(
       {this.iconData = Icons.email_outlined,
       this.title = 'Email',
-      this.subtitle = 'Guranteed quick response',
+      this.subtitle = 'Guaranteed quick response',
       this.type = CustomListTileType.email,
       this.tileColor = kProfileBackgroundColor,
       Key? key})
@@ -65,7 +65,7 @@ class CustomListTile extends StatelessWidget {
   const CustomListTile.switchAtsign(
       {this.iconData = Icons.switch_account_outlined,
       this.title = 'Switch atsign',
-      this.subtitle = 'Edit, add and delete SSH Keys',
+      this.subtitle = 'Select a different atsign to onboard with',
       this.type = CustomListTileType.sshKeyManagement,
       this.tileColor = kProfileBackgroundColor,
       Key? key})

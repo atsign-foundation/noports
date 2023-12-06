@@ -2,9 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:sshnoports/sshnp/sshnp.dart';
+import 'package:noports_core/sshnp.dart';
 import 'package:sshnp_gui/src/controllers/config_controller.dart';
 import 'package:sshnp_gui/src/presentation/screens/profile_editor_screen.dart';
+import 'package:sshnp_gui/src/presentation/widgets/profile_screen_widgets/profile_form/custom_switch_widget.dart';
 import 'package:sshnp_gui/src/presentation/widgets/profile_screen_widgets/profile_form/profile_form_desktop_view.dart';
 
 import 'mocks.dart';
@@ -34,7 +35,7 @@ class ProfileFormRobot {
     expect(finder, findsOneWidget);
   }
 
-  void findProfileFormWidgetsWithDefaultValues({required SSHNPParams configFile}) async {
+  void findProfileFormWidgetsWithDefaultValues({required SshnpParams configFile}) async {
     // 6 widgets of type TextFormField have empty text
     expect(find.widgetWithText(TextFormField, ''), findsNWidgets(6));
 
@@ -93,7 +94,7 @@ class ProfileFormRobot {
     // atKeys File
     final atKeysFileFinder = find.text('atKeys File');
     expect(atKeysFileFinder, findsOneWidget);
-    expect(find.text(configFile.atKeysFilePath), findsOneWidget);
+    expect(find.text(configFile.atKeysFilePath!), findsOneWidget);
 
     // Root Domain
     final rootDomainFinder = find.text('Root Domain');

@@ -144,7 +144,7 @@ class AuthenticationRepository {
     return atClientManager.atClient.getCurrentAtSign();
   }
 
-  /// get current atsign atcontact.
+  /// get current atsign atContact.
   Future<AtContact> getCurrentAtContact() async {
     var atSign = atClientManager.atClient.getCurrentAtSign();
     return await getAtSignDetails(atSign!);

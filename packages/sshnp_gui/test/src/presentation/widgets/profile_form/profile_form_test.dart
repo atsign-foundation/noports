@@ -1,8 +1,8 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:sshnoports/sshnp/sshnp.dart';
+import 'package:noports_core/sshnp.dart';
 
-import '../../../mocks.dart';
-import '../../../profile_form_robot.dart';
+import '../../../../robots/mocks.dart';
+import '../../../../robots/profile_form_robot.dart';
 
 void main() {
   testWidgets(
@@ -31,7 +31,7 @@ void main() {
           mockConfigListController: mockConfigListController, mockConfigFamilyController: mockConfigFamilyController);
       r.findCircularProgressIndictor();
       await tester.pump();
-      final configFile = SSHNPParams.empty();
+      final configFile = SshnpParams.empty();
       r.findProfileFormWidgetsWithDefaultValues(configFile: configFile);
     },
   );

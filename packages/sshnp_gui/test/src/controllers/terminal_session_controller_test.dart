@@ -1,6 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_test/flutter_test.dart';
 import 'package:sshnp_gui/src/controllers/terminal_session_controller.dart';
-import 'package:test/test.dart';
 
 void main() {
   group(

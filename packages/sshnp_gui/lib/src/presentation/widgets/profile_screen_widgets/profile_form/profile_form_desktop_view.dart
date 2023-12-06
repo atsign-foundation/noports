@@ -54,7 +54,9 @@ class _ProfileFormState extends ConsumerState<ProfileFormDesktopView> {
       if (rename) {
         await controller.deleteConfig(context: context);
         // delete old config file and write the new one
-        await controller.putConfig(config, oldProfileName: oldConfig.profileName!, context: context);
+        if (mounted) {
+          await controller.putConfig(config, oldProfileName: oldConfig.profileName!, context: context);
+        }
       } else {
         // create new config file
         await controller.putConfig(config, context: context);
@@ -181,8 +183,8 @@ class _ProfileFormState extends ConsumerState<ProfileFormDesktopView> {
                               }
                             },
                             onSaved: (value) {
-                              final atSsshKeyPair = ref.read(atSSHKeyPairManagerFamilyController(value!));
-                              atSsshKeyPair.when(
+                              final atSshKeyPair = ref.read(atSSHKeyPairManagerFamilyController(value!));
+                              atSshKeyPair.when(
                                   data: (data) => newConfig = SshnpPartialParams.merge(
                                       newConfig,
                                       SshnpPartialParams(

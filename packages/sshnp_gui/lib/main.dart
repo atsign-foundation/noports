@@ -9,7 +9,7 @@ import 'package:sshnp_gui/src/utility/platform_utility/platform_utililty.dart';
 final AtSignLogger _logger = AtSignLogger(AtEnv.appNamespace);
 
 Future<void> main() async {
-  // * AtEnv is an abtraction of the flutter_dotenv package used to
+  // * AtEnv is an abstraction of the flutter_dotenv package used to
   // * load the environment variables set by at_app
   try {
     await AtEnv.load();

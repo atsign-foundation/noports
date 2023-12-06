@@ -1,7 +1,7 @@
 import 'package:flutter/src/widgets/framework.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mocktail/mocktail.dart';
-import 'package:sshnoports/sshnp/sshnp.dart';
+import 'package:noports_core/sshnp_params.dart';
 import 'package:sshnp_gui/src/controllers/config_controller.dart';
 import 'package:sshnp_gui/src/controllers/terminal_session_controller.dart';
 
@@ -77,18 +77,18 @@ final mockConfigListController = AutoDisposeAsyncNotifierProvider<MockConfigList
   MockConfigListController.new,
 );
 
-class MockConfigFamilyController extends AutoDisposeFamilyAsyncNotifier<SSHNPParams, String>
+class MockConfigFamilyController extends AutoDisposeFamilyAsyncNotifier<SshnpParams, String>
     with Mock
     implements ConfigFamilyController {
-  late final SSHNPParams _mockConfig = SSHNPParams.empty();
+  late final SshnpParams _mockConfig = SshnpParams.empty();
 
   @override
-  Future<SSHNPParams> build(String profileName) async {
-    return Future<SSHNPParams>.value(_mockConfig);
+  Future<SshnpParams> build(String profileName) async {
+    return Future<SshnpParams>.value(_mockConfig);
   }
 
   @override
-  Future<void> putConfig(SSHNPParams params, {String? oldProfileName, BuildContext? context}) {
+  Future<void> putConfig(SshnpParams params, {String? oldProfileName, BuildContext? context}) {
     state = AsyncValue.data(params);
     ref.read(mockConfigListController.notifier).add(params.profileName!);
     return Future<void>.value();
@@ -104,6 +104,6 @@ class MockConfigFamilyController extends AutoDisposeFamilyAsyncNotifier<SSHNPPar
   // }
 }
 
-final mockConfigFamilyController = AutoDisposeAsyncNotifierProviderFamily<ConfigFamilyController, SSHNPParams, String>(
+final mockConfigFamilyController = AutoDisposeAsyncNotifierProviderFamily<ConfigFamilyController, SshnpParams, String>(
   MockConfigFamilyController.new,
 );

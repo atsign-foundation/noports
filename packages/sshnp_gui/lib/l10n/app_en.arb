@@ -70,7 +70,7 @@
     "removeButton":"Remove",
     "reset" : "Reset",
     "resetDescription":"This will remove the selected atSign and its details from this app only.",
-    "resetErrorText":"Please select atleast one atSign to reset",
+    "resetErrorText":"Please select at least one atSign to reset",
     "resetWarningText":"Warning: This action cannot be undone",
     "result" : "Result",
     "rootDomain" : "atDirectory Domain",
