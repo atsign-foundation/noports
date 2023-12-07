@@ -1,7 +1,7 @@
 # Dockerfile.package
 # A dockerfile for packaging SSH No Ports releases using docker buildx
 
-FROM atsigncompany/buildimage:3.1.3_3.2.0-210.2.beta@sha256:38fabc1bb15a57a08ecc0484b0309c6a7cf689e58c1b04499750a69ae2d57d55 AS build
+FROM atsigncompany/buildimage:automated@sha256:c37b2b3b952ef706774d2b35c4bab8033c71fa1a0669c391d4437cad878a9697 AS build
 # Using atsigncompany/buildimage until official dart image has RISC-V support
 WORKDIR /sshnoports
 COPY . .
