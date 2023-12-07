@@ -7,7 +7,7 @@ updates:
     schedule:
       interval: "daily"
   - package-ecosystem: "docker"
-    directory: "/packages/sshnoports/templates/docker/"
+    directory: "/packages/sshnoports/tools/"
     schedule:
       interval: "daily"
   - package-ecosystem: "docker"
