@@ -2,6 +2,12 @@ name: Multibuild
 
 on:
   workflow_dispatch:
+    inputs:
+      x64_only:
+        description: "Run x64 builds only"
+        required: true
+        default: false
+        type: boolean
 
 permissions: # added using https://github.com/step-security/secure-repo
   contents: read
@@ -54,8 +60,8 @@ jobs:
         run: dart compile exe bin/sshrvd.dart -v -o sshnp/sshrvd${{ matrix.ext }}
       - if: ${{ matrix.os != 'windows-latest' }}
         run: dart compile exe bin/sshrvd.dart -D ENABLE_SNOOP=true -v -o sshnp/debug/sshrvd${{ matrix.ext }}
-      - run: cp -r bundles/core/ sshnp/
-      - run: cp -r bundles/${{ matrix.bundle }}/ sshnp/
+      - run: cp -r bundles/core/* sshnp/
+      - run: cp -r bundles/${{ matrix.bundle }}/* sshnp/
       - run: cp LICENSE sshnp
       - run: tar -cvzf tarball/${{ matrix.output-name }}.tgz sshnp
       - uses: actions/upload-artifact@a8a3f3ad30e3422c9c7b888a15615d19a852ae32 # v3.1.3
@@ -65,6 +71,7 @@ jobs:
           if-no-files-found: error
 
   other_build:
+    if: ${{ ! inputs.x64_only }}
     needs: verify_tags
     runs-on: ubuntu-latest
     defaults:

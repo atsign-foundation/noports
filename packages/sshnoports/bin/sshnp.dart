@@ -41,12 +41,12 @@ void main(List<String> args) async {
 
   await runZonedGuarded(() async {
     final String homeDirectory = getHomeDirectory()!;
-
+    SshnpParams? params;
     try {
       final argResults = parser.parse(args);
       final coreArgs = parser.extractCoreArgs(args);
 
-      final params = SshnpParams.fromPartial(
+      params = SshnpParams.fromPartial(
         SshnpPartialParams.fromArgList(
           coreArgs,
           parserType: ParserType.commandLine,
@@ -122,13 +122,15 @@ void main(List<String> args) async {
       exit(1);
     } on SshnpError catch (error, stackTrace) {
       stderr.writeln(error.toString());
-      stderr.writeln('\nStack Trace: ${stackTrace.toString()}');
+      if (params?.verbose ?? true) {
+        stderr.writeln('\nStack Trace: ${stackTrace.toString()}');
+      }
       exit(1);
     }
   }, (Object error, StackTrace stackTrace) async {
     if (error is ArgumentError) return;
     if (error is SshnpError) return;
-    stderr.writeln('Unknown error: ${error.toString()}');
+    stderr.writeln('Error: ${error.toString()}');
     stderr.writeln('\nStack Trace: ${stackTrace.toString()}');
     exit(1);
   });
