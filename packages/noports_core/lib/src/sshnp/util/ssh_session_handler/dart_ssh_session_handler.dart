@@ -158,7 +158,8 @@ class SshClientHelper {
       }
 
       try {
-        await client.authenticated.catchError((e) => throw e);
+        // Ensure we are connected and authenticated correctly
+        await client.ping().catchError((e) => throw e);
       } catch (e, s) {
         throw SshnpError(
           'Failed to authenticate as $username@$host:$port : $e',
