@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:at_client/at_client.dart';
 import 'package:at_utils/at_utils.dart';
@@ -109,10 +110,11 @@ abstract class SshrvdChannel<T> with AsyncInitialization, AtClientBindings {
         ..ttl = 10000);
     logger.info('Sending notification to sshrvd: $ourSshrvdIdKey');
 
-    // TODO Jagan We need to send not just the sessionId but other metaData
+    String notificationValue = _getValue(params, sessionId);
+    // We need to send not just the sessionId but other metaData
     // especially, the atSign on the other end
     // In the rvd we need to figure out backwards compatibility.
-    await notify(ourSshrvdIdKey, sessionId);
+    await notify(ourSshrvdIdKey, notificationValue);
 
     int counter = 0;
     while (sshrvdAck == SshrvdAck.notAcknowledged) {
@@ -123,6 +125,24 @@ abstract class SshrvdChannel<T> with AsyncInitialization, AtClientBindings {
         logger.warning('Timed out waiting for sshrvd response');
         throw ('Connection timeout to sshrvd $host service\nhint: make sure host is valid and online');
       }
+    }
+  }
+
+  String _getValue(params, sessionId) {
+    bool supportsClientAuthentication = false;
+    bool authenticateSocketA = false;
+    bool authenticateSocketB = false;
+
+    if(supportsClientAuthentication) {
+      Map m = {};
+      m['session'] = sessionId;
+      m['atSignA'] = params.clientAtSign;
+      m['atSignB'] = params.sshnpdAtsign;
+      m['authenticateSocketA'] = authenticateSocketA;
+      m['authenticateSocketB'] = authenticateSocketB;
+      return jsonEncode(m);
+    } else {
+      return sessionId;
     }
   }
 }
