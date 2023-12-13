@@ -4,6 +4,7 @@ import 'package:mocktail/mocktail.dart';
 import 'package:noports_core/sshnp_params.dart';
 import 'package:sshnp_gui/src/controllers/config_controller.dart';
 import 'package:sshnp_gui/src/controllers/terminal_session_controller.dart';
+import 'package:sshnp_gui/src/repository/contact_repository.dart';
 
 class MockTerminalSessionController extends Notifier<String> with Mock implements TerminalSessionController {
   @override
@@ -107,3 +108,18 @@ class MockConfigFamilyController extends AutoDisposeFamilyAsyncNotifier<SshnpPar
 final mockConfigFamilyController = AutoDisposeAsyncNotifierProviderFamily<ConfigFamilyController, SshnpParams, String>(
   MockConfigFamilyController.new,
 );
+
+class MockContactService extends Mock implements ContactsService {
+  static final MockContactService _singleton = MockContactService._internal();
+  MockContactService._internal();
+
+  @override
+  factory MockContactService.getInstance() {
+    return _singleton;
+  }
+
+  @override
+  Future<Map<String, dynamic>> getCurrentAtsignContactDetails() {
+    return Future<Map<String, dynamic>>.value({'name': 'test', 'image': null});
+  }
+}

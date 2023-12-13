@@ -53,10 +53,10 @@ packages:
     dependency: "direct main"
     description:
       name: at_backupkey_flutter
-      sha256: "5e0eb67988f99f435076db43e2fdd96bb27647764243e1f74fe51dff529634c9"
+      sha256: "8af3902148420b840051a30da7d1051bee0dcae8ca2514372b710dd05713fc9e"
       url: "https://pub.dev"
     source: hosted
-    version: "4.0.10"
+    version: "4.0.11"
   at_base2e15:
     dependency: transitive
     description:
@@ -141,10 +141,10 @@ packages:
     dependency: "direct main"
     description:
       name: at_onboarding_flutter
-      sha256: f1da8c11c915117e96f145c63756e87aeaa78556b0990bc40756460d360ca18b
+      sha256: "6140f7d18d254f99e9881442ed8b41f63a97023ea20f4fd1f8d7e9bc592dc14c"
       url: "https://pub.dev"
     source: hosted
-    version: "6.1.3"
+    version: "6.1.5"
   at_persistence_secondary_server:
     dependency: transitive
     description:
@@ -397,18 +397,18 @@ packages:
     dependency: transitive
     description:
       name: file_picker
-      sha256: "21145c9c268d54b1f771d8380c195d2d6f655e0567dc1ca2f9c134c02c819e0a"
+      sha256: be325344c1f3070354a1d84a231a1ba75ea85d413774ec4bdf444c023342e030
       url: "https://pub.dev"
     source: hosted
-    version: "5.3.3"
+    version: "5.5.0"
   file_selector:
     dependency: "direct main"
     description:
       name: file_selector
-      sha256: "1d2fde93dddf634a9c3c0faa748169d7ac0d83757135555707e52f02c017ad4f"
+      sha256: "84eaf3e034d647859167d1f01cfe7b6352488f34c1b4932635012b202014c25b"
       url: "https://pub.dev"
     source: hosted
-    version: "0.9.5"
+    version: "1.0.1"
   file_selector_android:
     dependency: transitive
     description:
@@ -840,18 +840,18 @@ packages:
     dependency: transitive
     description:
       name: permission_handler
-      sha256: bc56bfe9d3f44c3c612d8d393bd9b174eb796d706759f9b495ac254e4294baa5
+      sha256: "284a66179cabdf942f838543e10413246f06424d960c92ba95c84439154fcac8"
       url: "https://pub.dev"
     source: hosted
-    version: "10.4.5"
+    version: "11.0.1"
   permission_handler_android:
     dependency: transitive
     description:
       name: permission_handler_android
-      sha256: "59c6322171c29df93a22d150ad95f3aa19ed86542eaec409ab2691b8f35f9a47"
+      sha256: f9fddd3b46109bd69ff3f9efa5006d2d309b7aec0f3c1c5637a60a2d5659e76e
       url: "https://pub.dev"
     source: hosted
-    version: "10.3.6"
+    version: "11.1.0"
   permission_handler_apple:
     dependency: transitive
     description:

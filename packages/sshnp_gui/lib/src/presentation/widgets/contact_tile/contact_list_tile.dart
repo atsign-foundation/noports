@@ -26,7 +26,7 @@ class ContactListTile extends StatelessWidget {
                   backgroundImage: snapshot.data!['image'] != null ? MemoryImage(snapshot.data!['image']) : null,
                 ),
                 title: Text(snapshot.data!['name']),
-                subtitle: Text(contactRepo.atClientManager.atClient.getCurrentAtSign()!),
+                subtitle: Text(contactRepo.atClientManager.atClient.getCurrentAtSign() ?? ''),
               ),
             );
           } else {

@@ -15,6 +15,7 @@ class SettingsScreenRobot {
 
   Future<void> pumpSettingsScreen({ConfigListController? mockConfigListController}) async {
     await tester.pumpWidget(ProviderScope(
+      overrides: const [],
       child: MaterialApp(
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,

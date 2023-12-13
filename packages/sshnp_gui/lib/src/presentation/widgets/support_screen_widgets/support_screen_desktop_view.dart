@@ -39,26 +39,22 @@ class SupportScreenDesktopView extends StatelessWidget {
                     style: Theme.of(context).textTheme.bodyMedium!.copyWith(color: kTextColorDark),
                   ),
                   gapH30,
-                  const Flexible(
-                    child: Row(
-                      children: [
-                        Flexible(child: CustomListTile.discord()),
-                        Flexible(child: CustomListTile.email()),
-                      ],
-                    ),
+                  const Row(
+                    children: [
+                      Flexible(child: CustomListTile.discord()),
+                      Flexible(child: CustomListTile.email()),
+                    ],
                   ),
                   gapH20,
                   const Divider(
                     color: kProfileFormFieldColor,
                   ),
                   gapH20,
-                  const Flexible(
-                    child: Row(
-                      children: [
-                        Flexible(child: CustomListTile.faq()),
-                        Flexible(child: CustomListTile.privacyPolicy()),
-                      ],
-                    ),
+                  const Row(
+                    children: [
+                      Flexible(child: CustomListTile.faq()),
+                      Flexible(child: CustomListTile.privacyPolicy()),
+                    ],
                   )
                 ],
               ),

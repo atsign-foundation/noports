@@ -3,57 +3,51 @@ import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:sshnp_gui/src/controllers/config_controller.dart';
-import 'package:sshnp_gui/src/presentation/screens/settings_screen.dart';
-import 'package:sshnp_gui/src/presentation/widgets/settings_screen_widgets/settings_actions/settings_actions.dart';
+import 'package:sshnp_gui/src/presentation/screens/support_screen.dart';
+import 'package:sshnp_gui/src/presentation/widgets/custom_list_tile.dart';
 
-class SettingsScreenRobot {
-  SettingsScreenRobot(this.tester);
+class SupportScreenRobot {
+  SupportScreenRobot(this.tester);
 
   final WidgetTester tester;
 
-  Future<void> pumpSettingsScreen({ConfigListController? mockConfigListController}) async {
+  Future<void> pumpSupportScreen({ConfigListController? mockConfigListController}) async {
     await tester.pumpWidget(const ProviderScope(
       child: MaterialApp(
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
-        home: SettingsScreen(),
+        home: SupportScreen(),
       ),
     ));
   }
 
-  void findSettings() {
-    final finder = find.text('Settings');
+  void findSupport() {
+    final finder = find.text('Support');
     expect(finder, findsOneWidget);
   }
 
-  void findSettingBackupKeyActionButton() {
-    final finder = find.byType(SettingsBackupKeyAction);
-
+  void findSupportDescription() {
+    final finder = find.text('Our team of experts is here to help! Select your preferred method below');
     expect(finder, findsOneWidget);
   }
 
-  void findSettingsSwitchAtsignActionButton() {
-    final finder = find.byType(SettingsSwitchAtsignActionMobile);
-    expect(finder, findsWidgets);
-  }
-
-  void findSettingsResetAppActionButton() {
-    final finder = find.byType(SettingsResetAppAction);
+  void findDiscordListTile() {
+    final finder = find.widgetWithText(CustomListTile, 'Discord');
     expect(finder, findsOneWidget);
   }
 
-  void findSettingsFaqActionButton() {
-    final finder = find.byType(SettingsFaqAction);
+  void findEmailListTile() {
+    final finder = find.widgetWithText(CustomListTile, 'Email');
     expect(finder, findsOneWidget);
   }
 
-  void findSettingsContactAction() {
-    final finder = find.byType(SettingsContactAction);
+  void findFAQListTile() {
+    final finder = find.widgetWithText(CustomListTile, 'FAQ');
     expect(finder, findsOneWidget);
   }
 
-  void findSettingsPrivacyPolicyAction() {
-    final finder = find.byType(SettingsPrivacyPolicyAction);
+  void findPrivacyPolicyListTile() {
+    final finder = find.widgetWithText(CustomListTile, 'Privacy Policy');
     expect(finder, findsOneWidget);
   }
 }
