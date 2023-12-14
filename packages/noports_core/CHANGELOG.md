@@ -1,3 +1,7 @@
+# 5.0.1
+
+- fix: Add more supported ssh public key types to the send ssh public key filters.
+
 # 5.0.0
 
 - **BREAKING CHANGE** fix: changed `list-devices` arg from String option to boolean flag.
