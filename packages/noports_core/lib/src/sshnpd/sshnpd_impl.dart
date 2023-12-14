@@ -14,6 +14,8 @@ import 'package:noports_core/utils.dart';
 import 'package:noports_core/src/version.dart';
 import 'package:uuid/uuid.dart';
 
+import '../sshrv/auth_provider.dart';
+
 @protected
 class SshnpdImpl implements Sshnpd {
   @override
@@ -499,7 +501,7 @@ class SshnpdImpl implements Sshnpd {
       // Connect to rendezvous point using background process.
       // This program can then exit without causing an issue.
       Process rv =
-          await Sshrv.exec(host, port, localSshdPort: localSshdPort).run();
+          await Sshrv.exec(host, port, localSshdPort: localSshdPort, authenticationProvider: SocketAuthenticationProviderManager.getAuthenticationProvider()).run();
       logger.info('Started rv - pid is ${rv.pid}');
 
       LocalSshKeyUtil keyUtil = LocalSshKeyUtil();

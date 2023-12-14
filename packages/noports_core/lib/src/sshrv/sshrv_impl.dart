@@ -7,6 +7,8 @@ import 'package:socket_connector/socket_connector.dart';
 
 import 'package:noports_core/src/common/default_args.dart';
 
+import 'auth_provider.dart';
+
 @visibleForTesting
 class SshrvImplExec implements Sshrv<Process> {
   @override
@@ -18,10 +20,14 @@ class SshrvImplExec implements Sshrv<Process> {
   @override
   final int localSshdPort;
 
-  const SshrvImplExec(
+  @override
+  SocketAuthenticationProvider? authenticationProvider;
+
+
+  SshrvImplExec(
     this.host,
     this.streamingPort, {
-    this.localSshdPort = DefaultArgs.localSshdPort,
+    this.localSshdPort = DefaultArgs.localSshdPort, this.authenticationProvider
   });
 
   @override
@@ -53,10 +59,13 @@ class SshrvImplDart implements Sshrv<SocketConnector> {
   @override
   final int localSshdPort;
 
-  const SshrvImplDart(
+  @override
+  SocketAuthenticationProvider? authenticationProvider;
+
+  SshrvImplDart(
     this.host,
     this.streamingPort, {
-    this.localSshdPort = 22,
+    this.localSshdPort = 22, SocketAuthenticationProvider? authenticationProvider
   });
 
   @override

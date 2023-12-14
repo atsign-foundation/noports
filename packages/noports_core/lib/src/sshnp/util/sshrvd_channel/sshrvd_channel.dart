@@ -6,6 +6,7 @@ import 'package:at_utils/at_utils.dart';
 import 'package:meta/meta.dart';
 import 'package:noports_core/src/common/mixins/async_initialization.dart';
 import 'package:noports_core/src/common/mixins/at_client_bindings.dart';
+import 'package:noports_core/src/sshnp/util/sshrvd_channel/notification_request_message.dart';
 import 'package:noports_core/sshnp.dart';
 import 'package:noports_core/sshrv.dart';
 import 'package:noports_core/sshrvd.dart';
@@ -134,15 +135,9 @@ abstract class SshrvdChannel<T> with AsyncInitialization, AtClientBindings {
     bool authenticateSocketB = false;
 
     if(supportsClientAuthentication) {
-      Map m = {};
-      m['session'] = sessionId;
-      m['atSignA'] = params.clientAtSign;
-      m['atSignB'] = params.sshnpdAtsign;
-      m['authenticateSocketA'] = authenticateSocketA;
-      m['authenticateSocketB'] = authenticateSocketB;
-      return jsonEncode(m);
+      return AuthentionEnablingMessage(sessionId, params.clientAtSign, params.sshnpdAtsign, authenticateSocketA, authenticateSocketB).toString();
     } else {
-      return sessionId;
+      return SessionIdMessage(sessionId).toString();
     }
   }
 }
