@@ -122,7 +122,8 @@ abstract class SshnpdChannel with AsyncInitialization, AtClientBindings {
     logger.info('Sharing public key with sshnpd');
     try {
       logger.info('sharing ssh public key: $publicKeyContents');
-      if (!publicKeyContents.startsWith('ssh-')) {
+      // Check for Supported ssh keypairs from dartssh2 package
+      if (!publicKeyContents.startsWith(RegExp(r'^(ecdsa-sha2-nistp)|(rsa-sha2-)|(ssh-rsa)|(ssh-ed25519)|(ecdsa-sha2-nistp)'))) {
         logger.severe('SSH Public Key does not look like a public key file');
         throw ('SSH Public Key does not look like a public key file');
       }
