@@ -73,13 +73,18 @@ class SshrvImplDart implements Sshrv<SocketConnector> {
     try {
       var hosts = await InternetAddress.lookup(host);
 
-      return await SocketConnector.socketToSocket(
+      SocketConnector socketConnector =  await SocketConnector.socketToSocket(
         socketAddressA: InternetAddress.loopbackIPv4,
         socketPortA: localSshdPort,
         socketAddressB: hosts[0],
         socketPortB: streamingPort,
         verbose: true,
       );
+
+      // TBD - Gary/Xavier/Jagan
+      // Should we expose the sockets from socketConnector? whats the best way to do this.
+      //authenticationProvider?.authenticate(socketConnector.socketB);
+      return socketConnector;
     } catch (e) {
       AtSignLogger('sshrv').severe(e.toString());
       rethrow;

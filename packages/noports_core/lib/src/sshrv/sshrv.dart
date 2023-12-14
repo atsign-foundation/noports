@@ -42,7 +42,7 @@ abstract class Sshrv<T> {
     return SshrvImplDart(
       host,
       streamingPort,
-      localSshdPort: localSshdPort,
+      localSshdPort: localSshdPort, authenticationProvider:authenticationProvider
     );
   }
 
