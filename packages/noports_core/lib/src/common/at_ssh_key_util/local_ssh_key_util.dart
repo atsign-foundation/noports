@@ -127,8 +127,9 @@ class LocalSshKeyUtil implements AtSshKeyUtil {
     String sessionId = '',
     String permissions = '',
   }) async {
-    // Check to see if the ssh public key looks like one!
-    if (!sshPublicKey.startsWith('ssh-')) {
+    // Check to see if the ssh public key is
+    // supported keys by the dartssh2 package
+    if (!sshPublicKey.startsWith(RegExp(r'^(ecdsa-sha2-nistp)|(rsa-sha2-)|(ssh-rsa)|(ssh-ed25519)|(ecdsa-sha2-nistp)'))) {
       throw ('$sshPublicKey does not look like a public key');
     }
 
