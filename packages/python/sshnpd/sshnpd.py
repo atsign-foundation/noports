@@ -16,6 +16,7 @@ from at_client.util import EncryptionUtil, KeysUtil
 from at_client.common.keys import AtKey, Metadata, SharedKey
 from at_client.connections.notification.atevents import AtEvent, AtEventType
 
+
 class SocketConnector:
     _logger = logging.getLogger("sshrv | socket_connector")
     def __init__(self, server1_ip, server1_port, server2_ip, server2_port, verbose = False):
@@ -35,10 +36,7 @@ class SocketConnector:
         self.server1_port = server1_port
         self.server2_ip = server2_ip
         self.server2_port = server2_port
-        
-        
-        
-        
+
     def connect(self):
         sockets_to_monitor = [self.socketA, self.socketB]
         timeout = 0
@@ -73,13 +71,10 @@ class SocketConnector:
                             raise        
         except Exception as e:
             raise(e)
-        
-            
+
     def close(self):
         self.socketA.close()
         self.socketB.close()
-        
-
 
 
 class SSHRV:
@@ -92,7 +87,6 @@ class SSHRV:
         self.socket_connector = None
         self.verbose = verbose
 
-    
     def run(self):
         try:
             self.host = gethostbyname(gethostname())
@@ -109,11 +103,10 @@ class SSHRV:
         return self.socket_connector.is_alive()
 
 
-
 class SSHNPDClient:
     #Current opened threads
     threads = []
-    
+
     def __init__(self, atsign, manager_atsign, device, username=None, verbose=False, expecting_ssh_keys = False):  
         #Threading Stuff
         self.closing = Event()
@@ -147,7 +140,7 @@ class SSHNPDClient:
         else:
             raise NotImplementedError("Unsupported operating system")
         self.ssh_path = f"{home_dir}/.ssh"
-        
+
     def start(self):
         if self.username:
             self._set_username()
@@ -156,17 +149,17 @@ class SSHNPDClient:
         event_thread = threading.Thread(target=self._handle_events, args=(self.at_client.queue,))
         event_thread.start()
         SSHNPDClient.threads.append(event_thread)
-        
+
     def is_alive(self):
-       if not self.authenticated:
-           return True
-       elif len(SSHNPDClient.threads) >= 2 and self.ssh_client.get_transport().is_active():
-           return True    
-       elif self.rv.is_alive():
-           return True
-       else: 
-           return False
-    
+        if not self.authenticated:
+            return True
+        elif len(SSHNPDClient.threads) >= 2 and self.ssh_client.get_transport().is_active():
+            return True
+        elif self.rv.is_alive():
+            return True
+        else:
+            return False
+
     def join(self):
         self.closing.set()
         if self.ssh_client:
@@ -175,15 +168,14 @@ class SSHNPDClient:
         for thread in SSHNPDClient.threads:
             thread.join()
         SSHNPDClient.threads.clear()
-            
-            
+
     def _set_username(self):
         username = getpass.getuser()
         username_key = SharedKey(
             "username", AtSign(self.atsign), AtSign(self.manager_atsign))
         self.at_client.put(username_key, username)
         self.username = username
-    
+
     def _handle_notifications(self, queue: Queue):
         private_key = ""
         ssh_public_key_received = True if not self.expecting_ssh_keys else (False if "" else True) #sorry for making this so cursed
@@ -228,7 +220,6 @@ class SSHNPDClient:
                         threading.Thread(target=self.sshnp_callback, args=(callbackArgs)).start()
                     except Exception as e:
                         raise e
-                    
                 #direct ssh
                 if key == 'ssh_request':
                     self.logger.debug(
@@ -244,7 +235,7 @@ class SSHNPDClient:
                         raise e
             except Empty:
                 pass
-        
+
     #Running in a thread
     def _handle_events(self, queue: Queue):  
         while not self.closing.is_set():
@@ -263,7 +254,7 @@ class SSHNPDClient:
                     self.at_client.handle_event(queue, at_event)
             except Empty:
                 pass  
-            
+
     def _direct_ssh(self, hostname, port, sessionId):
         sshrv = SSHRV(hostname, port)
         sshrv.run()
@@ -275,9 +266,8 @@ class SSHNPDClient:
         data = f'{{"status":"connected","sessionId":"{sessionId}","ephemeralPrivateKey":"{private_key}"}}'
         signature =  EncryptionUtil.sign_sha256_rsa(data, self.at_client.keys[KeysUtil.encryption_private_key_name])
         envelope = f'{{"payload":{data},"signature":"{signature}","hashingAlgo":"sha256","signingAlgo":"rsa2048"}}'
-
         return envelope
-    
+
     def sshnp_callback(
         self,   
         event: AtEvent,
@@ -311,10 +301,10 @@ class SSHNPDClient:
             ssh_response = self._direct_ssh(ssh_list['host'], ssh_list['port'], ssh_list['sessionId'])
         else:
             ssh_response = self._reverse_ssh_client(ssh_list, private_key)
-       
+        
         if ssh_response:
             notify_response = self.at_client.notify(at_key, ssh_response, session_id=uuid)
-            self.logger.info("sent ssh notification to " + at_key.shared_with.to_string() + "with id:" + uuid)
+            self.logger.info("sent ssh notification to " + at_key.shared_with.to_string() + " with id:" + uuid)
             self.authenticated = True
         if direct:
             self._ephemeral_cleanup(uuid)
@@ -348,7 +338,7 @@ class SSHNPDClient:
         sock.close()
         self.logger.info(f"Tunnel closed from {chan.origin_addr}")
 
-    #running in a threads
+    #running in a thread
     def _forward_socket(self, tp, dest):
         while not self.closing.is_set():
             chan = tp.accept(1000)
@@ -466,8 +456,8 @@ class SSHNPDClient:
             with open(f"{self.ssh_path}/authorized_keys", "w") as write:
                 write.write(f"{filedata}\n{ssh_public_key}")
             self.logger.debug("key written" )
-                
-            
+
+
 def main():
     parser = argparse.ArgumentParser("sshnpd")
     requiredNamed = parser.add_argument_group('required named arguments')
@@ -478,7 +468,6 @@ def main():
     optional.add_argument("-u",  action='store_true', dest="username",  help="Username", default="default")
     optional.add_argument("-v", action='store_true', dest="verbose", help="Verbose")
     optional.add_argument("-s", action="store_true", dest="expecting_ssh_keys", help="SSH Keypair, use this if you want to use your own ssh keypair")
-    
     
     args = parser.parse_args()
 
