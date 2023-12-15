@@ -541,10 +541,10 @@ packages:
     dependency: "direct dev"
     description:
       name: mocktail
-      sha256: bac151b31e4ed78bd59ab89aa4c0928f297b1180186d5daf03734519e5f596c1
+      sha256: f603ebd85a576e5914870b02e5839fc5d0243b867bf710651cf239a28ebb365e
       url: "https://pub.dev"
     source: hosted
-    version: "1.0.1"
+    version: "1.0.2"
   mutex:
     dependency: transitive
     description:
@@ -572,9 +572,10 @@ packages:
   noports_core:
     dependency: "direct main"
     description:
-      path: "../noports_core"
-      relative: true
-    source: path
+      name: noports_core
+      sha256: c9228de65289f6946c07f12606feb106a6c53d65ca22b69f3da10a71f3f12e0d
+      url: "https://pub.dev"
+    source: hosted
     version: "5.0.2"
   openssh_ed25519:
     dependency: transitive
