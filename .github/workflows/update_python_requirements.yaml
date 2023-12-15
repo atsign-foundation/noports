@@ -2,7 +2,8 @@ name: Bump requirements.txt
 on:
   pull_request:
     paths:
-      - 'pyproject.toml'
+      - 'packages/python/sshnpd/pyproject.toml'
+      - 'packages/python/sshnoports_sdk/pyproject.toml'
   workflow_dispatch:
 
 permissions:
@@ -33,7 +34,8 @@ jobs:
       with:
         poetry-version: '1.7.1'
 
-    - name: Bump Python dependencies
+    - name: Bump sshnpd Python dependencies
+      working-directory: packages/python/sshnpd
       if: ${{ github.actor == 'dependabot[bot]' }}
       run: |
         poetry update
@@ -45,6 +47,23 @@ jobs:
           echo 'No changes to commit on this run'
           exit 0
         else
-          git commit -m "build(deps): Bump requirements.txt"
+          git commit -m "build(deps): Bump sshnpd requirements.txt"
+          git push
+        fi
+
+    - name: Bump sshnoports_sdk Python dependencies
+      working-directory: packages/python/sshnoports_sdk
+      if: ${{ github.actor == 'dependabot[bot]' }}
+      run: |
+        poetry update
+        poetry export --format requirements.txt --output requirements.txt
+        git config --global user.name 'dependabot[bot]'
+        git config --global user.email 'dependabot[bot]@users.noreply.github.com'
+        git add requirements.txt
+        if [ -z "$(git status --porcelain)" ]; then 
+          echo 'No changes to commit on this run'
+          exit 0
+        else
+          git commit -m "build(deps): Bump sshnoports_sdk requirements.txt"
           git push
         fi
