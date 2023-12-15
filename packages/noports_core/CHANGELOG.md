@@ -1,6 +1,10 @@
+# 5.0.2
+
+- fix: Add more supported ssh public key types to the send ssh public key filters for sshnpd.
+
 # 5.0.1
 
-- fix: Add more supported ssh public key types to the send ssh public key filters.
+- fix: Add more supported ssh public key types to the send ssh public key filters for sshnp.
 
 # 5.0.0
 
