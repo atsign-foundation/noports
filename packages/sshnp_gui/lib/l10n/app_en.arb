@@ -112,6 +112,11 @@
     "verbose" : "Verbose Logging",
     "warning": "Warning",
     "warningMessage" : " Are you sure you want to delete this configuration",
-    "yourKeys" : "Your Keys"
+    "yourKeys" : "Your Keys",
+    "welcomeTo":"Welcome to",
+    "sshnpDesktopApp": "SSHNP Desktop App",
+    "welcomeToDescription" : "Make your devices reachable while eliminating network attack surfaces & reducing administrative overhead."
+
+
     
    }

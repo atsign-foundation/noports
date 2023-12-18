@@ -184,6 +184,9 @@ class _ProfileFormState extends ConsumerState<ProfileFormDesktopView> {
                             },
                             onSaved: (value) {
                               final atSshKeyPair = ref.read(atSSHKeyPairManagerFamilyController(value!));
+                              // write to a new controller to map the profile name to the ssh key pair manager nickname. Store this information locally.
+
+                              // At the point of ssh connect the profile name and the key manager name so get the identity passphrase and the fiel content.
                               atSshKeyPair.when(
                                   data: (data) => newConfig = SshnpPartialParams.merge(
                                       newConfig,
@@ -214,6 +217,7 @@ class _ProfileFormState extends ConsumerState<ProfileFormDesktopView> {
                     ),
                     gapH10,
                     CustomSwitchWidget(
+                        //TODO: change string to sendSshPublicKey not ssh public key
                         labelText: strings.sendSshPublicKey,
                         value: newConfig.sendSshPublicKey ?? oldConfig.sendSshPublicKey,
                         onChanged: (newValue) {

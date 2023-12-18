@@ -5,10 +5,13 @@ import 'package:at_contacts_flutter/utils/init_contacts_service.dart';
 import 'package:at_onboarding_flutter/at_onboarding_flutter.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
-import 'package:macos_ui/macos_ui.dart';
 import 'package:path_provider/path_provider.dart' show getApplicationSupportDirectory;
 import 'package:sshnp_gui/src/controllers/navigation_controller.dart';
+import 'package:sshnp_gui/src/utility/sizes.dart';
+
+import '../../utility/constants.dart';
 
 class OnboardingScreen extends StatefulWidget {
   const OnboardingScreen({super.key});
@@ -18,124 +21,132 @@ class OnboardingScreen extends StatefulWidget {
 }
 
 class _OnboardingScreenState extends State<OnboardingScreen> {
-  var _pageIndex = 0;
+  final _pageIndex = 0;
   @override
   Widget build(BuildContext context) {
     final strings = AppLocalizations.of(context)!;
     log('onboarding screen');
     // * load the AtClientPreference in the background
     Future<AtClientPreference> futurePreference = loadAtClientPreference();
-    return false
-        ? MacosWindow(
-            sidebar: Sidebar(
-                builder: ((context, scrollController) {
-                  return SidebarItems(
-                      items: const [
-                        SidebarItem(
-                          label: Text('home'),
-                        ),
-                        SidebarItem(
-                          label: Text('terminal'),
-                        ),
-                        SidebarItem(
-                          label: Text('settings'),
-                        ),
-                      ],
-                      currentIndex: _pageIndex,
-                      onChanged: (index) {
-                        setState(() => _pageIndex = index);
-                      });
-                }),
-                minWidth: 200),
-            child: IndexedStack(
-              index: _pageIndex,
-              children: [
-                ContentArea(builder: (((context, scrollController) {
-                  return Builder(
-                    builder: (context) => Center(
-                      child: ElevatedButton(
-                        onPressed: () async {
-                          AtOnboardingResult onboardingResult = await AtOnboarding.onboard(
-                            context: context,
-                            config: AtOnboardingConfig(
-                              atClientPreference: await futurePreference,
-                              rootEnvironment: AtEnv.rootEnvironment,
-                              domain: AtEnv.rootDomain,
-                              appAPIKey: AtEnv.appApiKey,
-                            ),
-                          );
-                          switch (onboardingResult.status) {
-                            case AtOnboardingResultStatus.success:
-                              if (context.mounted) {
-                                initializeContactsService(rootDomain: AtEnv.rootDomain);
-                                context.goNamed(AppRoute.home.name);
-                              }
-                              break;
-                            case AtOnboardingResultStatus.error:
-                              if (context.mounted) {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(
-                                    backgroundColor: Colors.red,
-                                    content: Text('An error has occurred'),
-                                  ),
-                                );
-                              }
-                              break;
-                            case AtOnboardingResultStatus.cancel:
-                              break;
-                          }
-                        },
-                        child: const Text('Onboard an @sign'),
+    return Scaffold(
+      extendBodyBehindAppBar: true,
+      body: Stack(alignment: Alignment.topLeft, children: [
+        Center(
+          // width: MediaQuery.of(context).size.width,
+          // height: MediaQuery.of(context).size.height,
+          child: Image.asset(
+            'assets/images/onboarding_bg.png',
+            width: MediaQuery.of(context).size.width,
+            height: MediaQuery.of(context).size.height,
+            fit: BoxFit.contain,
+          ),
+        ),
+        Positioned(
+          width: MediaQuery.of(context).size.width,
+          height: MediaQuery.of(context).size.height,
+          child: SvgPicture.asset(
+            'assets/images/onboarding_bg_overlay.svg',
+            fit: BoxFit.fill,
+          ),
+        ),
+        Center(
+          child: Builder(
+            builder: (context) => SizedBox(
+              width: 367,
+              height: 249,
+              child: Card(
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(Sizes.p12),
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.all(Sizes.p30),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Image.asset(
+                        'assets/images/logo_color.png',
                       ),
-                    ),
-                  );
-                })))
-              ],
-            ),
-          )
-        : Scaffold(
-            appBar: AppBar(
-              title: const Text('MyApp'),
-            ),
-            body: Builder(
-              builder: (context) => Center(
-                child: ElevatedButton(
-                  onPressed: () async {
-                    AtOnboardingResult onboardingResult = await AtOnboarding.onboard(
-                      context: context,
-                      config: AtOnboardingConfig(
-                        atClientPreference: await futurePreference,
-                        rootEnvironment: AtEnv.rootEnvironment,
-                        domain: AtEnv.rootDomain,
-                        appAPIKey: AtEnv.appApiKey,
-                      ),
-                    );
-                    switch (onboardingResult.status) {
-                      case AtOnboardingResultStatus.success:
-                        await initializeContactsService(rootDomain: AtEnv.rootDomain);
-                        if (context.mounted) {
-                          context.goNamed(AppRoute.home.name);
-                        }
-                        break;
-                      case AtOnboardingResultStatus.error:
-                        if (context.mounted) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              backgroundColor: Colors.red,
-                              content: Text('An error has occurred'),
+                      Text(
+                        strings.welcomeTo,
+                        style: Theme.of(context).textTheme.headlineLarge!.copyWith(
+                              color: Colors.black,
+                              fontWeight: FontWeight.w700,
+                              fontSize: 19,
                             ),
-                          );
-                        }
-                        break;
-                      case AtOnboardingResultStatus.cancel:
-                        break;
-                    }
-                  },
-                  child: const Text('Onboard an @sign'),
+                      ),
+                      Text(
+                        strings.sshnpDesktopApp,
+                        style: Theme.of(context).textTheme.headlineLarge!.copyWith(
+                              color: kPrimaryColor,
+                              fontWeight: FontWeight.w700,
+                              fontSize: 19,
+                            ),
+                      ),
+                      Text(
+                        strings.welcomeToDescription,
+                        style: Theme.of(context).textTheme.bodySmall!.copyWith(color: Colors.black),
+                      ),
+                      gapH10,
+                      Center(
+                        child: ElevatedButton(
+                          style: ElevatedButton.styleFrom(
+                            foregroundColor: kPrimaryColor,
+                            backgroundColor: kPrimaryColor,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(Sizes.p20),
+                            ),
+                            padding: const EdgeInsets.symmetric(horizontal: Sizes.p99, vertical: Sizes.p10),
+                          ),
+                          onPressed: () async {
+                            AtOnboardingResult onboardingResult = await AtOnboarding.onboard(
+                              context: context,
+                              config: AtOnboardingConfig(
+                                atClientPreference: await futurePreference,
+                                rootEnvironment: AtEnv.rootEnvironment,
+                                domain: AtEnv.rootDomain,
+                                appAPIKey: AtEnv.appApiKey,
+                                theme: AtOnboardingTheme(
+                                  primaryColor: kPrimaryColor,
+                                  // textTheme: Theme.of(context).textTheme.bodySmall,
+                                ),
+                              ),
+                            );
+                            switch (onboardingResult.status) {
+                              case AtOnboardingResultStatus.success:
+                                await initializeContactsService(rootDomain: AtEnv.rootDomain);
+                                if (context.mounted) {
+                                  context.goNamed(AppRoute.home.name);
+                                }
+                                break;
+                              case AtOnboardingResultStatus.error:
+                                if (context.mounted) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(
+                                      backgroundColor: Colors.red,
+                                      content: Text('An error has occurred'),
+                                    ),
+                                  );
+                                }
+                                break;
+                              case AtOnboardingResultStatus.cancel:
+                                break;
+                            }
+                          },
+                          child: Text(
+                            'Onboard an @sign',
+                            style: Theme.of(context).textTheme.bodySmall!.copyWith(color: Colors.white),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ),
-          );
+          ),
+        ),
+      ]),
+    );
   }
 }
 

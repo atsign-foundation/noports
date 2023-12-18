@@ -1,5 +1,5 @@
 name: sshnp_gui
-description: A new Flutter project
+description: ssh to any remove device using atsign
 version: 1.0.0+1
 publish_to: "none" # Remove this line if you wish to publish to pub.dev
 
@@ -47,7 +47,7 @@ dev_dependencies:
 
 dependency_overrides:
   # file_picker: ^6.0.0
-  at_onboarding_flutter: 6.1.3
+  # at_onboarding_flutter: 6.1.3
   intl: ^0.17.0-nullsafety.2
   # image: ^3.1.3
   zxing2: ^0.2.0
@@ -56,6 +56,10 @@ dependency_overrides:
     git:
       url: https://github.com/xavierchanth/socket_connector/
       ref: main
+  at_onboarding_flutter:
+    git:
+      url: https://github.com/atsign-foundation/at_widgets/
+      ref: theme_issues_fix
 flutter:
   uses-material-design: true
   generate: true
