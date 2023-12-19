@@ -1,13 +1,13 @@
 import 'dart:convert';
 
-abstract class SSHNPDNotificationRequestMessage {
+abstract class SrSessionRequest {
   late String sessionId;
 
   @override
   String toString();
 }
 
-class SessionIdMessage extends SSHNPDNotificationRequestMessage{
+class SessionIdMessage extends SrSessionRequest{
 
   @override
   String toString() {
@@ -30,15 +30,5 @@ class AuthenticationEnablingMessage extends SessionIdMessage {
     m['authenticateSocketA'] = authenticateSocketA;
     m['authenticateSocketB'] = authenticateSocketB;
     return jsonEncode(m);
-  }
-}
-
-class SSHNPDNotificationRequestMessageManager {
-  static SSHNPDNotificationRequestMessage get(bool authenticate) {
-
-    if(authenticate) {
-      return AuthenticationEnablingMessage();
-    }
-    return SessionIdMessage();
   }
 }

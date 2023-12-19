@@ -4,11 +4,11 @@ import 'dart:typed_data';
 
 import 'package:at_chops/at_chops.dart';
 
-abstract class SocketAuthenticationProvider {
+abstract class SocketAuthenticator {
   authenticate(Socket socket);
 }
 
-class EmptySocketAuthenticationProvider extends SocketAuthenticationProvider{
+class EmptySocketAuthenticator extends SocketAuthenticator {
   @override
   authenticate(Socket socket) {
     //Do Nothing
@@ -23,11 +23,11 @@ class EmptySocketAuthenticationProvider extends SocketAuthenticationProvider{
 ///       "hashingAlgo":"<algo>",
 ///       "signingAlgo":"<algo>"
 ///  }
-class JsonSignatureAuthenticationProvider extends SocketAuthenticationProvider{
+class SignatureAuthenticator extends SocketAuthenticator{
   String sessionId;
   String privateKey;
 
-  JsonSignatureAuthenticationProvider(this.sessionId, this.privateKey);
+  SignatureAuthenticator(this.sessionId, this.privateKey);
 
   @override
   authenticate(Socket socket) {
@@ -84,13 +84,5 @@ class JsonSignatureAuthenticationProvider extends SocketAuthenticationProvider{
       default:
         return "rsa2048";
     }
-  }
-}
-
-
-
-class SocketAuthenticationProviderManager {
-  static SocketAuthenticationProvider getAuthenticationProvider() {
-    return EmptySocketAuthenticationProvider();
   }
 }

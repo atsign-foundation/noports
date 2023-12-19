@@ -39,8 +39,8 @@ void main() {
     late String session;
     late String atSignA;
     String? atSignB;
-    SocketAuthenticator? socketAuthenticatorA;
-    SocketAuthenticator? socketAuthenticatorB;
+    SocketAuthVerifier? socketAuthenticatorA;
+    SocketAuthVerifier? socketAuthenticatorB;
     (session, atSignA, atSignB, socketAuthenticatorA, socketAuthenticatorB) = await SshrvdUtil.getParams(notification);
     expect(session, 'hello');
     expect(atSignA, '@4314sagittarius');

@@ -132,8 +132,9 @@ abstract class SshrvdChannel<T> with AsyncInitialization, AtClientBindings {
   }
 
   String _getValue(params, sessionId) {
-    SSHNPDNotificationRequestMessage message = SSHNPDNotificationRequestMessageManager.get(false);
-    message.sessionId = sessionId;
-    return message.toString();
+      // TO DO logic to decide what class to instantiate
+      // return AuthenticationEnablingMessage();
+    return (SessionIdMessage()..sessionId = sessionId).toString();
+
   }
 }

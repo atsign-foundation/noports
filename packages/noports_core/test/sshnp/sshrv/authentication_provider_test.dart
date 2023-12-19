@@ -16,10 +16,10 @@ void main() {
 
   test('Test json signinging and verification', () {
 
-    var provider = JsonSignatureAuthenticationProvider('hello', testEncryptionPrivateKey);
+    var provider = SignatureAuthenticator('hello', testEncryptionPrivateKey);
     var signedData = provider.sign('hello');
     print(signedData);
-    SignatureVerifyingSocketAuthenticator sa = SignatureVerifyingSocketAuthenticator(testEncryptionPublicKey , 'hello');
+    SignatureAuthVerifier sa = SignatureAuthVerifier(testEncryptionPublicKey , 'hello');
     List<int> list = utf8.encode(signedData);
     Uint8List data = Uint8List.fromList(list);
 

@@ -19,13 +19,14 @@ import 'package:socket_connector/socket_connector.dart';
 ///
 /// also expects signature to be base64 encoded
 ///
-class SignatureVerifyingSocketAuthenticator implements SocketAuthenticator {
+///
+class SignatureAuthVerifier implements SocketAuthVerifier {
   // Public key of the signing algorithm used to sign the data
   String publicKey;
   // data that was signed, this is the data that should be matched once the signature is verified
   dynamic dataToVerify;
 
-  SignatureVerifyingSocketAuthenticator(this.publicKey, this.dataToVerify);
+  SignatureAuthVerifier(this.publicKey, this.dataToVerify);
 
   @override
     (bool authenticated, Uint8List? unused) onData(

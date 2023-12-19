@@ -121,27 +121,26 @@ class SshrvdImpl implements Sshrvd {
     late String session;
     late String atSignA;
     String? atSignB;
-    SocketAuthenticator? socketAuthenticatorA;
-    SocketAuthenticator? socketAuthenticatorB;
+    SocketAuthVerifier? socketAuthenticatorA;
+    SocketAuthVerifier? socketAuthenticatorB;
 
     try {
-      (session, atSignA, atSignB, socketAuthenticatorA, socketAuthenticatorB) = await SshrvdUtil.getParams(notification);
+      (session, atSignA, atSignB, socketAuthenticatorA, socketAuthenticatorB) =
+          await SshrvdUtil.getParams(notification);
 
       if (managerAtsign != 'open' && managerAtsign != atSignA) {
         logger.shout('Session $session for $atSignA is denied');
         return;
       }
-
-    }catch(e) {
-      logger.shout(
-          'Unable to provide the socket pair due to: $e');
+    } catch (e) {
+      logger.shout('Unable to provide the socket pair due to: $e');
       return;
     }
-    (int, int) ports =
-        await _spawnSocketConnector(0, 0, session, atSignA, atSignB, socketAuthenticatorA, socketAuthenticatorB, snoop);
+    (int, int) ports = await _spawnSocketConnector(0, 0, session, atSignA,
+        atSignB, socketAuthenticatorA, socketAuthenticatorB, snoop);
     var (portA, portB) = ports;
-    logger
-        .warning('Starting session $session for $atSignA to $atSignB using ports $ports');
+    logger.warning(
+        'Starting session $session for $atSignA to $atSignB using ports $ports');
 
     var metaData = Metadata()
       ..isPublic = false
@@ -177,15 +176,25 @@ class SshrvdImpl implements Sshrvd {
     int portB,
     String session,
     String atSignA,
-    String? atSignB, SocketAuthenticator? socketAuthenticatorA,
-      SocketAuthenticator? socketAuthenticatorB,
+    String? atSignB,
+    SocketAuthVerifier? socketAuthVerifierA,
+    SocketAuthVerifier? socketAuthVerifierB,
     bool snoop,
   ) async {
     /// Spawn an isolate and wait for it to send back the issued port numbers
     ReceivePort receivePort = ReceivePort(session);
 
-    ConnectorParams parameters =
-        (receivePort.sendPort, portA, portB, session, atSignA, atSignB, socketAuthenticatorA, socketAuthenticatorB, snoop);
+    ConnectorParams parameters = (
+      receivePort.sendPort,
+      portA,
+      portB,
+      session,
+      atSignA,
+      atSignB,
+      socketAuthVerifierA,
+      socketAuthVerifierB,
+      snoop
+    );
 
     logger
         .info("Spawning socket connector isolate with parameters $parameters");
@@ -205,30 +214,38 @@ class SshrvdUtil {
     return notification.key.contains(Sshrvd.namespace);
   }
 
-  static Future<(String, String, String?, SocketAuthenticator?, SocketAuthenticator?)> getParams(AtNotification notification)  async {
-    if(notification.key.contains('request_ports') && notification.key.contains(Sshrvd.namespace)) {
+  static Future<
+          (String, String, String?, SocketAuthVerifier?, SocketAuthVerifier?)>
+      getParams(AtNotification notification) async {
+    if (notification.key.contains('request_ports') &&
+        notification.key.contains(Sshrvd.namespace)) {
       return await _processJSONRequest(notification);
     }
-    return _processLegacyRequest(notification);;
+    return _processLegacyRequest(notification);
+    ;
   }
 
-
-  static (String, String, String?, SocketAuthenticator?, SocketAuthenticator?) _processLegacyRequest(AtNotification notification) {
+  static (String, String, String?, SocketAuthVerifier?, SocketAuthVerifier?)
+      _processLegacyRequest(AtNotification notification) {
     return (notification.value!, notification.from, null, null, null);
   }
 
-  static Future<(String, String, String?, SocketAuthenticator?, SocketAuthenticator?)> _processJSONRequest(AtNotification notification) async {
+  static Future<
+          (String, String, String?, SocketAuthVerifier?, SocketAuthVerifier?)>
+      _processJSONRequest(AtNotification notification) async {
     String session = '';
     String atSignA = '';
     String atSignB = '';
     bool authenticateSocketA = false;
     bool authenticateSocketB = false;
-    SocketAuthenticator? socketAuthenticatorA;
-    SocketAuthenticator? socketAuthenticatorB;
+    SocketAuthVerifier? socketAuthVerifierA;
+    SocketAuthVerifier? socketAuthVerifierB;
 
     dynamic jsonValue = jsonDecode(notification.value ?? '');
 
-    if(jsonValue['session'] == null || jsonValue['atSignA'] == null || jsonValue['atSignB'] == null) {
+    if (jsonValue['session'] == null ||
+        jsonValue['atSignA'] == null ||
+        jsonValue['atSignB'] == null) {
       throw Exception('session, atSignA and atSignB cannot be empty');
     }
 
@@ -238,27 +255,35 @@ class SshrvdUtil {
     authenticateSocketA = jsonValue['authenticateSocketA'];
     authenticateSocketB = jsonValue['authenticateSocketB'];
 
-    if(authenticateSocketA) {
+    if (authenticateSocketA) {
       String? pkAtSignA = await _fetchPublicKey(atSignA);
-      if(pkAtSignA == null) {
+      if (pkAtSignA == null) {
         logger.shout(
             'Cannot spawn socket connector. Authenticator for $atSignA could not be created as PublicKey could not be fetched from the secondary server.');
-        throw Exception('Unable to create SocketAuthenticator for $atSignA due to not able to get public key for $atSignA');
+        throw Exception(
+            'Unable to create SocketAuthenticator for $atSignA due to not able to get public key for $atSignA');
       }
-      socketAuthenticatorA = SignatureVerifyingSocketAuthenticator(pkAtSignA, session);
+      socketAuthVerifierA = SignatureAuthVerifier(pkAtSignA, session);
     }
 
-    if(authenticateSocketB) {
+    if (authenticateSocketB) {
       String? pkAtSignB = await _fetchPublicKey(atSignB);
-      if(pkAtSignB == null) {
+      if (pkAtSignB == null) {
         logger.shout(
             'Cannot spawn socket connector. Authenticator for $atSignB could not be created as PublicKey could not be fetched from the secondary server.');
-        throw Exception('Unable to create SocketAuthenticator for $atSignB due to not able to get public key for $atSignB');
+        throw Exception(
+            'Unable to create SocketAuthenticator for $atSignB due to not able to get public key for $atSignB');
       }
-      socketAuthenticatorB = SignatureVerifyingSocketAuthenticator(pkAtSignB, session);
+      socketAuthVerifierB = SignatureAuthVerifier(pkAtSignB, session);
     }
 
-    return (session, atSignA, atSignB, socketAuthenticatorA, socketAuthenticatorB);
+    return (
+      session,
+      atSignA,
+      atSignB,
+      socketAuthVerifierA,
+      socketAuthVerifierB
+    );
   }
 
   static Future<String?> _fetchPublicKey(String atSign,
@@ -266,7 +291,7 @@ class SshrvdUtil {
     String? publicKey;
     AtLookupImpl atLookupImpl = AtLookupImpl(atSign, 'root.atsign.org', 64);
     SecondaryAddress secondaryAddress =
-    await atLookupImpl.secondaryAddressFinder.findSecondary(atSign);
+        await atLookupImpl.secondaryAddressFinder.findSecondary(atSign);
 
     SecureSocket secureSocket = await SecureSocket.connect(
         secondaryAddress.host, secondaryAddress.port);
@@ -280,7 +305,6 @@ class SshrvdUtil {
         publicKey = publicKey?.substring(0, publicKey?.indexOf('\n')).trim();
       }
     });
-
 
     int totalSecondsWaited = 0;
     while (totalSecondsWaited < secondsToWait) {

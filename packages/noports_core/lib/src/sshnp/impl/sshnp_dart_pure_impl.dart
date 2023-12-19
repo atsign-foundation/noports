@@ -44,7 +44,8 @@ class SshnpDartPureImpl extends SshnpCore
   Future<SshnpResult> run() async {
     /// Ensure that sshnp is initialized
     await callInitialization();
-    SSHNPNotificationRequestMessage message = SSHNPNotificationRequestMessageManager.get(false);
+    // TO DO : add logic to decide which message to instantiate
+    SshnpSessionRequest message = SessionIdMessage();
     message.direct = true;
     message.sessionId =sessionId;
     message.host = sshrvdChannel.host;

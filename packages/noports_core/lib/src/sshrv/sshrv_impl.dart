@@ -21,7 +21,7 @@ class SshrvImplExec implements Sshrv<Process> {
   final int localSshdPort;
 
   @override
-  SocketAuthenticationProvider? authenticationProvider;
+  SocketAuthenticator? authenticationProvider;
 
 
   SshrvImplExec(
@@ -60,12 +60,12 @@ class SshrvImplDart implements Sshrv<SocketConnector> {
   final int localSshdPort;
 
   @override
-  SocketAuthenticationProvider? authenticationProvider;
+  SocketAuthenticator? authenticationProvider;
 
   SshrvImplDart(
     this.host,
     this.streamingPort, {
-    this.localSshdPort = 22, SocketAuthenticationProvider? authenticationProvider
+    this.localSshdPort = 22, SocketAuthenticator? authenticationProvider
   });
 
   @override

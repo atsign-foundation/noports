@@ -3,7 +3,7 @@ import 'dart:isolate';
 import 'package:at_utils/at_logger.dart';
 import 'package:socket_connector/socket_connector.dart';
 
-typedef ConnectorParams = (SendPort, int, int, String, String, String?,SocketAuthenticator? socketAuthenticatorA, SocketAuthenticator? socketAuthenticatorB, bool);
+typedef ConnectorParams = (SendPort, int, int, String, String, String?,SocketAuthVerifier? socketAuthenticatorA, SocketAuthVerifier? socketAuthenticatorB, bool);
 typedef PortPair = (int, int);
 
 final logger = AtSignLogger(' sshrvd / socket_connector ');
@@ -13,7 +13,7 @@ final logger = AtSignLogger(' sshrvd / socket_connector ');
 /// It starts the socket connector, and sends back the assigned ports to the main isolate
 /// It then waits for socket connector to die before shutting itself down
 void socketConnector(ConnectorParams params) async {
-  var (sendPort, portA, portB, session, atSignA, atSignB, socketAuthenticatorA, socketAuthenticatorB, snoop) = params;
+  var (sendPort, portA, portB, session, atSignA, atSignB, socketAuthVerifierA, socketAuthVerifierB, snoop) = params;
 
   logger.info('Starting socket connector session $session for $atSignA to $atSignB');
 
@@ -25,8 +25,8 @@ void socketConnector(ConnectorParams params) async {
   serverPortA: portA,
   serverPortB: portB,
   verbose: snoop,
-  socketAuthenticatorA: socketAuthenticatorA,
-  socketAuthenticatorB: socketAuthenticatorB,
+  socketAuthVerifierA: socketAuthVerifierA,
+  socketAuthVerifierB: socketAuthVerifierB
   );
 
   /// Get the assigned ports from the socket connector

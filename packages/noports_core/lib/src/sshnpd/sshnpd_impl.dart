@@ -501,7 +501,7 @@ class SshnpdImpl implements Sshnpd {
       // Connect to rendezvous point using background process.
       // This program can then exit without causing an issue.
       Process rv =
-          await Sshrv.exec(host, port, localSshdPort: localSshdPort, authenticationProvider: SocketAuthenticationProviderManager.getAuthenticationProvider()).run();
+          await Sshrv.exec(host, port, localSshdPort: localSshdPort, authenticationProvider: EmptySocketAuthenticator()).run();
       logger.info('Started rv - pid is ${rv.pid}');
 
       LocalSshKeyUtil keyUtil = LocalSshKeyUtil();

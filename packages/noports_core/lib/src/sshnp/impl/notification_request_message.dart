@@ -1,6 +1,6 @@
 import 'dart:convert';
 
-abstract class SSHNPNotificationRequestMessage {
+abstract class SshnpSessionRequest {
   late bool direct;
   late String sessionId;
   late String host;
@@ -8,7 +8,8 @@ abstract class SSHNPNotificationRequestMessage {
 
   Map message();
 }
-class SessionIdMessage extends SSHNPNotificationRequestMessage{
+
+class SessionIdMessage extends SshnpSessionRequest{
 
   @override
   Map message() {
@@ -30,15 +31,5 @@ class AuthenticationEnablingMessage extends SessionIdMessage{
     Map m = super.message();
     m['authenticate'] = authenticate;
     return m;
-  }
-}
-
-class SSHNPNotificationRequestMessageManager {
-  static SSHNPNotificationRequestMessage get(bool authenticate) {
-
-    if(authenticate) {
-        return AuthenticationEnablingMessage()..authenticate = true;
-    }
-    return SessionIdMessage();
   }
 }
