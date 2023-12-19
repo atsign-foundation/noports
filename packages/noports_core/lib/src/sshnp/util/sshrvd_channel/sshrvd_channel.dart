@@ -43,6 +43,8 @@ abstract class SshrvdChannel<T> with AsyncInitialization, AtClientBindings {
   String get host => _host ?? params.host;
   int get port => _port ?? params.port;
 
+  bool authenticateDevice = false;
+
   // * Volatile fields set at runtime
 
   /// Whether sshrvd acknowledged our request
@@ -130,14 +132,8 @@ abstract class SshrvdChannel<T> with AsyncInitialization, AtClientBindings {
   }
 
   String _getValue(params, sessionId) {
-    bool supportsClientAuthentication = false;
-    bool authenticateSocketA = false;
-    bool authenticateSocketB = false;
-
-    if(supportsClientAuthentication) {
-      return AuthentionEnablingMessage(sessionId, params.clientAtSign, params.sshnpdAtsign, authenticateSocketA, authenticateSocketB).toString();
-    } else {
-      return SessionIdMessage(sessionId).toString();
-    }
+    SSHNPDNotificationRequestMessage message = SSHNPDNotificationRequestMessageManager.get(false);
+    message.sessionId = sessionId;
+    return message.toString();
   }
 }

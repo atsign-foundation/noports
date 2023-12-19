@@ -5,6 +5,8 @@ import 'package:meta/meta.dart';
 import 'package:noports_core/src/common/io_types.dart';
 import 'package:noports_core/sshnp_foundation.dart';
 
+import 'notification_request_message.dart';
+
 class SshnpOpensshLocalImpl extends SshnpCore
     with SshnpLocalSshKeyHandler, SshnpOpensshInitialTunnelHandler {
   SshnpOpensshLocalImpl({
@@ -63,7 +65,11 @@ class SshnpOpensshLocalImpl extends SshnpCore
   Future<SshnpResult> run() async {
     /// Ensure that sshnp is initialized
     await callInitialization();
-
+    SSHNPNotificationRequestMessage message = SSHNPNotificationRequestMessageManager.get(false);
+    message.direct = true;
+    message.sessionId =sessionId;
+    message.host = sshrvdChannel.host;
+    message.port = sshrvdChannel.port;
     /// Send an ssh request to sshnpd
     await notify(
       AtKey()
@@ -72,12 +78,7 @@ class SshnpOpensshLocalImpl extends SshnpCore
         ..sharedBy = params.clientAtSign
         ..sharedWith = params.sshnpdAtSign
         ..metadata = (Metadata()..ttl = 10000),
-      signAndWrapAndJsonEncode(atClient, {
-        'direct': true,
-        'sessionId': sessionId,
-        'host': sshrvdChannel.host,
-        'port': sshrvdChannel.port,
-      }),
+      signAndWrapAndJsonEncode(atClient, message.message()),
     );
 
     /// Wait for a response from sshnpd

@@ -1,14 +1,13 @@
 import 'dart:convert';
 
-class NotificationRequestMessage {
+abstract class SSHNPDNotificationRequestMessage {
+  late String sessionId;
+
   @override
   String toString();
 }
 
-class SessionIdMessage extends NotificationRequestMessage{
-  String sessionId;
-
-  SessionIdMessage(this.sessionId);
+class SessionIdMessage extends SSHNPDNotificationRequestMessage{
 
   @override
   String toString() {
@@ -16,13 +15,11 @@ class SessionIdMessage extends NotificationRequestMessage{
   }
 }
 
-class AuthentionEnablingMessage extends SessionIdMessage{
-  String atSignA;
-  String atSignB;
-  bool authenticateSocketA;
-  bool authenticateSocketB;
-
-  AuthentionEnablingMessage(String sessionId, this.atSignA, this.atSignB, this.authenticateSocketA, this.authenticateSocketB) : super(sessionId);
+class AuthenticationEnablingMessage extends SessionIdMessage {
+  late String atSignA;
+  late String atSignB;
+  late bool authenticateSocketA;
+  late bool authenticateSocketB;
 
   @override
   String toString() {
@@ -33,5 +30,15 @@ class AuthentionEnablingMessage extends SessionIdMessage{
     m['authenticateSocketA'] = authenticateSocketA;
     m['authenticateSocketB'] = authenticateSocketB;
     return jsonEncode(m);
+  }
+}
+
+class SSHNPDNotificationRequestMessageManager {
+  static SSHNPDNotificationRequestMessage get(bool authenticate) {
+
+    if(authenticate) {
+      return AuthenticationEnablingMessage();
+    }
+    return SessionIdMessage();
   }
 }
