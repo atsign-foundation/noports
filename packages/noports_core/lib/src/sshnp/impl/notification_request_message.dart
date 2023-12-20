@@ -1,5 +1,3 @@
-import 'dart:convert';
-
 abstract class SshnpSessionRequest {
   late bool direct;
   late String sessionId;

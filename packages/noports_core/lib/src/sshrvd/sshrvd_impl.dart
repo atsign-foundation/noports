@@ -223,7 +223,6 @@ class SshrvdUtil {
       return await _processJSONRequest(notification);
     }
     return _processLegacyRequest(notification);
-    ;
   }
 
   static (String, String, String?, SocketAuthVerifier?, SocketAuthVerifier?)

@@ -572,10 +572,9 @@ packages:
   noports_core:
     dependency: "direct main"
     description:
-      name: noports_core
-      sha256: c9228de65289f6946c07f12606feb106a6c53d65ca22b69f3da10a71f3f12e0d
-      url: "https://pub.dev"
-    source: hosted
+      path: "../noports_core"
+      relative: true
+    source: path
     version: "5.0.2"
   openssh_ed25519:
     dependency: transitive
