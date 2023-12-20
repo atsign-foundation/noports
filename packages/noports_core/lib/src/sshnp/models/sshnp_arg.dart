@@ -341,6 +341,7 @@ class SshnpArg {
     name: 'list-devices',
     help: 'List available devices',
     defaultsTo: DefaultSshnpArgs.listDevices,
+    format: ArgFormat.flag,
     aliases: ['ls'],
     negatable: false,
     parseWhen: ParseWhen.commandLine,

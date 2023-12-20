@@ -36,7 +36,7 @@ Future<Sshnp> createSshnp(
       );
     case SupportedSshClient.dart:
       String identityFile = params.identityFile ??
-          (throw SshnpError(
+          (throw ArgumentError(
             'Identity file is mandatory when using the dart client.',
           ));
       String pemText = await File(identityFile).readAsString();

@@ -56,10 +56,10 @@ codesign \
   --options=runtime \
   -s "$SIGNING_IDENTITY" \
   -v \
-  "$WORKING_DIR"/sshnp/{ssh*,at_activate};
+  "$WORKING_DIR"/sshnp/{ssh*,at_activate,debug/sshrvd};
 
 echo Verifying signatures:
-codesign -vvv --deep --strict "$WORKING_DIR"/sshnp/{ssh*,at_activate};
+codesign -vvv --deep --strict "$WORKING_DIR"/sshnp/{ssh*,at_activate,debug/sshrvd};
 
 # Zip the signed binaries
 ditto -c -k --keepParent "$WORKING_DIR"/sshnp "$WORKING_DIR/$OUTPUT_FILE".zip
