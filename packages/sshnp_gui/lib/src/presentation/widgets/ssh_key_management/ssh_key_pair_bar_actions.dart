@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sshnp_gui/src/utility/sizes.dart';
 
-import '../../../controllers/ssh_key_pair_controller.dart';
+import '../../../controllers/private_key_manager_controller.dart';
 import '../../../utility/constants.dart';
 import 'ssh_key_management_form_dialog.dart';
 
@@ -18,7 +18,7 @@ class SshKeyPairBarActions extends ConsumerStatefulWidget {
 class _SshKeyPairBarActionsState extends ConsumerState<SshKeyPairBarActions> {
   @override
   Widget build(BuildContext context) {
-    final controller = ref.watch(atSSHKeyPairManagerFamilyController(widget.identifier).notifier);
+    final controller = ref.watch(privateKeyManagerFamilyController(widget.identifier).notifier);
     return Row(
       children: [
         IconButton(
@@ -39,7 +39,7 @@ class _SshKeyPairBarActionsState extends ConsumerState<SshKeyPairBarActions> {
         IconButton(
           style: FilledButton.styleFrom(backgroundColor: kIconColorBackgroundDark),
           onPressed: () {
-            controller.deleteAtSSHKeyPairManager(identifier: widget.identifier);
+            controller.deletePrivateKeyManager(identifier: widget.identifier);
           },
           icon: const Icon(
             Icons.delete_outline,

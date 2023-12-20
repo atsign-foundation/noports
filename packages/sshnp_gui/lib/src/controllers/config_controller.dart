@@ -20,8 +20,7 @@ final configListController = AutoDisposeAsyncNotifierProvider<ConfigListControll
 );
 
 /// A provider that exposes the [ConfigFamilyController] to the app.
-final configFamilyController = AutoDisposeAsyncNotifierProviderFamily<
-    ConfigFamilyController, SshnpParams, String>(
+final configFamilyController = AutoDisposeAsyncNotifierProviderFamily<ConfigFamilyController, SshnpParams, String>(
   ConfigFamilyController.new,
 );
 
@@ -71,8 +70,7 @@ class ConfigListController extends AutoDisposeAsyncNotifier<Iterable<String>> {
 }
 
 /// Controller for the family of [SshnpParams] controllers
-class ConfigFamilyController
-    extends AutoDisposeFamilyAsyncNotifier<SshnpParams, String> {
+class ConfigFamilyController extends AutoDisposeFamilyAsyncNotifier<SshnpParams, String> {
   @override
   Future<SshnpParams> build(String arg) async {
     AtClient atClient = AtClientManager.getInstance().atClient;
@@ -83,15 +81,15 @@ class ConfigFamilyController
       );
     }
     try {
-      return ConfigKeyRepository.getParams(arg, atClient: atClient);
+      final result = await ConfigKeyRepository.getParams(arg, atClient: atClient);
+      return result;
     } catch (e) {
-      log(e.toString());
+      log('From Config Controller ${e.toString()}');
       return SshnpParams.empty();
     }
   }
 
-  Future<void> putConfig(SshnpParams params,
-      {String? oldProfileName, BuildContext? context}) async {
+  Future<void> putConfig(SshnpParams params, {String? oldProfileName, BuildContext? context}) async {
     AtClient atClient = AtClientManager.getInstance().atClient;
     SshnpParams oldParams = state.value ?? SshnpParams.empty();
     if (oldProfileName != null) {
@@ -121,8 +119,7 @@ class ConfigFamilyController
     try {
       await ConfigKeyRepository.deleteParams(arg, atClient: AtClientManager.getInstance().atClient);
       ref.read(configListController.notifier).remove(arg);
-      state =
-          AsyncValue.error('SshnpParams has been disposed', StackTrace.current);
+      state = AsyncValue.error('SshnpParams has been disposed', StackTrace.current);
     } catch (e) {
       if (context?.mounted ?? false) {
         CustomSnackBar.error(content: 'Failed to delete profile: $arg');

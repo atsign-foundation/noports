@@ -19,7 +19,7 @@ import 'package:sshnp_gui/src/utility/constants.dart';
 import 'package:sshnp_gui/src/utility/form_validator.dart';
 import 'package:sshnp_gui/src/utility/sizes.dart';
 
-import '../../../../controllers/ssh_key_pair_controller.dart';
+import '../../../../controllers/private_key_manager_controller.dart';
 
 class ProfileFormDesktopView extends ConsumerStatefulWidget {
   const ProfileFormDesktopView({super.key});
@@ -40,25 +40,23 @@ class _ProfileFormState extends ConsumerState<ProfileFormDesktopView> {
     super.initState();
   }
 
-  void onSubmit(SshnpParams oldConfig, SshnpPartialParams newConfig) async {
+  void onSubmit(SshnpParams oldConfig) async {
     if (_formkey.currentState!.validate()) {
       _formkey.currentState!.save();
-      final controller = ref.read(configFamilyController(newConfig.profileName ?? oldConfig.profileName!).notifier);
+      SshnpParams config = SshnpParams.merge(oldConfig, newConfig);
+      // get the controller for the profile that is about to be saved. Since this profile is not saved a log will be printed stating that the profile does not exist in keystore.
+      final controller = ref.read(configFamilyController(newConfig.profileName!).notifier);
       bool rename = newConfig.profileName != null &&
           newConfig.profileName!.isNotEmpty &&
           oldConfig.profileName != null &&
           oldConfig.profileName!.isNotEmpty &&
           newConfig.profileName != oldConfig.profileName;
-      SshnpParams config = SshnpParams.merge(oldConfig, newConfig);
 
       if (rename) {
-        await controller.deleteConfig(context: context);
-        // delete old config file and write the new one
-        if (mounted) {
-          await controller.putConfig(config, oldProfileName: oldConfig.profileName!, context: context);
-        }
+        // delete old config and create new config file
+        await controller.putConfig(config, oldProfileName: oldConfig.profileName!, context: context);
       } else {
-        // create new config file
+        // create new config file without trying to delete the old config file
         await controller.putConfig(config, context: context);
       }
       if (mounted) {
@@ -72,7 +70,7 @@ class _ProfileFormState extends ConsumerState<ProfileFormDesktopView> {
   Widget build(BuildContext context) {
     final strings = AppLocalizations.of(context)!;
     currentProfile = ref.watch(currentConfigController);
-    final atSshKeyPairs = ref.watch(atSshKeyPairListController);
+    final atSshKeyPairs = ref.watch(atPrivateKeyManagerListController);
 
     final asyncOldConfig = ref.watch(configFamilyController(currentProfile.profileName));
 
@@ -92,13 +90,14 @@ class _ProfileFormState extends ConsumerState<ProfileFormDesktopView> {
                       CustomTextFormField(
                         initialValue: oldConfig.profileName,
                         labelText: strings.profileName,
-                        onChanged: (value) {
+                        onSaved: (value) {
                           newConfig = SshnpPartialParams.merge(
                             newConfig,
-                            SshnpPartialParams(profileName: value),
+                            SshnpPartialParams(profileName: value!),
                           );
                           ref.read(formProfileNameController.notifier).state = value;
                           log(ref.read(formProfileNameController));
+                          log("profile name: ${newConfig.profileName}");
                         },
                         validator: FormValidator.validateProfileNameField,
                       ),
@@ -110,13 +109,15 @@ class _ProfileFormState extends ConsumerState<ProfileFormDesktopView> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       CustomTextFormField(
-                        initialValue: oldConfig.device,
-                        labelText: strings.device,
-                        onSaved: (value) => newConfig = SshnpPartialParams.merge(
-                          newConfig,
-                          SshnpPartialParams(device: value),
-                        ),
-                      ),
+                          initialValue: oldConfig.device,
+                          labelText: strings.device,
+                          onSaved: (value) {
+                            newConfig = SshnpPartialParams.merge(
+                              newConfig,
+                              SshnpPartialParams(device: value!),
+                            );
+                            log("device name: ${newConfig.device}");
+                          }),
                       gapW38,
                       CustomTextFormField(
                         initialValue: oldConfig.sshnpdAtSign,
@@ -183,7 +184,7 @@ class _ProfileFormState extends ConsumerState<ProfileFormDesktopView> {
                               }
                             },
                             onSaved: (value) {
-                              final atSshKeyPair = ref.read(atSSHKeyPairManagerFamilyController(value!));
+                              final atSshKeyPair = ref.read(privateKeyManagerFamilyController(value!));
                               // write to a new controller to map the profile name to the ssh key pair manager nickname. Store this information locally.
 
                               // At the point of ssh connect the profile name and the key manager name so get the identity passphrase and the fiel content.
@@ -200,9 +201,8 @@ class _ProfileFormState extends ConsumerState<ProfileFormDesktopView> {
                         }),
 
                     // TODO: Add key management dropdown here
-                    gapH10,
+                    gapH20,
 
-                    gapH10,
                     CustomDropdownFormField<SupportedSshAlgorithm>(
                       label: strings.sshAlgorithm,
                       hintText: strings.select,
@@ -309,7 +309,10 @@ class _ProfileFormState extends ConsumerState<ProfileFormDesktopView> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         ElevatedButton(
-                          onPressed: () => onSubmit(oldConfig, newConfig),
+                          onPressed: () {
+                            log('elevate button new config ${newConfig.profileName}}');
+                            onSubmit(oldConfig);
+                          },
                           child: Text(strings.submit),
                         ),
                         gapW8,

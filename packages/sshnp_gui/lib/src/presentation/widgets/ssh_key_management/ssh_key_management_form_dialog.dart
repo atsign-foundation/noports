@@ -5,18 +5,17 @@ import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:sshnp_gui/src/controllers/config_controller.dart';
 import 'package:sshnp_gui/src/controllers/form_controllers.dart';
 import 'package:sshnp_gui/src/controllers/navigation_controller.dart';
 import 'package:sshnp_gui/src/controllers/navigation_rail_controller.dart';
-import 'package:sshnp_gui/src/controllers/ssh_key_pair_controller.dart';
+import 'package:sshnp_gui/src/controllers/private_key_manager_controller.dart';
 import 'package:sshnp_gui/src/presentation/widgets/profile_screen_widgets/profile_form/custom_text_form_field.dart';
 import 'package:sshnp_gui/src/presentation/widgets/ssh_key_management/file_picker_field.dart';
 import 'package:sshnp_gui/src/utility/constants.dart';
 import 'package:sshnp_gui/src/utility/form_validator.dart';
 import 'package:sshnp_gui/src/utility/sizes.dart';
 
-import '../../../application/at_ssh_key_pair_manager.dart';
+import '../../../application/private_key_manager.dart';
 import '../../../controllers/file_picker_controller.dart';
 
 class SSHKeyManagementFormDialog extends ConsumerStatefulWidget {
@@ -30,7 +29,7 @@ class SSHKeyManagementFormDialog extends ConsumerStatefulWidget {
 
 class _SSHKeyManagementFormState extends ConsumerState<SSHKeyManagementFormDialog> {
   final GlobalKey<FormState> _formkey = GlobalKey<FormState>();
-  late CurrentConfigState currentProfile;
+
   late String nickname;
   // TODO: Handle olde passPhrase and content info and clean up this form
   String? passPhrase;
@@ -42,9 +41,7 @@ class _SSHKeyManagementFormState extends ConsumerState<SSHKeyManagementFormDialo
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
-      ref.read(formProfileNameController.notifier).state = currentProfile.profileName;
-    });
+    WidgetsBinding.instance.addPostFrameCallback((timeStamp) {});
   }
 
   @override
@@ -74,16 +71,16 @@ class _SSHKeyManagementFormState extends ConsumerState<SSHKeyManagementFormDialo
     if (_formkey.currentState!.validate()) {
       _formkey.currentState!.save();
 
-      final atSshKeyPairManager = AtSshKeyPairManager(
+      final privateKeyManager = PrivateKeyManager(
           nickname: nickname,
           content: await fileDetails.content,
           privateKeyFileName: fileDetails.fileName,
           passPhrase: passPhrase);
       fileDetails.clearFileDetails();
-      final controller = ref.read(atSSHKeyPairManagerFamilyController(nickname).notifier);
-      await controller.deleteAtSSHKeyPairManager(identifier: 'test');
+      final controller = ref.read(privateKeyManagerFamilyController(nickname).notifier);
+      await controller.deletePrivateKeyManager(identifier: 'test');
 
-      await controller.saveAtSshKeyPairManager(atSshKeyPairManager: atSshKeyPairManager);
+      await controller.savePrivateKeyManager(privateKeyManager: privateKeyManager);
 
       if (mounted) {
         ref.read(navigationRailController.notifier).setRoute(AppRoute.home);
@@ -95,18 +92,17 @@ class _SSHKeyManagementFormState extends ConsumerState<SSHKeyManagementFormDialo
   @override
   Widget build(BuildContext context) {
     final strings = AppLocalizations.of(context)!;
-    currentProfile = ref.watch(currentConfigController);
 
-    final asyncOldConfig = ref.watch(atSSHKeyPairManagerFamilyController(widget.identifier ?? ''));
+    final asyncOldConfig = ref.watch(privateKeyManagerFamilyController(widget.identifier ?? ''));
 
     return asyncOldConfig.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (error, stack) => Center(child: Text(error.toString())),
-        data: (oldAtSshKeyPairManager) {
-          nickname = oldAtSshKeyPairManager.nickname;
-          passPhrase = oldAtSshKeyPairManager.passPhrase;
-          content = oldAtSshKeyPairManager.content;
-          privateKeyFileName = oldAtSshKeyPairManager.privateKeyFileName;
+        data: (oldPrivateKeyManager) {
+          nickname = oldPrivateKeyManager.nickname;
+          passPhrase = oldPrivateKeyManager.passPhrase;
+          content = oldPrivateKeyManager.content;
+          privateKeyFileName = oldPrivateKeyManager.privateKeyFileName;
 
           return Dialog(
             child: Padding(

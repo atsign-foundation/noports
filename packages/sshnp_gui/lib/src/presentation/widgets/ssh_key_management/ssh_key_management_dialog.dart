@@ -4,7 +4,7 @@ import 'package:dotted_border/dotted_border.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:sshnp_gui/src/controllers/ssh_key_pair_controller.dart';
+import 'package:sshnp_gui/src/controllers/private_key_manager_controller.dart';
 import 'package:sshnp_gui/src/presentation/widgets/ssh_key_management/ssh_key_pair_bar.dart';
 import 'package:sshnp_gui/src/utility/constants.dart';
 import 'package:sshnp_gui/src/utility/sizes.dart';
@@ -25,7 +25,7 @@ class _SshKeyManagementScreenState extends ConsumerState<SshKeyManagementDialog>
     // * Getting the AtClientManager instance to use below
 
     final strings = AppLocalizations.of(context)!;
-    final atSshKeyPairs = ref.watch(atSshKeyPairListController);
+    final atSshKeyPairs = ref.watch(atPrivateKeyManagerListController);
 
     return Dialog(
       child: Padding(

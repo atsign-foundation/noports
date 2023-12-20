@@ -19,7 +19,7 @@ import 'package:sshnp_gui/src/utility/constants.dart';
 import 'package:sshnp_gui/src/utility/form_validator.dart';
 import 'package:sshnp_gui/src/utility/sizes.dart';
 
-import '../../../../controllers/ssh_key_pair_controller.dart';
+import '../../../../controllers/private_key_manager_controller.dart';
 
 class ProfileFormMobileView extends ConsumerStatefulWidget {
   const ProfileFormMobileView({super.key});
@@ -72,7 +72,7 @@ class _ProfileFormState extends ConsumerState<ProfileFormMobileView> {
   Widget build(BuildContext context) {
     final strings = AppLocalizations.of(context)!;
     currentProfile = ref.watch(currentConfigController);
-    final atSshKeyPairs = ref.watch(atSshKeyPairListController);
+    final atSshKeyPairs = ref.watch(atPrivateKeyManagerListController);
 
     final asyncOldConfig = ref.watch(configFamilyController(currentProfile.profileName));
 
@@ -176,7 +176,7 @@ class _ProfileFormState extends ConsumerState<ProfileFormMobileView> {
                               }
                             },
                             onSaved: (value) {
-                              final atSshKeyPair = ref.read(atSSHKeyPairManagerFamilyController(value!));
+                              final atSshKeyPair = ref.read(privateKeyManagerFamilyController(value!));
                               atSshKeyPair.when(
                                   data: (data) => newConfig = SshnpPartialParams.merge(
                                       newConfig,

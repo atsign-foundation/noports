@@ -1,26 +1,27 @@
 import 'package:noports_core/utils.dart';
 
-class AtSshKeyPairManager {
+/// A model for connecting [PrivateKeyManager]'s with a profile.
+class PrivateKeyManager {
   final String nickname;
   final String? passPhrase;
   final String content;
   final String privateKeyFileName;
 
-  AtSshKeyPairManager({
+  PrivateKeyManager({
     required this.nickname,
     this.passPhrase,
     required this.content,
     required this.privateKeyFileName,
   });
 
-  AtSshKeyPairManager.empty({
+  PrivateKeyManager.empty({
     this.nickname = '',
     this.passPhrase = '',
     this.content = '',
     this.privateKeyFileName = '',
   });
 
-  AtSshKeyPairManager.fromJson(Map<String, dynamic> json)
+  PrivateKeyManager.fromJson(Map<String, dynamic> json)
       : nickname = json['nickName'],
         passPhrase = json['passPhrase'],
         content = json['content'],
