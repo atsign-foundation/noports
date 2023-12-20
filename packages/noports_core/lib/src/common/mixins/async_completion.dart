@@ -4,13 +4,13 @@ import 'package:meta/meta.dart';
 
 mixin class AsyncDisposal {
   // * Private members
-  bool _dispoalStarted = false;
+  bool _disposalStarted = false;
   final Completer<void> _disposedCompleter = Completer<void>();
 
   // * Public members
 
   /// Used to check if disposal has started
-  bool get disposalStarted => _dispoalStarted;
+  bool get disposalStarted => _disposalStarted;
 
   /// Used to check if disposal has completed
   Future<void> get disposed => _disposedCompleter.future;
@@ -24,8 +24,8 @@ mixin class AsyncDisposal {
 
   @protected
   Future<void> callDisposal() async {
-    if (!_dispoalStarted) {
-      _dispoalStarted = true;
+    if (!_disposalStarted) {
+      _disposalStarted = true;
       unawaited(dispose());
     }
     return disposed;

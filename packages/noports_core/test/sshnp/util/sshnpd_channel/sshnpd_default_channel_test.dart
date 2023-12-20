@@ -41,6 +41,7 @@ void main() {
       notificationStreamController = StreamController();
       subscribeStub = SubscribeStub();
 
+      when(() => mockParams.verbose).thenReturn(false);
       when(() => mockParams.device).thenReturn(device);
       namespace = '$device.sshnp';
 

@@ -2,7 +2,8 @@ name: Bump requirements.txt
 on:
   pull_request:
     paths:
-      - 'pyproject.toml'
+      - 'packages/python/sshnpd/pyproject.toml'
+      - 'packages/python/sshnoports_sdk/pyproject.toml'
   workflow_dispatch:
 
 permissions:
@@ -23,7 +24,7 @@ jobs:
 
     - name: Set up Python
       if: ${{ github.actor == 'dependabot[bot]' }}
-      uses: actions/setup-python@65d7f2d534ac1bc67fcd62888c5f4f3d2cb2b236 # v4.7.1
+      uses: actions/setup-python@0a5c61591373683505ea898e09a3ea4f39ef2b9c # v5.0.0
       with:
           python-version: '3.11'
 
@@ -31,9 +32,10 @@ jobs:
       if: ${{ github.actor == 'dependabot[bot]' }}
       uses: abatilo/actions-poetry@192395c0d10c082a7c62294ab5d9a9de40e48974 # v2.3.0
       with:
-        poetry-version: '1.6.1'
+        poetry-version: '1.7.1'
 
-    - name: Bump Python dependencies
+    - name: Bump sshnpd Python dependencies
+      working-directory: packages/python/sshnpd
       if: ${{ github.actor == 'dependabot[bot]' }}
       run: |
         poetry update
@@ -45,6 +47,23 @@ jobs:
           echo 'No changes to commit on this run'
           exit 0
         else
-          git commit -m "build(deps): Bump requirements.txt"
+          git commit -m "build(deps): Bump sshnpd requirements.txt"
+          git push
+        fi
+
+    - name: Bump sshnoports_sdk Python dependencies
+      working-directory: packages/python/sshnoports_sdk
+      if: ${{ github.actor == 'dependabot[bot]' }}
+      run: |
+        poetry update
+        poetry export --format requirements.txt --output requirements.txt
+        git config --global user.name 'dependabot[bot]'
+        git config --global user.email 'dependabot[bot]@users.noreply.github.com'
+        git add requirements.txt
+        if [ -z "$(git status --porcelain)" ]; then 
+          echo 'No changes to commit on this run'
+          exit 0
+        else
+          git commit -m "build(deps): Bump sshnoports_sdk requirements.txt"
           git push
         fi

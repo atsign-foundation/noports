@@ -37,6 +37,7 @@ void main() {
     setUp(() {
       mockAtClient = MockAtClient();
       mockParams = MockSshnpParams();
+      when(() => mockParams.verbose).thenReturn(false);
       sessionId = Uuid().v4();
       notificationStreamController = StreamController();
       notifyStub = NotifyStub();

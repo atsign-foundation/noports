@@ -2,6 +2,12 @@ name: Multibuild
 
 on:
   workflow_dispatch:
+    inputs:
+      x64_only:
+        description: "Run x64 builds only"
+        required: true
+        default: false
+        type: boolean
 
 permissions: # added using https://github.com/step-security/secure-repo
   contents: read
@@ -24,33 +30,48 @@ jobs:
         include:
           - os: ubuntu-latest
             output-name: sshnp-linux-x64
+            ext: ''
+            bundle: 'shell'
           - os: macOS-latest
             output-name: sshnp-macos-x64
+            ext: ''
+            bundle: 'shell'
           - os: windows-latest
             output-name: sshnp-windows-x64
+            ext: '.exe'
+            bundle: 'windows'
 
     steps:
       - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
       - uses: dart-lang/setup-dart@b64355ae6ca0b5d484f0106a033dd1388965d06d # v1.6.0
       - run: mkdir sshnp
       - run: mkdir tarball
+      - if: ${{ matrix.os != 'windows-latest' }}
+        run: mkdir sshnp/debug
       - run: dart pub get
       - run: dart run build_runner build --delete-conflicting-outputs
-      - run: dart compile exe bin/activate_cli.dart -v -o sshnp/at_activate
-      - run: dart compile exe bin/sshnp.dart -v -o sshnp/sshnp
-      - run: dart compile exe bin/sshnpd.dart -v -o sshnp/sshnpd
-      - run: dart compile exe bin/sshrv.dart -v -o sshnp/sshrv
-      - run: dart compile exe bin/sshrvd.dart -v -o sshnp/sshrvd
-      - run: cp -r templates sshnp/templates
+      - run: dart compile exe bin/activate_cli.dart -v -o sshnp/at_activate${{ matrix.ext }}
+      - run: dart compile exe bin/sshnp.dart -v -o sshnp/sshnp${{ matrix.ext }}
+      - if: ${{ matrix.os != 'windows-latest' }}
+        run: dart compile exe bin/sshnpd.dart -v -o sshnp/sshnpd${{ matrix.ext }}
+      - if: ${{ matrix.os != 'windows-latest' }}
+        run: dart compile exe bin/sshrv.dart -v -o sshnp/sshrv${{ matrix.ext }}
+      - if: ${{ matrix.os != 'windows-latest' }}
+        run: dart compile exe bin/sshrvd.dart -v -o sshnp/sshrvd${{ matrix.ext }}
+      - if: ${{ matrix.os != 'windows-latest' }}
+        run: dart compile exe bin/sshrvd.dart -D ENABLE_SNOOP=true -v -o sshnp/debug/sshrvd${{ matrix.ext }}
+      - run: cp -r bundles/core/* sshnp/
+      - run: cp -r bundles/${{ matrix.bundle }}/* sshnp/
       - run: cp LICENSE sshnp
       - run: tar -cvzf tarball/${{ matrix.output-name }}.tgz sshnp
-      - uses: actions/upload-artifact@a8a3f3ad30e3422c9c7b888a15615d19a852ae32 # v3.1.3
+      - uses: actions/upload-artifact@c7d193f32edcb7bfad88892161225aeda64e9392 # v4.0.0
         with:
           name: x64_binaries
           path: ./packages/sshnoports/tarball/${{ matrix.output-name }}.tgz
           if-no-files-found: error
 
   other_build:
+    if: ${{ ! inputs.x64_only }}
     needs: verify_tags
     runs-on: ubuntu-latest
     defaults:
@@ -75,7 +96,7 @@ jobs:
           --platform ${{ matrix.platform }} -o type=tar,dest=bins.tar .
       - run: mkdir tarballs
       - run: tar -xvf bins.tar -C tarballs
-      - uses: actions/upload-artifact@a8a3f3ad30e3422c9c7b888a15615d19a852ae32 # v3.1.3
+      - uses: actions/upload-artifact@c7d193f32edcb7bfad88892161225aeda64e9392 # v4.0.0
         with:
           name: other_binaries
           path: ./packages/sshnoports/tarballs/${{ matrix.output-name }}.tgz

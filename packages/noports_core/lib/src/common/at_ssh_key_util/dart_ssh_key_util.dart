@@ -50,9 +50,9 @@ class DartSshKeyUtil implements AtSshKeyUtil {
   @override
   FutureOr addKeyPair({
     required AtSshKeyPair keyPair,
-    required String identifier,
+    String? identifier,
   }) {
-    _keyPairCache[identifier] = keyPair;
+    _keyPairCache[identifier ?? keyPair.identifier] = keyPair;
   }
 
   @override

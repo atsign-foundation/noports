@@ -1,5 +1,6 @@
 import 'package:args/args.dart';
 import 'package:noports_core/src/common/file_system_utils.dart';
+import 'package:noports_core/src/sshrvd/build_env.dart';
 
 class SshrvdParams {
   final String username;
@@ -43,7 +44,7 @@ class SshrvdParams {
       managerAtsign: r['manager'],
       ipAddress: r['ip'],
       verbose: r['verbose'],
-      snoop: r['snoop'],
+      snoop: BuildEnv.enableSnoop && r['snoop'],
       rootDomain: r['root-domain'],
     );
   }
@@ -84,12 +85,14 @@ class SshrvdParams {
       abbr: 'v',
       help: 'More logging',
     );
-    parser.addFlag(
-      'snoop',
-      abbr: 's',
-      defaultsTo: false,
-      help: 'Snoop on traffic passing through service',
-    );
+    if (BuildEnv.enableSnoop) {
+      parser.addFlag(
+        'snoop',
+        abbr: 's',
+        defaultsTo: false,
+        help: 'Snoop on traffic passing through service',
+      );
+    }
     parser.addOption(
       'root-domain',
       mandatory: false,

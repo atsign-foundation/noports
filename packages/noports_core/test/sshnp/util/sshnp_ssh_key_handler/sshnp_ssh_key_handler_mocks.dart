@@ -36,6 +36,14 @@ class StubbedSshnp extends SshnpCore with SshnpLocalSshKeyHandler {
   SshrvdChannel get sshrvdChannel =>
       _sshrvdChannel ?? (throw UnimplementedError());
   final SshrvdChannel? _sshrvdChannel;
+
+  @override
+  bool get canRunShell => false;
+
+  @override
+  Future<SshnpRemoteProcess> runShell() {
+    throw UnimplementedError();
+  }
 }
 
 class MockLocalSshKeyUtil extends Mock implements LocalSshKeyUtil {}
