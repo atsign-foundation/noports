@@ -18,6 +18,7 @@ void main(List<String> args) async {
         atsign: p.deviceAtsign,
         atKeysFilePath: p.atKeysFilePath,
         rootDomain: p.rootDomain,
+        storagePath: p.storagePath,
       ),
       usageCallback: (e, s) {
         printVersion();
