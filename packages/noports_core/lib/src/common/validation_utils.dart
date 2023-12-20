@@ -4,7 +4,6 @@ import 'package:at_chops/at_chops.dart';
 import 'package:at_client/at_client.dart';
 import 'package:at_utils/at_utils.dart';
 
-import 'package:noports_core/src/common/file_system_utils.dart';
 import 'package:noports_core/src/common/io_types.dart';
 import 'package:path/path.dart' as path;
 
@@ -74,12 +73,13 @@ Future<void> verifyEnvelopeSignature(
   AtSignLogger logger,
   Map envelope, {
   FileSystem? fs,
+  String? storagePath,
 }) async {
   final String signature = envelope['signature'];
   Map payload = envelope['payload'];
   final hashingAlgo = HashingAlgoType.values.byName(envelope['hashingAlgo']);
   final signingAlgo = SigningAlgoType.values.byName(envelope['signingAlgo']);
-  final pk = await getLocallyCachedPK(atClient, requestingAtsign, fs: fs);
+  final pk = await getLocallyCachedPK(atClient, requestingAtsign, fs: fs, storagePath: storagePath);
   AtSigningVerificationInput input = AtSigningVerificationInput(
       jsonEncode(payload), base64Decode(signature), pk)
     ..signingMode = AtSigningMode.data
@@ -110,10 +110,11 @@ Future<String> getLocallyCachedPK(
   AtClient atClient,
   String atSign, {
   FileSystem? fs,
+  String? storagePath,
 }) async {
   atSign = AtUtils.fixAtSign(atSign);
 
-  String? cachedPK = await _fetchFromLocalPKCache(atClient, atSign, fs: fs);
+  String? cachedPK = await _fetchFromLocalPKCache(atClient, atSign, fs: fs, storagePath: storagePath);
   if (cachedPK != null) {
     return cachedPK;
   }
@@ -124,7 +125,7 @@ Future<String> getLocallyCachedPK(
     throw AtPublicKeyNotFoundException('Failed to retrieve $s');
   }
 
-  await _storeToLocalPKCache(av.value, atClient, atSign, fs: fs);
+  await _storeToLocalPKCache(av.value, atClient, atSign, fs: fs, storagePath: storagePath);
 
   return av.value;
 }
@@ -133,11 +134,11 @@ Future<String?> _fetchFromLocalPKCache(
   AtClient atClient,
   String atSign, {
   FileSystem? fs,
+  String? storagePath,
 }) async {
   String dontAtMe = atSign.substring(1);
   if (fs != null) {
-    String fn = path
-        .normalize('${getHomeDirectory()}/.atsign/sshnp/cached_pks/$dontAtMe');
+    String fn = path.normalize('${storagePath!}/cached_pks/$dontAtMe');
     File f = fs.file(fn);
     if (await f.exists()) {
       return (await f.readAsString()).trim();
@@ -161,11 +162,11 @@ Future<bool> _storeToLocalPKCache(
   AtClient atClient,
   String atSign, {
   FileSystem? fs,
+  String? storagePath,
 }) async {
   String dontAtMe = atSign.substring(1);
   if (fs != null) {
-    String dirName =
-        path.normalize('${getHomeDirectory()}/.atsign/sshnp/cached_pks');
+    String dirName = path.normalize('${storagePath!}/cached_pks');
     String fileName = path.normalize('$dirName/$dontAtMe');
 
     File f = fs.file(fileName);
