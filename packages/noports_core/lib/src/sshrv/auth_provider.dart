@@ -5,12 +5,12 @@ import 'dart:typed_data';
 import 'package:at_chops/at_chops.dart';
 
 abstract class SocketAuthenticator {
-  authenticate(Socket socket);
+  authenticate(Socket? socket);
 }
 
 class EmptySocketAuthenticator extends SocketAuthenticator {
   @override
-  authenticate(Socket socket) {
+  authenticate(Socket? socket) {
     //Do Nothing
   }
 }
@@ -30,10 +30,10 @@ class SignatureAuthenticator extends SocketAuthenticator{
   SignatureAuthenticator(this.sessionId, this.privateKey);
 
   @override
-  authenticate(Socket socket) {
+  authenticate(Socket? socket) {
       // Sign and write to the socket
     String signedData = sign(sessionId);
-    socket.write(signedData);
+    socket?.write(signedData);
   }
 
   String sign(String dataToSign) {

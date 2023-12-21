@@ -17,7 +17,7 @@ abstract class Sshrv<T> {
   /// Defaults to 22
   abstract final int localSshdPort;
 
-  SocketAuthenticator? authenticationProvider;
+  SocketAuthenticator? socketAuthenticator;
 
   Future<T> run();
 
@@ -30,19 +30,19 @@ abstract class Sshrv<T> {
     return SshrvImplExec(
       host,
       streamingPort,
-      localSshdPort: localSshdPort, authenticationProvider:authenticationProvider
+      localSshdPort: localSshdPort, socketAuthenticator:authenticationProvider
     );
   }
 
   static Sshrv<SocketConnector> dart(
     String host,
     int streamingPort, {
-    int localSshdPort = 22, SocketAuthenticator? authenticationProvider
+    int localSshdPort = 22, SocketAuthenticator? socketAuthenticator
   }) {
     return SshrvImplDart(
       host,
       streamingPort,
-      localSshdPort: localSshdPort, authenticationProvider:authenticationProvider
+      localSshdPort: localSshdPort, socketAuthenticator:socketAuthenticator
     );
   }
 

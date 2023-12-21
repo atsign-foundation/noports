@@ -33,6 +33,7 @@ class SignatureAuthVerifier implements SocketAuthVerifier {
       Uint8List data, Socket socket)  {
     try {
       final message = String.fromCharCodes(data);
+      print(message);
       // Expected message to be the JSON format with the below structure:
       // {
       // "signature":"<signature>",

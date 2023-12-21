@@ -21,13 +21,13 @@ class SshrvImplExec implements Sshrv<Process> {
   final int localSshdPort;
 
   @override
-  SocketAuthenticator? authenticationProvider;
+  SocketAuthenticator? socketAuthenticator;
 
 
   SshrvImplExec(
     this.host,
     this.streamingPort, {
-    this.localSshdPort = DefaultArgs.localSshdPort, this.authenticationProvider
+    this.localSshdPort = DefaultArgs.localSshdPort, this.socketAuthenticator
   });
 
   @override
@@ -60,12 +60,12 @@ class SshrvImplDart implements Sshrv<SocketConnector> {
   final int localSshdPort;
 
   @override
-  SocketAuthenticator? authenticationProvider;
+  SocketAuthenticator? socketAuthenticator;
 
   SshrvImplDart(
     this.host,
     this.streamingPort, {
-    this.localSshdPort = 22, SocketAuthenticator? authenticationProvider
+    this.localSshdPort = 22, this.socketAuthenticator
   });
 
   @override
@@ -81,9 +81,13 @@ class SshrvImplDart implements Sshrv<SocketConnector> {
         verbose: true,
       );
 
-      // TBD - Gary/Xavier/Jagan
-      // Should we expose the sockets from socketConnector? whats the best way to do this.
-      //authenticationProvider?.authenticate(socketConnector.socketB);
+       if(socketAuthenticator != null) {
+         print('authenticating to socketB');
+        await socketAuthenticator?.authenticate(socketConnector.socketB);
+      }
+
+
+
       return socketConnector;
     } catch (e) {
       AtSignLogger('sshrv').severe(e.toString());
