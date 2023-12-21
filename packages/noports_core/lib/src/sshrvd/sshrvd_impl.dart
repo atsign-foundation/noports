@@ -8,6 +8,7 @@ import 'package:at_utils/at_logger.dart';
 import 'package:logging/logging.dart';
 import 'package:meta/meta.dart';
 import 'package:noports_core/src/sshrvd/signature_verifying_socket_authenticator.dart';
+import 'package:noports_core/src/sshrvd/build_env.dart';
 import 'package:noports_core/src/sshrvd/socket_connector.dart';
 import 'package:noports_core/src/sshrvd/sshrvd.dart';
 import 'package:noports_core/src/sshrvd/sshrvd_params.dart';
@@ -193,7 +194,7 @@ class SshrvdImpl implements Sshrvd {
       atSignB,
       socketAuthVerifierA,
       socketAuthVerifierB,
-      snoop
+      BuildEnv.enableSnoop && snoop,
     );
 
     logger
@@ -222,7 +223,6 @@ class SshrvdUtil {
       return await _processJSONRequest(notification);
     }
     return _processLegacyRequest(notification);
-    ;
   }
 
   static (String, String, String?, SocketAuthVerifier?, SocketAuthVerifier?)

@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:convert';
 
 import 'package:at_client/at_client.dart';
 import 'package:at_utils/at_utils.dart';
@@ -41,6 +40,7 @@ abstract class SshrvdChannel<T> with AsyncInitialization, AtClientBindings {
   int? _port;
 
   String get host => _host ?? params.host;
+
   int get port => _port ?? params.port;
 
   bool authenticateDevice = false;
@@ -53,6 +53,7 @@ abstract class SshrvdChannel<T> with AsyncInitialization, AtClientBindings {
 
   /// The port sshrvd is listening on
   int? _sshrvdPort;
+
   int? get sshrvdPort => _sshrvdPort;
 
   SshrvdChannel({
@@ -60,7 +61,9 @@ abstract class SshrvdChannel<T> with AsyncInitialization, AtClientBindings {
     required this.params,
     required this.sessionId,
     required this.sshrvGenerator,
-  });
+  }) {
+    logger.level = params.verbose ? 'info' : 'shout';
+  }
 
   @override
   Future<void> initialize() async {
@@ -119,12 +122,14 @@ abstract class SshrvdChannel<T> with AsyncInitialization, AtClientBindings {
     // In the rvd we need to figure out backwards compatibility.
     await notify(ourSshrvdIdKey, notificationValue);
 
-    int counter = 0;
+    int counter = 1;
     while (sshrvdAck == SshrvdAck.notAcknowledged) {
-      logger.info('Waiting for sshrvd response: $counter');
+      if (counter % 20 == 0) {
+        logger.info('Still waiting for sshrvd response');
+      }
       await Future.delayed(Duration(milliseconds: 100));
       counter++;
-      if (counter == 100) {
+      if (counter > 100) {
         logger.warning('Timed out waiting for sshrvd response');
         throw ('Connection timeout to sshrvd $host service\nhint: make sure host is valid and online');
       }

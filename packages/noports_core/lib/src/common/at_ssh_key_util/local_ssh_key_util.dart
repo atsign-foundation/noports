@@ -47,9 +47,10 @@ class LocalSshKeyUtil implements AtSshKeyUtil {
   @override
   Future<List<File>> addKeyPair({
     required AtSshKeyPair keyPair,
-    required String identifier,
+    String? identifier,
   }) async {
-    var files = _filesFromIdentifier(identifier: identifier);
+    var files =
+        _filesFromIdentifier(identifier: identifier ?? keyPair.identifier);
     await Future.wait([
       files[0].writeAsString(keyPair.privateKeyContents),
       files[1].writeAsString(keyPair.publicKeyContents),
@@ -126,8 +127,9 @@ class LocalSshKeyUtil implements AtSshKeyUtil {
     String sessionId = '',
     String permissions = '',
   }) async {
-    // Check to see if the ssh public key looks like one!
-    if (!sshPublicKey.startsWith('ssh-')) {
+    // Check to see if the ssh public key is
+    // supported keys by the dartssh2 package
+    if (!sshPublicKey.startsWith(RegExp(r'^(ecdsa-sha2-nistp)|(rsa-sha2-)|(ssh-rsa)|(ssh-ed25519)|(ecdsa-sha2-nistp)'))) {
       throw ('$sshPublicKey does not look like a public key');
     }
 

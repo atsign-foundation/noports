@@ -1,4 +1,7 @@
-FROM atsigncompany/buildimage:3.1.3_3.2.0-210.2.beta@sha256:38fabc1bb15a57a08ecc0484b0309c6a7cf689e58c1b04499750a69ae2d57d55 AS build
+# Dockerfile.package
+# A dockerfile for packaging SSH No Ports releases using docker buildx
+
+FROM atsigncompany/buildimage:automated@sha256:b22422ffae5bbc365d2d3fe7303a8ea272b9a772a3b8e75f9d8a34ad09405f7d AS build
 # Using atsigncompany/buildimage until official dart image has RISC-V support
 WORKDIR /sshnoports
 COPY . .
@@ -9,7 +12,7 @@ RUN set -eux; \
         arm64) ARCH="arm64";; \
         riscv64) ARCH="riscv64";; \
     esac; \
-    mkdir sshnp; \
+    mkdir -p sshnp/debug; \
     mkdir tarball; \
     dart pub get; \
     dart run build_runner build --delete-conflicting-outputs; \
@@ -18,7 +21,9 @@ RUN set -eux; \
     dart compile exe bin/sshnpd.dart -v -o sshnp/sshnpd; \
     dart compile exe bin/sshrv.dart -v -o sshnp/sshrv; \
     dart compile exe bin/sshrvd.dart -v -o sshnp/sshrvd; \
-    cp -r templates sshnp/templates; \
+    dart compile exe bin/sshrvd.dart -D ENABLE_SNOOP=true -v -o sshnp/debug/sshrvd; \
+    cp -r bundles/core/* sshnp/; \
+    cp -r bundles/shell/* sshnp/; \
     cp LICENSE sshnp/; \
     tar -cvzf tarball/sshnp-linux-${ARCH}.tgz sshnp
 

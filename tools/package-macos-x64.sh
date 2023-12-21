@@ -4,6 +4,8 @@
 # It first unpacks the prebuilt binaries, then it calls the notarize-macos.sh
 # script to notarize the binaries
 
+# This script expects the path to the tgz archive as an argument
+
 FULL_PATH_TO_SCRIPT="$(realpath "${BASH_SOURCE[0]}")"
 SCRIPT_DIRECTORY="$(dirname "$FULL_PATH_TO_SCRIPT")"
 ROOT_DIRECTORY="$SCRIPT_DIRECTORY/.."

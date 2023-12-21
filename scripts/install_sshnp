@@ -194,7 +194,7 @@ parse_requirements() {
   REQ_SSH=$(command -v ssh)
   REQ_SSHD=$(command -v sshd)
   REQ_SSH=$(command -v ssh)
-  if [ -f "/usr/sbin/sshd" ]; then 
+  if [ -f "/usr/sbin/sshd" ]; then
     REQ_SSHD=true
   fi
   #REQ_SSH0=$(ssh -o "StrictHostKeyChecking no" -o "PasswordAuthentication no" 0 exit 2>/dev/null; echo $?)
@@ -409,6 +409,18 @@ do_update() {
   echo; echo "Update complete!";
 }
 
+deprecation_msg() {
+  case "$SSHNP_VERSION" in
+    1.*|2.*|3.*|4.0.0-test.*|4.0.0-rc.*)
+      # no message, this group is expected to use this script
+    ;;
+    *)
+      echo "[!!!] WARNING:"
+      echo "This installation script is deprecated as of v4.0.0, please follow the latest installation instructions included in the release download."
+    ;;
+  esac
+}
+
 # Wrapping install steps prevents issues caused by interrupting the download
 main () {
   parse_requirements
@@ -420,6 +432,7 @@ main () {
   fi
   validate_args
   parse_env
+  deprecation_msg
   case "$SSHNP_OP" in
     install)
       do_install
