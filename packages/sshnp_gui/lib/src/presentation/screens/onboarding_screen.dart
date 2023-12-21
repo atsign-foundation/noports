@@ -45,7 +45,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
           width: MediaQuery.of(context).size.width,
           height: MediaQuery.of(context).size.height,
           child: SvgPicture.asset(
-            'assets/images/onboarding_bg_overlay.svg',
+            'assets/images/overlay.svg',
             fit: BoxFit.fill,
           ),
         ),
@@ -115,7 +115,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                               case AtOnboardingResultStatus.success:
                                 await initializeContactsService(rootDomain: AtEnv.rootDomain);
                                 if (context.mounted) {
-                                  context.goNamed(AppRoute.home.name);
+                                  context.replaceNamed(AppRoute.home.name);
                                 }
                                 break;
                               case AtOnboardingResultStatus.error:

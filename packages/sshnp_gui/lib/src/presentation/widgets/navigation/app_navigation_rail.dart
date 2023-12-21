@@ -61,7 +61,7 @@ class AppNavigationRail extends ConsumerWidget {
                 onDestinationSelected: (int selectedIndex) {
                   if (controller.getRoute(selectedIndex) != AppRoute.blank) {
                     controller.setIndex(selectedIndex);
-                    context.goNamed(controller.getCurrentRoute().name);
+                    context.replaceNamed(controller.getCurrentRoute().name);
                   }
                 },
               ),

@@ -1,6 +1,7 @@
 import 'package:at_app_flutter/at_app_flutter.dart';
 import 'package:at_contacts_flutter/services/contact_service.dart';
 import 'package:at_onboarding_flutter/at_onboarding_flutter.dart';
+import 'package:at_onboarding_flutter/services/onboarding_service.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:sshnp_gui/src/controllers/navigation_controller.dart';
@@ -142,16 +143,19 @@ class CustomListTile extends StatelessWidget {
           }
           break;
         case CustomListTileType.resetAtsign:
+          final futurePreference = await loadAtClientPreference();
           if (context.mounted) {
             await AtOnboarding.reset(
               context: context,
               config: AtOnboardingConfig(
-                atClientPreference: await loadAtClientPreference(),
+                atClientPreference: futurePreference,
                 rootEnvironment: AtEnv.rootEnvironment,
                 domain: AtEnv.rootDomain,
                 appAPIKey: AtEnv.appApiKey,
               ),
             );
+            final OnboardingService onboardingService = OnboardingService.getInstance();
+            onboardingService.setAtsign = null;
           }
           if (context.mounted) {
             context.goNamed(AppRoute.onboarding.name);
