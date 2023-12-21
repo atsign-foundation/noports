@@ -30,6 +30,7 @@
     "deviceHint" : "The device name of the sshnpd we wish to communicate with",
     "edit" : "Edit",
     "error" : "Error",
+    "privateKeyFormFieldError" : "Unable to load the private key manager. Please try again.",
     "export" : "Export",
     "failed": "Failed",
     "faq" : "FAQ",

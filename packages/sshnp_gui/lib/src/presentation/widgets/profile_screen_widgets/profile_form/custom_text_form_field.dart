@@ -13,6 +13,7 @@ class CustomTextFormField extends StatefulWidget {
     this.width = kFieldDefaultWidth,
     this.height = kFieldDefaultHeight,
     this.isPasswordField = false,
+    this.readOnly = false,
   });
 
   final String labelText;
@@ -24,6 +25,7 @@ class CustomTextFormField extends StatefulWidget {
   final void Function(String?)? onSaved;
   final String? Function(String?)? validator;
   final bool isPasswordField;
+  final bool readOnly;
 
   @override
   State<CustomTextFormField> createState() => _CustomTextFormFieldState();
@@ -71,6 +73,7 @@ class _CustomTextFormFieldState extends State<CustomTextFormField> {
                   : null,
               errorMaxLines: 3,
             ),
+            readOnly: widget.readOnly,
             onChanged: widget.onChanged,
             onSaved: widget.onSaved,
             validator: widget.validator,

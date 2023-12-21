@@ -5,10 +5,13 @@ import 'package:at_client_mobile/at_client_mobile.dart';
 import 'package:biometric_storage/biometric_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+import 'package:sshnp_gui/src/controllers/navigation_controller.dart';
 import 'package:sshnp_gui/src/presentation/widgets/utility/custom_snack_bar.dart';
 import 'package:sshnp_gui/src/repository/private_key_manager_repository.dart';
 
 import '../application/private_key_manager.dart';
+import '../repository/navigation_repository.dart';
 
 enum PrivateKeyManagerWriteState { create, update }
 
@@ -55,9 +58,24 @@ class CurrentPrivateKeyManagerController extends AutoDisposeNotifier<CurrentPriv
 
 /// Controller for the list of all [PrivatekeyManager] nicknames
 class PrivateKeyManagerListController extends AutoDisposeAsyncNotifier<Iterable<String>> {
+  final context = NavigationRepository.navKey.currentContext!;
   @override
   Future<Iterable<String>> build() async {
-    return await PrivateKeyManagerRepository.listPrivateKeyManagerNickname();
+    try {
+      return await PrivateKeyManagerRepository.listPrivateKeyManagerNickname();
+    } on AuthException catch (e) {
+      if (e.code == AuthExceptionCode.userCanceled) {
+        context.pushReplacementNamed(AppRoute.home.name);
+        CustomSnackBar.error(content: 'Operation canceled by user');
+      } else if (e.code == AuthExceptionCode.timeout) {
+        context.pushReplacementNamed(AppRoute.home.name);
+        CustomSnackBar.error(content: 'Operation timed out. Please try again');
+      } else {
+        context.pushReplacementNamed(AppRoute.home.name);
+        CustomSnackBar.error(content: 'An error occurred while retrieving the private key list. Please try again.');
+      }
+      return [];
+    }
   }
 
   Future<void> refresh() async {

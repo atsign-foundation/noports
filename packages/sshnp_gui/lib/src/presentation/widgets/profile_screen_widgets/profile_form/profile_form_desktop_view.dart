@@ -20,6 +20,8 @@ import 'package:sshnp_gui/src/utility/form_validator.dart';
 import 'package:sshnp_gui/src/utility/sizes.dart';
 
 import '../../../../controllers/private_key_manager_controller.dart';
+import '../../utility/custom_error_widget.dart';
+import 'custom_multiselect_form_field.dart';
 
 class ProfileFormDesktopView extends ConsumerStatefulWidget {
   const ProfileFormDesktopView({super.key});
@@ -59,6 +61,7 @@ class _ProfileFormState extends ConsumerState<ProfileFormDesktopView> {
         // create new config file without trying to delete the old config file
         await controller.putConfig(config, context: context);
       }
+      // profilePrivateKeyManagerController = ref.read(profilePrivateKeyManagerController.notifier);
       if (mounted) {
         ref.read(navigationRailController.notifier).setRoute(AppRoute.home);
         context.pushReplacementNamed(AppRoute.home.name);
@@ -70,7 +73,7 @@ class _ProfileFormState extends ConsumerState<ProfileFormDesktopView> {
   Widget build(BuildContext context) {
     final strings = AppLocalizations.of(context)!;
     currentProfile = ref.watch(currentConfigController);
-    final atSshKeyPairs = ref.watch(atPrivateKeyManagerListController);
+    final privateKeyManagerListController = ref.watch(atPrivateKeyManagerListController);
 
     final asyncOldConfig = ref.watch(configFamilyController(currentProfile.profileName));
 
@@ -144,13 +147,73 @@ class _ProfileFormState extends ConsumerState<ProfileFormDesktopView> {
                   Text(strings.sshKeyManagement('yes'), style: Theme.of(context).textTheme.bodyLarge),
                   gapH16,
                   ProfileFormCard(formFields: [
-                    atSshKeyPairs.when(
+                    privateKeyManagerListController.when(
+                        loading: () => const Center(child: CircularProgressIndicator()),
+                        error: (error, stack) => CustomTextFormField(
+                              labelText: strings.privateKey,
+                              readOnly: true,
+                              initialValue: CustomErrorWidget.getErrorMessage(error),
+                            ),
+                        data: (privateKeyManagerIterable) {
+                          final privateKeyManagerList = privateKeyManagerIterable.toList();
+                          privateKeyManagerList.add(kPrivateKeyDropDownOption);
+                          return CustomDropdownFormField<String>(
+                            width: kFieldDefaultWidth + Sizes.p5,
+                            initialValue: oldConfig.identityFile,
+                            label: strings.privateKey,
+                            hintText: strings.select,
+                            items: privateKeyManagerList.map((e) {
+                              if (e == kPrivateKeyDropDownOption) {
+                                return DropdownMenuItem<String>(
+                                  value: e,
+                                  child: DottedBorder(
+                                    dashPattern: const [10, 10],
+                                    color: kPrimaryColor,
+                                    radius: const Radius.circular(2),
+                                    padding: const EdgeInsets.all(Sizes.p12),
+                                    child: Text(
+                                      e,
+                                      style: Theme.of(context).textTheme.bodySmall!.copyWith(color: kPrimaryColor),
+                                    ),
+                                  ),
+                                );
+                              } else {
+                                return DropdownMenuItem<String>(
+                                  value: e,
+                                  child: Text(e),
+                                );
+                              }
+                            }).toList(),
+                            onChanged: (value) {
+                              if (value == kPrivateKeyDropDownOption) {
+                                showDialog(
+                                    context: context, builder: ((context) => const SSHKeyManagementFormDialog()));
+                              }
+                            },
+                            onSaved: (value) {
+                              final atSshKeyPair = ref.read(privateKeyManagerFamilyController(value!));
+                              // write to a new controller to map the profile name to the ssh key pair manager nickname. Store this information locally.
+
+                              // At the point of ssh connect the profile name and the key manager name so get the identity passphrase and the fiel content.
+                              atSshKeyPair.when(
+                                  data: (data) => newConfig = SshnpPartialParams.merge(
+                                      newConfig,
+                                      SshnpPartialParams(
+                                          identityFile: data.nickname, identityPassphrase: data.passPhrase)),
+                                  error: ((error, stackTrace) => log(error.toString())),
+                                  loading: () => const CircularProgressIndicator());
+                            },
+                            onValidator: FormValidator.validatePrivateKeyField,
+                          );
+                        }),
+                    gapH20,
+                    privateKeyManagerListController.when(
                         loading: () => const Center(child: CircularProgressIndicator()),
                         error: (error, stack) => Center(child: Text(error.toString())),
                         data: (atSshKeyPairs) {
                           final atSshKeyPairsList = atSshKeyPairs.toList();
                           atSshKeyPairsList.add(kPrivateKeyDropDownOption);
-                          return CustomDropdownFormField<String>(
+                          return CustomMultiSelectFormField<String>(
                             width: kFieldDefaultWidth + Sizes.p5,
                             initialValue: oldConfig.identityFile,
                             label: strings.privateKey,
@@ -199,13 +262,14 @@ class _ProfileFormState extends ConsumerState<ProfileFormDesktopView> {
                             onValidator: FormValidator.validatePrivateKeyField,
                           );
                         }),
-
+                    gapH20,
                     // TODO: Add key management dropdown here
                     gapH20,
 
                     CustomDropdownFormField<SupportedSshAlgorithm>(
                       label: strings.sshAlgorithm,
                       hintText: strings.select,
+                      initialValue: oldConfig.sshAlgorithm,
                       items: SupportedSshAlgorithm.values
                           .map((e) => DropdownMenuItem<SupportedSshAlgorithm>(
                                 value: e,
