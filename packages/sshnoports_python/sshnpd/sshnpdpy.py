@@ -15,6 +15,7 @@ from at_client.common import AtSign
 from at_client.util import EncryptionUtil, KeysUtil
 from at_client.common.keys import AtKey, Metadata, SharedKey
 from at_client.connections.notification.atevents import AtEvent, AtEventType
+from at_client.connections.notification.atnotificationservice import AtNotificationService
 
 class SocketConnector:
     _logger = logging.getLogger("sshrv | socket_connector")
@@ -123,7 +124,8 @@ class SSHNPD:
         self.device = device
         self.username = username
         self.device_namespace = f".{device}.sshnp"
-        self.at_client = AtClient(AtSign(atsign), queue=Queue(maxsize=20), verbose=verbose)
+        self.at_client : AtClient = AtClient(AtSign(atsign), queue=Queue(maxsize=20), verbose=verbose)
+        self.notification_service : AtNotificationService = self.at_client.notification_service
         
         #SSH Stuff
         self.ssh_client = None
@@ -150,7 +152,7 @@ class SSHNPD:
         if self.username:
             self._set_username()
         
-        self.at_client.start_monitor(self.device_namespace,)
+        self.notification_service.start_monitor(self.device_namespace,)
         event_thread = threading.Thread(target=self._handle_notifications, args=(self._sshnp_callback,))
         SSHNPD.threads.append(event_thread)
         event_thread.start()
@@ -189,7 +191,7 @@ class SSHNPD:
         ssh_notification_recieved = False
         
         while not self.closing.is_set():
-            for at_event in self.at_client.get_decrypted_events():
+            for at_event in self.notification_service.get_decrypted_events():
                 event_data = at_event.event_data
                 key = event_data["key"].split(":")[1].split(".")[0]
                 decrypted_value = str(event_data["decryptedValue"])
@@ -290,7 +292,7 @@ class SSHNPD:
             raise
         
         if ssh_response:
-            notify_response = self.at_client.notify(at_key, ssh_response, session_id=uuid)
+            notify_response = self.notification_service.notify(at_key, ssh_response, session_id=uuid)
             self.logger.info("sent ssh notification to " + at_key.shared_with.to_string() + "with id:" + uuid)
             self.authenticated = True
         if direct:
@@ -462,7 +464,6 @@ def main():
     optional.add_argument("-v", action='store_true', dest="verbose", help="Verbose")
     optional.add_argument("-s", action="store_true", dest="expecting_ssh_keys", help="SSH Keypair, use this if you want to use your own ssh keypair")
     
-    
     args = parser.parse_args()
 
     sshnpd = SSHNPD(args.atsign, args.manager_atsign, args.device, args.username, args.verbose, args.expecting_ssh_keys)
@@ -473,4 +474,4 @@ def main():
         sshnpd.join()
         
 if __name__ == "__main__":
-    main()
+    main() 
