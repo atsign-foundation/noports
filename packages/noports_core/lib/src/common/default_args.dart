@@ -18,6 +18,8 @@ class DefaultArgs {
   static const bool addForwardsToTunnel = false;
   static final bool allowLocalFileSystem =
       Platform.isLinux || Platform.isMacOS || Platform.isWindows;
+  static const bool authenticateClient = false;
+  static const bool authenticateDevice = false;
 }
 
 class DefaultSshnpArgs {

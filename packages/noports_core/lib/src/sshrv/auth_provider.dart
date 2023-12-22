@@ -2,6 +2,8 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:at_chops/at_chops.dart';
+import 'package:at_client/at_client.dart';
+
 
 abstract class SocketAuthenticator {
   authenticate(Socket? socket);
@@ -22,66 +24,34 @@ class EmptySocketAuthenticator extends SocketAuthenticator {
 ///       "hashingAlgo":"<algo>",
 ///       "signingAlgo":"<algo>"
 ///  }
-class SignatureAuthenticator extends SocketAuthenticator{
+class SignatureAuthenticator extends SocketAuthenticator {
   String sessionId;
-  String privateKey;
+  AtClient atClient;
 
-  SignatureAuthenticator(this.sessionId, this.privateKey);
+  SignatureAuthenticator(this.sessionId, this.atClient);
 
   @override
   authenticate(Socket? socket) {
-      // Sign and write to the socket
+    // Sign and write to the socket
     String signedData = sign(sessionId);
     socket?.write(signedData);
   }
 
   String sign(String dataToSign) {
-    AtEncryptionKeyPair atEncryptionKeyPair =
-    AtEncryptionKeyPair.create('', privateKey);
-    AtPkamKeyPair atPkamKeyPair = AtPkamKeyPair.create('', privateKey);
-    AtChopsKeys atChopsKeys =
-    AtChopsKeys.create(atEncryptionKeyPair, atPkamKeyPair);
-    AtChops atChops = AtChopsImpl(atChopsKeys);
-
-    Map responseMap = {};
-    AtSigningInput atSigningInput = AtSigningInput(dataToSign)
-      ..signingAlgorithm = DefaultSigningAlgo(
-          atChops.atChopsKeys.atEncryptionKeyPair, HashingAlgoType.sha256);
-    var atSigningResponse = atChops.sign(atSigningInput);
-
-    responseMap['signature'] = atSigningResponse.result;
-    responseMap['hashingAlgo'] =
-        _getHashingAlgo(atSigningResponse.atSigningMetaData.hashingAlgoType);
-    responseMap['signingAlgo'] =
-        _getSigningAlgo(atSigningResponse.atSigningMetaData.signingAlgoType);
-
-    return jsonEncode(responseMap);
+    return _signAndWrapAndJsonEncode(atClient, dataToSign);
   }
 
-  String _getHashingAlgo(HashingAlgoType? hashingAlgoType) {
+  String _signAndWrapAndJsonEncode(AtClient atClient, String dataToSign) {
+    Map envelope = {};
 
-    switch(hashingAlgoType) {
-      case HashingAlgoType.sha256:
-          return "sha256";
-        case HashingAlgoType.sha512:
-          return "sha512";
-      case HashingAlgoType.md5:
-        return "md5";
-      default:
-        return "sha256";
-    }
-  }
+    final AtSigningInput signingInput = AtSigningInput(dataToSign)
+      ..signingMode = AtSigningMode.data;
+    final AtSigningResult sr = atClient.atChops!.sign(signingInput);
 
-  String _getSigningAlgo(SigningAlgoType? signingAlgoType) {
-    switch(signingAlgoType) {
-      case SigningAlgoType.ecc_secp256r1:
-        return "ecc_secp256r1";
-      case SigningAlgoType.rsa2048:
-        return "rsa2048";
-      case SigningAlgoType.rsa4096:
-        return "rsa4096";
-      default:
-        return "rsa2048";
-    }
+    final String signature = sr.result.toString();
+    envelope['signature'] = signature;
+    envelope['hashingAlgo'] = sr.atSigningMetaData.hashingAlgoType!.name;
+    envelope['signingAlgo'] = sr.atSigningMetaData.signingAlgoType!.name;
+    return jsonEncode(envelope);
   }
 }

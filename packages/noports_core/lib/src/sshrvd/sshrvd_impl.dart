@@ -122,11 +122,11 @@ class SshrvdImpl implements Sshrvd {
     late String session;
     late String atSignA;
     String? atSignB;
-    SocketAuthVerifier? socketAuthenticatorA;
-    SocketAuthVerifier? socketAuthenticatorB;
+    SocketAuthVerifier? socketAuthVerifierA;
+    SocketAuthVerifier? socketAuthVerifierB;
 
     try {
-      (session, atSignA, atSignB, socketAuthenticatorA, socketAuthenticatorB) =
+      (session, atSignA, atSignB, socketAuthVerifierA, socketAuthVerifierB) =
           await SshrvdUtil.getParams(notification);
 
       if (managerAtsign != 'open' && managerAtsign != atSignA) {
@@ -138,7 +138,7 @@ class SshrvdImpl implements Sshrvd {
       return;
     }
     (int, int) ports = await _spawnSocketConnector(0, 0, session, atSignA,
-        atSignB, socketAuthenticatorA, socketAuthenticatorB, snoop);
+        atSignB, socketAuthVerifierA, socketAuthVerifierB, snoop);
     var (portA, portB) = ports;
     logger.warning(
         'Starting session $session for $atSignA to $atSignB using ports $ports');

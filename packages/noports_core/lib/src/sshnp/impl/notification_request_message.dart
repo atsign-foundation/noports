@@ -22,7 +22,7 @@ class SessionIdMessage extends SshnpSessionRequest{
 }
 
 class AuthenticationEnablingMessage extends SessionIdMessage{
-  bool authenticate = false;
+  bool authenticate = true;
 
   @override
   Map message() {

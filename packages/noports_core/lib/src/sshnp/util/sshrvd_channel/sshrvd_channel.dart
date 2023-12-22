@@ -42,9 +42,6 @@ abstract class SshrvdChannel<T> with AsyncInitialization, AtClientBindings {
   String get host => _host ?? params.host;
 
   int get port => _port ?? params.port;
-
-  bool authenticateDevice = false;
-
   // * Volatile fields set at runtime
 
   /// Whether sshrvd acknowledged our request
@@ -116,7 +113,7 @@ abstract class SshrvdChannel<T> with AsyncInitialization, AtClientBindings {
         ..ttl = 10000);
     logger.info('Sending notification to sshrvd: $ourSshrvdIdKey');
 
-    String notificationValue = _getValue(params, sessionId);
+    String notificationValue = _getValue(sessionId);
     // We need to send not just the sessionId but other metaData
     // especially, the atSign on the other end
     // In the rvd we need to figure out backwards compatibility.
@@ -136,10 +133,19 @@ abstract class SshrvdChannel<T> with AsyncInitialization, AtClientBindings {
     }
   }
 
-  String _getValue(params, sessionId) {
-      // TO DO logic to decide what class to instantiate
-      // return AuthenticationEnablingMessage();
-    return (SessionIdMessage()..sessionId = sessionId).toString();
+  String _getValue(String sessionId) {
 
+      if(params.authenticateClient || params.authenticateDevice) {
+         // Authentication is requested. Send the latest JSON message
+         var message = AuthenticationEnablingMessage();
+         message.sessionId = sessionId;
+         message.atSignA = params.clientAtSign;
+         message.atSignB = params.sshnpdAtSign;
+         message.authenticateSocketA = params.authenticateClient;
+         message.authenticateSocketA = params.authenticateDevice;
+        return message.toString();
+      }
+
+    return (SessionIdMessage()..sessionId = sessionId).toString();
   }
 }

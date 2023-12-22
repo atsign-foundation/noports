@@ -51,13 +51,7 @@ class SshnpDartPureImpl extends SshnpCore
   Future<SshnpResult> run() async {
     /// Ensure that sshnp is initialized
     await callInitialization();
-    // TO DO : add logic to decide which message to instantiate
-    SshnpSessionRequest message = SessionIdMessage();
-    message.direct = true;
-    message.sessionId =sessionId;
-    message.host = sshrvdChannel.host;
-    message.port = sshrvdChannel.port;
-
+    var message = _getMessage();
     logger.info('Sending request to sshnpd');
 
     /// Send an ssh request to sshnpd
@@ -114,6 +108,14 @@ class SshnpDartPureImpl extends SshnpCore
     );
   }
 
+  SshnpSessionRequest _getMessage() {
+    SessionIdMessage message = params.authenticateDevice ? AuthenticationEnablingMessage() : SessionIdMessage();
+    message.direct = true;
+    message.sessionId =sessionId;
+    message.host = sshrvdChannel.host;
+    message.port = sshrvdChannel.port;
+    return message;
+  }
   @override
   bool get canRunShell => true;
 

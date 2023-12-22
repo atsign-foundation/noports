@@ -433,7 +433,8 @@ class SshnpdImpl implements Sshnpd {
           requestingAtsign: requestingAtsign,
           sessionId: params['sessionId'],
           host: params['host'],
-          port: params['port']);
+          port: params['port'],
+          authenticate: params['authenticate']);
     } else {
       // reverse ssh requested
       await startReverseSsh(
@@ -494,15 +495,17 @@ class SshnpdImpl implements Sshnpd {
       {required String requestingAtsign,
       required String sessionId,
       required String host,
-      required int port}) async {
+      required int port,
+      required bool authenticate}) async {
     logger.shout(
         'Setting up ports for direct ssh session using ${sshClient.name} ($sshClient) from: $requestingAtsign session: $sessionId');
 
     try {
+      var authenticator = authenticate? SignatureAuthenticator(sessionId,atClient)  : EmptySocketAuthenticator();
       // Connect to rendezvous point using background process.
       // This program can then exit without causing an issue.
       Process rv =
-          await Sshrv.exec(host, port, localSshdPort: localSshdPort, authenticationProvider: EmptySocketAuthenticator()).run();
+          await Sshrv.exec(host, port, localSshdPort: localSshdPort, socketAuthenticator: authenticator).run();
       logger.info('Started rv - pid is ${rv.pid}');
 
       LocalSshKeyUtil keyUtil = LocalSshKeyUtil();

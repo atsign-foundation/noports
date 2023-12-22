@@ -67,13 +67,7 @@ class SshnpOpensshLocalImpl extends SshnpCore
     await callInitialization();
 
     logger.info('Sending request to sshnpd');
-
-    // TO DO : add logic to decide which message to instantiate
-    SshnpSessionRequest message = SessionIdMessage();
-    message.direct = true;
-    message.sessionId =sessionId;
-    message.host = sshrvdChannel.host;
-    message.port = sshrvdChannel.port;
+    var message = _getMessage();
     /// Send an ssh request to sshnpd
     await notify(
       AtKey()
@@ -127,6 +121,15 @@ class SshnpOpensshLocalImpl extends SshnpCore
       privateKeyFileName: identityKeyPair?.identifier,
       connectionBean: bean,
     );
+  }
+
+  SshnpSessionRequest _getMessage() {
+    SessionIdMessage message = params.authenticateDevice ? AuthenticationEnablingMessage() : SessionIdMessage();
+    message.direct = true;
+    message.sessionId =sessionId;
+    message.host = sshrvdChannel.host;
+    message.port = sshrvdChannel.port;
+    return message;
   }
 
   @override

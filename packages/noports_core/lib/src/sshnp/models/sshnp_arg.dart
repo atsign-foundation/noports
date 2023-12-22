@@ -124,6 +124,8 @@ class SshnpArg {
     addForwardsToTunnelArg,
     configFileArg,
     listDevicesArg,
+    authenticateClientArg,
+    authenticateDeviceArg
   ];
 
   @override
@@ -345,5 +347,21 @@ class SshnpArg {
     aliases: ['ls'],
     negatable: false,
     parseWhen: ParseWhen.commandLine,
+  );
+  static const authenticateClientArg = SshnpArg(
+    name: 'authenticate-client',
+    help: 'When true, client needs to authenticate it self to rvd',
+    defaultsTo: DefaultArgs.authenticateClient,
+    format: ArgFormat.flag,
+    parseWhen: ParseWhen.commandLine,
+    mandatory: false,
+  );
+  static const authenticateDeviceArg = SshnpArg(
+    name: 'authenticate-device',
+    help: 'When true, device needs to authenticate it self to rvd',
+    defaultsTo: DefaultArgs.authenticateDevice,
+    format: ArgFormat.flag,
+    parseWhen: ParseWhen.commandLine,
+    mandatory: false,
   );
 }

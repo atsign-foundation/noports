@@ -80,14 +80,10 @@ class SshrvImplDart implements Sshrv<SocketConnector> {
         socketPortB: streamingPort,
         verbose: true,
       );
-
        if(socketAuthenticator != null) {
-         print('authenticating to socketB');
+         print('authenticating socketB');
         await socketAuthenticator?.authenticate(socketConnector.socketB);
       }
-
-
-
       return socketConnector;
     } catch (e) {
       AtSignLogger('sshrv').severe(e.toString());

@@ -25,12 +25,12 @@ abstract class Sshrv<T> {
   static Sshrv<Process> exec(
     String host,
     int streamingPort, {
-    int localSshdPort = DefaultArgs.localSshdPort, SocketAuthenticator? authenticationProvider
+    int localSshdPort = DefaultArgs.localSshdPort, SocketAuthenticator? socketAuthenticator
   }) {
     return SshrvImplExec(
       host,
       streamingPort,
-      localSshdPort: localSshdPort, socketAuthenticator:authenticationProvider
+      localSshdPort: localSshdPort, socketAuthenticator:socketAuthenticator
     );
   }
 

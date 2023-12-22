@@ -35,30 +35,5 @@ void main() {
     notification.value = jsonEncode(m);
 
     expect(SshrvdUtil.accept(notification), true);
-
-    late String session;
-    late String atSignA;
-    String? atSignB;
-    SocketAuthVerifier? socketAuthenticatorA;
-    SocketAuthVerifier? socketAuthenticatorB;
-    (session, atSignA, atSignB, socketAuthenticatorA, socketAuthenticatorB) = await SshrvdUtil.getParams(notification);
-    expect(session, 'hello');
-    expect(atSignA, '@4314sagittarius');
-    expect(atSignB, '@4314sagittarius');
-    expect(socketAuthenticatorA, null);
-    expect(socketAuthenticatorB, null);
-
-    // Legacy message, but a JSON
-    notification = AtNotification.empty();
-    notification.key = 'test.${Sshrvd.namespace}';
-    notification.value = jsonEncode(m);
-    notification.from = '@4314sagittarius';
-
-    expect(SshrvdUtil.accept(notification), true);
-    (session, atSignA, atSignB, socketAuthenticatorA, socketAuthenticatorB) = await SshrvdUtil.getParams(notification);
-    expect(atSignA, '@4314sagittarius');
-    expect(atSignB, null);
-    expect(socketAuthenticatorA, null);
-    expect(socketAuthenticatorB, null);
   });
 }

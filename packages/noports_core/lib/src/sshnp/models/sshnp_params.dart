@@ -34,6 +34,8 @@ class SshnpParams {
   final bool addForwardsToTunnel;
   final String? atKeysFilePath;
   final SupportedSshAlgorithm sshAlgorithm;
+  final bool authenticateClient;
+  final bool authenticateDevice;
 
   /// Special Arguments
 
@@ -66,6 +68,8 @@ class SshnpParams {
     this.idleTimeout = DefaultArgs.idleTimeout,
     this.addForwardsToTunnel = DefaultArgs.addForwardsToTunnel,
     this.sshAlgorithm = DefaultArgs.sshAlgorithm,
+    this.authenticateClient = DefaultArgs.authenticateClient,
+    this.authenticateDevice = DefaultArgs.authenticateDevice
   });
 
   factory SshnpParams.empty() {
@@ -107,6 +111,8 @@ class SshnpParams {
       addForwardsToTunnel:
           params2.addForwardsToTunnel ?? params1.addForwardsToTunnel,
       sshAlgorithm: params2.sshAlgorithm ?? params1.sshAlgorithm,
+        authenticateClient: params2.authenticateClient ?? params1.authenticateClient,
+      authenticateDevice: params2.authenticateDevice ?? params1.authenticateDevice,
     );
   }
 
@@ -147,6 +153,10 @@ class SshnpParams {
       addForwardsToTunnel:
           partial.addForwardsToTunnel ?? DefaultArgs.addForwardsToTunnel,
       sshAlgorithm: partial.sshAlgorithm ?? DefaultArgs.sshAlgorithm,
+      authenticateClient:
+      partial.authenticateClient ?? DefaultArgs.authenticateClient,
+      authenticateDevice:
+      partial.authenticateClient ?? DefaultArgs.authenticateClient,
     );
   }
 
@@ -195,6 +205,8 @@ class SshnpParams {
       SshnpArg.idleTimeoutArg.name: idleTimeout,
       SshnpArg.addForwardsToTunnelArg.name: addForwardsToTunnel,
       SshnpArg.sshAlgorithmArg.name: sshAlgorithm.toString(),
+      SshnpArg.authenticateClientArg.name: authenticateClient,
+      SshnpArg.authenticateDeviceArg.name: authenticateDevice,
     };
     args.removeWhere(
       (key, value) => !parserType.shouldParse(SshnpArg.fromName(key).parseWhen),
@@ -233,6 +245,8 @@ class SshnpPartialParams {
   final int? idleTimeout;
   final bool? addForwardsToTunnel;
   final SupportedSshAlgorithm? sshAlgorithm;
+  final bool? authenticateClient;
+  final bool? authenticateDevice;
 
   /// Operation flags
   final bool? listDevices;
@@ -260,6 +274,8 @@ class SshnpPartialParams {
     this.idleTimeout,
     this.addForwardsToTunnel,
     this.sshAlgorithm,
+    this.authenticateClient,
+    this.authenticateDevice
   });
 
   factory SshnpPartialParams.empty() {
@@ -296,6 +312,8 @@ class SshnpPartialParams {
       addForwardsToTunnel:
           params2.addForwardsToTunnel ?? params1.addForwardsToTunnel,
       sshAlgorithm: params2.sshAlgorithm ?? params1.sshAlgorithm,
+      authenticateClient: params2.authenticateClient ?? params1.authenticateClient,
+      authenticateDevice: params2.authenticateDevice ?? params1.authenticateDevice,
     );
   }
 
@@ -345,6 +363,8 @@ class SshnpPartialParams {
           ? null
           : SupportedSshAlgorithm.fromString(
               args[SshnpArg.sshAlgorithmArg.name]),
+      authenticateClient: args[SshnpArg.authenticateClientArg.name],
+      authenticateDevice: args[SshnpArg.authenticateDeviceArg.name],
     );
   }
 
