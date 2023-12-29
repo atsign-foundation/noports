@@ -1,6 +1,8 @@
 import 'dart:io';
 
 import 'package:at_utils/at_utils.dart';
+import 'package:cryptography/cryptography.dart';
+import 'package:cryptography/dart.dart';
 import 'package:meta/meta.dart';
 import 'package:noports_core/sshrv.dart';
 import 'package:socket_connector/socket_connector.dart';
@@ -88,6 +90,30 @@ class SshrvImplDart implements Sshrv<SocketConnector> {
 
   @override
   Future<SocketConnector> run() async {
+    final DartAesCtr algorithm = DartAesCtr.with256bits(
+      macAlgorithm: Hmac.sha256(),
+    );
+    final secretKey = SecretKey([157, 145, 46, 127, 146, 161, 7, 96, 13, 29, 150, 203, 109, 252, 110, 92, 24, 55, 113, 121, 94, 91, 69, 63, 159, 162, 107, 49, 250, 118, 191, 113]);
+    final iv = [92, 231, 193, 189, 0, 154, 112, 102, 195, 163, 78, 6, 40, 108, 218, 250];
+
+    Stream<List<int>> encrypter(Stream<List<int>> stream) {
+      return algorithm.encryptStream(
+        stream,
+        secretKey: secretKey,
+        nonce: iv,
+        onMac: (mac) {},
+      );
+    }
+
+    Stream<List<int>> decrypter(Stream<List<int>> stream) {
+      return algorithm.decryptStream(
+        stream,
+        secretKey: secretKey,
+        nonce: iv,
+        mac: Mac.empty,
+      );
+    }
+
     try {
       var hosts = await InternetAddress.lookup(host);
 
@@ -95,23 +121,21 @@ class SshrvImplDart implements Sshrv<SocketConnector> {
 
       if (bindLocalPort) {
         socketConnector = await SocketConnector.serverToSocket(
-          receiverSocketAddress: hosts[0],
-          receiverSocketPort: streamingPort,
-          localServerPort: localPort,
-          verbose: true,
-          // sendStreamTransformer: encrypt,
-          // receiveStreamTransformer: decrypt
-        );
+            receiverSocketAddress: hosts[0],
+            receiverSocketPort: streamingPort,
+            localServerPort: localPort,
+            verbose: true,
+            transformAtoB: encrypter,
+            transformBtoA: decrypter);
       } else {
         socketConnector = await SocketConnector.socketToSocket(
-          socketAddressA: InternetAddress.loopbackIPv4,
-          socketPortA: localPort,
-          socketAddressB: hosts[0],
-          socketPortB: streamingPort,
-          verbose: true,
-          // sendStreamTransformer: encrypt,
-          // receiveStreamTransformer: decrypt
-        );
+            socketAddressA: InternetAddress.loopbackIPv4,
+            socketPortA: localPort,
+            socketAddressB: hosts[0],
+            socketPortB: streamingPort,
+            verbose: true,
+            transformAtoB: encrypter,
+            transformBtoA: decrypter);
       }
 
       if (rvdAuthString != null) {
