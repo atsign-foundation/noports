@@ -3,7 +3,6 @@ import 'dart:convert';
 import 'package:at_client/at_client.dart';
 import 'package:noports_core/src/sshrvd/sshrvd_impl.dart';
 import 'package:noports_core/sshrvd.dart';
-import 'package:socket_connector/socket_connector.dart';
 import 'package:test/test.dart';
 
 void main() {

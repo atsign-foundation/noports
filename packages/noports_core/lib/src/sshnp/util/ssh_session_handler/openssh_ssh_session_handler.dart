@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:meta/meta.dart';
 import 'package:noports_core/src/common/io_types.dart';
@@ -11,13 +12,14 @@ mixin OpensshSshSessionHandler on SshnpCore
   @override
   Future<Process?> startInitialTunnelSession({
     required String ephemeralKeyPairIdentifier,
+    int? localRvPort,
     @visibleForTesting ProcessStarter startProcess = Process.start,
   }) async {
     Process? process;
-    // If we are starting an initial tunnel, it should be to sshrvd,
-    // so it is safe to assume that sshrvdChannel is not null here
-    String argsString = '$tunnelUsername@${sshrvdChannel.host}'
-        ' -p ${sshrvdChannel.sshrvdPort}'
+    // If we are starting an initial tunnel, it should be to the local sshrv,
+    // so it is safe to assume that localRvPort is non-null
+    String argsString = '$tunnelUsername@localhost'
+        ' -p ${localRvPort!}'
         ' -i $ephemeralKeyPairIdentifier'
         ' -L $localPort:localhost:${params.remoteSshdPort}'
         ' -o LogLevel=VERBOSE'

@@ -3,9 +3,8 @@ import 'dart:async';
 import 'package:at_client/at_client.dart';
 import 'package:meta/meta.dart';
 import 'package:noports_core/src/common/io_types.dart';
+import 'package:noports_core/src/sshnp/impl/notification_request_message.dart';
 import 'package:noports_core/sshnp_foundation.dart';
-
-import 'notification_request_message.dart';
 
 class SshnpOpensshLocalImpl extends SshnpCore
     with SshnpLocalSshKeyHandler, OpensshSshSessionHandler {
@@ -67,7 +66,14 @@ class SshnpOpensshLocalImpl extends SshnpCore
     await callInitialization();
 
     logger.info('Sending request to sshnpd');
-    var message = _getMessage();
+
+    final server = await ServerSocket.bind(InternetAddress.anyIPv4, 0);
+    int localRvPort = server.port;
+    await server.close();
+
+    /// Start sshrv
+    await sshrvdChannel.runSshrv(directSsh: true, localRvPort: localRvPort);
+
     /// Send an ssh request to sshnpd
     await notify(
       AtKey()
@@ -76,7 +82,17 @@ class SshnpOpensshLocalImpl extends SshnpCore
         ..sharedBy = params.clientAtSign
         ..sharedWith = params.sshnpdAtSign
         ..metadata = (Metadata()..ttl = 10000),
-      signAndWrapAndJsonEncode(atClient, message.message()),
+      signAndWrapAndJsonEncode(
+          atClient,
+          SshnpSessionRequest(
+            direct: true,
+            sessionId: sessionId,
+            host: sshrvdChannel.host,
+            port: sshrvdChannel.sshrvdPort!,
+            authenticateToRvd: params.authenticateDeviceToRvd,
+            clientNonce: sshrvdChannel.clientNonce,
+            rvdNonce: sshrvdChannel.rvdNonce,
+          ).toJson()),
     );
 
     /// Wait for a response from sshnpd
@@ -103,7 +119,9 @@ class SshnpOpensshLocalImpl extends SshnpCore
 
     /// Start the initial tunnel
     Process? bean = await startInitialTunnelSession(
-        ephemeralKeyPairIdentifier: ephemeralKeyPair.identifier);
+      ephemeralKeyPairIdentifier: ephemeralKeyPair.identifier,
+      localRvPort: localRvPort,
+    );
 
     /// Remove the key pair from the key utility
     await keyUtil.deleteKeyPair(identifier: ephemeralKeyPair.identifier);
@@ -121,15 +139,6 @@ class SshnpOpensshLocalImpl extends SshnpCore
       privateKeyFileName: identityKeyPair?.identifier,
       connectionBean: bean,
     );
-  }
-
-  SshnpSessionRequest _getMessage() {
-    SessionIdMessage message = params.authenticateDevice ? AuthenticationEnablingMessage() : SessionIdMessage();
-    message.direct = true;
-    message.sessionId =sessionId;
-    message.host = sshrvdChannel.host;
-    message.port = sshrvdChannel.port;
-    return message;
   }
 
   @override

@@ -2,16 +2,16 @@ import 'dart:async';
 
 import 'package:at_client/at_client.dart';
 import 'package:dartssh2/dartssh2.dart';
+import 'package:noports_core/src/sshnp/impl/notification_request_message.dart';
 import 'package:noports_core/sshnp_foundation.dart';
-
-import 'notification_request_message.dart';
 
 class SshnpDartPureImpl extends SshnpCore
     with SshnpDartSshKeyHandler, DartSshSessionHandler {
-  SshnpDartPureImpl(
-      {required super.atClient,
-      required super.params,
-      required AtSshKeyPair? identityKeyPair}) {
+  SshnpDartPureImpl({
+    required super.atClient,
+    required super.params,
+    required AtSshKeyPair? identityKeyPair,
+  }) {
     this.identityKeyPair = identityKeyPair;
     _sshnpdChannel = SshnpdDefaultChannel(
       atClient: atClient,
@@ -51,7 +51,7 @@ class SshnpDartPureImpl extends SshnpCore
   Future<SshnpResult> run() async {
     /// Ensure that sshnp is initialized
     await callInitialization();
-    var message = _getMessage();
+
     logger.info('Sending request to sshnpd');
 
     /// Send an ssh request to sshnpd
@@ -62,7 +62,17 @@ class SshnpDartPureImpl extends SshnpCore
         ..sharedBy = params.clientAtSign
         ..sharedWith = params.sshnpdAtSign
         ..metadata = (Metadata()..ttl = 10000),
-      signAndWrapAndJsonEncode(atClient, message.message()),
+      signAndWrapAndJsonEncode(
+          atClient,
+          SshnpSessionRequest(
+            direct: true,
+            sessionId: sessionId,
+            host: sshrvdChannel.host,
+            port: sshrvdChannel.port,
+            authenticateToRvd: params.authenticateDeviceToRvd,
+            clientNonce: sshrvdChannel.clientNonce,
+            rvdNonce: sshrvdChannel.rvdNonce,
+          ).toJson()),
     );
 
     /// Wait for a response from sshnpd
@@ -108,14 +118,6 @@ class SshnpDartPureImpl extends SshnpCore
     );
   }
 
-  SshnpSessionRequest _getMessage() {
-    SessionIdMessage message = params.authenticateDevice ? AuthenticationEnablingMessage() : SessionIdMessage();
-    message.direct = true;
-    message.sessionId =sessionId;
-    message.host = sshrvdChannel.host;
-    message.port = sshrvdChannel.port;
-    return message;
-  }
   @override
   bool get canRunShell => true;
 

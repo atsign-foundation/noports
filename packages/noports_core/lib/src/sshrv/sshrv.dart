@@ -2,9 +2,6 @@ import 'dart:io';
 
 import 'package:noports_core/src/sshrv/sshrv_impl.dart';
 import 'package:socket_connector/socket_connector.dart';
-import 'package:noports_core/src/common/default_args.dart';
-
-import 'auth_provider.dart';
 
 abstract class Sshrv<T> {
   /// The internet address of the host to connect to.
@@ -13,11 +10,13 @@ abstract class Sshrv<T> {
   /// The port of the host to connect to.
   abstract final int streamingPort;
 
-  /// The local sshd port
+  /// The local port to bridge to
   /// Defaults to 22
-  abstract final int localSshdPort;
+  abstract final int localPort;
 
-  SocketAuthenticator? socketAuthenticator;
+  abstract final String? rvdAuthString;
+
+  abstract final bool bindLocalPort;
 
   Future<T> run();
 
@@ -25,24 +24,32 @@ abstract class Sshrv<T> {
   static Sshrv<Process> exec(
     String host,
     int streamingPort, {
-    int localSshdPort = DefaultArgs.localSshdPort, SocketAuthenticator? socketAuthenticator
+    required int localPort,
+    required bool bindLocalPort,
+    String? rvdAuthString,
   }) {
     return SshrvImplExec(
       host,
       streamingPort,
-      localSshdPort: localSshdPort, socketAuthenticator:socketAuthenticator
+      localPort: localPort,
+      bindLocalPort: bindLocalPort,
+      rvdAuthString: rvdAuthString,
     );
   }
 
   static Sshrv<SocketConnector> dart(
     String host,
     int streamingPort, {
-    int localSshdPort = 22, SocketAuthenticator? socketAuthenticator
+    required int localPort,
+    required bool bindLocalPort,
+    String? rvdAuthString,
   }) {
     return SshrvImplDart(
       host,
       streamingPort,
-      localSshdPort: localSshdPort, socketAuthenticator:socketAuthenticator
+      localPort: localPort,
+      bindLocalPort: bindLocalPort,
+      rvdAuthString: rvdAuthString,
     );
   }
 

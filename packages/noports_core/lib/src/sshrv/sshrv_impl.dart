@@ -5,10 +5,6 @@ import 'package:meta/meta.dart';
 import 'package:noports_core/sshrv.dart';
 import 'package:socket_connector/socket_connector.dart';
 
-import 'package:noports_core/src/common/default_args.dart';
-
-import 'auth_provider.dart';
-
 @visibleForTesting
 class SshrvImplExec implements Sshrv<Process> {
   @override
@@ -18,17 +14,18 @@ class SshrvImplExec implements Sshrv<Process> {
   final int streamingPort;
 
   @override
-  final int localSshdPort;
+  final int localPort;
 
   @override
-  SocketAuthenticator? socketAuthenticator;
+  final bool bindLocalPort;
 
+  @override
+  final String? rvdAuthString;
 
-  SshrvImplExec(
-    this.host,
-    this.streamingPort, {
-    this.localSshdPort = DefaultArgs.localSshdPort, this.socketAuthenticator
-  });
+  SshrvImplExec(this.host, this.streamingPort,
+      {required this.localPort,
+      required this.bindLocalPort,
+      this.rvdAuthString});
 
   @override
   Future<Process> run() async {
@@ -40,9 +37,25 @@ class SshrvImplExec implements Sshrv<Process> {
         'N.B. sshnp is expected to be compiled and run from source, not via the dart command.',
       );
     }
+    var rvArgs = [
+      '-h',
+      host,
+      '-p',
+      streamingPort.toString(),
+      '--local-port',
+      localPort.toString(),
+    ];
+    if (bindLocalPort) {
+      rvArgs.add('--bind-local-port');
+    }
+    if (rvdAuthString != null) {
+      rvArgs.addAll(['--rvd-auth', rvdAuthString!]);
+    }
+
+    stderr.writeln('$runtimeType.run(): executing $command ${rvArgs.join(' ')}');
     return Process.start(
       command,
-      [host, streamingPort.toString(), localSshdPort.toString()],
+      rvArgs,
       mode: ProcessStartMode.detached,
     );
   }
@@ -57,15 +70,20 @@ class SshrvImplDart implements Sshrv<SocketConnector> {
   final int streamingPort;
 
   @override
-  final int localSshdPort;
+  final int localPort;
 
   @override
-  SocketAuthenticator? socketAuthenticator;
+  final bool bindLocalPort;
+
+  @override
+  final String? rvdAuthString;
 
   SshrvImplDart(
     this.host,
     this.streamingPort, {
-    this.localSshdPort = 22, this.socketAuthenticator
+    required this.localPort,
+    required this.bindLocalPort,
+    this.rvdAuthString,
   });
 
   @override
@@ -73,16 +91,33 @@ class SshrvImplDart implements Sshrv<SocketConnector> {
     try {
       var hosts = await InternetAddress.lookup(host);
 
-      SocketConnector socketConnector =  await SocketConnector.socketToSocket(
-        socketAddressA: InternetAddress.loopbackIPv4,
-        socketPortA: localSshdPort,
-        socketAddressB: hosts[0],
-        socketPortB: streamingPort,
-        verbose: true,
-      );
+      late final SocketConnector socketConnector;
 
-      print('authenticating socketB');
-      await socketAuthenticator?.authenticate(socketConnector.socketB);
+      if (bindLocalPort) {
+        socketConnector = await SocketConnector.serverToSocket(
+          receiverSocketAddress: hosts[0],
+          receiverSocketPort: streamingPort,
+          localServerPort: localPort,
+          verbose: true,
+          // sendStreamTransformer: encrypt,
+          // receiveStreamTransformer: decrypt
+        );
+      } else {
+        socketConnector = await SocketConnector.socketToSocket(
+          socketAddressA: InternetAddress.loopbackIPv4,
+          socketPortA: localPort,
+          socketAddressB: hosts[0],
+          socketPortB: streamingPort,
+          verbose: true,
+          // sendStreamTransformer: encrypt,
+          // receiveStreamTransformer: decrypt
+        );
+      }
+
+      if (rvdAuthString != null) {
+        stderr.writeln('authenticating socketB');
+        socketConnector.socketB?.writeln(rvdAuthString);
+      }
 
       return socketConnector;
     } catch (e) {
@@ -90,4 +125,7 @@ class SshrvImplDart implements Sshrv<SocketConnector> {
       rethrow;
     }
   }
+
+  Stream<List<int>> encrypt(Stream<List<int>> s) async* {}
+  Stream<List<int>> decrypt(Stream<List<int>> s) async* {}
 }

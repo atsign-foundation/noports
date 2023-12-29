@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:at_chops/at_chops.dart';
 import 'package:at_client/at_client.dart';
 import 'package:at_utils/at_utils.dart';
 import 'package:mocktail/mocktail.dart';
@@ -34,7 +35,9 @@ void main() {
     sshrvGeneratorInvocation() => sshrvGeneratorStub(
           any(),
           any(),
-          localSshdPort: any(named: 'localSshdPort'),
+          localPort: any(named: 'localPort'),
+          bindLocalPort: any(named: 'bindLocalPort'),
+          rvdAuthString: any(named: 'rvdAuthString')
         );
     sshrvRunInvocation() => mockSshrv.run();
 
@@ -60,6 +63,16 @@ void main() {
 
       registerFallbackValue(AtKey());
       registerFallbackValue(NotificationParams.forUpdate(AtKey()));
+
+      // Create an AtChops instance for testing
+      AtEncryptionKeyPair encryptionKeyPair =
+      AtChopsUtil.generateAtEncryptionKeyPair();
+
+      AtChops atChops = AtChopsImpl(
+        AtChopsKeys.create(encryptionKeyPair, null),
+      );
+
+      when(() => mockAtClient.atChops).thenReturn(atChops);
     });
 
     test('public API', () {
@@ -75,7 +88,7 @@ void main() {
       expect(stubbedSshrvdChannel.logger, isA<AtSignLogger>());
       expect(
         stubbedSshrvdChannel.sshrvGenerator,
-        isA<Sshrv<String> Function(String, int, {int localSshdPort})>(),
+        isA<Sshrv<String> Function(String, int, {required int localPort, required bool bindLocalPort, String? rvdAuthString})>(),
       );
       expect(stubbedSshrvdChannel.atClient, mockAtClient);
       expect(stubbedSshrvdChannel.params, mockParams);
@@ -86,6 +99,9 @@ void main() {
       when(() => mockParams.host).thenReturn('@sshrvd');
       when(() => mockParams.device).thenReturn('mydevice');
       when(() => mockParams.clientAtSign).thenReturn('@client');
+      when(() => mockParams.sshnpdAtSign).thenReturn('@sshnpd');
+      when(() => mockParams.authenticateDeviceToRvd).thenReturn(true);
+      when(() => mockParams.authenticateClientToRvd).thenReturn(true);
 
       when(subscribeInvocation)
           .thenAnswer((_) => notificationStreamController.stream);
@@ -95,6 +111,7 @@ void main() {
           final testIp = '123.123.123.123';
           final portA = 10456;
           final portB = 10789;
+          final rvdSessionNonce = DateTime.now().toIso8601String();
 
           notificationStreamController.add(
             AtNotification.empty()
@@ -103,7 +120,7 @@ void main() {
               ..from = '@sshrvd'
               ..to = '@client'
               ..epochMillis = DateTime.now().millisecondsSinceEpoch
-              ..value = '$testIp,$portA,$portB',
+              ..value = '$testIp,$portA,$portB,$rvdSessionNonce',
           );
         },
       );
@@ -191,7 +208,7 @@ void main() {
       verifyNever(sshrvRunInvocation);
 
       await expectLater(
-        await stubbedSshrvdChannel.runSshrv(),
+        await stubbedSshrvdChannel.runSshrv(directSsh: false),
         'called sshrv run',
       );
 

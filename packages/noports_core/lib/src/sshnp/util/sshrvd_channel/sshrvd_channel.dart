@@ -5,6 +5,7 @@ import 'package:at_utils/at_utils.dart';
 import 'package:meta/meta.dart';
 import 'package:noports_core/src/common/mixins/async_initialization.dart';
 import 'package:noports_core/src/common/mixins/at_client_bindings.dart';
+import 'package:noports_core/src/common/validation_utils.dart';
 import 'package:noports_core/src/sshnp/util/sshrvd_channel/notification_request_message.dart';
 import 'package:noports_core/sshnp.dart';
 import 'package:noports_core/sshrv.dart';
@@ -32,16 +33,20 @@ abstract class SshrvdChannel<T> with AsyncInitialization, AtClientBindings {
   final SshrvGenerator<T> sshrvGenerator;
   final SshnpParams params;
   final String sessionId;
+  final String clientNonce = DateTime.now().toIso8601String();
+  late final String rvdNonce;
 
   // * Volatile fields which are set in [params] but may be overridden with
   // * values provided by sshrvd
 
   String? _host;
-  int? _port;
+  int? _portA;
 
   String get host => _host ?? params.host;
 
-  int get port => _port ?? params.port;
+  /// This is the port which the sshnp **client** will connect to
+  int get port => _portA ?? params.port;
+
   // * Volatile fields set at runtime
 
   /// Whether sshrvd acknowledged our request
@@ -49,9 +54,10 @@ abstract class SshrvdChannel<T> with AsyncInitialization, AtClientBindings {
   SshrvdAck sshrvdAck = SshrvdAck.notAcknowledged;
 
   /// The port sshrvd is listening on
-  int? _sshrvdPort;
+  int? _portB;
 
-  int? get sshrvdPort => _sshrvdPort;
+  /// This is the port which the sshnp **daemon** will connect to
+  int? get sshrvdPort => _portB;
 
   SshrvdChannel({
     required this.atClient,
@@ -68,22 +74,51 @@ abstract class SshrvdChannel<T> with AsyncInitialization, AtClientBindings {
       await getHostAndPortFromSshrvd();
     } else {
       _host = params.host;
-      _port = params.port;
+      _portA = params.port;
     }
     completeInitialization();
   }
 
-  Future<T?> runSshrv() async {
+  Future<T?> runSshrv({required bool directSsh, int? localRvPort}) async {
+    if (!directSsh && localRvPort != null) {
+      throw Exception(
+          'localRvPort must be null when using reverseSsh (legacy)');
+    }
+    if (directSsh && localRvPort == null) {
+      throw Exception(
+          'localRvPort must be non-null when using directSsh (default)');
+    }
     await callInitialization();
-    if (_sshrvdPort == null) throw Exception('sshrvdPort is null');
+    if (_portB == null) throw Exception('sshrvdPort is null');
 
     // Connect to rendezvous point using background process.
     // sshnp (this program) can then exit without issue.
-    Sshrv<T> sshrv = sshrvGenerator(
-      host,
-      _sshrvdPort!,
-      localSshdPort: params.localSshdPort,
-    );
+
+    late Sshrv<T> sshrv;
+    if (directSsh) {
+      sshrv = sshrvGenerator(
+        host,
+        _portA!,
+        localPort: localRvPort!,
+        bindLocalPort: true,
+        rvdAuthString: params.authenticateClientToRvd
+            ? signAndWrapAndJsonEncode(atClient, {
+                'sessionId': sessionId,
+                'clientNonce': clientNonce,
+                'rvdNonce': rvdNonce,
+              })
+            : null,
+      );
+    } else {
+      // legacy behaviour
+      sshrv = sshrvGenerator(
+        host,
+        _portB!,
+        localPort: params.localSshdPort,
+        bindLocalPort: false,
+      );
+    }
+
     return sshrv.run();
   }
 
@@ -95,15 +130,17 @@ abstract class SshrvdChannel<T> with AsyncInitialization, AtClientBindings {
       String ipPorts = notification.value.toString();
       List results = ipPorts.split(',');
       _host = results[0];
-      _port = int.parse(results[1]);
-      _sshrvdPort = int.parse(results[2]);
-      logger.info('Received host and port from sshrvd: $host:$port');
-      logger.info('Set sshrvdPort to: $_sshrvdPort');
+      _portA = int.parse(results[1]);
+      _portB = int.parse(results[2]);
+      rvdNonce = results[3];
+      logger.info(
+          'Received from sshrvd: host:port $host:$port and rvdNonce: $rvdNonce');
+      logger.info('Set sshrvdPort to: $_portB');
       sshrvdAck = SshrvdAck.acknowledged;
     });
     logger.info('Started listening for sshrvd response');
     AtKey ourSshrvdIdKey = AtKey()
-      ..key = '${params.device}.${Sshrvd.namespace}'
+      ..key = '${params.device}.request_ports.${Sshrvd.namespace}'
       ..sharedBy = params.clientAtSign // shared by us
       ..sharedWith = host // shared with the sshrvd host
       ..metadata = (Metadata()
@@ -113,7 +150,7 @@ abstract class SshrvdChannel<T> with AsyncInitialization, AtClientBindings {
         ..ttl = 10000);
     logger.info('Sending notification to sshrvd: $ourSshrvdIdKey');
 
-    String notificationValue = _getValue(sessionId);
+    String notificationValue = _prepareNotificationPayload(sessionId);
     // We need to send not just the sessionId but other metaData
     // especially, the atSign on the other end
     // In the rvd we need to figure out backwards compatibility.
@@ -133,19 +170,14 @@ abstract class SshrvdChannel<T> with AsyncInitialization, AtClientBindings {
     }
   }
 
-  String _getValue(String sessionId) {
-
-      if(params.authenticateClient || params.authenticateDevice) {
-         // Authentication is requested. Send the latest JSON message
-         var message = AuthenticationEnablingMessage();
-         message.sessionId = sessionId;
-         message.atSignA = params.clientAtSign;
-         message.atSignB = params.sshnpdAtSign;
-         message.authenticateSocketA = params.authenticateClient;
-         message.authenticateSocketA = params.authenticateDevice;
-        return message.toString();
-      }
-
-    return (SessionIdMessage()..sessionId = sessionId).toString();
+  String _prepareNotificationPayload(String sessionId) {
+    var message = SocketRendezvousRequestMessage();
+    message.sessionId = sessionId;
+    message.atSignA = params.clientAtSign;
+    message.atSignB = params.sshnpdAtSign;
+    message.authenticateSocketA = params.authenticateClientToRvd;
+    message.authenticateSocketB = params.authenticateDeviceToRvd;
+    message.clientNonce = clientNonce;
+    return message.toString();
   }
 }

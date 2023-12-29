@@ -1,33 +1,29 @@
-abstract class SshnpSessionRequest {
-  late bool direct;
-  late String sessionId;
-  late String host;
-  late int port;
+class SshnpSessionRequest {
+  final bool direct;
+  final String sessionId;
+  final String host;
+  final int port;
+  final bool authenticateToRvd;
+  final String clientNonce;
+  final String rvdNonce;
 
-  Map message();
-}
+  SshnpSessionRequest({
+    required this.direct,
+    required this.sessionId,
+    required this.host,
+    required this.port,
+    required this.authenticateToRvd,
+    required this.clientNonce,
+    required this.rvdNonce,
+  });
 
-class SessionIdMessage extends SshnpSessionRequest{
-
-  @override
-  Map message() {
-    Map m = {};
-    m['direct'] = true;
-    m['sessionId'] = sessionId;
-    m['host'] = host;
-    m['port'] = port;
-
-    return m;
-  }
-}
-
-class AuthenticationEnablingMessage extends SessionIdMessage{
-  bool authenticate = true;
-
-  @override
-  Map message() {
-    Map m = super.message();
-    m['authenticate'] = authenticate;
-    return m;
-  }
+  Map<String, dynamic> toJson() => {
+        'direct': direct,
+        'sessionId': sessionId,
+        'host': host,
+        'port': port,
+        'authenticateToRvd': authenticateToRvd,
+        'clientNonce': clientNonce,
+        'rvdNonce': rvdNonce,
+      };
 }

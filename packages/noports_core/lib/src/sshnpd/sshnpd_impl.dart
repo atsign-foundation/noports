@@ -14,8 +14,6 @@ import 'package:noports_core/utils.dart';
 import 'package:noports_core/src/version.dart';
 import 'package:uuid/uuid.dart';
 
-import '../sshrv/auth_provider.dart';
-
 @protected
 class SshnpdImpl implements Sshnpd {
   @override
@@ -331,9 +329,10 @@ class SshnpdImpl implements Sshnpd {
           'ssh Public Key received from ${notification.from} notification id : ${notification.id}');
       sshPublicKey = notification.value!;
 
-    // Check to see if the ssh public key is
-    // supported keys by the dartssh2 package
-    if (!sshPublicKey.startsWith(RegExp(r'^(ecdsa-sha2-nistp)|(rsa-sha2-)|(ssh-rsa)|(ssh-ed25519)|(ecdsa-sha2-nistp)'))) {
+      // Check to see if the ssh public key is
+      // supported keys by the dartssh2 package
+      if (!sshPublicKey.startsWith(RegExp(
+          r'^(ecdsa-sha2-nistp)|(rsa-sha2-)|(ssh-rsa)|(ssh-ed25519)|(ecdsa-sha2-nistp)'))) {
         throw ('$sshPublicKey does not look like a public key');
       }
 
@@ -411,6 +410,8 @@ class SshnpdImpl implements Sshnpd {
         assertValidValue(params, 'remoteForwardPort', int);
         assertValidValue(params, 'privateKey', String);
       }
+      assertValidValue(params, 'clientNonce', String);
+      assertValidValue(params, 'rvdNonce', String);
     } catch (e) {
       logger.warning(
           'Failed to extract parameters from notification value "${notification.value}" with error : $e');
@@ -430,11 +431,14 @@ class SshnpdImpl implements Sshnpd {
     if (params['direct'] == true) {
       // direct ssh requested
       await startDirectSsh(
-          requestingAtsign: requestingAtsign,
-          sessionId: params['sessionId'],
-          host: params['host'],
-          port: params['port'],
-          authenticate: params['authenticate']);
+        requestingAtsign: requestingAtsign,
+        sessionId: params['sessionId'],
+        host: params['host'],
+        port: params['port'],
+        authenticateToRvd: params['authenticateToRvd'],
+        clientNonce: params['clientNonce'],
+        rvdNonce: params['rvdNonce'],
+      );
     } else {
       // reverse ssh requested
       await startReverseSsh(
@@ -491,21 +495,34 @@ class SshnpdImpl implements Sshnpd {
   ///   ephemeral private key
   /// - starts a timer to remove the ephemeral key from `authorized_keys`
   ///   after 15 seconds
-  Future<void> startDirectSsh(
-      {required String requestingAtsign,
-      required String sessionId,
-      required String host,
-      required int port,
-      required bool authenticate}) async {
+  Future<void> startDirectSsh({
+    required String requestingAtsign,
+    required String sessionId,
+    required String host,
+    required int port,
+    required bool authenticateToRvd,
+    required String clientNonce,
+    required String rvdNonce,
+  }) async {
     logger.shout(
         'Setting up ports for direct ssh session using ${sshClient.name} ($sshClient) from: $requestingAtsign session: $sessionId');
 
     try {
-      var authenticator = authenticate? SignatureAuthenticator(sessionId,atClient)  : EmptySocketAuthenticator();
+      String? rvdAuthString;
+      if (authenticateToRvd) {
+        rvdAuthString = signAndWrapAndJsonEncode(atClient, {
+          'sessionId': sessionId,
+          'clientNonce': clientNonce,
+          'rvdNonce': rvdNonce,
+        });
+      }
       // Connect to rendezvous point using background process.
       // This program can then exit without causing an issue.
-      Process rv =
-          await Sshrv.exec(host, port, localSshdPort: localSshdPort, socketAuthenticator: authenticator).run();
+      Process rv = await Sshrv.exec(host, port,
+              localPort: localSshdPort,
+              bindLocalPort: false,
+              rvdAuthString: rvdAuthString)
+          .run();
       logger.info('Started rv - pid is ${rv.pid}');
 
       LocalSshKeyUtil keyUtil = LocalSshKeyUtil();

@@ -27,11 +27,13 @@ mixin StubbedSshnpOpensshSshSessionHandler on OpensshSshSessionHandler {
   @override
   Future<Process?> startInitialTunnelSession({
     required String ephemeralKeyPairIdentifier,
+    int? localRvPort,
     ProcessStarter startProcess = Process.start,
   }) {
     _stubbedStartInitialTunnel();
     return super.startInitialTunnelSession(
       ephemeralKeyPairIdentifier: ephemeralKeyPairIdentifier,
+      localRvPort: localRvPort,
       startProcess: _stubbedStartProcess.call,
     );
   }

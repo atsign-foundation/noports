@@ -1,21 +1,31 @@
-import 'dart:io';
-
+import 'package:args/args.dart';
 import 'package:noports_core/sshrv.dart';
 
 Future<void> main(List<String> args) async {
-  if (args.length < 2 || args.length > 3) {
-    stdout.writeln('sshrv <host> <port> [localhost sshd port, defaults to 22]');
-    exit(-1);
-  }
+  final ArgParser parser = ArgParser()
+    ..addOption('host', abbr: 'h', mandatory: true, help: 'rvd host')
+    ..addOption('port', abbr: 'p', mandatory: true, help: 'rvd port')
+    ..addOption('local-port',
+        defaultsTo: '22',
+        help: 'Local port (usually the sshd port) to bridge to; defaults to 22')
+    ..addFlag('bind-local-port',
+        defaultsTo: false,
+        negatable: false,
+        help: 'Set this flag when we are bridging from a local sender')
+    ..addOption('rvd-auth',
+        mandatory: false, help: 'Auth string to provide to rvd');
 
-  String host = args[0];
-  int streamingPort = int.parse(args[1]);
+  final parsed = parser.parse(args);
 
-  int localSshdPort = 22;
+  final String host = parsed['host'];
+  final int streamingPort = int.parse(parsed['port']);
+  final int localPort = int.parse(parsed['local-port']);
+  final String? rvdAuthString = parsed['rvd-auth'];
+  final bool bindLocalPort = parsed['bind-local-port'];
 
-  if (args.length > 2) {
-    localSshdPort = int.parse(args[2]);
-  }
-
-  await Sshrv.dart(host, streamingPort, localSshdPort: localSshdPort).run();
+  await Sshrv.dart(host, streamingPort,
+          localPort: localPort,
+          bindLocalPort: bindLocalPort,
+          rvdAuthString: rvdAuthString)
+      .run();
 }

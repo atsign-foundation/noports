@@ -19,7 +19,7 @@ mixin DartSshSessionHandler on SshnpCore
 
   @override
   Future<SSHClient> startInitialTunnelSession(
-      {required String ephemeralKeyPairIdentifier}) async {
+      {required String ephemeralKeyPairIdentifier, int? localRvPort}) async {
     // If we are starting an initial tunnel, it should be to sshrvd,
     // so it is safe to assume that sshrvdChannel is not null here
 

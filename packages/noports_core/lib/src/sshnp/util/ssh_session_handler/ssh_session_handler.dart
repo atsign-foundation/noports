@@ -5,7 +5,7 @@ mixin SshSessionHandler<T> {
   @protected
   @visibleForTesting
   Future<T> startInitialTunnelSession(
-      {required String ephemeralKeyPairIdentifier});
+      {required String ephemeralKeyPairIdentifier, int? localRvPort});
 
   @protected
   @visibleForTesting

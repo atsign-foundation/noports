@@ -1,34 +1,22 @@
 import 'dart:convert';
 
-abstract class SrSessionRequest {
+class SocketRendezvousRequestMessage {
   late String sessionId;
-
-  @override
-  String toString();
-}
-
-class SessionIdMessage extends SrSessionRequest{
-
-  @override
-  String toString() {
-    return sessionId;
-  }
-}
-
-class AuthenticationEnablingMessage extends SessionIdMessage {
   late String atSignA;
   late String atSignB;
   late bool authenticateSocketA;
   late bool authenticateSocketB;
+  late String clientNonce;
 
   @override
   String toString() {
     Map m = {};
-    m['session'] = sessionId;
+    m['sessionId'] = sessionId;
     m['atSignA'] = atSignA;
     m['atSignB'] = atSignB;
     m['authenticateSocketA'] = authenticateSocketA;
     m['authenticateSocketB'] = authenticateSocketB;
+    m['clientNonce'] = clientNonce;
     return jsonEncode(m);
   }
 }
