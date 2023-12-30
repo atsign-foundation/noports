@@ -11,20 +11,22 @@ void main() {
   late AtChops atChops;
 
   setUpAll(() {
-    AtEncryptionKeyPair encryptionKeyPair = AtChopsUtil
-        .generateAtEncryptionKeyPair(keySize: 2048);
+    AtEncryptionKeyPair encryptionKeyPair =
+        AtChopsUtil.generateAtEncryptionKeyPair(keySize: 2048);
 
     atChops = AtChopsImpl(AtChopsKeys.create(encryptionKeyPair, null));
   });
-  test('SignatureVerifyingSocketAuthenticator signature verification success', () {
+  test('SignatureVerifyingSocketAuthenticator signature verification success',
+      () {
     String rvdSessionNonce = DateTime.now().toIso8601String();
-    Map payload = {'sessionId':Uuid().v4(), 'rvdNonce': rvdSessionNonce};
+    Map payload = {'sessionId': Uuid().v4(), 'rvdNonce': rvdSessionNonce};
 
     String signedEnvelope = signPayload(atChops, payload);
     SignatureAuthVerifier sa = SignatureAuthVerifier(
         atChops.atChopsKeys.atEncryptionKeyPair!.atPublicKey.publicKey,
         jsonEncode(payload), // We'll verify the signature against this
-        rvdSessionNonce, 'test_for_success');
+        rvdSessionNonce,
+        'test_for_success');
 
     List<int> list = utf8.encode(signedEnvelope);
     Uint8List data = Uint8List.fromList(list);
@@ -37,16 +39,21 @@ void main() {
     expect(unused, null);
   });
 
-  test('SignatureVerifyingSocketAuthenticator signature verification failure', () {
+  test('SignatureVerifyingSocketAuthenticator signature verification failure',
+      () {
     String rvdSessionNonce = DateTime.now().toIso8601String();
-    Map payload = {'sessionId':Uuid().v4().toString(), 'rvdNonce': rvdSessionNonce};
+    Map payload = {
+      'sessionId': Uuid().v4().toString(),
+      'rvdNonce': rvdSessionNonce
+    };
 
     String signedEnvelope = signPayload(atChops, payload);
     SignatureAuthVerifier sa = SignatureAuthVerifier(
         atChops.atChopsKeys.atEncryptionKeyPair!.atPublicKey.publicKey,
         // using a different payload; signature verification will fail
         'some other payload',
-        rvdSessionNonce, 'test_for_failure');
+        rvdSessionNonce,
+        'test_for_failure');
 
     List<int> list = utf8.encode(signedEnvelope);
     Uint8List data = Uint8List.fromList(list);
@@ -54,16 +61,19 @@ void main() {
     expect(() => sa.onData(data, MockSocket()), throwsException);
   });
 
-  test('SignatureVerifyingSocketAuthenticator signature verification ok but mismatched nonce', () {
+  test(
+      'SignatureVerifyingSocketAuthenticator signature verification ok but mismatched nonce',
+      () {
     final uuidString = Uuid().v4().toString();
     String rvdSessionNonce = DateTime.now().toIso8601String();
-    Map payload = {'sessionId':uuidString, 'rvdNonce': rvdSessionNonce};
+    Map payload = {'sessionId': uuidString, 'rvdNonce': rvdSessionNonce};
 
     String signedEnvelope = signPayload(atChops, payload);
     SignatureAuthVerifier sa = SignatureAuthVerifier(
         atChops.atChopsKeys.atEncryptionKeyPair!.atPublicKey.publicKey,
         jsonEncode(payload),
-        rvdSessionNonce, 'test_for_mismatch');
+        rvdSessionNonce,
+        'test_for_mismatch');
 
     Map fakedEnvelope = jsonDecode(signedEnvelope);
     fakedEnvelope['payload']['rvdNonce'] = 'not the same nonce';
@@ -89,10 +99,10 @@ String signPayload(AtChops atChops, Map payload) {
 }
 
 bool verifySignature(
-    AtChops atChops,
-    String requestingAtsign,
-    Map envelope,
-    ) {
+  AtChops atChops,
+  String requestingAtsign,
+  Map envelope,
+) {
   final String signature = envelope['signature'];
   Map payload = envelope['payload'];
   final hashingAlgo = HashingAlgoType.values.byName(envelope['hashingAlgo']);

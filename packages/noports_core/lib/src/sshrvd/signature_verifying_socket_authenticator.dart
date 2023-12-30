@@ -33,7 +33,12 @@ class SignatureAuthVerifier implements SocketAuthVerifier {
   /// a tag to help decipher logs
   String tag;
 
-  SignatureAuthVerifier(this.publicKey, this.dataToVerify, this.rvdNonce, this.tag);
+  SignatureAuthVerifier(
+    this.publicKey,
+    this.dataToVerify,
+    this.rvdNonce,
+    this.tag,
+  );
 
   @override
   (bool authenticated, Uint8List? unused) onData(

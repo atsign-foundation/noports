@@ -154,7 +154,12 @@ abstract class SshrvdChannel<T> with AsyncInitialization, AtClientBindings {
     // We need to send not just the sessionId but other metaData
     // especially, the atSign on the other end
     // In the rvd we need to figure out backwards compatibility.
-    await notify(ourSshrvdIdKey, notificationValue);
+    await notify(
+      ourSshrvdIdKey,
+      notificationValue,
+      checkForFinalDeliveryStatus: false,
+      waitForFinalDeliveryStatus: false,
+    );
 
     int counter = 1;
     while (sshrvdAck == SshrvdAck.notAcknowledged) {

@@ -26,7 +26,13 @@ void main() {
 
     // Invocation patterns as closures so they can be referred to by name
     // instead of explicitly writing these calls several times in the test
-    notifyInvocation() => notifyStub(any(), any());
+    notifyInvocation() => notifyStub(
+          any(),
+          any(),
+          checkForFinalDeliveryStatus:
+              any(named: 'checkForFinalDeliveryStatus'),
+          waitForFinalDeliveryStatus: any(named: 'waitForFinalDeliveryStatus'),
+        );
     subscribeInvocation() => subscribeStub(
           regex: any(named: 'regex'),
           shouldDecrypt: any(named: 'shouldDecrypt'),
@@ -212,6 +218,10 @@ void main() {
             any<AtKey>(
                 that: predicate((AtKey key) => key.key == 'sshpublickey')),
             any(),
+            checkForFinalDeliveryStatus:
+                any(named: 'checkForFinalDeliveryStatus'),
+            waitForFinalDeliveryStatus:
+                any(named: 'waitForFinalDeliveryStatus'),
           ),
         ).thenAnswer((_) async {});
 
@@ -227,6 +237,10 @@ void main() {
             any<AtKey>(
                 that: predicate((AtKey key) => key.key == 'sshpublickey')),
             TestingKeyPair.public,
+            checkForFinalDeliveryStatus:
+                any(named: 'checkForFinalDeliveryStatus'),
+            waitForFinalDeliveryStatus:
+                any(named: 'waitForFinalDeliveryStatus'),
           ),
         ).called(1);
       }); // test sharePublicKeyIfRequired

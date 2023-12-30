@@ -62,7 +62,7 @@ abstract class SshnpdChannel with AsyncInitialization, AtClientBindings {
     ).listen(handleSshnpdResponses);
   }
 
-  /// Main reponse handler for the daemon's notifications.
+  /// Main response handler for the daemon's notifications.
   @visibleForTesting
   Future<void> handleSshnpdResponses(AtNotification notification) async {
     String notificationKey = notification.key
@@ -87,16 +87,16 @@ abstract class SshnpdChannel with AsyncInitialization, AtClientBindings {
   Future<SshnpdAck> handleSshnpdPayload(AtNotification notification);
 
   /// Wait until we've received an acknowledgement from the daemon.
-  /// Returns true if the deamon acknowledged our request.
+  /// Returns true if the daemon acknowledged our request.
   /// Returns false if a timeout occurred.
-  Future<SshnpdAck> waitForDaemonResponse() async {
+  Future<SshnpdAck> waitForDaemonResponse({int maxWaitMillis = 10000}) async {
     // Timer to timeout after 10 Secs or after the Ack of connected/Errors
     for (int counter = 1; counter <= 100; counter++) {
       if (counter % 20 == 0) {
         logger.info('Still waiting for sshnpd response');
         logger.info('sshnpdAck: $sshnpdAck');
       }
-      await Future.delayed(Duration(milliseconds: 100));
+      await Future.delayed(Duration(milliseconds: maxWaitMillis ~/ 100));
       if (sshnpdAck != SshnpdAck.notAcknowledged) break;
     }
     return sshnpdAck;
@@ -133,7 +133,12 @@ abstract class SshnpdChannel with AsyncInitialization, AtClientBindings {
         ..sharedBy = params.clientAtSign
         ..sharedWith = params.sshnpdAtSign
         ..metadata = (Metadata()..ttl = 10000);
-      await notify(sendOurPublicKeyToSshnpd, publicKeyContents);
+      await notify(
+        sendOurPublicKeyToSshnpd,
+        publicKeyContents,
+        checkForFinalDeliveryStatus: false,
+        waitForFinalDeliveryStatus: false,
+      );
     } catch (e, s) {
       throw SshnpError(
         'Error opening or validating public key file or sending to remote atSign',
@@ -231,7 +236,12 @@ abstract class SshnpdChannel with AsyncInitialization, AtClientBindings {
         ..metadata = metaData;
 
       logger.info('Sending ping to sshnpd');
-      unawaited(notify(pingKey, 'ping'));
+      unawaited(notify(
+        pingKey,
+        'ping',
+        checkForFinalDeliveryStatus: false,
+        waitForFinalDeliveryStatus: false,
+      ));
     }
 
     // wait for 10 seconds in case any are being slow

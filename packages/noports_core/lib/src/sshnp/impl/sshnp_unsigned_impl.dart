@@ -63,6 +63,8 @@ class SshnpUnsignedImpl extends SshnpCore with SshnpLocalSshKeyHandler {
     await notify(
       sendOurPrivateKeyToSshnpd,
       ephemeralKeyPair.privateKeyContents,
+      checkForFinalDeliveryStatus: false,
+      waitForFinalDeliveryStatus: false,
     );
 
     completeInitialization();
@@ -86,6 +88,8 @@ class SshnpUnsignedImpl extends SshnpCore with SshnpLocalSshKeyHandler {
         ..sharedWith = params.sshnpdAtSign
         ..metadata = (Metadata()..ttl = 10000),
       '$localPort ${sshrvdChannel.port} ${keyUtil.username} ${sshrvdChannel.host} $sessionId',
+      checkForFinalDeliveryStatus: false,
+      waitForFinalDeliveryStatus: false,
     );
 
     /// Wait for a response from sshnpd

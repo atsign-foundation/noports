@@ -10,7 +10,6 @@ void main() {
     // Create a notification in rvd namespace
     AtNotification notification = AtNotification.empty();
     notification.key = 'test.${Sshrvd.namespace}';
-
   });
 
   test('sshrvd should accept notification in new request_ports format', () {
@@ -20,7 +19,9 @@ void main() {
     expect(SshrvdUtil.accept(notification), true);
   });
 
-  test('sshrvd backwards compatibility test - should handle both legacy and new messages in JSON format', () async {
+  test(
+      'sshrvd backwards compatibility test - should handle both legacy and new messages in JSON format',
+      () async {
     Map m = {};
     m['session'] = 'hello';
     m['atSignA'] = '@4314sagittarius';

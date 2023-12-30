@@ -9,6 +9,8 @@ import 'package:socket_connector/socket_connector.dart';
 
 @visibleForTesting
 class SshrvImplExec implements Sshrv<Process> {
+  static final AtSignLogger logger = AtSignLogger('SshrvImplExec');
+
   @override
   final String host;
 
@@ -54,7 +56,8 @@ class SshrvImplExec implements Sshrv<Process> {
       rvArgs.addAll(['--rvd-auth', rvdAuthString!]);
     }
 
-    stderr.writeln('$runtimeType.run(): executing $command ${rvArgs.join(' ')}');
+    logger.info('$runtimeType.run(): executing $command'
+        ' ${rvArgs.join(' ')}');
     return Process.start(
       command,
       rvArgs,
@@ -93,8 +96,58 @@ class SshrvImplDart implements Sshrv<SocketConnector> {
     final DartAesCtr algorithm = DartAesCtr.with256bits(
       macAlgorithm: Hmac.sha256(),
     );
-    final secretKey = SecretKey([157, 145, 46, 127, 146, 161, 7, 96, 13, 29, 150, 203, 109, 252, 110, 92, 24, 55, 113, 121, 94, 91, 69, 63, 159, 162, 107, 49, 250, 118, 191, 113]);
-    final iv = [92, 231, 193, 189, 0, 154, 112, 102, 195, 163, 78, 6, 40, 108, 218, 250];
+    final secretKey = SecretKey([
+      157,
+      145,
+      46,
+      127,
+      146,
+      161,
+      7,
+      96,
+      13,
+      29,
+      150,
+      203,
+      109,
+      252,
+      110,
+      92,
+      24,
+      55,
+      113,
+      121,
+      94,
+      91,
+      69,
+      63,
+      159,
+      162,
+      107,
+      49,
+      250,
+      118,
+      191,
+      113
+    ]);
+    final iv = [
+      92,
+      231,
+      193,
+      189,
+      0,
+      154,
+      112,
+      102,
+      195,
+      163,
+      78,
+      6,
+      40,
+      108,
+      218,
+      250
+    ];
 
     Stream<List<int>> encrypter(Stream<List<int>> stream) {
       return algorithm.encryptStream(
@@ -151,5 +204,6 @@ class SshrvImplDart implements Sshrv<SocketConnector> {
   }
 
   Stream<List<int>> encrypt(Stream<List<int>> s) async* {}
+
   Stream<List<int>> decrypt(Stream<List<int>> s) async* {}
 }

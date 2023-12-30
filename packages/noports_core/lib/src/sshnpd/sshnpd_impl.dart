@@ -164,13 +164,16 @@ class SshnpdImpl implements Sshnpd {
 
       try {
         await notificationService.notify(
-            NotificationParams.forUpdate(atKey, value: username),
-            waitForFinalDeliveryStatus: false,
-            checkForFinalDeliveryStatus: false, onSuccess: (notification) {
-          logger.info('SUCCESS:$notification $username');
-        }, onError: (notification) {
-          logger.info('ERROR:$notification $username');
-        });
+          NotificationParams.forUpdate(atKey, value: username),
+          waitForFinalDeliveryStatus: false,
+          checkForFinalDeliveryStatus: false,
+          onSuccess: (notification) {
+            logger.info('SUCCESS:$notification $username');
+          },
+          onError: (notification) {
+            logger.info('ERROR:$notification $username');
+          },
+        );
       } catch (e) {
         stderr.writeln(e.toString());
       }
@@ -305,6 +308,8 @@ class SshnpdImpl implements Sshnpd {
           'devicename': device,
           'version': packageVersion,
         }),
+        checkForFinalDeliveryStatus: false,
+        waitForFinalDeliveryStatus: false,
       ),
     );
   }
@@ -547,6 +552,8 @@ class SshnpdImpl implements Sshnpd {
           'sessionId': sessionId,
           'ephemeralPrivateKey': keyPair.privateKeyContents,
         }),
+        checkForFinalDeliveryStatus: false,
+        waitForFinalDeliveryStatus: false,
         sessionId: sessionId,
       );
 
@@ -563,6 +570,8 @@ class SshnpdImpl implements Sshnpd {
         value:
             'Failed to start up the daemon side of the sshrv socket tunnel : $e',
         sessionId: sessionId,
+        checkForFinalDeliveryStatus: false,
+        waitForFinalDeliveryStatus: false,
       );
     }
   }
@@ -616,14 +625,19 @@ class SshnpdImpl implements Sshnpd {
               requestingAtsign: requestingAtsign, sessionId: sessionId),
           value: '$errorMessage (use --local-port to specify unused port)',
           sessionId: sessionId,
+          checkForFinalDeliveryStatus: false,
+          waitForFinalDeliveryStatus: false,
         );
       } else {
         /// Notify sshnp that the connection has been made
         await _notify(
-            atKey: _createResponseAtKey(
-                requestingAtsign: requestingAtsign, sessionId: sessionId),
-            value: 'connected',
-            sessionId: sessionId);
+          atKey: _createResponseAtKey(
+              requestingAtsign: requestingAtsign, sessionId: sessionId),
+          value: 'connected',
+          sessionId: sessionId,
+          checkForFinalDeliveryStatus: false,
+          waitForFinalDeliveryStatus: false,
+        );
       }
     } catch (e) {
       logger.severe('SSH Client failure : $e');
@@ -633,6 +647,8 @@ class SshnpdImpl implements Sshnpd {
             requestingAtsign: requestingAtsign, sessionId: sessionId),
         value: 'Remote SSH Client failure : $e',
         sessionId: sessionId,
+        checkForFinalDeliveryStatus: false,
+        waitForFinalDeliveryStatus: false,
       );
     }
   }
@@ -862,17 +878,24 @@ class SshnpdImpl implements Sshnpd {
   }
 
   /// This function sends a notification given an atKey and value
-  Future<void> _notify(
-      {required AtKey atKey,
-      required String value,
-      String sessionId = ''}) async {
-    await atClient.notificationService
-        .notify(NotificationParams.forUpdate(atKey, value: value),
-            onSuccess: (notification) {
-      logger.info('SUCCESS:$notification for: $sessionId with value: $value');
-    }, onError: (notification) {
-      logger.info('ERROR:$notification');
-    });
+  Future<void> _notify({
+    required AtKey atKey,
+    required String value,
+    required bool checkForFinalDeliveryStatus,
+    required bool waitForFinalDeliveryStatus,
+    String sessionId = '',
+  }) async {
+    await atClient.notificationService.notify(
+      NotificationParams.forUpdate(atKey, value: value),
+      checkForFinalDeliveryStatus: checkForFinalDeliveryStatus,
+      waitForFinalDeliveryStatus: waitForFinalDeliveryStatus,
+      onSuccess: (notification) {
+        logger.info('SUCCESS:$notification for: $sessionId with value: $value');
+      },
+      onError: (notification) {
+        logger.info('ERROR:$notification');
+      },
+    );
   }
 
   /// This function creates an atKey which shares the device name with the client

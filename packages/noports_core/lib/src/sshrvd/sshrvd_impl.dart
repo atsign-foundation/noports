@@ -197,7 +197,8 @@ class SshrvdImpl implements Sshrvd {
 
     PortPair ports = await receivePort.first;
 
-    logger.info('Received ports $ports in main isolate for session ${sshrvdSessionParams.sessionId}');
+    logger.info('Received ports $ports in main isolate'
+        ' for session ${sshrvdSessionParams.sessionId}');
 
     return ports;
   }

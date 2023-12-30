@@ -27,18 +27,21 @@ void main() {
 
     // Invocation patterns as closures so they can be referred to by name
     // instead of explicitly writing these calls several times in the test
-    notifyInvocation() => notifyStub(any(), any());
+    notifyInvocation() => notifyStub(
+          any(),
+          any(),
+          checkForFinalDeliveryStatus:
+              any(named: 'checkForFinalDeliveryStatus'),
+          waitForFinalDeliveryStatus: any(named: 'waitForFinalDeliveryStatus'),
+        );
     subscribeInvocation() => subscribeStub(
           regex: any(named: 'regex'),
           shouldDecrypt: any(named: 'shouldDecrypt'),
         );
-    sshrvGeneratorInvocation() => sshrvGeneratorStub(
-          any(),
-          any(),
-          localPort: any(named: 'localPort'),
-          bindLocalPort: any(named: 'bindLocalPort'),
-          rvdAuthString: any(named: 'rvdAuthString')
-        );
+    sshrvGeneratorInvocation() => sshrvGeneratorStub(any(), any(),
+        localPort: any(named: 'localPort'),
+        bindLocalPort: any(named: 'bindLocalPort'),
+        rvdAuthString: any(named: 'rvdAuthString'));
     sshrvRunInvocation() => mockSshrv.run();
 
     setUp(() {
@@ -66,7 +69,7 @@ void main() {
 
       // Create an AtChops instance for testing
       AtEncryptionKeyPair encryptionKeyPair =
-      AtChopsUtil.generateAtEncryptionKeyPair();
+          AtChopsUtil.generateAtEncryptionKeyPair();
 
       AtChops atChops = AtChopsImpl(
         AtChopsKeys.create(encryptionKeyPair, null),
@@ -88,7 +91,11 @@ void main() {
       expect(stubbedSshrvdChannel.logger, isA<AtSignLogger>());
       expect(
         stubbedSshrvdChannel.sshrvGenerator,
-        isA<Sshrv<String> Function(String, int, {required int localPort, required bool bindLocalPort, String? rvdAuthString})>(),
+        isA<
+            Sshrv<String> Function(String, int,
+                {required int localPort,
+                required bool bindLocalPort,
+                String? rvdAuthString})>(),
       );
       expect(stubbedSshrvdChannel.atClient, mockAtClient);
       expect(stubbedSshrvdChannel.params, mockParams);
@@ -145,7 +152,7 @@ void main() {
                 that: predicate(
                   // Predicate matching specifically the sshrvdIdKey format
                   (AtKey key) =>
-                      key.key == 'mydevice.${Sshrvd.namespace}' &&
+                      key.key == 'mydevice.request_ports.${Sshrvd.namespace}' &&
                       key.sharedBy == '@client' &&
                       key.sharedWith == '@sshrvd' &&
                       key.metadata != null &&
@@ -154,6 +161,10 @@ void main() {
                 ),
               ),
               any(),
+              checkForFinalDeliveryStatus:
+                  any(named: 'checkForFinalDeliveryStatus'),
+              waitForFinalDeliveryStatus:
+                  any(named: 'waitForFinalDeliveryStatus'),
             ),
       ]);
 

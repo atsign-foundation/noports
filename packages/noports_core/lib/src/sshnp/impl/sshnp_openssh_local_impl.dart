@@ -93,6 +93,8 @@ class SshnpOpensshLocalImpl extends SshnpCore
             clientNonce: sshrvdChannel.clientNonce,
             rvdNonce: sshrvdChannel.rvdNonce,
           ).toJson()),
+      checkForFinalDeliveryStatus: false,
+      waitForFinalDeliveryStatus: false,
     );
 
     /// Wait for a response from sshnpd
