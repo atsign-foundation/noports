@@ -2,11 +2,13 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:at_chops/at_chops.dart';
 import 'package:at_client/at_client.dart' hide StringBuffer;
 import 'package:at_utils/at_logger.dart';
 import 'package:dartssh2/dartssh2.dart';
 import 'package:logging/logging.dart';
 import 'package:meta/meta.dart';
+import 'package:noports_core/src/common/features.dart';
 import 'package:noports_core/src/common/openssh_binary_path.dart';
 import 'package:noports_core/src/sshrv/sshrv.dart';
 import 'package:noports_core/sshnpd.dart';
@@ -54,6 +56,10 @@ class SshnpdImpl implements Sshnpd {
 
   @override
   final SupportedSshAlgorithm sshAlgorithm;
+
+  @override
+  final AtEncryptionKeyPair ephemeralEncryptionKeyPair =
+      AtChopsUtil.generateAtEncryptionKeyPair(keySize: 2048);
 
   @override
   @visibleForTesting
@@ -301,13 +307,20 @@ class SshnpdImpl implements Sshnpd {
         ..namespaceAware = true);
 
     /// send a heartbeat back
+    var pingResponse = {
+      'devicename': device,
+      'version': packageVersion,
+      'ephemeralPK': ephemeralEncryptionKeyPair.atPublicKey.publicKey,
+      'ephemeralPKType': 'rsa2048',
+      'supportedFeatures': {
+        DaemonFeatures.srAuth.name: true,
+        DaemonFeatures.srE2ee.name: true,
+      },
+    };
     unawaited(
       _notify(
         atKey: atKey,
-        value: jsonEncode({
-          'devicename': device,
-          'version': packageVersion,
-        }),
+        value: jsonEncode(pingResponse),
         checkForFinalDeliveryStatus: false,
         waitForFinalDeliveryStatus: false,
       ),

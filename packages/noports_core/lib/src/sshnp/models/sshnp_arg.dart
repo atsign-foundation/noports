@@ -126,6 +126,7 @@ class SshnpArg {
     listDevicesArg,
     authenticateClientToRvdArg,
     authenticateDeviceToRvdArg,
+    encryptRvdTrafficArg,
   ];
 
   @override
@@ -350,7 +351,7 @@ class SshnpArg {
   );
   static const authenticateClientToRvdArg = SshnpArg(
     name: 'authenticate-client',
-    help: 'When true, client needs to authenticate it self to rvd',
+    help: 'When false, client will not authenticate itself to rvd',
     defaultsTo: DefaultArgs.authenticateClientToRvd,
     format: ArgFormat.flag,
     parseWhen: ParseWhen.commandLine,
@@ -358,8 +359,18 @@ class SshnpArg {
   );
   static const authenticateDeviceToRvdArg = SshnpArg(
     name: 'authenticate-device',
-    help: 'When true, device needs to authenticate it self to rvd',
+    help: 'When false, device will not authenticate to the socket rendezvous',
     defaultsTo: DefaultArgs.authenticateDeviceToRvd,
+    format: ArgFormat.flag,
+    parseWhen: ParseWhen.commandLine,
+    mandatory: false,
+  );
+  static const encryptRvdTrafficArg = SshnpArg(
+    name: 'encrypt-rvd-traffic',
+    help: 'When true, traffic via the socket rendezvous is encrypted,'
+        ' in addition to whatever encryption the traffic already has'
+        ' (e.g. an ssh session)',
+    defaultsTo: DefaultArgs.encryptRvdTraffic,
     format: ArgFormat.flag,
     parseWhen: ParseWhen.commandLine,
     mandatory: false,

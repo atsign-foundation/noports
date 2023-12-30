@@ -77,10 +77,10 @@ packages:
     dependency: "direct overridden"
     description:
       name: at_client
-      sha256: b25f991409efa860a6196399c20bbebb8e763695197996ea4013789b4b96f297
+      sha256: "975da85cd85f6997569f562a198a46dc5eb1c51e74522cef9b432cceed436b59"
       url: "https://pub.dev"
     source: hosted
-    version: "3.0.68"
+    version: "3.0.70"
   at_commons:
     dependency: transitive
     description:

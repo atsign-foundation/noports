@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:at_utils/at_utils.dart';
 import 'package:noports_core/src/common/types.dart';
 import 'package:noports_core/src/sshnp/models/config_file_repository.dart';
 import 'package:noports_core/src/sshnp/models/sshnp_arg.dart';
@@ -34,8 +35,9 @@ class SshnpParams {
   final bool addForwardsToTunnel;
   final String? atKeysFilePath;
   final SupportedSshAlgorithm sshAlgorithm;
-  final bool authenticateClientToRvd;
-  final bool authenticateDeviceToRvd;
+  bool authenticateClientToRvd;
+  bool authenticateDeviceToRvd;
+  bool encryptRvdTraffic;
 
   /// Special Arguments
 
@@ -70,6 +72,7 @@ class SshnpParams {
     this.sshAlgorithm = DefaultArgs.sshAlgorithm,
     this.authenticateClientToRvd = DefaultArgs.authenticateClientToRvd,
     this.authenticateDeviceToRvd = DefaultArgs.authenticateDeviceToRvd,
+    this.encryptRvdTraffic = DefaultArgs.encryptRvdTraffic,
   });
 
   factory SshnpParams.empty() {
@@ -115,6 +118,7 @@ class SshnpParams {
           params2.authenticateClientToRvd ?? params1.authenticateClientToRvd,
       authenticateDeviceToRvd:
           params2.authenticateDeviceToRvd ?? params1.authenticateDeviceToRvd,
+      encryptRvdTraffic: params2.encryptRvdTraffic ?? params1.encryptRvdTraffic,
     );
   }
 
@@ -159,6 +163,8 @@ class SshnpParams {
           DefaultArgs.authenticateClientToRvd,
       authenticateDeviceToRvd: partial.authenticateDeviceToRvd ??
           DefaultArgs.authenticateDeviceToRvd,
+      encryptRvdTraffic:
+          partial.encryptRvdTraffic ?? DefaultArgs.encryptRvdTraffic,
     );
   }
 
@@ -209,6 +215,7 @@ class SshnpParams {
       SshnpArg.sshAlgorithmArg.name: sshAlgorithm.toString(),
       SshnpArg.authenticateClientToRvdArg.name: authenticateClientToRvd,
       SshnpArg.authenticateDeviceToRvdArg.name: authenticateDeviceToRvd,
+      SshnpArg.encryptRvdTrafficArg.name: encryptRvdTraffic,
     };
     args.removeWhere(
       (key, value) => !parserType.shouldParse(SshnpArg.fromName(key).parseWhen),
@@ -249,6 +256,7 @@ class SshnpPartialParams {
   final SupportedSshAlgorithm? sshAlgorithm;
   final bool? authenticateClientToRvd;
   final bool? authenticateDeviceToRvd;
+  final bool? encryptRvdTraffic;
 
   /// Operation flags
   final bool? listDevices;
@@ -278,6 +286,7 @@ class SshnpPartialParams {
     this.sshAlgorithm,
     this.authenticateClientToRvd,
     this.authenticateDeviceToRvd,
+    this.encryptRvdTraffic,
   });
 
   factory SshnpPartialParams.empty() {
@@ -318,6 +327,7 @@ class SshnpPartialParams {
           params2.authenticateClientToRvd ?? params1.authenticateClientToRvd,
       authenticateDeviceToRvd:
           params2.authenticateDeviceToRvd ?? params1.authenticateDeviceToRvd,
+      encryptRvdTraffic: params2.encryptRvdTraffic ?? params1.encryptRvdTraffic,
     );
   }
 
@@ -341,8 +351,8 @@ class SshnpPartialParams {
   factory SshnpPartialParams.fromArgMap(Map<String, dynamic> args) {
     return SshnpPartialParams(
       profileName: args[SshnpArg.profileNameArg.name],
-      clientAtSign: args[SshnpArg.fromArg.name],
-      sshnpdAtSign: args[SshnpArg.toArg.name],
+      clientAtSign: AtUtils.fixAtSign(args[SshnpArg.fromArg.name]),
+      sshnpdAtSign: AtUtils.fixAtSign(args[SshnpArg.toArg.name]),
       host: args[SshnpArg.hostArg.name],
       device: args[SshnpArg.deviceArg.name],
       port: args[SshnpArg.portArg.name],
@@ -369,6 +379,7 @@ class SshnpPartialParams {
               args[SshnpArg.sshAlgorithmArg.name]),
       authenticateClientToRvd: args[SshnpArg.authenticateClientToRvdArg.name],
       authenticateDeviceToRvd: args[SshnpArg.authenticateDeviceToRvdArg.name],
+      encryptRvdTraffic: args[SshnpArg.encryptRvdTrafficArg.name],
     );
   }
 

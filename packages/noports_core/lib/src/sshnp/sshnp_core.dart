@@ -3,9 +3,11 @@ import 'dart:async';
 import 'package:at_client/at_client.dart' hide StringBuffer;
 import 'package:at_utils/at_logger.dart';
 import 'package:meta/meta.dart';
+import 'package:noports_core/src/common/features.dart';
 import 'package:noports_core/src/common/mixins/async_completion.dart';
 import 'package:noports_core/src/common/mixins/async_initialization.dart';
 import 'package:noports_core/src/common/mixins/at_client_bindings.dart';
+import 'package:noports_core/src/common/default_args.dart';
 import 'package:noports_core/src/sshnp/util/sshnp_ssh_key_handler/sshnp_ssh_key_handler.dart';
 import 'package:noports_core/src/sshnp/util/sshnpd_channel/sshnpd_channel.dart';
 import 'package:noports_core/src/sshnp/util/sshrvd_channel/sshrvd_channel.dart';
@@ -63,7 +65,7 @@ abstract class SshnpCore
     required this.atClient,
     required this.params,
   })  : sessionId = Uuid().v4(),
-        namespace = '${params.device}.sshnp',
+        namespace = '${params.device}.${DefaultArgs.namespace}',
         localPort = params.localPort {
     logger.level = params.verbose ? 'info' : 'shout';
 
@@ -82,6 +84,23 @@ abstract class SshnpCore
 
     /// Start the sshnpd payload handler
     await sshnpdChannel.callInitialization();
+
+    late Map<String, dynamic> pingResponse;
+    try {
+      pingResponse = await sshnpdChannel.ping().timeout(Duration(seconds: 10));
+    } catch (e) {
+      logger.severe(
+          'No ping response from ${params.device}${params.sshnpdAtSign}');
+      rethrow;
+    }
+
+    final daemonFeatures = pingResponse['supportedFeatures'];
+    if (daemonFeatures[DaemonFeatures.srAuth.name] != true) {
+      params.authenticateDeviceToRvd = false;
+    }
+    if (daemonFeatures[DaemonFeatures.srE2ee.name] != true) {
+      params.encryptRvdTraffic = false;
+    }
 
     /// Set the remote username to use for the ssh session
     remoteUsername = await sshnpdChannel.resolveRemoteUsername();

@@ -184,6 +184,43 @@ abstract class SshnpdChannel with AsyncInitialization, AtClientBindings {
     }
   }
 
+  Future<Map<String, dynamic>> ping() async {
+    Completer<Map<String, dynamic>> completer = Completer();
+
+    subscribe(
+      regex: 'heartbeat'
+          '.${params.device}'
+          '.${DefaultArgs.namespace}',
+      shouldDecrypt: true,
+    ).listen((notification) {
+      logger.info(
+          'Received ping response from ${notification.from} : ${notification.key} : ${notification.value}');
+      if (notification.from == params.sshnpdAtSign) {
+        logger.info('Completing the future');
+        completer.complete(jsonDecode(notification.value ?? '{}'));
+      }
+    });
+    var pingKey = AtKey()
+      ..key = "ping.${params.device}"
+      ..sharedBy = params.clientAtSign
+      ..sharedWith = params.sshnpdAtSign
+      ..namespace = DefaultArgs.namespace
+      ..metadata = (Metadata()
+        ..isPublic = false
+        ..isEncrypted = true
+        ..namespaceAware = true);
+
+    logger.info('Sending ping to sshnpd');
+    await notify(
+      pingKey,
+      'ping',
+      checkForFinalDeliveryStatus: false,
+      waitForFinalDeliveryStatus: false,
+    );
+
+    return completer.future;
+  }
+
   /// List all available devices from the daemon.
   /// Returns a [SSHPNPDeviceList] object which contains a map of device names
   /// and corresponding info, and a list of active devices (devices which also

@@ -132,7 +132,8 @@ class SshrvdImpl implements Sshrvd {
       return;
     }
 
-    logger.info('New session request: $sessionParams');
+    logger
+        .info('New session request: $sessionParams from ${notification.from}');
 
     (int, int) ports = await _spawnSocketConnector(
       0,
@@ -158,6 +159,9 @@ class SshrvdImpl implements Sshrvd {
       ..metadata = metaData;
 
     String data = '$ipAddress,$portA,$portB,${sessionParams.rvdNonce}';
+
+    logger.info(
+        'Sending response data for session ${sessionParams.sessionId} : [$data]');
 
     try {
       await atClient.notificationService.notify(
