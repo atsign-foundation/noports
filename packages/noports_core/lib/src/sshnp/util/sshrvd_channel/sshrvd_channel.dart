@@ -34,7 +34,6 @@ abstract class SshrvdChannel<T> with AsyncInitialization, AtClientBindings {
   final SshnpParams params;
   final String sessionId;
   final String clientNonce = DateTime.now().toIso8601String();
-  late final String rvdNonce;
 
   // * Volatile fields which are set in [params] but may be overridden with
   // * values provided by sshrvd
@@ -48,6 +47,10 @@ abstract class SshrvdChannel<T> with AsyncInitialization, AtClientBindings {
   int get port => _portA ?? params.port;
 
   // * Volatile fields set at runtime
+
+  String? rvdNonce;
+  String? sessionAESKeyString;
+  String? sessionIVString;
 
   /// Whether sshrvd acknowledged our request
   @visibleForTesting
@@ -79,7 +82,12 @@ abstract class SshrvdChannel<T> with AsyncInitialization, AtClientBindings {
     completeInitialization();
   }
 
-  Future<T?> runSshrv({required bool directSsh, int? localRvPort}) async {
+  Future<T?> runSshrv({
+    required bool directSsh,
+    int? localRvPort,
+    String? sessionAESKeyString,
+    String? sessionIVString,
+  }) async {
     if (!directSsh && localRvPort != null) {
       throw Exception(
           'localRvPort must be null when using reverseSsh (legacy)');
@@ -108,6 +116,8 @@ abstract class SshrvdChannel<T> with AsyncInitialization, AtClientBindings {
                 'rvdNonce': rvdNonce,
               })
             : null,
+        sessionAESKeyString: sessionAESKeyString,
+        sessionIVString: sessionIVString,
       );
     } else {
       // legacy behaviour

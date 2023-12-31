@@ -362,8 +362,12 @@ class SshnpPartialParams {
   factory SshnpPartialParams.fromArgMap(Map<String, dynamic> args) {
     return SshnpPartialParams(
       profileName: args[SshnpArg.profileNameArg.name],
-      clientAtSign: AtUtils.fixAtSign(args[SshnpArg.fromArg.name]),
-      sshnpdAtSign: AtUtils.fixAtSign(args[SshnpArg.toArg.name]),
+      clientAtSign: args[SshnpArg.fromArg.name] == null
+          ? null
+          : AtUtils.fixAtSign(args[SshnpArg.fromArg.name]),
+      sshnpdAtSign: args[SshnpArg.toArg.name] == null
+          ? null
+          : AtUtils.fixAtSign(args[SshnpArg.toArg.name]),
       host: args[SshnpArg.hostArg.name],
       device: args[SshnpArg.deviceArg.name],
       port: args[SshnpArg.portArg.name],

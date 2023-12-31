@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:at_chops/at_chops.dart';
 import 'package:at_client/at_client.dart' hide StringBuffer;
 import 'package:at_utils/at_logger.dart';
 import 'package:dartssh2/dartssh2.dart';
@@ -421,8 +422,6 @@ class SshnpdImpl implements Sshnpd {
         assertValidValue(params, 'remoteForwardPort', int);
         assertValidValue(params, 'privateKey', String);
       }
-      assertValidValue(params, 'clientNonce', String);
-      assertValidValue(params, 'rvdNonce', String);
     } catch (e) {
       logger.warning(
           'Failed to extract parameters from notification value "${notification.value}" with error : $e');
@@ -449,6 +448,9 @@ class SshnpdImpl implements Sshnpd {
         authenticateToRvd: params['authenticateToRvd'],
         clientNonce: params['clientNonce'],
         rvdNonce: params['rvdNonce'],
+        encryptRvdTraffic: params['encryptRvdTraffic'],
+        clientEphemeralPK: params['clientEphemeralPK'],
+        clientEphemeralPKType: params['clientEphemeralPKType'],
       );
     } else {
       // reverse ssh requested
@@ -511,13 +513,18 @@ class SshnpdImpl implements Sshnpd {
     required String sessionId,
     required String host,
     required int port,
-    required bool authenticateToRvd,
-    required String clientNonce,
-    required String rvdNonce,
+    required bool? authenticateToRvd,
+    required String? clientNonce,
+    required String? rvdNonce,
+    required bool? encryptRvdTraffic,
+    required String? clientEphemeralPK,
+    required String? clientEphemeralPKType,
   }) async {
     logger.shout(
         'Setting up ports for direct ssh session using ${sshClient.name} ($sshClient) from: $requestingAtsign session: $sessionId');
 
+    authenticateToRvd ??= false;
+    encryptRvdTraffic ??= false;
     try {
       String? rvdAuthString;
       if (authenticateToRvd) {
@@ -527,13 +534,26 @@ class SshnpdImpl implements Sshnpd {
           'rvdNonce': rvdNonce,
         });
       }
+
+      String? sessionAESKey;
+      String? sessionIV;
+      if (encryptRvdTraffic) {
+        // 256-bit AES, 128-bit IV
+        sessionAESKey =
+            AtChopsUtil.generateSymmetricKey(EncryptionKeyType.aes256).key;
+        sessionIV = base64Encode(AtChopsUtil.generateRandomIV(16).ivBytes);
+      }
       // Connect to rendezvous point using background process.
       // This program can then exit without causing an issue.
-      Process rv = await Sshrv.exec(host, port,
-              localPort: localSshdPort,
-              bindLocalPort: false,
-              rvdAuthString: rvdAuthString)
-          .run();
+      Process rv = await Sshrv.exec(
+        host,
+        port,
+        localPort: localSshdPort,
+        bindLocalPort: false,
+        rvdAuthString: rvdAuthString,
+        sessionAESKeyString: sessionAESKey,
+        sessionIVString: sessionIV,
+      ).run();
       logger.info('Started rv - pid is ${rv.pid}');
 
       LocalSshKeyUtil keyUtil = LocalSshKeyUtil();
@@ -557,6 +577,8 @@ class SshnpdImpl implements Sshnpd {
           'status': 'connected',
           'sessionId': sessionId,
           'ephemeralPrivateKey': keyPair.privateKeyContents,
+          'sessionAESKey': sessionAESKey,
+          'sessionIV': sessionIV,
         }),
         checkForFinalDeliveryStatus: false,
         waitForFinalDeliveryStatus: false,

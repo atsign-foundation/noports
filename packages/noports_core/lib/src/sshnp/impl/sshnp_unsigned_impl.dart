@@ -75,9 +75,6 @@ class SshnpUnsignedImpl extends SshnpCore with SshnpLocalSshKeyHandler {
     /// Ensure that sshnp is initialized
     await callInitialization();
 
-    /// Start sshrv
-    var bean = await sshrvdChannel.runSshrv(directSsh: false);
-
     /// Send an sshd request to sshnpd
     /// This will notify it that it can now connect to us
     await notify(
@@ -97,6 +94,9 @@ class SshnpUnsignedImpl extends SshnpCore with SshnpLocalSshKeyHandler {
     if (acked != SshnpdAck.acknowledged) {
       throw SshnpError('sshnpd did not acknowledge the request');
     }
+
+    /// Start sshrv
+    var bean = await sshrvdChannel.runSshrv(directSsh: false);
 
     /// Ensure that we clean up after ourselves
     await callDisposal();

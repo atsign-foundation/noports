@@ -11,6 +11,8 @@ abstract class SshrvGeneratorCaller<T> {
     required int localPort,
     required bool bindLocalPort,
     String? rvdAuthString,
+    String? sessionAESKeyString,
+    String? sessionIVString,
   });
 }
 

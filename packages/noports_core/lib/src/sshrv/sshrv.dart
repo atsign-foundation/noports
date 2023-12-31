@@ -14,7 +14,15 @@ abstract class Sshrv<T> {
   /// Defaults to 22
   abstract final int localPort;
 
+  /// A string which needs to be presented to the rvd before the rvd
+  /// will allow any further traffic on the socket
   abstract final String? rvdAuthString;
+
+  /// The AES key for encryption / decryption of the rv traffic
+  abstract final String? sessionAESKeyString;
+
+  /// The IV to use with the [sessionAESKeyString]
+  abstract final String? sessionIVString;
 
   abstract final bool bindLocalPort;
 
@@ -27,6 +35,8 @@ abstract class Sshrv<T> {
     required int localPort,
     required bool bindLocalPort,
     String? rvdAuthString,
+    String? sessionAESKeyString,
+    String? sessionIVString,
   }) {
     return SshrvImplExec(
       host,
@@ -34,6 +44,8 @@ abstract class Sshrv<T> {
       localPort: localPort,
       bindLocalPort: bindLocalPort,
       rvdAuthString: rvdAuthString,
+      sessionAESKeyString: sessionAESKeyString,
+      sessionIVString: sessionIVString,
     );
   }
 
@@ -43,6 +55,8 @@ abstract class Sshrv<T> {
     required int localPort,
     required bool bindLocalPort,
     String? rvdAuthString,
+    String? sessionAESKeyString,
+    String? sessionIVString,
   }) {
     return SshrvImplDart(
       host,
@@ -50,6 +64,8 @@ abstract class Sshrv<T> {
       localPort: localPort,
       bindLocalPort: bindLocalPort,
       rvdAuthString: rvdAuthString,
+      sessionAESKeyString: sessionAESKeyString,
+      sessionIVString: sessionIVString,
     );
   }
 

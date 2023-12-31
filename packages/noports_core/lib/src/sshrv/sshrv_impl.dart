@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:at_utils/at_utils.dart';
@@ -26,10 +27,26 @@ class SshrvImplExec implements Sshrv<Process> {
   @override
   final String? rvdAuthString;
 
-  SshrvImplExec(this.host, this.streamingPort,
-      {required this.localPort,
-      required this.bindLocalPort,
-      this.rvdAuthString});
+  @override
+  final String? sessionAESKeyString;
+
+  @override
+  final String? sessionIVString;
+
+  SshrvImplExec(
+    this.host,
+    this.streamingPort, {
+    required this.localPort,
+    required this.bindLocalPort,
+    this.rvdAuthString,
+    this.sessionAESKeyString,
+    this.sessionIVString,
+  }) {
+    if ((sessionAESKeyString == null && sessionIVString != null) ||
+        (sessionAESKeyString != null && sessionIVString == null)) {
+      throw ArgumentError('Both AES key and IV are required, or neither');
+    }
+  }
 
   @override
   Future<Process> run() async {
@@ -54,6 +71,12 @@ class SshrvImplExec implements Sshrv<Process> {
     }
     if (rvdAuthString != null) {
       rvArgs.addAll(['--rvd-auth', rvdAuthString!]);
+    }
+    if (sessionAESKeyString != null) {
+      rvArgs.addAll(['--aes-key', sessionAESKeyString!]);
+    }
+    if (sessionIVString != null) {
+      rvArgs.addAll(['--iv', sessionIVString!]);
     }
 
     logger.info('$runtimeType.run(): executing $command'
@@ -83,88 +106,56 @@ class SshrvImplDart implements Sshrv<SocketConnector> {
   @override
   final String? rvdAuthString;
 
+  @override
+  final String? sessionAESKeyString;
+
+  @override
+  final String? sessionIVString;
+
   SshrvImplDart(
     this.host,
     this.streamingPort, {
     required this.localPort,
     required this.bindLocalPort,
     this.rvdAuthString,
-  });
+    this.sessionAESKeyString,
+    this.sessionIVString,
+  }) {
+    if ((sessionAESKeyString == null && sessionIVString != null) ||
+        (sessionAESKeyString != null && sessionIVString == null)) {
+      throw ArgumentError('Both AES key and IV are required, or neither');
+    }
+  }
 
   @override
   Future<SocketConnector> run() async {
-    final DartAesCtr algorithm = DartAesCtr.with256bits(
-      macAlgorithm: Hmac.sha256(),
-    );
-    final secretKey = SecretKey([
-      157,
-      145,
-      46,
-      127,
-      146,
-      161,
-      7,
-      96,
-      13,
-      29,
-      150,
-      203,
-      109,
-      252,
-      110,
-      92,
-      24,
-      55,
-      113,
-      121,
-      94,
-      91,
-      69,
-      63,
-      159,
-      162,
-      107,
-      49,
-      250,
-      118,
-      191,
-      113
-    ]);
-    final iv = [
-      92,
-      231,
-      193,
-      189,
-      0,
-      154,
-      112,
-      102,
-      195,
-      163,
-      78,
-      6,
-      40,
-      108,
-      218,
-      250
-    ];
+    DataTransformer? encrypter;
+    DataTransformer? decrypter;
 
-    Stream<List<int>> encrypter(Stream<List<int>> stream) {
-      return algorithm.encryptStream(
-        stream,
-        secretKey: secretKey,
-        nonce: iv,
-        onMac: (mac) {},
+    if (sessionAESKeyString != null && sessionIVString != null) {
+      final DartAesCtr algorithm = DartAesCtr.with256bits(
+        macAlgorithm: Hmac.sha256(),
       );
-    }
+      final SecretKey sessionAESKey =
+          SecretKey(base64Decode(sessionAESKeyString!));
+      final List<int> sessionIV = base64Decode(sessionIVString!);
 
-    Stream<List<int>> decrypter(Stream<List<int>> stream) {
-      return algorithm.decryptStream(
-        stream,
-        secretKey: secretKey,
-        nonce: iv,
-        mac: Mac.empty,
-      );
+      encrypter = (Stream<List<int>> stream) {
+        return algorithm.encryptStream(
+          stream,
+          secretKey: sessionAESKey,
+          nonce: sessionIV,
+          onMac: (mac) {},
+        );
+      };
+      decrypter = (Stream<List<int>> stream) {
+        return algorithm.decryptStream(
+          stream,
+          secretKey: sessionAESKey,
+          nonce: sessionIV,
+          mac: Mac.empty,
+        );
+      };
     }
 
     try {

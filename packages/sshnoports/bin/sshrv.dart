@@ -13,7 +13,11 @@ Future<void> main(List<String> args) async {
         negatable: false,
         help: 'Set this flag when we are bridging from a local sender')
     ..addOption('rvd-auth',
-        mandatory: false, help: 'Auth string to provide to rvd');
+        mandatory: false, help: 'Auth string to provide to rvd')
+    ..addOption('aes-key',
+        mandatory: false, help: 'AES key to use for session encryption')
+    ..addOption('iv',
+        mandatory: false, help: 'IV to use for session encryption');
 
   final parsed = parser.parse(args);
 
@@ -22,10 +26,16 @@ Future<void> main(List<String> args) async {
   final int localPort = int.parse(parsed['local-port']);
   final String? rvdAuthString = parsed['rvd-auth'];
   final bool bindLocalPort = parsed['bind-local-port'];
+  final String? sessionAESKeyString = parsed['aes-key'];
+  final String? sessionIVString = parsed['iv'];
 
-  await Sshrv.dart(host, streamingPort,
-          localPort: localPort,
-          bindLocalPort: bindLocalPort,
-          rvdAuthString: rvdAuthString)
-      .run();
+  await Sshrv.dart(
+    host,
+    streamingPort,
+    localPort: localPort,
+    bindLocalPort: bindLocalPort,
+    rvdAuthString: rvdAuthString,
+    sessionAESKeyString: sessionAESKeyString,
+    sessionIVString: sessionIVString,
+  ).run();
 }

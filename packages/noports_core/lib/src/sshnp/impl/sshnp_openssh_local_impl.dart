@@ -71,9 +71,6 @@ class SshnpOpensshLocalImpl extends SshnpCore
     int localRvPort = server.port;
     await server.close();
 
-    /// Start sshrv
-    await sshrvdChannel.runSshrv(directSsh: true, localRvPort: localRvPort);
-
     /// Send an ssh request to sshnpd
     await notify(
       AtKey()
@@ -111,6 +108,14 @@ class SshnpOpensshLocalImpl extends SshnpCore
         'Expected an ephemeral private key from sshnpd, but it was not set',
       );
     }
+
+    /// Start sshrv
+    await sshrvdChannel.runSshrv(
+      directSsh: true,
+      localRvPort: localRvPort,
+      sessionAESKeyString: sshnpdChannel.sessionAESKeyString,
+      sessionIVString: sshnpdChannel.sessionIVString,
+    );
 
     /// Load the ephemeral private key into a key pair
     AtSshKeyPair ephemeralKeyPair = AtSshKeyPair.fromPem(

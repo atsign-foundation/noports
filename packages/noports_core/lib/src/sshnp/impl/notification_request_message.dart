@@ -5,10 +5,10 @@ class SshnpSessionRequest {
   final int port;
   final bool authenticateToRvd;
   final String clientNonce;
-  final String rvdNonce;
+  final String? rvdNonce;
   final bool encryptRvdTraffic;
-  final String clientEphemeralPK;
-  final String clientEphemeralPKType;
+  final String? clientEphemeralPK;
+  final String? clientEphemeralPKType;
 
   SshnpSessionRequest({
     required this.direct,

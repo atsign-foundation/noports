@@ -18,6 +18,8 @@ class SshnpdDefaultChannel extends SshnpdChannel
 
 mixin SshnpdDefaultPayloadHandler on SshnpdChannel {
   String? ephemeralPrivateKey;
+  String? sessionAESKeyString;
+  String? sessionIVString;
 
   @visibleForTesting
   // disable publickey cache on windows
@@ -66,8 +68,16 @@ mixin SshnpdDefaultPayloadHandler on SshnpdChannel {
       }
 
       logger.info('Verified signature of msg from ${params.sshnpdAtSign}');
-      logger.info('Setting ephemeralPrivateKey');
+
       ephemeralPrivateKey = daemonResponse['ephemeralPrivateKey'];
+      logger.info('Received ephemeralPrivateKey: $ephemeralPrivateKey');
+
+      sessionAESKeyString = daemonResponse['sessionAESKey'];
+      logger.info('Received sessionAESKey: $sessionAESKeyString');
+
+      sessionIVString = daemonResponse['sessionIV'];
+      logger.info('Received sessionIV: $sessionIVString');
+
       return SshnpdAck.acknowledged;
     }
     return SshnpdAck.acknowledgedWithErrors;
