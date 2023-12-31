@@ -35,9 +35,10 @@ class SshnpParams {
   final bool addForwardsToTunnel;
   final String? atKeysFilePath;
   final SupportedSshAlgorithm sshAlgorithm;
-  bool authenticateClientToRvd;
-  bool authenticateDeviceToRvd;
-  bool encryptRvdTraffic;
+  final bool authenticateClientToRvd;
+  final bool authenticateDeviceToRvd;
+  final bool encryptRvdTraffic;
+  final bool discoverDaemonFeatures;
 
   /// Special Arguments
 
@@ -73,6 +74,7 @@ class SshnpParams {
     this.authenticateClientToRvd = DefaultArgs.authenticateClientToRvd,
     this.authenticateDeviceToRvd = DefaultArgs.authenticateDeviceToRvd,
     this.encryptRvdTraffic = DefaultArgs.encryptRvdTraffic,
+    this.discoverDaemonFeatures = DefaultArgs.discoverDaemonFeatures,
   });
 
   factory SshnpParams.empty() {
@@ -119,6 +121,8 @@ class SshnpParams {
       authenticateDeviceToRvd:
           params2.authenticateDeviceToRvd ?? params1.authenticateDeviceToRvd,
       encryptRvdTraffic: params2.encryptRvdTraffic ?? params1.encryptRvdTraffic,
+      discoverDaemonFeatures:
+          params2.discoverDaemonFeatures ?? params1.discoverDaemonFeatures,
     );
   }
 
@@ -165,6 +169,8 @@ class SshnpParams {
           DefaultArgs.authenticateDeviceToRvd,
       encryptRvdTraffic:
           partial.encryptRvdTraffic ?? DefaultArgs.encryptRvdTraffic,
+      discoverDaemonFeatures:
+          partial.discoverDaemonFeatures ?? DefaultArgs.discoverDaemonFeatures,
     );
   }
 
@@ -216,6 +222,7 @@ class SshnpParams {
       SshnpArg.authenticateClientToRvdArg.name: authenticateClientToRvd,
       SshnpArg.authenticateDeviceToRvdArg.name: authenticateDeviceToRvd,
       SshnpArg.encryptRvdTrafficArg.name: encryptRvdTraffic,
+      SshnpArg.discoverDaemonFeaturesArg.name: discoverDaemonFeatures,
     };
     args.removeWhere(
       (key, value) => !parserType.shouldParse(SshnpArg.fromName(key).parseWhen),
@@ -257,6 +264,7 @@ class SshnpPartialParams {
   final bool? authenticateClientToRvd;
   final bool? authenticateDeviceToRvd;
   final bool? encryptRvdTraffic;
+  final bool? discoverDaemonFeatures;
 
   /// Operation flags
   final bool? listDevices;
@@ -287,6 +295,7 @@ class SshnpPartialParams {
     this.authenticateClientToRvd,
     this.authenticateDeviceToRvd,
     this.encryptRvdTraffic,
+    this.discoverDaemonFeatures,
   });
 
   factory SshnpPartialParams.empty() {
@@ -328,6 +337,8 @@ class SshnpPartialParams {
       authenticateDeviceToRvd:
           params2.authenticateDeviceToRvd ?? params1.authenticateDeviceToRvd,
       encryptRvdTraffic: params2.encryptRvdTraffic ?? params1.encryptRvdTraffic,
+      discoverDaemonFeatures:
+          params2.discoverDaemonFeatures ?? params1.discoverDaemonFeatures,
     );
   }
 
@@ -380,6 +391,7 @@ class SshnpPartialParams {
       authenticateClientToRvd: args[SshnpArg.authenticateClientToRvdArg.name],
       authenticateDeviceToRvd: args[SshnpArg.authenticateDeviceToRvdArg.name],
       encryptRvdTraffic: args[SshnpArg.encryptRvdTrafficArg.name],
+      discoverDaemonFeatures: args[SshnpArg.discoverDaemonFeaturesArg.name],
     );
   }
 

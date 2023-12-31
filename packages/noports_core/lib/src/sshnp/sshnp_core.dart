@@ -85,21 +85,30 @@ abstract class SshnpCore
     /// Start the sshnpd payload handler
     await sshnpdChannel.callInitialization();
 
-    late Map<String, dynamic> pingResponse;
-    try {
-      pingResponse = await sshnpdChannel.ping().timeout(Duration(seconds: 10));
-    } catch (e) {
-      logger.severe(
-          'No ping response from ${params.device}${params.sshnpdAtSign}');
-      rethrow;
-    }
+    if (params.discoverDaemonFeatures) {
+      late Map<String, dynamic> pingResponse;
+      try {
+        pingResponse =
+            await sshnpdChannel.ping().timeout(Duration(seconds: 10));
+      } catch (e) {
+        logger.severe(
+            'No ping response from ${params.device}${params.sshnpdAtSign}');
+        rethrow;
+      }
 
-    final daemonFeatures = pingResponse['supportedFeatures'];
-    if (daemonFeatures[DaemonFeatures.srAuth.name] != true) {
-      params.authenticateDeviceToRvd = false;
-    }
-    if (daemonFeatures[DaemonFeatures.srE2ee.name] != true) {
-      params.encryptRvdTraffic = false;
+      final daemonFeatures = pingResponse['supportedFeatures'];
+      if ((daemonFeatures[DaemonFeatures.srAuth.name] != true) &&
+          (params.authenticateDeviceToRvd == true)) {
+        throw ArgumentError('This device daemon does not support'
+            ' authentication to the socket rendezvous.'
+            ' Please set --no-authenticate-device');
+      }
+      if ((daemonFeatures[DaemonFeatures.srE2ee.name] != true) &&
+          (params.encryptRvdTraffic == true)) {
+        throw ArgumentError('This device daemon does not support'
+            ' encryption of traffic to the socket rendezvous.'
+            ' Please set --no-encrypt-rvd-traffic');
+      }
     }
 
     /// Set the remote username to use for the ssh session

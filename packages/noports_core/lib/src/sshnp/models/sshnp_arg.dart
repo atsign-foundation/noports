@@ -127,6 +127,7 @@ class SshnpArg {
     authenticateClientToRvdArg,
     authenticateDeviceToRvdArg,
     encryptRvdTrafficArg,
+    discoverDaemonFeaturesArg,
   ];
 
   @override
@@ -350,7 +351,7 @@ class SshnpArg {
     parseWhen: ParseWhen.commandLine,
   );
   static const authenticateClientToRvdArg = SshnpArg(
-    name: 'authenticate-client',
+    name: 'authenticate-client-to-rvd',
     help: 'When false, client will not authenticate itself to rvd',
     defaultsTo: DefaultArgs.authenticateClientToRvd,
     format: ArgFormat.flag,
@@ -358,7 +359,7 @@ class SshnpArg {
     mandatory: false,
   );
   static const authenticateDeviceToRvdArg = SshnpArg(
-    name: 'authenticate-device',
+    name: 'authenticate-device-to-rvd',
     help: 'When false, device will not authenticate to the socket rendezvous',
     defaultsTo: DefaultArgs.authenticateDeviceToRvd,
     format: ArgFormat.flag,
@@ -371,6 +372,20 @@ class SshnpArg {
         ' in addition to whatever encryption the traffic already has'
         ' (e.g. an ssh session)',
     defaultsTo: DefaultArgs.encryptRvdTraffic,
+    format: ArgFormat.flag,
+    parseWhen: ParseWhen.commandLine,
+    mandatory: false,
+  );
+  static const discoverDaemonFeaturesArg = SshnpArg(
+    name: 'discover-daemon-features',
+    help: 'When this flag is set, this client starts by pinging the daemon to'
+        ' discover what features it supports, and exits if this client has '
+        ' requested use of a feature which the daemon does not support.'
+        ' If you already know what features the daemon supports and are '
+        ' setting other flags (--authenticate-device-to-rvd and'
+        ' --encrypt-rvd-traffic) based on that knowledge, then you should unset'
+        ' this flag to reduce total time-to-connection.',
+    defaultsTo: DefaultArgs.discoverDaemonFeatures,
     format: ArgFormat.flag,
     parseWhen: ParseWhen.commandLine,
     mandatory: false,
