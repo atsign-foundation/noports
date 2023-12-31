@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:at_chops/at_chops.dart';
 import 'package:at_client/at_client.dart' hide StringBuffer;
 import 'package:at_utils/at_logger.dart';
 import 'package:meta/meta.dart';
@@ -60,6 +61,16 @@ abstract class SshnpCore
   /// The channel to communicate with the sshnpd (daemon)
   @protected
   SshnpdChannel get sshnpdChannel;
+
+  /// An encryption keypair which should only ever reside in memory.
+  /// The public key is provided in responses to client 'pings', and is
+  /// used by clients to encrypt symmetric encryption keys intended for
+  /// one-time use in a NoPorts session, and share the encrypted details
+  /// as part of the session request payload.
+  final AtEncryptionKeyPair clientEphemeralKeyPair =
+      AtChopsUtil.generateAtEncryptionKeyPair(keySize: 2048);
+
+  final EncryptionKeyType clientEphemeralKeyType = EncryptionKeyType.rsa2048;
 
   SshnpCore({
     required this.atClient,
