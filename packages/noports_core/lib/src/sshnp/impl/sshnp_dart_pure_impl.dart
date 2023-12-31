@@ -12,6 +12,25 @@ class SshnpDartPureImpl extends SshnpCore
     required super.params,
     required AtSshKeyPair? identityKeyPair,
   }) {
+    // TODO Defensive code to prevent use of rvd auth and rv traffic encryption
+    // TODO until they have been properly implemented with an in-memory RV.
+    // TODO At that time, make these four params "final" again
+    if (params.discoverDaemonFeatures) {
+      logger.shout('$runtimeType: disabling discoverDaemonFeatures flag');
+      params.discoverDaemonFeatures = false;
+    }
+    if (params.encryptRvdTraffic) {
+      logger.shout('$runtimeType: disabling encryptRvdTraffic flag');
+      params.encryptRvdTraffic = false;
+    }
+    if (params.authenticateDeviceToRvd) {
+      logger.shout('$runtimeType: disabling authenticateDeviceToRvd flag');
+      params.authenticateDeviceToRvd = false;
+    }
+    if (params.authenticateClientToRvd) {
+      logger.shout('$runtimeType: disabling authenticateClientToRvd flag');
+      params.authenticateClientToRvd = false;
+    }
     this.identityKeyPair = identityKeyPair;
     _sshnpdChannel = SshnpdDefaultChannel(
       atClient: atClient,

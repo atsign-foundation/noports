@@ -79,7 +79,7 @@ class SshrvImplExec implements Sshrv<Process> {
       rvArgs.addAll(['--iv', sessionIVString!]);
     }
 
-    logger.info('$runtimeType.run(): executing $command'
+    logger.shout('$runtimeType.run(): executing $command'
         ' ${rvArgs.join(' ')}');
     return Process.start(
       command,
