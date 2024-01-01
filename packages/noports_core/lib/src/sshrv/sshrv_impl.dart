@@ -168,23 +168,28 @@ class SshrvImplDart implements Sshrv<SocketConnector> {
             receiverSocketAddress: hosts[0],
             receiverSocketPort: streamingPort,
             localServerPort: localPort,
-            verbose: true,
+            verbose: false,
             transformAtoB: encrypter,
             transformBtoA: decrypter);
+        if (rvdAuthString != null) {
+          stderr.writeln('authenticating socketB');
+          socketConnector.authenticatedUnpairedReceivers.first.socket
+              .writeln(rvdAuthString);
+        }
       } else {
         socketConnector = await SocketConnector.socketToSocket(
             socketAddressA: InternetAddress.loopbackIPv4,
             socketPortA: localPort,
             socketAddressB: hosts[0],
             socketPortB: streamingPort,
-            verbose: true,
+            verbose: false,
             transformAtoB: encrypter,
             transformBtoA: decrypter);
-      }
-
-      if (rvdAuthString != null) {
-        stderr.writeln('authenticating socketB');
-        socketConnector.socketB?.writeln(rvdAuthString);
+        if (rvdAuthString != null) {
+          stderr.writeln('authenticating socketB');
+          socketConnector.establishedConnections.first.sideB.socket
+              .writeln(rvdAuthString);
+        }
       }
 
       return socketConnector;

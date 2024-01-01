@@ -81,7 +81,7 @@ void socketConnector(ConnectorParams connectorParams) async {
   }
 
   /// Create the socket connector
-  SocketConnector socketStream = await SocketConnector.serverToServer(
+  SocketConnector connector = await SocketConnector.serverToServer(
       serverAddressA: InternetAddress.anyIPv4,
       serverAddressB: InternetAddress.anyIPv4,
       serverPortA: portA,
@@ -91,8 +91,8 @@ void socketConnector(ConnectorParams connectorParams) async {
       socketAuthVerifierB: socketAuthVerifierB);
 
   /// Get the assigned ports from the socket connector
-  portA = socketStream.senderPort()!;
-  portB = socketStream.receiverPort()!;
+  portA = connector.senderPort()!;
+  portB = connector.receiverPort()!;
 
   logger.info('Assigned ports [$portA, $portB]'
       ' for session ${sshrvdSessionParams.sessionId}');
@@ -103,7 +103,8 @@ void socketConnector(ConnectorParams connectorParams) async {
   /// Shut myself down once the socket connector closes
   bool closed = false;
   while (closed == false) {
-    closed = await socketStream.closed();
+    logger.info('Waiting for connector to close');
+    closed = await connector.closed();
   }
 
   logger.info('Finished session ${sshrvdSessionParams.sessionId}'

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
@@ -17,9 +18,12 @@ void main() {
     atChops = AtChopsImpl(AtChopsKeys.create(encryptionKeyPair, null));
   });
   test('SignatureVerifyingSocketAuthenticator signature verification success',
-      () {
+      () async {
     String rvdSessionNonce = DateTime.now().toIso8601String();
     Map payload = {'sessionId': Uuid().v4(), 'rvdNonce': rvdSessionNonce};
+
+    late Function(Uint8List data) socketOnDataFn;
+    MockSocket mockSocket = MockSocket();
 
     String signedEnvelope = signPayload(atChops, payload);
     SignatureAuthVerifier sa = SignatureAuthVerifier(
@@ -31,16 +35,26 @@ void main() {
     List<int> list = utf8.encode(signedEnvelope);
     Uint8List data = Uint8List.fromList(list);
 
-    bool authenticated;
-    Uint8List? unused;
+    when(() => mockSocket.listen(any(),
+        onError: any(named: "onError"),
+        onDone: any(named: "onDone"))).thenAnswer((Invocation invocation) {
+      socketOnDataFn = invocation.positionalArguments[0];
 
-    (authenticated, unused) = sa.onData(data, MockSocket());
+      socketOnDataFn(data);
+
+      return MockStreamSubscription<Uint8List>();
+    });
+
+    bool authenticated;
+    Stream<Uint8List>? stream;
+
+    (authenticated, stream) = await sa.authenticate(mockSocket);
     expect(authenticated, true);
-    expect(unused, null);
+    expect(stream, isNotNull);
   });
 
   test('SignatureVerifyingSocketAuthenticator signature verification failure',
-      () {
+      () async {
     String rvdSessionNonce = DateTime.now().toIso8601String();
     Map payload = {
       'sessionId': Uuid().v4().toString(),
@@ -58,12 +72,33 @@ void main() {
     List<int> list = utf8.encode(signedEnvelope);
     Uint8List data = Uint8List.fromList(list);
 
-    expect(() => sa.onData(data, MockSocket()), throwsException);
+    late Function(Uint8List data) socketOnDataFn;
+    MockSocket mockSocket = MockSocket();
+
+    when(() => mockSocket.listen(any(),
+        onError: any(named: "onError"),
+        onDone: any(named: "onDone"))).thenAnswer((Invocation invocation) {
+      socketOnDataFn = invocation.positionalArguments[0];
+
+      socketOnDataFn(data);
+
+      return MockStreamSubscription<Uint8List>();
+    });
+
+    bool authenticated;
+    Stream<Uint8List>? stream;
+    bool somethingThrown = false;
+    try {
+      (authenticated, stream) = await sa.authenticate(mockSocket);
+    } catch (_) {
+      somethingThrown = true;
+    }
+    expect(somethingThrown, true);
   });
 
   test(
       'SignatureVerifyingSocketAuthenticator signature verification ok but mismatched nonce',
-      () {
+      () async {
     final uuidString = Uuid().v4().toString();
     String rvdSessionNonce = DateTime.now().toIso8601String();
     Map payload = {'sessionId': uuidString, 'rvdNonce': rvdSessionNonce};
@@ -80,7 +115,28 @@ void main() {
     List<int> list = utf8.encode(jsonEncode(fakedEnvelope));
     Uint8List data = Uint8List.fromList(list);
 
-    expect(() => sa.onData(data, MockSocket()), throwsException);
+    late Function(Uint8List data) socketOnDataFn;
+    MockSocket mockSocket = MockSocket();
+
+    when(() => mockSocket.listen(any(),
+        onError: any(named: "onError"),
+        onDone: any(named: "onDone"))).thenAnswer((Invocation invocation) {
+      socketOnDataFn = invocation.positionalArguments[0];
+
+      socketOnDataFn(data);
+
+      return MockStreamSubscription<Uint8List>();
+    });
+
+    bool authenticated;
+    Stream<Uint8List>? stream;
+    bool somethingThrown = false;
+    try {
+      (authenticated, stream) = await sa.authenticate(mockSocket);
+    } catch (_) {
+      somethingThrown = true;
+    }
+    expect(somethingThrown, true);
   });
 }
 
@@ -119,3 +175,5 @@ bool verifySignature(
 }
 
 class MockSocket extends Mock implements Socket {}
+
+class MockStreamSubscription<T> extends Mock implements StreamSubscription<T> {}

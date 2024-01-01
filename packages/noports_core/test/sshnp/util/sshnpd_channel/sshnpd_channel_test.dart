@@ -173,7 +173,8 @@ void main() {
         when(payloadInvocation)
             .thenAnswer((_) async => SshnpdAck.notAcknowledged);
 
-        Future<SshnpdAck> ack = stubbedSshnpdChannel.waitForDaemonResponse(maxWaitMillis: 300);
+        Future<SshnpdAck> ack =
+            stubbedSshnpdChannel.waitForDaemonResponse(maxWaitMillis: 300);
 
         // manually add a notification to the stream
         final String notificationId = Uuid().v4();

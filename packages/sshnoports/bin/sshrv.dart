@@ -1,5 +1,8 @@
+import 'dart:io';
+
 import 'package:args/args.dart';
 import 'package:noports_core/sshrv.dart';
+import 'package:socket_connector/socket_connector.dart';
 
 Future<void> main(List<String> args) async {
   final ArgParser parser = ArgParser()
@@ -29,7 +32,7 @@ Future<void> main(List<String> args) async {
   final String? sessionAESKeyString = parsed['aes-key'];
   final String? sessionIVString = parsed['iv'];
 
-  await Sshrv.dart(
+  SocketConnector connector = await Sshrv.dart(
     host,
     streamingPort,
     localPort: localPort,
@@ -38,4 +41,11 @@ Future<void> main(List<String> args) async {
     sessionAESKeyString: sessionAESKeyString,
     sessionIVString: sessionIVString,
   ).run();
+
+  /// Shut myself down once the socket connector closes
+  stderr.writeln('Waiting for connector to close');
+  await connector.closed();
+
+  stderr.writeln('Closed - exiting');
+  exit(0);
 }

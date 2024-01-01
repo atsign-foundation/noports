@@ -117,6 +117,9 @@ void main(List<String> args) async {
     } on ArgumentError catch (error) {
       printUsage(error: error);
       exit(1);
+    } on FormatException catch (error) {
+      printUsage(error: error);
+      exit(1);
     } on SshnpError catch (error, stackTrace) {
       stderr.writeln(error.toString());
       if (params?.verbose ?? true) {

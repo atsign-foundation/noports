@@ -1,8 +1,10 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:at_chops/at_chops.dart';
+import 'package:noports_core/src/sshrvd/socket_connector.dart';
 import 'package:socket_connector/socket_connector.dart';
 
 ///
@@ -40,60 +42,75 @@ class SignatureAuthVerifier implements SocketAuthVerifier {
     this.tag,
   );
 
-  @override
-  (bool authenticated, Uint8List? unused) onData(
-      Uint8List data, Socket socket) {
-    try {
-      final message = String.fromCharCodes(data);
-      // Expected message to be the JSON format with the below structure:
-      // {
-      // "signature":"<signature>",
-      // "hashingAlgo":"<algo>",
-      // "signingAlgo":"<algo>",
-      // "payload":{<the data which was signed>}
-      // }
-      var envelope = jsonDecode(message);
-
-      final hashingAlgo =
-          HashingAlgoType.values.byName(envelope['hashingAlgo']);
-      final signingAlgo =
-          SigningAlgoType.values.byName(envelope['signingAlgo']);
-
-      var payload = envelope['payload'];
-      if (payload == null || payload is! Map) {
-        throw Exception(
-            'Received an auth signature which does not include the payload');
-      }
-      if (payload['rvdNonce'] != rvdNonce) {
-        throw Exception(
-            'Received rvdNonce which does not match what is expected');
-      }
-
-      AtSigningVerificationInput input = AtSigningVerificationInput(
-          dataToVerify, base64Decode(envelope['signature']), publicKey)
-        ..signingAlgorithm = DefaultSigningAlgo(null, hashingAlgo)
-        ..signingMode = AtSigningMode.data
-        ..signingAlgoType = signingAlgo
-        ..hashingAlgoType = hashingAlgo;
-
-      AtSigningResult atSigningResult = _verifySignature(input);
-      print('Signing verification outcome is: ${atSigningResult.result}');
-      bool result = atSigningResult.result;
-
-      if (result == false) {
-        throw Exception(
-            'Signature verification failed. Signatures did not match.');
-      }
-    } catch (e) {
-      stderr.writeln('Error during socket authentication: $e');
-      throw Exception(e);
-    }
-    return (true, null);
-  }
-
   AtSigningResult _verifySignature(AtSigningVerificationInput input) {
     AtChopsKeys atChopsKeys = AtChopsKeys();
     AtChops atChops = AtChopsImpl(atChopsKeys);
     return atChops.verify(input);
+  }
+
+  @override
+  Future<(bool, Stream<Uint8List>?)> authenticate(Socket socket) async {
+    Completer<(bool, Stream<Uint8List>?)> completer = Completer();
+    bool authenticated = false;
+    StreamController<Uint8List> sc = StreamController();
+    logger.info('SignatureAuthVerifier $tag: starting listen');
+    socket.listen((Uint8List data) {
+      if (authenticated) {
+        sc.add(data);
+      } else {
+        try {
+          final message = String.fromCharCodes(data);
+          logger.info('SignatureAuthVerifier $tag received data: $message');
+          // Expected message to be the JSON format with the below structure:
+          // {
+          // "signature":"<signature>",
+          // "hashingAlgo":"<algo>",
+          // "signingAlgo":"<algo>",
+          // "payload":{<the data which was signed>}
+          // }
+          var envelope = jsonDecode(message);
+
+          final hashingAlgo =
+              HashingAlgoType.values.byName(envelope['hashingAlgo']);
+          final signingAlgo =
+              SigningAlgoType.values.byName(envelope['signingAlgo']);
+
+          var payload = envelope['payload'];
+          if (payload == null || payload is! Map) {
+            completer.completeError(
+                'Received an auth signature which does not include the payload');
+            return;
+          }
+          if (payload['rvdNonce'] != rvdNonce) {
+            completer.completeError(
+                'Received rvdNonce which does not match what is expected');
+            return;
+          }
+
+          AtSigningVerificationInput input = AtSigningVerificationInput(
+              dataToVerify, base64Decode(envelope['signature']), publicKey)
+            ..signingAlgorithm = DefaultSigningAlgo(null, hashingAlgo)
+            ..signingMode = AtSigningMode.data
+            ..signingAlgoType = signingAlgo
+            ..hashingAlgoType = hashingAlgo;
+
+          AtSigningResult atSigningResult = _verifySignature(input);
+          print('Signing verification outcome is: ${atSigningResult.result}');
+          bool result = atSigningResult.result;
+
+          if (result == false) {
+            completer.completeError(
+                'Signature verification failed. Signatures did not match.');
+            return;
+          }
+
+          authenticated = true;
+          completer.complete((true, sc.stream));
+        } catch (e) {
+          completer.completeError('Error during socket authentication: $e');
+        }
+      }
+    });
+    return completer.future;
   }
 }

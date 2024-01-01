@@ -177,7 +177,8 @@ class SshnpdParams {
     parser.addOption(
       'storage-path',
       mandatory: false,
-      help: r'Directory for local storage. Defaults to $HOME/.sshnp/${atSign}/storage',
+      help:
+          r'Directory for local storage. Defaults to $HOME/.sshnp/${atSign}/storage',
     );
 
     return parser;

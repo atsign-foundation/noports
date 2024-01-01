@@ -713,13 +713,11 @@ packages:
     source: hosted
     version: "1.0.4"
   socket_connector:
-    dependency: "direct overridden"
+    dependency: "direct main"
     description:
-      path: "."
-      ref: socket-authenticator-option
-      resolved-ref: d7233335ccf0eee4721fc0eff9f1204c3188bba0
-      url: "https://github.com/gkc/socket_connector.git"
-    source: git
+      path: "../../../socket_connector"
+      relative: true
+    source: path
     version: "1.1.0"
   source_map_stack_trace:
     dependency: transitive

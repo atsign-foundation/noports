@@ -426,8 +426,10 @@ void main() {
         final parsedParams =
             SshnpParams.fromConfigLines('myProfile', configLines);
         expect(parsedParams.profileName, equals('myProfile'));
-        expect(parsedParams.clientAtSign, equals('@myClientAtSign'.toLowerCase()));
-        expect(parsedParams.sshnpdAtSign, equals('@mySshnpdAtSign'.toLowerCase()));
+        expect(
+            parsedParams.clientAtSign, equals('@myClientAtSign'.toLowerCase()));
+        expect(
+            parsedParams.sshnpdAtSign, equals('@mySshnpdAtSign'.toLowerCase()));
         expect(parsedParams.host, equals('@myHost'));
         expect(parsedParams.device, equals('myDeviceName'));
         expect(parsedParams.port, equals(1234));
@@ -518,8 +520,10 @@ void main() {
         );
         final json = params.toJson();
         final parsedParams = SshnpParams.fromJson(json);
-        expect(parsedParams.clientAtSign, equals('@myClientAtSign'.toLowerCase()));
-        expect(parsedParams.sshnpdAtSign, equals('@mySshnpdAtSign'.toLowerCase()));
+        expect(
+            parsedParams.clientAtSign, equals('@myClientAtSign'.toLowerCase()));
+        expect(
+            parsedParams.sshnpdAtSign, equals('@mySshnpdAtSign'.toLowerCase()));
         expect(parsedParams.host, equals('@myHost'));
         expect(parsedParams.device, equals('myDeviceName'));
         expect(parsedParams.port, equals(1234));
@@ -822,8 +826,10 @@ void main() {
         final parsedParams =
             SshnpPartialParams.fromConfigLines('myProfile', configLines);
         expect(parsedParams.profileName, equals('myProfile'));
-        expect(parsedParams.clientAtSign, equals('@myClientAtSign'.toLowerCase()));
-        expect(parsedParams.sshnpdAtSign, equals('@mySshnpdAtSign'.toLowerCase()));
+        expect(
+            parsedParams.clientAtSign, equals('@myClientAtSign'.toLowerCase()));
+        expect(
+            parsedParams.sshnpdAtSign, equals('@mySshnpdAtSign'.toLowerCase()));
         expect(parsedParams.host, equals('@myHost'));
         expect(parsedParams.device, equals('myDeviceName'));
         expect(parsedParams.port, equals(1234));
