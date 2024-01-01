@@ -10,6 +10,7 @@ Future<AtClient> createAtClientCli({
   required String homeDirectory,
   required String atsign,
   required String atKeysFilePath,
+  String? storagePath,
   String? pathExtension,
   String subDirectory = '.sshnp',
   String namespace = DefaultArgs.namespace,
@@ -21,12 +22,13 @@ Future<AtClient> createAtClientCli({
   if (pathExtension != null) {
     pathBase += '$pathExtension${Platform.pathSeparator}';
   }
+  storagePath ??= path.normalize('$pathBase/storage');
   AtOnboardingPreference atOnboardingConfig = AtOnboardingPreference()
-    ..hiveStoragePath = path.normalize('$pathBase/storage')
+    ..hiveStoragePath = storagePath
     ..namespace = namespace
     ..downloadPath = path.normalize('$homeDirectory/$subDirectory/files')
     ..isLocalStoreRequired = true
-    ..commitLogPath = path.normalize('$pathBase/storage/commitLog')
+    ..commitLogPath = path.normalize('$storagePath/commitLog')
     ..fetchOfflineNotifications = false
     ..atKeysFilePath = atKeysFilePath
     ..atProtocolEmitted = Version(2, 0, 0)
