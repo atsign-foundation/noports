@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:at_chops/at_chops.dart';
 import 'package:at_utils/at_utils.dart';
 import 'package:noports_core/src/common/types.dart';
 import 'package:noports_core/src/sshnp/models/config_file_repository.dart';
@@ -49,6 +50,20 @@ class SshnpParams {
 
   /// Operation flags
   final bool listDevices;
+
+  /// An encryption keypair which should only ever reside in memory.
+  /// The public key is provided in responses to client 'pings', and is
+  /// used by clients to encrypt symmetric encryption keys intended for
+  /// one-time use in a NoPorts session, and share the encrypted details
+  /// as part of the session request payload.
+  AtEncryptionKeyPair get sessionKP {
+    _sessionKP ??= AtChopsUtil.generateAtEncryptionKeyPair(keySize: 2048);
+    return _sessionKP!;
+  }
+
+  /// Generate the ephemeralKeyPair only on demand
+  AtEncryptionKeyPair? _sessionKP;
+  final EncryptionKeyType sessionKPType = EncryptionKeyType.rsa2048;
 
   SshnpParams({
     required this.clientAtSign,

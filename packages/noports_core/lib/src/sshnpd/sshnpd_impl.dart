@@ -535,13 +535,40 @@ class SshnpdImpl implements Sshnpd {
         });
       }
 
-      String? sessionAESKey;
-      String? sessionIV;
+      String? sessionAESKey, sessionAESKeyEncrypted;
+      String? sessionIV, sessionIVEncrypted;
       if (encryptRvdTraffic) {
+        if (clientEphemeralPK == null || clientEphemeralPKType == null) {
+          throw Exception(
+              'encryptRvdTraffic was requested, but no client ephemeral public key / key type was provided');
+        }
         // 256-bit AES, 128-bit IV
         sessionAESKey =
             AtChopsUtil.generateSymmetricKey(EncryptionKeyType.aes256).key;
         sessionIV = base64Encode(AtChopsUtil.generateRandomIV(16).ivBytes);
+        late EncryptionKeyType ect;
+        try {
+          ect = EncryptionKeyType.values.byName(clientEphemeralPKType);
+        } catch (e) {
+          throw Exception('Unknown ephemeralPKType: $clientEphemeralPKType');
+        }
+        switch (ect) {
+          case EncryptionKeyType.rsa2048:
+            AtChops ac = AtChopsImpl(AtChopsKeys.create(
+                AtEncryptionKeyPair.create(clientEphemeralPK, 'n/a'), null));
+            sessionAESKeyEncrypted = ac
+                .encryptString(sessionAESKey,
+                    EncryptionKeyType.values.byName(clientEphemeralPKType))
+                .result;
+            sessionIVEncrypted = ac
+                .encryptString(sessionIV,
+                    EncryptionKeyType.values.byName(clientEphemeralPKType))
+                .result;
+            break;
+          default:
+            throw Exception(
+                'No handling for ephemeralPKType $clientEphemeralPKType');
+        }
       }
       // Connect to rendezvous point using background process.
       // This program can then exit without causing an issue.
@@ -577,8 +604,8 @@ class SshnpdImpl implements Sshnpd {
           'status': 'connected',
           'sessionId': sessionId,
           'ephemeralPrivateKey': keyPair.privateKeyContents,
-          'sessionAESKey': sessionAESKey,
-          'sessionIV': sessionIV,
+          'sessionAESKey': sessionAESKeyEncrypted,
+          'sessionIV': sessionIVEncrypted,
         }),
         checkForFinalDeliveryStatus: false,
         waitForFinalDeliveryStatus: false,
