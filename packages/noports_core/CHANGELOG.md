@@ -1,3 +1,7 @@
+# 5.0.3
+- feat: Add `--storage-path` option to sshnpd to allow users to specify where 
+  it keeps any locally stored data
+
 # 5.0.2
 
 - fix: Add more supported ssh public key types to the send ssh public key filters for sshnpd.

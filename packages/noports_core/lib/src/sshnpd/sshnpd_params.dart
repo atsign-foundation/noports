@@ -19,6 +19,7 @@ class SshnpdParams {
   final int localSshdPort;
   final String ephemeralPermissions;
   final SupportedSshAlgorithm sshAlgorithm;
+  final String? storagePath;
 
   // Non param variables
   static final ArgParser parser = _createArgParser();
@@ -37,6 +38,7 @@ class SshnpdParams {
     required this.localSshdPort,
     required this.ephemeralPermissions,
     required this.sshAlgorithm,
+    required this.storagePath,
   });
 
   static Future<SshnpdParams> fromArgs(List<String> args) async {
@@ -76,6 +78,7 @@ class SshnpdParams {
           int.tryParse(r['local-sshd-port']) ?? DefaultArgs.localSshdPort,
       ephemeralPermissions: r['ephemeral-permissions'],
       sshAlgorithm: SupportedSshAlgorithm.fromString(r['ssh-algorithm']),
+      storagePath: r['storage-path'],
     );
   }
 
@@ -169,6 +172,12 @@ class SshnpdParams {
       defaultsTo: DefaultArgs.sshAlgorithm.toString(),
       help: 'Use RSA 4096 keys rather than the default ED25519 keys',
       allowed: SupportedSshAlgorithm.values.map((c) => c.toString()).toList(),
+    );
+
+    parser.addOption(
+      'storage-path',
+      mandatory: false,
+      help: r'Directory for local storage. Defaults to $HOME/.sshnp/${atSign}/storage',
     );
 
     return parser;
