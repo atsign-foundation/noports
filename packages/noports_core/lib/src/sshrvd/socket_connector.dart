@@ -9,14 +9,13 @@ import 'signature_verifying_socket_authenticator.dart';
 
 typedef ConnectorParams = (
   SendPort,
-  int,
-  int,
-  String,
-  bool,
+  int, // portA
+  int, // portB
+  String, // session params
+  bool, // snoop
+  bool, // verbose
 );
 typedef PortPair = (int, int);
-
-final logger = AtSignLogger(' sshrvd / socket_connector ');
 
 /// This function is meant to be run in a separate isolate
 /// It starts the socket connector, and sends back the assigned ports to the main isolate
@@ -28,7 +27,16 @@ void socketConnector(ConnectorParams connectorParams) async {
     portB,
     sshrvdSessionParamsJsonString,
     snoop,
+    verbose,
   ) = connectorParams;
+
+  if (verbose) {
+    AtSignLogger.root_level = 'INFO';
+  } else {
+    AtSignLogger.root_level = 'WARNING';
+  }
+
+  final logger = AtSignLogger(' sshrvd / socket_connector ');
 
   SshrvdSessionParams sshrvdSessionParams =
       SshrvdSessionParams.fromJson(jsonDecode(sshrvdSessionParamsJsonString));

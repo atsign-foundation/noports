@@ -31,6 +31,8 @@ class SshrvdImpl implements Sshrvd {
   final String ipAddress;
   @override
   final bool snoop;
+  @override
+  bool verbose = false;
 
   @override
   @visibleForTesting
@@ -46,6 +48,7 @@ class SshrvdImpl implements Sshrvd {
     required this.managerAtsign,
     required this.ipAddress,
     required this.snoop,
+    required this.verbose,
   }) {
     logger.hierarchicalLoggingEnabled = true;
     logger.logger.level = Level.SHOUT;
@@ -81,6 +84,7 @@ class SshrvdImpl implements Sshrvd {
         managerAtsign: p.managerAtsign,
         ipAddress: p.ipAddress,
         snoop: p.snoop,
+        verbose: p.verbose,
       );
 
       if (p.verbose) {
@@ -140,6 +144,7 @@ class SshrvdImpl implements Sshrvd {
       0,
       sessionParams,
       snoop,
+      verbose,
     );
     var (portA, portB) = ports;
     logger.warning(
@@ -182,6 +187,7 @@ class SshrvdImpl implements Sshrvd {
     int portB,
     SshrvdSessionParams sshrvdSessionParams,
     bool snoop,
+    bool verbose,
   ) async {
     /// Spawn an isolate and wait for it to send back the issued port numbers
     ReceivePort receivePort = ReceivePort(sshrvdSessionParams.sessionId);
@@ -192,6 +198,7 @@ class SshrvdImpl implements Sshrvd {
       portB,
       jsonEncode(sshrvdSessionParams),
       BuildEnv.enableSnoop && snoop,
+      verbose,
     );
 
     logger

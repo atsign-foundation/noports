@@ -17,6 +17,7 @@ abstract class Sshrvd {
   abstract final String managerAtsign;
   abstract final String ipAddress;
   abstract final bool snoop;
+  bool verbose = false;
 
   /// true once [init] has completed
   @visibleForTesting

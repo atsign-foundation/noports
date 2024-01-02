@@ -4,7 +4,7 @@ import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:at_chops/at_chops.dart';
-import 'package:noports_core/src/sshrvd/socket_connector.dart';
+import 'package:at_utils/at_logger.dart';
 import 'package:socket_connector/socket_connector.dart';
 
 ///
@@ -23,6 +23,8 @@ import 'package:socket_connector/socket_connector.dart';
 ///
 ///
 class SignatureAuthVerifier implements SocketAuthVerifier {
+  static final AtSignLogger logger = AtSignLogger('SignatureAuthVerifier');
+
   /// Public key of the signing algorithm used to sign the data
   String publicKey;
 
