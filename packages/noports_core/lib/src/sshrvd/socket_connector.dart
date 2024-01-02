@@ -94,7 +94,8 @@ void socketConnector(ConnectorParams connectorParams) async {
       serverAddressB: InternetAddress.anyIPv4,
       serverPortA: portA,
       serverPortB: portB,
-      verbose: snoop,
+      verbose: verbose,
+      logTraffic: snoop,
       socketAuthVerifierA: socketAuthVerifierA,
       socketAuthVerifierB: socketAuthVerifierB);
 

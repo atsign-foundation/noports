@@ -717,7 +717,7 @@ packages:
     description:
       path: "."
       ref: socket-authenticator-option
-      resolved-ref: e651a93b5b42cd70679b6c0891ad21b1d2b0eb09
+      resolved-ref: acc28c31e9ce028dcb16948f2b3ce7c9fcec3b78
       url: "https://github.com/gkc/socket_connector.git"
     source: git
     version: "1.1.0"
