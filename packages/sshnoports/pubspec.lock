@@ -715,9 +715,11 @@ packages:
   socket_connector:
     dependency: "direct main"
     description:
-      path: "../../../socket_connector"
-      relative: true
-    source: path
+      path: "."
+      ref: socket-authenticator-option
+      resolved-ref: c46f112a4593c2747f9fefda0562197ce09ac858
+      url: "https://github.com/gkc/socket_connector.git"
+    source: git
     version: "1.1.0"
   source_map_stack_trace:
     dependency: transitive

@@ -69,22 +69,25 @@ class SshrvImplExec implements Sshrv<Process> {
     if (bindLocalPort) {
       rvArgs.add('--bind-local-port');
     }
+    Map<String, String> environment = {};
     if (rvdAuthString != null) {
-      rvArgs.addAll(['--rvd-auth', rvdAuthString!]);
+      rvArgs.addAll(['--rv-auth']);
+      environment['RV_AUTH'] = rvdAuthString!;
     }
-    if (sessionAESKeyString != null) {
-      rvArgs.addAll(['--aes-key', sessionAESKeyString!]);
-    }
-    if (sessionIVString != null) {
-      rvArgs.addAll(['--iv', sessionIVString!]);
+    if (sessionAESKeyString != null && sessionIVString != null) {
+      rvArgs.addAll(['--rv-e2ee']);
+      environment['RV_AES'] = sessionAESKeyString!;
+      environment['RV_IV'] = sessionIVString!;
     }
 
-    logger.shout('$runtimeType.run(): executing $command'
+    logger.info('$runtimeType.run(): executing $command'
         ' ${rvArgs.join(' ')}');
     return Process.start(
       command,
       rvArgs,
       mode: ProcessStartMode.detached,
+      includeParentEnvironment: true,
+      environment: environment,
     );
   }
 }

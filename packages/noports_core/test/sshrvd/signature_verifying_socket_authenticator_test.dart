@@ -85,11 +85,9 @@ void main() {
       return MockStreamSubscription<Uint8List>();
     });
 
-    bool authenticated;
-    Stream<Uint8List>? stream;
     bool somethingThrown = false;
     try {
-      (authenticated, stream) = await sa.authenticate(mockSocket);
+      await sa.authenticate(mockSocket);
     } catch (_) {
       somethingThrown = true;
     }
@@ -128,11 +126,9 @@ void main() {
       return MockStreamSubscription<Uint8List>();
     });
 
-    bool authenticated;
-    Stream<Uint8List>? stream;
     bool somethingThrown = false;
     try {
-      (authenticated, stream) = await sa.authenticate(mockSocket);
+      await sa.authenticate(mockSocket);
     } catch (_) {
       somethingThrown = true;
     }

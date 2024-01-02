@@ -15,22 +15,25 @@ Future<void> main(List<String> args) async {
         defaultsTo: false,
         negatable: false,
         help: 'Set this flag when we are bridging from a local sender')
-    ..addOption('rvd-auth',
-        mandatory: false, help: 'Auth string to provide to rvd')
-    ..addOption('aes-key',
-        mandatory: false, help: 'AES key to use for session encryption')
-    ..addOption('iv',
-        mandatory: false, help: 'IV to use for session encryption');
-
+    ..addFlag('rv-auth',
+        defaultsTo: false,
+        help: 'Whether this rv process will authenticate to rvd')
+    ..addFlag('rv-e2ee',
+        defaultsTo: false,
+        help: 'Whether this rv process will encrypt/decrypt'
+            ' all rvd socket traffic');
   final parsed = parser.parse(args);
 
   final String host = parsed['host'];
   final int streamingPort = int.parse(parsed['port']);
   final int localPort = int.parse(parsed['local-port']);
-  final String? rvdAuthString = parsed['rvd-auth'];
   final bool bindLocalPort = parsed['bind-local-port'];
-  final String? sessionAESKeyString = parsed['aes-key'];
-  final String? sessionIVString = parsed['iv'];
+  final bool rvAuth = parsed['rv-auth'];
+  final bool rvE2ee = parsed['rv-e2ee'];
+
+  String? rvdAuthString = rvAuth ? Platform.environment['RV_AUTH'] : null;
+  String? sessionAESKeyString = rvE2ee ? Platform.environment['RV_AES'] : null;
+  String? sessionIVString = rvE2ee ? Platform.environment['RV_IV'] : null;
 
   SocketConnector connector = await Sshrv.dart(
     host,
