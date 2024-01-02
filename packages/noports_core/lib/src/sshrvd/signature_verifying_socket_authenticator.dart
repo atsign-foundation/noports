@@ -97,7 +97,7 @@ class SignatureAuthVerifier implements SocketAuthVerifier {
             ..hashingAlgoType = hashingAlgo;
 
           AtSigningResult atSigningResult = _verifySignature(input);
-          print('Signing verification outcome is: ${atSigningResult.result}');
+          logger.info('Signing verification outcome is: ${atSigningResult.result}');
           bool result = atSigningResult.result;
 
           if (result == false) {
