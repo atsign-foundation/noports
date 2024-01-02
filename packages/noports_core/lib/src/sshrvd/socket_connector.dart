@@ -12,7 +12,7 @@ typedef ConnectorParams = (
   int, // portA
   int, // portB
   String, // session params
-  bool, // snoop
+  bool, // logTraffic
   bool, // verbose
 );
 typedef PortPair = (int, int);
@@ -26,7 +26,7 @@ void socketConnector(ConnectorParams connectorParams) async {
     portA,
     portB,
     sshrvdSessionParamsJsonString,
-    snoop,
+    logTraffic,
     verbose,
   ) = connectorParams;
 
@@ -95,7 +95,7 @@ void socketConnector(ConnectorParams connectorParams) async {
       serverPortA: portA,
       serverPortB: portB,
       verbose: verbose,
-      logTraffic: snoop,
+      logTraffic: logTraffic,
       socketAuthVerifierA: socketAuthVerifierA,
       socketAuthVerifierB: socketAuthVerifierB);
 

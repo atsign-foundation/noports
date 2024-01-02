@@ -10,7 +10,7 @@ class SshrvdParams {
   final String managerAtsign;
   final String ipAddress;
   final bool verbose;
-  final bool snoop;
+  final bool logTraffic;
   final String rootDomain;
 
   // Non param variables
@@ -24,7 +24,7 @@ class SshrvdParams {
     required this.managerAtsign,
     required this.ipAddress,
     required this.verbose,
-    required this.snoop,
+    required this.logTraffic,
     required this.rootDomain,
   });
 
@@ -44,7 +44,7 @@ class SshrvdParams {
       managerAtsign: r['manager'],
       ipAddress: r['ip'],
       verbose: r['verbose'],
-      snoop: BuildEnv.enableSnoop && r['snoop'],
+      logTraffic: BuildEnv.enableSnoop && r['snoop'],
       rootDomain: r['root-domain'],
     );
   }
@@ -90,7 +90,7 @@ class SshrvdParams {
         'snoop',
         abbr: 's',
         defaultsTo: false,
-        help: 'Snoop on traffic passing through service',
+        help: 'Log traffic passing through service',
       );
     }
     parser.addOption(
