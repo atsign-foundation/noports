@@ -19,6 +19,8 @@ dependency_overrides:
   at_client: 3.0.70
   at_lookup: 3.0.41
   at_utils: 3.0.15
+  asn1lib: 1.4.1
+  encrypt: 5.0.1
   crypton: 2.1.0
   dartssh2: 2.8.2
   logging: 1.2.0

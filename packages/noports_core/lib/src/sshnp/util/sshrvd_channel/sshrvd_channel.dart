@@ -178,7 +178,7 @@ abstract class SshrvdChannel<T> with AsyncInitialization, AtClientBindings {
       }
       await Future.delayed(Duration(milliseconds: 100));
       counter++;
-      if (counter > 100) {
+      if (counter > 150) {
         logger.warning('Timed out waiting for sshrvd response');
         throw ('Connection timeout to sshrvd $host service\nhint: make sure host is valid and online');
       }

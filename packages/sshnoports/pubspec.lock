@@ -34,7 +34,7 @@ packages:
     source: hosted
     version: "2.4.2"
   asn1lib:
-    dependency: transitive
+    dependency: "direct overridden"
     description:
       name: asn1lib
       sha256: b74e3842a52c61f8819a1ec8444b4de5419b41a7465e69d4aa681445377398b0
@@ -370,7 +370,7 @@ packages:
     source: hosted
     version: "0.3.10"
   encrypt:
-    dependency: transitive
+    dependency: "direct overridden"
     description:
       name: encrypt
       sha256: "4fd4e4fdc21b9d7d4141823e1e6515cd94e7b8d84749504c232999fba25d9bbb"
@@ -717,7 +717,7 @@ packages:
     description:
       path: "."
       ref: socket-authenticator-option
-      resolved-ref: c46f112a4593c2747f9fefda0562197ce09ac858
+      resolved-ref: "3a816acfefb17f1e0eae8333364f1dde46f87267"
       url: "https://github.com/gkc/socket_connector.git"
     source: git
     version: "1.1.0"

@@ -110,7 +110,7 @@ class SignatureAuthVerifier implements SocketAuthVerifier {
           completer.completeError('Error during socket authentication: $e');
         }
       }
-    });
+    }, onError: (error) => sc.addError(error), onDone: () => sc.close());
     return completer.future;
   }
 }
