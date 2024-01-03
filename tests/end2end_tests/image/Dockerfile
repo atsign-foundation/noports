@@ -42,6 +42,7 @@ RUN set -eux ; \
   apt-get install -y git ; \
   cd ${REPO_DIR} ; \
   git clone -b ${branch} --single-branch ${URL} . ; \
+  dart pub cache clean; \
   dart pub get; \
   dart run melos bootstrap --scope="noports_core" --scope="sshnoports"; \
   dart pub get -C ${PACKAGE_DIR}; \
