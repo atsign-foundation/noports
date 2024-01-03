@@ -79,7 +79,7 @@ COPY . ${REPO_DIR}
 RUN set -eux ; \
   cd ${REPO_DIR}; \
   dart pub get; \
-  dart run melos bootstrap --scope="noports_core" --scope="sshnoports"; \
+  dart run melos bootstrap --scope="sshnoports" --scope="noports_core"; \
   dart pub get -C ${PACKAGE_DIR}; \
   dart compile exe ${PACKAGE_DIR}/bin/sshnp.dart -o ${OUTPUT_DIR}/sshnp ; \
   dart compile exe ${PACKAGE_DIR}/bin/sshnpd.dart -o ${OUTPUT_DIR}/sshnpd ; \
