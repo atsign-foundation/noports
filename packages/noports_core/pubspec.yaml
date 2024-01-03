@@ -17,7 +17,7 @@ dependencies:
   dartssh2: ^2.8.2
   file: ^6.0.0
   logging: ^1.2.0
-  meta: ^1.9.1
+  meta: ^1.11.0
   openssh_ed25519: ^1.1.0
   path: ^1.8.3
   posix: ^5.0.0
