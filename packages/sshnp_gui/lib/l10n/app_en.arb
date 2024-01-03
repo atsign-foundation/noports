@@ -60,6 +60,7 @@
     "port" : "Remote Port",
     "privacyPolicy" : "Privacy Policy",
     "privateKey" : "SSH Private Key",
+    "privateKeyDescription" : "Select the keys you want to use when establishing a connection with this profile",
     "privateKeyNotFound": "No Private Key Found",
     "privateKeyNickname": "Private Key Nickname",
     "privateKeyManagement" : "Private Key Management",

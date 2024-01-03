@@ -51,7 +51,7 @@ class CurrentPrivateKeyManagerController extends AutoDisposeNotifier<CurrentProf
   }
 }
 
-/// Controller for the list of all [PrivatekeyManager] nicknames
+/// Controller for the list of all [ProfilePrivatekeyManager] nicknames
 class ProfilePrivateKeyManagerListController extends AutoDisposeAsyncNotifier<Iterable<String>> {
   @override
   Future<Iterable<String>> build() async {
@@ -64,8 +64,8 @@ class ProfilePrivateKeyManagerListController extends AutoDisposeAsyncNotifier<It
   }
 
   void add(String identity) async {
-    await ProfilePrivateKeyManagerRepository.writeProfilePrivateKeyManagerNicknames(state.value!.toList());
     state = AsyncValue.data({...state.value ?? [], identity});
+    await ProfilePrivateKeyManagerRepository.writeProfilePrivateKeyManagerNicknames(state.value!.toList());
   }
 
   Future<void> remove(String identity) async {

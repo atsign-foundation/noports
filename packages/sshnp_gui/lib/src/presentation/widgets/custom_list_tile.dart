@@ -67,7 +67,7 @@ class CustomListTile extends StatelessWidget {
       {this.iconData = Icons.switch_account_outlined,
       this.title = 'Switch atsign',
       this.subtitle = 'Select a different atsign to onboard with',
-      this.type = CustomListTileType.sshKeyManagement,
+      this.type = CustomListTileType.switchAtsign,
       this.tileColor = kProfileBackgroundColor,
       Key? key})
       : super(key: key);

@@ -4,9 +4,16 @@ import '../../../../utility/constants.dart';
 import '../../../../utility/sizes.dart';
 
 class ProfileFormCard extends StatelessWidget {
-  const ProfileFormCard({required this.formFields, super.key});
+  const ProfileFormCard({
+    required this.formFields,
+    this.largeScreenRightPadding = Sizes.p233,
+    super.key,
+  });
 
   final List<Widget> formFields;
+
+  /// The padding for the right side of the card on a screen larger than 600px
+  final double largeScreenRightPadding;
 
   @override
   Widget build(BuildContext context) {
@@ -28,7 +35,7 @@ class ProfileFormCard extends StatelessWidget {
         child: Padding(
           padding: EdgeInsets.only(
             left: Sizes.p28,
-            right: MediaQuery.of(context).size.width < 600 ? Sizes.p32 : Sizes.p233,
+            right: MediaQuery.of(context).size.width < 600 ? Sizes.p32 : largeScreenRightPadding,
             top: Sizes.p21,
             bottom: Sizes.p32,
           ),

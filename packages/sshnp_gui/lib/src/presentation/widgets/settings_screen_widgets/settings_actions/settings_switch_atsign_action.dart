@@ -10,6 +10,8 @@ import 'package:sshnp_gui/src/presentation/widgets/utility/custom_snack_bar.dart
 import 'package:sshnp_gui/src/repository/authentication_repository.dart';
 import 'package:sshnp_gui/src/repository/navigation_repository.dart';
 
+import '../../../../utility/constants.dart';
+
 class SettingsSwitchAtsignAction extends StatelessWidget {
   const SettingsSwitchAtsignAction({Key? key}) : super(key: key);
 
@@ -61,7 +63,7 @@ class _AtSignBottomSheetState extends ConsumerState<SwitchAtSignBottomSheet> {
               child: Container(
                 height: 155.toHeight < 155 ? 155 : 150.toHeight,
                 width: SizeConfig().screenWidth,
-                color: Colors.white,
+                color: kBackGroundColorDark,
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -74,7 +76,7 @@ class _AtSignBottomSheetState extends ConsumerState<SwitchAtSignBottomSheet> {
                     Container(
                       height: 100.toHeight < 105 ? 110 : 100.toHeight,
                       width: MediaQuery.of(context).size.width,
-                      color: Colors.white,
+                      color: kBackGroundColorDark,
                       child: state.isLoading
                           ? const CircularProgressIndicator()
                           : Row(

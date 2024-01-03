@@ -140,10 +140,11 @@ packages:
   at_onboarding_flutter:
     dependency: "direct main"
     description:
-      name: at_onboarding_flutter
-      sha256: "6140f7d18d254f99e9881442ed8b41f63a97023ea20f4fd1f8d7e9bc592dc14c"
-      url: "https://pub.dev"
-    source: hosted
+      path: "packages/at_onboarding_flutter"
+      ref: "fix/theme_issues_fix"
+      resolved-ref: "6c672c6f01a90d7460fd5d2e3fbaf925eb979089"
+      url: "https://github.com/atsign-foundation/at_widgets/"
+    source: git
     version: "6.1.5"
   at_persistence_secondary_server:
     dependency: transitive

@@ -1,3 +1,5 @@
+import 'dart:developer';
+
 import 'package:sshnp_gui/src/utility/constants.dart';
 
 class FormValidator {
@@ -33,6 +35,15 @@ class FormValidator {
     } else if (value! == kPrivateKeyDropDownOption) {
       return kPrivateKeyFieldValidationError;
     }
+    return null;
+  }
+
+  static String? validateMultiSelectStringField(List<String>? value) {
+    if (value == null || value.isEmpty) {
+      log('value is empty');
+      return kEmptyFieldValidationError;
+    }
+
     return null;
   }
 }

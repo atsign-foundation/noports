@@ -107,7 +107,6 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                                 appAPIKey: AtEnv.appApiKey,
                                 theme: AtOnboardingTheme(
                                   primaryColor: kPrimaryColor,
-                                  // textTheme: Theme.of(context).textTheme.bodySmall,
                                 ),
                               ),
                             );

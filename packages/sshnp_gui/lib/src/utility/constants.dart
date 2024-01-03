@@ -15,6 +15,8 @@ const kListTileColor = Color(0x70bcbcbc);
 const kListTileTitleColorDark = Color(0xff252525);
 const kSSHKeyManagementCardColor = Color(0xff3e3e3e);
 const kSshKeyManagementBarColor = Color(0xff505050);
+const kPrivateKeyGridBackgroundColor = Color(0xff3F3F3F);
+const kInputChipBackgroundColor = Color(0XFF515151);
 
 const kEmptyFieldValidationError = 'Field cannot be left blank';
 const kAtsignFieldValidationError = 'Field must start with @';

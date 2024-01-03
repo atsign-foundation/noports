@@ -56,10 +56,11 @@ dependency_overrides:
     git:
       url: https://github.com/xavierchanth/socket_connector/
       ref: main
-  at_onboarding_flutter:
-    git:
-      url: https://github.com/atsign-foundation/at_widgets/
-      ref: theme_issues_fix
+  # at_onboarding_flutter:
+  #   git:
+  #     url: https://github.com/atsign-foundation/at_widgets/
+  #     ref: fix/theme_issues_fix
+  #     path: packages/at_onboarding_flutter
 flutter:
   uses-material-design: true
   generate: true

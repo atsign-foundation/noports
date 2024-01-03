@@ -61,6 +61,7 @@ class ProfilePrivateKeyManagerRepository {
   static Future<Iterable<String>> listProfilePrivateKeyManagerNickname() async {
     final decodedData =
         await BiometricStorage().getStorage('$_profilePrivateKeyManager-nicknames').then((value) => value.read());
+
     if (decodedData == null) {
       return [];
     } else {

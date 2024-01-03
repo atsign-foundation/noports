@@ -26,6 +26,7 @@ class Sizes {
   // static const p64 = 64.0;
   static const p99 = 99.0;
   static const p103 = 103.0;
+  static const p163 = 163.0;
   static const p233 = 233.0;
   static const p247 = 247.0;
   static const p286 = 286.0;
