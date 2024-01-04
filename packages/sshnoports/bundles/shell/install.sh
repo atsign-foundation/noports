@@ -1,20 +1,27 @@
 #!/bin/sh
 
 # SYSTEM GIVENS #
+is_root() {
+  [ "$(id -u)" -eq 0 ]
+}
+
 define_env() {
   script_dir="$(dirname -- "$( readlink -f -- "$0"; )")"
   bin_dir="/usr/local/bin"
   systemd_dir="/etc/systemd/system"
-
-  user_home="$HOME"
+  if is_root; then
+    user="$SUDO_USER"
+    if [ -z "$user" ]; then
+      user="root"
+    fi
+  else
+    user="$USER"
+  fi
+  user_home=$(sudo -u "$user" sh -c 'echo $HOME')
   user_bin_dir="$user_home/.local/bin"
   user_sshnpd_dir="$user_home/.sshnpd"
   user_log_dir="$user_sshnpd_dir/logs"
   user_ssh_dir="$user_home/.ssh"
-}
-
-is_root() {
-  [ "$(id -u)" -eq 0 ]
 }
 
 is_darwin() {
@@ -85,6 +92,7 @@ install_single_binary() {
   cp "$script_dir/$1" "$dest/$1"
   echo "Installed $1 to $dest"
   if is_root & ! [ -f "$user_bin_dir/$1" ] ; then
+    mkdir -p "$user_bin_dir"
     ln -sf "$dest/$1" "$user_bin_dir/$1"
     echo "Linked $user_bin_dir/$1 to $dest"
   fi
