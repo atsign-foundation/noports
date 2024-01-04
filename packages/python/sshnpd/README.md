@@ -43,8 +43,3 @@ pip install .
 ```sh
 sshnpd -m @{clientAtsign} -a @{deviceAtsign} -d {deviceName}
 ```
-
-## No Ports SDK Python (experimental)
-
-There is a simple python SDK which allows you to create scripts for common
-administrative patterns via SSH No Ports.
