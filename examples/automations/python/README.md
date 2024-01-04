@@ -1,4 +1,4 @@
-# sshnoports sdk python
+# sshnoports automation python
 
 This "sdk" serves as an example for how to wrap and use an sshnp client in
 python scripts for automation purposes.
