@@ -11,11 +11,11 @@ No Ports Core is the underlying library used to enable sshnoports and the rest o
 
 ### CLI Example
 
-See the [sshnoports](https://github.com/atsign-foundation/sshnoports/tree/trunk/packages/sshnoports) project.
+See the [sshnoports](https://github.com/atsign-foundation/sshnoports/tree/trunk/packages/dart/sshnoports) project.
 
 ### Flutter Example
 
-See the [sshnp_gui](https://github.com/atsign-foundation/sshnoports/tree/trunk/packages/sshnp_gui) project.
+See the [sshnp_gui](https://github.com/atsign-foundation/sshnoports/tree/trunk/packages/dart/sshnp_gui) project.
 
 ## Maintainers
 

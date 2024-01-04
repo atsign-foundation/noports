@@ -29,13 +29,13 @@ jobs:
           go-version: 'stable'
           cache-dependency-path: tools/osv-scanner/go.sum
       - name: dart pub get
-        working-directory: packages/noports_core
+        working-directory: packages/dart/noports_core
         run: dart pub get
       - name: dart analyze
-        working-directory: packages/noports_core
+        working-directory: packages/dart/noports_core
         run: dart analyze
       - name: dart test
-        working-directory: packages/noports_core
+        working-directory: packages/dart/noports_core
         run: dart test
       # Runs osv-scanner to find any vulnerable Dart dependencies
       # It needs to look at pubspec.lock files, which is why it's
