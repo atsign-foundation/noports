@@ -9,10 +9,16 @@ Requisite=sshd.service
 # Requires=sshd.service
 
 [Service]
+# TODO : set username
 User=<username>
 Type=simple
 Restart=always
 RestartSec=3
+
+# Uncomment the following line to sleep for 10 seconds before starting up the service
+# ExecStartPre=/bin/sleep 10
+
+# TODO : set device_atsign, manager_atsign, device_name
 ExecStart=/usr/local/bin/sshnpd -a <@device_atsign> -m <@manager_atsign> -d <device_name> -v
 
 [Install]
