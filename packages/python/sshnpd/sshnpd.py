@@ -4,8 +4,6 @@ from io import StringIO
 from queue import Empty, Queue
 from time import sleep
 from threading import Event
-from paramiko import SSHClient, SSHException, WarningPolicy
-from paramiko.ed25519key import Ed25519Key
 
 from select import select
 from socket import socket, gethostbyname, gethostname, create_connection, error
@@ -118,7 +116,7 @@ class SSHNPDClient:
         self.device = device
         self.username = username
         self.device_namespace = f".{device}.sshnp"
-        self.at_client = AtClient(AtSign(atsign), queue=Queue(maxsize=20), verbose=verbose)
+        self.at_client =    AtClient(AtSign(atsign), queue=Queue(maxsize=20), verbose=verbose)
         
         #SSH Stuff
         self.ssh_client = None
@@ -134,8 +132,6 @@ class SSHNPDClient:
         #Directory Stuff
         home_dir = ""
         if os.name == "posix":  # Unix-based systems (Linux, macOS)
-            home_dir = os.path.expanduser("~")
-        elif os.name == "nt":  # Windows
             home_dir = os.path.expanduser("~")
         else:
             raise NotImplementedError("Unsupported operating system")
@@ -300,7 +296,7 @@ class SSHNPDClient:
         if direct:
             ssh_response = self._direct_ssh(ssh_list['host'], ssh_list['port'], ssh_list['sessionId'])
         else:
-            ssh_response = self._reverse_ssh_client(ssh_list, private_key)
+            ssh_response = self._reverse_ssh_client(ssh_list, private_key, uuid)
         
         if ssh_response:
             notify_response = self.at_client.notify(at_key, ssh_response, session_id=uuid)
@@ -308,52 +304,10 @@ class SSHNPDClient:
             self.authenticated = True
         if direct:
             self._ephemeral_cleanup(uuid)
+        else:
+            self._pem_cleanup(uuid)
 
-    #Running in a thread
-    def _forward_socket_handler(self, chan, dest):
-        sock = socket()
-        try:
-            sock.connect(dest)
-        except Exception as e:
-            self.logger.error(f"Forwarding request to {dest} failed: {e}")
-            return
-
-        self.logger.info(
-            f"Connected!  Tunnel open {chan.origin_addr} -> {chan.getpeername()} -> {dest}"
-        )
-
-        while not self.closing.is_set():
-            r, w, x = select([sock, chan], [], [])
-            if sock in r:
-                data = sock.recv(1024)
-                if len(data) == 0:
-                    break
-                chan.send(data)
-            if chan in r:
-                data = chan.recv(1024)
-                if len(data) == 0:
-                    break
-                sock.send(data)
-        chan.close()
-        sock.close()
-        self.logger.info(f"Tunnel closed from {chan.origin_addr}")
-
-    #running in a thread
-    def _forward_socket(self, tp, dest):
-        while not self.closing.is_set():
-            chan = tp.accept(1000)
-            if chan is None:
-                continue
-            
-            thread = threading.Thread(
-                target=self._forward_socket_handler,
-                args=(chan, dest),
-                daemon=True,
-            )
-            thread.start()
-            SSHNPDClient.threads.append(thread)
-
-    def _reverse_ssh_client(self, ssh_list: list, private_key: str):
+    def _reverse_ssh_client(self, ssh_list: list, private_key: str, uuid : str):
         local_port = ssh_list[0]
         port = ssh_list[1]
         username = ssh_list[2]
@@ -361,44 +315,42 @@ class SSHNPDClient:
         if "\\" in username:
             username = username.split("/")[-1]
         self.logger.info("ssh session started for " + username + " @ " + hostname + " on port " + port)
-        if self.ssh_client == None:
-            ssh_client = SSHClient()
-            ssh_client.load_system_host_keys(f"{self.ssh_path}/known_hosts")
-            ssh_client.set_missing_host_key_policy(WarningPolicy())
-            file_like = StringIO(private_key)
-            paramiko_log = logging.getLogger("paramiko.transport")
-            paramiko_log.setLevel(self.logger.level)
-            paramiko_log.addHandler(logging.StreamHandler())
-            self.ssh_client = ssh_client
+        filePath = f'{self.ssh_path}/tmp/.{uuid}'
         
-        try:
-            pkey = Ed25519Key.from_private_key(file_obj=file_like)
-            self.ssh_client.connect(
-                hostname=hostname,
-                port=port,
-                username=username,
-                pkey=pkey,
-                allow_agent=False,
-                timeout=10,
-                disabled_algorithms={"pubkeys": ["rsa-sha2-512", "rsa-sha2-256"]},
-            )
-            tp = self.ssh_client.get_transport()
-            self.logger.info("Forwarding port " + local_port + " to " + hostname + ":" + port)
-            tp.request_port_forward("", int(local_port))
-            thread = threading.Thread(
-                target=self._forward_socket,
-                args=(tp, ("localhost", 22)),
-                daemon=True,
-            )
-            thread.start()
-            SSHNPDClient.threads.append(thread)
+        if not os.path.exists(f"{self.ssh_path}/tmp/"):
+            os.makedirs(f"{self.ssh_path}/tmp/")
         
-        #I'll end up doing more with this I think
-        except  SSHException as e:
-            raise(f'SSHError (Make sure you do not have another sshnpd running): $e')
-        except Exception as e:
-            raise(e)
+        pemFile = open(filePath, "w")
+        if not private_key.endswith("\\n"):
+            private_key += "\\n"  
+              
+        pemFile.write(private_key)
+        pemFile.close()
+        subprocess.run("chmod go-rwx " + filePath, shell=True)
         
+        ssh_binary = subprocess.Popen(["ssh", 
+                                       f"{username}@{hostname}",
+                                       "-p", port, 
+                                       "-R", f"{local_port}:localhost:22",
+                                       "-t", "-t",
+                                       "-i", filePath, 
+                                       "-o", "StrictHostKeyChecking=accept-new", 
+                                       "-o", "IdentitiesOnly=yes",
+                                       "-o", "BatchMode=yes",
+                                       "-o", "ExitOnForwardFailure=yes",
+                                       "-f",
+                                       "sleep 15"
+                                       ],
+                                      cwd="/usr/bin/",)
+        
+        stdout, stderr = ssh_binary.communicate()
+        
+        if ssh_binary.returncode != 0:
+            self.logger.error("SSH Connection failed")
+            self.logger.error(stderr.decode("utf-8"))
+            raise Exception("Reverse SSH Connection failed (Legacy)")
+        
+        self.logger.info("SSH Connection established")
         return "connected"
 
     def _generate_ssh_keys(self, session_id):
@@ -441,6 +393,13 @@ class SSHNPDClient:
             os.remove(f"{self.ssh_path}/tmp/{session_id}_sshnp.pub")
             os.remove(f"{self.ssh_path}/tmp/{session_id}_sshnp")
             self.logger.info("ephemeral ssh keys cleaned up")
+        except Exception as e:
+            self.logger.error(e)
+    
+    def _pem_cleanup(self, session_id):
+        try:
+            os.remove(f"{self.ssh_path}/tmp/.{session_id}")
+            self.logger.info("pem file cleaned up")
         except Exception as e:
             self.logger.error(e)
 

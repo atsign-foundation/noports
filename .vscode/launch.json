@@ -2,7 +2,7 @@
   // Use IntelliSense to learn about possible attributes.
   // Hover to view descriptions of existing attributes.
   // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
-  "version": "0.2.0",
+  "version": "0.3.0",
   "configurations": [
     {
       // Since there are python tools in the repo, this allows you to run them faster in vscode
@@ -17,8 +17,8 @@
       "name": "Python: SSHNPD",
       "type": "python",
       "request": "launch",
-      "cwd": "",
-      "program": "packages/sshnpdpy/sshnpd.py",
+      "cwd": "packages/python/sshnpd/",
+      "program": "sshnpd.py",
       "console": "integratedTerminal",
       "justMyCode": true,
       "envFile": "${workspaceFolder}/.env",
