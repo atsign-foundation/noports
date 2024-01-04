@@ -3,11 +3,16 @@ Description=Ssh No Ports Rendezvous Daemon
 After=network-online.target
 
 [Service]
+# TODO : set username
 User=<username>
 Type=simple
 Restart=always
 RestartSec=3
-ExecStartPre=/bin/sleep 10
+
+# Uncomment the following line to sleep for 10 seconds before starting up the service
+# ExecStartPre=/bin/sleep 10
+
+# TODO : set atsign, internet_address
 ExecStart=/usr/local/bin/sshrvd -a <@atsign> -i <internet_address>
 
 [Install]
