@@ -1,7 +1,7 @@
 <img width=250px src="https://atsign.dev/assets/img/atPlatform_logo_gray.svg?sanitize=true" alt="The atPlatform logo">
 
 [![GitHub License](https://img.shields.io/badge/license-BSD3-blue.svg)](./LICENSE)
-[![OpenSSF Scorecard](https://api.securityscorecards.dev/projects/github.com/atsign-foundation/sshnoports/badge)](https://api.securityscorecards.dev/projects/github.com/atsign-foundation/sshnoports)
+[![OpenSSF Scorecard](https://api.securityscorecards.dev/projects/github.com/atsign-foundation/noports/badge)](https://api.securityscorecards.dev/projects/github.com/atsign-foundation/noports)
 
 # No Ports Core
 
@@ -11,11 +11,11 @@ No Ports Core is the underlying library used to enable sshnoports and the rest o
 
 ### CLI Example
 
-See the [sshnoports](https://github.com/atsign-foundation/sshnoports/tree/trunk/packages/sshnoports) project.
+See the [sshnoports](https://github.com/atsign-foundation/noports/tree/trunk/packages/sshnoports) project.
 
 ### Flutter Example
 
-See the [sshnp_gui](https://github.com/atsign-foundation/sshnoports/tree/trunk/packages/sshnp_gui) project.
+See the [sshnp_gui](https://github.com/atsign-foundation/noports/tree/trunk/packages/sshnp_gui) project.
 
 ## Maintainers
 
