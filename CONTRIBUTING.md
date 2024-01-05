@@ -36,11 +36,11 @@ if you don't already have Dart (or Flutter) installed.
 To prepare your dedicated GitHub repository:
 
 1. Fork in GitHub https://github.com/atsign-foundation/noports
-2. Clone *your forked repository* (e.g., `git clone git@github.com:yourname/sshnoports`)
+2. Clone *your forked repository* (e.g., `git clone git@github.com:yourname/noports`)
 3. Set your remotes as follows:
 
    ```sh
-   cd sshnoports
+   cd noports
    git remote add upstream git@github.com:atsign-foundation/noports.git
    git remote set-url upstream --push DISABLED
    ```
@@ -48,8 +48,8 @@ To prepare your dedicated GitHub repository:
    Running `git remote -v` should give something similar to:
 
    ```text
-   origin  git@github.com:yourname/sshnoports.git (fetch)
-   origin  git@github.com:yourname/sshnoports.git (push)
+   origin  git@github.com:yourname/noports.git (fetch)
+   origin  git@github.com:yourname/noports.git (push)
    upstream        git@github.com:atsign-foundation/noports.git (fetch)
    upstream        DISABLED (push)
    ```
