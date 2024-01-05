@@ -1,6 +1,6 @@
 # Under The Hood
 
-**Note**: This document describes version 4.0.0-rc.2 or greater; v4.0.0 will be released on or about Aug 20 2023.
+**Note**: This document describes version 4.0.0-rc.2 or later. Prior versions used a different method of forming the connection.
 
 ## Overview
 
@@ -52,7 +52,7 @@ This high-level flow is visualized in the diagrams below.
 
 ### Overview diagram
 
-![](.gitbook/assets/overview.png)
+![](../.gitbook/assets/overview.png)
 
 ### Control plane
 
