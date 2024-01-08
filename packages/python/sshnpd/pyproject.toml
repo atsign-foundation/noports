@@ -5,7 +5,7 @@ description = "Python implementation of SSH No Ports daemon"
 authors = ["Xavier Lin <xavier.lin@atsign.com >"]
 maintainers = ["Chris Swan <chris@atsign.com>"]
 readme = "README.md"
-homepage = "https://github.com/atsign-foundation/sshnoports"
+homepage = "https://github.com/atsign-foundation/noports"
 
 [tool.poetry.scripts]
 sshnpd = 'sshnpd:main'
