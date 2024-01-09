@@ -104,6 +104,7 @@ class AtSshKeyPairManagerFamilyController extends AutoDisposeFamilyAsyncNotifier
     }
     final store = await BiometricStorage().getStorage('com.atsign.sshnoports.ssh-$arg');
     final data = await store.read();
+
     if (data.isNull || data!.isEmpty) {
       return PrivateKeyManager.empty();
     }
