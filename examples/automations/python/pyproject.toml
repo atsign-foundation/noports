@@ -1,7 +1,7 @@
 [tool.poetry]
-name = "sshnoports_sdk_python"
+name = "sshnoports_automation_python"
 version = "0.0.1"
-description = "A simple python SDK which allows you to create scripts for common administrative patterns via SSH No Ports"
+description = "Some python recipes which allows you to create scripts for common administrative patterns via SSH No Ports"
 authors = ["Chris Swan <@cpswan>"]
 readme = "README.md"
 

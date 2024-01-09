@@ -23,7 +23,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     defaults:
       run:
-        working-directory: ./packages/sshnoports
+        working-directory: ./packages/dart/sshnoports
     strategy:
       matrix:
         os: [ubuntu-latest, macOS-latest, windows-latest]
@@ -64,10 +64,10 @@ jobs:
       - run: cp -r bundles/${{ matrix.bundle }}/* sshnp/
       - run: cp LICENSE sshnp
       - run: tar -cvzf tarball/${{ matrix.output-name }}.tgz sshnp
-      - uses: actions/upload-artifact@a8a3f3ad30e3422c9c7b888a15615d19a852ae32 # v3.1.3
+      - uses: actions/upload-artifact@c7d193f32edcb7bfad88892161225aeda64e9392 # v4.0.0
         with:
           name: x64_binaries
-          path: ./packages/sshnoports/tarball/${{ matrix.output-name }}.tgz
+          path: ./packages/dart/sshnoports/tarball/${{ matrix.output-name }}.tgz
           if-no-files-found: error
 
   other_build:
@@ -76,7 +76,7 @@ jobs:
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: ./packages/sshnoports
+        working-directory: ./packages/dart/sshnoports
     strategy:
       matrix:
         platform: [linux/arm/v7, linux/arm64, linux/riscv64]
@@ -96,10 +96,10 @@ jobs:
           --platform ${{ matrix.platform }} -o type=tar,dest=bins.tar .
       - run: mkdir tarballs
       - run: tar -xvf bins.tar -C tarballs
-      - uses: actions/upload-artifact@a8a3f3ad30e3422c9c7b888a15615d19a852ae32 # v3.1.3
+      - uses: actions/upload-artifact@c7d193f32edcb7bfad88892161225aeda64e9392 # v4.0.0
         with:
           name: other_binaries
-          path: ./packages/sshnoports/tarballs/${{ matrix.output-name }}.tgz
+          path: ./packages/dart/sshnoports/tarballs/${{ matrix.output-name }}.tgz
           if-no-files-found: error
 
   notify_on_completion:

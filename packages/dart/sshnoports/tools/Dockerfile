@@ -2,7 +2,7 @@
 # Build image for a containerized instance of sshnpd
 
 FROM dart:3.2.4@sha256:a310da69472710ceaa8015add37ef99d16d9ec51e9b67f87fe3b11a7e9596a50 AS buildimage
-ENV PACKAGEDIR=packages/sshnoports
+ENV PACKAGEDIR=packages/dart/sshnoports
 ENV BINARYDIR=/usr/local/at
 SHELL ["/bin/bash", "-c"]
 WORKDIR /app
@@ -24,7 +24,7 @@ ENV BINARYDIR=/usr/local/at
 ENV USER_ID=1024
 ENV GROUP_ID=1024
 
-COPY --from=buildimage /app/packages/sshnoports/bundles/core/docker/.startup.sh ${HOMEDIR}/
+COPY --from=buildimage /app/packages/dart/sshnoports/bundles/core/docker/.startup.sh ${HOMEDIR}/
 RUN \
   set -eux ; \
   apt-get update ; \
