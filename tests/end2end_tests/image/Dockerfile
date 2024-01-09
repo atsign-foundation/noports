@@ -30,7 +30,7 @@ FROM dart:3.2.4@sha256:a310da69472710ceaa8015add37ef99d16d9ec51e9b67f87fe3b11a7e
 
 ENV URL=https://github.com/atsign-foundation/noports.git
 ENV REPO_DIR=/app/repo
-ENV PACKAGE_DIR=${REPO_DIR}/packages/sshnoports
+ENV PACKAGE_DIR=${REPO_DIR}/packages/dart/sshnoports
 ENV OUTPUT_DIR=/app/output
 
 ARG branch=trunk
@@ -68,7 +68,7 @@ ENTRYPOINT cp -r /mount/. ${HOMEDIR} && sudo service ssh start && sh ${HOMEDIR}/
 FROM dart:3.2.4@sha256:a310da69472710ceaa8015add37ef99d16d9ec51e9b67f87fe3b11a7e9596a50 AS build-local
 
 ENV REPO_DIR=/app/repo
-ENV PACKAGE_DIR=${REPO_DIR}/packages/sshnoports
+ENV PACKAGE_DIR=${REPO_DIR}/packages/dart/sshnoports
 ENV OUTPUT_DIR=/app/output
 
 RUN mkdir -p ${REPO_DIR} ${OUTPUT_DIR} ;

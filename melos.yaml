@@ -1,9 +1,9 @@
 name: sshnoports
 
 packages:
-  - packages/noports_core
-  - packages/sshnoports
-  - packages/sshnp_gui
+  - packages/dart/noports_core
+  - packages/dart/sshnoports
+  - packages/dart/sshnp_gui
 
 command:
   bootstrap:
