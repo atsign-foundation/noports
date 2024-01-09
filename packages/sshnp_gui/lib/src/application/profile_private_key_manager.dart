@@ -23,5 +23,5 @@ class ProfilePrivateKeyManager {
     };
   }
 
-  String get identifier => '$profileNickname-$privateKeyNickname';
+  String get identifier => profileNickname;
 }

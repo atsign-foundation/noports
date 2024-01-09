@@ -1,5 +1,4 @@
-import 'dart:developer';
-
+import 'package:dotted_border/dotted_border.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -21,7 +20,6 @@ import 'package:sshnp_gui/src/utility/sizes.dart';
 
 import '../../../../application/profile_private_key_manager.dart';
 import '../../../../controllers/private_key_manager_controller.dart';
-import 'custom_multiselect_chip_form_field.dart';
 
 class ProfileFormDesktopView extends ConsumerStatefulWidget {
   const ProfileFormDesktopView({super.key});
@@ -34,7 +32,7 @@ class _ProfileFormState extends ConsumerState<ProfileFormDesktopView> {
   final GlobalKey<FormState> _formkey = GlobalKey<FormState>();
   late CurrentConfigState currentProfile;
   SshnpPartialParams newConfig = SshnpPartialParams.empty();
-  List<String> selectedItems = [];
+
   @override
   void initState() {
     WidgetsBinding.instance.addPostFrameCallback((timeStamp) async {
@@ -44,7 +42,6 @@ class _ProfileFormState extends ConsumerState<ProfileFormDesktopView> {
   }
 
   void onSubmit(SshnpParams oldConfig) async {
-    log('on submit start ${selectedItems.toString()}');
     if (_formkey.currentState!.validate()) {
       _formkey.currentState!.save();
       SshnpParams config = SshnpParams.merge(oldConfig, newConfig);
@@ -67,17 +64,6 @@ class _ProfileFormState extends ConsumerState<ProfileFormDesktopView> {
 
       /// Save the profile private key manager to the device's secure storage
       // TODO: Add a check to see if the profile private key manager already exists in the secure storage
-      log('selected items are $selectedItems just before for loop');
-      for (final item in selectedItems) {
-        final profilePrivateKeyManager = ProfilePrivateKeyManager(
-          profileNickname: newConfig.profileName!,
-          privateKeyNickname: item,
-        );
-        final privateProfileController =
-            ref.watch(profilePrivateKeyManagerFamilyController(profilePrivateKeyManager.identifier).notifier);
-        privateProfileController.saveProfilePrivateKeyManager(profilePrivateKeyManager: profilePrivateKeyManager);
-        log('for loop completed');
-      }
 
       if (mounted) {
         ref.read(navigationRailController.notifier).setRoute(AppRoute.home);
@@ -91,7 +77,7 @@ class _ProfileFormState extends ConsumerState<ProfileFormDesktopView> {
     final strings = AppLocalizations.of(context)!;
     currentProfile = ref.watch(currentConfigController);
     final privateKeyManagerListController = ref.watch(atPrivateKeyManagerListController);
-    final profilePrivateKeyListController = ref.watch(profilePrivateKeyManagerListController);
+    // final profilePrivateKeyListController = ref.watch(profilePrivateKeyManagerListController);
 
     final asyncOldConfig = ref.watch(configFamilyController(currentProfile.profileName));
 
@@ -165,20 +151,44 @@ class _ProfileFormState extends ConsumerState<ProfileFormDesktopView> {
                     privateKeyManagerListController.when(
                         loading: () => const Center(child: CircularProgressIndicator()),
                         error: (error, stack) => Center(child: Text(error.toString())),
-                        data: (privateKeyList) {
-                          profilePrivateKeyListController.when(
-                              data: ((data) {
-                                // TODO: Might have to filter for matching profiles.
-                                selectedItems = data.map((e) => e.split('-')[1]).toList();
-                              }),
-                              error: (error, stack) => Center(child: Text(error.toString())),
-                              loading: () => const Center(child: CircularProgressIndicator()));
-                          return CustomMultiSelectChipFormField<String>(
+                        data: (privateKeyListData) {
+                          // TODO: Delete this line
+                          // profilePrivateKeyListController.when(
+                          //     data: ((data) {
+                          //       // TODO: Might have to filter for matching profiles.
+                          //       // selectedItems = data.map((e) => e.split('-')[1]).toList();
+                          //     }),
+                          //     error: (error, stack) => Center(child: Text(error.toString())),
+                          //     loading: () => const Center(child: CircularProgressIndicator()));
+                          final privateKeyList = privateKeyListData.toList();
+                          privateKeyList.add(kPrivateKeyDropDownOption);
+                          return CustomDropdownFormField<String>(
                             width: kFieldDefaultWidth + Sizes.p5,
-                            selectedItems: selectedItems,
+                            initialValue: oldConfig.identityFile,
                             label: strings.privateKey,
                             hintText: strings.select,
-                            items: privateKeyList.toList(),
+                            items: privateKeyList.map((e) {
+                              if (e == kPrivateKeyDropDownOption) {
+                                return DropdownMenuItem<String>(
+                                  value: e,
+                                  child: DottedBorder(
+                                    dashPattern: const [10, 10],
+                                    color: kPrimaryColor,
+                                    radius: const Radius.circular(2),
+                                    padding: const EdgeInsets.all(Sizes.p12),
+                                    child: Text(
+                                      e,
+                                      style: Theme.of(context).textTheme.bodySmall!.copyWith(color: kPrimaryColor),
+                                    ),
+                                  ),
+                                );
+                              } else {
+                                return DropdownMenuItem<String>(
+                                  value: e,
+                                  child: Text(e),
+                                );
+                              }
+                            }).toList(),
                             onChanged: (value) {
                               if (value == kPrivateKeyDropDownOption) {
                                 showDialog(
@@ -186,20 +196,46 @@ class _ProfileFormState extends ConsumerState<ProfileFormDesktopView> {
                               }
                             },
                             onSaved: (value) {
-                              final atSshKeyPair = ref.read(privateKeyManagerFamilyController(value!));
-                              // write to a new controller to map the profile name to the ssh key pair manager nickname. Store this information locally.
-
-                              // At the point of ssh connect the profile name and the key manager name so get the identity passphrase and the fiel content.
-                              atSshKeyPair.when(
-                                  data: (data) => newConfig = SshnpPartialParams.merge(
-                                      newConfig,
-                                      SshnpPartialParams(
-                                          identityFile: data.nickname, identityPassphrase: data.passPhrase)),
-                                  error: ((error, stackTrace) => log(error.toString())),
-                                  loading: () => const CircularProgressIndicator());
+                              final profilePrivateKeyManager = ProfilePrivateKeyManager(
+                                profileNickname: newConfig.profileName!,
+                                privateKeyNickname: value!,
+                              );
+                              final privateProfileController = ref.watch(
+                                  profilePrivateKeyManagerFamilyController(profilePrivateKeyManager.identifier)
+                                      .notifier);
+                              privateProfileController.saveProfilePrivateKeyManager(
+                                  profilePrivateKeyManager: profilePrivateKeyManager);
                             },
                             onValidator: FormValidator.validatePrivateKeyField,
                           );
+
+                          // return CustomMultiSelectChipFormField<String>(
+                          //   width: kFieldDefaultWidth + Sizes.p5,
+                          //   selectedItems: selectedItems,
+                          //   label: strings.privateKey,
+                          //   hintText: strings.select,
+                          //   items: privateKeyList.toList(),
+                          //   onChanged: (value) {
+                          //     if (value == kPrivateKeyDropDownOption) {
+                          //       showDialog(
+                          //           context: context, builder: ((context) => const SSHKeyManagementFormDialog()));
+                          //     }
+                          //   },
+                          //   onSaved: (value) {
+                          //     final atSshKeyPair = ref.read(privateKeyManagerFamilyController(value!));
+                          //     // write to a new controller to map the profile name to the ssh key pair manager nickname. Store this information locally.
+
+                          //     // At the point of ssh connect the profile name and the key manager name so get the identity passphrase and the fiel content.
+                          //     atSshKeyPair.when(
+                          //         data: (data) => newConfig = SshnpPartialParams.merge(
+                          //             newConfig,
+                          //             SshnpPartialParams(
+                          //                 identityFile: data.nickname, identityPassphrase: data.passPhrase)),
+                          //         error: ((error, stackTrace) => log(error.toString())),
+                          //         loading: () => const CircularProgressIndicator());
+                          //   },
+                          //   onValidator: FormValidator.validatePrivateKeyField,
+                          // );
                         }),
                     gapH20,
                     // TODO: Add key management dropdown here

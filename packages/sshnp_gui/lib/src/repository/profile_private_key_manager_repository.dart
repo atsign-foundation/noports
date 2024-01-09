@@ -13,11 +13,10 @@ class ProfilePrivateKeyManagerRepository {
   /// Writes a [ProfilePrivateKeyManager] to the device's secure storage.
   static Future<void> writeProfilePrivateKeyManager(ProfilePrivateKeyManager manager) async {
     BiometricStorage biometricStorage = BiometricStorage();
-    final storage = await biometricStorage
-        .getStorage('$_profilePrivateKeyManager-${manager.profileNickname}-${manager.privateKeyNickname}');
+    final storage = await biometricStorage.getStorage('$_profilePrivateKeyManager-${manager.profileNickname}');
 
     await storage.write(jsonEncode(manager.toMap()));
-    final data = await readProfilePrivateKeyManager('${manager.privateKeyNickname}-${manager.profileNickname}}');
+    final data = await readProfilePrivateKeyManager(manager.profileNickname);
     // TODO: Remove this log after testing
     if (data == null) {
       log('no data');
@@ -47,25 +46,27 @@ class ProfilePrivateKeyManagerRepository {
     await storage.delete();
   }
 
-  /// Writes a list of [ProfilePrivateKeyManager] nicknames to the device's secure storage.
-  static Future<void> writeProfilePrivateKeyManagerNicknames(
-    List<String> identities,
-  ) async {
-    BiometricStorage biometricStorage = BiometricStorage();
-    final storage = await biometricStorage.getStorage('$_profilePrivateKeyManager-nicknames');
+  // TODO: Remove this after testing
 
-    await storage.write(jsonEncode(identities));
-  }
+  /// Writes a list of [ProfilePrivateKeyManager] nicknames to the device's secure storage.
+  // static Future<void> writeProfilePrivateKeyManagerNicknames(
+  //   List<String> identities,
+  // ) async {
+  //   BiometricStorage biometricStorage = BiometricStorage();
+  //   final storage = await biometricStorage.getStorage('$_profilePrivateKeyManager-nicknames');
+
+  //   await storage.write(jsonEncode(identities));
+  // }
 
   /// Returns a list of [ProfilePrivateKeyManager] nickname from the device's secure storage.
-  static Future<Iterable<String>> listProfilePrivateKeyManagerNickname() async {
-    final decodedData =
-        await BiometricStorage().getStorage('$_profilePrivateKeyManager-nicknames').then((value) => value.read());
+  // static Future<Iterable<String>> listProfilePrivateKeyManagerNickname() async {
+  //   final decodedData =
+  //       await BiometricStorage().getStorage('$_profilePrivateKeyManager-nicknames').then((value) => value.read());
 
-    if (decodedData == null) {
-      return [];
-    } else {
-      return [...jsonDecode(decodedData)];
-    }
-  }
+  //   if (decodedData == null) {
+  //     return [];
+  //   } else {
+  //     return [...jsonDecode(decodedData)];
+  //   }
+  // }
 }

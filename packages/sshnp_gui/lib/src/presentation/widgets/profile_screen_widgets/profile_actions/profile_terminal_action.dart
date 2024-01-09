@@ -8,12 +8,9 @@ import 'package:noports_core/sshnp.dart';
 import 'package:noports_core/utils.dart';
 import 'package:sshnp_gui/src/controllers/navigation_controller.dart';
 import 'package:sshnp_gui/src/controllers/navigation_rail_controller.dart';
-import 'package:sshnp_gui/src/controllers/profile_private_key_manager_controller.dart';
 import 'package:sshnp_gui/src/controllers/terminal_session_controller.dart';
+import 'package:sshnp_gui/src/presentation/widgets/profile_screen_widgets/profile_actions/profile_action_button.dart';
 import 'package:sshnp_gui/src/presentation/widgets/utility/custom_snack_bar.dart';
-import 'package:sshnp_gui/src/utility/sizes.dart';
-
-import '../../../../controllers/private_key_manager_controller.dart';
 
 class ProfileTerminalAction extends ConsumerStatefulWidget {
   final SshnpParams params;
@@ -24,7 +21,7 @@ class ProfileTerminalAction extends ConsumerStatefulWidget {
 }
 
 class _ProfileTerminalActionState extends ConsumerState<ProfileTerminalAction> {
-  Future<void> onPressed(String privateKeyNickname) async {
+  Future<void> onPressed() async {
     log(widget.params.identityPassphrase ?? 'no passphrase');
     log(widget.params.identityFile ?? 'no identity file');
     log(widget.params.clientAtSign ?? 'no client at sign');
@@ -38,22 +35,21 @@ class _ProfileTerminalActionState extends ConsumerState<ProfileTerminalAction> {
 
     try {
       // TODO ensure that this keyPair gets uploaded to the app first
-      final privateKeyManager = ref.watch(privateKeyManagerFamilyController(privateKeyNickname));
-      log(privateKeyNickname);
-      final params = privateKeyManager.when(data: (value) {
-        log('content: ${value.content}, passPhrase: ${value.passPhrase}');
+      // final privateKeyManager = ref.watch(privateKeyManagerFamilyController(privateKeyNickname));
 
-        return SshnpParams.merge(
-          widget.params,
-          SshnpPartialParams(identityFile: value.content, identityPassphrase: value.passPhrase),
-        );
-      }, error: (error, stackTrace) {
-        log(error.toString());
-      }, loading: () {
-        log('loading');
-      });
-      
-      
+      // final params = privateKeyManager.when(data: (value) {
+      //   log('content: ${value.content}, passPhrase: ${value.passPhrase}');
+
+      //   return SshnpParams.merge(
+      //     widget.params,
+      //     SshnpPartialParams(identityFile: value.content, identityPassphrase: value.passPhrase),
+      //   );
+      // }, error: (error, stackTrace) {
+      //   log(error.toString());
+      // }, loading: () {
+      //   log('loading');
+      // });
+
       AtClient atClient = AtClientManager.getInstance().atClient;
       // TODO: Delete the below line
       // DartSshKeyUtil keyUtil = DartSshKeyUtil();
@@ -61,8 +57,11 @@ class _ProfileTerminalActionState extends ConsumerState<ProfileTerminalAction> {
       // AtSshKeyPair keyPair = await keyUtil.getKeyPair(
       //   identifier: widget.params.identityFile ?? 'id_${atClient.getCurrentAtSign()!.replaceAll('@', '')}',
       // );
-      // TODO: Get values from biometric strogage (PrivateKeyManagerController)
-      AtSshKeyPair keyPair = AtSshKeyPair.fromPem(pemText, identifier: identifier, passphrase: );
+      // TODO: Get values from biometric storage (PrivateKeyManagerController)
+      AtSshKeyPair keyPair = AtSshKeyPair.fromPem(
+        content,
+        identifier: 'test',
+      );
 
       final sshnp = Sshnp.dartPure(
         params: widget.params,
@@ -84,6 +83,7 @@ class _ProfileTerminalActionState extends ConsumerState<ProfileTerminalAction> {
       if (result is SshnpCommand) {
         /// Set the command for the new session
         sessionController.setProcess(command: result.command, args: result.args);
+        log('profile name is ${widget.params.profileName}');
         sessionController.issueDisplayName(widget.params.profileName!);
         ref.read(navigationRailController.notifier).setRoute(AppRoute.terminal);
         if (mounted) {
@@ -92,6 +92,7 @@ class _ProfileTerminalActionState extends ConsumerState<ProfileTerminalAction> {
       }
     } catch (e) {
       if (mounted) {
+        log('error: ${e.toString()}');
         context.pop();
         CustomSnackBar.error(content: e.toString());
       }
@@ -100,28 +101,30 @@ class _ProfileTerminalActionState extends ConsumerState<ProfileTerminalAction> {
 
   @override
   Widget build(BuildContext context) {
-    final profilePrivateKeys = ref.watch(profilePrivateKeyManagerListController);
-    return profilePrivateKeys.when(
-        data: (data) {
-          return PopupMenuButton(
-            icon: const Icon(Icons.terminal),
-            tooltip: 'select a private key to ssh with',
-            itemBuilder: (itemBuilderContext) => data
-                .map((e) => PopupMenuItem(
-                      onTap: (() => onPressed(e.split('-').last)),
-                      child: Row(
-                        children: [
-                          const Icon(Icons.vpn_key),
-                          gapW12,
-                          Text(e),
-                        ],
-                      ),
-                    ))
-                .toList(),
-          );
-        },
-        error: (error, stack) => Center(child: Text(error.toString())),
-        loading: () => const Center(child: CircularProgressIndicator()));
+    //TODO: Add a terminal icon that calls on pressed. Reuse old code
+    return ProfileActionButton(onPressed: onPressed, icon: const Icon(Icons.terminal));
+    // final profilePrivateKeys = ref.watch(profilePrivateKeyManagerListController);
+    // return profilePrivateKeys.when(
+    //     data: (data) {
+    //       return PopupMenuButton(
+    //         icon: const Icon(Icons.terminal),
+    //         tooltip: 'select a private key to ssh with',
+    //         itemBuilder: (itemBuilderContext) => data
+    //             .map((e) => PopupMenuItem(
+    //                   onTap: (() async => await ref.read(profilePrivateKeyManagerListController.notifier).remove(e)),
+    //                   child: Row(
+    //                     children: [
+    //                       const Icon(Icons.vpn_key),
+    //                       gapW12,
+    //                       Text(e),
+    //                     ],
+    //                   ),
+    //                 ))
+    //             .toList(),
+    //       );
+    //     },
+    //     error: (error, stack) => Center(child: Text(error.toString())),
+    //     loading: () => const Center(child: CircularProgressIndicator()));
   }
 }
 
