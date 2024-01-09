@@ -7,7 +7,7 @@ updates:
     schedule:
       interval: "daily"
   - package-ecosystem: "docker"
-    directory: "/packages/sshnoports/tools/"
+    directory: "/packages/dart/sshnoports/tools/"
     schedule:
       interval: "daily"
   - package-ecosystem: "docker"
@@ -15,11 +15,11 @@ updates:
     schedule:
       interval: "daily"
   - package-ecosystem: "pub"
-    directory: "/packages/sshnoports/"
+    directory: "/packages/dart/sshnoports/"
     schedule:
       interval: "daily"
   - package-ecosystem: "pub"
-    directory: "/packages/sshnp_gui/"
+    directory: "/packages/dart/sshnp_gui/"
     schedule:
       interval: "daily"
   - package-ecosystem: "pip"

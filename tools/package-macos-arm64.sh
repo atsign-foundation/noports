@@ -8,7 +8,7 @@
 FULL_PATH_TO_SCRIPT="$(realpath "${BASH_SOURCE[0]}")"
 SCRIPT_DIRECTORY="$(dirname "$FULL_PATH_TO_SCRIPT")"
 ROOT_DIRECTORY="$SCRIPT_DIRECTORY/.."
-SRC_DIR="$ROOT_DIRECTORY/packages/sshnoports"
+SRC_DIR="$ROOT_DIRECTORY/packages/dart/sshnoports"
 
 if [ "$#" -ne 0 ]; then
   echo "Usage: $0"

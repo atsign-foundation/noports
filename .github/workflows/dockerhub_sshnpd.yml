@@ -15,9 +15,9 @@ jobs:
       matrix:
         include:
           - name: sshnpd
-            dockerfile: ./packages/sshnoports/tools/Dockerfile
+            dockerfile: ./packages/dart/sshnoports/tools/Dockerfile
           - name: activate_sshnpd
-            dockerfile: ./packages/sshnoports/tools/Dockerfile.activate
+            dockerfile: ./packages/dart/sshnoports/tools/Dockerfile.activate
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
