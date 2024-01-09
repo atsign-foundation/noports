@@ -41,7 +41,7 @@ jobs:
       # It needs to look at pubspec.lock files, which is why it's
       # placed here, as the `dart pub get` above will create them
       - name: Run osv-scanner
-        working-directory: packages
+        working-directory: packages/dart
         run: |
           go install github.com/google/osv-scanner/cmd/osv-scanner@6316373e47d7e3e4b4fd3630c4bbc10987738de6 # v1.4.3
           osv-scanner --lockfile=./sshnoports/pubspec.lock
