@@ -230,7 +230,7 @@ parse_env() {
   else
     SSHNP_VERSION="$(norm_version "$SSHNP_VERSION")"
   fi
-  URL="https://api.github.com/repos/atsign-foundation/sshnoports/releases/$SSHNP_VERSION";
+  URL="https://api.github.com/repos/atsign-foundation/noports/releases/$SSHNP_VERSION";
 
   case "$(uname)" in
     Darwin)

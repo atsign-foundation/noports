@@ -28,7 +28,7 @@ RUN set -eux ; \
 # BUILD BRANCH
 FROM dart:3.2.4@sha256:a310da69472710ceaa8015add37ef99d16d9ec51e9b67f87fe3b11a7e9596a50 AS build-branch
 
-ENV URL=https://github.com/atsign-foundation/sshnoports.git
+ENV URL=https://github.com/atsign-foundation/noports.git
 ENV REPO_DIR=/app/repo
 ENV PACKAGE_DIR=${REPO_DIR}/packages/dart/sshnoports
 ENV OUTPUT_DIR=/app/output
@@ -107,8 +107,8 @@ ARG release
 
 ENV BUILD_DIR=/app/build
 ENV OUTPUT_DIR=/app/output
-ENV URL="https://api.github.com/repos/atsign-foundation/sshnoports/releases/latest"
-ENV URLP="https://github.com/atsign-foundation/sshnoports/releases/download"
+ENV URL="https://api.github.com/repos/atsign-foundation/noports/releases/latest"
+ENV URLP="https://github.com/atsign-foundation/noports/releases/download"
 
 RUN apt-get update ; \
   apt-get install -y wget dpkg curl ; \

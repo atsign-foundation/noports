@@ -1,7 +1,7 @@
 <img width=250px src="https://atsign.dev/assets/img/atPlatform_logo_gray.svg?sanitize=true" alt="The atPlatform logo">
 
 [![GitHub License](https://img.shields.io/badge/license-BSD3-blue.svg)](./LICENSE)
-[![OpenSSF Scorecard](https://api.securityscorecards.dev/projects/github.com/atsign-foundation/sshnoports/badge)](https://api.securityscorecards.dev/projects/github.com/atsign-foundation/sshnoports)
+[![OpenSSF Scorecard](https://api.securityscorecards.dev/projects/github.com/atsign-foundation/noports/badge)](https://api.securityscorecards.dev/projects/github.com/atsign-foundation/noports)
 
 # SSH! No ports
 
@@ -12,7 +12,7 @@ address the device has been given. As long as the device and client has an IP ad
 DNS and Internet access, you will be able to connect to it.
 
 ## Quick demo
-![sshnp](https://github.com/atsign-foundation/sshnoports/assets/6131216/4ff005f1-230e-4621-9b33-f834caa9a1d1)
+![sshnp](https://github.com/atsign-foundation/noports/assets/6131216/4ff005f1-230e-4621-9b33-f834caa9a1d1)
 
 
 There are five binaries:-
@@ -30,7 +30,7 @@ can then ssh to via your localhost interface
 
 To get going you just need two (or three if you want to use your own sshrvd service) atSigns and their .atKeys files and the
 binaries (from the 
-[latest release](https://github.com/atsign-foundation/sshnoports/releases)).
+[latest release](https://github.com/atsign-foundation/noports/releases)).
 Once you have the atSigns (free or paid atSigns from [atsign.com](https://atsign.com)), drop the binaries in place
 on each machine and put the keys in `~/.atsign/keys` directory. You will need
 a device atSign and a manager atSign, but each device can also have a unique
