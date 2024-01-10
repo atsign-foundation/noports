@@ -16,6 +16,7 @@ class FilePickerController extends StateNotifier<AsyncValue<XFile?>> {
 
   String get fileName => state.value?.name ?? '';
   Future<String> get content async => await state.value?.readAsString() ?? '';
+  String get directory => state.value?.path ?? '';
 
   /// Get the file details.
   Future<void> getFileDetails() async {

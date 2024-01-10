@@ -84,10 +84,17 @@ class ConfigFamilyController extends AutoDisposeFamilyAsyncNotifier<SshnpParams,
     }
     try {
       final result = await ConfigKeyRepository.getParams(arg, atClient: atClient);
+      log('From Config Controller ${result.identityFile}');
       // Add identityFile to result.
       final privateKey = await ProfilePrivateKeyManagerRepository.readProfilePrivateKeyManager(arg);
       log('From Config Controller ${privateKey?.privateKeyNickname}');
-      return SshnpParams.merge(result, SshnpPartialParams(identityFile: privateKey?.privateKeyNickname));
+
+      return result;
+      // return SshnpParams.merge(
+      //     result,
+      //     SshnpPartialParams(
+      //       identityFile: privateKey?.privateKeyNickname,
+      //     ));
     } catch (e) {
       log('From Config Controller ${e.toString()}');
       return SshnpParams.empty();

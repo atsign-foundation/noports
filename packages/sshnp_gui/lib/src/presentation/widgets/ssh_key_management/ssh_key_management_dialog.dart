@@ -25,7 +25,7 @@ class _SshKeyManagementScreenState extends ConsumerState<SshKeyManagementDialog>
     // * Getting the AtClientManager instance to use below
 
     final strings = AppLocalizations.of(context)!;
-    final atSshKeyPairs = ref.watch(atPrivateKeyManagerListController);
+    final privateKeyManager = ref.watch(atPrivateKeyManagerListController);
 
     return Dialog(
       child: Padding(
@@ -46,7 +46,7 @@ class _SshKeyManagementScreenState extends ConsumerState<SshKeyManagementDialog>
               style: Theme.of(context).textTheme.bodySmall,
             ),
             gapH20,
-            atSshKeyPairs.when(
+            privateKeyManager.when(
               loading: () => const Center(
                 child: CircularProgressIndicator(),
               ),

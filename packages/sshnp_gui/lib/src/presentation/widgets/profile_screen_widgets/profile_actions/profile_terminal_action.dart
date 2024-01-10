@@ -11,6 +11,7 @@ import 'package:sshnp_gui/src/controllers/navigation_rail_controller.dart';
 import 'package:sshnp_gui/src/controllers/terminal_session_controller.dart';
 import 'package:sshnp_gui/src/presentation/widgets/profile_screen_widgets/profile_actions/profile_action_button.dart';
 import 'package:sshnp_gui/src/presentation/widgets/utility/custom_snack_bar.dart';
+import 'package:sshnp_gui/src/repository/private_key_manager_repository.dart';
 
 class ProfileTerminalAction extends ConsumerStatefulWidget {
   final SshnpParams params;
@@ -22,6 +23,7 @@ class ProfileTerminalAction extends ConsumerStatefulWidget {
 
 class _ProfileTerminalActionState extends ConsumerState<ProfileTerminalAction> {
   Future<void> onPressed() async {
+    log('identity file is: ${widget.params.identityFile}');
     log(widget.params.identityPassphrase ?? 'no passphrase');
     log(widget.params.identityFile ?? 'no identity file');
     log(widget.params.clientAtSign ?? 'no client at sign');
@@ -58,12 +60,22 @@ class _ProfileTerminalActionState extends ConsumerState<ProfileTerminalAction> {
       //   identifier: widget.params.identityFile ?? 'id_${atClient.getCurrentAtSign()!.replaceAll('@', '')}',
       // );
       // TODO: Get values from biometric storage (PrivateKeyManagerController)
+      final privateKeyManager = await PrivateKeyManagerRepository.readPrivateKeyManager('test');
+      log('private key is: ${privateKeyManager!.privateKeyFileName}');
       AtSshKeyPair keyPair = AtSshKeyPair.fromPem(
         content,
-        identifier: 'test',
+        identifier: privateKeyManager.privateKeyFileName,
+        // identifier: 'test',
       );
 
+      final sshnpParams = SshnpParams.merge(
+          widget.params,
+          SshnpPartialParams(
+            identityFile: '/Users/curtlycritchlow/.ssh/3e8ddb75-7b89-4c4a-9c08-f3c858113bb2_sshnp',
+          ));
+
       final sshnp = Sshnp.dartPure(
+        // params: sshnpParams,
         params: widget.params,
         atClient: atClient,
         identityKeyPair: keyPair,

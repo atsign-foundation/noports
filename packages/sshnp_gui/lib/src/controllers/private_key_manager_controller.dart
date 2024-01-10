@@ -84,8 +84,8 @@ class PrivateKeyManagerListController extends AutoDisposeAsyncNotifier<Iterable<
   }
 
   void add(String identity) async {
-    await PrivateKeyManagerRepository.writePrivateKeyManagerNicknames(state.value!.toList());
     state = AsyncValue.data({...state.value ?? [], identity});
+    await PrivateKeyManagerRepository.writePrivateKeyManagerNicknames(state.value!.toList());
   }
 
   Future<void> remove(String identity) async {

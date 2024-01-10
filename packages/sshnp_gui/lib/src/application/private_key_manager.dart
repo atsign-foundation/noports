@@ -6,12 +6,14 @@ class PrivateKeyManager {
   final String? passPhrase;
   final String content;
   final String privateKeyFileName;
+  final String? directory;
 
   PrivateKeyManager({
     required this.nickname,
     this.passPhrase,
     required this.content,
     required this.privateKeyFileName,
+    this.directory,
   });
 
   PrivateKeyManager.empty({
@@ -19,13 +21,15 @@ class PrivateKeyManager {
     this.passPhrase = '',
     this.content = '',
     this.privateKeyFileName = '',
+    this.directory = '',
   });
 
   PrivateKeyManager.fromJson(Map<String, dynamic> json)
       : nickname = json['nickName'],
         passPhrase = json['passPhrase'],
         content = json['content'],
-        privateKeyFileName = json['privateKeyFileName'];
+        privateKeyFileName = json['privateKeyFileName'],
+        directory = json['filePath'];
 
   Map<String, String?> toMap() {
     return {
@@ -33,10 +37,11 @@ class PrivateKeyManager {
       'passPhrase': passPhrase,
       'content': content,
       'privateKeyFileName': privateKeyFileName,
+      'filePath': directory,
     };
   }
 
   AtSshKeyPair toAtSshKeyPair() {
-    return AtSshKeyPair.fromPem(content, identifier: nickname, passphrase: passPhrase);
+    return AtSshKeyPair.fromPem(content, identifier: nickname, passphrase: passPhrase, directory: directory);
   }
 }

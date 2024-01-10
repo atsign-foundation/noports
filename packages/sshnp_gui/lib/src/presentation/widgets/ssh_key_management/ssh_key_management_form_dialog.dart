@@ -72,13 +72,14 @@ class _SSHKeyManagementFormState extends ConsumerState<SSHKeyManagementFormDialo
       _formkey.currentState!.save();
 
       final privateKeyManager = PrivateKeyManager(
-          nickname: nickname,
-          content: await fileDetails.content,
-          privateKeyFileName: fileDetails.fileName,
-          passPhrase: passPhrase);
+        nickname: nickname,
+        content: await fileDetails.content,
+        privateKeyFileName: fileDetails.fileName,
+        passPhrase: passPhrase,
+        directory: fileDetails.directory,
+      );
       fileDetails.clearFileDetails();
       final controller = ref.read(privateKeyManagerFamilyController(nickname).notifier);
-      await controller.deletePrivateKeyManager(identifier: 'test');
 
       await controller.savePrivateKeyManager(privateKeyManager: privateKeyManager);
 
