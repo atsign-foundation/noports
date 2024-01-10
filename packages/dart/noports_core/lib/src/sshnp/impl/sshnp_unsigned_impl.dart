@@ -2,9 +2,11 @@ import 'dart:async';
 
 import 'package:at_client/at_client.dart';
 import 'package:noports_core/src/common/io_types.dart';
+import 'package:noports_core/src/sshnp/util/ephemeral_port_binder.dart';
 import 'package:noports_core/sshnp_foundation.dart';
 
-class SshnpUnsignedImpl extends SshnpCore with SshnpLocalSshKeyHandler {
+class SshnpUnsignedImpl extends SshnpCore
+    with SshnpLocalSshKeyHandler, EphemeralPortBinder {
   SshnpUnsignedImpl({
     required super.atClient,
     required super.params,
@@ -38,6 +40,7 @@ class SshnpUnsignedImpl extends SshnpCore with SshnpLocalSshKeyHandler {
   @override
   Future<void> initialize() async {
     if (!isSafeToInitialize) return;
+    await findLocalPortIfRequired();
     await super.initialize();
 
     /// Generate an ephemeral key pair for this session
