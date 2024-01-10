@@ -5,13 +5,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:noports_core/sshnp.dart';
-import 'package:noports_core/utils.dart';
 import 'package:sshnp_gui/src/controllers/navigation_controller.dart';
 import 'package:sshnp_gui/src/controllers/navigation_rail_controller.dart';
 import 'package:sshnp_gui/src/controllers/terminal_session_controller.dart';
 import 'package:sshnp_gui/src/presentation/widgets/profile_screen_widgets/profile_actions/profile_action_button.dart';
-import 'package:sshnp_gui/src/presentation/widgets/utility/custom_snack_bar.dart';
 import 'package:sshnp_gui/src/repository/private_key_manager_repository.dart';
+
+import '../../../../repository/profile_private_key_manager_repository.dart';
+import '../../utility/custom_snack_bar.dart';
 
 class ProfileTerminalAction extends ConsumerStatefulWidget {
   final SshnpParams params;
@@ -23,7 +24,7 @@ class ProfileTerminalAction extends ConsumerStatefulWidget {
 
 class _ProfileTerminalActionState extends ConsumerState<ProfileTerminalAction> {
   Future<void> onPressed() async {
-    log('identity file is: ${widget.params.identityFile}');
+    log(widget.params.profileName ?? 'no profile name');
     log(widget.params.identityPassphrase ?? 'no passphrase');
     log(widget.params.identityFile ?? 'no identity file');
     log(widget.params.clientAtSign ?? 'no client at sign');
@@ -34,7 +35,7 @@ class _ProfileTerminalActionState extends ConsumerState<ProfileTerminalAction> {
         builder: (BuildContext context) => const Center(child: CircularProgressIndicator()),
       );
     }
-
+    // TODO: add try
     try {
       // TODO ensure that this keyPair gets uploaded to the app first
       // final privateKeyManager = ref.watch(privateKeyManagerFamilyController(privateKeyNickname));
@@ -60,19 +61,20 @@ class _ProfileTerminalActionState extends ConsumerState<ProfileTerminalAction> {
       //   identifier: widget.params.identityFile ?? 'id_${atClient.getCurrentAtSign()!.replaceAll('@', '')}',
       // );
       // TODO: Get values from biometric storage (PrivateKeyManagerController)
-      final privateKeyManager = await PrivateKeyManagerRepository.readPrivateKeyManager('test');
-      log('private key is: ${privateKeyManager!.privateKeyFileName}');
-      AtSshKeyPair keyPair = AtSshKeyPair.fromPem(
-        content,
-        identifier: privateKeyManager.privateKeyFileName,
-        // identifier: 'test',
-      );
 
-      final sshnpParams = SshnpParams.merge(
-          widget.params,
-          SshnpPartialParams(
-            identityFile: '/Users/curtlycritchlow/.ssh/3e8ddb75-7b89-4c4a-9c08-f3c858113bb2_sshnp',
-          ));
+      final profilePrivateKey =
+          await ProfilePrivateKeyManagerRepository.readProfilePrivateKeyManager(widget.params.profileName ?? '');
+      final privateKeyManager =
+          await PrivateKeyManagerRepository.readPrivateKeyManager(profilePrivateKey?.privateKeyNickname ?? '');
+      // log('private key is: ${privateKeyManager!.privateKeyFileName}');
+      // log('private key manager passphrase is: ${privateKeyManager.passPhrase}');
+      // AtSshKeyPair keyPair = AtSshKeyPair.fromPem(
+      //   privateKeyManager.content,
+      //   identifier: privateKeyManager.privateKeyFileName,
+      //   passphrase: privateKeyManager.passPhrase,
+      //   // passphrase: privateKeyManager.passPhrase,
+      // );
+      final keyPair = privateKeyManager?.toAtSshKeyPair();
 
       final sshnp = Sshnp.dartPure(
         // params: sshnpParams,
@@ -102,6 +104,7 @@ class _ProfileTerminalActionState extends ConsumerState<ProfileTerminalAction> {
           context.pushReplacementNamed(AppRoute.terminal.name);
         }
       }
+      //TODO: Add catch
     } catch (e) {
       if (mounted) {
         log('error: ${e.toString()}');

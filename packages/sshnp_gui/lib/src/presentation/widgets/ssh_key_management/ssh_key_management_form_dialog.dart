@@ -146,7 +146,14 @@ class _SSHKeyManagementFormState extends ConsumerState<SSHKeyManagementFormDialo
                         labelText: strings.privateKeyPassphrase,
                         initialValue: passPhrase,
                         isPasswordField: true,
-                        onSaved: (value) => passPhrase = value,
+                        onSaved: (value) {
+                          if (value == '' || value == null) {
+                            passPhrase = null;
+                          } else {
+                            passPhrase = value;
+                          }
+                          log('passphrase is $value');
+                        },
                       ),
                       gapH36,
                       SizedBox(

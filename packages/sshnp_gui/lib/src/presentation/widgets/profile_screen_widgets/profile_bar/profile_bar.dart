@@ -1,3 +1,5 @@
+import 'dart:developer';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -22,34 +24,37 @@ class _ProfileBarState extends ConsumerState<ProfileBar> {
   Widget build(BuildContext context) {
     final strings = AppLocalizations.of(context)!;
     final controller = ref.watch(configFamilyController(widget.profileName));
+    log('profileName: ${widget.profileName}');
     return controller.when(
-      loading: () => const LinearProgressIndicator(),
-      error: (error, stackTrace) {
-        return Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text(widget.profileName),
-            gapW8,
-            Expanded(child: Container()),
-            Text(strings.corruptedProfile),
-            ProfileDeleteAction(widget.profileName),
-          ],
-        );
-      },
-      data: (profile) => Card(
-        color: kProfileBarColor,
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            gapW16,
-            Text(widget.profileName),
-            gapW8,
-            Expanded(child: Container()),
-            const ProfileBarStats(),
-            ProfileBarActions(profile),
-          ],
-        ),
-      ),
-    );
+        loading: () => const LinearProgressIndicator(),
+        error: (error, stackTrace) {
+          return Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(widget.profileName),
+              gapW8,
+              Expanded(child: Container()),
+              Text(strings.corruptedProfile),
+              ProfileDeleteAction(widget.profileName),
+            ],
+          );
+        },
+        data: (profile) {
+          log('profile from profile_bar: ${profile.profileName}');
+          return Card(
+            color: kProfileBarColor,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                gapW16,
+                Text(widget.profileName),
+                gapW8,
+                Expanded(child: Container()),
+                const ProfileBarStats(),
+                ProfileBarActions(profile),
+              ],
+            ),
+          );
+        });
   }
 }

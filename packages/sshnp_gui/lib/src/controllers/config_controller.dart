@@ -7,8 +7,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:noports_core/sshnp_params.dart';
 import 'package:sshnp_gui/src/presentation/widgets/utility/custom_snack_bar.dart';
 
-import '../repository/profile_private_key_manager_repository.dart';
-
 enum ConfigFileWriteState { create, update }
 
 /// A provider that exposes the [CurrentConfigController] to the app.
@@ -84,10 +82,11 @@ class ConfigFamilyController extends AutoDisposeFamilyAsyncNotifier<SshnpParams,
     }
     try {
       final result = await ConfigKeyRepository.getParams(arg, atClient: atClient);
-      log('From Config Controller ${result.identityFile}');
+      log('config profile is: $arg');
+      log('From Config Controller identity file ${result.identityFile}');
       // Add identityFile to result.
-      final privateKey = await ProfilePrivateKeyManagerRepository.readProfilePrivateKeyManager(arg);
-      log('From Config Controller ${privateKey?.privateKeyNickname}');
+      // final privateKey = await ProfilePrivateKeyManagerRepository.readProfilePrivateKeyManager(arg);
+      // log('From Config Controller private key ${privateKey?.privateKeyNickname}');
 
       return result;
       // return SshnpParams.merge(

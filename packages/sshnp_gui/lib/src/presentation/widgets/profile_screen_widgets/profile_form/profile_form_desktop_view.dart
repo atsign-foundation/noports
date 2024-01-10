@@ -14,7 +14,7 @@ import 'package:sshnp_gui/src/presentation/widgets/profile_screen_widgets/profil
 import 'package:sshnp_gui/src/presentation/widgets/profile_screen_widgets/profile_form/custom_text_form_field.dart';
 import 'package:sshnp_gui/src/presentation/widgets/profile_screen_widgets/profile_form/profile_form_card.dart';
 import 'package:sshnp_gui/src/presentation/widgets/ssh_key_management/ssh_key_management_form_dialog.dart';
-import 'package:sshnp_gui/src/repository/private_key_manager_repository.dart';
+import 'package:sshnp_gui/src/repository/profile_private_key_manager_repository.dart';
 import 'package:sshnp_gui/src/utility/constants.dart';
 import 'package:sshnp_gui/src/utility/form_validator.dart';
 import 'package:sshnp_gui/src/utility/sizes.dart';
@@ -32,16 +32,16 @@ class ProfileFormDesktopView extends ConsumerStatefulWidget {
 class _ProfileFormState extends ConsumerState<ProfileFormDesktopView> {
   final GlobalKey<FormState> _formkey = GlobalKey<FormState>();
   late CurrentConfigState currentProfile;
-  late String? privateKeyNickname;
+  String? privateKeyNickname;
   SshnpPartialParams newConfig = SshnpPartialParams.empty();
 
   @override
   void initState() {
     WidgetsBinding.instance.addPostFrameCallback((timeStamp) async {
       ref.read(formProfileNameController.notifier).state = currentProfile.profileName;
-
-      privateKeyNickname = await PrivateKeyManagerRepository.readPrivateKeyManager(currentProfile.profileName)
-          .then((value) => value?.nickname);
+      privateKeyNickname =
+          await ProfilePrivateKeyManagerRepository.readProfilePrivateKeyManager(currentProfile.profileName)
+              .then((value) => value?.privateKeyNickname);
     });
 
     super.initState();
