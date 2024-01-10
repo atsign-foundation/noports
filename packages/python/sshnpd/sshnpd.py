@@ -1,5 +1,7 @@
 #!/bin/env python3
 import os, threading, getpass, json, logging, subprocess, argparse, errno
+from  cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
+from cryptography.hazmat.primitives import serialization
 from io import StringIO
 from queue import Empty, Queue
 from time import sleep
@@ -18,13 +20,10 @@ from at_client.connections.notification.atevents import AtEvent, AtEventType
 
 
 class SocketConnector:
-    _logger = logging.getLogger("sshrv | socket_connector")
-    def __init__(self, server1_ip, server1_port, server2_ip, server2_port, verbose = False):
-        self._logger.setLevel(logging.INFO)
-        self._logger.addHandler(logging.StreamHandler())
-        if verbose:
-            self._logger.setLevel(logging.DEBUG)
+    _logger = None
+    def __init__(self, server1_ip, server1_port, server2_ip, server2_port, logger):
         
+        _logger = logger
         # Create sockets for both servers
         self.socketA = create_connection((server1_ip, server1_port))
         self.socketB = create_connection((server2_ip, server2_port))
@@ -79,7 +78,14 @@ class SocketConnector:
 
 class SSHRV:
     def __init__(self, destination, port, local_port = 22, verbose = False):
-        self.logger = logging.getLogger("sshrv")
+        self.logger = logging.getLogger("sshrv | socket_connector")
+        self.logger.propagate = False
+        self.logger.addHandler(logging.StreamHandler())
+        if verbose:
+            self.logger.setLevel(logging.DEBUG)
+        else:
+            self.logger.setLevel(logging.INFO)
+            
         self.host = ""
         self.destination = destination
         self.local_ssh_port = local_port
@@ -90,7 +96,7 @@ class SSHRV:
     def run(self):
         try:
             self.host = gethostbyname(gethostname())
-            socket_connector = SocketConnector(self.host, self.local_ssh_port, self.destination, self.streaming_port, verbose=self.verbose)
+            socket_connector = SocketConnector(self.host, self.local_ssh_port, self.destination, self.streaming_port, logger=self.logger)
             t1 = threading.Thread(target=socket_connector.connect)
             t1.start()
             self.socket_connector = t1
@@ -98,6 +104,7 @@ class SSHRV:
                 
         except Exception as e:
             logging.error("SSHRV Error: " + str(e))
+            raise e
             
     def is_alive(self):
         return self.socket_connector.is_alive()
@@ -255,19 +262,6 @@ class SSHNPDClient:
             except Empty:
                 pass  
 
-    def _direct_ssh(self, hostname, port, sessionId):
-        sshrv = SSHRV(hostname, port)
-        sshrv.run()
-        self.rv = sshrv
-        self.logger.info("sshrv started @ "  + hostname + " on port " + str(port))
-        (public_key, private_key)= self._generate_ssh_keys(sessionId)
-        private_key = private_key.replace("\n", "\\n")
-        self._handle_ssh_public_key(public_key)
-        data = f'{{"status":"connected","sessionId":"{sessionId}","ephemeralPrivateKey":"{private_key}"}}'
-        signature =  EncryptionUtil.sign_sha256_rsa(data, self.at_client.keys[KeysUtil.encryption_private_key_name])
-        envelope = f'{{"payload":{data},"signature":"{signature}","hashingAlgo":"sha256","signingAlgo":"rsa2048"}}'
-        return envelope
-
     def sshnp_callback(
         self,   
         event: AtEvent,
@@ -306,8 +300,6 @@ class SSHNPDClient:
             notify_response = self.at_client.notify(at_key, ssh_response, session_id=uuid)
             self.logger.info("sent ssh notification to " + at_key.shared_with.to_string() + " with id:" + uuid)
             self.authenticated = True
-        if direct:
-            self._ephemeral_cleanup(uuid)
 
     #Running in a thread
     def _forward_socket_handler(self, chan, dest):
@@ -400,63 +392,52 @@ class SSHNPDClient:
             raise(e)
         
         return "connected"
+    
+    def _direct_ssh(self, hostname, port, sessionId):
+        sshrv = SSHRV(hostname, port)
+        data = ""
+        try:
+            sshrv.run()
+            self.rv = sshrv
+            self.logger.info("sshrv started @ "  + hostname + " on port " + str(port))
+            (public_key, private_key)= self._generate_ssh_keys()
+            private_key = private_key.replace("\n", "\\n")
+            self._handle_ssh_public_key(public_key)
+            data = f'{{"status":"connected","sessionId":"{sessionId}","ephemeralPrivateKey":"{private_key}"}}'
+        except Exception as e:
+            data = f'{{"status":""Remote SSH Client failure : {e}","sessionId":"{sessionId}"}}'
+            
+        signature =  EncryptionUtil.sign_sha256_rsa(data, self.at_client.keys[KeysUtil.encryption_private_key_name])
+        envelope = f'{{"payload":{data},"signature":"{signature}","hashingAlgo":"sha256","signingAlgo":"rsa2048"}}'
+        return envelope 
 
-    def _generate_ssh_keys(self, session_id):
+    def _generate_ssh_keys(self):
         # Generate SSH Keys
         self.logger.info("Generating SSH Keys")
-        if not os.path.exists(f"{self.ssh_path}/tmp/"):
-            os.makedirs(f"{self.ssh_path}/tmp/")
-            
-        ssh_keygen = subprocess.Popen(
-            ["ssh-keygen", "-t", "ed25519", "-a", "100", "-f", f"{session_id}_sshnp", "-q", "-N", ""],
-            cwd=f'{self.ssh_path}/tmp/',
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-        )
+        ed25519keypair = Ed25519PrivateKey.generate()
+        ssh_private_key = ed25519keypair.private_bytes(
+            encoding=serialization.Encoding.PEM, format=serialization.PrivateFormat.OpenSSH, encryption_algorithm=serialization.NoEncryption()
+        ).decode("utf-8")
         
-        stdout, stderr = ssh_keygen.communicate()
-        if ssh_keygen.returncode != 0:
-            self.logger.error("SSH Key generation failed")
-            self.logger.error(stderr.decode("utf-8"))
-            return False
-        
-        self.logger.info("SSH Keys Generated")
-        ssh_public_key = ""
-        ssh_private_key = ""
-        try:
-            with open(f"{self.ssh_path}/tmp/{session_id}_sshnp.pub", 'r') as public_key_file:
-                ssh_public_key = public_key_file.read()
-
-            with open(f"{self.ssh_path}/tmp/{session_id}_sshnp", 'r') as private_key_file:
-                ssh_private_key = private_key_file.read()
-                
-        except Exception as e:
-            self.logger.error(e)
-            return False
+        ssh_public_key = ed25519keypair.public_key().public_bytes(
+            encoding=serialization.Encoding.PEM, format=serialization.PublicFormat.SubjectPublicKeyInfo
+        ).decode("utf-8")
         
         return (ssh_public_key, ssh_private_key)
 
-    def _ephemeral_cleanup(self, session_id):
-        try:
-            os.remove(f"{self.ssh_path}/tmp/{session_id}_sshnp.pub")
-            os.remove(f"{self.ssh_path}/tmp/{session_id}_sshnp")
-            self.logger.info("ephemeral ssh keys cleaned up")
-        except Exception as e:
-            self.logger.error(e)
-
     def _handle_ssh_public_key(self, ssh_public_key):
         # // Check to see if the ssh Publickey is already in the file if not append to the ~/.ssh/authorized_keys file
-        writeKey = False
         filedata = ""
+        
+        if not os.path.isfile(f"{self.ssh_path}/authorized_keys"):
+            open(f"{self.ssh_path}/authorized_keys", "a").close()
+            
         with open(f"{self.ssh_path}/authorized_keys", "r") as read:
             filedata = read.read()
             if ssh_public_key not in filedata:
-                writeKey = True
-        if writeKey:
-            with open(f"{self.ssh_path}/authorized_keys", "w") as write:
-                write.write(f"{filedata}\n{ssh_public_key}")
-            self.logger.debug("key written" )
-
+                with open(f"{self.ssh_path}/authorized_keys", "w") as write:
+                    write.write(f"{filedata}\n{ssh_public_key}")
+                self.logger.debug("key written" )
 
 def main():
     parser = argparse.ArgumentParser("sshnpd")
