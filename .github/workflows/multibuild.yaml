@@ -66,7 +66,7 @@ jobs:
       - run: tar -cvzf tarball/${{ matrix.output-name }}.tgz sshnp
       - uses: actions/upload-artifact@c7d193f32edcb7bfad88892161225aeda64e9392 # v4.0.0
         with:
-          name: x64_binaries
+          name: ${{ matrix.output-name }}-upload
           path: ./packages/dart/sshnoports/tarball/${{ matrix.output-name }}.tgz
           if-no-files-found: error
 
@@ -98,7 +98,7 @@ jobs:
       - run: tar -xvf bins.tar -C tarballs
       - uses: actions/upload-artifact@c7d193f32edcb7bfad88892161225aeda64e9392 # v4.0.0
         with:
-          name: other_binaries
+          name: ${{ matrix.output-name }}-upload
           path: ./packages/dart/sshnoports/tarballs/${{ matrix.output-name }}.tgz
           if-no-files-found: error
 
