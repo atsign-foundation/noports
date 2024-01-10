@@ -1,3 +1,8 @@
+# 5.0.4
+
+- refactor: move the `findLocalPortIfRequired` function to `EphemeralPortBinder`, a mixin on `SshnpCore`
+- fix: call `callFindLocalPortIfRequired` during the initialization of the unsigned sshnp client
+
 # 5.0.3
 - feat: Add `--storage-path` option to sshnpd to allow users to specify where 
   it keeps any locally stored data
