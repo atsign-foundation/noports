@@ -260,6 +260,24 @@ class SSHNPDClient:
                     self.at_client.handle_event(queue, at_event)
             except Empty:
                 pass  
+            
+    def _direct_ssh(self, hostname, port, sessionId):
+        sshrv = SSHRV(hostname, port)
+        data = ""
+        try:
+            sshrv.run()
+            self.rv = sshrv
+            self.logger.info("sshrv started @ "  + hostname + " on port " + str(port))
+            (public_key, private_key)= self._generate_ssh_keys()
+            private_key = private_key.replace("\n", "\\n")
+            self._handle_ssh_public_key(public_key)
+            data = f'{{"status":"connected","sessionId":"{sessionId}","ephemeralPrivateKey":"{private_key}"}}'
+        except Exception as e:
+            data = f'{{"status":""Remote SSH Client failure : {e}","sessionId":"{sessionId}"}}'
+            
+        signature =  EncryptionUtil.sign_sha256_rsa(data, self.at_client.keys[KeysUtil.encryption_private_key_name])
+        envelope = f'{{"payload":{data},"signature":"{signature}","hashingAlgo":"sha256","signingAlgo":"rsa2048"}}'
+        return envelope 
 
     def sshnp_callback(
         self,   
@@ -392,23 +410,7 @@ class SSHNPDClient:
         
         return "connected"
     
-    def _direct_ssh(self, hostname, port, sessionId):
-        sshrv = SSHRV(hostname, port)
-        data = ""
-        try:
-            sshrv.run()
-            self.rv = sshrv
-            self.logger.info("sshrv started @ "  + hostname + " on port " + str(port))
-            (public_key, private_key)= self._generate_ssh_keys()
-            private_key = private_key.replace("\n", "\\n")
-            self._handle_ssh_public_key(public_key)
-            data = f'{{"status":"connected","sessionId":"{sessionId}","ephemeralPrivateKey":"{private_key}"}}'
-        except Exception as e:
-            data = f'{{"status":""Remote SSH Client failure : {e}","sessionId":"{sessionId}"}}'
-            
-        signature =  EncryptionUtil.sign_sha256_rsa(data, self.at_client.keys[KeysUtil.encryption_private_key_name])
-        envelope = f'{{"payload":{data},"signature":"{signature}","hashingAlgo":"sha256","signingAlgo":"rsa2048"}}'
-        return envelope 
+   
 
     def _generate_ssh_keys(self):
         # Generate SSH Keys
