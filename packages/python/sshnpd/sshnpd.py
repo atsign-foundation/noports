@@ -20,10 +20,9 @@ from at_client.connections.notification.atevents import AtEvent, AtEventType
 
 
 class SocketConnector:
-    _logger = None
     def __init__(self, server1_ip, server1_port, server2_ip, server2_port, logger):
         
-        _logger = logger
+        self._logger = logger
         # Create sockets for both servers
         self.socketA = create_connection((server1_ip, server1_port))
         self.socketB = create_connection((server2_ip, server2_port))
