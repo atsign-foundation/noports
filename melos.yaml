@@ -3,7 +3,7 @@ name: noports
 packages:
   - packages/dart/noports_core
   - packages/dart/sshnoports
-  - packages/dart/sshnp_gui
+  - packages/dart/sshnp_flutter
 
 command:
   bootstrap:
