@@ -23,7 +23,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     defaults:
       run:
-        working-directory: ./packages/sshnoports
+        working-directory: ./packages/dart/sshnoports
     strategy:
       matrix:
         os: [ubuntu-latest, macOS-latest, windows-latest]
@@ -67,7 +67,7 @@ jobs:
       - uses: actions/upload-artifact@c7d193f32edcb7bfad88892161225aeda64e9392 # v4.0.0
         with:
           name: x64_binaries
-          path: ./packages/sshnoports/tarball/${{ matrix.output-name }}.tgz
+          path: ./packages/dart/sshnoports/tarball/${{ matrix.output-name }}.tgz
           if-no-files-found: error
 
   other_build:
@@ -76,7 +76,7 @@ jobs:
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: ./packages/sshnoports
+        working-directory: ./packages/dart/sshnoports
     strategy:
       matrix:
         platform: [linux/arm/v7, linux/arm64, linux/riscv64]
@@ -99,7 +99,7 @@ jobs:
       - uses: actions/upload-artifact@c7d193f32edcb7bfad88892161225aeda64e9392 # v4.0.0
         with:
           name: other_binaries
-          path: ./packages/sshnoports/tarballs/${{ matrix.output-name }}.tgz
+          path: ./packages/dart/sshnoports/tarballs/${{ matrix.output-name }}.tgz
           if-no-files-found: error
 
   notify_on_completion:
