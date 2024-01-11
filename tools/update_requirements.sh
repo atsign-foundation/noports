@@ -3,6 +3,9 @@
 # update the requirements.txt, which is what we actually use to pull
 # in our Python dependencies. So we need to run this to generate a
 # new requirements.txt from the updated files.
+if [ -f poetry.lock ]; then
+  rm poetry.lock
+fi
 poetry export --format requirements.txt --output requirements.txt
 # of course this assumes that poetry is installed, which is done by:
 ## curl -sSL https://install.python-poetry.org | python3 -

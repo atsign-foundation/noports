@@ -63,7 +63,7 @@ void main(List<String> args) async {
         sshClient:
             SupportedSshClient.fromString(argResults['ssh-client'] as String),
       ).catchError((e) {
-        if (e.stackTrace != null) {
+        if (e is SshnpError && e.stackTrace != null) {
           Error.throwWithStackTrace(e, e.stackTrace!);
         }
         throw e;
