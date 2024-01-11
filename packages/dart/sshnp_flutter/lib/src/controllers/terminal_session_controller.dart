@@ -1,5 +1,5 @@
+import 'dart:async';
 import 'dart:convert';
-import 'dart:typed_data';
 
 import 'package:dartssh2/dartssh2.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -8,25 +8,23 @@ import 'package:uuid/uuid.dart';
 import 'package:xterm/xterm.dart';
 
 /// A provider that exposes the [TerminalSessionController] to the app.
-final terminalSessionController =
-    NotifierProvider<TerminalSessionController, String>(
+final terminalSessionController = NotifierProvider<TerminalSessionController, String>(
   TerminalSessionController.new,
 );
 
 /// A provider that exposes the [TerminalSessionListController] to the app.
-final terminalSessionListController =
-    NotifierProvider<TerminalSessionListController, List<String>>(
+final terminalSessionListController = NotifierProvider<TerminalSessionListController, List<String>>(
   TerminalSessionListController.new,
 );
 
 /// A provider that exposes the [TerminalSessionFamilyController] to the app.
-final terminalSessionFamilyController = NotifierProviderFamily<
-    TerminalSessionFamilyController, TerminalSession, String>(
+final terminalSessionFamilyController =
+    NotifierProviderFamily<TerminalSessionFamilyController, TerminalSession, String>(
   TerminalSessionFamilyController.new,
 );
 
-final terminalSessionProfileNameFamilyCounter = NotifierProviderFamily<
-    TerminalSessionProfileNameFamilyCounter, int, String>(
+final terminalSessionProfileNameFamilyCounter =
+    NotifierProviderFamily<TerminalSessionProfileNameFamilyCounter, int, String>(
   TerminalSessionProfileNameFamilyCounter.new,
 );
 
@@ -78,8 +76,7 @@ class TerminalSession {
 }
 
 /// Controller for the family of terminal session [TerminalController]s
-class TerminalSessionFamilyController
-    extends FamilyNotifier<TerminalSession, String> {
+class TerminalSessionFamilyController extends FamilyNotifier<TerminalSession, String> {
   @override
   TerminalSession build(String arg) {
     return TerminalSession(arg);
@@ -89,9 +86,8 @@ class TerminalSessionFamilyController
 
   void issueDisplayName(String profileName) {
     state._profileName = profileName;
-    state.displayName = ref
-        .read(terminalSessionProfileNameFamilyCounter(profileName).notifier)
-        ._addSession(state.sessionId);
+    state.displayName =
+        ref.read(terminalSessionProfileNameFamilyCounter(profileName).notifier)._addSession(state.sessionId);
   }
 
   void startSession(
@@ -130,8 +126,7 @@ class TerminalSessionFamilyController
 
       /// Count down to closing the terminal
       for (int i = 0; i < delay; i++) {
-        String message =
-            'Closing terminal session in ${delay - i} seconds...\r';
+        String message = 'Closing terminal session in ${delay - i} seconds...\r';
         state.terminal.write(message);
         await Future.delayed(const Duration(seconds: 1));
       }
@@ -154,9 +149,7 @@ class TerminalSessionFamilyController
 
   void _killProcess() {
     if (state.shell != null && state.shell is SSHSessionAsSshnpRemoteProcess) {
-      (state.shell as SSHSessionAsSshnpRemoteProcess)
-          .sshSession
-          .kill(SSHSignal.KILL);
+      (state.shell as SSHSessionAsSshnpRemoteProcess).sshSession.kill(SSHSignal.KILL);
     }
     state.isRunning = false;
   }
@@ -176,14 +169,10 @@ class TerminalSessionFamilyController
       // Find a new terminal tab to set as the active one
       if (currentIndex > 0) {
         // set active terminal to the one immediately to the left
-        ref
-            .read(terminalSessionController.notifier)
-            .setSession(terminalList[currentIndex - 1]);
+        ref.read(terminalSessionController.notifier).setSession(terminalList[currentIndex - 1]);
       } else if (terminalList.length > 1) {
         // set active terminal to the one immediately to the right
-        ref
-            .read(terminalSessionController.notifier)
-            .setSession(terminalList[currentIndex + 1]);
+        ref.read(terminalSessionController.notifier).setSession(terminalList[currentIndex + 1]);
       } else {
         // no other sessions available, set active terminal to empty string
         ref.read(terminalSessionController.notifier).setSession('');
@@ -195,17 +184,13 @@ class TerminalSessionFamilyController
 
     /// 4. Remove the session from the profile name counter
     if (state._profileName != null) {
-      ref
-          .read(terminalSessionProfileNameFamilyCounter(state._profileName!)
-              .notifier)
-          ._removeSession(state.sessionId);
+      ref.read(terminalSessionProfileNameFamilyCounter(state._profileName!).notifier)._removeSession(state.sessionId);
     }
   }
 }
 
 /// Counter for the number of terminal sessions by profileName - issues and tracks the display name for each session
-class TerminalSessionProfileNameFamilyCounter
-    extends FamilyNotifier<int, String> {
+class TerminalSessionProfileNameFamilyCounter extends FamilyNotifier<int, String> {
   @override
   int build(String arg) => 0;
 
