@@ -1,29 +1,32 @@
 import 'dart:convert';
-import 'dart:io';
 
-import 'package:flutter_pty/flutter_pty.dart';
+
+import 'package:dartssh2/dartssh2.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:noports_core/sshnp_foundation.dart';
 import 'package:uuid/uuid.dart';
 import 'package:xterm/xterm.dart';
 
 /// A provider that exposes the [TerminalSessionController] to the app.
-final terminalSessionController = NotifierProvider<TerminalSessionController, String>(
+final terminalSessionController =
+    NotifierProvider<TerminalSessionController, String>(
   TerminalSessionController.new,
 );
 
 /// A provider that exposes the [TerminalSessionListController] to the app.
-final terminalSessionListController = NotifierProvider<TerminalSessionListController, List<String>>(
+final terminalSessionListController =
+    NotifierProvider<TerminalSessionListController, List<String>>(
   TerminalSessionListController.new,
 );
 
 /// A provider that exposes the [TerminalSessionFamilyController] to the app.
-final terminalSessionFamilyController =
-    NotifierProviderFamily<TerminalSessionFamilyController, TerminalSession, String>(
+final terminalSessionFamilyController = NotifierProviderFamily<
+    TerminalSessionFamilyController, TerminalSession, String>(
   TerminalSessionFamilyController.new,
 );
 
-final terminalSessionProfileNameFamilyCounter =
-    NotifierProviderFamily<TerminalSessionProfileNameFamilyCounter, int, String>(
+final terminalSessionProfileNameFamilyCounter = NotifierProviderFamily<
+    TerminalSessionProfileNameFamilyCounter, int, String>(
   TerminalSessionProfileNameFamilyCounter.new,
 );
 
@@ -64,11 +67,10 @@ class TerminalSession {
   String? _profileName;
   String displayName;
 
-  late Pty pty;
   bool isRunning = false;
   bool isDisposed = true;
-  String? command;
-  List<String> args = const [];
+
+  SshnpRemoteProcess? shell;
 
   TerminalSession(this.sessionId)
       : terminal = Terminal(maxLines: 10000),
@@ -76,7 +78,8 @@ class TerminalSession {
 }
 
 /// Controller for the family of terminal session [TerminalController]s
-class TerminalSessionFamilyController extends FamilyNotifier<TerminalSession, String> {
+class TerminalSessionFamilyController
+    extends FamilyNotifier<TerminalSession, String> {
   @override
   TerminalSession build(String arg) {
     return TerminalSession(arg);
@@ -86,47 +89,45 @@ class TerminalSessionFamilyController extends FamilyNotifier<TerminalSession, St
 
   void issueDisplayName(String profileName) {
     state._profileName = profileName;
-    state.displayName =
-        ref.read(terminalSessionProfileNameFamilyCounter(profileName).notifier)._addSession(state.sessionId);
+    state.displayName = ref
+        .read(terminalSessionProfileNameFamilyCounter(profileName).notifier)
+        ._addSession(state.sessionId);
   }
 
-  void setProcess({String? command, List<String> args = const []}) {
-    state.command = command;
-    state.args = args;
-  }
+  void startSession(
+    SshnpRemoteProcess shell, {
+    String? terminalTitle,
+    String? initialMessage,
+  }) {
+    state.shell = shell;
 
-  void startProcess() {
     if (state.isRunning) return;
     state.isRunning = true;
     state.isDisposed = false;
-    state.pty = Pty.start(
-      state.command ?? Platform.environment['SHELL'] ?? 'bash',
-      arguments: state.args,
-      columns: state.terminal.viewWidth,
-      rows: state.terminal.viewHeight,
-      environment: Platform.environment,
-      workingDirectory: Platform.environment['HOME'],
-    );
 
-    final command = '${state.pty.executable} ${state.pty.arguments.join(' ')}';
-    state.terminal.setTitle(command);
+    if (terminalTitle != null) {
+      state.terminal.setTitle(terminalTitle);
+    }
 
-    // Write the command to the terminal
-    state.terminal.write('[Process: $command]\r\n\n');
+    if (initialMessage != null) {
+      state.terminal.write('[$initialMessage]\r\n\n');
+    }
 
-    // Write stdout of the process to the terminal
-    state.pty.output.cast<List<int>>().transform(const Utf8Decoder()).listen(state.terminal.write);
+    // Write stdout/stderr of the sshClient to the terminal
+    shell.stdout.transform(const Utf8Decoder()).listen(state.terminal.write);
+    shell.stderr.transform(const Utf8Decoder()).listen(state.terminal.write);
 
     // Write exit code of the process to the terminal
-    state.pty.exitCode.then((code) async {
-      state.terminal.write('\n[The process exited with code: $code]\r\n\n');
+    shell.done.then((_) async {
+      state.terminal.write('\n[Session Complete]\r\n\n');
       state.terminal.setCursorVisibleMode(false);
 
       int delay = 5;
 
       /// Count down to closing the terminal
       for (int i = 0; i < delay; i++) {
-        String message = 'Closing terminal session in ${delay - i} seconds...\r';
+        String message =
+            'Closing terminal session in ${delay - i} seconds...\r';
         state.terminal.write(message);
         await Future.delayed(const Duration(seconds: 1));
       }
@@ -138,17 +139,21 @@ class TerminalSessionFamilyController extends FamilyNotifier<TerminalSession, St
 
     // Write the terminal output to the process
     state.terminal.onOutput = (data) {
-      state.pty.write(const Utf8Encoder().convert(data));
+      shell.stdin.add(const Utf8Encoder().convert(data));
     };
 
     // Resize the terminal when the window is resized
-    state.terminal.onResize = (w, h, pw, ph) {
-      state.pty.resize(h, w);
-    };
+    if (shell is SSHSessionAsSshnpRemoteProcess) {
+      state.terminal.onResize = shell.sshSession.resizeTerminal;
+    }
   }
 
   void _killProcess() {
-    state.pty.kill();
+    if (state.shell != null && state.shell is SSHSessionAsSshnpRemoteProcess) {
+      (state.shell as SSHSessionAsSshnpRemoteProcess)
+          .sshSession
+          .kill(SSHSignal.KILL);
+    }
     state.isRunning = false;
   }
 
@@ -167,10 +172,14 @@ class TerminalSessionFamilyController extends FamilyNotifier<TerminalSession, St
       // Find a new terminal tab to set as the active one
       if (currentIndex > 0) {
         // set active terminal to the one immediately to the left
-        ref.read(terminalSessionController.notifier).setSession(terminalList[currentIndex - 1]);
+        ref
+            .read(terminalSessionController.notifier)
+            .setSession(terminalList[currentIndex - 1]);
       } else if (terminalList.length > 1) {
         // set active terminal to the one immediately to the right
-        ref.read(terminalSessionController.notifier).setSession(terminalList[currentIndex + 1]);
+        ref
+            .read(terminalSessionController.notifier)
+            .setSession(terminalList[currentIndex + 1]);
       } else {
         // no other sessions available, set active terminal to empty string
         ref.read(terminalSessionController.notifier).setSession('');
@@ -182,13 +191,17 @@ class TerminalSessionFamilyController extends FamilyNotifier<TerminalSession, St
 
     /// 4. Remove the session from the profile name counter
     if (state._profileName != null) {
-      ref.read(terminalSessionProfileNameFamilyCounter(state._profileName!).notifier)._removeSession(state.sessionId);
+      ref
+          .read(terminalSessionProfileNameFamilyCounter(state._profileName!)
+              .notifier)
+          ._removeSession(state.sessionId);
     }
   }
 }
 
 /// Counter for the number of terminal sessions by profileName - issues and tracks the display name for each session
-class TerminalSessionProfileNameFamilyCounter extends FamilyNotifier<int, String> {
+class TerminalSessionProfileNameFamilyCounter
+    extends FamilyNotifier<int, String> {
   @override
   int build(String arg) => 0;
 

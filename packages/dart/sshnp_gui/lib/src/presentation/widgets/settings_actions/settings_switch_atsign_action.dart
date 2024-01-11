@@ -9,8 +9,8 @@ import 'package:sshnp_gui/src/presentation/widgets/settings_screen_widgets/setti
 import 'package:sshnp_gui/src/presentation/widgets/utility/custom_snack_bar.dart';
 import 'package:sshnp_gui/src/repository/authentication_repository.dart';
 import 'package:sshnp_gui/src/repository/navigation_repository.dart';
+import 'package:sshnp_gui/src/utility/constants.dart';
 
-import '../../../../utility/constants.dart';
 
 class SettingsSwitchAtsignAction extends StatelessWidget {
   const SettingsSwitchAtsignAction({Key? key}) : super(key: key);

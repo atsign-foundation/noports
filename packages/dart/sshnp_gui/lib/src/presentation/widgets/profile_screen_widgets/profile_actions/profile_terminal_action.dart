@@ -19,7 +19,8 @@ class ProfileTerminalAction extends ConsumerStatefulWidget {
   const ProfileTerminalAction(this.params, {Key? key}) : super(key: key);
 
   @override
-  ConsumerState<ProfileTerminalAction> createState() => _ProfileTerminalActionState();
+  ConsumerState<ProfileTerminalAction> createState() =>
+      _ProfileTerminalActionState();
 }
 
 class _ProfileTerminalActionState extends ConsumerState<ProfileTerminalAction> {
@@ -32,7 +33,8 @@ class _ProfileTerminalActionState extends ConsumerState<ProfileTerminalAction> {
       showDialog<void>(
         context: context,
         barrierDismissible: false,
-        builder: (BuildContext context) => const Center(child: CircularProgressIndicator()),
+        builder: (BuildContext context) =>
+            const Center(child: CircularProgressIndicator()),
       );
     }
     // TODO: add try
@@ -63,9 +65,11 @@ class _ProfileTerminalActionState extends ConsumerState<ProfileTerminalAction> {
       // TODO: Get values from biometric storage (PrivateKeyManagerController)
 
       final profilePrivateKey =
-          await ProfilePrivateKeyManagerRepository.readProfilePrivateKeyManager(widget.params.profileName ?? '');
+          await ProfilePrivateKeyManagerRepository.readProfilePrivateKeyManager(
+              widget.params.profileName ?? '');
       final privateKeyManager =
-          await PrivateKeyManagerRepository.readPrivateKeyManager(profilePrivateKey?.privateKeyNickname ?? '');
+          await PrivateKeyManagerRepository.readPrivateKeyManager(
+              profilePrivateKey?.privateKeyNickname ?? '');
       // log('private key is: ${privateKeyManager!.privateKeyFileName}');
       // log('private key manager passphrase is: ${privateKeyManager.passPhrase}');
       // AtSshKeyPair keyPair = AtSshKeyPair.fromPem(
@@ -78,7 +82,10 @@ class _ProfileTerminalActionState extends ConsumerState<ProfileTerminalAction> {
 
       final sshnp = Sshnp.dartPure(
         // params: sshnpParams,
-        params: widget.params,
+        params: SshnpParams.merge(
+          widget.params,
+          SshnpPartialParams(verbose: true),
+        ),
         atClient: atClient,
         identityKeyPair: keyPair,
       );
@@ -89,16 +96,25 @@ class _ProfileTerminalActionState extends ConsumerState<ProfileTerminalAction> {
       }
 
       /// Issue a new session id
-      final sessionId = ref.watch(terminalSessionController.notifier).createSession();
+      final sessionId =
+          ref.watch(terminalSessionController.notifier).createSession();
 
       /// Create the session controller for the new session id
-      final sessionController = ref.watch(terminalSessionFamilyController(sessionId).notifier);
+      final sessionController =
+          ref.watch(terminalSessionFamilyController(sessionId).notifier);
 
       if (result is SshnpCommand) {
-        /// Set the command for the new session
-        sessionController.setProcess(command: result.command, args: result.args);
-        log('profile name is ${widget.params.profileName}');
+        if (sshnp.canRunShell) {
+          SshnpRemoteProcess shell = await sshnp.runShell();
+          sessionController.startSession(
+            shell,
+            terminalTitle:
+                '${widget.params.sshnpdAtSign}-${widget.params.device}',
+          );
+        }
+
         sessionController.issueDisplayName(widget.params.profileName!);
+        log('profile name is ${widget.params.profileName}');
         ref.read(navigationRailController.notifier).setRoute(AppRoute.terminal);
         if (mounted) {
           context.pushReplacementNamed(AppRoute.terminal.name);
@@ -117,7 +133,8 @@ class _ProfileTerminalActionState extends ConsumerState<ProfileTerminalAction> {
   @override
   Widget build(BuildContext context) {
     //TODO: Add a terminal icon that calls on pressed. Reuse old code
-    return ProfileActionButton(onPressed: onPressed, icon: const Icon(Icons.terminal));
+    return ProfileActionButton(
+        onPressed: onPressed, icon: const Icon(Icons.terminal));
     // final profilePrivateKeys = ref.watch(profilePrivateKeyManagerListController);
     // return profilePrivateKeys.when(
     //     data: (data) {
