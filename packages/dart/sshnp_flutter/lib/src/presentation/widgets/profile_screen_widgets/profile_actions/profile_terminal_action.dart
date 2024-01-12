@@ -89,7 +89,6 @@ class _ProfileTerminalActionState extends ConsumerState<ProfileTerminalAction> {
           SshnpPartialParams(
             verbose: kDebugMode,
             idleTimeout: 30,
-            tunnelUsername: 'root',
           ),
         ),
         atClient: atClient,
