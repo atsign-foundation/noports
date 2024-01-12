@@ -38,8 +38,9 @@ class SocketConnector:
     def connect(self):
         sockets_to_monitor = [self.socketA, self.socketB]
         timeout = 0
+        running = True
         try:
-            while True:
+            while running:
                 for sock in sockets_to_monitor:
                     try:
                         data = sock.recv(1024)
@@ -47,6 +48,7 @@ class SocketConnector:
                             print("Connection closed.")
                             sockets_to_monitor.remove(sock)
                             sock.close()
+                            running = False
                         elif not data: 
                             timeout += 1
                             sleep(0.1)
@@ -436,8 +438,8 @@ class SSHNPDClient:
         with open(f"{self.ssh_path}/authorized_keys", "r") as read:
             filedata = read.read()
             if ssh_public_key not in filedata:
-                with open(f"{self.ssh_path}/authorized_keys", "w") as write:
-                    write.write(f"{filedata}\n{ssh_public_key}")
+                with open(f"{self.ssh_path}/authorized_keys", "a") as write:
+                    write.write(f"{ssh_public_key} {self.username}@{gethostname()}\n")
                 self.logger.debug("key written" )
 
 def main():
