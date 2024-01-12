@@ -20,8 +20,7 @@ class ProfileTerminalAction extends ConsumerStatefulWidget {
   const ProfileTerminalAction(this.params, {Key? key}) : super(key: key);
 
   @override
-  ConsumerState<ProfileTerminalAction> createState() =>
-      _ProfileTerminalActionState();
+  ConsumerState<ProfileTerminalAction> createState() => _ProfileTerminalActionState();
 }
 
 class _ProfileTerminalActionState extends ConsumerState<ProfileTerminalAction> {
@@ -32,8 +31,7 @@ class _ProfileTerminalActionState extends ConsumerState<ProfileTerminalAction> {
       showDialog<void>(
         context: context,
         barrierDismissible: false,
-        builder: (BuildContext context) =>
-            const Center(child: CircularProgressIndicator()),
+        builder: (BuildContext context) => const Center(child: CircularProgressIndicator()),
       );
     }
     // TODO: add try
@@ -64,11 +62,9 @@ class _ProfileTerminalActionState extends ConsumerState<ProfileTerminalAction> {
       // TODO: Get values from biometric storage (PrivateKeyManagerController)
 
       final profilePrivateKey =
-          await ProfilePrivateKeyManagerRepository.readProfilePrivateKeyManager(
-              widget.params.profileName ?? '');
+          await ProfilePrivateKeyManagerRepository.readProfilePrivateKeyManager(widget.params.profileName ?? '');
       final privateKeyManager =
-          await PrivateKeyManagerRepository.readPrivateKeyManager(
-              profilePrivateKey?.privateKeyNickname ?? '');
+          await PrivateKeyManagerRepository.readPrivateKeyManager(profilePrivateKey?.privateKeyNickname ?? '');
       // log('private key is: ${privateKeyManager!.privateKeyFileName}');
       // log('private key manager passphrase is: ${privateKeyManager.passPhrase}');
       // AtSshKeyPair keyPair = AtSshKeyPair.fromPem(
@@ -101,12 +97,10 @@ class _ProfileTerminalActionState extends ConsumerState<ProfileTerminalAction> {
       }
 
       /// Issue a new session id
-      final sessionId =
-          ref.watch(terminalSessionController.notifier).createSession();
+      final sessionId = ref.watch(terminalSessionController.notifier).createSession();
 
       /// Create the session controller for the new session id
-      final sessionController =
-          ref.watch(terminalSessionFamilyController(sessionId).notifier);
+      final sessionController = ref.watch(terminalSessionFamilyController(sessionId).notifier);
 
       if (result is SshnpCommand) {
         if (sshnp.canRunShell) {
@@ -115,8 +109,7 @@ class _ProfileTerminalActionState extends ConsumerState<ProfileTerminalAction> {
           log('starting terminal session');
           sessionController.startSession(
             shell,
-            terminalTitle:
-                '${widget.params.sshnpdAtSign}-${widget.params.device}',
+            terminalTitle: '${widget.params.sshnpdAtSign}-${widget.params.device}',
           );
         }
 
@@ -140,8 +133,7 @@ class _ProfileTerminalActionState extends ConsumerState<ProfileTerminalAction> {
   @override
   Widget build(BuildContext context) {
     //TODO: Add a terminal icon that calls on pressed. Reuse old code
-    return ProfileActionButton(
-        onPressed: onPressed, icon: const Icon(Icons.terminal));
+    return ProfileActionButton(onPressed: onPressed, icon: const Icon(Icons.terminal));
     // final profilePrivateKeys = ref.watch(profilePrivateKeyManagerListController);
     // return profilePrivateKeys.when(
     //     data: (data) {

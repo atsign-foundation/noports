@@ -11,22 +11,18 @@ class TerminalScreenMobileView extends ConsumerStatefulWidget {
   const TerminalScreenMobileView({Key? key}) : super(key: key);
 
   @override
-  ConsumerState<TerminalScreenMobileView> createState() =>
-      _TerminalScreenMobileState();
+  ConsumerState<TerminalScreenMobileView> createState() => _TerminalScreenMobileState();
 }
 
-class _TerminalScreenMobileState extends ConsumerState<TerminalScreenMobileView>
-    with TickerProviderStateMixin {
+class _TerminalScreenMobileState extends ConsumerState<TerminalScreenMobileView> with TickerProviderStateMixin {
   final terminalController = TerminalController();
   @override
   void initState() {
     super.initState();
     final sessionId = ref.read(terminalSessionController);
 
-    final sessionController =
-        ref.read(terminalSessionFamilyController(sessionId).notifier);
-    WidgetsBinding.instance.endOfFrame.then((value) {
-    });
+    final sessionController = ref.read(terminalSessionFamilyController(sessionId).notifier);
+    WidgetsBinding.instance.endOfFrame.then((value) {});
   }
 
   @override
@@ -37,8 +33,7 @@ class _TerminalScreenMobileState extends ConsumerState<TerminalScreenMobileView>
 
   void closeSession(String sessionId) {
     // Remove the session from the list of sessions
-    final controller =
-        ref.read(terminalSessionFamilyController(sessionId).notifier);
+    final controller = ref.read(terminalSessionFamilyController(sessionId).notifier);
     controller.dispose();
   }
 
@@ -47,22 +42,16 @@ class _TerminalScreenMobileState extends ConsumerState<TerminalScreenMobileView>
     final strings = AppLocalizations.of(context)!;
     final terminalList = ref.watch(terminalSessionListController);
     final currentSessionId = ref.watch(terminalSessionController);
-    final int currentIndex =
-        (terminalList.isEmpty) ? 0 : terminalList.indexOf(currentSessionId);
-    final tabController = TabController(
-        initialIndex: currentIndex, length: terminalList.length, vsync: this);
+    final int currentIndex = (terminalList.isEmpty) ? 0 : terminalList.indexOf(currentSessionId);
+    final tabController = TabController(initialIndex: currentIndex, length: terminalList.length, vsync: this);
 
     return Scaffold(
       appBar: CustomAppBar(
-          title:
-              Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Text(strings.terminal,
-            style: Theme.of(context).textTheme.headlineLarge),
+          title: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Text(strings.terminal, style: Theme.of(context).textTheme.headlineLarge),
         Text.rich(
           TextSpan(
-              text: terminalList.isNotEmpty
-                  ? terminalList.length.toString()
-                  : '0 ',
+              text: terminalList.isNotEmpty ? terminalList.length.toString() : '0 ',
               style: Theme.of(context).textTheme.bodySmall!,
               children: [
                 TextSpan(text: strings.terminalDescription),
@@ -70,8 +59,7 @@ class _TerminalScreenMobileState extends ConsumerState<TerminalScreenMobileView>
         ),
       ])),
       body: Padding(
-        padding: const EdgeInsets.only(
-            left: Sizes.p36, top: Sizes.p21, right: Sizes.p36),
+        padding: const EdgeInsets.only(left: Sizes.p36, top: Sizes.p21, right: Sizes.p36),
         child: terminalList.isEmpty
             ? Center(
                 child: Text(
@@ -82,9 +70,7 @@ class _TerminalScreenMobileState extends ConsumerState<TerminalScreenMobileView>
               )
             : Column(
                 children: terminalList.map((String sessionId) {
-                  final displayName = ref
-                      .read(terminalSessionFamilyController(sessionId).notifier)
-                      .displayName;
+                  final displayName = ref.read(terminalSessionFamilyController(sessionId).notifier).displayName;
                   return Column(
                     children: [
                       Row(
@@ -98,9 +84,7 @@ class _TerminalScreenMobileState extends ConsumerState<TerminalScreenMobileView>
                       ),
                       TerminalView(
                         key: Key('terminal-view-$sessionId'),
-                        ref
-                            .watch(terminalSessionFamilyController(sessionId))
-                            .terminal,
+                        ref.watch(terminalSessionFamilyController(sessionId)).terminal,
                         controller: terminalController,
                         autofocus: true,
                         autoResize: true,

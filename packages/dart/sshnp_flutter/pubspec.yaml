@@ -65,6 +65,6 @@ flutter:
   uses-material-design: true
   generate: true
   assets:
-    - .env
+    # - .env
     - assets/images/nav_icons/
     - assets/images/
