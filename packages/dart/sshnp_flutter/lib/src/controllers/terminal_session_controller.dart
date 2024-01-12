@@ -114,12 +114,15 @@ class TerminalSessionFamilyController
     }
 
     // Write stdout/stderr of the sshClient to the terminal
-    utf8.decoder.bind(shell.stdout).listen(state.terminal.write);
-    utf8.decoder.bind(shell.stderr).listen(state.terminal.write);
+    var out = utf8.decoder.bind(shell.stdout).listen(state.terminal.write);
+    var err = utf8.decoder.bind(shell.stderr).listen(state.terminal.write);
 
     // Write exit code of the process to the terminal
     shell.done.then((_) async {
+      out.cancel();
+      err.cancel();
       state.terminal.onOutput = null;
+
       state.terminal.write('\n[Session Complete]\r\n\n');
       state.terminal.setCursorVisibleMode(false);
 
