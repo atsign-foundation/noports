@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
-import 'package:sshnp_gui/src/controllers/navigation_controller.dart';
-import 'package:sshnp_gui/src/controllers/navigation_rail_controller.dart';
-import 'package:sshnp_gui/src/utility/sizes.dart';
+import 'package:sshnp_flutter/src/controllers/navigation_controller.dart';
+import 'package:sshnp_flutter/src/controllers/navigation_rail_controller.dart';
+import 'package:sshnp_flutter/src/utility/sizes.dart';
 
 class AppNavigationRail extends ConsumerWidget {
   const AppNavigationRail({super.key});
@@ -18,7 +18,8 @@ class AppNavigationRail extends ConsumerWidget {
   ];
 
   static var deactivatedIcons = [
-    SvgPicture.asset('assets/images/nav_icons/current_connection_unselected.svg'),
+    SvgPicture.asset(
+        'assets/images/nav_icons/current_connection_unselected.svg'),
     SvgPicture.asset('assets/images/nav_icons/terminal_unselected.svg'),
     gap0,
     SvgPicture.asset('assets/images/nav_icons/support_unselected.svg'),

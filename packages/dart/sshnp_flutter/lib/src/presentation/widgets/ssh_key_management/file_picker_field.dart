@@ -2,8 +2,8 @@ import 'package:dotted_border/dotted_border.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:sshnp_gui/src/controllers/file_picker_controller.dart';
-import 'package:sshnp_gui/src/utility/constants.dart';
+import 'package:sshnp_flutter/src/controllers/file_picker_controller.dart';
+import 'package:sshnp_flutter/src/utility/constants.dart';
 
 class FilePickerField extends ConsumerStatefulWidget {
   static const defaultWidth = 192.0;
@@ -33,7 +33,8 @@ class _FilePickerFieldState extends ConsumerState<FilePickerField> {
   @override
   void initState() {
     super.initState();
-    controller = TextEditingController(text: ref.read(filePickerController.notifier).fileName);
+    controller = TextEditingController(
+        text: ref.read(filePickerController.notifier).fileName);
 
     controller.addListener(
       () {

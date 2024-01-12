@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
-import 'package:sshnp_gui/src/presentation/widgets/navigation/custom_app_bar.dart';
+import 'package:sshnp_flutter/src/presentation/widgets/navigation/custom_app_bar.dart';
 
 import '../../../utility/constants.dart';
 import '../../../utility/sizes.dart';
@@ -33,7 +33,8 @@ class SupportScreenMobileView extends StatelessWidget {
         ),
       ),
       body: Padding(
-        padding: const EdgeInsets.only(left: Sizes.p36, top: Sizes.p21, right: Sizes.p36),
+        padding: const EdgeInsets.only(
+            left: Sizes.p36, top: Sizes.p21, right: Sizes.p36),
         child: ListView(
           children: [
             Card(
@@ -78,7 +79,8 @@ class SupportScreenMobileView extends StatelessWidget {
                       child: CustomListTile.faq(tileColor: kProfileBarColor),
                     ),
                     Flexible(
-                      child: CustomListTile.privacyPolicy(tileColor: kProfileBarColor),
+                      child: CustomListTile.privacyPolicy(
+                          tileColor: kProfileBarColor),
                     ),
                   ],
                 ),

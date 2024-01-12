@@ -1,7 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:sshnp_gui/src/controllers/navigation_controller.dart';
-import 'package:sshnp_gui/src/controllers/navigation_rail_controller.dart';
+import 'package:sshnp_flutter/src/controllers/navigation_controller.dart';
+import 'package:sshnp_flutter/src/controllers/navigation_rail_controller.dart';
 
 void main() {
   group('NavigationRailController', () {
@@ -12,7 +12,8 @@ void main() {
       container = ProviderContainer();
       addTearDown(() => container.dispose());
 
-      container.listen(navigationRailController, (_, __) {}, fireImmediately: true);
+      container.listen(navigationRailController, (_, __) {},
+          fireImmediately: true);
       controller = container.read(navigationRailController.notifier);
     });
 

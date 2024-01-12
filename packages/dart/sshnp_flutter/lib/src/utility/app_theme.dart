@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:macos_ui/macos_ui.dart';
-import 'package:sshnp_gui/src/utility/constants.dart';
-import 'package:sshnp_gui/src/utility/sizes.dart';
+import 'package:sshnp_flutter/src/utility/constants.dart';
+import 'package:sshnp_flutter/src/utility/sizes.dart';
 
 class AppTheme {
   static TextTheme lightTextTheme = const TextTheme(
@@ -168,8 +168,10 @@ class AppTheme {
                 borderRadius: BorderRadius.circular(18.0),
               ),
             ),
-            backgroundColor: MaterialStateProperty.all<Color>(const Color(0xFF12DE26)),
-            foregroundColor: MaterialStateProperty.all<Color>(const Color(0xFFFFFFFF)),
+            backgroundColor:
+                MaterialStateProperty.all<Color>(const Color(0xFF12DE26)),
+            foregroundColor:
+                MaterialStateProperty.all<Color>(const Color(0xFFFFFFFF)),
           ),
         ),
         dialogTheme: const DialogTheme(
@@ -201,27 +203,28 @@ class AppTheme {
     return ThemeData(
       visualDensity: VisualDensity.adaptivePlatformDensity,
       useMaterial3: true,
-      colorScheme: const ColorScheme.dark().copyWith(primary: kPrimaryColor, background: kBackGroundColorDark
-          // onPrimary: kOnPrimaryColor,
-          // primaryContainer: kPrimaryContainer,
-          // onPrimaryContainer: kOnPrimaryContainer,
-          // secondary: kSecondaryColor,
-          // onSecondary: kOnSecondaryColor,
-          // secondaryContainer: kSecondaryContainer,
-          // onSecondaryContainer: kOnSecondaryContainer,
-          // tertiary: kTertiaryColor,
-          // onTertiary: kOnTertiaryColor,
-          // tertiaryContainer: kTertiaryContainer,
-          // onTertiaryContainer: kOnTertiaryContainer,
-          // error: kErrorColor,
-          // onError: kOnError,
-          // errorContainer: kErrorContainer,
-          // onErrorContainer: kOnErrorContainer,
-          // background: kBackgroundColor,
-          // onBackground: kOnBackground,
-          // surface: kSurface,
-          // onSurface: kOnSurface,
-          ),
+      colorScheme: const ColorScheme.dark()
+          .copyWith(primary: kPrimaryColor, background: kBackGroundColorDark
+              // onPrimary: kOnPrimaryColor,
+              // primaryContainer: kPrimaryContainer,
+              // onPrimaryContainer: kOnPrimaryContainer,
+              // secondary: kSecondaryColor,
+              // onSecondary: kOnSecondaryColor,
+              // secondaryContainer: kSecondaryContainer,
+              // onSecondaryContainer: kOnSecondaryContainer,
+              // tertiary: kTertiaryColor,
+              // onTertiary: kOnTertiaryColor,
+              // tertiaryContainer: kTertiaryContainer,
+              // onTertiaryContainer: kOnTertiaryContainer,
+              // error: kErrorColor,
+              // onError: kOnError,
+              // errorContainer: kErrorContainer,
+              // onErrorContainer: kOnErrorContainer,
+              // background: kBackgroundColor,
+              // onBackground: kOnBackground,
+              // surface: kSurface,
+              // onSurface: kOnSurface,
+              ),
       checkboxTheme: CheckboxThemeData(
         fillColor: MaterialStateColor.resolveWith(
           (states) {
@@ -229,8 +232,8 @@ class AppTheme {
           },
         ),
       ),
-      floatingActionButtonTheme:
-          const FloatingActionButtonThemeData(foregroundColor: Colors.white, backgroundColor: kPrimaryColor),
+      floatingActionButtonTheme: const FloatingActionButtonThemeData(
+          foregroundColor: Colors.white, backgroundColor: kPrimaryColor),
       textTheme: darkTextTheme,
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ButtonStyle(
@@ -243,8 +246,10 @@ class AppTheme {
               borderRadius: BorderRadius.circular(Sizes.p3),
             ),
           ),
-          backgroundColor: MaterialStateProperty.all<Color>(const Color(0xFF2F2F2F)),
-          foregroundColor: MaterialStateProperty.all<Color>(const Color(0xFF707070)),
+          backgroundColor:
+              MaterialStateProperty.all<Color>(const Color(0xFF2F2F2F)),
+          foregroundColor:
+              MaterialStateProperty.all<Color>(const Color(0xFF707070)),
         ),
       ),
       dialogTheme: const DialogTheme(
@@ -275,11 +280,14 @@ class AppTheme {
           // maximumSize: const Size(48, 43),
         ),
       ),
-      appBarTheme: const AppBarTheme(backgroundColor: kPrimaryColor, systemOverlayStyle: SystemUiOverlayStyle.light),
+      appBarTheme: const AppBarTheme(
+          backgroundColor: kPrimaryColor,
+          systemOverlayStyle: SystemUiOverlayStyle.light),
     );
   }
 
   static MacosThemeData macosDark() {
-    return MacosThemeData(brightness: Brightness.dark, primaryColor: kPrimaryColor);
+    return MacosThemeData(
+        brightness: Brightness.dark, primaryColor: kPrimaryColor);
   }
 }

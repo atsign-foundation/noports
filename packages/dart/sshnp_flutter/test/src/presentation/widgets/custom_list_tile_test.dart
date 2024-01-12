@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:sshnp_gui/src/presentation/widgets/custom_list_tile.dart';
+import 'package:sshnp_flutter/src/presentation/widgets/custom_list_tile.dart';
 
 import '../../../robots/custom_list_tile_robot.dart';
 

@@ -1,3 +1,3 @@
-# sshnp_gui
+# sshnp_flutter
 
 A new Flutter project

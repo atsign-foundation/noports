@@ -2,18 +2,19 @@ import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:sshnp_gui/src/controllers/config_controller.dart';
-import 'package:sshnp_gui/src/presentation/screens/settings_screen.dart';
-import 'package:sshnp_gui/src/presentation/widgets/contact_tile/contact_list_tile.dart';
-import 'package:sshnp_gui/src/presentation/widgets/custom_list_tile.dart';
-import 'package:sshnp_gui/src/utility/app_theme.dart';
+import 'package:sshnp_flutter/src/controllers/config_controller.dart';
+import 'package:sshnp_flutter/src/presentation/screens/settings_screen.dart';
+import 'package:sshnp_flutter/src/presentation/widgets/contact_tile/contact_list_tile.dart';
+import 'package:sshnp_flutter/src/presentation/widgets/custom_list_tile.dart';
+import 'package:sshnp_flutter/src/utility/app_theme.dart';
 
 class SettingsScreenRobot {
   SettingsScreenRobot(this.tester);
 
   final WidgetTester tester;
 
-  Future<void> pumpSettingsScreen({ConfigListController? mockConfigListController}) async {
+  Future<void> pumpSettingsScreen(
+      {ConfigListController? mockConfigListController}) async {
     await tester.pumpWidget(ProviderScope(
       overrides: const [],
       child: MaterialApp(

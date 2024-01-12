@@ -2,11 +2,13 @@ import 'package:flutter/src/widgets/framework.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:noports_core/sshnp_params.dart';
-import 'package:sshnp_gui/src/controllers/config_controller.dart';
-import 'package:sshnp_gui/src/controllers/terminal_session_controller.dart';
-import 'package:sshnp_gui/src/repository/contact_repository.dart';
+import 'package:sshnp_flutter/src/controllers/config_controller.dart';
+import 'package:sshnp_flutter/src/controllers/terminal_session_controller.dart';
+import 'package:sshnp_flutter/src/repository/contact_repository.dart';
 
-class MockTerminalSessionController extends Notifier<String> with Mock implements TerminalSessionController {
+class MockTerminalSessionController extends Notifier<String>
+    with Mock
+    implements TerminalSessionController {
   @override
   String build() {
     return '';
@@ -24,7 +26,8 @@ class MockTerminalSessionController extends Notifier<String> with Mock implement
   }
 }
 
-final mockTerminalSessionController = NotifierProvider<TerminalSessionController, String>(
+final mockTerminalSessionController =
+    NotifierProvider<TerminalSessionController, String>(
   MockTerminalSessionController.new,
 );
 
@@ -37,11 +40,13 @@ class MockTerminalSessionListController extends Notifier<List<String>>
   }
 }
 
-final mockTerminalSessionListController = NotifierProvider<TerminalSessionListController, List<String>>(
+final mockTerminalSessionListController =
+    NotifierProvider<TerminalSessionListController, List<String>>(
   MockTerminalSessionListController.new,
 );
 
-class MockConfigListController extends AutoDisposeAsyncNotifier<Iterable<String>>
+class MockConfigListController
+    extends AutoDisposeAsyncNotifier<Iterable<String>>
     with Mock
     implements ConfigListController {
   static Iterable<String> _mockConfigList = const Iterable.empty();
@@ -65,7 +70,8 @@ class MockConfigListController extends AutoDisposeAsyncNotifier<Iterable<String>
 
   @override
   void remove(String profileName) {
-    _mockConfigList = _mockConfigList.where((element) => element != profileName);
+    _mockConfigList =
+        _mockConfigList.where((element) => element != profileName);
     state = AsyncValue.data(_mockConfigList);
   }
 
@@ -74,11 +80,13 @@ class MockConfigListController extends AutoDisposeAsyncNotifier<Iterable<String>
   }
 }
 
-final mockConfigListController = AutoDisposeAsyncNotifierProvider<MockConfigListController, Iterable<String>>(
+final mockConfigListController = AutoDisposeAsyncNotifierProvider<
+    MockConfigListController, Iterable<String>>(
   MockConfigListController.new,
 );
 
-class MockConfigFamilyController extends AutoDisposeFamilyAsyncNotifier<SshnpParams, String>
+class MockConfigFamilyController
+    extends AutoDisposeFamilyAsyncNotifier<SshnpParams, String>
     with Mock
     implements ConfigFamilyController {
   late final SshnpParams _mockConfig = SshnpParams.empty();
@@ -89,7 +97,8 @@ class MockConfigFamilyController extends AutoDisposeFamilyAsyncNotifier<SshnpPar
   }
 
   @override
-  Future<void> putConfig(SshnpParams params, {String? oldProfileName, BuildContext? context}) {
+  Future<void> putConfig(SshnpParams params,
+      {String? oldProfileName, BuildContext? context}) {
     state = AsyncValue.data(params);
     ref.read(mockConfigListController.notifier).add(params.profileName!);
     return Future<void>.value();
@@ -97,7 +106,9 @@ class MockConfigFamilyController extends AutoDisposeFamilyAsyncNotifier<SshnpPar
 
   @override
   Future<void> deleteConfig({BuildContext? context}) async {
-    ref.read(mockConfigListController.notifier).remove(state.value!.profileName!);
+    ref
+        .read(mockConfigListController.notifier)
+        .remove(state.value!.profileName!);
   }
 
   // void throwError(String profileName) {
@@ -105,7 +116,8 @@ class MockConfigFamilyController extends AutoDisposeFamilyAsyncNotifier<SshnpPar
   // }
 }
 
-final mockConfigFamilyController = AutoDisposeAsyncNotifierProviderFamily<ConfigFamilyController, SshnpParams, String>(
+final mockConfigFamilyController = AutoDisposeAsyncNotifierProviderFamily<
+    ConfigFamilyController, SshnpParams, String>(
   MockConfigFamilyController.new,
 );
 

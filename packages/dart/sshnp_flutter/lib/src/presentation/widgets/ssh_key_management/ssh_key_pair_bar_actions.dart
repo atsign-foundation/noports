@@ -1,28 +1,32 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:sshnp_gui/src/utility/sizes.dart';
+import 'package:sshnp_flutter/src/utility/sizes.dart';
 
 import '../../../controllers/private_key_manager_controller.dart';
 import '../../../utility/constants.dart';
 import 'ssh_key_management_form_dialog.dart';
 
 class SshKeyPairBarActions extends ConsumerStatefulWidget {
-  const SshKeyPairBarActions({required this.identifier, Key? key}) : super(key: key);
+  const SshKeyPairBarActions({required this.identifier, Key? key})
+      : super(key: key);
 
   final String identifier;
 
   @override
-  ConsumerState<SshKeyPairBarActions> createState() => _SshKeyPairBarActionsState();
+  ConsumerState<SshKeyPairBarActions> createState() =>
+      _SshKeyPairBarActionsState();
 }
 
 class _SshKeyPairBarActionsState extends ConsumerState<SshKeyPairBarActions> {
   @override
   Widget build(BuildContext context) {
-    final controller = ref.watch(privateKeyManagerFamilyController(widget.identifier).notifier);
+    final controller = ref
+        .watch(privateKeyManagerFamilyController(widget.identifier).notifier);
     return Row(
       children: [
         IconButton(
-          style: FilledButton.styleFrom(backgroundColor: kIconColorBackgroundDark),
+          style:
+              FilledButton.styleFrom(backgroundColor: kIconColorBackgroundDark),
           onPressed: () async {
             await showDialog(
                 context: context,
@@ -37,7 +41,8 @@ class _SshKeyPairBarActionsState extends ConsumerState<SshKeyPairBarActions> {
         ),
         gapW8,
         IconButton(
-          style: FilledButton.styleFrom(backgroundColor: kIconColorBackgroundDark),
+          style:
+              FilledButton.styleFrom(backgroundColor: kIconColorBackgroundDark),
           onPressed: () {
             controller.deletePrivateKeyManager(identifier: widget.identifier);
           },

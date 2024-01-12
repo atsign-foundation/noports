@@ -1,10 +1,14 @@
 import 'package:flutter/material.dart';
-import 'package:sshnp_gui/src/utility/constants.dart';
+import 'package:sshnp_flutter/src/utility/constants.dart';
 
 import '../../../../utility/sizes.dart';
 
 class CustomSwitchWidget extends StatelessWidget {
-  const CustomSwitchWidget({required this.labelText, required this.value, required this.onChanged, super.key});
+  const CustomSwitchWidget(
+      {required this.labelText,
+      required this.value,
+      required this.onChanged,
+      super.key});
 
   final String labelText;
   final bool value;

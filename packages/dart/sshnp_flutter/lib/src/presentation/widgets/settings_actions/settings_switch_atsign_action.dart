@@ -4,13 +4,12 @@ import 'package:at_contacts_flutter/widgets/circular_contacts.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:sshnp_gui/src/controllers/authentication_controller.dart';
-import 'package:sshnp_gui/src/presentation/widgets/settings_screen_widgets/settings_actions/settings_action_button.dart';
-import 'package:sshnp_gui/src/presentation/widgets/utility/custom_snack_bar.dart';
-import 'package:sshnp_gui/src/repository/authentication_repository.dart';
-import 'package:sshnp_gui/src/repository/navigation_repository.dart';
-import 'package:sshnp_gui/src/utility/constants.dart';
-
+import 'package:sshnp_flutter/src/controllers/authentication_controller.dart';
+import 'package:sshnp_flutter/src/presentation/widgets/settings_screen_widgets/settings_actions/settings_action_button.dart';
+import 'package:sshnp_flutter/src/presentation/widgets/utility/custom_snack_bar.dart';
+import 'package:sshnp_flutter/src/repository/authentication_repository.dart';
+import 'package:sshnp_flutter/src/repository/navigation_repository.dart';
+import 'package:sshnp_flutter/src/utility/constants.dart';
 
 class SettingsSwitchAtsignAction extends StatelessWidget {
   const SettingsSwitchAtsignAction({Key? key}) : super(key: key);
@@ -34,7 +33,8 @@ class SwitchAtSignBottomSheet extends ConsumerStatefulWidget {
   const SwitchAtSignBottomSheet({Key? key}) : super(key: key);
 
   @override
-  ConsumerState<SwitchAtSignBottomSheet> createState() => _AtSignBottomSheetState();
+  ConsumerState<SwitchAtSignBottomSheet> createState() =>
+      _AtSignBottomSheetState();
 }
 
 class _AtSignBottomSheetState extends ConsumerState<SwitchAtSignBottomSheet> {
@@ -59,7 +59,8 @@ class _AtSignBottomSheetState extends ConsumerState<SwitchAtSignBottomSheet> {
             onClosing: () {},
             backgroundColor: Colors.transparent,
             builder: (context) => ClipRRect(
-              borderRadius: const BorderRadius.only(topLeft: Radius.circular(10), topRight: Radius.circular(10)),
+              borderRadius: const BorderRadius.only(
+                  topLeft: Radius.circular(10), topRight: Radius.circular(10)),
               child: Container(
                 height: 155.toHeight < 155 ? 155 : 150.toHeight,
                 width: SizeConfig().screenWidth,
@@ -68,7 +69,8 @@ class _AtSignBottomSheetState extends ConsumerState<SwitchAtSignBottomSheet> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 10, vertical: 5),
                       child: Text(
                         strings.switchAtsign,
                       ),
@@ -84,11 +86,15 @@ class _AtSignBottomSheetState extends ConsumerState<SwitchAtSignBottomSheet> {
                                 Expanded(
                                     child: ListView.builder(
                                   scrollDirection: Axis.horizontal,
-                                  itemCount: ref.watch(authenticationController).value!.length,
+                                  itemCount: ref
+                                      .watch(authenticationController)
+                                      .value!
+                                      .length,
                                   itemBuilder: (context, index) {
                                     return FutureBuilder(
                                         future: ref
-                                            .watch(authenticationController.notifier)
+                                            .watch(authenticationController
+                                                .notifier)
                                             .getAtContact(state.value![index])
                                             .then((value) => value),
                                         builder: ((context, snapshot) {
@@ -99,19 +105,25 @@ class _AtSignBottomSheetState extends ConsumerState<SwitchAtSignBottomSheet> {
                                                   : () async {
                                                       Navigator.pop(context);
                                                       ref
-                                                          .watch(authenticationRepositoryProvider)
-                                                          .handleSwitchAtsign(state.value![index]);
+                                                          .watch(
+                                                              authenticationRepositoryProvider)
+                                                          .handleSwitchAtsign(
+                                                              state.value![
+                                                                  index]);
 
                                                       // Navigator.pop(context);
                                                     },
                                               child: FittedBox(
-                                                child: CircularContacts(contact: snapshot.data as AtContact),
+                                                child: CircularContacts(
+                                                    contact: snapshot.data
+                                                        as AtContact),
                                               ),
                                             );
                                           } else if (!snapshot.hasData) {
                                             return const CircularProgressIndicator();
                                           } else {
-                                            CustomSnackBar.error(content: strings.error);
+                                            CustomSnackBar.error(
+                                                content: strings.error);
                                             return const SizedBox();
                                           }
                                         }));
@@ -126,7 +138,9 @@ class _AtSignBottomSheetState extends ConsumerState<SwitchAtSignBottomSheet> {
                                       isLoading = true;
                                       Navigator.pop(context);
                                     });
-                                    ref.watch(authenticationRepositoryProvider).handleSwitchAtsign(null);
+                                    ref
+                                        .watch(authenticationRepositoryProvider)
+                                        .handleSwitchAtsign(null);
 
                                     setState(() {
                                       isLoading = false;
@@ -136,7 +150,9 @@ class _AtSignBottomSheetState extends ConsumerState<SwitchAtSignBottomSheet> {
                                     margin: const EdgeInsets.only(right: 10),
                                     height: 40,
                                     width: 40,
-                                    child: Icon(Icons.add_circle_outline_outlined, size: 25.toFont),
+                                    child: Icon(
+                                        Icons.add_circle_outline_outlined,
+                                        size: 25.toFont),
                                   ),
                                 )
                               ],

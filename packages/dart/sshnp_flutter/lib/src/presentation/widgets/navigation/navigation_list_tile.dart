@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:sshnp_gui/src/controllers/navigation_controller.dart';
-import 'package:sshnp_gui/src/utility/constants.dart';
+import 'package:sshnp_flutter/src/controllers/navigation_controller.dart';
+import 'package:sshnp_flutter/src/utility/constants.dart';
 
 import '../../../utility/sizes.dart';
 

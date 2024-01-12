@@ -1,7 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:sshnp_gui/src/utility/constants.dart';
-import 'package:sshnp_gui/src/utility/form_validator.dart';
-
+import 'package:sshnp_flutter/src/utility/constants.dart';
+import 'package:sshnp_flutter/src/utility/form_validator.dart';
 
 void main() {
   group(
@@ -13,7 +12,8 @@ void main() {
       When validateRequiredField is called
       Then return kEmptyFieldValidationError''',
         () {
-          expect(FormValidator.validateRequiredField(''), kEmptyFieldValidationError);
+          expect(FormValidator.validateRequiredField(''),
+              kEmptyFieldValidationError);
         },
       );
       test(
@@ -34,7 +34,8 @@ void main() {
       Then return kEmptyFieldValidationError
       ''',
         () {
-          expect(FormValidator.validateAtsignField(''), kEmptyFieldValidationError);
+          expect(FormValidator.validateAtsignField(''),
+              kEmptyFieldValidationError);
         },
       );
       test(
@@ -44,7 +45,8 @@ void main() {
       Then return kAtsignFieldValidationError
       ''',
         () {
-          expect(FormValidator.validateAtsignField('alice'), kAtsignFieldValidationError);
+          expect(FormValidator.validateAtsignField('alice'),
+              kAtsignFieldValidationError);
         },
       );
       test(

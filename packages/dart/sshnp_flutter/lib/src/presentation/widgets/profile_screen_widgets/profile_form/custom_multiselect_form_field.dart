@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:sshnp_gui/src/utility/constants.dart';
+import 'package:sshnp_flutter/src/utility/constants.dart';
 
 class CustomMultiSelectFormField<T> extends StatelessWidget {
   const CustomMultiSelectFormField({
@@ -42,11 +42,17 @@ class CustomMultiSelectFormField<T> extends StatelessWidget {
           const SizedBox(height: 5),
           DropdownButtonFormField<T>(
             value: initialValue,
-            style: Theme.of(context).textTheme.bodySmall!.copyWith(color: Colors.black),
+            style: Theme.of(context)
+                .textTheme
+                .bodySmall!
+                .copyWith(color: Colors.black),
             selectedItemBuilder: (context) => items
                 .map((e) => Text(
                       e.value.toString(),
-                      style: Theme.of(context).textTheme.bodySmall!.copyWith(color: kPrimaryColor),
+                      style: Theme.of(context)
+                          .textTheme
+                          .bodySmall!
+                          .copyWith(color: kPrimaryColor),
                     ))
                 .toList(),
             dropdownColor: Colors.white,

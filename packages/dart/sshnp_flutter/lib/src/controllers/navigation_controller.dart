@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:sshnp_gui/src/presentation/screens/home_screen.dart';
-import 'package:sshnp_gui/src/presentation/screens/onboarding_screen.dart';
-import 'package:sshnp_gui/src/presentation/screens/profile_editor_screen.dart';
-import 'package:sshnp_gui/src/presentation/screens/settings_screen.dart';
-import 'package:sshnp_gui/src/presentation/screens/terminal_screen.dart';
-import 'package:sshnp_gui/src/repository/navigation_repository.dart';
+import 'package:sshnp_flutter/src/presentation/screens/home_screen.dart';
+import 'package:sshnp_flutter/src/presentation/screens/onboarding_screen.dart';
+import 'package:sshnp_flutter/src/presentation/screens/profile_editor_screen.dart';
+import 'package:sshnp_flutter/src/presentation/screens/settings_screen.dart';
+import 'package:sshnp_flutter/src/presentation/screens/terminal_screen.dart';
+import 'package:sshnp_flutter/src/repository/navigation_repository.dart';
 
 import '../presentation/screens/support_screen.dart';
 
@@ -39,8 +39,9 @@ final navigationController = Provider<GoRouter>(
             pageBuilder: (context, state) => CustomTransitionPage<void>(
               key: state.pageKey,
               child: const HomeScreen(),
-              transitionsBuilder: ((context, animation, secondaryAnimation, child) =>
-                  FadeTransition(opacity: animation, child: child)),
+              transitionsBuilder:
+                  ((context, animation, secondaryAnimation, child) =>
+                      FadeTransition(opacity: animation, child: child)),
             ),
           ),
           GoRoute(
@@ -49,8 +50,9 @@ final navigationController = Provider<GoRouter>(
             pageBuilder: (context, state) => CustomTransitionPage<void>(
               key: state.pageKey,
               child: const ProfileEditorScreen(),
-              transitionsBuilder: ((context, animation, secondaryAnimation, child) =>
-                  FadeTransition(opacity: animation, child: child)),
+              transitionsBuilder:
+                  ((context, animation, secondaryAnimation, child) =>
+                      FadeTransition(opacity: animation, child: child)),
             ),
           ),
           GoRoute(
@@ -59,8 +61,9 @@ final navigationController = Provider<GoRouter>(
             pageBuilder: (context, state) => CustomTransitionPage<void>(
               key: state.pageKey,
               child: const TerminalScreen(),
-              transitionsBuilder: ((context, animation, secondaryAnimation, child) =>
-                  FadeTransition(opacity: animation, child: child)),
+              transitionsBuilder:
+                  ((context, animation, secondaryAnimation, child) =>
+                      FadeTransition(opacity: animation, child: child)),
             ),
           ),
           GoRoute(
@@ -69,8 +72,9 @@ final navigationController = Provider<GoRouter>(
             pageBuilder: (context, state) => CustomTransitionPage<void>(
               key: state.pageKey,
               child: const SettingsScreen(),
-              transitionsBuilder: ((context, animation, secondaryAnimation, child) =>
-                  FadeTransition(opacity: animation, child: child)),
+              transitionsBuilder:
+                  ((context, animation, secondaryAnimation, child) =>
+                      FadeTransition(opacity: animation, child: child)),
             ),
           ),
           GoRoute(
@@ -79,8 +83,9 @@ final navigationController = Provider<GoRouter>(
             pageBuilder: (context, state) => CustomTransitionPage<void>(
               key: state.pageKey,
               child: const SupportScreen(),
-              transitionsBuilder: ((context, animation, secondaryAnimation, child) =>
-                  FadeTransition(opacity: animation, child: child)),
+              transitionsBuilder:
+                  ((context, animation, secondaryAnimation, child) =>
+                      FadeTransition(opacity: animation, child: child)),
             ),
           ),
           // ),

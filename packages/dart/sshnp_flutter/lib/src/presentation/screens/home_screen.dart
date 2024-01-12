@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:sshnp_gui/src/presentation/widgets/utility/responsive_widget.dart';
+import 'package:sshnp_flutter/src/presentation/widgets/utility/responsive_widget.dart';
 
 import '../widgets/home_screen_widgets/home_screen_desktop.dart';
 import '../widgets/home_screen_widgets/home_screen_mobile.dart';

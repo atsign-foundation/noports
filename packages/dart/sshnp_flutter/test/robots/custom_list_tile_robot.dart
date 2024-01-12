@@ -1,14 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:sshnp_gui/src/presentation/widgets/custom_list_tile.dart';
+import 'package:sshnp_flutter/src/presentation/widgets/custom_list_tile.dart';
 
 class CustomListTileRobot {
   CustomListTileRobot(this.tester);
 
   final WidgetTester tester;
 
-  Future<void> pumpCustomListTile({required CustomListTile customListTile}) async {
+  Future<void> pumpCustomListTile(
+      {required CustomListTile customListTile}) async {
     await tester.pumpWidget(MaterialApp(
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
@@ -96,7 +97,8 @@ class CustomListTileRobot {
 
     final textFinderOne = find.text('Switch atsign');
     expect(textFinderOne, findsOneWidget);
-    final textFinderTwo = find.text('Select a different atsign to onboard with');
+    final textFinderTwo =
+        find.text('Select a different atsign to onboard with');
     expect(textFinderTwo, findsOneWidget);
   }
 
@@ -122,7 +124,8 @@ class CustomListTileRobot {
 
     final textFinderOne = find.text('Reset App');
     expect(textFinderOne, findsOneWidget);
-    final textFinderTwo = find.text('App will be reset and you will be logged out');
+    final textFinderTwo =
+        find.text('App will be reset and you will be logged out');
     expect(textFinderTwo, findsOneWidget);
   }
 }

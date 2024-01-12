@@ -6,9 +6,9 @@ import 'package:biometric_storage/biometric_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:sshnp_gui/src/controllers/navigation_controller.dart';
-import 'package:sshnp_gui/src/presentation/widgets/utility/custom_snack_bar.dart';
-import 'package:sshnp_gui/src/repository/private_key_manager_repository.dart';
+import 'package:sshnp_flutter/src/controllers/navigation_controller.dart';
+import 'package:sshnp_flutter/src/presentation/widgets/utility/custom_snack_bar.dart';
+import 'package:sshnp_flutter/src/repository/private_key_manager_repository.dart';
 
 import '../application/private_key_manager.dart';
 import '../repository/navigation_repository.dart';
@@ -16,20 +16,21 @@ import '../repository/navigation_repository.dart';
 enum PrivateKeyManagerWriteState { create, update }
 
 /// A provider that exposes the [CurrentPrivateKeyManagerController] to the app.
-final currentPrivateKeyController =
-    AutoDisposeNotifierProvider<CurrentPrivateKeyManagerController, CurrentPrivateKeyManagerState>(
+final currentPrivateKeyController = AutoDisposeNotifierProvider<
+    CurrentPrivateKeyManagerController, CurrentPrivateKeyManagerState>(
   CurrentPrivateKeyManagerController.new,
 );
 
 /// A provider that exposes the [AtSshKeyPairListController] to the app.
-final atPrivateKeyManagerListController =
-    AutoDisposeAsyncNotifierProvider<PrivateKeyManagerListController, Iterable<String>>(
+final atPrivateKeyManagerListController = AutoDisposeAsyncNotifierProvider<
+    PrivateKeyManagerListController, Iterable<String>>(
   PrivateKeyManagerListController.new,
 );
 
 /// A provider that exposes the [AtSshKeyPairManagerFamilyController] to the app.
 final privateKeyManagerFamilyController =
-    AutoDisposeAsyncNotifierProviderFamily<AtSshKeyPairManagerFamilyController, PrivateKeyManager, String>(
+    AutoDisposeAsyncNotifierProviderFamily<AtSshKeyPairManagerFamilyController,
+        PrivateKeyManager, String>(
   AtSshKeyPairManagerFamilyController.new,
 );
 
@@ -38,11 +39,13 @@ class CurrentPrivateKeyManagerState {
   final String nickname;
   final PrivateKeyManagerWriteState sshKeyPairFileWriteState;
 
-  CurrentPrivateKeyManagerState({required this.nickname, required this.sshKeyPairFileWriteState});
+  CurrentPrivateKeyManagerState(
+      {required this.nickname, required this.sshKeyPairFileWriteState});
 }
 
 /// Controller for the current [PrivateKeyManager] being edited
-class CurrentPrivateKeyManagerController extends AutoDisposeNotifier<CurrentPrivateKeyManagerState> {
+class CurrentPrivateKeyManagerController
+    extends AutoDisposeNotifier<CurrentPrivateKeyManagerState> {
   @override
   CurrentPrivateKeyManagerState build() {
     return CurrentPrivateKeyManagerState(
@@ -57,7 +60,8 @@ class CurrentPrivateKeyManagerController extends AutoDisposeNotifier<CurrentPriv
 }
 
 /// Controller for the list of all [PrivatekeyManager] nicknames
-class PrivateKeyManagerListController extends AutoDisposeAsyncNotifier<Iterable<String>> {
+class PrivateKeyManagerListController
+    extends AutoDisposeAsyncNotifier<Iterable<String>> {
   final context = NavigationRepository.navKey.currentContext!;
   @override
   Future<Iterable<String>> build() async {
@@ -72,7 +76,9 @@ class PrivateKeyManagerListController extends AutoDisposeAsyncNotifier<Iterable<
         CustomSnackBar.error(content: 'Operation timed out. Please try again');
       } else {
         context.pushReplacementNamed(AppRoute.home.name);
-        CustomSnackBar.error(content: 'An error occurred while retrieving the private key list. Please try again.');
+        CustomSnackBar.error(
+            content:
+                'An error occurred while retrieving the private key list. Please try again.');
       }
       return [];
     }
@@ -85,24 +91,28 @@ class PrivateKeyManagerListController extends AutoDisposeAsyncNotifier<Iterable<
 
   void add(String identity) async {
     state = AsyncValue.data({...state.value ?? [], identity});
-    await PrivateKeyManagerRepository.writePrivateKeyManagerNicknames(state.value!.toList());
+    await PrivateKeyManagerRepository.writePrivateKeyManagerNicknames(
+        state.value!.toList());
   }
 
   Future<void> remove(String identity) async {
     final newState = state.value?.where((e) => e != identity) ?? [];
-    await PrivateKeyManagerRepository.writePrivateKeyManagerNicknames(newState.toList());
+    await PrivateKeyManagerRepository.writePrivateKeyManagerNicknames(
+        newState.toList());
     state = AsyncData(newState);
   }
 }
 
 /// Controller for the family of [AtSSHKeyPairManager] controllers
-class AtSshKeyPairManagerFamilyController extends AutoDisposeFamilyAsyncNotifier<PrivateKeyManager, String> {
+class AtSshKeyPairManagerFamilyController
+    extends AutoDisposeFamilyAsyncNotifier<PrivateKeyManager, String> {
   @override
   Future<PrivateKeyManager> build(String arg) async {
     if (arg.isEmpty) {
       PrivateKeyManager.empty();
     }
-    final store = await BiometricStorage().getStorage('com.atsign.sshnoports.ssh-$arg');
+    final store =
+        await BiometricStorage().getStorage('com.atsign.sshnoports.ssh-$arg');
     final data = await store.read();
 
     if (data.isNull || data!.isEmpty) {
@@ -112,23 +122,30 @@ class AtSshKeyPairManagerFamilyController extends AutoDisposeFamilyAsyncNotifier
     return PrivateKeyManager.fromJson(jsonDecode(data));
   }
 
-  Future<void> savePrivateKeyManager({required PrivateKeyManager privateKeyManager, BuildContext? context}) async {
+  Future<void> savePrivateKeyManager(
+      {required PrivateKeyManager privateKeyManager,
+      BuildContext? context}) async {
     try {
       PrivateKeyManagerRepository.writePrivateKeyManager(privateKeyManager);
       state = AsyncValue.data(privateKeyManager);
-      ref.read(atPrivateKeyManagerListController.notifier).add(privateKeyManager.nickname);
+      ref
+          .read(atPrivateKeyManagerListController.notifier)
+          .add(privateKeyManager.nickname);
     } catch (e) {
       if (context?.mounted ?? false) {
-        CustomSnackBar.error(content: 'Failed to update PrivateKeyManager: $arg');
+        CustomSnackBar.error(
+            content: 'Failed to update PrivateKeyManager: $arg');
       }
     }
   }
 
-  Future<void> deletePrivateKeyManager({required String identifier, BuildContext? context}) async {
+  Future<void> deletePrivateKeyManager(
+      {required String identifier, BuildContext? context}) async {
     try {
       await PrivateKeyManagerRepository.deletePrivateKeyManager(arg);
       ref.read(atPrivateKeyManagerListController.notifier).remove(arg);
-      state = AsyncValue.error('SSHNPParams has been disposed', StackTrace.current);
+      state =
+          AsyncValue.error('SSHNPParams has been disposed', StackTrace.current);
     } catch (e) {
       if (context?.mounted ?? false) {
         CustomSnackBar.error(content: 'Failed to delete profile: $arg');

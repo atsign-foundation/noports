@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:sshnp_gui/src/presentation/widgets/support_screen_widgets/support_screen_desktop_view.dart';
-import 'package:sshnp_gui/src/presentation/widgets/utility/responsive_widget.dart';
+import 'package:sshnp_flutter/src/presentation/widgets/support_screen_widgets/support_screen_desktop_view.dart';
+import 'package:sshnp_flutter/src/presentation/widgets/utility/responsive_widget.dart';
 
 import '../widgets/support_screen_widgets/support_screen_mobile_view.dart';
 

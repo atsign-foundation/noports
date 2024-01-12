@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:sshnp_gui/src/presentation/widgets/terminal_screen_widgets/terminal_screen_desktop_view.dart';
-import 'package:sshnp_gui/src/presentation/widgets/utility/responsive_widget.dart';
+import 'package:sshnp_flutter/src/presentation/widgets/terminal_screen_widgets/terminal_screen_desktop_view.dart';
+import 'package:sshnp_flutter/src/presentation/widgets/utility/responsive_widget.dart';
 
 import '../widgets/terminal_screen_widgets/terminal_screen_mobile_view.dart';
 

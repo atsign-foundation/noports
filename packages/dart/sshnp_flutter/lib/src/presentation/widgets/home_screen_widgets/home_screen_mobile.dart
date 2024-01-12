@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:sshnp_gui/src/presentation/widgets/navigation/custom_app_bar.dart';
-import 'package:sshnp_gui/src/utility/constants.dart';
+import 'package:sshnp_flutter/src/presentation/widgets/navigation/custom_app_bar.dart';
+import 'package:sshnp_flutter/src/utility/constants.dart';
 
 import '../../../utility/sizes.dart';
 import 'home_screen_actions/home_screen_action_callbacks.dart';
@@ -32,7 +32,8 @@ class HomeScreenMobile extends ConsumerWidget {
           ],
         )),
         body: const Padding(
-          padding: EdgeInsets.only(top: Sizes.p21, left: Sizes.p10, right: Sizes.p10),
+          padding: EdgeInsets.only(
+              top: Sizes.p21, left: Sizes.p10, right: Sizes.p10),
           child: HomeScreenCore(),
         ),
         floatingActionButton: Row(

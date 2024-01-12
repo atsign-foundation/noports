@@ -1,8 +1,8 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:sshnp_gui/src/utility/platform_utility/default_platform_utility.dart';
-import 'package:sshnp_gui/src/utility/platform_utility/macos_utility.dart';
+import 'package:sshnp_flutter/src/utility/platform_utility/default_platform_utility.dart';
+import 'package:sshnp_flutter/src/utility/platform_utility/macos_utility.dart';
 
 abstract class PlatformUtility {
   bool isPlatform();

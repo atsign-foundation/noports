@@ -12,12 +12,13 @@ import 'package:go_router/go_router.dart';
 import 'package:noports_core/utils.dart' show DefaultArgs;
 import 'package:path_provider/path_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:sshnp_gui/src/presentation/widgets/utility/custom_snack_bar.dart';
-import 'package:sshnp_gui/src/controllers/navigation_controller.dart';
-import 'package:sshnp_gui/src/repository/navigation_repository.dart';
+import 'package:sshnp_flutter/src/presentation/widgets/utility/custom_snack_bar.dart';
+import 'package:sshnp_flutter/src/controllers/navigation_controller.dart';
+import 'package:sshnp_flutter/src/repository/navigation_repository.dart';
 
 /// A provider that exposes an [AuthenticationRepository] instance to the app.
-final authenticationRepositoryProvider = Provider<AuthenticationRepository>((ref) => AuthenticationRepository());
+final authenticationRepositoryProvider =
+    Provider<AuthenticationRepository>((ref) => AuthenticationRepository());
 
 /// A singleton that makes all the network calls to the @platform.
 class AuthenticationRepository {
@@ -42,7 +43,8 @@ class AuthenticationRepository {
   }
 
   Future<void> clearKeychainEntries() async {
-    List<String> atsignList = await KeyChainManager.getInstance().getAtSignListFromKeychain();
+    List<String> atsignList =
+        await KeyChainManager.getInstance().getAtSignListFromKeychain();
     if (atsignList.isEmpty) {
       return;
     } else {

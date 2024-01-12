@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
-import 'package:sshnp_gui/src/presentation/widgets/navigation/navigation_list_tile.dart';
-import 'package:sshnp_gui/src/utility/constants.dart';
-import 'package:sshnp_gui/src/utility/sizes.dart';
+import 'package:sshnp_flutter/src/presentation/widgets/navigation/navigation_list_tile.dart';
+import 'package:sshnp_flutter/src/utility/constants.dart';
+import 'package:sshnp_flutter/src/utility/sizes.dart';
 
 class AppNavigationMobileDialog extends StatelessWidget {
   const AppNavigationMobileDialog({super.key});

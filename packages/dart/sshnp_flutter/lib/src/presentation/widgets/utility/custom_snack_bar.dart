@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:sshnp_gui/src/repository/navigation_repository.dart';
+import 'package:sshnp_flutter/src/repository/navigation_repository.dart';
 
 class CustomSnackBar {
   static void error({

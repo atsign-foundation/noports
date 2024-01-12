@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:sshnp_gui/src/utility/constants.dart';
+import 'package:sshnp_flutter/src/utility/constants.dart';
 
 import 'home_screen_action_callbacks.dart';
 
@@ -8,7 +8,8 @@ class ImportProfileAction extends ConsumerStatefulWidget {
   const ImportProfileAction({Key? key}) : super(key: key);
 
   @override
-  ConsumerState<ImportProfileAction> createState() => _ImportProfileActionState();
+  ConsumerState<ImportProfileAction> createState() =>
+      _ImportProfileActionState();
 }
 
 class _ImportProfileActionState extends ConsumerState<ImportProfileAction> {

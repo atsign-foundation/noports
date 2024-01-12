@@ -1,6 +1,6 @@
 import 'dart:developer';
 
-import 'package:sshnp_gui/src/utility/constants.dart';
+import 'package:sshnp_flutter/src/utility/constants.dart';
 
 class FormValidator {
   static String? validateRequiredField(String? value) {

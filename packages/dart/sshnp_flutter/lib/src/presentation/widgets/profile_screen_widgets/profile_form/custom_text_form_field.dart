@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:sshnp_gui/src/utility/constants.dart';
+import 'package:sshnp_flutter/src/utility/constants.dart';
 
 class CustomTextFormField extends StatefulWidget {
   const CustomTextFormField({
@@ -68,7 +68,9 @@ class _CustomTextFormFieldState extends State<CustomTextFormField> {
               suffixIcon: widget.isPasswordField
                   ? InkWell(
                       onTap: _setPasswordVisibility,
-                      child: Icon(_isPasswordVisible ? Icons.visibility_outlined : Icons.visibility_off_outlined),
+                      child: Icon(_isPasswordVisible
+                          ? Icons.visibility_outlined
+                          : Icons.visibility_off_outlined),
                     )
                   : null,
               errorMaxLines: 3,

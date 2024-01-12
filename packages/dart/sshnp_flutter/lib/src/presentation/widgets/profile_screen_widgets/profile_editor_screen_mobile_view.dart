@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
-import 'package:sshnp_gui/src/presentation/widgets/profile_screen_widgets/profile_form/profile_form_mobile_view.dart';
-import 'package:sshnp_gui/src/utility/constants.dart';
+import 'package:sshnp_flutter/src/presentation/widgets/profile_screen_widgets/profile_form/profile_form_mobile_view.dart';
+import 'package:sshnp_flutter/src/utility/constants.dart';
 
 import '../../../utility/sizes.dart';
 

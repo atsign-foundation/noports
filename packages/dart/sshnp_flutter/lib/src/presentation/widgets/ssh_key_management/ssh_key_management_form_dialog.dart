@@ -5,15 +5,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:sshnp_gui/src/controllers/form_controllers.dart';
-import 'package:sshnp_gui/src/controllers/navigation_controller.dart';
-import 'package:sshnp_gui/src/controllers/navigation_rail_controller.dart';
-import 'package:sshnp_gui/src/controllers/private_key_manager_controller.dart';
-import 'package:sshnp_gui/src/presentation/widgets/profile_screen_widgets/profile_form/custom_text_form_field.dart';
-import 'package:sshnp_gui/src/presentation/widgets/ssh_key_management/file_picker_field.dart';
-import 'package:sshnp_gui/src/utility/constants.dart';
-import 'package:sshnp_gui/src/utility/form_validator.dart';
-import 'package:sshnp_gui/src/utility/sizes.dart';
+import 'package:sshnp_flutter/src/controllers/form_controllers.dart';
+import 'package:sshnp_flutter/src/controllers/navigation_controller.dart';
+import 'package:sshnp_flutter/src/controllers/navigation_rail_controller.dart';
+import 'package:sshnp_flutter/src/controllers/private_key_manager_controller.dart';
+import 'package:sshnp_flutter/src/presentation/widgets/profile_screen_widgets/profile_form/custom_text_form_field.dart';
+import 'package:sshnp_flutter/src/presentation/widgets/ssh_key_management/file_picker_field.dart';
+import 'package:sshnp_flutter/src/utility/constants.dart';
+import 'package:sshnp_flutter/src/utility/form_validator.dart';
+import 'package:sshnp_flutter/src/utility/sizes.dart';
 
 import '../../../application/private_key_manager.dart';
 import '../../../controllers/file_picker_controller.dart';
@@ -24,10 +24,12 @@ class SSHKeyManagementFormDialog extends ConsumerStatefulWidget {
   final String? identifier;
 
   @override
-  ConsumerState<SSHKeyManagementFormDialog> createState() => _SSHKeyManagementFormState();
+  ConsumerState<SSHKeyManagementFormDialog> createState() =>
+      _SSHKeyManagementFormState();
 }
 
-class _SSHKeyManagementFormState extends ConsumerState<SSHKeyManagementFormDialog> {
+class _SSHKeyManagementFormState
+    extends ConsumerState<SSHKeyManagementFormDialog> {
   final GlobalKey<FormState> _formkey = GlobalKey<FormState>();
 
   late String nickname;
@@ -52,7 +54,8 @@ class _SSHKeyManagementFormState extends ConsumerState<SSHKeyManagementFormDialo
 
   Future<void> getPrivateKey() async {
     try {
-      file = await openFile(acceptedTypeGroups: <XTypeGroup>[dotPrivateTypeGroup]);
+      file =
+          await openFile(acceptedTypeGroups: <XTypeGroup>[dotPrivateTypeGroup]);
       if (file == null) return;
       content = await file!.readAsString();
       setState(() {
@@ -79,9 +82,11 @@ class _SSHKeyManagementFormState extends ConsumerState<SSHKeyManagementFormDialo
         directory: fileDetails.directory,
       );
       fileDetails.clearFileDetails();
-      final controller = ref.read(privateKeyManagerFamilyController(nickname).notifier);
+      final controller =
+          ref.read(privateKeyManagerFamilyController(nickname).notifier);
 
-      await controller.savePrivateKeyManager(privateKeyManager: privateKeyManager);
+      await controller.savePrivateKeyManager(
+          privateKeyManager: privateKeyManager);
 
       if (mounted) {
         ref.read(navigationRailController.notifier).setRoute(AppRoute.home);
@@ -94,7 +99,8 @@ class _SSHKeyManagementFormState extends ConsumerState<SSHKeyManagementFormDialo
   Widget build(BuildContext context) {
     final strings = AppLocalizations.of(context)!;
 
-    final asyncOldConfig = ref.watch(privateKeyManagerFamilyController(widget.identifier ?? ''));
+    final asyncOldConfig =
+        ref.watch(privateKeyManagerFamilyController(widget.identifier ?? ''));
 
     return asyncOldConfig.when(
         loading: () => const Center(child: CircularProgressIndicator()),
@@ -115,10 +121,14 @@ class _SSHKeyManagementFormState extends ConsumerState<SSHKeyManagementFormDialo
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       gapH20,
-                      Text(strings.sshKeyManagement('no'), style: Theme.of(context).textTheme.titleMedium),
+                      Text(strings.sshKeyManagement('no'),
+                          style: Theme.of(context).textTheme.titleMedium),
                       Text(
                         strings.privateKeyManagementDescription,
-                        style: Theme.of(context).textTheme.bodySmall!.copyWith(color: Colors.white),
+                        style: Theme.of(context)
+                            .textTheme
+                            .bodySmall!
+                            .copyWith(color: Colors.white),
                       ),
                       gapH16,
                       Text(strings.newSshKeyCreation),
@@ -136,7 +146,8 @@ class _SSHKeyManagementFormState extends ConsumerState<SSHKeyManagementFormDialo
                         labelText: strings.privateKeyNickname,
                         onSaved: (value) {
                           nickname = value!;
-                          ref.read(formProfileNameController.notifier).state = value;
+                          ref.read(formProfileNameController.notifier).state =
+                              value;
                           log(ref.read(formProfileNameController));
                         },
                         validator: FormValidator.validateProfileNameField,
@@ -164,14 +175,18 @@ class _SSHKeyManagementFormState extends ConsumerState<SSHKeyManagementFormDialo
                           children: [
                             TextButton(
                               onPressed: () {
-                                ref.read(navigationRailController.notifier).setRoute(AppRoute.home);
+                                ref
+                                    .read(navigationRailController.notifier)
+                                    .setRoute(AppRoute.home);
                                 context.pop();
                               },
                               child: Text(strings.cancel,
                                   style: Theme.of(context)
                                       .textTheme
                                       .bodySmall!
-                                      .copyWith(decoration: TextDecoration.underline)),
+                                      .copyWith(
+                                          decoration:
+                                              TextDecoration.underline)),
                             ),
                             gapW8,
                             ElevatedButton(

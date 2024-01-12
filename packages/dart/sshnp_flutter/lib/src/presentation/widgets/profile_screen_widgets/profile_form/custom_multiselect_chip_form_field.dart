@@ -2,8 +2,8 @@ import 'dart:developer';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
-import 'package:sshnp_gui/src/utility/constants.dart';
-import 'package:sshnp_gui/src/utility/form_validator.dart';
+import 'package:sshnp_flutter/src/utility/constants.dart';
+import 'package:sshnp_flutter/src/utility/form_validator.dart';
 
 import '../../../../utility/sizes.dart';
 import '../../ssh_key_management/ssh_key_management_form_dialog.dart';
@@ -33,10 +33,12 @@ class CustomMultiSelectChipFormField<T> extends StatefulWidget {
   final double height;
 
   @override
-  State<CustomMultiSelectChipFormField<T>> createState() => _CustomMultiSelectChipFormFieldState<T>();
+  State<CustomMultiSelectChipFormField<T>> createState() =>
+      _CustomMultiSelectChipFormFieldState<T>();
 }
 
-class _CustomMultiSelectChipFormFieldState<T> extends State<CustomMultiSelectChipFormField<T>> {
+class _CustomMultiSelectChipFormFieldState<T>
+    extends State<CustomMultiSelectChipFormField<T>> {
   @override
   Widget build(BuildContext context) {
     final strings = AppLocalizations.of(context)!;
@@ -54,10 +56,10 @@ class _CustomMultiSelectChipFormFieldState<T> extends State<CustomMultiSelectChi
             ListTile(
               title: Text(
                 widget.label,
-                style: Theme.of(context)
-                    .textTheme
-                    .bodySmall!
-                    .copyWith(color: Colors.grey, fontSize: 11, fontWeight: FontWeight.w500),
+                style: Theme.of(context).textTheme.bodySmall!.copyWith(
+                    color: Colors.grey,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w500),
               ),
               subtitle: Text(
                 strings.privateKeyDescription,
@@ -74,7 +76,10 @@ class _CustomMultiSelectChipFormFieldState<T> extends State<CustomMultiSelectChi
                   ),
                 ),
                 onPressed: () {
-                  showDialog(context: context, builder: ((context) => const SSHKeyManagementFormDialog()));
+                  showDialog(
+                      context: context,
+                      builder: ((context) =>
+                          const SSHKeyManagementFormDialog()));
                 },
                 icon: const Icon(Icons.add_circle_outline),
                 label: const Text('Add New'),
@@ -92,14 +97,16 @@ class _CustomMultiSelectChipFormFieldState<T> extends State<CustomMultiSelectChi
                     children: [
                       Expanded(
                         child: GridView.builder(
-                          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                          gridDelegate:
+                              const SliverGridDelegateWithFixedCrossAxisCount(
                             crossAxisCount: 2,
                             crossAxisSpacing: 8,
                             mainAxisSpacing: 8,
                             childAspectRatio: 4,
                           ),
                           itemCount: widget.items.length,
-                          itemBuilder: (BuildContext context, int index) => InputChip(
+                          itemBuilder: (BuildContext context, int index) =>
+                              InputChip(
                             backgroundColor: kInputChipBackgroundColor,
                             showCheckmark: true,
                             selectedColor: kPrimaryColor,
@@ -114,11 +121,13 @@ class _CustomMultiSelectChipFormFieldState<T> extends State<CustomMultiSelectChi
                                 if (value) {
                                   widget.selectedItems.add(widget.items[index]);
                                 } else {
-                                  widget.selectedItems.remove(widget.items[index]);
+                                  widget.selectedItems
+                                      .remove(widget.items[index]);
                                 }
                               });
                             },
-                            selected: widget.selectedItems.contains(widget.items[index]),
+                            selected: widget.selectedItems
+                                .contains(widget.items[index]),
                           ),
                         ),
                       ),
@@ -131,7 +140,8 @@ class _CustomMultiSelectChipFormFieldState<T> extends State<CustomMultiSelectChi
             if (state.hasError)
               Text(
                 state.errorText!,
-                style: theme.textTheme.bodySmall!.copyWith(color: theme.colorScheme.error),
+                style: theme.textTheme.bodySmall!
+                    .copyWith(color: theme.colorScheme.error),
               ),
           ],
         ),

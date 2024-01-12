@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
-import 'package:sshnp_gui/src/presentation/widgets/navigation/custom_app_bar.dart';
+import 'package:sshnp_flutter/src/presentation/widgets/navigation/custom_app_bar.dart';
 
 import '../../../utility/constants.dart';
 import '../../../utility/sizes.dart';
@@ -22,7 +22,8 @@ class SettingsMobileView extends StatelessWidget {
         style: Theme.of(context).textTheme.headlineLarge,
       )),
       body: Padding(
-        padding: const EdgeInsets.only(left: Sizes.p36, right: Sizes.p36, top: Sizes.p21),
+        padding: const EdgeInsets.only(
+            left: Sizes.p36, right: Sizes.p36, top: Sizes.p21),
         child: ListView(
           children: [
             Text(

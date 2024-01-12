@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:sshnp_gui/src/controllers/navigation_controller.dart';
-import 'package:sshnp_gui/src/utility/app_theme.dart';
-import 'package:sshnp_gui/src/utility/platform_utility/platform_utililty.dart';
+import 'package:sshnp_flutter/src/controllers/navigation_controller.dart';
+import 'package:sshnp_flutter/src/utility/app_theme.dart';
+import 'package:sshnp_flutter/src/utility/platform_utility/platform_utililty.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 class DefaultPlatformUtility implements PlatformUtility {

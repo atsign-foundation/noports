@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:sshnp_gui/src/presentation/widgets/utility/responsive_widget.dart';
+import 'package:sshnp_flutter/src/presentation/widgets/utility/responsive_widget.dart';
 
 import '../widgets/profile_screen_widgets/profile_editor_screen_desktop_view.dart';
 import '../widgets/profile_screen_widgets/profile_editor_screen_mobile_view.dart';

@@ -1,8 +1,9 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:sshnp_gui/src/controllers/navigation_controller.dart';
+import 'package:sshnp_flutter/src/controllers/navigation_controller.dart';
 
 final navigationRailController =
-    AutoDisposeNotifierProvider<NavigationRailController, AppRoute>(NavigationRailController.new);
+    AutoDisposeNotifierProvider<NavigationRailController, AppRoute>(
+        NavigationRailController.new);
 
 class NavigationRailController extends AutoDisposeNotifier<AppRoute> {
   @override

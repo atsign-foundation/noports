@@ -4,10 +4,10 @@ import 'package:at_onboarding_flutter/at_onboarding_flutter.dart';
 import 'package:at_onboarding_flutter/services/onboarding_service.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:sshnp_gui/src/controllers/navigation_controller.dart';
-import 'package:sshnp_gui/src/presentation/screens/onboarding_screen.dart';
-import 'package:sshnp_gui/src/presentation/widgets/utility/custom_snack_bar.dart';
-import 'package:sshnp_gui/src/utility/constants.dart';
+import 'package:sshnp_flutter/src/controllers/navigation_controller.dart';
+import 'package:sshnp_flutter/src/presentation/screens/onboarding_screen.dart';
+import 'package:sshnp_flutter/src/presentation/widgets/utility/custom_snack_bar.dart';
+import 'package:sshnp_flutter/src/utility/constants.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import 'settings_screen_widgets/settings_actions/settings_switch_atsign_action.dart';
@@ -110,7 +110,8 @@ class CustomListTile extends StatelessWidget {
           }
           break;
         case CustomListTileType.discord:
-          final Uri url = Uri.parse('https://discord.gg/atsign-778383211214536722');
+          final Uri url =
+              Uri.parse('https://discord.gg/atsign-778383211214536722');
           if (!await launchUrl(url)) {
             throw Exception('Could not launch $url');
           }
@@ -122,24 +123,30 @@ class CustomListTile extends StatelessWidget {
           }
           break;
         case CustomListTileType.privacyPolicy:
-          final Uri url = Uri.parse('https://www.noports.com/ssh-no-ports-privacy-policy');
+          final Uri url =
+              Uri.parse('https://www.noports.com/ssh-no-ports-privacy-policy');
           if (!await launchUrl(url)) {
             throw Exception('Could not launch $url');
           }
           break;
         case CustomListTileType.sshKeyManagement:
           if (context.mounted) {
-            showDialog(context: context, builder: ((context) => const SshKeyManagementDialog()));
+            showDialog(
+                context: context,
+                builder: ((context) => const SshKeyManagementDialog()));
           }
           break;
         case CustomListTileType.switchAtsign:
           if (context.mounted) {
-            await showModalBottomSheet(context: context, builder: (context) => const SwitchAtSignBottomSheet());
+            await showModalBottomSheet(
+                context: context,
+                builder: (context) => const SwitchAtSignBottomSheet());
           }
           break;
         case CustomListTileType.backupYourKey:
           if (context.mounted) {
-            BackupKeyWidget(atsign: ContactService().currentAtsign).showBackupDialog(context);
+            BackupKeyWidget(atsign: ContactService().currentAtsign)
+                .showBackupDialog(context);
           }
           break;
         case CustomListTileType.resetAtsign:
@@ -154,7 +161,8 @@ class CustomListTile extends StatelessWidget {
                 appAPIKey: AtEnv.appApiKey,
               ),
             );
-            final OnboardingService onboardingService = OnboardingService.getInstance();
+            final OnboardingService onboardingService =
+                OnboardingService.getInstance();
             onboardingService.setAtsign = null;
           }
           if (context.mounted) {
@@ -176,7 +184,10 @@ class CustomListTile extends StatelessWidget {
       title: Text(title),
       subtitle: Text(
         subtitle,
-        style: Theme.of(context).textTheme.bodySmall!.copyWith(color: kTextColorDark),
+        style: Theme.of(context)
+            .textTheme
+            .bodySmall!
+            .copyWith(color: kTextColorDark),
       ),
       onTap: () async {
         await onTap();

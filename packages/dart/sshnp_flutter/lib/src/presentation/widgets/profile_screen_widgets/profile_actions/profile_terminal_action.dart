@@ -5,11 +5,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:noports_core/sshnp.dart';
-import 'package:sshnp_gui/src/controllers/navigation_controller.dart';
-import 'package:sshnp_gui/src/controllers/navigation_rail_controller.dart';
-import 'package:sshnp_gui/src/controllers/terminal_session_controller.dart';
-import 'package:sshnp_gui/src/presentation/widgets/profile_screen_widgets/profile_actions/profile_action_button.dart';
-import 'package:sshnp_gui/src/repository/private_key_manager_repository.dart';
+import 'package:sshnp_flutter/src/controllers/navigation_controller.dart';
+import 'package:sshnp_flutter/src/controllers/navigation_rail_controller.dart';
+import 'package:sshnp_flutter/src/controllers/terminal_session_controller.dart';
+import 'package:sshnp_flutter/src/presentation/widgets/profile_screen_widgets/profile_actions/profile_action_button.dart';
+import 'package:sshnp_flutter/src/repository/private_key_manager_repository.dart';
 
 import '../../../../repository/profile_private_key_manager_repository.dart';
 import '../../utility/custom_snack_bar.dart';

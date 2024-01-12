@@ -7,9 +7,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
-import 'package:path_provider/path_provider.dart' show getApplicationSupportDirectory;
-import 'package:sshnp_gui/src/controllers/navigation_controller.dart';
-import 'package:sshnp_gui/src/utility/sizes.dart';
+import 'package:path_provider/path_provider.dart'
+    show getApplicationSupportDirectory;
+import 'package:sshnp_flutter/src/controllers/navigation_controller.dart';
+import 'package:sshnp_flutter/src/utility/sizes.dart';
 
 import '../../utility/constants.dart';
 
@@ -68,23 +69,28 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                       ),
                       Text(
                         strings.welcomeTo,
-                        style: Theme.of(context).textTheme.headlineLarge!.copyWith(
-                              color: Colors.black,
-                              fontWeight: FontWeight.w700,
-                              fontSize: 19,
-                            ),
+                        style:
+                            Theme.of(context).textTheme.headlineLarge!.copyWith(
+                                  color: Colors.black,
+                                  fontWeight: FontWeight.w700,
+                                  fontSize: 19,
+                                ),
                       ),
                       Text(
                         strings.sshnpDesktopApp,
-                        style: Theme.of(context).textTheme.headlineLarge!.copyWith(
-                              color: kPrimaryColor,
-                              fontWeight: FontWeight.w700,
-                              fontSize: 19,
-                            ),
+                        style:
+                            Theme.of(context).textTheme.headlineLarge!.copyWith(
+                                  color: kPrimaryColor,
+                                  fontWeight: FontWeight.w700,
+                                  fontSize: 19,
+                                ),
                       ),
                       Text(
                         strings.welcomeToDescription,
-                        style: Theme.of(context).textTheme.bodySmall!.copyWith(color: Colors.black),
+                        style: Theme.of(context)
+                            .textTheme
+                            .bodySmall!
+                            .copyWith(color: Colors.black),
                       ),
                       gapH10,
                       Center(
@@ -95,10 +101,12 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(Sizes.p20),
                             ),
-                            padding: const EdgeInsets.symmetric(horizontal: Sizes.p99, vertical: Sizes.p10),
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: Sizes.p99, vertical: Sizes.p10),
                           ),
                           onPressed: () async {
-                            AtOnboardingResult onboardingResult = await AtOnboarding.onboard(
+                            AtOnboardingResult onboardingResult =
+                                await AtOnboarding.onboard(
                               context: context,
                               config: AtOnboardingConfig(
                                 atClientPreference: await futurePreference,
@@ -112,7 +120,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                             );
                             switch (onboardingResult.status) {
                               case AtOnboardingResultStatus.success:
-                                await initializeContactsService(rootDomain: AtEnv.rootDomain);
+                                await initializeContactsService(
+                                    rootDomain: AtEnv.rootDomain);
                                 if (context.mounted) {
                                   context.replaceNamed(AppRoute.home.name);
                                 }
@@ -133,7 +142,10 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                           },
                           child: Text(
                             'Onboard an @sign',
-                            style: Theme.of(context).textTheme.bodySmall!.copyWith(color: Colors.white),
+                            style: Theme.of(context)
+                                .textTheme
+                                .bodySmall!
+                                .copyWith(color: Colors.white),
                           ),
                         ),
                       ),
