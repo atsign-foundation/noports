@@ -119,6 +119,7 @@ class TerminalSessionFamilyController
 
     // Write exit code of the process to the terminal
     shell.done.then((_) async {
+      state.terminal.onOutput = null;
       state.terminal.write('\n[Session Complete]\r\n\n');
       state.terminal.setCursorVisibleMode(false);
 
