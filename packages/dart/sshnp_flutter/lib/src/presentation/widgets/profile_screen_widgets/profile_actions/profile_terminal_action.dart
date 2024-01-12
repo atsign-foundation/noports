@@ -1,6 +1,7 @@
 import 'dart:developer';
 
 import 'package:at_client_mobile/at_client_mobile.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -26,8 +27,6 @@ class ProfileTerminalAction extends ConsumerStatefulWidget {
 class _ProfileTerminalActionState extends ConsumerState<ProfileTerminalAction> {
   Future<void> onPressed() async {
     log(widget.params.profileName ?? 'no profile name');
-    log(widget.params.identityPassphrase ?? 'no passphrase');
-    log(widget.params.identityFile ?? 'no identity file');
     log(widget.params.clientAtSign ?? 'no client at sign');
     if (mounted) {
       showDialog<void>(
@@ -80,11 +79,18 @@ class _ProfileTerminalActionState extends ConsumerState<ProfileTerminalAction> {
       // );
       final keyPair = privateKeyManager?.toAtSshKeyPair();
 
+      log('key-id: ${keyPair?.identifier}');
+      log('private-key-populated: ${(keyPair?.privateKeyContents ?? '').isNotEmpty.toString()}');
+
       final sshnp = Sshnp.dartPure(
         // params: sshnpParams,
         params: SshnpParams.merge(
           widget.params,
-          SshnpPartialParams(verbose: true),
+          SshnpPartialParams(
+            verbose: kDebugMode,
+            idleTimeout: 30,
+            tunnelUsername: 'root',
+          ),
         ),
         atClient: atClient,
         identityKeyPair: keyPair,
@@ -105,7 +111,9 @@ class _ProfileTerminalActionState extends ConsumerState<ProfileTerminalAction> {
 
       if (result is SshnpCommand) {
         if (sshnp.canRunShell) {
+          log('running shell session');
           SshnpRemoteProcess shell = await sshnp.runShell();
+          log('starting terminal session');
           sessionController.startSession(
             shell,
             terminalTitle:
@@ -159,12 +167,3 @@ class _ProfileTerminalActionState extends ConsumerState<ProfileTerminalAction> {
     //     loading: () => const Center(child: CircularProgressIndicator()));
   }
 }
-
-const content = """-----BEGIN OPENSSH PRIVATE KEY-----
-b3BlbnNzaC1rZXktdjEAAAAABG5vbmUAAAAEbm9uZQAAAAAAAAABAAAAMwAAAAtzc2gtZW
-QyNTUxOQAAACBZuGcLVvPhnszgd5VLiij8BGhFpBpqKVjO+m8PdIFphwAAALBhI2cbYSNn
-GwAAAAtzc2gtZWQyNTUxOQAAACBZuGcLVvPhnszgd5VLiij8BGhFpBpqKVjO+m8PdIFphw
-AAAECrtllzlYcwI8k32n9VuHfFS1iPnxk+/1ItFW61YF4M+lm4ZwtW8+GezOB3lUuKKPwE
-aEWkGmopWM76bw90gWmHAAAAKWN1cnRseWNyaXRjaGxvd0BDdXJ0bHlzLU1hY0Jvb2stUH
-JvLmxvY2FsAQIDBA==
------END OPENSSH PRIVATE KEY-----""";

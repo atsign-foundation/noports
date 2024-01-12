@@ -125,6 +125,7 @@ class SshClientHelper {
     required int port,
     required String username,
     required AtSshKeyPair keyPair,
+    bool ping = true,
   }) async {
     try {
       late final SSHSocket socket;

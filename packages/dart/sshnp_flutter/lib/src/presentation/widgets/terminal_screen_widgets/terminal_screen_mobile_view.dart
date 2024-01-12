@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
-import 'package:flutter_pty/flutter_pty.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sshnp_flutter/src/controllers/terminal_session_controller.dart';
 import 'package:sshnp_flutter/src/presentation/widgets/navigation/custom_app_bar.dart';
@@ -19,7 +18,6 @@ class TerminalScreenMobileView extends ConsumerStatefulWidget {
 class _TerminalScreenMobileState extends ConsumerState<TerminalScreenMobileView>
     with TickerProviderStateMixin {
   final terminalController = TerminalController();
-  late final Pty pty;
   @override
   void initState() {
     super.initState();
@@ -28,7 +26,6 @@ class _TerminalScreenMobileState extends ConsumerState<TerminalScreenMobileView>
     final sessionController =
         ref.read(terminalSessionFamilyController(sessionId).notifier);
     WidgetsBinding.instance.endOfFrame.then((value) {
-      sessionController.startProcess();
     });
   }
 

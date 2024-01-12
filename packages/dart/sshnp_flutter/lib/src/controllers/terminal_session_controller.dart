@@ -1,5 +1,5 @@
 import 'dart:convert';
-
+import 'dart:typed_data';
 
 import 'package:dartssh2/dartssh2.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -114,8 +114,8 @@ class TerminalSessionFamilyController
     }
 
     // Write stdout/stderr of the sshClient to the terminal
-    shell.stdout.transform(const Utf8Decoder()).listen(state.terminal.write);
-    shell.stderr.transform(const Utf8Decoder()).listen(state.terminal.write);
+    utf8.decoder.bind(shell.stdout).listen(state.terminal.write);
+    utf8.decoder.bind(shell.stderr).listen(state.terminal.write);
 
     // Write exit code of the process to the terminal
     shell.done.then((_) async {
@@ -139,7 +139,7 @@ class TerminalSessionFamilyController
 
     // Write the terminal output to the process
     state.terminal.onOutput = (data) {
-      shell.stdin.add(const Utf8Encoder().convert(data));
+      shell.stdin.add(utf8.encode(data));
     };
 
     // Resize the terminal when the window is resized
