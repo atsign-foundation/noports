@@ -43,7 +43,7 @@ jobs:
 
     steps:
       - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
-      - uses: dart-lang/setup-dart@b64355ae6ca0b5d484f0106a033dd1388965d06d # v1.6.0
+      - uses: dart-lang/setup-dart@ca7e6fee45ffbd82b555a7ebfc236d2c86439f5b # v1.6.1
       - run: mkdir sshnp
       - run: mkdir tarball
       - if: ${{ matrix.os != 'windows-latest' }}
@@ -66,7 +66,7 @@ jobs:
       - run: tar -cvzf tarball/${{ matrix.output-name }}.tgz sshnp
       - uses: actions/upload-artifact@c7d193f32edcb7bfad88892161225aeda64e9392 # v4.0.0
         with:
-          name: x64_binaries
+          name: ${{ matrix.output-name }}-upload
           path: ./packages/dart/sshnoports/tarball/${{ matrix.output-name }}.tgz
           if-no-files-found: error
 
@@ -98,7 +98,7 @@ jobs:
       - run: tar -xvf bins.tar -C tarballs
       - uses: actions/upload-artifact@c7d193f32edcb7bfad88892161225aeda64e9392 # v4.0.0
         with:
-          name: other_binaries
+          name: ${{ matrix.output-name }}-upload
           path: ./packages/dart/sshnoports/tarballs/${{ matrix.output-name }}.tgz
           if-no-files-found: error
 

@@ -1,4 +1,4 @@
-name: sshnoports
+name: noports
 
 packages:
   - packages/dart/noports_core
