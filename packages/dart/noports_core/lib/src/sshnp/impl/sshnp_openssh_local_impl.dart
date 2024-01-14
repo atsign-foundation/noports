@@ -7,7 +7,10 @@ import 'package:noports_core/src/sshnp/util/ephemeral_port_binder.dart';
 import 'package:noports_core/sshnp_foundation.dart';
 
 class SshnpOpensshLocalImpl extends SshnpCore
-    with SshnpLocalSshKeyHandler, OpensshSshSessionHandler, EphemeralPortBinder {
+    with
+        SshnpLocalSshKeyHandler,
+        OpensshSshSessionHandler,
+        EphemeralPortBinder {
   SshnpOpensshLocalImpl({
     required super.atClient,
     required super.params,
@@ -40,6 +43,7 @@ class SshnpOpensshLocalImpl extends SshnpCore
     await super.initialize();
     completeInitialization();
   }
+
   @override
   Future<SshnpResult> run() async {
     /// Ensure that sshnp is initialized

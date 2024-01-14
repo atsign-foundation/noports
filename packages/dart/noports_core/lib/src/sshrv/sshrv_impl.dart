@@ -176,8 +176,7 @@ class SshrvImplDart implements Sshrv<SocketConnector> {
             transformBtoA: decrypter);
         if (rvdAuthString != null) {
           stderr.writeln('authenticating socketB');
-          socketConnector.pendingB.first.socket
-              .writeln(rvdAuthString);
+          socketConnector.pendingB.first.socket.writeln(rvdAuthString);
         }
       } else {
         socketConnector = await SocketConnector.socketToSocket(
@@ -190,8 +189,7 @@ class SshrvImplDart implements Sshrv<SocketConnector> {
             transformBtoA: decrypter);
         if (rvdAuthString != null) {
           stderr.writeln('authenticating socketB');
-          socketConnector.connections.first.sideB.socket
-              .writeln(rvdAuthString);
+          socketConnector.connections.first.sideB.socket.writeln(rvdAuthString);
         }
       }
 

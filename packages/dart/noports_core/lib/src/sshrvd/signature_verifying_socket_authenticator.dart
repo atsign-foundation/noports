@@ -95,7 +95,8 @@ class SignatureAuthVerifier {
             ..hashingAlgoType = hashingAlgo;
 
           AtSigningResult atSigningResult = _verifySignature(input);
-          logger.info('Signing verification outcome is: ${atSigningResult.result}');
+          logger.info('Signing verification outcome is:'
+              ' ${atSigningResult.result}');
           bool result = atSigningResult.result;
 
           if (result == false) {
