@@ -47,7 +47,7 @@ Future<void> main(List<String> args) async {
 
   /// Shut myself down once the socket connector closes
   stderr.writeln('Waiting for connector to close');
-  await connector.closed();
+  await connector.done;
 
   stderr.writeln('Closed - exiting');
   exit(0);

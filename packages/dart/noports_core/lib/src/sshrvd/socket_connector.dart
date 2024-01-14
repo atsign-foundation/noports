@@ -66,7 +66,7 @@ void socketConnector(ConnectorParams connectorParams) async {
       jsonEncode(expectedPayloadForSignature),
       sshrvdSessionParams.rvdNonce!,
       sshrvdSessionParams.atSignA,
-    );
+    ).authenticate;
   }
 
   SocketAuthVerifier? socketAuthVerifierB;
@@ -85,23 +85,23 @@ void socketConnector(ConnectorParams connectorParams) async {
       jsonEncode(expectedPayloadForSignature),
       sshrvdSessionParams.rvdNonce!,
       sshrvdSessionParams.atSignB!,
-    );
+    ).authenticate;
   }
 
   /// Create the socket connector
   SocketConnector connector = await SocketConnector.serverToServer(
-      serverAddressA: InternetAddress.anyIPv4,
-      serverAddressB: InternetAddress.anyIPv4,
-      serverPortA: portA,
-      serverPortB: portB,
+      addressA: InternetAddress.anyIPv4,
+      addressB: InternetAddress.anyIPv4,
+      portA: portA,
+      portB: portB,
       verbose: verbose,
       logTraffic: logTraffic,
       socketAuthVerifierA: socketAuthVerifierA,
       socketAuthVerifierB: socketAuthVerifierB);
 
   /// Get the assigned ports from the socket connector
-  portA = connector.senderPort()!;
-  portB = connector.receiverPort()!;
+  portA = connector.sideAPort!;
+  portB = connector.sideBPort!;
 
   logger.info('Assigned ports [$portA, $portB]'
       ' for session ${sshrvdSessionParams.sessionId}');
@@ -113,7 +113,7 @@ void socketConnector(ConnectorParams connectorParams) async {
   bool closed = false;
   while (closed == false) {
     logger.info('Waiting for connector to close');
-    closed = await connector.closed();
+    closed = await connector.done;
   }
 
   logger.info('Finished session ${sshrvdSessionParams.sessionId}'

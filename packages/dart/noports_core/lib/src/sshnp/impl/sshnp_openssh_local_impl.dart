@@ -1,7 +1,6 @@
 import 'dart:async';
 
 import 'package:at_client/at_client.dart';
-import 'package:meta/meta.dart';
 import 'package:noports_core/src/common/io_types.dart';
 import 'package:noports_core/src/sshnp/impl/notification_request_message.dart';
 import 'package:noports_core/src/sshnp/util/ephemeral_port_binder.dart';

@@ -5,7 +5,6 @@ import 'dart:typed_data';
 
 import 'package:at_chops/at_chops.dart';
 import 'package:at_utils/at_logger.dart';
-import 'package:socket_connector/socket_connector.dart';
 
 ///
 /// Verifies signature of the data received over the socket using the same signing algorithm used to sign the data
@@ -22,7 +21,7 @@ import 'package:socket_connector/socket_connector.dart';
 /// also expects signature to be base64 encoded
 ///
 ///
-class SignatureAuthVerifier implements SocketAuthVerifier {
+class SignatureAuthVerifier {
   static final AtSignLogger logger = AtSignLogger('SignatureAuthVerifier');
 
   /// Public key of the signing algorithm used to sign the data
@@ -50,7 +49,6 @@ class SignatureAuthVerifier implements SocketAuthVerifier {
     return atChops.verify(input);
   }
 
-  @override
   Future<(bool, Stream<Uint8List>?)> authenticate(Socket socket) async {
     Completer<(bool, Stream<Uint8List>?)> completer = Completer();
     bool authenticated = false;

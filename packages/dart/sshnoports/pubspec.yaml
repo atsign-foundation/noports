@@ -13,6 +13,12 @@ dependencies:
   socket_connector: ^2.0.0
 
 dependency_overrides:
+  socket_connector:
+    git:
+      url: https://github.com/gkc/socket_connector.git
+      ref: socket-authenticator-option
+  noports_core:
+    path: ../noports_core
   # Pin the dependencies of noports_core
   archive: 3.3.9
   args: 2.4.2
@@ -28,10 +34,6 @@ dependency_overrides:
   ssh_key: 0.8.0
   uuid: 3.0.7
   version: 3.0.2
-  socket_connector:
-    git:
-      url: https://github.com/gkc/socket_connector.git
-      ref: socket-authenticator-option
 
 dev_dependencies:
   lints: ^3.0.0
