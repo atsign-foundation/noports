@@ -12,16 +12,16 @@ class AppNavigationRail extends ConsumerWidget {
   const AppNavigationRail({super.key});
 
   static var activatedIcons = [
+    SvgPicture.asset('assets/images/nav_icons/dashboard_selected.svg'),
     SvgPicture.asset('assets/images/nav_icons/current_connection_selected.svg'),
-    SvgPicture.asset('assets/images/nav_icons/terminal_selected.svg'),
     gap0,
     SvgPicture.asset('assets/images/nav_icons/support_selected.svg'),
     SvgPicture.asset('assets/images/nav_icons/settings_selected.svg')
   ];
 
   static var deactivatedIcons = [
+    SvgPicture.asset('assets/images/nav_icons/dashboard_unselected.svg'),
     SvgPicture.asset('assets/images/nav_icons/current_connection_unselected.svg'),
-    SvgPicture.asset('assets/images/nav_icons/terminal_unselected.svg'),
     gap0,
     SvgPicture.asset('assets/images/nav_icons/support_unselected.svg'),
     SvgPicture.asset('assets/images/nav_icons/settings_unselected.svg'),
@@ -48,12 +48,12 @@ class AppNavigationRail extends ConsumerWidget {
                 destinations: controller.routes.map((AppRoute route) {
                   if (route == AppRoute.blank) {
                     return NavigationRailDestination(
-                      icon: SizedBox(height: 130 + height - 467),
+                      icon: SizedBox(height: 116 + height - 467),
                       label: gap0,
                     );
                   } else if ((route == AppRoute.terminal && terminalList.isEmpty)) {
                     return const NavigationRailDestination(
-                      icon: gapH12,
+                      icon: gapH46,
                       label: gap0,
                     );
                   } else {
@@ -67,10 +67,13 @@ class AppNavigationRail extends ConsumerWidget {
                 }).toList(),
                 selectedIndex: currentIndex,
                 onDestinationSelected: (int selectedIndex) {
-                  if (controller.getRoute(selectedIndex) != AppRoute.blank) {
-                    controller.setIndex(selectedIndex);
-                    context.replaceNamed(controller.getCurrentRoute().name);
+                  // Don't navigate for blank app route and terminal route if there are no sessions
+                  if ((controller.getRoute(selectedIndex) == AppRoute.terminal && terminalList.isEmpty) ||
+                      controller.getRoute(selectedIndex) == AppRoute.blank) {
+                    return;
                   }
+                  controller.setIndex(selectedIndex);
+                  context.replaceNamed(controller.getCurrentRoute().name);
                 },
               ),
             ),
