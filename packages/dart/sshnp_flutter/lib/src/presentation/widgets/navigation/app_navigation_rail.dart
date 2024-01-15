@@ -6,6 +6,8 @@ import 'package:sshnp_flutter/src/controllers/navigation_controller.dart';
 import 'package:sshnp_flutter/src/controllers/navigation_rail_controller.dart';
 import 'package:sshnp_flutter/src/utility/sizes.dart';
 
+import '../../../controllers/terminal_session_controller.dart';
+
 class AppNavigationRail extends ConsumerWidget {
   const AppNavigationRail({super.key});
 
@@ -18,8 +20,7 @@ class AppNavigationRail extends ConsumerWidget {
   ];
 
   static var deactivatedIcons = [
-    SvgPicture.asset(
-        'assets/images/nav_icons/current_connection_unselected.svg'),
+    SvgPicture.asset('assets/images/nav_icons/current_connection_unselected.svg'),
     SvgPicture.asset('assets/images/nav_icons/terminal_unselected.svg'),
     gap0,
     SvgPicture.asset('assets/images/nav_icons/support_unselected.svg'),
@@ -29,6 +30,7 @@ class AppNavigationRail extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final controller = ref.watch(navigationRailController.notifier);
+    final terminalList = ref.watch(terminalSessionListController);
     final currentIndex = controller.getCurrentIndex();
     final height = MediaQuery.of(context).size.height;
 
@@ -47,6 +49,11 @@ class AppNavigationRail extends ConsumerWidget {
                   if (route == AppRoute.blank) {
                     return NavigationRailDestination(
                       icon: SizedBox(height: 130 + height - 467),
+                      label: gap0,
+                    );
+                  } else if ((route == AppRoute.terminal && terminalList.isEmpty)) {
+                    return const NavigationRailDestination(
+                      icon: gapH12,
                       label: gap0,
                     );
                   } else {

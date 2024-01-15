@@ -24,7 +24,7 @@ class _TerminalScreenDesktopViewState extends ConsumerState<TerminalScreenDeskto
     super.dispose();
   }
 
-  void closeSession(String sessionId) {
+  void closeSession(String sessionId, List<String> terminalList) {
     // Remove the session from the list of sessions
     final controller = ref.read(terminalSessionFamilyController(sessionId).notifier);
     controller.dispose();
@@ -73,7 +73,7 @@ class _TerminalScreenDesktopViewState extends ConsumerState<TerminalScreenDeskto
                                 Text(displayName),
                                 IconButton(
                                   icon: const Icon(Icons.close),
-                                  onPressed: () => closeSession(sessionId),
+                                  onPressed: () => closeSession(sessionId, terminalList),
                                 )
                               ],
                             ),

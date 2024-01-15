@@ -3,9 +3,13 @@ import 'dart:convert';
 
 import 'package:dartssh2/dartssh2.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:noports_core/sshnp_foundation.dart';
+import 'package:sshnp_flutter/src/repository/navigation_repository.dart';
 import 'package:uuid/uuid.dart';
 import 'package:xterm/xterm.dart';
+
+import 'navigation_controller.dart';
 
 /// A provider that exposes the [TerminalSessionController] to the app.
 final terminalSessionController = NotifierProvider<TerminalSessionController, String>(
@@ -55,6 +59,7 @@ class TerminalSessionListController extends Notifier<List<String>> {
 
   void _remove(String sessionId) {
     state.remove(sessionId);
+    if (state.isEmpty) NavigationRepository.navKey.currentContext!.pushReplacementNamed(AppRoute.home.name);
   }
 }
 
