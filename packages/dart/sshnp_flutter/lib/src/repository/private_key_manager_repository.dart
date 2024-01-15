@@ -1,7 +1,7 @@
 import 'dart:convert';
 
 import 'package:at_client_mobile/at_client_mobile.dart';
-import 'package:biometric_storage/biometric_storage.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../application/private_key_manager.dart';
 
@@ -9,20 +9,16 @@ import '../application/private_key_manager.dart';
 class PrivateKeyManagerRepository {
   /// Writes a [PrivateKeyManager] to the device's secure storage.
   static Future<void> writePrivateKeyManager(PrivateKeyManager manager) async {
-    BiometricStorage biometricStorage = BiometricStorage();
-    final storage = await biometricStorage.getStorage('com.atsign.sshnoports.ssh-${manager.nickname}');
-
-    await storage.write(jsonEncode(manager.toMap()));
+    final SharedPreferences prefs = await SharedPreferences.getInstance();
+    await prefs.setString('com.atsign.sshnoports.ssh-${manager.nickname}', jsonEncode(manager.toMap()));
   }
 
   /// Reads a [PrivateKeyManager] from the device's secure storage.
-  static Future<PrivateKeyManager?> readPrivateKeyManager(String identifier) async {
-    BiometricStorage biometricStorage = BiometricStorage();
-    final data = await biometricStorage.getStorage('com.atsign.sshnoports.ssh-$identifier').then(
-          (value) => value.read(),
-        );
+  static Future<PrivateKeyManager> readPrivateKeyManager(String identifier) async {
+    final SharedPreferences prefs = await SharedPreferences.getInstance();
+    final data = prefs.getString('com.atsign.sshnoports.ssh-$identifier');
     if (data.isNull || data!.isEmpty) {
-      return null;
+      return PrivateKeyManager.empty();
     } else {
       return PrivateKeyManager.fromJson(jsonDecode(data));
     }
@@ -30,29 +26,26 @@ class PrivateKeyManagerRepository {
 
   /// Deletes a [PrivateKeyManager] from the device's secure storage.
   static Future<void> deletePrivateKeyManager(String identifier) async {
-    BiometricStorage biometricStorage = BiometricStorage();
-    final storage = await biometricStorage.getStorage('com.atsign.sshnoports.ssh-$identifier');
-    await storage.delete();
+    final SharedPreferences prefs = await SharedPreferences.getInstance();
+    prefs.remove('com.atsign.sshnoports.ssh-$identifier');
   }
 
   /// Writes a list of [PrivateKeyManager] nicknames to the device's secure storage.
   static Future<void> writePrivateKeyManagerNicknames(
     List<String> identities,
   ) async {
-    BiometricStorage biometricStorage = BiometricStorage();
-    final storage = await biometricStorage.getStorage('com.atsign.sshnoports.nicknames');
-
-    await storage.write(jsonEncode(identities));
+    final SharedPreferences prefs = await SharedPreferences.getInstance();
+    await prefs.setStringList('com.atsign.sshnoports.nicknames', identities);
   }
 
   /// Returns a list of [PrivateKeyManager] nickname from the device's secure storage.
   static Future<Iterable<String>> listPrivateKeyManagerNickname() async {
-    final decodedData =
-        await BiometricStorage().getStorage('com.atsign.sshnoports.nicknames').then((value) => value.read());
+    final SharedPreferences prefs = await SharedPreferences.getInstance();
+    final decodedData = prefs.getStringList('com.atsign.sshnoports.nicknames');
     if (decodedData == null) {
       return [];
     } else {
-      return [...jsonDecode(decodedData)];
+      return decodedData;
     }
   }
 }
