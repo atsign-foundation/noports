@@ -30,9 +30,12 @@ class FormValidator {
   }
 
   static String? validatePrivateKeyField(String? value) {
+    String invalid = '[^a-zA-Z0-9_]';
     if (value?.isEmpty ?? true) {
       return kEmptyFieldValidationError;
     } else if (value! == kPrivateKeyDropDownOption) {
+      return kPrivateKeyFieldValidationError;
+    } else if (value.contains(RegExp(invalid))) {
       return kPrivateKeyFieldValidationError;
     }
     return null;

@@ -24,12 +24,10 @@ class SSHKeyManagementFormDialog extends ConsumerStatefulWidget {
   final String? identifier;
 
   @override
-  ConsumerState<SSHKeyManagementFormDialog> createState() =>
-      _SSHKeyManagementFormState();
+  ConsumerState<SSHKeyManagementFormDialog> createState() => _SSHKeyManagementFormState();
 }
 
-class _SSHKeyManagementFormState
-    extends ConsumerState<SSHKeyManagementFormDialog> {
+class _SSHKeyManagementFormState extends ConsumerState<SSHKeyManagementFormDialog> {
   final GlobalKey<FormState> _formkey = GlobalKey<FormState>();
 
   late String nickname;
@@ -54,8 +52,7 @@ class _SSHKeyManagementFormState
 
   Future<void> getPrivateKey() async {
     try {
-      file =
-          await openFile(acceptedTypeGroups: <XTypeGroup>[dotPrivateTypeGroup]);
+      file = await openFile(acceptedTypeGroups: <XTypeGroup>[dotPrivateTypeGroup]);
       if (file == null) return;
       content = await file!.readAsString();
       setState(() {
@@ -82,11 +79,9 @@ class _SSHKeyManagementFormState
         directory: fileDetails.directory,
       );
       fileDetails.clearFileDetails();
-      final controller =
-          ref.read(privateKeyManagerFamilyController(nickname).notifier);
+      final controller = ref.read(privateKeyManagerFamilyController(nickname).notifier);
 
-      await controller.savePrivateKeyManager(
-          privateKeyManager: privateKeyManager);
+      await controller.savePrivateKeyManager(privateKeyManager: privateKeyManager);
 
       if (mounted) {
         ref.read(navigationRailController.notifier).setRoute(AppRoute.home);
@@ -99,8 +94,7 @@ class _SSHKeyManagementFormState
   Widget build(BuildContext context) {
     final strings = AppLocalizations.of(context)!;
 
-    final asyncOldConfig =
-        ref.watch(privateKeyManagerFamilyController(widget.identifier ?? ''));
+    final asyncOldConfig = ref.watch(privateKeyManagerFamilyController(widget.identifier ?? ''));
 
     return asyncOldConfig.when(
         loading: () => const Center(child: CircularProgressIndicator()),
@@ -121,14 +115,10 @@ class _SSHKeyManagementFormState
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       gapH20,
-                      Text(strings.sshKeyManagement('no'),
-                          style: Theme.of(context).textTheme.titleMedium),
+                      Text(strings.sshKeyManagement('no'), style: Theme.of(context).textTheme.titleMedium),
                       Text(
                         strings.privateKeyManagementDescription,
-                        style: Theme.of(context)
-                            .textTheme
-                            .bodySmall!
-                            .copyWith(color: Colors.white),
+                        style: Theme.of(context).textTheme.bodySmall!.copyWith(color: Colors.white),
                       ),
                       gapH16,
                       Text(strings.newSshKeyCreation),
@@ -144,18 +134,19 @@ class _SSHKeyManagementFormState
                       CustomTextFormField(
                         initialValue: nickname,
                         labelText: strings.privateKeyNickname,
+                        toolTip: strings.privateKeyNicknameToolTip,
                         onSaved: (value) {
                           nickname = value!;
-                          ref.read(formProfileNameController.notifier).state =
-                              value;
+                          ref.read(formProfileNameController.notifier).state = value;
                           log(ref.read(formProfileNameController));
                         },
-                        validator: FormValidator.validateProfileNameField,
+                        validator: FormValidator.validatePrivateKeyField,
                       ),
                       gapH10,
                       CustomTextFormField(
                         labelText: strings.privateKeyPassphrase,
                         initialValue: passPhrase,
+                        toolTip: strings.privatekeyPassPhraseTooltip,
                         isPasswordField: true,
                         onSaved: (value) {
                           if (value == '' || value == null) {
@@ -175,18 +166,14 @@ class _SSHKeyManagementFormState
                           children: [
                             TextButton(
                               onPressed: () {
-                                ref
-                                    .read(navigationRailController.notifier)
-                                    .setRoute(AppRoute.home);
+                                ref.read(navigationRailController.notifier).setRoute(AppRoute.home);
                                 context.pop();
                               },
                               child: Text(strings.cancel,
                                   style: Theme.of(context)
                                       .textTheme
                                       .bodySmall!
-                                      .copyWith(
-                                          decoration:
-                                              TextDecoration.underline)),
+                                      .copyWith(decoration: TextDecoration.underline)),
                             ),
                             gapW8,
                             ElevatedButton(

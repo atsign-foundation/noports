@@ -11,6 +11,7 @@ class CustomDropdownFormField<T> extends StatelessWidget {
     this.onSaved,
     this.onValidator,
     this.hintText,
+    this.tooltip = '',
     this.width = kFieldDefaultWidth,
     this.height = kFieldDefaultHeight,
   });
@@ -22,6 +23,7 @@ class CustomDropdownFormField<T> extends StatelessWidget {
   final String? Function(T?)? onValidator;
   final String label;
   final String? hintText;
+  final String tooltip;
   final double width;
   final double height;
 
@@ -41,17 +43,11 @@ class CustomDropdownFormField<T> extends StatelessWidget {
           ),
           DropdownButtonFormField<T>(
             value: initialValue,
-            style: Theme.of(context)
-                .textTheme
-                .bodySmall!
-                .copyWith(color: Colors.black),
+            style: Theme.of(context).textTheme.bodySmall!.copyWith(color: Colors.black),
             selectedItemBuilder: (context) => items
                 .map((e) => Text(
                       e.value.toString(),
-                      style: Theme.of(context)
-                          .textTheme
-                          .bodySmall!
-                          .copyWith(color: kPrimaryColor),
+                      style: Theme.of(context).textTheme.bodySmall!.copyWith(color: kPrimaryColor),
                     ))
                 .toList(),
             dropdownColor: Colors.white,
@@ -65,6 +61,13 @@ class CustomDropdownFormField<T> extends StatelessWidget {
                 borderRadius: BorderRadius.circular(2),
               ),
               errorMaxLines: 3,
+              suffixIcon: Tooltip(
+                message: tooltip,
+                child: const Icon(
+                  Icons.question_mark_outlined,
+                  size: 12,
+                ),
+              ),
             ),
             items: items,
             onChanged: onChanged,

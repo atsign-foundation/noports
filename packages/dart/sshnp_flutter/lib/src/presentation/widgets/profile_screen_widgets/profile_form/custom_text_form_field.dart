@@ -14,11 +14,13 @@ class CustomTextFormField extends StatefulWidget {
     this.height = kFieldDefaultHeight,
     this.isPasswordField = false,
     this.readOnly = false,
+    this.toolTip = '',
   });
 
   final String labelText;
   final String? hintText;
   final String? initialValue;
+  final String toolTip;
   final double width;
   final double height;
   final void Function(String)? onChanged;
@@ -68,11 +70,15 @@ class _CustomTextFormFieldState extends State<CustomTextFormField> {
               suffixIcon: widget.isPasswordField
                   ? InkWell(
                       onTap: _setPasswordVisibility,
-                      child: Icon(_isPasswordVisible
-                          ? Icons.visibility_outlined
-                          : Icons.visibility_off_outlined),
+                      child: Icon(_isPasswordVisible ? Icons.visibility_outlined : Icons.visibility_off_outlined),
                     )
-                  : null,
+                  : Tooltip(
+                      message: widget.toolTip,
+                      child: const Icon(
+                        Icons.question_mark_outlined,
+                        size: 12,
+                      ),
+                    ),
               errorMaxLines: 3,
             ),
             readOnly: widget.readOnly,
