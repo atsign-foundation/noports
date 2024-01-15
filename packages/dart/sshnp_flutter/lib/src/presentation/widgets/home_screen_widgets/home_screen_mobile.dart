@@ -22,7 +22,7 @@ class HomeScreenMobile extends ConsumerWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              strings.currentConnections,
+              strings.connectionProfiles,
               style: Theme.of(context).textTheme.headlineLarge,
             ),
             Text(
@@ -32,8 +32,7 @@ class HomeScreenMobile extends ConsumerWidget {
           ],
         )),
         body: const Padding(
-          padding: EdgeInsets.only(
-              top: Sizes.p21, left: Sizes.p10, right: Sizes.p10),
+          padding: EdgeInsets.only(top: Sizes.p21, left: Sizes.p10, right: Sizes.p10),
           child: HomeScreenCore(),
         ),
         floatingActionButton: Row(

@@ -32,7 +32,7 @@ class HomeScreenDesktop extends StatelessWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            strings.currentConnections,
+                            strings.connectionProfiles,
                             style: Theme.of(context).textTheme.headlineLarge,
                           ),
                           Text(
