@@ -19,7 +19,7 @@ updates:
     schedule:
       interval: "daily"
   - package-ecosystem: "pub"
-    directory: "/packages/dart/sshnp_gui/"
+    directory: "/packages/dart/sshnp_flutter/"
     schedule:
       interval: "daily"
   - package-ecosystem: "pip"
