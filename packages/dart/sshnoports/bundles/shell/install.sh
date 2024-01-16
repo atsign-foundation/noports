@@ -61,9 +61,11 @@ usage() {
   echo "debug           - install all debug binaries"
   echo ""
   echo "all             - install all binaries (base and debug)"
-  echo ""
-  echo "systemd <unit>  - install a systemd unit"
-  echo "                  available units: [sshnpd, sshrvd]"
+  if ! is_darwin; then
+    echo ""
+    echo "systemd <unit>  - install a systemd unit"
+    echo "                  available units: [sshnpd, sshrvd]"
+  fi
   echo ""
   echo "headless <job>  - install a headless cron job"
   echo "                  available jobs: [sshnpd, sshrvd]"
@@ -162,6 +164,11 @@ install_systemd_sshrvd() {
 }
 
 systemd() {
+  if is_darwin; then
+    echo "Unknown command: systemd";
+    usage;
+    exit 1;
+  fi
   case "$1" in
     --help) usage; exit 0;;
     sshnpd) install_systemd_sshnpd;;
@@ -196,7 +203,7 @@ install_headless_job() {
   if is_root; then
     dest="$user_bin_dir/root_$job_name.sh"
   else
-  dest="$user_bin_dir/$job_name.sh"
+    dest="$user_bin_dir/$job_name.sh"
   fi
   if ! [ -f "$dest" ]; then
     cp "$script_dir/headless/$job_name.sh" "$dest"
@@ -269,7 +276,7 @@ install_tmux_service() {
   if is_root; then
     dest="$user_bin_dir/root_$service_name.sh"
   else
-  dest="$user_bin_dir/$service_name.sh"
+    dest="$user_bin_dir/$service_name.sh"
   fi
 
   if ! [ -f "$dest" ]; then
