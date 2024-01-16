@@ -193,7 +193,11 @@ install_headless_job() {
   job_name=$1
   mkdir -p "$user_bin_dir"
   mkdir -p "$user_log_dir"
+  if is_root; then
+    dest="$user_bin_dir/root_$job_name.sh"
+  else
   dest="$user_bin_dir/$job_name.sh"
+  fi
   if ! [ -f "$dest" ]; then
     cp "$script_dir/headless/$job_name.sh" "$dest"
   fi
@@ -262,7 +266,11 @@ post_tmux_message() {
 install_tmux_service() {
   service_name=$1
   mkdir -p "$user_bin_dir"
+  if is_root; then
+    dest="$user_bin_dir/root_$service_name.sh"
+  else
   dest="$user_bin_dir/$service_name.sh"
+  fi
 
   if ! [ -f "$dest" ]; then
     cp "$script_dir/headless/$service_name.sh" "$dest"
