@@ -48,3 +48,5 @@ app.*.map.json
 /android/app/profile
 /android/app/release
 coverage/lcov.info
+
+.vscode/settings.json
