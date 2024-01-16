@@ -20,8 +20,8 @@ const kInputChipBackgroundColor = Color(0XFF515151);
 
 const kEmptyFieldValidationError = 'Field cannot be left blank';
 const kAtsignFieldValidationError = 'Field must start with @';
-const kProfileNameFieldValidationError = 'Field must only use alphanumeric characters and spaces';
-const kPrivateKeyFieldValidationError = 'Field must only use alphanumeric characters';
+const kProfileNameFieldValidationError = 'Field must only use lower case alphanumeric characters spaces';
+const kPrivateKeyFieldValidationError = 'Field must only use lower case alphanumeric characters';
 
 const kPrivateKeyDropDownOption = 'Create a new private key';
 
