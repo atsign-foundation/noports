@@ -20,7 +20,7 @@ class FormValidator {
   }
 
   static String? validateProfileNameField(String? value) {
-    String invalid = '[^a-zA-Z0-9 ]';
+    String invalid = '[^a-z0-9 ]';
     if (value?.isEmpty ?? true) {
       return kEmptyFieldValidationError;
     } else if (value!.contains(RegExp(invalid))) {
@@ -30,7 +30,7 @@ class FormValidator {
   }
 
   static String? validatePrivateKeyField(String? value) {
-    String invalid = '[^a-zA-Z0-9_]';
+    String invalid = '[^a-z0-9_]';
     if (value?.isEmpty ?? true) {
       return kEmptyFieldValidationError;
     } else if (value! == kPrivateKeyDropDownOption) {

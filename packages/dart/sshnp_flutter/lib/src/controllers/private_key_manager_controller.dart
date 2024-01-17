@@ -1,12 +1,16 @@
 import 'dart:async';
+import 'dart:developer';
 
+import 'package:at_client_mobile/at_client_mobile.dart';
 import 'package:biometric_storage/biometric_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:noports_core/sshnp_params.dart';
 import 'package:sshnp_flutter/src/controllers/navigation_controller.dart';
 import 'package:sshnp_flutter/src/presentation/widgets/utility/custom_snack_bar.dart';
 import 'package:sshnp_flutter/src/repository/private_key_manager_repository.dart';
+import 'package:sshnp_flutter/src/repository/profile_private_key_manager_repository.dart';
 
 import '../application/private_key_manager.dart';
 import '../repository/navigation_repository.dart';
@@ -125,8 +129,23 @@ class AtSshKeyPairManagerFamilyController extends AutoDisposeFamilyAsyncNotifier
 
   Future<void> deletePrivateKeyManager({required String identifier, BuildContext? context}) async {
     try {
-      await PrivateKeyManagerRepository.deletePrivateKeyManager(arg);
+      // await PrivateKeyManagerRepository.deletePrivateKeyManager(arg);
       ref.read(atPrivateKeyManagerListController.notifier).remove(arg);
+      // Read in profiles
+      AtClient atClient = AtClientManager.getInstance().atClient;
+      final profiles = await ConfigKeyRepository.listProfiles(atClient);
+
+      for (final profile in profiles) {
+        //delete profile private key manager that matches the deleted private key manager
+        final profilePrivateKeyManager = await ProfilePrivateKeyManagerRepository.readProfilePrivateKeyManager(profile);
+        log('arg: $arg, profile $profile, profile private manager key nickname: ${profilePrivateKeyManager.privateKeyNickname}, profilePrivateKeyManager profile name: ${profilePrivateKeyManager.profileNickname}');
+
+        if (profilePrivateKeyManager.privateKeyNickname == arg) {
+          log('profile from if clause: $profile');
+          await ProfilePrivateKeyManagerRepository.deleteProfilePrivateKeyManager(profile);
+        }
+      }
+
       state = AsyncValue.error('SSHNPParams has been disposed', StackTrace.current);
     } catch (e) {
       if (context?.mounted ?? false) {

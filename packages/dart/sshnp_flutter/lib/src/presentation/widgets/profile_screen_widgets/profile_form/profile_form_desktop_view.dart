@@ -41,7 +41,9 @@ class _ProfileFormState extends ConsumerState<ProfileFormDesktopView> {
       ref.read(formProfileNameController.notifier).state = currentProfile.profileName;
       privateKeyNickname =
           await ProfilePrivateKeyManagerRepository.readProfilePrivateKeyManager(currentProfile.profileName)
-              .then((value) => value?.privateKeyNickname);
+              .then((value) => value.privateKeyNickname);
+
+      if (privateKeyNickname == '') privateKeyNickname = null;
     });
 
     super.initState();
@@ -83,7 +85,6 @@ class _ProfileFormState extends ConsumerState<ProfileFormDesktopView> {
     final strings = AppLocalizations.of(context)!;
     currentProfile = ref.watch(currentConfigController);
     final privateKeyManagerListController = ref.watch(atPrivateKeyManagerListController);
-    // final profilePrivateKeyListController = ref.watch(profilePrivateKeyManagerListController);
 
     final asyncOldConfig = ref.watch(configFamilyController(currentProfile.profileName));
 
@@ -279,55 +280,10 @@ class _ProfileFormState extends ConsumerState<ProfileFormDesktopView> {
                             },
                             onValidator: FormValidator.validatePrivateKeyField,
                           );
-
-                          // return CustomMultiSelectChipFormField<String>(
-                          //   width: kFieldDefaultWidth + Sizes.p5,
-                          //   selectedItems: selectedItems,
-                          //   label: strings.privateKey,
-                          //   hintText: strings.select,
-                          //   items: privateKeyList.toList(),
-                          //   onChanged: (value) {
-                          //     if (value == kPrivateKeyDropDownOption) {
-                          //       showDialog(
-                          //           context: context, builder: ((context) => const SSHKeyManagementFormDialog()));
-                          //     }
-                          //   },
-                          //   onSaved: (value) {
-                          //     final atSshKeyPair = ref.read(privateKeyManagerFamilyController(value!));
-                          //     // write to a new controller to map the profile name to the ssh key pair manager nickname. Store this information locally.
-
-                          //     // At the point of ssh connect the profile name and the key manager name so get the identity passphrase and the fiel content.
-                          //     atSshKeyPair.when(
-                          //         data: (data) => newConfig = SshnpPartialParams.merge(
-                          //             newConfig,
-                          //             SshnpPartialParams(
-                          //                 identityFile: data.nickname, identityPassphrase: data.passPhrase)),
-                          //         error: ((error, stackTrace) => log(error.toString())),
-                          //         loading: () => const CircularProgressIndicator());
-                          //   },
-                          //   onValidator: FormValidator.validatePrivateKeyField,
-                          // );
                         }),
                     gapH20,
-                    // TODO: Add key management dropdown here
                     gapH20,
-
-                    // CustomDropdownFormField<SupportedSshAlgorithm>(
-                    //   label: strings.sshAlgorithm,
-                    //   hintText: strings.select,
-                    //   initialValue: oldConfig.sshAlgorithm,
-                    //   items: SupportedSshAlgorithm.values
-                    //       .map((e) => DropdownMenuItem<SupportedSshAlgorithm>(
-                    //             value: e,
-                    //             child: Text(e.name),
-                    //           ))
-                    //       .toList(),
-                    //   onChanged: ((value) =>
-                    //       newConfig = SshnpPartialParams.merge(newConfig, SshnpPartialParams(sshAlgorithm: value))),
-                    // ),
-                    gapH10,
                     CustomSwitchWidget(
-                        //TODO: change string to sendSshPublicKey not ssh public key
                         labelText: strings.sendSshPublicKey,
                         value: newConfig.sendSshPublicKey ?? oldConfig.sendSshPublicKey,
                         tooltip: strings.sendSshPublicKeyTooltip,

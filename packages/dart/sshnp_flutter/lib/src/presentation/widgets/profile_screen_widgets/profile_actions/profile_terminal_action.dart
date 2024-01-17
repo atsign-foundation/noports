@@ -45,6 +45,12 @@ class _ProfileTerminalActionState extends ConsumerState<ProfileTerminalAction> {
     if (mounted) {
       showProgress('Starting Shell Session...');
     }
+
+    /// Issue a new session id
+    final sessionId = ref.watch(terminalSessionController.notifier).createSession();
+
+    /// Create the session controller for the new session id
+    final sessionController = ref.watch(terminalSessionFamilyController(sessionId).notifier);
     // TODO: add try
     try {
       // TODO ensure that this keyPair gets uploaded to the app first
@@ -104,17 +110,11 @@ class _ProfileTerminalActionState extends ConsumerState<ProfileTerminalAction> {
         throw result;
       }
 
-      /// Issue a new session id
-      final sessionId = ref.watch(terminalSessionController.notifier).createSession();
-
-      /// Create the session controller for the new session id
-      final sessionController = ref.watch(terminalSessionFamilyController(sessionId).notifier);
-
       if (result is SshnpCommand) {
         if (sshnp.canRunShell) {
           if (mounted) {
             context.pop();
-            showProgress('running shell session');
+            showProgress('running shell session...');
           }
           log('running shell session...');
 
@@ -139,6 +139,7 @@ class _ProfileTerminalActionState extends ConsumerState<ProfileTerminalAction> {
       }
       //TODO: Add catch
     } catch (e) {
+      sessionController.dispose();
       if (mounted) {
         log('error: ${e.toString()}');
         context.pop();
