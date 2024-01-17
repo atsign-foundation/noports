@@ -200,13 +200,14 @@ install_headless_job() {
   job_name=$1
   mkdir -p "$user_bin_dir"
   mkdir -p "$user_log_dir"
-  if is_root; then
-    dest="$user_bin_dir/root_$job_name.sh"
-  else
-    dest="$user_bin_dir/$job_name.sh"
-  fi
+
+  dest="$user_bin_dir/$job_name.sh"
   if ! [ -f "$dest" ]; then
-    cp "$script_dir/headless/$job_name.sh" "$dest"
+    if is_root; then
+      cp "$script_dir/headless/root_$job_name.sh" "$dest"
+    else
+      cp "$script_dir/headless/$job_name.sh" "$dest"
+    fi
   fi
 
   log_file="$user_sshnpd_dir/logs/$job_name.log"
@@ -273,14 +274,14 @@ post_tmux_message() {
 install_tmux_service() {
   service_name=$1
   mkdir -p "$user_bin_dir"
-  if is_root; then
-    dest="$user_bin_dir/root_$service_name.sh"
-  else
-    dest="$user_bin_dir/$service_name.sh"
-  fi
 
+  dest="$user_bin_dir/$service_name.sh"
   if ! [ -f "$dest" ]; then
-    cp "$script_dir/headless/$service_name.sh" "$dest"
+    if is_root; then
+      cp "$script_dir/headless/root_$service_name.sh" "$dest"
+    else
+      cp "$script_dir/headless/$service_name.sh" "$dest"
+    fi
   fi
 
   command="tmux new-session -d -s $service_name && tmux send-keys -t $service_name $dest C-m"
