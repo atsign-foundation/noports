@@ -177,7 +177,8 @@ abstract class SshnpdChannel with AsyncInitialization, AtClientBindings {
   /// Otherwise, the username will be set to [remoteUsername]
   Future<String?> resolveTunnelUsername(
       {required String? remoteUsername}) async {
-    if (params.tunnelUsername != null) {
+    if (params.tunnelUsername != null &&
+        params.tunnelUsername!.trim().isNotEmpty) {
       return params.tunnelUsername!;
     } else {
       return remoteUsername;
