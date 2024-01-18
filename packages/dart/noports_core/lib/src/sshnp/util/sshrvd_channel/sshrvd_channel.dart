@@ -149,24 +149,50 @@ abstract class SshrvdChannel<T> with AsyncInitialization, AtClientBindings {
       sshrvdAck = SshrvdAck.acknowledged;
     });
     logger.info('Started listening for sshrvd response');
-    AtKey ourSshrvdIdKey = AtKey()
-      ..key = '${params.device}.request_ports.${Sshrvd.namespace}'
-      ..sharedBy = params.clientAtSign // shared by us
-      ..sharedWith = host // shared with the sshrvd host
-      ..metadata = (Metadata()
+
+    late AtKey rvdRequestKey;
+    late String rvdRequestValue;
+
+    if (params.authenticateClientToRvd || params.authenticateDeviceToRvd) {
+      rvdRequestKey = AtKey()
+        ..key = '${params.device}.request_ports.${Sshrvd.namespace}'
+        ..sharedBy = params.clientAtSign // shared by us
+        ..sharedWith = host // shared with the sshrvd host
+        ..metadata = (Metadata()
         // as we are sending a notification to the sshrvd namespace,
         // we don't want to append our namespace
-        ..namespaceAware = false
-        ..ttl = 10000);
-    logger.info('Sending notification to sshrvd: $ourSshrvdIdKey');
+          ..namespaceAware = false
+          ..ttl = 10000);
 
-    String notificationValue = _prepareNotificationPayload(sessionId);
-    // We need to send not just the sessionId but other metaData
-    // especially, the atSign on the other end
-    // In the rvd we need to figure out backwards compatibility.
+      var message = SocketRendezvousRequestMessage();
+      message.sessionId = sessionId;
+      message.atSignA = params.clientAtSign;
+      message.atSignB = params.sshnpdAtSign;
+      message.authenticateSocketA = params.authenticateClientToRvd;
+      message.authenticateSocketB = params.authenticateDeviceToRvd;
+      message.clientNonce = clientNonce;
+
+      rvdRequestValue = message.toString();
+    } else {
+      // send a legacy message since no new rvd features are being used
+      rvdRequestKey = AtKey()
+        ..key = '${params.device}.${Sshrvd.namespace}'
+        ..sharedBy = params.clientAtSign // shared by us
+        ..sharedWith = host // shared with the sshrvd host
+        ..metadata = (Metadata()
+        // as we are sending a notification to the sshrvd namespace,
+        // we don't want to append our namespace
+          ..namespaceAware = false
+          ..ttl = 10000);
+
+      rvdRequestValue = sessionId;
+    }
+
+    logger.info(
+        'Sending notification to sshrvd with key $rvdRequestKey and value $rvdRequestValue');
     await notify(
-      ourSshrvdIdKey,
-      notificationValue,
+      rvdRequestKey,
+      rvdRequestValue,
       checkForFinalDeliveryStatus: false,
       waitForFinalDeliveryStatus: false,
     );
@@ -183,16 +209,5 @@ abstract class SshrvdChannel<T> with AsyncInitialization, AtClientBindings {
         throw ('Connection timeout to sshrvd $host service\nhint: make sure host is valid and online');
       }
     }
-  }
-
-  String _prepareNotificationPayload(String sessionId) {
-    var message = SocketRendezvousRequestMessage();
-    message.sessionId = sessionId;
-    message.atSignA = params.clientAtSign;
-    message.atSignB = params.sshnpdAtSign;
-    message.authenticateSocketA = params.authenticateClientToRvd;
-    message.authenticateSocketB = params.authenticateDeviceToRvd;
-    message.clientNonce = clientNonce;
-    return message.toString();
   }
 }
