@@ -163,8 +163,8 @@ abstract class SshrvdChannel<T> with AsyncInitialization, AtClientBindings {
         ..sharedBy = params.clientAtSign // shared by us
         ..sharedWith = host // shared with the sshrvd host
         ..metadata = (Metadata()
-        // as we are sending a notification to the sshrvd namespace,
-        // we don't want to append our namespace
+          // as we are sending a notification to the sshrvd namespace,
+          // we don't want to append our namespace
           ..namespaceAware = false
           ..ttl = 10000);
 
@@ -184,8 +184,8 @@ abstract class SshrvdChannel<T> with AsyncInitialization, AtClientBindings {
         ..sharedBy = params.clientAtSign // shared by us
         ..sharedWith = host // shared with the sshrvd host
         ..metadata = (Metadata()
-        // as we are sending a notification to the sshrvd namespace,
-        // we don't want to append our namespace
+          // as we are sending a notification to the sshrvd namespace,
+          // we don't want to append our namespace
           ..namespaceAware = false
           ..ttl = 10000);
 
