@@ -1,4 +1,4 @@
-package com.atsign.sshnp_flutter
+package com.atsign.sshnp
 
 import io.flutter.embedding.android.FlutterActivity
 

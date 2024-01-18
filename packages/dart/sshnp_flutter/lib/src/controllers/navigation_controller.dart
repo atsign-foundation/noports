@@ -18,8 +18,6 @@ enum AppRoute {
   blank, // This is a pace holder
   support,
   settings,
-  // sshKeyManagementForm,
-  // sskKeyManagement,
 }
 
 final navigationController = Provider<GoRouter>(
@@ -39,9 +37,8 @@ final navigationController = Provider<GoRouter>(
             pageBuilder: (context, state) => CustomTransitionPage<void>(
               key: state.pageKey,
               child: const HomeScreen(),
-              transitionsBuilder:
-                  ((context, animation, secondaryAnimation, child) =>
-                      FadeTransition(opacity: animation, child: child)),
+              transitionsBuilder: ((context, animation, secondaryAnimation, child) =>
+                  FadeTransition(opacity: animation, child: child)),
             ),
           ),
           GoRoute(
@@ -50,9 +47,8 @@ final navigationController = Provider<GoRouter>(
             pageBuilder: (context, state) => CustomTransitionPage<void>(
               key: state.pageKey,
               child: const ProfileEditorScreen(),
-              transitionsBuilder:
-                  ((context, animation, secondaryAnimation, child) =>
-                      FadeTransition(opacity: animation, child: child)),
+              transitionsBuilder: ((context, animation, secondaryAnimation, child) =>
+                  FadeTransition(opacity: animation, child: child)),
             ),
           ),
           GoRoute(
@@ -61,9 +57,8 @@ final navigationController = Provider<GoRouter>(
             pageBuilder: (context, state) => CustomTransitionPage<void>(
               key: state.pageKey,
               child: const TerminalScreen(),
-              transitionsBuilder:
-                  ((context, animation, secondaryAnimation, child) =>
-                      FadeTransition(opacity: animation, child: child)),
+              transitionsBuilder: ((context, animation, secondaryAnimation, child) =>
+                  FadeTransition(opacity: animation, child: child)),
             ),
           ),
           GoRoute(
@@ -72,9 +67,8 @@ final navigationController = Provider<GoRouter>(
             pageBuilder: (context, state) => CustomTransitionPage<void>(
               key: state.pageKey,
               child: const SettingsScreen(),
-              transitionsBuilder:
-                  ((context, animation, secondaryAnimation, child) =>
-                      FadeTransition(opacity: animation, child: child)),
+              transitionsBuilder: ((context, animation, secondaryAnimation, child) =>
+                  FadeTransition(opacity: animation, child: child)),
             ),
           ),
           GoRoute(
@@ -83,22 +77,10 @@ final navigationController = Provider<GoRouter>(
             pageBuilder: (context, state) => CustomTransitionPage<void>(
               key: state.pageKey,
               child: const SupportScreen(),
-              transitionsBuilder:
-                  ((context, animation, secondaryAnimation, child) =>
-                      FadeTransition(opacity: animation, child: child)),
+              transitionsBuilder: ((context, animation, secondaryAnimation, child) =>
+                  FadeTransition(opacity: animation, child: child)),
             ),
           ),
-          // ),
-          // GoRoute(
-          //   path: 'key-management',
-          //   name: AppRoute.sskKeyManagement.name,
-          //   pageBuilder: (context, state) => CustomTransitionPage<void>(
-          //     key: state.pageKey,
-          //     child: const SshKeyManagementScreen(),
-          //     transitionsBuilder: ((context, animation, secondaryAnimation, child) =>
-          //         FadeTransition(opacity: animation, child: child)),
-          //   ),
-          // )
         ],
       ),
     ],

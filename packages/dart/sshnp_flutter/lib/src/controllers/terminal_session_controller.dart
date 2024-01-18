@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'dart:convert';
-import 'dart:developer';
 
 import 'package:dartssh2/dartssh2.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -67,13 +66,9 @@ class TerminalSessionListController extends Notifier<List<String>> {
 class TerminalSession {
   final String sessionId;
   final Terminal terminal;
-
   String? _profileName;
   String displayName;
-
   bool isRunning = false;
-  // TODO: delete this
-  // bool isDisposed = true;
 
   SshnpRemoteProcess? shell;
 
@@ -106,8 +101,6 @@ class TerminalSessionFamilyController extends FamilyNotifier<TerminalSession, St
 
     if (state.isRunning) return;
     state.isRunning = true;
-    //TODO: Delete this
-    // state.isDisposed = false;
 
     if (terminalTitle != null) {
       state.terminal.setTitle(terminalTitle);
@@ -163,13 +156,6 @@ class TerminalSessionFamilyController extends FamilyNotifier<TerminalSession, St
   }
 
   void dispose() {
-    log('dispose called');
-
-    /// If the session is already disposed, return null
-    // TODO: delete this
-    // if (state.isDisposed) return;
-    log('dispose not disposed');
-
     /// 1. Set the session to disposed
     if (state.isRunning) _killProcess();
 

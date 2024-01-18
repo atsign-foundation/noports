@@ -25,10 +25,7 @@ class _ProfileRunActionState extends ConsumerState<ProfileRunAction> {
   }
 
   Future<void> onStart() async {
-    ref
-        .read(backgroundSessionFamilyController(widget.params.profileName!)
-            .notifier)
-        .start();
+    ref.read(backgroundSessionFamilyController(widget.params.profileName!).notifier).start();
     try {
       SshnpParams params = SshnpParams.merge(
         widget.params,
@@ -38,12 +35,10 @@ class _ProfileRunActionState extends ConsumerState<ProfileRunAction> {
         ),
       );
 
-      // TODO ensure that this keyPair gets uploaded to the app first
       AtClient atClient = AtClientManager.getInstance().atClient;
       DartSshKeyUtil keyUtil = DartSshKeyUtil();
       AtSshKeyPair keyPair = await keyUtil.getKeyPair(
-        identifier: params.identityFile ??
-            'id_${atClient.getCurrentAtSign()!.replaceAll('@', '')}',
+        identifier: params.identityFile ?? 'id_${atClient.getCurrentAtSign()!.replaceAll('@', '')}',
       );
 
       sshnp = Sshnp.dartPure(
@@ -57,10 +52,7 @@ class _ProfileRunActionState extends ConsumerState<ProfileRunAction> {
       if (sshnpResult is SshnpError) {
         throw sshnpResult!;
       }
-      ref
-          .read(backgroundSessionFamilyController(widget.params.profileName!)
-              .notifier)
-          .endStartUp();
+      ref.read(backgroundSessionFamilyController(widget.params.profileName!).notifier).endStartUp();
     } catch (e) {
       Future stop = onStop();
       if (mounted) {
@@ -74,14 +66,10 @@ class _ProfileRunActionState extends ConsumerState<ProfileRunAction> {
     if (sshnpResult is SshnpCommand) {
       await (sshnpResult as SshnpCommand).killConnectionBean();
     }
-    ref
-        .read(backgroundSessionFamilyController(widget.params.profileName!)
-            .notifier)
-        .stop();
+    ref.read(backgroundSessionFamilyController(widget.params.profileName!).notifier).stop();
   }
 
-  static Widget getIconFromStatus(
-      BackgroundSessionStatus status, BuildContext context) {
+  static Widget getIconFromStatus(BackgroundSessionStatus status, BuildContext context) {
     switch (status) {
       case BackgroundSessionStatus.stopped:
         return const Icon(
@@ -101,8 +89,7 @@ class _ProfileRunActionState extends ConsumerState<ProfileRunAction> {
 
   @override
   Widget build(BuildContext context) {
-    final status = ref
-        .watch(backgroundSessionFamilyController(widget.params.profileName!));
+    final status = ref.watch(backgroundSessionFamilyController(widget.params.profileName!));
     return ProfileActionButton(
       onPressed: () async {
         switch (status) {

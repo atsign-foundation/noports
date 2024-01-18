@@ -33,8 +33,7 @@ class _FilePickerFieldState extends ConsumerState<FilePickerField> {
   @override
   void initState() {
     super.initState();
-    controller = TextEditingController(
-        text: ref.read(filePickerController.notifier).fileName);
+    controller = TextEditingController(text: ref.read(filePickerController.notifier).fileName);
 
     controller.addListener(
       () {
@@ -57,7 +56,6 @@ class _FilePickerFieldState extends ConsumerState<FilePickerField> {
   Widget build(BuildContext context) {
     return SizedBox(
       width: widget.width,
-      // height: height,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -87,8 +85,6 @@ class _FilePickerFieldState extends ConsumerState<FilePickerField> {
                 await ref.read(filePickerController.notifier).getFileDetails();
                 controller.notifyListeners();
               },
-
-              // validator: FormValidator.validateOptio,
             ),
           ),
         ],

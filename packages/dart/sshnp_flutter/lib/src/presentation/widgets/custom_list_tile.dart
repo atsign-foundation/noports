@@ -75,7 +75,7 @@ class CustomListTile extends StatelessWidget {
       {this.iconData = Icons.bookmark_outline,
       this.title = 'Backup Your Keys',
       this.subtitle = 'Save a pair of your atKeys',
-      this.type = CustomListTileType.resetAtsign,
+      this.type = CustomListTileType.backupYourKey,
       this.tileColor = kProfileBackgroundColor,
       Key? key})
       : super(key: key);
@@ -106,12 +106,10 @@ class CustomListTile extends StatelessWidget {
           );
           if (!await launchUrl(emailUri)) {
             CustomSnackBar.notification(content: 'No email client available');
-            // throw Exception('Could not launch $emailUri');
           }
           break;
         case CustomListTileType.discord:
-          final Uri url =
-              Uri.parse('https://discord.gg/atsign-778383211214536722');
+          final Uri url = Uri.parse('https://discord.gg/atsign-778383211214536722');
           if (!await launchUrl(url)) {
             throw Exception('Could not launch $url');
           }
@@ -123,30 +121,24 @@ class CustomListTile extends StatelessWidget {
           }
           break;
         case CustomListTileType.privacyPolicy:
-          final Uri url =
-              Uri.parse('https://www.noports.com/ssh-no-ports-privacy-policy');
+          final Uri url = Uri.parse('https://www.noports.com/ssh-no-ports-privacy-policy');
           if (!await launchUrl(url)) {
             throw Exception('Could not launch $url');
           }
           break;
         case CustomListTileType.sshKeyManagement:
           if (context.mounted) {
-            showDialog(
-                context: context,
-                builder: ((context) => const SshKeyManagementDialog()));
+            showDialog(context: context, builder: ((context) => const SshKeyManagementDialog()));
           }
           break;
         case CustomListTileType.switchAtsign:
           if (context.mounted) {
-            await showModalBottomSheet(
-                context: context,
-                builder: (context) => const SwitchAtSignBottomSheet());
+            await showModalBottomSheet(context: context, builder: (context) => const SwitchAtSignBottomSheet());
           }
           break;
         case CustomListTileType.backupYourKey:
           if (context.mounted) {
-            BackupKeyWidget(atsign: ContactService().currentAtsign)
-                .showBackupDialog(context);
+            BackupKeyWidget(atsign: ContactService().currentAtsign).showBackupDialog(context);
           }
           break;
         case CustomListTileType.resetAtsign:
@@ -161,8 +153,7 @@ class CustomListTile extends StatelessWidget {
                 appAPIKey: AtEnv.appApiKey,
               ),
             );
-            final OnboardingService onboardingService =
-                OnboardingService.getInstance();
+            final OnboardingService onboardingService = OnboardingService.getInstance();
             onboardingService.setAtsign = null;
           }
           if (context.mounted) {
@@ -184,10 +175,7 @@ class CustomListTile extends StatelessWidget {
       title: Text(title),
       subtitle: Text(
         subtitle,
-        style: Theme.of(context)
-            .textTheme
-            .bodySmall!
-            .copyWith(color: kTextColorDark),
+        style: Theme.of(context).textTheme.bodySmall!.copyWith(color: kTextColorDark),
       ),
       onTap: () async {
         await onTap();
