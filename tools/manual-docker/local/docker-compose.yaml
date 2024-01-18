@@ -29,14 +29,14 @@ services:
       - sshnp
     depends_on:
       - image-manual-local
-  container-sshrvd:
-    image: atsigncompany/sshnp-e2e-manual:local
-    container_name: manual_local_sshrvd
-    volumes:
-      - ../../../../contexts/sshrvd/.atsign/keys/:/atsign/.atsign/keys/ # mount keys
-    network_mode: host
-    depends_on:
-      - image-manual-local
+  # container-sshrvd:
+  #   image: atsigncompany/sshnp-e2e-manual:local
+  #   container_name: manual_local_sshrvd
+  #   volumes:
+  #     - ../../../../contexts/sshrvd/.atsign/keys/:/atsign/.atsign/keys/ # mount keys
+  #   network_mode: host
+  #   depends_on:
+  #     - image-manual-local
 
 networks:
   sshnpd:

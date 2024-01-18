@@ -15,7 +15,7 @@ See the [sshnoports](https://github.com/atsign-foundation/noports/tree/trunk/pac
 
 ### Flutter Example
 
-See the [sshnp_gui](https://github.com/atsign-foundation/noports/tree/trunk/packages/dart/sshnp_gui) project.
+See the [sshnp_flutter](https://github.com/atsign-foundation/noports/tree/trunk/packages/dart/sshnp_flutter) project.
 
 ## Maintainers
 
