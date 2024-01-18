@@ -40,6 +40,7 @@ class SshrvdImpl implements Sshrvd {
   static final String subscriptionRegex = '${Sshrvd.namespace}@';
 
   late final SshrvdUtil sshrvdUtil;
+
   SshrvdImpl({
     required this.atClient,
     required this.atSign,
@@ -49,7 +50,7 @@ class SshrvdImpl implements Sshrvd {
     required this.ipAddress,
     required this.logTraffic,
     required this.verbose,
-    SshrvdUtil? sshrvdUtil
+    SshrvdUtil? sshrvdUtil,
   }) {
     this.sshrvdUtil = sshrvdUtil ?? SshrvdUtil(atClient);
     logger.hierarchicalLoggingEnabled = true;
@@ -272,22 +273,21 @@ class SshrvdSessionParams {
 
 class SshrvdUtil {
   final AtClient atClient;
+
   SshrvdUtil(this.atClient);
 
   bool accept(AtNotification notification) {
     return notification.key.contains(Sshrvd.namespace);
   }
 
-  Future<SshrvdSessionParams> getParams(
-      AtNotification notification) async {
+  Future<SshrvdSessionParams> getParams(AtNotification notification) async {
     if (notification.key.contains('.request_ports.${Sshrvd.namespace}')) {
       return await _processJSONRequest(notification);
     }
     return _processLegacyRequest(notification);
   }
 
-  SshrvdSessionParams _processLegacyRequest(
-      AtNotification notification) {
+  SshrvdSessionParams _processLegacyRequest(AtNotification notification) {
     return SshrvdSessionParams(
       sessionId: notification.value!,
       atSignA: notification.from,

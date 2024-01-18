@@ -104,12 +104,12 @@ class SshrvImplExec implements Sshrv<Process> {
         }
       }
     }, onError: (e) {
-      if (! rvPortBound.isCompleted) {
+      if (!rvPortBound.isCompleted) {
         rvPortBound.completeError(e);
       }
     });
 
-    await rvPortBound.future.timeout(Duration(seconds:2));
+    await rvPortBound.future.timeout(Duration(seconds: 2));
 
     return p;
   }
