@@ -143,9 +143,12 @@ abstract class SshrvdChannel<T> with AsyncInitialization, AtClientBindings {
       _host = results[0];
       _portA = int.parse(results[1]);
       _portB = int.parse(results[2]);
-      rvdNonce = results[3];
-      logger.info(
-          'Received from sshrvd: host:port $host:$port and rvdNonce: $rvdNonce');
+      if (results.length >= 4) {
+        rvdNonce = results[3];
+      }
+      logger.info('Received from sshrvd:'
+          ' host:port $host:$port'
+          ' rvdNonce: $rvdNonce');
       logger.info('Set sshrvdPort to: $_portB');
       sshrvdAck = SshrvdAck.acknowledged;
     });
