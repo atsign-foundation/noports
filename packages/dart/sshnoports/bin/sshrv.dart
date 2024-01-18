@@ -45,6 +45,9 @@ Future<void> main(List<String> args) async {
     sessionIVString: sessionIVString,
   ).run();
 
+  // Do not change this output
+  stderr.writeln('rv is running');
+
   /// Shut myself down once the socket connector closes
   stderr.writeln('Waiting for connector to close');
   await connector.done;

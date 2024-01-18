@@ -101,8 +101,6 @@ class SshnpOpensshLocalImpl extends SshnpCore
       sessionIVString: sshnpdChannel.sessionIVString,
     );
 
-    await Future.delayed(Duration(seconds: 1));
-
     /// Load the ephemeral private key into a key pair
     AtSshKeyPair ephemeralKeyPair = AtSshKeyPair.fromPem(
       sshnpdChannel.ephemeralPrivateKey!,

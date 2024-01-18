@@ -110,11 +110,8 @@ void socketConnector(ConnectorParams connectorParams) async {
   sendPort.send((portA, portB));
 
   /// Shut myself down once the socket connector closes
-  bool closed = false;
-  while (closed == false) {
-    logger.info('Waiting for connector to close');
-    closed = await connector.done;
-  }
+  logger.info('Waiting for connector to close');
+  await connector.done;
 
   logger.info('Finished session ${sshrvdSessionParams.sessionId}'
       ' for ${sshrvdSessionParams.atSignA} to ${sshrvdSessionParams.atSignB}'

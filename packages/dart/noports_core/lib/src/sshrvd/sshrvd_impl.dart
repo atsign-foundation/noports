@@ -3,7 +3,6 @@ import 'dart:io';
 import 'dart:isolate';
 import 'dart:convert';
 import 'package:at_client/at_client.dart';
-import 'package:at_lookup/at_lookup.dart';
 import 'package:at_utils/at_logger.dart';
 import 'package:logging/logging.dart';
 import 'package:meta/meta.dart';
@@ -40,6 +39,7 @@ class SshrvdImpl implements Sshrvd {
 
   static final String subscriptionRegex = '${Sshrvd.namespace}@';
 
+  late final SshrvdUtil sshrvdUtil;
   SshrvdImpl({
     required this.atClient,
     required this.atSign,
@@ -49,7 +49,9 @@ class SshrvdImpl implements Sshrvd {
     required this.ipAddress,
     required this.logTraffic,
     required this.verbose,
+    SshrvdUtil? sshrvdUtil
   }) {
+    this.sshrvdUtil = sshrvdUtil ?? SshrvdUtil(atClient);
     logger.hierarchicalLoggingEnabled = true;
     logger.logger.level = Level.SHOUT;
   }
@@ -119,12 +121,12 @@ class SshrvdImpl implements Sshrvd {
   }
 
   void _notificationHandler(AtNotification notification) async {
-    if (!SshrvdUtil.accept(notification)) {
+    if (!sshrvdUtil.accept(notification)) {
       return;
     }
     late SshrvdSessionParams sessionParams;
     try {
-      sessionParams = await SshrvdUtil.getParams(notification);
+      sessionParams = await sshrvdUtil.getParams(notification);
 
       if (managerAtsign != 'open' && managerAtsign != sessionParams.atSignA) {
         logger.shout(
@@ -269,11 +271,14 @@ class SshrvdSessionParams {
 }
 
 class SshrvdUtil {
-  static bool accept(AtNotification notification) {
+  final AtClient atClient;
+  SshrvdUtil(this.atClient);
+
+  bool accept(AtNotification notification) {
     return notification.key.contains(Sshrvd.namespace);
   }
 
-  static Future<SshrvdSessionParams> getParams(
+  Future<SshrvdSessionParams> getParams(
       AtNotification notification) async {
     if (notification.key.contains('.request_ports.${Sshrvd.namespace}')) {
       return await _processJSONRequest(notification);
@@ -281,7 +286,7 @@ class SshrvdUtil {
     return _processLegacyRequest(notification);
   }
 
-  static SshrvdSessionParams _processLegacyRequest(
+  SshrvdSessionParams _processLegacyRequest(
       AtNotification notification) {
     return SshrvdSessionParams(
       sessionId: notification.value!,
@@ -289,7 +294,7 @@ class SshrvdUtil {
     );
   }
 
-  static Future<SshrvdSessionParams> _processJSONRequest(
+  Future<SshrvdSessionParams> _processJSONRequest(
       AtNotification notification) async {
     dynamic jsonValue = jsonDecode(notification.value ?? '');
 
@@ -330,35 +335,8 @@ class SshrvdUtil {
     );
   }
 
-  static Future<String?> _fetchPublicKey(String atSign,
-      {int secondsToWait = 10}) async {
-    String? publicKey;
-    AtLookupImpl atLookupImpl = AtLookupImpl(atSign, 'root.atsign.org', 64);
-    SecondaryAddress secondaryAddress =
-        await atLookupImpl.secondaryAddressFinder.findSecondary(atSign);
-
-    SecureSocket secureSocket = await SecureSocket.connect(
-        secondaryAddress.host, secondaryAddress.port);
-
-    secureSocket.listen((event) {
-      String serverResponse = utf8.decode(event);
-      if (serverResponse == '@') {
-        secureSocket.write('lookup:publickey$atSign\n');
-      } else if (serverResponse.startsWith('data:')) {
-        publicKey = serverResponse.replaceFirst('data:', '');
-        publicKey = publicKey?.substring(0, publicKey?.indexOf('\n')).trim();
-      }
-    });
-
-    int totalSecondsWaited = 0;
-    while (totalSecondsWaited < secondsToWait) {
-      await Future.delayed(Duration(seconds: 1));
-      totalSecondsWaited = totalSecondsWaited + 1;
-      if (publicKey != null) {
-        break;
-      }
-    }
-    await secureSocket.close();
-    return publicKey;
+  Future<String?> _fetchPublicKey(String atSign) async {
+    AtValue v = await atClient.get(AtKey.fromString('public:publickey$atSign'));
+    return v.value;
   }
 }

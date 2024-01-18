@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
@@ -82,13 +83,35 @@ class SshrvImplExec implements Sshrv<Process> {
 
     logger.info('$runtimeType.run(): executing $command'
         ' ${rvArgs.join(' ')}');
-    return Process.start(
+    Process p = await Process.start(
       command,
       rvArgs,
-      mode: ProcessStartMode.detached,
+      mode: ProcessStartMode.detachedWithStdio,
       includeParentEnvironment: true,
       environment: environment,
     );
+    Completer rvPortBound = Completer();
+    p.stdout.listen((List<int> l) {
+      var s = utf8.decode(l).trim();
+      stderr.writeln('rv stdout: $s');
+    }, onError: (e) {});
+    p.stderr.listen((List<int> l) {
+      var allLines = utf8.decode(l).trim();
+      for (String s in allLines.split('\n')) {
+        stderr.writeln('rv stderr: [$s]');
+        if (s.endsWith('is running') && !rvPortBound.isCompleted) {
+          rvPortBound.complete();
+        }
+      }
+    }, onError: (e) {
+      if (! rvPortBound.isCompleted) {
+        rvPortBound.completeError(e);
+      }
+    });
+
+    await rvPortBound.future.timeout(Duration(seconds:2));
+
+    return p;
   }
 }
 
