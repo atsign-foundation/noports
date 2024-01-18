@@ -86,9 +86,8 @@ abstract class SshnpdChannel with AsyncInitialization, AtClientBindings {
   @protected
   Future<SshnpdAck> handleSshnpdPayload(AtNotification notification);
 
-  /// Wait until we've received an acknowledgement from the daemon.
-  /// Returns true if the daemon acknowledged our request.
-  /// Returns false if a timeout occurred.
+  /// Wait until we've received an acknowledgement from the daemon, or
+  /// have timed out while waiting.
   Future<SshnpdAck> waitForDaemonResponse({int maxWaitMillis = 15000}) async {
     // Timer to timeout after 10 Secs or after the Ack of connected/Errors
     for (int counter = 1; counter <= 100; counter++) {

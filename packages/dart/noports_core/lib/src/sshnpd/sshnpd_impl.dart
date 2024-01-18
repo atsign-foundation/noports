@@ -309,6 +309,7 @@ class SshnpdImpl implements Sshnpd {
       'supportedFeatures': {
         DaemonFeatures.srAuth.name: true,
         DaemonFeatures.srE2ee.name: true,
+        DaemonFeatures.acceptsPublicKeys.name: addSshPublicKeys,
       },
     };
     unawaited(

@@ -49,6 +49,19 @@ class SignatureAuthVerifier {
     return atChops.verify(input);
   }
 
+  /// We expect the authenticating client to send a JSON message with
+  /// this structure:
+  /// ```json
+  /// {
+  /// "signature":"&lt;signature&gt;",
+  /// "hashingAlgo":"&lt;algo&gt;",
+  /// "signingAlgo":"&lt;algo&gt;",
+  /// "payload":&lt;the data which was signed&gt;
+  /// }
+  /// ```
+  /// The signature is verified against [dataToVerify] and, although not
+  /// strictly necessary, the rvdNonce is also checked in what the client
+  /// send in the payload
   Future<(bool, Stream<Uint8List>?)> authenticate(Socket socket) async {
     Completer<(bool, Stream<Uint8List>?)> completer = Completer();
     bool authenticated = false;
@@ -61,13 +74,6 @@ class SignatureAuthVerifier {
         try {
           final message = String.fromCharCodes(data);
           logger.info('SignatureAuthVerifier $tag received data: $message');
-          // Expected message to be the JSON format with the below structure:
-          // {
-          // "signature":"<signature>",
-          // "hashingAlgo":"<algo>",
-          // "signingAlgo":"<algo>",
-          // "payload":{<the data which was signed>}
-          // }
           var envelope = jsonDecode(message);
 
           final hashingAlgo =

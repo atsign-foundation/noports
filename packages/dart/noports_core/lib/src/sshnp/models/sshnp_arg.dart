@@ -352,6 +352,7 @@ class SshnpArg {
   );
   static const authenticateClientToRvdArg = SshnpArg(
     name: 'authenticate-client-to-rvd',
+    abbr: 'a',
     help: 'When false, client will not authenticate itself to rvd',
     defaultsTo: DefaultArgs.authenticateClientToRvd,
     format: ArgFormat.flag,
@@ -360,6 +361,7 @@ class SshnpArg {
   );
   static const authenticateDeviceToRvdArg = SshnpArg(
     name: 'authenticate-device-to-rvd',
+    abbr: 'A',
     help: 'When false, device will not authenticate to the socket rendezvous',
     defaultsTo: DefaultArgs.authenticateDeviceToRvd,
     format: ArgFormat.flag,
@@ -368,6 +370,7 @@ class SshnpArg {
   );
   static const encryptRvdTrafficArg = SshnpArg(
     name: 'encrypt-rvd-traffic',
+    abbr: 'E',
     help: 'When true, traffic via the socket rendezvous is encrypted,'
         ' in addition to whatever encryption the traffic already has'
         ' (e.g. an ssh session)',
@@ -378,6 +381,7 @@ class SshnpArg {
   );
   static const discoverDaemonFeaturesArg = SshnpArg(
     name: 'discover-daemon-features',
+    abbr: 'F',
     help: 'When this flag is set, this client starts by pinging the daemon to'
         ' discover what features it supports, and exits if this client has '
         ' requested use of a feature which the daemon does not support.'
