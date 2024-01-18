@@ -5,6 +5,8 @@ import 'package:noports_core/src/sshrvd/sshrvd_impl.dart';
 import 'package:noports_core/sshrvd.dart';
 import 'package:test/test.dart';
 
+import '../sshnp/sshnp_mocks.dart';
+
 void main() {
   test('test notification subscription regex', () {
     // Create a notification in rvd namespace
@@ -16,7 +18,7 @@ void main() {
     // Create a notification in rvd namespace
     AtNotification notification = AtNotification.empty();
     notification.key = 'request_ports.test.${Sshrvd.namespace}';
-    expect(SshrvdUtil.accept(notification), true);
+    expect(SshrvdUtil(MockAtClient()).accept(notification), true);
   });
 
   test(
@@ -34,6 +36,6 @@ void main() {
     notification.key = 'request_ports.test.${Sshrvd.namespace}';
     notification.value = jsonEncode(m);
 
-    expect(SshrvdUtil.accept(notification), true);
+    expect(SshrvdUtil(MockAtClient()).accept(notification), true);
   });
 }
