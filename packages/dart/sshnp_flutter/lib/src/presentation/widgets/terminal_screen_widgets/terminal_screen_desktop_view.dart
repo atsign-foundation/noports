@@ -66,7 +66,6 @@ class _TerminalScreenDesktopViewState extends ConsumerState<TerminalScreenDeskto
                         tabs: terminalList.map((String sessionId) {
                           final displayName = ref.read(terminalSessionFamilyController(sessionId).notifier).displayName;
                           return Tab(
-                            // text: e,
                             key: Key('terminal-tab-$sessionId'),
                             child: Row(
                               children: [
