@@ -520,7 +520,7 @@ class SshnpdImpl implements Sshnpd {
     required String? clientEphemeralPK,
     required String? clientEphemeralPKType,
   }) async {
-    logger.shout(
+    logger.info(
         'Setting up ports for direct ssh session using ${sshClient.name} ($sshClient) from: $requestingAtsign session: $sessionId');
 
     authenticateToRvd ??= false;

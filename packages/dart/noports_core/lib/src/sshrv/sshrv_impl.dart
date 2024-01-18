@@ -93,13 +93,13 @@ class SshrvImplExec implements Sshrv<Process> {
     Completer rvPortBound = Completer();
     p.stdout.listen((List<int> l) {
       var s = utf8.decode(l).trim();
-      stderr.writeln('rv stdout: $s');
+      logger.info('rv stdout | $s');
     }, onError: (e) {});
     p.stderr.listen((List<int> l) {
       var allLines = utf8.decode(l).trim();
       for (String s in allLines.split('\n')) {
-        stderr.writeln('rv stderr: [$s]');
-        if (s.endsWith('is running') && !rvPortBound.isCompleted) {
+        logger.info('rv stderr | $s');
+        if (s.endsWith('rv is running') && !rvPortBound.isCompleted) {
           rvPortBound.complete();
         }
       }
@@ -215,6 +215,10 @@ class SshrvImplDart implements Sshrv<SocketConnector> {
           socketConnector.connections.first.sideB.socket.writeln(rvdAuthString);
         }
       }
+
+      // Do not change this output; it is specifically looked for in
+      // SshrvImplExec.run
+      stderr.writeln('rv is running');
 
       return socketConnector;
     } catch (e) {
