@@ -40,6 +40,11 @@ dependency_overrides:
       url: https://github.com/atsign-foundation/at_libraries
       path: packages/at_auth
       ref: uptake_commons_into_auth
+  at_server_status:
+    git:
+      url: https://github.com/atsign-foundation/at_libraries
+      path: packages/at_server_status
+      ref: update_dependencies
 
 dev_dependencies:
   build_runner: ^2.4.8
