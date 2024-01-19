@@ -137,7 +137,7 @@ class SshrvdImpl implements Sshrvd {
       ..namespaceAware = true;
 
     var atKey = AtKey()
-      ..key = notification.value
+      ..key = session
       ..sharedBy = atSign
       ..sharedWith = notification.from
       ..namespace = Sshrvd.namespace
@@ -151,7 +151,7 @@ class SshrvdImpl implements Sshrvd {
           waitForFinalDeliveryStatus: false,
           checkForFinalDeliveryStatus: false);
     } catch (e) {
-      stderr.writeln("Error writting session ${notification.value} atKey");
+      stderr.writeln("Error writing session $session atKey");
     }
   }
 

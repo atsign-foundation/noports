@@ -18,15 +18,15 @@ packages:
     source: hosted
     version: "6.2.0"
   archive:
-    dependency: "direct overridden"
+    dependency: transitive
     description:
       name: archive
-      sha256: e0902a06f0e00414e4e3438a084580161279f137aeb862274710f29ec10cf01e
+      sha256: "22600aa1e926be775fa5fe7e6894e7fb3df9efda8891c73f70fb3262399a432d"
       url: "https://pub.dev"
     source: hosted
-    version: "3.3.9"
+    version: "3.4.10"
   args:
-    dependency: "direct overridden"
+    dependency: transitive
     description:
       name: args
       sha256: eef6c46b622e0494a36c5a12d10d77fb4e855501a91c1b9ef9339326e58f0596
@@ -37,10 +37,10 @@ packages:
     dependency: transitive
     description:
       name: asn1lib
-      sha256: b74e3842a52c61f8819a1ec8444b4de5419b41a7465e69d4aa681445377398b0
+      sha256: "21afe4333076c02877d14f4a89df111e658a6d466cbfc802eb705eb91bd5adfd"
       url: "https://pub.dev"
     source: hosted
-    version: "1.4.1"
+    version: "1.5.0"
   async:
     dependency: transitive
     description:
@@ -50,13 +50,14 @@ packages:
     source: hosted
     version: "2.11.0"
   at_auth:
-    dependency: transitive
+    dependency: "direct overridden"
     description:
-      name: at_auth
-      sha256: b928dc6c1288e3f346fc4f3080d5b90bb728db0df10bfdc1673dbc7ec256206b
-      url: "https://pub.dev"
-    source: hosted
-    version: "1.0.3"
+      path: "packages/at_auth"
+      ref: uptake_commons_into_auth
+      resolved-ref: "5745c6937820f0506f832ae6c5f427b2f3f800f6"
+      url: "https://github.com/atsign-foundation/at_libraries"
+    source: git
+    version: "1.0.4"
   at_base2e15:
     dependency: transitive
     description:
@@ -69,26 +70,27 @@ packages:
     dependency: transitive
     description:
       name: at_chops
-      sha256: d7e0b2d0b644adfd90593bbf56c1b98d499c41b97518a806ad881a90032f3f37
+      sha256: f97102619c6ce827fc44d15fc3300c404526dc17e2097115dc1ce0d0289d26fe
       url: "https://pub.dev"
     source: hosted
-    version: "1.0.6"
+    version: "1.0.7"
   at_client:
     dependency: "direct overridden"
     description:
-      name: at_client
-      sha256: b25f991409efa860a6196399c20bbebb8e763695197996ea4013789b4b96f297
-      url: "https://pub.dev"
-    source: hosted
-    version: "3.0.68"
+      path: "packages/at_client"
+      ref: trunk
+      resolved-ref: "89717c199beafa7da1191c4c401390c25897c6a0"
+      url: "https://github.com/atsign-foundation/at_client_sdk"
+    source: git
+    version: "3.0.73"
   at_commons:
     dependency: transitive
     description:
       name: at_commons
-      sha256: "685753c1689c248ceef396fe128ce02e313347658df6dd2e0dff755f73cd5823"
+      sha256: a4e2d9c85a881538e52deb4632da0cf2f4e2761198c4482828f1acf1743bf317
       url: "https://pub.dev"
     source: hosted
-    version: "3.0.58"
+    version: "4.0.0"
   at_demo_data:
     dependency: transitive
     description:
@@ -98,29 +100,30 @@ packages:
     source: hosted
     version: "1.0.3"
   at_lookup:
-    dependency: "direct overridden"
+    dependency: transitive
     description:
       name: at_lookup
-      sha256: "75f1e8e0445295c6b649aa04a95275f51d79cd18aa83a9d0c207f10604cc17b1"
+      sha256: "5a3e941215e710d8d128d4fb1cf24a55ccd738c0a6e2991934beb5e76787ff96"
       url: "https://pub.dev"
     source: hosted
-    version: "3.0.41"
+    version: "3.0.44"
   at_onboarding_cli:
     dependency: "direct main"
     description:
-      name: at_onboarding_cli
-      sha256: "53ca31569f40c624e6456aad502c333bd3102f094696ed23e1896f34b4547b01"
-      url: "https://pub.dev"
-    source: hosted
+      path: "packages/at_onboarding_cli"
+      ref: onboarding_cli_commons_uptake
+      resolved-ref: "58b0b7500c7ae9da351a7692ff411f7d58365a97"
+      url: "https://github.com/atsign-foundation/at_libraries"
+    source: git
     version: "1.4.1"
   at_persistence_secondary_server:
     dependency: transitive
     description:
       name: at_persistence_secondary_server
-      sha256: "8dd493beaa10b42f42c47405884b926a01c07c345b53f25fa82383907880e24a"
+      sha256: b5736436dac6f13f80cc56e9fd5127dc7eae41ba9d3c761732f4dc0bb6db5e77
       url: "https://pub.dev"
     source: hosted
-    version: "3.0.59"
+    version: "3.0.60"
   at_persistence_spec:
     dependency: transitive
     description:
@@ -130,13 +133,14 @@ packages:
     source: hosted
     version: "2.0.14"
   at_server_status:
-    dependency: transitive
+    dependency: "direct overridden"
     description:
-      name: at_server_status
-      sha256: "01190ba0886dfafb02a7ec247faff405527e7efaa5c21f567e4f45e10699e12d"
-      url: "https://pub.dev"
-    source: hosted
-    version: "1.0.3"
+      path: "packages/at_server_status"
+      ref: update_dependencies
+      resolved-ref: d1dbd0a72f06484d6cc88712dd5b14f3aafcd2b8
+      url: "https://github.com/atsign-foundation/at_libraries"
+    source: git
+    version: "1.0.4"
   at_utf7:
     dependency: transitive
     description:
@@ -146,13 +150,13 @@ packages:
     source: hosted
     version: "1.0.0"
   at_utils:
-    dependency: "direct overridden"
+    dependency: transitive
     description:
       name: at_utils
-      sha256: "7033979de6e6b023cb86405039e3316b8f25c184c0985dfbd3a690d8bc3b8812"
+      sha256: ec28600e4eec321ee5e22be051109fa7b2e94590dc51d9f957730c2540beb681
       url: "https://pub.dev"
     source: hosted
-    version: "3.0.15"
+    version: "3.0.16"
   boolean_selector:
     dependency: transitive
     description:
@@ -322,13 +326,13 @@ packages:
     source: hosted
     version: "2.7.0"
   crypton:
-    dependency: "direct overridden"
+    dependency: transitive
     description:
       name: crypton
-      sha256: "886462e83bf642ba10f5382002654d27da8c2e6e1f42d928f12764cfa204f124"
+      sha256: "17b6631fbf89e389d421b46629132287ed37d601b2ad1357445826ab85022271"
       url: "https://pub.dev"
     source: hosted
-    version: "2.1.0"
+    version: "2.2.1"
   dart_periphery:
     dependency: transitive
     description:
@@ -346,7 +350,7 @@ packages:
     source: hosted
     version: "2.3.3"
   dartssh2:
-    dependency: "direct overridden"
+    dependency: transitive
     description:
       name: dartssh2
       sha256: "53a230c7dd6f487b704ceef1b29323ad64d19be89e786ccbc81e157a70417a56"
@@ -357,10 +361,10 @@ packages:
     dependency: transitive
     description:
       name: ecdsa
-      sha256: dd1efbaf6c18bfde9347dddcfe10dce3dd044e5a1b237457a49b5c24850dfb95
+      sha256: b71687a843151255fced9fead63b09816cc59e9ae7b954e6a852bdc344ae1aca
       url: "https://pub.dev"
     source: hosted
-    version: "0.0.4"
+    version: "0.1.0"
   elliptic:
     dependency: transitive
     description:
@@ -373,10 +377,10 @@ packages:
     dependency: transitive
     description:
       name: encrypt
-      sha256: "4fd4e4fdc21b9d7d4141823e1e6515cd94e7b8d84749504c232999fba25d9bbb"
+      sha256: "62d9aa4670cc2a8798bab89b39fc71b6dfbacf615de6cf5001fb39f7e4a996a2"
       url: "https://pub.dev"
     source: hosted
-    version: "5.0.1"
+    version: "5.0.3"
   ffi:
     dependency: transitive
     description:
@@ -506,7 +510,7 @@ packages:
     source: hosted
     version: "3.0.0"
   logging:
-    dependency: "direct overridden"
+    dependency: transitive
     description:
       name: logging
       sha256: "623a88c9594aa774443aa3eb2d41807a48486b5613e67599fb4c41c0ad47c340"
@@ -522,13 +526,13 @@ packages:
     source: hosted
     version: "0.12.16+1"
   meta:
-    dependency: "direct overridden"
+    dependency: transitive
     description:
       name: meta
-      sha256: "3c74dbf8763d36539f114c799d8a2d87343b5067e9d796ca22b5eb8437090ee3"
+      sha256: d584fa6707a52763a52446f02cc621b077888fb63b93bbcb1143a7be5a0c0c04
       url: "https://pub.dev"
     source: hosted
-    version: "1.9.1"
+    version: "1.11.0"
   mime:
     dependency: transitive
     description:
@@ -596,10 +600,10 @@ packages:
     dependency: transitive
     description:
       name: path
-      sha256: "8829d8a55c13fc0e37127c29fedf290c102f4e40ae94ada574091fe0ff96c917"
+      sha256: "087ce49c3f0dc39180befefc60fdb4acd8f8620e5682fe2476afd0b3688bb4af"
       url: "https://pub.dev"
     source: hosted
-    version: "1.8.3"
+    version: "1.9.0"
   petitparser:
     dependency: transitive
     description:
@@ -713,7 +717,7 @@ packages:
     source: hosted
     version: "1.0.4"
   socket_connector:
-    dependency: "direct overridden"
+    dependency: transitive
     description:
       name: socket_connector
       sha256: "8a5b67ae79e232186caa166ae640fac2247db390d4f5d11ed8975f95527fd355"
@@ -744,14 +748,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.10.0"
-  ssh_key:
-    dependency: "direct overridden"
-    description:
-      name: ssh_key
-      sha256: ded1af84f2c34748c000101940e7b9a63a077c9a136aaab85dbf54a6e9d19ec8
-      url: "https://pub.dev"
-    source: hosted
-    version: "0.8.0"
   stack_trace:
     dependency: transitive
     description:
@@ -824,14 +820,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.0.1"
-  tuple:
-    dependency: transitive
-    description:
-      name: tuple
-      sha256: a97ce2013f240b2f3807bcbaf218765b6f301c3eff91092bcfa23a039e7dd151
-      url: "https://pub.dev"
-    source: hosted
-    version: "2.0.2"
   typed_data:
     dependency: transitive
     description:
@@ -841,7 +829,7 @@ packages:
     source: hosted
     version: "1.3.2"
   uuid:
-    dependency: "direct overridden"
+    dependency: transitive
     description:
       name: uuid
       sha256: "648e103079f7c64a36dc7d39369cabb358d377078a051d6ae2ad3aa539519313"
@@ -849,7 +837,7 @@ packages:
     source: hosted
     version: "3.0.7"
   version:
-    dependency: "direct overridden"
+    dependency: transitive
     description:
       name: version
       sha256: "3d4140128e6ea10d83da32fef2fa4003fccbf6852217bb854845802f04191f94"
