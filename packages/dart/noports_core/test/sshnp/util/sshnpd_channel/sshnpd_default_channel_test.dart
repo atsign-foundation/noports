@@ -130,7 +130,7 @@ void main() {
         () => mockAtClient.get(
           any<AtKey>(
             that: predicate(
-              (AtKey key) => key.key?.contains('cached_pks') ?? false,
+              (AtKey key) => key.key.contains('cached_pks'),
             ),
           ),
         ),
@@ -237,7 +237,7 @@ void main() {
         () => mockAtClient.get(
           any<AtKey>(
             that: predicate(
-              (AtKey key) => key.key?.contains('cached_pks') ?? false,
+              (AtKey key) => key.key.contains('cached_pks'),
             ),
           ),
         ),

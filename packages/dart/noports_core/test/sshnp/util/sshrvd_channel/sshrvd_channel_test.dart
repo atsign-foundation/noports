@@ -131,9 +131,8 @@ void main() {
                       key.key == 'mydevice.${Sshrvd.namespace}' &&
                       key.sharedBy == '@client' &&
                       key.sharedWith == '@sshrvd' &&
-                      key.metadata != null &&
-                      key.metadata!.namespaceAware == false &&
-                      key.metadata!.ttl == 10000,
+                      key.metadata.namespaceAware == false &&
+                      key.metadata.ttl == 10000,
                 ),
               ),
               any(),
