@@ -1,4 +1,4 @@
-# ❓ FAQ
+# ❓ FAQ \[Coming soon]
 
 ## Coming soon!
 

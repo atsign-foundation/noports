@@ -103,7 +103,7 @@ Installation methods:
 3. [Headless (cron + nohup)](device-installation-sshnpd.md#headless-cron--nohup)
 4. [Standalone binaries](device-installation-sshnpd.md#standalone-binaries)
 
-### Systemd unit method
+### Systemd unit
 
 {% tabs %}
 {% tab title="Linux" %}
@@ -158,8 +158,8 @@ Add any additional config to the end of the line where sshnpd is run, some usefu
 Using `systemctl` we can enable and start the sshnpd service.
 
 ```bash
-systemctl enable sshnpd.service
-systemctl start sshnpd.service
+sudo systemctl enable sshnpd.service
+sudo systemctl start sshnpd.service
 ```
 
 #### Observing the service
@@ -167,7 +167,7 @@ systemctl start sshnpd.service
 If you need to verify the status of the service:
 
 ```bash
-systemctl status sshnpd.service
+sudo systemctl status sshnpd.service
 ```
 
 #### All done!
@@ -381,7 +381,7 @@ The headless service will automatically be started by the `cron @reboot` directi
 Run the following command to start it immediately:
 
 ```bash
-nohup $HOME/.local/bin/sshnpd.sh > $HOME/.sshnpd/logs/sshnpd.log 2> $HOME/.sshnpd/logs/sshnpd.err
+nohup $HOME/.local/bin/sshnpd.sh > $HOME/.sshnpd/logs/sshnpd.log 2> $HOME/.sshnpd/logs/sshnpd.err &
 ```
 
 #### Observing the service
