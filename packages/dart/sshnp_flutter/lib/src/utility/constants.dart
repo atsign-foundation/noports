@@ -2,7 +2,6 @@ import 'package:file_selector/file_selector.dart';
 import 'package:flutter/material.dart';
 
 const kPrimaryColor = Color(0xFFF05E3E);
-// const kBackGroundColorDark = Color(0xFF242424);
 const kBackGroundColorDark = Color(0xFF222222);
 const kProfileBarColor = Color(0xff3a3a3a);
 const kProfileBackgroundColor = Color(0xff262626);
@@ -35,8 +34,6 @@ const XTypeGroup dotEnvTypeGroup = XTypeGroup(
 const String dotPrivateMimeType = 'application/x-pem-file';
 const XTypeGroup dotPrivateTypeGroup = XTypeGroup(
   label: 'sshPrivateKey',
-  // mimeTypes: [dotPrivateMimeType],
-  // extensions: ['pem', ''],
 );
 
 // Form Field Constants

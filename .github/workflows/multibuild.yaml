@@ -64,7 +64,7 @@ jobs:
       - run: cp -r bundles/${{ matrix.bundle }}/* sshnp/
       - run: cp LICENSE sshnp
       - run: tar -cvzf tarball/${{ matrix.output-name }}.tgz sshnp
-      - uses: actions/upload-artifact@1eb3cb2b3e0f29609092a73eb033bb759a334595 # v4.1.0
+      - uses: actions/upload-artifact@694cdabd8bdb0f10b2cea11669e1bf5453eed0a6 # v4.2.0
         with:
           name: ${{ matrix.output-name }}-upload
           path: ./packages/dart/sshnoports/tarball/${{ matrix.output-name }}.tgz
@@ -96,7 +96,7 @@ jobs:
           --platform ${{ matrix.platform }} -o type=tar,dest=bins.tar .
       - run: mkdir tarballs
       - run: tar -xvf bins.tar -C tarballs
-      - uses: actions/upload-artifact@1eb3cb2b3e0f29609092a73eb033bb759a334595 # v4.1.0
+      - uses: actions/upload-artifact@694cdabd8bdb0f10b2cea11669e1bf5453eed0a6 # v4.2.0
         with:
           name: ${{ matrix.output-name }}-upload
           path: ./packages/dart/sshnoports/tarballs/${{ matrix.output-name }}.tgz

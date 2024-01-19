@@ -2,12 +2,9 @@ import 'dart:async';
 import 'dart:developer';
 
 import 'package:at_client_mobile/at_client_mobile.dart';
-import 'package:biometric_storage/biometric_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 import 'package:noports_core/sshnp_params.dart';
-import 'package:sshnp_flutter/src/controllers/navigation_controller.dart';
 import 'package:sshnp_flutter/src/presentation/widgets/utility/custom_snack_bar.dart';
 import 'package:sshnp_flutter/src/repository/private_key_manager_repository.dart';
 import 'package:sshnp_flutter/src/repository/profile_private_key_manager_repository.dart';
@@ -63,21 +60,7 @@ class PrivateKeyManagerListController extends AutoDisposeAsyncNotifier<Iterable<
   final context = NavigationRepository.navKey.currentContext!;
   @override
   Future<Iterable<String>> build() async {
-    try {
-      return await PrivateKeyManagerRepository.listPrivateKeyManagerNickname();
-    } on AuthException catch (e) {
-      if (e.code == AuthExceptionCode.userCanceled) {
-        context.pushReplacementNamed(AppRoute.home.name);
-        CustomSnackBar.error(content: 'Operation canceled by user');
-      } else if (e.code == AuthExceptionCode.timeout) {
-        context.pushReplacementNamed(AppRoute.home.name);
-        CustomSnackBar.error(content: 'Operation timed out. Please try again');
-      } else {
-        context.pushReplacementNamed(AppRoute.home.name);
-        CustomSnackBar.error(content: 'An error occurred while retrieving the private key list. Please try again.');
-      }
-      return [];
-    }
+    return await PrivateKeyManagerRepository.listPrivateKeyManagerNickname();
   }
 
   Future<void> refresh() async {
@@ -104,15 +87,9 @@ class AtSshKeyPairManagerFamilyController extends AutoDisposeFamilyAsyncNotifier
     if (arg.isEmpty) {
       PrivateKeyManager.empty();
     }
-    // final store = await BiometricStorage().getStorage('com.atsign.sshnoports.ssh-$arg');
+
     final data = await PrivateKeyManagerRepository.readPrivateKeyManager(arg);
     return data;
-    // final data = await store.read();
-    // if (data.isNull || data!.isEmpty) {
-    //   return PrivateKeyManager.empty();
-    // }
-
-    // return PrivateKeyManager.fromJson(jsonDecode(data));
   }
 
   Future<void> savePrivateKeyManager({required PrivateKeyManager privateKeyManager, BuildContext? context}) async {
@@ -129,7 +106,6 @@ class AtSshKeyPairManagerFamilyController extends AutoDisposeFamilyAsyncNotifier
 
   Future<void> deletePrivateKeyManager({required String identifier, BuildContext? context}) async {
     try {
-      // await PrivateKeyManagerRepository.deletePrivateKeyManager(arg);
       ref.read(atPrivateKeyManagerListController.notifier).remove(arg);
       // Read in profiles
       AtClient atClient = AtClientManager.getInstance().atClient;

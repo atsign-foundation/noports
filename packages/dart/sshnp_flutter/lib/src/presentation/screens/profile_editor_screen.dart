@@ -21,27 +21,3 @@ class _ProfileEditorScreenState extends State<ProfileEditorScreen> {
         tabletScreen: ProfileEditorScreenDesktopView());
   }
 }
-
-
-
-
-
-
-// Container(
-//       width: 192,
-//       height: 33,
-//       decoration: ShapeDecoration(
-//         color: const Color(0xFF2F2F2F),
-//         shape: RoundedRectangleBorder(
-//           side: const BorderSide(width: 1, color: Colors.white),
-//           borderRadius: BorderRadius.circular(2),
-//         ),
-//       ),
-//       child: TextFormField(
-//         decoration: InputDecoration(
-//           labelText: strings.sshnpdAtSign,
-//           hintText: strings.sshnpdAtSignHint,
-//           hintStyle: Theme.of(context).textTheme.bodySmall,
-//         ),
-//       ),
-//     );
