@@ -7,5 +7,6 @@ packages:
 
 command:
   bootstrap:
+    runPubGetInParallel: false
     hooks:
       post: dart run melos exec --scope="noports_core" --scope="sshnoports" -- "dart run build_runner build --delete-conflicting-outputs"
