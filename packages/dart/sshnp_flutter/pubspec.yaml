@@ -81,7 +81,7 @@ flutter_launcher_icons:
 
 msix_config:
   display_name: "SSH No Ports Desktop"
-  publisher_display_name: "The @ Company"
+  publisher_display_name: "Atsign"
   identity_name: "TheCompany.SSHNoPortsDesktop"
   publisher: CN=BBFE1D0B-F713-4C7F-B375-5EA851CBB1FF
   msix_version: 1.0.0.0
