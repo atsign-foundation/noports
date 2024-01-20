@@ -70,9 +70,6 @@ class _ProfileFormState extends ConsumerState<ProfileFormDesktopView> {
         await controller.putConfig(config, context: context);
       }
 
-      /// Save the profile private key manager to the device's secure storage
-      // TODO: Add a check to see if the profile private key manager already exists in the secure storage
-
       if (mounted) {
         ref.read(navigationRailController.notifier).setRoute(AppRoute.home);
         context.pushReplacementNamed(AppRoute.home.name);
@@ -204,14 +201,6 @@ class _ProfileFormState extends ConsumerState<ProfileFormDesktopView> {
                         ),
                       ),
                       gapH10,
-                      // CustomTextFormField(
-                      //   initialValue: oldConfig.localSshdPort.toString(),
-                      //   labelText: strings.localSshdPort,
-                      //   onChanged: (value) => newConfig = SshnpPartialParams.merge(
-                      //     newConfig,
-                      //     SshnpPartialParams(localSshdPort: int.tryParse(value)),
-                      //   ),
-                      // ),
                       gapH12,
                     ],
                   ),
@@ -223,14 +212,6 @@ class _ProfileFormState extends ConsumerState<ProfileFormDesktopView> {
                         loading: () => const Center(child: CircularProgressIndicator()),
                         error: (error, stack) => Center(child: Text(error.toString())),
                         data: (privateKeyListData) {
-                          // TODO: Delete this line
-                          // profilePrivateKeyListController.when(
-                          //     data: ((data) {
-                          //       // TODO: Might have to filter for matching profiles.
-                          //       // selectedItems = data.map((e) => e.split('-')[1]).toList();
-                          //     }),
-                          //     error: (error, stack) => Center(child: Text(error.toString())),
-                          //     loading: () => const Center(child: CircularProgressIndicator()));
                           final privateKeyList = privateKeyListData.toList();
                           privateKeyList.add(kPrivateKeyDropDownOption);
                           return CustomDropdownFormField<String>(

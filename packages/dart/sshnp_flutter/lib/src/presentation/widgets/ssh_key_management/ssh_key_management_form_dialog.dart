@@ -31,12 +31,10 @@ class _SSHKeyManagementFormState extends ConsumerState<SSHKeyManagementFormDialo
   final GlobalKey<FormState> _formkey = GlobalKey<FormState>();
 
   late String nickname;
-  // TODO: Handle olde passPhrase and content info and clean up this form
   String? passPhrase;
   late String content;
   String privateKeyFileName = '';
   XFile? file;
-  // late TextEditingController filePickerController;
 
   @override
   void initState() {
@@ -46,7 +44,6 @@ class _SSHKeyManagementFormState extends ConsumerState<SSHKeyManagementFormDialo
 
   @override
   void dispose() {
-    // filePickerController.dispose();
     super.dispose();
   }
 
@@ -57,8 +54,6 @@ class _SSHKeyManagementFormState extends ConsumerState<SSHKeyManagementFormDialo
       content = await file!.readAsString();
       setState(() {
         privateKeyFileName = file!.name;
-
-        // log(filePickerController.text);
       });
       setState(() {});
     } catch (e) {

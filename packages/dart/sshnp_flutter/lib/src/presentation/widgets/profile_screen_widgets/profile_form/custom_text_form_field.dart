@@ -46,7 +46,6 @@ class _CustomTextFormFieldState extends State<CustomTextFormField> {
   Widget build(BuildContext context) {
     return SizedBox(
       width: widget.width,
-      // height: height,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [

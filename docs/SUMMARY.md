@@ -1,14 +1,22 @@
 # Table of contents
 
-* [Copy of Under The Hood](README.md)
-* [No Ports Docs](<README (1).md>)
-
-## SSH No Ports
-
-* [Overview](ssh-no-ports/overview.md)
-* [Installation Guide](ssh-no-ports/installation-guide.md)
-* [Usage Guide](ssh-no-ports/usage-guide.md)
-
-## Developer Notes <a href="#dev-notes" id="dev-notes"></a>
-
-* [Under The Hood](dev-notes/underthehood.md)
+* [🚫 No Ports Documentation](README.md)
+* [⌨ SSH No Ports](ssh-no-ports/README.md)
+  * [🔢 Guides](ssh-no-ports/guides/README.md)
+    * [💽 Installation Guide](ssh-no-ports/guides/installation-guide/README.md)
+      * [👩💻 Client installation (sshnp)](ssh-no-ports/guides/installation-guide/client-installation-sshnp.md)
+      * [🖥 Device installation (sshnpd)](ssh-no-ports/guides/installation-guide/device-installation-sshnpd.md)
+      * [📌 Activate an address (a.k.a. atSign)](ssh-no-ports/guides/installation-guide/activate-an-address-a.k.a.-atsign.md)
+    * [👨💻 Usage Guide](ssh-no-ports/guides/usage-guide/README.md)
+      * [💻 Basic Usage](ssh-no-ports/guides/usage-guide/basic-usage.md)
+      * [🌐 Webserver](ssh-no-ports/guides/usage-guide/webserver.md)
+      * [🗃 SFTP](ssh-no-ports/guides/usage-guide/sftp.md)
+      * [🖥 RDP](ssh-no-ports/guides/usage-guide/rdp.md)
+    * [⬆ Upgrade Guide](ssh-no-ports/guides/upgrade-guide/README.md)
+      * [👩💻 Client Upgrade (sshnp)](ssh-no-ports/guides/upgrade-guide/client-upgrade-sshnp.md)
+      * [💽 Device Upgrade (sshnpd)](ssh-no-ports/guides/upgrade-guide/device-upgrade-sshnpd.md)
+  * [❓ FAQ \[Coming soon\]](ssh-no-ports/faq-coming-soon.md)
+* [📔 Developer Notes](developer-notes/README.md)
+  * [Under The Hood](developer-notes/underthehood.md)
+* [noports.com](https://noports.com)
+* [No Ports Address Portal](https://my.noports.com/no-ports/)

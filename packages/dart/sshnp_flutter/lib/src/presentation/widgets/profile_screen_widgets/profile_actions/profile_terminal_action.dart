@@ -51,49 +51,18 @@ class _ProfileTerminalActionState extends ConsumerState<ProfileTerminalAction> {
 
     /// Create the session controller for the new session id
     final sessionController = ref.watch(terminalSessionFamilyController(sessionId).notifier);
-    // TODO: add try
+
     try {
-      // TODO ensure that this keyPair gets uploaded to the app first
-      // final privateKeyManager = ref.watch(privateKeyManagerFamilyController(privateKeyNickname));
-
-      // final params = privateKeyManager.when(data: (value) {
-      //   log('content: ${value.content}, passPhrase: ${value.passPhrase}');
-
-      //   return SshnpParams.merge(
-      //     widget.params,
-      //     SshnpPartialParams(identityFile: value.content, identityPassphrase: value.passPhrase),
-      //   );
-      // }, error: (error, stackTrace) {
-      //   log(error.toString());
-      // }, loading: () {
-      //   log('loading');
-      // });
-
       AtClient atClient = AtClientManager.getInstance().atClient;
-      // TODO: Delete the below line
-      // DartSshKeyUtil keyUtil = DartSshKeyUtil();
-      // widget.params was originally used
-      // AtSshKeyPair keyPair = await keyUtil.getKeyPair(
-      //   identifier: widget.params.identityFile ?? 'id_${atClient.getCurrentAtSign()!.replaceAll('@', '')}',
-      // );
-      // TODO: Get values from biometric storage (PrivateKeyManagerController)
 
       final profilePrivateKey =
           await ProfilePrivateKeyManagerRepository.readProfilePrivateKeyManager(widget.params.profileName ?? '');
       final privateKeyManager =
           await PrivateKeyManagerRepository.readPrivateKeyManager(profilePrivateKey.privateKeyNickname);
-      // log('private key is: ${privateKeyManager!.privateKeyFileName}');
-      // log('private key manager passphrase is: ${privateKeyManager.passPhrase}');
-      // AtSshKeyPair keyPair = AtSshKeyPair.fromPem(
-      //   privateKeyManager.content,
-      //   identifier: privateKeyManager.privateKeyFileName,
-      //   passphrase: privateKeyManager.passPhrase,
-      //   // passphrase: privateKeyManager.passPhrase,
-      // );
+
       final keyPair = privateKeyManager.toAtSshKeyPair();
 
       final sshnp = Sshnp.dartPure(
-        // params: sshnpParams,
         params: SshnpParams.merge(
           widget.params,
           SshnpPartialParams(
@@ -137,7 +106,6 @@ class _ProfileTerminalActionState extends ConsumerState<ProfileTerminalAction> {
           context.pushReplacementNamed(AppRoute.terminal.name);
         }
       }
-      //TODO: Add catch
     } catch (e) {
       sessionController.dispose();
       if (mounted) {
@@ -150,29 +118,6 @@ class _ProfileTerminalActionState extends ConsumerState<ProfileTerminalAction> {
 
   @override
   Widget build(BuildContext context) {
-    //TODO: Add a terminal icon that calls on pressed. Reuse old code
     return ProfileActionButton(onPressed: onPressed, icon: const Icon(Icons.terminal));
-    // final profilePrivateKeys = ref.watch(profilePrivateKeyManagerListController);
-    // return profilePrivateKeys.when(
-    //     data: (data) {
-    //       return PopupMenuButton(
-    //         icon: const Icon(Icons.terminal),
-    //         tooltip: 'select a private key to ssh with',
-    //         itemBuilder: (itemBuilderContext) => data
-    //             .map((e) => PopupMenuItem(
-    //                   onTap: (() async => await ref.read(profilePrivateKeyManagerListController.notifier).remove(e)),
-    //                   child: Row(
-    //                     children: [
-    //                       const Icon(Icons.vpn_key),
-    //                       gapW12,
-    //                       Text(e),
-    //                     ],
-    //                   ),
-    //                 ))
-    //             .toList(),
-    //       );
-    //     },
-    //     error: (error, stack) => Center(child: Text(error.toString())),
-    //     loading: () => const Center(child: CircularProgressIndicator()));
   }
 }

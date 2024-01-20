@@ -31,7 +31,6 @@ class CustomDropdownFormField<T> extends StatelessWidget {
   Widget build(BuildContext context) {
     return SizedBox(
       width: width,
-      // height: height,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [

@@ -1,6 +1,6 @@
 name: sshnp_flutter
 description: ssh to any remove device using atsign
-version: 1.0.0+1
+version: 1.0.0+2
 publish_to: "none" # Remove this line if you wish to publish to pub.dev
 
 environment:
@@ -22,6 +22,7 @@ dependencies:
   flutter:
     sdk: flutter
   flutter_dotenv: ^5.0.2
+  flutter_launcher_icons: ^0.13.1
   flutter_localizations:
     sdk: flutter
   flutter_riverpod: ^2.3.6
@@ -68,3 +69,11 @@ flutter:
     # - .env
     - assets/images/nav_icons/
     - assets/images/
+flutter_launcher_icons:
+  android: "launcher_icon"
+  ios: true
+  remove_alpha_ios: true
+  image_path: "assets/images/app_logo.png"
+  macos:
+    generate: true
+    image_path: "assets/images/app_logo.png"

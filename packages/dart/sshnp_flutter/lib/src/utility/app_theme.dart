@@ -6,87 +6,44 @@ import 'package:sshnp_flutter/src/utility/sizes.dart';
 
 class AppTheme {
   static TextTheme lightTextTheme = const TextTheme(
-    // displayLarge: TextStyle(
-    //   fontSize: 80,
-    //   fontWeight: FontWeight.bold,
-    //   // letterSpacing: -1.5,
-    // ),
-    // displayMedium: TextStyle(
-    //   fontSize: 60,
-    //   fontWeight: FontWeight.bold,
-    //   // letterSpacing: -0.5,
-    // ),
-    // displaySmall: TextStyle(
-    //   fontSize: 48,
-    //   fontWeight: FontWeight.w800,
-    // ),
-    // headlineMedium: TextStyle(
-    //   fontSize: 34,
-    //   fontWeight: FontWeight.w600,
-    //   // letterSpacing: 0.25,
-    // ),
-    // headlineSmall: TextStyle(
-    //   fontSize: 24,
-    //   fontWeight: FontWeight.w400,
-    // ),
-    // titleLarge: TextStyle(
-    //   fontSize: 20,
-    //   fontWeight: FontWeight.w500,
-    //   // letterSpacing: 0.15,
-    // ),
     titleMedium: TextStyle(
       fontSize: 18,
       fontWeight: FontWeight.w600,
-      // letterSpacing: 0.15,
     ),
-    // titleSmall: TextStyle(
-    //   fontSize: 14,
-    //   fontWeight: FontWeight.w500,
-    //   // letterSpacing: 0.1,
-    // ),
     bodyLarge: TextStyle(
       fontSize: 14,
       fontWeight: FontWeight.w500,
-      // letterSpacing: 0.5,
     ),
     bodyMedium: TextStyle(
       fontSize: 12,
       fontWeight: FontWeight.w400,
-      // letterSpacing: 0.25,
     ),
     bodySmall: TextStyle(
       fontSize: 11,
       fontWeight: FontWeight.w400,
-      // letterSpacing: 0.4,
     ),
     labelLarge: TextStyle(
       fontSize: 11,
       fontWeight: FontWeight.w500,
-      // letterSpacing: 1.25,
     ),
     labelMedium: TextStyle(
       fontSize: 11,
       fontWeight: FontWeight.w500,
-      // letterSpacing: 1.25,
     ),
     labelSmall: TextStyle(
       fontSize: 10,
       fontWeight: FontWeight.w400,
-      // letterSpacing: 1.5,
     ),
   );
 
-  // 2
   static TextTheme darkTextTheme = const TextTheme(
     titleMedium: TextStyle(
       fontSize: 32,
       fontWeight: FontWeight.w600,
-      // letterSpacing: 0.15,
     ),
     titleSmall: TextStyle(
       fontSize: 14,
       fontWeight: FontWeight.w500,
-      // letterSpacing: 0.1,
     ),
     headlineLarge: TextStyle(
       fontSize: 22,
@@ -95,59 +52,32 @@ class AppTheme {
     bodyLarge: TextStyle(
       fontSize: 14,
       fontWeight: FontWeight.w600,
-      // letterSpacing: 0.5,
     ),
     bodyMedium: TextStyle(
       fontSize: 12,
       fontWeight: FontWeight.w600,
-      // letterSpacing: 0.25,
     ),
     bodySmall: TextStyle(
       fontSize: 10,
       fontWeight: FontWeight.w400,
-      // letterSpacing: 0.4,
     ),
     labelLarge: TextStyle(
       fontSize: 14,
       fontWeight: FontWeight.w500,
-      // letterSpacing: 1.25,
     ),
     labelSmall: TextStyle(
       fontSize: 10,
       fontWeight: FontWeight.w400,
-      // letterSpacing: 1.5,
     ),
   );
 
-  // 3
   static ThemeData light() {
     return ThemeData(
         fontFamily: 'Poppins',
         useMaterial3: true,
-        // scaffoldBackgroundColor: kPrimaryColor,
-
         brightness: Brightness.light,
         colorScheme: const ColorScheme.light().copyWith(
           primary: kPrimaryColor,
-          // onPrimary: kOnPrimaryColor,
-          // primaryContainer: kPrimaryContainer,
-          // onPrimaryContainer: kOnPrimaryContainer,
-          // secondary: kSecondaryColor,
-          // onSecondary: kOnSecondaryColor,
-          // secondaryContainer: kSecondaryContainer,
-          // onSecondaryContainer: kOnSecondaryContainer,
-          // tertiary: kTertiaryColor,
-          // onTertiary: kOnTertiaryColor,
-          // tertiaryContainer: kTertiaryContainer,
-          // onTertiaryContainer: kOnTertiaryContainer,
-          // error: kErrorColor,
-          // onError: kOnError,
-          // errorContainer: kErrorContainer,
-          // onErrorContainer: kOnErrorContainer,
-          // background: kBackgroundColor,
-          // onBackground: kOnBackground,
-          // surface: kSurface,
-          // onSurface: kOnSurface,
         ),
         checkboxTheme: CheckboxThemeData(
           fillColor: MaterialStateColor.resolveWith(
@@ -168,10 +98,8 @@ class AppTheme {
                 borderRadius: BorderRadius.circular(18.0),
               ),
             ),
-            backgroundColor:
-                MaterialStateProperty.all<Color>(const Color(0xFF12DE26)),
-            foregroundColor:
-                MaterialStateProperty.all<Color>(const Color(0xFFFFFFFF)),
+            backgroundColor: MaterialStateProperty.all<Color>(const Color(0xFF12DE26)),
+            foregroundColor: MaterialStateProperty.all<Color>(const Color(0xFFFFFFFF)),
           ),
         ),
         dialogTheme: const DialogTheme(
@@ -198,33 +126,11 @@ class AppTheme {
         )));
   }
 
-  // 4
   static ThemeData dark() {
     return ThemeData(
       visualDensity: VisualDensity.adaptivePlatformDensity,
       useMaterial3: true,
-      colorScheme: const ColorScheme.dark()
-          .copyWith(primary: kPrimaryColor, background: kBackGroundColorDark
-              // onPrimary: kOnPrimaryColor,
-              // primaryContainer: kPrimaryContainer,
-              // onPrimaryContainer: kOnPrimaryContainer,
-              // secondary: kSecondaryColor,
-              // onSecondary: kOnSecondaryColor,
-              // secondaryContainer: kSecondaryContainer,
-              // onSecondaryContainer: kOnSecondaryContainer,
-              // tertiary: kTertiaryColor,
-              // onTertiary: kOnTertiaryColor,
-              // tertiaryContainer: kTertiaryContainer,
-              // onTertiaryContainer: kOnTertiaryContainer,
-              // error: kErrorColor,
-              // onError: kOnError,
-              // errorContainer: kErrorContainer,
-              // onErrorContainer: kOnErrorContainer,
-              // background: kBackgroundColor,
-              // onBackground: kOnBackground,
-              // surface: kSurface,
-              // onSurface: kOnSurface,
-              ),
+      colorScheme: const ColorScheme.dark().copyWith(primary: kPrimaryColor, background: kBackGroundColorDark),
       checkboxTheme: CheckboxThemeData(
         fillColor: MaterialStateColor.resolveWith(
           (states) {
@@ -232,8 +138,8 @@ class AppTheme {
           },
         ),
       ),
-      floatingActionButtonTheme: const FloatingActionButtonThemeData(
-          foregroundColor: Colors.white, backgroundColor: kPrimaryColor),
+      floatingActionButtonTheme:
+          const FloatingActionButtonThemeData(foregroundColor: Colors.white, backgroundColor: kPrimaryColor),
       textTheme: darkTextTheme,
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ButtonStyle(
@@ -246,10 +152,8 @@ class AppTheme {
               borderRadius: BorderRadius.circular(Sizes.p3),
             ),
           ),
-          backgroundColor:
-              MaterialStateProperty.all<Color>(const Color(0xFF2F2F2F)),
-          foregroundColor:
-              MaterialStateProperty.all<Color>(const Color(0xFF707070)),
+          backgroundColor: MaterialStateProperty.all<Color>(const Color(0xFF2F2F2F)),
+          foregroundColor: MaterialStateProperty.all<Color>(const Color(0xFF707070)),
         ),
       ),
       dialogTheme: const DialogTheme(
@@ -276,18 +180,13 @@ class AppTheme {
           ),
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           fixedSize: const Size(48, 43),
-          // minimumSize: const Size(48, 43),
-          // maximumSize: const Size(48, 43),
         ),
       ),
-      appBarTheme: const AppBarTheme(
-          backgroundColor: kPrimaryColor,
-          systemOverlayStyle: SystemUiOverlayStyle.light),
+      appBarTheme: const AppBarTheme(backgroundColor: kPrimaryColor, systemOverlayStyle: SystemUiOverlayStyle.light),
     );
   }
 
   static MacosThemeData macosDark() {
-    return MacosThemeData(
-        brightness: Brightness.dark, primaryColor: kPrimaryColor);
+    return MacosThemeData(brightness: Brightness.dark, primaryColor: kPrimaryColor);
   }
 }

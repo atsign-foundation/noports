@@ -1,6 +1,8 @@
 # Under The Hood
 
-**Note**: This document describes version 4.0.0-rc.2 or later. Prior versions used a different method of forming the connection.
+{% hint style="info" %}
+This document describes version 4.0.0-rc.2. Other versions use a different method of forming the connection.
+{% endhint %}
 
 ## Overview
 

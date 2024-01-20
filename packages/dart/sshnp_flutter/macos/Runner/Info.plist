@@ -28,19 +28,19 @@
 		<string>MainMenu</string>
 		<key>NSPrincipalClass</key>
 		<string>NSApplication</string>
-		<key>NSFaceIDUsageDescription</key>
-		<string>$(PRODUCT_NAME) requires Touch Id or Face ID permission to authenticate with the service</string>
 		<key>UTImportedTypeDeclarations</key>
 		<array>
 			<dict>
-				<key>UTTypeIdentifier</key>
-				<string>com.atsign.atkeys</string>
 				<key>UTTypeConformsTo</key>
 				<array>
 					<string>public.json</string>
 				</array>
 				<key>UTTypeDescription</key>
 				<string>Atsign Cryptographic Key File</string>
+				<key>UTTypeIdentifier</key>
+				<string>com.atsign.atkeys</string>
+				<key>UTTypeReferenceURL</key>
+				<string>https://github.com/atsign-foundation/at_protocol</string>
 				<key>UTTypeTagSpecification</key>
 				<dict>
 					<key>public.filename-extension</key>
@@ -48,18 +48,18 @@
 						<string>atkeys</string>
 					</array>
 				</dict>
-				<key>UTTypeReferenceURL</key>
-				<string>https://github.com/atsign-foundation/at_protocol</string>
 			</dict>
 			<dict>
-				<key>UTTypeIdentifier</key>
-				<string>com.atsign.sshnp-config</string>
 				<key>UTTypeConformsTo</key>
 				<array>
 					<string>public.plain-text</string>
 				</array>
 				<key>UTTypeDescription</key>
 				<string>Dotenv File</string>
+				<key>UTTypeIdentifier</key>
+				<string>com.atsign.sshnp-config</string>
+				<key>UTTypeReferenceURL</key>
+				<string>https://12factor.net/</string>
 				<key>UTTypeTagSpecification</key>
 				<dict>
 					<key>public.filename-extension</key>
@@ -67,9 +67,9 @@
 						<string>env</string>
 					</array>
 				</dict>
-				<key>UTTypeReferenceURL</key>
-				<string>https://12factor.net/</string>
 			</dict>
 		</array>
+		<key>LSApplicationCategoryType</key>
+		<string>public.app-category.developer-tools</string>
 	</dict>
 </plist>

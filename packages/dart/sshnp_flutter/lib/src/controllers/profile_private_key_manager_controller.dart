@@ -45,31 +45,6 @@ class CurrentPrivateKeyManagerController extends AutoDisposeNotifier<CurrentProf
   }
 }
 
-// TODO: Delete this. We don't need a list of nicknames for the ProfilePrivateKeyManager
-/// Controller for the list of all [ProfilePrivatekeyManager] nicknames
-// class ProfilePrivateKeyManagerListController extends AutoDisposeAsyncNotifier<Iterable<String>> {
-//   @override
-//   Future<Iterable<String>> build() async {
-//     return await ProfilePrivateKeyManagerRepository.listProfilePrivateKeyManagerNickname();
-//   }
-
-//   Future<void> refresh() async {
-//     state = const AsyncLoading();
-//     state = await AsyncValue.guard(() => build());
-//   }
-
-//   void add(String identity) async {
-//     state = AsyncValue.data({...state.value ?? [], identity});
-//     await ProfilePrivateKeyManagerRepository.writeProfilePrivateKeyManagerNicknames(state.value!.toList());
-//   }
-
-//   Future<void> remove(String identity) async {
-//     final newState = state.value?.where((e) => e != identity) ?? [];
-//     await ProfilePrivateKeyManagerRepository.writeProfilePrivateKeyManagerNicknames(newState.toList());
-//     state = AsyncData(newState);
-//   }
-// }
-
 /// Controller for the family of [ProfilePrivateKeyManager] controllers
 class ProfilePrivateKeyManagerFamilyController
     extends AutoDisposeFamilyAsyncNotifier<ProfilePrivateKeyManager, String> {
@@ -88,8 +63,6 @@ class ProfilePrivateKeyManagerFamilyController
     try {
       ProfilePrivateKeyManagerRepository.writeProfilePrivateKeyManager(profilePrivateKeyManager);
       state = AsyncValue.data(profilePrivateKeyManager);
-      // TODO: Remove this after testing
-      // ref.read(profilePrivateKeyManagerListController.notifier).add(profilePrivateKeyManager.identifier);
     } catch (e) {
       if (context?.mounted ?? false) {
         CustomSnackBar.error(content: 'Failed to update ProfilePrivateKeyManager: $arg');
@@ -100,8 +73,6 @@ class ProfilePrivateKeyManagerFamilyController
   Future<void> deleteProfilePrivateKeyManager({required String identifier, BuildContext? context}) async {
     try {
       await ProfilePrivateKeyManagerRepository.deleteProfilePrivateKeyManager(arg);
-      // TODO: Delete this line
-      // ref.read(profilePrivateKeyManagerListController.notifier).remove(arg);
       state = AsyncValue.error('ProfilePrivate Key Manager has been disposed', StackTrace.current);
     } catch (e) {
       if (context?.mounted ?? false) {

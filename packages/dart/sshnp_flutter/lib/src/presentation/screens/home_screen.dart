@@ -16,8 +16,6 @@ class HomeScreen extends ConsumerStatefulWidget {
 class _HomeScreenState extends ConsumerState<HomeScreen> {
   @override
   Widget build(BuildContext context) {
-    // * Getting the AtClientManager instance to use below
-
     return const ResponsiveWidget(
       mobileScreen: HomeScreenMobile(),
       tabletScreen: HomeScreenDesktop(),
