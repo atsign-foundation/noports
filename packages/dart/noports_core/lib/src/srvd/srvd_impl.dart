@@ -62,7 +62,12 @@ class SrvdImpl implements Srvd {
       FutureOr<AtClient> Function(SrvdParams)? atClientGenerator,
       void Function(Object, StackTrace)? usageCallback}) async {
     try {
-      var p = await SrvdParams.fromArgs(args);
+      SrvdParams p;
+      try {
+        p = await SrvdParams.fromArgs(args);
+      } on FormatException catch (e) {
+        throw ArgumentError(e.message);
+      }
 
       if (!await File(p.atKeysFilePath).exists()) {
         throw ('\n Unable to find .atKeys file : ${p.atKeysFilePath}');
