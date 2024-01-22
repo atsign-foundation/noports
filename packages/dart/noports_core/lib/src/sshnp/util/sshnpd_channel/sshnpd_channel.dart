@@ -62,7 +62,7 @@ abstract class SshnpdChannel with AsyncInitialization, AtClientBindings {
     ).listen(handleSshnpdResponses);
   }
 
-  /// Main reponse handler for the daemon's notifications.
+  /// Main response handler for the daemon's notifications.
   @visibleForTesting
   Future<void> handleSshnpdResponses(AtNotification notification) async {
     String notificationKey = notification.key
@@ -86,17 +86,16 @@ abstract class SshnpdChannel with AsyncInitialization, AtClientBindings {
   @protected
   Future<SshnpdAck> handleSshnpdPayload(AtNotification notification);
 
-  /// Wait until we've received an acknowledgement from the daemon.
-  /// Returns true if the deamon acknowledged our request.
-  /// Returns false if a timeout occurred.
-  Future<SshnpdAck> waitForDaemonResponse() async {
+  /// Wait until we've received an acknowledgement from the daemon, or
+  /// have timed out while waiting.
+  Future<SshnpdAck> waitForDaemonResponse({int maxWaitMillis = 15000}) async {
     // Timer to timeout after 10 Secs or after the Ack of connected/Errors
     for (int counter = 1; counter <= 100; counter++) {
       if (counter % 20 == 0) {
         logger.info('Still waiting for sshnpd response');
         logger.info('sshnpdAck: $sshnpdAck');
       }
-      await Future.delayed(Duration(milliseconds: 100));
+      await Future.delayed(Duration(milliseconds: maxWaitMillis ~/ 100));
       if (sshnpdAck != SshnpdAck.notAcknowledged) break;
     }
     return sshnpdAck;
@@ -123,7 +122,8 @@ abstract class SshnpdChannel with AsyncInitialization, AtClientBindings {
     try {
       logger.info('sharing ssh public key: $publicKeyContents');
       // Check for Supported ssh keypairs from dartssh2 package
-      if (!publicKeyContents.startsWith(RegExp(r'^(ecdsa-sha2-nistp)|(rsa-sha2-)|(ssh-rsa)|(ssh-ed25519)|(ecdsa-sha2-nistp)'))) {
+      if (!publicKeyContents.startsWith(RegExp(
+          r'^(ecdsa-sha2-nistp)|(rsa-sha2-)|(ssh-rsa)|(ssh-ed25519)|(ecdsa-sha2-nistp)'))) {
         logger.severe('SSH Public Key does not look like a public key file');
         throw ('SSH Public Key does not look like a public key file');
       }
@@ -132,7 +132,12 @@ abstract class SshnpdChannel with AsyncInitialization, AtClientBindings {
         ..sharedBy = params.clientAtSign
         ..sharedWith = params.sshnpdAtSign
         ..metadata = (Metadata()..ttl = 10000);
-      await notify(sendOurPublicKeyToSshnpd, publicKeyContents);
+      await notify(
+        sendOurPublicKeyToSshnpd,
+        publicKeyContents,
+        checkForFinalDeliveryStatus: false,
+        waitForFinalDeliveryStatus: false,
+      );
     } catch (e, s) {
       throw SshnpError(
         'Error opening or validating public key file or sending to remote atSign',
@@ -171,11 +176,49 @@ abstract class SshnpdChannel with AsyncInitialization, AtClientBindings {
   /// Otherwise, the username will be set to [remoteUsername]
   Future<String?> resolveTunnelUsername(
       {required String? remoteUsername}) async {
-    if (params.tunnelUsername != null) {
+    if (params.tunnelUsername != null &&
+        params.tunnelUsername!.trim().isNotEmpty) {
       return params.tunnelUsername!;
     } else {
       return remoteUsername;
     }
+  }
+
+  Future<Map<String, dynamic>> ping() async {
+    Completer<Map<String, dynamic>> completer = Completer();
+
+    subscribe(
+      regex: 'heartbeat'
+          '.${params.device}'
+          '.${DefaultArgs.namespace}',
+      shouldDecrypt: true,
+    ).listen((notification) {
+      logger.info(
+          'Received ping response from ${notification.from} : ${notification.key} : ${notification.value}');
+      if (notification.from == params.sshnpdAtSign) {
+        logger.info('Completing the future');
+        completer.complete(jsonDecode(notification.value ?? '{}'));
+      }
+    });
+    var pingKey = AtKey()
+      ..key = "ping.${params.device}"
+      ..sharedBy = params.clientAtSign
+      ..sharedWith = params.sshnpdAtSign
+      ..namespace = DefaultArgs.namespace
+      ..metadata = (Metadata()
+        ..isPublic = false
+        ..isEncrypted = true
+        ..namespaceAware = true);
+
+    logger.info('Sending ping to sshnpd');
+    await notify(
+      pingKey,
+      'ping',
+      checkForFinalDeliveryStatus: false,
+      waitForFinalDeliveryStatus: false,
+    );
+
+    return completer.future;
   }
 
   /// List all available devices from the daemon.
@@ -230,7 +273,12 @@ abstract class SshnpdChannel with AsyncInitialization, AtClientBindings {
         ..metadata = metaData;
 
       logger.info('Sending ping to sshnpd');
-      unawaited(notify(pingKey, 'ping'));
+      unawaited(notify(
+        pingKey,
+        'ping',
+        checkForFinalDeliveryStatus: false,
+        waitForFinalDeliveryStatus: false,
+      ));
     }
 
     // wait for 10 seconds in case any are being slow

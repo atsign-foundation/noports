@@ -1,11 +1,12 @@
 import 'dart:async';
 import 'dart:io';
 import 'dart:isolate';
-
+import 'dart:convert';
 import 'package:at_client/at_client.dart';
 import 'package:at_utils/at_logger.dart';
 import 'package:logging/logging.dart';
 import 'package:meta/meta.dart';
+import 'package:noports_core/src/common/validation_utils.dart';
 import 'package:noports_core/src/sshrvd/build_env.dart';
 import 'package:noports_core/src/sshrvd/socket_connector.dart';
 import 'package:noports_core/src/sshrvd/sshrvd.dart';
@@ -28,11 +29,17 @@ class SshrvdImpl implements Sshrvd {
   @override
   final String ipAddress;
   @override
-  final bool snoop;
+  final bool logTraffic;
+  @override
+  bool verbose = false;
 
   @override
   @visibleForTesting
   bool initialized = false;
+
+  static final String subscriptionRegex = '${Sshrvd.namespace}@';
+
+  late final SshrvdUtil sshrvdUtil;
 
   SshrvdImpl({
     required this.atClient,
@@ -41,8 +48,11 @@ class SshrvdImpl implements Sshrvd {
     required this.atKeysFilePath,
     required this.managerAtsign,
     required this.ipAddress,
-    required this.snoop,
+    required this.logTraffic,
+    required this.verbose,
+    SshrvdUtil? sshrvdUtil,
   }) {
+    this.sshrvdUtil = sshrvdUtil ?? SshrvdUtil(atClient);
     logger.hierarchicalLoggingEnabled = true;
     logger.logger.level = Level.SHOUT;
   }
@@ -76,7 +86,8 @@ class SshrvdImpl implements Sshrvd {
         atKeysFilePath: p.atKeysFilePath,
         managerAtsign: p.managerAtsign,
         ipAddress: p.ipAddress,
-        snoop: p.snoop,
+        logTraffic: p.logTraffic,
+        verbose: p.verbose,
       );
 
       if (p.verbose) {
@@ -106,29 +117,41 @@ class SshrvdImpl implements Sshrvd {
     NotificationService notificationService = atClient.notificationService;
 
     notificationService
-        .subscribe(regex: '${Sshrvd.namespace}@', shouldDecrypt: true)
+        .subscribe(regex: subscriptionRegex, shouldDecrypt: true)
         .listen(_notificationHandler);
   }
 
   void _notificationHandler(AtNotification notification) async {
-    if (!notification.key.contains(Sshrvd.namespace)) {
-      // ignore notifications not for this namespace
+    if (!sshrvdUtil.accept(notification)) {
+      return;
+    }
+    late SshrvdSessionParams sessionParams;
+    try {
+      sessionParams = await sshrvdUtil.getParams(notification);
+
+      if (managerAtsign != 'open' && managerAtsign != sessionParams.atSignA) {
+        logger.shout(
+            'Session ${sessionParams.sessionId} for ${sessionParams.atSignA} is denied');
+        return;
+      }
+    } catch (e) {
+      logger.shout('Unable to provide the socket pair due to: $e');
       return;
     }
 
-    String session = notification.value!;
-    String forAtsign = notification.from;
-
-    if (managerAtsign != 'open' && managerAtsign != forAtsign) {
-      logger.shout('Session $session for $forAtsign denied');
-      return;
-    }
-
-    (int, int) ports =
-        await _spawnSocketConnector(0, 0, session, forAtsign, snoop);
-    var (portA, portB) = ports;
     logger
-        .warning('Starting session $session for $forAtsign using ports $ports');
+        .info('New session request: $sessionParams from ${notification.from}');
+
+    (int, int) ports = await _spawnSocketConnector(
+      0,
+      0,
+      sessionParams,
+      logTraffic,
+      verbose,
+    );
+    var (portA, portB) = ports;
+    logger.warning(
+        'Starting session ${sessionParams.sessionId} for ${sessionParams.atSignA} to ${sessionParams.atSignB} using ports $ports');
 
     var metaData = Metadata()
       ..isPublic = false
@@ -137,13 +160,16 @@ class SshrvdImpl implements Sshrvd {
       ..namespaceAware = true;
 
     var atKey = AtKey()
-      ..key = notification.value
+      ..key = sessionParams.sessionId
       ..sharedBy = atSign
       ..sharedWith = notification.from
       ..namespace = Sshrvd.namespace
       ..metadata = metaData;
 
-    String data = '$ipAddress,$portA,$portB';
+    String data = '$ipAddress,$portA,$portB,${sessionParams.rvdNonce}';
+
+    logger.info(
+        'Sending response data for session ${sessionParams.sessionId} : [$data]');
 
     try {
       await atClient.notificationService.notify(
@@ -151,7 +177,7 @@ class SshrvdImpl implements Sshrvd {
           waitForFinalDeliveryStatus: false,
           checkForFinalDeliveryStatus: false);
     } catch (e) {
-      stderr.writeln("Error writting session ${notification.value} atKey");
+      stderr.writeln("Error writing session ${notification.value} atKey");
     }
   }
 
@@ -162,20 +188,20 @@ class SshrvdImpl implements Sshrvd {
   Future<PortPair> _spawnSocketConnector(
     int portA,
     int portB,
-    String session,
-    String forAtsign,
-    bool snoop,
+    SshrvdSessionParams sshrvdSessionParams,
+    bool logTraffic,
+    bool verbose,
   ) async {
     /// Spawn an isolate and wait for it to send back the issued port numbers
-    ReceivePort receivePort = ReceivePort(session);
+    ReceivePort receivePort = ReceivePort(sshrvdSessionParams.sessionId);
 
     ConnectorParams parameters = (
       receivePort.sendPort,
       portA,
       portB,
-      session,
-      forAtsign,
-      BuildEnv.enableSnoop && snoop,
+      jsonEncode(sshrvdSessionParams),
+      BuildEnv.enableSnoop && logTraffic,
+      verbose,
     );
 
     logger
@@ -185,8 +211,132 @@ class SshrvdImpl implements Sshrvd {
 
     PortPair ports = await receivePort.first;
 
-    logger.info('Received ports $ports in main isolate for session $session');
+    logger.info('Received ports $ports in main isolate'
+        ' for session ${sshrvdSessionParams.sessionId}');
 
     return ports;
+  }
+}
+
+class SshrvdSessionParams {
+  final String sessionId;
+  final String atSignA;
+  final String? atSignB;
+  final bool authenticateSocketA;
+  final bool authenticateSocketB;
+  final String? publicKeyA;
+  final String? publicKeyB;
+  final String? clientNonce;
+  final String? rvdNonce;
+
+  SshrvdSessionParams({
+    required this.sessionId,
+    required this.atSignA,
+    this.atSignB,
+    this.authenticateSocketA = false,
+    this.authenticateSocketB = false,
+    this.publicKeyA,
+    this.publicKeyB,
+    this.rvdNonce,
+    this.clientNonce,
+  });
+
+  @override
+  String toString() => toJson().toString();
+
+  Map<String, dynamic> toJson() => {
+        'sessionId': sessionId,
+        'atSignA': atSignA,
+        'atSignB': atSignB,
+        'authenticateSocketA': authenticateSocketA,
+        'authenticateSocketB': authenticateSocketB,
+        'publicKeyA': publicKeyA,
+        'publicKeyB': publicKeyB,
+        'rvdNonce': rvdNonce,
+        'clientNonce': clientNonce,
+      };
+
+  static SshrvdSessionParams fromJson(Map<String, dynamic> json) {
+    return SshrvdSessionParams(
+      sessionId: json['sessionId'],
+      atSignA: json['atSignA'],
+      atSignB: json['atSignB'],
+      authenticateSocketA: json['authenticateSocketA'],
+      authenticateSocketB: json['authenticateSocketB'],
+      publicKeyA: json['publicKeyA'],
+      publicKeyB: json['publicKeyB'],
+      rvdNonce: json['rvdNonce'],
+      clientNonce: json['clientNonce'],
+    );
+  }
+}
+
+class SshrvdUtil {
+  final AtClient atClient;
+
+  SshrvdUtil(this.atClient);
+
+  bool accept(AtNotification notification) {
+    return notification.key.contains(Sshrvd.namespace);
+  }
+
+  Future<SshrvdSessionParams> getParams(AtNotification notification) async {
+    if (notification.key.contains('.request_ports.${Sshrvd.namespace}')) {
+      return await _processJSONRequest(notification);
+    }
+    return _processLegacyRequest(notification);
+  }
+
+  SshrvdSessionParams _processLegacyRequest(AtNotification notification) {
+    return SshrvdSessionParams(
+      sessionId: notification.value!,
+      atSignA: notification.from,
+    );
+  }
+
+  Future<SshrvdSessionParams> _processJSONRequest(
+      AtNotification notification) async {
+    dynamic jsonValue = jsonDecode(notification.value ?? '');
+
+    assertValidValue(jsonValue, 'sessionId', String);
+    assertValidValue(jsonValue, 'atSignA', String);
+    assertValidValue(jsonValue, 'atSignB', String);
+    assertValidValue(jsonValue, 'clientNonce', String);
+    assertValidValue(jsonValue, 'authenticateSocketA', bool);
+    assertValidValue(jsonValue, 'authenticateSocketA', bool);
+
+    final String sessionId = jsonValue['sessionId'];
+    final String atSignA = jsonValue['atSignA'];
+    final String atSignB = jsonValue['atSignB'];
+    final String clientNonce = jsonValue['clientNonce'];
+    final bool authenticateSocketA = jsonValue['authenticateSocketA'];
+    final bool authenticateSocketB = jsonValue['authenticateSocketB'];
+
+    String rvdSessionNonce = DateTime.now().toIso8601String();
+
+    String? publicKeyA;
+    String? publicKeyB;
+    if (authenticateSocketA) {
+      publicKeyA = await _fetchPublicKey(atSignA);
+    }
+    if (authenticateSocketB) {
+      publicKeyB = await _fetchPublicKey(atSignB);
+    }
+    return SshrvdSessionParams(
+      sessionId: sessionId,
+      atSignA: atSignA,
+      atSignB: atSignB,
+      authenticateSocketA: authenticateSocketA,
+      authenticateSocketB: authenticateSocketB,
+      publicKeyA: publicKeyA,
+      publicKeyB: publicKeyB,
+      rvdNonce: rvdSessionNonce,
+      clientNonce: clientNonce,
+    );
+  }
+
+  Future<String?> _fetchPublicKey(String atSign) async {
+    AtValue v = await atClient.get(AtKey.fromString('public:publickey$atSign'));
+    return v.value;
   }
 }

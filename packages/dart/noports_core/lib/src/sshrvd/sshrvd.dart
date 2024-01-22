@@ -16,7 +16,8 @@ abstract class Sshrvd {
   abstract final String atKeysFilePath;
   abstract final String managerAtsign;
   abstract final String ipAddress;
-  abstract final bool snoop;
+  abstract final bool logTraffic;
+  bool verbose = false;
 
   /// true once [init] has completed
   @visibleForTesting

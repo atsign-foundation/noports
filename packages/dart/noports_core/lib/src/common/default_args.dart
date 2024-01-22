@@ -18,6 +18,10 @@ class DefaultArgs {
   static const bool addForwardsToTunnel = false;
   static final bool allowLocalFileSystem =
       Platform.isLinux || Platform.isMacOS || Platform.isWindows;
+  static const bool authenticateClientToRvd = false;
+  static const bool authenticateDeviceToRvd = false;
+  static const bool encryptRvdTraffic = false;
+  static const bool discoverDaemonFeatures = false;
 }
 
 class DefaultSshnpArgs {

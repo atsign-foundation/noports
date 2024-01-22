@@ -26,7 +26,7 @@ packages:
     source: hosted
     version: "3.3.9"
   args:
-    dependency: "direct overridden"
+    dependency: "direct main"
     description:
       name: args
       sha256: eef6c46b622e0494a36c5a12d10d77fb4e855501a91c1b9ef9339326e58f0596
@@ -34,7 +34,7 @@ packages:
     source: hosted
     version: "2.4.2"
   asn1lib:
-    dependency: transitive
+    dependency: "direct overridden"
     description:
       name: asn1lib
       sha256: b74e3842a52c61f8819a1ec8444b4de5419b41a7465e69d4aa681445377398b0
@@ -77,10 +77,10 @@ packages:
     dependency: "direct overridden"
     description:
       name: at_client
-      sha256: b25f991409efa860a6196399c20bbebb8e763695197996ea4013789b4b96f297
+      sha256: "4904549d31a41d893e0df39636acb867b604aef7f2a3b40d9bb20e30b2e248d1"
       url: "https://pub.dev"
     source: hosted
-    version: "3.0.68"
+    version: "3.0.71"
   at_commons:
     dependency: transitive
     description:
@@ -370,7 +370,7 @@ packages:
     source: hosted
     version: "0.3.10"
   encrypt:
-    dependency: transitive
+    dependency: "direct overridden"
     description:
       name: encrypt
       sha256: "4fd4e4fdc21b9d7d4141823e1e6515cd94e7b8d84749504c232999fba25d9bbb"
@@ -575,7 +575,7 @@ packages:
       path: "../noports_core"
       relative: true
     source: path
-    version: "5.0.4"
+    version: "5.1.0"
   openssh_ed25519:
     dependency: transitive
     description:
@@ -713,13 +713,14 @@ packages:
     source: hosted
     version: "1.0.4"
   socket_connector:
-    dependency: "direct overridden"
+    dependency: "direct main"
     description:
-      name: socket_connector
-      sha256: "8a5b67ae79e232186caa166ae640fac2247db390d4f5d11ed8975f95527fd355"
-      url: "https://pub.dev"
-    source: hosted
-    version: "1.0.11"
+      path: "."
+      ref: socket-authenticator-option
+      resolved-ref: ed751077eaa4fa081773720c69916deb6077cd09
+      url: "https://github.com/gkc/socket_connector.git"
+    source: git
+    version: "2.0.0"
   source_map_stack_trace:
     dependency: transitive
     description:

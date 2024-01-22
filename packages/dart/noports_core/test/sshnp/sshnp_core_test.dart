@@ -37,9 +37,11 @@ void main() {
 
     /// When declaration setup for the constructor of [StubbedSshnp]
     whenConstructor({bool verbose = false}) {
+      when(() => mockParams.sshnpdAtSign).thenReturn('@sshnpd');
       when(() => mockParams.device).thenReturn('mydevice');
       when(() => mockParams.localPort).thenReturn(0);
       when(() => mockParams.verbose).thenReturn(verbose);
+      when(() => mockParams.discoverDaemonFeatures).thenReturn(false);
       when(() => mockAtClient.getPreferences()).thenReturn(null);
       when(() => mockAtClient.setPreferences(any())).thenReturn(null);
     }

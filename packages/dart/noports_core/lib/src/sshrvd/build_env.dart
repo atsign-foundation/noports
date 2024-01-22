@@ -1,4 +1,6 @@
+import 'dart:io';
+
 class BuildEnv {
   static final bool enableSnoop =
-      bool.fromEnvironment('ENABLE_SNOOP', defaultValue: false);
+      (Platform.environment['ENABLE_SNOOP'] ?? "false").toLowerCase() == 'true';
 }

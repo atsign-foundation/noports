@@ -12,7 +12,12 @@ abstract class FunctionCaller<T> {
 class FunctionStub<T> extends Mock implements FunctionCaller<T> {}
 
 abstract class NotifyCaller {
-  Future<void> call(AtKey key, String value);
+  Future<void> call(
+    AtKey key,
+    String value, {
+    required bool checkForFinalDeliveryStatus,
+    required bool waitForFinalDeliveryStatus,
+  });
 }
 
 class NotifyStub extends Mock implements NotifyCaller {}

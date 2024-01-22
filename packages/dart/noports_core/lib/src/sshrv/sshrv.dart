@@ -2,7 +2,6 @@ import 'dart:io';
 
 import 'package:noports_core/src/sshrv/sshrv_impl.dart';
 import 'package:socket_connector/socket_connector.dart';
-import 'package:noports_core/src/common/default_args.dart';
 
 abstract class Sshrv<T> {
   /// The internet address of the host to connect to.
@@ -11,9 +10,21 @@ abstract class Sshrv<T> {
   /// The port of the host to connect to.
   abstract final int streamingPort;
 
-  /// The local sshd port
+  /// The local port to bridge to
   /// Defaults to 22
-  abstract final int localSshdPort;
+  abstract final int localPort;
+
+  /// A string which needs to be presented to the rvd before the rvd
+  /// will allow any further traffic on the socket
+  abstract final String? rvdAuthString;
+
+  /// The AES key for encryption / decryption of the rv traffic
+  abstract final String? sessionAESKeyString;
+
+  /// The IV to use with the [sessionAESKeyString]
+  abstract final String? sessionIVString;
+
+  abstract final bool bindLocalPort;
 
   Future<T> run();
 
@@ -21,24 +32,40 @@ abstract class Sshrv<T> {
   static Sshrv<Process> exec(
     String host,
     int streamingPort, {
-    int localSshdPort = DefaultArgs.localSshdPort,
+    required int localPort,
+    required bool bindLocalPort,
+    String? rvdAuthString,
+    String? sessionAESKeyString,
+    String? sessionIVString,
   }) {
     return SshrvImplExec(
       host,
       streamingPort,
-      localSshdPort: localSshdPort,
+      localPort: localPort,
+      bindLocalPort: bindLocalPort,
+      rvdAuthString: rvdAuthString,
+      sessionAESKeyString: sessionAESKeyString,
+      sessionIVString: sessionIVString,
     );
   }
 
   static Sshrv<SocketConnector> dart(
     String host,
     int streamingPort, {
-    int localSshdPort = 22,
+    required int localPort,
+    required bool bindLocalPort,
+    String? rvdAuthString,
+    String? sessionAESKeyString,
+    String? sessionIVString,
   }) {
     return SshrvImplDart(
       host,
       streamingPort,
-      localSshdPort: localSshdPort,
+      localPort: localPort,
+      bindLocalPort: bindLocalPort,
+      rvdAuthString: rvdAuthString,
+      sessionAESKeyString: sessionAESKeyString,
+      sessionIVString: sessionIVString,
     );
   }
 

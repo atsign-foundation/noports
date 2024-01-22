@@ -129,7 +129,8 @@ class LocalSshKeyUtil implements AtSshKeyUtil {
   }) async {
     // Check to see if the ssh public key is
     // supported keys by the dartssh2 package
-    if (!sshPublicKey.startsWith(RegExp(r'^(ecdsa-sha2-nistp)|(rsa-sha2-)|(ssh-rsa)|(ssh-ed25519)|(ecdsa-sha2-nistp)'))) {
+    if (!sshPublicKey.startsWith(RegExp(
+        r'^(ecdsa-sha2-nistp)|(rsa-sha2-)|(ssh-rsa)|(ssh-ed25519)|(ecdsa-sha2-nistp)'))) {
       throw ('$sshPublicKey does not look like a public key');
     }
 

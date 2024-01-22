@@ -124,16 +124,23 @@ void main(List<String> args) async {
     } on ArgumentError catch (error) {
       printUsage(error: error);
       exit(1);
+    } on FormatException catch (error) {
+      printUsage(error: error);
+      exit(1);
     } on SshnpError catch (error, stackTrace) {
       stderr.writeln(error.toString());
       if (params?.verbose ?? true) {
         stderr.writeln('\nStack Trace: ${stackTrace.toString()}');
       }
       exit(1);
+    } catch (error, stackTrace) {
+      stderr.writeln(error.toString());
+      stderr.writeln('\nStack Trace: ${stackTrace.toString()}');
+      exit(1);
     }
   }, (Object error, StackTrace stackTrace) async {
-    if (error is ArgumentError) return;
-    if (error is SshnpError) return;
+    // if (error is ArgumentError) return;
+    // if (error is SshnpError) return;
     stderr.writeln('Error: ${error.toString()}');
     stderr.writeln('\nStack Trace: ${stackTrace.toString()}');
     exit(1);
