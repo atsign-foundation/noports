@@ -10,7 +10,7 @@ import 'package:noports_core/src/sshnpd/sshnpd_params.dart';
 abstract class Sshnpd {
   abstract final AtSignLogger logger;
 
-  /// The [AtClient] used to communicate with sshnpd and sshrvd
+  /// The [AtClient] used to communicate with sshnpd and srvd
   abstract AtClient atClient;
 
   // ====================================================================
@@ -69,15 +69,22 @@ abstract class Sshnpd {
   /// - [SupportedSshAlgorithm.rsa]
   abstract final SupportedSshAlgorithm sshAlgorithm;
 
-  static Future<Sshnpd> fromCommandLineArgs(List<String> args,
-      {AtClient? atClient,
-      FutureOr<AtClient> Function(SshnpdParams)? atClientGenerator,
-      void Function(Object, StackTrace)? usageCallback}) async {
+  /// The version of whatever program is using this library.
+  abstract final String version;
+
+  static Future<Sshnpd> fromCommandLineArgs(
+    List<String> args, {
+    AtClient? atClient,
+    FutureOr<AtClient> Function(SshnpdParams)? atClientGenerator,
+    void Function(Object, StackTrace)? usageCallback,
+    required String version,
+  }) async {
     return SshnpdImpl.fromCommandLineArgs(
       args,
       atClient: atClient,
       atClientGenerator: atClientGenerator,
       usageCallback: usageCallback,
+      version: version,
     );
   }
 

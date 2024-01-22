@@ -19,22 +19,22 @@ mixin DartSshSessionHandler on SshnpCore
 
   @override
   Future<SSHClient> startInitialTunnelSession(
-      {required String ephemeralKeyPairIdentifier}) async {
-    // If we are starting an initial tunnel, it should be to sshrvd,
-    // so it is safe to assume that sshrvdChannel is not null here
+      {required String ephemeralKeyPairIdentifier, int? localRvPort}) async {
+    // If we are starting an initial tunnel, it should be to srvd,
+    // so it is safe to assume that srvdChannel is not null here
 
     var username = tunnelUsername ?? getUserName(throwIfNull: true)!;
 
     logger.info('Starting tunnel ssh session as $username'
-        ' to ${sshrvdChannel.host} on port ${sshrvdChannel.sshrvdPort!}');
+        ' to ${srvdChannel.host} on port ${srvdChannel.srvdPort!}');
 
     AtSshKeyPair keyPair =
         await keyUtil.getKeyPair(identifier: ephemeralKeyPairIdentifier);
 
     SshClientHelper helper = SshClientHelper(logger);
     SSHClient tunnelSshClient = await helper.createSshClient(
-      host: sshrvdChannel.host,
-      port: sshrvdChannel.sshrvdPort!,
+      host: srvdChannel.host,
+      port: srvdChannel.srvdPort!,
       username: username,
       keyPair: keyPair,
     );

@@ -90,9 +90,7 @@ void main(List<String> args) async {
       }
       if (res is SshnpCommand) {
         if (sshnp.canRunShell) {
-          // ignore: unused_local_variable
           SshnpRemoteProcess shell = await sshnp.runShell();
-
           shell.stdout.listen(stdout.add);
           shell.stderr.listen(stderr.add);
 
@@ -109,12 +107,23 @@ void main(List<String> args) async {
 
           await shell.done;
           exit(0);
-        } else {
+        } else if (argResults[outputExecutionCommandFlag] as bool) {
           stdout.write('$res\n');
           exit(0);
+        } else {
+          Process process = await Process.start(
+            res.command,
+            res.args,
+            mode: ProcessStartMode.inheritStdio,
+          );
+
+          exit(await process.exitCode);
         }
       }
     } on ArgumentError catch (error) {
+      printUsage(error: error);
+      exit(1);
+    } on FormatException catch (error) {
       printUsage(error: error);
       exit(1);
     } on SshnpError catch (error, stackTrace) {
@@ -123,10 +132,14 @@ void main(List<String> args) async {
         stderr.writeln('\nStack Trace: ${stackTrace.toString()}');
       }
       exit(1);
+    } catch (error, stackTrace) {
+      stderr.writeln(error.toString());
+      stderr.writeln('\nStack Trace: ${stackTrace.toString()}');
+      exit(1);
     }
   }, (Object error, StackTrace stackTrace) async {
-    if (error is ArgumentError) return;
-    if (error is SshnpError) return;
+    // if (error is ArgumentError) return;
+    // if (error is SshnpError) return;
     stderr.writeln('Error: ${error.toString()}');
     stderr.writeln('\nStack Trace: ${stackTrace.toString()}');
     exit(1);

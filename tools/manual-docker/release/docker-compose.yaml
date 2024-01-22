@@ -29,11 +29,11 @@ services:
       - sshnpd
     depends_on:
       - image-manual-release
-  container-sshrvd:
+  container-srvd:
     image: atsigncompany/sshnp-e2e-manual:release
     container_name: manual_release_sshnp
     volumes:
-      - ../../../tests/end2end_tests/contexts/sshrvd/.atsign/keys/:/atsign/.atsign/keys/ # mount keys
+      - ../../../tests/end2end_tests/contexts/srvd/.atsign/keys/:/atsign/.atsign/keys/ # mount keys
     network_mode: host
     depends_on:
       - image-manual-release

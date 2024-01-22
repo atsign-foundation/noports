@@ -2,13 +2,15 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:at_chops/at_chops.dart';
 import 'package:at_client/at_client.dart' hide StringBuffer;
 import 'package:at_utils/at_logger.dart';
 import 'package:dartssh2/dartssh2.dart';
 import 'package:logging/logging.dart';
 import 'package:meta/meta.dart';
+import 'package:noports_core/src/common/features.dart';
 import 'package:noports_core/src/common/openssh_binary_path.dart';
-import 'package:noports_core/src/sshrv/sshrv.dart';
+import 'package:noports_core/src/srv/srv.dart';
 import 'package:noports_core/sshnpd.dart';
 import 'package:noports_core/utils.dart';
 import 'package:noports_core/src/version.dart';
@@ -59,10 +61,16 @@ class SshnpdImpl implements Sshnpd {
   @visibleForTesting
   bool initialized = false;
 
+  /// The version of whatever program is using this library.
+  @override
+  final String version;
+
   /// State variables used by [_notificationHandler]
   String _privateKey = '';
 
   static const String commandToSend = 'sshd';
+
+  late final Map<String, dynamic> pingResponse;
 
   SshnpdImpl({
     // final fields
@@ -77,17 +85,37 @@ class SshnpdImpl implements Sshnpd {
     this.localSshdPort = DefaultArgs.localSshdPort,
     required this.ephemeralPermissions,
     required this.sshAlgorithm,
+    required this.version,
   }) {
     logger.hierarchicalLoggingEnabled = true;
     logger.logger.level = Level.SHOUT;
+
+    pingResponse = {
+      'devicename': device,
+      'version': version,
+      'corePackageVersion': packageVersion,
+      'supportedFeatures': {
+        DaemonFeatures.srAuth.name: true,
+        DaemonFeatures.srE2ee.name: true,
+        DaemonFeatures.acceptsPublicKeys.name: addSshPublicKeys,
+      },
+    };
   }
 
-  static Future<Sshnpd> fromCommandLineArgs(List<String> args,
-      {AtClient? atClient,
-      FutureOr<AtClient> Function(SshnpdParams)? atClientGenerator,
-      void Function(Object, StackTrace)? usageCallback}) async {
+  static Future<Sshnpd> fromCommandLineArgs(
+    List<String> args, {
+    AtClient? atClient,
+    FutureOr<AtClient> Function(SshnpdParams)? atClientGenerator,
+    void Function(Object, StackTrace)? usageCallback,
+    required String version,
+  }) async {
     try {
-      var p = await SshnpdParams.fromArgs(args);
+      SshnpdParams p;
+      try {
+        p = await SshnpdParams.fromArgs(args);
+      } on FormatException catch (e) {
+        throw ArgumentError(e.message);
+      }
 
       // Check atKeyFile selected exists
       if (!await File(p.atKeysFilePath).exists()) {
@@ -117,6 +145,7 @@ class SshnpdImpl implements Sshnpd {
         localSshdPort: p.localSshdPort,
         ephemeralPermissions: p.ephemeralPermissions,
         sshAlgorithm: p.sshAlgorithm,
+        version: version,
       );
 
       if (p.verbose) {
@@ -164,13 +193,16 @@ class SshnpdImpl implements Sshnpd {
 
       try {
         await notificationService.notify(
-            NotificationParams.forUpdate(atKey, value: username),
-            waitForFinalDeliveryStatus: false,
-            checkForFinalDeliveryStatus: false, onSuccess: (notification) {
-          logger.info('SUCCESS:$notification $username');
-        }, onError: (notification) {
-          logger.info('ERROR:$notification $username');
-        });
+          NotificationParams.forUpdate(atKey, value: username),
+          waitForFinalDeliveryStatus: false,
+          checkForFinalDeliveryStatus: false,
+          onSuccess: (notification) {
+            logger.info('SUCCESS:$notification $username');
+          },
+          onError: (notification) {
+            logger.info('ERROR:$notification $username');
+          },
+        );
       } catch (e) {
         stderr.writeln(e.toString());
       }
@@ -301,10 +333,9 @@ class SshnpdImpl implements Sshnpd {
     unawaited(
       _notify(
         atKey: atKey,
-        value: jsonEncode({
-          'devicename': device,
-          'version': packageVersion,
-        }),
+        value: jsonEncode(pingResponse),
+        checkForFinalDeliveryStatus: false,
+        waitForFinalDeliveryStatus: false,
       ),
     );
   }
@@ -329,9 +360,10 @@ class SshnpdImpl implements Sshnpd {
           'ssh Public Key received from ${notification.from} notification id : ${notification.id}');
       sshPublicKey = notification.value!;
 
-    // Check to see if the ssh public key is
-    // supported keys by the dartssh2 package
-    if (!sshPublicKey.startsWith(RegExp(r'^(ecdsa-sha2-nistp)|(rsa-sha2-)|(ssh-rsa)|(ssh-ed25519)|(ecdsa-sha2-nistp)'))) {
+      // Check to see if the ssh public key is
+      // supported keys by the dartssh2 package
+      if (!sshPublicKey.startsWith(RegExp(
+          r'^(ecdsa-sha2-nistp)|(rsa-sha2-)|(ssh-rsa)|(ssh-ed25519)|(ecdsa-sha2-nistp)'))) {
         throw ('$sshPublicKey does not look like a public key');
       }
 
@@ -428,10 +460,17 @@ class SshnpdImpl implements Sshnpd {
     if (params['direct'] == true) {
       // direct ssh requested
       await startDirectSsh(
-          requestingAtsign: requestingAtsign,
-          sessionId: params['sessionId'],
-          host: params['host'],
-          port: params['port']);
+        requestingAtsign: requestingAtsign,
+        sessionId: params['sessionId'],
+        host: params['host'],
+        port: params['port'],
+        authenticateToRvd: params['authenticateToRvd'],
+        clientNonce: params['clientNonce'],
+        rvdNonce: params['rvdNonce'],
+        encryptRvdTraffic: params['encryptRvdTraffic'],
+        clientEphemeralPK: params['clientEphemeralPK'],
+        clientEphemeralPKType: params['clientEphemeralPKType'],
+      );
     } else {
       // reverse ssh requested
       await startReverseSsh(
@@ -480,7 +519,7 @@ class SshnpdImpl implements Sshnpd {
         remoteForwardPort: int.parse(remoteForwardPort));
   }
 
-  /// - Starts an sshrv process bridging the rvd to localhost:$localSshdPort
+  /// - Starts an srv process bridging the rvd to localhost:$localSshdPort
   /// - Generates an ephemeral keypair and adds its public key to the
   ///   `authorized_keys` file, limiting permissions (e.g. hosts and ports
   ///   which can be forwarded to) as per the `--ephemeral-permissions` option
@@ -488,19 +527,79 @@ class SshnpdImpl implements Sshnpd {
   ///   ephemeral private key
   /// - starts a timer to remove the ephemeral key from `authorized_keys`
   ///   after 15 seconds
-  Future<void> startDirectSsh(
-      {required String requestingAtsign,
-      required String sessionId,
-      required String host,
-      required int port}) async {
-    logger.shout(
+  Future<void> startDirectSsh({
+    required String requestingAtsign,
+    required String sessionId,
+    required String host,
+    required int port,
+    required bool? authenticateToRvd,
+    required String? clientNonce,
+    required String? rvdNonce,
+    required bool? encryptRvdTraffic,
+    required String? clientEphemeralPK,
+    required String? clientEphemeralPKType,
+  }) async {
+    logger.info(
         'Setting up ports for direct ssh session using ${sshClient.name} ($sshClient) from: $requestingAtsign session: $sessionId');
 
+    authenticateToRvd ??= false;
+    encryptRvdTraffic ??= false;
     try {
+      String? rvdAuthString;
+      if (authenticateToRvd) {
+        rvdAuthString = signAndWrapAndJsonEncode(atClient, {
+          'sessionId': sessionId,
+          'clientNonce': clientNonce,
+          'rvdNonce': rvdNonce,
+        });
+      }
+
+      String? sessionAESKey, sessionAESKeyEncrypted;
+      String? sessionIV, sessionIVEncrypted;
+      if (encryptRvdTraffic) {
+        if (clientEphemeralPK == null || clientEphemeralPKType == null) {
+          throw Exception(
+              'encryptRvdTraffic was requested, but no client ephemeral public key / key type was provided');
+        }
+        // 256-bit AES, 128-bit IV
+        sessionAESKey =
+            AtChopsUtil.generateSymmetricKey(EncryptionKeyType.aes256).key;
+        sessionIV = base64Encode(AtChopsUtil.generateRandomIV(16).ivBytes);
+        late EncryptionKeyType ect;
+        try {
+          ect = EncryptionKeyType.values.byName(clientEphemeralPKType);
+        } catch (e) {
+          throw Exception('Unknown ephemeralPKType: $clientEphemeralPKType');
+        }
+        switch (ect) {
+          case EncryptionKeyType.rsa2048:
+            AtChops ac = AtChopsImpl(AtChopsKeys.create(
+                AtEncryptionKeyPair.create(clientEphemeralPK, 'n/a'), null));
+            sessionAESKeyEncrypted = ac
+                .encryptString(sessionAESKey,
+                    EncryptionKeyType.values.byName(clientEphemeralPKType))
+                .result;
+            sessionIVEncrypted = ac
+                .encryptString(sessionIV,
+                    EncryptionKeyType.values.byName(clientEphemeralPKType))
+                .result;
+            break;
+          default:
+            throw Exception(
+                'No handling for ephemeralPKType $clientEphemeralPKType');
+        }
+      }
       // Connect to rendezvous point using background process.
       // This program can then exit without causing an issue.
-      Process rv =
-          await Sshrv.exec(host, port, localSshdPort: localSshdPort).run();
+      Process rv = await Srv.exec(
+        host,
+        port,
+        localPort: localSshdPort,
+        bindLocalPort: false,
+        rvdAuthString: rvdAuthString,
+        sessionAESKeyString: sessionAESKey,
+        sessionIVString: sessionIV,
+      ).run();
       logger.info('Started rv - pid is ${rv.pid}');
 
       LocalSshKeyUtil keyUtil = LocalSshKeyUtil();
@@ -524,7 +623,11 @@ class SshnpdImpl implements Sshnpd {
           'status': 'connected',
           'sessionId': sessionId,
           'ephemeralPrivateKey': keyPair.privateKeyContents,
+          'sessionAESKey': sessionAESKeyEncrypted,
+          'sessionIV': sessionIVEncrypted,
         }),
+        checkForFinalDeliveryStatus: false,
+        waitForFinalDeliveryStatus: false,
         sessionId: sessionId,
       );
 
@@ -539,8 +642,10 @@ class SshnpdImpl implements Sshnpd {
         atKey: _createResponseAtKey(
             requestingAtsign: requestingAtsign, sessionId: sessionId),
         value:
-            'Failed to start up the daemon side of the sshrv socket tunnel : $e',
+            'Failed to start up the daemon side of the srv socket tunnel : $e',
         sessionId: sessionId,
+        checkForFinalDeliveryStatus: false,
+        waitForFinalDeliveryStatus: false,
       );
     }
   }
@@ -594,14 +699,19 @@ class SshnpdImpl implements Sshnpd {
               requestingAtsign: requestingAtsign, sessionId: sessionId),
           value: '$errorMessage (use --local-port to specify unused port)',
           sessionId: sessionId,
+          checkForFinalDeliveryStatus: false,
+          waitForFinalDeliveryStatus: false,
         );
       } else {
         /// Notify sshnp that the connection has been made
         await _notify(
-            atKey: _createResponseAtKey(
-                requestingAtsign: requestingAtsign, sessionId: sessionId),
-            value: 'connected',
-            sessionId: sessionId);
+          atKey: _createResponseAtKey(
+              requestingAtsign: requestingAtsign, sessionId: sessionId),
+          value: 'connected',
+          sessionId: sessionId,
+          checkForFinalDeliveryStatus: false,
+          waitForFinalDeliveryStatus: false,
+        );
       }
     } catch (e) {
       logger.severe('SSH Client failure : $e');
@@ -611,6 +721,8 @@ class SshnpdImpl implements Sshnpd {
             requestingAtsign: requestingAtsign, sessionId: sessionId),
         value: 'Remote SSH Client failure : $e',
         sessionId: sessionId,
+        checkForFinalDeliveryStatus: false,
+        waitForFinalDeliveryStatus: false,
       );
     }
   }
@@ -740,7 +852,7 @@ class SshnpdImpl implements Sshnpd {
     await Process.run('chmod', ['go-rwx', pemFile.absolute.path]);
 
     // When we receive notification 'sshd', WE are going to ssh to the host and port provided by sshnp
-    // which could be the host and port of a client machine, or the host and port of an sshrvd which is
+    // which could be the host and port of a client machine, or the host and port of an srvd which is
     // joined via socket connector to the client machine. Let's call it targetHostName/Port
     //
     // so: ssh username@targetHostName -p targetHostPort
@@ -840,17 +952,24 @@ class SshnpdImpl implements Sshnpd {
   }
 
   /// This function sends a notification given an atKey and value
-  Future<void> _notify(
-      {required AtKey atKey,
-      required String value,
-      String sessionId = ''}) async {
-    await atClient.notificationService
-        .notify(NotificationParams.forUpdate(atKey, value: value),
-            onSuccess: (notification) {
-      logger.info('SUCCESS:$notification for: $sessionId with value: $value');
-    }, onError: (notification) {
-      logger.info('ERROR:$notification');
-    });
+  Future<void> _notify({
+    required AtKey atKey,
+    required String value,
+    required bool checkForFinalDeliveryStatus,
+    required bool waitForFinalDeliveryStatus,
+    String sessionId = '',
+  }) async {
+    await atClient.notificationService.notify(
+      NotificationParams.forUpdate(atKey, value: value),
+      checkForFinalDeliveryStatus: checkForFinalDeliveryStatus,
+      waitForFinalDeliveryStatus: waitForFinalDeliveryStatus,
+      onSuccess: (notification) {
+        logger.info('SUCCESS:$notification for: $sessionId with value: $value');
+      },
+      onError: (notification) {
+        logger.info('ERROR:$notification');
+      },
+    );
   }
 
   /// This function creates an atKey which shares the device name with the client
@@ -889,10 +1008,7 @@ class SshnpdImpl implements Sshnpd {
       logger.info('Updating device info for $device');
       await atClient.put(
         atKey,
-        jsonEncode({
-          'devicename': device,
-          'version': packageVersion,
-        }),
+        jsonEncode(pingResponse),
         putRequestOptions: PutRequestOptions()..useRemoteAtServer = true,
       );
     } catch (e) {

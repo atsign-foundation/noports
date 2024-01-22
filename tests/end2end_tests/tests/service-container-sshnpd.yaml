@@ -12,4 +12,4 @@
       retries: 36 # Retry the check n times
     # auto added:
     # - image
-    # - depends_on: (sshrvd + runtime service)
+    # - depends_on: (srvd + runtime service)

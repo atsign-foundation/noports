@@ -14,7 +14,7 @@ void main() {
     late AtClient mockAtClient;
     late SshnpParams mockParams;
     late SshnpdChannel mockSshnpdChannel;
-    late SshrvdChannel mockSshrvdChannel;
+    late SrvdChannel mockSrvdChannel;
 
     /// Initialization stubs
     late FunctionStub<void> stubbedCallInitialization;
@@ -26,7 +26,7 @@ void main() {
       mockAtClient = MockAtClient();
       mockParams = MockSshnpParams();
       mockSshnpdChannel = MockSshnpdChannel();
-      mockSshrvdChannel = MockSshrvdChannel();
+      mockSrvdChannel = MockSrvdChannel();
       registerFallbackValue(AtClientPreference());
 
       /// Initialization
@@ -37,9 +37,11 @@ void main() {
 
     /// When declaration setup for the constructor of [StubbedSshnp]
     whenConstructor({bool verbose = false}) {
+      when(() => mockParams.sshnpdAtSign).thenReturn('@sshnpd');
       when(() => mockParams.device).thenReturn('mydevice');
       when(() => mockParams.localPort).thenReturn(0);
       when(() => mockParams.verbose).thenReturn(verbose);
+      when(() => mockParams.discoverDaemonFeatures).thenReturn(false);
       when(() => mockAtClient.getPreferences()).thenReturn(null);
       when(() => mockAtClient.setPreferences(any())).thenReturn(null);
     }
@@ -59,8 +61,7 @@ void main() {
           .thenAnswer((_) async => 'myTunnelUsername');
       when(() => mockSshnpdChannel.sharePublicKeyIfRequired(
           identityKeyPair ?? any())).thenAnswer((_) async {});
-      when(() => mockSshrvdChannel.callInitialization())
-          .thenAnswer((_) async {});
+      when(() => mockSrvdChannel.callInitialization()).thenAnswer((_) async {});
     }
 
     group('Constructor', () {
@@ -110,7 +111,7 @@ void main() {
           atClient: mockAtClient,
           params: mockParams,
           sshnpdChannel: mockSshnpdChannel,
-          sshrvdChannel: mockSshrvdChannel,
+          srvdChannel: mockSrvdChannel,
         );
 
         /// Setup stubs for the mocks that are part of [MockAsyncInitializationMixin]
@@ -140,7 +141,7 @@ void main() {
               remoteUsername: 'myRemoteUsername'),
           () => mockSshnpdChannel
               .sharePublicKeyIfRequired(sshnpCore.identityKeyPair),
-          () => mockSshrvdChannel.callInitialization(),
+          () => mockSrvdChannel.callInitialization(),
           () => stubbedCompleteInitialization(),
         ]);
 
@@ -153,7 +154,7 @@ void main() {
             remoteUsername: 'myRemoteUsername'));
         verifyNever(() => mockSshnpdChannel
             .sharePublicKeyIfRequired(sshnpCore.identityKeyPair));
-        verifyNever(() => mockSshrvdChannel.callInitialization());
+        verifyNever(() => mockSrvdChannel.callInitialization());
         verifyNever(() => stubbedCompleteInitialization());
 
         /// Ensure [initialize()] is not ran a second time if we call
@@ -162,7 +163,7 @@ void main() {
         verify(() => stubbedCallInitialization()).called(1);
         verifyNever(() => stubbedInitialize());
         verifyNever(() => stubbedCompleteInitialization());
-        verifyNever(() => mockSshrvdChannel.callInitialization());
+        verifyNever(() => mockSrvdChannel.callInitialization());
       });
       test('tunnelUsername not supplied', () async {
         final params = SshnpParams(

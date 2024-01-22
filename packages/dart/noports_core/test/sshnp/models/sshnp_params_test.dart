@@ -319,8 +319,8 @@ void main() {
 
         final params = SshnpParams.fromJson(json);
         expect(params.profileName, equals('myProfile'));
-        expect(params.clientAtSign, equals('@myClientAtSign'));
-        expect(params.sshnpdAtSign, equals('@mySshnpdAtSign'));
+        expect(params.clientAtSign, equals('@myClientAtSign'.toLowerCase()));
+        expect(params.sshnpdAtSign, equals('@mySshnpdAtSign'.toLowerCase()));
         expect(params.host, equals('@myHost'));
         expect(params.device, equals('myDeviceName'));
         expect(params.port, equals(1234));
@@ -378,8 +378,8 @@ void main() {
         ];
         final params = SshnpParams.fromConfigLines('myProfile', configLines);
         expect(params.profileName, equals('myProfile'));
-        expect(params.clientAtSign, equals('@myClientAtSign'));
-        expect(params.sshnpdAtSign, equals('@mySshnpdAtSign'));
+        expect(params.clientAtSign, equals('@myClientAtSign'.toLowerCase()));
+        expect(params.sshnpdAtSign, equals('@mySshnpdAtSign'.toLowerCase()));
         expect(params.host, equals('@myHost'));
         expect(params.device, equals('myDeviceName'));
         expect(params.port, equals(1234));
@@ -426,8 +426,10 @@ void main() {
         final parsedParams =
             SshnpParams.fromConfigLines('myProfile', configLines);
         expect(parsedParams.profileName, equals('myProfile'));
-        expect(parsedParams.clientAtSign, equals('@myClientAtSign'));
-        expect(parsedParams.sshnpdAtSign, equals('@mySshnpdAtSign'));
+        expect(
+            parsedParams.clientAtSign, equals('@myClientAtSign'.toLowerCase()));
+        expect(
+            parsedParams.sshnpdAtSign, equals('@mySshnpdAtSign'.toLowerCase()));
         expect(parsedParams.host, equals('@myHost'));
         expect(parsedParams.device, equals('myDeviceName'));
         expect(parsedParams.port, equals(1234));
@@ -518,8 +520,10 @@ void main() {
         );
         final json = params.toJson();
         final parsedParams = SshnpParams.fromJson(json);
-        expect(parsedParams.clientAtSign, equals('@myClientAtSign'));
-        expect(parsedParams.sshnpdAtSign, equals('@mySshnpdAtSign'));
+        expect(
+            parsedParams.clientAtSign, equals('@myClientAtSign'.toLowerCase()));
+        expect(
+            parsedParams.sshnpdAtSign, equals('@mySshnpdAtSign'.toLowerCase()));
         expect(parsedParams.host, equals('@myHost'));
         expect(parsedParams.device, equals('myDeviceName'));
         expect(parsedParams.port, equals(1234));
@@ -822,8 +826,10 @@ void main() {
         final parsedParams =
             SshnpPartialParams.fromConfigLines('myProfile', configLines);
         expect(parsedParams.profileName, equals('myProfile'));
-        expect(parsedParams.clientAtSign, equals('@myClientAtSign'));
-        expect(parsedParams.sshnpdAtSign, equals('@mySshnpdAtSign'));
+        expect(
+            parsedParams.clientAtSign, equals('@myClientAtSign'.toLowerCase()));
+        expect(
+            parsedParams.sshnpdAtSign, equals('@mySshnpdAtSign'.toLowerCase()));
         expect(parsedParams.host, equals('@myHost'));
         expect(parsedParams.device, equals('myDeviceName'));
         expect(parsedParams.port, equals(1234));
@@ -865,8 +871,8 @@ void main() {
 
         final params = SshnpPartialParams.fromJson(json);
         expect(params.profileName, equals('myProfile'));
-        expect(params.clientAtSign, equals('@myClientAtSign'));
-        expect(params.sshnpdAtSign, equals('@mySshnpdAtSign'));
+        expect(params.clientAtSign, equals('@myClientAtSign'.toLowerCase()));
+        expect(params.sshnpdAtSign, equals('@mySshnpdAtSign'.toLowerCase()));
         expect(params.host, equals('@myHost'));
         expect(params.device, equals('myDeviceName'));
         expect(params.port, equals(1234));
@@ -913,8 +919,8 @@ void main() {
           SshnpArg.sshAlgorithmArg.name: SupportedSshAlgorithm.rsa.toString(),
         });
         expect(params.profileName, equals('myProfile'));
-        expect(params.clientAtSign, equals('@myClientAtSign'));
-        expect(params.sshnpdAtSign, equals('@mySshnpdAtSign'));
+        expect(params.clientAtSign, equals('@myClientAtSign'.toLowerCase()));
+        expect(params.sshnpdAtSign, equals('@mySshnpdAtSign'.toLowerCase()));
         expect(params.host, equals('@myHost'));
         expect(params.device, equals('myDeviceName'));
         expect(params.port, equals(1234));
@@ -983,8 +989,8 @@ void main() {
         ];
         final params = SshnpPartialParams.fromArgList(argList);
         expect(params.profileName, equals('myProfile'));
-        expect(params.clientAtSign, equals('@myClientAtSign'));
-        expect(params.sshnpdAtSign, equals('@mySshnpdAtSign'));
+        expect(params.clientAtSign, equals('@myClientAtSign'.toLowerCase()));
+        expect(params.sshnpdAtSign, equals('@mySshnpdAtSign'.toLowerCase()));
         expect(params.host, equals('@myHost'));
         expect(params.device, equals('myDeviceName'));
         expect(params.port, equals(1234));

@@ -14,7 +14,7 @@ void main() {
     late MockAtSshKeyPair keyPair;
 
     late MockSshnpdChannel mockSshnpdChannel;
-    late MockSshrvdChannel mockSshrvdChannel;
+    late MockSrvdChannel mockSrvdChannel;
 
     setUp(() {
       mockAtClient = MockAtClient();
@@ -23,14 +23,16 @@ void main() {
       keyPair = MockAtSshKeyPair();
 
       mockSshnpdChannel = MockSshnpdChannel();
-      mockSshrvdChannel = MockSshrvdChannel();
+      mockSrvdChannel = MockSrvdChannel();
       registerFallbackValue(AtClientPreference());
     });
 
     whenConstructor() {
+      when(() => mockParams.sshnpdAtSign).thenReturn('@sshnpd');
       when(() => mockParams.device).thenReturn('mydevice');
       when(() => mockParams.localPort).thenReturn(0);
       when(() => mockParams.verbose).thenReturn(false);
+      when(() => mockParams.discoverDaemonFeatures).thenReturn(false);
       when(() => mockAtClient.getPreferences()).thenReturn(null);
       when(() => mockAtClient.setPreferences(any())).thenReturn(null);
     }
@@ -45,8 +47,7 @@ void main() {
           .thenAnswer((_) async => 'myTunnelUsername');
       when(() => mockSshnpdChannel.sharePublicKeyIfRequired(identityKeyPair))
           .thenAnswer((_) async {});
-      when(() => mockSshrvdChannel.callInitialization())
-          .thenAnswer((_) async {});
+      when(() => mockSrvdChannel.callInitialization()).thenAnswer((_) async {});
     }
 
     test('public API', () {
@@ -66,7 +67,7 @@ void main() {
         params: mockParams,
         sshKeyUtil: keyUtil,
         sshnpdChannel: mockSshnpdChannel,
-        sshrvdChannel: mockSshrvdChannel,
+        srvdChannel: mockSrvdChannel,
       );
 
       whenInitialization(identityKeyPair: keyPair);
@@ -94,7 +95,7 @@ void main() {
         params: mockParams,
         sshKeyUtil: keyUtil,
         sshnpdChannel: mockSshnpdChannel,
-        sshrvdChannel: mockSshrvdChannel,
+        srvdChannel: mockSrvdChannel,
       );
 
       whenInitialization(identityKeyPair: keyPair);
@@ -123,7 +124,7 @@ void main() {
         params: mockParams,
         sshKeyUtil: keyUtil,
         sshnpdChannel: mockSshnpdChannel,
-        sshrvdChannel: mockSshrvdChannel,
+        srvdChannel: mockSrvdChannel,
       );
 
       whenInitialization();

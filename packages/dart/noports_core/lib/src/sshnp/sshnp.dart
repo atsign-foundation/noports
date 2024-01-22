@@ -50,7 +50,7 @@ abstract interface class Sshnp {
   SshnpParams get params;
 
   /// May only be run after [initialize] has been run.
-  /// - Sends request to sshrvd if required
+  /// - Sends request to srvd if required
   /// - Sends request to sshnpd; the response listener was started by [initialize]
   /// - Waits for success or error response, or time out after 10 secs
   /// - Make ssh tunnel connection using ephemeral keys

@@ -49,7 +49,7 @@ $ ./run-manual-docker.sh
 
 usage: ./run-manual-docker.sh
   -h|--help
-  -t|--tag <sshnp/sshnpd/sshrvd> (required) - docker container tag
+  -t|--tag <sshnp/sshnpd/srvd> (required) - docker container tag
   --no-cache (optional) - docker build without cache
   --rm (optional) - remove container after exit
   ONE OF THE FOLLOWING (required)
@@ -60,7 +60,7 @@ usage: ./run-manual-docker.sh
 
   example: ./run-manual-docker.sh -t sshnp -b trunk
   example: ./run-manual-docker.sh -t sshnpd -l
-  example: ./run-manual-docker.sh -t sshrvd -r v3.3.0
+  example: ./run-manual-docker.sh -t srvd -r v3.3.0
   example: ./run-manual-docker.sh -t sshnp --release
   example: ./run-manual-docker.sh -t sshnp --blank
 ```
