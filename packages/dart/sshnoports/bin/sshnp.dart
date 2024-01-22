@@ -1,6 +1,7 @@
 // dart packages
 import 'dart:async';
 import 'dart:io';
+import 'dart:typed_data';
 
 // atPlatform packages
 import 'package:at_utils/at_logger.dart';
@@ -12,7 +13,6 @@ import 'package:sshnoports/src/create_at_client_cli.dart';
 import 'package:sshnoports/src/print_devices.dart';
 import 'package:sshnoports/src/print_version.dart';
 import 'package:sshnoports/src/create_sshnp.dart';
-import 'package:sshnoports/src/shell_process.dart';
 
 void main(List<String> args) async {
   AtSignLogger.root_level = 'SHOUT';
@@ -90,18 +90,35 @@ void main(List<String> args) async {
       }
       if (res is SshnpCommand) {
         if (sshnp.canRunShell) {
-          // ignore: unused_local_variable
           SshnpRemoteProcess shell = await sshnp.runShell();
-          await runShellSession(shell);
+          shell.stdout.listen(stdout.add);
+          shell.stderr.listen(stderr.add);
+
+          // don't wait for a newline before sending to remote stdin
+          stdin.lineMode = false;
+          // echo only what is sent back from the other side
+          stdin.echoMode = false;
+
+          stdin.listen(shell.stdin.add);
+
+          // catch local ctrl-c's and forward to remote
+          ProcessSignal.sigint.watch().listen((signal) {
+            shell.stdin.add(Uint8List.fromList([3]));
+          });
+
+          await shell.done;
           exit(0);
         } else if (argResults['output-execution-command'] ?? false) {
           stdout.write('$res\n');
           exit(0);
         } else {
-          Process process = await Process.start(res.command, res.args);
-          SshnpRemoteProcess shell = ChildProcessAsSshnpRemoteProcess(process);
-          await runShellSession(shell);
-          exit(0);
+          Process process = await Process.start(
+            res.command,
+            res.args,
+            mode: ProcessStartMode.inheritStdio,
+          );
+
+          exit(await process.exitCode);
         }
       }
     } on ArgumentError catch (error) {
