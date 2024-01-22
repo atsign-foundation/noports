@@ -25,7 +25,7 @@ void socketConnector(ConnectorParams connectorParams) async {
     sendPort,
     portA,
     portB,
-    sshrvdSessionParamsJsonString,
+    srvdSessionParamsJsonString,
     logTraffic,
     verbose,
   ) = connectorParams;
@@ -36,55 +36,55 @@ void socketConnector(ConnectorParams connectorParams) async {
     AtSignLogger.root_level = 'WARNING';
   }
 
-  final logger = AtSignLogger(' sshrvd / socket_connector ');
+  final logger = AtSignLogger(' srvd / socket_connector ');
 
-  SshrvdSessionParams sshrvdSessionParams =
-      SshrvdSessionParams.fromJson(jsonDecode(sshrvdSessionParamsJsonString));
+  SrvdSessionParams srvdSessionParams =
+      SrvdSessionParams.fromJson(jsonDecode(srvdSessionParamsJsonString));
   logger.info(
-      'Starting socket connector session for ${sshrvdSessionParams.toJson()}');
+      'Starting socket connector session for ${srvdSessionParams.toJson()}');
 
   /// Create the socketAuthVerifiers as required
   Map expectedPayloadForSignature = {
-    'sessionId': sshrvdSessionParams.sessionId,
-    'clientNonce': sshrvdSessionParams.clientNonce,
-    'rvdNonce': sshrvdSessionParams.rvdNonce,
+    'sessionId': srvdSessionParams.sessionId,
+    'clientNonce': srvdSessionParams.clientNonce,
+    'rvdNonce': srvdSessionParams.rvdNonce,
   };
 
   SocketAuthVerifier? socketAuthVerifierA;
-  if (sshrvdSessionParams.authenticateSocketA) {
-    String? pkAtSignA = sshrvdSessionParams.publicKeyA;
+  if (srvdSessionParams.authenticateSocketA) {
+    String? pkAtSignA = srvdSessionParams.publicKeyA;
     if (pkAtSignA == null) {
       logger.shout('Cannot spawn socket connector.'
-          ' Authenticator for ${sshrvdSessionParams.atSignA}'
+          ' Authenticator for ${srvdSessionParams.atSignA}'
           ' could not be created as PublicKey could not be'
           ' fetched from the atServer.');
       throw Exception('Failed to create SocketAuthenticator'
-          ' for ${sshrvdSessionParams.atSignA} due to failure to get public key for ${sshrvdSessionParams.atSignA}');
+          ' for ${srvdSessionParams.atSignA} due to failure to get public key for ${srvdSessionParams.atSignA}');
     }
     socketAuthVerifierA = SignatureAuthVerifier(
       pkAtSignA,
       jsonEncode(expectedPayloadForSignature),
-      sshrvdSessionParams.rvdNonce!,
-      sshrvdSessionParams.atSignA,
+      srvdSessionParams.rvdNonce!,
+      srvdSessionParams.atSignA,
     ).authenticate;
   }
 
   SocketAuthVerifier? socketAuthVerifierB;
-  if (sshrvdSessionParams.authenticateSocketB) {
-    String? pkAtSignB = sshrvdSessionParams.publicKeyB;
+  if (srvdSessionParams.authenticateSocketB) {
+    String? pkAtSignB = srvdSessionParams.publicKeyB;
     if (pkAtSignB == null) {
       logger.shout('Cannot spawn socket connector.'
-          ' Authenticator for ${sshrvdSessionParams.atSignB}'
+          ' Authenticator for ${srvdSessionParams.atSignB}'
           ' could not be created as PublicKey could not be'
           ' fetched from the atServer');
       throw Exception('Failed to create SocketAuthenticator'
-          ' for ${sshrvdSessionParams.atSignB} due to failure to get public key for ${sshrvdSessionParams.atSignB}');
+          ' for ${srvdSessionParams.atSignB} due to failure to get public key for ${srvdSessionParams.atSignB}');
     }
     socketAuthVerifierB = SignatureAuthVerifier(
       pkAtSignB,
       jsonEncode(expectedPayloadForSignature),
-      sshrvdSessionParams.rvdNonce!,
-      sshrvdSessionParams.atSignB!,
+      srvdSessionParams.rvdNonce!,
+      srvdSessionParams.atSignB!,
     ).authenticate;
   }
 
@@ -104,7 +104,7 @@ void socketConnector(ConnectorParams connectorParams) async {
   portB = connector.sideBPort!;
 
   logger.info('Assigned ports [$portA, $portB]'
-      ' for session ${sshrvdSessionParams.sessionId}');
+      ' for session ${srvdSessionParams.sessionId}');
 
   /// Return the assigned ports to the main isolate
   sendPort.send((portA, portB));
@@ -113,8 +113,8 @@ void socketConnector(ConnectorParams connectorParams) async {
   logger.info('Waiting for connector to close');
   await connector.done;
 
-  logger.info('Finished session ${sshrvdSessionParams.sessionId}'
-      ' for ${sshrvdSessionParams.atSignA} to ${sshrvdSessionParams.atSignB}'
+  logger.info('Finished session ${srvdSessionParams.sessionId}'
+      ' for ${srvdSessionParams.atSignA} to ${srvdSessionParams.atSignB}'
       ' using ports [$portA, $portB]');
 
   Isolate.current.kill();

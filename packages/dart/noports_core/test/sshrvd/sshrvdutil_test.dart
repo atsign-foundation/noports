@@ -11,14 +11,14 @@ void main() {
   test('test notification subscription regex', () {
     // Create a notification in rvd namespace
     AtNotification notification = AtNotification.empty();
-    notification.key = 'test.${Sshrvd.namespace}';
+    notification.key = 'test.${Srvd.namespace}';
   });
 
   test('sshrvd should accept notification in new request_ports format', () {
     // Create a notification in rvd namespace
     AtNotification notification = AtNotification.empty();
-    notification.key = 'request_ports.test.${Sshrvd.namespace}';
-    expect(SshrvdUtil(MockAtClient()).accept(notification), true);
+    notification.key = 'request_ports.test.${Srvd.namespace}';
+    expect(SrvdUtil(MockAtClient()).accept(notification), true);
   });
 
   test(
@@ -33,9 +33,9 @@ void main() {
 
     // New message
     AtNotification notification = AtNotification.empty();
-    notification.key = 'request_ports.test.${Sshrvd.namespace}';
+    notification.key = 'request_ports.test.${Srvd.namespace}';
     notification.value = jsonEncode(m);
 
-    expect(SshrvdUtil(MockAtClient()).accept(notification), true);
+    expect(SrvdUtil(MockAtClient()).accept(notification), true);
   });
 }

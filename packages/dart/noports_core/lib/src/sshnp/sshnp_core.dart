@@ -53,9 +53,9 @@ abstract class SshnpCore
 
   // * Communication Channels
 
-  /// The channel to communicate with the sshrvd (host)
+  /// The channel to communicate with the srvd (host)
   @protected
-  SshrvdChannel get sshrvdChannel;
+  SrvdChannel get srvdChannel;
 
   /// The channel to communicate with the sshnpd (daemon)
   @protected
@@ -121,8 +121,8 @@ abstract class SshnpCore
     /// Shares the public key if required
     await sshnpdChannel.sharePublicKeyIfRequired(identityKeyPair);
 
-    /// Retrieve the sshrvd host and port pair
-    await sshrvdChannel.callInitialization();
+    /// Retrieve the srvd host and port pair
+    await srvdChannel.callInitialization();
   }
 
   @override

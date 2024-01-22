@@ -125,7 +125,7 @@ void main() {
           notificationStreamController.add(
             AtNotification.empty()
               ..id = Uuid().v4()
-              ..key = '$sessionId.${Sshrvd.namespace}'
+              ..key = '$sessionId.${Srvd.namespace}'
               ..from = '@sshrvd'
               ..to = '@client'
               ..epochMillis = DateTime.now().millisecondsSinceEpoch
@@ -148,13 +148,13 @@ void main() {
 
       verifyInOrder([
         () => subscribeStub(
-            regex: '$sessionId.${Sshrvd.namespace}@', shouldDecrypt: true),
+            regex: '$sessionId.${Srvd.namespace}@', shouldDecrypt: true),
         () => notifyStub(
               any<AtKey>(
                 that: predicate(
                   // Predicate matching specifically the sshrvdIdKey format
                   (AtKey key) =>
-                      key.key == 'mydevice.request_ports.${Sshrvd.namespace}' &&
+                      key.key == 'mydevice.request_ports.${Srvd.namespace}' &&
                       key.sharedBy == '@client' &&
                       key.sharedWith == '@sshrvd' &&
                       key.metadata != null &&

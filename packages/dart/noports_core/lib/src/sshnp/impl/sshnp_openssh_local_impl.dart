@@ -21,7 +21,7 @@ class SshnpOpensshLocalImpl extends SshnpCore
       sessionId: sessionId,
       namespace: this.namespace,
     );
-    _sshrvdChannel = SshrvdExecChannel(
+    _srvdChannel = SrvdExecChannel(
       atClient: atClient,
       params: params,
       sessionId: sessionId,
@@ -33,8 +33,8 @@ class SshnpOpensshLocalImpl extends SshnpCore
   late final SshnpdDefaultChannel _sshnpdChannel;
 
   @override
-  SshrvdExecChannel get sshrvdChannel => _sshrvdChannel;
-  late final SshrvdExecChannel _sshrvdChannel;
+  SrvdExecChannel get srvdChannel => _srvdChannel;
+  late final SrvdExecChannel _srvdChannel;
 
   @override
   Future<void> initialize() async {
@@ -68,11 +68,11 @@ class SshnpOpensshLocalImpl extends SshnpCore
           SshnpSessionRequest(
             direct: true,
             sessionId: sessionId,
-            host: sshrvdChannel.host,
-            port: sshrvdChannel.sshrvdPort!,
+            host: srvdChannel.host,
+            port: srvdChannel.srvdPort!,
             authenticateToRvd: params.authenticateDeviceToRvd,
-            clientNonce: sshrvdChannel.clientNonce,
-            rvdNonce: sshrvdChannel.rvdNonce,
+            clientNonce: srvdChannel.clientNonce,
+            rvdNonce: srvdChannel.rvdNonce,
             encryptRvdTraffic: params.encryptRvdTraffic,
             clientEphemeralPK: params.sessionKP.atPublicKey.publicKey,
             clientEphemeralPKType: params.sessionKPType.name,
@@ -93,8 +93,8 @@ class SshnpOpensshLocalImpl extends SshnpCore
       );
     }
 
-    /// Start sshrv
-    await sshrvdChannel.runSshrv(
+    /// Start srv
+    await srvdChannel.runSrv(
       directSsh: true,
       localRvPort: localRvPort,
       sessionAESKeyString: sshnpdChannel.sessionAESKeyString,

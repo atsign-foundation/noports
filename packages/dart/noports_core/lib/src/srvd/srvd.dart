@@ -6,7 +6,7 @@ import 'package:meta/meta.dart';
 import 'package:noports_core/src/srvd/srvd_impl.dart';
 import 'package:noports_core/src/srvd/srvd_params.dart';
 
-abstract class Sshrvd {
+abstract class Srvd {
   static const String namespace = 'sshrvd';
 
   abstract final AtSignLogger logger;
@@ -23,11 +23,11 @@ abstract class Sshrvd {
   @visibleForTesting
   bool initialized = false;
 
-  static Future<Sshrvd> fromCommandLineArgs(List<String> args,
+  static Future<Srvd> fromCommandLineArgs(List<String> args,
       {AtClient? atClient,
-      FutureOr<AtClient> Function(SshrvdParams)? atClientGenerator,
+      FutureOr<AtClient> Function(SrvdParams)? atClientGenerator,
       void Function(Object, StackTrace)? usageCallback}) async {
-    return SshrvdImpl.fromCommandLineArgs(args,
+    return SrvdImpl.fromCommandLineArgs(args,
         atClient: atClient,
         atClientGenerator: atClientGenerator,
         usageCallback: usageCallback);

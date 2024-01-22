@@ -12,31 +12,31 @@ import 'package:noports_core/srv.dart';
 import 'package:noports_core/srvd.dart';
 
 @visibleForTesting
-enum SshrvdAck {
-  /// sshrvd acknowledged our request
+enum SrvdAck {
+  /// srvd acknowledged our request
   acknowledged,
 
-  /// sshrvd acknowledged our request and had errors
+  /// srvd acknowledged our request and had errors
   acknowledgedWithErrors,
 
-  /// sshrvd did not acknowledge our request
+  /// srvd did not acknowledge our request
   notAcknowledged,
 }
 
-abstract class SshrvdChannel<T> with AsyncInitialization, AtClientBindings {
+abstract class SrvdChannel<T> with AsyncInitialization, AtClientBindings {
   @override
-  final logger = AtSignLogger(' SshrvdChannel ');
+  final logger = AtSignLogger(' SrvdChannel ');
 
   @override
   final AtClient atClient;
 
-  final SshrvGenerator<T> sshrvGenerator;
+  final SrvGenerator<T> srvGenerator;
   final SshnpParams params;
   final String sessionId;
   final String clientNonce = DateTime.now().toIso8601String();
 
   // * Volatile fields which are set in [params] but may be overridden with
-  // * values provided by sshrvd
+  // * values provided by srvd
 
   String? _host;
   int? _portA;
@@ -52,21 +52,21 @@ abstract class SshrvdChannel<T> with AsyncInitialization, AtClientBindings {
   String? sessionAESKeyString;
   String? sessionIVString;
 
-  /// Whether sshrvd acknowledged our request
+  /// Whether srvd acknowledged our request
   @visibleForTesting
-  SshrvdAck sshrvdAck = SshrvdAck.notAcknowledged;
+  SrvdAck srvdAck = SrvdAck.notAcknowledged;
 
-  /// The port sshrvd is listening on
+  /// The port srvd is listening on
   int? _portB;
 
   /// This is the port which the sshnp **daemon** will connect to
-  int? get sshrvdPort => _portB;
+  int? get srvdPort => _portB;
 
-  SshrvdChannel({
+  SrvdChannel({
     required this.atClient,
     required this.params,
     required this.sessionId,
-    required this.sshrvGenerator,
+    required this.srvGenerator,
   }) {
     logger.level = params.verbose ? 'info' : 'shout';
   }
@@ -74,7 +74,7 @@ abstract class SshrvdChannel<T> with AsyncInitialization, AtClientBindings {
   @override
   Future<void> initialize() async {
     if (params.host.startsWith('@')) {
-      await getHostAndPortFromSshrvd();
+      await getHostAndPortFromSrvd();
     } else {
       _host = params.host;
       _portA = params.port;
@@ -82,7 +82,7 @@ abstract class SshrvdChannel<T> with AsyncInitialization, AtClientBindings {
     completeInitialization();
   }
 
-  Future<T?> runSshrv({
+  Future<T?> runSrv({
     required bool directSsh,
     int? localRvPort,
     String? sessionAESKeyString,
@@ -97,14 +97,14 @@ abstract class SshrvdChannel<T> with AsyncInitialization, AtClientBindings {
           'localRvPort must be non-null when using directSsh (default)');
     }
     await callInitialization();
-    if (_portB == null) throw Exception('sshrvdPort is null');
+    if (_portB == null) throw Exception('srvdPort is null');
 
     // Connect to rendezvous point using background process.
     // sshnp (this program) can then exit without issue.
 
-    late Srv<T> sshrv;
+    late Srv<T> srv;
     if (directSsh) {
-      sshrv = sshrvGenerator(
+      srv = srvGenerator(
         host,
         _portA!,
         localPort: localRvPort!,
@@ -121,7 +121,7 @@ abstract class SshrvdChannel<T> with AsyncInitialization, AtClientBindings {
       );
     } else {
       // legacy behaviour
-      sshrv = sshrvGenerator(
+      srv = srvGenerator(
         host,
         _portB!,
         localPort: params.localSshdPort,
@@ -129,16 +129,16 @@ abstract class SshrvdChannel<T> with AsyncInitialization, AtClientBindings {
       );
     }
 
-    return sshrv.run();
+    return srv.run();
   }
 
   @protected
-  Future<void> getHostAndPortFromSshrvd() async {
-    sshrvdAck = SshrvdAck.notAcknowledged;
-    subscribe(regex: '$sessionId.${Sshrvd.namespace}@', shouldDecrypt: true)
+  Future<void> getHostAndPortFromSrvd() async {
+    srvdAck = SrvdAck.notAcknowledged;
+    subscribe(regex: '$sessionId.${Srvd.namespace}@', shouldDecrypt: true)
         .listen((notification) async {
       String ipPorts = notification.value.toString();
-      logger.info('Received from sshrvd: $ipPorts');
+      logger.info('Received from srvd: $ipPorts');
       List results = ipPorts.split(',');
       _host = results[0];
       _portA = int.parse(results[1]);
@@ -146,24 +146,24 @@ abstract class SshrvdChannel<T> with AsyncInitialization, AtClientBindings {
       if (results.length >= 4) {
         rvdNonce = results[3];
       }
-      logger.info('Received from sshrvd:'
+      logger.info('Received from srvd:'
           ' host:port $host:$port'
           ' rvdNonce: $rvdNonce');
-      logger.info('Set sshrvdPort to: $_portB');
-      sshrvdAck = SshrvdAck.acknowledged;
+      logger.info('Set srvdPort to: $_portB');
+      srvdAck = SrvdAck.acknowledged;
     });
-    logger.info('Started listening for sshrvd response');
+    logger.info('Started listening for srvd response');
 
     late AtKey rvdRequestKey;
     late String rvdRequestValue;
 
     if (params.authenticateClientToRvd || params.authenticateDeviceToRvd) {
       rvdRequestKey = AtKey()
-        ..key = '${params.device}.request_ports.${Sshrvd.namespace}'
+        ..key = '${params.device}.request_ports.${Srvd.namespace}'
         ..sharedBy = params.clientAtSign // shared by us
-        ..sharedWith = host // shared with the sshrvd host
+        ..sharedWith = host // shared with the srvd host
         ..metadata = (Metadata()
-          // as we are sending a notification to the sshrvd namespace,
+          // as we are sending a notification to the srvd namespace,
           // we don't want to append our namespace
           ..namespaceAware = false
           ..ttl = 10000);
@@ -180,11 +180,11 @@ abstract class SshrvdChannel<T> with AsyncInitialization, AtClientBindings {
     } else {
       // send a legacy message since no new rvd features are being used
       rvdRequestKey = AtKey()
-        ..key = '${params.device}.${Sshrvd.namespace}'
+        ..key = '${params.device}.${Srvd.namespace}'
         ..sharedBy = params.clientAtSign // shared by us
-        ..sharedWith = host // shared with the sshrvd host
+        ..sharedWith = host // shared with the srvd host
         ..metadata = (Metadata()
-          // as we are sending a notification to the sshrvd namespace,
+          // as we are sending a notification to the srvd namespace,
           // we don't want to append our namespace
           ..namespaceAware = false
           ..ttl = 10000);
@@ -193,7 +193,7 @@ abstract class SshrvdChannel<T> with AsyncInitialization, AtClientBindings {
     }
 
     logger.info(
-        'Sending notification to sshrvd with key $rvdRequestKey and value $rvdRequestValue');
+        'Sending notification to srvd with key $rvdRequestKey and value $rvdRequestValue');
     await notify(
       rvdRequestKey,
       rvdRequestValue,
@@ -202,15 +202,15 @@ abstract class SshrvdChannel<T> with AsyncInitialization, AtClientBindings {
     );
 
     int counter = 1;
-    while (sshrvdAck == SshrvdAck.notAcknowledged) {
+    while (srvdAck == SrvdAck.notAcknowledged) {
       if (counter % 20 == 0) {
-        logger.info('Still waiting for sshrvd response');
+        logger.info('Still waiting for srvd response');
       }
       await Future.delayed(Duration(milliseconds: 100));
       counter++;
       if (counter > 150) {
-        logger.warning('Timed out waiting for sshrvd response');
-        throw ('Connection timeout to sshrvd $host service\nhint: make sure host is valid and online');
+        logger.warning('Timed out waiting for srvd response');
+        throw ('Connection timeout to srvd $host service\nhint: make sure host is valid and online');
       }
     }
   }

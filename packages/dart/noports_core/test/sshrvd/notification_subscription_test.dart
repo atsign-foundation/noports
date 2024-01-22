@@ -5,15 +5,13 @@ import 'package:test/test.dart';
 void main() {
   test('Test notification subscription regex', () {
     expect(
-        RegExp(SshrvdImpl.subscriptionRegex)
-            .hasMatch('jagan@test.${Sshrvd.namespace}@jagan'),
+        RegExp(SrvdImpl.subscriptionRegex)
+            .hasMatch('jagan@test.${Srvd.namespace}@jagan'),
+        true);
+    expect(RegExp(SrvdImpl.subscriptionRegex).hasMatch('${Srvd.namespace}@'),
         true);
     expect(
-        RegExp(SshrvdImpl.subscriptionRegex).hasMatch('${Sshrvd.namespace}@'),
-        true);
-    expect(
-        RegExp(SshrvdImpl.subscriptionRegex)
-            .hasMatch('${Sshrvd.namespace}.test@'),
+        RegExp(SrvdImpl.subscriptionRegex).hasMatch('${Srvd.namespace}.test@'),
         false);
   });
 }

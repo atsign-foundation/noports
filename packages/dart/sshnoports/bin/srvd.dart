@@ -8,17 +8,17 @@ import 'package:sshnoports/src/print_version.dart';
 void main(List<String> args) async {
   AtSignLogger.root_level = 'SHOUT';
   AtSignLogger.defaultLoggingHandler = AtSignLogger.stdErrLoggingHandler;
-  late final Sshrvd sshrvd;
+  late final Srvd sshrvd;
 
   try {
-    sshrvd = await Sshrvd.fromCommandLineArgs(
+    sshrvd = await Srvd.fromCommandLineArgs(
       args,
       atClientGenerator: (SshrvdParams p) => createAtClientCli(
         homeDirectory: p.homeDirectory,
         subDirectory: '.sshrvd',
         atsign: p.atSign,
         atKeysFilePath: p.atKeysFilePath,
-        namespace: Sshrvd.namespace,
+        namespace: Srvd.namespace,
         rootDomain: p.rootDomain,
       ),
       usageCallback: (e, s) {

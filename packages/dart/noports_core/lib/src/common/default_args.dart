@@ -8,7 +8,7 @@ class DefaultArgs {
       SupportedSshAlgorithm.ed25519;
   static const bool verbose = false;
   static const String rootDomain = 'root.atsign.org';
-  static const SshrvGenerator sshrvGenerator = Srv.exec;
+  static const SrvGenerator srvGenerator = Srv.exec;
   static const int localSshdPort = 22;
   static const int remoteSshdPort = 22;
 

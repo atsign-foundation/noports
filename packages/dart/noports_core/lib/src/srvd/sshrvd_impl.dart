@@ -13,9 +13,9 @@ import 'package:noports_core/src/srvd/srvd.dart';
 import 'package:noports_core/src/srvd/srvd_params.dart';
 
 @protected
-class SshrvdImpl implements Sshrvd {
+class SrvdImpl implements Srvd {
   @override
-  final AtSignLogger logger = AtSignLogger(' sshrvd ');
+  final AtSignLogger logger = AtSignLogger(' srvd ');
   @override
   AtClient atClient;
   @override
@@ -37,11 +37,11 @@ class SshrvdImpl implements Sshrvd {
   @visibleForTesting
   bool initialized = false;
 
-  static final String subscriptionRegex = '${Sshrvd.namespace}@';
+  static final String subscriptionRegex = '${Srvd.namespace}@';
 
-  late final SshrvdUtil sshrvdUtil;
+  late final SrvdUtil srvdUtil;
 
-  SshrvdImpl({
+  SrvdImpl({
     required this.atClient,
     required this.atSign,
     required this.homeDirectory,
@@ -50,19 +50,19 @@ class SshrvdImpl implements Sshrvd {
     required this.ipAddress,
     required this.logTraffic,
     required this.verbose,
-    SshrvdUtil? sshrvdUtil,
+    SrvdUtil? srvdUtil,
   }) {
-    this.sshrvdUtil = sshrvdUtil ?? SshrvdUtil(atClient);
+    this.srvdUtil = srvdUtil ?? SrvdUtil(atClient);
     logger.hierarchicalLoggingEnabled = true;
     logger.logger.level = Level.SHOUT;
   }
 
-  static Future<Sshrvd> fromCommandLineArgs(List<String> args,
+  static Future<Srvd> fromCommandLineArgs(List<String> args,
       {AtClient? atClient,
-      FutureOr<AtClient> Function(SshrvdParams)? atClientGenerator,
+      FutureOr<AtClient> Function(SrvdParams)? atClientGenerator,
       void Function(Object, StackTrace)? usageCallback}) async {
     try {
-      var p = await SshrvdParams.fromArgs(args);
+      var p = await SrvdParams.fromArgs(args);
 
       if (!await File(p.atKeysFilePath).exists()) {
         throw ('\n Unable to find .atKeys file : ${p.atKeysFilePath}');
@@ -79,7 +79,7 @@ class SshrvdImpl implements Sshrvd {
 
       atClient ??= await atClientGenerator!(p);
 
-      var sshrvd = SshrvdImpl(
+      var srvd = SrvdImpl(
         atClient: atClient,
         atSign: p.atSign,
         homeDirectory: p.homeDirectory,
@@ -91,9 +91,9 @@ class SshrvdImpl implements Sshrvd {
       );
 
       if (p.verbose) {
-        sshrvd.logger.logger.level = Level.INFO;
+        srvd.logger.logger.level = Level.INFO;
       }
-      return sshrvd;
+      return srvd;
     } catch (e, s) {
       usageCallback?.call(e, s);
       rethrow;
@@ -122,12 +122,12 @@ class SshrvdImpl implements Sshrvd {
   }
 
   void _notificationHandler(AtNotification notification) async {
-    if (!sshrvdUtil.accept(notification)) {
+    if (!srvdUtil.accept(notification)) {
       return;
     }
-    late SshrvdSessionParams sessionParams;
+    late SrvdSessionParams sessionParams;
     try {
-      sessionParams = await sshrvdUtil.getParams(notification);
+      sessionParams = await srvdUtil.getParams(notification);
 
       if (managerAtsign != 'open' && managerAtsign != sessionParams.atSignA) {
         logger.shout(
@@ -163,7 +163,7 @@ class SshrvdImpl implements Sshrvd {
       ..key = sessionParams.sessionId
       ..sharedBy = atSign
       ..sharedWith = notification.from
-      ..namespace = Sshrvd.namespace
+      ..namespace = Srvd.namespace
       ..metadata = metaData;
 
     String data = '$ipAddress,$portA,$portB,${sessionParams.rvdNonce}';
@@ -188,18 +188,18 @@ class SshrvdImpl implements Sshrvd {
   Future<PortPair> _spawnSocketConnector(
     int portA,
     int portB,
-    SshrvdSessionParams sshrvdSessionParams,
+    SrvdSessionParams srvdSessionParams,
     bool logTraffic,
     bool verbose,
   ) async {
     /// Spawn an isolate and wait for it to send back the issued port numbers
-    ReceivePort receivePort = ReceivePort(sshrvdSessionParams.sessionId);
+    ReceivePort receivePort = ReceivePort(srvdSessionParams.sessionId);
 
     ConnectorParams parameters = (
       receivePort.sendPort,
       portA,
       portB,
-      jsonEncode(sshrvdSessionParams),
+      jsonEncode(srvdSessionParams),
       BuildEnv.enableSnoop && logTraffic,
       verbose,
     );
@@ -212,13 +212,13 @@ class SshrvdImpl implements Sshrvd {
     PortPair ports = await receivePort.first;
 
     logger.info('Received ports $ports in main isolate'
-        ' for session ${sshrvdSessionParams.sessionId}');
+        ' for session ${srvdSessionParams.sessionId}');
 
     return ports;
   }
 }
 
-class SshrvdSessionParams {
+class SrvdSessionParams {
   final String sessionId;
   final String atSignA;
   final String? atSignB;
@@ -229,7 +229,7 @@ class SshrvdSessionParams {
   final String? clientNonce;
   final String? rvdNonce;
 
-  SshrvdSessionParams({
+  SrvdSessionParams({
     required this.sessionId,
     required this.atSignA,
     this.atSignB,
@@ -256,8 +256,8 @@ class SshrvdSessionParams {
         'clientNonce': clientNonce,
       };
 
-  static SshrvdSessionParams fromJson(Map<String, dynamic> json) {
-    return SshrvdSessionParams(
+  static SrvdSessionParams fromJson(Map<String, dynamic> json) {
+    return SrvdSessionParams(
       sessionId: json['sessionId'],
       atSignA: json['atSignA'],
       atSignB: json['atSignB'],
@@ -271,30 +271,30 @@ class SshrvdSessionParams {
   }
 }
 
-class SshrvdUtil {
+class SrvdUtil {
   final AtClient atClient;
 
-  SshrvdUtil(this.atClient);
+  SrvdUtil(this.atClient);
 
   bool accept(AtNotification notification) {
-    return notification.key.contains(Sshrvd.namespace);
+    return notification.key.contains(Srvd.namespace);
   }
 
-  Future<SshrvdSessionParams> getParams(AtNotification notification) async {
-    if (notification.key.contains('.request_ports.${Sshrvd.namespace}')) {
+  Future<SrvdSessionParams> getParams(AtNotification notification) async {
+    if (notification.key.contains('.request_ports.${Srvd.namespace}')) {
       return await _processJSONRequest(notification);
     }
     return _processLegacyRequest(notification);
   }
 
-  SshrvdSessionParams _processLegacyRequest(AtNotification notification) {
-    return SshrvdSessionParams(
+  SrvdSessionParams _processLegacyRequest(AtNotification notification) {
+    return SrvdSessionParams(
       sessionId: notification.value!,
       atSignA: notification.from,
     );
   }
 
-  Future<SshrvdSessionParams> _processJSONRequest(
+  Future<SrvdSessionParams> _processJSONRequest(
       AtNotification notification) async {
     dynamic jsonValue = jsonDecode(notification.value ?? '');
 
@@ -322,7 +322,7 @@ class SshrvdUtil {
     if (authenticateSocketB) {
       publicKeyB = await _fetchPublicKey(atSignB);
     }
-    return SshrvdSessionParams(
+    return SrvdSessionParams(
       sessionId: sessionId,
       atSignA: atSignA,
       atSignB: atSignB,

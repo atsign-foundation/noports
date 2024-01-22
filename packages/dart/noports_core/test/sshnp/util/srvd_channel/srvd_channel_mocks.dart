@@ -3,7 +3,7 @@ import 'package:mocktail/mocktail.dart';
 import 'package:noports_core/sshnp_foundation.dart';
 import 'package:noports_core/srv.dart';
 
-/// Stubbing for [SshrvGenerator] typedef
+/// Stubbing for [SrvGenerator] typedef
 abstract class SshrvGeneratorCaller<T> {
   Srv<T> call(
     String host,
