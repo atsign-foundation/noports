@@ -9,6 +9,8 @@ class DefaultExtendedArgs {
   static const outputExecutionCommand = false;
 }
 
+const xFlag = 'output-execution-command';
+
 class ExtendedArgParser {
   static ArgParser createArgParser() {
     final parser = SshnpArg.createArgParser(parserType: ParserType.commandLine);
@@ -28,7 +30,7 @@ class ExtendedArgParser {
     );
 
     parser.addFlag(
-      'output-execution-command',
+      xFlag,
       abbr: 'x',
       help: 'Output the command that would be executed, and exit',
       defaultsTo: DefaultExtendedArgs.outputExecutionCommand,

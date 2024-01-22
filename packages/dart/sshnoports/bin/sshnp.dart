@@ -98,7 +98,6 @@ void main(List<String> args) async {
           stdin.lineMode = false;
           // echo only what is sent back from the other side
           stdin.echoMode = false;
-
           stdin.listen(shell.stdin.add);
 
           // catch local ctrl-c's and forward to remote
@@ -108,7 +107,7 @@ void main(List<String> args) async {
 
           await shell.done;
           exit(0);
-        } else if (argResults['output-execution-command'] ?? false) {
+        } else if (argResults.wasParsed(xFlag) && argResults[xFlag] as bool) {
           stdout.write('$res\n');
           exit(0);
         } else {
