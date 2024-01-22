@@ -6,7 +6,10 @@ const sshClients = ['openssh', 'dart'];
 class DefaultExtendedArgs {
   static const sshClient = SupportedSshClient.openssh;
   static const legacyDaemon = false;
+  static const outputExecutionCommand = false;
 }
+
+const xFlag = 'output-execution-command';
 
 class ExtendedArgParser {
   static ArgParser createArgParser() {
@@ -26,6 +29,13 @@ class ExtendedArgParser {
       negatable: false,
     );
 
+    parser.addFlag(
+      xFlag,
+      abbr: 'x',
+      help: 'Output the command that would be executed, and exit',
+      defaultsTo: DefaultExtendedArgs.outputExecutionCommand,
+      negatable: false,
+    );
     return parser;
   }
 

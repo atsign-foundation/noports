@@ -90,9 +90,7 @@ void main(List<String> args) async {
       }
       if (res is SshnpCommand) {
         if (sshnp.canRunShell) {
-          // ignore: unused_local_variable
           SshnpRemoteProcess shell = await sshnp.runShell();
-
           shell.stdout.listen(stdout.add);
           shell.stderr.listen(stderr.add);
 
@@ -109,9 +107,17 @@ void main(List<String> args) async {
 
           await shell.done;
           exit(0);
-        } else {
+        } else if (argResults.wasParsed(xFlag) && argResults[xFlag] as bool) {
           stdout.write('$res\n');
           exit(0);
+        } else {
+          Process process = await Process.start(
+            res.command,
+            res.args,
+            mode: ProcessStartMode.inheritStdio,
+          );
+
+          exit(await process.exitCode);
         }
       }
     } on ArgumentError catch (error) {
