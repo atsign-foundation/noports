@@ -16,7 +16,7 @@ on:
 env:
   SSHNP_ATSIGN: "@8incanteater"
   SSHNPD_ATSIGN: "@8052simple"
-  SSHRVD_ATSIGN: "@8485wealthy51"
+  SRVD_ATSIGN: "@8485wealthy51"
 
   PROD_AM_RVD_ATSIGN: "@rv_am"
   PROD_AP_RVD_ATSIGN: "@rv_ap"
@@ -87,7 +87,7 @@ jobs:
           sshnp_atsign: ${{ env.SSHNP_ATSIGN }}
           sshnpd: ${{ matrix.npd }}
           sshnpd_atsign: ${{ env.SSHNPD_ATSIGN }}
-          sshrvd_atsign: ${{ env[env.PROD_RVD_ATSIGN] }}
+          srvd_atsign: ${{ env[env.PROD_RVD_ATSIGN] }}
           devicename: ${{ env.DEVICENAME }}
 
       - name: Ensure entrypoints exist
@@ -95,7 +95,7 @@ jobs:
         run: |
           cat sshnp/entrypoint.sh
           cat sshnpd/entrypoint.sh
-          cat sshrvd/entrypoint.sh
+          cat srvd/entrypoint.sh
 
       - name: Create docker-compose.yaml
         working-directory: tests/end2end_tests/tests
@@ -247,7 +247,7 @@ jobs:
           sshnp_atsign: ${{ env.SSHNP_ATSIGN }}
           sshnpd: ${{ matrix.npd }}
           sshnpd_atsign: ${{ env.SSHNPD_ATSIGN }}
-          sshrvd_atsign: ${{ env[env.PROD_RVD_ATSIGN] }}
+          srvd_atsign: ${{ env[env.PROD_RVD_ATSIGN] }}
           devicename: ${{ env.DEVICENAME }}
           args: "-P 55"
 
@@ -256,7 +256,7 @@ jobs:
         run: |
           cat sshnp/entrypoint.sh
           cat sshnpd/entrypoint.sh
-          cat sshrvd/entrypoint.sh
+          cat srvd/entrypoint.sh
 
       - name: Create docker-compose.yaml
         working-directory: tests/end2end_tests/tests

@@ -1,5 +1,4 @@
-
-version: '3.8'
+version: "3.8"
 
 services:
   image-manual-branch:
@@ -31,15 +30,14 @@ services:
       - sshnpd
     depends_on:
       - image-manual-branch
-  container-sshrvd:
+  container-srvd:
     image: atsigncompany/sshnp-e2e-manual:branch
-    container_name: manual_branch_sshrvd
+    container_name: manual_branch_srvd
     volumes:
-      - ../../../tests/end2end_tests/contexts/sshrvd/.atsign/keys/:/atsign/.atsign/keys/ # mount keys
+      - ../../../tests/end2end_tests/contexts/srvd/.atsign/keys/:/atsign/.atsign/keys/ # mount keys
     network_mode: host
     depends_on:
       - image-manual-branch
-
 
 networks:
   sshnpd:

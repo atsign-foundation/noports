@@ -14,10 +14,10 @@ permissions:
 env:
   SSHNP_ATSIGN: "@8incanteater"
   SSHNPD_ATSIGN: "@8052simple"
-  SSHRVD_ATSIGN: "@8485wealthy51"
-  SSHRVD_AM_ATSIGN: "@rv_am"
-  SSHRVD_AP_ATSIGN: "@rv_ap"
-  SSHRVD_EU_ATSIGN: "@rv_eu"
+  SRVD_ATSIGN: "@8485wealthy51"
+  SRVD_AM_ATSIGN: "@rv_am"
+  SRVD_AP_ATSIGN: "@rv_ap"
+  SRVD_EU_ATSIGN: "@rv_eu"
   DOCKER_COMPOSE_BUILD_CMD: "docker compose build"
   DOCKER_COMPOSE_UP_CMD: "docker compose up --abort-on-container-exit"
 
@@ -28,10 +28,10 @@ jobs:
       fail-fast: false # if one job fails, do not fail the others
       matrix:
         rvd:
-          # - ${{ env.SSHRVD_ATSIGN }}
-          # - ${{ env.SSHRVD_AM_ATSIGN }}
-          # - ${{ env.SSHRVD_AP_ATSIGN }}
-          # - ${{ env.SSHRVD_EU_ATSIGN }}
+          # - ${{ env.SRVD_ATSIGN }}
+          # - ${{ env.SRVD_AM_ATSIGN }}
+          # - ${{ env.SRVD_AP_ATSIGN }}
+          # - ${{ env.SRVD_EU_ATSIGN }}
           - "@8485wealthy51"
           - "@rv_am"
           - "@rv_ap"
@@ -52,8 +52,8 @@ jobs:
           SSHNPD_ATKEYS="$(tr '[:lower:]' '[:upper:]' <<< '${{ env.SSHNPD_ATSIGN }}')"
           echo "SSHNPD_ATKEYS=ATKEYS_${SSHNPD_ATKEYS:1}" >> $GITHUB_ENV
 
-          SSHRVD_ATKEYS="$(tr '[:lower:]' '[:upper:]' <<< '${{ env.SSHRVD_ATSIGN }}')"
-          echo "SSHRVD_ATKEYS=ATKEYS_${SSHRVD_ATKEYS:1}" >> $GITHUB_ENV
+          SRVD_ATKEYS="$(tr '[:lower:]' '[:upper:]' <<< '${{ env.SRVD_ATSIGN }}')"
+          echo "SRVD_ATKEYS=ATKEYS_${SRVD_ATKEYS:1}" >> $GITHUB_ENV
 
       - name: Setup NP/NPD keys
         working-directory: tests/end2end_tests/contexts
@@ -84,18 +84,18 @@ jobs:
             sshnpd_entrypoint.sh
 
       - name: Set up RVD keys and entrypoint
-        if: matrix.rvd == env.SSHRVD_ATSIGN
+        if: matrix.rvd == env.SRVD_ATSIGN
         working-directory: tests/end2end_tests
         run: |
           # setup keys
-          echo "${{ secrets[env.SSHRVD_ATKEYS] }}" > contexts/sshrvd/.atsign/keys/${{ env.SSHRVD_ATSIGN }}_key.atKeys
+          echo "${{ secrets[env.SRVD_ATKEYS] }}" > contexts/srvd/.atsign/keys/${{ env.SRVD_ATSIGN }}_key.atKeys
 
-          # set up sshrvd entrypoint
+          # set up srvd entrypoint
           cd contexts/_init_
-          ./setup-sshrvd-entrypoint.sh \
+          ./setup-srvd-entrypoint.sh \
             ${{ matrix.rvd }} \
-            sshrvd_entrypoint.sh
-          cd ../sshrvd
+            srvd_entrypoint.sh
+          cd ../srvd
           cat entrypoint.sh
 
       - name: Ensure entrypoints exist
@@ -118,8 +118,8 @@ jobs:
           echo "        condition: service_started" >> docker-compose.yaml
           echo "      container-sshnpd:" >> docker-compose.yaml
           echo "        condition: service_healthy" >> docker-compose.yaml
-          if [ "${{ matrix.rvd }}" == "${{ env.SSHRVD_ATSIGN }}" ]; then
-            echo "      container-sshrvd:" >> docker-compose.yaml
+          if [ "${{ matrix.rvd }}" == "${{ env.SRVD_ATSIGN }}" ]; then
+            echo "      container-srvd:" >> docker-compose.yaml
             echo "        condition: service_healthy" >> docker-compose.yaml
           fi
           cat service-container-sshnpd.yaml >> docker-compose.yaml
@@ -127,16 +127,16 @@ jobs:
           echo "    depends_on:" >> docker-compose.yaml
           echo "      image-runtime-release:" >> docker-compose.yaml
           echo "        condition: service_started" >> docker-compose.yaml
-          if [ "${{ matrix.rvd }}" == "${{ env.SSHRVD_ATSIGN }}" ]; then
-            echo "      container-sshrvd:" >> docker-compose.yaml
+          if [ "${{ matrix.rvd }}" == "${{ env.SRVD_ATSIGN }}" ]; then
+            echo "      container-srvd:" >> docker-compose.yaml
             echo "        condition: service_healthy" >> docker-compose.yaml
           fi
 
       - name: Add RVD service to docker-compose.yaml
-        if: matrix.rvd == env.SSHRVD_ATSIGN
+        if: matrix.rvd == env.SRVD_ATSIGN
         working-directory: tests/end2end_tests/tests
         run: |
-          cat service-container-sshrvd.yaml >> docker-compose.yaml
+          cat service-container-srvd.yaml >> docker-compose.yaml
           echo "    image: atsigncompany/sshnp-e2e-runtime:latest" >> docker-compose.yaml
           echo "    depends_on:" >> docker-compose.yaml
           echo "      image-runtime-release:" >> docker-compose.yaml

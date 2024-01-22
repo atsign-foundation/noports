@@ -47,10 +47,10 @@ mkdir -p "$OUTPUT_DIR/debug"
 
 eval "$DART compile exe -o $OUTPUT_DIR/sshnpd $SRC_DIR/bin/sshnpd.dart"
 eval "$DART compile exe -o $OUTPUT_DIR/sshnp $SRC_DIR/bin/sshnp.dart"
-eval "$DART compile exe -o $OUTPUT_DIR/sshrvd $SRC_DIR/bin/sshrvd.dart"
-eval "$DART compile exe -o $OUTPUT_DIR/sshrv $SRC_DIR/bin/sshrv.dart"
+eval "$DART compile exe -o $OUTPUT_DIR/srvd $SRC_DIR/bin/srvd.dart"
+eval "$DART compile exe -o $OUTPUT_DIR/srv $SRC_DIR/bin/srv.dart"
 eval "$DART compile exe -o $OUTPUT_DIR/at_activate $SRC_DIR/bin/activate_cli.dart"
-eval "$DART compile exe -o $OUTPUT_DIR/debug/sshrvd -D ENABLE_SNOOP=true $SRC_DIR/bin/sshrvd.dart"
+eval "$DART compile exe -o $OUTPUT_DIR/debug/srvd -D ENABLE_SNOOP=true $SRC_DIR/bin/srvd.dart"
 
 cp -r "$SRC_DIR/bundles/core"/* "$OUTPUT_DIR/";
 cp -r "$SRC_DIR/bundles/shell"/* "$OUTPUT_DIR/";

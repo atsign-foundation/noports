@@ -1,6 +1,6 @@
-import 'package:noports_core/sshrv.dart';
+import 'package:noports_core/srv.dart';
 
-typedef SshrvGenerator<T> = Sshrv<T> Function(
+typedef SrvGenerator<T> = Srv<T> Function(
   String,
   int, {
   required int localPort,

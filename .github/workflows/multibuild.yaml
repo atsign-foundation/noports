@@ -55,11 +55,11 @@ jobs:
       - if: ${{ matrix.os != 'windows-latest' }}
         run: dart compile exe bin/sshnpd.dart -v -o sshnp/sshnpd${{ matrix.ext }}
       - if: ${{ matrix.os != 'windows-latest' }}
-        run: dart compile exe bin/sshrv.dart -v -o sshnp/sshrv${{ matrix.ext }}
+        run: dart compile exe bin/srv.dart -v -o sshnp/srv${{ matrix.ext }}
       - if: ${{ matrix.os != 'windows-latest' }}
-        run: dart compile exe bin/sshrvd.dart -v -o sshnp/sshrvd${{ matrix.ext }}
+        run: dart compile exe bin/srvd.dart -v -o sshnp/srvd${{ matrix.ext }}
       - if: ${{ matrix.os != 'windows-latest' }}
-        run: dart compile exe bin/sshrvd.dart -D ENABLE_SNOOP=true -v -o sshnp/debug/sshrvd${{ matrix.ext }}
+        run: dart compile exe bin/srvd.dart -D ENABLE_SNOOP=true -v -o sshnp/debug/srvd${{ matrix.ext }}
       - run: cp -r bundles/core/* sshnp/
       - run: cp -r bundles/${{ matrix.bundle }}/* sshnp/
       - run: cp LICENSE sshnp

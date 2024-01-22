@@ -10,7 +10,7 @@ import 'package:logging/logging.dart';
 import 'package:meta/meta.dart';
 import 'package:noports_core/src/common/features.dart';
 import 'package:noports_core/src/common/openssh_binary_path.dart';
-import 'package:noports_core/src/sshrv/sshrv.dart';
+import 'package:noports_core/src/srv/srv.dart';
 import 'package:noports_core/sshnpd.dart';
 import 'package:noports_core/utils.dart';
 import 'package:noports_core/src/version.dart';
@@ -501,7 +501,7 @@ class SshnpdImpl implements Sshnpd {
         remoteForwardPort: int.parse(remoteForwardPort));
   }
 
-  /// - Starts an sshrv process bridging the rvd to localhost:$localSshdPort
+  /// - Starts an srv process bridging the rvd to localhost:$localSshdPort
   /// - Generates an ephemeral keypair and adds its public key to the
   ///   `authorized_keys` file, limiting permissions (e.g. hosts and ports
   ///   which can be forwarded to) as per the `--ephemeral-permissions` option
@@ -573,7 +573,7 @@ class SshnpdImpl implements Sshnpd {
       }
       // Connect to rendezvous point using background process.
       // This program can then exit without causing an issue.
-      Process rv = await Sshrv.exec(
+      Process rv = await Srv.exec(
         host,
         port,
         localPort: localSshdPort,
@@ -624,7 +624,7 @@ class SshnpdImpl implements Sshnpd {
         atKey: _createResponseAtKey(
             requestingAtsign: requestingAtsign, sessionId: sessionId),
         value:
-            'Failed to start up the daemon side of the sshrv socket tunnel : $e',
+            'Failed to start up the daemon side of the srv socket tunnel : $e',
         sessionId: sessionId,
         checkForFinalDeliveryStatus: false,
         waitForFinalDeliveryStatus: false,
@@ -834,7 +834,7 @@ class SshnpdImpl implements Sshnpd {
     await Process.run('chmod', ['go-rwx', pemFile.absolute.path]);
 
     // When we receive notification 'sshd', WE are going to ssh to the host and port provided by sshnp
-    // which could be the host and port of a client machine, or the host and port of an sshrvd which is
+    // which could be the host and port of a client machine, or the host and port of an srvd which is
     // joined via socket connector to the client machine. Let's call it targetHostName/Port
     //
     // so: ssh username@targetHostName -p targetHostPort

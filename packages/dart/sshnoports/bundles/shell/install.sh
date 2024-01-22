@@ -53,25 +53,25 @@ usage() {
   echo "at_activate     - install at_activate"
   echo "sshnp           - install sshnp"
   echo "sshnpd          - install sshnpd"
-  echo "sshrv           - install sshrv"
-  echo "sshrvd          - install sshrvd"
+  echo "srv           - install srv"
+  echo "srvd          - install srvd"
   echo "binaries        - install all base binaries"
   echo ""
-  echo "debug_sshrvd    - install sshrvd with debugging enabled"
+  echo "debug_srvd    - install srvd with debugging enabled"
   echo "debug           - install all debug binaries"
   echo ""
   echo "all             - install all binaries (base and debug)"
   if ! is_darwin; then
     echo ""
     echo "systemd <unit>  - install a systemd unit"
-    echo "                  available units: [sshnpd, sshrvd]"
+    echo "                  available units: [sshnpd, srvd]"
   fi
   echo ""
   echo "headless <job>  - install a headless cron job"
-  echo "                  available jobs: [sshnpd, sshrvd]"
+  echo "                  available jobs: [sshnpd, srvd]"
   echo ""
   echo "tmux <service>  - install a service in a tmux session"
-  echo "                  available services: [sshnpd, sshrvd]"
+  echo "                  available services: [sshnpd, srvd]"
 }
 
 # SETUP AUTHORIZED KEYS #
@@ -104,8 +104,8 @@ install_base_binaries() {
   install_single_binary "at_activate"
   install_single_binary "sshnp"
   install_single_binary "sshnpd"
-  install_single_binary "sshrv"
-  install_single_binary "sshrvd"
+  install_single_binary "srv"
+  install_single_binary "srvd"
 }
 
 install_debug_binary() {
@@ -120,7 +120,7 @@ install_debug_binary() {
 }
 
 install_debug_binaries() {
-  install_debug_binary "sshrvd"
+  install_debug_binary "srvd"
 }
 
 install_all_binaries() {
@@ -153,14 +153,14 @@ install_systemd_unit() {
 install_systemd_sshnpd() {
   root_only
   install_single_binary "sshnpd"
-  install_single_binary "sshrv"
+  install_single_binary "srv"
   install_systemd_unit "sshnpd.service"
 }
 
-install_systemd_sshrvd() {
+install_systemd_srvd() {
   root_only
-  install_single_binary "sshrvd"
-  install_systemd_unit "sshrvd.service"
+  install_single_binary "srvd"
+  install_systemd_unit "srvd.service"
 }
 
 systemd() {
@@ -172,7 +172,7 @@ systemd() {
   case "$1" in
     --help) usage; exit 0;;
     sshnpd) install_systemd_sshnpd;;
-    sshrvd) install_systemd_sshrvd;;
+    srvd) install_systemd_srvd;;
     *)
       echo "Unknown systemd unit: $1";
       usage;
@@ -234,20 +234,20 @@ install_headless_job() {
 
 install_headless_sshnpd() {
   install_single_binary "sshnpd"
-  install_single_binary "sshrv"
+  install_single_binary "srv"
   install_headless_job "sshnpd"
 }
 
-install_headless_sshrvd() {
-  install_single_binary "sshrvd"
-  install_headless_job "sshrvd"
+install_headless_srvd() {
+  install_single_binary "srvd"
+  install_headless_job "srvd"
 }
 
 headless() {
   case "$1" in
     --help|'') usage; exit 0;;
     sshnpd) install_headless_sshnpd;;
-    sshrvd) install_headless_sshrvd;;
+    srvd) install_headless_srvd;;
     *)
       echo "Unknown headless job: $1";
       usage;
@@ -302,20 +302,20 @@ install_tmux_service() {
 
 install_tmux_sshnpd() {
   install_single_binary "sshnpd"
-  install_single_binary "sshrv"
+  install_single_binary "srv"
   install_tmux_service "sshnpd"
 }
 
-install_tmux_sshrvd() {
-  install_single_binary "sshrvd"
-  install_tmux_service "sshrvd"
+install_tmux_srvd() {
+  install_single_binary "srvd"
+  install_tmux_service "srvd"
 }
 
 tmux() {
   case "$1" in
     --help|'') usage; exit 0;;
     sshnpd) install_tmux_sshnpd;;
-    sshrvd) install_tmux_sshrvd;;
+    srvd) install_tmux_srvd;;
     *)
       echo "Unknown tmux service: $1";
       usage;
@@ -333,9 +333,9 @@ main() {
 
   case "$1" in
     --help|'') usage; exit 0;;
-    at_activate|sshnp|sshnpd|sshrv|sshrvd) install_single_binary "$1";;
+    at_activate|sshnp|sshnpd|srv|srvd) install_single_binary "$1";;
     binaries) install_base_binaries;;
-    debug_sshrvd) install_debug_sshrvd;;
+    debug_srvd) install_debug_srvd;;
     debug) install_debug_binaries;;
     all) install_all_binaries;;
     systemd|headless|tmux)

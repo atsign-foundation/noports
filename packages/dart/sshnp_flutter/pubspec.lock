@@ -77,10 +77,10 @@ packages:
     dependency: transitive
     description:
       name: at_client
-      sha256: dbb841c6f26d47a77605606aa82c67570990b2c07baa3e630ed931efb8747331
+      sha256: "41c5028179a1e765084ab85fcb6582640252b90421c4a4c37818d346e1d8ef9b"
       url: "https://pub.dev"
     source: hosted
-    version: "3.0.69"
+    version: "3.0.72"
   at_client_mobile:
     dependency: "direct main"
     description:
@@ -747,7 +747,7 @@ packages:
       path: "../noports_core"
       relative: true
     source: path
-    version: "5.0.4"
+    version: "5.1.0"
   openssh_ed25519:
     dependency: transitive
     description:

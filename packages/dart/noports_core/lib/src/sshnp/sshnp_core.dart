@@ -10,7 +10,7 @@ import 'package:noports_core/src/common/mixins/at_client_bindings.dart';
 import 'package:noports_core/src/common/default_args.dart';
 import 'package:noports_core/src/sshnp/util/sshnp_ssh_key_handler/sshnp_ssh_key_handler.dart';
 import 'package:noports_core/src/sshnp/util/sshnpd_channel/sshnpd_channel.dart';
-import 'package:noports_core/src/sshnp/util/sshrvd_channel/sshrvd_channel.dart';
+import 'package:noports_core/src/sshnp/util/srvd_channel/srvd_channel.dart';
 import 'package:noports_core/sshnp.dart';
 import 'package:uuid/uuid.dart';
 
@@ -53,9 +53,9 @@ abstract class SshnpCore
 
   // * Communication Channels
 
-  /// The channel to communicate with the sshrvd (host)
+  /// The channel to communicate with the srvd (host)
   @protected
-  SshrvdChannel get sshrvdChannel;
+  SrvdChannel get srvdChannel;
 
   /// The channel to communicate with the sshnpd (daemon)
   @protected
@@ -121,8 +121,8 @@ abstract class SshnpCore
     /// Shares the public key if required
     await sshnpdChannel.sharePublicKeyIfRequired(identityKeyPair);
 
-    /// Retrieve the sshrvd host and port pair
-    await sshrvdChannel.callInitialization();
+    /// Retrieve the srvd host and port pair
+    await srvdChannel.callInitialization();
   }
 
   @override
