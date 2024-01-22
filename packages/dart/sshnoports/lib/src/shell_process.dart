@@ -18,7 +18,7 @@ class ChildProcessAsSshnpRemoteProcess implements SshnpRemoteProcess {
   StreamSink<List<int>> get stdin => process.stdin;
 
   @override
-  Stream<List<int>> get stdout => throw UnimplementedError();
+  Stream<List<int>> get stdout => process.stdout;
 }
 
 Future<void> runShellSession(SshnpRemoteProcess shell) async {
