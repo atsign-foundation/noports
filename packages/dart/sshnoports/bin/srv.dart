@@ -7,20 +7,19 @@ import 'package:sshnoports/src/print_version.dart';
 
 Future<void> main(List<String> args) async {
   final ArgParser parser = ArgParser()
-    ..addOption(
-        'host', abbr: 'h', mandatory: true, help: 'rvd host')..addOption(
-        'port', abbr: 'p', mandatory: true, help: 'rvd port')..addOption(
-        'local-port',
+    ..addOption('host', abbr: 'h', mandatory: true, help: 'rvd host')
+    ..addOption('port', abbr: 'p', mandatory: true, help: 'rvd port')
+    ..addOption('local-port',
         defaultsTo: '22',
         help: 'Local port (usually the sshd port) to bridge to; defaults to 22')
     ..addFlag('bind-local-port',
         defaultsTo: false,
         negatable: false,
-        help: 'Set this flag when we are bridging from a local sender')..addFlag(
-        'rv-auth',
+        help: 'Set this flag when we are bridging from a local sender')
+    ..addFlag('rv-auth',
         defaultsTo: false,
-        help: 'Whether this rv process will authenticate to rvd')..addFlag(
-        'rv-e2ee',
+        help: 'Whether this rv process will authenticate to rvd')
+    ..addFlag('rv-e2ee',
         defaultsTo: false,
         help: 'Whether this rv process will encrypt/decrypt'
             ' all rvd socket traffic');
@@ -41,14 +40,21 @@ Future<void> main(List<String> args) async {
     final bool rvE2ee = parsed['rv-e2ee'];
 
     String? rvdAuthString = rvAuth ? Platform.environment['RV_AUTH'] : null;
-    String? sessionAESKeyString = rvE2ee
-        ? Platform.environment['RV_AES']
-        : null;
+    String? sessionAESKeyString =
+        rvE2ee ? Platform.environment['RV_AES'] : null;
     String? sessionIVString = rvE2ee ? Platform.environment['RV_IV'] : null;
 
     if (rvAuth && (rvdAuthString ?? '').isEmpty) {
       throw ArgumentError(
           '--rv-auth required, but RV_AUTH is not in environment');
+    }
+    if (rvE2ee && (sessionAESKeyString ?? '').isEmpty) {
+      throw ArgumentError(
+          '--rv-e2ee required, but RV_AES is not in environment');
+    }
+    if (rvE2ee && (sessionIVString ?? '').isEmpty) {
+      throw ArgumentError(
+          '--rv-e2ee required, but RV_IV is not in environment');
     }
     SocketConnector connector = await Srv.dart(
       host,
