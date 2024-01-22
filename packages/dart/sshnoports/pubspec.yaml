@@ -10,13 +10,9 @@ dependencies:
   noports_core: 5.1.0
   at_onboarding_cli: 1.4.1
   args: 2.4.2
-  socket_connector: ^2.0.0
+  socket_connector: ^2.0.1
 
 dependency_overrides:
-  socket_connector:
-    git:
-      url: https://github.com/gkc/socket_connector.git
-      ref: socket-authenticator-option
   noports_core:
     path: ../noports_core
   # Pin the dependencies of noports_core

@@ -237,10 +237,10 @@ packages:
     dependency: transitive
     description:
       name: chalkdart
-      sha256: "5fceaf0eb65cb3a0746423aad4b285b9ec123133b9435630ac027f305b21e8b5"
+      sha256: "0b7ec5c6a6bafd1445500632c00c573722bd7736e491675d4ac3fe560bbd9cfe"
       url: "https://pub.dev"
     source: hosted
-    version: "2.0.9"
+    version: "2.2.1"
   charcode:
     dependency: transitive
     description:
@@ -715,12 +715,11 @@ packages:
   socket_connector:
     dependency: "direct main"
     description:
-      path: "."
-      ref: socket-authenticator-option
-      resolved-ref: ed751077eaa4fa081773720c69916deb6077cd09
-      url: "https://github.com/gkc/socket_connector.git"
-    source: git
-    version: "2.0.0"
+      name: socket_connector
+      sha256: "7a063478d8a191447c297d480bf344179b239c52063f13f47d71acbaf4941064"
+      url: "https://pub.dev"
+    source: hosted
+    version: "2.0.1"
   source_map_stack_trace:
     dependency: transitive
     description:
