@@ -3,7 +3,7 @@ import 'dart:io';
 import 'package:noports_core/src/srv/srv_impl.dart';
 import 'package:socket_connector/socket_connector.dart';
 
-abstract class Sshrv<T> {
+abstract class Srv<T> {
   /// The internet address of the host to connect to.
   abstract final String host;
 
@@ -28,8 +28,8 @@ abstract class Sshrv<T> {
 
   Future<T> run();
 
-  // Can't use factory functions since SSHRV contains a generic type
-  static Sshrv<Process> exec(
+  // Can't use factory functions since Srv contains a generic type
+  static Srv<Process> exec(
     String host,
     int streamingPort, {
     required int localPort,
@@ -38,7 +38,7 @@ abstract class Sshrv<T> {
     String? sessionAESKeyString,
     String? sessionIVString,
   }) {
-    return SshrvImplExec(
+    return SrvImplExec(
       host,
       streamingPort,
       localPort: localPort,
@@ -49,7 +49,7 @@ abstract class Sshrv<T> {
     );
   }
 
-  static Sshrv<SocketConnector> dart(
+  static Srv<SocketConnector> dart(
     String host,
     int streamingPort, {
     required int localPort,
@@ -58,7 +58,7 @@ abstract class Sshrv<T> {
     String? sessionAESKeyString,
     String? sessionIVString,
   }) {
-    return SshrvImplDart(
+    return SrvImplDart(
       host,
       streamingPort,
       localPort: localPort,
@@ -70,6 +70,15 @@ abstract class Sshrv<T> {
   }
 
   static Future<String?> getLocalBinaryPath() async {
+    List<String> binaryNames = ['srv', 'sshrv'];
+    for (var name in binaryNames) {
+      var binary = await _getBinaryPathByName(name);
+      if (binary != null) return binary;
+    }
+    return null;
+  }
+
+  static Future<String?> _getBinaryPathByName(String name) async {
     String postfix = Platform.isWindows ? '.exe' : '';
     List<String> pathList =
         Platform.resolvedExecutable.split(Platform.pathSeparator);
@@ -78,10 +87,10 @@ abstract class Sshrv<T> {
 
     pathList
       ..removeLast()
-      ..add('sshrv$postfix');
+      ..add('$name$postfix');
 
-    File sshrvFile = File(pathList.join(Platform.pathSeparator));
-    bool sshrvExists = await sshrvFile.exists();
-    return (isExe && sshrvExists) ? sshrvFile.absolute.path : null;
+    File binaryName = File(pathList.join(Platform.pathSeparator));
+    bool binaryExists = await binaryName.exists();
+    return (isExe && binaryExists) ? binaryName.absolute.path : null;
   }
 }
