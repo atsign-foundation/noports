@@ -24,6 +24,6 @@ void printDeviceList(Iterable<String> devices, Map<String, dynamic> info) {
     return;
   }
   for (var device in devices) {
-    stderr.writeln('  $device - v${info[device]?['version']}');
+    stderr.writeln('  $device - v${info[device]?['version']} (core v${info[device]?['corePackageVersion']})');
   }
 }

@@ -23,7 +23,7 @@ void main(List<String> args) async {
       ),
       usageCallback: (e, s) {
         printVersion();
-        stdout.writeln(SrvdParams.parser.usage);
+        stderr.writeln(SrvdParams.parser.usage);
         stderr.writeln('\n$e');
       },
     );

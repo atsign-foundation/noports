@@ -4,6 +4,7 @@ import 'package:at_utils/at_logger.dart';
 import 'package:noports_core/sshnpd.dart';
 import 'package:sshnoports/src/create_at_client_cli.dart';
 import 'package:sshnoports/src/print_version.dart';
+import 'package:sshnoports/src/version.dart';
 
 void main(List<String> args) async {
   AtSignLogger.root_level = 'SHOUT';
@@ -22,9 +23,10 @@ void main(List<String> args) async {
       ),
       usageCallback: (e, s) {
         printVersion();
-        stdout.writeln(SshnpdParams.parser.usage);
+        stderr.writeln(SshnpdParams.parser.usage);
         stderr.writeln('\n$e');
       },
+      version: packageVersion,
     );
   } on ArgumentError catch (_) {
     exit(1);

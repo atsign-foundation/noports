@@ -4,5 +4,5 @@ import 'package:sshnoports/src/version.dart';
 
 /// Print version number
 void printVersion() {
-  stdout.writeln('Version : $packageVersion');
+  stderr.writeln('Version : $packageVersion');
 }
