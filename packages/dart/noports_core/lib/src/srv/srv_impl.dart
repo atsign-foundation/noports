@@ -35,7 +35,7 @@ class SrvImplExec implements Srv<Process> {
   final String? sessionIVString;
 
   @visibleForTesting
-  static const completionString = 'rv is running';
+  static const completionString = 'rv started successfully';
 
   SrvImplExec(
     this.host,
@@ -220,7 +220,11 @@ class SrvImplDart implements Srv<SocketConnector> {
       }
 
       // Do not remove this output; it is specifically looked for in
-      // SrvImplExec.run
+      // [SrvImplExec.run]. Why, you ask? Well, we have to wait until the srv
+      // has fully started - i.e. on the daemon side, established two outbound
+      // sockets, and on the client side, established one outbound socket and
+      // bound to a port. Looking for specific output when the rv is ready to
+      // do its job seems to be the only way to do this.
       stderr.writeln(SrvImplExec.completionString);
 
       return socketConnector;
