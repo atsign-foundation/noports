@@ -1,13 +1,13 @@
 #!/bin/bash
 
-# this script copies the template sshrvd entrypoint to ../sshrvd/entrypoint.sh
-# then also replaces the @sshrvdatsign with the provided argument (e.g. @alice)
-# example usage: ./setup-sshrvd-entrypoint.sh @alice
+# this script copies the template srvd entrypoint to ../srvd/entrypoint.sh
+# then also replaces the @srvdatsign with the provided argument (e.g. @alice)
+# example usage: ./setup-srvd-entrypoint.sh @alice
 
-sshrvd=$1 # e.g. @alice
-template_name=$2 # e.g. "sshrvd_entrypoint.sh"
+srvd=$1 # e.g. @alice
+template_name=$2 # e.g. "srvd_entrypoint.sh"
 
-cp ../../entrypoints/"$template_name" ../sshrvd/entrypoint.sh # copy template to the mounted folder
+cp ../../entrypoints/"$template_name" ../srvd/entrypoint.sh # copy template to the mounted folder
 
 prefix="sed -i"
 
@@ -17,4 +17,4 @@ then
     prefix="$prefix ''"
 fi
 
-eval "$prefix" "s/@sshrvdatsign/${sshrvd}/g" ../sshrvd/entrypoint.sh
+eval "$prefix" "s/@srvdatsign/${srvd}/g" ../srvd/entrypoint.sh

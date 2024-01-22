@@ -252,7 +252,7 @@ class SSHNPClient:
                 f"dart compile exe {target_path}/bin/sshnpd.dart -o {target_path}/sshnpd"
             )
             self.client.run_command(
-                f"dart compile exe {target_path}/bin/sshrv.dart -o {target_path}/sshrv"
+                f"dart compile exe {target_path}/bin/srv.dart -o {target_path}/srv"
             )
             self.client.run_command(
                 f"dart compile exe {target_path}/bin/activate_cli.dart -o {target_path}/at_activate"
@@ -280,7 +280,7 @@ class SSHNPClient:
         if not self.is_connected():
             raise Exception("SSHNPClient not connected to device")
 
-        binaries = "{" + ",".join(["sshnpd", "sshrv", "at_activate"]) + "}"
+        binaries = "{" + ",".join(["sshnpd", "srv", "at_activate"]) + "}"
         self.client.exec_command(f"cp -f {source}/{binaries} ~/.local/bin/")
 
     def update_sshnpd(self, source: PackageSource) -> None:

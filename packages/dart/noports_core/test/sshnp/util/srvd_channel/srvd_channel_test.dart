@@ -14,16 +14,16 @@ import '../../sshnp_mocks.dart';
 import 'srvd_channel_mocks.dart';
 
 void main() {
-  group('SshrvdChannel', () {
-    late SshrvGeneratorStub<String> sshrvGeneratorStub;
+  group('SrvdChannel', () {
+    late SrvGeneratorStub<String> srvGeneratorStub;
     late MockAtClient mockAtClient;
     late StreamController<AtNotification> notificationStreamController;
     late NotifyStub notifyStub;
     late SubscribeStub subscribeStub;
     late MockSshnpParams mockParams;
     late String sessionId;
-    late StubbedSshrvdChannel stubbedSshrvdChannel;
-    late MockSshrv<String> mockSshrv;
+    late StubbedSrvdChannel stubbedSrvdChannel;
+    late MockSrv<String> mockSrv;
 
     // Invocation patterns as closures so they can be referred to by name
     // instead of explicitly writing these calls several times in the test
@@ -38,14 +38,14 @@ void main() {
           regex: any(named: 'regex'),
           shouldDecrypt: any(named: 'shouldDecrypt'),
         );
-    sshrvGeneratorInvocation() => sshrvGeneratorStub(any(), any(),
+    srvGeneratorInvocation() => srvGeneratorStub(any(), any(),
         localPort: any(named: 'localPort'),
         bindLocalPort: any(named: 'bindLocalPort'),
         rvdAuthString: any(named: 'rvdAuthString'));
-    sshrvRunInvocation() => mockSshrv.run();
+    srvRunInvocation() => mockSrv.run();
 
     setUp(() {
-      sshrvGeneratorStub = SshrvGeneratorStub();
+      srvGeneratorStub = SrvGeneratorStub();
       mockAtClient = MockAtClient();
       notificationStreamController = StreamController();
       notifyStub = NotifyStub();
@@ -53,13 +53,13 @@ void main() {
       mockParams = MockSshnpParams();
       when(() => mockParams.verbose).thenReturn(false);
       sessionId = Uuid().v4();
-      mockSshrv = MockSshrv();
+      mockSrv = MockSrv();
 
-      stubbedSshrvdChannel = StubbedSshrvdChannel<String>(
+      stubbedSrvdChannel = StubbedSrvdChannel<String>(
         atClient: mockAtClient,
         params: mockParams,
         sessionId: sessionId,
-        sshrvGenerator: sshrvGeneratorStub,
+        srvGenerator: srvGeneratorStub,
         notify: notifyStub,
         subscribe: subscribeStub,
       );
@@ -83,27 +83,27 @@ void main() {
       // members which do not need further tests
 
       // Base type
-      expect(stubbedSshrvdChannel, isA<SshrvdChannel<String>>());
-      expect(stubbedSshrvdChannel, isA<AsyncInitialization>());
-      expect(stubbedSshrvdChannel, isA<AtClientBindings>());
+      expect(stubbedSrvdChannel, isA<SrvdChannel<String>>());
+      expect(stubbedSrvdChannel, isA<AsyncInitialization>());
+      expect(stubbedSrvdChannel, isA<AtClientBindings>());
 
       // final params
-      expect(stubbedSshrvdChannel.logger, isA<AtSignLogger>());
+      expect(stubbedSrvdChannel.logger, isA<AtSignLogger>());
       expect(
-        stubbedSshrvdChannel.sshrvGenerator,
+        stubbedSrvdChannel.srvGenerator,
         isA<
             Srv<String> Function(String, int,
                 {required int localPort,
                 required bool bindLocalPort,
                 String? rvdAuthString})>(),
       );
-      expect(stubbedSshrvdChannel.atClient, mockAtClient);
-      expect(stubbedSshrvdChannel.params, mockParams);
-      expect(stubbedSshrvdChannel.sessionId, sessionId);
+      expect(stubbedSrvdChannel.atClient, mockAtClient);
+      expect(stubbedSrvdChannel.params, mockParams);
+      expect(stubbedSrvdChannel.sessionId, sessionId);
     }); // test public API
 
-    whenInitializationWithSshrvdHost() {
-      when(() => mockParams.host).thenReturn('@sshrvd');
+    whenInitializationWithSrvdHost() {
+      when(() => mockParams.host).thenReturn('@srvd');
       when(() => mockParams.device).thenReturn('mydevice');
       when(() => mockParams.clientAtSign).thenReturn('@client');
       when(() => mockParams.sshnpdAtSign).thenReturn('@sshnpd');
@@ -126,7 +126,7 @@ void main() {
             AtNotification.empty()
               ..id = Uuid().v4()
               ..key = '$sessionId.${Srvd.namespace}'
-              ..from = '@sshrvd'
+              ..from = '@srvd'
               ..to = '@client'
               ..epochMillis = DateTime.now().millisecondsSinceEpoch
               ..value = '$testIp,$portA,$portB,$rvdSessionNonce',
@@ -135,16 +135,16 @@ void main() {
       );
     }
 
-    test('Initialization - sshrvd host', () async {
+    test('Initialization - srvd host', () async {
       /// Set the required parameters
-      whenInitializationWithSshrvdHost();
-      expect(stubbedSshrvdChannel.sshrvdAck, SshrvdAck.notAcknowledged);
-      expect(stubbedSshrvdChannel.initializeStarted, false);
+      whenInitializationWithSrvdHost();
+      expect(stubbedSrvdChannel.srvdAck, SrvdAck.notAcknowledged);
+      expect(stubbedSrvdChannel.initializeStarted, false);
 
       verifyNever(subscribeInvocation);
       verifyNever(notifyInvocation);
 
-      await expectLater(stubbedSshrvdChannel.initialize(), completes);
+      await expectLater(stubbedSrvdChannel.initialize(), completes);
 
       verifyInOrder([
         () => subscribeStub(
@@ -152,11 +152,11 @@ void main() {
         () => notifyStub(
               any<AtKey>(
                 that: predicate(
-                  // Predicate matching specifically the sshrvdIdKey format
+                  // Predicate matching specifically the srvdIdKey format
                   (AtKey key) =>
                       key.key == 'mydevice.request_ports.${Srvd.namespace}' &&
                       key.sharedBy == '@client' &&
-                      key.sharedWith == '@sshrvd' &&
+                      key.sharedWith == '@srvd' &&
                       key.metadata != null &&
                       key.metadata!.namespaceAware == false &&
                       key.metadata!.ttl == 10000,
@@ -173,65 +173,65 @@ void main() {
       verifyNever(subscribeInvocation);
       verifyNever(notifyInvocation);
 
-      expect(stubbedSshrvdChannel.sshrvdAck, SshrvdAck.acknowledged);
-      expect(stubbedSshrvdChannel.host, '123.123.123.123');
-      expect(stubbedSshrvdChannel.port, 10456);
-      expect(stubbedSshrvdChannel.sshrvdPort, 10789);
-    }); // test Initialization - sshrvd host
+      expect(stubbedSrvdChannel.srvdAck, SrvdAck.acknowledged);
+      expect(stubbedSrvdChannel.host, '123.123.123.123');
+      expect(stubbedSrvdChannel.port, 10456);
+      expect(stubbedSrvdChannel.srvdPort, 10789);
+    }); // test Initialization - srvd host
 
-    test('Initialization - non-sshrvd host', () async {
+    test('Initialization - non-srvd host', () async {
       when(() => mockParams.host).thenReturn('234.234.234.234');
       when(() => mockParams.port).thenReturn(135);
 
-      await expectLater(stubbedSshrvdChannel.initialize(), completes);
+      await expectLater(stubbedSrvdChannel.initialize(), completes);
 
-      expect(stubbedSshrvdChannel.host, '234.234.234.234');
-      expect(stubbedSshrvdChannel.port, 135);
-    }); // test Initialization - non-sshrvd host
+      expect(stubbedSrvdChannel.host, '234.234.234.234');
+      expect(stubbedSrvdChannel.port, 135);
+    }); // test Initialization - non-srvd host
 
-    test('Initialization completes - sshrvd host', () async {
+    test('Initialization completes - srvd host', () async {
       /// Set the required parameters
-      whenInitializationWithSshrvdHost();
-      await expectLater(stubbedSshrvdChannel.callInitialization(), completes);
-      await expectLater(stubbedSshrvdChannel.initialized, completes);
+      whenInitializationWithSrvdHost();
+      await expectLater(stubbedSrvdChannel.callInitialization(), completes);
+      await expectLater(stubbedSrvdChannel.initialized, completes);
     });
 
-    test('Initialization completes - non-sshrvd host', () async {
+    test('Initialization completes - non-srvd host', () async {
       when(() => mockParams.host).thenReturn('234.234.234.234');
       when(() => mockParams.port).thenReturn(135);
 
-      await expectLater(stubbedSshrvdChannel.callInitialization(), completes);
-      await expectLater(stubbedSshrvdChannel.initialized, completes);
-    }); // test Initialization - non-sshrvd host
+      await expectLater(stubbedSrvdChannel.callInitialization(), completes);
+      await expectLater(stubbedSrvdChannel.initialized, completes);
+    }); // test Initialization - non-srvd host
 
-    test('runSshrv', () async {
-      whenInitializationWithSshrvdHost();
+    test('runSrv', () async {
+      whenInitializationWithSrvdHost();
 
-      await expectLater(stubbedSshrvdChannel.callInitialization(), completes);
-      expect(stubbedSshrvdChannel.sshrvdAck, SshrvdAck.acknowledged);
-      await expectLater(stubbedSshrvdChannel.initialized, completes);
+      await expectLater(stubbedSrvdChannel.callInitialization(), completes);
+      expect(stubbedSrvdChannel.srvdAck, SrvdAck.acknowledged);
+      await expectLater(stubbedSrvdChannel.initialized, completes);
       // Initialization should be complete
-      // Begin test for [runSshrv()]
+      // Begin test for [runSrv()]
 
       when(() => mockParams.localSshdPort).thenReturn(23);
-      when(sshrvGeneratorInvocation).thenReturn(mockSshrv);
-      when(sshrvRunInvocation).thenAnswer((_) async => 'called sshrv run');
+      when(srvGeneratorInvocation).thenReturn(mockSrv);
+      when(srvRunInvocation).thenAnswer((_) async => 'called srv run');
 
-      verifyNever(sshrvGeneratorInvocation);
-      verifyNever(sshrvRunInvocation);
+      verifyNever(srvGeneratorInvocation);
+      verifyNever(srvRunInvocation);
 
       await expectLater(
-        await stubbedSshrvdChannel.runSshrv(directSsh: false),
-        'called sshrv run',
+        await stubbedSrvdChannel.runSrv(directSsh: false),
+        'called srv run',
       );
 
       verifyInOrder([
-        sshrvGeneratorInvocation,
-        sshrvRunInvocation,
+        srvGeneratorInvocation,
+        srvRunInvocation,
       ]);
 
-      verifyNever(sshrvGeneratorInvocation);
-      verifyNever(sshrvRunInvocation);
-    }); // test runSshrv
-  }); // group SshrvdChannel
+      verifyNever(srvGeneratorInvocation);
+      verifyNever(srvRunInvocation);
+    }); // test runSrv
+  }); // group SrvdChannel
 }

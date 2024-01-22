@@ -15,8 +15,8 @@ inputs:
   sshnpd_atsign:
     description: sshnpd atsign
     required: true
-  sshrvd_atsign:
-    description: sshrvd atsign
+  srvd_atsign:
+    description: srvd atsign
     required: true
   devicename:
     description: Unique sshnp devicename
@@ -52,7 +52,7 @@ runs:
             esac
             ;;
         esac
-        ./setup-sshnp-entrypoint.sh ${{ inputs.devicename }} ${{ inputs.sshnp_atsign }} ${{ inputs.sshnpd_atsign }} ${{ inputs.sshrvd_atsign }} "$entrypoint_filename" "$args ${{ inputs.args }}"
+        ./setup-sshnp-entrypoint.sh ${{ inputs.devicename }} ${{ inputs.sshnp_atsign }} ${{ inputs.sshnpd_atsign }} ${{ inputs.srvd_atsign }} "$entrypoint_filename" "$args ${{ inputs.args }}"
 
     - name: Setup NPD entrypoint
       shell: bash
@@ -73,4 +73,4 @@ runs:
       shell: bash
       working-directory: tests/end2end_tests/contexts/_init_
       run: |
-        ./setup-sshrvd-entrypoint.sh ${{ inputs.sshrvd_atsign }} "sshrvd_entrypoint.sh"
+        ./setup-srvd-entrypoint.sh ${{ inputs.srvd_atsign }} "srvd_entrypoint.sh"

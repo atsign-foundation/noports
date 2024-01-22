@@ -8,14 +8,14 @@ import 'package:sshnoports/src/print_version.dart';
 void main(List<String> args) async {
   AtSignLogger.root_level = 'SHOUT';
   AtSignLogger.defaultLoggingHandler = AtSignLogger.stdErrLoggingHandler;
-  late final Srvd sshrvd;
+  late final Srvd srvd;
 
   try {
-    sshrvd = await Srvd.fromCommandLineArgs(
+    srvd = await Srvd.fromCommandLineArgs(
       args,
-      atClientGenerator: (SshrvdParams p) => createAtClientCli(
+      atClientGenerator: (SrvdParams p) => createAtClientCli(
         homeDirectory: p.homeDirectory,
-        subDirectory: '.sshrvd',
+        subDirectory: '.srvd',
         atsign: p.atSign,
         atKeysFilePath: p.atKeysFilePath,
         namespace: Srvd.namespace,
@@ -23,7 +23,7 @@ void main(List<String> args) async {
       ),
       usageCallback: (e, s) {
         printVersion();
-        stdout.writeln(SshrvdParams.parser.usage);
+        stdout.writeln(SrvdParams.parser.usage);
         stderr.writeln('\n$e');
       },
     );
@@ -32,8 +32,8 @@ void main(List<String> args) async {
   }
 
   await runZonedGuarded(() async {
-    await sshrvd.init();
-    await sshrvd.run();
+    await srvd.init();
+    await srvd.run();
   }, (Object error, StackTrace stackTrace) async {
     stderr.writeln('Error: ${error.toString()}');
     stderr.writeln('Stack Trace: ${stackTrace.toString()}');

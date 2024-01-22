@@ -13,7 +13,7 @@ RestartSec=3
 # ExecStartPre=/bin/sleep 10
 
 # TODO : set atsign, internet_address
-ExecStart=/usr/local/bin/sshrvd -a <@atsign> -i <internet_address>
+ExecStart=/usr/local/bin/srvd -a <@atsign> -i <internet_address>
 
 [Install]
 WantedBy=multi-user.target

@@ -4,7 +4,7 @@ import 'package:noports_core/sshnp_foundation.dart';
 import 'package:noports_core/srv.dart';
 
 /// Stubbing for [SrvGenerator] typedef
-abstract class SshrvGeneratorCaller<T> {
+abstract class SrvGeneratorCaller<T> {
   Srv<T> call(
     String host,
     int port, {
@@ -16,12 +16,12 @@ abstract class SshrvGeneratorCaller<T> {
   });
 }
 
-class SshrvGeneratorStub<T> extends Mock implements SshrvGeneratorCaller<T> {}
+class SrvGeneratorStub<T> extends Mock implements SrvGeneratorCaller<T> {}
 
-class MockSshrv<T> extends Mock implements Srv<T> {}
+class MockSrv<T> extends Mock implements Srv<T> {}
 
-/// Stubbed [SshrvdChannel] which we are testing
-class StubbedSshrvdChannel<T> extends SshrvdChannel<T> {
+/// Stubbed [SrvdChannel] which we are testing
+class StubbedSrvdChannel<T> extends SrvdChannel<T> {
   final Future<void> Function(
     AtKey,
     String, {
@@ -31,11 +31,11 @@ class StubbedSshrvdChannel<T> extends SshrvdChannel<T> {
   final Stream<AtNotification> Function({String? regex, bool shouldDecrypt})?
       _subscribe;
 
-  StubbedSshrvdChannel({
+  StubbedSrvdChannel({
     required super.atClient,
     required super.params,
     required super.sessionId,
-    required super.sshrvGenerator,
+    required super.srvGenerator,
     Future<void> Function(
       AtKey,
       String, {

@@ -14,7 +14,7 @@ void main() {
     notification.key = 'test.${Srvd.namespace}';
   });
 
-  test('sshrvd should accept notification in new request_ports format', () {
+  test('srvd should accept notification in new request_ports format', () {
     // Create a notification in rvd namespace
     AtNotification notification = AtNotification.empty();
     notification.key = 'request_ports.test.${Srvd.namespace}';
@@ -22,7 +22,7 @@ void main() {
   });
 
   test(
-      'sshrvd backwards compatibility test - should handle both legacy and new messages in JSON format',
+      'srvd backwards compatibility test - should handle both legacy and new messages in JSON format',
       () async {
     Map m = {};
     m['session'] = 'hello';

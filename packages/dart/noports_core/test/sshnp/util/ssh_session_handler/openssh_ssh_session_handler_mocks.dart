@@ -46,9 +46,9 @@ class StubbedSshnp extends SshnpCore
     required super.atClient,
     required super.params,
     required SshnpdChannel sshnpdChannel,
-    required SshrvdChannel sshrvdChannel,
+    required SrvdChannel srvdChannel,
   })  : _sshnpdChannel = sshnpdChannel,
-        _sshrvdChannel = sshrvdChannel;
+        _srvdChannel = srvdChannel;
 
   @override
   AtSshKeyPair? get identityKeyPair => throw UnimplementedError();
@@ -64,8 +64,8 @@ class StubbedSshnp extends SshnpCore
   final SshnpdChannel _sshnpdChannel;
 
   @override
-  SshrvdChannel get sshrvdChannel => _sshrvdChannel;
-  final SshrvdChannel _sshrvdChannel;
+  SrvdChannel get srvdChannel => _srvdChannel;
+  final SrvdChannel _srvdChannel;
 
   @override
   Future<Process?> startUserSession({required Process? tunnelSession}) {

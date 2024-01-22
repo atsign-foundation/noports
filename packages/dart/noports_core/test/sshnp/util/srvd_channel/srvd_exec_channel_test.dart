@@ -7,7 +7,7 @@ import 'package:uuid/uuid.dart';
 import '../../sshnp_mocks.dart';
 
 void main() {
-  group('SshrvdExecChannel', () {
+  group('SrvdExecChannel', () {
     late MockAtClient mockAtClient;
     late MockSshnpParams mockSshnpParams;
     late String sessionId;
@@ -21,13 +21,13 @@ void main() {
     });
     test('public API', () {
       expect(
-        SshrvdExecChannel(
+        SrvdExecChannel(
           atClient: mockAtClient,
           params: mockSshnpParams,
           sessionId: sessionId,
         ),
-        isA<SshrvdChannel<Process>>(),
+        isA<SrvdChannel<Process>>(),
       );
     });
-  }); // group SshrvdDartChannel
+  }); // group SrvdDartChannel
 }

@@ -10,9 +10,9 @@ class StubbedSshnp extends SshnpCore with StubbedAsyncInitializationMixin {
     required super.atClient,
     required super.params,
     SshnpdChannel? sshnpdChannel,
-    SshrvdChannel? sshrvdChannel,
+    SrvdChannel? srvdChannel,
   })  : _sshnpdChannel = sshnpdChannel,
-        _sshrvdChannel = sshrvdChannel;
+        _srvdChannel = srvdChannel;
 
   @override
   Future<void> initialize() async {
@@ -37,9 +37,8 @@ class StubbedSshnp extends SshnpCore with StubbedAsyncInitializationMixin {
   final SshnpdChannel? _sshnpdChannel;
 
   @override
-  SshrvdChannel get sshrvdChannel =>
-      _sshrvdChannel ?? (throw UnimplementedError());
-  final SshrvdChannel? _sshrvdChannel;
+  SrvdChannel get srvdChannel => _srvdChannel ?? (throw UnimplementedError());
+  final SrvdChannel? _srvdChannel;
 
   @override
   bool get canRunShell => throw UnimplementedError();
