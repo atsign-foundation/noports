@@ -9,33 +9,36 @@ class DefaultExtendedArgs {
   static const outputExecutionCommand = false;
 }
 
-const xFlag = 'output-execution-command';
+const sshClientOption = 'ssh-client';
+const legacyDaemonFlag = 'legacy-daemon';
+const outputExecutionCommandFlag = 'output-execution-command';
 
 class ExtendedArgParser {
   static ArgParser createArgParser() {
     final parser = SshnpArg.createArgParser(parserType: ParserType.commandLine);
 
     parser.addOption(
-      'ssh-client',
+      sshClientOption,
       help: 'What to use for outbound ssh connections',
       allowed: SupportedSshClient.values.map((e) => e.toString()),
       defaultsTo: DefaultExtendedArgs.sshClient.toString(),
     );
 
     parser.addFlag(
-      'legacy-daemon',
+      legacyDaemonFlag,
       help: 'Request is to a legacy (< 4.0.0) noports daemon',
       defaultsTo: DefaultExtendedArgs.legacyDaemon,
       negatable: false,
     );
 
     parser.addFlag(
-      xFlag,
+      outputExecutionCommandFlag,
       abbr: 'x',
       help: 'Output the command that would be executed, and exit',
       defaultsTo: DefaultExtendedArgs.outputExecutionCommand,
       negatable: false,
     );
+
     return parser;
   }
 
@@ -59,7 +62,7 @@ class ExtendedArgParser {
 
     if (results!.wasParsed('ssh-client')) {
       final indices = coreArgs.indexed
-          .where((element) => element.$2 == '--ssh-client')
+          .where((element) => element.$2 == '--$sshClientOption')
           .map((e) => e.$1)
           .toList();
 
@@ -76,7 +79,13 @@ class ExtendedArgParser {
     }
 
     if (results!.wasParsed('legacy-daemon')) {
-      coreArgs.removeWhere((element) => element == '--legacy-daemon');
+      coreArgs.removeWhere((element) => element == '--$legacyDaemonFlag');
+    }
+
+    if (results!.wasParsed(outputExecutionCommandFlag)) {
+      coreArgs
+          .removeWhere((element) => element == '--$outputExecutionCommandFlag');
+      coreArgs.removeWhere((element) => element == '-x');
     }
 
     return coreArgs;

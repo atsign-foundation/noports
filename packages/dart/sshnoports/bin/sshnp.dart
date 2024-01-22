@@ -107,7 +107,7 @@ void main(List<String> args) async {
 
           await shell.done;
           exit(0);
-        } else if (argResults.wasParsed(xFlag) && argResults[xFlag] as bool) {
+        } else if (argResults[outputExecutionCommandFlag] as bool) {
           stdout.write('$res\n');
           exit(0);
         } else {
