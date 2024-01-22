@@ -24,8 +24,6 @@ dependencies:
   socket_connector: ^2.0.1
   uuid: ^3.0.7
 
-# dependency_overrides:
-
 dev_dependencies:
   build_runner: ^2.4.6
   build_version: ^2.1.1
