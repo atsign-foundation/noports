@@ -34,6 +34,9 @@ class SrvImplExec implements Srv<Process> {
   @override
   final String? sessionIVString;
 
+  @visibleForTesting
+  static const completionString = 'rv is running';
+
   SrvImplExec(
     this.host,
     this.streamingPort, {
@@ -99,7 +102,7 @@ class SrvImplExec implements Srv<Process> {
       var allLines = utf8.decode(l).trim();
       for (String s in allLines.split('\n')) {
         logger.info('rv stderr | $s');
-        if (s.endsWith('rv is running') && !rvPortBound.isCompleted) {
+        if (s.endsWith(completionString) && !rvPortBound.isCompleted) {
           rvPortBound.complete();
         }
       }
@@ -216,13 +219,13 @@ class SrvImplDart implements Srv<SocketConnector> {
         }
       }
 
-      // Do not change this output; it is specifically looked for in
-      // SshrvImplExec.run
-      stderr.writeln('rv is running');
+      // Do not remove this output; it is specifically looked for in
+      // SrvImplExec.run
+      stderr.writeln(SrvImplExec.completionString);
 
       return socketConnector;
     } catch (e) {
-      AtSignLogger('sshrv').severe(e.toString());
+      AtSignLogger('srv').severe(e.toString());
       rethrow;
     }
   }
