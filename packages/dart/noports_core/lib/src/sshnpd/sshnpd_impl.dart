@@ -61,10 +61,16 @@ class SshnpdImpl implements Sshnpd {
   @visibleForTesting
   bool initialized = false;
 
+  /// The version of whatever program is using this library.
+  @override
+  final String version;
+
   /// State variables used by [_notificationHandler]
   String _privateKey = '';
 
   static const String commandToSend = 'sshd';
+
+  late final Map<String, dynamic> pingResponse;
 
   SshnpdImpl({
     // final fields
@@ -79,17 +85,37 @@ class SshnpdImpl implements Sshnpd {
     this.localSshdPort = DefaultArgs.localSshdPort,
     required this.ephemeralPermissions,
     required this.sshAlgorithm,
+    required this.version,
   }) {
     logger.hierarchicalLoggingEnabled = true;
     logger.logger.level = Level.SHOUT;
+
+    pingResponse = {
+      'devicename': device,
+      'version': version,
+      'corePackageVersion': packageVersion,
+      'supportedFeatures': {
+        DaemonFeatures.srAuth.name: true,
+        DaemonFeatures.srE2ee.name: true,
+        DaemonFeatures.acceptsPublicKeys.name: addSshPublicKeys,
+      },
+    };
   }
 
-  static Future<Sshnpd> fromCommandLineArgs(List<String> args,
-      {AtClient? atClient,
-      FutureOr<AtClient> Function(SshnpdParams)? atClientGenerator,
-      void Function(Object, StackTrace)? usageCallback}) async {
+  static Future<Sshnpd> fromCommandLineArgs(
+    List<String> args, {
+    AtClient? atClient,
+    FutureOr<AtClient> Function(SshnpdParams)? atClientGenerator,
+    void Function(Object, StackTrace)? usageCallback,
+    required String version,
+  }) async {
     try {
-      var p = await SshnpdParams.fromArgs(args);
+      SshnpdParams p;
+      try {
+        p = await SshnpdParams.fromArgs(args);
+      } on FormatException catch (e) {
+        throw ArgumentError(e.message);
+      }
 
       // Check atKeyFile selected exists
       if (!await File(p.atKeysFilePath).exists()) {
@@ -119,6 +145,7 @@ class SshnpdImpl implements Sshnpd {
         localSshdPort: p.localSshdPort,
         ephemeralPermissions: p.ephemeralPermissions,
         sshAlgorithm: p.sshAlgorithm,
+        version: version,
       );
 
       if (p.verbose) {
@@ -303,15 +330,6 @@ class SshnpdImpl implements Sshnpd {
         ..namespaceAware = true);
 
     /// send a heartbeat back
-    var pingResponse = {
-      'devicename': device,
-      'version': packageVersion,
-      'supportedFeatures': {
-        DaemonFeatures.srAuth.name: true,
-        DaemonFeatures.srE2ee.name: true,
-        DaemonFeatures.acceptsPublicKeys.name: addSshPublicKeys,
-      },
-    };
     unawaited(
       _notify(
         atKey: atKey,
@@ -990,10 +1008,7 @@ class SshnpdImpl implements Sshnpd {
       logger.info('Updating device info for $device');
       await atClient.put(
         atKey,
-        jsonEncode({
-          'devicename': device,
-          'version': packageVersion,
-        }),
+        jsonEncode(pingResponse),
         putRequestOptions: PutRequestOptions()..useRemoteAtServer = true,
       );
     } catch (e) {
