@@ -102,7 +102,7 @@ abstract class SshrvdChannel<T> with AsyncInitialization, AtClientBindings {
     // Connect to rendezvous point using background process.
     // sshnp (this program) can then exit without issue.
 
-    late Sshrv<T> sshrv;
+    late Srv<T> sshrv;
     if (directSsh) {
       sshrv = sshrvGenerator(
         host,

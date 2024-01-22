@@ -5,7 +5,7 @@ import 'package:noports_core/srv.dart';
 
 /// Stubbing for [SshrvGenerator] typedef
 abstract class SshrvGeneratorCaller<T> {
-  Sshrv<T> call(
+  Srv<T> call(
     String host,
     int port, {
     required int localPort,
@@ -18,7 +18,7 @@ abstract class SshrvGeneratorCaller<T> {
 
 class SshrvGeneratorStub<T> extends Mock implements SshrvGeneratorCaller<T> {}
 
-class MockSshrv<T> extends Mock implements Sshrv<T> {}
+class MockSshrv<T> extends Mock implements Srv<T> {}
 
 /// Stubbed [SshrvdChannel] which we are testing
 class StubbedSshrvdChannel<T> extends SshrvdChannel<T> {

@@ -573,7 +573,7 @@ class SshnpdImpl implements Sshnpd {
       }
       // Connect to rendezvous point using background process.
       // This program can then exit without causing an issue.
-      Process rv = await Sshrv.exec(
+      Process rv = await Srv.exec(
         host,
         port,
         localPort: localSshdPort,

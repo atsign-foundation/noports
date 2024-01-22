@@ -10,8 +10,8 @@ import 'package:noports_core/srv.dart';
 import 'package:socket_connector/socket_connector.dart';
 
 @visibleForTesting
-class SshrvImplExec implements Sshrv<Process> {
-  static final AtSignLogger logger = AtSignLogger('SshrvImplExec');
+class SrvImplExec implements Srv<Process> {
+  static final AtSignLogger logger = AtSignLogger('SrvImplExec');
 
   @override
   final String host;
@@ -34,7 +34,7 @@ class SshrvImplExec implements Sshrv<Process> {
   @override
   final String? sessionIVString;
 
-  SshrvImplExec(
+  SrvImplExec(
     this.host,
     this.streamingPort, {
     required this.localPort,
@@ -51,11 +51,11 @@ class SshrvImplExec implements Sshrv<Process> {
 
   @override
   Future<Process> run() async {
-    String? command = await Sshrv.getLocalBinaryPath();
+    String? command = await Srv.getLocalBinaryPath();
     String postfix = Platform.isWindows ? '.exe' : '';
     if (command == null) {
       throw Exception(
-        'Unable to locate sshrv$postfix binary.\n'
+        'Unable to locate srv$postfix binary.\n'
         'N.B. sshnp is expected to be compiled and run from source, not via the dart command.',
       );
     }
@@ -116,7 +116,7 @@ class SshrvImplExec implements Sshrv<Process> {
 }
 
 @visibleForTesting
-class SshrvImplDart implements Sshrv<SocketConnector> {
+class SrvImplDart implements Srv<SocketConnector> {
   @override
   final String host;
 
@@ -138,7 +138,7 @@ class SshrvImplDart implements Sshrv<SocketConnector> {
   @override
   final String? sessionIVString;
 
-  SshrvImplDart(
+  SrvImplDart(
     this.host,
     this.streamingPort, {
     required this.localPort,

@@ -35,7 +35,7 @@ Future<void> main(List<String> args) async {
   String? sessionAESKeyString = rvE2ee ? Platform.environment['RV_AES'] : null;
   String? sessionIVString = rvE2ee ? Platform.environment['RV_IV'] : null;
 
-  SocketConnector connector = await Sshrv.dart(
+  SocketConnector connector = await Srv.dart(
     host,
     streamingPort,
     localPort: localPort,

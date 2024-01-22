@@ -92,7 +92,7 @@ void main() {
       expect(
         stubbedSshrvdChannel.sshrvGenerator,
         isA<
-            Sshrv<String> Function(String, int,
+            Srv<String> Function(String, int,
                 {required int localPort,
                 required bool bindLocalPort,
                 String? rvdAuthString})>(),
