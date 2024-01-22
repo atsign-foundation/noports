@@ -4,7 +4,7 @@ import 'dart:io';
 import 'dart:typed_data';
 import 'package:at_chops/at_chops.dart';
 import 'package:mocktail/mocktail.dart';
-import 'package:noports_core/src/sshrvd/signature_verifying_socket_authenticator.dart';
+import 'package:noports_core/src/srvd/signature_verifying_socket_authenticator.dart';
 import 'package:test/test.dart';
 import 'package:uuid/uuid.dart';
 

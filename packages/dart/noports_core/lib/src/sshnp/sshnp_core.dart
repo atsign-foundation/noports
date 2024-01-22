@@ -10,7 +10,7 @@ import 'package:noports_core/src/common/mixins/at_client_bindings.dart';
 import 'package:noports_core/src/common/default_args.dart';
 import 'package:noports_core/src/sshnp/util/sshnp_ssh_key_handler/sshnp_ssh_key_handler.dart';
 import 'package:noports_core/src/sshnp/util/sshnpd_channel/sshnpd_channel.dart';
-import 'package:noports_core/src/sshnp/util/sshrvd_channel/sshrvd_channel.dart';
+import 'package:noports_core/src/sshnp/util/srvd_channel/srvd_channel.dart';
 import 'package:noports_core/sshnp.dart';
 import 'package:uuid/uuid.dart';
 

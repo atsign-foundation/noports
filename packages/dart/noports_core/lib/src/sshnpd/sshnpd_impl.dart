@@ -10,7 +10,7 @@ import 'package:logging/logging.dart';
 import 'package:meta/meta.dart';
 import 'package:noports_core/src/common/features.dart';
 import 'package:noports_core/src/common/openssh_binary_path.dart';
-import 'package:noports_core/src/sshrv/sshrv.dart';
+import 'package:noports_core/src/srv/srv.dart';
 import 'package:noports_core/sshnpd.dart';
 import 'package:noports_core/utils.dart';
 import 'package:noports_core/src/version.dart';

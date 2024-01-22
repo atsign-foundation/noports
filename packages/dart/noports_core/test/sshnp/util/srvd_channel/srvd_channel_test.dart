@@ -5,13 +5,13 @@ import 'package:at_client/at_client.dart';
 import 'package:at_utils/at_utils.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:noports_core/sshnp_foundation.dart';
-import 'package:noports_core/sshrv.dart';
-import 'package:noports_core/sshrvd.dart';
+import 'package:noports_core/srv.dart';
+import 'package:noports_core/srvd.dart';
 import 'package:test/test.dart';
 import 'package:uuid/uuid.dart';
 
 import '../../sshnp_mocks.dart';
-import 'sshrvd_channel_mocks.dart';
+import 'srvd_channel_mocks.dart';
 
 void main() {
   group('SshrvdChannel', () {

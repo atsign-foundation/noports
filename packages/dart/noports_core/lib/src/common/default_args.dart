@@ -1,6 +1,6 @@
 import 'package:noports_core/src/common/io_types.dart';
 import 'package:noports_core/src/common/types.dart';
-import 'package:noports_core/sshrv.dart';
+import 'package:noports_core/srv.dart';
 
 class DefaultArgs {
   static const String namespace = 'sshnp';

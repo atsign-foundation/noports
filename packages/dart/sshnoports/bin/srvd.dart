@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'dart:io';
 import 'package:at_utils/at_logger.dart';
-import 'package:noports_core/sshrvd.dart';
+import 'package:noports_core/srvd.dart';
 import 'package:sshnoports/src/create_at_client_cli.dart';
 import 'package:sshnoports/src/print_version.dart';
 

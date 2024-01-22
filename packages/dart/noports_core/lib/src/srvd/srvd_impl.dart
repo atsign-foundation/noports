@@ -7,10 +7,10 @@ import 'package:at_utils/at_logger.dart';
 import 'package:logging/logging.dart';
 import 'package:meta/meta.dart';
 import 'package:noports_core/src/common/validation_utils.dart';
-import 'package:noports_core/src/sshrvd/build_env.dart';
-import 'package:noports_core/src/sshrvd/socket_connector.dart';
-import 'package:noports_core/src/sshrvd/sshrvd.dart';
-import 'package:noports_core/src/sshrvd/sshrvd_params.dart';
+import 'package:noports_core/src/srvd/build_env.dart';
+import 'package:noports_core/src/srvd/socket_connector.dart';
+import 'package:noports_core/src/srvd/srvd.dart';
+import 'package:noports_core/src/srvd/srvd_params.dart';
 
 @protected
 class SshrvdImpl implements Sshrvd {

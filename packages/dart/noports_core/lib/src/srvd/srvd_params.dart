@@ -1,6 +1,6 @@
 import 'package:args/args.dart';
 import 'package:noports_core/src/common/file_system_utils.dart';
-import 'package:noports_core/src/sshrvd/build_env.dart';
+import 'package:noports_core/src/srvd/build_env.dart';
 
 class SshrvdParams {
   final String username;

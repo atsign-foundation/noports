@@ -2,7 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:isolate';
 import 'package:at_utils/at_logger.dart';
-import 'package:noports_core/src/sshrvd/sshrvd_impl.dart';
+import 'package:noports_core/src/srvd/srvd_impl.dart';
 import 'package:socket_connector/socket_connector.dart';
 
 import 'signature_verifying_socket_authenticator.dart';

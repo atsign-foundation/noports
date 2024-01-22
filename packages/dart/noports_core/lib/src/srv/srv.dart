@@ -1,6 +1,6 @@
 import 'dart:io';
 
-import 'package:noports_core/src/sshrv/sshrv_impl.dart';
+import 'package:noports_core/src/srv/srv_impl.dart';
 import 'package:socket_connector/socket_connector.dart';
 
 abstract class Sshrv<T> {

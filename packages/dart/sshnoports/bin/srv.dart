@@ -1,7 +1,7 @@
 import 'dart:io';
 
 import 'package:args/args.dart';
-import 'package:noports_core/sshrv.dart';
+import 'package:noports_core/srv.dart';
 import 'package:socket_connector/socket_connector.dart';
 
 Future<void> main(List<String> args) async {

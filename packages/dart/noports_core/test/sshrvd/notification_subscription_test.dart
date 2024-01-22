@@ -1,5 +1,5 @@
-import 'package:noports_core/src/sshrvd/sshrvd_impl.dart';
-import 'package:noports_core/sshrvd.dart';
+import 'package:noports_core/src/srvd/srvd_impl.dart';
+import 'package:noports_core/srvd.dart';
 import 'package:test/test.dart';
 
 void main() {

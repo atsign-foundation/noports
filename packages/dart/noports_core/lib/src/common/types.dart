@@ -1,4 +1,4 @@
-import 'package:noports_core/sshrv.dart';
+import 'package:noports_core/srv.dart';
 
 typedef SshrvGenerator<T> = Sshrv<T> Function(
   String,

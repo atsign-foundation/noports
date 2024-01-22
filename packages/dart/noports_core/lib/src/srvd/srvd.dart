@@ -3,8 +3,8 @@ import 'dart:async';
 import 'package:at_client/at_client.dart';
 import 'package:at_utils/at_logger.dart';
 import 'package:meta/meta.dart';
-import 'package:noports_core/src/sshrvd/sshrvd_impl.dart';
-import 'package:noports_core/src/sshrvd/sshrvd_params.dart';
+import 'package:noports_core/src/srvd/srvd_impl.dart';
+import 'package:noports_core/src/srvd/srvd_params.dart';
 
 abstract class Sshrvd {
   static const String namespace = 'sshrvd';

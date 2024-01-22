@@ -6,7 +6,7 @@ import 'package:at_utils/at_utils.dart';
 import 'package:cryptography/cryptography.dart';
 import 'package:cryptography/dart.dart';
 import 'package:meta/meta.dart';
-import 'package:noports_core/sshrv.dart';
+import 'package:noports_core/srv.dart';
 import 'package:socket_connector/socket_connector.dart';
 
 @visibleForTesting

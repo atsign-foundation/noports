@@ -6,10 +6,10 @@ import 'package:meta/meta.dart';
 import 'package:noports_core/src/common/mixins/async_initialization.dart';
 import 'package:noports_core/src/common/mixins/at_client_bindings.dart';
 import 'package:noports_core/src/common/validation_utils.dart';
-import 'package:noports_core/src/sshnp/util/sshrvd_channel/notification_request_message.dart';
+import 'package:noports_core/src/sshnp/util/srvd_channel/notification_request_message.dart';
 import 'package:noports_core/sshnp.dart';
-import 'package:noports_core/sshrv.dart';
-import 'package:noports_core/sshrvd.dart';
+import 'package:noports_core/srv.dart';
+import 'package:noports_core/srvd.dart';
 
 @visibleForTesting
 enum SshrvdAck {
