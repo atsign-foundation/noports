@@ -39,24 +39,24 @@ To edit the crontab:
 crontab -e
 ```
 
-## sshrvd
+## srvd
 
 ### Installation
 
-The `sshrvd.service` file should be placed in `/etc/systemd/system` (as root).
+The `srvd.service` file should be placed in `/etc/systemd/system` (as root).
 
-Modify the `sshrvd.service` unit to use the appropriate atSign,
+Modify the `srvd.service` unit to use the appropriate atSign,
 (The boilerplate uses @atsign) as well as the internet address.
-Also change the username and make sure that username running sshrvd has the
+Also change the username and make sure that username running srvd has the
 .atkeys file in place at '~/.atsign/keys'.
 
-Run the following command to view full usage information of the sshrvd binary:
+Run the following command to view full usage information of the srvd binary:
 ```sh
-/usr/local/bin/sshrvd
+/usr/local/bin/srvd
 ```
 or if you didn't install the binaries as root:
 ```sh
-~/.local/bin/sshrvd
+~/.local/bin/srvd
 ```
 
 ### Usage

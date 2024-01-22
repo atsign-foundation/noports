@@ -38,7 +38,7 @@ class SshnpDartPureImpl extends SshnpCore
       sessionId: sessionId,
       namespace: this.namespace,
     );
-    _sshrvdChannel = SshrvdDartChannel(
+    _srvdChannel = SrvdDartChannel(
       atClient: atClient,
       params: params,
       sessionId: sessionId,
@@ -50,8 +50,8 @@ class SshnpDartPureImpl extends SshnpCore
   late final SshnpdDefaultChannel _sshnpdChannel;
 
   @override
-  SshrvdDartChannel get sshrvdChannel => _sshrvdChannel;
-  late final SshrvdDartChannel _sshrvdChannel;
+  SrvdDartChannel get srvdChannel => _srvdChannel;
+  late final SrvdDartChannel _srvdChannel;
 
   @override
   Future<void> initialize() async {
@@ -86,11 +86,11 @@ class SshnpDartPureImpl extends SshnpCore
           SshnpSessionRequest(
             direct: true,
             sessionId: sessionId,
-            host: sshrvdChannel.host,
-            port: sshrvdChannel.port,
+            host: srvdChannel.host,
+            port: srvdChannel.port,
             authenticateToRvd: params.authenticateDeviceToRvd,
-            clientNonce: sshrvdChannel.clientNonce,
-            rvdNonce: sshrvdChannel.rvdNonce,
+            clientNonce: srvdChannel.clientNonce,
+            rvdNonce: srvdChannel.rvdNonce,
             encryptRvdTraffic: params.encryptRvdTraffic,
             clientEphemeralPK: params.sessionKP.atPublicKey.publicKey,
             clientEphemeralPKType: params.sessionKPType.name,

@@ -22,7 +22,7 @@ class SshnpUnsignedImpl extends SshnpCore
       sessionId: sessionId,
       namespace: this.namespace,
     );
-    _sshrvdChannel = SshrvdExecChannel(
+    _srvdChannel = SrvdExecChannel(
       atClient: atClient,
       params: params,
       sessionId: sessionId,
@@ -34,8 +34,8 @@ class SshnpUnsignedImpl extends SshnpCore
   late final SshnpdUnsignedChannel _sshnpdChannel;
 
   @override
-  SshrvdExecChannel get sshrvdChannel => _sshrvdChannel;
-  late final SshrvdExecChannel _sshrvdChannel;
+  SrvdExecChannel get srvdChannel => _srvdChannel;
+  late final SrvdExecChannel _srvdChannel;
 
   @override
   Future<void> initialize() async {
@@ -87,7 +87,7 @@ class SshnpUnsignedImpl extends SshnpCore
         ..sharedBy = params.clientAtSign
         ..sharedWith = params.sshnpdAtSign
         ..metadata = (Metadata()..ttl = 10000),
-      '$localPort ${sshrvdChannel.port} ${keyUtil.username} ${sshrvdChannel.host} $sessionId',
+      '$localPort ${srvdChannel.port} ${keyUtil.username} ${srvdChannel.host} $sessionId',
       checkForFinalDeliveryStatus: false,
       waitForFinalDeliveryStatus: false,
     );
@@ -98,8 +98,8 @@ class SshnpUnsignedImpl extends SshnpCore
       throw SshnpError('sshnpd did not acknowledge the request');
     }
 
-    /// Start sshrv
-    var bean = await sshrvdChannel.runSshrv(directSsh: false);
+    /// Start srv
+    var bean = await srvdChannel.runSrv(directSsh: false);
 
     /// Ensure that we clean up after ourselves
     await callDisposal();

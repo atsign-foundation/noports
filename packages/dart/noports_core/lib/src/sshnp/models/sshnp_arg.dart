@@ -224,7 +224,7 @@ class SshnpArg {
   static const hostArg = SshnpArg(
     name: 'host',
     abbr: 'h',
-    help: 'atSign of sshrvd daemon or FQDN/IP address to connect back to',
+    help: 'atSign of srvd daemon or FQDN/IP address to connect back to',
     mandatory: true,
   );
   static const portArg = SshnpArg(

@@ -1,5 +1,4 @@
-
-version: '3.8'
+version: "3.8"
 
 services:
   image-manual-blank:
@@ -29,11 +28,11 @@ services:
       - sshnpd
     depends_on:
       - image-manual-blank
-  container-sshrvd:
+  container-srvd:
     image: atsigncompany/sshnp-e2e-manual:blank
-    container_name: manual_blank_sshrvd
+    container_name: manual_blank_srvd
     volumes:
-      - ../../../tests/end2end_tests/contexts/sshrvd/.atsign/keys/:/atsign/.atsign/keys/ # mount keys
+      - ../../../tests/end2end_tests/contexts/srvd/.atsign/keys/:/atsign/.atsign/keys/ # mount keys
     network_mode: host
     depends_on:
       - image-manual-blank

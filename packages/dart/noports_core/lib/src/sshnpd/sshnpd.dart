@@ -10,7 +10,7 @@ import 'package:noports_core/src/sshnpd/sshnpd_params.dart';
 abstract class Sshnpd {
   abstract final AtSignLogger logger;
 
-  /// The [AtClient] used to communicate with sshnpd and sshrvd
+  /// The [AtClient] used to communicate with sshnpd and srvd
   abstract AtClient atClient;
 
   // ====================================================================
