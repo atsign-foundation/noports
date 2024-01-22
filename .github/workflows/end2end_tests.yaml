@@ -1,3 +1,6 @@
+##
+## Temporarily disabled
+##
 name: end2end_tests
 
 permissions:
