@@ -137,7 +137,7 @@ class SshrvdImpl implements Sshrvd {
       ..namespaceAware = true;
 
     var atKey = AtKey()
-      ..key = notification.value
+      ..key = notification.value!
       ..sharedBy = atSign
       ..sharedWith = notification.from
       ..namespace = Sshrvd.namespace
