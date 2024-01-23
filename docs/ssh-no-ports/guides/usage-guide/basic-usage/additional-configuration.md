@@ -77,23 +77,5 @@ Pass command line arguments via an environment file.
 
 ### --list-devices
 
-List devices which have discovery enabled.
-
-## Coming in Version 5
-
-### --no-authenticate-client-to-rvd
-
-Disable client to rvd authentication.
-
-### --no-authenticate-device-to-rvd
-
-Disable device to rvd authentication.
-
-### --no-encrypt-rvd-traffic
-
-Disable encryption of the socket rendezvous traffic.
-
-### --no-discover-daemon-features
-
-By default, the client starts by pinging the daemon to discover what features it supports, and exits if this client has requested use of a feature which the daemon does not support. If you already know what features the daemon supports and are setting other flags (--authenticate-device-to-rvd and --encrypt-rvd-traffic) based on that knowledge, then you should unset this flag to reduce total time-to-connection.
+List devices which have discovery (-u) enabled.
 
