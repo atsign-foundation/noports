@@ -57,7 +57,7 @@ Additional ssh options which are passed to the ssh program.
 
 ### --add-forwards-to-tunnel
 
-Enable this flag to pass the -o, --local-ssh-options to the initial ssh tunnel instead of the ssh session.&#x20;
+Enable this flag to pass the `-o, --local-ssh-options` to the initial ssh tunnel instead of the ssh session.&#x20;
 
 ### --ssh-client
 
