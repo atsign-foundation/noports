@@ -19,10 +19,10 @@ class StubbedSshnp extends SshnpCore with SshnpLocalSshKeyHandler {
     required super.params,
     LocalSshKeyUtil? sshKeyUtil,
     SshnpdChannel? sshnpdChannel,
-    SshrvdChannel? sshrvdChannel,
+    SrvdChannel? srvdChannel,
   })  : _sshKeyUtil = sshKeyUtil,
         _sshnpdChannel = sshnpdChannel,
-        _sshrvdChannel = sshrvdChannel;
+        _srvdChannel = srvdChannel;
 
   @override
   Future<SshnpResult> run() => throw UnimplementedError();
@@ -33,9 +33,8 @@ class StubbedSshnp extends SshnpCore with SshnpLocalSshKeyHandler {
   final SshnpdChannel? _sshnpdChannel;
 
   @override
-  SshrvdChannel get sshrvdChannel =>
-      _sshrvdChannel ?? (throw UnimplementedError());
-  final SshrvdChannel? _sshrvdChannel;
+  SrvdChannel get srvdChannel => _srvdChannel ?? (throw UnimplementedError());
+  final SrvdChannel? _srvdChannel;
 
   @override
   bool get canRunShell => false;

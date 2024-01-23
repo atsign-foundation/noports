@@ -13,14 +13,14 @@ void main() {
     late MockAtClient mockAtClient;
     late MockSshnpParams mockParams;
     late MockSshnpdChannel mockSshnpChannel;
-    late MockSshrvdChannel mockSshrvdChannel;
+    late MockSrvdChannel mockSrvdChannel;
     late StubbedSshnp stubbedSshnp;
 
     setUp(() {
       mockAtClient = MockAtClient();
       mockParams = MockSshnpParams();
       mockSshnpChannel = MockSshnpdChannel();
-      mockSshrvdChannel = MockSshrvdChannel();
+      mockSrvdChannel = MockSrvdChannel();
 
       // Mocked SshnpCore Constructor calls
       registerFallbackValue(AtClientPreference());
@@ -34,11 +34,11 @@ void main() {
         atClient: mockAtClient,
         params: mockParams,
         sshnpdChannel: mockSshnpChannel,
-        sshrvdChannel: mockSshrvdChannel,
+        srvdChannel: mockSrvdChannel,
       );
 
       // Mocked SshnpCore Initialization calls
-      // TODO sshrvd channel mock calls
+      // TODO srvd channel mock calls
       // TODO sshnpd channel mock calls
     });
 

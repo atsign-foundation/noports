@@ -67,6 +67,10 @@ void main() {
 
     whenInitialization() {
       when(() => mockParams.sshnpdAtSign).thenReturn('@sshnpd');
+      when(() => mockParams.authenticateDeviceToRvd).thenReturn(true);
+      when(() => mockParams.authenticateClientToRvd).thenReturn(true);
+      when(() => mockParams.encryptRvdTraffic).thenReturn(true);
+      when(() => mockParams.discoverDaemonFeatures).thenReturn(false);
       when(subscribeInvocation)
           .thenAnswer((_) => notificationStreamController.stream);
     }

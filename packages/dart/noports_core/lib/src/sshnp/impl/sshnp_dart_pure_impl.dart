@@ -2,14 +2,35 @@ import 'dart:async';
 
 import 'package:at_client/at_client.dart';
 import 'package:dartssh2/dartssh2.dart';
+import 'package:noports_core/src/sshnp/impl/notification_request_message.dart';
 import 'package:noports_core/sshnp_foundation.dart';
 
 class SshnpDartPureImpl extends SshnpCore
     with SshnpDartSshKeyHandler, DartSshSessionHandler {
-  SshnpDartPureImpl(
-      {required super.atClient,
-      required super.params,
-      required AtSshKeyPair? identityKeyPair}) {
+  SshnpDartPureImpl({
+    required super.atClient,
+    required super.params,
+    required AtSshKeyPair? identityKeyPair,
+  }) {
+    // TODO Defensive code to prevent use of rvd auth and rv traffic encryption
+    // TODO until they have been properly implemented with an in-memory RV.
+    // TODO At that time, make these four params "final" again
+    if (params.discoverDaemonFeatures) {
+      logger.shout('$runtimeType: disabling discoverDaemonFeatures flag');
+      params.discoverDaemonFeatures = false;
+    }
+    if (params.encryptRvdTraffic) {
+      logger.shout('$runtimeType: disabling encryptRvdTraffic flag');
+      params.encryptRvdTraffic = false;
+    }
+    if (params.authenticateDeviceToRvd) {
+      logger.shout('$runtimeType: disabling authenticateDeviceToRvd flag');
+      params.authenticateDeviceToRvd = false;
+    }
+    if (params.authenticateClientToRvd) {
+      logger.shout('$runtimeType: disabling authenticateClientToRvd flag');
+      params.authenticateClientToRvd = false;
+    }
     this.identityKeyPair = identityKeyPair;
     _sshnpdChannel = SshnpdDefaultChannel(
       atClient: atClient,
@@ -17,7 +38,7 @@ class SshnpDartPureImpl extends SshnpCore
       sessionId: sessionId,
       namespace: this.namespace,
     );
-    _sshrvdChannel = SshrvdDartChannel(
+    _srvdChannel = SrvdDartChannel(
       atClient: atClient,
       params: params,
       sessionId: sessionId,
@@ -29,8 +50,8 @@ class SshnpDartPureImpl extends SshnpCore
   late final SshnpdDefaultChannel _sshnpdChannel;
 
   @override
-  SshrvdDartChannel get sshrvdChannel => _sshrvdChannel;
-  late final SshrvdDartChannel _sshrvdChannel;
+  SrvdDartChannel get srvdChannel => _srvdChannel;
+  late final SrvdDartChannel _srvdChannel;
 
   @override
   Future<void> initialize() async {
@@ -60,12 +81,22 @@ class SshnpDartPureImpl extends SshnpCore
         ..sharedBy = params.clientAtSign
         ..sharedWith = params.sshnpdAtSign
         ..metadata = (Metadata()..ttl = 10000),
-      signAndWrapAndJsonEncode(atClient, {
-        'direct': true,
-        'sessionId': sessionId,
-        'host': sshrvdChannel.host,
-        'port': sshrvdChannel.port,
-      }),
+      signAndWrapAndJsonEncode(
+          atClient,
+          SshnpSessionRequest(
+            direct: true,
+            sessionId: sessionId,
+            host: srvdChannel.host,
+            port: srvdChannel.port,
+            authenticateToRvd: params.authenticateDeviceToRvd,
+            clientNonce: srvdChannel.clientNonce,
+            rvdNonce: srvdChannel.rvdNonce,
+            encryptRvdTraffic: params.encryptRvdTraffic,
+            clientEphemeralPK: params.sessionKP.atPublicKey.publicKey,
+            clientEphemeralPKType: params.sessionKPType.name,
+          ).toJson()),
+      checkForFinalDeliveryStatus: false,
+      waitForFinalDeliveryStatus: false,
     );
 
     /// Wait for a response from sshnpd

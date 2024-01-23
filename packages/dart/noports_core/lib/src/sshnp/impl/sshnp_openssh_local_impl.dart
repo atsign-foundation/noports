@@ -2,11 +2,15 @@ import 'dart:async';
 
 import 'package:at_client/at_client.dart';
 import 'package:noports_core/src/common/io_types.dart';
+import 'package:noports_core/src/sshnp/impl/notification_request_message.dart';
 import 'package:noports_core/src/sshnp/util/ephemeral_port_binder.dart';
 import 'package:noports_core/sshnp_foundation.dart';
 
 class SshnpOpensshLocalImpl extends SshnpCore
-    with SshnpLocalSshKeyHandler, OpensshSshSessionHandler, EphemeralPortBinder {
+    with
+        SshnpLocalSshKeyHandler,
+        OpensshSshSessionHandler,
+        EphemeralPortBinder {
   SshnpOpensshLocalImpl({
     required super.atClient,
     required super.params,
@@ -17,7 +21,7 @@ class SshnpOpensshLocalImpl extends SshnpCore
       sessionId: sessionId,
       namespace: this.namespace,
     );
-    _sshrvdChannel = SshrvdExecChannel(
+    _srvdChannel = SrvdExecChannel(
       atClient: atClient,
       params: params,
       sessionId: sessionId,
@@ -29,8 +33,8 @@ class SshnpOpensshLocalImpl extends SshnpCore
   late final SshnpdDefaultChannel _sshnpdChannel;
 
   @override
-  SshrvdExecChannel get sshrvdChannel => _sshrvdChannel;
-  late final SshrvdExecChannel _sshrvdChannel;
+  SrvdExecChannel get srvdChannel => _srvdChannel;
+  late final SrvdExecChannel _srvdChannel;
 
   @override
   Future<void> initialize() async {
@@ -39,12 +43,17 @@ class SshnpOpensshLocalImpl extends SshnpCore
     await super.initialize();
     completeInitialization();
   }
+
   @override
   Future<SshnpResult> run() async {
     /// Ensure that sshnp is initialized
     await callInitialization();
 
     logger.info('Sending request to sshnpd');
+
+    final server = await ServerSocket.bind(InternetAddress.anyIPv4, 0);
+    int localRvPort = server.port;
+    await server.close();
 
     /// Send an ssh request to sshnpd
     await notify(
@@ -54,12 +63,22 @@ class SshnpOpensshLocalImpl extends SshnpCore
         ..sharedBy = params.clientAtSign
         ..sharedWith = params.sshnpdAtSign
         ..metadata = (Metadata()..ttl = 10000),
-      signAndWrapAndJsonEncode(atClient, {
-        'direct': true,
-        'sessionId': sessionId,
-        'host': sshrvdChannel.host,
-        'port': sshrvdChannel.port,
-      }),
+      signAndWrapAndJsonEncode(
+          atClient,
+          SshnpSessionRequest(
+            direct: true,
+            sessionId: sessionId,
+            host: srvdChannel.host,
+            port: srvdChannel.srvdPort!,
+            authenticateToRvd: params.authenticateDeviceToRvd,
+            clientNonce: srvdChannel.clientNonce,
+            rvdNonce: srvdChannel.rvdNonce,
+            encryptRvdTraffic: params.encryptRvdTraffic,
+            clientEphemeralPK: params.sessionKP.atPublicKey.publicKey,
+            clientEphemeralPKType: params.sessionKPType.name,
+          ).toJson()),
+      checkForFinalDeliveryStatus: false,
+      waitForFinalDeliveryStatus: false,
     );
 
     /// Wait for a response from sshnpd
@@ -74,6 +93,14 @@ class SshnpOpensshLocalImpl extends SshnpCore
       );
     }
 
+    /// Start srv
+    await srvdChannel.runSrv(
+      directSsh: true,
+      localRvPort: localRvPort,
+      sessionAESKeyString: sshnpdChannel.sessionAESKeyString,
+      sessionIVString: sshnpdChannel.sessionIVString,
+    );
+
     /// Load the ephemeral private key into a key pair
     AtSshKeyPair ephemeralKeyPair = AtSshKeyPair.fromPem(
       sshnpdChannel.ephemeralPrivateKey!,
@@ -86,7 +113,9 @@ class SshnpOpensshLocalImpl extends SshnpCore
 
     /// Start the initial tunnel
     Process? bean = await startInitialTunnelSession(
-        ephemeralKeyPairIdentifier: ephemeralKeyPair.identifier);
+      ephemeralKeyPairIdentifier: ephemeralKeyPair.identifier,
+      localRvPort: localRvPort,
+    );
 
     /// Remove the key pair from the key utility
     await keyUtil.deleteKeyPair(identifier: ephemeralKeyPair.identifier);

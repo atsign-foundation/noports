@@ -2,7 +2,7 @@ name: noports_core
 description: Core library code for sshnoports
 homepage: https://docs.atsign.com/
 
-version: 5.0.4
+version: 6.0.0
 
 environment:
   sdk: ">=3.0.0 <4.0.0"
@@ -21,7 +21,7 @@ dependencies:
   openssh_ed25519: ^1.1.0
   path: ^1.9.0
   posix: ^5.0.0
-  socket_connector: ^1.0.11
+  socket_connector: ^2.0.1
   uuid: ^3.0.7
 
 dependency_overrides:

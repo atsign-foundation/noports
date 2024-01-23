@@ -12,7 +12,12 @@ abstract class FunctionCaller<T> {
 class FunctionStub<T> extends Mock implements FunctionCaller<T> {}
 
 abstract class NotifyCaller {
-  Future<void> call(AtKey key, String value);
+  Future<void> call(
+    AtKey key,
+    String value, {
+    required bool checkForFinalDeliveryStatus,
+    required bool waitForFinalDeliveryStatus,
+  });
 }
 
 class NotifyStub extends Mock implements NotifyCaller {}
@@ -33,7 +38,7 @@ class MockSshnpParams extends Mock implements SshnpParams {}
 
 class MockSshnpdChannel extends Mock implements SshnpdChannel {}
 
-class MockSshrvdChannel extends Mock implements SshrvdChannel {}
+class MockSrvdChannel extends Mock implements SrvdChannel {}
 
 /// [dart:io] Mocks
 class MockProcess extends Mock implements Process {}

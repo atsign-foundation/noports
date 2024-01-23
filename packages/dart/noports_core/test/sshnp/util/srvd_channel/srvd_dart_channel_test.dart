@@ -1,13 +1,13 @@
 import 'package:mocktail/mocktail.dart';
-import 'package:noports_core/src/common/io_types.dart';
 import 'package:noports_core/sshnp_foundation.dart';
+import 'package:socket_connector/socket_connector.dart';
 import 'package:test/test.dart';
 import 'package:uuid/uuid.dart';
 
 import '../../sshnp_mocks.dart';
 
 void main() {
-  group('SshrvdExecChannel', () {
+  group('SrvdDartChannel', () {
     late MockAtClient mockAtClient;
     late MockSshnpParams mockSshnpParams;
     late String sessionId;
@@ -16,18 +16,17 @@ void main() {
       mockAtClient = MockAtClient();
       mockSshnpParams = MockSshnpParams();
       when(() => mockSshnpParams.verbose).thenReturn(false);
-
       sessionId = Uuid().v4();
     });
     test('public API', () {
       expect(
-        SshrvdExecChannel(
+        SrvdDartChannel(
           atClient: mockAtClient,
           params: mockSshnpParams,
           sessionId: sessionId,
         ),
-        isA<SshrvdChannel<Process>>(),
+        isA<SrvdChannel<SocketConnector>>(),
       );
     });
-  }); // group SshrvdDartChannel
+  }); // group SrvdDartChannel
 }

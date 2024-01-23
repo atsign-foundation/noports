@@ -14,7 +14,7 @@ RUN \
   dart pub get ; \
   dart run build_runner build --delete-conflicting-outputs ; \
   dart compile exe bin/sshnpd.dart -o ${BINARYDIR}/sshnpd ; \
-  dart compile exe bin/sshrv.dart -o ${BINARYDIR}/sshrv
+  dart compile exe bin/srv.dart -o ${BINARYDIR}/srv
 
 # Second stage of build FROM debian-slim
 FROM debian:stable-20240110-slim@sha256:f7235f31d948d45b37de1faabc7e518859d2b9cf0508486d71c1772cfc9bed8a
@@ -41,6 +41,6 @@ RUN \
   chmod 755 /${USER}/.startup.sh
 
 COPY --from=buildimage --chown=${USER}:${USER} /usr/local/at/sshnpd /usr/local/at/
-COPY --from=buildimage --chown=${USER}:${USER} /usr/local/at/sshrv /usr/local/at/
+COPY --from=buildimage --chown=${USER}:${USER} /usr/local/at/srv /usr/local/at/
 WORKDIR ${HOMEDIR}
 ENTRYPOINT ["/atsign/.startup.sh"]

@@ -1,8 +1,8 @@
 import 'package:args/args.dart';
 import 'package:noports_core/src/common/file_system_utils.dart';
-import 'package:noports_core/src/sshrvd/build_env.dart';
+import 'package:noports_core/src/srvd/build_env.dart';
 
-class SshrvdParams {
+class SrvdParams {
   final String username;
   final String atSign;
   final String homeDirectory;
@@ -10,13 +10,13 @@ class SshrvdParams {
   final String managerAtsign;
   final String ipAddress;
   final bool verbose;
-  final bool snoop;
+  final bool logTraffic;
   final String rootDomain;
 
   // Non param variables
   static final ArgParser parser = _createArgParser();
 
-  SshrvdParams({
+  SrvdParams({
     required this.username,
     required this.atSign,
     required this.homeDirectory,
@@ -24,18 +24,18 @@ class SshrvdParams {
     required this.managerAtsign,
     required this.ipAddress,
     required this.verbose,
-    required this.snoop,
+    required this.logTraffic,
     required this.rootDomain,
   });
 
-  static Future<SshrvdParams> fromArgs(List<String> args) async {
+  static Future<SrvdParams> fromArgs(List<String> args) async {
     // Arg check
     ArgResults r = parser.parse(args);
 
     String atSign = r['atsign'];
     String homeDirectory = getHomeDirectory()!;
 
-    return SshrvdParams(
+    return SrvdParams(
       username: getUserName(throwIfNull: true)!,
       atSign: atSign,
       homeDirectory: homeDirectory,
@@ -44,7 +44,7 @@ class SshrvdParams {
       managerAtsign: r['manager'],
       ipAddress: r['ip'],
       verbose: r['verbose'],
-      snoop: BuildEnv.enableSnoop && r['snoop'],
+      logTraffic: BuildEnv.enableSnoop && r['snoop'],
       rootDomain: r['root-domain'],
     );
   }
@@ -64,7 +64,7 @@ class SshrvdParams {
       'atsign',
       abbr: 'a',
       mandatory: true,
-      help: 'atSign for sshrvd',
+      help: 'atSign for srvd',
     );
     parser.addOption(
       'manager',
@@ -72,7 +72,7 @@ class SshrvdParams {
       defaultsTo: 'open',
       mandatory: false,
       help:
-          'Managers atSign that sshrvd will accept requests from. Default is any atSign can use sshrvd',
+          'Managers atSign that srvd will accept requests from. Default is any atSign can use srvd',
     );
     parser.addOption(
       'ip',
@@ -90,7 +90,7 @@ class SshrvdParams {
         'snoop',
         abbr: 's',
         defaultsTo: false,
-        help: 'Snoop on traffic passing through service',
+        help: 'Log traffic passing through service',
       );
     }
     parser.addOption(

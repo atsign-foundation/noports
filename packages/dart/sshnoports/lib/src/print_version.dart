@@ -1,8 +1,9 @@
 import 'dart:io';
 
-import 'package:sshnoports/src/version.dart';
+import 'package:sshnoports/src/version.dart' as release;
+import 'package:noports_core/version.dart' as package;
 
 /// Print version number
 void printVersion() {
-  stdout.writeln('Version : $packageVersion');
+  stderr.writeln('Version : ${release.packageVersion} (core: ${package.packageVersion}');
 }

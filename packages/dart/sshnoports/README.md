@@ -24,11 +24,11 @@ There are five binaries:-
 `sshnp`  : The client that sets up a connection to the device which you
 can then ssh to via your localhost interface
 
-`sshrvd` : This daemon acts as a rendezvous service and provides Internet routable IP/Ports for sshnpd and sshrv to connect to
+`srvd` : This daemon acts as a rendezvous service and provides Internet routable IP/Ports for sshnpd and srv to connect to
 
-`sshrv`  : This client is called by sshnp to connect the local sshd to the rendezvous point
+`srv`  : This client is called by sshnp to connect the local sshd to the rendezvous point
 
-To get going you just need two (or three if you want to use your own sshrvd service) atSigns and their .atKeys files and the
+To get going you just need two (or three if you want to use your own srvd service) atSigns and their .atKeys files and the
 binaries (from the 
 [latest release](https://github.com/atsign-foundation/noports/releases)).
 Once you have the atSigns (free or paid atSigns from [atsign.com](https://atsign.com)), drop the binaries in place
@@ -52,10 +52,10 @@ Once that has started up you can run the client code from another machine. The c
 
 ```
 ./sshnp --from <@your_manager_atsign> --to <@your_devices_atsign>  \
---host <atSign of sshrvd or FQDN/IP of client machine>  --device <iot_device_name> -s <>
+--host <atSign of srvd or FQDN/IP of client machine>  --device <iot_device_name> -s <>
 ```
 
-The --host specifies the atSign of the sshrvd or the DNS name of the openssh server of the client machine that the remote device can connect to. If everything goes to plan the client
+The --host specifies the atSign of the srvd or the DNS name of the openssh server of the client machine that the remote device can connect to. If everything goes to plan the client
 will complete and tell you how to connect to the remote host for example.
 
 Example command would be:-
@@ -76,11 +76,11 @@ If you want to do this in a single command use `$(<command>)` for example, note 
 $(./sshnp -f @myclient -t @myserver -d mymachine -h @myrz -s id_ed25519.pub)
 ```
 
-Atsign provides a sshrvd service but if you want to run your own `sshrvd` you will need a machine that has an internet IP and all ports 1024-65535 unfirewalled and an atSign for the daemon to use.
+Atsign provides a srvd service but if you want to run your own `srvd` you will need a machine that has an internet IP and all ports 1024-65535 unfirewalled and an atSign for the daemon to use.
 
-To run your own rendezvous service, simply run the `sshrvd` binary.  You may omit the manager atSign to allow all atSigns to use your rendezvous service. There are also flags like `-s` to snoop on traffic passing through the service. 
+To run your own rendezvous service, simply run the `srvd` binary.  You may omit the manager atSign to allow all atSigns to use your rendezvous service. There are also flags like `-s` to snoop on traffic passing through the service. 
 ```
-./sshrvd --atsign <@your_sshrvd_atsign> --manager <@manager_atsign> --ip <FQDN/IP address sent to clients>  
+./srvd --atsign <@your_srvd_atsign> --manager <@manager_atsign> --ip <FQDN/IP address sent to clients>  
 ```
 
 If you can now login using sshnp then you can now turn off sshd from listening on all external interfaces, and instead have ssh listen only on 127.0.0.1.
@@ -130,7 +130,7 @@ after a reboot if for some reason the container crashes is all easily achieved.
 
 ## TWO Ways to run SSH! no ports daemons (root access NOT required)
 
-### `sshnpd.sh` and `sshrvd.sh` - plain old shell scripts and log file
+### `sshnpd.sh` and `srvd.sh` - plain old shell scripts and log file
 
 The scripts directory of this repo contains an example `sshnpd.sh` that can
 be run in a user's home directory (and assumes that the release has been
@@ -148,7 +148,7 @@ You might also want to add a crontab entry to run the script on reboot:
 @reboot ~/sshnpd.sh > ~/sshnpd.log 2>&1
 ```
 
-### `tmux-sshnpd.sh` and `tmux-sshrvd.sh` - the power of tmux, highly recommended if tmux is installed `sudo apt install tmux`
+### `tmux-sshnpd.sh` and `tmux-srvd.sh` - the power of tmux, highly recommended if tmux is installed `sudo apt install tmux`
 
 This runs the daemon inside a tmux session, which can be connected to in order
 to see logs.
