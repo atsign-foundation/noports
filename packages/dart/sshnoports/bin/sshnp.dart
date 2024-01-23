@@ -18,7 +18,9 @@ void main(List<String> args) async {
   AtSignLogger.root_level = 'SHOUT';
   AtSignLogger.defaultLoggingHandler = AtSignLogger.stdErrLoggingHandler;
 
-  ExtendedArgParser parser = ExtendedArgParser();
+  ExtendedArgParser parser = ExtendedArgParser(
+    usageLineLength: stdout.hasTerminal ? stdout.terminalColumns : null,
+  );
 
   // Create the printUsage closure
   void printUsage({Object? error}) {

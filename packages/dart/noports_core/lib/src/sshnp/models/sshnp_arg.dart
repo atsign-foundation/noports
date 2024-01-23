@@ -140,8 +140,9 @@ class SshnpArg {
     bool withDefaults = true,
     Iterable<String>? includeList,
     Iterable<String>? excludeList,
+    int? usageLineLength,
   }) {
-    var parser = ArgParser();
+    var parser = ArgParser(usageLineLength: usageLineLength);
     // Basic arguments
     for (SshnpArg arg in SshnpArg.args) {
       if (!parserType.shouldParse(arg.parseWhen)) {
