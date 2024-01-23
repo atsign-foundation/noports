@@ -22,7 +22,7 @@ If you have a specific questions see the [FAQ](faq-coming-soon.md) or reach out 
 
 ### Usage
 
-<table data-card-size="large" data-column-title-hidden data-view="cards"><thead><tr><th data-card-target data-type="content-ref"></th></tr></thead><tbody><tr><td><a href="guides/usage-guide/basic-usage.md">basic-usage.md</a></td></tr><tr><td><a href="guides/usage-guide/webserver.md">webserver.md</a></td></tr><tr><td><a href="guides/usage-guide/sftp.md">sftp.md</a></td></tr><tr><td><a href="guides/usage-guide/rdp.md">rdp.md</a></td></tr></tbody></table>
+<table data-card-size="large" data-column-title-hidden data-view="cards"><thead><tr><th data-card-target data-type="content-ref"></th></tr></thead><tbody><tr><td><a href="guides/usage-guide/basic-usage/">basic-usage</a></td></tr><tr><td><a href="guides/usage-guide/web-server.md">web-server.md</a></td></tr><tr><td><a href="guides/usage-guide/sftp.md">sftp.md</a></td></tr><tr><td><a href="guides/usage-guide/rdp.md">rdp.md</a></td></tr></tbody></table>
 
 ### Upgrade
 

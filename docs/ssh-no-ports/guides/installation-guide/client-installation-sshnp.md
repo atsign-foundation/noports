@@ -171,13 +171,9 @@ export PATH="$PATH:$HOME/.local/bin";
 {% endtab %}
 {% endtabs %}
 
-## Activate your client address
-
-Before you can use your client, you need an activated noports address in order to continue. See [this guide](activate-an-address-a.k.a.-atsign.md) to learn how to activate it.
-
 ## All Done!
 
-sshnp is ready to go, you can now proceed to [installing your device](device-installation-sshnpd.md), or if you've already done that, checkout our [usage guide](../usage-guide/basic-usage.md).
+sshnp is ready to go, you can now proceed to [installing your device](device-installation-sshnpd.md), or if you've already done that, checkout our [usage guide](../usage-guide/basic-usage/).
 
 [^1]: client address only, activate the device address from the device.
 

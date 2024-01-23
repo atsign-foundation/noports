@@ -2,16 +2,16 @@
 
 ## Overview
 
-The following is a list of usage guides for SSH No Ports, it is recommended that you start with [the basics](basic-usage.md), before moving on to the advanced use-cases.
+The following is a list of usage guides for SSH No Ports, it is recommended that you start with [the basics](basic-usage/), before moving on to the advanced use-cases.
 
 ## Guides
 
-{% content-ref url="basic-usage.md" %}
-[basic-usage.md](basic-usage.md)
+{% content-ref url="basic-usage/" %}
+[basic-usage](basic-usage/)
 {% endcontent-ref %}
 
-{% content-ref url="webserver.md" %}
-[webserver.md](webserver.md)
+{% content-ref url="web-server.md" %}
+[web-server.md](web-server.md)
 {% endcontent-ref %}
 
 {% content-ref url="sftp.md" %}

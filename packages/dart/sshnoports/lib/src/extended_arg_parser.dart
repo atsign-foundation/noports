@@ -14,8 +14,11 @@ const legacyDaemonFlag = 'legacy-daemon';
 const outputExecutionCommandFlag = 'output-execution-command';
 
 class ExtendedArgParser {
-  static ArgParser createArgParser() {
-    final parser = SshnpArg.createArgParser(parserType: ParserType.commandLine);
+  static ArgParser createArgParser({int? usageLineLength}) {
+    final parser = SshnpArg.createArgParser(
+      parserType: ParserType.commandLine,
+      usageLineLength: usageLineLength,
+    );
 
     parser.addOption(
       sshClientOption,
@@ -45,7 +48,8 @@ class ExtendedArgParser {
   final ArgParser parser;
   ArgResults? results;
 
-  ExtendedArgParser() : parser = createArgParser();
+  ExtendedArgParser({int? usageLineLength})
+      : parser = createArgParser(usageLineLength: usageLineLength);
 
   ArgResults parse(Iterable<String> args) {
     return results = parser.parse(args);

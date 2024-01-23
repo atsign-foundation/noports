@@ -145,7 +145,7 @@ Replace `<@device_atsign>` with the [device address](#user-content-fn-4)[^4]
 
 Replace `<@manager_atsign>` with the [client address](#user-content-fn-5)[^5]
 
-Replace `<device_name>` with your own [custom **unique** identifier](#user-content-fn-6)[^6] for this device
+Replace `<device_name>` with your own [custom **unique** identifier](#user-content-fn-6)[^6] for this device, you will need this value later so don't forget it.
 
 Add any additional config to the end of the line where sshnpd is run, some useful flags you should consider adding:
 
@@ -172,7 +172,7 @@ sudo systemctl status sshnpd.service
 
 #### All done!
 
-Your systemd service is ready to go, you can now proceed to [installing your client](client-installation-sshnp.md), or if you've already done that, checkout our [usage guide](../usage-guide/basic-usage.md).
+Your systemd service is ready to go, you can now proceed to [installing your client](client-installation-sshnp.md), or if you've already done that, checkout our [usage guide](../usage-guide/basic-usage/).
 
 ### Tmux session
 
@@ -258,7 +258,7 @@ Replace `$device_atsign` with the [device address](#user-content-fn-8)[^8]
 
 Replace `$manager_atsign` with the [client address](#user-content-fn-9)[^9]
 
-Replace `$device_name` with your own [custom **unique** identifier](#user-content-fn-10)[^10] for this device
+Replace `$device_name` with your own [custom **unique** identifier](#user-content-fn-10)[^10] for this device, you will need this value later so don't forget it.
 
 Add any additional config to the end of the line where sshnpd is run, some useful flags you should consider adding:
 
@@ -290,7 +290,7 @@ To detach from the tmux session use the keybind `Ctrl + B, D`.  This will safely
 
 #### All done!
 
-Your tmux session is ready to go, you can now proceed to [installing your client](client-installation-sshnp.md), or if you've already done that, checkout our [usage guide](../usage-guide/basic-usage.md).
+Your tmux session is ready to go, you can now proceed to [installing your client](client-installation-sshnp.md), or if you've already done that, checkout our [usage guide](../usage-guide/basic-usage/).
 
 ### Headless (cron + nohup)
 
@@ -360,7 +360,7 @@ Replace `$device_atsign` with the [device address](#user-content-fn-12)[^12]
 
 Replace `$manager_atsign` with the [client address](#user-content-fn-13)[^13]
 
-Replace `$device_name` with your own [custom **unique** identifier](#user-content-fn-14)[^14] for this device
+Replace `$device_name` with your own [custom **unique** identifier](#user-content-fn-14)[^14] for this device, you will need this value later so don't forget it.
 
 Add any additional config to the end of the line where sshnpd is run, some useful flags you should consider adding:
 
@@ -399,7 +399,7 @@ Most of the logs will be found in `sshnpd.err`, it is usually worth checking tha
 
 #### All done!
 
-Your headless job is ready to go, you can now proceed to [installing your client](client-installation-sshnp.md), or if you've already done that, checkout our [usage guide](../usage-guide/basic-usage.md).
+Your headless job is ready to go, you can now proceed to [installing your client](client-installation-sshnp.md), or if you've already done that, checkout our [usage guide](../usage-guide/basic-usage/).
 
 ### Standalone binaries
 
@@ -451,7 +451,7 @@ From here, you are on your own for setting up sshnpd.
 
 #### What next?
 
-Once sshnpd is ready to go, you can now proceed to [installing your client](client-installation-sshnp.md), or if you've already done that, checkout our [usage guide](../usage-guide/basic-usage.md).
+Once sshnpd is ready to go, you can now proceed to [installing your client](client-installation-sshnp.md), or if you've already done that, checkout our [usage guide](../usage-guide/basic-usage/).
 
 [^1]: device address only, activate the client address from the client machine.
 
