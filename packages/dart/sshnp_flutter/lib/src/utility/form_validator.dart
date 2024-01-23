@@ -10,12 +10,23 @@ class FormValidator {
     return null;
   }
 
+  static String? validateRequiredIntField(String? value) {
+    String valid = r'^[0-9]+$';
+    if (value?.isEmpty ?? true) {
+      return kEmptyFieldValidationError;
+    } else if (!RegExp(valid).hasMatch(value!)) {
+      return kIntFieldValidationError;
+    }
+    return null;
+  }
+
   static String? validateAtsignField(String? value) {
     if (value?.isEmpty ?? true) {
       return kEmptyFieldValidationError;
     } else if (!value!.startsWith('@')) {
       return kAtsignFieldValidationError;
     }
+    validateRequiredField(value);
     return null;
   }
 

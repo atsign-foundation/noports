@@ -52,7 +52,7 @@ class _ProfileFormState extends ConsumerState<ProfileFormDesktopView> {
   void onSubmit(SshnpParams oldConfig) async {
     if (_formkey.currentState!.validate()) {
       _formkey.currentState!.save();
-      SshnpParams config = SshnpParams.merge(oldConfig, newConfig);
+      SshnpParams config = SshnpParams.merge(SshnpParams.empty(), newConfig);
 
       // get the controller for the profile that is about to be saved. Since this profile is not saved a log will be printed stating that the profile does not exist in keystore.
       final controller = ref.read(configFamilyController(newConfig.profileName!).notifier);
@@ -151,7 +151,7 @@ class _ProfileFormState extends ConsumerState<ProfileFormDesktopView> {
                       newConfig,
                       SshnpPartialParams(host: value),
                     ),
-                    validator: FormValidator.validateRequiredField,
+                    validator: FormValidator.validateAtsignField,
                   ),
                   gapH20,
                   Text(strings.connectionConfiguration, style: Theme.of(context).textTheme.bodyLarge),
@@ -159,10 +159,13 @@ class _ProfileFormState extends ConsumerState<ProfileFormDesktopView> {
                   ProfileFormCard(
                     formFields: [
                       CustomTextFormField(
-                          initialValue: oldConfig.remoteUsername ?? '',
+                          initialValue: oldConfig.remoteUsername,
                           labelText: strings.remoteUserName,
                           toolTip: strings.remoteUserNameTooltip,
                           onSaved: (value) {
+                            if (value == '') {
+                              value = null;
+                            }
                             newConfig = SshnpPartialParams.merge(
                               newConfig,
                               SshnpPartialParams(remoteUsername: value),
@@ -170,10 +173,13 @@ class _ProfileFormState extends ConsumerState<ProfileFormDesktopView> {
                           }),
                       gapH10,
                       CustomTextFormField(
-                          initialValue: oldConfig.tunnelUsername ?? '',
+                          initialValue: oldConfig.tunnelUsername,
                           labelText: strings.tunnelUserName,
                           toolTip: strings.tunnelUserNameTooltip,
                           onSaved: (value) {
+                            if (value == '') {
+                              value = null;
+                            }
                             newConfig = SshnpPartialParams.merge(
                               newConfig,
                               SshnpPartialParams(tunnelUsername: value),
@@ -184,21 +190,22 @@ class _ProfileFormState extends ConsumerState<ProfileFormDesktopView> {
                         initialValue: oldConfig.remoteSshdPort.toString(),
                         labelText: strings.remoteSshdPort,
                         toolTip: strings.remoteSshdPortTooltip,
-                        onChanged: (value) => newConfig = SshnpPartialParams.merge(
+                        onSaved: (value) => newConfig = SshnpPartialParams.merge(
                           newConfig,
-                          SshnpPartialParams(remoteSshdPort: int.tryParse(value)),
+                          SshnpPartialParams(remoteSshdPort: int.tryParse(value!)),
                         ),
-                        validator: FormValidator.validateRequiredField,
+                        validator: FormValidator.validateRequiredIntField,
                       ),
                       gapH10,
                       CustomTextFormField(
                         initialValue: oldConfig.localPort.toString(),
                         labelText: strings.localPort,
                         toolTip: strings.localPortTooltip,
-                        onChanged: (value) => newConfig = SshnpPartialParams.merge(
+                        onSaved: (value) => newConfig = SshnpPartialParams.merge(
                           newConfig,
-                          SshnpPartialParams(localPort: int.tryParse(value)),
+                          SshnpPartialParams(localPort: int.tryParse(value!)),
                         ),
+                        validator: FormValidator.validateRequiredIntField,
                       ),
                       gapH10,
                       gapH12,
@@ -288,9 +295,9 @@ class _ProfileFormState extends ConsumerState<ProfileFormDesktopView> {
                         hintText: strings.localSshOptionsHint,
                         labelText: strings.localSshOptions,
                         toolTip: strings.localSshOptionsTooltip,
-                        onChanged: (value) => newConfig = SshnpPartialParams.merge(
+                        onSaved: (value) => newConfig = SshnpPartialParams.merge(
                           newConfig,
-                          SshnpPartialParams(localSshOptions: value.split(',')),
+                          SshnpPartialParams(localSshOptions: value?.split(',')),
                         ),
                       ),
                       gapH10,
@@ -302,6 +309,7 @@ class _ProfileFormState extends ConsumerState<ProfileFormDesktopView> {
                           newConfig,
                           SshnpPartialParams(rootDomain: value),
                         ),
+                        validator: FormValidator.validateRequiredField,
                       ),
                     ],
                   ),
