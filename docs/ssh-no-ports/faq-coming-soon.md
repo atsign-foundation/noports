@@ -1,6 +1,6 @@
 # ❓ FAQ \[Coming soon]
 
-## Coming soon!
+## Ask your Questions!
 
 If you have a question that needs answering please do one of the following:
 
