@@ -19,5 +19,3 @@
   * [❓ FAQ \[Coming soon\]](ssh-no-ports/faq-coming-soon.md)
 * [📔 Developer Notes](developer-notes/README.md)
   * [Under The Hood](developer-notes/underthehood.md)
-* [noports.com](https://noports.com)
-* [No Ports Address Portal](https://my.noports.com/no-ports/)
