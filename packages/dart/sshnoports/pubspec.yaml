@@ -18,9 +18,9 @@ dependency_overrides:
   # Pin the dependencies of noports_core
   archive: 3.3.9
   args: 2.4.2
-  at_client: 3.0.71
-  at_lookup: 3.0.41
-  at_utils: 3.0.15
+  # at_client: 3.0.71
+  at_lookup: 3.0.45
+  at_utils: 3.0.16
   asn1lib: 1.4.1
   encrypt: 5.0.1
   crypton: 2.1.0
@@ -30,6 +30,18 @@ dependency_overrides:
   ssh_key: 0.8.0
   uuid: 3.0.7
   version: 3.0.2
+  at_commons: ^4.0.0
+  at_chops: ^2.0.0
+  at_client:
+    git:
+      url: https://github.com/atsign-foundation/at_client_sdk.git
+      path: packages/at_client
+      ref: trunk
+  at_onboarding_cli:
+    git:
+      url: https://github.com/atsign-foundation/at_libraries
+      path: packages/at_onboarding_cli
+      ref: uptake_atchops_major_version_atonboarding_cli
 
 dev_dependencies:
   lints: ^3.0.0
