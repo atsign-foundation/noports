@@ -19,7 +19,10 @@ dependency_overrides:
     path: ../noports_core
   # Pin the dependencies of noports_core
   archive: 3.3.9
-  args: 2.4.2
+  args:
+    git:
+      ref: gkc/show-aliases-in-usage
+      url: https://github.com/gkc/args
   at_client: 3.0.71
   at_lookup: 3.0.41
   at_utils: 3.0.15
