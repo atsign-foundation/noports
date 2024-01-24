@@ -36,7 +36,7 @@ class SshnpDartPureImpl extends SshnpCore
       atClient: atClient,
       params: params,
       sessionId: sessionId,
-      namespace: this.namespace,
+      namespace: namespace,
     );
     _srvdChannel = SrvdDartChannel(
       atClient: atClient,
@@ -77,7 +77,7 @@ class SshnpDartPureImpl extends SshnpCore
     await notify(
       AtKey()
         ..key = 'ssh_request'
-        ..namespace = this.namespace
+        ..namespace = namespace
         ..sharedBy = params.clientAtSign
         ..sharedWith = params.sshnpdAtSign
         ..metadata = (Metadata()..ttl = 10000),

@@ -313,7 +313,7 @@ void main() {
           () => mockAtClient.get(
             any<AtKey>(
               that: predicate(
-                  (AtKey key) => key.key?.startsWith('username.') ?? false),
+                  (AtKey key) => key.key.startsWith('username.')),
             ),
           ),
         ).thenAnswer((i) async => AtValue()..value = 'mySharedUsername');
