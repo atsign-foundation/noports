@@ -200,7 +200,8 @@ class SrvImplInline implements Srv<SSHSocket> {
         await socket.flush();
       }
 
-      WrappedSSHSocket sshSocket = WrappedSSHSocket(socket, rvdAuthString, encrypter, decrypter);
+      WrappedSSHSocket sshSocket =
+          WrappedSSHSocket(socket, rvdAuthString, encrypter, decrypter);
 
       return sshSocket;
     } catch (e) {
@@ -223,7 +224,8 @@ class WrappedSSHSocket implements SSHSocket {
   late StreamSink<List<int>> _sink;
   late Stream<Uint8List> _stream;
 
-  WrappedSSHSocket(this.socket, this.rvdAuthString, this.encrypter, this.decrypter) {
+  WrappedSSHSocket(
+      this.socket, this.rvdAuthString, this.encrypter, this.decrypter) {
     if (encrypter == null) {
       _sink = socket;
     } else {

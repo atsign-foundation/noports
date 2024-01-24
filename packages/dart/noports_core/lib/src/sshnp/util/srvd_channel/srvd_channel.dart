@@ -119,7 +119,18 @@ abstract class SrvdChannel<T> with AsyncInitialization, AtClientBindings {
       return srv.run();
     } else {
       // legacy behaviour, reverse ssh
-      return null;
+      if (params.host.startsWith('@')) {
+        srv = srvGenerator(
+          host,
+          daemonPort!, // everything was backwards back then
+          localPort: params.localSshdPort,
+          bindLocalPort: false,
+        );
+        return srv.run();
+      } else {
+        // direct connection from device host to client; SR not involved
+        return null;
+      }
     }
   }
 

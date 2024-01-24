@@ -25,6 +25,13 @@ Future<Sshnp> createSshnp(
   }
 
   if (legacyDaemon) {
+    if (params.authenticateDeviceToRvd ||
+        params.authenticateClientToRvd ||
+        params.encryptRvdTraffic ||
+        params.discoverDaemonFeatures) {
+      throw ArgumentError('When using --legacy-daemon, you must also'
+          ' use these flags: --no-ac --no-ad --no-et --no-ddf');
+    }
     // ignore: deprecated_member_use
     return Sshnp.unsigned(
       atClient: atClient,

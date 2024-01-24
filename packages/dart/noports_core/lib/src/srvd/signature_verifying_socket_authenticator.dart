@@ -86,9 +86,9 @@ class SignatureAuthVerifier {
             var envelope = jsonDecode(message);
 
             final hashingAlgo =
-            HashingAlgoType.values.byName(envelope['hashingAlgo']);
+                HashingAlgoType.values.byName(envelope['hashingAlgo']);
             final signingAlgo =
-            SigningAlgoType.values.byName(envelope['signingAlgo']);
+                SigningAlgoType.values.byName(envelope['signingAlgo']);
 
             var payload = envelope['payload'];
             if (payload == null || payload is! Map) {
