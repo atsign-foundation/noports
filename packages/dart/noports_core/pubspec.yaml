@@ -24,6 +24,20 @@ dependencies:
   socket_connector: ^2.0.1
   uuid: ^3.0.7
 
+dependency_overrides: 
+  at_commons: ^4.0.0
+  at_chops: ^2.0.0
+  at_utils: ^3.0.16
+  at_client:
+    git:
+      url: https://github.com/atsign-foundation/at_client_sdk.git
+      path: packages/at_client
+      ref: replace_encrypt_key_with_atchops
+  at_onboarding_cli:
+    git:
+      url: https://github.com/atsign-foundation/at_libraries
+      path: packages/at_onboarding_cli
+      ref: uptake_atchops_major_version_atonboarding_cli
 dev_dependencies:
   build_runner: ^2.4.6
   build_version: ^2.1.1
