@@ -179,6 +179,7 @@ class SshnpArg {
             help: arg.help,
             hide: arg.hide,
             negatable: arg.negatable,
+            aliases: arg.aliases ?? const [],
           );
           break;
       }
