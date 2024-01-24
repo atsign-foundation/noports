@@ -87,7 +87,7 @@ class SshnpUnsignedImpl extends SshnpCore
         ..sharedBy = params.clientAtSign
         ..sharedWith = params.sshnpdAtSign
         ..metadata = (Metadata()..ttl = 10000),
-      '$localPort ${srvdChannel.port} ${keyUtil.username} ${srvdChannel.host} $sessionId',
+      '$localPort ${srvdChannel.clientPort} ${keyUtil.username} ${srvdChannel.host} $sessionId',
       checkForFinalDeliveryStatus: false,
       waitForFinalDeliveryStatus: false,
     );

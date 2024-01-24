@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:dartssh2/dartssh2.dart';
 import 'package:meta/meta.dart';
 import 'package:noports_core/src/common/io_types.dart';
 import 'package:noports_core/src/common/openssh_binary_path.dart';
@@ -12,6 +13,7 @@ mixin OpensshSshSessionHandler on SshnpCore
   Future<Process?> startInitialTunnelSession({
     required String ephemeralKeyPairIdentifier,
     int? localRvPort,
+    SSHSocket? sshSocket,
     @visibleForTesting ProcessStarter startProcess = Process.start,
   }) async {
     Process? process;

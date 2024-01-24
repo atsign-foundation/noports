@@ -65,7 +65,7 @@ class SshnpOpensshLocalImpl extends SshnpCore
             direct: true,
             sessionId: sessionId,
             host: srvdChannel.host,
-            port: srvdChannel.srvdPort!,
+            port: srvdChannel.daemonPort!,
             authenticateToRvd: params.authenticateDeviceToRvd,
             clientNonce: srvdChannel.clientNonce,
             rvdNonce: srvdChannel.rvdNonce,

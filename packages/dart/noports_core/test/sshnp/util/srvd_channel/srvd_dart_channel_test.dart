@@ -20,7 +20,7 @@ void main() {
     });
     test('public API', () {
       expect(
-        SrvdDartChannel(
+        SrvdDartBindPortChannel(
           atClient: mockAtClient,
           params: mockSshnpParams,
           sessionId: sessionId,

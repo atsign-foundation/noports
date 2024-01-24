@@ -1,10 +1,12 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
+import 'dart:typed_data';
 
 import 'package:at_utils/at_utils.dart';
 import 'package:cryptography/cryptography.dart';
 import 'package:cryptography/dart.dart';
+import 'package:dartssh2/dartssh2.dart';
 import 'package:meta/meta.dart';
 import 'package:noports_core/srv.dart';
 import 'package:socket_connector/socket_connector.dart';
@@ -116,6 +118,148 @@ class SrvImplExec implements Srv<Process> {
 
     return p;
   }
+}
+
+@visibleForTesting
+class SrvImplInline implements Srv<SSHSocket> {
+  final AtSignLogger logger = AtSignLogger('SrvImplInline');
+
+  @override
+  final String host;
+
+  @override
+  final int streamingPort;
+
+  @override
+  final int localPort = -1;
+
+  @override
+  final bool bindLocalPort = false;
+
+  @override
+  final String? rvdAuthString;
+
+  @override
+  final String? sessionAESKeyString;
+
+  @override
+  final String? sessionIVString;
+
+  SrvImplInline(
+    this.host,
+    this.streamingPort, {
+    this.rvdAuthString,
+    this.sessionAESKeyString,
+    this.sessionIVString,
+  }) {
+    if ((sessionAESKeyString == null && sessionIVString != null) ||
+        (sessionAESKeyString != null && sessionIVString == null)) {
+      throw ArgumentError('Both AES key and IV are required, or neither');
+    }
+  }
+
+  @override
+  Future<SSHSocket> run() async {
+    DataTransformer? encrypter;
+    DataTransformer? decrypter;
+
+    if (sessionAESKeyString != null && sessionIVString != null) {
+      final DartAesCtr algorithm = DartAesCtr.with256bits(
+        macAlgorithm: Hmac.sha256(),
+      );
+      final SecretKey sessionAESKey =
+          SecretKey(base64Decode(sessionAESKeyString!));
+      final List<int> sessionIV = base64Decode(sessionIVString!);
+
+      encrypter = (Stream<List<int>> stream) {
+        return algorithm.encryptStream(
+          stream,
+          secretKey: sessionAESKey,
+          nonce: sessionIV,
+          onMac: (mac) {},
+        );
+      };
+      decrypter = (Stream<List<int>> stream) {
+        return algorithm.decryptStream(
+          stream,
+          secretKey: sessionAESKey,
+          nonce: sessionIV,
+          mac: Mac.empty,
+        );
+      };
+    }
+
+    try {
+      logger.info('Creating socket connection to rvd at $host:$streamingPort');
+      Socket socket = await Socket.connect(host, streamingPort);
+
+      // Authenticate if we have an rvdAuthString
+      if (rvdAuthString != null) {
+        logger.info('authenticating');
+        socket.writeln(rvdAuthString);
+        await socket.flush();
+      }
+
+      WrappedSSHSocket sshSocket = WrappedSSHSocket(socket, rvdAuthString, encrypter, decrypter);
+
+      return sshSocket;
+    } catch (e) {
+      AtSignLogger('srv').severe(e.toString());
+      rethrow;
+    }
+  }
+}
+
+/// - Get a hold of the underlying SSHSocket's Stream and StreamSink
+/// - Wrap the StreamSink with encrypter
+/// - Wrap the Stream with decrypter
+class WrappedSSHSocket implements SSHSocket {
+  /// The actual underlying socket
+  final Socket socket;
+  final String? rvdAuthString;
+  final DataTransformer? encrypter;
+  final DataTransformer? decrypter;
+
+  late StreamSink<List<int>> _sink;
+  late Stream<Uint8List> _stream;
+
+  WrappedSSHSocket(this.socket, this.rvdAuthString, this.encrypter, this.decrypter) {
+    if (encrypter == null) {
+      _sink = socket;
+    } else {
+      stderr.writeln('Wrapping SSHSocket\'s sink with encrypter');
+      StreamController<Uint8List> sc = StreamController<Uint8List>();
+      Stream<List<int>> encrypted = encrypter!(sc.stream);
+      encrypted.listen(socket.add);
+      _sink = sc;
+    }
+
+    if (decrypter == null) {
+      _stream = socket;
+    } else {
+      stderr.writeln('Wrapping SSHSocket\'s stream with decrypter');
+      _stream = decrypter!(socket).cast<Uint8List>();
+    }
+  }
+
+  @override
+  Future<void> close() async {
+    await socket.close();
+  }
+
+  @override
+  void destroy() {
+    socket.destroy();
+  }
+
+  @override
+  Future<void> get done => socket.done;
+
+  @override
+  StreamSink<List<int>> get sink => _sink;
+
+  @override
+  Stream<Uint8List> get stream => _stream;
 }
 
 @visibleForTesting
@@ -233,8 +377,4 @@ class SrvImplDart implements Srv<SocketConnector> {
       rethrow;
     }
   }
-
-  Stream<List<int>> encrypt(Stream<List<int>> s) async* {}
-
-  Stream<List<int>> decrypt(Stream<List<int>> s) async* {}
 }

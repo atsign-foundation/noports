@@ -36,12 +36,10 @@ class SshnpParams {
   final bool addForwardsToTunnel;
   final String? atKeysFilePath;
   final SupportedSshAlgorithm sshAlgorithm;
-  // TODO Once pure dart impl supports these flags then they can be
-  // TODO made "final" again
-  bool authenticateClientToRvd;
-  bool authenticateDeviceToRvd;
-  bool encryptRvdTraffic;
-  bool discoverDaemonFeatures;
+  final bool authenticateClientToRvd;
+  final bool authenticateDeviceToRvd;
+  final bool encryptRvdTraffic;
+  final bool discoverDaemonFeatures;
 
   /// Special Arguments
 

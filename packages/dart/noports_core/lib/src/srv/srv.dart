@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:dartssh2/dartssh2.dart';
 import 'package:noports_core/src/srv/srv_impl.dart';
 import 'package:socket_connector/socket_connector.dart';
 
@@ -32,8 +33,8 @@ abstract class Srv<T> {
   static Srv<Process> exec(
     String host,
     int streamingPort, {
-    required int localPort,
-    required bool bindLocalPort,
+    int? localPort,
+    bool? bindLocalPort,
     String? rvdAuthString,
     String? sessionAESKeyString,
     String? sessionIVString,
@@ -41,8 +42,8 @@ abstract class Srv<T> {
     return SrvImplExec(
       host,
       streamingPort,
-      localPort: localPort,
-      bindLocalPort: bindLocalPort,
+      localPort: localPort!,
+      bindLocalPort: bindLocalPort!,
       rvdAuthString: rvdAuthString,
       sessionAESKeyString: sessionAESKeyString,
       sessionIVString: sessionIVString,
@@ -52,8 +53,8 @@ abstract class Srv<T> {
   static Srv<SocketConnector> dart(
     String host,
     int streamingPort, {
-    required int localPort,
-    required bool bindLocalPort,
+    int? localPort,
+    bool? bindLocalPort,
     String? rvdAuthString,
     String? sessionAESKeyString,
     String? sessionIVString,
@@ -61,8 +62,26 @@ abstract class Srv<T> {
     return SrvImplDart(
       host,
       streamingPort,
-      localPort: localPort,
-      bindLocalPort: bindLocalPort,
+      localPort: localPort!,
+      bindLocalPort: bindLocalPort!,
+      rvdAuthString: rvdAuthString,
+      sessionAESKeyString: sessionAESKeyString,
+      sessionIVString: sessionIVString,
+    );
+  }
+
+  static Srv<SSHSocket> inline(
+    String host,
+    int streamingPort, {
+    int? localPort,
+    bool? bindLocalPort,
+    String? rvdAuthString,
+    String? sessionAESKeyString,
+    String? sessionIVString,
+  }) {
+    return SrvImplInline(
+      host,
+      streamingPort,
       rvdAuthString: rvdAuthString,
       sessionAESKeyString: sessionAESKeyString,
       sessionIVString: sessionIVString,
