@@ -4,7 +4,7 @@ typedef SrvGenerator<T> = Srv<T> Function(
   String,
   int, {
   int? localPort,
-  required bool bindLocalPort,
+  bool? bindLocalPort,
   String? rvdAuthString,
   String? sessionAESKeyString,
   String? sessionIVString,
