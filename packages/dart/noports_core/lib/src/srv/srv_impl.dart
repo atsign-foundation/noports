@@ -229,7 +229,6 @@ class WrappedSSHSocket implements SSHSocket {
     if (encrypter == null) {
       _sink = socket;
     } else {
-      stderr.writeln('Wrapping SSHSocket\'s sink with encrypter');
       StreamController<Uint8List> sc = StreamController<Uint8List>();
       Stream<List<int>> encrypted = encrypter!(sc.stream);
       encrypted.listen(socket.add);
@@ -239,7 +238,6 @@ class WrappedSSHSocket implements SSHSocket {
     if (decrypter == null) {
       _stream = socket;
     } else {
-      stderr.writeln('Wrapping SSHSocket\'s stream with decrypter');
       _stream = decrypter!(socket).cast<Uint8List>();
     }
   }
