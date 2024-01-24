@@ -28,10 +28,11 @@ packages:
   args:
     dependency: "direct main"
     description:
-      name: args
-      sha256: eef6c46b622e0494a36c5a12d10d77fb4e855501a91c1b9ef9339326e58f0596
-      url: "https://pub.dev"
-    source: hosted
+      path: "."
+      ref: "gkc/show-aliases-in-usage"
+      resolved-ref: a8e4d8083c0846ce3d13bafdb9470d537988cadc
+      url: "https://github.com/gkc/args"
+    source: git
     version: "2.4.2"
   asn1lib:
     dependency: "direct overridden"

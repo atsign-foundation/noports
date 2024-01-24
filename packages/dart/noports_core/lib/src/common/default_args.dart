@@ -21,7 +21,7 @@ class DefaultArgs {
   static const bool authenticateClientToRvd = true;
   static const bool authenticateDeviceToRvd = true;
   static const bool encryptRvdTraffic = true;
-  static const bool discoverDaemonFeatures = true;
+  static const bool discoverDaemonFeatures = false;
 }
 
 class DefaultSshnpArgs {
