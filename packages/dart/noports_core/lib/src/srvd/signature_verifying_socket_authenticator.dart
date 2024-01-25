@@ -74,16 +74,17 @@ class SignatureAuthVerifier {
       } else {
         buffer.addAll(data);
         if (buffer.contains(10)) {
-          logger.info('original buffer length ${buffer.length}');
+          logger.finer('original buffer length ${buffer.length}');
           List<int> authBuffer = buffer.sublist(0, buffer.indexOf(10));
-          logger.info('authBuffer length ${authBuffer.length}');
+          logger.finer('authBuffer length ${authBuffer.length}');
           buffer.removeRange(0, buffer.indexOf(10) + 1);
-          logger.info('remaining buffer length ${buffer.length}');
+          logger.finer('remaining buffer length ${buffer.length}');
 
           try {
             final message = String.fromCharCodes(authBuffer);
-            logger.info('SignatureAuthVerifier $tag received data: $message');
+            logger.finer('SignatureAuthVerifier $tag received data: $message');
             var envelope = jsonDecode(message);
+            logger.finer('SignatureAuthVerifier $tag decoded JSON message OK');
 
             final hashingAlgo =
                 HashingAlgoType.values.byName(envelope['hashingAlgo']);
@@ -110,8 +111,6 @@ class SignatureAuthVerifier {
               ..hashingAlgoType = hashingAlgo;
 
             AtSigningResult atSigningResult = _verifySignature(input);
-            logger.info('Signing verification outcome is:'
-                ' ${atSigningResult.result}');
             bool result = atSigningResult.result;
 
             if (result == false) {
@@ -120,6 +119,9 @@ class SignatureAuthVerifier {
               return;
             }
 
+            logger.info('SignatureAuthVerifier $tag :'
+                ' verification succeeded :'
+                ' ${atSigningResult.result}');
             authenticated = true;
             completer.complete((true, sc.stream));
 
