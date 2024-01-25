@@ -1,0 +1,27 @@
+name: Gitbook Review
+on:
+  push:
+    branches:
+     - gitbook
+
+jobs:
+  create-pull-request:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
+
+      - name: Create Pull Request
+        uses: peter-evans/create-pull-request@153407881ec5c347639a548ade7d8ad1d6740e38 # v5.0.2
+        with:
+          token: ${{ secrets.MY_GITHUB_TOKEN }}
+          committer: library-action[bot] <41898282+github-actions[bot]@users.noreply.github.com>
+          author: library-action[bot] <41898282+github-actions[bot]@users.noreply.github.com>
+          base: gitbook
+          branch: bot-new-stable-version
+          delete-branch: true
+          title: 'chore(gitbook): Update Gitbook Docs'
+          body: |
+            Automated PR to update the gitbook docs.
+          reviewers: xavierchanth
+          draft: false
