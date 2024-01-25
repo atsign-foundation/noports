@@ -13,7 +13,7 @@ abstract class Srv<T> {
 
   /// The local port to bridge to
   /// Defaults to 22
-  abstract final int localPort;
+  abstract final int? localPort;
 
   /// A string which needs to be presented to the rvd before the rvd
   /// will allow any further traffic on the socket
@@ -25,7 +25,7 @@ abstract class Srv<T> {
   /// The IV to use with the [sessionAESKeyString]
   abstract final String? sessionIVString;
 
-  abstract final bool bindLocalPort;
+  abstract final bool? bindLocalPort;
 
   Future<T> run();
 
@@ -42,8 +42,8 @@ abstract class Srv<T> {
     return SrvImplExec(
       host,
       streamingPort,
-      localPort: localPort!,
-      bindLocalPort: bindLocalPort!,
+      localPort: localPort,
+      bindLocalPort: bindLocalPort,
       rvdAuthString: rvdAuthString,
       sessionAESKeyString: sessionAESKeyString,
       sessionIVString: sessionIVString,

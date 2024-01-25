@@ -22,10 +22,10 @@ class SrvImplExec implements Srv<Process> {
   final int streamingPort;
 
   @override
-  final int localPort;
+  final int? localPort;
 
   @override
-  final bool bindLocalPort;
+  final bool? bindLocalPort;
 
   @override
   final String? rvdAuthString;
@@ -42,12 +42,15 @@ class SrvImplExec implements Srv<Process> {
   SrvImplExec(
     this.host,
     this.streamingPort, {
-    required this.localPort,
-    required this.bindLocalPort,
+    this.localPort,
+    this.bindLocalPort = false,
     this.rvdAuthString,
     this.sessionAESKeyString,
     this.sessionIVString,
   }) {
+    if (localPort == null) {
+      throw ArgumentError('localPort must be non-null');
+    }
     if ((sessionAESKeyString == null && sessionIVString != null) ||
         (sessionAESKeyString != null && sessionIVString == null)) {
       throw ArgumentError('Both AES key and IV are required, or neither');
@@ -72,7 +75,7 @@ class SrvImplExec implements Srv<Process> {
       '--local-port',
       localPort.toString(),
     ];
-    if (bindLocalPort) {
+    if (bindLocalPort ?? false) {
       rvArgs.add('--bind-local-port');
     }
     Map<String, String> environment = {};
