@@ -24,5 +24,7 @@ jobs:
             --base 'trunk' \
             --head 'gitbook' \
             --reviewer 'xavierchanth' \
-            --fill || echo "Already created?";
+            --title 'docs(automated): Update Gitbook docs' \
+            --fill || \
+          echo "Already created?";
 
