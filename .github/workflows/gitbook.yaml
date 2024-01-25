@@ -25,3 +25,4 @@ jobs:
           --body 'Automated PR to update gitbook docs.' \
           --reviewer 'xavierchanth' \
           --fill
+
