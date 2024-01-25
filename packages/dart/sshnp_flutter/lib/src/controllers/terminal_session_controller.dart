@@ -185,6 +185,11 @@ class TerminalSessionFamilyController extends FamilyNotifier<TerminalSession, St
       ref.read(terminalSessionProfileNameFamilyCounter(state._profileName!).notifier)._removeSession(state.sessionId);
     }
   }
+
+  void write(String data) {
+    state.terminal.write(data);
+    state.terminal.cursorNextLine(1);
+  }
 }
 
 /// Counter for the number of terminal sessions by profileName - issues and tracks the display name for each session
