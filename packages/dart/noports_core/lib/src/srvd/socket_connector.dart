@@ -113,7 +113,7 @@ void socketConnector(ConnectorParams connectorParams) async {
   logger.info('Waiting for connector to close');
   await connector.done;
 
-  logger.info('Finished session ${srvdSessionParams.sessionId}'
+  logger.shout('Finished session ${srvdSessionParams.sessionId}'
       ' for ${srvdSessionParams.atSignA} to ${srvdSessionParams.atSignB}'
       ' using ports [$portA, $portB]');
 

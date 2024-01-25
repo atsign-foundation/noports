@@ -66,7 +66,7 @@ class SignatureAuthVerifier {
     Completer<(bool, Stream<Uint8List>?)> completer = Completer();
     bool authenticated = false;
     StreamController<Uint8List> sc = StreamController();
-    logger.info('SignatureAuthVerifier $tag: starting listen');
+    logger.info('SignatureAuthVerifier for $tag: starting listen');
     List<int> buffer = [];
     socket.listen((Uint8List data) {
       if (authenticated) {
@@ -114,13 +114,16 @@ class SignatureAuthVerifier {
             bool result = atSigningResult.result;
 
             if (result == false) {
+              logger.shout('SignatureAuthVerifier $tag :'
+                  ' verification FAILURE :'
+                  ' ${atSigningResult.result}');
               completer.completeError(
                   'Signature verification failed. Signatures did not match.');
               return;
             }
 
-            logger.info('SignatureAuthVerifier $tag :'
-                ' verification succeeded :'
+            logger.shout('SignatureAuthVerifier $tag :'
+                ' verification SUCCESS :'
                 ' ${atSigningResult.result}');
             authenticated = true;
             completer.complete((true, sc.stream));
@@ -129,6 +132,10 @@ class SignatureAuthVerifier {
               sc.add(Uint8List.fromList(buffer));
             }
           } catch (e) {
+            logger.shout('SignatureAuthVerifier $tag :'
+                ' verification FAILED with exception :'
+                ' $e');
+
             completer.completeError('Error during socket authentication: $e');
           }
         }
