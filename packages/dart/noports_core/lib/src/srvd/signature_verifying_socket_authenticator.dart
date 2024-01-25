@@ -22,7 +22,7 @@ import 'package:at_utils/at_logger.dart';
 ///
 ///
 class SignatureAuthVerifier {
-  static final AtSignLogger logger = AtSignLogger('SignatureAuthVerifier');
+  static final AtSignLogger logger = AtSignLogger(' SignatureAuthVerifier ');
 
   /// Public key of the signing algorithm used to sign the data
   String publicKey;
@@ -122,7 +122,7 @@ class SignatureAuthVerifier {
               return;
             }
 
-            logger.shout('SignatureAuthVerifier $tag :'
+            logger.info('SignatureAuthVerifier $tag :'
                 ' verification SUCCESS :'
                 ' ${atSigningResult.result}');
             authenticated = true;
