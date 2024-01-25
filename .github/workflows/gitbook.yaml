@@ -24,7 +24,7 @@ jobs:
             --base 'trunk' \
             --head 'gitbook' \
             --reviewer 'xavierchanth' \
-            --title 'docs(automated): Update Gitbook docs' \
-            --body 'Automated PR' || \
+            --title 'docs(automated): Update docs from Gitbook' \
+            --body 'Sync Gitbook docs branch to trunk' || \
           echo "Already created?";
 
