@@ -22,6 +22,7 @@ const kAtsignFieldValidationError = 'Field must start with @';
 const kProfileNameFieldValidationError = 'Field must only use lower case alphanumeric characters spaces';
 const kPrivateKeyFieldValidationError = 'Field must only use lower case alphanumeric characters';
 const kIntFieldValidationError = 'Field must only use numbers';
+const kPortFieldValidationError = 'Field must use a valid port number';
 
 const kPrivateKeyDropDownOption = 'Create a new private key';
 

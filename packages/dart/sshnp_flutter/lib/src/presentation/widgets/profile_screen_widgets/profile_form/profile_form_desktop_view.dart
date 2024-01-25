@@ -194,7 +194,7 @@ class _ProfileFormState extends ConsumerState<ProfileFormDesktopView> {
                           newConfig,
                           SshnpPartialParams(remoteSshdPort: int.tryParse(value!)),
                         ),
-                        validator: FormValidator.validateRequiredIntField,
+                        validator: FormValidator.validateRequiredPortField,
                       ),
                       gapH10,
                       CustomTextFormField(
@@ -205,7 +205,7 @@ class _ProfileFormState extends ConsumerState<ProfileFormDesktopView> {
                           newConfig,
                           SshnpPartialParams(localPort: int.tryParse(value!)),
                         ),
-                        validator: FormValidator.validateRequiredIntField,
+                        validator: FormValidator.validateRequiredPortField,
                       ),
                       gapH10,
                       gapH12,

@@ -10,12 +10,14 @@ class FormValidator {
     return null;
   }
 
-  static String? validateRequiredIntField(String? value) {
+  static String? validateRequiredPortField(String? value) {
     String valid = r'^[0-9]+$';
     if (value?.isEmpty ?? true) {
       return kEmptyFieldValidationError;
     } else if (!RegExp(valid).hasMatch(value!)) {
-      return kIntFieldValidationError;
+      return kPortFieldValidationError;
+    } else if (!(int.parse(value) >= 0 && int.parse(value) <= 65535)) {
+      return kPortFieldValidationError;
     }
     return null;
   }
