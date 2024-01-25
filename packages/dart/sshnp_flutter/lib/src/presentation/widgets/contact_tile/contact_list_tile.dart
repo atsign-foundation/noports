@@ -23,14 +23,10 @@ class ContactListTile extends StatelessWidget {
                 tileColor: kListTileColor,
                 leading: CircleAvatar(
                   backgroundColor: kPrimaryColor,
-                  backgroundImage: snapshot.data!['image'] != null
-                      ? MemoryImage(snapshot.data!['image'])
-                      : null,
+                  backgroundImage: snapshot.data!['image'] != null ? MemoryImage(snapshot.data!['image']) : null,
                 ),
-                title: Text(snapshot.data!['name']),
-                subtitle: Text(
-                    contactRepo.atClientManager.atClient.getCurrentAtSign() ??
-                        ''),
+                title: Text(snapshot.data?['name'] ?? ''),
+                subtitle: Text(contactRepo.atClientManager.atClient.getCurrentAtSign() ?? ''),
               ),
             );
           } else {
@@ -38,7 +34,7 @@ class ContactListTile extends StatelessWidget {
               leading: CircleAvatar(
                 child: Icon(Icons.person),
               ),
-              title: Text('No Atsign'),
+              title: Text('No Name'),
               subtitle: Text('No Atsign'),
             );
           }
