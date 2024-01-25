@@ -30,6 +30,8 @@ void socketConnector(ConnectorParams connectorParams) async {
     verbose,
   ) = connectorParams;
 
+  AtSignLogger.defaultLoggingHandler = AtSignLogger.stdErrLoggingHandler;
+
   if (verbose) {
     AtSignLogger.root_level = 'INFO';
   } else {
