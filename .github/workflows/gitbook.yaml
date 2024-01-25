@@ -6,6 +6,9 @@ on:
 
 jobs:
   create-pull-request:
+    env:
+      branch: gitbook
+
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -17,10 +20,9 @@ jobs:
 
       - name: Create Pull Request
         run: |
-          gh_pr_up() { gh pr create $* || gh pr edit $* }
-          gh_pr_up \
-            --base 'trunk' \
-            --head 'gitbook' \
-            --reviewer 'xavierchanth' \
-            --fill;
+          gh pr create \
+            --base trunk \
+            --head gitbook \
+            --reviewer xavierchanth \
+            --fill || echo "Already created?";
 
