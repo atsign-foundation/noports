@@ -17,9 +17,8 @@ jobs:
           token: ${{ secrets.MY_GITHUB_TOKEN }}
           committer: library-action[bot] <41898282+github-actions[bot]@users.noreply.github.com>
           author: library-action[bot] <41898282+github-actions[bot]@users.noreply.github.com>
-          base: gitbook
-          branch: bot-new-stable-version
-          delete-branch: true
+          base: trunk
+          branch: gitbook
           title: 'chore(gitbook): Update Gitbook Docs'
           body: |
             Automated PR to update the gitbook docs.
