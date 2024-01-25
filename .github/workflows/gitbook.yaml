@@ -21,8 +21,8 @@ jobs:
       - name: Create Pull Request
         run: |
           gh pr create \
-            --base trunk \
-            --head gitbook \
-            --reviewer xavierchanth \
+            --base 'trunk' \
+            --head 'gitbook' \
+            --reviewer 'xavierchanth' \
             --fill || echo "Already created?";
 
