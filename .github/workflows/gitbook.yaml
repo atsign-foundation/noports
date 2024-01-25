@@ -25,6 +25,6 @@ jobs:
             --head 'gitbook' \
             --reviewer 'xavierchanth' \
             --title 'docs(automated): Update Gitbook docs' \
-            --fill || \
+            --body 'Automated PR' || \
           echo "Already created?";
 
