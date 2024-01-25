@@ -19,10 +19,8 @@ jobs:
         run: |
           gh_pr_up() { gh pr create $* || gh pr edit $* }
           gh_pr_up \
-          --base 'trunk' \
-          --head 'gitbook' \
-          --title 'chore(gitbook): Update Gitbook Docs' \
-          --body 'Automated PR to update gitbook docs.' \
-          --reviewer 'xavierchanth' \
-          --fill
+            --base 'trunk' \
+            --head 'gitbook' \
+            --reviewer 'xavierchanth' \
+            --fill;
 
