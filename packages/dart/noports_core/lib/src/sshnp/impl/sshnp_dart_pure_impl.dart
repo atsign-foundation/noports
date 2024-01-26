@@ -53,7 +53,7 @@ class SshnpDartPureImpl extends SshnpCore
     /// Ensure that sshnp is initialized
     await callInitialization();
 
-    var msg = 'Sending session request to device daemon';
+    var msg = 'Sending session request to the device daemon';
     logger.info(msg);
     sendProgress(msg);
 
