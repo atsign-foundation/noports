@@ -32,17 +32,40 @@ void main(List<String> args) async {
     }
   }
 
+  final bool originalLineMode = stdin.lineMode;
+  final bool originalEchoMode = stdin.echoMode;
+  bool shouldResetTerminal = false;
+
+  void configureRemoteShell() {
+    shouldResetTerminal = true;
+    // don't wait for a newline before sending to remote stdin
+    stdin.lineMode = false;
+    // echo only what is sent back from the other side
+    stdin.echoMode = false;
+  }
+
+  void resetShell() {
+    stdin.lineMode = originalLineMode;
+    stdin.echoMode = originalEchoMode;
+  }
+
+  void exitProgram({int exitCode = 0}) {
+    if (shouldResetTerminal) resetShell();
+    exit(exitCode);
+  }
+
   // Manually check if the help flag is set and print usage
   Set<String> helpSet = SshnpArg.fromName('help').aliasList.toSet();
   if (args.toSet().intersection(helpSet).isNotEmpty) {
     printUsage();
-    exit(0);
+    exitProgram();
   }
 
   await runZonedGuarded(() async {
     final String homeDirectory = getHomeDirectory()!;
     SshnpParams? params;
     try {
+      // Parse Args
       final argResults = parser.parse(args);
       final coreArgs = parser.extractCoreArgs(args);
 
@@ -53,6 +76,7 @@ void main(List<String> args) async {
         ),
       );
 
+      // Create Sshnp Instance
       final sshnp = await createSshnp(
         params,
         atClientGenerator: (SshnpParams params) => createAtClientCli(
@@ -75,7 +99,7 @@ void main(List<String> args) async {
       // A listen progress listener for the CLI
       // Will only log if verbose is false, since if verbose is true
       // there will already be a boatload of log messages
-      logProgress(String s) {
+      void logProgress(String s) {
         if (!(params?.verbose ?? true)) {
           stderr.writeln('${DateTime.now()} : $s');
         }
@@ -83,13 +107,15 @@ void main(List<String> args) async {
 
       sshnp.progressStream?.listen((s) => logProgress(s));
 
+      // Run List Devices Operation
       if (params.listDevices) {
         stderr.writeln('Searching for devices...');
         var deviceList = await sshnp.listDevices();
         printDevices(deviceList);
-        exit(0);
+        exitProgram();
       }
 
+      // Run Sshnp
       final res = await sshnp.run();
 
       if (res is SshnpError) {
@@ -100,18 +126,14 @@ void main(List<String> args) async {
       }
       if (res is SshnpNoOpSuccess) {
         stdout.write('$res\n');
-        exit(0);
+        exitProgram();
       }
       if (res is SshnpCommand) {
         if (sshnp.canRunShell) {
           SshnpRemoteProcess shell = await sshnp.runShell();
+          configureRemoteShell();
           shell.stdout.listen(stdout.add);
           shell.stderr.listen(stderr.add);
-
-          // don't wait for a newline before sending to remote stdin
-          stdin.lineMode = false;
-          // echo only what is sent back from the other side
-          stdin.echoMode = false;
           stdin.listen(shell.stdin.add);
 
           // catch local ctrl-c's and forward to remote
@@ -120,10 +142,10 @@ void main(List<String> args) async {
           });
 
           await shell.done;
-          exit(0);
+          exitProgram();
         } else if (argResults[outputExecutionCommandFlag] as bool) {
           stdout.write('$res\n');
-          exit(0);
+          exitProgram();
         } else {
           logProgress('Starting user session');
           Process process = await Process.start(
@@ -132,25 +154,25 @@ void main(List<String> args) async {
             mode: ProcessStartMode.inheritStdio,
           );
 
-          exit(await process.exitCode);
+          exitProgram(exitCode: await process.exitCode);
         }
       }
     } on ArgumentError catch (error) {
       printUsage(error: error);
-      exit(1);
+      exitProgram(exitCode: 1);
     } on FormatException catch (error) {
       printUsage(error: error);
-      exit(1);
+      exitProgram(exitCode: 1);
     } on SshnpError catch (error, stackTrace) {
       stderr.writeln('\nError : $error');
       if (params?.verbose ?? true) {
         stderr.writeln('\nStack Trace: $stackTrace');
       }
-      exit(1);
+      exitProgram(exitCode: 1);
     } catch (error, stackTrace) {
       stderr.writeln('\nError : $error');
       stderr.writeln('\nStack Trace: $stackTrace');
-      exit(1);
+      exitProgram(exitCode: 1);
     }
   }, (Object error, StackTrace stackTrace) async {
     if (error is SSHError) {
@@ -159,6 +181,6 @@ void main(List<String> args) async {
       stderr.writeln('\nError: $error');
       stderr.writeln('\nStack Trace: $stackTrace');
     }
-    exit(1);
+    exitProgram(exitCode: 1);
   });
 }
