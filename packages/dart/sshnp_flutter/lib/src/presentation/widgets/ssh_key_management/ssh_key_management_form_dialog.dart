@@ -80,7 +80,7 @@ class _SSHKeyManagementFormState extends ConsumerState<SSHKeyManagementFormDialo
 
       if (mounted) {
         ref.read(navigationRailController.notifier).setRoute(AppRoute.home);
-        context.pop();
+        context.pop(nickname);
       }
     }
   }
