@@ -115,7 +115,6 @@ void main(List<String> args) async {
           rootDomain: params.rootDomain,
           storagePath: storageDir!.path,
         ),
-        legacyDaemon: argResults['legacy-daemon'] as bool,
         sshClient:
             SupportedSshClient.fromString(argResults['ssh-client'] as String),
       ).catchError((e) {

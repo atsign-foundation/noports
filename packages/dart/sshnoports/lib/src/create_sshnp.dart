@@ -12,7 +12,6 @@ Future<Sshnp> createSshnp(
   AtClient? atClient,
   AtClientGenerator? atClientGenerator,
   SupportedSshClient sshClient = DefaultExtendedArgs.sshClient,
-  bool legacyDaemon = DefaultExtendedArgs.legacyDaemon,
 }) async {
   atClient ??= await atClientGenerator?.call(params);
 
@@ -22,21 +21,6 @@ Future<Sshnp> createSshnp(
   if (atClient == null) {
     throw ArgumentError(
         'atClient must be provided or atClientGenerator must be provided');
-  }
-
-  if (legacyDaemon) {
-    if (params.authenticateDeviceToRvd ||
-        params.authenticateClientToRvd ||
-        params.encryptRvdTraffic ||
-        params.discoverDaemonFeatures) {
-      throw ArgumentError('When using --legacy-daemon, you must also'
-          ' use these flags: --no-ac --no-ad --no-et --no-ddf');
-    }
-    // ignore: deprecated_member_use
-    return Sshnp.unsigned(
-      atClient: atClient,
-      params: params,
-    );
   }
 
   switch (sshClient) {

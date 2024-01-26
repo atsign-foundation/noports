@@ -5,12 +5,10 @@ const sshClients = ['openssh', 'dart'];
 
 class DefaultExtendedArgs {
   static const sshClient = SupportedSshClient.openssh;
-  static const legacyDaemon = false;
   static const outputExecutionCommand = false;
 }
 
 const sshClientOption = 'ssh-client';
-const legacyDaemonFlag = 'legacy-daemon';
 const outputExecutionCommandFlag = 'output-execution-command';
 
 class ExtendedArgParser {
@@ -25,13 +23,6 @@ class ExtendedArgParser {
       help: 'What to use for outbound ssh connections',
       allowed: SupportedSshClient.values.map((e) => e.toString()),
       defaultsTo: DefaultExtendedArgs.sshClient.toString(),
-    );
-
-    parser.addFlag(
-      legacyDaemonFlag,
-      help: 'Request is to a legacy (< 4.0.0) noports daemon',
-      defaultsTo: DefaultExtendedArgs.legacyDaemon,
-      negatable: false,
     );
 
     parser.addFlag(
@@ -80,10 +71,6 @@ class ExtendedArgParser {
         coreArgs.removeAt(i); // remove the option e.g. --ssh-client
         coreArgs.removeAt(i); // remove the value e.g. "openssh"
       }
-    }
-
-    if (results!.wasParsed('legacy-daemon')) {
-      coreArgs.removeWhere((element) => element == '--$legacyDaemonFlag');
     }
 
     if (results!.wasParsed(outputExecutionCommandFlag)) {

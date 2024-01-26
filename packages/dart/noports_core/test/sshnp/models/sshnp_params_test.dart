@@ -26,7 +26,6 @@ void main() {
       expect(params.idleTimeout, isA<int>());
       expect(params.addForwardsToTunnel, isA<bool>());
       expect(params.atKeysFilePath, isA<String?>());
-      expect(params.sshAlgorithm, isA<SupportedSshAlgorithm>());
       expect(params.profileName, isA<String?>());
       expect(params.listDevices, isA<bool>());
       expect(params.toConfigLines(), isA<List<String>>());
@@ -162,14 +161,6 @@ void main() {
         expect(
             params.atKeysFilePath, equals('~/.atsign/@myAtsign_keys.atKeys'));
       });
-      test('SshnpParams.sshAlgorithm test', () {
-        final params = SshnpParams(
-            clientAtSign: '',
-            sshnpdAtSign: '',
-            host: '',
-            sshAlgorithm: SupportedSshAlgorithm.rsa);
-        expect(params.sshAlgorithm, equals(SupportedSshAlgorithm.rsa));
-      });
       test('SshnpParams.profileName test', () {
         final params = SshnpParams(
             clientAtSign: '',
@@ -212,7 +203,6 @@ void main() {
         expect(params.idleTimeout, equals(DefaultArgs.idleTimeout));
         expect(params.addForwardsToTunnel,
             equals(DefaultArgs.addForwardsToTunnel));
-        expect(params.sshAlgorithm, equals(DefaultArgs.sshAlgorithm));
       });
       test('SshnpParams.merge() test (overrides take priority)', () {
         final params = SshnpParams.merge(
@@ -261,7 +251,6 @@ void main() {
         expect(params.addForwardsToTunnel, equals(true));
         expect(
             params.atKeysFilePath, equals('~/.atsign/@myAtsign_keys.atKeys'));
-        expect(params.sshAlgorithm, equals(SupportedSshAlgorithm.rsa));
       });
       test('SshnpParams.merge() test (null coalesce values)', () {
         final params =
@@ -290,7 +279,6 @@ void main() {
         expect(params.idleTimeout, equals(DefaultArgs.idleTimeout));
         expect(params.addForwardsToTunnel,
             equals(DefaultArgs.addForwardsToTunnel));
-        expect(params.sshAlgorithm, equals(DefaultArgs.sshAlgorithm));
       });
       test('SshnpParams.fromJson() test', () {
         String json = '{'
@@ -340,7 +328,6 @@ void main() {
         expect(params.addForwardsToTunnel, equals(true));
         expect(
             params.atKeysFilePath, equals('~/.atsign/@myAtsign_keys.atKeys'));
-        expect(params.sshAlgorithm, equals(SupportedSshAlgorithm.rsa));
       });
       test('SshnpParams.fromPartial() test', () {
         final partial = SshnpPartialParams(
@@ -417,7 +404,6 @@ void main() {
           idleTimeout: 120,
           addForwardsToTunnel: true,
           atKeysFilePath: '~/.atsign/@myAtsign_keys.atKeys',
-          sshAlgorithm: SupportedSshAlgorithm.rsa,
         );
         final configLines = params.toConfigLines();
         // Since exact formatting is in question,
@@ -465,7 +451,6 @@ void main() {
           idleTimeout: 120,
           addForwardsToTunnel: true,
           atKeysFilePath: '~/.atsign/@myAtsign_keys.atKeys',
-          sshAlgorithm: SupportedSshAlgorithm.rsa,
         );
         final argMap = params.toArgMap();
         expect(argMap[SshnpArg.fromArg.name], equals('@myClientAtSign'));
@@ -516,7 +501,6 @@ void main() {
           idleTimeout: 120,
           addForwardsToTunnel: true,
           atKeysFilePath: '~/.atsign/@myAtsign_keys.atKeys',
-          sshAlgorithm: SupportedSshAlgorithm.rsa,
         );
         final json = params.toJson();
         final parsedParams = SshnpParams.fromJson(json);
@@ -543,7 +527,6 @@ void main() {
         expect(parsedParams.addForwardsToTunnel, equals(true));
         expect(parsedParams.atKeysFilePath,
             equals('~/.atsign/@myAtsign_keys.atKeys'));
-        expect(parsedParams.sshAlgorithm, equals(SupportedSshAlgorithm.rsa));
       });
     }); // group('SshnpParams functions')
   }); // group('SshnpParams')
@@ -817,7 +800,6 @@ void main() {
           idleTimeout: 120,
           addForwardsToTunnel: true,
           atKeysFilePath: '~/.atsign/@myAtsign_keys.atKeys',
-          sshAlgorithm: SupportedSshAlgorithm.rsa,
         );
         final configLines = params.toConfigLines();
         // Since exact formatting is in question,
