@@ -418,7 +418,6 @@ void main() {
             parsedParams.sshnpdAtSign, equals('@mySshnpdAtSign'.toLowerCase()));
         expect(parsedParams.host, equals('@myHost'));
         expect(parsedParams.device, equals('myDeviceName'));
-        expect(parsedParams.port, equals(1234));
         expect(parsedParams.localPort, equals(2345));
         expect(parsedParams.sendSshPublicKey, equals(true));
         expect(parsedParams.localSshOptions,
@@ -477,8 +476,6 @@ void main() {
         expect(argMap[SshnpArg.addForwardsToTunnelArg.name], equals(true));
         expect(argMap[SshnpArg.keyFileArg.name],
             equals('~/.atsign/@myAtsign_keys.atKeys'));
-        expect(argMap[SshnpArg.sshAlgorithmArg.name],
-            equals(SupportedSshAlgorithm.rsa.toString()));
       });
       test('SshnpParams.toJson', () {
         final params = SshnpParams(
@@ -936,8 +933,6 @@ void main() {
           '@myHost',
           '--${SshnpArg.deviceArg.name}',
           'myDeviceName',
-          '--${SshnpArg.portArg.name}',
-          '1234',
           '--${SshnpArg.localPortArg.name}',
           '2345',
           '--${SshnpArg.identityFileArg.name}',
@@ -956,8 +951,6 @@ void main() {
           'true',
           '--${SshnpArg.rootDomainArg.name}',
           'root.atsign.wtf',
-          '--${SshnpArg.localSshdPortArg.name}',
-          '4567',
           '--${SshnpArg.remoteSshdPortArg.name}',
           '2222',
           '--${SshnpArg.idleTimeoutArg.name}',
@@ -975,7 +968,6 @@ void main() {
         expect(params.sshnpdAtSign, equals('@mySshnpdAtSign'.toLowerCase()));
         expect(params.host, equals('@myHost'));
         expect(params.device, equals('myDeviceName'));
-        expect(params.port, equals(1234));
         expect(params.localPort, equals(2345));
         expect(params.identityFile, equals('.ssh/id_ed25519'));
         expect(params.identityPassphrase, equals('myPassphrase'));
@@ -986,7 +978,6 @@ void main() {
         expect(params.tunnelUsername, equals('myTunnelUsername'));
         expect(params.verbose, equals(true));
         expect(params.rootDomain, equals('root.atsign.wtf'));
-        expect(params.localSshdPort, equals(4567));
         expect(params.remoteSshdPort, equals(2222));
         expect(params.idleTimeout, equals(120));
         expect(params.addForwardsToTunnel, equals(true));
