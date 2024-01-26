@@ -2,7 +2,10 @@ name: Gitbook Review
 on:
   push:
     branches:
-     - gitbook
+      - gitbook
+
+permissions:
+  contents: read
 
 jobs:
   create-pull-request:
@@ -16,7 +19,7 @@ jobs:
 
       - name: Authenticate GitHub CLI
         run: |
-         echo -e ${{ secrets.MY_GITHUB_TOKEN }} | gh auth login --with-token 
+          echo -e ${{ secrets.MY_GITHUB_TOKEN }} | gh auth login --with-token 
 
       - name: Create Pull Request
         run: |
@@ -27,4 +30,3 @@ jobs:
             --title 'docs(automated): Update docs from Gitbook' \
             --body 'Sync Gitbook docs branch to trunk' || \
           echo "Already created?";
-
