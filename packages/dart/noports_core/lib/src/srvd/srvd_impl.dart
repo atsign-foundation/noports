@@ -130,13 +130,17 @@ class SrvdImpl implements Srvd {
     if (!srvdUtil.accept(notification)) {
       return;
     }
+
+    logger.shout('New session request from ${notification.from}');
+
     late SrvdSessionParams sessionParams;
     try {
       sessionParams = await srvdUtil.getParams(notification);
 
       if (managerAtsign != 'open' && managerAtsign != sessionParams.atSignA) {
-        logger.shout(
-            'Session ${sessionParams.sessionId} for ${sessionParams.atSignA} is denied');
+        logger.shout('Session ${sessionParams.sessionId}'
+            ' for ${sessionParams.atSignA}'
+            ' is denied');
         return;
       }
     } catch (e) {
@@ -144,8 +148,7 @@ class SrvdImpl implements Srvd {
       return;
     }
 
-    logger
-        .info('New session request: $sessionParams from ${notification.from}');
+    logger.info('New session request params: $sessionParams');
 
     (int, int) ports = await _spawnSocketConnector(
       0,
@@ -155,8 +158,9 @@ class SrvdImpl implements Srvd {
       verbose,
     );
     var (portA, portB) = ports;
-    logger.warning(
-        'Starting session ${sessionParams.sessionId} for ${sessionParams.atSignA} to ${sessionParams.atSignB} using ports $ports');
+    logger.shout('Starting session ${sessionParams.sessionId}'
+        ' for ${sessionParams.atSignA} to ${sessionParams.atSignB}'
+        ' using ports $ports');
 
     var metaData = Metadata()
       ..isPublic = false
@@ -173,8 +177,9 @@ class SrvdImpl implements Srvd {
 
     String data = '$ipAddress,$portA,$portB,${sessionParams.rvdNonce}';
 
-    logger.info(
-        'Sending response data for session ${sessionParams.sessionId} : [$data]');
+    logger.shout('Sending response data'
+        ' for requested session ${sessionParams.sessionId} :'
+        ' [$data]');
 
     try {
       await atClient.notificationService.notify(

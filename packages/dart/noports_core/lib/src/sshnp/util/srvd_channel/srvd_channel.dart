@@ -44,7 +44,7 @@ abstract class SrvdChannel<T> with AsyncInitialization, AtClientBindings {
   String get host => _host ?? params.host;
 
   /// This is the port which the sshnp **client** will connect to
-  int get port => _portA ?? params.port;
+  int get clientPort => _portA ?? params.port;
 
   // * Volatile fields set at runtime
 
@@ -60,7 +60,7 @@ abstract class SrvdChannel<T> with AsyncInitialization, AtClientBindings {
   int? _portB;
 
   /// This is the port which the sshnp **daemon** will connect to
-  int? get srvdPort => _portB;
+  int? get daemonPort => _portB;
 
   SrvdChannel({
     required this.atClient,
@@ -78,6 +78,7 @@ abstract class SrvdChannel<T> with AsyncInitialization, AtClientBindings {
     } else {
       _host = params.host;
       _portA = params.port;
+      _portB = params.port;
     }
     completeInitialization();
   }
@@ -92,12 +93,8 @@ abstract class SrvdChannel<T> with AsyncInitialization, AtClientBindings {
       throw Exception(
           'localRvPort must be null when using reverseSsh (legacy)');
     }
-    if (directSsh && localRvPort == null) {
-      throw Exception(
-          'localRvPort must be non-null when using directSsh (default)');
-    }
+
     await callInitialization();
-    if (_portB == null) throw Exception('srvdPort is null');
 
     // Connect to rendezvous point using background process.
     // sshnp (this program) can then exit without issue.
@@ -106,8 +103,8 @@ abstract class SrvdChannel<T> with AsyncInitialization, AtClientBindings {
     if (directSsh) {
       srv = srvGenerator(
         host,
-        _portA!,
-        localPort: localRvPort!,
+        clientPort,
+        localPort: localRvPort,
         bindLocalPort: true,
         rvdAuthString: params.authenticateClientToRvd
             ? signAndWrapAndJsonEncode(atClient, {
@@ -119,17 +116,22 @@ abstract class SrvdChannel<T> with AsyncInitialization, AtClientBindings {
         sessionAESKeyString: sessionAESKeyString,
         sessionIVString: sessionIVString,
       );
+      return srv.run();
     } else {
-      // legacy behaviour
-      srv = srvGenerator(
-        host,
-        _portB!,
-        localPort: params.localSshdPort,
-        bindLocalPort: false,
-      );
+      // legacy behaviour, reverse ssh
+      if (params.host.startsWith('@')) {
+        srv = srvGenerator(
+          host,
+          daemonPort!, // everything was backwards back then
+          localPort: params.localSshdPort,
+          bindLocalPort: false,
+        );
+        return srv.run();
+      } else {
+        // direct connection from device host to client; SR not involved
+        return null;
+      }
     }
-
-    return srv.run();
   }
 
   @protected
@@ -147,9 +149,9 @@ abstract class SrvdChannel<T> with AsyncInitialization, AtClientBindings {
         rvdNonce = results[3];
       }
       logger.info('Received from srvd:'
-          ' host:port $host:$port'
+          ' host:port $host:$clientPort'
           ' rvdNonce: $rvdNonce');
-      logger.info('Set srvdPort to: $_portB');
+      logger.info('Daemon will connect to: $host:$daemonPort');
       srvdAck = SrvdAck.acknowledged;
     });
     logger.info('Started listening for srvd response');

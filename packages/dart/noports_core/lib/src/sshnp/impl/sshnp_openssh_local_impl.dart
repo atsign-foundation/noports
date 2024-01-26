@@ -51,10 +51,6 @@ class SshnpOpensshLocalImpl extends SshnpCore
 
     logger.info('Sending request to sshnpd');
 
-    final server = await ServerSocket.bind(InternetAddress.anyIPv4, 0);
-    int localRvPort = server.port;
-    await server.close();
-
     /// Send an ssh request to sshnpd
     await notify(
       AtKey()
@@ -69,7 +65,7 @@ class SshnpOpensshLocalImpl extends SshnpCore
             direct: true,
             sessionId: sessionId,
             host: srvdChannel.host,
-            port: srvdChannel.srvdPort!,
+            port: srvdChannel.daemonPort!,
             authenticateToRvd: params.authenticateDeviceToRvd,
             clientNonce: srvdChannel.clientNonce,
             rvdNonce: srvdChannel.rvdNonce,
@@ -92,6 +88,11 @@ class SshnpOpensshLocalImpl extends SshnpCore
         'Expected an ephemeral private key from sshnpd, but it was not set',
       );
     }
+
+    /// Find a port to use
+    final server = await ServerSocket.bind(InternetAddress.anyIPv4, 0);
+    int localRvPort = server.port;
+    await server.close();
 
     /// Start srv
     await srvdChannel.runSrv(

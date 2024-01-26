@@ -5,6 +5,7 @@ import 'dart:typed_data';
 
 // atPlatform packages
 import 'package:at_utils/at_logger.dart';
+import 'package:dartssh2/dartssh2.dart';
 
 // local packages
 import 'package:noports_core/sshnp_foundation.dart';
@@ -140,10 +141,12 @@ void main(List<String> args) async {
       exit(1);
     }
   }, (Object error, StackTrace stackTrace) async {
-    // if (error is ArgumentError) return;
-    // if (error is SshnpError) return;
-    stderr.writeln('Error: ${error.toString()}');
-    stderr.writeln('\nStack Trace: ${stackTrace.toString()}');
+    if (error is SSHError) {
+      stderr.writeln('\nError: ${error.toString()}');
+    } else {
+      stderr.writeln('Error: ${error.toString()}');
+      stderr.writeln('\nStack Trace: ${stackTrace.toString()}');
+    }
     exit(1);
   });
 }

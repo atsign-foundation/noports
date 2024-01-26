@@ -12,25 +12,6 @@ class SshnpDartPureImpl extends SshnpCore
     required super.params,
     required AtSshKeyPair? identityKeyPair,
   }) {
-    // TODO Defensive code to prevent use of rvd auth and rv traffic encryption
-    // TODO until they have been properly implemented with an in-memory RV.
-    // TODO At that time, make these four params "final" again
-    if (params.discoverDaemonFeatures) {
-      logger.shout('$runtimeType: disabling discoverDaemonFeatures flag');
-      params.discoverDaemonFeatures = false;
-    }
-    if (params.encryptRvdTraffic) {
-      logger.shout('$runtimeType: disabling encryptRvdTraffic flag');
-      params.encryptRvdTraffic = false;
-    }
-    if (params.authenticateDeviceToRvd) {
-      logger.shout('$runtimeType: disabling authenticateDeviceToRvd flag');
-      params.authenticateDeviceToRvd = false;
-    }
-    if (params.authenticateClientToRvd) {
-      logger.shout('$runtimeType: disabling authenticateClientToRvd flag');
-      params.authenticateClientToRvd = false;
-    }
     this.identityKeyPair = identityKeyPair;
     _sshnpdChannel = SshnpdDefaultChannel(
       atClient: atClient,
@@ -38,7 +19,7 @@ class SshnpDartPureImpl extends SshnpCore
       sessionId: sessionId,
       namespace: this.namespace,
     );
-    _srvdChannel = SrvdDartChannel(
+    _srvdChannel = SrvdDartSSHSocketChannel(
       atClient: atClient,
       params: params,
       sessionId: sessionId,
@@ -50,8 +31,8 @@ class SshnpDartPureImpl extends SshnpCore
   late final SshnpdDefaultChannel _sshnpdChannel;
 
   @override
-  SrvdDartChannel get srvdChannel => _srvdChannel;
-  late final SrvdDartChannel _srvdChannel;
+  SrvdDartSSHSocketChannel get srvdChannel => _srvdChannel;
+  late final SrvdDartSSHSocketChannel _srvdChannel;
 
   @override
   Future<void> initialize() async {
@@ -87,7 +68,7 @@ class SshnpDartPureImpl extends SshnpCore
             direct: true,
             sessionId: sessionId,
             host: srvdChannel.host,
-            port: srvdChannel.port,
+            port: srvdChannel.daemonPort!,
             authenticateToRvd: params.authenticateDeviceToRvd,
             clientNonce: srvdChannel.clientNonce,
             rvdNonce: srvdChannel.rvdNonce,
@@ -120,9 +101,18 @@ class SshnpDartPureImpl extends SshnpCore
     /// Add the key pair to the key utility
     await keyUtil.addKeyPair(keyPair: ephemeralKeyPair);
 
+    /// Start srv
+    SSHSocket? sshSocket = await srvdChannel.runSrv(
+      directSsh: true,
+      sessionAESKeyString: sshnpdChannel.sessionAESKeyString,
+      sessionIVString: sshnpdChannel.sessionIVString,
+    );
+
     /// Start the initial tunnel
     tunnelSshClient = await startInitialTunnelSession(
-        ephemeralKeyPairIdentifier: ephemeralKeyPair.identifier);
+      ephemeralKeyPairIdentifier: ephemeralKeyPair.identifier,
+      sshSocket: sshSocket,
+    );
 
     /// Remove the key pair from the key utility
     await keyUtil.deleteKeyPair(identifier: ephemeralKeyPair.identifier);

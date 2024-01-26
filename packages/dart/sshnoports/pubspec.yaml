@@ -11,6 +11,8 @@ dependencies:
   at_onboarding_cli: 1.4.1
   args: 2.4.2
   socket_connector: ^2.0.1
+  dartssh2: 2.8.2
+
 
 dependency_overrides:
   noports_core:

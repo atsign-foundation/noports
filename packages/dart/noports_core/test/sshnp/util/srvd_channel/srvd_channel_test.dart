@@ -175,8 +175,8 @@ void main() {
 
       expect(stubbedSrvdChannel.srvdAck, SrvdAck.acknowledged);
       expect(stubbedSrvdChannel.host, '123.123.123.123');
-      expect(stubbedSrvdChannel.port, 10456);
-      expect(stubbedSrvdChannel.srvdPort, 10789);
+      expect(stubbedSrvdChannel.clientPort, 10456);
+      expect(stubbedSrvdChannel.daemonPort, 10789);
     }); // test Initialization - srvd host
 
     test('Initialization - non-srvd host', () async {
@@ -186,7 +186,7 @@ void main() {
       await expectLater(stubbedSrvdChannel.initialize(), completes);
 
       expect(stubbedSrvdChannel.host, '234.234.234.234');
-      expect(stubbedSrvdChannel.port, 135);
+      expect(stubbedSrvdChannel.clientPort, 135);
     }); // test Initialization - non-srvd host
 
     test('Initialization completes - srvd host', () async {
