@@ -1,11 +1,14 @@
-// dart packages
+// dart core packages
 import 'dart:async';
 import 'dart:io';
 import 'dart:typed_data';
 
+// other packages
+import 'package:path/path.dart' as path;
+import 'package:dartssh2/dartssh2.dart';
+
 // atPlatform packages
 import 'package:at_utils/at_logger.dart';
-import 'package:dartssh2/dartssh2.dart';
 
 // local packages
 import 'package:noports_core/sshnp_foundation.dart';
@@ -49,8 +52,19 @@ void main(List<String> args) async {
     stdin.echoMode = originalEchoMode;
   }
 
+  Directory? storageDir;
+
+  void deleteStorage() {
+    if (storageDir != null) {
+      if (storageDir!.existsSync()) {
+        storageDir!.deleteSync(recursive: true);
+      }
+    }
+  }
+
   void exitProgram({int exitCode = 0}) {
     if (shouldResetTerminal) resetShell();
+    deleteStorage();
     exit(exitCode);
   }
 
@@ -76,6 +90,20 @@ void main(List<String> args) async {
         ),
       );
 
+      storageDir = Directory(path.normalize('$homeDirectory'
+          '/${DefaultArgs.storagePathSubDirectory}'
+          '/${params.clientAtSign}'
+          '/storage'
+          '/${DateTime.now().millisecondsSinceEpoch}'));
+      storageDir!.createSync(recursive: true);
+
+      final sigintListener = ProcessSignal.sigint.watch().listen((signal) {
+        exitProgram(exitCode: 1);
+      });
+      ProcessSignal.sigterm.watch().listen((signal) {
+        exitProgram(exitCode: 1);
+      });
+
       // Create Sshnp Instance
       final sshnp = await createSshnp(
         params,
@@ -85,6 +113,7 @@ void main(List<String> args) async {
           atKeysFilePath: params.atKeysFilePath ??
               getDefaultAtKeysFilePath(homeDirectory, params.clientAtSign),
           rootDomain: params.rootDomain,
+          storagePath: storageDir!.path,
         ),
         legacyDaemon: argResults['legacy-daemon'] as bool,
         sshClient:
@@ -135,6 +164,9 @@ void main(List<String> args) async {
           shell.stdout.listen(stdout.add);
           shell.stderr.listen(stderr.add);
           stdin.listen(shell.stdin.add);
+
+          // Cancel the previous ctrl-c listener which would call exitProgram
+          await sigintListener.cancel();
 
           // catch local ctrl-c's and forward to remote
           ProcessSignal.sigint.watch().listen((signal) {
