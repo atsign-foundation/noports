@@ -48,11 +48,13 @@ class AppNavigationRail extends ConsumerWidget {
                 destinations: controller.routes.map((AppRoute route) {
                   if (route == AppRoute.blank) {
                     return NavigationRailDestination(
+                      disabled: true,
                       icon: SizedBox(height: 116 + height - 467),
                       label: gap0,
                     );
                   } else if ((route == AppRoute.terminal && terminalList.isEmpty)) {
                     return const NavigationRailDestination(
+                      disabled: true,
                       icon: gapH46,
                       label: gap0,
                     );
