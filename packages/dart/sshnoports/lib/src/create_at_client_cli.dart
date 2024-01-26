@@ -12,7 +12,7 @@ Future<AtClient> createAtClientCli({
   required String atKeysFilePath,
   String? storagePath,
   String? pathExtension,
-  String subDirectory = '.sshnp',
+  String subDirectory = DefaultArgs.storagePathSubDirectory,
   String namespace = DefaultArgs.namespace,
   String rootDomain = DefaultArgs.rootDomain,
 }) async {
