@@ -55,9 +55,13 @@ void main(List<String> args) async {
   Directory? storageDir;
 
   void deleteStorage() {
-    if (storageDir != null) {
-      if (storageDir!.existsSync()) {
-        storageDir!.deleteSync(recursive: true);
+    // Windows will not let us delete files that are open
+    // so will will ignore this step and leave them in %localappdata%\Temp
+    if (!Platform.isWindows) {
+      if (storageDir != null) {
+        if (storageDir!.existsSync()) {
+          storageDir!.deleteSync(recursive: true);
+        }
       }
     }
   }
@@ -90,19 +94,30 @@ void main(List<String> args) async {
         ),
       );
 
-      storageDir = Directory(path.normalize('$homeDirectory'
-          '/${DefaultArgs.storagePathSubDirectory}'
-          '/${params.clientAtSign}'
-          '/storage'
-          '/${DateTime.now().millisecondsSinceEpoch}'));
+      // Windows will not let us delete files in use so
+      // We will point storage to temp directory and let OS clean up
+      if (Platform.isWindows) {
+        storageDir = Directory(path.normalize('${Platform.environment['TEMP']}'
+            '/${DefaultArgs.storagePathSubDirectory}'
+            '/${params.clientAtSign}'
+            '/storage'
+            '/${DateTime.now().millisecondsSinceEpoch}'));
+      } else {
+        storageDir = Directory(path.normalize('$homeDirectory'
+            '/${DefaultArgs.storagePathSubDirectory}'
+            '/${params.clientAtSign}'
+            '/storage'
+            '/${DateTime.now().millisecondsSinceEpoch}'));
+      }
       storageDir!.createSync(recursive: true);
-
       final sigintListener = ProcessSignal.sigint.watch().listen((signal) {
         exitProgram(exitCode: 1);
       });
-      ProcessSignal.sigterm.watch().listen((signal) {
-        exitProgram(exitCode: 1);
-      });
+      if (!Platform.isWindows) {
+        ProcessSignal.sigterm.watch().listen((signal) {
+          exitProgram(exitCode: 1);
+        });
+      }
 
       // Create Sshnp Instance
       final sshnp = await createSshnp(
@@ -110,13 +125,11 @@ void main(List<String> args) async {
         atClientGenerator: (SshnpParams params) => createAtClientCli(
           homeDirectory: homeDirectory,
           atsign: params.clientAtSign,
-          atKeysFilePath: params.atKeysFilePath ??
-              getDefaultAtKeysFilePath(homeDirectory, params.clientAtSign),
+          atKeysFilePath: params.atKeysFilePath ?? getDefaultAtKeysFilePath(homeDirectory, params.clientAtSign),
           rootDomain: params.rootDomain,
           storagePath: storageDir!.path,
         ),
-        sshClient:
-            SupportedSshClient.fromString(argResults['ssh-client'] as String),
+        sshClient: SupportedSshClient.fromString(argResults['ssh-client'] as String),
       ).catchError((e) {
         if (e is SshnpError && e.stackTrace != null) {
           Error.throwWithStackTrace(e, e.stackTrace!);
