@@ -80,6 +80,7 @@ void main(List<String> args) async {
           stderr.writeln('${DateTime.now()} : $s');
         }
       }
+
       sshnp.progressStream?.listen((s) => logProgress(s));
 
       if (params.listDevices) {
