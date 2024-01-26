@@ -1,11 +1,21 @@
+import 'dart:developer';
+
+import 'package:at_onboarding_flutter/at_onboarding_flutter.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:go_router/go_router.dart';
+import 'package:noports_core/sshnp.dart';
 import 'package:sshnp_flutter/src/controllers/terminal_session_controller.dart';
 import 'package:sshnp_flutter/src/presentation/widgets/navigation/app_navigation_rail.dart';
 import 'package:sshnp_flutter/src/utility/sizes.dart';
 import 'package:xterm/xterm.dart';
+
+import '../../../repository/private_key_manager_repository.dart';
+import '../../../repository/profile_private_key_manager_repository.dart';
+import '../utility/custom_snack_bar.dart';
 
 // * Once the onboarding process is completed you will be taken to this screen
 class TerminalScreenDesktopView extends ConsumerStatefulWidget {
@@ -17,6 +27,79 @@ class TerminalScreenDesktopView extends ConsumerStatefulWidget {
 
 class _TerminalScreenDesktopViewState extends ConsumerState<TerminalScreenDesktopView> with TickerProviderStateMixin {
   final terminalController = TerminalController();
+
+  @override
+  void initState() {
+    super.initState();
+
+    WidgetsBinding.instance.addPostFrameCallback(
+      (_) async {
+        final Map shellInfo = (GoRouterState.of(context).extra ?? {'runShell': false}) as Map;
+        if (shellInfo['runShell']) {
+          /// Issue a new session id
+          final sessionId = ref.watch(terminalSessionController.notifier).createSession();
+
+          /// Create the session controller for the new session id
+          final sessionController = ref.watch(terminalSessionFamilyController(sessionId).notifier);
+
+          sessionController.issueDisplayName(shellInfo['params'].profileName!);
+
+          sessionController.write('Starting Shell Session...');
+          log('Starting Shell Session...');
+
+          try {
+            AtClient atClient = AtClientManager.getInstance().atClient;
+
+            final profilePrivateKey = await ProfilePrivateKeyManagerRepository.readProfilePrivateKeyManager(
+                shellInfo['params'].profileName ?? '');
+            final privateKeyManager =
+                await PrivateKeyManagerRepository.readPrivateKeyManager(profilePrivateKey.privateKeyNickname);
+
+            final keyPair = privateKeyManager.toAtSshKeyPair();
+
+            final sshnp = Sshnp.dartPure(
+              params: SshnpParams.merge(
+                shellInfo['params'],
+                SshnpPartialParams(
+                  verbose: kDebugMode,
+                  idleTimeout: 30,
+                ),
+              ),
+              atClient: atClient,
+              identityKeyPair: keyPair,
+            );
+
+            final result = await sshnp.run();
+            if (result is SshnpError) {
+              throw result;
+            }
+
+            if (result is SshnpCommand) {
+              if (sshnp.canRunShell) {
+                sessionController.write('running shell session...');
+                log('running shell session...');
+
+                SshnpRemoteProcess shell = await sshnp.runShell();
+                sessionController.write('starting terminal session...');
+                log('starting terminal session');
+                sessionController.startSession(
+                  shell,
+                  terminalTitle: '${shellInfo['sshnpdAtSign']}-${shellInfo['params'].device}',
+                );
+              }
+            }
+          } catch (e) {
+            sessionController.dispose();
+            if (mounted) {
+              log('error: ${e.toString()}');
+
+              CustomSnackBar.error(content: e.toString());
+            }
+          }
+        }
+      },
+    );
+  }
 
   @override
   void dispose() {
