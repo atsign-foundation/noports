@@ -26,7 +26,6 @@ void main() {
       expect(params.idleTimeout, isA<int>());
       expect(params.addForwardsToTunnel, isA<bool>());
       expect(params.atKeysFilePath, isA<String?>());
-      expect(params.sshAlgorithm, isA<SupportedSshAlgorithm>());
       expect(params.profileName, isA<String?>());
       expect(params.listDevices, isA<bool>());
       expect(params.toConfigLines(), isA<List<String>>());
@@ -162,14 +161,6 @@ void main() {
         expect(
             params.atKeysFilePath, equals('~/.atsign/@myAtsign_keys.atKeys'));
       });
-      test('SshnpParams.sshAlgorithm test', () {
-        final params = SshnpParams(
-            clientAtSign: '',
-            sshnpdAtSign: '',
-            host: '',
-            sshAlgorithm: SupportedSshAlgorithm.rsa);
-        expect(params.sshAlgorithm, equals(SupportedSshAlgorithm.rsa));
-      });
       test('SshnpParams.profileName test', () {
         final params = SshnpParams(
             clientAtSign: '',
@@ -212,7 +203,6 @@ void main() {
         expect(params.idleTimeout, equals(DefaultArgs.idleTimeout));
         expect(params.addForwardsToTunnel,
             equals(DefaultArgs.addForwardsToTunnel));
-        expect(params.sshAlgorithm, equals(DefaultArgs.sshAlgorithm));
       });
       test('SshnpParams.merge() test (overrides take priority)', () {
         final params = SshnpParams.merge(
@@ -261,7 +251,6 @@ void main() {
         expect(params.addForwardsToTunnel, equals(true));
         expect(
             params.atKeysFilePath, equals('~/.atsign/@myAtsign_keys.atKeys'));
-        expect(params.sshAlgorithm, equals(SupportedSshAlgorithm.rsa));
       });
       test('SshnpParams.merge() test (null coalesce values)', () {
         final params =
@@ -290,7 +279,6 @@ void main() {
         expect(params.idleTimeout, equals(DefaultArgs.idleTimeout));
         expect(params.addForwardsToTunnel,
             equals(DefaultArgs.addForwardsToTunnel));
-        expect(params.sshAlgorithm, equals(DefaultArgs.sshAlgorithm));
       });
       test('SshnpParams.fromJson() test', () {
         String json = '{'
@@ -340,7 +328,6 @@ void main() {
         expect(params.addForwardsToTunnel, equals(true));
         expect(
             params.atKeysFilePath, equals('~/.atsign/@myAtsign_keys.atKeys'));
-        expect(params.sshAlgorithm, equals(SupportedSshAlgorithm.rsa));
       });
       test('SshnpParams.fromPartial() test', () {
         final partial = SshnpPartialParams(
@@ -417,7 +404,6 @@ void main() {
           idleTimeout: 120,
           addForwardsToTunnel: true,
           atKeysFilePath: '~/.atsign/@myAtsign_keys.atKeys',
-          sshAlgorithm: SupportedSshAlgorithm.rsa,
         );
         final configLines = params.toConfigLines();
         // Since exact formatting is in question,
@@ -432,7 +418,6 @@ void main() {
             parsedParams.sshnpdAtSign, equals('@mySshnpdAtSign'.toLowerCase()));
         expect(parsedParams.host, equals('@myHost'));
         expect(parsedParams.device, equals('myDeviceName'));
-        expect(parsedParams.port, equals(1234));
         expect(parsedParams.localPort, equals(2345));
         expect(parsedParams.sendSshPublicKey, equals(true));
         expect(parsedParams.localSshOptions,
@@ -465,7 +450,6 @@ void main() {
           idleTimeout: 120,
           addForwardsToTunnel: true,
           atKeysFilePath: '~/.atsign/@myAtsign_keys.atKeys',
-          sshAlgorithm: SupportedSshAlgorithm.rsa,
         );
         final argMap = params.toArgMap();
         expect(argMap[SshnpArg.fromArg.name], equals('@myClientAtSign'));
@@ -492,8 +476,6 @@ void main() {
         expect(argMap[SshnpArg.addForwardsToTunnelArg.name], equals(true));
         expect(argMap[SshnpArg.keyFileArg.name],
             equals('~/.atsign/@myAtsign_keys.atKeys'));
-        expect(argMap[SshnpArg.sshAlgorithmArg.name],
-            equals(SupportedSshAlgorithm.rsa.toString()));
       });
       test('SshnpParams.toJson', () {
         final params = SshnpParams(
@@ -516,7 +498,6 @@ void main() {
           idleTimeout: 120,
           addForwardsToTunnel: true,
           atKeysFilePath: '~/.atsign/@myAtsign_keys.atKeys',
-          sshAlgorithm: SupportedSshAlgorithm.rsa,
         );
         final json = params.toJson();
         final parsedParams = SshnpParams.fromJson(json);
@@ -543,7 +524,6 @@ void main() {
         expect(parsedParams.addForwardsToTunnel, equals(true));
         expect(parsedParams.atKeysFilePath,
             equals('~/.atsign/@myAtsign_keys.atKeys'));
-        expect(parsedParams.sshAlgorithm, equals(SupportedSshAlgorithm.rsa));
       });
     }); // group('SshnpParams functions')
   }); // group('SshnpParams')
@@ -817,7 +797,6 @@ void main() {
           idleTimeout: 120,
           addForwardsToTunnel: true,
           atKeysFilePath: '~/.atsign/@myAtsign_keys.atKeys',
-          sshAlgorithm: SupportedSshAlgorithm.rsa,
         );
         final configLines = params.toConfigLines();
         // Since exact formatting is in question,
@@ -954,8 +933,6 @@ void main() {
           '@myHost',
           '--${SshnpArg.deviceArg.name}',
           'myDeviceName',
-          '--${SshnpArg.portArg.name}',
-          '1234',
           '--${SshnpArg.localPortArg.name}',
           '2345',
           '--${SshnpArg.identityFileArg.name}',
@@ -974,8 +951,6 @@ void main() {
           'true',
           '--${SshnpArg.rootDomainArg.name}',
           'root.atsign.wtf',
-          '--${SshnpArg.localSshdPortArg.name}',
-          '4567',
           '--${SshnpArg.remoteSshdPortArg.name}',
           '2222',
           '--${SshnpArg.idleTimeoutArg.name}',
@@ -993,7 +968,6 @@ void main() {
         expect(params.sshnpdAtSign, equals('@mySshnpdAtSign'.toLowerCase()));
         expect(params.host, equals('@myHost'));
         expect(params.device, equals('myDeviceName'));
-        expect(params.port, equals(1234));
         expect(params.localPort, equals(2345));
         expect(params.identityFile, equals('.ssh/id_ed25519'));
         expect(params.identityPassphrase, equals('myPassphrase'));
@@ -1004,7 +978,6 @@ void main() {
         expect(params.tunnelUsername, equals('myTunnelUsername'));
         expect(params.verbose, equals(true));
         expect(params.rootDomain, equals('root.atsign.wtf'));
-        expect(params.localSshdPort, equals(4567));
         expect(params.remoteSshdPort, equals(2222));
         expect(params.idleTimeout, equals(120));
         expect(params.addForwardsToTunnel, equals(true));
