@@ -122,7 +122,7 @@ abstract class SrvdChannel<T> with AsyncInitialization, AtClientBindings {
       if (params.host.startsWith('@')) {
         srv = srvGenerator(
           host,
-          daemonPort!, // everything was backwards back then
+          clientPort,
           localPort: params.localSshdPort,
           bindLocalPort: false,
         );
@@ -212,7 +212,7 @@ abstract class SrvdChannel<T> with AsyncInitialization, AtClientBindings {
       counter++;
       if (counter > 150) {
         logger.warning('Timed out waiting for srvd response');
-        throw ('Connection timeout to srvd $host service\nhint: make sure host is valid and online');
+        throw ('Connection timeout to srvd $host service');
       }
     }
   }

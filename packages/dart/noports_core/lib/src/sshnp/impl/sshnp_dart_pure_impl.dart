@@ -11,6 +11,7 @@ class SshnpDartPureImpl extends SshnpCore
     required super.atClient,
     required super.params,
     required AtSshKeyPair? identityKeyPair,
+    required super.logStream,
   }) {
     this.identityKeyPair = identityKeyPair;
     _sshnpdChannel = SshnpdDefaultChannel(
@@ -52,7 +53,9 @@ class SshnpDartPureImpl extends SshnpCore
     /// Ensure that sshnp is initialized
     await callInitialization();
 
-    logger.info('Sending request to sshnpd');
+    var msg = 'Sending session request to the device daemon';
+    logger.info(msg);
+    sendProgress(msg);
 
     /// Send an ssh request to sshnpd
     await notify(
@@ -81,14 +84,17 @@ class SshnpDartPureImpl extends SshnpCore
     );
 
     /// Wait for a response from sshnpd
+    sendProgress('Waiting for response from the device daemon');
     var acked = await sshnpdChannel.waitForDaemonResponse();
     if (acked != SshnpdAck.acknowledged) {
-      throw SshnpError('sshnpd did not acknowledge the request');
+      throw SshnpError('No response from the device daemon');
+    } else {
+      sendProgress('Received response from the device daemon');
     }
 
     if (sshnpdChannel.ephemeralPrivateKey == null) {
       throw SshnpError(
-        'Expected an ephemeral private key from sshnpd, but it was not set',
+        'Expected an ephemeral private key from device daemon, but it was not set',
       );
     }
 
@@ -102,6 +108,7 @@ class SshnpDartPureImpl extends SshnpCore
     await keyUtil.addKeyPair(keyPair: ephemeralKeyPair);
 
     /// Start srv
+    sendProgress('Creating connection to socket rendezvous');
     SSHSocket? sshSocket = await srvdChannel.runSrv(
       directSsh: true,
       sessionAESKeyString: sshnpdChannel.sessionAESKeyString,
@@ -109,6 +116,7 @@ class SshnpDartPureImpl extends SshnpCore
     );
 
     /// Start the initial tunnel
+    sendProgress('Starting tunnel session');
     tunnelSshClient = await startInitialTunnelSession(
       ephemeralKeyPairIdentifier: ephemeralKeyPair.identifier,
       sshSocket: sshSocket,
@@ -142,9 +150,11 @@ class SshnpDartPureImpl extends SshnpCore
           'Cannot execute runShell, tunnel has not yet been created');
     }
 
+    sendProgress('Starting user session');
     SSHClient userSession =
         await startUserSession(tunnelSession: tunnelSshClient!);
 
+    sendProgress('Starting remote shell');
     SSHSession shell = await userSession.shell();
 
     return SSHSessionAsSshnpRemoteProcess(shell);

@@ -61,9 +61,27 @@ abstract class SshnpCore
   @protected
   SshnpdChannel get sshnpdChannel;
 
+  final StreamController<String> _progressStreamController =
+      StreamController<String>.broadcast();
+
+  /// Yields a string every time something interesting happens with regards to
+  /// progress towards establishing the ssh connection.
+  @override
+  Stream<String>? get progressStream => _progressStreamController.stream;
+
+  /// Yields every log message that is written to [stderr]
+  @override
+  final Stream<String>? logStream;
+
+  /// Subclasses should use this method to generate progress messages
+  sendProgress(String message) {
+    _progressStreamController.add(message);
+  }
+
   SshnpCore({
     required this.atClient,
     required this.params,
+    this.logStream,
   })  : sessionId = Uuid().v4(),
         namespace = '${params.device}.${DefaultArgs.namespace}',
         localPort = params.localPort {
@@ -80,6 +98,7 @@ abstract class SshnpCore
   @mustCallSuper
   Future<void> initialize() async {
     if (!isSafeToInitialize) return;
+
     logger.info('Initializing SshnpCore');
 
     /// Start the sshnpd payload handler
@@ -88,11 +107,14 @@ abstract class SshnpCore
     if (params.discoverDaemonFeatures) {
       late Map<String, dynamic> pingResponse;
       try {
+        sendProgress('Pinging daemon to discover features');
         pingResponse =
             await sshnpdChannel.ping().timeout(Duration(seconds: 10));
       } catch (e) {
-        logger.severe(
-            'No ping response from ${params.device}${params.sshnpdAtSign}');
+        var msg =
+            'No ping response from ${params.device}${params.sshnpdAtSign}';
+        sendProgress(msg);
+        logger.severe(msg);
         rethrow;
       }
 
@@ -112,16 +134,22 @@ abstract class SshnpCore
     }
 
     /// Set the remote username to use for the ssh session
+    sendProgress('Resolving remote username for user session');
     remoteUsername = await sshnpdChannel.resolveRemoteUsername();
 
     /// Set the username to use for the initial ssh tunnel
+    sendProgress('Resolving remote username for tunnel session');
     tunnelUsername = await sshnpdChannel.resolveTunnelUsername(
         remoteUsername: remoteUsername);
 
     /// Shares the public key if required
+    if (params.sendSshPublicKey) {
+      sendProgress('Sharing ssh public key');
+    }
     await sshnpdChannel.sharePublicKeyIfRequired(identityKeyPair);
 
     /// Retrieve the srvd host and port pair
+    sendProgress('Fetching host and port from srvd');
     await srvdChannel.callInitialization();
   }
 

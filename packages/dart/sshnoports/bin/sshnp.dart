@@ -72,6 +72,17 @@ void main(List<String> args) async {
         throw e;
       });
 
+      // A listen progress listener for the CLI
+      // Will only log if verbose is false, since if verbose is true
+      // there will already be a boatload of log messages
+      logProgress(String s) {
+        if (!(params?.verbose ?? true)) {
+          stderr.writeln('${DateTime.now()} : $s');
+        }
+      }
+
+      sshnp.progressStream?.listen((s) => logProgress(s));
+
       if (params.listDevices) {
         stderr.writeln('Searching for devices...');
         var deviceList = await sshnp.listDevices();
@@ -114,6 +125,7 @@ void main(List<String> args) async {
           stdout.write('$res\n');
           exit(0);
         } else {
+          logProgress('Starting user session');
           Process process = await Process.start(
             res.command,
             res.args,
@@ -130,22 +142,22 @@ void main(List<String> args) async {
       printUsage(error: error);
       exit(1);
     } on SshnpError catch (error, stackTrace) {
-      stderr.writeln(error.toString());
+      stderr.writeln('\nError : $error');
       if (params?.verbose ?? true) {
-        stderr.writeln('\nStack Trace: ${stackTrace.toString()}');
+        stderr.writeln('\nStack Trace: $stackTrace');
       }
       exit(1);
     } catch (error, stackTrace) {
-      stderr.writeln(error.toString());
-      stderr.writeln('\nStack Trace: ${stackTrace.toString()}');
+      stderr.writeln('\nError : $error');
+      stderr.writeln('\nStack Trace: $stackTrace');
       exit(1);
     }
   }, (Object error, StackTrace stackTrace) async {
     if (error is SSHError) {
-      stderr.writeln('\nError: ${error.toString()}');
+      stderr.writeln('\n\nError: $error');
     } else {
-      stderr.writeln('Error: ${error.toString()}');
-      stderr.writeln('\nStack Trace: ${stackTrace.toString()}');
+      stderr.writeln('\nError: $error');
+      stderr.writeln('\nStack Trace: $stackTrace');
     }
     exit(1);
   });
