@@ -55,8 +55,6 @@ void main(List<String> args) async {
   Directory? storageDir;
 
   void deleteStorage() {
-    stderr.writeln('*** Deleting temporary storage');
-
     if (storageDir != null) {
       if (storageDir!.existsSync()) {
         storageDir!.deleteSync(recursive: true);
