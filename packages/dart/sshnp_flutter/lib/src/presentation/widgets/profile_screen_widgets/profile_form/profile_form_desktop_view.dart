@@ -258,9 +258,9 @@ class _ProfileFormState extends ConsumerState<ProfileFormDesktopView> {
                                     );
                                   }
                                 }).toList(),
-                                onChanged: (value) {
+                                onChanged: (value) async {
                                   if (value == kPrivateKeyDropDownOption) {
-                                    showDialog(
+                                    privateKeyNickname = await showDialog(
                                         context: context, builder: ((context) => const SSHKeyManagementFormDialog()));
                                   }
                                 },
