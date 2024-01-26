@@ -55,14 +55,12 @@ mixin OpensshSshSessionHandler on SshnpCore implements SshSessionHandler<Process
         // the process since there is a physical window the user can close to
         // end the session
         unawaited(startProcess(
-          'powershell.exe',
+          opensshBinaryPath,
           [
-            '-command',
-            opensshBinaryPath,
             ...args,
           ],
           runInShell: true,
-          mode: ProcessStartMode.detachedWithStdio,
+          mode: ProcessStartMode.normal,
         ));
         // Delay to allow the initial connection to get in place
         int waiter = 0;
