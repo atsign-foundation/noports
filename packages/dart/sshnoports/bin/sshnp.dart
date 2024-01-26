@@ -41,10 +41,10 @@ void main(List<String> args) async {
 
   void configureRemoteShell() {
     shouldResetTerminal = true;
-    // don't wait for a newline before sending to remote stdin
-    stdin.lineMode = false;
     // echo only what is sent back from the other side
     stdin.echoMode = false;
+    // don't wait for a newline before sending to remote stdin
+    stdin.lineMode = false;
   }
 
   void resetShell() {
