@@ -69,6 +69,7 @@ mixin OpensshSshSessionHandler on SshnpCore implements SshSessionHandler<Process
         int counter = 0;
         while (waiter == 0) {
           Socket? sock;
+          await Future.delayed(Duration(milliseconds: 500));
           try {
             sock = await Socket.connect('localhost', localPort);
           } catch (e) {
@@ -80,7 +81,6 @@ mixin OpensshSshSessionHandler on SshnpCore implements SshSessionHandler<Process
             await sock?.close();
             waiter = 1;
           }
-          await Future.delayed(Duration(milliseconds: 200));
           if (counter > 5) {
             throw SshnpError(
               'SSHNP failed to start the initial ssh tunnel',
