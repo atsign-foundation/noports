@@ -1,5 +1,5 @@
 #!/bin/bash
-SSHNP_COMMAND="$HOME/.local/bin/sshnp@sshnpdatsign -d deviceName -h @sshrvdatsign args > sshnp.log"
+SSHNP_COMMAND="$HOME/.local/bin/sshnp@sshnpdatsign -d deviceName -h @srvdatsign args > sshnp.log"
 echo "Running: $SSHNP_COMMAND"
 eval "$SSHNP_COMMAND"
 cat sshnp.log

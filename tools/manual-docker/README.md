@@ -33,7 +33,7 @@ If you are on Windows, you may need to use [WSL]().
 1. Clone this repository
 
 ```sh
-git clone https://github.com/atsign-foundation/sshnoports.git
+git clone https://github.com/atsign-foundation/noports.git
 ```
 
 2. Navigate to the `tools` directory
@@ -49,7 +49,7 @@ $ ./run-manual-docker.sh
 
 usage: ./run-manual-docker.sh
   -h|--help
-  -t|--tag <sshnp/sshnpd/sshrvd> (required) - docker container tag
+  -t|--tag <sshnp/sshnpd/srvd> (required) - docker container tag
   --no-cache (optional) - docker build without cache
   --rm (optional) - remove container after exit
   ONE OF THE FOLLOWING (required)
@@ -60,7 +60,7 @@ usage: ./run-manual-docker.sh
 
   example: ./run-manual-docker.sh -t sshnp -b trunk
   example: ./run-manual-docker.sh -t sshnpd -l
-  example: ./run-manual-docker.sh -t sshrvd -r v3.3.0
+  example: ./run-manual-docker.sh -t srvd -r v3.3.0
   example: ./run-manual-docker.sh -t sshnp --release
   example: ./run-manual-docker.sh -t sshnp --blank
 ```
@@ -84,7 +84,7 @@ If you do not want to use the [custom shell script](#using-the-custom-shell-scri
 1. Clone this repository
 
 ```sh
-git clone https://github.com/atsign-foundation/sshnoports.git
+git clone https://github.com/atsign-foundation/noports.git
 ```
 
 2. Navigate to the `tools` directory

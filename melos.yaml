@@ -1,11 +1,12 @@
-name: sshnoports
+name: noports
 
 packages:
-  - packages/noports_core
-  - packages/sshnoports
-  - packages/sshnp_gui
+  - packages/dart/noports_core
+  - packages/dart/sshnoports
+  - packages/dart/sshnp_flutter
 
 command:
   bootstrap:
+    runPubGetInParallel: false
     hooks:
       post: dart run melos exec --scope="noports_core" --scope="sshnoports" -- "dart run build_runner build --delete-conflicting-outputs"

@@ -230,7 +230,7 @@ parse_env() {
   else
     SSHNP_VERSION="$(norm_version "$SSHNP_VERSION")"
   fi
-  URL="https://api.github.com/repos/atsign-foundation/sshnoports/releases/$SSHNP_VERSION";
+  URL="https://api.github.com/repos/atsign-foundation/noports/releases/$SSHNP_VERSION";
 
   case "$(uname)" in
     Darwin)
@@ -291,15 +291,15 @@ build_dart_binaries() {
   echo "DEV MODE: Installing from local repo: $SSHNP_DEV_MODE";
   mkdir -p "$HOME_PATH/.atsign/temp/$BINARY_NAME/templates/"
 
-  cp -R "$SSHNP_DEV_MODE"/packages/sshnoports/templates/* "$HOME_PATH/.atsign/temp/$BINARY_NAME/templates/";
+  cp -R "$SSHNP_DEV_MODE"/packages/dart/sshnoports/templates/* "$HOME_PATH/.atsign/temp/$BINARY_NAME/templates/";
 
-  dart pub get -C "$SSHNP_DEV_MODE/packages/sshnoports"
+  dart pub get -C "$SSHNP_DEV_MODE/packages/dart/sshnoports"
 
-  dart compile exe "$SSHNP_DEV_MODE/packages/sshnoports/bin/sshnp.dart" -o "$HOME_PATH/.atsign/temp/$BINARY_NAME/sshnp";
-  dart compile exe "$SSHNP_DEV_MODE/packages/sshnoports/bin/sshnpd.dart" -o "$HOME_PATH/.atsign/temp/$BINARY_NAME/sshnpd";
-  dart compile exe "$SSHNP_DEV_MODE/packages/sshnoports/bin/sshrv.dart" -o "$HOME_PATH/.atsign/temp/$BINARY_NAME/sshrv";
-  dart compile exe "$SSHNP_DEV_MODE/packages/sshnoports/bin/sshrvd.dart" -o "$HOME_PATH/.atsign/temp/$BINARY_NAME/sshrvd";
-  dart compile exe "$SSHNP_DEV_MODE/packages/sshnoports/bin/activate_cli.dart" -o "$HOME_PATH/.atsign/temp/$BINARY_NAME/at_activate";
+  dart compile exe "$SSHNP_DEV_MODE/packages/dart/sshnoports/bin/sshnp.dart" -o "$HOME_PATH/.atsign/temp/$BINARY_NAME/sshnp";
+  dart compile exe "$SSHNP_DEV_MODE/packages/dart/sshnoports/bin/sshnpd.dart" -o "$HOME_PATH/.atsign/temp/$BINARY_NAME/sshnpd";
+  dart compile exe "$SSHNP_DEV_MODE/packages/dart/sshnoports/bin/sshrv.dart" -o "$HOME_PATH/.atsign/temp/$BINARY_NAME/sshrv";
+  dart compile exe "$SSHNP_DEV_MODE/packages/dart/sshnoports/bin/sshrvd.dart" -o "$HOME_PATH/.atsign/temp/$BINARY_NAME/sshrvd";
+  dart compile exe "$SSHNP_DEV_MODE/packages/dart/sshnoports/bin/activate_cli.dart" -o "$HOME_PATH/.atsign/temp/$BINARY_NAME/at_activate";
 }
 
 # Make a copy of the locally provided archive

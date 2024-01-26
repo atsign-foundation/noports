@@ -1,5 +1,5 @@
 # BASE
-FROM debian:stable-20231218-slim@sha256:d4494b6af5eafd77c251e7eb1b5bfefc99a7b81172e80c30feb883898f7e5655 AS base
+FROM debian:stable-20240110-slim@sha256:f7235f31d948d45b37de1faabc7e518859d2b9cf0508486d71c1772cfc9bed8a AS base
 
 ENV USER=atsign
 ENV HOMEDIR=/${USER}
@@ -26,11 +26,11 @@ RUN set -eux ; \
 
 # BRANCH
 # BUILD BRANCH
-FROM dart:3.2.3@sha256:8c407a320022563d21b7614e2d2e723751871d0306b474cedd8ec91497888cf1 AS build-branch
+FROM dart:3.2.5@sha256:622d0e15b24a1f060ef3b968f22f9ee5cb5e424dff94a2dcb3824f609780ec25 AS build-branch
 
-ENV URL=https://github.com/atsign-foundation/sshnoports.git
+ENV URL=https://github.com/atsign-foundation/noports.git
 ENV REPO_DIR=/app/repo
-ENV PACKAGE_DIR=${REPO_DIR}/packages/sshnoports
+ENV PACKAGE_DIR=${REPO_DIR}/packages/dart/sshnoports
 ENV OUTPUT_DIR=/app/output
 
 ARG branch=trunk
@@ -47,8 +47,8 @@ RUN set -eux ; \
   dart pub get -C ${PACKAGE_DIR}; \
   dart compile exe ${PACKAGE_DIR}/bin/sshnp.dart -o ${OUTPUT_DIR}/sshnp ; \
   dart compile exe ${PACKAGE_DIR}/bin/sshnpd.dart -o ${OUTPUT_DIR}/sshnpd ; \
-  dart compile exe ${PACKAGE_DIR}/bin/sshrv.dart -o ${OUTPUT_DIR}/sshrv ; \
-  dart compile exe ${PACKAGE_DIR}/bin/sshrvd.dart -o ${OUTPUT_DIR}/sshrvd ; \
+  dart compile exe ${PACKAGE_DIR}/bin/srv.dart -o ${OUTPUT_DIR}/srv ; \
+  dart compile exe ${PACKAGE_DIR}/bin/srvd.dart -o ${OUTPUT_DIR}/srvd ; \
   dart compile exe ${PACKAGE_DIR}/bin/activate_cli.dart -o ${OUTPUT_DIR}/at_activate ;
 
 # RUNTIME BRANCH
@@ -65,10 +65,10 @@ ENTRYPOINT cp -r /mount/. ${HOMEDIR} && sudo service ssh start && sh ${HOMEDIR}/
 
 # LOCAL
 # BUILD LOCAL
-FROM dart:3.2.3@sha256:8c407a320022563d21b7614e2d2e723751871d0306b474cedd8ec91497888cf1 AS build-local
+FROM dart:3.2.5@sha256:622d0e15b24a1f060ef3b968f22f9ee5cb5e424dff94a2dcb3824f609780ec25 AS build-local
 
 ENV REPO_DIR=/app/repo
-ENV PACKAGE_DIR=${REPO_DIR}/packages/sshnoports
+ENV PACKAGE_DIR=${REPO_DIR}/packages/dart/sshnoports
 ENV OUTPUT_DIR=/app/output
 
 RUN mkdir -p ${REPO_DIR} ${OUTPUT_DIR} ;
@@ -83,8 +83,8 @@ RUN set -eux ; \
   dart pub get -C ${PACKAGE_DIR}; \
   dart compile exe ${PACKAGE_DIR}/bin/sshnp.dart -o ${OUTPUT_DIR}/sshnp ; \
   dart compile exe ${PACKAGE_DIR}/bin/sshnpd.dart -o ${OUTPUT_DIR}/sshnpd ; \
-  dart compile exe ${PACKAGE_DIR}/bin/sshrv.dart -o ${OUTPUT_DIR}/sshrv ; \
-  dart compile exe ${PACKAGE_DIR}/bin/sshrvd.dart -o ${OUTPUT_DIR}/sshrvd ; \
+  dart compile exe ${PACKAGE_DIR}/bin/srv.dart -o ${OUTPUT_DIR}/srv ; \
+  dart compile exe ${PACKAGE_DIR}/bin/srvd.dart -o ${OUTPUT_DIR}/srvd ; \
   dart compile exe ${PACKAGE_DIR}/bin/activate_cli.dart -o ${OUTPUT_DIR}/at_activate ;
 
 # RUNTIME LOCAL
@@ -101,14 +101,14 @@ ENTRYPOINT cp -r /mount/. ${HOMEDIR} && sudo service ssh start && sh ${HOMEDIR}/
 
 # RELEASE
 # BUILD RELEASE
-FROM debian:stable-20231218-slim@sha256:d4494b6af5eafd77c251e7eb1b5bfefc99a7b81172e80c30feb883898f7e5655 AS build-release
+FROM debian:stable-20240110-slim@sha256:f7235f31d948d45b37de1faabc7e518859d2b9cf0508486d71c1772cfc9bed8a AS build-release
 
 ARG release
 
 ENV BUILD_DIR=/app/build
 ENV OUTPUT_DIR=/app/output
-ENV URL="https://api.github.com/repos/atsign-foundation/sshnoports/releases/latest"
-ENV URLP="https://github.com/atsign-foundation/sshnoports/releases/download"
+ENV URL="https://api.github.com/repos/atsign-foundation/noports/releases/latest"
+ENV URLP="https://github.com/atsign-foundation/noports/releases/download"
 
 RUN apt-get update ; \
   apt-get install -y wget dpkg curl ; \
@@ -134,7 +134,7 @@ RUN apt-get update ; \
   tar -xvf sshnp-linux-${ARCH}.tgz ; \
   rm sshnp-linux-${ARCH}.tgz ; \
   cd sshnp ; \
-  mv sshnp sshnpd sshrv sshrvd at_activate ${OUTPUT_DIR} ;
+  mv sshnp sshnpd srv srvd at_activate ${OUTPUT_DIR} ;
 
 # RUNTIME RELEASE
 FROM base AS runtime-release

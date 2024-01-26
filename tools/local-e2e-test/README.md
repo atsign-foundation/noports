@@ -27,7 +27,7 @@ If you are on Windows, you may need to use [WSL]().
 1. Clone this repository
 
 ```sh
-git clone https://github.com/atsign-foundation/sshnoports.git
+git clone https://github.com/atsign-foundation/noports.git
 ```
 
 2. Navigate to the `tools` directory

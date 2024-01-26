@@ -23,27 +23,27 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
-      - uses: dart-lang/setup-dart@b64355ae6ca0b5d484f0106a033dd1388965d06d # v1.6.0
+      - uses: dart-lang/setup-dart@ca7e6fee45ffbd82b555a7ebfc236d2c86439f5b # v1.6.1
       - uses: actions/setup-go@0c52d547c9bc32b1aa3301fd7a9cb496313a4491 # v5.0.0
         with:
-          go-version: 'stable'
+          go-version: "stable"
           cache-dependency-path: tools/osv-scanner/go.sum
       - name: dart pub get
-        working-directory: packages/noports_core
+        working-directory: packages/dart/noports_core
         run: dart pub get
       - name: dart analyze
-        working-directory: packages/noports_core
+        working-directory: packages/dart/noports_core
         run: dart analyze
       - name: dart test
-        working-directory: packages/noports_core
+        working-directory: packages/dart/noports_core
         run: dart test
       # Runs osv-scanner to find any vulnerable Dart dependencies
       # It needs to look at pubspec.lock files, which is why it's
       # placed here, as the `dart pub get` above will create them
       - name: Run osv-scanner
-        working-directory: packages
+        working-directory: packages/dart
         run: |
           go install github.com/google/osv-scanner/cmd/osv-scanner@6316373e47d7e3e4b4fd3630c4bbc10987738de6 # v1.4.3
           osv-scanner --lockfile=./sshnoports/pubspec.lock
-          osv-scanner --lockfile=./sshnp_gui/pubspec.lock
+          osv-scanner --lockfile=./sshnp_flutter/pubspec.lock
           osv-scanner --lockfile=./noports_core/pubspec.lock

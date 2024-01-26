@@ -30,7 +30,7 @@ jobs:
 
     - name: Install Poetry
       if: ${{ github.actor == 'dependabot[bot]' }}
-      uses: abatilo/actions-poetry@192395c0d10c082a7c62294ab5d9a9de40e48974 # v2.3.0
+      uses: abatilo/actions-poetry@7b6d33e44b4f08d7021a1dee3c044e9c253d6439 # v3.0.0
       with:
         poetry-version: '1.7.1'
 

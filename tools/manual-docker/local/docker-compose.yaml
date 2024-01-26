@@ -1,5 +1,4 @@
-
-version: '3.8'
+version: "3.8"
 
 services:
   image-manual-local:
@@ -29,14 +28,14 @@ services:
       - sshnp
     depends_on:
       - image-manual-local
-  container-sshrvd:
-    image: atsigncompany/sshnp-e2e-manual:local
-    container_name: manual_local_sshrvd
-    volumes:
-      - ../../../../contexts/sshrvd/.atsign/keys/:/atsign/.atsign/keys/ # mount keys
-    network_mode: host
-    depends_on:
-      - image-manual-local
+  # container-srvd:
+  #   image: atsigncompany/sshnp-e2e-manual:local
+  #   container_name: manual_local_srvd
+  #   volumes:
+  #     - ../../../../contexts/srvd/.atsign/keys/:/atsign/.atsign/keys/ # mount keys
+  #   network_mode: host
+  #   depends_on:
+  #     - image-manual-local
 
 networks:
   sshnpd:

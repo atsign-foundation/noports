@@ -1,0 +1,30 @@
+name: Gitbook Review
+on:
+  push:
+    branches:
+     - gitbook
+
+jobs:
+  create-pull-request:
+    env:
+      branch: gitbook
+
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
+
+      - name: Authenticate GitHub CLI
+        run: |
+         echo -e ${{ secrets.MY_GITHUB_TOKEN }} | gh auth login --with-token 
+
+      - name: Create Pull Request
+        run: |
+          gh pr create \
+            --base 'trunk' \
+            --head 'gitbook' \
+            --reviewer 'xavierchanth' \
+            --title 'docs(automated): Update docs from Gitbook' \
+            --body 'Sync Gitbook docs branch to trunk' || \
+          echo "Already created?";
+

@@ -1,6 +1,6 @@
 #!/bin/bash
 echo "SSHNP START ENTRY"
-SSHNP_COMMAND="$HOME/.local/bin/sshnp -f @sshnpatsign -t @sshnpdatsign -d deviceName -h @sshrvdatsign args > sshnp.log"
+SSHNP_COMMAND="$HOME/.local/bin/sshnp -f @sshnpatsign -t @sshnpdatsign -d deviceName -h @srvdatsign args  --no-encrypt-rvd-traffic --no-authenticate-client-to-rvd --no-authenticate-device-to-rvd --no-discover-daemon-features > sshnp.log"
 
 run_test()
 {
