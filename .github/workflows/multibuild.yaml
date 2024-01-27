@@ -54,8 +54,7 @@ jobs:
       - run: dart compile exe bin/sshnp.dart -v -o sshnp/sshnp${{ matrix.ext }}
       - if: ${{ matrix.os != 'windows-latest' }}
         run: dart compile exe bin/sshnpd.dart -v -o sshnp/sshnpd${{ matrix.ext }}
-      - if: ${{ matrix.os != 'windows-latest' }}
-        run: dart compile exe bin/srv.dart -v -o sshnp/srv${{ matrix.ext }}
+      - run: dart compile exe bin/srv.dart -v -o sshnp/srv${{ matrix.ext }}
       - if: ${{ matrix.os != 'windows-latest' }}
         run: dart compile exe bin/srvd.dart -v -o sshnp/srvd${{ matrix.ext }}
       - if: ${{ matrix.os != 'windows-latest' }}
