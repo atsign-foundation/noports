@@ -54,8 +54,11 @@ class LocalSshKeyUtil implements AtSshKeyUtil {
     await Future.wait([
       files[0].create(recursive: true),
       files[1].create(recursive: true),
-      files[0].writeAsString(keyPair.privateKeyContents),
-      files[1].writeAsString(keyPair.publicKeyContents),
+    ]).catchError((e) => throw e);
+
+    await Future.wait([
+    files[0].writeAsString(keyPair.privateKeyContents),
+    files[1].writeAsString(keyPair.publicKeyContents),
     ]).catchError((e) => throw e);
 
     if (!Platform.isWindows) {
