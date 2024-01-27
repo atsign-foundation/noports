@@ -222,8 +222,8 @@ void main(List<String> args) async {
       exitProgram(exitCode: 1);
     }
   }, (Object error, StackTrace stackTrace) async {
-    if (error is SSHError) {
-      stderr.writeln('\n\nError: $error');
+    if (error is SSHError || error is SshnpError) {
+      stderr.writeln('\nError: $error');
     } else {
       stderr.writeln('\nError: $error');
       stderr.writeln('\nStack Trace: $stackTrace');
