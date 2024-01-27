@@ -60,6 +60,7 @@ void main(List<String> args) async {
     if (!Platform.isWindows) {
       if (storageDir != null) {
         if (storageDir!.existsSync()) {
+          // stderr.writeln('${DateTime.now()} : Cleaning up temporary files');
           storageDir!.deleteSync(recursive: true);
         }
       }
@@ -125,11 +126,13 @@ void main(List<String> args) async {
         atClientGenerator: (SshnpParams params) => createAtClientCli(
           homeDirectory: homeDirectory,
           atsign: params.clientAtSign,
-          atKeysFilePath: params.atKeysFilePath ?? getDefaultAtKeysFilePath(homeDirectory, params.clientAtSign),
+          atKeysFilePath: params.atKeysFilePath ??
+              getDefaultAtKeysFilePath(homeDirectory, params.clientAtSign),
           rootDomain: params.rootDomain,
           storagePath: storageDir!.path,
         ),
-        sshClient: SupportedSshClient.fromString(argResults['ssh-client'] as String),
+        sshClient:
+            SupportedSshClient.fromString(argResults['ssh-client'] as String),
       ).catchError((e) {
         if (e is SshnpError && e.stackTrace != null) {
           Error.throwWithStackTrace(e, e.stackTrace!);
@@ -219,8 +222,8 @@ void main(List<String> args) async {
       exitProgram(exitCode: 1);
     }
   }, (Object error, StackTrace stackTrace) async {
-    if (error is SSHError) {
-      stderr.writeln('\n\nError: $error');
+    if (error is SSHError || error is SshnpError) {
+      stderr.writeln('\nError: $error');
     } else {
       stderr.writeln('\nError: $error');
       stderr.writeln('\nStack Trace: $stackTrace');
