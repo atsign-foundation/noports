@@ -212,7 +212,7 @@ abstract class SrvdChannel<T> with AsyncInitialization, AtClientBindings {
       counter++;
       if (counter > 150) {
         logger.warning('Timed out waiting for srvd response');
-        throw ('Connection timeout to srvd $host service');
+        throw SshnpError('Connection timeout to srvd $host service');
       }
     }
   }
