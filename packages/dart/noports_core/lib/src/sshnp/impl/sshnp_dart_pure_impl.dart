@@ -115,15 +115,21 @@ class SshnpDartPureImpl extends SshnpCore
       sessionIVString: sshnpdChannel.sessionIVString,
     );
 
-    /// Start the initial tunnel
-    sendProgress('Starting tunnel session');
-    tunnelSshClient = await startInitialTunnelSession(
-      ephemeralKeyPairIdentifier: ephemeralKeyPair.identifier,
-      sshSocket: sshSocket,
-    );
-
-    /// Remove the key pair from the key utility
-    await keyUtil.deleteKeyPair(identifier: ephemeralKeyPair.identifier);
+    try {
+      /// Start the initial tunnel
+      sendProgress('Starting tunnel session');
+      tunnelSshClient = await startInitialTunnelSession(
+        ephemeralKeyPairIdentifier: ephemeralKeyPair.identifier,
+        sshSocket: sshSocket,
+      );
+    } finally {
+      /// Remove the key pair from the key utility
+      try {
+        await keyUtil.deleteKeyPair(identifier: ephemeralKeyPair.identifier);
+      } catch (e) {
+        logger.shout('Failed to delete ephemeral keyPair: $e');
+      }
+    }
 
     /// Ensure that we clean up after ourselves
     await callDisposal();
