@@ -4,21 +4,27 @@ import 'package:path/path.dart' as path;
 /// Get the home directory or null if unknown.
 String? getHomeDirectory({bool throwIfNull = false}) {
   String? homeDir;
+  String envVarName = '';
   switch (Platform.operatingSystem) {
     case 'linux':
     case 'macos':
-      homeDir = Platform.environment['HOME'];
+      envVarName = 'HOME';
+      homeDir = Platform.environment[envVarName];
       break;
     case 'windows':
-      homeDir = Platform.environment['USERPROFILE'];
+      envVarName = 'USERPROFILE';
+      homeDir = Platform.environment[envVarName];
       break;
     default:
       // ios and fuchsia to use the ApplicationSupportDirectory
       homeDir = null;
+      if (throwIfNull) {
+        throw ('Unable to determine home directory on platform ${Platform.operatingSystem}');
+      }
       break;
   }
   if (throwIfNull && homeDir == null) {
-    throw ('Unable to determine your username: please set environment variable');
+    throw ('Unable to determine your home directory: please set $envVarName environment variable');
   }
   return homeDir;
 }
@@ -27,20 +33,26 @@ String? getHomeDirectory({bool throwIfNull = false}) {
 String? getUserName({bool throwIfNull = false}) {
   Map<String, String> envVars = Platform.environment;
   String? userName;
+  String envVarName = '';
   switch (Platform.operatingSystem) {
     case 'linux':
     case 'macos':
-      userName = envVars['USER'];
+      envVarName = 'USER';
+      userName = envVars[envVarName];
       break;
     case 'windows':
-      userName = envVars['USERNAME'];
+      envVarName = 'USERNAME';
+      userName = envVars[envVarName];
       break;
     default:
       userName = null;
+      if (throwIfNull) {
+        throw ('Unable to determine username on platform ${Platform.operatingSystem}');
+      }
       break;
   }
   if (throwIfNull && userName == null) {
-    throw ('Unable to determine your username: please set environment variable');
+    throw ('Unable to determine your username: please set environment variable $envVarName');
   }
   return userName;
 }
