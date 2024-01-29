@@ -93,6 +93,7 @@ class _ProfileFormState extends ConsumerState<ProfileFormDesktopView> {
             child: Form(
               key: _formkey,
               child: Column(
+                mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Row(
@@ -156,9 +157,10 @@ class _ProfileFormState extends ConsumerState<ProfileFormDesktopView> {
                   Text(strings.connectionConfiguration, style: Theme.of(context).textTheme.bodyLarge),
                   gapH20,
                   ProfileFormCard(
-                    largeScreenRightPadding: Sizes.p103,
+                    largeScreenRightPadding: Sizes.p32,
                     formFields: [
                       Row(
+                        mainAxisSize: MainAxisSize.min,
                         children: [
                           CustomTextFormField(
                               initialValue: oldConfig.remoteUsername,
@@ -191,6 +193,7 @@ class _ProfileFormState extends ConsumerState<ProfileFormDesktopView> {
                       ),
                       gapH10,
                       Row(
+                        mainAxisSize: MainAxisSize.min,
                         children: [
                           CustomTextFormField(
                             initialValue: oldConfig.remoteSshdPort.toString(),
@@ -221,8 +224,9 @@ class _ProfileFormState extends ConsumerState<ProfileFormDesktopView> {
                   gapH20,
                   Text(strings.sshKeyManagement('yes'), style: Theme.of(context).textTheme.bodyLarge),
                   gapH16,
-                  ProfileFormCard(largeScreenRightPadding: 5, formFields: [
+                  ProfileFormCard(largeScreenRightPadding: Sizes.p32, formFields: [
                     Row(
+                      mainAxisSize: MainAxisSize.min,
                       children: [
                         privateKeyManagerListController.when(
                             loading: () => const Center(child: CircularProgressIndicator()),
@@ -280,27 +284,29 @@ class _ProfileFormState extends ConsumerState<ProfileFormDesktopView> {
                             }),
                         gapW38,
                         CustomSwitchWidget(
-                            labelText: strings.sendSshPublicKey,
-                            value: newConfig.sendSshPublicKey ?? oldConfig.sendSshPublicKey,
-                            tooltip: strings.sendSshPublicKeyTooltip,
-                            onChanged: (newValue) {
-                              setState(() {
-                                newConfig = SshnpPartialParams.merge(
-                                  newConfig,
-                                  SshnpPartialParams(sendSshPublicKey: newValue),
-                                );
-                              });
-                            }),
+                          labelText: strings.sendSshPublicKey,
+                          value: newConfig.sendSshPublicKey ?? oldConfig.sendSshPublicKey,
+                          tooltip: strings.sendSshPublicKeyTooltip,
+                          onChanged: (newValue) {
+                            setState(() {
+                              newConfig = SshnpPartialParams.merge(
+                                newConfig,
+                                SshnpPartialParams(sendSshPublicKey: newValue),
+                              );
+                            });
+                          },
+                        ),
                       ],
                     ),
                   ]),
                   gapH20,
-                  Text(strings.advancedConfiguration, style: Theme.of(context).textTheme.bodyMedium),
+                  Text(strings.advancedConfiguration, style: Theme.of(context).textTheme.bodyLarge),
                   gapH20,
                   ProfileFormCard(
-                    largeScreenRightPadding: Sizes.p103,
+                    largeScreenRightPadding: Sizes.p32,
                     formFields: [
                       Row(
+                        mainAxisSize: MainAxisSize.min,
                         children: [
                           CustomTextFormField(
                             initialValue: oldConfig.localSshOptions.join(','),
@@ -325,6 +331,65 @@ class _ProfileFormState extends ConsumerState<ProfileFormDesktopView> {
                           ),
                         ],
                       ),
+                    ],
+                  ),
+                  gapH20,
+                  Text(strings.socketRendezvousConfiguration, style: Theme.of(context).textTheme.bodyLarge),
+                  gapH20,
+                  ProfileFormCard(
+                    largeScreenRightPadding: Sizes.p32,
+                    formFields: [
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          CustomSwitchWidget(
+                            labelText: strings.authenticateClientToRvd,
+                            value: newConfig.authenticateClientToRvd ?? oldConfig.authenticateClientToRvd,
+                            tooltip: strings.authenticateClientToRvdTooltip,
+                            onChanged: (newValue) {
+                              setState(() {
+                                newConfig = SshnpPartialParams.merge(
+                                  newConfig,
+                                  SshnpPartialParams(authenticateClientToRvd: newValue),
+                                );
+                              });
+                            },
+                          ),
+                          gapW38,
+                          CustomSwitchWidget(
+                            labelText: strings.authenticateDeviceToRvd,
+                            value: newConfig.authenticateDeviceToRvd ?? oldConfig.authenticateDeviceToRvd,
+                            tooltip: strings.authenticateDeviceToRvdTooltip,
+                            onChanged: (newValue) {
+                              setState(() {
+                                newConfig = SshnpPartialParams.merge(
+                                  newConfig,
+                                  SshnpPartialParams(authenticateDeviceToRvd: newValue),
+                                );
+                              });
+                            },
+                          ),
+                        ],
+                      ),
+                      gapH10,
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          CustomSwitchWidget(
+                            labelText: strings.encryptRvdTraffic,
+                            value: newConfig.encryptRvdTraffic ?? oldConfig.encryptRvdTraffic,
+                            tooltip: strings.encryptRvdTrafficTooltip,
+                            onChanged: (newValue) {
+                              setState(() {
+                                newConfig = SshnpPartialParams.merge(
+                                  newConfig,
+                                  SshnpPartialParams(encryptRvdTraffic: newValue),
+                                );
+                              });
+                            },
+                          ),
+                        ],
+                      )
                     ],
                   ),
                   gapH30,

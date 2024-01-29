@@ -41,6 +41,7 @@ class ProfileFormCard extends StatelessWidget {
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
             children: formFields,
           ),
         ),
