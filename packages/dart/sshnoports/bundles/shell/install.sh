@@ -91,7 +91,14 @@ install_single_binary() {
     dest="$user_bin_dir"
   fi
   mkdir -p "$dest"
+  if test -f "$dest/$1"; then
+    if test -f "$dest/$1.old"; then
+      rm -f "$dest/$1.old" || echo "Failed to remove $dest/$1.old - aborting" && exit 1
+    fi
+    mv "$dest/$1" "$dest/$1.old" || echo "Failed to rename $dest/$1 to $dest/$1.old - aborting" && exit 1
+  fi
   cp -f "$script_dir/$1" "$dest/$1"
+
   echo "=> Installed $1 to $dest"
   if is_root & ! [ -f "$user_bin_dir/$1" ] ; then
     mkdir -p "$user_bin_dir"
