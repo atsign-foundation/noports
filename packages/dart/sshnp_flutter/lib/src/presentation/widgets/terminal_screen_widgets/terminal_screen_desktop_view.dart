@@ -44,9 +44,6 @@ class _TerminalScreenDesktopViewState extends ConsumerState<TerminalScreenDeskto
 
           sessionController.issueDisplayName(shellInfo['params'].profileName!);
 
-          sessionController.write('Starting Shell Session...');
-          log('Starting Shell Session...');
-
           try {
             AtClient atClient = AtClientManager.getInstance().atClient;
 
@@ -68,6 +65,10 @@ class _TerminalScreenDesktopViewState extends ConsumerState<TerminalScreenDeskto
               atClient: atClient,
               identityKeyPair: keyPair,
             );
+            sshnp.progressStream?.listen((progress) {
+              sessionController.write(progress);
+              log(progress);
+            });
 
             final result = await sshnp.run();
             if (result is SshnpError) {
@@ -76,12 +77,8 @@ class _TerminalScreenDesktopViewState extends ConsumerState<TerminalScreenDeskto
 
             if (result is SshnpCommand) {
               if (sshnp.canRunShell) {
-                sessionController.write('running shell session...');
-                log('running shell session...');
-
                 SshnpRemoteProcess shell = await sshnp.runShell();
-                sessionController.write('starting terminal session...');
-                log('starting terminal session');
+
                 sessionController.startSession(
                   shell,
                   terminalTitle: '${shellInfo['sshnpdAtSign']}-${shellInfo['params'].device}',
@@ -90,6 +87,7 @@ class _TerminalScreenDesktopViewState extends ConsumerState<TerminalScreenDeskto
             }
           } catch (e) {
             sessionController.dispose();
+
             if (mounted) {
               log('error: ${e.toString()}');
 

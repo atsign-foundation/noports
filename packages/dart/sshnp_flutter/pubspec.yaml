@@ -31,12 +31,12 @@ dependencies:
   intl: any
   macos_ui: ^2.0.0
   mocktail: ^1.0.0
-  noports_core: ^5.0.0
+  noports_core: ^6.0.0
   page_transition: ^2.0.9
   path: ^1.8.3
   path_provider: ^2.1.1
   shared_preferences: ^2.2.2
-  socket_connector: ^1.0.11
+  socket_connector: ^2.0.1
   url_launcher: ^6.1.14
   uuid: ^3.0.7
   xterm: ^3.5.0
