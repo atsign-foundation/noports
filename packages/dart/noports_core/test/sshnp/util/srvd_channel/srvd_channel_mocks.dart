@@ -8,8 +8,8 @@ abstract class SrvGeneratorCaller<T> {
   Srv<T> call(
     String host,
     int port, {
-    required int localPort,
-    required bool bindLocalPort,
+    int? localPort,
+    bool? bindLocalPort,
     String? rvdAuthString,
     String? sessionAESKeyString,
     String? sessionIVString,

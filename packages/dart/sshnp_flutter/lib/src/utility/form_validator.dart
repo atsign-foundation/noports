@@ -10,12 +10,25 @@ class FormValidator {
     return null;
   }
 
+  static String? validateRequiredPortField(String? value) {
+    String valid = r'^[0-9]+$';
+    if (value?.isEmpty ?? true) {
+      return kEmptyFieldValidationError;
+    } else if (!RegExp(valid).hasMatch(value!)) {
+      return kPortFieldValidationError;
+    } else if (!(int.parse(value) >= 0 && int.parse(value) <= 65535)) {
+      return kPortFieldValidationError;
+    }
+    return null;
+  }
+
   static String? validateAtsignField(String? value) {
     if (value?.isEmpty ?? true) {
       return kEmptyFieldValidationError;
     } else if (!value!.startsWith('@')) {
       return kAtsignFieldValidationError;
     }
+    validateRequiredField(value);
     return null;
   }
 

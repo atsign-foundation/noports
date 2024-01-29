@@ -1,3 +1,8 @@
+# 6.0.1
+- fix: ensure that directories for key creation exist before trying to create them
+- fix: ensure that temporary keys are deleted after use
+- ci: add srv.exe to the release on Windows
+
 # 6.0.0
 - Added ability to authenticate to the socket rendezvous, and made this the 
   default behaviour.

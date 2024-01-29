@@ -110,14 +110,14 @@ cd sshnp
 2. Then run the installer:
 
 ```sh
-./install.sh sshnp
+./install.sh sshnp && ./install.sh srv
 ```
 
 This will install the binaries to `~/.local/bin`.\
 Instead, if you'd like to install the binaries to `/usr/local/bin`, run the installer as root:
 
 ```sh
-sudo ./install.sh sshnp
+sudo ./install.sh sshnp && sudo ./install.sh srv
 ```
 {% endtab %}
 
@@ -131,14 +131,14 @@ cd sshnp
 2. Then run the installer:
 
 ```sh
-./install.sh sshnp
+./install.sh sshnp && ./install.sh srv
 ```
 
 This will install the binaries to `~/.local/bin`.\
 Instead, if you'd like to install the binaries to `/usr/local/bin`, run the installer as root:
 
 ```sh
-sudo ./install.sh sshnp
+sudo ./install.sh sshnp && sudo ./install.sh srv
 ```
 {% endtab %}
 

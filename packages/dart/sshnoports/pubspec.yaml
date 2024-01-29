@@ -1,27 +1,43 @@
 name: sshnoports
 publish_to: none
 
-version: 5.0.0
+version: 5.0.1
 
 environment:
   sdk: ">=3.0.0 <4.0.0"
 
 dependencies:
-  noports_core: 6.0.0
+  noports_core: 6.0.1
   at_onboarding_cli: 1.4.1
   args: 2.4.2
   socket_connector: ^2.0.1
+  dartssh2: 2.8.2
 
 dependency_overrides:
-  at_onboarding_cli:
+  noports_core:
+    path: ../noports_core
+  # Pin the dependencies of noports_core
+  archive: 3.3.9
+  args:
     git:
-      url: https://github.com/atsign-foundation/at_libraries
-      path: packages/at_onboarding_cli
-      ref: onboarding_cli_commons_uptake
+      ref: gkc/show-aliases-in-usage
+      url: https://github.com/gkc/args
+  at_client: 3.0.71
+  at_lookup: 3.0.41
+  at_utils: 3.0.15
+  asn1lib: 1.4.1
+  encrypt: 5.0.1
+  crypton: 2.1.0
+  dartssh2: 2.8.2
+  logging: 1.2.0
+  meta: 1.9.1
+  ssh_key: 0.8.0
+  uuid: 3.0.7
+  version: 3.0.2
 
 dev_dependencies:
   lints: ^3.0.0
-  test: ^1.25.1
+  test: ^1.25.2
   mocktail: ^1.0.3
   build_runner: ^2.4.8
   build_version: ^2.1.1

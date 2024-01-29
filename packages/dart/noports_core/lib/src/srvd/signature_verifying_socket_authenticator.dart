@@ -22,7 +22,7 @@ import 'package:at_utils/at_logger.dart';
 ///
 ///
 class SignatureAuthVerifier {
-  static final AtSignLogger logger = AtSignLogger('SignatureAuthVerifier');
+  static final AtSignLogger logger = AtSignLogger(' SignatureAuthVerifier ');
 
   /// Public key of the signing algorithm used to sign the data
   String publicKey;
@@ -66,55 +66,78 @@ class SignatureAuthVerifier {
     Completer<(bool, Stream<Uint8List>?)> completer = Completer();
     bool authenticated = false;
     StreamController<Uint8List> sc = StreamController();
-    logger.info('SignatureAuthVerifier $tag: starting listen');
+    logger.info('SignatureAuthVerifier for $tag: starting listen');
+    List<int> buffer = [];
     socket.listen((Uint8List data) {
       if (authenticated) {
         sc.add(data);
       } else {
-        try {
-          final message = String.fromCharCodes(data);
-          logger.info('SignatureAuthVerifier $tag received data: $message');
-          var envelope = jsonDecode(message);
+        buffer.addAll(data);
+        if (buffer.contains(10)) {
+          logger.finer('original buffer length ${buffer.length}');
+          List<int> authBuffer = buffer.sublist(0, buffer.indexOf(10));
+          logger.finer('authBuffer length ${authBuffer.length}');
+          buffer.removeRange(0, buffer.indexOf(10) + 1);
+          logger.finer('remaining buffer length ${buffer.length}');
 
-          final hashingAlgo =
-              HashingAlgoType.values.byName(envelope['hashingAlgo']);
-          final signingAlgo =
-              SigningAlgoType.values.byName(envelope['signingAlgo']);
+          try {
+            final message = String.fromCharCodes(authBuffer);
+            logger.finer('SignatureAuthVerifier $tag received data: $message');
+            var envelope = jsonDecode(message);
+            logger.finer('SignatureAuthVerifier $tag decoded JSON message OK');
 
-          var payload = envelope['payload'];
-          if (payload == null || payload is! Map) {
-            completer.completeError(
-                'Received an auth signature which does not include the payload');
-            return;
+            final hashingAlgo =
+                HashingAlgoType.values.byName(envelope['hashingAlgo']);
+            final signingAlgo =
+                SigningAlgoType.values.byName(envelope['signingAlgo']);
+
+            var payload = envelope['payload'];
+            if (payload == null || payload is! Map) {
+              completer.completeError(
+                  'Received an auth signature which does not include the payload');
+              return;
+            }
+            if (payload['rvdNonce'] != rvdNonce) {
+              completer.completeError(
+                  'Received rvdNonce which does not match what is expected');
+              return;
+            }
+
+            AtSigningVerificationInput input = AtSigningVerificationInput(
+                dataToVerify, base64Decode(envelope['signature']), publicKey)
+              ..signingAlgorithm = DefaultSigningAlgo(null, hashingAlgo)
+              ..signingMode = AtSigningMode.data
+              ..signingAlgoType = signingAlgo
+              ..hashingAlgoType = hashingAlgo;
+
+            AtSigningResult atSigningResult = _verifySignature(input);
+            bool result = atSigningResult.result;
+
+            if (result == false) {
+              logger.shout('SignatureAuthVerifier $tag :'
+                  ' verification FAILURE :'
+                  ' ${atSigningResult.result}');
+              completer.completeError(
+                  'Signature verification failed. Signatures did not match.');
+              return;
+            }
+
+            logger.info('SignatureAuthVerifier $tag :'
+                ' verification SUCCESS :'
+                ' ${atSigningResult.result}');
+            authenticated = true;
+            completer.complete((true, sc.stream));
+
+            if (buffer.isNotEmpty) {
+              sc.add(Uint8List.fromList(buffer));
+            }
+          } catch (e) {
+            logger.shout('SignatureAuthVerifier $tag :'
+                ' verification FAILED with exception :'
+                ' $e');
+
+            completer.completeError('Error during socket authentication: $e');
           }
-          if (payload['rvdNonce'] != rvdNonce) {
-            completer.completeError(
-                'Received rvdNonce which does not match what is expected');
-            return;
-          }
-
-          AtSigningVerificationInput input = AtSigningVerificationInput(
-              dataToVerify, base64Decode(envelope['signature']), publicKey)
-            ..signingAlgorithm = DefaultSigningAlgo(null, hashingAlgo)
-            ..signingMode = AtSigningMode.data
-            ..signingAlgoType = signingAlgo
-            ..hashingAlgoType = hashingAlgo;
-
-          AtSigningResult atSigningResult = _verifySignature(input);
-          logger.info('Signing verification outcome is:'
-              ' ${atSigningResult.result}');
-          bool result = atSigningResult.result;
-
-          if (result == false) {
-            completer.completeError(
-                'Signature verification failed. Signatures did not match.');
-            return;
-          }
-
-          authenticated = true;
-          completer.complete((true, sc.stream));
-        } catch (e) {
-          completer.completeError('Error during socket authentication: $e');
         }
       }
     }, onError: (error) => sc.addError(error), onDone: () => sc.close());

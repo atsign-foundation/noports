@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:args/args.dart';
 import 'package:noports_core/src/common/default_args.dart';
 import 'package:noports_core/src/common/file_system_utils.dart';
@@ -83,7 +85,9 @@ class SshnpdParams {
   }
 
   static ArgParser _createArgParser() {
-    var parser = ArgParser();
+    var parser = ArgParser(
+      usageLineLength: stdout.hasTerminal ? stdout.terminalColumns : null,
+    );
 
     // Basic arguments
     parser.addOption(

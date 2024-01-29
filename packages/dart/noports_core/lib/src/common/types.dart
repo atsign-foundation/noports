@@ -3,8 +3,8 @@ import 'package:noports_core/srv.dart';
 typedef SrvGenerator<T> = Srv<T> Function(
   String,
   int, {
-  required int localPort,
-  required bool bindLocalPort,
+  int? localPort,
+  bool? bindLocalPort,
   String? rvdAuthString,
   String? sessionAESKeyString,
   String? sessionIVString,

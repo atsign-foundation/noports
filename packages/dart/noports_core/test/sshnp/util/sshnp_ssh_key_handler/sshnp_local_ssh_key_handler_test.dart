@@ -33,6 +33,7 @@ void main() {
       when(() => mockParams.localPort).thenReturn(0);
       when(() => mockParams.verbose).thenReturn(false);
       when(() => mockParams.discoverDaemonFeatures).thenReturn(false);
+      when(() => mockParams.sendSshPublicKey).thenReturn(false);
       when(() => mockAtClient.getPreferences()).thenReturn(null);
       when(() => mockAtClient.setPreferences(any())).thenReturn(null);
     }

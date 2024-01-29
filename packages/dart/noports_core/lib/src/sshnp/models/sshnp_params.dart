@@ -35,13 +35,10 @@ class SshnpParams {
   final int idleTimeout;
   final bool addForwardsToTunnel;
   final String? atKeysFilePath;
-  final SupportedSshAlgorithm sshAlgorithm;
-  // TODO Once pure dart impl supports these flags then they can be
-  // TODO made "final" again
-  bool authenticateClientToRvd;
-  bool authenticateDeviceToRvd;
-  bool encryptRvdTraffic;
-  bool discoverDaemonFeatures;
+  final bool authenticateClientToRvd;
+  final bool authenticateDeviceToRvd;
+  final bool encryptRvdTraffic;
+  final bool discoverDaemonFeatures;
 
   /// Special Arguments
 
@@ -87,7 +84,6 @@ class SshnpParams {
     this.remoteSshdPort = DefaultArgs.remoteSshdPort,
     this.idleTimeout = DefaultArgs.idleTimeout,
     this.addForwardsToTunnel = DefaultArgs.addForwardsToTunnel,
-    this.sshAlgorithm = DefaultArgs.sshAlgorithm,
     this.authenticateClientToRvd = DefaultArgs.authenticateClientToRvd,
     this.authenticateDeviceToRvd = DefaultArgs.authenticateDeviceToRvd,
     this.encryptRvdTraffic = DefaultArgs.encryptRvdTraffic,
@@ -132,7 +128,6 @@ class SshnpParams {
       idleTimeout: params2.idleTimeout ?? params1.idleTimeout,
       addForwardsToTunnel:
           params2.addForwardsToTunnel ?? params1.addForwardsToTunnel,
-      sshAlgorithm: params2.sshAlgorithm ?? params1.sshAlgorithm,
       authenticateClientToRvd:
           params2.authenticateClientToRvd ?? params1.authenticateClientToRvd,
       authenticateDeviceToRvd:
@@ -179,7 +174,6 @@ class SshnpParams {
       idleTimeout: partial.idleTimeout ?? DefaultArgs.idleTimeout,
       addForwardsToTunnel:
           partial.addForwardsToTunnel ?? DefaultArgs.addForwardsToTunnel,
-      sshAlgorithm: partial.sshAlgorithm ?? DefaultArgs.sshAlgorithm,
       authenticateClientToRvd: partial.authenticateClientToRvd ??
           DefaultArgs.authenticateClientToRvd,
       authenticateDeviceToRvd: partial.authenticateDeviceToRvd ??
@@ -235,7 +229,6 @@ class SshnpParams {
       SshnpArg.remoteSshdPortArg.name: remoteSshdPort,
       SshnpArg.idleTimeoutArg.name: idleTimeout,
       SshnpArg.addForwardsToTunnelArg.name: addForwardsToTunnel,
-      SshnpArg.sshAlgorithmArg.name: sshAlgorithm.toString(),
       SshnpArg.authenticateClientToRvdArg.name: authenticateClientToRvd,
       SshnpArg.authenticateDeviceToRvdArg.name: authenticateDeviceToRvd,
       SshnpArg.encryptRvdTrafficArg.name: encryptRvdTraffic,

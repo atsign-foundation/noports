@@ -14,6 +14,7 @@ class SshnpOpensshLocalImpl extends SshnpCore
   SshnpOpensshLocalImpl({
     required super.atClient,
     required super.params,
+    required super.logStream,
   }) {
     _sshnpdChannel = SshnpdDefaultChannel(
       atClient: atClient,
@@ -49,11 +50,9 @@ class SshnpOpensshLocalImpl extends SshnpCore
     /// Ensure that sshnp is initialized
     await callInitialization();
 
-    logger.info('Sending request to sshnpd');
-
-    final server = await ServerSocket.bind(InternetAddress.anyIPv4, 0);
-    int localRvPort = server.port;
-    await server.close();
+    var msg = 'Sending session request to the device daemon';
+    logger.info(msg);
+    sendProgress(msg);
 
     /// Send an ssh request to sshnpd
     await notify(
@@ -69,7 +68,7 @@ class SshnpOpensshLocalImpl extends SshnpCore
             direct: true,
             sessionId: sessionId,
             host: srvdChannel.host,
-            port: srvdChannel.srvdPort!,
+            port: srvdChannel.daemonPort!,
             authenticateToRvd: params.authenticateDeviceToRvd,
             clientNonce: srvdChannel.clientNonce,
             rvdNonce: srvdChannel.rvdNonce,
@@ -82,9 +81,12 @@ class SshnpOpensshLocalImpl extends SshnpCore
     );
 
     /// Wait for a response from sshnpd
+    sendProgress('Waiting for response from the device daemon');
     var acked = await sshnpdChannel.waitForDaemonResponse();
     if (acked != SshnpdAck.acknowledged) {
-      throw SshnpError('sshnpd did not acknowledge the request');
+      throw SshnpError('No response from the device daemon');
+    } else {
+      sendProgress('Received response from the device daemon');
     }
 
     if (sshnpdChannel.ephemeralPrivateKey == null) {
@@ -93,7 +95,13 @@ class SshnpOpensshLocalImpl extends SshnpCore
       );
     }
 
+    /// Find a port to use
+    final server = await ServerSocket.bind(InternetAddress.anyIPv4, 0);
+    int localRvPort = server.port;
+    await server.close();
+
     /// Start srv
+    sendProgress('Creating connection to socket rendezvous');
     await srvdChannel.runSrv(
       directSsh: true,
       localRvPort: localRvPort,
@@ -111,14 +119,22 @@ class SshnpOpensshLocalImpl extends SshnpCore
     /// Add the key pair to the key utility
     await keyUtil.addKeyPair(keyPair: ephemeralKeyPair);
 
-    /// Start the initial tunnel
-    Process? bean = await startInitialTunnelSession(
-      ephemeralKeyPairIdentifier: ephemeralKeyPair.identifier,
-      localRvPort: localRvPort,
-    );
-
-    /// Remove the key pair from the key utility
-    await keyUtil.deleteKeyPair(identifier: ephemeralKeyPair.identifier);
+    Process? bean;
+    try {
+      /// Start the initial tunnel
+      sendProgress('Starting tunnel session');
+      bean = await startInitialTunnelSession(
+        ephemeralKeyPairIdentifier: ephemeralKeyPair.identifier,
+        localRvPort: localRvPort,
+      );
+    } finally {
+      /// Remove the key pair from the key utility.
+      try {
+        await keyUtil.deleteKeyPair(identifier: ephemeralKeyPair.identifier);
+      } catch (e) {
+        logger.shout('Failed to delete ephemeral keyPair: $e');
+      }
+    }
 
     /// Ensure that we clean up after ourselves
     await callDisposal();

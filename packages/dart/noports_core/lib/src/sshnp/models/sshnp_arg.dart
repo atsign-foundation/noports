@@ -135,6 +135,11 @@ class SshnpArg {
     return 'SshnpArg{format: $format, name: $name, abbr: $abbr, help: $help, mandatory: $mandatory, defaultsTo: $defaultsTo, type: $type}';
   }
 
+  static final disabledArgs = [
+    portArg,
+    localSshdPortArg,
+  ];
+
   static ArgParser createArgParser({
     ParserType parserType = ParserType.all,
     bool withDefaults = true,
@@ -145,7 +150,8 @@ class SshnpArg {
     var parser = ArgParser(usageLineLength: usageLineLength);
     // Basic arguments
     for (SshnpArg arg in SshnpArg.args) {
-      if (!parserType.shouldParse(arg.parseWhen)) {
+      if (!parserType.shouldParse(arg.parseWhen) ||
+          disabledArgs.contains(arg)) {
         continue;
       }
 
@@ -179,6 +185,7 @@ class SshnpArg {
             help: arg.help,
             hide: arg.hide,
             negatable: arg.negatable,
+            aliases: arg.aliases ?? const [],
           );
           break;
       }
@@ -197,6 +204,7 @@ class SshnpArg {
     defaultsTo: DefaultArgs.help,
     format: ArgFormat.flag,
     parseWhen: ParseWhen.commandLine,
+    negatable: false,
   );
   static const keyFileArg = SshnpArg(
     name: 'key-file',
@@ -262,6 +270,7 @@ class SshnpArg {
         'When true, the ssh public key will be sent to the remote host for use in the ssh session',
     defaultsTo: DefaultSshnpArgs.sendSshPublicKey,
     format: ArgFormat.flag,
+    negatable: false,
   );
   static const localSshOptionsArg = SshnpArg(
     name: 'local-ssh-options',
@@ -276,6 +285,7 @@ class SshnpArg {
     defaultsTo: DefaultArgs.verbose,
     help: 'More logging',
     format: ArgFormat.flag,
+    negatable: false,
   );
   static const remoteUserNameArg = SshnpArg(
     name: 'remote-user-name',
@@ -335,6 +345,7 @@ class SshnpArg {
     defaultsTo: DefaultArgs.addForwardsToTunnel,
     format: ArgFormat.flag,
     parseWhen: ParseWhen.commandLine,
+    negatable: false,
   );
   static const configFileArg = SshnpArg(
     name: 'config-file',
@@ -353,7 +364,7 @@ class SshnpArg {
   );
   static const authenticateClientToRvdArg = SshnpArg(
     name: 'authenticate-client-to-rvd',
-    abbr: 'a',
+    aliases: ['ac'],
     help: 'When false, client will not authenticate itself to rvd',
     defaultsTo: DefaultArgs.authenticateClientToRvd,
     format: ArgFormat.flag,
@@ -362,7 +373,7 @@ class SshnpArg {
   );
   static const authenticateDeviceToRvdArg = SshnpArg(
     name: 'authenticate-device-to-rvd',
-    abbr: 'A',
+    aliases: ['ad'],
     help: 'When false, device will not authenticate to the socket rendezvous',
     defaultsTo: DefaultArgs.authenticateDeviceToRvd,
     format: ArgFormat.flag,
@@ -371,7 +382,7 @@ class SshnpArg {
   );
   static const encryptRvdTrafficArg = SshnpArg(
     name: 'encrypt-rvd-traffic',
-    abbr: 'E',
+    aliases: ['et'],
     help: 'When true, traffic via the socket rendezvous is encrypted,'
         ' in addition to whatever encryption the traffic already has'
         ' (e.g. an ssh session)',
@@ -382,7 +393,7 @@ class SshnpArg {
   );
   static const discoverDaemonFeaturesArg = SshnpArg(
     name: 'discover-daemon-features',
-    abbr: 'F',
+    aliases: ['ddf'],
     help: 'When this flag is set, this client starts by pinging the daemon to'
         ' discover what features it supports, and exits if this client has '
         ' requested use of a feature which the daemon does not support.'
@@ -394,5 +405,6 @@ class SshnpArg {
     format: ArgFormat.flag,
     parseWhen: ParseWhen.commandLine,
     mandatory: false,
+    negatable: false,
   );
 }

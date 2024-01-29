@@ -4,6 +4,7 @@ import 'package:noports_core/srv.dart';
 
 class DefaultArgs {
   static const String namespace = 'sshnp';
+  static const String storagePathSubDirectory = '.sshnp';
   static const SupportedSshAlgorithm sshAlgorithm =
       SupportedSshAlgorithm.ed25519;
   static const bool verbose = false;
@@ -21,7 +22,7 @@ class DefaultArgs {
   static const bool authenticateClientToRvd = true;
   static const bool authenticateDeviceToRvd = true;
   static const bool encryptRvdTraffic = true;
-  static const bool discoverDaemonFeatures = true;
+  static const bool discoverDaemonFeatures = false;
 }
 
 class DefaultSshnpArgs {

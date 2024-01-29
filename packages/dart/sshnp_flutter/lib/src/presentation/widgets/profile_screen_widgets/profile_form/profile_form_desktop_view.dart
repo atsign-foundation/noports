@@ -52,7 +52,7 @@ class _ProfileFormState extends ConsumerState<ProfileFormDesktopView> {
   void onSubmit(SshnpParams oldConfig) async {
     if (_formkey.currentState!.validate()) {
       _formkey.currentState!.save();
-      SshnpParams config = SshnpParams.merge(oldConfig, newConfig);
+      SshnpParams config = SshnpParams.merge(SshnpParams.empty(), newConfig);
 
       // get the controller for the profile that is about to be saved. Since this profile is not saved a log will be printed stating that the profile does not exist in keystore.
       final controller = ref.read(configFamilyController(newConfig.profileName!).notifier);
@@ -112,7 +112,17 @@ class _ProfileFormState extends ConsumerState<ProfileFormDesktopView> {
                         },
                         validator: FormValidator.validateProfileNameField,
                       ),
-                      gapW8,
+                      gapW38,
+                      CustomTextFormField(
+                        initialValue: oldConfig.host,
+                        labelText: strings.host,
+                        toolTip: strings.hostTooltip,
+                        onSaved: (value) => newConfig = SshnpPartialParams.merge(
+                          newConfig,
+                          SshnpPartialParams(host: value),
+                        ),
+                        validator: FormValidator.validateAtsignField,
+                      ),
                     ],
                   ),
                   gapH10,
@@ -142,65 +152,69 @@ class _ProfileFormState extends ConsumerState<ProfileFormDesktopView> {
                       ),
                     ],
                   ),
-                  gapH10,
-                  CustomTextFormField(
-                    initialValue: oldConfig.host,
-                    labelText: strings.host,
-                    toolTip: strings.hostTooltip,
-                    onSaved: (value) => newConfig = SshnpPartialParams.merge(
-                      newConfig,
-                      SshnpPartialParams(host: value),
-                    ),
-                    validator: FormValidator.validateRequiredField,
-                  ),
                   gapH20,
                   Text(strings.connectionConfiguration, style: Theme.of(context).textTheme.bodyLarge),
                   gapH20,
                   ProfileFormCard(
+                    largeScreenRightPadding: Sizes.p103,
                     formFields: [
-                      CustomTextFormField(
-                          initialValue: oldConfig.remoteUsername ?? '',
-                          labelText: strings.remoteUserName,
-                          toolTip: strings.remoteUserNameTooltip,
-                          onSaved: (value) {
-                            newConfig = SshnpPartialParams.merge(
-                              newConfig,
-                              SshnpPartialParams(remoteUsername: value),
-                            );
-                          }),
-                      gapH10,
-                      CustomTextFormField(
-                          initialValue: oldConfig.tunnelUsername ?? '',
-                          labelText: strings.tunnelUserName,
-                          toolTip: strings.tunnelUserNameTooltip,
-                          onSaved: (value) {
-                            newConfig = SshnpPartialParams.merge(
-                              newConfig,
-                              SshnpPartialParams(tunnelUsername: value),
-                            );
-                          }),
-                      gapH10,
-                      CustomTextFormField(
-                        initialValue: oldConfig.remoteSshdPort.toString(),
-                        labelText: strings.remoteSshdPort,
-                        toolTip: strings.remoteSshdPortTooltip,
-                        onChanged: (value) => newConfig = SshnpPartialParams.merge(
-                          newConfig,
-                          SshnpPartialParams(remoteSshdPort: int.tryParse(value)),
-                        ),
-                        validator: FormValidator.validateRequiredField,
+                      Row(
+                        children: [
+                          CustomTextFormField(
+                              initialValue: oldConfig.remoteUsername,
+                              labelText: strings.remoteUserName,
+                              toolTip: strings.remoteUserNameTooltip,
+                              onSaved: (value) {
+                                if (value == '') {
+                                  value = null;
+                                }
+                                newConfig = SshnpPartialParams.merge(
+                                  newConfig,
+                                  SshnpPartialParams(remoteUsername: value),
+                                );
+                              }),
+                          gapW38,
+                          CustomTextFormField(
+                              initialValue: oldConfig.tunnelUsername,
+                              labelText: strings.tunnelUserName,
+                              toolTip: strings.tunnelUserNameTooltip,
+                              onSaved: (value) {
+                                if (value == '') {
+                                  value = null;
+                                }
+                                newConfig = SshnpPartialParams.merge(
+                                  newConfig,
+                                  SshnpPartialParams(tunnelUsername: value),
+                                );
+                              }),
+                        ],
                       ),
                       gapH10,
-                      CustomTextFormField(
-                        initialValue: oldConfig.localPort.toString(),
-                        labelText: strings.localPort,
-                        toolTip: strings.localPortTooltip,
-                        onChanged: (value) => newConfig = SshnpPartialParams.merge(
-                          newConfig,
-                          SshnpPartialParams(localPort: int.tryParse(value)),
-                        ),
+                      Row(
+                        children: [
+                          CustomTextFormField(
+                            initialValue: oldConfig.remoteSshdPort.toString(),
+                            labelText: strings.remoteSshdPort,
+                            toolTip: strings.remoteSshdPortTooltip,
+                            onSaved: (value) => newConfig = SshnpPartialParams.merge(
+                              newConfig,
+                              SshnpPartialParams(remoteSshdPort: int.tryParse(value!)),
+                            ),
+                            validator: FormValidator.validateRequiredPortField,
+                          ),
+                          gapW38,
+                          CustomTextFormField(
+                            initialValue: oldConfig.localPort.toString(),
+                            labelText: strings.localPort,
+                            toolTip: strings.localPortTooltip,
+                            onSaved: (value) => newConfig = SshnpPartialParams.merge(
+                              newConfig,
+                              SshnpPartialParams(localPort: int.tryParse(value!)),
+                            ),
+                            validator: FormValidator.validateRequiredPortField,
+                          ),
+                        ],
                       ),
-                      gapH10,
                       gapH12,
                     ],
                   ),
@@ -208,104 +222,112 @@ class _ProfileFormState extends ConsumerState<ProfileFormDesktopView> {
                   Text(strings.sshKeyManagement('yes'), style: Theme.of(context).textTheme.bodyLarge),
                   gapH16,
                   ProfileFormCard(largeScreenRightPadding: 5, formFields: [
-                    privateKeyManagerListController.when(
-                        loading: () => const Center(child: CircularProgressIndicator()),
-                        error: (error, stack) => Center(child: Text(error.toString())),
-                        data: (privateKeyListData) {
-                          final privateKeyList = privateKeyListData.toList();
-                          privateKeyList.add(kPrivateKeyDropDownOption);
-                          return CustomDropdownFormField<String>(
-                            width: kFieldDefaultWidth + Sizes.p10,
-                            initialValue: privateKeyNickname,
-                            label: strings.privateKey,
-                            hintText: strings.select,
-                            tooltip: strings.privateKeyTooltip,
-                            items: privateKeyList.map((e) {
-                              if (e == kPrivateKeyDropDownOption) {
-                                return DropdownMenuItem<String>(
-                                  value: e,
-                                  child: DottedBorder(
-                                    dashPattern: const [10, 10],
-                                    color: kPrimaryColor,
-                                    radius: const Radius.circular(2),
-                                    padding: const EdgeInsets.all(Sizes.p12),
-                                    child: Text(
-                                      e,
-                                      style: Theme.of(context).textTheme.bodySmall!.copyWith(color: kPrimaryColor),
-                                    ),
-                                  ),
-                                );
-                              } else {
-                                return DropdownMenuItem<String>(
-                                  value: e,
-                                  child: Text(e),
-                                );
-                              }
-                            }).toList(),
-                            onChanged: (value) {
-                              if (value == kPrivateKeyDropDownOption) {
-                                showDialog(
-                                    context: context, builder: ((context) => const SSHKeyManagementFormDialog()));
-                              }
-                            },
-                            onSaved: (value) {
-                              final profilePrivateKeyManager = ProfilePrivateKeyManager(
-                                profileNickname: newConfig.profileName!,
-                                privateKeyNickname: value!,
+                    Row(
+                      children: [
+                        privateKeyManagerListController.when(
+                            loading: () => const Center(child: CircularProgressIndicator()),
+                            error: (error, stack) => Center(child: Text(error.toString())),
+                            data: (privateKeyListData) {
+                              final privateKeyList = privateKeyListData.toList();
+                              privateKeyList.add(kPrivateKeyDropDownOption);
+                              return CustomDropdownFormField<String>(
+                                width: kFieldDefaultWidth + Sizes.p10,
+                                initialValue: privateKeyNickname,
+                                label: strings.privateKey,
+                                hintText: strings.select,
+                                tooltip: strings.privateKeyTooltip,
+                                items: privateKeyList.map((e) {
+                                  if (e == kPrivateKeyDropDownOption) {
+                                    return DropdownMenuItem<String>(
+                                      value: e,
+                                      child: DottedBorder(
+                                        dashPattern: const [10, 10],
+                                        color: kPrimaryColor,
+                                        radius: const Radius.circular(2),
+                                        padding: const EdgeInsets.all(Sizes.p12),
+                                        child: Text(
+                                          e,
+                                          style: Theme.of(context).textTheme.bodySmall!.copyWith(color: kPrimaryColor),
+                                        ),
+                                      ),
+                                    );
+                                  } else {
+                                    return DropdownMenuItem<String>(
+                                      value: e,
+                                      child: Text(e),
+                                    );
+                                  }
+                                }).toList(),
+                                onChanged: (value) async {
+                                  if (value == kPrivateKeyDropDownOption) {
+                                    privateKeyNickname = await showDialog(
+                                        context: context, builder: ((context) => const SSHKeyManagementFormDialog()));
+                                  }
+                                },
+                                onSaved: (value) {
+                                  final profilePrivateKeyManager = ProfilePrivateKeyManager(
+                                    profileNickname: newConfig.profileName!,
+                                    privateKeyNickname: value!,
+                                  );
+                                  final privateProfileController = ref.watch(
+                                      profilePrivateKeyManagerFamilyController(profilePrivateKeyManager.identifier)
+                                          .notifier);
+                                  privateProfileController.saveProfilePrivateKeyManager(
+                                      profilePrivateKeyManager: profilePrivateKeyManager);
+                                },
+                                onValidator: FormValidator.validatePrivateKeyField,
                               );
-                              final privateProfileController = ref.watch(
-                                  profilePrivateKeyManagerFamilyController(profilePrivateKeyManager.identifier)
-                                      .notifier);
-                              privateProfileController.saveProfilePrivateKeyManager(
-                                  profilePrivateKeyManager: profilePrivateKeyManager);
-                            },
-                            onValidator: FormValidator.validatePrivateKeyField,
-                          );
-                        }),
-                    gapH20,
-                    gapH20,
-                    CustomSwitchWidget(
-                        labelText: strings.sendSshPublicKey,
-                        value: newConfig.sendSshPublicKey ?? oldConfig.sendSshPublicKey,
-                        tooltip: strings.sendSshPublicKeyTooltip,
-                        onChanged: (newValue) {
-                          setState(() {
-                            newConfig = SshnpPartialParams.merge(
-                              newConfig,
-                              SshnpPartialParams(sendSshPublicKey: newValue),
-                            );
-                          });
-                        }),
+                            }),
+                        gapW38,
+                        CustomSwitchWidget(
+                            labelText: strings.sendSshPublicKey,
+                            value: newConfig.sendSshPublicKey ?? oldConfig.sendSshPublicKey,
+                            tooltip: strings.sendSshPublicKeyTooltip,
+                            onChanged: (newValue) {
+                              setState(() {
+                                newConfig = SshnpPartialParams.merge(
+                                  newConfig,
+                                  SshnpPartialParams(sendSshPublicKey: newValue),
+                                );
+                              });
+                            }),
+                      ],
+                    ),
                   ]),
-                  gapH30,
                   gapH20,
                   Text(strings.advancedConfiguration, style: Theme.of(context).textTheme.bodyMedium),
                   gapH20,
                   ProfileFormCard(
+                    largeScreenRightPadding: Sizes.p103,
                     formFields: [
-                      CustomTextFormField(
-                        initialValue: oldConfig.localSshOptions.join(','),
-                        hintText: strings.localSshOptionsHint,
-                        labelText: strings.localSshOptions,
-                        toolTip: strings.localSshOptionsTooltip,
-                        onChanged: (value) => newConfig = SshnpPartialParams.merge(
-                          newConfig,
-                          SshnpPartialParams(localSshOptions: value.split(',')),
-                        ),
-                      ),
-                      gapH10,
-                      CustomTextFormField(
-                        initialValue: oldConfig.rootDomain,
-                        labelText: strings.rootDomain,
-                        toolTip: strings.rootDomainTooltip,
-                        onSaved: (value) => newConfig = SshnpPartialParams.merge(
-                          newConfig,
-                          SshnpPartialParams(rootDomain: value),
-                        ),
+                      Row(
+                        children: [
+                          CustomTextFormField(
+                            initialValue: oldConfig.localSshOptions.join(','),
+                            hintText: strings.localSshOptionsHint,
+                            labelText: strings.localSshOptions,
+                            toolTip: strings.localSshOptionsTooltip,
+                            onSaved: (value) => newConfig = SshnpPartialParams.merge(
+                              newConfig,
+                              SshnpPartialParams(localSshOptions: value?.split(',')),
+                            ),
+                          ),
+                          gapW38,
+                          CustomTextFormField(
+                            initialValue: oldConfig.rootDomain,
+                            labelText: strings.rootDomain,
+                            toolTip: strings.rootDomainTooltip,
+                            onSaved: (value) => newConfig = SshnpPartialParams.merge(
+                              newConfig,
+                              SshnpPartialParams(rootDomain: value),
+                            ),
+                            validator: FormValidator.validateRequiredField,
+                          ),
+                        ],
                       ),
                     ],
                   ),
-                  gapH10,
+                  gapH30,
                   SizedBox(
                     width: kFieldDefaultWidth + Sizes.p233,
                     child: Row(
@@ -329,6 +351,7 @@ class _ProfileFormState extends ConsumerState<ProfileFormDesktopView> {
                       ],
                     ),
                   ),
+                  gapH30,
                 ],
               ),
             ),

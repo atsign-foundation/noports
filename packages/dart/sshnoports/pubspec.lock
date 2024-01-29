@@ -28,10 +28,11 @@ packages:
   args:
     dependency: transitive
     description:
-      name: args
-      sha256: eef6c46b622e0494a36c5a12d10d77fb4e855501a91c1b9ef9339326e58f0596
-      url: "https://pub.dev"
-    source: hosted
+      path: "."
+      ref: "gkc/show-aliases-in-usage"
+      resolved-ref: a8e4d8083c0846ce3d13bafdb9470d537988cadc
+      url: "https://github.com/gkc/args"
+    source: git
     version: "2.4.2"
   asn1lib:
     dependency: "direct overridden"
@@ -350,7 +351,7 @@ packages:
     source: hosted
     version: "2.3.3"
   dartssh2:
-    dependency: transitive
+    dependency: "direct main"
     description:
       name: dartssh2
       sha256: "53a230c7dd6f487b704ceef1b29323ad64d19be89e786ccbc81e157a70417a56"
@@ -579,7 +580,7 @@ packages:
       path: "../noports_core"
       relative: true
     source: path
-    version: "5.0.4"
+    version: "6.0.1"
   openssh_ed25519:
     dependency: transitive
     description:
@@ -792,10 +793,10 @@ packages:
     dependency: "direct dev"
     description:
       name: test
-      sha256: "694c108e13c6b35b15fcb0f8f03eddf8373f93b044c9497b5e81ce09f7381bda"
+      sha256: "7ee446762c2c50b3bd4ea96fe13ffac69919352bd3b4b17bac3f3465edc58073"
       url: "https://pub.dev"
     source: hosted
-    version: "1.25.1"
+    version: "1.25.2"
   test_api:
     dependency: transitive
     description:

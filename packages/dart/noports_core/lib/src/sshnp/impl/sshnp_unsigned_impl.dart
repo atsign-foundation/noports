@@ -10,6 +10,7 @@ class SshnpUnsignedImpl extends SshnpCore
   SshnpUnsignedImpl({
     required super.atClient,
     required super.params,
+    required super.logStream,
   }) {
     if (Platform.isWindows) {
       throw SshnpError(
@@ -78,6 +79,9 @@ class SshnpUnsignedImpl extends SshnpCore
     /// Ensure that sshnp is initialized
     await callInitialization();
 
+    /// Start srv
+    var bean = await srvdChannel.runSrv(directSsh: false);
+
     /// Send an sshd request to sshnpd
     /// This will notify it that it can now connect to us
     await notify(
@@ -87,7 +91,7 @@ class SshnpUnsignedImpl extends SshnpCore
         ..sharedBy = params.clientAtSign
         ..sharedWith = params.sshnpdAtSign
         ..metadata = (Metadata()..ttl = 10000),
-      '$localPort ${srvdChannel.port} ${keyUtil.username} ${srvdChannel.host} $sessionId',
+      '$localPort ${srvdChannel.daemonPort} ${keyUtil.username} ${srvdChannel.host} $sessionId',
       checkForFinalDeliveryStatus: false,
       waitForFinalDeliveryStatus: false,
     );
@@ -97,9 +101,6 @@ class SshnpUnsignedImpl extends SshnpCore
     if (acked != SshnpdAck.acknowledged) {
       throw SshnpError('sshnpd did not acknowledge the request');
     }
-
-    /// Start srv
-    var bean = await srvdChannel.runSrv(directSsh: false);
 
     /// Ensure that we clean up after ourselves
     await callDisposal();
