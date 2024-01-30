@@ -97,6 +97,7 @@ jobs:
             --identifier \
             --entitlements ./tools/templates/entitlements.plist \
             --options=runtime \
+            --keychain $KEYCHAIN_PATH \
             -s "$MACOS_SIGNING_IDENTITY"
             -v \
             sshnp/{ssh*,srv,srvd,at_activate,debug/srvd}
