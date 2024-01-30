@@ -87,6 +87,9 @@ jobs:
           echo -n "$MACOS_CODESIGN_CERT" | base64 --decode -o $CERT_PATH
           security import $CERT_PATH -A -t cert -f pkcs7 -k $KEYCHAIN_PATH
 
+          ls
+          echo
+          ls sshnp
           echo "signing code"
           codesign \
             --timestamp \
@@ -96,7 +99,7 @@ jobs:
             --options=runtime \
             --keychain $KEYCHAIN_PATH \
             -s "$MACOS_SIGNING_IDENTITY" \
-            -v \
+            -vvv \
             sshnp/{ssh*,srv,srvd,at_activate,debug/srvd}
  
           echo "verifying signatures"
