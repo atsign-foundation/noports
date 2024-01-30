@@ -68,41 +68,7 @@ The service will restart using the new binary that has been put in place.
 
 ### Tmux session
 
-To restart the service running in the tmux session, we will use the tmux send-keys command:
-
-```bash
-tmux send-keys -t sshnpd C-c C-p C-m
-```
-
-<details>
-
-<summary>If you're curious how this command works</summary>
-
-```bash
-tmux send-keys -t sshnpd
-```
-
-Tells tmux that we want to send some key inputs to it.
-
-```
-C-c
-```
-
-Sends the key bind Ctrl + c to the tmux session. Ctrl + c terminates the current program execution.
-
-```
-C-p
-```
-
-Sends the key bind Ctrl + p to the tmux session. Ctrl + p recalls the previous command.
-
-```
-C-m
-```
-
-Sends the key bind C + m to the tmux session. Ctrl + m sends a return, telling tmux to run the command.
-
-</details>
+The installer automatically restarts your tmux session, no other steps required!
 
 ### Headless (cron + nohup)
 
