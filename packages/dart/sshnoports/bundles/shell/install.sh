@@ -14,7 +14,9 @@ define_env() {
     user="$SUDO_USER"
     if [ -z "$user" ]; then
       user="root"
-    else # we are sudo-ing
+    else
+      # we are root, but via sudo
+      # so get home directory of SUDO_USER
       user_home=$(sudo -u "$user" sh -c 'echo $HOME')
     fi
   else
