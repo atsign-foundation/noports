@@ -5,6 +5,7 @@ is_root() {
   [ "$(id -u)" -eq 0 ]
 }
 
+user_home=$HOME
 define_env() {
   script_dir="$(dirname -- "$( readlink -f -- "$0"; )")"
   bin_dir="/usr/local/bin"
@@ -13,11 +14,14 @@ define_env() {
     user="$SUDO_USER"
     if [ -z "$user" ]; then
       user="root"
+    else
+      # we are root, but via sudo
+      # so get home directory of SUDO_USER
+      user_home=$(sudo -u "$user" sh -c 'echo $HOME')
     fi
   else
     user="$USER"
   fi
-  user_home=$(sudo -u "$user" sh -c 'echo $HOME')
   user_bin_dir="$user_home/.local/bin"
   user_sshnpd_dir="$user_home/.sshnpd"
   user_log_dir="$user_sshnpd_dir/logs"
@@ -93,9 +97,21 @@ install_single_binary() {
   mkdir -p "$dest"
   if test -f "$dest/$1"; then
     if test -f "$dest/$1.old"; then
-      rm -f "$dest/$1.old" || echo "Failed to remove $dest/$1.old - aborting" && exit 1
+      if rm -f "$dest/$1.old"
+      then
+        echo "=> Removed $dest/$1.old"
+      else
+        echo "Failed to remove $dest/$1.old - aborting"
+        exit 1
+      fi
     fi
-    mv "$dest/$1" "$dest/$1.old" || echo "Failed to rename $dest/$1 to $dest/$1.old - aborting" && exit 1
+    if mv "$dest/$1" "$dest/$1.old"
+    then
+      echo "=> Renamed existing binary $dest/$1 to $dest/$1.old"
+    else
+      echo "Failed to rename $dest/$1 to $dest/$1.old - aborting"
+      exit 1
+    fi
   fi
   cp -f "$script_dir/$1" "$dest/$1"
 
@@ -103,7 +119,7 @@ install_single_binary() {
   if is_root & ! [ -f "$user_bin_dir/$1" ] ; then
     mkdir -p "$user_bin_dir"
     ln -sf "$dest/$1" "$user_bin_dir/$1"
-    echo "=> Linked $user_bin_dir/$1 to $dest"
+    echo "=> Linked $user_bin_dir/$1 to $dest/$1"
   fi
 }
 
