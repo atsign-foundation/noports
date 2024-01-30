@@ -164,7 +164,7 @@ jobs:
           if-no-files-found: error
 
   notify_on_completion:
-    needs: [x64_build, other_build]
+    needs: [main_build, other_build]
     runs-on: ubuntu-latest
     steps:
       - name: Google Chat Notification
