@@ -65,11 +65,11 @@ jobs:
       - run: cp -r bundles/core/* sshnp/
       - run: cp -r bundles/${{ matrix.bundle }}/* sshnp/
       - run: cp LICENSE sshnp
-      - run: tar -cvzf tarball/${{ matrix.output-name }}.tgz sshnp
+      # - run: tar -cvzf tarball/${{ matrix.output-name }}.tgz sshnp
       - uses: actions/upload-artifact@26f96dfa697d77e81fd5907df203aa23a56210a8 # v4.3.0
         with:
-          name: ${{ matrix.output-name }}-upload
-          path: ./packages/dart/sshnoports/tarball/${{ matrix.output-name }}.tgz
+          name: ${{ matrix.output-name }}
+          path: ./packages/dart/sshnoports/sshnp
           if-no-files-found: error
 
   other_build:
