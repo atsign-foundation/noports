@@ -76,20 +76,16 @@ jobs:
           MACOS_SIGNING_IDENTITY: ${{ secrets.MACOS_SIGNING_IDENTITY }}
           MACOS_KEYCHAIN_PASSWORD: ${{ secrets.MACOS_KEYCHAIN_PASSWORD }}
         run: |
-          CERT_PATH=$RUNNER_TEMP/codesign.cer
+          # create temp keychain
           KEYCHAIN_PATH=$RUNNER_TEMP/app-signing.keychain-db
-
-          echo "importing codesign cert"
-          echo -n "$MACOS_CODESIGN_CERT" | base64 --decode -o $CERT_PATH
-
-          echo "creating temporary keychain"
           security create-keychain -p "$MACOS_KEYCHAIN_PASSWORD" $KEYCHAIN_PATH
           security set-keychain-settings -lut 21600 $KEYCHAIN_PATH
           security unlock-keychain -p "$MACOS_KEYCHAIN_PASSWORD" $KEYCHAIN_PATH
 
-          echo "importing cert to keychain"
+          # import certificate to keychain
+          CERT_PATH=$RUNNER_TEMP/codesign.cer
+          echo -n "$MACOS_CODESIGN_CERT" | base64 --decode -o $CERT_PATH
           security import $CERT_PATH -A -t cert -f pkcs7 -k $KEYCHAIN_PATH
-          security list-keychain -d user -s $KEYCHAIN_PATH
 
           echo "signing code"
           codesign \
@@ -99,7 +95,7 @@ jobs:
             --entitlements ./tools/templates/entitlements.plist \
             --options=runtime \
             --keychain $KEYCHAIN_PATH \
-            -s "$MACOS_SIGNING_IDENTITY"
+            -s "$MACOS_SIGNING_IDENTITY" \
             -v \
             sshnp/{ssh*,srv,srvd,at_activate,debug/srvd}
  
