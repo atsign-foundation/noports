@@ -70,6 +70,7 @@ jobs:
       - run: cp LICENSE sshnp
       # codesign for apple
       - if: ${{ matrix.os == 'macOS-latest' || matrix.os == 'macos-14'}}
+        name: Import certificates
         env:
           MACOS_CODESIGN_CERT: ${{ secrets.MACOS_CODESIGN_CERT }}
           MACOS_SIGNING_IDENTITY: ${{ secrets.MACOS_SIGNING_IDENTITY }}
@@ -78,19 +79,19 @@ jobs:
           CERT_PATH=$RUNNER_TEMP/codesign.cer
           KEYCHAIN_PATH=$RUNNER_TEMP/app-signing.keychain-db
 
-          # import certificate
+          echo "importing codesign cert"
           echo -n "$MACOS_CODESIGN_CERT" | base64 --decode -o $CERT_PATH
 
-          # create temporary keychain
+          echo "creating temporary keychain"
           security create-keychain -p "$MACOS_KEYCHAIN_PASSWORD" $KEYCHAIN_PATH
           security set-keychain-settings -lut 21600 $KEYCHAIN_PATH
           security unlock-keychain -p "$MACOS_KEYCHAIN_PASSWORD" $KEYCHAIN_PATH
 
-          # import certificate to keychain
+          echo "importing cert to keychain"
           security import $CERT_PATH -A -t cert -f pkcs7 -k $KEYCHAIN_PATH
           security list-keychain -d user -s $KEYCHAIN_PATH
- 
-          # Do codesign
+
+          echo "signing code"
           codesign \
             --timestamp \
             --prefix \
@@ -102,7 +103,7 @@ jobs:
             -v \
             sshnp/{ssh*,srv,srvd,at_activate,debug/srvd}
  
-          # Verify signatures
+          echo "verifying signatures"
           codesign -vvv --deep --strict /sshnp/{ssh*,srv,srvd,at_activate,debug/srvd}
 
       # zip the build
