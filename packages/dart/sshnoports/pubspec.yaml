@@ -8,7 +8,7 @@ environment:
 
 dependencies:
   noports_core: 6.0.1
-  at_onboarding_cli: 1.4.1
+  at_onboarding_cli: 1.4.3
   args: 2.4.2
   socket_connector: ^2.0.1
   dartssh2: 2.8.2
@@ -22,9 +22,9 @@ dependency_overrides:
     git:
       ref: gkc/show-aliases-in-usage
       url: https://github.com/gkc/args
-  at_client: 3.0.71
-  at_lookup: 3.0.41
-  at_utils: 3.0.15
+  at_client: 3.0.75
+  at_lookup: 3.0.45
+  at_utils: 3.0.16
   asn1lib: 1.4.1
   encrypt: 5.0.1
   crypton: 2.1.0
