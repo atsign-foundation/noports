@@ -158,9 +158,8 @@ void main() {
                       key.key == 'mydevice.request_ports.${Srvd.namespace}' &&
                       key.sharedBy == '@client' &&
                       key.sharedWith == '@srvd' &&
-                      key.metadata != null &&
-                      key.metadata!.namespaceAware == false &&
-                      key.metadata!.ttl == 10000,
+                      key.metadata.namespaceAware == false &&
+                      key.metadata.ttl == 10000,
                 ),
               ),
               any(),
