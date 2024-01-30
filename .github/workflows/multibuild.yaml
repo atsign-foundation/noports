@@ -36,11 +36,14 @@ jobs:
             output-name: sshnp-macos-x64
             ext: ''
             bundle: 'shell'
+          - os: macos-14
+            output-name: sshnp-macos-arm64
+            ext: ''
+            bundle: 'shell'
           - os: windows-latest
             output-name: sshnp-windows-x64
             ext: '.exe'
             bundle: 'windows'
-
     steps:
       - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
       - uses: dart-lang/setup-dart@ca7e6fee45ffbd82b555a7ebfc236d2c86439f5b # v1.6.1
