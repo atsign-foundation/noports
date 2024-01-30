@@ -82,8 +82,7 @@ class ConfigFamilyController extends AutoDisposeFamilyAsyncNotifier<SshnpParams,
     }
     try {
       final result = await ConfigKeyRepository.getParams(arg, atClient: atClient);
-      log('config profile is: $arg');
-      log('From Config Controller identity file ${result.identityFile}');
+
       return result;
     } catch (e) {
       log('From Config Controller ${e.toString()}');

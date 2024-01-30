@@ -5,6 +5,7 @@ is_root() {
   [ "$(id -u)" -eq 0 ]
 }
 
+user_home=$HOME
 define_env() {
   script_dir="$(dirname -- "$( readlink -f -- "$0"; )")"
   bin_dir="/usr/local/bin"
@@ -13,11 +14,14 @@ define_env() {
     user="$SUDO_USER"
     if [ -z "$user" ]; then
       user="root"
+    else
+      # we are root, but via sudo
+      # so get home directory of SUDO_USER
+      user_home=$(sudo -u "$user" sh -c 'echo $HOME')
     fi
   else
     user="$USER"
   fi
-  user_home=$(sudo -u "$user" sh -c 'echo $HOME')
   user_bin_dir="$user_home/.local/bin"
   user_sshnpd_dir="$user_home/.sshnpd"
   user_log_dir="$user_sshnpd_dir/logs"
@@ -91,12 +95,31 @@ install_single_binary() {
     dest="$user_bin_dir"
   fi
   mkdir -p "$dest"
-  cp "$script_dir/$1" "$dest/$1"
-  echo "Installed $1 to $dest"
+  if test -f "$dest/$1"; then
+    if test -f "$dest/$1.old"; then
+      if rm -f "$dest/$1.old"
+      then
+        echo "=> Removed $dest/$1.old"
+      else
+        echo "Failed to remove $dest/$1.old - aborting"
+        exit 1
+      fi
+    fi
+    if mv "$dest/$1" "$dest/$1.old"
+    then
+      echo "=> Renamed existing binary $dest/$1 to $dest/$1.old"
+    else
+      echo "Failed to rename $dest/$1 to $dest/$1.old - aborting"
+      exit 1
+    fi
+  fi
+  cp -f "$script_dir/$1" "$dest/$1"
+
+  echo "=> Installed $1 to $dest"
   if is_root & ! [ -f "$user_bin_dir/$1" ] ; then
     mkdir -p "$user_bin_dir"
     ln -sf "$dest/$1" "$user_bin_dir/$1"
-    echo "Linked $user_bin_dir/$1 to $dest"
+    echo "=> Linked $user_bin_dir/$1 to $dest/$1"
   fi
 }
 
@@ -116,7 +139,7 @@ install_debug_binary() {
   fi
   mkdir -p "$dest"
   cp "$script_dir/debug/$1" "$bin_dir/debug_$1"
-  echo "Installed debug_$1 to $dest"
+  echo "=> Installed debug_$1 to $dest"
 }
 
 install_debug_binaries() {
@@ -218,13 +241,13 @@ install_headless_job() {
   crontab_contents=$(crontab -l 2>/dev/null)
 
   if echo "$crontab_contents" | grep -Fxq "$cron_entry"; then
-    echo "cron job already installed, killing any old $job_name.sh processes"
+    echo "=> cron job already installed, killing any old $job_name.sh processes"
     pids=$(pgrep "$command")
     if [ -n "$pids" ]; then
      echo "$pids" | xargs kill
     fi
   else
-     echo "Installing cron job: $cron_entry"
+     echo "=> Installing cron job: $cron_entry"
     (echo "$crontab_contents"; echo "$cron_entry") | crontab -;
   fi
 
@@ -249,7 +272,7 @@ headless() {
     sshnpd) install_headless_sshnpd;;
     srvd) install_headless_srvd;;
     *)
-      echo "Unknown headless job: $1";
+      echo "Error: Unknown headless job: $1";
       usage;
       exit 1;
   esac
@@ -276,6 +299,8 @@ install_tmux_service() {
   mkdir -p "$user_bin_dir"
 
   dest="$user_bin_dir/$service_name.sh"
+
+  # Only copy the "$service_name".sh script if it's not already there
   if ! [ -f "$dest" ]; then
     if is_root; then
       cp "$script_dir/headless/root_$service_name.sh" "$dest"
@@ -289,11 +314,16 @@ install_tmux_service() {
   crontab_contents=$(crontab -l 2>/dev/null)
 
   if echo "$crontab_contents" | grep -Fxq "$cron_entry"; then
-    echo "cron job already installed, killing old tmux session"
-    tmux kill-session -t "$service_name"
+    echo "=> Cron job already installed, will not re-install"
   else
-    echo "Installing cron job: $cron_entry"
+    echo "=> Installing cron job: $cron_entry"
     (echo "$crontab_contents"; echo "$cron_entry") | crontab -;
+  fi
+
+  if (command tmux has-session -t "$service_name" 2> /dev/null); then
+    echo "=> Found existing tmux session for $service_name - will kill and restart it"
+    command tmux kill-session -t "$service_name"
+    command tmux new-session -d -s "$service_name" && command tmux send-keys -t "$service_name" "$dest" C-m
   fi
 
   echo ""

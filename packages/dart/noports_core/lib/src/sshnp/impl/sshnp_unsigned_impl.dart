@@ -21,7 +21,7 @@ class SshnpUnsignedImpl extends SshnpCore
       atClient: atClient,
       params: params,
       sessionId: sessionId,
-      namespace: this.namespace,
+      namespace: namespace,
     );
     _srvdChannel = SrvdExecChannel(
       atClient: atClient,
@@ -62,7 +62,7 @@ class SshnpUnsignedImpl extends SshnpCore
       ..key = 'privatekey'
       ..sharedBy = params.clientAtSign
       ..sharedWith = params.sshnpdAtSign
-      ..namespace = this.namespace
+      ..namespace = namespace
       ..metadata = (Metadata()..ttl = 10000);
     await notify(
       sendOurPrivateKeyToSshnpd,
@@ -87,7 +87,7 @@ class SshnpUnsignedImpl extends SshnpCore
     await notify(
       AtKey()
         ..key = 'sshd'
-        ..namespace = this.namespace
+        ..namespace = namespace
         ..sharedBy = params.clientAtSign
         ..sharedWith = params.sshnpdAtSign
         ..metadata = (Metadata()..ttl = 10000),

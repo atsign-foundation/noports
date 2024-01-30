@@ -135,6 +135,11 @@ class SshnpArg {
     return 'SshnpArg{format: $format, name: $name, abbr: $abbr, help: $help, mandatory: $mandatory, defaultsTo: $defaultsTo, type: $type}';
   }
 
+  static final disabledArgs = [
+    portArg,
+    localSshdPortArg,
+  ];
+
   static ArgParser createArgParser({
     ParserType parserType = ParserType.all,
     bool withDefaults = true,
@@ -145,7 +150,8 @@ class SshnpArg {
     var parser = ArgParser(usageLineLength: usageLineLength);
     // Basic arguments
     for (SshnpArg arg in SshnpArg.args) {
-      if (!parserType.shouldParse(arg.parseWhen)) {
+      if (!parserType.shouldParse(arg.parseWhen) ||
+          disabledArgs.contains(arg)) {
         continue;
       }
 
@@ -198,6 +204,7 @@ class SshnpArg {
     defaultsTo: DefaultArgs.help,
     format: ArgFormat.flag,
     parseWhen: ParseWhen.commandLine,
+    negatable: false,
   );
   static const keyFileArg = SshnpArg(
     name: 'key-file',
@@ -263,6 +270,7 @@ class SshnpArg {
         'When true, the ssh public key will be sent to the remote host for use in the ssh session',
     defaultsTo: DefaultSshnpArgs.sendSshPublicKey,
     format: ArgFormat.flag,
+    negatable: false,
   );
   static const localSshOptionsArg = SshnpArg(
     name: 'local-ssh-options',
@@ -277,6 +285,7 @@ class SshnpArg {
     defaultsTo: DefaultArgs.verbose,
     help: 'More logging',
     format: ArgFormat.flag,
+    negatable: false,
   );
   static const remoteUserNameArg = SshnpArg(
     name: 'remote-user-name',
@@ -336,6 +345,7 @@ class SshnpArg {
     defaultsTo: DefaultArgs.addForwardsToTunnel,
     format: ArgFormat.flag,
     parseWhen: ParseWhen.commandLine,
+    negatable: false,
   );
   static const configFileArg = SshnpArg(
     name: 'config-file',
@@ -395,5 +405,6 @@ class SshnpArg {
     format: ArgFormat.flag,
     parseWhen: ParseWhen.commandLine,
     mandatory: false,
+    negatable: false,
   );
 }

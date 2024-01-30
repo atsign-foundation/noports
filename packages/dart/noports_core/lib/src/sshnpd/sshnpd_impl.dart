@@ -624,15 +624,24 @@ class SshnpdImpl implements Sshnpd {
 
       LocalSshKeyUtil keyUtil = LocalSshKeyUtil();
 
-      AtSshKeyPair keyPair = await keyUtil.generateKeyPair(
+      /// Generate the ephemeral key pair which the client will use for the
+      /// initial tunnel ssh session
+      AtSshKeyPair tunnelKeyPair = await keyUtil.generateKeyPair(
           algorithm: sshAlgorithm, identifier: 'ephemeral_$sessionId');
 
       await keyUtil.authorizePublicKey(
-        sshPublicKey: keyPair.publicKeyContents,
+        sshPublicKey: tunnelKeyPair.publicKeyContents,
         localSshdPort: localSshdPort,
         sessionId: sessionId,
         permissions: ephemeralPermissions,
       );
+
+      /// Remove the ephemeral keypair from persistent storage
+      try {
+        await keyUtil.deleteKeyPair(identifier: tunnelKeyPair.identifier);
+      } catch (e) {
+        logger.shout('Failed to delete ephemeral keyPair: $e');
+      }
 
       /// - Send response message to the sshnp client which includes the
       ///   ephemeral private key
@@ -642,7 +651,7 @@ class SshnpdImpl implements Sshnpd {
         value: signAndWrapAndJsonEncode(atClient, {
           'status': 'connected',
           'sessionId': sessionId,
-          'ephemeralPrivateKey': keyPair.privateKeyContents,
+          'ephemeralPrivateKey': tunnelKeyPair.privateKeyContents,
           'sessionAESKey': sessionAESKeyEncrypted,
           'sessionIV': sessionIVEncrypted,
         }),

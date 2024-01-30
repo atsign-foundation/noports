@@ -41,10 +41,10 @@ void main(List<String> args) async {
 
   void configureRemoteShell() {
     shouldResetTerminal = true;
-    // don't wait for a newline before sending to remote stdin
-    stdin.lineMode = false;
     // echo only what is sent back from the other side
     stdin.echoMode = false;
+    // don't wait for a newline before sending to remote stdin
+    stdin.lineMode = false;
   }
 
   void resetShell() {
@@ -55,9 +55,14 @@ void main(List<String> args) async {
   Directory? storageDir;
 
   void deleteStorage() {
-    if (storageDir != null) {
-      if (storageDir!.existsSync()) {
-        storageDir!.deleteSync(recursive: true);
+    // Windows will not let us delete files that are open
+    // so will will ignore this step and leave them in %localappdata%\Temp
+    if (!Platform.isWindows) {
+      if (storageDir != null) {
+        if (storageDir!.existsSync()) {
+          // stderr.writeln('${DateTime.now()} : Cleaning up temporary files');
+          storageDir!.deleteSync(recursive: true);
+        }
       }
     }
   }
@@ -90,19 +95,30 @@ void main(List<String> args) async {
         ),
       );
 
-      storageDir = Directory(path.normalize('$homeDirectory'
-          '/${DefaultArgs.storagePathSubDirectory}'
-          '/${params.clientAtSign}'
-          '/storage'
-          '/${DateTime.now().millisecondsSinceEpoch}'));
+      // Windows will not let us delete files in use so
+      // We will point storage to temp directory and let OS clean up
+      if (Platform.isWindows) {
+        storageDir = Directory(path.normalize('${Platform.environment['TEMP']}'
+            '/${DefaultArgs.storagePathSubDirectory}'
+            '/${params.clientAtSign}'
+            '/storage'
+            '/${DateTime.now().millisecondsSinceEpoch}'));
+      } else {
+        storageDir = Directory(path.normalize('$homeDirectory'
+            '/${DefaultArgs.storagePathSubDirectory}'
+            '/${params.clientAtSign}'
+            '/storage'
+            '/${DateTime.now().millisecondsSinceEpoch}'));
+      }
       storageDir!.createSync(recursive: true);
-
       final sigintListener = ProcessSignal.sigint.watch().listen((signal) {
         exitProgram(exitCode: 1);
       });
-      ProcessSignal.sigterm.watch().listen((signal) {
-        exitProgram(exitCode: 1);
-      });
+      if (!Platform.isWindows) {
+        ProcessSignal.sigterm.watch().listen((signal) {
+          exitProgram(exitCode: 1);
+        });
+      }
 
       // Create Sshnp Instance
       final sshnp = await createSshnp(
@@ -115,7 +131,6 @@ void main(List<String> args) async {
           rootDomain: params.rootDomain,
           storagePath: storageDir!.path,
         ),
-        legacyDaemon: argResults['legacy-daemon'] as bool,
         sshClient:
             SupportedSshClient.fromString(argResults['ssh-client'] as String),
       ).catchError((e) {
@@ -207,8 +222,8 @@ void main(List<String> args) async {
       exitProgram(exitCode: 1);
     }
   }, (Object error, StackTrace stackTrace) async {
-    if (error is SSHError) {
-      stderr.writeln('\n\nError: $error');
+    if (error is SSHError || error is SshnpError) {
+      stderr.writeln('\nError: $error');
     } else {
       stderr.writeln('\nError: $error');
       stderr.writeln('\nStack Trace: $stackTrace');

@@ -20,7 +20,7 @@ class SshnpOpensshLocalImpl extends SshnpCore
       atClient: atClient,
       params: params,
       sessionId: sessionId,
-      namespace: this.namespace,
+      namespace: namespace,
     );
     _srvdChannel = SrvdExecChannel(
       atClient: atClient,
@@ -58,7 +58,7 @@ class SshnpOpensshLocalImpl extends SshnpCore
     await notify(
       AtKey()
         ..key = 'ssh_request'
-        ..namespace = this.namespace
+        ..namespace = namespace
         ..sharedBy = params.clientAtSign
         ..sharedWith = params.sshnpdAtSign
         ..metadata = (Metadata()..ttl = 10000),
@@ -119,15 +119,22 @@ class SshnpOpensshLocalImpl extends SshnpCore
     /// Add the key pair to the key utility
     await keyUtil.addKeyPair(keyPair: ephemeralKeyPair);
 
-    /// Start the initial tunnel
-    sendProgress('Starting tunnel session');
-    Process? bean = await startInitialTunnelSession(
-      ephemeralKeyPairIdentifier: ephemeralKeyPair.identifier,
-      localRvPort: localRvPort,
-    );
-
-    /// Remove the key pair from the key utility
-    await keyUtil.deleteKeyPair(identifier: ephemeralKeyPair.identifier);
+    Process? bean;
+    try {
+      /// Start the initial tunnel
+      sendProgress('Starting tunnel session');
+      bean = await startInitialTunnelSession(
+        ephemeralKeyPairIdentifier: ephemeralKeyPair.identifier,
+        localRvPort: localRvPort,
+      );
+    } finally {
+      /// Remove the key pair from the key utility.
+      try {
+        await keyUtil.deleteKeyPair(identifier: ephemeralKeyPair.identifier);
+      } catch (e) {
+        logger.shout('Failed to delete ephemeral keyPair: $e');
+      }
+    }
 
     /// Ensure that we clean up after ourselves
     await callDisposal();
