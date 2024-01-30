@@ -3,8 +3,8 @@ name: Multibuild
 on:
   workflow_dispatch:
     inputs:
-      x64_only:
-        description: "Run x64 builds only"
+      main_build_only:
+        description: "Run non-dockerx builds only"
         required: true
         default: false
         type: boolean
@@ -18,7 +18,7 @@ jobs:
     steps:
       - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
       - uses: ./.github/composite/verify_cli_tags
-  x64_build:
+  main_build:
     needs: verify_tags
     runs-on: ${{ matrix.os }}
     defaults:
@@ -65,15 +65,15 @@ jobs:
       - run: cp -r bundles/core/* sshnp/
       - run: cp -r bundles/${{ matrix.bundle }}/* sshnp/
       - run: cp LICENSE sshnp
-      # - run: tar -cvzf tarball/${{ matrix.output-name }}.tgz sshnp
+      - run: tar -cvzf tarball/${{ matrix.output-name }}.tgz sshnp
       - uses: actions/upload-artifact@26f96dfa697d77e81fd5907df203aa23a56210a8 # v4.3.0
         with:
           name: ${{ matrix.output-name }}
-          path: ./packages/dart/sshnoports/sshnp
+          path: ./packages/dart/sshnoports/tarball
           if-no-files-found: error
 
   other_build:
-    if: ${{ ! inputs.x64_only }}
+    if: ${{ ! inputs.main_build_only }}
     needs: verify_tags
     runs-on: ubuntu-latest
     defaults:
@@ -117,7 +117,7 @@ jobs:
 
   notify_on_failure:
     if: failure()
-    needs: [x64_build, other_build]
+    needs: [main_build, other_build]
     runs-on: ubuntu-latest
     steps:
       - name: Google Chat Notification
