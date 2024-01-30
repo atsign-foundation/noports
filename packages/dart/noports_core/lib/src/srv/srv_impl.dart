@@ -9,6 +9,7 @@ import 'package:cryptography/dart.dart';
 import 'package:dartssh2/dartssh2.dart';
 import 'package:meta/meta.dart';
 import 'package:noports_core/srv.dart';
+import 'package:noports_core/sshnp.dart';
 import 'package:socket_connector/socket_connector.dart';
 
 @visibleForTesting
@@ -62,7 +63,7 @@ class SrvImplExec implements Srv<Process> {
     String? command = await Srv.getLocalBinaryPath();
     String postfix = Platform.isWindows ? '.exe' : '';
     if (command == null) {
-      throw Exception(
+      throw SshnpError(
         'Unable to locate srv$postfix binary.\n'
         'N.B. sshnp is expected to be compiled and run from source, not via the dart command.',
       );
