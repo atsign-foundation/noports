@@ -87,7 +87,7 @@ jobs:
           echo -n "$MACOS_CODESIGN_CERT" | base64 --decode -o $CERT_PATH
           security import $CERT_PATH -A -t cert -f pkcs12 -k $KEYCHAIN_PATH
 
-          echo "signing code"
+          # codesign
           codesign \
             --timestamp \
             --prefix \
@@ -99,7 +99,7 @@ jobs:
             -vvv \
             sshnp/{ssh*,srv,srvd,at_activate,debug/srvd}
  
-          echo "verifying signatures"
+          # signature verification
           codesign -vvv --deep --strict /sshnp/{ssh*,srv,srvd,at_activate,debug/srvd}
 
       # zip the build
@@ -108,7 +108,7 @@ jobs:
       - if: ${{ matrix.os == 'ubuntu-latest' }}
         run: tar -cvzf tarball/${{ matrix.output-name }}.tgz sshnp
       - if: ${{ matrix.os == 'windows-latest' }}
-        run: zip -r -q tarball/${{ matrix.output-name }}.zip sshnp
+        run: Compress-Archive -Path sshnp -Destination tarball/${{ matrix.output-name }}.zip
       # Notarize the build
       - if: ${{ matrix.os == 'macOS-latest' || matrix.os == 'macos-14'}}
         env:
