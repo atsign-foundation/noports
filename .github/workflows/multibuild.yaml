@@ -47,10 +47,12 @@ jobs:
     steps:
       - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
       - uses: dart-lang/setup-dart@ca7e6fee45ffbd82b555a7ebfc236d2c86439f5b # v1.6.1
+      # create directories need for build
       - run: mkdir sshnp
       - run: mkdir tarball
       - if: ${{ matrix.os != 'windows-latest' }}
         run: mkdir sshnp/debug
+      # compile binaries
       - run: dart pub get
       - run: dart run build_runner build --delete-conflicting-outputs
       - run: dart compile exe bin/activate_cli.dart -v -o sshnp/at_activate${{ matrix.ext }}
@@ -62,10 +64,67 @@ jobs:
         run: dart compile exe bin/srvd.dart -v -o sshnp/srvd${{ matrix.ext }}
       - if: ${{ matrix.os != 'windows-latest' }}
         run: dart compile exe bin/srvd.dart -D ENABLE_SNOOP=true -v -o sshnp/debug/srvd${{ matrix.ext }}
+      # copy additional bundle items to build
       - run: cp -r bundles/core/* sshnp/
       - run: cp -r bundles/${{ matrix.bundle }}/* sshnp/
       - run: cp LICENSE sshnp
-      - run: tar -cvzf tarball/${{ matrix.output-name }}.tgz sshnp
+      # codesign for apple
+      - if: ${{ matrix.os == 'macOS-latest' || matrix.os == 'macos-14'}}
+        env:
+          MACOS_CODESIGN_CERT: ${{ secrets.MACOS_CODESIGN_CERT }}
+          MACOS_SIGNING_IDENTITY: ${{ secrets.MACOS_SIGNING_IDENTITY }}
+          MACOS_KEYCHAIN_PASSWORD: ${{ secrets.MACOS_KEYCHAIN_PASSWORD }}
+        run: |
+          CERT_PATH=$RUNNER_TEMP/codesign.cer
+          KEYCHAIN_PATH=$RUNNER_TEMP/app-signing.keychain-db
+
+          # import certificate
+          echo -n "$MACOS_CODESIGN_CERT" | base64 --decode -o $CERT_PATH
+
+          # create temporary keychain
+          security create-keychain -p "$MACOS_KEYCHAIN_PASSWORD" $KEYCHAIN_PATH
+          security set-keychain-settings -lut 21600 $KEYCHAIN_PATH
+          security unlock-keychain -p "$MACOS_KEYCHAIN_PASSWORD" $KEYCHAIN_PATH
+
+          # import certificate to keychain
+          security import $CERT_PATH -A -t cert -f pkcs7 -k $KEYCHAIN_PATH
+          security list-keychain -d user -s $KEYCHAIN_PATH
+ 
+          # Do codesign
+          codesign \
+            --timestamp \
+            --prefix \
+            --identifier \
+            --entitlements ./tools/templates/entitlements.plist \
+            --options=runtime \
+            -s "$MACOS_SIGNING_IDENTITY"
+            -v \
+            sshnp/{ssh*,srv,srvd,at_activate,debug/srvd}
+ 
+          # Verify signatures
+          codesign -vvv --deep --strict /sshnp/{ssh*,srv,srvd,at_activate,debug/srvd}
+
+      # zip the build
+      - if: ${{ matrix.os == 'macOS-latest' || matrix.os == 'macos-14'}}
+        run: ditto -c -k --keepParent sshnp tarball/${{ matrix.output-name }}.zip
+      - if: ${{ matrix.os == 'ubuntu-latest' }}
+        run: tar -cvzf tarball/${{ matrix.output-name }}.tgz sshnp
+      - if: ${{ matrix.os == 'windows-latest' }}
+        run: zip -r -q tarball/${{ matrix.output-name }}.zip sshnp
+      # Notarize the build
+      - if: ${{ matrix.os == 'macOS-latest' || matrix.os == 'macos-14'}}
+        env:
+          MACOS_APPLE_ID: ${{ secrets.MACOS_APPLE_ID }}
+          MACOS_TEAM_ID: ${{ secrets.MACOS_TEAM_ID }}
+          MACOS_APPLE_ID_PASSWORD: ${{ secrets.MACOS_APPLE_ID_PASSWORD }}
+        run: |
+          xcrun notarytool submit tarball/${{ matrix.output-name }}.zip \
+            --apple-id "$MACOS_APPLE_ID" \
+            --team-id "$MACOS_TEAM_ID" \
+            --password "$MACOS_APPLE_ID_PASSWORD" \
+            --wait
+
+      # upload the build
       - uses: actions/upload-artifact@26f96dfa697d77e81fd5907df203aa23a56210a8 # v4.3.0
         with:
           name: ${{ matrix.output-name }}
