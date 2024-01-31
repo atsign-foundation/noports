@@ -52,7 +52,7 @@ class _ProfileFormState extends ConsumerState<ProfileFormDesktopView> {
   void onSubmit(SshnpParams oldConfig) async {
     if (_formkey.currentState!.validate()) {
       _formkey.currentState!.save();
-      SshnpParams config = SshnpParams.merge(SshnpParams.empty(), newConfig);
+      SshnpParams config = SshnpParams.merge(oldConfig, newConfig);
 
       // get the controller for the profile that is about to be saved. Since this profile is not saved a log will be printed stating that the profile does not exist in keystore.
       final controller = ref.read(configFamilyController(newConfig.profileName!).notifier);
