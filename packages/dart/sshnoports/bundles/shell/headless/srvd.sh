@@ -2,13 +2,18 @@
 # disable "var is referenced but not assigned" warning for template
 # shellcheck disable=SC2154
 
-# Uncomment the following lines to specify your own values, or modify them inline below
-# atsign="@my_rvd"
-# internet_address="127.0.0.1"
+# Configuration of srvd service
+# This unit script is a template for the srvd background service.
+# You can configure the service by editing the variables below.
+# This service file covers the common configuration options for srvd.
+# To see all available options, run `srvd` with no arguments.
 
-sleep 10; # allow machine to bring up network
+atsign="@my_rvd"    # MANDATORY: Srvd atSign
+internet_address="" # MANDATORY: Public FQDN or IP address of the machine running the srvd
+
+sleep 10 # allow machine to bring up network
 export USER="$user"
 while true; do
-  "$HOME"/.local/bin/srvd -a "$atsign" -i "$internet_address"
-  sleep 10
+	"$HOME"/.local/bin/srvd -a "$atsign" -i "$internet_address"
+	sleep 10
 done
