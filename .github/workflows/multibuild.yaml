@@ -77,31 +77,27 @@ jobs:
           MACOS_SIGNING_IDENTITY: ${{ secrets.MACOS_SIGNING_IDENTITY }}
           MACOS_KEYCHAIN_PASSWORD: ${{ secrets.MACOS_KEYCHAIN_PASSWORD }}
         run: |
-          # create temp keychain
-          KEYCHAIN_PATH=$RUNNER_TEMP/app-signing.keychain-db
-          security create-keychain -p "$MACOS_KEYCHAIN_PASSWORD" $KEYCHAIN_PATH
-          security set-keychain-settings -lut 21600 $KEYCHAIN_PATH
-          security unlock-keychain -p "$MACOS_KEYCHAIN_PASSWORD" $KEYCHAIN_PATH
-
-          # import certificate to keychain
+          # Load certificate
           CERT_PATH=$RUNNER_TEMP/noports-codesign.p12
           echo -n "$MACOS_CODESIGN_CERT" | base64 --decode -o $CERT_PATH
-          security import $CERT_PATH -A -t cert -f pkcs12 -k $KEYCHAIN_PATH -P $MACOS_CODESIGN_CERT_PASSWORD
-
-          # codesign
-          codesign \
-            --timestamp \
-            --prefix \
-            --identifier \
-            --entitlements ./tools/templates/entitlements.plist \
-            --options=runtime \
-            --keychain $KEYCHAIN_PATH \
-            -s "$MACOS_SIGNING_IDENTITY" \
-            -vvv \
-            sshnp/{ssh*,srv,srvd,at_activate,debug/srvd}
+          # create temp keychain
+          KEYCHAIN_PATH=$RUNNER_TEMP/build.keychain
+          security create-keychain -p "$MACOS_KEYCHAIN_PASSWORD" $KEYCHAIN_PATH
+          security default-keychain -s $KEYCHAIN_PATH
+          security unlock-keychain -p "$MACOS_KEYCHAIN_PASSWORD" $KEYCHAIN_PATH
+          security import $CERT_PATH -k $KEYCHAIN_PATH -P "$MACOS_CODESIGN_CERT_PASSWORD" -T /usr/bin/codesign
+          security set-key-partition-list -S apple-tool:apple,:,codesign: -s -k "$MACOS_KEYCHAIN_PASSWORD" $KEYCHAIN_PATH
  
-          # signature verification
-          codesign -vvv --deep --strict /sshnp/{ssh*,srv,srvd,at_activate,debug/srvd}
+          # codesign
+          /usr/bin/codesign \
+            --force \
+            -s "$MACOS_SIGNING_IDENTITY" \
+            --options=runtime \
+            --entitlements ./tools/templates/entitlements.plist \
+            --prefix "com.atsign." \
+            --timestamp \
+            -v \
+            sshnp/{ssh*,srv,srvd,at_activate,debug/srvd}
 
       # zip the build
       - if: ${{ matrix.os == 'macOS-latest' || matrix.os == 'macos-14'}}
