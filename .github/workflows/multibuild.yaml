@@ -85,10 +85,9 @@ jobs:
           # import certificate to keychain
           CERT_PATH=$RUNNER_TEMP/noports-codesign.p12
           echo -n "$MACOS_CODESIGN_CERT" | base64 --decode -o $CERT_PATH
-          security import $CERT_PATH -A -t cert -f pkcs12 -k $KEYCHAIN_PATH
+          security import $CERT_PATH -A -t cert -f pkcs12 -k $KEYCHAIN_PATH -P $MACOS_CODESIGN_CERT_PASSWORD
 
           # codesign
-          echo "starting codesign"
           codesign \
             --timestamp \
             --prefix \
@@ -101,7 +100,6 @@ jobs:
             sshnp/{ssh*,srv,srvd,at_activate,debug/srvd}
  
           # signature verification
-          echo "doing signature verification"
           codesign -vvv --deep --strict /sshnp/{ssh*,srv,srvd,at_activate,debug/srvd}
 
       # zip the build
