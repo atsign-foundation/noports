@@ -1,5 +1,16 @@
 ---
 description: Welcome to the No Ports documentation site.
+layout:
+  title:
+    visible: true
+  description:
+    visible: true
+  tableOfContents:
+    visible: true
+  outline:
+    visible: true
+  pagination:
+    visible: true
 ---
 
 # 🚫 No Ports Documentation

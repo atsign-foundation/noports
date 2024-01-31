@@ -18,7 +18,7 @@ If you have a specific questions see the [FAQ](faq-coming-soon.md) or reach out 
 
 ### Installation
 
-<table data-card-size="large" data-column-title-hidden data-view="cards"><thead><tr><th data-card-target data-type="content-ref"></th></tr></thead><tbody><tr><td><a href="guides/installation-guide/client-installation-sshnp.md">client-installation-sshnp.md</a></td></tr><tr><td><a href="guides/installation-guide/device-installation-sshnpd.md">device-installation-sshnpd.md</a></td></tr></tbody></table>
+<table data-card-size="large" data-column-title-hidden data-view="cards"><thead><tr><th data-card-target data-type="content-ref"></th></tr></thead><tbody><tr><td><a href="guides/installation-guide/client-installation-sshnp.md">client-installation-sshnp.md</a></td></tr><tr><td><a href="guides/installation-guide/device-installation-sshnpd/">device-installation-sshnpd</a></td></tr></tbody></table>
 
 ### Usage
 
