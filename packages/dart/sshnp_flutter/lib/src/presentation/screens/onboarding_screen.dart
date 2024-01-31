@@ -9,6 +9,7 @@ import 'package:path_provider/path_provider.dart' show getApplicationSupportDire
 import 'package:sshnp_flutter/src/controllers/navigation_controller.dart';
 import 'package:sshnp_flutter/src/utility/sizes.dart';
 
+import '../../repository/authentication_repository.dart';
 import '../../utility/constants.dart';
 
 class OnboardingScreen extends StatefulWidget {
@@ -106,12 +107,15 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                                   ),
                                 ),
                               );
+
                               switch (onboardingResult.status) {
                                 case AtOnboardingResultStatus.success:
                                   await initializeContactsService(rootDomain: AtEnv.rootDomain);
                                   if (context.mounted) {
                                     context.replaceNamed(AppRoute.home.name);
                                   }
+                                  await AuthenticationRepository().setFirstRun(true);
+
                                   break;
                                 case AtOnboardingResultStatus.error:
                                   if (context.mounted) {

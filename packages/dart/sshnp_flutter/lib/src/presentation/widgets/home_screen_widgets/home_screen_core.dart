@@ -1,10 +1,16 @@
+import 'dart:developer';
+
+import 'package:at_onboarding_flutter/at_onboarding_flutter.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../controllers/config_controller.dart';
+import '../../../repository/authentication_repository.dart';
+import '../../../utility/my_sync_progress_listener.dart';
 import '../../../utility/sizes.dart';
 import '../profile_screen_widgets/profile_bar/profile_bar.dart';
+import '../utility/custom_snack_bar.dart';
 
 class HomeScreenCore extends ConsumerStatefulWidget {
   const HomeScreenCore({super.key});
@@ -14,6 +20,25 @@ class HomeScreenCore extends ConsumerStatefulWidget {
 }
 
 class _HomeScreenCoreState extends ConsumerState<HomeScreenCore> {
+  @override
+  void initState() {
+    // TODO: implement initState
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback(
+      (_) async {
+        AtClientManager.getInstance().atClient.syncService.addProgressListener(MySyncProgressListener(ref));
+        final isFirstRun = await AuthenticationRepository().checkFirstRun();
+        log(isFirstRun.toString());
+        if (isFirstRun) {
+          CustomSnackBar.notification(
+            content: 'Syncing profiles...',
+            duration: const Duration(seconds: 3),
+          );
+        }
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final strings = AppLocalizations.of(context)!;
