@@ -12,9 +12,16 @@ manager_atsign="@example_client" # MANDATORY: Manager/client address (atSign)
 device_atsign="@example_device"  # MANDATORY: Device address (atSign)
 device_name="default"            # Device name
 user="$(whoami)"                 # MANDATORY: Username
-# s="-s" # Uncomment if you wish the daemon to update authorized_keys to include public keys sent by authorized manager atSigns
-# u="-u" # Uncomment if you wish to have the daemon make various information visible to the manager atsign - e.g. username, version, etc - without the manager atSign needing to know this daemon's device name
-v="-v" # Uncomment to enable verbose logging
+v="-v"                           # Comment to disable verbose logging
+
+# Uncomment if you wish the daemon to update authorized_keys to include public
+# keys sent by authorized manager atSigns
+# s="-s"
+
+# Uncomment if you wish to have the daemon make various information visible to
+# the manager atsign - e.g. username, version, etc - without the manager atSign
+# needing to know this daemon's device name
+# u="-u"
 
 sleep 10 # allow machine to bring up network
 export USER="$user"

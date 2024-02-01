@@ -10,10 +10,11 @@
 
 atsign="@my_rvd"    # MANDATORY: Srvd atSign
 internet_address="" # MANDATORY: Public FQDN or IP address of the machine running the srvd
+v="-v"              # Comment to disable verbose logging
 
 sleep 10 # allow machine to bring up network
 export USER="$user"
 while true; do
-	/usr/local/bin/srvd -a "$atsign" -i "$internet_address"
+	/usr/local/bin/srvd -a "$atsign" -i "$internet_address" "$v"
 	sleep 10
 done
