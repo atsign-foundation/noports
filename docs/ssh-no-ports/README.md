@@ -6,7 +6,7 @@ SSH No Ports is the flagship product in the No Ports suite. It enables you to SS
 
 ## Information
 
-See [here](https://www.noports.com/sshnp-how-it-works) for more information on how SSH No Ports works.
+See [here](how-it-works.md) for more information on how SSH No Ports works.
 
 If you have a specific questions see the [FAQ](faq-coming-soon.md) or reach out to use using one of the following options:
 
