@@ -1,5 +1,5 @@
 # BASE
-FROM debian:stable-20240110-slim@sha256:f7235f31d948d45b37de1faabc7e518859d2b9cf0508486d71c1772cfc9bed8a AS base
+FROM debian:stable-20240130-slim@sha256:4255c9f8a4d6e66488adc0c2084c99df44bda22849b21b3afc0e9746e9a0be18 AS base
 
 ENV USER=atsign
 ENV HOMEDIR=/${USER}
@@ -101,7 +101,7 @@ ENTRYPOINT cp -r /mount/. ${HOMEDIR} && sudo service ssh start && sh ${HOMEDIR}/
 
 # RELEASE
 # BUILD RELEASE
-FROM debian:stable-20240110-slim@sha256:f7235f31d948d45b37de1faabc7e518859d2b9cf0508486d71c1772cfc9bed8a AS build-release
+FROM debian:stable-20240130-slim@sha256:4255c9f8a4d6e66488adc0c2084c99df44bda22849b21b3afc0e9746e9a0be18 AS build-release
 
 ARG release
 
