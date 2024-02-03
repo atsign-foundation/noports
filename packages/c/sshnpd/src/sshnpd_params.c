@@ -1,13 +1,21 @@
-#include "params.h"
+#include "sshnpd_params.h"
 #include "version.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
-int main(int argc, char **argv) {
-  sshnpd_params *params = malloc(sizeof(sshnpd_params));
-  apply_default_values_to_params(params);
+void apply_default_values_to_params(sshnpd_params *params) {
+  params->device = "default";
+  params->sshpublickey = 0;
+  params->unhide = 0;
+  params->verbose = 0;
+  params->ssh_algorithm = ED25519;
+  params->ephemeral_permission = "";
+  params->root_domain = "root.atsign.org";
+  params->local_sshd_port = 22;
+}
 
+int parse_params(sshnpd_params *params, int argc, const char **argv) {
   char *ssh_algorithm_input;
   argparse_option options[] = {
       OPT_HELP(),
@@ -36,44 +44,45 @@ int main(int argc, char **argv) {
   char description[24];
   snprintf(description, sizeof(description), "Version : %s\n", SSHNPD_VERSION);
   argparse_describe(&argparse, description, "");
-  argc = argparse_parse(&argparse, argc, (const char **)argv);
+  argc = argparse_parse(&argparse, argc, argv);
 
+  // Mandatory options
   if (params->atsign == NULL) {
+    argparse_usage(&argparse);
     printf("Invalid Argument(s): Option atsign is mandatory\n");
-    free(params);
     return 1;
   } else if (params->manager == NULL) {
+    argparse_usage(&argparse);
     printf("Invalid Argument(s) Option manager is mandatory\n");
-    free(params);
     return 1;
   }
 
-  if (!strcmp(ssh_algorithm_input, "ssh-rsa")) {
-    params->ssh_algorithm = RSA;
-  } else if (!strcmp(ssh_algorithm_input, "ssh-ed25519")) {
-    params->ssh_algorithm = ED25519;
-  } else {
-    printf("FormatException: \"%s\" is not an allowed value for option "
-           "\"ssh-algorithm\"\n",
-           ssh_algorithm_input);
-    free(params);
+  if (ssh_algorithm_input != NULL) {
+    // Parse ssh_algorithm_input to its enum value
+    if (strcmp(ssh_algorithm_input, "ssh-rsa") == 0) {
+      params->ssh_algorithm = RSA;
+    } else if (strcmp(ssh_algorithm_input, "ssh-ed25519") == 0) {
+      params->ssh_algorithm = ED25519;
+    } else {
+      argparse_usage(&argparse);
+      printf("Invalid Argument(s): \"%s\" is not an allowed value for option "
+             "\"ssh-algorithm\"\n",
+             ssh_algorithm_input);
+      return 1;
+    }
+  }
+
+  // TODO improve atsign validation
+  if (params->atsign[0] != '@') {
+    printf("Invalid Argument(s): \"%s\" is not a valid atSign\n",
+           params->atsign);
+    return 1;
+  }
+  if (params->manager[0] != '@') {
+    printf("Invalid Argument(s): \"%s\" is not a valid atSign\n",
+           params->manager);
     return 1;
   }
 
-  // print all params
-  printf("\n\nParams:\n");
-  printf("key_file: %s\n", params->key_file);
-  printf("atsign: %s\n", params->atsign);
-  printf("manager: %s\n", params->manager);
-  printf("device: %s\n", params->device);
-  printf("sshpublickey: %d\n", params->sshpublickey);
-  printf("unhide: %d\n", params->unhide);
-  printf("verbose: %d\n", params->verbose);
-  printf("ssh_algorithm: %u\n", params->ssh_algorithm);
-  printf("ephemeral_permission: %s\n", params->ephemeral_permission);
-  printf("root_domain: %s\n", params->root_domain);
-  printf("local_sshd_port: %d\n\n", params->local_sshd_port);
-
-  free(params);
   return 0;
 }

@@ -33,5 +33,6 @@ typedef struct sshnpd_params {
 } sshnpd_params;
 
 void apply_default_values_to_params(sshnpd_params *params);
+int parse_params(sshnpd_params *params, int argc, const char **argv);
 
 #endif
