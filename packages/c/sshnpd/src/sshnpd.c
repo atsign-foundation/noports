@@ -11,13 +11,6 @@
 #define FILENAME_BUFFER_SIZE 500
 #define LOGGER_TAG "sshnpd"
 
-// Steps
-// 7.  If unhide, share username using put and notify
-// 8.  Cache the manager public key
-// 9.  Start heartbeat to the atServer
-// 10.  Start monitor
-// 11. Start the device refresh loop
-
 int main(int argc, char **argv) {
   sshnpd_params *params = malloc(sizeof(sshnpd_params));
 
@@ -41,7 +34,7 @@ int main(int argc, char **argv) {
     return 1;
   }
 
-  // TODO move this to where it is used later
+  // TODO: move this to where it is used later
   const char *username = getenv(USERVAR);
   if (params->unhide && username == NULL) {
     atclient_atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR,
@@ -118,7 +111,12 @@ int main(int argc, char **argv) {
     return 1;
   }
 
-  // TODO can we free atkeys now?
+  // TODO : can we free atkeys now?
+
+  // 8.  Cache the manager public key
+  // 9.  Start heartbeat to the atServer
+  // 10. Start monitor
+  // 11. Start the device refresh loop
 
   free(params);
   return 0;
