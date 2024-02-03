@@ -13,4 +13,7 @@
 #define USERVAR "USER"
 #endif
 
+// TODO move these somewhere else
+#define ROOT_PORT 64
+
 #endif

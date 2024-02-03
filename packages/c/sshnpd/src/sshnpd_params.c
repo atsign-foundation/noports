@@ -57,7 +57,7 @@ int parse_params(sshnpd_params *params, int argc, const char **argv) {
     return 1;
   }
 
-  if (ssh_algorithm_input != NULL) {
+  if (strlen(ssh_algorithm_input) != 0) {
     // Parse ssh_algorithm_input to its enum value
     if (strcmp(ssh_algorithm_input, "ssh-rsa") == 0) {
       params->ssh_algorithm = RSA;
