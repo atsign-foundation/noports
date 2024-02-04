@@ -26,6 +26,7 @@ RUN \
   ./static-openssh.sh ; \
   cp build/openssh-portable*/ssh-keygen ${BINARYDIR}/ ; \ 
   chmod 755 ${BINARYDIR}/ssh-keygen ; \
+  chmod 755 ${BINARYDIR}/ssh ; \
   # build sshnpd
   cd ${WORKDIR}/${PACKAGEDIR}; \
   dart pub get ; \
@@ -48,5 +49,6 @@ WORKDIR /usr/local/at
 COPY --from=buildimage  /usr/local/at/sshnpd /usr/local/at/
 COPY --from=buildimage  /usr/local/at/srv /usr/local/at/
 COPY --from=buildimage  /usr/local/at/ssh-keygen /usr/local/at/
+COPY --from=buildimage  /usr/local/at/ssh /usr/local/at/
 USER atsign
 ENTRYPOINT ["/usr/local/at/sshnpd"]
