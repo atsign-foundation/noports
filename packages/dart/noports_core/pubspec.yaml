@@ -7,6 +7,12 @@ version: 6.0.3
 environment:
   sdk: ">=3.0.0 <4.0.0"
 
+dependency_overrides:
+  args:
+    git:
+      ref: gkc/show-aliases-in-usage
+      url: https://github.com/gkc/args
+
 dependencies:
   args: ^2.4.2
   at_chops: ^1.0.7

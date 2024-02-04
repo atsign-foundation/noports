@@ -49,10 +49,10 @@ class SshnpParams {
   final bool listDevices;
 
   /// An encryption keypair which should only ever reside in memory.
-  /// The public key is provided in responses to client 'pings', and is
-  /// used by clients to encrypt symmetric encryption keys intended for
+  /// The public key is provided in requests to the daemon, and is
+  /// used by daemons to encrypt symmetric encryption keys intended for
   /// one-time use in a NoPorts session, and share the encrypted details
-  /// as part of the session request payload.
+  /// as part of the daemon's response
   AtEncryptionKeyPair get sessionKP {
     _sessionKP ??= AtChopsUtil.generateAtEncryptionKeyPair(keySize: 2048);
     return _sessionKP!;

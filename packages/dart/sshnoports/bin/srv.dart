@@ -6,7 +6,7 @@ import 'package:socket_connector/socket_connector.dart';
 import 'package:sshnoports/src/print_version.dart';
 
 Future<void> main(List<String> args) async {
-  final ArgParser parser = ArgParser()
+  final ArgParser parser = ArgParser(showAliasesInUsage: true)
     ..addOption('host', abbr: 'h', mandatory: true, help: 'rvd host')
     ..addOption('port', abbr: 'p', mandatory: true, help: 'rvd port')
     ..addOption('local-port',

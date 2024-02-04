@@ -23,6 +23,7 @@ dependency_overrides:
       ref: gkc/show-aliases-in-usage
       url: https://github.com/gkc/args
   at_client: 3.0.73
+  at_cli_commons: ^1.0.4
   at_lookup: 3.0.44
   at_utils: 3.0.16
   asn1lib: 1.4.1

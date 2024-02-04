@@ -87,6 +87,7 @@ class SshnpdParams {
   static ArgParser _createArgParser() {
     var parser = ArgParser(
       usageLineLength: stdout.hasTerminal ? stdout.terminalColumns : null,
+      showAliasesInUsage: true,
     );
 
     // Basic arguments
