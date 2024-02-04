@@ -1,3 +1,8 @@
+# 6.0.2
+- chore: Uptake at_commons ^4.0.1 (was ^3.0.56)
+- fix: lint errors related to the new version of at_commons
+- chore: make SrvImpl throw an SshnpError instead of an Exception
+
 # 6.0.1
 - fix: ensure that directories for key creation exist before trying to create them
 - fix: ensure that temporary keys are deleted after use

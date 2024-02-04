@@ -1,19 +1,30 @@
 [Unit]
-Description=Ssh No Ports Rendezvous Daemon
+Description=No Ports Socket Rendezvous Daemon
 After=network-online.target
 
+[Install]
+WantedBy=multi-user.target
+
 [Service]
-# TODO : set username
-User=<username>
 Type=simple
 Restart=always
 RestartSec=3
 
-# Uncomment the following line to sleep for 10 seconds before starting up the service
-# ExecStartPre=/bin/sleep 10
+# Configuration of srvd service
+# This unit script is a template for the srvd background service.
+# You can configure the service by editing the variables below.
+# This service file covers the common configuration options for srvd.
+# To see all available options, run `srvd` with no arguments.
 
-# TODO : set atsign, internet_address
-ExecStart=/usr/local/bin/srvd -a <@atsign> -i <internet_address>
+# MANDATORY: User to run the daemon as
+User=<username>
 
-[Install]
-WantedBy=multi-user.target
+# MANDATORY: Srvd atSign
+Environment=atsign="@my_rvd"
+
+# MANDATORY: Public FQDN or IP address of the machine running the srvd
+Environment=internet_address=""
+
+# The line below runs the srvd service, with the options set above.
+# You can edit this line to further customize the service to your needs.
+ExecStart=/usr/local/bin/srvd -a "$atsign" -i "$internet_address"

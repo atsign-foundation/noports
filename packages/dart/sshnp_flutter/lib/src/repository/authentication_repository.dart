@@ -31,14 +31,31 @@ class AuthenticationRepository {
   static var atContactService = ContactService();
 
   /// This function will clear the keychain if the app installed newly again.
-  Future<void> checkFirstRun() async {
+  Future<void> checkKeyChainFirstRun() async {
     _logger.finer('Checking for keychain entries to clear');
     SharedPreferences prefs = await SharedPreferences.getInstance();
-    if (prefs.getBool('first_run') ?? true) {
+    if (prefs.getBool('keyChainFirstRun') ?? true) {
       _logger.finer('First run detected. Clearing keychain');
       await clearKeychainEntries();
-      await prefs.setBool('first_run', false);
+      await prefs.setBool('keyChainFirstRun', false);
     }
+  }
+
+  /// This function will check for first run.
+  Future<bool> checkFirstRun() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    if (prefs.getBool('firstRun') ?? true) {
+      return true;
+    } else {
+      return false;
+    }
+  }
+
+  /// This function will set first run.
+  /// setting first run to false will prevent the app from firstRun sync.
+  Future<void> setFirstRun(bool status) async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('firstRun', status);
   }
 
   Future<void> clearKeychainEntries() async {

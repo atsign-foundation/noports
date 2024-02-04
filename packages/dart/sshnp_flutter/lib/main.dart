@@ -6,6 +6,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sshnp_flutter/src/utility/platform_utility/platform_utililty.dart';
 
+import '../src/repository/authentication_repository.dart';
+
 final AtSignLogger _logger = AtSignLogger(AtEnv.appNamespace);
 
 Future<void> main() async {
@@ -16,6 +18,7 @@ Future<void> main() async {
   } catch (e) {
     _logger.finer('Environment failed to load from .env: ', e);
   }
+  await AuthenticationRepository().checkKeyChainFirstRun();
 
   PlatformUtility platformUtility = PlatformUtility.current();
   await platformUtility.configurePlatform();
