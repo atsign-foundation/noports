@@ -15,18 +15,18 @@ RUN \
   mkdir -p $HOMEDIR/config ; \
   mkdir -p /etc/cacert ; \
   mkdir -p ${BINARYDIR} ; \
-  #cp cacert/cacert.pem /etc/cacert ; \
-  #cp ssh-keygen/ssh-keygen ${BINARYDIR} ; \
-  #mkdir -p /archive ; \
+  # create atsign account
   addgroup --gid $GROUP_ID atsign ; \
   useradd --system --uid $USER_ID --gid $GROUP_ID --shell /bin/bash \
     --home $HOMEDIR atsign ; \
   chown -R atsign:atsign $HOMEDIR ; \
-  # create static ssh-keygen
+  # build static ssh-keygen
   apt update && apt install -y curl gcc make autoconf ; \
   cd ${OPENSSH} ; \
   ./static-openssh.sh ; \
   cp build/openssh-portable*/ssh-keygen ${BINARYDIR}/ ; \ 
+  chmod 755 ${BINARYDIR}/ssh-keygen ; \
+  # build sshnpd
   cd ${WORKDIR}/${PACKAGEDIR}; \
   dart pub get ; \
   dart pub update ; \
@@ -40,7 +40,6 @@ ENV PATH=/usr/local/at
 ENV USER=atsign
 COPY --from=buildimage /atsign /atsign/
 COPY --from=buildimage /runtime/ /
-#COPY --from=buildimage /lib/ /
 COPY --from=buildimage /etc/ssl/certs/ /etc/ssl/certs/
 COPY --from=buildimage /etc/passwd /etc/passwd
 COPY --from=buildimage /etc/group /etc/group

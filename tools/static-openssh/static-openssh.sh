@@ -41,7 +41,7 @@ curl --output $dist/openssl-$OPENSSL_VERSION.tar.gz --location https://www.opens
 gzip -dc $dist/openssl-*.tar.gz |(cd "$build" && tar xf -)
 fi
 cd "$build"/openssl-*
-./config --prefix="$root" no-shared no-tests
+./config --prefix="$root"  no-shared no-tests
 make
 make install
 cd "$top"
@@ -64,6 +64,6 @@ sed \
 ; 
 export PATH=$root/bin:$PATH 
 autoreconf
-./configure LIBS="-lpthread" "--prefix=$root" "--exec-prefix=$root" --with-privsep-user=nobody --with-privsep-path="$prefix/var/empty" "--with-ssl-dir=$root"
+./configure LIBS="-lpthread"  "--with-ldflags=-static" "--prefix=$root" "--exec-prefix=$root" --with-privsep-user=nobody --with-privsep-path="$prefix/var/empty" "--with-ssl-dir=$root"
 make
 cd "$top"
