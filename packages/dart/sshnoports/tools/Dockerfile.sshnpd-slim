@@ -25,6 +25,7 @@ RUN \
   cd ${OPENSSH} ; \
   ./static-openssh.sh ; \
   cp build/openssh-portable*/ssh-keygen ${BINARYDIR}/ ; \ 
+  cp build/openssh-portable*/ssh ${BINARYDIR}/ ; \
   chmod 755 ${BINARYDIR}/ssh-keygen ; \
   chmod 755 ${BINARYDIR}/ssh ; \
   # build sshnpd
