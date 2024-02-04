@@ -1,3 +1,8 @@
+# 6.0.3
+- chore: downgrade at_commons dependency from ^4.0.1 to ^4.0.0
+- chore: downgrade at_client dependency from ^3.0.75 to ^3.0.73
+- chore: downgrade at_chops dependency from ^2.0.0 to ^1.0.7
+
 # 6.0.2
 - chore: Uptake at_commons ^4.0.1 (was ^3.0.56)
 - fix: lint errors related to the new version of at_commons

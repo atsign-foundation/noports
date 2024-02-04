@@ -1,14 +1,14 @@
 name: sshnoports
 publish_to: none
 
-version: 5.0.2
+version: 5.0.3
 
 environment:
   sdk: ">=3.0.0 <4.0.0"
 
 dependencies:
   noports_core: 6.0.2
-  at_onboarding_cli: 1.4.3
+  at_onboarding_cli: 1.4.2
   args: 2.4.2
   socket_connector: ^2.0.1
   dartssh2: 2.8.2
@@ -22,8 +22,8 @@ dependency_overrides:
     git:
       ref: gkc/show-aliases-in-usage
       url: https://github.com/gkc/args
-  at_client: 3.0.75
-  at_lookup: 3.0.45
+  at_client: 3.0.73
+  at_lookup: 3.0.44
   at_utils: 3.0.16
   asn1lib: 1.4.1
   encrypt: 5.0.1
