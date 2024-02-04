@@ -11,6 +11,7 @@ dependencies:
   at_backupkey_flutter: ^4.0.10
   at_client_mobile: ^3.2.11
   at_common_flutter: ^2.0.12
+  at_contact: ^3.0.7
   at_contacts_flutter: ^4.0.5
   at_onboarding_flutter: ^6.1.4
   at_utils: ^3.0.11

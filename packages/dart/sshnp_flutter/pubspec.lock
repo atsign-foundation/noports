@@ -106,7 +106,7 @@ packages:
     source: hosted
     version: "4.0.1"
   at_contact:
-    dependency: transitive
+    dependency: "direct main"
     description:
       name: at_contact
       sha256: "232a7dd140bd4c22f4d99c7866633338de57e50f0e1eb84e515dc1ed0f7b0fee"
