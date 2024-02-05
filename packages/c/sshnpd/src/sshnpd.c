@@ -1,9 +1,9 @@
-#include "sshnpd_params.h"
 #include <atclient/atclient.h>
 #include <atclient/atkeys.h>
 #include <atclient/atkeysfile.h>
 #include <atclient/atlogger.h>
-#include <environment.h>
+#include <sshnpd/environment.h>
+#include <sshnpd/params.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>

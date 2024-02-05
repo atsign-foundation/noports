@@ -1,7 +1,7 @@
 #ifndef SSHNPD_PARAMS_H
 #define SSHNPD_PARAMS_H
 
-#include "argparse.h"
+#include <argparse/argparse.h>
 #include <getopt.h>
 #include <stdbool.h>
 #include <stdint.h>

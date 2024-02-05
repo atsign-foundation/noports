@@ -1,5 +1,5 @@
-#include "sshnpd_params.h"
-#include "version.h"
+#include <sshnpd/params.h>
+#include <sshnpd/version.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
