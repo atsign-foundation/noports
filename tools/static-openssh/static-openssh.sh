@@ -41,7 +41,13 @@ curl --output $dist/openssl-$OPENSSL_VERSION.tar.gz --location https://www.opens
 gzip -dc $dist/openssl-*.tar.gz |(cd "$build" && tar xf -)
 fi
 cd "$build"/openssl-*
-./config --prefix="$root"  no-shared no-tests
+  CPU=$(uname -m)
+  if [[ $CPU == "armv7l" ]]
+     then  
+     ./Configure linux-armv4 --prefix="$root"  no-shared no-tests
+     else
+     ./config --prefix="$root"  no-shared no-tests
+  fi
 make
 make install
 cd "$top"
