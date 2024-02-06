@@ -1,6 +1,6 @@
 # To build using docker buildx
-# docker buildx build --push --platform linux/amd64,linux/arm64 \
-# --tag cconstab/sshnpd-colin-slim-multi:mac  \
+# docker buildx build --push --platform linux/amd64,linux/arm64,linux/arm/v7 \
+# --tag cconstab/sshnpd-colin-slim-multi:latest  \
 # -f packages/dart/sshnoports/tools/Dockerfile.sshnpd-slim .
 
 # Note dart:beta needs to be used when using M1 mac as known bug causes
