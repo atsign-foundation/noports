@@ -11,7 +11,6 @@ project(
 # 1a. Manually add your src files here
 # globs are known as bad practice, so we do not use them here
 set(SSHNPD_SRCS
-  ${CMAKE_CURRENT_LIST_DIR}/src/sshnpd.c
   ${CMAKE_CURRENT_LIST_DIR}/src/params.c
 )
 
@@ -149,7 +148,7 @@ install(
 )
 
 # 7. Create sshnpd executable target
-add_executable(${PROJECT_NAME} ${CMAKE_CURRENT_LIST_DIR}/src/sshnpd.c)
+add_executable(${PROJECT_NAME} ${CMAKE_CURRENT_LIST_DIR}/src/main.c)
 
 target_link_libraries(${PROJECT_NAME} PRIVATE
  ${PROJECT_NAME}_lib

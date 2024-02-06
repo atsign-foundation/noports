@@ -4,7 +4,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-void apply_default_values_to_params(sshnpd_params *params) {
+void apply_default_values_to_params(sshnpd_params_t *params) {
   params->device = "default";
   params->sshpublickey = 0;
   params->unhide = 0;
@@ -15,9 +15,9 @@ void apply_default_values_to_params(sshnpd_params *params) {
   params->local_sshd_port = 22;
 }
 
-int parse_params(sshnpd_params *params, int argc, const char **argv) {
+int parse_params(sshnpd_params_t *params, int argc, const char **argv) {
   char *ssh_algorithm_input;
-  argparse_option options[] = {
+  argparse_option_t options[] = {
       OPT_HELP(),
       OPT_STRING('k', "key-file", &params->key_file, "Path to the key file"),
       OPT_STRING('a', "atsign", &params->atsign, "Atsign to use (mandatory)"),
@@ -38,7 +38,7 @@ int parse_params(sshnpd_params *params, int argc, const char **argv) {
       OPT_END(),
   };
 
-  argparse argparse;
+  argparse_t argparse;
   argparse_init(&argparse, options, NULL, 0);
 
   char description[24];

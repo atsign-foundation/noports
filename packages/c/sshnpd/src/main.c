@@ -10,9 +10,8 @@
 
 #define FILENAME_BUFFER_SIZE 500
 #define LOGGER_TAG "sshnpd"
-
 int main(int argc, char **argv) {
-  sshnpd_params *params = malloc(sizeof(sshnpd_params));
+  sshnpd_params_t *params = malloc(sizeof(sshnpd_params_t));
 
   // 1.  Load default values
   apply_default_values_to_params(params);
@@ -23,12 +22,20 @@ int main(int argc, char **argv) {
     return 1;
   }
 
-  // 3. Validate the environment
+  // 3.  Configure the Logger
+  if (params->verbose) {
+    printf("Verbose mode enabled\n");
+    atclient_atlogger_set_logging_level(ATLOGGER_LOGGING_LEVEL_DEBUG);
+  } else {
+    atclient_atlogger_set_logging_level(ATLOGGER_LOGGING_LEVEL_INFO);
+  }
+
+  // 4. Validate the environment
   const char *homedir = getenv(HOMEVAR);
   if (homedir == NULL) {
     atclient_atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR,
                           "Unable to determine your home directory: please "
-                          "set %s environment variable",
+                          "set %s environment variable\n",
                           HOMEVAR);
     free(params);
     return 1;
@@ -39,18 +46,10 @@ int main(int argc, char **argv) {
   if (params->unhide && username == NULL) {
     atclient_atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR,
                           "Unable to determine your username: please "
-                          "set %s environment variable",
+                          "set %s environment variable\n",
                           USERVAR);
     free(params);
     return 1;
-  }
-
-  // 4.  Configure the Logger
-  if (params->verbose) {
-    printf("Verbose mode enabled\n");
-    atclient_atlogger_set_logging_level(ATLOGGER_LOGGING_LEVEL_DEBUG);
-  } else {
-    atclient_atlogger_set_logging_level(ATLOGGER_LOGGING_LEVEL_INFO);
   }
 
   // 5.  Load the atKeys
@@ -70,7 +69,7 @@ int main(int argc, char **argv) {
 
   if (ret != 0) {
     atclient_atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR,
-                          "Unable to read the key file");
+                          "Unable to read the key file\n");
     free(params);
     atclient_atkeysfile_free(&atkeysfile);
     return 1;
@@ -83,7 +82,7 @@ int main(int argc, char **argv) {
   ret = atclient_atkeys_populate_from_atkeysfile(&atkeys, atkeysfile);
   if (ret != 0) {
     atclient_atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR,
-                          "Unable to parse the key file");
+                          "Unable to parse the key file\n");
     free(params);
     atclient_atkeysfile_free(&atkeysfile);
     atclient_atkeys_free(&atkeys);
