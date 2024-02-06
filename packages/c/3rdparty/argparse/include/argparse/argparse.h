@@ -123,7 +123,7 @@ int argparse_help_cb_no_exit(struct argparse *self,
 #define OPT_GROUP(h)                                                           \
   { ARGPARSE_OPT_GROUP, 0, NULL, NULL, h, NULL, 0, 0 }
 #define OPT_HELP()                                                             \
-  OPT_BOOLEAN('h', "help", NULL, "show this help message and exit",            \
+  OPT_BOOLEAN(0, "help", NULL, "show this help message and exit",              \
               argparse_help_cb, 0, OPT_NONEG)
 
 int argparse_init(struct argparse *self, struct argparse_option *options,
