@@ -5,6 +5,7 @@
 
 # Note dart:beta needs to be used when using M1 mac as known bug causes
 # crash dump otherwise, can move back to standard builds if on Linux/Windows
+# crash still hapens on arm build 
 # 02/05/2024
 
 FROM dart:beta-sdk AS buildimage
