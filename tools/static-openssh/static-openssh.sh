@@ -4,7 +4,7 @@ set -uex
 umask 0077
 
 ZLIB_VERSION=1.3.1
-OPENSSL_VERSION=3.2.0
+OPENSSL_VERSION=3.2.1
 OPENSSH_VERSION=V_9_6_P1
 
 prefix="/opt/openssh"
