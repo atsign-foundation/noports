@@ -40,7 +40,6 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
             ),
           ),
           Positioned(
-            bottom: 0,
             width: MediaQuery.of(context).size.width,
             height: MediaQuery.of(context).size.height,
             child: SvgPicture.asset(
@@ -58,7 +57,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                     borderRadius: BorderRadius.circular(Sizes.p12),
                   ),
                   child: Padding(
-                    padding: const EdgeInsets.all(Sizes.p30),
+                    padding:
+                        const EdgeInsets.only(top: Sizes.p30, bottom: Sizes.p10, left: Sizes.p30, right: Sizes.p30),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -85,7 +85,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                           strings.welcomeToDescription,
                           style: Theme.of(context).textTheme.bodySmall!.copyWith(color: Colors.black),
                         ),
-                        gapH10,
+                        gapH20,
                         Center(
                           child: ElevatedButton(
                             style: ElevatedButton.styleFrom(
@@ -139,6 +139,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                             ),
                           ),
                         ),
+                        gapH10,
                         Center(
                             child: TextButton(
                           onPressed: () async {
