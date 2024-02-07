@@ -27,23 +27,25 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     Future<AtClientPreference> futurePreference = loadAtClientPreference();
     return Scaffold(
       extendBodyBehindAppBar: true,
+      extendBody: true,
       body: Stack(
-        alignment: Alignment.topLeft,
+        alignment: Alignment.center,
         children: [
-          Center(
+          Positioned(
+            width: MediaQuery.of(context).size.width,
+            height: MediaQuery.of(context).size.height,
             child: Image.asset(
               'assets/images/onboarding_bg.png',
-              width: MediaQuery.of(context).size.width,
-              height: MediaQuery.of(context).size.height,
-              fit: BoxFit.contain,
+              fit: BoxFit.cover,
             ),
           ),
           Positioned(
+            bottom: 0,
             width: MediaQuery.of(context).size.width,
             height: MediaQuery.of(context).size.height,
             child: SvgPicture.asset(
               'assets/images/overlay.svg',
-              fit: BoxFit.fill,
+              fit: BoxFit.cover,
             ),
           ),
           Center(
