@@ -26,6 +26,13 @@ RUN \
   mkdir -p $HOMEDIR/config ; \
   mkdir -p /etc/cacert ; \
   mkdir -p ${BINARYDIR} ; \
+  # build sshnpd
+  cd ${WORKDIR}/${PACKAGEDIR}; \
+  dart pub get ; \
+  dart pub update ; \
+  dart pub upgrade : \
+  dart compile exe bin/sshnpd.dart -o ${BINARYDIR}/sshnpd ; \
+  dart compile exe bin/srv.dart -o ${BINARYDIR}/srv ; \
   # create atsign account
   addgroup --gid $GROUP_ID atsign ; \
   useradd --system --uid $USER_ID --gid $GROUP_ID --shell /bin/bash \
@@ -38,13 +45,7 @@ RUN \
   cp build/openssh-portable*/ssh-keygen ${BINARYDIR}/ ; \ 
   cp build/openssh-portable*/ssh ${BINARYDIR}/ ; \
   chmod 755 ${BINARYDIR}/ssh-keygen ; \
-  chmod 755 ${BINARYDIR}/ssh ; \
-  # build sshnpd
-  cd ${WORKDIR}/${PACKAGEDIR}; \
-  dart pub get ; \
-  dart pub update ; \
-  dart compile exe bin/sshnpd.dart -o ${BINARYDIR}/sshnpd ; \
-  dart compile exe bin/srv.dart -o ${BINARYDIR}/srv
+  chmod 755 ${BINARYDIR}/ssh 
 
 
 # Second stage of build FROM scratch
