@@ -39,7 +39,7 @@ RUN \
   chown -R atsign:atsign $HOMEDIR ; \
   # build static openssh binaries
   apt update && apt install -y curl gcc make autoconf ; \
-  cd ${OPENSSH} ; \
+  cd ${WORKDIR}/${OPENSSH} ; \
   ./static-openssh.sh ; \
   cp build/openssh-portable*/ssh-keygen ${BINARYDIR}/ ; \ 
   cp build/openssh-portable*/ssh ${BINARYDIR}/ ; \
