@@ -120,9 +120,8 @@ class SshnpdParams {
       abbr: 'd',
       mandatory: false,
       defaultsTo: "default",
-      help:
-          'This daemon will operate with this device name;'
-              ' allows multiple devices to share an atSign',
+      help: 'This daemon will operate with this device name;'
+          ' allows multiple devices to share an atSign',
     );
 
     parser.addFlag(

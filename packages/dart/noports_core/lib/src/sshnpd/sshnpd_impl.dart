@@ -174,7 +174,6 @@ class SshnpdImpl implements Sshnpd {
       throw StateError('Cannot run() - not initialized');
     }
 
-
     await _shareUsername();
 
     logger.info('Starting heartbeat');
@@ -1035,8 +1034,7 @@ class SshnpdImpl implements Sshnpd {
           await atClient.put(
             atKey,
             jsonEncode(pingResponse),
-            putRequestOptions: PutRequestOptions()
-              ..useRemoteAtServer = true,
+            putRequestOptions: PutRequestOptions()..useRemoteAtServer = true,
           );
         } catch (e) {
           stderr.writeln(e.toString());
