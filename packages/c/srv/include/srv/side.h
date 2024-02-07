@@ -28,7 +28,7 @@ struct _side_t {
 
   // During init
   mbedtls_net_context *socket;
-  side_t *other_side;
+  side_t *other;
 
   // Server state (null when is_server is false)
   mbedtls_net_context **connections;
@@ -40,6 +40,6 @@ int srv_side_init(const side_hints_t *hints, side_t *side);
 void srv_link_sides(side_t *side_a, side_t *side_b);
 void srv_side_free(side_t *side);
 
-void *srv_side_handle(void *_side);
+void *srv_side_handle(void *side);
 
 #endif

@@ -4,28 +4,33 @@
 
 void apply_default_values_to_params(srv_params_t *params) {
   params->local_port = 22;
+#if ALLOW_BIND_LOCAL_PORT
   params->bind_local_port = 0;
+#endif
   params->rv_auth = 0;
+
   params->rv_e2ee = 0;
 }
 
 int parse_params(srv_params_t *params, int argc, const char **argv) {
   argparse_option_t options[] = {
-      OPT_BOOLEAN(0, "help", NULL, "show this help message and exit",
-                  argparse_help_cb, 0, OPT_NONEG),
-      OPT_STRING('h', "host", &params->host, "rvd host"),
-      OPT_INTEGER('p', "port", &params->port, "rvd port"),
-      OPT_INTEGER(
-          0, "local-port", &params->local_port,
-          "Local port (usually the sshd port) to bridge to; defaults to 22"),
-      OPT_BOOLEAN(0, "bind-local-port", &params->bind_local_port,
-                  "Set this flag when we are bridging from a local sender"),
-      OPT_BOOLEAN(0, "rv-auth", &params->rv_auth,
-                  "Whether this rv process will authenticate to rvd"),
-      OPT_BOOLEAN(0, "rv-e2ee", &params->rv_e2ee,
-                  "Whether this rv process will encrypt/decrypt all rvd socket "
-                  "traffic"),
-      OPT_END(),
+    OPT_BOOLEAN(0, "help", NULL, "show this help message and exit",
+                argparse_help_cb, 0, OPT_NONEG),
+    OPT_STRING('h', "host", &params->host, "rvd host"),
+    OPT_INTEGER('p', "port", &params->port, "rvd port"),
+    OPT_INTEGER(
+        0, "local-port", &params->local_port,
+        "Local port (usually the sshd port) to bridge to; defaults to 22"),
+#if ALLOW_BIND_LOCAL_PORT
+    OPT_BOOLEAN(0, "bind-local-port", &params->bind_local_port,
+                "Set this flag when we are bridging from a local sender"),
+#endif
+    OPT_BOOLEAN(0, "rv-auth", &params->rv_auth,
+                "Whether this rv process will authenticate to rvd"),
+    OPT_BOOLEAN(0, "rv-e2ee", &params->rv_e2ee,
+                "Whether this rv process will encrypt/decrypt all rvd socket "
+                "traffic"),
+    OPT_END(),
   };
 
   argparse_t argparse;
