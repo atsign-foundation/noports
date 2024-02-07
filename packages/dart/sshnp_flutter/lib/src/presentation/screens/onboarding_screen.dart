@@ -135,7 +135,10 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                             },
                             child: Text(
                               'Onboard an @sign',
-                              style: Theme.of(context).textTheme.bodySmall!.copyWith(color: Colors.white),
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .bodySmall!
+                                  .copyWith(color: Colors.white, fontWeight: FontWeight.w700),
                             ),
                           ),
                         ),
