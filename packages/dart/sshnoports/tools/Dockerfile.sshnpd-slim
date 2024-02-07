@@ -30,7 +30,6 @@ RUN \
   cd ${WORKDIR}/${PACKAGEDIR}; \
   dart pub get ; \
   dart pub update ; \
-  dart pub upgrade : \
   dart compile exe bin/sshnpd.dart -o ${BINARYDIR}/sshnpd ; \
   dart compile exe bin/srv.dart -o ${BINARYDIR}/srv ; \
   # create atsign account
