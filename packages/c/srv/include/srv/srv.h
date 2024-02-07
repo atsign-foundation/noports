@@ -1,34 +1,19 @@
 #ifndef SRV_H
 #define SRV_H
-#include <netdb.h>
-#include <srv/params.h>
-#include <srv/stream.h>
+#include "srv/params.h"
 
-typedef struct _side_t side_t;
-struct _side_t {
-  bool is_side_a;
-  bool is_server;
-  const char *auth_string;
-  aes_transformer_t *transformer;
-  int sock_fd;
+// LOGGING
+#define ERROR ATLOGGER_LOGGING_LEVEL_ERROR
+#define WARN ATLOGGER_LOGGING_LEVEL_WARN
+#define INFO ATLOGGER_LOGGING_LEVEL_INFO
+#define DEBUG ATLOGGER_LOGGING_LEVEL_DEBUG
 
-  pthread_mutex_t *mutex;  // This mutex is used to lock things below it
-  int *connected_fd_count; // Number of connected clients
-  int **connected_fd;      // List of connected client pointers
-  struct _side_t *other_side;
-};
+// NETWORKING
+#define MAX_PORT_DIGIT_COUNT 5
+#define MAX_BUFFER_LEN 128 * 32 // =  4 AES blocks * 256 bits / 8 bits per byte
+#define RECV_TIMEOUT 15000      // 15 seconds
 
+#define SRV_COMPLETION_STRING "rv started successfully"
 int run_srv(srv_params_t *params);
 
-int socket_to_socket(const srv_params_t *params, const char *auth_string,
-                     aes_transformer_t *encrypter,
-                     aes_transformer_t *decrypter);
-
-int server_to_socket(const srv_params_t *params, const char *auth_string,
-                     aes_transformer_t *encrypter,
-                     aes_transformer_t *decrypter);
-
-void *handle_single_connection(void *side);
-
-int init_socket_for_side(const char *host, const uint16_t port, side_t *side);
 #endif

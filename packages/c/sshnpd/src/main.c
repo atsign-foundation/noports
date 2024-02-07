@@ -1,7 +1,7 @@
 #include <atclient/atclient.h>
 #include <atclient/atkeys.h>
 #include <atclient/atkeysfile.h>
-#include <atclient/atlogger.h>
+#include <atlogger/atlogger.h>
 #include <sshnpd/environment.h>
 #include <sshnpd/params.h>
 #include <stdio.h>

@@ -12,6 +12,9 @@ project(
 # globs are known as bad practice, so we do not use them here
 set(SRV_SRCS
   ${CMAKE_CURRENT_LIST_DIR}/src/params.c
+  ${CMAKE_CURRENT_LIST_DIR}/src/server_to_socket.c
+  ${CMAKE_CURRENT_LIST_DIR}/src/side.c
+  ${CMAKE_CURRENT_LIST_DIR}/src/socket_to_socket.c
   ${CMAKE_CURRENT_LIST_DIR}/src/srv.c
   ${CMAKE_CURRENT_LIST_DIR}/src/stream.c
 )
@@ -66,7 +69,23 @@ else()
   message(STATUS "[SRV] atchops found package..")
 endif()
 
-# 4b. MbedTLS
+#4b. atlogger
+find_package(atclient)
+if(NOT atclient_FOUND)
+  # TODO: fetch from GitHub
+  # message(STATUS "[SRV] atclient not found, fetching from GitHub..")
+  # FetchContent_Declare(
+  #  atclient
+  #  URL https://github.com/...
+  #           URL_HASH SHA256=
+  # )
+  list(APPEND SRV_TARGETS_TO_INSTALL atlogger)
+  list(APPEND SRV_MAKE_AVAILABLE atlogger)
+else()
+  message(STATUS "[SRV] atclient found package..")
+endif()
+
+# 4c. MbedTLS
 find_package(MbedTLS QUIET)
 if(NOT MbedTLS_FOUND)
   message(STATUS "[SRV] MbedTLS not found, fetching from GitHub..")
@@ -81,7 +100,7 @@ else()
   message(STATUS "[SRV] MbedTLS found package..")
 endif()
 
-# 4c. argparse
+# 4d. argparse
 find_package(argparse-static QUIET)
 if(NOT argparse-static_FOUND)
   message(STATUS "[SRV] argparse not found, fetching from local repository..")
@@ -95,6 +114,7 @@ else()
   message(STATUS "[SRV] argparse found package..")
 endif()
 
+# 4e. make everything available
 if(SRV_MAKE_AVAILABLE)
   FetchContent_MakeAvailable(${SRV_MAKE_AVAILABLE})
 endif()
@@ -105,7 +125,9 @@ add_library(${PROJECT_NAME}_lib STATIC ${SRV_SRCS})
 
 target_link_libraries(${PROJECT_NAME}_lib PRIVATE
   argparse::argparse-static
+  atclient::atlogger
   atchops::atchops
+  MbedTLS::mbedtls
 )
 
 # Set include directories for srv target
