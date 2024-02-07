@@ -7,8 +7,8 @@
 
 #define TAG "srv - socket_to_socket"
 int socket_to_socket(const srv_params_t *params, const char *auth_string,
-                     aes_transformer_t *encrypter,
-                     aes_transformer_t *decrypter) {
+                     chunked_transformer_t *encrypter,
+                     chunked_transformer_t *decrypter) {
   side_t side_a, side_b;
   side_hints_t hints_a = {1, 0, NULL, params->local_port, NULL};
   side_hints_t hints_b = {0, 0, params->host, params->port, auth_string};

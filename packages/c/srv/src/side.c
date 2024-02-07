@@ -62,19 +62,22 @@ void *srv_side_handle(void *side) {
   unsigned char *buffer = malloc(MAX_BUFFER_LEN * sizeof(unsigned char));
 
   if (s->is_server == 0) {
-    // TODO: make this proper code
-    int len, slen;
+    // rlen = received length
+    // len = length (received or transformed)
+    // slen = sent length
+    size_t rlen, len, slen;
 
     atclient_atlogger_log(tag, INFO, "Starting handler\n");
-    while ((len = mbedtls_net_recv(s->socket, buffer, MAX_BUFFER_LEN)) > 0) {
-      atclient_atlogger_log(tag, INFO, "Received data | len: %d\n", len);
+    while ((rlen = mbedtls_net_recv(s->socket, buffer, MAX_BUFFER_LEN)) > 0) {
+      atclient_atlogger_log(tag, INFO, "Received data | len: %d\n", rlen);
       atclient_atlogger_log(tag, INFO, "Data: %s\n", buffer);
 
-      // TODO: transform the data
-      // if (side->transformer != NULL) {
-      //   atclient_atlogger_log(tag, INFO, "Transforming data\n");
-      //   side->transformer->transform(side->transformer, buffer, len);
-      // }
+      if (s->transformer != NULL) {
+        atclient_atlogger_log(tag, INFO, "Transforming data\n");
+        s->transformer->transform(s->transformer, buffer, rlen, &len);
+      } else {
+        len = rlen;
+      }
 
       if (s->other->is_server == 0) {
         slen = mbedtls_net_send(s->other->socket, buffer, len);

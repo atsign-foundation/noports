@@ -3,7 +3,7 @@
 #include "srv/stream.h"
 
 int server_to_socket(const srv_params_t *params, const char *auth_string,
-                     aes_transformer_t *encrypter,
-                     aes_transformer_t *decrypter) {
+                     chunked_transformer_t *encrypter,
+                     chunked_transformer_t *decrypter) {
   return 0;
 }

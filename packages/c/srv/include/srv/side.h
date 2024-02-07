@@ -14,7 +14,7 @@ struct _side_hints_t {
   const char *host;
   const uint16_t port;
   const char *auth_string;
-  const aes_transformer_t *transformer;
+  const chunked_transformer_t *transformer;
 };
 
 struct _side_t {
@@ -24,7 +24,7 @@ struct _side_t {
   const char *host;
   const uint16_t port;
   const char *auth_string;
-  const aes_transformer_t *transformer;
+  const chunked_transformer_t *transformer;
 
   // During init
   mbedtls_net_context *socket;
