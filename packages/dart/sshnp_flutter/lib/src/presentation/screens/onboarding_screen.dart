@@ -62,8 +62,10 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Image.asset(
-                          'assets/images/logo_color.png',
+                        SvgPicture.asset(
+                          'assets/images/app_logo.svg',
+                          fit: BoxFit.cover,
+                          height: Sizes.p38,
                         ),
                         Text(
                           strings.welcomeTo,
