@@ -11,7 +11,6 @@
 // NETWORKING
 #define MAX_PORT_DIGIT_COUNT 5
 #define MAX_BUFFER_LEN 128 * 32 // =  4 AES blocks * 256 bits / 8 bits per byte
-#define RECV_TIMEOUT 15000      // 15 seconds
 
 // Disable local bind for now
 #define ALLOW_BIND_LOCAL_PORT 0
@@ -20,10 +19,11 @@
 // disabled - local bind won't be available in the parser either
 #if ALLOW_BIND_LOCAL_PORT
 void no_op() {}
-#define verify_bind_local_port() no_op();
+#define halt_if_cant_bind_local_port() no_op();
 #else
-#define verify_bind_local_port()                                               \
-  atclient_atlogger_log("srv - bind", ERROR, "--local-bind-port is disabled"); \
+#define halt_if_cant_bind_local_port()                                         \
+  atclient_atlogger_log("srv - bind", ERROR,                                   \
+                        "--local-bind-port is disabled\n");                    \
   exit(1);
 #endif
 

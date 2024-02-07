@@ -66,11 +66,11 @@ void *srv_side_handle(void *side) {
     int len, slen;
 
     atclient_atlogger_log(tag, INFO, "Starting handler\n");
-    while ((len = mbedtls_net_recv_timeout(s->socket, buffer, MAX_BUFFER_LEN,
-                                           RECV_TIMEOUT)) > 0) {
+    while ((len = mbedtls_net_recv(s->socket, buffer, MAX_BUFFER_LEN)) > 0) {
       atclient_atlogger_log(tag, INFO, "Received data | len: %d\n", len);
       atclient_atlogger_log(tag, INFO, "Data: %s\n", buffer);
 
+      // TODO: transform the data
       // if (side->transformer != NULL) {
       //   atclient_atlogger_log(tag, INFO, "Transforming data\n");
       //   side->transformer->transform(side->transformer, buffer, len);
@@ -79,17 +79,21 @@ void *srv_side_handle(void *side) {
       if (s->other->is_server == 0) {
         slen = mbedtls_net_send(s->other->socket, buffer, len);
       } else {
-        verify_bind_local_port();
+        halt_if_cant_bind_local_port();
       }
       if (slen != len) {
+        // How to handle this? We probably shouldn't just drop the connection
         atclient_atlogger_log(
             tag, ERROR,
             "Error sending data, expected to send %d bytes, only sent %d\n",
             len, slen);
+        mbedtls_net_close(s->socket);
         break;
       }
       atclient_atlogger_log(tag, INFO, "Sent data\n");
     }
+    mbedtls_net_close(s->socket);
+    atclient_atlogger_log(tag, INFO, "Handler closed\n");
   } else {
   }
   pthread_exit(NULL);

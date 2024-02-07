@@ -34,7 +34,7 @@ int run_srv(srv_params_t *params) {
     res =
         socket_to_socket(params, params->rvd_auth_string, encrypter, decrypter);
   } else {
-    verify_bind_local_port();
+    halt_if_cant_bind_local_port();
     atclient_atlogger_log(TAG, INFO, "Starting server to socket srv\n");
     res =
         server_to_socket(params, params->rvd_auth_string, encrypter, decrypter);
