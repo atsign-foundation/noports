@@ -37,7 +37,7 @@ class SshnpdImpl implements Sshnpd {
   String get deviceAtsign => atClient.getCurrentAtSign()!;
 
   @override
-  final String managerAtsign;
+  final List<String> managerAtsigns;
 
   @override
   final SupportedSshClient sshClient;
@@ -78,7 +78,7 @@ class SshnpdImpl implements Sshnpd {
     required this.username,
     required this.homeDirectory,
     required this.device,
-    required this.managerAtsign,
+    required this.managerAtsigns,
     required this.sshClient,
     this.makeDeviceInfoVisible = false,
     this.addSshPublicKeys = false,
@@ -138,7 +138,7 @@ class SshnpdImpl implements Sshnpd {
         username: p.username,
         homeDirectory: p.homeDirectory,
         device: p.device,
-        managerAtsign: p.managerAtsign,
+        managerAtsigns: p.managerAtsigns,
         sshClient: p.sshClient,
         makeDeviceInfoVisible: p.makeDeviceInfoVisible,
         addSshPublicKeys: p.addSshPublicKeys,
@@ -174,45 +174,14 @@ class SshnpdImpl implements Sshnpd {
       throw StateError('Cannot run() - not initialized');
     }
 
-    NotificationService notificationService = atClient.notificationService;
 
-    // Only share this information if configured to do so
-    if (makeDeviceInfoVisible) {
-      var metaData = Metadata()
-        ..isPublic = false
-        ..isEncrypted = true
-        ..ttr = -1 // we want this to be cacheable by managerAtsign
-        ..namespaceAware = true;
-
-      var atKey = AtKey()
-        ..key = 'username.$device'
-        ..sharedBy = deviceAtsign
-        ..sharedWith = managerAtsign
-        ..namespace = DefaultArgs.namespace
-        ..metadata = metaData;
-
-      try {
-        await notificationService.notify(
-          NotificationParams.forUpdate(atKey, value: username),
-          waitForFinalDeliveryStatus: false,
-          checkForFinalDeliveryStatus: false,
-          onSuccess: (notification) {
-            logger.info('SUCCESS:$notification $username');
-          },
-          onError: (notification) {
-            logger.info('ERROR:$notification $username');
-          },
-        );
-      } catch (e) {
-        stderr.writeln(e.toString());
-      }
-    }
+    await _shareUsername();
 
     logger.info('Starting heartbeat');
     startHeartbeat();
 
     logger.info('Subscribing to $device\\.${DefaultArgs.namespace}@');
-    notificationService
+    atClient.notificationService
         .subscribe(
             regex: '$device\\.${DefaultArgs.namespace}@', shouldDecrypt: true)
         .listen(
@@ -261,8 +230,8 @@ class SshnpdImpl implements Sshnpd {
   void _notificationHandler(AtNotification notification) async {
     if (!isFromAuthorizedAtsign(notification)) {
       logger.shout('Notification ignored from ${notification.from}'
-          ' which is not in authorized list [$managerAtsign].'
-          ' Notification was ${jsonEncode(notification.toJson())}');
+          ' which is not in authorized list $managerAtsigns.'
+          ' Notification value was ${notification.value}');
       return;
     }
 
@@ -305,13 +274,13 @@ class SshnpdImpl implements Sshnpd {
   }
 
   bool isFromAuthorizedAtsign(AtNotification notification) =>
-      notification.from == managerAtsign;
+      managerAtsigns.contains(notification.from);
 
   void _handlePingNotification(AtNotification notification) {
     if (!isFromAuthorizedAtsign(notification)) {
       logger.shout('Notification ignored from ${notification.from}'
-          ' which is not in authorized list [$managerAtsign].'
-          ' Notification was ${jsonEncode(notification.toJson())}');
+          ' which is not in authorized list $managerAtsigns.'
+          ' Notification value was ${notification.value}');
       return;
     }
 
@@ -343,8 +312,8 @@ class SshnpdImpl implements Sshnpd {
   Future<void> _handlePublicKeyNotification(AtNotification notification) async {
     if (!isFromAuthorizedAtsign(notification)) {
       logger.shout('Notification ignored from ${notification.from}'
-          ' which is not in authorized list [$managerAtsign].'
-          ' Notification was ${jsonEncode(notification.toJson())}');
+          ' which is not in authorized list $managerAtsigns.'
+          ' Notification value was ${notification.value}');
       return;
     }
 
@@ -408,8 +377,8 @@ class SshnpdImpl implements Sshnpd {
   void _handleSshRequestNotification(AtNotification notification) async {
     if (!isFromAuthorizedAtsign(notification)) {
       logger.shout('Notification ignored from ${notification.from}'
-          ' which is not in authorized list [$managerAtsign].'
-          ' Notification was ${jsonEncode(notification.toJson())}');
+          ' which is not in authorized list $managerAtsigns.'
+          ' Notification value was ${notification.value}');
       return;
     }
 
@@ -488,8 +457,8 @@ class SshnpdImpl implements Sshnpd {
   void _handleLegacySshRequestNotification(AtNotification notification) async {
     if (!isFromAuthorizedAtsign(notification)) {
       logger.shout('Notification ignored from ${notification.from}'
-          ' which is not in authorized list [$managerAtsign].'
-          ' Notification was ${jsonEncode(notification.toJson())}');
+          ' which is not in authorized list $managerAtsigns.'
+          ' Notification value was ${notification.value}');
       return;
     }
     String requestingAtsign = notification.from;
@@ -981,47 +950,109 @@ class SshnpdImpl implements Sshnpd {
     );
   }
 
-  /// This function creates an atKey which shares the device name with the client
+  /// This function shares or un-shares the username with each of the
+  /// [managerAtsigns]
+  /// - if [makeDeviceInfoVisible] is true, shares a
+  ///   'username.$device.sshnp' record with each managerAtsign
+  /// - if [makeDeviceInfoVisible] is false, deletes any
+  ///   'username.$device.sshnp' records
+  Future<void> _shareUsername() async {
+    var metaData = Metadata()
+      ..isPublic = false
+      ..isEncrypted = true
+      ..ttr = -1 // we want this to be cacheable by managerAtsign
+      ..ccd = true // we want cached copies to be deleted if the key is deleted
+      ..namespaceAware = true;
+
+    for (final managerAtsign in managerAtsigns) {
+      var atKey = AtKey()
+        ..key = 'username.$device'
+        ..sharedBy = deviceAtsign
+        ..sharedWith = managerAtsign
+        ..namespace = DefaultArgs.namespace
+        ..metadata = metaData;
+
+      // Only share this information if configured to do so
+      if (makeDeviceInfoVisible) {
+        try {
+          logger.info('Sharing username $username with $managerAtsign');
+          await atClient.notificationService.notify(
+            NotificationParams.forUpdate(atKey, value: username),
+            waitForFinalDeliveryStatus: false,
+            checkForFinalDeliveryStatus: false,
+            onSuccess: (notification) {
+              logger.info('SUCCESS:$notification $username');
+            },
+            onError: (notification) {
+              logger.info('ERROR:$notification $username');
+            },
+          );
+        } catch (e) {
+          stderr.writeln(e.toString());
+        }
+      } else {
+        logger.info('Un-sharing username $username from $managerAtsign');
+        try {
+          await atClient.delete(
+            atKey,
+            deleteRequestOptions: DeleteRequestOptions()
+              ..useRemoteAtServer = true,
+          );
+        } catch (e) {
+          stderr.writeln(e.toString());
+        }
+      }
+    }
+  }
+
+  /// This function shares or un-shares device info with each of the [managerAtsigns]
+  /// - if [makeDeviceInfoVisible] is true, shares a
+  ///   'device_info.$device.sshnp' record with each managerAtsign
+  /// - if [makeDeviceInfoVisible] is false, deletes any
+  ///   'device_info.$device.sshnp' records
   Future<void> _refreshDeviceEntry() async {
     const ttl = 1000 * 60 * 60 * 24 * 30; // 30 days
     var metaData = Metadata()
       ..isPublic = false
       ..isEncrypted = true
       ..ttr = -1 // we want this to be cacheable by managerAtsign
+      ..ccd = true // we want cached copies to be deleted if the key is deleted
       ..ttl = ttl // but to expire after 30 days
       ..updatedAt = DateTime.now()
       ..namespaceAware = true;
 
-    var atKey = AtKey()
-      ..key = 'device_info.$device'
-      ..sharedBy = deviceAtsign
-      ..sharedWith = managerAtsign
-      ..namespace = DefaultArgs.namespace
-      ..metadata = metaData;
+    for (final managerAtsign in managerAtsigns) {
+      var atKey = AtKey()
+        ..key = 'device_info.$device'
+        ..sharedBy = deviceAtsign
+        ..sharedWith = managerAtsign
+        ..namespace = DefaultArgs.namespace
+        ..metadata = metaData;
 
-    if (!makeDeviceInfoVisible) {
-      logger.info('Deleting old device info for $device (if it exists)');
-      try {
-        await atClient.delete(
-          atKey,
-          deleteRequestOptions: DeleteRequestOptions()
-            ..useRemoteAtServer = true,
-        );
-      } catch (e) {
-        stderr.writeln(e.toString());
+      if (makeDeviceInfoVisible) {
+        try {
+          logger.info('Sharing device info for $device with $managerAtsign');
+          await atClient.put(
+            atKey,
+            jsonEncode(pingResponse),
+            putRequestOptions: PutRequestOptions()
+              ..useRemoteAtServer = true,
+          );
+        } catch (e) {
+          stderr.writeln(e.toString());
+        }
+      } else {
+        logger.info('Un-sharing device info for $device from $managerAtsign');
+        try {
+          await atClient.delete(
+            atKey,
+            deleteRequestOptions: DeleteRequestOptions()
+              ..useRemoteAtServer = true,
+          );
+        } catch (e) {
+          stderr.writeln(e.toString());
+        }
       }
-      return;
-    }
-
-    try {
-      logger.info('Updating device info for $device');
-      await atClient.put(
-        atKey,
-        jsonEncode(pingResponse),
-        putRequestOptions: PutRequestOptions()..useRemoteAtServer = true,
-      );
-    } catch (e) {
-      stderr.writeln(e.toString());
     }
   }
 }

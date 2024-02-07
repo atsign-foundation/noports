@@ -10,7 +10,7 @@ class SshnpdParams {
   final String device;
   final String username;
   final String homeDirectory;
-  final String managerAtsign;
+  final List<String> managerAtsigns;
   final String atKeysFilePath;
   final String deviceAtsign;
   final bool verbose;
@@ -29,7 +29,7 @@ class SshnpdParams {
     required this.device,
     required this.username,
     required this.homeDirectory,
-    required this.managerAtsign,
+    required this.managerAtsigns,
     required this.atKeysFilePath,
     required this.deviceAtsign,
     required this.verbose,
@@ -48,7 +48,11 @@ class SshnpdParams {
     ArgResults r = parser.parse(args);
 
     String deviceAtsign = r['atsign'];
-    String managerAtsign = r['manager'];
+    List<String> managerAtsigns = r['managers']
+        .toString()
+        .split(',')
+        .map((e) => e.trim().toLowerCase())
+        .toList();
     String homeDirectory = getHomeDirectory()!;
 
     // Do we have a device ?
@@ -67,7 +71,7 @@ class SshnpdParams {
       device: r['device'],
       username: getUserName(throwIfNull: true)!,
       homeDirectory: homeDirectory,
-      managerAtsign: managerAtsign,
+      managerAtsigns: managerAtsigns,
       atKeysFilePath: r['key-file'] ??
           getDefaultAtKeysFilePath(homeDirectory, deviceAtsign),
       deviceAtsign: deviceAtsign,
@@ -104,10 +108,12 @@ class SshnpdParams {
       help: 'atSign of this device',
     );
     parser.addOption(
-      'manager',
+      'managers',
+      aliases: ['manager'],
       abbr: 'm',
       mandatory: true,
-      help: 'Managers atSign, that this device will accept triggers from',
+      help: 'atSign or list of atSigns (comma separated)'
+          ' that this device will accept requests from',
     );
     parser.addOption(
       'device',
@@ -115,7 +121,8 @@ class SshnpdParams {
       mandatory: false,
       defaultsTo: "default",
       help:
-          'Send a trigger to this device, allows multiple devices share an atSign',
+          'This daemon will operate with this device name;'
+              ' allows multiple devices to share an atSign',
     );
 
     parser.addFlag(
