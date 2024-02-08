@@ -246,6 +246,7 @@ class SshnpArg {
         'TCP port to connect back to (only required if --host specified a FQDN/IP)',
     defaultsTo: DefaultSshnpArgs.port,
     type: ArgType.integer,
+    parseWhen: ParseWhen.commandLine,
   );
   static const localPortArg = SshnpArg(
     name: 'local-port',
@@ -289,6 +290,7 @@ class SshnpArg {
     help: 'More logging',
     format: ArgFormat.flag,
     negatable: false,
+    parseWhen: ParseWhen.commandLine,
   );
   static const remoteUserNameArg = SshnpArg(
     name: 'remote-user-name',
@@ -315,6 +317,7 @@ class SshnpArg {
     mandatory: false,
     format: ArgFormat.option,
     type: ArgType.integer,
+    parseWhen: ParseWhen.commandLine,
   );
   static const remoteSshdPortArg = SshnpArg(
     name: 'remote-sshd-port',
@@ -371,7 +374,6 @@ class SshnpArg {
     help: 'When false, client will not authenticate itself to rvd',
     defaultsTo: DefaultArgs.authenticateClientToRvd,
     format: ArgFormat.flag,
-    parseWhen: ParseWhen.commandLine,
     mandatory: false,
   );
   static const authenticateDeviceToRvdArg = SshnpArg(
@@ -380,7 +382,6 @@ class SshnpArg {
     help: 'When false, device will not authenticate to the socket rendezvous',
     defaultsTo: DefaultArgs.authenticateDeviceToRvd,
     format: ArgFormat.flag,
-    parseWhen: ParseWhen.commandLine,
     mandatory: false,
   );
   static const encryptRvdTrafficArg = SshnpArg(
@@ -391,7 +392,6 @@ class SshnpArg {
         ' (e.g. an ssh session)',
     defaultsTo: DefaultArgs.encryptRvdTraffic,
     format: ArgFormat.flag,
-    parseWhen: ParseWhen.commandLine,
     mandatory: false,
   );
   static const discoverDaemonFeaturesArg = SshnpArg(

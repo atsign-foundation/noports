@@ -1,3 +1,6 @@
+# 6.0.4
+- build: upgrade at_chops dependency to ^2.0.0
+
 # 6.0.3
 - chore: downgrade at_commons dependency from ^4.0.1 to ^4.0.0
 - chore: downgrade at_client dependency from ^3.0.75 to ^3.0.73
