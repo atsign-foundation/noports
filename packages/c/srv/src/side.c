@@ -20,8 +20,8 @@ int srv_side_init(const side_hints_t *hints, side_t *side) {
   memcpy(side, hints, sizeof(side_hints_t));
 
   // Convert port to string
-  char service[MAX_PORT_DIGIT_COUNT];
-  snprintf(service, MAX_PORT_DIGIT_COUNT, "%d", side->port);
+  char service[MAX_PORT_LEN];
+  snprintf(service, MAX_PORT_LEN, "%d", side->port);
 
   if (side->is_server == 0) {
     atclient_atlogger_log(TAG, INFO, "Doing tcp connect to %s:%s\n", side->host,
@@ -30,7 +30,16 @@ int srv_side_init(const side_hints_t *hints, side_t *side) {
         mbedtls_net_connect(ctx, side->host, service, MBEDTLS_NET_PROTO_TCP);
     if (res != 0) {
       mbedtls_net_free(ctx);
-      atclient_atlogger_log(TAG, ERROR, "Failed: tcp connect\n");
+      if (res == MBEDTLS_ERR_NET_SOCKET_FAILED) {
+        atclient_atlogger_log(TAG, ERROR,
+                              "Failed: tcp connect - socket failed\n");
+      } else if (res == MBEDTLS_ERR_NET_UNKNOWN_HOST) {
+        atclient_atlogger_log(TAG, ERROR,
+                              "Failed: tcp connect - unknown host\n");
+      } else if (res == MBEDTLS_ERR_NET_CONNECT_FAILED) {
+        atclient_atlogger_log(TAG, ERROR,
+                              "Failed: tcp connect - connect failed\n");
+      }
       return res;
     }
   } else {
@@ -74,7 +83,11 @@ void *srv_side_handle(void *side) {
 
       if (s->transformer != NULL) {
         atclient_atlogger_log(tag, INFO, "Transforming data\n");
-        s->transformer->transform(s->transformer, buffer, rlen, &len);
+        int res =
+            (int)s->transformer->transform(s->transformer, buffer, rlen, &len);
+        if (res != 0) {
+          break;
+        }
       } else {
         len = rlen;
       }
@@ -90,11 +103,11 @@ void *srv_side_handle(void *side) {
             tag, ERROR,
             "Error sending data, expected to send %d bytes, only sent %d\n",
             len, slen);
-        mbedtls_net_close(s->socket);
         break;
       }
       atclient_atlogger_log(tag, INFO, "Sent data\n");
     }
+    free(buffer);
     mbedtls_net_close(s->socket);
     atclient_atlogger_log(tag, INFO, "Handler closed\n");
   } else {

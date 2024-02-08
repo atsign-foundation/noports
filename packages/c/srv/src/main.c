@@ -11,6 +11,7 @@
 
 int main(int argc, char **argv) {
   srv_params_t *params = malloc(sizeof(srv_params_t));
+  printf("init\n");
 
   // 1.  Load default values
   apply_default_values_to_params(params);
@@ -21,13 +22,14 @@ int main(int argc, char **argv) {
     return 1;
   }
 
-  atclient_atlogger_set_logging_level(INFO);
+  atclient_atlogger_set_logging_level(DEBUG);
   atclient_atlogger_log(TAG, INFO, "running srv\n");
 
   // 3. Call the run function
   int res = run_srv(params);
 
   atclient_atlogger_log(TAG, INFO, "srv completed with code %d\n", res);
+
   free(params);
   return res;
 }

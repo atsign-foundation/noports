@@ -9,7 +9,7 @@
 #define DEBUG ATLOGGER_LOGGING_LEVEL_DEBUG
 
 // NETWORKING
-#define MAX_PORT_DIGIT_COUNT 5
+#define MAX_PORT_LEN 6          // 5 digits + null terminator
 #define MAX_BUFFER_LEN 128 * 32 // =  4 AES blocks * 256 bits / 8 bits per byte
 
 // Disable local bind for now

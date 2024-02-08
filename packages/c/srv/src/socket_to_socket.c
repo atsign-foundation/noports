@@ -37,6 +37,9 @@ int socket_to_socket(const srv_params_t *params, const char *auth_string,
   pthread_create(&thread_a, NULL, srv_side_handle, &side_a);
   pthread_create(&thread_b, NULL, srv_side_handle, &side_b);
 
+  // single to sshnpd that we are done
+  fprintf(stderr, SRV_COMPLETION_STRING);
+
   pthread_join(thread_a, NULL);
   pthread_join(thread_b, NULL);
 
