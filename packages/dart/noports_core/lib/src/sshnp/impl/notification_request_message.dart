@@ -9,6 +9,7 @@ class SshnpSessionRequest {
   final bool encryptRvdTraffic;
   final String? clientEphemeralPK;
   final String? clientEphemeralPKType;
+  final int? remotePort;
 
   SshnpSessionRequest({
     required this.direct,
@@ -21,6 +22,7 @@ class SshnpSessionRequest {
     required this.encryptRvdTraffic,
     required this.clientEphemeralPK,
     required this.clientEphemeralPKType,
+    this.remotePort,
   });
 
   Map<String, dynamic> toJson() => {
@@ -34,5 +36,6 @@ class SshnpSessionRequest {
         'encryptRvdTraffic': encryptRvdTraffic,
         'clientEphemeralPK': clientEphemeralPK,
         'clientEphemeralPKType': clientEphemeralPKType,
+        'remotePort': remotePort,
       };
 }

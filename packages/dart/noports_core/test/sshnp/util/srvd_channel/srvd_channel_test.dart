@@ -103,7 +103,7 @@ void main() {
     }); // test public API
 
     whenInitializationWithSrvdHost() {
-      when(() => mockParams.host).thenReturn('@srvd');
+      when(() => mockParams.srvdAtSign).thenReturn('@srvd');
       when(() => mockParams.device).thenReturn('mydevice');
       when(() => mockParams.clientAtSign).thenReturn('@client');
       when(() => mockParams.sshnpdAtSign).thenReturn('@sshnpd');
@@ -174,20 +174,10 @@ void main() {
       verifyNever(notifyInvocation);
 
       expect(stubbedSrvdChannel.srvdAck, SrvdAck.acknowledged);
-      expect(stubbedSrvdChannel.host, '123.123.123.123');
+      expect(stubbedSrvdChannel.rvdHost, '123.123.123.123');
       expect(stubbedSrvdChannel.clientPort, 10456);
       expect(stubbedSrvdChannel.daemonPort, 10789);
     }); // test Initialization - srvd host
-
-    test('Initialization - non-srvd host', () async {
-      when(() => mockParams.host).thenReturn('234.234.234.234');
-      when(() => mockParams.port).thenReturn(135);
-
-      await expectLater(stubbedSrvdChannel.initialize(), completes);
-
-      expect(stubbedSrvdChannel.host, '234.234.234.234');
-      expect(stubbedSrvdChannel.clientPort, 135);
-    }); // test Initialization - non-srvd host
 
     test('Initialization completes - srvd host', () async {
       /// Set the required parameters
@@ -195,14 +185,6 @@ void main() {
       await expectLater(stubbedSrvdChannel.callInitialization(), completes);
       await expectLater(stubbedSrvdChannel.initialized, completes);
     });
-
-    test('Initialization completes - non-srvd host', () async {
-      when(() => mockParams.host).thenReturn('234.234.234.234');
-      when(() => mockParams.port).thenReturn(135);
-
-      await expectLater(stubbedSrvdChannel.callInitialization(), completes);
-      await expectLater(stubbedSrvdChannel.initialized, completes);
-    }); // test Initialization - non-srvd host
 
     test('runSrv', () async {
       whenInitializationWithSrvdHost();
@@ -213,7 +195,6 @@ void main() {
       // Initialization should be complete
       // Begin test for [runSrv()]
 
-      when(() => mockParams.localSshdPort).thenReturn(23);
       when(srvGeneratorInvocation).thenReturn(mockSrv);
       when(srvRunInvocation).thenAnswer((_) async => 'called srv run');
 
@@ -221,7 +202,7 @@ void main() {
       verifyNever(srvRunInvocation);
 
       await expectLater(
-        await stubbedSrvdChannel.runSrv(directSsh: false),
+        await stubbedSrvdChannel.runSrv(),
         'called srv run',
       );
 

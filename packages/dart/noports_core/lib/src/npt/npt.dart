@@ -4,26 +4,32 @@ import 'dart:io';
 import 'package:args/args.dart';
 import 'package:at_client/at_client.dart';
 import 'package:at_utils/at_logger.dart';
+import 'package:noports_core/sshnp.dart';
+import 'package:noports_core/utils.dart';
+import 'package:uuid/uuid.dart';
 
-import '../common/default_args.dart';
+import '../common/mixins/at_client_bindings.dart';
 import '../common/streaming_logging_handler.dart';
+import '../sshnp/impl/notification_request_message.dart';
+import '../sshnp/util/srvd_channel/srvd_exec_channel.dart';
+import '../sshnp/util/sshnpd_channel/sshnpd_channel.dart';
+import '../sshnp/util/sshnpd_channel/sshnpd_default_channel.dart';
 
 abstract interface class Npt {
   AtClient get atClient;
 
-  int get remotePort;
+  NptParams get params;
 
-  String get npdAtSign;
+  String get sessionId;
 
-  String get rvdAtSign;
-
-  String get device;
-
-  bool get verbose;
+  String get namespace;
 
   /// Yields a string every time something interesting happens with regards to
   /// progress towards establishing the connection.
   Stream<String>? get progressStream;
+
+  /// Yields every log message that is written to [stderr]
+  Stream<String>? get logStream;
 
   /// - Sends request to rvd
   /// - Sends request to npd
@@ -33,21 +39,13 @@ abstract interface class Npt {
   Future<int> run();
 
   factory Npt.create({
+    required NptParams params,
     required AtClient atClient,
-    required int remotePort,
-    required String npdAtSign,
-    required String rvdAtSign,
-    required String device,
-    bool verbose = DefaultArgs.verbose,
     Stream<String>? logStream,
   }) {
     return _NptImpl(
+      params: params,
       atClient: atClient,
-      remotePort: remotePort,
-      npdAtSign: npdAtSign,
-      rvdAtSign: rvdAtSign,
-      device: device,
-      verbose: verbose,
       logStream: logStream,
     );
   }
@@ -64,16 +62,15 @@ abstract interface class Npt {
 abstract class NptBase implements Npt {
   @override
   final AtClient atClient;
+
   @override
-  final int remotePort;
+  final NptParams params;
+
   @override
-  final String npdAtSign;
+  final String sessionId;
+
   @override
-  final String rvdAtSign;
-  @override
-  final String device;
-  @override
-  final bool verbose;
+  final String namespace;
 
   static final StreamingLoggingHandler _slh =
       StreamingLoggingHandler(AtSignLogger.defaultLoggingHandler);
@@ -81,41 +78,125 @@ abstract class NptBase implements Npt {
   final StreamController<String> _progressStreamController =
       StreamController<String>.broadcast();
 
+  /// Subclasses should use this method to generate progress messages
+  sendProgress(String message) {
+    _progressStreamController.add(message);
+  }
+
   /// Yields a string every time something interesting happens with regards to
   /// progress towards establishing the connection.
   @override
   Stream<String>? get progressStream => _progressStreamController.stream;
 
   /// Yields every log message that is written to [stderr]
+  @override
   final Stream<String>? logStream;
 
+  final logger = AtSignLogger(' Npt ');
+
   NptBase({
+    required this.params,
     required this.atClient,
-    required this.remotePort,
-    required this.npdAtSign,
-    required this.rvdAtSign,
-    required this.device,
-    this.verbose = DefaultArgs.verbose,
     this.logStream,
-  }) {
+  })  : sessionId = Uuid().v4(),
+        namespace = '${params.device}.${DefaultArgs.namespace}' {
     AtSignLogger.defaultLoggingHandler = _slh;
+    logger.level = params.verbose ? 'info' : 'shout';
+
+    /// Set the namespace to the device's namespace
+    AtClientPreference preference =
+        atClient.getPreferences() ?? AtClientPreference();
+    preference.namespace = namespace;
+    atClient.setPreferences(preference);
   }
 }
 
-class _NptImpl extends NptBase {
+class _NptImpl extends NptBase with AtClientBindings {
+  SshnpdDefaultChannel get sshnpdChannel => _sshnpdChannel;
+  late final SshnpdDefaultChannel _sshnpdChannel;
+
+  SrvdExecChannel get srvdChannel => _srvdChannel;
+  late final SrvdExecChannel _srvdChannel;
+
   _NptImpl({
+    required super.params,
     required super.atClient,
-    required super.remotePort,
-    required super.npdAtSign,
-    required super.rvdAtSign,
-    required super.device,
-    super.verbose,
     super.logStream,
-  });
+  }) {
+    _sshnpdChannel = SshnpdDefaultChannel(
+      atClient: atClient,
+      params: params,
+      sessionId: sessionId,
+      namespace: namespace,
+    );
+    _srvdChannel = SrvdExecChannel(
+      atClient: atClient,
+      params: params,
+      sessionId: sessionId,
+    );
+  }
 
   @override
   Future<int> run() async {
-    // TODO: implement run
-    throw UnimplementedError();
+    var msg = 'Sending session request to the device daemon';
+    logger.info(msg);
+    sendProgress(msg);
+
+    /// Send an ssh request to sshnpd
+    await notify(
+      AtKey()
+        ..key = 'ssh_request'
+        ..namespace = namespace
+        ..sharedBy = params.clientAtSign
+        ..sharedWith = params.sshnpdAtSign
+        ..metadata = (Metadata()..ttl = 10000),
+      signAndWrapAndJsonEncode(
+          atClient,
+          SshnpSessionRequest(
+            direct: true,
+            sessionId: sessionId,
+            host: srvdChannel.rvdHost,
+            port: srvdChannel.daemonPort,
+            authenticateToRvd: params.authenticateDeviceToRvd,
+            clientNonce: srvdChannel.clientNonce,
+            rvdNonce: srvdChannel.rvdNonce,
+            encryptRvdTraffic: params.encryptRvdTraffic,
+            clientEphemeralPK: params.sessionKP.atPublicKey.publicKey,
+            clientEphemeralPKType: params.sessionKPType.name,
+            remotePort: params.remotePort,
+          ).toJson()),
+      checkForFinalDeliveryStatus: false,
+      waitForFinalDeliveryStatus: false,
+    );
+
+    /// Wait for a response from sshnpd
+    sendProgress('Waiting for response from the device daemon');
+    var acked = await sshnpdChannel.waitForDaemonResponse();
+    if (acked != SshnpdAck.acknowledged) {
+      throw SshnpError('No response from the device daemon');
+    } else {
+      sendProgress('Received response from the device daemon');
+    }
+
+    if (sshnpdChannel.ephemeralPrivateKey == null) {
+      throw SshnpError(
+        'Expected an ephemeral private key from sshnpd, but it was not set',
+      );
+    }
+
+    /// Find a port to use
+    final server = await ServerSocket.bind(InternetAddress.anyIPv4, 0);
+    int localRvPort = server.port;
+    await server.close();
+
+    /// Start srv
+    sendProgress('Creating connection to socket rendezvous');
+    await srvdChannel.runSrv(
+      localRvPort: localRvPort,
+      sessionAESKeyString: sshnpdChannel.sessionAESKeyString,
+      sessionIVString: sshnpdChannel.sessionIVString,
+    );
+
+    return localRvPort;
   }
 }

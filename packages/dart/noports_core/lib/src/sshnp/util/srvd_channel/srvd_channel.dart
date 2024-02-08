@@ -31,20 +31,40 @@ abstract class SrvdChannel<T> with AsyncInitialization, AtClientBindings {
   final AtClient atClient;
 
   final SrvGenerator<T> srvGenerator;
-  final SshnpParams params;
+  final SrvdChannelParams params;
   final String sessionId;
   final String clientNonce = DateTime.now().toIso8601String();
 
-  // * Volatile fields which are set in [params] but may be overridden with
-  // * values provided by srvd
+  bool fetched = false;
+  late String _rvdHost;
+  late int _rvdPortA;
+  late int _rvdPortB;
 
-  String? _host;
-  int? _portA;
+  String get rvdHost {
+    if (fetched) {
+      return _rvdHost;
+    } else {
+      throw SshnpError('Not yet fetched from srvd');
+    }
+  }
 
-  String get host => _host ?? params.host;
+  /// This is the port which the sshnp **daemon** will connect to
+  int get daemonPort {
+    if (fetched) {
+      return _rvdPortB;
+    } else {
+      throw SshnpError('Not yet fetched from srvd');
+    }
+  }
 
   /// This is the port which the sshnp **client** will connect to
-  int get clientPort => _portA ?? params.port;
+  int get clientPort {
+    if (fetched) {
+      return _rvdPortA;
+    } else {
+      throw SshnpError('Not yet fetched from srvd');
+    }
+  }
 
   // * Volatile fields set at runtime
 
@@ -55,12 +75,6 @@ abstract class SrvdChannel<T> with AsyncInitialization, AtClientBindings {
   /// Whether srvd acknowledged our request
   @visibleForTesting
   SrvdAck srvdAck = SrvdAck.notAcknowledged;
-
-  /// The port srvd is listening on
-  int? _portB;
-
-  /// This is the port which the sshnp **daemon** will connect to
-  int? get daemonPort => _portB;
 
   SrvdChannel({
     required this.atClient,
@@ -73,65 +87,39 @@ abstract class SrvdChannel<T> with AsyncInitialization, AtClientBindings {
 
   @override
   Future<void> initialize() async {
-    if (params.host.startsWith('@')) {
-      await getHostAndPortFromSrvd();
-    } else {
-      _host = params.host;
-      _portA = params.port;
-      _portB = params.port;
-    }
+    await getHostAndPortFromSrvd();
+
     completeInitialization();
   }
 
   Future<T?> runSrv({
-    required bool directSsh,
     int? localRvPort,
     String? sessionAESKeyString,
     String? sessionIVString,
   }) async {
-    if (!directSsh && localRvPort != null) {
-      throw Exception(
-          'localRvPort must be null when using reverseSsh (legacy)');
-    }
-
     await callInitialization();
 
     // Connect to rendezvous point using background process.
     // sshnp (this program) can then exit without issue.
 
     late Srv<T> srv;
-    if (directSsh) {
-      srv = srvGenerator(
-        host,
-        clientPort,
-        localPort: localRvPort,
-        bindLocalPort: true,
-        rvdAuthString: params.authenticateClientToRvd
-            ? signAndWrapAndJsonEncode(atClient, {
-                'sessionId': sessionId,
-                'clientNonce': clientNonce,
-                'rvdNonce': rvdNonce,
-              })
-            : null,
-        sessionAESKeyString: sessionAESKeyString,
-        sessionIVString: sessionIVString,
-      );
-      return srv.run();
-    } else {
-      // legacy behaviour, reverse ssh
-      if (params.host.startsWith('@')) {
-        srv = srvGenerator(
-          host,
-          clientPort,
-          localPort: params.localSshdPort,
-          bindLocalPort: false,
-        );
-        return srv.run();
-      } else {
-        // direct connection from device host to client; SR not involved
-        return null;
-      }
-    }
+
+    srv = srvGenerator(
+      rvdHost,
+      clientPort,
+      localPort: localRvPort,
+      bindLocalPort: true,
+      rvdAuthString: params.authenticateClientToRvd
+          ? signAndWrapAndJsonEncode(atClient, {
+              'sessionId': sessionId,
+              'clientNonce': clientNonce,
+              'rvdNonce': rvdNonce,
+            })
+          : null,
+      sessionAESKeyString: sessionAESKeyString,
+      sessionIVString: sessionIVString,
+    );
+    return srv.run();
   }
 
   @protected
@@ -142,16 +130,17 @@ abstract class SrvdChannel<T> with AsyncInitialization, AtClientBindings {
       String ipPorts = notification.value.toString();
       logger.info('Received from srvd: $ipPorts');
       List results = ipPorts.split(',');
-      _host = results[0];
-      _portA = int.parse(results[1]);
-      _portB = int.parse(results[2]);
+      _rvdHost = results[0];
+      _rvdPortA = int.parse(results[1]);
+      _rvdPortB = int.parse(results[2]);
       if (results.length >= 4) {
         rvdNonce = results[3];
       }
+      fetched = true;
       logger.info('Received from srvd:'
-          ' host:port $host:$clientPort'
+          ' rvdHost:clientPort:daemonPort $rvdHost:$clientPort:$daemonPort'
           ' rvdNonce: $rvdNonce');
-      logger.info('Daemon will connect to: $host:$daemonPort');
+      logger.info('Daemon will connect to: $rvdHost:$daemonPort');
       srvdAck = SrvdAck.acknowledged;
     });
     logger.info('Started listening for srvd response');
@@ -163,7 +152,7 @@ abstract class SrvdChannel<T> with AsyncInitialization, AtClientBindings {
       rvdRequestKey = AtKey()
         ..key = '${params.device}.request_ports.${Srvd.namespace}'
         ..sharedBy = params.clientAtSign // shared by us
-        ..sharedWith = host // shared with the srvd host
+        ..sharedWith = params.srvdAtSign // shared with the srvd host
         ..metadata = (Metadata()
           // as we are sending a notification to the srvd namespace,
           // we don't want to append our namespace
@@ -184,7 +173,7 @@ abstract class SrvdChannel<T> with AsyncInitialization, AtClientBindings {
       rvdRequestKey = AtKey()
         ..key = '${params.device}.${Srvd.namespace}'
         ..sharedBy = params.clientAtSign // shared by us
-        ..sharedWith = host // shared with the srvd host
+        ..sharedWith = params.srvdAtSign // shared with the srvd host
         ..metadata = (Metadata()
           // as we are sending a notification to the srvd namespace,
           // we don't want to append our namespace
@@ -212,7 +201,8 @@ abstract class SrvdChannel<T> with AsyncInitialization, AtClientBindings {
       counter++;
       if (counter > 150) {
         logger.warning('Timed out waiting for srvd response');
-        throw SshnpError('Connection timeout to srvd $host service');
+        throw SshnpError(
+            'Connection timeout to srvd ${params.srvdAtSign} service');
       }
     }
   }

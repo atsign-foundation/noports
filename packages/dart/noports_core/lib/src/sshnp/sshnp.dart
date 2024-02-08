@@ -19,18 +19,6 @@ abstract interface class Sshnp {
   static final StreamingLoggingHandler _slh =
       StreamingLoggingHandler(AtSignLogger.defaultLoggingHandler);
 
-  /// Legacy v3.x.x client
-  @Deprecated(
-      'Legacy unsigned client - only for connecting with ^3.0.0 daemons')
-  factory Sshnp.unsigned({
-    required AtClient atClient,
-    required SshnpParams params,
-  }) {
-    AtSignLogger.defaultLoggingHandler = _slh;
-    return SshnpUnsignedImpl(
-        atClient: atClient, params: params, logStream: _slh.stream);
-  }
-
   /// Think of this as the "default" client - calls openssh
   factory Sshnp.openssh({
     required AtClient atClient,

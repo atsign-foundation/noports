@@ -145,11 +145,16 @@ void main(List<String> args) async {
     await cliBase.init();
 
     final npt = Npt.create(
+      params: NptParams(
+        clientAtSign: parsedArgs['from'],
+        sshnpdAtSign: parsedArgs['npd'],
+        srvdAtSign: parsedArgs['rvd'],
+        remotePort: parsedArgs['remote-port'],
+        device: parsedArgs['device'],
+        verbose: parsedArgs['verbose'],
+        rootDomain: parsedArgs['root-domain'],
+      ),
       atClient: cliBase.atClient,
-      remotePort: parsedArgs['remote-port'],
-      npdAtSign: parsedArgs['npd'],
-      rvdAtSign: parsedArgs['rvd'],
-      device: parsedArgs['device'],
     );
 
     // A listen progress listener for the CLI

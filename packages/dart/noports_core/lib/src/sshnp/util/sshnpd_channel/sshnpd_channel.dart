@@ -31,7 +31,7 @@ abstract class SshnpdChannel with AsyncInitialization, AtClientBindings {
   @override
   final AtClient atClient;
 
-  final SshnpParams params;
+  final SshnpdChannelParams params;
   final String sessionId;
   final String namespace;
 

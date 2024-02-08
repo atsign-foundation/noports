@@ -1,3 +1,4 @@
+import 'package:dartssh2/dartssh2.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:noports_core/sshnp_foundation.dart';
 import 'package:socket_connector/socket_connector.dart';
@@ -18,7 +19,7 @@ void main() {
       when(() => mockSshnpParams.verbose).thenReturn(false);
       sessionId = Uuid().v4();
     });
-    test('public API', () {
+    test('public API SrvdDartBindPortChannel', () {
       expect(
         SrvdDartBindPortChannel(
           atClient: mockAtClient,
@@ -26,6 +27,16 @@ void main() {
           sessionId: sessionId,
         ),
         isA<SrvdChannel<SocketConnector>>(),
+      );
+    });
+    test('public API SrvdDartSSHSocketChannel', () {
+      expect(
+        SrvdDartSSHSocketChannel(
+          atClient: mockAtClient,
+          params: mockSshnpParams,
+          sessionId: sessionId,
+        ),
+        isA<SrvdChannel<SSHSocket>>(),
       );
     });
   }); // group SrvdDartChannel

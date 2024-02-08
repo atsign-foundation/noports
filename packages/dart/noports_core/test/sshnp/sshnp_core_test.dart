@@ -170,7 +170,7 @@ void main() {
         final params = SshnpParams(
             clientAtSign: '@client',
             sshnpdAtSign: '@daemon',
-            host: 'foo.bar.test',
+            srvdAtSign: '@srvd',
             remoteUsername: 'alice');
         final channel = SshnpdDefaultChannel(
             atClient: mockAtClient,
@@ -187,7 +187,7 @@ void main() {
         final params = SshnpParams(
             clientAtSign: '@client',
             sshnpdAtSign: '@daemon',
-            host: 'foo.bar.test',
+            srvdAtSign: '@srvd',
             remoteUsername: 'alice',
             tunnelUsername: 'bob');
         final channel = SshnpdDefaultChannel(
