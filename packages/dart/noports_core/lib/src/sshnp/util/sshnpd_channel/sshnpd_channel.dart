@@ -158,17 +158,12 @@ abstract class SshnpdChannel with AsyncInitialization, AtClientBindings {
     AtKey userNameRecordID = AtKey.fromString(
         '${params.clientAtSign}:username.$namespace${params.sshnpdAtSign}');
 
-    try {
-      return (await atClient.get(userNameRecordID).catchError(
-        (_) {
-          throw SshnpError('Remote username record not shared with the client');
-        },
-      ))
-          .value;
-    } catch (e) {
-      logger.info(e.toString());
-      return null;
-    }
+    return (await atClient.get(userNameRecordID).catchError(
+      (_) {
+        throw SshnpError('Remote username record not shared with the client');
+      },
+    ))
+        .value;
   }
 
   /// Resolve the username to use in the initial ssh tunnel
