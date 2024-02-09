@@ -8,6 +8,7 @@
 #include <argparse/argparse.h>
 #include <assert.h>
 #include <errno.h>
+#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -49,12 +50,9 @@ static int argparse_getvalue(struct argparse *self,
   switch (opt->type) {
   case ARGPARSE_OPT_BOOLEAN:
     if (flags & OPT_UNSET) {
-      *(int *)opt->value = *(int *)opt->value - 1;
+      *(bool *)opt->value = 0;
     } else {
-      *(int *)opt->value = *(int *)opt->value + 1;
-    }
-    if (*(int *)opt->value < 0) {
-      *(int *)opt->value = 0;
+      *(bool *)opt->value = 1;
     }
     break;
   case ARGPARSE_OPT_BIT:
