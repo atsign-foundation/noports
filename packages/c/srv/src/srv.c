@@ -5,7 +5,6 @@
 #include "srv/stream.h"
 #include <atchops/base64.h>
 #include <atlogger.h>
-#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -85,7 +84,6 @@ int run_srv(srv_params_t *params) {
 
   if (params->bind_local_port == 0) {
     atclient_atlogger_log(TAG, INFO, "Starting socket to socket srv\n");
-    fflush(stdout);
     res = socket_to_socket(params, params->rvd_auth_string, &encrypter,
                            &decrypter);
   } else {

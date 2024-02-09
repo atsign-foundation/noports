@@ -80,9 +80,7 @@ void *srv_side_handle(void *side) {
     // slen = sent length
     size_t rlen, len, slen;
 
-    atclient_atlogger_log(tag, INFO, "Starting handler\n");
     while ((rlen = mbedtls_net_recv(s->socket, buffer, MAX_BUFFER_LEN)) > 0) {
-      atclient_atlogger_log(tag, INFO, "Received data | len: %lu\n", rlen);
 
       if (s->transformer != NULL) {
         atclient_atlogger_log(tag, INFO, "Transforming data\n");
@@ -108,11 +106,9 @@ void *srv_side_handle(void *side) {
             len, slen);
         break;
       }
-      atclient_atlogger_log(tag, INFO, "Sent data\n");
     }
     free(buffer);
     mbedtls_net_close(s->socket);
-    atclient_atlogger_log(tag, INFO, "Handler closed\n");
   } else {
   }
   pthread_exit(NULL);

@@ -26,6 +26,5 @@ int main(int argc, char **argv) {
   int res = run_srv(&params);
 
   atclient_atlogger_log(TAG, INFO, "srv completing with code %d\n", res);
-  fflush(stdout);
   return res;
 }
