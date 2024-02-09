@@ -13,7 +13,6 @@ struct _side_hints_t {
   const bool is_server;
   const char *host;
   const uint16_t port;
-  const char *auth_string;
   const chunked_transformer_t *transformer;
 };
 
@@ -23,12 +22,12 @@ struct _side_t {
   const bool is_server;
   const char *host;
   const uint16_t port;
-  const char *auth_string;
   const chunked_transformer_t *transformer;
 
   // During init
   mbedtls_net_context *socket;
   side_t *other;
+  int main_pipe[2];
 
   // Server state (null when is_server is false)
   mbedtls_net_context **connections;
@@ -37,7 +36,7 @@ struct _side_t {
 };
 
 int srv_side_init(const side_hints_t *hints, side_t *side);
-void srv_link_sides(side_t *side_a, side_t *side_b);
+void srv_link_sides(side_t *side_a, side_t *side_b, int fds[2]);
 void srv_side_free(side_t *side);
 
 void *srv_side_handle(void *side);

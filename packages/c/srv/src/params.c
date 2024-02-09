@@ -4,11 +4,8 @@
 
 void apply_default_values_to_params(srv_params_t *params) {
   params->local_port = 22;
-#if ALLOW_BIND_LOCAL_PORT
   params->bind_local_port = 0;
-#endif
   params->rv_auth = 0;
-
   params->rv_e2ee = 0;
 }
 
@@ -30,6 +27,7 @@ int parse_params(srv_params_t *params, int argc, const char **argv) {
     OPT_BOOLEAN(0, "rv-e2ee", &params->rv_e2ee,
                 "Whether this rv process will encrypt/decrypt all rvd socket "
                 "traffic"),
+
     OPT_END(),
   };
 
@@ -51,31 +49,31 @@ int parse_params(srv_params_t *params, int argc, const char **argv) {
     printf("Invalid Argument(s) Option port is mandatory\n");
     return 1;
   }
+
   // Load the environment
-  if (params->rv_auth) {
+  if (params->rv_auth == 1) {
     params->rvd_auth_string = getenv("RV_AUTH");
     if (params->rvd_auth_string == NULL) {
       argparse_usage(&argparse);
-      printf("--rv-auth enabled, but RV_AUTH is not in envionment");
+      printf("--rv-auth enabled, but RV_AUTH is not in envionment\n");
       return 1;
     }
   }
 
-  if (params->rv_e2ee) {
+  if (params->rv_e2ee == 1) {
     params->session_aes_key_string = getenv("RV_AES");
     if (params->session_aes_key_string == NULL) {
       argparse_usage(&argparse);
-      printf("--rv-e2ee enabled, but RV_AES is not in environment");
+      printf("--rv-e2ee enabled, but RV_AES is not in environment\n");
       return 1;
     }
 
     params->session_aes_iv_string = getenv("RV_IV");
     if (params->session_aes_iv_string == NULL) {
       argparse_usage(&argparse);
-      printf("--rv-e2ee enabled, but RV_IV is not in environment");
+      printf("--rv-e2ee enabled, but RV_IV is not in environment\n");
       return 1;
     }
   }
-
   return 0;
 }

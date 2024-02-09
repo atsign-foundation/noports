@@ -5,20 +5,17 @@
 #include <netdb.h>
 #include <srv/params.h>
 #include <srv/side.h>
-#include <stdlib.h>
 
 #define TAG "srv - main"
 
 int main(int argc, char **argv) {
-  srv_params_t *params = malloc(sizeof(srv_params_t));
-  printf("init\n");
+  srv_params_t params;
 
   // 1.  Load default values
-  apply_default_values_to_params(params);
+  apply_default_values_to_params(&params);
 
   // 2.  Parse the command line arguments
-  if (parse_params(params, argc, (const char **)argv) != 0) {
-    free(params);
+  if (parse_params(&params, argc, (const char **)argv) != 0) {
     return 1;
   }
 
@@ -26,10 +23,9 @@ int main(int argc, char **argv) {
   atclient_atlogger_log(TAG, INFO, "running srv\n");
 
   // 3. Call the run function
-  int res = run_srv(params);
+  int res = run_srv(&params);
 
-  atclient_atlogger_log(TAG, INFO, "srv completed with code %d\n", res);
-
-  free(params);
+  atclient_atlogger_log(TAG, INFO, "srv completing with code %d\n", res);
+  fflush(stdout);
   return res;
 }
