@@ -11,8 +11,7 @@ typedef struct _chunked_transformer chunked_transformer_t;
 
 // Tranform function typedef
 typedef int(chunk_transform_t)(const struct _chunked_transformer *self,
-                               unsigned char *chunk, const size_t len,
-                               size_t *olen);
+                               unsigned char *buffer, size_t *len);
 
 // AES transformer state struct typedef
 typedef struct _aes_ctr_transformer_state aes_ctr_transformer_state_t;
@@ -35,10 +34,8 @@ struct _chunked_transformer {
 };
 
 int aes_ctr_encrypt_stream(const chunked_transformer_t *self,
-                           unsigned char *chunk, const size_t len,
-                           size_t *olen);
+                           unsigned char *buffer, size_t *len);
 
 int aes_ctr_decrypt_stream(const chunked_transformer_t *self,
-                           unsigned char *chunk, const size_t len,
-                           size_t *olen);
+                           unsigned char *buffer, size_t *len);
 #endif

@@ -64,6 +64,7 @@ int run_srv(srv_params_t *params) {
       mbedtls_aes_free(&decrypter.aes_ctr.ctx);
       return res;
     }
+
     // Copy the iv to the decrypter
     memcpy(decrypter.aes_ctr.nonce_counter, encrypter.aes_ctr.nonce_counter,
            AES_BLOCK_LEN);
@@ -110,6 +111,11 @@ int socket_to_socket(const srv_params_t *params, const char *auth_string,
   side_hints_t hints_a = {1, 0, NULL, params->local_port};
   side_hints_t hints_b = {0, 0, params->host, params->port};
 
+  if (params->rv_e2ee) {
+    hints_a.transformer = encrypter;
+    hints_b.transformer = decrypter;
+  }
+
   atclient_atlogger_log(TAG, INFO, "Initializing connection for side a\n");
   int res = srv_side_init(&hints_a, &sides[0]);
   if (res != 0) {
@@ -124,11 +130,6 @@ int socket_to_socket(const srv_params_t *params, const char *auth_string,
     atclient_atlogger_log(TAG, ERROR,
                           "Failed to initialize connection for side b\n");
     return res;
-  }
-
-  if (params->rv_e2ee) {
-    hints_a.transformer = encrypter;
-    hints_b.transformer = decrypter;
   }
 
   int fds[2];
@@ -159,7 +160,6 @@ int socket_to_socket(const srv_params_t *params, const char *auth_string,
   // signal to sshnpd that we are done
   fprintf(stderr, "%s\n", SRV_COMPLETION_STRING);
   fflush(stderr);
-
   // Wait for all threads to finish and join them back to the main thread
   pthread_t tid;
   int retval = 0;
@@ -200,4 +200,17 @@ int server_to_socket(const srv_params_t *params, const char *auth_string,
                      chunked_transformer_t *encrypter,
                      chunked_transformer_t *decrypter) {
   return 0;
+}
+
+void uft8_safe_log(const char *tag, atclient_atlogger_logging_level level,
+                   const unsigned char *data, size_t len) {
+  char buffer[len];
+  memcpy(buffer, data, len);
+  for (int i = 0; i < len; i++) {
+    if (buffer[i] > 0x7f || buffer[i] < 0x20) {
+      // printf("replaced %hhu\n", buffer[i]);
+      buffer[i] = '*';
+    }
+  }
+  atclient_atlogger_log(tag, level, "%s\n", buffer);
 }

@@ -75,34 +75,40 @@ void *srv_side_handle(void *side) {
   unsigned char *buffer = malloc(BUFFER_LEN * sizeof(unsigned char));
 
   if (s->is_server == 0) {
-    // rlen = received length
-    // len = length (received or transformed)
-    // slen = sent length
-    size_t rlen, len, slen;
-
-    while ((rlen = mbedtls_net_recv(&s->socket, buffer, READ_LEN)) > 0) {
-
-      atclient_atlogger_log(tag, INFO, "Read %d bytes \n", rlen);
+    size_t len, slen;
+    int res;
+    while ((len = mbedtls_net_recv(&s->socket, buffer, READ_LEN)) > 0) {
+      if (res < 0) {
+        atclient_atlogger_log(tag, ERROR, "Error reading data: %d", len);
+        break;
+      } else {
+        len = res;
+      }
+      atclient_atlogger_log(tag, INFO, "Read %d bytes \n", len);
 
       if (s->transformer != NULL) {
-        atclient_atlogger_log(tag, DEBUG, "Transforming data \n");
-        int res =
-            (int)s->transformer->transform(s->transformer, buffer, rlen, &len);
+        uft8_safe_log(tag, DEBUG, buffer, len);
+        atclient_atlogger_log(tag, DEBUG, "Transforming data:\n");
+        res = (int)s->transformer->transform(s->transformer, buffer, &len);
         if (res != 0) {
           break;
         }
-      } else {
-        len = rlen;
+        uft8_safe_log(tag, DEBUG, buffer, len);
       }
 
       if (s->other->is_server == 0) {
-        slen = mbedtls_net_send(&s->other->socket, buffer, len);
+        res = mbedtls_net_send(&s->other->socket, buffer, len);
+        if (res < 0) {
+          atclient_atlogger_log(tag, ERROR, "Error sending data: %d", res);
+          break;
+        } else {
+          slen = res;
+        }
       } else {
         halt_if_cant_bind_local_port();
-        // TODO: implement retries
       }
-      if (slen != len) {
-        // How to handle this? We probably shouldn't just drop the connection
+      if (slen < len) {
+        // TODO: implement retries
         atclient_atlogger_log(
             tag, ERROR,
             "Error sending data, expected to send %lu bytes, only sent %lu\n",
