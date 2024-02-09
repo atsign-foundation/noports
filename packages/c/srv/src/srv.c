@@ -144,8 +144,8 @@ int socket_to_socket(const srv_params_t *params, const char *auth_string,
     int len = strlen(auth_string);
 
     int slen =
-        mbedtls_net_send(sides[1].socket, (unsigned char *)auth_string, len);
-    slen += mbedtls_net_send(sides[1].socket, (unsigned char *)"\n", 1);
+        mbedtls_net_send(&sides[1].socket, (unsigned char *)auth_string, len);
+    slen += mbedtls_net_send(&sides[1].socket, (unsigned char *)"\n", 1);
     if (slen != len + 1) {
       atclient_atlogger_log(TAG, ERROR, "Failed to send auth string\n");
       return -1;

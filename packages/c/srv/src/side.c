@@ -14,8 +14,7 @@
 #define TAG_B "srv - side b"
 
 int srv_side_init(const side_hints_t *hints, side_t *side) {
-  mbedtls_net_context *ctx = malloc(sizeof(mbedtls_net_context));
-  mbedtls_net_init(ctx);
+  mbedtls_net_init(&side->socket);
 
   memcpy(side, hints, sizeof(side_hints_t));
 
@@ -26,10 +25,10 @@ int srv_side_init(const side_hints_t *hints, side_t *side) {
   if (side->is_server == 0) {
     atclient_atlogger_log(TAG, INFO, "Doing tcp connect to %s:%s\n", side->host,
                           service);
-    int res =
-        mbedtls_net_connect(ctx, side->host, service, MBEDTLS_NET_PROTO_TCP);
+    int res = mbedtls_net_connect(&side->socket, side->host, service,
+                                  MBEDTLS_NET_PROTO_TCP);
     if (res != 0) {
-      mbedtls_net_free(ctx);
+      mbedtls_net_free(&side->socket);
       if (res == MBEDTLS_ERR_NET_SOCKET_FAILED) {
         atclient_atlogger_log(TAG, ERROR,
                               "Failed: tcp connect - socket failed\n");
@@ -44,16 +43,16 @@ int srv_side_init(const side_hints_t *hints, side_t *side) {
     }
   } else {
     atclient_atlogger_log(TAG, INFO, "Doing tcp bind\n");
-    int res = mbedtls_net_bind(ctx, side->host, service, MBEDTLS_NET_PROTO_TCP);
+    int res = mbedtls_net_bind(&side->socket, side->host, service,
+                               MBEDTLS_NET_PROTO_TCP);
     if (res != 0) {
-      mbedtls_net_free(ctx);
+      mbedtls_net_free(&side->socket);
       atclient_atlogger_log(TAG, ERROR, "Failed: tcp bind\n");
       return res;
     }
   }
 
   // store the context
-  side->socket = ctx;
   return 0;
 }
 
@@ -66,7 +65,7 @@ void srv_link_sides(side_t *side_a, side_t *side_b, int fds[2]) {
   side_b->main_pipe[1] = fds[1];
 }
 
-void srv_side_free(side_t *side) { mbedtls_net_free(side->socket); }
+void srv_side_free(side_t *side) { mbedtls_net_free(&side->socket); }
 void *srv_side_handle(void *side) {
   side_t *s = (side_t *)side;
 
@@ -80,7 +79,7 @@ void *srv_side_handle(void *side) {
     // slen = sent length
     size_t rlen, len, slen;
 
-    while ((rlen = mbedtls_net_recv(s->socket, buffer, READ_LEN)) > 0) {
+    while ((rlen = mbedtls_net_recv(&s->socket, buffer, READ_LEN)) > 0) {
 
       atclient_atlogger_log(tag, INFO, "Read %d bytes \n", rlen);
 
@@ -96,7 +95,7 @@ void *srv_side_handle(void *side) {
       }
 
       if (s->other->is_server == 0) {
-        slen = mbedtls_net_send(s->other->socket, buffer, len);
+        slen = mbedtls_net_send(&s->other->socket, buffer, len);
       } else {
         halt_if_cant_bind_local_port();
         // TODO: implement retries
@@ -111,7 +110,7 @@ void *srv_side_handle(void *side) {
       }
     }
     free(buffer);
-    mbedtls_net_close(s->socket);
+    mbedtls_net_close(&s->socket);
   } else {
   }
 
