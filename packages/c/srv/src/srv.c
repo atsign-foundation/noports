@@ -34,20 +34,15 @@ int run_srv(srv_params_t *params) {
       return res;
     }
 
-    // Allocate encrypter and load aes key
-    // encrypter = malloc(sizeof(chunked_transformer_t)); // FREE
     mbedtls_aes_init(&encrypter.aes_ctr.ctx); // FREE
     res = mbedtls_aes_setkey_enc(&encrypter.aes_ctr.ctx, aes_key,
                                  AES_256_KEY_BITS);
     if (res != 0) {
       atclient_atlogger_log(TAG, ERROR, "Error setting encryption key\n");
       mbedtls_aes_free(&encrypter.aes_ctr.ctx);
-      // free(encrypter);
       return res;
     }
 
-    // Allocate decrypter and load aes key
-    // decrypter = malloc(sizeof(chunked_transformer_t)); // FREE
     mbedtls_aes_init(&decrypter.aes_ctr.ctx); // FREE
     res = mbedtls_aes_setkey_dec(&decrypter.aes_ctr.ctx, aes_key,
                                  AES_256_KEY_BITS);
@@ -55,8 +50,6 @@ int run_srv(srv_params_t *params) {
       atclient_atlogger_log(TAG, ERROR, "Error setting decryption key\n");
       mbedtls_aes_free(&encrypter.aes_ctr.ctx);
       mbedtls_aes_free(&decrypter.aes_ctr.ctx);
-      // free(encrypter);
-      // free(decrypter);
       return res;
     }
 
@@ -71,8 +64,6 @@ int run_srv(srv_params_t *params) {
                             "Error decoding session_aes_iv_string\n");
       mbedtls_aes_free(&encrypter.aes_ctr.ctx);
       mbedtls_aes_free(&decrypter.aes_ctr.ctx);
-      // free(encrypter);
-      // free(decrypter);
       return res;
     }
     // Copy the iv to the decrypter
