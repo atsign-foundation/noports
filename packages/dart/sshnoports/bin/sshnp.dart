@@ -9,6 +9,7 @@ import 'package:dartssh2/dartssh2.dart';
 
 // atPlatform packages
 import 'package:at_utils/at_logger.dart';
+import 'package:at_client/at_client.dart';
 
 // local packages
 import 'package:noports_core/sshnp_foundation.dart';
@@ -130,6 +131,7 @@ void main(List<String> args) async {
               getDefaultAtKeysFilePath(homeDirectory, params.clientAtSign),
           rootDomain: params.rootDomain,
           storagePath: storageDir!.path,
+          atServiceFactory: DefaultAtServiceFactory(),
         ),
         sshClient:
             SupportedSshClient.fromString(argResults['ssh-client'] as String),

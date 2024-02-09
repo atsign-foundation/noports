@@ -56,19 +56,29 @@ Future<void> main(List<String> args) async {
       throw ArgumentError(
           '--rv-e2ee required, but RV_IV is not in environment');
     }
-    SocketConnector connector = await Srv.dart(
-      host,
-      streamingPort,
-      localPort: localPort,
-      bindLocalPort: bindLocalPort,
-      rvdAuthString: rvdAuthString,
-      sessionAESKeyString: sessionAESKeyString,
-      sessionIVString: sessionIVString,
-    ).run();
 
-    /// Shut myself down once the socket connector closes
-    stderr.writeln('Waiting for connector to close');
-    await connector.done;
+    try {
+      SocketConnector connector = await Srv.dart(
+        host,
+        streamingPort,
+        localPort: localPort,
+        bindLocalPort: bindLocalPort,
+        rvdAuthString: rvdAuthString,
+        sessionAESKeyString: sessionAESKeyString,
+        sessionIVString: sessionIVString,
+      ).run();
+
+      /// Shut myself down once the socket connector closes
+      stderr.writeln('Waiting for connector to close');
+      await connector.done;
+    } on ArgumentError catch (e) {
+      rethrow;
+    } catch (e) {
+      // Do not remove this output; it is specifically looked for in
+      // [SrvImplExec.run].
+      stderr.writeln('${Srv.completedWithExceptionString} : $e');
+      exit(1);
+    }
 
     stderr.writeln('Closed - exiting');
     exit(0);

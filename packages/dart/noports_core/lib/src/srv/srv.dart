@@ -5,6 +5,10 @@ import 'package:noports_core/src/srv/srv_impl.dart';
 import 'package:socket_connector/socket_connector.dart';
 
 abstract class Srv<T> {
+  static const completedWithExceptionString = 'Exception running srv';
+
+  static const completionString = 'rv started successfully';
+
   /// The internet address of the host to connect to.
   abstract final String host;
 
@@ -101,8 +105,9 @@ abstract class Srv<T> {
     String postfix = Platform.isWindows ? '.exe' : '';
     List<String> pathList =
         Platform.resolvedExecutable.split(Platform.pathSeparator);
-    bool isExe =
-        (pathList.last == 'sshnp$postfix' || pathList.last == 'sshnpd$postfix');
+    bool isExe = (pathList.last == 'sshnp$postfix' ||
+        pathList.last == 'sshnpd$postfix' ||
+        pathList.last == 'npt$postfix');
 
     pathList
       ..removeLast()

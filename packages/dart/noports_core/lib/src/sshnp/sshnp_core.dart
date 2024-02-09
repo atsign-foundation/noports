@@ -105,19 +105,27 @@ abstract class SshnpCore
     await sshnpdChannel.callInitialization();
 
     List<DaemonFeature> requiredFeatures = [];
-    if (params.authenticateDeviceToRvd) {
-      requiredFeatures.add(DaemonFeature.srAuth);
-    }
-    if (params.encryptRvdTraffic) {
-      requiredFeatures.add(DaemonFeature.srE2ee);
-    }
-    if (params.sendSshPublicKey) {
-      requiredFeatures.add(DaemonFeature.acceptsSshPublicKeys);
-    }
-    sendProgress('Sending daemon feature check request');
+    Future<
+        List<
+            (
+              DaemonFeature feature,
+              bool supported,
+              String reason,
+            )>>? featureCheckFuture;
+    if (params.discoverDaemonFeatures) {
+      if (params.authenticateDeviceToRvd) {
+        requiredFeatures.add(DaemonFeature.srAuth);
+      }
+      if (params.encryptRvdTraffic) {
+        requiredFeatures.add(DaemonFeature.srE2ee);
+      }
+      if (params.sendSshPublicKey) {
+        requiredFeatures.add(DaemonFeature.acceptsSshPublicKeys);
+      }
+      sendProgress('Sending daemon feature check request');
 
-    Future<List<(DaemonFeature feature, bool supported, String reason)>>
-        featureCheck = sshnpdChannel.featureCheck(requiredFeatures);
+      featureCheckFuture = sshnpdChannel.featureCheck(requiredFeatures);
+    }
 
     /// Set the remote username to use for the ssh session
     sendProgress('Resolving remote username for user session');
@@ -139,14 +147,16 @@ abstract class SshnpCore
     await srvdChannel.callInitialization();
     sendProgress('Received host and port from srvd');
 
-    sendProgress('Waiting for daemon feature check response');
-    List<(DaemonFeature, bool, String)> features = await featureCheck;
-    sendProgress('Received daemon feature check response');
-    await Future.delayed(Duration(milliseconds: 1));
-    for (final (DaemonFeature _, bool supported, String reason) in features) {
-      if (!supported) throw SshnpError(reason);
+    if (params.discoverDaemonFeatures) {
+      sendProgress('Waiting for daemon feature check response');
+      List<(DaemonFeature, bool, String)> features = await featureCheckFuture!;
+      sendProgress('Received daemon feature check response');
+      await Future.delayed(Duration(milliseconds: 1));
+      for (final (DaemonFeature _, bool supported, String reason) in features) {
+        if (!supported) throw SshnpError(reason);
+      }
+      sendProgress('Required daemon features are supported');
     }
-    sendProgress('Required daemon features are supported');
   }
 
   @override

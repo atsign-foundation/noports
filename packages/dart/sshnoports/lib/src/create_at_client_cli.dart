@@ -4,12 +4,12 @@ import 'package:at_onboarding_cli/at_onboarding_cli.dart';
 import 'package:noports_core/utils.dart';
 import 'package:version/version.dart';
 import 'package:path/path.dart' as path;
-import 'service_factories.dart';
 
 Future<AtClient> createAtClientCli({
   required String homeDirectory,
   required String atsign,
   required String atKeysFilePath,
+  required AtServiceFactory atServiceFactory,
   String? storagePath,
   String? pathExtension,
   String subDirectory = DefaultArgs.storagePathSubDirectory,
@@ -36,7 +36,7 @@ Future<AtClient> createAtClientCli({
 
   AtOnboardingService onboardingService = AtOnboardingServiceImpl(
       atsign, atOnboardingConfig,
-      atServiceFactory: ServiceFactoryWithNoOpSyncService());
+      atServiceFactory: atServiceFactory);
 
   await onboardingService.authenticate();
 

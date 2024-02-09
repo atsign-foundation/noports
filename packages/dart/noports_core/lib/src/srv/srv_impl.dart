@@ -37,9 +37,6 @@ class SrvImplExec implements Srv<Process> {
   @override
   final String? sessionIVString;
 
-  @visibleForTesting
-  static const completionString = 'rv started successfully';
-
   SrvImplExec(
     this.host,
     this.streamingPort, {
@@ -108,8 +105,12 @@ class SrvImplExec implements Srv<Process> {
       var allLines = utf8.decode(l).trim();
       for (String s in allLines.split('\n')) {
         logger.info('rv stderr | $s');
-        if (s.endsWith(completionString) && !rvPortBound.isCompleted) {
+        if (s.endsWith(Srv.completionString) && !rvPortBound.isCompleted) {
           rvPortBound.complete();
+        } else if (s.contains(Srv.completedWithExceptionString)) {
+          if (!rvPortBound.isCompleted) {
+            rvPortBound.completeError(s);
+          }
         }
       }
     }, onError: (e) {
@@ -373,7 +374,7 @@ class SrvImplDart implements Srv<SocketConnector> {
       // sockets, and on the client side, established one outbound socket and
       // bound to a port. Looking for specific output when the rv is ready to
       // do its job seems to be the only way to do this.
-      stderr.writeln(SrvImplExec.completionString);
+      stderr.writeln(Srv.completionString);
 
       return socketConnector;
     } catch (e) {

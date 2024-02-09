@@ -179,6 +179,8 @@ class _NptImpl extends NptBase
       if (!supported) throw SshnpError(reason);
     }
     sendProgress('Required daemon features are supported');
+
+    completeInitialization();
   }
 
   @override
@@ -193,25 +195,25 @@ class _NptImpl extends NptBase
     /// Send an ssh request to sshnpd
     await notify(
       AtKey()
-        ..key = 'ssh_request'
+        ..key = 'npt_request'
         ..namespace = namespace
         ..sharedBy = params.clientAtSign
         ..sharedWith = params.sshnpdAtSign
         ..metadata = (Metadata()..ttl = 10000),
       signAndWrapAndJsonEncode(
           atClient,
-          SshnpSessionRequest(
-            direct: true,
+          NptSessionRequest(
             sessionId: sessionId,
-            host: srvdChannel.rvdHost,
-            port: srvdChannel.daemonPort,
+            rvdHost: srvdChannel.rvdHost,
+            rvdPort: srvdChannel.daemonPort,
             authenticateToRvd: params.authenticateDeviceToRvd,
             clientNonce: srvdChannel.clientNonce,
-            rvdNonce: srvdChannel.rvdNonce,
+            rvdNonce: srvdChannel.rvdNonce!,
             encryptRvdTraffic: params.encryptRvdTraffic,
             clientEphemeralPK: params.sessionKP.atPublicKey.publicKey,
             clientEphemeralPKType: params.sessionKPType.name,
-            remotePort: params.remotePort,
+            requestedPort: params.remotePort,
+            requestedHost: params.remoteHost,
           ).toJson()),
       checkForFinalDeliveryStatus: false,
       waitForFinalDeliveryStatus: false,
@@ -219,18 +221,17 @@ class _NptImpl extends NptBase
 
     /// Wait for a response from sshnpd
     sendProgress('Waiting for response from the device daemon');
-    var acked = await sshnpdChannel.waitForDaemonResponse();
-    if (acked != SshnpdAck.acknowledged) {
-      throw SshnpError('No response from the device daemon');
-    } else {
-      sendProgress('Received response from the device daemon');
+    SshnpdAck ack = await sshnpdChannel.waitForDaemonResponse();
+    switch (ack) {
+      case SshnpdAck.acknowledged:
+        sendProgress('Received response from the device daemon');
+      case SshnpdAck.acknowledgedWithErrors:
+        throw SshnpError('Received error response from the device daemon');
+      case SshnpdAck.notAcknowledged:
+        throw SshnpError('No response from the device daemon');
     }
 
-    if (sshnpdChannel.ephemeralPrivateKey == null) {
-      throw SshnpError(
-        'Expected an ephemeral private key from sshnpd, but it was not set',
-      );
-    }
+    sendProgress('Finding an available local port');
 
     /// Find a port to use
     final server = await ServerSocket.bind(InternetAddress.anyIPv4, 0);

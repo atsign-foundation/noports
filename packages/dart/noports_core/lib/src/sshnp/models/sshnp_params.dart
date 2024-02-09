@@ -106,13 +106,19 @@ abstract interface class SshnpdChannelParams implements ClientParams {
 
 class NptParams extends ClientParamsBase
     implements SrvdChannelParams, SshnpdChannelParams {
+  /// The host name / ip address that we wish to connect to (on the device's network)
+  final String remoteHost;
+
+  /// The port that we wish to connect to (on the device's network)
+  final int remotePort;
+
   NptParams({
     required super.clientAtSign,
     required super.sshnpdAtSign,
     required super.srvdAtSign,
+    required this.remoteHost,
     required this.remotePort,
     required super.device,
-    this.sendSshPublicKey = DefaultSshnpArgs.sendSshPublicKey,
     super.verbose = DefaultArgs.verbose,
     super.atKeysFilePath,
     super.rootDomain = DefaultArgs.rootDomain,
@@ -121,14 +127,16 @@ class NptParams extends ClientParamsBase
     super.encryptRvdTraffic = DefaultArgs.encryptRvdTraffic,
   });
 
-  final int remotePort;
+  /// not relevant for Npt
+  @override
+  final bool sendSshPublicKey = false;
 
+  /// not relevant for Npt
   @override
-  final bool sendSshPublicKey;
+  final String? remoteUsername = null; // not relevant for Npt
+  /// not relevant for Npt
   @override
-  final String? remoteUsername = null;
-  @override
-  final String? tunnelUsername = null;
+  final String? tunnelUsername = null; // not relevant for Npt
 }
 
 class SshnpParams extends ClientParamsBase

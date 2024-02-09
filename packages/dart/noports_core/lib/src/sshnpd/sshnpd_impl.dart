@@ -11,6 +11,7 @@ import 'package:meta/meta.dart';
 import 'package:noports_core/src/common/features.dart';
 import 'package:noports_core/src/common/openssh_binary_path.dart';
 import 'package:noports_core/src/srv/srv.dart';
+import 'package:noports_core/src/sshnp/impl/notification_request_message.dart';
 import 'package:noports_core/sshnpd.dart';
 import 'package:noports_core/utils.dart';
 import 'package:noports_core/src/version.dart';
@@ -98,6 +99,7 @@ class SshnpdImpl implements Sshnpd {
         DaemonFeature.srAuth.name: true,
         DaemonFeature.srE2ee.name: true,
         DaemonFeature.acceptsSshPublicKeys.name: addSshPublicKeys,
+        DaemonFeature.supportsPortChoice.name: true,
       },
     };
   }
@@ -255,19 +257,27 @@ class SshnpdImpl implements Sshnpd {
 
       case 'sshd':
         logger.info(
-            '<4.0.0 request for (reverse) ssh received from ${notification.from}'
-            ' ( notification id : ${notification.id} )');
+            'LEGACY $notificationKey request received from ${notification.from}'
+            ' ( ${notification.value} )');
         _handleLegacySshRequestNotification(notification);
         break;
 
       case 'ping':
+        logger.info('$notificationKey received from ${notification.from}'
+            ' ( ${notification.value} )');
         _handlePingNotification(notification);
         break;
 
       case 'ssh_request':
-        logger.info('>=4.0.0 request for ssh received from ${notification.from}'
-            ' ( $notification )');
+        logger.info('$notificationKey received from ${notification.from}'
+            ' ( ${notification.value} )');
         _handleSshRequestNotification(notification);
+        break;
+
+      case 'npt_request':
+        logger.info('$notificationKey received from ${notification.from}'
+            ' ( ${notification.value} )');
+        _handleNptRequestNotification(notification);
         break;
     }
   }
@@ -348,6 +358,159 @@ class SshnpdImpl implements Sshnpd {
     } catch (e) {
       logger.severe("Error writing to"
           " $username's .ssh/authorized_keys file : $e");
+    }
+  }
+
+  void _handleNptRequestNotification(AtNotification notification) async {
+    if (!isFromAuthorizedAtsign(notification)) {
+      logger.shout('Notification ignored from ${notification.from}'
+          ' which is not in authorized list $managerAtsigns.'
+          ' Notification value was ${notification.value}');
+      return;
+    }
+
+    String requestingAtsign = notification.from;
+
+    // Validate the request payload.
+    //
+    // If a 'direct' ssh is being requested, then
+    // only sessionId, host (of the rvd) and port (of the rvd) are required.
+    //
+    // If a reverse ssh is being requested, then we also require
+    // a username (to ssh back to the client), a privateKey (for that
+    // ssh) and a remoteForwardPort, to set up the ssh tunnel back to this
+    // device from the client side.
+    late final Map envelope;
+    late final NptSessionRequest req;
+    try {
+      envelope = jsonDecode(notification.value!);
+      assertValidValue(envelope, 'signature', String);
+      assertValidValue(envelope, 'hashingAlgo', String);
+      assertValidValue(envelope, 'signingAlgo', String);
+
+      Map<String, dynamic> params = envelope['payload'];
+
+      req = NptSessionRequest.fromJson(params);
+    } catch (e) {
+      logger.warning(
+          'Failed to extract parameters from notification value "${notification.value}" with error : $e');
+      return;
+    }
+
+    try {
+      await verifyEnvelopeSignature(
+          atClient, requestingAtsign, logger, envelope);
+    } catch (e) {
+      logger.shout('Failed to verify signature of msg from $requestingAtsign');
+      logger.shout('Exception: $e');
+      logger.shout('Notification value: ${notification.value}');
+      return;
+    }
+
+    // TODO if requestedHost is not localhost then respond with an error
+
+    // Start our side of the tunnel
+    await startNpt(
+      requestingAtsign: requestingAtsign,
+      req: req,
+    );
+  }
+
+  Future<void> startNpt({
+    required String requestingAtsign,
+    required NptSessionRequest req,
+  }) async {
+    logger.info(
+        'Setting up ports for tunnel session using ${sshClient.name} ($sshClient) from: $requestingAtsign session: ${req.sessionId}');
+
+    // TODO Loads of duplicated code here with startDirectSsh, duplicate code needs to be factored out
+    // TODO making the rvdAuthString; generating AES and IV and encrypting them
+
+    try {
+      String? rvdAuthString;
+      if (req.authenticateToRvd) {
+        // TODO refactor duplicate code from startDirectSsh
+        rvdAuthString = signAndWrapAndJsonEncode(atClient, {
+          'sessionId': req.sessionId,
+          'clientNonce': req.clientNonce,
+          'rvdNonce': req.rvdNonce,
+        });
+      }
+
+      String? sessionAESKey, sessionAESKeyEncrypted;
+      String? sessionIV, sessionIVEncrypted;
+      if (req.encryptRvdTraffic) {
+        // TODO refactor duplicate code from startDirectSsh
+        // 256-bit AES, 128-bit IV
+        sessionAESKey =
+            AtChopsUtil.generateSymmetricKey(EncryptionKeyType.aes256).key;
+        sessionIV = base64Encode(AtChopsUtil.generateRandomIV(16).ivBytes);
+        late EncryptionKeyType ect;
+        try {
+          ect = EncryptionKeyType.values.byName(req.clientEphemeralPKType);
+        } catch (e) {
+          throw Exception(
+              'Unknown ephemeralPKType: ${req.clientEphemeralPKType}');
+        }
+        switch (ect) {
+          case EncryptionKeyType.rsa2048:
+            AtChops ac = AtChopsImpl(AtChopsKeys.create(
+                AtEncryptionKeyPair.create(req.clientEphemeralPK, 'n/a'),
+                null));
+            sessionAESKeyEncrypted = ac
+                .encryptString(sessionAESKey,
+                    EncryptionKeyType.values.byName(req.clientEphemeralPKType))
+                .result;
+            sessionIVEncrypted = ac
+                .encryptString(sessionIV,
+                    EncryptionKeyType.values.byName(req.clientEphemeralPKType))
+                .result;
+            break;
+          default:
+            throw Exception(
+                'No handling for ephemeralPKType ${req.clientEphemeralPKType}');
+        }
+      }
+      // Connect to rendezvous point using background process.
+      // This program can then exit without causing an issue.
+      Process rv = await Srv.exec(
+        req.rvdHost,
+        req.rvdPort,
+        localPort: req.requestedPort,
+        bindLocalPort: false,
+        rvdAuthString: rvdAuthString,
+        sessionAESKeyString: sessionAESKey,
+        sessionIVString: sessionIV,
+      ).run();
+      logger.info('Started rv - pid is ${rv.pid}');
+
+      /// - Send response message to the sshnp client which includes the
+      ///   ephemeral private key
+      await _notify(
+        atKey: _createResponseAtKey(
+            requestingAtsign: requestingAtsign, sessionId: req.sessionId),
+        value: signAndWrapAndJsonEncode(atClient, {
+          'status': 'connected',
+          'sessionId': req.sessionId,
+          'sessionAESKey': sessionAESKeyEncrypted,
+          'sessionIV': sessionIVEncrypted,
+        }),
+        checkForFinalDeliveryStatus: false,
+        waitForFinalDeliveryStatus: false,
+        sessionId: req.sessionId,
+      );
+    } catch (e) {
+      logger.severe('startNpt failed with unexpected error : $e');
+      // Notify sshnp that this session is NOT connected
+      await _notify(
+        atKey: _createResponseAtKey(
+            requestingAtsign: requestingAtsign, sessionId: req.sessionId),
+        value:
+            'Failed to start up the daemon side of the srv socket tunnel : $e',
+        sessionId: req.sessionId,
+        checkForFinalDeliveryStatus: false,
+        waitForFinalDeliveryStatus: false,
+      );
     }
   }
 

@@ -21,7 +21,13 @@ void main(List<String> args) async {
 
   Directory? storageDir;
 
+  bool perSessionStorage = false;
+
   void deleteStorage() {
+    if (! perSessionStorage) {
+      return;
+    }
+
     // Windows will not let us delete files that are open
     // so will will ignore this step and leave them in %localappdata%\Temp
     if (!Platform.isWindows) {
@@ -62,13 +68,6 @@ void main(List<String> args) async {
         help: 'This client\'s atSign',
       );
       parser.addOption(
-        'key-file',
-        abbr: 'k',
-        mandatory: false,
-        aliases: const ['keyFile'],
-        help: 'This client\'s atSign\'s keyFile if not in ~/.atsign/keys/',
-      );
-      parser.addOption(
         'to',
         abbr: 't',
         mandatory: true,
@@ -88,15 +87,7 @@ void main(List<String> args) async {
             ' The same atSign may be used to run daemons on many devices,'
             ' therefore each one must run with its own unique device name',
       );
-      parser.addFlag('help',
-          abbr: 'h', defaultsTo: false, negatable: false, help: 'Print usage');
-      parser.addFlag(
-        'verbose',
-        abbr: 'v',
-        defaultsTo: false,
-        negatable: false,
-        help: 'More logging',
-      );
+      // TODO add ability to specify local port
       parser.addOption(
         'remote-port',
         abbr: 'p',
@@ -105,12 +96,46 @@ void main(List<String> args) async {
         help: 'The remote port required',
       );
       parser.addOption(
+        'remote-host',
+        abbr: 'h',
+        aliases: ['rh'],
+        defaultsTo: 'localhost',
+        help: 'The remote host required',
+      );
+      parser.addOption(
+        'key-file',
+        abbr: 'k',
+        mandatory: false,
+        aliases: const ['keyFile'],
+        help:
+            'Path to this client\'s atSign\'s keyFile, if not in ~/.atsign/keys/',
+      );
+      parser.addOption(
         'root-domain',
-        aliases: ['at-directory-domain'],
         mandatory: false,
         defaultsTo: 'root.atsign.org',
         help: 'atDirectory domain',
       );
+      parser.addFlag(
+        'per-session-storage',
+        aliases: ['pss'],
+        defaultsTo: true,
+        negatable: true,
+        help: 'Use ephemeral local storage for each session.'
+            ' Defaults to true, enabling you to run multiple local clients'
+            ' concurrently. However: if you wish to run just one client at a'
+            ' time, then you will get a performance boost if you negate this'
+            ' flag.',
+      );
+      parser.addFlag(
+        'verbose',
+        abbr: 'v',
+        defaultsTo: false,
+        negatable: false,
+        help: 'More logging',
+      );
+      parser.addFlag('help',
+          defaultsTo: false, negatable: false, help: 'Print usage');
 
       // Parse Args
       ArgResults parsedArgs = parser.parse(args);
@@ -124,25 +149,33 @@ void main(List<String> args) async {
       String daemonAtSign = parsedArgs['to'];
       String srvdAtSign = parsedArgs['srvd'];
       int remotePort = int.parse(parsedArgs['remote-port']);
+      String remoteHost = parsedArgs['remote-host'];
       String device = parsedArgs['device'];
       String rootDomain = parsedArgs['root-domain'];
+      perSessionStorage = parsedArgs['per-session-storage'];
 
       // Windows will not let us delete files in use so
       // We will point storage to temp directory and let OS clean up
       var clientAtSign = parsedArgs['from'];
 
+      late String storageDirLastPart;
+      if (perSessionStorage) {
+        storageDirLastPart = DateTime.now().millisecondsSinceEpoch.toString();
+      } else {
+        storageDirLastPart = 'single';
+      }
       if (Platform.isWindows) {
         storageDir = Directory(path.normalize('${Platform.environment['TEMP']}'
             '/${DefaultArgs.storagePathSubDirectory}'
             '/$clientAtSign'
             '/storage'
-            '/${DateTime.now().millisecondsSinceEpoch}'));
+            '/$storageDirLastPart'));
       } else {
         storageDir = Directory(path.normalize('$homeDirectory'
             '/${DefaultArgs.storagePathSubDirectory}'
             '/$clientAtSign'
             '/storage'
-            '/${DateTime.now().millisecondsSinceEpoch}'));
+            '/$storageDirLastPart'));
       }
       storageDir?.createSync(recursive: true);
 
@@ -172,6 +205,7 @@ void main(List<String> args) async {
           clientAtSign: clientAtSign,
           sshnpdAtSign: daemonAtSign,
           srvdAtSign: srvdAtSign,
+          remoteHost: remoteHost,
           remotePort: remotePort,
           device: device,
           verbose: verbose,
@@ -193,7 +227,7 @@ void main(List<String> args) async {
 
       final localPort = await npt.run();
 
-      stdout.writeln('Local port: $localPort');
+      stdout.writeln('$localPort');
     } on ArgumentError catch (error) {
       printUsage(error: error);
       exitProgram(exitCode: 1);
