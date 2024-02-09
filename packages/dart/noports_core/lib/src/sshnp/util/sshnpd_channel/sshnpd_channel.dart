@@ -10,6 +10,8 @@ import 'package:noports_core/src/common/mixins/at_client_bindings.dart';
 import 'package:noports_core/sshnp.dart';
 import 'package:noports_core/utils.dart';
 
+import '../../../common/features.dart';
+
 /// enum for sshnpd acknowledgement state
 enum SshnpdAck {
   /// sshnpd acknowledged our request
@@ -118,33 +120,25 @@ abstract class SshnpdChannel with AsyncInitialization, AtClientBindings {
 
     var publicKeyContents = identityKeyPair.publicKeyContents;
 
-    logger.info('Sharing public key with sshnpd');
-    try {
-      logger.info('sharing ssh public key: $publicKeyContents');
-      // Check for Supported ssh keypairs from dartssh2 package
-      if (!publicKeyContents.startsWith(RegExp(
-          r'^(ecdsa-sha2-nistp)|(rsa-sha2-)|(ssh-rsa)|(ssh-ed25519)|(ecdsa-sha2-nistp)'))) {
-        logger.severe('SSH Public Key does not look like a public key file');
-        throw ('SSH Public Key does not look like a public key file');
-      }
-      AtKey sendOurPublicKeyToSshnpd = AtKey()
-        ..key = 'sshpublickey'
-        ..sharedBy = params.clientAtSign
-        ..sharedWith = params.sshnpdAtSign
-        ..metadata = (Metadata()..ttl = 10000);
-      await notify(
-        sendOurPublicKeyToSshnpd,
-        publicKeyContents,
-        checkForFinalDeliveryStatus: false,
-        waitForFinalDeliveryStatus: false,
-      );
-    } catch (e, s) {
-      throw SshnpError(
-        'Error opening or validating public key file or sending to remote atSign',
-        error: e,
-        stackTrace: s,
-      );
+    logger.info('Sharing ssh public key with sshnpd: $publicKeyContents');
+    // Check for Supported ssh keypairs from dartssh2 package
+    if (!publicKeyContents.startsWith(RegExp(
+        r'^(ecdsa-sha2-nistp)|(rsa-sha2-)|(ssh-rsa)|(ssh-ed25519)|(ecdsa-sha2-nistp)'))) {
+      throw SshnpError('SSH Public Key does not look like a public key file');
     }
+    AtKey sendOurPublicKeyToSshnpd = AtKey()
+      ..key = 'sshpublickey'
+      ..sharedBy = params.clientAtSign
+      ..sharedWith = params.sshnpdAtSign
+      ..metadata = (Metadata()..ttl = 10000);
+    unawaited(notify(
+      sendOurPublicKeyToSshnpd,
+      publicKeyContents,
+      checkForFinalDeliveryStatus: false,
+      waitForFinalDeliveryStatus: false,
+    ).onError((e, st) {
+      throw SshnpError('Error sending ssh public key to sshnpd: $e');
+    }));
   }
 
   /// Resolve the remote username to use in the ssh session.
@@ -177,6 +171,38 @@ abstract class SshnpdChannel with AsyncInitialization, AtClientBindings {
     } else {
       return remoteUsername;
     }
+  }
+
+  Future<List<(DaemonFeature feature, bool supported, String reason)>>
+      featureCheck(List<DaemonFeature> features,
+          {Duration timeout = const Duration(seconds: 10)}) async {
+    if (features.isEmpty) {
+      return [];
+    }
+    Map<String, dynamic> pingResponse;
+    try {
+      pingResponse = await ping().timeout(timeout);
+    } on TimeoutException catch (_) {
+      var msg = 'Ping to ${params.device}${params.sshnpdAtSign}'
+          ' timed out after ${timeout.inSeconds} seconds';
+      return features.map((e) => (e, false, msg)).toList();
+    } catch (e) {
+      var msg = 'Ping to ${params.device}${params.sshnpdAtSign}'
+          ' threw exception $e';
+      return features.map((feature) => (feature, false, msg)).toList();
+    }
+
+    final Map<String, dynamic> daemonFeatures =
+        pingResponse['supportedFeatures'];
+    return features
+        .map((feature) => (
+              feature,
+              daemonFeatures[feature.name] == true,
+              daemonFeatures[feature.name] == true
+                  ? ''
+                  : 'This device daemon does not ${feature.description}',
+            ))
+        .toList();
   }
 
   Future<Map<String, dynamic>> ping() async {

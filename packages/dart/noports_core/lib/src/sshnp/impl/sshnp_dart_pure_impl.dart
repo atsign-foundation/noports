@@ -49,6 +49,11 @@ class SshnpDartPureImpl extends SshnpCore
   SSHClient? tunnelSshClient;
 
   @override
+  Future<void> dispose() async {
+    completeDisposal();
+  }
+
+  @override
   Future<SshnpResult> run() async {
     /// Ensure that sshnp is initialized
     await callInitialization();

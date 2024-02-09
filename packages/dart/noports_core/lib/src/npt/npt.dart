@@ -4,10 +4,14 @@ import 'dart:io';
 import 'package:args/args.dart';
 import 'package:at_client/at_client.dart';
 import 'package:at_utils/at_logger.dart';
+import 'package:meta/meta.dart';
 import 'package:noports_core/sshnp.dart';
 import 'package:noports_core/utils.dart';
 import 'package:uuid/uuid.dart';
 
+import '../common/features.dart';
+import '../common/mixins/async_completion.dart';
+import '../common/mixins/async_initialization.dart';
 import '../common/mixins/at_client_bindings.dart';
 import '../common/streaming_logging_handler.dart';
 import '../sshnp/impl/notification_request_message.dart';
@@ -111,7 +115,8 @@ abstract class NptBase implements Npt {
   }
 }
 
-class _NptImpl extends NptBase with AtClientBindings {
+class _NptImpl extends NptBase
+    with AsyncInitialization, AsyncDisposal, AtClientBindings {
   SshnpdDefaultChannel get sshnpdChannel => _sshnpdChannel;
   late final SshnpdDefaultChannel _sshnpdChannel;
 
@@ -137,7 +142,50 @@ class _NptImpl extends NptBase with AtClientBindings {
   }
 
   @override
+  Future<void> dispose() async {
+    completeDisposal();
+  }
+
+  @override
+  @mustCallSuper
+  Future<void> initialize() async {
+    if (!isSafeToInitialize) return;
+
+    logger.info('Initializing $runtimeType');
+
+    /// Start the sshnpd payload handler
+    await sshnpdChannel.callInitialization();
+
+    List<DaemonFeature> requiredFeatures = [
+      DaemonFeature.srAuth,
+      DaemonFeature.srE2ee,
+      DaemonFeature.supportsPortChoice,
+    ];
+    sendProgress('Sending daemon feature check request');
+
+    Future<List<(DaemonFeature feature, bool supported, String reason)>>
+        featureCheck = sshnpdChannel.featureCheck(requiredFeatures);
+
+    /// Retrieve the srvd host and port pair
+    sendProgress('Fetching host and port from srvd');
+    await srvdChannel.callInitialization();
+    sendProgress('Received host and port from srvd');
+
+    sendProgress('Waiting for daemon feature check response');
+    List<(DaemonFeature, bool, String)> features = await featureCheck;
+    sendProgress('Received daemon feature check response');
+    await Future.delayed(Duration(milliseconds: 1));
+    for (final (DaemonFeature _, bool supported, String reason) in features) {
+      if (!supported) throw SshnpError(reason);
+    }
+    sendProgress('Required daemon features are supported');
+  }
+
+  @override
   Future<int> run() async {
+    /// Ensure that sshnp is initialized
+    await callInitialization();
+
     var msg = 'Sending session request to the device daemon';
     logger.info(msg);
     sendProgress(msg);

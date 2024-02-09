@@ -95,9 +95,9 @@ class SshnpdImpl implements Sshnpd {
       'version': version,
       'corePackageVersion': packageVersion,
       'supportedFeatures': {
-        DaemonFeatures.srAuth.name: true,
-        DaemonFeatures.srE2ee.name: true,
-        DaemonFeatures.acceptsPublicKeys.name: addSshPublicKeys,
+        DaemonFeature.srAuth.name: true,
+        DaemonFeature.srE2ee.name: true,
+        DaemonFeature.acceptsSshPublicKeys.name: addSshPublicKeys,
       },
     };
   }
