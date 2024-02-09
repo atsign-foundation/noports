@@ -282,7 +282,7 @@ class _ProfileFormState extends ConsumerState<ProfileFormDesktopView> {
                                 onValidator: FormValidator.validatePrivateKeyField,
                               );
                             }),
-                        gapW38,
+                        gapW34,
                         CustomSwitchWidget(
                           labelText: strings.sendSshPublicKey,
                           value: newConfig.sendSshPublicKey ?? oldConfig.sendSshPublicKey,
