@@ -111,5 +111,12 @@ void *srv_side_handle(void *side) {
     mbedtls_net_close(s->socket);
   } else {
   }
+
+  // Notify the main thread that we are done so it will know to clean up
+  atclient_atlogger_log(tag, DEBUG, "Exiting side thread\n");
+  pthread_t t = pthread_self();
+  write(s->main_pipe[1], &t, sizeof(pthread_t));
+
+  // Exit this thread
   pthread_exit(NULL);
 }
