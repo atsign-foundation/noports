@@ -36,7 +36,11 @@ struct _chunked_transformer {
   };
 };
 
-int aes_ctr_crypt_stream(const chunked_transformer_t *self,
-                         unsigned char *chunk, const size_t len, size_t *olen);
+int aes_ctr_encrypt_stream(const chunked_transformer_t *self,
+                           unsigned char *chunk, const size_t len,
+                           size_t *olen);
 
+int aes_ctr_decrypt_stream(const chunked_transformer_t *self,
+                           unsigned char *chunk, const size_t len,
+                           size_t *olen);
 #endif

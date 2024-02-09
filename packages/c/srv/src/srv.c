@@ -78,8 +78,8 @@ int run_srv(srv_params_t *params) {
     decrypter.aes_ctr.nc_off = 0;
 
     // Set the transform functions
-    encrypter.transform = aes_ctr_crypt_stream;
-    decrypter.transform = aes_ctr_crypt_stream;
+    encrypter.transform = aes_ctr_encrypt_stream;
+    decrypter.transform = aes_ctr_decrypt_stream;
   };
 
   if (params->bind_local_port == 0) {
