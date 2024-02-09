@@ -18,21 +18,19 @@ class _ProfileMenuBarState extends ConsumerState<ProfileMenuButton> {
     final strings = AppLocalizations.of(context)!;
     return PopupMenuButton(
       itemBuilder: (context) => [
-        PopupMenuItem(
-          child: ProfileMenuItem(
-              const Icon(Icons.file_download_outlined), strings.export),
-          onTap: () =>
-              ProfileActionCallbacks.export(ref, context, widget.profileName),
-        ),
+        // PopupMenuItem(
+        //   child: ProfileMenuItem(
+        //       const Icon(Icons.file_download_outlined), strings.export),
+        //   onTap: () =>
+        //       ProfileActionCallbacks.export(ref, context, widget.profileName),
+        // ),
         PopupMenuItem(
           child: ProfileMenuItem(const Icon(Icons.edit), strings.edit),
-          onTap: () =>
-              ProfileActionCallbacks.edit(ref, context, widget.profileName),
+          onTap: () => ProfileActionCallbacks.edit(ref, context, widget.profileName),
         ),
         PopupMenuItem(
           child: const ProfileMenuItem(Icon(Icons.delete_forever), 'Delete'),
-          onTap: () =>
-              ProfileActionCallbacks.delete(context, widget.profileName),
+          onTap: () => ProfileActionCallbacks.delete(context, widget.profileName),
         ),
       ],
       padding: EdgeInsets.zero,
