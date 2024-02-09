@@ -228,6 +228,8 @@ void main(List<String> args) async {
       final localPort = await npt.run();
 
       stdout.writeln('$localPort');
+
+      exit(0);
     } on ArgumentError catch (error) {
       printUsage(error: error);
       exitProgram(exitCode: 1);
