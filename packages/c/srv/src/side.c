@@ -14,9 +14,11 @@
 #define TAG_B "srv - side b"
 
 int srv_side_init(const side_hints_t *hints, side_t *side) {
-  mbedtls_net_init(&side->socket);
-
+  // Is it a bit redundant to use a separate struct for the predefined values in
+  // the side struct? yes... but it is easier to tell what you should set vs let
+  // this function set
   memcpy(side, hints, sizeof(side_hints_t));
+  mbedtls_net_init(&side->socket);
 
   // Convert port to string
   char service[MAX_PORT_LEN];
@@ -52,7 +54,6 @@ int srv_side_init(const side_hints_t *hints, side_t *side) {
     }
   }
 
-  // store the context
   return 0;
 }
 

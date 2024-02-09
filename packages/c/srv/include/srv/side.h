@@ -25,7 +25,7 @@ struct _side_t {
   const chunked_transformer_t *transformer;
 
   // During init
-  mbedtls_net_context socket;
+  mbedtls_net_context socket; // NB: free this with mbedtls_net_free
   side_t *other;
   int main_pipe[2];
 
