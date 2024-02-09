@@ -1,5 +1,0 @@
-name: sc
-environment:
-  sdk: '^3.2.0'
-dependencies:
-  socket_connector: ^2.0.1
