@@ -1,6 +1,7 @@
 #ifndef SRV_H
 #define SRV_H
 #include "srv/params.h"
+#include "srv/stream.h"
 
 // LOGGING
 #define ERROR ATLOGGER_LOGGING_LEVEL_ERROR
@@ -31,4 +32,11 @@ void no_op() {}
 #define SRV_COMPLETION_STRING "rv started successfully"
 int run_srv(srv_params_t *params);
 
+int socket_to_socket(const srv_params_t *params, const char *auth_string,
+                     chunked_transformer_t *encrypter,
+                     chunked_transformer_t *decrypter);
+
+int server_to_socket(const srv_params_t *params, const char *auth_string,
+                     chunked_transformer_t *encrypter,
+                     chunked_transformer_t *decrypter);
 #endif
