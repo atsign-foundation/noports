@@ -4,7 +4,7 @@ import 'package:at_utils/at_logger.dart';
 import 'package:noports_core/srvd.dart';
 import 'package:sshnoports/src/create_at_client_cli.dart';
 import 'package:sshnoports/src/print_version.dart';
-import 'package:at_client/at_client.dart';
+import 'package:sshnoports/src/service_factories.dart';
 
 void main(List<String> args) async {
   AtSignLogger.root_level = 'SHOUT';
@@ -21,7 +21,7 @@ void main(List<String> args) async {
         atKeysFilePath: p.atKeysFilePath,
         namespace: Srvd.namespace,
         rootDomain: p.rootDomain,
-        atServiceFactory: DefaultAtServiceFactory(),
+        atServiceFactory: ServiceFactoryWithNoOpSyncService(),
       ),
       usageCallback: (e, s) {
         printVersion();

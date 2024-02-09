@@ -24,7 +24,7 @@ void main(List<String> args) async {
   bool perSessionStorage = false;
 
   void deleteStorage() {
-    if (! perSessionStorage) {
+    if (!perSessionStorage) {
       return;
     }
 

@@ -9,7 +9,6 @@ import 'package:dartssh2/dartssh2.dart';
 
 // atPlatform packages
 import 'package:at_utils/at_logger.dart';
-import 'package:at_client/at_client.dart';
 
 // local packages
 import 'package:noports_core/sshnp_foundation.dart';
@@ -18,6 +17,7 @@ import 'package:sshnoports/src/create_at_client_cli.dart';
 import 'package:sshnoports/src/print_devices.dart';
 import 'package:sshnoports/src/print_version.dart';
 import 'package:sshnoports/src/create_sshnp.dart';
+import 'package:sshnoports/src/service_factories.dart';
 
 void main(List<String> args) async {
   AtSignLogger.root_level = 'SHOUT';
@@ -131,7 +131,7 @@ void main(List<String> args) async {
               getDefaultAtKeysFilePath(homeDirectory, params.clientAtSign),
           rootDomain: params.rootDomain,
           storagePath: storageDir!.path,
-          atServiceFactory: DefaultAtServiceFactory(),
+          atServiceFactory: ServiceFactoryWithNoOpSyncService(),
         ),
         sshClient:
             SupportedSshClient.fromString(argResults['ssh-client'] as String),
