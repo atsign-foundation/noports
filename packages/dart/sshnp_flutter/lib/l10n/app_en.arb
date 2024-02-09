@@ -51,7 +51,7 @@
     "keyFile" : "Key File",
     "listDevices" : "List Devices",
     "localPort": "Local Forwarding Port",
-    "localPortTooltip" : "Port on which sshd is listening locally on the client host",
+    "localPortTooltip" : "Local port to use for doing tcp forwarding (ephemeral if set to 0)",
     "localSshdPort": "Local SSHD Port",
     "localSshOptions" : "Local SSH Options",
     "localSshOptionsTooltip" : "Add these commands to the local ssh command",
