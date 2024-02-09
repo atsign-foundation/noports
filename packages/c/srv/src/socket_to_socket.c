@@ -11,8 +11,8 @@ int socket_to_socket(const srv_params_t *params, const char *auth_string,
                      chunked_transformer_t *encrypter,
                      chunked_transformer_t *decrypter) {
   side_t sides[2];
-  side_hints_t hints_a = {1, 0, NULL, params->local_port};
-  side_hints_t hints_b = {0, 0, params->host, params->port};
+  side_hints_t hints_a = {1, 0, NULL, params->local_port, encrypter};
+  side_hints_t hints_b = {0, 0, params->host, params->port, decrypter};
 
   atclient_atlogger_log(TAG, INFO, "Initializing connection for side a\n");
   int res = srv_side_init(&hints_a, &sides[0]);
