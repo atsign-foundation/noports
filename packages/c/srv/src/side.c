@@ -67,12 +67,12 @@ void srv_link_sides(side_t *side_a, side_t *side_b, int fds[2]) {
 }
 
 void srv_side_free(side_t *side) { mbedtls_net_free(side->socket); }
-
 void *srv_side_handle(void *side) {
   side_t *s = (side_t *)side;
 
   const char *const tag = s->is_side_a ? TAG_A : TAG_B;
-  unsigned char *buffer = malloc(MAX_BUFFER_LEN * sizeof(unsigned char));
+
+  unsigned char *buffer = malloc(BUFFER_LEN * sizeof(unsigned char));
 
   if (s->is_server == 0) {
     // rlen = received length
@@ -80,10 +80,12 @@ void *srv_side_handle(void *side) {
     // slen = sent length
     size_t rlen, len, slen;
 
-    while ((rlen = mbedtls_net_recv(s->socket, buffer, MAX_BUFFER_LEN)) > 0) {
+    while ((rlen = mbedtls_net_recv(s->socket, buffer, READ_LEN)) > 0) {
+
+      atclient_atlogger_log(tag, INFO, "Read %d bytes \n", rlen);
 
       if (s->transformer != NULL) {
-        atclient_atlogger_log(tag, INFO, "Transforming data\n");
+        atclient_atlogger_log(tag, DEBUG, "Transforming data \n");
         int res =
             (int)s->transformer->transform(s->transformer, buffer, rlen, &len);
         if (res != 0) {
@@ -97,6 +99,7 @@ void *srv_side_handle(void *side) {
         slen = mbedtls_net_send(s->other->socket, buffer, len);
       } else {
         halt_if_cant_bind_local_port();
+        // TODO: implement retries
       }
       if (slen != len) {
         // How to handle this? We probably shouldn't just drop the connection

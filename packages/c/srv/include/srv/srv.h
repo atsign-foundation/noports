@@ -10,8 +10,14 @@
 #define DEBUG ATLOGGER_LOGGING_LEVEL_DEBUG
 
 // NETWORKING
-#define MAX_PORT_LEN 6          // 5 digits + null terminator
-#define MAX_BUFFER_LEN 128 * 32 // =  4 AES blocks * 256 bits / 8 bits per byte
+#define MAX_PORT_LEN 6 // 5 digits + null terminator
+
+// BUFFER SIZES
+// NB: This is currently hard coded to support AES, but may need to be modified
+// for other transformation algorithms
+#define READ_BLOCKS 4
+#define READ_LEN (AES_BLOCK_LEN * READ_BLOCKS)
+#define BUFFER_LEN (READ_LEN + AES_BLOCK_LEN + 1)
 
 // Disable local bind for now
 #define ALLOW_BIND_LOCAL_PORT 0

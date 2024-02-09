@@ -160,6 +160,7 @@ int socket_to_socket(const srv_params_t *params, const char *auth_string,
   fprintf(stderr, "%s\n", SRV_COMPLETION_STRING);
   fflush(stderr);
 
+  // Wait for all threads to finish and join them back to the main thread
   pthread_t tid;
   int retval = 0;
   for (int i = 0; i < 2; i++) {
@@ -167,12 +168,12 @@ int socket_to_socket(const srv_params_t *params, const char *auth_string,
 
     res = pthread_join(tid, (void *)&retval);
     if (res != 0) {
-      atclient_atlogger_log(TAG, INFO,
+      atclient_atlogger_log(TAG, DEBUG,
                             "Joining pthread %l failed with code: %l\n",
                             threads[i], res);
       break;
     }
-    atclient_atlogger_log(TAG, INFO, "pthread %l exited with code: %l\n",
+    atclient_atlogger_log(TAG, DEBUG, "pthread %l exited with code: %l\n",
                           threads[i], retval);
     if (retval != 0) {
       break;
@@ -180,9 +181,10 @@ int socket_to_socket(const srv_params_t *params, const char *auth_string,
   }
 
   if (res != 0 || retval != 0) {
+    atclient_atlogger_log(TAG, DEBUG, "Cancelling all open threads\n");
     for (int i = 0; i < 2; i++) {
       if (pthread_cancel(threads[i]) != 0) {
-        atclient_atlogger_log(TAG, INFO, "Failed to cancel thread: %l\n",
+        atclient_atlogger_log(TAG, DEBUG, "Failed to cancel thread: %l\n",
                               threads[i]);
       }
     }

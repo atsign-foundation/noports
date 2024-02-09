@@ -1,13 +1,11 @@
 #ifndef STREAM_H
 #define STREAM_H
 #include <MbedTLS/aes.h>
-#include <stddef.h>
 
 #define AES_256_KEY_BYTES 32 // 256 bits = 32 bytes
 #define AES_256_KEY_BITS 256
 
 #define AES_BLOCK_LEN 16 // 128 bits = 16 bytes
-
 // Transformer struct typedef
 typedef struct _chunked_transformer chunked_transformer_t;
 

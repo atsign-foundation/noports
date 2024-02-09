@@ -12,9 +12,7 @@ project(
 # globs are known as bad practice, so we do not use them here
 set(SRV_SRCS
   ${CMAKE_CURRENT_LIST_DIR}/src/params.c
-  ${CMAKE_CURRENT_LIST_DIR}/src/server_to_socket.c
   ${CMAKE_CURRENT_LIST_DIR}/src/side.c
-  ${CMAKE_CURRENT_LIST_DIR}/src/socket_to_socket.c
   ${CMAKE_CURRENT_LIST_DIR}/src/srv.c
   ${CMAKE_CURRENT_LIST_DIR}/src/stream.c
 )
