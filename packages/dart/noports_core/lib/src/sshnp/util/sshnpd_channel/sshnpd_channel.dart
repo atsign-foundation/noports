@@ -177,9 +177,9 @@ abstract class SshnpdChannel with AsyncInitialization, AtClientBindings {
   }
 
   Future<List<(DaemonFeature feature, bool supported, String reason)>>
-      featureCheck(List<DaemonFeature> features,
+      featureCheck(List<DaemonFeature> featuresToCheck,
           {Duration timeout = const Duration(seconds: 10)}) async {
-    if (features.isEmpty) {
+    if (featuresToCheck.isEmpty) {
       return [];
     }
     Map<String, dynamic> pingResponse;
@@ -188,22 +188,25 @@ abstract class SshnpdChannel with AsyncInitialization, AtClientBindings {
     } on TimeoutException catch (_) {
       var msg = 'Ping to ${params.device}${params.sshnpdAtSign}'
           ' timed out after ${timeout.inSeconds} seconds';
-      return features.map((e) => (e, false, msg)).toList();
+      return featuresToCheck.map((f) => (f, false, msg)).toList();
     } catch (e) {
       var msg = 'Ping to ${params.device}${params.sshnpdAtSign}'
           ' threw exception $e';
-      return features.map((feature) => (feature, false, msg)).toList();
+      return featuresToCheck.map((feature) => (feature, false, msg)).toList();
     }
 
+    // If supportedFeatures was null (i.e. a response from a v4 daemon),
+    // then we will assume that "acceptsPublicKeys" is true
     final Map<String, dynamic> daemonFeatures =
-        pingResponse['supportedFeatures'];
-    return features
-        .map((feature) => (
-              feature,
-              daemonFeatures[feature.name] == true,
-              daemonFeatures[feature.name] == true
+        pingResponse['supportedFeatures'] ??
+            {DaemonFeature.acceptsPublicKeys.name: true};
+    return featuresToCheck
+        .map((featureToCheck) => (
+              featureToCheck,
+              daemonFeatures[featureToCheck.name] == true,
+              daemonFeatures[featureToCheck.name] == true
                   ? ''
-                  : 'This device daemon does not ${feature.description}',
+                  : 'This device daemon does not ${featureToCheck.description}',
             ))
         .toList();
   }

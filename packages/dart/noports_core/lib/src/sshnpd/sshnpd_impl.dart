@@ -83,7 +83,7 @@ class SshnpdImpl implements Sshnpd {
     required this.sshClient,
     this.makeDeviceInfoVisible = false,
     this.addSshPublicKeys = false,
-    this.localSshdPort = DefaultArgs.localSshdPort,
+    this.localSshdPort = DefaultSshnpdArgs.localSshdPort,
     required this.ephemeralPermissions,
     required this.sshAlgorithm,
     required this.version,
@@ -98,7 +98,7 @@ class SshnpdImpl implements Sshnpd {
       'supportedFeatures': {
         DaemonFeature.srAuth.name: true,
         DaemonFeature.srE2ee.name: true,
-        DaemonFeature.acceptsSshPublicKeys.name: addSshPublicKeys,
+        DaemonFeature.acceptsPublicKeys.name: addSshPublicKeys,
         DaemonFeature.supportsPortChoice.name: true,
       },
     };

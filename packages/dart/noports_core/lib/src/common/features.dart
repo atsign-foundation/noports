@@ -1,8 +1,10 @@
 /// Features which can be supported by the NoPorts Daemon
+/// Do not change the names of existing features as this will cause
+/// breaking changes across versions
 enum DaemonFeature {
-  /// daemon will accept public keys sent by clients (i.e. daemon has been
+  /// daemon will accept ssh public keys sent by clients (i.e. daemon has been
   /// started with the `--sshpublickey` or `-s` flag)
-  acceptsSshPublicKeys,
+  acceptsPublicKeys,
 
   /// authenticate when connecting to the Socket Rendezvous (sr)
   srAuth,
@@ -21,7 +23,7 @@ enum DaemonFeature {
 extension FeatureDescription on DaemonFeature {
   String get description {
     switch (this) {
-      case DaemonFeature.acceptsSshPublicKeys:
+      case DaemonFeature.acceptsPublicKeys:
         return 'accept ssh public keys from the client';
       case DaemonFeature.srAuth:
         return 'authenticate to the socket rendezvous';

@@ -125,7 +125,6 @@ class SshnpArg {
     authenticateClientToRvdArg,
     authenticateDeviceToRvdArg,
     encryptRvdTrafficArg,
-    discoverDaemonFeaturesArg,
   ];
 
   @override
@@ -370,21 +369,5 @@ class SshnpArg {
     defaultsTo: DefaultArgs.encryptRvdTraffic,
     format: ArgFormat.flag,
     mandatory: false,
-  );
-  static const discoverDaemonFeaturesArg = SshnpArg(
-    name: 'discover-daemon-features',
-    aliases: ['ddf'],
-    help: 'When this flag is set, this client starts by pinging the daemon to'
-        ' discover what features it supports, and exits if this client has '
-        ' requested use of a feature which the daemon does not support.'
-        ' If you already know what features the daemon supports and are '
-        ' setting other flags (--authenticate-device-to-rvd and'
-        ' --encrypt-rvd-traffic) based on that knowledge, then you should unset'
-        ' this flag to reduce total time-to-connection.',
-    defaultsTo: DefaultArgs.discoverDaemonFeatures,
-    format: ArgFormat.flag,
-    parseWhen: ParseWhen.commandLine,
-    mandatory: false,
-    negatable: false,
   );
 }

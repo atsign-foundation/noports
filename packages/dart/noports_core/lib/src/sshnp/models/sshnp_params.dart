@@ -28,9 +28,18 @@ abstract interface class ClientParams {
 
   String? get atKeysFilePath;
 
+  /// An encryption keypair which should only ever reside in memory.
+  /// The public key is provided in requests to the daemon, and is
+  /// used by daemons to encrypt symmetric encryption keys intended for
+  /// one-time use in a NoPorts session, and share the encrypted details
+  /// as part of the daemon's response
   AtEncryptionKeyPair get sessionKP;
 
   EncryptionKeyType get sessionKPType;
+
+  /// The port we wish to use on this device. If 0, then we ask the operating
+  /// system for a port
+  int get localPort;
 }
 
 abstract class ClientParamsBase implements ClientParams {
@@ -64,11 +73,9 @@ abstract class ClientParamsBase implements ClientParams {
   @override
   final String? atKeysFilePath;
 
-  /// An encryption keypair which should only ever reside in memory.
-  /// The public key is provided in requests to the daemon, and is
-  /// used by daemons to encrypt symmetric encryption keys intended for
-  /// one-time use in a NoPorts session, and share the encrypted details
-  /// as part of the daemon's response
+  @override
+  final int localPort;
+
   @override
   AtEncryptionKeyPair get sessionKP {
     _sessionKP ??= AtChopsUtil.generateAtEncryptionKeyPair(keySize: 2048);
@@ -84,6 +91,7 @@ abstract class ClientParamsBase implements ClientParams {
     required this.clientAtSign,
     required this.sshnpdAtSign,
     required this.srvdAtSign,
+    this.localPort = DefaultSshnpArgs.localPort,
     this.device = DefaultSshnpArgs.device,
     this.verbose = DefaultArgs.verbose,
     this.atKeysFilePath,
@@ -119,6 +127,7 @@ class NptParams extends ClientParamsBase
     required this.remoteHost,
     required this.remotePort,
     required super.device,
+    super.localPort = DefaultSshnpArgs.localPort,
     super.verbose = DefaultArgs.verbose,
     super.atKeysFilePath,
     super.rootDomain = DefaultArgs.rootDomain,
@@ -148,7 +157,6 @@ class SshnpParams extends ClientParamsBase
   /// handle the error.
 
   /// Optional Arguments
-  final int localPort;
   final String? identityFile;
   final String? identityPassphrase;
   @override
@@ -161,7 +169,6 @@ class SshnpParams extends ClientParamsBase
   final int remoteSshdPort;
   final int idleTimeout;
   final bool addForwardsToTunnel;
-  final bool discoverDaemonFeatures;
 
   /// Special Arguments
 
@@ -177,7 +184,7 @@ class SshnpParams extends ClientParamsBase
     required super.srvdAtSign,
     this.profileName,
     super.device = DefaultSshnpArgs.device,
-    this.localPort = DefaultSshnpArgs.localPort,
+    super.localPort = DefaultSshnpArgs.localPort,
     this.identityFile,
     this.identityPassphrase,
     this.sendSshPublicKey = DefaultSshnpArgs.sendSshPublicKey,
@@ -194,7 +201,6 @@ class SshnpParams extends ClientParamsBase
     super.authenticateClientToRvd = DefaultArgs.authenticateClientToRvd,
     super.authenticateDeviceToRvd = DefaultArgs.authenticateDeviceToRvd,
     super.encryptRvdTraffic = DefaultArgs.encryptRvdTraffic,
-    this.discoverDaemonFeatures = DefaultArgs.discoverDaemonFeatures,
   });
 
   factory SshnpParams.empty() {
@@ -238,8 +244,6 @@ class SshnpParams extends ClientParamsBase
       authenticateDeviceToRvd:
           params2.authenticateDeviceToRvd ?? params1.authenticateDeviceToRvd,
       encryptRvdTraffic: params2.encryptRvdTraffic ?? params1.encryptRvdTraffic,
-      discoverDaemonFeatures:
-          params2.discoverDaemonFeatures ?? params1.discoverDaemonFeatures,
     );
   }
 
@@ -285,8 +289,6 @@ class SshnpParams extends ClientParamsBase
           DefaultArgs.authenticateDeviceToRvd,
       encryptRvdTraffic:
           partial.encryptRvdTraffic ?? DefaultArgs.encryptRvdTraffic,
-      discoverDaemonFeatures:
-          partial.discoverDaemonFeatures ?? DefaultArgs.discoverDaemonFeatures,
     );
   }
 
@@ -335,7 +337,6 @@ class SshnpParams extends ClientParamsBase
       SshnpArg.authenticateClientToRvdArg.name: authenticateClientToRvd,
       SshnpArg.authenticateDeviceToRvdArg.name: authenticateDeviceToRvd,
       SshnpArg.encryptRvdTrafficArg.name: encryptRvdTraffic,
-      SshnpArg.discoverDaemonFeaturesArg.name: discoverDaemonFeatures,
     };
     args.removeWhere(
       (key, value) => !parserType.shouldParse(SshnpArg.fromName(key).parseWhen),
@@ -375,7 +376,6 @@ class SshnpPartialParams {
   final bool? authenticateClientToRvd;
   final bool? authenticateDeviceToRvd;
   final bool? encryptRvdTraffic;
-  final bool? discoverDaemonFeatures;
 
   /// Operation flags
   final bool? listDevices;
@@ -404,7 +404,6 @@ class SshnpPartialParams {
     this.authenticateClientToRvd,
     this.authenticateDeviceToRvd,
     this.encryptRvdTraffic,
-    this.discoverDaemonFeatures,
   });
 
   factory SshnpPartialParams.empty() {
@@ -444,8 +443,6 @@ class SshnpPartialParams {
       authenticateDeviceToRvd:
           params2.authenticateDeviceToRvd ?? params1.authenticateDeviceToRvd,
       encryptRvdTraffic: params2.encryptRvdTraffic ?? params1.encryptRvdTraffic,
-      discoverDaemonFeatures:
-          params2.discoverDaemonFeatures ?? params1.discoverDaemonFeatures,
     );
   }
 
@@ -500,7 +497,6 @@ class SshnpPartialParams {
       authenticateClientToRvd: args[SshnpArg.authenticateClientToRvdArg.name],
       authenticateDeviceToRvd: args[SshnpArg.authenticateDeviceToRvdArg.name],
       encryptRvdTraffic: args[SshnpArg.encryptRvdTrafficArg.name],
-      discoverDaemonFeatures: args[SshnpArg.discoverDaemonFeaturesArg.name],
     );
   }
 

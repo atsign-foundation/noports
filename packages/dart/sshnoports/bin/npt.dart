@@ -87,7 +87,13 @@ void main(List<String> args) async {
             ' The same atSign may be used to run daemons on many devices,'
             ' therefore each one must run with its own unique device name',
       );
-      // TODO add ability to specify local port
+      parser.addOption(
+        'local-port',
+        abbr: 'l',
+        help: 'client-side local port for the socket tunnel.'
+            ' If not supplied, we will ask the o/s for a spare port',
+        defaultsTo: '0',
+      );
       parser.addOption(
         'remote-port',
         abbr: 'p',
@@ -153,6 +159,7 @@ void main(List<String> args) async {
       String device = parsedArgs['device'];
       String rootDomain = parsedArgs['root-domain'];
       perSessionStorage = parsedArgs['per-session-storage'];
+      int localPort = int.parse(parsedArgs['local-port']);
 
       // Windows will not let us delete files in use so
       // We will point storage to temp directory and let OS clean up
@@ -208,6 +215,7 @@ void main(List<String> args) async {
           remoteHost: remoteHost,
           remotePort: remotePort,
           device: device,
+          localPort: localPort,
           verbose: verbose,
           rootDomain: parsedArgs['root-domain'],
         ),
@@ -225,9 +233,10 @@ void main(List<String> args) async {
 
       npt.progressStream?.listen((s) => logProgress(s));
 
-      final localPort = await npt.run();
+      final actualLocalPort = await npt.run();
 
-      stdout.writeln('$localPort');
+      stderr.writeln('requested localPort $localPort actual localPort $actualLocalPort');
+      stdout.writeln('$actualLocalPort');
 
       exit(0);
     } on ArgumentError catch (error) {

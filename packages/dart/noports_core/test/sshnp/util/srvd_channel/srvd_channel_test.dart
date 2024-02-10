@@ -110,7 +110,6 @@ void main() {
       when(() => mockParams.authenticateDeviceToRvd).thenReturn(true);
       when(() => mockParams.authenticateClientToRvd).thenReturn(true);
       when(() => mockParams.encryptRvdTraffic).thenReturn(true);
-      when(() => mockParams.discoverDaemonFeatures).thenReturn(false);
       when(() => mockParams.sendSshPublicKey).thenReturn(false);
 
       when(subscribeInvocation)

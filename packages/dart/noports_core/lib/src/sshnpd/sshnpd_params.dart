@@ -81,7 +81,7 @@ class SshnpdParams {
       sshClient: sshClient,
       rootDomain: r['root-domain'],
       localSshdPort:
-          int.tryParse(r['local-sshd-port']) ?? DefaultArgs.localSshdPort,
+          int.tryParse(r['local-sshd-port']) ?? DefaultSshnpdArgs.localSshdPort,
       ephemeralPermissions: r['ephemeral-permissions'],
       sshAlgorithm: SupportedSshAlgorithm.fromString(r['ssh-algorithm']),
       storagePath: r['storage-path'],
@@ -166,7 +166,7 @@ class SshnpdParams {
     parser.addOption(
       'local-sshd-port',
       help: 'port on which sshd is listening locally on localhost',
-      defaultsTo: DefaultArgs.localSshdPort.toString(),
+      defaultsTo: DefaultSshnpdArgs.localSshdPort.toString(),
       mandatory: false,
     );
 
