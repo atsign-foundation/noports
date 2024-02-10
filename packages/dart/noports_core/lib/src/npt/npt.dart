@@ -231,12 +231,19 @@ class _NptImpl extends NptBase
         throw SshnpError('No response from the device daemon');
     }
 
-    sendProgress('Finding an available local port');
+    int localRvPort;
+    if (params.localPort == 0) {
+      sendProgress('Finding an available local port');
 
-    /// Find a port to use
-    final server = await ServerSocket.bind(InternetAddress.anyIPv4, 0);
-    int localRvPort = server.port;
-    await server.close();
+      /// Find a port to use
+      final server = await ServerSocket.bind(InternetAddress.anyIPv4, 0);
+      localRvPort = server.port;
+      await server.close();
+    } else {
+      sendProgress('Will use supplied local port ${params.localPort}');
+
+      localRvPort = params.localPort;
+    }
 
     /// Start srv
     sendProgress('Creating connection to socket rendezvous');
