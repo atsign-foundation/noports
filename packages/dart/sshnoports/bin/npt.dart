@@ -89,6 +89,7 @@ void main(List<String> args) async {
       );
       parser.addOption(
         'local-port',
+        aliases: ['lp'],
         abbr: 'l',
         help: 'client-side local port for the socket tunnel.'
             ' If not supplied, we will ask the o/s for a spare port',
