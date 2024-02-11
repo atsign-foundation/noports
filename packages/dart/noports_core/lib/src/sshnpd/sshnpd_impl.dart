@@ -151,8 +151,7 @@ class SshnpdImpl implements Sshnpd {
         ephemeralPermissions: p.ephemeralPermissions,
         sshAlgorithm: p.sshAlgorithm,
         version: version,
-        permitOpen:
-            p.permitOpen.split(',').map((e) => e.trim()).toList(),
+        permitOpen: p.permitOpen.split(',').map((e) => e.trim()).toList(),
       );
 
       if (p.verbose) {
@@ -424,7 +423,10 @@ class SshnpdImpl implements Sshnpd {
     }
 
     String requested = '${req.requestedHost}:${req.requestedPort}';
-    if (!permitOpen.contains(requested)) {
+    if (!(permitOpen.contains(requested) ||
+        permitOpen.contains('*:${req.requestedPort}') ||
+        permitOpen.contains('${req.requestedHost}:*') ||
+        permitOpen.contains('*:*'))) {
       // Notify noports client that this session is NOT connected
       await _notify(
         atKey: _createResponseAtKey(
