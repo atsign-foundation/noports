@@ -6,10 +6,11 @@ import 'package:noports_core/srv.dart';
 /// Stubbing for [SrvGenerator] typedef
 abstract class SrvGeneratorCaller<T> {
   Srv<T> call(
-    String host,
-    int port, {
+    String streamingHost,
+    int streamingPort, {
     int? localPort,
     bool? bindLocalPort,
+    String? localHost,
     String? rvdAuthString,
     String? sessionAESKeyString,
     String? sessionIVString,

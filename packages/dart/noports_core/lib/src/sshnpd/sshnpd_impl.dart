@@ -73,6 +73,8 @@ class SshnpdImpl implements Sshnpd {
 
   late final Map<String, dynamic> pingResponse;
 
+  final List<String> permitOpen;
+
   SshnpdImpl({
     // final fields
     required this.atClient,
@@ -87,6 +89,7 @@ class SshnpdImpl implements Sshnpd {
     required this.ephemeralPermissions,
     required this.sshAlgorithm,
     required this.version,
+    required this.permitOpen,
   }) {
     logger.hierarchicalLoggingEnabled = true;
     logger.logger.level = Level.SHOUT;
@@ -148,6 +151,8 @@ class SshnpdImpl implements Sshnpd {
         ephemeralPermissions: p.ephemeralPermissions,
         sshAlgorithm: p.sshAlgorithm,
         version: version,
+        permitOpen:
+            p.permitOpen.split(',').map((e) => e.trim()).toList(),
       );
 
       if (p.verbose) {
@@ -404,11 +409,31 @@ class SshnpdImpl implements Sshnpd {
       logger.shout('Failed to verify signature of msg from $requestingAtsign');
       logger.shout('Exception: $e');
       logger.shout('Notification value: ${notification.value}');
+
+      // Notify noports client that this session is NOT connected
+      await _notify(
+        atKey: _createResponseAtKey(
+            requestingAtsign: requestingAtsign, sessionId: req.sessionId),
+        value: 'Signature not verified: $e',
+        sessionId: req.sessionId,
+        checkForFinalDeliveryStatus: false,
+        waitForFinalDeliveryStatus: false,
+      );
       return;
     }
 
-    // TODO if requestedHost is not localhost then respond with an error
-
+    String requested = '${req.requestedHost}:${req.requestedPort}';
+    if (!permitOpen.contains(requested)) {
+      // Notify noports client that this session is NOT connected
+      await _notify(
+        atKey: _createResponseAtKey(
+            requestingAtsign: requestingAtsign, sessionId: req.sessionId),
+        value: 'Daemon does not permit connections to $requested',
+        sessionId: req.sessionId,
+        checkForFinalDeliveryStatus: false,
+        waitForFinalDeliveryStatus: false,
+      );
+    }
     // Start our side of the tunnel
     await startNpt(
       requestingAtsign: requestingAtsign,
@@ -424,7 +449,7 @@ class SshnpdImpl implements Sshnpd {
         'Setting up ports for tunnel session using ${sshClient.name} ($sshClient) from: $requestingAtsign session: ${req.sessionId}');
 
     // TODO Loads of duplicated code here with startDirectSsh, duplicate code needs to be factored out
-    // TODO making the rvdAuthString; generating AES and IV and encrypting them
+    //      e.g. making the rvdAuthString; generating AES and IV and encrypting them
 
     try {
       String? rvdAuthString;
@@ -478,6 +503,7 @@ class SshnpdImpl implements Sshnpd {
         req.rvdPort,
         localPort: req.requestedPort,
         bindLocalPort: false,
+        localHost: req.requestedHost,
         rvdAuthString: rvdAuthString,
         sessionAESKeyString: sessionAESKey,
         sessionIVString: sessionIV,

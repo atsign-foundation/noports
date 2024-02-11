@@ -106,7 +106,7 @@ void main(List<String> args) async {
         'remote-host',
         abbr: 'h',
         aliases: ['rh'],
-        defaultsTo: 'localhost',
+        mandatory: false,
         help: 'The remote host required',
       );
       parser.addOption(
@@ -236,7 +236,8 @@ void main(List<String> args) async {
 
       final actualLocalPort = await npt.run();
 
-      stderr.writeln('requested localPort $localPort actual localPort $actualLocalPort');
+      stderr.writeln(
+          'requested localPort $localPort actual localPort $actualLocalPort');
       stdout.writeln('$actualLocalPort');
 
       exit(0);

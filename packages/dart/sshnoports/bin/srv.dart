@@ -16,6 +16,9 @@ Future<void> main(List<String> args) async {
         defaultsTo: false,
         negatable: false,
         help: 'Set this flag when we are bridging from a local sender')
+    ..addOption('local-host',
+        mandatory: false,
+        help: 'Host on the local network to bridge to; defaults to localhost')
     ..addFlag('rv-auth',
         defaultsTo: false,
         help: 'Whether this rv process will authenticate to rvd')
@@ -32,10 +35,11 @@ Future<void> main(List<String> args) async {
       throw ArgumentError(e.message);
     }
 
-    final String host = parsed['host'];
+    final String streamingHost = parsed['host'];
     final int streamingPort = int.parse(parsed['port']);
     final int localPort = int.parse(parsed['local-port']);
     final bool bindLocalPort = parsed['bind-local-port'];
+    final String localHost = parsed['local-host'];
     final bool rvAuth = parsed['rv-auth'];
     final bool rvE2ee = parsed['rv-e2ee'];
 
@@ -59,9 +63,10 @@ Future<void> main(List<String> args) async {
 
     try {
       SocketConnector connector = await Srv.dart(
-        host,
+        streamingHost,
         streamingPort,
         localPort: localPort,
+        localHost: localHost,
         bindLocalPort: bindLocalPort,
         rvdAuthString: rvdAuthString,
         sessionAESKeyString: sessionAESKeyString,

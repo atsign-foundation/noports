@@ -10,7 +10,7 @@ abstract class Srv<T> {
   static const completionString = 'rv started successfully';
 
   /// The internet address of the host to connect to.
-  abstract final String host;
+  abstract final String streamingHost;
 
   /// The port of the host to connect to.
   abstract final int streamingPort;
@@ -18,6 +18,10 @@ abstract class Srv<T> {
   /// The local port to bridge to
   /// Defaults to 22
   abstract final int? localPort;
+
+  /// The local host to bridge to
+  /// Defaults to localhost
+  abstract final String? localHost;
 
   /// A string which needs to be presented to the rvd before the rvd
   /// will allow any further traffic on the socket
@@ -35,18 +39,20 @@ abstract class Srv<T> {
 
   // Can't use factory functions since Srv contains a generic type
   static Srv<Process> exec(
-    String host,
+    String streamingHost,
     int streamingPort, {
     int? localPort,
+    String? localHost,
     bool? bindLocalPort,
     String? rvdAuthString,
     String? sessionAESKeyString,
     String? sessionIVString,
   }) {
     return SrvImplExec(
-      host,
+      streamingHost,
       streamingPort,
       localPort: localPort,
+      localHost: localHost,
       bindLocalPort: bindLocalPort,
       rvdAuthString: rvdAuthString,
       sessionAESKeyString: sessionAESKeyString,
@@ -55,18 +61,20 @@ abstract class Srv<T> {
   }
 
   static Srv<SocketConnector> dart(
-    String host,
+    String streamingHost,
     int streamingPort, {
     int? localPort,
     bool? bindLocalPort,
+    String? localHost,
     String? rvdAuthString,
     String? sessionAESKeyString,
     String? sessionIVString,
   }) {
     return SrvImplDart(
-      host,
+      streamingHost,
       streamingPort,
       localPort: localPort!,
+      localHost: localHost,
       bindLocalPort: bindLocalPort!,
       rvdAuthString: rvdAuthString,
       sessionAESKeyString: sessionAESKeyString,
@@ -75,16 +83,17 @@ abstract class Srv<T> {
   }
 
   static Srv<SSHSocket> inline(
-    String host,
+    String streamingHost,
     int streamingPort, {
     int? localPort,
     bool? bindLocalPort,
+    String? localHost,
     String? rvdAuthString,
     String? sessionAESKeyString,
     String? sessionIVString,
   }) {
     return SrvImplInline(
-      host,
+      streamingHost,
       streamingPort,
       rvdAuthString: rvdAuthString,
       sessionAESKeyString: sessionAESKeyString,

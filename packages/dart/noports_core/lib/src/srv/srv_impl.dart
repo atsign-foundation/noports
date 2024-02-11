@@ -17,13 +17,16 @@ class SrvImplExec implements Srv<Process> {
   static final AtSignLogger logger = AtSignLogger('SrvImplExec');
 
   @override
-  final String host;
+  final String streamingHost;
 
   @override
   final int streamingPort;
 
   @override
   final int? localPort;
+
+  @override
+  final String? localHost;
 
   @override
   final bool? bindLocalPort;
@@ -38,9 +41,10 @@ class SrvImplExec implements Srv<Process> {
   final String? sessionIVString;
 
   SrvImplExec(
-    this.host,
+    this.streamingHost,
     this.streamingPort, {
     this.localPort,
+    this.localHost,
     this.bindLocalPort = false,
     this.rvdAuthString,
     this.sessionAESKeyString,
@@ -67,11 +71,13 @@ class SrvImplExec implements Srv<Process> {
     }
     var rvArgs = [
       '-h',
-      host,
+      streamingHost,
       '-p',
       streamingPort.toString(),
       '--local-port',
       localPort.toString(),
+      '--local-host',
+      localHost ?? 'localhost',
     ];
     if (bindLocalPort ?? false) {
       rvArgs.add('--bind-local-port');
@@ -130,7 +136,7 @@ class SrvImplInline implements Srv<SSHSocket> {
   final AtSignLogger logger = AtSignLogger('SrvImplInline');
 
   @override
-  final String host;
+  final String streamingHost;
 
   @override
   final int streamingPort;
@@ -142,6 +148,9 @@ class SrvImplInline implements Srv<SSHSocket> {
   final bool bindLocalPort = false;
 
   @override
+  final String? localHost = null;
+
+  @override
   final String? rvdAuthString;
 
   @override
@@ -151,7 +160,7 @@ class SrvImplInline implements Srv<SSHSocket> {
   final String? sessionIVString;
 
   SrvImplInline(
-    this.host,
+    this.streamingHost,
     this.streamingPort, {
     this.rvdAuthString,
     this.sessionAESKeyString,
@@ -195,8 +204,9 @@ class SrvImplInline implements Srv<SSHSocket> {
     }
 
     try {
-      logger.info('Creating socket connection to rvd at $host:$streamingPort');
-      Socket socket = await Socket.connect(host, streamingPort);
+      logger.info(
+          'Creating socket connection to rvd at $streamingHost:$streamingPort');
+      Socket socket = await Socket.connect(streamingHost, streamingPort);
 
       // Authenticate if we have an rvdAuthString
       if (rvdAuthString != null) {
@@ -270,13 +280,16 @@ class WrappedSSHSocket implements SSHSocket {
 @visibleForTesting
 class SrvImplDart implements Srv<SocketConnector> {
   @override
-  final String host;
+  final String streamingHost;
 
   @override
   final int streamingPort;
 
   @override
   final int localPort;
+
+  @override
+  final String? localHost;
 
   @override
   final bool bindLocalPort;
@@ -291,10 +304,11 @@ class SrvImplDart implements Srv<SocketConnector> {
   final String? sessionIVString;
 
   SrvImplDart(
-    this.host,
+    this.streamingHost,
     this.streamingPort, {
     required this.localPort,
     required this.bindLocalPort,
+    this.localHost,
     this.rvdAuthString,
     this.sessionAESKeyString,
     this.sessionIVString,
@@ -337,7 +351,7 @@ class SrvImplDart implements Srv<SocketConnector> {
     }
 
     try {
-      var hosts = await InternetAddress.lookup(host);
+      var hosts = await InternetAddress.lookup(streamingHost);
 
       late final SocketConnector socketConnector;
 
@@ -355,7 +369,8 @@ class SrvImplDart implements Srv<SocketConnector> {
         }
       } else {
         socketConnector = await SocketConnector.socketToSocket(
-            addressA: InternetAddress.loopbackIPv4,
+            addressA:
+                (await InternetAddress.lookup(localHost ?? 'localhost'))[0],
             portA: localPort,
             addressB: hosts[0],
             portB: streamingPort,

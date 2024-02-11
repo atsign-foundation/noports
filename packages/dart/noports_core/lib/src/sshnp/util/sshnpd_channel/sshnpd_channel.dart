@@ -223,8 +223,10 @@ abstract class SshnpdChannel with AsyncInitialization, AtClientBindings {
       logger.info(
           'Received ping response from ${notification.from} : ${notification.key} : ${notification.value}');
       if (notification.from == params.sshnpdAtSign) {
-        logger.info('Completing the future');
-        completer.complete(jsonDecode(notification.value ?? '{}'));
+        if (!completer.isCompleted) {
+          logger.info('Completing the future');
+          completer.complete(jsonDecode(notification.value ?? '{}'));
+        }
       }
     });
     var pingKey = AtKey()

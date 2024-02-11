@@ -22,9 +22,11 @@ class SshnpdParams {
   final String ephemeralPermissions;
   final SupportedSshAlgorithm sshAlgorithm;
   final String? storagePath;
+  final String permitOpen;
 
   // Non param variables
   static final ArgParser parser = _createArgParser();
+
   SshnpdParams({
     required this.device,
     required this.username,
@@ -41,6 +43,7 @@ class SshnpdParams {
     required this.ephemeralPermissions,
     required this.sshAlgorithm,
     required this.storagePath,
+    required this.permitOpen,
   });
 
   static Future<SshnpdParams> fromArgs(List<String> args) async {
@@ -85,6 +88,7 @@ class SshnpdParams {
       ephemeralPermissions: r['ephemeral-permissions'],
       sshAlgorithm: SupportedSshAlgorithm.fromString(r['ssh-algorithm']),
       storagePath: r['storage-path'],
+      permitOpen: r['permit-open'],
     );
   }
 
@@ -129,16 +133,16 @@ class SshnpdParams {
       'sshpublickey',
       abbr: 's',
       defaultsTo: false,
-      help:
-          'When set, will update authorized_keys to include public key sent by manager',
+      help: 'When set, will update authorized_keys'
+          ' to include public key sent by manager',
     );
     parser.addFlag(
       'un-hide',
       abbr: 'u',
       aliases: const ['username'],
       defaultsTo: false,
-      help:
-          'When set, makes various information visible to the manager atSign - e.g. username, version, etc',
+      help: 'When set, makes various information visible'
+          ' to the manager atSign - e.g. username, version, etc',
     );
     parser.addFlag(
       'verbose',
@@ -188,8 +192,18 @@ class SshnpdParams {
     parser.addOption(
       'storage-path',
       mandatory: false,
-      help:
-          r'Directory for local storage. Defaults to $HOME/.sshnp/${atSign}/storage',
+      help: 'Directory for local storage.'
+          r' Defaults to $HOME/.sshnp/${atSign}/storage',
+    );
+
+    parser.addOption(
+      'permit-open',
+      aliases: ['po'],
+      mandatory: false,
+      defaultsTo: 'localhost:22,localhost:3389',
+      help: 'Comma separated-list of host:port to which the daemon will permit'
+          ' a connection from an authorized client. Hosts may be dns names or'
+          ' ip addresses.',
     );
 
     return parser;
