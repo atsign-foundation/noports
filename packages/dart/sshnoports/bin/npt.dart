@@ -106,7 +106,7 @@ void main(List<String> args) async {
         'remote-host',
         abbr: 'h',
         aliases: ['rh'],
-        mandatory: false,
+        defaultsTo: 'localhost',
         help: 'The remote host required',
       );
       parser.addOption(
