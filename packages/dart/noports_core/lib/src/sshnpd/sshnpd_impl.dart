@@ -419,6 +419,7 @@ class SshnpdImpl implements Sshnpd {
         checkForFinalDeliveryStatus: false,
         waitForFinalDeliveryStatus: false,
       );
+
       return;
     }
 
@@ -433,6 +434,8 @@ class SshnpdImpl implements Sshnpd {
         checkForFinalDeliveryStatus: false,
         waitForFinalDeliveryStatus: false,
       );
+
+      return;
     }
     // Start our side of the tunnel
     await startNpt(

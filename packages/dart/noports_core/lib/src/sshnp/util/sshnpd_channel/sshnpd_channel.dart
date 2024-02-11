@@ -91,18 +91,18 @@ abstract class SshnpdChannel with AsyncInitialization, AtClientBindings {
   /// Wait until we've received an acknowledgement from the daemon, or
   /// have timed out while waiting.
   Future<SshnpdAck> waitForDaemonResponse({int maxWaitMillis = 15000}) async {
-    // TODO Would be much better for this to return a Future<SshnpdAck, String>
-    // TODO where the String is the failure reason if any
+    // TODO Would maybe be better to return a Future<SshnpdAck, String>
+    //      with the String being the failure reason (if any)
 
     // Timer to timeout after 10 Secs or after the Ack of connected/Errors
     for (int counter = 1; counter <= 100; counter++) {
       if (counter % 20 == 0) {
         logger.info('Still waiting for sshnpd response');
-        logger.info('sshnpdAck: $sshnpdAck');
       }
       await Future.delayed(Duration(milliseconds: maxWaitMillis ~/ 100));
       if (sshnpdAck != SshnpdAck.notAcknowledged) break;
     }
+    logger.info('sshnpdAck: $sshnpdAck');
     return sshnpdAck;
   }
 
