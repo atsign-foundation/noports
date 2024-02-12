@@ -5,8 +5,8 @@
 
 # Note dart:beta needs to be used when using M1 mac as known bug causes
 # crash dump otherwise, can move back to standard builds if on Linux/Windows
-# crash still hapens on arm build so remove that build on M1 too
-# 02/05/2024
+# crash still happens on arm build so remove that build on M1 too
+# as of 5th Feb 2024 - Will check state as 3.3 Stable is released
 #FROM dart:beta-sdk AS buildimage
 
 FROM dart:3.2.6@sha256:63cccf40dda6d2481a3d347f4e23081bd8bac707506fde9d6913de4a513533cd  AS buildimage
@@ -53,7 +53,6 @@ ENV PATH=/usr/local/at
 ENV USER=atsign
 COPY --from=buildimage /atsign /atsign/
 COPY --from=buildimage /runtime/ /
-COPY --from=buildimage /etc/ssl/certs/ /etc/ssl/certs/
 COPY --from=buildimage /etc/passwd /etc/passwd
 COPY --from=buildimage /etc/group /etc/group
 COPY --from=buildimage /etc/cacert /etc/cacert
