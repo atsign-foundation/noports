@@ -20,6 +20,6 @@
       * [👩💻 Client Upgrade (sshnp)](ssh-no-ports/guides/upgrade-guide/client-upgrade-sshnp.md)
       * [💽 Device Upgrade (sshnpd)](ssh-no-ports/guides/upgrade-guide/device-upgrade-sshnpd.md)
   * [🔍 How It Works](ssh-no-ports/how-it-works.md)
-  * [❓ FAQ \[Coming soon\]](ssh-no-ports/faq-coming-soon.md)
+  * [❓ FAQ](ssh-no-ports/faq.md)
 * [📔 Developer Notes](developer-notes/README.md)
   * [Under The Hood](developer-notes/underthehood.md)
