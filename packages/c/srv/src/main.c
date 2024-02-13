@@ -8,16 +8,14 @@
 
 #define TAG "srv - main"
 
-int main(int argc, char **argv)
-{
+int main(int argc, char **argv) {
   srv_params_t params;
 
   // 1.  Load default values
   apply_default_values_to_params(&params);
 
   // 2.  Parse the command line arguments
-  if (parse_params(&params, argc, (const char **)argv) != 0)
-  {
+  if (parse_params(&params, argc, (const char **)argv) != 0) {
     return 1;
   }
 

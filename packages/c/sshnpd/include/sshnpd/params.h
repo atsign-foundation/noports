@@ -10,14 +10,12 @@
 typedef struct argparse_option argparse_option_t;
 typedef struct argparse argparse_t;
 
-enum supported_ssh_algorithm
-{
+enum supported_ssh_algorithm {
   ED25519,
   RSA,
 };
 
-typedef struct
-{
+typedef struct {
   char *atsign;
   char *manager;
   char *device;

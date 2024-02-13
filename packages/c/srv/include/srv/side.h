@@ -8,8 +8,7 @@
 typedef struct _side_hints_t side_hints_t;
 typedef struct _side_t side_t;
 
-struct _side_hints_t
-{
+struct _side_hints_t {
   const bool is_side_a;
   const bool is_server;
   const char *host;
@@ -17,8 +16,7 @@ struct _side_hints_t
   const chunked_transformer_t *transformer;
 };
 
-struct _side_t
-{
+struct _side_t {
   // From hints
   const bool is_side_a;
   const bool is_server;
