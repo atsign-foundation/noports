@@ -1,31 +1,32 @@
 # Dockerfile.package
 # A dockerfile for packaging SSH No Ports releases using docker buildx
 
-FROM atsigncompany/buildimage:automated@sha256:61c382d79876fa3012b6ff91945dcc0d31279f57f4af4b47901a162f0f795d09 AS build
+FROM atsigncompany/buildimage:3.2.6_3.3.0-279.3.beta@sha256:48e84951c35ba8f2c5703f4210e8b99f7d76af0b0c9369918adf1c47906181c0 AS build
 # Using atsigncompany/buildimage until official dart image has RISC-V support
 WORKDIR /sshnoports
 COPY . .
 RUN set -eux; \
-    case "$(dpkg --print-architecture)" in \
-        amd64) ARCH="x64";; \
-        armhf) ARCH="arm";; \
-        arm64) ARCH="arm64";; \
-        riscv64) ARCH="riscv64";; \
-    esac; \
-    mkdir -p sshnp/debug; \
-    mkdir tarball; \
-    dart pub get; \
-    dart run build_runner build --delete-conflicting-outputs; \
-    dart compile exe bin/activate_cli.dart -v -o sshnp/at_activate; \
-    dart compile exe bin/sshnp.dart -v -o sshnp/sshnp; \
-    dart compile exe bin/sshnpd.dart -v -o sshnp/sshnpd; \
-    dart compile exe bin/sshrv.dart -v -o sshnp/sshrv; \
-    dart compile exe bin/sshrvd.dart -v -o sshnp/sshrvd; \
-    dart compile exe bin/sshrvd.dart -D ENABLE_SNOOP=true -v -o sshnp/debug/sshrvd; \
-    cp -r bundles/core/* sshnp/; \
-    cp -r bundles/shell/* sshnp/; \
-    cp LICENSE sshnp/; \
-    tar -cvzf tarball/sshnp-linux-${ARCH}.tgz sshnp
+  case "$(dpkg --print-architecture)" in \
+  amd64) ARCH="x64";; \
+  armhf) ARCH="arm";; \
+  arm64) ARCH="arm64";; \
+  riscv64) ARCH="riscv64";; \
+  esac; \
+  cd sshnoports; \
+  mkdir -p sshnp/debug; \
+  mkdir tarball; \
+  dart pub get; \
+  dart run build_runner build --delete-conflicting-outputs; \
+  dart compile exe bin/activate_cli.dart -v -o sshnp/at_activate; \
+  dart compile exe bin/sshnp.dart -v -o sshnp/sshnp; \
+  dart compile exe bin/sshnpd.dart -v -o sshnp/sshnpd; \
+  dart compile exe bin/srv.dart -v -o sshnp/srv; \
+  dart compile exe bin/srvd.dart -v -o sshnp/srvd; \
+  dart compile exe bin/srvd.dart -D ENABLE_SNOOP=true -v -o sshnp/debug/srvd; \
+  cp -r bundles/core/* sshnp/; \
+  cp -r bundles/shell/* sshnp/; \
+  cp LICENSE sshnp/; \
+  tar -cvzf tarball/sshnp-linux-${ARCH}.tgz sshnp
 
 FROM scratch
-COPY --from=build /sshnoports/tarball/* /
+COPY --from=build /sshnoports/sshnoports/tarball/* /

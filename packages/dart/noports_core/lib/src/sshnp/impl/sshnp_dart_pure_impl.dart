@@ -2,22 +2,25 @@ import 'dart:async';
 
 import 'package:at_client/at_client.dart';
 import 'package:dartssh2/dartssh2.dart';
+import 'package:noports_core/src/sshnp/impl/notification_request_message.dart';
 import 'package:noports_core/sshnp_foundation.dart';
 
 class SshnpDartPureImpl extends SshnpCore
     with SshnpDartSshKeyHandler, DartSshSessionHandler {
-  SshnpDartPureImpl(
-      {required super.atClient,
-      required super.params,
-      required AtSshKeyPair? identityKeyPair}) {
+  SshnpDartPureImpl({
+    required super.atClient,
+    required super.params,
+    required AtSshKeyPair? identityKeyPair,
+    required super.logStream,
+  }) {
     this.identityKeyPair = identityKeyPair;
     _sshnpdChannel = SshnpdDefaultChannel(
       atClient: atClient,
       params: params,
       sessionId: sessionId,
-      namespace: this.namespace,
+      namespace: namespace,
     );
-    _sshrvdChannel = SshrvdDartChannel(
+    _srvdChannel = SrvdDartSSHSocketChannel(
       atClient: atClient,
       params: params,
       sessionId: sessionId,
@@ -29,8 +32,8 @@ class SshnpDartPureImpl extends SshnpCore
   late final SshnpdDefaultChannel _sshnpdChannel;
 
   @override
-  SshrvdDartChannel get sshrvdChannel => _sshrvdChannel;
-  late final SshrvdDartChannel _sshrvdChannel;
+  SrvdDartSSHSocketChannel get srvdChannel => _srvdChannel;
+  late final SrvdDartSSHSocketChannel _srvdChannel;
 
   @override
   Future<void> initialize() async {
@@ -50,33 +53,48 @@ class SshnpDartPureImpl extends SshnpCore
     /// Ensure that sshnp is initialized
     await callInitialization();
 
-    logger.info('Sending request to sshnpd');
+    var msg = 'Sending session request to the device daemon';
+    logger.info(msg);
+    sendProgress(msg);
 
     /// Send an ssh request to sshnpd
     await notify(
       AtKey()
         ..key = 'ssh_request'
-        ..namespace = this.namespace
+        ..namespace = namespace
         ..sharedBy = params.clientAtSign
         ..sharedWith = params.sshnpdAtSign
         ..metadata = (Metadata()..ttl = 10000),
-      signAndWrapAndJsonEncode(atClient, {
-        'direct': true,
-        'sessionId': sessionId,
-        'host': sshrvdChannel.host,
-        'port': sshrvdChannel.port,
-      }),
+      signAndWrapAndJsonEncode(
+          atClient,
+          SshnpSessionRequest(
+            direct: true,
+            sessionId: sessionId,
+            host: srvdChannel.host,
+            port: srvdChannel.daemonPort!,
+            authenticateToRvd: params.authenticateDeviceToRvd,
+            clientNonce: srvdChannel.clientNonce,
+            rvdNonce: srvdChannel.rvdNonce,
+            encryptRvdTraffic: params.encryptRvdTraffic,
+            clientEphemeralPK: params.sessionKP.atPublicKey.publicKey,
+            clientEphemeralPKType: params.sessionKPType.name,
+          ).toJson()),
+      checkForFinalDeliveryStatus: false,
+      waitForFinalDeliveryStatus: false,
     );
 
     /// Wait for a response from sshnpd
+    sendProgress('Waiting for response from the device daemon');
     var acked = await sshnpdChannel.waitForDaemonResponse();
     if (acked != SshnpdAck.acknowledged) {
-      throw SshnpError('sshnpd did not acknowledge the request');
+      throw SshnpError('No response from the device daemon');
+    } else {
+      sendProgress('Received response from the device daemon');
     }
 
     if (sshnpdChannel.ephemeralPrivateKey == null) {
       throw SshnpError(
-        'Expected an ephemeral private key from sshnpd, but it was not set',
+        'Expected an ephemeral private key from device daemon, but it was not set',
       );
     }
 
@@ -89,12 +107,29 @@ class SshnpDartPureImpl extends SshnpCore
     /// Add the key pair to the key utility
     await keyUtil.addKeyPair(keyPair: ephemeralKeyPair);
 
-    /// Start the initial tunnel
-    tunnelSshClient = await startInitialTunnelSession(
-        ephemeralKeyPairIdentifier: ephemeralKeyPair.identifier);
+    /// Start srv
+    sendProgress('Creating connection to socket rendezvous');
+    SSHSocket? sshSocket = await srvdChannel.runSrv(
+      directSsh: true,
+      sessionAESKeyString: sshnpdChannel.sessionAESKeyString,
+      sessionIVString: sshnpdChannel.sessionIVString,
+    );
 
-    /// Remove the key pair from the key utility
-    await keyUtil.deleteKeyPair(identifier: ephemeralKeyPair.identifier);
+    try {
+      /// Start the initial tunnel
+      sendProgress('Starting tunnel session');
+      tunnelSshClient = await startInitialTunnelSession(
+        ephemeralKeyPairIdentifier: ephemeralKeyPair.identifier,
+        sshSocket: sshSocket,
+      );
+    } finally {
+      /// Remove the key pair from the key utility
+      try {
+        await keyUtil.deleteKeyPair(identifier: ephemeralKeyPair.identifier);
+      } catch (e) {
+        logger.shout('Failed to delete ephemeral keyPair: $e');
+      }
+    }
 
     /// Ensure that we clean up after ourselves
     await callDisposal();
@@ -121,9 +156,11 @@ class SshnpDartPureImpl extends SshnpCore
           'Cannot execute runShell, tunnel has not yet been created');
     }
 
+    sendProgress('Starting user session');
     SSHClient userSession =
         await startUserSession(tunnelSession: tunnelSshClient!);
 
+    sendProgress('Starting remote shell');
     SSHSession shell = await userSession.shell();
 
     return SSHSessionAsSshnpRemoteProcess(shell);

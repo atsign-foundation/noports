@@ -52,6 +52,11 @@ class LocalSshKeyUtil implements AtSshKeyUtil {
     var files =
         _filesFromIdentifier(identifier: identifier ?? keyPair.identifier);
     await Future.wait([
+      files[0].create(recursive: true),
+      files[1].create(recursive: true),
+    ]).catchError((e) => throw e);
+
+    await Future.wait([
       files[0].writeAsString(keyPair.privateKeyContents),
       files[1].writeAsString(keyPair.publicKeyContents),
     ]).catchError((e) => throw e);
@@ -115,7 +120,7 @@ class LocalSshKeyUtil implements AtSshKeyUtil {
     return AtSshKeyPair.fromPem(
       pemText,
       passphrase: passphrase,
-      directory: directory,
+      directory: workingDirectory,
       identifier: identifier,
     );
   }
@@ -129,7 +134,8 @@ class LocalSshKeyUtil implements AtSshKeyUtil {
   }) async {
     // Check to see if the ssh public key is
     // supported keys by the dartssh2 package
-    if (!sshPublicKey.startsWith(RegExp(r'^(ecdsa-sha2-nistp)|(rsa-sha2-)|(ssh-rsa)|(ssh-ed25519)|(ecdsa-sha2-nistp)'))) {
+    if (!sshPublicKey.startsWith(RegExp(
+        r'^(ecdsa-sha2-nistp)|(rsa-sha2-)|(ssh-rsa)|(ssh-ed25519)|(ecdsa-sha2-nistp)'))) {
       throw ('$sshPublicKey does not look like a public key');
     }
 

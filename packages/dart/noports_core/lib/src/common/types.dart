@@ -1,12 +1,21 @@
-import 'package:noports_core/sshrv.dart';
+import 'package:noports_core/srv.dart';
 
-typedef SshrvGenerator<T> = Sshrv<T> Function(String, int, {int localSshdPort});
+typedef SrvGenerator<T> = Srv<T> Function(
+  String,
+  int, {
+  int? localPort,
+  bool? bindLocalPort,
+  String? rvdAuthString,
+  String? sessionAESKeyString,
+  String? sessionIVString,
+});
 
 enum SupportedSshClient {
   openssh(cliArg: 'openssh'),
   dart(cliArg: 'dart');
 
   final String _cliArg;
+
   const SupportedSshClient({required String cliArg}) : _cliArg = cliArg;
 
   factory SupportedSshClient.fromString(String cliArg) {
@@ -25,6 +34,7 @@ enum SupportedSshAlgorithm {
   rsa(cliArg: 'ssh-rsa');
 
   final String _cliArg;
+
   const SupportedSshAlgorithm({required String cliArg}) : _cliArg = cliArg;
 
   factory SupportedSshAlgorithm.fromString(String cliArg) {

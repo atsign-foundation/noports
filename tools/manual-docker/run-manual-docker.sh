@@ -6,7 +6,7 @@ usage() {
     echo ""
     echo "usage: $0"
     echo "  -h|--help"
-    echo "  -t|--tag <sshnp/sshnpd/sshrvd> (required) - docker container tag"
+    echo "  -t|--tag <sshnp/sshnpd/srvd> (required) - docker container tag"
     echo "  --no-cache (optional) - docker build without cache"
     echo "  --rm (optional) - remove container after exit"
     echo "  ONE OF THE FOLLOWING (required)"
@@ -17,7 +17,7 @@ usage() {
     echo ""
     echo "  example: $0 -t sshnp -b trunk"
     echo "  example: $0 -t sshnpd -l"
-    echo "  example: $0 -t sshrvd -r v3.3.0"
+    echo "  example: $0 -t srvd -r v3.3.0"
     echo "  example: $0 -t sshnp --release"
     echo "  example: $0 -t sshnp --blank"
     echo ""
@@ -91,10 +91,10 @@ parse_args() {
         exit 1
     fi
 
-    # check that tag is one of: sshnp/sshnpd/sshrvd
-    if [[ $tag != "sshnp" && $tag != "sshnpd" && $tag != "sshrvd" ]];
+    # check that tag is one of: sshnp/sshnpd/srvd
+    if [[ $tag != "sshnp" && $tag != "sshnpd" && $tag != "srvd" ]];
     then
-        echo "Invalid tag: $tag, must be one of: sshnp/sshnpd/sshrvd"
+        echo "Invalid tag: $tag, must be one of: sshnp/sshnpd/srvd"
         usage
         exit 1
     fi

@@ -26,7 +26,13 @@ void main() {
 
     // Invocation patterns as closures so they can be referred to by name
     // instead of explicitly writing these calls several times in the test
-    notifyInvocation() => notifyStub(any(), any());
+    notifyInvocation() => notifyStub(
+          any(),
+          any(),
+          checkForFinalDeliveryStatus:
+              any(named: 'checkForFinalDeliveryStatus'),
+          waitForFinalDeliveryStatus: any(named: 'waitForFinalDeliveryStatus'),
+        );
     subscribeInvocation() => subscribeStub(
           regex: any(named: 'regex'),
           shouldDecrypt: any(named: 'shouldDecrypt'),
@@ -167,7 +173,8 @@ void main() {
         when(payloadInvocation)
             .thenAnswer((_) async => SshnpdAck.notAcknowledged);
 
-        Future<SshnpdAck> ack = stubbedSshnpdChannel.waitForDaemonResponse();
+        Future<SshnpdAck> ack =
+            stubbedSshnpdChannel.waitForDaemonResponse(maxWaitMillis: 300);
 
         // manually add a notification to the stream
         final String notificationId = Uuid().v4();
@@ -212,6 +219,10 @@ void main() {
             any<AtKey>(
                 that: predicate((AtKey key) => key.key == 'sshpublickey')),
             any(),
+            checkForFinalDeliveryStatus:
+                any(named: 'checkForFinalDeliveryStatus'),
+            waitForFinalDeliveryStatus:
+                any(named: 'waitForFinalDeliveryStatus'),
           ),
         ).thenAnswer((_) async {});
 
@@ -227,6 +238,10 @@ void main() {
             any<AtKey>(
                 that: predicate((AtKey key) => key.key == 'sshpublickey')),
             TestingKeyPair.public,
+            checkForFinalDeliveryStatus:
+                any(named: 'checkForFinalDeliveryStatus'),
+            waitForFinalDeliveryStatus:
+                any(named: 'waitForFinalDeliveryStatus'),
           ),
         ).called(1);
       }); // test sharePublicKeyIfRequired
@@ -297,8 +312,7 @@ void main() {
         when(
           () => mockAtClient.get(
             any<AtKey>(
-              that: predicate(
-                  (AtKey key) => key.key?.startsWith('username.') ?? false),
+              that: predicate((AtKey key) => key.key.startsWith('username.')),
             ),
           ),
         ).thenAnswer((i) async => AtValue()..value = 'mySharedUsername');

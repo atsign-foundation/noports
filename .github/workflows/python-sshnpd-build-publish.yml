@@ -25,7 +25,7 @@ jobs:
           python-version: '3.11'
 
     - name: Install Poetry
-      uses: abatilo/actions-poetry@a5643c67b5fcc9ac5eddb395c7f61b1b66d86034 # v2.4.0
+      uses: abatilo/actions-poetry@7b6d33e44b4f08d7021a1dee3c044e9c253d6439 # v3.0.0
       with:
         poetry-version: '1.7.1'
     
@@ -36,7 +36,7 @@ jobs:
         cp -r dist/ $GITHUB_WORKSPACE
 
     - name: Store the distribution packages
-      uses: actions/upload-artifact@c7d193f32edcb7bfad88892161225aeda64e9392 # v4.0.0
+      uses: actions/upload-artifact@5d5d22a31266ced268874388b861e4b58bb5c2f3 # v4.3.1
       with:
         name: sshnpd-python-package
         path: dist/
@@ -56,7 +56,7 @@ jobs:
 
     steps:
     - name: Download all the dists
-      uses: actions/download-artifact@f44cd7b40bfd40b6aa1cc1b9b5b7bf03d3c67110 # v4.1.0
+      uses: actions/download-artifact@eaceaf801fd36c7dee90939fad912460b18a1ffe # v4.1.2
       with:
         name: sshnpd-python-package
         path: dist/
@@ -80,7 +80,7 @@ jobs:
 
     steps:
     - name: Download all the dists
-      uses: actions/download-artifact@f44cd7b40bfd40b6aa1cc1b9b5b7bf03d3c67110 # v4.1.0
+      uses: actions/download-artifact@eaceaf801fd36c7dee90939fad912460b18a1ffe # v4.1.2
       with:
         name: sshnpd-python-package
         path: dist/
@@ -101,7 +101,7 @@ jobs:
 
     steps:
     - name: Download all the dists
-      uses: actions/download-artifact@f44cd7b40bfd40b6aa1cc1b9b5b7bf03d3c67110 # v4.1.0
+      uses: actions/download-artifact@eaceaf801fd36c7dee90939fad912460b18a1ffe # v4.1.2
       with:
         name: sshnpd-python-package
         path: dist/

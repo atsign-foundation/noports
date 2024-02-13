@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:at_chops/at_chops.dart';
 import 'package:at_client/at_client.dart';
 import 'package:meta/meta.dart';
 import 'package:noports_core/src/common/io_types.dart';
@@ -18,6 +19,8 @@ class SshnpdDefaultChannel extends SshnpdChannel
 
 mixin SshnpdDefaultPayloadHandler on SshnpdChannel {
   String? ephemeralPrivateKey;
+  String? sessionAESKeyString;
+  String? sessionIVString;
 
   @visibleForTesting
   // disable publickey cache on windows
@@ -66,8 +69,29 @@ mixin SshnpdDefaultPayloadHandler on SshnpdChannel {
       }
 
       logger.info('Verified signature of msg from ${params.sshnpdAtSign}');
-      logger.info('Setting ephemeralPrivateKey');
+
       ephemeralPrivateKey = daemonResponse['ephemeralPrivateKey'];
+      logger.info('Received ephemeralPrivateKey: $ephemeralPrivateKey');
+
+      String? sessionAESKeyStringEncrypted = daemonResponse['sessionAESKey'];
+      logger.info(
+          'Received encrypted sessionAESKey: $sessionAESKeyStringEncrypted');
+
+      String? sessionIVStringEncrypted = daemonResponse['sessionIV'];
+      logger.info('Received encrypted sessionIV: $sessionIVStringEncrypted');
+
+      if (sessionAESKeyStringEncrypted != null &&
+          sessionIVStringEncrypted != null) {
+        AtChops atChops =
+            AtChopsImpl(AtChopsKeys.create(params.sessionKP, null));
+        sessionAESKeyString = atChops
+            .decryptString(sessionAESKeyStringEncrypted, params.sessionKPType)
+            .result;
+        sessionIVString = atChops
+            .decryptString(sessionIVStringEncrypted, params.sessionKPType)
+            .result;
+      }
+
       return SshnpdAck.acknowledged;
     }
     return SshnpdAck.acknowledgedWithErrors;

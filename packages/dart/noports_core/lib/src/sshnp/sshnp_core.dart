@@ -3,12 +3,14 @@ import 'dart:async';
 import 'package:at_client/at_client.dart' hide StringBuffer;
 import 'package:at_utils/at_logger.dart';
 import 'package:meta/meta.dart';
+import 'package:noports_core/src/common/features.dart';
 import 'package:noports_core/src/common/mixins/async_completion.dart';
 import 'package:noports_core/src/common/mixins/async_initialization.dart';
 import 'package:noports_core/src/common/mixins/at_client_bindings.dart';
+import 'package:noports_core/src/common/default_args.dart';
 import 'package:noports_core/src/sshnp/util/sshnp_ssh_key_handler/sshnp_ssh_key_handler.dart';
 import 'package:noports_core/src/sshnp/util/sshnpd_channel/sshnpd_channel.dart';
-import 'package:noports_core/src/sshnp/util/sshrvd_channel/sshrvd_channel.dart';
+import 'package:noports_core/src/sshnp/util/srvd_channel/srvd_channel.dart';
 import 'package:noports_core/sshnp.dart';
 import 'package:uuid/uuid.dart';
 
@@ -51,19 +53,37 @@ abstract class SshnpCore
 
   // * Communication Channels
 
-  /// The channel to communicate with the sshrvd (host)
+  /// The channel to communicate with the srvd (host)
   @protected
-  SshrvdChannel get sshrvdChannel;
+  SrvdChannel get srvdChannel;
 
   /// The channel to communicate with the sshnpd (daemon)
   @protected
   SshnpdChannel get sshnpdChannel;
 
+  final StreamController<String> _progressStreamController =
+      StreamController<String>.broadcast();
+
+  /// Yields a string every time something interesting happens with regards to
+  /// progress towards establishing the ssh connection.
+  @override
+  Stream<String>? get progressStream => _progressStreamController.stream;
+
+  /// Yields every log message that is written to [stderr]
+  @override
+  final Stream<String>? logStream;
+
+  /// Subclasses should use this method to generate progress messages
+  sendProgress(String message) {
+    _progressStreamController.add(message);
+  }
+
   SshnpCore({
     required this.atClient,
     required this.params,
+    this.logStream,
   })  : sessionId = Uuid().v4(),
-        namespace = '${params.device}.sshnp',
+        namespace = '${params.device}.${DefaultArgs.namespace}',
         localPort = params.localPort {
     logger.level = params.verbose ? 'info' : 'shout';
 
@@ -78,23 +98,59 @@ abstract class SshnpCore
   @mustCallSuper
   Future<void> initialize() async {
     if (!isSafeToInitialize) return;
+
     logger.info('Initializing SshnpCore');
 
     /// Start the sshnpd payload handler
     await sshnpdChannel.callInitialization();
 
+    if (params.discoverDaemonFeatures) {
+      late Map<String, dynamic> pingResponse;
+      try {
+        sendProgress('Pinging daemon to discover features');
+        pingResponse =
+            await sshnpdChannel.ping().timeout(Duration(seconds: 10));
+      } catch (e) {
+        var msg =
+            'No ping response from ${params.device}${params.sshnpdAtSign}';
+        sendProgress(msg);
+        logger.severe(msg);
+        rethrow;
+      }
+
+      final daemonFeatures = pingResponse['supportedFeatures'];
+      if ((daemonFeatures[DaemonFeatures.srAuth.name] != true) &&
+          (params.authenticateDeviceToRvd == true)) {
+        throw ArgumentError('This device daemon does not support'
+            ' authentication to the socket rendezvous.'
+            ' Please set --no-authenticate-device');
+      }
+      if ((daemonFeatures[DaemonFeatures.srE2ee.name] != true) &&
+          (params.encryptRvdTraffic == true)) {
+        throw ArgumentError('This device daemon does not support'
+            ' encryption of traffic to the socket rendezvous.'
+            ' Please set --no-encrypt-rvd-traffic');
+      }
+    }
+
     /// Set the remote username to use for the ssh session
+    sendProgress('Resolving remote username for user session');
     remoteUsername = await sshnpdChannel.resolveRemoteUsername();
 
     /// Set the username to use for the initial ssh tunnel
+    sendProgress('Resolving remote username for tunnel session');
     tunnelUsername = await sshnpdChannel.resolveTunnelUsername(
         remoteUsername: remoteUsername);
 
     /// Shares the public key if required
+    if (params.sendSshPublicKey) {
+      sendProgress('Sharing ssh public key');
+    }
     await sshnpdChannel.sharePublicKeyIfRequired(identityKeyPair);
 
-    /// Retrieve the sshrvd host and port pair
-    await sshrvdChannel.callInitialization();
+    /// Retrieve the srvd host and port pair
+    sendProgress('Fetching host and port from srvd');
+    await srvdChannel.callInitialization();
   }
 
   @override

@@ -1,13 +1,25 @@
 # Table of contents
 
-* [No Ports Docs](README.md)
-
-## SSH No Ports
-
-* [Overview](ssh-no-ports/overview.md)
-* [Installation Guide](ssh-no-ports/installation-guide.md)
-* [Usage Guide](ssh-no-ports/usage-guide.md)
-
-## Developer Notes <a href="#dev-notes" id="dev-notes"></a>
-
-* [Under The Hood](dev-notes/underthehood.md)
+* [🚫 No Ports Documentation](README.md)
+* [⌨ SSH No Ports](ssh-no-ports/README.md)
+  * [🔢 Guides](ssh-no-ports/guides/README.md)
+    * [💽 Installation Guide](ssh-no-ports/guides/installation-guide/README.md)
+      * [🖥 Device installation (sshnpd)](ssh-no-ports/guides/installation-guide/device-installation-sshnpd/README.md)
+        * [Systemd Unit](ssh-no-ports/guides/installation-guide/device-installation-sshnpd/systemd-unit.md)
+        * [Tmux session](ssh-no-ports/guides/installation-guide/device-installation-sshnpd/tmux-session.md)
+        * [Standalone Binaries](ssh-no-ports/guides/installation-guide/device-installation-sshnpd/standalone-binaries.md)
+        * [Headless](ssh-no-ports/guides/installation-guide/device-installation-sshnpd/headless.md)
+      * [👩💻 Client installation (sshnp)](ssh-no-ports/guides/installation-guide/client-installation-sshnp.md)
+    * [👨💻 Usage Guide](ssh-no-ports/guides/usage-guide/README.md)
+      * [💻 Basic Usage](ssh-no-ports/guides/usage-guide/basic-usage/README.md)
+        * [⚙ Additional Configuration](ssh-no-ports/guides/usage-guide/basic-usage/additional-configuration.md)
+      * [🗃 SFTP](ssh-no-ports/guides/usage-guide/sftp.md)
+      * [🌐 Web Server](ssh-no-ports/guides/usage-guide/web-server.md)
+      * [🖥 RDP](ssh-no-ports/guides/usage-guide/rdp.md)
+    * [⬆ Upgrade Guide](ssh-no-ports/guides/upgrade-guide/README.md)
+      * [👩💻 Client Upgrade (sshnp)](ssh-no-ports/guides/upgrade-guide/client-upgrade-sshnp.md)
+      * [💽 Device Upgrade (sshnpd)](ssh-no-ports/guides/upgrade-guide/device-upgrade-sshnpd.md)
+  * [🔍 How It Works](ssh-no-ports/how-it-works.md)
+  * [❓ FAQ](ssh-no-ports/faq.md)
+* [📔 Developer Notes](developer-notes/README.md)
+  * [Under The Hood](developer-notes/underthehood.md)

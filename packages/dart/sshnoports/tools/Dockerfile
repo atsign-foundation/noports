@@ -1,7 +1,7 @@
 # Dockerfile
 # Build image for a containerized instance of sshnpd
 
-FROM dart:3.2.4@sha256:a310da69472710ceaa8015add37ef99d16d9ec51e9b67f87fe3b11a7e9596a50 AS buildimage
+FROM dart:3.2.6@sha256:63cccf40dda6d2481a3d347f4e23081bd8bac707506fde9d6913de4a513533cd AS buildimage
 ENV PACKAGEDIR=packages/dart/sshnoports
 ENV BINARYDIR=/usr/local/at
 SHELL ["/bin/bash", "-c"]
@@ -14,10 +14,10 @@ RUN \
   dart pub get ; \
   dart run build_runner build --delete-conflicting-outputs ; \
   dart compile exe bin/sshnpd.dart -o ${BINARYDIR}/sshnpd ; \
-  dart compile exe bin/sshrv.dart -o ${BINARYDIR}/sshrv
+  dart compile exe bin/srv.dart -o ${BINARYDIR}/srv
 
 # Second stage of build FROM debian-slim
-FROM debian:stable-20231218-slim@sha256:d4494b6af5eafd77c251e7eb1b5bfefc99a7b81172e80c30feb883898f7e5655
+FROM debian:stable-20240130-slim@sha256:4255c9f8a4d6e66488adc0c2084c99df44bda22849b21b3afc0e9746e9a0be18
 ENV USER=atsign
 ENV HOMEDIR=/${USER}
 ENV BINARYDIR=/usr/local/at
@@ -41,6 +41,6 @@ RUN \
   chmod 755 /${USER}/.startup.sh
 
 COPY --from=buildimage --chown=${USER}:${USER} /usr/local/at/sshnpd /usr/local/at/
-COPY --from=buildimage --chown=${USER}:${USER} /usr/local/at/sshrv /usr/local/at/
+COPY --from=buildimage --chown=${USER}:${USER} /usr/local/at/srv /usr/local/at/
 WORKDIR ${HOMEDIR}
 ENTRYPOINT ["/atsign/.startup.sh"]

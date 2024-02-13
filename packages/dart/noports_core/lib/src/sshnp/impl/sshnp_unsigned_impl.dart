@@ -10,6 +10,7 @@ class SshnpUnsignedImpl extends SshnpCore
   SshnpUnsignedImpl({
     required super.atClient,
     required super.params,
+    required super.logStream,
   }) {
     if (Platform.isWindows) {
       throw SshnpError(
@@ -20,9 +21,9 @@ class SshnpUnsignedImpl extends SshnpCore
       atClient: atClient,
       params: params,
       sessionId: sessionId,
-      namespace: this.namespace,
+      namespace: namespace,
     );
-    _sshrvdChannel = SshrvdExecChannel(
+    _srvdChannel = SrvdExecChannel(
       atClient: atClient,
       params: params,
       sessionId: sessionId,
@@ -34,8 +35,8 @@ class SshnpUnsignedImpl extends SshnpCore
   late final SshnpdUnsignedChannel _sshnpdChannel;
 
   @override
-  SshrvdExecChannel get sshrvdChannel => _sshrvdChannel;
-  late final SshrvdExecChannel _sshrvdChannel;
+  SrvdExecChannel get srvdChannel => _srvdChannel;
+  late final SrvdExecChannel _srvdChannel;
 
   @override
   Future<void> initialize() async {
@@ -61,11 +62,13 @@ class SshnpUnsignedImpl extends SshnpCore
       ..key = 'privatekey'
       ..sharedBy = params.clientAtSign
       ..sharedWith = params.sshnpdAtSign
-      ..namespace = this.namespace
+      ..namespace = namespace
       ..metadata = (Metadata()..ttl = 10000);
     await notify(
       sendOurPrivateKeyToSshnpd,
       ephemeralKeyPair.privateKeyContents,
+      checkForFinalDeliveryStatus: false,
+      waitForFinalDeliveryStatus: false,
     );
 
     completeInitialization();
@@ -76,19 +79,21 @@ class SshnpUnsignedImpl extends SshnpCore
     /// Ensure that sshnp is initialized
     await callInitialization();
 
-    /// Start sshrv
-    var bean = await sshrvdChannel.runSshrv();
+    /// Start srv
+    var bean = await srvdChannel.runSrv(directSsh: false);
 
     /// Send an sshd request to sshnpd
     /// This will notify it that it can now connect to us
     await notify(
       AtKey()
         ..key = 'sshd'
-        ..namespace = this.namespace
+        ..namespace = namespace
         ..sharedBy = params.clientAtSign
         ..sharedWith = params.sshnpdAtSign
         ..metadata = (Metadata()..ttl = 10000),
-      '$localPort ${sshrvdChannel.port} ${keyUtil.username} ${sshrvdChannel.host} $sessionId',
+      '$localPort ${srvdChannel.daemonPort} ${keyUtil.username} ${srvdChannel.host} $sessionId',
+      checkForFinalDeliveryStatus: false,
+      waitForFinalDeliveryStatus: false,
     );
 
     /// Wait for a response from sshnpd

@@ -5,6 +5,7 @@ is_root() {
   [ "$(id -u)" -eq 0 ]
 }
 
+user_home=$HOME
 define_env() {
   script_dir="$(dirname -- "$( readlink -f -- "$0"; )")"
   bin_dir="/usr/local/bin"
@@ -13,11 +14,14 @@ define_env() {
     user="$SUDO_USER"
     if [ -z "$user" ]; then
       user="root"
+    else
+      # we are root, but via sudo
+      # so get home directory of SUDO_USER
+      user_home=$(sudo -u "$user" sh -c 'echo $HOME')
     fi
   else
     user="$USER"
   fi
-  user_home=$(sudo -u "$user" sh -c 'echo $HOME')
   user_bin_dir="$user_home/.local/bin"
   user_sshnpd_dir="$user_home/.sshnpd"
   user_log_dir="$user_sshnpd_dir/logs"
@@ -53,23 +57,25 @@ usage() {
   echo "at_activate     - install at_activate"
   echo "sshnp           - install sshnp"
   echo "sshnpd          - install sshnpd"
-  echo "sshrv           - install sshrv"
-  echo "sshrvd          - install sshrvd"
+  echo "srv           - install srv"
+  echo "srvd          - install srvd"
   echo "binaries        - install all base binaries"
   echo ""
-  echo "debug_sshrvd    - install sshrvd with debugging enabled"
+  echo "debug_srvd    - install srvd with debugging enabled"
   echo "debug           - install all debug binaries"
   echo ""
   echo "all             - install all binaries (base and debug)"
-  echo ""
-  echo "systemd <unit>  - install a systemd unit"
-  echo "                  available units: [sshnpd, sshrvd]"
+  if ! is_darwin; then
+    echo ""
+    echo "systemd <unit>  - install a systemd unit"
+    echo "                  available units: [sshnpd, srvd]"
+  fi
   echo ""
   echo "headless <job>  - install a headless cron job"
-  echo "                  available jobs: [sshnpd, sshrvd]"
+  echo "                  available jobs: [sshnpd, srvd]"
   echo ""
   echo "tmux <service>  - install a service in a tmux session"
-  echo "                  available services: [sshnpd, sshrvd]"
+  echo "                  available services: [sshnpd, srvd]"
 }
 
 # SETUP AUTHORIZED KEYS #
@@ -89,12 +95,31 @@ install_single_binary() {
     dest="$user_bin_dir"
   fi
   mkdir -p "$dest"
-  cp "$script_dir/$1" "$dest/$1"
-  echo "Installed $1 to $dest"
+  if test -f "$dest/$1"; then
+    if test -f "$dest/$1.old"; then
+      if rm -f "$dest/$1.old"
+      then
+        echo "=> Removed $dest/$1.old"
+      else
+        echo "Failed to remove $dest/$1.old - aborting"
+        exit 1
+      fi
+    fi
+    if mv "$dest/$1" "$dest/$1.old"
+    then
+      echo "=> Renamed existing binary $dest/$1 to $dest/$1.old"
+    else
+      echo "Failed to rename $dest/$1 to $dest/$1.old - aborting"
+      exit 1
+    fi
+  fi
+  cp -f "$script_dir/$1" "$dest/$1"
+
+  echo "=> Installed $1 to $dest"
   if is_root & ! [ -f "$user_bin_dir/$1" ] ; then
     mkdir -p "$user_bin_dir"
     ln -sf "$dest/$1" "$user_bin_dir/$1"
-    echo "Linked $user_bin_dir/$1 to $dest"
+    echo "=> Linked $user_bin_dir/$1 to $dest/$1"
   fi
 }
 
@@ -102,8 +127,8 @@ install_base_binaries() {
   install_single_binary "at_activate"
   install_single_binary "sshnp"
   install_single_binary "sshnpd"
-  install_single_binary "sshrv"
-  install_single_binary "sshrvd"
+  install_single_binary "srv"
+  install_single_binary "srvd"
 }
 
 install_debug_binary() {
@@ -114,11 +139,11 @@ install_debug_binary() {
   fi
   mkdir -p "$dest"
   cp "$script_dir/debug/$1" "$bin_dir/debug_$1"
-  echo "Installed debug_$1 to $dest"
+  echo "=> Installed debug_$1 to $dest"
 }
 
 install_debug_binaries() {
-  install_debug_binary "sshrvd"
+  install_debug_binary "srvd"
 }
 
 install_all_binaries() {
@@ -151,21 +176,26 @@ install_systemd_unit() {
 install_systemd_sshnpd() {
   root_only
   install_single_binary "sshnpd"
-  install_single_binary "sshrv"
+  install_single_binary "srv"
   install_systemd_unit "sshnpd.service"
 }
 
-install_systemd_sshrvd() {
+install_systemd_srvd() {
   root_only
-  install_single_binary "sshrvd"
-  install_systemd_unit "sshrvd.service"
+  install_single_binary "srvd"
+  install_systemd_unit "srvd.service"
 }
 
 systemd() {
+  if is_darwin; then
+    echo "Unknown command: systemd";
+    usage;
+    exit 1;
+  fi
   case "$1" in
     --help) usage; exit 0;;
     sshnpd) install_systemd_sshnpd;;
-    sshrvd) install_systemd_sshrvd;;
+    srvd) install_systemd_srvd;;
     *)
       echo "Unknown systemd unit: $1";
       usage;
@@ -193,9 +223,14 @@ install_headless_job() {
   job_name=$1
   mkdir -p "$user_bin_dir"
   mkdir -p "$user_log_dir"
+
   dest="$user_bin_dir/$job_name.sh"
   if ! [ -f "$dest" ]; then
-    cp "$script_dir/headless/$job_name.sh" "$dest"
+    if is_root; then
+      cp "$script_dir/headless/root_$job_name.sh" "$dest"
+    else
+      cp "$script_dir/headless/$job_name.sh" "$dest"
+    fi
   fi
 
   log_file="$user_sshnpd_dir/logs/$job_name.log"
@@ -206,13 +241,13 @@ install_headless_job() {
   crontab_contents=$(crontab -l 2>/dev/null)
 
   if echo "$crontab_contents" | grep -Fxq "$cron_entry"; then
-    echo "cron job already installed, killing any old $job_name.sh processes"
+    echo "=> cron job already installed, killing any old $job_name.sh processes"
     pids=$(pgrep "$command")
     if [ -n "$pids" ]; then
      echo "$pids" | xargs kill
     fi
   else
-     echo "Installing cron job: $cron_entry"
+     echo "=> Installing cron job: $cron_entry"
     (echo "$crontab_contents"; echo "$cron_entry") | crontab -;
   fi
 
@@ -222,22 +257,22 @@ install_headless_job() {
 
 install_headless_sshnpd() {
   install_single_binary "sshnpd"
-  install_single_binary "sshrv"
+  install_single_binary "srv"
   install_headless_job "sshnpd"
 }
 
-install_headless_sshrvd() {
-  install_single_binary "sshrvd"
-  install_headless_job "sshrvd"
+install_headless_srvd() {
+  install_single_binary "srvd"
+  install_headless_job "srvd"
 }
 
 headless() {
   case "$1" in
     --help|'') usage; exit 0;;
     sshnpd) install_headless_sshnpd;;
-    sshrvd) install_headless_sshrvd;;
+    srvd) install_headless_srvd;;
     *)
-      echo "Unknown headless job: $1";
+      echo "Error: Unknown headless job: $1";
       usage;
       exit 1;
   esac
@@ -262,10 +297,16 @@ post_tmux_message() {
 install_tmux_service() {
   service_name=$1
   mkdir -p "$user_bin_dir"
+
   dest="$user_bin_dir/$service_name.sh"
 
+  # Only copy the "$service_name".sh script if it's not already there
   if ! [ -f "$dest" ]; then
-    cp "$script_dir/headless/$service_name.sh" "$dest"
+    if is_root; then
+      cp "$script_dir/headless/root_$service_name.sh" "$dest"
+    else
+      cp "$script_dir/headless/$service_name.sh" "$dest"
+    fi
   fi
 
   command="tmux new-session -d -s $service_name && tmux send-keys -t $service_name $dest C-m"
@@ -273,11 +314,16 @@ install_tmux_service() {
   crontab_contents=$(crontab -l 2>/dev/null)
 
   if echo "$crontab_contents" | grep -Fxq "$cron_entry"; then
-    echo "cron job already installed, killing old tmux session"
-    tmux kill-session -t "$service_name"
+    echo "=> Cron job already installed, will not re-install"
   else
-    echo "Installing cron job: $cron_entry"
+    echo "=> Installing cron job: $cron_entry"
     (echo "$crontab_contents"; echo "$cron_entry") | crontab -;
+  fi
+
+  if (command tmux has-session -t "$service_name" 2> /dev/null); then
+    echo "=> Found existing tmux session for $service_name - will kill and restart it"
+    command tmux kill-session -t "$service_name"
+    command tmux new-session -d -s "$service_name" && command tmux send-keys -t "$service_name" "$dest" C-m
   fi
 
   echo ""
@@ -286,20 +332,20 @@ install_tmux_service() {
 
 install_tmux_sshnpd() {
   install_single_binary "sshnpd"
-  install_single_binary "sshrv"
+  install_single_binary "srv"
   install_tmux_service "sshnpd"
 }
 
-install_tmux_sshrvd() {
-  install_single_binary "sshrvd"
-  install_tmux_service "sshrvd"
+install_tmux_srvd() {
+  install_single_binary "srvd"
+  install_tmux_service "srvd"
 }
 
 tmux() {
   case "$1" in
     --help|'') usage; exit 0;;
     sshnpd) install_tmux_sshnpd;;
-    sshrvd) install_tmux_sshrvd;;
+    srvd) install_tmux_srvd;;
     *)
       echo "Unknown tmux service: $1";
       usage;
@@ -317,9 +363,9 @@ main() {
 
   case "$1" in
     --help|'') usage; exit 0;;
-    at_activate|sshnp|sshnpd|sshrv|sshrvd) install_single_binary "$1";;
+    at_activate|sshnp|sshnpd|srv|srvd) install_single_binary "$1";;
     binaries) install_base_binaries;;
-    debug_sshrvd) install_debug_sshrvd;;
+    debug_srvd) install_debug_srvd;;
     debug) install_debug_binaries;;
     all) install_all_binaries;;
     systemd|headless|tmux)

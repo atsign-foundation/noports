@@ -10,7 +10,12 @@ class HandleSshnpdPayloadStub extends Mock
     implements HandleSshnpdPayloadCaller {}
 
 class StubbedSshnpdChannel extends SshnpdChannel {
-  final Future<void> Function(AtKey, String)? _notify;
+  final Future<void> Function(
+    AtKey,
+    String, {
+    required bool checkForFinalDeliveryStatus,
+    required bool waitForFinalDeliveryStatus,
+  })? _notify;
   final Stream<AtNotification> Function({String? regex, bool shouldDecrypt})?
       _subscribe;
   final Future<SshnpdAck> Function(AtNotification notification)?
@@ -21,7 +26,12 @@ class StubbedSshnpdChannel extends SshnpdChannel {
     required super.params,
     required super.sessionId,
     required super.namespace,
-    Future<void> Function(AtKey, String)? notify,
+    Future<void> Function(
+      AtKey,
+      String, {
+      required bool checkForFinalDeliveryStatus,
+      required bool waitForFinalDeliveryStatus,
+    })? notify,
     Stream<AtNotification> Function({String? regex, bool shouldDecrypt})?
         subscribe,
     Future<SshnpdAck> Function(AtNotification notification)?
@@ -39,9 +49,16 @@ class StubbedSshnpdChannel extends SshnpdChannel {
   @override
   Future<void> notify(
     AtKey atKey,
-    String value,
-  ) async {
-    return _notify?.call(atKey, value);
+    String value, {
+    required bool checkForFinalDeliveryStatus,
+    required bool waitForFinalDeliveryStatus,
+  }) async {
+    return _notify?.call(
+      atKey,
+      value,
+      checkForFinalDeliveryStatus: checkForFinalDeliveryStatus,
+      waitForFinalDeliveryStatus: waitForFinalDeliveryStatus,
+    );
   }
 
   @override

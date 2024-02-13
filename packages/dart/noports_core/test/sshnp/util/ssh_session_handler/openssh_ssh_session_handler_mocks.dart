@@ -1,3 +1,4 @@
+import 'package:dartssh2/dartssh2.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:noports_core/src/common/io_types.dart';
 import 'package:noports_core/sshnp_foundation.dart';
@@ -27,11 +28,14 @@ mixin StubbedSshnpOpensshSshSessionHandler on OpensshSshSessionHandler {
   @override
   Future<Process?> startInitialTunnelSession({
     required String ephemeralKeyPairIdentifier,
+    int? localRvPort,
+    SSHSocket? sshSocket,
     ProcessStarter startProcess = Process.start,
   }) {
     _stubbedStartInitialTunnel();
     return super.startInitialTunnelSession(
       ephemeralKeyPairIdentifier: ephemeralKeyPairIdentifier,
+      localRvPort: localRvPort,
       startProcess: _stubbedStartProcess.call,
     );
   }
@@ -44,9 +48,9 @@ class StubbedSshnp extends SshnpCore
     required super.atClient,
     required super.params,
     required SshnpdChannel sshnpdChannel,
-    required SshrvdChannel sshrvdChannel,
+    required SrvdChannel srvdChannel,
   })  : _sshnpdChannel = sshnpdChannel,
-        _sshrvdChannel = sshrvdChannel;
+        _srvdChannel = srvdChannel;
 
   @override
   AtSshKeyPair? get identityKeyPair => throw UnimplementedError();
@@ -62,8 +66,8 @@ class StubbedSshnp extends SshnpCore
   final SshnpdChannel _sshnpdChannel;
 
   @override
-  SshrvdChannel get sshrvdChannel => _sshrvdChannel;
-  final SshrvdChannel _sshrvdChannel;
+  SrvdChannel get srvdChannel => _srvdChannel;
+  final SrvdChannel _srvdChannel;
 
   @override
   Future<Process?> startUserSession({required Process? tunnelSession}) {

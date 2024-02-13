@@ -40,20 +40,20 @@ To view the realtime logs, use journalctl:
 sudo journalctl -u sshnpd.service
 ```
 
-## sshrvd
+## srvd
 
 ### Installation
 
-The `sshrvd.service` file should be placed in `/etc/systemd/system` (as root).
+The `srvd.service` file should be placed in `/etc/systemd/system` (as root).
 
-Modify the `sshrvd.service` unit to use the appropriate atSign,
+Modify the `srvd.service` unit to use the appropriate atSign,
 (The boilerplate uses @atsign) as well as the internet address.
-Also change the username and make sure that username running sshrvd has the
+Also change the username and make sure that username running srvd has the
 .atkeys file in place at '~/.atsign/keys'.
 
-Run the following command to view full usage information of the sshrvd binary:
+Run the following command to view full usage information of the srvd binary:
 ```sh
-/usr/local/bin/sshrvd
+/usr/local/bin/srvd
 ```
 
 ### Usage
@@ -61,18 +61,18 @@ Run the following command to view full usage information of the sshrvd binary:
 To enable the service use:
 
 ```sh
-sudo systemctl enable sshrvd.service
+sudo systemctl enable srvd.service
 ```
 
 The services will then start at the next reboot, or can be started immediately
 with:
 
 ```sh
-sudo systemctl start sshrvd.service
+sudo systemctl start srvd.service
 ```
 
 To view the realtime logs, use journalctl:
 
 ```sh
-sudo journalctl -u sshrvd.service
+sudo journalctl -u srvd.service
 ```

@@ -1,8 +1,10 @@
 import 'dart:io';
 
-import 'package:sshnoports/src/version.dart';
+import 'package:sshnoports/src/version.dart' as binaries;
+import 'package:noports_core/version.dart' as core;
 
 /// Print version number
 void printVersion() {
-  stdout.writeln('Version : $packageVersion');
+  stderr.writeln('Version : ${binaries.packageVersion}'
+      ' (core: ${core.packageVersion})');
 }

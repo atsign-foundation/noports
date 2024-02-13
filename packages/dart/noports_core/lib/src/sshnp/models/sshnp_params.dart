@@ -1,5 +1,7 @@
 import 'dart:convert';
 
+import 'package:at_chops/at_chops.dart';
+import 'package:at_utils/at_utils.dart';
 import 'package:noports_core/src/common/types.dart';
 import 'package:noports_core/src/sshnp/models/config_file_repository.dart';
 import 'package:noports_core/src/sshnp/models/sshnp_arg.dart';
@@ -33,7 +35,10 @@ class SshnpParams {
   final int idleTimeout;
   final bool addForwardsToTunnel;
   final String? atKeysFilePath;
-  final SupportedSshAlgorithm sshAlgorithm;
+  final bool authenticateClientToRvd;
+  final bool authenticateDeviceToRvd;
+  final bool encryptRvdTraffic;
+  final bool discoverDaemonFeatures;
 
   /// Special Arguments
 
@@ -42,6 +47,20 @@ class SshnpParams {
 
   /// Operation flags
   final bool listDevices;
+
+  /// An encryption keypair which should only ever reside in memory.
+  /// The public key is provided in responses to client 'pings', and is
+  /// used by clients to encrypt symmetric encryption keys intended for
+  /// one-time use in a NoPorts session, and share the encrypted details
+  /// as part of the session request payload.
+  AtEncryptionKeyPair get sessionKP {
+    _sessionKP ??= AtChopsUtil.generateAtEncryptionKeyPair(keySize: 2048);
+    return _sessionKP!;
+  }
+
+  /// Generate the ephemeralKeyPair only on demand
+  AtEncryptionKeyPair? _sessionKP;
+  final EncryptionKeyType sessionKPType = EncryptionKeyType.rsa2048;
 
   SshnpParams({
     required this.clientAtSign,
@@ -65,7 +84,10 @@ class SshnpParams {
     this.remoteSshdPort = DefaultArgs.remoteSshdPort,
     this.idleTimeout = DefaultArgs.idleTimeout,
     this.addForwardsToTunnel = DefaultArgs.addForwardsToTunnel,
-    this.sshAlgorithm = DefaultArgs.sshAlgorithm,
+    this.authenticateClientToRvd = DefaultArgs.authenticateClientToRvd,
+    this.authenticateDeviceToRvd = DefaultArgs.authenticateDeviceToRvd,
+    this.encryptRvdTraffic = DefaultArgs.encryptRvdTraffic,
+    this.discoverDaemonFeatures = DefaultArgs.discoverDaemonFeatures,
   });
 
   factory SshnpParams.empty() {
@@ -106,7 +128,13 @@ class SshnpParams {
       idleTimeout: params2.idleTimeout ?? params1.idleTimeout,
       addForwardsToTunnel:
           params2.addForwardsToTunnel ?? params1.addForwardsToTunnel,
-      sshAlgorithm: params2.sshAlgorithm ?? params1.sshAlgorithm,
+      authenticateClientToRvd:
+          params2.authenticateClientToRvd ?? params1.authenticateClientToRvd,
+      authenticateDeviceToRvd:
+          params2.authenticateDeviceToRvd ?? params1.authenticateDeviceToRvd,
+      encryptRvdTraffic: params2.encryptRvdTraffic ?? params1.encryptRvdTraffic,
+      discoverDaemonFeatures:
+          params2.discoverDaemonFeatures ?? params1.discoverDaemonFeatures,
     );
   }
 
@@ -146,7 +174,14 @@ class SshnpParams {
       idleTimeout: partial.idleTimeout ?? DefaultArgs.idleTimeout,
       addForwardsToTunnel:
           partial.addForwardsToTunnel ?? DefaultArgs.addForwardsToTunnel,
-      sshAlgorithm: partial.sshAlgorithm ?? DefaultArgs.sshAlgorithm,
+      authenticateClientToRvd: partial.authenticateClientToRvd ??
+          DefaultArgs.authenticateClientToRvd,
+      authenticateDeviceToRvd: partial.authenticateDeviceToRvd ??
+          DefaultArgs.authenticateDeviceToRvd,
+      encryptRvdTraffic:
+          partial.encryptRvdTraffic ?? DefaultArgs.encryptRvdTraffic,
+      discoverDaemonFeatures:
+          partial.discoverDaemonFeatures ?? DefaultArgs.discoverDaemonFeatures,
     );
   }
 
@@ -194,7 +229,10 @@ class SshnpParams {
       SshnpArg.remoteSshdPortArg.name: remoteSshdPort,
       SshnpArg.idleTimeoutArg.name: idleTimeout,
       SshnpArg.addForwardsToTunnelArg.name: addForwardsToTunnel,
-      SshnpArg.sshAlgorithmArg.name: sshAlgorithm.toString(),
+      SshnpArg.authenticateClientToRvdArg.name: authenticateClientToRvd,
+      SshnpArg.authenticateDeviceToRvdArg.name: authenticateDeviceToRvd,
+      SshnpArg.encryptRvdTrafficArg.name: encryptRvdTraffic,
+      SshnpArg.discoverDaemonFeaturesArg.name: discoverDaemonFeatures,
     };
     args.removeWhere(
       (key, value) => !parserType.shouldParse(SshnpArg.fromName(key).parseWhen),
@@ -233,6 +271,10 @@ class SshnpPartialParams {
   final int? idleTimeout;
   final bool? addForwardsToTunnel;
   final SupportedSshAlgorithm? sshAlgorithm;
+  final bool? authenticateClientToRvd;
+  final bool? authenticateDeviceToRvd;
+  final bool? encryptRvdTraffic;
+  final bool? discoverDaemonFeatures;
 
   /// Operation flags
   final bool? listDevices;
@@ -260,6 +302,10 @@ class SshnpPartialParams {
     this.idleTimeout,
     this.addForwardsToTunnel,
     this.sshAlgorithm,
+    this.authenticateClientToRvd,
+    this.authenticateDeviceToRvd,
+    this.encryptRvdTraffic,
+    this.discoverDaemonFeatures,
   });
 
   factory SshnpPartialParams.empty() {
@@ -296,6 +342,13 @@ class SshnpPartialParams {
       addForwardsToTunnel:
           params2.addForwardsToTunnel ?? params1.addForwardsToTunnel,
       sshAlgorithm: params2.sshAlgorithm ?? params1.sshAlgorithm,
+      authenticateClientToRvd:
+          params2.authenticateClientToRvd ?? params1.authenticateClientToRvd,
+      authenticateDeviceToRvd:
+          params2.authenticateDeviceToRvd ?? params1.authenticateDeviceToRvd,
+      encryptRvdTraffic: params2.encryptRvdTraffic ?? params1.encryptRvdTraffic,
+      discoverDaemonFeatures:
+          params2.discoverDaemonFeatures ?? params1.discoverDaemonFeatures,
     );
   }
 
@@ -319,8 +372,12 @@ class SshnpPartialParams {
   factory SshnpPartialParams.fromArgMap(Map<String, dynamic> args) {
     return SshnpPartialParams(
       profileName: args[SshnpArg.profileNameArg.name],
-      clientAtSign: args[SshnpArg.fromArg.name],
-      sshnpdAtSign: args[SshnpArg.toArg.name],
+      clientAtSign: args[SshnpArg.fromArg.name] == null
+          ? null
+          : AtUtils.fixAtSign(args[SshnpArg.fromArg.name]),
+      sshnpdAtSign: args[SshnpArg.toArg.name] == null
+          ? null
+          : AtUtils.fixAtSign(args[SshnpArg.toArg.name]),
       host: args[SshnpArg.hostArg.name],
       device: args[SshnpArg.deviceArg.name],
       port: args[SshnpArg.portArg.name],
@@ -345,6 +402,10 @@ class SshnpPartialParams {
           ? null
           : SupportedSshAlgorithm.fromString(
               args[SshnpArg.sshAlgorithmArg.name]),
+      authenticateClientToRvd: args[SshnpArg.authenticateClientToRvdArg.name],
+      authenticateDeviceToRvd: args[SshnpArg.authenticateDeviceToRvdArg.name],
+      encryptRvdTraffic: args[SshnpArg.encryptRvdTrafficArg.name],
+      discoverDaemonFeatures: args[SshnpArg.discoverDaemonFeaturesArg.name],
     );
   }
 

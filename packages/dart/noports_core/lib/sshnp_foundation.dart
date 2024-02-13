@@ -20,9 +20,9 @@ export 'src/sshnp/util/sshnpd_channel/sshnpd_channel.dart';
 export 'src/sshnp/util/sshnpd_channel/sshnpd_default_channel.dart';
 export 'src/sshnp/util/sshnpd_channel/sshnpd_unsigned_channel.dart';
 
-export 'src/sshnp/util/sshrvd_channel/sshrvd_channel.dart';
-export 'src/sshnp/util/sshrvd_channel/sshrvd_dart_channel.dart';
-export 'src/sshnp/util/sshrvd_channel/sshrvd_exec_channel.dart';
+export 'src/sshnp/util/srvd_channel/srvd_channel.dart';
+export 'src/sshnp/util/srvd_channel/srvd_dart_channel.dart';
+export 'src/sshnp/util/srvd_channel/srvd_exec_channel.dart';
 
 export 'src/sshnp/util/ssh_session_handler/ssh_session_handler.dart';
 export 'src/sshnp/util/ssh_session_handler/dart_ssh_session_handler.dart';
