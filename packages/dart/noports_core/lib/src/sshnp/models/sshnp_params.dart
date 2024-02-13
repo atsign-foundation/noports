@@ -120,6 +120,9 @@ class NptParams extends ClientParamsBase
   /// The port that we wish to connect to (on the device's network)
   final int remotePort;
 
+  /// Whether to run the srv within this process, or fork a separate process
+  final bool inline;
+
   NptParams({
     required super.clientAtSign,
     required super.sshnpdAtSign,
@@ -134,6 +137,7 @@ class NptParams extends ClientParamsBase
     super.authenticateClientToRvd = DefaultArgs.authenticateClientToRvd,
     super.authenticateDeviceToRvd = DefaultArgs.authenticateDeviceToRvd,
     super.encryptRvdTraffic = DefaultArgs.encryptRvdTraffic,
+    required this.inline,
   });
 
   /// not relevant for Npt

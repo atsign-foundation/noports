@@ -2,12 +2,11 @@ import 'dart:io';
 
 import 'package:dartssh2/dartssh2.dart';
 import 'package:noports_core/src/srv/srv_impl.dart';
-import 'package:socket_connector/socket_connector.dart';
 
 abstract class Srv<T> {
   static const completedWithExceptionString = 'Exception running srv';
 
-  static const completionString = 'rv started successfully';
+  static const startedString = 'rv started successfully';
 
   /// The internet address of the host to connect to.
   abstract final String streamingHost;
@@ -33,7 +32,11 @@ abstract class Srv<T> {
   /// The IV to use with the [sessionAESKeyString]
   abstract final String? sessionIVString;
 
+  /// Whether to bind a local port or not
   abstract final bool? bindLocalPort;
+
+  /// Whether to enable multiple connections or not
+  abstract final bool multi;
 
   Future<T> run();
 
@@ -47,6 +50,8 @@ abstract class Srv<T> {
     String? rvdAuthString,
     String? sessionAESKeyString,
     String? sessionIVString,
+    bool multi = false,
+    bool detached = false,
   }) {
     return SrvImplExec(
       streamingHost,
@@ -57,10 +62,11 @@ abstract class Srv<T> {
       rvdAuthString: rvdAuthString,
       sessionAESKeyString: sessionAESKeyString,
       sessionIVString: sessionIVString,
+      multi: multi,
     );
   }
 
-  static Srv<SocketConnector> dart(
+  static Srv<Future> dart(
     String streamingHost,
     int streamingPort, {
     int? localPort,
@@ -69,6 +75,8 @@ abstract class Srv<T> {
     String? rvdAuthString,
     String? sessionAESKeyString,
     String? sessionIVString,
+    bool multi = false,
+    bool detached = false,
   }) {
     return SrvImplDart(
       streamingHost,
@@ -79,6 +87,8 @@ abstract class Srv<T> {
       rvdAuthString: rvdAuthString,
       sessionAESKeyString: sessionAESKeyString,
       sessionIVString: sessionIVString,
+      multi: multi,
+      detached: detached,
     );
   }
 
@@ -91,6 +101,8 @@ abstract class Srv<T> {
     String? rvdAuthString,
     String? sessionAESKeyString,
     String? sessionIVString,
+    bool multi = false,
+    bool detached = false,
   }) {
     return SrvImplInline(
       streamingHost,
@@ -98,6 +110,7 @@ abstract class Srv<T> {
       rvdAuthString: rvdAuthString,
       sessionAESKeyString: sessionAESKeyString,
       sessionIVString: sessionIVString,
+      multi: multi,
     );
   }
 

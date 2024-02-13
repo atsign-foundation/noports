@@ -117,6 +117,8 @@ class SshnpDartPureImpl extends SshnpCore
     SSHSocket? sshSocket = await srvdChannel.runSrv(
       sessionAESKeyString: sshnpdChannel.sessionAESKeyString,
       sessionIVString: sshnpdChannel.sessionIVString,
+      multi: false,
+      detached: false,
     );
 
     try {

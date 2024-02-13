@@ -1,11 +1,14 @@
 import 'dart:io';
 
 import 'package:args/args.dart';
+import 'package:at_utils/at_logger.dart';
 import 'package:noports_core/srv.dart';
-import 'package:socket_connector/socket_connector.dart';
 import 'package:sshnoports/src/print_version.dart';
 
 Future<void> main(List<String> args) async {
+  AtSignLogger.root_level = 'SHOUT';
+  AtSignLogger.defaultLoggingHandler = AtSignLogger.stdErrLoggingHandler;
+
   final ArgParser parser = ArgParser(showAliasesInUsage: true)
     ..addOption('host', abbr: 'h', mandatory: true, help: 'rvd host')
     ..addOption('port', abbr: 'p', mandatory: true, help: 'rvd port')
@@ -25,7 +28,12 @@ Future<void> main(List<String> args) async {
     ..addFlag('rv-e2ee',
         defaultsTo: false,
         help: 'Whether this rv process will encrypt/decrypt'
-            ' all rvd socket traffic');
+            ' all rvd socket traffic')
+    ..addFlag('multi',
+        defaultsTo: false,
+        negatable: false,
+        help: 'Set this flag when we want multiple connections via the rvd')
+  ;
 
   try {
     final ArgResults parsed;
@@ -42,6 +50,7 @@ Future<void> main(List<String> args) async {
     final String localHost = parsed['local-host'];
     final bool rvAuth = parsed['rv-auth'];
     final bool rvE2ee = parsed['rv-e2ee'];
+    final bool multi = parsed['multi'];
 
     String? rvdAuthString = rvAuth ? Platform.environment['RV_AUTH'] : null;
     String? sessionAESKeyString =
@@ -62,7 +71,7 @@ Future<void> main(List<String> args) async {
     }
 
     try {
-      SocketConnector connector = await Srv.dart(
+      Future done = await Srv.dart(
         streamingHost,
         streamingPort,
         localPort: localPort,
@@ -71,11 +80,13 @@ Future<void> main(List<String> args) async {
         rvdAuthString: rvdAuthString,
         sessionAESKeyString: sessionAESKeyString,
         sessionIVString: sessionIVString,
+        multi: multi,
+        detached: true, // by definition - this is the srv binary
       ).run();
 
       /// Shut myself down once the socket connector closes
-      stderr.writeln('Waiting for connector to close');
-      await connector.done;
+      stderr.writeln('Waiting for Srv to close');
+      await done;
     } on ArgumentError {
       rethrow;
     } catch (e) {

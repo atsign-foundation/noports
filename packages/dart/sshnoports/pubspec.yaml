@@ -10,12 +10,17 @@ dependencies:
   noports_core: 6.0.3
   at_onboarding_cli: 1.4.3
   args: 2.4.2
-  socket_connector: ^2.0.1
+  socket_connector: ^2.1.0
   dartssh2: 2.8.2
+  at_utils: 3.0.16
 
 dependency_overrides:
   noports_core:
-    path: ../noports_core
+    path: "../noports_core"
+  socket_connector:
+    git:
+      ref: feat/multi
+      url: https://github.com/atsign-foundation/socket_connector
   # Pin the dependencies of noports_core
   archive: 3.3.9
   args:

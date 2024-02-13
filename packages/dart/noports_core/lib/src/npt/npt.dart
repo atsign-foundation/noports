@@ -5,6 +5,7 @@ import 'package:args/args.dart';
 import 'package:at_client/at_client.dart';
 import 'package:at_utils/at_logger.dart';
 import 'package:meta/meta.dart';
+import 'package:noports_core/src/sshnp/util/srvd_channel/srvd_exec_channel.dart';
 import 'package:noports_core/sshnp.dart';
 import 'package:noports_core/utils.dart';
 import 'package:uuid/uuid.dart';
@@ -15,7 +16,8 @@ import '../common/mixins/async_initialization.dart';
 import '../common/mixins/at_client_bindings.dart';
 import '../common/streaming_logging_handler.dart';
 import '../sshnp/impl/notification_request_message.dart';
-import '../sshnp/util/srvd_channel/srvd_exec_channel.dart';
+import '../sshnp/util/srvd_channel/srvd_channel.dart';
+import '../sshnp/util/srvd_channel/srvd_dart_channel.dart';
 import '../sshnp/util/sshnpd_channel/sshnpd_channel.dart';
 import '../sshnp/util/sshnpd_channel/sshnpd_default_channel.dart';
 
@@ -42,6 +44,8 @@ abstract interface class Npt {
   /// - Return the port which the local srv is bound to
   Future<int> run();
 
+  Future get done;
+
   factory Npt.create({
     required NptParams params,
     required AtClient atClient,
@@ -59,6 +63,7 @@ abstract interface class Npt {
       usageLineLength: stdout.hasTerminal ? stdout.terminalColumns : null,
       showAliasesInUsage: true,
     );
+
     return parser;
   }
 }
@@ -120,8 +125,11 @@ class _NptImpl extends NptBase
   SshnpdDefaultChannel get sshnpdChannel => _sshnpdChannel;
   late final SshnpdDefaultChannel _sshnpdChannel;
 
-  SrvdExecChannel get srvdChannel => _srvdChannel;
-  late final SrvdExecChannel _srvdChannel;
+  late final SrvdChannel _srvdChannel;
+
+  final Completer _completer = Completer();
+  @override
+  Future get done => _completer.future;
 
   _NptImpl({
     required super.params,
@@ -134,11 +142,19 @@ class _NptImpl extends NptBase
       sessionId: sessionId,
       namespace: namespace,
     );
-    _srvdChannel = SrvdExecChannel(
-      atClient: atClient,
-      params: params,
-      sessionId: sessionId,
-    );
+    if (params.inline) {
+      _srvdChannel = SrvdDartBindPortChannel(
+        atClient: atClient,
+        params: params,
+        sessionId: sessionId,
+      );
+    } else {
+      _srvdChannel = SrvdExecChannel(
+        atClient: atClient,
+        params: params,
+        sessionId: sessionId,
+      );
+    }
   }
 
   @override
@@ -168,7 +184,7 @@ class _NptImpl extends NptBase
 
     /// Retrieve the srvd host and port pair
     sendProgress('Fetching host and port from srvd');
-    await srvdChannel.callInitialization();
+    await _srvdChannel.callInitialization();
     sendProgress('Received host and port from srvd');
 
     sendProgress('Waiting for daemon feature check response');
@@ -204,11 +220,11 @@ class _NptImpl extends NptBase
           atClient,
           NptSessionRequest(
             sessionId: sessionId,
-            rvdHost: srvdChannel.rvdHost,
-            rvdPort: srvdChannel.daemonPort,
+            rvdHost: _srvdChannel.rvdHost,
+            rvdPort: _srvdChannel.daemonPort,
             authenticateToRvd: params.authenticateDeviceToRvd,
-            clientNonce: srvdChannel.clientNonce,
-            rvdNonce: srvdChannel.rvdNonce!,
+            clientNonce: _srvdChannel.clientNonce,
+            rvdNonce: _srvdChannel.rvdNonce!,
             encryptRvdTraffic: params.encryptRvdTraffic,
             clientEphemeralPK: params.sessionKP.atPublicKey.publicKey,
             clientEphemeralPKType: params.sessionKPType.name,
@@ -247,11 +263,25 @@ class _NptImpl extends NptBase
 
     /// Start srv
     sendProgress('Creating connection to socket rendezvous');
-    await srvdChannel.runSrv(
-      localRvPort: localRvPort,
-      sessionAESKeyString: sshnpdChannel.sessionAESKeyString,
-      sessionIVString: sshnpdChannel.sessionIVString,
-    );
+    if (params.inline) {
+      Future f = await _srvdChannel.runSrv(
+        localRvPort: localRvPort,
+        sessionAESKeyString: sshnpdChannel.sessionAESKeyString,
+        sessionIVString: sshnpdChannel.sessionIVString,
+        multi: true,
+        detached: false,
+      );
+      unawaited(f.whenComplete(() => _completer.complete()));
+    } else {
+      await _srvdChannel.runSrv(
+        localRvPort: localRvPort,
+        sessionAESKeyString: sshnpdChannel.sessionAESKeyString,
+        sessionIVString: sshnpdChannel.sessionIVString,
+        multi: true,
+        detached: true,
+      );
+      _completer.complete();
+    }
 
     return localRvPort;
   }

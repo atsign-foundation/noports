@@ -512,6 +512,7 @@ class SshnpdImpl implements Sshnpd {
         rvdAuthString: rvdAuthString,
         sessionAESKeyString: sessionAESKey,
         sessionIVString: sessionIV,
+        multi: true,
       ).run();
       logger.info('Started rv - pid is ${rv.pid}');
 

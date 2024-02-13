@@ -1,9 +1,8 @@
 import 'package:dartssh2/dartssh2.dart';
 import 'package:noports_core/src/sshnp/util/srvd_channel/srvd_channel.dart';
 import 'package:noports_core/srv.dart';
-import 'package:socket_connector/socket_connector.dart';
 
-class SrvdDartBindPortChannel extends SrvdChannel<SocketConnector> {
+class SrvdDartBindPortChannel extends SrvdChannel<Future> {
   SrvdDartBindPortChannel({
     required super.atClient,
     required super.params,

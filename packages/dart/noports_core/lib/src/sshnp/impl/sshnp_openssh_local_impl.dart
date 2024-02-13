@@ -106,6 +106,8 @@ class SshnpOpensshLocalImpl extends SshnpCore
       localRvPort: localRvPort,
       sessionAESKeyString: sshnpdChannel.sessionAESKeyString,
       sessionIVString: sshnpdChannel.sessionIVString,
+      multi: false,
+      detached: true,
     );
 
     /// Load the ephemeral private key into a key pair

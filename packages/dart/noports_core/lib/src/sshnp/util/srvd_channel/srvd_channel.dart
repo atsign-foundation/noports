@@ -96,6 +96,8 @@ abstract class SrvdChannel<T> with AsyncInitialization, AtClientBindings {
     int? localRvPort,
     String? sessionAESKeyString,
     String? sessionIVString,
+    bool multi = false,
+    bool detached = false,
   }) async {
     await callInitialization();
 
@@ -118,6 +120,8 @@ abstract class SrvdChannel<T> with AsyncInitialization, AtClientBindings {
           : null,
       sessionAESKeyString: sessionAESKeyString,
       sessionIVString: sessionIVString,
+      multi: multi,
+      detached: detached,
     );
     return srv.run();
   }
