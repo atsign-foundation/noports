@@ -14,8 +14,8 @@ abstract class SrvGeneratorCaller<T> {
     String? rvdAuthString,
     String? sessionAESKeyString,
     String? sessionIVString,
-    bool multi,
-    bool detached,
+    bool multi = false,
+    bool detached = false,
   });
 }
 

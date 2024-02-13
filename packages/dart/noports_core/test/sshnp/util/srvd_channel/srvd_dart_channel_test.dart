@@ -26,7 +26,7 @@ void main() {
           params: mockSshnpParams,
           sessionId: sessionId,
         ),
-        isA<SrvdChannel<SocketConnector>>(),
+        isA<SrvdChannel<Future>>(),
       );
     });
     test('public API SrvdDartSSHSocketChannel', () {
