@@ -26,6 +26,8 @@
     "corruptedProfile": "Status: profile is corrupted",
     "connectionProfiles" : "Connection Profiles",
     "currentConnectionsDescription" : "Configure or create connection profiles",
+   "createConnectionProfile":"Create a Connection Profile",
+    "createConnectionProfileDesc":"Create a new profile from scratch",
     "delete" : "Delete",
     "deleteButton" : "Delete",
     "dest" : "Dest.",

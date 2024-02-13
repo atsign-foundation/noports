@@ -4,6 +4,8 @@ import 'package:at_onboarding_flutter/at_onboarding_flutter.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:sshnp_flutter/src/presentation/widgets/home_screen_widgets/home_screen_actions/new_profile_action.dart';
+import 'package:sshnp_flutter/src/utility/constants.dart';
 
 import '../../../controllers/config_controller.dart';
 import '../../../repository/authentication_repository.dart';
@@ -52,7 +54,48 @@ class _HomeScreenCoreState extends ConsumerState<HomeScreenCore> {
       },
       data: (profiles) {
         if (profiles.isEmpty) {
-          return const Text('No SSHNP Configurations Found');
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              gapH40,
+              Text(
+                'Get Started!',
+                style: Theme.of(context).textTheme.bodyMedium!.copyWith(color: kHomeScreenGreyText),
+              ),
+              gapH16,
+              Stack(
+                children: [
+                  Container(
+                    height: Sizes.p185 + Sizes.p8,
+                    width: Sizes.p244 + Sizes.p8,
+                    decoration: BoxDecoration(
+                      color: kProfileFormFieldColor,
+                      borderRadius: BorderRadius.circular(Sizes.p8),
+                    ),
+                  ),
+                  Card(
+                    color: kInputChipBackgroundColor,
+                    child: SizedBox(
+                      height: Sizes.p185,
+                      width: Sizes.p244,
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          // Text(strings.createConnectionProfile, style: Theme.of(context).textTheme.bodyLarge),
+                          Text(
+                            strings.createConnectionProfileDesc,
+                            textAlign: TextAlign.center,
+                          ),
+                          gapH14,
+                          const NewProfileAction(),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              )
+            ],
+          );
         }
         final sortedProfiles = profiles.toList();
         sortedProfiles.sort();
