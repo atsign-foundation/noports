@@ -10,7 +10,8 @@
 typedef struct argparse_option argparse_option_t;
 typedef struct argparse argparse_t;
 
-typedef struct {
+typedef struct
+{
   char *host;
   uint16_t port;
   uint16_t local_port;

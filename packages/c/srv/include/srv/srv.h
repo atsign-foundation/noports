@@ -29,9 +29,8 @@
 void no_op() {}
 #define halt_if_cant_bind_local_port() no_op();
 #else
-#define halt_if_cant_bind_local_port()                                         \
-  atclient_atlogger_log("srv - bind", ERROR,                                   \
-                        "--local-bind-port is disabled\n");                    \
+#define halt_if_cant_bind_local_port()                                                                                 \
+  atclient_atlogger_log("srv - bind", ERROR, "--local-bind-port is disabled\n");                                       \
   exit(1);
 #endif
 
@@ -39,14 +38,11 @@ void no_op() {}
 #define SRV_COMPLETION_STRING "rv started successfully"
 int run_srv(srv_params_t *params);
 
-int socket_to_socket(const srv_params_t *params, const char *auth_string,
-                     chunked_transformer_t *encrypter,
+int socket_to_socket(const srv_params_t *params, const char *auth_string, chunked_transformer_t *encrypter,
                      chunked_transformer_t *decrypter);
 
-int server_to_socket(const srv_params_t *params, const char *auth_string,
-                     chunked_transformer_t *encrypter,
+int server_to_socket(const srv_params_t *params, const char *auth_string, chunked_transformer_t *encrypter,
                      chunked_transformer_t *decrypter);
 
-void uft8_safe_log(const char *tag, atclient_atlogger_logging_level level,
-                   const unsigned char *data, size_t len);
+void uft8_safe_log(const char *tag, atclient_atlogger_logging_level level, const unsigned char *data, size_t len);
 #endif

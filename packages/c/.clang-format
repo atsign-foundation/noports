@@ -1,0 +1,7 @@
+# Some formatting rules have been modified / enforced for consistency
+# https://code.visualstudio.com/docs/cpp/cpp-ide#_code-formatting
+---
+Language: Cpp # Covers C and C++
+BasedOnStyle: LLVM # Added this to ensure a sane set of defaults
+BreakBeforeBraces: Allman # atsign-foundation/at_c is already heavily styled like this, so lets keep this setting as is
+ColumnLimit: 120 # LLVM uses 80, but we mostly use 120 at Atsign

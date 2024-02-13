@@ -10,12 +10,12 @@
 typedef struct _chunked_transformer chunked_transformer_t;
 
 // Tranform function typedef
-typedef int(chunk_transform_t)(const struct _chunked_transformer *self,
-                               unsigned char *buffer, size_t *len);
+typedef int(chunk_transform_t)(const struct _chunked_transformer *self, unsigned char *buffer, size_t *len);
 
 // AES transformer state struct typedef
 typedef struct _aes_ctr_transformer_state aes_ctr_transformer_state_t;
-struct _aes_ctr_transformer_state {
+struct _aes_ctr_transformer_state
+{
   mbedtls_aes_context ctx;
   unsigned char nonce_counter[AES_BLOCK_LEN];
   unsigned char stream_block[AES_BLOCK_LEN];
@@ -23,19 +23,19 @@ struct _aes_ctr_transformer_state {
 };
 
 // Tranformer struct definition
-struct _chunked_transformer {
+struct _chunked_transformer
+{
   // Different transform functions expect different parameters/state union types
   chunk_transform_t *transform;
 
   // Transformer State
-  union {
+  union
+  {
     aes_ctr_transformer_state_t aes_ctr;
   };
 };
 
-int aes_ctr_encrypt_stream(const chunked_transformer_t *self,
-                           unsigned char *buffer, size_t *len);
+int aes_ctr_encrypt_stream(const chunked_transformer_t *self, unsigned char *buffer, size_t *len);
 
-int aes_ctr_decrypt_stream(const chunked_transformer_t *self,
-                           unsigned char *buffer, size_t *len);
+int aes_ctr_decrypt_stream(const chunked_transformer_t *self, unsigned char *buffer, size_t *len);
 #endif
