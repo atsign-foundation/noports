@@ -26,7 +26,7 @@ RUN set -eux ; \
 
 # BRANCH
 # BUILD BRANCH
-FROM dart:3.2.6@sha256:22dab172cdabf538ca9e78376686d6f6e46104b0504eed6ce8797cc39cc9bd9e AS build-branch
+FROM dart:3.2.6@sha256:a40513b89e61d043fca9f8d76d4e95e9a3a84031041620a616f7e8702600084e AS build-branch
 
 ENV URL=https://github.com/atsign-foundation/noports.git
 ENV REPO_DIR=/app/repo
