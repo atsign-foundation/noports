@@ -173,7 +173,7 @@ void main(List<String> args) async {
       String rootDomain = parsedArgs['root-domain'];
       perSessionStorage = parsedArgs['per-session-storage'];
       int localPort = int.parse(parsedArgs['local-port']);
-      bool inline = ! parsedArgs[outputExecutionCommandFlag];
+      bool inline = !parsedArgs[outputExecutionCommandFlag];
 
       // Windows will not let us delete files in use so
       // We will point storage to temp directory and let OS clean up
@@ -251,7 +251,7 @@ void main(List<String> args) async {
       final actualLocalPort = await npt.run();
 
       logProgress('requested localPort $localPort ; '
-              ' actual localPort $actualLocalPort');
+          ' actual localPort $actualLocalPort');
 
       stdout.writeln('$actualLocalPort');
 

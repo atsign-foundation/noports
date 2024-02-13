@@ -32,8 +32,7 @@ Future<void> main(List<String> args) async {
     ..addFlag('multi',
         defaultsTo: false,
         negatable: false,
-        help: 'Set this flag when we want multiple connections via the rvd')
-  ;
+        help: 'Set this flag when we want multiple connections via the rvd');
 
   try {
     final ArgResults parsed;

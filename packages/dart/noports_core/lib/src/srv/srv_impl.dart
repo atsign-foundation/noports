@@ -481,7 +481,7 @@ class SrvImplDart implements Srv<Future> {
       }
       String response = String.fromCharCodes(event).trim();
       logger.info('Received control socket response: [$response]');
-      if (! (controlResponseCompleter?.isCompleted ?? false)) {
+      if (!(controlResponseCompleter?.isCompleted ?? false)) {
         controlResponseCompleter?.complete(response);
       }
     }, onError: (e) {
