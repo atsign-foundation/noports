@@ -302,7 +302,12 @@ class _ProfileFormState extends ConsumerState<ProfileFormMobileView> {
                       children: [
                         ElevatedButton(
                           onPressed: () => onSubmit(oldConfig, newConfig),
-                          child: Text(strings.submit),
+                          child: Text(
+                            strings.submit,
+                            style: Theme.of(context).textTheme.labelLarge!.copyWith(
+                                  color: Colors.white,
+                                ),
+                          ),
                         ),
                         gapW8,
                         TextButton(

@@ -408,7 +408,10 @@ class _ProfileFormState extends ConsumerState<ProfileFormDesktopView> {
                           onPressed: () {
                             onSubmit(oldConfig);
                           },
-                          child: Text(strings.submit),
+                          child: Text(
+                            strings.submit,
+                            style: Theme.of(context).textTheme.labelLarge!.copyWith(color: Colors.white),
+                          ),
                         ),
                         gapW8,
                         TextButton(
