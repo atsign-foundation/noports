@@ -4,6 +4,7 @@
 #include "srv/stream.h"
 #include <atchops/base64.h>
 #include <atlogger.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -147,26 +148,22 @@ int socket_to_socket(const srv_params_t *params, const char *auth_string, chunke
   // Wait for all threads to finish and join them back to the main thread
   pthread_t tid;
   int retval = 0;
+
+  // Wait for any pthread to exit
+  read(fds[0], &tid, sizeof(pthread_t));
+
+  // Automatically close both pthreads
+  atclient_atlogger_log(TAG, DEBUG, "Cancelling remaining open threads\n");
   for (int i = 0; i < 2; i++) {
-    read(fds[0], &tid, sizeof(pthread_t));
-
-    res = pthread_join(tid, (void *)&retval);
-    if (res != 0) {
-      atclient_atlogger_log(TAG, DEBUG, "Joining pthread %l failed with code: %l\n", threads[i], res);
-      break;
+    if (pthread_equal(threads[i], tid) > 0) {
+      res = pthread_join(tid, (void *)&retval);
+      atclient_atlogger_log(TAG, DEBUG, "Joining exited thread\n");
+      continue;
     }
-    atclient_atlogger_log(TAG, DEBUG, "pthread %l exited with code: %l\n", threads[i], retval);
-    if (retval != 0) {
-      break;
-    }
-  }
-
-  if (res != 0 || retval != 0) {
-    atclient_atlogger_log(TAG, DEBUG, "Cancelling all open threads\n");
-    for (int i = 0; i < 2; i++) {
-      if (pthread_cancel(threads[i]) != 0) {
-        atclient_atlogger_log(TAG, DEBUG, "Failed to cancel thread: %l\n", threads[i]);
-      }
+    if (pthread_cancel(threads[i]) != 0) {
+      atclient_atlogger_log(TAG, DEBUG, "Failed to cancel other thread\n");
+    } else {
+      atclient_atlogger_log(TAG, DEBUG, "Canceled other thread\n");
     }
   }
 
