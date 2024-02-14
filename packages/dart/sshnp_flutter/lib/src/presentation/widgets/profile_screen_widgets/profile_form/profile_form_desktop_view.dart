@@ -103,6 +103,7 @@ class _ProfileFormState extends ConsumerState<ProfileFormDesktopView> {
                         initialValue: oldConfig.profileName,
                         labelText: strings.profileName,
                         toolTip: strings.profileNameTooltip,
+                        hintText: strings.profileNameHintText,
                         onSaved: (value) {
                           oldConfig.idleTimeout;
                           newConfig = SshnpPartialParams.merge(
@@ -115,6 +116,7 @@ class _ProfileFormState extends ConsumerState<ProfileFormDesktopView> {
                       ),
                       gapW38,
                       CustomTextFormField(
+                        hintText: strings.hostHintText,
                         initialValue: oldConfig.host,
                         labelText: strings.host,
                         toolTip: strings.hostTooltip,
@@ -145,6 +147,7 @@ class _ProfileFormState extends ConsumerState<ProfileFormDesktopView> {
                         initialValue: oldConfig.sshnpdAtSign,
                         labelText: strings.sshnpdAtSign,
                         toolTip: strings.sshnpdAtSignTooltip,
+                        hintText: strings.sshnpdAtSignHintText,
                         onSaved: (value) => newConfig = SshnpPartialParams.merge(
                           newConfig,
                           SshnpPartialParams(sshnpdAtSign: value),
@@ -164,8 +167,9 @@ class _ProfileFormState extends ConsumerState<ProfileFormDesktopView> {
                         children: [
                           CustomTextFormField(
                               initialValue: oldConfig.remoteUsername,
-                              labelText: strings.remoteUserName,
-                              toolTip: strings.remoteUserNameTooltip,
+                              labelText: strings.remoteUsername,
+                              toolTip: strings.remoteUsernameTooltip,
+                              hintText: strings.remoteUsernameHintText,
                               onSaved: (value) {
                                 if (value == '') {
                                   value = null;
@@ -178,8 +182,9 @@ class _ProfileFormState extends ConsumerState<ProfileFormDesktopView> {
                           gapW38,
                           CustomTextFormField(
                               initialValue: oldConfig.tunnelUsername,
-                              labelText: strings.tunnelUserName,
-                              toolTip: strings.tunnelUserNameTooltip,
+                              labelText: strings.tunnelUsername,
+                              toolTip: strings.tunnelUsernameTooltip,
+                              hintText: strings.tunnelUsernameHintText,
                               onSaved: (value) {
                                 if (value == '') {
                                   value = null;

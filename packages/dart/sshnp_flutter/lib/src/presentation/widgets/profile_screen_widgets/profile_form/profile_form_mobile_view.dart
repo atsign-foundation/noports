@@ -223,7 +223,7 @@ class _ProfileFormState extends ConsumerState<ProfileFormMobileView> {
                       CustomTextFormField(
                           width: double.infinity,
                           initialValue: oldConfig.remoteUsername ?? '',
-                          labelText: strings.remoteUserName,
+                          labelText: strings.remoteUsername,
                           onSaved: (value) {
                             newConfig = SshnpPartialParams.merge(
                               newConfig,
