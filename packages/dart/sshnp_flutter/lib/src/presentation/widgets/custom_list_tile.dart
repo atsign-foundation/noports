@@ -144,7 +144,7 @@ class CustomListTile extends StatelessWidget {
         case CustomListTileType.resetAtsign:
           final futurePreference = await loadAtClientPreference();
           if (context.mounted) {
-            await AtOnboarding.reset(
+            final result = await AtOnboarding.reset(
               context: context,
               config: AtOnboardingConfig(
                 atClientPreference: futurePreference,
@@ -154,11 +154,14 @@ class CustomListTile extends StatelessWidget {
               ),
             );
             final OnboardingService onboardingService = OnboardingService.getInstance();
-            onboardingService.setAtsign = null;
+            final status = await onboardingService.checkAtsignStatus();
+
+            if (context.mounted && result == AtOnboardingResetResult.success) {
+              onboardingService.setAtsign = null;
+              context.goNamed(AppRoute.onboarding.name);
+            }
           }
-          if (context.mounted) {
-            context.goNamed(AppRoute.onboarding.name);
-          }
+
           break;
       }
     }
