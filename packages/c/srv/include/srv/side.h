@@ -8,6 +8,8 @@
 typedef struct _side_hints_t side_hints_t;
 typedef struct _side_t side_t;
 
+// @brief input structure for the side_t type
+// This structure includes all of the predefined, or non-state values which are stored in the side_T type
 struct _side_hints_t {
   const bool is_side_a;
   const bool is_server;
@@ -16,6 +18,11 @@ struct _side_hints_t {
   const chunked_transformer_t *transformer;
 };
 
+// @brief Structure which represents one side of a connection.
+// The first 5 parameters represent the predefined values that are set from the side_hints_t input.
+// * is_side_a, is_server, host, port, and transformer.
+// The next 3 parameters are set dynamically during initialization.
+// The last 3 parameters are used to store server state.
 struct _side_t {
   // From hints
   const bool is_side_a;
@@ -35,10 +42,35 @@ struct _side_t {
   int connection_capacity;
 };
 
+/**
+ * @brief Initialize the state of a single side of the socket connection.
+ *
+ * @param hints a pointer to a structure containing the input parameters.
+ * @param side a pointer to the side structure which will be initialized by this function.
+ */
 int srv_side_init(const side_hints_t *hints, side_t *side);
+
+/**
+ * @brief Link two sides of a socket connector together, and provide the main pipe to them.
+ *
+ * @param side_a one of the two sides being linked.
+ * @param side_b one of the two sides being linked.
+ * @param fds file descriptors for a pipe used to signal to the calling thread that a side has completed/exited.
+ */
 void srv_link_sides(side_t *side_a, side_t *side_b, int fds[2]);
+
+/**
+ * @brief Free the memory allocated for a single side of the socket connection.
+ *
+ * @param side a pointer to the side struture which will be freed by this function.
+ */
 void srv_side_free(side_t *side);
 
+/**
+ * @brief A pointer to the function which actually handles the side connection.
+ *
+ * @param side the structure for the side being handled.
+ */
 void *srv_side_handle(void *side);
 
 #endif
