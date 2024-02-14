@@ -18,11 +18,10 @@ int aes_ctr_encrypt_stream(const chunked_transformer_t *self, unsigned char *buf
     atclient_atlogger_log(TAG, ERROR, "Failed to encrypt chunk\n");
     free(output);
     return res;
-  } else {
-    // Free the old chunk and assign the address of the encrypted one
-    free(buffer);
-    buffer = output;
   }
+  // Free the old chunk and assign the address of the encrypted one
+  free(buffer);
+  buffer = output;
 
   return 0;
 }
@@ -39,11 +38,10 @@ int aes_ctr_decrypt_stream(const chunked_transformer_t *self, unsigned char *buf
   if (res != 0) {
     atclient_atlogger_log(TAG, ERROR, "Failed to decrypt chunk\n");
     return res;
-  } else {
-    // Free the old chunk and assign the address of the decrypted one
-    free(buffer);
-    buffer = output;
   }
+  // Free the old chunk and assign the address of the decrypted one
+  free(buffer);
+  buffer = output;
 
   return 0;
 }

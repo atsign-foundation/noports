@@ -36,13 +36,47 @@ void no_op() {}
 
 // GENERAL SRV definitions
 #define SRV_COMPLETION_STRING "rv started successfully"
+
+/**
+ * @brief run srv with some parameters
+ *
+ * @param params a pointer to the parameters to run srv with
+ * @return int 0 on success, non-zero on error
+ */
 int run_srv(srv_params_t *params);
 
+/**
+ * @brief Run a socket to socket connection
+ *
+ * @param params a pointer to the original program parameters
+ * @param auth_string an authentication string to send to the server at startup
+ * @param encrypter a pointer to the encryption transformer used to encrypt messages sent to the server
+ * @param decrypter a pointer to the decryption transformer used to decrypt messages from the server
+ * @return int 0 on success, non-zero on error
+ *
+ * Note: the server in this context is the far side defined by params->host and params->port
+ * Note: params->bind_local_port is expected to be 0
+ */
 int socket_to_socket(const srv_params_t *params, const char *auth_string, chunked_transformer_t *encrypter,
                      chunked_transformer_t *decrypter);
 
+/**
+ * @brief Run a server to socket connection
+ *
+ * @param params a pointer to the original program parameters
+ * @param auth_string an authentication string to send to the server at startup
+ * @param encrypter a pointer to the encryption transformer used to encrypt messages sent to the server
+ * @param decrypter a pointer to the decryption transformer used to decrypt messages from the server
+ * @return int 0 on success, non-zero on error
+ *
+ * Note: the server in this context is the far side defined by params->host and params->port
+ * Note: params->bind_local_port is expected to be 1
+ */
 int server_to_socket(const srv_params_t *params, const char *auth_string, chunked_transformer_t *encrypter,
                      chunked_transformer_t *decrypter);
 
+/**
+ * @brief A wrapper around atlogger/atlogger to substitue non utf8 characters before logging
+ */
 void uft8_safe_log(const char *tag, atclient_atlogger_logging_level level, const unsigned char *data, size_t len);
 #endif

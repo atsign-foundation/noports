@@ -6,33 +6,60 @@
 #define AES_256_KEY_BITS 256
 
 #define AES_BLOCK_LEN 16 // 128 bits = 16 bytes
-// Transformer struct typedef
-typedef struct _chunked_transformer chunked_transformer_t;
+struct _chunked_transformer;
 
-// Tranform function typedef
+/**
+ * @brief type definition for a chunk based transform function
+ *
+ * @param self a pointer to the structure storing the context accessed by this function
+ * @param buffer the buffer to transform - must be null terminated
+ * @param len the output length of the buffer
+ * @return int 0 on success, non-zero on error
+ */
 typedef int(chunk_transform_t)(const struct _chunked_transformer *self, unsigned char *buffer, size_t *len);
 
-// AES transformer state struct typedef
-typedef struct _aes_ctr_transformer_state aes_ctr_transformer_state_t;
-struct _aes_ctr_transformer_state {
+/**
+ * @brief structure for storing the state behind aesctr stream encyption / decryption
+ */
+typedef struct _aes_ctr_transformer_state {
   mbedtls_aes_context ctx;
   unsigned char nonce_counter[AES_BLOCK_LEN];
   unsigned char stream_block[AES_BLOCK_LEN];
   size_t nc_off;
-};
+} aes_ctr_transformer_state_t;
 
-// Tranformer struct definition
-struct _chunked_transformer {
+/**
+ * @brief a structure for handling a chunk based tranformer
+ *
+ * Contains the function pointer for the transform function, and the state/context required by that function.
+ */
+typedef struct _chunked_transformer {
   // Different transform functions expect different parameters/state union types
   chunk_transform_t *transform;
 
-  // Transformer State
+  // Transformer state/context
   union {
     aes_ctr_transformer_state_t aes_ctr;
   };
-};
+} chunked_transformer_t;
 
+/**
+ * @brief encrypt a chunk of a stream using aesctr
+ *
+ * @param self a pointer to the structure storing the context accessed by this function
+ * @param buffer the buffer to encrypt - must be null terminated
+ * @param len the output length of the buffer
+ * @return int 0 on success, non-zero on error
+ */
 int aes_ctr_encrypt_stream(const chunked_transformer_t *self, unsigned char *buffer, size_t *len);
 
+/**
+ * @brief decrypt a chunk of a stream using aesctr
+ *
+ * @param self a pointer to the structure storing the context accessed by this function
+ * @param buffer the buffer to decrypt - must be null terminated
+ * @param len the output length of the buffer
+ * @return int 0 on success, non-zero on error
+ */
 int aes_ctr_decrypt_stream(const chunked_transformer_t *self, unsigned char *buffer, size_t *len);
 #endif

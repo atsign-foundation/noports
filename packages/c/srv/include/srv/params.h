@@ -7,9 +7,11 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-typedef struct argparse_option argparse_option_t;
-typedef struct argparse argparse_t;
-
+/**
+ * @brief Free the memory allocated for a single side of the socket connection.
+ *
+ * @param side a pointer to the side struture which will be freed by this function.
+ */
 typedef struct {
   char *host;
   uint16_t port;
@@ -25,7 +27,20 @@ typedef struct {
 
 } srv_params_t;
 
+/**
+ * @brief Apply the default values to a params structure
+ *
+ * @param params a pointer to the parameters structure to apply the defaults to.
+ */
 void apply_default_values_to_params(srv_params_t *params);
+
+/**
+ * @brief Parse parameters into a params structure
+ *
+ * @param params a pointer ot the parameters structure
+ * @param argc the count of arguments
+ * @param argv the list of arguments
+ */
 int parse_params(srv_params_t *params, int argc, const char **argv);
 
 #endif

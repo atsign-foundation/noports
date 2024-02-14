@@ -10,7 +10,7 @@ void apply_default_values_to_params(srv_params_t *params) {
 }
 
 int parse_params(srv_params_t *params, int argc, const char **argv) {
-  argparse_option_t options[] = {
+  struct argparse_option options[] = {
     OPT_BOOLEAN(0, "help", NULL, "show this help message and exit", argparse_help_cb, 0, OPT_NONEG),
     OPT_STRING('h', "host", &params->host, "rvd host"),
     OPT_INTEGER('p', "port", &params->port, "rvd port"),
@@ -28,7 +28,7 @@ int parse_params(srv_params_t *params, int argc, const char **argv) {
     OPT_END(),
   };
 
-  argparse_t argparse;
+  struct argparse argparse;
   argparse_init(&argparse, options, NULL, 0);
 
   char description[24];
