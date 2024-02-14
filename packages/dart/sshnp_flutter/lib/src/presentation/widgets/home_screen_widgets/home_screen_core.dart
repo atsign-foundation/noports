@@ -109,7 +109,7 @@ class _HomeScreenCoreState extends ConsumerState<HomeScreenCore> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(strings.profileName),
+                Text(strings.profileName('other')),
                 Padding(
                   padding: const EdgeInsets.only(right: Sizes.p36),
                   child: Text(strings.commands),
