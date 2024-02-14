@@ -156,6 +156,8 @@ class ConfigFileRepository {
           case ArgFormat.flag:
             if (value.toLowerCase() == 'true') {
               args[arg.name] = true;
+            } else {
+              args[arg.name] = false;
             }
             continue;
           case ArgFormat.multiOption:

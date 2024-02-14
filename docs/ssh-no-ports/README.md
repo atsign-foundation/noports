@@ -8,7 +8,7 @@ SSH No Ports is the flagship product in the No Ports suite. It enables you to SS
 
 See [here](how-it-works.md) for more information on how SSH No Ports works.
 
-If you have a specific questions see the [FAQ](faq-coming-soon.md) or reach out to use using one of the following options:
+If you have a specific questions see the [FAQ](faq.md) or reach out to use using one of the following options:
 
 * Create a new [GitHub issue](https://github.com/atsign-foundation/noports/issues/new/choose)
 * Join [our discord](https://discord.atsign.com) and post to our `📑｜forum` channel

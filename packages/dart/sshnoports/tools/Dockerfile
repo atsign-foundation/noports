@@ -1,7 +1,7 @@
 # Dockerfile
 # Build image for a containerized instance of sshnpd
 
-FROM dart:3.2.5@sha256:66e45c56249e3c0666c100d29e95c7d14cd0807bee9bda3513e8e4d5efc4f047 AS buildimage
+FROM dart:3.2.6@sha256:7c08a296c364e2a70af9c4c457867f44c57afba6db3e78fb4865695fe344ef5c AS buildimage
 ENV PACKAGEDIR=packages/dart/sshnoports
 ENV BINARYDIR=/usr/local/at
 SHELL ["/bin/bash", "-c"]
@@ -17,7 +17,7 @@ RUN \
   dart compile exe bin/srv.dart -o ${BINARYDIR}/srv
 
 # Second stage of build FROM debian-slim
-FROM debian:stable-20240130-slim@sha256:4255c9f8a4d6e66488adc0c2084c99df44bda22849b21b3afc0e9746e9a0be18
+FROM debian:stable-20240211-slim@sha256:435ba09b2e259426c0552a041eef609b01d4655d9c8467d75be390801068baf3
 ENV USER=atsign
 ENV HOMEDIR=/${USER}
 ENV BINARYDIR=/usr/local/at
