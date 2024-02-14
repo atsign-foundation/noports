@@ -1,6 +1,7 @@
 import 'package:dartssh2/dartssh2.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:noports_core/sshnp_foundation.dart';
+import 'package:socket_connector/socket_connector.dart';
 import 'package:test/test.dart';
 import 'package:uuid/uuid.dart';
 
@@ -25,7 +26,7 @@ void main() {
           params: mockSshnpParams,
           sessionId: sessionId,
         ),
-        isA<SrvdChannel<Future>>(),
+        isA<SrvdChannel<SocketConnector>>(),
       );
     });
     test('public API SrvdDartSSHSocketChannel', () {
