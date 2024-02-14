@@ -8,6 +8,7 @@ import 'package:meta/meta.dart';
 import 'package:noports_core/src/sshnp/util/srvd_channel/srvd_exec_channel.dart';
 import 'package:noports_core/sshnp.dart';
 import 'package:noports_core/utils.dart';
+import 'package:socket_connector/socket_connector.dart';
 import 'package:uuid/uuid.dart';
 
 import '../common/features.dart';
@@ -264,14 +265,15 @@ class _NptImpl extends NptBase
     /// Start srv
     sendProgress('Creating connection to socket rendezvous');
     if (params.inline) {
-      Future f = await _srvdChannel.runSrv(
+      // not detached
+      SocketConnector sc = await _srvdChannel.runSrv(
         localRvPort: localRvPort,
         sessionAESKeyString: sshnpdChannel.sessionAESKeyString,
         sessionIVString: sshnpdChannel.sessionIVString,
         multi: true,
         detached: false,
       );
-      unawaited(f.whenComplete(() => _completer.complete()));
+      unawaited(sc.done.whenComplete(() => _completer.complete()));
     } else {
       await _srvdChannel.runSrv(
         localRvPort: localRvPort,

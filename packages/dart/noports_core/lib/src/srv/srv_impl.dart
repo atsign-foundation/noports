@@ -111,14 +111,23 @@ class SrvImplExec implements Srv<Process> {
     );
     Completer rvPortBound = Completer();
     p.stdout.listen((List<int> l) {
-      var s = utf8.decode(l).trim();
-      logger.info('rv stdout | $s');
+      var allLines = utf8.decode(l).trim();
+      for (String s in allLines.split('\n')) {
+        logger.info('rv stdout | $s');
+        if (s.contains(Srv.startedString) && !rvPortBound.isCompleted) {
+          rvPortBound.complete();
+        } else if (s.contains(Srv.completedWithExceptionString)) {
+          if (!rvPortBound.isCompleted) {
+            rvPortBound.completeError(s);
+          }
+        }
+      }
     }, onError: (e) {});
     p.stderr.listen((List<int> l) {
       var allLines = utf8.decode(l).trim();
       for (String s in allLines.split('\n')) {
         logger.info('rv stderr | $s');
-        if (s.endsWith(Srv.startedString) && !rvPortBound.isCompleted) {
+        if (s.contains(Srv.startedString) && !rvPortBound.isCompleted) {
           rvPortBound.complete();
         } else if (s.contains(Srv.completedWithExceptionString)) {
           if (!rvPortBound.isCompleted) {
@@ -289,7 +298,7 @@ class WrappedSSHSocket implements SSHSocket {
 }
 
 @visibleForTesting
-class SrvImplDart implements Srv<Future> {
+class SrvImplDart implements Srv<SocketConnector> {
   @override
   final String streamingHost;
 
@@ -340,7 +349,7 @@ class SrvImplDart implements Srv<Future> {
   }
 
   @override
-  Future<Future> run() async {
+  Future<SocketConnector> run() async {
     DataTransformer? encrypter;
     DataTransformer? decrypter;
 
@@ -373,16 +382,16 @@ class SrvImplDart implements Srv<Future> {
     try {
       var hosts = await InternetAddress.lookup(streamingHost);
 
-      late Future f;
+      late SocketConnector sc;
       if (bindLocalPort) {
         if (multi) {
-          f = _runClientSideMulti(
+          sc = await _runClientSideMulti(
             hosts: hosts,
             encrypter: encrypter,
             decrypter: decrypter,
           );
         } else {
-          f = _runClientSideSingle(
+          sc = await _runClientSideSingle(
             hosts: hosts,
             encrypter: encrypter,
             decrypter: decrypter,
@@ -391,13 +400,13 @@ class SrvImplDart implements Srv<Future> {
       } else {
         // daemon side
         if (multi) {
-          f = _runDaemonSideMulti(
+          sc = await _runDaemonSideMulti(
             hosts: hosts,
             encrypter: encrypter,
             decrypter: decrypter,
           );
         } else {
-          f = _runDaemonSideSingle(
+          sc = await _runDaemonSideSingle(
             hosts: hosts,
             encrypter: encrypter,
             decrypter: decrypter,
@@ -415,22 +424,20 @@ class SrvImplDart implements Srv<Future> {
         stderr.writeln(Srv.startedString);
       }
 
-      return f;
+      return sc;
     } catch (e) {
       AtSignLogger('srv').severe(e.toString());
       rethrow;
     }
   }
 
-  Future<Future> _runClientSideSingle({
+  Future<SocketConnector> _runClientSideSingle({
     required List<InternetAddress> hosts,
     required DataTransformer? encrypter,
     required DataTransformer? decrypter,
   }) async {
     // client side
-    Completer completer = Completer();
-
-    SocketConnector socketConnector = await SocketConnector.serverToSocket(
+    SocketConnector sc = await SocketConnector.serverToSocket(
       portA: localPort,
       addressB: hosts[0],
       portB: streamingPort,
@@ -441,63 +448,45 @@ class SrvImplDart implements Srv<Future> {
       onConnect: (Socket sideA, Socket sideB) async {
         // Authenticate the sideB socket (to the rvd)
         if (rvdAuthString != null) {
-          logger.info('authenticating new connection to rvd');
+          logger.info(
+              '_runClientSideSingle authenticating new connection to rvd');
           sideB.writeln(rvdAuthString);
         }
       },
     );
 
-    // upon socketConnector.done, destroy the control socket, and complete
-    unawaited(socketConnector.done.whenComplete(() {
-      if (!completer.isCompleted) {
-        completer.complete();
-      }
-    }));
-
-    return completer.future;
+    return sc;
   }
 
-  Future<Future> _runClientSideMulti({
+  Future<SocketConnector> _runClientSideMulti({
     required List<InternetAddress> hosts,
     required DataTransformer? encrypter,
     required DataTransformer? decrypter,
   }) async {
     // client side
-    Completer completer = Completer();
-
-    Completer<String>? controlResponseCompleter;
+    SocketConnector? sc;
 
     Socket controlSocket = await Socket.connect(streamingHost, streamingPort,
         timeout: Duration(seconds: 1));
     // Authenticate the control socket
     if (rvdAuthString != null) {
-      logger.info('authenticating control socket connection to rvd');
+      logger.info(
+          '_runClientSideMulti authenticating control socket connection to rvd');
       controlSocket.writeln(rvdAuthString);
     }
     controlSocket.listen((event) {
-      if (event.isEmpty) {
-        logger.info('Empty control socket response received');
-        return;
-      }
       String response = String.fromCharCodes(event).trim();
-      logger.info('Received control socket response: [$response]');
-      if (!(controlResponseCompleter?.isCompleted ?? false)) {
-        controlResponseCompleter?.complete(response);
-      }
+      logger.info(
+          '_runClientSideMulti Received control socket response: [$response]');
     }, onError: (e) {
-      logger.severe('controlSocket error: $e');
-      if (!completer.isCompleted) {
-        completer.complete();
-      }
+      logger.severe('_runClientSideMulti controlSocket error: $e');
+      sc?.close();
     }, onDone: () {
-      logger.info('controlSocket done');
-      if (!completer.isCompleted) {
-        completer.complete();
-      }
+      logger.info('_runClientSideMulti controlSocket done');
+      sc?.close();
     });
 
-    late SocketConnector socketConnector;
-    socketConnector = await SocketConnector.serverToSocket(
+    sc = await SocketConnector.serverToSocket(
       portA: localPort,
       addressB: hosts[0],
       portB: streamingPort,
@@ -505,48 +494,35 @@ class SrvImplDart implements Srv<Future> {
       transformAtoB: encrypter,
       transformBtoA: decrypter,
       multi: multi,
-      onConnect: (Socket sideA, Socket sideB) async {
+      onConnect: (Socket sideA, Socket sideB) {
+        // For some bizarro reason, we can't use the logger or write to stderr
+        // in this callback
+        logger.info('_runClientSideMulti Sending connect request');
+        controlSocket.writeln('connect');
         // Authenticate the sideB socket (to the rvd)
         if (rvdAuthString != null) {
-          logger.info('authenticating new connection to rvd');
+          logger
+              .info('_runClientSideMulti authenticating new connection to rvd');
           sideB.writeln(rvdAuthString);
-        }
-        controlResponseCompleter = Completer<String>();
-        logger.info('Sending connect request');
-        controlSocket.writeln('connect');
-        logger.info('Waiting for response to connect request');
-        String response = await controlResponseCompleter!.future
-            .timeout(Duration(seconds: 1));
-        logger.info('Connect response: $response');
-        if (response != 'ack') {
-          socketConnector.close();
-          controlSocket.destroy();
-          if (!completer.isCompleted) {
-            completer.complete();
-          }
         }
       },
     );
 
     // upon socketConnector.done, destroy the control socket, and complete
-    unawaited(socketConnector.done.whenComplete(() {
+    unawaited(sc.done.whenComplete(() {
+      logger.info('_runClientSideMulti sc.done');
       controlSocket.destroy();
-      if (!completer.isCompleted) {
-        completer.complete();
-      }
     }));
 
-    return completer.future;
+    return sc;
   }
 
-  Future<Future> _runDaemonSideMulti({
+  Future<SocketConnector> _runDaemonSideMulti({
     required List<InternetAddress> hosts,
     required DataTransformer? encrypter,
     required DataTransformer? decrypter,
   }) async {
-    Completer completer = Completer();
-
-    List<SocketConnector> connectors = [];
+    SocketConnector sc = SocketConnector();
 
     // - create control socket and listen for requests
     // - for each request, create a socketToSocket connection
@@ -558,16 +534,20 @@ class SrvImplDart implements Srv<Future> {
     }
     controlSocket.listen((event) async {
       if (event.isEmpty) {
-        logger.info('Empty control message received');
+        logger.info('Empty control message (Uint8List) received');
         return;
       }
       String request = String.fromCharCodes(event).trim();
+      if (request.isEmpty) {
+        logger.info('Empty control message (String) received');
+        return;
+      }
       switch (request) {
         case 'connect':
-          controlSocket.writeln('ack');
           logger.info('Control socket received request: [$request];'
               ' creating new socketToSocket connection');
-          SocketConnector connector = await SocketConnector.socketToSocket(
+          await SocketConnector.socketToSocket(
+              connector: sc,
               addressA:
                   (await InternetAddress.lookup(localHost ?? 'localhost'))[0],
               portA: localPort,
@@ -578,38 +558,30 @@ class SrvImplDart implements Srv<Future> {
               transformBtoA: decrypter);
           if (rvdAuthString != null) {
             stderr.writeln('authenticating new socket connection to rvd');
-            connector.connections.first.sideB.socket.writeln(rvdAuthString);
+            sc.connections.last.sideB.socket.writeln(rvdAuthString);
           }
-          connectors.add(connector);
-          unawaited(connector.done.whenComplete(() {
-            connectors.remove(connector);
-            if (connectors.isEmpty) {
-              if (!completer.isCompleted) {
-                completer.complete();
-              }
-            }
-          }));
+
           break;
         default:
           logger.severe('Unknown request to control socket: [$request]');
-          controlSocket.writeln('nack');
       }
     }, onError: (e) {
       logger.severe('controlSocket error: $e');
-      if (!completer.isCompleted) {
-        completer.complete();
-      }
+      sc.close();
     }, onDone: () {
       logger.info('controlSocket done');
-      if (!completer.isCompleted) {
-        completer.complete();
-      }
+      sc.close();
     });
 
-    return completer.future;
+    // upon socketConnector.done, destroy the control socket, and complete
+    unawaited(sc.done.whenComplete(() {
+      controlSocket.destroy();
+    }));
+
+    return sc;
   }
 
-  Future<Future> _runDaemonSideSingle({
+  Future<SocketConnector> _runDaemonSideSingle({
     required List<InternetAddress> hosts,
     required DataTransformer? encrypter,
     required DataTransformer? decrypter,
@@ -627,6 +599,6 @@ class SrvImplDart implements Srv<Future> {
       socketConnector.connections.first.sideB.socket.writeln(rvdAuthString);
     }
 
-    return socketConnector.done;
+    return socketConnector;
   }
 }

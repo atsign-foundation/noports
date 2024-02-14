@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:args/args.dart';
 import 'package:at_utils/at_logger.dart';
 import 'package:noports_core/srv.dart';
+import 'package:socket_connector/socket_connector.dart';
 import 'package:sshnoports/src/print_version.dart';
 
 Future<void> main(List<String> args) async {
@@ -70,7 +71,7 @@ Future<void> main(List<String> args) async {
     }
 
     try {
-      Future done = await Srv.dart(
+      SocketConnector sc = await Srv.dart(
         streamingHost,
         streamingPort,
         localPort: localPort,
@@ -85,7 +86,7 @@ Future<void> main(List<String> args) async {
 
       /// Shut myself down once the socket connector closes
       stderr.writeln('Waiting for Srv to close');
-      await done;
+      await sc.done;
     } on ArgumentError {
       rethrow;
     } catch (e) {
