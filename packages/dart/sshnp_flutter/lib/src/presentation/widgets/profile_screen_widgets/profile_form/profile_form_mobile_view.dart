@@ -89,7 +89,7 @@ class _ProfileFormState extends ConsumerState<ProfileFormMobileView> {
                   CustomTextFormField(
                     width: double.infinity,
                     initialValue: oldConfig.profileName,
-                    labelText: strings.profileName,
+                    labelText: strings.profileName('required'),
                     onChanged: (value) {
                       newConfig = SshnpPartialParams.merge(
                         newConfig,

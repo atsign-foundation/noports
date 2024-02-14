@@ -43,7 +43,7 @@
     "from" : "From",
     "homeDirectory" : "Home Directory",
     "homeDirectoryHint" : "The home directory on this host",
-    "host" : "SR Address (atSign)",
+    "host" : "SR Address (atSign) *",
     "hostTooltip" : "atSign of srvd daemon or FQDN/IP address to connect back to",
     "hostHintText" : "eg. rv_am",
     "hostSelection" : "Host Selection",
@@ -69,7 +69,7 @@
     "onboardButtonDescription" : "Onboard with Client Address (atSign)",
     "port" : "Remote Port",
     "privacyPolicy" : "Privacy Policy",
-    "privateKey" : "SSH Private Key",
+    "privateKey" : "SSH Private Key *",
     "privateKeyTooltip" : "Private Key for authentication",
     "privateKeyDescription" : "Select the keys you want to use when establishing a connection with this profile",
     "privateKeyNotFound": "No Private Key Found",
@@ -79,7 +79,13 @@
     "privateKeyManagementDescription" : "Create and Configure your private key",
     "privateKeyPassphrase" : "Private Key Passphrase",
     "privatekeyPassPhraseTooltip" : "Passphrase of the Private Key",
-    "profileName" : "Profile Name",
+    "profileName" : "{fieldStatus, select, required{Profile Name *} other{Profile Name}}",
+    "@profileName": {
+      "description" : "Required fields",
+      "fieldStatus" : {
+         "type" : "String"
+      }
+    },
     "profileNameTooltip" : "Name of the profile to use",
     "profileNameHintText" : "eg. Alice Linux VM",
     "remoteSshdPort": "Remote SSHD Port",
@@ -118,7 +124,7 @@
          }
       }
     },
-    "sshnpdAtSign" : "Device Address (atSign)",
+    "sshnpdAtSign" : "Device Address (atSign) *",
     "sshnpdAtSignHint" : "The atSign of the sshnpd we wish to communicate with",
     "sshnpdAtSignTooltip" : "Receiving device atSign",
     "sshnpdAtSignHintText" : "eg. @alice_device",

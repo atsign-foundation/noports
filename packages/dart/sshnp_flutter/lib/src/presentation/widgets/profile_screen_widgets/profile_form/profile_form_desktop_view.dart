@@ -101,7 +101,7 @@ class _ProfileFormState extends ConsumerState<ProfileFormDesktopView> {
                     children: [
                       CustomTextFormField(
                         initialValue: oldConfig.profileName,
-                        labelText: strings.profileName,
+                        labelText: strings.profileName('required'),
                         toolTip: strings.profileNameTooltip,
                         hintText: strings.profileNameHintText,
                         onSaved: (value) {
