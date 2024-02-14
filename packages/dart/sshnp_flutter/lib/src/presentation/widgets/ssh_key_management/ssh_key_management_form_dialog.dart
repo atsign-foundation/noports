@@ -173,7 +173,12 @@ class _SSHKeyManagementFormState extends ConsumerState<SSHKeyManagementFormDialo
                             gapW8,
                             ElevatedButton(
                               onPressed: () => onSubmit(context),
-                              child: Text(strings.addKey),
+                              child: Text(
+                                strings.addKey,
+                                style: Theme.of(context).textTheme.labelLarge!.copyWith(
+                                      color: Colors.white,
+                                    ),
+                              ),
                             ),
                           ],
                         ),
