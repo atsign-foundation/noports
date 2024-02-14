@@ -7,6 +7,9 @@ import 'package:socket_connector/socket_connector.dart';
 import 'package:sshnoports/src/print_version.dart';
 
 Future<void> main(List<String> args) async {
+  // Do not change this to anything below WARNING. If you do, then the
+  // onConnect callback in SrvImplDart._runClientSideMulti will crash the
+  // program
   AtSignLogger.root_level = 'SHOUT';
   AtSignLogger.defaultLoggingHandler = AtSignLogger.stdErrLoggingHandler;
 

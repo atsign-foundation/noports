@@ -495,8 +495,10 @@ class SrvImplDart implements Srv<SocketConnector> {
       transformBtoA: decrypter,
       multi: multi,
       onConnect: (Socket sideA, Socket sideB) {
-        // For some bizarro reason, we can't use the logger or write to stderr
-        // in this callback
+        // For some bizarro reason, we can't write to stderr in this callback
+        // when the Srv has been started via SrvImplExec. Thus it is very
+        // important that the srv binary never have a logger root level of
+        // anything below 'warning'
         logger.info('_runClientSideMulti Sending connect request');
         controlSocket.writeln('connect');
         // Authenticate the sideB socket (to the rvd)
