@@ -80,6 +80,7 @@
     "privateKeyManagementDescription" : "Create and Configure your private key",
     "privateKeyPassphrase" : "Private Key Passphrase",
     "privatekeyPassPhraseTooltip" : "Passphrase of the Private Key",
+    
     "profileName" : "{fieldStatus, select, required{Profile Name *} other{Profile Name}}",
     "@profileName": {
       "description" : "Required fields",
