@@ -118,8 +118,9 @@ int socket_to_socket(const srv_params_t *params, const char *auth_string, chunke
     return res;
   }
 
-  int fds[2];
-  pthread_t threads[2];
+  int fds[2], tidx;
+  int exit_res = 0;
+  pthread_t threads[2], tid;
   pipe(fds);
 
   srv_link_sides(&sides[0], &sides[1], fds);
@@ -138,37 +139,53 @@ int socket_to_socket(const srv_params_t *params, const char *auth_string, chunke
     }
   }
 
-  for (int i = 0; i < 2; i++) {
-    pthread_create(&threads[i], NULL, srv_side_handle, &sides[i]);
+  res = pthread_create(&threads[0], NULL, srv_side_handle, &sides[0]);
+  if (res != 0) {
+    atclient_atlogger_log(TAG, ERROR, "Failed to create thread: 0\n");
+    exit_res = res;
+    goto exit;
+  }
+
+  res = pthread_create(&threads[1], NULL, srv_side_handle, &sides[1]);
+  if (res != 0) {
+    atclient_atlogger_log(TAG, ERROR, "Failed to create thread: 1\n");
+    exit_res = res;
+    goto cancel;
   }
 
   // signal to sshnpd that we are done
   fprintf(stderr, "%s\n", SRV_COMPLETION_STRING);
   fflush(stderr);
   // Wait for all threads to finish and join them back to the main thread
-  pthread_t tid;
   int retval = 0;
 
   // Wait for any pthread to exit
   read(fds[0], &tid, sizeof(pthread_t));
 
-  // Automatically close both pthreads
-  atclient_atlogger_log(TAG, DEBUG, "Cancelling remaining open threads\n");
-  for (int i = 0; i < 2; i++) {
-    if (pthread_equal(threads[i], tid) > 0) {
-      res = pthread_join(tid, (void *)&retval);
-      atclient_atlogger_log(TAG, DEBUG, "Joining exited thread\n");
-      continue;
-    }
-    if (pthread_cancel(threads[i]) != 0) {
-      atclient_atlogger_log(TAG, DEBUG, "Failed to cancel other thread\n");
-    } else {
-      atclient_atlogger_log(TAG, DEBUG, "Canceled other thread\n");
-    }
+  atclient_atlogger_log(TAG, DEBUG, "Joining exited thread\n");
+  res = pthread_join(tid, (void *)&retval);
+
+cancel:
+  if (pthread_equal(threads[0], tid) > 0) {
+    // If threads[0] exited normally then we will cancel threads[1]
+    // In all other cases, cancel threads[0] (could be because threads[1] exited or errored)
+    tidx = 1;
   }
 
+  atclient_atlogger_log(TAG, DEBUG, "Cancelling remaining open thread: %d\n", tidx);
+  if (pthread_cancel(threads[tidx]) != 0) {
+    atclient_atlogger_log(TAG, WARN, "Failed to cancel thread: %d\n", tidx);
+  } else {
+    atclient_atlogger_log(TAG, DEBUG, "Canceled thread: %d\n", tidx);
+  }
+
+exit:
   close(fds[0]);
   close(fds[1]);
+
+  if (exit_res != 0) {
+    return exit_res;
+  }
 
   return 0;
 }
