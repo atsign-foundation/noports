@@ -50,7 +50,7 @@ class SrvdParams {
   }
 
   static ArgParser _createArgParser() {
-    var parser = ArgParser();
+    var parser = ArgParser(showAliasesInUsage: true);
 
     // Basic arguments
     parser.addOption(

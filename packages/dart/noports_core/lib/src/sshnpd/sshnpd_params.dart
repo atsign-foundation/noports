@@ -22,9 +22,11 @@ class SshnpdParams {
   final String ephemeralPermissions;
   final SupportedSshAlgorithm sshAlgorithm;
   final String? storagePath;
+  final String permitOpen;
 
   // Non param variables
   static final ArgParser parser = _createArgParser();
+
   SshnpdParams({
     required this.device,
     required this.username,
@@ -41,6 +43,7 @@ class SshnpdParams {
     required this.ephemeralPermissions,
     required this.sshAlgorithm,
     required this.storagePath,
+    required this.permitOpen,
   });
 
   static Future<SshnpdParams> fromArgs(List<String> args) async {
@@ -81,16 +84,18 @@ class SshnpdParams {
       sshClient: sshClient,
       rootDomain: r['root-domain'],
       localSshdPort:
-          int.tryParse(r['local-sshd-port']) ?? DefaultArgs.localSshdPort,
+          int.tryParse(r['local-sshd-port']) ?? DefaultSshnpdArgs.localSshdPort,
       ephemeralPermissions: r['ephemeral-permissions'],
       sshAlgorithm: SupportedSshAlgorithm.fromString(r['ssh-algorithm']),
       storagePath: r['storage-path'],
+      permitOpen: r['permit-open'],
     );
   }
 
   static ArgParser _createArgParser() {
     var parser = ArgParser(
       usageLineLength: stdout.hasTerminal ? stdout.terminalColumns : null,
+      showAliasesInUsage: true,
     );
 
     // Basic arguments
@@ -128,16 +133,16 @@ class SshnpdParams {
       'sshpublickey',
       abbr: 's',
       defaultsTo: false,
-      help:
-          'When set, will update authorized_keys to include public key sent by manager',
+      help: 'When set, will update authorized_keys'
+          ' to include public key sent by manager',
     );
     parser.addFlag(
       'un-hide',
       abbr: 'u',
       aliases: const ['username'],
       defaultsTo: false,
-      help:
-          'When set, makes various information visible to the manager atSign - e.g. username, version, etc',
+      help: 'When set, makes various information visible'
+          ' to the manager atSign - e.g. username, version, etc',
     );
     parser.addFlag(
       'verbose',
@@ -165,7 +170,7 @@ class SshnpdParams {
     parser.addOption(
       'local-sshd-port',
       help: 'port on which sshd is listening locally on localhost',
-      defaultsTo: DefaultArgs.localSshdPort.toString(),
+      defaultsTo: DefaultSshnpdArgs.localSshdPort.toString(),
       mandatory: false,
     );
 
@@ -187,8 +192,18 @@ class SshnpdParams {
     parser.addOption(
       'storage-path',
       mandatory: false,
-      help:
-          r'Directory for local storage. Defaults to $HOME/.sshnp/${atSign}/storage',
+      help: 'Directory for local storage.'
+          r' Defaults to $HOME/.sshnp/${atSign}/storage',
+    );
+
+    parser.addOption(
+      'permit-open',
+      aliases: ['po'],
+      mandatory: false,
+      defaultsTo: 'localhost:22,localhost:3389',
+      help: 'Comma separated-list of host:port to which the daemon will permit'
+          ' a connection from an authorized client. Hosts may be dns names or'
+          ' ip addresses.',
     );
 
     return parser;

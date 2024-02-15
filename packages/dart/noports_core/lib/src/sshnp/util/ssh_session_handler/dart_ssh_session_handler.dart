@@ -26,7 +26,7 @@ mixin DartSshSessionHandler on SshnpCore
     var username = tunnelUsername ?? getUserName(throwIfNull: true)!;
 
     logger.info('Starting tunnel ssh session as $username'
-        ' to ${srvdChannel.host} on port ${srvdChannel.daemonPort!}');
+        ' to ${srvdChannel.rvdHost} on port ${srvdChannel.daemonPort}');
 
     AtSshKeyPair keyPair =
         await keyUtil.getKeyPair(identifier: ephemeralKeyPairIdentifier);
@@ -38,15 +38,15 @@ mixin DartSshSessionHandler on SshnpCore
     if (sshSocket != null) {
       tunnelSshClient = await helper.createSshClientWithSshSocket(
         sshSocket: sshSocket,
-        host: srvdChannel.host,
-        port: srvdChannel.daemonPort!,
+        host: srvdChannel.rvdHost,
+        port: srvdChannel.daemonPort,
         username: username,
         keyPair: keyPair,
       );
     } else {
       tunnelSshClient = await helper.createDirectSshClient(
-        host: srvdChannel.host,
-        port: srvdChannel.daemonPort!,
+        host: srvdChannel.rvdHost,
+        port: srvdChannel.daemonPort,
         username: username,
         keyPair: keyPair,
       );

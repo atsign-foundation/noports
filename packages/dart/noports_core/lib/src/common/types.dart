@@ -5,9 +5,12 @@ typedef SrvGenerator<T> = Srv<T> Function(
   int, {
   int? localPort,
   bool? bindLocalPort,
+  String? localHost,
   String? rvdAuthString,
   String? sessionAESKeyString,
   String? sessionIVString,
+  bool multi,
+  bool detached,
 });
 
 enum SupportedSshClient {
