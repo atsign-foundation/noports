@@ -7,33 +7,45 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-typedef struct argparse_option argparse_option_t;
-typedef struct argparse argparse_t;
+typedef struct argparse_option ArgparseOption;
+typedef struct argparse Argparse;
 
-enum supported_ssh_algorithm {
+enum SupportedSshAlgorithm {
   ED25519,
   RSA,
 };
 
+enum ManagerType {
+  SingleManager,
+  ManagerList,
+};
+
 typedef struct {
   char *atsign;
-  char *manager;
+  enum ManagerType manager_type;
+  union {
+    char *manager;
+    struct {
+      size_t manager_list_len;
+      char **manager_list;
+    };
+  };
   char *device;
 
   bool sshpublickey;
   bool unhide;
   bool verbose;
 
-  enum supported_ssh_algorithm ssh_algorithm;
+  enum SupportedSshAlgorithm ssh_algorithm;
   char *ephemeral_permission;
 
   char *root_domain;
   uint16_t local_sshd_port;
 
   char *key_file;
-} sshnpd_params_t;
+} SshnpdParams;
 
-void apply_default_values_to_params(sshnpd_params_t *params);
-int parse_params(sshnpd_params_t *params, int argc, const char **argv);
+void apply_default_values_to_params(SshnpdParams *params);
+int parse_params(SshnpdParams *params, int argc, const char **argv);
 
 #endif

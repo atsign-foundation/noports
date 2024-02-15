@@ -1,3 +1,4 @@
+#include "sshnpd/sshnpd.h"
 #include <atclient/atclient.h>
 #include <atclient/atkeys.h>
 #include <atclient/atkeysfile.h>
@@ -11,19 +12,18 @@
 #define FILENAME_BUFFER_SIZE 500
 #define LOGGER_TAG "sshnpd"
 int main(int argc, char **argv) {
-  sshnpd_params_t *params = malloc(sizeof(sshnpd_params_t));
+  SshnpdParams params;
 
   // 1.  Load default values
-  apply_default_values_to_params(params);
+  apply_default_values_to_params(&params);
 
   // 2.  Parse the command line arguments
-  if (parse_params(params, argc, (const char **)argv) != 0) {
-    free(params);
+  if (parse_params(&params, argc, (const char **)argv) != 0) {
     return 1;
   }
 
   // 3.  Configure the Logger
-  if (params->verbose) {
+  if (params.verbose) {
     printf("Verbose mode enabled\n");
     atclient_atlogger_set_logging_level(ATLOGGER_LOGGING_LEVEL_DEBUG);
   } else {
@@ -37,18 +37,16 @@ int main(int argc, char **argv) {
                           "Unable to determine your home directory: please "
                           "set %s environment variable\n",
                           HOMEVAR);
-    free(params);
     return 1;
   }
 
   // TODO: move this to where it is used later
   const char *username = getenv(USERVAR);
-  if (params->unhide && username == NULL) {
+  if (params.unhide && username == NULL) {
     atclient_atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR,
                           "Unable to determine your username: please "
                           "set %s environment variable\n",
                           USERVAR);
-    free(params);
     return 1;
   }
 
@@ -58,17 +56,16 @@ int main(int argc, char **argv) {
 
   // 5.1 Read the atKeys file
   int ret = 0;
-  if (params->key_file != NULL) {
-    ret = atclient_atkeysfile_read(&atkeysfile, (const char *)params->key_file);
+  if (params.key_file != NULL) {
+    ret = atclient_atkeysfile_read(&atkeysfile, (const char *)params.key_file);
   } else {
     char filename[FILENAME_BUFFER_SIZE];
-    snprintf(filename, FILENAME_BUFFER_SIZE, "%s/.atsign/keys/%s_key.atKeys", homedir, params->atsign);
+    snprintf(filename, FILENAME_BUFFER_SIZE, "%s/.atsign/keys/%s_key.atKeys", homedir, params.atsign);
     ret = atclient_atkeysfile_read(&atkeysfile, filename);
   }
 
   if (ret != 0) {
     atclient_atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Unable to read the key file\n");
-    free(params);
     atclient_atkeysfile_free(&atkeysfile);
     return 1;
   }
@@ -80,7 +77,6 @@ int main(int argc, char **argv) {
   ret = atclient_atkeys_populate_from_atkeysfile(&atkeys, atkeysfile);
   if (ret != 0) {
     atclient_atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Unable to parse the key file\n");
-    free(params);
     atclient_atkeysfile_free(&atkeysfile);
     atclient_atkeys_free(&atkeys);
     return 1;
@@ -91,15 +87,13 @@ int main(int argc, char **argv) {
   atclient atclient;
   atclient_init(&atclient);
 
-  if (atclient_start_root_connection(&atclient, params->root_domain, ROOT_PORT) != 0) {
-    free(params);
+  if (atclient_start_root_connection(&atclient, params.root_domain, ROOT_PORT) != 0) {
     atclient_atkeys_free(&atkeys);
     atclient_free(&atclient);
     return 1;
   }
 
-  if (atclient_pkam_authenticate(&atclient, atkeys, params->atsign, strlen(params->atsign))) {
-    free(params);
+  if (atclient_pkam_authenticate(&atclient, atkeys, params.atsign, strlen(params.atsign))) {
     atclient_atkeys_free(&atkeys);
     atclient_free(&atclient);
     return 1;
@@ -108,10 +102,23 @@ int main(int argc, char **argv) {
   // TODO : can we free atkeys now?
 
   // 8.  Cache the manager public key
+  // 8.1 build the atkey for the manager public key
+  switch (params.manager_type) {
+  case SingleManager:
+    atclient_atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_DEBUG, "Single manager: %s\n", params.manager);
+    break;
+  case ManagerList:
+    atclient_atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_DEBUG, "Manager List: %lu,", params.manager_list_len);
+    for (int i = 0; i < params.manager_list_len; i++) {
+      printf("%s,", params.manager_list[i]);
+    }
+    printf("\n");
+    break;
+  }
+
   // 9.  Start heartbeat to the atServer
   // 10. Start monitor
   // 11. Start the device refresh loop
 
-  free(params);
   return 0;
 }

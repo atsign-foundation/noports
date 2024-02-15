@@ -4,7 +4,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-void apply_default_values_to_params(sshnpd_params_t *params) {
+void apply_default_values_to_params(SshnpdParams *params) {
   params->device = "default";
   params->sshpublickey = 0;
   params->unhide = 0;
@@ -15,9 +15,9 @@ void apply_default_values_to_params(sshnpd_params_t *params) {
   params->local_sshd_port = 22;
 }
 
-int parse_params(sshnpd_params_t *params, int argc, const char **argv) {
-  char *ssh_algorithm_input;
-  argparse_option_t options[] = {
+int parse_params(SshnpdParams *params, int argc, const char **argv) {
+  char *ssh_algorithm_input = "";
+  ArgparseOption options[] = {
       OPT_HELP(),
       OPT_STRING('k', "key-file", &params->key_file, "Path to the key file"),
       OPT_STRING('a', "atsign", &params->atsign, "Atsign to use (mandatory)"),
@@ -33,7 +33,7 @@ int parse_params(sshnpd_params_t *params, int argc, const char **argv) {
       OPT_END(),
   };
 
-  argparse_t argparse;
+  Argparse argparse;
   argparse_init(&argparse, options, NULL, 0);
 
   char description[24];
@@ -68,13 +68,55 @@ int parse_params(sshnpd_params_t *params, int argc, const char **argv) {
   }
 
   // TODO: improve atsign validation
+  // Basic validation for main atsign
   if (params->atsign[0] != '@') {
     printf("Invalid Argument(s): \"%s\" is not a valid atSign\n", params->atsign);
     return 1;
   }
-  if (params->manager[0] != '@') {
-    printf("Invalid Argument(s): \"%s\" is not a valid atSign\n", params->manager);
-    return 1;
+
+  // Validation and type inference for manager list
+  int sep_count = 0;
+  int end = strlen(params->manager);
+  // first counter the number of seperators
+  for (int i = 0; i < end; i++) {
+    if (params->manager[i] == ',') {
+      sep_count++;
+    }
+  }
+
+  if (sep_count == 0) {
+    params->manager_type = SingleManager;
+  } else {
+    params->manager_type = ManagerList;
+    // malloc pointers to each string, but don't malloc any more memory for individual char storage
+    params->manager_list = malloc((sep_count + 1) * sizeof(char *));
+    params->manager_list[0] = params->manager; // cool trick, since manager is the same memory block as manager_list_len
+    int pos = 1;                               // Starts at 1 since we already added the first item to the list
+    for (int i = 0; i < end; i++) {
+      if (params->manager[i] == ',') {
+        // Set this comma to a null terminator
+        params->manager[i] = '\0';
+        if (params->manager[i + 1] == '\0') {
+          // Trailing comma, so we will do nothing else and break the loop...
+          // The allocated memory has a double trailing null seperator, but that's fine
+          break;
+        }
+        if (params->manager[i + 1] != '@') {
+          printf("Invalid Argument(s): Expected a list of atSigns: \"%s\"\n", params->manager);
+          free(params->manager_list);
+          return 1;
+        }
+        // Keep track of the start of the next item
+        params->manager_list[pos++] = params->manager + i + 1;
+        if (pos > sep_count) {
+          // This is only more efficient if the last string in the list is longer than the number of items in the list
+          // Which it likely is, since in most cases we only expect there to be <10 items in the list.
+          // But we know we've reached the last item so we can break from the loop now.
+          break;
+        }
+      }
+    }
+    params->manager_list_len = sep_count + 1;
   }
 
   return 0;
