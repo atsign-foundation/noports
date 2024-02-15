@@ -1,0 +1,57 @@
+INFO|2024-02-14 20:45:16.997969|Sshnp|Finding a spare local port 
+INFO|2024-02-14 20:45:16.998122|Sshnp|Initializing SshnpLocalSshKeyHandler 
+INFO|2024-02-14 20:45:16.998138|Sshnp|Loading identity key pair from /Users/chant/.ssh/id_ed25519 
+INFO|2024-02-14 20:45:16.998281|Sshnp|Initializing SshnpCore 
+INFO|2024-02-14 20:45:16.998295| SshnpdChannel |Starting monitor for notifications with regex: "9ab39093-ed5a-4e41-b3dd-f1d7de8f64c2.testing.sshnp@xchan" 
+INFO|2024-02-14 20:45:16.998304| SshnpdChannel |Subscribing to notifications with regex: "9ab39093-ed5a-4e41-b3dd-f1d7de8f64c2.testing.sshnp@xchan" 
+INFO|2024-02-14 20:45:17.536312| SshnpdChannel |Sharing public key with sshnpd 
+INFO|2024-02-14 20:45:17.536365| SshnpdChannel |sharing ssh public key: ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIJheXcmLvDfsYvfFYoe891oA84iyHPn3rIr+9KJe+3/+ 
+INFO|2024-02-14 20:45:17.756058|AbstractAtKeyEncryption (@xavierchanth)|Encrypted shared symmetric key for @xavierchanth not found in local storage 
+INFO|2024-02-14 20:45:17.756318|AbstractAtKeyEncryption (@xavierchanth)|Deleting @xchan:shared_key@xavierchanth from LocalSecondary 
+INFO|2024-02-14 20:45:17.756715|AbstractAtKeyEncryption (@xavierchanth)|Fetching shared symmetric key for @xavierchanth from atServer 
+INFO|2024-02-14 20:45:17.828180|AbstractAtKeyEncryption (@xavierchanth)|Retrieved my encrypted copy of shared symmetric key for @xchan from atServer - saving to local storage 
+INFO|2024-02-14 20:45:17.838115|AbstractAtKeyEncryption (@xavierchanth)|'Their' copy of shared symmetric key for @xchan not found in local storage - will check atServer 
+INFO|2024-02-14 20:45:17.910325|AbstractAtKeyEncryption (@xavierchanth)|Found 'their' copy of shared symmetric key for @xchan in atServer - saving to local storage 
+INFO|2024-02-14 20:45:18.030598| SrvdChannel |Subscribing to notifications with regex: "9ab39093-ed5a-4e41-b3dd-f1d7de8f64c2.sshrvd@" 
+INFO|2024-02-14 20:45:18.030686| SrvdChannel |Started listening for srvd response 
+INFO|2024-02-14 20:45:18.030712| SrvdChannel |Sending notification to srvd with key @xchan_8286:testing.request_ports.sshrvd@xavierchanth and value {"sessionId":"9ab39093-ed5a-4e41-b3dd-f1d7de8f64c2","atSignA":"@xavierchanth","atSignB":"@xchan","authenticateSocketA":true,"authenticateSocketB":true,"clientNonce":"2024-02-14T20:45:16.997960"} 
+INFO|2024-02-14 20:45:18.244133|AbstractAtKeyEncryption (@xavierchanth)|Encrypted shared symmetric key for @xavierchanth not found in local storage 
+INFO|2024-02-14 20:45:18.244254|AbstractAtKeyEncryption (@xavierchanth)|Deleting @xchan_8286:shared_key@xavierchanth from LocalSecondary 
+INFO|2024-02-14 20:45:18.244409|AbstractAtKeyEncryption (@xavierchanth)|Fetching shared symmetric key for @xavierchanth from atServer 
+INFO|2024-02-14 20:45:18.304035|AbstractAtKeyEncryption (@xavierchanth)|Retrieved my encrypted copy of shared symmetric key for @xchan_8286 from atServer - saving to local storage 
+INFO|2024-02-14 20:45:18.307081|AbstractAtKeyEncryption (@xavierchanth)|'Their' copy of shared symmetric key for @xchan_8286 not found in local storage - will check atServer 
+INFO|2024-02-14 20:45:18.367475|AbstractAtKeyEncryption (@xavierchanth)|Found 'their' copy of shared symmetric key for @xchan_8286 in atServer - saving to local storage 
+INFO|2024-02-14 20:45:18.731807| SrvdChannel |Received from srvd: uplink.xavierchanth.xyz,39663,34293,2024-02-15T01:45:18.578762 
+INFO|2024-02-14 20:45:18.731853| SrvdChannel |Received from srvd: host:port uplink.xavierchanth.xyz:39663 rvdNonce: 2024-02-15T01:45:18.578762 
+INFO|2024-02-14 20:45:18.731868| SrvdChannel |Daemon will connect to: uplink.xavierchanth.xyz:34293 
+INFO|2024-02-14 20:45:18.779074|Sshnp|Sending session request to the device daemon 
+INFO|2024-02-14 20:45:19.495486| SshnpdChannel |Received 9ab39093-ed5a-4e41-b3dd-f1d7de8f64c2.testing.sshnp@xchan notification 
+INFO|2024-02-14 20:45:19.496196| SshnpdChannel |Signing Verification Result: ResultType: bool, Result: true, SigningMetadata: {HashingAlgo: sha256, SigningAlgo: rsa2048, SignatureTimestamp: 2024-02-15 01:45:19.495750Z} 
+INFO|2024-02-14 20:45:19.496214| SshnpdChannel |svr.result is a bool 
+INFO|2024-02-14 20:45:19.496244| SshnpdChannel |svr.result is true 
+INFO|2024-02-14 20:45:19.496251| SshnpdChannel |Verified signature of msg from @xchan 
+INFO|2024-02-14 20:45:19.496257| SshnpdChannel |Received ephemeralPrivateKey: -----BEGIN OPENSSH PRIVATE KEY-----
+b3BlbnNzaC1rZXktdjEAAAAABG5vbmUAAAAEbm9uZQAAAAAAAAABAAAAMwAAAAtzc2gtZW
+QyNTUxOQAAACA7lykg69izb44OtAVYKdA/JZRep/Z8dzvrkOrbPE5QSgAAAJigpEOyoKRD
+sgAAAAtzc2gtZWQyNTUxOQAAACA7lykg69izb44OtAVYKdA/JZRep/Z8dzvrkOrbPE5QSg
+AAAEAFUBoKHeqrKWv6k4aWcl/sXgATM2C+VSjmlLyuC4bpKDuXKSDr2LNvjg60BVgp0D8l
+lF6n9nx3O+uQ6ts8TlBKAAAAFWNoYW50QHhjaGFuLW1icC5sb2NhbA==
+-----END OPENSSH PRIVATE KEY-----
+ 
+INFO|2024-02-14 20:45:19.496264| SshnpdChannel |Received encrypted sessionAESKey: eWA/swQHA3r7eEemvjzhw1T/kl2W5KY+WwtXr8b05zVq53tvMl+4fYB7348CYg32uFFL15PijY5BbnyW4wUYy2JPY9K49AjaeY/6Uzaz4jZNfZlVIwb+x+m6nDGXGdPsODqhPBTPawIgYv95hYWu/1G4LKqnMuKbJbFYHPlPe/96G0CVDPWDFv/5gQEnYnZfO9iDWhSYVtvdaV/yeyL07NQPXAv359eoKRNA9KOsi35KCbXYuXicdYPyf6uuYCOLCexi/vQk/nBGgpDPfF5Jmu8l7ti1eKwXv37I/bPJPH40odXpXi+ezpwzgm0ZgfmKmWDy3/9K7G8xClQSksExDw== 
+INFO|2024-02-14 20:45:19.496270| SshnpdChannel |Received encrypted sessionIV: Ao0Li1zjgPqsgCeNSF/tR2D+2QLVaLtN8esPaGcfvmlS7ku3JDOk1aqaUDtV3qJEfe6hcuZflijQbifeEfFkGtXnQQkuxXoiCgYCrsD5yC+1fnT1pWoIWkGEaa30egDDXe22ruf/bn4LQhZjAEUFfn/UmUxeYC5leTDwHemw0foQxo8kXlhDqE+crLkRHBZUn4mo2IJirSoWgVw/y6AxzA5uc1X87vxNrdqMiNMwIz2MYk8o8ZEgGFreBXy3pCvoTelhKFlLoJanBDyDHp+GrEICU6PdEj7PoprylRVCWOOk5we/1kXu5I0Vjwt4I082mac/bpb9vJT1kYcSLP7R0A== 
+INFO|2024-02-14 20:45:19.501284| SshnpdChannel |Session 9ab39093-ed5a-4e41-b3dd-f1d7de8f64c2 connected successfully 
+INFO|2024-02-14 20:45:19.533956|SrvImplExec|SrvImplExec.run(): executing /Users/chant/src/af/noports/packages/dart/srv -h uplink.xavierchanth.xyz -p 39663 --local-port 60695 --bind-local-port --rv-auth --rv-e2ee 
+INFO|2024-02-14 20:45:19.578859|SrvImplExec|rv stderr | authenticating socketB 
+INFO|2024-02-14 20:45:19.578943|SrvImplExec|rv stderr | rv started successfully 
+INFO|2024-02-14 20:45:19.578964|SrvImplExec|rv stderr | Waiting for connector to close 
+INFO|2024-02-14 20:45:19.579678|Sshnp|9ab39093-ed5a-4e41-b3dd-f1d7de8f64c2 | Executing /usr/bin/ssh chant@localhost -p 60695 -i /Users/chant/.sshnp/ephemeral_9ab39093-ed5a-4e41-b3dd-f1d7de8f64c2 -L 60678:localhost:22 -o LogLevel=VERBOSE -t -t -o StrictHostKeyChecking=accept-new -o IdentitiesOnly=yes -o BatchMode=yes -o ExitOnForwardFailure=yes -n -f sleep 15 
+INFO|2024-02-14 20:45:19.590212|SrvImplExec|rv stdout | nonce: [253, 14, 152, 138, 19, 204, 207, 81, 132, 123, 24, 4, 231, 81, 190, 177]
+64 
+INFO|2024-02-14 20:45:19.590323|SrvImplExec|rv stdout | To rvd: SSH-2.0-OpenSSH_9.4 
+INFO|2024-02-14 20:45:19.621779|SrvImplExec|rv stdout | From rvd: d¥´Ù½Í×Ã°.ë¢È~giéÀÅ| 
+INFO|2024-02-14 20:45:19.642863|SrvImplExec|rv stderr | Closed - exiting 
+INFO|2024-02-14 20:45:19.642970|Sshnp| 9ab39093-ed5a-4e41-b3dd-f1d7de8f64c2 | sshStdErr | kex_exchange_identification: Connection closed by remote host
+Connection closed by 127.0.0.1 port 60695
+ 
+ssh: connect to host localhost port 60678: Connection refused

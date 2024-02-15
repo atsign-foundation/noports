@@ -47,6 +47,10 @@ int run_srv(srv_params_t *params) {
       return res;
     }
 
+    // Zero the iv
+    memset(encrypter.aes_ctr.nonce_counter, 0, AES_BLOCK_LEN);
+    memset(decrypter.aes_ctr.nonce_counter, 0, AES_BLOCK_LEN);
+
     // Decode the iv
     size_t iv_len;
     res = atchops_base64_decode((unsigned char *)params->session_aes_iv_string, strlen(params->session_aes_iv_string),
@@ -58,6 +62,12 @@ int run_srv(srv_params_t *params) {
       return res;
     }
 
+    atclient_atlogger_log(TAG, INFO, "key:  %s\n", aes_key);
+    atclient_atlogger_log(TAG, INFO, "iv: %s\n", encrypter.aes_ctr.nonce_counter);
+    for (int i = 0; i < AES_BLOCK_LEN; i++) {
+      printf("%d, ", encrypter.aes_ctr.nonce_counter[i]);
+    }
+    printf("\n");
     // Copy the iv to the decrypter
     memcpy(decrypter.aes_ctr.nonce_counter, encrypter.aes_ctr.nonce_counter, AES_BLOCK_LEN);
 

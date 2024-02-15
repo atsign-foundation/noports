@@ -1,0 +1,26 @@
+ [0;32m[INFO][0m	srv - main | running srv
+ [0;32m[INFO][0m	srv - run | Configuring encrypter/decrypter for srv
+ [0;32m[INFO][0m	srv - run | key:  ÀPÉVÎqU@l…oŠwC ïù4’1Ö~fã²¬ú¿lÌ
+ [0;32m[INFO][0m	srv - run | iv: ý˜ŠÌÏQ„{çQ¾±
+253, 14, 152, 138, 19, 204, 207, 81, 132, 123, 24, 4, 231, 81, 190, 177, 
+ [0;32m[INFO][0m	srv - run | Starting socket to socket srv
+ [0;32m[INFO][0m	srv - run | Initializing connection for side a
+ [0;32m[INFO][0m	srv - side | Doing tcp connect to (null):22
+ [0;32m[INFO][0m	srv - run | Initializing connection for side b
+ [0;32m[INFO][0m	srv - side | Doing tcp connect to uplink.xavierchanth.xyz:34293
+ [0;32m[INFO][0m	srv - run | Starting threads
+ [0;32m[INFO][0m	srv - run | Sending auth string
+ [0;32m[INFO][0m	srv - side a | Read 21 bytes 
+ [0;34m[DEBG][0m	srv - side a | SSH-2.0-OpenSSH_9.4**
+ [0;34m[DEBG][0m	srv - side a | Transforming data:
+ [0;34m[DEBG][0m	aes - transform | Encrypting 21 bytes
+ [0;34m[DEBG][0m	srv - side a | *@&D0****************
+ [0;32m[INFO][0m	srv - side b | Read 21 bytes 
+ [0;34m[DEBG][0m	srv - side b | 7********Y***-/*P***v
+ [0;34m[DEBG][0m	srv - side b | Transforming data:
+ [0;34m[DEBG][0m	aes - transform | Decrypting 21 bytes
+ [0;34m[DEBG][0m	srv - side b | `@&D0****************
+ [0;32m[INFO][0m	srv - side a | Read 34 bytes 
+ [0;34m[DEBG][0m	srv - side a | Invalid SSH identification string.
+ [0;34m[DEBG][0m	srv - side a | Transforming data:
+ [0;34m[DEBG][0m	aes - transform | Encrypting 34 bytes

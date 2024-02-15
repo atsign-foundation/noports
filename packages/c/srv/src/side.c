@@ -71,9 +71,11 @@ void *srv_side_handle(void *side) {
   if (s->is_server == 0) {
     size_t len, slen;
     int res;
-    while ((len = mbedtls_net_recv(&s->socket, buffer, READ_LEN)) > 0) {
+    while ((res = mbedtls_net_recv(&s->socket, buffer, 1024 * 1024)) > 0) {
+
+      // Ensure a safe conversion from int to unsigned long (res -> len)
       if (res < 0) {
-        atclient_atlogger_log(tag, ERROR, "Error reading data: %d", len);
+        atclient_atlogger_log(tag, ERROR, "Error reading data: %d", res);
         break;
       } else {
         len = res;

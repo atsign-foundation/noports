@@ -318,20 +318,35 @@ class SrvImplDart implements Srv<SocketConnector> {
       final List<int> sessionIV = base64Decode(sessionIVString!);
 
       encrypter = (Stream<List<int>> stream) {
+        var controller = StreamController<List<int>>();
+        stream.listen((List<int> ints) {
+          controller.add(ints);
+          var message = String.fromCharCodes(ints);
+          print("To rvd p: $message");
+        });
+        print("nonce: $sessionIV");
+        print(algorithm.counterBits);
         return algorithm.encryptStream(
-          stream,
+          controller.stream,
           secretKey: sessionAESKey,
           nonce: sessionIV,
           onMac: (mac) {},
         );
       };
       decrypter = (Stream<List<int>> stream) {
-        return algorithm.decryptStream(
+        var dec = algorithm.decryptStream(
           stream,
           secretKey: sessionAESKey,
           nonce: sessionIV,
           mac: Mac.empty,
         );
+        var controller = StreamController<List<int>>();
+        dec.listen((List<int> ints) {
+          controller.add(ints);
+          var message = String.fromCharCodes(ints);
+          print("From rvd: $message");
+        });
+        return controller.stream;
       };
     }
 
