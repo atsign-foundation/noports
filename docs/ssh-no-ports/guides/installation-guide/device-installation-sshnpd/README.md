@@ -2,7 +2,7 @@
 
 ## Overview
 
-The SSH No Ports daemon (a.k.a. sshnpd) is available as a background service in three forms. The service may be installed as a `systemd unit`, in a `tmux session`, or as a background job using `cron` and `nohup`. The binaries can also be installed standalone so that you can install your own custom background service.
+The SSH No Ports daemon (a.k.a. sshnpd) is installable as a background service in many ways depending on your environment you can choice your best option. The service may be installed as a `systemd unit`, `docker container`, `tmux session`, or as a background job using `cron` and `nohup`. The binaries can also be installed standalone so that you can install your own custom background service.
 
 ### No Windows Support
 
@@ -92,6 +92,6 @@ unzip sshnp.zip
 
 ## 3. Install sshnpd
 
-See the links in the table below to continue with the installation process
+See the links in the table below to continue with the installation process.
 
 <table><thead><tr><th width="196" data-type="content-ref">Installation method</th><th>When to use this method</th></tr></thead><tbody><tr><td><a href="systemd-unit.md">systemd-unit.md</a></td><td>You are on Linux and have root access.</td></tr><tr><td><a href="tmux-session.md">tmux-session.md</a></td><td>You have tmux installed, or can install it.</td></tr><tr><td><a href="standalone-binaries.md">standalone-binaries.md</a></td><td>You want to manually setup the background service after downloading the binaries.</td></tr><tr><td><a href="headless.md">headless.md</a></td><td>When none of the above options are suitable.</td></tr></tbody></table>
