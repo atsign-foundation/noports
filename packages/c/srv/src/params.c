@@ -21,10 +21,11 @@ int parse_params(srv_params_t *params, int argc, const char **argv) {
                 "Set this flag when we are bridging from a local sender"),
 #endif
     OPT_BOOLEAN(0, "rv-auth", &params->rv_auth, "Whether this rv process will authenticate to rvd"),
+#if ALLOW_ENCRYPT_TRAFFIC
     OPT_BOOLEAN(0, "rv-e2ee", &params->rv_e2ee,
                 "Whether this rv process will encrypt/decrypt all rvd socket "
                 "traffic"),
-
+#endif
     OPT_END(),
   };
 
@@ -57,6 +58,9 @@ int parse_params(srv_params_t *params, int argc, const char **argv) {
     }
   }
 
+#if ALLOW_ENCRYPT_TRAFFIC == 0
+  params->rv_e2ee = 0;
+#endif
   if (params->rv_e2ee == 1) {
     params->session_aes_key_string = getenv("RV_AES");
     if (params->session_aes_key_string == NULL) {
