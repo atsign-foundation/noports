@@ -15,10 +15,6 @@ dependency_overrides:
       url: https://github.com/atsign-foundation/at_client_sdk
       ref: issue_1232
       path: packages/at_client_mobile
-  socket_connector:
-    git:
-      ref: feat/multi
-      url: https://github.com/atsign-foundation/socket_connector
   # file_picker: ^6.0.0
   # at_onboarding_flutter: 6.1.3
   intl: ^0.17.0-nullsafety.2
