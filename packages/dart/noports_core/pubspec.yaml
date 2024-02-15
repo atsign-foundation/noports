@@ -29,10 +29,6 @@ dependency_overrides:
     git:
       ref: gkc/show-aliases-in-usage
       url: https://github.com/gkc/args
-  socket_connector:
-    git:
-      ref: feat/multi
-      url: https://github.com/atsign-foundation/socket_connector
 
 dev_dependencies:
   build_runner: ^2.4.6
