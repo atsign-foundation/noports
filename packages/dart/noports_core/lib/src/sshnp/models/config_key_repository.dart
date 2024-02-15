@@ -11,7 +11,7 @@ class ConfigKeyRepository {
   static const String configNamespace = 'profiles.${DefaultArgs.namespace}';
 
   static String toProfileName(AtKey atKey, {bool replaceSpaces = true}) {
-    var profileName = atKey.key!.split('.').first;
+    var profileName = atKey.key.split('.').first;
     profileName = profileName.replaceFirst(keyPrefix, '');
     if (replaceSpaces) profileName = profileName.replaceAll('_', ' ');
     return profileName;

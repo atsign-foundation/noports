@@ -1,3 +1,4 @@
+import 'package:dartssh2/dartssh2.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:noports_core/src/common/io_types.dart';
 import 'package:noports_core/sshnp_foundation.dart';
@@ -28,6 +29,7 @@ mixin StubbedSshnpOpensshSshSessionHandler on OpensshSshSessionHandler {
   Future<Process?> startInitialTunnelSession({
     required String ephemeralKeyPairIdentifier,
     int? localRvPort,
+    SSHSocket? sshSocket,
     ProcessStarter startProcess = Process.start,
   }) {
     _stubbedStartInitialTunnel();

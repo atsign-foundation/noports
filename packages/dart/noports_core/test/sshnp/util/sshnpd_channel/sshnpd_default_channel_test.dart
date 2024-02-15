@@ -70,7 +70,7 @@ void main() {
       when(() => mockParams.authenticateDeviceToRvd).thenReturn(true);
       when(() => mockParams.authenticateClientToRvd).thenReturn(true);
       when(() => mockParams.encryptRvdTraffic).thenReturn(true);
-      when(() => mockParams.discoverDaemonFeatures).thenReturn(false);
+      when(() => mockParams.sendSshPublicKey).thenReturn(false);
       when(subscribeInvocation)
           .thenAnswer((_) => notificationStreamController.stream);
     }
@@ -134,7 +134,7 @@ void main() {
         () => mockAtClient.get(
           any<AtKey>(
             that: predicate(
-              (AtKey key) => key.key?.contains('cached_pks') ?? false,
+              (AtKey key) => key.key.contains('cached_pks'),
             ),
           ),
         ),
@@ -241,7 +241,7 @@ void main() {
         () => mockAtClient.get(
           any<AtKey>(
             that: predicate(
-              (AtKey key) => key.key?.contains('cached_pks') ?? false,
+              (AtKey key) => key.key.contains('cached_pks'),
             ),
           ),
         ),

@@ -1,32 +1,32 @@
 import 'dart:async';
 
 import 'package:at_client/at_client.dart' hide StringBuffer;
+import 'package:at_utils/at_logger.dart';
+import 'package:noports_core/src/common/streaming_logging_handler.dart';
 import 'package:noports_core/sshnp_foundation.dart';
 
 abstract interface class SshnpRemoteProcess {
   Future<void> get done;
+
   Stream<List<int>> get stderr;
+
   StreamSink<List<int>> get stdin;
+
   Stream<List<int>> get stdout;
 }
 
 abstract interface class Sshnp {
-  /// Legacy v3.x.x client
-  @Deprecated(
-      'Legacy unsigned client - only for connecting with ^3.0.0 daemons')
-  factory Sshnp.unsigned({
-    required AtClient atClient,
-    required SshnpParams params,
-  }) {
-    return SshnpUnsignedImpl(atClient: atClient, params: params);
-  }
+  static final StreamingLoggingHandler _slh =
+      StreamingLoggingHandler(AtSignLogger.defaultLoggingHandler);
 
   /// Think of this as the "default" client - calls openssh
   factory Sshnp.openssh({
     required AtClient atClient,
     required SshnpParams params,
   }) {
-    return SshnpOpensshLocalImpl(atClient: atClient, params: params);
+    AtSignLogger.defaultLoggingHandler = _slh;
+    return SshnpOpensshLocalImpl(
+        atClient: atClient, params: params, logStream: _slh.stream);
   }
 
   /// Uses a dartssh2 ssh client - requires that you pass in the identity keypair
@@ -35,8 +35,12 @@ abstract interface class Sshnp {
     required SshnpParams params,
     required AtSshKeyPair? identityKeyPair,
   }) {
+    AtSignLogger.defaultLoggingHandler = _slh;
     var sshnp = SshnpDartPureImpl(
-        atClient: atClient, params: params, identityKeyPair: identityKeyPair);
+        atClient: atClient,
+        params: params,
+        identityKeyPair: identityKeyPair,
+        logStream: _slh.stream);
     if (identityKeyPair != null) {
       sshnp.keyUtil.addKeyPair(keyPair: identityKeyPair);
     }
@@ -72,4 +76,11 @@ abstract interface class Sshnp {
   /// - Iterable<String> of atSigns of sshnpd that did not respond
   /// - Map<String, dynamic> where the keys are all atSigns included in the maps, and the values being their device info
   Future<SshnpDeviceList> listDevices();
+
+  /// Yields a string every time something interesting happens with regards to
+  /// progress towards establishing the ssh connection.
+  Stream<String>? get progressStream;
+
+  /// Yields every log message that is written to [stderr]
+  Stream<String>? get logStream;
 }

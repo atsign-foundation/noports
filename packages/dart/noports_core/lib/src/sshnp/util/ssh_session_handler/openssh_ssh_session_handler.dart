@@ -1,6 +1,8 @@
 import 'dart:async';
+import 'dart:io';
 import 'dart:convert';
 
+import 'package:dartssh2/dartssh2.dart';
 import 'package:meta/meta.dart';
 import 'package:noports_core/src/common/io_types.dart';
 import 'package:noports_core/src/common/openssh_binary_path.dart';
@@ -12,6 +14,7 @@ mixin OpensshSshSessionHandler on SshnpCore
   Future<Process?> startInitialTunnelSession({
     required String ephemeralKeyPairIdentifier,
     int? localRvPort,
+    SSHSocket? sshSocket,
     @visibleForTesting ProcessStarter startProcess = Process.start,
   }) async {
     Process? process;
@@ -53,17 +56,36 @@ mixin OpensshSshSessionHandler on SshnpCore
         // the process since there is a physical window the user can close to
         // end the session
         unawaited(startProcess(
-          'powershell.exe',
+          opensshBinaryPath,
           [
-            '-command',
-            opensshBinaryPath,
             ...args,
           ],
           runInShell: true,
-          mode: ProcessStartMode.detachedWithStdio,
+          mode: ProcessStartMode.normal,
         ));
-        // Delay to allow the detached session to pick up the keys
-        await Future.delayed(Duration(seconds: 3));
+        // Delay to allow the initial connection to get in place
+        int waiter = 0;
+        int counter = 0;
+        while (waiter == 0) {
+          Socket? sock;
+          await Future.delayed(Duration(milliseconds: 500));
+          try {
+            sock = await Socket.connect('localhost', localPort);
+          } catch (e) {
+            logger.info("waiting for initial ssh tunnel");
+            await sock?.close();
+            counter++;
+          }
+          if (sock?.remotePort == localPort) {
+            await sock?.close();
+            waiter = 1;
+          }
+          if (counter > 5) {
+            throw SshnpError(
+              'SSHNP failed to start the initial ssh tunnel',
+            );
+          }
+        }
       } else {
         process = await startProcess(opensshBinaryPath, args);
         process.stdout.transform(Utf8Decoder()).listen((String s) {

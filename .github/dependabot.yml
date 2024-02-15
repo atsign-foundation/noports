@@ -23,10 +23,10 @@ updates:
     schedule:
       interval: "daily"
   - package-ecosystem: "pip"
-    directory: "/packages/python/sshnoports_sdk/"
+    directory: "/examples/automations/python/sshnoports_automation_python/"
     schedule:
       interval: "daily"
   - package-ecosystem: "pip"
-    directory: "/packages/python/sshnpdpy/"
+    directory: "/packages/python/sshnpd/"
     schedule:
       interval: "daily"

@@ -6,5 +6,5 @@ import 'package:noports_core/version.dart' as core;
 /// Print version number
 void printVersion() {
   stderr.writeln('Version : ${binaries.packageVersion}'
-      ' (core: ${core.packageVersion}');
+      ' (core: ${core.packageVersion})');
 }

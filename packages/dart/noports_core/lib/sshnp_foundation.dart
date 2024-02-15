@@ -18,7 +18,6 @@ export 'src/sshnp/models/sshnp_device_list.dart';
 // Sshnp Utils
 export 'src/sshnp/util/sshnpd_channel/sshnpd_channel.dart';
 export 'src/sshnp/util/sshnpd_channel/sshnpd_default_channel.dart';
-export 'src/sshnp/util/sshnpd_channel/sshnpd_unsigned_channel.dart';
 
 export 'src/sshnp/util/srvd_channel/srvd_channel.dart';
 export 'src/sshnp/util/srvd_channel/srvd_dart_channel.dart';
@@ -35,7 +34,6 @@ export 'src/sshnp/util/sshnp_ssh_key_handler/sshnp_dart_ssh_key_handler.dart';
 // Impl
 export 'src/sshnp/impl/sshnp_dart_pure_impl.dart';
 export 'src/sshnp/impl/sshnp_openssh_local_impl.dart';
-export 'src/sshnp/impl/sshnp_unsigned_impl.dart';
 
 // Common
 export 'src/common/at_ssh_key_util/at_ssh_key_util.dart';
@@ -50,3 +48,4 @@ export 'src/common/default_args.dart';
 export 'src/common/file_system_utils.dart';
 export 'src/common/types.dart';
 export 'src/common/validation_utils.dart';
+export 'src/common/noports_exception.dart';

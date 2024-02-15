@@ -1,3 +1,21 @@
+# 6.0.4
+- build: upgrade at_chops dependency to ^2.0.0
+
+# 6.0.3
+- chore: downgrade at_commons dependency from ^4.0.1 to ^4.0.0
+- chore: downgrade at_client dependency from ^3.0.75 to ^3.0.73
+- chore: downgrade at_chops dependency from ^2.0.0 to ^1.0.7
+
+# 6.0.2
+- chore: Uptake at_commons ^4.0.1 (was ^3.0.56)
+- fix: lint errors related to the new version of at_commons
+- chore: make SrvImpl throw an SshnpError instead of an Exception
+
+# 6.0.1
+- fix: ensure that directories for key creation exist before trying to create them
+- fix: ensure that temporary keys are deleted after use
+- ci: add srv.exe to the release on Windows
+
 # 6.0.0
 - Added ability to authenticate to the socket rendezvous, and made this the 
   default behaviour.

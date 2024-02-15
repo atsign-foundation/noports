@@ -3,8 +3,8 @@ name: Multibuild
 on:
   workflow_dispatch:
     inputs:
-      x64_only:
-        description: "Run x64 builds only"
+      main_build_only:
+        description: "Run non-dockerx builds only"
         required: true
         default: false
         type: boolean
@@ -18,7 +18,7 @@ jobs:
     steps:
       - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
       - uses: ./.github/composite/verify_cli_tags
-  x64_build:
+  main_build:
     needs: verify_tags
     runs-on: ${{ matrix.os }}
     defaults:
@@ -36,42 +36,98 @@ jobs:
             output-name: sshnp-macos-x64
             ext: ''
             bundle: 'shell'
+          - os: macos-14
+            output-name: sshnp-macos-arm64
+            ext: ''
+            bundle: 'shell'
           - os: windows-latest
             output-name: sshnp-windows-x64
             ext: '.exe'
             bundle: 'windows'
-
     steps:
       - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
-      - uses: dart-lang/setup-dart@ca7e6fee45ffbd82b555a7ebfc236d2c86439f5b # v1.6.1
+      - uses: dart-lang/setup-dart@fedb1266e91cf51be2fdb382869461a434b920a3 # v1.6.2
+      # create directories need for build
       - run: mkdir sshnp
       - run: mkdir tarball
       - if: ${{ matrix.os != 'windows-latest' }}
         run: mkdir sshnp/debug
+      # compile binaries
       - run: dart pub get
       - run: dart run build_runner build --delete-conflicting-outputs
       - run: dart compile exe bin/activate_cli.dart -v -o sshnp/at_activate${{ matrix.ext }}
       - run: dart compile exe bin/sshnp.dart -v -o sshnp/sshnp${{ matrix.ext }}
       - if: ${{ matrix.os != 'windows-latest' }}
         run: dart compile exe bin/sshnpd.dart -v -o sshnp/sshnpd${{ matrix.ext }}
-      - if: ${{ matrix.os != 'windows-latest' }}
-        run: dart compile exe bin/srv.dart -v -o sshnp/srv${{ matrix.ext }}
+      - run: dart compile exe bin/srv.dart -v -o sshnp/srv${{ matrix.ext }}
       - if: ${{ matrix.os != 'windows-latest' }}
         run: dart compile exe bin/srvd.dart -v -o sshnp/srvd${{ matrix.ext }}
       - if: ${{ matrix.os != 'windows-latest' }}
         run: dart compile exe bin/srvd.dart -D ENABLE_SNOOP=true -v -o sshnp/debug/srvd${{ matrix.ext }}
+      # copy additional bundle items to build
       - run: cp -r bundles/core/* sshnp/
       - run: cp -r bundles/${{ matrix.bundle }}/* sshnp/
       - run: cp LICENSE sshnp
-      - run: tar -cvzf tarball/${{ matrix.output-name }}.tgz sshnp
-      - uses: actions/upload-artifact@26f96dfa697d77e81fd5907df203aa23a56210a8 # v4.3.0
+      # codesign for apple
+      - if: ${{ matrix.os == 'macOS-latest' || matrix.os == 'macos-14'}}
+        name: Import certificates
+        env:
+          MACOS_CODESIGN_CERT: ${{ secrets.MACOS_CODESIGN_CERT }}
+          MACOS_CODESIGN_CERT_PASSWORD: ${{ secrets.MACOS_CODESIGN_CERT_PASSWORD }}
+          MACOS_SIGNING_IDENTITY: ${{ secrets.MACOS_SIGNING_IDENTITY }}
+          MACOS_KEYCHAIN_PASSWORD: ${{ secrets.MACOS_KEYCHAIN_PASSWORD }}
+        run: |
+          # Load certificate
+          CERT_PATH=$RUNNER_TEMP/noports-codesign.p12
+          echo -n "$MACOS_CODESIGN_CERT" | base64 --decode -o $CERT_PATH
+          # create temp keychain
+          KEYCHAIN_PATH=$RUNNER_TEMP/build.keychain
+          security create-keychain -p "$MACOS_KEYCHAIN_PASSWORD" $KEYCHAIN_PATH
+          security default-keychain -s $KEYCHAIN_PATH
+          security unlock-keychain -p "$MACOS_KEYCHAIN_PASSWORD" $KEYCHAIN_PATH
+          security import $CERT_PATH -k $KEYCHAIN_PATH -P "$MACOS_CODESIGN_CERT_PASSWORD" -T /usr/bin/codesign
+          security set-key-partition-list -S apple-tool:apple,:,codesign: -s -k "$MACOS_KEYCHAIN_PASSWORD" $KEYCHAIN_PATH
+ 
+          # codesign
+          /usr/bin/codesign \
+            --force \
+            -s "$MACOS_SIGNING_IDENTITY" \
+            --options=runtime \
+            --entitlements ./tools/templates/entitlements.plist \
+            --prefix "com.atsign." \
+            --timestamp \
+            -v \
+            sshnp/{ssh*,srv,srvd,at_activate,debug/srvd}
+
+      # zip the build
+      - if: ${{ matrix.os == 'macOS-latest' || matrix.os == 'macos-14'}}
+        run: ditto -c -k --keepParent sshnp tarball/${{ matrix.output-name }}.zip
+      - if: ${{ matrix.os == 'ubuntu-latest' }}
+        run: tar -cvzf tarball/${{ matrix.output-name }}.tgz sshnp
+      - if: ${{ matrix.os == 'windows-latest' }}
+        run: Compress-Archive -Path sshnp -Destination tarball/${{ matrix.output-name }}.zip
+      # Notarize the build
+      - if: ${{ matrix.os == 'macOS-latest' || matrix.os == 'macos-14'}}
+        env:
+          MACOS_APPLE_ID: ${{ secrets.MACOS_APPLE_ID }}
+          MACOS_TEAM_ID: ${{ secrets.MACOS_TEAM_ID }}
+          MACOS_APPLE_ID_PASSWORD: ${{ secrets.MACOS_APPLE_ID_PASSWORD }}
+        run: |
+          xcrun notarytool submit tarball/${{ matrix.output-name }}.zip \
+            --apple-id "$MACOS_APPLE_ID" \
+            --team-id "$MACOS_TEAM_ID" \
+            --password "$MACOS_APPLE_ID_PASSWORD" \
+            --wait
+
+      # upload the build
+      - uses: actions/upload-artifact@5d5d22a31266ced268874388b861e4b58bb5c2f3 # v4.3.1
         with:
           name: ${{ matrix.output-name }}-upload
-          path: ./packages/dart/sshnoports/tarball/${{ matrix.output-name }}.tgz
+          path: ./packages/dart/sshnoports/tarball
           if-no-files-found: error
 
   other_build:
-    if: ${{ ! inputs.x64_only }}
+    if: ${{ ! inputs.main_build_only }}
     needs: verify_tags
     runs-on: ubuntu-latest
     defaults:
@@ -96,14 +152,14 @@ jobs:
           --platform ${{ matrix.platform }} -o type=tar,dest=bins.tar .
       - run: mkdir tarballs
       - run: tar -xvf bins.tar -C tarballs
-      - uses: actions/upload-artifact@26f96dfa697d77e81fd5907df203aa23a56210a8 # v4.3.0
+      - uses: actions/upload-artifact@5d5d22a31266ced268874388b861e4b58bb5c2f3 # v4.3.1
         with:
           name: ${{ matrix.output-name }}-upload
           path: ./packages/dart/tarballs/${{ matrix.output-name }}.tgz
           if-no-files-found: error
 
   notify_on_completion:
-    needs: [x64_build, other_build]
+    needs: [main_build, other_build]
     runs-on: ubuntu-latest
     steps:
       - name: Google Chat Notification
@@ -115,7 +171,7 @@ jobs:
 
   notify_on_failure:
     if: failure()
-    needs: [x64_build, other_build]
+    needs: [main_build, other_build]
     runs-on: ubuntu-latest
     steps:
       - name: Google Chat Notification

@@ -31,7 +31,7 @@ class ProfileFormRobot {
         )));
   }
 
-  void findCircularProgressIndictor() {
+  void findCircularProgressIndicator() {
     final finder = find.byType(CircularProgressIndicator);
     expect(finder, findsOneWidget);
   }
@@ -43,7 +43,7 @@ class ProfileFormRobot {
     // 2 widget of type switch have false value
     expect(find.byWidgetPredicate((widget) => widget is Switch && widget.value == false), findsNWidgets(2));
 
-    // ProifileName
+    // ProfileName
     final profileNameFinder = find.text('Profile Name');
 
     expect(profileNameFinder, findsOneWidget);
@@ -82,12 +82,6 @@ class ProfileFormRobot {
     expect(localPortFinder, findsOneWidget);
     expect(find.text(configFile.localPort.toString()), findsOneWidget);
 
-    // Local SSHD Port
-    final localSSHDPortFinder = find.text('Local SSHD Port');
-    expect(localSSHDPortFinder, findsOneWidget);
-    // remote port and local sshd port has the same default value
-    expect(find.text(configFile.localSshdPort.toString()), findsNWidgets(2));
-
     // Local SSH options
     final localSSHOptionsFinder = find.text('Local SSH Options');
     expect(localSSHOptionsFinder, findsOneWidget);
@@ -108,7 +102,7 @@ class ProfileFormRobot {
   }
 
   void findProfileFormWidgetsWithNewValues() async {
-    // ProifileName
+    // ProfileName
     final profileNameFinder = find.widgetWithText(TextFormField, 'Profile Name');
     await tester.enterText(profileNameFinder, 'test profile');
     expect(find.text('test profile'), findsOneWidget);
@@ -158,11 +152,6 @@ class ProfileFormRobot {
     final localPortFinder = find.widgetWithText(TextFormField, 'Local Port');
     await tester.enterText(localPortFinder, 'test local port');
     expect(find.text('test local port'), findsOneWidget);
-
-    // Local SSHD Port
-    final localSSHDPortFinder = find.widgetWithText(TextFormField, 'Local SSHD Port');
-    await tester.enterText(localSSHDPortFinder, 'test local sshd port');
-    expect(find.text('test local sshd port'), findsOneWidget);
 
     // Local SSH options
     final localSSHOptionsFinder = find.widgetWithText(TextFormField, 'Local SSH Options');
@@ -190,7 +179,7 @@ class ProfileFormRobot {
   }
 
   void submitFormWithValues() async {
-    // ProifileName
+    // ProfileName
     final profileNameFinder = find.widgetWithText(TextFormField, 'Profile Name');
     await tester.enterText(profileNameFinder, 'test profile');
     expect(find.text('test profile'), findsOneWidget);
@@ -240,11 +229,6 @@ class ProfileFormRobot {
     final localPortFinder = find.widgetWithText(TextFormField, 'Local Port');
     await tester.enterText(localPortFinder, 'test local port');
     expect(find.text('test local port'), findsOneWidget);
-
-    // Local SSHD Port
-    final localSSHDPortFinder = find.widgetWithText(TextFormField, 'Local SSHD Port');
-    await tester.enterText(localSSHDPortFinder, 'test local sshd port');
-    expect(find.text('test local sshd port'), findsOneWidget);
 
     // Local SSH options
     final localSSHOptionsFinder = find.widgetWithText(TextFormField, 'Local SSH Options');

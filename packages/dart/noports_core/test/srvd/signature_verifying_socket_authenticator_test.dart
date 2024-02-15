@@ -32,7 +32,7 @@ void main() {
         rvdSessionNonce,
         'test_for_success');
 
-    List<int> list = utf8.encode(signedEnvelope);
+    List<int> list = utf8.encode('$signedEnvelope\n');
     Uint8List data = Uint8List.fromList(list);
 
     when(() => mockSocket.listen(any(),
@@ -69,7 +69,7 @@ void main() {
         rvdSessionNonce,
         'test_for_failure');
 
-    List<int> list = utf8.encode(signedEnvelope);
+    List<int> list = utf8.encode('$signedEnvelope\n');
     Uint8List data = Uint8List.fromList(list);
 
     late Function(Uint8List data) socketOnDataFn;
@@ -110,7 +110,7 @@ void main() {
 
     Map fakedEnvelope = jsonDecode(signedEnvelope);
     fakedEnvelope['payload']['rvdNonce'] = 'not the same nonce';
-    List<int> list = utf8.encode(jsonEncode(fakedEnvelope));
+    List<int> list = utf8.encode('${jsonEncode(fakedEnvelope)}\n');
     Uint8List data = Uint8List.fromList(list);
 
     late Function(Uint8List data) socketOnDataFn;

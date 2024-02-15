@@ -61,9 +61,27 @@ abstract class SshnpCore
   @protected
   SshnpdChannel get sshnpdChannel;
 
+  final StreamController<String> _progressStreamController =
+      StreamController<String>.broadcast();
+
+  /// Yields a string every time something interesting happens with regards to
+  /// progress towards establishing the ssh connection.
+  @override
+  Stream<String>? get progressStream => _progressStreamController.stream;
+
+  /// Yields every log message that is written to [stderr]
+  @override
+  final Stream<String>? logStream;
+
+  /// Subclasses should use this method to generate progress messages
+  sendProgress(String message) {
+    _progressStreamController.add(message);
+  }
+
   SshnpCore({
     required this.atClient,
     required this.params,
+    this.logStream,
   })  : sessionId = Uuid().v4(),
         namespace = '${params.device}.${DefaultArgs.namespace}',
         localPort = params.localPort {
@@ -80,49 +98,65 @@ abstract class SshnpCore
   @mustCallSuper
   Future<void> initialize() async {
     if (!isSafeToInitialize) return;
+
     logger.info('Initializing SshnpCore');
 
     /// Start the sshnpd payload handler
     await sshnpdChannel.callInitialization();
 
-    if (params.discoverDaemonFeatures) {
-      late Map<String, dynamic> pingResponse;
-      try {
-        pingResponse =
-            await sshnpdChannel.ping().timeout(Duration(seconds: 10));
-      } catch (e) {
-        logger.severe(
-            'No ping response from ${params.device}${params.sshnpdAtSign}');
-        rethrow;
-      }
-
-      final daemonFeatures = pingResponse['supportedFeatures'];
-      if ((daemonFeatures[DaemonFeatures.srAuth.name] != true) &&
-          (params.authenticateDeviceToRvd == true)) {
-        throw ArgumentError('This device daemon does not support'
-            ' authentication to the socket rendezvous.'
-            ' Please set --no-authenticate-device');
-      }
-      if ((daemonFeatures[DaemonFeatures.srE2ee.name] != true) &&
-          (params.encryptRvdTraffic == true)) {
-        throw ArgumentError('This device daemon does not support'
-            ' encryption of traffic to the socket rendezvous.'
-            ' Please set --no-encrypt-rvd-traffic');
-      }
+    /// Send ping to the daemon to discover its supported features. Note that
+    /// we only wait for the ping response **after** we have completed our
+    /// interaction with the srvd; as a result the ping causes no increase in
+    /// overall time-to-session-started
+    List<DaemonFeature> requiredFeatures = [];
+    Future<
+        List<
+            (
+              DaemonFeature feature,
+              bool supported,
+              String reason,
+            )>>? featureCheckFuture;
+    if (params.authenticateDeviceToRvd) {
+      requiredFeatures.add(DaemonFeature.srAuth);
     }
+    if (params.encryptRvdTraffic) {
+      requiredFeatures.add(DaemonFeature.srE2ee);
+    }
+    if (params.sendSshPublicKey) {
+      requiredFeatures.add(DaemonFeature.acceptsPublicKeys);
+    }
+    sendProgress('Sending daemon feature check request');
+
+    featureCheckFuture = sshnpdChannel.featureCheck(requiredFeatures);
 
     /// Set the remote username to use for the ssh session
+    sendProgress('Resolving remote username for user session');
     remoteUsername = await sshnpdChannel.resolveRemoteUsername();
 
     /// Set the username to use for the initial ssh tunnel
+    sendProgress('Resolving remote username for tunnel session');
     tunnelUsername = await sshnpdChannel.resolveTunnelUsername(
         remoteUsername: remoteUsername);
 
     /// Shares the public key if required
+    if (params.sendSshPublicKey) {
+      sendProgress('Sharing ssh public key');
+    }
     await sshnpdChannel.sharePublicKeyIfRequired(identityKeyPair);
 
     /// Retrieve the srvd host and port pair
+    sendProgress('Fetching host and port from srvd');
     await srvdChannel.callInitialization();
+    sendProgress('Received host and port from srvd');
+
+    sendProgress('Waiting for daemon feature check response');
+    List<(DaemonFeature, bool, String)> features = await featureCheckFuture;
+    sendProgress('Received daemon feature check response');
+    await Future.delayed(Duration(milliseconds: 1));
+    for (final (DaemonFeature _, bool supported, String reason) in features) {
+      if (!supported) throw SshnpError(reason);
+    }
+    sendProgress('Required daemon features are supported');
   }
 
   @override

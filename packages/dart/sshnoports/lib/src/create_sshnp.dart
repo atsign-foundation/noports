@@ -12,7 +12,6 @@ Future<Sshnp> createSshnp(
   AtClient? atClient,
   AtClientGenerator? atClientGenerator,
   SupportedSshClient sshClient = DefaultExtendedArgs.sshClient,
-  bool legacyDaemon = DefaultExtendedArgs.legacyDaemon,
 }) async {
   atClient ??= await atClientGenerator?.call(params);
 
@@ -22,14 +21,6 @@ Future<Sshnp> createSshnp(
   if (atClient == null) {
     throw ArgumentError(
         'atClient must be provided or atClientGenerator must be provided');
-  }
-
-  if (legacyDaemon) {
-    // ignore: deprecated_member_use
-    return Sshnp.unsigned(
-      atClient: atClient,
-      params: params,
-    );
   }
 
   switch (sshClient) {

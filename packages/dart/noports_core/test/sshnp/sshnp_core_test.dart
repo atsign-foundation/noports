@@ -1,6 +1,7 @@
 import 'package:at_client/at_client.dart';
 import 'package:at_utils/at_logger.dart';
 import 'package:logging/logging.dart';
+import 'package:noports_core/src/common/features.dart';
 import 'package:noports_core/sshnp_foundation.dart';
 import 'package:test/test.dart';
 import 'package:mocktail/mocktail.dart';
@@ -41,7 +42,10 @@ void main() {
       when(() => mockParams.device).thenReturn('mydevice');
       when(() => mockParams.localPort).thenReturn(0);
       when(() => mockParams.verbose).thenReturn(verbose);
-      when(() => mockParams.discoverDaemonFeatures).thenReturn(false);
+      when(() => mockParams.authenticateDeviceToRvd).thenReturn(true);
+      when(() => mockParams.authenticateClientToRvd).thenReturn(true);
+      when(() => mockParams.encryptRvdTraffic).thenReturn(true);
+      when(() => mockParams.sendSshPublicKey).thenReturn(false);
       when(() => mockAtClient.getPreferences()).thenReturn(null);
       when(() => mockAtClient.setPreferences(any())).thenReturn(null);
     }
@@ -61,6 +65,9 @@ void main() {
           .thenAnswer((_) async => 'myTunnelUsername');
       when(() => mockSshnpdChannel.sharePublicKeyIfRequired(
           identityKeyPair ?? any())).thenAnswer((_) async {});
+      when(() => mockSshnpdChannel.featureCheck(any())).thenAnswer((_) async {
+        return DaemonFeature.values.map((f) => (f, true, 'mocked')).toList();
+      });
       when(() => mockSrvdChannel.callInitialization()).thenAnswer((_) async {});
     }
 
@@ -169,7 +176,7 @@ void main() {
         final params = SshnpParams(
             clientAtSign: '@client',
             sshnpdAtSign: '@daemon',
-            host: 'foo.bar.test',
+            srvdAtSign: '@srvd',
             remoteUsername: 'alice');
         final channel = SshnpdDefaultChannel(
             atClient: mockAtClient,
@@ -186,7 +193,7 @@ void main() {
         final params = SshnpParams(
             clientAtSign: '@client',
             sshnpdAtSign: '@daemon',
-            host: 'foo.bar.test',
+            srvdAtSign: '@srvd',
             remoteUsername: 'alice',
             tunnelUsername: 'bob');
         final channel = SshnpdDefaultChannel(
