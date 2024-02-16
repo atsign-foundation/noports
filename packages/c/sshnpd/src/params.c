@@ -78,7 +78,7 @@ int parse_params(SshnpdParams *params, int argc, const char **argv) {
   int sep_count = 0;
   int end = strlen(params->manager);
   // first counter the number of seperators
-  for (int i = 0; i < end; i++) {
+  for (int i = 0; i < end - 1; i++) {
     if (params->manager[i] == ',') {
       sep_count++;
     }
@@ -108,15 +108,9 @@ int parse_params(SshnpdParams *params, int argc, const char **argv) {
         }
         // Keep track of the start of the next item
         params->manager_list[pos++] = params->manager + i + 1;
-        if (pos > sep_count) {
-          // This is only more efficient if the last string in the list is longer than the number of items in the list
-          // Which it likely is, since in most cases we only expect there to be <10 items in the list.
-          // But we know we've reached the last item so we can break from the loop now.
-          break;
-        }
       }
     }
-    params->manager_list_len = sep_count + 1;
+    params->manager_list_len = sep_count + 1; // This overwrites the memory of params->manager
   }
 
   return 0;

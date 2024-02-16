@@ -1,3 +1,4 @@
+#include "sshnpd/background_jobs.h"
 #include "sshnpd/sshnpd.h"
 #include <atclient/atclient.h>
 #include <atclient/atkeys.h>
@@ -101,8 +102,7 @@ int main(int argc, char **argv) {
 
   // TODO : can we free atkeys now?
 
-  // 8.  Cache the manager public key
-  // 8.1 build the atkey for the manager public key
+  // 8. cache the manager public keys
   switch (params.manager_type) {
   case SingleManager:
     atclient_atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_DEBUG, "Single manager: %s\n", params.manager);
@@ -116,9 +116,58 @@ int main(int argc, char **argv) {
     break;
   }
 
+  // pipe to communicate with the threads we will create in 9 & 10
+  int fds[2], res;
+  int exit_res = 0;
+  pipe(fds);
+
   // 9.  Start heartbeat to the atServer
-  // 10. Start monitor
-  // 11. Start the device refresh loop
+  pthread_t heartbeat_tid;
+  struct heartbeat_params heartbeat_params = {&atclient, fds[0], fds[1]};
+  res = pthread_create(&heartbeat_tid, NULL, heartbeat, (void *)&heartbeat_params);
+  if (res != 0) {
+    atclient_atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to start heartbeat thread\n");
+    exit_res = res;
+    goto exit;
+  }
+
+  // 10. Start the device refresh loop
+  pthread_t refresh_tid;
+  struct refresh_device_entry_params refresh_params = {&atclient, &params, fds[0], fds[1]};
+  res = pthread_create(&heartbeat_tid, NULL, refresh_device_entry, (void *)&refresh_params);
+  if (res != 0) {
+    atclient_atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to start refresh device entry thread\n");
+    exit_res = res;
+    goto cancel_heartbeat;
+  }
+
+  // 11. Start monitor
+  // TODO: monitor
+
+  sleep(10); // Temp sleep to ensure that heartbeat triggers once before the program exits
+cancel_device_refresh:
+  atclient_atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_DEBUG, "Cancelling device entry refresh thread\n");
+  if (pthread_cancel(refresh_tid) != 0) {
+    atclient_atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_WARN, "Failed to cancel device entry refresh thread\n");
+  } else {
+    atclient_atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_DEBUG, "Canceled device entry refresh thread\n");
+  }
+cancel_heartbeat:
+  atclient_atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_DEBUG, "Cancelling heartbeat thread\n");
+  if (pthread_cancel(heartbeat_tid) != 0) {
+    atclient_atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_WARN, "Failed to cancel heartbeat thread\n");
+  } else {
+    atclient_atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_DEBUG, "Canceled heartbeat thread\n");
+  }
+exit:
+  close(fds[0]);
+  close(fds[1]);
+  atclient_atkeys_free(&atkeys);
+  atclient_free(&atclient);
+
+  if (exit_res != 0) {
+    return exit_res;
+  }
 
   return 0;
 }

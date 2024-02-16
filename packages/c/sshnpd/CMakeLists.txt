@@ -12,6 +12,7 @@ project(
 # globs are known as bad practice, so we do not use them here
 set(SSHNPD_SRCS
   ${CMAKE_CURRENT_LIST_DIR}/src/params.c
+  ${CMAKE_CURRENT_LIST_DIR}/src/background_jobs.c
 )
 
 # 1b. Manually add your include directories here
