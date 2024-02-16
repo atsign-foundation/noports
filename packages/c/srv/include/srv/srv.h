@@ -22,7 +22,7 @@
 
 // Disable local bind for now
 #define ALLOW_BIND_LOCAL_PORT 0
-#define ALLOW_ENCRYPT_TRAFFIC 0
+#define ALLOW_ENCRYPT_TRAFFIC 1
 
 // A macro which will print an error and exit if local bind is attempted, and
 // disabled - local bind won't be available in the parser either

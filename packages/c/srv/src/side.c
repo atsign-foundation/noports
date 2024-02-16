@@ -71,7 +71,7 @@ void *srv_side_handle(void *side) {
   if (s->is_server == 0) {
     size_t len, slen;
     int res;
-    while ((len = mbedtls_net_recv(&s->socket, buffer, READ_LEN)) > 0) {
+    while ((res = mbedtls_net_recv(&s->socket, buffer, READ_LEN)) > 0) {
       if (res < 0) {
         atclient_atlogger_log(tag, ERROR, "Error reading data: %d", len);
         break;
@@ -79,7 +79,8 @@ void *srv_side_handle(void *side) {
         len = res;
       }
       atclient_atlogger_log(tag, INFO, "Read %d bytes \n", len);
-
+      uft8_safe_log(tag, DEBUG, buffer, len);
+      fflush(stdout);
       if (s->transformer != NULL) {
         uft8_safe_log(tag, DEBUG, buffer, len);
         atclient_atlogger_log(tag, DEBUG, "Transforming data:\n");

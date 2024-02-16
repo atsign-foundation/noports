@@ -61,6 +61,9 @@ int run_srv(srv_params_t *params) {
     // Copy the iv to the decrypter
     memcpy(decrypter.aes_ctr.nonce_counter, encrypter.aes_ctr.nonce_counter, AES_BLOCK_LEN);
 
+    memset(decrypter.aes_ctr.nonce_counter + 11, 0, 4);
+    memset(encrypter.aes_ctr.nonce_counter + 11, 0, 4);
+
     // Set the stream blocks to 0
     memset(encrypter.aes_ctr.stream_block, 0, AES_BLOCK_LEN);
     memset(decrypter.aes_ctr.stream_block, 0, AES_BLOCK_LEN);
