@@ -118,17 +118,30 @@ sudo journalctl -u sshnpd.service -f
 
 ## 5. Check your environment.
 
-There are a number of fiddly things to get in place for ssh to work. The first is the `~/.ssh/authorized_keys`file. It needs to be only writable by the owner, else the `sshd` will not allow logins. This can be checked with `ls -l` and corrected with.
+There are a number of fiddly things to get in place for ssh to work. The first is the `~/.ssh/authorized_keys`file of the user being used to run the systemd unit.
+
+The file needs to owned by the user running the systemd unit. Currently there is a bug in the script and this sets the user to root, which needs to be corrected if not running as root. You can do this with the following command substituting `debain` for your username and group.
+
+&#x20;The file also needs to be only writable by the owner, else the `sshd` will not allow logins. This can be checked with `ls -l` and corrected with the chmod command.
 
 ```bash
-chmod 600 ~/.ssh/authorized_keys
+debian@beaglebone:~$ ls -l ~/.ssh/
+total 0
+-rw-r--r-- 1 root root 0 Feb 18 00:28 authorized_keys
+debian@beaglebone:~$ sudo chown debian:debian ~/.ssh/authorized_keys
+debian@beaglebone:~$ ls -l ~/.ssh/
+total 0
+-rw-r--r-- 1 debian debian 0 Feb 18 00:28 authorized_keys
+debian@beaglebone:~$ chmod 600 ~/.ssh/authorized_keys
 ```
 
-It should look like this.
+Once complete it should look like this.
 
 ```
-cconstab@iotdevice01:~$ ls -l  ~/.ssh/authorized_keys
--rw------- 1 cconstab cconstab 813 Feb 17 23:42 /home/cconstab/.ssh/authorized_keys
+debian@beaglebone:~$ ls -l ~/.ssh/
+total 0
+-rw------- 1 debian debian 0 Feb 18 00:28 authorized_keys
+debian@beaglebone:~$
 ```
 
 If you decided to use the root user in the service setup you need to make sure that the root user is allowed to login via sshd. Whist this is not recommended you can get it working by editing the `/etc/ssh/sshd_config` file and removing the `#` on this line.
