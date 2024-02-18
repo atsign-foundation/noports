@@ -36,7 +36,7 @@ You'll then be greeted with a file that looks like this:
 
 {% @github-files/github-code-block url="https://github.com/atsign-foundation/noports/blob/trunk/packages/dart/sshnoports/bundles/shell/systemd/sshnpd.service" %}
 
-Replace `<username>` with the [linux user ](#user-content-fn-1)[^1]running sshnpd
+Replace `<username>` with the [linux user ](#user-content-fn-1)[^1]running sshnpd (we suggest creating service account not running as root)
 
 Replace `<@device_atsign>` with the [device address](#user-content-fn-2)[^2]
 
@@ -110,7 +110,36 @@ If you need to verify the status of the service:
 sudo systemctl status sshnpd.service
 ```
 
-## 5. All done!
+If you want to follow the logs of the service you can with&#x20;
+
+```bash
+sudo journalctl -u sshnpd.service -f
+```
+
+## 5. Check your environment.
+
+There are a number of fiddly things to get in place for ssh to work. The first is the `~/.ssh/authorized_keys`file. It needs to be only writable by the owner, else the `sshd` will not allow logins. This can be checked with `ls -l` and corrected with.
+
+```bash
+chmod 600 ~/.ssh/authorized_keys
+```
+
+It should look like this.
+
+```
+cconstab@iotdevice01:~$ ls -l  ~/.ssh/authorized_keys
+-rw------- 1 cconstab cconstab 813 Feb 17 23:42 /home/cconstab/.ssh/authorized_keys
+```
+
+If you decided to use the root user in the service setup you need to make sure that the root user is allowed to login via sshd. Whist this is not recommended you can get it working by editing the `/etc/ssh/sshd_config` file and removing the `#` on this line.
+
+```
+# PermitRootLogin prohibit-password
+```
+
+Once removed you will need to restart the sshd daemon. How to do this varies from distribution/OS so check on how to do it or reboot.
+
+## 6. All Done !
 
 Your systemd service is ready to go, you can now proceed to [installing your client](../client-installation-sshnp.md), or if you've already done that, checkout our [usage guide](../../usage-guide/basic-usage/).
 
