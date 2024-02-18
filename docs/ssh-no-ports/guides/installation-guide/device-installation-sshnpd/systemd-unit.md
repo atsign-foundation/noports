@@ -144,7 +144,17 @@ total 0
 debian@beaglebone:~$
 ```
 
-If you decided to use the root user in the service setup you need to make sure that the root user is allowed to login via sshd. Whist this is not recommended you can get it working by editing the `/etc/ssh/sshd_config` file and removing the `#` on this line.
+## Running sshnpd at root special steps (not recommended)
+
+If you decided to use the root user in the service setup you have a futher couple of steps.
+
+```bash
+sudo mkdir -p ~root/.ssh
+sudo touch ~root/.ssh/authorized_keys
+sudo chmod 600 ~root/.ssh/authorized_keys
+```
+
+Then you need to make sure that the root user is allowed to login via sshd. Whist this is not recommended you can get it working by editing the `/etc/ssh/sshd_config` file and removing the `#` on this line.
 
 ```
 # PermitRootLogin prohibit-password
