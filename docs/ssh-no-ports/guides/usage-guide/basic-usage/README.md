@@ -94,11 +94,11 @@ An example of a complete command might look like this:
 sshnp -f @alice_client -t @alice_device -d my_server -h @rv_am -i ~/.ssh/id_ed25519
 ```
 
-\*Note if the username on the remote machine is different than your local machine you will have to also use the `-u` flag with the remote username. For example, if the remote username is `bobc`
+\*Note if the username on the remote machine is different than your local machine you will have to also use the `-u` flag and the `-U` flag with the remote username. For example, if the remote username is `bocbc`. If you used the `-u` flag when running the sshnpd daemon then you can safely omit the `-U` flag.
 
 ```bash
 sshnp -f @alice_client -t @alice_device -d my_server \
- -h @rv_am -i ~/.ssh/id_ed25519 -u bobc
+ -h @rv_am -i ~/.ssh/id_ed25519 -u bobc -U bobc
 ```
 
 The rest of the configuration for `sshnp` is contained in a separate guide:
