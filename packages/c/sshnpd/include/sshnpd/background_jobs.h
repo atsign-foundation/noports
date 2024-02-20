@@ -14,6 +14,9 @@
 
 #define HEARTBEAT_TAG "heartbeat thread"
 #define REFRESH_TAG "refresh thread"
+
+#define DEVICE_INFO "device_info"
+#define DEVICE_INFO_LEN 11
 /**
  * @brief a struct which gets passed to heartbeat as a void pointer
  *

@@ -1,7 +1,11 @@
+#include "sshnpd/params.h"
+#include <atclient/atkey.h>
 #include <atclient/connection.h>
 #include <atlogger/atlogger.h>
 #include <pthread.h>
 #include <sshnpd/background_jobs.h>
+#include <sshnpd/sshnpd.h>
+#include <stdio.h>
 #include <string.h>
 
 void *heartbeat(void *void_heartbeat_params) {
@@ -31,7 +35,31 @@ void *heartbeat(void *void_heartbeat_params) {
   }
 }
 
-void *refresh_device_entry(void *refresh_device_entry_params) {
-  // TODO: device entry
-  pthread_exit(NULL);
+void *refresh_device_entry(void *void_refresh_device_entry_params) {
+  struct refresh_device_entry_params *params = void_refresh_device_entry_params;
+
+  // Buffer for the atkeys
+  size_t num_managers = params->params->manager_list_len;
+  atclient_atkey atkeys[num_managers];
+
+  // Buffer for the base portion of each atkey
+  size_t key_base_len = strlen(params->params->device) + strlen(params->params->atsign) +
+                        20; // +11 for device_info,+5 for sshnp, +3 for additional seperators, +1 for null term
+  char key_base[key_base_len];
+  // example: :device_info.device_name.sshnp@client_atsign
+  snprintf(key_base, key_base_len, ":device_info.%s.sshnp.%s", params->params->device, params->params->atsign);
+
+  // Build each atkey
+  for (int i = 0; i < num_managers; i++) {
+    atclient_atkey_init(atkeys + i);
+    size_t buffer_len = strlen(params->params->manager_list[i]) + key_base_len;
+    char atkey_buffer[buffer_len];
+    // example: @client_atsign:device_info.device_name.sshnp@client_atsign
+    snprintf(atkey_buffer, buffer_len, "%s%s", params->params->manager_list[i], key_base);
+    atclient_atkey_from_string(atkeys + i, atkey_buffer, buffer_len);
+  }
+
+  while (true) {
+    sleep(HOUR_IN_MS); // Once an hour
+  }
 }

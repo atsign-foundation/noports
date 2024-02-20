@@ -1,51 +1,21 @@
 #include "srv/srv.h"
 #include <atlogger/atlogger.h>
 #include <srv/stream.h>
-#include <stdlib.h>
 
 #define TAG "aes - transform"
-int aes_ctr_encrypt_stream(const chunked_transformer_t *self, unsigned char *buffer, size_t *len) {
+int aes_ctr_crypt_stream(const chunked_transformer_t *self, size_t len, const unsigned char *input,
+                         unsigned char *output) {
   // Access the state from the self pointer
   aes_ctr_transformer_state_t *state = (aes_ctr_transformer_state_t *)&self->aes_ctr;
 
-  unsigned char *output = malloc(*len * sizeof(unsigned char));
-  atclient_atlogger_log(TAG, DEBUG, "Encrypting %lu bytes\n", *len);
-  atclient_atlogger_log(TAG, DEBUG, "nonce_counter: %d,%d,%d,%d\n nc_off: %lu", state->nonce_counter[12],
-                        state->nonce_counter[13], state->nonce_counter[14], state->nonce_counter[15], state->nc_off);
-  // Encrypt the buffer to the chunk
-  int res = mbedtls_aes_crypt_ctr(&state->ctx, *len, &state->nc_off, state->nonce_counter, state->stream_block, buffer,
-                                  output);
+  // **crypt the buffer to the chunk
+  int res =
+      mbedtls_aes_crypt_ctr(&state->ctx, len, &state->nc_off, state->nonce_counter, state->stream_block, input, output);
 
   if (res != 0) {
-    atclient_atlogger_log(TAG, ERROR, "Failed to encrypt chunk\n");
-    free(output);
+    atclient_atlogger_log(TAG, ERROR, "Failed to crypt chunk\n");
     return res;
   }
-  // Free the old chunk and assign the address of the encrypted one
-  unsigned char *temp = buffer;
-  buffer = output;
-  free(temp);
-
-  return 0;
-}
-
-int aes_ctr_decrypt_stream(const chunked_transformer_t *self, unsigned char *buffer, size_t *len) {
-  // Access the state from the self pointer
-  aes_ctr_transformer_state_t *state = (aes_ctr_transformer_state_t *)&self->aes_ctr;
-
-  unsigned char *output = malloc(*len * sizeof(unsigned char));
-  atclient_atlogger_log(TAG, DEBUG, "Decrypting %lu bytes\n", *len);
-  // Decrypt the buffer to the chunk
-  int res = mbedtls_aes_crypt_ctr(&state->ctx, *len, &state->nc_off, state->nonce_counter, state->stream_block, buffer,
-                                  output);
-  if (res != 0) {
-    atclient_atlogger_log(TAG, ERROR, "Failed to decrypt chunk\n");
-    return res;
-  }
-  // Free the old chunk and assign the address of the decrypted one
-  unsigned char *temp = buffer;
-  buffer = output;
-  free(temp);
 
   return 0;
 }

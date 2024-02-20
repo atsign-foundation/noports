@@ -15,21 +15,10 @@ enum SupportedSshAlgorithm {
   RSA,
 };
 
-enum ManagerType {
-  SingleManager,
-  ManagerList,
-};
-
 typedef struct {
   char *atsign;
-  enum ManagerType manager_type;
-  union {
-    char *manager;
-    struct {
-      size_t manager_list_len;
-      char **manager_list;
-    };
-  };
+  size_t manager_list_len;
+  char **manager_list;
   char *device;
 
   bool sshpublickey;

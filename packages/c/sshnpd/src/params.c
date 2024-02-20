@@ -17,11 +17,12 @@ void apply_default_values_to_params(SshnpdParams *params) {
 
 int parse_params(SshnpdParams *params, int argc, const char **argv) {
   char *ssh_algorithm_input = "";
+  char *manager = "";
   ArgparseOption options[] = {
       OPT_HELP(),
       OPT_STRING('k', "key-file", &params->key_file, "Path to the key file"),
       OPT_STRING('a', "atsign", &params->atsign, "Atsign to use (mandatory)"),
-      OPT_STRING('m', "manager", &params->manager, "Manager to use (mandatory)"),
+      OPT_STRING('m', "manager", &manager, "Manager to use (mandatory)"),
       OPT_STRING('d', "device", &params->device, "Device to use"),
       OPT_BOOLEAN('s', "sshpublickey", &params->sshpublickey, "Generate ssh public key"),
       OPT_BOOLEAN('u', "un-hide", &params->unhide, "Unhide device"),
@@ -41,12 +42,13 @@ int parse_params(SshnpdParams *params, int argc, const char **argv) {
   argparse_describe(&argparse, description, "");
   argc = argparse_parse(&argparse, argc, argv);
 
+  int manager_end = strlen(manager);
   // Mandatory options
   if (params->atsign == NULL) {
     argparse_usage(&argparse);
     printf("Invalid Argument(s): Option atsign is mandatory\n");
     return 1;
-  } else if (params->manager == NULL) {
+  } else if (manager == NULL || manager_end == 0) {
     argparse_usage(&argparse);
     printf("Invalid Argument(s) Option manager is mandatory\n");
     return 1;
@@ -76,42 +78,37 @@ int parse_params(SshnpdParams *params, int argc, const char **argv) {
 
   // Validation and type inference for manager list
   int sep_count = 0;
-  int end = strlen(params->manager);
   // first counter the number of seperators
-  for (int i = 0; i < end - 1; i++) {
-    if (params->manager[i] == ',') {
+  for (int i = 0; i < manager_end - 1; i++) {
+    if (manager[i] == ',') {
       sep_count++;
     }
   }
 
-  if (sep_count == 0) {
-    params->manager_type = SingleManager;
-  } else {
-    params->manager_type = ManagerList;
-    // malloc pointers to each string, but don't malloc any more memory for individual char storage
-    params->manager_list = malloc((sep_count + 1) * sizeof(char *));
-    params->manager_list[0] = params->manager; // cool trick, since manager is the same memory block as manager_list_len
-    int pos = 1;                               // Starts at 1 since we already added the first item to the list
-    for (int i = 0; i < end; i++) {
-      if (params->manager[i] == ',') {
-        // Set this comma to a null terminator
-        params->manager[i] = '\0';
-        if (params->manager[i + 1] == '\0') {
-          // Trailing comma, so we will do nothing else and break the loop...
-          // The allocated memory has a double trailing null seperator, but that's fine
-          break;
-        }
-        if (params->manager[i + 1] != '@') {
-          printf("Invalid Argument(s): Expected a list of atSigns: \"%s\"\n", params->manager);
-          free(params->manager_list);
-          return 1;
-        }
-        // Keep track of the start of the next item
-        params->manager_list[pos++] = params->manager + i + 1;
+  // malloc pointers to each string, but don't malloc any more memory for individual char storage
+  params->manager_list = malloc((sep_count + 1) * sizeof(char *));
+  params->manager_list[0] = manager;
+  int pos = 1; // Starts at 1 since we already added the first item to the list
+  for (int i = 0; i < manager_end; i++) {
+    if (manager[i] == ',') {
+      // Set this comma to a null terminator
+      manager[i] = '\0';
+      if (manager[i + 1] == '\0') {
+        // Trailing comma, so we over counted by one
+        sep_count--;
+        // The allocated memory has a double trailing null seperator, but that's fine
+        break;
       }
+      if (manager[i + 1] != '@') {
+        printf("Invalid Argument(s): Expected a list of atSigns: \"%s\"\n", manager);
+        free(params->manager_list);
+        return 1;
+      }
+      // Keep track of the start of the next item
+      params->manager_list[pos++] = manager + i + 1;
     }
-    params->manager_list_len = sep_count + 1; // This overwrites the memory of params->manager
   }
+  params->manager_list_len = sep_count + 1;
 
   return 0;
 }

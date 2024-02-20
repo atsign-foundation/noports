@@ -39,7 +39,7 @@ int run_srv(srv_params_t *params) {
     }
 
     mbedtls_aes_init(&decrypter.aes_ctr.ctx); // FREE
-    res = mbedtls_aes_setkey_dec(&decrypter.aes_ctr.ctx, aes_key, AES_256_KEY_BITS);
+    res = mbedtls_aes_setkey_enc(&decrypter.aes_ctr.ctx, aes_key, AES_256_KEY_BITS);
     if (res != 0) {
       atclient_atlogger_log(TAG, ERROR, "Error setting decryption key\n");
       mbedtls_aes_free(&encrypter.aes_ctr.ctx);
@@ -61,9 +61,6 @@ int run_srv(srv_params_t *params) {
     // Copy the iv to the decrypter
     memcpy(decrypter.aes_ctr.nonce_counter, encrypter.aes_ctr.nonce_counter, AES_BLOCK_LEN);
 
-    memset(decrypter.aes_ctr.nonce_counter + 11, 0, 4);
-    memset(encrypter.aes_ctr.nonce_counter + 11, 0, 4);
-
     // Set the stream blocks to 0
     memset(encrypter.aes_ctr.stream_block, 0, AES_BLOCK_LEN);
     memset(decrypter.aes_ctr.stream_block, 0, AES_BLOCK_LEN);
@@ -73,9 +70,9 @@ int run_srv(srv_params_t *params) {
     decrypter.aes_ctr.nc_off = 0;
 
     // Set the transform functions
-    encrypter.transform = aes_ctr_encrypt_stream;
-    decrypter.transform = aes_ctr_decrypt_stream;
-  };
+    encrypter.transform = aes_ctr_crypt_stream;
+    decrypter.transform = aes_ctr_crypt_stream;
+  }
 
   if (params->bind_local_port == 0) {
     atclient_atlogger_log(TAG, INFO, "Starting socket to socket srv\n");
@@ -196,16 +193,4 @@ exit:
 int server_to_socket(const srv_params_t *params, const char *auth_string, chunked_transformer_t *encrypter,
                      chunked_transformer_t *decrypter) {
   return 0;
-}
-
-void uft8_safe_log(const char *tag, atclient_atlogger_logging_level level, const unsigned char *data, size_t len) {
-  char buffer[len];
-  memcpy(buffer, data, len);
-  for (int i = 0; i < len; i++) {
-    if (buffer[i] > 0x7f || buffer[i] < 0x20) {
-      // printf("replaced %hhu\n", buffer[i]);
-      buffer[i] = '*';
-    }
-  }
-  atclient_atlogger_log(tag, level, "%s\n", buffer);
 }

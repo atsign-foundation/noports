@@ -1,5 +1,4 @@
 #include "sshnpd/background_jobs.h"
-#include "sshnpd/sshnpd.h"
 #include <atclient/atclient.h>
 #include <atclient/atkeys.h>
 #include <atclient/atkeysfile.h>
@@ -103,18 +102,15 @@ int main(int argc, char **argv) {
   // TODO : can we free atkeys now?
 
   // 8. cache the manager public keys
-  switch (params.manager_type) {
-  case SingleManager:
-    atclient_atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_DEBUG, "Single manager: %s\n", params.manager);
-    break;
-  case ManagerList:
-    atclient_atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_DEBUG, "Manager List: %lu,", params.manager_list_len);
-    for (int i = 0; i < params.manager_list_len; i++) {
-      printf("%s,", params.manager_list[i]);
-    }
-    printf("\n");
-    break;
+  atclient_atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_DEBUG, "Manager List: %lu,", params.manager_list_len);
+  for (int i = 0; i < params.manager_list_len; i++) {
+    printf("%s,", params.manager_list[i]);
+
+    char public_encryption_key[1024];
+    // atclient_get_public_encryption_key(&atclient, params.manager_list[i], &public_encryption_key);
+    // TODO: finish caching
   }
+  printf("\n");
 
   // pipe to communicate with the threads we will create in 9 & 10
   int fds[2], res;

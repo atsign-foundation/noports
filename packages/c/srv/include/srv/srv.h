@@ -76,8 +76,4 @@ int socket_to_socket(const srv_params_t *params, const char *auth_string, chunke
 int server_to_socket(const srv_params_t *params, const char *auth_string, chunked_transformer_t *encrypter,
                      chunked_transformer_t *decrypter);
 
-/**
- * @brief A wrapper around atlogger/atlogger to substitue non utf8 characters before logging
- */
-void uft8_safe_log(const char *tag, atclient_atlogger_logging_level level, const unsigned char *data, size_t len);
 #endif

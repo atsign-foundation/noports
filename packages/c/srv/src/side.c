@@ -78,17 +78,17 @@ void *srv_side_handle(void *side) {
       } else {
         len = res;
       }
-      atclient_atlogger_log(tag, INFO, "Read %d bytes \n", len);
-      uft8_safe_log(tag, DEBUG, buffer, len);
+      atclient_atlogger_log(tag, DEBUG, "Read %d bytes \n", len);
       fflush(stdout);
       if (s->transformer != NULL) {
-        uft8_safe_log(tag, DEBUG, buffer, len);
-        atclient_atlogger_log(tag, DEBUG, "Transforming data:\n");
-        res = (int)s->transformer->transform(s->transformer, buffer, &len);
+        unsigned char *output = malloc(BUFFER_LEN * sizeof(unsigned char));
+        atclient_atlogger_log(tag, DEBUG, "Transforming data\n");
+        res = (int)s->transformer->transform(s->transformer, len, buffer, output);
         if (res != 0) {
           break;
         }
-        uft8_safe_log(tag, DEBUG, buffer, len);
+        free(buffer);
+        buffer = output;
       }
 
       if (s->other->is_server == 0) {
