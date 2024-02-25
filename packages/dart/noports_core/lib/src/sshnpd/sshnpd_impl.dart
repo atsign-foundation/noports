@@ -84,6 +84,10 @@ class SshnpdImpl implements Sshnpd {
 
   final List<String> permitOpen;
 
+  @override
+  // TODO Ideally need a separate argument and for this to be set separately
+  String get authorizingAtsign => managerAtsigns.first;
+
   SshnpdImpl({
     // final fields
     required this.atClient,
@@ -250,11 +254,14 @@ class SshnpdImpl implements Sshnpd {
 
   /// Notification handler for sshnpd
   void _notificationHandler(AtNotification notification) async {
-    if (!await isFromAuthorizedAtsign(notification)) {
+    bool authed;
+    String message;
+    (authed, message) = await isFromAuthorizedAtsign(notification);
+    if (!authed) {
       // TODO IF $someConditions apply then send a 'nice' error
       // TODO message notification back to the requester
       logger.shout('Notification ignored from ${notification.from}'
-          ' which is not in authorized list [$managerAtsigns].'
+          ' which is not authorized: $message'
           ' Notification value was ${notification.value}');
       return;
     }
@@ -305,7 +312,7 @@ class SshnpdImpl implements Sshnpd {
     }
   }
 
-  Future<bool> isFromAuthorizedAtsign(AtNotification notification) async {
+  Future<(bool, String)> isFromAuthorizedAtsign(AtNotification notification) async {
     const authTimeoutSeconds = 10;
     late bool authed;
     late String message;
@@ -319,20 +326,19 @@ class SshnpdImpl implements Sshnpd {
       } on TimeoutException {
         authed = false;
         message =
-            'No response from authorizer after $authTimeoutSeconds seconds';
+        'No response from authorizer after $authTimeoutSeconds seconds';
       }
     } else {
       authed = managerAtsigns.contains(notification.from);
       message =
-          'client atSign ${notification.from} ${authed ? 'matches' : 'does NOT match'} managerAtsign';
+      'client atSign ${notification.from} ${authed
+          ? 'matches'
+          : 'does NOT match'} managerAtsign';
     }
+    return (authed, message);
+  }
 
   void _handlePingNotification(AtNotification notification) {
-    if (!isFromAuthorizedAtsign(notification)) {
-      logger.shout('Notification ignored from ${notification.from}'
-          ' which is not in authorized list $managerAtsigns.'
-          ' Notification value was ${notification.value}');
-      return;
     logger.info(
         'ping received from ${notification.from} notification id : ${notification.id}');
 
@@ -359,13 +365,6 @@ class SshnpdImpl implements Sshnpd {
   }
 
   Future<void> _handlePublicKeyNotification(AtNotification notification) async {
-    if (!isFromAuthorizedAtsign(notification)) {
-      logger.shout('Notification ignored from ${notification.from}'
-          ' which is not in authorized list [$managerAtsign].'
-          ' Notification was ${jsonEncode(notification.toJson())}');
-      return;
-    }
-
     if (!addSshPublicKeys) {
       logger.info(
           'Ignoring sshpublickey from ${notification.from} notification id : ${notification.id}');
@@ -402,13 +401,6 @@ class SshnpdImpl implements Sshnpd {
   }
 
   void _handleNptRequestNotification(AtNotification notification) async {
-    if (!isFromAuthorizedAtsign(notification)) {
-      logger.shout('Notification ignored from ${notification.from}'
-          ' which is not in authorized list $managerAtsigns.'
-          ' Notification value was ${notification.value}');
-      return;
-    }
-
     String requestingAtsign = notification.from;
 
     // Validate the request payload.
@@ -1282,7 +1274,7 @@ class AuthChecker implements AtRpcCallbacks {
       atClient: sshnpd.atClient,
       baseNameSpace: DefaultArgs.namespace,
       domainNameSpace: 'auth_checks',
-      allowList: {sshnpd.managerAtsign},
+      allowList: {sshnpd.authorizingAtsign},
       callbacks: this,
     );
     rpc.start();
@@ -1299,8 +1291,8 @@ class AuthChecker implements AtRpcCallbacks {
         .toJson());
     completerMap[request.reqId] = Completer<SSHNPAAuthCheckResponse>();
     sshnpd.logger.info(
-        'Sending auth check request to sshnpa at ${sshnpd.managerAtsign} : $request');
-    await rpc.sendRequest(toAtSign: sshnpd.managerAtsign, request: request);
+        'Sending auth check request to sshnpa at ${sshnpd.authorizingAtsign} : $request');
+    await rpc.sendRequest(toAtSign: sshnpd.authorizingAtsign, request: request);
     return completerMap[request.reqId]!.future;
   }
 
@@ -1321,25 +1313,25 @@ class AuthChecker implements AtRpcCallbacks {
     if (completer.isCompleted) {
       sshnpd.logger.warning(
           'Ignoring auth check response (received after future completion)'
-          ' from ${sshnpd.managerAtsign}'
+          ' from ${sshnpd.authorizingAtsign}'
           ' : $response');
       return;
     }
     switch (response.respType) {
       case AtRpcRespType.ack:
         // We don't complete the future when we get an ack
-        sshnpd.logger.info('Got ack from ${sshnpd.managerAtsign}'
+        sshnpd.logger.info('Got ack from ${sshnpd.authorizingAtsign}'
             ' : $response');
         break;
       case AtRpcRespType.success:
         sshnpd.logger
-            .info('Got auth check response from ${sshnpd.managerAtsign}'
+            .info('Got auth check response from ${sshnpd.authorizingAtsign}'
                 ' : $response');
         completer.complete(SSHNPAAuthCheckResponse.fromJson(response.payload));
         break;
       default:
         sshnpd.logger.warning(
-            'Got non-success auth check response from ${sshnpd.managerAtsign}'
+            'Got non-success auth check response from ${sshnpd.authorizingAtsign}'
             ' : $response');
         completer.complete(SSHNPAAuthCheckResponse(
             authorized: false,

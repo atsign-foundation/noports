@@ -4,6 +4,7 @@ import 'package:at_utils/at_logger.dart';
 import 'package:noports_core/sshnpa.dart';
 import 'package:sshnoports/src/create_at_client_cli.dart';
 import 'package:sshnoports/src/print_version.dart';
+import 'package:sshnoports/src/service_factories.dart';
 
 Future<void> run(
     SSHNPARequestHandler handler, List<String> commandLineArgs) async {
@@ -20,6 +21,7 @@ Future<void> run(
         atsign: p.authorizerAtsign,
         atKeysFilePath: p.atKeysFilePath,
         rootDomain: p.rootDomain,
+        atServiceFactory: ServiceFactoryWithNoOpSyncService(),
       ),
       usageCallback: (e, s) {
         printVersion();
