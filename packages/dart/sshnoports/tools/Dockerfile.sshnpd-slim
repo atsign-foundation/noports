@@ -1,0 +1,65 @@
+# To build using docker buildx
+# docker buildx build --push --platform linux/amd64,linux/arm64,linux/arm/v7 \
+# --tag <YOUR DOCKERHUB ID>/sshnpd-slim-multi:latest  \
+# -f packages/dart/sshnoports/tools/Dockerfile.sshnpd-slim .
+
+# Note dart:beta needs to be used when using M1 mac as known bug causes
+# crash dump otherwise, can move back to standard builds if on Linux/Windows
+# crash still happens on arm build so remove that build on M1 too
+# as of 5th Feb 2024 - Will check state as 3.3 Stable is released
+#FROM dart:beta-sdk AS buildimage
+
+FROM dart:3.3.0@sha256:b166b6f9a5969fbb0feaf38480b064060f1f16eb93f7dce0b08608929f40712c  AS buildimage
+ENV PACKAGEDIR=packages/dart/sshnoports
+ENV OPENSSH=tools/static-openssh
+ENV BINARYDIR=/usr/local/at
+ENV HOMEDIR=/atsign
+ENV WORKDIR=/app
+ENV USER_ID=1024
+ENV GROUP_ID=1024
+SHELL ["/bin/bash", "-c"]
+WORKDIR /app
+COPY . .
+RUN \
+  set -eux ; \
+  mkdir -p $HOMEDIR/storage ; \
+  mkdir -p $HOMEDIR/config ; \
+  mkdir -p /etc/cacert ; \
+  mkdir -p ${BINARYDIR} ; \
+  # build sshnpd
+  cd ${WORKDIR}/${PACKAGEDIR}; \
+  dart pub get ; \
+  dart pub update ; \
+  dart compile exe bin/sshnpd.dart -o ${BINARYDIR}/sshnpd ; \
+  dart compile exe bin/srv.dart -o ${BINARYDIR}/srv ; \
+  # create atsign account
+  addgroup --gid $GROUP_ID atsign ; \
+  useradd --system --uid $USER_ID --gid $GROUP_ID --shell /bin/bash \
+    --home $HOMEDIR atsign ; \
+  chown -R atsign:atsign $HOMEDIR ; \
+  # build static openssh binaries
+  apt update && apt install -y curl gcc make autoconf ; \
+  cd ${WORKDIR}/${OPENSSH} ; \
+  ./static-openssh.sh ; \
+  cp build/openssh-portable*/ssh-keygen ${BINARYDIR}/ ; \ 
+  cp build/openssh-portable*/ssh ${BINARYDIR}/ ; \
+  chmod 755 ${BINARYDIR}/ssh-keygen ; \
+  chmod 755 ${BINARYDIR}/ssh 
+
+
+# Second stage of build FROM scratch
+FROM scratch
+ENV PATH=/usr/local/at
+ENV USER=atsign
+COPY --from=buildimage /atsign /atsign/
+COPY --from=buildimage /runtime/ /
+COPY --from=buildimage /etc/passwd /etc/passwd
+COPY --from=buildimage /etc/group /etc/group
+COPY --from=buildimage /etc/cacert /etc/cacert
+WORKDIR /usr/local/at
+COPY --from=buildimage  /usr/local/at/sshnpd /usr/local/at/
+COPY --from=buildimage  /usr/local/at/srv /usr/local/at/
+COPY --from=buildimage  /usr/local/at/ssh-keygen /usr/local/at/
+COPY --from=buildimage  /usr/local/at/ssh /usr/local/at/
+USER atsign
+ENTRYPOINT ["/usr/local/at/sshnpd"]

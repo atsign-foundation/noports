@@ -10,6 +10,8 @@ import 'package:noports_core/src/common/mixins/at_client_bindings.dart';
 import 'package:noports_core/sshnp.dart';
 import 'package:noports_core/utils.dart';
 
+import '../../../common/features.dart';
+
 /// enum for sshnpd acknowledgement state
 enum SshnpdAck {
   /// sshnpd acknowledged our request
@@ -31,7 +33,7 @@ abstract class SshnpdChannel with AsyncInitialization, AtClientBindings {
   @override
   final AtClient atClient;
 
-  final SshnpParams params;
+  final SshnpdChannelParams params;
   final String sessionId;
   final String namespace;
 
@@ -89,15 +91,18 @@ abstract class SshnpdChannel with AsyncInitialization, AtClientBindings {
   /// Wait until we've received an acknowledgement from the daemon, or
   /// have timed out while waiting.
   Future<SshnpdAck> waitForDaemonResponse({int maxWaitMillis = 15000}) async {
+    // TODO Would maybe be better to return a Future<SshnpdAck, String>
+    //      with the String being the failure reason (if any)
+
     // Timer to timeout after 10 Secs or after the Ack of connected/Errors
     for (int counter = 1; counter <= 100; counter++) {
       if (counter % 20 == 0) {
         logger.info('Still waiting for sshnpd response');
-        logger.info('sshnpdAck: $sshnpdAck');
       }
       await Future.delayed(Duration(milliseconds: maxWaitMillis ~/ 100));
       if (sshnpdAck != SshnpdAck.notAcknowledged) break;
     }
+    logger.info('sshnpdAck: $sshnpdAck');
     return sshnpdAck;
   }
 
@@ -118,33 +123,25 @@ abstract class SshnpdChannel with AsyncInitialization, AtClientBindings {
 
     var publicKeyContents = identityKeyPair.publicKeyContents;
 
-    logger.info('Sharing public key with sshnpd');
-    try {
-      logger.info('sharing ssh public key: $publicKeyContents');
-      // Check for Supported ssh keypairs from dartssh2 package
-      if (!publicKeyContents.startsWith(RegExp(
-          r'^(ecdsa-sha2-nistp)|(rsa-sha2-)|(ssh-rsa)|(ssh-ed25519)|(ecdsa-sha2-nistp)'))) {
-        logger.severe('SSH Public Key does not look like a public key file');
-        throw ('SSH Public Key does not look like a public key file');
-      }
-      AtKey sendOurPublicKeyToSshnpd = AtKey()
-        ..key = 'sshpublickey'
-        ..sharedBy = params.clientAtSign
-        ..sharedWith = params.sshnpdAtSign
-        ..metadata = (Metadata()..ttl = 10000);
-      await notify(
-        sendOurPublicKeyToSshnpd,
-        publicKeyContents,
-        checkForFinalDeliveryStatus: false,
-        waitForFinalDeliveryStatus: false,
-      );
-    } catch (e, s) {
-      throw SshnpError(
-        'Error opening or validating public key file or sending to remote atSign',
-        error: e,
-        stackTrace: s,
-      );
+    logger.info('Sharing ssh public key with sshnpd: $publicKeyContents');
+    // Check for Supported ssh keypairs from dartssh2 package
+    if (!publicKeyContents.startsWith(RegExp(
+        r'^(ecdsa-sha2-nistp)|(rsa-sha2-)|(ssh-rsa)|(ssh-ed25519)|(ecdsa-sha2-nistp)'))) {
+      throw SshnpError('SSH Public Key does not look like a public key file');
     }
+    AtKey sendOurPublicKeyToSshnpd = AtKey()
+      ..key = 'sshpublickey'
+      ..sharedBy = params.clientAtSign
+      ..sharedWith = params.sshnpdAtSign
+      ..metadata = (Metadata()..ttl = 10000);
+    unawaited(notify(
+      sendOurPublicKeyToSshnpd,
+      publicKeyContents,
+      checkForFinalDeliveryStatus: false,
+      waitForFinalDeliveryStatus: false,
+    ).onError((e, st) {
+      throw SshnpError('Error sending ssh public key to sshnpd: $e');
+    }));
   }
 
   /// Resolve the remote username to use in the ssh session.
@@ -158,17 +155,12 @@ abstract class SshnpdChannel with AsyncInitialization, AtClientBindings {
     AtKey userNameRecordID = AtKey.fromString(
         '${params.clientAtSign}:username.$namespace${params.sshnpdAtSign}');
 
-    try {
-      return (await atClient.get(userNameRecordID).catchError(
-        (_) {
-          throw SshnpError('Remote username record not shared with the client');
-        },
-      ))
-          .value;
-    } catch (e) {
-      logger.info(e.toString());
-      return null;
-    }
+    return (await atClient.get(userNameRecordID).catchError(
+      (_) {
+        throw SshnpError('Remote username record not shared with the client');
+      },
+    ))
+        .value;
   }
 
   /// Resolve the username to use in the initial ssh tunnel
@@ -184,6 +176,41 @@ abstract class SshnpdChannel with AsyncInitialization, AtClientBindings {
     }
   }
 
+  Future<List<(DaemonFeature feature, bool supported, String reason)>>
+      featureCheck(List<DaemonFeature> featuresToCheck,
+          {Duration timeout = const Duration(seconds: 10)}) async {
+    if (featuresToCheck.isEmpty) {
+      return [];
+    }
+    Map<String, dynamic> pingResponse;
+    try {
+      pingResponse = await ping().timeout(timeout);
+    } on TimeoutException catch (_) {
+      var msg = 'Ping to ${params.device}${params.sshnpdAtSign}'
+          ' timed out after ${timeout.inSeconds} seconds';
+      return featuresToCheck.map((f) => (f, false, msg)).toList();
+    } catch (e) {
+      var msg = 'Ping to ${params.device}${params.sshnpdAtSign}'
+          ' threw exception $e';
+      return featuresToCheck.map((feature) => (feature, false, msg)).toList();
+    }
+
+    // If supportedFeatures was null (i.e. a response from a v4 daemon),
+    // then we will assume that "acceptsPublicKeys" is true
+    final Map<String, dynamic> daemonFeatures =
+        pingResponse['supportedFeatures'] ??
+            {DaemonFeature.acceptsPublicKeys.name: true};
+    return featuresToCheck
+        .map((featureToCheck) => (
+              featureToCheck,
+              daemonFeatures[featureToCheck.name] == true,
+              daemonFeatures[featureToCheck.name] == true
+                  ? ''
+                  : 'This device daemon does not ${featureToCheck.description}',
+            ))
+        .toList();
+  }
+
   Future<Map<String, dynamic>> ping() async {
     Completer<Map<String, dynamic>> completer = Completer();
 
@@ -196,8 +223,10 @@ abstract class SshnpdChannel with AsyncInitialization, AtClientBindings {
       logger.info(
           'Received ping response from ${notification.from} : ${notification.key} : ${notification.value}');
       if (notification.from == params.sshnpdAtSign) {
-        logger.info('Completing the future');
-        completer.complete(jsonDecode(notification.value ?? '{}'));
+        if (!completer.isCompleted) {
+          logger.info('Completing the future');
+          completer.complete(jsonDecode(notification.value ?? '{}'));
+        }
       }
     });
     var pingKey = AtKey()

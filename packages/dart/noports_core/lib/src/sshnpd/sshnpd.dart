@@ -27,7 +27,7 @@ abstract class Sshnpd {
 
   String get deviceAtsign;
 
-  abstract final String managerAtsign;
+  abstract final List<String> managerAtsigns;
 
   /// The ssh client to use when doing reverse ssh
   abstract final SupportedSshClient sshClient;

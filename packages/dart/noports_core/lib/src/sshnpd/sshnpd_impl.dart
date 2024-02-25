@@ -11,6 +11,7 @@ import 'package:meta/meta.dart';
 import 'package:noports_core/src/common/features.dart';
 import 'package:noports_core/src/common/openssh_binary_path.dart';
 import 'package:noports_core/src/srv/srv.dart';
+import 'package:noports_core/src/sshnp/impl/notification_request_message.dart';
 import 'package:noports_core/sshnpd.dart';
 import 'package:noports_core/sshnpa.dart';
 import 'package:noports_core/utils.dart';
@@ -38,7 +39,7 @@ class SshnpdImpl implements Sshnpd {
   String get deviceAtsign => atClient.getCurrentAtSign()!;
 
   @override
-  final String managerAtsign;
+  final List<String> managerAtsigns;
 
   @override
   final SupportedSshClient sshClient;
@@ -81,22 +82,25 @@ class SshnpdImpl implements Sshnpd {
 
   late final Map<String, dynamic> pingResponse;
 
+  final List<String> permitOpen;
+
   SshnpdImpl({
     // final fields
     required this.atClient,
     required this.username,
     required this.homeDirectory,
     required this.device,
-    required this.managerAtsign,
+    required this.managerAtsigns,
     required this.sshClient,
     this.makeDeviceInfoVisible = false,
     this.addSshPublicKeys = false,
     this.delegateAuthChecks = false,
-    this.localSshdPort = DefaultArgs.localSshdPort,
+    this.localSshdPort = DefaultSshnpdArgs.localSshdPort,
     required this.ephemeralPermissions,
     required this.sshAlgorithm,
     required this.deviceGroup,
     required this.version,
+    required this.permitOpen,
   }) {
     logger.hierarchicalLoggingEnabled = true;
     logger.logger.level = Level.SHOUT;
@@ -106,9 +110,10 @@ class SshnpdImpl implements Sshnpd {
       'version': version,
       'corePackageVersion': packageVersion,
       'supportedFeatures': {
-        DaemonFeatures.srAuth.name: true,
-        DaemonFeatures.srE2ee.name: true,
-        DaemonFeatures.acceptsPublicKeys.name: addSshPublicKeys,
+        DaemonFeature.srAuth.name: true,
+        DaemonFeature.srE2ee.name: true,
+        DaemonFeature.acceptsPublicKeys.name: addSshPublicKeys,
+        DaemonFeature.supportsPortChoice.name: true,
       },
     };
   }
@@ -149,7 +154,7 @@ class SshnpdImpl implements Sshnpd {
         username: p.username,
         homeDirectory: p.homeDirectory,
         device: p.device,
-        managerAtsign: p.managerAtsign,
+        managerAtsigns: p.managerAtsigns,
         sshClient: p.sshClient,
         makeDeviceInfoVisible: p.makeDeviceInfoVisible,
         addSshPublicKeys: p.addSshPublicKeys,
@@ -159,6 +164,7 @@ class SshnpdImpl implements Sshnpd {
         sshAlgorithm: p.sshAlgorithm,
         deviceGroup: p.deviceGroup,
         version: version,
+        permitOpen: p.permitOpen.split(',').map((e) => e.trim()).toList(),
       );
 
       if (p.verbose) {
@@ -191,45 +197,13 @@ class SshnpdImpl implements Sshnpd {
       authChecker = AuthChecker(this);
     }
 
-    NotificationService notificationService = atClient.notificationService;
-
-    // Only share this information if configured to do so
-    if (makeDeviceInfoVisible) {
-      var metaData = Metadata()
-        ..isPublic = false
-        ..isEncrypted = true
-        ..ttr = -1 // we want this to be cacheable by managerAtsign
-        ..namespaceAware = true;
-
-      var atKey = AtKey()
-        ..key = 'username.$device'
-        ..sharedBy = deviceAtsign
-        ..sharedWith = managerAtsign
-        ..namespace = DefaultArgs.namespace
-        ..metadata = metaData;
-
-      try {
-        await notificationService.notify(
-          NotificationParams.forUpdate(atKey, value: username),
-          waitForFinalDeliveryStatus: false,
-          checkForFinalDeliveryStatus: false,
-          onSuccess: (notification) {
-            logger.info('SUCCESS:$notification $username');
-          },
-          onError: (notification) {
-            logger.info('ERROR:$notification $username');
-          },
-        );
-      } catch (e) {
-        stderr.writeln(e.toString());
-      }
-    }
+    await _shareUsername();
 
     logger.info('Starting heartbeat');
     startHeartbeat();
 
     logger.info('Subscribing to $device\\.${DefaultArgs.namespace}@');
-    notificationService
+    atClient.notificationService
         .subscribe(
             regex: '$device\\.${DefaultArgs.namespace}@', shouldDecrypt: true)
         .listen(
@@ -279,6 +253,9 @@ class SshnpdImpl implements Sshnpd {
     if (!await isFromAuthorizedAtsign(notification)) {
       // TODO IF $someConditions apply then send a 'nice' error
       // TODO message notification back to the requester
+      logger.shout('Notification ignored from ${notification.from}'
+          ' which is not in authorized list [$managerAtsigns].'
+          ' Notification value was ${notification.value}');
       return;
     }
 
@@ -303,19 +280,27 @@ class SshnpdImpl implements Sshnpd {
 
       case 'sshd':
         logger.info(
-            '<4.0.0 request for (reverse) ssh received from ${notification.from}'
-            ' ( notification id : ${notification.id} )');
+            'LEGACY $notificationKey request received from ${notification.from}'
+            ' ( ${notification.value} )');
         _handleLegacySshRequestNotification(notification);
         break;
 
       case 'ping':
+        logger.info('$notificationKey received from ${notification.from}'
+            ' ( ${notification.value} )');
         _handlePingNotification(notification);
         break;
 
       case 'ssh_request':
-        logger.info('>=4.0.0 request for ssh received from ${notification.from}'
-            ' ( $notification )');
+        logger.info('$notificationKey received from ${notification.from}'
+            ' ( ${notification.value} )');
         _handleSshRequestNotification(notification);
+        break;
+
+      case 'npt_request':
+        logger.info('$notificationKey received from ${notification.from}'
+            ' ( ${notification.value} )');
+        _handleNptRequestNotification(notification);
         break;
     }
   }
@@ -337,24 +322,17 @@ class SshnpdImpl implements Sshnpd {
             'No response from authorizer after $authTimeoutSeconds seconds';
       }
     } else {
-      authed = notification.from == managerAtsign;
+      authed = managerAtsigns.contains(notification.from);
       message =
           'client atSign ${notification.from} ${authed ? 'matches' : 'does NOT match'} managerAtsign';
     }
 
-    if (authed) {
-      logger.info(
-          'Notification from ${notification.from} was authorized: $message');
-    } else {
-      logger.shout(
-          'Notification from ${notification.from} was not authorized: $message.'
-          ' Notification was ${jsonEncode(notification.toJson())}');
-    }
-
-    return authed;
-  }
-
-  void _handlePingNotification(AtNotification notification) async {
+  void _handlePingNotification(AtNotification notification) {
+    if (!isFromAuthorizedAtsign(notification)) {
+      logger.shout('Notification ignored from ${notification.from}'
+          ' which is not in authorized list $managerAtsigns.'
+          ' Notification value was ${notification.value}');
+      return;
     logger.info(
         'ping received from ${notification.from} notification id : ${notification.id}');
 
@@ -381,6 +359,13 @@ class SshnpdImpl implements Sshnpd {
   }
 
   Future<void> _handlePublicKeyNotification(AtNotification notification) async {
+    if (!isFromAuthorizedAtsign(notification)) {
+      logger.shout('Notification ignored from ${notification.from}'
+          ' which is not in authorized list [$managerAtsign].'
+          ' Notification was ${jsonEncode(notification.toJson())}');
+      return;
+    }
+
     if (!addSshPublicKeys) {
       logger.info(
           'Ignoring sshpublickey from ${notification.from} notification id : ${notification.id}');
@@ -413,6 +398,187 @@ class SshnpdImpl implements Sshnpd {
     } catch (e) {
       logger.severe("Error writing to"
           " $username's .ssh/authorized_keys file : $e");
+    }
+  }
+
+  void _handleNptRequestNotification(AtNotification notification) async {
+    if (!isFromAuthorizedAtsign(notification)) {
+      logger.shout('Notification ignored from ${notification.from}'
+          ' which is not in authorized list $managerAtsigns.'
+          ' Notification value was ${notification.value}');
+      return;
+    }
+
+    String requestingAtsign = notification.from;
+
+    // Validate the request payload.
+    //
+    // If a 'direct' ssh is being requested, then
+    // only sessionId, host (of the rvd) and port (of the rvd) are required.
+    //
+    // If a reverse ssh is being requested, then we also require
+    // a username (to ssh back to the client), a privateKey (for that
+    // ssh) and a remoteForwardPort, to set up the ssh tunnel back to this
+    // device from the client side.
+    late final Map envelope;
+    late final NptSessionRequest req;
+    try {
+      envelope = jsonDecode(notification.value!);
+      assertValidValue(envelope, 'signature', String);
+      assertValidValue(envelope, 'hashingAlgo', String);
+      assertValidValue(envelope, 'signingAlgo', String);
+
+      Map<String, dynamic> params = envelope['payload'];
+
+      req = NptSessionRequest.fromJson(params);
+    } catch (e) {
+      logger.warning(
+          'Failed to extract parameters from notification value "${notification.value}" with error : $e');
+      return;
+    }
+
+    try {
+      await verifyEnvelopeSignature(
+          atClient, requestingAtsign, logger, envelope);
+    } catch (e) {
+      logger.shout('Failed to verify signature of msg from $requestingAtsign');
+      logger.shout('Exception: $e');
+      logger.shout('Notification value: ${notification.value}');
+
+      // Notify noports client that this session is NOT connected
+      await _notify(
+        atKey: _createResponseAtKey(
+            requestingAtsign: requestingAtsign, sessionId: req.sessionId),
+        value: 'Signature not verified: $e',
+        sessionId: req.sessionId,
+        checkForFinalDeliveryStatus: false,
+        waitForFinalDeliveryStatus: false,
+      );
+
+      return;
+    }
+
+    String requested = '${req.requestedHost}:${req.requestedPort}';
+    if (!(permitOpen.contains(requested) ||
+        permitOpen.contains('*:${req.requestedPort}') ||
+        permitOpen.contains('${req.requestedHost}:*') ||
+        permitOpen.contains('*:*'))) {
+      // Notify noports client that this session is NOT connected
+      await _notify(
+        atKey: _createResponseAtKey(
+            requestingAtsign: requestingAtsign, sessionId: req.sessionId),
+        value: 'Daemon does not permit connections to $requested',
+        sessionId: req.sessionId,
+        checkForFinalDeliveryStatus: false,
+        waitForFinalDeliveryStatus: false,
+      );
+
+      return;
+    }
+    // Start our side of the tunnel
+    await startNpt(
+      requestingAtsign: requestingAtsign,
+      req: req,
+    );
+  }
+
+  Future<void> startNpt({
+    required String requestingAtsign,
+    required NptSessionRequest req,
+  }) async {
+    logger.info(
+        'Setting up ports for tunnel session using ${sshClient.name} ($sshClient) from: $requestingAtsign session: ${req.sessionId}');
+
+    // TODO Loads of duplicated code here with startDirectSsh, duplicate code needs to be factored out
+    //      e.g. making the rvdAuthString; generating AES and IV and encrypting them
+
+    try {
+      String? rvdAuthString;
+      if (req.authenticateToRvd) {
+        // TODO refactor duplicate code from startDirectSsh
+        rvdAuthString = signAndWrapAndJsonEncode(atClient, {
+          'sessionId': req.sessionId,
+          'clientNonce': req.clientNonce,
+          'rvdNonce': req.rvdNonce,
+        });
+      }
+
+      String? sessionAESKey, sessionAESKeyEncrypted;
+      String? sessionIV, sessionIVEncrypted;
+      if (req.encryptRvdTraffic) {
+        // TODO refactor duplicate code from startDirectSsh
+        // 256-bit AES, 128-bit IV
+        sessionAESKey =
+            AtChopsUtil.generateSymmetricKey(EncryptionKeyType.aes256).key;
+        sessionIV = base64Encode(AtChopsUtil.generateRandomIV(16).ivBytes);
+        late EncryptionKeyType ect;
+        try {
+          ect = EncryptionKeyType.values.byName(req.clientEphemeralPKType);
+        } catch (e) {
+          throw Exception(
+              'Unknown ephemeralPKType: ${req.clientEphemeralPKType}');
+        }
+        switch (ect) {
+          case EncryptionKeyType.rsa2048:
+            AtChops ac = AtChopsImpl(AtChopsKeys.create(
+                AtEncryptionKeyPair.create(req.clientEphemeralPK, 'n/a'),
+                null));
+            sessionAESKeyEncrypted = ac
+                .encryptString(sessionAESKey,
+                    EncryptionKeyType.values.byName(req.clientEphemeralPKType))
+                .result;
+            sessionIVEncrypted = ac
+                .encryptString(sessionIV,
+                    EncryptionKeyType.values.byName(req.clientEphemeralPKType))
+                .result;
+            break;
+          default:
+            throw Exception(
+                'No handling for ephemeralPKType ${req.clientEphemeralPKType}');
+        }
+      }
+      // Connect to rendezvous point using background process.
+      // This program can then exit without causing an issue.
+      Process rv = await Srv.exec(
+        req.rvdHost,
+        req.rvdPort,
+        localPort: req.requestedPort,
+        bindLocalPort: false,
+        localHost: req.requestedHost,
+        rvdAuthString: rvdAuthString,
+        sessionAESKeyString: sessionAESKey,
+        sessionIVString: sessionIV,
+        multi: true,
+      ).run();
+      logger.info('Started rv - pid is ${rv.pid}');
+
+      /// - Send response message to the sshnp client which includes the
+      ///   ephemeral private key
+      await _notify(
+        atKey: _createResponseAtKey(
+            requestingAtsign: requestingAtsign, sessionId: req.sessionId),
+        value: signAndWrapAndJsonEncode(atClient, {
+          'status': 'connected',
+          'sessionId': req.sessionId,
+          'sessionAESKey': sessionAESKeyEncrypted,
+          'sessionIV': sessionIVEncrypted,
+        }),
+        checkForFinalDeliveryStatus: false,
+        waitForFinalDeliveryStatus: false,
+        sessionId: req.sessionId,
+      );
+    } catch (e) {
+      logger.severe('startNpt failed with unexpected error : $e');
+      // Notify sshnp that this session is NOT connected
+      await _notify(
+        atKey: _createResponseAtKey(
+            requestingAtsign: requestingAtsign, sessionId: req.sessionId),
+        value:
+            'Failed to start up the daemon side of the srv socket tunnel : $e',
+        sessionId: req.sessionId,
+        checkForFinalDeliveryStatus: false,
+        waitForFinalDeliveryStatus: false,
+      );
     }
   }
 
@@ -1001,47 +1167,108 @@ class SshnpdImpl implements Sshnpd {
     );
   }
 
-  /// This function creates an atKey which shares the device name with the client
+  /// This function shares or un-shares the username with each of the
+  /// [managerAtsigns]
+  /// - if [makeDeviceInfoVisible] is true, shares a
+  ///   'username.$device.sshnp' record with each managerAtsign
+  /// - if [makeDeviceInfoVisible] is false, deletes any
+  ///   'username.$device.sshnp' records
+  Future<void> _shareUsername() async {
+    var metaData = Metadata()
+      ..isPublic = false
+      ..isEncrypted = true
+      ..ttr = -1 // we want this to be cacheable by managerAtsign
+      ..ccd = true // we want cached copies to be deleted if the key is deleted
+      ..namespaceAware = true;
+
+    for (final managerAtsign in managerAtsigns) {
+      var atKey = AtKey()
+        ..key = 'username.$device'
+        ..sharedBy = deviceAtsign
+        ..sharedWith = managerAtsign
+        ..namespace = DefaultArgs.namespace
+        ..metadata = metaData;
+
+      // Only share this information if configured to do so
+      if (makeDeviceInfoVisible) {
+        try {
+          logger.info('Sharing username $username with $managerAtsign');
+          await atClient.notificationService.notify(
+            NotificationParams.forUpdate(atKey, value: username),
+            waitForFinalDeliveryStatus: false,
+            checkForFinalDeliveryStatus: false,
+            onSuccess: (notification) {
+              logger.info('SUCCESS:$notification $username');
+            },
+            onError: (notification) {
+              logger.info('ERROR:$notification $username');
+            },
+          );
+        } catch (e) {
+          stderr.writeln(e.toString());
+        }
+      } else {
+        logger.info('Un-sharing username $username from $managerAtsign');
+        try {
+          await atClient.delete(
+            atKey,
+            deleteRequestOptions: DeleteRequestOptions()
+              ..useRemoteAtServer = true,
+          );
+        } catch (e) {
+          stderr.writeln(e.toString());
+        }
+      }
+    }
+  }
+
+  /// This function shares or un-shares device info with each of the [managerAtsigns]
+  /// - if [makeDeviceInfoVisible] is true, shares a
+  ///   'device_info.$device.sshnp' record with each managerAtsign
+  /// - if [makeDeviceInfoVisible] is false, deletes any
+  ///   'device_info.$device.sshnp' records
   Future<void> _refreshDeviceEntry() async {
     const ttl = 1000 * 60 * 60 * 24 * 30; // 30 days
     var metaData = Metadata()
       ..isPublic = false
       ..isEncrypted = true
       ..ttr = -1 // we want this to be cacheable by managerAtsign
+      ..ccd = true // we want cached copies to be deleted if the key is deleted
       ..ttl = ttl // but to expire after 30 days
       ..updatedAt = DateTime.now()
       ..namespaceAware = true;
 
-    var atKey = AtKey()
-      ..key = 'device_info.$device'
-      ..sharedBy = deviceAtsign
-      ..sharedWith = managerAtsign
-      ..namespace = DefaultArgs.namespace
-      ..metadata = metaData;
+    for (final managerAtsign in managerAtsigns) {
+      var atKey = AtKey()
+        ..key = 'device_info.$device'
+        ..sharedBy = deviceAtsign
+        ..sharedWith = managerAtsign
+        ..namespace = DefaultArgs.namespace
+        ..metadata = metaData;
 
-    if (!makeDeviceInfoVisible) {
-      logger.info('Deleting old device info for $device (if it exists)');
-      try {
-        await atClient.delete(
-          atKey,
-          deleteRequestOptions: DeleteRequestOptions()
-            ..useRemoteAtServer = true,
-        );
-      } catch (e) {
-        stderr.writeln(e.toString());
+      if (makeDeviceInfoVisible) {
+        try {
+          logger.info('Sharing device info for $device with $managerAtsign');
+          await atClient.put(
+            atKey,
+            jsonEncode(pingResponse),
+            putRequestOptions: PutRequestOptions()..useRemoteAtServer = true,
+          );
+        } catch (e) {
+          stderr.writeln(e.toString());
+        }
+      } else {
+        logger.info('Un-sharing device info for $device from $managerAtsign');
+        try {
+          await atClient.delete(
+            atKey,
+            deleteRequestOptions: DeleteRequestOptions()
+              ..useRemoteAtServer = true,
+          );
+        } catch (e) {
+          stderr.writeln(e.toString());
+        }
       }
-      return;
-    }
-
-    try {
-      logger.info('Updating device info for $device');
-      await atClient.put(
-        atKey,
-        jsonEncode(pingResponse),
-        putRequestOptions: PutRequestOptions()..useRemoteAtServer = true,
-      );
-    } catch (e) {
-      stderr.writeln(e.toString());
     }
   }
 }

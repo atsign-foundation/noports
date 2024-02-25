@@ -5,13 +5,13 @@ import 'package:test/test.dart';
 void main() {
   group('SshnpParams', () {
     test('public API test', () {
-      final params = SshnpParams(clientAtSign: '', sshnpdAtSign: '', host: '');
+      final params =
+          SshnpParams(clientAtSign: '', sshnpdAtSign: '', srvdAtSign: '');
       expect(params, isNotNull);
       expect(params.clientAtSign, isA<String>());
       expect(params.sshnpdAtSign, isA<String>());
-      expect(params.host, isA<String>());
+      expect(params.srvdAtSign, isA<String>());
       expect(params.device, isA<String>());
-      expect(params.port, isA<int>());
       expect(params.localPort, isA<int>());
       expect(params.identityFile, isA<String?>());
       expect(params.identityPassphrase, isA<String?>());
@@ -21,7 +21,6 @@ void main() {
       expect(params.tunnelUsername, isA<String?>());
       expect(params.verbose, isA<bool>());
       expect(params.rootDomain, isA<String>());
-      expect(params.localSshdPort, isA<int>());
       expect(params.remoteSshdPort, isA<int>());
       expect(params.idleTimeout, isA<int>());
       expect(params.addForwardsToTunnel, isA<bool>());
@@ -36,42 +35,40 @@ void main() {
     group('SshnpParams final variables', () {
       test('SshnpParams.clientAtSign test', () {
         final params = SshnpParams(
-            clientAtSign: '@myClientAtSign', sshnpdAtSign: '', host: '');
+            clientAtSign: '@myClientAtSign', sshnpdAtSign: '', srvdAtSign: '');
         expect(params.clientAtSign, equals('@myClientAtSign'));
       });
       test('SshnpParams.sshnpdAtSign test', () {
         final params = SshnpParams(
-            clientAtSign: '', sshnpdAtSign: '@mySshnpdAtSign', host: '');
+            clientAtSign: '', sshnpdAtSign: '@mySshnpdAtSign', srvdAtSign: '');
         expect(params.sshnpdAtSign, equals('@mySshnpdAtSign'));
       });
       test('SshnpParams.host test', () {
-        final params =
-            SshnpParams(clientAtSign: '', sshnpdAtSign: '', host: '@myHost');
-        expect(params.host, equals('@myHost'));
+        final params = SshnpParams(
+            clientAtSign: '', sshnpdAtSign: '', srvdAtSign: '@my_srvd');
+        expect(params.srvdAtSign, equals('@my_srvd'));
       });
       test('SshnpParams.device test', () {
         final params = SshnpParams(
             clientAtSign: '',
             sshnpdAtSign: '',
-            host: '',
+            srvdAtSign: '',
             device: 'myDeviceName');
         expect(params.device, equals('myDeviceName'));
       });
-      test('SshnpParams.port test', () {
-        final params = SshnpParams(
-            clientAtSign: '', sshnpdAtSign: '', host: '', port: 1234);
-        expect(params.port, equals(1234));
-      });
       test('SshnpParams.localPort test', () {
         final params = SshnpParams(
-            clientAtSign: '', sshnpdAtSign: '', host: '', localPort: 2345);
+            clientAtSign: '',
+            sshnpdAtSign: '',
+            srvdAtSign: '',
+            localPort: 2345);
         expect(params.localPort, equals(2345));
       });
       test('SshnpParams.identityFile test', () {
         final params = SshnpParams(
             clientAtSign: '',
             sshnpdAtSign: '',
-            host: '',
+            srvdAtSign: '',
             identityFile: '.ssh/id_ed25519');
         expect(params.identityFile, equals('.ssh/id_ed25519'));
       });
@@ -79,7 +76,7 @@ void main() {
         final params = SshnpParams(
             clientAtSign: '',
             sshnpdAtSign: '',
-            host: '',
+            srvdAtSign: '',
             identityPassphrase: 'myPassphrase');
         expect(params.identityPassphrase, equals('myPassphrase'));
       });
@@ -87,7 +84,7 @@ void main() {
         final params = SshnpParams(
             clientAtSign: '',
             sshnpdAtSign: '',
-            host: '',
+            srvdAtSign: '',
             sendSshPublicKey: true);
         expect(params.sendSshPublicKey, equals(true));
       });
@@ -95,7 +92,7 @@ void main() {
         final params = SshnpParams(
             clientAtSign: '',
             sshnpdAtSign: '',
-            host: '',
+            srvdAtSign: '',
             localSshOptions: ['-L 127.0.01:8080:127.0.0.1:80']);
         expect(
             params.localSshOptions, equals(['-L 127.0.01:8080:127.0.0.1:80']));
@@ -104,7 +101,7 @@ void main() {
         final params = SshnpParams(
             clientAtSign: '',
             sshnpdAtSign: '',
-            host: '',
+            srvdAtSign: '',
             remoteUsername: 'myUsername');
         expect(params.remoteUsername, equals('myUsername'));
       });
@@ -112,43 +109,44 @@ void main() {
         final params = SshnpParams(
             clientAtSign: '',
             sshnpdAtSign: '',
-            host: '',
+            srvdAtSign: '',
             tunnelUsername: 'myTunnelUsername');
         expect(params.tunnelUsername, equals('myTunnelUsername'));
       });
       test('SshnpParams.verbose test', () {
         final params = SshnpParams(
-            clientAtSign: '', sshnpdAtSign: '', host: '', verbose: true);
+            clientAtSign: '', sshnpdAtSign: '', srvdAtSign: '', verbose: true);
         expect(params.verbose, equals(true));
       });
       test('SshnpParams.rootDomain test', () {
         final params = SshnpParams(
             clientAtSign: '',
             sshnpdAtSign: '',
-            host: '',
+            srvdAtSign: '',
             rootDomain: 'root.atsign.wtf');
         expect(params.rootDomain, equals('root.atsign.wtf'));
       });
-      test('SshnpParams.localSshdPort test', () {
-        final params = SshnpParams(
-            clientAtSign: '', sshnpdAtSign: '', host: '', localSshdPort: 4567);
-        expect(params.localSshdPort, equals(4567));
-      });
       test('SshnpParams.remoteSshdPort test', () {
         final params = SshnpParams(
-            clientAtSign: '', sshnpdAtSign: '', host: '', remoteSshdPort: 2222);
+            clientAtSign: '',
+            sshnpdAtSign: '',
+            srvdAtSign: '',
+            remoteSshdPort: 2222);
         expect(params.remoteSshdPort, equals(2222));
       });
       test('SshnpParams.idleTimeout test', () {
         final params = SshnpParams(
-            clientAtSign: '', sshnpdAtSign: '', host: '', idleTimeout: 120);
+            clientAtSign: '',
+            sshnpdAtSign: '',
+            srvdAtSign: '',
+            idleTimeout: 120);
         expect(params.idleTimeout, equals(120));
       });
       test('SshnpParams.addForwardsToTunnel test', () {
         final params = SshnpParams(
             clientAtSign: '',
             sshnpdAtSign: '',
-            host: '',
+            srvdAtSign: '',
             addForwardsToTunnel: true);
         expect(params.addForwardsToTunnel, equals(true));
       });
@@ -156,7 +154,7 @@ void main() {
         final params = SshnpParams(
             clientAtSign: '',
             sshnpdAtSign: '',
-            host: '',
+            srvdAtSign: '',
             atKeysFilePath: '~/.atsign/@myAtsign_keys.atKeys');
         expect(
             params.atKeysFilePath, equals('~/.atsign/@myAtsign_keys.atKeys'));
@@ -165,13 +163,16 @@ void main() {
         final params = SshnpParams(
             clientAtSign: '',
             sshnpdAtSign: '',
-            host: '',
+            srvdAtSign: '',
             profileName: 'myProfile');
         expect(params.profileName, equals('myProfile'));
       });
       test('SshnpParams.listDevices test', () {
         final params = SshnpParams(
-            clientAtSign: '', sshnpdAtSign: '', host: '', listDevices: true);
+            clientAtSign: '',
+            sshnpdAtSign: '',
+            srvdAtSign: '',
+            listDevices: true);
         expect(params.listDevices, equals(true));
       });
     }); // group('SshnpParams final variables')
@@ -182,9 +183,8 @@ void main() {
         expect(params.profileName, equals(''));
         expect(params.clientAtSign, equals(''));
         expect(params.sshnpdAtSign, equals(''));
-        expect(params.host, equals(''));
+        expect(params.srvdAtSign, equals(''));
         expect(params.device, equals(DefaultSshnpArgs.device));
-        expect(params.port, equals(DefaultSshnpArgs.port));
         expect(params.localPort, equals(DefaultSshnpArgs.localPort));
         expect(params.identityFile, isNull);
         expect(params.identityPassphrase, isNull);
@@ -197,7 +197,6 @@ void main() {
         expect(params.tunnelUsername, isNull);
         expect(params.atKeysFilePath, isNull);
         expect(params.rootDomain, equals(DefaultArgs.rootDomain));
-        expect(params.localSshdPort, equals(DefaultArgs.localSshdPort));
         expect(params.listDevices, equals(DefaultSshnpArgs.listDevices));
         expect(params.remoteSshdPort, equals(DefaultArgs.remoteSshdPort));
         expect(params.idleTimeout, equals(DefaultArgs.idleTimeout));
@@ -210,9 +209,8 @@ void main() {
           SshnpPartialParams(
             clientAtSign: '@myClientAtSign',
             sshnpdAtSign: '@mySshnpdAtSign',
-            host: '@myHost',
+            srvdAtSign: '@mySrvdAtSign',
             device: 'myDeviceName',
-            port: 1234,
             localPort: 2345,
             identityFile: '.ssh/id_ed25519',
             identityPassphrase: 'myPassphrase',
@@ -222,7 +220,6 @@ void main() {
             tunnelUsername: 'myTunnelUsername',
             verbose: true,
             rootDomain: 'root.atsign.wtf',
-            localSshdPort: 4567,
             remoteSshdPort: 2222,
             idleTimeout: 120,
             addForwardsToTunnel: true,
@@ -232,9 +229,8 @@ void main() {
         );
         expect(params.clientAtSign, equals('@myClientAtSign'));
         expect(params.sshnpdAtSign, equals('@mySshnpdAtSign'));
-        expect(params.host, equals('@myHost'));
+        expect(params.srvdAtSign, equals('@mySrvdAtSign'));
         expect(params.device, equals('myDeviceName'));
-        expect(params.port, equals(1234));
         expect(params.localPort, equals(2345));
         expect(params.identityFile, equals('.ssh/id_ed25519'));
         expect(params.identityPassphrase, equals('myPassphrase'));
@@ -245,7 +241,6 @@ void main() {
         expect(params.tunnelUsername, equals('myTunnelUsername'));
         expect(params.verbose, equals(true));
         expect(params.rootDomain, equals('root.atsign.wtf'));
-        expect(params.localSshdPort, equals(4567));
         expect(params.remoteSshdPort, equals(2222));
         expect(params.idleTimeout, equals(120));
         expect(params.addForwardsToTunnel, equals(true));
@@ -258,9 +253,8 @@ void main() {
         expect(params.profileName, equals(''));
         expect(params.clientAtSign, equals(''));
         expect(params.sshnpdAtSign, equals(''));
-        expect(params.host, equals(''));
+        expect(params.srvdAtSign, equals(''));
         expect(params.device, equals(DefaultSshnpArgs.device));
-        expect(params.port, equals(DefaultSshnpArgs.port));
         expect(params.localPort, equals(DefaultSshnpArgs.localPort));
         expect(params.identityFile, isNull);
         expect(params.identityPassphrase, isNull);
@@ -273,7 +267,6 @@ void main() {
         expect(params.tunnelUsername, isNull);
         expect(params.atKeysFilePath, isNull);
         expect(params.rootDomain, equals(DefaultArgs.rootDomain));
-        expect(params.localSshdPort, equals(DefaultArgs.localSshdPort));
         expect(params.listDevices, equals(DefaultSshnpArgs.listDevices));
         expect(params.remoteSshdPort, equals(DefaultArgs.remoteSshdPort));
         expect(params.idleTimeout, equals(DefaultArgs.idleTimeout));
@@ -285,9 +278,8 @@ void main() {
             '"${SshnpArg.profileNameArg.name}": "myProfile",'
             '"${SshnpArg.fromArg.name}": "@myClientAtSign",'
             '"${SshnpArg.toArg.name}": "@mySshnpdAtSign",'
-            '"${SshnpArg.hostArg.name}": "@myHost",'
+            '"${SshnpArg.srvdArg.name}": "@mySrvdAtSign",'
             '"${SshnpArg.deviceArg.name}": "myDeviceName",'
-            '"${SshnpArg.portArg.name}": 1234,'
             '"${SshnpArg.localPortArg.name}": 2345,'
             '"${SshnpArg.identityFileArg.name}": ".ssh/id_ed25519",'
             '"${SshnpArg.identityPassphraseArg.name}": "myPassphrase",'
@@ -297,7 +289,6 @@ void main() {
             '"${SshnpArg.tunnelUserNameArg.name}": "myTunnelUsername",'
             '"${SshnpArg.verboseArg.name}": true,'
             '"${SshnpArg.rootDomainArg.name}": "root.atsign.wtf",'
-            '"${SshnpArg.localSshdPortArg.name}": 4567,'
             '"${SshnpArg.remoteSshdPortArg.name}": 2222,'
             '"${SshnpArg.idleTimeoutArg.name}": 120,'
             '"${SshnpArg.addForwardsToTunnelArg.name}": true,'
@@ -309,9 +300,8 @@ void main() {
         expect(params.profileName, equals('myProfile'));
         expect(params.clientAtSign, equals('@myClientAtSign'.toLowerCase()));
         expect(params.sshnpdAtSign, equals('@mySshnpdAtSign'.toLowerCase()));
-        expect(params.host, equals('@myHost'));
+        expect(params.srvdAtSign, equals('@mySrvdAtSign'));
         expect(params.device, equals('myDeviceName'));
-        expect(params.port, equals(1234));
         expect(params.localPort, equals(2345));
         expect(params.identityFile, equals('.ssh/id_ed25519'));
         expect(params.identityPassphrase, equals('myPassphrase'));
@@ -322,7 +312,6 @@ void main() {
         expect(params.tunnelUsername, equals('myTunnelUsername'));
         expect(params.verbose, equals(true));
         expect(params.rootDomain, equals('root.atsign.wtf'));
-        expect(params.localSshdPort, equals(4567));
         expect(params.remoteSshdPort, equals(2222));
         expect(params.idleTimeout, equals(120));
         expect(params.addForwardsToTunnel, equals(true));
@@ -333,20 +322,19 @@ void main() {
         final partial = SshnpPartialParams(
           clientAtSign: '@myClientAtSign',
           sshnpdAtSign: '@mySshnpdAtSign',
-          host: '@myHost',
+          srvdAtSign: '@mySrvdAtSign',
         );
         final params = SshnpParams.fromPartial(partial);
         expect(params.clientAtSign, equals('@myClientAtSign'));
         expect(params.sshnpdAtSign, equals('@mySshnpdAtSign'));
-        expect(params.host, equals('@myHost'));
+        expect(params.srvdAtSign, equals('@mySrvdAtSign'));
       });
       test('SshnpParams.fromConfigLines() test', () {
         final configLines = [
           '${SshnpArg.fromArg.bashName} = @myClientAtSign',
           '${SshnpArg.toArg.bashName} = @mySshnpdAtSign',
-          '${SshnpArg.hostArg.bashName} = @myHost',
+          '${SshnpArg.srvdArg.bashName} = @mySrvdAtSign',
           '${SshnpArg.deviceArg.bashName} = myDeviceName',
-          '${SshnpArg.portArg.bashName} = 1234',
           '${SshnpArg.localPortArg.bashName} = 2345',
           '${SshnpArg.identityFileArg.bashName} = .ssh/id_ed25519',
           '${SshnpArg.identityPassphraseArg.bashName} = myPassphrase',
@@ -354,32 +342,33 @@ void main() {
           '${SshnpArg.localSshOptionsArg.bashName} = -L 127.0.01:8080:127.0.0.1:80',
           '${SshnpArg.remoteUserNameArg.bashName} = myUsername',
           '${SshnpArg.tunnelUserNameArg.bashName} = myTunnelUsername',
-          '${SshnpArg.verboseArg.bashName} = true',
           '${SshnpArg.rootDomainArg.bashName} = root.atsign.wtf',
-          '${SshnpArg.localSshdPortArg.bashName} = 4567',
           '${SshnpArg.remoteSshdPortArg.bashName} = 2222',
           '${SshnpArg.idleTimeoutArg.bashName} = 120',
           '${SshnpArg.addForwardsToTunnelArg.bashName} = true',
           '${SshnpArg.keyFileArg.bashName} = ~/.atsign/@myAtsign_keys.atKeys',
           '${SshnpArg.sshAlgorithmArg.bashName} = ${SupportedSshAlgorithm.rsa.toString()}',
+          '${SshnpArg.authenticateClientToRvdArg.bashName} = false',
+          '${SshnpArg.authenticateDeviceToRvdArg.bashName} = false',
+          '${SshnpArg.encryptRvdTrafficArg.bashName} = false',
         ];
         final params = SshnpParams.fromConfigLines('myProfile', configLines);
         expect(params.profileName, equals('myProfile'));
         expect(params.clientAtSign, equals('@myClientAtSign'.toLowerCase()));
         expect(params.sshnpdAtSign, equals('@mySshnpdAtSign'.toLowerCase()));
-        expect(params.host, equals('@myHost'));
+        expect(params.srvdAtSign, equals('@mySrvdAtSign'));
         expect(params.device, equals('myDeviceName'));
-        expect(params.port, equals(1234));
         expect(params.localPort, equals(2345));
         expect(params.sendSshPublicKey, equals(true));
         expect(
             params.localSshOptions, equals(['-L 127.0.01:8080:127.0.0.1:80']));
         expect(params.remoteUsername, equals('myUsername'));
         expect(params.tunnelUsername, equals('myTunnelUsername'));
-        expect(params.verbose, equals(true));
         expect(params.rootDomain, equals('root.atsign.wtf'));
-        expect(params.localSshdPort, equals(4567));
         expect(params.remoteSshdPort, equals(2222));
+        expect(params.authenticateClientToRvd, equals(false));
+        expect(params.authenticateDeviceToRvd, equals(false));
+        expect(params.encryptRvdTraffic, equals(false));
       });
     }); // group('SshnpParams factories')
     group('SshnpParams functions', () {
@@ -387,9 +376,8 @@ void main() {
         final params = SshnpParams(
           clientAtSign: '@myClientAtSign',
           sshnpdAtSign: '@mySshnpdAtSign',
-          host: '@myHost',
+          srvdAtSign: '@mySrvdAtSign',
           device: 'myDeviceName',
-          port: 1234,
           localPort: 2345,
           identityFile: '.ssh/id_ed25519',
           identityPassphrase: 'myPassphrase',
@@ -397,13 +385,14 @@ void main() {
           localSshOptions: ['-L 127.0.01:8080:127.0.0.1:80'],
           remoteUsername: 'myUsername',
           tunnelUsername: 'myTunnelUsername',
-          verbose: true,
           rootDomain: 'root.atsign.wtf',
-          localSshdPort: 4567,
           remoteSshdPort: 2222,
           idleTimeout: 120,
           addForwardsToTunnel: true,
           atKeysFilePath: '~/.atsign/@myAtsign_keys.atKeys',
+          authenticateClientToRvd: false,
+          authenticateDeviceToRvd: false,
+          encryptRvdTraffic: false,
         );
         final configLines = params.toConfigLines();
         // Since exact formatting is in question,
@@ -416,7 +405,7 @@ void main() {
             parsedParams.clientAtSign, equals('@myClientAtSign'.toLowerCase()));
         expect(
             parsedParams.sshnpdAtSign, equals('@mySshnpdAtSign'.toLowerCase()));
-        expect(parsedParams.host, equals('@myHost'));
+        expect(parsedParams.srvdAtSign, equals('@mySrvdAtSign'));
         expect(parsedParams.device, equals('myDeviceName'));
         expect(parsedParams.localPort, equals(2345));
         expect(parsedParams.sendSshPublicKey, equals(true));
@@ -424,18 +413,18 @@ void main() {
             equals(['-L 127.0.01:8080:127.0.0.1:80']));
         expect(parsedParams.remoteUsername, equals('myUsername'));
         expect(parsedParams.tunnelUsername, equals('myTunnelUsername'));
-        expect(parsedParams.verbose, equals(true));
         expect(parsedParams.rootDomain, equals('root.atsign.wtf'));
-        expect(parsedParams.localSshdPort, equals(4567));
         expect(parsedParams.remoteSshdPort, equals(2222));
+        expect(parsedParams.authenticateClientToRvd, false);
+        expect(parsedParams.authenticateDeviceToRvd, false);
+        expect(parsedParams.encryptRvdTraffic, false);
       });
       test('SshnpParams.toArgMap', () {
         final params = SshnpParams(
           clientAtSign: '@myClientAtSign',
           sshnpdAtSign: '@mySshnpdAtSign',
-          host: '@myHost',
+          srvdAtSign: '@mySrvdAtSign',
           device: 'myDeviceName',
-          port: 1234,
           localPort: 2345,
           identityFile: '.ssh/id_ed25519',
           identityPassphrase: 'myPassphrase',
@@ -445,7 +434,6 @@ void main() {
           tunnelUsername: 'myTunnelUsername',
           verbose: true,
           rootDomain: 'root.atsign.wtf',
-          localSshdPort: 4567,
           remoteSshdPort: 2222,
           idleTimeout: 120,
           addForwardsToTunnel: true,
@@ -454,9 +442,8 @@ void main() {
         final argMap = params.toArgMap();
         expect(argMap[SshnpArg.fromArg.name], equals('@myClientAtSign'));
         expect(argMap[SshnpArg.toArg.name], equals('@mySshnpdAtSign'));
-        expect(argMap[SshnpArg.hostArg.name], equals('@myHost'));
+        expect(argMap[SshnpArg.srvdArg.name], equals('@mySrvdAtSign'));
         expect(argMap[SshnpArg.deviceArg.name], equals('myDeviceName'));
-        expect(argMap[SshnpArg.portArg.name], equals(1234));
         expect(argMap[SshnpArg.localPortArg.name], equals(2345));
         expect(
             argMap[SshnpArg.identityFileArg.name], equals('.ssh/id_ed25519'));
@@ -470,7 +457,6 @@ void main() {
             equals('myTunnelUsername'));
         expect(argMap[SshnpArg.verboseArg.name], equals(true));
         expect(argMap[SshnpArg.rootDomainArg.name], equals('root.atsign.wtf'));
-        expect(argMap[SshnpArg.localSshdPortArg.name], equals(4567));
         expect(argMap[SshnpArg.remoteSshdPortArg.name], equals(2222));
         expect(argMap[SshnpArg.idleTimeoutArg.name], equals(120));
         expect(argMap[SshnpArg.addForwardsToTunnelArg.name], equals(true));
@@ -481,9 +467,8 @@ void main() {
         final params = SshnpParams(
           clientAtSign: '@myClientAtSign',
           sshnpdAtSign: '@mySshnpdAtSign',
-          host: '@myHost',
+          srvdAtSign: '@mySrvdAtSign',
           device: 'myDeviceName',
-          port: 1234,
           localPort: 2345,
           identityFile: '.ssh/id_ed25519',
           identityPassphrase: 'myPassphrase',
@@ -493,7 +478,6 @@ void main() {
           tunnelUsername: 'myTunnelUsername',
           verbose: true,
           rootDomain: 'root.atsign.wtf',
-          localSshdPort: 4567,
           remoteSshdPort: 2222,
           idleTimeout: 120,
           addForwardsToTunnel: true,
@@ -505,9 +489,8 @@ void main() {
             parsedParams.clientAtSign, equals('@myClientAtSign'.toLowerCase()));
         expect(
             parsedParams.sshnpdAtSign, equals('@mySshnpdAtSign'.toLowerCase()));
-        expect(parsedParams.host, equals('@myHost'));
+        expect(parsedParams.srvdAtSign, equals('@mySrvdAtSign'));
         expect(parsedParams.device, equals('myDeviceName'));
-        expect(parsedParams.port, equals(1234));
         expect(parsedParams.localPort, equals(2345));
         expect(parsedParams.identityFile, equals('.ssh/id_ed25519'));
         expect(parsedParams.identityPassphrase, equals('myPassphrase'));
@@ -518,7 +501,6 @@ void main() {
         expect(parsedParams.tunnelUsername, equals('myTunnelUsername'));
         expect(parsedParams.verbose, equals(true));
         expect(parsedParams.rootDomain, equals('root.atsign.wtf'));
-        expect(parsedParams.localSshdPort, equals(4567));
         expect(parsedParams.remoteSshdPort, equals(2222));
         expect(parsedParams.idleTimeout, equals(120));
         expect(parsedParams.addForwardsToTunnel, equals(true));
@@ -534,9 +516,8 @@ void main() {
       expect(partialParams, isNotNull);
       expect(partialParams.clientAtSign, isA<String?>());
       expect(partialParams.sshnpdAtSign, isA<String?>());
-      expect(partialParams.host, isA<String?>());
+      expect(partialParams.srvdAtSign, isA<String?>());
       expect(partialParams.device, isA<String?>());
-      expect(partialParams.port, isA<int?>());
       expect(partialParams.localPort, isA<int?>());
       expect(partialParams.identityFile, isA<String?>());
       expect(partialParams.identityPassphrase, isA<String?>());
@@ -546,7 +527,6 @@ void main() {
       expect(partialParams.tunnelUsername, isA<String?>());
       expect(partialParams.verbose, isA<bool?>());
       expect(partialParams.rootDomain, isA<String?>());
-      expect(partialParams.localSshdPort, isA<int?>());
       expect(partialParams.remoteSshdPort, isA<int?>());
       expect(partialParams.idleTimeout, isA<int?>());
       expect(partialParams.addForwardsToTunnel, isA<bool?>());
@@ -566,16 +546,12 @@ void main() {
         expect(params.sshnpdAtSign, equals('@mySshnpdAtSign'));
       });
       test('SshnpPartialParams.host test', () {
-        final params = SshnpPartialParams(host: '@myHost');
-        expect(params.host, equals('@myHost'));
+        final params = SshnpPartialParams(srvdAtSign: '@mySrvdAtSign');
+        expect(params.srvdAtSign, equals('@mySrvdAtSign'));
       });
       test('SshnpPartialParams.device test', () {
         final params = SshnpPartialParams(device: 'myDeviceName');
         expect(params.device, equals('myDeviceName'));
-      });
-      test('SshnpPartialParams.port test', () {
-        final params = SshnpPartialParams(port: 1234);
-        expect(params.port, equals(1234));
       });
       test('SshnpPartialParams.localPort test', () {
         final params = SshnpPartialParams(localPort: 2345);
@@ -615,10 +591,6 @@ void main() {
         final params = SshnpPartialParams(rootDomain: 'root.atsign.wtf');
         expect(params.rootDomain, equals('root.atsign.wtf'));
       });
-      test('SshnpPartialParams.localSshdPort test', () {
-        final params = SshnpPartialParams(localSshdPort: 4567);
-        expect(params.localSshdPort, equals(4567));
-      });
       test('SshnpPartialParams.remoteSshdPort test', () {
         final params = SshnpPartialParams(remoteSshdPort: 2222);
         expect(params.remoteSshdPort, equals(2222));
@@ -657,9 +629,8 @@ void main() {
         expect(params.profileName, isNull);
         expect(params.clientAtSign, isNull);
         expect(params.sshnpdAtSign, isNull);
-        expect(params.host, isNull);
+        expect(params.srvdAtSign, isNull);
         expect(params.device, isNull);
-        expect(params.port, isNull);
         expect(params.localPort, isNull);
         expect(params.identityFile, isNull);
         expect(params.identityPassphrase, isNull);
@@ -669,7 +640,6 @@ void main() {
         expect(params.remoteUsername, isNull);
         expect(params.tunnelUsername, isNull);
         expect(params.rootDomain, isNull);
-        expect(params.localSshdPort, isNull);
         expect(params.remoteSshdPort, isNull);
         expect(params.idleTimeout, isNull);
         expect(params.addForwardsToTunnel, isNull);
@@ -683,9 +653,8 @@ void main() {
           SshnpPartialParams(
             clientAtSign: '@myClientAtSign',
             sshnpdAtSign: '@mySshnpdAtSign',
-            host: '@myHost',
+            srvdAtSign: '@mySrvdAtSign',
             device: 'myDeviceName',
-            port: 1234,
             localPort: 2345,
             identityFile: '.ssh/id_ed25519',
             identityPassphrase: 'myPassphrase',
@@ -695,7 +664,6 @@ void main() {
             tunnelUsername: 'myTunnelUsername',
             verbose: true,
             rootDomain: 'root.atsign.wtf',
-            localSshdPort: 4567,
             remoteSshdPort: 2222,
             idleTimeout: 120,
             addForwardsToTunnel: true,
@@ -705,9 +673,8 @@ void main() {
         );
         expect(params.clientAtSign, equals('@myClientAtSign'));
         expect(params.sshnpdAtSign, equals('@mySshnpdAtSign'));
-        expect(params.host, equals('@myHost'));
+        expect(params.srvdAtSign, equals('@mySrvdAtSign'));
         expect(params.device, equals('myDeviceName'));
-        expect(params.port, equals(1234));
         expect(params.localPort, equals(2345));
         expect(params.identityFile, equals('.ssh/id_ed25519'));
         expect(params.identityPassphrase, equals('myPassphrase'));
@@ -718,7 +685,6 @@ void main() {
         expect(params.tunnelUsername, equals('myTunnelUsername'));
         expect(params.verbose, equals(true));
         expect(params.rootDomain, equals('root.atsign.wtf'));
-        expect(params.localSshdPort, equals(4567));
         expect(params.remoteSshdPort, equals(2222));
         expect(params.idleTimeout, equals(120));
         expect(params.addForwardsToTunnel, equals(true));
@@ -731,9 +697,8 @@ void main() {
           SshnpPartialParams(
             clientAtSign: '@myClientAtSign',
             sshnpdAtSign: '@mySshnpdAtSign',
-            host: '@myHost',
+            srvdAtSign: '@mySrvdAtSign',
             device: 'myDeviceName',
-            port: 1234,
             localPort: 2345,
             identityFile: '.ssh/id_ed25519',
             identityPassphrase: 'myPassphrase',
@@ -743,7 +708,6 @@ void main() {
             tunnelUsername: 'myTunnelUsername',
             verbose: true,
             rootDomain: 'root.atsign.wtf',
-            localSshdPort: 4567,
             remoteSshdPort: 2222,
             idleTimeout: 120,
             addForwardsToTunnel: true,
@@ -754,9 +718,8 @@ void main() {
         );
         expect(params.clientAtSign, equals('@myClientAtSign'));
         expect(params.sshnpdAtSign, equals('@mySshnpdAtSign'));
-        expect(params.host, equals('@myHost'));
+        expect(params.srvdAtSign, equals('@mySrvdAtSign'));
         expect(params.device, equals('myDeviceName'));
-        expect(params.port, equals(1234));
         expect(params.localPort, equals(2345));
         expect(params.identityFile, equals('.ssh/id_ed25519'));
         expect(params.identityPassphrase, equals('myPassphrase'));
@@ -767,7 +730,6 @@ void main() {
         expect(params.tunnelUsername, equals('myTunnelUsername'));
         expect(params.verbose, equals(true));
         expect(params.rootDomain, equals('root.atsign.wtf'));
-        expect(params.localSshdPort, equals(4567));
         expect(params.remoteSshdPort, equals(2222));
         expect(params.idleTimeout, equals(120));
         expect(params.addForwardsToTunnel, equals(true));
@@ -780,9 +742,8 @@ void main() {
         final params = SshnpParams(
           clientAtSign: '@myClientAtSign',
           sshnpdAtSign: '@mySshnpdAtSign',
-          host: '@myHost',
+          srvdAtSign: '@mySrvdAtSign',
           device: 'myDeviceName',
-          port: 1234,
           localPort: 2345,
           identityFile: '.ssh/id_ed25519',
           identityPassphrase: 'myPassphrase',
@@ -790,13 +751,14 @@ void main() {
           localSshOptions: ['-L 127.0.01:8080:127.0.0.1:80'],
           remoteUsername: 'myUsername',
           tunnelUsername: 'myTunnelUsername',
-          verbose: true,
           rootDomain: 'root.atsign.wtf',
-          localSshdPort: 4567,
           remoteSshdPort: 2222,
           idleTimeout: 120,
           addForwardsToTunnel: true,
           atKeysFilePath: '~/.atsign/@myAtsign_keys.atKeys',
+          authenticateClientToRvd: false,
+          authenticateDeviceToRvd: false,
+          encryptRvdTraffic: false,
         );
         final configLines = params.toConfigLines();
         // Since exact formatting is in question,
@@ -809,28 +771,27 @@ void main() {
             parsedParams.clientAtSign, equals('@myClientAtSign'.toLowerCase()));
         expect(
             parsedParams.sshnpdAtSign, equals('@mySshnpdAtSign'.toLowerCase()));
-        expect(parsedParams.host, equals('@myHost'));
+        expect(parsedParams.srvdAtSign, equals('@mySrvdAtSign'));
         expect(parsedParams.device, equals('myDeviceName'));
-        expect(parsedParams.port, equals(1234));
         expect(parsedParams.localPort, equals(2345));
         expect(parsedParams.sendSshPublicKey, equals(true));
         expect(parsedParams.localSshOptions,
             equals(['-L 127.0.01:8080:127.0.0.1:80']));
         expect(parsedParams.remoteUsername, equals('myUsername'));
         expect(parsedParams.tunnelUsername, equals('myTunnelUsername'));
-        expect(parsedParams.verbose, equals(true));
         expect(parsedParams.rootDomain, equals('root.atsign.wtf'));
-        expect(parsedParams.localSshdPort, equals(4567));
         expect(parsedParams.remoteSshdPort, equals(2222));
+        expect(parsedParams.authenticateClientToRvd, false);
+        expect(parsedParams.authenticateDeviceToRvd, false);
+        expect(parsedParams.encryptRvdTraffic, false);
       });
       test('SshnpPartialParams.fromJson() test', () {
         String json = '{'
             '"${SshnpArg.profileNameArg.name}": "myProfile",'
             '"${SshnpArg.fromArg.name}": "@myClientAtSign",'
             '"${SshnpArg.toArg.name}": "@mySshnpdAtSign",'
-            '"${SshnpArg.hostArg.name}": "@myHost",'
+            '"${SshnpArg.srvdArg.name}": "@mySrvdAtSign",'
             '"${SshnpArg.deviceArg.name}": "myDeviceName",'
-            '"${SshnpArg.portArg.name}": 1234,'
             '"${SshnpArg.localPortArg.name}": 2345,'
             '"${SshnpArg.identityFileArg.name}": ".ssh/id_ed25519",'
             '"${SshnpArg.identityPassphraseArg.name}": "myPassphrase",'
@@ -840,7 +801,6 @@ void main() {
             '"${SshnpArg.tunnelUserNameArg.name}": "myTunnelUsername",'
             '"${SshnpArg.verboseArg.name}": true,'
             '"${SshnpArg.rootDomainArg.name}": "root.atsign.wtf",'
-            '"${SshnpArg.localSshdPortArg.name}": 4567,'
             '"${SshnpArg.remoteSshdPortArg.name}": 2222,'
             '"${SshnpArg.idleTimeoutArg.name}": 120,'
             '"${SshnpArg.addForwardsToTunnelArg.name}": true,'
@@ -852,9 +812,8 @@ void main() {
         expect(params.profileName, equals('myProfile'));
         expect(params.clientAtSign, equals('@myClientAtSign'.toLowerCase()));
         expect(params.sshnpdAtSign, equals('@mySshnpdAtSign'.toLowerCase()));
-        expect(params.host, equals('@myHost'));
+        expect(params.srvdAtSign, equals('@mySrvdAtSign'));
         expect(params.device, equals('myDeviceName'));
-        expect(params.port, equals(1234));
         expect(params.localPort, equals(2345));
         expect(params.identityFile, equals('.ssh/id_ed25519'));
         expect(params.identityPassphrase, equals('myPassphrase'));
@@ -865,7 +824,6 @@ void main() {
         expect(params.tunnelUsername, equals('myTunnelUsername'));
         expect(params.verbose, equals(true));
         expect(params.rootDomain, equals('root.atsign.wtf'));
-        expect(params.localSshdPort, equals(4567));
         expect(params.remoteSshdPort, equals(2222));
         expect(params.idleTimeout, equals(120));
         expect(params.addForwardsToTunnel, equals(true));
@@ -878,9 +836,8 @@ void main() {
           SshnpArg.profileNameArg.name: 'myProfile',
           SshnpArg.fromArg.name: '@myClientAtSign',
           SshnpArg.toArg.name: '@mySshnpdAtSign',
-          SshnpArg.hostArg.name: '@myHost',
+          SshnpArg.srvdArg.name: '@mySrvdAtSign',
           SshnpArg.deviceArg.name: 'myDeviceName',
-          SshnpArg.portArg.name: 1234,
           SshnpArg.localPortArg.name: 2345,
           SshnpArg.identityFileArg.name: '.ssh/id_ed25519',
           SshnpArg.identityPassphraseArg.name: 'myPassphrase',
@@ -890,7 +847,6 @@ void main() {
           SshnpArg.tunnelUserNameArg.name: 'myTunnelUsername',
           SshnpArg.verboseArg.name: true,
           SshnpArg.rootDomainArg.name: 'root.atsign.wtf',
-          SshnpArg.localSshdPortArg.name: 4567,
           SshnpArg.remoteSshdPortArg.name: 2222,
           SshnpArg.idleTimeoutArg.name: 120,
           SshnpArg.addForwardsToTunnelArg.name: true,
@@ -900,9 +856,8 @@ void main() {
         expect(params.profileName, equals('myProfile'));
         expect(params.clientAtSign, equals('@myClientAtSign'.toLowerCase()));
         expect(params.sshnpdAtSign, equals('@mySshnpdAtSign'.toLowerCase()));
-        expect(params.host, equals('@myHost'));
+        expect(params.srvdAtSign, equals('@mySrvdAtSign'));
         expect(params.device, equals('myDeviceName'));
-        expect(params.port, equals(1234));
         expect(params.localPort, equals(2345));
         expect(params.identityFile, equals('.ssh/id_ed25519'));
         expect(params.identityPassphrase, equals('myPassphrase'));
@@ -913,7 +868,6 @@ void main() {
         expect(params.tunnelUsername, equals('myTunnelUsername'));
         expect(params.verbose, equals(true));
         expect(params.rootDomain, equals('root.atsign.wtf'));
-        expect(params.localSshdPort, equals(4567));
         expect(params.remoteSshdPort, equals(2222));
         expect(params.idleTimeout, equals(120));
         expect(params.addForwardsToTunnel, equals(true));
@@ -929,8 +883,8 @@ void main() {
           '@myClientAtSign',
           '--${SshnpArg.toArg.name}',
           '@mySshnpdAtSign',
-          '--${SshnpArg.hostArg.name}',
-          '@myHost',
+          '--${SshnpArg.srvdArg.name}',
+          '@mySrvdAtSign',
           '--${SshnpArg.deviceArg.name}',
           'myDeviceName',
           '--${SshnpArg.localPortArg.name}',
@@ -966,7 +920,7 @@ void main() {
         expect(params.profileName, equals('myProfile'));
         expect(params.clientAtSign, equals('@myClientAtSign'.toLowerCase()));
         expect(params.sshnpdAtSign, equals('@mySshnpdAtSign'.toLowerCase()));
-        expect(params.host, equals('@myHost'));
+        expect(params.srvdAtSign, equals('@mySrvdAtSign'));
         expect(params.device, equals('myDeviceName'));
         expect(params.localPort, equals(2345));
         expect(params.identityFile, equals('.ssh/id_ed25519'));

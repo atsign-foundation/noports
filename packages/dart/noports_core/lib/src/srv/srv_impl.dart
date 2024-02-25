@@ -17,13 +17,16 @@ class SrvImplExec implements Srv<Process> {
   static final AtSignLogger logger = AtSignLogger('SrvImplExec');
 
   @override
-  final String host;
+  final String streamingHost;
 
   @override
   final int streamingPort;
 
   @override
   final int? localPort;
+
+  @override
+  final String? localHost;
 
   @override
   final bool? bindLocalPort;
@@ -37,17 +40,19 @@ class SrvImplExec implements Srv<Process> {
   @override
   final String? sessionIVString;
 
-  @visibleForTesting
-  static const completionString = 'rv started successfully';
+  @override
+  final bool multi;
 
   SrvImplExec(
-    this.host,
+    this.streamingHost,
     this.streamingPort, {
     this.localPort,
+    this.localHost,
     this.bindLocalPort = false,
     this.rvdAuthString,
     this.sessionAESKeyString,
     this.sessionIVString,
+    required this.multi,
   }) {
     if (localPort == null) {
       throw ArgumentError('localPort must be non-null');
@@ -70,12 +75,17 @@ class SrvImplExec implements Srv<Process> {
     }
     var rvArgs = [
       '-h',
-      host,
+      streamingHost,
       '-p',
       streamingPort.toString(),
       '--local-port',
       localPort.toString(),
+      '--local-host',
+      localHost ?? 'localhost',
     ];
+    if (multi) {
+      rvArgs.add('--multi');
+    }
     if (bindLocalPort ?? false) {
       rvArgs.add('--bind-local-port');
     }
@@ -101,15 +111,28 @@ class SrvImplExec implements Srv<Process> {
     );
     Completer rvPortBound = Completer();
     p.stdout.listen((List<int> l) {
-      var s = utf8.decode(l).trim();
-      logger.info('rv stdout | $s');
+      var allLines = utf8.decode(l).trim();
+      for (String s in allLines.split('\n')) {
+        logger.info('rv stdout | $s');
+        if (s.contains(Srv.startedString) && !rvPortBound.isCompleted) {
+          rvPortBound.complete();
+        } else if (s.contains(Srv.completedWithExceptionString)) {
+          if (!rvPortBound.isCompleted) {
+            rvPortBound.completeError(s);
+          }
+        }
+      }
     }, onError: (e) {});
     p.stderr.listen((List<int> l) {
       var allLines = utf8.decode(l).trim();
       for (String s in allLines.split('\n')) {
         logger.info('rv stderr | $s');
-        if (s.endsWith(completionString) && !rvPortBound.isCompleted) {
+        if (s.contains(Srv.startedString) && !rvPortBound.isCompleted) {
           rvPortBound.complete();
+        } else if (s.contains(Srv.completedWithExceptionString)) {
+          if (!rvPortBound.isCompleted) {
+            rvPortBound.completeError(s);
+          }
         }
       }
     }, onError: (e) {
@@ -129,7 +152,7 @@ class SrvImplInline implements Srv<SSHSocket> {
   final AtSignLogger logger = AtSignLogger('SrvImplInline');
 
   @override
-  final String host;
+  final String streamingHost;
 
   @override
   final int streamingPort;
@@ -141,6 +164,9 @@ class SrvImplInline implements Srv<SSHSocket> {
   final bool bindLocalPort = false;
 
   @override
+  final String? localHost = null;
+
+  @override
   final String? rvdAuthString;
 
   @override
@@ -149,12 +175,16 @@ class SrvImplInline implements Srv<SSHSocket> {
   @override
   final String? sessionIVString;
 
+  @override
+  final bool multi;
+
   SrvImplInline(
-    this.host,
+    this.streamingHost,
     this.streamingPort, {
     this.rvdAuthString,
     this.sessionAESKeyString,
     this.sessionIVString,
+    this.multi = false,
   }) {
     if ((sessionAESKeyString == null && sessionIVString != null) ||
         (sessionAESKeyString != null && sessionIVString == null)) {
@@ -194,8 +224,9 @@ class SrvImplInline implements Srv<SSHSocket> {
     }
 
     try {
-      logger.info('Creating socket connection to rvd at $host:$streamingPort');
-      Socket socket = await Socket.connect(host, streamingPort);
+      logger.info(
+          'Creating socket connection to rvd at $streamingHost:$streamingPort');
+      Socket socket = await Socket.connect(streamingHost, streamingPort);
 
       // Authenticate if we have an rvdAuthString
       if (rvdAuthString != null) {
@@ -269,13 +300,16 @@ class WrappedSSHSocket implements SSHSocket {
 @visibleForTesting
 class SrvImplDart implements Srv<SocketConnector> {
   @override
-  final String host;
+  final String streamingHost;
 
   @override
   final int streamingPort;
 
   @override
   final int localPort;
+
+  @override
+  final String? localHost;
 
   @override
   final bool bindLocalPort;
@@ -289,14 +323,24 @@ class SrvImplDart implements Srv<SocketConnector> {
   @override
   final String? sessionIVString;
 
+  @override
+  final bool multi;
+
+  final bool detached;
+
+  final AtSignLogger logger = AtSignLogger(' SrvImplDart ');
+
   SrvImplDart(
-    this.host,
+    this.streamingHost,
     this.streamingPort, {
     required this.localPort,
     required this.bindLocalPort,
+    this.localHost,
     this.rvdAuthString,
     this.sessionAESKeyString,
     this.sessionIVString,
+    this.multi = false,
+    required this.detached,
   }) {
     if ((sessionAESKeyString == null && sessionIVString != null) ||
         (sessionAESKeyString != null && sessionIVString == null)) {
@@ -336,34 +380,37 @@ class SrvImplDart implements Srv<SocketConnector> {
     }
 
     try {
-      var hosts = await InternetAddress.lookup(host);
+      var hosts = await InternetAddress.lookup(streamingHost);
 
-      late final SocketConnector socketConnector;
-
+      late SocketConnector sc;
       if (bindLocalPort) {
-        socketConnector = await SocketConnector.serverToSocket(
-            portA: localPort,
-            addressB: hosts[0],
-            portB: streamingPort,
-            verbose: false,
-            transformAtoB: encrypter,
-            transformBtoA: decrypter);
-        if (rvdAuthString != null) {
-          stderr.writeln('authenticating socketB');
-          socketConnector.pendingB.first.socket.writeln(rvdAuthString);
+        if (multi) {
+          sc = await _runClientSideMulti(
+            hosts: hosts,
+            encrypter: encrypter,
+            decrypter: decrypter,
+          );
+        } else {
+          sc = await _runClientSideSingle(
+            hosts: hosts,
+            encrypter: encrypter,
+            decrypter: decrypter,
+          );
         }
       } else {
-        socketConnector = await SocketConnector.socketToSocket(
-            addressA: InternetAddress.loopbackIPv4,
-            portA: localPort,
-            addressB: hosts[0],
-            portB: streamingPort,
-            verbose: false,
-            transformAtoB: encrypter,
-            transformBtoA: decrypter);
-        if (rvdAuthString != null) {
-          stderr.writeln('authenticating socketB');
-          socketConnector.connections.first.sideB.socket.writeln(rvdAuthString);
+        // daemon side
+        if (multi) {
+          sc = await _runDaemonSideMulti(
+            hosts: hosts,
+            encrypter: encrypter,
+            decrypter: decrypter,
+          );
+        } else {
+          sc = await _runDaemonSideSingle(
+            hosts: hosts,
+            encrypter: encrypter,
+            decrypter: decrypter,
+          );
         }
       }
 
@@ -373,12 +420,187 @@ class SrvImplDart implements Srv<SocketConnector> {
       // sockets, and on the client side, established one outbound socket and
       // bound to a port. Looking for specific output when the rv is ready to
       // do its job seems to be the only way to do this.
-      stderr.writeln(SrvImplExec.completionString);
+      if (detached) {
+        stderr.writeln(Srv.startedString);
+      }
 
-      return socketConnector;
+      return sc;
     } catch (e) {
       AtSignLogger('srv').severe(e.toString());
       rethrow;
     }
+  }
+
+  Future<SocketConnector> _runClientSideSingle({
+    required List<InternetAddress> hosts,
+    required DataTransformer? encrypter,
+    required DataTransformer? decrypter,
+  }) async {
+    // client side
+    SocketConnector sc = await SocketConnector.serverToSocket(
+      portA: localPort,
+      addressB: hosts[0],
+      portB: streamingPort,
+      verbose: false,
+      transformAtoB: encrypter,
+      transformBtoA: decrypter,
+      multi: multi,
+      onConnect: (Socket sideA, Socket sideB) async {
+        // Authenticate the sideB socket (to the rvd)
+        if (rvdAuthString != null) {
+          logger.info(
+              '_runClientSideSingle authenticating new connection to rvd');
+          sideB.writeln(rvdAuthString);
+        }
+      },
+    );
+
+    return sc;
+  }
+
+  Future<SocketConnector> _runClientSideMulti({
+    required List<InternetAddress> hosts,
+    required DataTransformer? encrypter,
+    required DataTransformer? decrypter,
+  }) async {
+    // client side
+    SocketConnector? sc;
+
+    Socket controlSocket = await Socket.connect(streamingHost, streamingPort,
+        timeout: Duration(seconds: 1));
+    // Authenticate the control socket
+    if (rvdAuthString != null) {
+      logger.info(
+          '_runClientSideMulti authenticating control socket connection to rvd');
+      controlSocket.writeln(rvdAuthString);
+    }
+    controlSocket.listen((event) {
+      String response = String.fromCharCodes(event).trim();
+      logger.info(
+          '_runClientSideMulti Received control socket response: [$response]');
+    }, onError: (e) {
+      logger.severe('_runClientSideMulti controlSocket error: $e');
+      sc?.close();
+    }, onDone: () {
+      logger.info('_runClientSideMulti controlSocket done');
+      sc?.close();
+    });
+
+    sc = await SocketConnector.serverToSocket(
+      portA: localPort,
+      addressB: hosts[0],
+      portB: streamingPort,
+      verbose: false,
+      transformAtoB: encrypter,
+      transformBtoA: decrypter,
+      multi: multi,
+      onConnect: (Socket sideA, Socket sideB) {
+        // For some bizarro reason, we can't write to stderr in this callback
+        // when the Srv has been started via SrvImplExec. Thus it is very
+        // important that the srv binary never have a logger root level of
+        // anything below 'warning'
+        logger.info('_runClientSideMulti Sending connect request');
+        controlSocket.writeln('connect');
+        // Authenticate the sideB socket (to the rvd)
+        if (rvdAuthString != null) {
+          logger
+              .info('_runClientSideMulti authenticating new connection to rvd');
+          sideB.writeln(rvdAuthString);
+        }
+      },
+    );
+
+    // upon socketConnector.done, destroy the control socket, and complete
+    unawaited(sc.done.whenComplete(() {
+      logger.info('_runClientSideMulti sc.done');
+      controlSocket.destroy();
+    }));
+
+    return sc;
+  }
+
+  Future<SocketConnector> _runDaemonSideMulti({
+    required List<InternetAddress> hosts,
+    required DataTransformer? encrypter,
+    required DataTransformer? decrypter,
+  }) async {
+    SocketConnector sc = SocketConnector();
+
+    // - create control socket and listen for requests
+    // - for each request, create a socketToSocket connection
+    Socket controlSocket = await Socket.connect(streamingHost, streamingPort,
+        timeout: Duration(seconds: 1));
+    if (rvdAuthString != null) {
+      logger.info('authenticating control socket connection to rvd');
+      controlSocket.writeln(rvdAuthString);
+    }
+    controlSocket.listen((event) async {
+      if (event.isEmpty) {
+        logger.info('Empty control message (Uint8List) received');
+        return;
+      }
+      String request = String.fromCharCodes(event).trim();
+      if (request.isEmpty) {
+        logger.info('Empty control message (String) received');
+        return;
+      }
+      switch (request) {
+        case 'connect':
+          logger.info('Control socket received request: [$request];'
+              ' creating new socketToSocket connection');
+          await SocketConnector.socketToSocket(
+              connector: sc,
+              addressA:
+                  (await InternetAddress.lookup(localHost ?? 'localhost'))[0],
+              portA: localPort,
+              addressB: hosts[0],
+              portB: streamingPort,
+              verbose: false,
+              transformAtoB: encrypter,
+              transformBtoA: decrypter);
+          if (rvdAuthString != null) {
+            stderr.writeln('authenticating new socket connection to rvd');
+            sc.connections.last.sideB.socket.writeln(rvdAuthString);
+          }
+
+          break;
+        default:
+          logger.severe('Unknown request to control socket: [$request]');
+      }
+    }, onError: (e) {
+      logger.severe('controlSocket error: $e');
+      sc.close();
+    }, onDone: () {
+      logger.info('controlSocket done');
+      sc.close();
+    });
+
+    // upon socketConnector.done, destroy the control socket, and complete
+    unawaited(sc.done.whenComplete(() {
+      controlSocket.destroy();
+    }));
+
+    return sc;
+  }
+
+  Future<SocketConnector> _runDaemonSideSingle({
+    required List<InternetAddress> hosts,
+    required DataTransformer? encrypter,
+    required DataTransformer? decrypter,
+  }) async {
+    SocketConnector socketConnector = await SocketConnector.socketToSocket(
+        addressA: (await InternetAddress.lookup(localHost ?? 'localhost'))[0],
+        portA: localPort,
+        addressB: hosts[0],
+        portB: streamingPort,
+        verbose: false,
+        transformAtoB: encrypter,
+        transformBtoA: decrypter);
+    if (rvdAuthString != null) {
+      stderr.writeln('authenticating socketB');
+      socketConnector.connections.first.sideB.socket.writeln(rvdAuthString);
+    }
+
+    return socketConnector;
   }
 }

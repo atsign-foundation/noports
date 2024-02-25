@@ -18,6 +18,8 @@ jobs:
             dockerfile: ./packages/dart/sshnoports/tools/Dockerfile
           - name: activate_sshnpd
             dockerfile: ./packages/dart/sshnoports/tools/Dockerfile.activate
+          - name: sshnpd-slim
+            dockerfile: ./packages/dart/sshnoports/tools/Dockerfile.sshnpd-slim
     runs-on: ubuntu-latest
     steps:
       - name: Checkout

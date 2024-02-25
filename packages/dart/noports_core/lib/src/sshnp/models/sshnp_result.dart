@@ -2,6 +2,8 @@ import 'package:meta/meta.dart';
 import 'package:noports_core/src/common/io_types.dart';
 import 'package:socket_connector/socket_connector.dart';
 
+import '../../common/noports_exception.dart';
+
 abstract class SshnpResult {}
 
 class SshnpSuccess implements SshnpResult {}
@@ -49,31 +51,8 @@ const optionsWithPrivateKey = [
   '-o IdentitiesOnly=yes'
 ];
 
-class SshnpError implements SshnpFailure, Exception {
-  final Object message;
-  final Object? error;
-  final StackTrace? stackTrace;
-
-  SshnpError(this.message, {this.error, this.stackTrace});
-
-  @override
-  String toString() {
-    return message.toString();
-  }
-
-  String toVerboseString() {
-    final sb = StringBuffer();
-    sb.write(message);
-    if (error != null) {
-      sb.write('\n');
-      sb.write('Error: $error');
-    }
-    if (stackTrace != null) {
-      sb.write('\n');
-      sb.write('Stack Trace: $stackTrace');
-    }
-    return sb.toString();
-  }
+class SshnpError extends SshnpException implements SshnpFailure {
+  SshnpError(super.message, {super.error, super.stackTrace});
 }
 
 class SshnpCommand<Bean> extends SshnpSuccess with SshnpConnectionBean<Bean> {

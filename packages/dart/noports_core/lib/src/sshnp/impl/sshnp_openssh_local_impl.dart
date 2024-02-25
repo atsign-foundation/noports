@@ -67,8 +67,8 @@ class SshnpOpensshLocalImpl extends SshnpCore
           SshnpSessionRequest(
             direct: true,
             sessionId: sessionId,
-            host: srvdChannel.host,
-            port: srvdChannel.daemonPort!,
+            host: srvdChannel.rvdHost,
+            port: srvdChannel.daemonPort,
             authenticateToRvd: params.authenticateDeviceToRvd,
             clientNonce: srvdChannel.clientNonce,
             rvdNonce: srvdChannel.rvdNonce,
@@ -103,10 +103,11 @@ class SshnpOpensshLocalImpl extends SshnpCore
     /// Start srv
     sendProgress('Creating connection to socket rendezvous');
     await srvdChannel.runSrv(
-      directSsh: true,
       localRvPort: localRvPort,
       sessionAESKeyString: sshnpdChannel.sessionAESKeyString,
       sessionIVString: sshnpdChannel.sessionIVString,
+      multi: false,
+      detached: true,
     );
 
     /// Load the ephemeral private key into a key pair
