@@ -82,6 +82,9 @@ flutter_launcher_icons:
   macos:
     generate: true
     image_path: "assets/images/app_logo.png"
+  windows:
+    generate: true
+    image_path: "assets/images/app_logo.png"
 
 msix_config:
   display_name: "SSH No Ports Desktop"
