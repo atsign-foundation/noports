@@ -8,10 +8,10 @@ environment:
 
 # issue_1232
 dependency_overrides:
-  xterm:
-    git:
-      url: https://github.com/box-apps/xterm.dart
-      ref: master
+  # xterm:
+  #   git:
+  #     url: https://github.com/box-apps/xterm.dart
+  #     ref: master
   # at_commons: ^4.0.0
   # at_client_mobile:
   #   git:
@@ -27,9 +27,9 @@ dependency_overrides:
 
 dependencies:
   at_app_flutter: ^5.0.1
-  at_backupkey_flutter: ^4.0.10
+  at_backupkey_flutter: ^4.0.13
   at_client_mobile: ^3.2.11
-  at_common_flutter: ^2.0.12
+  at_common_flutter: ^2.0.13
   at_contact: ^3.0.7
   at_contacts_flutter: ^4.0.5
   at_onboarding_flutter: ^6.1.4
@@ -59,7 +59,7 @@ dependencies:
   url_launcher: ^6.1.14
   uuid: ^3.0.7
   window_manager: ^0.3.8
-  xterm: ^3.4.1
+  xterm: ^3.5.0
 
 dev_dependencies:
   flutter_lints: ^3.0.1
