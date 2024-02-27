@@ -125,7 +125,7 @@ class _ProfileFormState extends ConsumerState<ProfileFormMobileView> {
                   CustomTextFormField(
                     width: double.infinity,
                     initialValue: oldConfig.host,
-                    labelText: strings.srvdAtsign,
+                    labelText: strings.host,
                     onSaved: (value) => newConfig = SshnpPartialParams.merge(
                       newConfig,
                       SshnpPartialParams(host: value),

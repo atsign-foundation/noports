@@ -5,11 +5,11 @@ import 'package:at_app_flutter/at_app_flutter.dart' show AtEnv;
 import 'package:at_utils/at_logger.dart' show AtSignLogger;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:sshnp_flutter/src/utility/platform_utility/platform_utililty.dart';
 import 'package:window_manager/window_manager.dart';
 
 import '../src/repository/authentication_repository.dart';
 import '../src/utility/sizes.dart';
+import 'src/utility/platform_utility/platform_utility.dart';
 
 final AtSignLogger _logger = AtSignLogger(AtEnv.appNamespace);
 
