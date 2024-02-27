@@ -28,7 +28,7 @@ class SshnpdParams {
   static final ArgParser parser = _createArgParser();
 
   SshnpdParams({
-    required this.device,
+    required String device,
     required this.username,
     required this.homeDirectory,
     required this.managerAtsigns,
@@ -44,7 +44,7 @@ class SshnpdParams {
     required this.sshAlgorithm,
     required this.storagePath,
     required this.permitOpen,
-  });
+  }) : device = device.toLowerCase();
 
   static Future<SshnpdParams> fromArgs(List<String> args) async {
     // Arg check

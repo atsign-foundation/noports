@@ -54,7 +54,7 @@ void main() {
             sshnpdAtSign: '',
             srvdAtSign: '',
             device: 'myDeviceName');
-        expect(params.device, equals('myDeviceName'));
+        expect(params.device, equals('myDeviceName'.toLowerCase()));
       });
       test('SshnpParams.localPort test', () {
         final params = SshnpParams(
@@ -230,7 +230,7 @@ void main() {
         expect(params.clientAtSign, equals('@myClientAtSign'));
         expect(params.sshnpdAtSign, equals('@mySshnpdAtSign'));
         expect(params.srvdAtSign, equals('@mySrvdAtSign'));
-        expect(params.device, equals('myDeviceName'));
+        expect(params.device, equals('myDeviceName'.toLowerCase()));
         expect(params.localPort, equals(2345));
         expect(params.identityFile, equals('.ssh/id_ed25519'));
         expect(params.identityPassphrase, equals('myPassphrase'));
@@ -301,7 +301,7 @@ void main() {
         expect(params.clientAtSign, equals('@myClientAtSign'.toLowerCase()));
         expect(params.sshnpdAtSign, equals('@mySshnpdAtSign'.toLowerCase()));
         expect(params.srvdAtSign, equals('@mySrvdAtSign'));
-        expect(params.device, equals('myDeviceName'));
+        expect(params.device, equals('myDeviceName'.toLowerCase()));
         expect(params.localPort, equals(2345));
         expect(params.identityFile, equals('.ssh/id_ed25519'));
         expect(params.identityPassphrase, equals('myPassphrase'));
@@ -357,7 +357,7 @@ void main() {
         expect(params.clientAtSign, equals('@myClientAtSign'.toLowerCase()));
         expect(params.sshnpdAtSign, equals('@mySshnpdAtSign'.toLowerCase()));
         expect(params.srvdAtSign, equals('@mySrvdAtSign'));
-        expect(params.device, equals('myDeviceName'));
+        expect(params.device, equals('myDeviceName'.toLowerCase()));
         expect(params.localPort, equals(2345));
         expect(params.sendSshPublicKey, equals(true));
         expect(
@@ -406,7 +406,7 @@ void main() {
         expect(
             parsedParams.sshnpdAtSign, equals('@mySshnpdAtSign'.toLowerCase()));
         expect(parsedParams.srvdAtSign, equals('@mySrvdAtSign'));
-        expect(parsedParams.device, equals('myDeviceName'));
+        expect(parsedParams.device, equals('myDeviceName'.toLowerCase()));
         expect(parsedParams.localPort, equals(2345));
         expect(parsedParams.sendSshPublicKey, equals(true));
         expect(parsedParams.localSshOptions,
@@ -443,7 +443,7 @@ void main() {
         expect(argMap[SshnpArg.fromArg.name], equals('@myClientAtSign'));
         expect(argMap[SshnpArg.toArg.name], equals('@mySshnpdAtSign'));
         expect(argMap[SshnpArg.srvdArg.name], equals('@mySrvdAtSign'));
-        expect(argMap[SshnpArg.deviceArg.name], equals('myDeviceName'));
+        expect(argMap[SshnpArg.deviceArg.name], equals('myDeviceName'.toLowerCase()));
         expect(argMap[SshnpArg.localPortArg.name], equals(2345));
         expect(
             argMap[SshnpArg.identityFileArg.name], equals('.ssh/id_ed25519'));
@@ -490,7 +490,7 @@ void main() {
         expect(
             parsedParams.sshnpdAtSign, equals('@mySshnpdAtSign'.toLowerCase()));
         expect(parsedParams.srvdAtSign, equals('@mySrvdAtSign'));
-        expect(parsedParams.device, equals('myDeviceName'));
+        expect(parsedParams.device, equals('myDeviceName'.toLowerCase()));
         expect(parsedParams.localPort, equals(2345));
         expect(parsedParams.identityFile, equals('.ssh/id_ed25519'));
         expect(parsedParams.identityPassphrase, equals('myPassphrase'));
@@ -772,7 +772,7 @@ void main() {
         expect(
             parsedParams.sshnpdAtSign, equals('@mySshnpdAtSign'.toLowerCase()));
         expect(parsedParams.srvdAtSign, equals('@mySrvdAtSign'));
-        expect(parsedParams.device, equals('myDeviceName'));
+        expect(parsedParams.device, equals('myDeviceName'.toLowerCase()));
         expect(parsedParams.localPort, equals(2345));
         expect(parsedParams.sendSshPublicKey, equals(true));
         expect(parsedParams.localSshOptions,
