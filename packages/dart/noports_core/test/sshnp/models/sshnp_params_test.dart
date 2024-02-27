@@ -443,7 +443,8 @@ void main() {
         expect(argMap[SshnpArg.fromArg.name], equals('@myClientAtSign'));
         expect(argMap[SshnpArg.toArg.name], equals('@mySshnpdAtSign'));
         expect(argMap[SshnpArg.srvdArg.name], equals('@mySrvdAtSign'));
-        expect(argMap[SshnpArg.deviceArg.name], equals('myDeviceName'.toLowerCase()));
+        expect(argMap[SshnpArg.deviceArg.name],
+            equals('myDeviceName'.toLowerCase()));
         expect(argMap[SshnpArg.localPortArg.name], equals(2345));
         expect(
             argMap[SshnpArg.identityFileArg.name], equals('.ssh/id_ed25519'));
