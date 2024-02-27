@@ -2,43 +2,177 @@ import 'dart:convert';
 
 import 'package:at_chops/at_chops.dart';
 import 'package:at_utils/at_utils.dart';
-import 'package:noports_core/src/common/types.dart';
 import 'package:noports_core/src/sshnp/models/config_file_repository.dart';
 import 'package:noports_core/src/sshnp/models/sshnp_arg.dart';
 import 'package:noports_core/src/common/default_args.dart';
 import 'package:noports_core/sshnp.dart';
 
-class SshnpParams {
+abstract interface class ClientParams {
+  bool get verbose;
+
+  String get device;
+
+  String get rootDomain;
+
+  String get clientAtSign;
+
+  String get sshnpdAtSign;
+
+  String get srvdAtSign;
+
+  bool get authenticateClientToRvd;
+
+  bool get authenticateDeviceToRvd;
+
+  bool get encryptRvdTraffic;
+
+  String? get atKeysFilePath;
+
+  /// An encryption keypair which should only ever reside in memory.
+  /// The public key is provided in requests to the daemon, and is
+  /// used by daemons to encrypt symmetric encryption keys intended for
+  /// one-time use in a NoPorts session, and share the encrypted details
+  /// as part of the daemon's response
+  AtEncryptionKeyPair get sessionKP;
+
+  EncryptionKeyType get sessionKPType;
+
+  /// The port we wish to use on this device. If 0, then we ask the operating
+  /// system for a port
+  int get localPort;
+}
+
+abstract class ClientParamsBase implements ClientParams {
+  @override
+  final bool verbose;
+
+  @override
+  final String device;
+
+  @override
+  final String rootDomain;
+
+  @override
+  final String clientAtSign;
+
+  @override
+  final String sshnpdAtSign;
+
+  @override
+  final String srvdAtSign;
+
+  @override
+  final bool authenticateClientToRvd;
+
+  @override
+  final bool authenticateDeviceToRvd;
+
+  @override
+  final bool encryptRvdTraffic;
+
+  @override
+  final String? atKeysFilePath;
+
+  @override
+  final int localPort;
+
+  @override
+  AtEncryptionKeyPair get sessionKP {
+    _sessionKP ??= AtChopsUtil.generateAtEncryptionKeyPair(keySize: 2048);
+    return _sessionKP!;
+  }
+
+  /// Generate the ephemeralKeyPair only on demand
+  AtEncryptionKeyPair? _sessionKP;
+  @override
+  final EncryptionKeyType sessionKPType = EncryptionKeyType.rsa2048;
+
+  ClientParamsBase({
+    required this.clientAtSign,
+    required this.sshnpdAtSign,
+    required this.srvdAtSign,
+    this.localPort = DefaultSshnpArgs.localPort,
+    this.device = DefaultSshnpArgs.device,
+    this.verbose = DefaultArgs.verbose,
+    this.atKeysFilePath,
+    this.rootDomain = DefaultArgs.rootDomain,
+    this.authenticateClientToRvd = DefaultArgs.authenticateClientToRvd,
+    this.authenticateDeviceToRvd = DefaultArgs.authenticateDeviceToRvd,
+    this.encryptRvdTraffic = DefaultArgs.encryptRvdTraffic,
+  });
+}
+
+abstract interface class SrvdChannelParams implements ClientParams {}
+
+abstract interface class SshnpdChannelParams implements ClientParams {
+  String? get remoteUsername;
+
+  String? get tunnelUsername;
+
+  bool get sendSshPublicKey;
+}
+
+class NptParams extends ClientParamsBase
+    implements SrvdChannelParams, SshnpdChannelParams {
+  /// The host name / ip address that we wish to connect to (on the device's network)
+  final String remoteHost;
+
+  /// The port that we wish to connect to (on the device's network)
+  final int remotePort;
+
+  /// Whether to run the srv within this process, or fork a separate process
+  final bool inline;
+
+  NptParams({
+    required super.clientAtSign,
+    required super.sshnpdAtSign,
+    required super.srvdAtSign,
+    required this.remoteHost,
+    required this.remotePort,
+    required super.device,
+    super.localPort = DefaultSshnpArgs.localPort,
+    super.verbose = DefaultArgs.verbose,
+    super.atKeysFilePath,
+    super.rootDomain = DefaultArgs.rootDomain,
+    super.authenticateClientToRvd = DefaultArgs.authenticateClientToRvd,
+    super.authenticateDeviceToRvd = DefaultArgs.authenticateDeviceToRvd,
+    super.encryptRvdTraffic = DefaultArgs.encryptRvdTraffic,
+    required this.inline,
+  });
+
+  /// not relevant for Npt
+  @override
+  final bool sendSshPublicKey = false;
+
+  /// not relevant for Npt
+  @override
+  final String? remoteUsername = null; // not relevant for Npt
+  /// not relevant for Npt
+  @override
+  final String? tunnelUsername = null; // not relevant for Npt
+}
+
+class SshnpParams extends ClientParamsBase
+    implements SrvdChannelParams, SshnpdChannelParams {
   /// Required Arguments
   /// These arguments do not have fallback values and must be provided.
   /// Since there are multiple sources for these values, we cannot validate
   /// that they will be provided. If any are null, then the caller must
   /// handle the error.
-  final String clientAtSign;
-  final String sshnpdAtSign;
-  final String host;
 
   /// Optional Arguments
-  final String device;
-  final int port;
-  final int localPort;
   final String? identityFile;
   final String? identityPassphrase;
+  @override
   final bool sendSshPublicKey;
   final List<String> localSshOptions;
+  @override
   final String? remoteUsername;
+  @override
   final String? tunnelUsername;
-  final bool verbose;
-  final String rootDomain;
-  final int localSshdPort;
   final int remoteSshdPort;
   final int idleTimeout;
   final bool addForwardsToTunnel;
-  final String? atKeysFilePath;
-  final bool authenticateClientToRvd;
-  final bool authenticateDeviceToRvd;
-  final bool encryptRvdTraffic;
-  final bool discoverDaemonFeatures;
 
   /// Special Arguments
 
@@ -48,46 +182,29 @@ class SshnpParams {
   /// Operation flags
   final bool listDevices;
 
-  /// An encryption keypair which should only ever reside in memory.
-  /// The public key is provided in responses to client 'pings', and is
-  /// used by clients to encrypt symmetric encryption keys intended for
-  /// one-time use in a NoPorts session, and share the encrypted details
-  /// as part of the session request payload.
-  AtEncryptionKeyPair get sessionKP {
-    _sessionKP ??= AtChopsUtil.generateAtEncryptionKeyPair(keySize: 2048);
-    return _sessionKP!;
-  }
-
-  /// Generate the ephemeralKeyPair only on demand
-  AtEncryptionKeyPair? _sessionKP;
-  final EncryptionKeyType sessionKPType = EncryptionKeyType.rsa2048;
-
   SshnpParams({
-    required this.clientAtSign,
-    required this.sshnpdAtSign,
-    required this.host,
+    required super.clientAtSign,
+    required super.sshnpdAtSign,
+    required super.srvdAtSign,
     this.profileName,
-    this.device = DefaultSshnpArgs.device,
-    this.port = DefaultSshnpArgs.port,
-    this.localPort = DefaultSshnpArgs.localPort,
+    super.device = DefaultSshnpArgs.device,
+    super.localPort = DefaultSshnpArgs.localPort,
     this.identityFile,
     this.identityPassphrase,
     this.sendSshPublicKey = DefaultSshnpArgs.sendSshPublicKey,
     this.localSshOptions = DefaultSshnpArgs.localSshOptions,
-    this.verbose = DefaultArgs.verbose,
+    super.verbose = DefaultArgs.verbose,
     this.remoteUsername,
     this.tunnelUsername,
-    this.atKeysFilePath,
-    this.rootDomain = DefaultArgs.rootDomain,
-    this.localSshdPort = DefaultArgs.localSshdPort,
+    super.atKeysFilePath,
+    super.rootDomain = DefaultArgs.rootDomain,
     this.listDevices = DefaultSshnpArgs.listDevices,
     this.remoteSshdPort = DefaultArgs.remoteSshdPort,
     this.idleTimeout = DefaultArgs.idleTimeout,
     this.addForwardsToTunnel = DefaultArgs.addForwardsToTunnel,
-    this.authenticateClientToRvd = DefaultArgs.authenticateClientToRvd,
-    this.authenticateDeviceToRvd = DefaultArgs.authenticateDeviceToRvd,
-    this.encryptRvdTraffic = DefaultArgs.encryptRvdTraffic,
-    this.discoverDaemonFeatures = DefaultArgs.discoverDaemonFeatures,
+    super.authenticateClientToRvd = DefaultArgs.authenticateClientToRvd,
+    super.authenticateDeviceToRvd = DefaultArgs.authenticateDeviceToRvd,
+    super.encryptRvdTraffic = DefaultArgs.encryptRvdTraffic,
   });
 
   factory SshnpParams.empty() {
@@ -95,7 +212,7 @@ class SshnpParams {
       profileName: '',
       clientAtSign: '',
       sshnpdAtSign: '',
-      host: '',
+      srvdAtSign: '',
     );
   }
 
@@ -108,9 +225,8 @@ class SshnpParams {
       profileName: params2.profileName ?? params1.profileName,
       clientAtSign: params2.clientAtSign ?? params1.clientAtSign,
       sshnpdAtSign: params2.sshnpdAtSign ?? params1.sshnpdAtSign,
-      host: params2.host ?? params1.host,
+      srvdAtSign: params2.srvdAtSign ?? params1.srvdAtSign,
       device: params2.device ?? params1.device,
-      port: params2.port ?? params1.port,
       localPort: params2.localPort ?? params1.localPort,
       atKeysFilePath: params2.atKeysFilePath ?? params1.atKeysFilePath,
       identityFile: params2.identityFile ?? params1.identityFile,
@@ -122,7 +238,6 @@ class SshnpParams {
       tunnelUsername: params2.tunnelUsername ?? params1.tunnelUsername,
       verbose: params2.verbose ?? params1.verbose,
       rootDomain: params2.rootDomain ?? params1.rootDomain,
-      localSshdPort: params2.localSshdPort ?? params1.localSshdPort,
       listDevices: params2.listDevices ?? params1.listDevices,
       remoteSshdPort: params2.remoteSshdPort ?? params1.remoteSshdPort,
       idleTimeout: params2.idleTimeout ?? params1.idleTimeout,
@@ -133,8 +248,6 @@ class SshnpParams {
       authenticateDeviceToRvd:
           params2.authenticateDeviceToRvd ?? params1.authenticateDeviceToRvd,
       encryptRvdTraffic: params2.encryptRvdTraffic ?? params1.encryptRvdTraffic,
-      discoverDaemonFeatures:
-          params2.discoverDaemonFeatures ?? params1.discoverDaemonFeatures,
     );
   }
 
@@ -146,16 +259,17 @@ class SshnpParams {
       SshnpParams.fromPartial(SshnpPartialParams.fromJson(json));
 
   factory SshnpParams.fromPartial(SshnpPartialParams partial) {
-    partial.clientAtSign ?? (throw ArgumentError('from is mandatory'));
-    partial.sshnpdAtSign ?? (throw ArgumentError('to is mandatory'));
-    partial.host ?? (throw ArgumentError('host is mandatory'));
+    partial.clientAtSign ??
+        (throw ArgumentError('from (clientAtSign) is mandatory'));
+    partial.sshnpdAtSign ??
+        (throw ArgumentError('to (npdAtSign) is mandatory'));
+    partial.srvdAtSign ?? (throw ArgumentError('srvdAtSign is mandatory'));
     return SshnpParams(
       profileName: partial.profileName,
       clientAtSign: partial.clientAtSign!,
       sshnpdAtSign: partial.sshnpdAtSign!,
-      host: partial.host!,
+      srvdAtSign: partial.srvdAtSign!,
       device: partial.device ?? DefaultSshnpArgs.device,
-      port: partial.port ?? DefaultSshnpArgs.port,
       localPort: partial.localPort ?? DefaultSshnpArgs.localPort,
       identityFile: partial.identityFile,
       identityPassphrase: partial.identityPassphrase,
@@ -168,7 +282,6 @@ class SshnpParams {
       tunnelUsername: partial.tunnelUsername,
       atKeysFilePath: partial.atKeysFilePath,
       rootDomain: partial.rootDomain ?? DefaultArgs.rootDomain,
-      localSshdPort: partial.localSshdPort ?? DefaultArgs.localSshdPort,
       listDevices: partial.listDevices ?? DefaultSshnpArgs.listDevices,
       remoteSshdPort: partial.remoteSshdPort ?? DefaultArgs.remoteSshdPort,
       idleTimeout: partial.idleTimeout ?? DefaultArgs.idleTimeout,
@@ -180,8 +293,6 @@ class SshnpParams {
           DefaultArgs.authenticateDeviceToRvd,
       encryptRvdTraffic:
           partial.encryptRvdTraffic ?? DefaultArgs.encryptRvdTraffic,
-      discoverDaemonFeatures:
-          partial.discoverDaemonFeatures ?? DefaultArgs.discoverDaemonFeatures,
     );
   }
 
@@ -212,9 +323,8 @@ class SshnpParams {
       SshnpArg.profileNameArg.name: profileName,
       SshnpArg.fromArg.name: clientAtSign,
       SshnpArg.toArg.name: sshnpdAtSign,
-      SshnpArg.hostArg.name: host,
+      SshnpArg.srvdArg.name: srvdAtSign,
       SshnpArg.deviceArg.name: device,
-      SshnpArg.portArg.name: port,
       SshnpArg.localPortArg.name: localPort,
       SshnpArg.keyFileArg.name: atKeysFilePath,
       SshnpArg.identityFileArg.name: identityFile,
@@ -225,14 +335,12 @@ class SshnpParams {
       SshnpArg.tunnelUserNameArg.name: tunnelUsername,
       SshnpArg.verboseArg.name: verbose,
       SshnpArg.rootDomainArg.name: rootDomain,
-      SshnpArg.localSshdPortArg.name: localSshdPort,
       SshnpArg.remoteSshdPortArg.name: remoteSshdPort,
       SshnpArg.idleTimeoutArg.name: idleTimeout,
       SshnpArg.addForwardsToTunnelArg.name: addForwardsToTunnel,
       SshnpArg.authenticateClientToRvdArg.name: authenticateClientToRvd,
       SshnpArg.authenticateDeviceToRvdArg.name: authenticateDeviceToRvd,
       SshnpArg.encryptRvdTrafficArg.name: encryptRvdTraffic,
-      SshnpArg.discoverDaemonFeaturesArg.name: discoverDaemonFeatures,
     };
     args.removeWhere(
       (key, value) => !parserType.shouldParse(SshnpArg.fromName(key).parseWhen),
@@ -253,11 +361,9 @@ class SshnpPartialParams {
   final String? profileName;
   final String? clientAtSign;
   final String? sshnpdAtSign;
-  final String? host;
+  final String? srvdAtSign;
   final String? device;
-  final int? port;
   final int? localPort;
-  final int? localSshdPort;
   final String? atKeysFilePath;
   final String? identityFile;
   final String? identityPassphrase;
@@ -274,7 +380,6 @@ class SshnpPartialParams {
   final bool? authenticateClientToRvd;
   final bool? authenticateDeviceToRvd;
   final bool? encryptRvdTraffic;
-  final bool? discoverDaemonFeatures;
 
   /// Operation flags
   final bool? listDevices;
@@ -283,9 +388,8 @@ class SshnpPartialParams {
     this.profileName,
     this.clientAtSign,
     this.sshnpdAtSign,
-    this.host,
+    this.srvdAtSign,
     this.device,
-    this.port,
     this.localPort,
     this.atKeysFilePath,
     this.identityFile,
@@ -296,7 +400,6 @@ class SshnpPartialParams {
     this.tunnelUsername,
     this.verbose,
     this.rootDomain,
-    this.localSshdPort,
     this.listDevices,
     this.remoteSshdPort,
     this.idleTimeout,
@@ -305,7 +408,6 @@ class SshnpPartialParams {
     this.authenticateClientToRvd,
     this.authenticateDeviceToRvd,
     this.encryptRvdTraffic,
-    this.discoverDaemonFeatures,
   });
 
   factory SshnpPartialParams.empty() {
@@ -321,9 +423,8 @@ class SshnpPartialParams {
       profileName: params2.profileName ?? params1.profileName,
       clientAtSign: params2.clientAtSign ?? params1.clientAtSign,
       sshnpdAtSign: params2.sshnpdAtSign ?? params1.sshnpdAtSign,
-      host: params2.host ?? params1.host,
+      srvdAtSign: params2.srvdAtSign ?? params1.srvdAtSign,
       device: params2.device ?? params1.device,
-      port: params2.port ?? params1.port,
       localPort: params2.localPort ?? params1.localPort,
       atKeysFilePath: params2.atKeysFilePath ?? params1.atKeysFilePath,
       identityFile: params2.identityFile ?? params1.identityFile,
@@ -335,7 +436,6 @@ class SshnpPartialParams {
       tunnelUsername: params2.tunnelUsername ?? params1.tunnelUsername,
       verbose: params2.verbose ?? params1.verbose,
       rootDomain: params2.rootDomain ?? params1.rootDomain,
-      localSshdPort: params2.localSshdPort ?? params1.localSshdPort,
       listDevices: params2.listDevices ?? params1.listDevices,
       remoteSshdPort: params2.remoteSshdPort ?? params1.remoteSshdPort,
       idleTimeout: params2.idleTimeout ?? params1.idleTimeout,
@@ -347,8 +447,6 @@ class SshnpPartialParams {
       authenticateDeviceToRvd:
           params2.authenticateDeviceToRvd ?? params1.authenticateDeviceToRvd,
       encryptRvdTraffic: params2.encryptRvdTraffic ?? params1.encryptRvdTraffic,
-      discoverDaemonFeatures:
-          params2.discoverDaemonFeatures ?? params1.discoverDaemonFeatures,
     );
   }
 
@@ -378,9 +476,8 @@ class SshnpPartialParams {
       sshnpdAtSign: args[SshnpArg.toArg.name] == null
           ? null
           : AtUtils.fixAtSign(args[SshnpArg.toArg.name]),
-      host: args[SshnpArg.hostArg.name],
+      srvdAtSign: args[SshnpArg.srvdArg.name],
       device: args[SshnpArg.deviceArg.name],
-      port: args[SshnpArg.portArg.name],
       localPort: args[SshnpArg.localPortArg.name],
       atKeysFilePath: args[SshnpArg.keyFileArg.name],
       identityFile: args[SshnpArg.identityFileArg.name],
@@ -393,7 +490,6 @@ class SshnpPartialParams {
       tunnelUsername: args[SshnpArg.tunnelUserNameArg.name],
       verbose: args[SshnpArg.verboseArg.name],
       rootDomain: args[SshnpArg.rootDomainArg.name],
-      localSshdPort: args[SshnpArg.localSshdPortArg.name],
       listDevices: args[SshnpArg.listDevicesArg.name],
       remoteSshdPort: args[SshnpArg.remoteSshdPortArg.name],
       idleTimeout: args[SshnpArg.idleTimeoutArg.name],
@@ -405,7 +501,6 @@ class SshnpPartialParams {
       authenticateClientToRvd: args[SshnpArg.authenticateClientToRvdArg.name],
       authenticateDeviceToRvd: args[SshnpArg.authenticateDeviceToRvdArg.name],
       encryptRvdTraffic: args[SshnpArg.encryptRvdTrafficArg.name],
-      discoverDaemonFeatures: args[SshnpArg.discoverDaemonFeaturesArg.name],
     );
   }
 

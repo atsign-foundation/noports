@@ -7,7 +7,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sshnp_flutter/src/utility/platform_utility/platform_utililty.dart';
 import 'package:window_manager/window_manager.dart';
-
 import '../src/repository/authentication_repository.dart';
 import '../src/utility/sizes.dart';
 

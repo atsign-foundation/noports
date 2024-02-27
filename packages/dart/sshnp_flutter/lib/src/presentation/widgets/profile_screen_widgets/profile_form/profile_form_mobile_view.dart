@@ -124,11 +124,11 @@ class _ProfileFormState extends ConsumerState<ProfileFormMobileView> {
                   gapH10,
                   CustomTextFormField(
                     width: double.infinity,
-                    initialValue: oldConfig.host,
-                    labelText: strings.host,
+                    initialValue: oldConfig.srvdAtSign,
+                    labelText: strings.srvdAtsign,
                     onSaved: (value) => newConfig = SshnpPartialParams.merge(
                       newConfig,
-                      SshnpPartialParams(host: value),
+                      SshnpPartialParams(srvdAtSign: value),
                     ),
                     validator: FormValidator.validateRequiredField,
                   ),
@@ -233,32 +233,11 @@ class _ProfileFormState extends ConsumerState<ProfileFormMobileView> {
                       gapH10,
                       CustomTextFormField(
                         width: double.infinity,
-                        initialValue: oldConfig.port.toString(),
-                        labelText: strings.port,
-                        onChanged: (value) => newConfig = SshnpPartialParams.merge(
-                          newConfig,
-                          SshnpPartialParams(port: int.tryParse(value)),
-                        ),
-                        validator: FormValidator.validateRequiredField,
-                      ),
-                      gapH10,
-                      CustomTextFormField(
-                        width: double.infinity,
                         initialValue: oldConfig.localPort.toString(),
                         labelText: strings.localPort,
                         onChanged: (value) => newConfig = SshnpPartialParams.merge(
                           newConfig,
                           SshnpPartialParams(localPort: int.tryParse(value)),
-                        ),
-                      ),
-                      gapH10,
-                      CustomTextFormField(
-                        width: double.infinity,
-                        initialValue: oldConfig.localSshdPort.toString(),
-                        labelText: strings.localSshdPort,
-                        onChanged: (value) => newConfig = SshnpPartialParams.merge(
-                          newConfig,
-                          SshnpPartialParams(localSshdPort: int.tryParse(value)),
                         ),
                       ),
                       gapH12,

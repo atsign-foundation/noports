@@ -52,7 +52,7 @@ jobs:
         fi
 
     - name: Bump sshnoports_automation_python Python dependencies
-      working-directory: examples/automations/python/sshnoports_automation_python
+      working-directory: examples/automations/python
       if: ${{ github.actor == 'dependabot[bot]' }}
       run: |
         poetry update

@@ -23,7 +23,7 @@ updates:
     schedule:
       interval: "daily"
   - package-ecosystem: "pip"
-    directory: "/examples/automations/python/sshnoports_automation_python/"
+    directory: "/examples/automations/python/"
     schedule:
       interval: "daily"
   - package-ecosystem: "pip"

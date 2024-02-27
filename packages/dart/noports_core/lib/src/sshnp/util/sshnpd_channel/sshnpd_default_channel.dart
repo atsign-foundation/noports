@@ -34,7 +34,11 @@ mixin SshnpdDefaultPayloadHandler on SshnpdChannel {
 
   @override
   Future<SshnpdAck> handleSshnpdPayload(AtNotification notification) async {
-    if (notification.value?.startsWith('{') ?? false) {
+    bool validResponse = notification.value?.startsWith('{') ?? false;
+    if (!validResponse) {
+      logger.shout('invalid daemon response: ${notification.value}');
+      return SshnpdAck.acknowledgedWithErrors;
+    } else {
       late final Map envelope;
       late final Map daemonResponse;
       try {
@@ -45,9 +49,8 @@ mixin SshnpdDefaultPayloadHandler on SshnpdChannel {
 
         daemonResponse = envelope['payload'] as Map;
         assertValidValue(daemonResponse, 'sessionId', String);
-        assertValidValue(daemonResponse, 'ephemeralPrivateKey', String);
       } catch (e) {
-        logger.warning(
+        logger.shout(
             'Failed to extract parameters from notification value "${notification.value}" with error : $e');
         return SshnpdAck.acknowledgedWithErrors;
       }
@@ -94,6 +97,5 @@ mixin SshnpdDefaultPayloadHandler on SshnpdChannel {
 
       return SshnpdAck.acknowledged;
     }
-    return SshnpdAck.acknowledgedWithErrors;
   }
 }

@@ -1,12 +1,19 @@
 import 'dart:io';
 
 import 'package:args/args.dart';
+import 'package:at_utils/at_logger.dart';
 import 'package:noports_core/srv.dart';
 import 'package:socket_connector/socket_connector.dart';
 import 'package:sshnoports/src/print_version.dart';
 
 Future<void> main(List<String> args) async {
-  final ArgParser parser = ArgParser()
+  // Do not change this to anything below WARNING. If you do, then the
+  // onConnect callback in SrvImplDart._runClientSideMulti will crash the
+  // program
+  AtSignLogger.root_level = 'SHOUT';
+  AtSignLogger.defaultLoggingHandler = AtSignLogger.stdErrLoggingHandler;
+
+  final ArgParser parser = ArgParser(showAliasesInUsage: true)
     ..addOption('host', abbr: 'h', mandatory: true, help: 'rvd host')
     ..addOption('port', abbr: 'p', mandatory: true, help: 'rvd port')
     ..addOption('local-port',
@@ -16,13 +23,20 @@ Future<void> main(List<String> args) async {
         defaultsTo: false,
         negatable: false,
         help: 'Set this flag when we are bridging from a local sender')
+    ..addOption('local-host',
+        mandatory: false,
+        help: 'Host on the local network to bridge to; defaults to localhost')
     ..addFlag('rv-auth',
         defaultsTo: false,
         help: 'Whether this rv process will authenticate to rvd')
     ..addFlag('rv-e2ee',
         defaultsTo: false,
         help: 'Whether this rv process will encrypt/decrypt'
-            ' all rvd socket traffic');
+            ' all rvd socket traffic')
+    ..addFlag('multi',
+        defaultsTo: false,
+        negatable: false,
+        help: 'Set this flag when we want multiple connections via the rvd');
 
   try {
     final ArgResults parsed;
@@ -32,12 +46,14 @@ Future<void> main(List<String> args) async {
       throw ArgumentError(e.message);
     }
 
-    final String host = parsed['host'];
+    final String streamingHost = parsed['host'];
     final int streamingPort = int.parse(parsed['port']);
     final int localPort = int.parse(parsed['local-port']);
     final bool bindLocalPort = parsed['bind-local-port'];
+    final String localHost = parsed['local-host'];
     final bool rvAuth = parsed['rv-auth'];
     final bool rvE2ee = parsed['rv-e2ee'];
+    final bool multi = parsed['multi'];
 
     String? rvdAuthString = rvAuth ? Platform.environment['RV_AUTH'] : null;
     String? sessionAESKeyString =
@@ -56,19 +72,32 @@ Future<void> main(List<String> args) async {
       throw ArgumentError(
           '--rv-e2ee required, but RV_IV is not in environment');
     }
-    SocketConnector connector = await Srv.dart(
-      host,
-      streamingPort,
-      localPort: localPort,
-      bindLocalPort: bindLocalPort,
-      rvdAuthString: rvdAuthString,
-      sessionAESKeyString: sessionAESKeyString,
-      sessionIVString: sessionIVString,
-    ).run();
 
-    /// Shut myself down once the socket connector closes
-    stderr.writeln('Waiting for connector to close');
-    await connector.done;
+    try {
+      SocketConnector sc = await Srv.dart(
+        streamingHost,
+        streamingPort,
+        localPort: localPort,
+        localHost: localHost,
+        bindLocalPort: bindLocalPort,
+        rvdAuthString: rvdAuthString,
+        sessionAESKeyString: sessionAESKeyString,
+        sessionIVString: sessionIVString,
+        multi: multi,
+        detached: true, // by definition - this is the srv binary
+      ).run();
+
+      /// Shut myself down once the socket connector closes
+      stderr.writeln('Waiting for Srv to close');
+      await sc.done;
+    } on ArgumentError {
+      rethrow;
+    } catch (e) {
+      // Do not remove this output; it is specifically looked for in
+      // [SrvImplExec.run].
+      stderr.writeln('${Srv.completedWithExceptionString} : $e');
+      exit(1);
+    }
 
     stderr.writeln('Closed - exiting');
     exit(0);

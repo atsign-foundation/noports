@@ -5,8 +5,12 @@ import 'package:noports_core/src/srv/srv_impl.dart';
 import 'package:socket_connector/socket_connector.dart';
 
 abstract class Srv<T> {
+  static const completedWithExceptionString = 'Exception running srv';
+
+  static const startedString = 'rv started successfully';
+
   /// The internet address of the host to connect to.
-  abstract final String host;
+  abstract final String streamingHost;
 
   /// The port of the host to connect to.
   abstract final int streamingPort;
@@ -14,6 +18,10 @@ abstract class Srv<T> {
   /// The local port to bridge to
   /// Defaults to 22
   abstract final int? localPort;
+
+  /// The local host to bridge to
+  /// Defaults to localhost
+  abstract final String? localHost;
 
   /// A string which needs to be presented to the rvd before the rvd
   /// will allow any further traffic on the socket
@@ -25,66 +33,85 @@ abstract class Srv<T> {
   /// The IV to use with the [sessionAESKeyString]
   abstract final String? sessionIVString;
 
+  /// Whether to bind a local port or not
   abstract final bool? bindLocalPort;
+
+  /// Whether to enable multiple connections or not
+  abstract final bool multi;
 
   Future<T> run();
 
   // Can't use factory functions since Srv contains a generic type
   static Srv<Process> exec(
-    String host,
+    String streamingHost,
     int streamingPort, {
     int? localPort,
+    String? localHost,
     bool? bindLocalPort,
     String? rvdAuthString,
     String? sessionAESKeyString,
     String? sessionIVString,
+    bool multi = false,
+    bool detached = false,
   }) {
     return SrvImplExec(
-      host,
+      streamingHost,
       streamingPort,
       localPort: localPort,
+      localHost: localHost,
       bindLocalPort: bindLocalPort,
       rvdAuthString: rvdAuthString,
       sessionAESKeyString: sessionAESKeyString,
       sessionIVString: sessionIVString,
+      multi: multi,
     );
   }
 
   static Srv<SocketConnector> dart(
-    String host,
+    String streamingHost,
     int streamingPort, {
     int? localPort,
     bool? bindLocalPort,
+    String? localHost,
     String? rvdAuthString,
     String? sessionAESKeyString,
     String? sessionIVString,
+    bool multi = false,
+    bool detached = false,
   }) {
     return SrvImplDart(
-      host,
+      streamingHost,
       streamingPort,
       localPort: localPort!,
+      localHost: localHost,
       bindLocalPort: bindLocalPort!,
       rvdAuthString: rvdAuthString,
       sessionAESKeyString: sessionAESKeyString,
       sessionIVString: sessionIVString,
+      multi: multi,
+      detached: detached,
     );
   }
 
   static Srv<SSHSocket> inline(
-    String host,
+    String streamingHost,
     int streamingPort, {
     int? localPort,
     bool? bindLocalPort,
+    String? localHost,
     String? rvdAuthString,
     String? sessionAESKeyString,
     String? sessionIVString,
+    bool multi = false,
+    bool detached = false,
   }) {
     return SrvImplInline(
-      host,
+      streamingHost,
       streamingPort,
       rvdAuthString: rvdAuthString,
       sessionAESKeyString: sessionAESKeyString,
       sessionIVString: sessionIVString,
+      multi: multi,
     );
   }
 
@@ -101,8 +128,9 @@ abstract class Srv<T> {
     String postfix = Platform.isWindows ? '.exe' : '';
     List<String> pathList =
         Platform.resolvedExecutable.split(Platform.pathSeparator);
-    bool isExe =
-        (pathList.last == 'sshnp$postfix' || pathList.last == 'sshnpd$postfix');
+    bool isExe = (pathList.last == 'sshnp$postfix' ||
+        pathList.last == 'sshnpd$postfix' ||
+        pathList.last == 'npt$postfix');
 
     pathList
       ..removeLast()

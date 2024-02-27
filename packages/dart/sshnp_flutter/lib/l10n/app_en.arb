@@ -51,9 +51,8 @@
     "importProfile" : "Import Profile",
     "keyFile" : "Key File",
     "listDevices" : "List Devices",
-    "localPort": "Local Forwarding Port",
-    "localPortTooltip" : "Port on which sshd is listening locally on the client host",
-    "localSshdPort": "Local SSHD Port",
+    "localPort": "Client-side port for the ssh tunnel",
+    "localPortTooltip" : "Client-side port for the ssh tunnel. Defaults to 0 (ask the o/s for a port)",
     "localSshOptions" : "Local SSH Options",
     "localSshOptionsTooltip" : "Add these commands to the local ssh command",
     "localSshOptionsHint" : "Use \",\" to separate options",
@@ -79,7 +78,6 @@
     "privateKeyManagementDescription" : "Create and Configure your private key",
     "privateKeyPassphrase" : "Private Key Passphrase",
     "privatekeyPassPhraseTooltip" : "Passphrase of the Private Key",
-    
     "profileName" : "{fieldStatus, select, required{Profile Name *} other{Profile Name}}",
     "@profileName": {
       "description" : "Required fields",
@@ -114,6 +112,8 @@
     "supportDescription" : "Our team of experts is here to help! Select your preferred method below",
     "sourcePort" : "Source Port",
     "socketRendezvousConfiguration" : "Socket Rendezvous\nConfiguration",
+    "srvdAtsign" : "SR Address (atSign)",
+    "srvdAtsignTooltip" : "atSign of the socket rendezvous",
     "sshAlgorithm" : "SSH Algorithm",
     "sshButton" : "ssh",
     "sshKeyManagement": "{newLine, select, yes{SSH Key \nConfiguration} no{SSH Key Management} other{SSH Key Management}}",
@@ -150,7 +150,4 @@
     "welcomeTo":"Welcome to",
     "sshnpDesktopApp": "SSHNP Desktop App",
     "welcomeToDescription" : "Make your devices reachable while eliminating network attack surfaces & reducing administrative overhead."
-
-
-    
    }

@@ -74,6 +74,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.0.0"
+  at_cli_commons:
+    dependency: "direct overridden"
+    description:
+      name: at_cli_commons
+      sha256: "9165a0547ee36024f5d013cbb455197ef6f1f8a2c93620b1c49cb2eeead92157"
+      url: "https://pub.dev"
+    source: hosted
+    version: "1.0.4"
   at_client:
     dependency: "direct overridden"
     description:
@@ -147,7 +155,7 @@ packages:
     source: hosted
     version: "1.0.0"
   at_utils:
-    dependency: "direct overridden"
+    dependency: "direct main"
     description:
       name: at_utils
       sha256: ec28600e4eec321ee5e22be051109fa7b2e94590dc51d9f957730c2540beb681
@@ -462,10 +470,10 @@ packages:
     dependency: transitive
     description:
       name: image
-      sha256: "49a0d4b0c12402853d3f227fe7c315601b238d126aa4caa5dbb2dcf99421aa4a"
+      sha256: "4c68bfd5ae83e700b5204c1e74451e7bf3cf750e6843c6e158289cf56bda018e"
       url: "https://pub.dev"
     source: hosted
-    version: "4.1.6"
+    version: "4.1.7"
   internet_connection_checker:
     dependency: transitive
     description:
@@ -576,7 +584,7 @@ packages:
       path: "../noports_core"
       relative: true
     source: path
-    version: "6.0.3"
+    version: "6.0.4"
   openssh_ed25519:
     dependency: transitive
     description:
@@ -717,10 +725,10 @@ packages:
     dependency: "direct main"
     description:
       name: socket_connector
-      sha256: "7a063478d8a191447c297d480bf344179b239c52063f13f47d71acbaf4941064"
+      sha256: a614741652395393bc8e06987a0569bac116b2112645cc846015949dcf66aebd
       url: "https://pub.dev"
     source: hosted
-    version: "2.0.1"
+    version: "2.1.0"
   source_map_stack_trace:
     dependency: transitive
     description:
