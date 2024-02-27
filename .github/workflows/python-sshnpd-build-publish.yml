@@ -61,7 +61,7 @@ jobs:
         name: sshnpd-python-package
         path: dist/
     - name: Publish distribution to TestPyPI
-      uses: pypa/gh-action-pypi-publish@2f6f737ca5f74c637829c0f5c3acd0e29ea5e8bf # v1.8.11
+      uses: pypa/gh-action-pypi-publish@e53eb8b103ffcb59469888563dc324e3c8ba6f06 # v1.8.12
       with:
         skip-existing: true
         repository-url: https://test.pypi.org/legacy/
@@ -85,7 +85,7 @@ jobs:
         name: sshnpd-python-package
         path: dist/
     - name: Publish distribution to PyPI
-      uses: pypa/gh-action-pypi-publish@2f6f737ca5f74c637829c0f5c3acd0e29ea5e8bf # v1.8.11
+      uses: pypa/gh-action-pypi-publish@e53eb8b103ffcb59469888563dc324e3c8ba6f06 # v1.8.12
 
   github-release:
     name: >-
