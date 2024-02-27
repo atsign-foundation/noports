@@ -8,10 +8,10 @@ environment:
 
 # issue_1232
 dependency_overrides:
-  # xterm:
-  #   git:
-  #     url: https://github.com/box-apps/xterm.dart
-  #     ref: master
+  xterm:
+    git:
+      url: https://github.com/box-apps/xterm.dart
+      ref: master
   # at_commons: ^4.0.0
   # at_client_mobile:
   #   git:
