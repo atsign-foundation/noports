@@ -84,9 +84,7 @@ void main(List<String> args) async {
         'device',
         abbr: 'd',
         mandatory: true,
-        help: 'The device name'
-            ' The same atSign may be used to run daemons on many devices,'
-            ' therefore each one must run with its own unique device name',
+        help: 'Receiving device name. $deviceNameFormatHelp',
       );
       parser.addOption(
         'local-port',
