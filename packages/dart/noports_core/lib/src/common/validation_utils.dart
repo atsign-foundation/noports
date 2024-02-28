@@ -8,9 +8,12 @@ import 'package:noports_core/src/common/file_system_utils.dart';
 import 'package:noports_core/src/common/io_types.dart';
 import 'package:path/path.dart' as path;
 
-const String sshnpDeviceNameRegex = r'[a-zA-Z0-9_]{0,15}';
+const String sshnpDeviceNameRegex = r'[a-z0-9_]{1,30}';
+const String invalidDeviceNameMsg = 'Device name must be alphanumeric'
+    ' snake case, max length 30';
+const String deviceNameFormatHelp = 'Alphanumeric snake case, max length 30.';
 
-bool checkNonAscii(String test) {
+bool invalidDeviceName(String test) {
   return RegExp(sshnpDeviceNameRegex).allMatches(test).first.group(0) != test;
 }
 

@@ -1,7 +1,6 @@
 import 'package:args/args.dart';
 
-import 'package:noports_core/src/common/default_args.dart';
-import 'package:noports_core/src/common/types.dart';
+import 'package:noports_core/utils.dart';
 
 enum ArgFormat {
   option,
@@ -224,7 +223,7 @@ class SshnpArg {
   static const deviceArg = SshnpArg(
     name: 'device',
     abbr: 'd',
-    help: 'Receiving device name',
+    help: 'Receiving device name. $deviceNameFormatHelp',
     defaultsTo: DefaultSshnpArgs.device,
   );
   static const srvdArg = SshnpArg(
