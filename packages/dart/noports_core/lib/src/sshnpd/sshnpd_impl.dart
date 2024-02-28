@@ -80,7 +80,7 @@ class SshnpdImpl implements Sshnpd {
     required this.atClient,
     required this.username,
     required this.homeDirectory,
-    required String device,
+    required this.device,
     required this.managerAtsigns,
     required this.sshClient,
     this.makeDeviceInfoVisible = false,
@@ -90,7 +90,7 @@ class SshnpdImpl implements Sshnpd {
     required this.sshAlgorithm,
     required this.version,
     required this.permitOpen,
-  }) : device = device.toLowerCase() {
+  }) {
     if (invalidDeviceName(device)) {
       throw ArgumentError(invalidDeviceNameMsg);
     }
