@@ -91,14 +91,14 @@ abstract class ClientParamsBase implements ClientParams {
     required this.sshnpdAtSign,
     required this.srvdAtSign,
     this.localPort = DefaultSshnpArgs.localPort,
-    String device = DefaultSshnpArgs.device,
+    this.device = DefaultSshnpArgs.device,
     this.verbose = DefaultArgs.verbose,
     this.atKeysFilePath,
     this.rootDomain = DefaultArgs.rootDomain,
     this.authenticateClientToRvd = DefaultArgs.authenticateClientToRvd,
     this.authenticateDeviceToRvd = DefaultArgs.authenticateDeviceToRvd,
     this.encryptRvdTraffic = DefaultArgs.encryptRvdTraffic,
-  }) : device = device.toLowerCase() {
+  }) {
     if (invalidDeviceName(device)) {
       throw ArgumentError(invalidDeviceNameMsg);
     }
