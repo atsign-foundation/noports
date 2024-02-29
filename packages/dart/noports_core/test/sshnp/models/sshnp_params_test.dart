@@ -72,7 +72,7 @@ void main() {
                 clientAtSign: '',
                 sshnpdAtSign: '',
                 srvdAtSign: '',
-                device: 'abcde_12345_abcde_12345_abcde_1'),
+                device: 'abcde_12345_abcde_12345_abcde_12345_X'),
             throwsA(TypeMatcher<ArgumentError>()));
       });
       test('SshnpParams.device test', () {
