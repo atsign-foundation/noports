@@ -14,7 +14,6 @@ set(SRV_SRCS
   ${CMAKE_CURRENT_LIST_DIR}/src/params.c
   ${CMAKE_CURRENT_LIST_DIR}/src/side.c
   ${CMAKE_CURRENT_LIST_DIR}/src/srv.c
-  ${CMAKE_CURRENT_LIST_DIR}/src/stream.c
 )
 
 # 1b. Manually add your include directories here

@@ -5,7 +5,6 @@
 #include <atlogger.h>
 #include <netdb.h>
 #include <srv/params.h>
-#include <srv/stream.h>
 #include <string.h>
 #include <sys/socket.h>
 
@@ -69,7 +68,7 @@ void *srv_side_handle(void *side) {
   unsigned char *buffer = malloc(BUFFER_LEN * sizeof(unsigned char));
 
   if (s->is_server == 0) {
-    size_t len, slen;
+    size_t len;
     int res;
     while ((res = mbedtls_net_recv(&s->socket, buffer, READ_LEN)) > 0) {
       if (res < 0) {
@@ -92,20 +91,18 @@ void *srv_side_handle(void *side) {
       }
 
       if (s->other->is_server == 0) {
-        res = mbedtls_net_send(&s->other->socket, buffer, len);
-        if (res < 0) {
-          atclient_atlogger_log(tag, ERROR, "Error sending data: %d", res);
-          break;
-        } else {
-          slen = res;
+        while (len > 0) {
+          res = mbedtls_net_send(&s->other->socket, buffer, len);
+          if (res < 0) {
+            atclient_atlogger_log(tag, ERROR, "Error sending data: %d", res);
+            break;
+          } else {
+            atclient_atlogger_log(tag, DEBUG, "Sent bytes: %d", res);
+            len -= res;
+          }
         }
       } else {
         halt_if_cant_bind_local_port();
-      }
-      if (slen < len) {
-        // TODO: implement retries
-        atclient_atlogger_log(tag, ERROR, "Error sending data, expected to send %lu bytes, only sent %lu\n", len, slen);
-        break;
       }
     }
     free(buffer);

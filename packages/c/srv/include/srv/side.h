@@ -3,7 +3,7 @@
 #include <MbedTLS/net_sockets.h>
 #include <netdb.h>
 #include <srv/params.h>
-#include <srv/stream.h>
+#include <srv/srv.h>
 
 /**
  * @brief input structure for the side_t type
