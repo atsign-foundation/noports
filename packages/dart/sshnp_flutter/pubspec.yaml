@@ -9,6 +9,10 @@ environment:
 # issue_1232
 
 dependency_overrides:
+  xterm:
+    git:
+      url: https://github.com/box-apps/xterm.dart
+      ref: master
   at_commons: ^4.0.0
   at_client_mobile:
     git:
@@ -47,8 +51,7 @@ dependencies:
   intl: any
   macos_ui: ^2.0.0
   mocktail: ^1.0.0
-  noports_core:
-    path: ../noports_core/
+  noports_core: ^6.0.2
   page_transition: ^2.0.9
   path: ^1.8.3
   path_provider: ^2.1.1
@@ -71,6 +74,25 @@ flutter:
     # - .env
     - assets/images/nav_icons/
     - assets/images/
+
+  fonts:
+    - family: 0xProtoNerdFont
+      fonts:
+        - asset: assets/fonts/0xProtoNerdFontMono-Regular.ttf
+        - asset: assets/fonts/0xProtoNerdFont-Regular.ttf
+    - family: IosevkaTermNerdFontPropo
+      fonts:
+        # - asset: assets/fonts/IosevkaTermNerdFontPropo-Bold.ttf
+        # - asset: assets/fonts/IosevkaTermNerdFontPropo-BoldItalic.ttf
+        # - asset: assets/fonts/IosevkaTermNerdFontPropo-Italic.ttf
+        - asset: assets/fonts/IosevkaTermNerdFontPropo-Regular.ttf
+    - family: GeistMonoNerdFont
+      fonts:
+        # - asset: assets/fonts/GeistMonoNerdFont-Bold.ttf
+        # - asset: assets/fonts/GeistMonoNerdFont-BoldItalic.ttf
+        # - asset: assets/fonts/GeistMonoNerdFont-Italic.ttf
+        - asset: assets/fonts/GeistMonoNerdFont-Regular.otf
+
 flutter_launcher_icons:
   android: "launcher_icon"
   ios: true

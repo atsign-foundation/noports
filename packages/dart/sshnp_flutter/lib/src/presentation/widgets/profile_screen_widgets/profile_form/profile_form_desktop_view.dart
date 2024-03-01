@@ -115,12 +115,12 @@ class _ProfileFormState extends ConsumerState<ProfileFormDesktopView> {
                       ),
                       gapW38,
                       CustomTextFormField(
-                        initialValue: oldConfig.srvdAtSign,
+                        initialValue: oldConfig.host,
                         labelText: strings.srvdAtsign,
                         toolTip: strings.srvdAtsignTooltip,
                         onSaved: (value) => newConfig = SshnpPartialParams.merge(
                           newConfig,
-                          SshnpPartialParams(srvdAtSign: value),
+                          SshnpPartialParams(host: value),
                         ),
                         validator: FormValidator.validateAtsignField,
                       ),

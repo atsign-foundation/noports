@@ -124,11 +124,11 @@ class _ProfileFormState extends ConsumerState<ProfileFormMobileView> {
                   gapH10,
                   CustomTextFormField(
                     width: double.infinity,
-                    initialValue: oldConfig.srvdAtSign,
+                    initialValue: oldConfig.host,
                     labelText: strings.srvdAtsign,
                     onSaved: (value) => newConfig = SshnpPartialParams.merge(
                       newConfig,
-                      SshnpPartialParams(srvdAtSign: value),
+                      SshnpPartialParams(host: value),
                     ),
                     validator: FormValidator.validateRequiredField,
                   ),

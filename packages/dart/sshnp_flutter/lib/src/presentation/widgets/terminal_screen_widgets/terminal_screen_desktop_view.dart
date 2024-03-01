@@ -172,6 +172,17 @@ class _TerminalScreenDesktopViewState extends ConsumerState<TerminalScreenDeskto
                               controller: terminalController,
                               autofocus: true,
                               autoResize: true,
+
+                              // textStyle:
+                              //     TerminalStyle.fromTextStyle(const TextStyle(fontFamily: '0xProtoNerdFontMono')),
+                              // textStyle: TerminalStyle.fromTextStyle(const TextStyle(
+                              //   fontFamily: 'GeistMonoNerdFont',
+                              //   // fontSize: 14,
+                              // )),
+                              textStyle: TerminalStyle.fromTextStyle(const TextStyle(
+                                fontFamily: 'IosevkaTermNerdFontPropo',
+                                // fontSize: 14,
+                              )),
                             );
                           }).toList(),
                         ),
