@@ -39,7 +39,7 @@ dependencies:
   socket_connector: ^2.0.1
   url_launcher: ^6.1.14
   uuid: ^3.0.7
-  xterm: ^3.5.0
+  xterm: ^4.0.0
 
 dev_dependencies:
   flutter_lints: ^2.0.0
