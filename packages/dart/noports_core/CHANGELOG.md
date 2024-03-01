@@ -1,3 +1,7 @@
+# 6.0.5
+- fix: Strict validation of device name as alphanumeric snake case
+- feat: Increase device name max length from 15 to 36
+
 # 6.0.4
 - build: upgrade at_chops dependency to ^2.0.0
 
