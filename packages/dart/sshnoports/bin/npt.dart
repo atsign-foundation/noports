@@ -207,6 +207,19 @@ void main(List<String> args) async {
         });
       }
 
+      NptParams params = NptParams(
+        clientAtSign: clientAtSign,
+        sshnpdAtSign: daemonAtSign,
+        srvdAtSign: srvdAtSign,
+        remoteHost: remoteHost,
+        remotePort: remotePort,
+        device: device,
+        localPort: localPort,
+        verbose: verbose,
+        rootDomain: parsedArgs['root-domain'],
+        inline: inline,
+      );
+
       cli.CLIBase cliBase = cli.CLIBase(
           atSign: clientAtSign,
           atKeysFilePath: parsedArgs['key-file'],
@@ -220,18 +233,7 @@ void main(List<String> args) async {
       await cliBase.init();
 
       final npt = Npt.create(
-        params: NptParams(
-          clientAtSign: clientAtSign,
-          sshnpdAtSign: daemonAtSign,
-          srvdAtSign: srvdAtSign,
-          remoteHost: remoteHost,
-          remotePort: remotePort,
-          device: device,
-          localPort: localPort,
-          verbose: verbose,
-          rootDomain: parsedArgs['root-domain'],
-          inline: inline,
-        ),
+        params: params,
         atClient: cliBase.atClient,
       );
 

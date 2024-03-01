@@ -71,7 +71,7 @@ class SshnpdParams {
 
     // Do we have an ASCII ?
     if (invalidDeviceName(device)) {
-      throw ('\n$invalidDeviceNameMsg');
+      throw ArgumentError(invalidDeviceNameMsg);
     }
 
     return SshnpdParams(
