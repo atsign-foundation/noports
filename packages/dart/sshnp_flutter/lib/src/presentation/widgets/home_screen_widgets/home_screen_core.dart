@@ -4,7 +4,7 @@ import 'package:at_onboarding_flutter/at_onboarding_flutter.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:sshnp_flutter/src/presentation/widgets/home_screen_widgets/home_screen_actions/new_profile_action.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:sshnp_flutter/src/utility/constants.dart';
 
 import '../../../controllers/config_controller.dart';
@@ -13,6 +13,7 @@ import '../../../utility/my_sync_progress_listener.dart';
 import '../../../utility/sizes.dart';
 import '../profile_screen_widgets/profile_bar/profile_bar.dart';
 import '../utility/custom_snack_bar.dart';
+import 'home_screen_actions/home_screen_action_callbacks.dart';
 
 class HomeScreenCore extends ConsumerStatefulWidget {
   const HomeScreenCore({super.key});
@@ -53,48 +54,52 @@ class _HomeScreenCoreState extends ConsumerState<HomeScreenCore> {
         return Text(e.toString());
       },
       data: (profiles) {
-        if (profiles.isEmpty) {
-          return Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              gapH40,
-              Text(
-                'Get Started!',
-                style: Theme.of(context).textTheme.bodyMedium!.copyWith(color: kHomeScreenGreyText),
-              ),
-              gapH16,
-              Stack(
-                children: [
-                  Container(
-                    height: Sizes.p185 + Sizes.p8,
-                    width: Sizes.p244 + Sizes.p8,
-                    decoration: BoxDecoration(
-                      color: kProfileFormFieldColor,
-                      borderRadius: BorderRadius.circular(Sizes.p8),
-                    ),
-                  ),
-                  Card(
-                    color: kInputChipBackgroundColor,
-                    child: SizedBox(
-                      height: Sizes.p185,
-                      width: Sizes.p244,
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          // Text(strings.createConnectionProfile, style: Theme.of(context).textTheme.bodyLarge),
-                          Text(
-                            strings.createConnectionProfileDesc,
-                            textAlign: TextAlign.center,
-                          ),
-                          gapH14,
-                          const NewProfileAction(),
-                        ],
+        if (profiles.isNotEmpty) {
+          return Center(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                gapH40,
+                Text(
+                  'Get Started!',
+                  style: Theme.of(context).textTheme.bodyMedium!.copyWith(color: kHomeScreenGreyText),
+                ),
+                gapH16,
+                GestureDetector(
+                  onTap: () => HomeScreenActionCallbacks.newProfileAction(ref, context),
+                  child: Stack(
+                    children: [
+                      // const NewProfileAction(),
+                      SvgPicture.asset(
+                        'assets/images/empty_profile_bg.svg',
+                        width: MediaQuery.of(context).size.width * 0.8,
+                        height: MediaQuery.of(context).size.height * 0.68,
+                        fit: BoxFit.cover,
                       ),
-                    ),
+                      Positioned(
+                        top: 60,
+                        left: 88,
+                        right: 88,
+                        child: Text(
+                          strings.createConnectionProfile,
+                          style: Theme.of(context).textTheme.bodyLarge!.copyWith(fontSize: 18),
+                          textAlign: TextAlign.center,
+                        ),
+                      ),
+                      Positioned(
+                        top: 100,
+                        left: 88,
+                        right: 88,
+                        child: Text(
+                          strings.createConnectionProfileDesc,
+                          textAlign: TextAlign.center,
+                        ),
+                      ),
+                    ],
                   ),
-                ],
-              )
-            ],
+                ),
+              ],
+            ),
           );
         }
         final sortedProfiles = profiles.toList();
