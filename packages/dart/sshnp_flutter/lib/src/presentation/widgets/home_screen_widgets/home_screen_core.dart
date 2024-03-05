@@ -54,7 +54,7 @@ class _HomeScreenCoreState extends ConsumerState<HomeScreenCore> {
         return Text(e.toString());
       },
       data: (profiles) {
-        if (profiles.isNotEmpty) {
+        if (profiles.isEmpty) {
           return Center(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
