@@ -25,7 +25,7 @@
     "corruptedPrivateKey" : "Status: Private Key is corrupted",
     "corruptedProfile": "Status: profile is corrupted",
     "connectionProfiles" : "Connection Profiles",
-    "currentConnectionsDescription" : "Configure or create connection profiles",
+    "currentConnectionsDescription" : "Create and manage connection profiles",
    "createConnectionProfile":"Start New Connection Profile",
     "createConnectionProfileDesc":"Click to set up a connection profile for SSH access to you remote device",
     "delete" : "Delete",

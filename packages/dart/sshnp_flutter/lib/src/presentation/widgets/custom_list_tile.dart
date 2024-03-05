@@ -50,7 +50,7 @@ class CustomListTile extends StatelessWidget {
   const CustomListTile.privacyPolicy({
     this.iconData = Icons.account_balance_wallet_outlined,
     this.title = 'Privacy Policy',
-    this.subtitle = 'Check our terms of service',
+    this.subtitle = 'Check our privacy policy',
     this.type = CustomListTileType.privacyPolicy,
     this.tileColor = kProfileBackgroundColor,
     Key? key,
@@ -58,7 +58,7 @@ class CustomListTile extends StatelessWidget {
   const CustomListTile.keyManagement(
       {this.iconData = Icons.vpn_key_outlined,
       this.title = 'SSH Key Management',
-      this.subtitle = 'Edit, add and delete SSH Keys',
+      this.subtitle = 'Edit, add, and delete SSH Keys',
       this.type = CustomListTileType.sshKeyManagement,
       this.tileColor = kProfileBackgroundColor,
       Key? key})
@@ -73,8 +73,8 @@ class CustomListTile extends StatelessWidget {
       : super(key: key);
   const CustomListTile.backUpYourKey(
       {this.iconData = Icons.bookmark_outline,
-      this.title = 'Backup Your Keys',
-      this.subtitle = 'Save a pair of your atKeys',
+      this.title = 'Back Up Your Keys',
+      this.subtitle = 'Create a backup of your keys',
       this.type = CustomListTileType.backupYourKey,
       this.tileColor = kProfileBackgroundColor,
       Key? key})
