@@ -21,7 +21,7 @@ class HomeScreenDesktop extends StatelessWidget {
           const AppNavigationRail(),
           Expanded(
             child: Padding(
-              padding: const EdgeInsets.only(left: Sizes.p36, top: Sizes.p21),
+              padding: const EdgeInsets.only(left: Sizes.p36, right: Sizes.p36, top: Sizes.p21),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [

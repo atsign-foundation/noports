@@ -1429,12 +1429,11 @@ packages:
   xterm:
     dependency: "direct main"
     description:
-      path: "."
-      ref: master
-      resolved-ref: b5bbd92da7ab512cadeb535289eb53165f7bc6ae
-      url: "https://github.com/box-apps/xterm.dart"
-    source: git
-    version: "3.6.1-pre"
+      name: xterm
+      sha256: "168dfedca77cba33fdb6f52e2cd001e9fde216e398e89335c19b524bb22da3a2"
+      url: "https://pub.dev"
+    source: hosted
+    version: "4.0.0"
   yaml:
     dependency: transitive
     description:
@@ -1460,5 +1459,5 @@ packages:
     source: hosted
     version: "0.2.1"
 sdks:
-  dart: ">=3.2.0 <4.0.0"
-  flutter: ">=3.16.0"
+  dart: ">=3.2.3 <4.0.0"
+  flutter: ">=3.19.0"

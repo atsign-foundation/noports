@@ -27,15 +27,16 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     Future<AtClientPreference> futurePreference = loadAtClientPreference();
     return Scaffold(
       extendBodyBehindAppBar: true,
+      extendBody: true,
       body: Stack(
-        alignment: Alignment.topLeft,
+        alignment: Alignment.center,
         children: [
-          Center(
+          Positioned(
+            width: MediaQuery.of(context).size.width,
+            height: MediaQuery.of(context).size.height,
             child: Image.asset(
               'assets/images/onboarding_bg.png',
-              width: MediaQuery.of(context).size.width,
-              height: MediaQuery.of(context).size.height,
-              fit: BoxFit.contain,
+              fit: BoxFit.cover,
             ),
           ),
           Positioned(
@@ -43,7 +44,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
             height: MediaQuery.of(context).size.height,
             child: SvgPicture.asset(
               'assets/images/overlay.svg',
-              fit: BoxFit.fill,
+              fit: BoxFit.cover,
             ),
           ),
           Center(
@@ -56,12 +57,15 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                     borderRadius: BorderRadius.circular(Sizes.p12),
                   ),
                   child: Padding(
-                    padding: const EdgeInsets.all(Sizes.p30),
+                    padding:
+                        const EdgeInsets.only(top: Sizes.p30, bottom: Sizes.p10, left: Sizes.p30, right: Sizes.p30),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Image.asset(
-                          'assets/images/logo_color.png',
+                        SvgPicture.asset(
+                          'assets/images/app_logo.svg',
+                          fit: BoxFit.cover,
+                          height: Sizes.p38,
                         ),
                         Text(
                           strings.welcomeTo,
@@ -83,7 +87,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                           strings.welcomeToDescription,
                           style: Theme.of(context).textTheme.bodySmall!.copyWith(color: Colors.black),
                         ),
-                        gapH10,
+                        gapH20,
                         Center(
                           child: ElevatedButton(
                             style: ElevatedButton.styleFrom(
@@ -138,6 +142,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                             ),
                           ),
                         ),
+                        gapH10,
                         Center(
                             child: TextButton(
                           onPressed: () async {
