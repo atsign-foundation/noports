@@ -1452,7 +1452,7 @@ packages:
     source: hosted
     version: "0.0.6"
   zxing2:
-    dependency: "direct overridden"
+    dependency: transitive
     description:
       name: zxing2
       sha256: a042961441bd400f59595f9125ef5fca4c888daf0ea59c17f41e0e151f8a12b5
@@ -1461,4 +1461,4 @@ packages:
     version: "0.2.1"
 sdks:
   dart: ">=3.2.0 <4.0.0"
-  flutter: ">=3.16.0"
+  flutter: ">=3.19.0"
