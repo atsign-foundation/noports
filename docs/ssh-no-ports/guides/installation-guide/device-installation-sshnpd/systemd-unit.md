@@ -36,13 +36,18 @@ You'll then be greeted with a file that looks like this:
 
 {% @github-files/github-code-block url="https://github.com/atsign-foundation/noports/blob/trunk/packages/dart/sshnoports/bundles/shell/systemd/sshnpd.service" %}
 
-Replace `<username>` with the [linux user ](#user-content-fn-1)[^1]running sshnpd
+Replace `<username>` with the [linux user ](#user-content-fn-1)[^1]running sshnpd (we suggest creating service account not running as root)
 
 Replace `<@device_atsign>` with the [device address](#user-content-fn-2)[^2]
 
 Replace `<@manager_atsign>` with the [client address](#user-content-fn-3)[^3]
 
-Replace `<device_name>` with your own [custom **unique** identifier](#user-content-fn-4)[^4] for this device, you will need this value later so don't forget it.
+Replace `<device_name>` with your own [custom **unique
+** identifier](#user-content-fn-4)[^4] for this device. You will need this
+value later, so don't forget it.
+{% hint style="info" %}
+`<device_name>` must be alphanumeric snake case, max length 30 - e.g. dev_abc1
+{% endhint %}
 
 Add any additional config to the end of the line where sshnpd is run, some useful flags you should consider adding:
 
@@ -110,7 +115,59 @@ If you need to verify the status of the service:
 sudo systemctl status sshnpd.service
 ```
 
-## 5. All done!
+If you want to follow the logs of the service you can with&#x20;
+
+```bash
+sudo journalctl -u sshnpd.service -f
+```
+
+## 5. Check your environment.
+
+There are a number of fiddly things to get in place for ssh to work. The first is the `~/.ssh/authorized_keys`file of the user being used to run the systemd unit.
+
+The file needs to owned by the user running the systemd unit. Currently there is a bug in the script and this sets the user to root, which needs to be corrected if not running as root. You can do this with the following command substituting `debain` for your username and group.
+
+&#x20;The file also needs to be only writable by the owner, else the `sshd` will not allow logins. This can be checked with `ls -l` and corrected with the chmod command.
+
+```bash
+debian@beaglebone:~$ ls -l ~/.ssh/
+total 0
+-rw-r--r-- 1 root root 0 Feb 18 00:28 authorized_keys
+debian@beaglebone:~$ sudo chown debian:debian ~/.ssh/authorized_keys
+debian@beaglebone:~$ ls -l ~/.ssh/
+total 0
+-rw-r--r-- 1 debian debian 0 Feb 18 00:28 authorized_keys
+debian@beaglebone:~$ chmod 600 ~/.ssh/authorized_keys
+```
+
+Once complete it should look like this.
+
+```
+debian@beaglebone:~$ ls -l ~/.ssh/
+total 0
+-rw------- 1 debian debian 0 Feb 18 00:28 authorized_keys
+debian@beaglebone:~$
+```
+
+## Running sshnpd at root special steps (not recommended)
+
+If you decided to use the root user in the service setup you have a futher couple of steps.
+
+```bash
+sudo mkdir -p ~root/.ssh
+sudo touch ~root/.ssh/authorized_keys
+sudo chmod 600 ~root/.ssh/authorized_keys
+```
+
+Then you need to make sure that the root user is allowed to login via sshd. Whist this is not recommended you can get it working by editing the `/etc/ssh/sshd_config` file and removing the `#` on this line.
+
+```
+# PermitRootLogin prohibit-password
+```
+
+Once removed you will need to restart the sshd daemon. How to do this varies from distribution/OS so check on how to do it or reboot.
+
+## 6. All Done !
 
 Your systemd service is ready to go, you can now proceed to [installing your client](../client-installation-sshnp.md), or if you've already done that, checkout our [usage guide](../../usage-guide/basic-usage/).
 

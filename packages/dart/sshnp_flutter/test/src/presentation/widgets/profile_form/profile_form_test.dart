@@ -13,7 +13,7 @@ void main() {
       final r = ProfileFormRobot(tester);
       await r.pumpProfileForm(
           mockConfigListController: mockConfigListController, mockConfigFamilyController: mockConfigFamilyController);
-      r.findCircularProgressIndictor();
+      r.findCircularProgressIndicator();
 
       // r.findHomeErrorText();
       // r.findNoConfigurationFoundWidget();
@@ -29,7 +29,7 @@ void main() {
       final r = ProfileFormRobot(tester);
       await r.pumpProfileForm(
           mockConfigListController: mockConfigListController, mockConfigFamilyController: mockConfigFamilyController);
-      r.findCircularProgressIndictor();
+      r.findCircularProgressIndicator();
       await tester.pump();
       final configFile = SshnpParams.empty();
       r.findProfileFormWidgetsWithDefaultValues(configFile: configFile);
@@ -43,7 +43,7 @@ void main() {
       final r = ProfileFormRobot(tester);
       await r.pumpProfileForm(
           mockConfigListController: mockConfigListController, mockConfigFamilyController: mockConfigFamilyController);
-      r.findCircularProgressIndictor();
+      r.findCircularProgressIndicator();
       await tester.pump();
 
       r.findProfileFormWidgetsWithNewValues();

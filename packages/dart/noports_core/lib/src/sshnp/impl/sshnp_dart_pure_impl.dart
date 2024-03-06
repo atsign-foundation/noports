@@ -49,6 +49,11 @@ class SshnpDartPureImpl extends SshnpCore
   SSHClient? tunnelSshClient;
 
   @override
+  Future<void> dispose() async {
+    completeDisposal();
+  }
+
+  @override
   Future<SshnpResult> run() async {
     /// Ensure that sshnp is initialized
     await callInitialization();
@@ -70,8 +75,8 @@ class SshnpDartPureImpl extends SshnpCore
           SshnpSessionRequest(
             direct: true,
             sessionId: sessionId,
-            host: srvdChannel.host,
-            port: srvdChannel.daemonPort!,
+            host: srvdChannel.rvdHost,
+            port: srvdChannel.daemonPort,
             authenticateToRvd: params.authenticateDeviceToRvd,
             clientNonce: srvdChannel.clientNonce,
             rvdNonce: srvdChannel.rvdNonce,
@@ -110,9 +115,10 @@ class SshnpDartPureImpl extends SshnpCore
     /// Start srv
     sendProgress('Creating connection to socket rendezvous');
     SSHSocket? sshSocket = await srvdChannel.runSrv(
-      directSsh: true,
       sessionAESKeyString: sshnpdChannel.sessionAESKeyString,
       sessionIVString: sshnpdChannel.sessionIVString,
+      multi: false,
+      detached: false,
     );
 
     try {

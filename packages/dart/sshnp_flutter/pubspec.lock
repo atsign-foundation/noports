@@ -69,26 +69,27 @@ packages:
     dependency: transitive
     description:
       name: at_chops
-      sha256: f97102619c6ce827fc44d15fc3300c404526dc17e2097115dc1ce0d0289d26fe
+      sha256: "825171a3132b3756119bd16b6fd1fa6257f74a64babaf13cae2d82d53b8c6be1"
       url: "https://pub.dev"
     source: hosted
-    version: "1.0.7"
+    version: "2.0.0"
   at_client:
     dependency: transitive
     description:
       name: at_client
-      sha256: e200d5078657c237fbda53cbd818ab17b8b520204c3512183c852981d799ab7b
+      sha256: "65fefc2c217376bdcdff1b7b5b30c476bc5bf8ca4146863aa4a28ce5401d3600"
       url: "https://pub.dev"
     source: hosted
-    version: "3.0.73"
+    version: "3.0.75"
   at_client_mobile:
     dependency: "direct main"
     description:
-      name: at_client_mobile
-      sha256: "8dfd971fa2408c86124d5597ebe613b3c53e8ff32b9d0d304f98ce2d2ceed48f"
-      url: "https://pub.dev"
-    source: hosted
-    version: "3.2.14"
+      path: "packages/at_client_mobile"
+      ref: issue_1232
+      resolved-ref: "303229de131131eb9efbc61b42547db191208ecd"
+      url: "https://github.com/atsign-foundation/at_client_sdk"
+    source: git
+    version: "3.2.15"
   at_common_flutter:
     dependency: "direct main"
     description:
@@ -109,10 +110,10 @@ packages:
     dependency: "direct main"
     description:
       name: at_contact
-      sha256: "232a7dd140bd4c22f4d99c7866633338de57e50f0e1eb84e515dc1ed0f7b0fee"
+      sha256: e1b8904116e6e0fcbc5627409bffe3b620417c62b76bbedc84b1f66acc28adfe
       url: "https://pub.dev"
     source: hosted
-    version: "3.0.7"
+    version: "3.0.8"
   at_contacts_flutter:
     dependency: "direct main"
     description:
@@ -133,18 +134,18 @@ packages:
     dependency: transitive
     description:
       name: at_lookup
-      sha256: "5a3e941215e710d8d128d4fb1cf24a55ccd738c0a6e2991934beb5e76787ff96"
+      sha256: "25e71e2c9fe8bbccf534823b9cdc240239c225ef18b1d333420533a3e626df08"
       url: "https://pub.dev"
     source: hosted
-    version: "3.0.44"
+    version: "3.0.46"
   at_onboarding_flutter:
     dependency: "direct main"
     description:
       name: at_onboarding_flutter
-      sha256: "80620df158e698db1a41b9f5522ca236da0ba5118a8e16af94625812209b8be0"
+      sha256: "3d7021a3789a4fb87a04e79f7f849e22875ea13f9ff3fdef7ad246679dce0e6c"
       url: "https://pub.dev"
     source: hosted
-    version: "6.1.6"
+    version: "6.1.7"
   at_persistence_secondary_server:
     dependency: transitive
     description:
@@ -421,10 +422,10 @@ packages:
     dependency: transitive
     description:
       name: file_picker
-      sha256: be325344c1f3070354a1d84a231a1ba75ea85d413774ec4bdf444c023342e030
+      sha256: "4e42aacde3b993c5947467ab640882c56947d9d27342a5b6f2895b23956954a6"
       url: "https://pub.dev"
     source: hosted
-    version: "5.5.0"
+    version: "6.1.1"
   file_selector:
     dependency: "direct main"
     description:
@@ -795,7 +796,7 @@ packages:
       path: "../noports_core"
       relative: true
     source: path
-    version: "6.0.3"
+    version: "6.0.5"
   openssh_ed25519:
     dependency: transitive
     description:
@@ -816,10 +817,10 @@ packages:
     dependency: transitive
     description:
       name: package_info_plus
-      sha256: "7e76fad405b3e4016cd39d08f455a4eb5199723cf594cd1b8916d47140d93017"
+      sha256: "88bc797f44a94814f2213db1c9bd5badebafdfb8290ca9f78d4b9ee2a3db4d79"
       url: "https://pub.dev"
     source: hosted
-    version: "4.2.0"
+    version: "5.0.1"
   package_info_plus_platform_interface:
     dependency: transitive
     description:
@@ -1141,10 +1142,10 @@ packages:
     dependency: "direct main"
     description:
       name: socket_connector
-      sha256: "7a063478d8a191447c297d480bf344179b239c52063f13f47d71acbaf4941064"
+      sha256: a614741652395393bc8e06987a0569bac116b2112645cc846015949dcf66aebd
       url: "https://pub.dev"
     source: hosted
-    version: "2.0.1"
+    version: "2.1.0"
   source_span:
     dependency: transitive
     description:

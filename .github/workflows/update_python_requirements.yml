@@ -3,7 +3,7 @@ on:
   pull_request:
     paths:
       - 'packages/python/sshnpd/pyproject.toml'
-      - 'packages/python/sshnoports_sdk/pyproject.toml'
+      - 'examples/automations/python/sshnoports_automation_python/pyproject.toml'
   workflow_dispatch:
 
 permissions:
@@ -51,8 +51,8 @@ jobs:
           git push
         fi
 
-    - name: Bump sshnoports_sdk Python dependencies
-      working-directory: packages/python/sshnoports_sdk
+    - name: Bump sshnoports_automation_python Python dependencies
+      working-directory: examples/automations/python
       if: ${{ github.actor == 'dependabot[bot]' }}
       run: |
         poetry update
