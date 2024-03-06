@@ -54,7 +54,7 @@
     "keyFile" : "Key File",
     "listDevices" : "List Devices",
     "localPort": "Client-side port for the ssh tunnel",
-    "localPortTooltip" : "Client-side port for the ssh tunnel. Defaults to 0 (ask the o/s for a port)",
+    "localPortTooltip" : "Defaults to 0 (ask the o/s for a port)",
     "localSshOptions" : "Local SSH Options",
     "localSshOptionsTooltip" : "Add these commands to the local ssh command",
     "localSshOptionsHint" : "Use \",\" to separate options",
