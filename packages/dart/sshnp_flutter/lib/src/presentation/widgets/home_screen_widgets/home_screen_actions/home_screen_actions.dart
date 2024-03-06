@@ -3,7 +3,7 @@ import 'package:sshnp_flutter/src/presentation/widgets/home_screen_widgets/home_
 import 'package:sshnp_flutter/src/utility/sizes.dart';
 
 class HomeScreenActions extends StatelessWidget {
-  const HomeScreenActions({Key? key}) : super(key: key);
+  const HomeScreenActions({super.key});
 
   @override
   Widget build(BuildContext context) {

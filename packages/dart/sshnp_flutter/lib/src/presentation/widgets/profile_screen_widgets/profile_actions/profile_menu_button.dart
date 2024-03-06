@@ -6,7 +6,7 @@ import 'package:sshnp_flutter/src/utility/sizes.dart';
 
 class ProfileMenuButton extends ConsumerStatefulWidget {
   final String profileName;
-  const ProfileMenuButton(this.profileName, {Key? key}) : super(key: key);
+  const ProfileMenuButton(this.profileName, {super.key});
 
   @override
   ConsumerState<ProfileMenuButton> createState() => _ProfileMenuBarState();
@@ -41,7 +41,7 @@ class _ProfileMenuBarState extends ConsumerState<ProfileMenuButton> {
 class ProfileMenuItem extends StatelessWidget {
   final Widget icon;
   final String text;
-  const ProfileMenuItem(this.icon, this.text, {Key? key}) : super(key: key);
+  const ProfileMenuItem(this.icon, this.text, {super.key});
 
   @override
   Widget build(BuildContext context) {

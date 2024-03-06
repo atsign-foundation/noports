@@ -14,7 +14,7 @@ import 'ssh_key_management_form_dialog.dart';
 
 // * Once the onboarding process is completed you will be taken to this screen
 class SshKeyManagementDialog extends ConsumerStatefulWidget {
-  const SshKeyManagementDialog({Key? key}) : super(key: key);
+  const SshKeyManagementDialog({super.key});
 
   @override
   ConsumerState<SshKeyManagementDialog> createState() => _SshKeyManagementScreenState();

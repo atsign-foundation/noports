@@ -111,7 +111,6 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                                   ),
                                 ),
                               );
-
                               switch (onboardingResult.status) {
                                 case AtOnboardingResultStatus.success:
                                   await initializeContactsService(rootDomain: AtEnv.rootDomain);

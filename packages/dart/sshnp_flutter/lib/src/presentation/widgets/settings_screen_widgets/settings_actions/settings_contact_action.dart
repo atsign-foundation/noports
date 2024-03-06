@@ -4,7 +4,7 @@ import 'package:sshnp_flutter/src/presentation/widgets/settings_screen_widgets/s
 import 'package:url_launcher/url_launcher.dart';
 
 class SettingsContactAction extends StatelessWidget {
-  const SettingsContactAction({Key? key}) : super(key: key);
+  const SettingsContactAction({super.key});
 
   @override
   Widget build(BuildContext context) {

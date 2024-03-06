@@ -8,7 +8,7 @@ import '../../../utility/constants.dart';
 import 'ssh_key_management_form_dialog.dart';
 
 class SshKeyPairBarActions extends ConsumerStatefulWidget {
-  const SshKeyPairBarActions({required this.identifier, Key? key}) : super(key: key);
+  const SshKeyPairBarActions({required this.identifier, super.key});
 
   final String identifier;
 

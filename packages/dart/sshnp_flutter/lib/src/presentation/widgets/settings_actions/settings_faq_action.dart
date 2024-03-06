@@ -4,7 +4,7 @@ import 'package:sshnp_flutter/src/presentation/widgets/settings_screen_widgets/s
 import 'package:url_launcher/url_launcher.dart';
 
 class SettingsFaqAction extends StatelessWidget {
-  const SettingsFaqAction({Key? key}) : super(key: key);
+  const SettingsFaqAction({super.key});
 
   @override
   Widget build(BuildContext context) {

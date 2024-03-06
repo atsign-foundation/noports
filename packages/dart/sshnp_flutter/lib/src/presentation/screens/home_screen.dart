@@ -7,7 +7,7 @@ import '../widgets/home_screen_widgets/home_screen_mobile.dart';
 
 // * Once the onboarding process is completed you will be taken to this screen
 class HomeScreen extends ConsumerStatefulWidget {
-  const HomeScreen({Key? key}) : super(key: key);
+  const HomeScreen({super.key});
 
   @override
   ConsumerState<HomeScreen> createState() => _HomeScreenState();
