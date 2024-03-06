@@ -9,7 +9,7 @@ import 'package:sshnp_flutter/src/presentation/widgets/utility/custom_snack_bar.
 
 class ProfileRunAction extends ConsumerStatefulWidget {
   final SshnpParams params;
-  const ProfileRunAction(this.params, {Key? key}) : super(key: key);
+  const ProfileRunAction(this.params, {super.key});
 
   @override
   ConsumerState<ProfileRunAction> createState() => _ProfileRunActionState();

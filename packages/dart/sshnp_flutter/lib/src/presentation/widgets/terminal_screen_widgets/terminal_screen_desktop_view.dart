@@ -19,7 +19,7 @@ import '../utility/custom_snack_bar.dart';
 
 // * Once the onboarding process is completed you will be taken to this screen
 class TerminalScreenDesktopView extends ConsumerStatefulWidget {
-  const TerminalScreenDesktopView({Key? key}) : super(key: key);
+  const TerminalScreenDesktopView({super.key});
 
   @override
   ConsumerState<TerminalScreenDesktopView> createState() => _TerminalScreenDesktopViewState();
@@ -135,7 +135,7 @@ class _TerminalScreenDesktopViewState extends ConsumerState<TerminalScreenDeskto
                       'assets/images/noports_light.svg',
                     ),
                     gapH24,
-                    if (terminalList.isEmpty) Text(strings.noTerminalSessions, textScaleFactor: 2),
+                    if (terminalList.isEmpty) Text(strings.noTerminalSessions, textScaler: const TextScaler.linear(2)),
                     if (terminalList.isEmpty) Text(strings.noTerminalSessionsHelp),
                     if (terminalList.isNotEmpty)
                       TabBar(

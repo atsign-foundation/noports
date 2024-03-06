@@ -7,7 +7,7 @@ class HomeScreenImportDialog extends StatefulWidget {
   final void Function(String?) setValue;
 
   final String? initialName;
-  const HomeScreenImportDialog(this.setValue, {this.initialName, Key? key}) : super(key: key);
+  const HomeScreenImportDialog(this.setValue, {this.initialName, super.key});
 
   @override
   State<HomeScreenImportDialog> createState() => _HomeScreenImportDialogState();

@@ -5,7 +5,7 @@ import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:sshnp_flutter/src/presentation/widgets/settings_screen_widgets/settings_actions/settings_action_button.dart';
 
 class SettingsBackupKeyAction extends StatelessWidget {
-  const SettingsBackupKeyAction({Key? key}) : super(key: key);
+  const SettingsBackupKeyAction({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -14,8 +14,7 @@ class SettingsBackupKeyAction extends StatelessWidget {
       icon: Icons.bookmark_outline,
       title: strings.backupYourKeys,
       onTap: () {
-        BackupKeyWidget(atsign: ContactService().currentAtsign)
-            .showBackupDialog(context);
+        BackupKeyWidget(atsign: ContactService().currentAtsign).showBackupDialog(context);
       },
     );
   }

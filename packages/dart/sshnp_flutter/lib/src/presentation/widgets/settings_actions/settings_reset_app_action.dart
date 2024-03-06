@@ -13,10 +13,10 @@ class SettingsResetAppAction extends StatefulWidget {
   final bool isOnboardingScreen;
 
   const SettingsResetAppAction({
-    Key? key,
+    super.key,
     this.buttonText,
     this.isOnboardingScreen = false,
-  }) : super(key: key);
+  });
 
   @override
   State<SettingsResetAppAction> createState() => _SettingsResetAppActionState();

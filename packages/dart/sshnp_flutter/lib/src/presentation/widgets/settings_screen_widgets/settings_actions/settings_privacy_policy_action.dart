@@ -4,7 +4,7 @@ import 'package:sshnp_flutter/src/presentation/widgets/settings_screen_widgets/s
 import 'package:url_launcher/url_launcher.dart';
 
 class SettingsPrivacyPolicyAction extends StatelessWidget {
-  const SettingsPrivacyPolicyAction({Key? key}) : super(key: key);
+  const SettingsPrivacyPolicyAction({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -13,8 +13,7 @@ class SettingsPrivacyPolicyAction extends StatelessWidget {
       icon: Icons.account_balance_wallet_outlined,
       title: strings.privacyPolicy,
       onTap: () async {
-        final Uri url =
-            Uri.parse('https://atsign.com/apps/atdatabrowser-privacy-policy/');
+        final Uri url = Uri.parse('https://atsign.com/apps/atdatabrowser-privacy-policy/');
         if (!await launchUrl(url)) {
           throw Exception('Could not launch $url');
         }

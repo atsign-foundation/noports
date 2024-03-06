@@ -19,29 +19,28 @@ class NavigationListTile extends StatelessWidget {
       this.title = 'Current\nConnections',
       this.type = CustomListTileType.currentConnections,
       this.tileColor = kBackGroundColorDark,
-      Key? key})
-      : super(key: key);
+      super.key});
   const NavigationListTile.terminal({
     this.iconData = Icons.terminal_outlined,
     this.title = 'Terminal',
     this.type = CustomListTileType.terminal,
     this.tileColor = kBackGroundColorDark,
-    Key? key,
-  }) : super(key: key);
+    super.key,
+  });
   const NavigationListTile.support({
     this.iconData = Icons.question_mark_outlined,
     this.title = 'Support',
     this.type = CustomListTileType.support,
     this.tileColor = kBackGroundColorDark,
-    Key? key,
-  }) : super(key: key);
+    super.key,
+  });
   const NavigationListTile.settings({
     this.iconData = Icons.settings,
     this.title = 'Settings',
     this.type = CustomListTileType.settings,
     this.tileColor = kBackGroundColorDark,
-    Key? key,
-  }) : super(key: key);
+    super.key,
+  });
 
   final IconData iconData;
   final String title;

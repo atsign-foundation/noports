@@ -29,64 +29,59 @@ class CustomListTile extends StatelessWidget {
       this.subtitle = 'Guaranteed quick response',
       this.type = CustomListTileType.email,
       this.tileColor = kProfileBackgroundColor,
-      Key? key})
-      : super(key: key);
+      super.key});
   const CustomListTile.discord({
     this.iconData = Icons.discord,
     this.title = 'Discord',
     this.subtitle = 'Join our server for help',
     this.type = CustomListTileType.discord,
     this.tileColor = kProfileBackgroundColor,
-    Key? key,
-  }) : super(key: key);
+    super.key,
+  });
   const CustomListTile.faq({
     this.iconData = Icons.help_center_outlined,
     this.title = 'FAQ',
     this.subtitle = 'Frequently asked questions',
     this.type = CustomListTileType.faq,
     this.tileColor = kProfileBackgroundColor,
-    Key? key,
-  }) : super(key: key);
+    super.key,
+  });
   const CustomListTile.privacyPolicy({
     this.iconData = Icons.account_balance_wallet_outlined,
     this.title = 'Privacy Policy',
     this.subtitle = 'Check our privacy policy',
     this.type = CustomListTileType.privacyPolicy,
     this.tileColor = kProfileBackgroundColor,
-    Key? key,
-  }) : super(key: key);
+    super.key,
+  });
   const CustomListTile.keyManagement(
       {this.iconData = Icons.vpn_key_outlined,
       this.title = 'SSH Key Management',
       this.subtitle = 'Edit, add, and delete SSH Keys',
       this.type = CustomListTileType.sshKeyManagement,
       this.tileColor = kProfileBackgroundColor,
-      Key? key})
-      : super(key: key);
+      super.key});
   const CustomListTile.switchAtsign(
       {this.iconData = Icons.switch_account_outlined,
       this.title = 'Switch atsign',
       this.subtitle = 'Select a different atsign to onboard with',
       this.type = CustomListTileType.switchAtsign,
       this.tileColor = kProfileBackgroundColor,
-      Key? key})
-      : super(key: key);
+      super.key});
   const CustomListTile.backUpYourKey(
       {this.iconData = Icons.bookmark_outline,
       this.title = 'Back Up Your Keys',
       this.subtitle = 'Create a backup of your keys',
       this.type = CustomListTileType.backupYourKey,
       this.tileColor = kProfileBackgroundColor,
-      Key? key})
-      : super(key: key);
+      super.key});
   const CustomListTile.resetAtsign(
       {this.iconData = Icons.rotate_right,
       this.title = 'Reset App',
       this.subtitle = 'App will be reset and you will be logged out',
       this.type = CustomListTileType.resetAtsign,
       this.tileColor = kProfileBackgroundColor,
-      Key? key})
-      : super(key: key);
+      super.key});
 
   final IconData iconData;
   final String title;
@@ -154,7 +149,6 @@ class CustomListTile extends StatelessWidget {
               ),
             );
             final OnboardingService onboardingService = OnboardingService.getInstance();
-            final status = await onboardingService.checkAtsignStatus();
 
             if (context.mounted && result == AtOnboardingResetResult.success) {
               onboardingService.setAtsign = null;
