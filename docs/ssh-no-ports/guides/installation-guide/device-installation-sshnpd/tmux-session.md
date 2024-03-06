@@ -68,7 +68,13 @@ sudo ./install.sh tmux sshnpd
 
 ## 2. Configure the startup script
 
-After installing the startup script, we must configure it.
+After installing the startup script, we must configure it, with `nano` or `vi` depending on your preference.
+
+```bash
+nano ~/.local/bin/sshnpd.sh
+```
+
+or
 
 ```bash
 vi ~/.local/bin/sshnpd.sh
