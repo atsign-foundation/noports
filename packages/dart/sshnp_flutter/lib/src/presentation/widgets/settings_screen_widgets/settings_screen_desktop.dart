@@ -62,7 +62,7 @@ class SettingsDesktopView extends ConsumerWidget {
                           CustomListTile.resetAtsign(),
                         ])),
                   ),
-                  Text('App Version ${packageInfoController.version}(${packageInfoController.buildNumber})'),
+                  Text('App Version ${packageInfoController.version} (${packageInfoController.buildNumber})'),
                 ],
               ),
             ),
