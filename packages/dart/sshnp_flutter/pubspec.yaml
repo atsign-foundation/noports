@@ -48,6 +48,8 @@ dev_dependencies:
     sdk: flutter
 
 dependency_overrides:
+  noports_core:
+    path: ../noports_core
   at_commons: ^4.0.0
   # file_picker: ^6.0.0
   # at_onboarding_flutter: 6.1.3
