@@ -7,8 +7,7 @@ class HomeScreenImportDialog extends StatefulWidget {
   final void Function(String?) setValue;
 
   final String? initialName;
-  const HomeScreenImportDialog(this.setValue, {this.initialName, Key? key})
-      : super(key: key);
+  const HomeScreenImportDialog(this.setValue, {this.initialName, Key? key}) : super(key: key);
 
   @override
   State<HomeScreenImportDialog> createState() => _HomeScreenImportDialogState();
@@ -27,7 +26,7 @@ class _HomeScreenImportDialogState extends State<HomeScreenImportDialog> {
         key: _formkey,
         child: CustomTextFormField(
           initialValue: widget.initialName,
-          labelText: strings.profileName,
+          labelText: strings.profileName('required'),
           onSaved: (value) {
             result = value;
           },
@@ -40,10 +39,7 @@ class _HomeScreenImportDialogState extends State<HomeScreenImportDialog> {
             Navigator.of(context).pop(false);
           },
           child: Text(strings.cancelButton,
-              style: Theme.of(context)
-                  .textTheme
-                  .bodySmall!
-                  .copyWith(decoration: TextDecoration.underline)),
+              style: Theme.of(context).textTheme.bodySmall!.copyWith(decoration: TextDecoration.underline)),
         ),
         ElevatedButton(
           onPressed: () {
@@ -57,10 +53,7 @@ class _HomeScreenImportDialogState extends State<HomeScreenImportDialog> {
               ),
           child: Text(
             strings.submit,
-            style: Theme.of(context)
-                .textTheme
-                .bodySmall!
-                .copyWith(fontWeight: FontWeight.w700, color: Colors.white),
+            style: Theme.of(context).textTheme.bodySmall!.copyWith(fontWeight: FontWeight.w700, color: Colors.white),
           ),
         )
       ],

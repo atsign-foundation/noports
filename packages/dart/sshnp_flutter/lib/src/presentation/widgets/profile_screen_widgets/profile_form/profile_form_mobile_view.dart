@@ -89,7 +89,7 @@ class _ProfileFormState extends ConsumerState<ProfileFormMobileView> {
                   CustomTextFormField(
                     width: double.infinity,
                     initialValue: oldConfig.profileName,
-                    labelText: strings.profileName,
+                    labelText: strings.profileName('required'),
                     onChanged: (value) {
                       newConfig = SshnpPartialParams.merge(
                         newConfig,
@@ -124,11 +124,11 @@ class _ProfileFormState extends ConsumerState<ProfileFormMobileView> {
                   gapH10,
                   CustomTextFormField(
                     width: double.infinity,
-                    initialValue: oldConfig.srvdAtSign,
-                    labelText: strings.srvdAtsign,
+                    initialValue: oldConfig.host,
+                    labelText: strings.host,
                     onSaved: (value) => newConfig = SshnpPartialParams.merge(
                       newConfig,
-                      SshnpPartialParams(srvdAtSign: value),
+                      SshnpPartialParams(host: value),
                     ),
                     validator: FormValidator.validateRequiredField,
                   ),
@@ -223,7 +223,7 @@ class _ProfileFormState extends ConsumerState<ProfileFormMobileView> {
                       CustomTextFormField(
                           width: double.infinity,
                           initialValue: oldConfig.remoteUsername ?? '',
-                          labelText: strings.remoteUserName,
+                          labelText: strings.remoteUsername,
                           onSaved: (value) {
                             newConfig = SshnpPartialParams.merge(
                               newConfig,
@@ -281,7 +281,12 @@ class _ProfileFormState extends ConsumerState<ProfileFormMobileView> {
                       children: [
                         ElevatedButton(
                           onPressed: () => onSubmit(oldConfig, newConfig),
-                          child: Text(strings.submit),
+                          child: Text(
+                            strings.submit,
+                            style: Theme.of(context).textTheme.labelLarge!.copyWith(
+                                  color: Colors.white,
+                                ),
+                          ),
                         ),
                         gapW8,
                         TextButton(

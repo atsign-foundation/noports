@@ -9,6 +9,7 @@ import 'package:sshnp_flutter/src/presentation/widgets/ssh_key_management/ssh_ke
 import 'package:sshnp_flutter/src/utility/constants.dart';
 import 'package:sshnp_flutter/src/utility/sizes.dart';
 
+import '../../../controllers/file_picker_controller.dart';
 import 'ssh_key_management_form_dialog.dart';
 
 // * Once the onboarding process is completed you will be taken to this screen
@@ -16,12 +17,10 @@ class SshKeyManagementDialog extends ConsumerStatefulWidget {
   const SshKeyManagementDialog({Key? key}) : super(key: key);
 
   @override
-  ConsumerState<SshKeyManagementDialog> createState() =>
-      _SshKeyManagementScreenState();
+  ConsumerState<SshKeyManagementDialog> createState() => _SshKeyManagementScreenState();
 }
 
-class _SshKeyManagementScreenState
-    extends ConsumerState<SshKeyManagementDialog> {
+class _SshKeyManagementScreenState extends ConsumerState<SshKeyManagementDialog> {
   @override
   Widget build(BuildContext context) {
     // * Getting the AtClientManager instance to use below
@@ -71,10 +70,7 @@ class _SshKeyManagementScreenState
                         TextSpan(text: strings.yourKeys, children: [
                           TextSpan(
                             text: ' ${sortedPrivateKeys.length}',
-                            style: Theme.of(context)
-                                .textTheme
-                                .bodyMedium!
-                                .copyWith(color: kPrimaryColor),
+                            style: Theme.of(context).textTheme.bodyMedium!.copyWith(color: kPrimaryColor),
                           ),
                         ]),
                       ),
@@ -87,8 +83,7 @@ class _SshKeyManagementScreenState
                             padding: const EdgeInsets.all(8.0),
                             child: GridView.builder(
                               itemCount: sortedPrivateKeys.length,
-                              gridDelegate:
-                                  const SliverGridDelegateWithFixedCrossAxisCount(
+                              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                                 crossAxisCount: 2,
                                 childAspectRatio: 190 / 60,
                               ),
@@ -107,9 +102,8 @@ class _SshKeyManagementScreenState
             gapH20,
             GestureDetector(
               onTap: () async {
-                await showDialog(
-                    context: context,
-                    builder: ((context) => const SSHKeyManagementFormDialog()));
+                ref.read(filePickerController.notifier).clearFileDetails();
+                await showDialog(context: context, builder: ((context) => const SSHKeyManagementFormDialog()));
               },
               child: DottedBorder(
                 dashPattern: const [10, 10],
@@ -121,10 +115,7 @@ class _SshKeyManagementScreenState
                   child: Center(
                     child: Text(
                       strings.uploadNewKey,
-                      style: Theme.of(context)
-                          .textTheme
-                          .bodySmall!
-                          .copyWith(color: kPrimaryColor),
+                      style: Theme.of(context).textTheme.bodySmall!.copyWith(color: kPrimaryColor),
                     ),
                   ),
                 ),

@@ -96,7 +96,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(Sizes.p20),
                               ),
-                              padding: const EdgeInsets.symmetric(horizontal: Sizes.p99, vertical: Sizes.p10),
+                              padding: const EdgeInsets.symmetric(horizontal: Sizes.p60, vertical: Sizes.p10),
                             ),
                             onPressed: () async {
                               AtOnboardingResult onboardingResult = await AtOnboarding.onboard(
@@ -136,11 +136,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                               }
                             },
                             child: Text(
-                              'Onboard an @sign',
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .bodySmall!
-                                  .copyWith(color: Colors.white, fontWeight: FontWeight.w700),
+                              strings.onboardButtonDescription,
+                              style: Theme.of(context).textTheme.bodySmall!.copyWith(color: Colors.white),
+                              textAlign: TextAlign.center,
                             ),
                           ),
                         ),

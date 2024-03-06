@@ -66,3 +66,5 @@ const gapH36 = SizedBox(height: Sizes.p36);
 const gapH40 = SizedBox(height: Sizes.p40);
 const gapH46 = SizedBox(height: Sizes.p46);
 const gapH60 = SizedBox(height: Sizes.p60);
+
+const kMinimumWindowSize = Size(671, 505);
