@@ -249,10 +249,6 @@ ubuntu@f5040633c8a0:~$
 
 You are now logged into the container and if you need root access can use the password you chose to `sudo -s`
 
-### Demo recording.
-
-{% embed url="https://asciinema.org/a/INCJFw6LcWsR9bMPjwd98a62e" %}
-recorded live
-{% endembed %}
+{% embed url="https://asciinema.org/a/645698" %}
 
 Good luck using this outline for your own environment.
