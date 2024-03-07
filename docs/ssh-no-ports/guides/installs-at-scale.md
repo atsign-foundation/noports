@@ -22,7 +22,7 @@ Cut and paste this script and tailor it to your needs. Do not forget to chmod 50
 
 ```bash
 #!/bin/bash
-# Configure these variable to your liking or pass in args
+# Configure these variables to your liking or pass in args
 if [ $# -ne 8 ]
 then
 # USERNAME & PASSWORD created with sudo priviledges by install.sh
