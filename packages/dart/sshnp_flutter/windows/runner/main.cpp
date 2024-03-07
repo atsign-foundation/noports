@@ -26,8 +26,8 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance, _In_opt_ HINSTANCE prev,
 
   FlutterWindow window(project);
   Win32Window::Point origin(10, 10);
-  Win32Window::Size size(1280, 720);
-  if (!window.Create(L"sshnp_flutter", origin, size)) {
+  Win32Window::Size size(671, 541);
+  if (!window.Create(L"SSH No Ports Desktop", origin, size)) {
     return EXIT_FAILURE;
   }
   window.SetQuitOnClose(true);
