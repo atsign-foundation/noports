@@ -18,7 +18,7 @@ Each atSign has a reasonable maximum of 25 devices that it can manage, so keep t
 
 ## Install.sh
 
-Cut and paste this script and tailor it to your needs. Do not forget to chmod 500 or else it will not run! More details below on how to set things up and a demo run, too, using docker.
+Cut and paste this script and tailor it to your needs. Do not forget to chmod 500 or else it will not run! More details below on how to set things up, and a demo run, too, using Docker.
 
 ```bash
 #!/bin/bash
@@ -139,7 +139,7 @@ openssl enc -aes-256-cbc -pbkdf2 -iter 1000000 -salt -in ~/.atsign/keys/@ssh_1_k
 
 This command will ask you for a password which you will put in the `install.sh` file as `ATKEY_PASSWORD`.
 
-You can then set up a simple http (the file is encrypted) server to serve the keys with. For example, a python single line of code:
+You can then set up a simple http (the file is encrypted) server to serve the keys with. For example, a Python single line of code:
 
 `python3 -m http.server 8080 --bind 0`
 
@@ -147,9 +147,9 @@ Alternatively, you can put the keys file on filebin.net and it will locate the f
 
 `https://filebin.net/s2w5r6gwemmz5kvi/_ssh_1_key.atKeys.aes`
 
-It is worth noting that the `@` gets translated to a `_` but that does not effect the script. Using this site has the advantage that the URL is hidden, and it uses TLS plus you can delete the files once completed.
+It is worth noting that the `@` gets translated to a `_` but that does not effect the script. Using this site has the advantage that the URL is hidden, and it uses TLS—plus you can delete the files once completed.
 
-At this point you can derive the URL of the encrypted atKeys file and put it in the `install.sh` file headers
+At this point you can derive the URL of the encrypted atKeys file and put it in the `install.sh` file headers.
 
 ```
 export ATKEYS_URL="http://192.168.1.61:8080/@ssh_1_key.atKeys.aes"
@@ -157,7 +157,7 @@ export ATKEYS_URL="http://192.168.1.61:8080/@ssh_1_key.atKeys.aes"
 export ATKEY_PASSWORD="helloworld12345!"
 ```
 
-The other variables should be straight forward enough.
+The other variables should be straightforward enough.
 
 ```
 export USERNAME=ubuntu
@@ -169,39 +169,39 @@ export CONFIG_URL="https://raw.githubusercontent.com/cconstab/sshnpd_config/main
 Gist for sshnpd config file
 {% endembed %}
 
-The other variables set up the atSigns for the manager and device and the device name itself. The device name by default uses the `hostname` using the shell command `$(hostname)` but that only works if the hostname is compliant with the `-d` format of sshnpd. You can pick another way to identify the host or just make sure the hostname is compliant.
+The other variables set up the atSigns for the manager and device and for the device name itself. The device name by default uses the `hostname` using the shell command `$(hostname)` , but that only works if the hostname is compliant with the `-d` format of sshnpd. You can pick another way to identify the host or just make sure the hostname is compliant.
 
-## Running the install.sh (Note has to be run as root)
+## Running the install.sh (Note: Has to be run as root)
 
-This is a simple matter now of getting the install.sh to the target device and running it. The needed files will be installed, the username name created, cronjobs put in place and the 'sshnpd' will be started.
+This is a simple matter now of getting the install.sh to the target device and running it. The needed files will be installed, the username name created, cronjobs put in place, and the 'sshnpd' will be started.
 
-How you get the `install.sh` file to the target machine is going to vary depending on your enviroment. Using scp is a good option or using ssh or curl and pulling the file (using the same encryption method perhaps).
+How you get the `install.sh` file to the target machine is going to vary depending on your environment. Using scp is a good option, as is using ssh or curl and pulling the file (using the same encryption method perhaps).
 
 ## Scaling things up
 
-The install.sh script works fine on individual machines but if you want to install on say 25 machines this is how you do it.
+The install.sh script works fine on individual machines, but if you want to install on, say, 25 machines, this is how you do it.
 
-First you need to have ssh root access to the machines you want to install on. This btw this SSH access will be removed as you do the install with this line uncommented:
+First, you need to have ssh root access to the machines you want to install on. _This SSH access will be removed as you do the install with this line uncommented:_
 
 ```bash
 #sed -i 's/#ListenAddress 0.0.0.0/ListenAddress 127.0.0.1/' /etc/ssh/sshd_config
 ```
 
-if you pass 8 arguments into the install.sh they will be used rather than the hardcoded values. This allows you to pass in the values needed as the script is run QED.
+If you pass 8 arguments into the install.sh they will be used rather than the hardcoded values. This allows you to pass in the values needed as the script is run QED.
 
-For example
+For example:
 
 `./install.sh ubuntu changeme https://raw.githubusercontent.com/cconstab/sshnpd_config/main/config/sshnpd.sh http://192.168.1.61:8080/@ssh_1_key.atKeys.aes helloworld @cconstab @ssh_1 $(hostname)`
 
 ## To test this
 
-Using docker is the simple way to test any options first before moving to production.
+Using Docker is the simple way to test any options first before moving to production.
 
-something like this will mount the script and start a basic Linux build.
+Something like this will mount the script and start a basic Linux build:
 
 `docker run -it -v ./install.sh:/root/install.sh debian:trixie-slim`
 
-You can then cd and run the `install.sh` script for example:
+You can then cd and run the `install.sh` script. For example:
 
 ```
 ╰$ docker run -it -v ./install.sh:/root/install.sh debian:trixie-slim
@@ -211,7 +211,7 @@ install.sh
 root@f5040633c8a0:~# ./install.sh 
 ```
 
-After the install has completed you can su - to the USERNAME you chose and see tmux/sshnpd running.
+After the install has completed, you can su - to the USERNAME you chose and see tmux/sshnpd running.
 
 ```
 root@f5040633c8a0:~# su - ubuntu
@@ -220,7 +220,7 @@ sshnpd: 1 windows (created Sun Mar  3 22:48:01 2024)
 ubuntu@f5040633c8a0:~$ 
 ```
 
-On another machine you can login to the container using the select MANAGER\_ATSIGN remembering to give the daemon a ssh key and the username.
+On another machine, you can log in to the container using the select MANAGER\_ATSIGN, remembering to give the daemon a ssh key and the username.
 
 ```
 ~/.local/bin/sshnp -f @cconstab -t @ssh_1  -h @rv_am -s -i ~/.ssh/id_ed25519 -u ubuntu  -d f5040633c8a0
@@ -247,8 +247,8 @@ Last login: Sun Mar  3 22:51:42 2024 from 127.0.0.1
 ubuntu@f5040633c8a0:~$
 ```
 
-You are now logged into the container and if you need root access can use the password you chose to `sudo -s`
+You are now logged into the container. If you need root access, you can use the password you chose to `sudo -s`
 
 {% embed url="https://asciinema.org/a/645698" %}
 
-Good luck using this outline for your own environment.
+Feel free to adapt this outline to your specific needs and share your improvements back with the community.
