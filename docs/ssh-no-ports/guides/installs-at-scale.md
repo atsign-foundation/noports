@@ -2,23 +2,23 @@
 description: Typing is less fun after a few devices.
 ---
 
-# ⚖️ Installs at scale.
+# ⚖️ Installs at scale
 
 ## Important Notes
 
-This is an engineering guide not a definative solution as every production environment is different, feel free to borrow what is useful and ignore what is not. If you have better ideas or ways, please let us know!
+This is an engineering guide, not a definitive solution, as every production environment is different. Feel free to borrow what is useful and ignore what is not. If you have better ideas or ways, please let us know!
 
 ### Other considerations
 
-Each atSign has a reasonable maximum of 25 devices that it can manage so keep that in mind as you use this script to rollout devices. By default, the hostname is used as the `-d`DEVICE\_NAME. Your hostnames may not match the requirements of the DEVICE\_NAME flag.
+Each atSign has a reasonable maximum of 25 devices that it can manage, so keep that in mind as you use this script to roll out devices. By default, the hostname is used as the `-d`DEVICE\_NAME. Your hostnames may not match the requirements of the DEVICE\_NAME flag.
 
 * Lowercase Alphanumeric max 15 Characters Snake Case before version 5.0.3
-* &#x20;Case insensitive Alphanumeric max 36 Chars Snake Case from version 5.0.3 onwards.
+* Case insensitive Alphanumeric max 36 Chars Snake Case from version 5.0.3 onwards.
   * allows UUID snake cased device names.
 
 ## Install.sh
 
-Cut and paste this script and tailor it to your needs, do not forget to chmod 500 else it will not run ! More details below on how to set things up and a demo run too using docker.
+Cut and paste this script and tailor it to your needs. Do not forget to chmod 500 or else it will not run! More details below on how to set things up and a demo run, too, using docker.
 
 ```bash
 #!/bin/bash
@@ -127,9 +127,9 @@ su - $USERNAME sh -c "/usr/bin/tmux new-session -d -s sshnpd && tmux send-keys -
 
 ### Set up your environment.
 
-Each atSign has its own set of keys that are "cut" with at\_activate. This will cut the keys for the atSign and place them in `~/.atsign/keys`. But each machine you want run sshnpd on also needs these atKeys file. So we need to have a way to get them to each device. It is possible to ssh/scp them but that becomes very cumbersome at scale. Instead we encrypt the keys with AES256 and place them on a webserver. When the install script is run it knows bot the URL and the encryption password and can pull the atKeys file to the right place.
+Each atSign has its own set of keys that are "cut" with at\_activate. This will cut the keys for the atSign and place them in `~/.atsign/keys`. Each machine requires the atKeys file to run sshnpd, so, we need to have a way to get them to each device. It is possible to ssh/scp them, but that becomes very cumbersome at scale. Instead, we encrypt the keys with AES256 and place them on a webserver. When the install script is run, it knows both the URL and the encryption password and can pull the atKeys file to the right place.
 
-The steps are to get the atKeys file as normal using at\_activate then encrypt them using a command like this:
+The steps are to (1) get the atKeys file as normal using at\_activate, then (2) encrypt them using a command like this:
 
 ```
 mkdir enckeys
@@ -137,13 +137,13 @@ cd enckeys
 openssl enc -aes-256-cbc -pbkdf2 -iter 1000000 -salt -in ~/.atsign/keys/@ssh_1_key.atKeys -out @ssh_1_key.atKeys.aes
 ```
 
-This command will ask you for a passord which you will put in the `install.sh` file as `ATKEY_PASSWORD`.
+This command will ask you for a password which you will put in the `install.sh` file as `ATKEY_PASSWORD`.
 
-You can then set up a simple http (the file is encrypted) server to serve the keys, with for example a python single line of code.
+You can then set up a simple http (the file is encrypted) server to serve the keys with. For example, a python single line of code:
 
 `python3 -m http.server 8080 --bind 0`
 
-Alternatively you can put the keys file on filebin.net and it will locate the file in a random URL which you can put into the `install.sh` file, for example
+Alternatively, you can put the keys file on filebin.net and it will locate the file in a random URL which you can put into the `install.sh` file. For example:
 
 `https://filebin.net/s2w5r6gwemmz5kvi/_ssh_1_key.atKeys.aes`
 
