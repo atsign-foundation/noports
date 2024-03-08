@@ -1,4 +1,4 @@
-# 👩💻 Client installation (sshnp)
+# 👩‍💻 Client installation (sshnp)
 
 ## Overview
 
@@ -196,9 +196,11 @@ Now that you have at\_activate installed, you can invoke the command with the na
 {% endtab %}
 {% endtabs %}
 
-#### Enter the OTP
+### Enter the One Time Password (OTP) & Check your SPAM/PROMOTIONS folders
 
 The application will pause and wait for the input of a one time pin (OTP) before you can continue. You should receive this pin to the contact information associated with the registration of your noports address (i.e. email or text message).
+
+\*\*\*If you are using a gmail.com account we have seen that sometimes the OTP gets stuck in the SPAM or PROMOTIONS folder. If you do not see the OTP check those folders.&#x20;
 
 Once you receive the message, enter the pin into the application and press enter to continue. The application should proceed to create the cryptographic keys and store them at `~/.atsign/keys/@my_noports_client_key.atKeys`.
 
