@@ -15,7 +15,7 @@ RUN set -eux; \
   cd sshnoports; \
   mkdir -p sshnp/debug; \
   mkdir tarball; \
-  dart pub get; \
+  dart pub get --enforce-lockfile; \
   dart run build_runner build --delete-conflicting-outputs; \
   dart compile exe bin/activate_cli.dart -v -o sshnp/at_activate; \
   dart compile exe bin/sshnp.dart -v -o sshnp/sshnp; \
