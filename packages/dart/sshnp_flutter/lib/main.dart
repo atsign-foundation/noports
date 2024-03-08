@@ -25,7 +25,7 @@ Future<void> main() async {
     WidgetsFlutterBinding.ensureInitialized();
     final wm = WindowManager.instance;
     await wm.ensureInitialized();
-    await wm.setMinimumSize(kMinimumWindowSize);
+    await wm.setMinimumSize(kWindowsMinWindowSize);
   }
 
   await AuthenticationRepository().checkKeyChainFirstRun();
