@@ -125,7 +125,7 @@ Now that you have at\_activate installed, you can invoke the command with the na
 {% endtab %}
 {% endtabs %}
 
-#### Enter the One Time Password (OTP)  & Check your SPAM folder!
+### Enter the One Time Password (OTP)  & Check your SPAM folder!
 
 The application will pause and wait for the input of a one time pin (OTP) before you can continue. You should receive this pin to the contact information associated with the registration of your noports address (i.e. email or text message). \
 \
