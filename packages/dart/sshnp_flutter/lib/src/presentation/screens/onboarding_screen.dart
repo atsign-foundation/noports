@@ -43,7 +43,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
             width: MediaQuery.of(context).size.width,
             height: MediaQuery.of(context).size.height,
             child: SvgPicture.asset(
-              'assets/images/overlay.svg',
+              'assets/images/onboarding_bg_overlay.svg',
               fit: BoxFit.cover,
             ),
           ),

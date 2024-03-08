@@ -71,7 +71,7 @@ class _HomeScreenCoreState extends ConsumerState<HomeScreenCore> {
                     children: [
                       // const NewProfileAction(),
                       SvgPicture.asset(
-                        'assets/images/combo.svg',
+                        'assets/images/empty_profile_bg.svg',
                         width: MediaQuery.of(context).size.width * 0.8,
                         height: MediaQuery.of(context).size.height * 0.68,
                         fit: BoxFit.cover,
