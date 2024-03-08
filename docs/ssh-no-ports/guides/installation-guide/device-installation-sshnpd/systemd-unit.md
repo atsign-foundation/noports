@@ -42,7 +42,12 @@ Replace `<@device_atsign>` with the [device address](#user-content-fn-2)[^2]
 
 Replace `<@manager_atsign>` with the [client address](#user-content-fn-3)[^3]
 
-Replace `<device_name>` with your own [custom **unique** identifier](#user-content-fn-4)[^4] for this device, you will need this value later so don't forget it.
+Replace `<device_name>` with your own [custom **unique
+** identifier](#user-content-fn-4)[^4] for this device. You will need this
+value later, so don't forget it.
+{% hint style="info" %}
+`<device_name>` must be alphanumeric snake case, max length 30 - e.g. dev_abc1
+{% endhint %}
 
 Add any additional config to the end of the line where sshnpd is run, some useful flags you should consider adding:
 

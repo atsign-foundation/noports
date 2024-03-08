@@ -84,9 +84,7 @@ void main(List<String> args) async {
         'device',
         abbr: 'd',
         mandatory: true,
-        help: 'The device name'
-            ' The same atSign may be used to run daemons on many devices,'
-            ' therefore each one must run with its own unique device name',
+        help: 'Receiving device name. $deviceNameFormatHelp',
       );
       parser.addOption(
         'local-port',
@@ -209,6 +207,19 @@ void main(List<String> args) async {
         });
       }
 
+      NptParams params = NptParams(
+        clientAtSign: clientAtSign,
+        sshnpdAtSign: daemonAtSign,
+        srvdAtSign: srvdAtSign,
+        remoteHost: remoteHost,
+        remotePort: remotePort,
+        device: device,
+        localPort: localPort,
+        verbose: verbose,
+        rootDomain: parsedArgs['root-domain'],
+        inline: inline,
+      );
+
       cli.CLIBase cliBase = cli.CLIBase(
           atSign: clientAtSign,
           atKeysFilePath: parsedArgs['key-file'],
@@ -222,18 +233,7 @@ void main(List<String> args) async {
       await cliBase.init();
 
       final npt = Npt.create(
-        params: NptParams(
-          clientAtSign: clientAtSign,
-          sshnpdAtSign: daemonAtSign,
-          srvdAtSign: srvdAtSign,
-          remoteHost: remoteHost,
-          remotePort: remotePort,
-          device: device,
-          localPort: localPort,
-          verbose: verbose,
-          rootDomain: parsedArgs['root-domain'],
-          inline: inline,
-        ),
+        params: params,
         atClient: cliBase.atClient,
       );
 
