@@ -20,6 +20,7 @@
       * [👩‍💻 Client Upgrade (sshnp)](ssh-no-ports/guides/upgrade-guide/client-upgrade-sshnp.md)
       * [💽 Device Upgrade (sshnpd)](ssh-no-ports/guides/upgrade-guide/device-upgrade-sshnpd.md)
     * [⚖️ Installs at scale](ssh-no-ports/guides/installs-at-scale.md)
+    * [🏔️ Be your own VPN](ssh-no-ports/guides/be-your-own-vpn.md)
   * [🔍 How It Works](ssh-no-ports/how-it-works.md)
   * [❓ FAQ](ssh-no-ports/faq.md)
 * [📔 Developer Notes](developer-notes/README.md)
