@@ -116,7 +116,7 @@ class CustomListTile extends StatelessWidget {
           }
           break;
         case CustomListTileType.privacyPolicy:
-          final Uri url = Uri.parse('https://www.noports.com/ssh-no-ports-privacy-policy');
+          final Uri url = Uri.parse('https://atsign.com/privacy-policy/');
           if (!await launchUrl(url)) {
             throw Exception('Could not launch $url');
           }
