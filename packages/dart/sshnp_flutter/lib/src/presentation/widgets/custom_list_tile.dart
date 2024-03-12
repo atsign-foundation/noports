@@ -10,7 +10,7 @@ import 'package:sshnp_flutter/src/presentation/widgets/utility/custom_snack_bar.
 import 'package:sshnp_flutter/src/utility/constants.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-import 'settings_screen_widgets/settings_actions/settings_switch_atsign_action.dart';
+import 'settings_actions/settings_switch_atsign_action.dart';
 import 'ssh_key_management/ssh_key_management_dialog.dart';
 
 class CustomListTile extends StatelessWidget {
