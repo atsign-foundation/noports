@@ -12,9 +12,9 @@ SSH has you covered, with the use of two tools: the first is a built in SOCKS pr
 
 ### The amazing sshuttle&#x20;
 
-Once you have SSH No Ports up and running, you will be able to connect to your device from anywhere on the Internet. You will notice that you did not have to open any ports to the Internet in order to connect. _There is nothing on the device to attack from the Internet._&#x20;
+Once you have SSH No Ports up and running, you will be able to connect to your device from anywhere on the Internet. You will notice that you did not have to open any ports to the Internet in order to connect. _There is no access to the device from the Internet and yet you can connect._&#x20;
 
-If you are happy with command line access only, great; but, you might want to now use your SSH connection as a VPN and have a full IP tunnel. For this, [sshuttle](https://github.com/sshuttle/sshuttle) is the perfect tool. However, if you are using Windows, then you will have to set up a local VM/Container. (If that sounds like too much, skip down to the section below on using SOCKS.)
+If you are happy with command line access only, great; but you might want to now use your SSH connection as a VPN and have a full IP tunnel. For this, [sshuttle](https://github.com/sshuttle/sshuttle) is the perfect tool. However, if you are using Windows, then you will have to set up a local VM/Container. (If that sounds like too much, skip down to the section below on using SOCKS.)
 
 To use sshuttle, we need to make sure that the SSH command itself can log in without any complex arguments. This requires two steps:
 
