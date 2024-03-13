@@ -47,7 +47,7 @@
     "homeDirectoryHint" : "The home directory on this host",
     "host" : "SR Address (atSign) *",
     "hostTooltip" : "atSign of srvd daemon or FQDN/IP address to connect back to",
-    "hostHintText" : "eg. rv_am",
+    "hostHintText" : "eg. @rv_am",
     "hostSelection" : "Host Selection",
     "import" : "Import",
     "importProfile" : "Import Profile",
