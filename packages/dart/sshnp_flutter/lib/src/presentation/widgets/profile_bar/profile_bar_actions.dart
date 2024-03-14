@@ -4,7 +4,7 @@ import 'package:sshnp_flutter/src/presentation/widgets/profile_screen_widgets/pr
 
 class ProfileBarActions extends StatelessWidget {
   final SshnpParams params;
-  const ProfileBarActions(this.params, {Key? key}) : super(key: key);
+  const ProfileBarActions(this.params, {super.key});
 
   @override
   Widget build(BuildContext context) {

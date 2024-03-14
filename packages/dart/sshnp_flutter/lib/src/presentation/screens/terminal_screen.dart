@@ -6,7 +6,7 @@ import '../widgets/terminal_screen_widgets/terminal_screen_mobile_view.dart';
 
 // * Once the onboarding process is completed you will be taken to this screen
 class TerminalScreen extends StatelessWidget {
-  const TerminalScreen({Key? key}) : super(key: key);
+  const TerminalScreen({super.key});
 
   @override
   Widget build(BuildContext context) {

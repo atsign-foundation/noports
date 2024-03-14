@@ -6,8 +6,8 @@ class ProfileActionButton extends StatelessWidget {
   const ProfileActionButton({
     required this.onPressed,
     required this.icon,
-    Key? key,
-  }) : super(key: key);
+    super.key,
+  });
 
   @override
   Widget build(BuildContext context) {

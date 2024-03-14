@@ -7,8 +7,8 @@ class SettingsActionButton extends StatelessWidget {
     required this.icon,
     required this.title,
     required this.onTap,
-    Key? key,
-  }) : super(key: key);
+    super.key,
+  });
 
   final IconData icon;
   final String title;
@@ -19,8 +19,7 @@ class SettingsActionButton extends StatelessWidget {
     return Container(
       width: 300,
       height: 60,
-      decoration: BoxDecoration(
-          color: kPrimaryColor, borderRadius: BorderRadius.circular(10)),
+      decoration: BoxDecoration(color: kPrimaryColor, borderRadius: BorderRadius.circular(10)),
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: Sizes.p12),
         child: ListTile(
@@ -30,14 +29,10 @@ class SettingsActionButton extends StatelessWidget {
           ),
           title: Text(
             title,
-            style: Theme.of(context)
-                .textTheme
-                .bodySmall!
-                .copyWith(fontSize: 18, color: Colors.white),
+            style: Theme.of(context).textTheme.bodySmall!.copyWith(fontSize: 18, color: Colors.white),
           ),
           onTap: onTap,
-          shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
         ),
       ),
     );

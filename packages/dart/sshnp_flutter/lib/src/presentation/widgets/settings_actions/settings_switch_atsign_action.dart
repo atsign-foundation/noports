@@ -12,7 +12,7 @@ import 'package:sshnp_flutter/src/repository/navigation_repository.dart';
 import 'package:sshnp_flutter/src/utility/constants.dart';
 
 class SettingsSwitchAtsignAction extends StatelessWidget {
-  const SettingsSwitchAtsignAction({Key? key}) : super(key: key);
+  const SettingsSwitchAtsignAction({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -30,7 +30,7 @@ class SettingsSwitchAtsignAction extends StatelessWidget {
 }
 
 class SwitchAtSignBottomSheet extends ConsumerStatefulWidget {
-  const SwitchAtSignBottomSheet({Key? key}) : super(key: key);
+  const SwitchAtSignBottomSheet({super.key});
 
   @override
   ConsumerState<SwitchAtSignBottomSheet> createState() => _AtSignBottomSheetState();
