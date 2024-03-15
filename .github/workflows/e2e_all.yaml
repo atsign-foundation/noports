@@ -1,0 +1,35 @@
+name: end_to_end_tests
+
+permissions:
+  contents: read
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - trunk
+
+  pull_request:
+    branches:
+      - trunk
+
+jobs:
+  e2e_all:
+    # Don't run on PRs from a fork or Dependabot as the secrets aren't available
+    if: ${{ github.event.pull_request.head.repo.fork == false && github.actor != 'dependabot[bot]'}}
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: execute tests on cicd vm
+    uses: appleboy/ssh-action@029f5b4aeeeb58fdfe1410a5d17f967dacf36262 # v1.0.3
+    env:
+      SHA: ${{ env.GITHUB_SHA }}
+    with:
+      host: ${{ secrets.NOPORTS_CICD_HOST }}
+      username: ubuntu
+      key: ${{ secrets.NOPORTS_CICD_SSH_KEY }}
+      envs: SHA
+      script: |
+        cd noports
+        git fetch
+        git checkout $SHA
