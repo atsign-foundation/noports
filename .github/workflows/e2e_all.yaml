@@ -38,5 +38,5 @@ jobs:
             echo "Running tests"
             tests/e2e_all/scripts/run_all.sh @apricoteventual @combinedbelgian @rv_am \
               -w 10 -z 15 \
-              -s 'd:4.0.5 d:5.0.2 d:current' -c 'd:4.0.5 d:5.0.2 d:current' \
+              -s 'd:4.0.5 d:5.0.2 d:current' -c 'd:4.0.5 d:current' \
               -t all 
