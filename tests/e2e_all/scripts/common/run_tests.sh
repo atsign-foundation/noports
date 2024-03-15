@@ -76,11 +76,6 @@ do
         0) # test passed
           testResult="PASSED"
           passed=$((passed+1))
-          echo "    test execution's stdout: "
-          sed 's/^/        /' "$stdoutFileName"
-
-          echo "    test execution's stderr: "
-          sed 's/^/        /' "$stderrFileName"
           ;;
         50) # special exit code, indicates the test was deliberately ignored
           testResult="IGNORED"
@@ -111,6 +106,12 @@ do
 
       case $testResult in
         FAILED)
+          echo "    test execution's stdout: "
+          sed 's/^/        /' "$stdoutFileName"
+
+          echo "    test execution's stderr: "
+          sed 's/^/        /' "$stderrFileName"
+
           echo -e "    ${logColour}${testResult}${NC} : exit code $exitStatus $additionalInfo : $what" | tee -a "$reportFile"
           # shellcheck disable=SC2129
           echo "    test execution's stdout: " >> "$reportFile"

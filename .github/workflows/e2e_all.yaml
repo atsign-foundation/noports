@@ -30,9 +30,13 @@ jobs:
           key: ${{ secrets.NOPORTS_CICD_SSH_KEY }}
           envs: SHA
           script: |
-            set -x
-            echo "SHA is $SHA"
             cd noports
+            echo "Running git fetch"
             git fetch
+            echo "Running git checkout -f $SHA"
             git checkout -f "$SHA"
-            git branch
+            echo "Running tests"
+            noports/tests/e2e_all/scripts/run_locally.sh @apricoteventual @combinedbelgian @rv_am \
+              -w 10 -z 15 \
+              -s 'd:4.0.5 d:5.0.2 d:current' -c 'd:4.0.5 d:5.0.2 d:current' \
+              -t all 
