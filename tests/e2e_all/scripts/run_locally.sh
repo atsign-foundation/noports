@@ -182,6 +182,8 @@ else
 fi
 
 echo
+logInfo "Sleeping for 15 seconds to give daemons time to clean up ephemeral keys"
+sleep 15
 logInfo "Calling common/stop_daemons.sh"
 "$testScriptsDir/common/stop_daemons.sh"
 retCode=$?
