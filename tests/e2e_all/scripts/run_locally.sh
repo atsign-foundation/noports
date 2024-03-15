@@ -106,7 +106,7 @@ while getopts r:t:s:c:u:i:w:n opt; do
 done
 
 if test "$testsToRun" = "all"; then
-  testsToRun=$(ls -1 "$testScriptsDir/tests" | grep -v "^noop$")
+  testsToRun=$(ls -1 "$testScriptsDir/tests" | grep -v "^noop$" | grep -v "^shared$")
   logInfo "Will run all tests: $testsToRun"
 fi
 

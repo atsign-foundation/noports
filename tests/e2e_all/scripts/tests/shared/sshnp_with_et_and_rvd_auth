@@ -1,6 +1,5 @@
 #!/bin/bash
 
-# shellcheck disable=SC2034
 scriptName=$(basename -- "$0")
 
 if test -z "$testScriptsDir" ; then
@@ -10,13 +9,13 @@ fi
 source "$testScriptsDir/common/common_functions.include.sh"
 source "$testScriptsDir/common/check_env.include.sh" || exit $?
 
-
-if test $# != 2 ; then
-  logErrorAndExit "Must supply daemonVersion, clientVersion"
+if test $# != 3 ; then
+  logErrorAndExit "Must supply daemonVersion, clientVersion and ssh client to use"
 fi
 
 daemonVersion="$1"
 clientVersion="$2"
+sshClient="$3"
 
 # logInfo "Daemon version : $d_type : $d_major.$d_minor.$d_patch"
 deviceName=$(getNoFlagsDeviceNameForCommitIDTypeAndVersion "$commitId" "$daemonVersion" )
@@ -25,27 +24,36 @@ deviceName=$(getNoFlagsDeviceNameForCommitIDTypeAndVersion "$commitId" "$daemonV
 clientBinaryPath=$(getPathToBinariesForTypeAndVersion "$clientVersion")
 
 #
-# v4 feature set, default client flags
-# - use openssh as the ssh client
-#
+# v5 feature set
+# - authenticate to the srvd
+# - end-to-end-encrypt the traffic via the srvd
 
 # 1. All client versions since 5 require the '-x' flag in order to output the
 # ssh command rather than just forking to the ssh inline.
-# 2. sshnp since 5.x also requires '--no-ad' and '--no-et' flags
-# since those features are enabled by default from v5
 if [[ $(versionIsAtLeast "$clientVersion" "d:5.0.0") == "true" ]] ; then
-  v5Flags="-x --no-ad --no-et"
+  v5Flags="-x"
+fi
+
+# Daemon versions prior to 5 do not support rvd authentication nor end-to-end encryption
+if [[ $(versionIsLessThan "$daemonVersion" "d:5.0.0") == "true" ]]; then
+  echo "Daemon version $daemonVersion is less than required version for this test d:5:0:0 - will ignore this test" >> $(getReportFile)
+  exit 50
+fi
+
+# Client versions prior to 5 do not support rvd authentication nor end-to-end encryption
+if [[ $(versionIsLessThan "$clientVersion" "d:5.0.0") == "true" ]]; then
+  echo "Client version $clientVersion is less than required version for this test d:5:0:0 - will ignore this test" >> $(getReportFile)
+  exit 50
 fi
 
 l1="$clientBinaryPath/sshnp -f $clientAtSign -d $deviceName -i $identityFilename"
 l2=" -t $daemonAtSign -h $srvAtSign -u $remoteUsername"
-l3=" --ssh-client openssh"
+l3=" --ssh-client $sshClient"
 l4=" --root-domain $atDirectoryHost"
 l5=" ${v5Flags}"
 command="$l1 $l2 $l3 $l4 $l5"
 
 echo "$(iso8601Date) | Executing $command" | tee -a "$(getReportFile)"
 
-# shellcheck disable=SC2016
 # shellcheck disable=SC2091
 $($command) <<< 'echo $(date) $(whoami) $(hostname) TEST PASSED'
