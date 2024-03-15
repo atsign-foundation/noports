@@ -7,9 +7,6 @@ fi
 source "$testScriptsDir/common/common_functions.include.sh"
 source "$testScriptsDir/common/check_env.include.sh" || exit $?
 
-logInfo ""
-logInfo "  run_tests starting"
-
 NC='\033[0m'
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -38,20 +35,23 @@ fi
 outputDir=$(getOutputDir)
 mkdir -p "${outputDir}/clients"
 
+numDaemons=$(wc -w <<< "$daemonVersions")
+numClients=$(wc -w <<< "$clientVersions")
+numTestScripts=$(wc -w <<< "$testsToRun")
+totalNumTests=$((numDaemons * numClients * numTestScripts))
+
 for testToRun in $testsToRun
 do
   for daemonVersion in $daemonVersions
   do
     for clientVersion in $clientVersions
     do
-      logInfo "Test ${testToRun} with client ${clientVersion} and daemon ${daemonVersion}"
+      what="Test $((total+1)) of $totalNumTests | testScript: ${testToRun} client: ${clientVersion} daemon: ${daemonVersion}"
+      logInfo "$what"
 
       baseFileName="${outputDir}/clients/${testToRun}.daemon.${daemonVersion}.client.${clientVersion}"
       stdoutFileName="${baseFileName}.out"
       stderrFileName="${baseFileName}.err"
-
-      what="tests/$testToRun for daemon [$daemonVersion] client [$clientVersion]"
-      logInfo "    Executing $what > $stdoutFileName 2> $stderrFileName"
 
       # Execute the test script
       timeout "$timeoutDuration" "$testScriptsDir/tests/$testToRun" "$daemonVersion" "$clientVersion" \
@@ -64,7 +64,7 @@ do
       total=$((total+1))
       if (( exitStatus == 0 )); then
         # Exit code 0, but did the output contain the magic 'TEST PASSED' words?
-        if ! grep "TEST PASSED" "$stdoutFileName"; then
+        if ! grep -q "TEST PASSED" "$stdoutFileName"; then
           exitStatus=51
         fi
       fi
@@ -106,13 +106,14 @@ do
 
       case $testResult in
         FAILED)
+          echo -e "    ${logColour}${testResult}${NC} : exit code $exitStatus $additionalInfo : $what" | tee -a "$reportFile"
+
           echo "    test execution's stdout: "
           sed 's/^/        /' "$stdoutFileName"
 
           echo "    test execution's stderr: "
           sed 's/^/        /' "$stderrFileName"
 
-          echo -e "    ${logColour}${testResult}${NC} : exit code $exitStatus $additionalInfo : $what" | tee -a "$reportFile"
           # shellcheck disable=SC2129
           echo "    test execution's stdout: " >> "$reportFile"
           sed 's/^/        /' "$stdoutFileName" >> "$reportFile"
@@ -123,14 +124,13 @@ do
           echo >> "$reportFile"
           ;;
         IGNORED)
-          echo -e "$what | ${logColour}${testResult}${NC}" | tee -a "$reportFile"
+          echo -e "    ${logColour}${testResult}${NC} | $what" | tee -a "$reportFile"
           ;;
         PASSED)
-          echo -e "$what | ${logColour}${testResult}${NC}" | tee -a "$reportFile"
-          echo -e "$what | ssh output was: $(grep "TEST PASSED" "$stdoutFileName")" | tee -a "$reportFile"
+          echo -e "    ${logColour}${testResult}${NC} | $what" | tee -a "$reportFile"
+          echo -e "    ssh output was: $(grep "TEST PASSED" "$stdoutFileName")" >> "$reportFile"
           ;;
       esac
-      echo >> "$reportFile"
       echo >> "$reportFile"
     done
   done

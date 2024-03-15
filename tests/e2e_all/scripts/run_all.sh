@@ -123,7 +123,7 @@ export clientVersions
 export remoteUsername
 export identityFilename
 export daemonStartWait
-timeoutDuration=$daemonStartWait
+timeoutDuration=20
 export timeoutDuration
 
 shift "$(( OPTIND - 1 ))"
