@@ -1,5 +1,5 @@
 # BASE
-FROM debian:stable-20240211-slim@sha256:435ba09b2e259426c0552a041eef609b01d4655d9c8467d75be390801068baf3 AS base
+FROM debian:stable-20240311-slim@sha256:d10f0545d14bad5f4d230301f7e4fd904384f2dd16fda16d708f936c2fa1db3e AS base
 
 ENV USER=atsign
 ENV HOMEDIR=/${USER}
@@ -26,7 +26,7 @@ RUN set -eux ; \
 
 # BRANCH
 # BUILD BRANCH
-FROM dart:3.3.0@sha256:b166b6f9a5969fbb0feaf38480b064060f1f16eb93f7dce0b08608929f40712c AS build-branch
+FROM dart:3.3.1@sha256:7e0b4e5d3773c61b5d5b42908f48853fab04c33a080c6f73ee3a99bdd1f4536e AS build-branch
 
 ENV URL=https://github.com/atsign-foundation/noports.git
 ENV REPO_DIR=/app/repo
@@ -65,7 +65,7 @@ ENTRYPOINT cp -r /mount/. ${HOMEDIR} && sudo service ssh start && sh ${HOMEDIR}/
 
 # LOCAL
 # BUILD LOCAL
-FROM dart:3.3.0@sha256:b166b6f9a5969fbb0feaf38480b064060f1f16eb93f7dce0b08608929f40712c AS build-local
+FROM dart:3.3.1@sha256:7e0b4e5d3773c61b5d5b42908f48853fab04c33a080c6f73ee3a99bdd1f4536e AS build-local
 
 ENV REPO_DIR=/app/repo
 ENV PACKAGE_DIR=${REPO_DIR}/packages/dart/sshnoports
@@ -101,7 +101,7 @@ ENTRYPOINT cp -r /mount/. ${HOMEDIR} && sudo service ssh start && sh ${HOMEDIR}/
 
 # RELEASE
 # BUILD RELEASE
-FROM debian:stable-20240211-slim@sha256:435ba09b2e259426c0552a041eef609b01d4655d9c8467d75be390801068baf3 AS build-release
+FROM debian:stable-20240311-slim@sha256:d10f0545d14bad5f4d230301f7e4fd904384f2dd16fda16d708f936c2fa1db3e AS build-release
 
 ARG release
 

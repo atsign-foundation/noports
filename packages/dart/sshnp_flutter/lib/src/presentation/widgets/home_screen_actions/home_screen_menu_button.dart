@@ -5,7 +5,7 @@ import 'package:sshnp_flutter/src/presentation/widgets/home_screen_widgets/home_
 import 'package:sshnp_flutter/src/utility/sizes.dart';
 
 class HomeScreenMenuButton extends ConsumerStatefulWidget {
-  const HomeScreenMenuButton({Key? key}) : super(key: key);
+  const HomeScreenMenuButton({super.key});
 
   @override
   ConsumerState<HomeScreenMenuButton> createState() => _ProfileMenuBarState();
@@ -30,7 +30,7 @@ class _ProfileMenuBarState extends ConsumerState<HomeScreenMenuButton> {
 class ProfileMenuItem extends StatelessWidget {
   final Widget icon;
   final String text;
-  const ProfileMenuItem(this.icon, this.text, {Key? key}) : super(key: key);
+  const ProfileMenuItem(this.icon, this.text, {super.key});
 
   @override
   Widget build(BuildContext context) {

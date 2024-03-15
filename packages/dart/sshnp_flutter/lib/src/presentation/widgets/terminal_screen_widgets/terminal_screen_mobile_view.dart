@@ -8,7 +8,7 @@ import 'package:xterm/xterm.dart';
 
 // * Once the onboarding process is completed you will be taken to this screen
 class TerminalScreenMobileView extends ConsumerStatefulWidget {
-  const TerminalScreenMobileView({Key? key}) : super(key: key);
+  const TerminalScreenMobileView({super.key});
 
   @override
   ConsumerState<TerminalScreenMobileView> createState() => _TerminalScreenMobileState();

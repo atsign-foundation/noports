@@ -16,6 +16,8 @@ import 'package:sshnp_flutter/src/controllers/navigation_controller.dart';
 import 'package:sshnp_flutter/src/presentation/widgets/utility/custom_snack_bar.dart';
 import 'package:sshnp_flutter/src/repository/navigation_repository.dart';
 
+import '../utility/constants.dart';
+
 /// A provider that exposes an [AuthenticationRepository] instance to the app.
 final authenticationRepositoryProvider = Provider<AuthenticationRepository>((ref) => AuthenticationRepository());
 
@@ -91,6 +93,9 @@ class AuthenticationRepository {
         domain: AtEnv.rootDomain,
         rootEnvironment: AtEnv.rootEnvironment,
         appAPIKey: AtEnv.appApiKey,
+        theme: AtOnboardingTheme(
+          primaryColor: kPrimaryColor,
+        ),
       ),
     );
     switch (result.status) {

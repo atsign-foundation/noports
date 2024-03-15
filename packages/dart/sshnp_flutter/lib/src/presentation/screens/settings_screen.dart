@@ -5,14 +5,12 @@ import 'package:sshnp_flutter/src/presentation/widgets/utility/responsive_widget
 import '../widgets/settings_screen_widgets/settings_screen_mobile.dart';
 
 class SettingsScreen extends StatelessWidget {
-  const SettingsScreen({Key? key}) : super(key: key);
+  const SettingsScreen({super.key});
   static String route = 'settingsScreen';
 
   @override
   Widget build(BuildContext context) {
     return const ResponsiveWidget(
-        mobileScreen: SettingsMobileView(),
-        largeScreen: SettingsDesktopView(),
-        tabletScreen: SettingsDesktopView());
+        mobileScreen: SettingsMobileView(), largeScreen: SettingsDesktopView(), tabletScreen: SettingsDesktopView());
   }
 }
