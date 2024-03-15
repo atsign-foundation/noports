@@ -7,15 +7,17 @@ fi
 source "$testScriptsDir/common/common_functions.include.sh"
 source "$testScriptsDir/common/check_env.include.sh" || exit $?
 
+silent="false"
+if [[ "$1" == "-s" ]]; then silent="true"; fi
+
+localLogInfo() {
+  if [[ "$silent" == "true" ]]; then return; fi
+  logInfo "$1"
+}
 echo
-logInfo ""
-logInfo "Cleaning up"
+localLogInfo ""
+localLogInfo "Cleaning up"
 
-logInfo "rm -rf /tmp/e2e_all/${commitId}/daemons"
-rm -rf "/tmp/e2e_all/${commitId}/daemons"
-
-logInfo "rm -rf /tmp/e2e_all/${commitId}/clients"
-rm -rf "/tmp/e2e_all/${commitId}/clients"
-
-logInfo "rmdir /tmp/e2e_all/${commitId}"
-rmdir "/tmp/e2e_all/${commitId}"
+outputDir=$(getOutputDir)
+localLogInfo "rm -rf ${outputDir}"
+rm -rf "${outputDir}"

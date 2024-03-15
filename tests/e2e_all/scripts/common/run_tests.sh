@@ -35,7 +35,8 @@ if (( timeoutDuration == 0 )) ; then
   timeoutDuration=10
 fi
 
-mkdir -p "/tmp/e2e_all/${commitId}/clients"
+outputDir=$(getOutputDir)
+mkdir -p "${outputDir}/clients"
 
 for testToRun in $testsToRun
 do
@@ -43,13 +44,14 @@ do
   do
     for clientVersion in $clientVersions
     do
-      echo
-      baseFileName="/tmp/e2e_all/${commitId}/clients/${testToRun}.daemon.${daemonVersion}.client.${clientVersion}"
+      logInfo "Test ${testToRun} with client ${clientVersion} and daemon ${daemonVersion}"
+
+      baseFileName="${outputDir}/clients/${testToRun}.daemon.${daemonVersion}.client.${clientVersion}"
       stdoutFileName="${baseFileName}.out"
       stderrFileName="${baseFileName}.err"
 
       what="tests/$testToRun for daemon [$daemonVersion] client [$clientVersion]"
-      logInfo "Executing $what > $stdoutFileName 2> $stderrFileName"
+      logInfo "    Executing $what > $stdoutFileName 2> $stderrFileName"
 
       # Execute the test script
       timeout "$timeoutDuration" "$testScriptsDir/tests/$testToRun" "$daemonVersion" "$clientVersion" \
@@ -74,6 +76,11 @@ do
         0) # test passed
           testResult="PASSED"
           passed=$((passed+1))
+          echo "    test execution's stdout: "
+          sed 's/^/        /' "$stdoutFileName"
+
+          echo "    test execution's stderr: "
+          sed 's/^/        /' "$stderrFileName"
           ;;
         50) # special exit code, indicates the test was deliberately ignored
           testResult="IGNORED"
@@ -104,7 +111,7 @@ do
 
       case $testResult in
         FAILED)
-          echo -e "${logColour}${testResult}${NC} : exit code $exitStatus $additionalInfo : $what" | tee -a "$reportFile"
+          echo -e "    ${logColour}${testResult}${NC} : exit code $exitStatus $additionalInfo : $what" | tee -a "$reportFile"
           # shellcheck disable=SC2129
           echo "    test execution's stdout: " >> "$reportFile"
           sed 's/^/        /' "$stdoutFileName" >> "$reportFile"

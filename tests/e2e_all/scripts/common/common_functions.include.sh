@@ -1,6 +1,9 @@
 RED='\033[0;31m'
 NC='\033[0m'
 
+getOutputDir() {
+  echo "/tmp/e2e_all/${commitId}"
+}
 getReportFile() {
   echo "/tmp/e2e_all/${commitId}.test.report"
 }

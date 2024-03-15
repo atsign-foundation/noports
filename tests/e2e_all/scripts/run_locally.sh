@@ -91,7 +91,10 @@ shift
 remoteUsername=$(whoami)
 identityFilename="${HOME}/.ssh/noports"
 
-while getopts r:t:s:c:u:i:w:n opt; do
+daemonStartWait=15
+daemonStopWait=15
+
+while getopts r:t:s:c:u:i:w:z:n opt; do
   case $opt in
     r) atDirectoryHost=$OPTARG ;;
     t) testsToRun=$OPTARG ;;
@@ -99,13 +102,15 @@ while getopts r:t:s:c:u:i:w:n opt; do
     c) clientVersions=$OPTARG ;;
     u) remoteUsername=$OPTARG ;;
     i) identityFilename=$OPTARG ;;
-    w) waitForDaemons=$OPTARG ;;
+    w) daemonStartWait=$OPTARG ;;
+    z) daemonStopWait=$OPTARG ;;
     n) recompile="false" ;;
     *) usageAndExit ;;
   esac
 done
 
 if test "$testsToRun" = "all"; then
+  # shellcheck disable=SC2010
   testsToRun=$(ls -1 "$testScriptsDir/tests" | grep -v "^noop$" | grep -v "^shared$")
   logInfo "Will run all tests: $testsToRun"
 fi
@@ -117,8 +122,8 @@ export daemonVersions
 export clientVersions
 export remoteUsername
 export identityFilename
-export waitForDaemons
-timeoutDuration=$waitForDaemons
+export daemonStartWait
+timeoutDuration=$daemonStartWait
 export timeoutDuration
 
 shift "$(( OPTIND - 1 ))"
@@ -144,6 +149,8 @@ mkdir -p "$commitId"
 cd "$commitId" || exit 1 # should now be in <repo_root>/tests/e2e_all/runtime/$commitId
 testRuntimeDir="$(pwd)"
 export testRuntimeDir
+
+"$testScriptsDir/common/cleanup_tmp_files.sh" -s
 
 logInfo "  --> will execute setup_binaries, start_daemons and tests [$testsToRun] with "
 logInfo "    testRootDir:      $testRootDir"
@@ -175,15 +182,15 @@ if test "$retCode" != 0; then
   exit $retCode
 else
   echo
-  logInfo "Sleeping for $waitForDaemons seconds to allow daemons to start"
-  sleep "$waitForDaemons"
+  logInfo "Sleeping for $daemonStartWait seconds to allow daemons to start"
+  sleep "$daemonStartWait"
   logInfo "Calling common/run_tests.sh"
   "$testScriptsDir/common/run_tests.sh"
 fi
 
 echo
-logInfo "Sleeping for 15 seconds to give daemons time to clean up ephemeral keys"
-sleep 15
+logInfo "Sleeping for $daemonStopWait seconds to give daemons time to clean up ephemeral keys"
+sleep "$daemonStopWait"
 logInfo "Calling common/stop_daemons.sh"
 "$testScriptsDir/common/stop_daemons.sh"
 retCode=$?
@@ -191,13 +198,13 @@ if test "$retCode" != 0; then
   logError "stop_daemons failed with exit status $retCode"
 fi
 
-#echo
-#logInfo "Calling common/cleanup_tmp_files.sh"
-#"$testScriptsDir/common/cleanup_tmp_files.sh"
-#retCode=$?
-#if test "$retCode" != 0; then
-#  logError "cleanup_tmp_files failed with exit status $retCode"
-#fi
+echo
+logInfo "Calling common/cleanup_tmp_files.sh"
+"$testScriptsDir/common/cleanup_tmp_files.sh"
+retCode=$?
+if test "$retCode" != 0; then
+  logError "cleanup_tmp_files failed with exit status $retCode"
+fi
 
 reportFile=$(getReportFile)
 
