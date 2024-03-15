@@ -149,3 +149,5 @@ actuallyExecuted=$(( total - ignored ))
 echo -e "### Of a possible $total, ignored $ignored and executed $actuallyExecuted tests" >> "$reportFile"
 echo -e "${colour}### Passed: $passed Failed: $failed${NC}" >> "$reportFile"
 echo "###########################################################" >> "$reportFile"
+
+exit $failed

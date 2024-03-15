@@ -186,6 +186,7 @@ else
   sleep "$daemonStartWait"
   logInfo "Calling common/run_tests.sh"
   "$testScriptsDir/common/run_tests.sh"
+  testExitStatus=$?
 fi
 
 echo
@@ -215,3 +216,4 @@ cat "$reportFile"
 logInfo ""
 logInfo ""
 
+exit $testExitStatus
