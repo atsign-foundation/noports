@@ -22,8 +22,9 @@ function usageAndExit {
   echo "     [-t <space-separated list of test scripts to run from the e2e_all/scripts/tests/ subdirectory>] \\"
   echo "     [-s <daemon versions>] \\"
   echo "     [-c <client versions>] \\"
-  echo "     [-u <remote username>] - defaults to the local username\\"
+  echo "     [-u <remote username>] - defaults to the local username \\"
   echo "     [-i <identity file name> - defaults to ~/.ssh/noports] \\"
+  echo "     [-w <daemon wait time> - how long to wait for daemons to start up - defaults to 30 seconds] \\"
   echo "     [-n (Do not recompile binaries for current commit. Default is to always recompile.)]"
   echo ""
   echo "Notes:"
@@ -90,7 +91,7 @@ shift
 remoteUsername=$(whoami)
 identityFilename="${HOME}/.ssh/noports"
 
-while getopts r:t:s:c:u:i:n opt; do
+while getopts r:t:s:c:u:i:w:n opt; do
   case $opt in
     r) atDirectoryHost=$OPTARG ;;
     t) testsToRun=$OPTARG ;;
@@ -98,6 +99,7 @@ while getopts r:t:s:c:u:i:n opt; do
     c) clientVersions=$OPTARG ;;
     u) remoteUsername=$OPTARG ;;
     i) identityFilename=$OPTARG ;;
+    w) waitForDaemons=$OPTARG ;;
     n) recompile="false" ;;
     *) usageAndExit ;;
   esac
@@ -115,6 +117,9 @@ export daemonVersions
 export clientVersions
 export remoteUsername
 export identityFilename
+export waitForDaemons
+timeoutDuration=$waitForDaemons
+export timeoutDuration
 
 shift "$(( OPTIND - 1 ))"
 
@@ -169,9 +174,9 @@ if test "$retCode" != 0; then
   logError "Failed to start daemons; will not run tests"
   exit $retCode
 else
-echo
-  timeoutDuration=3
-  export timeoutDuration
+  echo
+  logInfo "Sleeping for $waitForDaemons seconds to allow daemons to start"
+  sleep "$waitForDaemons"
   logInfo "Calling common/run_tests.sh"
   "$testScriptsDir/common/run_tests.sh"
 fi
@@ -184,13 +189,13 @@ if test "$retCode" != 0; then
   logError "stop_daemons failed with exit status $retCode"
 fi
 
-echo
-logInfo "Calling common/cleanup_tmp_files.sh"
-"$testScriptsDir/common/cleanup_tmp_files.sh"
-retCode=$?
-if test "$retCode" != 0; then
-  logError "cleanup_tmp_files failed with exit status $retCode"
-fi
+#echo
+#logInfo "Calling common/cleanup_tmp_files.sh"
+#"$testScriptsDir/common/cleanup_tmp_files.sh"
+#retCode=$?
+#if test "$retCode" != 0; then
+#  logError "cleanup_tmp_files failed with exit status $retCode"
+#fi
 
 reportFile=$(getReportFile)
 
