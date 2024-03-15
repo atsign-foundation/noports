@@ -234,6 +234,9 @@ buildCurrentDartBinaries() {
   fi
   cd "$binarySourceDir" || exit 1
 
+  logInfo "    dart pub get"
+  dart pub get || exit 1
+
   if [ -f "$binaryOutputDir/activate_cli" ]; then
     logInfo "        $binaryOutputDir/activate_cli has already been compiled"
   else
