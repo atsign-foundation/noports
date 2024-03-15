@@ -34,4 +34,4 @@ jobs:
             echo "SHA is $SHA"
             cd noports
             git fetch
-            git checkout "$SHA"
+            git checkout -f "$SHA"
