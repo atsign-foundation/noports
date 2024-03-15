@@ -1,0 +1,54 @@
+#!/bin/bash
+
+# shellcheck disable=SC2034
+scriptName=$(basename -- "$0")
+
+if test -z "$testScriptsDir" ; then
+  echo -e "    ${RED}check_env: testScriptsDir is not set${NC}" && exit 1
+fi
+
+source "$testScriptsDir/common/common_functions.include.sh"
+source "$testScriptsDir/common/check_env.include.sh" || exit $?
+
+
+if test $# != 2 ; then
+  logErrorAndExit "Must supply daemonVersion, clientVersion"
+fi
+
+daemonVersion="$1"
+clientVersion="$2"
+
+# logInfo "Daemon version : $d_type : $d_major.$d_minor.$d_patch"
+deviceName=$(getNoFlagsDeviceNameForCommitIDTypeAndVersion "$commitId" "$daemonVersion" )
+
+# logInfo "Client version : $c_type : $c_major.$c_minor.$c_patch"
+clientBinaryPath=$(getPathToBinariesForTypeAndVersion "$clientVersion")
+
+#
+# v4 feature set, default client flags
+# - use openssh as the ssh client
+#
+
+# 1. All client versions since 5 require the '-x' flag in order to output the
+# ssh command rather than just forking to the ssh inline.
+# 2. sshnp since 5.x also requires '--no-ad' and '--no-et' flags
+# since those features are enabled by default from v5
+if [[ $(versionIsAtLeast "$clientVersion" "d:5.0.0") == "true" ]] ; then
+  v5Flags="-x --no-ad --no-et"
+fi
+
+remoteUser="gary"
+
+identityFile=~/.ssh/noports
+l1="$clientBinaryPath/sshnp -f $clientAtSign -d $deviceName -i $identityFile"
+l2=" -t $daemonAtSign -h $srvAtSign -u $remoteUser"
+l3=" --ssh-client openssh"
+l4=" --root-domain $atDirectoryHost"
+l5=" ${v5Flags}"
+command="$l1 $l2 $l3 $l4 $l5"
+
+echo "$(iso8601Date) | Executing $command" | tee -a "$(getReportFile)"
+
+# shellcheck disable=SC2016
+# shellcheck disable=SC2091
+$($command) <<< 'echo $(date) $(whoami) $(hostname) TEST PASSED'

@@ -36,8 +36,15 @@ void main(List<String> args) async {
     }
   }
 
-  final bool originalLineMode = stdin.lineMode;
-  final bool originalEchoMode = stdin.echoMode;
+  bool originalLineMode = true;
+  try {
+    originalLineMode = stdin.lineMode;
+  } catch (_) {}
+  bool originalEchoMode = true;
+  try {
+    originalEchoMode = stdin.echoMode;
+  } catch (_) {}
+
   bool shouldResetTerminal = false;
 
   void configureRemoteShell() {
