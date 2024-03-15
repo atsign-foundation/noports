@@ -1,6 +1,14 @@
 RED='\033[0;31m'
 NC='\033[0m'
 
+if [ -z "$remoteUsername" ] ; then
+  echo -e "    ${RED}check_env: remoteUsername is not set${NC}" && exit 1
+fi
+
+if [ -z "$identityFilename" ] ; then
+  echo -e "    ${RED}check_env: identityFilename is not set${NC}" && exit 1
+fi
+
 if [ -z "$testsToRun" ] ; then
   echo -e "    ${RED}check_env: testsToRun is not set${NC}" && exit 1
 fi

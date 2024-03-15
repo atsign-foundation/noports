@@ -22,6 +22,8 @@ function usageAndExit {
   echo "     [-t <space-separated list of test scripts to run from the e2e_all/scripts/tests/ subdirectory>] \\"
   echo "     [-s <daemon versions>] \\"
   echo "     [-c <client versions>] \\"
+  echo "     [-u <remote username>] - defaults to the local username\\"
+  echo "     [-i <identity file name> - defaults to ~/.ssh/noports] \\"
   echo "     [-n (Do not recompile binaries for current commit. Default is to always recompile.)]"
   echo ""
   echo "Notes:"
@@ -85,12 +87,17 @@ shift
 shift
 shift
 
-while getopts r:t:s:c:n opt; do
+remoteUsername=$(whoami)
+identityFilename="${HOME}/.ssh/noports"
+
+while getopts r:t:s:c:u:i:n opt; do
   case $opt in
     r) atDirectoryHost=$OPTARG ;;
     t) testsToRun=$OPTARG ;;
     s) daemonVersions=$OPTARG ;;
     c) clientVersions=$OPTARG ;;
+    u) remoteUsername=$OPTARG ;;
+    i) identityFilename=$OPTARG ;;
     n) recompile="false" ;;
     *) usageAndExit ;;
   esac
@@ -106,6 +113,8 @@ export atDirectoryPort
 export testsToRun
 export daemonVersions
 export clientVersions
+export remoteUsername
+export identityFilename
 
 shift "$(( OPTIND - 1 ))"
 

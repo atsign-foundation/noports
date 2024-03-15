@@ -37,11 +37,8 @@ if [[ $(versionIsAtLeast "$clientVersion" "d:5.0.0") == "true" ]] ; then
   v5Flags="-x --no-ad --no-et"
 fi
 
-remoteUser="gary"
-
-identityFile=~/.ssh/noports
-l1="$clientBinaryPath/sshnp -f $clientAtSign -d $deviceName -i $identityFile"
-l2=" -t $daemonAtSign -h $srvAtSign -u $remoteUser"
+l1="$clientBinaryPath/sshnp -f $clientAtSign -d $deviceName -i $identityFilename"
+l2=" -t $daemonAtSign -h $srvAtSign -u $remoteUsername"
 l3=" --ssh-client openssh"
 l4=" --root-domain $atDirectoryHost"
 l5=" ${v5Flags}"
