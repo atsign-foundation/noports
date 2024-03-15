@@ -13,7 +13,7 @@ import 'profile_bar_actions.dart';
 
 class ProfileBar extends ConsumerStatefulWidget {
   final String profileName;
-  const ProfileBar(this.profileName, {Key? key}) : super(key: key);
+  const ProfileBar(this.profileName, {super.key});
 
   @override
   ConsumerState<ProfileBar> createState() => _ProfileBarState();
@@ -49,7 +49,7 @@ class _ProfileBarState extends ConsumerState<ProfileBar> {
                 gapW16,
                 Text(widget.profileName),
                 gapW8,
-                Expanded(child: Container()),
+                const Expanded(child: gap0),
                 const ProfileBarStats(),
                 ProfileBarActions(profile),
               ],

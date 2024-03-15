@@ -52,10 +52,9 @@ class _SSHKeyManagementFormState extends ConsumerState<SSHKeyManagementFormDialo
       file = await openFile(acceptedTypeGroups: <XTypeGroup>[dotPrivateTypeGroup]);
       if (file == null) return;
       content = await file!.readAsString();
-      setState(() {
-        privateKeyFileName = file!.name;
-      });
-      setState(() {});
+      log(content);
+
+      // setState(() {});
     } catch (e) {
       log(e.toString());
     }
@@ -118,12 +117,22 @@ class _SSHKeyManagementFormState extends ConsumerState<SSHKeyManagementFormDialo
                       gapH16,
                       Text(strings.newSshKeyCreation),
                       gapH4,
-                      FilePickerField(
-                        onTap: () async {
-                          await getPrivateKey();
-                        },
-                        initialValue: privateKeyFileName,
-                        validator: FormValidator.validateRequiredField,
+                      Row(
+                        children: [
+                          FilePickerField(
+                            onTap: () async {},
+                            initialValue: privateKeyFileName,
+                            validator: FormValidator.validateRequiredField,
+                          ),
+                          gapW38,
+                          Visibility(
+                            visible: ref.watch(invalidPrivateKeyFileProvider),
+                            child: Text(
+                              'Invalid private key',
+                              style: Theme.of(context).textTheme.bodyMedium!.copyWith(color: Colors.red),
+                            ),
+                          ),
+                        ],
                       ),
                       gapH10,
                       CustomTextFormField(
@@ -173,7 +182,12 @@ class _SSHKeyManagementFormState extends ConsumerState<SSHKeyManagementFormDialo
                             gapW8,
                             ElevatedButton(
                               onPressed: () => onSubmit(context),
-                              child: Text(strings.addKey),
+                              child: Text(
+                                strings.addKey,
+                                style: Theme.of(context).textTheme.labelLarge!.copyWith(
+                                      color: Colors.white,
+                                    ),
+                              ),
                             ),
                           ],
                         ),
