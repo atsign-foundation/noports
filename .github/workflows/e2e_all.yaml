@@ -23,7 +23,7 @@ jobs:
       - name: execute tests on cicd vm
         uses: appleboy/ssh-action@029f5b4aeeeb58fdfe1410a5d17f967dacf36262 # v1.0.3
         env:
-          SHA: ${{ github.sha }}
+          SHA: ${{ github.event.pull_request.head.sha || github.sha }}
         with:
           host: ${{ secrets.NOPORTS_CICD_HOST }}
           username: ubuntu
@@ -35,3 +35,4 @@ jobs:
             cd noports
             git fetch
             git checkout -f "$SHA"
+            git branch
