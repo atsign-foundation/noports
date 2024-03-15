@@ -30,6 +30,7 @@ jobs:
           key: ${{ secrets.NOPORTS_CICD_SSH_KEY }}
           envs: SHA
           script: |
+            echo "SHA is $SHA"
             cd noports
             git fetch
-            git checkout $SHA
+            git checkout "$SHA"
