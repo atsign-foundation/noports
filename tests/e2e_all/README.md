@@ -88,6 +88,10 @@ Note: All script names are relative to `/path/to/repoRoot/tests/e2e_all/scripts/
     tests/e2e_all/scripts/run_all.sh @atSign1 @atSign2 @rv_am \
     -w 10 -z 15
     ```
+- Note: `checkout -f` is used because before binaries are compiled, the 
+  script executes `dart pub get` which frequently will update the
+  pubspec.lock file and so the next time the job runs we want to just discard 
+  that change - therefore, we force checkout.
 - Requirements for the CICD host
     1. git is installed
     2. dart / flutter sdk is installed
