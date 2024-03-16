@@ -11,6 +11,7 @@
 # - in cleanup, also remove sshnp-ephemeral
 # - in cleanup, ensure that the authorized_keys file isn't accidentally wiped
 # - implement the -u test similar to the -s test
+# - update the README
 
 # This script is for running e2e tests locally (e.g. development host), and will
 # - Set up binaries
