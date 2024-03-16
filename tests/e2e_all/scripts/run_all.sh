@@ -20,20 +20,18 @@ function usageAndExit {
   echo "  $scriptName @client_atsign @daemon_atsign @socket_rendezvous_atsign \\"
   echo "     [-r <atDirectory (aka root) host>] \\"
   echo "     [-t <space-separated list of test scripts to run from the e2e_all/scripts/tests/ subdirectory>] \\"
-  echo "     [-s <daemon versions>] \\"
-  echo "     [-c <client versions>] \\"
+  echo "     [-s <daemon versions>] - defaults to $defaultDaemonVersions\\"
+  echo "     [-c <client versions>] - defaults to $defaultClientVersions \\"
   echo "     [-u <remote username>] - defaults to the local username \\"
   echo "     [-i <identity file name> - defaults to ~/.ssh/noports] \\"
-  echo "     [-w <daemon wait time> - how long to wait for daemons to start up - defaults to 30 seconds] \\"
+  echo "     [-w <daemon start wait time> - how long to wait for daemons to start up - defaults to 30 seconds] \\"
   echo "     [-n (Do not recompile binaries for current commit. Default is to always recompile.)]"
   echo ""
   echo "Notes:"
   echo "  <atDirectory host> defaults to root.atsign.org"
-  echo "  If test script names are not supplied then the 'noop' test will be executed"
-  echo "  If you supply 'all' as the test script name then all tests will be executed"
+  echo "  If test script names are not supplied then all tests in e2e_all/scripts/tests will be executed"
+  echo "  For a quick sanity check, use '-t noop' which will run a 'noop' test which does nothing except pass"
   echo "  Daemon / client versions are supplied as multiple <type>:<version> pairs, separated by spaces"
-  echo "  List of daemonVersions defaults to $defaultDaemonVersions"
-  echo "  List of clientVersions defaults to $defaultClientVersions"
   echo ""
   echo "Usage examples:"
   echo "    $scriptName -s 'd:4.0.5 d:current' -c 'd:current' -t 'test1.sh test2.sh test3.sh'"
@@ -45,7 +43,7 @@ function usageAndExit {
 
 atDirectoryHost=root.atsign.org
 atDirectoryPort=64
-testsToRun="noop"
+testsToRun="all"
 
 defaultDaemonVersions="d:4.0.5 d:5.0.2 d:current"
 
@@ -86,6 +84,10 @@ source "$testScriptsDir/common/common_functions.include.sh"
 unset clientAtSign
 unset daemonAtSign
 unset srvAtSign
+
+if (( $# < 3 )); then
+  usageAndExit
+fi
 
 clientAtSign="$1"
 if test "${clientAtSign:0:1}" != "@"; then

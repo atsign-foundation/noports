@@ -1,82 +1,91 @@
-# End-to-end test matrix
+# End-to-end tests, iteration 2[^1]
 
 ## Goals
 
-- Easily run locally
-- Rebuild only when necessary
-- Easily run from GitHub actions
+- Easy to run locally
+- Easy to run from GitHub actions
+- Easy to configure matrix of daemons and clients
+- Support individual tests asserting what their version requirements are
+- Easy to run one test, several tests, or all tests
 
-## Approach
+## To run
+  ```
+  # Show usage, all flags and options
+  tests/e2e_all/scripts/run_all.sh
 
-- Run daemons (latest release aka LR, branch) on cicd VM
-- Run branch's socket rendezvous on cicd VM
-- Test
-    - not testing legacy daemon
-    - LR cli clients (openssh and dart) VS both daemons VS both SR, LR features
-      only
-    - branch's cli clients (openssh and dart) VS both daemons VS both SR, LR
-      features only
-    - branch's cli clients (openssh and dart) VS branch daemons VS branch SR,
-      all features
+  # Dry run to verify that the test rig machinery works
+  tests/e2e_all/scripts/run_all.sh @foo @bar @baz -t noop
 
-## NoPorts Daemons
+  # Run all tests, prod atSigns
+  tests/e2e_all/scripts/run_all.sh \
+    @clientAtSign @daemonAtSign @srvdAtSign \
+    -i ~/.ssh/<identityFileName>
 
-- Versions: 3_2_0, 4_0_4, git_$BRANCH (BRANCH=`git rev-parse --short HEAD`)
-- Pull existing release binaries from the release downloads if not already
-  present
-- $VERSION WITH "-u" and "-s" flags, set DEVICE = npe2e_${VERSION}_with_flags
-- $VERSION WITHOUT "-u" and "-s" flags, set DEVICE = npe2e_${VERSION}_no_flags
+  # Run all tests, with local atDirectory and atServers
+  # TODO Add section to this doc showing how to run local atServers
+  tests/e2e_all/scripts/run_all.sh \
+    @alice @bob @chuck \
+    -r vip.ve.atsign.zone
+    -i ~/.ssh/<identityFileName> \
+    -w 3
+```
 
-## Running the daemons (npd and rvd)
+## How run_all.sh works
+Note: All script names are relative to <repoRoot>/tests/e2e_all/scripts/
+- Parses args
+- Runs `common/setup_binaries.sh` which iterates though $daemonVersions and 
+  $clientVersions and for each one
+  - If version is not 'current' (i.e. the current git branch) and not already 
+    downloaded, downloads from the appropriate NoPorts repo release assets to 
+    `<repoRoot>/tests/e2e_all/releases`
+  - If version is 'current', builds binaries for the current branch in 
+    `<repoRoo>tests/e2e_all/runtime/`
+    - If the '-n' flag is set then binaries will not be rebuilt (but will be 
+      built if they are not present)
+- Runs `common/start_daemons.sh` which iterates through $daemonVersions and,
+  for each one
+  - Sets the deviceName - for example
+    - for daemon version `d:4.0.5` the deviceName will be `${shortCommitId}d405`
+    - for daemon version `d:current` the deviceName will be `${shortCommitId}dc`
+  - Runs the daemon with `-a @daemonAtSign -m @clientAtSign -d {$deviceName} -v`
+- Runs `common/run_tests.sh` which
+  - iterates through each combination of test script, daemon version and
+    client version and
+    - runs that test script for that daemon version and client version
+    - checks exit status == zero AND 'TEST PASSED' appears in the test script's 
+      output
+  - logs progress as it goes
+  - outputs a summary report at the end
+- Runs `common/stop_daemons.sh`
+- Runs `common/cleanup_tmp_files.sh`
+  - the `/tmp/e2e_all/${shortCommitId}` directory is removed. (All daemon, client 
+    and test script output files were written to there.) 
 
-- Set up
-    - Ensure $HOME/np_e2e_test/$VERSION exist for each version
-    - If not downloaded, download released binaries which we want to test into
-      $VERSION/bin
-    - on cicd VM, switch git branch to $BRANCH, and git pull
-    - stop npe2e_$BRANCH_with_flags and _no_flags if they are running
-    - Build all binaries from local branch, put into git_$BRANCH/bin
-- Start the daemons
-    - go through the directories
-    - check if npe2e_${VERSION} is running if version is not 'branch'
-    - if not running
-        - start npe2e_${VERSION}_with_flags if it is not running
-        - start npe2e_${VERSION}_no_flags if it is not running
-    - start npe2e_$BRANCH_with_flags and _no_flags
-- Start the branch SR
-    - stop existing process sshrvd_$BRANCH if it is running
-    - build the sshrvd binary as sshrvd_$BRANCH
-    - start sshrvd_$BRANCH -a @rvd --ip hostname -v
+## How the GitHub workflow works
+- The workflow file is `<repoRoot>/.github/workflows/e2e_all.yaml`
+- It gets the appropriate commitId and places it in $SHA
+- ssh's to the CICD host (using repo secrets `NOPORTS_CICD_HOST` and 
+  `NOPORTS_CICD_SSH_KEY`) and runs
+    ```
+    cd noports
 
-## Daemon scripts
-- set up to build branch binaries - CICD VM ONLY
-    - git checkout $BRANCH, git pull
-- Create dirs (both local and cicd vm)
-- Download released binaries (both) - need to specify platform
-  - For our purposes we only care about linux-x64 for cicd vm, and 
-    macos-arm64 or windows-x64 for laptops
-  - Download to $HOME/np_e2e_test/$VERSION/bin
-    from https://github.com/atsign-foundation/noports/releases/download/v$version/sshnp-$platform.zip
-- Stop $BRANCH daemon and SR (both)
-- dart pub get in packages/dart/sshnoports (both)
-- build BRANCH binaries (both)
-  - compile into $HOME/np_e2e_test/$VERSION/bin
-- Start older daemons if not running (both)
-- Start branch daemon (both)
-- Start branch SR (both)
+    echo "Running git fetch"
+    git fetch
 
-All of the above can be wrapped into a single script with a flag for "are we 
-cicd or not"
+    echo "Running git checkout -f $SHA"
+    git checkout -f "$SHA"
 
-Let's make it two scripts, one of which NEVER CHANGES so that a git pull 
-doesn't bork it, and is just a wrapper for the second one
+    echo "Running tests"
+    tests/e2e_all/scripts/run_all.sh @atSign1 @atSign2 @rv_am \
+    -w 10 -z 15
+    ```
+- Requirements for the CICD host
+  1. git is installed
+  2. dart / flutter sdk is installed
+  3. Clone of this repo is at ~/noports
+  4. noports and noports.pub files in ~/.ssh directory
+  5. noports.pub is in the ~/.ssh/authorized_keys file
+  6. atKeys files for `@atSign1` and `@atSign2` are in ~/.atsign/keys
 
-## Running the tests (i.e. the clients)
-- Run the set-up scripts
-  - GitHub action - ssh to cicd vm and run the script for $BRANCH 
-  - Local - just run the script for $BRANCH
-- Run all the client tests sequentially from a single file, echo the 
-  pass/fail status to output file
-- When complete, cat the output file
-- Tests fail if there is any failure in the output file or if the output
-  file length is shorter or longer than expected
+[^1]: Shout-out and endless thanks to @JeremyTubongbanua who built the first 
+iteration of the NoPorts e2e test rig
