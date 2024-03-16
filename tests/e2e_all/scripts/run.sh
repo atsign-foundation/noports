@@ -1,5 +1,17 @@
 #!/bin/bash
 
+# TODO
+# - move the ssh-keygen stuff into common
+# - create a new key before running run_tests
+# - run all (except minus_s_flag and minus_s_flag) tests
+#     against the daemons which have set the -s and -u flags
+# - create function which gets device name
+# - rename current function which gets device name to something shorter
+# - no pause before stopping daemons
+# - in cleanup, also remove sshnp-ephemeral
+# - in cleanup, ensure that the authorized_keys file isn't accidentally wiped
+# - implement the -u test similar to the -s test
+
 # This script is for running e2e tests locally (e.g. development host), and will
 # - Set up binaries
 # - Start all required daemons
@@ -23,7 +35,6 @@ function usageAndExit {
   echo "     [-s <daemon versions>] - defaults to $defaultDaemonVersions\\"
   echo "     [-c <client versions>] - defaults to $defaultClientVersions \\"
   echo "     [-u <remote username>] - defaults to the local username \\"
-  echo "     [-i <identity file name> - defaults to ~/.ssh/noports] \\"
   echo "     [-w <daemon start wait time> - how long to wait for daemons to start up - defaults to 30 seconds] \\"
   echo "     [-n (Do not recompile binaries for current commit. Default is to always recompile.)]"
   echo ""
@@ -52,7 +63,7 @@ defaultDaemonVersions="d:4.0.5 d:5.0.2 d:current"
 # `expect` magic to allow the 5.x clients to run even though there is not
 # a real terminal attached.
 # To see what I mean - run sshnp 5.0.2 with piped input - for example
-# sshnoports % /Users/gary/dev/atsign/repos/sshnoports/tests/e2e_all/releases/dart.5.0.2/sshnp/sshnp -f @garycasey -t @rv_ap -h @rv_ap -u atsign -d gkc -i ~/.ssh/noports <<< 'echo hello'
+# sshnoports % sshnp -f @atsign_1 -t @atsign_2 -h @rv_atsign -u username -d devicename -i /path/to/identityFile <<< 'echo hello'
 #  Unhandled exception:
 #  StdinException: Error getting terminal line mode, OS Error: Inappropriate ioctl for device, errno = 25
 #  #0      Stdin.lineMode (dart:io-patch/stdio_patch.dart:116)
@@ -110,20 +121,22 @@ shift
 shift
 shift
 
+commitId="$(git rev-parse --short HEAD)"
+export commitId
+
 remoteUsername=$(whoami)
-identityFilename="${HOME}/.ssh/noports"
+identityFilename="$HOME/.ssh/${commitId}"
 
 daemonStartWait=15
 daemonStopWait=15
 
-while getopts r:t:s:c:u:i:w:z:n opt; do
+while getopts r:t:s:c:u:w:z:n opt; do
   case $opt in
     r) atDirectoryHost=$OPTARG ;;
     t) testsToRun=$OPTARG ;;
     s) daemonVersions=$OPTARG ;;
     c) clientVersions=$OPTARG ;;
     u) remoteUsername=$OPTARG ;;
-    i) identityFilename=$OPTARG ;;
     w) daemonStartWait=$OPTARG ;;
     z) daemonStopWait=$OPTARG ;;
     n) recompile="false" ;;
@@ -149,9 +162,6 @@ timeoutDuration=20
 export timeoutDuration
 
 shift "$(( OPTIND - 1 ))"
-
-commitId="$(git rev-parse --short HEAD)"
-export commitId
 
 # Script dir is <repo_root>/tests/e2e_all/scripts
 cd "$testScriptsDir/../../.." || exit 1 # should now be in <repo_root>/
@@ -221,14 +231,6 @@ if test "$retCode" != 0; then
   logError "stop_daemons failed with exit status $retCode"
 fi
 
-echo
-logInfo "Calling common/cleanup_tmp_files.sh"
-"$testScriptsDir/common/cleanup_tmp_files.sh"
-retCode=$?
-if test "$retCode" != 0; then
-  logError "cleanup_tmp_files failed with exit status $retCode"
-fi
-
 reportFile=$(getReportFile)
 
 logInfo ""
@@ -237,5 +239,13 @@ echo
 cat "$reportFile"
 logInfo ""
 logInfo ""
+
+echo
+logInfo "Calling common/cleanup_tmp_files.sh"
+"$testScriptsDir/common/cleanup_tmp_files.sh"
+retCode=$?
+if test "$retCode" != 0; then
+  logError "cleanup_tmp_files failed with exit status $retCode"
+fi
 
 exit $testExitStatus

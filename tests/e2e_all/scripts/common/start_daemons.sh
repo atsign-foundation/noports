@@ -32,8 +32,19 @@ do
 
   logInfo "      Starting daemon version $typeAndVersion with neither the -u nor -s flags"
   commandLine="$cBinary $fRoot $fAtSigns -d ${deviceName} --storage-path ${outputDir}/daemons/${deviceName}.storage -v"
-  echo "        --> $commandLine  >& ${outputDir}/daemons/${deviceName}.out 2> ${outputDir}/daemons/${deviceName}.err &"
-  $commandLine > "${outputDir}/daemons/${deviceName}.out" 2> "${outputDir}/daemons/${deviceName}.err" &
+  echo "        --> $commandLine  >& ${outputDir}/daemons/${deviceName}.log 2>&1 &"
+  $commandLine > "${outputDir}/daemons/${deviceName}.log" 2>&1 &
   sleep 0.2
   echo
+
+  deviceName="${deviceName}f"
+  logInfo "      Starting daemon version $typeAndVersion with the -u and -s flags"
+  commandLine="$cBinary $fRoot $fAtSigns -d ${deviceName} --storage-path ${outputDir}/daemons/${deviceName}.storage -v -u -s"
+  echo "        --> $commandLine  >& ${outputDir}/daemons/${deviceName}.log 2>&1 &"
+  $commandLine > "${outputDir}/daemons/${deviceName}.log" 2>&1 &
+  sleep 0.2
+
+  echo
+  echo
+
 done
