@@ -4,16 +4,13 @@ NC='\033[0m'
 authKeysFile="$HOME/.ssh/authorized_keys"
 
 getTestSshCommand() {
-  getTestSshCommand="$1"
+  testSshCommand="$1"
 
   # shellcheck disable=SC2016
   remoteCommand='echo `date` `whoami` `hostname` TEST PASSED'
-  getTestSshCommand="${getTestSshCommand} $remoteCommand"
-  if ! grep 'IdentityAgent=none' <<< "$getTestSshCommand"; then
-    getTestSshCommand=$(sed -e 's/ssh -p /ssh -o IdentityAgent=none -p /' <<< "$getTestSshCommand")
-  fi
+  testSshCommand="${testSshCommand} $remoteCommand"
   # shellcheck disable=SC2086
-  echo $getTestSshCommand
+  echo $testSshCommand
 }
 
 backupAuthorizedKeys() {
