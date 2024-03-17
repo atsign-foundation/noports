@@ -125,9 +125,8 @@ remoteUsername=$(whoami)
 identityFilename="$HOME/.ssh/e2e_all.${commitId}"
 
 daemonStartWait=15
-daemonStopWait=15
 
-while getopts r:t:s:c:u:w:z:n opt; do
+while getopts r:t:s:c:u:w:n opt; do
   case $opt in
     r) atDirectoryHost=$OPTARG ;;
     t) testsToRun=$OPTARG ;;
@@ -135,7 +134,6 @@ while getopts r:t:s:c:u:w:z:n opt; do
     c) clientVersions=$OPTARG ;;
     u) remoteUsername=$OPTARG ;;
     w) daemonStartWait=$OPTARG ;;
-    z) daemonStopWait=$OPTARG ;;
     n) recompile="false" ;;
     *) usageAndExit ;;
   esac

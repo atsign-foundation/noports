@@ -85,8 +85,7 @@ to `/path/to/repoRoot/tests/e2e_all/scripts/`
     git checkout -f "$SHA"
 
     echo "Running tests"
-    tests/e2e_all/scripts/main.sh @atSign1 @atSign2 @rv_am \
-    -w 15 -z 15
+    tests/e2e_all/scripts/main.sh @atSign1 @atSign2 @rv_am
     ```
 - Note: `checkout -f` is used because before binaries are compiled, the
   script executes `dart pub get` which frequently will update the
