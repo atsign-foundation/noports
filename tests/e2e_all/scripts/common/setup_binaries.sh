@@ -17,9 +17,6 @@ if ! [ "$currentCommitId" = "$commitId" ]; then
   exit 1
 fi
 
-# TODO This should be run before common/setup_binaries.sh is run
-# "$testScriptsDir/checkout_git_commit_id.sh" -c "$commitId"
-
 cd "$testRuntimeDir" || exit 1
 
 mkdir -p "$testRuntimeDir"/binaries

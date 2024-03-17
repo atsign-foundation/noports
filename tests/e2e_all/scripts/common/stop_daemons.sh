@@ -7,11 +7,17 @@ fi
 source "$testScriptsDir/common/common_functions.include.sh"
 source "$testScriptsDir/common/check_env.include.sh" || exit $?
 
-logInfo ""
-logInfo "  stop_daemons starting"
-
 for pid in $(pgrep -f "sshnpd.*${commitId}")
 do
-  logInfo "    killing $pid ($(ps -ef | grep " $pid "))"
+  kill "$pid"
+done
+
+for pid in $(pgrep -f "tests/e2e_all/runtime/.*/srv ")
+do
+  kill "$pid"
+done
+
+for pid in $(pgrep -f "tests/e2e_all/releases/.*/srv ")
+do
   kill "$pid"
 done

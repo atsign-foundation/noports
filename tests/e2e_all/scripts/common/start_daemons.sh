@@ -7,9 +7,6 @@ fi
 source "$testScriptsDir/common/common_functions.include.sh"
 source "$testScriptsDir/common/check_env.include.sh" || exit $?
 
-logInfo ""
-logInfo "  start_daemons starting"
-
 outputDir=$(getOutputDir)
 mkdir -p "${outputDir}/daemons"
 
@@ -21,7 +18,7 @@ for typeAndVersion in $daemonVersions
 do
   logInfo "    Starting daemons for commitId $commitId and version $typeAndVersion"
 
-  deviceName=$(getNoFlagsDeviceNameForCommitIDTypeAndVersion "$commitId" "$typeAndVersion" )
+  deviceName=$(getDeviceNameNoFlags "$commitId" "$typeAndVersion" )
   logInfo "    Got deviceName $deviceName"
 
   pathToBinaries=$(getPathToBinariesForTypeAndVersion "$typeAndVersion")
@@ -37,7 +34,7 @@ do
   sleep 0.2
   echo
 
-  deviceName="${deviceName}f"
+  deviceName=$(getDeviceNameWithFlags "$commitId" "$typeAndVersion" )
   logInfo "      Starting daemon version $typeAndVersion with the -u and -s flags"
   commandLine="$cBinary $fRoot $fAtSigns -d ${deviceName} --storage-path ${outputDir}/daemons/${deviceName}.storage -v -u -s"
   echo "        --> $commandLine  >& ${outputDir}/daemons/${deviceName}.log 2>&1 &"

@@ -18,7 +18,7 @@ clientVersion="$2"
 sshClient="$3"
 
 # logInfo "Daemon version : $d_type : $d_major.$d_minor.$d_patch"
-deviceName=$(getNoFlagsDeviceNameForCommitIDTypeAndVersion "$commitId" "$daemonVersion" )
+deviceName=$(getDeviceNameWithFlags "$commitId" "$daemonVersion" )
 
 # logInfo "Client version : $c_type : $c_major.$c_minor.$c_patch"
 clientBinaryPath=$(getPathToBinariesForTypeAndVersion "$clientVersion")
@@ -31,29 +31,34 @@ clientBinaryPath=$(getPathToBinariesForTypeAndVersion "$clientVersion")
 # 1. All client versions since 5 require the '-x' flag in order to output the
 # ssh command rather than just forking to the ssh inline.
 if [[ $(versionIsAtLeast "$clientVersion" "d:5.0.0") == "true" ]] ; then
-  v5Flags="-x"
+  extraFlags="-x"
 fi
 
 # Daemon versions prior to 5 do not support rvd authentication nor end-to-end encryption
 if [[ $(versionIsLessThan "$daemonVersion" "d:5.0.0") == "true" ]]; then
-  echo "Daemon version $daemonVersion is less than required version for this test d:5:0:0 - will ignore this test" >> $(getReportFile)
-  exit 50
+  exit 50 # test rig interprets this exit status as 'test was not applicable'
 fi
 
 # Client versions prior to 5 do not support rvd authentication nor end-to-end encryption
 if [[ $(versionIsLessThan "$clientVersion" "d:5.0.0") == "true" ]]; then
-  echo "Client version $clientVersion is less than required version for this test d:5:0:0 - will ignore this test" >> $(getReportFile)
-  exit 50
+  exit 50 # test rig interprets this exit status as 'test was not applicable'
 fi
 
 l1="$clientBinaryPath/sshnp -f $clientAtSign -d $deviceName -i $identityFilename"
 l2=" -t $daemonAtSign -h $srvAtSign -u $remoteUsername"
 l3=" --ssh-client $sshClient"
 l4=" --root-domain $atDirectoryHost"
-l5=" ${v5Flags}"
-command="$l1 $l2 $l3 $l4 $l5"
+l5=" ${extraFlags}"
+sshnpCommand="$l1 $l2 $l3 $l4 $l5 -s ${identityFilename}.pub"
 
-echo "$(iso8601Date) | Executing $command" | tee -a "$(getReportFile)"
+echo "$(iso8601Date) | Executing $sshnpCommand" | tee -a "$(getReportFile)"
+sshCommand="$($sshnpCommand)"
+sshnpExitStatus=$?
+if (( sshnpExitStatus != 0 )); then
+  exit $sshnpExitStatus
+fi
+
+echo "$(iso8601Date) | Executing $sshCommand" | tee -a "$(getReportFile)"
 
 # shellcheck disable=SC2091
-$($command) <<< 'echo $(date) $(whoami) $(hostname) TEST PASSED'
+$(getTestSshCommand "$sshCommand")

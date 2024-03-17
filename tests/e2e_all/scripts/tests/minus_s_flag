@@ -6,7 +6,6 @@
 # 3a. Run against a daemon with the -s flag
 #   3b. Verify it succeeds
 
-# shellcheck disable=SC2034
 scriptName=$(basename -- "$0")
 
 if test -z "$testScriptsDir" ; then
@@ -23,10 +22,11 @@ fi
 daemonVersion="$1"
 clientVersion="$2"
 
+if [[ "$clientVersion" != "d:current" ]] || [[ "$daemonVersion" != "d:current" ]]; then
+  exit 50 # test rig interprets this exit status as 'test was not applicable'
+fi
 # 1. Generate a new ssh key
-mkdir -p "$HOME/.ssh"
-chmod go-rwx "$HOME/.ssh"
-ssh-keygen -t ed25519 -q -N '' -f "${identityFilename}" -C "$commitId"<<< y >/dev/null 2>&1
+generateNewSshKey
 
 # logInfo "Client version : $c_type : $c_major.$c_minor.$c_patch"
 clientBinaryPath=$(getPathToBinariesForTypeAndVersion "$clientVersion")
@@ -34,24 +34,24 @@ clientBinaryPath=$(getPathToBinariesForTypeAndVersion "$clientVersion")
 #
 # v4 feature set, default client flags
 
-# 1. All client versions since 5 require the '-x' flag in order to output the
-# ssh command rather than just forking to the ssh inline.
-# 2. sshnp since 5.x also requires '--no-ad' and '--no-et' flags
-# since those features are enabled by default from v5
+# - All client versions since 5 require the '-x' flag in order to output the
+#   ssh command rather than just forking to the ssh inline.
+# - sshnp since 5.x also requires '--no-ad' and '--no-et' flags,
+#   since those features are enabled by default from v5
 if [[ $(versionIsAtLeast "$clientVersion" "d:5.0.0") == "true" ]] ; then
-  v5Flags="-x --no-ad --no-et"
+  extraFlags="-x --no-ad --no-et"
 fi
 
 # 2a. Run sshnp against a daemon without the -s flag, with that new key
 #   2b. Verify it fails
-deviceName=$(getNoFlagsDeviceNameForCommitIDTypeAndVersion "$commitId" "$daemonVersion" )
+deviceName=$(getDeviceNameNoFlags "$commitId" "$daemonVersion" )
 l1="$clientBinaryPath/sshnp -f $clientAtSign -d $deviceName -i $identityFilename"
 l2=" -t $daemonAtSign -h $srvAtSign -u $remoteUsername"
 l4=" --root-domain $atDirectoryHost"
-l5=" ${v5Flags}"
+l5=" ${extraFlags}"
 sshnpCommand="$l1 $l2 $l3 $l4 $l5 -s ${identityFilename}.pub"
 
-echo "$(iso8601Date) | Executing $sshnpCommand" | tee -a "$(getReportFile)"
+echo "$(iso8601Date) | Executing $sshnpCommand"
 sshCommand=$($sshnpCommand)
 sshnpExitStatus=$?
 
@@ -61,43 +61,42 @@ sshnpExitStatus=$?
 # - 4.x clients, and 5.x clients against 4.x daemons will show success to this point
 #   so let's try the ssh which will fail
 if (( sshnpExitStatus != 0 )); then
-  echo "$(iso8601Date) | $scriptName: sshnp with new key failed as expected" | tee -a "$(getReportFile)"
+  logInfo "$scriptName: sshnp with new key failed as expected" | tee -a "$(getReportFile)"
 else
-  # shellcheck disable=SC2016
-  sshCommand=${sshCommand} 'echo $(date) $(whoami) $(hostname) TEST PASSED'
+  echo "$(iso8601Date) | Executing $sshCommand"
 
-  # shellcheck disable=SC2016
-  echo "$(iso8601Date) | Executing $sshCommand" 'echo $(date) $(whoami) $(hostname) TEST PASSED' | tee -a "$(getReportFile)"
-  # shellcheck disable=SC2016
   # shellcheck disable=SC2091
-  $sshCommand 'echo $(date) $(whoami) $(hostname) TEST PASSED'
+  $(getTestSshCommand "$sshCommand")
   exitStatus=$?
+
   if (( exitStatus == 0 )); then
     # It should have failed
-    echo "$(iso8601Date) | $scriptName: sshnp with new key did not fail as expected" | tee -a "$(getReportFile)"
+    logError "$scriptName: sshnp with new key did not fail as expected" | tee -a "$(getReportFile)"
     exit 1
   else
-    echo "$(iso8601Date) | $scriptName: sshnp with new key failed as expected" | tee -a "$(getReportFile)"
+    logInfo "$scriptName: sshnp with new key failed as expected" | tee -a "$(getReportFile)"
   fi
 fi
 
 
 # 3a. Run against a daemon with the -s flag
 #   3b. Verify it succeeds
-deviceName="${deviceName}f"
+deviceName=$(getDeviceNameWithFlags "$commitId" "$daemonVersion" )
 l1="$clientBinaryPath/sshnp -f $clientAtSign -d $deviceName -i $identityFilename"
 l2=" -t $daemonAtSign -h $srvAtSign -u $remoteUsername"
 l4=" --root-domain $atDirectoryHost"
-l5=" ${v5Flags}"
+l5=" ${extraFlags}"
 sshnpCommand="$l1 $l2 $l3 $l4 $l5 -s ${identityFilename}.pub"
 
-echo "$(iso8601Date) | Executing $sshnpCommand" | tee -a "$(getReportFile)"
+echo "$(iso8601Date) | Executing $sshnpCommand"
 sshCommand=$($sshnpCommand)
-# shellcheck disable=SC2016
-sshCommand=${sshCommand}
+sshnpExitStatus=$?
+if (( sshnpExitStatus != 0 )); then
+  exit $sshnpExitStatus
+fi
 
-# shellcheck disable=SC2016
-echo "$(iso8601Date) | Executing $sshCommand 'echo \$(date) \$(whoami) \$(hostname) TEST PASSED'" | tee -a "$(getReportFile)"
-# shellcheck disable=SC2016
+echo "$(iso8601Date) | Executing $sshCommand"
+
 # shellcheck disable=SC2091
-$sshCommand 'echo $(date) $(whoami) $(hostname) TEST PASSED'
+$(getTestSshCommand "$sshCommand")
+

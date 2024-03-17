@@ -13,11 +13,6 @@ if test $# != 2 ; then
   logErrorAndExit "Must supply daemonVersion, clientVersion"
 fi
 
-daemonVersion="$1"
-clientVersion="$2"
-
-deviceName=$(getNoFlagsDeviceNameForCommitIDTypeAndVersion "$commitId" "$type" "$daemonVersion" )
-
 echo "TEST PASSED"
 
 exit 0

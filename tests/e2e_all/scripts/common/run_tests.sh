@@ -54,7 +54,7 @@ do
       stderrFileName="${baseFileName}.err"
 
       # Execute the test script
-      timeout "$timeoutDuration" "$testScriptsDir/tests/$testToRun" "$daemonVersion" "$clientVersion" \
+      timeout --foreground "$timeoutDuration" "$testScriptsDir/tests/$testToRun" "$daemonVersion" "$clientVersion" \
         > "$stdoutFileName" 2> "$stderrFileName"
 
       #
@@ -78,8 +78,8 @@ do
           passed=$((passed+1))
           ;;
         50) # special exit code, indicates the test was deliberately ignored
-          testResult="IGNORED"
-          additionalInfo="(ignored)"
+          testResult="N/A"
+          additionalInfo="(not applicable)"
           ignored=$((ignored+1))
           ;;
         51) # special exit code, indicates the exit code was 0 but there was no 'TEST PASSED' output
@@ -99,7 +99,7 @@ do
       esac
       case $testResult in
         FAILED) logColour=$RED ;;
-        IGNORED) logColour=$BLUE ;;
+        "N/A") logColour=$BLUE ;;
         PASSED) logColour=$GREEN ;;
         *) logErrorAndExit "Unexpected testResult $testResult" ;;
       esac
@@ -123,12 +123,12 @@ do
 
           echo >> "$reportFile"
           ;;
-        IGNORED)
+        "N/A")
           echo -e "    ${logColour}${testResult}${NC} | $what" | tee -a "$reportFile"
           ;;
         PASSED)
           echo -e "    ${logColour}${testResult}${NC} | $what" | tee -a "$reportFile"
-          echo -e "    ssh output was: $(grep "TEST PASSED" "$stdoutFileName")" >> "$reportFile"
+          echo -e "    ssh output was: $(grep "TEST PASSED" "$stdoutFileName" | grep -v "Executing ssh")" >> "$reportFile"
           ;;
       esac
       echo >> "$reportFile"
@@ -147,8 +147,8 @@ else
   colour=$RED
 fi
 actuallyExecuted=$(( total - ignored ))
-echo -e "### Of a possible $total, ignored $ignored and executed $actuallyExecuted tests" >> "$reportFile"
-echo -e "${colour}### Passed: $passed Failed: $failed${NC}" >> "$reportFile"
+echo -e "### Of a possible $total, $ignored were not applicable (usually version constraints)" >> "$reportFile"
+echo -e "${colour}### Executed: $actuallyExecuted  Passed: $passed  Failed: $failed${NC}" >> "$reportFile"
 echo "###########################################################" >> "$reportFile"
 
 exit $failed

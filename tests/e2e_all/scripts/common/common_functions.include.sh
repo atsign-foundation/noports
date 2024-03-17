@@ -1,6 +1,45 @@
 RED='\033[0;31m'
 NC='\033[0m'
 
+authKeysFile="$HOME/.ssh/authorized_keys"
+
+getTestSshCommand() {
+  getTestSshCommand="$1"
+
+  # shellcheck disable=SC2016
+  remoteCommand='echo `date` `whoami` `hostname` TEST PASSED'
+  getTestSshCommand="${getTestSshCommand} $remoteCommand"
+  if ! grep 'IdentityAgent=none' <<< "$getTestSshCommand"; then
+    getTestSshCommand=$(sed -e 's/ssh -p /ssh -o IdentityAgent=none -p /' <<< "$getTestSshCommand")
+  fi
+  # shellcheck disable=SC2086
+  echo $getTestSshCommand
+}
+
+backupAuthorizedKeys() {
+  authKeysFileBackup="$authKeysFile.before.commit.${commitId}"
+  rm -f "$authKeysFileBackup"
+  cp -p "$authKeysFile" "$authKeysFileBackup"
+}
+
+restoreAuthorizedKeys() {
+  authKeysFileBackup="$authKeysFile.before.commit.${commitId}"
+  if test -f "$authKeysFileBackup"; then
+    rm -f "$authKeysFile"
+    mv "$authKeysFileBackup" "$authKeysFile"
+  fi
+}
+
+generateNewSshKey() {
+  mkdir -p "$HOME/.ssh"
+  chmod go-rwx "$HOME/.ssh"
+  touch "$authKeysFile"
+  chmod go-rwx "$authKeysFile"
+
+  logInfo "Generating test ssh keypair"
+  ssh-keygen -t ed25519 -q -N '' -f "${identityFilename}" -C "$commitId"<<< y >/dev/null 2>&1
+}
+
 getOutputDir() {
   echo "/tmp/e2e_all/${commitId}"
 }
@@ -8,9 +47,9 @@ getReportFile() {
   echo "/tmp/e2e_all/${commitId}.test.report"
 }
 
-getNoFlagsDeviceNameForCommitIDTypeAndVersion() {
+getDeviceNameNoFlags() {
   if (( $# != 2 )) ; then
-    logError "getNoFlagsDeviceNameForCommitIDTypeAndVersion expects two parameters; $# were supplied"
+    logError "getDeviceNameNoFlags expects two parameters; $# were supplied"
     exit 1
   fi
   commitId="$1"
@@ -21,6 +60,15 @@ getNoFlagsDeviceNameForCommitIDTypeAndVersion() {
     versionForDeviceName="c";
   fi
   echo "${commitId}${type}${versionForDeviceName}"
+}
+
+getDeviceNameWithFlags() {
+  if (( $# != 2 )) ; then
+    logError "getDeviceNameFlags expects two parameters; $# were supplied"
+    exit 1
+  fi
+  # shellcheck disable=SC2086
+  echo "$(getDeviceNameNoFlags $1 $2)f"
 }
 
 OS=""

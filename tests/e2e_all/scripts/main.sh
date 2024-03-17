@@ -1,18 +1,5 @@
 #!/bin/bash
 
-# TODO
-# - move the ssh-keygen stuff into common
-# - create a new key before running run_tests
-# - run all (except minus_s_flag and minus_s_flag) tests
-#     against the daemons which have set the -s and -u flags
-# - create function which gets device name
-# - rename current function which gets device name to something shorter
-# - no pause before stopping daemons
-# - in cleanup, also remove sshnp-ephemeral
-# - in cleanup, ensure that the authorized_keys file isn't accidentally wiped
-# - implement the -u test similar to the -s test
-# - update the README
-
 # This script is for running e2e tests locally (e.g. development host), and will
 # - Set up binaries
 # - Start all required daemons
@@ -52,6 +39,9 @@ function usageAndExit {
   echo ""
   exit 1
 }
+
+# disable ssh-agent for these tests
+export SSH_AUTH_SOCK=""
 
 atDirectoryHost=root.atsign.org
 atDirectoryPort=64
@@ -132,7 +122,7 @@ commitId="$(git rev-parse --short HEAD)"
 export commitId
 
 remoteUsername=$(whoami)
-identityFilename="$HOME/.ssh/${commitId}"
+identityFilename="$HOME/.ssh/e2e_all.${commitId}"
 
 daemonStartWait=15
 daemonStopWait=15
@@ -213,6 +203,18 @@ if test "$retCode" != 0; then
 fi
 
 echo
+logInfo "Generating new ssh key"
+generateNewSshKey
+
+echo
+logInfo "Backing up authorized_keys"
+backupAuthorizedKeys
+
+# Kill any daemons that might be running since last time, due to a Ctrl-C or whatever
+echo
+logInfo "Calling stop_daemons.sh"
+"$testScriptsDir/common/stop_daemons.sh"
+
 logInfo "Calling start_daemons.sh"
 "$testScriptsDir/common/start_daemons.sh"
 retCode=$?
@@ -228,15 +230,16 @@ else
   testExitStatus=$?
 fi
 
-echo
-logInfo "Sleeping for $daemonStopWait seconds to give daemons time to clean up ephemeral keys"
-sleep "$daemonStopWait"
 logInfo "Calling common/stop_daemons.sh"
 "$testScriptsDir/common/stop_daemons.sh"
 retCode=$?
 if test "$retCode" != 0; then
   logError "stop_daemons failed with exit status $retCode"
 fi
+
+echo
+logInfo "Restoring authorized_keys from backup"
+restoreAuthorizedKeys
 
 reportFile=$(getReportFile)
 
