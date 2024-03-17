@@ -93,6 +93,12 @@ export testScriptsDir
 
 source "$testScriptsDir/common/common_functions.include.sh"
 
+if ! command -v timeout &> /dev/null
+then
+    logErrorAndExit "'timeout' command could not be found. If on MacOS, brew install coreutils"
+fi
+
+
 unset clientAtSign
 unset daemonAtSign
 unset srvAtSign
