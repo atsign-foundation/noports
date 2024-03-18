@@ -12,12 +12,12 @@ do
   kill "$pid"
 done
 
-for pid in $(pgrep -f "tests/e2e_all/runtime/.*/srv ")
+for pid in $(pgrep -f "tests/e2e_all/runtime/.*/.* ")
 do
   kill "$pid"
 done
 
-for pid in $(pgrep -f "tests/e2e_all/releases/.*/srv ")
+for pid in $(pgrep -f "tests/e2e_all/releases/.*/.* ")
 do
   kill "$pid"
 done

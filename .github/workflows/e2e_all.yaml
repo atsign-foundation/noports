@@ -1,4 +1,4 @@
-name: end_to_end_tests
+name: e2e_all
 
 permissions:
   contents: read
@@ -17,6 +17,7 @@ jobs:
   e2e_all:
     # Don't run on PRs from a fork or Dependabot as the secrets aren't available
     if: ${{ github.event.pull_request.head.repo.fork == false && github.actor != 'dependabot[bot]'}}
+    concurrency: e2e_all
     runs-on: ubuntu-latest
 
     steps:
