@@ -8,16 +8,15 @@ eval spawn $env(SSHNP_COMMAND)
 
 set expected "${env(REMOTE_USERNAME)}@${env(REMOTE_HOSTNAME)}"
 expect {
-    eof             { send_user "sshnp exited with non-zero exit code\n\n" ; exit 1 }
+    eof             { exit 1 }
     $expected
 }
 
 send "echo \$(date) \$(whoami) \$(hostname) SCOOBY DOO\n"
 set expected "${env(REMOTE_USERNAME)}.*SCOOBY DOO"
 expect {
-    eof             { send_user "sshnp exited with non-zero exit code\n\n" ; exit 1 }
+    eof             { exit 1 }
     -re $expected
 }
 
-send_user "Everything worked OK\n\n"
 exit 0
