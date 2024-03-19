@@ -1,0 +1,22 @@
+#!/bin/bash
+
+# shellcheck disable=SC2034
+scriptName=$(basename -- "$0")
+
+if test -z "$testScriptsDir" ; then
+  echo -e "    ${RED}check_env: testScriptsDir is not set${NC}" && exit 1
+fi
+
+source "$testScriptsDir/common/common_functions.include.sh"
+source "$testScriptsDir/common/check_env.include.sh" || exit $?
+
+
+if test $# != 2 ; then
+  logErrorAndExit "Must supply daemonVersion, clientVersion"
+fi
+
+daemonVersion="$1"
+clientVersion="$2"
+
+# Execute ssh-client 'openssh', v5 daemon features, and print the ssh command
+"$testScriptsDir/tests/shared/sshnp" "$daemonVersion" "$clientVersion" "openssh" "v5" "print"

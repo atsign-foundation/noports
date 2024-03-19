@@ -57,7 +57,7 @@ sshnpExitStatus=$?
 
 if (( sshnpExitStatus == 0 )); then
     # It should have failed
-    logError "$scriptName: sshnp to ${deviceName} without '-u <username>' did not fail as expected" | tee -a "$(getReportFile)"
+    logError "$scriptName: sshnp to ${deviceName} without '-u <username>' did not fail as expected"
     exit 1
 fi
 

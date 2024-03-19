@@ -1,5 +1,6 @@
 #!/bin/bash
 
+# shellcheck disable=SC2034
 scriptName=$(basename -- "$0")
 
 if test -z "$testScriptsDir" ; then
@@ -17,4 +18,5 @@ fi
 daemonVersion="$1"
 clientVersion="$2"
 
-"$testScriptsDir/tests/shared/sshnp_with_et_and_rvd_auth" "$daemonVersion" "$clientVersion" openssh
+# Execute ssh-client 'dart', v5 daemon features, and it must be 'inline'
+"$testScriptsDir/tests/shared/sshnp" "$daemonVersion" "$clientVersion" "dart" "v5" "inline"

@@ -1,0 +1,23 @@
+#!/usr/bin/expect
+
+proc timed_out { } { send_user "\nTimeout!\n" ; exit 1 }
+set timeout 5
+expect_before timeout timed_out
+
+eval spawn $env(SSHNP_COMMAND)
+
+set expected "${env(REMOTE_USERNAME)}@${env(REMOTE_HOSTNAME)}"
+expect {
+    eof             { send_user "sshnp exited with non-zero exit code\n\n" ; exit 1 }
+    $expected       { send_user "Detected expected prompt $expected\n" }
+}
+
+send "echo \$(date) \$(whoami) \$(hostname) SCOOBY DOO\n"
+set expected "${env(REMOTE_USERNAME)}.*SCOOBY DOO"
+expect {
+    eof             { send_user "sshnp exited with non-zero exit code\n\n" ; exit 1 }
+    -re $expected   { send_user "Detected expected command output $expected\n" }
+}
+
+send_user "Everything worked OK\n\n"
+exit 0

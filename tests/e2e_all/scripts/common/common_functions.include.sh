@@ -3,6 +3,17 @@ NC='\033[0m'
 
 authKeysFile="$HOME/.ssh/authorized_keys"
 
+getBaseSshnpCommand() {
+  if (( $# != 1 )); then
+    logErrorAndExit "getBaseSshnpCommand requires 1 argument (clientBinaryPath)"
+  fi
+  clientBinaryPath="$1"
+  l1="$clientBinaryPath/sshnp -f $clientAtSign -d $deviceName -i $identityFilename"
+  l2=" -t $daemonAtSign -h $srvAtSign -u $remoteUsername"
+  l3=" --root-domain $atDirectoryHost"
+  echo "$l1" "$l2" "$l3"
+}
+
 getTestSshCommand() {
   testSshCommand="$1"
 
@@ -82,7 +93,7 @@ iso8601Date() {
 }
 
 logError() {
-  echo -e "$(iso8601Date) |     ${RED}ERROR:${NC} $1"
+  echo -e "$(iso8601Date) |     ${RED}ERROR:${NC} $1" | tee -a "$getReportFile"
 }
 
 logErrorAndExit() {

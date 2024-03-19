@@ -47,7 +47,7 @@ do
     for clientVersion in $clientVersions
     do
       what="Test $((total+1)) of $totalNumTests | testScript: ${testToRun} client: ${clientVersion} daemon: ${daemonVersion}"
-      logInfo "$what"
+      logInfo "$what" | tee -a "$(getReportFile)"
 
       baseFileName="${outputDir}/clients/${testToRun}.daemon.${daemonVersion}.client.${clientVersion}"
       stdoutFileName="${baseFileName}.out"
@@ -128,7 +128,6 @@ do
           ;;
         PASSED)
           echo -e "    ${logColour}${testResult}${NC} | $what" | tee -a "$reportFile"
-          echo -e "    ssh output was: $(grep "TEST PASSED" "$stdoutFileName" | grep -v "Executing ssh")" >> "$reportFile"
           ;;
       esac
       echo >> "$reportFile"

@@ -48,25 +48,7 @@ atDirectoryPort=64
 testsToRun="all"
 
 defaultDaemonVersions="d:4.0.5 d:5.0.2 d:current"
-
-# Client Versions
-# Don't re-add 5.0.x until we've implemented the required
-# `expect` magic to allow the 5.x clients to run even though there is not
-# a real terminal attached.
-# To see what I mean - run sshnp 5.0.2 with piped input - for example
-# sshnoports % sshnp -f @atsign_1 -t @atsign_2 -h @rv_atsign -u username -d devicename -i /path/to/identityFile <<< 'echo hello'
-#  Unhandled exception:
-#  StdinException: Error getting terminal line mode, OS Error: Inappropriate ioctl for device, errno = 25
-#  #0      Stdin.lineMode (dart:io-patch/stdio_patch.dart:116)
-#  #1      main (file:///Users/runner/work/noports/noports/packages/dart/sshnoports/bin/sshnp.dart:38)
-#  #2      _delayEntrypointInvocation.<anonymous closure> (dart:isolate-patch/isolate_patch.dart:295)
-#  #3      _RawReceivePort._handleMessage (dart:isolate-patch/isolate_patch.dart:184)
-#
-# i.e. basically doesn't work in scripting environments
-#
-# version 5.1.0+ does work in scripting environments
-#
-defaultClientVersions="d:4.0.5 d:current"
+defaultClientVersions="d:4.0.5 d:5.0.2 d:current"
 
 daemonVersions=$defaultDaemonVersions
 clientVersions=$defaultClientVersions
