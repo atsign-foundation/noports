@@ -21,7 +21,7 @@ getTestSshCommand() {
   remoteCommand='echo `date` `whoami` `hostname` TEST PASSED'
   testSshCommand="${testSshCommand} $remoteCommand"
   # shellcheck disable=SC2086
-  echo $testSshCommand
+  echo unbuffer $testSshCommand
 }
 
 backupAuthorizedKeys() {
