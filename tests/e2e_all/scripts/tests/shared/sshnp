@@ -86,7 +86,7 @@ esac
 
 
 # Let's put together the sshnp command we will execute
-sshnpCommand="unbuffer $baseSshnpCommand -s ${identityFilename}.pub ${additionalSshnpFlags} "
+sshnpCommand="$baseSshnpCommand -s ${identityFilename}.pub ${additionalSshnpFlags} "
 
 # Finally, let's run the sshnp and ssh session
 case "$executionType" in
@@ -94,7 +94,8 @@ case "$executionType" in
     echo "$(iso8601Date) | Executing $sshnpCommand" | tee -a "$(getReportFile)"
 
     # 1. Execute the sshnpCommand, output is the sshCommand
-    sshCommand="$($sshnpCommand)"
+    # shellcheck disable=SC2086
+    sshCommand=$(echo "" | unbuffer $sshnpCommand | grep --color=none "^ssh -p")
 
     # 2. Check the exit status
     sshnpExitStatus=$?
