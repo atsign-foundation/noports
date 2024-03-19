@@ -28,10 +28,6 @@ echo "### NoPorts e2e test run starting at $(iso8601Date)" >> "$reportFile"
 echo "### " >> "$reportFile"
 echo "### " >> "$reportFile"
 
-if (( timeoutDuration == 0 )) ; then
-  timeoutDuration=10
-fi
-
 outputDir=$(getOutputDir)
 mkdir -p "${outputDir}/clients"
 

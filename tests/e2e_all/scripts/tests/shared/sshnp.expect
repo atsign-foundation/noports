@@ -1,7 +1,7 @@
 #!/usr/bin/expect
 
 proc timed_out { } { send_user "\nTimeout!\n" ; exit 1 }
-set timeout 5
+set timeout $env(SSHNP_TIMEOUT)
 expect_before timeout timed_out
 
 eval spawn $env(SSHNP_COMMAND)

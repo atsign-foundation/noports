@@ -116,6 +116,7 @@ case "$executionType" in
     # sshnp will itself run the ssh session
     # To test, we will run an expect script for $sshnpCommand
     SSHNP_COMMAND="$sshnpCommand"; export SSHNP_COMMAND
+    SSHNP_TIMEOUT=$timeoutDuration; export SSHNP_TIMEOUT
     REMOTE_HOSTNAME="$(hostname -s)"; export REMOTE_HOSTNAME
     REMOTE_USERNAME=$remoteUsername; export REMOTE_USERNAME
 
