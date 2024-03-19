@@ -86,7 +86,7 @@ esac
 
 
 # Let's put together the sshnp command we will execute
-sshnpCommand="$baseSshnpCommand -s ${identityFilename}.pub ${additionalSshnpFlags} "
+sshnpCommand="unbuffer $baseSshnpCommand -s ${identityFilename}.pub ${additionalSshnpFlags} "
 
 # Finally, let's run the sshnp and ssh session
 case "$executionType" in
