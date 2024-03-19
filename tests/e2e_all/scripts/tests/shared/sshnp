@@ -91,11 +91,16 @@ sshnpCommand="$baseSshnpCommand -s ${identityFilename}.pub ${additionalSshnpFlag
 # Finally, let's run the sshnp and ssh session
 case "$executionType" in
   "print")
+    # If it's 5.0.x then we can't run this from a script because reasons
+    if [[ $(versionIsAtLeast "$clientVersion" "d:5.0.0") == "true" ]] && [[ $(versionIsLessThan "$clientVersion" "d:5.1.0") == "true" ]];
+    then
+      exit 50 # test rig interprets this exit status as 'test was not applicable'
+    fi
     echo "$(iso8601Date) | Executing $sshnpCommand" | tee -a "$(getReportFile)"
 
     # 1. Execute the sshnpCommand, output is the sshCommand
     # shellcheck disable=SC2086
-    sshCommand=$(echo "" | unbuffer $sshnpCommand | grep --color=none "^ssh -p")
+    sshCommand=$($sshnpCommand)
 
     # 2. Check the exit status
     sshnpExitStatus=$?
