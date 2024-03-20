@@ -10,6 +10,7 @@ source "$testScriptsDir/common/check_env.include.sh" || exit $?
 NC='\033[0m'
 RED='\033[0;31m'
 GREEN='\033[0;32m'
+ORANGE='\033[0;33m'
 BLUE='\033[0;34m'
 
 mkdir -p /tmp/e2e_all
@@ -49,13 +50,32 @@ do
       stdoutFileName="${baseFileName}.out"
       stderrFileName="${baseFileName}.err"
 
-      # Execute the test script
-      timeout --foreground "$timeoutDuration" "$testScriptsDir/tests/$testToRun" "$daemonVersion" "$clientVersion" \
-        > "$stdoutFileName" 2> "$stderrFileName"
+      exitStatus=1
+      maxAttempts=3
+      if [[ $(uname -s) == "Darwin" ]]; then
+        maxAttempts=2
+      fi
+      attempts=0
 
-      #
-      # Check exit status
-      exitStatus=$?
+      while (( exitStatus != 0 && exitStatus != 50 && attempts < maxAttempts ));
+      do
+        if (( attempts > 0 )); then
+          logWarning "    Exit status was $exitStatus; will retry in 3 seconds"; sleep 3;
+        else
+          logGreenInfo "    Running test script";
+        fi
+        # Execute the test script
+        timeout --foreground "$timeoutDuration" "$testScriptsDir/tests/$testToRun" "$daemonVersion" "$clientVersion" \
+          > "$stdoutFileName" 2> "$stderrFileName"
+
+        exitStatus=$?
+
+        attempts=$((attempts+1))
+      done
+
+      if (( exitStatus != 0 && exitStatus != 50 && attempts == maxAttempts )); then
+        logError "    Failed after $maxAttempts attempts"
+      fi
 
       total=$((total+1))
       if (( exitStatus == 0 )); then

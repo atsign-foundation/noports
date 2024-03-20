@@ -1,5 +1,8 @@
-RED='\033[0;31m'
 NC='\033[0m'
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+ORANGE='\033[0;33m'
+BLUE='\033[0;34m'
 
 authKeysFile="$HOME/.ssh/authorized_keys"
 
@@ -92,8 +95,16 @@ iso8601Date() {
   fi
 }
 
+logGreenInfo() {
+  echo -e "$(iso8601Date) |     ${GREEN}INFO :${NC} $1"
+}
+
 logError() {
-  echo -e "$(iso8601Date) |     ${RED}ERROR:${NC} $1" | tee -a "$getReportFile"
+  echo -e "$(iso8601Date) |     ${RED}ERROR:${NC} $1" | tee -a "$(getReportFile)"
+}
+
+logWarning() {
+  echo -e "$(iso8601Date) |     ${ORANGE}WARN :${NC} $1" | tee -a "$(getReportFile)"
 }
 
 logErrorAndExit() {
