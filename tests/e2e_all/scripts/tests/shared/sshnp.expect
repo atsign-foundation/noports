@@ -6,7 +6,7 @@ expect_before timeout timed_out
 
 eval spawn $env(SSHNP_COMMAND)
 
-set expected "${env(REMOTE_USERNAME)}@${env(REMOTE_HOSTNAME)}"
+set expected "Last login:"
 expect {
     eof             { exit 1 }
     $expected
