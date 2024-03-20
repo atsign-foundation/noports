@@ -44,7 +44,7 @@ do
     for clientVersion in $clientVersions
     do
       what="Test $((total+1)) of $totalNumTests | testScript: ${testToRun} client: ${clientVersion} daemon: ${daemonVersion}"
-      logInfo "$what" | tee -a "$(getReportFile)"
+      logGreenInfo "$what" | tee -a "$(getReportFile)"
 
       baseFileName="${outputDir}/clients/${testToRun}.daemon.${daemonVersion}.client.${clientVersion}"
       stdoutFileName="${baseFileName}.out"
