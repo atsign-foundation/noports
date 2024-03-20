@@ -1,8 +1,10 @@
 NC='\033[0m'
+BOLD='\033[1m'
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 ORANGE='\033[0;33m'
 BLUE='\033[0;34m'
+BBLUE='\033[1;34m'
 
 authKeysFile="$HOME/.ssh/authorized_keys"
 
@@ -112,8 +114,20 @@ logErrorAndExit() {
   exit 1
 }
 
+crLog() {
+  echo -e "$2" "\r$(iso8601Date) | $1"
+}
+
+log() {
+  echo -e "$2" "$(iso8601Date) | $1"
+}
+
 logInfo() {
-  echo "$(iso8601Date) | $1"
+  log "$1" "$2"
+}
+
+logInfoAndReport() {
+  echo -e "$(iso8601Date) | $1" | tee -a "$(getReportFile)"
 }
 
 getDartCompilationOutputDir() {
@@ -130,6 +144,19 @@ getDartReleaseBinDirForVersion() {
   echo "$testRootDir/releases/dart.$version/sshnp"
 }
 
+getVersionDescription() {
+  if (( $# != 1)); then logErrorAndExit "getVersionDescription requires 1 parameter"; fi
+  IFS=: read -r type version <<< "$1"
+  case $type in
+    d) desc="Dart " ;;
+    *) desc="$type (?) " ;;
+  esac
+  case $version in
+    current) desc="${desc} (branch)" ;;
+    *) desc="${desc} v${version}" ;;
+  esac
+  echo "$desc"
+}
 versionIsLessThan() {
   actualTypeAndVersion="$1"
   typeAndVersionList="$2"

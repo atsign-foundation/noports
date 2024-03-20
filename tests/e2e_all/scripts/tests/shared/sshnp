@@ -46,10 +46,12 @@ case "$daemonFeatureSet" in
   v5)
     # Require a v5 client to test v5 features
     if [[ $(versionIsLessThan "$clientVersion" "d:5.0.0") == "true" ]]; then
+      logInfoAndReport "    N/A  because requires a v5+ client to test v5+ daemon features"
       exit 50 # test rig interprets this exit status as 'test was not applicable'
     fi
     # Require a v5 daemon to test v5 features
     if [[ $(versionIsLessThan "$daemonVersion" "d:5.0.0") == "true" ]]; then
+      logInfoAndReport "    N/A  because can't test v5+ daemon features on a daemon version < 5"
       exit 50 # test rig interprets this exit status as 'test was not applicable'
     fi
     ;;
@@ -64,6 +66,7 @@ case "$executionType" in
     #  When outputting command line
     #    if ssh-client is 'dart' this is not applicable
     if [[ "$sshClient" == "dart" ]]; then
+      logInfoAndReport "    N/A  because sshClient is $sshClient which always executes the ssh 'inline'"
       exit 50 # test rig interprets this exit status as 'test was not applicable'
     fi
     #    if v5 client add the '-x' flag
@@ -73,8 +76,9 @@ case "$executionType" in
     ;;
   "inline")
     # Running inline - requires either (1) sshClient='dart' or (2) v5+ client
-    if [[ "$sshClient" != "dart" ]] || [[ $(versionIsLessThan "$clientVersion" "d:5.0.0") == "true" ]];
+    if [[ "$sshClient" != "dart" ]] && [[ $(versionIsAtLeast "$clientVersion" "d:5.0.0") != "true" ]];
     then
+      logInfoAndReport "    N/A  because sshClient is $sshClient and client version is $clientVersion"
       exit 50 # test rig interprets this exit status as 'test was not applicable'
     fi
     ;;
@@ -94,6 +98,7 @@ case "$executionType" in
     # If it's 5.0.x then we can't run this from a script because reasons
     if [[ $(versionIsAtLeast "$clientVersion" "d:5.0.0") == "true" ]] && [[ $(versionIsLessThan "$clientVersion" "d:5.1.0") == "true" ]];
     then
+      logInfoAndReport "    N/A  because of bug in client versions 5.0.x which prevent running except with a real terminal attached "
       exit 50 # test rig interprets this exit status as 'test was not applicable'
     fi
     echo "$(iso8601Date) | Executing $sshnpCommand" | tee -a "$(getReportFile)"

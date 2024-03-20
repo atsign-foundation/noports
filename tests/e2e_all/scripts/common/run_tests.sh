@@ -7,12 +7,6 @@ fi
 source "$testScriptsDir/common/common_functions.include.sh"
 source "$testScriptsDir/common/check_env.include.sh" || exit $?
 
-NC='\033[0m'
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-ORANGE='\033[0;33m'
-BLUE='\033[0;34m'
-
 mkdir -p /tmp/e2e_all
 
 reportFile=$(getReportFile)
@@ -41,10 +35,13 @@ for testToRun in $testsToRun
 do
   for daemonVersion in $daemonVersions
   do
+    pdv=$(getVersionDescription "$daemonVersion")
     for clientVersion in $clientVersions
     do
-      what="Test $((total+1)) of $totalNumTests | testScript: ${testToRun} client: ${clientVersion} daemon: ${daemonVersion}"
-      logGreenInfo "$what" | tee -a "$(getReportFile)"
+      pcv=$(getVersionDescription "$clientVersion")
+      what="Test $((total+1)) of $totalNumTests | ${BOLD}Test script: ${BBLUE}${testToRun}${NC} ${BOLD}Client: ${BBLUE}${pcv}${NC} ${BOLD}Daemon: ${BBLUE}${pdv}${NC}"
+      echo
+      logInfoAndReport "$what"
 
       baseFileName="${outputDir}/clients/${testToRun}.daemon.${daemonVersion}.client.${clientVersion}"
       stdoutFileName="${baseFileName}.out"
@@ -62,7 +59,7 @@ do
         if (( attempts > 0 )); then
           logWarning "    Exit status was $exitStatus; will retry in 3 seconds"; sleep 3;
         else
-          logGreenInfo "    Running test script";
+          log "    Running test script ... " "-n";
         fi
         # Execute the test script
         timeout --foreground "$timeoutDuration" "$testScriptsDir/tests/$testToRun" "$daemonVersion" "$clientVersion" \
@@ -122,13 +119,7 @@ do
 
       case $testResult in
         FAILED)
-          echo -e "    ${logColour}${testResult}${NC} : exit code $exitStatus $additionalInfo : $what" | tee -a "$reportFile"
-
-          echo "    test execution's stdout: "
-          sed 's/^/        /' "$stdoutFileName"
-
-          echo "    test execution's stderr: "
-          sed 's/^/        /' "$stderrFileName"
+          crLog "    Running test script ... ${logColour}${testResult}${NC} : exit code $exitStatus $additionalInfo" | tee -a "$(getReportFile)"
 
           # shellcheck disable=SC2129
           echo "    test execution's stdout: " >> "$reportFile"
@@ -140,10 +131,10 @@ do
           echo >> "$reportFile"
           ;;
         "N/A")
-          echo -e "    ${logColour}${testResult}${NC} | $what" | tee -a "$reportFile"
+          crLog "    Running test script ... ${logColour}${testResult}${NC}" | tee -a "$(getReportFile)"
           ;;
         PASSED)
-          echo -e "    ${logColour}${testResult}${NC} | $what" | tee -a "$reportFile"
+          crLog "    Running test script ... ${logColour}${testResult}${NC}" | tee -a "$(getReportFile)"
           ;;
       esac
       echo >> "$reportFile"
