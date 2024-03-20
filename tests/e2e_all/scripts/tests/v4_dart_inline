@@ -7,16 +7,5 @@ if test -z "$testScriptsDir" ; then
   echo -e "    ${RED}check_env: testScriptsDir is not set${NC}" && exit 1
 fi
 
-source "$testScriptsDir/common/common_functions.include.sh"
-source "$testScriptsDir/common/check_env.include.sh" || exit $?
-
-
-if test $# != 2 ; then
-  logErrorAndExit "Must supply daemonVersion, clientVersion"
-fi
-
-daemonVersion="$1"
-clientVersion="$2"
-
 # Execute ssh-client 'dart', v4 daemon features, and it must be 'inline'
-"$testScriptsDir/tests/shared/sshnp" "$daemonVersion" "$clientVersion" "dart" "v4" "inline"
+"$testScriptsDir/tests/shared/sshnp" "$1" "$2" "dart" "v4" "inline"
