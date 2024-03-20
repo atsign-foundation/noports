@@ -58,9 +58,9 @@ do
       do
         if (( attempts > 0 )); then
           logWarning "    Exit status was $exitStatus; will retry in 3 seconds"; sleep 3;
-        else
-          log "    Running test script ... " "-n";
         fi
+        log "    Running test script ... ";
+
         # Execute the test script
         timeout --foreground "$timeoutDuration" "$testScriptsDir/tests/$testToRun" "$daemonVersion" "$clientVersion" \
           > "$stdoutFileName" 2> "$stderrFileName"
@@ -71,7 +71,7 @@ do
       done
 
       if (( exitStatus != 0 && exitStatus != 50 && attempts == maxAttempts )); then
-        logError "    Failed after $maxAttempts attempts"
+        logError "    Failed after $maxAttempts attempts                                                            "
       fi
 
       total=$((total+1))
@@ -119,7 +119,7 @@ do
 
       case $testResult in
         FAILED)
-          crLog "    Running test script ... ${logColour}${testResult}${NC} : exit code $exitStatus $additionalInfo" | tee -a "$(getReportFile)"
+          logInfoAndReport "    ${logColour}Test ${testResult}${NC} : exit code $exitStatus $additionalInfo"
 
           # shellcheck disable=SC2129
           echo "    test execution's stdout: " >> "$reportFile"
@@ -131,10 +131,10 @@ do
           echo >> "$reportFile"
           ;;
         "N/A")
-          crLog "    Running test script ... ${logColour}${testResult}${NC}" | tee -a "$(getReportFile)"
+          logInfoAndReport "    ${logColour}Test ${testResult}${NC}"
           ;;
         PASSED)
-          crLog "    Running test script ... ${logColour}${testResult}${NC}" | tee -a "$(getReportFile)"
+          logInfoAndReport "    ${logColour}Test ${testResult}${NC}"
           ;;
       esac
       echo >> "$reportFile"

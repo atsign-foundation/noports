@@ -105,25 +105,29 @@ logError() {
   echo -e "$(iso8601Date) |     ${RED}ERROR:${NC} $1" | tee -a "$(getReportFile)"
 }
 
-logWarning() {
-  echo -e "$(iso8601Date) |     ${ORANGE}WARN :${NC} $1" | tee -a "$(getReportFile)"
-}
-
 logErrorAndExit() {
   logError "$1"
   exit 1
 }
 
+logWarning() {
+  echo -e "$(iso8601Date) |     ${ORANGE}WARN :${NC} $1" | tee -a "$(getReportFile)"
+}
+
 crLog() {
-  echo -e "$2" "\r$(iso8601Date) | $1"
+  echo -e "\r$(iso8601Date) | $1"
 }
 
 log() {
-  echo -e "$2" "$(iso8601Date) | $1"
+  echo -e "$(iso8601Date) | $1"
 }
 
 logInfo() {
-  log "$1" "$2"
+  log "$1"
+}
+
+reportInfo() {
+  logInfo "$1" >> "$(getReportFile)"
 }
 
 logInfoAndReport() {
