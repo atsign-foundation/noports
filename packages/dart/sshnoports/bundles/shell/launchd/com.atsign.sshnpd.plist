@@ -6,7 +6,6 @@
 	<string>com.atsign.sshnpd</string>
 	<key>ProgramArguments</key>
     <array>
-      <!-- TODO: add the program arguments-->
       <string>/Users/[user]/.local/bin/sshnpd</string>
       <string>-a</string>
       <string>[device_atsign]</string>
