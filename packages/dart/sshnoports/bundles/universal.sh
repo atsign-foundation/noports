@@ -11,7 +11,7 @@ repo_url="https://github.com/atsign-foundation/sshnoports"
 # nothing else should be writen outside the main function to avoid side effects
 
 ### Environment based variables
-unset arg_zero="$0"
+arg_zero="$0"
 unset script_dir
 unset platform_name
 unset system_arch
@@ -60,6 +60,15 @@ is_root() {
 is_darwin() {
 	[ "$(uname)" = 'Darwin' ]
 }
+
+sedi() {
+	if is_darwin; then
+		sed -i '' "$@"
+	else
+		sed -i "$@"
+	fi
+}
+
 version() {
 	echo "Version: $script_version (Target: $sshnp_version)"
 }
@@ -274,7 +283,7 @@ write_metadata() {
 	file=$1
 	variable=$2
 	value=$3
-	sed -i'' "/$start_line/,/$end_line/;s/$variable=\".*\"/$variable=\"$value\"/" "$file"
+	sedi "/$start_line/,/$end_line/s|$variable=\".*\"|$variable=\"$value\"|g " "$file"
 }
 
 write_metadata_array() {
@@ -284,7 +293,7 @@ write_metadata_array() {
 	file=$1
 	variable=$2
 	value=$(echo "$3" | tr ',' ' ')
-	sed -i'' "/$start_line/,/$end_line/;s/$variable=(.*)/$variable=($value)" "$file"
+	sedi "/$start_line/,/$end_line/s|$variable=(.*)|$variable=($value)|g" "$file"
 }
 
 write_program_arguments_plist() {
@@ -299,14 +308,14 @@ write_program_arguments_plist() {
 		string_array="$string_array\n<string>$1</string>"
 		shift
 	done
-	sed -i'' "/$start_line/,/$end_line/c\\$start_line\n$second_line$string_array\n$end_line\n" "$file"
+	sedi "/$start_line/,/$end_line/c\\$start_line\n$second_line$string_array\n$end_line\n" "$file"
 }
 
 write_systemd_environment() {
 	file=$1
 	variable=$2
 	value=$3
-	sed -i'' "s/Environment=$variable=\".*\"/Environment=$variable=\"$value\"/" "$file"
+	sedi "s|Environment=$variable=\".*\"|Environment=$variable=\"$value\"|g" "$file"
 }
 
 get_client_device_atsigns() {

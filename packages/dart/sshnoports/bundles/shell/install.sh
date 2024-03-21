@@ -34,6 +34,14 @@ is_darwin() {
 	[ "$(uname)" = 'Darwin' ]
 }
 
+sedi() {
+	if is_darwin; then
+		sed -i '' "$@"
+	else
+		sed -i "$@"
+	fi
+}
+
 no_mac() {
 	if is_darwin; then
 		echo "Error: this operation is only supported on linux"
@@ -294,7 +302,7 @@ install_headless_job() {
 	if ! [ -f "$dest" ]; then
 		cp "$script_dir/headless/$job_name.sh" "$dest"
 		if is_root; then
-			sed -i'' "s|^binary_path=\".*\"$|binary_path=\"$bin_dir\"|g" "$dest"
+			sedi "s|^binary_path=\".*\"$|binary_path=\"$bin_dir\"|g" "$dest"
 		fi
 	fi
 
@@ -376,7 +384,7 @@ install_tmux_service() {
 	if ! [ -f "$dest" ]; then
 		cp "$script_dir/headless/$service_name.sh" "$dest"
 		if is_root; then
-			sed -i'' "s|^binary_path=\".*\"$|binary_path=\"$bin_dir\"|g" "$dest"
+			sedi "s|^binary_path=\".*\"$|binary_path=\"$bin_dir\"|g" "$dest"
 		fi
 	fi
 

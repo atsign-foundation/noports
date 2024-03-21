@@ -1,12 +1,12 @@
 #!/bin/bash
-#SCRIPT METADATA
+# SCRIPT METADATA
 binary_path="$HOME/.local/bin"
 client_atsign=""
 device_atsign=""
 host_atsign=""
 devices=(device1 device2 device3)
 additional_args=()
-#END METADATA
+# END METADATA
 
 unset d
 select d in "${devices[@]}"; do

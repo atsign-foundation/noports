@@ -173,10 +173,11 @@ jobs:
             file=$1
             variable=$2
             value=$3
-            sed -i'' "/$start_line/,/$end_line/;s/$variable=\".*\"/$variable=\"$value\"/" "$file"
+            # since this is linux only, sed -i is safe without a file ext.
+            sed -i "/$start_line/,/$end_line/s|$variable=\".*\"|$variable=\"$value\"|g" "$file"
           }
           REF=${{ github.ref }}
-          TAG=${REF:10}
+          TAG=${REF:11}
           write_metadata universal.sh sshnp_version "$TAG"
       - uses: actions/upload-artifact@5d5d22a31266ced268874388b861e4b58bb5c2f3 # v4.3.1
         with:
@@ -184,7 +185,7 @@ jobs:
           path: ./packages/dart/sshnoports/bundles/universal.sh
           if-no-files-found: error
   notify_on_completion:
-    needs: [main_build, other_build, universal_installer]
+    needs: [main_build, other_build, universal_sh]
     runs-on: ubuntu-latest
     steps:
       - name: Google Chat Notification
@@ -196,7 +197,7 @@ jobs:
 
   notify_on_failure:
     if: failure()
-    needs: [main_build, other_build, universal_installer]
+    needs: [main_build, other_build, universal_sh]
     runs-on: ubuntu-latest
     steps:
       - name: Google Chat Notification
