@@ -16,6 +16,8 @@ dependencies:
   at_utils: 3.0.16
 
 dependency_overrides:
+  socket_connector:
+    path: /Users/gary/dev/atsign/repos/socket_connector
   args:
     git:
       ref: gkc/show-aliases-in-usage

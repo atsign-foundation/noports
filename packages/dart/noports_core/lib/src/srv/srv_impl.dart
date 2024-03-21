@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
 
+import 'package:at_chops/at_chops.dart';
 import 'package:at_utils/at_utils.dart';
 import 'package:cryptography/cryptography.dart';
 import 'package:cryptography/dart.dart';
@@ -348,69 +349,64 @@ class SrvImplDart implements Srv<SocketConnector> {
     }
   }
 
+  DataTransformer createEncrypter(String aesKeyBase64, String ivBase64) {
+    final DartAesCtr algorithm = DartAesCtr.with256bits(
+      macAlgorithm: Hmac.sha256(),
+    );
+    final SecretKey sessionAESKey = SecretKey(base64Decode(aesKeyBase64));
+    final List<int> sessionIV = base64Decode(ivBase64);
+
+    return (Stream<List<int>> stream) {
+      return algorithm.encryptStream(
+        stream,
+        secretKey: sessionAESKey,
+        nonce: sessionIV,
+        onMac: (mac) {},
+      );
+    };
+  }
+
+  DataTransformer createDecrypter(String aesKeyBase64, String ivBase64) {
+    final DartAesCtr algorithm = DartAesCtr.with256bits(
+      macAlgorithm: Hmac.sha256(),
+    );
+    final SecretKey sessionAESKey = SecretKey(base64Decode(aesKeyBase64));
+    final List<int> sessionIV = base64Decode(ivBase64);
+
+    return (Stream<List<int>> stream) {
+      return algorithm.decryptStream(
+        stream,
+        secretKey: sessionAESKey,
+        nonce: sessionIV,
+        mac: Mac.empty,
+      );
+    };
+  }
+
   @override
   Future<SocketConnector> run() async {
-    DataTransformer? encrypter;
-    DataTransformer? decrypter;
-
-    if (sessionAESKeyString != null && sessionIVString != null) {
-      final DartAesCtr algorithm = DartAesCtr.with256bits(
-        macAlgorithm: Hmac.sha256(),
-      );
-      final SecretKey sessionAESKey =
-          SecretKey(base64Decode(sessionAESKeyString!));
-      final List<int> sessionIV = base64Decode(sessionIVString!);
-
-      encrypter = (Stream<List<int>> stream) {
-        return algorithm.encryptStream(
-          stream,
-          secretKey: sessionAESKey,
-          nonce: sessionIV,
-          onMac: (mac) {},
-        );
-      };
-      decrypter = (Stream<List<int>> stream) {
-        return algorithm.decryptStream(
-          stream,
-          secretKey: sessionAESKey,
-          nonce: sessionIV,
-          mac: Mac.empty,
-        );
-      };
-    }
-
     try {
       var hosts = await InternetAddress.lookup(streamingHost);
 
       late SocketConnector sc;
       if (bindLocalPort) {
         if (multi) {
-          sc = await _runClientSideMulti(
-            hosts: hosts,
-            encrypter: encrypter,
-            decrypter: decrypter,
-          );
+          if (sessionAESKeyString == null || sessionIVString == null) {
+            throw ArgumentError('Symmetric session encryption key required');
+          }
+          sc = await _runClientSideMulti(hosts: hosts);
         } else {
-          sc = await _runClientSideSingle(
-            hosts: hosts,
-            encrypter: encrypter,
-            decrypter: decrypter,
-          );
+          sc = await _runClientSideSingle(hosts: hosts);
         }
       } else {
         // daemon side
         if (multi) {
-          sc = await _runDaemonSideMulti(
-            hosts: hosts,
-            encrypter: encrypter,
-            decrypter: decrypter,
-          );
+          if (sessionAESKeyString == null || sessionIVString == null) {
+            throw ArgumentError('Symmetric session encryption key required');
+          }
+          sc = await _runDaemonSideMulti(hosts: hosts);
         } else {
-          sc = await _runDaemonSideSingle(
-            hosts: hosts,
-            encrypter: encrypter,
-            decrypter: decrypter,
-          );
+          sc = await _runDaemonSideSingle(hosts: hosts);
         }
       }
 
@@ -433,9 +429,13 @@ class SrvImplDart implements Srv<SocketConnector> {
 
   Future<SocketConnector> _runClientSideSingle({
     required List<InternetAddress> hosts,
-    required DataTransformer? encrypter,
-    required DataTransformer? decrypter,
   }) async {
+    DataTransformer? encrypter;
+    DataTransformer? decrypter;
+    if (sessionAESKeyString != null && sessionIVString != null) {
+      encrypter = createEncrypter(sessionAESKeyString!, sessionIVString!);
+      decrypter = createDecrypter(sessionAESKeyString!, sessionIVString!);
+    }
     // client side
     SocketConnector sc = await SocketConnector.serverToSocket(
       portA: localPort,
@@ -460,81 +460,109 @@ class SrvImplDart implements Srv<SocketConnector> {
 
   Future<SocketConnector> _runClientSideMulti({
     required List<InternetAddress> hosts,
-    required DataTransformer? encrypter,
-    required DataTransformer? decrypter,
   }) async {
     // client side
-    SocketConnector? sc;
+    SocketConnector? socketConnector;
 
-    Socket controlSocket = await Socket.connect(streamingHost, streamingPort,
+    Socket sessionControlSocket = await Socket.connect(
+        streamingHost, streamingPort,
         timeout: Duration(seconds: 1));
     // Authenticate the control socket
     if (rvdAuthString != null) {
       logger.info(
           '_runClientSideMulti authenticating control socket connection to rvd');
-      controlSocket.writeln(rvdAuthString);
+      sessionControlSocket.writeln(rvdAuthString);
     }
-    controlSocket.listen((event) {
+    DataTransformer controlEncrypter =
+        createEncrypter(sessionAESKeyString!, sessionIVString!);
+    DataTransformer controlDecrypter =
+        createDecrypter(sessionAESKeyString!, sessionIVString!);
+
+    // Listen to stream which is decrypting the socket stream
+    // Write to a stream controller which encrypts and writes to the socket
+    Stream<List<int>> controlStream = controlDecrypter(sessionControlSocket);
+    StreamController<Uint8List> controlSink = StreamController<Uint8List>();
+    controlEncrypter(controlSink.stream).listen(sessionControlSocket.add);
+
+    controlStream.listen((event) {
       String response = String.fromCharCodes(event).trim();
       logger.info(
           '_runClientSideMulti Received control socket response: [$response]');
     }, onError: (e) {
       logger.severe('_runClientSideMulti controlSocket error: $e');
-      sc?.close();
+      socketConnector?.close();
     }, onDone: () {
       logger.info('_runClientSideMulti controlSocket done');
-      sc?.close();
+      socketConnector?.close();
     });
 
-    sc = await SocketConnector.serverToSocket(
+    socketConnector = await SocketConnector.serverToSocket(
       portA: localPort,
       addressB: hosts[0],
       portB: streamingPort,
       verbose: false,
-      transformAtoB: encrypter,
-      transformBtoA: decrypter,
       multi: multi,
-      onConnect: (Socket sideA, Socket sideB) {
+      beforeJoining: (Side sideA, Side sideB) {
         // For some bizarro reason, we can't write to stderr in this callback
         // when the Srv has been started via SrvImplExec. Thus it is very
         // important that the srv binary never have a logger root level of
         // anything below 'warning'
         logger.info('_runClientSideMulti Sending connect request');
-        controlSocket.writeln('connect');
+
+        String socketAESKey =
+            AtChopsUtil.generateSymmetricKey(EncryptionKeyType.aes256).key;
+        String socketIV =
+            base64Encode(AtChopsUtil.generateRandomIV(16).ivBytes);
+        controlSink.add(
+            Uint8List.fromList('connect:$socketAESKey:$socketIV'.codeUnits));
         // Authenticate the sideB socket (to the rvd)
         if (rvdAuthString != null) {
           logger
               .info('_runClientSideMulti authenticating new connection to rvd');
-          sideB.writeln(rvdAuthString);
+          sideB.socket.writeln(rvdAuthString);
         }
+        sideA.transformer = createEncrypter(socketAESKey, socketIV);
+        sideB.transformer = createDecrypter(socketAESKey, socketIV);
       },
     );
 
     // upon socketConnector.done, destroy the control socket, and complete
-    unawaited(sc.done.whenComplete(() {
+    unawaited(socketConnector.done.whenComplete(() {
       logger.info('_runClientSideMulti sc.done');
-      controlSocket.destroy();
+      sessionControlSocket.destroy();
     }));
 
-    return sc;
+    return socketConnector;
   }
 
   Future<SocketConnector> _runDaemonSideMulti({
     required List<InternetAddress> hosts,
-    required DataTransformer? encrypter,
-    required DataTransformer? decrypter,
   }) async {
     SocketConnector sc = SocketConnector();
 
     // - create control socket and listen for requests
     // - for each request, create a socketToSocket connection
-    Socket controlSocket = await Socket.connect(streamingHost, streamingPort,
+    Socket sessionControlSocket = await Socket.connect(
+        streamingHost, streamingPort,
         timeout: Duration(seconds: 1));
+    // Authenticate the control socket
     if (rvdAuthString != null) {
-      logger.info('authenticating control socket connection to rvd');
-      controlSocket.writeln(rvdAuthString);
+      logger.info(
+          '_runClientSideMulti authenticating control socket connection to rvd');
+      sessionControlSocket.writeln(rvdAuthString);
     }
-    controlSocket.listen((event) async {
+    DataTransformer controlEncrypter =
+        createEncrypter(sessionAESKeyString!, sessionIVString!);
+    DataTransformer controlDecrypter =
+        createDecrypter(sessionAESKeyString!, sessionIVString!);
+
+    // Listen to stream which is decrypting the socket stream
+    // Write to a stream controller which encrypts and writes to the socket
+    Stream<List<int>> controlStream = controlDecrypter(sessionControlSocket);
+    StreamController<Uint8List> controlSink = StreamController<Uint8List>();
+    controlEncrypter(controlSink.stream).listen(sessionControlSocket.add);
+
+    controlStream.listen((event) async {
       if (event.isEmpty) {
         logger.info('Empty control message (Uint8List) received');
         return;
@@ -544,9 +572,14 @@ class SrvImplDart implements Srv<SocketConnector> {
         logger.info('Empty control message (String) received');
         return;
       }
-      switch (request) {
+      List<String> args = request.split(":");
+      switch (args.first) {
         case 'connect':
-          logger.info('Control socket received request: [$request];'
+          if (args.length != 3) {
+            logger.severe('Unknown request to control socket: [$request]');
+            return;
+          }
+          logger.info('Control socket received ${args.first} request - '
               ' creating new socketToSocket connection');
           await SocketConnector.socketToSocket(
               connector: sc,
@@ -556,8 +589,8 @@ class SrvImplDart implements Srv<SocketConnector> {
               addressB: hosts[0],
               portB: streamingPort,
               verbose: false,
-              transformAtoB: encrypter,
-              transformBtoA: decrypter);
+              transformAtoB: createEncrypter(args[1], args[2]),
+              transformBtoA: createDecrypter(args[1], args[2]));
           if (rvdAuthString != null) {
             stderr.writeln('authenticating new socket connection to rvd');
             sc.connections.last.sideB.socket.writeln(rvdAuthString);
@@ -577,7 +610,7 @@ class SrvImplDart implements Srv<SocketConnector> {
 
     // upon socketConnector.done, destroy the control socket, and complete
     unawaited(sc.done.whenComplete(() {
-      controlSocket.destroy();
+      sessionControlSocket.destroy();
     }));
 
     return sc;
@@ -585,9 +618,13 @@ class SrvImplDart implements Srv<SocketConnector> {
 
   Future<SocketConnector> _runDaemonSideSingle({
     required List<InternetAddress> hosts,
-    required DataTransformer? encrypter,
-    required DataTransformer? decrypter,
   }) async {
+    DataTransformer? encrypter;
+    DataTransformer? decrypter;
+    if (sessionAESKeyString != null && sessionIVString != null) {
+      encrypter = createEncrypter(sessionAESKeyString!, sessionIVString!);
+      decrypter = createDecrypter(sessionAESKeyString!, sessionIVString!);
+    }
     SocketConnector socketConnector = await SocketConnector.socketToSocket(
         addressA: (await InternetAddress.lookup(localHost ?? 'localhost'))[0],
         portA: localPort,

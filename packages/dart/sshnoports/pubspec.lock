@@ -716,10 +716,9 @@ packages:
   socket_connector:
     dependency: "direct main"
     description:
-      name: socket_connector
-      sha256: a614741652395393bc8e06987a0569bac116b2112645cc846015949dcf66aebd
-      url: "https://pub.dev"
-    source: hosted
+      path: "/Users/gary/dev/atsign/repos/socket_connector"
+      relative: false
+    source: path
     version: "2.1.0"
   source_map_stack_trace:
     dependency: transitive

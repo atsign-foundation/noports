@@ -25,6 +25,8 @@ dependencies:
   uuid: ^3.0.7
 
 dependency_overrides:
+  socket_connector:
+    path: /Users/gary/dev/atsign/repos/socket_connector
   args:
     git:
       ref: gkc/show-aliases-in-usage
