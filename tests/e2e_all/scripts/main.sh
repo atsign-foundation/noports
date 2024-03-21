@@ -159,8 +159,6 @@ cd "$commitId" || exit 1 # should now be in <repo_root>/tests/e2e_all/runtime/$c
 testRuntimeDir="$(pwd)"
 export testRuntimeDir
 
-"$testScriptsDir/common/cleanup_tmp_files.sh" -s
-
 logInfo "  --> will execute setup_binaries, start_daemons and tests [$testsToRun] with "
 logInfo "    testRootDir:      $testRootDir"
 logInfo "    testRuntimeDir:   $testRuntimeDir"
@@ -223,19 +221,19 @@ restoreAuthorizedKeys
 
 reportFile=$(getReportFile)
 
+echo
+logInfo "Calling common/cleanup_tmp_files.sh"
+"$testScriptsDir/common/cleanup_tmp_files.sh"
+retCode=$?
+if test "$retCode" != 0; then
+  log "cleanup_tmp_files failed with exit status $retCode"
+fi
+
 logInfo ""
 logInfo "Tests completed. Report follows. (Can also be found at ${reportFile}) : "
 echo
 cat "$reportFile"
 logInfo ""
 logInfo ""
-
-echo
-logInfo "Calling common/cleanup_tmp_files.sh"
-"$testScriptsDir/common/cleanup_tmp_files.sh"
-retCode=$?
-if test "$retCode" != 0; then
-  logError "cleanup_tmp_files failed with exit status $retCode"
-fi
 
 exit $testExitStatus

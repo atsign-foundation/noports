@@ -14,10 +14,19 @@ localLogInfo() {
   if [[ "$silent" == "true" ]]; then return; fi
   logInfo "$1"
 }
+
+safeRemoveDir() {
+  dirToRemove="$1"
+  if grep -q "e2e_all/runtime" <<< "$dirToRemove" || grep -q "e2e_all/${commitId}" <<< "$dirToRemove"
+  then
+    localLogInfo "rm -rf ${dirToRemove:fubar}"
+    rm -rf "${dirToRemove:fubar}"
+  fi
+}
 echo
 localLogInfo ""
 localLogInfo "Cleaning up"
 
-outputDir=$(getOutputDir)
-localLogInfo "rm -rf ${outputDir}"
-rm -rf "${outputDir}"
+safeRemoveDir "$(getOutputDir)"
+
+safeRemoveDir "$testRuntimeDir"
