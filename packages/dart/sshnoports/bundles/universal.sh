@@ -27,7 +27,7 @@ verbose=false
 unset tmp_path
 unset install_type
 unset download_url
-unset local_archive
+local_archive=""
 
 ### Client/ Device Install Variables
 unset client_atsign
