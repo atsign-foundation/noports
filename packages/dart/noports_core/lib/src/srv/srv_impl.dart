@@ -548,7 +548,7 @@ class SrvImplDart implements Srv<SocketConnector> {
     // Authenticate the control socket
     if (rvdAuthString != null) {
       logger.info(
-          '_runClientSideMulti authenticating control socket connection to rvd');
+          '_runDaemonSideMulti authenticating control socket connection to rvd');
       sessionControlSocket.writeln(rvdAuthString);
     }
     DataTransformer controlEncrypter =
