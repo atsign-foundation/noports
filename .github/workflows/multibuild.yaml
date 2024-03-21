@@ -173,7 +173,8 @@ jobs:
             file=$1
             variable=$2
             value=$3
-            sed -i'' "/$start_line/,/$end_line/;s/$variable=\".*\"/$variable=\"$value\"/" "$file"
+            # since this is linux only, sed -i is safe without a file ext.
+            sed -i "/$start_line/,/$end_line/s|$variable=\".*\"|$variable=\"$value\"|g" "$file"
           }
           REF=${{ github.ref }}
           TAG=${REF:10}
