@@ -19,6 +19,17 @@ getBaseSshnpCommand() {
   echo "$l1" "$l2" "$l3"
 }
 
+getBaseNptCommand() {
+  if (( $# != 1 )); then
+    logErrorAndExit "getBaseNptCommand requires 1 argument (clientBinaryPath)"
+  fi
+  clientBinaryPath="$1"
+  l1="$clientBinaryPath/npt -f $clientAtSign -d $deviceName"
+  l2=" -t $daemonAtSign -r $srvAtSign"
+  l3=" --root-domain $atDirectoryHost"
+  echo "$l1" "$l2" "$l3"
+}
+
 getTestSshCommand() {
   testSshCommand="$1"
 

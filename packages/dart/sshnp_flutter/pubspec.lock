@@ -792,11 +792,10 @@ packages:
   noports_core:
     dependency: "direct main"
     description:
-      name: noports_core
-      sha256: "616afc599117dd9881aaf59893cbaacf1234a4e2e16e415e3a08b2d4b45eac05"
-      url: "https://pub.dev"
-    source: hosted
-    version: "6.0.2"
+      path: "../noports_core"
+      relative: true
+    source: path
+    version: "6.0.5"
   openssh_ed25519:
     dependency: transitive
     description:
@@ -1150,10 +1149,10 @@ packages:
     dependency: "direct main"
     description:
       name: socket_connector
-      sha256: a614741652395393bc8e06987a0569bac116b2112645cc846015949dcf66aebd
+      sha256: "3c641546699aa58e9ab8be9841627a30af3c1ffcf4461ca5d00d7c56392ab63a"
       url: "https://pub.dev"
     source: hosted
-    version: "2.1.0"
+    version: "2.2.0"
   source_span:
     dependency: transitive
     description:

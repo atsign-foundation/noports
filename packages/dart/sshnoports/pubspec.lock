@@ -78,10 +78,10 @@ packages:
     dependency: "direct main"
     description:
       name: at_cli_commons
-      sha256: "9165a0547ee36024f5d013cbb455197ef6f1f8a2c93620b1c49cb2eeead92157"
+      sha256: "6360c1a05a358240e7ffb264e9ae089a95db0367f4ae3649c30c18763c398ea0"
       url: "https://pub.dev"
     source: hosted
-    version: "1.0.4"
+    version: "1.0.5"
   at_client:
     dependency: transitive
     description:
@@ -717,10 +717,10 @@ packages:
     dependency: "direct main"
     description:
       name: socket_connector
-      sha256: a614741652395393bc8e06987a0569bac116b2112645cc846015949dcf66aebd
+      sha256: "3c641546699aa58e9ab8be9841627a30af3c1ffcf4461ca5d00d7c56392ab63a"
       url: "https://pub.dev"
     source: hosted
-    version: "2.1.0"
+    version: "2.2.0"
   source_map_stack_trace:
     dependency: transitive
     description:

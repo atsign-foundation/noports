@@ -10,9 +10,9 @@ dependencies:
   noports_core:
     path: "../noports_core"
   at_onboarding_cli: 1.4.3
-  at_cli_commons: ^1.0.4
+  at_cli_commons: ^1.0.5
   args: 2.4.2
-  socket_connector: ^2.1.0
+  socket_connector: ^2.2.0
   dartssh2: 2.8.2
   at_utils: 3.0.16
 
