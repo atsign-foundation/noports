@@ -88,7 +88,6 @@ usage() {
 }
 
 parse_env() {
-	script_dir="$(dirname -- "$(readlink -f -- "$0")")"
 	case "$(uname)" in
 	Darwin) platform_name='macos' ;;
 	Linux) platform_name='linux' ;;

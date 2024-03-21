@@ -96,7 +96,6 @@ usage() {
 	echo "Options:"
 	echo "-b <dir>        - override the directory in which the binaries are written to"
 	echo "-u <username>   - override the user to install the binaries for"
-	echo "-f <flags>      - additional flags services"
 }
 
 # SETUP AUTHORIZED KEYS #
@@ -197,7 +196,6 @@ install_systemd_unit() {
 	mkdir -p "$systemd_dir"
 	dest="$systemd_dir/$unit_name"
 	cp "$script_dir/systemd/$unit_name" "$dest"
-	# TODO: set the correct dir / user in the script
 	post_systemd_message
 }
 
@@ -238,7 +236,9 @@ systemd() {
 
 # LAUNCHD SERVICES #
 post_launchd_message() {
-	echo "Launchd unit installed"
+	echo "Launchd unit installed, make sure to configure the unit by editing $dest"
+	echo ""
+	echo "To enable the service see \"Login Items\" in settings"
 }
 
 install_launchd_unit() {
@@ -246,7 +246,6 @@ install_launchd_unit() {
 	mac_only
 	mkdir -p "$launchd_dir"
 	dest="$launchd_dir/$unit_name"
-	# TODO: set the correct dir / user in the script
 	cp "$script_dir/launchd_dir/$unit_name" "$dest"
 	post_launchd_message
 }
