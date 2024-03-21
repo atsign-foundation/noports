@@ -184,7 +184,7 @@ jobs:
           path: ./packages/dart/sshnoports/bundles/universal.sh
           if-no-files-found: error
   notify_on_completion:
-    needs: [main_build, other_build, universal_installer]
+    needs: [main_build, other_build, universal_sh]
     runs-on: ubuntu-latest
     steps:
       - name: Google Chat Notification
@@ -196,7 +196,7 @@ jobs:
 
   notify_on_failure:
     if: failure()
-    needs: [main_build, other_build, universal_installer]
+    needs: [main_build, other_build, universal_sh]
     runs-on: ubuntu-latest
     steps:
       - name: Google Chat Notification
