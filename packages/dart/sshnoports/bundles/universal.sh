@@ -456,6 +456,7 @@ main() {
 
 	unpack_archive
 
+	get_user_inputs
 	case "$install_type" in
 	client) client ;;
 	device) device ;;
