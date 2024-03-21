@@ -445,12 +445,12 @@ class SrvImplDart implements Srv<SocketConnector> {
       transformAtoB: encrypter,
       transformBtoA: decrypter,
       multi: multi,
-      onConnect: (Socket sideA, Socket sideB) async {
+      beforeJoining: (Side sideA, Side sideB) async {
         // Authenticate the sideB socket (to the rvd)
         if (rvdAuthString != null) {
           logger.info(
               '_runClientSideSingle authenticating new connection to rvd');
-          sideB.writeln(rvdAuthString);
+          sideB.socket.writeln(rvdAuthString);
         }
       },
     );

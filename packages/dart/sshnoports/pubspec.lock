@@ -719,7 +719,7 @@ packages:
       path: "/Users/gary/dev/atsign/repos/socket_connector"
       relative: false
     source: path
-    version: "2.1.0"
+    version: "2.2.0"
   source_map_stack_trace:
     dependency: transitive
     description:
