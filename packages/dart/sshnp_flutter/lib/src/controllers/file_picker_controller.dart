@@ -24,10 +24,16 @@ class FilePickerController extends StateNotifier<AsyncValue<XFile?>> {
     try {
       final file = await openFile(acceptedTypeGroups: <XTypeGroup>[dotPrivateTypeGroup]);
       if (file == null) return;
-
-      state = await AsyncValue.guard(() async => file);
+      final content = await file.readAsString();
+      if (content.contains("-----BEGIN OPENSSH PRIVATE KEY-----")) {
+        state = await AsyncValue.guard(() async => file);
+        ref.read(invalidPrivateKeyFileProvider.notifier).state = false;
+      } else {
+        ref.read(invalidPrivateKeyFileProvider.notifier).state = true;
+      }
     } catch (e) {
       log(e.toString());
+      ref.read(invalidPrivateKeyFileProvider.notifier).state = true;
     }
   }
 
@@ -38,3 +44,8 @@ class FilePickerController extends StateNotifier<AsyncValue<XFile?>> {
     state = const AsyncValue.data(null);
   }
 }
+
+/// A provider that exposes the [invalidPrivateKeyFileProvider] to the app.
+///
+/// This provider is used store the bool state of whether the private key file is valid or not.
+final invalidPrivateKeyFileProvider = StateProvider((ref) => true);

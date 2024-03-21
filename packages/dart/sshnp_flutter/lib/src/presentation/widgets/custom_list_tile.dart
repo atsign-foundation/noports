@@ -10,7 +10,7 @@ import 'package:sshnp_flutter/src/presentation/widgets/utility/custom_snack_bar.
 import 'package:sshnp_flutter/src/utility/constants.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-import 'settings_screen_widgets/settings_actions/settings_switch_atsign_action.dart';
+import 'settings_actions/settings_switch_atsign_action.dart';
 import 'ssh_key_management/ssh_key_management_dialog.dart';
 
 class CustomListTile extends StatelessWidget {
@@ -29,64 +29,59 @@ class CustomListTile extends StatelessWidget {
       this.subtitle = 'Guaranteed quick response',
       this.type = CustomListTileType.email,
       this.tileColor = kProfileBackgroundColor,
-      Key? key})
-      : super(key: key);
+      super.key});
   const CustomListTile.discord({
     this.iconData = Icons.discord,
     this.title = 'Discord',
     this.subtitle = 'Join our server for help',
     this.type = CustomListTileType.discord,
     this.tileColor = kProfileBackgroundColor,
-    Key? key,
-  }) : super(key: key);
+    super.key,
+  });
   const CustomListTile.faq({
     this.iconData = Icons.help_center_outlined,
     this.title = 'FAQ',
     this.subtitle = 'Frequently asked questions',
     this.type = CustomListTileType.faq,
     this.tileColor = kProfileBackgroundColor,
-    Key? key,
-  }) : super(key: key);
+    super.key,
+  });
   const CustomListTile.privacyPolicy({
     this.iconData = Icons.account_balance_wallet_outlined,
     this.title = 'Privacy Policy',
-    this.subtitle = 'Check our terms of service',
+    this.subtitle = 'Check our privacy policy',
     this.type = CustomListTileType.privacyPolicy,
     this.tileColor = kProfileBackgroundColor,
-    Key? key,
-  }) : super(key: key);
+    super.key,
+  });
   const CustomListTile.keyManagement(
       {this.iconData = Icons.vpn_key_outlined,
       this.title = 'SSH Key Management',
-      this.subtitle = 'Edit, add and delete SSH Keys',
+      this.subtitle = 'Edit, add, and delete SSH Keys',
       this.type = CustomListTileType.sshKeyManagement,
       this.tileColor = kProfileBackgroundColor,
-      Key? key})
-      : super(key: key);
+      super.key});
   const CustomListTile.switchAtsign(
       {this.iconData = Icons.switch_account_outlined,
       this.title = 'Switch atsign',
       this.subtitle = 'Select a different atsign to onboard with',
       this.type = CustomListTileType.switchAtsign,
       this.tileColor = kProfileBackgroundColor,
-      Key? key})
-      : super(key: key);
+      super.key});
   const CustomListTile.backUpYourKey(
       {this.iconData = Icons.bookmark_outline,
-      this.title = 'Backup Your Keys',
-      this.subtitle = 'Save a pair of your atKeys',
+      this.title = 'Back Up Your Keys',
+      this.subtitle = 'Create a backup of your keys',
       this.type = CustomListTileType.backupYourKey,
       this.tileColor = kProfileBackgroundColor,
-      Key? key})
-      : super(key: key);
+      super.key});
   const CustomListTile.resetAtsign(
       {this.iconData = Icons.rotate_right,
       this.title = 'Reset App',
       this.subtitle = 'App will be reset and you will be logged out',
       this.type = CustomListTileType.resetAtsign,
       this.tileColor = kProfileBackgroundColor,
-      Key? key})
-      : super(key: key);
+      super.key});
 
   final IconData iconData;
   final String title;
@@ -115,13 +110,13 @@ class CustomListTile extends StatelessWidget {
           }
           break;
         case CustomListTileType.faq:
-          final Uri url = Uri.parse('https://atsign.com/faqs/');
+          final Uri url = Uri.parse('https://docs.noports.com/ssh-no-ports/faq');
           if (!await launchUrl(url)) {
             throw Exception('Could not launch $url');
           }
           break;
         case CustomListTileType.privacyPolicy:
-          final Uri url = Uri.parse('https://www.noports.com/ssh-no-ports-privacy-policy');
+          final Uri url = Uri.parse('https://atsign.com/privacy-policy/');
           if (!await launchUrl(url)) {
             throw Exception('Could not launch $url');
           }
@@ -144,7 +139,7 @@ class CustomListTile extends StatelessWidget {
         case CustomListTileType.resetAtsign:
           final futurePreference = await loadAtClientPreference();
           if (context.mounted) {
-            await AtOnboarding.reset(
+            final result = await AtOnboarding.reset(
               context: context,
               config: AtOnboardingConfig(
                 atClientPreference: futurePreference,
@@ -154,11 +149,13 @@ class CustomListTile extends StatelessWidget {
               ),
             );
             final OnboardingService onboardingService = OnboardingService.getInstance();
-            onboardingService.setAtsign = null;
+
+            if (context.mounted && result == AtOnboardingResetResult.success) {
+              onboardingService.setAtsign = null;
+              context.goNamed(AppRoute.onboarding.name);
+            }
           }
-          if (context.mounted) {
-            context.goNamed(AppRoute.onboarding.name);
-          }
+
           break;
       }
     }

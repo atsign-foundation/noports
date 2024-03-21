@@ -10,7 +10,7 @@ import 'package:sshnp_flutter/src/utility/sizes.dart';
 
 class SshKeyPairBar extends ConsumerStatefulWidget {
   final String identifier;
-  const SshKeyPairBar(this.identifier, {Key? key}) : super(key: key);
+  const SshKeyPairBar(this.identifier, {super.key});
 
   @override
   ConsumerState<SshKeyPairBar> createState() => _SskKeyPairBarState();
@@ -20,8 +20,7 @@ class _SskKeyPairBarState extends ConsumerState<SshKeyPairBar> {
   @override
   Widget build(BuildContext context) {
     final strings = AppLocalizations.of(context)!;
-    final controller =
-        ref.watch(privateKeyManagerFamilyController(widget.identifier));
+    final controller = ref.watch(privateKeyManagerFamilyController(widget.identifier));
     return controller.when(
       loading: () => const LinearProgressIndicator(),
       error: (error, stackTrace) {

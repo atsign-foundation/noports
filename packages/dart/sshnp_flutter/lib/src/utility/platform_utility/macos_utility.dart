@@ -3,13 +3,13 @@ import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:macos_ui/macos_ui.dart';
 import 'package:sshnp_flutter/src/controllers/navigation_controller.dart';
 import 'package:sshnp_flutter/src/utility/app_theme.dart';
 import 'package:sshnp_flutter/src/utility/platform_utility/default_platform_utility.dart';
 import 'package:sshnp_flutter/src/utility/platform_utility/platform_utility.dart';
-import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 class MacosUtility implements PlatformUtility {
   const MacosUtility();
@@ -29,7 +29,7 @@ class MacosUtility implements PlatformUtility {
 }
 
 class _MyApp extends ConsumerWidget {
-  const _MyApp({Key? key}) : super(key: key);
+  const _MyApp({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {

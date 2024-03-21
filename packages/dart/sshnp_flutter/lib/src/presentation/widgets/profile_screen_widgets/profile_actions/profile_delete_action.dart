@@ -5,8 +5,7 @@ import 'package:sshnp_flutter/src/presentation/widgets/profile_screen_widgets/pr
 class ProfileDeleteAction extends StatelessWidget {
   final String profileName;
   final bool menuItem;
-  const ProfileDeleteAction(this.profileName, {this.menuItem = false, Key? key})
-      : super(key: key);
+  const ProfileDeleteAction(this.profileName, {this.menuItem = false, super.key});
 
   @override
   Widget build(BuildContext context) {

@@ -2,12 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sshnp_flutter/src/utility/sizes.dart';
 
+import '../../../controllers/file_picker_controller.dart';
 import '../../../controllers/private_key_manager_controller.dart';
 import '../../../utility/constants.dart';
 import 'ssh_key_management_form_dialog.dart';
 
 class SshKeyPairBarActions extends ConsumerStatefulWidget {
-  const SshKeyPairBarActions({required this.identifier, Key? key}) : super(key: key);
+  const SshKeyPairBarActions({required this.identifier, super.key});
 
   final String identifier;
 
@@ -24,6 +25,7 @@ class _SshKeyPairBarActionsState extends ConsumerState<SshKeyPairBarActions> {
         IconButton(
           style: FilledButton.styleFrom(backgroundColor: kIconColorBackgroundDark),
           onPressed: () async {
+            ref.read(filePickerController.notifier).clearFileDetails();
             await showDialog(
                 context: context,
                 builder: ((context) => SSHKeyManagementFormDialog(

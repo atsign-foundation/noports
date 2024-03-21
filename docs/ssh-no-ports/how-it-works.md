@@ -31,12 +31,13 @@ How SSH No Ports Works
 4. Next, @alice\_client requests a connection to @alice\_device and shares one port from the Socket Rendezvous (which we abbreviate to SR).
 5. The device, @alice\_device, generates a new ephemeral SSH key pair for the session.
 6. @alice\_device automatically sends the ephemeral SSH private key to @alice\_client.
-7. @alice\_device will then forward its SSHD port to the SR using Atsign’s SSHRV client.
+7. @alice\_device will then forward its SSHD port to the SR. The SR will be authenticated and encrypted by @alice\_device with the ephemeral keys. &#x20;
 8. This enables @alice\_client to SSH to the SR using the second port.
-9. The Socket Rendezvous connects both ports that are issued to @alice\_client.
-10. An SSH tunnel from @alice\_client is created over the connected tunnel through the SR to @alice\_device.
-11. This tunnel forwards an ephemeral port on @alice\_client’s localhost to @alice\_device’s SSHD port.
-12. Now the connection is ready! The application will provide an SSH command which can be used to connect over this tunnel.
-13. When running the command, Alice will be able to SSH connect to @alice\_device!
-14. Alice has successfully connected to her remote device, @alice\_device.
+9. The Socket Rendezvous connects both ports that are issued to @alice\_client and waits to be authenticated by @alice\_client.
+10. @alice\_client then authenticates to the SR with the encrypted ephermal keys sent by @alice\_device.
+11. An SSH tunnel from @alice\_client is created over the connected tunnel through the SR to @alice\_device.
+12. This tunnel forwards an ephemeral port on @alice\_client’s localhost to @alice\_device’s SSHD port.
+13. Now the connection is ready! The application will provide an SSH command which can be used to connect over this tunnel.
+14. When running the command, Alice will be able to SSH connect to @alice\_device!
+15. Alice has successfully connected to her remote device, @alice\_device.
 

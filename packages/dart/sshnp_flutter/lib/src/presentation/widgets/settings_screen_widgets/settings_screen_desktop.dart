@@ -1,20 +1,23 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../controllers/package_info_controller.dart';
 import '../../../utility/constants.dart';
 import '../../../utility/sizes.dart';
 import '../contact_tile/contact_list_tile.dart';
 import '../custom_list_tile.dart';
 import '../navigation/app_navigation_rail.dart';
 
-class SettingsDesktopView extends StatelessWidget {
+class SettingsDesktopView extends ConsumerWidget {
   const SettingsDesktopView({
     super.key,
   });
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final strings = AppLocalizations.of(context)!;
+    final packageInfoController = ref.read(packageInfo);
     return Scaffold(
       body: SafeArea(
           child: Row(
@@ -59,6 +62,7 @@ class SettingsDesktopView extends StatelessWidget {
                           CustomListTile.resetAtsign(),
                         ])),
                   ),
+                  Text('App Version ${packageInfoController.version} (${packageInfoController.buildNumber})'),
                 ],
               ),
             ),
