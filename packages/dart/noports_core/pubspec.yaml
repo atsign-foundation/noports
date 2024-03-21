@@ -26,7 +26,9 @@ dependencies:
 
 dependency_overrides:
   socket_connector:
-    path: /Users/gary/dev/atsign/repos/socket_connector
+    git:
+      ref: gkc/enhance-server-to-socket
+      url: https://github.com/atsign-foundation/socket_connector
   args:
     git:
       ref: gkc/show-aliases-in-usage

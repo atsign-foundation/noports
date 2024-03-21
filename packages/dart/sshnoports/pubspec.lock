@@ -716,9 +716,11 @@ packages:
   socket_connector:
     dependency: "direct main"
     description:
-      path: "/Users/gary/dev/atsign/repos/socket_connector"
-      relative: false
-    source: path
+      path: "."
+      ref: "gkc/enhance-server-to-socket"
+      resolved-ref: "88fddf55787a25f085f4d56b8eff5db3108df800"
+      url: "https://github.com/atsign-foundation/socket_connector"
+    source: git
     version: "2.2.0"
   source_map_stack_trace:
     dependency: transitive
