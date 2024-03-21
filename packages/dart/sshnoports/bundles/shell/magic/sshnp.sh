@@ -4,7 +4,7 @@ binary_path="$HOME/.local/bin"
 client_atsign=""
 device_atsign=""
 host_atsign=""
-devices=(device1 device2 device3)
+devices=()
 additional_args=()
 # END METADATA
 
