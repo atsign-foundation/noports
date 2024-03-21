@@ -1,0 +1,84 @@
+#!/bin/bash
+
+# 1a. Run sshnp without the '-u <username>' option talking to a device daemon which
+#     does not have the -u flag enabled.
+# 1b. Verify it fails
+# 2a. Run sshnp without the '-u <username>' option talking to a device daemon which
+#     DOES have the -u flag enabled.
+# 2b. Verify it succeeds
+
+scriptName=$(basename -- "$0")
+
+if test -z "$testScriptsDir" ; then
+  echo -e "    ${RED}check_env: testScriptsDir is not set${NC}" && exit 1
+fi
+
+source "$testScriptsDir/common/common_functions.include.sh"
+source "$testScriptsDir/common/check_env.include.sh" || exit $?
+
+if test $# != 2 ; then
+  logErrorAndExit "Must supply daemonVersion, clientVersion"
+fi
+
+daemonVersion="$1"
+clientVersion="$2"
+
+if [[ "$clientVersion" != "d:current" ]] || [[ "$daemonVersion" != "d:current" ]]; then
+  exit 50 # test rig interprets this exit status as 'test was not applicable'
+fi
+
+# logInfo "Client version : $c_type : $c_major.$c_minor.$c_patch"
+clientBinaryPath=$(getPathToBinariesForTypeAndVersion "$clientVersion")
+
+#
+# v4 feature set, default client flags
+
+# - All client versions since 5 require the '-x' flag in order to output the
+#   ssh command rather than just forking to the ssh inline.
+# - sshnp since 5.x also requires '--no-ad' and '--no-et' flags,
+#   since those features are enabled by default from v5
+if [[ $(versionIsAtLeast "$clientVersion" "d:5.0.0") == "true" ]] ; then
+  extraFlags="-x --no-ad --no-et"
+fi
+
+# 1a. Run sshnp without the '-u <username>' option talking to a device daemon which
+#     does not have the -u flag enabled.
+# 1b. Verify it fails
+deviceName=$(getDeviceNameNoFlags "$commitId" "$daemonVersion" )
+l1="$clientBinaryPath/sshnp -f $clientAtSign -d $deviceName -i $identityFilename"
+l2=" -t $daemonAtSign -h $srvAtSign "
+l4=" --root-domain $atDirectoryHost"
+l5=" ${extraFlags}"
+sshnpCommand="$l1 $l2 $l3 $l4 $l5 -s ${identityFilename}.pub"
+
+echo "$(iso8601Date) | Executing $sshnpCommand"
+sshCommand=$($sshnpCommand)
+sshnpExitStatus=$?
+
+if (( sshnpExitStatus == 0 )); then
+    # It should have failed
+    logError "$scriptName: sshnp to ${deviceName} without '-u <username>' did not fail as expected"
+    exit 1
+fi
+
+# 2a. Run sshnp without the '-u <username>' option talking to a device daemon which
+#     DOES have the -u flag enabled.
+# 2b. Verify it succeeds, and that the subsequent ssh succeeds
+deviceName=$(getDeviceNameWithFlags "$commitId" "$daemonVersion" )
+l1="$clientBinaryPath/sshnp -f $clientAtSign -d $deviceName -i $identityFilename"
+l2=" -t $daemonAtSign -h $srvAtSign"
+l4=" --root-domain $atDirectoryHost"
+l5=" ${extraFlags}"
+sshnpCommand="$l1 $l2 $l3 $l4 $l5 -s ${identityFilename}.pub"
+
+echo "$(iso8601Date) | Executing $sshnpCommand"
+sshCommand=$($sshnpCommand)
+sshnpExitStatus=$?
+if (( sshnpExitStatus != 0 )); then
+  exit $sshnpExitStatus
+fi
+
+echo "$(iso8601Date) | Executing $sshCommand"
+
+# shellcheck disable=SC2091
+$(getTestSshCommand "$sshCommand")

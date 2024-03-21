@@ -110,10 +110,10 @@ packages:
     dependency: transitive
     description:
       name: at_lookup
-      sha256: "31d4a6f0a3495aa3ed81ffec7d4d2995221aaaa73a35e17962a6a07c67dfba0c"
+      sha256: "25e71e2c9fe8bbccf534823b9cdc240239c225ef18b1d333420533a3e626df08"
       url: "https://pub.dev"
     source: hosted
-    version: "3.0.45"
+    version: "3.0.46"
   at_onboarding_cli:
     dependency: "direct main"
     description:
@@ -653,10 +653,10 @@ packages:
     dependency: transitive
     description:
       name: posix
-      sha256: "3ad26924254fd2354b0e2b95fc8b45ac392ad87434f8e64807b3a1ac077f2256"
+      sha256: a0117dc2167805aa9125b82eee515cc891819bac2f538c83646d355b16f58b9a
       url: "https://pub.dev"
     source: hosted
-    version: "5.0.0"
+    version: "6.0.1"
   process:
     dependency: transitive
     description:
@@ -681,14 +681,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.2.3"
-  quiver:
-    dependency: transitive
-    description:
-      name: quiver
-      sha256: b1c1ac5ce6688d77f65f3375a9abb9319b3cb32486bdc7a1e0fdf004d7ba4e47
-      url: "https://pub.dev"
-    source: hosted
-    version: "3.2.1"
   shelf:
     dependency: transitive
     description:
