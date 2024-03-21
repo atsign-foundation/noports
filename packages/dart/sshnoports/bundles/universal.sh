@@ -25,13 +25,13 @@ unset user
 ### Input Variables
 verbose=false
 unset tmp_path
-unset install_type
+install_type=""
 unset download_url
 local_archive=""
 
 ### Client/ Device Install Variables
-unset client_atsign
-unset device_atsign
+client_atsign=""
+device_atsign=""
 
 ### Client Install Variables
 unset magic_script
@@ -39,7 +39,7 @@ unset host_atsign
 unset devices
 
 ### Device Install Variables
-unset device_name
+device_name=""
 
 norm_atsign() {
 	# Prepend an @ to the front of the atsign if missing
@@ -304,10 +304,14 @@ write_program_arguments_plist() {
 	shift
 	string_array=""
 	while [ $# -gt 0 ]; do
-		string_array="$string_array\n<string>$1</string>"
+		string_array="$string_array\\
+    <string>$1</string>"
 		shift
 	done
-	sedi "/$start_line/,/$end_line/c\\$start_line\n$second_line$string_array\n$end_line\n" "$file"
+	sedi "/<key>ProgramArguments<\\/key>/,/<\\/array>/c\\
+  $start_line\\
+  $second_line$string_array\\
+  $end_line" "$file"
 }
 
 write_systemd_environment() {
@@ -373,7 +377,6 @@ client() {
 
 	echo "Enter the device names you would like to include in the magic script"
 	echo "/done to finish"
-	unset device_name
 	while [ "$done_input" = false ]; do
 		echo "device: "
 		read -r device_name
@@ -392,7 +395,6 @@ client() {
 
 # DEVICE INSTALLATION #
 device() {
-	unset device_name
 	unset device_install_type
 	if is_darwin; then
 		device_install_type="launchd"
@@ -414,9 +416,10 @@ device() {
 	install_output=$("$extract_path"/sshnp/install.sh -b "$bin_path" -u "$user" "$device_install_type" sshnpd)
 	case "$device_install_type" in
 	launchd)
-		launchd_plist="$HOME/Library/LaunchAgents/com.atsign.foundation.sshnpd.plist"
+		launchd_plist="$HOME/Library/LaunchAgents/com.atsign.sshnpd.plist"
 		write_program_arguments_plist "$launchd_plist" "$bin_path/sshnpd" "-f" "$(norm_atsign "$client_atsign")" "-t" "$(norm_atsign "$device_atsign")" "-d" "$device_name" "-su"
 		launchctl load "$launchd_plist"
+		launchctl start "$launchd_plist"
 		;;
 	systemd)
 		systemd_service="/etc/systemd/system/sshnpd.service"
