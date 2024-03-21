@@ -28,5 +28,3 @@ localLogInfo ""
 localLogInfo "Cleaning up"
 
 safeRemoveDir "$(getOutputDir)"
-
-safeRemoveDir "$testRuntimeDir"

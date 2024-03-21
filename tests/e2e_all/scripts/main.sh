@@ -159,6 +159,8 @@ cd "$commitId" || exit 1 # should now be in <repo_root>/tests/e2e_all/runtime/$c
 testRuntimeDir="$(pwd)"
 export testRuntimeDir
 
+"$testScriptsDir/common/cleanup_tmp_files.sh" -s
+
 logInfo "  --> will execute setup_binaries, start_daemons and tests [$testsToRun] with "
 logInfo "    testRootDir:      $testRootDir"
 logInfo "    testRuntimeDir:   $testRuntimeDir"
