@@ -38,10 +38,8 @@ fi
 
 additionalSshnpFlags=" --ssh-client ${sshClient}"
 
-# logInfo "Daemon version : $d_type : $d_major.$d_minor.$d_patch"
 deviceName=$(getDeviceNameWithFlags "$commitId" "$daemonVersion" )
 
-# logInfo "Client version : $c_type : $c_major.$c_minor.$c_patch"
 clientBinaryPath=$(getPathToBinariesForTypeAndVersion "$clientVersion")
 
 baseSshnpCommand=$(getBaseSshnpCommand "$clientBinaryPath")
