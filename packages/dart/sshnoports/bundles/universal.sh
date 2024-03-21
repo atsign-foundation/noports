@@ -11,7 +11,7 @@ repo_url="https://github.com/atsign-foundation/sshnoports"
 # nothing else should be writen outside the main function to avoid side effects
 
 ### Environment based variables
-unset arg_zero="$0"
+arg_zero="$0"
 unset script_dir
 unset platform_name
 unset system_arch
