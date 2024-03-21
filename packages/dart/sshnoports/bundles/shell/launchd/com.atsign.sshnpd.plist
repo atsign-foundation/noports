@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>Label</key>
+	<string>com.atsign.sshnpd</string>
+	<key>ProgramArguments</key>
+    <array>
+      <!-- TODO: add the program arguments-->
+      <string>/Users/[user]/.local/bin/sshnpd</string>
+      <string>-a</string>
+      <string>[device_atsign]</string>
+      <string>-m</string>
+      <string>[client_atsign]</string>
+      <string>-d</string>
+      <string>[device_name]</string>
+      <string>-su</string>
+	</array>
+	<key>RunAtLoad</key>
+	<true/>
+</dict>
+</plist>

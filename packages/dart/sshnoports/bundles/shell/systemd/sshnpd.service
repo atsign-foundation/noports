@@ -34,13 +34,13 @@ Environment=device_atsign="@example_device"
 # Device name
 Environment=device_name="default"
 
-# Uncomment if you wish the daemon to update authorized_keys to include public keys sent by authorized manager atSigns
-; Environment=s="-s"
+# Comment if you don't want the daemon to update authorized_keys to include public keys sent by authorized manager atSigns
+Environment=s="-s"
 
-# Uncomment if you wish to have the daemon make various information visible to the manager atsign - e.g. username, version, etc - without the manager atSign needing to know this daemon's device name
-; Environment=u="-u"
+# Comment if you don't want the daemon to share various information with the manager atsign - e.g. username, version, etc - without the manager atSign needing to know this daemon's device name
+Environment=u="-u"
 
-# Uncomment to enable verbose logging
+# Comment to disable verbose logging
 Environment=v="-v"
 
 # The line below runs the sshnpd service, with the options set above.
