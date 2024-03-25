@@ -33,6 +33,12 @@ fi
 
 deviceName=$(getDeviceNameWithFlags "$commitId" "$daemonVersion" )
 
+# We will capture daemon log from now until end of test
+outputDir=$(getOutputDir)
+daemonLogFile="${outputDir}/daemons/${deviceName}.log"
+tail -f -n 0 "$daemonLogFile" >> "$DAEMON_LOG_FRAGMENT_NAME" &
+tailPid=$! # We'll kill this later
+
 clientBinaryPath=$(getPathToBinariesForTypeAndVersion "$clientVersion")
 
 baseNptCommand=$(getBaseNptCommand "$clientBinaryPath")
@@ -47,6 +53,8 @@ nptPort=$($nptCommand)
 # 2. Check the exit status
 nptExitStatus=$?
 if (( nptExitStatus != 0 )); then
+  # Kill the daemon log tail, and exit with the exit status of the npt command
+  kill "$tailPid"
   exit $nptExitStatus
 fi
 
@@ -58,6 +66,7 @@ echo "$(iso8601Date) | Executing $sshCommand" | tee -a "$(getReportFile)"
 
 # shellcheck disable=SC2091
 $(getTestSshCommand "$sshCommand")
-
-# 4. Exit with the exit status of the ssh command
-exit $?
+sshExitStatus=$?
+# 4. Kill the daemon log tail, and exit with the exit status of the ssh command
+kill "$tailPid"
+exit $sshExitStatus

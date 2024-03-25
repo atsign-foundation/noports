@@ -45,6 +45,16 @@ fi
 #     does not have the -u flag enabled.
 # 1b. Verify it fails
 deviceName=$(getDeviceNameNoFlags "$commitId" "$daemonVersion" )
+
+# We will capture daemon log from now until end of test
+outputDir=$(getOutputDir)
+daemonLogFile="${outputDir}/daemons/${deviceName}.log"
+echo "" >> "$DAEMON_LOG_FRAGMENT_NAME"
+echo "First daemon (without flags) $deviceName" >> "$DAEMON_LOG_FRAGMENT_NAME"
+echo "" >> "$DAEMON_LOG_FRAGMENT_NAME"
+tail -f "$daemonLogFile" >> "$DAEMON_LOG_FRAGMENT_NAME" &
+tailPid=$! # We'll kill this later
+
 l1="$clientBinaryPath/sshnp -f $clientAtSign -d $deviceName -i $identityFilename"
 l2=" -t $daemonAtSign -h $srvAtSign "
 l4=" --root-domain $atDirectoryHost"
@@ -58,6 +68,7 @@ sshnpExitStatus=$?
 if (( sshnpExitStatus == 0 )); then
     # It should have failed
     logError "$scriptName: sshnp to ${deviceName} without '-u <username>' did not fail as expected"
+    kill $tailPid
     exit 1
 fi
 
@@ -65,6 +76,14 @@ fi
 #     DOES have the -u flag enabled.
 # 2b. Verify it succeeds, and that the subsequent ssh succeeds
 deviceName=$(getDeviceNameWithFlags "$commitId" "$daemonVersion" )
+kill $tailPid
+daemonLogFile="${outputDir}/daemons/${deviceName}.log"
+echo "" >> "$DAEMON_LOG_FRAGMENT_NAME"
+echo "Second daemon (with flags) : $deviceName" >> "$DAEMON_LOG_FRAGMENT_NAME"
+echo "" >> "$DAEMON_LOG_FRAGMENT_NAME"
+tail -f "$daemonLogFile" >> "$DAEMON_LOG_FRAGMENT_NAME" &
+tailPid=$! # We'll kill this later
+
 l1="$clientBinaryPath/sshnp -f $clientAtSign -d $deviceName -i $identityFilename"
 l2=" -t $daemonAtSign -h $srvAtSign"
 l4=" --root-domain $atDirectoryHost"
@@ -75,6 +94,8 @@ echo "$(iso8601Date) | Executing $sshnpCommand"
 sshCommand=$($sshnpCommand)
 sshnpExitStatus=$?
 if (( sshnpExitStatus != 0 )); then
+  logError "$scriptName: sshnp to ${deviceName} without '-u <username>' should have succeeded but did not"
+  kill $tailPid
   exit $sshnpExitStatus
 fi
 
@@ -82,3 +103,9 @@ echo "$(iso8601Date) | Executing $sshCommand"
 
 # shellcheck disable=SC2091
 $(getTestSshCommand "$sshCommand")
+sshExitStatus=$?
+if (( sshExitStatus != 0 )); then
+  logError "$scriptName: ssh to ${deviceName} without '-u <username>' should have succeeded but did not"
+fi
+kill $tailPid
+exit $sshExitStatus
