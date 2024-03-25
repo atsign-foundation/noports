@@ -30,10 +30,10 @@ Future<void> main(List<String> args) async {
   // will have exited and closed its stderr.
   // However you can set this log level to whatever you wish if you also change
   // the default logging handler (see below)
-  AtSignLogger.root_level = 'SHOUT';
+  AtSignLogger.root_level = 'FINEST';
   AtSignLogger.defaultLoggingHandler = AtSignLogger.stdErrLoggingHandler;
   // Uncomment this next line if you need to debug and see all output.
-  // AtSignLogger.defaultLoggingHandler = TmpFileLoggingHandler();
+  AtSignLogger.defaultLoggingHandler = TmpFileLoggingHandler();
 
   final ArgParser parser = ArgParser(showAliasesInUsage: true)
     ..addOption('host', abbr: 'h', mandatory: true, help: 'rvd host')
