@@ -94,6 +94,7 @@ fi
 deviceName=$(getDeviceNameWithFlags "$commitId" "$daemonVersion" )
 
 # We will capture daemon log from now until end of test
+kill $tailPid
 outputDir=$(getOutputDir)
 daemonLogFile="${outputDir}/daemons/${deviceName}.log"
 echo "" >> "$DAEMON_LOG_FRAGMENT_NAME"
