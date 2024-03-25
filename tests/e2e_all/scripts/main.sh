@@ -221,6 +221,9 @@ echo
 logInfo "Restoring authorized_keys from backup"
 restoreAuthorizedKeys
 
+logInfo "Removing $identityFilename and $identityFilename.pub"
+rm -f "${identityFilename}" "${identityFilename}.pub"
+
 reportFile=$(getReportFile)
 
 echo
