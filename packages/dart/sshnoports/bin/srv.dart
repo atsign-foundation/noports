@@ -2,16 +2,38 @@ import 'dart:io';
 
 import 'package:args/args.dart';
 import 'package:at_utils/at_logger.dart';
+import 'package:logging/logging.dart';
 import 'package:noports_core/srv.dart';
 import 'package:socket_connector/socket_connector.dart';
 import 'package:sshnoports/src/print_version.dart';
 
+class TmpFileLoggingHandler implements LoggingHandler {
+  File f = File('/tmp/noports/srv.$pid.log');
+
+  TmpFileLoggingHandler() {
+    f.createSync(recursive: true);
+  }
+
+  @override
+  void call(LogRecord record) {
+    f.writeAsStringSync('${record.level.name}'
+        '|${record.time}'
+        '|${record.loggerName}'
+        '|${record.message} \n',
+    mode: FileMode.writeOnlyAppend);
+  }
+}
+
 Future<void> main(List<String> args) async {
-  // Do not change this to anything below WARNING. If you do, then the
-  // onConnect callback in SrvImplDart._runClientSideMulti will crash the
-  // program
+  // For production usage, do not change this to anything below SHOUT or this
+  // programme will crash when emitting log messages, as this process's parent
+  // will have exited and closed its stderr.
+  // However you can set this log level to whatever you wish if you also change
+  // the default logging handler (see below)
   AtSignLogger.root_level = 'SHOUT';
   AtSignLogger.defaultLoggingHandler = AtSignLogger.stdErrLoggingHandler;
+  // Uncomment this next line if you need to debug and see all output.
+  // AtSignLogger.defaultLoggingHandler = TmpFileLoggingHandler();
 
   final ArgParser parser = ArgParser(showAliasesInUsage: true)
     ..addOption('host', abbr: 'h', mandatory: true, help: 'rvd host')

@@ -15,6 +15,7 @@ dependencies:
   socket_connector: ^2.2.0
   dartssh2: 2.8.2
   at_utils: 3.0.16
+  logging: ^1.2.0
 
 dependency_overrides:
   args:

@@ -231,7 +231,7 @@ class SrvImplInline implements Srv<SSHSocket> {
 
       // Authenticate if we have an rvdAuthString
       if (rvdAuthString != null) {
-        logger.info('authenticating');
+        logger.info('run() authenticating to rvd');
         socket.writeln(rvdAuthString);
         await socket.flush();
       }
@@ -351,7 +351,7 @@ class SrvImplDart implements Srv<SocketConnector> {
 
   DataTransformer createEncrypter(String aesKeyBase64, String ivBase64) {
     final DartAesCtr algorithm = DartAesCtr.with256bits(
-      macAlgorithm: Hmac.sha256(),
+      macAlgorithm: MacAlgorithm.empty,
     );
     final SecretKey sessionAESKey = SecretKey(base64Decode(aesKeyBase64));
     final List<int> sessionIV = base64Decode(ivBase64);
@@ -368,7 +368,7 @@ class SrvImplDart implements Srv<SocketConnector> {
 
   DataTransformer createDecrypter(String aesKeyBase64, String ivBase64) {
     final DartAesCtr algorithm = DartAesCtr.with256bits(
-      macAlgorithm: Hmac.sha256(),
+      macAlgorithm: MacAlgorithm.empty,
     );
     final SecretKey sessionAESKey = SecretKey(base64Decode(aesKeyBase64));
     final List<int> sessionIV = base64Decode(ivBase64);
@@ -579,7 +579,7 @@ class SrvImplDart implements Srv<SocketConnector> {
             logger.severe('Unknown request to control socket: [$request]');
             return;
           }
-          logger.info('Control socket received ${args.first} request - '
+          logger.info('_runDaemonSideMulti Control socket received ${args.first} request - '
               ' creating new socketToSocket connection');
           await SocketConnector.socketToSocket(
               connector: sc,
@@ -592,7 +592,7 @@ class SrvImplDart implements Srv<SocketConnector> {
               transformAtoB: createEncrypter(args[1], args[2]),
               transformBtoA: createDecrypter(args[1], args[2]));
           if (rvdAuthString != null) {
-            stderr.writeln('authenticating new socket connection to rvd');
+            logger.info('_runDaemonSideMulti authenticating new socket connection to rvd');
             sc.connections.last.sideB.socket.writeln(rvdAuthString);
           }
 
@@ -634,7 +634,7 @@ class SrvImplDart implements Srv<SocketConnector> {
         transformAtoB: encrypter,
         transformBtoA: decrypter);
     if (rvdAuthString != null) {
-      stderr.writeln('authenticating socketB');
+      logger.info('_runDaemonSideSingle authenticating socketB to rvd');
       socketConnector.connections.first.sideB.socket.writeln(rvdAuthString);
     }
 
