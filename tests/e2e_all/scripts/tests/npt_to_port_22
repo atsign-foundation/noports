@@ -58,6 +58,10 @@ if (( nptExitStatus != 0 )); then
   exit $nptExitStatus
 fi
 
+
+echo "$(iso8601Date) | Running ps for the spawned srv process BEFORE running ssh" | tee -a "$(getReportFile)"
+ps -ef | grep "srv " | grep "$nptPort" | tee -a "$(getReportFile)"
+
 # 3. Execute an ssh
 sshCommand="ssh -p $nptPort -o StrictHostKeyChecking=accept-new -o IdentitiesOnly=yes"
 sshCommand="${sshCommand} ${remoteUsername}@localhost -i $identityFilename"
@@ -67,6 +71,10 @@ echo "$(iso8601Date) | Executing $sshCommand" | tee -a "$(getReportFile)"
 # shellcheck disable=SC2091
 $(getTestSshCommand "$sshCommand")
 sshExitStatus=$?
+
+echo "$(iso8601Date) | Running ps for the spawned srv process AFTER running ssh" | tee -a "$(getReportFile)"
+ps -ef | grep "srv " | grep "$nptPort" | tee -a "$(getReportFile)"
+
 # 4. Kill the daemon log tail, and exit with the exit status of the ssh command
 kill "$tailPid"
 exit $sshExitStatus
