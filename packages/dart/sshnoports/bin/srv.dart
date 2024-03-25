@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:args/args.dart';
@@ -35,6 +36,7 @@ Future<void> main(List<String> args) async {
   // Uncomment this next line if you need to debug and see all output.
   AtSignLogger.defaultLoggingHandler = TmpFileLoggingHandler();
 
+  AtSignLogger logger = AtSignLogger(' srv.main ');
   final ArgParser parser = ArgParser(showAliasesInUsage: true)
     ..addOption('host', abbr: 'h', mandatory: true, help: 'rvd host')
     ..addOption('port', abbr: 'p', mandatory: true, help: 'rvd port')
@@ -60,6 +62,7 @@ Future<void> main(List<String> args) async {
         negatable: false,
         help: 'Set this flag when we want multiple connections via the rvd');
 
+  await runZonedGuarded(() async {
   try {
     final ArgResults parsed;
     try {
@@ -129,4 +132,7 @@ Future<void> main(List<String> args) async {
     stderr.writeln('\n$e');
     exit(1);
   }
+  }, (Object error, StackTrace stackTrace) async {
+    logger.severe('Unhandled exception $error; stackTrace follows\n$stackTrace');
+  });
 }
