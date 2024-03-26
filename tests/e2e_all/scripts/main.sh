@@ -202,9 +202,6 @@ if test "$retCode" != 0; then
   logError "Failed to start daemons; will not run tests"
   exit $retCode
 else
-  echo
-  logInfo "Sleeping for $daemonStartWait seconds to allow daemons to start"
-  sleep "$daemonStartWait"
   logInfo "Calling common/run_tests.sh"
   "$testScriptsDir/common/run_tests.sh"
   testExitStatus=$?
