@@ -59,6 +59,25 @@ flutter:
     # - .env
     - assets/images/nav_icons/
     - assets/images/
+
+  fonts:
+    - family: 0xProtoNerdFont
+      fonts:
+        - asset: assets/fonts/0xProtoNerdFontMono-Regular.ttf
+        - asset: assets/fonts/0xProtoNerdFont-Regular.ttf
+    - family: IosevkaTermNerdFontPropo
+      fonts:
+        # - asset: assets/fonts/IosevkaTermNerdFontPropo-Bold.ttf
+        # - asset: assets/fonts/IosevkaTermNerdFontPropo-BoldItalic.ttf
+        # - asset: assets/fonts/IosevkaTermNerdFontPropo-Italic.ttf
+        - asset: assets/fonts/IosevkaTermNerdFontPropo-Regular.ttf
+    - family: GeistMonoNerdFont
+      fonts:
+        # - asset: assets/fonts/GeistMonoNerdFont-Bold.ttf
+        # - asset: assets/fonts/GeistMonoNerdFont-BoldItalic.ttf
+        # - asset: assets/fonts/GeistMonoNerdFont-Italic.ttf
+        - asset: assets/fonts/GeistMonoNerdFont-Regular.otf
+
 flutter_launcher_icons:
   android: "launcher_icon"
   ios: true
