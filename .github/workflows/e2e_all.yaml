@@ -41,4 +41,4 @@ jobs:
             echo "Running tests"
             SRV_LOG_TO_TMP="true"
             export SRV_LOG_TO_TMP
-            tests/e2e_all/scripts/main.sh @apricoteventual @combinedbelgian @rv_am -t 'minus_s_flag npt_to_port_22'
+            tests/e2e_all/scripts/main.sh @apricoteventual @combinedbelgian @rv_am
