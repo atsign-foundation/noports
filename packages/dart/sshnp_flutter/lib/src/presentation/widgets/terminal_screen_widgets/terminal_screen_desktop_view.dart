@@ -179,10 +179,10 @@ class _TerminalScreenDesktopViewState extends ConsumerState<TerminalScreenDeskto
                               //   fontFamily: 'GeistMonoNerdFont',
                               //   // fontSize: 14,
                               // )),
-                              textStyle: TerminalStyle.fromTextStyle(const TextStyle(
-                                fontFamily: 'IosevkaTermNerdFontPropo',
-                                // fontSize: 14,
-                              )),
+                              textStyle: TerminalStyle.fromTextStyle(
+                                  const TextStyle(fontFamily: 'IosevkaTermNerdFontPropo', fontSize: 14
+                                      // fontSize: 14,
+                                      )),
                             );
                           }).toList(),
                         ),
