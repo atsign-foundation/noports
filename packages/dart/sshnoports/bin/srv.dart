@@ -129,6 +129,7 @@ Future<void> main(List<String> args) async {
         stderr.writeln('Waiting for Srv to close');
         logger.shout('Wrote waiting message to stderr');
         await sc.done;
+        logger.shout('sc is done');
       } on ArgumentError {
         rethrow;
       } catch (e) {
