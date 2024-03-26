@@ -72,7 +72,9 @@ class SrvImplExec implements Srv<Process> {
     // TODO Revert this
     //
     //
-    command='$command.sh';
+    if (command != null) {
+      command = '$command.sh';
+    }
     String postfix = Platform.isWindows ? '.exe' : '';
     if (command == null) {
       throw SshnpError(
@@ -602,7 +604,7 @@ class SrvImplDart implements Srv<SocketConnector> {
               transformBtoA: createDecrypter(args[1], args[2]));
           if (rvdAuthString != null) {
             logger.info('_runDaemonSideMulti authenticating'
-                    ' new socket connection to rvd');
+                ' new socket connection to rvd');
             sc.connections.last.sideB.socket.writeln(rvdAuthString);
           }
 
