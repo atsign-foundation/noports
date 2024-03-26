@@ -40,11 +40,15 @@ void main(List<String> args) async {
   bool originalLineMode = true;
   try {
     originalLineMode = stdin.lineMode;
-  } catch (e) {terminalError = e;}
+  } catch (e) {
+    terminalError = e;
+  }
   bool originalEchoMode = true;
   try {
     originalEchoMode = stdin.echoMode;
-  } catch (e) {terminalError ??= e;}
+  } catch (e) {
+    terminalError ??= e;
+  }
 
   bool shouldResetTerminal = false;
 

@@ -225,8 +225,8 @@ class SrvImplInline implements Srv<SSHSocket> {
     }
 
     try {
-      logger.info(
-          'Creating socket connection to rvd at $streamingHost:$streamingPort');
+      logger.info('Creating socket connection to rvd'
+          ' at $streamingHost:$streamingPort');
       Socket socket = await Socket.connect(streamingHost, streamingPort);
 
       // Authenticate if we have an rvdAuthString
@@ -448,8 +448,8 @@ class SrvImplDart implements Srv<SocketConnector> {
       beforeJoining: (Side sideA, Side sideB) async {
         // Authenticate the sideB socket (to the rvd)
         if (rvdAuthString != null) {
-          logger.info(
-              '_runClientSideSingle authenticating new connection to rvd');
+          logger.info('_runClientSideSingle authenticating'
+              ' new connection to rvd');
           sideB.socket.writeln(rvdAuthString);
         }
       },
@@ -469,8 +469,8 @@ class SrvImplDart implements Srv<SocketConnector> {
         timeout: Duration(seconds: 1));
     // Authenticate the control socket
     if (rvdAuthString != null) {
-      logger.info(
-          '_runClientSideMulti authenticating control socket connection to rvd');
+      logger.info('_runClientSideMulti authenticating'
+          ' control socket connection to rvd');
       sessionControlSocket.writeln(rvdAuthString);
     }
     DataTransformer controlEncrypter =
@@ -486,8 +486,8 @@ class SrvImplDart implements Srv<SocketConnector> {
 
     controlStream.listen((event) {
       String response = String.fromCharCodes(event).trim();
-      logger.info(
-          '_runClientSideMulti Received control socket response: [$response]');
+      logger.info('_runClientSideMulti'
+          ' Received control socket response: [$response]');
     }, onError: (e) {
       logger.severe('_runClientSideMulti controlSocket error: $e');
       socketConnector?.close();
@@ -547,8 +547,8 @@ class SrvImplDart implements Srv<SocketConnector> {
         timeout: Duration(seconds: 1));
     // Authenticate the control socket
     if (rvdAuthString != null) {
-      logger.info(
-          '_runDaemonSideMulti authenticating control socket connection to rvd');
+      logger.info('_runDaemonSideMulti authenticating'
+          ' control socket connection to rvd');
       sessionControlSocket.writeln(rvdAuthString);
     }
     DataTransformer controlEncrypter =
@@ -579,7 +579,8 @@ class SrvImplDart implements Srv<SocketConnector> {
             logger.severe('Unknown request to control socket: [$request]');
             return;
           }
-          logger.info('_runDaemonSideMulti Control socket received ${args.first} request - '
+          logger.info('_runDaemonSideMulti'
+              ' Control socket received ${args.first} request - '
               ' creating new socketToSocket connection');
           await SocketConnector.socketToSocket(
               connector: sc,
@@ -592,7 +593,8 @@ class SrvImplDart implements Srv<SocketConnector> {
               transformAtoB: createEncrypter(args[1], args[2]),
               transformBtoA: createDecrypter(args[1], args[2]));
           if (rvdAuthString != null) {
-            logger.info('_runDaemonSideMulti authenticating new socket connection to rvd');
+            logger.info('_runDaemonSideMulti authenticating'
+                    ' new socket connection to rvd');
             sc.connections.last.sideB.socket.writeln(rvdAuthString);
           }
 
