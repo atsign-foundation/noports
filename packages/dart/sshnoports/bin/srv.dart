@@ -38,7 +38,6 @@ Future<void> main(List<String> args) async {
   // will have exited and closed its stderr.
   AtSignLogger.root_level = 'SHOUT';
   AtSignLogger.defaultLoggingHandler = AtSignLogger.stdErrLoggingHandler;
-  AtSignLogger logger = AtSignLogger(' srv.main ');
   // However if environment has SRV_LOG_TO_TMP == "true" then we will log to a
   // file in /tmp and we might as well log everything
   if ((Platform.environment['SRV_LOG_TO_TMP'] ?? "false").toLowerCase() ==
@@ -46,6 +45,7 @@ Future<void> main(List<String> args) async {
     AtSignLogger.defaultLoggingHandler = TmpFileLoggingHandler();
     AtSignLogger.root_level = 'FINEST';
   }
+  AtSignLogger logger = AtSignLogger(' srv.main ');
 
   final ArgParser parser = ArgParser(showAliasesInUsage: true)
     ..addOption('host', abbr: 'h', mandatory: true, help: 'rvd host')
