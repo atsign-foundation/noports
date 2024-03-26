@@ -108,6 +108,7 @@ Future<void> main(List<String> args) async {
             '--rv-e2ee required, but RV_IV is not in environment');
       }
 
+      logger.shout('About to call Srv.dart(...).run()');
       try {
         SocketConnector sc = await Srv.dart(
           streamingHost,
