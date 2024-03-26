@@ -496,6 +496,7 @@ class SrvImplDart implements Srv<SocketConnector> {
       socketConnector?.close();
     });
 
+    logger.info('_runClientSideMulti calling SocketConnector.serverToSocket');
     socketConnector = await SocketConnector.serverToSocket(
       portA: localPort,
       addressB: hosts[0],
@@ -525,6 +526,7 @@ class SrvImplDart implements Srv<SocketConnector> {
         sideB.transformer = createDecrypter(socketAESKey, socketIV);
       },
     );
+    logger.info('_runClientSideMulti serverToSocket is ready');
 
     // upon socketConnector.done, destroy the control socket, and complete
     unawaited(socketConnector.done.whenComplete(() {
