@@ -67,6 +67,12 @@ class SrvImplExec implements Srv<Process> {
   @override
   Future<Process> run() async {
     String? command = await Srv.getLocalBinaryPath();
+    //
+    //
+    // TODO Revert this
+    //
+    //
+    command='$command.sh';
     String postfix = Platform.isWindows ? '.exe' : '';
     if (command == null) {
       throw SshnpError(
