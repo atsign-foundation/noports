@@ -113,18 +113,24 @@ Future<void> main(List<String> args) async {
       ).run();
 
       /// Shut myself down once the socket connector closes
+      logger.shout('About to write "waiting for Srv to close" message to stderr');
       stderr.writeln('Waiting for Srv to close');
+      logger.shout('Wrote waiting message to stderr');
       await sc.done;
     } on ArgumentError {
       rethrow;
     } catch (e) {
       // Do not remove this output; it is specifically looked for in
       // [SrvImplExec.run].
+      logger.shout('About to write "${Srv.completedWithExceptionString}" message to stderr');
       stderr.writeln('${Srv.completedWithExceptionString} : $e');
+      logger.shout('Wrote "${Srv.completedWithExceptionString}" message to stderr');
       exit(1);
     }
 
+    logger.shout('About to write "Closed - exiting" message to stderr');
     stderr.writeln('Closed - exiting');
+    logger.shout('Wrote "Closed - exiting" message to stderr');
     exit(0);
   } on ArgumentError catch (e) {
     printVersion();
@@ -133,6 +139,6 @@ Future<void> main(List<String> args) async {
     exit(1);
   }
   }, (Object error, StackTrace stackTrace) async {
-    logger.severe('Unhandled exception $error; stackTrace follows\n$stackTrace');
+    logger.shout('Unhandled exception $error; stackTrace follows\n$stackTrace');
   });
 }
