@@ -26,7 +26,8 @@ class TmpFileLoggingHandler implements LoggingHandler {
     try {
       AtSignLogger.stdErrLoggingHandler.call(record);
     } catch (e) {
-      f.writeAsStringSync('********** Failed to log to stderr: $e');
+      f.writeAsStringSync('********** Failed to log to stderr: $e',
+          mode: FileMode.writeOnlyAppend);
     }
   }
 }
