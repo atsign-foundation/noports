@@ -1,0 +1,154 @@
+#!/bin/bash
+
+# Parameterized script used by all of the individual sshnp test cases.
+# Individual sshnp test cases call this script with the appropriate parameters.
+scriptName=$(basename -- "$0")
+
+if test -z "$testScriptsDir" ; then
+  echo -e "    ${RED}check_env: testScriptsDir is not set${NC}" && exit 1
+fi
+
+source "$testScriptsDir/common/common_functions.include.sh"
+source "$testScriptsDir/common/check_env.include.sh" || exit $?
+
+if test $# != 5 ; then
+  logErrorAndExit "Must supply daemonVersion, clientVersion, sshClient, daemonFeatureSet (v4 / v5 / etc), executionType (print or inline)"
+fi
+
+daemonVersion="$1"
+clientVersion="$2"
+sshClient="$3"
+daemonFeatureSet="$4"
+executionType="$5"
+
+# If client has already been released
+# then it has already have been tested against all released daemon versions
+# So only test it against the 'current' daemon
+# i.e. if client != current and daemon != current then exit 50
+
+if ! grep -q "current" <<< "$clientVersion" && ! grep -q "current" <<< "$daemonVersion" ; then
+  logInfoAndReport "    N/A  because released client $(getVersionDescription "$clientVersion") has already been tested against released daemon $(getVersionDescription "$daemonVersion")"
+  exit 50
+fi
+
+if [[ "$sshClient" != "openssh" ]] && [[ "$sshClient" != "dart" ]]; then
+  logError "tests/shared/sshnp: Unhandled sshClient parameter [$sshClient] - must be openssh or dart"
+  exit 1
+fi
+
+additionalSshnpFlags=" --ssh-client ${sshClient}"
+
+deviceName=$(getDeviceNameWithFlags "$commitId" "$daemonVersion" )
+
+clientBinaryPath=$(getPathToBinariesForTypeAndVersion "$clientVersion")
+
+baseSshnpCommand=$(getBaseSshnpCommand "$clientBinaryPath")
+
+case "$daemonFeatureSet" in
+  v4)
+    # v5 clients need to unset some flags for backwards compatibility
+    if [[ $(versionIsAtLeast "$clientVersion" "d:5.0.0") == "true" ]] ; then
+      additionalSshnpFlags="${additionalSshnpFlags} --no-ad --no-et"
+    fi
+    ;;
+  v5)
+    # Require a v5 client to test v5 features
+    if [[ $(versionIsLessThan "$clientVersion" "d:5.0.0") == "true" ]]; then
+      logInfoAndReport "    N/A  because requires a v5+ client to test v5+ daemon features"
+      exit 50 # test rig interprets this exit status as 'test was not applicable'
+    fi
+    # Require a v5 daemon to test v5 features
+    if [[ $(versionIsLessThan "$daemonVersion" "d:5.0.0") == "true" ]]; then
+      logInfoAndReport "    N/A  because can't test v5+ daemon features on a daemon version < 5"
+      exit 50 # test rig interprets this exit status as 'test was not applicable'
+    fi
+    ;;
+  *)
+    logError "tests/shared/sshnp: Unhandled daemonFeatureSet parameter [$daemonFeatureSet] - must be v4 or v5"
+    exit 1
+    ;;
+esac
+
+case "$executionType" in
+  "print")
+    #  When outputting command line
+    #    if ssh-client is 'dart' this is not applicable
+    if [[ "$sshClient" == "dart" ]]; then
+      logInfoAndReport "    N/A  because sshClient is $sshClient which always executes the ssh 'inline'"
+      exit 50 # test rig interprets this exit status as 'test was not applicable'
+    fi
+    #    if v5 client add the '-x' flag
+    if [[ $(versionIsAtLeast "$clientVersion" "d:5.0.0") == "true" ]] ; then
+      additionalSshnpFlags="${additionalSshnpFlags} -x"
+    fi
+    ;;
+  "inline")
+    # Running inline - requires either (1) sshClient='dart' or (2) v5+ client
+    if [[ "$sshClient" != "dart" ]] && [[ $(versionIsAtLeast "$clientVersion" "d:5.0.0") != "true" ]];
+    then
+      logInfoAndReport "    N/A  because sshClient is $sshClient and client version is $clientVersion"
+      exit 50 # test rig interprets this exit status as 'test was not applicable'
+    fi
+    ;;
+  *)
+    logError "tests/shared/sshnp: Unhandled executionType parameter [$executionType] - must be print or inline"
+    exit 1
+    ;;
+esac
+
+
+# Let's put together the sshnp command we will execute
+sshnpCommand="$baseSshnpCommand -s ${identityFilename}.pub ${additionalSshnpFlags} "
+
+# Finally, let's run the sshnp and ssh session
+case "$executionType" in
+  "print")
+    # If it's 5.0.x then we can't run this from a script because reasons
+    if [[ $(versionIsAtLeast "$clientVersion" "d:5.0.0") == "true" ]] && [[ $(versionIsLessThan "$clientVersion" "d:5.1.0") == "true" ]];
+    then
+      logInfoAndReport "    N/A  because of bug in client versions 5.0.x which prevent running except with a real terminal attached "
+      exit 50 # test rig interprets this exit status as 'test was not applicable'
+    fi
+    echo "$(iso8601Date) | Executing $sshnpCommand" | tee -a "$(getReportFile)"
+
+    # 1. Execute the sshnpCommand, output is the sshCommand
+    # shellcheck disable=SC2086
+    sshCommand=$($sshnpCommand)
+
+    # 2. Check the exit status
+    sshnpExitStatus=$?
+    if (( sshnpExitStatus != 0 )); then
+      exit $sshnpExitStatus
+    fi
+
+    echo "$(iso8601Date) | Executing $sshCommand" | tee -a "$(getReportFile)"
+
+    # 3. Execute the sshCommand
+    # shellcheck disable=SC2091
+    $(getTestSshCommand "$sshCommand")
+
+    # 4. Exit with the exit status of the ssh command
+    exit $?
+
+    ;;
+  "inline")
+    # sshnp will itself run the ssh session
+    # To test, we will run an expect script for $sshnpCommand
+    SSHNP_COMMAND="$sshnpCommand"; export SSHNP_COMMAND
+    SSHNP_TIMEOUT=$timeoutDuration; export SSHNP_TIMEOUT
+    REMOTE_HOSTNAME="$(hostname -s)"; export REMOTE_HOSTNAME
+    REMOTE_USERNAME=$remoteUsername; export REMOTE_USERNAME
+
+    echo "$(iso8601Date) | Executing sshnp.expect with sshnpCommand $sshnpCommand" | tee -a "$(getReportFile)"
+
+    "$testScriptsDir/tests/shared/sshnp.expect"
+    retCode=$?
+    if (( retCode == 0 )); then
+      echo 'sshnp.expect TEST PASSED'
+    fi
+    exit $retCode
+    ;;
+  *)
+    ;;
+esac
+

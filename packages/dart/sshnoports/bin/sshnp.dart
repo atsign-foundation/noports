@@ -36,8 +36,16 @@ void main(List<String> args) async {
     }
   }
 
-  final bool originalLineMode = stdin.lineMode;
-  final bool originalEchoMode = stdin.echoMode;
+  dynamic terminalError;
+  bool originalLineMode = true;
+  try {
+    originalLineMode = stdin.lineMode;
+  } catch (e) {terminalError = e;}
+  bool originalEchoMode = true;
+  try {
+    originalEchoMode = stdin.echoMode;
+  } catch (e) {terminalError ??= e;}
+
   bool shouldResetTerminal = false;
 
   void configureRemoteShell() {
@@ -176,6 +184,9 @@ void main(List<String> args) async {
       }
       if (res is SshnpCommand) {
         if (sshnp.canRunShell) {
+          if (terminalError != null) {
+            throw SshnpError(terminalError!);
+          }
           SshnpRemoteProcess shell = await sshnp.runShell();
           configureRemoteShell();
           shell.stdout.listen(stdout.add);
@@ -196,6 +207,9 @@ void main(List<String> args) async {
           stdout.write('$res\n');
           exitProgram();
         } else {
+          if (terminalError != null) {
+            throw SshnpError(terminalError!);
+          }
           logProgress('Starting user session');
           Process process = await Process.start(
             res.command,

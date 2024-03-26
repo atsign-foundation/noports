@@ -11,7 +11,6 @@ import 'package:at_utils/at_logger.dart';
 import 'package:at_cli_commons/at_cli_commons.dart' as cli;
 import 'package:noports_core/npt.dart';
 import 'package:noports_core/sshnp_foundation.dart';
-import 'package:sshnoports/src/extended_arg_parser.dart';
 
 // local packages
 import 'package:sshnoports/src/print_version.dart';
@@ -144,13 +143,13 @@ void main(List<String> args) async {
           defaultsTo: false, negatable: false, help: 'Print usage');
 
       parser.addFlag(
-        outputExecutionCommandFlag,
+        'exit-when-connected',
         abbr: 'x',
         help: 'Instead of running the srv in the same process,'
             ' fork the srv,'
             ' print the local port to stdout,'
             ' and exit this program.',
-        defaultsTo: DefaultExtendedArgs.outputExecutionCommand,
+        defaultsTo: false,
         negatable: false,
       );
 
@@ -171,7 +170,7 @@ void main(List<String> args) async {
       String rootDomain = parsedArgs['root-domain'];
       perSessionStorage = parsedArgs['per-session-storage'];
       int localPort = int.parse(parsedArgs['local-port']);
-      bool inline = !parsedArgs[outputExecutionCommandFlag];
+      bool inline = !parsedArgs['exit-when-connected'];
 
       // Windows will not let us delete files in use so
       // We will point storage to temp directory and let OS clean up

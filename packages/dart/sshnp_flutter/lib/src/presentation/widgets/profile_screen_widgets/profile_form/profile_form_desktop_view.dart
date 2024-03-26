@@ -118,8 +118,8 @@ class _ProfileFormState extends ConsumerState<ProfileFormDesktopView> {
                       CustomTextFormField(
                         hintText: strings.hostHintText,
                         initialValue: oldConfig.host,
-                        labelText: strings.srvdAtsign,
-                        toolTip: strings.srvdAtsignTooltip,
+                        labelText: strings.host,
+                        toolTip: strings.hostTooltip,
                         onSaved: (value) => newConfig = SshnpPartialParams.merge(
                           newConfig,
                           SshnpPartialParams(host: value),

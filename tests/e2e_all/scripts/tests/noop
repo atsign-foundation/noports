@@ -1,0 +1,18 @@
+#!/bin/bash
+
+scriptName=$(basename -- "$0")
+
+if test -z "$testScriptsDir" ; then
+  echo -e "    ${RED}check_env: testScriptsDir is not set${NC}" && exit 1
+fi
+
+source "$testScriptsDir/common/common_functions.include.sh"
+source "$testScriptsDir/common/check_env.include.sh" || exit $?
+
+if test $# != 2 ; then
+  logErrorAndExit "Must supply daemonVersion, clientVersion"
+fi
+
+echo "TEST PASSED"
+
+exit 0
