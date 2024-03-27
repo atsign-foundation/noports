@@ -6,6 +6,6 @@ binDir="$(dirname -- "$0")"
 
 mkdir -p /tmp/noports
 
-# "${binDir}/srv" "$@" 2>&1 | tee -a /tmp/noports/srv.sh.$$.log
-"${binDir}/srv" "$@"
+"${binDir}/srv" "$@" 2>&1 | tee -a /tmp/noports/srv.sh.$$.log
+# "${binDir}/srv" "$@" >> /tmp/noports/srv.sh.$$.log 2>&1
 echo "Exit code was $? " >> /tmp/noports/srv.sh.$$.log

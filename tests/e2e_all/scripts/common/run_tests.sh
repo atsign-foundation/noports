@@ -71,7 +71,7 @@ do
           > "$stdoutFileName" 2> "$stderrFileName"
 
         exitStatus=$?
-        if (( exitStatus != 0 )); then
+        if (( exitStatus != 0 && exitStatus != 50 )); then
           # shellcheck disable=SC2129
           echo "    test execution's stdout: " | tee -a "$reportFile"
           sed 's/^/        /' "$stdoutFileName" | tee -a "$reportFile"
@@ -147,8 +147,21 @@ do
           ;;
       esac
       echo >> "$reportFile"
+
+      if [[ "$testResult" == "FAILED" ]];
+      then
+        break
+      fi
     done
+    if [[ "$testResult" == "FAILED" ]];
+    then
+      break
+    fi
   done
+    if [[ "$testResult" == "FAILED" ]];
+    then
+      break
+    fi
 done
 # shellcheck disable=SC2129
 
