@@ -23,3 +23,10 @@ do
     kill "$pid"
   fi
 done
+
+for pid in $(pgrep -f "tail .*/tmp/e2e_all/.*/daemons")
+do
+  processInfo=$(ps -ef | grep " $pid " | grep -v grep)
+  echo "Killing $processInfo"
+  kill "$pid"
+done

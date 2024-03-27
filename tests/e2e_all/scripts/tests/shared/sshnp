@@ -100,6 +100,12 @@ esac
 # Let's put together the sshnp command we will execute
 sshnpCommand="$baseSshnpCommand -s ${identityFilename}.pub ${additionalSshnpFlags} "
 
+# We will capture daemon log from now until end of test
+outputDir=$(getOutputDir)
+daemonLogFile="${outputDir}/daemons/${deviceName}.log"
+tail -f -n 0 "$daemonLogFile" >> "$DAEMON_LOG_FRAGMENT_NAME" &
+tailPid=$! # We'll kill this later
+
 # Finally, let's run the sshnp and ssh session
 case "$executionType" in
   "print")
@@ -107,6 +113,7 @@ case "$executionType" in
     if [[ $(versionIsAtLeast "$clientVersion" "d:5.0.0") == "true" ]] && [[ $(versionIsLessThan "$clientVersion" "d:5.1.0") == "true" ]];
     then
       logInfoAndReport "    N/A  because of bug in client versions 5.0.x which prevent running except with a real terminal attached "
+      kill $tailPid
       exit 50 # test rig interprets this exit status as 'test was not applicable'
     fi
     echo "$(iso8601Date) | Executing $sshnpCommand" | tee -a "$(getReportFile)"
@@ -118,6 +125,7 @@ case "$executionType" in
     # 2. Check the exit status
     sshnpExitStatus=$?
     if (( sshnpExitStatus != 0 )); then
+      kill $tailPid
       exit $sshnpExitStatus
     fi
 
@@ -126,9 +134,11 @@ case "$executionType" in
     # 3. Execute the sshCommand
     # shellcheck disable=SC2091
     $(getTestSshCommand "$sshCommand")
+    sshExitStatus=$?
 
     # 4. Exit with the exit status of the ssh command
-    exit $?
+    kill $tailPid
+    exit $sshExitStatus
 
     ;;
   "inline")
@@ -146,6 +156,7 @@ case "$executionType" in
     if (( retCode == 0 )); then
       echo 'sshnp.expect TEST PASSED'
     fi
+    kill $tailPid
     exit $retCode
     ;;
   *)
