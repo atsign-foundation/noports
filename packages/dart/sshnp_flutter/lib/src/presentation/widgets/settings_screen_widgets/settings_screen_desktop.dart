@@ -28,7 +28,7 @@ class SettingsDesktopView extends ConsumerWidget {
           const AppNavigationRail(),
           Expanded(
             child: Padding(
-              padding: const EdgeInsets.only(left: Sizes.p36, top: Sizes.p21),
+              padding: const EdgeInsets.only(left: Sizes.p36, top: Sizes.p21, right: Sizes.p36),
               child: ListView(
                 children: [
                   Padding(
@@ -46,22 +46,24 @@ class SettingsDesktopView extends ConsumerWidget {
                     child: ContactListTile(),
                   ),
                   gapH36,
-                  Align(
-                    alignment: Alignment.centerLeft,
-                    child: Container(
-                        height: 180,
-                        width: 540,
-                        decoration: BoxDecoration(
-                          color: kProfileBackgroundColor,
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: GridView.count(childAspectRatio: 202 / 60, crossAxisCount: 2, children: const [
-                          CustomListTile.keyManagement(),
-                          CustomListTile.backUpYourKey(),
-                          CustomListTile.switchAtsign(),
-                          CustomListTile.resetAtsign(),
-                        ])),
+                  const Row(
+                    children: [
+                      Flexible(child: CustomListTile.keyManagement()),
+                      Flexible(child: CustomListTile.backUpYourKey()),
+                    ],
                   ),
+                  gapH20,
+                  const Divider(
+                    color: kProfileFormFieldColor,
+                  ),
+                  gapH20,
+                  const Row(
+                    children: [
+                      Flexible(child: CustomListTile.switchAtsign()),
+                      Flexible(child: CustomListTile.resetAtsign()),
+                    ],
+                  ),
+                  gapH40,
                   Text('App Version ${packageInfoController.version} (${packageInfoController.buildNumber})'),
                 ],
               ),
