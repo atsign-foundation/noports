@@ -124,7 +124,7 @@ done
 if test "$testsToRun" = "all"; then
   # shellcheck disable=SC2010
   testsToRun=$(ls -1 "$testScriptsDir/tests" | grep -v "^noop$" | grep -v "^shared$")
-  logInfo "Will run all tests: $testsToRun"
+  logInfo "Will run all tests: $(tr -d "\n" <<< "$testsToRun")"
 fi
 
 export atDirectoryHost
@@ -161,7 +161,7 @@ export testRuntimeDir
 
 "$testScriptsDir/common/cleanup_tmp_files.sh" -s
 
-logInfo "  --> will execute setup_binaries, start_daemons and tests [$testsToRun] with "
+logInfo "  --> will execute setup_binaries, start_daemons and run_tests with "
 logInfo "    testRootDir:      $testRootDir"
 logInfo "    testRuntimeDir:   $testRuntimeDir"
 logInfo "    testScriptsDir:   $testScriptsDir"
@@ -170,7 +170,7 @@ logInfo "    atDirectoryHost:  $atDirectoryHost"
 logInfo "    daemonVersions:   $daemonVersions"
 logInfo "    clientVersions:   $clientVersions"
 logInfo "    commitId:         $commitId"
-logInfo "    testsToRun:       $testsToRun"
+logInfo "    testsToRun:       $(tr -d "\n" <<< "$testsToRun")"
 
 echo
 logInfo "Calling setup_binaries.sh"
