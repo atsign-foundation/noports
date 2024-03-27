@@ -142,7 +142,9 @@ class SrvImplExec implements Srv<Process> {
       }
     });
 
-    await rvPortBound.future.timeout(Duration(seconds: 2));
+    await rvPortBound.future.timeout(Duration(seconds: 3));
+
+    await Future.delayed(Duration(milliseconds: 100));
 
     return p;
   }
@@ -241,7 +243,7 @@ class SrvImplInline implements Srv<SSHSocket> {
 
       return sshSocket;
     } catch (e) {
-      AtSignLogger('srv').severe(e.toString());
+      logger.severe(e.toString());
       rethrow;
     }
   }
@@ -418,12 +420,19 @@ class SrvImplDart implements Srv<SocketConnector> {
       // bound to a port. Looking for specific output when the rv is ready to
       // do its job seems to be the only way to do this.
       if (detached) {
-        stderr.writeln(Srv.startedString);
+        try {
+          stderr.writeln(Srv.startedString);
+        } catch (e, st) {
+          logger.severe('Failed to write ${Srv.startedString}'
+              ' to stderr: ${e.toString()} ;'
+              ' stackTrace follows:\n'
+              '$st');
+        }
       }
 
       return sc;
     } catch (e) {
-      AtSignLogger('srv').severe(e.toString());
+      logger.severe(e.toString());
       rethrow;
     }
   }
