@@ -1,7 +1,7 @@
 name: sshnoports
 publish_to: none
 
-version: 5.1.0-rc.5
+version: 5.1.0-rc.6
 
 environment:
   sdk: ">=3.0.0 <4.0.0"
@@ -15,6 +15,7 @@ dependencies:
   socket_connector: ^2.2.0
   dartssh2: 2.8.2
   at_utils: 3.0.16
+  logging: ^1.2.0
 
 dependency_overrides:
   args:

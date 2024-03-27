@@ -142,7 +142,9 @@ class SrvImplExec implements Srv<Process> {
       }
     });
 
-    await rvPortBound.future.timeout(Duration(seconds: 2));
+    await rvPortBound.future.timeout(Duration(seconds: 3));
+
+    await Future.delayed(Duration(milliseconds: 100));
 
     return p;
   }
@@ -225,13 +227,13 @@ class SrvImplInline implements Srv<SSHSocket> {
     }
 
     try {
-      logger.info(
-          'Creating socket connection to rvd at $streamingHost:$streamingPort');
+      logger.info('Creating socket connection to rvd'
+          ' at $streamingHost:$streamingPort');
       Socket socket = await Socket.connect(streamingHost, streamingPort);
 
       // Authenticate if we have an rvdAuthString
       if (rvdAuthString != null) {
-        logger.info('authenticating');
+        logger.info('run() authenticating to rvd');
         socket.writeln(rvdAuthString);
         await socket.flush();
       }
@@ -241,7 +243,7 @@ class SrvImplInline implements Srv<SSHSocket> {
 
       return sshSocket;
     } catch (e) {
-      AtSignLogger('srv').severe(e.toString());
+      logger.severe(e.toString());
       rethrow;
     }
   }
@@ -343,6 +345,7 @@ class SrvImplDart implements Srv<SocketConnector> {
     this.multi = false,
     required this.detached,
   }) {
+    logger.info('New SrvImplDart - localPort $localPort');
     if ((sessionAESKeyString == null && sessionIVString != null) ||
         (sessionAESKeyString != null && sessionIVString == null)) {
       throw ArgumentError('Both AES key and IV are required, or neither');
@@ -351,7 +354,7 @@ class SrvImplDart implements Srv<SocketConnector> {
 
   DataTransformer createEncrypter(String aesKeyBase64, String ivBase64) {
     final DartAesCtr algorithm = DartAesCtr.with256bits(
-      macAlgorithm: Hmac.sha256(),
+      macAlgorithm: MacAlgorithm.empty,
     );
     final SecretKey sessionAESKey = SecretKey(base64Decode(aesKeyBase64));
     final List<int> sessionIV = base64Decode(ivBase64);
@@ -368,7 +371,7 @@ class SrvImplDart implements Srv<SocketConnector> {
 
   DataTransformer createDecrypter(String aesKeyBase64, String ivBase64) {
     final DartAesCtr algorithm = DartAesCtr.with256bits(
-      macAlgorithm: Hmac.sha256(),
+      macAlgorithm: MacAlgorithm.empty,
     );
     final SecretKey sessionAESKey = SecretKey(base64Decode(aesKeyBase64));
     final List<int> sessionIV = base64Decode(ivBase64);
@@ -417,12 +420,19 @@ class SrvImplDart implements Srv<SocketConnector> {
       // bound to a port. Looking for specific output when the rv is ready to
       // do its job seems to be the only way to do this.
       if (detached) {
-        stderr.writeln(Srv.startedString);
+        try {
+          stderr.writeln(Srv.startedString);
+        } catch (e, st) {
+          logger.severe('Failed to write ${Srv.startedString}'
+              ' to stderr: ${e.toString()} ;'
+              ' stackTrace follows:\n'
+              '$st');
+        }
       }
 
       return sc;
     } catch (e) {
-      AtSignLogger('srv').severe(e.toString());
+      logger.severe(e.toString());
       rethrow;
     }
   }
@@ -442,14 +452,16 @@ class SrvImplDart implements Srv<SocketConnector> {
       addressB: hosts[0],
       portB: streamingPort,
       verbose: false,
+      logger: ioSinkForLogger(logger),
       transformAtoB: encrypter,
       transformBtoA: decrypter,
       multi: multi,
       beforeJoining: (Side sideA, Side sideB) async {
+        logger.info('beforeJoining called');
         // Authenticate the sideB socket (to the rvd)
         if (rvdAuthString != null) {
-          logger.info(
-              '_runClientSideSingle authenticating new connection to rvd');
+          logger.info('_runClientSideSingle authenticating'
+              ' new connection to rvd');
           sideB.socket.writeln(rvdAuthString);
         }
       },
@@ -469,8 +481,8 @@ class SrvImplDart implements Srv<SocketConnector> {
         timeout: Duration(seconds: 1));
     // Authenticate the control socket
     if (rvdAuthString != null) {
-      logger.info(
-          '_runClientSideMulti authenticating control socket connection to rvd');
+      logger.info('_runClientSideMulti authenticating'
+          ' control socket connection to rvd');
       sessionControlSocket.writeln(rvdAuthString);
     }
     DataTransformer controlEncrypter =
@@ -486,8 +498,8 @@ class SrvImplDart implements Srv<SocketConnector> {
 
     controlStream.listen((event) {
       String response = String.fromCharCodes(event).trim();
-      logger.info(
-          '_runClientSideMulti Received control socket response: [$response]');
+      logger.info('_runClientSideMulti'
+          ' Received control socket response: [$response]');
     }, onError: (e) {
       logger.severe('_runClientSideMulti controlSocket error: $e');
       socketConnector?.close();
@@ -496,11 +508,13 @@ class SrvImplDart implements Srv<SocketConnector> {
       socketConnector?.close();
     });
 
+    logger.info('_runClientSideMulti calling SocketConnector.serverToSocket');
     socketConnector = await SocketConnector.serverToSocket(
       portA: localPort,
       addressB: hosts[0],
       portB: streamingPort,
       verbose: false,
+      logger: ioSinkForLogger(logger),
       multi: multi,
       beforeJoining: (Side sideA, Side sideB) {
         // For some bizarro reason, we can't write to stderr in this callback
@@ -525,6 +539,7 @@ class SrvImplDart implements Srv<SocketConnector> {
         sideB.transformer = createDecrypter(socketAESKey, socketIV);
       },
     );
+    logger.info('_runClientSideMulti serverToSocket is ready');
 
     // upon socketConnector.done, destroy the control socket, and complete
     unawaited(socketConnector.done.whenComplete(() {
@@ -547,8 +562,8 @@ class SrvImplDart implements Srv<SocketConnector> {
         timeout: Duration(seconds: 1));
     // Authenticate the control socket
     if (rvdAuthString != null) {
-      logger.info(
-          '_runDaemonSideMulti authenticating control socket connection to rvd');
+      logger.info('_runDaemonSideMulti authenticating'
+          ' control socket connection to rvd');
       sessionControlSocket.writeln(rvdAuthString);
     }
     DataTransformer controlEncrypter =
@@ -579,7 +594,8 @@ class SrvImplDart implements Srv<SocketConnector> {
             logger.severe('Unknown request to control socket: [$request]');
             return;
           }
-          logger.info('Control socket received ${args.first} request - '
+          logger.info('_runDaemonSideMulti'
+              ' Control socket received ${args.first} request - '
               ' creating new socketToSocket connection');
           await SocketConnector.socketToSocket(
               connector: sc,
@@ -589,10 +605,12 @@ class SrvImplDart implements Srv<SocketConnector> {
               addressB: hosts[0],
               portB: streamingPort,
               verbose: false,
+              logger: ioSinkForLogger(logger),
               transformAtoB: createEncrypter(args[1], args[2]),
               transformBtoA: createDecrypter(args[1], args[2]));
           if (rvdAuthString != null) {
-            stderr.writeln('authenticating new socket connection to rvd');
+            logger.info('_runDaemonSideMulti authenticating'
+                ' new socket connection to rvd');
             sc.connections.last.sideB.socket.writeln(rvdAuthString);
           }
 
@@ -631,13 +649,22 @@ class SrvImplDart implements Srv<SocketConnector> {
         addressB: hosts[0],
         portB: streamingPort,
         verbose: false,
+        logger: ioSinkForLogger(logger),
         transformAtoB: encrypter,
         transformBtoA: decrypter);
     if (rvdAuthString != null) {
-      stderr.writeln('authenticating socketB');
+      logger.info('_runDaemonSideSingle authenticating socketB to rvd');
       socketConnector.connections.first.sideB.socket.writeln(rvdAuthString);
     }
 
     return socketConnector;
   }
+}
+
+IOSink ioSinkForLogger(AtSignLogger l) {
+  StreamController<List<int>> logSinkSc = StreamController<List<int>>();
+  logSinkSc.stream.listen((event) {
+    l.shout(' (SocketConnector) | ${String.fromCharCodes(event)}');
+  });
+  return IOSink(logSinkSc.sink);
 }
