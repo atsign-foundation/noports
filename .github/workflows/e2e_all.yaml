@@ -39,6 +39,4 @@ jobs:
             echo "Running git checkout -f $SHA"
             git checkout -f "$SHA"
             echo "Running tests"
-            SRV_LOG_TO_TMP="true"
-            export SRV_LOG_TO_TMP
             tests/e2e_all/scripts/main.sh @apricoteventual @combinedbelgian @rv_am

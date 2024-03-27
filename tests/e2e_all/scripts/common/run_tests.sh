@@ -51,7 +51,7 @@ do
       export DAEMON_LOG_FRAGMENT_NAME
 
       exitStatus=1
-      maxAttempts=3
+      maxAttempts=5
       if [[ $(uname -s) == "Darwin" ]]; then
         maxAttempts=2
       fi
