@@ -67,14 +67,6 @@ class SrvImplExec implements Srv<Process> {
   @override
   Future<Process> run() async {
     String? command = await Srv.getLocalBinaryPath();
-    //
-    //
-    // TODO Revert this
-    //
-    //
-    if (command != null) {
-      command = '$command.sh';
-    }
     String postfix = Platform.isWindows ? '.exe' : '';
     if (command == null) {
       throw SshnpError(
@@ -351,6 +343,7 @@ class SrvImplDart implements Srv<SocketConnector> {
     this.multi = false,
     required this.detached,
   }) {
+    logger.info('New SrvImplDart - localPort $localPort');
     if ((sessionAESKeyString == null && sessionIVString != null) ||
         (sessionAESKeyString != null && sessionIVString == null)) {
       throw ArgumentError('Both AES key and IV are required, or neither');
@@ -450,10 +443,12 @@ class SrvImplDart implements Srv<SocketConnector> {
       addressB: hosts[0],
       portB: streamingPort,
       verbose: false,
+      logger: ioSinkForLogger(logger),
       transformAtoB: encrypter,
       transformBtoA: decrypter,
       multi: multi,
       beforeJoining: (Side sideA, Side sideB) async {
+        logger.info('beforeJoining called');
         // Authenticate the sideB socket (to the rvd)
         if (rvdAuthString != null) {
           logger.info('_runClientSideSingle authenticating'
@@ -510,6 +505,7 @@ class SrvImplDart implements Srv<SocketConnector> {
       addressB: hosts[0],
       portB: streamingPort,
       verbose: false,
+      logger: ioSinkForLogger(logger),
       multi: multi,
       beforeJoining: (Side sideA, Side sideB) {
         // For some bizarro reason, we can't write to stderr in this callback
@@ -600,6 +596,7 @@ class SrvImplDart implements Srv<SocketConnector> {
               addressB: hosts[0],
               portB: streamingPort,
               verbose: false,
+              logger: ioSinkForLogger(logger),
               transformAtoB: createEncrypter(args[1], args[2]),
               transformBtoA: createDecrypter(args[1], args[2]));
           if (rvdAuthString != null) {
@@ -643,6 +640,7 @@ class SrvImplDart implements Srv<SocketConnector> {
         addressB: hosts[0],
         portB: streamingPort,
         verbose: false,
+        logger: ioSinkForLogger(logger),
         transformAtoB: encrypter,
         transformBtoA: decrypter);
     if (rvdAuthString != null) {
@@ -652,4 +650,12 @@ class SrvImplDart implements Srv<SocketConnector> {
 
     return socketConnector;
   }
+}
+
+IOSink ioSinkForLogger(AtSignLogger l) {
+  StreamController<List<int>> logSinkSc = StreamController<List<int>>();
+  logSinkSc.stream.listen((event) {
+    l.shout(' (SocketConnector) | ${String.fromCharCodes(event)}');
+  });
+  return IOSink(logSinkSc.sink);
 }
