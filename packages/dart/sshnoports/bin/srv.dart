@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:io';
 
+import 'package:path/path.dart' as path;
 import 'package:args/args.dart';
 import 'package:at_utils/at_logger.dart';
 import 'package:logging/logging.dart';
@@ -9,9 +10,17 @@ import 'package:socket_connector/socket_connector.dart';
 import 'package:sshnoports/src/print_version.dart';
 
 class TmpFileLoggingHandler implements LoggingHandler {
-  File f = File('/tmp/noports/srv.$pid.log');
+  late final File f;
+
+  bool logToStderr = true;
 
   TmpFileLoggingHandler() {
+    if (Platform.isWindows) {
+      f = File(path.normalize('${Platform.environment['TEMP']}'
+          '/srv.$pid.log'));
+    } else {
+      f = File('/tmp/srv.$pid.log');
+    }
     f.createSync(recursive: true);
   }
 
@@ -23,29 +32,22 @@ class TmpFileLoggingHandler implements LoggingHandler {
         '|${record.loggerName}'
         '|${record.message} \n',
         mode: FileMode.writeOnlyAppend);
-    try {
-      AtSignLogger.stdErrLoggingHandler.call(record);
-    } catch (e) {
-      f.writeAsStringSync('********** Failed to log to stderr: $e',
-          mode: FileMode.writeOnlyAppend);
+    if (logToStderr) {
+      try {
+        AtSignLogger.stdErrLoggingHandler.call(record);
+      } catch (e) {
+        f.writeAsStringSync('********** Failed to log to stderr: $e',
+            mode: FileMode.writeOnlyAppend);
+      }
     }
   }
 }
 
 Future<void> main(List<String> args) async {
-  // For production usage, do not change this to anything below SHOUT or this
-  // programme will crash when emitting log messages, as this process's parent
-  // will have exited and closed its stderr.
-  AtSignLogger.root_level = 'SHOUT';
-  AtSignLogger.defaultLoggingHandler = AtSignLogger.stdErrLoggingHandler;
-  // However if environment has SRV_LOG_TO_TMP == "true" then we will log to a
-  // file in /tmp and we might as well log everything
-  var fileLogger=TmpFileLoggingHandler();
-  if ((Platform.environment['SRV_LOG_TO_TMP'] ?? "false").toLowerCase() ==
-      'true') {
-    AtSignLogger.defaultLoggingHandler = fileLogger;
-    AtSignLogger.root_level = 'FINEST';
-  }
+  AtSignLogger.root_level = 'INFO';
+  var fileLoggingHandler = TmpFileLoggingHandler();
+  AtSignLogger.defaultLoggingHandler = fileLoggingHandler;
+
   AtSignLogger logger = AtSignLogger(' srv.main ');
 
   final ArgParser parser = ArgParser(showAliasesInUsage: true)
@@ -74,6 +76,7 @@ Future<void> main(List<String> args) async {
         help: 'Set this flag when we want multiple connections via the rvd');
 
   await runZonedGuarded(() async {
+    final SocketConnector sc;
     try {
       final ArgResults parsed;
       try {
@@ -109,59 +112,47 @@ Future<void> main(List<String> args) async {
             '--rv-e2ee required, but RV_IV is not in environment');
       }
 
-      logger.shout('About to call Srv.dart(...).run()');
-      try {
-        SocketConnector sc = await Srv.dart(
-          streamingHost,
-          streamingPort,
-          localPort: localPort,
-          localHost: localHost,
-          bindLocalPort: bindLocalPort,
-          rvdAuthString: rvdAuthString,
-          sessionAESKeyString: sessionAESKeyString,
-          sessionIVString: sessionIVString,
-          multi: multi,
-          detached: true, // by definition - this is the srv binary
-        ).run();
-
-        /// Shut myself down once the socket connector closes
-        logger.shout(
-            'About to write "waiting for Srv to close" message to stderr');
-        stderr.writeln('Waiting for Srv to close');
-        logger.shout('Wrote waiting message to stderr');
-        await sc.done;
-        logger.shout('sc is done');
-      } on ArgumentError {
-        rethrow;
-      } catch (e) {
-        // Do not remove this output; it is specifically looked for in
-        // [SrvImplExec.run].
-        logger.shout(
-            'About to write "${Srv.completedWithExceptionString}" message to stderr');
-        stderr.writeln('${Srv.completedWithExceptionString} : $e');
-        logger.shout(
-            'Wrote "${Srv.completedWithExceptionString}" message to stderr');
-        exit(1);
-      }
-
-      logger.shout('About to write "Closed - exiting" message to stderr');
-      stderr.writeln('Closed - exiting');
-      logger.shout('Wrote "Closed - exiting" message to stderr');
-      exit(0);
+      sc = await Srv.dart(
+        streamingHost,
+        streamingPort,
+        localPort: localPort,
+        localHost: localHost,
+        bindLocalPort: bindLocalPort,
+        rvdAuthString: rvdAuthString,
+        sessionAESKeyString: sessionAESKeyString,
+        sessionIVString: sessionIVString,
+        multi: multi,
+        detached: true, // by definition - this is the srv binary
+      ).run();
     } on ArgumentError catch (e) {
       printVersion();
       stderr.writeln(parser.usage);
       stderr.writeln('\n$e');
+
+      /// clean up the log file in /tmp
+      try {fileLoggingHandler.f.deleteSync();} catch (_) {}
+
       exit(1);
     }
-  }, (error, stackTrace) async {
-    fileLogger.f.writeAsStringSync(
-        'direct to log file:'
-        ' Unhandled exception $error;'
-        ' stackTrace follows:'
-        '\n'
-        '$stackTrace',
-        mode: FileMode.writeOnlyAppend);
+
+    /// No more writing to stderr, as the parent process will have exited,
+    /// and stderr no longer exists
+    fileLoggingHandler.logToStderr = false;
+
+    /// Wait for socket connector to close
+    await sc.done;
+
+    /// clean up the log file in /tmp
+    try {fileLoggingHandler.f.deleteSync();} catch (_) {}
+
+    exit(0);
+  }, (error, StackTrace stackTrace) async {
     logger.shout('Unhandled exception $error; stackTrace follows\n$stackTrace');
+    //   // Do not remove this output; it is specifically looked for in
+    //   // [SrvImplExec.run].
+    logger.shout('${Srv.completedWithExceptionString} : $error');
+
+    /// We will leave the log file in /tmp
+    exit(200);
   });
 }
