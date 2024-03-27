@@ -65,6 +65,7 @@ class SettingsDesktopView extends ConsumerWidget {
                   ),
                   gapH40,
                   Text('App Version ${packageInfoController.version} (${packageInfoController.buildNumber})'),
+                  gapH20,
                 ],
               ),
             ),
