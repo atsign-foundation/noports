@@ -40,9 +40,10 @@ Future<void> main(List<String> args) async {
   AtSignLogger.defaultLoggingHandler = AtSignLogger.stdErrLoggingHandler;
   // However if environment has SRV_LOG_TO_TMP == "true" then we will log to a
   // file in /tmp and we might as well log everything
+  var fileLogger=TmpFileLoggingHandler();
   if ((Platform.environment['SRV_LOG_TO_TMP'] ?? "false").toLowerCase() ==
       'true') {
-    AtSignLogger.defaultLoggingHandler = TmpFileLoggingHandler();
+    AtSignLogger.defaultLoggingHandler = fileLogger;
     AtSignLogger.root_level = 'FINEST';
   }
   AtSignLogger logger = AtSignLogger(' srv.main ');
@@ -153,7 +154,14 @@ Future<void> main(List<String> args) async {
       stderr.writeln('\n$e');
       exit(1);
     }
-  }, (Object error, StackTrace stackTrace) async {
+  }, (error, stackTrace) async {
+    fileLogger.f.writeAsStringSync(
+        'direct to log file:'
+        ' Unhandled exception $error;'
+        ' stackTrace follows:'
+        '\n'
+        '$stackTrace',
+        mode: FileMode.writeOnlyAppend);
     logger.shout('Unhandled exception $error; stackTrace follows\n$stackTrace');
   });
 }
