@@ -141,7 +141,9 @@ Future<void> main(List<String> args) async {
     await sc.done;
 
     /// We will clean up the log file in /tmp since we are exiting normally
-    try {fileLoggingHandler.f.deleteSync();} catch (_) {}
+    try {
+      fileLoggingHandler.f.deleteSync();
+    } catch (_) {}
 
     exit(0);
   }, (error, StackTrace stackTrace) async {
