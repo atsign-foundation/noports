@@ -129,9 +129,7 @@ Future<void> main(List<String> args) async {
       stderr.writeln(parser.usage);
       stderr.writeln('\n$e');
 
-      /// clean up the log file in /tmp
-      try {fileLoggingHandler.f.deleteSync();} catch (_) {}
-
+      // We will leave the log file in /tmp since we are exiting abnormally
       exit(1);
     }
 
@@ -142,17 +140,17 @@ Future<void> main(List<String> args) async {
     /// Wait for socket connector to close
     await sc.done;
 
-    /// clean up the log file in /tmp
+    /// We will clean up the log file in /tmp since we are exiting normally
     try {fileLoggingHandler.f.deleteSync();} catch (_) {}
 
     exit(0);
   }, (error, StackTrace stackTrace) async {
     logger.shout('Unhandled exception $error; stackTrace follows\n$stackTrace');
-    //   // Do not remove this output; it is specifically looked for in
-    //   // [SrvImplExec.run].
+    // Do not remove this output; it is specifically looked for in
+    // [SrvImplExec.run].
     logger.shout('${Srv.completedWithExceptionString} : $error');
 
-    /// We will leave the log file in /tmp
+    // We will leave the log file in /tmp since we are exiting abnormally
     exit(200);
   });
 }
