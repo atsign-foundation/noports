@@ -454,7 +454,6 @@ main() {
         cp "$local_archive" "$archive_path"
     else
         download_url=$(get_download_url)
-        echo "Downloading archive from $download_url"
         echo "$download_url" | download_archive
     fi
 
