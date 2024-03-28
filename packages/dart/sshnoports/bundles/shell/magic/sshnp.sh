@@ -9,6 +9,7 @@ additional_args=()
 # END METADATA
 
 unset d
+echo "Select a device (enter the number):"
 select d in "${devices[@]}"; do
 	break
 done
