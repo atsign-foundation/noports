@@ -432,9 +432,9 @@ device() {
 		;;
 	tmux | headless)
 		shell_script="$bin_path"/sshnpd.sh
-		metadata_write "$shell_script" "manager_atsign" "$(norm_atsign "$client_atsign")"
-		metadata_write "$shell_script" "device_atsign" "$(norm_atsign "$device_atsign")"
-		metadata_write "$shell_script" "device_name" "$device_name"
+		write_metadata "$shell_script" "manager_atsign" "$(norm_atsign "$client_atsign")"
+		write_metadata "$shell_script" "device_atsign" "$(norm_atsign "$device_atsign")"
+		write_metadata "$shell_script" "device_name" "$device_name"
 		# split install output by lines, then grab the output after the line that says "To start immediately"
 		eval "$(echo "$install_output" | grep -A1 "To start .* immediately:" | tail -n1)"
 		;;
