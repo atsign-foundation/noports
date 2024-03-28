@@ -265,6 +265,7 @@ unpack_archive() {
 		unzip -qo "$archive_path" -d "$extract_path"
 		;;
 	tgz | tar.gz)
+        mkdir -p "$extract_path"
 		tar -zxf "$archive_path" -C "$extract_path"
 		;;
 	esac
