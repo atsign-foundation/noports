@@ -55,51 +55,70 @@ class _HomeScreenCoreState extends ConsumerState<HomeScreenCore> {
       },
       data: (profiles) {
         if (profiles.isEmpty) {
-          return Center(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                gapH40,
-                Text(
-                  'Get Started!',
-                  style: Theme.of(context).textTheme.bodyMedium!.copyWith(color: kHomeScreenGreyText),
+          final emptyStateTextColor = Theme.of(context).textTheme.bodyMedium!.copyWith(color: Colors.white30);
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              gapH40,
+              // TODO: revisite uncommented code for pro version
+              // Text(
+              //   'Get Started!',
+              //   style: Theme.of(context).textTheme.bodyMedium!.copyWith(color: kHomeScreenGreyText),
+              // ),
+              // gapH16,
+              // EmptyStateAltWidget(ref: ref, strings: strings),
+              ListTile(
+                title: Text(strings.getStartedTitle),
+                subtitle: Text(strings.getStartedSubtitle,
+                    style: Theme.of(context).textTheme.bodyMedium!.copyWith(fontWeight: FontWeight.normal)),
+                tileColor: kPrimaryColor,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
                 ),
-                gapH16,
-                GestureDetector(
-                  onTap: () => HomeScreenActionCallbacks.newProfileAction(ref, context),
-                  child: Stack(
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: Sizes.p36,
+                  vertical: Sizes.p12,
+                ),
+                trailing: const Icon(Icons.add_circle_outline),
+                onTap: () => HomeScreenActionCallbacks.newProfileAction(ref, context),
+              ),
+              gapH24,
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    strings.profileName('other'),
+                    style: emptyStateTextColor,
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.only(right: Sizes.p36),
+                    child: Text(
+                      strings.commands,
+                      style: emptyStateTextColor,
+                    ),
+                  ),
+                ],
+              ),
+              const Divider(),
+              gapH20,
+              Expanded(
+                child: Container(
+                  width: double.infinity,
+                  color: kProfileBackgroundColor,
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      // const NewProfileAction(),
-                      SvgPicture.asset(
-                        'assets/images/empty_profile_bg.svg',
-                        width: MediaQuery.of(context).size.width * 0.8,
-                        height: MediaQuery.of(context).size.height * 0.68,
-                        fit: BoxFit.cover,
+                      Text(
+                        strings.getStartedNoConnections,
+                        style: emptyStateTextColor,
                       ),
-                      Positioned(
-                        top: 60,
-                        left: 88,
-                        right: 88,
-                        child: Text(
-                          strings.createConnectionProfile,
-                          style: Theme.of(context).textTheme.bodyLarge!.copyWith(fontSize: 18),
-                          textAlign: TextAlign.center,
-                        ),
-                      ),
-                      Positioned(
-                        top: 100,
-                        left: 88,
-                        right: 88,
-                        child: Text(
-                          strings.createConnectionProfileDesc,
-                          textAlign: TextAlign.center,
-                        ),
-                      ),
+                      gapH20,
+                      SvgPicture.asset('assets/images/getting_started_empty_state.svg')
                     ],
                   ),
                 ),
-              ],
-            ),
+              )
+            ],
           );
         }
         final sortedProfiles = profiles.toList();
@@ -125,6 +144,54 @@ class _HomeScreenCoreState extends ConsumerState<HomeScreenCore> {
           ],
         );
       },
+    );
+  }
+}
+
+class EmptyStateAltWidget extends StatelessWidget {
+  const EmptyStateAltWidget({
+    super.key,
+    required this.ref,
+    required this.strings,
+  });
+
+  final WidgetRef ref;
+  final AppLocalizations strings;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: () => HomeScreenActionCallbacks.newProfileAction(ref, context),
+      child: Stack(
+        children: [
+          // const NewProfileAction(),
+          SvgPicture.asset(
+            'assets/images/empty_profile_bg.svg',
+            width: MediaQuery.of(context).size.width * 0.8,
+            height: MediaQuery.of(context).size.height * 0.68,
+            fit: BoxFit.cover,
+          ),
+          Positioned(
+            top: 60,
+            left: 88,
+            right: 88,
+            child: Text(
+              strings.createConnectionProfile,
+              style: Theme.of(context).textTheme.bodyLarge!.copyWith(fontSize: 18),
+              textAlign: TextAlign.center,
+            ),
+          ),
+          Positioned(
+            top: 100,
+            left: 88,
+            right: 88,
+            child: Text(
+              strings.createConnectionProfileDesc,
+              textAlign: TextAlign.center,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
