@@ -246,7 +246,7 @@ install_launchd_unit() {
 	mac_only
 	mkdir -p "$launchd_dir"
 	dest="$launchd_dir/$unit_name"
-	cp "$script_dir/launchd_dir/$unit_name" "$dest"
+	cp "$script_dir/launchd/$unit_name" "$dest"
 	post_launchd_message
 }
 
