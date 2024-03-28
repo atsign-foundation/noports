@@ -3,7 +3,7 @@
 # shellcheck disable=SC2154
 # SCRIPT METADATA
 binary_path="$HOME/.local/bin"
-manager_atsign="@example_client" # MANDATORY: Manager/client address (atSign)
+manager_atsign="@example_client" # MANDATORY: Manager/client address/Comma separated addresses (atSign/s)
 device_atsign="@example_device"  # MANDATORY: Device address (atSign)
 device_name="default"            # Device name
 user="$(whoami)"                 # MANDATORY: Username
