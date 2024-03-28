@@ -157,6 +157,9 @@ norm_install_type() {
     c*)
         echo "client"
         ;;
+    b*)
+        echo "both"
+        ;;
     *)
         echo ""
         ;;
@@ -463,6 +466,7 @@ main() {
     case "$install_type" in
     client) client ;;
     device) device ;;
+    both) client device ;;
     esac
 }
 
