@@ -4,8 +4,7 @@ import 'package:at_chops/at_chops.dart';
 import 'package:at_utils/at_utils.dart';
 import 'package:noports_core/src/sshnp/models/config_file_repository.dart';
 import 'package:noports_core/src/sshnp/models/sshnp_arg.dart';
-import 'package:noports_core/src/common/default_args.dart';
-import 'package:noports_core/sshnp.dart';
+import 'package:noports_core/utils.dart';
 
 abstract interface class ClientParams {
   bool get verbose;
@@ -99,7 +98,11 @@ abstract class ClientParamsBase implements ClientParams {
     this.authenticateClientToRvd = DefaultArgs.authenticateClientToRvd,
     this.authenticateDeviceToRvd = DefaultArgs.authenticateDeviceToRvd,
     this.encryptRvdTraffic = DefaultArgs.encryptRvdTraffic,
-  });
+  }) {
+    if (invalidDeviceName(device)) {
+      throw ArgumentError(invalidDeviceNameMsg);
+    }
+  }
 }
 
 abstract interface class SrvdChannelParams implements ClientParams {}

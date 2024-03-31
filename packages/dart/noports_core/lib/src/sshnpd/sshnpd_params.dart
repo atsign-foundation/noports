@@ -48,7 +48,11 @@ class SshnpdParams {
     required this.deviceGroup,
     required this.storagePath,
     required this.permitOpen,
-  });
+  }) {
+    if (invalidDeviceName(device)) {
+      throw ArgumentError(invalidDeviceNameMsg);
+    }
+  }
 
   static Future<SshnpdParams> fromArgs(List<String> args) async {
     // Arg check
@@ -70,8 +74,8 @@ class SshnpdParams {
         orElse: () => DefaultSshnpdArgs.sshClient);
 
     // Do we have an ASCII ?
-    if (checkNonAscii(device)) {
-      throw ('\nDevice name can only contain alphanumeric characters with a max length of 15');
+    if (invalidDeviceName(device)) {
+      throw ArgumentError(invalidDeviceNameMsg);
     }
 
     return SshnpdParams(
@@ -132,7 +136,8 @@ class SshnpdParams {
       mandatory: false,
       defaultsTo: "default",
       help: 'This daemon will operate with this device name;'
-          ' allows multiple devices to share an atSign',
+          ' allows multiple devices to share an atSign.'
+          ' $deviceNameFormatHelp',
     );
 
     parser.addFlag(

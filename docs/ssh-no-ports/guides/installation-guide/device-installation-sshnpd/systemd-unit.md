@@ -42,7 +42,12 @@ Replace `<@device_atsign>` with the [device address](#user-content-fn-2)[^2]
 
 Replace `<@manager_atsign>` with the [client address](#user-content-fn-3)[^3]
 
-Replace `<device_name>` with your own [custom **unique** identifier](#user-content-fn-4)[^4] for this device, you will need this value later so don't forget it.
+Replace `<device_name>` with your own [custom **unique
+** identifier](#user-content-fn-4)[^4] for this device. You will need this
+value later, so don't forget it.
+{% hint style="info" %}
+`<device_name>` must be alphanumeric snake case, max length 30 - e.g. dev_abc1
+{% endhint %}
 
 Add any additional config to the end of the line where sshnpd is run, some useful flags you should consider adding:
 
@@ -77,9 +82,11 @@ Now that you have at\_activate installed, you can invoke the command with the na
 {% endtab %}
 {% endtabs %}
 
-#### Enter the OTP
+### Enter the One Time Password (OTP) & Check your SPAM/PROMOTIONS folders
 
 The application will pause and wait for the input of a one time pin (OTP) before you can continue. You should receive this pin to the contact information associated with the registration of your noports address (i.e. email or text message).
+
+\*\*\*If you are using a gmail.com account we have seen that sometimes the OTP gets stuck in the SPAM or PROMOTIONS folder. If you do not see the OTP check those folders.&#x20;
 
 Once you receive the message, enter the pin into the application and press enter to continue. The application should proceed to create the cryptographic keys and store them at `~/.atsign/keys/@my_noports_device_key.atKeys`.
 

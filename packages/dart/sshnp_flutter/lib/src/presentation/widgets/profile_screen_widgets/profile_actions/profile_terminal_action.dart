@@ -9,7 +9,7 @@ import 'package:sshnp_flutter/src/utility/sizes.dart';
 
 class ProfileTerminalAction extends ConsumerStatefulWidget {
   final SshnpParams params;
-  const ProfileTerminalAction(this.params, {Key? key}) : super(key: key);
+  const ProfileTerminalAction(this.params, {super.key});
 
   @override
   ConsumerState<ProfileTerminalAction> createState() => _ProfileTerminalActionState();

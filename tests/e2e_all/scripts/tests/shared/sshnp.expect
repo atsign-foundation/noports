@@ -1,0 +1,22 @@
+#!/usr/bin/expect
+
+proc timed_out { } { send_user "\nTimeout!\n" ; exit 1 }
+set timeout $env(SSHNP_TIMEOUT)
+expect_before timeout timed_out
+
+eval spawn $env(SSHNP_COMMAND)
+
+set expected "Last login:"
+expect {
+    eof             { exit 1 }
+    $expected
+}
+
+send "echo \$(date) \$(whoami) \$(hostname) SCOOBY DOO\n"
+set expected "${env(REMOTE_USERNAME)}.*SCOOBY DOO"
+expect {
+    eof             { exit 1 }
+    -re $expected
+}
+
+exit 0

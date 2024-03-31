@@ -106,6 +106,9 @@ class SshnpdImpl implements Sshnpd {
     required this.version,
     required this.permitOpen,
   }) {
+    if (invalidDeviceName(device)) {
+      throw ArgumentError(invalidDeviceNameMsg);
+    }
     logger.hierarchicalLoggingEnabled = true;
     logger.logger.level = Level.SHOUT;
 

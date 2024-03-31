@@ -1,0 +1,129 @@
+#!/bin/bash
+
+# 1. Generate a new ssh key
+# 2a. Run sshnp against a daemon without the -s flag, with that new key
+#   2b. Verify it fails
+# 3a. Run against a daemon with the -s flag
+#   3b. Verify it succeeds
+
+scriptName=$(basename -- "$0")
+
+if test -z "$testScriptsDir" ; then
+  echo -e "    ${RED}check_env: testScriptsDir is not set${NC}" && exit 1
+fi
+
+source "$testScriptsDir/common/common_functions.include.sh"
+source "$testScriptsDir/common/check_env.include.sh" || exit $?
+
+if test $# != 2 ; then
+  logErrorAndExit "Must supply daemonVersion, clientVersion"
+fi
+
+daemonVersion="$1"
+clientVersion="$2"
+
+if [[ "$clientVersion" != "d:current" ]] || [[ "$daemonVersion" != "d:current" ]]; then
+  exit 50 # test rig interprets this exit status as 'test was not applicable'
+fi
+# 1. Generate a new ssh key
+generateNewSshKey
+
+# logInfo "Client version : $c_type : $c_major.$c_minor.$c_patch"
+clientBinaryPath=$(getPathToBinariesForTypeAndVersion "$clientVersion")
+
+#
+# v4 feature set, default client flags
+
+# - All client versions since 5 require the '-x' flag in order to output the
+#   ssh command rather than just forking to the ssh inline.
+# - sshnp since 5.x also requires '--no-ad' and '--no-et' flags,
+#   since those features are enabled by default from v5
+if [[ $(versionIsAtLeast "$clientVersion" "d:5.0.0") == "true" ]] ; then
+  extraFlags="-x --no-ad --no-et"
+fi
+
+# 2a. Run sshnp against a daemon without the -s flag, with that new key
+#   2b. Verify it fails
+deviceName=$(getDeviceNameNoFlags "$commitId" "$daemonVersion" )
+
+# We will capture daemon log from now until end of test
+outputDir=$(getOutputDir)
+daemonLogFile="${outputDir}/daemons/${deviceName}.log"
+echo "First daemon (without flags) $deviceName" >> "$DAEMON_LOG_FRAGMENT_NAME"
+echo "" >> "$DAEMON_LOG_FRAGMENT_NAME"
+tail -f "$daemonLogFile" >> "$DAEMON_LOG_FRAGMENT_NAME" &
+tailPid=$! # We'll kill this later
+
+l1="$clientBinaryPath/sshnp -f $clientAtSign -d $deviceName -i $identityFilename"
+l2=" -t $daemonAtSign -h $srvAtSign -u $remoteUsername"
+l4=" --root-domain $atDirectoryHost"
+l5=" ${extraFlags}"
+sshnpCommand="$l1 $l2 $l3 $l4 $l5 -s ${identityFilename}.pub"
+
+echo "$(iso8601Date) | Executing $sshnpCommand"
+sshCommand=$($sshnpCommand)
+sshnpExitStatus=$?
+
+# - 5.x clients against 5.x daemons should show a failure at this point, since
+#   a 5.x client will ping the 5.x daemon to ask whether it supports accepting
+#   public keys
+# - 4.x clients, and 5.x clients against 4.x daemons will show success to this point
+#   so let's try the ssh which will fail
+if (( sshnpExitStatus != 0 )); then
+  logInfo "$scriptName: sshnp with new key failed as expected" | tee -a "$(getReportFile)"
+else
+  echo "$(iso8601Date) | Executing $sshCommand"
+
+  # shellcheck disable=SC2091
+  $(getTestSshCommand "$sshCommand")
+  exitStatus=$?
+
+  if (( exitStatus == 0 )); then
+    # It should have failed
+    logError "$scriptName: sshnp with new key did not fail as expected"
+    kill $tailPid
+    exit 1
+  else
+    logInfo "$scriptName: sshnp with new key failed as expected" | tee -a "$(getReportFile)"
+  fi
+fi
+
+
+# 3a. Run against a daemon with the -s flag
+#   3b. Verify it succeeds
+deviceName=$(getDeviceNameWithFlags "$commitId" "$daemonVersion" )
+
+# We will capture daemon log from now until end of test
+kill $tailPid
+outputDir=$(getOutputDir)
+daemonLogFile="${outputDir}/daemons/${deviceName}.log"
+echo "" >> "$DAEMON_LOG_FRAGMENT_NAME"
+echo "Second daemon (with flags) : $deviceName" >> "$DAEMON_LOG_FRAGMENT_NAME"
+echo "" >> "$DAEMON_LOG_FRAGMENT_NAME"
+tail -f "$daemonLogFile" >> "$DAEMON_LOG_FRAGMENT_NAME" &
+tailPid=$! # We'll kill this later
+
+l1="$clientBinaryPath/sshnp -f $clientAtSign -d $deviceName -i $identityFilename"
+l2=" -t $daemonAtSign -h $srvAtSign -u $remoteUsername"
+l4=" --root-domain $atDirectoryHost"
+l5=" ${extraFlags}"
+sshnpCommand="$l1 $l2 $l3 $l4 $l5 -s ${identityFilename}.pub"
+
+echo "$(iso8601Date) | Executing $sshnpCommand"
+sshCommand=$($sshnpCommand)
+sshnpExitStatus=$?
+if (( sshnpExitStatus != 0 )); then
+  # Kill the daemon log tail, and exit with the exit status of the sshnp command
+  kill $tailPid
+  exit $sshnpExitStatus
+fi
+
+echo "$(iso8601Date) | Executing $sshCommand"
+
+# shellcheck disable=SC2091
+$(getTestSshCommand "$sshCommand")
+sshExitStatus=$?
+
+# Kill the daemon log tail, and exit with the exit status of the ssh command
+kill "$tailPid"
+exit $sshExitStatus

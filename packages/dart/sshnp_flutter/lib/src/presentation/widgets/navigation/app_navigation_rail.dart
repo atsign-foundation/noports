@@ -44,6 +44,7 @@ class AppNavigationRail extends ConsumerWidget {
             child: IntrinsicHeight(
               child: NavigationRail(
                 groupAlignment: -1,
+                minWidth: 97,
                 leading: SvgPicture.asset('assets/images/logo.svg'),
                 destinations: controller.routes.map((AppRoute route) {
                   if (route == AppRoute.blank) {

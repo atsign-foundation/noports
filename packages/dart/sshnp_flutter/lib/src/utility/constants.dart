@@ -16,14 +16,14 @@ const kSSHKeyManagementCardColor = Color(0xff3e3e3e);
 const kSshKeyManagementBarColor = Color(0xff505050);
 const kPrivateKeyGridBackgroundColor = Color(0xff3F3F3F);
 const kInputChipBackgroundColor = Color(0XFF515151);
+const kHomeScreenGreyText = Color(0xffB7B7B7);
 
 const kEmptyFieldValidationError = 'Field cannot be left blank';
 const kAtsignFieldValidationError = 'Field must start with @';
-const kProfileNameFieldValidationError = 'Field must only use lower case alphanumeric characters spaces';
+const kProfileNameFieldValidationError = 'Field must only use lower case alphanumeric characters and spaces';
 const kPrivateKeyFieldValidationError = 'Field must only use lower case alphanumeric characters';
 const kIntFieldValidationError = 'Field must only use numbers';
 const kPortFieldValidationError = 'Field must use a valid port number';
-
 const kPrivateKeyDropDownOption = 'Create a new private key';
 
 const String dotEnvMimeType = 'text/plain';

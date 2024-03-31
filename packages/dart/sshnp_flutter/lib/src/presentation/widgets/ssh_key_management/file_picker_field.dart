@@ -77,7 +77,7 @@ class _FilePickerFieldState extends ConsumerState<FilePickerField> {
                 filled: true,
                 fillColor: kProfileFormFieldColor,
                 border: InputBorder.none,
-                hintText: AppLocalizations.of(context)!.selectAFile,
+                hintText: AppLocalizations.of(context)!.selectPrivateKey,
                 hintStyle: Theme.of(context).textTheme.bodySmall,
               ),
               validator: widget.validator,
