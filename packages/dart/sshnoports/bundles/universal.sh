@@ -416,6 +416,12 @@ write_program_arguments_plist() {
 	sedi '/^[[:space:]]*$/d' "$file" # remove empty lines to keep things clean
 }
 
+write_systemd_user() {
+	file=$1
+	user=$2
+	sedi "s|<username>|$user|g" "$file"
+}
+
 write_systemd_environment() {
 	file=$1
 	variable=$2
@@ -554,6 +560,7 @@ device() {
 		;;
 	systemd)
 		systemd_service="/etc/systemd/system/sshnpd.service"
+        write_systemd_user "$systemd_service" "$user"
 		write_systemd_environment "$systemd_service" "manager_atsign" "$(norm_atsign "$client_atsign")"
 		write_systemd_environment "$systemd_service" "device_atsign" "$(norm_atsign "$device_atsign")"
 		write_systemd_environment "$systemd_service" "device_name" "$device_name"
