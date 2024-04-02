@@ -449,7 +449,7 @@ client() {
 	magic_script="$bin_path"/@sshnp
 	cp "$extract_path"/sshnp/magic/sshnp.sh "$magic_script"
 	chmod +x "$magic_script"
-	if is_root; then
+	if is_root && [ -f "$bin_path"/@sshnp ]; then
 		ln -sf "$bin_path"/@sshnp "$user_bin_dir"/@sshnp
 		if [ $verbose = true ]; then
 			echo "=> Linked $user_bin_dir/@sshnp to $bin_path/@sshnp"
