@@ -446,36 +446,40 @@ main() {
 
 	define_env
 
-	case "$1" in
-	--help | '')
-		usage
-		exit 0
-		;;
-	-b)
-		binary_dir="$1"
+    while [ $# -gt 0 ]; do
+	    case "$1" in
+			-h)
+				usage
+				exit 0
+				;;
+			-b)
+				binary_dir="$2"
+				shift
+				;;
+			-u)
+				user="$2"
+				user_home=$(sudo -u "$user" sh -c 'echo $HOME')
+				shift
+				;;
+			at_activate | npt | sshnp | sshnpd | srv | srvd) install_single_binary "$1" ;;
+			binaries) install_base_binaries ;;
+			debug_srvd) install_debug_binary "${1#"debug_"}" ;; # strips debug_ prefix from the command input
+			debug) install_debug_binaries ;;
+			all) install_all_binaries ;;
+			systemd | launchd | headless | tmux)
+				command=$1
+				shift 1
+				$command "$@"
+				;;
+			*)
+				echo "Unknown command: $1"
+				usage
+				exit 1
+				;;
+		esac
 		shift
-		;;
-	-u)
-		user="$1"
-		user_home=$(sudo -u "$user" sh -c 'echo $HOME')
-		shift
-		;;
-	at_activate | npt | sshnp | sshnpd | srv | srvd) install_single_binary "$1" ;;
-	binaries) install_base_binaries ;;
-	debug_srvd) install_debug_binary "${1#"debug_"}" ;; # strips debug_ prefix from the command input
-	debug) install_debug_binaries ;;
-	all) install_all_binaries ;;
-	systemd | launchd | headless | tmux)
-		command=$1
-		shift 1
-		$command "$@"
-		;;
-	*)
-		echo "Unknown command: $1"
-		usage
-		exit 1
-		;;
-	esac
+	done
+
 }
 
 main "$@"
