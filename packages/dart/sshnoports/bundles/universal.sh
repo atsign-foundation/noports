@@ -21,6 +21,8 @@ unset archive_path
 unset as_root
 unset bin_path
 unset user
+unset user_home
+unset user_bin_dir
 
 ### Input Variables
 verbose=false
@@ -151,16 +153,24 @@ parse_env() {
 	tmp_path="/tmp"
 	extract_path="$tmp_path/sshnp-$time_stamp"
 	archive_path="$extract_path.$archive_ext"
-
+	user_home="$HOME"
 	if is_root; then
+		user="$SUDO_USER"
 		as_root=true
 		bin_path="/usr/local/bin"
-		user=$(logname)
+		if [ -z "$user" ]; then
+			user="root"
+		else
+			# we are root, but via sudo
+			# so get home directory of SUDO_USER
+			user_home=$(sudo -u "$user" sh -c 'echo $HOME')
+		fi
 	else
 		as_root=false
 		bin_path="$HOME/.local/bin"
 		user="$USER"
 	fi
+	user_bin_dir=$user_home/.local/bin/@sshnp
 }
 
 is_valid_source_mode() {
@@ -439,6 +449,12 @@ client() {
 	magic_script="$bin_path"/@sshnp
 	cp "$extract_path"/sshnp/magic/sshnp.sh "$magic_script"
 	chmod +x "$magic_script"
+	if is_root; then
+		ln -sf "$bin_path"/@sshnp "$user_bin_dir"/@sshnp
+		if [ $verbose = true ]; then
+			echo "=> Linked $user_bin_dir/@sshnp to $bin_path/@sshnp"
+		fi
+	fi
 
 	# get the inputs for the magic script
 	get_client_device_atsigns
