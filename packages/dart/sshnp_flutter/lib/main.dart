@@ -31,5 +31,6 @@ Future<void> main() async {
   await AuthenticationRepository().checkKeyChainFirstRun();
   PlatformUtility platformUtility = PlatformUtility.current();
   await platformUtility.configurePlatform();
+
   runApp(ProviderScope(child: platformUtility.app));
 }

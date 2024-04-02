@@ -41,3 +41,13 @@ const XTypeGroup dotPrivateTypeGroup = XTypeGroup(
 // Form Field Constants
 const kFieldDefaultWidth = 192.0;
 const kFieldDefaultHeight = 33.0;
+
+// Device Size
+
+const kSmallDeviceMinSize = 0;
+const kSmallDeviceMaxSize = 599;
+const kMediumDeviceMinSize = 600;
+const kMediumDeviceMaxSize = 839;
+const kLargeDeviceMinSize = 840;
+const kLargeDeviceMaxSize = 1439;
+const kExtraLargeDeviceMinSize = 1440;
