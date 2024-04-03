@@ -3,7 +3,7 @@
 # SCRIPT METADATA
 # DO NOT MODIFY/DELETE THIS BLOCK
 script_version="3.0.0"
-sshnp_version="5.1.0-rc.10"
+sshnp_version="5.1.0-rc.9"
 repo_url="https://github.com/atsign-foundation/sshnoports"
 # END METADATA
 
@@ -559,7 +559,7 @@ device() {
     get_client_device_atsigns
 
     while [ -z "$device_name" ]; do
-        printf "Enter device name:\n$ "
+        printf "Enter device name: "
         read -r device_name
     done
 
@@ -586,9 +586,8 @@ device() {
         write_systemd_environment "$systemd_service" "device_name" "$device_name"
         systemctl enable sshnpd
         systemctl start sshnpd
-        echo "sshnpd installed with systemd"
-        echo "use: journalctl -u sshnpd.service -f"
-        echo "to see logs"
+        echo "sshnpd installed with systemd. To see logs use:"
+        echo "journalctl -u sshnpd.service -f"
         ;;
     tmux | headless)
         shell_script="$bin_path"/sshnpd.sh
