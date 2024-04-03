@@ -144,7 +144,10 @@ function Cleanup {
 
 function Download-Archive {
     Write-Host "Downloading $BINARY_NAME from $global:URL"
-    Invoke-WebRequest -Uri $global:URL -OutFile "$global:HOME_PATH/.atsign/temp/$SSHNPD_VERSION/$BINARY_NAME.zip"
+    $DOWNLOAD_BODY = $(Invoke-WebRequest -Uri $global:URL).ToString() -split "," | Select-String "browser_download_url" | Select-String "sshnp-windows"
+    $DOWNLOAD_URL = $DOWNLOAD_BODY.ToString() -split '"' | Select-Object -Index 3
+    Write-Host $DOWNLOAD_URL
+    Invoke-WebRequest -Uri $DOWNLOAD_URL -OutFile "$HOME_PATH/.atsign/temp/$SSHNPD_VERSION/$BINARY_NAME.zip"
     if (-not (Test-Path "$HOME_PATH/.atsign/temp/$SSHNPD_VERSION/$BINARY_NAME.zip")) {
         Write-Host "Failed to download $BINARY_NAME"
         Cleanup
@@ -159,7 +162,7 @@ function Unpack-Archive {
     }
 
     Expand-Archive -Path "$HOME_PATH/.atsign/temp/$SSHNPD_VERSION/$BINARY_NAME.zip" -DestinationPath "$HOME_PATH/.atsign/temp/$SSHNPD_VERSION/" -Force
-    if (-not (Test-Path "$HOME_PATH/.atsign/temp/$SSHNPD_VERSION/$BINARY_NAME")) {
+    if (-not (Test-Path "$HOME_PATH/.atsign/temp/$SSHNPD_VERSION/sshnp.exe")) {
         Write-Host "Failed to unpack $BINARY_NAME"
         Cleanup
         Exit 1
@@ -168,8 +171,8 @@ function Unpack-Archive {
 }
 
 function New-SshnpdService {
-    New-Service -Name "sshnpd" -BinaryPathName "$global:BIN_PATH/sshnpd.exe" -DisplayName "sshnpd" -StartupType "Automatic"
-    Get-WmiObject -Class Win32_Service -Filter "Name='sshnpd'" | Start-Service
+    New-Service -Name "sshnp" -BinaryPathName "$global:BIN_PATH/sshnp.exe" -DisplayName "sshnp" -StartupType "Automatic"
+    Get-WmiObject -Class Win32_Service -Filter "Name='sshnp'" | Start-Service
 }
 
 function Get-Main-Binaries {
@@ -183,7 +186,8 @@ function Main {
     Check-BasicRequirements
     Parse-Env
     Make-Dirs
-    Get-Main-Binaries
+    Download-Archive
+    Unpack-Archive
 }
 
 # Execute the main function
