@@ -443,15 +443,20 @@ get_client_device_atsigns() {
 
     while [ -z "$device_atsign" ]; do
         if [ -d "${user_home}/.atsign/keys" ]; then
-            atkeys=( $(ls -1 ${user_home}/.atsign/keys | sed s/@// | sed s/_key.atKeys//) )
-            if [ ${#atkeys[@]} -eq 0 ]; then
-                echo "~/.atsign/keys directory found but there are no keys there yet"
+            atkeycount=0
+            for file in $(find "$user_home"/.atsign/keys/*.atKeys -type f); do
+                atkeys="$atkeys $(echo "$file" | sed s/^.*@// | sed s/_key.atKeys//)"
+                atkeycount=$((atkeycount+1))
+            done
+            if [ $atkeycount -eq 0 ]; then
+                echo '$HOME/.atsign/keys directory found but there are no keys there yet'
                 echo "Which atSign do you plan to use?"
                 get_device_atsign
             else
-                echo "${#atkeys[@]} atKeys found: ${atkeys[@]}"
-                for atkey in "${atkeys[@]}"; do
-                    printf "Would you like to use @${atkey} for this device? "
+                echo "${atkeycount}} atKeys found: ${atkeys}"
+                for file in $(find "$user_home"/.atsign/keys/*.atKeys -type f); do
+                    atkey=$(echo "$file" | sed s/^.*@// | sed s/_key.atKeys//)
+                    printf "Would you like to use @%s for this device? " "$atkey"
                     read -r use_atkey
                     case $use_atkey in
                     y*|Y*)
@@ -464,8 +469,8 @@ get_client_device_atsigns() {
                 get_device_atsign
             fi
         else
-            mkdir -p ${user_home}/.atsign/keys
-            echo "~/.atsign/keys directory created"
+            mkdir -p "$user_home"/.atsign/keys
+            echo '$HOME/.atsign/keys directory created'
             echo "Which atSign do you plan to use?"
             get_device_atsign
         fi
@@ -540,7 +545,7 @@ client() {
             # Do nothing for custom region
             ;;
         *)
-            printf "Invalid region: ${host_atsign}: "
+            printf "Invalid region: %s: " "$host_atsign"
             read -r host_atsign
             ;;
         esac
