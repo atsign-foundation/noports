@@ -3,7 +3,7 @@
 # SCRIPT METADATA
 # DO NOT MODIFY/DELETE THIS BLOCK
 script_version="3.0.0"
-sshnp_version="5.1.0-rc.9"
+sshnp_version="5.1.0-rc.10"
 repo_url="https://github.com/atsign-foundation/sshnoports"
 # END METADATA
 
@@ -428,6 +428,13 @@ write_systemd_environment() {
     sedi "s|Environment=$variable=\".*\"|Environment=$variable=\"$value\"|g" "$file"
 }
 
+get_device_atsign() {
+    while [ -z "$device_atsign" ]; do
+        printf "Enter device atSign: "
+        read -r device_atsign
+    done
+}
+
 get_client_device_atsigns() {
     while [ -z "$client_atsign" ]; do
         printf "Enter client atSign: "
@@ -435,9 +442,35 @@ get_client_device_atsigns() {
     done
 
     while [ -z "$device_atsign" ]; do
-        printf "Enter device atSign: "
-        read -r device_atsign
+        if [ -d "${user_home}/.atsign/keys" ]; then
+            atkeys=( $(ls -1 ${user_home}/.atsign/keys | sed s/@// | sed s/_key.atKeys//) )
+            if [ ${#atkeys[@]} -eq 0 ]; then
+                echo "~/.atsign/keys directory found but there are no keys there yet"
+                echo "Which atSign do you plan to use?"
+                get_device_atsign
+            else
+                echo "${#atkeys[@]} atKeys found: ${atkeys[@]}"
+                for atkey in "${atkeys[@]}"; do
+                    printf "Would you like to use @${atkey} for this device? "
+                    read -r use_atkey
+                    case $use_atkey in
+                    y*|Y*)
+                        device_atsign=$atkey
+                        break 2
+                        ;;
+                    esac
+                done
+                # If we get this far and an atsign hasn't been picked just ask
+                get_device_atsign
+            fi
+        else
+            mkdir -p ${user_home}/.atsign/keys
+            echo "~/.atsign/keys directory created"
+            echo "Which atSign do you plan to use?"
+            get_device_atsign
+        fi
     done
+
 }
 
 suggest_sudo() {
