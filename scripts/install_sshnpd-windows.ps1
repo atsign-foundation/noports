@@ -170,16 +170,6 @@ function Unpack-Archive {
     $global:BIN_PATH = "$HOME_PATH/.atsign/temp/$SSHNPD_VERSION/$BINARY_NAME"
 }
 
-function New-SshnpdService {
-    New-Service -Name "sshnp" -BinaryPathName "$global:BIN_PATH/sshnp.exe" -DisplayName "sshnp" -StartupType "Automatic"
-    Get-WmiObject -Class Win32_Service -Filter "Name='sshnp'" | Start-Service
-}
-
-function Get-Main-Binaries {
-    Download-Archive
-    Unpack-Archive
-    New-SshnpdService
-}
 # Main function
 function Main {
     # Check basic requirements
