@@ -58,126 +58,128 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
             child: Builder(
               builder: (context) => SizedBox(
                 width: MediaQuery.of(context).size.width * 0.55,
-                height: MediaQuery.of(context).size.height * 0.55,
+                // height: MediaQuery.of(context).size.height * 0.55,
                 child: Card(
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(Sizes.p12),
                   ),
-                  child: Center(
-                    child: Padding(
-                      padding:
-                          const EdgeInsets.only(top: Sizes.p30, bottom: Sizes.p10, left: Sizes.p30, right: Sizes.p30),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          SvgPicture.asset(
-                            'assets/images/app_logo.svg',
-                            fit: BoxFit.cover,
-                            height: Sizes.p38,
-                          ),
-                          Text(
-                            strings.welcomeTo,
-                            style: headlineLarge.copyWith(
-                              color: Colors.black,
-                              fontWeight: FontWeight.w700,
-                              fontSize: headlineLarge.fontSize!.toFont,
+                  child: Wrap(children: [
+                    Center(
+                      child: Padding(
+                        padding:
+                            const EdgeInsets.only(top: Sizes.p30, bottom: Sizes.p30, left: Sizes.p30, right: Sizes.p30),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            SvgPicture.asset(
+                              'assets/images/app_logo.svg',
+                              fit: BoxFit.cover,
+                              height: Sizes.p38,
                             ),
-                          ),
-                          Text(
-                            strings.sshnpDesktopApp,
-                            style: headlineLarge.copyWith(
-                              color: kPrimaryColor,
-                              fontWeight: FontWeight.w700,
-                              fontSize: headlineLarge.fontSize!.toFont,
-                            ),
-                          ),
-                          Text(
-                            strings.welcomeToDescription,
-                            style: bodySmall.copyWith(color: Colors.black, fontSize: bodySmall.fontSize!.toFont),
-                          ),
-                          gapH20,
-                          Center(
-                            child: ElevatedButton(
-                              style: ElevatedButton.styleFrom(
-                                foregroundColor: kPrimaryColor,
-                                backgroundColor: kPrimaryColor,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(Sizes.p20),
-                                ),
-                                padding: const EdgeInsets.symmetric(horizontal: Sizes.p60, vertical: Sizes.p10),
+                            Text(
+                              strings.welcomeTo,
+                              style: headlineLarge.copyWith(
+                                color: Colors.black,
+                                fontWeight: FontWeight.w700,
+                                fontSize: headlineLarge.fontSize!.toFont,
                               ),
+                            ),
+                            Text(
+                              strings.sshnpDesktopApp,
+                              style: headlineLarge.copyWith(
+                                color: kPrimaryColor,
+                                fontWeight: FontWeight.w700,
+                                fontSize: headlineLarge.fontSize!.toFont,
+                              ),
+                            ),
+                            Text(
+                              strings.welcomeToDescription,
+                              style: bodySmall.copyWith(color: Colors.black, fontSize: bodySmall.fontSize!.toFont),
+                            ),
+                            gapH20,
+                            Center(
+                              child: ElevatedButton(
+                                style: ElevatedButton.styleFrom(
+                                  foregroundColor: kPrimaryColor,
+                                  backgroundColor: kPrimaryColor,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(Sizes.p20),
+                                  ),
+                                  padding: const EdgeInsets.symmetric(horizontal: Sizes.p60, vertical: Sizes.p10),
+                                ),
+                                onPressed: () async {
+                                  AtOnboardingResult onboardingResult = await AtOnboarding.onboard(
+                                    context: context,
+                                    config: AtOnboardingConfig(
+                                      atClientPreference: await futurePreference,
+                                      rootEnvironment: AtEnv.rootEnvironment,
+                                      domain: AtEnv.rootDomain,
+                                      appAPIKey: AtEnv.appApiKey,
+                                      theme: AtOnboardingTheme(
+                                        primaryColor: kPrimaryColor,
+                                      ),
+                                    ),
+                                  );
+                                  switch (onboardingResult.status) {
+                                    case AtOnboardingResultStatus.success:
+                                      await initializeContactsService(rootDomain: AtEnv.rootDomain);
+                                      if (context.mounted) {
+                                        context.replaceNamed(AppRoute.home.name);
+                                      }
+                                      await AuthenticationRepository().setFirstRun(true);
+
+                                      break;
+                                    case AtOnboardingResultStatus.error:
+                                      if (context.mounted) {
+                                        ScaffoldMessenger.of(context).showSnackBar(
+                                          const SnackBar(
+                                            backgroundColor: Colors.red,
+                                            content: Text('An error has occurred'),
+                                          ),
+                                        );
+                                      }
+                                      break;
+                                    case AtOnboardingResultStatus.cancel:
+                                      break;
+                                  }
+                                },
+                                child: Text(
+                                  strings.onboardButtonDescription,
+                                  style: bodySmall.copyWith(
+                                    color: Colors.white,
+                                    fontSize: bodySmall.fontSize!.toFont,
+                                  ),
+                                  textAlign: TextAlign.center,
+                                ),
+                              ),
+                            ),
+                            gapH10,
+                            Center(
+                                child: TextButton(
                               onPressed: () async {
-                                AtOnboardingResult onboardingResult = await AtOnboarding.onboard(
+                                await AtOnboarding.reset(
                                   context: context,
                                   config: AtOnboardingConfig(
                                     atClientPreference: await futurePreference,
                                     rootEnvironment: AtEnv.rootEnvironment,
                                     domain: AtEnv.rootDomain,
                                     appAPIKey: AtEnv.appApiKey,
-                                    theme: AtOnboardingTheme(
-                                      primaryColor: kPrimaryColor,
-                                    ),
                                   ),
                                 );
-                                switch (onboardingResult.status) {
-                                  case AtOnboardingResultStatus.success:
-                                    await initializeContactsService(rootDomain: AtEnv.rootDomain);
-                                    if (context.mounted) {
-                                      context.replaceNamed(AppRoute.home.name);
-                                    }
-                                    await AuthenticationRepository().setFirstRun(true);
-
-                                    break;
-                                  case AtOnboardingResultStatus.error:
-                                    if (context.mounted) {
-                                      ScaffoldMessenger.of(context).showSnackBar(
-                                        const SnackBar(
-                                          backgroundColor: Colors.red,
-                                          content: Text('An error has occurred'),
-                                        ),
-                                      );
-                                    }
-                                    break;
-                                  case AtOnboardingResultStatus.cancel:
-                                    break;
-                                }
                               },
                               child: Text(
-                                strings.onboardButtonDescription,
-                                style: bodySmall.copyWith(
-                                  color: Colors.white,
-                                  fontSize: bodySmall.fontSize!.toFont,
-                                ),
-                                textAlign: TextAlign.center,
+                                'Reset',
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .bodySmall!
+                                    .copyWith(color: Colors.black, fontWeight: FontWeight.w700),
                               ),
-                            ),
-                          ),
-                          gapH10,
-                          Center(
-                              child: TextButton(
-                            onPressed: () async {
-                              await AtOnboarding.reset(
-                                context: context,
-                                config: AtOnboardingConfig(
-                                  atClientPreference: await futurePreference,
-                                  rootEnvironment: AtEnv.rootEnvironment,
-                                  domain: AtEnv.rootDomain,
-                                  appAPIKey: AtEnv.appApiKey,
-                                ),
-                              );
-                            },
-                            child: Text(
-                              'Reset',
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .bodySmall!
-                                  .copyWith(color: Colors.black, fontWeight: FontWeight.w700),
-                            ),
-                          ))
-                        ],
+                            ))
+                          ],
+                        ),
                       ),
                     ),
-                  ),
+                  ]),
                 ),
               ),
             ),

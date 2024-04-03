@@ -105,8 +105,8 @@ class SizeConfig {
     _mediaQueryData = MediaQuery.of(context);
     screenWidth = _mediaQueryData.size.width;
     screenHeight = _mediaQueryData.size.height;
-    refHeight = 812;
-    refWidth = 375;
+    refHeight = 505;
+    refWidth = 671;
 
     deviceTextFactor = _mediaQueryData.textScaler.scale(20) / 20;
 
@@ -160,13 +160,22 @@ class SizeConfig {
     // }
     double res = (val / refWidth) * 100;
     double temp = 0.0;
-    if (screenWidth < screenHeight) {
-      temp = res * safeBlockHorizontal * textFactor;
+    if (screenWidth > screenHeight) {
+      temp = res * safeBlockHorizontal + (val * 0.150521609538003) * textFactor;
     } else {
-      temp = res * safeBlockVertical * textFactor;
+      temp = res * safeBlockVertical + (val * 0.2473919523099851) * textFactor;
     }
     // print('$val,$temp,$refHeight,$refWidth');
     return temp;
+
+    // var heightScale = (_mediaQueryData.size.height / refHeight);
+    // var widthScale = (_mediaQueryData.size.width / refWidth);
+
+    // if (_mediaQueryData.size.height > refHeight || _mediaQueryData.size.width > refWidth) {
+    //   heightScale = heightScale * 0.9;
+    //   widthScale = widthScale * 0.9;
+    // }
+    // return val * heightScale * widthScale;
   }
 }
 
