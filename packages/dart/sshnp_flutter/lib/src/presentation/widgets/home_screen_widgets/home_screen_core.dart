@@ -45,7 +45,11 @@ class _HomeScreenCoreState extends ConsumerState<HomeScreenCore> {
   @override
   Widget build(BuildContext context) {
     final strings = AppLocalizations.of(context)!;
+    final bodyLarge = Theme.of(context).textTheme.bodyLarge!;
+    final bodyMedium = Theme.of(context).textTheme.bodyMedium!;
     final profileNames = ref.watch(configListController);
+    log(bodyMedium.fontSize!.toFont.toString());
+    SizeConfig().init(context);
     return profileNames.when(
       loading: () => const Center(
         child: CircularProgressIndicator(),
@@ -55,7 +59,10 @@ class _HomeScreenCoreState extends ConsumerState<HomeScreenCore> {
       },
       data: (profiles) {
         if (profiles.isEmpty) {
-          final emptyStateTextColor = Theme.of(context).textTheme.bodyMedium!.copyWith(color: Colors.white30);
+          final emptyStateTextColor = bodyMedium.copyWith(
+            color: Colors.white30,
+            fontSize: bodyMedium.fontSize!.toFont,
+          );
           return Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -68,9 +75,14 @@ class _HomeScreenCoreState extends ConsumerState<HomeScreenCore> {
               // gapH16,
               // EmptyStateAltWidget(ref: ref, strings: strings),
               ListTile(
-                title: Text(strings.getStartedTitle),
-                subtitle: Text(strings.getStartedSubtitle,
-                    style: Theme.of(context).textTheme.bodyMedium!.copyWith(fontWeight: FontWeight.normal)),
+                title: Text(
+                  strings.getStartedTitle,
+                  style: bodyLarge.copyWith(fontSize: bodyLarge.fontSize!.toFont),
+                ),
+                subtitle: Text(
+                  strings.getStartedSubtitle,
+                  style: bodyMedium.copyWith(fontWeight: FontWeight.normal, fontSize: bodyMedium.fontSize!.toFont),
+                ),
                 tileColor: kPrimaryColor,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(10),
@@ -79,7 +91,10 @@ class _HomeScreenCoreState extends ConsumerState<HomeScreenCore> {
                   horizontal: Sizes.p36,
                   vertical: Sizes.p12,
                 ),
-                trailing: const Icon(Icons.add_circle_outline),
+                trailing: Icon(
+                  Icons.add_circle_outline,
+                  size: 24.toFont,
+                ),
                 onTap: () => HomeScreenActionCallbacks.newProfileAction(ref, context),
               ),
               gapH24,
@@ -104,7 +119,10 @@ class _HomeScreenCoreState extends ConsumerState<HomeScreenCore> {
               Expanded(
                 child: Container(
                   width: double.infinity,
-                  color: kProfileBackgroundColor,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(Sizes.p10),
+                    color: kProfileBackgroundColor,
+                  ),
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
@@ -113,7 +131,11 @@ class _HomeScreenCoreState extends ConsumerState<HomeScreenCore> {
                         style: emptyStateTextColor,
                       ),
                       gapH20,
-                      SvgPicture.asset('assets/images/getting_started_empty_state.svg')
+                      SvgPicture.asset(
+                        'assets/images/getting_started_empty_state.svg',
+                        width: MediaQuery.of(context).size.width * 0.15,
+                        height: MediaQuery.of(context).size.height * 0.15,
+                      )
                     ],
                   ),
                 ),
@@ -128,10 +150,16 @@ class _HomeScreenCoreState extends ConsumerState<HomeScreenCore> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(strings.profileName('other')),
+                Text(strings.profileName('other'),
+                    style: bodyMedium.copyWith(
+                      fontSize: bodyMedium.fontSize!.toFont,
+                    )),
                 Padding(
                   padding: const EdgeInsets.only(right: Sizes.p36),
-                  child: Text(strings.commands),
+                  child: Text(strings.commands,
+                      style: bodyMedium.copyWith(
+                        fontSize: bodyMedium.fontSize!.toFont,
+                      )),
                 ),
               ],
             ),

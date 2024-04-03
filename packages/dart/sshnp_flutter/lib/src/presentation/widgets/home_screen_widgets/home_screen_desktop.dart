@@ -15,8 +15,12 @@ class HomeScreenDesktop extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    SizeConfig().init(context);
     final strings = AppLocalizations.of(context)!;
+    final headlineLarge = Theme.of(context).textTheme.headlineLarge!;
+    final bodySmall = Theme.of(context).textTheme.bodySmall!;
     final profileNames = ref.watch(configListController);
+
     return Scaffold(
       body: Row(
         mainAxisSize: MainAxisSize.min,
@@ -36,11 +40,11 @@ class HomeScreenDesktop extends ConsumerWidget {
                         children: [
                           Text(
                             strings.connectionProfiles,
-                            style: Theme.of(context).textTheme.headlineLarge,
+                            style: headlineLarge.copyWith(fontSize: headlineLarge.fontSize!.toFont),
                           ),
                           Text(
                             strings.currentConnectionsDescription,
-                            style: Theme.of(context).textTheme.bodySmall,
+                            style: bodySmall.copyWith(fontSize: bodySmall.fontSize!.toFont),
                           ),
                         ],
                       ),
