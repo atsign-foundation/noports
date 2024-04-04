@@ -9,6 +9,11 @@ repo_url="https://github.com/atsign-foundation/sshnoports"
 
 # N.B. Other than the variable definitions, and the call to the main function,
 # nothing else should be writen outside the main function to avoid side effects
+### Environment config
+
+# GREP_COLOR not used directly so ignore the shellcheck warning for it
+# shellcheck disable=SC2034
+GREP_COLOR=never
 
 ### Environment based variables
 arg_zero="$0"
