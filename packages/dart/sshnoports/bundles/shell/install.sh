@@ -49,6 +49,13 @@ no_mac() {
   fi
 }
 
+mac_only() {
+  if ! is_darwin; then
+    echo "Error: this operation is only supported on macos"
+    exit 1
+  fi
+}
+
 root_only() {
   if ! is_root; then
     echo "Error: this operation requires root privileges"
