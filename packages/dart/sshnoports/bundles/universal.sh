@@ -428,6 +428,13 @@ write_systemd_environment() {
     sedi "s|Environment=$variable=\".*\"|Environment=$variable=\"$value\"|g" "$file"
 }
 
+get_client_atsign() {
+    while [ -z "$client_atsign" ]; do
+        printf "Enter client atSign: "
+        read -r client_atsign
+    done
+}
+
 get_device_atsign() {
     while [ -z "$device_atsign" ]; do
         printf "Enter device atSign: "
@@ -435,48 +442,35 @@ get_device_atsign() {
     done
 }
 
-get_client_device_atsigns() {
-    while [ -z "$client_atsign" ]; do
-        printf "Enter client atSign: "
-        read -r client_atsign
-    done
-
-    while [ -z "$device_atsign" ]; do
-        if [ -d "${user_home}/.atsign/keys" ]; then
-            atkeycount=0
-            atkeys=""
-            for file in $(find "$user_home"/.atsign/keys/*.atKeys -type f); do
-                atkeys="$atkeys $(echo "$file" | sed s/^.*@// | sed s/_key.atKeys//)"
-                atkeycount=$((atkeycount+1))
-            done
-            if [ $atkeycount -eq 0 ]; then
-                echo '$HOME/.atsign/keys directory found but there are no keys there yet'
-                echo "Which atSign do you plan to use?"
-                get_device_atsign
-            else
-                echo "${atkeycount} atKeys found: ${atkeys}"
-                for file in $(find "$user_home"/.atsign/keys/*.atKeys -type f); do
-                    atkey=$(echo "$file" | sed s/^.*@// | sed s/_key.atKeys//)
-                    printf "Would you like to use @%s for this device? " "$atkey"
-                    read -r use_atkey
-                    case $use_atkey in
-                    y*|Y*)
-                        device_atsign=$atkey
-                        break 2
-                        ;;
-                    esac
-                done
-                # If we get this far and an atsign hasn't been picked just ask
-                get_device_atsign
-            fi
+get_installed_atsigns() {
+    atkeycount=0
+    atkeys=""
+    selectedatsign=""
+    if [ -d "${user_home}/.atsign/keys" ]; then
+        for file in $(find "$user_home"/.atsign/keys/*.atKeys -type f); do
+            atkeys="$atkeys $(echo "$file" | sed s/^.*@// | sed s/_key.atKeys//)"
+            atkeycount=$((atkeycount+1))
+        done
+        if [ $atkeycount -eq 0 ]; then
+            echo '$HOME/.atsign/keys directory found but there are no keys there yet'
         else
-            mkdir -p "$user_home"/.atsign/keys
-            echo '$HOME/.atsign/keys directory created'
-            echo "Which atSign do you plan to use?"
-            get_device_atsign
+            echo "${atkeycount} atKeys found: ${atkeys}"
+            for file in $(find "$user_home"/.atsign/keys/*.atKeys -type f); do
+                atkey=$(echo "$file" | sed s/^.*@// | sed s/_key.atKeys//)
+                printf "Would you like to use @%s? " "$atkey"
+                read -r use_atkey
+                case $use_atkey in
+                [Yy]*)
+                    selectedatsign=$atkey
+                    break 2
+                    ;;
+                esac
+            done
         fi
-    done
-
+    else
+        mkdir -p "$user_home"/.atsign/keys
+        echo '$HOME/.atsign/keys directory created'
+    fi
 }
 
 suggest_sudo() {
@@ -520,7 +514,14 @@ client() {
     fi
 
     # get the inputs for the magic script
-    get_client_device_atsigns
+    if [ -z "$client_atsign" ]; then
+        get_installed_atsigns
+        client_atsign="$selectedatsign"
+        get_client_atsign
+    fi
+
+    get_device_atsign
+
     if [ -z "$host_atsign" ]; then
         echo Pick your default region:
         echo "  am   : Americas"
@@ -597,7 +598,13 @@ device() {
         device_install_type=$device_type
     fi
 
-    get_client_device_atsigns
+    get_client_atsign
+
+    if [ -z "$device_atsign" ]; then
+        get_installed_atsigns
+        device_atsign="$selectedatsign"
+        get_device_atsign
+    fi
 
     while [ -z "$device_name" ]; do
         printf "Enter device name: "
