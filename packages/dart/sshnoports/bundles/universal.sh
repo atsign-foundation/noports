@@ -448,34 +448,51 @@ get_device_atsign() {
 }
 
 get_installed_atsigns() {
-    atkeycount=0
-    atkeys=""
-    selectedatsign=""
-    if [ -d "${user_home}/.atsign/keys" ]; then
-        for file in $(find "$user_home"/.atsign/keys/*.atKeys -type f); do
-            atkeys="$atkeys $(echo "$file" | sed s/^.*@// | sed s/_key.atKeys//)"
-            atkeycount=$((atkeycount+1))
-        done
-        if [ $atkeycount -eq 0 ]; then
-            echo '$HOME/.atsign/keys directory found but there are no keys there yet'
-        else
-            echo "${atkeycount} atKeys found: ${atkeys}"
-            for file in $(find "$user_home"/.atsign/keys/*.atKeys -type f); do
-                atkey=$(echo "$file" | sed s/^.*@// | sed s/_key.atKeys//)
-                printf "Would you like to use @%s? " "$atkey"
-                read -r use_atkey
-                case $use_atkey in
-                [Yy]*)
-                    selectedatsign=$atkey
-                    break 2
-                    ;;
-                esac
-            done
-        fi
+  atkeycount=0
+  atkeys=""
+  selectedatsign=""
+  if [ -d "${user_home}/.atsign/keys" ]; then
+    # Disable unsafe find looping (will break if atkey file name contains a space, which it shouldn't)
+    # shellcheck disable=SC2044
+    for file in $(find "$user_home"/.atsign/keys/*.atKeys -type f); do
+      atkeys="$atkeys $(echo "$file" | sed s/^.*@// | sed s/_key.atKeys//)"
+      atkeycount=$((atkeycount + 1))
+    done
+    atkeys="$(echo "$atkeys" | sed s/\ \ /\ / | sed s/^\ //)" # remove double & leading space since it will interfere with cut
+    if [ $atkeycount -eq 0 ]; then
+      echo "$HOME/.atsign/keys directory found but there are no keys there yet"
+    elif [ $atkeycount -eq 1 ]; then
+      atkey=$(echo "$atkeys" | sed "s/\ //g")
+      echo "1 atKeys file found: ${atkey}"
+      printf "Would you like to use @%s? " "$atkey"
+      read -r use_atkey
+      case $use_atkey in
+        [Yy]*)
+          selectedatsign=$atkey
+          ;;
+      esac
     else
-        mkdir -p "$user_home"/.atsign/keys
-        echo '$HOME/.atsign/keys directory created'
+      echo "${atkeycount} atKeys found: ${atkeys}"
+      echo "Which one should be used:"
+      echo "0) None"
+      for i in $(seq 1 $atkeycount); do
+        echo "$i) @$(echo "$atkeys" | cut -d' ' -f"$i")"
+      done
+      printf '$ '
+      read -r selectedinput
+
+      selectedindex=$((selectedinput))
+      if [ "$selectedindex" -gt 0 ]; then
+        selectedatsign="$(echo "$atkeys" | cut -d' ' -f"$selectedindex")"
+        echo "Selected: @$selectedatsign"
+      else
+        echo "No existing atkeys were selected"
+      fi
     fi
+  else
+    mkdir -p "$user_home"/.atsign/keys
+    echo "$HOME/.atsign/keys directory created"
+  fi
 }
 
 suggest_sudo() {
