@@ -509,13 +509,13 @@ client() {
     "$extract_path"/sshnp/install.sh -b "$bin_path" -u "$user" npt
 
     # install the magic sshnp script
-    magic_script="$bin_path"/@sshnp
+    magic_script="$bin_path"/np.sh
     cp "$extract_path"/sshnp/magic/sshnp.sh "$magic_script"
     chmod +x "$magic_script"
-    if is_root && [ -f "$bin_path"/@sshnp ]; then
-        ln -sf "$bin_path"/@sshnp "$user_bin_dir"/@sshnp
+    if is_root && [ -f "$bin_path"/np.sh ]; then
+        ln -sf "$bin_path"/np.sh "$user_bin_dir"/np.sh
         if [ $verbose = true ]; then
-            echo "=> Linked $user_bin_dir/@sshnp to $bin_path/@sshnp"
+            echo "=> Linked $user_bin_dir/np.sh to $bin_path/np.sh"
         fi
     fi
 
@@ -573,6 +573,8 @@ client() {
     write_metadata "$magic_script" "device_atsign" "$(norm_atsign "$device_atsign")"
     write_metadata "$magic_script" "host_atsign" "$(norm_atsign "$host_atsign")"
     write_metadata_array "$magic_script" "devices" "$devices"
+
+    echo "Run np.sh to get your quick pick of devices to connect to."
 }
 
 # DEVICE INSTALLATION #
