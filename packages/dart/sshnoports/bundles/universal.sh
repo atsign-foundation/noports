@@ -444,6 +444,7 @@ get_client_device_atsigns() {
     while [ -z "$device_atsign" ]; do
         if [ -d "${user_home}/.atsign/keys" ]; then
             atkeycount=0
+            atkeys=""
             for file in $(find "$user_home"/.atsign/keys/*.atKeys -type f); do
                 atkeys="$atkeys $(echo "$file" | sed s/^.*@// | sed s/_key.atKeys//)"
                 atkeycount=$((atkeycount+1))
@@ -453,7 +454,7 @@ get_client_device_atsigns() {
                 echo "Which atSign do you plan to use?"
                 get_device_atsign
             else
-                echo "${atkeycount}} atKeys found: ${atkeys}"
+                echo "${atkeycount} atKeys found: ${atkeys}"
                 for file in $(find "$user_home"/.atsign/keys/*.atKeys -type f); do
                     atkey=$(echo "$file" | sed s/^.*@// | sed s/_key.atKeys//)
                     printf "Would you like to use @%s for this device? " "$atkey"
