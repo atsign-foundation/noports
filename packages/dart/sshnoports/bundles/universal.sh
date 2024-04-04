@@ -526,6 +526,7 @@ client() {
   # install the binaries
   "$extract_path"/sshnp/install.sh -b "$bin_path" -u "$user" sshnp
   "$extract_path"/sshnp/install.sh -b "$bin_path" -u "$user" npt
+  "$extract_path"/sshnp/install.sh -b "$bin_path" -u "$user" at_activate
 
   # install the magic sshnp script
   magic_script="$bin_path"/np.sh
@@ -635,6 +636,8 @@ device() {
     printf "Enter device name: "
     read -r device_name
   done
+
+  "$extract_path"/sshnp/install.sh -b "$bin_path" -u "$user" at_activate
 
   # run the device install script and capture the output
   install_output=$("$extract_path"/sshnp/install.sh -b "$bin_path" -u "$user" "$device_install_type" sshnpd)
