@@ -14,6 +14,7 @@ repo_url="https://github.com/atsign-foundation/sshnoports"
 # GREP_COLOR not used directly so ignore the shellcheck warning for it
 # shellcheck disable=SC2034
 GREP_COLOR=never
+unset GREP_OPTIONS
 
 ### Environment based variables
 arg_zero="$0"
