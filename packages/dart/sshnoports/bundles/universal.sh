@@ -452,6 +452,7 @@ get_device_atsign() {
 }
 
 get_installed_atsigns() {
+  clientOrDevice="$1"
   atkeycount=0
   atkeys=""
   selectedatsign=""
@@ -476,13 +477,11 @@ get_installed_atsigns() {
           ;;
       esac
     else
-      echo "${atkeycount} atKeys found: ${atkeys}"
-      echo "Which one should be used:"
       echo "0) None"
       for i in $(seq 1 $atkeycount); do
         echo "$i) @$(echo "$atkeys" | cut -d' ' -f"$i")"
       done
-      printf '$ '
+      printf '=> Found .atKeys for %s atSigns. Choose %s atSign : $ ' "$atkeycount" "$clientOrDevice"
       read -r selectedinput
 
       selectedindex=$((selectedinput))
@@ -542,7 +541,7 @@ client() {
 
   # get the inputs for the magic script
   if [ -z "$client_atsign" ]; then
-    get_installed_atsigns
+    get_installed_atsigns "client"
     client_atsign="$selectedatsign"
     get_client_atsign
   fi
@@ -602,7 +601,7 @@ client() {
   write_metadata "$magic_script" "host_atsign" "$(norm_atsign "$host_atsign")"
   write_metadata_array "$magic_script" "devices" "$devices"
 
-  echo "Run np.sh to get your quick pick of devices to connect to."
+  echo "Run ${bin_path}/np.sh to get your quick pick of devices to connect to."
 }
 
 # DEVICE INSTALLATION #
@@ -628,7 +627,7 @@ device() {
   get_client_atsign
 
   if [ -z "$device_atsign" ]; then
-    get_installed_atsigns
+    get_installed_atsigns "device"
     device_atsign="$selectedatsign"
     get_device_atsign
   fi
