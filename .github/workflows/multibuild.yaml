@@ -57,6 +57,7 @@ jobs:
       - run: dart run build_runner build --delete-conflicting-outputs
       - run: dart compile exe bin/activate_cli.dart -v -o sshnp/at_activate${{ matrix.ext }}
       - run: dart compile exe bin/sshnp.dart -v -o sshnp/sshnp${{ matrix.ext }}
+      - run: dart compile exe bin/npt.dart -v -o sshnp/npt${{ matrix.ext }}
       - if: ${{ matrix.os != 'windows-latest' }}
         run: dart compile exe bin/sshnpd.dart -v -o sshnp/sshnpd${{ matrix.ext }}
       - run: dart compile exe bin/srv.dart -v -o sshnp/srv${{ matrix.ext }}
@@ -97,7 +98,7 @@ jobs:
             --prefix "com.atsign." \
             --timestamp \
             -v \
-            sshnp/{ssh*,srv,srvd,at_activate,debug/srvd}
+            sshnp/{sshnp,sshnpd,srv,srvd,at_activate,debug/srvd,npt}
 
       # zip the build
       - if: ${{ matrix.os == 'macOS-latest' || matrix.os == 'macos-14'}}
@@ -122,7 +123,7 @@ jobs:
       # upload the build
       - uses: actions/upload-artifact@5d5d22a31266ced268874388b861e4b58bb5c2f3 # v4.3.1
         with:
-          name: ${{ matrix.output-name }}-upload
+          name: ${{ matrix.output-name }}-${{github.ref_name}}-${{github.run_number}}-${{github.run_attempt}}
           path: ./packages/dart/sshnoports/tarball
           if-no-files-found: error
 
@@ -154,7 +155,7 @@ jobs:
       - run: tar -xvf bins.tar -C tarballs
       - uses: actions/upload-artifact@5d5d22a31266ced268874388b861e4b58bb5c2f3 # v4.3.1
         with:
-          name: ${{ matrix.output-name }}-upload
+          name: ${{ matrix.output-name }}-${{github.ref_name}}-${{github.run_number}}-${{github.run_attempt}}
           path: ./packages/dart/tarballs/${{ matrix.output-name }}.tgz
           if-no-files-found: error
 
@@ -181,7 +182,7 @@ jobs:
           write_metadata universal.sh sshnp_version "$TAG"
       - uses: actions/upload-artifact@5d5d22a31266ced268874388b861e4b58bb5c2f3 # v4.3.1
         with:
-          name: universal.sh
+          name: universal.sh-${{github.ref_name}}-${{github.run_number}}-${{github.run_attempt}}
           path: ./packages/dart/sshnoports/bundles/universal.sh
           if-no-files-found: error
   notify_on_completion:
