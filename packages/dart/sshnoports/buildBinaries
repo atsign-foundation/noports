@@ -1,7 +1,5 @@
 #!/bin/bash
 
-export ENABLE_SNOOP=true
-
 echo Starting at `date`
 echo
 
