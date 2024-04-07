@@ -42,6 +42,9 @@ class SshnpdImpl implements Sshnpd {
   final List<String> managerAtsigns;
 
   @override
+  final String? policyManagerAtsign;
+
+  @override
   final SupportedSshClient sshClient;
 
   @override
@@ -49,9 +52,6 @@ class SshnpdImpl implements Sshnpd {
 
   @override
   final bool addSshPublicKeys;
-
-  @override
-  final bool delegateAuthChecks;
 
   @override
   final int localSshdPort;
@@ -84,10 +84,6 @@ class SshnpdImpl implements Sshnpd {
 
   final List<String> permitOpen;
 
-  @override
-  // TODO Ideally need a separate argument and for this to be set separately
-  String get authorizingAtsign => managerAtsigns.first;
-
   SshnpdImpl({
     // final fields
     required this.atClient,
@@ -95,22 +91,27 @@ class SshnpdImpl implements Sshnpd {
     required this.homeDirectory,
     required this.device,
     required this.managerAtsigns,
+    this.policyManagerAtsign,
     required this.sshClient,
     this.makeDeviceInfoVisible = false,
     this.addSshPublicKeys = false,
-    this.delegateAuthChecks = false,
     this.localSshdPort = DefaultSshnpdArgs.localSshdPort,
     required this.ephemeralPermissions,
     required this.sshAlgorithm,
     required this.deviceGroup,
     required this.version,
     required this.permitOpen,
+    this.authChecker,
   }) {
     if (invalidDeviceName(device)) {
       throw ArgumentError(invalidDeviceNameMsg);
     }
     logger.hierarchicalLoggingEnabled = true;
     logger.logger.level = Level.SHOUT;
+
+    if (authChecker == null && policyManagerAtsign != null) {
+      authChecker = SSHNPAAuthChecker(this);
+    }
 
     pingResponse = {
       'devicename': device,
@@ -162,10 +163,10 @@ class SshnpdImpl implements Sshnpd {
         homeDirectory: p.homeDirectory,
         device: p.device,
         managerAtsigns: p.managerAtsigns,
+        policyManagerAtsign: p.policyManagerAtsign,
         sshClient: p.sshClient,
         makeDeviceInfoVisible: p.makeDeviceInfoVisible,
         addSshPublicKeys: p.addSshPublicKeys,
-        delegateAuthChecks: p.delegateAuthChecks,
         localSshdPort: p.localSshdPort,
         ephemeralPermissions: p.ephemeralPermissions,
         sshAlgorithm: p.sshAlgorithm,
@@ -198,10 +199,6 @@ class SshnpdImpl implements Sshnpd {
   Future<void> run() async {
     if (!initialized) {
       throw StateError('Cannot run() - not initialized');
-    }
-
-    if (delegateAuthChecks) {
-      authChecker = AuthChecker(this);
     }
 
     await _shareUsername();
@@ -315,14 +312,23 @@ class SshnpdImpl implements Sshnpd {
     }
   }
 
-  Future<(bool, String)> isFromAuthorizedAtsign(AtNotification notification) async {
+  Future<(bool, String)> isFromAuthorizedAtsign(
+      AtNotification notification) async {
     const authTimeoutSeconds = 10;
     late bool authed;
     late String message;
-    if (delegateAuthChecks) {
+    String client = notification.from;
+
+    if (managerAtsigns.contains(client)) {
+      return (true, '$client is in --managers list');
+    }
+
+    if (authChecker != null) {
       try {
+        logger.info('Asking $policyManagerAtsign'
+            ' whether $client may connect to this daemon');
         SSHNPAAuthCheckResponse resp = await authChecker!
-            .check(clientAtsign: notification.from)
+            .mayConnect(clientAtsign: client)
             .timeout(const Duration(seconds: authTimeoutSeconds));
         authed = resp.authorized;
         message = resp.message ?? '';
@@ -331,14 +337,11 @@ class SshnpdImpl implements Sshnpd {
         message =
         'No response from authorizer after $authTimeoutSeconds seconds';
       }
-    } else {
-      authed = managerAtsigns.contains(notification.from);
-      message =
-      'client atSign ${notification.from} ${authed
-          ? 'matches'
-          : 'does NOT match'} managerAtsign';
+
+      return (authed, message);
     }
-    return (authed, message);
+
+    return (false, '$client is not in --managers list');
   }
 
   void _handlePingNotification(AtNotification notification) {
@@ -1268,47 +1271,77 @@ class SshnpdImpl implements Sshnpd {
   }
 }
 
-class AuthChecker implements AtRpcCallbacks {
+abstract interface class AuthChecker {
+  Future<SSHNPAAuthCheckResponse> mayConnect({required String clientAtsign});
+}
+
+class SSHNPAAuthChecker implements AuthChecker, AtRpcCallbacks {
   final Sshnpd sshnpd;
   late final AtRpc rpc;
+  final Map<String, int> authCheckCache = {};
+  final Map<int, Completer<SSHNPAAuthCheckResponse>> completerMap = {};
 
-  AuthChecker(this.sshnpd) {
+  SSHNPAAuthChecker(this.sshnpd) {
     rpc = AtRpc(
       atClient: sshnpd.atClient,
       baseNameSpace: DefaultArgs.namespace,
       domainNameSpace: 'auth_checks',
-      allowList: {sshnpd.authorizingAtsign},
+      allowList: {sshnpd.policyManagerAtsign!},
       callbacks: this,
     );
     rpc.start();
   }
 
-  Map<int, Completer<SSHNPAAuthCheckResponse>> completerMap = {};
+  @override
+  Future<SSHNPAAuthCheckResponse> mayConnect(
+      {required String clientAtsign}) async {
 
-  Future<SSHNPAAuthCheckResponse> check({required String clientAtsign}) async {
+    // We're caching auth checks for 30 seconds so we don't bombard the
+    // auth server unnecessarily.
+    if (authCheckCache.containsKey(clientAtsign)) {
+      return completerMap[authCheckCache[clientAtsign]!]!.future;
+    }
     AtRpcReq request = AtRpcReq.create(SSHNPAAuthCheckRequest(
             daemonAtsign: sshnpd.deviceAtsign,
             daemonDeviceName: sshnpd.device,
             daemonDeviceGroupName: sshnpd.deviceGroup,
             clientAtsign: clientAtsign)
         .toJson());
+
     completerMap[request.reqId] = Completer<SSHNPAAuthCheckResponse>();
+    authCheckCache[clientAtsign] = request.reqId;
+
+    // To keep memory tidy, we'll clear this request and its cached response
+    // after 30 seconds
+    Future.delayed(Duration(seconds: 30), () {
+      completerMap.remove(request.reqId);
+      authCheckCache.remove(clientAtsign);
+    });
+
     sshnpd.logger.info(
-        'Sending auth check request to sshnpa at ${sshnpd.authorizingAtsign} : $request');
-    await rpc.sendRequest(toAtSign: sshnpd.authorizingAtsign, request: request);
+        'Sending auth check request to sshnpa at ${sshnpd.policyManagerAtsign} : $request');
+    await rpc.sendRequest(
+        toAtSign: sshnpd.policyManagerAtsign!, request: request);
     return completerMap[request.reqId]!.future;
   }
 
-  /// Not handling requests via AtRpc as yet
+  /// We only send requests
   @override
   Future<AtRpcResp> handleRequest(AtRpcReq request, String fromAtSign) async {
-    // TODO: implement handleRequest
-    throw UnimplementedError();
+    throw UnimplementedError('Nope');
   }
 
   @override
   Future<void> handleResponse(AtRpcResp response) async {
     sshnpd.logger.info('Got response ${response.payload}');
+
+    if (! completerMap.containsKey(response.reqId)) {
+      sshnpd.logger.warning(
+          'Ignoring auth check response (completerMap has been cleared)'
+              ' from ${sshnpd.policyManagerAtsign}'
+              ' : $response');
+      return;
+    }
 
     Completer<SSHNPAAuthCheckResponse> completer =
         completerMap[response.reqId]!;
@@ -1316,25 +1349,25 @@ class AuthChecker implements AtRpcCallbacks {
     if (completer.isCompleted) {
       sshnpd.logger.warning(
           'Ignoring auth check response (received after future completion)'
-          ' from ${sshnpd.authorizingAtsign}'
+          ' from ${sshnpd.policyManagerAtsign}'
           ' : $response');
       return;
     }
     switch (response.respType) {
       case AtRpcRespType.ack:
         // We don't complete the future when we get an ack
-        sshnpd.logger.info('Got ack from ${sshnpd.authorizingAtsign}'
+        sshnpd.logger.info('Got ack from ${sshnpd.policyManagerAtsign}'
             ' : $response');
         break;
       case AtRpcRespType.success:
         sshnpd.logger
-            .info('Got auth check response from ${sshnpd.authorizingAtsign}'
+            .info('Got auth check response from ${sshnpd.policyManagerAtsign}'
                 ' : $response');
         completer.complete(SSHNPAAuthCheckResponse.fromJson(response.payload));
         break;
       default:
         sshnpd.logger.warning(
-            'Got non-success auth check response from ${sshnpd.authorizingAtsign}'
+            'Got non-success auth check response from ${sshnpd.policyManagerAtsign}'
             ' : $response');
         completer.complete(SSHNPAAuthCheckResponse(
             authorized: false,

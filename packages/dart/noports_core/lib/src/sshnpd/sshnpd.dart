@@ -29,7 +29,7 @@ abstract class Sshnpd {
 
   abstract final List<String> managerAtsigns;
 
-  String get authorizingAtsign;
+  String? get policyManagerAtsign;
 
   /// The ssh client to use when doing reverse ssh
   abstract final SupportedSshClient sshClient;
@@ -49,11 +49,6 @@ abstract class Sshnpd {
   /// authorized_keys file.
   /// This flag should default to false.
   abstract final bool addSshPublicKeys;
-
-  /// When true, sshnpd will listen for messages from multiple atSigns
-  /// but check with the [managerAtsign] if this particular client atSign
-  /// is currently authorized to connect to this device.
-  abstract final bool delegateAuthChecks;
 
   /// true once [init] has completed
   @visibleForTesting

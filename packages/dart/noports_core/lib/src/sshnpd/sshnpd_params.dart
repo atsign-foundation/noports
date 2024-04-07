@@ -11,12 +11,12 @@ class SshnpdParams {
   final String username;
   final String homeDirectory;
   final List<String> managerAtsigns;
+  final String? policyManagerAtsign;
   final String atKeysFilePath;
   final String deviceAtsign;
   final bool verbose;
   final bool makeDeviceInfoVisible;
   final bool addSshPublicKeys;
-  final bool delegateAuthChecks;
   final SupportedSshClient sshClient;
   final String rootDomain;
   final int localSshdPort;
@@ -34,12 +34,12 @@ class SshnpdParams {
     required this.username,
     required this.homeDirectory,
     required this.managerAtsigns,
+    required this.policyManagerAtsign,
     required this.atKeysFilePath,
     required this.deviceAtsign,
     required this.verbose,
     required this.makeDeviceInfoVisible,
     required this.addSshPublicKeys,
-    required this.delegateAuthChecks,
     required this.sshClient,
     required this.rootDomain,
     required this.localSshdPort,
@@ -59,11 +59,21 @@ class SshnpdParams {
     ArgResults r = parser.parse(args);
 
     String deviceAtsign = r['atsign'];
-    List<String> managerAtsigns = r['managers']
-        .toString()
-        .split(',')
-        .map((e) => e.trim().toLowerCase())
-        .toList();
+
+    if (!r.wasParsed('managers') && !r.wasParsed('policy-manager')) {
+      throw ArgumentError ('At least one of --managers and --policy-manager'
+          ' options must be supplied.');
+    }
+    final List<String> managerAtsigns;
+    if (r.wasParsed('managers')) {
+      managerAtsigns = r['managers']
+          .toString()
+          .split(',')
+          .map((e) => e.trim().toLowerCase())
+          .toList();
+    } else {
+      managerAtsigns = [];
+    }
     String homeDirectory = getHomeDirectory()!;
 
     // Do we have a device ?
@@ -83,13 +93,13 @@ class SshnpdParams {
       username: getUserName(throwIfNull: true)!,
       homeDirectory: homeDirectory,
       managerAtsigns: managerAtsigns,
+      policyManagerAtsign: r['policy-manager'],
       atKeysFilePath: r['key-file'] ??
           getDefaultAtKeysFilePath(homeDirectory, deviceAtsign),
       deviceAtsign: deviceAtsign,
       verbose: r['verbose'],
       makeDeviceInfoVisible: r['un-hide'],
       addSshPublicKeys: r['sshpublickey'],
-      delegateAuthChecks: r['delegate-auth-checks'],
       sshClient: sshClient,
       rootDomain: r['root-domain'],
       localSshdPort:
@@ -126,9 +136,24 @@ class SshnpdParams {
       'managers',
       aliases: ['manager'],
       abbr: 'm',
-      mandatory: true,
+      mandatory: false,
       help: 'atSign or list of atSigns (comma separated)'
-          ' that this device will accept requests from',
+          ' that this device will accept requests from.'
+          ' At least one of --managers and --policy-manager must be supplied.'
+          ' If both --managers and --policy-manager are supplied then '
+          ' the daemon will check with the --policy-manager atSign re '
+          ' requests which come from atSigns not in the --managers list.',
+    );
+    parser.addOption(
+      'policy-manager',
+      abbr: 'p',
+      mandatory: false,
+      help: 'The atSign which this device will use to decide whether or not to '
+          ' accept requests from some client atSign. '
+          ' At least one of --managers and --policy-manager must be supplied.'
+          ' If both --managers and --policy-manager are supplied then '
+          ' the daemon will check with the --policy-manager atSign re '
+          ' requests which come from atSigns not in the --managers list.',
     );
     parser.addOption(
       'device',
@@ -146,13 +171,6 @@ class SshnpdParams {
       defaultsTo: false,
       help: 'When set, will update authorized_keys'
           ' to include public key sent by manager',
-    );
-    parser.addFlag(
-      'delegate-auth-checks',
-      defaultsTo: false,
-      help: 'When set, sshnpd will listen for messages from multiple atSigns '
-          'but check with the [managerAtsign] if this particular client atSign '
-          'is currently authorized to connect to this device.',
     );
     parser.addFlag(
       'un-hide',
