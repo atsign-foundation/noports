@@ -2,21 +2,21 @@ import 'dart:convert';
 
 const JsonEncoder jsonPrettyPrinter = JsonEncoder.withIndent('    ');
 
-class SSHNPAAuthCheckRequest {
+class NPAAuthCheckRequest {
   final String daemonAtsign;
   final String daemonDeviceName;
   final String daemonDeviceGroupName;
   final String clientAtsign;
 
-  SSHNPAAuthCheckRequest({
+  NPAAuthCheckRequest({
     required this.daemonAtsign,
     required this.daemonDeviceName,
     required this.daemonDeviceGroupName,
     required this.clientAtsign,
   });
 
-  static SSHNPAAuthCheckRequest fromJson(Map<String, dynamic> json) {
-    return SSHNPAAuthCheckRequest(
+  static NPAAuthCheckRequest fromJson(Map<String, dynamic> json) {
+    return NPAAuthCheckRequest(
       daemonAtsign: json['daemonAtsign'],
       daemonDeviceName: json['daemonDeviceName'],
       daemonDeviceGroupName: json['daemonDeviceGroupName'],
@@ -35,14 +35,14 @@ class SSHNPAAuthCheckRequest {
   String toString() => jsonPrettyPrinter.convert(toJson());
 }
 
-class SSHNPAAuthCheckResponse {
+class NPAAuthCheckResponse {
   final bool authorized;
   final String? message;
 
-  SSHNPAAuthCheckResponse({required this.authorized, required this.message});
+  NPAAuthCheckResponse({required this.authorized, required this.message});
 
-  static SSHNPAAuthCheckResponse fromJson(Map<String, dynamic> json) {
-    return SSHNPAAuthCheckResponse(
+  static NPAAuthCheckResponse fromJson(Map<String, dynamic> json) {
+    return NPAAuthCheckResponse(
       authorized: json['authorized'],
       message: json['message'],
     );

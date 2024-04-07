@@ -13,7 +13,7 @@ import 'package:noports_core/src/common/openssh_binary_path.dart';
 import 'package:noports_core/src/srv/srv.dart';
 import 'package:noports_core/src/sshnp/impl/notification_request_message.dart';
 import 'package:noports_core/sshnpd.dart';
-import 'package:noports_core/sshnpa.dart';
+import 'package:noports_core/npa.dart';
 import 'package:noports_core/utils.dart';
 import 'package:noports_core/src/version.dart';
 import 'package:uuid/uuid.dart';
@@ -110,7 +110,7 @@ class SshnpdImpl implements Sshnpd {
     logger.logger.level = Level.SHOUT;
 
     if (authChecker == null && policyManagerAtsign != null) {
-      authChecker = SSHNPAAuthChecker(this);
+      authChecker = _NPAAuthChecker(this);
     }
 
     pingResponse = {
@@ -327,7 +327,7 @@ class SshnpdImpl implements Sshnpd {
       try {
         logger.info('Asking $policyManagerAtsign'
             ' whether $client may connect to this daemon');
-        SSHNPAAuthCheckResponse resp = await authChecker!
+        NPAAuthCheckResponse resp = await authChecker!
             .mayConnect(clientAtsign: client)
             .timeout(const Duration(seconds: authTimeoutSeconds));
         authed = resp.authorized;
@@ -1271,16 +1271,16 @@ class SshnpdImpl implements Sshnpd {
 }
 
 abstract interface class AuthChecker {
-  Future<SSHNPAAuthCheckResponse> mayConnect({required String clientAtsign});
+  Future<NPAAuthCheckResponse> mayConnect({required String clientAtsign});
 }
 
-class SSHNPAAuthChecker implements AuthChecker, AtRpcCallbacks {
+class _NPAAuthChecker implements AuthChecker, AtRpcCallbacks {
   final Sshnpd sshnpd;
   late final AtRpc rpc;
   final Map<String, int> authCheckCache = {};
-  final Map<int, Completer<SSHNPAAuthCheckResponse>> completerMap = {};
+  final Map<int, Completer<NPAAuthCheckResponse>> completerMap = {};
 
-  SSHNPAAuthChecker(this.sshnpd) {
+  _NPAAuthChecker(this.sshnpd) {
     rpc = AtRpc(
       atClient: sshnpd.atClient,
       baseNameSpace: DefaultArgs.namespace,
@@ -1292,21 +1292,21 @@ class SSHNPAAuthChecker implements AuthChecker, AtRpcCallbacks {
   }
 
   @override
-  Future<SSHNPAAuthCheckResponse> mayConnect(
+  Future<NPAAuthCheckResponse> mayConnect(
       {required String clientAtsign}) async {
     // We're caching auth checks for 30 seconds so we don't bombard the
     // auth server unnecessarily.
     if (authCheckCache.containsKey(clientAtsign)) {
       return completerMap[authCheckCache[clientAtsign]!]!.future;
     }
-    AtRpcReq request = AtRpcReq.create(SSHNPAAuthCheckRequest(
+    AtRpcReq request = AtRpcReq.create(NPAAuthCheckRequest(
             daemonAtsign: sshnpd.deviceAtsign,
             daemonDeviceName: sshnpd.device,
             daemonDeviceGroupName: sshnpd.deviceGroup,
             clientAtsign: clientAtsign)
         .toJson());
 
-    completerMap[request.reqId] = Completer<SSHNPAAuthCheckResponse>();
+    completerMap[request.reqId] = Completer<NPAAuthCheckResponse>();
     authCheckCache[clientAtsign] = request.reqId;
 
     // To keep memory tidy, we'll clear this request and its cached response
@@ -1341,7 +1341,7 @@ class SSHNPAAuthChecker implements AuthChecker, AtRpcCallbacks {
       return;
     }
 
-    Completer<SSHNPAAuthCheckResponse> completer =
+    Completer<NPAAuthCheckResponse> completer =
         completerMap[response.reqId]!;
 
     if (completer.isCompleted) {
@@ -1361,13 +1361,13 @@ class SSHNPAAuthChecker implements AuthChecker, AtRpcCallbacks {
         sshnpd.logger
             .info('Got auth check response from ${sshnpd.policyManagerAtsign}'
                 ' : $response');
-        completer.complete(SSHNPAAuthCheckResponse.fromJson(response.payload));
+        completer.complete(NPAAuthCheckResponse.fromJson(response.payload));
         break;
       default:
         sshnpd.logger.warning(
             'Got non-success auth check response from ${sshnpd.policyManagerAtsign}'
             ' : $response');
-        completer.complete(SSHNPAAuthCheckResponse(
+        completer.complete(NPAAuthCheckResponse(
             authorized: false,
             message: response.message ?? 'Got non-success response $response'));
         break;

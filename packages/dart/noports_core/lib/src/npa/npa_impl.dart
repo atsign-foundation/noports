@@ -6,11 +6,11 @@ import 'package:at_client/at_client.dart' hide StringBuffer;
 import 'package:at_utils/at_logger.dart';
 import 'package:logging/logging.dart';
 import 'package:meta/meta.dart';
-import 'package:noports_core/sshnpa.dart';
+import 'package:noports_core/npa.dart';
 import 'package:noports_core/utils.dart';
 
 @protected
-class SSHNPAImpl implements SSHNPA {
+class NPAImpl implements NPA {
   @override
   final AtSignLogger logger = AtSignLogger(' sshnpa ');
 
@@ -27,11 +27,11 @@ class SSHNPAImpl implements SSHNPA {
   Set<String> daemonAtsigns;
 
   @override
-  SSHNPARequestHandler handler;
+  NPARequestHandler handler;
 
   static const JsonEncoder jsonPrettyPrinter = JsonEncoder.withIndent('    ');
 
-  SSHNPAImpl({
+  NPAImpl({
     // final fields
     required this.atClient,
     required this.homeDirectory,
@@ -42,13 +42,13 @@ class SSHNPAImpl implements SSHNPA {
     logger.logger.level = Level.SHOUT;
   }
 
-  static Future<SSHNPA> fromCommandLineArgs(List<String> args,
-      {required SSHNPARequestHandler handler,
+  static Future<NPA> fromCommandLineArgs(List<String> args,
+      {required NPARequestHandler handler,
       AtClient? atClient,
-      FutureOr<AtClient> Function(SSHNPAParams)? atClientGenerator,
+      FutureOr<AtClient> Function(NPAParams)? atClientGenerator,
       void Function(Object, StackTrace)? usageCallback}) async {
     try {
-      var p = await SSHNPAParams.fromArgs(args);
+      var p = await NPAParams.fromArgs(args);
 
       // Check atKeyFile selected exists
       if (!await File(p.atKeysFilePath).exists()) {
@@ -66,7 +66,7 @@ class SSHNPAImpl implements SSHNPA {
 
       atClient ??= await atClientGenerator!(p);
 
-      var sshnpa = SSHNPAImpl(
+      var sshnpa = NPAImpl(
         atClient: atClient,
         homeDirectory: p.homeDirectory,
         daemonAtsigns: p.daemonAtsigns,
@@ -104,8 +104,8 @@ class SSHNPAImpl implements SSHNPA {
     logger.info('Received request from $fromAtSign: '
         '${jsonPrettyPrinter.convert(request.toJson())}');
 
-    SSHNPAAuthCheckRequest authCheckRequest =
-        SSHNPAAuthCheckRequest.fromJson(request.payload);
+    NPAAuthCheckRequest authCheckRequest =
+        NPAAuthCheckRequest.fromJson(request.payload);
     try {
       var authCheckResponse = await handler.doAuthCheck(authCheckRequest);
       return AtRpcResp(
@@ -117,7 +117,7 @@ class SSHNPAImpl implements SSHNPA {
       return AtRpcResp(
           reqId: request.reqId,
           respType: AtRpcRespType.success,
-          payload: SSHNPAAuthCheckResponse(
+          payload: NPAAuthCheckResponse(
                   authorized: false, message: 'Exception: $e')
               .toJson());
     }

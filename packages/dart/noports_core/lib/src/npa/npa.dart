@@ -2,20 +2,20 @@ import 'dart:async';
 
 import 'package:at_client/at_client.dart' hide StringBuffer;
 import 'package:at_utils/at_logger.dart';
-import 'package:noports_core/src/sshnpa/sshnpa_params.dart';
-import 'package:noports_core/src/sshnpa/sshnpa_impl.dart';
-import 'package:noports_core/src/sshnpa/sshnpa_rpcs.dart';
+import 'package:noports_core/src/npa/npa_params.dart';
+import 'package:noports_core/src/npa/npa_impl.dart';
+import 'package:noports_core/src/npa/npa_rpcs.dart';
 
-abstract class SSHNPARequestHandler {
-  Future<SSHNPAAuthCheckResponse> doAuthCheck(
-      SSHNPAAuthCheckRequest authCheckRequest);
+abstract class NPARequestHandler {
+  Future<NPAAuthCheckResponse> doAuthCheck(
+      NPAAuthCheckRequest authCheckRequest);
 }
 
 /// - Listens for authorization check requests from sshnp daemons
 /// - Checks if the clientAtSign is currently authorized to access
 ///   the sshnpd atSign and device
 /// - Responds accordingly
-abstract class SSHNPA implements AtRpcCallbacks {
+abstract class NPA implements AtRpcCallbacks {
   abstract final AtSignLogger logger;
 
   /// The [AtClient] used to communicate with SSHNPDs
@@ -31,14 +31,14 @@ abstract class SSHNPA implements AtRpcCallbacks {
 
   abstract Set<String> daemonAtsigns;
 
-  abstract SSHNPARequestHandler handler;
+  abstract NPARequestHandler handler;
 
-  static Future<SSHNPA> fromCommandLineArgs(List<String> args,
-      {required SSHNPARequestHandler handler,
+  static Future<NPA> fromCommandLineArgs(List<String> args,
+      {required NPARequestHandler handler,
       AtClient? atClient,
-      FutureOr<AtClient> Function(SSHNPAParams)? atClientGenerator,
+      FutureOr<AtClient> Function(NPAParams)? atClientGenerator,
       void Function(Object, StackTrace)? usageCallback}) async {
-    return SSHNPAImpl.fromCommandLineArgs(
+    return NPAImpl.fromCommandLineArgs(
       args,
       handler: handler,
       atClient: atClient,

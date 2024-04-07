@@ -1,22 +1,22 @@
 import 'dart:async';
 import 'dart:io';
 import 'package:at_utils/at_logger.dart';
-import 'package:noports_core/sshnpa.dart';
+import 'package:noports_core/npa.dart';
 import 'package:sshnoports/src/create_at_client_cli.dart';
 import 'package:sshnoports/src/print_version.dart';
 import 'package:sshnoports/src/service_factories.dart';
 
 Future<void> run(
-    SSHNPARequestHandler handler, List<String> commandLineArgs) async {
+    NPARequestHandler handler, List<String> commandLineArgs) async {
   AtSignLogger.root_level = 'SHOUT';
   AtSignLogger.defaultLoggingHandler = AtSignLogger.stdErrLoggingHandler;
-  late final SSHNPA sshnpa;
+  late final NPA sshnpa;
 
   try {
-    sshnpa = await SSHNPA.fromCommandLineArgs(
+    sshnpa = await NPA.fromCommandLineArgs(
       commandLineArgs,
       handler: handler,
-      atClientGenerator: (SSHNPAParams p) => createAtClientCli(
+      atClientGenerator: (NPAParams p) => createAtClientCli(
         homeDirectory: p.homeDirectory,
         atsign: p.authorizerAtsign,
         atKeysFilePath: p.atKeysFilePath,
@@ -25,7 +25,7 @@ Future<void> run(
       ),
       usageCallback: (e, s) {
         printVersion();
-        stdout.writeln(SSHNPAParams.parser.usage);
+        stdout.writeln(NPAParams.parser.usage);
         stderr.writeln('\n$e');
       },
     );

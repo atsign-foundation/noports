@@ -1,7 +1,7 @@
 import 'package:args/args.dart';
 import 'package:noports_core/src/common/file_system_utils.dart';
 
-class SSHNPAParams {
+class NPAParams {
   final String authorizerAtsign;
   final Set<String> daemonAtsigns;
   final String atKeysFilePath;
@@ -11,7 +11,7 @@ class SSHNPAParams {
 
   // Non param variables
   static final ArgParser parser = _createArgParser();
-  SSHNPAParams({
+  NPAParams({
     required this.authorizerAtsign,
     required this.daemonAtsigns,
     required this.atKeysFilePath,
@@ -20,14 +20,14 @@ class SSHNPAParams {
     required this.homeDirectory,
   });
 
-  static Future<SSHNPAParams> fromArgs(List<String> args) async {
+  static Future<NPAParams> fromArgs(List<String> args) async {
     // Arg check
     ArgResults r = parser.parse(args);
 
     String authorizerAtsign = r['atsign'];
     String homeDirectory = getHomeDirectory()!;
 
-    return SSHNPAParams(
+    return NPAParams(
       authorizerAtsign: authorizerAtsign,
       daemonAtsigns: r['daemon-atsigns'].toString().split(',').toSet(),
       atKeysFilePath: r['key-file'] ??
