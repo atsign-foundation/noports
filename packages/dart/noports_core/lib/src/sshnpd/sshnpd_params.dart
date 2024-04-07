@@ -61,7 +61,7 @@ class SshnpdParams {
     String deviceAtsign = r['atsign'];
 
     if (!r.wasParsed('managers') && !r.wasParsed('policy-manager')) {
-      throw ArgumentError ('At least one of --managers and --policy-manager'
+      throw ArgumentError('At least one of --managers and --policy-manager'
           ' options must be supplied.');
     }
     final List<String> managerAtsigns;

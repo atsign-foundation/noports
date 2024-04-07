@@ -19,8 +19,8 @@ class CLI implements SSHNPARequestHandler {
     }
     final bool authorized = decision.toLowerCase().startsWith('a');
     return SSHNPAAuthCheckResponse(
-        authorized: authorized,
-        message: authorized ? 'Approved via CLI' : 'Denied via CLI',
+      authorized: authorized,
+      message: authorized ? 'Approved via CLI' : 'Denied via CLI',
     );
   }
 }

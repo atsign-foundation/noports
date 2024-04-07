@@ -81,12 +81,12 @@ abstract class Sshnpd {
   abstract final String version;
 
   static Future<Sshnpd> fromCommandLineArgs(
-      List<String> args, {
-        AtClient? atClient,
-        FutureOr<AtClient> Function(SshnpdParams)? atClientGenerator,
-        void Function(Object, StackTrace)? usageCallback,
-        required String version,
-      }) async {
+    List<String> args, {
+    AtClient? atClient,
+    FutureOr<AtClient> Function(SshnpdParams)? atClientGenerator,
+    void Function(Object, StackTrace)? usageCallback,
+    required String version,
+  }) async {
     return SshnpdImpl.fromCommandLineArgs(
       args,
       atClient: atClient,

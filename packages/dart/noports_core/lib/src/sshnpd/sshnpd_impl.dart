@@ -334,8 +334,7 @@ class SshnpdImpl implements Sshnpd {
         message = resp.message ?? '';
       } on TimeoutException {
         authed = false;
-        message =
-        'No response from authorizer after $authTimeoutSeconds seconds';
+        message = 'Timed out waiting for authorizer response';
       }
 
       return (authed, message);
@@ -1295,7 +1294,6 @@ class SSHNPAAuthChecker implements AuthChecker, AtRpcCallbacks {
   @override
   Future<SSHNPAAuthCheckResponse> mayConnect(
       {required String clientAtsign}) async {
-
     // We're caching auth checks for 30 seconds so we don't bombard the
     // auth server unnecessarily.
     if (authCheckCache.containsKey(clientAtsign)) {
@@ -1335,11 +1333,11 @@ class SSHNPAAuthChecker implements AuthChecker, AtRpcCallbacks {
   Future<void> handleResponse(AtRpcResp response) async {
     sshnpd.logger.info('Got response ${response.payload}');
 
-    if (! completerMap.containsKey(response.reqId)) {
+    if (!completerMap.containsKey(response.reqId)) {
       sshnpd.logger.warning(
           'Ignoring auth check response (completerMap has been cleared)'
-              ' from ${sshnpd.policyManagerAtsign}'
-              ' : $response');
+          ' from ${sshnpd.policyManagerAtsign}'
+          ' : $response');
       return;
     }
 
