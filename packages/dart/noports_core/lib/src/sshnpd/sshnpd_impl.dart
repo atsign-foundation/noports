@@ -1341,8 +1341,7 @@ class _NPAAuthChecker implements AuthChecker, AtRpcCallbacks {
       return;
     }
 
-    Completer<NPAAuthCheckResponse> completer =
-        completerMap[response.reqId]!;
+    Completer<NPAAuthCheckResponse> completer = completerMap[response.reqId]!;
 
     if (completer.isCompleted) {
       sshnpd.logger.warning(

@@ -117,9 +117,9 @@ class NPAImpl implements NPA {
       return AtRpcResp(
           reqId: request.reqId,
           respType: AtRpcRespType.success,
-          payload: NPAAuthCheckResponse(
-                  authorized: false, message: 'Exception: $e')
-              .toJson());
+          payload:
+              NPAAuthCheckResponse(authorized: false, message: 'Exception: $e')
+                  .toJson());
     }
   }
 
