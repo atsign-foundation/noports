@@ -12,7 +12,10 @@ class ProfileEditorScreenDesktopView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    SizeConfig().init(context);
     final strings = AppLocalizations.of(context)!;
+    final headlineLarge = Theme.of(context).textTheme.headlineLarge!;
+    final bodySmall = Theme.of(context).textTheme.bodySmall!;
     return Scaffold(
       body: SafeArea(
         child: Row(
@@ -28,7 +31,7 @@ class ProfileEditorScreenDesktopView extends StatelessWidget {
                 child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                   Text(
                     strings.addNewConnection,
-                    style: Theme.of(context).textTheme.headlineLarge,
+                    style: headlineLarge.copyWith(fontSize: headlineLarge.fontSize?.toFont),
                   ),
                   gapH10,
                   const LinearProgressIndicator(
@@ -37,9 +40,9 @@ class ProfileEditorScreenDesktopView extends StatelessWidget {
                   gapH10,
                   Text(
                     strings.addNewConnectionDescription,
-                    style: Theme.of(context).textTheme.bodySmall!,
+                    style: bodySmall.copyWith(fontSize: bodySmall.fontSize?.toFont),
                   ),
-                  gapH16,
+                  gapH24,
                   const Expanded(child: ProfileFormDesktopView())
                 ]),
               ),
