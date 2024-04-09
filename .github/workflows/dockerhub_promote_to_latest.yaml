@@ -11,7 +11,7 @@ on:
         options:
           - sshnpd
           - activate_sshnpd
-          - sshnpd_slim
+          - sshnpd-slim
 
 permissions: # added using https://github.com/step-security/secure-workflows
   contents: read
