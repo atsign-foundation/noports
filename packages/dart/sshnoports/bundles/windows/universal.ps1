@@ -4,6 +4,10 @@
 .DESCRIPTION
     Usage: install_sshnpd [options]
 
+    Sshnp Version: 5.1.0
+    Repository: https://github.com/atsign-foundation/sshnoports
+    Script Version: 0.1.0
+
     General options:
       -u, --update                Update all services instead of installing
           --rename                Rename device for client/device pair with the new name
@@ -75,6 +79,18 @@ param(
     [string]$SSHNPD_VERSION,
     [string]$SSHNPD_SERVICE_ARGS
 )
+
+### --- IMPORTANT ---
+#Make sure to change the values in the help message.
+#The help message must be at the top of the script, so no variables.
+
+# SCRIPT METADATA
+# DO NOT MODIFY/DELETE THIS BLOCK
+$script_version = "0.1.0"
+$sshnp_version = "5.1.0"
+$repo_url = "https://github.com/atsign-foundation/sshnoports"
+# END METADATA
+
 
 
 # Set variables
@@ -162,12 +178,13 @@ function Unpack-Archive {
     }
 
     Expand-Archive -Path "$HOME_PATH/.atsign/temp/$SSHNPD_VERSION/$BINARY_NAME.zip" -DestinationPath "$HOME_PATH/.atsign/temp/$SSHNPD_VERSION/" -Force
-    if (-not (Test-Path "$HOME_PATH/.atsign/temp/$SSHNPD_VERSION/sshnp.exe")) {
+    if (-not (Test-Path "$HOME_PATH/.atsign/temp/$SSHNPD_VERSION/sshnp/sshnp.exe")) {
         Write-Host "Failed to unpack $BINARY_NAME"
-        Cleanup
+        #Cleanup
         Exit 1
     }
     $global:BIN_PATH = "$HOME_PATH/.atsign/temp/$SSHNPD_VERSION/$BINARY_NAME"
+    Remove-Item -Path "$HOME_PATH/.atsign/temp/$SSHNPD_VERSION/$BINARY_NAME.zip" -Force
 }
 
 # Main function
