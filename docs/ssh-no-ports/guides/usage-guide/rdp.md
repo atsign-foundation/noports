@@ -1,4 +1,4 @@
-# 🖥 RDP
+# 🖥️ RDP
 
 ## Overview
 
@@ -18,7 +18,7 @@ sshnp ... -o '-L 33899:localhost:3389'
 
 We bridge remote port 3389 to port 33899 on the local machine, since 3389 is possibly already in use on the local machine.
 
-Now you can connect to localhost:33899 in your favorite SFTP client, use the same user name and SSH private key that you used to connect via sshnp.
+Now you can connect to localhost:33899 in your favorite RDP client, use the same user name and SSH private key that you used to connect via sshnp.
 
 ## Putting it altogether
 
@@ -33,6 +33,6 @@ With a web server forwarding the command might look like:
 <pre class="language-bash"><code class="lang-bash"><strong>sshnp -f @alice_client -t @alice_device -d my_server -h @rv_am -i ~/.ssh/id_ed25519 -o '-L 33899:localhost:3389'
 </strong></code></pre>
 
-Now you can connect to localhost:33899 in your favorite SFTP client.
+Now you can connect to localhost:33899 in your favorite RDP client.
 
 Use the same user name as the SSH session, and the same file as passed into `-i` as the SSH private key for authentication (`~/.ssh/id_ed25519` in this example).
