@@ -1,3 +1,7 @@
+# 6.0.6
+- feat: SrvImplDart: supply a logger to SocketConnector so that the Srv can 
+  control what happens with any log messages that SocketConnector emits
+
 # 6.0.5
 - fix: Strict validation of device name as alphanumeric snake case
 - feat: Increase device name max length from 15 to 36

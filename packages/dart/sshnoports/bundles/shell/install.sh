@@ -5,9 +5,10 @@ is_root() {
   [ "$(id -u)" -eq 0 ]
 }
 
+unset binary_dir
 user_home=$HOME
 define_env() {
-  script_dir="$(dirname -- "$( readlink -f -- "$0"; )")"
+  script_dir="$(dirname -- "$(readlink -f -- "$0")")"
   bin_dir="/usr/local/bin"
   systemd_dir="/etc/systemd/system"
   if is_root; then
@@ -22,6 +23,7 @@ define_env() {
   else
     user="$USER"
   fi
+  launchd_dir="$user_home/Library/LaunchAgents"
   user_bin_dir="$user_home/.local/bin"
   user_sshnpd_dir="$user_home/.sshnpd"
   user_log_dir="$user_sshnpd_dir/logs"
@@ -32,9 +34,24 @@ is_darwin() {
   [ "$(uname)" = 'Darwin' ]
 }
 
+sedi() {
+  if is_darwin; then
+    sed -i '' "$@"
+  else
+    sed -i "$@"
+  fi
+}
+
 no_mac() {
   if is_darwin; then
     echo "Error: this operation is only supported on linux"
+    exit 1
+  fi
+}
+
+mac_only() {
+  if ! is_darwin; then
+    echo "Error: this operation is only supported on macos"
     exit 1
   fi
 }
@@ -52,23 +69,29 @@ usage() {
   if [ -z "$arg_zero" ]; then
     arg_zero='install.sh'
   fi
-  echo "$arg_zero [command]"
+  echo "$arg_zero [...options] [command]"
   echo "Available commands:"
   echo "at_activate     - install at_activate"
+  echo "npt             - install npt"
   echo "sshnp           - install sshnp"
   echo "sshnpd          - install sshnpd"
-  echo "srv           - install srv"
-  echo "srvd          - install srvd"
-  echo "binaries        - install all base binaries"
+  echo "srv             - install srv"
+  echo "srvd            - install srvd"
+  echo "binaries        - install all base binaries (everything above)"
   echo ""
-  echo "debug_srvd    - install srvd with debugging enabled"
+  echo "debug_srvd      - install srvd with debugging enabled"
   echo "debug           - install all debug binaries"
   echo ""
-  echo "all             - install all binaries (base and debug)"
+  echo "all             - install all binaries (everything above)"
   if ! is_darwin; then
     echo ""
     echo "systemd <unit>  - install a systemd unit"
     echo "                  available units: [sshnpd, srvd]"
+  fi
+  if is_darwin; then
+    echo ""
+    echo "launchd <unit>  - install a launchd unit"
+    echo "                  available units: [sshnpd]"
   fi
   echo ""
   echo "headless <job>  - install a headless cron job"
@@ -76,6 +99,10 @@ usage() {
   echo ""
   echo "tmux <service>  - install a service in a tmux session"
   echo "                  available services: [sshnpd, srvd]"
+  echo ""
+  echo "Options:"
+  echo "-b <dir>        - override the directory in which the binaries are written to"
+  echo "-u <username>   - override the user to install the binaries for"
 }
 
 # SETUP AUTHORIZED KEYS #
@@ -89,7 +116,9 @@ setup_authorized_keys() {
 # INSTALL BINARIES #
 
 install_single_binary() {
-  if is_root; then
+  if [ -n "$binary_dir" ]; then
+    dest="$binary_dir"
+  elif is_root; then
     dest="$bin_dir"
   else
     dest="$user_bin_dir"
@@ -97,16 +126,14 @@ install_single_binary() {
   mkdir -p "$dest"
   if test -f "$dest/$1"; then
     if test -f "$dest/$1.old"; then
-      if rm -f "$dest/$1.old"
-      then
+      if rm -f "$dest/$1.old"; then
         echo "=> Removed $dest/$1.old"
       else
         echo "Failed to remove $dest/$1.old - aborting"
         exit 1
       fi
     fi
-    if mv "$dest/$1" "$dest/$1.old"
-    then
+    if mv "$dest/$1" "$dest/$1.old"; then
       echo "=> Renamed existing binary $dest/$1 to $dest/$1.old"
     else
       echo "Failed to rename $dest/$1 to $dest/$1.old - aborting"
@@ -116,10 +143,18 @@ install_single_binary() {
   cp -f "$script_dir/$1" "$dest/$1"
 
   echo "=> Installed $1 to $dest"
-  if is_root & ! [ -f "$user_bin_dir/$1" ] ; then
+  if
+    is_root &
+    ! [ -f "$user_bin_dir/$1" ]
+  then
     mkdir -p "$user_bin_dir"
-    ln -sf "$dest/$1" "$user_bin_dir/$1"
-    echo "=> Linked $user_bin_dir/$1 to $dest/$1"
+    if [ -f "$dest/$1" ]; then
+      ln -sf "$dest/$1" "$user_bin_dir/$1"
+      echo "=> Linked $user_bin_dir/$1 to $dest/$1"
+    else
+      echo "Failed to link $user_bin_dir/$1 to $dest/$1:"
+      echo "  $dest/$1 does not exist"
+    fi
   fi
 }
 
@@ -129,10 +164,13 @@ install_base_binaries() {
   install_single_binary "sshnpd"
   install_single_binary "srv"
   install_single_binary "srvd"
+  install_single_binary "npt"
 }
 
 install_debug_binary() {
-  if is_root; then
+  if [ -n "$binary_dir" ]; then
+    dest="$binary_dir"
+  elif is_root; then
     dest="$bin_dir"
   else
     dest="$user_bin_dir"
@@ -188,18 +226,65 @@ install_systemd_srvd() {
 
 systemd() {
   if is_darwin; then
-    echo "Unknown command: systemd";
-    usage;
-    exit 1;
+    echo "Unknown command: systemd"
+    usage
+    exit 1
   fi
   case "$1" in
-    --help) usage; exit 0;;
-    sshnpd) install_systemd_sshnpd;;
-    srvd) install_systemd_srvd;;
+    --help)
+      usage
+      exit 0
+      ;;
+    sshnpd) install_systemd_sshnpd ;;
+    srvd) install_systemd_srvd ;;
     *)
-      echo "Unknown systemd unit: $1";
-      usage;
-      exit 1;
+      echo "Unknown systemd unit: $1"
+      usage
+      exit 1
+      ;;
+  esac
+  setup_authorized_keys
+}
+
+# LAUNCHD SERVICES #
+post_launchd_message() {
+  echo "Launchd unit installed, make sure to configure the unit by editing $dest"
+  echo ""
+  echo "To enable the service see \"Login Items\" in settings"
+}
+
+install_launchd_unit() {
+  unit_name="$1"
+  mac_only
+  mkdir -p "$launchd_dir"
+  dest="$launchd_dir/$unit_name"
+  cp "$script_dir/launchd/$unit_name" "$dest"
+  post_launchd_message
+}
+
+install_launchd_sshnpd() {
+  install_single_binary "sshnpd"
+  install_single_binary "srv"
+  install_launchd_unit "com.atsign.sshnpd.plist"
+}
+
+launchd() {
+  if ! is_darwin; then
+    echo "Unknown command: launchd"
+    usage
+    exit 1
+  fi
+  case "$1" in
+    --help)
+      usage
+      exit 0
+      ;;
+    sshnpd) install_launchd_sshnpd ;;
+    *)
+      echo "Unknown launchd unit: $1"
+      usage
+      exit 1
+      ;;
   esac
   setup_authorized_keys
 }
@@ -226,10 +311,9 @@ install_headless_job() {
 
   dest="$user_bin_dir/$job_name.sh"
   if ! [ -f "$dest" ]; then
+    cp "$script_dir/headless/$job_name.sh" "$dest"
     if is_root; then
-      cp "$script_dir/headless/root_$job_name.sh" "$dest"
-    else
-      cp "$script_dir/headless/$job_name.sh" "$dest"
+      sedi "s|^binary_path=\".*\"$|binary_path=\"$bin_dir\"|g" "$dest"
     fi
   fi
 
@@ -244,11 +328,14 @@ install_headless_job() {
     echo "=> cron job already installed, killing any old $job_name.sh processes"
     pids=$(pgrep "$command")
     if [ -n "$pids" ]; then
-     echo "$pids" | xargs kill
+      echo "$pids" | xargs kill
     fi
   else
-     echo "=> Installing cron job: $cron_entry"
-    (echo "$crontab_contents"; echo "$cron_entry") | crontab -;
+    echo "=> Installing cron job: $cron_entry"
+    (
+      echo "$crontab_contents"
+      echo "$cron_entry"
+    ) | crontab -
   fi
 
   echo ""
@@ -268,13 +355,17 @@ install_headless_srvd() {
 
 headless() {
   case "$1" in
-    --help|'') usage; exit 0;;
-    sshnpd) install_headless_sshnpd;;
-    srvd) install_headless_srvd;;
+    --help | '')
+      usage
+      exit 0
+      ;;
+    sshnpd) install_headless_sshnpd ;;
+    srvd) install_headless_srvd ;;
     *)
-      echo "Error: Unknown headless job: $1";
-      usage;
-      exit 1;
+      echo "Error: Unknown headless job: $1"
+      usage
+      exit 1
+      ;;
   esac
   setup_authorized_keys
 }
@@ -302,10 +393,9 @@ install_tmux_service() {
 
   # Only copy the "$service_name".sh script if it's not already there
   if ! [ -f "$dest" ]; then
+    cp "$script_dir/headless/$service_name.sh" "$dest"
     if is_root; then
-      cp "$script_dir/headless/root_$service_name.sh" "$dest"
-    else
-      cp "$script_dir/headless/$service_name.sh" "$dest"
+      sedi "s|^binary_path=\".*\"$|binary_path=\"$bin_dir\"|g" "$dest"
     fi
   fi
 
@@ -317,10 +407,13 @@ install_tmux_service() {
     echo "=> Cron job already installed, will not re-install"
   else
     echo "=> Installing cron job: $cron_entry"
-    (echo "$crontab_contents"; echo "$cron_entry") | crontab -;
+    (
+      echo "$crontab_contents"
+      echo "$cron_entry"
+    ) | crontab -
   fi
 
-  if (command tmux has-session -t "$service_name" 2> /dev/null); then
+  if (command tmux has-session -t "$service_name" 2>/dev/null); then
     echo "=> Found existing tmux session for $service_name - will kill and restart it"
     command tmux kill-session -t "$service_name"
     command tmux new-session -d -s "$service_name" && command tmux send-keys -t "$service_name" "$dest" C-m
@@ -343,13 +436,17 @@ install_tmux_srvd() {
 
 tmux() {
   case "$1" in
-    --help|'') usage; exit 0;;
-    sshnpd) install_tmux_sshnpd;;
-    srvd) install_tmux_srvd;;
+    --help | '')
+      usage
+      exit 0
+      ;;
+    sshnpd) install_tmux_sshnpd ;;
+    srvd) install_tmux_srvd ;;
     *)
-      echo "Unknown tmux service: $1";
-      usage;
-      exit 1;
+      echo "Unknown tmux service: $1"
+      usage
+      exit 1
+      ;;
   esac
   setup_authorized_keys
 }
@@ -361,23 +458,40 @@ main() {
 
   define_env
 
-  case "$1" in
-    --help|'') usage; exit 0;;
-    at_activate|sshnp|sshnpd|srv|srvd) install_single_binary "$1";;
-    binaries) install_base_binaries;;
-    debug_srvd) install_debug_srvd;;
-    debug) install_debug_binaries;;
-    all) install_all_binaries;;
-    systemd|headless|tmux)
-      command=$1;
-      shift 1;
-      $command "$@";
-    ;;
-    *)
-      echo "Unknown command: $1";
-      usage;
-      exit 1;
-  esac
+  while [ $# -gt 0 ]; do
+    case "$1" in
+      -h)
+        usage
+        exit 0
+        ;;
+      -b)
+        binary_dir="$2"
+        shift
+        ;;
+      -u)
+        user="$2"
+        user_home=$(sudo -u "$user" sh -c 'echo $HOME')
+        shift
+        ;;
+      at_activate | npt | sshnp | sshnpd | srv | srvd) install_single_binary "$1" ;;
+      binaries) install_base_binaries ;;
+      debug_srvd) install_debug_binary "${1#"debug_"}" ;; # strips debug_ prefix from the command input
+      debug) install_debug_binaries ;;
+      all) install_all_binaries ;;
+      systemd | launchd | headless | tmux)
+        command=$1
+        shift 1
+        $command "$@"
+        ;;
+      *)
+        echo "Unknown command: $1"
+        usage
+        exit 1
+        ;;
+    esac
+    shift
+  done
+
 }
 
 main "$@"

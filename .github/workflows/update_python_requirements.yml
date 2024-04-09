@@ -24,7 +24,7 @@ jobs:
 
     - name: Set up Python
       if: ${{ github.actor == 'dependabot[bot]' }}
-      uses: actions/setup-python@0a5c61591373683505ea898e09a3ea4f39ef2b9c # v5.0.0
+      uses: actions/setup-python@82c7e631bb3cdc910f68e0081d67478d79c6982d # v5.1.0
       with:
           python-version: '3.11'
 
@@ -32,7 +32,7 @@ jobs:
       if: ${{ github.actor == 'dependabot[bot]' }}
       uses: abatilo/actions-poetry@7b6d33e44b4f08d7021a1dee3c044e9c253d6439 # v3.0.0
       with:
-        poetry-version: '1.7.1'
+        poetry-version: '1.8.2'
 
     - name: Bump sshnpd Python dependencies
       working-directory: packages/python/sshnpd
