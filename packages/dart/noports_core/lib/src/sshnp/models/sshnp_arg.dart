@@ -124,6 +124,7 @@ class SshnpArg {
     authenticateClientToRvdArg,
     authenticateDeviceToRvdArg,
     encryptRvdTrafficArg,
+    daemonPingTimeoutArg,
   ];
 
   @override
@@ -371,6 +372,7 @@ class SshnpArg {
   );
   static const daemonPingTimeoutArg = SshnpArg(
     name: 'daemon-ping-timeout',
+    aliases: ['dpt'],
     help: 'Seconds the client should wait for response after pinging a daemon',
     defaultsTo: DefaultArgs.daemonPingTimeoutSeconds,
     mandatory: false,
