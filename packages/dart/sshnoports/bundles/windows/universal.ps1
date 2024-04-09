@@ -94,7 +94,7 @@ $repo_url = "https://github.com/atsign-foundation/sshnoports"
 
 
 # Set variables
-$BINARY_NAME = "sshnpd"
+$BINARY_NAME = "sshnp"
 
 # Define function to normalize atsign
 function Norm-Atsign {
@@ -112,7 +112,7 @@ function Norm-Version {
 
 # Define function to check basic requirements
 function Check-BasicRequirements {
-    $requiredCommands = @("ps", "Get-Process", "Select-String", "Select-Object", "Get-WmiObject", "StartService","Test-Path", "New-Item", "Get-Command", "New-Object", "Invoke-WebRequest", "New-Service")
+    $requiredCommands = @("attrib", "Expand-Archive", "Select-String", "Select-Object", "Get-WmiObject", "StartService","Test-Path", "New-Item", "Get-Command", "New-Object", "Invoke-WebRequest", "New-Service")
     
     foreach ($command in $requiredCommands) {
         if (-not (Get-Command -Name $command -ErrorAction SilentlyContinue)) {
@@ -129,16 +129,26 @@ function Make-Dirs {
         Remove-Item -Path "$env:HOME\.atsign\temp\$SSHNPD_VERSION" -Recurse -Force
     }
 
+    if (-not (Test-Path "$env:HOME\.ssh")) {
+        New-Item -Path "$env:HOME\.ssh" -ItemType Directory -Force
+    }
     
-    New-Item -Path "$env:HOME\.ssh\" -ItemType Directory -Force
-    New-Item -Path "$env:HOME\.$BINARY_NAME\logs" -ItemType Directory -Force
-    New-Item -Path "$env:HOME\.atsign\keys" -ItemType Directory -Force
-    New-Item -Path "$env:HOME\.atsign\temp\$SSHNPD_VERSION" -ItemType Directory -Force
-    New-Item -Path "$env:HOME\.local\bin" -ItemType Directory -Force
+    if (-not (Test-Path "$env:HOME\.$BINARY_NAME\logs")){
+        New-Item -Path "$env:HOME\.$BINARY_NAME\logs" -ItemType Directory -Force
+    }
+    if(-not (Test-Path "$env:HOME\.atsign\keys")){
+        New-Item -Path "$env:HOME\.atsign\keys" -ItemType Directory -Force
+    }
+    if(-not (Test-Path "$env:HOME\.atsign\temp")){
+        New-Item -Path "$env:HOME\.atsign\temp" -ItemType Directory -Force
+    }
+    if(-not (Test-Path "$env:HOME\.local\bin")){
+        New-Item -Path "$env:HOME\.local\bin" -ItemType Directory -Force
+    }
 
     if (-not (Test-Path "$env:HOME\.ssh\authorized_keys" -PathType Leaf)) {
         New-Item -Path "$env:HOME\.ssh\authorized_keys" -ItemType File -Force
-        Set-ItemProperty -Path "$env:HOME\.ssh\authorized_keys" -Name Mode -Value "600"
+        attrib "$env:HOME\.ssh\authorized_keys" +h
     }
 }
 
@@ -163,10 +173,11 @@ function Download-Archive {
     $DOWNLOAD_BODY = $(Invoke-WebRequest -Uri $global:URL).ToString() -split "," | Select-String "browser_download_url" | Select-String "sshnp-windows"
     $DOWNLOAD_URL = $DOWNLOAD_BODY.ToString() -split '"' | Select-Object -Index 3
     Write-Host $DOWNLOAD_URL
+    New-Item -Path "$HOME_PATH/.atsign/temp/$SSHNPD_VERSION" -ItemType Directory -Force
     Invoke-WebRequest -Uri $DOWNLOAD_URL -OutFile "$HOME_PATH/.atsign/temp/$SSHNPD_VERSION/$BINARY_NAME.zip"
     if (-not (Test-Path "$HOME_PATH/.atsign/temp/$SSHNPD_VERSION/$BINARY_NAME.zip")) {
         Write-Host "Failed to download $BINARY_NAME"
-        Cleanup
+        #Cleanup
         Exit 1
     }
 }
@@ -180,7 +191,7 @@ function Unpack-Archive {
     Expand-Archive -Path "$HOME_PATH/.atsign/temp/$SSHNPD_VERSION/$BINARY_NAME.zip" -DestinationPath "$HOME_PATH/.atsign/temp/$SSHNPD_VERSION/" -Force
     if (-not (Test-Path "$HOME_PATH/.atsign/temp/$SSHNPD_VERSION/sshnp/sshnp.exe")) {
         Write-Host "Failed to unpack $BINARY_NAME"
-        #Cleanup
+        Cleanup
         Exit 1
     }
     $global:BIN_PATH = "$HOME_PATH/.atsign/temp/$SSHNPD_VERSION/$BINARY_NAME"
