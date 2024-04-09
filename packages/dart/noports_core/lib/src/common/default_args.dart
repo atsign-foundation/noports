@@ -21,6 +21,11 @@ class DefaultArgs {
   static const bool authenticateClientToRvd = true;
   static const bool authenticateDeviceToRvd = true;
   static const bool encryptRvdTraffic = true;
+
+  /// How long a client should wait for response after pinging a daemon
+  static const int daemonPingTimeoutSeconds = 20;
+  static const Duration daemonPingTimeoutDuration =
+      Duration(seconds: daemonPingTimeoutSeconds);
 }
 
 class DefaultSshnpArgs {

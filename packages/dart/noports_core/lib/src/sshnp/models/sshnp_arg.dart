@@ -369,4 +369,13 @@ class SshnpArg {
     format: ArgFormat.flag,
     mandatory: false,
   );
+  static const daemonPingTimeoutArg = SshnpArg(
+    name: 'daemon-ping-timeout',
+    help: 'Seconds the client should wait for response after pinging a daemon',
+    defaultsTo: DefaultArgs.daemonPingTimeoutSeconds,
+    mandatory: false,
+    format: ArgFormat.option,
+    type: ArgType.integer,
+    parseWhen: ParseWhen.commandLine,
+  );
 }

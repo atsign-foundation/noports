@@ -39,6 +39,8 @@ abstract interface class ClientParams {
   /// The port we wish to use on this device. If 0, then we ask the operating
   /// system for a port
   int get localPort;
+
+  Duration get daemonPingTimeout;
 }
 
 abstract class ClientParamsBase implements ClientParams {
@@ -86,6 +88,9 @@ abstract class ClientParamsBase implements ClientParams {
   @override
   final EncryptionKeyType sessionKPType = EncryptionKeyType.rsa2048;
 
+  @override
+  final Duration daemonPingTimeout;
+
   ClientParamsBase({
     required this.clientAtSign,
     required this.sshnpdAtSign,
@@ -98,6 +103,7 @@ abstract class ClientParamsBase implements ClientParams {
     this.authenticateClientToRvd = DefaultArgs.authenticateClientToRvd,
     this.authenticateDeviceToRvd = DefaultArgs.authenticateDeviceToRvd,
     this.encryptRvdTraffic = DefaultArgs.encryptRvdTraffic,
+    this.daemonPingTimeout = DefaultArgs.daemonPingTimeoutDuration,
   }) {
     if (invalidDeviceName(device)) {
       throw ArgumentError(invalidDeviceNameMsg);
@@ -141,6 +147,7 @@ class NptParams extends ClientParamsBase
     super.authenticateDeviceToRvd = DefaultArgs.authenticateDeviceToRvd,
     super.encryptRvdTraffic = DefaultArgs.encryptRvdTraffic,
     required this.inline,
+    super.daemonPingTimeout,
   });
 
   /// not relevant for Npt
@@ -208,6 +215,7 @@ class SshnpParams extends ClientParamsBase
     super.authenticateClientToRvd = DefaultArgs.authenticateClientToRvd,
     super.authenticateDeviceToRvd = DefaultArgs.authenticateDeviceToRvd,
     super.encryptRvdTraffic = DefaultArgs.encryptRvdTraffic,
+    super.daemonPingTimeout,
   });
 
   factory SshnpParams.empty() {
@@ -251,6 +259,7 @@ class SshnpParams extends ClientParamsBase
       authenticateDeviceToRvd:
           params2.authenticateDeviceToRvd ?? params1.authenticateDeviceToRvd,
       encryptRvdTraffic: params2.encryptRvdTraffic ?? params1.encryptRvdTraffic,
+      daemonPingTimeout: params2.daemonPingTimeout ?? params1.daemonPingTimeout,
     );
   }
 
@@ -296,6 +305,8 @@ class SshnpParams extends ClientParamsBase
           DefaultArgs.authenticateDeviceToRvd,
       encryptRvdTraffic:
           partial.encryptRvdTraffic ?? DefaultArgs.encryptRvdTraffic,
+      daemonPingTimeout:
+          partial.daemonPingTimeout ?? DefaultArgs.daemonPingTimeoutDuration,
     );
   }
 
@@ -383,6 +394,7 @@ class SshnpPartialParams {
   final bool? authenticateClientToRvd;
   final bool? authenticateDeviceToRvd;
   final bool? encryptRvdTraffic;
+  final Duration? daemonPingTimeout;
 
   /// Operation flags
   final bool? listDevices;
@@ -411,6 +423,7 @@ class SshnpPartialParams {
     this.authenticateClientToRvd,
     this.authenticateDeviceToRvd,
     this.encryptRvdTraffic,
+    this.daemonPingTimeout,
   });
 
   factory SshnpPartialParams.empty() {
@@ -450,6 +463,7 @@ class SshnpPartialParams {
       authenticateDeviceToRvd:
           params2.authenticateDeviceToRvd ?? params1.authenticateDeviceToRvd,
       encryptRvdTraffic: params2.encryptRvdTraffic ?? params1.encryptRvdTraffic,
+      daemonPingTimeout: params2.daemonPingTimeout ?? params1.daemonPingTimeout,
     );
   }
 
@@ -504,6 +518,7 @@ class SshnpPartialParams {
       authenticateClientToRvd: args[SshnpArg.authenticateClientToRvdArg.name],
       authenticateDeviceToRvd: args[SshnpArg.authenticateDeviceToRvdArg.name],
       encryptRvdTraffic: args[SshnpArg.encryptRvdTrafficArg.name],
+      daemonPingTimeout: args[SshnpArg.daemonPingTimeoutArg.name],
     );
   }
 
