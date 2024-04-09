@@ -16,6 +16,7 @@ class Sizes {
   static const p21 = 21.0;
   static const p28 = 28.0;
   static const p24 = 24.0;
+  static const p26 = 26.0;
   static const p30 = 30.0;
   static const p32 = 32.0;
   static const p34 = 34.0;
@@ -166,7 +167,12 @@ class SizeConfig {
       temp = res * safeBlockVertical + (val * 0.2473919523099851) * textFactor;
     }
     // print('$val,$temp,$refHeight,$refWidth');
-    return temp;
+    final maxSize = val + Sizes.p4;
+    if (temp > maxSize) {
+      return maxSize;
+    } else {
+      return temp;
+    }
 
     // var heightScale = (_mediaQueryData.size.height / refHeight);
     // var widthScale = (_mediaQueryData.size.width / refWidth);

@@ -49,6 +49,12 @@ class ResponsiveWidget extends StatelessWidget {
     return width >= kLargeDeviceMinSize && width <= kLargeDeviceMaxSize;
   }
 
+  static bool isLargerScreen() {
+    final context = NavigationRepository.navKey.currentContext!;
+    final width = MediaQuery.of(context).size.width;
+    return width >= kLargeDeviceMinSize;
+  }
+
   static bool isMediumScreen(BuildContext context) {
     final width = MediaQuery.of(context).size.width;
     return width >= kMediumDeviceMinSize && width <= kMediumDeviceMaxSize;

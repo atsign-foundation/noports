@@ -80,7 +80,7 @@ class SettingsDesktopView extends ConsumerWidget {
                   gapH40,
                   Text(
                     'App Version ${packageInfoController.version} (${packageInfoController.buildNumber})',
-                    style: bodyMedium.copyWith(fontSize: bodyMedium.fontSize!.toFont - 1.5),
+                    style: bodyMedium.copyWith(fontSize: bodyMedium.fontSize!.toFont - 1.5, color: kTextColorDark),
                   ),
                   gapH20,
                 ],
