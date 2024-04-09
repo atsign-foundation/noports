@@ -11,7 +11,7 @@ RUN \
   set -eux ; \
   mkdir -p ${BINARYDIR} ; \
   cd ${PACKAGEDIR}; \
-  dart pub get ; \
+  dart pub get --enforce-lockfile; \
   dart run build_runner build --delete-conflicting-outputs ; \
   dart compile exe bin/sshnpd.dart -o ${BINARYDIR}/sshnpd ; \
   dart compile exe bin/srv.dart -o ${BINARYDIR}/srv

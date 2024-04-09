@@ -10,7 +10,7 @@ RUN \
   set -eux ; \
   mkdir -p ${BINARYDIR} ; \
   cd ${PACKAGEDIR}; \
-  dart pub get ; \
+  dart pub get --enforce-lockfile; \
   dart run build_runner build --delete-conflicting-outputs ; \
   dart compile exe bin/activate_cli.dart -o ${BINARYDIR}/at_activate
 
