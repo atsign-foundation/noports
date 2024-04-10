@@ -24,6 +24,8 @@ RUN \
   set -eux ; \
   mkdir -p $HOMEDIR/storage ; \
   mkdir -p $HOMEDIR/config ; \
+  mkdir -p $HOMEDIR/.sshnp ; \
+  mkdir -p $HOMEDIR/.atsign ; \
   mkdir -p /etc/cacert ; \
   mkdir -p ${BINARYDIR} ; \
   # build sshnpd
@@ -50,11 +52,11 @@ RUN \
 FROM scratch
 ENV PATH=/usr/local/at
 ENV USER=atsign
-COPY --from=buildimage /atsign /atsign/
 COPY --from=buildimage /runtime/ /
 COPY --from=buildimage /etc/passwd /etc/passwd
 COPY --from=buildimage /etc/group /etc/group
-COPY --from=buildimage /etc/cacert /etc/cacert
+COPY --from=buildimage --chown=atsign:atsign /atsign /atsign
+COPY --from=buildimage --chown=atsign:atsign /tmp /tmp
 WORKDIR /usr/local/at
 COPY --from=buildimage  /usr/local/at/sshnpd /usr/local/at/
 COPY --from=buildimage  /usr/local/at/srv /usr/local/at/
