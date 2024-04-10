@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 
 const kPrimaryColor = Color(0xFFF05E3E);
 const kBackGroundColorDark = Color(0xFF222222);
+const kDarkBarColor = Color(0xFF1E1E1E);
 const kProfileBarColor = Color(0xff3a3a3a);
 const kProfileBackgroundColor = Color(0xff262626);
 const kProfileFormFieldColor = Color(0xff303030);

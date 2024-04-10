@@ -239,7 +239,7 @@ class _ProfileFormState extends ConsumerState<ProfileFormDesktopView> {
                   ),
                   gapH20,
                   Text(
-                    strings.sshKeyManagement('yes'),
+                    strings.sshKeyManagement('other'),
                     style: bodyLarge.copyWith(fontSize: bodyLarge.fontSize?.toFont),
                   ),
                   gapH16,
@@ -413,11 +413,13 @@ class _ProfileFormState extends ConsumerState<ProfileFormDesktopView> {
                     ],
                   ),
                   gapH30,
-                  SizedBox(
-                    width: kFieldDefaultWidth + Sizes.p233,
+                  Container(
+                    color: kDarkBarColor,
+                    width: MediaQuery.of(context).size.width,
+                    height: Sizes.p60,
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                      crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
                         ElevatedButton(
                           onPressed: () {
@@ -442,7 +444,7 @@ class _ProfileFormState extends ConsumerState<ProfileFormDesktopView> {
                       ],
                     ),
                   ),
-                  gapH30,
+                  // gapH30,
                 ],
               ),
             ),
