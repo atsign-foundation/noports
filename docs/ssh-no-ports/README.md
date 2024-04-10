@@ -1,4 +1,4 @@
-# ⌨ SSH No Ports
+# ⌨️ SSH No Ports
 
 ## Overview
 
@@ -18,7 +18,7 @@ If you have a specific questions see the [FAQ](faq.md) or reach out to use using
 
 ### Installation
 
-<table data-card-size="large" data-column-title-hidden data-view="cards"><thead><tr><th data-card-target data-type="content-ref"></th></tr></thead><tbody><tr><td><a href="guides/installation-guide/client-installation-sshnp.md">client-installation-sshnp.md</a></td></tr><tr><td><a href="guides/installation-guide/device-installation-sshnpd/">device-installation-sshnpd</a></td></tr></tbody></table>
+<table data-card-size="large" data-column-title-hidden data-view="cards"><thead><tr><th data-card-target data-type="content-ref"></th></tr></thead><tbody><tr><td><a href="guides/advanced-installation-guides/client-installation-sshnp.md">client-installation-sshnp.md</a></td></tr><tr><td><a href="guides/advanced-installation-guides/device-installation-sshnpd/">device-installation-sshnpd</a></td></tr></tbody></table>
 
 ### Usage
 

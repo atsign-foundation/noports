@@ -1,7 +1,7 @@
 # 🔢 Guides
 
-{% content-ref url="installation-guide/" %}
-[installation-guide](installation-guide/)
+{% content-ref url="installation-guide.md" %}
+[installation-guide.md](installation-guide.md)
 {% endcontent-ref %}
 
 {% content-ref url="usage-guide/" %}
