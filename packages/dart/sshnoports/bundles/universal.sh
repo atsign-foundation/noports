@@ -36,6 +36,7 @@ unset tmp_path
 install_type=""
 unset download_url
 local_archive=""
+no_sudo=false
 
 ### Client/ Device Install Variables
 client_atsign=""
@@ -110,10 +111,11 @@ usage() {
   echo "Note: only one of --region or --rv-atsign can be used"
   echo
   echo "Device Options:"
-  echo "  -c, --client-atsign  <atsign>  Set the client atSign"
-  echo "  -d, --device-atsign  <atsign>  Set the device atSign"
-  echo "  -n, --device-name    <name>    Set the device name"
-  echo "  --dt, --device-type  <type>    Set the device type (launchd, systemd, tmux, headless)"
+  echo "  -c,   --client-atsign  <atsign>  Set the client atSign"
+  echo "  -d,   --device-atsign  <atsign>  Set the device atSign"
+  echo "  -n,   --device-name    <name>    Set the device name"
+  echo "  --dt, --device-type    <type>    Set the device type (launchd, systemd, tmux, headless)"
+  echo "        --no-sudo                  Deliberately install without sudo priveleges"
 
 }
 
@@ -301,6 +303,9 @@ parse_args() {
           echo "Invalid device type: $device_type_input"
           echo "Valid options are: (launchd, systemd, tmux, headless)" exit 1
         fi
+        ;;
+      --no-sudo)
+        no_sudo=true
         ;;
       *)
         echo "Unexpected option: $1"
@@ -501,22 +506,15 @@ get_installed_atsigns() {
 suggest_sudo() {
   echo
   echo "Systemd is present but this script is not running with sudo"
-  echo "It is suggested that you exit and rerun:"
+  echo "We recommend that you install to systemd (requires root privileges to write the unit file)"
   echo
   echo "sudo sh universal.sh"
   echo
-  echo "If you'd rather (P)roceed with a non systemd installation"
-  echo "then enter p or P, otherwise this script will exit."
-  printf "(P)roceed? "
-  read -r proceed
-  case $proceed in
-    p | P)
-      return
-      ;;
-    *)
-      exit 0
-      ;;
-  esac
+  echo "If you'd rather proceed with a non systemd installation (not recommended):"
+  echo
+  echo "sh universal.sh --no-sudo"
+  echo
+  exit 0
 }
 
 # CLIENT INSTALLATION #
@@ -613,12 +611,22 @@ device() {
     elif is_root && is_systemd_available; then
       device_install_type="systemd"
     else
-      if is_systemd_available; then
+      if ! $no_sudo && is_systemd_available; then
         suggest_sudo
       fi
       if command -v tmux >/dev/null 2>&1; then
         device_install_type="tmux"
       else
+        if ! command -v cron >/dev/null 2>&1; then
+          echo "ERROR: crontab not available"
+          echo "Please install cron and make it available on the PATH"
+          exit 1
+        fi
+        if ! command -v nohup >/dev/null 2>&1; then
+          echo "ERROR: nohup not available"
+          echo "Please install nohup and make it available on the PATH"
+          exit 1
+        fi
         device_install_type="headless"
       fi
     fi
