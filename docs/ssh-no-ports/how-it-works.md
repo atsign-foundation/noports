@@ -22,22 +22,23 @@ description: >-
 ## **How SSH No Ports uses Atsign’s Control Plane**
 
 {% embed url="https://player.vimeo.com/video/859419053?app_id=122963&referrer=https://www.noports.com/" %}
-How SSH No Ports Works
+**How SSH No Ports Works** (_This video doesn't include the new SR authentication and traffic encryption features yet, we will release an updated video soon!_)&#x20;
 {% endembed %}
 
 1. Alice wants to securely connect to her remote device, @alice\_device.
 2. To initiate this, Alice’s client, @alice\_client, will first select a socket rendezvous, or SR for short.
 3. The SR will issue two connection ports to @alice\_client by providing the host address and two port numbers. This is done through Atsign’s control plane, and the information is end-to-end encrypted.
-4. Next, @alice\_client requests a connection to @alice\_device and shares one port from the Socket Rendezvous (which we abbreviate to SR).
+4. Next, @alice\_client requests a connection to @alice\_device and shares one port from the SR.
 5. The device, @alice\_device, generates a new ephemeral SSH key pair for the session.
 6. @alice\_device automatically sends the ephemeral SSH private key to @alice\_client.
-7. @alice\_device will then forward its SSHD port to the SR. The SR will be authenticated and encrypted by @alice\_device with the ephemeral keys. &#x20;
-8. This enables @alice\_client to SSH to the SR using the second port.
-9. The Socket Rendezvous connects both ports that are issued to @alice\_client and waits to be authenticated by @alice\_client.
-10. @alice\_client then authenticates to the SR with the encrypted ephermal keys sent by @alice\_device.
-11. An SSH tunnel from @alice\_client is created over the connected tunnel through the SR to @alice\_device.
-12. This tunnel forwards an ephemeral port on @alice\_client’s localhost to @alice\_device’s SSHD port.
-13. Now the connection is ready! The application will provide an SSH command which can be used to connect over this tunnel.
-14. When running the command, Alice will be able to SSH connect to @alice\_device!
-15. Alice has successfully connected to her remote device, @alice\_device.
+7. @alice\_device will then connect to the SR using Atsign's SR client. The SR client authenticates to the SR, then forwards @alice\_device's SSHD port to the SR. The SR client ensures that all traffic sent to the SR is encrypted, and it also decrypts all traffic from the SR. &#x20;
+8. @alice\_client can now also connect and authenticate to the SR using the SR client. This side also encrypts all traffic to the SR, and decrypts all traffic from the SR, ensuring that the connection is fully end-to-end encrypted between @alice\_client and @alice\_device.
+9. The SR connects both ports issued to @alice ensuring that traffic sent between the connection is able to reach the other side.
+10. An SSH tunnel from @alice\_client is created over the connected tunnel through the SR to @alice\_device.
+11. This tunnel forwards an ephemeral port on @alice\_client’s localhost to @alice\_device’s SSHD port.
+12. Now the connection is ready! The application will provide an SSH command which can be used to connect over this tunnel.
+13. When running the command, Alice will be able to SSH connect to @alice\_device!
+14. Alice has successfully connected to her remote device, @alice\_device.
+
+
 
