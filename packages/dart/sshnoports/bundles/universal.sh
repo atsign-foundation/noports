@@ -612,12 +612,15 @@ device() {
       device_install_type="launchd"
     elif is_root && is_systemd_available; then
       device_install_type="systemd"
-    elif is_systemd_available; then
-      suggest_sudo
-    elif command -v tmux >/dev/null 2>&1; then
-      device_install_type="tmux"
     else
-      device_install_type="headless"
+      if is_systemd_available; then
+        suggest_sudo
+      fi
+      if command -v tmux >/dev/null 2>&1; then
+        device_install_type="tmux"
+      else
+        device_install_type="headless"
+      fi
     fi
   else
     # override the device type if it is set
