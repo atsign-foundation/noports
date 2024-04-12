@@ -12,6 +12,7 @@ on:
   pull_request:
     branches:
       - trunk
+      - release-v*.*.*
 
 jobs:
   cli_tags:
