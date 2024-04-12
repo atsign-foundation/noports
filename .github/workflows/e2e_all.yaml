@@ -12,6 +12,7 @@ on:
   pull_request:
     branches:
       - trunk
+      - release-v*.*.*
 
 jobs:
   e2e_all:
