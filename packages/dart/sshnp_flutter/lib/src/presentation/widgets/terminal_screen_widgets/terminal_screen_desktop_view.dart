@@ -1,8 +1,9 @@
 import 'dart:developer';
 
-import 'package:at_onboarding_flutter/at_onboarding_flutter.dart';
+import 'package:at_onboarding_flutter/at_onboarding_flutter.dart' hide Intent;
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
@@ -27,6 +28,7 @@ class TerminalScreenDesktopView extends ConsumerStatefulWidget {
 
 class _TerminalScreenDesktopViewState extends ConsumerState<TerminalScreenDesktopView> with TickerProviderStateMixin {
   final terminalController = TerminalController();
+  double terminalFontSize = 14.0;
 
   @override
   void initState() {
@@ -172,6 +174,63 @@ class _TerminalScreenDesktopViewState extends ConsumerState<TerminalScreenDeskto
                               controller: terminalController,
                               autofocus: true,
                               autoResize: true,
+                              shortcuts: <ShortcutActivator, VoidCallbackIntent>{
+                                LogicalKeySet(
+                                  LogicalKeyboardKey.control,
+                                  LogicalKeyboardKey.keyQ,
+                                ): VoidCallbackIntent(() {
+                                  log('exit intent called');
+
+                                  closeSession(sessionId);
+                                }),
+                                LogicalKeySet(
+                                  LogicalKeyboardKey.control,
+                                  LogicalKeyboardKey.shift,
+                                  LogicalKeyboardKey.arrowRight,
+                                ): VoidCallbackIntent(() {
+                                  log('next tab called');
+                                  log(tabController.index.toString());
+                                  if (currentIndex < terminalList.length - 1) {
+                                    ref
+                                        .read(terminalSessionController.notifier)
+                                        .setSession(terminalList[tabController.index + 1]);
+
+                                    log(tabController.index.toString());
+                                  }
+                                }),
+                                LogicalKeySet(
+                                  LogicalKeyboardKey.control,
+                                  LogicalKeyboardKey.shift,
+                                  LogicalKeyboardKey.arrowLeft,
+                                ): VoidCallbackIntent(() {
+                                  log('next tab called');
+                                  log(tabController.index.toString());
+                                  if (currentIndex > 0) {
+                                    ref
+                                        .read(terminalSessionController.notifier)
+                                        .setSession(terminalList[tabController.index - 1]);
+
+                                    log(tabController.index.toString());
+                                  }
+                                }),
+                                LogicalKeySet(
+                                  LogicalKeyboardKey.control,
+                                  LogicalKeyboardKey.shift,
+                                  LogicalKeyboardKey.add,
+                                ): VoidCallbackIntent(() {
+                                  log('a tab called');
+                                  setState(() {
+                                    terminalFontSize++;
+                                  });
+                                }),
+                                LogicalKeySet(LogicalKeyboardKey.control, LogicalKeyboardKey.shift,
+                                    LogicalKeyboardKey.underscore): VoidCallbackIntent(() {
+                                  log('a tab called');
+                                  setState(() {
+                                    terminalFontSize--;
+                                  });
+                                }),
+                              },
 
                               // textStyle:
                               //     TerminalStyle.fromTextStyle(const TextStyle(fontFamily: '0xProtoNerdFontMono')),
@@ -180,7 +239,7 @@ class _TerminalScreenDesktopViewState extends ConsumerState<TerminalScreenDeskto
                               //   // fontSize: 14,
                               // )),
                               textStyle: TerminalStyle.fromTextStyle(
-                                  const TextStyle(fontFamily: 'IosevkaTermNerdFontPropo', fontSize: 14
+                                  TextStyle(fontFamily: 'IosevkaTermNerdFontPropo', fontSize: terminalFontSize
                                       // fontSize: 14,
                                       )),
                             );
