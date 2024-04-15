@@ -524,6 +524,7 @@ client() {
   # install the binaries
   "$extract_path"/sshnp/install.sh -b "$bin_path" -u "$user" sshnp
   "$extract_path"/sshnp/install.sh -b "$bin_path" -u "$user" npt
+  "$extract_path"/sshnp/install.sh -b "$bin_path" -u "$user" srv
   "$extract_path"/sshnp/install.sh -b "$bin_path" -u "$user" at_activate
 
   # install the magic sshnp script
