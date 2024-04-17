@@ -113,6 +113,47 @@ class _TerminalScreenDesktopViewState extends ConsumerState<TerminalScreenDeskto
     controller.dispose();
   }
 
+  void exitCallback(String sessionId) {
+    log('exit intent called');
+    closeSession(sessionId);
+  }
+
+  void nextTabCallback(TabController tabController, List<String> terminalList, int currentIndex) {
+    log('next tab called');
+    log(tabController.index.toString());
+    log(terminalList.length.toString());
+    if (tabController.index < (terminalList.length - 1)) {
+      ref.read(terminalSessionController.notifier).setSession(terminalList[tabController.index + 1]);
+      tabController.index++;
+      log('current index is $currentIndex');
+      log(tabController.index.toString());
+    }
+  }
+
+  void previousTabCallback(TabController tabController, List<String> terminalList, int currentIndex) {
+    log('previous tab called');
+    log(tabController.index.toString());
+    if (tabController.index > 0) {
+      ref.read(terminalSessionController.notifier).setSession(terminalList[tabController.index - 1]);
+
+      log(tabController.index.toString());
+    }
+  }
+
+  void increaseFontSize() {
+    log('a tab called');
+    setState(() {
+      terminalFontSize++;
+    });
+  }
+
+  void decreaseFontSize() {
+    log('a tab called');
+    setState(() {
+      terminalFontSize--;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     final strings = AppLocalizations.of(context)!;
@@ -179,56 +220,44 @@ class _TerminalScreenDesktopViewState extends ConsumerState<TerminalScreenDeskto
                                   LogicalKeyboardKey.control,
                                   LogicalKeyboardKey.keyQ,
                                 ): VoidCallbackIntent(() {
-                                  log('exit intent called');
-
-                                  closeSession(sessionId);
+                                  exitCallback(sessionId);
                                 }),
                                 LogicalKeySet(
                                   LogicalKeyboardKey.control,
                                   LogicalKeyboardKey.shift,
                                   LogicalKeyboardKey.arrowRight,
                                 ): VoidCallbackIntent(() {
-                                  log('next tab called');
-                                  log(tabController.index.toString());
-                                  if (currentIndex < terminalList.length - 1) {
-                                    ref
-                                        .read(terminalSessionController.notifier)
-                                        .setSession(terminalList[tabController.index + 1]);
-
-                                    log(tabController.index.toString());
-                                  }
+                                  nextTabCallback(tabController, terminalList, currentIndex);
+                                }),
+                                LogicalKeySet(
+                                  LogicalKeyboardKey.control,
+                                  LogicalKeyboardKey.keyL,
+                                ): VoidCallbackIntent(() {
+                                  nextTabCallback(tabController, terminalList, currentIndex);
                                 }),
                                 LogicalKeySet(
                                   LogicalKeyboardKey.control,
                                   LogicalKeyboardKey.shift,
                                   LogicalKeyboardKey.arrowLeft,
                                 ): VoidCallbackIntent(() {
-                                  log('next tab called');
-                                  log(tabController.index.toString());
-                                  if (currentIndex > 0) {
-                                    ref
-                                        .read(terminalSessionController.notifier)
-                                        .setSession(terminalList[tabController.index - 1]);
-
-                                    log(tabController.index.toString());
-                                  }
+                                  previousTabCallback(tabController, terminalList, currentIndex);
+                                }),
+                                LogicalKeySet(
+                                  LogicalKeyboardKey.control,
+                                  LogicalKeyboardKey.keyH,
+                                ): VoidCallbackIntent(() {
+                                  previousTabCallback(tabController, terminalList, currentIndex);
                                 }),
                                 LogicalKeySet(
                                   LogicalKeyboardKey.control,
                                   LogicalKeyboardKey.shift,
                                   LogicalKeyboardKey.add,
                                 ): VoidCallbackIntent(() {
-                                  log('a tab called');
-                                  setState(() {
-                                    terminalFontSize++;
-                                  });
+                                  increaseFontSize();
                                 }),
                                 LogicalKeySet(LogicalKeyboardKey.control, LogicalKeyboardKey.shift,
                                     LogicalKeyboardKey.underscore): VoidCallbackIntent(() {
-                                  log('a tab called');
-                                  setState(() {
-                                    terminalFontSize--;
-                                  });
+                                  decreaseFontSize();
                                 }),
                               },
 
