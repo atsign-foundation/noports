@@ -189,10 +189,7 @@ class SshnpdImpl implements Sshnpd {
     startHeartbeat();
 
     logger.info('Subscribing to $device\\.${DefaultArgs.namespace}@');
-    atClient.notificationService
-        .subscribe(
-            regex: '$device\\.${DefaultArgs.namespace}@', shouldDecrypt: true)
-        .listen(
+    atClient.notificationService.subscribe(regex: '$device\\.${DefaultArgs.namespace}@', shouldDecrypt: true).listen(
           _notificationHandler,
           onError: (e) => logger.severe('Notification Failed:$e'),
           onDone: () => logger.info('Notification listener stopped'),
@@ -215,10 +212,7 @@ class SshnpdImpl implements Sshnpd {
     Timer.periodic(Duration(seconds: 15), (timer) async {
       String? resp;
       try {
-        resp = await atClient
-            .getRemoteSecondary()
-            ?.atLookUp
-            .executeCommand('noop:0\n');
+        resp = await atClient.getRemoteSecondary()?.atLookUp.executeCommand('noop:0\n');
       } catch (_) {}
       if (resp == null || !resp.startsWith('data:ok')) {
         if (lastHeartbeatOk) {
@@ -253,8 +247,7 @@ class SshnpdImpl implements Sshnpd {
     logger.info('Received: $notificationKey');
     switch (notificationKey) {
       case 'privatekey':
-        logger.info(
-            'Private Key received from ${notification.from} notification id : ${notification.id}');
+        logger.info('Private Key received from ${notification.from} notification id : ${notification.id}');
         _privateKey = notification.value!;
         break;
 
@@ -263,8 +256,7 @@ class SshnpdImpl implements Sshnpd {
         break;
 
       case 'sshd':
-        logger.info(
-            'LEGACY $notificationKey request received from ${notification.from}'
+        logger.info('LEGACY $notificationKey request received from ${notification.from}'
             ' ( ${notification.value} )');
         _handleLegacySshRequestNotification(notification);
         break;
@@ -289,8 +281,7 @@ class SshnpdImpl implements Sshnpd {
     }
   }
 
-  bool isFromAuthorizedAtsign(AtNotification notification) =>
-      managerAtsigns.contains(notification.from);
+  bool isFromAuthorizedAtsign(AtNotification notification) => managerAtsigns.contains(notification.from);
 
   void _handlePingNotification(AtNotification notification) {
     if (!isFromAuthorizedAtsign(notification)) {
@@ -300,8 +291,7 @@ class SshnpdImpl implements Sshnpd {
       return;
     }
 
-    logger.info(
-        'ping received from ${notification.from} notification id : ${notification.id}');
+    logger.info('ping received from ${notification.from} notification id : ${notification.id}');
 
     var atKey = AtKey()
       ..key = 'heartbeat.$device'
@@ -334,33 +324,30 @@ class SshnpdImpl implements Sshnpd {
     }
 
     if (!addSshPublicKeys) {
-      logger.info(
-          'Ignoring sshpublickey from ${notification.from} notification id : ${notification.id}');
+      logger.info('Ignoring sshpublickey from ${notification.from} notification id : ${notification.id}');
       return;
     }
 
     try {
       final String sshPublicKey;
-      logger.info(
-          'ssh Public Key received from ${notification.from} notification id : ${notification.id}');
+      logger.info('ssh Public Key received from ${notification.from} notification id : ${notification.id}');
       sshPublicKey = notification.value!;
 
       // Check to see if the ssh public key is
       // supported keys by the dartssh2 package
-      if (!sshPublicKey.startsWith(RegExp(
-          r'^(ecdsa-sha2-nistp)|(rsa-sha2-)|(ssh-rsa)|(ssh-ed25519)|(ecdsa-sha2-nistp)'))) {
+      if (!sshPublicKey
+          .startsWith(RegExp(r'^(ecdsa-sha2-nistp)|(rsa-sha2-)|(ssh-rsa)|(ssh-ed25519)|(ecdsa-sha2-nistp)'))) {
         throw ('$sshPublicKey does not look like a public key');
       }
 
       // Check to see if the ssh Publickey is already in the file if not append to the ~/.ssh/authorized_keys file
-      var authKeysFilePath = [homeDirectory, '.ssh', 'authorized_keys']
-          .join(Platform.pathSeparator);
+      var authKeysFilePath = [homeDirectory, '.ssh', 'authorized_keys'].join(Platform.pathSeparator);
       var authKeys = File(authKeysFilePath);
 
       var authKeysContent = await authKeys.readAsString();
 
       if (!authKeysContent.contains(sshPublicKey)) {
-        authKeys.writeAsStringSync('\n$sshPublicKey', mode: FileMode.append);
+        authKeys.writeAsStringSync('\nPermitOpen="localhost:22",restrict $sshPublicKey', mode: FileMode.append);
       }
     } catch (e) {
       logger.severe("Error writing to"
@@ -399,14 +386,12 @@ class SshnpdImpl implements Sshnpd {
 
       req = NptSessionRequest.fromJson(params);
     } catch (e) {
-      logger.warning(
-          'Failed to extract parameters from notification value "${notification.value}" with error : $e');
+      logger.warning('Failed to extract parameters from notification value "${notification.value}" with error : $e');
       return;
     }
 
     try {
-      await verifyEnvelopeSignature(
-          atClient, requestingAtsign, logger, envelope);
+      await verifyEnvelopeSignature(atClient, requestingAtsign, logger, envelope);
     } catch (e) {
       logger.shout('Failed to verify signature of msg from $requestingAtsign');
       logger.shout('Exception: $e');
@@ -414,8 +399,7 @@ class SshnpdImpl implements Sshnpd {
 
       // Notify noports client that this session is NOT connected
       await _notify(
-        atKey: _createResponseAtKey(
-            requestingAtsign: requestingAtsign, sessionId: req.sessionId),
+        atKey: _createResponseAtKey(requestingAtsign: requestingAtsign, sessionId: req.sessionId),
         value: 'Signature not verified: $e',
         sessionId: req.sessionId,
         checkForFinalDeliveryStatus: false,
@@ -432,8 +416,7 @@ class SshnpdImpl implements Sshnpd {
         permitOpen.contains('*:*'))) {
       // Notify noports client that this session is NOT connected
       await _notify(
-        atKey: _createResponseAtKey(
-            requestingAtsign: requestingAtsign, sessionId: req.sessionId),
+        atKey: _createResponseAtKey(requestingAtsign: requestingAtsign, sessionId: req.sessionId),
         value: 'Daemon does not permit connections to $requested',
         sessionId: req.sessionId,
         checkForFinalDeliveryStatus: false,
@@ -475,33 +458,25 @@ class SshnpdImpl implements Sshnpd {
       if (req.encryptRvdTraffic) {
         // TODO refactor duplicate code from startDirectSsh
         // 256-bit AES, 128-bit IV
-        sessionAESKey =
-            AtChopsUtil.generateSymmetricKey(EncryptionKeyType.aes256).key;
+        sessionAESKey = AtChopsUtil.generateSymmetricKey(EncryptionKeyType.aes256).key;
         sessionIV = base64Encode(AtChopsUtil.generateRandomIV(16).ivBytes);
         late EncryptionKeyType ect;
         try {
           ect = EncryptionKeyType.values.byName(req.clientEphemeralPKType);
         } catch (e) {
-          throw Exception(
-              'Unknown ephemeralPKType: ${req.clientEphemeralPKType}');
+          throw Exception('Unknown ephemeralPKType: ${req.clientEphemeralPKType}');
         }
         switch (ect) {
           case EncryptionKeyType.rsa2048:
-            AtChops ac = AtChopsImpl(AtChopsKeys.create(
-                AtEncryptionKeyPair.create(req.clientEphemeralPK, 'n/a'),
-                null));
-            sessionAESKeyEncrypted = ac
-                .encryptString(sessionAESKey,
-                    EncryptionKeyType.values.byName(req.clientEphemeralPKType))
-                .result;
-            sessionIVEncrypted = ac
-                .encryptString(sessionIV,
-                    EncryptionKeyType.values.byName(req.clientEphemeralPKType))
-                .result;
+            AtChops ac =
+                AtChopsImpl(AtChopsKeys.create(AtEncryptionKeyPair.create(req.clientEphemeralPK, 'n/a'), null));
+            sessionAESKeyEncrypted =
+                ac.encryptString(sessionAESKey, EncryptionKeyType.values.byName(req.clientEphemeralPKType)).result;
+            sessionIVEncrypted =
+                ac.encryptString(sessionIV, EncryptionKeyType.values.byName(req.clientEphemeralPKType)).result;
             break;
           default:
-            throw Exception(
-                'No handling for ephemeralPKType ${req.clientEphemeralPKType}');
+            throw Exception('No handling for ephemeralPKType ${req.clientEphemeralPKType}');
         }
       }
       // Connect to rendezvous point using background process.
@@ -522,8 +497,7 @@ class SshnpdImpl implements Sshnpd {
       /// - Send response message to the sshnp client which includes the
       ///   ephemeral private key
       await _notify(
-        atKey: _createResponseAtKey(
-            requestingAtsign: requestingAtsign, sessionId: req.sessionId),
+        atKey: _createResponseAtKey(requestingAtsign: requestingAtsign, sessionId: req.sessionId),
         value: signAndWrapAndJsonEncode(atClient, {
           'status': 'connected',
           'sessionId': req.sessionId,
@@ -538,10 +512,8 @@ class SshnpdImpl implements Sshnpd {
       logger.severe('startNpt failed with unexpected error : $e');
       // Notify sshnp that this session is NOT connected
       await _notify(
-        atKey: _createResponseAtKey(
-            requestingAtsign: requestingAtsign, sessionId: req.sessionId),
-        value:
-            'Failed to start up the daemon side of the srv socket tunnel : $e',
+        atKey: _createResponseAtKey(requestingAtsign: requestingAtsign, sessionId: req.sessionId),
+        value: 'Failed to start up the daemon side of the srv socket tunnel : $e',
         sessionId: req.sessionId,
         checkForFinalDeliveryStatus: false,
         waitForFinalDeliveryStatus: false,
@@ -608,14 +580,12 @@ class SshnpdImpl implements Sshnpd {
         assertValidValue(params, 'privateKey', String);
       }
     } catch (e) {
-      logger.warning(
-          'Failed to extract parameters from notification value "${notification.value}" with error : $e');
+      logger.warning('Failed to extract parameters from notification value "${notification.value}" with error : $e');
       return;
     }
 
     try {
-      await verifyEnvelopeSignature(
-          atClient, requestingAtsign, logger, envelope);
+      await verifyEnvelopeSignature(atClient, requestingAtsign, logger, envelope);
     } catch (e) {
       logger.shout('Failed to verify signature of msg from $requestingAtsign');
       logger.shout('Exception: $e');
@@ -728,8 +698,7 @@ class SshnpdImpl implements Sshnpd {
               'encryptRvdTraffic was requested, but no client ephemeral public key / key type was provided');
         }
         // 256-bit AES, 128-bit IV
-        sessionAESKey =
-            AtChopsUtil.generateSymmetricKey(EncryptionKeyType.aes256).key;
+        sessionAESKey = AtChopsUtil.generateSymmetricKey(EncryptionKeyType.aes256).key;
         sessionIV = base64Encode(AtChopsUtil.generateRandomIV(16).ivBytes);
         late EncryptionKeyType ect;
         try {
@@ -739,20 +708,14 @@ class SshnpdImpl implements Sshnpd {
         }
         switch (ect) {
           case EncryptionKeyType.rsa2048:
-            AtChops ac = AtChopsImpl(AtChopsKeys.create(
-                AtEncryptionKeyPair.create(clientEphemeralPK, 'n/a'), null));
-            sessionAESKeyEncrypted = ac
-                .encryptString(sessionAESKey,
-                    EncryptionKeyType.values.byName(clientEphemeralPKType))
-                .result;
-            sessionIVEncrypted = ac
-                .encryptString(sessionIV,
-                    EncryptionKeyType.values.byName(clientEphemeralPKType))
-                .result;
+            AtChops ac = AtChopsImpl(AtChopsKeys.create(AtEncryptionKeyPair.create(clientEphemeralPK, 'n/a'), null));
+            sessionAESKeyEncrypted =
+                ac.encryptString(sessionAESKey, EncryptionKeyType.values.byName(clientEphemeralPKType)).result;
+            sessionIVEncrypted =
+                ac.encryptString(sessionIV, EncryptionKeyType.values.byName(clientEphemeralPKType)).result;
             break;
           default:
-            throw Exception(
-                'No handling for ephemeralPKType $clientEphemeralPKType');
+            throw Exception('No handling for ephemeralPKType $clientEphemeralPKType');
         }
       }
       // Connect to rendezvous point using background process.
@@ -772,8 +735,8 @@ class SshnpdImpl implements Sshnpd {
 
       /// Generate the ephemeral key pair which the client will use for the
       /// initial tunnel ssh session
-      AtSshKeyPair tunnelKeyPair = await keyUtil.generateKeyPair(
-          algorithm: sshAlgorithm, identifier: 'ephemeral_$sessionId');
+      AtSshKeyPair tunnelKeyPair =
+          await keyUtil.generateKeyPair(algorithm: sshAlgorithm, identifier: 'ephemeral_$sessionId');
 
       await keyUtil.authorizePublicKey(
         sshPublicKey: tunnelKeyPair.publicKeyContents,
@@ -792,8 +755,7 @@ class SshnpdImpl implements Sshnpd {
       /// - Send response message to the sshnp client which includes the
       ///   ephemeral private key
       await _notify(
-        atKey: _createResponseAtKey(
-            requestingAtsign: requestingAtsign, sessionId: sessionId),
+        atKey: _createResponseAtKey(requestingAtsign: requestingAtsign, sessionId: sessionId),
         value: signAndWrapAndJsonEncode(atClient, {
           'status': 'connected',
           'sessionId': sessionId,
@@ -808,16 +770,13 @@ class SshnpdImpl implements Sshnpd {
 
       /// - start a timer to remove the ephemeral key from `authorized_keys`
       ///   after 15 seconds
-      Timer(const Duration(seconds: 15),
-          () => keyUtil.deauthorizePublicKey(sessionId));
+      Timer(const Duration(seconds: 15), () => keyUtil.deauthorizePublicKey(sessionId));
     } catch (e) {
       logger.severe('startDirectSsh failed with unexpected error : $e');
       // Notify sshnp that this session is NOT connected
       await _notify(
-        atKey: _createResponseAtKey(
-            requestingAtsign: requestingAtsign, sessionId: sessionId),
-        value:
-            'Failed to start up the daemon side of the srv socket tunnel : $e',
+        atKey: _createResponseAtKey(requestingAtsign: requestingAtsign, sessionId: sessionId),
+        value: 'Failed to start up the daemon side of the srv socket tunnel : $e',
         sessionId: sessionId,
         checkForFinalDeliveryStatus: false,
         waitForFinalDeliveryStatus: false,
@@ -870,8 +829,7 @@ class SshnpdImpl implements Sshnpd {
         logger.warning(errorMessage);
         // Notify sshnp that this session is NOT connected
         await _notify(
-          atKey: _createResponseAtKey(
-              requestingAtsign: requestingAtsign, sessionId: sessionId),
+          atKey: _createResponseAtKey(requestingAtsign: requestingAtsign, sessionId: sessionId),
           value: '$errorMessage (use --local-port to specify unused port)',
           sessionId: sessionId,
           checkForFinalDeliveryStatus: false,
@@ -880,8 +838,7 @@ class SshnpdImpl implements Sshnpd {
       } else {
         /// Notify sshnp that the connection has been made
         await _notify(
-          atKey: _createResponseAtKey(
-              requestingAtsign: requestingAtsign, sessionId: sessionId),
+          atKey: _createResponseAtKey(requestingAtsign: requestingAtsign, sessionId: sessionId),
           value: 'connected',
           sessionId: sessionId,
           checkForFinalDeliveryStatus: false,
@@ -892,8 +849,7 @@ class SshnpdImpl implements Sshnpd {
       logger.severe('SSH Client failure : $e');
       // Notify sshnp that this session is NOT connected
       await _notify(
-        atKey: _createResponseAtKey(
-            requestingAtsign: requestingAtsign, sessionId: sessionId),
+        atKey: _createResponseAtKey(requestingAtsign: requestingAtsign, sessionId: sessionId),
         value: 'Remote SSH Client failure : $e',
         sessionId: sessionId,
         checkForFinalDeliveryStatus: false,
@@ -902,8 +858,7 @@ class SshnpdImpl implements Sshnpd {
     }
   }
 
-  AtKey _createResponseAtKey(
-      {required String requestingAtsign, required String sessionId}) {
+  AtKey _createResponseAtKey({required String requestingAtsign, required String sessionId}) {
     var atKey = AtKey()
       ..key = '$sessionId.$device'
       ..sharedBy = deviceAtsign
@@ -946,10 +901,7 @@ class SshnpdImpl implements Sshnpd {
         ],
       );
     } catch (e) {
-      return (
-        false,
-        'Failed to create SSHClient for $username@$host:$port : $e'
-      );
+      return (false, 'Failed to create SSHClient for $username@$host:$port : $e');
     }
 
     try {
@@ -1001,8 +953,7 @@ class SshnpdImpl implements Sshnpd {
         if (shouldStop) break;
       }
     }).catchError((e) {
-      logger.shout(
-          '$sessionId | reverseSshViaSSHClient | error from forward connections handler $e');
+      logger.shout('$sessionId | reverseSshViaSSHClient | error from forward connections handler $e');
     }));
 
     return (true, null);
@@ -1101,14 +1052,12 @@ class SshnpdImpl implements Sshnpd {
     String? errorMessage;
     if (sshExitCode != 0) {
       if (sshExitCode == 6464) {
-        logger.shout(
-            '$sessionId | Command timed out: $opensshBinaryPath ${args.join(' ')}');
+        logger.shout('$sessionId | Command timed out: $opensshBinaryPath ${args.join(' ')}');
         errorMessage = 'Failed to establish connection - timed out';
       } else {
         logger.shout('$sessionId | Exit code $sshExitCode from'
             ' $opensshBinaryPath ${args.join(' ')}');
-        errorMessage =
-            'Failed to establish connection - exit code $sshExitCode';
+        errorMessage = 'Failed to establish connection - exit code $sshExitCode';
       }
     }
 
@@ -1192,8 +1141,7 @@ class SshnpdImpl implements Sshnpd {
         try {
           await atClient.delete(
             atKey,
-            deleteRequestOptions: DeleteRequestOptions()
-              ..useRemoteAtServer = true,
+            deleteRequestOptions: DeleteRequestOptions()..useRemoteAtServer = true,
           );
         } catch (e) {
           stderr.writeln(e.toString());
@@ -1242,8 +1190,7 @@ class SshnpdImpl implements Sshnpd {
         try {
           await atClient.delete(
             atKey,
-            deleteRequestOptions: DeleteRequestOptions()
-              ..useRemoteAtServer = true,
+            deleteRequestOptions: DeleteRequestOptions()..useRemoteAtServer = true,
           );
         } catch (e) {
           stderr.writeln(e.toString());
