@@ -250,13 +250,12 @@ class _TerminalScreenDesktopViewState extends ConsumerState<TerminalScreenDeskto
                                 }),
                                 LogicalKeySet(
                                   LogicalKeyboardKey.control,
-                                  LogicalKeyboardKey.shift,
-                                  LogicalKeyboardKey.add,
+                                  LogicalKeyboardKey.equal,
                                 ): VoidCallbackIntent(() {
                                   increaseFontSize();
                                 }),
-                                LogicalKeySet(LogicalKeyboardKey.control, LogicalKeyboardKey.shift,
-                                    LogicalKeyboardKey.underscore): VoidCallbackIntent(() {
+                                LogicalKeySet(LogicalKeyboardKey.control, LogicalKeyboardKey.minus):
+                                    VoidCallbackIntent(() {
                                   decreaseFontSize();
                                 }),
                               },
