@@ -42,6 +42,7 @@ class CustomSwitchWidget extends StatelessWidget {
             message: tooltip,
             child: Icon(
               Icons.question_mark_outlined,
+              color: kPrimaryColor,
               size: 12.toFont,
             ),
           )
