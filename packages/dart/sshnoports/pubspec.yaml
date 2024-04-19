@@ -9,7 +9,7 @@ environment:
 dependencies:
   noports_core:
     path: "../noports_core"
-  at_onboarding_cli: 1.4.3
+  at_onboarding_cli: 1.4.4
   at_cli_commons: ^1.0.5
   args: 2.4.2
   socket_connector: ^2.2.0
@@ -25,7 +25,7 @@ dependency_overrides:
 
 dev_dependencies:
   lints: ^3.0.0
-  test: ^1.25.3
+  test: ^1.25.4
   mocktail: ^1.0.3
   build_runner: ^2.4.9
   build_version: ^2.1.1

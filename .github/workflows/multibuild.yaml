@@ -46,7 +46,7 @@ jobs:
             bundle: 'windows'
     steps:
       - uses: actions/checkout@9bb56186c3b09b4f86b1c65136769dd318469633 # v4.1.2
-      - uses: dart-lang/setup-dart@fedb1266e91cf51be2fdb382869461a434b920a3 # v1.6.2
+      - uses: dart-lang/setup-dart@f0ead981b4d9a35b37f30d36160575d60931ec30 # v1.6.4
       # create directories need for build
       - run: mkdir sshnp
       - run: mkdir tarball
@@ -58,8 +58,7 @@ jobs:
       - run: dart compile exe bin/activate_cli.dart -v -o sshnp/at_activate${{ matrix.ext }}
       - run: dart compile exe bin/sshnp.dart -v -o sshnp/sshnp${{ matrix.ext }}
       - run: dart compile exe bin/npt.dart -v -o sshnp/npt${{ matrix.ext }}
-      - if: ${{ matrix.os != 'windows-latest' }}
-        run: dart compile exe bin/sshnpd.dart -v -o sshnp/sshnpd${{ matrix.ext }}
+      - run: dart compile exe bin/sshnpd.dart -v -o sshnp/sshnpd${{ matrix.ext }}
       - run: dart compile exe bin/srv.dart -v -o sshnp/srv${{ matrix.ext }}
       - if: ${{ matrix.os != 'windows-latest' }}
         run: dart compile exe bin/srvd.dart -v -o sshnp/srvd${{ matrix.ext }}
