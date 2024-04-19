@@ -98,14 +98,13 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, tea.Quit
 		case "esc":
 			if !m.viewportVisible {
-				break
+				return m, nil
 			}
-
 			m.viewportVisible = false
 			// TODO: cancel any running commands
 		case "enter":
 			if m.viewportVisible {
-				break
+				return m, nil
 			}
 
 			m.viewportVisible = true
