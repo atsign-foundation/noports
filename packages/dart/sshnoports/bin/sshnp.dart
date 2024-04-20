@@ -168,7 +168,7 @@ void main(List<String> args) async {
       // Run List Devices Operation
       if (params.listDevices) {
         stderr.writeln('Searching for devices...');
-        var deviceList = await sshnp.listDevices();
+        SshnpDeviceList deviceList = await sshnp.listDevices();
         printDevices(deviceList);
         exitProgram();
       }
