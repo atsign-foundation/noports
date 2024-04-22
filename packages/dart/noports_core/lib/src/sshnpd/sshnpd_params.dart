@@ -147,6 +147,7 @@ class SshnpdParams {
     parser.addFlag(
       'hide',
       abbr: 'h',
+      negatable: false,
       defaultsTo: false,
       help: 'Hides the device from advertising its information to the manager'
           ' atSign. Even with this enabled, sshnpd will still respond to ping'
