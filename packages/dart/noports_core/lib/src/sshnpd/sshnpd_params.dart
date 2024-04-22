@@ -75,7 +75,7 @@ class SshnpdParams {
     }
     bool makeDeviceInfoVisible = r['un-hide'];
     if (r.wasParsed('hide')) {
-      makeDeviceInfoVisible = r['hide'];
+      makeDeviceInfoVisible = !r['hide'];
     }
     return SshnpdParams(
       device: r['device'],
