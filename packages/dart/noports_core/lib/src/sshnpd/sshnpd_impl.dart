@@ -107,6 +107,7 @@ class SshnpdImpl implements Sshnpd {
         DaemonFeature.acceptsPublicKeys.name: addSshPublicKeys,
         DaemonFeature.supportsPortChoice.name: true,
       },
+      'allowedServices': permitOpen,
     };
   }
 
