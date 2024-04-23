@@ -73,7 +73,10 @@ class SshnpdParams {
     if (invalidDeviceName(device)) {
       throw ArgumentError(invalidDeviceNameMsg);
     }
-
+    bool makeDeviceInfoVisible = r['un-hide'];
+    if (r.wasParsed('hide')) {
+      makeDeviceInfoVisible = !r['hide'];
+    }
     return SshnpdParams(
       device: r['device'],
       username: getUserName(throwIfNull: true)!,
@@ -83,7 +86,7 @@ class SshnpdParams {
           getDefaultAtKeysFilePath(homeDirectory, deviceAtsign),
       deviceAtsign: deviceAtsign,
       verbose: r['verbose'],
-      makeDeviceInfoVisible: r['un-hide'],
+      makeDeviceInfoVisible: makeDeviceInfoVisible,
       addSshPublicKeys: r['sshpublickey'],
       sshClient: sshClient,
       rootDomain: r['root-domain'],
@@ -142,12 +145,27 @@ class SshnpdParams {
           ' to include public key sent by manager',
     );
     parser.addFlag(
+      'hide',
+      abbr: 'h',
+      negatable: false,
+      defaultsTo: false,
+      help: 'Hides the device from advertising its information to the manager'
+          ' atSign. Even with this enabled, sshnpd will still respond to ping'
+          ' requests from the manager. (This takes priority over -u / --un-hide)',
+    );
+    parser.addFlag(
       'un-hide',
       abbr: 'u',
       aliases: const ['username'],
-      defaultsTo: false,
-      help: 'When set, makes various information visible'
-          ' to the manager atSign - e.g. username, version, etc',
+      defaultsTo: true,
+      hide: true,
+      callback: (bool unhide) {
+        if (unhide) {
+          stderr.writeln(
+              "[WARN] -u, --un-hide is deprecated, since it is now on by default."
+              " Use --hide if you want to disable device information sharing.");
+        }
+      },
     );
     parser.addFlag(
       'verbose',
