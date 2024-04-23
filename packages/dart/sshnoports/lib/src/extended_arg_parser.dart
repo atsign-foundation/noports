@@ -43,7 +43,7 @@ class ExtendedArgParser {
       : parser = createArgParser(usageLineLength: usageLineLength);
 
   ArgResults parse(Iterable<String> args) {
-    return parser.parse(args);
+    return result = parser.parse(args);
   }
 
   String get usage => parser.usage;
