@@ -52,7 +52,7 @@ class ExtendedArgParser {
     List<String> coreArgs = args.toList();
 
     if (results == null) {
-      results = parse(args);
+      parse(args);
     }
 
     if (results!.wasParsed('ssh-client')) {
