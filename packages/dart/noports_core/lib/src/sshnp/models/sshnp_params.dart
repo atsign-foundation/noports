@@ -272,7 +272,9 @@ class SshnpParams extends ClientParamsBase
       partial.sshnpdAtSign ??
           (throw ArgumentError(
               'Option to is mandatory, unless list-devices is passed.'));
-      partial.srvdAtSign ?? (throw ArgumentError('srvdAtSign is mandatory'));
+      partial.srvdAtSign ??
+          (throw ArgumentError(
+              'srvdAtSign is mandatory, unless list-devices is passed.'));
     }
 
     return SshnpParams(
