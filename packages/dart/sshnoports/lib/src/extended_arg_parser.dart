@@ -43,7 +43,7 @@ class ExtendedArgParser {
       : parser = createArgParser(usageLineLength: usageLineLength);
 
   ArgResults parse(Iterable<String> args) {
-    return results = parser.parse(args);
+    return parser.parse(args);
   }
 
   String get usage => parser.usage;
@@ -52,7 +52,7 @@ class ExtendedArgParser {
     List<String> coreArgs = args.toList();
 
     if (results == null) {
-      parse(args);
+      results = parse(args);
     }
 
     if (results!.wasParsed('ssh-client')) {

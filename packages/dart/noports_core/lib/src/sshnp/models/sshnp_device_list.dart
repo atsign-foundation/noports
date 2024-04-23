@@ -12,4 +12,9 @@ class SshnpDeviceList {
 
   Set<String> get inactiveDevices =>
       info.keys.toSet().difference(activeDevices);
+
+  void add(SshnpDeviceList o) {
+    info.addEntries(o.info.entries);
+    activeDevices.addAll(o.activeDevices);
+  }
 }

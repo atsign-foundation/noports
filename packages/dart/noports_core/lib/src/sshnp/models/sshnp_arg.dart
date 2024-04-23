@@ -106,6 +106,7 @@ class SshnpArg {
     toArg,
     deviceArg,
     srvdArg,
+    legacySrvdArg,
     localPortArg,
     identityFileArg,
     identityPassphraseArg,
@@ -218,7 +219,7 @@ class SshnpArg {
     name: 'to',
     abbr: 't',
     help: 'Receiving device atSign',
-    mandatory: true,
+    defaultsTo: "",
   );
   static const deviceArg = SshnpArg(
     name: 'device',
@@ -228,10 +229,14 @@ class SshnpArg {
   );
   static const srvdArg = SshnpArg(
     name: 'srvd',
-    aliases: ['host'],
-    abbr: 'h',
+    abbr: 'r',
     help: 'atSign of srvd daemon',
-    mandatory: true,
+  );
+  static const legacySrvdArg = SshnpArg(
+    name: 'host',
+    abbr: 'h',
+    mandatory: false,
+    hide: true,
   );
   static const localPortArg = SshnpArg(
     name: 'local-port',
