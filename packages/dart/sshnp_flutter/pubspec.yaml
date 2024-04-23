@@ -96,6 +96,6 @@ msix_config:
   identity_name: "TheCompany.SSHNoPortsDesktop"
   publisher: CN=BBFE1D0B-F713-4C7F-B375-5EA851CBB1FF
   msix_version: 1.0.0.0
-  logo_path: null
+  logo_path: "assets/images/app_logo.png"
   capabilities: internetClient
   store: true
