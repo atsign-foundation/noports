@@ -11,9 +11,9 @@ class SupportScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return const ResponsiveWidget(
-      mobileScreen: SupportScreenMobileView(),
+      smallScreen: SupportScreenMobileView(),
       largeScreen: SupportScreenDesktopView(),
-      tabletScreen: SupportScreenDesktopView(),
+      mediumScreen: SupportScreenDesktopView(),
     );
   }
 }

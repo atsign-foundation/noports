@@ -176,6 +176,7 @@ class _TerminalScreenDesktopViewState extends ConsumerState<TerminalScreenDeskto
                   child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                     SvgPicture.asset(
                       'assets/images/noports_light.svg',
+                      height: Sizes.p38,
                     ),
                     gapH24,
                     if (terminalList.isEmpty) Text(strings.noTerminalSessions, textScaler: const TextScaler.linear(2)),

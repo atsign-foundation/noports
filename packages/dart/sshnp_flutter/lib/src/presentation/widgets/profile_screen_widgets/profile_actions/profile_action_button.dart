@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../../../utility/sizes.dart';
+
 class ProfileActionButton extends StatelessWidget {
   final void Function() onPressed;
   final Widget icon;
@@ -11,7 +13,9 @@ class ProfileActionButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    SizeConfig().init(context);
     return IconButton(
+      iconSize: 24.toFont,
       onPressed: onPressed,
       icon: icon,
     );

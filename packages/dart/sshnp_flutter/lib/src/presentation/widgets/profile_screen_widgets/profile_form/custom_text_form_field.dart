@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:sshnp_flutter/src/utility/constants.dart';
 
+import '../../../../utility/sizes.dart';
+
 class CustomTextFormField extends StatefulWidget {
   const CustomTextFormField({
     super.key,
@@ -44,28 +46,37 @@ class _CustomTextFormFieldState extends State<CustomTextFormField> {
 
   @override
   Widget build(BuildContext context) {
+    SizeConfig().init(context);
+    final bodySmall = Theme.of(context).textTheme.bodySmall!;
     return SizedBox(
-      width: widget.width,
+      width: widget.width.toWidth,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
             widget.labelText,
-            style: Theme.of(context).textTheme.bodySmall!.copyWith(
-                  color: Colors.grey,
-                ),
+            style: bodySmall.copyWith(
+              color: Colors.grey,
+              fontSize: bodySmall.fontSize?.toFont,
+            ),
           ),
           TextFormField(
             initialValue: widget.initialValue,
             obscureText: widget.isPasswordField && !_isPasswordVisible,
             decoration: InputDecoration(
+              contentPadding: EdgeInsets.symmetric(
+                vertical: 10.toFont,
+                horizontal: 10.toFont,
+              ),
               filled: true,
               fillColor: kProfileFormFieldColor,
               border: UnderlineInputBorder(
                 borderRadius: BorderRadius.circular(2),
               ),
               hintText: widget.hintText,
-              hintStyle: Theme.of(context).textTheme.bodySmall,
+              hintStyle: bodySmall.copyWith(
+                fontSize: bodySmall.fontSize?.toFont,
+              ),
               suffixIcon: widget.isPasswordField
                   ? InkWell(
                       onTap: _setPasswordVisibility,
@@ -73,9 +84,10 @@ class _CustomTextFormFieldState extends State<CustomTextFormField> {
                     )
                   : Tooltip(
                       message: widget.toolTip,
-                      child: const Icon(
+                      child: Icon(
                         Icons.question_mark_outlined,
-                        size: 12,
+                        color: kPrimaryColor,
+                        size: 12.toFont,
                       ),
                     ),
               errorMaxLines: 3,

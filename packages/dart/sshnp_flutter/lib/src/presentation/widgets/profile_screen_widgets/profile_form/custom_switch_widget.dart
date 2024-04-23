@@ -19,14 +19,16 @@ class CustomSwitchWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    SizeConfig().init(context);
+    final bodySmall = Theme.of(context).textTheme.bodySmall!;
     return SizedBox(
-      width: kFieldDefaultWidth,
+      width: kFieldDefaultWidth.toWidth,
       child: Row(
         children: [
           Expanded(
               child: Text(
             labelText,
-            style: Theme.of(context).textTheme.bodySmall,
+            style: bodySmall.copyWith(fontSize: bodySmall.fontSize?.toFont),
           )),
           gapW8,
           Switch(
@@ -38,9 +40,10 @@ class CustomSwitchWidget extends StatelessWidget {
           gapW8,
           Tooltip(
             message: tooltip,
-            child: const Icon(
+            child: Icon(
               Icons.question_mark_outlined,
-              size: 12,
+              color: kPrimaryColor,
+              size: 12.toFont,
             ),
           )
         ],
