@@ -581,12 +581,12 @@ client() {
   if [ -z "$devices" ]; then
     done_input=false
     echo "Installing a quick picker script to make it easy to connect to devices..."
-    echo "Enter the device names you would like to include in the quick picker script"
-    echo "/done to finish"
+    echo "Type a device name and press enter to submit it."
+    echo "Press enter once more to finish."
     while [ "$done_input" = false ]; do
       printf "Device name: "
       read -r device_name
-      if [ "$device_name" = "/done" ]; then
+      if [ -z "$device_name" ]; then
         done_input=true
       else
         devices="$devices,$device_name"
