@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:developer';
 
 import 'package:at_onboarding_flutter/at_onboarding_flutter.dart' hide Intent;
@@ -56,30 +57,46 @@ class _TerminalScreenDesktopViewState extends ConsumerState<TerminalScreenDeskto
 
             final keyPair = privateKeyManager.toAtSshKeyPair();
 
-            final sshnp = Sshnp.dartPure(
-              params: SshnpParams.merge(
-                shellInfo['params'],
-                SshnpPartialParams(
-                  verbose: kDebugMode,
-                  idleTimeout: 30,
+            Sshnp? sshnp;
+            SshnpResult? result = await runZonedGuarded<Future<SshnpResult?>>(() async {
+              sshnp = Sshnp.dartPure(
+                params: SshnpParams.merge(
+                  shellInfo['params'],
+                  SshnpPartialParams(
+                    verbose: kDebugMode,
+                    idleTimeout: 30,
+                  ),
                 ),
-              ),
-              atClient: atClient,
-              identityKeyPair: keyPair,
-            );
-            sshnp.progressStream?.listen((progress) {
-              sessionController.write(progress);
-              log(progress);
-            });
+                atClient: atClient,
+                identityKeyPair: keyPair,
+              );
 
-            final result = await sshnp.run();
+              sshnp!.progressStream?.listen((progress) {
+                sessionController.write(progress);
+                log(progress);
+              });
+
+              return await sshnp!.run().catchError((e) {
+                CustomSnackBar.error(content: e.toString());
+                throw 'Failed to start session';
+              });
+            }, (error, stack) {
+              log('Error: $error', error: error, stackTrace: stack);
+              sshnp = null;
+              CustomSnackBar.error(content: 'Failed to initialize SSH No Ports');
+              throw error.toString();
+            });
+            if (sshnp == null || result == null) {
+              throw 'Failed to initialize SSH No Ports';
+            }
+            log(result.toString());
             if (result is SshnpError) {
               throw result;
             }
 
             if (result is SshnpCommand) {
-              if (sshnp.canRunShell) {
-                SshnpRemoteProcess shell = await sshnp.runShell();
+              if (sshnp!.canRunShell) {
+                SshnpRemoteProcess shell = await sshnp!.runShell();
 
                 sessionController.startSession(
                   shell,
@@ -88,11 +105,12 @@ class _TerminalScreenDesktopViewState extends ConsumerState<TerminalScreenDeskto
               }
             }
           } catch (e) {
+            log('catch called');
             sessionController.dispose();
 
+            log('error: ${e.toString()}');
             if (mounted) {
-              log('error: ${e.toString()}');
-
+              log('mounted called');
               CustomSnackBar.error(content: e.toString());
             }
           }
