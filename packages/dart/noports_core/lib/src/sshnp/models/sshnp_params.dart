@@ -15,6 +15,7 @@ abstract interface class ClientParams {
 
   String get clientAtSign;
 
+  // This value can be "" if list-devices was passed, otherwise it should be a valid atSign
   String get sshnpdAtSign;
 
   String get srvdAtSign;
@@ -262,16 +263,25 @@ class SshnpParams extends ClientParamsBase
       SshnpParams.fromPartial(SshnpPartialParams.fromJson(json));
 
   factory SshnpParams.fromPartial(SshnpPartialParams partial) {
+    // Always need the clientAtSign
     partial.clientAtSign ??
         (throw ArgumentError('from (clientAtSign) is mandatory'));
-    partial.sshnpdAtSign ??
-        (throw ArgumentError('to (npdAtSign) is mandatory'));
-    partial.srvdAtSign ?? (throw ArgumentError('srvdAtSign is mandatory'));
+
+    if (!(partial.listDevices ?? DefaultSshnpArgs.listDevices)) {
+      // if list-devices is not set, then ensure sshnpdAtSign and srvdAtSign are set
+      partial.sshnpdAtSign ??
+          (throw ArgumentError(
+              'Option to is mandatory, unless list-devices is passed.'));
+      partial.srvdAtSign ??
+          (throw ArgumentError(
+              'srvdAtSign is mandatory, unless list-devices is passed.'));
+    }
+
     return SshnpParams(
       profileName: partial.profileName,
       clientAtSign: partial.clientAtSign!,
-      sshnpdAtSign: partial.sshnpdAtSign!,
-      srvdAtSign: partial.srvdAtSign!,
+      sshnpdAtSign: partial.sshnpdAtSign ?? "",
+      srvdAtSign: partial.srvdAtSign ?? "",
       device: partial.device ?? DefaultSshnpArgs.device,
       localPort: partial.localPort ?? DefaultSshnpArgs.localPort,
       identityFile: partial.identityFile,
@@ -479,7 +489,8 @@ class SshnpPartialParams {
       sshnpdAtSign: args[SshnpArg.toArg.name] == null
           ? null
           : AtUtils.fixAtSign(args[SshnpArg.toArg.name]),
-      srvdAtSign: args[SshnpArg.srvdArg.name],
+      srvdAtSign:
+          args[SshnpArg.srvdArg.name] ?? args[SshnpArg.legacySrvdArg.name],
       device: args[SshnpArg.deviceArg.name],
       localPort: args[SshnpArg.localPortArg.name],
       atKeysFilePath: args[SshnpArg.keyFileArg.name],
