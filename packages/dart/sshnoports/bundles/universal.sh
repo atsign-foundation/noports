@@ -98,7 +98,7 @@ usage() {
   echo "  -v, --verbose                  Verbose tracing"
   echo "      --version                  Display version"
   echo "      --temp-path      <path>    Set the temporary path for downloads"
-  echo "  -t, --type           <type>    Set the install type (device, client, both)"
+  echo "  -t, --type           <type>    Set the install type (device, client)"
   echo "      --local          <path>    Install from a local archive"
   echo
   echo "Client Options:"
@@ -186,7 +186,7 @@ is_valid_source_mode() {
 }
 
 is_valid_install_type() {
-  [ "$1" = "device" ] || [ "$1" = "client" ] || [ "$1" = "both" ]
+  [ "$1" = "device" ] || [ "$1" = "client" ]
 }
 
 norm_install_type() {
@@ -196,9 +196,6 @@ norm_install_type() {
       ;;
     c*)
       echo "client"
-      ;;
-    b*)
-      echo "both"
       ;;
     *)
       echo ""
@@ -256,7 +253,7 @@ parse_args() {
         install_type=$(norm_install_type "$install_type_input")
         if ! is_valid_install_type "$install_type"; then
           echo "Invalid install type: $install_type_input"
-          echo "Valid options are: (device, client, both)" exit 1
+          echo "Valid options are: (device, client)" exit 1
         fi
         ;;
       --local)
@@ -320,7 +317,7 @@ get_user_inputs() {
   if [ -z "$install_type" ]; then
     unset install_type_input
     while [ -z "$install_type" ]; do
-      printf "Install type (device, client, both):  "
+      printf "Install type (device, client):  "
       read -r install_type_input
       install_type=$(norm_install_type "$install_type_input")
     done
@@ -709,14 +706,6 @@ main() {
   case "$install_type" in
     client) client ;;
     device) device ;;
-    both)
-      echo
-      echo "Installing device part..."
-      device
-      echo
-      echo "Installing client part..."
-      client
-      ;;
   esac
 }
 
