@@ -21,7 +21,7 @@ jobs:
       contents: write # Needed to create workflow branch
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@1d96c772d19495a3b5c517cd2bc0cb401ea0529f # v4.1.3
+      - uses: actions/checkout@0ad4b8fadaa221de15dcec353f45205ec38ea70b # v4.1.4
       - name: Create action branch
         run: |
           git config --global user.name 'Atsign Robot'
@@ -69,7 +69,7 @@ jobs:
             ext: '.exe'
             bundle: 'windows'
     steps:
-      - uses: actions/checkout@1d96c772d19495a3b5c517cd2bc0cb401ea0529f # v4.1.3
+      - uses: actions/checkout@0ad4b8fadaa221de15dcec353f45205ec38ea70b # v4.1.4
         with:
           ref: multibuild-${{github.run_number}}
       - uses: dart-lang/setup-dart@f0ead981b4d9a35b37f30d36160575d60931ec30 # v1.6.4
@@ -170,7 +170,7 @@ jobs:
             output-name: sshnp-linux-riscv64
     steps:
       - if: ${{ ! inputs.main_build_only }}
-        uses: actions/checkout@1d96c772d19495a3b5c517cd2bc0cb401ea0529f # v4.1.3
+        uses: actions/checkout@0ad4b8fadaa221de15dcec353f45205ec38ea70b # v4.1.4
         with:
           ref: multibuild-${{github.run_number}}
       - if: ${{ ! inputs.main_build_only }}
@@ -197,7 +197,7 @@ jobs:
         working-directory: ./packages/dart/sshnoports/bundles
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@1d96c772d19495a3b5c517cd2bc0cb401ea0529f # v4.1.3
+      - uses: actions/checkout@0ad4b8fadaa221de15dcec353f45205ec38ea70b # v4.1.4
       - run: |
           write_metadata() {
             start_line="# SCRIPT METADATA"
@@ -228,7 +228,7 @@ jobs:
       id-token: write  # Mandatory for sigstore
     steps:
     - name: Download all the tarballs
-      uses: actions/download-artifact@9c19ed7fe5d278cd354c7dfd5d3b88589c7e2395 # v4.1.6
+      uses: actions/download-artifact@65a9edc5881444af0b9093a5e628f2fe47ea3b2e # v4.1.7
       with:
         path: tarballs/
     - name: Move packages for signing
@@ -264,7 +264,7 @@ jobs:
     permissions:
       contents: write # Needed to delete workflow branch
     steps:
-    - uses: actions/checkout@1d96c772d19495a3b5c517cd2bc0cb401ea0529f # v4.1.3
+    - uses: actions/checkout@0ad4b8fadaa221de15dcec353f45205ec38ea70b # v4.1.4
       with:
         ref: multibuild-${{github.run_number}}
     - name: Delete workflow branch
