@@ -439,25 +439,24 @@ write_systemd_environment() {
   sedi "s|Environment=$variable=\".*\"|Environment=$variable=\"$value\"|g" "$file"
 }
 
-get_client_atsign() {
-  while [ -z "$client_atsign" ]; do
-    printf "Enter client atSign: "
-    read -r client_atsign
+get_atsign_manually() {
+  selectedatsign=""
+  if [ $# -gt 0 ]; then
+    clientOrDevice="$1"
+  fi
+  while [ -z "$selectedatsign" ]; do
+    printf "Enter %s atSign: " "$clientOrDevice"
+    read -r selectedatsign
   done
 }
 
-get_device_atsign() {
-  while [ -z "$device_atsign" ]; do
-    printf "Enter device atSign: "
-    read -r device_atsign
-  done
-}
-
-get_installed_atsigns() {
+get_atsign() {
   clientOrDevice="$1"
   atkeycount=0
   atkeys=""
   selectedatsign=""
+  echo
+  echo "Setting up $clientOrDevice atSign"
   if [ -d "${user_home}/.atsign/keys" ]; then
     # Disable unsafe find looping (will break if atkey file name contains a space, which it shouldn't)
     # shellcheck disable=SC2044
@@ -467,7 +466,8 @@ get_installed_atsigns() {
     done
     atkeys="$(echo "$atkeys" | sed s/\ \ /\ / | sed s/^\ //)" # remove double & leading space since it will interfere with cut
     if [ $atkeycount -eq 0 ]; then
-      echo "$HOME/.atsign/keys directory found but there are no keys there yet"
+      echo "$HOME/.atsign/keys directory found but there are no keys there yet, please enter the $clientOrDevice atSign manually"
+      get_atsign_manually
     elif [ $atkeycount -eq 1 ]; then
       atkey=$(echo "$atkeys" | sed "s/\ //g")
       echo "1 atKeys file found: ${atkey}"
@@ -483,7 +483,10 @@ get_installed_atsigns() {
       for i in $(seq 1 $atkeycount); do
         echo "$i) @$(echo "$atkeys" | cut -d' ' -f"$i")"
       done
-      printf '=> Found .atKeys for %s atSigns. Choose %s atSign : $ ' "$atkeycount" "$clientOrDevice"
+      echo
+      printf "Found .atKeys for %s atSigns." "$atkeycount"
+      echo
+      printf 'Choose %s atSign (input the number): $ ' "$clientOrDevice"
       read -r selectedinput
 
       selectedindex=$((selectedinput))
@@ -491,12 +494,15 @@ get_installed_atsigns() {
         selectedatsign="$(echo "$atkeys" | cut -d' ' -f"$selectedindex")"
         echo "Selected: @$selectedatsign"
       else
-        echo "No existing atkeys were selected"
+        echo "No existing atkeys were selected, please enter the $clientOrDevice atSign manually."
+        get_atsign_manually
       fi
     fi
   else
     mkdir -p "$user_home"/.atsign/keys
     echo "$HOME/.atsign/keys directory created"
+    echo "Since we did not detect any atkeys on this machine, please enter the $clientOrDevice atSign manually."
+    get_atsign_manually
   fi
 }
 
@@ -537,12 +543,14 @@ client() {
 
   # get the inputs for the magic script
   if [ -z "$client_atsign" ]; then
-    get_installed_atsigns "client"
+    get_atsign "client"
     client_atsign="$selectedatsign"
-    get_client_atsign
   fi
 
-  get_device_atsign
+  if [ -z "$device_atsign" ]; then
+    get_atsign_manually "device"
+    device_atsign="$selectedatsign"
+  fi
 
   if [ -z "$host_atsign" ]; then
     echo Pick your default region:
@@ -633,12 +641,14 @@ device() {
     device_install_type=$device_type
   fi
 
-  get_client_atsign
+  if [ -z "$client_atsign" ]; then
+    get_atsign_manually "client"
+    client_atsign="$selectedatsign"
+  fi
 
   if [ -z "$device_atsign" ]; then
-    get_installed_atsigns "device"
+    get_atsign "device"
     device_atsign="$selectedatsign"
-    get_device_atsign
   fi
 
   while [ -z "$device_name" ]; do
