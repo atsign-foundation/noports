@@ -1,3 +1,8 @@
+# 6.0.7
+- feat: include allowed services in device ping
+- chore: deprecate -h and --host in favor of -r and --srvd
+- feat: allow --list-devices to work without requiring -t or -r
+
 # 6.0.6
 - feat: SrvImplDart: supply a logger to SocketConnector so that the Srv can 
   control what happens with any log messages that SocketConnector emits
