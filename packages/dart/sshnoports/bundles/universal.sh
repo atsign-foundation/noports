@@ -178,7 +178,7 @@ parse_env() {
     bin_path="$HOME/.local/bin"
     user="$USER"
   fi
-  user_bin_dir=$user_home/.local/bin/@sshnp
+  user_bin_dir=$user_home/.local/bin
 }
 
 is_valid_source_mode() {
