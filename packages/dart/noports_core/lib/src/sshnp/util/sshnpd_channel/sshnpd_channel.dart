@@ -178,7 +178,7 @@ abstract class SshnpdChannel with AsyncInitialization, AtClientBindings {
 
   Future<List<(DaemonFeature feature, bool supported, String reason)>>
       featureCheck(List<DaemonFeature> featuresToCheck,
-          {Duration timeout = const Duration(seconds: 10)}) async {
+          {Duration timeout = DefaultArgs.daemonPingTimeoutDuration}) async {
     if (featuresToCheck.isEmpty) {
       return [];
     }

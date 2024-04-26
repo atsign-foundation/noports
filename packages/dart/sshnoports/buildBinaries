@@ -1,0 +1,18 @@
+#!/bin/bash
+
+echo Starting at `date`
+echo
+
+echo "Compiling activate_cli"; dart compile exe --verbosity error bin/activate_cli.dart -o bin/activate_cli &
+echo "Compiling srv"; dart compile exe --verbosity error bin/srv.dart -o bin/srv &
+echo "Compiling sshnpd"; dart compile exe --verbosity error bin/sshnpd.dart -o bin/sshnpd &
+echo "Compiling srvd"; dart compile exe --verbosity error bin/srvd.dart -o bin/srvd &
+echo "Compiling sshnp"; dart compile exe --verbosity error bin/sshnp.dart -o bin/sshnp &
+echo "Compiling npt"; dart compile exe --verbosity error bin/npt.dart -o bin/npt &
+echo "Compiling demo/npa_always_deny"; dart compile exe --verbosity error bin/demo/npa_always_deny.dart -o bin/demo/sshnpa_always_deny &
+echo "Compiling demo/npa_cli"; dart compile exe --verbosity error bin/demo/npa_cli.dart -o bin/demo/npa_cli &
+
+wait
+
+echo 
+echo Finished at `date`
