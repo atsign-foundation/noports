@@ -21,6 +21,11 @@ class DefaultArgs {
   static const bool authenticateClientToRvd = true;
   static const bool authenticateDeviceToRvd = true;
   static const bool encryptRvdTraffic = true;
+
+  /// How long a client should wait for response after pinging a daemon
+  static const int daemonPingTimeoutSeconds = 20;
+  static const Duration daemonPingTimeoutDuration =
+      Duration(seconds: daemonPingTimeoutSeconds);
 }
 
 class DefaultSshnpArgs {
@@ -35,4 +40,5 @@ class DefaultSshnpArgs {
 class DefaultSshnpdArgs {
   static const SupportedSshClient sshClient = SupportedSshClient.openssh;
   static const int localSshdPort = 22;
+  static const String deviceGroupName = '__none__';
 }

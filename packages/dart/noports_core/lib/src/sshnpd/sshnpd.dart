@@ -29,6 +29,8 @@ abstract class Sshnpd {
 
   abstract final List<String> managerAtsigns;
 
+  String? get policyManagerAtsign;
+
   /// The ssh client to use when doing reverse ssh
   abstract final SupportedSshClient sshClient;
 
@@ -68,6 +70,12 @@ abstract class Sshnpd {
   /// - [SupportedSshAlgorithm.ed25519]
   /// - [SupportedSshAlgorithm.rsa]
   abstract final SupportedSshAlgorithm sshAlgorithm;
+
+  /// The name of this device's "group".
+  /// When delegated authorization is being used then the group name is sent
+  //  to the authorizer service as well as the device name, this daemon's
+  //  atSign, and the atSign of the client which is requesting a connection'
+  abstract final String deviceGroup;
 
   /// The version of whatever program is using this library.
   abstract final String version;
