@@ -1,0 +1,5 @@
+# Ignore everything (generated development binaries)
+*
+# Allow dart files
+!*.dart
+!.gitignore
