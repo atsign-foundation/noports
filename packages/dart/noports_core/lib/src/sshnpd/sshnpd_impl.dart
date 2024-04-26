@@ -57,6 +57,9 @@ class SshnpdImpl implements Sshnpd {
   final int localSshdPort;
 
   @override
+  final String sshPublicKeyPermissions;
+
+  @override
   final String ephemeralPermissions;
 
   @override
@@ -96,6 +99,7 @@ class SshnpdImpl implements Sshnpd {
     this.makeDeviceInfoVisible = false,
     this.addSshPublicKeys = false,
     this.localSshdPort = DefaultSshnpdArgs.localSshdPort,
+    this.sshPublicKeyPermissions = DefaultSshnpdArgs.sshPublicKeyPermissions,
     required this.ephemeralPermissions,
     required this.sshAlgorithm,
     required this.deviceGroup,
@@ -398,7 +402,10 @@ class SshnpdImpl implements Sshnpd {
       var authKeysContent = await authKeys.readAsString();
 
       if (!authKeysContent.contains(sshPublicKey)) {
-        authKeys.writeAsStringSync('\n$sshPublicKey', mode: FileMode.append);
+        authKeys.writeAsStringSync(
+          '\n$sshPublicKeyPermissions $sshPublicKey',
+          mode: FileMode.append,
+        );
       }
     } catch (e) {
       logger.severe("Error writing to"

@@ -59,6 +59,11 @@ abstract class Sshnpd {
   abstract final int localSshdPort;
 
   /// Permissions which are added to the authorized_keys file when adding
+  /// a public key via --sshpublickey being enabled.
+  /// e.g. PermitOpen="host-1:3389",PermitOpen="localhost:80"
+  abstract final String sshPublicKeyPermissions;
+
+  /// Permissions which are added to the authorized_keys file when adding
   /// a newly-generated ephemeral public key.
   /// e.g. PermitOpen="host-1:3389",PermitOpen="localhost:80"
   ///
