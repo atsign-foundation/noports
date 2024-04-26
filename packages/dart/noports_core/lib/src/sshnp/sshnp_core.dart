@@ -109,13 +109,6 @@ abstract class SshnpCore
     /// interaction with the srvd; as a result the ping causes no increase in
     /// overall time-to-session-started
     List<DaemonFeature> requiredFeatures = [];
-    Future<
-        List<
-            (
-              DaemonFeature feature,
-              bool supported,
-              String reason,
-            )>>? featureCheckFuture;
     if (params.authenticateDeviceToRvd) {
       requiredFeatures.add(DaemonFeature.srAuth);
     }
@@ -127,7 +120,9 @@ abstract class SshnpCore
     }
     sendProgress('Sending daemon feature check request');
 
-    featureCheckFuture = sshnpdChannel.featureCheck(requiredFeatures);
+    Future<List<(DaemonFeature feature, bool supported, String reason)>>
+        featureCheckFuture = sshnpdChannel.featureCheck(requiredFeatures,
+            timeout: params.daemonPingTimeout);
 
     /// Set the remote username to use for the ssh session
     sendProgress('Resolving remote username for user session');
@@ -152,6 +147,7 @@ abstract class SshnpCore
     sendProgress('Waiting for daemon feature check response');
     List<(DaemonFeature, bool, String)> features = await featureCheckFuture;
     sendProgress('Received daemon feature check response');
+
     await Future.delayed(Duration(milliseconds: 1));
     for (final (DaemonFeature _, bool supported, String reason) in features) {
       if (!supported) throw SshnpError(reason);
