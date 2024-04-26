@@ -255,39 +255,86 @@ abstract class SshnpdChannel with AsyncInitialization, AtClientBindings {
   /// and corresponding info, and a list of active devices (devices which also
   /// responded to our real-time ping).
   Future<SshnpDeviceList> listDevices() async {
+    String sharedBy = params.sshnpdAtSign;
+
+    if (sharedBy.isNotEmpty) {
+      return _listDevices(sharedBy,
+          useFullDeviceName:
+              false); // if -t was specified fullDeviceName is redundant
+    }
+
+    // Shared by is empty so first we will lookup all potential device atsigns to list from
+    // Then we will _listDevices for each one
+    var scanRegex =
+        'device_info\\.$sshnpDeviceNameRegex\\.${DefaultArgs.namespace}';
+    List<AtKey> atKeys = await getAtKeysRemote(regex: scanRegex);
+    Set<String> atSigns = <String>{};
+
+    for (var key in atKeys) {
+      if (key.sharedBy != null) atSigns.add(key.sharedBy!);
+    }
+
+    // We have to do it this way, or for some reason we get cached keys which...
+    List<SshnpDeviceList> deviceLists =
+        await Future.wait(atSigns.map((a) => _listDevices(a)).toList());
+
+    // consolidate the list
+    SshnpDeviceList consolidatedList = SshnpDeviceList();
+    for (var list in deviceLists) {
+      consolidatedList.add(list);
+    }
+
+    return consolidatedList;
+  }
+
+  Future<SshnpDeviceList> _listDevices(String sharedBy,
+      {bool useFullDeviceName = true}) async {
+    SshnpDeviceList deviceList = SshnpDeviceList();
     // get all the keys device_info.*.sshnpd
     var scanRegex =
         'device_info\\.$sshnpDeviceNameRegex\\.${DefaultArgs.namespace}';
-
-    var atKeys =
-        await getAtKeysRemote(regex: scanRegex, sharedBy: params.sshnpdAtSign);
-
-    SshnpDeviceList deviceList = SshnpDeviceList();
+    List<AtKey> atKeys =
+        await getAtKeysRemote(regex: scanRegex, sharedBy: sharedBy);
 
     // Listen for heartbeat notifications
     subscribe(regex: 'heartbeat\\.$sshnpDeviceNameRegex', shouldDecrypt: true)
         .listen((notification) {
       var deviceInfo = jsonDecode(notification.value ?? '{}');
       var devicename = deviceInfo['devicename'];
+      var fullDeviceName = devicename + sharedBy;
       if (devicename != null) {
-        deviceList.setActive(devicename);
+        deviceList.setActive(useFullDeviceName ? fullDeviceName : devicename);
       }
     });
 
     // for each key, get the value
     for (var entryKey in atKeys) {
-      var atValue = await atClient.get(
+      bool shouldContinue = false;
+      var atValue = await atClient
+          .get(
         entryKey,
         getRequestOptions: GetRequestOptions()..bypassCache = true,
-      );
+      )
+          .catchError((_) {
+        // Probably a cached key which should have been deleted
+        shouldContinue = true;
+        return AtValue();
+      });
+
+      if (shouldContinue) {
+        continue;
+      }
+
       var deviceInfo = jsonDecode(atValue.value) ?? <String, dynamic>{};
 
       if (deviceInfo['devicename'] == null) {
         continue;
       }
 
-      var devicename = deviceInfo['devicename'] as String;
-      deviceList.info[devicename] = deviceInfo;
+      String devicename = deviceInfo['devicename'];
+      String fullDeviceName = devicename + sharedBy;
+      deviceList.info[useFullDeviceName ? fullDeviceName : devicename] =
+          deviceInfo;
 
       var metaData = Metadata()
         ..isPublic = false
@@ -325,7 +372,8 @@ abstract class SshnpdChannel with AsyncInitialization, AtClientBindings {
       bool showHiddenKeys = false}) async {
     var builder = ScanVerbBuilder()
       ..sharedWith = sharedWith
-      ..sharedBy = sharedBy
+      ..sharedBy =
+          sharedBy // for some reason, if this is null it only returns cached keys
       ..regex = regex
       ..showHiddenKeys = showHiddenKeys
       ..auth = true;
