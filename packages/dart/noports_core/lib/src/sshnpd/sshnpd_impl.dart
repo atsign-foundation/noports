@@ -58,6 +58,7 @@ class SshnpdImpl implements Sshnpd {
 
   @override
   final String sshPublicKeyPermissions;
+  final String _sshPublicKeySeparator; // ' ' if there are permissions else ''
 
   @override
   final String ephemeralPermissions;
@@ -106,15 +107,21 @@ class SshnpdImpl implements Sshnpd {
     required this.version,
     required this.permitOpen,
     this.authChecker,
-  }) {
+  }) : _sshPublicKeySeparator = (sshPublicKeyPermissions.isEmpty ? "" : " ") {
     if (invalidDeviceName(device)) {
       throw ArgumentError(invalidDeviceNameMsg);
     }
     logger.hierarchicalLoggingEnabled = true;
-    logger.logger.level = Level.SHOUT;
 
     if (authChecker == null && policyManagerAtsign != null) {
       authChecker = _NPAAuthChecker(this);
+    }
+
+    if (addSshPublicKeys) {
+      logger.info(
+        "Starting sshnpd with addSshPublicKeys on, using permissions: "
+        "'$sshPublicKeyPermissions'",
+      );
     }
 
     pingResponse = {
@@ -173,6 +180,7 @@ class SshnpdImpl implements Sshnpd {
         makeDeviceInfoVisible: p.makeDeviceInfoVisible,
         addSshPublicKeys: p.addSshPublicKeys,
         localSshdPort: p.localSshdPort,
+        sshPublicKeyPermissions: p.sshPublicKeyPermissions,
         ephemeralPermissions: p.ephemeralPermissions,
         sshAlgorithm: p.sshAlgorithm,
         deviceGroup: p.deviceGroup,
@@ -403,7 +411,7 @@ class SshnpdImpl implements Sshnpd {
 
       if (!authKeysContent.contains(sshPublicKey)) {
         authKeys.writeAsStringSync(
-          '\n$sshPublicKeyPermissions $sshPublicKey',
+          '$sshPublicKeyPermissions$_sshPublicKeySeparator$sshPublicKey',
           mode: FileMode.append,
         );
       }
