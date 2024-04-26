@@ -271,7 +271,7 @@ jobs:
       run: git push origin --delete multibuild-${{github.run_number}}
 
   notify_on_completion:
-    needs: [main_build, other_build, universal_sh]
+    needs: [github-release, cleanup]
     runs-on: ubuntu-latest
     steps:
       - name: Google Chat Notification
@@ -283,12 +283,12 @@ jobs:
 
   notify_on_failure:
     if: failure()
-    needs: [main_build, other_build, universal_sh]
+    needs: [github-release, cleanup]
     runs-on: ubuntu-latest
     steps:
       - name: Google Chat Notification
         uses: Co-qn/google-chat-notification@3691ccf4763537d6e544bc6cdcccc1965799d056 # v1
         with:
-          name: SSH no ports binaries build FAILED by GitHub Action ${{ github.run_number }}
+          name: SSH no ports binaries build by GitHub Action ${{ github.run_number }}
           url: ${{ secrets.GOOGLE_CHAT_WEBHOOK }}
-          status: ${{ job.status }}
+          status: failure
