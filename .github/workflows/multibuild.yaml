@@ -40,7 +40,7 @@ jobs:
             git commit -m 'ci: Updated version to tag'
           fi
       - name: Push changes to branch
-        run: git push --set-upstream origin robo-${{github.run_number}}
+        run: git push --set-upstream origin multibuild-${{github.run_number}}
 
   main_build:
     needs: verify_tags
