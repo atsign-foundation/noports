@@ -3,7 +3,7 @@
 * [🚫 No Ports Documentation](README.md)
 * [⌨️ SSH No Ports](ssh-no-ports/README.md)
   * [🔢 Guides](ssh-no-ports/guides/README.md)
-    * [💽 Installation Guide](ssh-no-ports/guides/installation-guide.md)
+    * [💽 Installation Guide for Client and Device machines](ssh-no-ports/guides/installation-guide.md)
     * [👨‍💻 Usage Guide](ssh-no-ports/guides/usage-guide/README.md)
       * [💻 Basic Usage](ssh-no-ports/guides/usage-guide/basic-usage/README.md)
         * [⚙️ Additional Configuration](ssh-no-ports/guides/usage-guide/basic-usage/additional-configuration.md)
