@@ -5,6 +5,7 @@ package main
 import (
 	"github.com/charmbracelet/bubbles/viewport"
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/lipgloss"
 )
 
 func (m appState) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
@@ -14,7 +15,6 @@ func (m appState) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	)
 
 	// Cache this at the start of the update, since it may change mid way through
-	inViewport := m.viewport.isVisible
 
 	// Handle terminal / input events first
 	switch msg := msg.(type) {
@@ -24,23 +24,17 @@ func (m appState) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.KeyMsg:
 		m, cmd = m.KeyMsg(msg)
 		cmds = append(cmds, cmd)
-		if inViewport { // Don't handle key events for viewport outside of our own logic
-			return m, tea.Batch(cmds...)
-		}
 	}
 
 	// Update the view contents
-	if m.viewport.isVisible {
-		if m.viewport.isReady {
-			// Update viewport
-			m.viewport.model, cmd = m.viewport.model.Update(msg)
-			cmds = append(cmds, cmd)
-		}
-	} else {
-		// Update the list
-		m.list.model, cmd = m.list.model.Update(msg)
+	if m.viewport.isReady {
+		// Update viewport
+		m.viewport.model, cmd = m.viewport.model.Update(msg)
 		cmds = append(cmds, cmd)
 	}
+	// Update the list
+	m.list.model, cmd = m.list.model.Update(msg)
+	cmds = append(cmds, cmd)
 
 	// Keep spinning
 	if !m.viewport.isReady {
@@ -54,21 +48,11 @@ func (m appState) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 // Handle keyboard input
 func (m appState) KeyMsg(msg tea.KeyMsg) (appState, tea.Cmd) {
 	switch msg.String() {
-	case "ctrl+c":
-		return m, tea.Quit // ctrl+c always quits
-	case "q", tea.KeyEsc.String(): // escape and q do the same thing
-		m.viewport.isVisible = false // leave the viewport if we are in it
-		// TODO: cancel running commands
-
 	case "enter":
-		if m.viewport.isVisible {
-			return m, nil // Disable enter in the viewport
+		if useHighPerformanceRenderer {
+			viewport.Sync(m.viewport.model)
 		}
-
-		m.viewport.isVisible = true
-		m.viewport.model.SetContent("\n Yeah... I don't really know how to implement this yet, so here's a smiley\n :)\n")
 		// TODO:
-		// - Start command
 		// - Somehow stream it to content
 	}
 
@@ -77,13 +61,18 @@ func (m appState) KeyMsg(msg tea.KeyMsg) (appState, tea.Cmd) {
 
 // Update the window size when it is reported to us
 func (m appState) WindowSizeMsg(msg tea.WindowSizeMsg) (appState, tea.Cmd) {
-	x, y := m.frame.style.GetFrameSize()
-	w := msg.Width - x
-	h := msg.Height - y
+	frameW, frameH := m.frame.style.GetFrameSize()
+	listFrameW := m.list.style.GetHorizontalFrameSize()
+	listWidth := lipgloss.Width(m.list.model.View())
+	viewportFrameW, viewportFrameH := m.viewport.style.GetFrameSize()
+
+	w := msg.Width - frameW - listFrameW - listWidth - viewportFrameW
+	h := msg.Height - frameH - viewportFrameH
 
 	m.list.model.SetSize(w, h)
 	if !m.viewport.isReady {
 		m.viewport.model = viewport.New(w, h)
+		m.viewport.model.SetContent("> ")
 		m.viewport.model.HighPerformanceRendering = useHighPerformanceRenderer
 		m.viewport.isReady = true
 	} else {

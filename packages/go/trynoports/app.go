@@ -27,13 +27,16 @@ type appFrame struct {
 
 type appList struct {
 	model list.Model
+	style lipgloss.Style
 }
 
 type appViewport struct {
-	model     viewport.Model
-	spinner   spinner.Model
-	isVisible bool
-	isReady   bool
+	style        lipgloss.Style
+	buffer       chan string
+	model        viewport.Model
+	commandQueue []string
+	spinner      spinner.Model
+	isReady      bool
 }
 
 func (m appState) Init() tea.Cmd {
@@ -42,12 +45,21 @@ func (m appState) Init() tea.Cmd {
 
 // The actual bubbletea program (as middleware for a wish ssh session)
 func App(s ssh.Session) (tea.Model, []tea.ProgramOption) {
+	// Style Calculations
 	pty, _, _ := s.Pty()
 	renderer := bubbletea.MakeRenderer(s)
-	frameStyle := renderer.NewStyle().Margin(1, 2)
+	frameStyle := renderer.NewStyle().Margin(2)
+	appHeight := pty.Window.Height - frameStyle.GetVerticalFrameSize()
+	listStyle := lipgloss.NewStyle().Border(lipgloss.RoundedBorder()).Height(appHeight)
+	viewportStyle := lipgloss.NewStyle().Border(lipgloss.RoundedBorder()).MarginLeft(2).Padding(1).Height(appHeight)
+
+	// Spinner
 	spin := spinner.New()
 	spin.Spinner = spinner.Dot
 
+	// List styles application
+
+	// Main state initialization
 	m := appState{
 		frame: appFrame{
 			width:  pty.Window.Width,
@@ -55,9 +67,11 @@ func App(s ssh.Session) (tea.Model, []tea.ProgramOption) {
 			style:  frameStyle,
 		},
 		list: appList{
-			model: InitCommands(),
+			style: listStyle,
+			model: InitCommands(list.NewDefaultDelegate(), 0, appHeight-listStyle.GetVerticalFrameSize()),
 		},
 		viewport: appViewport{
+			style:   viewportStyle,
 			spinner: spin,
 		},
 	}

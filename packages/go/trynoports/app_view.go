@@ -1,18 +1,35 @@
 package main
 
-import "fmt"
+import (
+	"fmt"
+
+	"github.com/charmbracelet/lipgloss"
+)
 
 // View part of Elm architecture for app
 
 func (m appState) View() string {
-	if m.viewport.isVisible {
-		if !m.viewport.isReady {
-			return fmt.Sprintf("%s Initializing a new shell session...", m.viewport.spinner.View())
-		}
-		// TODO: put a nice frame around this with some help & the command being run as the title or something
-		return m.frame.style.Render(m.viewport.model.View())
-	}
+	return m.frame.style.Render(
+		lipgloss.JoinHorizontal(
+			lipgloss.Top,
+			m.RenderList(m.list.style),
+			m.RenderViewport(m.viewport.style),
+		),
+	)
+}
 
-	// Show the list of commands
-	return m.frame.style.Render(m.list.model.View())
+func (m appState) RenderViewport(style lipgloss.Style) string {
+	return style.Render(
+		func() string {
+			if !m.viewport.isReady {
+				return fmt.Sprintf("%s Initializing a new shell session...", m.viewport.spinner.View())
+			}
+			// TODO: put a nice frame around this with some help & the command being run as the title or something
+			return m.viewport.model.View()
+		}(),
+	)
+}
+
+func (m appState) RenderList(style lipgloss.Style) string {
+	return style.Render(m.list.model.View())
 }
