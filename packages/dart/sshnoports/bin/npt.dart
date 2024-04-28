@@ -121,6 +121,14 @@ void main(List<String> args) async {
         defaultsTo: 'root.atsign.org',
         help: 'atDirectory domain',
       );
+      parser.addOption(
+        'daemon-ping-timeout',
+        aliases: ['dpt'],
+        mandatory: false,
+        defaultsTo: DefaultArgs.daemonPingTimeoutSeconds.toString(),
+        help: 'Seconds the client should wait for response'
+            ' after pinging a daemon',
+      );
       parser.addFlag(
         'per-session-storage',
         aliases: ['pss'],
@@ -217,6 +225,7 @@ void main(List<String> args) async {
         verbose: verbose,
         rootDomain: parsedArgs['root-domain'],
         inline: inline,
+        daemonPingTimeout: Duration(seconds: int.parse(parsedArgs['daemon-ping-timeout'])),
       );
 
       cli.CLIBase cliBase = cli.CLIBase(
