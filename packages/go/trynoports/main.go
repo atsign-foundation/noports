@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"flag"
-	"fmt"
 	"net"
 	"os"
 	"os/signal"
@@ -36,9 +35,9 @@ var (
 // Setup the server (main server lifecycle)
 func main() {
 	flag.Parse()
-	fmt.Println("Environment")
-	fmt.Printf(" - h: %s\n", *Flagh)
-	fmt.Printf(" - f: %t\n", *Flagf)
+	log.Info("Environment")
+	log.Info(" - h: %s\n", *Flagh)
+	log.Info(" - f: %t\n", *Flagf)
 
 	// Create the server object with appropriate middleware
 	s, err := wish.NewServer(

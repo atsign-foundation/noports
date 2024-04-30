@@ -9,6 +9,7 @@ import (
 	"github.com/charmbracelet/bubbles/viewport"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
+	"github.com/charmbracelet/log"
 )
 
 func (m appState) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
@@ -31,8 +32,8 @@ func (m appState) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			viewport.Sync(m.viewport.model)
 		}
 	case tea.WindowSizeMsg:
-		m, cmd = m.WindowSizeMsg(msg)
-		cmds = append(cmds, cmd)
+		m.width = msg.Width
+		m.height = msg.Height
 	case tea.KeyMsg:
 		m = m.KeyMsg(msg)
 	}
@@ -49,6 +50,10 @@ func (m appState) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	// Update the list
 	m.list.model, cmd = m.list.model.Update(msg)
+	cmds = append(cmds, cmd)
+
+	// Recompute the size of the components based on current changes
+	m, cmd = m.ResizeComponents(msg)
 	cmds = append(cmds, cmd)
 
 	// Batch all of the potential commands
@@ -96,7 +101,7 @@ func (p appState) KeyMsg(msg tea.KeyMsg) (m appState) {
 			m.viewport.model.SetContent(m.viewport.content)
 			m.viewport.model.GotoBottom()
 			m.viewport.isRunning = false
-			fmt.Printf("Error running command: %s\n", err)
+			log.Error("Error running command: %s\n", err)
 			return
 		}
 
@@ -119,27 +124,35 @@ func (p appState) KeyMsg(msg tea.KeyMsg) (m appState) {
 }
 
 // Update the window size when it is reported to us
-func (m appState) WindowSizeMsg(msg tea.WindowSizeMsg) (appState, tea.Cmd) {
+func (m appState) ResizeComponents(msg tea.Msg) (appState, tea.Cmd) {
+	// get frame dimensions
 	frameW, frameH := m.frame.style.GetFrameSize()
-	listFrameW := m.list.style.GetHorizontalFrameSize()
-	listWidth := lipgloss.Width(m.list.model.View())
+
+	// get preferred list dimensions
+	m.list.model.SetSize(80, m.height-frameH)
+	// pseudo render the list to compute it's actual width
+	// (can change during filtering or popping open the full help dialog)
+	listW := lipgloss.Width(m.list.model.View())
+
+	// get list & viewport frame sizes
+	listFrameW, _ := m.list.style.GetFrameSize()
 	viewportFrameW, viewportFrameH := m.viewport.style.GetFrameSize()
 
-	w := msg.Width - frameW - listFrameW - listWidth - viewportFrameW
-	h := msg.Height - frameH - viewportFrameH
+	// calculate viewport dimensions
+	viewportW := m.width - frameW - viewportFrameW - listFrameW - listW
+	viewportH := m.height - frameH - viewportFrameH
 
-	m.list.model.SetSize(w, h)
 	if !m.viewport.isReady {
 		// This is where the viewport is initialized
-		m.viewport.model = viewport.New(w, h)
+		m.viewport.model = viewport.New(viewportW, viewportH)
 		m.viewport.model.SetContent(welcomeMessageContent)
 		m.viewport.model.HighPerformanceRendering = useHighPerformanceRenderer
 		m.viewport.model.KeyMap.Down.SetEnabled(false)
 		m.viewport.model.KeyMap.Up.SetEnabled(false)
 		m.viewport.isReady = true
 	} else {
-		m.viewport.model.Width = w
-		m.viewport.model.Height = h
+		m.viewport.model.Width = viewportW
+		m.viewport.model.Height = viewportH
 	}
 
 	if useHighPerformanceRenderer {

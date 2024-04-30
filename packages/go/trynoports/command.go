@@ -79,6 +79,7 @@ func (c appCommand) Run(done chan int) (chan string, error) {
 		time.Sleep(250 * time.Millisecond) // Give the pipe enough time to clear - also prevents clients from running > 4 commands / second
 		cmdDone <- err
 	}()
+
 	go func() {
 		var buf [256]byte
 		for {

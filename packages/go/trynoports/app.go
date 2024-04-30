@@ -18,10 +18,12 @@ import (
 // Main application state, composed of 3 sub-models
 type appState struct {
 	program  *tea.Program
-	frame    appFrame
 	list     appList
+	frame    appFrame
 	viewport appViewport
-	focused  int // 0 = list, 1 = viewport
+	width    int
+	height   int
+	focused  int
 }
 
 type appFrame struct {
@@ -117,7 +119,7 @@ func AppMiddleware() wish.Middleware {
 				),
 				key.NewBinding(
 					key.WithKeys("enter"),
-					key.WithHelp("enter", "Run the currently selected command"),
+					key.WithHelp("enter", "Run command"),
 				),
 			}
 		}
