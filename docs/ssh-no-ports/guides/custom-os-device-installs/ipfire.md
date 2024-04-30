@@ -6,6 +6,8 @@ description: Installation of sshnpd on the IPFire.org firewall
 
 
 
+{% embed url="https://youtu.be/6PzJqeI5g9g" %}
+
 ## Install IPFire
 
 IPFire provides a solid Firewall and uses a base Linux OS. The installation of the OS itself is well documented at ipfire.org. X86 and ARM devices like Raspberry PI's are well supported.\
