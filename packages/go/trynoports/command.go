@@ -78,7 +78,6 @@ func (c appCommand) Run(done chan int) (chan string, error) {
 				pipe.Close()
 				close(cmdDone)
 				done <- 0
-				fmt.Println("Done reading command")
 				return
 			default:
 				n, err := pipe.Read(buf[:])
@@ -93,12 +92,4 @@ func (c appCommand) Run(done chan int) (chan string, error) {
 	}()
 
 	return ch, nil
-}
-
-func waitForCommand(cmd exec.Cmd, ch chan error) {
-	err := cmd.Wait()
-	ch <- err
-}
-
-func mergeCommandBuffers(ch chan string, errCh chan string, errExitCh chan int, outCh chan string, outExitCh chan int, innerDoneCh chan error, done chan int) {
 }
