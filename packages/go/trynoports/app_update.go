@@ -34,34 +34,29 @@ func (m appState) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m, cmd = m.WindowSizeMsg(msg)
 		cmds = append(cmds, cmd)
 	case tea.KeyMsg:
-		m, cmd = m.KeyMsg(msg)
-		cmds = append(cmds, cmd)
+		m = m.KeyMsg(msg)
 	}
 
 	// Update the view contents
 	if m.viewport.isReady {
-		if m.focused == 1 {
-			// Update viewport
-			m.viewport.model, cmd = m.viewport.model.Update(msg)
-			cmds = append(cmds, cmd)
-		}
+		// Update viewport
+		m.viewport.model, cmd = m.viewport.model.Update(msg)
+		cmds = append(cmds, cmd)
 	} else {
 		m.viewport.spinner, cmd = m.viewport.spinner.Update(msg)
 		cmds = append(cmds, cmd)
 	}
 
 	// Update the list
-	if m.focused == 0 {
-		m.list.model, cmd = m.list.model.Update(msg)
-		cmds = append(cmds, cmd)
-	}
+	m.list.model, cmd = m.list.model.Update(msg)
+	cmds = append(cmds, cmd)
 
 	// Batch all of the potential commands
 	return m, tea.Batch(cmds...)
 }
 
 // Handle keyboard input
-func (p appState) KeyMsg(msg tea.KeyMsg) (m appState, cmd tea.Cmd) {
+func (p appState) KeyMsg(msg tea.KeyMsg) (m appState) {
 	m = p
 	switch msg.String() {
 	case "enter":
@@ -107,14 +102,6 @@ func (p appState) KeyMsg(msg tea.KeyMsg) (m appState, cmd tea.Cmd) {
 				}
 			}
 		}()
-	case "h", tea.KeyLeft.String():
-		m.focused = 0
-		m.list.style = m.list.style.BorderForeground(lipgloss.Color("7"))
-		m.viewport.style = m.viewport.style.BorderForeground(lipgloss.Color("244"))
-	case "l", tea.KeyRight.String():
-		m.focused = 1
-		m.list.style = m.list.style.BorderForeground(lipgloss.Color("244"))
-		m.viewport.style = m.viewport.style.BorderForeground(lipgloss.Color("7"))
 	}
 
 	return

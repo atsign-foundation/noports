@@ -108,12 +108,12 @@ func AppMiddleware() wish.Middleware {
 		m.list.model.AdditionalFullHelpKeys = func() []key.Binding {
 			return []key.Binding{
 				key.NewBinding(
-					key.WithKeys("h", "left"),
-					key.WithHelp("←/h", "Focus the list"),
+					key.WithKeys(tea.KeyCtrlD.String()),
+					key.WithHelp("Ctrl+D", "Scroll down in the viewport"),
 				),
 				key.NewBinding(
-					key.WithKeys("l", "right"),
-					key.WithHelp("→/l", "Focus the viewport"),
+					key.WithKeys(tea.KeyCtrlU.String()),
+					key.WithHelp("Ctrl+U", "Scroll up in the viewport"),
 				),
 				key.NewBinding(
 					key.WithKeys("enter"),
