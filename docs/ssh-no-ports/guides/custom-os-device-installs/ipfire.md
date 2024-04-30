@@ -4,20 +4,18 @@ description: Installation of sshnpd on the IPFire.org firewall
 
 # IPFire
 
-
-
 {% embed url="https://youtu.be/6PzJqeI5g9g" %}
 
 ## Install IPFire
 
-IPFire provides a solid Firewall and uses a base Linux OS. The installation of the OS itself is well documented at ipfire.org. X86 and ARM devices like Raspberry PI's are well supported.\
-&#x20;Make sure to configure the network interfaces and ensure you can get to the Web Interface on&#x20;
+IPFire provides a solid Firewall and uses a base Linux OS. The installation of the OS itself is well documented at ipfire.org. X64 and Arm devices like Raspberry PI's are well supported.
+
+\
+Make sure to configure the network interfaces and ensure you can get to the Web Interface on&#x20;
 
 ```
 https://<GREEN Interface IP>:444
 ```
-
-
 
 ## Installing sshnpd the SSH No Ports Daemon
 
@@ -79,7 +77,7 @@ Then add a password to the atsign account again as root
 passwd atsign
 ```
 
-Once completed then check everything is workiing by su - to atsign the using sudo -s to get back to root.
+Once completed then check everything is working by su - to atsign the using sudo -s to get back to root.
 
 ```
 su - atsign
@@ -88,7 +86,7 @@ sudo -s
 
 #### Installing sshnpd&#x20;
 
-As atsign (not root!) download the SSH No Ports software, which we can do with curl and then unpack the archive with tar. The curl command below brings in the x64 CPU architecture file if you are using ARM/ARM64 then curl down the right option by picking the right link from:-
+As atsign (not root!) download the SSH No Ports software, which we can do with curl and then unpack the archive with tar. The curl command below brings in the x64 CPU architecture file if you are using Arm/Arm64 then curl down the right option by picking the right link from:-
 
 {% content-ref url="../advanced-installation-guides/" %}
 [advanced-installation-guides](../advanced-installation-guides/)
@@ -127,7 +125,7 @@ device_name="ipfire01"     # Device name
 
 #### Certificate Authority public certificates
 
-IPFire has non standard base certificates but we can install the latest versions from Mozilla so the sshnpd daemon can use TLS, by using thes commands.
+IPFire has non standard base certificates but we can install the latest versions from Mozilla so the sshnpd daemon can use TLS, by using these commands.
 
 ```
 sudo mkdir -p /etc/pki/tls/certs
@@ -136,7 +134,7 @@ curl --etag-compare etag.txt --etag-save etag.txt --remote-name https://curl.se/
 
 #### Put your atSign atKeys file in place
 
-If you have not got your atKeys file you will need to use at\_activate to get them as explained in the the advantance instalation guide. If you do have the keys for your device then they need to be in the \~/.atsign/keys directory. You can scp them over for instance. Its a good idea to chmod them to 600.
+If you have not got your atKeys file you will need to use at\_activate to get them as explained in the the advanced installation guide. If you do have the keys for your device then they need to be in the \~/.atsign/keys directory. You can scp them over for instance. Its a good idea to chmod them to 600.
 
 ```
 chmod 600 ~/.atsign/keys/*
@@ -169,7 +167,7 @@ Then you will need to add the following line
 @reboot tmux new-session -d -s sshnpd && tmux send-keys -t sshnpd /home/atsign/.local/bin/sshnpd.sh C-m
 ```
 
-Thats it you are done!
+That's it you are done!
 
 To test you can reboot or as atsign run the command below and try and log in using sshnp
 
@@ -177,12 +175,12 @@ To test you can reboot or as atsign run the command below and try and log in usi
 @reboot tmux new-session -d -s sshnpd && tmux send-keys -t sshnpd /home/atsign/.local/bin/sshnpd.sh C-m &
 ```
 
-#### Looging in from a remote machine
+#### Logging in from a remote machine
 
 At this point you will be able to log in remotely using sshnp. The first time you will need to specify a ssh key using the -i and -s arguments. This will put the public key into the authorized\_hosts file on the IPFire machine.  In my case I would use.
 
 ```
-sshnp -f @cconstab -t @ssh_1 -h @rv_am -d ipfire01 -i ~/.ssh/GitHub_rsa -s
+sshnp -f @cconstab -t @ssh_1 -h @rv_am -d ipfire01 -i ~/.ssh/id_rsa -s
 ```
 
 your will look like something similar depending on your SSH Key pair (you can generate one if you do not have one with ssh-keygen) and your client/device atsigns.
@@ -190,14 +188,12 @@ your will look like something similar depending on your SSH Key pair (you can ge
 When you get logged in you can remove the -s and the -i flags and login on subsequent logins as the public key will be in place on the IPFire machine. You will have to put the keys you want to use in \~/.ssh/config also on the machine you are ssh'ing from, in my case I use a single line.
 
 ```
-IdentityFile ~/.ssh/GitHub_rsa
+IdentityFile ~/.ssh/id_rsa
 ```
 
-&#x20;Remember to keep your SSH and  Atsign keys safe and make a copy offline.
+Remember to keep your SSH and  Atsign keys safe and make a copy offline.
 
 You are now able to login from anywhere as long as the firewall and you have Internet access. Congrats!&#x20;
-
-
 
 #### For the paranoid
 
