@@ -34,6 +34,19 @@ func (m appState) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.WindowSizeMsg:
 		m.width = msg.Width
 		m.height = msg.Height
+
+		// We have an initial window size now
+		// Now it is safe to initialize the viewport
+		if !m.viewport.isReady {
+			// We will resize this to the correct size during the ResizeComponents call
+			m.viewport.model = viewport.New(1, 1)
+			m.viewport.model.SetContent(welcomeMessageContent)
+			m.viewport.model.HighPerformanceRendering = useHighPerformanceRenderer
+			m.viewport.model.KeyMap.Down.SetEnabled(false)
+			m.viewport.model.KeyMap.Up.SetEnabled(false)
+			m.viewport.isReady = true
+		}
+
 	case tea.KeyMsg:
 		m = m.KeyMsg(msg)
 	}
@@ -142,15 +155,7 @@ func (m appState) ResizeComponents(msg tea.Msg) (appState, tea.Cmd) {
 	viewportW := m.width - frameW - viewportFrameW - listFrameW - listW
 	viewportH := m.height - frameH - viewportFrameH
 
-	if !m.viewport.isReady {
-		// This is where the viewport is initialized
-		m.viewport.model = viewport.New(viewportW, viewportH)
-		m.viewport.model.SetContent(welcomeMessageContent)
-		m.viewport.model.HighPerformanceRendering = useHighPerformanceRenderer
-		m.viewport.model.KeyMap.Down.SetEnabled(false)
-		m.viewport.model.KeyMap.Up.SetEnabled(false)
-		m.viewport.isReady = true
-	} else {
+	if m.viewport.isReady {
 		m.viewport.model.Width = viewportW
 		m.viewport.model.Height = viewportH
 	}
