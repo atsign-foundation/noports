@@ -61,23 +61,21 @@
 #>
 #Prints the help message via get-help install_sshnpd-windows.ps1 
 param(
-    [string]$SSHNP_OP = "install",
-    [switch]$SSHNP_CACHE_TEMP,
-    [string]$SSHNP_LOCAL,
-    [string]$SSHNP_DEV_MODE,
-    [Parameter(Mandatory=$true, HelpMessage="Specify the manager atsign.")]
-    [ValidateNotNullOrEmpty()]
+    # [Parameter(Mandatory=$true, HelpMessage="Specify the manager atsign.")]
+    # [ValidateNotNullOrEmpty()]
     [string]$CLIENT_ATSIGN,
     [string]$DEVICE_MANAGER_ATSIGN,
-    [Parameter(Mandatory=$true, HelpMessage="Specify the device atsign.")]
-    [ValidateNotNullOrEmpty()]
+    # [Parameter(Mandatory=$true, HelpMessage="Specify the device atsign.")]
+    # [ValidateNotNullOrEmpty()]
     [string]$DEVICE_ATSIGN,
-    [Parameter(Mandatory=$true, HelpMessage="Specify the device name.")]
-    [ValidateNotNullOrEmpty()]
+    # [Parameter(Mandatory=$true, HelpMessage="Specify the device name.")]
+    # [ValidateNotNullOrEmpty()]
     [string]$DEVICE_NAME,
+    # [Parameter(Mandatory=$true, HelpMessage="Specify install type, client device or both.")]
+    # [ValidateNotNullOrEmpty()]
+    [string]$INSTALL_TYPE,
     [string]$HOST_ATSIGN,
-    [string]$VERSION,
-    [string]$SSHNPD_SERVICE_ARGS
+    [string]$VERSION
 )
 
 ### --- IMPORTANT ---
@@ -90,35 +88,39 @@ $sshnp_version = "5.1.0"
 $repo_url = "https://github.com/atsign-foundation/sshnoports"
 # END METADATA
 
+#Required for service stuff, if you want to debug comment it out
+# if(!([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole] 'Administrator')) {
+#     Start-Process -FilePath PowerShell.exe -Verb Runas -ArgumentList "-File `"$($MyInvocation.MyCommand.Path)`"  `"$($MyInvocation.MyCommand.UnboundArguments)`""
+#     Exit
+# }
 
-#can stay until sshnpd releases
-$BINARY_NAME = "sshnp"
 
 function Norm-Atsign {
-    param([string]$input)
-    $atsign = "@$($input -replace '"', '' -replace '^@', '')"
+    param([string]$str)
+    $atsign = "@$($str -replace '"', '' -replace '^@', '')"
     return $atsign
 }
 
 function Norm-Version {
-    param([string]$input)
-    $version = "tags/v$($input -replace '"', '' -replace '^tags/', '' -replace '^v', '')"
+    param([string]$str)
+    $version = "tags/v$($str -replace '"', '' -replace '^tags/', '' -replace '^v', '')"
     return $version
 }
 
 function Norm-InstallType {
-    param([string]$input)
-    $input = $input.ToLower()
-    switch -regex ($input) {
-        "d.*" { return "device" }
-        "c.*" { return "client" }
-        "b.*" { return "both" }
+    param([string]$str)
+    $str = $str.ToLower()
+    switch -regex ($str) {
+        "^d.*" { return "device" }
+        "^c.*" { return "client" }
+        "^b.*" { return "both" }
         default { return $null }
     }
 }
 
+
 function Check-BasicRequirements {
-    $requiredCommands = @("attrib", "Expand-Archive", "Select-String", "Select-Object", "Get-WmiObject", "StartService","Test-Path", "New-Item", "Get-Command", "New-Object", "Invoke-WebRequest", "New-Service")
+    $requiredCommands = @("attrib", "Expand-Archive", "Select-String", "Select-Object", "Start-Service","Test-Path", "New-Item", "Get-Command", "New-Object", "Invoke-WebRequest", "New-Service")
     
     foreach ($command in $requiredCommands) {
         if (-not (Get-Command -Name $command -ErrorAction SilentlyContinue)) {
@@ -128,28 +130,22 @@ function Check-BasicRequirements {
 }
 
 function Make-Dirs {
+    Write-Host $env:HOME
     if (-not (Test-Path "$env:HOME\.atsign")) {
         New-Item -Path "$env:HOME\.atsign" -ItemType Directory -Force
-    }
-    if(Test-Path "$env:HOME\.atsign\temp\$VERSION") {
-        Remove-Item -Path "$env:HOME\.atsign\temp\$VERSION" -Recurse -Force
-    }
-
-    if (-not (Test-Path "$env:HOME\.ssh")) {
-        New-Item -Path "$env:HOME\.ssh" -ItemType Directory -Force
-    }
-    
-    if (-not (Test-Path "$env:HOME\.$BINARY_NAME\logs")){
-        New-Item -Path "$env:HOME\.$BINARY_NAME\logs" -ItemType Directory -Force
     }
     if(-not (Test-Path "$env:HOME\.atsign\keys")){
         New-Item -Path "$env:HOME\.atsign\keys" -ItemType Directory -Force
     }
-    if(-not (Test-Path "$env:HOME\.atsign\temp")){
-        New-Item -Path "$env:HOME\.atsign\temp" -ItemType Directory -Force
+    if (-not (Test-Path "$env:HOME\.ssh")) {
+        New-Item -Path "$env:HOME\.ssh" -ItemType Directory -Force
     }
-    if(-not (Test-Path "$env:HOME\.local\bin")){
-        New-Item -Path "$env:HOME\.local\bin" -ItemType Directory -Force
+
+    if(-not (Test-Path $ARCHIVE_PATH)){
+        New-Item -Path "$ARCHIVE_PATH" -ItemType Directory -Force
+    }
+    if(-not (Test-Path $INSTALL_PATH)){
+        New-Item -Path "$INSTALL_PATH" -ItemType Directory -Force
     }
 
     if (-not (Test-Path "$env:HOME\.ssh\authorized_keys" -PathType Leaf)) {
@@ -159,66 +155,86 @@ function Make-Dirs {
 }
 
 function Parse-Env {
-    $global:HOME_PATH = if (-not [string]::IsNullOrEmpty($env:HOME)) { $env:HOME } else { $env:USERPROFILE }
-    $global:VERSION = if ([string]::IsNullOrEmpty($VERSION)) { "latest" } else { Norm-Version $VERSION }
-    $global:URL = "https://api.github.com/repos/atsign-foundation/noports/releases/$VERSION"
-    #$global:INSTALL_TYPE = $null
-    $CLIENT_ATSIGN = Norm-Atsign $CLIENT_ATSIGN
-    $DEVICE_ATSIGN = Norm-Atsign $DEVICE_ATSIGN
-    $DEVICE_MANAGER_ATSIGN = Norm-Atsign $DEVICE_MANAGER_ATSIGN
-    $VERSION =  Norm-Version $VERSION
-    
+    $script:VERSION = if ([string]::IsNullOrEmpty($VERSION)) { "latest" } else { Norm-Version $VERSION }
+    $script:SSHNP_URL = "https://api.github.com/repos/atsign-foundation/noports/releases/$VERSION"
+    $script:WINSW_URL = "https://api.github.com/repos/winsw/winsw/releases/$VERSION"
+    $script:ARCHIVE_PATH =  "$env:LOCALAPPDATA\atsign\$VERSION"
+    $script:homepath = if (-not [string]::IsNullOrEmpty($env:HOME)) { $env:HOME } else { $env:USERPROFILE }
+    $script:INSTALL_PATH =  "$homepath\.local\bin"
+    $script:INSTALL_TYPE = Norm-InstallType "$script:INSTALL_TYPE"
 }
-
 function Cleanup {
-    if (Test-Path "$HOME_PATH/.atsign/temp/$VERSION") {
-        Remove-Item -Path "$HOME_PATH/.atsign/temp/$VERSION" -Recurse -Force
+    if (Test-Path "$ARCHIVE_PATH") {
+        Remove-Item -Path "$ARCHIVE_PATH" -Recurse -Force
     }
 }
-
-function Download-Archive {
-    Write-Host "Downloading $BINARY_NAME from $global:URL"
-    $DOWNLOAD_BODY = $(Invoke-WebRequest -Uri $global:URL).ToString() -split "," | Select-String "browser_download_url" | Select-String "sshnp-windows"
-    $DOWNLOAD_URL = $DOWNLOAD_BODY.ToString() -split '"' | Select-Object -Index 3
-    Write-Host $DOWNLOAD_URL
-    New-Item -Path "$HOME_PATH/.atsign/temp/$VERSION" -ItemType Directory -Force
-    Invoke-WebRequest -Uri $DOWNLOAD_URL -OutFile $global:ARCHIVE_PATH
-    if (-not (Test-Path $global:ARCHIVE_PATH)) {
-        Write-Host "Failed to download $BINARY_NAME"
-        Cleanup
-        Exit 1
-    }
-}
-
 function Unpack-Archive {
-    
-    if (-not (Test-Path $global:ARCHIVE_PATH)) {
-        Write-Host "Failed to download $BINARY_NAME"
+    if (-not (Test-Path "$ARCHIVE_PATH\sshnp.zip")) {
+        Write-Host "Failed to download sshnp"
         Exit 1
     }
+    if (Test-Path "$script:INSTALL_PATH\sshnp"){
+        Remove-Item -Path "$script:INSTALL_PATH\sshnp" -Recurse -Force
+    }
 
-    Expand-Archive -Path  -DestinationPath "$HOME_PATH/.atsign/temp/$VERSION/" -Force
-    if (-not (Test-Path "$HOME_PATH/.atsign/temp/$VERSION/sshnp/sshnp.exe")) {
-        Write-Host "Failed to unpack $BINARY_NAME"
+
+    Expand-Archive -Path "$ARCHIVE_PATH\sshnp.zip" -DestinationPath $INSTALL_PATH -Force
+    if (-not (Test-Path "$INSTALL_PATH/sshnp/sshnp.exe")) {
+        Write-Host "Failed to unpack sshnp"
         Cleanup
         Exit 1
     }
-    $global:BIN_PATH = "$HOME_PATH/.atsign/temp/$VERSION/$BINARY_NAME"
 }
 
+function Download-Sshnp {
+    Write-Host "Downloading sshnp from $SSHNP_URL"
+    $DOWNLOAD_BODY = $(Invoke-WebRequest -Uri $SSHNP_URL).ToString() -split "," | Select-String "browser_download_url" | Select-String "sshnp-windows" | Select-Object -Index 0
+    $DOWNLOAD_URL = $DOWNLOAD_BODY.ToString() -split '"' | Select-Object -Index 3
+    Invoke-WebRequest -Uri $DOWNLOAD_URL -OutFile "$ARCHIVE_PATH\sshnp.zip"
+    if (-not (Test-Path "$ARCHIVE_PATH\sshnp.zip")) {
+        Write-Host "Failed to download sshnp"
+        Cleanup
+        Exit 1
+    }
+    Unpack-Archive
+}
 
-function Get-UserInputs {
-    if (-not $global:INSTALL_TYPE) {
-        while (-not $global:INSTALL_TYPE) {
-            $install_type_input = Read-Host "Install type (device, client, both):"
-            $global:INSTALL_TYPE = Norm-InstallType $install_type_input
+function Download-Winsw {
+    $DOWNLOAD_BODY = $(Invoke-WebRequest -Uri $script:WINSW_URL).ToString() -split "," | Select-String "browser_download_url" | Select-String "WinSW-x64" 
+    $DOWNLOAD_URL = $DOWNLOAD_BODY.ToString() -split '"' | Select-Object -Index 3
+    Invoke-WebRequest -Uri $DOWNLOAD_URL -OutFile "$script:INSTALL_PATH\sshnp\sshnpd_service.exe"
+    if (-not (Test-Path "$script:INSTALL_PATH\sshnp\sshnpd_service.exe")) {
+        Write-Host "Failed to download winsw"
+        Cleanup
+        Exit 1
+    }
+}
+
+function Add-ToPath {
+    $pathToAdd = "$script:INSTALL_PATH\sshnp"
+    if (Test-Path $script:INSTALL_PATH){
+        if ($env:Path -notlike "*$pathToAdd*") {
+            $newPath = ($env:Path + ";" + $pathToAdd)
+            [Environment]::SetEnvironmentVariable("PATH", $newPath, [EnvironmentVariableTarget]::User)
+        } else {
+            Write-Host "Path already exists in the environment variable PATH."
+        }
+    } else {
+        Throw "'$pathToAdd' is not a valid path."
+    }
+}
+
+function Get-InstallType {
+    if ([string]::IsNullOrEmpty($script:INSTALL_TYPE)) {
+        while ([string]::IsNullOrEmpty($script:INSTALL_TYPE)) {
+            $install_type_input = Read-Host "Install type (device, client, both)"
+            $script:INSTALL_TYPE = Norm-InstallType $install_type_input
         }
     }
 }
 
-#Not Sure if this is needed, but I'll leave it here for now.
 function Get-Atsigns {
-    $directory = "$env:home\.atsign\keys"
+    $directory = "$homepath\.atsign\keys"
     $prefixes = @()
 
     if (Test-Path $directory -PathType Container) {
@@ -229,10 +245,16 @@ function Get-Atsigns {
             $prefixes += $prefix
         }
     }
-
-    return $prefixes
+    $i = 1
+    Write-Host "Found some atsigns, please select one"
+    Write-Host "0) None"
+    foreach($prefix in $prefixes){
+        Write-Host "$i) $prefix"
+        $i = $i + 1
+    }
+    $i = Read-Host "Choose an atsign"
+    return $prefixes[$i-1]
 }
-
 
 function Write-Metadata {
     param(
@@ -259,7 +281,6 @@ function Write-Metadata {
                 $content[$i] = $content[$i] -replace "$variable=`".*`"", "$variable=`"$value`""
 
             }
-            Write-Host "he"
         }
 
         $content | Set-Content -Path $file
@@ -267,7 +288,6 @@ function Write-Metadata {
         Write-Host "Error: Metadata block not found in $file"
     }
 }
-
 
 function Install-Client {
     if (-not $HOST_ATSIGN) {
@@ -277,7 +297,7 @@ function Install-Client {
         Write-Host "  eu   : Europe"
         Write-Host "  @___ : Specify a custom region atSign"
         while (-not ($host_atsign -match "@.*")) {
-            switch -Regex ($host_atsign.ToLower()) {
+            switch -regex ($host_atsign.ToLower()) {
                 "^(am).*" {
                     $host_atsign = "@rv_am"
                     break
@@ -295,27 +315,89 @@ function Install-Client {
                     break
                 }
                 default {
-                    Write-Host ("Invalid region: $host_atsign")
                     $host_atsign = Read-Host "Region"
                 }
             }
         }
+        $script:HOST_ATSIGN = $host_atsign
     }
-    
-    
+    $clientPath = "$script:INSTALL_PATH\sshnp\$script:DEVICE_NAME$script:DEVICE_ATSIGN.ps1"
+    "sshnp.exe -f '$script:CLIENT_ATSIGN' -t '$script:DEVICE_ATSIGN' -d '$script:DEVICE_NAME' -r '$script:HOST_ATSIGN' -s -u '$Env:UserName'"  | Out-File -FilePath  $clientPath
+    if (-not (Test-Path $clientPath -PathType Leaf)) {
+        Write-Host "Failed to create client script'. Please check your permissions and try again."
+        Cleanup
+        Exit 1
+    } 
+  
+    Write-Host "Created client script for $script:DEVICE_NAME$script:DEVICE_ATSIGN"
+
+    if (-not ($script:INSTALL_TYPE -eq "both")){
+        Remove-Item "$script:INSTALL_PATH/sshnp/srv.exe" -Force
+        Remove-Item "$script:INSTALL_PATH/sshnp/sshnpd.exe" -Force
+    }
+}
+
+function Install-Device {
+    Write-Host "Installed at_activate and sshnpd binaries to $script:INSTALL_PATH"
+    if (-not ($script:INSTALL_TYPE -eq "both")){
+        Remove-Item "$script:INSTALL_PATH/sshnp/sshnp.exe" -Force
+        Remove-Item "$script:INSTALL_PATH/sshnp/srv.exe" -Force
+        Remove-Item "$script:INSTALL_PATH/sshnp/npt.exe" -Force
+    }
+    Download-Winsw
+    $servicePath = "$script:INSTALL_PATH\sshnp\sshnpd_service.exe"
+    [xml]$xmlContent = Get-Content "$script:INSTALL_PATH\sshnp\sshnpd_service.xml"
+    $xmlContent.service.arguments = "-a $script:DEVICE_ATSIGN -m $script:CLIENT_ATSIGN -d $script:DEVICE_NAME -k $script:homepath/.atsign/keys/$script:DEVICE_ATSIGN"+ "_key.atKeys -s"
+    $xmlContent.Save("$script:INSTALL_PATH\sshnp\sshnpd_service.xml")
+    if (-not (Test-Path $servicePath -PathType Leaf)) {
+        Write-Host "Failed to create service script'. Please check your permissions and try again."
+        Cleanup
+        Exit 1
+    } 
+    if (Get-Service sshnpd){
+        sshnpd_service.exe uninstall -ErrorAction SilentlyContinue
+    }
+    sshnpd_service.exe install 
+    sshnpd_service.exe start
 }
 
 # Main function
 function Main {
-    # Check-BasicRequirements
-    # Parse-Env
-    # #Windows Only Has Device For Now so no need to ask for install type
-    # #Get-UserInputs
-    # Make-Dirs
-    # Download-Archive
-    # Unpack-Archive
-    #Install-Client
-    Write-Metadata -file $env:HOMEPATH\testmeta\test -variable "womp" -value "reversed"
+    Check-BasicRequirements
+    Parse-Env
+    if ([string]::IsNullOrEmpty($script:INSTALL_TYPE)){
+        Get-InstallType
+    }
+    Make-Dirs
+    Download-Sshnp
+    Add-ToPath
+    while ([string]::IsNullOrEmpty($script:DEVICE_ATSIGN)){
+        Write-Host "Selecting a Device atsign.."
+        $atsign = Get-Atsigns
+        $script:DEVICE_ATSIGN =  Norm-Atsign $atsign
+    }
+    while([string]::IsNullOrEmpty($script:CLIENT_ATSIGN)){
+        Write-Host "Selecting a Client atsign.."
+        $atsign = Get-Atsigns
+        $script:CLIENT_ATSIGN =  Norm-Atsign $atsign
+    }
+    $script:DEVICE_NAME = Read-Host "Device Name? "
+    switch -regex ($INSTALL_TYPE){
+        "client" {
+            Install-Client
+        }
+        "device" {
+            Install-Device
+        }
+        "both" {
+            Install-Client
+            Install-Device
+        }
+    }
+
+    Cleanup
+    Write-Host "Successfully installed $script:INSTALL_TYPE at $script:INSTALL_PATH, script ending..."
+    Start-Sleep -Seconds 10
 }
 
 # Execute the main function

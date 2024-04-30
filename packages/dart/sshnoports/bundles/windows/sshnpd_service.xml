@@ -1,0 +1,8 @@
+<service>
+  <id>sshnpd</id>
+  <name>sshnpd</name>
+  <description>Ssh No Ports Daemon</description>
+  <executable>sshnpd</executable>
+  <arguments>-a {client} -m {manager} -d {device} -k {homdir} -s</arguments>
+  <log mode="roll"></log>
+</service>
