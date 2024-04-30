@@ -25,11 +25,11 @@ SSH No Ports relies on the SSH daemon and so the first step is to enable it on t
 
 
 
-<figure><img src="../../.gitbook/assets/Screenshot from 2024-04-29 18-05-59.png" alt=""><figcaption><p>Enable all options</p></figcaption></figure>
+<figure><img src="../../../.gitbook/assets/Screenshot from 2024-04-29 18-05-59.png" alt=""><figcaption><p>Enable all options</p></figcaption></figure>
 
 We will also need to add the TMUX package via the web interface under the IPFire section click Pakfire, then add TMUX.
 
-<figure><img src="../../.gitbook/assets/Screenshot from 2024-04-29 18-09-27.png" alt=""><figcaption></figcaption></figure>
+<figure><img src="../../../.gitbook/assets/Screenshot from 2024-04-29 18-09-27.png" alt=""><figcaption></figcaption></figure>
 
 #### Linux Setup
 
@@ -88,8 +88,8 @@ sudo -s
 
 As atsign (not root!) download the SSH No Ports software, which we can do with curl and then unpack the archive with tar. The curl command below brings in the x64 CPU architecture file if you are using ARM/ARM64 then curl down the right option by picking the right link from:-
 
-{% content-ref url="../guides/advanced-installation-guides/" %}
-[advanced-installation-guides](../guides/advanced-installation-guides/)
+{% content-ref url="../advanced-installation-guides/" %}
+[advanced-installation-guides](../advanced-installation-guides/)
 {% endcontent-ref %}
 
 ```

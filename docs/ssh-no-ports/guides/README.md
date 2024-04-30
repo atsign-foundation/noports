@@ -27,3 +27,7 @@ coverY: 0
 {% content-ref url="be-your-own-vpn.md" %}
 [be-your-own-vpn.md](be-your-own-vpn.md)
 {% endcontent-ref %}
+
+{% content-ref url="custom-os-device-installs/" %}
+[custom-os-device-installs](custom-os-device-installs/)
+{% endcontent-ref %}
