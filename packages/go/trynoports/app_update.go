@@ -143,19 +143,22 @@ func (m appState) ResizeComponents(msg tea.Msg) (appState, tea.Cmd) {
 
 	// get preferred list dimensions
 	m.list.model.SetSize(80, m.height-frameH)
-	// pseudo render the list to compute it's actual width
-	// (can change during filtering or popping open the full help dialog)
-	listW := lipgloss.Width(m.list.model.View())
 
-	// get list & viewport frame sizes
-	listFrameW, _ := m.list.style.GetFrameSize()
-	viewportFrameW, viewportFrameH := m.viewport.style.GetFrameSize()
-
-	// calculate viewport dimensions
-	viewportW := m.width - frameW - viewportFrameW - listFrameW - listW
-	viewportH := m.height - frameH - viewportFrameH
-
+	// do all the calculations to resize the viewport
 	if m.viewport.isReady {
+		// pseudo render the list to compute it's actual width
+		// (can change during filtering or popping open the full help dialog)
+		listW := lipgloss.Width(m.list.model.View())
+
+		// get list & viewport frame sizes
+		listFrameW, _ := m.list.style.GetFrameSize()
+		viewportFrameW, viewportFrameH := m.viewport.style.GetFrameSize()
+
+		// calculate viewport dimensions
+		viewportW := m.width - frameW - viewportFrameW - listFrameW - listW
+		viewportH := m.height - frameH - viewportFrameH
+
+		// resize the viewport
 		m.viewport.model.Width = viewportW
 		m.viewport.model.Height = viewportH
 	}
