@@ -103,7 +103,7 @@ func AppMiddleware() wish.Middleware {
 			return []key.Binding{
 				key.NewBinding(
 					key.WithKeys("enter"),
-					key.WithHelp("enter", "Run command"),
+					key.WithHelp("enter", "run command"),
 				),
 			}
 		}
@@ -111,15 +111,15 @@ func AppMiddleware() wish.Middleware {
 			return []key.Binding{
 				key.NewBinding(
 					key.WithKeys(tea.KeyCtrlD.String()),
-					key.WithHelp("Ctrl+D", "Scroll down in the viewport"),
+					key.WithHelp("ctrl+d", "down (viewport)"),
 				),
 				key.NewBinding(
 					key.WithKeys(tea.KeyCtrlU.String()),
-					key.WithHelp("Ctrl+U", "Scroll up in the viewport"),
+					key.WithHelp("ctrl+u", "up (viewport)"),
 				),
 				key.NewBinding(
 					key.WithKeys("enter"),
-					key.WithHelp("enter", "Run command"),
+					key.WithHelp("enter", "run command"),
 				),
 			}
 		}
