@@ -185,7 +185,13 @@ sshnp -f @cconstab -t @ssh_1 -h @rv_am -d ipfire01 -i ~/.ssh/GitHub_rsa -s
 
 your will look like something similar depending on your SSH Key pair (you can generate one if you do not have one with ssh-keygen) and your client/device atsigns.
 
-When you get logged in you can remove the -s and the -i flags and login on subsequent logins as the public key will be in place on the IPFire machine. Remember to keep your SSH and  Atsign keys safe and make a copy offline.
+When you get logged in you can remove the -s and the -i flags and login on subsequent logins as the public key will be in place on the IPFire machine. You will have to put the keys you want to use in \~/.ssh/config also on the machine you are ssh'ing from, in my case I use a single line.
+
+```
+IdentityFile ~/.ssh/GitHub_rsa
+```
+
+&#x20;Remember to keep your SSH and  Atsign keys safe and make a copy offline.
 
 You are now able to login from anywhere as long as the firewall and you have Internet access. Congrats!&#x20;
 
