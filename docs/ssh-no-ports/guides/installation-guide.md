@@ -1,8 +1,10 @@
 ---
-description: How to  install for either client, device or both.
+description: >-
+  Follow these steps on your client machine and remote device machine. For the
+  client select client and for the device select device, yes it's that easy !
 ---
 
-# 💽 Installation Guide
+# 💽 Installation Guide for Client and Device machines
 
 ## 1. Download universal.sh
 
@@ -89,3 +91,6 @@ If you have activated the client address before, you must copy the address from 
 
 The address will be located at `~/.atsign/keys/@my_noports_client_key.atKeys`. Copy this file from your other machine to the same location on the machine that you are installing sshnpd on.
 
+
+
+### 4. Remember to repeat on the client or device machine!

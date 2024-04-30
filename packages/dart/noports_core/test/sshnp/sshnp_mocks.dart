@@ -34,7 +34,10 @@ class MockAtClient extends Mock implements AtClient {}
 
 class MockNotificationService extends Mock implements NotificationService {}
 
-class MockSshnpParams extends Mock implements SshnpParams {}
+class MockSshnpParams extends Mock implements SshnpParams {
+  @override
+  Duration get daemonPingTimeout => DefaultArgs.daemonPingTimeoutDuration;
+}
 
 class MockSshnpdChannel extends Mock implements SshnpdChannel {}
 

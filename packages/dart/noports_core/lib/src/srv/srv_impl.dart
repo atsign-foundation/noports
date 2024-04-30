@@ -71,7 +71,9 @@ class SrvImplExec implements Srv<Process> {
     if (command == null) {
       throw SshnpError(
         'Unable to locate srv$postfix binary.\n'
-        'N.B. sshnp is expected to be compiled and run from source, not via the dart command.',
+        "It's possible that either the binary is missing, or you are trying to run from source."
+        "If the binary is missing, make sure the srv is installed, try reinstalling."
+        "If you are trying to run from source, first compile sshnp.dart & srv.dart and try running the generated binary.",
       );
     }
     var rvArgs = [

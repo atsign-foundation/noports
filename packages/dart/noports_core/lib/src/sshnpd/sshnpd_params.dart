@@ -11,6 +11,7 @@ class SshnpdParams {
   final String username;
   final String homeDirectory;
   final List<String> managerAtsigns;
+  final String? policyManagerAtsign;
   final String atKeysFilePath;
   final String deviceAtsign;
   final bool verbose;
@@ -21,6 +22,7 @@ class SshnpdParams {
   final int localSshdPort;
   final String ephemeralPermissions;
   final SupportedSshAlgorithm sshAlgorithm;
+  final String deviceGroup;
   final String? storagePath;
   final String permitOpen;
 
@@ -32,6 +34,7 @@ class SshnpdParams {
     required this.username,
     required this.homeDirectory,
     required this.managerAtsigns,
+    required this.policyManagerAtsign,
     required this.atKeysFilePath,
     required this.deviceAtsign,
     required this.verbose,
@@ -42,6 +45,7 @@ class SshnpdParams {
     required this.localSshdPort,
     required this.ephemeralPermissions,
     required this.sshAlgorithm,
+    required this.deviceGroup,
     required this.storagePath,
     required this.permitOpen,
   }) {
@@ -55,11 +59,21 @@ class SshnpdParams {
     ArgResults r = parser.parse(args);
 
     String deviceAtsign = r['atsign'];
-    List<String> managerAtsigns = r['managers']
-        .toString()
-        .split(',')
-        .map((e) => e.trim().toLowerCase())
-        .toList();
+
+    if (!r.wasParsed('managers') && !r.wasParsed('policy-manager')) {
+      throw ArgumentError('At least one of --managers and --policy-manager'
+          ' options must be supplied.');
+    }
+    final List<String> managerAtsigns;
+    if (r.wasParsed('managers')) {
+      managerAtsigns = r['managers']
+          .toString()
+          .split(',')
+          .map((e) => e.trim().toLowerCase())
+          .toList();
+    } else {
+      managerAtsigns = [];
+    }
     String homeDirectory = getHomeDirectory()!;
 
     // Do we have a device ?
@@ -73,17 +87,21 @@ class SshnpdParams {
     if (invalidDeviceName(device)) {
       throw ArgumentError(invalidDeviceNameMsg);
     }
-
+    bool makeDeviceInfoVisible = r['un-hide'];
+    if (r.wasParsed('hide')) {
+      makeDeviceInfoVisible = !r['hide'];
+    }
     return SshnpdParams(
       device: r['device'],
       username: getUserName(throwIfNull: true)!,
       homeDirectory: homeDirectory,
       managerAtsigns: managerAtsigns,
+      policyManagerAtsign: r['policy-manager'],
       atKeysFilePath: r['key-file'] ??
           getDefaultAtKeysFilePath(homeDirectory, deviceAtsign),
       deviceAtsign: deviceAtsign,
       verbose: r['verbose'],
-      makeDeviceInfoVisible: r['un-hide'],
+      makeDeviceInfoVisible: makeDeviceInfoVisible,
       addSshPublicKeys: r['sshpublickey'],
       sshClient: sshClient,
       rootDomain: r['root-domain'],
@@ -91,6 +109,7 @@ class SshnpdParams {
           int.tryParse(r['local-sshd-port']) ?? DefaultSshnpdArgs.localSshdPort,
       ephemeralPermissions: r['ephemeral-permissions'],
       sshAlgorithm: SupportedSshAlgorithm.fromString(r['ssh-algorithm']),
+      deviceGroup: r['device-group'],
       storagePath: r['storage-path'],
       permitOpen: r['permit-open'],
     );
@@ -120,9 +139,24 @@ class SshnpdParams {
       'managers',
       aliases: ['manager'],
       abbr: 'm',
-      mandatory: true,
+      mandatory: false,
       help: 'atSign or list of atSigns (comma separated)'
-          ' that this device will accept requests from',
+          ' that this device will accept requests from.'
+          ' At least one of --managers and --policy-manager must be supplied.'
+          ' If both --managers and --policy-manager are supplied then '
+          ' the daemon will check with the --policy-manager atSign re '
+          ' requests which come from atSigns not in the --managers list.',
+    );
+    parser.addOption(
+      'policy-manager',
+      abbr: 'p',
+      mandatory: false,
+      help: 'The atSign which this device will use to decide whether or not to '
+          ' accept requests from some client atSign. '
+          ' At least one of --managers and --policy-manager must be supplied.'
+          ' If both --managers and --policy-manager are supplied then '
+          ' the daemon will check with the --policy-manager atSign re '
+          ' requests which come from atSigns not in the --managers list.',
     );
     parser.addOption(
       'device',
@@ -142,12 +176,27 @@ class SshnpdParams {
           ' to include public key sent by manager',
     );
     parser.addFlag(
+      'hide',
+      abbr: 'h',
+      negatable: false,
+      defaultsTo: false,
+      help: 'Hides the device from advertising its information to the manager'
+          ' atSign. Even with this enabled, sshnpd will still respond to ping'
+          ' requests from the manager. (This takes priority over -u / --un-hide)',
+    );
+    parser.addFlag(
       'un-hide',
       abbr: 'u',
       aliases: const ['username'],
-      defaultsTo: false,
-      help: 'When set, makes various information visible'
-          ' to the manager atSign - e.g. username, version, etc',
+      defaultsTo: true,
+      hide: true,
+      callback: (bool unhide) {
+        if (unhide) {
+          stderr.writeln(
+              "[WARN] -u, --un-hide is deprecated, since it is now on by default."
+              " Use --hide if you want to disable device information sharing.");
+        }
+      },
     );
     parser.addFlag(
       'verbose',
@@ -170,6 +219,16 @@ class SshnpdParams {
       mandatory: false,
       defaultsTo: 'root.atsign.org',
       help: 'atDirectory domain',
+    );
+
+    parser.addOption(
+      'device-group',
+      mandatory: false,
+      defaultsTo: DefaultSshnpdArgs.deviceGroupName,
+      help: 'The name of this device\'s group. When delegated authorization'
+          ' is being used then the group name is sent to the authorizer'
+          ' service as well as the device name, this daemon\'s atSign, '
+          ' and the client atSign which is requesting a connection',
     );
 
     parser.addOption(

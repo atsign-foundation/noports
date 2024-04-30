@@ -181,7 +181,8 @@ class _NptImpl extends NptBase
     sendProgress('Sending daemon feature check request');
 
     Future<List<(DaemonFeature feature, bool supported, String reason)>>
-        featureCheck = sshnpdChannel.featureCheck(requiredFeatures);
+        featureCheckFuture = sshnpdChannel.featureCheck(requiredFeatures,
+            timeout: params.daemonPingTimeout);
 
     /// Retrieve the srvd host and port pair
     sendProgress('Fetching host and port from srvd');
@@ -189,8 +190,9 @@ class _NptImpl extends NptBase
     sendProgress('Received host and port from srvd');
 
     sendProgress('Waiting for daemon feature check response');
-    List<(DaemonFeature, bool, String)> features = await featureCheck;
+    List<(DaemonFeature, bool, String)> features = await featureCheckFuture;
     sendProgress('Received daemon feature check response');
+
     await Future.delayed(Duration(milliseconds: 1));
     for (final (DaemonFeature _, bool supported, String reason) in features) {
       if (!supported) throw SshnpError(reason);
