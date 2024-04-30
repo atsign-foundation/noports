@@ -24,7 +24,6 @@ func (m appState) RenderViewport(style lipgloss.Style) string {
 			if !m.viewport.isReady {
 				return fmt.Sprintf("%s Initializing a new shell session...", m.viewport.spinner.View())
 			}
-			// TODO: put a nice frame around this with some help & the command being run as the title or something
 			return m.viewport.model.View()
 		}(),
 	)

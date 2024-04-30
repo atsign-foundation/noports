@@ -3,6 +3,9 @@ package main
 // Update part of Elm architecture for app
 
 import (
+	"fmt"
+	"strings"
+
 	"github.com/charmbracelet/bubbles/viewport"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
@@ -18,6 +21,17 @@ func (m appState) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	// Handle terminal / input events first
 	switch msg := msg.(type) {
+	case ProgramMsg:
+		m.program = msg.program
+	case CmdDoneMsg:
+		m.viewport.isRunning = false
+	case ViewportContentMsg:
+		m.viewport.content += msg.content
+		m.viewport.model.SetContent(m.viewport.content)
+		m.viewport.model.GotoBottom()
+		if useHighPerformanceRenderer {
+			viewport.Sync(m.viewport.model)
+		}
 	case tea.WindowSizeMsg:
 		m, cmd = m.WindowSizeMsg(msg)
 		cmds = append(cmds, cmd)
@@ -27,10 +41,15 @@ func (m appState) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	}
 
 	// Update the view contents
-	if m.viewport.isReady {
-		// Update viewport
-		m.viewport.model, cmd = m.viewport.model.Update(msg)
-		cmds = append(cmds, cmd)
+	switch msg.(type) {
+	case tea.KeyMsg:
+		break
+	default:
+		if m.viewport.isReady {
+			// Update viewport
+			m.viewport.model, cmd = m.viewport.model.Update(msg)
+			cmds = append(cmds, cmd)
+		}
 	}
 	// Update the list
 	m.list.model, cmd = m.list.model.Update(msg)
@@ -49,11 +68,46 @@ func (m appState) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 func (m appState) KeyMsg(msg tea.KeyMsg) (appState, tea.Cmd) {
 	switch msg.String() {
 	case "enter":
+		if m.viewport.isRunning {
+			return m, nil
+		} else {
+			m.viewport.isRunning = true
+		}
+		// Update the command entry
+		command := m.list.model.SelectedItem().(appCommand).command
+		args := strings.Join(m.list.model.SelectedItem().(appCommand).args, " ")
+		if len(m.viewport.content) == 0 {
+			m.viewport.content = fmt.Sprintf("> %s %s\n", command, args)
+		} else {
+			m.viewport.content = fmt.Sprintf("%s\n> %s %s\n", m.viewport.content, command, args)
+		}
+		m.viewport.model.SetContent(m.viewport.content)
+		m.viewport.model.GotoBottom()
+
 		if useHighPerformanceRenderer {
 			viewport.Sync(m.viewport.model)
 		}
-		// TODO:
-		// - Somehow stream it to content
+
+		done := make(chan int, 1)
+		ch, err := m.list.model.SelectedItem().(appCommand).Run(done)
+		if err != nil {
+			fmt.Printf("got an error: %s\n", err)
+			return m, nil
+		}
+
+		go func() {
+			for {
+				select {
+				case <-done:
+					close(ch)
+					close(done)
+					m.program.Send(CmdDoneMsg{})
+					return
+				case msg := <-ch:
+					m.program.Send(ViewportContentMsg{msg})
+				}
+			}
+		}()
 	}
 
 	return m, nil
