@@ -101,7 +101,7 @@ func (p appState) KeyMsg(msg tea.KeyMsg) (m appState) {
 			m.viewport.model.SetContent(m.viewport.content)
 			m.viewport.model.GotoBottom()
 			m.viewport.isRunning = false
-			log.Error("Error running command: %s\n", err)
+			log.Error("Error running command: ", "error", err)
 			return
 		}
 

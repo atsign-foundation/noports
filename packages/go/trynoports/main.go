@@ -35,9 +35,7 @@ var (
 // Setup the server (main server lifecycle)
 func main() {
 	flag.Parse()
-	log.Info("Environment")
-	log.Info(" - h: %s\n", *Flagh)
-	log.Info(" - f: %t\n", *Flagf)
+	log.Info("Environment", "nmap host (-h)", *Flagh, "use ifconfig (-f)", *Flagf)
 
 	// Create the server object with appropriate middleware
 	s, err := wish.NewServer(
