@@ -17,8 +17,6 @@ func (m appState) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		cmds []tea.Cmd
 	)
 
-	// Cache this at the start of the update, since it may change mid way through
-
 	// Handle terminal / input events first
 	switch msg := msg.(type) {
 	case ProgramMsg:
@@ -41,46 +39,42 @@ func (m appState) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	}
 
 	// Update the view contents
-	switch msg.(type) {
-	case tea.KeyMsg:
-		break
-	default:
-		if m.viewport.isReady {
+	if m.viewport.isReady {
+		if m.focused == 1 {
 			// Update viewport
 			m.viewport.model, cmd = m.viewport.model.Update(msg)
 			cmds = append(cmds, cmd)
 		}
-	}
-	// Update the list
-	m.list.model, cmd = m.list.model.Update(msg)
-	cmds = append(cmds, cmd)
-
-	// Keep spinning
-	if !m.viewport.isReady {
+	} else {
 		m.viewport.spinner, cmd = m.viewport.spinner.Update(msg)
 		cmds = append(cmds, cmd)
 	}
+
+	// Update the list
+	if m.focused == 0 {
+		m.list.model, cmd = m.list.model.Update(msg)
+		cmds = append(cmds, cmd)
+	}
+
 	// Batch all of the potential commands
 	return m, tea.Batch(cmds...)
 }
 
 // Handle keyboard input
-func (m appState) KeyMsg(msg tea.KeyMsg) (appState, tea.Cmd) {
+func (p appState) KeyMsg(msg tea.KeyMsg) (m appState, cmd tea.Cmd) {
+	m = p
 	switch msg.String() {
 	case "enter":
 		if m.viewport.isRunning {
-			return m, nil
+			return
 		} else {
 			m.viewport.isRunning = true
 		}
 		// Update the command entry
 		command := m.list.model.SelectedItem().(appCommand).command
 		args := strings.Join(m.list.model.SelectedItem().(appCommand).args, " ")
-		if len(m.viewport.content) == 0 {
-			m.viewport.content = fmt.Sprintf("> %s %s\n", command, args)
-		} else {
-			m.viewport.content = fmt.Sprintf("%s\n> %s %s\n", m.viewport.content, command, args)
-		}
+		// Throw away the old contents, otherwise someone malicious might try to allocate infinite memory to that struct
+		m.viewport.content = fmt.Sprintf("> %s %s\n", command, args)
 		m.viewport.model.SetContent(m.viewport.content)
 		m.viewport.model.GotoBottom()
 
@@ -91,8 +85,13 @@ func (m appState) KeyMsg(msg tea.KeyMsg) (appState, tea.Cmd) {
 		done := make(chan int, 1)
 		ch, err := m.list.model.SelectedItem().(appCommand).Run(done)
 		if err != nil {
-			fmt.Printf("got an error: %s\n", err)
-			return m, nil
+			close(done)
+			m.viewport.content = fmt.Sprintf("> %s %s\nOops! We messed up, can't run this command right now...", command, args)
+			m.viewport.model.SetContent(m.viewport.content)
+			m.viewport.model.GotoBottom()
+			m.viewport.isRunning = false
+			fmt.Printf("Error running command: %s\n", err)
+			return
 		}
 
 		go func() {
@@ -108,9 +107,17 @@ func (m appState) KeyMsg(msg tea.KeyMsg) (appState, tea.Cmd) {
 				}
 			}
 		}()
+	case "h", tea.KeyLeft.String():
+		m.focused = 0
+		m.list.style = m.list.style.BorderForeground(lipgloss.Color("7"))
+		m.viewport.style = m.viewport.style.BorderForeground(lipgloss.Color("244"))
+	case "l", tea.KeyRight.String():
+		m.focused = 1
+		m.list.style = m.list.style.BorderForeground(lipgloss.Color("244"))
+		m.viewport.style = m.viewport.style.BorderForeground(lipgloss.Color("7"))
 	}
 
-	return m, nil
+	return
 }
 
 // Update the window size when it is reported to us
@@ -126,7 +133,7 @@ func (m appState) WindowSizeMsg(msg tea.WindowSizeMsg) (appState, tea.Cmd) {
 	m.list.model.SetSize(w, h)
 	if !m.viewport.isReady {
 		m.viewport.model = viewport.New(w, h)
-		m.viewport.model.SetContent("> ")
+		m.viewport.model.SetContent("> ") // TODO  add welcome message
 		m.viewport.model.HighPerformanceRendering = useHighPerformanceRenderer
 		m.viewport.isReady = true
 	} else {

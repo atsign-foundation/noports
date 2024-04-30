@@ -27,13 +27,17 @@ const (
 )
 
 // Program inputs
-var Ip = flag.String("h", "", "set the host for the nmap command")
+var (
+	Flagh = flag.String("h", "", "set the host for the nmap command")
+	Flagf = flag.Bool("f", false, "use the ifconfig instead of ip addr")
+)
 
 // Setup the server (main server lifecycle)
 func main() {
 	flag.Parse()
 	fmt.Println("Environment")
-	fmt.Printf(" - Ip: %s\n", *Ip)
+	fmt.Printf(" - h: %s\n", *Flagh)
+	fmt.Printf(" - f: %t\n", *Flagf)
 
 	// Create the server object with appropriate middleware
 	s, err := wish.NewServer(

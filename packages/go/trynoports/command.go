@@ -12,15 +12,25 @@ import (
 func InitCommands(d list.ItemDelegate, width int, height int) list.Model {
 	return list.New(
 		[]list.Item{
-			appCommand{
-				title:   "Show Network Interface",
-				command: "ip",
-				args:    []string{"addr"},
-			},
+			func() appCommand {
+				if *Flagf {
+					return appCommand{
+						title:   "Show Network Interface",
+						command: "ifconfig",
+						args:    []string{},
+					}
+				} else {
+					return appCommand{
+						title:   "Show Network Interface",
+						command: "ip",
+						args:    []string{"addr"},
+					}
+				}
+			}(),
 			appCommand{
 				title:   "Scan All Ports",
 				command: "nmap",
-				args:    []string{"-p", "1-65535", *Ip},
+				args:    []string{"-p", "1-65535", *Flagh},
 			},
 		},
 		d, 0, 0,

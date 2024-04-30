@@ -3,6 +3,7 @@ package main
 // Model / Init part of Elm architecture for app
 
 import (
+	"github.com/charmbracelet/bubbles/key"
 	"github.com/charmbracelet/bubbles/list"
 	"github.com/charmbracelet/bubbles/spinner"
 	"github.com/charmbracelet/bubbles/viewport"
@@ -20,6 +21,7 @@ type appState struct {
 	frame    appFrame
 	list     appList
 	viewport appViewport
+	focused  int // 0 = list, 1 = viewport
 }
 
 type appFrame struct {
@@ -68,8 +70,8 @@ func AppMiddleware() wish.Middleware {
 		renderer := bubbletea.MakeRenderer(s)
 		frameStyle := renderer.NewStyle().Margin(2)
 		appHeight := pty.Window.Height - frameStyle.GetVerticalFrameSize()
-		listStyle := lipgloss.NewStyle().Border(lipgloss.RoundedBorder()).Height(appHeight)
-		viewportStyle := lipgloss.NewStyle().Border(lipgloss.RoundedBorder()).MarginLeft(2).Padding(1).Height(appHeight)
+		listStyle := lipgloss.NewStyle().Border(lipgloss.RoundedBorder()).BorderForeground(lipgloss.Color("7")).Height(appHeight)
+		viewportStyle := lipgloss.NewStyle().Border(lipgloss.RoundedBorder()).BorderForeground(lipgloss.Color("244")).MarginLeft(2).Padding(1).Height(appHeight)
 
 		// Spinner
 		spin := spinner.New()
@@ -92,10 +94,34 @@ func AppMiddleware() wish.Middleware {
 				style:   viewportStyle,
 				spinner: spin,
 			},
+			focused: 0, // focus list by default
 		}
 		m.list.model.Title = title
+		m.list.model.AdditionalShortHelpKeys = func() []key.Binding {
+			return []key.Binding{
+				key.NewBinding(
+					key.WithKeys("enter"),
+					key.WithHelp("enter", "Run the currently selected command"),
+				),
+			}
+		}
+		m.list.model.AdditionalFullHelpKeys = func() []key.Binding {
+			return []key.Binding{
+				key.NewBinding(
+					key.WithKeys("h", "left"),
+					key.WithHelp("←/h", "Focus the list"),
+				),
+				key.NewBinding(
+					key.WithKeys("l", "right"),
+					key.WithHelp("→/l", "Focus the viewport"),
+				),
+				key.NewBinding(
+					key.WithKeys("enter"),
+					key.WithHelp("enter", "Run the currently selected command"),
+				),
+			}
+		}
 
-		// TODO: add enter to help keybinds
 		return newProg(m, append(bubbletea.MakeOptions(s), tea.WithAltScreen())...)
 	}
 	return bubbletea.MiddlewareWithProgramHandler(teaHandler, termenv.ANSI256)
