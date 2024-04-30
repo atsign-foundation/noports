@@ -19,11 +19,12 @@ import (
 )
 
 const (
-	title                      = "Welcome to Try No Ports!"
+	title                      = "Welcome to Atsign's No Ports!"
 	host                       = "localhost"
 	port                       = "23234"
 	keyPath                    = ".ssh/id_ed25519"
 	useHighPerformanceRenderer = false
+	welcomeMessageContent      = "Hello!\n"
 )
 
 // Program inputs

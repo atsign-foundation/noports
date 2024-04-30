@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os/exec"
 	"strings"
+	"time"
 
 	"github.com/charmbracelet/bubbles/list"
 )
@@ -12,6 +13,7 @@ import (
 func InitCommands(d list.ItemDelegate, width int, height int) list.Model {
 	return list.New(
 		[]list.Item{
+			welcomeMessage{},
 			func() appCommand {
 				if *Flagf {
 					return appCommand{
@@ -37,14 +39,19 @@ func InitCommands(d list.ItemDelegate, width int, height int) list.Model {
 	)
 }
 
-type CommandResult struct{ err error }
-
-// Type to define the commands available above
-type appCommand struct {
-	title   string
-	command string
-	args    []string
-}
+type (
+	CommandResult  struct{ err error }
+	RunnerWithDone interface {
+		Run(done chan int) (chan string, error)
+	}
+	// Type to define the commands available above
+	appCommand struct {
+		title   string
+		command string
+		args    []string
+	}
+	welcomeMessage struct{}
+)
 
 func (c appCommand) FilterValue() string { return c.title }
 func (c appCommand) Title() string       { return c.title }
@@ -68,7 +75,9 @@ func (c appCommand) Run(done chan int) (chan string, error) {
 
 	cmdDone := make(chan error, 1)
 	go func() {
-		cmdDone <- cmd.Wait()
+		err := cmd.Wait()
+		time.Sleep(250 * time.Millisecond) // Give the pipe enough time to clear - also prevents clients from running > 4 commands / second
+		cmdDone <- err
 	}()
 	go func() {
 		var buf [256]byte
@@ -89,6 +98,21 @@ func (c appCommand) Run(done chan int) (chan string, error) {
 				}
 			}
 		}
+	}()
+
+	return ch, nil
+}
+
+func (c welcomeMessage) FilterValue() string { return "Show the Welcome Message" }
+func (c welcomeMessage) Title() string       { return "Show the Welcome Message" }
+func (c welcomeMessage) Description() string { return "(The text shown when you first connected)" }
+func (c welcomeMessage) Run(done chan int) (chan string, error) {
+	ch := make(chan string, 100)
+
+	go func() {
+		ch <- welcomeMessageContent
+		time.Sleep(250 * time.Millisecond) // Give the pipe enough time to clear - also prevents clients from running > 4 commands / second
+		done <- 0
 	}()
 
 	return ch, nil

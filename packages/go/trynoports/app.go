@@ -36,12 +36,13 @@ type appList struct {
 }
 
 type appViewport struct {
-	style     lipgloss.Style
-	model     viewport.Model
-	content   string
-	spinner   spinner.Model
-	isRunning bool
-	isReady   bool
+	style        lipgloss.Style
+	content      string
+	model        viewport.Model
+	spinner      spinner.Model
+	contentIndex int
+	isRunning    bool
+	isReady      bool
 }
 
 func (m appState) Init() tea.Cmd {
@@ -94,14 +95,13 @@ func AppMiddleware() wish.Middleware {
 				style:   viewportStyle,
 				spinner: spin,
 			},
-			focused: 0, // focus list by default
 		}
 		m.list.model.Title = title
 		m.list.model.AdditionalShortHelpKeys = func() []key.Binding {
 			return []key.Binding{
 				key.NewBinding(
 					key.WithKeys("enter"),
-					key.WithHelp("enter", "Run the currently selected command"),
+					key.WithHelp("enter", "Run command"),
 				),
 			}
 		}

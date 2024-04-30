@@ -60,27 +60,38 @@ func (p appState) KeyMsg(msg tea.KeyMsg) (m appState) {
 	m = p
 	switch msg.String() {
 	case "enter":
-		if m.viewport.isRunning {
+		if m.viewport.isRunning || m.list.model.Index() == m.viewport.contentIndex {
 			return
-		} else {
-			m.viewport.isRunning = true
 		}
-		// Update the command entry
-		command := m.list.model.SelectedItem().(appCommand).command
-		args := strings.Join(m.list.model.SelectedItem().(appCommand).args, " ")
-		// Throw away the old contents, otherwise someone malicious might try to allocate infinite memory to that struct
-		m.viewport.content = fmt.Sprintf("> %s %s\n", command, args)
+		m.viewport.isRunning = true
+		m.viewport.contentIndex = m.list.model.Index()
+
+		item := m.list.model.SelectedItem()
+		var command, args string
+
+		switch item.(type) {
+		case appCommand:
+			// Update the command entry
+			command = item.(appCommand).command
+			args = strings.Join(m.list.model.SelectedItem().(appCommand).args, " ")
+			// Throw away the old contents, otherwise someone malicious might try to allocate infinite memory to that struct
+			m.viewport.content = fmt.Sprintf("> %s %s\n", command, args)
+
+		default:
+			m.viewport.content = ""
+		}
 		m.viewport.model.SetContent(m.viewport.content)
 		m.viewport.model.GotoBottom()
-
 		if useHighPerformanceRenderer {
 			viewport.Sync(m.viewport.model)
 		}
 
 		done := make(chan int, 1)
-		ch, err := m.list.model.SelectedItem().(appCommand).Run(done)
+		ch, err := m.list.model.SelectedItem().(RunnerWithDone).Run(done)
 		if err != nil {
 			close(done)
+			// Welcome command should never return an error, so it is safe to assume we have an appCommand in here
+			// Thus command & args are set
 			m.viewport.content = fmt.Sprintf("> %s %s\nOops! We messed up, can't run this command right now...", command, args)
 			m.viewport.model.SetContent(m.viewport.content)
 			m.viewport.model.GotoBottom()
@@ -119,9 +130,12 @@ func (m appState) WindowSizeMsg(msg tea.WindowSizeMsg) (appState, tea.Cmd) {
 
 	m.list.model.SetSize(w, h)
 	if !m.viewport.isReady {
+		// This is where the viewport is initialized
 		m.viewport.model = viewport.New(w, h)
-		m.viewport.model.SetContent("> ") // TODO  add welcome message
+		m.viewport.model.SetContent(welcomeMessageContent)
 		m.viewport.model.HighPerformanceRendering = useHighPerformanceRenderer
+		m.viewport.model.KeyMap.Down.SetEnabled(false)
+		m.viewport.model.KeyMap.Up.SetEnabled(false)
 		m.viewport.isReady = true
 	} else {
 		m.viewport.model.Width = w
