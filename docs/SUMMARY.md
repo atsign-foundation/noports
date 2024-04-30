@@ -22,6 +22,8 @@
         * [Systemd Unit](ssh-no-ports/guides/advanced-installation-guides/device-installation-sshnpd/systemd-unit.md)
         * [Headless](ssh-no-ports/guides/advanced-installation-guides/device-installation-sshnpd/headless.md)
       * [👩‍💻 Client installation (sshnp)](ssh-no-ports/guides/advanced-installation-guides/client-installation-sshnp.md)
+  * [🛃 Custom OS/Device Installs](ssh-no-ports/custom-os-device-installs/README.md)
+    * [IPFire](ssh-no-ports/custom-os-device-installs/ipfire.md)
   * [🔍 How It Works](ssh-no-ports/how-it-works.md)
   * [❓ FAQ](ssh-no-ports/faq.md)
 * [📔 Developer Notes](developer-notes/README.md)
