@@ -1,10 +1,10 @@
-# 👩💻 Client Upgrade (sshnp)
+# 👩‍💻 Client Upgrade (sshnp)
 
 ## Upgrade sshnp
 
 Upgrading to the latest version of sshnp is identical to the installation process.
 
-Please see the [installation guide](../installation-guide/client-installation-sshnp.md) to proceed.
+Please see the [installation guide](../advanced-installation-guides/client-installation-sshnp.md) to proceed.
 
 ### Verify the Upgrade
 

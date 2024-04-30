@@ -110,6 +110,7 @@ usage() {
 setup_authorized_keys() {
   mkdir -p "$user_ssh_dir"
   touch "$user_ssh_dir/authorized_keys"
+  chown $user:$user "$user_ssh_dir/authorized_keys"
   chmod 644 "$user_ssh_dir/authorized_keys"
 }
 

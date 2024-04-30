@@ -36,6 +36,7 @@ unset tmp_path
 install_type=""
 unset download_url
 local_archive=""
+no_sudo=false
 
 ### Client/ Device Install Variables
 client_atsign=""
@@ -97,7 +98,7 @@ usage() {
   echo "  -v, --verbose                  Verbose tracing"
   echo "      --version                  Display version"
   echo "      --temp-path      <path>    Set the temporary path for downloads"
-  echo "  -t, --type           <type>    Set the install type (device, client, both)"
+  echo "  -t, --type           <type>    Set the install type (device, client)"
   echo "      --local          <path>    Install from a local archive"
   echo
   echo "Client Options:"
@@ -110,10 +111,11 @@ usage() {
   echo "Note: only one of --region or --rv-atsign can be used"
   echo
   echo "Device Options:"
-  echo "  -c, --client-atsign  <atsign>  Set the client atSign"
-  echo "  -d, --device-atsign  <atsign>  Set the device atSign"
-  echo "  -n, --device-name    <name>    Set the device name"
-  echo "  --dt, --device-type  <type>    Set the device type (launchd, systemd, tmux, headless)"
+  echo "  -c,   --client-atsign  <atsign>  Set the client atSign"
+  echo "  -d,   --device-atsign  <atsign>  Set the device atSign"
+  echo "  -n,   --device-name    <name>    Set the device name"
+  echo "  --dt, --device-type    <type>    Set the device type (launchd, systemd, tmux, headless)"
+  echo "        --no-sudo                  Deliberately install without sudo priveleges"
 
 }
 
@@ -176,7 +178,7 @@ parse_env() {
     bin_path="$HOME/.local/bin"
     user="$USER"
   fi
-  user_bin_dir=$user_home/.local/bin/@sshnp
+  user_bin_dir=$user_home/.local/bin
 }
 
 is_valid_source_mode() {
@@ -184,7 +186,7 @@ is_valid_source_mode() {
 }
 
 is_valid_install_type() {
-  [ "$1" = "device" ] || [ "$1" = "client" ] || [ "$1" = "both" ]
+  [ "$1" = "device" ] || [ "$1" = "client" ]
 }
 
 norm_install_type() {
@@ -194,9 +196,6 @@ norm_install_type() {
       ;;
     c*)
       echo "client"
-      ;;
-    b*)
-      echo "both"
       ;;
     *)
       echo ""
@@ -254,7 +253,7 @@ parse_args() {
         install_type=$(norm_install_type "$install_type_input")
         if ! is_valid_install_type "$install_type"; then
           echo "Invalid install type: $install_type_input"
-          echo "Valid options are: (device, client, both)" exit 1
+          echo "Valid options are: (device, client)" exit 1
         fi
         ;;
       --local)
@@ -302,6 +301,9 @@ parse_args() {
           echo "Valid options are: (launchd, systemd, tmux, headless)" exit 1
         fi
         ;;
+      --no-sudo)
+        no_sudo=true
+        ;;
       *)
         echo "Unexpected option: $1"
         exit 1
@@ -315,7 +317,7 @@ get_user_inputs() {
   if [ -z "$install_type" ]; then
     unset install_type_input
     while [ -z "$install_type" ]; do
-      printf "Install type (device, client, both):  "
+      printf "Install type (device, client):  "
       read -r install_type_input
       install_type=$(norm_install_type "$install_type_input")
     done
@@ -437,25 +439,24 @@ write_systemd_environment() {
   sedi "s|Environment=$variable=\".*\"|Environment=$variable=\"$value\"|g" "$file"
 }
 
-get_client_atsign() {
-  while [ -z "$client_atsign" ]; do
-    printf "Enter client atSign: "
-    read -r client_atsign
+get_atsign_manually() {
+  selectedatsign=""
+  if [ $# -gt 0 ]; then
+    clientOrDevice="$1"
+  fi
+  while [ -z "$selectedatsign" ]; do
+    printf "Enter %s atSign: " "$clientOrDevice"
+    read -r selectedatsign
   done
 }
 
-get_device_atsign() {
-  while [ -z "$device_atsign" ]; do
-    printf "Enter device atSign: "
-    read -r device_atsign
-  done
-}
-
-get_installed_atsigns() {
+get_atsign() {
   clientOrDevice="$1"
   atkeycount=0
   atkeys=""
   selectedatsign=""
+  echo
+  echo "Setting up $clientOrDevice atSign"
   if [ -d "${user_home}/.atsign/keys" ]; then
     # Disable unsafe find looping (will break if atkey file name contains a space, which it shouldn't)
     # shellcheck disable=SC2044
@@ -465,7 +466,8 @@ get_installed_atsigns() {
     done
     atkeys="$(echo "$atkeys" | sed s/\ \ /\ / | sed s/^\ //)" # remove double & leading space since it will interfere with cut
     if [ $atkeycount -eq 0 ]; then
-      echo "$HOME/.atsign/keys directory found but there are no keys there yet"
+      echo "$HOME/.atsign/keys directory found but there are no keys there yet, please enter the $clientOrDevice atSign manually"
+      get_atsign_manually
     elif [ $atkeycount -eq 1 ]; then
       atkey=$(echo "$atkeys" | sed "s/\ //g")
       echo "1 atKeys file found: ${atkey}"
@@ -481,7 +483,10 @@ get_installed_atsigns() {
       for i in $(seq 1 $atkeycount); do
         echo "$i) @$(echo "$atkeys" | cut -d' ' -f"$i")"
       done
-      printf '=> Found .atKeys for %s atSigns. Choose %s atSign : $ ' "$atkeycount" "$clientOrDevice"
+      echo
+      printf "Found .atKeys for %s atSigns." "$atkeycount"
+      echo
+      printf 'Choose %s atSign (input the number): $ ' "$clientOrDevice"
       read -r selectedinput
 
       selectedindex=$((selectedinput))
@@ -489,34 +494,31 @@ get_installed_atsigns() {
         selectedatsign="$(echo "$atkeys" | cut -d' ' -f"$selectedindex")"
         echo "Selected: @$selectedatsign"
       else
-        echo "No existing atkeys were selected"
+        echo "No existing atkeys were selected, please enter the $clientOrDevice atSign manually."
+        get_atsign_manually
       fi
     fi
   else
     mkdir -p "$user_home"/.atsign/keys
+    chown -R $user:$user "$user_home"/.atsign
     echo "$HOME/.atsign/keys directory created"
+    echo "Since we did not detect any atkeys on this machine, please enter the $clientOrDevice atSign manually."
+    get_atsign_manually
   fi
 }
 
 suggest_sudo() {
   echo
   echo "Systemd is present but this script is not running with sudo"
-  echo "It is suggested that you exit and rerun:"
+  echo "We recommend that you install to systemd (requires root privileges to write the unit file)"
   echo
   echo "sudo sh universal.sh"
   echo
-  echo "If you'd rather (P)roceed with a non systemd installation"
-  echo "then enter p or P, otherwise this script will exit."
-  printf "(P)roceed? "
-  read -r proceed
-  case $proceed in
-    p | P)
-      return
-      ;;
-    *)
-      exit 0
-      ;;
-  esac
+  echo "If you'd rather proceed with a non systemd installation (not recommended):"
+  echo
+  echo "sh universal.sh --no-sudo"
+  echo
+  exit 0
 }
 
 # CLIENT INSTALLATION #
@@ -526,6 +528,7 @@ client() {
   # install the binaries
   "$extract_path"/sshnp/install.sh -b "$bin_path" -u "$user" sshnp
   "$extract_path"/sshnp/install.sh -b "$bin_path" -u "$user" npt
+  "$extract_path"/sshnp/install.sh -b "$bin_path" -u "$user" srv
   "$extract_path"/sshnp/install.sh -b "$bin_path" -u "$user" at_activate
 
   # install the magic sshnp script
@@ -541,12 +544,14 @@ client() {
 
   # get the inputs for the magic script
   if [ -z "$client_atsign" ]; then
-    get_installed_atsigns "client"
+    get_atsign "client"
     client_atsign="$selectedatsign"
-    get_client_atsign
   fi
 
-  get_device_atsign
+  if [ -z "$device_atsign" ]; then
+    get_atsign_manually "device"
+    device_atsign="$selectedatsign"
+  fi
 
   if [ -z "$host_atsign" ]; then
     echo Pick your default region:
@@ -582,12 +587,12 @@ client() {
   if [ -z "$devices" ]; then
     done_input=false
     echo "Installing a quick picker script to make it easy to connect to devices..."
-    echo "Enter the device names you would like to include in the quick picker script"
-    echo "/done to finish"
+    echo "Type a device name and press enter to submit it."
+    echo "Press enter once more to finish."
     while [ "$done_input" = false ]; do
       printf "Device name: "
       read -r device_name
-      if [ "$device_name" = "/done" ]; then
+      if [ -z "$device_name" ]; then
         done_input=true
       else
         devices="$devices,$device_name"
@@ -612,24 +617,39 @@ device() {
       device_install_type="launchd"
     elif is_root && is_systemd_available; then
       device_install_type="systemd"
-    elif is_systemd_available; then
-      suggest_sudo
-    elif command -v tmux >/dev/null 2>&1; then
-      device_install_type="tmux"
     else
-      device_install_type="headless"
+      if ! $no_sudo && is_systemd_available; then
+        suggest_sudo
+      fi
+      if command -v tmux >/dev/null 2>&1; then
+        device_install_type="tmux"
+      else
+        if ! command -v cron >/dev/null 2>&1; then
+          echo "ERROR: crontab not available"
+          echo "Please install cron and make it available on the PATH"
+          exit 1
+        fi
+        if ! command -v nohup >/dev/null 2>&1; then
+          echo "ERROR: nohup not available"
+          echo "Please install nohup and make it available on the PATH"
+          exit 1
+        fi
+        device_install_type="headless"
+      fi
     fi
   else
     # override the device type if it is set
     device_install_type=$device_type
   fi
 
-  get_client_atsign
+  if [ -z "$client_atsign" ]; then
+    get_atsign_manually "client"
+    client_atsign="$selectedatsign"
+  fi
 
   if [ -z "$device_atsign" ]; then
-    get_installed_atsigns "device"
+    get_atsign "device"
     device_atsign="$selectedatsign"
-    get_device_atsign
   fi
 
   while [ -z "$device_name" ]; do
@@ -697,14 +717,6 @@ main() {
   case "$install_type" in
     client) client ;;
     device) device ;;
-    both)
-      echo
-      echo "Installing device part..."
-      device
-      echo
-      echo "Installing client part..."
-      client
-      ;;
   esac
 }
 
