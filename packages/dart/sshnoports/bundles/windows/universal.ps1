@@ -262,14 +262,11 @@ function Write-Metadata {
         [string]$variable,
         [string]$value
     )
-
     $start_line = "# SCRIPT METADATA"
     $end_line = "# END METADATA"
-
     $content = Get-Content -Path $file
     $start_index = $content.IndexOf($start_line)
     $end_index = $content.IndexOf($end_line)
-
     if ([string]::IsNullOrEmpty($content)) {
         Write-Host "Error: $file is empty"
         return
@@ -282,7 +279,6 @@ function Write-Metadata {
 
             }
         }
-
         $content | Set-Content -Path $file
     } else {
         Write-Host "Error: Metadata block not found in $file"
@@ -328,9 +324,7 @@ function Install-Client {
         Cleanup
         Exit 1
     } 
-  
     Write-Host "Created client script for $script:DEVICE_NAME$script:DEVICE_ATSIGN"
-
     if (-not ($script:INSTALL_TYPE -eq "both")){
         Remove-Item "$script:INSTALL_PATH/sshnp/srv.exe" -Force
         Remove-Item "$script:INSTALL_PATH/sshnp/sshnpd.exe" -Force
@@ -394,7 +388,6 @@ function Main {
             Install-Device
         }
     }
-
     Cleanup
     Write-Host "Successfully installed $script:INSTALL_TYPE at $script:INSTALL_PATH, script ending..."
     Start-Sleep -Seconds 10
