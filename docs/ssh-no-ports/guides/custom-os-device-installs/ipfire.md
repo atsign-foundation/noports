@@ -199,3 +199,18 @@ You are now able to login from anywhere as long as the firewall and you have Int
 
 
 
+#### For the paranoid
+
+If you would like to remove the ssh daemon from the GREEN side as well then you can edit the `/etc/ssh/sshd_config` file to only bind on localhost but updating this line.
+
+```
+ListenAddress 0.0.0.0
+```
+
+to&#x20;
+
+```
+ListenAddress localhost
+```
+
+and then reboot or restart the sshd daemon.
