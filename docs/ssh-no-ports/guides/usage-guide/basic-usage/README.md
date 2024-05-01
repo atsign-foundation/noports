@@ -8,6 +8,8 @@ sshnp -f @<_client> -t @<_device> -h <@rv_(am|ap|eu) -d <name> -i <~/.ssh<ssh_ke
 
 {% hint style="info" %}
 Replace the \<??> with your details and remember to logout and back into the client so you have `sshnp` in your PATH.
+
+Once you have logged in once you can drop the `-i` and `-s` flags if you wish.
 {% endhint %}
 
 ## Overview
