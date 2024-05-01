@@ -27,10 +27,6 @@ func (m appState) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case ViewportContentMsg:
 		m.viewport.content += msg.content
 		m.viewport.model.SetContent(m.viewport.content)
-		m.viewport.model.GotoBottom()
-		if useHighPerformanceRenderer {
-			viewport.Sync(m.viewport.model)
-		}
 	case tea.WindowSizeMsg:
 		m.width = msg.Width
 		m.height = msg.Height
@@ -40,11 +36,14 @@ func (m appState) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		if !m.viewport.isReady {
 			// We will resize this to the correct size during the ResizeComponents call
 			m.viewport.model = viewport.New(1, 1)
-			m.viewport.model.SetContent(welcomeMessageContent)
+			m.viewport.content = welcomeMessageContent
 			m.viewport.model.HighPerformanceRendering = useHighPerformanceRenderer
 			m.viewport.model.KeyMap.Down.SetEnabled(false)
 			m.viewport.model.KeyMap.Up.SetEnabled(false)
 			m.viewport.isReady = true
+			if useHighPerformanceRenderer {
+				cmds = append(cmds, viewport.Sync(m.viewport.model))
+			}
 		}
 
 	case tea.KeyMsg:
@@ -97,11 +96,6 @@ func (p appState) KeyMsg(msg tea.KeyMsg) (m appState) {
 
 		default:
 			m.viewport.content = ""
-		}
-		m.viewport.model.SetContent(m.viewport.content)
-		m.viewport.model.GotoBottom()
-		if useHighPerformanceRenderer {
-			viewport.Sync(m.viewport.model)
 		}
 
 		done := make(chan int, 1)
@@ -161,10 +155,14 @@ func (m appState) ResizeComponents(msg tea.Msg) (appState, tea.Cmd) {
 		// resize the viewport
 		m.viewport.model.Width = viewportW
 		m.viewport.model.Height = viewportH
+
+		content := lipgloss.NewStyle().Width(viewportW).Render(m.viewport.content)
+		m.viewport.model.SetContent(content)
+
+		if useHighPerformanceRenderer {
+			return m, viewport.Sync(m.viewport.model)
+		}
 	}
 
-	if useHighPerformanceRenderer {
-		return m, viewport.Sync(m.viewport.model)
-	}
 	return m, nil
 }
