@@ -1,12 +1,9 @@
-package main
-
-// Model / Init part of Elm architecture for app
+package app
 
 import (
 	"github.com/charmbracelet/bubbles/key"
 	"github.com/charmbracelet/bubbles/list"
 	"github.com/charmbracelet/bubbles/spinner"
-	"github.com/charmbracelet/bubbles/viewport"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/charmbracelet/ssh"
@@ -15,51 +12,12 @@ import (
 	"github.com/muesli/termenv"
 )
 
-// Main application state, composed of 3 sub-models
-type appState struct {
-	program  *tea.Program
-	list     appList
-	frame    appFrame
-	viewport appViewport
-	width    int
-	height   int
-	focused  int
-}
+const (
+	title                      = "Welcome to Atsign's NoPorts Trial Environment!"
+	useHighPerformanceRenderer = false
+)
 
-type appFrame struct {
-	style  lipgloss.Style
-	width  int
-	height int
-}
-
-type appList struct {
-	model list.Model
-	style lipgloss.Style
-}
-
-type appViewport struct {
-	style        lipgloss.Style
-	content      string
-	model        viewport.Model
-	spinner      spinner.Model
-	contentIndex int
-	isRunning    bool
-	isReady      bool
-}
-
-func (m appState) Init() tea.Cmd {
-	return m.viewport.spinner.Tick
-}
-
-type ProgramMsg struct {
-	program *tea.Program
-}
-type ViewportContentMsg struct {
-	content string
-}
-type CmdDoneMsg struct{}
-
-func AppMiddleware() wish.Middleware {
+func AppMiddleware(initCommands func(d list.ItemDelegate, width int, height int) list.Model) wish.Middleware {
 	newProg := func(m appState, opts ...tea.ProgramOption) *tea.Program {
 		p := tea.NewProgram(m, opts...)
 		go func() {
@@ -91,7 +49,7 @@ func AppMiddleware() wish.Middleware {
 			},
 			list: appList{
 				style: listStyle,
-				model: InitCommands(list.NewDefaultDelegate(), 0, appHeight-listStyle.GetVerticalFrameSize()),
+				model: initCommands(list.NewDefaultDelegate(), 0, appHeight-listStyle.GetVerticalFrameSize()),
 			},
 			viewport: appViewport{
 				style:   viewportStyle,

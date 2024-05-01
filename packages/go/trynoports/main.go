@@ -1,6 +1,8 @@
 package main
 
 import (
+	"app"
+	"command"
 	"context"
 	"errors"
 	"flag"
@@ -10,6 +12,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/charmbracelet/bubbles/list"
 	"github.com/charmbracelet/log"
 	"github.com/charmbracelet/ssh"
 	"github.com/charmbracelet/wish"
@@ -18,27 +21,40 @@ import (
 )
 
 const (
-	title                      = "Welcome to Atsign's NoPorts Trial Environment!"
-	host                       = "localhost"
-	port                       = "23234"
-	keyPath                    = ".ssh/id_ed25519"
-	useHighPerformanceRenderer = false
-	welcomeMessageContent      = `Welcome to the NoPorts Trial environment!
-
-This environment allows you to test out NoPorts before doing device setup. If you're seeing this message, your client was set up correctly!
-
-We have a few cool tricks you can try while you are here:
-
-#1 - List out all the network interfaces
-#2 - Run nmap to scan the public interface for open ports
-
-Combined, these will show you that there aren't any inbound ports open on this machine. We've taken a number of precautions to ensure that we minimize the network attack surface when you use NoPorts, while also making it as easy to use as possible. If you're curious about how the technology works, or you want to learn more about how we handle security, please visit our site:
-
-https://www.noports.com/sshnp-how-it-works
-
-Hint: To see the full controls of this application, press "?"
-`
+	host    = "localhost"
+	port    = "23234"
+	keyPath = ".ssh/id_ed25519"
 )
+
+// Available system commands
+func InitCommands(d list.ItemDelegate, width int, height int) list.Model {
+	return list.New(
+		[]list.Item{
+			command.WelcomeMessage{},
+			func() command.AppCommand {
+				if *Flagf {
+					return command.AppCommand{
+						Label: "Show Network Interface",
+						Cmd:   "ifconfig",
+						Args:  []string{},
+					}
+				} else {
+					return command.AppCommand{
+						Label: "Show Network Interface",
+						Cmd:   "ip",
+						Args:  []string{"addr"},
+					}
+				}
+			}(),
+			command.AppCommand{
+				Label: "Scan All Ports",
+				Cmd:   "nmap",
+				Args:  []string{"-p", "1-65535", *Flagh},
+			},
+		},
+		d, 0, 0,
+	)
+}
 
 // Program inputs
 var (
@@ -56,7 +72,7 @@ func main() {
 		wish.WithAddress(net.JoinHostPort(host, port)),
 		wish.WithHostKeyPath(keyPath),
 		wish.WithMiddleware(
-			AppMiddleware(),
+			app.AppMiddleware(InitCommands),
 			activeterm.Middleware(), // Bubble Tea apps usually require a PTY.
 			logging.Middleware(),
 		),

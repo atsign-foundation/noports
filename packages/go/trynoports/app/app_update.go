@@ -1,8 +1,9 @@
-package main
+package app
 
 // Update part of Elm architecture for app
 
 import (
+	"command"
 	"fmt"
 	"strings"
 
@@ -36,7 +37,7 @@ func (m appState) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		if !m.viewport.isReady {
 			// We will resize this to the correct size during the ResizeComponents call
 			m.viewport.model = viewport.New(1, 1)
-			m.viewport.content = welcomeMessageContent
+			m.viewport.content = command.WelcomeMessageContent
 			m.viewport.model.HighPerformanceRendering = useHighPerformanceRenderer
 			m.viewport.model.KeyMap.Down.SetEnabled(false)
 			m.viewport.model.KeyMap.Up.SetEnabled(false)
@@ -84,27 +85,27 @@ func (p appState) KeyMsg(msg tea.KeyMsg) (m appState) {
 		m.viewport.contentIndex = m.list.model.Index()
 
 		item := m.list.model.SelectedItem()
-		var command, args string
+		var cmd, args string
 
 		switch item.(type) {
-		case appCommand:
+		case command.AppCommand:
 			// Update the command entry
-			command = item.(appCommand).command
-			args = strings.Join(m.list.model.SelectedItem().(appCommand).args, " ")
+			cmd = item.(command.AppCommand).Cmd
+			args = strings.Join(m.list.model.SelectedItem().(command.AppCommand).Args, " ")
 			// Throw away the old contents, otherwise someone malicious might try to allocate infinite memory to that struct
-			m.viewport.content = fmt.Sprintf("> %s %s\n", command, args)
+			m.viewport.content = fmt.Sprintf("> %s %s\n", cmd, args)
 
 		default:
 			m.viewport.content = ""
 		}
 
 		done := make(chan int, 1)
-		ch, err := m.list.model.SelectedItem().(RunnerWithDone).Run(done)
+		ch, err := m.list.model.SelectedItem().(command.RunnerWithDone).Run(done)
 		if err != nil {
 			close(done)
 			// Welcome command should never return an error, so it is safe to assume we have an appCommand in here
 			// Thus command & args are set
-			m.viewport.content = fmt.Sprintf("> %s %s\nOops! We messed up, can't run this command right now...", command, args)
+			m.viewport.content = fmt.Sprintf("> %s %s\nOops! We messed up, can't run this command right now...", cmd, args)
 			m.viewport.model.SetContent(m.viewport.content)
 			m.viewport.model.GotoBottom()
 			m.viewport.isRunning = false
