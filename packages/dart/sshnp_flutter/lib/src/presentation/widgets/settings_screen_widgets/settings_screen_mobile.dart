@@ -22,8 +22,7 @@ class SettingsMobileView extends StatelessWidget {
         style: Theme.of(context).textTheme.headlineLarge,
       )),
       body: Padding(
-        padding: const EdgeInsets.only(
-            left: Sizes.p36, right: Sizes.p36, top: Sizes.p21),
+        padding: const EdgeInsets.only(left: Sizes.p36, right: Sizes.p36, top: Sizes.p21),
         child: ListView(
           children: [
             Text(

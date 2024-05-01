@@ -1,3 +1,5 @@
+import 'dart:developer';
+
 import 'package:at_app_flutter/at_app_flutter.dart';
 import 'package:at_contacts_flutter/services/contact_service.dart';
 import 'package:at_onboarding_flutter/at_onboarding_flutter.dart';
@@ -83,6 +85,13 @@ class CustomListTile extends StatelessWidget {
       this.type = CustomListTileType.resetAtsign,
       this.tileColor = kProfileBackgroundColor,
       super.key});
+  const CustomListTile.feedback(
+      {this.iconData = Icons.feedback_outlined,
+      this.title = 'Feedback',
+      this.subtitle = 'Send us your feedback',
+      this.type = CustomListTileType.feedback,
+      this.tileColor = kProfileBackgroundColor,
+      super.key});
 
   final IconData iconData;
   final String title;
@@ -159,8 +168,54 @@ class CustomListTile extends StatelessWidget {
               context.goNamed(AppRoute.onboarding.name);
             }
           }
-
           break;
+
+        case CustomListTileType.feedback:
+          // late final Uri emailUri;
+          // BetterFeedback.of(context).show(
+          //   (UserFeedback feedback) async {
+          // final Email email = Email(
+          //   body: '''
+          //   Hi, I would like to provide feedback on the SSH No Ports Desktop app. Here are my thoughts:
+
+          //   ${feedback.text}''',
+          //   subject: 'SSH No Ports Desktop Feedback',
+          //   recipients: ['info@noports.com'],
+          //   attachmentPaths: [await writeImageToStorage(feedback.screenshot)],
+          //   isHTML: false,
+          // );
+
+          // String platformResponse;
+
+          // try {
+          //   await FlutterEmailSender.send(email);
+          //   platformResponse = 'success';
+          // } catch (error) {
+          //   print(error);
+          //   platformResponse = error.toString();
+          // }
+
+          // if (!context.mounted) return;
+
+          // ScaffoldMessenger.of(context).showSnackBar(
+          //   SnackBar(
+          //     content: Text(platformResponse),
+          //   ),
+          // );
+
+          final emailUri = Uri(
+            scheme: 'mailto',
+            path: 'info@noports.com',
+            query: 'subject=SSH No Ports Desktop Feedback',
+          );
+
+          if (!await launchUrl(emailUri)) {
+            CustomSnackBar.notification(content: 'No email client available');
+          }
+          //   },
+          // );
+
+          log('about to send email');
       }
     }
 
@@ -205,4 +260,5 @@ enum CustomListTileType {
   switchAtsign,
   backupYourKey,
   resetAtsign,
+  feedback
 }

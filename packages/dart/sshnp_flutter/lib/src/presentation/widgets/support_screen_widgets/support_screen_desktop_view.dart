@@ -50,6 +50,7 @@ class SupportScreenDesktopView extends StatelessWidget {
                   const Row(
                     children: [
                       Flexible(child: CustomListTile.discord()),
+                      gapW12,
                       Flexible(child: CustomListTile.email()),
                     ],
                   ),
@@ -61,9 +62,22 @@ class SupportScreenDesktopView extends StatelessWidget {
                   const Row(
                     children: [
                       Flexible(child: CustomListTile.faq()),
+                      gapW12,
                       Flexible(child: CustomListTile.privacyPolicy()),
                     ],
-                  )
+                  ),
+                  gapH20,
+                  const Divider(
+                    color: kProfileFormFieldColor,
+                  ),
+                  gapH20,
+                  const Row(
+                    children: [
+                      Flexible(child: CustomListTile.feedback()),
+                      gapW12,
+                      Flexible(child: gap0),
+                    ],
+                  ),
                 ],
               ),
             ),
