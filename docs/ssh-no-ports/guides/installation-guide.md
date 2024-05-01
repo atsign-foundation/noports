@@ -157,7 +157,7 @@ The instructions are very similar to the client install&#x20;
 ### Download the universal installer&#x20;
 
 ```
-curl -L https://github.com/atsign-foundation/noports/releases/latest/download/universal.sh -o universal.sh// Some code
+curl -L https://github.com/atsign-foundation/noports/releases/latest/download/universal.sh -o universal.sh
 ```
 
 ## Run the installer
