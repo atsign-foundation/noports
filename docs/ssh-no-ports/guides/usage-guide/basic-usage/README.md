@@ -1,5 +1,15 @@
 # 💻 Basic Usage
 
+## TL;DR
+
+```
+sshnp -f @<_client> -t @<_device> -h <@rv_(am|ap|eu) -d <name> -i <~/.ssh<ssh_key> -s
+```
+
+{% hint style="info" %}
+Replace the \<??> with your details and remember to logout and back into the client so you have `sshnp` in your PATH.
+{% endhint %}
+
 ## Overview
 
 This guide covers the basics to understanding the parameters of and invoking sshnp.
