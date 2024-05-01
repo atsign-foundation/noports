@@ -58,7 +58,7 @@ func InitCommands(d list.ItemDelegate, width int, height int) list.Model {
 
 // Program inputs
 var (
-	Flagh = flag.String("h", "", "set the host for the nmap command")
+	Flagh = flag.String("h", "localhost", "set the host for the nmap command")
 	Flagf = flag.Bool("f", false, "use the ifconfig instead of ip addr")
 )
 
@@ -66,6 +66,10 @@ var (
 func main() {
 	flag.Parse()
 	log.Info("Environment", "nmap host (-h)", *Flagh, "use ifconfig (-f)", *Flagf)
+
+	if *Flagh == "localhost" {
+		log.Warn("Detected the default nmap host, did you set the nmap host with `-h`?")
+	}
 
 	// Create the server object with appropriate middleware
 	s, err := wish.NewServer(
