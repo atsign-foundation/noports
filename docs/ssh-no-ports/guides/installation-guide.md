@@ -39,13 +39,13 @@ oci_mail_0001
 dc_001_row_009_rack_0067_ru_014
 ```
 
-{% hint style="info" %}
+{% hint style="success" %}
 Once you have these you are ready !
 {% endhint %}
 
-* [ ] Client atSIgn (e.g. @sshnp\_client)
-* [ ] Device atSign (e.g. @sshnp\_device)
-* [ ] Device name (e.g. my\_host\_01)
+* [x] Client atSIgn (e.g. @sshnp\_client)
+* [x] Device atSign (e.g. @sshnp\_device)
+* [x] Device name (e.g. my\_host\_01)
 
 ## _On the client machine_
 
@@ -144,7 +144,7 @@ If you have activated the client address before, you must copy the atSign from t
 
 The atSign keys file will be located at `~/.atsign/keys/` directory with a filename that will include the atSign. Copy this file from your other machine to the same location on the machine that you are installing SSH No Ports on, using `scp` or similar.
 
-{% hint style="info" %}
+{% hint style="success" %}
 Your client machine software installation is completed now on to the device/server
 {% endhint %}
 
@@ -199,6 +199,6 @@ This time you can enter `device` and the questions are a little easier, but you 
 
 &#x20;As before if this atSign is already activated elsewhere then you need to copy the .atKeys file for this atSign into the `~/.atsign/keys/` directory.
 
-{% hint style="info" %}
-You are ready to go back to the client the device install is complete
+{% hint style="success" %}
+You are ready to go back to the client and use SSH No Ports&#x20;
 {% endhint %}
