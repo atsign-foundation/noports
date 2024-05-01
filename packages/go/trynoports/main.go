@@ -30,23 +30,23 @@ const (
 func InitCommands(d list.ItemDelegate, width int, height int) list.Model {
 	return list.New(
 		[]list.Item{
-			command.WelcomeMessage{},
-			func() command.AppCommand {
+			command.WelcomeCmd{},
+			func() command.ExecCmd {
 				if *Flagf {
-					return command.AppCommand{
+					return command.ExecCmd{
 						Label: "Show Network Interface",
 						Cmd:   "ifconfig",
 						Args:  []string{},
 					}
 				} else {
-					return command.AppCommand{
+					return command.ExecCmd{
 						Label: "Show Network Interface",
 						Cmd:   "ip",
 						Args:  []string{"addr"},
 					}
 				}
 			}(),
-			command.AppCommand{
+			command.ExecCmd{
 				Label: "Scan All Ports",
 				Cmd:   "nmap",
 				Args:  []string{"-p", "1-65535", *Flagh},

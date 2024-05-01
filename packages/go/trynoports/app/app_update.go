@@ -37,7 +37,7 @@ func (m appState) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		if !m.viewport.isReady {
 			// We will resize this to the correct size during the ResizeComponents call
 			m.viewport.model = viewport.New(1, 1)
-			m.viewport.content = command.WelcomeMessageContent
+			m.viewport.content = command.WelcomeMessage
 			m.viewport.model.HighPerformanceRendering = useHighPerformanceRenderer
 			m.viewport.model.KeyMap.Down.SetEnabled(false)
 			m.viewport.model.KeyMap.Up.SetEnabled(false)
@@ -88,10 +88,10 @@ func (p appState) KeyMsg(msg tea.KeyMsg) (m appState) {
 		var cmd, args string
 
 		switch item.(type) {
-		case command.AppCommand:
+		case command.ExecCmd:
 			// Update the command entry
-			cmd = item.(command.AppCommand).Cmd
-			args = strings.Join(m.list.model.SelectedItem().(command.AppCommand).Args, " ")
+			cmd = item.(command.ExecCmd).Cmd
+			args = strings.Join(m.list.model.SelectedItem().(command.ExecCmd).Args, " ")
 			// Throw away the old contents, otherwise someone malicious might try to allocate infinite memory to that struct
 			m.viewport.content = fmt.Sprintf("> %s %s\n", cmd, args)
 
