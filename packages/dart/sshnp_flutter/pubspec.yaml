@@ -38,7 +38,6 @@ dependencies:
   package_info_plus: ^5.0.1
   page_transition: ^2.0.9
   path: ^1.8.3
-  path_provider: ^2.1.1
   shared_preferences: ^2.2.2
   socket_connector: ^2.0.1
   url_launcher: ^6.1.14

@@ -83,6 +83,13 @@ class CustomListTile extends StatelessWidget {
       this.type = CustomListTileType.resetAtsign,
       this.tileColor = kProfileBackgroundColor,
       super.key});
+  const CustomListTile.feedback(
+      {this.iconData = Icons.feedback_outlined,
+      this.title = 'Feedback',
+      this.subtitle = 'Send us your feedback',
+      this.type = CustomListTileType.feedback,
+      this.tileColor = kProfileBackgroundColor,
+      super.key});
 
   final IconData iconData;
   final String title;
@@ -159,8 +166,18 @@ class CustomListTile extends StatelessWidget {
               context.goNamed(AppRoute.onboarding.name);
             }
           }
-
           break;
+
+        case CustomListTileType.feedback:
+          final emailUri = Uri(
+            scheme: 'mailto',
+            path: 'info@noports.com',
+            query: 'subject=SSH No Ports Desktop Feedback',
+          );
+
+          if (!await launchUrl(emailUri)) {
+            CustomSnackBar.notification(content: 'No email client available');
+          }
       }
     }
 
@@ -205,4 +222,5 @@ enum CustomListTileType {
   switchAtsign,
   backupYourKey,
   resetAtsign,
+  feedback
 }
