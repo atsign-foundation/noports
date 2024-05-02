@@ -1,1 +1,3 @@
 .ssh/
+# ignore built binary
+/trynoports
