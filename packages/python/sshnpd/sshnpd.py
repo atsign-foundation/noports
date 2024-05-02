@@ -50,6 +50,7 @@ class SocketConnector:
                             print("Connection closed.")
                             sockets_to_monitor.remove(sock)
                             sock.close()
+                            return
                         elif not data: 
                             timeout += 1
                             sleep(0.1)
