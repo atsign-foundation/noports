@@ -4,6 +4,10 @@ description: Installation of client and server software
 
 # 💽 Simple Installation Guide Linux/MacOS
 
+{% embed url="https://www.youtube.com/watch?v=HSthe7wVGao" %}
+Prefer to follow along to a video ? Great !  Below you can just cut and paste along with Colin.&#x20;
+{% endembed %}
+
 {% hint style="info" %}
 For more control of the installation look at the Advanced Installation guides.
 {% endhint %}
