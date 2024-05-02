@@ -9,7 +9,7 @@
 # as of 5th Feb 2024 - Will check state as 3.3 Stable is released
 #FROM dart:beta-sdk AS buildimage
 
-FROM dart:3.3.1@sha256:7e0b4e5d3773c61b5d5b42908f48853fab04c33a080c6f73ee3a99bdd1f4536e  AS buildimage
+FROM dart:3.3.4@sha256:816fee592c641f61ff42461d23cfc3bee301f21e2288cb6818ab961c44c6efc0  AS buildimage
 ENV PACKAGEDIR=packages/dart/sshnoports
 ENV OPENSSH=tools/static-openssh
 ENV BINARYDIR=/usr/local/at
@@ -28,14 +28,13 @@ RUN \
   mkdir -p ${BINARYDIR} ; \
   # build sshnpd
   cd ${WORKDIR}/${PACKAGEDIR}; \
-  dart pub get ; \
-  dart pub update ; \
+  dart pub get --enforce-lockfile ; \
   dart compile exe bin/sshnpd.dart -o ${BINARYDIR}/sshnpd ; \
   dart compile exe bin/srv.dart -o ${BINARYDIR}/srv ; \
   # create atsign account
   addgroup --gid $GROUP_ID atsign ; \
   useradd --system --uid $USER_ID --gid $GROUP_ID --shell /bin/bash \
-    --home $HOMEDIR atsign ; \
+  --home $HOMEDIR atsign ; \
   chown -R atsign:atsign $HOMEDIR ; \
   # build static openssh binaries
   apt update && apt install -y curl gcc make autoconf ; \

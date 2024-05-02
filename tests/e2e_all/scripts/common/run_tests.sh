@@ -25,6 +25,7 @@ echo "### " >> "$reportFile"
 
 outputDir=$(getOutputDir)
 mkdir -p "${outputDir}/clients"
+mkdir -p "${outputDir}/tests"
 
 numDaemons=$(wc -w <<< "$daemonVersions")
 numClients=$(wc -w <<< "$clientVersions")
@@ -46,9 +47,11 @@ do
       baseFileName="${outputDir}/clients/${testToRun}.daemon.${daemonVersion}.client.${clientVersion}"
       stdoutFileName="${baseFileName}.out"
       stderrFileName="${baseFileName}.err"
+      DAEMON_LOG_FRAGMENT_NAME="${baseFileName}.daemonLogFragment.log"
+      export DAEMON_LOG_FRAGMENT_NAME
 
       exitStatus=1
-      maxAttempts=3
+      maxAttempts=5
       if [[ $(uname -s) == "Darwin" ]]; then
         maxAttempts=2
       fi
@@ -56,6 +59,8 @@ do
 
       while (( exitStatus != 0 && exitStatus != 50 && attempts < maxAttempts ));
       do
+        rm -f "$DAEMON_LOG_FRAGMENT_NAME"
+        touch "$DAEMON_LOG_FRAGMENT_NAME"
         if (( attempts > 0 )); then
           logWarning "    Exit status was $exitStatus; will retry in 3 seconds"; sleep 3;
         fi
@@ -66,6 +71,19 @@ do
           > "$stdoutFileName" 2> "$stderrFileName"
 
         exitStatus=$?
+        if (( exitStatus != 0 && exitStatus != 50 )); then
+          # shellcheck disable=SC2129
+          echo "    test execution's stdout: " | tee -a "$reportFile"
+          sed 's/^/        /' "$stdoutFileName" | tee -a "$reportFile"
+
+          echo "    test execution's stderr: " | tee -a "$reportFile"
+          sed 's/^/        /' "$stderrFileName" | tee -a "$reportFile"
+
+          echo "    daemon log fragment: " | tee -a "$reportFile"
+          sed 's/^/        /' "$DAEMON_LOG_FRAGMENT_NAME" | tee -a "$reportFile"
+
+          echo; echo >> "$reportFile"
+        fi
 
         attempts=$((attempts+1))
       done
@@ -120,15 +138,6 @@ do
       case $testResult in
         FAILED)
           logInfoAndReport "    ${logColour}Test ${testResult}${NC} : exit code $exitStatus $additionalInfo"
-
-          # shellcheck disable=SC2129
-          echo "    test execution's stdout: " >> "$reportFile"
-          sed 's/^/        /' "$stdoutFileName" >> "$reportFile"
-
-          echo "    test execution's stderr: " >> "$reportFile"
-          sed 's/^/        /' "$stderrFileName" >> "$reportFile"
-
-          echo >> "$reportFile"
           ;;
         "N/A")
           logInfoAndReport "    ${logColour}Test ${testResult}${NC}"
@@ -138,8 +147,21 @@ do
           ;;
       esac
       echo >> "$reportFile"
+
+      if [[ "$testResult" == "FAILED" ]];
+      then
+        break
+      fi
     done
+    if [[ "$testResult" == "FAILED" ]];
+    then
+      break
+    fi
   done
+    if [[ "$testResult" == "FAILED" ]];
+    then
+      break
+    fi
 done
 # shellcheck disable=SC2129
 

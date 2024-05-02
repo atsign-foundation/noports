@@ -390,6 +390,8 @@ buildCurrentDartBinaries() {
     logInfo "        Compiling npt"
     dart compile exe --verbosity "$compileVerbosity" bin/npt.dart -o "$binaryOutputDir/npt"
   fi
+
+  cp "$testScriptsDir/srv.sh" "$binaryOutputDir/srv.sh"
 }
 
 downloadDartBinaries() {

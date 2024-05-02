@@ -106,6 +106,7 @@ class SshnpArg {
     toArg,
     deviceArg,
     srvdArg,
+    legacySrvdArg,
     localPortArg,
     identityFileArg,
     identityPassphraseArg,
@@ -124,6 +125,7 @@ class SshnpArg {
     authenticateClientToRvdArg,
     authenticateDeviceToRvdArg,
     encryptRvdTrafficArg,
+    daemonPingTimeoutArg,
   ];
 
   @override
@@ -218,7 +220,7 @@ class SshnpArg {
     name: 'to',
     abbr: 't',
     help: 'Receiving device atSign',
-    mandatory: true,
+    defaultsTo: "",
   );
   static const deviceArg = SshnpArg(
     name: 'device',
@@ -228,10 +230,14 @@ class SshnpArg {
   );
   static const srvdArg = SshnpArg(
     name: 'srvd',
-    aliases: ['host'],
-    abbr: 'h',
+    abbr: 'r',
     help: 'atSign of srvd daemon',
-    mandatory: true,
+  );
+  static const legacySrvdArg = SshnpArg(
+    name: 'host',
+    abbr: 'h',
+    mandatory: false,
+    hide: true,
   );
   static const localPortArg = SshnpArg(
     name: 'local-port',
@@ -368,5 +374,15 @@ class SshnpArg {
     defaultsTo: DefaultArgs.encryptRvdTraffic,
     format: ArgFormat.flag,
     mandatory: false,
+  );
+  static const daemonPingTimeoutArg = SshnpArg(
+    name: 'daemon-ping-timeout',
+    aliases: ['dpt'],
+    help: 'Seconds the client should wait for response after pinging a daemon',
+    defaultsTo: DefaultArgs.daemonPingTimeoutSeconds,
+    mandatory: false,
+    format: ArgFormat.option,
+    type: ArgType.integer,
+    parseWhen: ParseWhen.commandLine,
   );
 }

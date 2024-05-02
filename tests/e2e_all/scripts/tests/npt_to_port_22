@@ -33,12 +33,18 @@ fi
 
 deviceName=$(getDeviceNameWithFlags "$commitId" "$daemonVersion" )
 
+# We will capture daemon log from now until end of test
+outputDir=$(getOutputDir)
+daemonLogFile="${outputDir}/daemons/${deviceName}.log"
+tail -f -n 0 "$daemonLogFile" >> "$DAEMON_LOG_FRAGMENT_NAME" &
+tailPid=$! # We'll kill this later
+
 clientBinaryPath=$(getPathToBinariesForTypeAndVersion "$clientVersion")
 
 baseNptCommand=$(getBaseNptCommand "$clientBinaryPath")
 
 # Let's put together the npt command we will execute
-nptCommand="$baseNptCommand $additionalFlags"
+nptCommand="$baseNptCommand $additionalFlags --verbose"
 
 # 1. Execute the npt command - its output is the port that npt is using
 echo "$(iso8601Date) | Executing $nptCommand" | tee -a "$(getReportFile)"
@@ -47,8 +53,15 @@ nptPort=$($nptCommand)
 # 2. Check the exit status
 nptExitStatus=$?
 if (( nptExitStatus != 0 )); then
+  # Kill the daemon log tail, and exit with the exit status of the npt command
+  kill "$tailPid"
   exit $nptExitStatus
 fi
+
+
+echo "$(iso8601Date) | npt OK, local port is $nptPort" >> "$(getReportFile)"
+echo "$(iso8601Date) | Running ps for the spawned srv process with port $nptPort BEFORE running ssh" >> "$(getReportFile)"
+ps -ef | grep "srv " | grep "$nptPort" >> "$(getReportFile)"
 
 # 3. Execute an ssh
 sshCommand="ssh -p $nptPort -o StrictHostKeyChecking=accept-new -o IdentitiesOnly=yes"
@@ -58,6 +71,11 @@ echo "$(iso8601Date) | Executing $sshCommand" | tee -a "$(getReportFile)"
 
 # shellcheck disable=SC2091
 $(getTestSshCommand "$sshCommand")
+sshExitStatus=$?
 
-# 4. Exit with the exit status of the ssh command
-exit $?
+echo "$(iso8601Date) | Running ps for the spawned srv process with port $nptPort AFTER running ssh" >> "$(getReportFile)"
+ps -ef | grep "srv " | grep "$nptPort" >> "$(getReportFile)"
+
+# 4. Kill the daemon log tail, and exit with the exit status of the ssh command
+kill "$tailPid"
+exit $sshExitStatus

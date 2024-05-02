@@ -1,7 +1,7 @@
 # Dockerfile.package
 # A dockerfile for packaging SSH No Ports releases using docker buildx
 
-FROM atsigncompany/buildimage:3.3.1_3.4.0-99.1.beta@sha256:7fba76b7de2edc00c3591c42bb9a1e81d2a9605abd6c309bc4d15ab04d630d20 AS build
+FROM atsigncompany/buildimage:3.3.4_3.4.0-282.2.beta@sha256:4edfe687b77437988e1efd24b348795fa84c48b1c428b68c8026ca63478fa40a AS build
 # Using atsigncompany/buildimage until official dart image has RISC-V support
 WORKDIR /sshnoports
 COPY . .
@@ -19,6 +19,7 @@ RUN set -eux; \
   dart run build_runner build --delete-conflicting-outputs; \
   dart compile exe bin/activate_cli.dart -v -o sshnp/at_activate; \
   dart compile exe bin/sshnp.dart -v -o sshnp/sshnp; \
+  dart compile exe bin/npt.dart -v -o sshnp/npt; \
   dart compile exe bin/sshnpd.dart -v -o sshnp/sshnpd; \
   dart compile exe bin/srv.dart -v -o sshnp/srv; \
   dart compile exe bin/srvd.dart -v -o sshnp/srvd; \

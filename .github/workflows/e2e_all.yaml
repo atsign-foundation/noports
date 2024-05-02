@@ -12,6 +12,7 @@ on:
   pull_request:
     branches:
       - trunk
+      - release-v*.*.*
 
 jobs:
   e2e_all:
@@ -32,6 +33,8 @@ jobs:
           envs: SHA
           script: |
             cd noports
+            rm -rf tests/e2e_all/runtime
+            mkdir -p tests/e2e_all/runtime
             echo "Running git fetch"
             git fetch
             echo "Running git checkout -f $SHA"

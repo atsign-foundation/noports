@@ -45,6 +45,15 @@ fi
 # 2a. Run sshnp against a daemon without the -s flag, with that new key
 #   2b. Verify it fails
 deviceName=$(getDeviceNameNoFlags "$commitId" "$daemonVersion" )
+
+# We will capture daemon log from now until end of test
+outputDir=$(getOutputDir)
+daemonLogFile="${outputDir}/daemons/${deviceName}.log"
+echo "First daemon (without flags) $deviceName" >> "$DAEMON_LOG_FRAGMENT_NAME"
+echo "" >> "$DAEMON_LOG_FRAGMENT_NAME"
+tail -f "$daemonLogFile" >> "$DAEMON_LOG_FRAGMENT_NAME" &
+tailPid=$! # We'll kill this later
+
 l1="$clientBinaryPath/sshnp -f $clientAtSign -d $deviceName -i $identityFilename"
 l2=" -t $daemonAtSign -h $srvAtSign -u $remoteUsername"
 l4=" --root-domain $atDirectoryHost"
@@ -72,6 +81,7 @@ else
   if (( exitStatus == 0 )); then
     # It should have failed
     logError "$scriptName: sshnp with new key did not fail as expected"
+    kill $tailPid
     exit 1
   else
     logInfo "$scriptName: sshnp with new key failed as expected" | tee -a "$(getReportFile)"
@@ -82,6 +92,17 @@ fi
 # 3a. Run against a daemon with the -s flag
 #   3b. Verify it succeeds
 deviceName=$(getDeviceNameWithFlags "$commitId" "$daemonVersion" )
+
+# We will capture daemon log from now until end of test
+kill $tailPid
+outputDir=$(getOutputDir)
+daemonLogFile="${outputDir}/daemons/${deviceName}.log"
+echo "" >> "$DAEMON_LOG_FRAGMENT_NAME"
+echo "Second daemon (with flags) : $deviceName" >> "$DAEMON_LOG_FRAGMENT_NAME"
+echo "" >> "$DAEMON_LOG_FRAGMENT_NAME"
+tail -f "$daemonLogFile" >> "$DAEMON_LOG_FRAGMENT_NAME" &
+tailPid=$! # We'll kill this later
+
 l1="$clientBinaryPath/sshnp -f $clientAtSign -d $deviceName -i $identityFilename"
 l2=" -t $daemonAtSign -h $srvAtSign -u $remoteUsername"
 l4=" --root-domain $atDirectoryHost"
@@ -92,6 +113,8 @@ echo "$(iso8601Date) | Executing $sshnpCommand"
 sshCommand=$($sshnpCommand)
 sshnpExitStatus=$?
 if (( sshnpExitStatus != 0 )); then
+  # Kill the daemon log tail, and exit with the exit status of the sshnp command
+  kill $tailPid
   exit $sshnpExitStatus
 fi
 
@@ -99,4 +122,8 @@ echo "$(iso8601Date) | Executing $sshCommand"
 
 # shellcheck disable=SC2091
 $(getTestSshCommand "$sshCommand")
+sshExitStatus=$?
 
+# Kill the daemon log tail, and exit with the exit status of the ssh command
+kill "$tailPid"
+exit $sshExitStatus

@@ -23,15 +23,19 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@9bb56186c3b09b4f86b1c65136769dd318469633 # v4.1.2
-
-      # verify tags
-      - uses: ./.github/composite/verify_cli_tags
-
+        uses: actions/checkout@0ad4b8fadaa221de15dcec353f45205ec38ea70b # v4.1.4
+      - name: Ensure pubspec.yaml matches git ref (if current git ref is a version tag)
+        shell: bash
+        if: startsWith(github.ref, 'refs/tags/v')
+        working-directory: ./packages/dart/sshnoports
+        run: |
+          REF=${{ github.ref }}
+          VER=${REF:11}
+          sed -i "0,/version:/{s/version: \(.*\)/version: "${VER}"/}" pubspec.yaml
       - name: Set up QEMU
         uses: docker/setup-qemu-action@68827325e0b33c7199eb31dd4e31fbe9023e06e3 # v3.0.0
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@2b51285047da1547ffb1b2203d8be4c0af6b1f20 # v3.2.0
+        uses: docker/setup-buildx-action@d70bba72b1f3fd22344832f00baa16ece964efeb # v3.3.0
       - name: Login to Docker Hub
         uses: docker/login-action@e92390c5fb421da1463c202d546fed0ec5c39f20 # v3.1.0
         with:
@@ -51,3 +55,14 @@ jobs:
           tags: |
             atsigncompany/${{ matrix.name }}:${{ env.VERSION }}
             atsigncompany/${{ matrix.name }}:release-${{ env.VERSION }}
+      # Promote to latest so long as this isn't a pre-release
+      - name: Tag latest
+        run: |
+          RELEASE_JSON=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+            "https://api.github.com/repos/${{ github.repository }}/releases/tags/${{ env.VERSION }}")
+          PRERELEASE=$(echo "$RELEASE_JSON" | jq -r '.prerelease')
+          if [ $PRERELEASE == 'false' ]; then
+            docker buildx imagetools create -t \
+              atsigncompany/${{ matrix.name }}:latest \
+              atsigncompany/${{ matrix.name }}:release-${{ env.VERSION }}
+          fi
