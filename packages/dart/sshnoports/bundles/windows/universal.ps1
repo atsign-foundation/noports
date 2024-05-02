@@ -349,7 +349,7 @@ function Install-Device {
         Exit 1
     } 
     if (Get-Service sshnpd){
-        sshnpd_service.exe uninstall -ErrorAction SilentlyContinue
+        sshnpd_service.exe uninstall -ErrorAction Continue
     }
     sshnpd_service.exe install 
     sshnpd_service.exe start
