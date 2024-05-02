@@ -61,6 +61,10 @@ func (m appState) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		cmds = append(cmds, cmd)
 	}
 
+	// Update the help dialog
+	m.help.model, cmd = m.help.model.Update(msg)
+	cmds = append(cmds, cmd)
+
 	// Update the list
 	m.list.model, cmd = m.list.model.Update(msg)
 	cmds = append(cmds, cmd)
@@ -70,13 +74,15 @@ func (m appState) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	cmds = append(cmds, cmd)
 
 	// Batch all of the potential commands
-	return m, tea.Batch(cmds...)
+	return m, tea.Sequence(cmds...)
 }
 
 // Handle keyboard input
 func (p appState) KeyMsg(msg tea.KeyMsg) (m appState) {
 	m = p
 	switch msg.String() {
+	case "?":
+		m.help.model.ShowAll = !m.help.model.ShowAll
 	case "enter":
 		if m.viewport.isRunning || m.list.model.Index() == m.viewport.contentIndex {
 			return
@@ -107,7 +113,6 @@ func (p appState) KeyMsg(msg tea.KeyMsg) (m appState) {
 			// Thus command & args are set
 			m.viewport.content = fmt.Sprintf("> %s %s\nOops! We messed up, can't run this command right now...", cmd, args)
 			m.viewport.model.SetContent(m.viewport.content)
-			m.viewport.model.GotoBottom()
 			m.viewport.isRunning = false
 			log.Error("Error running command: ", "error", err)
 			return
@@ -133,11 +138,17 @@ func (p appState) KeyMsg(msg tea.KeyMsg) (m appState) {
 
 // Update the window size when it is reported to us
 func (m appState) ResizeComponents(msg tea.Msg) (appState, tea.Cmd) {
-	// get frame dimensions
-	frameW, frameH := m.frame.style.GetFrameSize()
+	// calculate and get frame dimensions (help is part of the frame)
+	frameW, frameH := m.frame.GetFrameSize()
+
+	helpHeight := FullHelpHeight
+	if fullHelpOnly {
+		helpHeight = FullOnlyHelpHeight
+	}
 
 	// get preferred list dimensions
-	m.list.model.SetSize(80, m.height-frameH)
+	m.list.model.SetSize(40, m.height-frameH-helpHeight)
+	m.list.style = m.list.style.Height(m.height - frameH - helpHeight)
 
 	// do all the calculations to resize the viewport
 	if m.viewport.isReady {
@@ -157,7 +168,7 @@ func (m appState) ResizeComponents(msg tea.Msg) (appState, tea.Cmd) {
 		m.viewport.model.Width = viewportW
 		m.viewport.model.Height = viewportH
 
-		content := lipgloss.NewStyle().Width(viewportW).Render(m.viewport.content)
+		content := lipgloss.NewStyle().Width(viewportW).Height(viewportH).Render(m.viewport.content)
 		m.viewport.model.SetContent(content)
 
 		if useHighPerformanceRenderer {
