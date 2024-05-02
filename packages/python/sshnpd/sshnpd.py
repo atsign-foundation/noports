@@ -36,7 +36,7 @@ class SocketConnector:
         self.server1_ip = server1_ip
         self.server1_port = server1_port
         self.server2_ip = server2_ip
-        self.server2_port = server2_portt1.join()
+        self.server2_port = server2_port
 
     def connect(self):
         sockets_to_monitor = [self.socketA, self.socketB]
@@ -154,7 +154,10 @@ class SSHNPDClient:
     def set_username(self):
         username = getpass.getuser()
         username_key = SharedKey(
-            "username", AtSign(self.atsign), AtSign(self.manager_atsign))
+            f"username.{self.device}.sshnp", AtSign(self.atsign), AtSign(self.manager_atsign))
+        metadata = Metadata(iv_nonce= EncryptionUtil.generate_iv_nonce(), is_public=False, is_encrypted=True, is_hidden=False)
+        username_key.metadata = metadata
+        username_key.cache(-1, True)
         self.at_client.put(username_key, username)
         self.username = username
 
@@ -168,7 +171,6 @@ class SSHNPDClient:
                 
                 if event_type == AtEventType.UPDATE_NOTIFICATION:
                     queue.put(at_event)
-                    sleep(1)
                 if event_type != AtEventType.DECRYPTED_UPDATE_NOTIFICATION:
                     continue
                 
@@ -199,7 +201,6 @@ class SSHNPDClient:
                 # the Main thread needs to access the queue AFTER the handle thread has finished with it
                 if event_type == AtEventType.DECRYPTED_UPDATE_NOTIFICATION:
                     queue.put(at_event)
-                    sleep(1)
                 else:
                     if event_type == AtEventType.UPDATE_NOTIFICATION:
                         self.at_client.secondary_connection.execute_command(
@@ -239,7 +240,7 @@ class SSHNPDClient:
             sshrv.run()
             self.rv = sshrv
             self.logger.info("sshrv started @ " + hostname + " on port " + str(port))
-            (public_key, private_key) = self._generate_ssh_keys(session_id)
+            (public_key, private_key) = self.generate_ssh_keys(session_id)
             private_key = private_key.replace("\n", "\\n")
             self.handle_ssh_public_key(public_key)
             data = f'{{"status":"connected","sessionId":"{session_id}","ephemeralPrivateKey":"{private_key}"}}'
