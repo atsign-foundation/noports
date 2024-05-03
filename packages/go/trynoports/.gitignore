@@ -1,3 +1,4 @@
 .ssh/
+.atsign/
 # ignore built binary
 /trynoports
