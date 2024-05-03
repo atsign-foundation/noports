@@ -153,7 +153,7 @@ class SSHNPDClient:
     def set_username(self):
         username = getpass.getuser()
         username_key = SharedKey(
-            f"username.{self.device}.sshnp", AtSign(self.manager_atsign), AtSign(self.atsign))
+            f"username.{self.device}.sshnp", AtSign(self.atsign), AtSign(self.manager_atsign))
         metadata = Metadata(iv_nonce= EncryptionUtil.generate_iv_nonce(), is_public=False, is_encrypted=True, is_hidden=False)
         username_key.metadata = metadata
         username_key.cache(-1, True)
