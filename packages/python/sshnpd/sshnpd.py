@@ -1,12 +1,10 @@
-#!/bin/env python3
+#!/usr/bin/env python3
 import sys
 import os, threading, getpass, json, logging, subprocess, argparse, errno
 from io import StringIO
 from queue import Empty, Queue
 from time import sleep
 from threading import Event
-from paramiko import SSHClient, SSHException, WarningPolicy
-from paramiko.ed25519key import Ed25519Key
 
 from select import select
 from socket import socket, gethostbyname, gethostname, create_connection, error
