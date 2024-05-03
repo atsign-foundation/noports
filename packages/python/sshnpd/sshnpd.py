@@ -130,14 +130,15 @@ class SSHNPDClient:
         self.ssh_path = f"{home_dir}/.ssh"
 
         self.threads = []
+        self.encrypted_queue = Queue()
         
     def start(self):
         if self.username:
             self.set_username()
 
         self.threads.append(threading.Thread(target=self.at_client.start_monitor, args=(self.device_namespace,), daemon=True))
-        self.threads.append(threading.Thread(target=self.handle_notifications, args=(self.at_client.queue,), daemon=True))
-        self.threads.append(threading.Thread(target=self.handle_events, args=(self.at_client.queue,), daemon=True))
+        self.threads.append(threading.Thread(target=self.handle_notifications,  daemon=True))
+        self.threads.append(threading.Thread(target=self.handle_events,  daemon=True))
 
         for thread in self.threads:
             thread.start()
@@ -161,15 +162,15 @@ class SSHNPDClient:
         self.username = username
 
     # Running in a thread
-    def handle_notifications(self, queue: Queue):
+    def handle_notifications(self):
         while True:
             try:
-                at_event = queue.get(block=False)
+                at_event = self.at_client.queue.get(block=False)
                 event_type = at_event.event_type
                 event_data = at_event.event_data
                 
                 if event_type == AtEventType.UPDATE_NOTIFICATION:
-                    queue.put(at_event)
+                    self.encrypted_queue.put(at_event)
                 if event_type != AtEventType.DECRYPTED_UPDATE_NOTIFICATION:
                     continue
                 
@@ -192,20 +193,16 @@ class SSHNPDClient:
                 pass
 
     # Running in a thread
-    def handle_events(self, queue: Queue):
+    def handle_events(self):
         while True:
             try:
-                at_event = queue.get(block=False)
+                at_event = self.encrypted_queue.get(block=False)
                 event_type = at_event.event_type
-                # the Main thread needs to access the queue AFTER the handle thread has finished with it
-                if event_type == AtEventType.DECRYPTED_UPDATE_NOTIFICATION:
-                    queue.put(at_event)
-                else:
-                    if event_type == AtEventType.UPDATE_NOTIFICATION:
-                        self.at_client.secondary_connection.execute_command(
-                            "notify:remove:" + at_event.event_data["id"]
-                        )
-                    self.at_client.handle_event(queue, at_event)
+                if event_type == AtEventType.UPDATE_NOTIFICATION:
+                    self.at_client.secondary_connection.execute_command(
+                        "notify:remove:" + at_event.event_data["id"]
+                    )
+                self.at_client.handle_event(self.at_client.queue, at_event)
             except Empty:
                 pass
 
@@ -293,7 +290,7 @@ class SSHNPDClient:
             os.remove(f"{self.ssh_path}/tmp/{session_id}_sshnp")
             self.logger.info("ephemeral ssh keys cleaned up")
         except Exception:
-            self.logger.info("no ephermaeral keys to clean up")
+            self.logger.info("")
 
     def handle_ssh_public_key(self, ssh_public_key):
         # // Check to see if the ssh Publickey is already in the file if not append to the ~/.ssh/authorized_keys file
