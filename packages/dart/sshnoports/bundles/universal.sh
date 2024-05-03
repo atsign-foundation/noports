@@ -390,9 +390,19 @@ download_archive() {
 unpack_archive() {
   case "$archive_ext" in
     zip)
+      if ! check_cmd unzip; then
+        >&2 echo "ERROR: unzip not found"
+        >&2 echo "Please install unzip and make it available on the PATH"
+        exit 1
+      fi
       unzip -qo "$archive_path" -d "$extract_path"
       ;;
     tgz | tar.gz)
+      if ! check_cmd tar; then
+        >&2 echo "ERROR: tar not available"
+        >&2 echo "Please install tar and make it available on the PATH"
+        exit 1
+      fi
       mkdir -p "$extract_path"
       tar -zxf "$archive_path" -C "$extract_path"
       ;;
