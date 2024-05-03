@@ -521,6 +521,35 @@ suggest_sudo() {
   exit 0
 }
 
+check_ssh_keys() {
+  set +eu
+  ssh_dir=$(ls -1 "$user_home"/.ssh) 2>/dev/null
+  ssh_dir_exit=$?
+  set -eu
+  if [ "$ssh_dir_exit" -ne 0 ]; then
+    echo
+    echo "No .ssh directory found. You may want to create one and then add a key to it"
+    echo "with ssh-keygen."
+    echo
+    return
+  fi
+  if [ "$ssh_dir" = "" ]; then
+    echo
+    echo "Found an empty .ssh directory."
+    echo "You may wish to add a key with ssh-keygen."
+    echo
+    return
+  fi
+  if [ "$ssh_dir" = "authorized_keys" ]; then
+    echo
+    echo "Just found an authorized_keys file in the .ssh directory."
+    echo "You may wish to add a key with ssh-keygen."
+    echo
+    return
+  fi
+  # TODO we could have a more sophisticated check for other files to see if they're keys
+}
+
 # CLIENT INSTALLATION #
 client() {
   mkdir -p "$bin_path"
@@ -530,6 +559,9 @@ client() {
   "$extract_path"/sshnp/install.sh -b "$bin_path" -u "$user" npt
   "$extract_path"/sshnp/install.sh -b "$bin_path" -u "$user" srv
   "$extract_path"/sshnp/install.sh -b "$bin_path" -u "$user" at_activate
+
+  # check that there are some ssh keys
+  check_ssh_keys
 
   # install the magic sshnp script
   magic_script="$bin_path"/np.sh

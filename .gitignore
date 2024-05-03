@@ -6,6 +6,16 @@ pubspec_overrides.yaml
 .dart_tool/
 .packages
 
+# Binaries build from dart/sshnoports
+packages/dart/sshnoports/bin/activate_cli
+packages/dart/sshnoports/bin/demo/npa_cli
+packages/dart/sshnoports/bin/demo/sshnpa_always_deny
+packages/dart/sshnoports/bin/npt
+packages/dart/sshnoports/bin/srv
+packages/dart/sshnoports/bin/srvd
+packages/dart/sshnoports/bin/sshnp
+packages/dart/sshnoports/bin/sshnpd
+
 # Jetbrains
 .idea/*
 
