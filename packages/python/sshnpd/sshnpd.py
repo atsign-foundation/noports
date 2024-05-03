@@ -292,8 +292,8 @@ class SSHNPDClient:
             os.remove(f"{self.ssh_path}/tmp/{session_id}_sshnp.pub")
             os.remove(f"{self.ssh_path}/tmp/{session_id}_sshnp")
             self.logger.info("ephemeral ssh keys cleaned up")
-        except Exception as e:
-            self.logger.error(e)
+        except Exception:
+            self.logger.info("no ephermaeral keys to clean up")
 
     def handle_ssh_public_key(self, ssh_public_key):
         # // Check to see if the ssh Publickey is already in the file if not append to the ~/.ssh/authorized_keys file
