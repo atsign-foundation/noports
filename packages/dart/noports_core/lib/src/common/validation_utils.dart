@@ -12,6 +12,8 @@ const String sshnpDeviceNameRegex = r'[a-z0-9_]{1,36}';
 const String invalidDeviceNameMsg = 'Device name must be alphanumeric'
     ' snake case, max length 36';
 const String deviceNameFormatHelp = 'Alphanumeric snake case, max length 36.';
+const String invalidSshKeyPermissionsMsg =
+    'Detected newline characters in the ssh public key permissions which malforms the authorized_keys file.';
 
 bool invalidDeviceName(String test) {
   return RegExp(sshnpDeviceNameRegex).allMatches(test).first.group(0) != test;
