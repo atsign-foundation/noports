@@ -1,7 +1,6 @@
 import 'package:args/args.dart';
 
-import 'package:noports_core/src/common/default_args.dart';
-import 'package:noports_core/src/common/types.dart';
+import 'package:noports_core/utils.dart';
 
 enum ArgFormat {
   option,
@@ -106,8 +105,8 @@ class SshnpArg {
     fromArg,
     toArg,
     deviceArg,
-    hostArg,
-    portArg,
+    srvdArg,
+    legacySrvdArg,
     localPortArg,
     identityFileArg,
     identityPassphraseArg,
@@ -117,7 +116,6 @@ class SshnpArg {
     remoteUserNameArg,
     tunnelUserNameArg,
     rootDomainArg,
-    localSshdPortArg,
     remoteSshdPortArg,
     idleTimeoutArg,
     sshAlgorithmArg,
@@ -127,7 +125,7 @@ class SshnpArg {
     authenticateClientToRvdArg,
     authenticateDeviceToRvdArg,
     encryptRvdTrafficArg,
-    discoverDaemonFeaturesArg,
+    daemonPingTimeoutArg,
   ];
 
   @override
@@ -135,10 +133,7 @@ class SshnpArg {
     return 'SshnpArg{format: $format, name: $name, abbr: $abbr, help: $help, mandatory: $mandatory, defaultsTo: $defaultsTo, type: $type}';
   }
 
-  static final disabledArgs = [
-    portArg,
-    localSshdPortArg,
-  ];
+  static final disabledArgs = [];
 
   static ArgParser createArgParser({
     ParserType parserType = ParserType.all,
@@ -147,7 +142,10 @@ class SshnpArg {
     Iterable<String>? excludeList,
     int? usageLineLength,
   }) {
-    var parser = ArgParser(usageLineLength: usageLineLength);
+    var parser = ArgParser(
+      usageLineLength: usageLineLength,
+      showAliasesInUsage: true,
+    );
     // Basic arguments
     for (SshnpArg arg in SshnpArg.args) {
       if (!parserType.shouldParse(arg.parseWhen) ||
@@ -222,34 +220,30 @@ class SshnpArg {
     name: 'to',
     abbr: 't',
     help: 'Receiving device atSign',
-    mandatory: true,
+    defaultsTo: "",
   );
   static const deviceArg = SshnpArg(
     name: 'device',
     abbr: 'd',
-    help: 'Receiving device name',
+    help: 'Receiving device name. $deviceNameFormatHelp',
     defaultsTo: DefaultSshnpArgs.device,
   );
-  static const hostArg = SshnpArg(
+  static const srvdArg = SshnpArg(
+    name: 'srvd',
+    abbr: 'r',
+    help: 'atSign of srvd daemon',
+  );
+  static const legacySrvdArg = SshnpArg(
     name: 'host',
     abbr: 'h',
-    help: 'atSign of srvd daemon or FQDN/IP address to connect back to',
-    mandatory: true,
-  );
-  static const portArg = SshnpArg(
-    name: 'port',
-    abbr: 'p',
-    help:
-        'TCP port to connect back to (only required if --host specified a FQDN/IP)',
-    defaultsTo: DefaultSshnpArgs.port,
-    type: ArgType.integer,
-    parseWhen: ParseWhen.commandLine,
+    mandatory: false,
+    hide: true,
   );
   static const localPortArg = SshnpArg(
     name: 'local-port',
     abbr: 'l',
-    help:
-        'Reverse ssh port to listen on, on your local machine, by sshnp default finds a spare port',
+    help: 'client-side local port for the ssh tunnel.'
+        ' If not supplied, we will ask the o/s for a spare port',
     defaultsTo: DefaultSshnpArgs.localPort,
     type: ArgType.integer,
   );
@@ -305,16 +299,6 @@ class SshnpArg {
     defaultsTo: DefaultArgs.rootDomain,
     mandatory: false,
     format: ArgFormat.option,
-  );
-  static const localSshdPortArg = SshnpArg(
-    name: 'local-sshd-port',
-    help: 'port on which sshd is listening locally on the client host',
-    defaultsTo: DefaultArgs.localSshdPort,
-    abbr: 'P',
-    mandatory: false,
-    format: ArgFormat.option,
-    type: ArgType.integer,
-    parseWhen: ParseWhen.commandLine,
   );
   static const remoteSshdPortArg = SshnpArg(
     name: 'remote-sshd-port',
@@ -391,20 +375,14 @@ class SshnpArg {
     format: ArgFormat.flag,
     mandatory: false,
   );
-  static const discoverDaemonFeaturesArg = SshnpArg(
-    name: 'discover-daemon-features',
-    aliases: ['ddf'],
-    help: 'When this flag is set, this client starts by pinging the daemon to'
-        ' discover what features it supports, and exits if this client has '
-        ' requested use of a feature which the daemon does not support.'
-        ' If you already know what features the daemon supports and are '
-        ' setting other flags (--authenticate-device-to-rvd and'
-        ' --encrypt-rvd-traffic) based on that knowledge, then you should unset'
-        ' this flag to reduce total time-to-connection.',
-    defaultsTo: DefaultArgs.discoverDaemonFeatures,
-    format: ArgFormat.flag,
-    parseWhen: ParseWhen.commandLine,
+  static const daemonPingTimeoutArg = SshnpArg(
+    name: 'daemon-ping-timeout',
+    aliases: ['dpt'],
+    help: 'Seconds the client should wait for response after pinging a daemon',
+    defaultsTo: DefaultArgs.daemonPingTimeoutSeconds,
     mandatory: false,
-    negatable: false,
+    format: ArgFormat.option,
+    type: ArgType.integer,
+    parseWhen: ParseWhen.commandLine,
   );
 }

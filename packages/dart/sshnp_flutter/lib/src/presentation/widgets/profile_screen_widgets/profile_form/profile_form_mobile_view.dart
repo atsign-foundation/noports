@@ -89,7 +89,7 @@ class _ProfileFormState extends ConsumerState<ProfileFormMobileView> {
                   CustomTextFormField(
                     width: double.infinity,
                     initialValue: oldConfig.profileName,
-                    labelText: strings.profileName,
+                    labelText: strings.profileName('required'),
                     onChanged: (value) {
                       newConfig = SshnpPartialParams.merge(
                         newConfig,
@@ -223,7 +223,7 @@ class _ProfileFormState extends ConsumerState<ProfileFormMobileView> {
                       CustomTextFormField(
                           width: double.infinity,
                           initialValue: oldConfig.remoteUsername ?? '',
-                          labelText: strings.remoteUserName,
+                          labelText: strings.remoteUsername,
                           onSaved: (value) {
                             newConfig = SshnpPartialParams.merge(
                               newConfig,
@@ -233,32 +233,11 @@ class _ProfileFormState extends ConsumerState<ProfileFormMobileView> {
                       gapH10,
                       CustomTextFormField(
                         width: double.infinity,
-                        initialValue: oldConfig.port.toString(),
-                        labelText: strings.port,
-                        onChanged: (value) => newConfig = SshnpPartialParams.merge(
-                          newConfig,
-                          SshnpPartialParams(port: int.tryParse(value)),
-                        ),
-                        validator: FormValidator.validateRequiredField,
-                      ),
-                      gapH10,
-                      CustomTextFormField(
-                        width: double.infinity,
                         initialValue: oldConfig.localPort.toString(),
                         labelText: strings.localPort,
                         onChanged: (value) => newConfig = SshnpPartialParams.merge(
                           newConfig,
                           SshnpPartialParams(localPort: int.tryParse(value)),
-                        ),
-                      ),
-                      gapH10,
-                      CustomTextFormField(
-                        width: double.infinity,
-                        initialValue: oldConfig.localSshdPort.toString(),
-                        labelText: strings.localSshdPort,
-                        onChanged: (value) => newConfig = SshnpPartialParams.merge(
-                          newConfig,
-                          SshnpPartialParams(localSshdPort: int.tryParse(value)),
                         ),
                       ),
                       gapH12,
@@ -302,7 +281,12 @@ class _ProfileFormState extends ConsumerState<ProfileFormMobileView> {
                       children: [
                         ElevatedButton(
                           onPressed: () => onSubmit(oldConfig, newConfig),
-                          child: Text(strings.submit),
+                          child: Text(
+                            strings.submit,
+                            style: Theme.of(context).textTheme.labelLarge!.copyWith(
+                                  color: Colors.white,
+                                ),
+                          ),
                         ),
                         gapW8,
                         TextButton(

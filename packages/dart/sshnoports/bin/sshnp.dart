@@ -17,6 +17,7 @@ import 'package:sshnoports/src/create_at_client_cli.dart';
 import 'package:sshnoports/src/print_devices.dart';
 import 'package:sshnoports/src/print_version.dart';
 import 'package:sshnoports/src/create_sshnp.dart';
+import 'package:sshnoports/src/service_factories.dart';
 
 void main(List<String> args) async {
   AtSignLogger.root_level = 'SHOUT';
@@ -35,8 +36,20 @@ void main(List<String> args) async {
     }
   }
 
-  final bool originalLineMode = stdin.lineMode;
-  final bool originalEchoMode = stdin.echoMode;
+  dynamic terminalError;
+  bool originalLineMode = true;
+  try {
+    originalLineMode = stdin.lineMode;
+  } catch (e) {
+    terminalError = e;
+  }
+  bool originalEchoMode = true;
+  try {
+    originalEchoMode = stdin.echoMode;
+  } catch (e) {
+    terminalError ??= e;
+  }
+
   bool shouldResetTerminal = false;
 
   void configureRemoteShell() {
@@ -130,6 +143,7 @@ void main(List<String> args) async {
               getDefaultAtKeysFilePath(homeDirectory, params.clientAtSign),
           rootDomain: params.rootDomain,
           storagePath: storageDir!.path,
+          atServiceFactory: ServiceFactoryWithNoOpSyncService(),
         ),
         sshClient:
             SupportedSshClient.fromString(argResults['ssh-client'] as String),
@@ -154,7 +168,7 @@ void main(List<String> args) async {
       // Run List Devices Operation
       if (params.listDevices) {
         stderr.writeln('Searching for devices...');
-        var deviceList = await sshnp.listDevices();
+        SshnpDeviceList deviceList = await sshnp.listDevices();
         printDevices(deviceList);
         exitProgram();
       }
@@ -174,6 +188,9 @@ void main(List<String> args) async {
       }
       if (res is SshnpCommand) {
         if (sshnp.canRunShell) {
+          if (terminalError != null) {
+            throw SshnpError(terminalError!);
+          }
           SshnpRemoteProcess shell = await sshnp.runShell();
           configureRemoteShell();
           shell.stdout.listen(stdout.add);
@@ -194,6 +211,9 @@ void main(List<String> args) async {
           stdout.write('$res\n');
           exitProgram();
         } else {
+          if (terminalError != null) {
+            throw SshnpError(terminalError!);
+          }
           logProgress('Starting user session');
           Process process = await Process.start(
             res.command,

@@ -1,0 +1,125 @@
+#!/bin/bash
+
+# 1. Run with --host
+#  - expect this test to pass
+# 2. Run with -h && -r (-h set to an invalid rvd atSign)
+#  - expect this test to pass
+
+# TODO: Would like to add a test for, but this causes the test to timeout waiting for the bad srvd
+# 3. Run with -h && -r (-r set to an invalid rvd atSign)
+#  - expect this test to fail
+
+scriptName=$(basename -- "$0")
+
+if test -z "$testScriptsDir"; then
+  echo -e "    ${RED}check_env: testScriptsDir is not set${NC}" && exit 1
+fi
+
+source "$testScriptsDir/common/common_functions.include.sh"
+source "$testScriptsDir/common/check_env.include.sh" || exit $?
+
+if test $# != 2; then
+  logErrorAndExit "Must supply daemonVersion, clientVersion"
+fi
+
+daemonVersion="$1"
+clientVersion="$2"
+badSrvAtSign="@do_not_activate" # This atsign is a known reserved atsign which is not activated
+
+# -r added in d:5.2.0
+if [[ $(versionIsLessThan "$clientVersion" "d:5.2.0") == "true" ]]; then
+  logInfoAndReport "    N/A because client version is $clientVersion and -r was added in v5.2.0"
+  exit 50
+fi
+
+#
+# v4 feature set, default client flags
+
+# - All client versions since 5 require the '-x' flag in order to output the
+#   ssh command rather than just forking to the ssh inline.
+# - sshnp since 5.x also requires '--no-ad' and '--no-et' flags,
+#   since those features are enabled by default from v5
+if [[ $(versionIsAtLeast "$clientVersion" "d:5.0.0") == "true" ]]; then
+  extraFlags="-x --no-ad --no-et"
+fi
+
+# logInfo "Client version : $c_type : $c_major.$c_minor.$c_patch"
+clientBinaryPath=$(getPathToBinariesForTypeAndVersion "$clientVersion")
+
+# 1. Run with --host
+deviceName=$(getDeviceNameWithFlags "$commitId" "$daemonVersion")
+
+# We will capture daemon log from now until end of test
+outputDir=$(getOutputDir)
+daemonLogFile="${outputDir}/daemons/${deviceName}.log"
+echo "First daemon (--host) $deviceName" >>"$DAEMON_LOG_FRAGMENT_NAME"
+echo "" >>"$DAEMON_LOG_FRAGMENT_NAME"
+tail -f "$daemonLogFile" >>"$DAEMON_LOG_FRAGMENT_NAME" &
+tailPid=$! # We'll kill this later
+
+l1="$clientBinaryPath/sshnp -f $clientAtSign -d $deviceName -i $identityFilename"
+l2=" -t $daemonAtSign --host $srvAtSign -u $remoteUsername"
+l4=" --root-domain $atDirectoryHost"
+l5=" ${extraFlags}"
+sshnpCommand="$l1 $l2 $l3 $l4 $l5 -s ${identityFilename}.pub"
+
+echo "$(iso8601Date) | Executing $sshnpCommand"
+sshCommand=$($sshnpCommand)
+sshnpExitStatus=$?
+
+if ((sshnpExitStatus != 0)); then
+  logError "$scriptName: sshnp to ${deviceName} with '--host <host>' should have succeeded but did not"
+  kill $tailPid
+  exit $sshnpExitStatus
+fi
+
+echo "$(iso8601Date) | Executing $sshCommand"
+
+# shellcheck disable=SC2091
+$(getTestSshCommand "$sshCommand")
+sshExitStatus=$?
+if ((sshExitStatus != 0)); then
+  logError "$scriptName: ssh to ${deviceName} with '--host <host>' should have succeeded but did not"
+  kill $tailPid
+  exit $sshExitStatus
+fi
+
+# 2. Run with -r <good> and -h <bad>
+deviceName=$(getDeviceNameWithFlags "$commitId" "$daemonVersion")
+kill $tailPid
+# We will capture daemon log from now until end of test
+outputDir=$(getOutputDir)
+daemonLogFile="${outputDir}/daemons/${deviceName}.log"
+echo "Third daemon (-r <good> && -h <bad>) $deviceName" >>"$DAEMON_LOG_FRAGMENT_NAME"
+echo "" >>"$DAEMON_LOG_FRAGMENT_NAME"
+tail -f "$daemonLogFile" >>"$DAEMON_LOG_FRAGMENT_NAME" &
+tailPid=$! # We'll kill this later
+
+l1="$clientBinaryPath/sshnp -f $clientAtSign -d $deviceName -i $identityFilename"
+# set -h as the bad one, since we expect -r to take priority, execution will fail if -h takes priority
+l2=" -t $daemonAtSign -r $srvAtSign -h $badSrvAtSign -u $remoteUsername"
+l4=" --root-domain $atDirectoryHost"
+l5=" ${extraFlags}"
+sshnpCommand="$l1 $l2 $l3 $l4 $l5 -s ${identityFilename}.pub"
+
+echo "$(iso8601Date) | Executing $sshnpCommand"
+sshCommand=$($sshnpCommand)
+sshnpExitStatus=$?
+
+if ((sshnpExitStatus != 0)); then
+  logError "$scriptName: sshnp to ${deviceName} with '-r <host> -h <bad host>' should have succeeded but did not"
+  kill $tailPid
+  exit $sshnpExitStatus
+fi
+
+echo "$(iso8601Date) | Executing $sshCommand"
+
+# shellcheck disable=SC2091
+$(getTestSshCommand "$sshCommand")
+sshExitStatus=$?
+if ((sshExitStatus != 0)); then
+  logError "$scriptName: ssh to ${deviceName} with '-r <host> -h <bad host>' should have succeeded but did not"
+fi
+
+kill $tailPid
+exit $sshExitStatus

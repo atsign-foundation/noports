@@ -7,26 +7,20 @@ updates:
     schedule:
       interval: "daily"
   - package-ecosystem: "docker"
-    directory: "/packages/dart/sshnoports/tools/"
-    schedule:
-      interval: "daily"
-  - package-ecosystem: "docker"
-    directory: "/tests/end2end_tests/image/"
-    schedule:
-      interval: "daily"
-  - package-ecosystem: "pub"
-    directory: "/packages/dart/sshnoports/"
+    directories:
+      - "/packages/dart/sshnoports/tools/"
+      - "/tests/end2end_tests/image/"
     schedule:
       interval: "daily"
   - package-ecosystem: "pub"
-    directory: "/packages/dart/sshnp_flutter/"
+    directories:
+      - "/packages/dart/sshnoports/"
+      - "/packages/dart/sshnp_flutter/"
     schedule:
       interval: "daily"
   - package-ecosystem: "pip"
-    directory: "/examples/automations/python/sshnoports_automation_python/"
-    schedule:
-      interval: "daily"
-  - package-ecosystem: "pip"
-    directory: "/packages/python/sshnpd/"
+    directories:
+      - "/examples/automations/python/"
+      - "/packages/python/sshnpd/"
     schedule:
       interval: "daily"

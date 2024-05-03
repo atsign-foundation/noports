@@ -10,7 +10,6 @@ class DefaultArgs {
   static const bool verbose = false;
   static const String rootDomain = 'root.atsign.org';
   static const SrvGenerator srvGenerator = Srv.exec;
-  static const int localSshdPort = 22;
   static const int remoteSshdPort = 22;
 
   /// value in seconds after which idle ssh tunnels will be closed
@@ -22,20 +21,24 @@ class DefaultArgs {
   static const bool authenticateClientToRvd = true;
   static const bool authenticateDeviceToRvd = true;
   static const bool encryptRvdTraffic = true;
-  static const bool discoverDaemonFeatures = false;
+
+  /// How long a client should wait for response after pinging a daemon
+  static const int daemonPingTimeoutSeconds = 20;
+  static const Duration daemonPingTimeoutDuration =
+      Duration(seconds: daemonPingTimeoutSeconds);
 }
 
 class DefaultSshnpArgs {
   static const String device = 'default';
-  static const int port = 22;
   static const int localPort = 0;
   static const bool sendSshPublicKey = false;
   static const List<String> localSshOptions = <String>[];
-  static const bool legacyDaemon = false;
   static const bool listDevices = false;
   static const SupportedSshClient sshClient = SupportedSshClient.openssh;
 }
 
 class DefaultSshnpdArgs {
   static const SupportedSshClient sshClient = SupportedSshClient.openssh;
+  static const int localSshdPort = 22;
+  static const String deviceGroupName = '__none__';
 }

@@ -1,3 +1,16 @@
+# 6.0.7
+- feat: include allowed services in device ping
+- chore: deprecate -h and --host in favor of -r and --srvd
+- feat: allow --list-devices to work without requiring -t or -r
+
+# 6.0.6
+- feat: SrvImplDart: supply a logger to SocketConnector so that the Srv can 
+  control what happens with any log messages that SocketConnector emits
+
+# 6.0.5
+- fix: Strict validation of device name as alphanumeric snake case
+- feat: Increase device name max length from 15 to 36
+
 # 6.0.4
 - build: upgrade at_chops dependency to ^2.0.0
 

@@ -56,7 +56,7 @@ void main() {
               ..value = SshnpParams(
                       clientAtSign: '@owner',
                       sshnpdAtSign: '@device',
-                      host: '@host')
+                      srvdAtSign: '@srvd')
                   .toJson(),
           ),
         );
@@ -97,7 +97,7 @@ void main() {
         expect(params, isA<SshnpParams>());
         expect(params.clientAtSign, equals('@owner'));
         expect(params.sshnpdAtSign, equals('@device'));
-        expect(params.host, equals('@host'));
+        expect(params.srvdAtSign, equals('@srvd'));
       });
 
       test('ConfigKeyRepository.putParams test', () async {
@@ -124,7 +124,7 @@ void main() {
               SshnpParams(
                   clientAtSign: '@owner',
                   sshnpdAtSign: '@device',
-                  host: '@host',
+                  srvdAtSign: '@srvd',
                   profileName: 'profileName2'),
               atClient: atClient,
             ),

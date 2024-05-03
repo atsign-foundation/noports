@@ -5,7 +5,7 @@ import 'package:sshnp_flutter/src/presentation/widgets/utility/responsive_widget
 import '../widgets/support_screen_widgets/support_screen_mobile_view.dart';
 
 class SupportScreen extends StatelessWidget {
-  const SupportScreen({Key? key}) : super(key: key);
+  const SupportScreen({super.key});
   static String route = 'supportScreen';
 
   @override

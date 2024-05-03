@@ -8,7 +8,7 @@ import 'package:xterm/xterm.dart';
 
 // * Once the onboarding process is completed you will be taken to this screen
 class TerminalScreenMobileView extends ConsumerStatefulWidget {
-  const TerminalScreenMobileView({Key? key}) : super(key: key);
+  const TerminalScreenMobileView({super.key});
 
   @override
   ConsumerState<TerminalScreenMobileView> createState() => _TerminalScreenMobileState();
@@ -21,7 +21,7 @@ class _TerminalScreenMobileState extends ConsumerState<TerminalScreenMobileView>
     super.initState();
     final sessionId = ref.read(terminalSessionController);
 
-    final sessionController = ref.read(terminalSessionFamilyController(sessionId).notifier);
+    ref.read(terminalSessionFamilyController(sessionId).notifier);
     WidgetsBinding.instance.endOfFrame.then((value) {});
   }
 
@@ -43,7 +43,7 @@ class _TerminalScreenMobileState extends ConsumerState<TerminalScreenMobileView>
     final terminalList = ref.watch(terminalSessionListController);
     final currentSessionId = ref.watch(terminalSessionController);
     final int currentIndex = (terminalList.isEmpty) ? 0 : terminalList.indexOf(currentSessionId);
-    final tabController = TabController(initialIndex: currentIndex, length: terminalList.length, vsync: this);
+    TabController(initialIndex: currentIndex, length: terminalList.length, vsync: this);
 
     return Scaffold(
       appBar: CustomAppBar(
