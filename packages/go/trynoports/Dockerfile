@@ -2,7 +2,8 @@
 
 FROM dart:3.3.4@sha256:816fee592c641f61ff42461d23cfc3bee301f21e2288cb6818ab961c44c6efc0  AS dart-builder
 ENV PACKAGEDIR=packages/dart/sshnoports
-ENV KEYSDIR=packages/go/trynoports/.atsign/keys
+ENV ATKEYSDIR=packages/go/trynoports/.atsign/keys
+ENV SSHKEYSDIR=packages/go/trynoports/.ssh
 ENV OPENSSH=tools/static-openssh
 ENV BINARYDIR=/usr/local/at
 ENV HOMEDIR=/atsign
@@ -16,6 +17,9 @@ RUN \
   set -eux ; \
   mkdir -p $HOMEDIR/storage ; \
   mkdir -p $HOMEDIR/config ; \
+  mkdir -p $HOMEDIR/.ssh ; \
+  mkdir -p $HOMEDIR/.sshnp ; \
+  mkdir -p $HOMEDIR/.atsign/keys ; \
   mkdir -p /etc/cacert ; \
   mkdir -p ${BINARYDIR} ;
 WORKDIR ${WORKDIR}/${PACKAGEDIR}
@@ -28,7 +32,8 @@ RUN \
   addgroup --gid $GROUP_ID atsign ; \
   useradd --system --uid $USER_ID --gid $GROUP_ID --shell /bin/bash \
   --home $HOMEDIR atsign ; \
-  mv ${WORKDIR}/${KEYSIR}/* ${HOMEDIR}/keys/ ; \
+  mv ${WORKDIR}/${ATKEYSDIR}/* ${HOMEDIR}/.atsign/keys/ ; \
+  mv ${WORKDIR}/${SSHKEYSDIR}/* ${HOMEDIR}/.ssh/ ; \
   chown -R atsign:atsign $HOMEDIR ; \
   # build static openssh binaries
   apt-get -y update && apt-get install -y --no-install-recommends curl gcc make autoconf ;
@@ -62,7 +67,8 @@ RUN \
 FROM scratch
 ENV PATH=/usr/local/at
 ENV USER=atsign
-COPY --from=dart-builder /atsign /atsign/
+ENV HOME=/atsign
+COPY --from=dart-builder /atsign/ /atsign/
 COPY --from=dart-builder /runtime/ /
 COPY --from=dart-builder /etc/passwd /etc/passwd
 COPY --from=dart-builder /etc/group /etc/group
