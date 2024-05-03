@@ -317,7 +317,7 @@ def main():
     requiredNamed.add_argument("-d", "--device", dest="device", type=str, help="Device Name", default="default")
     optional = parser.add_argument_group('optional arguments')
     optional.add_argument("-s", action="store_true", dest="expecting_ssh_keys", help="Add ssh key into authorized_keys", default=False)
-    optional.add_argument("-u",  action='store_true', dest="username",  help="Username", default="default")
+    optional.add_argument("-u",  action='store_true', dest="username",  help="Username", default="default", required=True)
     optional.add_argument("-v", action='store_true', dest="verbose", help="Verbose")
     
     args = parser.parse_args()
