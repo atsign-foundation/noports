@@ -6,9 +6,12 @@ import (
 	"context"
 	"errors"
 	"flag"
+	"fmt"
 	"net"
 	"os"
 	"os/signal"
+	"sshnpd"
+	"strings"
 	"syscall"
 	"time"
 
@@ -22,7 +25,7 @@ import (
 
 const (
 	host    = "localhost"
-	port    = "23234"
+	port    = 23234
 	keyPath = ".ssh/id_ed25519"
 )
 
@@ -60,6 +63,16 @@ func InitCommands(d list.ItemDelegate, width int, height int) list.Model {
 var (
 	Flagh = flag.String("h", "localhost", "set the host for the nmap command")
 	Flagf = flag.Bool("f", false, "use the ifconfig instead of ip addr")
+	Flagl = flag.String("l", "", "path to a log file for sshnpd")
+	// sshnpd flags
+	FlagK    = flag.String("K", "", "-k for sshnpd")
+	FlagA    = flag.String("A", "", "-a for sshnpd")
+	FlagM    = flag.String("M", "", "-m for sshnpd")
+	FlagD    = flag.String("D", "", "-d for sshnpd")
+	FlagS    = flag.Bool("S", true, "-s for sshnpd")
+	FlagU    = flag.Bool("U", true, "-u for sshnpd")
+	FlagV    = flag.Bool("V", true, "-v for sshnpd")
+	FlagArgs = flag.String("ARGS", "", "additional args for sshnpd (';' separated)")
 )
 
 // Setup the server (main server lifecycle)
@@ -71,9 +84,47 @@ func main() {
 		log.Warn("Detected the default nmap host, did you set the nmap host with `-h`?")
 	}
 
+	args := strings.Split(*FlagArgs, ";")
+
+	if *FlagS {
+		args = append(args, "-s")
+	}
+
+	if *FlagU {
+		args = append(args, "-u")
+	}
+
+	if *FlagV {
+		args = append(args, "-v")
+	}
+
+	sshnpdArgs := sshnpd.Args{
+		KeyFile:    *FlagK,
+		Atsign:     *FlagA,
+		Managers:   *FlagM,
+		DeviceName: *FlagD,
+		Host:       host,
+		Port:       port,
+		Args:       args,
+	}
+	sshnpdCh := sshnpd.Start(sshnpdArgs)
+
+	go func() {
+		for msg := range sshnpdCh {
+			switch signal := msg.(type) {
+			case sshnpd.ErrorSignal:
+				log.Error("Sshnpd failed to start", "signal.Err", signal.Err)
+			case sshnpd.LogSignal:
+				log.Info("Sshnpd | ", "Msg", string(signal.Msg[:]))
+			case sshnpd.DoneSignal:
+				log.Warn("Sshnpd Exited")
+			}
+		}
+	}()
+
 	// Create the server object with appropriate middleware
 	s, err := wish.NewServer(
-		wish.WithAddress(net.JoinHostPort(host, port)),
+		wish.WithAddress(net.JoinHostPort(host, fmt.Sprintf("%d", port))),
 		wish.WithHostKeyPath(keyPath),
 		wish.WithMiddleware(
 			app.AppMiddleware(InitCommands),
