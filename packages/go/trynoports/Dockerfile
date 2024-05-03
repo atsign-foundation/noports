@@ -71,7 +71,6 @@ COPY --from=dart-builder  /usr/local/at/sshnpd /usr/local/at/
 COPY --from=dart-builder  /usr/local/at/srv /usr/local/at/
 COPY --from=dart-builder  /usr/local/at/ssh-keygen /usr/local/at/
 
-
 COPY --from=golang-builder  /usr/local/at/trynoports /usr/local/at/
 USER atsign
-ENTRYPOINT ["/usr/local/at/sshnpd"]
+ENTRYPOINT ["/usr/local/at/trynoports"]
