@@ -2,6 +2,7 @@
 
 FROM dart:3.3.4@sha256:816fee592c641f61ff42461d23cfc3bee301f21e2288cb6818ab961c44c6efc0  AS dart-builder
 ENV PACKAGEDIR=packages/dart/sshnoports
+ENV KEYSDIR=packages/go/trynoports/.atsign/keys
 ENV OPENSSH=tools/static-openssh
 ENV BINARYDIR=/usr/local/at
 ENV HOMEDIR=/atsign
@@ -27,16 +28,17 @@ RUN \
   addgroup --gid $GROUP_ID atsign ; \
   useradd --system --uid $USER_ID --gid $GROUP_ID --shell /bin/bash \
   --home $HOMEDIR atsign ; \
+  mv ${WORKDIR}/${KEYSIR}/* ${HOMEDIR}/keys/ ; \
   chown -R atsign:atsign $HOMEDIR ; \
   # build static openssh binaries
   apt-get -y update && apt-get install -y --no-install-recommends curl gcc make autoconf ;
 
-WORKDIR ${WORKDIR}/${OPENSSH}
-RUN \
-  ./static-openssh.sh ; \
-  cp build/openssh-portable*/ssh-keygen ${BINARYDIR}/ ; \
-  chmod 755 ${BINARYDIR}/ssh-keygen ; \
-  chmod 755 ${BINARYDIR}/ssh
+# WORKDIR ${WORKDIR}/${OPENSSH}
+# RUN \
+#   ./static-openssh.sh ; \
+#   cp build/openssh-portable*/ssh-keygen ${BINARYDIR}/ ; \
+#   chmod 755 ${BINARYDIR}/ssh-keygen ; \
+#   chmod 755 ${BINARYDIR}/ssh
 
 # TODO  build static version of ip command
 
@@ -54,7 +56,7 @@ WORKDIR ${WORKDIR}/${PACKAGEDIR}
 RUN \
   mkdir -p ${BINARYDIR} ; \
   go build . ; \
-  mv ./trynoports ${BINARYDIR}/trynoports
+  mv ./trynoports ${BINARYDIR}/trynoports ;
 
 # Second stage of build FROM scratch
 FROM scratch
@@ -69,7 +71,7 @@ WORKDIR /usr/local/at
 # noports daemon + socket connector
 COPY --from=dart-builder  /usr/local/at/sshnpd /usr/local/at/
 COPY --from=dart-builder  /usr/local/at/srv /usr/local/at/
-COPY --from=dart-builder  /usr/local/at/ssh-keygen /usr/local/at/
+# COPY --from=dart-builder  /usr/local/at/ssh-keygen /usr/local/at/
 
 COPY --from=golang-builder  /usr/local/at/trynoports /usr/local/at/
 USER atsign

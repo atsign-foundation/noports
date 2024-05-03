@@ -24,9 +24,8 @@ import (
 )
 
 const (
-	host    = "localhost"
-	port    = 23234
-	keyPath = ".ssh/id_ed25519"
+	host = "localhost"
+	port = 23234
 )
 
 // Available system commands
@@ -61,9 +60,9 @@ func InitCommands(d list.ItemDelegate, width int, height int) list.Model {
 
 // Program inputs
 var (
+	Flagk = flag.String("k", ".ssh/id_ed25519", "host key path")
 	Flagh = flag.String("h", "localhost", "set the host for the nmap command")
 	Flagf = flag.Bool("f", false, "use the ifconfig instead of ip addr")
-	Flagl = flag.String("l", "", "path to a log file for sshnpd")
 	// sshnpd flags
 	FlagK    = flag.String("K", "", "-k for sshnpd")
 	FlagA    = flag.String("A", "", "-a for sshnpd")
@@ -78,7 +77,23 @@ var (
 // Setup the server (main server lifecycle)
 func main() {
 	flag.Parse()
-	log.Info("Environment", "nmap host (-h)", *Flagh, "use ifconfig (-f)", *Flagf)
+	log.Info(
+		"Environment",
+		"host key path (-k)", *Flagk,
+		"nmap host (-h)", *Flagh,
+		"use ifconfig (-f)", *Flagf,
+	)
+	log.Info(
+		"Sshnpd Args",
+		"-k", *FlagK,
+		"-a", *FlagA,
+		"-m", *FlagM,
+		"-d", *FlagD,
+		"-s", *FlagS,
+		"-u", *FlagU,
+		"-v", *FlagV,
+		"additional args", *FlagArgs,
+	)
 
 	if *Flagh == "localhost" {
 		log.Warn("Detected the default nmap host, did you set the nmap host with `-h`?")
@@ -125,7 +140,7 @@ func main() {
 	// Create the server object with appropriate middleware
 	s, err := wish.NewServer(
 		wish.WithAddress(net.JoinHostPort(host, fmt.Sprintf("%d", port))),
-		wish.WithHostKeyPath(keyPath),
+		wish.WithHostKeyPath(*Flagk),
 		wish.WithMiddleware(
 			app.AppMiddleware(InitCommands),
 			activeterm.Middleware(), // Bubble Tea apps usually require a PTY.
