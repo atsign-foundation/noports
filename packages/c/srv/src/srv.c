@@ -2,7 +2,7 @@
 #include "srv/params.h"
 #include "srv/side.h"
 #include <atchops/base64.h>
-#include <atlogger.h>
+#include <atlogger/atlogger.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -14,7 +14,7 @@ int run_srv(srv_params_t *params) {
   chunked_transformer_t decrypter;
   int res;
   if (params->rv_e2ee == 1) {
-    atclient_atlogger_log(TAG, INFO, "Configuring encrypter/decrypter for srv\n");
+    atlogger_log(TAG, INFO, "Configuring encrypter/decrypter for srv\n");
 
     // Temporary buffer for decoding the key
     unsigned char aes_key[AES_256_KEY_BYTES];
@@ -25,14 +25,14 @@ int run_srv(srv_params_t *params) {
                                 aes_key, AES_256_KEY_BYTES, &aes_key_len);
 
     if (res != 0 || aes_key_len != AES_256_KEY_BYTES) {
-      atclient_atlogger_log(TAG, ERROR, "Error decoding session_aes_key_string\n");
+      atlogger_log(TAG, ERROR, "Error decoding session_aes_key_string\n");
       return res;
     }
 
     mbedtls_aes_init(&encrypter.aes_ctr.ctx); // FREE
     res = mbedtls_aes_setkey_enc(&encrypter.aes_ctr.ctx, aes_key, AES_256_KEY_BITS);
     if (res != 0) {
-      atclient_atlogger_log(TAG, ERROR, "Error setting encryption key\n");
+      atlogger_log(TAG, ERROR, "Error setting encryption key\n");
       mbedtls_aes_free(&encrypter.aes_ctr.ctx);
       return res;
     }
@@ -40,7 +40,7 @@ int run_srv(srv_params_t *params) {
     mbedtls_aes_init(&decrypter.aes_ctr.ctx); // FREE
     res = mbedtls_aes_setkey_enc(&decrypter.aes_ctr.ctx, aes_key, AES_256_KEY_BITS);
     if (res != 0) {
-      atclient_atlogger_log(TAG, ERROR, "Error setting decryption key\n");
+      atlogger_log(TAG, ERROR, "Error setting decryption key\n");
       mbedtls_aes_free(&encrypter.aes_ctr.ctx);
       mbedtls_aes_free(&decrypter.aes_ctr.ctx);
       return res;
@@ -51,7 +51,7 @@ int run_srv(srv_params_t *params) {
     res = atchops_base64_decode((unsigned char *)params->session_aes_iv_string, strlen(params->session_aes_iv_string),
                                 encrypter.aes_ctr.nonce_counter, AES_BLOCK_LEN, &iv_len);
     if (res != 0 || iv_len != AES_BLOCK_LEN) {
-      atclient_atlogger_log(TAG, ERROR, "Error decoding session_aes_iv_string\n");
+      atlogger_log(TAG, ERROR, "Error decoding session_aes_iv_string\n");
       mbedtls_aes_free(&encrypter.aes_ctr.ctx);
       mbedtls_aes_free(&decrypter.aes_ctr.ctx);
       return res;
@@ -74,13 +74,13 @@ int run_srv(srv_params_t *params) {
   }
 
   if (params->bind_local_port == 0) {
-    atclient_atlogger_log(TAG, INFO, "Starting socket to socket srv\n");
+    atlogger_log(TAG, INFO, "Starting socket to socket srv\n");
     res = socket_to_socket(params, params->rvd_auth_string, &encrypter, &decrypter);
   } else {
-    atclient_atlogger_log("srv - bind", ATLOGGER_LOGGING_LEVEL_ERROR, "--local-bind-port is disabled\n");
+    atlogger_log("srv - bind", ATLOGGER_LOGGING_LEVEL_ERROR, "--local-bind-port is disabled\n");
     exit(1);
 
-    atclient_atlogger_log(TAG, INFO, "Starting server to socket srv\n");
+    atlogger_log(TAG, INFO, "Starting server to socket srv\n");
     res = server_to_socket(params, params->rvd_auth_string, &encrypter, &decrypter);
   }
 
@@ -103,17 +103,17 @@ int socket_to_socket(const srv_params_t *params, const char *auth_string, chunke
     hints_b.transformer = decrypter;
   }
 
-  atclient_atlogger_log(TAG, INFO, "Initializing connection for side a\n");
+  atlogger_log(TAG, INFO, "Initializing connection for side a\n");
   int res = srv_side_init(&hints_a, &sides[0]);
   if (res != 0) {
-    atclient_atlogger_log(TAG, ERROR, "Failed to initialize connection for side a\n");
+    atlogger_log(TAG, ERROR, "Failed to initialize connection for side a\n");
     return res;
   }
 
-  atclient_atlogger_log(TAG, INFO, "Initializing connection for side b\n");
+  atlogger_log(TAG, INFO, "Initializing connection for side b\n");
   res = srv_side_init(&hints_b, &sides[1]);
   if (res != 0) {
-    atclient_atlogger_log(TAG, ERROR, "Failed to initialize connection for side b\n");
+    atlogger_log(TAG, ERROR, "Failed to initialize connection for side b\n");
     return res;
   }
 
@@ -124,30 +124,30 @@ int socket_to_socket(const srv_params_t *params, const char *auth_string, chunke
 
   srv_link_sides(&sides[0], &sides[1], fds);
 
-  atclient_atlogger_log(TAG, INFO, "Starting threads\n");
+  atlogger_log(TAG, INFO, "Starting threads\n");
   // send the auth string to side b
   if (params->rv_auth == 1) {
-    atclient_atlogger_log(TAG, INFO, "Sending auth string\n");
+    atlogger_log(TAG, INFO, "Sending auth string\n");
     int len = strlen(auth_string);
 
     int slen = mbedtls_net_send(&sides[1].socket, (unsigned char *)auth_string, len);
     slen += mbedtls_net_send(&sides[1].socket, (unsigned char *)"\n", 1);
     if (slen != len + 1) {
-      atclient_atlogger_log(TAG, ERROR, "Failed to send auth string\n");
+      atlogger_log(TAG, ERROR, "Failed to send auth string\n");
       return -1;
     }
   }
 
   res = pthread_create(&threads[0], NULL, srv_side_handle, &sides[0]);
   if (res != 0) {
-    atclient_atlogger_log(TAG, ERROR, "Failed to create thread: 0\n");
+    atlogger_log(TAG, ERROR, "Failed to create thread: 0\n");
     exit_res = res;
     goto exit;
   }
 
   res = pthread_create(&threads[1], NULL, srv_side_handle, &sides[1]);
   if (res != 0) {
-    atclient_atlogger_log(TAG, ERROR, "Failed to create thread: 1\n");
+    atlogger_log(TAG, ERROR, "Failed to create thread: 1\n");
     exit_res = res;
     goto cancel;
   }
@@ -161,7 +161,7 @@ int socket_to_socket(const srv_params_t *params, const char *auth_string, chunke
   // Wait for any pthread to exit
   read(fds[0], &tid, sizeof(pthread_t));
 
-  atclient_atlogger_log(TAG, DEBUG, "Joining exited thread\n");
+  atlogger_log(TAG, DEBUG, "Joining exited thread\n");
   res = pthread_join(tid, (void *)&retval);
 
 cancel:
@@ -171,11 +171,11 @@ cancel:
     tidx = 1;
   }
 
-  atclient_atlogger_log(TAG, DEBUG, "Cancelling remaining open thread: %d\n", tidx);
+  atlogger_log(TAG, DEBUG, "Cancelling remaining open thread: %d\n", tidx);
   if (pthread_cancel(threads[tidx]) != 0) {
-    atclient_atlogger_log(TAG, WARN, "Failed to cancel thread: %d\n", tidx);
+    atlogger_log(TAG, WARN, "Failed to cancel thread: %d\n", tidx);
   } else {
-    atclient_atlogger_log(TAG, DEBUG, "Canceled thread: %d\n", tidx);
+    atlogger_log(TAG, DEBUG, "Canceled thread: %d\n", tidx);
   }
 
 exit:
@@ -204,7 +204,7 @@ int aes_ctr_crypt_stream(const chunked_transformer_t *self, size_t len, const un
       mbedtls_aes_crypt_ctr(&state->ctx, len, &state->nc_off, state->nonce_counter, state->stream_block, input, output);
 
   if (res != 0) {
-    atclient_atlogger_log(TAG, ERROR, "Failed to crypt chunk\n");
+    atlogger_log(TAG, ERROR, "Failed to crypt chunk\n");
     return res;
   }
 

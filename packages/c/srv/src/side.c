@@ -1,8 +1,8 @@
 #include "srv/side.h"
 #include "srv/srv.h"
-#include <MbedTLS/net_sockets.h>
 #include <atchops/base64.h>
-#include <atlogger.h>
+#include <atlogger/atlogger.h>
+#include <mbedtls/net_sockets.h>
 #include <netdb.h>
 #include <srv/params.h>
 #include <string.h>
@@ -24,25 +24,25 @@ int srv_side_init(const side_hints_t *hints, side_t *side) {
   snprintf(service, MAX_PORT_LEN, "%d", side->port);
 
   if (side->is_server == 0) {
-    atclient_atlogger_log(TAG, INFO, "Doing tcp connect to %s:%s\n", side->host, service);
+    atlogger_log(TAG, INFO, "Doing tcp connect to %s:%s\n", side->host, service);
     int res = mbedtls_net_connect(&side->socket, side->host, service, MBEDTLS_NET_PROTO_TCP);
     if (res != 0) {
       mbedtls_net_free(&side->socket);
       if (res == MBEDTLS_ERR_NET_SOCKET_FAILED) {
-        atclient_atlogger_log(TAG, ERROR, "Failed: tcp connect - socket failed\n");
+        atlogger_log(TAG, ERROR, "Failed: tcp connect - socket failed\n");
       } else if (res == MBEDTLS_ERR_NET_UNKNOWN_HOST) {
-        atclient_atlogger_log(TAG, ERROR, "Failed: tcp connect - unknown host\n");
+        atlogger_log(TAG, ERROR, "Failed: tcp connect - unknown host\n");
       } else if (res == MBEDTLS_ERR_NET_CONNECT_FAILED) {
-        atclient_atlogger_log(TAG, ERROR, "Failed: tcp connect - connect failed\n");
+        atlogger_log(TAG, ERROR, "Failed: tcp connect - connect failed\n");
       }
       return res;
     }
   } else {
-    atclient_atlogger_log(TAG, INFO, "Doing tcp bind\n");
+    atlogger_log(TAG, INFO, "Doing tcp bind\n");
     int res = mbedtls_net_bind(&side->socket, side->host, service, MBEDTLS_NET_PROTO_TCP);
     if (res != 0) {
       mbedtls_net_free(&side->socket);
-      atclient_atlogger_log(TAG, ERROR, "Failed: tcp bind\n");
+      atlogger_log(TAG, ERROR, "Failed: tcp bind\n");
       return res;
     }
   }
@@ -72,16 +72,16 @@ void *srv_side_handle(void *side) {
     int res;
     while ((res = mbedtls_net_recv(&s->socket, buffer, READ_LEN)) > 0) {
       if (res < 0) {
-        atclient_atlogger_log(tag, ERROR, "Error reading data: %d", len);
+        atlogger_log(tag, ERROR, "Error reading data: %d", len);
         break;
       } else {
         len = res;
       }
-      atclient_atlogger_log(tag, DEBUG, "Read %d bytes \n", len);
+      atlogger_log(tag, DEBUG, "Read %d bytes \n", len);
       fflush(stdout);
       if (s->transformer != NULL) {
         unsigned char *output = malloc(BUFFER_LEN * sizeof(unsigned char));
-        atclient_atlogger_log(tag, DEBUG, "Transforming data\n");
+        atlogger_log(tag, DEBUG, "Transforming data\n");
         res = (int)s->transformer->transform(s->transformer, len, buffer, output);
         if (res != 0) {
           break;
@@ -94,10 +94,10 @@ void *srv_side_handle(void *side) {
         while (len > 0) {
           res = mbedtls_net_send(&s->other->socket, buffer, len);
           if (res < 0) {
-            atclient_atlogger_log(tag, ERROR, "Error sending data: %d", res);
+            atlogger_log(tag, ERROR, "Error sending data: %d", res);
             break;
           } else {
-            atclient_atlogger_log(tag, DEBUG, "Sent bytes: %d", res);
+            atlogger_log(tag, DEBUG, "Sent bytes: %d", res);
             len -= res;
           }
         }
@@ -111,7 +111,7 @@ void *srv_side_handle(void *side) {
   }
 
   // Notify the main thread that we are done so it will know to clean up
-  atclient_atlogger_log(tag, DEBUG, "Exiting side thread\n");
+  atlogger_log(tag, DEBUG, "Exiting side thread\n");
   pthread_t t = pthread_self();
   write(s->main_pipe[1], &t, sizeof(pthread_t));
 

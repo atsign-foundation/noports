@@ -31,7 +31,7 @@ void no_op() {}
 #define halt_if_cant_bind_local_port() no_op();
 #else
 #define halt_if_cant_bind_local_port()                                                                                 \
-  atclient_atlogger_log("srv - bind", ERROR, "--local-bind-port is disabled\n");                                       \
+  atlogger_log("srv - bind", ERROR, "--local-bind-port is disabled\n");                                                \
   exit(1);
 #endif
 
