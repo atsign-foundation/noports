@@ -15,8 +15,10 @@ class ProfileMenuButton extends ConsumerStatefulWidget {
 class _ProfileMenuBarState extends ConsumerState<ProfileMenuButton> {
   @override
   Widget build(BuildContext context) {
+    SizeConfig().init(context);
     final strings = AppLocalizations.of(context)!;
     return PopupMenuButton(
+      iconSize: 24.toFont,
       itemBuilder: (context) => [
         // PopupMenuItem(
         //   child: ProfileMenuItem(
@@ -25,11 +27,21 @@ class _ProfileMenuBarState extends ConsumerState<ProfileMenuButton> {
         //       ProfileActionCallbacks.export(ref, context, widget.profileName),
         // ),
         PopupMenuItem(
-          child: ProfileMenuItem(const Icon(Icons.edit), strings.edit),
+          child: ProfileMenuItem(
+              Icon(
+                Icons.edit,
+                size: 20.toFont,
+              ),
+              strings.edit),
           onTap: () => ProfileActionCallbacks.edit(ref, context, widget.profileName),
         ),
         PopupMenuItem(
-          child: const ProfileMenuItem(Icon(Icons.delete_forever), 'Delete'),
+          child: ProfileMenuItem(
+              Icon(
+                Icons.delete_forever,
+                size: 20.toFont,
+              ),
+              'Delete'),
           onTap: () => ProfileActionCallbacks.delete(context, widget.profileName),
         ),
       ],
@@ -45,11 +57,16 @@ class ProfileMenuItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    SizeConfig().init(context);
+    final bodyMedium = Theme.of(context).textTheme.bodyMedium!;
     return Row(
       children: [
         icon,
         gapW12,
-        Text(text),
+        Text(text,
+            style: bodyMedium.copyWith(
+              fontSize: bodyMedium.fontSize!.toFont,
+            )),
       ],
     );
   }

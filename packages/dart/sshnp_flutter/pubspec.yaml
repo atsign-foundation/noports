@@ -1,6 +1,6 @@
 name: sshnp_flutter
 description: ssh to any remove device using atsign
-version: 1.0.0+4
+version: 1.0.0+5
 publish_to: "none" # Remove this line if you wish to publish to pub.dev
 
 environment:
@@ -38,7 +38,6 @@ dependencies:
   package_info_plus: ^5.0.1
   page_transition: ^2.0.9
   path: ^1.8.3
-  path_provider: ^2.1.1
   shared_preferences: ^2.2.2
   socket_connector: ^2.0.1
   url_launcher: ^6.1.14
@@ -59,6 +58,25 @@ flutter:
     # - .env
     - assets/images/nav_icons/
     - assets/images/
+
+  fonts:
+    - family: 0xProtoNerdFont
+      fonts:
+        - asset: assets/fonts/0xProtoNerdFontMono-Regular.ttf
+        - asset: assets/fonts/0xProtoNerdFont-Regular.ttf
+    - family: IosevkaTermNerdFontPropo
+      fonts:
+        # - asset: assets/fonts/IosevkaTermNerdFontPropo-Bold.ttf
+        # - asset: assets/fonts/IosevkaTermNerdFontPropo-BoldItalic.ttf
+        # - asset: assets/fonts/IosevkaTermNerdFontPropo-Italic.ttf
+        - asset: assets/fonts/IosevkaTermNerdFontPropo-Regular.ttf
+    - family: GeistMonoNerdFont
+      fonts:
+        # - asset: assets/fonts/GeistMonoNerdFont-Bold.ttf
+        # - asset: assets/fonts/GeistMonoNerdFont-BoldItalic.ttf
+        # - asset: assets/fonts/GeistMonoNerdFont-Italic.ttf
+        - asset: assets/fonts/GeistMonoNerdFont-Regular.otf
+
 flutter_launcher_icons:
   android: "launcher_icon"
   ios: true
@@ -77,6 +95,6 @@ msix_config:
   identity_name: "TheCompany.SSHNoPortsDesktop"
   publisher: CN=BBFE1D0B-F713-4C7F-B375-5EA851CBB1FF
   msix_version: 1.0.0.0
-  logo_path: null
+  logo_path: "assets/images/app_logo.png"
   capabilities: internetClient
   store: true
