@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 
 const kPrimaryColor = Color(0xFFF05E3E);
 const kBackGroundColorDark = Color(0xFF222222);
+const kDarkBarColor = Color(0xFF1E1E1E);
 const kProfileBarColor = Color(0xff3a3a3a);
 const kProfileBackgroundColor = Color(0xff262626);
 const kProfileFormFieldColor = Color(0xff303030);
@@ -41,3 +42,13 @@ const XTypeGroup dotPrivateTypeGroup = XTypeGroup(
 // Form Field Constants
 const kFieldDefaultWidth = 192.0;
 const kFieldDefaultHeight = 33.0;
+
+// Device Size
+
+const kSmallDeviceMinSize = 0;
+const kSmallDeviceMaxSize = 599;
+const kMediumDeviceMinSize = 600;
+const kMediumDeviceMaxSize = 839;
+const kLargeDeviceMinSize = 840;
+const kLargeDeviceMaxSize = 1439;
+const kExtraLargeDeviceMinSize = 1440;

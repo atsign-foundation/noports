@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:developer';
 
-import 'package:dartssh2/dartssh2.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:noports_core/sshnp_foundation.dart';
@@ -148,16 +148,23 @@ class TerminalSessionFamilyController extends FamilyNotifier<TerminalSession, St
     }
   }
 
-  void _killProcess() {
+  Future<void> _closeSession() async {
     if (state.shell != null && state.shell is SSHSessionAsSshnpRemoteProcess) {
-      (state.shell as SSHSessionAsSshnpRemoteProcess).sshSession.kill(SSHSignal.KILL);
+      try {
+        await (state.shell as SSHSessionAsSshnpRemoteProcess).sshSession.stdin.close().catchError((e) {
+          log('Failed to close stdin : $e');
+        });
+        (state.shell as SSHSessionAsSshnpRemoteProcess).sshSession.close();
+      } catch (e) {
+        log('Failed to close SSH Session : $e');
+      }
     }
     state.isRunning = false;
   }
 
   void dispose() {
     /// 1. Set the session to disposed
-    if (state.isRunning) _killProcess();
+    if (state.isRunning) _closeSession();
 
     // 2. Find a new session to set as the active one
     final terminalList = ref.read(terminalSessionListController);

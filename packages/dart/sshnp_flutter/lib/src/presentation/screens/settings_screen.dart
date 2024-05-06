@@ -11,6 +11,6 @@ class SettingsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return const ResponsiveWidget(
-        mobileScreen: SettingsMobileView(), largeScreen: SettingsDesktopView(), tabletScreen: SettingsDesktopView());
+        smallScreen: SettingsMobileView(), largeScreen: SettingsDesktopView(), mediumScreen: SettingsDesktopView());
   }
 }

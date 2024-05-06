@@ -79,7 +79,17 @@ class _ProfileFormState extends ConsumerState<ProfileFormDesktopView> {
 
   @override
   Widget build(BuildContext context) {
+    SizeConfig().init(context);
     final strings = AppLocalizations.of(context)!;
+    final spacingHeight = SizedBox(
+      height: 20.toHeight,
+    );
+    final spacingWidth = SizedBox(
+      width: 38.toWidth,
+    );
+    final bodyLarge = Theme.of(context).textTheme.bodyLarge!;
+    final bodyMedium = Theme.of(context).textTheme.bodyMedium!;
+
     currentProfile = ref.watch(currentConfigController);
     final privateKeyManagerListController = ref.watch(atPrivateKeyManagerListController);
 
@@ -114,7 +124,7 @@ class _ProfileFormState extends ConsumerState<ProfileFormDesktopView> {
                         },
                         validator: FormValidator.validateProfileNameField,
                       ),
-                      gapW38,
+                      spacingWidth,
                       CustomTextFormField(
                         hintText: strings.hostHintText,
                         initialValue: oldConfig.host,
@@ -128,7 +138,7 @@ class _ProfileFormState extends ConsumerState<ProfileFormDesktopView> {
                       ),
                     ],
                   ),
-                  gapH10,
+                  spacingHeight,
                   Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -142,7 +152,7 @@ class _ProfileFormState extends ConsumerState<ProfileFormDesktopView> {
                               SshnpPartialParams(device: value!),
                             );
                           }),
-                      gapW38,
+                      spacingWidth,
                       CustomTextFormField(
                         initialValue: oldConfig.sshnpdAtSign,
                         labelText: strings.sshnpdAtSign,
@@ -157,7 +167,8 @@ class _ProfileFormState extends ConsumerState<ProfileFormDesktopView> {
                     ],
                   ),
                   gapH20,
-                  Text(strings.connectionConfiguration, style: Theme.of(context).textTheme.bodyLarge),
+                  Text(strings.connectionConfiguration,
+                      style: bodyLarge.copyWith(fontSize: bodyLarge.fontSize?.toFont)),
                   gapH20,
                   ProfileFormCard(
                     largeScreenRightPadding: Sizes.p32,
@@ -179,7 +190,7 @@ class _ProfileFormState extends ConsumerState<ProfileFormDesktopView> {
                                   SshnpPartialParams(remoteUsername: value),
                                 );
                               }),
-                          gapW38,
+                          spacingWidth,
                           CustomTextFormField(
                               initialValue: oldConfig.tunnelUsername,
                               labelText: strings.tunnelUsername,
@@ -196,7 +207,7 @@ class _ProfileFormState extends ConsumerState<ProfileFormDesktopView> {
                               }),
                         ],
                       ),
-                      gapH10,
+                      spacingHeight,
                       Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
@@ -210,7 +221,7 @@ class _ProfileFormState extends ConsumerState<ProfileFormDesktopView> {
                             ),
                             validator: FormValidator.validateRequiredPortField,
                           ),
-                          gapW38,
+                          spacingWidth,
                           CustomTextFormField(
                             initialValue: oldConfig.localPort.toString(),
                             labelText: strings.localPort,
@@ -227,7 +238,10 @@ class _ProfileFormState extends ConsumerState<ProfileFormDesktopView> {
                     ],
                   ),
                   gapH20,
-                  Text(strings.sshKeyManagement('yes'), style: Theme.of(context).textTheme.bodyLarge),
+                  Text(
+                    strings.sshKeyManagement('other'),
+                    style: bodyLarge.copyWith(fontSize: bodyLarge.fontSize?.toFont),
+                  ),
                   gapH16,
                   ProfileFormCard(largeScreenRightPadding: Sizes.p32, formFields: [
                     Row(
@@ -305,7 +319,7 @@ class _ProfileFormState extends ConsumerState<ProfileFormDesktopView> {
                     ),
                   ]),
                   gapH20,
-                  Text(strings.advancedConfiguration, style: Theme.of(context).textTheme.bodyLarge),
+                  Text(strings.advancedConfiguration, style: bodyLarge.copyWith(fontSize: bodyLarge.fontSize?.toFont)),
                   gapH20,
                   ProfileFormCard(
                     largeScreenRightPadding: Sizes.p32,
@@ -323,7 +337,7 @@ class _ProfileFormState extends ConsumerState<ProfileFormDesktopView> {
                               SshnpPartialParams(localSshOptions: value?.split(',')),
                             ),
                           ),
-                          gapW38,
+                          spacingWidth,
                           CustomTextFormField(
                             initialValue: oldConfig.rootDomain,
                             labelText: strings.rootDomain,
@@ -339,7 +353,8 @@ class _ProfileFormState extends ConsumerState<ProfileFormDesktopView> {
                     ],
                   ),
                   gapH20,
-                  Text(strings.socketRendezvousConfiguration, style: Theme.of(context).textTheme.bodyLarge),
+                  Text(strings.socketRendezvousConfiguration,
+                      style: bodyLarge.copyWith(fontSize: bodyLarge.fontSize?.toFont)),
                   gapH20,
                   ProfileFormCard(
                     largeScreenRightPadding: Sizes.p32,
@@ -360,7 +375,7 @@ class _ProfileFormState extends ConsumerState<ProfileFormDesktopView> {
                               });
                             },
                           ),
-                          gapW38,
+                          spacingWidth,
                           CustomSwitchWidget(
                             labelText: strings.authenticateDeviceToRvd,
                             value: newConfig.authenticateDeviceToRvd ?? oldConfig.authenticateDeviceToRvd,
@@ -376,7 +391,7 @@ class _ProfileFormState extends ConsumerState<ProfileFormDesktopView> {
                           ),
                         ],
                       ),
-                      gapH10,
+                      spacingHeight,
                       Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
@@ -398,11 +413,13 @@ class _ProfileFormState extends ConsumerState<ProfileFormDesktopView> {
                     ],
                   ),
                   gapH30,
-                  SizedBox(
-                    width: kFieldDefaultWidth + Sizes.p233,
+                  Container(
+                    color: kDarkBarColor,
+                    width: MediaQuery.of(context).size.width,
+                    height: Sizes.p60,
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                      crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
                         ElevatedButton(
                           onPressed: () {
@@ -410,7 +427,7 @@ class _ProfileFormState extends ConsumerState<ProfileFormDesktopView> {
                           },
                           child: Text(
                             strings.submit,
-                            style: Theme.of(context).textTheme.labelLarge!.copyWith(color: Colors.white),
+                            style: bodyMedium.copyWith(color: Colors.white, fontSize: bodyMedium.fontSize?.toFont),
                           ),
                         ),
                         gapW8,
@@ -419,12 +436,15 @@ class _ProfileFormState extends ConsumerState<ProfileFormDesktopView> {
                             ref.read(navigationRailController.notifier).setRoute(AppRoute.home);
                             context.pushReplacementNamed(AppRoute.home.name);
                           },
-                          child: Text(strings.cancel),
+                          child: Text(
+                            strings.cancel,
+                            style: bodyMedium.copyWith(color: kPrimaryColor, fontSize: bodyMedium.fontSize?.toFont),
+                          ),
                         ),
                       ],
                     ),
                   ),
-                  gapH30,
+                  // gapH30,
                 ],
               ),
             ),
