@@ -2,7 +2,9 @@
 #include <atclient/atclient.h>
 #include <atclient/atkeys.h>
 #include <atclient/atkeysfile.h>
+#include <atclient/connection.h>
 #include <atlogger/atlogger.h>
+#include <pthread.h>
 #include <sshnpd/environment.h>
 #include <sshnpd/params.h>
 #include <stdio.h>
@@ -25,28 +27,28 @@ int main(int argc, char **argv) {
   // 3.  Configure the Logger
   if (params.verbose) {
     printf("Verbose mode enabled\n");
-    atclient_atlogger_set_logging_level(ATLOGGER_LOGGING_LEVEL_DEBUG);
+    atlogger_set_logging_level(ATLOGGER_LOGGING_LEVEL_DEBUG);
   } else {
-    atclient_atlogger_set_logging_level(ATLOGGER_LOGGING_LEVEL_INFO);
+    atlogger_set_logging_level(ATLOGGER_LOGGING_LEVEL_INFO);
   }
 
   // 4. Validate the environment
   const char *homedir = getenv(HOMEVAR);
   if (homedir == NULL) {
-    atclient_atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR,
-                          "Unable to determine your home directory: please "
-                          "set %s environment variable\n",
-                          HOMEVAR);
+    atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR,
+                 "Unable to determine your home directory: please "
+                 "set %s environment variable\n",
+                 HOMEVAR);
     return 1;
   }
 
   // TODO: move this to where it is used later
   const char *username = getenv(USERVAR);
   if (params.unhide && username == NULL) {
-    atclient_atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR,
-                          "Unable to determine your username: please "
-                          "set %s environment variable\n",
-                          USERVAR);
+    atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR,
+                 "Unable to determine your username: please "
+                 "set %s environment variable\n",
+                 USERVAR);
     return 1;
   }
 
@@ -65,7 +67,7 @@ int main(int argc, char **argv) {
   }
 
   if (ret != 0) {
-    atclient_atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Unable to read the key file\n");
+    atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Unable to read the key file\n");
     atclient_atkeysfile_free(&atkeysfile);
     return 1;
   }
@@ -76,33 +78,35 @@ int main(int argc, char **argv) {
 
   ret = atclient_atkeys_populate_from_atkeysfile(&atkeys, atkeysfile);
   if (ret != 0) {
-    atclient_atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Unable to parse the key file\n");
+    atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Unable to parse the key file\n");
     atclient_atkeysfile_free(&atkeysfile);
     atclient_atkeys_free(&atkeys);
     return 1;
   }
   atclient_atkeysfile_free(&atkeysfile);
 
-  // 6. Initialize the atclient
+  // 6. Initialize the root connection
+  atclient_connection root_conn;
+  atclient_connection_init(&root_conn);
+
+  if (atclient_connection_connect(&root_conn, params.root_domain, ROOT_PORT) != 0) {
+    atclient_atkeys_free(&atkeys);
+    atclient_connection_free(&root_conn);
+    return 1;
+  }
+
+  // 7. Initialize the atclient
   atclient atclient;
   atclient_init(&atclient);
-
-  if (atclient_start_root_connection(&atclient, params.root_domain, ROOT_PORT) != 0) {
+  if (atclient_pkam_authenticate(&atclient, &root_conn, &atkeys, params.atsign)) {
     atclient_atkeys_free(&atkeys);
+    atclient_connection_free(&root_conn);
     atclient_free(&atclient);
     return 1;
   }
-
-  if (atclient_pkam_authenticate(&atclient, atkeys, params.atsign, strlen(params.atsign))) {
-    atclient_atkeys_free(&atkeys);
-    atclient_free(&atclient);
-    return 1;
-  }
-
-  // TODO : can we free atkeys now?
 
   // 8. cache the manager public keys
-  atclient_atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_DEBUG, "Manager List: %lu,", params.manager_list_len);
+  atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_DEBUG, "Manager List: %lu,", params.manager_list_len);
   for (int i = 0; i < params.manager_list_len; i++) {
     printf("%s,", params.manager_list[i]);
 
@@ -122,7 +126,7 @@ int main(int argc, char **argv) {
   struct heartbeat_params heartbeat_params = {&atclient, fds[0], fds[1]};
   res = pthread_create(&heartbeat_tid, NULL, heartbeat, (void *)&heartbeat_params);
   if (res != 0) {
-    atclient_atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to start heartbeat thread\n");
+    atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to start heartbeat thread\n");
     exit_res = res;
     goto exit;
   }
@@ -132,7 +136,7 @@ int main(int argc, char **argv) {
   struct refresh_device_entry_params refresh_params = {&atclient, &params, fds[0], fds[1]};
   res = pthread_create(&heartbeat_tid, NULL, refresh_device_entry, (void *)&refresh_params);
   if (res != 0) {
-    atclient_atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to start refresh device entry thread\n");
+    atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to start refresh device entry thread\n");
     exit_res = res;
     goto cancel_heartbeat;
   }
@@ -142,18 +146,18 @@ int main(int argc, char **argv) {
 
   sleep(10); // Temp sleep to ensure that heartbeat triggers once before the program exits
 cancel_device_refresh:
-  atclient_atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_DEBUG, "Cancelling device entry refresh thread\n");
+  atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_DEBUG, "Cancelling device entry refresh thread\n");
   if (pthread_cancel(refresh_tid) != 0) {
-    atclient_atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_WARN, "Failed to cancel device entry refresh thread\n");
+    atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_WARN, "Failed to cancel device entry refresh thread\n");
   } else {
-    atclient_atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_DEBUG, "Canceled device entry refresh thread\n");
+    atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_DEBUG, "Canceled device entry refresh thread\n");
   }
 cancel_heartbeat:
-  atclient_atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_DEBUG, "Cancelling heartbeat thread\n");
+  atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_DEBUG, "Cancelling heartbeat thread\n");
   if (pthread_cancel(heartbeat_tid) != 0) {
-    atclient_atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_WARN, "Failed to cancel heartbeat thread\n");
+    atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_WARN, "Failed to cancel heartbeat thread\n");
   } else {
-    atclient_atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_DEBUG, "Canceled heartbeat thread\n");
+    atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_DEBUG, "Canceled heartbeat thread\n");
   }
 exit:
   close(fds[0]);

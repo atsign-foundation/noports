@@ -1,4 +1,6 @@
 cmake_minimum_required(VERSION 3.19)
+set(CMAKE_C_STANDARD 99)
+cmake_policy(SET CMP0135 NEW)
 
 project(srv VERSION 0.0.1 LANGUAGES C)
 
@@ -43,7 +45,7 @@ include(GNUInstallDirs)
 cmake_policy(SET CMP0135 NEW)
 
 # 4. Dependencies
-#4a. atsdk
+# 4a. atsdk
 find_package(atsdk)
 if(NOT atsdk_FOUND)
   # TODO: fetch from GitHub
@@ -70,7 +72,7 @@ else()
   message(STATUS "[SRV] argparse found package..")
 endif()
 
-# 4e. make everything available
+# 4c. make everything available
 if(SRV_MAKE_AVAILABLE)
   fetchcontent_makeavailable(${SRV_MAKE_AVAILABLE})
 endif()

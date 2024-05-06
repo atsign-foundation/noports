@@ -1,24 +1,20 @@
 cmake_minimum_required(VERSION 3.19)
-
-project(
-  sshnpd
-  VERSION 0.0.1
-  LANGUAGES C
-)
+set(CMAKE_C_STANDARD 99)
+cmake_policy(SET CMP0135 NEW)
+project(sshnpd VERSION 0.0.1 LANGUAGES C)
 
 # 1. Variables - you are free to edit anything in this step
 
 # 1a. Manually add your src files here
 # globs are known as bad practice, so we do not use them here
-set(SSHNPD_SRCS
+set(
+  SSHNPD_SRCS
   ${CMAKE_CURRENT_LIST_DIR}/src/params.c
   ${CMAKE_CURRENT_LIST_DIR}/src/background_jobs.c
 )
 
 # 1b. Manually add your include directories here
-set(SSHNPD_INCLUDE_DIR
-  ${CMAKE_CURRENT_LIST_DIR}/include
-)
+set(SSHNPD_INCLUDE_DIR ${CMAKE_CURRENT_LIST_DIR}/include)
 
 # 1c. Set the path to the argparse directory
 set(ARGPARSE_DIR ${CMAKE_CURRENT_LIST_DIR}/../3rdparty/argparse)
@@ -29,7 +25,6 @@ set(ARGPARSE_DIR ${CMAKE_CURRENT_LIST_DIR}/../3rdparty/argparse)
 # `tests/` folder in the build directory where `ctest` can be ran in that
 # directory, OFF=>does not build `tests/`
 option(SSHNPD_BUILD_TESTS "Build sshnpd tests" OFF)
-
 
 # 2. Include CMake modules
 
@@ -49,9 +44,9 @@ cmake_policy(SET CMP0135 NEW)
 
 # 4. Dependencies
 
-# 4a. atclient
-find_package(atclient QUIET)
-if(NOT atclient_FOUND)
+# 4a. atsdk
+find_package(atsdk QUIET)
+if(NOT atsdk_FOUND)
   # TODO: fetch from GitHub
   # message(STATUS "[SSHNPD] atclient not found, fetching from GitHub..")
   # FetchContent_Declare(
@@ -59,75 +54,52 @@ if(NOT atclient_FOUND)
   #  URL https://github.com/...
   #           URL_HASH SHA256=
   # )
-  list(APPEND SSHNPD_TARGETS_TO_INSTALL atclient cJSON)
-  list(APPEND SSHNPD_MAKE_AVAILABLE atclient)
+  list(APPEND SSHNPD_TARGETS_TO_INSTALL atclient atchops atlogger)
+  list(APPEND SSHNPD_MAKE_AVAILABLE atclient atchops atlogger)
 else()
   message(STATUS "[SSHNPD] atclient found package..")
 endif()
 
-# 4b. atchops
-find_package(atchops)
-if(NOT atchops_FOUND)
-  # TODO: fetch from GitHub
-  # message(STATUS "[SSHNPD] atchops not found, fetching from GitHub..")
-  # FetchContent_Declare(
-  #  atchops
-  #  URL https://github.com/...
-  #           URL_HASH SHA256=
-  # )
-  list(APPEND SSHNPD_TARGETS_TO_INSTALL atchops uuid4-static)
-  list(APPEND SSHNPD_MAKE_AVAILABLE atchops)
-else()
-  message(STATUS "[SSHNPD] atchops found package..")
-endif()
-
-# 4c. MbedTLS
-find_package(MbedTLS QUIET)
-if(NOT MbedTLS_FOUND)
-  message(STATUS "[SSHNPD] MbedTLS not found, fetching from GitHub..")
-  FetchContent_Declare(
-   MbedTLS
-   URL https://github.com/Mbed-TLS/mbedtls/archive/refs/tags/v3.5.1.zip
-            URL_HASH SHA256=959a492721ba036afc21f04d1836d874f93ac124cf47cf62c9bcd3a753e49bdb # hash for v3.5.1 .zip release source code
-  )
-  list(APPEND SSHNPD_TARGETS_TO_INSTALL mbedtls mbedx509 mbedcrypto p256m everest)
-  list(APPEND SSHNPD_MAKE_AVAILABLE MbedTLS)
-else()
-  message(STATUS "[SSHNPD] MbedTLS found package..")
-endif()
-
-# 4d. argparse
+# 4b. argparse
 find_package(argparse-static QUIET)
 if(NOT argparse-static_FOUND)
-  message(STATUS "[SSHNPD] argparse not found, fetching from local repository..")
-  FetchContent_Declare(
-   argparse-static
-   SOURCE_DIR ${ARGPARSE_DIR}
+  message(
+    STATUS
+    "[SSHNPD] argparse not found, fetching from local repository.."
   )
+  fetchcontent_declare(argparse-static SOURCE_DIR ${ARGPARSE_DIR})
   list(APPEND SSHNPD_TARGETS_TO_INSTALL argparse-static)
   list(APPEND SSHNPD_MAKE_AVAILABLE argparse-static)
 else()
   message(STATUS "[SSHNPD] argparse found package..")
 endif()
 
+# 4c. make everything available
 if(SSHNPD_MAKE_AVAILABLE)
-  FetchContent_MakeAvailable(${SSHNPD_MAKE_AVAILABLE})
+  fetchcontent_makeavailable(${SSHNPD_MAKE_AVAILABLE})
 endif()
 
 # 5. Create sshnpd_lib library target
 
 add_library(${PROJECT_NAME}_lib STATIC ${SSHNPD_SRCS})
 
-target_link_libraries(${PROJECT_NAME}_lib PRIVATE
-  atclient::atclient
-  argparse::argparse-static
+target_link_libraries(
+  ${PROJECT_NAME}_lib
+  PRIVATE
+    atsdk::atclient
+    atsdk::atchops
+    atsdk::atlogger
+    argparse::argparse-static
 )
 
 # Set include directories for sshnpd target
-target_include_directories(${PROJECT_NAME}_lib PUBLIC
-  $<BUILD_INTERFACE:${SSHNPD_INCLUDE_DIR}>
-  $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
- )
+target_include_directories(
+  ${PROJECT_NAME}_lib
+  PUBLIC
+    $<BUILD_INTERFACE:${SSHNPD_INCLUDE_DIR}>
+    $<BUILD_INTERFACE:${argparse-static_SOURCE_DIR}>
+    $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
+)
 
 # 6 Install sshnpd library
 # This step configures running `cmake --build build --target install` (which is the same thing as `make install`)
@@ -137,9 +109,9 @@ list(APPEND SSHNPD_TARGETS_TO_INSTALL ${PROJECT_NAME}_lib) # install sshnpd_lib
 foreach(target ${SSHNPD_TARGETS_TO_INSTALL})
   message(STATUS "[SSHNPD] Installing ${target}..")
   install(
-   TARGETS ${target}
-   EXPORT ${PROJECT_NAME}_lib-config
-   ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    TARGETS ${target}
+    EXPORT ${PROJECT_NAME}_lib-config
+    ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
   )
 endforeach()
 
@@ -151,10 +123,14 @@ install(
 # 7. Create sshnpd executable target
 add_executable(${PROJECT_NAME} ${CMAKE_CURRENT_LIST_DIR}/src/main.c)
 
-target_link_libraries(${PROJECT_NAME} PRIVATE
- ${PROJECT_NAME}_lib
-  atclient::atclient
-  argparse::argparse-static
+target_link_libraries(
+  ${PROJECT_NAME}
+  PRIVATE
+    ${PROJECT_NAME}_lib
+    atsdk::atclient
+    atsdk::atchops
+    atsdk::atlogger
+    argparse::argparse-static
 )
 
 # 8. Build tests

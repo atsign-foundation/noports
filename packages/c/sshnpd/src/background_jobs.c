@@ -22,12 +22,12 @@ void *heartbeat(void *void_heartbeat_params) {
     // TODO: mutex unblocks
     if (res == 0 && olen >= 7 && strncmp((const char *)recv, "data:ok", 7) == 0) {
       if (last_heartbeat_ok != 1) {
-        atclient_atlogger_log(HEARTBEAT_TAG, ATLOGGER_LOGGING_LEVEL_INFO, "connection available\n");
+        atlogger_log(HEARTBEAT_TAG, ATLOGGER_LOGGING_LEVEL_INFO, "connection available\n");
         last_heartbeat_ok = 1;
       }
     } else {
       if (last_heartbeat_ok != 0) {
-        atclient_atlogger_log(HEARTBEAT_TAG, ATLOGGER_LOGGING_LEVEL_INFO, "connection lost\n");
+        atlogger_log(HEARTBEAT_TAG, ATLOGGER_LOGGING_LEVEL_INFO, "connection lost\n");
         last_heartbeat_ok = 0;
       }
     }

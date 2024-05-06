@@ -19,12 +19,12 @@ int main(int argc, char **argv) {
     return 1;
   }
 
-  atclient_atlogger_set_logging_level(DEBUG);
-  atclient_atlogger_log(TAG, INFO, "running srv\n");
+  atlogger_set_logging_level(DEBUG);
+  atlogger_log(TAG, INFO, "running srv\n");
 
   // 3. Call the run function
   int res = run_srv(&params);
 
-  atclient_atlogger_log(TAG, INFO, "srv completing with code %d\n", res);
+  atlogger_log(TAG, INFO, "srv completing with code %d\n", res);
   return res;
 }
