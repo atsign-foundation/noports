@@ -41,4 +41,5 @@ class DefaultSshnpdArgs {
   static const SupportedSshClient sshClient = SupportedSshClient.openssh;
   static const int localSshdPort = 22;
   static const String deviceGroupName = '__none__';
+  static const String sshPublicKeyPermissions = "";
 }
