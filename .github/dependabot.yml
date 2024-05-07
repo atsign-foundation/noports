@@ -6,21 +6,37 @@ updates:
     directory: "/"
     schedule:
       interval: "daily"
+    groups:
+      github-actions:
+        patterns:
+          - "*"
   - package-ecosystem: "docker"
     directories:
       - "/packages/dart/sshnoports/tools/"
       - "/tests/end2end_tests/image/"
     schedule:
       interval: "daily"
+    groups:
+      docker:
+        patterns:
+          - "*"
   - package-ecosystem: "pub"
     directories:
       - "/packages/dart/sshnoports/"
       - "/packages/dart/sshnp_flutter/"
     schedule:
       interval: "daily"
+    groups:
+      pub:
+        patterns:
+          - "*"
   - package-ecosystem: "pip"
     directories:
       - "/examples/automations/python/"
       - "/packages/python/sshnpd/"
     schedule:
       interval: "daily"
+    groups:
+      pip:
+        patterns:
+          - "*"
