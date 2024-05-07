@@ -1,4 +1,8 @@
-# sshnoports/packages/test/end2end_tests
+# Deprecated; superseded by tests/e2e_all
+[!WARNING]
+Deprecated; superseded by tests/e2e_all
+
+# tests/end2end_tests
 
 There are two main things happening in this folder that you can use for testing stuff locally:
 

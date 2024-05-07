@@ -410,14 +410,6 @@ class SshnpdImpl implements Sshnpd {
     String requestingAtsign = notification.from;
 
     // Validate the request payload.
-    //
-    // If a 'direct' ssh is being requested, then
-    // only sessionId, host (of the rvd) and port (of the rvd) are required.
-    //
-    // If a reverse ssh is being requested, then we also require
-    // a username (to ssh back to the client), a privateKey (for that
-    // ssh) and a remoteForwardPort, to set up the ssh tunnel back to this
-    // device from the client side.
     late final Map envelope;
     late final NptSessionRequest req;
     try {

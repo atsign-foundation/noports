@@ -183,6 +183,10 @@ if test "$retCode" != 0; then
 fi
 
 echo
+logInfo "Calling apkam_setup.sh"
+"$testScriptsDir/common/apkam_setup.sh"
+
+echo
 logInfo "Generating new ssh key"
 generateNewSshKey
 
