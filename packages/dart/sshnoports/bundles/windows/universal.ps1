@@ -2,62 +2,11 @@
 .SYNOPSIS
    Installtion script for sshnpd on Windows
 .DESCRIPTION
-    Usage: install_sshnpd [options]
+    Usage: universal.ps1 
 
-    Sshnp Version: 5.1.0
+    Sshnp Version: 5.2.0
     Repository: https://github.com/atsign-foundation/sshnoports
     Script Version: 0.1.0
-
-    General options:
-      -u, --update                Update all services instead of installing
-          --rename                Rename device for client/device pair with the new name
-      -l, --local <path>          Install using local zip/tgz
-      -r, --repo <path>           Install using local repo
-      -h, --help                  Display this help message
-
-    Installation options:
-      -c, --client <address>      Client address (e.g. @alice_client)
-      -d, --device <address>      Device address (e.g. @alice_device)
-      -n, --name <device name>    Name of the device
-      -v, --version <version>     Version to install (default: latest)
-          --args <args>           Additional arguments to sshnpd ("-v" by default)
-          Possible args:
-            -s, --[no-]sshpublickey      Update authorized_keys to include public key from sshnp
-            -u, --[no-]un-hide           When set, makes various information visible to the manager atSign - e.g. username, version, etc
-            -v, --[no-]verbose           More logging
-
-    Rename options:
-      -c, --client <address>      Client address (e.g. @alice_client)
-      -n, --name <device name>    New name of the device
-.PARAMETER install_sshnpd OP
-    The operation to perform. Default is "install".
-    Rename options:
-      -c, --client <address>      Client address (e.g. @alice_client)
-      -n, --name <device name>    New name of the device
-.EXAMPLE
-    Usage: install_sshnpd [options]
-
-    General options:
-      -u, --update                Update all services instead of installing
-          --rename                Rename device for client/device pair with the new name
-      -l, --local <path>          Install using local zip/tgz
-      -r, --repo <path>           Install using local repo
-      -h, --help                  Display this help message
-
-    Installation options:
-      -c, --client <address>      Client address (e.g. @alice_client)
-      -d, --device <address>      Device address (e.g. @alice_device)
-      -n, --name <device name>    Name of the device
-      -v, --version <version>     Version to install (default: latest)
-          --args <args>           Additional arguments to sshnpd ("-v" by default)
-          Possible args:
-            -s, --[no-]sshpublickey      Update authorized_keys to include public key from sshnp
-            -u, --[no-]un-hide           When set, makes various information visible to the manager atSign - e.g. username, version, etc
-            -v, --[no-]verbose           More logging
-
-    Rename options:
-      -c, --client <address>      Client address (e.g. @alice_client)
-      -n, --name <device name>    New name of the device
 #>
 #Prints the help message via get-help install_sshnpd-windows.ps1 
 param(
