@@ -84,15 +84,9 @@ param(
 
 # SCRIPT METADATA
 $script_version = "0.1.0"
-$sshnp_version = "5.1.0"
+$sshnp_version = "5.2.0"
 $repo_url = "https://github.com/atsign-foundation/sshnoports"
 # END METADATA
-
-#Required for service stuff, if you want to debug comment it out
-# if(!([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole] 'Administrator')) {
-#     Start-Process -FilePath PowerShell.exe -Verb Runas -ArgumentList "-File `"$($MyInvocation.MyCommand.Path)`"  `"$($MyInvocation.MyCommand.UnboundArguments)`""
-#     Exit
-# }
 
 
 function Norm-Atsign {
@@ -114,6 +108,7 @@ function Norm-InstallType {
         "^d.*" { return "device" }
         "^c.*" { return "client" }
         "^b.*" { return "both" }
+        "^u.*" { return "uninstall"}
         default { return $null }
     }
 }
@@ -162,6 +157,10 @@ function Parse-Env {
     $script:homepath = if (-not [string]::IsNullOrEmpty($env:HOME)) { $env:HOME } else { $env:USERPROFILE }
     $script:INSTALL_PATH =  "$homepath\.local\bin"
     $script:INSTALL_TYPE = Norm-InstallType "$script:INSTALL_TYPE"
+    if (Get-Service "sshnpd" -ErrorAction SilentlyContinue){
+        Invoke-Expression "sshnpd_service stop" -ErrorAction SilentlyContinue
+        Invoke-Expression "sshnpd_service uninstall" -ErrorAction SilentlyContinue
+    }
 }
 function Cleanup {
     if (Test-Path "$ARCHIVE_PATH") {
@@ -227,7 +226,7 @@ function Add-ToPath {
 function Get-InstallType {
     if ([string]::IsNullOrEmpty($script:INSTALL_TYPE)) {
         while ([string]::IsNullOrEmpty($script:INSTALL_TYPE)) {
-            $install_type_input = Read-Host "Install type (device, client, both)"
+            $install_type_input = Read-Host "Install type (device, client, both, uninstall)"
             $script:INSTALL_TYPE = Norm-InstallType $install_type_input
         }
     }
@@ -245,15 +244,22 @@ function Get-Atsigns {
             $prefixes += $prefix
         }
     }
-    $i = 1
-    Write-Host "Found some atsigns, please select one"
-    Write-Host "0) None"
-    foreach($prefix in $prefixes){
-        Write-Host "$i) $prefix"
-        $i = $i + 1
+    if (-not ([string]::IsNullOrEmpty($prefixes))) {
+        $i = 1
+        Write-Host "Found some atsigns, please select one"
+        Write-Host "0) None"
+        foreach($prefix in $prefixes){
+            Write-Host "$i) $prefix"
+            $i = $i + 1
+        }
+        $i = Read-Host "Choose an atsign"
+        return $prefixes[$i-1]
+    } else {
+        Write-Host "No atsigns found, please get one at  https://www.my.atsign.com/go"
+        Write-Host "Exiting.."
+        Cleanup
+        Start-Sleep -Seconds 3  
     }
-    $i = Read-Host "Choose an atsign"
-    return $prefixes[$i-1]
 }
 
 function Write-Metadata {
@@ -335,24 +341,44 @@ function Install-Device {
     Write-Host "Installed at_activate and sshnpd binaries to $script:INSTALL_PATH"
     if (-not ($script:INSTALL_TYPE -eq "both")){
         Remove-Item "$script:INSTALL_PATH/sshnp/sshnp.exe" -Force
-        Remove-Item "$script:INSTALL_PATH/sshnp/srv.exe" -Force
         Remove-Item "$script:INSTALL_PATH/sshnp/npt.exe" -Force
     }
     Download-Winsw
-    $servicePath = "$script:INSTALL_PATH\sshnp\sshnpd_service.exe"
-    [xml]$xmlContent = Get-Content "$script:INSTALL_PATH\sshnp\sshnpd_service.xml"
+    New-Item -Path "$script:INSTALL_PATH\sshnp\" -Name "logs" -ItemType "directory" 
+    $servicePath = "$script:INSTALL_PATH\sshnp\sshnpd.exe"
+    $xmlPath = "$script:INSTALL_PATH\sshnp\sshnpd_service.xml"
+    [xml]$xmlContent = Get-Content $xmlPath
     $xmlContent.service.arguments = "-a $script:DEVICE_ATSIGN -m $script:CLIENT_ATSIGN -d $script:DEVICE_NAME -k $script:homepath/.atsign/keys/$script:DEVICE_ATSIGN"+ "_key.atKeys -s"
-    $xmlContent.Save("$script:INSTALL_PATH\sshnp\sshnpd_service.xml")
+    $xmlEnv = $xmlContent.service.env | Where-Object {$_.Name -eq "USERPROFILE"}
+    $xmlEnv.Value = $script:homepath 
+    $xmlContent.Save($xmlPath)
     if (-not (Test-Path $servicePath -PathType Leaf)) {
         Write-Host "Failed to create service script'. Please check your permissions and try again."
         Cleanup
         Exit 1
     } 
-    if (Get-Service sshnpd){
-        sshnpd_service.exe uninstall -ErrorAction Continue
+    try {
+        Invoke-Expression "sshnpd_service install"
+        Invoke-Expression "sshnpd_service start"
     }
-    sshnpd_service.exe install 
-    sshnpd_service.exe start
+    catch {
+        Invoke-Expression "sshnpd_service stop" -ErrorAction SilentlyContinue
+        Invoke-Expression "sshnpd_service uninstall" -ErrorAction SilentlyContinue
+    }
+}
+
+function Uninstall-Both{
+    if (Get-Service "sshnpd" -ErrorAction SilentlyContinue){
+        Invoke-Expression "sshnpd_service stop" -ErrorAction SilentlyContinue
+        Invoke-Expression "sshnpd_service uninstall" -ErrorAction SilentlyContinue
+    }
+    if (Test-Path "$script:INSTALL_PATH\sshnp"){
+        Remove-Item -Path "$script:INSTALL_PATH\sshnp" -Recurse -Force
+    }
+    Cleanup
+    Write-Host "Uninstall complete, exiting.."
+    Start-Sleep -Seconds 3
+    exit 1
 }
 
 # Main function
@@ -361,6 +387,9 @@ function Main {
     Parse-Env
     if ([string]::IsNullOrEmpty($script:INSTALL_TYPE)){
         Get-InstallType
+    }
+    if ($script:INSTALL_TYPE -eq "uninstall"){
+        Uninstall-Both
     }
     Make-Dirs
     Download-Sshnp
@@ -392,6 +421,5 @@ function Main {
     Write-Host "Successfully installed $script:INSTALL_TYPE at $script:INSTALL_PATH, script ending..."
     Start-Sleep -Seconds 10
 }
-
 # Execute the main function
 Main

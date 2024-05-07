@@ -2,7 +2,7 @@
   <id>sshnpd</id>
   <name>sshnpd</name>
   <description>Ssh No Ports Daemon</description>
-  <depend>Netlogon<depend/>
+  <env name="USERPROFILE" value="%USERPROFILE%"/>
   <serviceaccount>
     <username>NT AUTHORITY\NetworkService</username>
   </serviceaccount>
