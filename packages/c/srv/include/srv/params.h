@@ -5,7 +5,6 @@
 #include <argparse/argparse.h>
 #include <getopt.h>
 #include <stdbool.h>
-#include <stdint.h>
 
 /**
  * @brief Free the memory allocated for a single side of the socket connection.
@@ -16,6 +15,7 @@ typedef struct {
   char *host;
   uint16_t port;
   uint16_t local_port;
+  char *local_host;
 
   bool bind_local_port;
   bool rv_auth;

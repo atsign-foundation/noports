@@ -1,6 +1,7 @@
 #include <srv/params.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 void apply_default_values_to_params(srv_params_t *params) {
   params->local_port = 22;
@@ -16,6 +17,7 @@ int parse_params(srv_params_t *params, int argc, const char **argv) {
     OPT_INTEGER('p', "port", &params->port, "rvd port"),
     OPT_INTEGER(0, "local-port", &params->local_port,
                 "Local port (usually the sshd port) to bridge to; defaults to 22"),
+    OPT_STRING(0, "local-host", &params->local_host, "Local host to bridge to; defaults to localhost"),
 #if ALLOW_BIND_LOCAL_PORT
     OPT_BOOLEAN(0, "bind-local-port", &params->bind_local_port,
                 "Set this flag when we are bridging from a local sender"),

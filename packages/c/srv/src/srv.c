@@ -95,7 +95,7 @@ int run_srv(srv_params_t *params) {
 int socket_to_socket(const srv_params_t *params, const char *auth_string, chunked_transformer_t *encrypter,
                      chunked_transformer_t *decrypter) {
   side_t sides[2];
-  side_hints_t hints_a = {1, 0, NULL, params->local_port};
+  side_hints_t hints_a = {1, 0, params->local_host, params->local_port};
   side_hints_t hints_b = {0, 0, params->host, params->port};
 
   if (params->rv_e2ee) {
