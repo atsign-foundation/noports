@@ -10,21 +10,14 @@
 #>
 #Prints the help message via get-help install_sshnpd-windows.ps1 
 param(
-    # [Parameter(Mandatory=$true, HelpMessage="Specify the manager atsign.")]
-    # [ValidateNotNullOrEmpty()]
     [string]$CLIENT_ATSIGN,
     [string]$DEVICE_MANAGER_ATSIGN,
-    # [Parameter(Mandatory=$true, HelpMessage="Specify the device atsign.")]
-    # [ValidateNotNullOrEmpty()]
     [string]$DEVICE_ATSIGN,
-    # [Parameter(Mandatory=$true, HelpMessage="Specify the device name.")]
-    # [ValidateNotNullOrEmpty()]
     [string]$DEVICE_NAME,
-    # [Parameter(Mandatory=$true, HelpMessage="Specify install type, client device or both.")]
-    # [ValidateNotNullOrEmpty()]
     [string]$INSTALL_TYPE,
     [string]$HOST_ATSIGN,
-    [string]$VERSION
+    [string]$VERSION,
+    [switch]$dev = $false
 )
 
 ### --- IMPORTANT ---
@@ -41,6 +34,9 @@ $repo_url = "https://github.com/atsign-foundation/sshnoports"
 function Norm-Atsign {
     param([string]$str)
     $atsign = "@$($str -replace '"', '' -replace '^@', '')"
+    if($atsign -eq "@"){
+        return $null
+    }
     return $atsign
 }
 
@@ -196,7 +192,6 @@ function Get-Atsigns {
     if (-not ([string]::IsNullOrEmpty($prefixes))) {
         $i = 1
         Write-Host "Found some atsigns, please select one"
-        Write-Host "0) None"
         foreach($prefix in $prefixes){
             Write-Host "$i) $prefix"
             $i = $i + 1
@@ -334,6 +329,9 @@ function Uninstall-Both{
 function Main {
     Check-BasicRequirements
     Parse-Env
+    if ($dev) {
+        Write-Host "---- Dev Mode -----"
+    }
     if ([string]::IsNullOrEmpty($script:INSTALL_TYPE)){
         Get-InstallType
     }
@@ -343,6 +341,9 @@ function Main {
     Make-Dirs
     Download-Sshnp
     Add-ToPath
+    if ($dev) {
+        Copy-Item .\sshnpd_service.xml "$script:INSTALL_PATH/sshnp"
+    }
     while ([string]::IsNullOrEmpty($script:DEVICE_ATSIGN)){
         Write-Host "Selecting a Device atsign.."
         $atsign = Get-Atsigns
