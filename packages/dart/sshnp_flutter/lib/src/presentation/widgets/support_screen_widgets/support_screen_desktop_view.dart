@@ -13,6 +13,9 @@ class SupportScreenDesktopView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    SizeConfig().init(context);
+    final headlineLarge = Theme.of(context).textTheme.headlineLarge!;
+    final bodyMedium = Theme.of(context).textTheme.bodyMedium!;
     final strings = AppLocalizations.of(context)!;
     return Scaffold(
       body: SafeArea(
@@ -31,17 +34,23 @@ class SupportScreenDesktopView extends StatelessWidget {
                     padding: const EdgeInsets.only(top: Sizes.p20),
                     child: Text(
                       strings.support,
-                      style: Theme.of(context).textTheme.headlineLarge,
+                      style: headlineLarge.copyWith(
+                        fontSize: headlineLarge.fontSize!.toFont,
+                      ),
                     ),
                   ),
                   Text(
                     strings.supportDescription,
-                    style: Theme.of(context).textTheme.bodyMedium!.copyWith(color: kTextColorDark),
+                    style: bodyMedium.copyWith(
+                      color: kTextColorDark,
+                      fontSize: bodyMedium.fontSize!.toFont,
+                    ),
                   ),
                   gapH30,
                   const Row(
                     children: [
                       Flexible(child: CustomListTile.discord()),
+                      gapW12,
                       Flexible(child: CustomListTile.email()),
                     ],
                   ),
@@ -53,9 +62,22 @@ class SupportScreenDesktopView extends StatelessWidget {
                   const Row(
                     children: [
                       Flexible(child: CustomListTile.faq()),
+                      gapW12,
                       Flexible(child: CustomListTile.privacyPolicy()),
                     ],
-                  )
+                  ),
+                  gapH20,
+                  const Divider(
+                    color: kProfileFormFieldColor,
+                  ),
+                  gapH20,
+                  const Row(
+                    children: [
+                      Flexible(child: CustomListTile.feedback()),
+                      gapW12,
+                      Flexible(child: gap0),
+                    ],
+                  ),
                 ],
               ),
             ),

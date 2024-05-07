@@ -1,3 +1,5 @@
+import 'dart:developer';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -16,7 +18,12 @@ class SettingsDesktopView extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    SizeConfig().init(context);
     final strings = AppLocalizations.of(context)!;
+    final headlineLarge = Theme.of(context).textTheme.headlineLarge!;
+    final bodyMedium = Theme.of(context).textTheme.bodyMedium!;
+    final bodySmall = Theme.of(context).textTheme.bodySmall!;
+    log(headlineLarge.fontSize.toString());
     final packageInfoController = ref.read(packageInfo);
     return Scaffold(
       body: SafeArea(
@@ -28,41 +35,54 @@ class SettingsDesktopView extends ConsumerWidget {
           const AppNavigationRail(),
           Expanded(
             child: Padding(
-              padding: const EdgeInsets.only(left: Sizes.p36, top: Sizes.p21),
+              padding: const EdgeInsets.only(left: Sizes.p36, top: Sizes.p21, right: Sizes.p10),
               child: ListView(
                 children: [
                   Padding(
                     padding: const EdgeInsets.symmetric(vertical: Sizes.p20),
                     child: Text(
                       strings.settings,
-                      style: Theme.of(context).textTheme.headlineLarge,
+                      style: headlineLarge.copyWith(
+                        fontSize: headlineLarge.fontSize!.toFont,
+                      ),
                     ),
                   ),
                   gapH20,
-                  const Text('Account'),
+                  Text(
+                    'Account',
+                    style: bodyMedium.copyWith(fontSize: bodyMedium.fontSize!.toFont),
+                  ),
                   gapH16,
                   const Align(
                     alignment: Alignment.centerLeft,
                     child: ContactListTile(),
                   ),
                   gapH36,
-                  Align(
-                    alignment: Alignment.centerLeft,
-                    child: Container(
-                        height: 180,
-                        width: 540,
-                        decoration: BoxDecoration(
-                          color: kProfileBackgroundColor,
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: GridView.count(childAspectRatio: 202 / 60, crossAxisCount: 2, children: const [
-                          CustomListTile.keyManagement(),
-                          CustomListTile.backUpYourKey(),
-                          CustomListTile.switchAtsign(),
-                          CustomListTile.resetAtsign(),
-                        ])),
+                  const Row(
+                    children: [
+                      Flexible(child: CustomListTile.keyManagement()),
+                      gapW12,
+                      Flexible(child: CustomListTile.backUpYourKey()),
+                    ],
                   ),
-                  Text('App Version ${packageInfoController.version} (${packageInfoController.buildNumber})'),
+                  gapH20,
+                  const Divider(
+                    color: kProfileFormFieldColor,
+                  ),
+                  gapH20,
+                  const Row(
+                    children: [
+                      Flexible(child: CustomListTile.switchAtsign()),
+                      gapW12,
+                      Flexible(child: CustomListTile.resetAtsign()),
+                    ],
+                  ),
+                  gapH40,
+                  Text(
+                    'App Version ${packageInfoController.version} (${packageInfoController.buildNumber})',
+                    style: bodyMedium.copyWith(fontSize: bodyMedium.fontSize!.toFont - 1.5, color: kTextColorDark),
+                  ),
+                  gapH20,
                 ],
               ),
             ),

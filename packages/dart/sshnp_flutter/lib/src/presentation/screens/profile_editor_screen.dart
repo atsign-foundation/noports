@@ -16,8 +16,8 @@ class _ProfileEditorScreenState extends State<ProfileEditorScreen> {
   @override
   Widget build(BuildContext context) {
     return const ResponsiveWidget(
-        mobileScreen: ProfileEditorScreenMobileView(),
+        smallScreen: ProfileEditorScreenMobileView(),
         largeScreen: ProfileEditorScreenDesktopView(),
-        tabletScreen: ProfileEditorScreenDesktopView());
+        mediumScreen: ProfileEditorScreenDesktopView());
   }
 }

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:sshnp_flutter/src/utility/constants.dart';
+import 'package:sshnp_flutter/src/utility/sizes.dart';
 
 class CustomDropdownFormField<T> extends StatelessWidget {
   const CustomDropdownFormField({
@@ -29,31 +30,40 @@ class CustomDropdownFormField<T> extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    SizeConfig().init(context);
+    final bodySmall = Theme.of(context).textTheme.bodySmall!;
     return SizedBox(
-      width: width,
+      width: width.toWidth,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
             label,
-            style: Theme.of(context).textTheme.bodySmall!.copyWith(
-                  color: Colors.grey,
-                ),
+            style: bodySmall.copyWith(
+              color: Colors.grey,
+              fontSize: bodySmall.fontSize?.toFont,
+            ),
           ),
           DropdownButtonFormField<T>(
             value: initialValue,
-            style: Theme.of(context).textTheme.bodySmall!.copyWith(color: Colors.black),
+            style: bodySmall.copyWith(
+              color: Colors.black,
+              fontSize: bodySmall.fontSize?.toFont,
+            ),
             selectedItemBuilder: (context) => items
                 .map((e) => Text(
                       e.value.toString(),
-                      style: Theme.of(context).textTheme.bodySmall!.copyWith(color: kPrimaryColor),
+                      style: bodySmall.copyWith(
+                        color: kPrimaryColor,
+                        // fontSize: bodySmall.fontSize?.toFont,
+                      ),
                     ))
                 .toList(),
             dropdownColor: Colors.white,
             decoration: InputDecoration(
               isDense: true,
               hintText: hintText,
-              hintStyle: Theme.of(context).textTheme.bodySmall,
+              hintStyle: bodySmall.copyWith(fontSize: bodySmall.fontSize?.toFont),
               filled: true,
               fillColor: kProfileFormFieldColor,
               border: OutlineInputBorder(
@@ -64,6 +74,7 @@ class CustomDropdownFormField<T> extends StatelessWidget {
                 message: tooltip,
                 child: const Icon(
                   Icons.question_mark_outlined,
+                  color: kPrimaryColor,
                   size: 12,
                 ),
               ),

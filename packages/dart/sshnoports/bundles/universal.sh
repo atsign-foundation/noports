@@ -76,6 +76,14 @@ is_systemd_available() {
   [ -d /run/systemd/system ]
 }
 
+check_cmd() {
+  set +e
+  command -v "$1" > /dev/null 2>&1
+  exitcode=$?
+  set -e
+  return $exitcode
+}
+
 sedi() {
   if is_darwin; then
     sed -i '' "$@"
@@ -337,28 +345,42 @@ Environment:
 EOL
 }
 
+downloader() {
+  if check_cmd curl; then
+    curl -sSfL "$1" -o "$2"
+  elif check_cmd wget; then
+    wget "$1" -q -O "$2"
+  else
+    >&2 echo
+    >&2 echo "Couldn't find curl or wget to download package"
+    >&2 echo "Please install one of them"
+    >&2 echo "Also how did you download this script???"
+    >&2 echo
+    exit 1
+  fi
+}
+
 get_download_url() {
   unset download_urls
-  download_urls=$(
-    curl -fsSL "https://api.github.com/repos/atsign-foundation/noports/releases/$(norm_version $sshnp_version)" |
-      grep browser_download_url |
-      cut -d\" -f4
-  )
+  release_prefix="https://api.github.com/repos/atsign-foundation/noports/releases/"
+  release_info=$(downloader "$release_prefix$(norm_version $sshnp_version)" - )
+  exitcode=$?
+  if [ $exitcode != 0 ]; then exit $exitcode; fi
+  download_urls=$(echo "$release_info" | grep browser_download_url | cut -d\" -f4)
 
   if [ -z "$download_urls" ]; then
-    echo "Failed to get download url for sshnoports"
+    >&2 echo "Failed to get download url for sshnoports"
     exit 1
   fi
 
-  echo "$download_urls" |
-    grep "$platform_name" | grep "$system_arch" |
-    cut -d\" -f4
+  echo "$download_urls" | grep "$platform_name" |
+    grep "$system_arch" | cut -d\" -f4
 }
 
 download_archive() {
   read -r download_url
   echo "Downloading archive from $download_url"
-  curl -sL "$download_url" -o "$archive_path"
+  downloader "$download_url" "$archive_path"
   if [ ! -f "$archive_path" ]; then
     echo "Failed to download archive"
     exit 1
@@ -368,9 +390,19 @@ download_archive() {
 unpack_archive() {
   case "$archive_ext" in
     zip)
+      if ! check_cmd unzip; then
+        >&2 echo "ERROR: unzip not found"
+        >&2 echo "Please install unzip and make it available on the PATH"
+        exit 1
+      fi
       unzip -qo "$archive_path" -d "$extract_path"
       ;;
     tgz | tar.gz)
+      if ! check_cmd tar; then
+        >&2 echo "ERROR: tar not available"
+        >&2 echo "Please install tar and make it available on the PATH"
+        exit 1
+      fi
       mkdir -p "$extract_path"
       tar -zxf "$archive_path" -C "$extract_path"
       ;;
@@ -653,17 +685,17 @@ device() {
       if ! $no_sudo && is_systemd_available; then
         suggest_sudo
       fi
-      if command -v tmux >/dev/null 2>&1; then
+      if check_cmd tmux; then
         device_install_type="tmux"
       else
-        if ! command -v cron >/dev/null 2>&1; then
-          echo "ERROR: crontab not available"
-          echo "Please install cron and make it available on the PATH"
+        if ! check_cmd cron; then
+          >&2 echo "ERROR: crontab not available"
+          >&2 echo "Please install cron and make it available on the PATH"
           exit 1
         fi
-        if ! command -v nohup >/dev/null 2>&1; then
-          echo "ERROR: nohup not available"
-          echo "Please install nohup and make it available on the PATH"
+        if ! check_cmd nohup; then
+          >&2 echo "ERROR: nohup not available"
+          >&2 echo "Please install nohup and make it available on the PATH"
           exit 1
         fi
         device_install_type="headless"
