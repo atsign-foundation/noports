@@ -8,6 +8,7 @@ import 'package:sshnp_flutter/src/controllers/navigation_controller.dart';
 import 'package:sshnp_flutter/src/presentation/screens/onboarding_screen.dart';
 import 'package:sshnp_flutter/src/presentation/widgets/utility/custom_snack_bar.dart';
 import 'package:sshnp_flutter/src/utility/constants.dart';
+import 'package:sshnp_flutter/src/utility/sizes.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import 'settings_actions/settings_switch_atsign_action.dart';
@@ -82,6 +83,13 @@ class CustomListTile extends StatelessWidget {
       this.type = CustomListTileType.resetAtsign,
       this.tileColor = kProfileBackgroundColor,
       super.key});
+  const CustomListTile.feedback(
+      {this.iconData = Icons.feedback_outlined,
+      this.title = 'Feedback',
+      this.subtitle = 'Send us your feedback',
+      this.type = CustomListTileType.feedback,
+      this.tileColor = kProfileBackgroundColor,
+      super.key});
 
   final IconData iconData;
   final String title;
@@ -92,6 +100,9 @@ class CustomListTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    SizeConfig().init(context);
+    final bodyMedium = Theme.of(context).textTheme.bodyMedium!;
+    final bodySmall = Theme.of(context).textTheme.bodySmall!;
     Future<void> onTap() async {
       switch (type) {
         case CustomListTileType.email:
@@ -155,24 +166,44 @@ class CustomListTile extends StatelessWidget {
               context.goNamed(AppRoute.onboarding.name);
             }
           }
-
           break;
+
+        case CustomListTileType.feedback:
+          final emailUri = Uri(
+            scheme: 'mailto',
+            path: 'info@noports.com',
+            query: 'subject=SSH No Ports Desktop Feedback',
+          );
+
+          if (!await launchUrl(emailUri)) {
+            CustomSnackBar.notification(content: 'No email client available');
+          }
       }
     }
 
     return ListTile(
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(Sizes.p10),
+      ),
       leading: FilledButton(
-        style: FilledButton.styleFrom(backgroundColor: kIconColorBackground),
+        style: FilledButton.styleFrom(
+          backgroundColor: kIconColorBackground,
+          // minimumSize: Size(64.toFont, 100.toFont),
+        ),
         onPressed: onTap,
         child: Icon(
           iconData,
           color: kIconColorDark,
+          // size: Sizes.p24.toFont,
         ),
       ),
-      title: Text(title),
+      title: Text(
+        title,
+        style: bodyMedium.copyWith(fontSize: bodyMedium.fontSize!.toFont),
+      ),
       subtitle: Text(
         subtitle,
-        style: Theme.of(context).textTheme.bodySmall!.copyWith(color: kTextColorDark),
+        style: bodySmall.copyWith(color: kTextColorDark, fontSize: bodySmall.fontSize!.toFont),
       ),
       onTap: () async {
         await onTap();
@@ -191,4 +222,5 @@ enum CustomListTileType {
   switchAtsign,
   backupYourKey,
   resetAtsign,
+  feedback
 }

@@ -1,5 +1,3 @@
-import 'dart:developer';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -23,31 +21,42 @@ class _ProfileBarState extends ConsumerState<ProfileBar> {
   @override
   Widget build(BuildContext context) {
     final strings = AppLocalizations.of(context)!;
+    SizeConfig().init(context);
     final controller = ref.watch(configFamilyController(widget.profileName));
-    log('profileName: ${widget.profileName}');
+
+    final bodyMedium = Theme.of(context).textTheme.bodyMedium!;
+
     return controller.when(
         loading: () => const LinearProgressIndicator(),
         error: (error, stackTrace) {
           return Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(widget.profileName),
+              Text(widget.profileName,
+                  style: bodyMedium.copyWith(
+                    fontSize: bodyMedium.fontSize!.toFont,
+                  )),
               gapW8,
               Expanded(child: Container()),
-              Text(strings.corruptedProfile),
+              Text(strings.corruptedProfile,
+                  style: bodyMedium.copyWith(
+                    fontSize: bodyMedium.fontSize!.toFont,
+                  )),
               ProfileDeleteAction(widget.profileName),
             ],
           );
         },
         data: (profile) {
-          log('profile from profile_bar: ${profile.profileName}');
           return Card(
             color: kProfileBarColor,
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 gapW16,
-                Text(widget.profileName),
+                Text(widget.profileName,
+                    style: bodyMedium.copyWith(
+                      fontSize: bodyMedium.fontSize!.toFont,
+                    )),
                 gapW8,
                 const Expanded(child: gap0),
                 const ProfileBarStats(),

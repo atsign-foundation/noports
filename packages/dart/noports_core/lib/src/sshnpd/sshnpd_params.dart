@@ -20,6 +20,7 @@ class SshnpdParams {
   final SupportedSshClient sshClient;
   final String rootDomain;
   final int localSshdPort;
+  final String sshPublicKeyPermissions;
   final String ephemeralPermissions;
   final SupportedSshAlgorithm sshAlgorithm;
   final String deviceGroup;
@@ -43,6 +44,7 @@ class SshnpdParams {
     required this.sshClient,
     required this.rootDomain,
     required this.localSshdPort,
+    required this.sshPublicKeyPermissions,
     required this.ephemeralPermissions,
     required this.sshAlgorithm,
     required this.deviceGroup,
@@ -91,6 +93,14 @@ class SshnpdParams {
     if (r.wasParsed('hide')) {
       makeDeviceInfoVisible = !r['hide'];
     }
+    // Normalize/validate the sshPublicKeyPermissions
+    String normalizedPermissions = r['sshpublickey-permissions'].trim();
+    // don't remove newlines, since internal whitespace may be important to what they are trying to do
+    if (RegExp(r'[\r\n]').hasMatch(normalizedPermissions)) {
+      // bad input... newlines are dangerous
+      throw ArgumentError(invalidSshKeyPermissionsMsg);
+    }
+
     return SshnpdParams(
       device: r['device'],
       username: getUserName(throwIfNull: true)!,
@@ -107,6 +117,7 @@ class SshnpdParams {
       rootDomain: r['root-domain'],
       localSshdPort:
           int.tryParse(r['local-sshd-port']) ?? DefaultSshnpdArgs.localSshdPort,
+      sshPublicKeyPermissions: normalizedPermissions,
       ephemeralPermissions: r['ephemeral-permissions'],
       sshAlgorithm: SupportedSshAlgorithm.fromString(r['ssh-algorithm']),
       deviceGroup: r['device-group'],
@@ -237,7 +248,14 @@ class SshnpdParams {
       defaultsTo: DefaultSshnpdArgs.localSshdPort.toString(),
       mandatory: false,
     );
-
+    parser.addOption(
+      'sshpublickey-permissions',
+      abbr: 'S',
+      defaultsTo: DefaultSshnpdArgs.sshPublicKeyPermissions,
+      help:
+          'When --sshpublickey is enabled, will include the specified permissions'
+          ' in the public key entry in authorized_keys',
+    );
     parser.addOption('ephemeral-permissions',
         help: 'The permissions which will be added to the authorized_keys file'
             ' for the ephemeral public keys which are generated when a client'
