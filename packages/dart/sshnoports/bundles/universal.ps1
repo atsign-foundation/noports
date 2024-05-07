@@ -304,19 +304,19 @@ function Install-Device {
         Exit 1
     } 
     try {
-        Invoke-Expression "sshnpd_service install"
-        Invoke-Expression "sshnpd_service start"
+        Invoke-Expression "$script:service_path install"
+        Invoke-Expression "$script:service_path start"
     }
     catch {
-        Invoke-Expression "sshnpd_service stop" -ErrorAction SilentlyContinue
-        Invoke-Expression "sshnpd_service uninstall" -ErrorAction SilentlyContinue
+        Invoke-Expression "$script:service_path stop" -ErrorAction SilentlyContinue
+        Invoke-Expression "$script:service_path uninstall" -ErrorAction SilentlyContinue
     }
 }
 
 function Uninstall-Both{
     if (Get-Service "sshnpd" -ErrorAction SilentlyContinue){
-        Invoke-Expression "sshnpd_service stop" -ErrorAction SilentlyContinue
-        Invoke-Expression "sshnpd_service uninstall" -ErrorAction SilentlyContinue
+        Invoke-Expression "\$script:service_path stop" -ErrorAction SilentlyContinue
+        Invoke-Expression "$script:service_path uninstall" -ErrorAction SilentlyContinue
     }
     if (Test-Path "$script:INSTALL_PATH\sshnp"){
         Remove-Item -Path "$script:INSTALL_PATH\sshnp" -Recurse -Force
@@ -346,6 +346,7 @@ function Main {
     if ($dev) {
         Copy-Item .\sshnpd_service.xml "$script:INSTALL_PATH/sshnp"
     }
+    $script:service_path = "$script:INSTALL_PATH\sshnp\sshnpd_service.exe"
     while ([string]::IsNullOrEmpty($script:DEVICE_ATSIGN)){
         Write-Host "Selecting a Device atsign.."
         $atsign = Get-Atsigns
