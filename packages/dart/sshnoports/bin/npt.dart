@@ -225,7 +225,8 @@ void main(List<String> args) async {
         verbose: verbose,
         rootDomain: parsedArgs['root-domain'],
         inline: inline,
-        daemonPingTimeout: Duration(seconds: int.parse(parsedArgs['daemon-ping-timeout'])),
+        daemonPingTimeout:
+            Duration(seconds: int.parse(parsedArgs['daemon-ping-timeout'])),
       );
 
       cli.CLIBase cliBase = cli.CLIBase(
