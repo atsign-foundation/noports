@@ -52,7 +52,6 @@ function Norm-InstallType {
     switch -regex ($str) {
         "^d.*" { return "device" }
         "^c.*" { return "client" }
-        "^b.*" { return "both" }
         "^u.*" { return "uninstall"}
         default { return $null }
     }
@@ -171,7 +170,7 @@ function Add-ToPath {
 function Get-InstallType {
     if ([string]::IsNullOrEmpty($script:INSTALL_TYPE)) {
         while ([string]::IsNullOrEmpty($script:INSTALL_TYPE)) {
-            $install_type_input = Read-Host "Install type (device, client, both, uninstall)"
+            $install_type_input = Read-Host "Install type (device, client, uninstall)"
             $script:INSTALL_TYPE = Norm-InstallType $install_type_input
         }
     }
@@ -192,11 +191,16 @@ function Get-Atsigns {
     if (-not ([string]::IsNullOrEmpty($prefixes))) {
         $i = 1
         Write-Host "Found some atsigns, please select one"
+        Write-Host "0) Manually Enter:"
         foreach($prefix in $prefixes){
             Write-Host "$i) $prefix"
             $i = $i + 1
         }
         $i = Read-Host "Choose an atsign"
+        if($i -eq 0){
+            $at = Read-Host "Enter your atsign"
+            return Norm-Atsign $at
+        }
         return $prefixes[$i-1]
     } else {
         Write-Host "No atsigns found, please get one at  https://www.my.atsign.com/go"
@@ -267,26 +271,24 @@ function Install-Client {
         }
         $script:HOST_ATSIGN = $host_atsign
     }
-    $clientPath = "$script:INSTALL_PATH\sshnp\$script:DEVICE_NAME$script:DEVICE_ATSIGN.ps1"
-    "sshnp.exe -f '$script:CLIENT_ATSIGN' -t '$script:DEVICE_ATSIGN' -d '$script:DEVICE_NAME' -r '$script:HOST_ATSIGN' -s -u '$Env:UserName'"  | Out-File -FilePath  $clientPath
+    $device_atsign_client = ""
+    while ([string]::IsNullOrEmpty($device_atsign_client)){
+        Write-Host "Selecting the Device atsign.."
+        $atsign = Get-Atsigns
+        $device_atsign_client =  Norm-Atsign $atsign
+    }
+    $clientPath = "$script:INSTALL_PATH\sshnp\$script:DEVICE_NAME$device_atsign_client.ps1"
+    "sshnp.exe -f '$script:CLIENT_ATSIGN' -t '$device_atsign_client' -d '$script:DEVICE_NAME' -r '$script:HOST_ATSIGN' -s -u '$Env:UserName'"  | Out-File -FilePath  $clientPath
     if (-not (Test-Path $clientPath -PathType Leaf)) {
         Write-Host "Failed to create client script'. Please check your permissions and try again."
         Cleanup
         Exit 1
     } 
     Write-Host "Created client script for $script:DEVICE_NAME$script:DEVICE_ATSIGN"
-    if (-not ($script:INSTALL_TYPE -eq "both")){
-        Remove-Item "$script:INSTALL_PATH/sshnp/srv.exe" -Force
-        Remove-Item "$script:INSTALL_PATH/sshnp/sshnpd.exe" -Force
-    }
 }
 
 function Install-Device {
     Write-Host "Installed at_activate and sshnpd binaries to $script:INSTALL_PATH"
-    if (-not ($script:INSTALL_TYPE -eq "both")){
-        Remove-Item "$script:INSTALL_PATH/sshnp/sshnp.exe" -Force
-        Remove-Item "$script:INSTALL_PATH/sshnp/npt.exe" -Force
-    }
     Download-Winsw
     New-Item -Path "$script:INSTALL_PATH\sshnp\" -Name "logs" -ItemType "directory" 
     $servicePath = "$script:INSTALL_PATH\sshnp\sshnpd.exe"
@@ -360,10 +362,6 @@ function Main {
             Install-Client
         }
         "device" {
-            Install-Device
-        }
-        "both" {
-            Install-Client
             Install-Device
         }
     }
