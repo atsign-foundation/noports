@@ -1,6 +1,13 @@
 #!/usr/bin/env python3
+import argparse
+import errno
+import getpass
+import json
+import logging
+import os
+import subprocess
 import sys
-import os, threading, getpass, json, logging, subprocess, argparse, errno
+import threading
 from queue import Empty, Queue
 from time import sleep
 
