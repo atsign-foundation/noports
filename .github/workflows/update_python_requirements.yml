@@ -47,7 +47,9 @@ jobs:
           echo 'No changes to commit on this run'
           exit 0
         else
-          git commit -m "build(deps): Bump sshnpd requirements.txt"
+          poetry version patch
+          git add pyproject.toml
+          git commit -m "build(deps): Bump sshnpd requirements.txt and poetry version"
           git push
         fi
 
@@ -64,6 +66,8 @@ jobs:
           echo 'No changes to commit on this run'
           exit 0
         else
-          git commit -m "build(deps): Bump sshnoports_sdk requirements.txt"
+          poetry version patch
+          git add pyproject.toml
+          git commit -m "build(deps): Bump sshnoports_sdk requirements.txt and poetry version"
           git push
         fi
