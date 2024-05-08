@@ -3,7 +3,6 @@ on:
   pull_request:
     paths:
       - 'packages/python/sshnpd/pyproject.toml'
-      - 'examples/automations/python/sshnoports_automation_python/pyproject.toml'
   workflow_dispatch:
 
 permissions:
@@ -50,24 +49,5 @@ jobs:
           poetry version patch
           git add pyproject.toml
           git commit -m "build(deps): Bump sshnpd requirements.txt and poetry version"
-          git push
-        fi
-
-    - name: Bump sshnoports_automation_python Python dependencies
-      working-directory: examples/automations/python
-      if: ${{ github.actor == 'dependabot[bot]' }}
-      run: |
-        poetry update
-        poetry export --format requirements.txt --output requirements.txt
-        git config --global user.name 'dependabot[bot]'
-        git config --global user.email 'dependabot[bot]@users.noreply.github.com'
-        git add requirements.txt
-        if [ -z "$(git status --porcelain)" ]; then 
-          echo 'No changes to commit on this run'
-          exit 0
-        else
-          poetry version patch
-          git add pyproject.toml
-          git commit -m "build(deps): Bump sshnoports_sdk requirements.txt and poetry version"
           git push
         fi
