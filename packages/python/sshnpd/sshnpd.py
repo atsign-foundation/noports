@@ -319,13 +319,15 @@ def main():
     
     args = parser.parse_args()
     sshnpd = SSHNPDClient(args.atsign, args.manager_atsign, args.device, args.username, args.verbose, args.expecting_ssh_keys)
-
+    thread = None
     while True:
         try:    
-            threading.Thread(target=sshnpd.start).start()
+            thread = threading.Thread(target=sshnpd.start)
+            thread.start()
             while sshnpd.is_alive():
                 sleep(3)    
         except Exception as e:
+            thread.join()
             sshnpd.close()
             print(e)
         print("Restarting sshnpd in 3 seconds..")
