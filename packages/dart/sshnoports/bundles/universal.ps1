@@ -57,7 +57,6 @@ function Norm-InstallType {
     }
 }
 
-
 function Check-BasicRequirements {
     $requiredCommands = @("attrib", "Expand-Archive", "Select-String", "Select-Object", "Start-Service","Test-Path", "New-Item", "Get-Command", "New-Object", "Invoke-WebRequest", "New-Service")
     
@@ -92,7 +91,6 @@ function Make-Dirs {
         attrib "$env:HOME\.ssh\authorized_keys" +h
     }
 }
-
 function Parse-Env {
     $script:VERSION = if ([string]::IsNullOrEmpty($VERSION)) { "latest" } else { Norm-Version $VERSION }
     $script:SSHNP_URL = "https://api.github.com/repos/atsign-foundation/noports/releases/$VERSION"
@@ -119,8 +117,6 @@ function Unpack-Archive {
     if (Test-Path "$script:INSTALL_PATH\sshnp"){
         Remove-Item -Path "$script:INSTALL_PATH\sshnp" -Recurse -Force
     }
-
-
     Expand-Archive -Path "$ARCHIVE_PATH\sshnp.zip" -DestinationPath $INSTALL_PATH -Force
     if (-not (Test-Path "$INSTALL_PATH/sshnp/sshnp.exe")) {
         Write-Host "Failed to unpack sshnp"
@@ -210,35 +206,6 @@ function Get-Atsigns {
     }
 }
 
-function Write-Metadata {
-    param(
-        [string]$file,
-        [string]$variable,
-        [string]$value
-    )
-    $start_line = "# SCRIPT METADATA"
-    $end_line = "# END METADATA"
-    $content = Get-Content -Path $file
-    $start_index = $content.IndexOf($start_line)
-    $end_index = $content.IndexOf($end_line)
-    if ([string]::IsNullOrEmpty($content)) {
-        Write-Host "Error: $file is empty"
-        return
-    }
-
-    if ($start_index -ne -1 -and $end_index -ne -1) {
-        for ($i = $start_index; $i -le $end_index; $i++) {
-            if ($content[$i] -match "$variable=`".*`"") {
-                $content[$i] = $content[$i] -replace "$variable=`".*`"", "$variable=`"$value`""
-
-            }
-        }
-        $content | Set-Content -Path $file
-    } else {
-        Write-Host "Error: Metadata block not found in $file"
-    }
-}
-
 function Install-Client {
     if (-not $HOST_ATSIGN) {
         Write-Host "Pick your default region:"
@@ -271,14 +238,8 @@ function Install-Client {
         }
         $script:HOST_ATSIGN = $host_atsign
     }
-    $device_atsign_client = ""
-    while ([string]::IsNullOrEmpty($device_atsign_client)){
-        Write-Host "Selecting the Device atsign.."
-        $atsign = Get-Atsigns
-        $device_atsign_client =  Norm-Atsign $atsign
-    }
-    $clientPath = "$script:INSTALL_PATH\sshnp\$script:DEVICE_NAME$device_atsign_client.ps1"
-    "sshnp.exe -f '$script:CLIENT_ATSIGN' -t '$device_atsign_client' -d '$script:DEVICE_NAME' -r '$script:HOST_ATSIGN' -s -u '$Env:UserName'"  | Out-File -FilePath  $clientPath
+    $clientPath = "$script:INSTALL_PATH\sshnp\$script:DEVICE_NAME$script:DEVICE_ATSIGN.ps1"
+    "sshnp.exe -f '$script:CLIENT_ATSIGN' -t '$script:DEVICE_ATSIGN' -d '$script:DEVICE_NAME' -r '$script:HOST_ATSIGN' -s -u '$Env:UserName'"  | Out-File -FilePath  $clientPath
     if (-not (Test-Path $clientPath -PathType Leaf)) {
         Write-Host "Failed to create client script'. Please check your permissions and try again."
         Cleanup
@@ -333,6 +294,11 @@ function Main {
     Parse-Env
     if ($dev) {
         Write-Host "---- Dev Mode -----"
+        if(-not (Test-Path .\packages\dart\sshnoports\bundles\windows\sshnpd_service.xml)){
+            Write-Host "Please use dev mode inside the repo at the root directory of noports"
+            Cleanup 
+            Exit 1
+        }
     }
     if ([string]::IsNullOrEmpty($script:INSTALL_TYPE)){
         Get-InstallType
@@ -343,8 +309,8 @@ function Main {
     Make-Dirs
     Download-Sshnp
     Add-ToPath
-    if ($dev) {
-        Copy-Item .\sshnpd_service.xml "$script:INSTALL_PATH/sshnp"
+    if($dev) {
+        Copy-Item .\packages\dart\sshnoports\bundles\windows\sshnpd_service.xml "$script:INSTALL_PATH/sshnp"
     }
     $script:service_path = "$script:INSTALL_PATH\sshnp\sshnpd_service.exe"
     while ([string]::IsNullOrEmpty($script:DEVICE_ATSIGN)){
