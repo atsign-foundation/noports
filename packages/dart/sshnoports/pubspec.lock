@@ -117,12 +117,11 @@ packages:
   at_onboarding_cli:
     dependency: "direct main"
     description:
-      path: "packages/at_onboarding_cli"
-      ref: "gkc/apkam-aware-cli"
-      resolved-ref: "7fb44deac726ea691fee3feed3d0b150059d8044"
-      url: "https://github.com/atsign-foundation/at_libraries"
-    source: git
-    version: "1.5.0"
+      name: at_onboarding_cli
+      sha256: "117ae37069db83439a37545c18fe4fa44d869e7ae315df0d867077ffd3c28af9"
+      url: "https://pub.dev"
+    source: hosted
+    version: "1.4.4"
   at_persistence_secondary_server:
     dependency: transitive
     description:
@@ -585,7 +584,7 @@ packages:
       path: "../noports_core"
       relative: true
     source: path
-    version: "6.0.7"
+    version: "6.1.0"
   openssh_ed25519:
     dependency: transitive
     description:
