@@ -34,11 +34,12 @@ jobs:
     # The dark mode and light mode Atsign logos in the GitHub README don't
     # show properly on PyPI so we have a copy of the README.md in
     # README.PyPI.md with just the light mode logo.
-    # This step checks that we don't have drift between the docs.
-    - name: Check that READMEs are in sync
-      working-directory: packages/python/sshnpd
+    # That README is generated here from a stub header line plus the rest
+    # of the main README.md
+    - name: Generate README for PyPI
       run: |
-        diff <(tail -n +2 README.md) <(tail -n +2 README.PyPI.md)
+        mv README.PyPI.md.stub README.PyPI.md
+        tail -n +2 README.md >> README.PyPI.md
 
     - name: Build using Poetry
       working-directory: packages/python/sshnpd
