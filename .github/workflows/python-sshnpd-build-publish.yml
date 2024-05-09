@@ -37,6 +37,7 @@ jobs:
     # That README is generated here from a stub header line plus the rest
     # of the main README.md
     - name: Generate README for PyPI
+      working-directory: packages/python/sshnpd
       run: |
         mv README.PyPI.md.stub README.PyPI.md
         tail -n +2 README.md >> README.PyPI.md
