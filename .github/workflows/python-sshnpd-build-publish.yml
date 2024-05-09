@@ -7,6 +7,8 @@ on:
       - 'p*.*.*'
     branches:
       - trunk
+    paths:
+      - 'packages/python/sshnpd/**'
 
 permissions:  # added using https://github.com/step-security/secure-repo
   contents: read
@@ -27,13 +29,14 @@ jobs:
     - name: Install Poetry
       uses: abatilo/actions-poetry@7b6d33e44b4f08d7021a1dee3c044e9c253d6439 # v3.0.0
       with:
-        poetry-version: '1.8.2'
+        poetry-version: '1.8.3'
 
     # The dark mode and light mode Atsign logos in the GitHub README don't
     # show properly on PyPI so we have a copy of the README.md in
     # README.PyPI.md with just the light mode logo.
     # This step checks that we don't have drift between the docs.
     - name: Check that READMEs are in sync
+      working-directory: packages/python/sshnpd
       run: |
         diff <(tail -n +2 README.md) <(tail -n +2 README.PyPI.md)
 

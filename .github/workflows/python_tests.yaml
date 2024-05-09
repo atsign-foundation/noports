@@ -4,6 +4,9 @@ on:
     paths:
       - 'packages/python/**'
 
+# Declare default permissions as read only.
+permissions: read-all
+
 jobs:
   ruff:
     runs-on: ubuntu-latest
