@@ -5,7 +5,6 @@ import 'dart:typed_data';
 
 // other packages
 import 'package:chalkdart/chalk.dart';
-import 'package:chalkdart/chalk_x11.dart';
 import 'package:path/path.dart' as path;
 import 'package:dartssh2/dartssh2.dart';
 
