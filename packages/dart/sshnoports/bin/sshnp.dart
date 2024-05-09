@@ -109,11 +109,12 @@ void main(List<String> args) async {
         ),
       );
 
-      if (params.device == DefaultSshnpArgs.device) {
+      if (! argResults.wasParsed(SshnpArg.deviceArg.name)) {
         stderr.write(chalk.red('Warning: '));
-        stderr.writeln('Using default value of "default"'
+        stderr.writeln('Using default value of "${params.device}"'
             ' for optional arg "--${SshnpArg.deviceArg.name}".'
-            ' Note that this arg will be mandatory in future releases.');
+            ' Note that the --${SshnpArg.deviceArg.name} arg'
+            ' will be mandatory in future releases.');
       }
 
       // Windows will not let us delete files in use so
