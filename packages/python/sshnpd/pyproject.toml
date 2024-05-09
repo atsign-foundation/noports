@@ -1,10 +1,10 @@
 [tool.poetry]
 name = "sshnpd"
-version = "0.4.7"
+version = "0.4.8"
 description = "Python implementation of SSH No Ports daemon"
 authors = ["Xavier Lin <xavier.lin@atsign.com >"]
 maintainers = ["Chris Swan <chris@atsign.com>"]
-readme = "README.md"
+readme = "README.PyPI.md"
 homepage = "https://github.com/atsign-foundation/noports"
 
 [tool.poetry.scripts]
