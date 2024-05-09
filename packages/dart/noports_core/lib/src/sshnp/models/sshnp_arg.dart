@@ -226,7 +226,7 @@ class SshnpArg {
     name: 'device',
     abbr: 'd',
     help: 'Receiving device name. $deviceNameFormatHelp',
-    defaultsTo: DefaultSshnpArgs.device,
+    mandatory: true,
   );
   static const srvdArg = SshnpArg(
     name: 'srvd',
