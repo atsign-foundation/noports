@@ -34,6 +34,7 @@ jobs:
     # README.PyPI.md with just the light mode logo.
     # This step checks that we don't have drift between the docs.
     - name: Check that READMEs are in sync
+      working-directory: packages/python/sshnpd
       run: |
         diff <(tail -n +2 README.md) <(tail -n +2 README.PyPI.md)
 
