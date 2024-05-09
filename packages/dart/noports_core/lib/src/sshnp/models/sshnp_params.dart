@@ -277,20 +277,13 @@ class SshnpParams extends ClientParamsBase
         (throw ArgumentError('from (clientAtSign) is mandatory'));
 
     if (!(partial.listDevices ?? DefaultSshnpArgs.listDevices)) {
-      // if list-devices is not set, then ensure that
-      // sshnpdAtSign, srvdAtSign and device are all set
+      // if list-devices is not set, then ensure sshnpdAtSign and srvdAtSign are set
       partial.sshnpdAtSign ??
           (throw ArgumentError(
-              'Option --${SshnpArg.toArg.name}'
-                  ' is mandatory, unless using --list-devices'));
+              'Option to is mandatory, unless list-devices is passed.'));
       partial.srvdAtSign ??
           (throw ArgumentError(
-              'Option --${SshnpArg.srvdArg.name}'
-                  ' is mandatory, unless using --list-devices'));
-      partial.device ??
-          (throw ArgumentError(
-              'Option --${SshnpArg.deviceArg.name}'
-                  ' is mandatory, unless using --list-devices'));
+              'srvdAtSign is mandatory, unless list-devices is passed.'));
     }
 
     return SshnpParams(

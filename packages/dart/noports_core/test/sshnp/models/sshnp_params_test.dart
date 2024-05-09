@@ -351,13 +351,11 @@ void main() {
           clientAtSign: '@myClientAtSign',
           sshnpdAtSign: '@mySshnpdAtSign',
           srvdAtSign: '@mySrvdAtSign',
-          device: 'my_device_name_12345'
         );
         final params = SshnpParams.fromPartial(partial);
         expect(params.clientAtSign, equals('@myClientAtSign'));
         expect(params.sshnpdAtSign, equals('@mySshnpdAtSign'));
         expect(params.srvdAtSign, equals('@mySrvdAtSign'));
-        expect(params.device, equals('my_device_name_12345'));
       });
       test('SshnpParams.fromConfigLines() test', () {
         final configLines = [

@@ -16,6 +16,7 @@ dependencies:
   dartssh2: 2.8.2
   at_utils: 3.0.16
   logging: ^1.2.0
+  chalkdart: ^2.2.1
 
 dependency_overrides:
   args:
