@@ -31,9 +31,7 @@ updates:
         patterns:
           - "*"
   - package-ecosystem: "pip"
-    directories:
-      - "/examples/automations/python/"
-      - "/packages/python/sshnpd/"
+    directory: "/packages/python/sshnpd/"
     schedule:
       interval: "daily"
     groups:
