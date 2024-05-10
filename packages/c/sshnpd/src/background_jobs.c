@@ -1,6 +1,7 @@
 #include "sshnpd/params.h"
 #include <atclient/atkey.h>
 #include <atclient/connection.h>
+#include <atclient/metadata.h>
 #include <atlogger/atlogger.h>
 #include <pthread.h>
 #include <sshnpd/background_jobs.h>
@@ -8,35 +9,22 @@
 #include <stdio.h>
 #include <string.h>
 
+#define LOGGER_TAG "heartbeat"
+#define THIRTY_DAYS_IN_MS ((long)1000 * 60 * 60 * 24 * 30)
+
 void *heartbeat(void *void_heartbeat_params) {
   struct heartbeat_params *params = void_heartbeat_params;
   int res;
-  const size_t recvlen = 50;
-  unsigned char recv[recvlen];
-  size_t olen;
-  bool last_heartbeat_ok = 1;
   while (true) {
-    // TODO: mutex blocks
-    res = atclient_connection_send(&params->atclient->secondary_connection, (unsigned char *)NOOP_COMMAND,
-                                   NOOP_COMMAND_LEN, recv, recvlen, &olen);
-    // TODO: mutex unblocks
-    if (res == 0 && olen >= 7 && strncmp((const char *)recv, "data:ok", 7) == 0) {
-      if (last_heartbeat_ok != 1) {
-        atlogger_log(HEARTBEAT_TAG, ATLOGGER_LOGGING_LEVEL_INFO, "connection available\n");
-        last_heartbeat_ok = 1;
-      }
-    } else {
-      if (last_heartbeat_ok != 0) {
-        atlogger_log(HEARTBEAT_TAG, ATLOGGER_LOGGING_LEVEL_INFO, "connection lost\n");
-        last_heartbeat_ok = 0;
-      }
-    }
+    atclient_send_heartbeat(params->atclient);
     sleep(15 * MIN_IN_MS); // Once every 15 mins
   }
 }
 
 void *refresh_device_entry(void *void_refresh_device_entry_params) {
   struct refresh_device_entry_params *params = void_refresh_device_entry_params;
+
+  // TODO: also send the USERNAME key
 
   // Buffer for the atkeys
   size_t num_managers = params->params->manager_list_len;
@@ -50,16 +38,53 @@ void *refresh_device_entry(void *void_refresh_device_entry_params) {
   snprintf(key_base, key_base_len, ":device_info.%s.sshnp.%s", params->params->device, params->params->atsign);
 
   // Build each atkey
+  int ret = 0;
   for (int i = 0; i < num_managers; i++) {
     atclient_atkey_init(atkeys + i);
     size_t buffer_len = strlen(params->params->manager_list[i]) + key_base_len;
     char atkey_buffer[buffer_len];
     // example: @client_atsign:device_info.device_name.sshnp@client_atsign
     snprintf(atkey_buffer, buffer_len, "%s%s", params->params->manager_list[i], key_base);
-    atclient_atkey_from_string(atkeys + i, atkey_buffer, buffer_len);
+    ret = atclient_atkey_from_string(atkeys + i, atkey_buffer, buffer_len);
+
+    atclient_atkey_metadata *metadata = &(atkeys + 1)->metadata;
+    atclient_atkey_metadata_set_ispublic(metadata, false);
+    atclient_atkey_metadata_set_isencrypted(metadata, true);
+    atclient_atkey_metadata_set_ttr(metadata, -1);
+    atclient_atkey_metadata_set_ccd(metadata, true);
+    atclient_atkey_metadata_set_ttl(metadata, THIRTY_DAYS_IN_MS);
   }
+  // from dart code:
+  // const ttl = 1000 * 60 * 60 * 24 * 30; // 30 days
+  // var metaData = Metadata()
+  //   ..isPublic = false
+  //   ..isEncrypted = true
+  //   ..ttr = -1 // we want this to be cacheable by managerAtsign
+  //   ..ccd = true // we want cached copies to be deleted if the key is deleted
+  //   ..ttl = ttl // but to expire after 30 days
+  //   TODO: these don't exist in at_c... do we need them?
+  //   ..updatedAt = DateTime.now()
+  //   ..namespaceAware = true;
 
   while (true) {
+    for (int i = 0; i < num_managers; i++) {
+      pthread_mutex_lock(&ATCLIENT_LOCK);
+      if (params->params->hide) {
+        ret = atclient_delete(params->atclient, atkeys + i);
+      } else {
+        ret = atclient_put(params->atclient, atkeys + i, params->payload, strlen(params->payload), NULL);
+      }
+      pthread_mutex_unlock(&ATCLIENT_LOCK);
+      if (ret != 0) {
+        atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to refresh device entry for %s\n",
+                     params->params->manager_list[i]);
+      }
+    }
     sleep(HOUR_IN_MS); // Once an hour
+  }
+
+  // Clean up upon exit
+  for (int i = 0; i < num_managers; i++) {
+    atclient_atkey_free(atkeys + i); // automatically cleans up metadata as well
   }
 }

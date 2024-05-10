@@ -43,8 +43,9 @@ void *heartbeat(void *heartbeat_params);
  * @param fds a pair of file descriptors to communicate with the main thread
  */
 struct refresh_device_entry_params {
-  const atclient *atclient;
+  atclient *atclient;
   const SshnpdParams *params;
+  const char *payload;
   int fds[2];
 };
 

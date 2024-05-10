@@ -5,7 +5,6 @@
 #include <argparse/argparse.h>
 #include <getopt.h>
 #include <stdbool.h>
-#include <stdint.h>
 
 typedef struct argparse_option ArgparseOption;
 typedef struct argparse Argparse;
@@ -17,12 +16,17 @@ enum SupportedSshAlgorithm {
 
 typedef struct {
   char *atsign;
-  size_t manager_list_len;
-  char **manager_list;
   char *device;
 
+  size_t manager_list_len;
+  char **manager_list;
+
+  size_t permitopen_len;
+  char **permitopen;
+  bool free_permitopen;
+
   bool sshpublickey;
-  bool unhide;
+  bool hide;
   bool verbose;
 
   enum SupportedSshAlgorithm ssh_algorithm;

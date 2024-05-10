@@ -3,11 +3,15 @@
 #include <stdlib.h>
 #include <string.h>
 
+#define default_permitopen "localhost:22,localhost:3389"
 void apply_default_values_to_params(SshnpdParams *params) {
+  params->key_file = NULL;
+  params->atsign = NULL;
   params->device = "default";
   params->sshpublickey = 0;
-  params->unhide = 0;
+  params->hide = 0;
   params->verbose = 0;
+  params->free_permitopen = 0;
   params->ssh_algorithm = ED25519;
   params->ephemeral_permission = "";
   params->root_domain = "root.atsign.org";
@@ -16,7 +20,8 @@ void apply_default_values_to_params(SshnpdParams *params) {
 
 int parse_params(SshnpdParams *params, int argc, const char **argv) {
   char *ssh_algorithm_input = "";
-  char *manager = "";
+  char *manager = NULL;
+  char *permitopen = NULL;
   ArgparseOption options[] = {
       OPT_HELP(),
       OPT_STRING('k', "key-file", &params->key_file, "Path to the key file"),
@@ -24,8 +29,9 @@ int parse_params(SshnpdParams *params, int argc, const char **argv) {
       OPT_STRING('m', "manager", &manager, "Manager to use (mandatory)"),
       OPT_STRING('d', "device", &params->device, "Device to use"),
       OPT_BOOLEAN('s', "sshpublickey", &params->sshpublickey, "Generate ssh public key"),
-      OPT_BOOLEAN('u', "un-hide", &params->unhide, "Unhide device"),
+      OPT_BOOLEAN('h', "hide", &params->hide, "Hide device from device entry (still responds to pings)"),
       OPT_BOOLEAN('v', "verbose", &params->verbose, "Verbose output"),
+      OPT_STRING(0, "permit-open", &permitopen, "Manager to use (mandatory)"),
       OPT_STRING(0, "ssh-algorithm", &ssh_algorithm_input, "SSH algorithm to use"),
       OPT_STRING(0, "ephemeral-permission", &params->ephemeral_permission, "Ephemeral permission to use"),
       OPT_STRING(0, "root-domain", &params->root_domain, "Root domain to use"),
@@ -41,17 +47,25 @@ int parse_params(SshnpdParams *params, int argc, const char **argv) {
   argparse_describe(&argparse, description, "");
   argc = argparse_parse(&argparse, argc, argv);
 
-  int manager_end = strlen(manager);
   // Mandatory options
   if (params->atsign == NULL) {
     argparse_usage(&argparse);
     printf("Invalid Argument(s): Option atsign is mandatory\n");
     return 1;
-  } else if (manager == NULL || manager_end == 0) {
+  } else if (manager == NULL) {
     argparse_usage(&argparse);
     printf("Invalid Argument(s) Option manager is mandatory\n");
     return 1;
   }
+
+  if (permitopen == NULL) {
+    permitopen = malloc(strlen(default_permitopen) * sizeof(char));
+    strcpy(permitopen, default_permitopen);
+    params->free_permitopen = 1;
+  }
+
+  int manager_end = strlen(manager);
+  int permitopen_end = strlen(permitopen);
 
   if (strlen(ssh_algorithm_input) != 0) {
     // Parse ssh_algorithm_input to its enum value
@@ -108,6 +122,35 @@ int parse_params(SshnpdParams *params, int argc, const char **argv) {
     }
   }
   params->manager_list_len = sep_count + 1;
+
+  // Repeat for permit-open
+  sep_count = 0;
+  for (int i = 0; i < permitopen_end - 1; i++) {
+    if (permitopen[i] == ',') {
+      sep_count++;
+    }
+  }
+
+  // malloc pointers to each string, but don't malloc any more memory for individual char storage
+  params->permitopen = malloc((sep_count + 1) * sizeof(char *));
+  params->permitopen[0] = permitopen;
+  pos = 1; // Starts at 1 since we already added the first item to the list
+  for (int i = 0; i < permitopen_end; i++) {
+    if (permitopen[i] == ',') {
+      // Set this comma to a null terminator
+      printf("pass\n");
+      permitopen[i] = '\0';
+      if (permitopen[i + 1] == '\0') {
+        // Trailing comma, so we over counted by one
+        sep_count--;
+        // The allocated memory has a double trailing null seperator, but that's fine
+        break;
+      }
+      // Keep track of the start of the next item
+      params->permitopen[pos++] = manager + i + 1;
+    }
+  }
+  params->permitopen_len = sep_count + 1;
 
   return 0;
 }
