@@ -16,6 +16,7 @@ dependencies:
   dartssh2: 2.8.2
   at_utils: 3.0.16
   logging: ^1.2.0
+  chalkdart: ^2.2.1
 
 dependency_overrides:
   dartssh2:
@@ -28,7 +29,7 @@ dependency_overrides:
       url: https://github.com/gkc/args
 
 dev_dependencies:
-  lints: ^3.0.0
+  lints: ^4.0.0
   test: ^1.25.5
   mocktail: ^1.0.3
   build_runner: ^2.4.9

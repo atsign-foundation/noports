@@ -543,7 +543,6 @@ class SshnpPartialParams {
       parserType: parserType,
     );
     var parsedArgs = parser.parse(args);
-
     if (parser.options.keys.contains(SshnpArg.configFileArg.name) &&
         parsedArgs.wasParsed(SshnpArg.configFileArg.name)) {
       var configFileName = parsedArgs[SshnpArg.configFileArg.name] as String;
@@ -554,12 +553,26 @@ class SshnpPartialParams {
     }
 
     // THIS IS A WORKAROUND IN ORDER TO BE TYPE SAFE IN SshnpPartialParams.fromArgMap
-    Map<String, dynamic> parsedArgsMap = {
-      for (var e in parsedArgs.options)
-        e: SshnpArg.fromName(e).type == ArgType.integer
-            ? int.tryParse(parsedArgs[e])
-            : parsedArgs[e]
-    };
+    Map<String, dynamic> parsedArgsMap = {};
+    for (var e in parsedArgs.options) {
+      SshnpArg arg = SshnpArg.fromName(e);
+      try {
+        final v = arg.type == ArgType.integer
+            ? int.parse(parsedArgs[e])
+            : parsedArgs[e];
+        parsedArgsMap[e] = v;
+      } on FormatException catch (_) {
+        var msg = 'Invalid value "${parsedArgs[e]}" for option --${arg.name}';
+        if (arg.abbr != null) {
+          msg += ' (-${arg.abbr})';
+        }
+        throw ArgumentError(msg);
+      }
+    }
+
+    if (parsedArgs.rest.isNotEmpty) {
+      throw ArgumentError("Unparsed args ${parsedArgs.rest}");
+    }
 
     return SshnpPartialParams.merge(
       params,
