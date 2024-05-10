@@ -29,6 +29,7 @@ struct {
 };
 
 static unsigned long min(unsigned long a, unsigned long b) { return a < b ? a : b; }
+static pthread_mutex_t atclient_lock = PTHREAD_MUTEX_INITIALIZER;
 
 int main(int argc, char **argv) {
   SshnpdParams params;
@@ -177,7 +178,8 @@ int main(int argc, char **argv) {
 
   // 9. Start the device refresh loop - if hide is off
   pthread_t refresh_tid;
-  struct refresh_device_entry_params refresh_params = {&atclient, &params, ping_response, fds[0], fds[1]};
+  struct refresh_device_entry_params refresh_params = {&atclient,     &atclient_lock, &params,
+                                                       ping_response, fds[0],         fds[1]};
   res = pthread_create(&refresh_tid, NULL, refresh_device_entry, (void *)&refresh_params);
   if (res != 0) {
     atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to start refresh device entry thread\n");
@@ -272,6 +274,8 @@ int main(int argc, char **argv) {
           }
         }
 
+        printf("pass\n");
+        printf("key: %s\n", key);
         atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_DEBUG, "Received key: %s\n", key);
         switch (notification_key) {
         case NK_SSHPUBLICKEY: {
@@ -300,8 +304,28 @@ int main(int argc, char **argv) {
           notify_params->value = ping_response;
           notify_params->operation = ATCLIENT_NOTIFY_OPERATION_UPDATE;
 
-          atclient_notify(&atclient, notify_params, NULL);
-          // TODO: no wait for delivery
+          int ret = pthread_mutex_lock(&atclient_lock);
+          if (ret != 0) {
+            atlogger_log("PING RESPONSE", ATLOGGER_LOGGING_LEVEL_ERROR,
+                         "Failed to get a lock on atclient for sending a notification\n");
+            goto exit_ping;
+          }
+
+          ret = atclient_notify(&atclient, notify_params, NULL);
+          if (ret != 0) {
+            atlogger_log("PING RESPONSE", ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to send ping response to %s\n",
+                         message->notification.from);
+          }
+          do {
+            ret = pthread_mutex_unlock(&atclient_lock);
+            if (ret != 0) {
+              atlogger_log("PING RESPONSE", ATLOGGER_LOGGING_LEVEL_ERROR,
+                           "Failed to release atclient lock, trying again in 1 second\n");
+              sleep(1);
+            }
+          } while (ret != 0);
+          atlogger_log("PING RESPONSE", ATLOGGER_LOGGING_LEVEL_DEBUG, "Released the atclient lock\n");
+        exit_ping:
           atclient_notify_params_free(notify_params);
           atclient_atkey_free(pingkey);
           break;

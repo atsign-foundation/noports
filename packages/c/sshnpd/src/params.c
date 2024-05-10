@@ -138,7 +138,6 @@ int parse_params(SshnpdParams *params, int argc, const char **argv) {
   for (int i = 0; i < permitopen_end; i++) {
     if (permitopen[i] == ',') {
       // Set this comma to a null terminator
-      printf("pass\n");
       permitopen[i] = '\0';
       if (permitopen[i + 1] == '\0') {
         // Trailing comma, so we over counted by one

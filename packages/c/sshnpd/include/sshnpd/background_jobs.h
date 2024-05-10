@@ -44,6 +44,7 @@ void *heartbeat(void *heartbeat_params);
  */
 struct refresh_device_entry_params {
   atclient *atclient;
+  pthread_mutex_t *atclient_lock;
   const SshnpdParams *params;
   const char *payload;
   int fds[2];

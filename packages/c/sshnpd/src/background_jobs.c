@@ -32,7 +32,7 @@ void *refresh_device_entry(void *void_refresh_device_entry_params) {
 
   // Buffer for the base portion of each atkey
   size_t key_base_len = strlen(params->params->device) + strlen(params->params->atsign) +
-                        20; // +11 for device_info,+5 for sshnp, +3 for additional seperators, +1 for null term
+                        21; // +12 for ":device_info",+5 for sshnp, +3 for '.', +1 for null term
   char key_base[key_base_len];
   // example: :device_info.device_name.sshnp@client_atsign
   snprintf(key_base, key_base_len, ":device_info.%s.sshnp.%s", params->params->device, params->params->atsign);
@@ -67,18 +67,38 @@ void *refresh_device_entry(void *void_refresh_device_entry_params) {
   //   ..namespaceAware = true;
 
   while (true) {
+    if (params->params->hide) {
+
+      atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_INFO,
+                   "--hide enabled, deleting any existing device info entries for this device\n");
+    } else {
+      atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_INFO, "Refreshing device info entries for this device\n");
+    }
     for (int i = 0; i < num_managers; i++) {
-      pthread_mutex_lock(&ATCLIENT_LOCK);
+      ret = pthread_mutex_lock(params->atclient_lock);
+      if (ret != 0) {
+        atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR,
+                     "Failed to get a lock on atclient for performing device entry operation\n");
+        continue;
+      }
       if (params->params->hide) {
         ret = atclient_delete(params->atclient, atkeys + i);
       } else {
         ret = atclient_put(params->atclient, atkeys + i, params->payload, strlen(params->payload), NULL);
       }
-      pthread_mutex_unlock(&ATCLIENT_LOCK);
       if (ret != 0) {
         atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to refresh device entry for %s\n",
                      params->params->manager_list[i]);
       }
+      do {
+        ret = pthread_mutex_unlock(params->atclient_lock);
+        if (ret != 0) {
+          atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR,
+                       "Failed to release atclient lock, trying again in 1 second\n");
+          sleep(1);
+        }
+      } while (ret != 0);
+      atlogger_log("PING RESPONSE", ATLOGGER_LOGGING_LEVEL_DEBUG, "Released the atclient lock\n");
     }
     sleep(HOUR_IN_MS); // Once an hour
   }

@@ -1,7 +1,6 @@
 #ifndef SSHNPD_H
 #define SSHNPD_H
 
-#include <pthread.h>
 #define SSHNPD_VERSION "0.1.0"
 
 /* Windows Definitions */
@@ -34,8 +33,5 @@ enum notification_key {
 };
 
 #define NOTIFICATION_KEYS_LEN 5
-
-// global worker atclient semaphore
-pthread_mutex_t ATCLIENT_LOCK = PTHREAD_MUTEX_INITIALIZER;
 
 #endif
