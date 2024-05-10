@@ -186,13 +186,15 @@ function Get-Atsigns {
     }
     if (-not ([string]::IsNullOrEmpty($prefixes))) {
         $i = 1
-        Write-Host "Found some atsigns, please select one"
         Write-Host "0) Manually Enter:"
         foreach($prefix in $prefixes){
             Write-Host "$i) $prefix"
             $i = $i + 1
         }
-        $i = Read-Host "Choose an atsign"
+        $i = Read-Host "Choose an atsign (input number)"
+        while(-not ($i -match "^\d+$")){
+            $i = Read-Host "Choose an atsign (input number)"
+        }
         if($i -eq 0){
             $at = Read-Host "Enter your atsign"
             return Norm-Atsign $at
@@ -276,7 +278,7 @@ function Install-Device {
 
 function Uninstall-Both{
     if (Get-Service "sshnpd" -ErrorAction SilentlyContinue){
-        Invoke-Expression "\$script:service_path stop" -ErrorAction SilentlyContinue
+        Invoke-Expression "$script:service_path stop" -ErrorAction SilentlyContinue
         Invoke-Expression "$script:service_path uninstall" -ErrorAction SilentlyContinue
     }
     if (Test-Path "$script:INSTALL_PATH\sshnp"){
@@ -323,7 +325,7 @@ function Main {
         $atsign = Get-Atsigns
         $script:CLIENT_ATSIGN =  Norm-Atsign $atsign
     }
-    $script:DEVICE_NAME = Read-Host "Device Name? "
+    $script:DEVICE_NAME = Read-Host "Device Name "
     switch -regex ($INSTALL_TYPE){
         "client" {
             Install-Client
