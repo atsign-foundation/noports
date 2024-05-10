@@ -106,7 +106,7 @@ esac
 
 
 # Let's put together the sshnp command we will execute
-sshnpCommand="$baseSshnpCommand -s ${identityFilename}.pub ${additionalSshnpFlags} ${extraFlags}"
+sshnpCommand="$baseSshnpCommand -s ${additionalSshnpFlags} "
 
 # We will capture daemon log from now until end of test
 outputDir=$(getOutputDir)

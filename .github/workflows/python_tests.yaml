@@ -1,0 +1,17 @@
+name: Python tests
+on:
+  pull_request:
+    paths:
+      - 'packages/python/**'
+
+# Declare default permissions as read only.
+permissions: read-all
+
+jobs:
+  ruff:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@44c2b7a8a4ea60a981eaca3cf939b5f4305c123b # v4.1.5
+      - uses: chartboost/ruff-action@e18ae971ccee1b2d7bbef113930f00c670b78da4 # v1.0.0
+        with:
+          src: './packages/python'
