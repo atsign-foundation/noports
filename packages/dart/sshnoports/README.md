@@ -2,6 +2,7 @@
 
 [![GitHub License](https://img.shields.io/badge/license-BSD3-blue.svg)](./LICENSE)
 [![OpenSSF Scorecard](https://api.securityscorecards.dev/projects/github.com/atsign-foundation/noports/badge)](https://api.securityscorecards.dev/projects/github.com/atsign-foundation/noports)
+[![SLSA 3](https://slsa.dev/images/gh-badge-level3.svg)](https://slsa.dev)
 
 # SSH! No ports
 

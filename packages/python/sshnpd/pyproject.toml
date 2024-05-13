@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "sshnpd"
-version = "0.4.8"
+version = "0.4.9"
 description = "Python implementation of SSH No Ports daemon"
 authors = ["Xavier Lin <xavier.lin@atsign.com >"]
 maintainers = ["Chris Swan <chris@atsign.com>"]
@@ -12,7 +12,7 @@ sshnpd = 'sshnpd:main'
 
 [tool.poetry.dependencies]
 python = "^3.10"
-atsdk = "0.2.13"
+atsdk = "0.2.14"
 
 [build-system]
 requires = ["poetry-core"]

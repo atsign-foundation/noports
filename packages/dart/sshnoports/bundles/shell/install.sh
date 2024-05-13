@@ -148,9 +148,14 @@ install_single_binary() {
     is_root &
     ! [ -f "$user_bin_dir/$1" ]
   then
-    mkdir -p "$user_bin_dir"
+    if ! [ -d "$user_bin_dir" ]; then
+      mkdir -p "$user_bin_dir"
+      chown -R $user:$user "$user_bin_dir"
+    fi
+
     if [ -f "$dest/$1" ]; then
       ln -sf "$dest/$1" "$user_bin_dir/$1"
+      chown $user:$user "$user_bin_dir/$1"
       echo "=> Linked $user_bin_dir/$1 to $dest/$1"
     else
       echo "Failed to link $user_bin_dir/$1 to $dest/$1:"
