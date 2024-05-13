@@ -1,13 +1,17 @@
 #!/usr/bin/env python3
+import argparse
+import errno
+import getpass
+import json
+import logging
+import os
+import subprocess
 import sys
-import os, threading, getpass, json, logging, subprocess, argparse, errno
-from io import StringIO
+import threading
 from queue import Empty, Queue
 from time import sleep
-from threading import Event
 
-from select import select
-from socket import socket, gethostbyname, gethostname, create_connection, error
+from socket import gethostbyname, create_connection, error
 
 from at_client import AtClient
 from at_client.common import AtSign
@@ -19,12 +23,11 @@ from at_client.connections.notification.atevents import AtEvent, AtEventType
 class SocketConnector:
     _logger = logging.getLogger("sshrv | socket_connector")
 
-    def __init__(self, server1_ip, server1_port, server2_ip, server2_port, verbose = False):
+    def __init__(self, server1_ip, server1_port, server2_ip, server2_port, verbose=False):
         self._logger.setLevel(logging.INFO)
         self._logger.addHandler(logging.StreamHandler())
         if verbose:
             self._logger.setLevel(logging.DEBUG)
-        
         # Create sockets for both servers
         self.socketA = create_connection((server1_ip, server1_port))
         self.socketB = create_connection((server2_ip, server2_port))
@@ -49,7 +52,7 @@ class SocketConnector:
                             sockets_to_monitor.remove(sock)
                             sock.close()
                             return
-                        elif not data: 
+                        elif not data:
                             timeout += 1
                             sleep(0.1)
                         if data == b'':
@@ -63,7 +66,6 @@ class SocketConnector:
                                 self._logger.debug("RECV B -> A : " + str(data))
                                 self.socketA.send(data)
                             timeout = 0
-                                
                     except error as e:
                         if e.errno == errno.EWOULDBLOCK:
                             pass  # No data available, continue
@@ -96,17 +98,15 @@ class SSHRV:
             t1.start()
             self.socket_connector = t1
             return True
-                
         except Exception as e:
             raise e
-       
+
     def is_alive(self):
         return self.socket_connector.is_alive()
 
 
 class SSHNPDClient:
-    def __init__(self, atsign, manager_atsign, device="default", username=None, verbose=False, expecting_ssh_keys=False):  
-        
+    def __init__(self, atsign, manager_atsign, device="default", username=None, verbose=False, expecting_ssh_keys=False):
         # AtClient Stuff
         self.atsign = atsign
         self.manager_atsign = manager_atsign
@@ -114,24 +114,21 @@ class SSHNPDClient:
         self.username = username
         self.device_namespace = f".{device}.sshnp"
         self.at_client = AtClient(AtSign(atsign), queue=Queue(maxsize=20), verbose=verbose)
-        
         # SSH Stuff
         self.ssh_client = None
         self.rv = None
         self.expecting_ssh_keys = expecting_ssh_keys
-        
         # Logger
         self.logger = logging.getLogger("sshnpd")
         self.logger.setLevel((logging.DEBUG if verbose else logging.INFO))
         self.logger.addHandler(logging.StreamHandler())
-        
         # Directory Stuff
         home_dir = os.path.expanduser("~")
         self.ssh_path = f"{home_dir}/.ssh"
 
         self.threads = []
         self.encrypted_queue = Queue()
-        
+
     def start(self):
         if self.username:
             self.set_username()
@@ -146,7 +143,7 @@ class SSHNPDClient:
     def close(self):
         self.threads.clear()
         sys.exit()
-        
+
     def is_alive(self):
         foreach_thread = [thread.is_alive() for thread in self.threads]
         return all(foreach_thread)
@@ -155,7 +152,7 @@ class SSHNPDClient:
         username = getpass.getuser()
         username_key = SharedKey(
             f"username.{self.device}.sshnp", AtSign(self.atsign), AtSign(self.manager_atsign))
-        metadata = Metadata(iv_nonce= EncryptionUtil.generate_iv_nonce(), is_public=False, is_encrypted=True, is_hidden=False)
+        metadata = Metadata(iv_nonce=EncryptionUtil.generate_iv_nonce(), is_public=False, is_encrypted=True, is_hidden=False)
         username_key.metadata = metadata
         username_key.cache(-1, True)
         self.at_client.put(username_key, username)
@@ -168,12 +165,10 @@ class SSHNPDClient:
                 at_event = self.at_client.queue.get(block=False)
                 event_type = at_event.event_type
                 event_data = at_event.event_data
-                
                 if event_type == AtEventType.UPDATE_NOTIFICATION:
                     self.encrypted_queue.put(at_event)
                 if event_type != AtEventType.DECRYPTED_UPDATE_NOTIFICATION:
                     continue
-                
                 key = event_data["key"].split(":")[1].split(".")[0]
                 decrypted_value = str(event_data["decryptedValue"])
 
@@ -206,10 +201,7 @@ class SSHNPDClient:
             except Empty:
                 pass
 
-    def direct_ssh(
-        self,   
-        event: AtEvent,
-    ):
+    def direct_ssh(self, event: AtEvent):
         uuid = event.event_data["id"]
         ssh_list = json.loads(event.event_data["decryptedValue"])['payload']
         iv_nonce = EncryptionUtil.generate_iv_nonce()
@@ -227,7 +219,6 @@ class SSHNPDClient:
         at_key.shared_with = AtSign(self.manager_atsign)
         at_key.metadata = metadata
         at_key.namespace = self.device_namespace
-        
         hostname = ssh_list['host']
         port = ssh_list['port']
         session_id = ssh_list['sessionId']
@@ -254,20 +245,18 @@ class SSHNPDClient:
         # Generate SSH Keys
         self.logger.info("Generating SSH Keys")
         if not os.path.exists(f"{self.ssh_path}/tmp/"):
-            os.makedirs(f"{self.ssh_path}/tmp/")   
+            os.makedirs(f"{self.ssh_path}/tmp/")
         ssh_keygen = subprocess.Popen(
             ["ssh-keygen", "-t", "ed25519", "-a", "100", "-f", f"{session_id}_sshnp", "-q", "-N", ""],
             cwd=f'{self.ssh_path}/tmp/',
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
         )
-        
         stdout, stderr = ssh_keygen.communicate()
         if ssh_keygen.returncode != 0:
             self.logger.error("SSH Key generation failed")
             self.logger.error(stderr.decode("utf-8"))
             return False
-        
         self.logger.info("SSH Keys Generated")
         ssh_public_key = ""
         ssh_private_key = ""
@@ -277,11 +266,9 @@ class SSHNPDClient:
 
             with open(f"{self.ssh_path}/tmp/{session_id}_sshnp", 'r') as private_key_file:
                 ssh_private_key = private_key_file.read()
-                
         except Exception as e:
             self.logger.error(e)
             return False
-        
         return (ssh_public_key, ssh_private_key)
 
     def ephemeral_cleanup(self, session_id):
@@ -316,21 +303,21 @@ def main():
     optional.add_argument("-s", action="store_true", dest="expecting_ssh_keys", help="Add ssh key into authorized_keys", default=False)
     optional.add_argument("-u",  action='store_true', dest="username",  help="Username", default="default", required=True)
     optional.add_argument("-v", action='store_true', dest="verbose", help="Verbose")
-    
     args = parser.parse_args()
     sshnpd = SSHNPDClient(args.atsign, args.manager_atsign, args.device, args.username, args.verbose, args.expecting_ssh_keys)
-
+    thread = None
     while True:
-        try:    
-            threading.Thread(target=sshnpd.start).start()
+        try:
+            thread = threading.Thread(target=sshnpd.start)
+            thread.start()
             while sshnpd.is_alive():
-                sleep(3)    
+                sleep(3)
         except Exception as e:
+            thread.join()
             sshnpd.close()
             print(e)
         print("Restarting sshnpd in 3 seconds..")
-        sleep(3)    
-
+        sleep(3)
 
 
 if __name__ == "__main__":

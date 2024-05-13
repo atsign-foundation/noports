@@ -1030,7 +1030,7 @@ class SshnpdImpl implements Sshnpd {
             },
           ),
         );
-        unawaited(socket.pipe(connection.sink));
+        unawaited(socket.cast<List<int>>().pipe(connection.sink));
         if (shouldStop) break;
       }
     }).catchError((e) {
