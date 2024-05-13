@@ -22,7 +22,7 @@ dependency_overrides:
   dartssh2:
     git:
       url: https://github.com/atsign-foundation/dartssh2
-      ref: gkc/upgrade-to-dart-3
+      ref: trunk
   args:
     git:
       ref: gkc/show-aliases-in-usage
