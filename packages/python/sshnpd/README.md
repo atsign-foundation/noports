@@ -2,6 +2,7 @@
 
 [![GitHub License](https://img.shields.io/badge/license-BSD3-blue.svg)](./LICENSE)
 [![PyPI version](https://badge.fury.io/py/sshnpd.svg)](https://badge.fury.io/py/sshnpd)
+[![SLSA 3](https://slsa.dev/images/gh-badge-level3.svg)](https://slsa.dev)
 
 # SSHNPD Python (beta)
 
