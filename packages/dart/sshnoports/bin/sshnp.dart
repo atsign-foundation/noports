@@ -4,6 +4,7 @@ import 'dart:io';
 import 'dart:typed_data';
 
 // other packages
+import 'package:chalkdart/chalk.dart';
 import 'package:path/path.dart' as path;
 import 'package:dartssh2/dartssh2.dart';
 
@@ -107,6 +108,14 @@ void main(List<String> args) async {
           parserType: ParserType.commandLine,
         ),
       );
+
+      if (! argResults.wasParsed(SshnpArg.deviceArg.name)) {
+        stderr.write(chalk.red('Warning: '));
+        stderr.writeln('Using default value of "${params.device}"'
+            ' for optional arg "--${SshnpArg.deviceArg.name}".'
+            ' Note that the --${SshnpArg.deviceArg.name} arg'
+            ' will be mandatory in future releases.');
+      }
 
       // Windows will not let us delete files in use so
       // We will point storage to temp directory and let OS clean up

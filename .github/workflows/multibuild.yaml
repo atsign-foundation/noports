@@ -219,18 +219,32 @@ jobs:
 
   github-release:
     name: >-
-      Sign the binary tarballs with Sigstore
-      and upload them to GitHub Release
+      Upload artifacts and generate SBOMs and checksums for provenance
     needs: [main_build, other_build, universal_sh]
     runs-on: ubuntu-latest
+    outputs:
+      hashes: ${{ steps.hash.outputs.hashes }}
     permissions:
       contents: write  # Mandatory for making GitHub Releases
       id-token: write  # Mandatory for sigstore
+      attestations: write
     steps:
+    - name: Checkout pubspec.lock
+      uses: actions/checkout@44c2b7a8a4ea60a981eaca3cf939b5f4305c123b # v4.1.5
+      with:
+        sparse-checkout: packages/dart/sshnoports/pubspec.lock
+        sparse-checkout-cone-mode: false
+    - name: Install Syft
+      uses: anchore/sbom-action/download-syft@7ccf588e3cf3cc2611714c2eeae48550fbc17552 # v0.15.11
     - name: Download all the tarballs
       uses: actions/download-artifact@65a9edc5881444af0b9093a5e628f2fe47ea3b2e # v4.1.7
       with:
         path: tarballs/
+    - name: Generate SBOMs
+      run: |
+        syft scan file:./packages/dart/sshnoports/pubspec.lock \
+          -o 'spdx-json=tarballs/dart_sshnoports_sbom.spdx.json' \
+          -o 'cyclonedx-json=tarballs/dart_sshnoports_sbom.cyclonedx.json'
     - name: Move packages for signing
       run: |
         cd tarballs
@@ -238,23 +252,38 @@ jobs:
         mv */*.tgz .
         mv */*.zip .
         rm -Rf -- */
-    - name: Sign the tarballs with Sigstore
-      uses: sigstore/gh-action-sigstore-python@61f6a500bbfdd9a2a339cf033e5421951fbc1cd2 # v2.1.1
-      with:
-        inputs: >-
-          ./tarballs/*.sh
-          ./tarballs/*.tgz
-          ./tarballs/*.zip
-    - name: Upload artifact signatures to GitHub Release
+    - name: Generate SHA256 checksums
+      working-directory: tarballs
+      run: sha256sum * > checksums.txt
+    - name: Upload artifacts to GitHub Release
       env:
         GITHUB_TOKEN: ${{ github.token }}
       # Upload to GitHub Release using the `gh` CLI.
       # `tarballs/` contains the built packages, and the
-      # sigstore-produced signatures and certificates.
+      # Syft produced SBOMs
       run: >-
         gh release upload
         '${{ github.ref_name }}' tarballs/**
         --repo '${{ github.repository }}'
+    - id: hash
+      name: Pass artifact hashes for SLSA provenance
+      working-directory: tarballs
+      run: |
+        echo "hashes=$(cat checksums.txt | base64 -w0)" >> "$GITHUB_OUTPUT"
+    - uses: actions/attest-build-provenance@951c0c5f8e375ad4efad33405ab77f7ded2358e4 # v1.1.1
+      with:
+        subject-path: 'tarballs/**'
+
+  provenance:
+    needs: [github-release]
+    permissions:
+      actions: read # Needed for detection of GitHub Actions environment.
+      id-token: write # Needed for provenance signing and ID
+      contents: write # Needed for release uploads
+    uses: slsa-framework/slsa-github-generator/.github/workflows/generator_generic_slsa3.yml@v2.0.0 # 5a775b367a56d5bd118a224a811bba288150a563
+    with:
+      base64-subjects: "${{ needs.github-release.outputs.hashes }}"
+      upload-assets: true
 
   cleanup:
     name: Clean up temporary branch
