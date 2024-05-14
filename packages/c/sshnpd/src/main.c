@@ -7,10 +7,12 @@
 #include <atclient/connection.h>
 #include <atclient/monitor.h>
 #include <atclient/notify.h>
+#include <atclient/stringutils.h>
 #include <atlogger/atlogger.h>
 #include <cJSON.h>
 #include <pthread.h>
 #include <sshnpd/params.h>
+#include <sshnpd/ssh_key_util.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -18,14 +20,20 @@
 #define FILENAME_BUFFER_SIZE 500
 #define LOGGER_TAG "sshnpd"
 
-struct {
+static struct {
   char *str;
   enum notification_key key;
 } notification_key_map[] = {
+    {"", NK_NONE},
     {"sshpublickey", NK_SSHPUBLICKEY},
     {"ping", NK_PING},
     {"ssh_request", NK_SSH_REQUEST},
     {"npt_request", NK_NPT_REQUEST},
+};
+
+static char *supported_key_prefix_map[] = {
+    [SKP_NONE] = "",       [SKP_ESN] = "ecdsa-sha2-nistp", [SKP_RS2] = "rsa-sha2-",
+    [SKP_RSA] = "ssh-rsa", [SKP_ED9] = "ssh-ed25519",
 };
 
 static unsigned long min(unsigned long a, unsigned long b) { return a < b ? a : b; }
@@ -210,6 +218,7 @@ int main(int argc, char **argv) {
   // 12. Main notification handler loop
   atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_INFO, "Starting monitor loop:\n");
 
+main_loop:
   while (true) {
     atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_DEBUG, "Waiting for next monitor thread message\n");
     atclient_monitor_message *message;
@@ -274,20 +283,74 @@ int main(int argc, char **argv) {
           }
         }
 
-        atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_DEBUG, "Received key: %s\n", key);
+        atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_DEBUG, "Received key: '%s'\n", key);
         switch (notification_key) {
         case NK_SSHPUBLICKEY: {
-          // TODO  implement public key authorizer
+          const char *tag = "SSHPUBLICKEY RESPONSE";
+          if (!params.sshpublickey) {
+            atlogger_log(tag, ATLOGGER_LOGGING_LEVEL_ERROR, "Ignoring sshpublickey from %s\n",
+                         message->notification.from);
+            break;
+          }
+          char *ssh_key = (char *)message->notification.decryptedvalue;
+          size_t ssh_key_len = strlen(ssh_key);
+
+          bool is_valid_prefix = false;
+          for (int i = 1; i < SUPPORTED_KEY_PREFIX_LEN; i++) {
+            char *prefix = supported_key_prefix_map[i];
+            size_t prefix_len = message->notification.decryptedvaluelen;
+
+            if (prefix_len < strlen(ssh_key)) {
+              continue;
+            }
+
+            if (strncmp(ssh_key, prefix, prefix_len)) {
+              is_valid_prefix = true;
+              break;
+            }
+          }
+
+          if (!is_valid_prefix) {
+            atlogger_log(tag, ATLOGGER_LOGGING_LEVEL_ERROR, "Ssh public key does not look like a public key\n");
+            break;
+          }
+
+          // printf("PASS\n");
+          // authorize public key
+          int ret = authorize_ssh_public_key(homedir, "", ssh_key);
+          if (ret != 0) {
+            atlogger_log(tag, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to authorize ssh public key\n");
+            break;
+          }
+
+          // printf("PASS2\n");
+          // TODO: move this to SSH later - don't need deauth for this command, only ephemeral
+          //
+          // pthread_t tid;
+          // malloc here so that the thread can own the contents
+          // deauthorize_ssh_public_key_params *deauth_params = malloc(sizeof(deauthorize_ssh_public_key_params));
+          // strcpy(deauth_params->homedir, homedir);
+          // strcpy(deauth_params->key, ssh_key);
+          //
+          // do {
+          //   ret = pthread_create(&tid, NULL, (void *)deauthorize_ssh_public_key_job, deauth_params);
+          //   if (ret != 0) {
+          //     atlogger_log(tag, ATLOGGER_LOGGING_LEVEL_ERROR,
+          //                  "Failed to start thread to deauthorize ssh public key, trying again in 1 second...\n");
+          //     sleep(1);
+          //   }
+          // } while (ret != 0);
+
           break;
         }
         case NK_PING: {
+          const char *tag = "PING RESPONSE";
           atclient_atkey pingkey;
           atclient_atkey_init(&pingkey);
 
           size_t keynamelen = strlen("heartbeat") + strlen(params.device) + 2; // + 1 for '.' +1 for '\0'
           char keyname[keynamelen];
           snprintf(keyname, keynamelen, "heartbeat.%s", params.device);
-          printf("keyname: %s\n", keyname);
           atclient_atkey_create_sharedkey(&pingkey, keyname, keynamelen, params.atsign, strlen(params.atsign),
                                           message->notification.from, strlen(message->notification.from), SSHNP_NS,
                                           SSHNP_NS_LEN);
@@ -305,25 +368,25 @@ int main(int argc, char **argv) {
 
           int ret = pthread_mutex_lock(&atclient_lock);
           if (ret != 0) {
-            atlogger_log("PING RESPONSE", ATLOGGER_LOGGING_LEVEL_ERROR,
+            atlogger_log(tag, ATLOGGER_LOGGING_LEVEL_ERROR,
                          "Failed to get a lock on atclient for sending a notification\n");
             goto exit_ping;
           }
 
           ret = atclient_notify(&atclient, &notify_params, NULL);
           if (ret != 0) {
-            atlogger_log("PING RESPONSE", ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to send ping response to %s\n",
+            atlogger_log(tag, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to send ping response to %s\n",
                          message->notification.from);
           }
           do {
             ret = pthread_mutex_unlock(&atclient_lock);
             if (ret != 0) {
-              atlogger_log("PING RESPONSE", ATLOGGER_LOGGING_LEVEL_ERROR,
+              atlogger_log(tag, ATLOGGER_LOGGING_LEVEL_ERROR,
                            "Failed to release atclient lock, trying again in 1 second\n");
               sleep(1);
             }
           } while (ret != 0);
-          atlogger_log("PING RESPONSE", ATLOGGER_LOGGING_LEVEL_DEBUG, "Released the atclient lock\n");
+          atlogger_log(tag, ATLOGGER_LOGGING_LEVEL_DEBUG, "Released the atclient lock\n");
         exit_ping:
           atclient_notify_params_free(&notify_params);
           atclient_atkey_free(&pingkey);
