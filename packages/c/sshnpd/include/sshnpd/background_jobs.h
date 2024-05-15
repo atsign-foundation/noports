@@ -47,6 +47,7 @@ struct refresh_device_entry_params {
   pthread_mutex_t *atclient_lock;
   const SshnpdParams *params;
   const char *payload;
+  const char *username;
   int fds[2];
 };
 

@@ -192,8 +192,8 @@ int main(int argc, char **argv) {
 
   // 9. Start the device refresh loop - if hide is off
   pthread_t refresh_tid;
-  struct refresh_device_entry_params refresh_params = {&atclient,     &atclient_lock, &params,
-                                                       ping_response, fds[0],         fds[1]};
+  struct refresh_device_entry_params refresh_params = {&atclient, &atclient_lock, &params, ping_response,
+                                                       username,  fds[0],         fds[1]};
   res = pthread_create(&refresh_tid, NULL, refresh_device_entry, (void *)&refresh_params);
   if (res != 0) {
     atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to start refresh device entry thread\n");

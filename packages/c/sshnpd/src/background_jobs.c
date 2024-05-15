@@ -35,16 +35,17 @@ void *refresh_device_entry(void *void_refresh_device_entry_params) {
 
   // Buffer for the base portion of each atkey
   size_t infokey_base_len = strlen(params->params->device) + strlen(params->params->atsign) +
-                            21; // +12 for ":device_info",+5 for sshnp, +3 for '.', +1 for null term
+                            20; // +12 for ":device_info",+5 for sshnp, +2 for '.', +1 for null term
   char infokey_base[infokey_base_len];
   // example: :device_info.device_name.sshnp@client_atsign
-  snprintf(infokey_base, infokey_base_len, ":device_info.%s.sshnp.%s", params->params->device, params->params->atsign);
+  snprintf(infokey_base, infokey_base_len, ":device_info.%s.sshnp%s", params->params->device, params->params->atsign);
 
   // Buffer for the username keys
   size_t usernamekey_base_len = strlen(params->params->device) + strlen(params->params->atsign) +
-                                18; // +9 for ":username",+5 for sshnp, +3 for '.', +1 for null term
-  char *username_key_base[usernamekey_base_len];
-  snprintf(infokey_base, infokey_base_len, ":username.%s.sshnp.%s", params->params->device, params->params->atsign);
+                                17; // +9 for ":username",+5 for sshnp, +2 for '.', +1 for null term
+  char username_key_base[usernamekey_base_len];
+  snprintf(username_key_base, usernamekey_base_len, ":username.%s.sshnp%s", params->params->device,
+           params->params->atsign);
 
   int ret = 0;
   if (params->params->hide) {
@@ -69,7 +70,7 @@ void *refresh_device_entry(void *void_refresh_device_entry_params) {
       exit(ret);
     }
 
-    atclient_atkey_metadata *metadata = &(infokeys + 1)->metadata;
+    atclient_atkey_metadata *metadata = &(infokeys + i)->metadata;
     atclient_atkey_metadata_set_ispublic(metadata, false);
     atclient_atkey_metadata_set_isencrypted(metadata, true);
     atclient_atkey_metadata_set_ttr(metadata, -1);
@@ -78,16 +79,16 @@ void *refresh_device_entry(void *void_refresh_device_entry_params) {
 
     // username
     atclient_atkey_init(usernamekeys + i);
-    buffer_len = strlen(params->params->manager_list[i]) + infokey_base_len;
+    buffer_len = strlen(params->params->manager_list[i]) + usernamekey_base_len;
     // example: @client_atsign:device_info.device_name.sshnp@client_atsign
-    snprintf(atkey_buffer, buffer_len, "%s%s", params->params->manager_list[i], infokey_base);
-    ret = atclient_atkey_from_string(infokeys + i, atkey_buffer, buffer_len);
+    snprintf(atkey_buffer, buffer_len, "%s%s", params->params->manager_list[i], username_key_base);
+    ret = atclient_atkey_from_string(usernamekeys + i, atkey_buffer, buffer_len);
     if (ret != 0) {
       atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to create username atkey for %s\n",
                    params->params->manager_list[i]);
       exit(ret);
     }
-    atclient_atkey_metadata *metadata2 = &(infokeys + 1)->metadata;
+    atclient_atkey_metadata *metadata2 = &(usernamekeys + i)->metadata;
     atclient_atkey_metadata_set_ispublic(metadata2, false);
     atclient_atkey_metadata_set_isencrypted(metadata2, true);
     atclient_atkey_metadata_set_ttr(metadata2, -1);
@@ -100,7 +101,7 @@ void *refresh_device_entry(void *void_refresh_device_entry_params) {
         exit(ret);
       }
     } else {
-      ret = atclient_put(params->atclient, usernamekeys + i, params->payload, strlen(params->payload), NULL);
+      ret = atclient_put(params->atclient, usernamekeys + i, params->username, strlen(params->username), NULL);
       if (ret != 0) {
         atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to put username atkey for %s\n",
                      params->params->manager_list[i]);
