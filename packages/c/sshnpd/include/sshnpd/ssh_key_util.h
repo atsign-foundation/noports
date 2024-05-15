@@ -1,6 +1,8 @@
 #ifndef SSH_KEY_UTIL_H
 #define PARAMS_H
 
+#include <pthread.h>
+#include <stdio.h>
 enum supported_key_prefix {
   SKP_NONE,
   SKP_ESN, // ecdsa-sha2-nistp
@@ -11,14 +13,16 @@ enum supported_key_prefix {
 
 #define SUPPORTED_KEY_PREFIX_LEN 5
 
-int authorize_ssh_public_key(const char *homedir, const char *permissions, const char *key);
-int deauthorize_ssh_public_key(const char *homedir, const char *key, const char *temp_file);
-
 typedef struct {
-  char *homedir;
+  FILE *authkeys_file;
+  char *authkeys_filename;
+  char *permissions; // not required for deauthorize
   char *key;
-} deauthorize_ssh_public_key_params;
+} authkeys_params;
+
+int authorize_ssh_public_key(authkeys_params *params);
+int deauthorize_ssh_public_key(authkeys_params *params);
 
 #define DEAUTHORIZE_SSH_PUBLIC_KEY_DELAY 15
-void deauthorize_ssh_public_key_job(void *deauthorize_ssh_public_key_params);
+void deauthorize_ssh_public_key_job(void *authkeys_params);
 #endif

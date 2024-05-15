@@ -10,12 +10,15 @@
 #include <atclient/stringutils.h>
 #include <atlogger/atlogger.h>
 #include <cJSON.h>
+#include <libgen.h>
 #include <pthread.h>
 #include <sshnpd/params.h>
 #include <sshnpd/ssh_key_util.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/errno.h>
+#include <unistd.h>
 
 #define FILENAME_BUFFER_SIZE 500
 #define LOGGER_TAG "sshnpd"
@@ -134,6 +137,7 @@ int main(int argc, char **argv) {
   // 7.b Initialize the worker atclient
   atclient atclient;
   atclient_init(&atclient);
+  bool free_ping_response = false;
   res = atclient_pkam_authenticate(&atclient, &root_conn, &atkeys, params.atsign);
   if (res != 0) {
     exit_res = res;
@@ -162,11 +166,11 @@ int main(int argc, char **argv) {
   cJSON_AddItemToObject(ping_response_json, "corePackageVersion", cJSON_CreateString("c0.1.0"));
 
   cJSON *supported_features = cJSON_CreateObject();
-  cJSON_AddItemToObject(supported_features, "srAuth", cJSON_CreateBool(cJSON_True));
-  cJSON_AddItemToObject(supported_features, "srE2ee", cJSON_CreateBool(cJSON_True));
-  cJSON_bool acceptsPublicKeys = (params.sshpublickey) ? cJSON_True : cJSON_False;
+  cJSON_AddItemToObject(supported_features, "srAuth", cJSON_CreateBool(true));
+  cJSON_AddItemToObject(supported_features, "srE2ee", cJSON_CreateBool(true));
+  cJSON_bool acceptsPublicKeys = params.sshpublickey;
   cJSON_AddItemToObject(supported_features, "acceptsPublicKeys", cJSON_CreateBool(acceptsPublicKeys));
-  cJSON_AddItemToObject(supported_features, "supportsPortChoice", cJSON_CreateBool(cJSON_True));
+  cJSON_AddItemToObject(supported_features, "supportsPortChoice", cJSON_CreateBool(true));
   cJSON_AddItemToObject(ping_response_json, "supportedFeatures", supported_features);
 
   cJSON *allowed_services = cJSON_CreateArray();
@@ -182,6 +186,8 @@ int main(int argc, char **argv) {
   if (ping_response == NULL) {
     atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "cJSON_Print failed\n");
     goto cancel_atclient;
+  } else {
+    free_ping_response = true;
   }
 
   // 9. Start the device refresh loop - if hide is off
@@ -215,9 +221,26 @@ int main(int argc, char **argv) {
     exit_res = res;
     goto cancel_refresh;
   }
+
+  char *authkeys_filename = malloc(sizeof(char) + (strlen(homedir) + 22));
+  sprintf(authkeys_filename, "%s/.ssh/authorized_keys", homedir);
+
+  atlogger_log("AUTH SSH KEY", ATLOGGER_LOGGING_LEVEL_DEBUG, "Using authorized_keys file: %s\n", authkeys_filename);
+  FILE *authkeys_file = fopen(authkeys_filename, "r"); // readonly for now, we will freopen this file later
+
+  if (authkeys_file == NULL) {
+    atlogger_log("AUTH SSH KEY", ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to open authorized_keys file: %s\n",
+                 strerror(errno));
+    if (errno != 0) {
+      exit_res = errno;
+    } else {
+      exit_res = 1;
+    }
+    goto close_authkeys;
+  }
+
   // 12. Main notification handler loop
   atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_INFO, "Starting monitor loop:\n");
-
 main_loop:
   while (true) {
     atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_DEBUG, "Waiting for next monitor thread message\n");
@@ -227,7 +250,6 @@ main_loop:
       atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to read monitor message: %d\n", res);
       continue;
     }
-
     switch (message->type) {
 
     case ATCLIENT_MONITOR_MESSAGE_TYPE_NOTIFICATION: {
@@ -315,15 +337,19 @@ main_loop:
             break;
           }
 
-          // printf("PASS\n");
+          authkeys_params authkeys_params = {};
+          authkeys_params.authkeys_file = authkeys_file;
+          authkeys_params.authkeys_filename = authkeys_filename;
+          authkeys_params.permissions = "";
+          authkeys_params.key = ssh_key;
+
           // authorize public key
-          int ret = authorize_ssh_public_key(homedir, "", ssh_key);
+          int ret = authorize_ssh_public_key(&authkeys_params);
           if (ret != 0) {
             atlogger_log(tag, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to authorize ssh public key\n");
             break;
           }
 
-          // printf("PASS2\n");
           // TODO: move this to SSH later - don't need deauth for this command, only ephemeral
           //
           // pthread_t tid;
@@ -393,10 +419,238 @@ main_loop:
           break;
         }
         case NK_SSH_REQUEST: {
-          // TODO  implement ssh req
+          char *tag = "SSH_REQUEST";
+          char *requesting_atsign = message->notification.from;
+
+          char *decrypted_json = malloc(sizeof(char) * (message->notification.decryptedvaluelen + 1));
+          memcpy(decrypted_json, message->notification.decryptedvalue, message->notification.decryptedvaluelen);
+          *(decrypted_json + message->notification.decryptedvaluelen) = '\0';
+
+          cJSON *envelope = cJSON_Parse(decrypted_json);
+          free(decrypted_json);
+
+          // First validate the types of everything we expect to be in the envelope
+          bool has_valid_values = cJSON_IsObject(envelope);
+
+          if (!has_valid_values) {
+            atlogger_log(tag, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to parse the envelope\n");
+            break;
+          }
+
+          cJSON *signature = cJSON_GetObjectItem(envelope, "signature");
+          has_valid_values = has_valid_values && cJSON_IsString(signature);
+
+          cJSON *hashing_algo = cJSON_GetObjectItem(envelope, "hashingAlgo");
+          has_valid_values = has_valid_values && cJSON_IsString(hashing_algo);
+
+          cJSON *signing_algo = cJSON_GetObjectItem(envelope, "signingAlgo");
+          has_valid_values = has_valid_values && cJSON_IsString(signing_algo);
+
+          cJSON *payload = cJSON_GetObjectItem(envelope, "payload");
+          has_valid_values = has_valid_values && cJSON_IsObject(payload);
+
+          if (!has_valid_values) {
+            atlogger_log(tag, ATLOGGER_LOGGING_LEVEL_ERROR, "Received invalid envelope format\n");
+            free(envelope);
+            break;
+          }
+
+          cJSON *direct = cJSON_GetObjectItem(payload, "direct");
+          has_valid_values = cJSON_IsBool(direct);
+
+          if (!has_valid_values) {
+            atlogger_log(tag, ATLOGGER_LOGGING_LEVEL_ERROR, "Couldn't determine if payload is direct\n");
+            free(envelope);
+            break;
+          }
+
+          if (!cJSON_IsTrue(direct)) {
+            atlogger_log(tag, ATLOGGER_LOGGING_LEVEL_ERROR, "Only direct mode is supported by this device\n");
+            free(envelope);
+            break;
+          }
+
+          cJSON *session_id = cJSON_GetObjectItem(payload, "sessionId");
+          has_valid_values = cJSON_IsString(session_id);
+
+          cJSON *host = cJSON_GetObjectItem(payload, "host");
+          has_valid_values = has_valid_values && cJSON_IsString(host);
+
+          cJSON *port = cJSON_GetObjectItem(payload, "port");
+          has_valid_values = has_valid_values && cJSON_IsNumber(port);
+
+          if (!has_valid_values) {
+            atlogger_log(tag, ATLOGGER_LOGGING_LEVEL_ERROR, "Received invalid payload format\n");
+            free(envelope);
+            break;
+          }
+
+          // These values do not need to be asserted for v4 compatibility, only for v5
+
+          cJSON *auth_to_rvd = cJSON_GetObjectItem(payload, "authenticateToRvd");
+          cJSON *encrypt_traffic = cJSON_GetObjectItem(payload, "encryptRvdTraffic");
+          cJSON *client_nonce = cJSON_GetObjectItem(payload, "clientNonce");
+          cJSON *rvd_nonce = cJSON_GetObjectItem(payload, "rvdNonce");
+          cJSON *client_ephemeral_pk = cJSON_GetObjectItem(payload, "clientEphemeralPK");
+          cJSON *client_ephemeral_pk_type = cJSON_GetObjectItem(payload, "clientEphemeralPKType");
+
+          // TODO: verify signature of envelope
+
+          bool authenticate_to_rvd = cJSON_IsTrue(auth_to_rvd);
+          bool encrypt_rvd_traffic = cJSON_IsTrue(encrypt_traffic);
+
+          char *rvd_auth_string;
+          if (authenticate_to_rvd) {
+            has_valid_values = cJSON_IsString(client_nonce) && cJSON_IsString(rvd_nonce);
+
+            if (!has_valid_values) {
+              atlogger_log(tag, ATLOGGER_LOGGING_LEVEL_ERROR,
+                           "Missing nonce values, cannot create auth string for rvd\n");
+              free(envelope);
+              break;
+            }
+
+            cJSON *rvd_auth_payload = cJSON_CreateObject();
+            cJSON_AddItemReferenceToObject(rvd_auth_payload, "sessionId", session_id);
+            cJSON_AddItemReferenceToObject(rvd_auth_payload, "clientNonce", client_nonce);
+            cJSON_AddItemReferenceToObject(rvd_auth_payload, "rvdNonce", rvd_nonce);
+            rvd_auth_string = cJSON_Print(rvd_auth_payload);
+            cJSON_Delete(rvd_auth_payload);
+          }
+
+          char *session_aes_key, *session_aes_key_encrypted;
+          char *session_iv, *session_iv_encrypted;
+          if (encrypt_rvd_traffic) {
+            has_valid_values = cJSON_IsString(client_ephemeral_pk) && cJSON_IsString(client_ephemeral_pk_type);
+            if (!has_valid_values) {
+              atlogger_log(
+                  tag, ATLOGGER_LOGGING_LEVEL_ERROR,
+                  "encryptRvdTraffic was requested, but no client ephemeral public key / key type was provided\n");
+
+              if (authenticate_to_rvd) {
+                free(rvd_auth_string);
+              }
+              free(envelope);
+              break;
+            }
+
+            // TODO: setup the aes keys
+          }
+
+          pid_t pid = fork();
+          if (pid == 0) {
+            // child process
+            char *srv_path;
+            char *dir = dirname(argv[0]); // do not free this
+            if (dir[0] == '/') {
+              // absolute path - so just use it
+              size_t srv_path_len = strlen(dir) + 4;              // "<dir>/srv"
+              srv_path = malloc(sizeof(char) * srv_path_len + 1); // +1 for '\0'
+              snprintf(srv_path, srv_path_len, "%s/srv", dir);
+            } else {
+              char *cwd;
+              cwd = getcwd(cwd, 0); // free this
+              if (cwd == NULL) {
+                res = errno;
+                if (res == 0) {
+                  res = 1;
+                }
+                printf("Failed to get the current working directory: %s\n", strerror(errno));
+                exit(res);
+              }
+              size_t srv_path_len = (strlen(cwd) + strlen(dir) + 5); // + 1 for a '/' inbetween + 4 for "/srv"
+              srv_path = malloc(sizeof(char) * srv_path_len + 1);    // + 1 for '\0'
+              snprintf(srv_path, srv_path_len, "%s/%s/srv", cwd, dir);
+              free(cwd);
+            }
+
+            char *streaming_host = cJSON_Print(host);
+            char *streaming_port = cJSON_Print(port);
+            long local_port_len = long_strlen(params.local_sshd_port);
+
+            size_t srv_argc = 8 + authenticate_to_rvd + encrypt_rvd_traffic;
+            char **srv_argv = malloc(sizeof(char) * srv_argc + 1);
+            srv_argv[srv_argc] = NULL; // the array must be terminated with a NULL pointer
+            int off = 0;
+
+            // -h
+            size_t size = 2;
+            srv_argv[off] = malloc(sizeof(char) * size);
+            snprintf(srv_argv[off++], size, "-h");
+            size = strlen(streaming_host);
+            srv_argv[off] = malloc(sizeof(char) * size);
+            snprintf(srv_argv[off++], size, "%s", streaming_host);
+            // -p
+            size = 2;
+            srv_argv[off] = malloc(sizeof(char) * size);
+            snprintf(srv_argv[off++], size, "-p");
+            size = strlen(streaming_port);
+            srv_argv[off] = malloc(sizeof(char) * size);
+            snprintf(srv_argv[off++], size, "%s", streaming_port);
+            //--local-port
+            size = 12;
+            srv_argv[off] = malloc(sizeof(char) * size);
+            snprintf(srv_argv[off++], size, "--local-port");
+            size = local_port_len;
+            srv_argv[off] = malloc(sizeof(char) * size);
+            snprintf(srv_argv[off++], size, "%d", params.local_sshd_port);
+            // --local-host
+            size = 12;
+            srv_argv[off] = malloc(sizeof(char) * size);
+            snprintf(srv_argv[off++], size, "--local-host");
+            size = 9;
+            srv_argv[off] = malloc(sizeof(char) * size);
+            snprintf(srv_argv[off++], size, "localhost");
+
+            if (authenticate_to_rvd) {
+              // size already 9
+              srv_argv[off] = malloc(sizeof(char) * size);
+              snprintf(srv_argv[off++], size, "--rv-auth");
+            }
+
+            if (encrypt_rvd_traffic) {
+              // size already 9
+              srv_argv[off] = malloc(sizeof(char) * size);
+              snprintf(srv_argv[off++], size, "--rv-e2ee");
+            }
+            // TODO:
+            // setup envp for srv (RV_AUTH, RV_AES, RV_IV)
+
+            res = execve(srv_path, srv_argv, NULL);
+
+            for (int i = 0; i < srv_argc; i++) {
+              free(srv_argv[i]);
+            }
+            free(srv_argv);
+            free(srv_path);
+            exit(res);
+            // - start srv here
+            // - exit afterwards
+
+          } else if (pid > 0) {
+            // parent process
+            // TODO:
+            // - Generate ephemeral key pair
+            // - authorize the public key
+            // - notify the client with ephemeral pk
+            // - Schedule ephemeral pk cleanup
+          } else {
+            // error forking the process
+            atlogger_log(tag, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to fork the process: %s\n", strerror(errno));
+            if (authenticate_to_rvd) {
+              free(rvd_auth_string);
+            }
+            free(envelope);
+            break;
+          }
+
+          if (authenticate_to_rvd) {
+          }
+          printf("We are here\n");
           break;
         }
         case NK_NPT_REQUEST: {
+          char *tag = "NPT_REQUEST";
           // TODO  implement npt req
           break;
         }
@@ -415,6 +669,10 @@ main_loop:
     }
   }
 
+close_authkeys: {
+  fclose(authkeys_file);
+  free(authkeys_filename);
+}
 cancel_heartbeat: {
   atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_DEBUG, "Cancelling heartbeat thread\n");
   if (pthread_cancel(heartbeat_tid) != 0) {
@@ -433,6 +691,9 @@ cancel_refresh: {
   }
 }
 cancel_atclient: {
+  if (free_ping_response) {
+    free(ping_response);
+  }
   atclient_connection_disconnect(&atclient.secondary_connection);
   atclient_free(&atclient);
 }
