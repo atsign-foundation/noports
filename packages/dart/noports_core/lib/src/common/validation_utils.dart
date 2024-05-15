@@ -59,6 +59,17 @@ void assertValidValue(Map m, String k, Type t) {
   }
 }
 
+/// Assert that the value for key k in Map m is non-null and is of Type t.
+/// Throws an ArgumentError if the value is null, or is not of Type t.
+void assertNullOrValidValue(Map m, String k, Type t) {
+  var v = m[k];
+  if (v == null) {
+    return;
+  } else {
+    return assertValidValue(m, k, t);
+  }
+}
+
 String signAndWrapAndJsonEncode(AtClient atClient, Map payload) {
   Map envelope = {'payload': payload};
 
