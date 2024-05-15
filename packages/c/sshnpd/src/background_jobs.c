@@ -66,41 +66,51 @@ void *refresh_device_entry(void *void_refresh_device_entry_params) {
   //   ..updatedAt = DateTime.now()
   //   ..namespaceAware = true;
 
+  // Build each atkey
+  int interval_seconds = 15;
+  int counter = 0;
   while (true) {
-    if (params->params->hide) {
-
-      atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_INFO,
-                   "--hide enabled, deleting any existing device info entries for this device\n");
-    } else {
-      atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_INFO, "Refreshing device info entries for this device\n");
-    }
-    for (int i = 0; i < num_managers; i++) {
-      ret = pthread_mutex_lock(params->atclient_lock);
-      if (ret != 0) {
-        atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR,
-                     "Failed to get a lock on atclient for performing device entry operation\n");
-        continue;
-      }
+    ret = pthread_mutex_lock(params->atclient_lock);
+    // once an hour the counter will reset
+    if (counter == 0) {
       if (params->params->hide) {
-        ret = atclient_delete(params->atclient, atkeys + i);
+        atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_INFO,
+                     "--hide enabled, deleting any existing device info entries for this device\n");
       } else {
-        ret = atclient_put(params->atclient, atkeys + i, params->payload, strlen(params->payload), NULL);
+        atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_INFO, "Refreshing device info entries for this device\n");
       }
-      if (ret != 0) {
-        atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to refresh device entry for %s\n",
-                     params->params->manager_list[i]);
-      }
-      do {
-        ret = pthread_mutex_unlock(params->atclient_lock);
+      for (int i = 0; i < num_managers; i++) {
         if (ret != 0) {
           atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR,
-                       "Failed to release atclient lock, trying again in 1 second\n");
-          sleep(1);
+                       "Failed to get a lock on atclient for performing device entry operation\n");
+          continue;
         }
-      } while (ret != 0);
-      atlogger_log("PING RESPONSE", ATLOGGER_LOGGING_LEVEL_DEBUG, "Released the atclient lock\n");
+        if (params->params->hide) {
+          ret = atclient_delete(params->atclient, atkeys + i);
+        } else {
+          ret = atclient_put(params->atclient, atkeys + i, params->payload, strlen(params->payload), NULL);
+        }
+        if (ret != 0) {
+          atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to refresh device entry for %s\n",
+                       params->params->manager_list[i]);
+        }
+      }
+    } else {
+      atclient_send_heartbeat(params->atclient);
+      atlogger_log("PING RESPONSE", ATLOGGER_LOGGING_LEVEL_DEBUG, "Sent a heartbeat on the worker connection\n");
     }
-    sleep(HOUR_IN_MS); // Once an hour
+    do {
+      ret = pthread_mutex_unlock(params->atclient_lock);
+      if (ret != 0) {
+        atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR,
+                     "Failed to release atclient lock, trying again in 1 second\n");
+        sleep(1);
+      }
+    } while (ret != 0);
+    atlogger_log("PING RESPONSE", ATLOGGER_LOGGING_LEVEL_DEBUG, "Released the atclient lock\n");
+    fflush(stdout);
+    counter = (counter + 1) % (60 * 60 / interval_seconds); // reset back to 0 once an hour
+    sleep(interval_seconds);
   }
 
   // Clean up upon exit
