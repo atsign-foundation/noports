@@ -19,6 +19,10 @@ dependencies:
   chalkdart: ^2.2.1
 
 dependency_overrides:
+  dartssh2:
+    git:
+      url: https://github.com/atsign-foundation/dartssh2
+      ref: trunk
   at_onboarding_cli:
     git:
       url: https://github.com/atsign-foundation/at_libraries

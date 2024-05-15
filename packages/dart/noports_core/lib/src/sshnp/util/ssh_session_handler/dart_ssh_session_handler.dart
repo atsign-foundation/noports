@@ -236,7 +236,7 @@ class SshClientHelper {
           },
         ),
       );
-      unawaited(socket.pipe(forward.sink));
+      unawaited(socket.cast<List<int>>().pipe(forward.sink));
     }, onError: (Object error) {
       counter = 0;
     }, onDone: () {
