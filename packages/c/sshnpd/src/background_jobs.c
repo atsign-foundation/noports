@@ -28,44 +28,99 @@ void *refresh_device_entry(void *void_refresh_device_entry_params) {
 
   // Buffer for the atkeys
   size_t num_managers = params->params->manager_list_len;
-  atclient_atkey atkeys[num_managers];
+  size_t num_username_keys = params->params->hide ? 0 : num_managers;
+
+  atclient_atkey infokeys[num_managers];
+  atclient_atkey usernamekeys[num_username_keys];
 
   // Buffer for the base portion of each atkey
-  size_t key_base_len = strlen(params->params->device) + strlen(params->params->atsign) +
-                        21; // +12 for ":device_info",+5 for sshnp, +3 for '.', +1 for null term
-  char key_base[key_base_len];
+  size_t infokey_base_len = strlen(params->params->device) + strlen(params->params->atsign) +
+                            21; // +12 for ":device_info",+5 for sshnp, +3 for '.', +1 for null term
+  char infokey_base[infokey_base_len];
   // example: :device_info.device_name.sshnp@client_atsign
-  snprintf(key_base, key_base_len, ":device_info.%s.sshnp.%s", params->params->device, params->params->atsign);
+  snprintf(infokey_base, infokey_base_len, ":device_info.%s.sshnp.%s", params->params->device, params->params->atsign);
 
-  // Build each atkey
+  // Buffer for the username keys
+  size_t usernamekey_base_len = strlen(params->params->device) + strlen(params->params->atsign) +
+                                18; // +9 for ":username",+5 for sshnp, +3 for '.', +1 for null term
+  char *username_key_base[usernamekey_base_len];
+  snprintf(infokey_base, infokey_base_len, ":username.%s.sshnp.%s", params->params->device, params->params->atsign);
+
   int ret = 0;
+  if (params->params->hide) {
+    atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_INFO,
+                 "--hide enabled, deleting any existing username entries for this device\n");
+  } else {
+    atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_INFO, "Saving username entries for this device\n");
+  }
+  ret = pthread_mutex_lock(params->atclient_lock);
   for (int i = 0; i < num_managers; i++) {
-    atclient_atkey_init(atkeys + i);
-    size_t buffer_len = strlen(params->params->manager_list[i]) + key_base_len;
+    // device_info
+    atclient_atkey_init(infokeys + i);
+    size_t buffer_len = strlen(params->params->manager_list[i]) + infokey_base_len;
     char atkey_buffer[buffer_len];
     // example: @client_atsign:device_info.device_name.sshnp@client_atsign
-    snprintf(atkey_buffer, buffer_len, "%s%s", params->params->manager_list[i], key_base);
-    ret = atclient_atkey_from_string(atkeys + i, atkey_buffer, buffer_len);
+    snprintf(atkey_buffer, buffer_len, "%s%s", params->params->manager_list[i], infokey_base);
+    ret = atclient_atkey_from_string(infokeys + i, atkey_buffer, buffer_len);
 
-    atclient_atkey_metadata *metadata = &(atkeys + 1)->metadata;
+    if (ret != 0) {
+      atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to create device_info atkey for %s\n",
+                   params->params->manager_list[i]);
+      exit(ret);
+    }
+
+    atclient_atkey_metadata *metadata = &(infokeys + 1)->metadata;
     atclient_atkey_metadata_set_ispublic(metadata, false);
     atclient_atkey_metadata_set_isencrypted(metadata, true);
     atclient_atkey_metadata_set_ttr(metadata, -1);
     atclient_atkey_metadata_set_ccd(metadata, true);
     atclient_atkey_metadata_set_ttl(metadata, THIRTY_DAYS_IN_MS);
-  }
-  // from dart code:
-  // const ttl = 1000 * 60 * 60 * 24 * 30; // 30 days
-  // var metaData = Metadata()
-  //   ..isPublic = false
-  //   ..isEncrypted = true
-  //   ..ttr = -1 // we want this to be cacheable by managerAtsign
-  //   ..ccd = true // we want cached copies to be deleted if the key is deleted
-  //   ..ttl = ttl // but to expire after 30 days
-  //   TODO: these don't exist in at_c... do we need them?
-  //   ..updatedAt = DateTime.now()
-  //   ..namespaceAware = true;
 
+    // username
+    atclient_atkey_init(usernamekeys + i);
+    buffer_len = strlen(params->params->manager_list[i]) + infokey_base_len;
+    // example: @client_atsign:device_info.device_name.sshnp@client_atsign
+    snprintf(atkey_buffer, buffer_len, "%s%s", params->params->manager_list[i], infokey_base);
+    ret = atclient_atkey_from_string(infokeys + i, atkey_buffer, buffer_len);
+    if (ret != 0) {
+      atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to create username atkey for %s\n",
+                   params->params->manager_list[i]);
+      exit(ret);
+    }
+    atclient_atkey_metadata *metadata2 = &(infokeys + 1)->metadata;
+    atclient_atkey_metadata_set_ispublic(metadata2, false);
+    atclient_atkey_metadata_set_isencrypted(metadata2, true);
+    atclient_atkey_metadata_set_ttr(metadata2, -1);
+    atclient_atkey_metadata_set_ccd(metadata2, true);
+    if (params->params->hide) {
+      ret = atclient_delete(params->atclient, usernamekeys + i);
+      if (ret != 0) {
+        atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to delete username atkey for %s\n",
+                     params->params->manager_list[i]);
+        exit(ret);
+      }
+    } else {
+      ret = atclient_put(params->atclient, usernamekeys + i, params->payload, strlen(params->payload), NULL);
+      if (ret != 0) {
+        atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to put username atkey for %s\n",
+                     params->params->manager_list[i]);
+        exit(ret);
+      }
+    }
+  }
+
+  do {
+    ret = pthread_mutex_unlock(params->atclient_lock);
+    if (ret != 0) {
+      atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR,
+                   "Failed to release atclient lock, trying again in 1 second\n");
+      sleep(1);
+    }
+  } while (ret != 0);
+
+  for (int i = 0; i < num_managers; i++) {
+    atclient_atkey_free(usernamekeys + i);
+  }
   // Build each atkey
   int interval_seconds = 15;
   int counter = 0;
@@ -86,9 +141,9 @@ void *refresh_device_entry(void *void_refresh_device_entry_params) {
           continue;
         }
         if (params->params->hide) {
-          ret = atclient_delete(params->atclient, atkeys + i);
+          ret = atclient_delete(params->atclient, infokeys + i);
         } else {
-          ret = atclient_put(params->atclient, atkeys + i, params->payload, strlen(params->payload), NULL);
+          ret = atclient_put(params->atclient, infokeys + i, params->payload, strlen(params->payload), NULL);
         }
         if (ret != 0) {
           atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to refresh device entry for %s\n",
@@ -97,7 +152,7 @@ void *refresh_device_entry(void *void_refresh_device_entry_params) {
       }
     } else {
       atclient_send_heartbeat(params->atclient);
-      atlogger_log("PING RESPONSE", ATLOGGER_LOGGING_LEVEL_DEBUG, "Sent a heartbeat on the worker connection\n");
+      atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_DEBUG, "Sent a heartbeat on the worker connection\n");
     }
     do {
       ret = pthread_mutex_unlock(params->atclient_lock);
@@ -107,7 +162,7 @@ void *refresh_device_entry(void *void_refresh_device_entry_params) {
         sleep(1);
       }
     } while (ret != 0);
-    atlogger_log("PING RESPONSE", ATLOGGER_LOGGING_LEVEL_DEBUG, "Released the atclient lock\n");
+    atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_DEBUG, "Released the atclient lock\n");
     fflush(stdout);
     counter = (counter + 1) % (60 * 60 / interval_seconds); // reset back to 0 once an hour
     sleep(interval_seconds);
@@ -115,6 +170,6 @@ void *refresh_device_entry(void *void_refresh_device_entry_params) {
 
   // Clean up upon exit
   for (int i = 0; i < num_managers; i++) {
-    atclient_atkey_free(atkeys + i); // automatically cleans up metadata as well
+    atclient_atkey_free(infokeys + i); // automatically cleans up metadata as well
   }
 }
