@@ -9,29 +9,20 @@ environment:
 dependencies:
   noports_core:
     path: "../noports_core"
-  at_onboarding_cli: 1.4.4
+  at_onboarding_cli: 1.5.0
   at_cli_commons: ^1.1.0
-  args: 2.4.2
-  socket_connector: ^2.2.0
-  dartssh2: 2.8.2
-  at_utils: 3.0.16
-  logging: ^1.2.0
-  chalkdart: ^2.2.1
-
-dependency_overrides:
-  dartssh2:
-    git:
-      url: https://github.com/atsign-foundation/dartssh2
-      ref: trunk
-  at_onboarding_cli:
-    git:
-      url: https://github.com/atsign-foundation/at_libraries
-      ref: gkc/apkam-aware-cli
-      path: packages/at_onboarding_cli
   args:
     git:
       ref: gkc/show-aliases-in-usage
       url: https://github.com/gkc/args
+  socket_connector: ^2.2.0
+  dartssh2:
+    git:
+      url: https://github.com/atsign-foundation/dartssh2
+      ref: trunk
+  at_utils: 3.0.16
+  logging: ^1.2.0
+  chalkdart: ^2.2.1
 
 dev_dependencies:
   lints: ^4.0.0
