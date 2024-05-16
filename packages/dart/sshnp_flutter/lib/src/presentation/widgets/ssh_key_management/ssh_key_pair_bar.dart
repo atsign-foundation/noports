@@ -19,8 +19,12 @@ class SshKeyPairBar extends ConsumerStatefulWidget {
 class _SskKeyPairBarState extends ConsumerState<SshKeyPairBar> {
   @override
   Widget build(BuildContext context) {
+    SizeConfig().init(context);
     final strings = AppLocalizations.of(context)!;
     final controller = ref.watch(privateKeyManagerFamilyController(widget.identifier));
+
+    final bodyMedium = Theme.of(context).textTheme.bodyMedium!;
+
     return controller.when(
       loading: () => const LinearProgressIndicator(),
       error: (error, stackTrace) {
@@ -28,10 +32,21 @@ class _SskKeyPairBarState extends ConsumerState<SshKeyPairBar> {
         return Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text(widget.identifier),
+            Text(
+              widget.identifier,
+              style: bodyMedium.copyWith(
+                fontSize: bodyMedium.fontSize!.toFont,
+              ),
+            ),
             gapW8,
             Expanded(child: Container()),
-            Text(strings.corruptedPrivateKey),
+            Text(
+              strings.corruptedPrivateKey,
+              style: bodyMedium.copyWith(
+                fontSize: bodyMedium.fontSize!.toFont,
+              ),
+            ),
+
             // ProfileDeleteAction(widget.identifier),
           ],
         );
@@ -43,6 +58,9 @@ class _SskKeyPairBarState extends ConsumerState<SshKeyPairBar> {
           children: [
             Text(
               atSshKeyPairManager.nickname,
+              style: bodyMedium.copyWith(
+                fontSize: bodyMedium.fontSize!.toFont,
+              ),
             ),
             SshKeyPairBarActions(
               identifier: widget.identifier,
