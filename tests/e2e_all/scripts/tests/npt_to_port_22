@@ -11,7 +11,14 @@ source "$testScriptsDir/common/check_env.include.sh" || exit $?
 
 daemonVersion="$1"
 clientVersion="$2"
-additionalFlags="--remote-port 22 --exit-when-connected"
+extraFlags="--remote-port 22 --exit-when-connected"
+
+if [[ $(versionIsAtLeast "$clientVersion" "d:5.3.0") == "true" ]]; then
+  apkamApp=$(getApkamAppName)
+  apkamDev=$(getApkamDeviceName "client" "$commitId")
+  keysFile=$(getApkamKeysFile "$clientAtSign" "$apkamApp" "$apkamDev")
+  extraFlags="$extraFlags -k $keysFile"
+fi
 
 # If client has already been released
 # then it has already have been tested against all released daemon versions
@@ -44,7 +51,7 @@ clientBinaryPath=$(getPathToBinariesForTypeAndVersion "$clientVersion")
 baseNptCommand=$(getBaseNptCommand "$clientBinaryPath")
 
 # Let's put together the npt command we will execute
-nptCommand="$baseNptCommand $additionalFlags --verbose"
+nptCommand="$baseNptCommand $extraFlags --verbose"
 
 # 1. Execute the npt command - its output is the port that npt is using
 echo "$(iso8601Date) | Executing $nptCommand" | tee -a "$(getReportFile)"

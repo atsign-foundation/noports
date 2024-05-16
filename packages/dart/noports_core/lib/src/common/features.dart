@@ -33,8 +33,4 @@ extension FeatureDescription on DaemonFeature {
         return 'support requests for specific device ports';
     }
   }
-
-  void talk() {
-    print('meow');
-  }
 }
