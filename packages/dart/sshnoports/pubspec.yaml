@@ -13,15 +13,16 @@ dependencies:
   at_cli_commons: ^1.1.0
   args: 2.4.2
   socket_connector: ^2.2.0
-  dartssh2:
-    git:
-      url: https://github.com/atsign-foundation/dartssh2
-      ref: trunk
+  dartssh2: 2.8.2
   at_utils: 3.0.16
   logging: ^1.2.0
   chalkdart: ^2.2.1
 
 dependency_overrides:
+  dartssh2:
+    git:
+      url: https://github.com/atsign-foundation/dartssh2
+      ref: trunk
   args:
     git:
       ref: gkc/show-aliases-in-usage
