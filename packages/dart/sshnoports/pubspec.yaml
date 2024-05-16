@@ -32,5 +32,5 @@ dev_dependencies:
   lints: ^4.0.0
   test: ^1.25.5
   mocktail: ^1.0.3
-  build_runner: ^2.4.9
+  build_runner: ^2.4.10
   build_version: ^2.1.1
