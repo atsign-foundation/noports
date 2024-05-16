@@ -117,11 +117,10 @@ packages:
   at_onboarding_cli:
     dependency: "direct main"
     description:
-      path: "packages/at_onboarding_cli"
-      ref: "gkc/apkam-aware-cli"
-      resolved-ref: "7fb44deac726ea691fee3feed3d0b150059d8044"
-      url: "https://github.com/atsign-foundation/at_libraries"
-    source: git
+      name: at_onboarding_cli
+      sha256: "2ef03f80c5b7c52ceb9f405a25aa62153f8d5efd04a174cb7870b47df32dada6"
+      url: "https://pub.dev"
+    source: hosted
     version: "1.5.0"
   at_persistence_secondary_server:
     dependency: transitive
