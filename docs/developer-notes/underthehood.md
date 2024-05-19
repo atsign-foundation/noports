@@ -117,26 +117,7 @@ Once the interactions above have completed
           * $device\_host:22 <===>
             * device sshd program
 
-```mermaid
-sequenceDiagram
-    participant ssh
-    participant clp as client local port
-    participant rvp1 as rvd port 1
-    participant rvp2 as rvd port 2
-    participant dp22 as device port 22
-    participant sshd
-    
-    note over ssh,clp: client host
-    note over rvp1, rvp2: rvd host
-    note over dp22, sshd: device host
-    
-    note over clp, rvp1: Bridged by <br> client ssh local port forward
-    note over rvp1, rvp2: Bridged by <br> rvd
-    note over rvp2, dp22: Bridged by <br> device sshrv
-    
-    ssh ->> sshd: packets from ssh to sshd
-    sshd ->> ssh: packets from sshd to ssh
-```
+![](AtsignDataPlane.png)
 
 ## Further Details
 

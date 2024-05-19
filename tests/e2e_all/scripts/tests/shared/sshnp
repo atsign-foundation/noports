@@ -44,6 +44,14 @@ clientBinaryPath=$(getPathToBinariesForTypeAndVersion "$clientVersion")
 
 baseSshnpCommand=$(getBaseSshnpCommand "$clientBinaryPath")
 
+unset extraFlags
+if [[ $(versionIsAtLeast "$clientVersion" "d:5.3.0") == "true" ]]; then
+  apkamApp=$(getApkamAppName)
+  apkamDev=$(getApkamDeviceName "client" "$commitId")
+  keysFile=$(getApkamKeysFile "$clientAtSign" "$apkamApp" "$apkamDev")
+  extraFlags="$extraFlags -k $keysFile"
+fi
+
 case "$daemonFeatureSet" in
   v4)
     # v5 clients need to unset some flags for backwards compatibility
