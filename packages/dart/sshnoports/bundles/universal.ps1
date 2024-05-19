@@ -99,9 +99,25 @@ function Parse-Env {
     $script:homepath = if (-not [string]::IsNullOrEmpty($env:HOME)) { $env:HOME } else { $env:USERPROFILE }
     $script:INSTALL_PATH =  "$homepath\.local\bin"
     $script:INSTALL_TYPE = Norm-InstallType "$script:INSTALL_TYPE"
-    if (Get-Service "sshnpd" -ErrorAction SilentlyContinue){
-        Invoke-Expression "sshnpd_service stop" -ErrorAction SilentlyContinue
-        Invoke-Expression "sshnpd_service uninstall" -ErrorAction SilentlyContinue
+    if ($script:INSTALL_TYPE -eq "device") {
+        if (Get-Service "sshnpd" -ErrorAction SilentlyContinue){
+            Invoke-Expression "sshnpd_service stop" -ErrorAction SilentlyContinue
+            Invoke-Expression "sshnpd_service uninstall" -ErrorAction SilentlyContinue
+        }
+        if (Test-Path "$script:INSTALL_PATH\sshnp\sshnpd.exe"){
+            Remove-Item -Path "$script:INSTALL_PATH\sshnp\sshnpd.exe" -Force
+        }
+        if (Test-Path "$script:INSTALL_PATH\sshnp\sshnpd_service.xml"){
+            Remove-Item -Path "$script:INSTALL_PATH\sshnp\sshnpd_service.xml" -Force
+        }
+        if (Test-Path "$script:INSTALL_PATH\sshnp\sshnpd_service.exe"){
+            Remove-Item -Path "$script:INSTALL_PATH\sshnp\sshnpd_service.exe" -Force
+        }        
+    }
+    if ($script:INSTALL_TYPE -eq "client") {
+        if (Test-Path "$script:INSTALL_PATH\sshnp\sshnp.exe"){
+            Remove-Item -Path "$script:INSTALL_PATH\sshnp\sshnp.exe" -Force
+        }
     }
 }
 function Cleanup {
@@ -205,6 +221,7 @@ function Get-Atsigns {
         Write-Host "Exiting.."
         Cleanup
         Start-Sleep -Seconds 3  
+        Exit 1
     }
 }
 
@@ -292,6 +309,12 @@ function Uninstall-Both{
 
 # Main function
 function Main {
+    if ([string]::IsNullOrEmpty($script:INSTALL_TYPE)){
+        Get-InstallType
+    }
+    if ($script:INSTALL_TYPE -eq "uninstall"){
+        Uninstall-Both
+    }
     Check-BasicRequirements
     Parse-Env
     if ($dev) {
@@ -301,12 +324,6 @@ function Main {
             Cleanup 
             Exit 1
         }
-    }
-    if ([string]::IsNullOrEmpty($script:INSTALL_TYPE)){
-        Get-InstallType
-    }
-    if ($script:INSTALL_TYPE -eq "uninstall"){
-        Uninstall-Both
     }
     Make-Dirs
     Download-Sshnp
