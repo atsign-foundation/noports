@@ -8,6 +8,10 @@ environment:
 
 dependency_overrides:
   intl: ^0.17.0-nullsafety.2
+  dartssh2:
+    git:
+      url: https://github.com/atsign-foundation/dartssh2
+      ref: trunk
 
 dependencies:
   at_app_flutter: ^5.0.1

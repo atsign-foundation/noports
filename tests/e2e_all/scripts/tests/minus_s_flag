@@ -42,6 +42,13 @@ if [[ $(versionIsAtLeast "$clientVersion" "d:5.0.0") == "true" ]] ; then
   extraFlags="-x --no-ad --no-et"
 fi
 
+if [[ $(versionIsAtLeast "$clientVersion" "d:5.3.0") == "true" ]]; then
+  apkamApp=$(getApkamAppName)
+  apkamDev=$(getApkamDeviceName "client" "$commitId")
+  keysFile=$(getApkamKeysFile "$clientAtSign" "$apkamApp" "$apkamDev")
+  extraFlags="$extraFlags -k $keysFile"
+fi
+
 # 2a. Run sshnp against a daemon without the -s flag, with that new key
 #   2b. Verify it fails
 deviceName=$(getDeviceNameNoFlags "$commitId" "$daemonVersion" )
@@ -58,7 +65,7 @@ l1="$clientBinaryPath/sshnp -f $clientAtSign -d $deviceName -i $identityFilename
 l2=" -t $daemonAtSign -h $srvAtSign -u $remoteUsername"
 l4=" --root-domain $atDirectoryHost"
 l5=" ${extraFlags}"
-sshnpCommand="$l1 $l2 $l3 $l4 $l5 -s ${identityFilename}.pub"
+sshnpCommand="$l1 $l2 $l3 $l4 $l5 -s"
 
 echo "$(iso8601Date) | Executing $sshnpCommand"
 sshCommand=$($sshnpCommand)
@@ -107,7 +114,7 @@ l1="$clientBinaryPath/sshnp -f $clientAtSign -d $deviceName -i $identityFilename
 l2=" -t $daemonAtSign -h $srvAtSign -u $remoteUsername"
 l4=" --root-domain $atDirectoryHost"
 l5=" ${extraFlags}"
-sshnpCommand="$l1 $l2 $l3 $l4 $l5 -s ${identityFilename}.pub"
+sshnpCommand="$l1 $l2 $l3 $l4 $l5 -s"
 
 echo "$(iso8601Date) | Executing $sshnpCommand"
 sshCommand=$($sshnpCommand)

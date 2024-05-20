@@ -41,6 +41,13 @@ if [[ $(versionIsAtLeast "$clientVersion" "d:5.0.0") == "true" ]] ; then
   extraFlags="-x --no-ad --no-et"
 fi
 
+if [[ $(versionIsAtLeast "$clientVersion" "d:5.3.0") == "true" ]]; then
+  apkamApp=$(getApkamAppName)
+  apkamDev=$(getApkamDeviceName "client" "$commitId")
+  keysFile=$(getApkamKeysFile "$clientAtSign" "$apkamApp" "$apkamDev")
+  extraFlags="$extraFlags -k $keysFile"
+fi
+
 # 1a. Run sshnp without the '-u <username>' option talking to a device daemon which
 #     does not have the -u flag enabled.
 # 1b. Verify it fails
@@ -59,7 +66,7 @@ l1="$clientBinaryPath/sshnp -f $clientAtSign -d $deviceName -i $identityFilename
 l2=" -t $daemonAtSign -h $srvAtSign "
 l4=" --root-domain $atDirectoryHost"
 l5=" ${extraFlags}"
-sshnpCommand="$l1 $l2 $l3 $l4 $l5 -s ${identityFilename}.pub"
+sshnpCommand="$l1 $l2 $l3 $l4 $l5 -s"
 
 echo "$(iso8601Date) | Executing $sshnpCommand"
 sshCommand=$($sshnpCommand)
@@ -88,7 +95,7 @@ l1="$clientBinaryPath/sshnp -f $clientAtSign -d $deviceName -i $identityFilename
 l2=" -t $daemonAtSign -h $srvAtSign"
 l4=" --root-domain $atDirectoryHost"
 l5=" ${extraFlags}"
-sshnpCommand="$l1 $l2 $l3 $l4 $l5 -s ${identityFilename}.pub"
+sshnpCommand="$l1 $l2 $l3 $l4 $l5 -s"
 
 echo "$(iso8601Date) | Executing $sshnpCommand"
 sshCommand=$($sshnpCommand)
