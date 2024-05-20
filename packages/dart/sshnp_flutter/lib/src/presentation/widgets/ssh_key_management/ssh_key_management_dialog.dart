@@ -24,12 +24,16 @@ class _SshKeyManagementScreenState extends ConsumerState<SshKeyManagementDialog>
   @override
   Widget build(BuildContext context) {
     // * Getting the AtClientManager instance to use below
-
+    SizeConfig().init(context);
     final strings = AppLocalizations.of(context)!;
     final privateKeyManager = ref.watch(atPrivateKeyManagerListController);
+    final bodyLarge = Theme.of(context).textTheme.bodyLarge!;
+    final bodyMedium = Theme.of(context).textTheme.bodyMedium!;
+    final bodySmall = Theme.of(context).textTheme.bodySmall!;
 
     return Dialog(
-      child: Padding(
+      child: Container(
+        constraints: const BoxConstraints(maxWidth: Sizes.p460, maxHeight: Sizes.p460),
         padding: const EdgeInsets.only(
           left: Sizes.p36,
           top: Sizes.p21,
@@ -40,11 +44,11 @@ class _SshKeyManagementScreenState extends ConsumerState<SshKeyManagementDialog>
           children: [
             Text(
               strings.privateKeyManagement,
-              style: Theme.of(context).textTheme.bodyLarge,
+              style: bodyLarge.copyWith(fontSize: bodyLarge.fontSize?.toFont),
             ),
             Text(
               strings.privateKeyManagementDescription,
-              style: Theme.of(context).textTheme.bodySmall,
+              style: bodySmall.copyWith(fontSize: bodySmall.fontSize?.toFont),
             ),
             gapH20,
             privateKeyManager.when(
@@ -52,11 +56,14 @@ class _SshKeyManagementScreenState extends ConsumerState<SshKeyManagementDialog>
                 child: CircularProgressIndicator(),
               ),
               error: (e, s) {
-                return Text(e.toString());
+                return Text(e.toString(), style: bodyMedium.copyWith(fontSize: bodyMedium.fontSize?.toFont));
               },
               data: (privateKeys) {
                 if (privateKeys.isEmpty) {
-                  return Text(strings.privateKeyNotFound);
+                  return Text(
+                    strings.privateKeyNotFound,
+                    style: bodyMedium.copyWith(fontSize: bodyMedium.fontSize?.toFont),
+                  );
                 }
                 final sortedPrivateKeys = privateKeys.toList();
                 sortedPrivateKeys.sort();
@@ -67,12 +74,15 @@ class _SshKeyManagementScreenState extends ConsumerState<SshKeyManagementDialog>
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text.rich(
-                        TextSpan(text: strings.yourKeys, children: [
-                          TextSpan(
-                            text: ' ${sortedPrivateKeys.length}',
-                            style: Theme.of(context).textTheme.bodyMedium!.copyWith(color: kPrimaryColor),
-                          ),
-                        ]),
+                        TextSpan(
+                            text: strings.yourKeys,
+                            style: bodyMedium.copyWith(fontSize: bodyMedium.fontSize?.toFont),
+                            children: [
+                              TextSpan(
+                                text: ' ${sortedPrivateKeys.length}',
+                                style: bodyMedium.copyWith(color: kPrimaryColor, fontSize: bodyMedium.fontSize?.toFont),
+                              ),
+                            ]),
                       ),
                       SizedBox(
                         width: 411,
@@ -115,7 +125,7 @@ class _SshKeyManagementScreenState extends ConsumerState<SshKeyManagementDialog>
                   child: Center(
                     child: Text(
                       strings.uploadNewKey,
-                      style: Theme.of(context).textTheme.bodySmall!.copyWith(color: kPrimaryColor),
+                      style: bodySmall.copyWith(color: kPrimaryColor, fontSize: bodySmall.fontSize?.toFont),
                     ),
                   ),
                 ),

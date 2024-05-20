@@ -36,6 +36,7 @@ class Sizes {
   static const p247 = 247.0;
   static const p286 = 286.0;
   static const p320 = 320.0;
+  static const p460 = 460.0;
 }
 
 const gap0 = SizedBox();
