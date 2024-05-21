@@ -12,6 +12,10 @@ dependency_overrides:
     git:
       url: https://github.com/atsign-foundation/dartssh2
       ref: trunk
+  args:
+    git:
+      ref: gkc/show-aliases-in-usage
+      url: https://github.com/gkc/args
 
 dependencies:
   at_app_flutter: ^5.0.1
@@ -38,7 +42,9 @@ dependencies:
   intl: any
   macos_ui: ^2.0.0
   mocktail: ^1.0.0
-  noports_core: ^6.0.2
+  # noports_core: ^6.0.2
+  noports_core:
+    path: "../noports_core"
   package_info_plus: ^5.0.1
   page_transition: ^2.0.9
   path: ^1.8.3
