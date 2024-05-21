@@ -14,7 +14,7 @@ enum SupportedSshAlgorithm {
   RSA,
 };
 
-typedef struct {
+struct _sshnpd_params {
   char *atsign;
   char *device;
 
@@ -36,9 +36,10 @@ typedef struct {
   uint16_t local_sshd_port;
 
   char *key_file;
-} SshnpdParams;
+};
+typedef struct _sshnpd_params sshnpd_params;
 
-void apply_default_values_to_params(SshnpdParams *params);
-int parse_params(SshnpdParams *params, int argc, const char **argv);
+void apply_default_values_to_params(sshnpd_params *params);
+int parse_params(sshnpd_params *params, int argc, const char **argv);
 
 #endif

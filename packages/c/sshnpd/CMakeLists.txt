@@ -10,8 +10,16 @@ project(sshnpd VERSION 0.0.1 LANGUAGES C)
 set(
   SSHNPD_SRCS
   ${CMAKE_CURRENT_LIST_DIR}/src/background_jobs.c
+  ${CMAKE_CURRENT_LIST_DIR}/src/file_utils.c
+  ${CMAKE_CURRENT_LIST_DIR}/src/handle_npt_request.c
+  ${CMAKE_CURRENT_LIST_DIR}/src/handle_ping.c
+  ${CMAKE_CURRENT_LIST_DIR}/src/handle_ssh_request.c
+  ${CMAKE_CURRENT_LIST_DIR}/src/handle_sshpublickey.c
+  ${CMAKE_CURRENT_LIST_DIR}/src/main.c
   ${CMAKE_CURRENT_LIST_DIR}/src/params.c
-  ${CMAKE_CURRENT_LIST_DIR}/src/ssh_key_util.c
+  ${CMAKE_CURRENT_LIST_DIR}/src/run_srv.c
+  ${CMAKE_CURRENT_LIST_DIR}/src/run_sshkeygen.c
+  ${CMAKE_CURRENT_LIST_DIR}/src/utils.c
 )
 
 # 1b. Manually add your include directories here
@@ -84,14 +92,25 @@ endif()
 
 add_library(${PROJECT_NAME}_lib STATIC ${SSHNPD_SRCS})
 
-target_link_libraries(
-  ${PROJECT_NAME}_lib
-  PRIVATE
-    atsdk::atclient
-    atsdk::atchops
-    atsdk::atlogger
-    argparse::argparse-static
-)
+if(CMAKE_BUILD_TYPE STREQUAL "Debug")
+  target_link_libraries(
+    ${PROJECT_NAME}_lib
+    PRIVATE
+      atsdk::atclient
+      debug atsdk::atchops
+      atsdk::atlogger
+      argparse::argparse-static
+  )
+else()
+  target_link_libraries(
+    ${PROJECT_NAME}_lib
+    PRIVATE
+      atsdk::atclient
+      atsdk::atchops
+      atsdk::atlogger
+      argparse::argparse-static
+  )
+endif()
 
 # Set include directories for sshnpd target
 target_include_directories(

@@ -4,7 +4,7 @@
 #include <string.h>
 
 #define default_permitopen "localhost:22,localhost:3389"
-void apply_default_values_to_params(SshnpdParams *params) {
+void apply_default_values_to_params(sshnpd_params *params) {
   params->key_file = NULL;
   params->atsign = NULL;
   params->device = "default";
@@ -18,7 +18,7 @@ void apply_default_values_to_params(SshnpdParams *params) {
   params->local_sshd_port = 22;
 }
 
-int parse_params(SshnpdParams *params, int argc, const char **argv) {
+int parse_params(sshnpd_params *params, int argc, const char **argv) {
   char *ssh_algorithm_input = "";
   char *manager = NULL;
   char *permitopen = NULL;
@@ -60,6 +60,10 @@ int parse_params(SshnpdParams *params, int argc, const char **argv) {
 
   if (permitopen == NULL) {
     permitopen = malloc(strlen(default_permitopen) * sizeof(char));
+    if (permitopen == NULL) {
+      printf("Failed to allocate memory for permitopen input\n");
+      return 1;
+    }
     strcpy(permitopen, default_permitopen);
     params->free_permitopen = 1;
   }
@@ -100,6 +104,10 @@ int parse_params(SshnpdParams *params, int argc, const char **argv) {
 
   // malloc pointers to each string, but don't malloc any more memory for individual char storage
   params->manager_list = malloc((sep_count + 1) * sizeof(char *));
+  if (params->manager_list == NULL) {
+    printf("Failed to allocate memory for manager list\n");
+    return 1;
+  }
   params->manager_list[0] = manager;
   int pos = 1; // Starts at 1 since we already added the first item to the list
   for (int i = 0; i < manager_end; i++) {
@@ -133,6 +141,10 @@ int parse_params(SshnpdParams *params, int argc, const char **argv) {
 
   // malloc pointers to each string, but don't malloc any more memory for individual char storage
   params->permitopen = malloc((sep_count + 1) * sizeof(char *));
+  if (params->permitopen == NULL) {
+    printf("Failed to allocate memory for permitopen\n");
+    return 1;
+  }
   params->permitopen[0] = permitopen;
   pos = 1; // Starts at 1 since we already added the first item to the list
   for (int i = 0; i < permitopen_end; i++) {

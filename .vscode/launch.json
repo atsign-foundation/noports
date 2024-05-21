@@ -1,7 +1,10 @@
 {
-  // Use IntelliSense to learn about possible attributes.
-  // Hover to view descriptions of existing attributes.
-  // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+  // Put your args to sshnpd in a .env file:
+  // For example:
+  // TO="@my_device"
+  // FROM="@my_client"
+  // DEVICE="foobardevice"
+
   "version": "0.2.0",
   "configurations": [
     {
@@ -22,14 +25,31 @@
       "console": "integratedTerminal",
       "justMyCode": true,
       "envFile": "${workspaceFolder}/.env",
-      //put your args in a .env 
       "args": [
-        "--atsign", "${env:TO}",
-        "--manager", "${env:FROM}",
-        "--device", "${env:DEVICE}",
+        "--atsign",
+        "${env:TO}",
+        "--manager",
+        "${env:FROM}",
+        "--device",
+        "${env:DEVICE}",
         "-u"
+      ]
+    },
+    {
+      "name": "C: SSHNPD",
+      "type": "lldb",
+      "request": "launch",
+      "program": "packages/c/sshnpd/build/sshnpd",
+      "preLaunchTask": "BuildSshnpdC",
+      "envFile": "${workspaceFolder}/.env",
+      "args": [
+        "-s",
+        "-v",
+        "-a", "${env:TO}",
+        "-m", "${env:FROM}",
+        "-d", "${env:DEVICE}"
       ],
-      
+      "cwd": ""
     }
   ]
 }

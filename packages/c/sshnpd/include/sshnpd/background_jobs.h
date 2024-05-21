@@ -39,13 +39,13 @@ void *heartbeat(void *heartbeat_params);
  * @brief a struct which gets passed to refresh_device_entry as a void pointer
  *
  * @param atclient the atclient context to use to send the device entry
- * @param params the SshnpdParams which provide the device name and manager (list)
+ * @param params the sshnpd_params which provide the device name and manager (list)
  * @param fds a pair of file descriptors to communicate with the main thread
  */
 struct refresh_device_entry_params {
   atclient *atclient;
   pthread_mutex_t *atclient_lock;
-  const SshnpdParams *params;
+  const sshnpd_params *params;
   const char *payload;
   const char *username;
   int fds[2];
