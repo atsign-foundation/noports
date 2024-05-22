@@ -13,7 +13,7 @@ char *read_file_contents(char *filename) {
   int ret = 0;
   FILE *file = fopen(filename, "r");
   if (file == NULL) {
-    atlogger_log(tag, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to freopen the file: %s\n", strerror(errno));
+    atlogger_log(tag, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to fopen the file: %s\n", strerror(errno));
     if (errno != 0) {
       ret = errno;
     } else {
@@ -43,7 +43,6 @@ char *read_file_contents(char *filename) {
     goto exit;
   }
 
-  printf("fsize: %ld\n", fsize);
   char *buffer = malloc(sizeof(char) * (fsize + 10));
   if (buffer == NULL) {
     atlogger_log(tag, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to allocate a buffer to read file into: %s\n",
