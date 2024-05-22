@@ -53,7 +53,7 @@ class AppNavigationRail extends ConsumerWidget {
                   if (route == AppRoute.blank) {
                     return NavigationRailDestination(
                       disabled: true,
-                      icon: SizedBox(height: 116 + height - 467),
+                      icon: SizedBox(height: 116 + height - 468),
                       label: gap0,
                     );
                   } else if ((route == AppRoute.terminal && terminalList.isEmpty)) {

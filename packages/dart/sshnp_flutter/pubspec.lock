@@ -18,13 +18,14 @@ packages:
     source: hosted
     version: "3.5.1"
   args:
-    dependency: transitive
+    dependency: "direct overridden"
     description:
-      name: args
-      sha256: "7cf60b9f0cc88203c5a190b4cd62a99feea42759a7fa695010eb5de1c0b2252a"
-      url: "https://pub.dev"
-    source: hosted
-    version: "2.5.0"
+      path: "."
+      ref: "gkc/show-aliases-in-usage"
+      resolved-ref: ece6d42302acc5bae7a4ba793440ccb0945d48f5
+      url: "https://github.com/gkc/args"
+    source: git
+    version: "2.4.2"
   asn1lib:
     dependency: transitive
     description:
@@ -862,7 +863,7 @@ packages:
     source: hosted
     version: "1.0.1"
   path_provider:
-    dependency: transitive
+    dependency: "direct main"
     description:
       name: path_provider
       sha256: c9e7d3a4cd1410877472158bee69963a4579f78b68c65a2b7d40d1a7a88bb161
