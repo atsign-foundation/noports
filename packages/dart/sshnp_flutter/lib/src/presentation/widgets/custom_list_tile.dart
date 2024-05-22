@@ -134,7 +134,11 @@ class CustomListTile extends StatelessWidget {
           break;
         case CustomListTileType.sshKeyManagement:
           if (context.mounted) {
-            showDialog(context: context, builder: ((context) => const SshKeyManagementDialog()));
+            // final Size screenSize = MediaQuery.of(context).size;
+            showDialog(
+                // anchorPoint: Offset((screenSize.width / 2) + 500, screenSize.height / 2),
+                context: context,
+                builder: ((context) => const SshKeyManagementDialog()));
           }
           break;
         case CustomListTileType.switchAtsign:

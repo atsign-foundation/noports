@@ -47,8 +47,8 @@ atDirectoryHost=root.atsign.org
 atDirectoryPort=64
 testsToRun="all"
 
-defaultDaemonVersions="d:4.0.5 d:5.0.2 d:current"
-defaultClientVersions="d:4.0.5 d:5.0.2 d:current"
+defaultDaemonVersions="d:4.0.5 d:5.2.0 d:current"
+defaultClientVersions="d:4.0.5 d:5.2.0 d:current"
 
 daemonVersions=$defaultDaemonVersions
 clientVersions=$defaultClientVersions
@@ -181,6 +181,10 @@ if test "$retCode" != 0; then
   logError "Failed to set up binaries - exiting"
   exit $retCode
 fi
+
+echo
+logInfo "Calling apkam_setup.sh"
+"$testScriptsDir/common/apkam_setup.sh"
 
 echo
 logInfo "Generating new ssh key"

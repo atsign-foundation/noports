@@ -8,6 +8,36 @@ BBLUE='\033[1;34m'
 
 authKeysFile="$HOME/.ssh/authorized_keys"
 
+getApkamAppName() {
+  echo "e2e_all"
+}
+
+getApkamDeviceName() {
+  if (( $# != 2 )); then
+    # shellcheck disable=SC2016
+    logErrorAndExit 'getApkamDeviceName requires 2 arguments: <client|daemon> $commitId'
+  fi
+  which="$1"
+  commitId="$2"
+  echo "${which}_${commitId}"
+}
+
+getApkamKeysDir() {
+  echo "$testRuntimeDir"/apkam
+}
+
+getApkamKeysFile() {
+  if (( $# != 3 )); then
+    # shellcheck disable=SC2016
+    logErrorAndExit 'getApkamKeysFile requires 3 arguments: $atSign $apkamAppName $apkamDeviceName'
+  fi
+  keysDir=$(getApkamKeysDir)
+  atSign="$1"
+  apkamApp="$2"
+  apkamDev="$3"
+  echo "$keysDir"/"$atSign"."$apkamApp"."$apkamDev".atKeys
+}
+
 getBaseSshnpCommand() {
   if (( $# != 1 )); then
     logErrorAndExit "getBaseSshnpCommand requires 1 argument (clientBinaryPath)"

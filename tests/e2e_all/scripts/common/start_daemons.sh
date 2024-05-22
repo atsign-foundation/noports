@@ -48,11 +48,17 @@ do
   cBinary="$pathToBinaries/sshnpd"
   fRoot="--root-domain $atDirectoryHost"
   fAtSigns="-m $clientAtSign -a $daemonAtSign"
+  if [[ $(versionIsAtLeast "$typeAndVersion" "d:5.3.0") == "true" ]]; then
+    apkamApp=$(getApkamAppName)
+    apkamDev=$(getApkamDeviceName "daemon" "$commitId")
+    keysFile=$(getApkamKeysFile "$daemonAtSign" "$apkamApp" "$apkamDev")
+    extraFlags="-k $keysFile"
+  fi
 
   deviceName=$(getDeviceNameNoFlags "$commitId" "$typeAndVersion" )
   logFile="${outputDir}/daemons/${deviceName}.log"
   logInfo "      Starting daemon version $typeAndVersion with neither the -u nor -s flags"
-  commandLine="$cBinary $fRoot $fAtSigns -d ${deviceName} --storage-path ${outputDir}/daemons/${deviceName}.storage -v"
+  commandLine="$cBinary $fRoot $fAtSigns -d ${deviceName} --storage-path ${outputDir}/daemons/${deviceName}.storage -v $extraFlags"
   echo "        --> $commandLine  >& $logFile 2>&1 &"
   $commandLine > "$logFile" 2>&1 &
 
@@ -62,7 +68,7 @@ do
   deviceName=$(getDeviceNameWithFlags "$commitId" "$typeAndVersion" )
   logFile="${outputDir}/daemons/${deviceName}.log"
   logInfo "      Starting daemon version $typeAndVersion with the -u and -s flags"
-  commandLine="$cBinary $fRoot $fAtSigns -d ${deviceName} --storage-path ${outputDir}/daemons/${deviceName}.storage -v -u -s"
+  commandLine="$cBinary $fRoot $fAtSigns -d ${deviceName} --storage-path ${outputDir}/daemons/${deviceName}.storage -v -u -s $extraFlags"
   echo "        --> $commandLine  >& $logFile 2>&1 &"
   $commandLine > "$logFile" 2>&1 &
   waitUntilStarted $! "$deviceName" "$logFile"
