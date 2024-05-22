@@ -42,6 +42,9 @@
       "program": "packages/c/sshnpd/build/sshnpd",
       "preLaunchTask": "BuildSshnpdC",
       "envFile": "${workspaceFolder}/.env",
+      "env": {
+        "PATH": "${env:PATH}"
+      },
       "args": [
         "-s",
         "-v",
