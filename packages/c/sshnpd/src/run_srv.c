@@ -126,11 +126,6 @@ void run_srv(char *dir, sshnpd_params *params, cJSON *host, cJSON *port, bool au
     printf(" %s", argv[i]);
   }
   printf("\n");
-  atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_DEBUG, "srv environment:");
-  for (int i = 0; i < envc; i++) {
-    printf(" %s", envp[i]);
-  }
-  printf("\n");
   fflush(stdout);
   res = execve(path, argv, envp);
   atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_DEBUG, "srv exited (with code %d): %s\n", res, strerror(errno));
