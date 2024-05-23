@@ -7,6 +7,7 @@
 #include <atchops/aes.h>
 #include <atchops/iv.h>
 #include <atchops/rsa.h>
+#include <atchops/rsakey.h>
 #include <atchops/sha.h>
 #include <atclient/atclient.h>
 #include <atclient/atkey.h>
@@ -46,7 +47,8 @@ static unsigned long min(unsigned long a, unsigned long b) { return a < b ? a : 
 static pthread_mutex_t atclient_lock = PTHREAD_MUTEX_INITIALIZER;
 
 static void main_loop(atclient *monitor_ctx, atclient *atclient, sshnpd_params *params, FILE *authkeys_file,
-                      char *authkeys_filename, char *ping_response, char *bin_dir, char *home_dir);
+                      char *authkeys_filename, char *ping_response, char *bin_dir, char *home_dir,
+                      atchops_rsakey_privatekey signingkey);
 
 int main(int argc, char **argv) {
   // Save this value so it is available when we fork() later
@@ -124,6 +126,11 @@ int main(int argc, char **argv) {
     atclient_atkeys_free(&atkeys);
     return res;
   }
+
+  // 5.3 create a key copy for signing
+  atchops_rsakey_privatekey signingkey;
+  atchops_rsakey_privatekey_init(&signingkey);
+  memcpy(&signingkey, &atkeys.encryptprivatekey, sizeof(atchops_rsakey_privatekey));
 
   // 6. Initialize the root connection
   atclient_connection root_conn;
@@ -261,7 +268,7 @@ int main(int argc, char **argv) {
   // 12. Main notification handler loop
   atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_INFO, "Starting main loop\n");
   main_loop(&monitor_ctx, &atclient, &params, authkeys_file, authkeys_filename, ping_response, bin_dir,
-            (char *)home_dir);
+            (char *)home_dir, signingkey);
   atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_INFO, "Exited main loop\n");
 
 close_authkeys: {
@@ -324,7 +331,8 @@ exit: {
 }
 
 void main_loop(atclient *monitor_ctx, atclient *atclient, sshnpd_params *params, FILE *authkeys_file,
-               char *authkeys_filename, char *ping_response, char *bin_dir, char *home_dir) {
+               char *authkeys_filename, char *ping_response, char *bin_dir, char *home_dir,
+               atchops_rsakey_privatekey signingkey) {
   int res = 0;
   while (true) {
     atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_DEBUG, "Waiting for next monitor thread message\n");
@@ -405,7 +413,7 @@ void main_loop(atclient *monitor_ctx, atclient *atclient, sshnpd_params *params,
           break;
         case NK_SSH_REQUEST:
           handle_ssh_request(atclient, &atclient_lock, params, message, bin_dir, home_dir, authkeys_file,
-                             authkeys_filename);
+                             authkeys_filename, signingkey);
           break;
         case NK_NPT_REQUEST:
           handle_npt_request(params, message);

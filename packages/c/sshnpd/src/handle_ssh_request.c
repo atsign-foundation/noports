@@ -2,7 +2,9 @@
 #include "sshnpd/params.h"
 #include "sshnpd/sshnpd.h"
 #include <atchops/aes.h>
+#include <atchops/base64.h>
 #include <atchops/iv.h>
+#include <atchops/rsakey.h>
 #include <atclient/monitor.h>
 #include <atclient/notify.h>
 #include <atlogger/atlogger.h>
@@ -18,7 +20,7 @@
 
 void handle_ssh_request(atclient *atclient, pthread_mutex_t *atclient_lock, sshnpd_params *params,
                         atclient_monitor_message *message, char *bin_dir, char *home_dir, FILE *authkeys_file,
-                        char *authkeys_filename) {
+                        char *authkeys_filename, atchops_rsakey_privatekey signing_key) {
   int res = 0;
   char *requesting_atsign = message->notification.from;
 
@@ -106,6 +108,7 @@ void handle_ssh_request(atclient *atclient, pthread_mutex_t *atclient_lock, sshn
   bool authenticate_to_rvd = cJSON_IsTrue(auth_to_rvd);
   bool encrypt_rvd_traffic = cJSON_IsTrue(encrypt_traffic);
 
+  // TODO: maybe don't need this
   char *rvd_auth_string;
   if (authenticate_to_rvd) {
     has_valid_values = cJSON_IsString(client_nonce) && cJSON_IsString(rvd_nonce);
@@ -128,8 +131,7 @@ void handle_ssh_request(atclient *atclient, pthread_mutex_t *atclient_lock, sshn
     char *signing_input = cJSON_PrintUnformatted(res_envelope);
 
     unsigned char signature[2048];
-    atchops_rsa_sign(atclient->atkeys.encryptprivatekey, MBEDTLS_MD_SHA256, (unsigned char *)signing_input,
-                     sizeof(signing_input), signature);
+    atchops_rsa_sign(signing_key, ATCHOPS_MD_SHA256, (unsigned char *)signing_input, sizeof(signing_input), signature);
 
     cJSON_AddItemToObject(res_envelope, "signature", cJSON_CreateString((char *)signature));
     cJSON_AddItemToObject(res_envelope, "hashingAlgo", cJSON_CreateString("sha256"));
@@ -314,16 +316,14 @@ void handle_ssh_request(atclient *atclient, pthread_mutex_t *atclient_lock, sshn
       char *priv_key = read_file_contents(privkey_filename);
       if (priv_key == NULL) {
         atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to read private ephemeral key file.\n");
-        goto clean_privkey;
+        goto cancel_parent;
       }
 
       char *pub_key = read_file_contents(pubkey_filename);
       if (pub_key == NULL) {
         atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to read public ephemeral key file.\n");
-        goto clean_pubkey;
+        goto clean_privkey;
       }
-
-      printf("%s\n%s\n", priv_key, pub_key);
 
       akp.key = pub_key;
       res = authorize_ssh_public_key(&akp);
@@ -347,28 +347,32 @@ void handle_ssh_request(atclient *atclient, pthread_mutex_t *atclient_lock, sshn
       cJSON *final_res_envelope = cJSON_CreateObject();
       cJSON_AddItemToObject(final_res_envelope, "payload", final_res_payload);
 
-      unsigned char *signing_input = (unsigned char *)cJSON_PrintUnformatted(final_res_envelope);
+      unsigned char *signing_input = (unsigned char *)cJSON_PrintUnformatted(final_res_payload);
 
-      printf("signing input: %s\n", signing_input);
-      printf("signing input len: %lu\n", strlen((char *)signing_input));
-      printf("hello\n");
-
-      // TODO: fix RSA sign
+      printf("signing: '%s'\n", signing_input);
 
       unsigned char signature[256];
       memset(signature, 0, sizeof(unsigned char) * 256);
-
-      res = atchops_rsa_sign(atclient->atkeys.encryptprivatekey, MBEDTLS_MD_SHA256, signing_input,
-                             strlen((char *)signing_input), signature);
-
-      printf("sig: %256.256s\n", signature);
-      printf("res: %d\n", res);
+      res = atchops_rsa_sign(signing_key, ATCHOPS_MD_SHA256, signing_input, strlen((char *)signing_input), signature);
       if (res != 0) {
         atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to sign the final res payload\n");
         goto clean_json;
       }
 
-      cJSON_AddItemToObject(final_res_envelope, "signature", cJSON_CreateString((char *)signature));
+      unsigned char base64signature[384];
+      memset(base64signature, 0, sizeof(unsigned char) * 384);
+
+      size_t sig_len;
+      res = atchops_base64_encode(signature, 256, base64signature, 384, &sig_len);
+      if (res != 0) {
+        atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR,
+                     "Failed to base64 encode the final res payload's signature\n");
+        goto clean_json;
+      }
+
+      printf("sig: '%s'\n", base64signature);
+
+      cJSON_AddItemToObject(final_res_envelope, "signature", cJSON_CreateString((char *)base64signature));
       cJSON_AddItemToObject(final_res_envelope, "hashingAlgo", cJSON_CreateString("sha256"));
       cJSON_AddItemToObject(final_res_envelope, "signingAlgo", cJSON_CreateString("rsa2048"));
       char *final_res_value = cJSON_PrintUnformatted(final_res_envelope);
@@ -392,6 +396,12 @@ void handle_ssh_request(atclient *atclient, pthread_mutex_t *atclient_lock, sshn
       notify_params.key = final_res_atkey;
       notify_params.value = final_res_value;
       notify_params.operation = ATCLIENT_NOTIFY_OPERATION_UPDATE;
+
+      atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_DEBUG, "Sending final payload: %s\n", final_res_value);
+      char final_keystr[500];
+      size_t out;
+      atclient_atkey_to_string(&final_res_atkey, final_keystr, 500, &out);
+      atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_DEBUG, "Sending final atkey: %s\n", final_keystr);
 
       int ret = pthread_mutex_lock(atclient_lock);
       if (ret != 0) {
@@ -441,9 +451,17 @@ void handle_ssh_request(atclient *atclient, pthread_mutex_t *atclient_lock, sshn
       free(signing_input);
     }
       printf("PASS3\n");
-    clean_pubkey: { free(pub_key); }
+    clean_pubkey: {
+      if (pub_key != NULL) {
+        free(pub_key);
+      }
+    }
       printf("PASS4\n");
-    clean_privkey: { free(priv_key); }
+    clean_privkey: {
+      if (priv_key != NULL) {
+        free(priv_key);
+      }
+    }
       printf("PASS5\n");
     clean_permissions: { free(akp.permissions); }
     cancel_parent: {} // Don't need to do anything here, we just want a way to essentially exit out of the parent's post

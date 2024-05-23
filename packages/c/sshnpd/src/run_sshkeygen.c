@@ -42,7 +42,7 @@ void run_sshkeygen(sshnpd_params *params, char *filename, char *comment) {
   argv[off++] = "-C";
   argv[off++] = comment;
   argv[off++] = "-N";
-  argv[off++] = "''";
+  argv[off++] = "";
 
   atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_DEBUG, "Starting ssh-keygen with command:");
   for (int i = 0; i < argc; i++) {
