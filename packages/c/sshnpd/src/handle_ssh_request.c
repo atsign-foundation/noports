@@ -108,7 +108,6 @@ void handle_ssh_request(atclient *atclient, pthread_mutex_t *atclient_lock, sshn
   bool authenticate_to_rvd = cJSON_IsTrue(auth_to_rvd);
   bool encrypt_rvd_traffic = cJSON_IsTrue(encrypt_traffic);
 
-  // TODO: maybe don't need this
   char *rvd_auth_string;
   if (authenticate_to_rvd) {
     has_valid_values = cJSON_IsString(client_nonce) && cJSON_IsString(rvd_nonce);
@@ -128,12 +127,34 @@ void handle_ssh_request(atclient *atclient, pthread_mutex_t *atclient_lock, sshn
     cJSON *res_envelope = cJSON_CreateObject();
     cJSON_AddItemToObject(res_envelope, "payload", rvd_auth_payload);
 
-    char *signing_input = cJSON_PrintUnformatted(res_envelope);
+    char *signing_input = cJSON_PrintUnformatted(rvd_auth_payload);
 
-    unsigned char signature[2048];
-    atchops_rsa_sign(signing_key, ATCHOPS_MD_SHA256, (unsigned char *)signing_input, sizeof(signing_input), signature);
+    unsigned char signature[256];
+    memset(signature, 0, sizeof(unsigned char) * 256);
+    res = atchops_rsa_sign(signing_key, ATCHOPS_MD_SHA256, (unsigned char *)signing_input,
+                           strlen((char *)signing_input), signature);
+    if (res != 0) {
+      atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to sign the auth string payload\n");
+      free(signing_input);
+      cJSON_Delete(res_envelope);
+      free(envelope);
+      return;
+    }
 
-    cJSON_AddItemToObject(res_envelope, "signature", cJSON_CreateString((char *)signature));
+    unsigned char base64signature[384];
+    memset(base64signature, 0, sizeof(unsigned char) * 384);
+
+    size_t sig_len;
+    res = atchops_base64_encode(signature, 256, base64signature, 384, &sig_len);
+    if (res != 0) {
+      atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to base64 encode the auth string payload\n");
+      free(signing_input);
+      cJSON_Delete(res_envelope);
+      free(envelope);
+      return;
+    }
+
+    cJSON_AddItemToObject(res_envelope, "signature", cJSON_CreateString((char *)base64signature));
     cJSON_AddItemToObject(res_envelope, "hashingAlgo", cJSON_CreateString("sha256"));
     cJSON_AddItemToObject(res_envelope, "signingAlgo", cJSON_CreateString("rsa2048"));
     rvd_auth_string = cJSON_PrintUnformatted(res_envelope);
@@ -141,9 +162,9 @@ void handle_ssh_request(atclient *atclient, pthread_mutex_t *atclient_lock, sshn
     cJSON_Delete(res_envelope);
   }
 
-  unsigned char session_aes_key[32], *session_aes_key_encrypted;
-  unsigned char session_iv[25], *session_iv_encrypted;
-  size_t session_iv_len;
+  unsigned char session_aes_key[48], *session_aes_key_encrypted, *session_aes_key_base64;
+  unsigned char session_iv[25], *session_iv_encrypted, *session_iv_base64;
+  size_t session_aes_key_len, session_iv_len, session_aes_key_encrypted_len, session_iv_encrypted_len;
   if (encrypt_rvd_traffic) {
     has_valid_values = cJSON_IsString(client_ephemeral_pk) && cJSON_IsString(client_ephemeral_pk_type);
     if (!has_valid_values) {
@@ -157,8 +178,10 @@ void handle_ssh_request(atclient *atclient, pthread_mutex_t *atclient_lock, sshn
       return;
     }
 
-    memset(session_aes_key, 0, sizeof(unsigned char) * 32);
-    res = atchops_aes_generate_key(session_aes_key, ATCHOPS_AES_256);
+    printf("encrypting rvd traffic\n");
+
+    memset(session_aes_key, 0, sizeof(unsigned char) * 48);
+    res = atchops_aes_generate_keybase64(session_aes_key, 48, &session_aes_key_len, ATCHOPS_AES_256);
     if (res != 0) {
       atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to generate session aes key\n");
       if (authenticate_to_rvd) {
@@ -193,8 +216,7 @@ void handle_ssh_request(atclient *atclient, pthread_mutex_t *atclient_lock, sshn
         atchops_rsakey_publickey_init(&ac);
 
         res = atchops_rsakey_populate_publickey(&ac, pk, strlen(pk));
-
-        session_aes_key_encrypted = malloc(2048);
+        session_aes_key_encrypted = malloc(sizeof(unsigned char) * 32);
         if (session_aes_key_encrypted == NULL) {
           atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR,
                        "Failed to allocate memory to encrypt the session aes key\n");
@@ -204,8 +226,8 @@ void handle_ssh_request(atclient *atclient, pthread_mutex_t *atclient_lock, sshn
           free(envelope);
           return;
         }
-        size_t session_aes_key_encrypted_len;
-        res = atchops_rsa_encrypt(ac, session_aes_key, 32, session_aes_key_encrypted, 256,
+
+        res = atchops_rsa_encrypt(ac, session_aes_key, session_aes_key_len, session_aes_key_encrypted, 256,
                                   &session_aes_key_encrypted_len);
         if (res != 0) {
           atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to encrypt the session aes key\n");
@@ -217,34 +239,99 @@ void handle_ssh_request(atclient *atclient, pthread_mutex_t *atclient_lock, sshn
           return;
         }
 
-        session_iv_encrypted = malloc(2048);
+        session_aes_key_len = session_aes_key_encrypted_len * 3 / 2; // reusing this since we can
+
+        session_aes_key_base64 = malloc(sizeof(unsigned char) * session_aes_key_len);
+        if (session_aes_key_base64 == NULL) {
+          atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR,
+                       "Failed to allocate memory to base64 encode the session aes key\n");
+          if (authenticate_to_rvd) {
+            free(rvd_auth_string);
+          }
+          free(session_aes_key_encrypted);
+          free(envelope);
+          return;
+        }
+        memset(session_aes_key_base64, 0, session_aes_key_len);
+
+        size_t session_aes_key_base64_len;
+        res = atchops_base64_encode(session_aes_key_encrypted, session_aes_key_encrypted_len, session_aes_key_base64,
+                                    session_aes_key_len, &session_aes_key_base64_len);
+        if (res != 0) {
+          atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to base64 encode the session aes key\n");
+          if (authenticate_to_rvd) {
+            free(rvd_auth_string);
+          }
+          free(session_aes_key_base64);
+          free(session_aes_key_encrypted);
+          free(envelope);
+          return;
+        }
+
+        // No longer need this
+        free(session_aes_key_encrypted);
+
+        session_iv_encrypted = malloc(sizeof(unsigned char) * 32);
         if (session_iv_encrypted == NULL) {
           atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR,
                        "Failed to allocate memory to encrypt the session iv\n");
           if (authenticate_to_rvd) {
             free(rvd_auth_string);
           }
-          free(session_aes_key_encrypted);
+          free(session_aes_key_base64);
           free(envelope);
           return;
         }
 
-        size_t session_iv_encrypted_len;
-        res = atchops_rsa_encrypt(ac, session_iv, 25, session_iv_encrypted, 256, &session_iv_encrypted_len);
+        res = atchops_rsa_encrypt(ac, session_iv, session_iv_len, session_iv_encrypted, 256, &session_iv_encrypted_len);
         if (res != 0) {
           atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to encrypt the session iv\n");
           if (authenticate_to_rvd) {
             free(rvd_auth_string);
           }
           free(session_iv_encrypted);
-          free(session_aes_key_encrypted);
+          free(session_aes_key_base64);
           free(envelope);
           return;
         }
-      }
-      return;
-    }
-    }
+
+        session_iv_len = session_iv_encrypted_len * 3 / 2; // reusing this since we can
+        session_iv_base64 = malloc(sizeof(unsigned char) * session_iv_len);
+        if (session_iv_base64 == NULL) {
+          atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR,
+                       "Failed to allocate memory to base64 encode the session iv\n");
+          if (authenticate_to_rvd) {
+            free(rvd_auth_string);
+          }
+          free(session_iv_encrypted);
+          free(session_aes_key_base64);
+          free(envelope);
+          return;
+        }
+        memset(session_iv_base64, 0, session_iv_len);
+
+        size_t session_iv_base64_len;
+        res = atchops_base64_encode(session_iv_encrypted, session_iv_encrypted_len, session_iv_base64, session_iv_len,
+                                    &session_iv_base64_len);
+        if (res != 0) {
+          atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to base64 encode the session iv\n");
+          if (authenticate_to_rvd) {
+            free(rvd_auth_string);
+          }
+          free(session_iv_base64);
+          free(session_iv_encrypted);
+          free(session_aes_key_base64);
+          free(envelope);
+          return;
+        }
+        // No longer need this
+        free(session_iv_encrypted);
+
+        printf("aes: %lu - %lu\n", session_aes_key_base64_len, strlen(session_aes_key_base64));
+        printf("iv: %lu - %lu\n", session_iv_base64_len, strlen(session_iv_base64));
+      } // rsa2048
+    } // case 7
+    } // switch
 
     if (!is_valid) {
       atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR,
@@ -261,8 +348,8 @@ void handle_ssh_request(atclient *atclient, pthread_mutex_t *atclient_lock, sshn
   pid = fork();
   if (pid == 0) {
     // child process
-    run_srv(bin_dir, params, host, port, authenticate_to_rvd, rvd_auth_string, encrypt_rvd_traffic,
-            session_aes_key_encrypted, session_iv_encrypted, authkeys_file, authkeys_filename);
+    run_srv(bin_dir, params, host, port, authenticate_to_rvd, rvd_auth_string, encrypt_rvd_traffic, session_aes_key,
+            session_iv, authkeys_file, authkeys_filename);
   } else if (pid > 0) {
 
     // parent process
@@ -337,8 +424,8 @@ void handle_ssh_request(atclient *atclient, pthread_mutex_t *atclient_lock, sshn
       cJSON_AddItemReferenceToObject(final_res_payload, "sessionId", session_id);
       cJSON_AddStringToObject(final_res_payload, "ephemeralPrivateKey", priv_key);
       if (encrypt_rvd_traffic) {
-        cJSON_AddStringToObject(final_res_payload, "sessionAESKey", (char *)session_aes_key_encrypted);
-        cJSON_AddStringToObject(final_res_payload, "sessionIV", (char *)session_iv_encrypted);
+        cJSON_AddStringToObject(final_res_payload, "sessionAESKey", (char *)session_aes_key_base64);
+        cJSON_AddStringToObject(final_res_payload, "sessionIV", (char *)session_iv_base64);
       } else {
         cJSON_AddNullToObject(final_res_payload, "sessionAESKey");
         cJSON_AddNullToObject(final_res_payload, "sessionIV");
@@ -468,8 +555,8 @@ cancel:
     free(rvd_auth_string);
   }
   if (encrypt_rvd_traffic) {
-    free(session_iv_encrypted);
-    free(session_aes_key_encrypted);
+    free(session_iv_base64);
+    free(session_aes_key_base64);
   }
   free(envelope);
   return;
