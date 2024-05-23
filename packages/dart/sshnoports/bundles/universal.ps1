@@ -30,7 +30,6 @@ $sshnp_version = "5.2.0"
 $repo_url = "https://github.com/atsign-foundation/sshnoports"
 # END METADATA
 
-
 function Norm-Atsign {
     param([string]$str)
     $atsign = "@$($str -replace '"', '' -replace '^@', '')"
@@ -123,7 +122,7 @@ function Parse-Env {
 function Cleanup {
     if (Test-Path "$ARCHIVE_PATH") {
         Remove-Item -Path "$ARCHIVE_PATH" -Recurse -Force
-    }
+     }
 }
 function Unpack-Archive {
     if (-not (Test-Path "$ARCHIVE_PATH\sshnp.zip")) {
@@ -178,8 +177,7 @@ function Add-ToPath {
         Throw "'$pathToAdd' is not a valid path."
     }
 }
-
-function Get-InstallType {
+function Get-InstallType { 
     if ([string]::IsNullOrEmpty($script:INSTALL_TYPE)) {
         while ([string]::IsNullOrEmpty($script:INSTALL_TYPE)) {
             $install_type_input = Read-Host "Install type (device, client, uninstall)"
@@ -187,14 +185,11 @@ function Get-InstallType {
         }
     }
 }
-
 function Get-Atsigns {
     $directory = "$homepath\.atsign\keys"
     $prefixes = @()
-
     if (Test-Path $directory -PathType Container) {
         $files = Get-ChildItem -Path $directory -Filter "*.atKeys" -File
-
         foreach ($file in $files) {
             $prefix = $file.BaseName -replace '_key$'
             $prefixes += $prefix
@@ -224,7 +219,6 @@ function Get-Atsigns {
         Exit 1
     }
 }
-
 function Install-Client {
     if (-not $HOST_ATSIGN) {
         Write-Host "Pick your default region:"
