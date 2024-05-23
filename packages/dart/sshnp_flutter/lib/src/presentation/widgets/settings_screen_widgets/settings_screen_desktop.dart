@@ -22,7 +22,7 @@ class SettingsDesktopView extends ConsumerWidget {
     final strings = AppLocalizations.of(context)!;
     final headlineLarge = Theme.of(context).textTheme.headlineLarge!;
     final bodyMedium = Theme.of(context).textTheme.bodyMedium!;
-    final bodySmall = Theme.of(context).textTheme.bodySmall!;
+
     log(headlineLarge.fontSize.toString());
     final packageInfoController = ref.read(packageInfo);
     return Scaffold(

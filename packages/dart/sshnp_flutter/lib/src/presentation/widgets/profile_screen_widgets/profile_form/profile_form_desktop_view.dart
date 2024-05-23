@@ -127,12 +127,12 @@ class _ProfileFormState extends ConsumerState<ProfileFormDesktopView> {
                       spacingWidth,
                       CustomTextFormField(
                         hintText: strings.hostHintText,
-                        initialValue: oldConfig.host,
+                        initialValue: oldConfig.srvdAtSign,
                         labelText: strings.host,
                         toolTip: strings.hostTooltip,
                         onSaved: (value) => newConfig = SshnpPartialParams.merge(
                           newConfig,
-                          SshnpPartialParams(host: value),
+                          SshnpPartialParams(srvdAtSign: value),
                         ),
                         validator: FormValidator.validateAtsignField,
                       ),

@@ -86,7 +86,12 @@ class _SSHKeyManagementFormState extends ConsumerState<SSHKeyManagementFormDialo
 
   @override
   Widget build(BuildContext context) {
+    SizeConfig().init(context);
     final strings = AppLocalizations.of(context)!;
+    final bodyLarge = Theme.of(context).textTheme.bodyLarge!;
+    final bodyMedium = Theme.of(context).textTheme.bodyMedium!;
+    final bodySmall = Theme.of(context).textTheme.bodySmall!;
+    final labelLarge = Theme.of(context).textTheme.labelLarge!;
 
     final asyncOldConfig = ref.watch(privateKeyManagerFamilyController(widget.identifier ?? ''));
 
@@ -100,100 +105,105 @@ class _SSHKeyManagementFormState extends ConsumerState<SSHKeyManagementFormDialo
           privateKeyFileName = oldPrivateKeyManager.privateKeyFileName;
 
           return Dialog(
-            child: Padding(
-              padding: const EdgeInsets.all(Sizes.p21),
-              child: SingleChildScrollView(
-                child: Form(
-                  key: _formkey,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      gapH20,
-                      Text(strings.sshKeyManagement('no'), style: Theme.of(context).textTheme.titleMedium),
-                      Text(
-                        strings.privateKeyManagementDescription,
-                        style: Theme.of(context).textTheme.bodySmall!.copyWith(color: Colors.white),
-                      ),
-                      gapH16,
-                      Text(strings.newSshKeyCreation),
-                      gapH4,
-                      Row(
-                        children: [
-                          FilePickerField(
-                            onTap: () async {},
-                            initialValue: privateKeyFileName,
-                            validator: FormValidator.validateRequiredField,
+            child: Container(
+              constraints: const BoxConstraints(maxWidth: Sizes.p460, maxHeight: Sizes.p460),
+              padding: const EdgeInsets.only(
+                left: Sizes.p36,
+                top: Sizes.p21,
+                right: Sizes.p36,
+              ),
+              child: Form(
+                key: _formkey,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    gapH20,
+                    Text(
+                      strings.sshKeyManagement('no'),
+                      style: bodyLarge.copyWith(fontSize: bodyLarge.fontSize?.toFont),
+                    ),
+                    Text(
+                      strings.privateKeyManagementDescription,
+                      style: bodySmall.copyWith(color: Colors.white, fontSize: bodySmall.fontSize?.toFont),
+                    ),
+                    gapH16,
+                    Text(strings.newSshKeyCreation),
+                    gapH4,
+                    Row(
+                      children: [
+                        FilePickerField(
+                          onTap: () async {},
+                          initialValue: privateKeyFileName,
+                          validator: FormValidator.validateRequiredField,
+                        ),
+                        gapW38,
+                        Visibility(
+                          visible: ref.watch(invalidPrivateKeyFileProvider),
+                          child: Text(
+                            'Invalid private key',
+                            style: bodyMedium.copyWith(color: Colors.red, fontSize: bodyMedium.fontSize?.toFont),
                           ),
-                          gapW38,
-                          Visibility(
-                            visible: ref.watch(invalidPrivateKeyFileProvider),
+                        ),
+                      ],
+                    ),
+                    gapH10,
+                    CustomTextFormField(
+                      initialValue: nickname,
+                      labelText: strings.privateKeyNickname,
+                      toolTip: strings.privateKeyNicknameToolTip,
+                      onSaved: (value) {
+                        nickname = value!;
+                        ref.read(formProfileNameController.notifier).state = value;
+                        log(ref.read(formProfileNameController));
+                      },
+                      validator: FormValidator.validatePrivateKeyField,
+                    ),
+                    gapH10,
+                    CustomTextFormField(
+                      labelText: strings.privateKeyPassphrase,
+                      initialValue: passPhrase,
+                      toolTip: strings.privatekeyPassPhraseTooltip,
+                      isPasswordField: true,
+                      onSaved: (value) {
+                        if (value == '' || value == null) {
+                          passPhrase = null;
+                        } else {
+                          passPhrase = value;
+                        }
+                        log('passphrase is $value');
+                      },
+                    ),
+                    gapH36,
+                    SizedBox(
+                      width: kFieldDefaultWidth + Sizes.p233,
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          TextButton(
+                            onPressed: () {
+                              ref.read(navigationRailController.notifier).setRoute(AppRoute.home);
+                              context.pop();
+                            },
+                            child: Text(strings.cancel,
+                                style: bodySmall.copyWith(
+                                    decoration: TextDecoration.underline, fontSize: bodySmall.fontSize?.toFont)),
+                          ),
+                          gapW8,
+                          ElevatedButton(
+                            onPressed: () => onSubmit(context),
                             child: Text(
-                              'Invalid private key',
-                              style: Theme.of(context).textTheme.bodyMedium!.copyWith(color: Colors.red),
+                              strings.addKey,
+                              style: labelLarge.copyWith(
+                                color: Colors.white,
+                                fontSize: labelLarge.fontSize?.toFont,
+                              ),
                             ),
                           ),
                         ],
                       ),
-                      gapH10,
-                      CustomTextFormField(
-                        initialValue: nickname,
-                        labelText: strings.privateKeyNickname,
-                        toolTip: strings.privateKeyNicknameToolTip,
-                        onSaved: (value) {
-                          nickname = value!;
-                          ref.read(formProfileNameController.notifier).state = value;
-                          log(ref.read(formProfileNameController));
-                        },
-                        validator: FormValidator.validatePrivateKeyField,
-                      ),
-                      gapH10,
-                      CustomTextFormField(
-                        labelText: strings.privateKeyPassphrase,
-                        initialValue: passPhrase,
-                        toolTip: strings.privatekeyPassPhraseTooltip,
-                        isPasswordField: true,
-                        onSaved: (value) {
-                          if (value == '' || value == null) {
-                            passPhrase = null;
-                          } else {
-                            passPhrase = value;
-                          }
-                          log('passphrase is $value');
-                        },
-                      ),
-                      gapH36,
-                      SizedBox(
-                        width: kFieldDefaultWidth + Sizes.p233,
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            TextButton(
-                              onPressed: () {
-                                ref.read(navigationRailController.notifier).setRoute(AppRoute.home);
-                                context.pop();
-                              },
-                              child: Text(strings.cancel,
-                                  style: Theme.of(context)
-                                      .textTheme
-                                      .bodySmall!
-                                      .copyWith(decoration: TextDecoration.underline)),
-                            ),
-                            gapW8,
-                            ElevatedButton(
-                              onPressed: () => onSubmit(context),
-                              child: Text(
-                                strings.addKey,
-                                style: Theme.of(context).textTheme.labelLarge!.copyWith(
-                                      color: Colors.white,
-                                    ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
               ),
             ),

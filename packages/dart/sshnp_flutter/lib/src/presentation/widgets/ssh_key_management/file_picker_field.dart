@@ -5,6 +5,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sshnp_flutter/src/controllers/file_picker_controller.dart';
 import 'package:sshnp_flutter/src/utility/constants.dart';
 
+import '../../../utility/sizes.dart';
+
 class FilePickerField extends ConsumerStatefulWidget {
   static const defaultWidth = 192.0;
   static const defaultHeight = 33.0;
@@ -54,6 +56,8 @@ class _FilePickerFieldState extends ConsumerState<FilePickerField> {
 
   @override
   Widget build(BuildContext context) {
+    SizeConfig().init(context);
+    final bodySmall = Theme.of(context).textTheme.bodySmall!;
     return SizedBox(
       width: widget.width,
       child: Column(
@@ -61,9 +65,10 @@ class _FilePickerFieldState extends ConsumerState<FilePickerField> {
         children: [
           Text(
             AppLocalizations.of(context)!.privateKey,
-            style: Theme.of(context).textTheme.bodySmall!.copyWith(
-                  color: Colors.grey,
-                ),
+            style: bodySmall.copyWith(
+              color: Colors.grey,
+              fontSize: bodySmall.fontSize?.toFont,
+            ),
           ),
           DottedBorder(
             dashPattern: const [10, 10],
@@ -78,7 +83,7 @@ class _FilePickerFieldState extends ConsumerState<FilePickerField> {
                 fillColor: kProfileFormFieldColor,
                 border: InputBorder.none,
                 hintText: AppLocalizations.of(context)!.selectPrivateKey,
-                hintStyle: Theme.of(context).textTheme.bodySmall,
+                hintStyle: bodySmall.copyWith(fontSize: bodySmall.fontSize!.toFont),
               ),
               validator: widget.validator,
               onTap: () async {
