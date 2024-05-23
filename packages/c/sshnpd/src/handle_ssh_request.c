@@ -349,8 +349,6 @@ void handle_ssh_request(atclient *atclient, pthread_mutex_t *atclient_lock, sshn
 
       unsigned char *signing_input = (unsigned char *)cJSON_PrintUnformatted(final_res_payload);
 
-      printf("signing: '%s'\n", signing_input);
-
       unsigned char signature[256];
       memset(signature, 0, sizeof(unsigned char) * 256);
       res = atchops_rsa_sign(signing_key, ATCHOPS_MD_SHA256, signing_input, strlen((char *)signing_input), signature);
@@ -369,8 +367,6 @@ void handle_ssh_request(atclient *atclient, pthread_mutex_t *atclient_lock, sshn
                      "Failed to base64 encode the final res payload's signature\n");
         goto clean_json;
       }
-
-      printf("sig: '%s'\n", base64signature);
 
       cJSON_AddItemToObject(final_res_envelope, "signature", cJSON_CreateString((char *)base64signature));
       cJSON_AddItemToObject(final_res_envelope, "hashingAlgo", cJSON_CreateString("sha256"));
@@ -397,11 +393,9 @@ void handle_ssh_request(atclient *atclient, pthread_mutex_t *atclient_lock, sshn
       notify_params.value = final_res_value;
       notify_params.operation = ATCLIENT_NOTIFY_OPERATION_UPDATE;
 
-      atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_DEBUG, "Sending final payload: %s\n", final_res_value);
       char final_keystr[500];
       size_t out;
       atclient_atkey_to_string(&final_res_atkey, final_keystr, 500, &out);
-      atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_DEBUG, "Sending final atkey: %s\n", final_keystr);
 
       int ret = pthread_mutex_lock(atclient_lock);
       if (ret != 0) {
@@ -440,29 +434,24 @@ void handle_ssh_request(atclient *atclient, pthread_mutex_t *atclient_lock, sshn
     clean_authkeys: {
       // TODO: Schedule ephemeral pk cleanup
     }
-      printf("PASS1\n");
     clean_res: {
       free(keyname);
       free(final_res_value);
     }
-      printf("PASS2\n");
     clean_json: {
       cJSON_Delete(final_res_envelope);
       free(signing_input);
     }
-      printf("PASS3\n");
     clean_pubkey: {
       if (pub_key != NULL) {
         free(pub_key);
       }
     }
-      printf("PASS4\n");
     clean_privkey: {
       if (priv_key != NULL) {
         free(priv_key);
       }
     }
-      printf("PASS5\n");
     clean_permissions: { free(akp.permissions); }
     cancel_parent: {} // Don't need to do anything here, we just want a way to essentially exit out of the parent's post
                       // fork success block
