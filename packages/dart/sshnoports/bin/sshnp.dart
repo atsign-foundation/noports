@@ -109,7 +109,7 @@ void main(List<String> args) async {
         ),
       );
 
-      if (! argResults.wasParsed(SshnpArg.deviceArg.name)) {
+      if (!argResults.wasParsed(SshnpArg.deviceArg.name)) {
         stderr.write(chalk.red('Warning: '));
         stderr.writeln('Using default value of "${params.device}"'
             ' for optional arg "--${SshnpArg.deviceArg.name}".'
@@ -165,9 +165,10 @@ void main(List<String> args) async {
 
       // A listen progress listener for the CLI
       // Will only log if verbose is false, since if verbose is true
-      // there will already be a boatload of log messages
+      // there will already be a boatload of log messages.
+      // However, will NOT log if the quiet flag has been set.
       void logProgress(String s) {
-        if (!(params?.verbose ?? true)) {
+        if (params?.verbose == false && argResults[quietFlag] == false) {
           stderr.writeln('${DateTime.now()} : $s');
         }
       }

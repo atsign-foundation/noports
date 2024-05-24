@@ -1,9 +1,9 @@
 #!/bin/bash
 
-echo Starting at `date`
+echo Starting at $(date)
 echo
 
-echo "Compiling activate_cli"; dart compile exe --verbosity error bin/activate_cli.dart -o bin/activate_cli &
+echo "Compiling at_activate"; dart compile exe --verbosity error bin/activate_cli.dart -o bin/at_activate &
 echo "Compiling srv"; dart compile exe --verbosity error bin/srv.dart -o bin/srv &
 echo "Compiling sshnpd"; dart compile exe --verbosity error bin/sshnpd.dart -o bin/sshnpd &
 echo "Compiling srvd"; dart compile exe --verbosity error bin/srvd.dart -o bin/srvd &
@@ -15,4 +15,4 @@ echo "Compiling demo/npa_cli"; dart compile exe --verbosity error bin/demo/npa_c
 wait
 
 echo 
-echo Finished at `date`
+echo Finished at $(date)

@@ -11,6 +11,7 @@ import 'package:at_utils/at_logger.dart';
 import 'package:at_cli_commons/at_cli_commons.dart' as cli;
 import 'package:noports_core/npt.dart';
 import 'package:noports_core/sshnp_foundation.dart';
+import 'package:sshnoports/src/extended_arg_parser.dart';
 
 // local packages
 import 'package:sshnoports/src/print_version.dart';
@@ -147,6 +148,13 @@ void main(List<String> args) async {
         negatable: false,
         help: 'More logging',
       );
+      parser.addFlag(
+        quietFlag,
+        abbr: 'q',
+        defaultsTo: DefaultArgs.quiet,
+        negatable: false,
+        help: 'Minimal logging',
+      );
       parser.addFlag('help',
           defaultsTo: false, negatable: false, help: 'Print usage');
 
@@ -179,6 +187,7 @@ void main(List<String> args) async {
       perSessionStorage = parsedArgs['per-session-storage'];
       int localPort = int.parse(parsedArgs['local-port']);
       bool inline = !parsedArgs['exit-when-connected'];
+      bool quiet = parsedArgs[quietFlag];
 
       // Windows will not let us delete files in use so
       // We will point storage to temp directory and let OS clean up
@@ -248,9 +257,10 @@ void main(List<String> args) async {
 
       // A listen progress listener for the CLI
       // Will only log if verbose is false, since if verbose is true
-      // there will already be a boatload of log messages
+      // there will already be a boatload of log messages.
+      // However, will NOT log if the quiet flag has been set.
       void logProgress(String s) {
-        if (!verbose) {
+        if (!verbose && !quiet) {
           stderr.writeln('${DateTime.now()} : $s');
         }
       }
