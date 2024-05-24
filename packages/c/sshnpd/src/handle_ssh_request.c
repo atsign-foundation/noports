@@ -326,9 +326,6 @@ void handle_ssh_request(atclient *atclient, pthread_mutex_t *atclient_lock, sshn
         }
         // No longer need this
         free(session_iv_encrypted);
-
-        printf("aes: %lu - %lu\n", session_aes_key_base64_len, strlen(session_aes_key_base64));
-        printf("iv: %lu - %lu\n", session_iv_base64_len, strlen(session_iv_base64));
       } // rsa2048
     } // case 7
     } // switch
@@ -343,6 +340,7 @@ void handle_ssh_request(atclient *atclient, pthread_mutex_t *atclient_lock, sshn
       return;
     }
   }
+
   pid_t pid, pid2;
   int status, status2;
   pid = fork();
