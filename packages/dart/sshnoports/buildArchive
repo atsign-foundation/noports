@@ -1,0 +1,49 @@
+#!/bin/bash
+
+# Run this in order to create a local archive that can be used when testing universal.sh
+scriptName=$(basename -- "$0")
+cd "$(dirname -- "$0")" || exit 1
+packageDir=$(pwd)
+
+echo "$(date) : Starting compilation"
+echo
+
+rm -rf build/sshnp
+mkdir -p build/sshnp
+
+echo "Compiling at_activate"; dart compile exe --verbosity error bin/activate_cli.dart -o build/sshnp/at_activate &
+echo "Compiling srv"; dart compile exe --verbosity error bin/srv.dart -o build/sshnp/srv &
+echo "Compiling sshnpd"; dart compile exe --verbosity error bin/sshnpd.dart -o build/sshnp/sshnpd &
+echo "Compiling srvd"; dart compile exe --verbosity error bin/srvd.dart -o build/sshnp/srvd &
+echo "Compiling sshnp"; dart compile exe --verbosity error bin/sshnp.dart -o build/sshnp/sshnp &
+echo "Compiling npt"; dart compile exe --verbosity error bin/npt.dart -o build/sshnp/npt &
+
+wait
+
+echo
+echo "$(date) : Compilation complete"
+
+
+echo "$(date) : Copying bundles"
+cp -r bundles/core/* build/sshnp/
+cp -r bundles/shell/* build/sshnp/
+cp LICENSE build/sshnp
+
+cd build
+
+case "$(uname)" in
+  Darwin)
+    echo "$(date) : Creating zip"
+    ditto -c -k --keepParent sshnp sshnp.zip
+    echo "$(date) : Created $packageDir/build/sshnp.zip"
+    ;;
+  Linux)
+    echo "$(date) : Creating tgz"
+    tar -cvzf sshnp.tgz sshnp
+    echo "$(date) : Created $packageDir/build/sshnp.tgz"
+    ;;
+  *)
+    echo "buildLocalTarballs does not support this platform: $(uname)"
+    ;;
+esac
+
