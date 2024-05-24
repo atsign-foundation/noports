@@ -147,6 +147,13 @@ void main(List<String> args) async {
         negatable: false,
         help: 'More logging',
       );
+      parser.addFlag(
+        'quiet',
+        abbr: 'q',
+        defaultsTo: DefaultArgs.quiet,
+        negatable: false,
+        help: 'Minimal logging',
+      );
       parser.addFlag('help',
           defaultsTo: false, negatable: false, help: 'Print usage');
 
@@ -179,6 +186,7 @@ void main(List<String> args) async {
       perSessionStorage = parsedArgs['per-session-storage'];
       int localPort = int.parse(parsedArgs['local-port']);
       bool inline = !parsedArgs['exit-when-connected'];
+      bool quiet = parsedArgs['quiet'];
 
       // Windows will not let us delete files in use so
       // We will point storage to temp directory and let OS clean up
@@ -248,9 +256,10 @@ void main(List<String> args) async {
 
       // A listen progress listener for the CLI
       // Will only log if verbose is false, since if verbose is true
-      // there will already be a boatload of log messages
+      // there will already be a boatload of log messages.
+      // However, will NOT log if the quiet flag has been set.
       void logProgress(String s) {
-        if (!verbose) {
+        if (!verbose && !quiet) {
           stderr.writeln('${DateTime.now()} : $s');
         }
       }
