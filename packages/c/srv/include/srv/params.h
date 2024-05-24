@@ -1,10 +1,16 @@
-#ifndef PARAMS_H
-#define PARAMS_H
+#ifndef SRV_PARAMS_H
+#define SRV_PARAMS_H
 #define SRV_VERSION "0.1.0"
 
 #include <argparse/argparse.h>
 #include <getopt.h>
 #include <stdbool.h>
+
+typedef struct {
+  char *rvd_auth_string;
+  char *session_aes_key_string;
+  char *session_aes_iv_string;
+} srv_env_t;
 
 /**
  * @brief Free the memory allocated for a single side of the socket connection.
@@ -24,7 +30,6 @@ typedef struct {
   char *rvd_auth_string;
   char *session_aes_key_string;
   char *session_aes_iv_string;
-
 } srv_params_t;
 
 /**
@@ -32,7 +37,7 @@ typedef struct {
  *
  * @param params a pointer to the parameters structure to apply the defaults to.
  */
-void apply_default_values_to_params(srv_params_t *params);
+void apply_default_values_to_srv_params(srv_params_t *params);
 
 /**
  * @brief Parse parameters into a params structure
@@ -41,6 +46,6 @@ void apply_default_values_to_params(srv_params_t *params);
  * @param argc the count of arguments
  * @param argv the list of arguments
  */
-int parse_params(srv_params_t *params, int argc, const char **argv);
+int parse_srv_params(srv_params_t *params, int argc, const char **argv, srv_env_t *environment);
 
 #endif

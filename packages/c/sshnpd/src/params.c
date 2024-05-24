@@ -4,7 +4,7 @@
 #include <string.h>
 
 #define default_permitopen "localhost:22,localhost:3389"
-void apply_default_values_to_params(sshnpd_params *params) {
+void apply_default_values_to_sshnpd_params(sshnpd_params *params) {
   params->key_file = NULL;
   params->atsign = NULL;
   params->device = "default";
@@ -18,7 +18,7 @@ void apply_default_values_to_params(sshnpd_params *params) {
   params->local_sshd_port = 22;
 }
 
-int parse_params(sshnpd_params *params, int argc, const char **argv) {
+int parse_sshnpd_params(sshnpd_params *params, int argc, const char **argv) {
   char *ssh_algorithm_input = "";
   char *manager = NULL;
   char *permitopen = NULL;

@@ -3,7 +3,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-void apply_default_values_to_params(srv_params_t *params) {
+void apply_default_values_to_srv_params(srv_params_t *params) {
   params->local_host = "localhost";
   params->local_port = 22;
   params->bind_local_port = 0;
@@ -11,7 +11,7 @@ void apply_default_values_to_params(srv_params_t *params) {
   params->rv_e2ee = 0;
 }
 
-int parse_params(srv_params_t *params, int argc, const char **argv) {
+int parse_srv_params(srv_params_t *params, int argc, const char **argv, srv_env_t *environment) {
   struct argparse_option options[] = {
       OPT_BOOLEAN(0, "help", NULL, "show this help message and exit", argparse_help_cb, 0, OPT_NONEG),
       OPT_STRING('h', "host", &params->host, "rvd host"),
@@ -51,7 +51,11 @@ int parse_params(srv_params_t *params, int argc, const char **argv) {
 
   // Load the environment
   if (params->rv_auth == 1) {
-    params->rvd_auth_string = getenv("RV_AUTH");
+    if (environment != NULL && environment->rvd_auth_string != NULL) {
+      params->rvd_auth_string = environment->rvd_auth_string;
+    } else {
+      params->rvd_auth_string = getenv("RV_AUTH");
+    }
     if (params->rvd_auth_string == NULL) {
       argparse_usage(&argparse);
       printf("--rv-auth enabled, but RV_AUTH is not in envionment\n");
@@ -60,14 +64,21 @@ int parse_params(srv_params_t *params, int argc, const char **argv) {
   }
 
   if (params->rv_e2ee == 1) {
-    params->session_aes_key_string = getenv("RV_AES");
+    if (environment != NULL && environment->session_aes_key_string != NULL) {
+      params->session_aes_key_string = environment->session_aes_key_string;
+    } else {
+      params->session_aes_key_string = getenv("RV_AES");
+    }
     if (params->session_aes_key_string == NULL) {
       argparse_usage(&argparse);
       printf("--rv-e2ee enabled, but RV_AES is not in environment\n");
       return 1;
     }
-
-    params->session_aes_iv_string = getenv("RV_IV");
+    if (environment != NULL && environment->session_aes_iv_string != NULL) {
+      params->session_aes_iv_string = environment->session_aes_iv_string;
+    } else {
+      params->session_aes_iv_string = getenv("RV_IV");
+    }
     if (params->session_aes_iv_string == NULL) {
       argparse_usage(&argparse);
       printf("--rv-e2ee enabled, but RV_IV is not in environment\n");

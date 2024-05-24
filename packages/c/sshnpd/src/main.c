@@ -22,7 +22,7 @@
 #include <libgen.h>
 #include <pthread.h>
 #include <sshnpd/file_utils.h>
-#include <sshnpd/run_srv.h>
+#include <sshnpd/run_srv_process.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -47,20 +47,17 @@ static unsigned long min(unsigned long a, unsigned long b) { return a < b ? a : 
 static pthread_mutex_t atclient_lock = PTHREAD_MUTEX_INITIALIZER;
 
 static void main_loop(atclient *monitor_ctx, atclient *atclient, sshnpd_params *params, FILE *authkeys_file,
-                      char *authkeys_filename, char *ping_response, char *bin_dir, char *home_dir,
+                      char *authkeys_filename, char *ping_response, char *home_dir,
                       atchops_rsakey_privatekey signingkey);
 
 int main(int argc, char **argv) {
-  // Save this value so it is available when we fork() later
-  char *bin_dir = dirname(argv[0]); // do not free this
-
   sshnpd_params params;
 
   // 1.  Load default values
-  apply_default_values_to_params(&params);
+  apply_default_values_to_sshnpd_params(&params);
 
   // 2.  Parse the command line arguments
-  if (parse_params(&params, argc, (const char **)argv) != 0) {
+  if (parse_sshnpd_params(&params, argc, (const char **)argv) != 0) {
     return 1;
   }
 
@@ -267,8 +264,8 @@ int main(int argc, char **argv) {
 
   // 12. Main notification handler loop
   atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_INFO, "Starting main loop\n");
-  main_loop(&monitor_ctx, &atclient, &params, authkeys_file, authkeys_filename, ping_response, bin_dir,
-            (char *)home_dir, signingkey);
+  main_loop(&monitor_ctx, &atclient, &params, authkeys_file, authkeys_filename, ping_response, (char *)home_dir,
+            signingkey);
   atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_INFO, "Exited main loop\n");
 
 close_authkeys: {
@@ -331,8 +328,7 @@ exit: {
 }
 
 void main_loop(atclient *monitor_ctx, atclient *atclient, sshnpd_params *params, FILE *authkeys_file,
-               char *authkeys_filename, char *ping_response, char *bin_dir, char *home_dir,
-               atchops_rsakey_privatekey signingkey) {
+               char *authkeys_filename, char *ping_response, char *home_dir, atchops_rsakey_privatekey signingkey) {
   int res = 0;
   while (true) {
     atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_DEBUG, "Waiting for next monitor thread message\n");
@@ -412,8 +408,8 @@ void main_loop(atclient *monitor_ctx, atclient *atclient, sshnpd_params *params,
           handle_ping(params, message, ping_response, atclient, &atclient_lock);
           break;
         case NK_SSH_REQUEST:
-          handle_ssh_request(atclient, &atclient_lock, params, message, bin_dir, home_dir, authkeys_file,
-                             authkeys_filename, signingkey);
+          handle_ssh_request(atclient, &atclient_lock, params, message, home_dir, authkeys_file, authkeys_filename,
+                             signingkey);
           break;
         case NK_NPT_REQUEST:
           handle_npt_request(params, message);

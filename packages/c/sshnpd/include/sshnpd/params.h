@@ -1,5 +1,5 @@
-#ifndef PARAMS_H
-#define PARAMS_H
+#ifndef SSHNPD_PARAMS_H
+#define SSHNPD_PARAMS_H
 #define SSHNPD_VERSION "0.1.0"
 
 #include <argparse/argparse.h>
@@ -39,7 +39,7 @@ struct _sshnpd_params {
 };
 typedef struct _sshnpd_params sshnpd_params;
 
-void apply_default_values_to_params(sshnpd_params *params);
-int parse_params(sshnpd_params *params, int argc, const char **argv);
+void apply_default_values_to_sshnpd_params(sshnpd_params *params);
+int parse_sshnpd_params(sshnpd_params *params, int argc, const char **argv);
 
 #endif

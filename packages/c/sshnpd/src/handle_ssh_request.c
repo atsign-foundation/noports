@@ -9,7 +9,7 @@
 #include <atclient/notify.h>
 #include <atlogger/atlogger.h>
 #include <cJSON.h>
-#include <sshnpd/run_srv.h>
+#include <sshnpd/run_srv_process.h>
 #include <sshnpd/run_sshkeygen.h>
 #include <sshnpd/utils.h>
 #include <string.h>
@@ -19,8 +19,8 @@
 #define LOGGER_TAG "SSH_REQUEST"
 
 void handle_ssh_request(atclient *atclient, pthread_mutex_t *atclient_lock, sshnpd_params *params,
-                        atclient_monitor_message *message, char *bin_dir, char *home_dir, FILE *authkeys_file,
-                        char *authkeys_filename, atchops_rsakey_privatekey signing_key) {
+                        atclient_monitor_message *message, char *home_dir, FILE *authkeys_file, char *authkeys_filename,
+                        atchops_rsakey_privatekey signing_key) {
   int res = 0;
   char *requesting_atsign = message->notification.from;
 
@@ -346,8 +346,8 @@ void handle_ssh_request(atclient *atclient, pthread_mutex_t *atclient_lock, sshn
   pid = fork();
   if (pid == 0) {
     // child process
-    run_srv(bin_dir, params, host, port, authenticate_to_rvd, rvd_auth_string, encrypt_rvd_traffic, session_aes_key,
-            session_iv, authkeys_file, authkeys_filename);
+    run_srv_process(params, host, port, authenticate_to_rvd, rvd_auth_string, encrypt_rvd_traffic, session_aes_key, session_iv,
+            authkeys_file, authkeys_filename);
   } else if (pid > 0) {
 
     // parent process
