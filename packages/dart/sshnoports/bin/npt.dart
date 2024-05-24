@@ -11,6 +11,7 @@ import 'package:at_utils/at_logger.dart';
 import 'package:at_cli_commons/at_cli_commons.dart' as cli;
 import 'package:noports_core/npt.dart';
 import 'package:noports_core/sshnp_foundation.dart';
+import 'package:sshnoports/src/extended_arg_parser.dart';
 
 // local packages
 import 'package:sshnoports/src/print_version.dart';
@@ -148,7 +149,7 @@ void main(List<String> args) async {
         help: 'More logging',
       );
       parser.addFlag(
-        'quiet',
+        quietFlag,
         abbr: 'q',
         defaultsTo: DefaultArgs.quiet,
         negatable: false,
@@ -186,7 +187,7 @@ void main(List<String> args) async {
       perSessionStorage = parsedArgs['per-session-storage'];
       int localPort = int.parse(parsedArgs['local-port']);
       bool inline = !parsedArgs['exit-when-connected'];
-      bool quiet = parsedArgs['quiet'];
+      bool quiet = parsedArgs[quietFlag];
 
       // Windows will not let us delete files in use so
       // We will point storage to temp directory and let OS clean up
