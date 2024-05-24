@@ -90,9 +90,9 @@ endif()
 find_package(srv-lib QUIET)
 if(NOT srv-lib_FOUND)
   message(STATUS "[SSHNPD] srv-lib not found, fetching from local repository..")
-  fetchcontent_declare(srv-lib SOURCE_DIR ${ARGPARSE_DIR})
-  list(APPEND SSHNPD_TARGETS_TO_INSTALL srv-lib)
-  list(APPEND SSHNPD_MAKE_AVAILABLE srv-lib)
+  fetchcontent_declare(srv-lib SOURCE_DIR ${SRV_DIR})
+  list(APPEND SSHNPD_TARGETS_TO_INSTALL srv-lib argparse-static)
+  list(APPEND SSHNPD_MAKE_AVAILABLE srv-lib argparse-static)
 else()
   message(STATUS "[SSHNPD] srv-lib found package..")
 endif()
@@ -113,6 +113,7 @@ if(CMAKE_BUILD_TYPE STREQUAL "Debug")
       atsdk::atclient
       debug atsdk::atchops
       atsdk::atlogger
+      srv-lib
       argparse::argparse-static
   )
 else()
@@ -122,6 +123,7 @@ else()
       atsdk::atclient
       atsdk::atchops
       atsdk::atlogger
+      srv-lib
       argparse::argparse-static
   )
 endif()
