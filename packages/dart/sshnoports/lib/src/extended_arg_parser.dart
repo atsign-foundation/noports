@@ -89,6 +89,11 @@ class ExtendedArgParser {
       coreArgs.removeWhere((element) => element == '-x');
     }
 
+    if (results!.wasParsed(quietFlag)) {
+      coreArgs.removeWhere((element) => element == '--$quietFlag');
+      coreArgs.removeWhere((element) => element == '-q');
+    }
+
     return coreArgs;
   }
 }
