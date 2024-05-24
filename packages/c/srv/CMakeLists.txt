@@ -79,10 +79,10 @@ endif()
 
 # 5. Create srv_lib library target
 
-add_library(${PROJECT_NAME}_lib STATIC ${SRV_SRCS})
+add_library(${PROJECT_NAME}-lib STATIC ${SRV_SRCS})
 
 target_link_libraries(
-  ${PROJECT_NAME}_lib
+  ${PROJECT_NAME}-lib
   PRIVATE
     argparse::argparse-static
     atsdk::atlogger
@@ -92,7 +92,7 @@ target_link_libraries(
 
 # Set include directories for srv target
 target_include_directories(
-  ${PROJECT_NAME}_lib
+  ${PROJECT_NAME}-lib
   PUBLIC
     $<BUILD_INTERFACE:${SRV_INCLUDE_DIR}>
     $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
@@ -101,13 +101,13 @@ target_include_directories(
 # 6 Install srv library
 # This step configures running `cmake --build build --target install` (which is the same thing as `make install`)
 # This work also helps other CMake projects use `find_package(atclient)` to find our library, once installed.
-list(APPEND SRV_TARGETS_TO_INSTALL ${PROJECT_NAME}_lib) # install srv_lib
+list(APPEND SRV_TARGETS_TO_INSTALL ${PROJECT_NAME}-lib) # install srv_lib
 
 foreach(target ${SRV_TARGETS_TO_INSTALL})
   message(STATUS "[SRV] Installing ${target}..")
   install(
     TARGETS ${target}
-    EXPORT ${PROJECT_NAME}_lib-config
+    EXPORT ${PROJECT_NAME}-lib-config
     ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
   )
 endforeach()
@@ -123,7 +123,7 @@ add_executable(${PROJECT_NAME} ${CMAKE_CURRENT_LIST_DIR}/src/main.c)
 target_link_libraries(
   ${PROJECT_NAME}
   PRIVATE
-    ${PROJECT_NAME}_lib
+    ${PROJECT_NAME}-lib
     atsdk::atlogger
     atsdk::atchops
     atsdk::mbedtls
