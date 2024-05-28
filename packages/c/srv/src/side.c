@@ -79,11 +79,9 @@ void *srv_side_handle(void *side) {
       } else {
         len = res;
       }
-      atlogger_log(tag, DEBUG, "Read %d bytes \n", len);
       fflush(stdout);
       if (s->transformer != NULL) {
         unsigned char *output = malloc(BUFFER_LEN * sizeof(unsigned char));
-        atlogger_log(tag, DEBUG, "Transforming data\n");
         res = (int)s->transformer->transform(s->transformer, len, buffer, output);
         if (res != 0) {
           break;
@@ -99,7 +97,6 @@ void *srv_side_handle(void *side) {
             atlogger_log(tag, ERROR, "Error sending data: %d", res);
             break;
           } else {
-            atlogger_log(tag, DEBUG, "Sent bytes: %d", res);
             len -= res;
           }
         }

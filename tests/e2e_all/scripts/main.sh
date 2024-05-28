@@ -47,7 +47,7 @@ atDirectoryHost=root.atsign.org
 atDirectoryPort=64
 testsToRun="all"
 
-defaultDaemonVersions="d:4.0.5 d:5.2.0 d:current"
+defaultDaemonVersions="d:4.0.5 d:5.2.0 d:current c:current"
 defaultClientVersions="d:4.0.5 d:5.2.0 d:current"
 
 daemonVersions=$defaultDaemonVersions
@@ -65,17 +65,15 @@ export testScriptsDir
 
 source "$testScriptsDir/common/common_functions.include.sh"
 
-if ! command -v timeout &> /dev/null
-then
-    logErrorAndExit "'timeout' command could not be found. If on MacOS, brew install coreutils"
+if ! command -v timeout &>/dev/null; then
+  logErrorAndExit "'timeout' command could not be found. If on MacOS, brew install coreutils"
 fi
-
 
 unset clientAtSign
 unset daemonAtSign
 unset srvAtSign
 
-if (( $# < 3 )); then
+if (($# < 3)); then
   usageAndExit
 fi
 
@@ -124,7 +122,7 @@ done
 if test "$testsToRun" = "all"; then
   # shellcheck disable=SC2010
   testsToRun=$(ls -1 "$testScriptsDir/tests" | grep -v "^noop$" | grep -v "^shared$")
-  logInfo "Will run all tests: $(tr -d "\n" <<< "$testsToRun")"
+  logInfo "Will run all tests: $(tr -d "\n" <<<"$testsToRun")"
 fi
 
 export atDirectoryHost
@@ -138,7 +136,7 @@ export daemonStartWait
 timeoutDuration=20
 export timeoutDuration
 
-shift "$(( OPTIND - 1 ))"
+shift "$((OPTIND - 1))"
 
 # Script dir is <repo_root>/tests/e2e_all/scripts
 cd "$testScriptsDir/../../.." || exit 1 # should now be in <repo_root>/
@@ -170,7 +168,7 @@ logInfo "    atDirectoryHost:  $atDirectoryHost"
 logInfo "    daemonVersions:   $daemonVersions"
 logInfo "    clientVersions:   $clientVersions"
 logInfo "    commitId:         $commitId"
-logInfo "    testsToRun:       $(tr -d "\n" <<< "$testsToRun")"
+logInfo "    testsToRun:       $(tr -d "\n" <<<"$testsToRun")"
 
 echo
 logInfo "Calling setup_binaries.sh"

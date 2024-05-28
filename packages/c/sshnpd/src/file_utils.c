@@ -127,9 +127,9 @@ int authorize_ssh_public_key(authkeys_params *params) {
   }
 
   if (strlen(params->permissions) > 0) {
-    ret = fprintf(params->authkeys_file, "%s %s\n", params->permissions, params->key);
+    ret = fprintf(params->authkeys_file, "%s %s", params->permissions, params->key);
   } else {
-    ret = fprintf(params->authkeys_file, "%s\n", params->key);
+    ret = fprintf(params->authkeys_file, "%s", params->key);
   }
 
   if (ret < 0) {

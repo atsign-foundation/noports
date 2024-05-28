@@ -8,12 +8,14 @@ BBLUE='\033[1;34m'
 
 authKeysFile="$HOME/.ssh/authorized_keys"
 
+### BEGIN GENERAL ###
+
 getApkamAppName() {
   echo "e2e_all"
 }
 
 getApkamDeviceName() {
-  if (( $# != 2 )); then
+  if (($# != 2)); then
     # shellcheck disable=SC2016
     logErrorAndExit 'getApkamDeviceName requires 2 arguments: <client|daemon> $commitId'
   fi
@@ -27,7 +29,7 @@ getApkamKeysDir() {
 }
 
 getApkamKeysFile() {
-  if (( $# != 3 )); then
+  if (($# != 3)); then
     # shellcheck disable=SC2016
     logErrorAndExit 'getApkamKeysFile requires 3 arguments: $atSign $apkamAppName $apkamDeviceName'
   fi
@@ -39,18 +41,22 @@ getApkamKeysFile() {
 }
 
 getBaseSshnpCommand() {
-  if (( $# != 1 )); then
+  if (($# != 1)); then
     logErrorAndExit "getBaseSshnpCommand requires 1 argument (clientBinaryPath)"
   fi
   clientBinaryPath="$1"
   l1="$clientBinaryPath/sshnp -f $clientAtSign -d $deviceName -i $identityFilename"
-  l2=" -t $daemonAtSign -h $srvAtSign -u $remoteUsername"
+  if [ "$(versionIsLessThan "$daemonVersion" "d:5.2.0")" ]; then
+    l2=" -t $daemonAtSign -h $srvAtSign -u $remoteUsername"
+  else
+    l2=" -t $daemonAtSign -r $srvAtSign -u $remoteUsername"
+  fi
   l3=" --root-domain $atDirectoryHost"
   echo "$l1" "$l2" "$l3"
 }
 
 getBaseNptCommand() {
-  if (( $# != 1 )); then
+  if (($# != 1)); then
     logErrorAndExit "getBaseNptCommand requires 1 argument (clientBinaryPath)"
   fi
   clientBinaryPath="$1"
@@ -91,7 +97,7 @@ generateNewSshKey() {
   chmod go-rwx "$authKeysFile"
 
   logInfo "Generating test ssh keypair"
-  ssh-keygen -t ed25519 -q -N '' -f "${identityFilename}" -C "$commitId"<<< y >/dev/null 2>&1
+  ssh-keygen -t ed25519 -q -N '' -f "${identityFilename}" -C "$commitId" <<<y >/dev/null 2>&1
 }
 
 getOutputDir() {
@@ -102,22 +108,22 @@ getReportFile() {
 }
 
 getDeviceNameNoFlags() {
-  if (( $# != 2 )) ; then
+  if (($# != 2)); then
     logError "getDeviceNameNoFlags expects two parameters; $# were supplied"
     exit 1
   fi
   commitId="$1"
   typeAndVersion="$2"
-  IFS=: read -r type version <<< "$typeAndVersion"
+  IFS=: read -r type version <<<"$typeAndVersion"
   versionForDeviceName=$(echo "$version" | tr -d ".")
   if test "$versionForDeviceName" = "current"; then
-    versionForDeviceName="c";
+    versionForDeviceName="c"
   fi
   echo "${commitId}${type}${versionForDeviceName}"
 }
 
 getDeviceNameWithFlags() {
-  if (( $# != 2 )) ; then
+  if (($# != 2)); then
     logError "getDeviceNameFlags expects two parameters; $# were supplied"
     exit 1
   fi
@@ -168,30 +174,16 @@ logInfo() {
 }
 
 reportInfo() {
-  logInfo "$1" >> "$(getReportFile)"
+  logInfo "$1" >>"$(getReportFile)"
 }
 
 logInfoAndReport() {
   echo -e "$(iso8601Date) | $1" | tee -a "$(getReportFile)"
 }
 
-getDartCompilationOutputDir() {
-  echo "$testRuntimeDir/binaries/branch"
-}
-
-getDartReleaseDirForVersion() {
-  version="$1"
-  echo "$testRootDir/releases/dart.$version"
-}
-
-getDartReleaseBinDirForVersion() {
-  version="$1"
-  echo "$testRootDir/releases/dart.$version/sshnp"
-}
-
 getVersionDescription() {
-  if (( $# != 1)); then logErrorAndExit "getVersionDescription requires 1 parameter"; fi
-  IFS=: read -r type version <<< "$1"
+  if (($# != 1)); then logErrorAndExit "getVersionDescription requires 1 parameter"; fi
+  IFS=: read -r type version <<<"$1"
   case $type in
     d) desc="Dart " ;;
     *) desc="$type (?) " ;;
@@ -205,13 +197,12 @@ getVersionDescription() {
 versionIsLessThan() {
   actualTypeAndVersion="$1"
   typeAndVersionList="$2"
-  IFS=: read -r aType aVersion <<< "$actualTypeAndVersion"
+  IFS=: read -r aType aVersion <<<"$actualTypeAndVersion"
 
-  IFS=. read -r aMaj aMin aPat <<< "$aVersion"
+  IFS=. read -r aMaj aMin aPat <<<"$aVersion"
 
-  for rtv in $typeAndVersionList
-  do
-    IFS=: read -r rType rVersion <<< "$rtv"
+  for rtv in $typeAndVersionList; do
+    IFS=: read -r rType rVersion <<<"$rtv"
     if [[ "$aType" == "$rType" ]]; then
       if [[ "$aVersion" == "current" ]]; then
         # actual version 'current' is never less than anything
@@ -219,28 +210,28 @@ versionIsLessThan() {
         return
       fi
 
-      IFS=. read -r rMaj rMin rPat <<< "$rVersion"
-      if (( aMaj < rMaj )); then
+      IFS=. read -r rMaj rMin rPat <<<"$rVersion"
+      if ((aMaj < rMaj)); then
         echo "true"
         return
       fi
-      if (( aMaj > rMaj )); then
+      if ((aMaj > rMaj)); then
         echo "false"
         return
       fi
 
       # major versions are the same - compare minor versions
-      if (( aMin < rMin )); then
+      if ((aMin < rMin)); then
         echo "true"
         return
       fi
-      if (( aMin > rMin )); then
+      if ((aMin > rMin)); then
         echo "false"
         return
       fi
 
       # minor versions are the same - compare patch versions
-      if (( aPat < rPat )); then
+      if ((aPat < rPat)); then
         echo "true"
         return
       else
@@ -262,14 +253,13 @@ versionIsAtLeast() {
   #   return TRUE if not
   actualTypeAndVersion="$1"
   typeAndVersionList="$2"
-  IFS=: read -r aType aVersion <<< "$actualTypeAndVersion"
+  IFS=: read -r aType aVersion <<<"$actualTypeAndVersion"
 
-  IFS=. read -r aMaj aMin aPat <<< "$aVersion"
+  IFS=. read -r aMaj aMin aPat <<<"$aVersion"
 
   # for required in required list
-  for rtv in $typeAndVersionList
-  do
-    IFS=: read -r rType rVersion <<< "$rtv"
+  for rtv in $typeAndVersionList; do
+    IFS=: read -r rType rVersion <<<"$rtv"
     if [[ "$aType" == "$rType" ]]; then
       if [[ "$aVersion" == "current" ]]; then
         # actual version 'current' is always at least what is required
@@ -277,28 +267,28 @@ versionIsAtLeast() {
         return
       fi
 
-      IFS=. read -r rMaj rMin rPat <<< "$rVersion"
-      if (( aMaj < rMaj )); then # not at required major version
+      IFS=. read -r rMaj rMin rPat <<<"$rVersion"
+      if ((aMaj < rMaj)); then # not at required major version
         echo "false"
         return
       fi
-      if (( aMaj > rMaj )); then # beyond the required major version
+      if ((aMaj > rMaj)); then # beyond the required major version
         echo "true"
         return
       fi
 
       # major versions are the same - compare minor versions
-      if (( aMin < rMin )); then # not at required minor version
+      if ((aMin < rMin)); then # not at required minor version
         echo "false"
         return
       fi
-      if (( aMin > rMin )); then
+      if ((aMin > rMin)); then
         echo "true"
         return
       fi
 
       # minor versions are the same - compare patch versions
-      if (( aPat < rPat )); then # not at required patch version
+      if ((aPat < rPat)); then # not at required patch version
         echo "false"
         return
       else
@@ -315,18 +305,21 @@ versionIsAtLeast() {
 # if test isLessThan "$daemonVersion" "d:5.0.0"; then
 
 getPathToBinariesForTypeAndVersion() {
-  if (( $# != 1 )) ; then
+  if (($# != 1)); then
     logError "getPathToBinariesForTypeAndVersion expects one parameter, but was supplied $#"
     exit 1
   fi
   typeAndVersion="$1"
-  IFS=: read -r type version <<< "$typeAndVersion"
+  IFS=: read -r type version <<<"$typeAndVersion"
 
   case "$version" in
     current)
       case "$type" in
         d) # dart
           getDartCompilationOutputDir
+          ;;
+        c)
+          getCCompilationOutputDir
           ;;
         *)
           logErrorAndExit "Don't know how to getPathToBinariesForTypeAndVersion for $typeAndVersion"
@@ -338,12 +331,30 @@ getPathToBinariesForTypeAndVersion() {
         d) # dart
           getDartReleaseBinDirForVersion "$version"
           ;;
+        # c);; # Not supported yet (soon)
         *)
           logErrorAndExit "Don't know how to getPathToBinariesForTypeAndVersion for $typeAndVersion"
           ;;
       esac
       ;;
   esac
+}
+
+### END OF GENERAL ###
+### BEGIN DART ###
+
+getDartCompilationOutputDir() {
+  echo "$testRuntimeDir/binaries/dart.branch"
+}
+
+getDartReleaseDirForVersion() {
+  version="$1"
+  echo "$testRootDir/releases/dart.$version"
+}
+
+getDartReleaseBinDirForVersion() {
+  version="$1"
+  echo "$testRootDir/releases/dart.$version/sshnp"
 }
 
 setupDartVersion() {
@@ -455,10 +466,10 @@ downloadDartBinaries() {
   if ! [ -d "$versionBinDir/sshnp" ]; then
     case "$EXT" in
       zip)
-        unzip -qo "$versionBinDir/$downloadZipName" -d "$versionBinDir";
+        unzip -qo "$versionBinDir/$downloadZipName" -d "$versionBinDir"
         ;;
-      tgz|tar.gz)
-        tar -zxf "$versionBinDir/$downloadZipName" -C "$versionBinDir";
+      tgz | tar.gz)
+        tar -zxf "$versionBinDir/$downloadZipName" -C "$versionBinDir"
         ;;
     esac
   fi
@@ -467,3 +478,77 @@ downloadDartBinaries() {
   rm -f "${testRuntimeDir}/binaries/dart.${version}"
   ln -s "$versionBinDir/sshnp" "${testRuntimeDir}/binaries/dart.${version}"
 }
+
+### END DART ###
+### BEGIN C ###
+
+getCCompilationOutputDir() {
+  echo "$testRuntimeDir/binaries/c.branch"
+}
+
+setupCVersion() {
+  version="$1"
+
+  if test "$version" = "current"; then
+    buildCurrentCBinaries || exit $?
+  else
+    logErrorAndExit "Versions other than 'current' are unimplemented for C"
+    # downloadDartBinaries "$version" || exit $?
+  fi
+}
+
+buildCurrentCBinaries() {
+  compileVerbosity=error
+
+  if [ $(uname) == 'Darwin' ]; then
+    # GNU install dirs are protected on macos...
+    sudo -v -p "On macos we require sudo access to install build files to /usr/local/include and /usr/local/lib\nPlease provide your sudo password:"
+  fi
+
+  logInfo "    Compiling C binaries for current git commitId $commitId"
+
+  binaryOutputDir=$(getCCompilationOutputDir)
+  mkdir -p "$binaryOutputDir"
+
+  if [ "$recompile" = "true" ]; then
+    cd "$binaryOutputDir" || exit 1
+    rm -f activate_cli srv sshnpd srvd sshnp npt
+  fi
+
+  binarySourceDir="$repoRootDir/packages/c"
+  if ! [ -d "$binarySourceDir" ]; then
+    logErrorAndExit "Directory $binarySourceDir does not exist. Has package structure changed? "
+  fi
+  cd "$binarySourceDir" || exit 1
+
+  if ! command -v cmake 2>/dev/null; then
+    logErrorAndExit "cmake is required to build c:current binaries"
+  fi
+
+  # We shouldn't need this binary for any e2e tests right now, but leaving this here in case we do
+  # if [ -f "$binaryOutputDir/srv" ]; then
+  #   logInfo "        $binaryOutputDir/srv has already been compiled"
+  # else
+  #   logInfo "        Compiling srv"
+  #   local base_dir="./srv"
+  #   local build_dir="$base_dir/build"
+  #   cmake -B $build_dir -S $base_dir
+  #   cmake --build $build_dir
+  #   cp $build_dir/srv "$binaryOutputDir/"
+  # fi
+
+  if [ -f "$binaryOutputDir/sshnpd" ]; then
+    logInfo "        $binaryOutputDir/sshnpd has already been compiled"
+  else
+    logInfo "        Compiling sshnpd"
+    local base_dir="./sshnpd"
+    local build_dir="$base_dir/build"
+    cmake -B $build_dir -S $base_dir
+    cmake --build $build_dir
+    cp $build_dir/sshnpd "$binaryOutputDir/"
+  fi
+
+  cp "$testScriptsDir/srv.sh" "$binaryOutputDir/srv.sh"
+}
+
+### END C ###
