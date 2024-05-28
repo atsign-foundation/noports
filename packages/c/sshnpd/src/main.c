@@ -330,6 +330,7 @@ exit: {
 void main_loop(atclient *monitor_ctx, atclient *atclient, sshnpd_params *params, FILE *authkeys_file,
                char *authkeys_filename, char *ping_response, char *home_dir, atchops_rsakey_privatekey signingkey) {
   int res = 0;
+  atlogger_log("E2E TESTS", ATLOGGER_LOGGING_LEVEL_INFO, "Monitor .*monitor started");
   while (true) {
     atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_DEBUG, "Waiting for next monitor thread message\n");
     atclient_monitor_message *message;

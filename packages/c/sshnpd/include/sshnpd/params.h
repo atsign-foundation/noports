@@ -36,6 +36,7 @@ struct _sshnpd_params {
   uint16_t local_sshd_port;
 
   char *key_file;
+  char *storage_path;
 };
 typedef struct _sshnpd_params sshnpd_params;
 

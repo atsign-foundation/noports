@@ -36,6 +36,8 @@ int parse_sshnpd_params(sshnpd_params *params, int argc, const char **argv) {
       OPT_STRING(0, "ephemeral-permission", &params->ephemeral_permission, "Ephemeral permission to use"),
       OPT_STRING(0, "root-domain", &params->root_domain, "Root domain to use"),
       OPT_INTEGER(0, "local-sshd-port", &params->local_sshd_port, "Local sshd port to use"),
+      OPT_STRING(0, "storage-path", &params->storage_path, NULL),
+      OPT_BOOLEAN('u', "un-hide", NULL, NULL),
       OPT_END(),
   };
 
