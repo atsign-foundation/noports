@@ -57,20 +57,7 @@ cmake_policy(SET CMP0135 NEW)
 # 4. Dependencies
 
 # 4a. atsdk
-find_package(atsdk QUIET)
-if(NOT atsdk_FOUND)
-  # TODO: fetch from GitHub
-  # message(STATUS "[SSHNPD] atclient not found, fetching from GitHub..")
-  # FetchContent_Declare(
-  #  atclient
-  #  URL https://github.com/...
-  #           URL_HASH SHA256=
-  # )
-  list(APPEND SSHNPD_TARGETS_TO_INSTALL atclient atchops atlogger)
-  list(APPEND SSHNPD_MAKE_AVAILABLE atclient atchops atlogger)
-else()
-  message(STATUS "[SSHNPD] atclient found package..")
-endif()
+include(${CMAKE_CURRENT_SOURCE_DIR}/../cmake/atsdk.cmake)
 
 # 4b. argparse
 find_package(argparse-static QUIET)
@@ -109,22 +96,12 @@ add_library(${PROJECT_NAME}-lib STATIC ${SSHNPD_SRCS})
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
   target_link_libraries(
     ${PROJECT_NAME}-lib
-    PRIVATE
-      atsdk::atclient
-      debug atsdk::atchops
-      atsdk::atlogger
-      srv-lib
-      argparse::argparse-static
+    PRIVATE atclient atchops atlogger srv-lib argparse::argparse-static
   )
 else()
   target_link_libraries(
     ${PROJECT_NAME}-lib
-    PRIVATE
-      atsdk::atclient
-      atsdk::atchops
-      atsdk::atlogger
-      srv-lib
-      argparse::argparse-static
+    PRIVATE atclient atchops atlogger srv-lib argparse::argparse-static
   )
 endif()
 
@@ -163,9 +140,9 @@ target_link_libraries(
   ${PROJECT_NAME}
   PRIVATE
     ${PROJECT_NAME}-lib
-    atsdk::atclient
-    atsdk::atchops
-    atsdk::atlogger
+    atclient
+    atchops
+    atlogger
     argparse::argparse-static
 )
 

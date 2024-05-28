@@ -131,7 +131,7 @@ int main(int argc, char **argv) {
 
   // 6. Initialize the root connection
   atclient_connection root_conn;
-  atclient_connection_init(&root_conn);
+  atclient_connection_init(&root_conn, ATCLIENT_CONNECTION_TYPE_DIRECTORY);
   res = atclient_connection_connect(&root_conn, params.root_domain, ROOT_PORT);
   if (res != 0) {
     exit_res = res;
@@ -344,6 +344,10 @@ void main_loop(atclient *monitor_ctx, atclient *atclient, sshnpd_params *params,
 
     // in code -> clang-format -> out code
     switch (message->type) {
+    case ATCLIENT_MONITOR_ERROR_READ:
+    case ATCLIENT_MONITOR_ERROR_PARSE:
+      // TODO: handle errors
+      break;
     case ATCLIENT_MONITOR_MESSAGE_TYPE_NOTIFICATION: {
       bool is_init = atclient_atnotification_decryptedvalue_is_initialized(&message->notification);
       bool has_key = atclient_atnotification_key_is_initialized(&message->notification);

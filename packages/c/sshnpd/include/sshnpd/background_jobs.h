@@ -4,6 +4,7 @@
 #include "sshnpd/params.h"
 #include <atclient/atclient.h>
 #include <atclient/atkey.h>
+#include <pthread.h>
 
 #define SEC_IN_MS 1000
 #define MIN_IN_MS (60 * SEC_IN_MS)

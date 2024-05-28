@@ -4,6 +4,7 @@
 #include <atclient/monitor.h>
 #include <atclient/notify.h>
 #include <atlogger/atlogger.h>
+#include <pthread.h>
 #include <stdio.h>
 #include <string.h>
 

@@ -4,7 +4,9 @@
 #include <atlogger/atlogger.h>
 #include <mbedtls/net_sockets.h>
 #include <netdb.h>
+#include <pthread.h>
 #include <srv/params.h>
+#include <stdlib.h>
 #include <string.h>
 #include <sys/socket.h>
 

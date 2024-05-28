@@ -3,6 +3,7 @@
 #include "srv/side.h"
 #include <atchops/base64.h>
 #include <atlogger/atlogger.h>
+#include <pthread.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>

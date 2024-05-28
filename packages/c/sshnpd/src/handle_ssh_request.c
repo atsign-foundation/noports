@@ -12,6 +12,7 @@
 #include <sshnpd/run_srv_process.h>
 #include <sshnpd/run_sshkeygen.h>
 #include <sshnpd/utils.h>
+#include <stdlib.h>
 #include <string.h>
 #include <sys/errno.h>
 #include <unistd.h>
@@ -346,8 +347,8 @@ void handle_ssh_request(atclient *atclient, pthread_mutex_t *atclient_lock, sshn
   pid = fork();
   if (pid == 0) {
     // child process
-    run_srv_process(params, host, port, authenticate_to_rvd, rvd_auth_string, encrypt_rvd_traffic, session_aes_key, session_iv,
-            authkeys_file, authkeys_filename);
+    run_srv_process(params, host, port, authenticate_to_rvd, rvd_auth_string, encrypt_rvd_traffic, session_aes_key,
+                    session_iv, authkeys_file, authkeys_filename);
   } else if (pid > 0) {
 
     // parent process

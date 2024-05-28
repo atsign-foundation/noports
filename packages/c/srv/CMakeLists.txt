@@ -46,20 +46,7 @@ cmake_policy(SET CMP0135 NEW)
 
 # 4. Dependencies
 # 4a. atsdk
-find_package(atsdk)
-if(NOT atsdk_FOUND)
-  # TODO: fetch from GitHub
-  # message(STATUS "[SRV] atclient not found, fetching from GitHub..")
-  # FetchContent_Declare(
-  #  atclient
-  #  URL https://github.com/...
-  #           URL_HASH SHA256=
-  # )
-  list(APPEND SRV_TARGETS_TO_INSTALL atchops atlogger mbedtls)
-  list(APPEND SRV_MAKE_AVAILABLE atchops atlogger mbedtls)
-else()
-  message(STATUS "[SRV] atclient found package..")
-endif()
+include(${CMAKE_CURRENT_SOURCE_DIR}/../cmake/atsdk.cmake)
 
 # 4b. argparse
 find_package(argparse-static QUIET)
@@ -83,11 +70,7 @@ add_library(${PROJECT_NAME}-lib STATIC ${SRV_SRCS})
 
 target_link_libraries(
   ${PROJECT_NAME}-lib
-  PRIVATE
-    argparse::argparse-static
-    atsdk::atlogger
-    atsdk::atchops
-    atsdk::mbedtls
+  PRIVATE argparse::argparse-static atlogger atchops mbedtls
 )
 
 # Set include directories for srv target
@@ -122,12 +105,7 @@ add_executable(${PROJECT_NAME} ${CMAKE_CURRENT_LIST_DIR}/src/main.c)
 
 target_link_libraries(
   ${PROJECT_NAME}
-  PRIVATE
-    ${PROJECT_NAME}-lib
-    atsdk::atlogger
-    atsdk::atchops
-    atsdk::mbedtls
-    argparse::argparse-static
+  PRIVATE ${PROJECT_NAME}-lib atlogger atchops mbedtls argparse::argparse-static
 )
 
 # 8. Build tests

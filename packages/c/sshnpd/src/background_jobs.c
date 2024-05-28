@@ -7,6 +7,7 @@
 #include <sshnpd/background_jobs.h>
 #include <sshnpd/sshnpd.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
 #define LOGGER_TAG "heartbeat"
