@@ -280,6 +280,9 @@ void argparse_usage(struct argparse *self) {
   size_t len;
   options = self->options;
   for (; options->type != ARGPARSE_OPT_END; options++) {
+    if (options->help == NULL) {
+      continue;
+    }
     len = 0;
     if ((options)->short_name) {
       len += 2;
@@ -307,6 +310,9 @@ void argparse_usage(struct argparse *self) {
 
   options = self->options;
   for (; options->type != ARGPARSE_OPT_END; options++) {
+    if (options->help == NULL) {
+      continue;
+    }
     size_t pos = 0;
     size_t pad = 0;
     if (options->type == ARGPARSE_OPT_GROUP) {
