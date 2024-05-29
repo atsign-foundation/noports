@@ -186,6 +186,7 @@ getVersionDescription() {
   IFS=: read -r type version <<<"$1"
   case $type in
     d) desc="Dart " ;;
+    c) desc="C" ;;
     *) desc="$type (?) " ;;
   esac
   case $version in
