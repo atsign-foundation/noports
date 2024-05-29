@@ -122,7 +122,7 @@ done
 if test "$testsToRun" = "all"; then
   # shellcheck disable=SC2010
   testsToRun=$(ls -1 "$testScriptsDir/tests" | grep -v "^noop$" | grep -v "^shared$")
-  logInfo "Will run all tests: $(tr -d "\n" <<<"$testsToRun")"
+  logInfo "Will run all tests: $(tr "\n" ";" <<<"$testsToRun")"
 fi
 
 export atDirectoryHost
@@ -168,7 +168,7 @@ logInfo "    atDirectoryHost:  $atDirectoryHost"
 logInfo "    daemonVersions:   $daemonVersions"
 logInfo "    clientVersions:   $clientVersions"
 logInfo "    commitId:         $commitId"
-logInfo "    testsToRun:       $(tr -d "\n" <<<"$testsToRun")"
+logInfo "    testsToRun:       $(tr "\n" ";" <<<"$testsToRun")"
 
 echo
 logInfo "Calling setup_binaries.sh"
