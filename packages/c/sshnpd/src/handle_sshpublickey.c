@@ -18,6 +18,7 @@ void handle_sshpublickey(sshnpd_params *params, atclient_monitor_message *messag
                  message->notification.from);
     return;
   }
+
   char *ssh_key = (char *)message->notification.decryptedvalue;
   size_t ssh_key_len = strlen(ssh_key);
 
@@ -32,7 +33,7 @@ void handle_sshpublickey(sshnpd_params *params, atclient_monitor_message *messag
 
     if (strncmp(ssh_key, prefix, prefix_len)) {
       is_valid_prefix = true;
-      return;
+      break;
     }
   }
 
@@ -51,7 +52,10 @@ void handle_sshpublickey(sshnpd_params *params, atclient_monitor_message *messag
   int ret = authorize_ssh_public_key(&authkeys_params);
   if (ret != 0) {
     atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to authorize ssh public key\n");
+    return;
   }
+
+  atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_DEBUG, "Authorized public key");
 
   // TODO: move this to SSH later - don't need deauth for this command, only ephemeral
   //
