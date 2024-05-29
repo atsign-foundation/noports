@@ -55,22 +55,5 @@ void handle_sshpublickey(sshnpd_params *params, atclient_monitor_message *messag
     return;
   }
 
-  atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_DEBUG, "Authorized public key");
-
-  // TODO: move this to SSH later - don't need deauth for this command, only ephemeral
-  //
-  // pthread_t tid;
-  // malloc here so that the thread can own the contents
-  // deauthorize_ssh_public_key_params *deauth_params = malloc(sizeof(deauthorize_ssh_public_key_params));
-  // strcpy(deauth_params->homedir, homedir);
-  // strcpy(deauth_params->key, ssh_key);
-  //
-  // do {
-  //   ret = pthread_create(&tid, NULL, (void *)deauthorize_ssh_public_key_job, deauth_params);
-  //   if (ret != 0) {
-  //     atlogger_log(tag, ATLOGGER_LOGGING_LEVEL_ERROR,
-  //                  "Failed to start thread to deauthorize ssh public key, trying again in 1 second...\n");
-  //     sleep(1);
-  //   }
-  // } while (ret != 0);
+  atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_DEBUG, "Authorized public key\n");
 }

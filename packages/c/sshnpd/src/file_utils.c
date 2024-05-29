@@ -126,10 +126,15 @@ int authorize_ssh_public_key(authkeys_params *params) {
     goto cleanup;
   }
 
+  char *postfix = "";
+  if (params->key[strlen(params->key) - 1] != '\n') {
+    postfix = "\n";
+  }
+
   if (strlen(params->permissions) > 0) {
-    ret = fprintf(params->authkeys_file, "%s %s", params->permissions, params->key);
+    ret = fprintf(params->authkeys_file, "%s %s%s", params->permissions, params->key, postfix);
   } else {
-    ret = fprintf(params->authkeys_file, "%s", params->key);
+    ret = fprintf(params->authkeys_file, "%s%s", params->key, postfix);
   }
 
   if (ret < 0) {
