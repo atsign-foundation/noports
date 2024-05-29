@@ -4,7 +4,6 @@ import 'dart:io';
 
 // other packages
 import 'package:args/args.dart';
-import 'package:path/path.dart' as path;
 
 // atPlatform packages
 import 'package:at_utils/at_logger.dart';
@@ -193,24 +192,26 @@ void main(List<String> args) async {
       // We will point storage to temp directory and let OS clean up
       var clientAtSign = parsedArgs['from'];
 
-      late String storageDirLastPart;
+      late String uniqueID;
       if (perSessionStorage) {
-        storageDirLastPart = DateTime.now().millisecondsSinceEpoch.toString();
+        uniqueID = DateTime.now().millisecondsSinceEpoch.toString();
       } else {
-        storageDirLastPart = 'single';
+        uniqueID = 'single';
       }
       if (Platform.isWindows) {
-        storageDir = Directory(path.normalize('${Platform.environment['TEMP']}'
-            '/${DefaultArgs.storagePathSubDirectory}'
-            '/$clientAtSign'
-            '/storage'
-            '/$storageDirLastPart'));
+        storageDir = Directory(standardAtClientStoragePath(
+          homeDirectory: Platform.environment['TEMP']!,
+          atSign: clientAtSign,
+          progName: '.npt',
+          uniqueID: uniqueID,
+        ));
       } else {
-        storageDir = Directory(path.normalize('$homeDirectory'
-            '/${DefaultArgs.storagePathSubDirectory}'
-            '/$clientAtSign'
-            '/storage'
-            '/$storageDirLastPart'));
+        storageDir = Directory(standardAtClientStoragePath(
+          homeDirectory: homeDirectory,
+          atSign: clientAtSign,
+          progName: '.npt',
+          uniqueID: uniqueID,
+        ));
       }
       storageDir?.createSync(recursive: true);
 

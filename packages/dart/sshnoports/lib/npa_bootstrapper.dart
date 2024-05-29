@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:io';
 import 'package:at_utils/at_logger.dart';
 import 'package:noports_core/npa.dart';
+import 'package:noports_core/utils.dart';
 import 'package:sshnoports/src/create_at_client_cli.dart';
 import 'package:sshnoports/src/print_version.dart';
 import 'package:sshnoports/src/service_factories.dart';
@@ -17,11 +18,16 @@ Future<void> run(
       commandLineArgs,
       handler: handler,
       atClientGenerator: (NPAParams p) => createAtClientCli(
-        homeDirectory: p.homeDirectory,
         atsign: p.authorizerAtsign,
         atKeysFilePath: p.atKeysFilePath,
         rootDomain: p.rootDomain,
         atServiceFactory: ServiceFactoryWithNoOpSyncService(),
+        namespace: DefaultArgs.namespace,
+        storagePath: standardAtClientStoragePath(
+            homeDirectory: p.homeDirectory,
+            atSign: p.authorizerAtsign,
+            progName: '.${DefaultArgs.namespace}',
+            uniqueID: 'single'),
       ),
       usageCallback: (e, s) {
         printVersion();

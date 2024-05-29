@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:io';
 import 'package:at_utils/at_logger.dart';
 import 'package:noports_core/srvd.dart';
+import 'package:noports_core/utils.dart';
 import 'package:sshnoports/src/create_at_client_cli.dart';
 import 'package:sshnoports/src/print_version.dart';
 import 'package:sshnoports/src/service_factories.dart';
@@ -15,8 +16,11 @@ void main(List<String> args) async {
     srvd = await Srvd.fromCommandLineArgs(
       args,
       atClientGenerator: (SrvdParams p) => createAtClientCli(
-        homeDirectory: p.homeDirectory,
-        subDirectory: '.srvd',
+        storagePath: standardAtClientStoragePath(
+            homeDirectory: p.homeDirectory,
+            atSign: p.atSign,
+            progName: '.srvd',
+            uniqueID: 'single'),
         atsign: p.atSign,
         atKeysFilePath: p.atKeysFilePath,
         namespace: Srvd.namespace,

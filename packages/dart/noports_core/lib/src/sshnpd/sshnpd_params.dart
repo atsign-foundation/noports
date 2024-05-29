@@ -24,7 +24,7 @@ class SshnpdParams {
   final String ephemeralPermissions;
   final SupportedSshAlgorithm sshAlgorithm;
   final String deviceGroup;
-  final String? storagePath;
+  final String storagePath;
   final String permitOpen;
 
   // Non param variables
@@ -121,7 +121,12 @@ class SshnpdParams {
       ephemeralPermissions: r['ephemeral-permissions'],
       sshAlgorithm: SupportedSshAlgorithm.fromString(r['ssh-algorithm']),
       deviceGroup: r['device-group'],
-      storagePath: r['storage-path'],
+      storagePath: r['storage-path'] ??
+          standardAtClientStoragePath(
+              homeDirectory: homeDirectory,
+              atSign: deviceAtsign,
+              progName: '.sshnpd',
+              uniqueID: r['device']),
       permitOpen: r['permit-open'],
     );
   }
@@ -275,7 +280,7 @@ class SshnpdParams {
       'storage-path',
       mandatory: false,
       help: 'Directory for local storage.'
-          r' Defaults to $HOME/.sshnp/${atSign}/storage',
+          r' Defaults to $HOME/.atsign/storage/$atSign/.npd/$deviceName/',
     );
 
     parser.addOption(
