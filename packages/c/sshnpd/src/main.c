@@ -330,7 +330,7 @@ exit: {
 void main_loop(atclient *monitor_ctx, atclient *atclient, sshnpd_params *params, FILE *authkeys_file,
                char *authkeys_filename, char *ping_response, char *home_dir, atchops_rsakey_privatekey signingkey) {
   int res = 0;
-  atlogger_log("E2E TESTS", ATLOGGER_LOGGING_LEVEL_INFO, "Monitor .*monitor started");
+  atlogger_log("E2E TESTS", ATLOGGER_LOGGING_LEVEL_INFO, "Monitor .*monitor started\n");
   while (true) {
     atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_DEBUG, "Waiting for next monitor thread message\n");
     atclient_monitor_message *message;
@@ -404,19 +404,22 @@ void main_loop(atclient *monitor_ctx, atclient *atclient, sshnpd_params *params,
         }
 
         // TODO: multithread these handlers
-        atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_DEBUG, "Received key: '%s'\n", key);
         switch (notification_key) {
         case NK_SSHPUBLICKEY:
+          atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_DEBUG, "Executing handle_sshpublickey\n");
           handle_sshpublickey(params, message, authkeys_file, authkeys_filename);
           break;
         case NK_PING:
+          atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_DEBUG, "Executing handle_ping\n");
           handle_ping(params, message, ping_response, atclient, &atclient_lock);
           break;
         case NK_SSH_REQUEST:
+          atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_DEBUG, "Executing handle_ssh_request\n");
           handle_ssh_request(atclient, &atclient_lock, params, message, home_dir, authkeys_file, authkeys_filename,
                              signingkey);
           break;
         case NK_NPT_REQUEST:
+          atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_DEBUG, "Executing handle_npt_request\n");
           handle_npt_request(params, message);
           break;
         case NK_NONE:
