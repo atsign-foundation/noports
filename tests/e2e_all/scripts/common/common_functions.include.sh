@@ -500,11 +500,6 @@ setupCVersion() {
 buildCurrentCBinaries() {
   compileVerbosity=error
 
-  if [ $(uname) == 'Darwin' ]; then
-    # GNU install dirs are protected on macos...
-    sudo -v -p "On macos we require sudo access to install build files to /usr/local/include and /usr/local/lib\nPlease provide your sudo password:"
-  fi
-
   logInfo "    Compiling C binaries for current git commitId $commitId"
 
   binaryOutputDir=$(getCCompilationOutputDir)
