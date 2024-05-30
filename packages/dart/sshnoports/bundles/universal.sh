@@ -656,10 +656,16 @@ client() {
     while [ "$done_input" = false ]; do
       printf "Device name: "
       read -r device_name
+
       if [ -z "$device_name" ]; then
         done_input=true
       else
-        devices="$devices,$device_name"
+        if ! echo "$device_name" | grep -Eq '^[a-z_][a-z0-9_]*$'; then
+          echo "Device name must be in snake case"
+          device_name="" 
+        else
+          devices="$devices,$device_name"
+        fi
       fi
     done
   fi
@@ -719,7 +725,12 @@ device() {
   while [ -z "$device_name" ]; do
     printf "Enter device name: "
     read -r device_name
-  done
+
+    if ! echo "$device_name" | grep -Eq '^[a-z_][a-z0-9_]*$'; then
+        echo "Device name must be in snake case"
+        device_name="" 
+    fi
+done
 
   "$extract_path"/sshnp/install.sh -b "$bin_path" -u "$user" at_activate
 
