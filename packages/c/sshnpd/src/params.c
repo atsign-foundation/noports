@@ -88,8 +88,6 @@ int parse_sshnpd_params(sshnpd_params *params, int argc, const char **argv) {
     }
   }
 
-  // TODO: improve atsign validation
-  // Basic validation for main atsign
   if (params->atsign[0] != '@') {
     printf("Invalid Argument(s): \"%s\" is not a valid atSign\n", params->atsign);
     return 1;

@@ -10,6 +10,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 
 #define LOGGER_TAG "heartbeat"
 #define THIRTY_DAYS_IN_MS ((long)1000 * 60 * 60 * 24 * 30)
