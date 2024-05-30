@@ -7,11 +7,11 @@
 #include <atchops/rsakey.h>
 #include <atclient/monitor.h>
 #include <atclient/notify.h>
+#include <atclient/stringutils.h>
 #include <atlogger/atlogger.h>
 #include <cJSON.h>
 #include <sshnpd/run_srv_process.h>
 #include <sshnpd/run_sshkeygen.h>
-#include <sshnpd/utils.h>
 #include <stdlib.h>
 #include <string.h>
 #include <sys/errno.h>
