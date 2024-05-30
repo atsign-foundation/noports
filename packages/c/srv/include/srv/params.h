@@ -5,6 +5,7 @@
 #include <argparse/argparse.h>
 #include <getopt.h>
 #include <stdbool.h>
+#include <stdint.h>
 
 typedef struct {
   char *rvd_auth_string;

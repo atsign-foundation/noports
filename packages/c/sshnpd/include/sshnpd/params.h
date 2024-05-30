@@ -5,6 +5,7 @@
 #include <argparse/argparse.h>
 #include <getopt.h>
 #include <stdbool.h>
+#include <stddef.h>
 
 typedef struct argparse_option ArgparseOption;
 typedef struct argparse Argparse;
