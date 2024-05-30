@@ -659,8 +659,8 @@ client() {
       if [ -z "$device_name" ]; then
         done_input=true
       else
-        if ! echo "$device_name" | grep -Eq '^[a-z][a-z0-9_]*$'; then
-          echo "Device name must be in snake case"
+        if ! echo "$device_name" | grep -Eq '^[a-z][a-z0-9_]{0,14}$'; then
+          echo "Device name must be in snake case and max 15 characters"
           device_name="" 
         else
           devices="$devices,$device_name"
@@ -724,8 +724,8 @@ device() {
   while [ -z "$device_name" ]; do
     printf "Enter device name: "
     read -r device_name
-    if ! echo "$device_name" | grep -Eq '^[a-z][a-z0-9_]*$'; then
-        echo "Device name must be in snake case"
+    if ! echo "$device_name" | grep -Eq '^[a-z][a-z0-9_]{0,14}$'; then
+        echo "Device name must be in snake case and max 15 characters"
         device_name="" 
     fi
 done
