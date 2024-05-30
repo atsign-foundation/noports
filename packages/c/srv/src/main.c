@@ -1,6 +1,5 @@
 #include "srv/srv.h"
 #include <atchops/base64.h>
-#include <atclient/atclient.h>
 #include <atlogger/atlogger.h>
 #include <netdb.h>
 #include <srv/params.h>
