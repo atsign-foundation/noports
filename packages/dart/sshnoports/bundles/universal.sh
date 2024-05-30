@@ -660,7 +660,7 @@ client() {
       if [ -z "$device_name" ]; then
         done_input=true
       else
-        if ! echo "$device_name" | grep -Eq '^[a-z_][a-z0-9_]*$'; then
+        if ! echo "$device_name" | grep -Eq '^[a-z][a-z0-9_]*$'; then
           echo "Device name must be in snake case"
           device_name="" 
         else
