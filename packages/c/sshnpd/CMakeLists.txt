@@ -19,7 +19,6 @@ set(
   ${CMAKE_CURRENT_LIST_DIR}/src/params.c
   ${CMAKE_CURRENT_LIST_DIR}/src/run_srv_process.c
   ${CMAKE_CURRENT_LIST_DIR}/src/run_sshkeygen.c
-  ${CMAKE_CURRENT_LIST_DIR}/src/utils.c
 )
 
 # 1b. Manually add your include directories here
