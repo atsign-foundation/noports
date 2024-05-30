@@ -539,6 +539,7 @@ buildCurrentCBinaries() {
     logInfo "        Compiling sshnpd"
     local base_dir="./sshnpd"
     local build_dir="$base_dir/build"
+    mkdir -p "$build_dir"
     cmake -B $build_dir -S $base_dir
     cmake --build $build_dir
     cp $build_dir/sshnpd "$binaryOutputDir/"
