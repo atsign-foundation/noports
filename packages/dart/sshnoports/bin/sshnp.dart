@@ -5,7 +5,6 @@ import 'dart:typed_data';
 
 // other packages
 import 'package:chalkdart/chalk.dart';
-import 'package:path/path.dart' as path;
 import 'package:dartssh2/dartssh2.dart';
 
 // atPlatform packages
@@ -109,7 +108,7 @@ void main(List<String> args) async {
         ),
       );
 
-      if (! argResults.wasParsed(SshnpArg.deviceArg.name)) {
+      if (!argResults.wasParsed(SshnpArg.deviceArg.name)) {
         stderr.write(chalk.red('Warning: '));
         stderr.writeln('Using default value of "${params.device}"'
             ' for optional arg "--${SshnpArg.deviceArg.name}".'
@@ -120,17 +119,19 @@ void main(List<String> args) async {
       // Windows will not let us delete files in use so
       // We will point storage to temp directory and let OS clean up
       if (Platform.isWindows) {
-        storageDir = Directory(path.normalize('${Platform.environment['TEMP']}'
-            '/${DefaultArgs.storagePathSubDirectory}'
-            '/${params.clientAtSign}'
-            '/storage'
-            '/${DateTime.now().millisecondsSinceEpoch}'));
+        storageDir = Directory(standardAtClientStoragePath(
+          homeDirectory: Platform.environment['TEMP']!,
+          atSign: params.clientAtSign,
+          progName: '.sshnp',
+          uniqueID: '${DateTime.now().millisecondsSinceEpoch}',
+        ));
       } else {
-        storageDir = Directory(path.normalize('$homeDirectory'
-            '/${DefaultArgs.storagePathSubDirectory}'
-            '/${params.clientAtSign}'
-            '/storage'
-            '/${DateTime.now().millisecondsSinceEpoch}'));
+        storageDir = Directory(standardAtClientStoragePath(
+          homeDirectory: homeDirectory,
+          atSign: params.clientAtSign,
+          progName: '.sshnp',
+          uniqueID: '${DateTime.now().millisecondsSinceEpoch}',
+        ));
       }
       storageDir!.createSync(recursive: true);
       final sigintListener = ProcessSignal.sigint.watch().listen((signal) {
@@ -146,12 +147,12 @@ void main(List<String> args) async {
       final sshnp = await createSshnp(
         params,
         atClientGenerator: (SshnpParams params) => createAtClientCli(
-          homeDirectory: homeDirectory,
           atsign: params.clientAtSign,
           atKeysFilePath: params.atKeysFilePath ??
               getDefaultAtKeysFilePath(homeDirectory, params.clientAtSign),
           rootDomain: params.rootDomain,
           storagePath: storageDir!.path,
+          namespace: DefaultArgs.namespace,
           atServiceFactory: ServiceFactoryWithNoOpSyncService(),
         ),
         sshClient:
@@ -165,9 +166,10 @@ void main(List<String> args) async {
 
       // A listen progress listener for the CLI
       // Will only log if verbose is false, since if verbose is true
-      // there will already be a boatload of log messages
+      // there will already be a boatload of log messages.
+      // However, will NOT log if the quiet flag has been set.
       void logProgress(String s) {
-        if (!(params?.verbose ?? true)) {
+        if (params?.verbose == false && argResults[quietFlag] == false) {
           stderr.writeln('${DateTime.now()} : $s');
         }
       }

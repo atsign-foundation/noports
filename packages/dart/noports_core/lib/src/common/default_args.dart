@@ -4,10 +4,12 @@ import 'package:noports_core/srv.dart';
 
 class DefaultArgs {
   static const String namespace = 'sshnp';
+  @Deprecated("No longer used")
   static const String storagePathSubDirectory = '.sshnp';
   static const SupportedSshAlgorithm sshAlgorithm =
       SupportedSshAlgorithm.ed25519;
   static const bool verbose = false;
+  static const bool quiet = false;
   static const String rootDomain = 'root.atsign.org';
   static const SrvGenerator srvGenerator = Srv.exec;
   static const int remoteSshdPort = 22;
