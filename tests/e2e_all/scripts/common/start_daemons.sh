@@ -44,6 +44,7 @@ for typeAndVersion in $daemonVersions; do
   cBinary="$pathToBinaries/sshnpd"
   fRoot="--root-domain $atDirectoryHost"
   fAtSigns="-m $clientAtSign -a $daemonAtSign"
+  extraFlags=""
   if [[ $(versionIsAtLeast "$typeAndVersion" "d:5.3.0") == "true" ]]; then
     apkamApp=$(getApkamAppName)
     apkamDev=$(getApkamDeviceName "daemon" "$commitId")
