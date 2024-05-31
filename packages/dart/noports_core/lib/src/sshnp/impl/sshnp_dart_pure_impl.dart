@@ -97,21 +97,12 @@ class SshnpDartPureImpl extends SshnpCore
     } else {
       sendProgress('Received response from the device daemon');
     }
-
-    if (sshnpdChannel.ephemeralPrivateKey == null) {
+    if (sshnpdChannel.ephemeralPrivateKey == null &&
+        !params.encryptRvdTraffic) {
       throw SshnpError(
         'Expected an ephemeral private key from device daemon, but it was not set',
       );
     }
-
-    /// Load the ephemeral private key into a key pair
-    AtSshKeyPair ephemeralKeyPair = AtSshKeyPair.fromPem(
-      sshnpdChannel.ephemeralPrivateKey!,
-      identifier: 'ephemeral_$sessionId',
-    );
-
-    /// Add the key pair to the key utility
-    await keyUtil.addKeyPair(keyPair: ephemeralKeyPair);
 
     /// Start srv
     sendProgress('Creating connection to socket rendezvous');
@@ -125,6 +116,15 @@ class SshnpDartPureImpl extends SshnpCore
     // If we're not encrypting traffic on the sockets, then we create an extra
     // ssh session in order to encrypt the user's "real" ssh session.
     if (params.encryptRvdTraffic == false) {
+      /// Load the ephemeral private key into a key pair
+      AtSshKeyPair ephemeralKeyPair = AtSshKeyPair.fromPem(
+        sshnpdChannel.ephemeralPrivateKey!,
+        identifier: 'ephemeral_$sessionId',
+      );
+
+      /// Add the key pair to the key utility
+      await keyUtil.addKeyPair(keyPair: ephemeralKeyPair);
+
       try {
         /// Start the initial tunnel
         sendProgress('Starting tunnel session');

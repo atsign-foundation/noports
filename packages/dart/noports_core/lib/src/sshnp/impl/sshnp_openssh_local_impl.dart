@@ -89,7 +89,8 @@ class SshnpOpensshLocalImpl extends SshnpCore
       sendProgress('Received response from the device daemon');
     }
 
-    if (sshnpdChannel.ephemeralPrivateKey == null) {
+    if (sshnpdChannel.ephemeralPrivateKey == null &&
+        !params.encryptRvdTraffic) {
       throw SshnpError(
         'Expected an ephemeral private key from sshnpd, but it was not set',
       );
@@ -107,7 +108,6 @@ class SshnpOpensshLocalImpl extends SshnpCore
     } else {
       localRvPort = localPort;
     }
-
 
     /// Start srv
     sendProgress('Creating connection to socket rendezvous');
