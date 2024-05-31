@@ -70,7 +70,7 @@ class StubbedSshnp extends SshnpCore
   final SrvdChannel _srvdChannel;
 
   @override
-  Future<Process?> startUserSession({required Process? tunnelSession}) {
+  Future<Process?> startUserSession() {
     throw UnimplementedError();
   }
 

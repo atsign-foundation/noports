@@ -47,6 +47,7 @@ class SshnpDartPureImpl extends SshnpCore
   }
 
   SSHClient? tunnelSshClient;
+  SSHSocket? _sshSocketForUserSession;
 
   @override
   Future<void> dispose() async {
@@ -114,27 +115,33 @@ class SshnpDartPureImpl extends SshnpCore
 
     /// Start srv
     sendProgress('Creating connection to socket rendezvous');
-    SSHSocket? sshSocket = await srvdChannel.runSrv(
+    SSHSocket? temp = await srvdChannel.runSrv(
       sessionAESKeyString: sshnpdChannel.sessionAESKeyString,
       sessionIVString: sshnpdChannel.sessionIVString,
       multi: false,
       detached: false,
     );
 
-    try {
-      /// Start the initial tunnel
-      sendProgress('Starting tunnel session');
-      tunnelSshClient = await startInitialTunnelSession(
-        ephemeralKeyPairIdentifier: ephemeralKeyPair.identifier,
-        sshSocket: sshSocket,
-      );
-    } finally {
-      /// Remove the key pair from the key utility
+    // If we're not encrypting traffic on the sockets, then we create an extra
+    // ssh session in order to encrypt the user's "real" ssh session.
+    if (params.encryptRvdTraffic == false) {
       try {
-        await keyUtil.deleteKeyPair(identifier: ephemeralKeyPair.identifier);
-      } catch (e) {
-        logger.shout('Failed to delete ephemeral keyPair: $e');
+        /// Start the initial tunnel
+        sendProgress('Starting tunnel session');
+        tunnelSshClient = await startInitialTunnelSession(
+          ephemeralKeyPairIdentifier: ephemeralKeyPair.identifier,
+          sshSocket: temp,
+        );
+      } finally {
+        /// Remove the key pair from the key utility
+        try {
+          await keyUtil.deleteKeyPair(identifier: ephemeralKeyPair.identifier);
+        } catch (e) {
+          logger.shout('Failed to delete ephemeral keyPair: $e');
+        }
       }
+    } else {
+      _sshSocketForUserSession = temp;
     }
 
     /// Ensure that we clean up after ourselves
@@ -157,14 +164,9 @@ class SshnpDartPureImpl extends SshnpCore
 
   @override
   Future<SshnpRemoteProcess> runShell() async {
-    if (tunnelSshClient == null) {
-      throw StateError(
-          'Cannot execute runShell, tunnel has not yet been created');
-    }
-
     sendProgress('Starting user session');
     SSHClient userSession =
-        await startUserSession(tunnelSession: tunnelSshClient!);
+        await startUserSession(sshSocket: _sshSocketForUserSession);
 
     sendProgress('Starting remote shell');
     SSHSession shell = await userSession.shell();
