@@ -203,6 +203,8 @@ logInfo "Calling start_daemons.sh"
 retCode=$?
 if test "$retCode" != 0; then
   logError "Failed to start daemons; will not run tests"
+  logInfo "Calling stop_daemons.sh"
+  "$testScriptsDir/common/stop_daemons.sh"
   exit $retCode
 else
   logInfo "Calling common/run_tests.sh"
