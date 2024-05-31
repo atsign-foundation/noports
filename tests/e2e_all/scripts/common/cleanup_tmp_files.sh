@@ -25,6 +25,6 @@ safeRemoveDir() {
 }
 echo
 localLogInfo ""
-localLogInfo "Cleaning up"
+localLogInfo "NOT Cleaning up output files for this run"
 
-safeRemoveDir "$(getOutputDir)"
+# safeRemoveDir "$(getOutputDir)"
