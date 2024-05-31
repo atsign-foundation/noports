@@ -47,8 +47,8 @@ atDirectoryHost=root.atsign.org
 atDirectoryPort=64
 testsToRun="all"
 
-# defaultDaemonVersions="c:current"
-defaultDaemonVersions="d:4.0.5 d:5.2.0 d:current c:current"
+defaultDaemonVersions="c:current"
+# defaultDaemonVersions="d:4.0.5 d:5.2.0 d:current c:current"
 defaultClientVersions="d:4.0.5 d:5.2.0 d:current"
 
 daemonVersions=$defaultDaemonVersions
