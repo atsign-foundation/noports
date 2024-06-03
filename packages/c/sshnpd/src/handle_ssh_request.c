@@ -30,6 +30,7 @@ void handle_ssh_request(atclient *atclient, pthread_mutex_t *atclient_lock, sshn
     atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to allocate memory to decrypt the envelope\n");
     return;
   }
+
   memcpy(decrypted_json, message->notification.decryptedvalue, message->notification.decryptedvaluelen);
   *(decrypted_json + message->notification.decryptedvaluelen) = '\0';
 

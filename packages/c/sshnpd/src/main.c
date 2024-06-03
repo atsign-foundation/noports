@@ -356,8 +356,7 @@ void main_loop(atclient *monitor_ctx, atclient *atclient, sshnpd_params *params,
         atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_DEBUG, "Notification value received: %s\n",
                      message->notification.decryptedvalue);
         if (!has_key || strcmp(message->notification.id, "-1") == 0) {
-          atclient_monitor_message_free(message);
-          continue;
+          break;
         }
 
         char *key = message->notification.key;
@@ -368,8 +367,7 @@ void main_loop(atclient *monitor_ctx, atclient *atclient, sshnpd_params *params,
         char *tailstart = strstr(key, tail);
         if (tailstart == NULL) {
           atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Skipping message: couldn't find the tail\n");
-          atclient_monitor_message_free(message);
-          continue;
+          break;
         }
         *tailstart = '\0'; // reterminate the string at the start of the trail
 
@@ -380,14 +378,12 @@ void main_loop(atclient *monitor_ctx, atclient *atclient, sshnpd_params *params,
         if (strlen(key) < head_len) {
           atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR,
                        "Skipping message: key length is shorter than the expected head\n");
-          atclient_monitor_message_free(message);
-          continue;
+          break;
         }
         int is_equal = strncmp(key, head, head_len);
         if (is_equal != 0) {
           atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Skipping message: couldn't find the head\n");
-          atclient_monitor_message_free(message);
-          continue;
+          break;
         }
 
         // Now that we've confirmed it to be at the front, just do a pointer shift
@@ -402,8 +398,7 @@ void main_loop(atclient *monitor_ctx, atclient *atclient, sshnpd_params *params,
             break;
           }
         }
-
-        // TODO: multithread these handlers
+        // TODO: maybe multithread these handlers
         switch (notification_key) {
         case NK_SSHPUBLICKEY:
           atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_DEBUG, "Executing handle_sshpublickey\n");
@@ -430,14 +425,14 @@ void main_loop(atclient *monitor_ctx, atclient *atclient, sshnpd_params *params,
                      message->notification.id);
       }
       atclient_monitor_message_free(message);
-      continue;
+      break;
     }
     case ATCLIENT_MONITOR_MESSAGE_TYPE_DATA_RESPONSE:
     case ATCLIENT_MONITOR_MESSAGE_TYPE_NONE:
     case ATCLIENT_MONITOR_MESSAGE_TYPE_ERROR_RESPONSE:
       printf("message type-> %d\n", message->type);
-      atclient_monitor_message_free(message);
-      continue;
+      break;
     }
+    atclient_monitor_message_free(message);
   }
 }

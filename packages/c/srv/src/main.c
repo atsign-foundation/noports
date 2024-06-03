@@ -18,7 +18,7 @@ int main(int argc, char **argv) {
     return 1;
   }
 
-  atlogger_set_logging_level(DEBUG);
+  atlogger_set_logging_level(INFO);
   atlogger_log(TAG, INFO, "running srv\n");
 
   // 3. Call the run function

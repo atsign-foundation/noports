@@ -3,7 +3,6 @@
 #include "srv/params.h"
 #include <atlogger/atlogger.h>
 #include <mbedtls/aes.h>
-#include <stdlib.h>
 
 // LOGGING
 #define ERROR ATLOGGER_LOGGING_LEVEL_ERROR

@@ -27,8 +27,6 @@ void *heartbeat(void *void_heartbeat_params) {
 void *refresh_device_entry(void *void_refresh_device_entry_params) {
   struct refresh_device_entry_params *params = void_refresh_device_entry_params;
 
-  // TODO: also send the USERNAME key
-
   // Buffer for the atkeys
   size_t num_managers = params->params->manager_list_len;
   size_t num_username_keys = params->params->hide ? 0 : num_managers;

@@ -3,8 +3,13 @@
 # shellcheck disable=SC2034
 scriptName=$(basename -- "$0")
 
-if test -z "$testScriptsDir" ; then
+if test -z "$testScriptsDir"; then
   echo -e "    ${RED}check_env: testScriptsDir is not set${NC}" && exit 1
+fi
+
+if [[ ${daemonVersion:0:1} == "c" ]]; then
+  logInfoAndReport "    N/A  because c daemon isn't compatible with v4 clients"
+  exit 50
 fi
 
 # Execute ssh-client 'openssh', v4 daemon features, and print the ssh command

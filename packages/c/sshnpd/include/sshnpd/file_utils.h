@@ -4,9 +4,6 @@
 #include <pthread.h>
 #include <stdio.h>
 
-// only allocates a buffer if it returns 0, otherwise the buffer is cleared automatically
-char *read_file_contents(char *filename);
-
 enum supported_key_prefix {
   SKP_NONE,
   SKP_ESN, // ecdsa-sha2-nistp
@@ -25,9 +22,4 @@ typedef struct {
 } authkeys_params;
 
 int authorize_ssh_public_key(authkeys_params *params);
-int deauthorize_ssh_public_key(authkeys_params *params);
-
-#define DEAUTHORIZE_SSH_PUBLIC_KEY_DELAY 15
-void deauthorize_ssh_public_key_job(void *authkeys_params);
-
 #endif
