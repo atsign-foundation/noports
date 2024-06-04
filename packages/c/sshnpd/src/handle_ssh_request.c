@@ -21,6 +21,8 @@
 
 #define LOGGER_TAG "SSH_REQUEST"
 
+#define BYTES(x) (sizeof(unsigned char) * x)
+
 void handle_ssh_request(atclient *atclient, pthread_mutex_t *atclient_lock, sshnpd_params *params,
                         atclient_monitor_message *message, char *home_dir, FILE *authkeys_file, char *authkeys_filename,
                         atchops_rsakey_privatekey signing_key) {
@@ -112,6 +114,13 @@ void handle_ssh_request(atclient *atclient, pthread_mutex_t *atclient_lock, sshn
   bool authenticate_to_rvd = cJSON_IsTrue(auth_to_rvd);
   bool encrypt_rvd_traffic = cJSON_IsTrue(encrypt_traffic);
 
+  if (!encrypt_rvd_traffic) {
+    atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR,
+                 "Encrypt rvd traffic flag is false, this feature must be enabled\n");
+    free(envelope);
+    return;
+  }
+
   char *rvd_auth_string;
   if (authenticate_to_rvd) {
     has_valid_values = cJSON_IsString(client_nonce) && cJSON_IsString(rvd_nonce);
@@ -129,12 +138,12 @@ void handle_ssh_request(atclient *atclient, pthread_mutex_t *atclient_lock, sshn
     cJSON_AddItemReferenceToObject(rvd_auth_payload, "rvdNonce", rvd_nonce);
 
     cJSON *res_envelope = cJSON_CreateObject();
-    cJSON_AddItemToObject(res_envelope, "payload", rvd_auth_payload);
+    cJSON_AddItemReferenceToObject(res_envelope, "payload", rvd_auth_payload);
 
     char *signing_input = cJSON_PrintUnformatted(rvd_auth_payload);
 
     unsigned char signature[256];
-    memset(signature, 0, sizeof(unsigned char) * 256);
+    memset(signature, 0, BYTES(256));
     res = atchops_rsa_sign(signing_key, ATCHOPS_MD_SHA256, (unsigned char *)signing_input,
                            strlen((char *)signing_input), signature);
     if (res != 0) {
@@ -146,7 +155,7 @@ void handle_ssh_request(atclient *atclient, pthread_mutex_t *atclient_lock, sshn
     }
 
     unsigned char base64signature[384];
-    memset(base64signature, 0, sizeof(unsigned char) * 384);
+    memset(base64signature, 0, BYTES(384));
 
     size_t sig_len;
     res = atchops_base64_encode(signature, 256, base64signature, 384, &sig_len);
@@ -166,8 +175,9 @@ void handle_ssh_request(atclient *atclient, pthread_mutex_t *atclient_lock, sshn
     cJSON_Delete(res_envelope);
   }
 
-  unsigned char session_aes_key[48], *session_aes_key_encrypted, *session_aes_key_base64;
+  unsigned char session_aes_key[49], *session_aes_key_encrypted, *session_aes_key_base64;
   unsigned char session_iv[25], *session_iv_encrypted, *session_iv_base64;
+  bool free_session_base64 = false;
   size_t session_aes_key_len, session_iv_len, session_aes_key_encrypted_len, session_iv_encrypted_len;
   if (!encrypt_rvd_traffic) {
     atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "encryptRvdTraffic=false is not supported by this daemon\n");
@@ -190,8 +200,8 @@ void handle_ssh_request(atclient *atclient, pthread_mutex_t *atclient_lock, sshn
     return;
   }
 
-  memset(session_aes_key, 0, sizeof(unsigned char) * 48);
-  res = atchops_aes_generate_keybase64(session_aes_key, 48, &session_aes_key_len, ATCHOPS_AES_256);
+  memset(session_aes_key, 0, BYTES(49));
+  res = atchops_aes_generate_keybase64(session_aes_key, 49, &session_aes_key_len, ATCHOPS_AES_256);
   if (res != 0) {
     atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to generate session aes key\n");
     if (authenticate_to_rvd) {
@@ -201,7 +211,7 @@ void handle_ssh_request(atclient *atclient, pthread_mutex_t *atclient_lock, sshn
     return;
   }
 
-  memset(session_iv, 0, sizeof(unsigned char) * 25);
+  memset(session_iv, 0, BYTES(25));
 
   res = atchops_iv_generate_base64(session_iv, 25, &session_iv_len);
   if (res != 0) {
@@ -226,10 +236,21 @@ void handle_ssh_request(atclient *atclient, pthread_mutex_t *atclient_lock, sshn
       atchops_rsakey_publickey_init(&ac);
 
       res = atchops_rsakey_populate_publickey(&ac, pk, strlen(pk));
-      session_aes_key_encrypted = malloc(sizeof(unsigned char) * 32);
+      if (res != 0) {
+        atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to populate client ephemeral pk\n");
+        atchops_rsakey_publickey_free(&ac);
+        if (authenticate_to_rvd) {
+          free(rvd_auth_string);
+        }
+        free(envelope);
+        return;
+      }
+
+      session_aes_key_encrypted = malloc(BYTES(256));
       if (session_aes_key_encrypted == NULL) {
         atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR,
                      "Failed to allocate memory to encrypt the session aes key\n");
+        atchops_rsakey_publickey_free(&ac);
         if (authenticate_to_rvd) {
           free(rvd_auth_string);
         }
@@ -241,6 +262,7 @@ void handle_ssh_request(atclient *atclient, pthread_mutex_t *atclient_lock, sshn
                                 &session_aes_key_encrypted_len);
       if (res != 0) {
         atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to encrypt the session aes key\n");
+        atchops_rsakey_publickey_free(&ac);
         if (authenticate_to_rvd) {
           free(rvd_auth_string);
         }
@@ -251,10 +273,11 @@ void handle_ssh_request(atclient *atclient, pthread_mutex_t *atclient_lock, sshn
 
       session_aes_key_len = session_aes_key_encrypted_len * 3 / 2; // reusing this since we can
 
-      session_aes_key_base64 = malloc(sizeof(unsigned char) * session_aes_key_len);
+      session_aes_key_base64 = malloc(BYTES(session_aes_key_len));
       if (session_aes_key_base64 == NULL) {
         atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR,
                      "Failed to allocate memory to base64 encode the session aes key\n");
+        atchops_rsakey_publickey_free(&ac);
         if (authenticate_to_rvd) {
           free(rvd_auth_string);
         }
@@ -269,6 +292,7 @@ void handle_ssh_request(atclient *atclient, pthread_mutex_t *atclient_lock, sshn
                                   session_aes_key_len, &session_aes_key_base64_len);
       if (res != 0) {
         atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to base64 encode the session aes key\n");
+        atchops_rsakey_publickey_free(&ac);
         if (authenticate_to_rvd) {
           free(rvd_auth_string);
         }
@@ -281,9 +305,10 @@ void handle_ssh_request(atclient *atclient, pthread_mutex_t *atclient_lock, sshn
       // No longer need this
       free(session_aes_key_encrypted);
 
-      session_iv_encrypted = malloc(sizeof(unsigned char) * 32);
+      session_iv_encrypted = malloc(BYTES(256));
       if (session_iv_encrypted == NULL) {
         atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to allocate memory to encrypt the session iv\n");
+        atchops_rsakey_publickey_free(&ac);
         if (authenticate_to_rvd) {
           free(rvd_auth_string);
         }
@@ -293,6 +318,7 @@ void handle_ssh_request(atclient *atclient, pthread_mutex_t *atclient_lock, sshn
       }
 
       res = atchops_rsa_encrypt(ac, session_iv, session_iv_len, session_iv_encrypted, 256, &session_iv_encrypted_len);
+      atchops_rsakey_publickey_free(&ac);
       if (res != 0) {
         atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to encrypt the session iv\n");
         if (authenticate_to_rvd) {
@@ -305,7 +331,7 @@ void handle_ssh_request(atclient *atclient, pthread_mutex_t *atclient_lock, sshn
       }
 
       session_iv_len = session_iv_encrypted_len * 3 / 2; // reusing this since we can
-      session_iv_base64 = malloc(sizeof(unsigned char) * session_iv_len);
+      session_iv_base64 = malloc(BYTES(session_iv_len));
       if (session_iv_base64 == NULL) {
         atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR,
                      "Failed to allocate memory to base64 encode the session iv\n");
@@ -335,7 +361,8 @@ void handle_ssh_request(atclient *atclient, pthread_mutex_t *atclient_lock, sshn
       }
       // No longer need this
       free(session_iv_encrypted);
-    } // rsa2048
+      free_session_base64 = true;
+    } // rsa2048 - allocates (session_iv_base64, session_aes_key_base64)
   } // case 7
   } // switch
 
@@ -348,6 +375,12 @@ void handle_ssh_request(atclient *atclient, pthread_mutex_t *atclient_lock, sshn
     free(envelope);
     return;
   }
+
+  // At this point, allocated memory:
+  // - envelope (always)
+  // - rvd_auth_string (if authenticate_to_rvd == true)
+  // - session_aes_key_base64 (if free_session_base64 == true)
+  // - session_iv_base64 (if free_session_base64 == true)
 
   pid_t pid, pid2;
   int status, status2;
@@ -365,15 +398,9 @@ void handle_ssh_request(atclient *atclient, pthread_mutex_t *atclient_lock, sshn
     cJSON *final_res_payload = cJSON_CreateObject();
     cJSON_AddStringToObject(final_res_payload, "status", "connected");
     cJSON_AddItemReferenceToObject(final_res_payload, "sessionId", session_id);
-    // cJSON_AddStringToObject(final_res_payload, "ephemeralPrivateKey", priv_key);
     cJSON_AddNullToObject(final_res_payload, "ephemeralPrivateKey");
-    if (encrypt_rvd_traffic) {
-      cJSON_AddStringToObject(final_res_payload, "sessionAESKey", (char *)session_aes_key_base64);
-      cJSON_AddStringToObject(final_res_payload, "sessionIV", (char *)session_iv_base64);
-    } else {
-      cJSON_AddNullToObject(final_res_payload, "sessionAESKey");
-      cJSON_AddNullToObject(final_res_payload, "sessionIV");
-    }
+    cJSON_AddStringToObject(final_res_payload, "sessionAESKey", (char *)session_aes_key_base64);
+    cJSON_AddStringToObject(final_res_payload, "sessionIV", (char *)session_iv_base64);
 
     cJSON *final_res_envelope = cJSON_CreateObject();
     cJSON_AddItemToObject(final_res_envelope, "payload", final_res_payload);
@@ -381,7 +408,7 @@ void handle_ssh_request(atclient *atclient, pthread_mutex_t *atclient_lock, sshn
     unsigned char *signing_input = (unsigned char *)cJSON_PrintUnformatted(final_res_payload);
 
     unsigned char signature[256];
-    memset(signature, 0, sizeof(unsigned char) * 256);
+    memset(signature, 0, 256);
     res = atchops_rsa_sign(signing_key, ATCHOPS_MD_SHA256, signing_input, strlen((char *)signing_input), signature);
     if (res != 0) {
       atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to sign the final res payload\n");
@@ -409,6 +436,11 @@ void handle_ssh_request(atclient *atclient, pthread_mutex_t *atclient_lock, sshn
 
     size_t keynamelen = strlen(identifier) + strlen(params->device) + 2; // + 1 for '.' +1 for '\0'
     char *keyname = malloc(sizeof(char) * keynamelen);
+    if (keyname == NULL) {
+      atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to allocate memory for keyname");
+      goto clean_final_res_value;
+    }
+
     snprintf(keyname, keynamelen, "%s.%s", identifier, params->device);
     atclient_atkey_create_sharedkey(&final_res_atkey, keyname, keynamelen, params->atsign, strlen(params->atsign),
                                     requesting_atsign, strlen(requesting_atsign), SSHNP_NS, SSHNP_NS_LEN);
@@ -450,17 +482,17 @@ void handle_ssh_request(atclient *atclient, pthread_mutex_t *atclient_lock, sshn
     } while (ret != 0);
     atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_DEBUG, "Released the atclient lock\n");
 
-  clean_res: {
-    free(keyname);
+  clean_res: { free(keyname); }
+  clean_final_res_value: {
+    atclient_atkey_free(&final_res_atkey);
     free(final_res_value);
   }
   clean_json: {
     cJSON_Delete(final_res_envelope);
     free(signing_input);
   }
-  cancel_parent: {} // Don't need to do anything here, we just want a way to essentially exit out of the parent's post
-                    // fork success block
-    free(identifier);
+
+    // end of parent process
   } else {
     atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to fork the srv process: %s\n", strerror(errno));
   }
@@ -468,7 +500,7 @@ cancel:
   if (authenticate_to_rvd) {
     free(rvd_auth_string);
   }
-  if (encrypt_rvd_traffic) {
+  if (free_session_base64) {
     free(session_iv_base64);
     free(session_aes_key_base64);
   }
