@@ -33,7 +33,7 @@ if [[ $(versionIsLessThan "$clientVersion" "d:5.2.0") == "true" ]]; then
 fi
 
 if [[ "${daemonVersion:0:1}" == "c" ]]; then
-  logInfoAndReport "    N/A C daemon released after this flag was added (and doesn't support v4 feature set used in this test)"
+  logInfoAndReport "    N/A C daemon doesn't need to test a client side only feature
   exit 50
 fi
 

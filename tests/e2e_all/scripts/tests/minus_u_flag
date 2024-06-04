@@ -30,6 +30,12 @@ fi
 # logInfo "Client version : $c_type : $c_major.$c_minor.$c_patch"
 clientBinaryPath=$(getPathToBinariesForTypeAndVersion "$clientVersion")
 
+if [[ "${daemonVersion:0:1}" == "c" && $(versionIsLessThan "$clientVersion" "d:5.3.0") ]]; then
+  logInfoAndReport "    N/A C daemon is not compatible with thi client
+  exit 50
+fi
+
+
 #
 # v4 feature set, default client flags
 
@@ -37,7 +43,9 @@ clientBinaryPath=$(getPathToBinariesForTypeAndVersion "$clientVersion")
 #   ssh command rather than just forking to the ssh inline.
 # - sshnp since 5.x also requires '--no-ad' and '--no-et' flags,
 #   since those features are enabled by default from v5
-if [[ $(versionIsAtLeast "$clientVersion" "d:5.0.0") == "true" ]] ; then
+if [[ "${daemonVersion:0:1}" == "c" ]]; then
+  extraFlags="-x"
+elif [[ $(versionIsAtLeast "$clientVersion" "d:5.0.0") == "true" ]]; then
   extraFlags="-x --no-ad --no-et"
 fi
 
