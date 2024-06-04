@@ -1,11 +1,11 @@
 if(NOT atsdk_FOUND)
   message(STATUS "atsdk not found, fetching from GitHub..")
-  fetchcontent_declare(
+  FetchContent_Declare(
     atsdk
     GIT_REPOSITORY https://github.com/atsign-foundation/at_c.git
-    GIT_TAG e43ba4e9a3ce04ed02e3469f49656d4d887361f3
+    GIT_TAG 2e185d86476ecef0d736632ee096f50f4dcb0fe3
   )
-  fetchcontent_makeavailable(atsdk)
+  FetchContent_MakeAvailable(atsdk)
   install(TARGETS atclient atchops atlogger)
 else()
   message(STATUS "atsdk already installed...")
