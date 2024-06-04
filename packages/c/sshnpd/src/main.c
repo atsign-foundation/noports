@@ -288,6 +288,8 @@ cancel_refresh: {
   } else {
     atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_DEBUG, "Canceled device entry refresh thread\n");
   }
+  close(fds[0]);
+  close(fds[1]);
 }
 cancel_atclient: {
   if (free_ping_response) {
@@ -308,9 +310,7 @@ cancel_root: {
   atclient_connection_free(&root_conn);
 }
 exit: {
-  close(fds[0]);
-  close(fds[1]);
-
+  atchops_rsakey_privatekey_free(&signingkey);
   atclient_atkeys_free(&atkeys);
 
   if (params.free_permitopen) {
