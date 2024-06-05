@@ -90,16 +90,25 @@ class SshnpOpensshLocalImpl extends SshnpCore
       sendProgress('Received response from the device daemon');
     }
 
-    if (sshnpdChannel.ephemeralPrivateKey == null) {
+    if (sshnpdChannel.ephemeralPrivateKey == null &&
+        !params.encryptRvdTraffic) {
       throw SshnpError(
         'Expected an ephemeral private key from sshnpd, but it was not set',
       );
     }
 
-    /// Find a port to use
-    final server = await ServerSocket.bind(InternetAddress.anyIPv4, 0);
-    int localRvPort = server.port;
-    await server.close();
+    final int localRvPort;
+    // If we're not encrypting traffic on the sockets, then we create an extra
+    // ssh session in order to encrypt the user's "real" ssh session. And we
+    // need to grab an unused local port.
+    if (params.encryptRvdTraffic == false) {
+      /// Find a port to use for the tunnel ssh session
+      final server = await ServerSocket.bind(InternetAddress.anyIPv4, 0);
+      localRvPort = server.port;
+      await server.close();
+    } else {
+      localRvPort = localPort;
+    }
 
     /// Start srv
     sendProgress('Creating connection to socket rendezvous');
@@ -111,30 +120,35 @@ class SshnpOpensshLocalImpl extends SshnpCore
       detached: true,
     );
 
-    /// Load the ephemeral private key into a key pair
-    AtSshKeyPair ephemeralKeyPair = AtSshKeyPair.fromPem(
-      sshnpdChannel.ephemeralPrivateKey!,
-      identifier: 'ephemeral_$sessionId',
-      directory: keyUtil.sshnpHomeDirectory,
-    );
-
-    /// Add the key pair to the key utility
-    await keyUtil.addKeyPair(keyPair: ephemeralKeyPair);
-
     Process? bean;
-    try {
-      /// Start the initial tunnel
-      sendProgress('Starting tunnel session');
-      bean = await startInitialTunnelSession(
-        ephemeralKeyPairIdentifier: ephemeralKeyPair.identifier,
-        localRvPort: localRvPort,
+
+    // If we're not encrypting traffic on the sockets, then we create an extra
+    // ssh session in order to encrypt the user's "real" ssh session.
+    if (params.encryptRvdTraffic == false) {
+      /// Load the ephemeral private key into a key pair
+      AtSshKeyPair ephemeralKeyPair = AtSshKeyPair.fromPem(
+        sshnpdChannel.ephemeralPrivateKey!,
+        identifier: 'ephemeral_$sessionId',
+        directory: keyUtil.sshnpHomeDirectory,
       );
-    } finally {
-      /// Remove the key pair from the key utility.
+
+      /// Add the key pair to the key utility
+      await keyUtil.addKeyPair(keyPair: ephemeralKeyPair);
+
       try {
-        await keyUtil.deleteKeyPair(identifier: ephemeralKeyPair.identifier);
-      } catch (e) {
-        logger.shout('Failed to delete ephemeral keyPair: $e');
+        /// Start the initial tunnel
+        sendProgress('Starting tunnel session');
+        bean = await startInitialTunnelSession(
+          ephemeralKeyPairIdentifier: ephemeralKeyPair.identifier,
+          localRvPort: localRvPort,
+        );
+      } finally {
+        /// Remove the key pair from the key utility.
+        try {
+          await keyUtil.deleteKeyPair(identifier: ephemeralKeyPair.identifier);
+        } catch (e) {
+          logger.shout('Failed to delete ephemeral keyPair: $e');
+        }
       }
     }
 

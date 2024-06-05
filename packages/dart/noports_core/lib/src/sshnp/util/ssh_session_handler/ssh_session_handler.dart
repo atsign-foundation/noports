@@ -13,7 +13,5 @@ mixin SshSessionHandler<T> {
 
   @protected
   @visibleForTesting
-  Future<T> startUserSession({
-    required T tunnelSession,
-  });
+  Future<T> startUserSession();
 }
