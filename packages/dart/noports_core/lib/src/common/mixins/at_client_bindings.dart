@@ -11,9 +11,11 @@ mixin AtClientBindings {
     String value, {
     required bool checkForFinalDeliveryStatus,
     required bool waitForFinalDeliveryStatus,
+    required Duration ttln,
   }) async {
     await atClient.notificationService.notify(
-      NotificationParams.forUpdate(atKey, value: value),
+      NotificationParams.forUpdate(atKey,
+          value: value, notificationExpiry: ttln),
       checkForFinalDeliveryStatus: checkForFinalDeliveryStatus,
       waitForFinalDeliveryStatus: waitForFinalDeliveryStatus,
       onSuccess: (NotificationResult notification) {

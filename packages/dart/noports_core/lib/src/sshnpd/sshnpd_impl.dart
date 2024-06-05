@@ -378,6 +378,7 @@ class SshnpdImpl implements Sshnpd {
         value: jsonEncode(pingResponse),
         checkForFinalDeliveryStatus: false,
         waitForFinalDeliveryStatus: false,
+        ttln: Duration(minutes: 1),
       ),
     );
   }
@@ -458,6 +459,7 @@ class SshnpdImpl implements Sshnpd {
         sessionId: req.sessionId,
         checkForFinalDeliveryStatus: false,
         waitForFinalDeliveryStatus: false,
+        ttln: Duration(minutes: 1),
       );
 
       return;
@@ -476,6 +478,7 @@ class SshnpdImpl implements Sshnpd {
         sessionId: req.sessionId,
         checkForFinalDeliveryStatus: false,
         waitForFinalDeliveryStatus: false,
+        ttln: Duration(minutes: 1),
       );
 
       return;
@@ -571,6 +574,7 @@ class SshnpdImpl implements Sshnpd {
         checkForFinalDeliveryStatus: false,
         waitForFinalDeliveryStatus: false,
         sessionId: req.sessionId,
+        ttln: Duration(minutes: 1),
       );
     } catch (e) {
       logger.severe('startNpt failed with unexpected error : $e');
@@ -583,6 +587,7 @@ class SshnpdImpl implements Sshnpd {
         sessionId: req.sessionId,
         checkForFinalDeliveryStatus: false,
         waitForFinalDeliveryStatus: false,
+        ttln: Duration(minutes: 1),
       );
     }
   }
@@ -822,6 +827,7 @@ class SshnpdImpl implements Sshnpd {
         checkForFinalDeliveryStatus: false,
         waitForFinalDeliveryStatus: false,
         sessionId: sessionId,
+        ttln: Duration(minutes: 1),
       );
 
       /// - start a timer to remove the ephemeral key from `authorized_keys`
@@ -839,6 +845,7 @@ class SshnpdImpl implements Sshnpd {
         sessionId: sessionId,
         checkForFinalDeliveryStatus: false,
         waitForFinalDeliveryStatus: false,
+        ttln: Duration(minutes: 1),
       );
     }
   }
@@ -894,6 +901,7 @@ class SshnpdImpl implements Sshnpd {
           sessionId: sessionId,
           checkForFinalDeliveryStatus: false,
           waitForFinalDeliveryStatus: false,
+          ttln: Duration(minutes: 1),
         );
       } else {
         /// Notify sshnp that the connection has been made
@@ -904,6 +912,7 @@ class SshnpdImpl implements Sshnpd {
           sessionId: sessionId,
           checkForFinalDeliveryStatus: false,
           waitForFinalDeliveryStatus: false,
+          ttln: Duration(minutes: 1),
         );
       }
     } catch (e) {
@@ -916,6 +925,7 @@ class SshnpdImpl implements Sshnpd {
         sessionId: sessionId,
         checkForFinalDeliveryStatus: false,
         waitForFinalDeliveryStatus: false,
+        ttln: Duration(minutes: 1),
       );
     }
   }
@@ -1150,10 +1160,12 @@ class SshnpdImpl implements Sshnpd {
     required String value,
     required bool checkForFinalDeliveryStatus,
     required bool waitForFinalDeliveryStatus,
+    required Duration ttln,
     String sessionId = '',
   }) async {
     await atClient.notificationService.notify(
-      NotificationParams.forUpdate(atKey, value: value),
+      NotificationParams.forUpdate(atKey,
+          value: value, notificationExpiry: ttln),
       checkForFinalDeliveryStatus: checkForFinalDeliveryStatus,
       waitForFinalDeliveryStatus: waitForFinalDeliveryStatus,
       onSuccess: (notification) {
@@ -1192,7 +1204,12 @@ class SshnpdImpl implements Sshnpd {
         try {
           logger.info('Sharing username $username with $managerAtsign');
           await atClient.notificationService.notify(
-            NotificationParams.forUpdate(atKey, value: username),
+            NotificationParams.forUpdate(
+              atKey,
+              value: username,
+              // notification can expire rapidly, the info is being cached
+              notificationExpiry: Duration(minutes: 1),
+            ),
             waitForFinalDeliveryStatus: false,
             checkForFinalDeliveryStatus: false,
             onSuccess: (notification) {
