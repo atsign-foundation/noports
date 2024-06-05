@@ -183,7 +183,8 @@ class SrvdImpl implements Srvd {
 
     try {
       await atClient.notificationService.notify(
-          NotificationParams.forUpdate(atKey, value: data),
+          NotificationParams.forUpdate(atKey,
+              value: data, notificationExpiry: Duration(minutes: 1)),
           waitForFinalDeliveryStatus: false,
           checkForFinalDeliveryStatus: false);
     } catch (e) {

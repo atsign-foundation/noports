@@ -32,6 +32,7 @@ void main() {
           checkForFinalDeliveryStatus:
               any(named: 'checkForFinalDeliveryStatus'),
           waitForFinalDeliveryStatus: any(named: 'waitForFinalDeliveryStatus'),
+          ttln: any(named: 'ttln'),
         );
     subscribeInvocation() => subscribeStub(
           regex: any(named: 'regex'),
@@ -64,6 +65,7 @@ void main() {
       );
 
       registerFallbackValue(AtKey());
+      registerFallbackValue(Duration(minutes: 1));
       registerFallbackValue(AtNotification.empty());
     });
 
@@ -223,6 +225,7 @@ void main() {
                 any(named: 'checkForFinalDeliveryStatus'),
             waitForFinalDeliveryStatus:
                 any(named: 'waitForFinalDeliveryStatus'),
+            ttln: any(named: 'ttln'),
           ),
         ).thenAnswer((_) async {});
 
@@ -242,6 +245,7 @@ void main() {
                 any(named: 'checkForFinalDeliveryStatus'),
             waitForFinalDeliveryStatus:
                 any(named: 'waitForFinalDeliveryStatus'),
+            ttln: any(named: 'ttln'),
           ),
         ).called(1);
       }); // test sharePublicKeyIfRequired

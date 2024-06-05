@@ -30,6 +30,7 @@ class StubbedSrvdChannel<T> extends SrvdChannel<T> {
     String, {
     required bool checkForFinalDeliveryStatus,
     required bool waitForFinalDeliveryStatus,
+    required Duration ttln,
   })? _notify;
   final Stream<AtNotification> Function({String? regex, bool shouldDecrypt})?
       _subscribe;
@@ -44,6 +45,7 @@ class StubbedSrvdChannel<T> extends SrvdChannel<T> {
       String, {
       required bool checkForFinalDeliveryStatus,
       required bool waitForFinalDeliveryStatus,
+      required Duration ttln,
     })? notify,
     Stream<AtNotification> Function({String? regex, bool shouldDecrypt})?
         subscribe,
@@ -56,12 +58,14 @@ class StubbedSrvdChannel<T> extends SrvdChannel<T> {
     String value, {
     required bool checkForFinalDeliveryStatus,
     required bool waitForFinalDeliveryStatus,
+    required Duration ttln,
   }) async {
     return _notify?.call(
       atKey,
       value,
       checkForFinalDeliveryStatus: checkForFinalDeliveryStatus,
       waitForFinalDeliveryStatus: waitForFinalDeliveryStatus,
+      ttln: ttln,
     );
   }
 
