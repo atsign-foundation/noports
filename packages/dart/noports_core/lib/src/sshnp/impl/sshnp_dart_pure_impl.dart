@@ -86,6 +86,7 @@ class SshnpDartPureImpl extends SshnpCore
           ).toJson()),
       checkForFinalDeliveryStatus: false,
       waitForFinalDeliveryStatus: false,
+      ttln: Duration(minutes: 1),
     );
 
     /// Wait for a response from sshnpd

@@ -194,6 +194,7 @@ abstract class SrvdChannel<T> with AsyncInitialization, AtClientBindings {
       rvdRequestValue,
       checkForFinalDeliveryStatus: false,
       waitForFinalDeliveryStatus: false,
+      ttln: Duration(minutes: 1),
     );
 
     int counter = 1;
