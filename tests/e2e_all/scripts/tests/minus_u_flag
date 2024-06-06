@@ -9,14 +9,14 @@
 
 scriptName=$(basename -- "$0")
 
-if test -z "$testScriptsDir" ; then
+if test -z "$testScriptsDir"; then
   echo -e "    ${RED}check_env: testScriptsDir is not set${NC}" && exit 1
 fi
 
 source "$testScriptsDir/common/common_functions.include.sh"
 source "$testScriptsDir/common/check_env.include.sh" || exit $?
 
-if test $# != 2 ; then
+if test $# != 2; then
   logErrorAndExit "Must supply daemonVersion, clientVersion"
 fi
 
@@ -31,10 +31,9 @@ fi
 clientBinaryPath=$(getPathToBinariesForTypeAndVersion "$clientVersion")
 
 if [[ "${daemonVersion:0:1}" == "c" && $(versionIsLessThan "$clientVersion" "d:5.3.0") ]]; then
-  logInfoAndReport "    N/A C daemon is not compatible with thi client
+  logInfoAndReport "    N/A C daemon is not compatible with this client"
   exit 50
 fi
-
 
 #
 # v4 feature set, default client flags
@@ -59,15 +58,15 @@ fi
 # 1a. Run sshnp without the '-u <username>' option talking to a device daemon which
 #     does not have the -u flag enabled.
 # 1b. Verify it fails
-deviceName=$(getDeviceNameNoFlags "$commitId" "$daemonVersion" )
+deviceName=$(getDeviceNameNoFlags "$commitId" "$daemonVersion")
 
 # We will capture daemon log from now until end of test
 outputDir=$(getOutputDir)
 daemonLogFile="${outputDir}/daemons/${deviceName}.log"
-echo "" >> "$DAEMON_LOG_FRAGMENT_NAME"
-echo "First daemon (without flags) $deviceName" >> "$DAEMON_LOG_FRAGMENT_NAME"
-echo "" >> "$DAEMON_LOG_FRAGMENT_NAME"
-tail -f "$daemonLogFile" >> "$DAEMON_LOG_FRAGMENT_NAME" &
+echo "" >>"$DAEMON_LOG_FRAGMENT_NAME"
+echo "First daemon (without flags) $deviceName" >>"$DAEMON_LOG_FRAGMENT_NAME"
+echo "" >>"$DAEMON_LOG_FRAGMENT_NAME"
+tail -f "$daemonLogFile" >>"$DAEMON_LOG_FRAGMENT_NAME" &
 tailPid=$! # We'll kill this later
 
 l1="$clientBinaryPath/sshnp -f $clientAtSign -d $deviceName -i $identityFilename"
@@ -80,23 +79,23 @@ echo "$(iso8601Date) | Executing $sshnpCommand"
 sshCommand=$($sshnpCommand)
 sshnpExitStatus=$?
 
-if (( sshnpExitStatus == 0 )); then
-    # It should have failed
-    logError "$scriptName: sshnp to ${deviceName} without '-u <username>' did not fail as expected"
-    kill $tailPid
-    exit 1
+if ((sshnpExitStatus == 0)); then
+  # It should have failed
+  logError "$scriptName: sshnp to ${deviceName} without '-u <username>' did not fail as expected"
+  kill $tailPid
+  exit 1
 fi
 
 # 2a. Run sshnp without the '-u <username>' option talking to a device daemon which
 #     DOES have the -u flag enabled.
 # 2b. Verify it succeeds, and that the subsequent ssh succeeds
-deviceName=$(getDeviceNameWithFlags "$commitId" "$daemonVersion" )
+deviceName=$(getDeviceNameWithFlags "$commitId" "$daemonVersion")
 kill $tailPid
 daemonLogFile="${outputDir}/daemons/${deviceName}.log"
-echo "" >> "$DAEMON_LOG_FRAGMENT_NAME"
-echo "Second daemon (with flags) : $deviceName" >> "$DAEMON_LOG_FRAGMENT_NAME"
-echo "" >> "$DAEMON_LOG_FRAGMENT_NAME"
-tail -f "$daemonLogFile" >> "$DAEMON_LOG_FRAGMENT_NAME" &
+echo "" >>"$DAEMON_LOG_FRAGMENT_NAME"
+echo "Second daemon (with flags) : $deviceName" >>"$DAEMON_LOG_FRAGMENT_NAME"
+echo "" >>"$DAEMON_LOG_FRAGMENT_NAME"
+tail -f "$daemonLogFile" >>"$DAEMON_LOG_FRAGMENT_NAME" &
 tailPid=$! # We'll kill this later
 
 l1="$clientBinaryPath/sshnp -f $clientAtSign -d $deviceName -i $identityFilename"
@@ -108,7 +107,7 @@ sshnpCommand="$l1 $l2 $l3 $l4 $l5 -s"
 echo "$(iso8601Date) | Executing $sshnpCommand"
 sshCommand=$($sshnpCommand)
 sshnpExitStatus=$?
-if (( sshnpExitStatus != 0 )); then
+if ((sshnpExitStatus != 0)); then
   logError "$scriptName: sshnp to ${deviceName} without '-u <username>' should have succeeded but did not"
   kill $tailPid
   exit $sshnpExitStatus
@@ -119,7 +118,7 @@ echo "$(iso8601Date) | Executing $sshCommand"
 # shellcheck disable=SC2091
 $(getTestSshCommand "$sshCommand")
 sshExitStatus=$?
-if (( sshExitStatus != 0 )); then
+if ((sshExitStatus != 0)); then
   logError "$scriptName: ssh to ${deviceName} without '-u <username>' should have succeeded but did not"
 fi
 kill $tailPid
