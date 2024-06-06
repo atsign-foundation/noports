@@ -38,6 +38,8 @@ enroll() {
   apkamDev=$(getApkamDeviceName "$which" "$commitId")
   keysFileName=$(getApkamKeysFile "$atSign" "$apkamApp" "$apkamDev")
 
+  rm -f "$keysFileName"
+
   logInfo "Denying any pending enrollment requests for $atSign with apkamAppName $apkamApp and apkamDeviceName $apkamDev"
   $authBinary deny -r "$atDirectoryHost" -a "$atSign" --arx "$apkamApp" --drx "$apkamDev" || return $?
 

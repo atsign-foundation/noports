@@ -139,6 +139,7 @@ abstract class SshnpdChannel with AsyncInitialization, AtClientBindings {
       publicKeyContents,
       checkForFinalDeliveryStatus: false,
       waitForFinalDeliveryStatus: false,
+      ttln: Duration(minutes: 1),
     ).onError((e, st) {
       throw SshnpError('Error sending ssh public key to sshnpd: $e');
     }));
@@ -245,6 +246,7 @@ abstract class SshnpdChannel with AsyncInitialization, AtClientBindings {
       'ping',
       checkForFinalDeliveryStatus: false,
       waitForFinalDeliveryStatus: false,
+      ttln: Duration(minutes: 1),
     );
 
     return completer.future;
@@ -354,6 +356,7 @@ abstract class SshnpdChannel with AsyncInitialization, AtClientBindings {
         'ping',
         checkForFinalDeliveryStatus: false,
         waitForFinalDeliveryStatus: false,
+        ttln: Duration(minutes: 1),
       ));
     }
 
