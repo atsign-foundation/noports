@@ -10,6 +10,7 @@
 #include <atchops/rsakey.h>
 #include <atchops/sha.h>
 #include <atclient/atclient.h>
+#include <atclient/atclient_utils.h>
 #include <atclient/atkey.h>
 #include <atclient/atkeys.h>
 #include <atclient/atkeysfile.h>
@@ -130,18 +131,19 @@ int main(int argc, char **argv) {
   memcpy(&signingkey, &atkeys.encryptprivatekey, sizeof(atchops_rsakey_privatekey));
 
   // 6. Initialize the root connection
-  atclient_connection root_conn;
-  atclient_connection_init(&root_conn, ATCLIENT_CONNECTION_TYPE_DIRECTORY);
-  res = atclient_connection_connect(&root_conn, params.root_domain, ROOT_PORT);
+  char *atserver_host;
+  int atserver_port;
+  res = atclient_utils_find_atserver_address(params.root_domain, ROOT_PORT, params.atsign, &atserver_host,
+                                             &atserver_port);
   if (res != 0) {
     exit_res = res;
-    goto cancel_root;
+    goto exit;
   }
 
   // 7.a Initialize the monitor atclient
   atclient monitor_ctx;
   atclient_init(&monitor_ctx);
-  res = atclient_pkam_authenticate(&monitor_ctx, &root_conn, &atkeys, params.atsign);
+  res = atclient_pkam_authenticate(&monitor_ctx, atserver_host, atserver_port, &atkeys, params.atsign);
   if (res != 0) {
     exit_res = res;
     goto cancel_monitor_ctx;
@@ -151,7 +153,7 @@ int main(int argc, char **argv) {
   atclient atclient;
   atclient_init(&atclient);
   bool free_ping_response = false;
-  res = atclient_pkam_authenticate(&atclient, &root_conn, &atkeys, params.atsign);
+  res = atclient_pkam_authenticate(&atclient, atserver_host, atserver_port, &atkeys, params.atsign);
   if (res != 0) {
     exit_res = res;
     goto cancel_atclient;
@@ -295,19 +297,13 @@ cancel_atclient: {
   if (free_ping_response) {
     free(ping_response);
   }
-  atclient_connection_disconnect(&atclient.secondary_connection);
+  atclient_connection_disconnect(&atclient.atserver_connection);
   atclient_free(&atclient);
 }
 cancel_monitor_ctx: {
-  atclient_connection_disconnect(&monitor_ctx.secondary_connection);
+  atclient_connection_disconnect(&monitor_ctx.atserver_connection);
   atclient_free(&monitor_ctx);
-}
-cancel_root: {
-  res = atclient_connection_disconnect(&root_conn);
-  if (res != 0) {
-    atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_WARN, "Failed to disconnect from root server\n");
-  }
-  atclient_connection_free(&root_conn);
+  free(atserver_host);
 }
 exit: {
   atchops_rsakey_privatekey_free(&signingkey);
