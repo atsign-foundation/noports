@@ -45,17 +45,32 @@ static struct {
 };
 
 static unsigned long min(unsigned long a, unsigned long b) { return a < b ? a : b; }
+
 static pthread_mutex_t atclient_lock = PTHREAD_MUTEX_INITIALIZER;
 static int lock_atclient(void);
 static int unlock_atclient(void);
 
-static void main_loop(atclient *monitor_ctx, atclient *atclient, sshnpd_params *params, FILE *authkeys_file,
-                      char *authkeys_filename, char *ping_response, char *home_dir,
-                      atchops_rsakey_privatekey signingkey);
+static int reconnect_atclient(const unsigned char *src, const size_t srclen, unsigned char *recv, const size_t recvsize,
+                              size_t *recvlen);
+
+// information to be shared between functions in this file
+static atclient worker;
+static char *atserver_host;
+static int atserver_port;
+static atclient_atkeys atkeys;
+static char *atsign;
+static sshnpd_params params;
+static atclient monitor_ctx;
+static char *regex;
+static FILE *authkeys_file;
+static char *authkeys_filename;
+static char *ping_response;
+static char *home_dir;
+static atchops_rsakey_privatekey signingkey;
+
+static void main_loop();
 
 int main(int argc, char **argv) {
-  sshnpd_params params;
-
   // 1.  Load default values
   apply_default_values_to_sshnpd_params(&params);
 
@@ -73,7 +88,7 @@ int main(int argc, char **argv) {
   }
 
   // 4. Validate the environment
-  const char *home_dir = getenv(HOMEVAR);
+  home_dir = getenv(HOMEVAR);
   if (home_dir == NULL) {
     atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR,
                  "Unable to determine your home directory: please "
@@ -116,7 +131,6 @@ int main(int argc, char **argv) {
   }
 
   // 5.2 Read the atKeysFile into the atKeys struct
-  atclient_atkeys atkeys;
   atclient_atkeys_init(&atkeys);
 
   res = atclient_atkeys_populate_from_atkeysfile(&atkeys, atkeysfile);
@@ -128,13 +142,10 @@ int main(int argc, char **argv) {
   }
 
   // 5.3 create a key copy for signing
-  atchops_rsakey_privatekey signingkey;
   atchops_rsakey_privatekey_init(&signingkey);
   memcpy(&signingkey, &atkeys.encryptprivatekey, sizeof(atchops_rsakey_privatekey));
 
-  // 6. Initialize the root connection
-  char *atserver_host;
-  int atserver_port;
+  // 6. Get atServer address
   res = atclient_utils_find_atserver_address(params.root_domain, ROOT_PORT, params.atsign, &atserver_host,
                                              &atserver_port);
   if (res != 0) {
@@ -143,7 +154,6 @@ int main(int argc, char **argv) {
   }
 
   // 7.a Initialize the monitor atclient
-  atclient monitor_ctx;
   atclient_init(&monitor_ctx);
   res = atclient_pkam_authenticate(&monitor_ctx, atserver_host, atserver_port, &atkeys, params.atsign);
   if (res != 0) {
@@ -152,14 +162,17 @@ int main(int argc, char **argv) {
   }
 
   // 7.b Initialize the worker atclient
-  atclient atclient;
-  atclient_init(&atclient);
+  atclient_init(&worker);
   bool free_ping_response = false;
-  res = atclient_pkam_authenticate(&atclient, atserver_host, atserver_port, &atkeys, params.atsign);
+  res = atclient_pkam_authenticate(&worker, atserver_host, atserver_port, &atkeys, params.atsign);
   if (res != 0) {
     exit_res = res;
     goto cancel_atclient;
   }
+
+  // 7.c setup hooks to restart the worker atclient
+  atclient_connection_hooks_init(&worker.atserver_connection);
+  atclient_connection_hooks_set(&worker.atserver_connection, ACHT_PRE_SEND, reconnect_atclient);
 
   // 8. cache the manager public keys
   atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_DEBUG, "Manager List: %lu - ", params.manager_list_len);
@@ -197,7 +210,7 @@ int main(int argc, char **argv) {
   cJSON_AddItemToObject(ping_response_json, "allowedServices", allowed_services);
 
   //
-  char *ping_response = cJSON_PrintUnformatted(ping_response_json);
+  ping_response = cJSON_PrintUnformatted(ping_response_json);
   cJSON_Delete(ping_response_json);
 
   if (ping_response == NULL) {
@@ -209,8 +222,8 @@ int main(int argc, char **argv) {
 
   // 9. Start the device refresh loop - if hide is off
   pthread_t refresh_tid;
-  struct refresh_device_entry_params refresh_params = {&atclient, &atclient_lock, &params, ping_response,
-                                                       username,  fds[0],         fds[1]};
+  struct refresh_device_entry_params refresh_params = {&worker,  &atclient_lock, &params, ping_response,
+                                                       username, fds[0],         fds[1]};
   res = pthread_create(&refresh_tid, NULL, refresh_device_entry, (void *)&refresh_params);
   if (res != 0) {
     atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to start refresh device entry thread\n");
@@ -219,15 +232,14 @@ int main(int argc, char **argv) {
   }
 
   // 10. Start monitor
-  char *regex = malloc((strlen(params.device) + strlen(SSHNP_NS) + 3)); // needs to be declared before any gotos
+  regex = malloc((strlen(params.device) + strlen(SSHNP_NS) + 3)); // needs to be declared before any gotos
   if (regex == NULL) {
     atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to allocate memory for the monitor regex\n");
     exit_res = 1;
     goto cancel_atclient;
   }
   sprintf(regex, "%s.%s@", params.device, SSHNP_NS);
-  size_t regex_len = strlen(regex);
-  res = atclient_monitor_start(&monitor_ctx, regex, regex_len);
+  res = atclient_monitor_start(&monitor_ctx, regex, strlen(regex));
   if (res != 0) {
     atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to start monitor\n");
     exit_res = res;
@@ -244,7 +256,7 @@ int main(int argc, char **argv) {
     goto cancel_refresh;
   }
 
-  char *authkeys_filename = malloc(sizeof(char) + (strlen(home_dir) + 22));
+  authkeys_filename = malloc(sizeof(char) + (strlen(home_dir) + 22));
   if (authkeys_filename == NULL) {
     atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to allocate memory for authkeys_filename\n");
     exit_res = 1;
@@ -253,7 +265,7 @@ int main(int argc, char **argv) {
   sprintf(authkeys_filename, "%s/.ssh/authorized_keys", home_dir);
 
   atlogger_log("AUTH SSH KEY", ATLOGGER_LOGGING_LEVEL_DEBUG, "Using authorized_keys file: %s\n", authkeys_filename);
-  FILE *authkeys_file = fopen(authkeys_filename, "r"); // readonly for now, we will freopen this file later
+  authkeys_file = fopen(authkeys_filename, "r"); // readonly for now, we will freopen this file later
 
   if (authkeys_file == NULL) {
     atlogger_log("AUTH SSH KEY", ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to open authorized_keys file: %s\n",
@@ -268,8 +280,7 @@ int main(int argc, char **argv) {
 
   // 12. Main notification handler loop
   atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_INFO, "Starting main loop\n");
-  main_loop(&monitor_ctx, &atclient, &params, authkeys_file, authkeys_filename, ping_response, (char *)home_dir,
-            signingkey);
+  main_loop();
   atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_INFO, "Exited main loop\n");
 
 close_authkeys: {
@@ -299,8 +310,8 @@ cancel_atclient: {
   if (free_ping_response) {
     free(ping_response);
   }
-  atclient_connection_disconnect(&atclient.atserver_connection);
-  atclient_free(&atclient);
+  atclient_connection_disconnect(&worker.atserver_connection);
+  atclient_free(&worker);
 }
 cancel_monitor_ctx: {
   atclient_connection_disconnect(&monitor_ctx.atserver_connection);
@@ -325,8 +336,7 @@ exit: {
 }
 }
 
-void main_loop(atclient *monitor_ctx, atclient *atclient, sshnpd_params *params, FILE *authkeys_file,
-               char *authkeys_filename, char *ping_response, char *home_dir, atchops_rsakey_privatekey signingkey) {
+void main_loop() {
   int res = 0;
   atlogger_log("E2E TESTS", ATLOGGER_LOGGING_LEVEL_INFO, "Monitor .*monitor started\n");
   atclient_monitor_hooks monitor_hooks;
@@ -337,7 +347,7 @@ void main_loop(atclient *monitor_ctx, atclient *atclient, sshnpd_params *params,
   while (true) {
     atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_DEBUG, "Waiting for next monitor thread message\n");
     atclient_monitor_message *message;
-    res = atclient_monitor_read(monitor_ctx, atclient, &message, &monitor_hooks);
+    res = atclient_monitor_read(&monitor_ctx, &worker, &message, &monitor_hooks);
 
     if (message == NULL) {
       atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to read message: message was NULL\n");
@@ -349,8 +359,40 @@ void main_loop(atclient *monitor_ctx, atclient *atclient, sshnpd_params *params,
     // in code -> clang-format -> out code
     switch (message->type) {
     case ATCLIENT_MONITOR_ERROR_READ:
+      atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Error reading on the monitor connection\n");
+
+      if (!atclient_monitor_is_connected(&monitor_ctx)) {
+        atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_INFO,
+                     "Seems the monitor connection is down, trying to reconnect\n");
+
+        int ret = atclient_pkam_authenticate(&monitor_ctx, atserver_host, atserver_port, &atkeys, atsign);
+        if (ret != 0) {
+          atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Monitor connection failed to reconnect.\n");
+          sleep(1);
+          break;
+        }
+
+        ret = atclient_monitor_start(&monitor_ctx, regex, strlen(regex));
+        if (ret != 0) {
+          atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Monitor verb failed to restart.\n");
+          break;
+        }
+
+        atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_INFO, "Reconnected the monitor connection.\n");
+      }
+      break;
+    case ATCLIENT_MONITOR_MESSAGE_TYPE_DATA_RESPONSE:
+      atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_DEBUG, "Received a data response: %s\n", message->data_response);
+      break;
+    case ATCLIENT_MONITOR_MESSAGE_TYPE_ERROR_RESPONSE:
+      atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Received an error response: %s\n",
+                   message->error_response);
+      break;
+    case ATCLIENT_MONITOR_MESSAGE_TYPE_NONE:
+      atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Received a NONE notification type");
+      break;
     case ATCLIENT_MONITOR_ERROR_PARSE:
-      // TODO: handle errors
+      atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to parse the notification\n");
       break;
     case ATCLIENT_MONITOR_MESSAGE_TYPE_NOTIFICATION: {
       bool is_init = atclient_atnotification_decryptedvalue_is_initialized(&message->notification);
@@ -365,8 +407,8 @@ void main_loop(atclient *monitor_ctx, atclient *atclient, sshnpd_params *params,
         char *key = message->notification.key;
 
         // strip '.$device.${DefaultArgs.namespace}${notification.from}' from the back
-        char tail[strlen(params->device) + strlen(SSHNP_NS) + strlen(message->notification.from) + 3];
-        sprintf(tail, ".%s.%s%s", params->device, SSHNP_NS, message->notification.from);
+        char tail[strlen(params.device) + strlen(SSHNP_NS) + strlen(message->notification.from) + 3];
+        sprintf(tail, ".%s.%s%s", params.device, SSHNP_NS, message->notification.from);
         char *tailstart = strstr(key, tail);
         if (tailstart == NULL) {
           atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Skipping message: couldn't find the tail\n");
@@ -405,20 +447,20 @@ void main_loop(atclient *monitor_ctx, atclient *atclient, sshnpd_params *params,
         switch (notification_key) {
         case NK_SSHPUBLICKEY:
           atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_DEBUG, "Executing handle_sshpublickey\n");
-          handle_sshpublickey(params, message, authkeys_file, authkeys_filename);
+          handle_sshpublickey(&params, message, authkeys_file, authkeys_filename);
           break;
         case NK_PING:
           atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_DEBUG, "Executing handle_ping\n");
-          handle_ping(params, message, ping_response, atclient, &atclient_lock);
+          handle_ping(&params, message, ping_response, &worker, &atclient_lock);
           break;
         case NK_SSH_REQUEST:
           atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_DEBUG, "Executing handle_ssh_request\n");
-          handle_ssh_request(atclient, &atclient_lock, params, message, home_dir, authkeys_file, authkeys_filename,
+          handle_ssh_request(&worker, &atclient_lock, &params, message, home_dir, authkeys_file, authkeys_filename,
                              signingkey);
           break;
         case NK_NPT_REQUEST:
           atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_DEBUG, "Executing handle_npt_request\n");
-          handle_npt_request(params, message);
+          handle_npt_request(&params, message);
           break;
         case NK_NONE:
           break;
@@ -430,11 +472,6 @@ void main_loop(atclient *monitor_ctx, atclient *atclient, sshnpd_params *params,
       atclient_monitor_message_free(message);
       break;
     }
-    case ATCLIENT_MONITOR_MESSAGE_TYPE_DATA_RESPONSE:
-    case ATCLIENT_MONITOR_MESSAGE_TYPE_NONE:
-    case ATCLIENT_MONITOR_MESSAGE_TYPE_ERROR_RESPONSE:
-      printf("message type-> %d\n", message->type);
-      break;
     }
     atclient_monitor_message_free(message);
   }
@@ -442,7 +479,6 @@ void main_loop(atclient *monitor_ctx, atclient *atclient, sshnpd_params *params,
 
 static int lock_atclient(void) {
   int ret = pthread_mutex_lock(&atclient_lock);
-  printf("A\n");
   if (ret != 0) {
     atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR,
                  "Failed to get a lock on atclient for sending a notification\n");
@@ -453,13 +489,27 @@ static int lock_atclient(void) {
 }
 
 static int unlock_atclient(void) {
-  printf("B\n");
   int ret;
   ret = pthread_mutex_unlock(&atclient_lock);
   if (ret != 0) {
     atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to release atclient lock\n");
   } else {
     atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_DEBUG, "Released the atclient lock\n");
+  }
+  return ret;
+}
+
+static int reconnect_atclient(const unsigned char *src, const size_t srclen, unsigned char *recv, const size_t recvsize,
+                              size_t *recvlen) {
+  char *TAG = "reconnect";
+  int ret = 0;
+  if (!atclient_is_connected(&worker)) {
+    atlogger_log(TAG, ATLOGGER_LOGGING_LEVEL_INFO, "We are not connected to atServer? :(\n");
+    if ((ret = atclient_pkam_authenticate(&worker, atserver_host, atserver_port, &atkeys, atsign)) == 0) {
+      atlogger_log(TAG, ATLOGGER_LOGGING_LEVEL_INFO, "Reconnected to the atServer!\n");
+    } else {
+      atlogger_log(TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to reconnect to the atServer.\n");
+    }
   }
   return ret;
 }
