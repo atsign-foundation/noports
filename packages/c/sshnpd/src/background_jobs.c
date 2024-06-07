@@ -56,6 +56,11 @@ void *refresh_device_entry(void *void_refresh_device_entry_params) {
     atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_INFO, "Saving username entries for this device\n");
   }
   ret = pthread_mutex_lock(params->atclient_lock);
+  if (ret != 0) {
+    atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to lock the atclient\n");
+    exit(ret);
+  }
+
   for (int i = 0; i < num_managers; i++) {
     // device_info
     atclient_atkey_init(infokeys + i);
@@ -111,14 +116,11 @@ void *refresh_device_entry(void *void_refresh_device_entry_params) {
     }
   }
 
-  do {
-    ret = pthread_mutex_unlock(params->atclient_lock);
-    if (ret != 0) {
-      atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR,
-                   "Failed to release atclient lock, trying again in 1 second\n");
-      sleep(1);
-    }
-  } while (ret != 0);
+  ret = pthread_mutex_unlock(params->atclient_lock);
+  if (ret != 0) {
+    atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to release atclient lock\n");
+    exit(ret);
+  }
 
   for (int i = 0; i < num_managers; i++) {
     atclient_atkey_free(usernamekeys + i);
@@ -128,6 +130,10 @@ void *refresh_device_entry(void *void_refresh_device_entry_params) {
   int counter = 0;
   while (true) {
     ret = pthread_mutex_lock(params->atclient_lock);
+    if (ret != 0) {
+      atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to get a lock on atclient\n");
+      exit(ret);
+    }
     // once an hour the counter will reset
     if (counter == 0) {
       if (params->params->hide) {
@@ -137,11 +143,6 @@ void *refresh_device_entry(void *void_refresh_device_entry_params) {
         atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_INFO, "Refreshing device info entries for this device\n");
       }
       for (int i = 0; i < num_managers; i++) {
-        if (ret != 0) {
-          atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR,
-                       "Failed to get a lock on atclient for performing device entry operation\n");
-          continue;
-        }
         if (params->params->hide) {
           ret = atclient_delete(params->atclient, infokeys + i);
         } else {
@@ -156,14 +157,11 @@ void *refresh_device_entry(void *void_refresh_device_entry_params) {
       atclient_send_heartbeat(params->atclient);
       atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_DEBUG, "Sent a heartbeat on the worker connection\n");
     }
-    do {
-      ret = pthread_mutex_unlock(params->atclient_lock);
-      if (ret != 0) {
-        atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR,
-                     "Failed to release atclient lock, trying again in 1 second\n");
-        sleep(1);
-      }
-    } while (ret != 0);
+    ret = pthread_mutex_unlock(params->atclient_lock);
+    if (ret != 0) {
+      atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to release atclient lock\n");
+      exit(ret);
+    }
     atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_DEBUG, "Released the atclient lock\n");
     fflush(stdout);
     counter = (counter + 1) % (60 * 60 / interval_seconds); // reset back to 0 once an hour

@@ -46,15 +46,12 @@ void handle_ping(sshnpd_params *params, atclient_monitor_message *message, char 
     atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to send ping response to %s\n",
                  message->notification.from);
   }
-  do {
-    ret = pthread_mutex_unlock(atclient_lock);
-    if (ret != 0) {
-      atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR,
-                   "Failed to release atclient lock, trying again in 1 second\n");
-      sleep(1);
-    }
-  } while (ret != 0);
-  atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_DEBUG, "Released the atclient lock\n");
+  ret = pthread_mutex_unlock(atclient_lock);
+  if (ret != 0) {
+    atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to release atclient lock\n");
+  } else {
+    atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_DEBUG, "Released the atclient lock\n");
+  }
 exit_ping:
   atclient_notify_params_free(&notify_params);
   atclient_atkey_free(&pingkey);

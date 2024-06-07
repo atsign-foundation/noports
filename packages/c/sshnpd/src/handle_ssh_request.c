@@ -472,15 +472,12 @@ void handle_ssh_request(atclient *atclient, pthread_mutex_t *atclient_lock, sshn
       atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to send final response to %s\n",
                    message->notification.from);
     }
-    do {
-      ret = pthread_mutex_unlock(atclient_lock);
-      if (ret != 0) {
-        atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR,
-                     "Failed to release atclient lock, trying again in 1 second\n");
-        sleep(1);
-      }
-    } while (ret != 0);
-    atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_DEBUG, "Released the atclient lock\n");
+    ret = pthread_mutex_unlock(atclient_lock);
+    if (ret != 0) {
+      atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to release atclient lock\n");
+    } else {
+      atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_DEBUG, "Released the atclient lock\n");
+    }
 
   clean_res: { free(keyname); }
   clean_final_res_value: {

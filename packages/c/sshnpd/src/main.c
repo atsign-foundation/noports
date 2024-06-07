@@ -46,6 +46,8 @@ static struct {
 
 static unsigned long min(unsigned long a, unsigned long b) { return a < b ? a : b; }
 static pthread_mutex_t atclient_lock = PTHREAD_MUTEX_INITIALIZER;
+static int lock_atclient(void);
+static int unlock_atclient(void);
 
 static void main_loop(atclient *monitor_ctx, atclient *atclient, sshnpd_params *params, FILE *authkeys_file,
                       char *authkeys_filename, char *ping_response, char *home_dir,
@@ -327,10 +329,15 @@ void main_loop(atclient *monitor_ctx, atclient *atclient, sshnpd_params *params,
                char *authkeys_filename, char *ping_response, char *home_dir, atchops_rsakey_privatekey signingkey) {
   int res = 0;
   atlogger_log("E2E TESTS", ATLOGGER_LOGGING_LEVEL_INFO, "Monitor .*monitor started\n");
+  atclient_monitor_hooks monitor_hooks;
+
+  monitor_hooks.pre_decrypt_notification = lock_atclient;
+  monitor_hooks.post_decrypt_notification = unlock_atclient;
+
   while (true) {
     atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_DEBUG, "Waiting for next monitor thread message\n");
     atclient_monitor_message *message;
-    res = atclient_monitor_read(monitor_ctx, atclient, &message);
+    res = atclient_monitor_read(monitor_ctx, atclient, &message, &monitor_hooks);
 
     if (message == NULL) {
       atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to read message: message was NULL\n");
@@ -431,4 +438,28 @@ void main_loop(atclient *monitor_ctx, atclient *atclient, sshnpd_params *params,
     }
     atclient_monitor_message_free(message);
   }
+}
+
+static int lock_atclient(void) {
+  int ret = pthread_mutex_lock(&atclient_lock);
+  printf("A\n");
+  if (ret != 0) {
+    atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR,
+                 "Failed to get a lock on atclient for sending a notification\n");
+  } else {
+    atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_DEBUG, "Locked the atclient\n");
+  }
+  return ret;
+}
+
+static int unlock_atclient(void) {
+  printf("B\n");
+  int ret;
+  ret = pthread_mutex_unlock(&atclient_lock);
+  if (ret != 0) {
+    atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to release atclient lock\n");
+  } else {
+    atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_DEBUG, "Released the atclient lock\n");
+  }
+  return ret;
 }
