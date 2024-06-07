@@ -55,6 +55,9 @@ cmake -B build -S . -DCMAKE_C_COMPILER=clang
 cmake --build build
 ```
 
+It may be necessary to use `-DBUILD_SHARED_LIBS=off` to get a binary with
+cjson statically linked (rather than needing `libcjson1` shared library).
+
 The sshnpd binary will then be located at `./build/sshnpd`.
 
 ## Dependencies
