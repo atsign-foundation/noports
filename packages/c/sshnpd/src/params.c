@@ -31,7 +31,9 @@ int parse_sshnpd_params(sshnpd_params *params, int argc, const char **argv) {
       OPT_BOOLEAN('s', "sshpublickey", &params->sshpublickey, "Generate ssh public key"),
       OPT_BOOLEAN('h', "hide", &params->hide, "Hide device from device entry (still responds to pings)"),
       OPT_BOOLEAN('v', "verbose", &params->verbose, "Verbose output"),
-      OPT_STRING(0, "permit-open", &permitopen, "Manager to use (mandatory)"),
+      OPT_STRING(0, "permit-open", &permitopen,
+                 "Comma separated-list of host:port to which the daemon will permit a connection from an authorized "
+                 "client. (defaults to \"localhost:22,localhost:3389\")"),
       OPT_STRING(0, "ssh-algorithm", &ssh_algorithm_input, "SSH algorithm to use"),
       OPT_STRING(0, "ephemeral-permission", &params->ephemeral_permission, "Ephemeral permission to use"),
       OPT_STRING(0, "root-domain", &params->root_domain, "Root domain to use"),
