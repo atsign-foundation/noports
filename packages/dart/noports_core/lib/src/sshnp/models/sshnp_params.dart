@@ -533,8 +533,9 @@ class SshnpPartialParams {
       authenticateClientToRvd: args[SshnpArg.authenticateClientToRvdArg.name],
       authenticateDeviceToRvd: args[SshnpArg.authenticateDeviceToRvdArg.name],
       encryptRvdTraffic: args[SshnpArg.encryptRvdTrafficArg.name],
-      daemonPingTimeout:
-          Duration(seconds: args[SshnpArg.daemonPingTimeoutArg.name]),
+      daemonPingTimeout: Duration(
+          seconds: args[SshnpArg.daemonPingTimeoutArg.name] ??
+              DefaultArgs.daemonPingTimeoutSeconds),
     );
   }
 
