@@ -295,13 +295,22 @@ void main(List<String> args) async {
 
         npt.progressStream?.listen((s) => logProgress(s));
 
-        final actualLocalPort = await npt.run();
-        params.localPort = actualLocalPort;
+        try {
+          final actualLocalPort = await npt.run();
+          params.localPort = actualLocalPort;
 
-        logProgress('requested localPort $localPort ; '
-            ' actual localPort $actualLocalPort');
+          logProgress('npt is listening on localhost:$actualLocalPort');
 
-        stdout.writeln('$actualLocalPort');
+          if (!inline) {
+            stdout.writeln('$actualLocalPort');
+          }
+        } on TimeoutException catch (e) {
+          logProgress (e.toString());
+          await npt.close();
+          if (! keepAlive) {
+            throw SshnpError(e.toString());
+          }
+        }
 
         await npt.done;
 
