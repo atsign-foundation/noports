@@ -207,6 +207,12 @@ void main(List<String> args) async {
       bool quiet = parsedArgs[quietFlag];
       bool keepAlive = parsedArgs['keep-alive'];
 
+      if (keepAlive && !inline) {
+        // keep alive only applies when running inline
+        throw ArgumentError('--keep-alive and --exit-when-connected'
+            ' are mutually exclusive');
+      }
+
       // Windows will not let us delete files in use so
       // We will point storage to temp directory and let OS clean up
       var clientAtSign = parsedArgs['from'];
