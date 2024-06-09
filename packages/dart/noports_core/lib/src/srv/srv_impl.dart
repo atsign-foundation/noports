@@ -423,7 +423,7 @@ class SrvImplDart implements Srv<SocketConnector> {
           if (sessionAESKeyString == null || sessionIVString == null) {
             throw ArgumentError('Symmetric session encryption key required');
           }
-          sc = await _runDaemonSideMulti(hosts: hosts);
+          sc = await _runDaemonSideMulti(hosts: hosts, timeout: timeout);
         } else {
           sc = await _runDaemonSideSingle(hosts: hosts);
         }
@@ -572,8 +572,9 @@ class SrvImplDart implements Srv<SocketConnector> {
 
   Future<SocketConnector> _runDaemonSideMulti({
     required List<InternetAddress> hosts,
+    required Duration timeout,
   }) async {
-    SocketConnector sc = SocketConnector();
+    SocketConnector sc = SocketConnector(timeout: timeout);
 
     // - create control socket and listen for requests
     // - for each request, create a socketToSocket connection
