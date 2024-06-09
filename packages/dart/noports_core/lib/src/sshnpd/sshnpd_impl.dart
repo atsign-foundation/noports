@@ -133,6 +133,7 @@ class SshnpdImpl implements Sshnpd {
         DaemonFeature.srE2ee.name: true,
         DaemonFeature.acceptsPublicKeys.name: addSshPublicKeys,
         DaemonFeature.supportsPortChoice.name: true,
+        DaemonFeature.adjustableTimeout.name: true,
       },
       'allowedServices': permitOpen,
     };
