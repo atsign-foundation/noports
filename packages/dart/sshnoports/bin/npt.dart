@@ -305,9 +305,9 @@ void main(List<String> args) async {
             stdout.writeln('$actualLocalPort');
           }
         } on TimeoutException catch (e) {
-          logProgress (e.toString());
+          logProgress(e.toString());
           await npt.close();
-          if (! keepAlive) {
+          if (!keepAlive) {
             throw SshnpError(e.toString());
           }
         }

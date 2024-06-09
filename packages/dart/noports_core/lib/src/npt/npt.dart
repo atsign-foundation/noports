@@ -168,7 +168,7 @@ class _NptImpl extends NptBase
 
   @override
   Future<void> close() async {
-    if (! _completer.isCompleted) {
+    if (!_completer.isCompleted) {
       _completer.complete();
     }
   }
