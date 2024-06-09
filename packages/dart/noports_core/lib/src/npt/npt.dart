@@ -191,6 +191,7 @@ class _NptImpl extends NptBase
     if (! (params.timeout == DefaultArgs.srvTimeout)) {
       requiredFeatures.add(DaemonFeature.adjustableTimeout);
     }
+    logger.info('Sending daemon feature check request');
     sendProgress('Sending daemon feature check request');
 
     Future<List<(DaemonFeature feature, bool supported, String reason)>>

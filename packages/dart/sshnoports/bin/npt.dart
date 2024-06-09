@@ -181,7 +181,7 @@ void main(List<String> args) async {
         'timeout',
         abbr: 'T',
         mandatory: false,
-        defaultsTo: '60',
+        defaultsTo: DefaultArgs.srvTimeoutInSeconds.toString(),
         help:
             'How long to keep the SocketConnector open if there have been no connections',
       );
