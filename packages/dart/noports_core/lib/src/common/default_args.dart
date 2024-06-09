@@ -30,7 +30,7 @@ class DefaultArgs {
       Duration(seconds: daemonPingTimeoutSeconds);
 
   /// How long srv should stay running if SocketConnector has no connections
-  static const int srvTimeoutInSeconds = 60;
+  static const int srvTimeoutInSeconds = 30;
   static const Duration srvTimeout = Duration(seconds: srvTimeoutInSeconds);
 }
 
