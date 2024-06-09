@@ -168,6 +168,24 @@ void main(List<String> args) async {
         negatable: false,
       );
 
+      parser.addFlag(
+        'keep-alive',
+        abbr: 'K',
+        help:
+            'Stay alive. If a session ends, create a new session and re-bind to the local port.',
+        defaultsTo: false,
+        negatable: false,
+      );
+
+      parser.addOption(
+        'timeout',
+        abbr: 'T',
+        mandatory: false,
+        defaultsTo: '60',
+        help:
+            'How long to keep the SocketConnector open if there have been no connections',
+      );
+
       // Parse Args
       ArgResults parsedArgs = parser.parse(args);
 
@@ -187,6 +205,7 @@ void main(List<String> args) async {
       int localPort = int.parse(parsedArgs['local-port']);
       bool inline = !parsedArgs['exit-when-connected'];
       bool quiet = parsedArgs[quietFlag];
+      bool keepAlive = parsedArgs['keep-alive'];
 
       // Windows will not let us delete files in use so
       // We will point storage to temp directory and let OS clean up
@@ -237,6 +256,7 @@ void main(List<String> args) async {
         inline: inline,
         daemonPingTimeout:
             Duration(seconds: int.parse(parsedArgs['daemon-ping-timeout'])),
+        timeout: Duration(seconds: int.parse(parsedArgs['timeout'])),
       );
 
       cli.CLIBase cliBase = cli.CLIBase(
@@ -249,13 +269,6 @@ void main(List<String> args) async {
           verbose: parsedArgs['verbose'],
           syncDisabled: true);
 
-      await cliBase.init();
-
-      final npt = Npt.create(
-        params: params,
-        atClient: cliBase.atClient,
-      );
-
       // A listen progress listener for the CLI
       // Will only log if verbose is false, since if verbose is true
       // there will already be a boatload of log messages.
@@ -266,16 +279,35 @@ void main(List<String> args) async {
         }
       }
 
-      npt.progressStream?.listen((s) => logProgress(s));
+      await cliBase.init();
 
-      final actualLocalPort = await npt.run();
+      while (true) {
+        final npt = Npt.create(
+          params: params,
+          atClient: cliBase.atClient,
+        );
 
-      logProgress('requested localPort $localPort ; '
-          ' actual localPort $actualLocalPort');
+        npt.progressStream?.listen((s) => logProgress(s));
 
-      stdout.writeln('$actualLocalPort');
+        final actualLocalPort = await npt.run();
+        params.localPort = actualLocalPort;
 
-      await npt.done;
+        logProgress('requested localPort $localPort ; '
+            ' actual localPort $actualLocalPort');
+
+        stdout.writeln('$actualLocalPort');
+
+        await npt.done;
+
+        if (keepAlive) {
+          logProgress('Session ended, keep-alive is set:'
+              ' will wait 5 seconds and retry');
+          await Future.delayed(Duration(seconds: 5));
+        } else {
+          // not keeping alive - break out of the while (true)
+          break;
+        }
+      }
 
       exitProgram(exitCode: 0);
     } on ArgumentError catch (error) {

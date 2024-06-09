@@ -28,6 +28,10 @@ class DefaultArgs {
   static const int daemonPingTimeoutSeconds = 20;
   static const Duration daemonPingTimeoutDuration =
       Duration(seconds: daemonPingTimeoutSeconds);
+
+  /// How long srv should stay running if SocketConnector has no connections
+  static const int srvTimeoutInSeconds = 60;
+  static const Duration srvTimeout = Duration(seconds: srvTimeoutInSeconds);
 }
 
 class DefaultSshnpArgs {

@@ -233,6 +233,7 @@ class _NptImpl extends NptBase
             clientEphemeralPKType: params.sessionKPType.name,
             requestedPort: params.remotePort,
             requestedHost: params.remoteHost,
+            timeout: params.timeout,
           ).toJson()),
       checkForFinalDeliveryStatus: false,
       waitForFinalDeliveryStatus: false,
@@ -275,6 +276,7 @@ class _NptImpl extends NptBase
         sessionIVString: sshnpdChannel.sessionIVString,
         multi: true,
         detached: false,
+        timeout: params.timeout,
       );
       unawaited(sc.done.whenComplete(() => _completer.complete()));
     } else {
@@ -284,6 +286,7 @@ class _NptImpl extends NptBase
         sessionIVString: sshnpdChannel.sessionIVString,
         multi: true,
         detached: true,
+        timeout: params.timeout,
       );
       _completer.complete();
     }
