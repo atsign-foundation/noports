@@ -280,7 +280,7 @@ class _NptImpl extends NptBase
       localRvPort = server.port;
       await server.close();
     } else {
-      sendProgress('Will use supplied local port ${params.localPort}');
+      sendProgress('Will use local port ${params.localPort}');
 
       localRvPort = params.localPort;
     }
