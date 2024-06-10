@@ -171,7 +171,7 @@ int main(int argc, char **argv) {
   }
 
   // 7.c setup hooks to restart the worker atclient
-  atclient_connection_hooks_init(&worker.atserver_connection);
+  atclient_connection_enable_hooks(&worker.atserver_connection);
   atclient_connection_hooks_set(&worker.atserver_connection, ACHT_PRE_SEND, reconnect_atclient);
 
   // 8. cache the manager public keys
