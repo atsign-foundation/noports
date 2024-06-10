@@ -126,7 +126,7 @@ void *refresh_device_entry(void *void_refresh_device_entry_params) {
     atclient_atkey_free(usernamekeys + i);
   }
   // Build each atkey
-  int interval_seconds = 15;
+  int interval_seconds = 60 * 60; // once an hour
   int counter = 0;
   while (true) {
     ret = pthread_mutex_lock(params->atclient_lock);
@@ -135,28 +135,27 @@ void *refresh_device_entry(void *void_refresh_device_entry_params) {
       exit(ret);
     }
     // once an hour the counter will reset
-    if (counter == 0) {
-      if (params->params->hide) {
-        atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_INFO,
-                     "--hide enabled, deleting any existing device info entries for this device\n");
-      } else {
-        atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_INFO, "Refreshing device info entries for this device\n");
-      }
-      for (int i = 0; i < num_managers; i++) {
-        if (params->params->hide) {
-          ret = atclient_delete(params->atclient, infokeys + i);
-        } else {
-          ret = atclient_put(params->atclient, infokeys + i, params->payload, strlen(params->payload), NULL);
-        }
-        if (ret != 0) {
-          atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to refresh device entry for %s\n",
-                       params->params->manager_list[i]);
-        }
-      }
+    if (params->params->hide) {
+      atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_INFO,
+                   "--hide enabled, deleting any existing device info entries for this device\n");
     } else {
-      atclient_send_heartbeat(params->atclient);
-      atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_DEBUG, "Sent a heartbeat on the worker connection\n");
+      atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_INFO, "Refreshing device info entries for this device\n");
     }
+
+    fflush(stdout);
+
+    for (int i = 0; i < num_managers; i++) {
+      if (params->params->hide) {
+        ret = atclient_delete(params->atclient, infokeys + i);
+      } else {
+        ret = atclient_put(params->atclient, infokeys + i, params->payload, strlen(params->payload), NULL);
+      }
+      if (ret != 0) {
+        atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to refresh device entry for %s\n",
+                     params->params->manager_list[i]);
+      }
+    }
+
     ret = pthread_mutex_unlock(params->atclient_lock);
     if (ret != 0) {
       atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to release atclient lock\n");
@@ -164,7 +163,6 @@ void *refresh_device_entry(void *void_refresh_device_entry_params) {
     }
     atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_DEBUG, "Released the atclient lock\n");
     fflush(stdout);
-    counter = (counter + 1) % (60 * 60 / interval_seconds); // reset back to 0 once an hour
     sleep(interval_seconds);
   }
 

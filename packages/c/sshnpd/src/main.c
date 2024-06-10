@@ -48,17 +48,19 @@ static unsigned long min(unsigned long a, unsigned long b) { return a < b ? a : 
 
 static pthread_mutex_t atclient_lock = PTHREAD_MUTEX_INITIALIZER;
 static int lock_atclient(void);
-static int unlock_atclient(void);
+static int unlock_atclient(int);
 
 static int reconnect_atclient(const unsigned char *src, const size_t srclen, unsigned char *recv, const size_t recvsize,
                               size_t *recvlen);
+
+static int set_worker_hooks();
+static void main_loop();
 
 // information to be shared between functions in this file
 static atclient worker;
 static char *atserver_host;
 static int atserver_port;
 static atclient_atkeys atkeys;
-static char *atsign;
 static sshnpd_params params;
 static atclient monitor_ctx;
 static char *regex;
@@ -67,8 +69,6 @@ static char *authkeys_filename;
 static char *ping_response;
 static char *home_dir;
 static atchops_rsakey_privatekey signingkey;
-
-static void main_loop();
 
 int main(int argc, char **argv) {
   // 1.  Load default values
@@ -171,8 +171,7 @@ int main(int argc, char **argv) {
   }
 
   // 7.c setup hooks to restart the worker atclient
-  atclient_connection_enable_hooks(&worker.atserver_connection);
-  atclient_connection_hooks_set(&worker.atserver_connection, ATCLIENT_CONNECTION_HOOK_TYPE_PRE_SEND, reconnect_atclient);
+  set_worker_hooks();
 
   // 8. cache the manager public keys
   atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_DEBUG, "Manager List: %lu - ", params.manager_list_len);
@@ -365,7 +364,8 @@ void main_loop() {
         atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_INFO,
                      "Seems the monitor connection is down, trying to reconnect\n");
 
-        int ret = atclient_pkam_authenticate(&monitor_ctx, atserver_host, atserver_port, &atkeys, atsign);
+        int ret =
+            atclient_monitor_pkam_authenticate(&monitor_ctx, atserver_host, atserver_port, &atkeys, params.atsign);
         if (ret != 0) {
           atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Monitor connection failed to reconnect.\n");
           sleep(1);
@@ -488,8 +488,7 @@ static int lock_atclient(void) {
   return ret;
 }
 
-static int unlock_atclient(void) {
-  int ret;
+static int unlock_atclient(int ret) {
   ret = pthread_mutex_unlock(&atclient_lock);
   if (ret != 0) {
     atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to release atclient lock\n");
@@ -499,17 +498,34 @@ static int unlock_atclient(void) {
   return ret;
 }
 
+static int set_worker_hooks() {
+  atclient_connection_enable_hooks(&worker.atserver_connection);
+  return atclient_connection_hooks_set(&worker.atserver_connection, ATCLIENT_CONNECTION_HOOK_TYPE_PRE_SEND,
+                                       reconnect_atclient);
+}
+
 static int reconnect_atclient(const unsigned char *src, const size_t srclen, unsigned char *recv, const size_t recvsize,
                               size_t *recvlen) {
   char *TAG = "reconnect";
   int ret = 0;
+
   if (!atclient_is_connected(&worker)) {
-    atlogger_log(TAG, ATLOGGER_LOGGING_LEVEL_INFO, "We are not connected to atServer? :(\n");
-    if ((ret = atclient_pkam_authenticate(&worker, atserver_host, atserver_port, &atkeys, atsign)) == 0) {
-      atlogger_log(TAG, ATLOGGER_LOGGING_LEVEL_INFO, "Reconnected to the atServer!\n");
-    } else {
+    atlogger_log(TAG, ATLOGGER_LOGGING_LEVEL_INFO, "Worker client is not connected, attempting to reconnect:\n");
+    ret = atclient_pkam_authenticate(&worker, atserver_host, atserver_port, &atkeys, params.atsign);
+
+    if (ret != 0) {
       atlogger_log(TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to reconnect to the atServer.\n");
+      goto exit;
+    }
+
+    atlogger_log(TAG, ATLOGGER_LOGGING_LEVEL_INFO, "Reconnected to the atServer!\n");
+    ret = set_worker_hooks();
+
+    if (ret != 0) {
+      atlogger_log(TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to set worker hooks for the atServer.\n");
     }
   }
+
+exit:
   return ret;
 }
