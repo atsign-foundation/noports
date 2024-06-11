@@ -77,6 +77,7 @@ void run_srv_process(sshnpd_params *params, cJSON *host, cJSON *port, bool authe
     exit(1);
   }
 
+  atlogger_set_logging_level(ATLOGGER_LOGGING_LEVEL_INFO);
   res = run_srv(&srv_params);
 
   atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_DEBUG, "srv exited (with code %d): %s\n", res, strerror(errno));
