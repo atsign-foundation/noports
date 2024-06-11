@@ -56,7 +56,20 @@ cmake --build build
 ```
 
 It may be necessary to use `-DBUILD_SHARED_LIBS=off` to get a binary with
-cjson statically linked (rather than needing `libcjson1` shared library).
+dependencies statically linked.
+
+If you want only cjson to be statically linked (rather than needing `libcjson1`
+shared library), cjson provides the following options:
+
+```
+option(CJSON_OVERRIDE_BUILD_SHARED_LIBS "Override BUILD_SHARED_LIBS with CJSON_BUILD_SHARED_LIBS" OFF)
+option(CJSON_BUILD_SHARED_LIBS "Overrides BUILD_SHARED_LIBS if CJSON_OVERRIDE_BUILD_SHARED_LIBS is enabled" ON)
+```
+
+For example, to build with cjson statically linked, but the rest of the 
+dependencies with shared libraries (if available):
+`-DBUILD_SHARED_LIBS=on -DCJSON_OVERRIDE_BUILD_SHARED_LIBS=on -DCJSON_BUILD_SHARED_LIBS=off`
+
 
 The sshnpd binary will then be located at `./build/sshnpd`.
 
