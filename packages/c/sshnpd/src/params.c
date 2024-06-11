@@ -156,7 +156,6 @@ int parse_sshnpd_params(sshnpd_params *params, int argc, const char **argv) {
   params->permitopen[0] = permitopen;
   pos = 1; // Starts at 1 since we already added the first item to the list
   for (int i = 0; i < permitopen_end; i++) {
-    printf("i: %d - c: %c\n", i, permitopen[i]);
     if (permitopen[i] == ',') {
       // Set this comma to a null terminator
       permitopen[i] = '\0';
