@@ -166,7 +166,7 @@ int parse_sshnpd_params(sshnpd_params *params, int argc, const char **argv) {
         break;
       }
       // Keep track of the start of the next item
-      params->permitopen[pos++] = manager + i + 1;
+      params->permitopen[pos++] = permitopen + i + 1;
     }
   }
   params->permitopen_len = sep_count + 1;
