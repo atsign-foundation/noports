@@ -358,16 +358,15 @@ void main_loop() {
     // in code -> clang-format -> out code
     switch (message->type) {
     case ATCLIENT_MONITOR_ERROR_READ:
-      atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Error reading on the monitor connection\n");
-
       if (!atclient_monitor_is_connected(&monitor_ctx)) {
-        atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_INFO,
+        atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR,
                      "Seems the monitor connection is down, trying to reconnect\n");
 
         int ret =
             atclient_monitor_pkam_authenticate(&monitor_ctx, atserver_host, atserver_port, &atkeys, params.atsign);
         if (ret != 0) {
-          atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Monitor connection failed to reconnect.\n");
+          atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR,
+                       "Monitor connection failed to reconnect, trying again in 1 second...\n");
           sleep(1);
           break;
         }
