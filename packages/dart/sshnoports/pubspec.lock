@@ -83,13 +83,14 @@ packages:
     source: hosted
     version: "1.1.0"
   at_client:
-    dependency: transitive
+    dependency: "direct overridden"
     description:
-      name: at_client
-      sha256: "65fefc2c217376bdcdff1b7b5b30c476bc5bf8ca4146863aa4a28ce5401d3600"
-      url: "https://pub.dev"
-    source: hosted
-    version: "3.0.75"
+      path: "packages/at_client"
+      ref: trunk
+      resolved-ref: "7ed6ce8734fa230a1670549ad063a2348c0a22cc"
+      url: "https://github.com/atsign-foundation/at_client_sdk"
+    source: git
+    version: "3.0.76"
   at_commons:
     dependency: transitive
     description:
