@@ -18,7 +18,6 @@ set(
   ${CMAKE_CURRENT_LIST_DIR}/src/main.c
   ${CMAKE_CURRENT_LIST_DIR}/src/params.c
   ${CMAKE_CURRENT_LIST_DIR}/src/run_srv_process.c
-  ${CMAKE_CURRENT_LIST_DIR}/src/run_sshkeygen.c
 )
 
 # 1b. Manually add your include directories here
@@ -65,7 +64,7 @@ if(NOT argparse-static_FOUND)
     STATUS
     "[SSHNPD] argparse not found, fetching from local repository.."
   )
-  fetchcontent_declare(argparse-static SOURCE_DIR ${ARGPARSE_DIR})
+  FetchContent_Declare(argparse-static SOURCE_DIR ${ARGPARSE_DIR})
   list(APPEND SSHNPD_TARGETS_TO_INSTALL argparse-static)
   list(APPEND SSHNPD_MAKE_AVAILABLE argparse-static)
 else()
@@ -76,7 +75,7 @@ endif()
 find_package(srv-lib QUIET)
 if(NOT srv-lib_FOUND)
   message(STATUS "[SSHNPD] srv-lib not found, fetching from local repository..")
-  fetchcontent_declare(srv-lib SOURCE_DIR ${SRV_DIR})
+  FetchContent_Declare(srv-lib SOURCE_DIR ${SRV_DIR})
   list(APPEND SSHNPD_TARGETS_TO_INSTALL srv-lib argparse-static)
   list(APPEND SSHNPD_MAKE_AVAILABLE srv-lib argparse-static)
 else()
@@ -85,7 +84,7 @@ endif()
 
 # 4d. make everything available
 if(SSHNPD_MAKE_AVAILABLE)
-  fetchcontent_makeavailable(${SSHNPD_MAKE_AVAILABLE})
+  FetchContent_MakeAvailable(${SSHNPD_MAKE_AVAILABLE})
 endif()
 
 # 5. Create sshnpd_lib library target
