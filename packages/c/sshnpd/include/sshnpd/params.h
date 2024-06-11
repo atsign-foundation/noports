@@ -24,7 +24,8 @@ struct _sshnpd_params {
 
   size_t permitopen_len;
   char **permitopen;
-  bool free_permitopen;
+  char *permitopen_str;
+  bool should_free_permitopen_str;
 
   bool sshpublickey;
   bool hide;

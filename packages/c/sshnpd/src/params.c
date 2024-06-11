@@ -11,7 +11,6 @@ void apply_default_values_to_sshnpd_params(sshnpd_params *params) {
   params->sshpublickey = 0;
   params->hide = 0;
   params->verbose = 0;
-  params->free_permitopen = 0;
   params->ssh_algorithm = ED25519;
   params->ephemeral_permission = "";
   params->root_domain = "root.atsign.org";
@@ -63,13 +62,13 @@ int parse_sshnpd_params(sshnpd_params *params, int argc, const char **argv) {
   }
 
   if (permitopen == NULL) {
-    permitopen = malloc((strlen(default_permitopen) + 1) * sizeof(char));
-    if (permitopen == NULL) {
-      printf("Failed to allocate memory for permitopen input\n");
+    params->permitopen_str = malloc(sizeof(char) * (strlen(default_permitopen) + 1));
+    if (params->permitopen_str == NULL) {
+      printf("Failed to allocate memory for default permitopen string\n");
       return 1;
     }
-    strcpy(permitopen, default_permitopen);
-    params->free_permitopen = 1;
+    strcpy(params->permitopen_str, default_permitopen);
+    permitopen = params->permitopen_str;
   }
 
   int manager_end = strlen(manager);
@@ -86,12 +85,14 @@ int parse_sshnpd_params(sshnpd_params *params, int argc, const char **argv) {
       printf("Invalid Argument(s): \"%s\" is not an allowed value for option "
              "\"ssh-algorithm\"\n",
              ssh_algorithm_input);
+      free(params->permitopen_str);
       return 1;
     }
   }
 
   if (params->atsign[0] != '@') {
     printf("Invalid Argument(s): \"%s\" is not a valid atSign\n", params->atsign);
+    free(params->permitopen_str);
     return 1;
   }
 
@@ -108,6 +109,7 @@ int parse_sshnpd_params(sshnpd_params *params, int argc, const char **argv) {
   params->manager_list = malloc((sep_count + 1) * sizeof(char *));
   if (params->manager_list == NULL) {
     printf("Failed to allocate memory for manager list\n");
+    free(params->permitopen_str);
     return 1;
   }
   params->manager_list[0] = manager;
@@ -125,6 +127,7 @@ int parse_sshnpd_params(sshnpd_params *params, int argc, const char **argv) {
       if (manager[i + 1] != '@') {
         printf("Invalid Argument(s): Expected a list of atSigns: \"%s\"\n", manager);
         free(params->manager_list);
+        free(params->permitopen_str);
         return 1;
       }
       // Keep track of the start of the next item
@@ -145,11 +148,15 @@ int parse_sshnpd_params(sshnpd_params *params, int argc, const char **argv) {
   params->permitopen = malloc((sep_count + 1) * sizeof(char *));
   if (params->permitopen == NULL) {
     printf("Failed to allocate memory for permitopen\n");
+    free(params->manager_list);
+    free(params->permitopen_str);
     return 1;
   }
+
   params->permitopen[0] = permitopen;
   pos = 1; // Starts at 1 since we already added the first item to the list
   for (int i = 0; i < permitopen_end; i++) {
+    printf("i: %d - c: %c\n", i, permitopen[i]);
     if (permitopen[i] == ',') {
       // Set this comma to a null terminator
       permitopen[i] = '\0';

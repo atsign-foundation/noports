@@ -22,6 +22,7 @@
 #include <cJSON.h>
 #include <libgen.h>
 #include <pthread.h>
+#include <signal.h>
 #include <sshnpd/file_utils.h>
 #include <sshnpd/run_srv_process.h>
 #include <stdio.h>
@@ -70,7 +71,21 @@ static char *ping_response;
 static char *home_dir;
 static atchops_rsakey_privatekey signingkey;
 
+// Signal handling
+static volatile sig_atomic_t should_run = 1;
+static void sig_handler(int _) {
+  (void)_;
+  atlogger_log("sig_handler", ATLOGGER_LOGGING_LEVEL_WARN, "Received SIGINT, exiting safely\n");
+  should_run = 0;
+}
+
 int main(int argc, char **argv) {
+  int res = 0;
+  int exit_res = 0;
+
+  // Catch sigint and pass to the handler
+  signal(SIGINT, sig_handler);
+
   // 1.  Load default values
   apply_default_values_to_sshnpd_params(&params);
 
@@ -94,7 +109,8 @@ int main(int argc, char **argv) {
                  "Unable to determine your home directory: please "
                  "set %s environment variable\n",
                  HOMEVAR);
-    return 1;
+    exit_res = 1;
+    goto exit;
   }
 
   const char *username = getenv(USERVAR);
@@ -103,11 +119,14 @@ int main(int argc, char **argv) {
                  "Unable to determine your username: please "
                  "set %s environment variable\n",
                  USERVAR);
-    return 1;
+    exit_res = 1;
+    goto exit;
   }
 
-  int res = 0;
-  int exit_res = -1;
+  if (!should_run) {
+    exit_res = res;
+    goto exit;
+  }
 
   // 5.  Load the atKeys
   atclient_atkeysfile atkeysfile;
@@ -124,10 +143,13 @@ int main(int argc, char **argv) {
     atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_DEBUG, "Using atkeysfile: %s\n", (const char *)params.key_file);
   }
 
-  if (res != 0) {
-    atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Unable to read the key file\n");
+  if (res != 0 || !should_run) {
+    if (res != 0) {
+      atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Unable to read the key file\n");
+    }
     atclient_atkeysfile_free(&atkeysfile);
-    return res;
+    exit_res = res;
+    goto exit;
   }
 
   // 5.2 Read the atKeysFile into the atKeys struct
@@ -135,10 +157,13 @@ int main(int argc, char **argv) {
 
   res = atclient_atkeys_populate_from_atkeysfile(&atkeys, atkeysfile);
   atclient_atkeysfile_free(&atkeysfile);
-  if (res != 0) {
-    atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Unable to parse the key file\n");
+  if (res != 0 || !should_run) {
+    if (res != 0) {
+      atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Unable to parse the key file\n");
+    }
     atclient_atkeys_free(&atkeys);
-    return res;
+    exit_res = res;
+    goto exit;
   }
 
   // 5.3 create a key copy for signing
@@ -150,13 +175,13 @@ int main(int argc, char **argv) {
                                              &atserver_port);
   if (res != 0) {
     exit_res = res;
-    goto exit;
+    goto clean_atkeys;
   }
 
   // 7.a Initialize the monitor atclient
   atclient_init(&monitor_ctx);
   res = atclient_pkam_authenticate(&monitor_ctx, atserver_host, atserver_port, &atkeys, params.atsign);
-  if (res != 0) {
+  if (res != 0 || !should_run) {
     exit_res = res;
     goto cancel_monitor_ctx;
   }
@@ -165,7 +190,7 @@ int main(int argc, char **argv) {
   atclient_init(&worker);
   bool free_ping_response = false;
   res = atclient_pkam_authenticate(&worker, atserver_host, atserver_port, &atkeys, params.atsign);
-  if (res != 0) {
+  if (res != 0 || !should_run) {
     exit_res = res;
     goto cancel_atclient;
   }
@@ -183,6 +208,11 @@ int main(int argc, char **argv) {
     // TODO: finish caching
   }
   printf("\n");
+
+  if (!should_run) {
+    exit_res = res;
+    goto cancel_atclient;
+  }
 
   // pipe to communicate with the threads we will create in 9 & 10
   int fds[2];
@@ -219,14 +249,22 @@ int main(int argc, char **argv) {
     free_ping_response = true;
   }
 
+  if (!should_run) {
+    goto cancel_atclient;
+  }
+
   // 9. Start the device refresh loop - if hide is off
   pthread_t refresh_tid;
-  struct refresh_device_entry_params refresh_params = {&worker,  &atclient_lock, &params, ping_response,
-                                                       username, fds[0],         fds[1]};
+  struct refresh_device_entry_params refresh_params = {&worker,       &atclient_lock, &params,
+                                                       ping_response, username,       &should_run};
   res = pthread_create(&refresh_tid, NULL, refresh_device_entry, (void *)&refresh_params);
   if (res != 0) {
     atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to start refresh device entry thread\n");
     exit_res = res;
+    goto cancel_atclient;
+  }
+
+  if (!should_run) {
     goto cancel_atclient;
   }
 
@@ -237,6 +275,7 @@ int main(int argc, char **argv) {
     exit_res = 1;
     goto cancel_atclient;
   }
+
   sprintf(regex, "%s.%s@", params.device, SSHNP_NS);
   res = atclient_monitor_start(&monitor_ctx, regex, strlen(regex));
   if (res != 0) {
@@ -245,21 +284,16 @@ int main(int argc, char **argv) {
     goto cancel_refresh;
   }
 
-  // 11.  Start heartbeat to the atServer
-  pthread_t heartbeat_tid;
-  struct heartbeat_params heartbeat_params = {&monitor_ctx, fds[0], fds[1]};
-  res = pthread_create(&heartbeat_tid, NULL, heartbeat, (void *)&heartbeat_params);
-  if (res != 0) {
-    atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to start heartbeat thread\n");
-    exit_res = res;
+  if (!should_run) {
     goto cancel_refresh;
   }
 
+  // 11. Get a pointer to the authorized_keys file
   authkeys_filename = malloc(sizeof(char) + (strlen(home_dir) + 22));
   if (authkeys_filename == NULL) {
     atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to allocate memory for authkeys_filename\n");
     exit_res = 1;
-    goto cancel_heartbeat;
+    goto cancel_refresh;
   }
   sprintf(authkeys_filename, "%s/.ssh/authorized_keys", home_dir);
 
@@ -277,62 +311,50 @@ int main(int argc, char **argv) {
     goto close_authkeys;
   }
 
+  if (!should_run) {
+    goto close_authkeys;
+  }
+
   // 12. Main notification handler loop
   atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_INFO, "Starting main loop\n");
   main_loop();
   atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_INFO, "Exited main loop\n");
 
-close_authkeys: {
+close_authkeys:
   fclose(authkeys_file);
   free(authkeys_filename);
-}
-cancel_heartbeat: {
-  atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_DEBUG, "Cancelling heartbeat thread\n");
-  if (pthread_cancel(heartbeat_tid) != 0) {
-    atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_WARN, "Failed to cancel heartbeat thread\n");
-  } else {
-    atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_DEBUG, "Canceled heartbeat thread\n");
-  }
-}
-cancel_refresh: {
+
+cancel_refresh:
   free(regex);
-  atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_DEBUG, "Cancelling device entry refresh thread\n");
-  if (pthread_cancel(heartbeat_tid) != 0) {
-    atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_WARN, "Failed to cancel device entry refresh thread\n");
+  atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_DEBUG, "Joining device entry refresh thread\n");
+  should_run = 0;
+  if (pthread_join(refresh_tid, NULL) != 0) {
+    atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_WARN, "Failed to join device entry refresh thread\n");
   } else {
-    atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_DEBUG, "Canceled device entry refresh thread\n");
+    atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_DEBUG, "Joined device entry refresh thread\n");
   }
-  close(fds[0]);
-  close(fds[1]);
-}
-cancel_atclient: {
+
+cancel_atclient:
   if (free_ping_response) {
     free(ping_response);
   }
   atclient_connection_disconnect(&worker.atserver_connection);
   atclient_free(&worker);
-}
-cancel_monitor_ctx: {
+
+cancel_monitor_ctx:
   atclient_connection_disconnect(&monitor_ctx.atserver_connection);
   atclient_free(&monitor_ctx);
   free(atserver_host);
-}
-exit: {
+
+clean_atkeys:
   atchops_rsakey_privatekey_free(&signingkey);
   atclient_atkeys_free(&atkeys);
 
-  if (params.free_permitopen) {
-    free(params.permitopen);
-  }
-
-  if (exit_res != 0) {
-    return exit_res;
-  }
-
-  // There actually is no positive exit scenario right now... the only way for sshnp to exit is through failure or
-  // through an external signal
-  return 0;
-}
+exit:
+  free(params.manager_list);
+  free(params.permitopen);
+  free(params.permitopen_str);
+  return exit_res;
 }
 
 void main_loop() {
@@ -343,9 +365,10 @@ void main_loop() {
   monitor_hooks.pre_decrypt_notification = lock_atclient;
   monitor_hooks.post_decrypt_notification = unlock_atclient;
 
-  while (true) {
+  atclient_monitor_message *message;
+
+  while (should_run) {
     atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_DEBUG, "Waiting for next monitor thread message\n");
-    atclient_monitor_message *message;
     res = atclient_monitor_read(&monitor_ctx, &worker, &message, &monitor_hooks);
 
     if (message == NULL) {
@@ -442,6 +465,11 @@ void main_loop() {
             break;
           }
         }
+
+        if (!should_run) {
+          break;
+        }
+
         // TODO: maybe multithread these handlers
         switch (notification_key) {
         case NK_SSHPUBLICKEY:
@@ -468,12 +496,11 @@ void main_loop() {
         atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_DEBUG, "Skipping notification (no decryptedvalue): %s\n",
                      message->notification.id);
       }
-      atclient_monitor_message_free(message);
       break;
-    }
-    }
+    } // end of case ATCLIENT_MONITOR_MESSAGE_TYPE_NOTIFICATION
+    } // end of switch
     atclient_monitor_message_free(message);
-  }
+  } // end of while loop
 }
 
 static int lock_atclient(void) {
