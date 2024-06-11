@@ -63,7 +63,7 @@ int parse_sshnpd_params(sshnpd_params *params, int argc, const char **argv) {
   }
 
   if (permitopen == NULL) {
-    permitopen = malloc(strlen(default_permitopen) * sizeof(char));
+    permitopen = malloc((strlen(default_permitopen) + 1) * sizeof(char));
     if (permitopen == NULL) {
       printf("Failed to allocate memory for permitopen input\n");
       return 1;
