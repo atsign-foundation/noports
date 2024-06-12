@@ -386,8 +386,19 @@ void handle_ssh_request(atclient *atclient, pthread_mutex_t *atclient_lock, sshn
   pid = fork();
   if (pid == 0) {
     // child process
+    // free this immediately, we don't need it on the child fork
+    free(envelope);
+    if (free_session_base64) {
+      free(session_aes_key_base64);
+      free(session_iv_base64);
+    }
+
     run_srv_process(params, host, port, authenticate_to_rvd, rvd_auth_string, encrypt_rvd_traffic, session_aes_key,
                     session_iv, authkeys_file, authkeys_filename);
+    if (authenticate_to_rvd) {
+      free(rvd_auth_string);
+    }
+    // end of child process
   } else if (pid > 0) {
 
     // parent process

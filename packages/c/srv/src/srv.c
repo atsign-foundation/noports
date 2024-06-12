@@ -171,6 +171,8 @@ cancel:
     // If threads[0] exited normally then we will cancel threads[1]
     // In all other cases, cancel threads[0] (could be because threads[1] exited or errored)
     tidx = 1;
+  } else {
+    tidx = 0;
   }
 
   atlogger_log(TAG, DEBUG, "Cancelling remaining open thread: %d\n", tidx);

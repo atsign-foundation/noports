@@ -42,6 +42,7 @@ void run_srv_process(sshnpd_params *params, cJSON *host, cJSON *port, bool authe
   char *streaming_port_str = malloc(sizeof(char) * size);
   if (streaming_port_str == NULL) {
     atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "srv fork failed to allocate some memory\n");
+    free(argv);
     exit(1);
   }
   snprintf(streaming_port_str, size, "%d", params->local_sshd_port);
@@ -74,6 +75,8 @@ void run_srv_process(sshnpd_params *params, cJSON *host, cJSON *port, bool authe
   srv_params_t srv_params;
   apply_default_values_to_srv_params(&srv_params);
   if (parse_srv_params(&srv_params, argc, (const char **)argv, &environment) != 0) {
+    free(argv);
+    free(streaming_port_str);
     exit(1);
   }
 
@@ -82,5 +85,9 @@ void run_srv_process(sshnpd_params *params, cJSON *host, cJSON *port, bool authe
 
   atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_DEBUG, "srv exited (with code %d): %s\n", res, strerror(errno));
   fflush(stdout);
+
+  free(argv);
+  free(streaming_port_str);
+
   exit(res);
 }
