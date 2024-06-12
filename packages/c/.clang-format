@@ -1,0 +1,4 @@
+---
+Language: Cpp # Covers C and C++
+BasedOnStyle: LLVM # Added this to ensure a sane set of defaults
+ColumnLimit: 120 # LLVM uses 80, but we mostly use 120 at Atsign

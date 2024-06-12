@@ -12,6 +12,7 @@ updates:
           - "*"
   - package-ecosystem: "docker"
     directories:
+      - "/packages/c/sshnpd/tools/"
       - "/packages/dart/sshnoports/tools/"
       - "/tests/end2end_tests/image/"
     schedule:
