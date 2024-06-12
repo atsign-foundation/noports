@@ -39,11 +39,11 @@ dependency on ssh-keygen altogether.
 The normal way to build this project is with cmake.
 You can install cmake through most package managers, or through python's pip.
 
-With `cc` (disables warnings found in mbedtls' tests):
+With `gcc` (disables warnings found in mbedtls' tests):
 
 ```bash
 cd packages/c/sshnpd
-cmake -B build -S . -DCMAKE_C_COMPILER=cc -DCMAKE_C_FLAGS="-Wno-calloc-transposed-args"
+cmake -B build -S . -DCMAKE_C_COMPILER=gcc -DCMAKE_C_FLAGS="-Wno-calloc-transposed-args"
 cmake --build build
 ```
 
