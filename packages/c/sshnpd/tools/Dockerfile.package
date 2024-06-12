@@ -1,7 +1,7 @@
 # Dockerfile.package
 # A dockerfile for packaging SSH No Ports releases using docker buildx
 
-FROM debian:stable-slim AS build
+FROM debian:stable-20240513-slim@sha256:2b2e35d67c8fda0ba853d40cd18e57b99ab12d82fd3200607015eb09784068bd AS build
 WORKDIR /sshnpd
 COPY . .
 RUN set -eux; \
