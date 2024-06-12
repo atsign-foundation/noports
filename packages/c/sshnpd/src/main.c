@@ -365,21 +365,17 @@ void main_loop() {
   monitor_hooks.pre_decrypt_notification = lock_atclient;
   monitor_hooks.post_decrypt_notification = unlock_atclient;
 
-  atclient_monitor_message *message;
+  atclient_monitor_message message;
 
   while (should_run) {
     atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_DEBUG, "Waiting for next monitor thread message\n");
+    atclient_monitor_message_init(&message);
     res = atclient_monitor_read(&monitor_ctx, &worker, &message, &monitor_hooks);
 
-    if (message == NULL) {
-      atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to read message: message was NULL\n");
-      continue;
-    } else {
-      atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_DEBUG, "Received message of type: %d\n", message->type);
-    }
+    atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_DEBUG, "Received message of type: %d\n", message.type);
 
     // in code -> clang-format -> out code
-    switch (message->type) {
+    switch (message.type) {
     case ATCLIENT_MONITOR_ERROR_READ:
       if (!atclient_monitor_is_connected(&monitor_ctx)) {
         atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR,
@@ -404,33 +400,36 @@ void main_loop() {
       }
       break;
     case ATCLIENT_MONITOR_MESSAGE_TYPE_DATA_RESPONSE:
-      atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_DEBUG, "Received a data response: %s\n", message->data_response);
+      atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_DEBUG, "Received a data response: %s\n", message.data_response);
       break;
     case ATCLIENT_MONITOR_MESSAGE_TYPE_ERROR_RESPONSE:
       atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Received an error response: %s\n",
-                   message->error_response);
+                   message.error_response);
       break;
     case ATCLIENT_MONITOR_MESSAGE_TYPE_NONE:
       atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Received a NONE notification type");
       break;
-    case ATCLIENT_MONITOR_ERROR_PARSE:
+    case ATCLIENT_MONITOR_ERROR_PARSE_NOTIFICATION:
       atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to parse the notification\n");
       break;
+    case ATCLIENT_MONITOR_ERROR_DECRYPT_NOTIFICATION:
+      atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to decrypt the notification\n");
+      break;
     case ATCLIENT_MONITOR_MESSAGE_TYPE_NOTIFICATION: {
-      bool is_init = atclient_atnotification_decryptedvalue_is_initialized(&message->notification);
-      bool has_key = atclient_atnotification_key_is_initialized(&message->notification);
+      bool is_init = atclient_atnotification_decryptedvalue_is_initialized(&message.notification);
+      bool has_key = atclient_atnotification_key_is_initialized(&message.notification);
       if (is_init) {
         atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_DEBUG, "Notification value received: %s\n",
-                     message->notification.decryptedvalue);
-        if (!has_key || strcmp(message->notification.id, "-1") == 0) {
+                     message.notification.decryptedvalue);
+        if (!has_key || strcmp(message.notification.id, "-1") == 0) {
           break;
         }
 
-        char *key = message->notification.key;
+        char *key = message.notification.key;
 
         // strip '.$device.${DefaultArgs.namespace}${notification.from}' from the back
-        char tail[strlen(params.device) + strlen(SSHNP_NS) + strlen(message->notification.from) + 3];
-        sprintf(tail, ".%s.%s%s", params.device, SSHNP_NS, message->notification.from);
+        char tail[strlen(params.device) + strlen(SSHNP_NS) + strlen(message.notification.from) + 3];
+        sprintf(tail, ".%s.%s%s", params.device, SSHNP_NS, message.notification.from);
         char *tailstart = strstr(key, tail);
         if (tailstart == NULL) {
           atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Skipping message: couldn't find the tail\n");
@@ -440,7 +439,7 @@ void main_loop() {
 
         // strip notification.to from the front
         // first let's validate that notification.to is on the front
-        char *head = message->notification.to;
+        char *head = message.notification.to;
         size_t head_len = strlen(head);
         if (strlen(key) < head_len) {
           atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR,
@@ -474,32 +473,32 @@ void main_loop() {
         switch (notification_key) {
         case NK_SSHPUBLICKEY:
           atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_DEBUG, "Executing handle_sshpublickey\n");
-          handle_sshpublickey(&params, message, authkeys_file, authkeys_filename);
+          handle_sshpublickey(&params, &message, authkeys_file, authkeys_filename);
           break;
         case NK_PING:
           atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_DEBUG, "Executing handle_ping\n");
-          handle_ping(&params, message, ping_response, &worker, &atclient_lock);
+          handle_ping(&params, &message, ping_response, &worker, &atclient_lock);
           break;
         case NK_SSH_REQUEST:
           atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_DEBUG, "Executing handle_ssh_request\n");
-          handle_ssh_request(&worker, &atclient_lock, &params, message, home_dir, authkeys_file, authkeys_filename,
+          handle_ssh_request(&worker, &atclient_lock, &params, &message, home_dir, authkeys_file, authkeys_filename,
                              signingkey);
           break;
         case NK_NPT_REQUEST:
           atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_DEBUG, "Executing handle_npt_request\n");
-          handle_npt_request(&params, message);
+          handle_npt_request(&params, &message);
           break;
         case NK_NONE:
           break;
         }
       } else {
         atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_DEBUG, "Skipping notification (no decryptedvalue): %s\n",
-                     message->notification.id);
+                     message.notification.id);
       }
       break;
     } // end of case ATCLIENT_MONITOR_MESSAGE_TYPE_NOTIFICATION
     } // end of switch
-    atclient_monitor_message_free(message);
+    atclient_monitor_message_free(&message);
   } // end of while loop
 }
 
