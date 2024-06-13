@@ -123,8 +123,6 @@ void handle_ssh_request(atclient *atclient, pthread_mutex_t *atclient_lock, sshn
     return;
   }
 
-  atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_INFO, "Before get_publickey, atclient.async_read : %d\n",
-               atclient->async_read);
   res = atclient_get_publickey(atclient, &atkey, value, valuelen, &valueolen, true);
   if (res != 0) {
     atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to get public key\n");
