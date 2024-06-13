@@ -70,13 +70,18 @@ static char *authkeys_filename;
 static char *ping_response;
 static char *home_dir;
 static atchops_rsakey_privatekey signingkey;
+static bool is_child_process = false;
 
 // Signal handling
 static volatile sig_atomic_t should_run = 1;
 static void sig_handler(int _) {
   (void)_;
-  atlogger_log("sig_handler", ATLOGGER_LOGGING_LEVEL_WARN, "Received SIGINT, exiting safely\n");
-  should_run = 0;
+  if (should_run == 1) {
+    atlogger_log("sig_handler", ATLOGGER_LOGGING_LEVEL_WARN, "Received SIGINT, exiting safely\n");
+    should_run = 0;
+  } else if (should_run == 0) {
+    atlogger_log("sig_handler", ATLOGGER_LOGGING_LEVEL_WARN, "Received SIGINT again, exiting forcefully\n");
+  }
 }
 
 int main(int argc, char **argv) {
@@ -335,7 +340,7 @@ cancel_refresh:
   }
 
 cancel_atclient:
-  if (free_ping_response) {
+  if (!free_ping_response) {
     free(ping_response);
   }
   atclient_connection_disconnect(&worker.atserver_connection);
@@ -354,7 +359,8 @@ exit:
   free(params.manager_list);
   free(params.permitopen);
   free(params.permitopen_str);
-  return exit_res;
+
+  exit(exit_res);
 }
 
 void main_loop() {
