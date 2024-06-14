@@ -1,4 +1,6 @@
 # key allocation & free is a known false positive
+# TODO: I couldn't see anything wrong with how we are doing it, but need to get 
+# a second set of eyes on this issue - @XavierChanth
 {
   atchops_rsakey_privatekey_init
     Memcheck:Leak
