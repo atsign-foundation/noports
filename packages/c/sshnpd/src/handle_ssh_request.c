@@ -126,9 +126,12 @@ void handle_ssh_request(atclient *atclient, pthread_mutex_t *atclient_lock, sshn
   res = atclient_get_publickey(atclient, &atkey, value, valuelen, &valueolen, true);
   if (res != 0) {
     atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to get public key\n");
+    atclient_atkey_free(&atkey);
     free(envelope);
     return;
   }
+
+  atclient_atkey_free(&atkey);
 
   atchops_rsakey_publickey requesting_atsign_publickey;
   atchops_rsakey_publickey_init(&requesting_atsign_publickey);
@@ -161,8 +164,11 @@ void handle_ssh_request(atclient *atclient, pthread_mutex_t *atclient_lock, sshn
   if (res != 0) {
     atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to verify envelope signature\n");
     free(envelope);
+    atchops_rsakey_publickey_free(&requesting_atsign_publickey);
     return;
   }
+
+  atchops_rsakey_publickey_free(&requesting_atsign_publickey);
 
   bool authenticate_to_rvd = cJSON_IsTrue(auth_to_rvd);
   bool encrypt_rvd_traffic = cJSON_IsTrue(encrypt_traffic);
