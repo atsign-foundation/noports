@@ -468,7 +468,7 @@ void handle_ssh_request(atclient *atclient, pthread_mutex_t *atclient_lock, sshn
 
     atclient_notify_params notify_params;
     atclient_notify_params_init(&notify_params);
-    notify_params.key = final_res_atkey;
+    notify_params.atkey = &final_res_atkey;
     notify_params.value = final_res_value;
     notify_params.operation = ATCLIENT_NOTIFY_OPERATION_UPDATE;
 

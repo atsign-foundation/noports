@@ -99,7 +99,8 @@ int main(int argc, char **argv) {
     return 1;
   }
 
-  // 3.  Configure the Logger
+  // 3.  Configure the Logger - at this point atlogger_free must be called
+  // before the program exits
   if (params.verbose) {
     printf("Verbose mode enabled\n");
     atlogger_set_logging_level(ATLOGGER_LOGGING_LEVEL_DEBUG);
@@ -346,6 +347,7 @@ exit:
   free(params.permitopen);
   free(params.permitopen_str);
 
+  atlogger_free();
   exit(exit_res);
 }
 

@@ -9,22 +9,13 @@
     fun:main
 }
 {
-  FIXME atlogger_get_instance
-    Memcheck:Leak
-    match-leak-kinds: reachable
-    fun:malloc
-    fun:atlogger_get_instance
-    fun:atlogger_set_logging_level
-    fun:main
-}
-{
   FIXME atclient_atsign_init
     Memcheck:Leak
     fun:malloc
     fun:atclient_atsign_init
 }
 {
-  FIXME atclient_connection_enable_hooks
+  FIXME atclient_connection_enable_hooks - FP?
     Memcheck:Leak
     fun:malloc
     fun:atclient_connection_enable_hooks
