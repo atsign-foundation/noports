@@ -1,0 +1,7 @@
+.cache
+build*
+
+compile_commands.json
+
+core
+valgrind-out.txt*

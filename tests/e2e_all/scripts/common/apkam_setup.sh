@@ -1,6 +1,6 @@
 #!/bin/bash
 
-if [ -z "$testScriptsDir" ] ; then
+if [ -z "$testScriptsDir" ]; then
   echo -e "    ${RED}check_env: testScriptsDir is not set${NC}" && exit 1
 fi
 
@@ -20,7 +20,7 @@ fi
 cd "$testRuntimeDir" || exit 1
 
 enroll() {
-  if (( $# != 2 )); then
+  if (($# != 2)); then
     # shellcheck disable=SC2016
     logErrorAndExit 'enroll() requires 3 arguments. enroll $atSign <client|daemon>'
   fi
@@ -38,6 +38,8 @@ enroll() {
   apkamDev=$(getApkamDeviceName "$which" "$commitId")
   keysFileName=$(getApkamKeysFile "$atSign" "$apkamApp" "$apkamDev")
 
+  rm -f "$keysFileName"
+
   logInfo "Denying any pending enrollment requests for $atSign with apkamAppName $apkamApp and apkamDeviceName $apkamDev"
   $authBinary deny -r "$atDirectoryHost" -a "$atSign" --arx "$apkamApp" --drx "$apkamDev" || return $?
 
@@ -47,11 +49,11 @@ enroll() {
   # submit enrollment request in background
   logInfo "Submitting enrollment request for $atSign with apkamAppName $apkamApp and apkamDeviceName $apkamDev"
   $authBinary enroll -r "$atDirectoryHost" -a "$atSign" \
-      --app "$apkamApp" \
-      --device "$apkamDev" \
-      --namespaces "sshnp:rw,sshrvd:rw" \
-      --keys "$keysFileName" \
-      --passcode "$otp" 1> /dev/null 2> /dev/null &
+    --app "$apkamApp" \
+    --device "$apkamDev" \
+    --namespaces "sshnp:rw,sshrvd:rw" \
+    --keys "$keysFileName" \
+    --passcode "$otp" 1>/dev/null 2>/dev/null &
 
   # sleep 5 seconds
   logInfo "Waiting for enrollment request to have been submitted"
