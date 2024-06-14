@@ -18,7 +18,7 @@ int run_srv_process(sshnpd_params *params, cJSON *host, cJSON *port, bool authen
   int res = 0;
 
   char *streaming_host = cJSON_GetStringValue(host);
-  char *streaming_port = cJSON_Print(port);
+  char *streaming_port = cJSON_Print(port); // FIXME: leak
   long local_port_len = long_strlen(params->local_sshd_port);
 
   size_t argc = 9 + authenticate_to_rvd + encrypt_rvd_traffic;
