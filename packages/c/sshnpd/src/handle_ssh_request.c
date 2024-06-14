@@ -105,10 +105,70 @@ void handle_ssh_request(atclient *atclient, pthread_mutex_t *atclient_lock, sshn
   cJSON *client_ephemeral_pk = cJSON_GetObjectItem(payload, "clientEphemeralPK");
   cJSON *client_ephemeral_pk_type = cJSON_GetObjectItem(payload, "clientEphemeralPKType");
 
-  // TODO: verify signature of payload
+  // verify signature of payload
+
   // - get public key of requesting atsign
+  const size_t valuelen = 4096;
+  char value[valuelen];
+  memset(value, 0, valuelen);
+  size_t valueolen = 0;
+
+  atclient_atkey atkey;
+  atclient_atkey_init(&atkey);
+
+  if ((res = atclient_atkey_create_publickey(&atkey, "publickey", 9, requesting_atsign, strlen(requesting_atsign), NULL,
+                                             0)) != 0) {
+    atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to create public key\n");
+    free(envelope);
+    return;
+  }
+
+  res = atclient_get_publickey(atclient, &atkey, value, valuelen, &valueolen, true);
+  if (res != 0) {
+    atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to get public key\n");
+    atclient_atkey_free(&atkey);
+    free(envelope);
+    return;
+  }
+
+  atclient_atkey_free(&atkey);
+
+  atchops_rsakey_publickey requesting_atsign_publickey;
+  atchops_rsakey_publickey_init(&requesting_atsign_publickey);
+
+  res = atchops_rsakey_populate_publickey(&requesting_atsign_publickey, value, strlen(value));
+  if (res != 0) {
+    printf("atchops_rsakey_populate_publickey (failed): %d\n", res);
+    free(envelope);
+    return;
+  }
+
   // - get hashing and signing algos from envelope
   // - verify signature from envelop against payload as cJSON_PrintUnformatted
+
+  char *payloadstr = cJSON_PrintUnformatted(payload);
+  char *signature_str = cJSON_GetStringValue(signature);
+  char *hashing_algo_str = cJSON_GetStringValue(hashing_algo);
+  char *signing_algo_str = cJSON_GetStringValue(signing_algo);
+
+  memset(value, 0, valuelen);
+  res = atchops_base64_decode((unsigned char *)signature_str, strlen(signature_str), value, valuelen, &valueolen);
+  if (res != 0) {
+    atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "atchops_base64_decode: %d\n", res);
+    free(envelope);
+    return;
+  }
+
+  res = verify_envelope_signature(requesting_atsign_publickey, (const unsigned char *)payloadstr,
+                                  (unsigned char *)value, hashing_algo_str, signing_algo_str);
+  if (res != 0) {
+    atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to verify envelope signature\n");
+    free(envelope);
+    atchops_rsakey_publickey_free(&requesting_atsign_publickey);
+    return;
+  }
+
+  atchops_rsakey_publickey_free(&requesting_atsign_publickey);
 
   bool authenticate_to_rvd = cJSON_IsTrue(auth_to_rvd);
   bool encrypt_rvd_traffic = cJSON_IsTrue(encrypt_traffic);
@@ -362,8 +422,8 @@ void handle_ssh_request(atclient *atclient, pthread_mutex_t *atclient_lock, sshn
       free(session_iv_encrypted);
       free_session_base64 = true;
     } // rsa2048 - allocates (session_iv_base64, session_aes_key_base64)
-  } // case 7
-  } // switch
+  }   // case 7
+  }   // switch
 
   if (!is_valid) {
     atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR,
@@ -489,12 +549,12 @@ void handle_ssh_request(atclient *atclient, pthread_mutex_t *atclient_lock, sshn
       atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_DEBUG, "Released the atclient lock\n");
     }
 
-  clean_res: { free(keyname); }
-  clean_final_res_value: {
+  clean_res : { free(keyname); }
+  clean_final_res_value : {
     atclient_atkey_free(&final_res_atkey);
     free(final_res_value);
   }
-  clean_json: {
+  clean_json : {
     cJSON_Delete(final_res_envelope);
     free(signing_input);
   }
@@ -513,4 +573,28 @@ cancel:
   }
   free(envelope);
   return;
+}
+
+int verify_envelope_signature(atchops_rsakey_publickey publickey, const unsigned char *payload,
+                              unsigned char *signature, const char *hashing_algo, const char *signing_algo) {
+  int ret = 0;
+
+  atchops_md_type mdtype;
+
+  if (strcmp(hashing_algo, "sha256") == 0) {
+    mdtype = ATCHOPS_MD_SHA256;
+  } else {
+    atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Unsupported hash type for rsa verify\n");
+    return -1;
+  }
+
+  ret = atchops_rsa_verify(publickey, ATCHOPS_MD_SHA256, payload, strlen(payload), signature);
+  if (ret != 0) {
+    atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "verify_envelope_signature (failed)\n");
+    return -1;
+  }
+
+  atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_DEBUG, "verify_envelope_signature (success)\n");
+
+  return ret;
 }
