@@ -57,7 +57,7 @@
 
 # ignore libc
 {
-  idk
+  libc 1
     Memcheck:Leak
     match-leak-kinds: reachable
     fun:calloc
@@ -75,7 +75,7 @@
     fun:_dl_catch_error
 }
 {
-  idk2
+  libc 2
     Memcheck:Leak
     match-leak-kinds: reachable
     fun:malloc
@@ -93,7 +93,7 @@
     fun:_dl_catch_error
 }
 {
-  idk3
+  libc 3
     Memcheck:Leak
     match-leak-kinds: reachable
     fun:malloc
@@ -111,7 +111,7 @@
     fun:_dl_catch_error
 }
 {
-  idk4
+  libc 4
     Memcheck:Leak
     match-leak-kinds: definite
     fun:malloc
@@ -129,7 +129,7 @@
     fun:__libc_dlopen_mode
 }
 {
-  idk5
+  libc 5
     Memcheck:Leak
     match-leak-kinds: reachable
     fun:calloc
