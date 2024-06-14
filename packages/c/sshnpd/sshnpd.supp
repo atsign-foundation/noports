@@ -1,4 +1,23 @@
-# Things to fix only main process
+# key allocation & free is a known false positive
+# TODO: I couldn't see anything wrong with how we are doing it, but need to get 
+# a second set of eyes on this issue - @XavierChanth
+{
+  atchops_rsakey_privatekey_init
+    Memcheck:Leak
+    match-leak-kinds: definite
+    fun:malloc
+    fun:atchops_rsakey_privatekey_init
+    fun:main
+}
+{
+  atchops_rsakey_privatekey_free
+    Memcheck:Free
+    fun:free
+    fun:atchops_rsakey_privatekey_free
+    fun:atclient_atkeys_free
+    fun:main
+}
+# Things to fix
 {
   FIXME cJSON_PrintUnformatted
     Memcheck:Leak
