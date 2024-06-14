@@ -8,4 +8,5 @@
   </serviceaccount>
   <executable>sshnpd</executable>
   <arguments>-a {client} -m {manager} -d {device} -k {homdir} -s</arguments>
+  <onfailure action="restart" delay="3 sec"/>
 </service>

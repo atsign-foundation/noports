@@ -98,31 +98,36 @@ function Parse-Env {
     $script:homepath = if (-not [string]::IsNullOrEmpty($env:HOME)) { $env:HOME } else { $env:USERPROFILE }
     $script:INSTALL_PATH =  "$homepath\.local\bin"
     $script:INSTALL_TYPE = Norm-InstallType "$script:INSTALL_TYPE"
+    #Setting to silence download progress bars, see more 
+    #https://learn.microsoft.com/en-ca/powershell/module/microsoft.powershell.core/about/about_preference_variables?view=powershell-7.4#progresspreference 
+    $global:ProgressPreference = 'SilentlyContinue'
     if ($script:INSTALL_TYPE -eq "device") {
         if (Get-Service "sshnpd" -ErrorAction SilentlyContinue){
-            Invoke-Expression "sshnpd_service stop" -ErrorAction SilentlyContinue
-            Invoke-Expression "sshnpd_service uninstall" -ErrorAction SilentlyContinue
+            Invoke-Expression "sshnpd_service stop" -ErrorAction SilentlyContinue | Out-Null
+            Invoke-Expression "sshnpd_service uninstall" -ErrorAction SilentlyContinue | Out-Null
         }
         if (Test-Path "$script:INSTALL_PATH\sshnp\sshnpd.exe"){
-            Remove-Item -Path "$script:INSTALL_PATH\sshnp\sshnpd.exe" -Force
+            Remove-Item -Path "$script:INSTALL_PATH\sshnp\sshnpd.exe" -Force | Out-Null
         }
         if (Test-Path "$script:INSTALL_PATH\sshnp\sshnpd_service.xml"){
-            Remove-Item -Path "$script:INSTALL_PATH\sshnp\sshnpd_service.xml" -Force
+            Remove-Item -Path "$script:INSTALL_PATH\sshnp\sshnpd_service.xml" -Force | Out-Null
         }
         if (Test-Path "$script:INSTALL_PATH\sshnp\sshnpd_service.exe"){
-            Remove-Item -Path "$script:INSTALL_PATH\sshnp\sshnpd_service.exe" -Force
+            Remove-Item -Path "$script:INSTALL_PATH\sshnp\sshnpd_service.exe" -Force | Out-Null
         }        
     }
     if ($script:INSTALL_TYPE -eq "client") {
         if (Test-Path "$script:INSTALL_PATH\sshnp\sshnp.exe"){
-            Remove-Item -Path "$script:INSTALL_PATH\sshnp\sshnp.exe" -Force
+            Remove-Item -Path "$script:INSTALL_PATH\sshnp\sshnp.exe" -Force | Out-Null
         }
     }
 }
 function Cleanup {
     if (Test-Path "$ARCHIVE_PATH") {
         Remove-Item -Path "$ARCHIVE_PATH" -Recurse -Force
-     }
+    }
+    #Default value for this preference.
+    $global:ProgressPreference = "Continue"
 }
 function Unpack-Archive {
     if (-not (Test-Path "$ARCHIVE_PATH\sshnp.zip")) {
@@ -132,7 +137,7 @@ function Unpack-Archive {
     if (Test-Path "$script:INSTALL_PATH\sshnp"){
         Remove-Item -Path "$script:INSTALL_PATH\sshnp" -Recurse -Force
     }
-    Expand-Archive -Path "$ARCHIVE_PATH\sshnp.zip" -DestinationPath $INSTALL_PATH -Force
+    Expand-Archive -Path "$ARCHIVE_PATH\sshnp.zip" -DestinationPath $INSTALL_PATH -Force | Out-Null
     if (-not (Test-Path "$INSTALL_PATH/sshnp/sshnp.exe")) {
         Write-Host "Failed to unpack sshnp"
         Cleanup
@@ -141,10 +146,10 @@ function Unpack-Archive {
 }
 
 function Download-Sshnp {
-    Write-Host "Downloading sshnp from $SSHNP_URL"
+    Write-Host "Downloading sshnp from $SSHNP_URL..."
     $DOWNLOAD_BODY = $(Invoke-WebRequest -Uri $SSHNP_URL).ToString() -split "," | Select-String "browser_download_url" | Select-String "sshnp-windows" | Select-Object -Index 0
     $DOWNLOAD_URL = $DOWNLOAD_BODY.ToString() -split '"' | Select-Object -Index 3
-    Invoke-WebRequest -Uri $DOWNLOAD_URL -OutFile "$ARCHIVE_PATH\sshnp.zip"
+    Invoke-WebRequest -Uri $DOWNLOAD_URL -OutFile "$ARCHIVE_PATH\sshnp.zip" | Out-Null
     if (-not (Test-Path "$ARCHIVE_PATH\sshnp.zip")) {
         Write-Host "Failed to download sshnp"
         Cleanup
@@ -156,7 +161,8 @@ function Download-Sshnp {
 function Download-Winsw {
     $DOWNLOAD_BODY = $(Invoke-WebRequest -Uri $script:WINSW_URL).ToString() -split "," | Select-String "browser_download_url" | Select-String "WinSW-x64" 
     $DOWNLOAD_URL = $DOWNLOAD_BODY.ToString() -split '"' | Select-Object -Index 3
-    Invoke-WebRequest -Uri $DOWNLOAD_URL -OutFile "$script:INSTALL_PATH\sshnp\sshnpd_service.exe"
+    Write-Host "Installing sshnpd Windows Service..."
+    Invoke-WebRequest -Uri $DOWNLOAD_URL -OutFile "$script:INSTALL_PATH\sshnp\sshnpd_service.exe" | Out-Null
     if (-not (Test-Path "$script:INSTALL_PATH\sshnp\sshnpd_service.exe")) {
         Write-Host "Failed to download winsw"
         Cleanup
@@ -262,7 +268,7 @@ function Install-Client {
 }
 
 function Install-Device {
-    Write-Host "Installed at_activate and sshnpd binaries to $script:INSTALL_PATH"
+    Write-Host "Installed at_activate and sshnpd binaries to $script:INSTALL_PATH" 
     Download-Winsw
     New-Item -Path "$script:INSTALL_PATH\sshnp\" -Name "logs" -ItemType "directory" 
     $servicePath = "$script:INSTALL_PATH\sshnp\sshnpd.exe"
@@ -278,8 +284,8 @@ function Install-Device {
         Exit 1
     } 
     try {
-        Invoke-Expression "$script:service_path install"
-        Invoke-Expression "$script:service_path start"
+        Invoke-Expression "$script:service_path install" | Out-Null
+        Invoke-Expression "$script:service_path start" | Out-Null
     }
     catch {
         Invoke-Expression "$script:service_path stop" -ErrorAction SilentlyContinue
@@ -289,7 +295,7 @@ function Install-Device {
 
 function Uninstall-Both{
     if (Get-Service "sshnpd" -ErrorAction SilentlyContinue){
-        Invoke-Expression "$script:service_path stop" -ErrorAction SilentlyContinue
+        Invoke-Expression "$script:service_path stop" -ErrorAction SilentlyContinue 
         Invoke-Expression "$script:service_path uninstall" -ErrorAction SilentlyContinue
     }
     if (Test-Path "$script:INSTALL_PATH\sshnp"){
@@ -303,14 +309,15 @@ function Uninstall-Both{
 
 # Main function
 function Main {
-    if ([string]::IsNullOrEmpty($script:INSTALL_TYPE)){
+    if ([string]::IsNullOrEmpty($script:INSTALL_TYPE)){ 
         Get-InstallType
     }
+    Parse-Env
+    $script:service_path = "$script:INSTALL_PATH\sshnp\sshnpd_service.exe"
     if ($script:INSTALL_TYPE -eq "uninstall"){
         Uninstall-Both
     }
     Check-BasicRequirements
-    Parse-Env
     if ($dev) {
         Write-Host "---- Dev Mode -----"
         if(-not (Test-Path .\packages\dart\sshnoports\bundles\windows\sshnpd_service.xml)){
@@ -325,7 +332,6 @@ function Main {
     if($dev) {
         Copy-Item .\packages\dart\sshnoports\bundles\windows\sshnpd_service.xml "$script:INSTALL_PATH/sshnp"
     }
-    $script:service_path = "$script:INSTALL_PATH\sshnp\sshnpd_service.exe"
     while ([string]::IsNullOrEmpty($script:DEVICE_ATSIGN)){
         Write-Host "Selecting a Device atsign.."
         $atsign = Get-Atsigns
