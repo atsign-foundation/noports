@@ -353,24 +353,30 @@ FIXME atclient_connection_connect mbedtls_asn1_get_sequence_of
    fun:main
 }
 
-# False positives?
-# TODO: I couldn't see anything wrong with how we are doing it, but need to get 
-# a second set of eyes on this issue - @XavierChanth
+# srv
 {
-  atchops_rsakey_privatekey_init
+  FIXME srv_side_handle
     Memcheck:Leak
-    match-leak-kinds: definite
     fun:malloc
-    fun:atchops_rsakey_privatekey_init
-    fun:main
+    fun:srv_side_handle 
+    fun:start_thread 
+    fun:clone 
 }
 {
-  atchops_rsakey_privatekey_free
-    Memcheck:Free
-    fun:free
-    fun:atchops_rsakey_privatekey_free
-    fun:atclient_atkeys_free
-    fun:main
+  FIXME srv certs
+    Memcheck:Leak
+    fun:calloc 
+    fun:asn1_get_sequence_of_cb 
+    fun:mbedtls_asn1_traverse_sequence_of 
+    fun:mbedtls_asn1_get_sequence_of 
+    fun:x509_get_ext_key_usage 
+    fun:x509_get_crt_ext 
+    fun:x509_crt_parse_der_core 
+    fun:mbedtls_x509_crt_parse_der_internal 
+    fun:mbedtls_x509_crt_parse_der 
+    fun:ssl_parse_certificate_chain 
+    fun:mbedtls_ssl_parse_certificate 
+    fun:mbedtls_ssl_handshake_client_step 
 }
 
 # ignore libc
