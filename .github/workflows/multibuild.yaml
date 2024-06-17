@@ -218,6 +218,7 @@ jobs:
           if-no-files-found: error
 
   universal_ps1:
+    if: startsWith(github.ref, 'refs/tags/v')
     defaults:
       run:
         working-directory: ./packages/dart/sshnoports/bundles
