@@ -235,7 +235,7 @@ jobs:
   github-release:
     name: >-
       Upload artifacts and generate SBOMs and checksums for provenance
-    needs: [main_build, other_build, universal_sh]
+    needs: [main_build, other_build, universal_sh, universal_ps1]
     runs-on: ubuntu-latest
     outputs:
       hashes: ${{ steps.hash.outputs.hashes }}
