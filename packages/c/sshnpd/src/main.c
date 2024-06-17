@@ -347,7 +347,6 @@ exit:
   free(params.permitopen);
   free(params.permitopen_str);
 
-  atlogger_free();
   exit(exit_res);
 }
 
