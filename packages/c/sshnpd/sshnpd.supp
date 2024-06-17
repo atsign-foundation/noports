@@ -14,14 +14,6 @@
     fun:malloc
     fun:atclient_atsign_init
 }
-{
-  FIXME atclient_connection_enable_hooks - FP?
-    Memcheck:Leak
-    fun:malloc
-    fun:atclient_connection_enable_hooks
-    fun:set_worker_hooks
-    fun:main
-}
 # Issues after connections have been made
 {
   FIXME atclient_atstr_init 1
