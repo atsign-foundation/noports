@@ -264,6 +264,7 @@ jobs:
       run: |
         cd tarballs
         mv */*.sh .
+        mv */*.ps1 .
         mv */*.tgz .
         mv */*.zip .
         rm -Rf -- */
