@@ -23,8 +23,8 @@
 #define BYTES(x) (sizeof(unsigned char) * x)
 
 void handle_ssh_request(atclient *atclient, pthread_mutex_t *atclient_lock, sshnpd_params *params,
-                        atclient_monitor_message *message, char *home_dir, FILE *authkeys_file, char *authkeys_filename,
-                        atchops_rsakey_privatekey signing_key) {
+                        bool *is_child_process, atclient_monitor_message *message, char *home_dir, FILE *authkeys_file,
+                        char *authkeys_filename, atchops_rsakey_privatekey signing_key) {
   int res = 0;
   char *requesting_atsign = message->notification.from;
 
@@ -192,6 +192,7 @@ void handle_ssh_request(atclient *atclient, pthread_mutex_t *atclient_lock, sshn
     }
 
     cJSON *rvd_auth_payload = cJSON_CreateObject();
+    // FIXME: leaks : these 3 calls
     cJSON_AddItemReferenceToObject(rvd_auth_payload, "sessionId", session_id);
     cJSON_AddItemReferenceToObject(rvd_auth_payload, "clientNonce", client_nonce);
     cJSON_AddItemReferenceToObject(rvd_auth_payload, "rvdNonce", rvd_nonce);
@@ -441,11 +442,13 @@ void handle_ssh_request(atclient *atclient, pthread_mutex_t *atclient_lock, sshn
   // - session_aes_key_base64 (if free_session_base64 == true)
   // - session_iv_base64 (if free_session_base64 == true)
 
-  pid_t pid, pid2;
-  int status, status2;
-  pid = fork();
+  pid_t pid = fork();
+  int status;
+  bool free_envelope = true;
+
   if (pid == 0) {
     // child process
+
     // free this immediately, we don't need it on the child fork
     free(envelope);
     if (free_session_base64) {
@@ -453,11 +456,14 @@ void handle_ssh_request(atclient *atclient, pthread_mutex_t *atclient_lock, sshn
       free(session_iv_base64);
     }
 
-    run_srv_process(params, host, port, authenticate_to_rvd, rvd_auth_string, encrypt_rvd_traffic, session_aes_key,
-                    session_iv, authkeys_file, authkeys_filename);
+    int res = run_srv_process(params, host, port, authenticate_to_rvd, rvd_auth_string, encrypt_rvd_traffic,
+                              session_aes_key, session_iv, authkeys_file, authkeys_filename);
+    *is_child_process = true;
+
     if (authenticate_to_rvd) {
       free(rvd_auth_string);
     }
+    return;
     // end of child process
   } else if (pid > 0) {
 
@@ -522,7 +528,7 @@ void handle_ssh_request(atclient *atclient, pthread_mutex_t *atclient_lock, sshn
 
     atclient_notify_params notify_params;
     atclient_notify_params_init(&notify_params);
-    notify_params.key = final_res_atkey;
+    notify_params.atkey = &final_res_atkey;
     notify_params.value = final_res_value;
     notify_params.operation = ATCLIENT_NOTIFY_OPERATION_UPDATE;
 

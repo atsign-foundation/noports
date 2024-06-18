@@ -62,7 +62,7 @@ int parse_sshnpd_params(sshnpd_params *params, int argc, const char **argv) {
   }
 
   if (permitopen == NULL) {
-    params->permitopen_str = malloc(sizeof(char) * (strlen(default_permitopen) + 1));
+    params->permitopen_str = malloc(sizeof(char) * (strlen(default_permitopen) + 1)); // FIXME: leaks
     if (params->permitopen_str == NULL) {
       printf("Failed to allocate memory for default permitopen string\n");
       return 1;
@@ -106,7 +106,7 @@ int parse_sshnpd_params(sshnpd_params *params, int argc, const char **argv) {
   }
 
   // malloc pointers to each string, but don't malloc any more memory for individual char storage
-  params->manager_list = malloc((sep_count + 1) * sizeof(char *));
+  params->manager_list = malloc((sep_count + 1) * sizeof(char *)); // FIXME: leak
   if (params->manager_list == NULL) {
     printf("Failed to allocate memory for manager list\n");
     free(params->permitopen_str);
@@ -145,7 +145,7 @@ int parse_sshnpd_params(sshnpd_params *params, int argc, const char **argv) {
   }
 
   // malloc pointers to each string, but don't malloc any more memory for individual char storage
-  params->permitopen = malloc((sep_count + 1) * sizeof(char *));
+  params->permitopen = malloc((sep_count + 1) * sizeof(char *)); // FIXME  leak
   if (params->permitopen == NULL) {
     printf("Failed to allocate memory for permitopen\n");
     free(params->manager_list);
