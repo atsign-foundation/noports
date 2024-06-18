@@ -19,19 +19,32 @@ class LocalSshKeyUtil implements AtSshKeyUtil {
   final FileSystem fs;
 
   final String homeDirectory;
+  late final String sshHomeDirectory;
+  late final String sshnpHomeDirectory;
   bool cacheKeys;
 
   LocalSshKeyUtil({
     String? homeDirectory,
     this.cacheKeys = true,
     @visibleForTesting this.fs = const LocalFileSystem(),
-  }) : homeDirectory = homeDirectory ?? getHomeDirectory(throwIfNull: true)!;
+  }) : homeDirectory = homeDirectory ?? getHomeDirectory(throwIfNull: true)! {
+    sshHomeDirectory = path.normalize('${this.homeDirectory}/.ssh/');
+    sshnpHomeDirectory = path.normalize('${this.homeDirectory}/.sshnp/');
+
+    if (!fs.directory(sshHomeDirectory).existsSync()) {
+      fs.directory(sshHomeDirectory).createSync(recursive: true);
+    }
+    if (!fs.directory(sshnpHomeDirectory).existsSync()) {
+      fs.directory(sshnpHomeDirectory).createSync(recursive: true);
+    }
+    if (!Platform.isWindows) {
+      chmod(sshHomeDirectory, '700');
+      chmod(sshnpHomeDirectory, '700');
+    }
+  }
 
   bool get isValidPlatform =>
       Platform.isLinux || Platform.isMacOS || Platform.isWindows;
-
-  String get sshHomeDirectory => path.normalize('$homeDirectory/.ssh/');
-  String get sshnpHomeDirectory => path.normalize('$homeDirectory/.sshnp/');
 
   String get _defaultDirectory => sshnpHomeDirectory;
 
@@ -137,10 +150,6 @@ class LocalSshKeyUtil implements AtSshKeyUtil {
     if (!sshPublicKey.startsWith(RegExp(
         r'^(ecdsa-sha2-nistp)|(rsa-sha2-)|(ssh-rsa)|(ssh-ed25519)|(ecdsa-sha2-nistp)'))) {
       throw ('$sshPublicKey does not look like a public key');
-    }
-
-    if (!fs.directory(sshHomeDirectory).existsSync()) {
-      fs.directory(sshHomeDirectory).createSync();
     }
 
     // Check to see if the ssh Publickey is already in the authorized_keys file.
