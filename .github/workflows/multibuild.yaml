@@ -56,7 +56,7 @@ jobs:
             output-name: sshnp-linux-x64
             ext: ''
             bundle: 'shell'
-          - os: macOS-latest
+          - os: macos-13
             output-name: sshnp-macos-x64
             ext: ''
             bundle: 'shell'
