@@ -28,8 +28,8 @@ class LocalSshKeyUtil implements AtSshKeyUtil {
     this.cacheKeys = true,
     @visibleForTesting this.fs = const LocalFileSystem(),
   }) : homeDirectory = homeDirectory ?? getHomeDirectory(throwIfNull: true)! {
-    sshHomeDirectory = path.normalize('$homeDirectory/.ssh/');
-    sshnpHomeDirectory = path.normalize('$homeDirectory/.sshnp/');
+    sshHomeDirectory = path.normalize('${this.homeDirectory}/.ssh/');
+    sshnpHomeDirectory = path.normalize('${this.homeDirectory}/.sshnp/');
 
     if (!fs.directory(sshHomeDirectory).existsSync()) {
       fs.directory(sshHomeDirectory).createSync(recursive: true);
