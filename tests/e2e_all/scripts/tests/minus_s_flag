@@ -8,23 +8,29 @@
 
 scriptName=$(basename -- "$0")
 
-if test -z "$testScriptsDir" ; then
+if test -z "$testScriptsDir"; then
   echo -e "    ${RED}check_env: testScriptsDir is not set${NC}" && exit 1
 fi
 
 source "$testScriptsDir/common/common_functions.include.sh"
 source "$testScriptsDir/common/check_env.include.sh" || exit $?
 
-if test $# != 2 ; then
+if test $# != 2; then
   logErrorAndExit "Must supply daemonVersion, clientVersion"
 fi
 
 daemonVersion="$1"
 clientVersion="$2"
 
-if [[ "$clientVersion" != "d:current" ]] || [[ "$daemonVersion" != "d:current" ]]; then
+if [[ "$clientVersion" != "d:current" ]] || [[ "${daemonVersion:1}" != ":current" ]]; then
   exit 50 # test rig interprets this exit status as 'test was not applicable'
 fi
+
+if [[ "${daemonVersion:0:1}" == "c" && $(versionIsLessThan "$clientVersion" "d:5.3.0") ]]; then
+  logInfoAndReport "    N/A C daemon is not compatible with thi client"
+  exit 50
+fi
+
 # 1. Generate a new ssh key
 generateNewSshKey
 
@@ -38,27 +44,36 @@ clientBinaryPath=$(getPathToBinariesForTypeAndVersion "$clientVersion")
 #   ssh command rather than just forking to the ssh inline.
 # - sshnp since 5.x also requires '--no-ad' and '--no-et' flags,
 #   since those features are enabled by default from v5
-if [[ $(versionIsAtLeast "$clientVersion" "d:5.0.0") == "true" ]] ; then
+if [[ "${daemonVersion:0:1}" == "c" ]]; then
+  extraFlags="-x"
+elif [[ $(versionIsAtLeast "$clientVersion" "d:5.0.0") == "true" ]]; then
   extraFlags="-x --no-ad --no-et"
+fi
+
+if [[ $(versionIsAtLeast "$clientVersion" "d:5.3.0") == "true" ]]; then
+  apkamApp=$(getApkamAppName)
+  apkamDev=$(getApkamDeviceName "client" "$commitId")
+  keysFile=$(getApkamKeysFile "$clientAtSign" "$apkamApp" "$apkamDev")
+  extraFlags="$extraFlags -k $keysFile"
 fi
 
 # 2a. Run sshnp against a daemon without the -s flag, with that new key
 #   2b. Verify it fails
-deviceName=$(getDeviceNameNoFlags "$commitId" "$daemonVersion" )
+deviceName=$(getDeviceNameNoFlags "$commitId" "$daemonVersion")
 
 # We will capture daemon log from now until end of test
 outputDir=$(getOutputDir)
 daemonLogFile="${outputDir}/daemons/${deviceName}.log"
-echo "First daemon (without flags) $deviceName" >> "$DAEMON_LOG_FRAGMENT_NAME"
-echo "" >> "$DAEMON_LOG_FRAGMENT_NAME"
-tail -f "$daemonLogFile" >> "$DAEMON_LOG_FRAGMENT_NAME" &
+echo "First daemon (without flags) $deviceName" >>"$DAEMON_LOG_FRAGMENT_NAME"
+echo "" >>"$DAEMON_LOG_FRAGMENT_NAME"
+tail -f "$daemonLogFile" >>"$DAEMON_LOG_FRAGMENT_NAME" &
 tailPid=$! # We'll kill this later
 
 l1="$clientBinaryPath/sshnp -f $clientAtSign -d $deviceName -i $identityFilename"
 l2=" -t $daemonAtSign -h $srvAtSign -u $remoteUsername"
 l4=" --root-domain $atDirectoryHost"
 l5=" ${extraFlags}"
-sshnpCommand="$l1 $l2 $l3 $l4 $l5 -s ${identityFilename}.pub"
+sshnpCommand="$l1 $l2 $l3 $l4 $l5 -s"
 
 echo "$(iso8601Date) | Executing $sshnpCommand"
 sshCommand=$($sshnpCommand)
@@ -69,7 +84,7 @@ sshnpExitStatus=$?
 #   public keys
 # - 4.x clients, and 5.x clients against 4.x daemons will show success to this point
 #   so let's try the ssh which will fail
-if (( sshnpExitStatus != 0 )); then
+if ((sshnpExitStatus != 0)); then
   logInfo "$scriptName: sshnp with new key failed as expected" | tee -a "$(getReportFile)"
 else
   echo "$(iso8601Date) | Executing $sshCommand"
@@ -78,7 +93,7 @@ else
   $(getTestSshCommand "$sshCommand")
   exitStatus=$?
 
-  if (( exitStatus == 0 )); then
+  if ((exitStatus == 0)); then
     # It should have failed
     logError "$scriptName: sshnp with new key did not fail as expected"
     kill $tailPid
@@ -88,31 +103,30 @@ else
   fi
 fi
 
-
 # 3a. Run against a daemon with the -s flag
 #   3b. Verify it succeeds
-deviceName=$(getDeviceNameWithFlags "$commitId" "$daemonVersion" )
+deviceName=$(getDeviceNameWithFlags "$commitId" "$daemonVersion")
 
 # We will capture daemon log from now until end of test
 kill $tailPid
 outputDir=$(getOutputDir)
 daemonLogFile="${outputDir}/daemons/${deviceName}.log"
-echo "" >> "$DAEMON_LOG_FRAGMENT_NAME"
-echo "Second daemon (with flags) : $deviceName" >> "$DAEMON_LOG_FRAGMENT_NAME"
-echo "" >> "$DAEMON_LOG_FRAGMENT_NAME"
-tail -f "$daemonLogFile" >> "$DAEMON_LOG_FRAGMENT_NAME" &
+echo "" >>"$DAEMON_LOG_FRAGMENT_NAME"
+echo "Second daemon (with flags) : $deviceName" >>"$DAEMON_LOG_FRAGMENT_NAME"
+echo "" >>"$DAEMON_LOG_FRAGMENT_NAME"
+tail -f "$daemonLogFile" >>"$DAEMON_LOG_FRAGMENT_NAME" &
 tailPid=$! # We'll kill this later
 
 l1="$clientBinaryPath/sshnp -f $clientAtSign -d $deviceName -i $identityFilename"
 l2=" -t $daemonAtSign -h $srvAtSign -u $remoteUsername"
 l4=" --root-domain $atDirectoryHost"
 l5=" ${extraFlags}"
-sshnpCommand="$l1 $l2 $l3 $l4 $l5 -s ${identityFilename}.pub"
+sshnpCommand="$l1 $l2 $l3 $l4 $l5 -s"
 
 echo "$(iso8601Date) | Executing $sshnpCommand"
 sshCommand=$($sshnpCommand)
 sshnpExitStatus=$?
-if (( sshnpExitStatus != 0 )); then
+if ((sshnpExitStatus != 0)); then
   # Kill the daemon log tail, and exit with the exit status of the sshnp command
   kill $tailPid
   exit $sshnpExitStatus

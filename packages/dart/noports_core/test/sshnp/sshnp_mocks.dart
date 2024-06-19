@@ -17,6 +17,7 @@ abstract class NotifyCaller {
     String value, {
     required bool checkForFinalDeliveryStatus,
     required bool waitForFinalDeliveryStatus,
+    required Duration ttln,
   });
 }
 

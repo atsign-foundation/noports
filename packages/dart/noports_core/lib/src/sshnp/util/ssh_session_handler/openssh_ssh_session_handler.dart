@@ -108,9 +108,7 @@ mixin OpensshSshSessionHandler on SshnpCore
   }
 
   @override
-  Future<Process?> startUserSession({
-    required Process? tunnelSession,
-  }) async {
+  Future<Process?> startUserSession() async {
     throw UnimplementedError();
   }
 }

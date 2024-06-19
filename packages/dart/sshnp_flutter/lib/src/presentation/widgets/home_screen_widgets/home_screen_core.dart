@@ -45,7 +45,11 @@ class _HomeScreenCoreState extends ConsumerState<HomeScreenCore> {
   @override
   Widget build(BuildContext context) {
     final strings = AppLocalizations.of(context)!;
+    final bodyLarge = Theme.of(context).textTheme.bodyLarge!;
+    final bodyMedium = Theme.of(context).textTheme.bodyMedium!;
     final profileNames = ref.watch(configListController);
+
+    SizeConfig().init(context);
     return profileNames.when(
       loading: () => const Center(
         child: CircularProgressIndicator(),
@@ -55,49 +59,89 @@ class _HomeScreenCoreState extends ConsumerState<HomeScreenCore> {
       },
       data: (profiles) {
         if (profiles.isEmpty) {
-          return Center(
+          final emptyStateTextColor = bodyMedium.copyWith(
+            color: Colors.white30,
+            fontSize: bodyMedium.fontSize!.toFont,
+          );
+          return SingleChildScrollView(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 gapH40,
-                Text(
-                  'Get Started!',
-                  style: Theme.of(context).textTheme.bodyMedium!.copyWith(color: kHomeScreenGreyText),
-                ),
-                gapH16,
-                GestureDetector(
-                  onTap: () => HomeScreenActionCallbacks.newProfileAction(ref, context),
-                  child: Stack(
-                    children: [
-                      // const NewProfileAction(),
-                      SvgPicture.asset(
-                        'assets/images/empty_profile_bg.svg',
-                        width: MediaQuery.of(context).size.width * 0.8,
-                        height: MediaQuery.of(context).size.height * 0.68,
-                        fit: BoxFit.cover,
-                      ),
-                      Positioned(
-                        top: 60,
-                        left: 88,
-                        right: 88,
-                        child: Text(
-                          strings.createConnectionProfile,
-                          style: Theme.of(context).textTheme.bodyLarge!.copyWith(fontSize: 18),
-                          textAlign: TextAlign.center,
-                        ),
-                      ),
-                      Positioned(
-                        top: 100,
-                        left: 88,
-                        right: 88,
-                        child: Text(
-                          strings.createConnectionProfileDesc,
-                          textAlign: TextAlign.center,
-                        ),
-                      ),
-                    ],
+                // TODO: revisite uncommented code for pro version
+                // Text(
+                //   'Get Started!',
+                //   style: Theme.of(context).textTheme.bodyMedium!.copyWith(color: kHomeScreenGreyText),
+                // ),
+                // gapH16,
+                // EmptyStateAltWidget(ref: ref, strings: strings),
+                ListTile(
+                  title: Text(
+                    strings.getStartedTitle,
+                    style: bodyLarge.copyWith(fontSize: bodyLarge.fontSize!.toFont),
                   ),
+                  subtitle: Text(
+                    strings.getStartedSubtitle,
+                    style: bodyMedium.copyWith(fontWeight: FontWeight.normal, fontSize: bodyMedium.fontSize!.toFont),
+                  ),
+                  tileColor: kPrimaryColor,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: Sizes.p36,
+                    vertical: Sizes.p12,
+                  ),
+                  trailing: Icon(
+                    Icons.add_circle_outline,
+                    size: 24.toFont,
+                  ),
+                  onTap: () => HomeScreenActionCallbacks.newProfileAction(ref, context),
                 ),
+                gapH24,
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      strings.profileName('other'),
+                      style: emptyStateTextColor,
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.only(right: Sizes.p36),
+                      child: Text(
+                        strings.commands,
+                        style: emptyStateTextColor,
+                      ),
+                    ),
+                  ],
+                ),
+                const Divider(),
+                gapH20,
+                Container(
+                  width: double.infinity,
+                  height: MediaQuery.of(context).size.height * 0.4,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(Sizes.p10),
+                    color: kProfileBackgroundColor,
+                  ),
+                  child: Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text(
+                          strings.getStartedNoConnections,
+                          style: emptyStateTextColor,
+                        ),
+                        gapH20,
+                        SvgPicture.asset(
+                          'assets/images/getting_started_empty_state.svg',
+                          width: MediaQuery.of(context).size.width * 0.15,
+                          height: MediaQuery.of(context).size.height * 0.15,
+                        )
+                      ],
+                    ),
+                  ),
+                )
               ],
             ),
           );
@@ -109,10 +153,16 @@ class _HomeScreenCoreState extends ConsumerState<HomeScreenCore> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(strings.profileName('other')),
+                Text(strings.profileName('other'),
+                    style: bodyMedium.copyWith(
+                      fontSize: bodyMedium.fontSize!.toFont,
+                    )),
                 Padding(
                   padding: const EdgeInsets.only(right: Sizes.p36),
-                  child: Text(strings.commands),
+                  child: Text(strings.commands,
+                      style: bodyMedium.copyWith(
+                        fontSize: bodyMedium.fontSize!.toFont,
+                      )),
                 ),
               ],
             ),
@@ -125,6 +175,54 @@ class _HomeScreenCoreState extends ConsumerState<HomeScreenCore> {
           ],
         );
       },
+    );
+  }
+}
+
+class EmptyStateAltWidget extends StatelessWidget {
+  const EmptyStateAltWidget({
+    super.key,
+    required this.ref,
+    required this.strings,
+  });
+
+  final WidgetRef ref;
+  final AppLocalizations strings;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: () => HomeScreenActionCallbacks.newProfileAction(ref, context),
+      child: Stack(
+        children: [
+          // const NewProfileAction(),
+          SvgPicture.asset(
+            'assets/images/empty_profile_bg.svg',
+            width: MediaQuery.of(context).size.width * 0.8,
+            height: MediaQuery.of(context).size.height * 0.68,
+            fit: BoxFit.cover,
+          ),
+          Positioned(
+            top: 60,
+            left: 88,
+            right: 88,
+            child: Text(
+              strings.createConnectionProfile,
+              style: Theme.of(context).textTheme.bodyLarge!.copyWith(fontSize: 18),
+              textAlign: TextAlign.center,
+            ),
+          ),
+          Positioned(
+            top: 100,
+            left: 88,
+            right: 88,
+            child: Text(
+              strings.createConnectionProfileDesc,
+              textAlign: TextAlign.center,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

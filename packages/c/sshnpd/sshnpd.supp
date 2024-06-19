@@ -1,0 +1,442 @@
+# Things to fix only main process
+{
+  FIXME cJSON_PrintUnformatted
+    Memcheck:Leak
+    match-leak-kinds: reachable
+    fun:realloc
+    fun:print
+    fun:cJSON_PrintUnformatted
+    fun:main
+}
+{
+  FIXME atclient_atsign_init
+    Memcheck:Leak
+    fun:malloc
+    fun:atclient_atsign_init
+}
+# Issues after connections have been made
+{
+  FIXME atclient_atstr_init 1
+    Memcheck:Leak
+    match-leak-kinds: definite
+    fun:malloc
+    fun:atclient_atstr_init
+    fun:atclient_atstr_init_literal
+
+}
+{
+  FIXME atclient_atstr_init 2
+    Memcheck:Leak
+    match-leak-kinds: definite
+    fun:malloc
+    fun:atclient_atstr_init
+    fun:atclient_atkey_init
+}
+# cjson related
+{
+  FIXME run_srv_process cJSON_Print
+    Memcheck:Leak
+    match-leak-kinds: definite
+    fun:realloc
+    fun:print
+    fun:cJSON_Print
+    fun:run_srv_process
+    fun:handle_ssh_request
+    fun:main_loop
+    fun:main
+}
+{
+  FIXME handle_ssh_request cJSON_AddItemReferenceToObject 1
+    Memcheck:Leak
+    match-leak-kinds: indirect
+    fun:malloc
+    fun:cJSON_strdup
+    fun:add_item_to_object
+    fun:cJSON_AddItemReferenceToObject
+    fun:handle_ssh_request
+    fun:main_loop
+    fun:main
+}
+{
+  FIXME handle_ssh_request cJSON_AddItemReferenceToObject 2
+    Memcheck:Leak
+    match-leak-kinds: indirect
+    fun:malloc
+    fun:cJSON_New_Item
+    fun:create_reference
+    fun:cJSON_AddItemReferenceToObject
+    fun:handle_ssh_request
+    fun:main_loop
+    fun:main
+}
+
+{
+  FIXME handle_ssh_request cJSON_Parse
+    Memcheck:Leak
+    match-leak-kinds: indirect
+    fun:malloc
+    fun:parse_string
+    fun:parse_value
+    fun:parse_object
+    fun:parse_value
+    fun:cJSON_ParseWithLengthOpts
+    fun:cJSON_ParseWithOpts
+    fun:cJSON_Parse
+    fun:handle_ssh_request
+    fun:main_loop
+    fun:main
+}
+{
+   FIXME handle_ssh_request cJSON_Parse 2
+   Memcheck:Leak
+   match-leak-kinds: indirect
+   fun:malloc
+   fun:cJSON_New_Item
+   fun:parse_object
+   fun:parse_value
+   fun:cJSON_ParseWithLengthOpts
+   fun:cJSON_ParseWithOpts
+   fun:cJSON_Parse
+   fun:handle_ssh_request
+   fun:main_loop
+   fun:main
+}
+{
+   FIXME handle_ssh_request cJSON_Parse 3
+   Memcheck:Leak
+   match-leak-kinds: indirect
+   fun:malloc
+   fun:parse_string
+   fun:parse_value
+   fun:parse_object
+   fun:parse_value
+   fun:parse_object
+   fun:parse_value
+   fun:cJSON_ParseWithLengthOpts
+   fun:cJSON_ParseWithOpts
+   fun:cJSON_Parse
+   fun:handle_ssh_request
+   fun:main_loop
+}
+{
+FIXME handle_ssh_request cJSON_Parse 4
+   Memcheck:Leak
+   match-leak-kinds: definite
+   fun:malloc
+   fun:cJSON_New_Item
+   fun:parse_object
+   fun:parse_value
+   fun:cJSON_ParseWithLengthOpts
+   fun:cJSON_ParseWithOpts
+   fun:cJSON_Parse
+   fun:handle_ssh_request
+   fun:main_loop
+   fun:main
+}
+{
+FIXME handle_ssh_request cJSON_Parse 5
+   Memcheck:Leak
+   match-leak-kinds: indirect
+   fun:malloc
+   fun:parse_string
+   fun:parse_object
+   fun:parse_value
+   fun:cJSON_ParseWithLengthOpts
+   fun:cJSON_ParseWithOpts
+   fun:cJSON_Parse
+   fun:handle_ssh_request
+   fun:main_loop
+   fun:main
+}
+{
+FIXME handle_ssh_request cJSON_Parse 6
+   Memcheck:Leak
+   match-leak-kinds: indirect
+   fun:malloc
+   fun:parse_string
+   fun:parse_object
+   fun:parse_value
+   fun:parse_object
+   fun:parse_value
+   fun:cJSON_ParseWithLengthOpts
+   fun:cJSON_ParseWithOpts
+   fun:cJSON_Parse
+   fun:handle_ssh_request
+   fun:main_loop
+   fun:main
+}
+{
+FIXME handle_ssh_request cJSON_Parse 7
+   Memcheck:Leak
+   match-leak-kinds: indirect
+   fun:malloc
+   fun:cJSON_New_Item
+   fun:parse_object
+   fun:parse_value
+   fun:parse_object
+   fun:parse_value
+   fun:cJSON_ParseWithLengthOpts
+   fun:cJSON_ParseWithOpts
+   fun:cJSON_Parse
+   fun:handle_ssh_request
+   fun:main_loop
+   fun:main
+}
+{
+FIXME handle_ssh_request cJSON_Parse 8
+   Memcheck:Leak
+   match-leak-kinds: definite
+   fun:malloc
+   fun:cJSON_New_Item
+   fun:parse_object
+   fun:parse_value
+   fun:cJSON_ParseWithLengthOpts
+   fun:cJSON_ParseWithOpts
+   fun:cJSON_Parse
+   fun:handle_ssh_request
+   fun:main_loop
+   fun:main
+}
+{
+  FIXME handle_ssh_request cJSON_CreateObject
+    Memcheck:Leak
+    match-leak-kinds: definite
+    fun:malloc
+    fun:cJSON_New_Item
+    fun:cJSON_CreateObject
+    fun:handle_ssh_request
+    fun:main_loop
+    fun:main
+}
+# mbedtls related
+{
+FIXME atclient_connection_connect mbedtls_pk_parse_subpubkey
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   fun:calloc
+   fun:mbedtls_mpi_grow
+   fun:mbedtls_mpi_resize_clear
+   fun:mbedtls_mpi_read_binary
+   fun:mbedtls_rsa_import_raw
+   fun:pk_get_rsapubkey
+   fun:mbedtls_pk_parse_subpubkey
+   fun:x509_crt_parse_der_core
+   fun:mbedtls_x509_crt_parse_der_internal
+   fun:mbedtls_x509_crt_parse_der
+   fun:mbedtls_x509_crt_parse
+   fun:atclient_connection_connect
+}
+{
+  FIXME atclient_connection_connect x509_get_certificate_policies
+    Memcheck:Leak
+    match-leak-kinds: reachable
+    fun:calloc
+    fun:x509_get_certificate_policies
+    fun:x509_get_crt_ext
+    fun:x509_crt_parse_der_core
+    fun:mbedtls_x509_crt_parse_der_internal
+    fun:mbedtls_x509_crt_parse_der
+    fun:mbedtls_x509_crt_parse
+    fun:atclient_connection_connect
+    fun:atclient_start_atserver_connection
+    fun:atclient_pkam_authenticate
+    fun:main
+}
+{
+  FIXME atclient_connection_connect x509_get_certificate_policies 2
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   fun:calloc
+   fun:x509_get_certificate_policies
+   fun:x509_get_crt_ext
+   fun:x509_crt_parse_der_core
+   fun:mbedtls_x509_crt_parse_der_internal
+   fun:mbedtls_x509_crt_parse_der
+   fun:ssl_parse_certificate_chain
+   fun:mbedtls_ssl_parse_certificate
+   fun:mbedtls_ssl_handshake_client_step
+   fun:mbedtls_ssl_handshake_step
+   fun:mbedtls_ssl_handshake
+   fun:atclient_connection_connect
+}
+{
+FIXME atclient_connection_connect mbedtls_asn1_get_sequence_of
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   fun:calloc
+   fun:asn1_get_sequence_of_cb
+   fun:mbedtls_asn1_traverse_sequence_of
+   fun:mbedtls_asn1_get_sequence_of
+   fun:x509_get_ext_key_usage
+   fun:x509_get_crt_ext
+   fun:x509_crt_parse_der_core
+   fun:mbedtls_x509_crt_parse_der_internal
+   fun:mbedtls_x509_crt_parse_der
+   fun:mbedtls_x509_crt_parse
+   fun:atclient_connection_connect
+   fun:atclient_start_atserver_connection
+}
+{
+  FIXME atclient_connection_connect pk_get_ecpubkey
+    Memcheck:Leak
+    match-leak-kinds: reachable
+    fun:calloc
+    fun:mbedtls_mpi_grow
+    fun:mbedtls_mpi_lset
+    fun:mbedtls_ecp_point_read_binary
+    fun:pk_get_ecpubkey
+    fun:mbedtls_pk_parse_subpubkey
+    fun:x509_crt_parse_der_core
+    fun:mbedtls_x509_crt_parse_der_internal
+    fun:mbedtls_x509_crt_parse_der
+    fun:mbedtls_x509_crt_parse
+    fun:atclient_connection_connect
+    fun:atclient_start_atserver_connection
+}
+{
+   FIXME mbedtls_ssl_parse_certificate
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   fun:calloc
+   fun:mbedtls_mpi_grow
+   fun:mbedtls_mpi_resize_clear
+   fun:mbedtls_mpi_read_binary
+   fun:mbedtls_rsa_import_raw
+   fun:pk_get_rsapubkey
+   fun:mbedtls_pk_parse_subpubkey
+   fun:x509_crt_parse_der_core
+   fun:mbedtls_x509_crt_parse_der_internal
+   fun:mbedtls_x509_crt_parse_der
+   fun:ssl_parse_certificate_chain
+   fun:mbedtls_ssl_parse_certificate
+}
+
+{
+   FIXME mbedtls_ssl_set_hostname
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   fun:calloc
+   fun:mbedtls_ssl_set_hostname
+   fun:atclient_connection_connect
+   fun:atclient_start_atserver_connection
+   fun:atclient_pkam_authenticate
+   fun:main
+}
+
+# srv
+{
+  FIXME srv_side_handle
+    Memcheck:Leak
+    fun:malloc
+    fun:srv_side_handle 
+    fun:start_thread 
+    fun:clone 
+}
+{
+  FIXME srv certs
+    Memcheck:Leak
+    fun:calloc 
+    fun:asn1_get_sequence_of_cb 
+    fun:mbedtls_asn1_traverse_sequence_of 
+    fun:mbedtls_asn1_get_sequence_of 
+    fun:x509_get_ext_key_usage 
+    fun:x509_get_crt_ext 
+    fun:x509_crt_parse_der_core 
+    fun:mbedtls_x509_crt_parse_der_internal 
+    fun:mbedtls_x509_crt_parse_der 
+    fun:ssl_parse_certificate_chain 
+    fun:mbedtls_ssl_parse_certificate 
+    fun:mbedtls_ssl_handshake_client_step 
+}
+
+# ignore libc
+{
+  libc 1
+    Memcheck:Leak
+    match-leak-kinds: reachable
+    fun:calloc
+    fun:UnknownInlinedFun
+    fun:_dl_new_object
+    fun:_dl_map_object_from_fd
+    fun:_dl_map_object
+    fun:dl_open_worker_begin
+    fun:_dl_catch_exception
+    fun:dl_open_worker
+    fun:_dl_catch_exception
+    fun:_dl_open
+    fun:do_dlopen
+    fun:_dl_catch_exception
+    fun:_dl_catch_error
+}
+{
+  libc 2
+    Memcheck:Leak
+    match-leak-kinds: reachable
+    fun:malloc
+    fun:malloc
+    fun:strdup
+    fun:_dl_load_cache_lookup
+    fun:_dl_map_object
+    fun:dl_open_worker_begin
+    fun:_dl_catch_exception
+    fun:dl_open_worker
+    fun:_dl_catch_exception
+    fun:_dl_open
+    fun:do_dlopen
+    fun:_dl_catch_exception
+    fun:_dl_catch_error
+}
+{
+  libc 3
+    Memcheck:Leak
+    match-leak-kinds: reachable
+    fun:malloc
+    fun:UnknownInlinedFun
+    fun:_dl_new_object
+    fun:_dl_map_object_from_fd
+    fun:_dl_map_object
+    fun:dl_open_worker_begin
+    fun:_dl_catch_exception
+    fun:dl_open_worker
+    fun:_dl_catch_exception
+    fun:_dl_open
+    fun:do_dlopen
+    fun:_dl_catch_exception
+    fun:_dl_catch_error
+}
+{
+  libc 4
+    Memcheck:Leak
+    match-leak-kinds: definite
+    fun:malloc
+    fun:UnknownInlinedFun
+    fun:_dl_map_object_deps
+    fun:dl_open_worker_begin
+    fun:_dl_catch_exception
+    fun:dl_open_worker
+    fun:_dl_catch_exception
+    fun:_dl_open
+    fun:do_dlopen
+    fun:_dl_catch_exception
+    fun:_dl_catch_error
+    fun:dlerror_run
+    fun:__libc_dlopen_mode
+}
+{
+  libc 5
+    Memcheck:Leak
+    match-leak-kinds: reachable
+    fun:calloc
+    fun:UnknownInlinedFun
+    fun:_dl_check_map_versions
+    fun:dl_open_worker_begin
+    fun:_dl_catch_exception
+    fun:dl_open_worker
+    fun:_dl_catch_exception
+    fun:_dl_open
+    fun:do_dlopen
+    fun:_dl_catch_exception
+    fun:_dl_catch_error
+    fun:dlerror_run
+    fun:__libc_dlopen_mode
+}

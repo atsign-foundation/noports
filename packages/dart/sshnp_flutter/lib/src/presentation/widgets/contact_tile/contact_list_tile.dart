@@ -9,25 +9,34 @@ class ContactListTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    SizeConfig().init(context);
     final contactRepo = ContactsService.getInstance();
+    final bodyMedium = Theme.of(context).textTheme.bodyMedium!;
+    final bodySmall = Theme.of(context).textTheme.bodySmall!;
     return FutureBuilder(
         future: contactRepo.getCurrentAtsignContactDetails(),
         builder: ((context, snapshot) {
           if (snapshot.hasData) {
             return SizedBox(
-              width: Sizes.p320,
+              width: Sizes.p244.toFont,
               child: ListTile(
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(Sizes.p8),
-                ),
-                tileColor: kListTileColor,
-                leading: CircleAvatar(
-                  backgroundColor: kPrimaryColor,
-                  backgroundImage: snapshot.data!['image'] != null ? MemoryImage(snapshot.data!['image']) : null,
-                ),
-                title: Text(snapshot.data?['name'] ?? ''),
-                subtitle: Text(contactRepo.atClientManager.atClient.getCurrentAtSign() ?? ''),
-              ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(Sizes.p8.toFont),
+                  ),
+                  tileColor: kListTileColor,
+                  leading: CircleAvatar(
+                    radius: Sizes.p18.toFont,
+                    backgroundColor: kPrimaryColor,
+                    backgroundImage: snapshot.data!['image'] != null ? MemoryImage(snapshot.data!['image']) : null,
+                  ),
+                  title: Text(
+                    snapshot.data?['name'] ?? '',
+                    style: bodyMedium.copyWith(fontSize: bodyMedium.fontSize?.toFont),
+                  ),
+                  subtitle: Text(
+                    contactRepo.atClientManager.atClient.getCurrentAtSign() ?? '',
+                    style: bodySmall.copyWith(fontSize: bodySmall.fontSize?.toFont),
+                  )),
             );
           } else {
             return const ListTile(

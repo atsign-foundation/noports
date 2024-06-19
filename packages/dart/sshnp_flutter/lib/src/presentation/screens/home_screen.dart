@@ -27,8 +27,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     return const ResponsiveWidget(
-      mobileScreen: HomeScreenMobile(),
-      tabletScreen: HomeScreenDesktop(),
+      smallScreen: HomeScreenMobile(),
+      mediumScreen: HomeScreenDesktop(),
       largeScreen: HomeScreenDesktop(),
     );
   }

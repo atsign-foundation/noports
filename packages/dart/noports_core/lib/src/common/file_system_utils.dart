@@ -1,6 +1,21 @@
 import 'package:noports_core/src/common/io_types.dart';
 import 'package:path/path.dart' as path;
 
+/// $homeDirectory/.atsign/storage/$atSign/.$progName/$uniqueID
+String standardAtClientStoragePath({
+  required String homeDirectory,
+  required String atSign,
+  required String progName, // e.g. npt, sshnp, sshnpd, srvd etc
+  required String uniqueID,
+}) {
+  return path.normalize('$homeDirectory'
+      '/.atsign'
+      '/storage'
+      '/$atSign'
+      '/.$progName'
+      '/$uniqueID');
+}
+
 /// Get the home directory or null if unknown.
 String? getHomeDirectory({bool throwIfNull = false}) {
   String? homeDir;

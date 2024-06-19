@@ -89,9 +89,7 @@ mixin DartSshSessionHandler on SshnpCore
   }
 
   @override
-  Future<SSHClient> startUserSession({
-    required SSHClient tunnelSession,
-  }) async {
+  Future<SSHClient> startUserSession({SSHSocket? sshSocket}) async {
     if (identityKeyPair == null) {
       throw SshnpError('Identity Key pair is mandatory with the dart client.');
     }
@@ -101,13 +99,24 @@ mixin DartSshSessionHandler on SshnpCore
     logger
         .info('Starting user ssh session as $username to localhost:$localPort');
 
+    SSHClient userSshClient;
     SshClientHelper helper = SshClientHelper(logger);
-    SSHClient userSshClient = await helper.createDirectSshClient(
-      host: 'localhost',
-      port: localPort,
-      username: username,
-      keyPair: identityKeyPair!,
-    );
+    if (sshSocket == null) {
+      userSshClient = await helper.createDirectSshClient(
+        host: 'localhost',
+        port: localPort,
+        username: username,
+        keyPair: identityKeyPair!,
+      );
+    } else {
+      userSshClient = await helper.createSshClientWithSshSocket(
+        sshSocket: sshSocket,
+        host: 'localhost',
+        port: localPort,
+        username: username,
+        keyPair: identityKeyPair!,
+      );
+    }
 
     if (!params.addForwardsToTunnel) {
       var optionsSplitBySpace = params.localSshOptions.join(' ').split(' ');
@@ -236,7 +245,7 @@ class SshClientHelper {
           },
         ),
       );
-      unawaited(socket.pipe(forward.sink));
+      unawaited(socket.cast<List<int>>().pipe(forward.sink));
     }, onError: (Object error) {
       counter = 0;
     }, onDone: () {

@@ -55,14 +55,18 @@ Future<void> main(List<String> args) async {
     ..addOption('port', abbr: 'p', mandatory: true, help: 'rvd port')
     ..addOption('local-port',
         defaultsTo: '22',
-        help: 'Local port (usually the sshd port) to bridge to; defaults to 22')
+        help: 'On the daemon side, this is the local port to connect to.'
+            ' On the client side this is the local port which the srv will bind'
+            ' to so that client-side programs can create sockets to it.')
     ..addFlag('bind-local-port',
         defaultsTo: false,
         negatable: false,
-        help: 'Set this flag when we are bridging from a local sender')
+        help: 'Client side flag.')
     ..addOption('local-host',
         mandatory: false,
-        help: 'Host on the local network to bridge to; defaults to localhost')
+        defaultsTo: 'localhost',
+        help: 'Used on daemon side for npt sessions only. The host on the'
+            ' daemon\'s local network to connect to; defaults to localhost.')
     ..addFlag('rv-auth',
         defaultsTo: false,
         help: 'Whether this rv process will authenticate to rvd')

@@ -11,8 +11,8 @@ class TerminalScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return const ResponsiveWidget(
-        mobileScreen: TerminalScreenMobileView(),
-        tabletScreen: TerminalScreenDesktopView(),
+        smallScreen: TerminalScreenMobileView(),
+        mediumScreen: TerminalScreenDesktopView(),
         largeScreen: TerminalScreenDesktopView());
   }
 }

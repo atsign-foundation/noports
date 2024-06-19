@@ -12,6 +12,8 @@ const String sshnpDeviceNameRegex = r'[a-z0-9_]{1,36}';
 const String invalidDeviceNameMsg = 'Device name must be alphanumeric'
     ' snake case, max length 36';
 const String deviceNameFormatHelp = 'Alphanumeric snake case, max length 36.';
+const String invalidSshKeyPermissionsMsg =
+    'Detected newline characters in the ssh public key permissions which malforms the authorized_keys file.';
 
 bool invalidDeviceName(String test) {
   return RegExp(sshnpDeviceNameRegex).allMatches(test).first.group(0) != test;
@@ -54,6 +56,17 @@ void assertValidValue(Map m, String k, Type t) {
   if (v == null || v.runtimeType != t) {
     throw ArgumentError(
         'Parameter $k should be a $t but is actually a ${v.runtimeType} with value $v');
+  }
+}
+
+/// Assert that the value for key k in Map m is non-null and is of Type t.
+/// Throws an ArgumentError if the value is null, or is not of Type t.
+void assertNullOrValidValue(Map m, String k, Type t) {
+  var v = m[k];
+  if (v == null) {
+    return;
+  } else {
+    return assertValidValue(m, k, t);
   }
 }
 

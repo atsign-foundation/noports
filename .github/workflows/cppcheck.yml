@@ -1,0 +1,27 @@
+name: Cppcheck
+on:
+  workflow_dispatch:
+  push:
+    branches: [trunk]
+    paths:
+      - '/packages/c/**'
+  pull_request:
+    branches: [trunk]
+    paths:
+      - '/packages/c/**'
+
+permissions:
+  contents: read
+
+jobs:
+  cppcheck:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./packages/c
+    steps:
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
+      - name: Cppcheck
+        run: |
+          sudo apt install -y cppcheck
+          cppcheck .

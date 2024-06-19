@@ -1,6 +1,6 @@
 #!/bin/bash
 
-if [ -z "$testScriptsDir" ] ; then
+if [ -z "$testScriptsDir" ]; then
   echo -e "    ${RED}check_env: testScriptsDir is not set${NC}" && exit 1
 fi
 
@@ -37,24 +37,24 @@ else
 fi
 
 case "$(uname -m)" in
-  aarch64|arm64)
+  aarch64 | arm64)
     ARCH="arm64"
     ;;
-  x86_64|amd64)
+  x86_64 | amd64)
     ARCH="x64"
     ;;
-  armv7l|arm)
+  armv7l | arm)
     ARCH="NotHandled"
     ;;
   riscv64)
     ARCH="NotHandled"
     ;;
-  *) ARCH="NotHandled";;
+  *) ARCH="NotHandled" ;;
 esac
 
 if [ "$ARCH" = "NotHandled" ]; then
   logErrorAndExit "This script doesn't know how to download binaries for this platform ($(uname -m)"
-  exit 1;
+  exit 1
 fi
 
 logInfo "    Architecture is $ARCH"
@@ -66,17 +66,18 @@ allVersions="$daemonVersions $clientVersions"
 uniqueVersions=$(for ver in $allVersions; do echo "$ver"; done | sort -u | tr "\n" " ")
 
 # Binaries for named versions will not be re-downloaded but will be linked
-for typeAndVersion in $uniqueVersions
-do
-  IFS=: read -r type version <<< "$typeAndVersion"
+for typeAndVersion in $uniqueVersions; do
+  IFS=: read -r type version <<<"$typeAndVersion"
   case "$type" in
     d) # dart
       setupDartVersion "$version" || logErrorAndExit "Failed to set up binaries for dart version [$version]"
       ;;
+    c) # c
+      setupCVersion "$version" || logErrorAndExit "Failed to set up binaries for c version [$version]"
+      ;;
     *)
       logErrorAndExit "This script doesn't know where to find NoPorts daemon binary for [$typeAndVersion]"
-      exit 1;
+      exit 1
       ;;
   esac
 done
-

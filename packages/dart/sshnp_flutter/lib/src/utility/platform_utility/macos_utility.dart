@@ -24,12 +24,14 @@ class MacosUtility implements PlatformUtility {
     return Platform.isMacOS && !kIsWeb;
   }
 
+  //TODO: Change this to _MyApp() when the macOS implementation is done.
   @override
   Widget get app => const DefaultPlatformUtility().app; //const _MyApp();
 }
 
+// ignore: unused_element
 class _MyApp extends ConsumerWidget {
-  const _MyApp({super.key});
+  const _MyApp();
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {

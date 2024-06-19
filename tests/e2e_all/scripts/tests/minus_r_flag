@@ -32,6 +32,11 @@ if [[ $(versionIsLessThan "$clientVersion" "d:5.2.0") == "true" ]]; then
   exit 50
 fi
 
+if [[ "${daemonVersion:0:1}" == "c" ]]; then
+  logInfoAndReport "    N/A C daemon doesn't need to test a client side only feature"
+  exit 50
+fi
+
 #
 # v4 feature set, default client flags
 
@@ -41,6 +46,13 @@ fi
 #   since those features are enabled by default from v5
 if [[ $(versionIsAtLeast "$clientVersion" "d:5.0.0") == "true" ]]; then
   extraFlags="-x --no-ad --no-et"
+fi
+
+if [[ $(versionIsAtLeast "$clientVersion" "d:5.3.0") == "true" ]]; then
+  apkamApp=$(getApkamAppName)
+  apkamDev=$(getApkamDeviceName "client" "$commitId")
+  keysFile=$(getApkamKeysFile "$clientAtSign" "$apkamApp" "$apkamDev")
+  extraFlags="$extraFlags -k $keysFile"
 fi
 
 # logInfo "Client version : $c_type : $c_major.$c_minor.$c_patch"
@@ -61,7 +73,7 @@ l1="$clientBinaryPath/sshnp -f $clientAtSign -d $deviceName -i $identityFilename
 l2=" -t $daemonAtSign --host $srvAtSign -u $remoteUsername"
 l4=" --root-domain $atDirectoryHost"
 l5=" ${extraFlags}"
-sshnpCommand="$l1 $l2 $l3 $l4 $l5 -s ${identityFilename}.pub"
+sshnpCommand="$l1 $l2 $l3 $l4 $l5 -s"
 
 echo "$(iso8601Date) | Executing $sshnpCommand"
 sshCommand=$($sshnpCommand)
@@ -100,7 +112,7 @@ l1="$clientBinaryPath/sshnp -f $clientAtSign -d $deviceName -i $identityFilename
 l2=" -t $daemonAtSign -r $srvAtSign -h $badSrvAtSign -u $remoteUsername"
 l4=" --root-domain $atDirectoryHost"
 l5=" ${extraFlags}"
-sshnpCommand="$l1 $l2 $l3 $l4 $l5 -s ${identityFilename}.pub"
+sshnpCommand="$l1 $l2 $l3 $l4 $l5 -s"
 
 echo "$(iso8601Date) | Executing $sshnpCommand"
 sshCommand=$($sshnpCommand)

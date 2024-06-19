@@ -7,6 +7,8 @@ on:
       - 'p*.*.*'
     branches:
       - trunk
+    paths:
+      - 'packages/python/sshnpd/**'
 
 permissions:  # added using https://github.com/step-security/secure-repo
   contents: read
@@ -17,7 +19,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - name: Checkout this repo
-      uses: actions/checkout@0ad4b8fadaa221de15dcec353f45205ec38ea70b # v4.1.4
+      uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
 
     - name: Set up Python
       uses: actions/setup-python@82c7e631bb3cdc910f68e0081d67478d79c6982d # v5.1.0
@@ -27,8 +29,19 @@ jobs:
     - name: Install Poetry
       uses: abatilo/actions-poetry@7b6d33e44b4f08d7021a1dee3c044e9c253d6439 # v3.0.0
       with:
-        poetry-version: '1.8.2'
-    
+        poetry-version: '1.8.3'
+
+    # The dark mode and light mode Atsign logos in the GitHub README don't
+    # show properly on PyPI so we have a copy of the README.md in
+    # README.PyPI.md with just the light mode logo.
+    # That README is generated here from a stub header line plus the rest
+    # of the main README.md
+    - name: Generate README for PyPI
+      working-directory: packages/python/sshnpd
+      run: |
+        mv README.PyPI.md.stub README.PyPI.md
+        tail -n +2 README.md >> README.PyPI.md
+
     - name: Build using Poetry
       working-directory: packages/python/sshnpd
       run: |
@@ -61,7 +74,7 @@ jobs:
         name: sshnpd-python-package
         path: dist/
     - name: Publish distribution to TestPyPI
-      uses: pypa/gh-action-pypi-publish@81e9d935c883d0b210363ab89cf05f3894778450 # v1.8.14
+      uses: pypa/gh-action-pypi-publish@ec4db0b4ddc65acdf4bff5fa45ac92d78b56bdf0 # v1.9.0
       with:
         skip-existing: true
         repository-url: https://test.pypi.org/legacy/
@@ -85,39 +98,66 @@ jobs:
         name: sshnpd-python-package
         path: dist/
     - name: Publish distribution to PyPI
-      uses: pypa/gh-action-pypi-publish@81e9d935c883d0b210363ab89cf05f3894778450 # v1.8.14
+      uses: pypa/gh-action-pypi-publish@ec4db0b4ddc65acdf4bff5fa45ac92d78b56bdf0 # v1.9.0
 
   github-release:
-    name: >-
-      Sign the Python distribution with Sigstore
-      and upload them to GitHub Release
+    name: Attest Python distribution artifacts and upload them to the GitHub Release
     needs:
     - publish-to-pypi
     runs-on: ubuntu-latest
-
+    outputs:
+      hashes: ${{ steps.hash.outputs.hashes }}
     permissions:
       contents: write  # IMPORTANT: mandatory for making GitHub Releases
       id-token: write  # IMPORTANT: mandatory for sigstore
-
+      attestations: write
     steps:
+    - name: Checkout requirements.txt
+      uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
+      with:
+        sparse-checkout: packages/python/sshnpd/requirements.txt
+        sparse-checkout-cone-mode: false
     - name: Download all the dists
       uses: actions/download-artifact@65a9edc5881444af0b9093a5e628f2fe47ea3b2e # v4.1.7
       with:
         name: sshnpd-python-package
         path: dist/
-    - name: Sign the dists with Sigstore
-      uses: sigstore/gh-action-sigstore-python@61f6a500bbfdd9a2a339cf033e5421951fbc1cd2 # v2.1.1
+    - name: Install Syft
+      uses: anchore/sbom-action/download-syft@e8d2a6937ecead383dfe75190d104edd1f9c5751 # v0.16.0
+    - name: Generate SBOMs
+      run: |
+        syft scan file:./packages/python/sshnpd/requirements.txt \
+          -o 'spdx-json=dist/python_sshnpd_sbom.spdx.json' \
+          -o 'cyclonedx-json=dist/python_sshnpd_sbom.cyclonedx.json'
+    - name: Generate SHA256 checksums
+      working-directory: dist
+      run: sha256sum * > checksums.txt
+    - id: hash
+      name: Pass artifact hashes for SLSA provenance
+      working-directory: dist
+      run: |
+        echo "hashes=$(cat checksums.txt | base64 -w0)" >> "$GITHUB_OUTPUT"
+    - name: Attest the release artifacts
+      uses: actions/attest-build-provenance@bdd51370e0416ac948727f861e03c2f05d32d78e # v1.3.2
       with:
-        inputs: >-
-          ./dist/*.tar.gz
-          ./dist/*.whl
+        subject-path: 'dist/**'
     - name: Upload artifact signatures to GitHub Release
       env:
         GITHUB_TOKEN: ${{ github.token }}
       # Upload to GitHub Release using the `gh` CLI.
-      # `dist/` contains the built packages, and the
-      # sigstore-produced signatures and certificates.
+      # `dist/` contains the built packages
       run: >-
         gh release upload
         '${{ github.ref_name }}' dist/**
         --repo '${{ github.repository }}'
+
+  provenance:
+    needs: [github-release]
+    permissions:
+      actions: read # Needed for detection of GitHub Actions environment.
+      id-token: write # Needed for provenance signing and ID
+      contents: write # Needed for release uploads
+    uses: slsa-framework/slsa-github-generator/.github/workflows/generator_generic_slsa3.yml@v2.0.0 # 5a775b367a56d5bd118a224a811bba288150a563
+    with:
+      base64-subjects: "${{ needs.github-release.outputs.hashes }}"
+      upload-assets: true

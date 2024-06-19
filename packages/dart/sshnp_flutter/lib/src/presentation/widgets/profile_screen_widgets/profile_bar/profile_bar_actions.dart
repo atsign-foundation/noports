@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:noports_core/sshnp.dart';
 import 'package:sshnp_flutter/src/presentation/widgets/profile_screen_widgets/profile_actions/profile_actions.dart';
+import 'package:sshnp_flutter/src/utility/sizes.dart';
 
 class ProfileBarActions extends StatelessWidget {
   final SshnpParams params;
@@ -12,6 +13,7 @@ class ProfileBarActions extends StatelessWidget {
       children: [
         ProfileTerminalAction(params),
         ProfileMenuButton(params.profileName!),
+        gapW8,
       ],
     );
   }

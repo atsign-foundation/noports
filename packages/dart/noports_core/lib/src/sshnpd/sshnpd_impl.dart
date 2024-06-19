@@ -57,6 +57,10 @@ class SshnpdImpl implements Sshnpd {
   final int localSshdPort;
 
   @override
+  final String sshPublicKeyPermissions;
+  final String _sshPublicKeySeparator; // ' ' if there are permissions else ''
+
+  @override
   final String ephemeralPermissions;
 
   @override
@@ -96,21 +100,28 @@ class SshnpdImpl implements Sshnpd {
     this.makeDeviceInfoVisible = false,
     this.addSshPublicKeys = false,
     this.localSshdPort = DefaultSshnpdArgs.localSshdPort,
+    this.sshPublicKeyPermissions = DefaultSshnpdArgs.sshPublicKeyPermissions,
     required this.ephemeralPermissions,
     required this.sshAlgorithm,
     required this.deviceGroup,
     required this.version,
     required this.permitOpen,
     this.authChecker,
-  }) {
+  }) : _sshPublicKeySeparator = (sshPublicKeyPermissions.isEmpty ? "" : " ") {
     if (invalidDeviceName(device)) {
       throw ArgumentError(invalidDeviceNameMsg);
     }
     logger.hierarchicalLoggingEnabled = true;
-    logger.logger.level = Level.SHOUT;
 
     if (authChecker == null && policyManagerAtsign != null) {
       authChecker = _NPAAuthChecker(this);
+    }
+
+    if (addSshPublicKeys) {
+      logger.info(
+        "Starting sshnpd with addSshPublicKeys on, using permissions: "
+        "'$sshPublicKeyPermissions'",
+      );
     }
 
     pingResponse = {
@@ -169,6 +180,7 @@ class SshnpdImpl implements Sshnpd {
         makeDeviceInfoVisible: p.makeDeviceInfoVisible,
         addSshPublicKeys: p.addSshPublicKeys,
         localSshdPort: p.localSshdPort,
+        sshPublicKeyPermissions: p.sshPublicKeyPermissions,
         ephemeralPermissions: p.ephemeralPermissions,
         sshAlgorithm: p.sshAlgorithm,
         deviceGroup: p.deviceGroup,
@@ -366,6 +378,7 @@ class SshnpdImpl implements Sshnpd {
         value: jsonEncode(pingResponse),
         checkForFinalDeliveryStatus: false,
         waitForFinalDeliveryStatus: false,
+        ttln: Duration(minutes: 1),
       ),
     );
   }
@@ -398,7 +411,10 @@ class SshnpdImpl implements Sshnpd {
       var authKeysContent = await authKeys.readAsString();
 
       if (!authKeysContent.contains(sshPublicKey)) {
-        authKeys.writeAsStringSync('\n$sshPublicKey', mode: FileMode.append);
+        authKeys.writeAsStringSync(
+          '$sshPublicKeyPermissions$_sshPublicKeySeparator$sshPublicKey',
+          mode: FileMode.append,
+        );
       }
     } catch (e) {
       logger.severe("Error writing to"
@@ -409,15 +425,7 @@ class SshnpdImpl implements Sshnpd {
   void _handleNptRequestNotification(AtNotification notification) async {
     String requestingAtsign = notification.from;
 
-    // Validate the request payload.
-    //
-    // If a 'direct' ssh is being requested, then
-    // only sessionId, host (of the rvd) and port (of the rvd) are required.
-    //
-    // If a reverse ssh is being requested, then we also require
-    // a username (to ssh back to the client), a privateKey (for that
-    // ssh) and a remoteForwardPort, to set up the ssh tunnel back to this
-    // device from the client side.
+    // Extract the NPT request payload.
     late final Map envelope;
     late final NptSessionRequest req;
     try {
@@ -451,6 +459,7 @@ class SshnpdImpl implements Sshnpd {
         sessionId: req.sessionId,
         checkForFinalDeliveryStatus: false,
         waitForFinalDeliveryStatus: false,
+        ttln: Duration(minutes: 1),
       );
 
       return;
@@ -469,6 +478,7 @@ class SshnpdImpl implements Sshnpd {
         sessionId: req.sessionId,
         checkForFinalDeliveryStatus: false,
         waitForFinalDeliveryStatus: false,
+        ttln: Duration(minutes: 1),
       );
 
       return;
@@ -564,6 +574,7 @@ class SshnpdImpl implements Sshnpd {
         checkForFinalDeliveryStatus: false,
         waitForFinalDeliveryStatus: false,
         sessionId: req.sessionId,
+        ttln: Duration(minutes: 1),
       );
     } catch (e) {
       logger.severe('startNpt failed with unexpected error : $e');
@@ -576,44 +587,23 @@ class SshnpdImpl implements Sshnpd {
         sessionId: req.sessionId,
         checkForFinalDeliveryStatus: false,
         waitForFinalDeliveryStatus: false,
+        ttln: Duration(minutes: 1),
       );
     }
   }
 
-  /// [notification] payload is json with the following structure
-  /// ```json
-  /// {
-  ///   "sessionId": $sessionId // must be provided
-  ///   "host": "$host", // must be provided
-  ///   "port": "$port", // must be provided
-  ///   "direct": "{true|false}", // must be provided
-  ///   "username" : "$username", // provided only if `direct` is false
-  ///   "remoteForwardPort" : 12345, // provided only if `direct` is false
-  ///   "privateKey" : "$privateKey", // provided only if `direct` is false
-  /// }
-  /// ```
-  ///
   /// If json['direct'] is true, bridge the rvd connection to this device's
   /// [localSshdPort] so that the client can do a 'direct' ssh via the rvd
   ///
-  /// If json['direct'] is false, start a reverse ssh to the client device
-  /// using the `username`, `host`, `port` and `privateKey` which are also
-  /// provided in the json payload, and requesting a remote port forwarding
-  /// of the provided `remoteForwardPort` to this device's [localSshdPort].
-  /// Once this is running, the client user will then be able to ssh to
-  /// this device via `ssh -p $remoteForwardPort <some user>@localhost`
+  /// **LEGACY behaviour** If json['direct'] is false, start a reverse ssh to
+  /// the client device using the `username`, `host`, `port` and `privateKey`
+  /// which are also provided in the json payload, and requesting a remote
+  /// port forwarding of the provided `remoteForwardPort` to this device's
+  /// [localSshdPort].
   void _handleSshRequestNotification(AtNotification notification) async {
     String requestingAtsign = notification.from;
 
     // Validate the request payload.
-    //
-    // If a 'direct' ssh is being requested, then
-    // only sessionId, host (of the rvd) and port (of the rvd) are required.
-    //
-    // If a reverse ssh is being requested, then we also require
-    // a username (to ssh back to the client), a privateKey (for that
-    // ssh) and a remoteForwardPort, to set up the ssh tunnel back to this
-    // device from the client side.
     late final Map envelope;
     late final Map params;
     try {
@@ -623,9 +613,24 @@ class SshnpdImpl implements Sshnpd {
       assertValidValue(envelope, 'signingAlgo', String);
 
       params = envelope['payload'] as Map;
+
+      // sessionId, host (of the rvd) and port (of the rvd) are required.
       assertValidValue(params, 'sessionId', String);
       assertValidValue(params, 'host', String);
       assertValidValue(params, 'port', int);
+
+      // v5+ params are not required but must be valid if supplied
+      assertNullOrValidValue(params, 'authenticateToRvd', bool);
+      assertNullOrValidValue(params, 'clientNonce', String);
+      assertNullOrValidValue(params, 'rvdNonce', String);
+      assertNullOrValidValue(params, 'encryptRvdTraffic', bool);
+      assertNullOrValidValue(params, 'clientEphemeralPK', String);
+      assertNullOrValidValue(params, 'clientEphemeralPKType', String);
+
+      // If a reverse ssh (v3, LEGACY BEHAVIOUR) is being requested, then we
+      // also require a username (to ssh back to the client), a privateKey (for
+      // that ssh) and a remoteForwardPort, to set up the ssh tunnel back to
+      // this device from the client side.
       if (params['direct'] != true) {
         assertValidValue(params, 'username', String);
         assertValidValue(params, 'remoteForwardPort', int);
@@ -822,6 +827,7 @@ class SshnpdImpl implements Sshnpd {
         checkForFinalDeliveryStatus: false,
         waitForFinalDeliveryStatus: false,
         sessionId: sessionId,
+        ttln: Duration(minutes: 1),
       );
 
       /// - start a timer to remove the ephemeral key from `authorized_keys`
@@ -839,6 +845,7 @@ class SshnpdImpl implements Sshnpd {
         sessionId: sessionId,
         checkForFinalDeliveryStatus: false,
         waitForFinalDeliveryStatus: false,
+        ttln: Duration(minutes: 1),
       );
     }
   }
@@ -894,6 +901,7 @@ class SshnpdImpl implements Sshnpd {
           sessionId: sessionId,
           checkForFinalDeliveryStatus: false,
           waitForFinalDeliveryStatus: false,
+          ttln: Duration(minutes: 1),
         );
       } else {
         /// Notify sshnp that the connection has been made
@@ -904,6 +912,7 @@ class SshnpdImpl implements Sshnpd {
           sessionId: sessionId,
           checkForFinalDeliveryStatus: false,
           waitForFinalDeliveryStatus: false,
+          ttln: Duration(minutes: 1),
         );
       }
     } catch (e) {
@@ -916,6 +925,7 @@ class SshnpdImpl implements Sshnpd {
         sessionId: sessionId,
         checkForFinalDeliveryStatus: false,
         waitForFinalDeliveryStatus: false,
+        ttln: Duration(minutes: 1),
       );
     }
   }
@@ -1015,7 +1025,7 @@ class SshnpdImpl implements Sshnpd {
             },
           ),
         );
-        unawaited(socket.pipe(connection.sink));
+        unawaited(socket.cast<List<int>>().pipe(connection.sink));
         if (shouldStop) break;
       }
     }).catchError((e) {
@@ -1150,10 +1160,12 @@ class SshnpdImpl implements Sshnpd {
     required String value,
     required bool checkForFinalDeliveryStatus,
     required bool waitForFinalDeliveryStatus,
+    required Duration ttln,
     String sessionId = '',
   }) async {
     await atClient.notificationService.notify(
-      NotificationParams.forUpdate(atKey, value: value),
+      NotificationParams.forUpdate(atKey,
+          value: value, notificationExpiry: ttln),
       checkForFinalDeliveryStatus: checkForFinalDeliveryStatus,
       waitForFinalDeliveryStatus: waitForFinalDeliveryStatus,
       onSuccess: (notification) {
@@ -1192,7 +1204,12 @@ class SshnpdImpl implements Sshnpd {
         try {
           logger.info('Sharing username $username with $managerAtsign');
           await atClient.notificationService.notify(
-            NotificationParams.forUpdate(atKey, value: username),
+            NotificationParams.forUpdate(
+              atKey,
+              value: username,
+              // notification can expire rapidly, the info is being cached
+              notificationExpiry: Duration(minutes: 1),
+            ),
             waitForFinalDeliveryStatus: false,
             checkForFinalDeliveryStatus: false,
             onSuccess: (notification) {
