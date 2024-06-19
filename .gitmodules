@@ -1,0 +1,3 @@
+[submodule "packages/c/cmake-sbom"]
+	path = packages/c/cmake-sbom
+	url = git@github.com:DEMCON/cmake-sbom.git

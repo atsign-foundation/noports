@@ -46,6 +46,14 @@ include(FetchContent)
 # E.g. on Linux & MacOS, ${CMAKE_INSTALL_LIBDIR} is /usr/local/lib, but on Windows it may be C:\Program Files\atchops\lib
 include(GNUInstallDirs)
 
+# Generate SBOM using https://github.com/DEMCON/cmake-sbom installed as git submodule
+list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/../cmake-sbom/cmake")
+
+include(sbom)
+sbom_generate(SUPPLIER Atsign SUPPLIER_URL https://atsign.com)
+# Add sbom_add() ...
+sbom_finalize()
+
 # 3. Set CMake policies
 
 # Ensures that non-deprecated behaviour is used in ExternalProject_Add and FetchContent modules
