@@ -188,7 +188,7 @@ class _NptImpl extends NptBase
       DaemonFeature.srE2ee,
       DaemonFeature.supportsPortChoice,
     ];
-    if (! (params.timeout == DefaultArgs.srvTimeout)) {
+    if (!(params.timeout == DefaultArgs.srvTimeout)) {
       requiredFeatures.add(DaemonFeature.adjustableTimeout);
     }
     logger.info('Sending daemon feature check request');
