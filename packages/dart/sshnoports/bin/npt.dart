@@ -8,6 +8,7 @@ import 'package:args/args.dart';
 // atPlatform packages
 import 'package:at_utils/at_logger.dart';
 import 'package:at_cli_commons/at_cli_commons.dart' as cli;
+import 'package:duration/duration.dart';
 import 'package:noports_core/npt.dart';
 import 'package:noports_core/sshnp_foundation.dart';
 import 'package:sshnoports/src/extended_arg_parser.dart';
@@ -181,9 +182,18 @@ void main(List<String> args) async {
         'timeout',
         abbr: 'T',
         mandatory: false,
-        defaultsTo: DefaultArgs.srvTimeoutInSeconds.toString(),
-        help:
-            'How long to keep the SocketConnector open if there have been no connections',
+        defaultsTo: '${DefaultArgs.srvTimeoutInSeconds}s',
+        help: 'How long to keep the SocketConnector open if there have been'
+            ' no connections. Argument must be supplied in human readable'
+            ' form e.g. as follows: "30s" or "1h" or "1h,14m,30s"'
+            ' or "7d". To request a "never" timeout, use'
+            ' "-T 0" which sets a timeout of 365 days.\n\n'
+            'Note that the timeout is operative on the daemon side so for'
+            ' example if you set a timeout of 10 seconds, the session'
+            ' will end in slightly less than 10 seconds from the client\'s'
+            ' perspective, as a small amount of time elapses before the'
+            ' client receives positive confirmation from the daemon that'
+            ' it has started its session.',
       );
 
       // Parse Args
@@ -249,6 +259,11 @@ void main(List<String> args) async {
         });
       }
 
+      String timeoutArg = parsedArgs['timeout'];
+      if (timeoutArg == '0') {
+        // "never" timeout - make it a year
+        timeoutArg = '365d';
+      }
       NptParams params = NptParams(
         clientAtSign: clientAtSign,
         sshnpdAtSign: daemonAtSign,
@@ -262,7 +277,7 @@ void main(List<String> args) async {
         inline: inline,
         daemonPingTimeout:
             Duration(seconds: int.parse(parsedArgs['daemon-ping-timeout'])),
-        timeout: Duration(seconds: int.parse(parsedArgs['timeout'])),
+        timeout: parseDuration(timeoutArg),
       );
 
       cli.CLIBase cliBase = cli.CLIBase(
@@ -319,7 +334,8 @@ void main(List<String> args) async {
               ' will wait 5 seconds and retry');
           await Future.delayed(Duration(seconds: 5));
         } else {
-          // not keeping alive - break out of the while (true)
+          // not keeping alive - break out of the "while (true)"
+          logProgress('Session ended');
           break;
         }
       }
