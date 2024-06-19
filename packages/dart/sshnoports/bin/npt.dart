@@ -17,6 +17,9 @@ import 'package:sshnoports/src/extended_arg_parser.dart';
 import 'package:sshnoports/src/print_version.dart';
 
 void main(List<String> args) async {
+  const int keepAliveDefaultTimeoutHours = 24;
+  const int neverTimeoutDays = 365;
+
   AtSignLogger.root_level = 'SHOUT';
   AtSignLogger.defaultLoggingHandler = AtSignLogger.stdErrLoggingHandler;
 
@@ -173,7 +176,12 @@ void main(List<String> args) async {
         'keep-alive',
         abbr: 'K',
         help:
-            'Stay alive. If a session ends, create a new session and re-bind to the local port.',
+            'Stay alive. If a session ends, create a new session and re-bind'
+                ' to the local port. Note that a session can end due to'
+                ' being unused after a configurable timeout (see the --timeout'
+                ' option) which defaults to 30s; if the --keep-alive flag is'
+                ' set but no specific --timeout was provided, then the timeout'
+                ' is defaulted to $keepAliveDefaultTimeoutHours hours.',
         defaultsTo: false,
         negatable: false,
       );
@@ -187,7 +195,7 @@ void main(List<String> args) async {
             ' no connections. Argument must be supplied in human readable'
             ' form e.g. as follows: "30s" or "1h" or "1h,14m,30s"'
             ' or "7d". To request a "never" timeout, use'
-            ' "-T 0" which sets a timeout of 365 days.\n\n'
+            ' "-T 0" which sets a timeout of $neverTimeoutDays days.\n\n'
             'Note that the timeout is operative on the daemon side so for'
             ' example if you set a timeout of 10 seconds, the session'
             ' will end in slightly less than 10 seconds from the client\'s'
@@ -216,6 +224,16 @@ void main(List<String> args) async {
       bool inline = !parsedArgs['exit-when-connected'];
       bool quiet = parsedArgs[quietFlag];
       bool keepAlive = parsedArgs['keep-alive'];
+
+      // A listen progress listener for the CLI
+      // Will only log if verbose is false, since if verbose is true
+      // there will already be a boatload of log messages.
+      // However, will NOT log if the quiet flag has been set.
+      void logProgress(String s) {
+        if (!verbose && !quiet) {
+          stderr.writeln('${DateTime.now()} : $s');
+        }
+      }
 
       if (keepAlive && !inline) {
         // keep alive only applies when running inline
@@ -259,10 +277,30 @@ void main(List<String> args) async {
         });
       }
 
+      cli.CLIBase cliBase = cli.CLIBase(
+          atSign: clientAtSign,
+          atKeysFilePath: parsedArgs['key-file'],
+          nameSpace: DefaultArgs.namespace,
+          rootDomain: rootDomain,
+          homeDir: getHomeDirectory(),
+          storageDir: storageDir?.path,
+          verbose: parsedArgs['verbose'],
+          syncDisabled: true);
+
+      await cliBase.init();
+
       String timeoutArg = parsedArgs['timeout'];
       if (timeoutArg == '0') {
         // "never" timeout - make it a year
-        timeoutArg = '365d';
+        logProgress('Requested "never" timeout: set to $neverTimeoutDays days');
+        timeoutArg = '${neverTimeoutDays}d';
+      }
+      // If we're doing keep-alive but we didn't get a specific timeout
+      // then we'll set the timeout to [keepAliveDefaultTimeoutHours] hours
+      if (keepAlive && !parsedArgs.wasParsed('timeout')) {
+        logProgress('Requested keep-alive without specifying a timeout:'
+            ' setting timeout to $keepAliveDefaultTimeoutHours hours');
+        timeoutArg = '${keepAliveDefaultTimeoutHours}h';
       }
       NptParams params = NptParams(
         clientAtSign: clientAtSign,
@@ -279,28 +317,6 @@ void main(List<String> args) async {
             Duration(seconds: int.parse(parsedArgs['daemon-ping-timeout'])),
         timeout: parseDuration(timeoutArg),
       );
-
-      cli.CLIBase cliBase = cli.CLIBase(
-          atSign: clientAtSign,
-          atKeysFilePath: parsedArgs['key-file'],
-          nameSpace: DefaultArgs.namespace,
-          rootDomain: rootDomain,
-          homeDir: getHomeDirectory(),
-          storageDir: storageDir?.path,
-          verbose: parsedArgs['verbose'],
-          syncDisabled: true);
-
-      // A listen progress listener for the CLI
-      // Will only log if verbose is false, since if verbose is true
-      // there will already be a boatload of log messages.
-      // However, will NOT log if the quiet flag has been set.
-      void logProgress(String s) {
-        if (!verbose && !quiet) {
-          stderr.writeln('${DateTime.now()} : $s');
-        }
-      }
-
-      await cliBase.init();
 
       while (true) {
         final npt = Npt.create(
