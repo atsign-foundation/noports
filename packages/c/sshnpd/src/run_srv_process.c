@@ -25,6 +25,7 @@ int run_srv_process(sshnpd_params *params, cJSON *host, cJSON *port, bool authen
   char **argv = malloc(sizeof(char *) * (argc + 1));
   if (argv == NULL) {
     atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "srv fork failed to allocate some memory\n");
+    free(streaming_port);
     exit(1);
   }
   argv[0] = "srv";
@@ -43,6 +44,7 @@ int run_srv_process(sshnpd_params *params, cJSON *host, cJSON *port, bool authen
   if (streaming_port_str == NULL) {
     atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "srv fork failed to allocate some memory\n");
     free(argv);
+    free(streaming_port);
     exit(1);
   }
   snprintf(streaming_port_str, size, "%d", params->local_sshd_port);
@@ -77,6 +79,7 @@ int run_srv_process(sshnpd_params *params, cJSON *host, cJSON *port, bool authen
   if (parse_srv_params(&srv_params, argc, (const char **)argv, &environment) != 0) {
     free(argv);
     free(streaming_port_str);
+    free(streaming_port);
     exit(1);
   }
 
@@ -88,6 +91,7 @@ int run_srv_process(sshnpd_params *params, cJSON *host, cJSON *port, bool authen
 
   free(argv);
   free(streaming_port_str);
+  free(streaming_port);
 
   return res;
 }
