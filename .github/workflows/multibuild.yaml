@@ -56,7 +56,7 @@ jobs:
             output-name: sshnp-linux-x64
             ext: ''
             bundle: 'shell'
-          - os: macOS-latest
+          - os: macos-13
             output-name: sshnp-macos-x64
             ext: ''
             bundle: 'shell'
@@ -217,10 +217,25 @@ jobs:
           path: ./packages/dart/sshnoports/bundles/universal.sh
           if-no-files-found: error
 
+  universal_ps1:
+    if: startsWith(github.ref, 'refs/tags/v')
+    defaults:
+      run:
+        working-directory: ./packages/dart/sshnoports/bundles
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
+    - uses: actions/upload-artifact@65462800fd760344b1a7b4382951275a0abb4808 # v4.3.3
+      with: 
+        name: universal.ps1-${{github.ref_name}}-${{github.run_number}}-${{github.run_attempt}}
+        path: ./packages/dart/sshnoports/bundles/universal.ps1
+        if-no-files-found: error
+
+
   github-release:
     name: >-
       Upload artifacts and generate SBOMs and checksums for provenance
-    needs: [main_build, other_build, universal_sh]
+    needs: [main_build, other_build, universal_sh, universal_ps1]
     runs-on: ubuntu-latest
     outputs:
       hashes: ${{ steps.hash.outputs.hashes }}
@@ -249,6 +264,7 @@ jobs:
       run: |
         cd tarballs
         mv */*.sh .
+        mv */*.ps1 .
         mv */*.tgz .
         mv */*.zip .
         rm -Rf -- */
@@ -270,7 +286,7 @@ jobs:
       working-directory: tarballs
       run: |
         echo "hashes=$(cat checksums.txt | base64 -w0)" >> "$GITHUB_OUTPUT"
-    - uses: actions/attest-build-provenance@49df96e17e918a15956db358890b08e61c704919 # v1.2.0
+    - uses: actions/attest-build-provenance@bdd51370e0416ac948727f861e03c2f05d32d78e # v1.3.2
       with:
         subject-path: 'tarballs/**'
 

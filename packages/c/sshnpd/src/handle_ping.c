@@ -30,7 +30,7 @@ void handle_ping(sshnpd_params *params, atclient_monitor_message *message, char 
 
   atclient_notify_params notify_params;
   atclient_notify_params_init(&notify_params);
-  notify_params.key = pingkey;
+  notify_params.atkey = &pingkey;
   notify_params.value = ping_response;
   notify_params.operation = ATCLIENT_NOTIFY_OPERATION_UPDATE;
 

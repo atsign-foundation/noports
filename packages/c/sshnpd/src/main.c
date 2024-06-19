@@ -70,13 +70,18 @@ static char *authkeys_filename;
 static char *ping_response;
 static char *home_dir;
 static atchops_rsakey_privatekey signingkey;
+static bool is_child_process = false;
 
 // Signal handling
 static volatile sig_atomic_t should_run = 1;
 static void sig_handler(int _) {
   (void)_;
-  atlogger_log("sig_handler", ATLOGGER_LOGGING_LEVEL_WARN, "Received SIGINT, exiting safely\n");
-  should_run = 0;
+  if (should_run == 1) {
+    atlogger_log("sig_handler", ATLOGGER_LOGGING_LEVEL_WARN, "Received SIGINT, exiting safely\n");
+    should_run = 0;
+  } else if (should_run == 0) {
+    atlogger_log("sig_handler", ATLOGGER_LOGGING_LEVEL_WARN, "Received SIGINT again, exiting forcefully\n");
+  }
 }
 
 int main(int argc, char **argv) {
@@ -95,6 +100,7 @@ int main(int argc, char **argv) {
   }
 
   // 3.  Configure the Logger
+  // before the program exits
   if (params.verbose) {
     printf("Verbose mode enabled\n");
     atlogger_set_logging_level(ATLOGGER_LOGGING_LEVEL_DEBUG);
@@ -129,37 +135,20 @@ int main(int argc, char **argv) {
   }
 
   // 5.  Load the atKeys
-  atclient_atkeysfile atkeysfile;
-  atclient_atkeysfile_init(&atkeysfile);
-
-  // 5.1 Read the atKeys file
+  atclient_atkeys_init(&atkeys);
   if (params.key_file == NULL) {
     char filename[FILENAME_BUFFER_SIZE];
     snprintf(filename, FILENAME_BUFFER_SIZE, "%s/.atsign/keys/%s_key.atKeys", home_dir, params.atsign);
-    res = atclient_atkeysfile_read(&atkeysfile, filename);
+    res = atclient_atkeys_populate_from_path(&atkeys, filename);
     atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_DEBUG, "Using atkeysfile: %s\n", filename);
   } else {
-    res = atclient_atkeysfile_read(&atkeysfile, (const char *)params.key_file);
+    res = atclient_atkeys_populate_from_path(&atkeys, (const char *)params.key_file);
     atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_DEBUG, "Using atkeysfile: %s\n", (const char *)params.key_file);
   }
 
   if (res != 0 || !should_run) {
     if (res != 0) {
-      atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Unable to read the key file\n");
-    }
-    atclient_atkeysfile_free(&atkeysfile);
-    exit_res = res;
-    goto exit;
-  }
-
-  // 5.2 Read the atKeysFile into the atKeys struct
-  atclient_atkeys_init(&atkeys);
-
-  res = atclient_atkeys_populate_from_atkeysfile(&atkeys, atkeysfile);
-  atclient_atkeysfile_free(&atkeysfile);
-  if (res != 0 || !should_run) {
-    if (res != 0) {
-      atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Unable to parse the key file\n");
+      atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Unable to load the atkeys file\n");
     }
     atclient_atkeys_free(&atkeys);
     exit_res = res;
@@ -167,8 +156,7 @@ int main(int argc, char **argv) {
   }
 
   // 5.3 create a key copy for signing
-  atchops_rsakey_privatekey_init(&signingkey);
-  memcpy(&signingkey, &atkeys.encryptprivatekey, sizeof(atchops_rsakey_privatekey));
+  atchops_rsakey_privatekey_clone(&signingkey, &atkeys.encryptprivatekey);
 
   // 6. Get atServer address
   res = atclient_utils_find_atserver_address(params.root_domain, ROOT_PORT, params.atsign, &atserver_host,
@@ -328,22 +316,26 @@ cancel_refresh:
   free(regex);
   atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_DEBUG, "Joining device entry refresh thread\n");
   should_run = 0;
-  if (pthread_join(refresh_tid, NULL) != 0) {
+  if (!is_child_process && pthread_join(refresh_tid, NULL) != 0) {
     atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_WARN, "Failed to join device entry refresh thread\n");
   } else {
     atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_DEBUG, "Joined device entry refresh thread\n");
   }
 
 cancel_atclient:
-  if (free_ping_response) {
+  if (!free_ping_response) {
     free(ping_response);
   }
-  atclient_connection_disconnect(&worker.atserver_connection);
-  atclient_free(&worker);
+  if (!is_child_process) {
+    atclient_connection_disconnect(&worker.atserver_connection);
+    atclient_free(&worker);
+  }
 
 cancel_monitor_ctx:
-  atclient_connection_disconnect(&monitor_ctx.atserver_connection);
-  atclient_free(&monitor_ctx);
+  if (!is_child_process) {
+    atclient_connection_disconnect(&monitor_ctx.atserver_connection);
+    atclient_free(&monitor_ctx);
+  }
   free(atserver_host);
 
 clean_atkeys:
@@ -354,7 +346,8 @@ exit:
   free(params.manager_list);
   free(params.permitopen);
   free(params.permitopen_str);
-  return exit_res;
+
+  exit(exit_res);
 }
 
 void main_loop() {
@@ -481,8 +474,13 @@ void main_loop() {
           break;
         case NK_SSH_REQUEST:
           atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_DEBUG, "Executing handle_ssh_request\n");
-          handle_ssh_request(&worker, &atclient_lock, &params, &message, home_dir, authkeys_file, authkeys_filename,
-                             signingkey);
+          handle_ssh_request(&worker, &atclient_lock, &params, &is_child_process, &message, home_dir, authkeys_file,
+                             authkeys_filename, signingkey);
+          if (is_child_process) {
+            atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_DEBUG, "Exiting child process\n");
+            atclient_monitor_message_free(&message);
+            return;
+          }
           break;
         case NK_NPT_REQUEST:
           atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_DEBUG, "Executing handle_npt_request\n");
