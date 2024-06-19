@@ -175,13 +175,12 @@ void main(List<String> args) async {
       parser.addFlag(
         'keep-alive',
         abbr: 'K',
-        help:
-            'Stay alive. If a session ends, create a new session and re-bind'
-                ' to the local port. Note that a session can end due to'
-                ' being unused after a configurable timeout (see the --timeout'
-                ' option) which defaults to 30s; if the --keep-alive flag is'
-                ' set but no specific --timeout was provided, then the timeout'
-                ' is defaulted to $keepAliveDefaultTimeoutHours hours.',
+        help: 'Stay alive. If a session ends, create a new session and'
+            ' re-bind to the local port. Note that a session can end due to'
+            ' being unused after a configurable timeout (see the --timeout'
+            ' option) which defaults to 30s; if the --keep-alive flag is'
+            ' set but no specific --timeout was provided, then the timeout'
+            ' is defaulted to $keepAliveDefaultTimeoutHours hours.',
         defaultsTo: false,
         negatable: false,
       );
