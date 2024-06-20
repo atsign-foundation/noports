@@ -76,7 +76,7 @@ abstract class ClientParamsBase implements ClientParams {
   final String? atKeysFilePath;
 
   @override
-  final int localPort;
+  int localPort;
 
   @override
   AtEncryptionKeyPair get sessionKP {
@@ -133,6 +133,9 @@ class NptParams extends ClientParamsBase
   /// Whether to run the srv within this process, or fork a separate process
   final bool inline;
 
+  /// How long to keep the local port open if there have been no connections
+  final Duration timeout;
+
   NptParams({
     required super.clientAtSign,
     required super.sshnpdAtSign,
@@ -149,6 +152,7 @@ class NptParams extends ClientParamsBase
     super.encryptRvdTraffic = DefaultArgs.encryptRvdTraffic,
     required this.inline,
     super.daemonPingTimeout,
+    required this.timeout,
   });
 
   /// not relevant for Npt
@@ -529,7 +533,9 @@ class SshnpPartialParams {
       authenticateClientToRvd: args[SshnpArg.authenticateClientToRvdArg.name],
       authenticateDeviceToRvd: args[SshnpArg.authenticateDeviceToRvdArg.name],
       encryptRvdTraffic: args[SshnpArg.encryptRvdTrafficArg.name],
-      daemonPingTimeout: args[SshnpArg.daemonPingTimeoutArg.name],
+      daemonPingTimeout: Duration(
+          seconds: args[SshnpArg.daemonPingTimeoutArg.name] ??
+              DefaultArgs.daemonPingTimeoutSeconds),
     );
   }
 

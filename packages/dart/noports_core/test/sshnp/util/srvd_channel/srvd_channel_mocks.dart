@@ -16,6 +16,7 @@ abstract class SrvGeneratorCaller<T> {
     String? sessionIVString,
     bool multi = false,
     bool detached = false,
+    Duration timeout = DefaultArgs.srvTimeout,
   });
 }
 

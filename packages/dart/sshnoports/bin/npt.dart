@@ -8,6 +8,7 @@ import 'package:args/args.dart';
 // atPlatform packages
 import 'package:at_utils/at_logger.dart';
 import 'package:at_cli_commons/at_cli_commons.dart' as cli;
+import 'package:duration/duration.dart';
 import 'package:noports_core/npt.dart';
 import 'package:noports_core/sshnp_foundation.dart';
 import 'package:sshnoports/src/extended_arg_parser.dart';
@@ -16,6 +17,9 @@ import 'package:sshnoports/src/extended_arg_parser.dart';
 import 'package:sshnoports/src/print_version.dart';
 
 void main(List<String> args) async {
+  const int keepAliveDefaultTimeoutHours = 24;
+  const int neverTimeoutDays = 365;
+
   AtSignLogger.root_level = 'SHOUT';
   AtSignLogger.defaultLoggingHandler = AtSignLogger.stdErrLoggingHandler;
 
@@ -168,6 +172,37 @@ void main(List<String> args) async {
         negatable: false,
       );
 
+      parser.addFlag(
+        'keep-alive',
+        abbr: 'K',
+        help: 'Stay alive. If a session ends, create a new session and'
+            ' re-bind to the local port. Note that a session can end due to'
+            ' being unused after a configurable timeout (see the --timeout'
+            ' option) which defaults to 30s; if the --keep-alive flag is'
+            ' set but no specific --timeout was provided, then the timeout'
+            ' is defaulted to $keepAliveDefaultTimeoutHours hours.',
+        defaultsTo: false,
+        negatable: false,
+      );
+
+      parser.addOption(
+        'timeout',
+        abbr: 'T',
+        mandatory: false,
+        defaultsTo: '${DefaultArgs.srvTimeoutInSeconds}s',
+        help: 'How long to keep the SocketConnector open if there have been'
+            ' no connections. Argument must be supplied in human readable'
+            ' form e.g. as follows: "30s" or "1h" or "1h,14m,30s"'
+            ' or "7d". To request a "never" timeout, use'
+            ' "-T 0" which sets a timeout of $neverTimeoutDays days.\n\n'
+            'Note that the timeout is operative on the daemon side so for'
+            ' example if you set a timeout of 10 seconds, the session'
+            ' will end in slightly less than 10 seconds from the client\'s'
+            ' perspective, as a small amount of time elapses before the'
+            ' client receives positive confirmation from the daemon that'
+            ' it has started its session.',
+      );
+
       // Parse Args
       ArgResults parsedArgs = parser.parse(args);
 
@@ -187,6 +222,23 @@ void main(List<String> args) async {
       int localPort = int.parse(parsedArgs['local-port']);
       bool inline = !parsedArgs['exit-when-connected'];
       bool quiet = parsedArgs[quietFlag];
+      bool keepAlive = parsedArgs['keep-alive'];
+
+      // A listen progress listener for the CLI
+      // Will only log if verbose is false, since if verbose is true
+      // there will already be a boatload of log messages.
+      // However, will NOT log if the quiet flag has been set.
+      void logProgress(String s) {
+        if (!verbose && !quiet) {
+          stderr.writeln('${DateTime.now()} : $s');
+        }
+      }
+
+      if (keepAlive && !inline) {
+        // keep alive only applies when running inline
+        throw ArgumentError('--keep-alive and --exit-when-connected'
+            ' are mutually exclusive');
+      }
 
       // Windows will not let us delete files in use so
       // We will point storage to temp directory and let OS clean up
@@ -224,6 +276,31 @@ void main(List<String> args) async {
         });
       }
 
+      cli.CLIBase cliBase = cli.CLIBase(
+          atSign: clientAtSign,
+          atKeysFilePath: parsedArgs['key-file'],
+          nameSpace: DefaultArgs.namespace,
+          rootDomain: rootDomain,
+          homeDir: getHomeDirectory(),
+          storageDir: storageDir?.path,
+          verbose: parsedArgs['verbose'],
+          syncDisabled: true);
+
+      await cliBase.init();
+
+      String timeoutArg = parsedArgs['timeout'];
+      if (timeoutArg == '0') {
+        // "never" timeout - make it a year
+        logProgress('Requested "never" timeout: set to $neverTimeoutDays days');
+        timeoutArg = '${neverTimeoutDays}d';
+      }
+      // If we're doing keep-alive but we didn't get a specific timeout
+      // then we'll set the timeout to [keepAliveDefaultTimeoutHours] hours
+      if (keepAlive && !parsedArgs.wasParsed('timeout')) {
+        logProgress('Requested keep-alive without specifying a timeout:'
+            ' setting timeout to $keepAliveDefaultTimeoutHours hours');
+        timeoutArg = '${keepAliveDefaultTimeoutHours}h';
+      }
       NptParams params = NptParams(
         clientAtSign: clientAtSign,
         sshnpdAtSign: daemonAtSign,
@@ -237,45 +314,46 @@ void main(List<String> args) async {
         inline: inline,
         daemonPingTimeout:
             Duration(seconds: int.parse(parsedArgs['daemon-ping-timeout'])),
+        timeout: parseDuration(timeoutArg),
       );
 
-      cli.CLIBase cliBase = cli.CLIBase(
-          atSign: clientAtSign,
-          atKeysFilePath: parsedArgs['key-file'],
-          nameSpace: DefaultArgs.namespace,
-          rootDomain: rootDomain,
-          homeDir: getHomeDirectory(),
-          storageDir: storageDir?.path,
-          verbose: parsedArgs['verbose'],
-          syncDisabled: true);
+      while (true) {
+        final npt = Npt.create(
+          params: params,
+          atClient: cliBase.atClient,
+        );
 
-      await cliBase.init();
+        npt.progressStream?.listen((s) => logProgress(s));
 
-      final npt = Npt.create(
-        params: params,
-        atClient: cliBase.atClient,
-      );
+        try {
+          final actualLocalPort = await npt.run();
+          params.localPort = actualLocalPort;
 
-      // A listen progress listener for the CLI
-      // Will only log if verbose is false, since if verbose is true
-      // there will already be a boatload of log messages.
-      // However, will NOT log if the quiet flag has been set.
-      void logProgress(String s) {
-        if (!verbose && !quiet) {
-          stderr.writeln('${DateTime.now()} : $s');
+          logProgress('npt is listening on localhost:$actualLocalPort');
+
+          if (!inline) {
+            stdout.writeln('$actualLocalPort');
+          }
+        } on TimeoutException catch (e) {
+          logProgress(e.toString());
+          await npt.close();
+          if (!keepAlive) {
+            throw SshnpError(e.toString());
+          }
+        }
+
+        await npt.done;
+
+        if (keepAlive) {
+          logProgress('Session ended, keep-alive is set:'
+              ' will wait 5 seconds and retry');
+          await Future.delayed(Duration(seconds: 5));
+        } else {
+          // not keeping alive - break out of the "while (true)"
+          logProgress('Session ended');
+          break;
         }
       }
-
-      npt.progressStream?.listen((s) => logProgress(s));
-
-      final actualLocalPort = await npt.run();
-
-      logProgress('requested localPort $localPort ; '
-          ' actual localPort $actualLocalPort');
-
-      stdout.writeln('$actualLocalPort');
-
-      await npt.done;
 
       exitProgram(exitCode: 0);
     } on ArgumentError catch (error) {

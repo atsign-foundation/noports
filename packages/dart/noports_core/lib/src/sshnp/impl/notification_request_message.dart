@@ -54,6 +54,7 @@ class SshnpSessionRequest {
 }
 
 class NptSessionRequest {
+  static const int defaultTimeout = 1000 * 60;
   final String sessionId;
   final String rvdHost;
   final int rvdPort;
@@ -65,6 +66,7 @@ class NptSessionRequest {
   final bool encryptRvdTraffic;
   final String clientEphemeralPK;
   final String clientEphemeralPKType;
+  final Duration timeout;
 
   NptSessionRequest({
     required this.sessionId,
@@ -78,6 +80,7 @@ class NptSessionRequest {
     required this.encryptRvdTraffic,
     required this.clientEphemeralPK,
     required this.clientEphemeralPKType,
+    required this.timeout,
   });
 
   static NptSessionRequest fromJson(Map<String, dynamic> json) {
@@ -93,6 +96,7 @@ class NptSessionRequest {
       encryptRvdTraffic: json['encryptRvdTraffic'],
       clientEphemeralPK: json['clientEphemeralPK'],
       clientEphemeralPKType: json['clientEphemeralPKType'],
+      timeout: Duration(milliseconds: json['timeout'] ?? defaultTimeout),
     );
   }
 
@@ -109,5 +113,6 @@ class NptSessionRequest {
         'encryptRvdTraffic': encryptRvdTraffic,
         'clientEphemeralPK': clientEphemeralPK,
         'clientEphemeralPKType': clientEphemeralPKType,
+        'timeout': timeout.inMilliseconds,
       };
 }
