@@ -50,7 +50,6 @@ jobs:
         working-directory: ./packages/dart/sshnoports
     strategy:
       matrix:
-        os: [ubuntu-latest, windows-latest]
         include:
           - os: ubuntu-latest
             output-name: sshnp-linux-x64
