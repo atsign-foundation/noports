@@ -111,6 +111,11 @@ sedi() {
   fi
 }
 
+chown_dir() {
+  echo "$1 was created by this installer, ensuring that it is owned by $user"
+  chown -R $user:$user "$1" 2>/dev/null || chown -R $user "$1" 2>/dev/null
+}
+
 version() {
   echo "Version: $script_version (Target: $sshnp_version)"
 }
@@ -223,12 +228,12 @@ parse_env() {
 
   check_ssh_localhost
 
-  is_dotlocal_created=$([ -d $HOME/.local/ ])
-  is_dotlocalbin_created=$([ -d $HOME/.local/bin ])
-  is_dotssh_created=$([ -d $HOME/.ssh/ ])
-  is_dotsshnp_created=$([ -d $HOME/.sshnp/ ])
-  is_dotatsign_created=$([ -d $HOME/.atsign/ ])
-  is_dotatsignkeys_created=$([ -d $HOME/.atsign/keys/ ])
+  [ -d $user_home/.local/ ] && is_dotlocal_created=true || is_dotlocal_created=false
+  [ -d $user_home/.local/bin ] && is_dotlocalbin_created=true || is_dotlocalbin_created=false
+  [ -d $user_home/.ssh/ ] && is_dotssh_created=true || is_dotssh_created=false
+  [ -d $user_home/.sshnp/ ] && is_dotsshnp_created=true || is_dotsshnp_created=false
+  [ -d $user_home/.atsign/ ] && is_dotatsign_created=true || is_dotatsign_created=false
+  [ -d $user_home/.atsign/keys/ ] && is_dotatsignkeys_created=true || is_dotatsignkeys_created=false
 }
 
 is_valid_source_mode() {
@@ -484,12 +489,12 @@ cleanup() {
   rm -rf "$extract_path"
 
   if $as_root; then
-    is_dotlocal_created || chown_dir $HOME/.local
-    is_dotlocalbin_created || chown_dir $HOME/.local/bin
-    is_dotssh_created || chown_dir $HOME/.ssh/
-    is_dotsshnp_created || chown_dir $HOME/.sshnp/
-    is_dotatsign_created || chown_dir $HOME/.atsign/
-    is_dotatsignkeys_created || chown_dir $HOME/.atsign/keys/
+    $is_dotlocal_created || chown_dir $user_home/.local
+    $is_dotlocalbin_created || chown_dir $user_home/.local/bin
+    $is_dotssh_created || chown_dir $user_home/.ssh/
+    $is_dotsshnp_created || chown_dir $user_home/.sshnp/
+    $is_dotatsign_created || chown_dir $user_home/.atsign/
+    $is_dotatsignkeys_created || chown_dir $user_home/.atsign/keys/
   fi
 }
 
@@ -850,11 +855,6 @@ device() {
   if ! check_cmd sshd; then
     >&2 echo "sshd not found. Please install sshd and ensure it is running."
   fi
-}
-
-chown_dir() {
-  echo "$1 was created by this installer, ensuring that it is owned by $user"
-  chown -R $user:$user "$1" || chown -R $user "$1"
 }
 
 main() {
