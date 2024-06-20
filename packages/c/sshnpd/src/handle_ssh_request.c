@@ -62,7 +62,7 @@ void handle_ssh_request(atclient *atclient, pthread_mutex_t *atclient_lock, sshn
 
   if (!has_valid_values) {
     atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Received invalid envelope format\n");
-    free(envelope);
+    cJSON_Delete(envelope);
     return;
   }
 
@@ -71,13 +71,13 @@ void handle_ssh_request(atclient *atclient, pthread_mutex_t *atclient_lock, sshn
 
   if (!has_valid_values) {
     atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Couldn't determine if payload is direct\n");
-    free(envelope);
+    cJSON_Delete(envelope);
     return;
   }
 
   if (!cJSON_IsTrue(direct)) {
     atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Only direct mode is supported by this device\n");
-    free(envelope);
+    cJSON_Delete(envelope);
     return;
   }
 
@@ -92,7 +92,7 @@ void handle_ssh_request(atclient *atclient, pthread_mutex_t *atclient_lock, sshn
 
   if (!has_valid_values) {
     atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Received invalid payload format\n");
-    free(envelope);
+    cJSON_Delete(envelope);
     return;
   }
 
@@ -119,7 +119,7 @@ void handle_ssh_request(atclient *atclient, pthread_mutex_t *atclient_lock, sshn
   if ((res = atclient_atkey_create_publickey(&atkey, "publickey", 9, requesting_atsign, strlen(requesting_atsign), NULL,
                                              0)) != 0) {
     atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to create public key\n");
-    free(envelope);
+    cJSON_Delete(envelope);
     return;
   }
 
@@ -127,7 +127,7 @@ void handle_ssh_request(atclient *atclient, pthread_mutex_t *atclient_lock, sshn
   if (res != 0) {
     atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to get public key\n");
     atclient_atkey_free(&atkey);
-    free(envelope);
+    cJSON_Delete(envelope);
     return;
   }
 
@@ -139,7 +139,7 @@ void handle_ssh_request(atclient *atclient, pthread_mutex_t *atclient_lock, sshn
   res = atchops_rsakey_populate_publickey(&requesting_atsign_publickey, value, strlen(value));
   if (res != 0) {
     printf("atchops_rsakey_populate_publickey (failed): %d\n", res);
-    free(envelope);
+    cJSON_Delete(envelope);
     return;
   }
 
@@ -155,7 +155,7 @@ void handle_ssh_request(atclient *atclient, pthread_mutex_t *atclient_lock, sshn
   res = atchops_base64_decode((unsigned char *)signature_str, strlen(signature_str), value, valuelen, &valueolen);
   if (res != 0) {
     atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "atchops_base64_decode: %d\n", res);
-    free(envelope);
+    cJSON_Delete(envelope);
     return;
   }
 
@@ -163,7 +163,7 @@ void handle_ssh_request(atclient *atclient, pthread_mutex_t *atclient_lock, sshn
                                   (unsigned char *)value, hashing_algo_str, signing_algo_str);
   if (res != 0) {
     atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to verify envelope signature\n");
-    free(envelope);
+    cJSON_Delete(envelope);
     atchops_rsakey_publickey_free(&requesting_atsign_publickey);
     return;
   }
@@ -176,7 +176,7 @@ void handle_ssh_request(atclient *atclient, pthread_mutex_t *atclient_lock, sshn
   if (!encrypt_rvd_traffic) {
     atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR,
                  "Encrypt rvd traffic flag is false, this feature must be enabled\n");
-    free(envelope);
+    cJSON_Delete(envelope);
     return;
   }
 
@@ -187,7 +187,7 @@ void handle_ssh_request(atclient *atclient, pthread_mutex_t *atclient_lock, sshn
     if (!has_valid_values) {
       atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR,
                    "Missing nonce values, cannot create auth string for rvd\n");
-      free(envelope);
+      cJSON_Delete(envelope);
       return;
     }
 
@@ -211,7 +211,7 @@ void handle_ssh_request(atclient *atclient, pthread_mutex_t *atclient_lock, sshn
       free(signing_input);
       cJSON_Delete(res_envelope);
       cJSON_Delete(rvd_auth_payload);
-      free(envelope);
+      cJSON_Delete(envelope);
       return;
     }
 
@@ -225,7 +225,7 @@ void handle_ssh_request(atclient *atclient, pthread_mutex_t *atclient_lock, sshn
       free(signing_input);
       cJSON_Delete(res_envelope);
       cJSON_Delete(rvd_auth_payload);
-      free(envelope);
+      cJSON_Delete(envelope);
       return;
     }
 
@@ -247,7 +247,7 @@ void handle_ssh_request(atclient *atclient, pthread_mutex_t *atclient_lock, sshn
     if (authenticate_to_rvd) {
       free(rvd_auth_string);
     }
-    free(envelope);
+    cJSON_Delete(envelope);
     return;
   }
 
@@ -259,7 +259,7 @@ void handle_ssh_request(atclient *atclient, pthread_mutex_t *atclient_lock, sshn
     if (authenticate_to_rvd) {
       free(rvd_auth_string);
     }
-    free(envelope);
+    cJSON_Delete(envelope);
     return;
   }
 
@@ -270,7 +270,7 @@ void handle_ssh_request(atclient *atclient, pthread_mutex_t *atclient_lock, sshn
     if (authenticate_to_rvd) {
       free(rvd_auth_string);
     }
-    free(envelope);
+    cJSON_Delete(envelope);
     return;
   }
 
@@ -282,7 +282,7 @@ void handle_ssh_request(atclient *atclient, pthread_mutex_t *atclient_lock, sshn
     if (authenticate_to_rvd) {
       free(rvd_auth_string);
     }
-    free(envelope);
+    cJSON_Delete(envelope);
     return;
   }
 
@@ -305,7 +305,7 @@ void handle_ssh_request(atclient *atclient, pthread_mutex_t *atclient_lock, sshn
         if (authenticate_to_rvd) {
           free(rvd_auth_string);
         }
-        free(envelope);
+        cJSON_Delete(envelope);
         return;
       }
 
@@ -317,7 +317,7 @@ void handle_ssh_request(atclient *atclient, pthread_mutex_t *atclient_lock, sshn
         if (authenticate_to_rvd) {
           free(rvd_auth_string);
         }
-        free(envelope);
+        cJSON_Delete(envelope);
         return;
       }
 
@@ -330,7 +330,7 @@ void handle_ssh_request(atclient *atclient, pthread_mutex_t *atclient_lock, sshn
           free(rvd_auth_string);
         }
         free(session_aes_key_encrypted);
-        free(envelope);
+        cJSON_Delete(envelope);
         return;
       }
 
@@ -345,7 +345,7 @@ void handle_ssh_request(atclient *atclient, pthread_mutex_t *atclient_lock, sshn
           free(rvd_auth_string);
         }
         free(session_aes_key_encrypted);
-        free(envelope);
+        cJSON_Delete(envelope);
         return;
       }
       memset(session_aes_key_base64, 0, session_aes_key_len);
@@ -361,7 +361,7 @@ void handle_ssh_request(atclient *atclient, pthread_mutex_t *atclient_lock, sshn
         }
         free(session_aes_key_base64);
         free(session_aes_key_encrypted);
-        free(envelope);
+        cJSON_Delete(envelope);
         return;
       }
 
@@ -376,7 +376,7 @@ void handle_ssh_request(atclient *atclient, pthread_mutex_t *atclient_lock, sshn
           free(rvd_auth_string);
         }
         free(session_aes_key_base64);
-        free(envelope);
+        cJSON_Delete(envelope);
         return;
       }
 
@@ -389,7 +389,7 @@ void handle_ssh_request(atclient *atclient, pthread_mutex_t *atclient_lock, sshn
         }
         free(session_iv_encrypted);
         free(session_aes_key_base64);
-        free(envelope);
+        cJSON_Delete(envelope);
         return;
       }
 
@@ -403,7 +403,7 @@ void handle_ssh_request(atclient *atclient, pthread_mutex_t *atclient_lock, sshn
         }
         free(session_iv_encrypted);
         free(session_aes_key_base64);
-        free(envelope);
+        cJSON_Delete(envelope);
         return;
       }
       memset(session_iv_base64, 0, session_iv_len);
@@ -419,7 +419,7 @@ void handle_ssh_request(atclient *atclient, pthread_mutex_t *atclient_lock, sshn
         free(session_iv_base64);
         free(session_iv_encrypted);
         free(session_aes_key_base64);
-        free(envelope);
+        cJSON_Delete(envelope);
         return;
       }
       // No longer need this
@@ -435,7 +435,7 @@ void handle_ssh_request(atclient *atclient, pthread_mutex_t *atclient_lock, sshn
     if (authenticate_to_rvd) {
       free(rvd_auth_string);
     }
-    free(envelope);
+    cJSON_Delete(envelope);
     return;
   }
 
@@ -453,7 +453,7 @@ void handle_ssh_request(atclient *atclient, pthread_mutex_t *atclient_lock, sshn
     // child process
 
     // free this immediately, we don't need it on the child fork
-    free(envelope);
+    cJSON_Delete(envelope);
     if (free_session_base64) {
       free(session_aes_key_base64);
       free(session_iv_base64);
@@ -581,7 +581,7 @@ cancel:
     free(session_iv_base64);
     free(session_aes_key_base64);
   }
-  free(envelope);
+  cJSON_Delete(envelope);
   return;
 }
 
