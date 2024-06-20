@@ -133,6 +133,7 @@ class SshnpdImpl implements Sshnpd {
         DaemonFeature.srE2ee.name: true,
         DaemonFeature.acceptsPublicKeys.name: addSshPublicKeys,
         DaemonFeature.supportsPortChoice.name: true,
+        DaemonFeature.adjustableTimeout.name: true,
       },
       'allowedServices': permitOpen,
     };
@@ -557,6 +558,7 @@ class SshnpdImpl implements Sshnpd {
         sessionAESKeyString: sessionAESKey,
         sessionIVString: sessionIV,
         multi: true,
+        timeout: req.timeout,
       ).run();
       logger.info('Started rv - pid is ${rv.pid}');
 
@@ -788,6 +790,7 @@ class SshnpdImpl implements Sshnpd {
         rvdAuthString: rvdAuthString,
         sessionAESKeyString: sessionAESKey,
         sessionIVString: sessionIV,
+        timeout: DefaultArgs.srvTimeout,
       ).run();
       logger.info('Started rv - pid is ${rv.pid}');
 

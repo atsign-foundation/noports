@@ -45,6 +45,8 @@ abstract interface class Npt {
   /// - Return the port which the local srv is bound to
   Future<int> run();
 
+  Future<void> close();
+
   Future get done;
 
   factory Npt.create({
@@ -129,6 +131,7 @@ class _NptImpl extends NptBase
   late final SrvdChannel _srvdChannel;
 
   final Completer _completer = Completer();
+
   @override
   Future get done => _completer.future;
 
@@ -164,6 +167,13 @@ class _NptImpl extends NptBase
   }
 
   @override
+  Future<void> close() async {
+    if (!_completer.isCompleted) {
+      _completer.complete();
+    }
+  }
+
+  @override
   @mustCallSuper
   Future<void> initialize() async {
     if (!isSafeToInitialize) return;
@@ -178,6 +188,10 @@ class _NptImpl extends NptBase
       DaemonFeature.srE2ee,
       DaemonFeature.supportsPortChoice,
     ];
+    if (!(params.timeout == DefaultArgs.srvTimeout)) {
+      requiredFeatures.add(DaemonFeature.adjustableTimeout);
+    }
+    logger.info('Sending daemon feature check request');
     sendProgress('Sending daemon feature check request');
 
     Future<List<(DaemonFeature feature, bool supported, String reason)>>
@@ -195,7 +209,13 @@ class _NptImpl extends NptBase
 
     await Future.delayed(Duration(milliseconds: 1));
     for (final (DaemonFeature _, bool supported, String reason) in features) {
-      if (!supported) throw SshnpError(reason);
+      if (!supported) {
+        if (reason.contains('timed out')) {
+          throw TimeoutException('Ping to NoPorts daemon timed out');
+        } else {
+          throw SshnpError(reason);
+        }
+      }
     }
     sendProgress('Required daemon features are supported');
 
@@ -204,7 +224,7 @@ class _NptImpl extends NptBase
 
   @override
   Future<int> run() async {
-    /// Ensure that sshnp is initialized
+    /// Ensure that npt is initialized
     await callInitialization();
 
     var msg = 'Sending session request to the device daemon';
@@ -233,6 +253,7 @@ class _NptImpl extends NptBase
             clientEphemeralPKType: params.sessionKPType.name,
             requestedPort: params.remotePort,
             requestedHost: params.remoteHost,
+            timeout: params.timeout,
           ).toJson()),
       checkForFinalDeliveryStatus: false,
       waitForFinalDeliveryStatus: false,
@@ -260,7 +281,7 @@ class _NptImpl extends NptBase
       localRvPort = server.port;
       await server.close();
     } else {
-      sendProgress('Will use supplied local port ${params.localPort}');
+      sendProgress('Will use local port ${params.localPort}');
 
       localRvPort = params.localPort;
     }
@@ -275,6 +296,7 @@ class _NptImpl extends NptBase
         sessionIVString: sshnpdChannel.sessionIVString,
         multi: true,
         detached: false,
+        timeout: params.timeout,
       );
       unawaited(sc.done.whenComplete(() => _completer.complete()));
     } else {
@@ -284,6 +306,7 @@ class _NptImpl extends NptBase
         sessionIVString: sshnpdChannel.sessionIVString,
         multi: true,
         detached: true,
+        timeout: params.timeout,
       );
       _completer.complete();
     }

@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:dartssh2/dartssh2.dart';
 import 'package:noports_core/src/srv/srv_impl.dart';
+import 'package:noports_core/utils.dart';
 import 'package:socket_connector/socket_connector.dart';
 
 abstract class Srv<T> {
@@ -39,6 +40,9 @@ abstract class Srv<T> {
   /// Whether to enable multiple connections or not
   abstract final bool multi;
 
+  /// How long to keep the SocketConnector open if there have been no connections
+  abstract final Duration timeout;
+
   Future<T> run();
 
   // Can't use factory functions since Srv contains a generic type
@@ -53,6 +57,7 @@ abstract class Srv<T> {
     String? sessionIVString,
     bool multi = false,
     bool detached = false,
+    Duration timeout = DefaultArgs.srvTimeout,
   }) {
     return SrvImplExec(
       streamingHost,
@@ -64,6 +69,7 @@ abstract class Srv<T> {
       sessionAESKeyString: sessionAESKeyString,
       sessionIVString: sessionIVString,
       multi: multi,
+      timeout: timeout,
     );
   }
 
@@ -78,6 +84,7 @@ abstract class Srv<T> {
     String? sessionIVString,
     bool multi = false,
     bool detached = false,
+    Duration timeout = DefaultArgs.srvTimeout,
   }) {
     return SrvImplDart(
       streamingHost,
@@ -90,6 +97,7 @@ abstract class Srv<T> {
       sessionIVString: sessionIVString,
       multi: multi,
       detached: detached,
+      timeout: timeout,
     );
   }
 
@@ -104,6 +112,7 @@ abstract class Srv<T> {
     String? sessionIVString,
     bool multi = false,
     bool detached = false,
+    Duration timeout = DefaultArgs.srvTimeout,
   }) {
     return SrvImplInline(
       streamingHost,
@@ -112,6 +121,7 @@ abstract class Srv<T> {
       sessionAESKeyString: sessionAESKeyString,
       sessionIVString: sessionIVString,
       multi: multi,
+      timeout: timeout,
     );
   }
 

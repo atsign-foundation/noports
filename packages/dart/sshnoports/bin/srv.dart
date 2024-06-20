@@ -58,10 +58,12 @@ Future<void> main(List<String> args) async {
         help: 'On the daemon side, this is the local port to connect to.'
             ' On the client side this is the local port which the srv will bind'
             ' to so that client-side programs can create sockets to it.')
+    ..addOption('timeout',
+        defaultsTo: '60',
+        help: 'How long to keep the SocketConnector open'
+            ' if there have been no connections')
     ..addFlag('bind-local-port',
-        defaultsTo: false,
-        negatable: false,
-        help: 'Client side flag.')
+        defaultsTo: false, negatable: false, help: 'Client side flag.')
     ..addOption('local-host',
         mandatory: false,
         defaultsTo: 'localhost',
@@ -97,6 +99,7 @@ Future<void> main(List<String> args) async {
       final bool rvAuth = parsed['rv-auth'];
       final bool rvE2ee = parsed['rv-e2ee'];
       final bool multi = parsed['multi'];
+      final Duration timeout = Duration(seconds: int.parse(parsed['timeout']));
 
       String? rvdAuthString = rvAuth ? Platform.environment['RV_AUTH'] : null;
       String? sessionAESKeyString =
@@ -126,7 +129,9 @@ Future<void> main(List<String> args) async {
         sessionAESKeyString: sessionAESKeyString,
         sessionIVString: sessionIVString,
         multi: multi,
-        detached: true, // by definition - this is the srv binary
+        detached: true,
+        // by definition - this is the srv binary
+        timeout: timeout,
       ).run();
     } on ArgumentError catch (e) {
       printVersion();

@@ -1,3 +1,15 @@
+# 6.1.0
+- feat: npt: added 'keep-alive' flag, and an adjustable session timeout (#1110)
+- fix: sshnpd: ensure required directories exist (#1139)
+- feat: all: set a 1-minute ttln (notification time-to-live) (#1095)
+- feat: sshnp: No double ssh when sockets are encrypted (#1090)
+- feat: sshnpd: make daemon storage location map to its device name (#1080)
+- feat: sshnpd: add more type validation for session requests (#1063)
+- fix: sshnp: various arg parsing issues (#1047)
+- feat: sshnpd: add '--sshpublickey-permissions' option (#1004)
+- fix: sshnpd,sshnp,npt: better error message if srv binary can't be 
+  located (#988)
+
 # 6.0.7
 - feat: include allowed services in device ping
 - chore: deprecate -h and --host in favor of -r and --srvd

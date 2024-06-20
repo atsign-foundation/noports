@@ -187,13 +187,7 @@ abstract class SshnpdChannel with AsyncInitialization, AtClientBindings {
     try {
       pingResponse = await ping().timeout(timeout);
     } on TimeoutException catch (_) {
-      var msg = 'Ping to ${params.device}${params.sshnpdAtSign}'
-          ' timed out after ${timeout.inSeconds} seconds';
-      return featuresToCheck.map((f) => (f, false, msg)).toList();
-    } catch (e) {
-      var msg = 'Ping to ${params.device}${params.sshnpdAtSign}'
-          ' threw exception $e';
-      return featuresToCheck.map((feature) => (feature, false, msg)).toList();
+      throw TimeoutException('Daemon feature check timed out');
     }
 
     // If supportedFeatures was null (i.e. a response from a v4 daemon),
