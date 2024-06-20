@@ -1,0 +1,25 @@
+{
+    forked thread atclient_put
+    Memcheck:Leak
+    match-leak-kinds: definite
+    fun:malloc
+    fun:atclient_atstr_init
+    fun:atclient_atstr_init_literal
+    fun:set_ivnonce
+    fun:atclient_atkey_metadata_set_ivnonce
+    fun:atclient_put
+    fun:refresh_device_entry
+    fun:start_thread
+    fun:clone
+}
+{
+    forked thread atkey
+    Memcheck:Leak
+    match-leak-kinds: definite
+    fun:malloc
+    fun:atclient_atstr_init
+    fun:atclient_atkey_init
+    fun:refresh_device_entry
+    fun:start_thread
+    fun:clone
+}
