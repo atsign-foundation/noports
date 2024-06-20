@@ -37,6 +37,7 @@ install_type=""
 unset download_url
 local_archive=""
 no_sudo=false
+quiet=false
 
 ### Client/ Device Install Variables
 client_atsign=""
@@ -76,6 +77,15 @@ is_systemd_available() {
   [ -d /run/systemd/system ]
 }
 
+check_quiet(){
+  for arg in "$@"; do
+    if [ "$arg" = "-q" ] || [ "$arg" = "--quiet" ]; then 
+      exec > /dev/null
+      break
+    fi
+  done
+}
+
 check_cmd() {
   set +e
   command -v "$1" > /dev/null 2>&1
@@ -108,6 +118,7 @@ usage() {
   echo "      --temp-path      <path>    Set the temporary path for downloads"
   echo "  -t, --type           <type>    Set the install type (device, client)"
   echo "      --local          <path>    Install from a local archive"
+  echo "  -q, --quiet                    Disables any printing to the terminal from the script. Ensure you are including options."
   echo
   echo "Client Options:"
   echo "  -c, --client-atsign  <atsign>  Set the client atSign"
@@ -132,9 +143,9 @@ parse_env() {
     Darwin) platform_name='macos' ;;
     Linux) platform_name='linux' ;;
     *)
-      echo "Detected an unsupported platform: $(uname)"
-      echo "Please open an issue at: $repo_url"
-      echo "and provide the following information: $(uname -a)" exit 1
+      >&2 echo "Detected an unsupported platform: $(uname)"
+      >&2 echo "Please open an issue at: $repo_url"
+      >&2 echo "and provide the following information: $(uname -a)" exit 1
       ;;
   esac
 
@@ -157,9 +168,9 @@ parse_env() {
       system_arch="riscv64"
       ;;
     *)
-      echo "Detected an unsupported architecture: $(uname -m)"
-      echo "Please open an issue at: $repo_url"
-      echo "and provide the following information: $(uname -a)"
+      >&2 echo "Detected an unsupported architecture: $(uname -m)"
+      >&2 echo "Please open an issue at: $repo_url"
+      >&2 echo "and provide the following information: $(uname -a)"
       exit 1
       ;;
   esac
@@ -260,8 +271,8 @@ parse_args() {
         install_type_input="$1"
         install_type=$(norm_install_type "$install_type_input")
         if ! is_valid_install_type "$install_type"; then
-          echo "Invalid install type: $install_type_input"
-          echo "Valid options are: (device, client)" exit 1
+          >&2 echo "Invalid install type: $install_type_input"
+          >&2 echo "Valid options are: (device, client)" exit 1
         fi
         ;;
       --local)
@@ -269,7 +280,7 @@ parse_args() {
         if [ -f "$1" ]; then
           local_archive="$1"
         else
-          echo "Local archive not found: $1"
+          >&2 echo "Local archive not found: $1"
           exit 1
         fi
         ;;
@@ -305,20 +316,39 @@ parse_args() {
         device_type_input="$1"
         device_type=$(norm_device_type "$device_type_input")
         if ! is_valid_device_type "$device_type"; then
-          echo "Invalid device type: $device_type_input"
-          echo "Valid options are: (launchd, systemd, tmux, headless)" exit 1
+          >&2 echo "Invalid device type: $device_type_input"
+          >&2 echo "Valid options are: (launchd, systemd, tmux, headless)" exit 1
         fi
         ;;
       --no-sudo)
         no_sudo=true
         ;;
+      -q | --quiet)
+        quiet=true
+        ;;
       *)
-        echo "Unexpected option: $1"
+        >&2 echo "Unexpected option: $1"
         exit 1
         ;;
     esac
     shift
   done
+  if [ $quiet = true ]; then
+    if [ "$install_type" = "device" ]; then
+      if [ -z "$client_atsign" ] || [ -z "$device_atsign" ] || [ -z "$device_name" ]; then
+        >&2 echo "Error: Missing required information for device installation. (-c, -d, -n)"
+        exit 1
+      fi
+    elif [ "$install_type" = "client" ]; then
+      if [ -z "$client_atsign" ] || [ -z "$device_atsign" ] || [ -z "$host_atsign" ]; then
+        >&2 echo "Error: Missing required information for client installation. (-c, -d, -r)"
+        exit 1
+      fi
+    else
+      >&2 echo "Specify -t, (device or client) and its required parameters."
+      exit 1
+    fi
+  fi
 }
 
 get_user_inputs() {
@@ -649,24 +679,26 @@ client() {
   done
 
   if [ -z "$devices" ]; then
+    if [ "$quiet" = false ]; then
     done_input=false
     echo "Installing a quick picker script to make it easy to connect to devices..."
     echo "Type a device name and press enter to submit it."
     echo "Press enter once more to finish."
-    while [ "$done_input" = false ]; do
-      printf "Device name: "
-      read -r device_name
-      if [ -z "$device_name" ]; then
-        done_input=true
-      else
-        if ! echo "$device_name" | grep -Eq '^[a-z][a-z0-9_]{0,14}$'; then
-          echo "Device name must be in snake case and max 15 characters"
-          device_name="" 
+      while [ "$done_input" = false ]; do
+        printf "Device name: "
+        read -r device_name
+        if [ -z "$device_name" ]; then
+          done_input=true
         else
-          devices="$devices,$device_name"
+          if ! echo "$device_name" | grep -Eq '^[a-z][a-z0-9_]{0,14}$'; then
+            echo "Device name must be in snake case and max 15 characters"
+            device_name="" 
+          else
+            devices="$devices,$device_name"
+          fi
         fi
-      fi
-    done
+      done
+    fi
   fi
 
   # write the metadata to the magic script
@@ -767,11 +799,15 @@ done
       eval "$(echo "$install_output" | grep -A1 "To start .* immediately:" | tail -n1)"
       ;;
   esac
+  if ! check_cmd sshd; then
+    >&2 echo "sshd not found. Please install sshd and ensure it is running."
+  fi
 }
 
 main() {
   trap cleanup EXIT
   set -eu
+  check_quiet "$@"
   parse_env
   print_env
   parse_args "$@"
