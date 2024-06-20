@@ -1,4 +1,12 @@
-# 🗃 SFTP
+# 🗃️ SFTP
+
+## Outdated
+
+This section is outdated. For the most current information, please see the updated documentation.
+
+{% content-ref url="../../../noports-tunnel/" %}
+[noports-tunnel](../../../noports-tunnel/)
+{% endcontent-ref %}
 
 ## Overview
 
@@ -30,8 +38,9 @@ sshnp -f @alice_client -t @alice_device -d my_server -h @rv_am -i ~/.ssh/id_ed25
 
 With a web server forwarding the command might look like:
 
-<pre class="language-bash"><code class="lang-bash"><strong>sshnp -f @alice_client -t @alice_device -d my_server -h @rv_am -i ~/.ssh/id_ed25519 -o '-L 2222:localhost:22'
-</strong></code></pre>
+```bash
+sshnp -f @alice_client -t @alice_device -d my_server -h @rv_am -i ~/.ssh/id_ed25519 -o '-L 2222:localhost:22'
+```
 
 Now you can connect to localhost:2222 in your favorite SFTP client.&#x20;
 
