@@ -112,8 +112,10 @@ sedi() {
 }
 
 chown_dir() {
-  echo "$1 was created by this installer, ensuring that it is owned by $user"
-  chown -R $user:$user "$1" 2>/dev/null || chown -R $user "$1" 2>/dev/null
+  if [ -d $1 ]; then
+    echo "$1 was created by this installer, ensuring that it is owned by $user"
+    chown -R $user:$user "$1" 2>/dev/null || chown -R $user "$1" 2>/dev/null
+  fi
 }
 
 version() {
