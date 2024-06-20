@@ -482,6 +482,15 @@ cleanup() {
   # These should be in the tmp directory, attempt to remove them anyway
   rm -f "$archive_path"
   rm -rf "$extract_path"
+
+  if $as_root; then
+    is_dotlocal_created || chown_dir $HOME/.local
+    is_dotlocalbin_created || chown_dir $HOME/.local/bin
+    is_dotssh_created || chown_dir $HOME/.ssh/
+    is_dotsshnp_created || chown_dir $HOME/.sshnp/
+    is_dotatsign_created || chown_dir $HOME/.atsign/
+    is_dotatsignkeys_created || chown_dir $HOME/.atsign/keys/
+  fi
 }
 
 write_metadata() {
@@ -848,17 +857,6 @@ chown_dir() {
   chown -R $user:$user "$1" || chown -R $user "$1"
 }
 
-cleanup() {
-  if as_root; then
-    is_dotlocal_created || chown_dir $HOME/.local
-    is_dotlocalbin_created || chown_dir $HOME/.local/bin
-    is_dotssh_created || chown_dir $HOME/.ssh/
-    is_dotsshnp_created || chown_dir $HOME/.sshnp/
-    is_dotatsign_created || chown_dir $HOME/.atsign/
-    is_dotatsignkeys_created || chown_dir $HOME/.atsign/keys/
-  fi
-}
-
 main() {
   trap cleanup EXIT
   set -eu
@@ -882,8 +880,6 @@ main() {
     client) client ;;
     device) device ;;
   esac
-
-  cleanup
 }
 
 main "$@"
