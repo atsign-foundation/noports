@@ -156,6 +156,7 @@ void handle_ssh_request(atclient *atclient, pthread_mutex_t *atclient_lock, sshn
   if (res != 0) {
     atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "atchops_base64_decode: %d\n", res);
     cJSON_Delete(envelope);
+    cJSON_free(payloadstr);
     return;
   }
 
@@ -165,6 +166,7 @@ void handle_ssh_request(atclient *atclient, pthread_mutex_t *atclient_lock, sshn
     atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to verify envelope signature\n");
     cJSON_Delete(envelope);
     atchops_rsakey_publickey_free(&requesting_atsign_publickey);
+    cJSON_free(payloadstr);
     return;
   }
 
@@ -177,6 +179,7 @@ void handle_ssh_request(atclient *atclient, pthread_mutex_t *atclient_lock, sshn
     atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR,
                  "Encrypt rvd traffic flag is false, this feature must be enabled\n");
     cJSON_Delete(envelope);
+    cJSON_free(payloadstr);
     return;
   }
 
@@ -188,6 +191,7 @@ void handle_ssh_request(atclient *atclient, pthread_mutex_t *atclient_lock, sshn
       atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR,
                    "Missing nonce values, cannot create auth string for rvd\n");
       cJSON_Delete(envelope);
+      cJSON_free(payloadstr);
       return;
     }
 
@@ -208,10 +212,11 @@ void handle_ssh_request(atclient *atclient, pthread_mutex_t *atclient_lock, sshn
                            strlen((char *)signing_input), signature);
     if (res != 0) {
       atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to sign the auth string payload\n");
-      free(signing_input);
+      cJSON_free(signing_input);
       cJSON_Delete(res_envelope);
       cJSON_Delete(rvd_auth_payload);
       cJSON_Delete(envelope);
+      cJSON_free(payloadstr);
       return;
     }
 
@@ -222,10 +227,11 @@ void handle_ssh_request(atclient *atclient, pthread_mutex_t *atclient_lock, sshn
     res = atchops_base64_encode(signature, 256, base64signature, 384, &sig_len);
     if (res != 0) {
       atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to base64 encode the auth string payload\n");
-      free(signing_input);
+      cJSON_free(signing_input);
       cJSON_Delete(res_envelope);
       cJSON_Delete(rvd_auth_payload);
       cJSON_Delete(envelope);
+      cJSON_free(payloadstr);
       return;
     }
 
@@ -233,9 +239,10 @@ void handle_ssh_request(atclient *atclient, pthread_mutex_t *atclient_lock, sshn
     cJSON_AddItemToObject(res_envelope, "hashingAlgo", cJSON_CreateString("sha256"));
     cJSON_AddItemToObject(res_envelope, "signingAlgo", cJSON_CreateString("rsa2048"));
     rvd_auth_string = cJSON_PrintUnformatted(res_envelope);
-    free(signing_input);
+    cJSON_free(signing_input);
     cJSON_Delete(res_envelope);
     cJSON_Delete(rvd_auth_payload);
+    cJSON_free(payloadstr);
   }
 
   unsigned char session_aes_key[49], *session_aes_key_encrypted, *session_aes_key_base64;
@@ -566,7 +573,7 @@ void handle_ssh_request(atclient *atclient, pthread_mutex_t *atclient_lock, sshn
   clean_json : {
     cJSON_Delete(final_res_envelope);
     cJSON_Delete(final_res_payload);
-    free(signing_input);
+    cJSON_free(signing_input);
   }
 
     // end of parent process
