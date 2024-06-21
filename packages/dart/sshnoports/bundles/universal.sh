@@ -30,6 +30,15 @@ unset user
 unset user_home
 unset user_bin_dir
 
+### Pre-installation validation
+unset ssh_localhost_status
+unset is_dotlocal_created
+unset is_dotlocalbin_created
+unset is_dotssh_created
+unset is_dotsshnp_created
+unset is_dotatsign_created
+unset is_dotatsignkeys_created
+
 ### Input Variables
 verbose=false
 unset tmp_path
@@ -37,6 +46,7 @@ install_type=""
 unset download_url
 local_archive=""
 no_sudo=false
+quiet=false
 
 ### Client/ Device Install Variables
 client_atsign=""
@@ -76,9 +86,18 @@ is_systemd_available() {
   [ -d /run/systemd/system ]
 }
 
+check_quiet() {
+  for arg in "$@"; do
+    if [ "$arg" = "-q" ] || [ "$arg" = "--quiet" ]; then
+      exec >/dev/null
+      break
+    fi
+  done
+}
+
 check_cmd() {
   set +e
-  command -v "$1" > /dev/null 2>&1
+  command -v "$1" >/dev/null 2>&1
   exitcode=$?
   set -e
   return $exitcode
@@ -89,6 +108,13 @@ sedi() {
     sed -i '' "$@"
   else
     sed -i "$@"
+  fi
+}
+
+chown_dir() {
+  if [ -d $1 ]; then
+    echo "$1 was created by this installer, ensuring that it is owned by $user"
+    chown -R $user:$user "$1" 2>/dev/null || chown -R $user "$1" 2>/dev/null
   fi
 }
 
@@ -108,6 +134,7 @@ usage() {
   echo "      --temp-path      <path>    Set the temporary path for downloads"
   echo "  -t, --type           <type>    Set the install type (device, client)"
   echo "      --local          <path>    Install from a local archive"
+  echo "  -q, --quiet                    Disables any printing to the terminal from the script. Ensure you are including options."
   echo
   echo "Client Options:"
   echo "  -c, --client-atsign  <atsign>  Set the client atSign"
@@ -127,14 +154,27 @@ usage() {
 
 }
 
+check_ssh_localhost() {
+  # ssh_localhost_status
+  if check_cmd sshd; then
+    ssh_localhost_status='sshd not found'
+  elif check_cmd ssh; then
+    ssh_localhost_status='sshd found, but ssh not found'
+  elif ssh localhost -o IdentitiesOnly true >/dev/null; then
+    ssh_localhost_status='Able to ssh to localhost'
+  else
+    ssh_localhost_status='sshd & ssh both found, but failed to ssh to localhost'
+  fi
+}
+
 parse_env() {
   case "$(uname)" in
     Darwin) platform_name='macos' ;;
     Linux) platform_name='linux' ;;
     *)
-      echo "Detected an unsupported platform: $(uname)"
-      echo "Please open an issue at: $repo_url"
-      echo "and provide the following information: $(uname -a)" exit 1
+      >&2 echo "Detected an unsupported platform: $(uname)"
+      >&2 echo "Please open an issue at: $repo_url"
+      >&2 echo "and provide the following information: $(uname -a)" exit 1
       ;;
   esac
 
@@ -157,9 +197,9 @@ parse_env() {
       system_arch="riscv64"
       ;;
     *)
-      echo "Detected an unsupported architecture: $(uname -m)"
-      echo "Please open an issue at: $repo_url"
-      echo "and provide the following information: $(uname -a)"
+      >&2 echo "Detected an unsupported architecture: $(uname -m)"
+      >&2 echo "Please open an issue at: $repo_url"
+      >&2 echo "and provide the following information: $(uname -a)"
       exit 1
       ;;
   esac
@@ -187,6 +227,15 @@ parse_env() {
     user="$USER"
   fi
   user_bin_dir=$user_home/.local/bin
+
+  check_ssh_localhost
+
+  [ -d $user_home/.local/ ] && is_dotlocal_created=true || is_dotlocal_created=false
+  [ -d $user_home/.local/bin ] && is_dotlocalbin_created=true || is_dotlocalbin_created=false
+  [ -d $user_home/.ssh/ ] && is_dotssh_created=true || is_dotssh_created=false
+  [ -d $user_home/.sshnp/ ] && is_dotsshnp_created=true || is_dotsshnp_created=false
+  [ -d $user_home/.atsign/ ] && is_dotatsign_created=true || is_dotatsign_created=false
+  [ -d $user_home/.atsign/keys/ ] && is_dotatsignkeys_created=true || is_dotatsignkeys_created=false
 }
 
 is_valid_source_mode() {
@@ -260,8 +309,8 @@ parse_args() {
         install_type_input="$1"
         install_type=$(norm_install_type "$install_type_input")
         if ! is_valid_install_type "$install_type"; then
-          echo "Invalid install type: $install_type_input"
-          echo "Valid options are: (device, client)" exit 1
+          >&2 echo "Invalid install type: $install_type_input"
+          >&2 echo "Valid options are: (device, client)" exit 1
         fi
         ;;
       --local)
@@ -269,7 +318,7 @@ parse_args() {
         if [ -f "$1" ]; then
           local_archive="$1"
         else
-          echo "Local archive not found: $1"
+          >&2 echo "Local archive not found: $1"
           exit 1
         fi
         ;;
@@ -305,20 +354,39 @@ parse_args() {
         device_type_input="$1"
         device_type=$(norm_device_type "$device_type_input")
         if ! is_valid_device_type "$device_type"; then
-          echo "Invalid device type: $device_type_input"
-          echo "Valid options are: (launchd, systemd, tmux, headless)" exit 1
+          >&2 echo "Invalid device type: $device_type_input"
+          >&2 echo "Valid options are: (launchd, systemd, tmux, headless)" exit 1
         fi
         ;;
       --no-sudo)
         no_sudo=true
         ;;
+      -q | --quiet)
+        quiet=true
+        ;;
       *)
-        echo "Unexpected option: $1"
+        >&2 echo "Unexpected option: $1"
         exit 1
         ;;
     esac
     shift
   done
+  if [ $quiet = true ]; then
+    if [ "$install_type" = "device" ]; then
+      if [ -z "$client_atsign" ] || [ -z "$device_atsign" ] || [ -z "$device_name" ]; then
+        >&2 echo "Error: Missing required information for device installation. (-c, -d, -n)"
+        exit 1
+      fi
+    elif [ "$install_type" = "client" ]; then
+      if [ -z "$client_atsign" ] || [ -z "$device_atsign" ] || [ -z "$host_atsign" ]; then
+        >&2 echo "Error: Missing required information for client installation. (-c, -d, -r)"
+        exit 1
+      fi
+    else
+      >&2 echo "Specify -t, (device or client) and its required parameters."
+      exit 1
+    fi
+  fi
 }
 
 get_user_inputs() {
@@ -333,7 +401,7 @@ get_user_inputs() {
 }
 
 print_env() {
-  cat <<EOL
+  cat <<EOF
 Environment:
   Platform name: $platform_name
   System arch: $system_arch
@@ -342,7 +410,15 @@ Environment:
   Binary path: $bin_path
   User: $user
   User home: $user_home
-EOL
+  Ssh status: $ssh_localhost_status
+  Did directories exist (prior to install):
+  -       .local/ : $is_dotlocal_created
+  -   .local/bin/ : $is_dotlocalbin_created
+  -         .ssh/ : $is_dotssh_created
+  -       .sshnp/ : $is_dotssh_created
+  -      .atsign/ : $is_dotatsign_created
+  - .atsign/keys/ : $is_dotatsignkeys_created
+EOF
 }
 
 downloader() {
@@ -363,7 +439,7 @@ downloader() {
 get_download_url() {
   unset download_urls
   release_prefix="https://api.github.com/repos/atsign-foundation/noports/releases/"
-  release_info=$(downloader "$release_prefix$(norm_version $sshnp_version)" - )
+  release_info=$(downloader "$release_prefix$(norm_version $sshnp_version)" -)
   exitcode=$?
   if [ $exitcode != 0 ]; then exit $exitcode; fi
   download_urls=$(echo "$release_info" | grep browser_download_url | cut -d\" -f4)
@@ -413,6 +489,15 @@ cleanup() {
   # These should be in the tmp directory, attempt to remove them anyway
   rm -f "$archive_path"
   rm -rf "$extract_path"
+
+  if $as_root; then
+    $is_dotlocal_created || chown_dir $user_home/.local
+    $is_dotlocalbin_created || chown_dir $user_home/.local/bin
+    $is_dotssh_created || chown_dir $user_home/.ssh/
+    $is_dotsshnp_created || chown_dir $user_home/.sshnp/
+    $is_dotatsign_created || chown_dir $user_home/.atsign/
+    $is_dotatsignkeys_created || chown_dir $user_home/.atsign/keys/
+  fi
 }
 
 write_metadata() {
@@ -649,24 +734,26 @@ client() {
   done
 
   if [ -z "$devices" ]; then
-    done_input=false
-    echo "Installing a quick picker script to make it easy to connect to devices..."
-    echo "Type a device name and press enter to submit it."
-    echo "Press enter once more to finish."
-    while [ "$done_input" = false ]; do
-      printf "Device name: "
-      read -r device_name
-      if [ -z "$device_name" ]; then
-        done_input=true
-      else
-        if ! echo "$device_name" | grep -Eq '^[a-z][a-z0-9_]{0,14}$'; then
-          echo "Device name must be in snake case and max 15 characters"
-          device_name="" 
+    if [ "$quiet" = false ]; then
+      done_input=false
+      echo "Installing a quick picker script to make it easy to connect to devices..."
+      echo "Type a device name and press enter to submit it."
+      echo "Press enter once more to finish."
+      while [ "$done_input" = false ]; do
+        printf "Device name: "
+        read -r device_name
+        if [ -z "$device_name" ]; then
+          done_input=true
         else
-          devices="$devices,$device_name"
+          if ! echo "$device_name" | grep -Eq '^[a-z][a-z0-9_]{0,14}$'; then
+            echo "Device name must be in snake case and max 15 characters"
+            device_name=""
+          else
+            devices="$devices,$device_name"
+          fi
         fi
-      fi
-    done
+      done
+    fi
   fi
 
   # write the metadata to the magic script
@@ -725,10 +812,10 @@ device() {
     printf "Enter device name: "
     read -r device_name
     if ! echo "$device_name" | grep -Eq '^[a-z][a-z0-9_]{0,14}$'; then
-        echo "Device name must be in snake case and max 15 characters"
-        device_name="" 
+      echo "Device name must be in snake case and max 15 characters"
+      device_name=""
     fi
-done
+  done
 
   "$extract_path"/sshnp/install.sh -b "$bin_path" -u "$user" at_activate
 
@@ -767,11 +854,15 @@ done
       eval "$(echo "$install_output" | grep -A1 "To start .* immediately:" | tail -n1)"
       ;;
   esac
+  if ! check_cmd sshd; then
+    >&2 echo "sshd not found. Please install sshd and ensure it is running."
+  fi
 }
 
 main() {
   trap cleanup EXIT
   set -eu
+  check_quiet "$@"
   parse_env
   print_env
   parse_args "$@"

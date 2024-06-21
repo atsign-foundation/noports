@@ -29,7 +29,7 @@ mixin class AsyncInitialization {
   Future<void> callInitialization() async {
     if (!_initializeStarted) {
       _initializeStarted = true;
-      unawaited(initialize());
+      await initialize();
     }
     return initialized;
   }

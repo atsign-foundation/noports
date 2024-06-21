@@ -120,3 +120,9 @@ The rest of the configuration for `sshnp` is contained in a separate guide:
 {% content-ref url="additional-configuration.md" %}
 [additional-configuration.md](additional-configuration.md)
 {% endcontent-ref %}
+
+## Want to use RDP, SFTP or etc?
+
+{% content-ref url="../../../../noports-tunnel/" %}
+[noports-tunnel](../../../../noports-tunnel/)
+{% endcontent-ref %}

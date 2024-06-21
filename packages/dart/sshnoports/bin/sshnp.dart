@@ -241,6 +241,9 @@ void main(List<String> args) async {
     } on FormatException catch (error) {
       printUsage(error: error);
       exitProgram(exitCode: 1);
+    } on TimeoutException catch (error) {
+      stderr.writeln('\nError : $error');
+      exitProgram(exitCode: 1);
     } on SshnpError catch (error, stackTrace) {
       stderr.writeln('\nError : $error');
       if (params?.verbose ?? true) {

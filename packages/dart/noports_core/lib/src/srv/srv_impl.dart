@@ -44,6 +44,9 @@ class SrvImplExec implements Srv<Process> {
   @override
   final bool multi;
 
+  @override
+  final Duration timeout;
+
   SrvImplExec(
     this.streamingHost,
     this.streamingPort, {
@@ -54,6 +57,7 @@ class SrvImplExec implements Srv<Process> {
     this.sessionAESKeyString,
     this.sessionIVString,
     required this.multi,
+    required this.timeout,
   }) {
     if (localPort == null) {
       throw ArgumentError('localPort must be non-null');
@@ -85,6 +89,8 @@ class SrvImplExec implements Srv<Process> {
       localPort.toString(),
       '--local-host',
       localHost ?? 'localhost',
+      '--timeout',
+      timeout.inSeconds.toString(),
     ];
     if (multi) {
       rvArgs.add('--multi');
@@ -183,6 +189,9 @@ class SrvImplInline implements Srv<SSHSocket> {
   @override
   final bool multi;
 
+  @override
+  final Duration timeout;
+
   SrvImplInline(
     this.streamingHost,
     this.streamingPort, {
@@ -190,6 +199,7 @@ class SrvImplInline implements Srv<SSHSocket> {
     this.sessionAESKeyString,
     this.sessionIVString,
     this.multi = false,
+    required this.timeout,
   }) {
     if ((sessionAESKeyString == null && sessionIVString != null) ||
         (sessionAESKeyString != null && sessionIVString == null)) {
@@ -333,6 +343,9 @@ class SrvImplDart implements Srv<SocketConnector> {
 
   final bool detached;
 
+  @override
+  final Duration timeout;
+
   final AtSignLogger logger = AtSignLogger(' SrvImplDart ');
 
   SrvImplDart(
@@ -346,6 +359,7 @@ class SrvImplDart implements Srv<SocketConnector> {
     this.sessionIVString,
     this.multi = false,
     required this.detached,
+    required this.timeout,
   }) {
     logger.info('New SrvImplDart - localPort $localPort');
     if ((sessionAESKeyString == null && sessionIVString != null) ||
@@ -399,9 +413,9 @@ class SrvImplDart implements Srv<SocketConnector> {
           if (sessionAESKeyString == null || sessionIVString == null) {
             throw ArgumentError('Symmetric session encryption key required');
           }
-          sc = await _runClientSideMulti(hosts: hosts);
+          sc = await _runClientSideMulti(hosts: hosts, timeout: timeout);
         } else {
-          sc = await _runClientSideSingle(hosts: hosts);
+          sc = await _runClientSideSingle(hosts: hosts, timeout: timeout);
         }
       } else {
         // daemon side
@@ -409,7 +423,7 @@ class SrvImplDart implements Srv<SocketConnector> {
           if (sessionAESKeyString == null || sessionIVString == null) {
             throw ArgumentError('Symmetric session encryption key required');
           }
-          sc = await _runDaemonSideMulti(hosts: hosts);
+          sc = await _runDaemonSideMulti(hosts: hosts, timeout: timeout);
         } else {
           sc = await _runDaemonSideSingle(hosts: hosts);
         }
@@ -441,6 +455,7 @@ class SrvImplDart implements Srv<SocketConnector> {
 
   Future<SocketConnector> _runClientSideSingle({
     required List<InternetAddress> hosts,
+    required Duration timeout,
   }) async {
     DataTransformer? encrypter;
     DataTransformer? decrypter;
@@ -458,6 +473,7 @@ class SrvImplDart implements Srv<SocketConnector> {
       transformAtoB: encrypter,
       transformBtoA: decrypter,
       multi: multi,
+      timeout: timeout,
       beforeJoining: (Side sideA, Side sideB) async {
         logger.info('beforeJoining called');
         // Authenticate the sideB socket (to the rvd)
@@ -474,6 +490,7 @@ class SrvImplDart implements Srv<SocketConnector> {
 
   Future<SocketConnector> _runClientSideMulti({
     required List<InternetAddress> hosts,
+    required Duration timeout,
   }) async {
     // client side
     SocketConnector? socketConnector;
@@ -518,6 +535,7 @@ class SrvImplDart implements Srv<SocketConnector> {
       verbose: false,
       logger: ioSinkForLogger(logger),
       multi: multi,
+      timeout: timeout,
       beforeJoining: (Side sideA, Side sideB) {
         // For some bizarro reason, we can't write to stderr in this callback
         // when the Srv has been started via SrvImplExec. Thus it is very
@@ -554,8 +572,9 @@ class SrvImplDart implements Srv<SocketConnector> {
 
   Future<SocketConnector> _runDaemonSideMulti({
     required List<InternetAddress> hosts,
+    required Duration timeout,
   }) async {
-    SocketConnector sc = SocketConnector();
+    SocketConnector sc = SocketConnector(timeout: timeout);
 
     // - create control socket and listen for requests
     // - for each request, create a socketToSocket connection
