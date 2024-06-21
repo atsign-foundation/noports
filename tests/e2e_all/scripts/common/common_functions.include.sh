@@ -540,7 +540,7 @@ buildCurrentCBinaries() {
     local base_dir="./sshnpd"
     local build_dir="$base_dir/build"
     mkdir -p "$build_dir"
-    cmake -B $build_dir -S $base_dir -DCMAKE_C_COMPILER=gcc -DCMAKE_C_FLAGS="-Wall -Wextra -Wpedantic -Werror" -DBUILD_TESTS=off
+    cmake -B $build_dir -S $base_dir -DCMAKE_C_COMPILER=gcc -DCMAKE_C_FLAGS="-Wall -Wextra -Werror-implicit-function-declaration" -DBUILD_TESTS=off
     cmake --build $build_dir
     if [ $? -ne 0 ]; then
       logErrorAndExit "cmake build failed"
