@@ -10,6 +10,7 @@
 #include <atlogger/atlogger.h>
 #include <cJSON.h>
 #include <pthread.h>
+#include <sshnpd/handle_ssh_request.h>
 #include <sshnpd/run_srv_process.h>
 #include <stdlib.h>
 #include <string.h>
@@ -423,8 +424,8 @@ void handle_ssh_request(atclient *atclient, pthread_mutex_t *atclient_lock, sshn
       free(session_iv_encrypted);
       free_session_base64 = true;
     } // rsa2048 - allocates (session_iv_base64, session_aes_key_base64)
-  }   // case 7
-  }   // switch
+  } // case 7
+  } // switch
 
   if (!is_valid) {
     atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR,
@@ -555,12 +556,12 @@ void handle_ssh_request(atclient *atclient, pthread_mutex_t *atclient_lock, sshn
       atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_DEBUG, "Released the atclient lock\n");
     }
 
-  clean_res : { free(keyname); }
-  clean_final_res_value : {
+  clean_res: { free(keyname); }
+  clean_final_res_value: {
     atclient_atkey_free(&final_res_atkey);
     free(final_res_value);
   }
-  clean_json : {
+  clean_json: {
     cJSON_Delete(final_res_envelope);
     free(signing_input);
   }
