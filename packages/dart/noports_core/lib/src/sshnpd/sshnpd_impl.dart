@@ -377,9 +377,6 @@ class SshnpdImpl implements Sshnpd {
       _notify(
         atKey: atKey,
         value: jsonEncode(pingResponse),
-        checkForFinalDeliveryStatus: false,
-        waitForFinalDeliveryStatus: false,
-        ttln: Duration(minutes: 1),
       ),
     );
   }
@@ -458,9 +455,6 @@ class SshnpdImpl implements Sshnpd {
             requestingAtsign: requestingAtsign, sessionId: req.sessionId),
         value: 'Signature not verified: $e',
         sessionId: req.sessionId,
-        checkForFinalDeliveryStatus: false,
-        waitForFinalDeliveryStatus: false,
-        ttln: Duration(minutes: 1),
       );
 
       return;
@@ -476,10 +470,7 @@ class SshnpdImpl implements Sshnpd {
         atKey: _createResponseAtKey(
             requestingAtsign: requestingAtsign, sessionId: req.sessionId),
         value: 'Daemon does not permit connections to $requested',
-        sessionId: req.sessionId,
-        checkForFinalDeliveryStatus: false,
-        waitForFinalDeliveryStatus: false,
-        ttln: Duration(minutes: 1),
+        sessionId: req.sessionId, 
       );
 
       return;
@@ -573,10 +564,7 @@ class SshnpdImpl implements Sshnpd {
           'sessionAESKey': sessionAESKeyEncrypted,
           'sessionIV': sessionIVEncrypted,
         }),
-        checkForFinalDeliveryStatus: false,
-        waitForFinalDeliveryStatus: false,
         sessionId: req.sessionId,
-        ttln: Duration(minutes: 1),
       );
     } catch (e) {
       logger.severe('startNpt failed with unexpected error : $e');
@@ -587,9 +575,6 @@ class SshnpdImpl implements Sshnpd {
         value:
             'Failed to start up the daemon side of the srv socket tunnel : $e',
         sessionId: req.sessionId,
-        checkForFinalDeliveryStatus: false,
-        waitForFinalDeliveryStatus: false,
-        ttln: Duration(minutes: 1),
       );
     }
   }
@@ -827,10 +812,7 @@ class SshnpdImpl implements Sshnpd {
           'sessionAESKey': sessionAESKeyEncrypted,
           'sessionIV': sessionIVEncrypted,
         }),
-        checkForFinalDeliveryStatus: false,
-        waitForFinalDeliveryStatus: false,
         sessionId: sessionId,
-        ttln: Duration(minutes: 1),
       );
 
       /// - start a timer to remove the ephemeral key from `authorized_keys`
@@ -846,9 +828,6 @@ class SshnpdImpl implements Sshnpd {
         value:
             'Failed to start up the daemon side of the srv socket tunnel : $e',
         sessionId: sessionId,
-        checkForFinalDeliveryStatus: false,
-        waitForFinalDeliveryStatus: false,
-        ttln: Duration(minutes: 1),
       );
     }
   }
@@ -902,9 +881,6 @@ class SshnpdImpl implements Sshnpd {
               requestingAtsign: requestingAtsign, sessionId: sessionId),
           value: '$errorMessage (use --local-port to specify unused port)',
           sessionId: sessionId,
-          checkForFinalDeliveryStatus: false,
-          waitForFinalDeliveryStatus: false,
-          ttln: Duration(minutes: 1),
         );
       } else {
         /// Notify sshnp that the connection has been made
@@ -913,9 +889,6 @@ class SshnpdImpl implements Sshnpd {
               requestingAtsign: requestingAtsign, sessionId: sessionId),
           value: 'connected',
           sessionId: sessionId,
-          checkForFinalDeliveryStatus: false,
-          waitForFinalDeliveryStatus: false,
-          ttln: Duration(minutes: 1),
         );
       }
     } catch (e) {
@@ -926,9 +899,6 @@ class SshnpdImpl implements Sshnpd {
             requestingAtsign: requestingAtsign, sessionId: sessionId),
         value: 'Remote SSH Client failure : $e',
         sessionId: sessionId,
-        checkForFinalDeliveryStatus: false,
-        waitForFinalDeliveryStatus: false,
-        ttln: Duration(minutes: 1),
       );
     }
   }
@@ -1161,9 +1131,9 @@ class SshnpdImpl implements Sshnpd {
   Future<void> _notify({
     required AtKey atKey,
     required String value,
-    required bool checkForFinalDeliveryStatus,
-    required bool waitForFinalDeliveryStatus,
-    required Duration ttln,
+    bool checkForFinalDeliveryStatus = false,
+    bool waitForFinalDeliveryStatus = false,
+    Duration ttln = const Duration(minutes: 1),
     String sessionId = '',
   }) async {
     await atClient.notificationService.notify(
