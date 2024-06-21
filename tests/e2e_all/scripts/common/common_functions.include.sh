@@ -542,6 +542,9 @@ buildCurrentCBinaries() {
     mkdir -p "$build_dir"
     cmake -B $build_dir -S $base_dir -DCMAKE_C_COMPILER=gcc -DCMAKE_C_FLAGS="-Wall -Wextra -Wpedantic -Werror" -DBUILD_TESTS=off
     cmake --build $build_dir
+    if [ $? -ne 0 ]; then
+      logErrorAndExit "cmake build failed"
+    fi
     cp $build_dir/sshnpd "$binaryOutputDir/"
   fi
 
