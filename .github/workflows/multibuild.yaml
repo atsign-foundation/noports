@@ -217,13 +217,26 @@ jobs:
           if-no-files-found: error
 
   universal_ps1:
-    if: startsWith(github.ref, 'refs/tags/v')
+    # REMEMBER TO ADD BACK if: startsWith(github.ref, 'refs/tags/v')
     defaults:
       run:
         working-directory: ./packages/dart/sshnoports/bundles
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
+    - run: |
+          write_metadata() {
+            start_line="# SCRIPT METADATA"
+            end_line="# END METADATA"
+            file=$1
+            variable=$2
+            value=$3
+            # since this is linux only, sed -i is safe without a file ext.
+            sed -i "/$start_line/,/$end_line/s|$variable=\".*\"|$variable=\"$value\"|g" "$file"
+          }
+          REF=${{ github.ref }}
+          TAG=${REF:11}
+          write_metadata universal.ps1 TargetVersion "$TAG"
     - uses: actions/upload-artifact@65462800fd760344b1a7b4382951275a0abb4808 # v4.3.3
       with: 
         name: universal.ps1-${{github.ref_name}}-${{github.run_number}}-${{github.run_attempt}}

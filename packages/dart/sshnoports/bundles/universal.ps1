@@ -1,35 +1,44 @@
 <#
 .SYNOPSIS
-   Installtion script for sshnpd on Windows
+   Installation script for SSH NoPorts on Windows
+   Repository: https://github.com/atsign-foundation/sshnoports
+
+    # SCRIPT METADATA
+    Script Version: 0.1.0
+    TargetVersion: 5.2.0
+    # END METADATA
+
 .DESCRIPTION
     Usage: universal.ps1 
 
-    Sshnp Version: 5.2.0
-    Repository: https://github.com/atsign-foundation/sshnoports
-    Script Version: 0.1.0
+    No options provides an interactive install.
+
+    -t, --INSTALL_TYPE <type>    Set the install type (device, client)
+
+    Client Options:
+      -c, --CLIENT_ATSIGN        Set the client atSign
+      -d, --DEVICE_ATSIGN        Set the device atSign
+      -h, --HOST_ATSIGN          Set the default rendezvous atsign
+
+
+    Device Options:
+      -c, --CLIENT_ATSIGN        Set the client atSign
+      -d, --DEVICE_ATSIGN        Set the device atSign
+      -n, --DEVICE_NAME          Set the device name
+    
 #>
-#Prints the help message via get-help install_sshnpd-windows.ps1 
+
+#Prints the help message via get-help universal.ps1 
 param(
-    [string]$CLIENT_ATSIGN,
-    [string]$DEVICE_MANAGER_ATSIGN,
-    [string]$DEVICE_ATSIGN,
-    [string]$DEVICE_NAME,
-    [string]$INSTALL_TYPE,
-    [string]$HOST_ATSIGN,
-    [string]$VERSION,
+    [Alias("c")][string]$CLIENT_ATSIGN,
+    [Alias("d")][string]$DEVICE_ATSIGN,
+    [Alias("n")][string]$DEVICE_NAME,
+    [Alias("t")][string]$INSTALL_TYPE,
+    [Alias("h")][string]$HOST_ATSIGN,
+    [Alias("v")][string]$VERSION,
     [switch]$dev = $false
 )
-
-### --- IMPORTANT ---
-#Make sure to change the values in the help message.
-#The help message must be at the top of the script, so no variables.
-
-# SCRIPT METADATA
-$script_version = "0.1.0"
-$sshnp_version = "5.2.0"
-$repo_url = "https://github.com/atsign-foundation/sshnoports"
-# END METADATA
-
+Write-Host (Get-Variable MyInvocation).Value
 function Norm-Atsign {
     param([string]$str)
     $atsign = "@$($str -replace '"', '' -replace '^@', '')"
