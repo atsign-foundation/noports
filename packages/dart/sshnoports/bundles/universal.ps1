@@ -4,8 +4,8 @@
    Repository: https://github.com/atsign-foundation/sshnoports
 
     # SCRIPT METADATA
-    Script Version: 0.1.0
-    TargetVersion: 5.2.0
+    ScriptVersion=0.2.0
+    TargetVersion=5.2.0
     # END METADATA
 
 .DESCRIPTION
