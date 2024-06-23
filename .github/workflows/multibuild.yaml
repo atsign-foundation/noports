@@ -235,7 +235,7 @@ jobs:
             sed -i "/$start_line/,/$end_line/s|$variable=\".*\"|$variable=\"$value\"|g" "$file"
           }
           REF=${{ github.ref }}
-          TAG=${REF:11}
+          TAG=${REF:11} 
           write_metadata universal.ps1 TargetVersion "$TAG"
     - uses: actions/upload-artifact@65462800fd760344b1a7b4382951275a0abb4808 # v4.3.3
       with: 
