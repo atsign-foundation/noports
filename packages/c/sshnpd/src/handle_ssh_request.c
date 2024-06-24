@@ -63,7 +63,7 @@ void handle_ssh_request(atclient *atclient, pthread_mutex_t *atclient_lock, sshn
 
   if (!has_valid_values) {
     atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Received invalid envelope format\n");
-    free(envelope);
+    cJSON_Delete(envelope);
     return;
   }
 
@@ -72,13 +72,13 @@ void handle_ssh_request(atclient *atclient, pthread_mutex_t *atclient_lock, sshn
 
   if (!has_valid_values) {
     atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Couldn't determine if payload is direct\n");
-    free(envelope);
+    cJSON_Delete(envelope);
     return;
   }
 
   if (!cJSON_IsTrue(direct)) {
     atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Only direct mode is supported by this device\n");
-    free(envelope);
+    cJSON_Delete(envelope);
     return;
   }
 
@@ -93,7 +93,7 @@ void handle_ssh_request(atclient *atclient, pthread_mutex_t *atclient_lock, sshn
 
   if (!has_valid_values) {
     atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Received invalid payload format\n");
-    free(envelope);
+    cJSON_Delete(envelope);
     return;
   }
 
