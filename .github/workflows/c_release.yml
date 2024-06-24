@@ -113,7 +113,7 @@ jobs:
     - uses: actions/upload-artifact@65462800fd760344b1a7b4382951275a0abb4808 # v4.3.3
       with:
         name: csshnpd-src-${{github.ref_name}}-${{github.run_number}}-${{github.run_attempt}}
-        path: ./tarball/csshnpd-${{ github.ref_name }}.tgz
+        path: ./tarball/csshnpd-${{ github.ref_name }}.tar.gz
 
   github-release:
     name: >-
