@@ -142,6 +142,7 @@ jobs:
         echo "Before:"
         ls -latrR *
         mv */*.tgz .
+        mv */*.tar.gz .
         mv */*.zip .
         rm -Rf -- */
         echo "After:"
