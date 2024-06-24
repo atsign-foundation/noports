@@ -120,7 +120,7 @@ void handle_ssh_request(atclient *atclient, pthread_mutex_t *atclient_lock, sshn
   if ((res = atclient_atkey_create_publickey(&atkey, "publickey", 9, requesting_atsign, strlen(requesting_atsign), NULL,
                                              0)) != 0) {
     atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to create public key\n");
-    free(envelope);
+    cJSON_Delete(envelope);
     return;
   }
 
@@ -128,7 +128,7 @@ void handle_ssh_request(atclient *atclient, pthread_mutex_t *atclient_lock, sshn
   if (res != 0) {
     atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to get public key\n");
     atclient_atkey_free(&atkey);
-    free(envelope);
+    cJSON_Delete(envelope);
     return;
   }
 
@@ -140,7 +140,7 @@ void handle_ssh_request(atclient *atclient, pthread_mutex_t *atclient_lock, sshn
   res = atchops_rsakey_populate_publickey(&requesting_atsign_publickey, value, strlen(value));
   if (res != 0) {
     printf("atchops_rsakey_populate_publickey (failed): %d\n", res);
-    free(envelope);
+    cJSON_Delete(envelope);
     return;
   }
 
