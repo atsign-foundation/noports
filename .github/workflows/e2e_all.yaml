@@ -6,10 +6,14 @@ permissions:
 on:
   workflow_dispatch:
   push:
+    paths-ignore:
+      - "docs/**"
     branches:
       - trunk
 
   pull_request:
+    paths-ignore:
+      - "docs/**"
     branches:
       - trunk
       - release-v*.*.*

@@ -118,6 +118,7 @@ class SshnpOpensshLocalImpl extends SshnpCore
       sessionIVString: sshnpdChannel.sessionIVString,
       multi: false,
       detached: true,
+      timeout: DefaultArgs.srvTimeout,
     );
 
     Process? bean;

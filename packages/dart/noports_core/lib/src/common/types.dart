@@ -11,6 +11,7 @@ typedef SrvGenerator<T> = Srv<T> Function(
   String? sessionIVString,
   bool multi,
   bool detached,
+  Duration timeout,
 });
 
 enum SupportedSshClient {

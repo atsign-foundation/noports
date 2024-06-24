@@ -112,6 +112,7 @@ class SshnpDartPureImpl extends SshnpCore
       sessionIVString: sshnpdChannel.sessionIVString,
       multi: false,
       detached: false,
+      timeout: DefaultArgs.srvTimeout,
     );
 
     // If we're not encrypting traffic on the sockets, then we create an extra

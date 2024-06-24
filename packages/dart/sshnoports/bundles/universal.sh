@@ -30,6 +30,15 @@ unset user
 unset user_home
 unset user_bin_dir
 
+### Pre-installation validation
+unset ssh_localhost_status
+unset is_dotlocal_created
+unset is_dotlocalbin_created
+unset is_dotssh_created
+unset is_dotsshnp_created
+unset is_dotatsign_created
+unset is_dotatsignkeys_created
+
 ### Input Variables
 verbose=false
 unset tmp_path
@@ -77,10 +86,10 @@ is_systemd_available() {
   [ -d /run/systemd/system ]
 }
 
-check_quiet(){
+check_quiet() {
   for arg in "$@"; do
-    if [ "$arg" = "-q" ] || [ "$arg" = "--quiet" ]; then 
-      exec > /dev/null
+    if [ "$arg" = "-q" ] || [ "$arg" = "--quiet" ]; then
+      exec >/dev/null
       break
     fi
   done
@@ -88,7 +97,7 @@ check_quiet(){
 
 check_cmd() {
   set +e
-  command -v "$1" > /dev/null 2>&1
+  command -v "$1" >/dev/null 2>&1
   exitcode=$?
   set -e
   return $exitcode
@@ -99,6 +108,13 @@ sedi() {
     sed -i '' "$@"
   else
     sed -i "$@"
+  fi
+}
+
+chown_dir() {
+  if [ -d $1 ]; then
+    echo "$1 was created by this installer, ensuring that it is owned by $user"
+    chown -R $user:$user "$1" 2>/dev/null || chown -R $user "$1" 2>/dev/null
   fi
 }
 
@@ -136,6 +152,19 @@ usage() {
   echo "  --dt, --device-type    <type>    Set the device type (launchd, systemd, tmux, headless)"
   echo "        --no-sudo                  Deliberately install without sudo priveleges"
 
+}
+
+check_ssh_localhost() {
+  # ssh_localhost_status
+  if check_cmd sshd; then
+    ssh_localhost_status='sshd not found'
+  elif check_cmd ssh; then
+    ssh_localhost_status='sshd found, but ssh not found'
+  elif ssh localhost -o IdentitiesOnly true >/dev/null; then
+    ssh_localhost_status='Able to ssh to localhost'
+  else
+    ssh_localhost_status='sshd & ssh both found, but failed to ssh to localhost'
+  fi
 }
 
 parse_env() {
@@ -198,6 +227,15 @@ parse_env() {
     user="$USER"
   fi
   user_bin_dir=$user_home/.local/bin
+
+  check_ssh_localhost
+
+  [ -d $user_home/.local/ ] && is_dotlocal_created=true || is_dotlocal_created=false
+  [ -d $user_home/.local/bin ] && is_dotlocalbin_created=true || is_dotlocalbin_created=false
+  [ -d $user_home/.ssh/ ] && is_dotssh_created=true || is_dotssh_created=false
+  [ -d $user_home/.sshnp/ ] && is_dotsshnp_created=true || is_dotsshnp_created=false
+  [ -d $user_home/.atsign/ ] && is_dotatsign_created=true || is_dotatsign_created=false
+  [ -d $user_home/.atsign/keys/ ] && is_dotatsignkeys_created=true || is_dotatsignkeys_created=false
 }
 
 is_valid_source_mode() {
@@ -363,7 +401,7 @@ get_user_inputs() {
 }
 
 print_env() {
-  cat <<EOL
+  cat <<EOF
 Environment:
   Platform name: $platform_name
   System arch: $system_arch
@@ -372,7 +410,15 @@ Environment:
   Binary path: $bin_path
   User: $user
   User home: $user_home
-EOL
+  Ssh status: $ssh_localhost_status
+  Did directories exist (prior to install):
+  -       .local/ : $is_dotlocal_created
+  -   .local/bin/ : $is_dotlocalbin_created
+  -         .ssh/ : $is_dotssh_created
+  -       .sshnp/ : $is_dotssh_created
+  -      .atsign/ : $is_dotatsign_created
+  - .atsign/keys/ : $is_dotatsignkeys_created
+EOF
 }
 
 downloader() {
@@ -393,7 +439,7 @@ downloader() {
 get_download_url() {
   unset download_urls
   release_prefix="https://api.github.com/repos/atsign-foundation/noports/releases/"
-  release_info=$(downloader "$release_prefix$(norm_version $sshnp_version)" - )
+  release_info=$(downloader "$release_prefix$(norm_version $sshnp_version)" -)
   exitcode=$?
   if [ $exitcode != 0 ]; then exit $exitcode; fi
   download_urls=$(echo "$release_info" | grep browser_download_url | cut -d\" -f4)
@@ -443,6 +489,15 @@ cleanup() {
   # These should be in the tmp directory, attempt to remove them anyway
   rm -f "$archive_path"
   rm -rf "$extract_path"
+
+  if $as_root; then
+    $is_dotlocal_created || chown_dir $user_home/.local
+    $is_dotlocalbin_created || chown_dir $user_home/.local/bin
+    $is_dotssh_created || chown_dir $user_home/.ssh/
+    $is_dotsshnp_created || chown_dir $user_home/.sshnp/
+    $is_dotatsign_created || chown_dir $user_home/.atsign/
+    $is_dotatsignkeys_created || chown_dir $user_home/.atsign/keys/
+  fi
 }
 
 write_metadata() {
@@ -680,10 +735,10 @@ client() {
 
   if [ -z "$devices" ]; then
     if [ "$quiet" = false ]; then
-    done_input=false
-    echo "Installing a quick picker script to make it easy to connect to devices..."
-    echo "Type a device name and press enter to submit it."
-    echo "Press enter once more to finish."
+      done_input=false
+      echo "Installing a quick picker script to make it easy to connect to devices..."
+      echo "Type a device name and press enter to submit it."
+      echo "Press enter once more to finish."
       while [ "$done_input" = false ]; do
         printf "Device name: "
         read -r device_name
@@ -692,7 +747,7 @@ client() {
         else
           if ! echo "$device_name" | grep -Eq '^[a-z][a-z0-9_]{0,14}$'; then
             echo "Device name must be in snake case and max 15 characters"
-            device_name="" 
+            device_name=""
           else
             devices="$devices,$device_name"
           fi
@@ -757,10 +812,10 @@ device() {
     printf "Enter device name: "
     read -r device_name
     if ! echo "$device_name" | grep -Eq '^[a-z][a-z0-9_]{0,14}$'; then
-        echo "Device name must be in snake case and max 15 characters"
-        device_name="" 
+      echo "Device name must be in snake case and max 15 characters"
+      device_name=""
     fi
-done
+  done
 
   "$extract_path"/sshnp/install.sh -b "$bin_path" -u "$user" at_activate
 

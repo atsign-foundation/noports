@@ -1,5 +1,13 @@
 # 🖥️ RDP
 
+## Outdated
+
+This section is outdated. For the most current information, please see the updated documentation.
+
+{% content-ref url="../../../noports-tunnel/" %}
+[noports-tunnel](../../../noports-tunnel/)
+{% endcontent-ref %}
+
 ## Overview
 
 In this guide, we will demonstrate how to use SSH No Ports to bridge RDP on a remote development machine to localhost:3389 so we can access the RDP service locally.
