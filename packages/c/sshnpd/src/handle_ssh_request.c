@@ -191,7 +191,8 @@ void handle_ssh_request(atclient *atclient, pthread_mutex_t *atclient_lock, sshn
     if (!has_valid_values) {
       atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR,
                    "Missing nonce values, cannot create auth string for rvd\n");
-      free(envelope);
+      cJSON_Delete(envelope);
+      cJSON_free(payloadstr);
       return;
     }
 
