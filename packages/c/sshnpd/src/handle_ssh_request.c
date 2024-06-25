@@ -179,7 +179,8 @@ void handle_ssh_request(atclient *atclient, pthread_mutex_t *atclient_lock, sshn
   if (!encrypt_rvd_traffic) {
     atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR,
                  "Encrypt rvd traffic flag is false, this feature must be enabled\n");
-    free(envelope);
+    cJSON_Delete(envelope);
+    cJSON_free(payloadstr);
     return;
   }
 
