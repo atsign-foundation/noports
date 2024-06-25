@@ -240,8 +240,10 @@ void handle_ssh_request(atclient *atclient, pthread_mutex_t *atclient_lock, sshn
     cJSON_AddItemToObject(res_envelope, "hashingAlgo", cJSON_CreateString("sha256"));
     cJSON_AddItemToObject(res_envelope, "signingAlgo", cJSON_CreateString("rsa2048"));
     rvd_auth_string = cJSON_PrintUnformatted(res_envelope);
-    free(signing_input);
+    cJSON_free(signing_input);
     cJSON_Delete(res_envelope);
+    cJSON_Delete(rvd_auth_payload);
+    cJSON_free(payloadstr);
   }
 
   unsigned char session_aes_key[49], *session_aes_key_encrypted, *session_aes_key_base64;
