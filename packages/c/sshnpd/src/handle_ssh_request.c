@@ -156,7 +156,8 @@ void handle_ssh_request(atclient *atclient, pthread_mutex_t *atclient_lock, sshn
   res = atchops_base64_decode((unsigned char *)signature_str, strlen(signature_str), value, valuelen, &valueolen);
   if (res != 0) {
     atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "atchops_base64_decode: %d\n", res);
-    free(envelope);
+    cJSON_Delete(envelope);
+    cJSON_free(payloadstr);
     return;
   }
 
