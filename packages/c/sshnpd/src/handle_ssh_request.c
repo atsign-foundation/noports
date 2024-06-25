@@ -228,9 +228,11 @@ void handle_ssh_request(atclient *atclient, pthread_mutex_t *atclient_lock, sshn
     res = atchops_base64_encode(signature, 256, base64signature, 384, &sig_len);
     if (res != 0) {
       atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to base64 encode the auth string payload\n");
-      free(signing_input);
+      cJSON_free(signing_input);
       cJSON_Delete(res_envelope);
-      free(envelope);
+      cJSON_Delete(rvd_auth_payload);
+      cJSON_Delete(envelope);
+      cJSON_free(payloadstr);
       return;
     }
 
