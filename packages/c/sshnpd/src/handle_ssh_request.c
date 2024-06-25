@@ -313,7 +313,7 @@ void handle_ssh_request(atclient *atclient, pthread_mutex_t *atclient_lock, sshn
         if (authenticate_to_rvd) {
           free(rvd_auth_string);
         }
-        free(envelope);
+        cJSON_Delete(envelope);
         return;
       }
 
@@ -325,7 +325,7 @@ void handle_ssh_request(atclient *atclient, pthread_mutex_t *atclient_lock, sshn
         if (authenticate_to_rvd) {
           free(rvd_auth_string);
         }
-        free(envelope);
+        cJSON_Delete(envelope);
         return;
       }
 
@@ -338,7 +338,7 @@ void handle_ssh_request(atclient *atclient, pthread_mutex_t *atclient_lock, sshn
           free(rvd_auth_string);
         }
         free(session_aes_key_encrypted);
-        free(envelope);
+        cJSON_Delete(envelope);
         return;
       }
 
@@ -353,7 +353,7 @@ void handle_ssh_request(atclient *atclient, pthread_mutex_t *atclient_lock, sshn
           free(rvd_auth_string);
         }
         free(session_aes_key_encrypted);
-        free(envelope);
+        cJSON_Delete(envelope);
         return;
       }
       memset(session_aes_key_base64, 0, session_aes_key_len);
