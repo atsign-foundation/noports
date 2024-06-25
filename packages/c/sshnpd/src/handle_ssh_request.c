@@ -11,6 +11,7 @@
 #include <cJSON.h>
 #include <pthread.h>
 #include <sshnpd/run_srv_process.h>
+#include <sshnpd/handle_ssh_request.h>
 #include <stdlib.h>
 #include <string.h>
 #include <sys/errno.h>
