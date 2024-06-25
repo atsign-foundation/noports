@@ -166,7 +166,8 @@ void handle_ssh_request(atclient *atclient, pthread_mutex_t *atclient_lock, sshn
     atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to verify envelope signature\n");
     cJSON_Delete(envelope);
     atchops_rsakey_publickey_free(&requesting_atsign_publickey);
-    cJSON_free(payloadstr);
+    // cJSON_Delete(envelope);
+    // cJSON_free(payloadstr);
     return;
   }
 
