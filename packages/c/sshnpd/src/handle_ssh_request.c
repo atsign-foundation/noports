@@ -427,15 +427,15 @@ void handle_ssh_request(atclient *atclient, pthread_mutex_t *atclient_lock, sshn
         free(session_iv_base64);
         free(session_iv_encrypted);
         free(session_aes_key_base64);
-        free(envelope);
+        cJSON_Delete(envelope);
         return;
       }
       // No longer need this
       free(session_iv_encrypted);
       free_session_base64 = true;
     } // rsa2048 - allocates (session_iv_base64, session_aes_key_base64)
-  } // case 7
-  } // switch
+  }   // case 7
+  }   // switch
 
   if (!is_valid) {
     atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR,
@@ -443,7 +443,7 @@ void handle_ssh_request(atclient *atclient, pthread_mutex_t *atclient_lock, sshn
     if (authenticate_to_rvd) {
       free(rvd_auth_string);
     }
-    free(envelope);
+    cJSON_Delete(envelope);
     return;
   }
 
