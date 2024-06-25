@@ -10,8 +10,8 @@
 #include <atlogger/atlogger.h>
 #include <cJSON.h>
 #include <pthread.h>
-#include <sshnpd/run_srv_process.h>
 #include <sshnpd/handle_ssh_request.h>
+#include <sshnpd/run_srv_process.h>
 #include <stdlib.h>
 #include <string.h>
 #include <sys/errno.h>
@@ -156,8 +156,7 @@ void handle_ssh_request(atclient *atclient, pthread_mutex_t *atclient_lock, sshn
   res = atchops_base64_decode((unsigned char *)signature_str, strlen(signature_str), value, valuelen, &valueolen);
   if (res != 0) {
     atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "atchops_base64_decode: %d\n", res);
-    // cJSON_Delete(envelope);
-    // cJSON_free(payloadstr);
+    free(envelope);
     return;
   }
 
@@ -165,9 +164,8 @@ void handle_ssh_request(atclient *atclient, pthread_mutex_t *atclient_lock, sshn
                                   (unsigned char *)value, hashing_algo_str, signing_algo_str);
   if (res != 0) {
     atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to verify envelope signature\n");
+    free(envelope);
     atchops_rsakey_publickey_free(&requesting_atsign_publickey);
-    // cJSON_Delete(envelope);
-    // cJSON_free(payloadstr);
     return;
   }
 
@@ -179,8 +177,7 @@ void handle_ssh_request(atclient *atclient, pthread_mutex_t *atclient_lock, sshn
   if (!encrypt_rvd_traffic) {
     atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR,
                  "Encrypt rvd traffic flag is false, this feature must be enabled\n");
-    cJSON_Delete(envelope);
-    cJSON_free(payloadstr);
+    free(envelope);
     return;
   }
 
@@ -191,8 +188,7 @@ void handle_ssh_request(atclient *atclient, pthread_mutex_t *atclient_lock, sshn
     if (!has_valid_values) {
       atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR,
                    "Missing nonce values, cannot create auth string for rvd\n");
-      cJSON_Delete(envelope);
-      cJSON_free(payloadstr);
+      free(envelope);
       return;
     }
 
@@ -213,11 +209,9 @@ void handle_ssh_request(atclient *atclient, pthread_mutex_t *atclient_lock, sshn
                            strlen((char *)signing_input), signature);
     if (res != 0) {
       atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to sign the auth string payload\n");
-      cJSON_free(signing_input);
+      free(signing_input);
       cJSON_Delete(res_envelope);
-      cJSON_Delete(rvd_auth_payload);
-      cJSON_Delete(envelope);
-      cJSON_free(payloadstr);
+      free(envelope);
       return;
     }
 
@@ -228,11 +222,9 @@ void handle_ssh_request(atclient *atclient, pthread_mutex_t *atclient_lock, sshn
     res = atchops_base64_encode(signature, 256, base64signature, 384, &sig_len);
     if (res != 0) {
       atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to base64 encode the auth string payload\n");
-      cJSON_free(signing_input);
+      free(signing_input);
       cJSON_Delete(res_envelope);
-      cJSON_Delete(rvd_auth_payload);
-      cJSON_Delete(envelope);
-      cJSON_free(payloadstr);
+      free(envelope);
       return;
     }
 
@@ -240,10 +232,8 @@ void handle_ssh_request(atclient *atclient, pthread_mutex_t *atclient_lock, sshn
     cJSON_AddItemToObject(res_envelope, "hashingAlgo", cJSON_CreateString("sha256"));
     cJSON_AddItemToObject(res_envelope, "signingAlgo", cJSON_CreateString("rsa2048"));
     rvd_auth_string = cJSON_PrintUnformatted(res_envelope);
-    cJSON_free(signing_input);
+    free(signing_input);
     cJSON_Delete(res_envelope);
-    cJSON_Delete(rvd_auth_payload);
-    cJSON_free(payloadstr);
   }
 
   unsigned char session_aes_key[49], *session_aes_key_encrypted, *session_aes_key_base64;
@@ -255,7 +245,7 @@ void handle_ssh_request(atclient *atclient, pthread_mutex_t *atclient_lock, sshn
     if (authenticate_to_rvd) {
       free(rvd_auth_string);
     }
-    cJSON_Delete(envelope);
+    free(envelope);
     return;
   }
 
@@ -267,7 +257,7 @@ void handle_ssh_request(atclient *atclient, pthread_mutex_t *atclient_lock, sshn
     if (authenticate_to_rvd) {
       free(rvd_auth_string);
     }
-    cJSON_Delete(envelope);
+    free(envelope);
     return;
   }
 
@@ -278,7 +268,7 @@ void handle_ssh_request(atclient *atclient, pthread_mutex_t *atclient_lock, sshn
     if (authenticate_to_rvd) {
       free(rvd_auth_string);
     }
-    cJSON_Delete(envelope);
+    free(envelope);
     return;
   }
 
@@ -290,7 +280,7 @@ void handle_ssh_request(atclient *atclient, pthread_mutex_t *atclient_lock, sshn
     if (authenticate_to_rvd) {
       free(rvd_auth_string);
     }
-    cJSON_Delete(envelope);
+    free(envelope);
     return;
   }
 
@@ -313,7 +303,7 @@ void handle_ssh_request(atclient *atclient, pthread_mutex_t *atclient_lock, sshn
         if (authenticate_to_rvd) {
           free(rvd_auth_string);
         }
-        cJSON_Delete(envelope);
+        free(envelope);
         return;
       }
 
@@ -325,7 +315,7 @@ void handle_ssh_request(atclient *atclient, pthread_mutex_t *atclient_lock, sshn
         if (authenticate_to_rvd) {
           free(rvd_auth_string);
         }
-        cJSON_Delete(envelope);
+        free(envelope);
         return;
       }
 
@@ -338,7 +328,7 @@ void handle_ssh_request(atclient *atclient, pthread_mutex_t *atclient_lock, sshn
           free(rvd_auth_string);
         }
         free(session_aes_key_encrypted);
-        cJSON_Delete(envelope);
+        free(envelope);
         return;
       }
 
@@ -353,7 +343,7 @@ void handle_ssh_request(atclient *atclient, pthread_mutex_t *atclient_lock, sshn
           free(rvd_auth_string);
         }
         free(session_aes_key_encrypted);
-        cJSON_Delete(envelope);
+        free(envelope);
         return;
       }
       memset(session_aes_key_base64, 0, session_aes_key_len);
@@ -369,7 +359,7 @@ void handle_ssh_request(atclient *atclient, pthread_mutex_t *atclient_lock, sshn
         }
         free(session_aes_key_base64);
         free(session_aes_key_encrypted);
-        cJSON_Delete(envelope);
+        free(envelope);
         return;
       }
 
@@ -384,7 +374,7 @@ void handle_ssh_request(atclient *atclient, pthread_mutex_t *atclient_lock, sshn
           free(rvd_auth_string);
         }
         free(session_aes_key_base64);
-        cJSON_Delete(envelope);
+        free(envelope);
         return;
       }
 
@@ -397,7 +387,7 @@ void handle_ssh_request(atclient *atclient, pthread_mutex_t *atclient_lock, sshn
         }
         free(session_iv_encrypted);
         free(session_aes_key_base64);
-        cJSON_Delete(envelope);
+        free(envelope);
         return;
       }
 
@@ -411,7 +401,7 @@ void handle_ssh_request(atclient *atclient, pthread_mutex_t *atclient_lock, sshn
         }
         free(session_iv_encrypted);
         free(session_aes_key_base64);
-        cJSON_Delete(envelope);
+        free(envelope);
         return;
       }
       memset(session_iv_base64, 0, session_iv_len);
@@ -427,15 +417,15 @@ void handle_ssh_request(atclient *atclient, pthread_mutex_t *atclient_lock, sshn
         free(session_iv_base64);
         free(session_iv_encrypted);
         free(session_aes_key_base64);
-        cJSON_Delete(envelope);
+        free(envelope);
         return;
       }
       // No longer need this
       free(session_iv_encrypted);
       free_session_base64 = true;
     } // rsa2048 - allocates (session_iv_base64, session_aes_key_base64)
-  }   // case 7
-  }   // switch
+  } // case 7
+  } // switch
 
   if (!is_valid) {
     atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR,
@@ -443,7 +433,7 @@ void handle_ssh_request(atclient *atclient, pthread_mutex_t *atclient_lock, sshn
     if (authenticate_to_rvd) {
       free(rvd_auth_string);
     }
-    cJSON_Delete(envelope);
+    free(envelope);
     return;
   }
 
@@ -461,7 +451,7 @@ void handle_ssh_request(atclient *atclient, pthread_mutex_t *atclient_lock, sshn
     // child process
 
     // free this immediately, we don't need it on the child fork
-    cJSON_Delete(envelope);
+    free(envelope);
     if (free_session_base64) {
       free(session_aes_key_base64);
       free(session_iv_base64);
@@ -566,15 +556,14 @@ void handle_ssh_request(atclient *atclient, pthread_mutex_t *atclient_lock, sshn
       atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_DEBUG, "Released the atclient lock\n");
     }
 
-  clean_res : { free(keyname); }
-  clean_final_res_value : {
+  clean_res: { free(keyname); }
+  clean_final_res_value: {
     atclient_atkey_free(&final_res_atkey);
     free(final_res_value);
   }
-  clean_json : {
+  clean_json: {
     cJSON_Delete(final_res_envelope);
-    cJSON_Delete(final_res_payload);
-    cJSON_free(signing_input);
+    free(signing_input);
   }
 
     // end of parent process
@@ -589,7 +578,7 @@ cancel:
     free(session_iv_base64);
     free(session_aes_key_base64);
   }
-  cJSON_Delete(envelope);
+  free(envelope);
   return;
 }
 
