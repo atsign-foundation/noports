@@ -212,9 +212,11 @@ void handle_ssh_request(atclient *atclient, pthread_mutex_t *atclient_lock, sshn
                            strlen((char *)signing_input), signature);
     if (res != 0) {
       atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to sign the auth string payload\n");
-      free(signing_input);
+      cJSON_free(signing_input);
       cJSON_Delete(res_envelope);
-      free(envelope);
+      cJSON_Delete(rvd_auth_payload);
+      cJSON_Delete(envelope);
+      cJSON_free(payloadstr);
       return;
     }
 
