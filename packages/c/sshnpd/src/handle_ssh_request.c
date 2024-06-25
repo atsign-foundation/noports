@@ -10,7 +10,6 @@
 #include <atlogger/atlogger.h>
 #include <cJSON.h>
 #include <pthread.h>
-#include <sshnpd/handle_ssh_request.h>
 #include <sshnpd/run_srv_process.h>
 #include <stdlib.h>
 #include <string.h>
@@ -156,7 +155,8 @@ void handle_ssh_request(atclient *atclient, pthread_mutex_t *atclient_lock, sshn
   res = atchops_base64_decode((unsigned char *)signature_str, strlen(signature_str), value, valuelen, &valueolen);
   if (res != 0) {
     atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "atchops_base64_decode: %d\n", res);
-    free(envelope);
+    cJSON_Delete(envelope);
+    cJSON_free(payloadstr);
     return;
   }
 
@@ -164,8 +164,9 @@ void handle_ssh_request(atclient *atclient, pthread_mutex_t *atclient_lock, sshn
                                   (unsigned char *)value, hashing_algo_str, signing_algo_str);
   if (res != 0) {
     atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to verify envelope signature\n");
-    free(envelope);
+    cJSON_Delete(envelope);
     atchops_rsakey_publickey_free(&requesting_atsign_publickey);
+    cJSON_free(payloadstr);
     return;
   }
 
