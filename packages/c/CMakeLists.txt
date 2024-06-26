@@ -1,0 +1,5 @@
+cmake_minimum_required(VERSION 3.19)
+set(CMAKE_C_STANDARD 99)
+cmake_policy(SET CMP0135 NEW)
+project(csshnpd VERSION 0.0.1 LANGUAGES C)
+add_subdirectory(sshnpd)
