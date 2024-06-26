@@ -574,6 +574,7 @@ void handle_ssh_request(atclient *atclient, pthread_mutex_t *atclient_lock, sshn
   clean_json : {
     cJSON_Delete(final_res_envelope);
     // cJSON_Delete(final_res_payload);
+    cJSON_free(signing_input);
   }
 
     // end of parent process
