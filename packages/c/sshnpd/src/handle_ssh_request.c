@@ -589,7 +589,7 @@ cancel:
     free(session_iv_base64);
     free(session_aes_key_base64);
   }
-  free(envelope);
+  cJSON_Delete(envelope);
   return;
 }
 
