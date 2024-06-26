@@ -10,5 +10,10 @@ void handle_ssh_request(atclient *atclient, pthread_mutex_t *atclient_lock, sshn
 
 int verify_envelope_signature(atchops_rsakey_publickey publickey, const unsigned char *payload,
                               unsigned char *signature, const char *hashing_algo, const char *signing_algo);
+                              
+static int create_response_atkey(atclient_atkey *key, const char *atsign, const char *requesting_atsign,
+                                 const char *session_id, const char *keyname, const size_t *keynamelen);
+
+static int notify(atclient *atclient, pthread_mutex_t *atclient_lock, atclient_atkey *key, char *value);
 
 #endif

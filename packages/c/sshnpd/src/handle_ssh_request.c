@@ -23,10 +23,16 @@
 
 #define BYTES(x) (sizeof(unsigned char) * x)
 
+static int create_response_atkey(atclient_atkey *key, const char *atsign, const char *requesting_atsign,
+                                 const char *session_id, const char *keyname, const size_t *keynamelen);
+
+static int notify(atclient *atclient, pthread_mutex_t *atclient_lock, atclient_atkey *key, char *value);
+
 void handle_ssh_request(atclient *atclient, pthread_mutex_t *atclient_lock, sshnpd_params *params,
                         bool *is_child_process, atclient_monitor_message *message, char *home_dir, FILE *authkeys_file,
                         char *authkeys_filename, atchops_rsakey_privatekey signing_key) {
   int res = 0;
+  char *atsign = message->notification.to;
   char *requesting_atsign = message->notification.from;
 
   char *decrypted_json = malloc(sizeof(char) * (message->notification.decryptedvaluelen + 1));
@@ -163,6 +169,8 @@ void handle_ssh_request(atclient *atclient, pthread_mutex_t *atclient_lock, sshn
   res = verify_envelope_signature(requesting_atsign_publickey, (const unsigned char *)payloadstr,
                                   (unsigned char *)value, hashing_algo_str, signing_algo_str);
   if (res != 0) {
+    // Notify noports client that this session is NOT connected
+
     atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to verify envelope signature\n");
     free(envelope);
     atchops_rsakey_publickey_free(&requesting_atsign_publickey);
@@ -170,6 +178,18 @@ void handle_ssh_request(atclient *atclient, pthread_mutex_t *atclient_lock, sshn
   }
 
   atchops_rsakey_publickey_free(&requesting_atsign_publickey);
+
+  // create 'session_id.device'
+
+  char *identifier = cJSON_GetStringValue(session_id);
+  size_t keynamelen = strlen(identifier) + strlen(params->device) + 2; // + 1 for '.' +1 for '\0'
+  char *keyname = malloc(sizeof(char) * keynamelen);
+  if (keyname == NULL) {
+    atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to allocate memory for keyname");
+    goto clean_final_res_value;
+  }
+
+  snprintf(keyname, keynamelen, "%s.%s", identifier, params->device);
 
   bool authenticate_to_rvd = cJSON_IsTrue(auth_to_rvd);
   bool encrypt_rvd_traffic = cJSON_IsTrue(encrypt_traffic);
@@ -471,7 +491,9 @@ void handle_ssh_request(atclient *atclient, pthread_mutex_t *atclient_lock, sshn
     // parent process
     waitpid(pid, &status, WNOHANG); // Don't wait for srv
 
-    char *identifier = cJSON_GetStringValue(session_id);
+    // - Send response message to the sshnp client which includes the
+    //   ephemeral private key
+
     cJSON *final_res_payload = cJSON_CreateObject();
     cJSON_AddStringToObject(final_res_payload, "status", "connected");
     cJSON_AddItemReferenceToObject(final_res_payload, "sessionId", session_id);
@@ -511,49 +533,17 @@ void handle_ssh_request(atclient *atclient, pthread_mutex_t *atclient_lock, sshn
     atclient_atkey final_res_atkey;
     atclient_atkey_init(&final_res_atkey);
 
-    size_t keynamelen = strlen(identifier) + strlen(params->device) + 2; // + 1 for '.' +1 for '\0'
-    char *keyname = malloc(sizeof(char) * keynamelen);
-    if (keyname == NULL) {
-      atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to allocate memory for keyname");
-      goto clean_final_res_value;
-    }
-
-    snprintf(keyname, keynamelen, "%s.%s", identifier, params->device);
-    atclient_atkey_create_sharedkey(&final_res_atkey, keyname, keynamelen, params->atsign, strlen(params->atsign),
-                                    requesting_atsign, strlen(requesting_atsign), SSHNP_NS, SSHNP_NS_LEN);
-
-    atclient_atkey_metadata *metadata = &final_res_atkey.metadata;
-    atclient_atkey_metadata_set_ispublic(metadata, false);
-    atclient_atkey_metadata_set_isencrypted(metadata, true);
-    atclient_atkey_metadata_set_ttl(metadata, 10000);
-
-    atclient_notify_params notify_params;
-    atclient_notify_params_init(&notify_params);
-    notify_params.atkey = &final_res_atkey;
-    notify_params.value = final_res_value;
-    notify_params.operation = ATCLIENT_NOTIFY_OPERATION_UPDATE;
-
-    char final_keystr[500];
-    size_t out;
-    atclient_atkey_to_string(&final_res_atkey, final_keystr, 500, &out);
-
-    int ret = pthread_mutex_lock(atclient_lock);
-    if (ret != 0) {
-      atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR,
-                   "Failed to get a lock on atclient for sending a notification\n");
+    res = create_response_atkey(&final_res_atkey, atsign, requesting_atsign,
+                                 identifier, keyname, &keynamelen);
+    if (res != 0) {
+      printf("Error create_response_atkey");
       goto clean_res;
     }
 
-    ret = atclient_notify(atclient, &notify_params, NULL);
-    if (ret != 0) {
-      atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to send final response to %s\n",
-                   message->notification.from);
-    }
-    ret = pthread_mutex_unlock(atclient_lock);
-    if (ret != 0) {
-      atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to release atclient lock\n");
-    } else {
-      atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_DEBUG, "Released the atclient lock\n");
+    res = notify(atclient, atclient_lock, &final_res_atkey, final_res_value);
+    if (res != 0) {
+      printf("Error notify");
+      goto clean_res;
     }
 
   clean_res: { free(keyname); }
@@ -602,6 +592,67 @@ int verify_envelope_signature(atchops_rsakey_publickey publickey, const unsigned
   }
 
   atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_DEBUG, "verify_envelope_signature (success)\n");
+
+  return ret;
+}
+
+static int create_response_atkey(atclient_atkey *key, const char *atsign, const char *requesting_atsign,
+                                 const char *session_id, const char *keyname, const size_t *keynamelen) {
+  int ret = 0;
+
+  ret = atclient_atkey_create_sharedkey(key, keyname, *keynamelen, atsign, strlen(atsign), requesting_atsign,
+                                        strlen(requesting_atsign), SSHNP_NS, SSHNP_NS_LEN);
+  if (ret != 0) {
+    return ret;
+  }
+
+  atclient_atkey_metadata *metadata = &(key->metadata);
+  atclient_atkey_metadata_set_ispublic(metadata, false);
+  atclient_atkey_metadata_set_isencrypted(metadata, true);
+  atclient_atkey_metadata_set_ttl(metadata, 10000);
+
+  return ret;
+}
+
+static int notify(atclient *atclient, pthread_mutex_t *atclient_lock, atclient_atkey *key, char *value) {
+
+  int ret = 0;
+
+  atclient_notify_params notify_params;
+  atclient_notify_params_init(&notify_params);
+  notify_params.atkey = key;
+  notify_params.value = value;
+  notify_params.notification_expiry = 60000; // 1 min
+  notify_params.operation = ATCLIENT_NOTIFY_OPERATION_UPDATE;
+
+  char final_keystr[500];
+  size_t out;
+  ret = atclient_atkey_to_string(key, final_keystr, 500, &out);
+  if (ret != 0) {
+    //err
+    atclient_notify_params_free(&notify_params);
+    return ret;
+  }
+
+  ret = pthread_mutex_lock(atclient_lock);
+  if (ret != 0) {
+    atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR,
+                  "Failed to get a lock on atclient for sending a notification\n");
+    atclient_notify_params_free(&notify_params);
+    return ret;
+  }
+
+  ret = atclient_notify(atclient, &notify_params, NULL);
+  atclient_notify_params_free(&notify_params);
+  if (ret != 0) {
+    return ret;
+  }
+  ret = pthread_mutex_unlock(atclient_lock);
+  if (ret != 0) {
+    atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to release atclient lock\n");
+  } else {
+    atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_DEBUG, "Released the atclient lock\n");
+  }
 
   return ret;
 }
