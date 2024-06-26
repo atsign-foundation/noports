@@ -492,11 +492,11 @@ void handle_ssh_request(atclient *atclient, pthread_mutex_t *atclient_lock, sshn
     cJSON *final_res_envelope = cJSON_CreateObject();
     cJSON_AddItemToObject(final_res_envelope, "payload", final_res_payload);
 
-    unsigned char *signing_input = (unsigned char *)cJSON_PrintUnformatted(final_res_payload);
+    unsigned char *signing_input2 = (unsigned char *)cJSON_PrintUnformatted(final_res_payload);
 
     unsigned char signature[256];
     memset(signature, 0, 256);
-    res = atchops_rsa_sign(signing_key, ATCHOPS_MD_SHA256, signing_input, strlen((char *)signing_input), signature);
+    res = atchops_rsa_sign(signing_key, ATCHOPS_MD_SHA256, signing_input2, strlen((char *)signing_input2), signature);
     if (res != 0) {
       atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to sign the final res payload\n");
       goto clean_json;
@@ -574,7 +574,7 @@ void handle_ssh_request(atclient *atclient, pthread_mutex_t *atclient_lock, sshn
   clean_json : {
     cJSON_Delete(final_res_envelope);
     cJSON_Delete(final_res_payload);
-    cJSON_free(signing_input);
+    cJSON_free(signing_input2);
   }
 
     // end of parent process
