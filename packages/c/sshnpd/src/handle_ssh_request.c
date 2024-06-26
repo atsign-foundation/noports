@@ -112,11 +112,25 @@ void handle_ssh_request(atclient *atclient, pthread_mutex_t *atclient_lock, sshn
   cJSON *client_ephemeral_pk = cJSON_GetObjectItem(payload, "clientEphemeralPK");
   cJSON *client_ephemeral_pk_type = cJSON_GetObjectItem(payload, "clientEphemeralPKType");
 
+  // buffer for verification
+  const size_t valuelen = 4096;
+  char value[valuelen];
+
+  // create 'session_id.device'
+
+  char *identifier = cJSON_GetStringValue(session_id);
+  size_t keynamelen = strlen(identifier) + strlen(params->device) + 2; // + 1 for '.' +1 for '\0'
+  char *keyname = malloc(sizeof(char) * keynamelen);
+  if (keyname == NULL) {
+    atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to allocate memory for keyname");
+    goto clean_final_res_value;
+  }
+
+  snprintf(keyname, keynamelen, "%s.%s", identifier, params->device);
+
   // verify signature of payload
 
   // - get public key of requesting atsign
-  const size_t valuelen = 4096;
-  char value[valuelen];
   memset(value, 0, valuelen);
   size_t valueolen = 0;
 
@@ -169,27 +183,27 @@ void handle_ssh_request(atclient *atclient, pthread_mutex_t *atclient_lock, sshn
   res = verify_envelope_signature(requesting_atsign_publickey, (const unsigned char *)payloadstr,
                                   (unsigned char *)value, hashing_algo_str, signing_algo_str);
   if (res != 0) {
+
     // Notify noports client that this session is NOT connected
+    memset(value, 0, valuelen);
+    snprintf(value, valuelen, "Signature verification failed: %d\n", res);
+    atclient_atkey error_res_atkey;
+    atclient_atkey_init(&error_res_atkey);
+
+    create_response_atkey(&error_res_atkey, atsign, requesting_atsign,
+                                 identifier, keyname, &keynamelen);
+
+    notify(atclient, atclient_lock, &error_res_atkey, value);
+    atclient_atkey_free(&error_res_atkey);
 
     atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to verify envelope signature\n");
     free(envelope);
     atchops_rsakey_publickey_free(&requesting_atsign_publickey);
+
     return;
   }
 
   atchops_rsakey_publickey_free(&requesting_atsign_publickey);
-
-  // create 'session_id.device'
-
-  char *identifier = cJSON_GetStringValue(session_id);
-  size_t keynamelen = strlen(identifier) + strlen(params->device) + 2; // + 1 for '.' +1 for '\0'
-  char *keyname = malloc(sizeof(char) * keynamelen);
-  if (keyname == NULL) {
-    atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to allocate memory for keyname");
-    goto clean_final_res_value;
-  }
-
-  snprintf(keyname, keynamelen, "%s.%s", identifier, params->device);
 
   bool authenticate_to_rvd = cJSON_IsTrue(auth_to_rvd);
   bool encrypt_rvd_traffic = cJSON_IsTrue(encrypt_traffic);
