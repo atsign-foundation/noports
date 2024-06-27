@@ -32,6 +32,7 @@ void handle_ssh_request(atclient *atclient, pthread_mutex_t *atclient_lock, sshn
                         bool *is_child_process, atclient_monitor_message *message, char *home_dir, FILE *authkeys_file,
                         char *authkeys_filename, atchops_rsakey_privatekey signing_key) {
   int res = 0;
+  int err_res = 0;
   char *atsign = message->notification.to;
   char *requesting_atsign = message->notification.from;
 
@@ -183,23 +184,33 @@ void handle_ssh_request(atclient *atclient, pthread_mutex_t *atclient_lock, sshn
   res = verify_envelope_signature(requesting_atsign_publickey, (const unsigned char *)payloadstr,
                                   (unsigned char *)value, hashing_algo_str, signing_algo_str);
   if (res != 0) {
-
     // Notify noports client that this session is NOT connected
     memset(value, 0, valuelen);
     snprintf(value, valuelen, "Signature verification failed: %d\n", res);
     atclient_atkey error_res_atkey;
     atclient_atkey_init(&error_res_atkey);
 
-    create_response_atkey(&error_res_atkey, atsign, requesting_atsign,
-                                 identifier, keyname, &keynamelen);
+    err_res = create_response_atkey(&error_res_atkey, atsign, requesting_atsign, identifier, keyname, &keynamelen);
+    if (res != 0) {
+      atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to create error response atkey\n");
+      free(envelope);
+      atchops_rsakey_publickey_free(&requesting_atsign_publickey);
+      return;
+    }
 
-    notify(atclient, atclient_lock, &error_res_atkey, value);
+    err_res = notify(atclient, atclient_lock, &error_res_atkey, value);
     atclient_atkey_free(&error_res_atkey);
+    if (res != 0) {
+      atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to send rejection notification to %s\n",
+                   requesting_atsign);
+      free(envelope);
+      atchops_rsakey_publickey_free(&requesting_atsign_publickey);
+      return;
+    }
 
     atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to verify envelope signature\n");
     free(envelope);
     atchops_rsakey_publickey_free(&requesting_atsign_publickey);
-
     return;
   }
 
@@ -458,8 +469,8 @@ void handle_ssh_request(atclient *atclient, pthread_mutex_t *atclient_lock, sshn
       free(session_iv_encrypted);
       free_session_base64 = true;
     } // rsa2048 - allocates (session_iv_base64, session_aes_key_base64)
-  } // case 7
-  } // switch
+  }   // case 7
+  }   // switch
 
   if (!is_valid) {
     atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR,
@@ -547,25 +558,25 @@ void handle_ssh_request(atclient *atclient, pthread_mutex_t *atclient_lock, sshn
     atclient_atkey final_res_atkey;
     atclient_atkey_init(&final_res_atkey);
 
-    res = create_response_atkey(&final_res_atkey, atsign, requesting_atsign,
-                                 identifier, keyname, &keynamelen);
+    res = create_response_atkey(&final_res_atkey, atsign, requesting_atsign, identifier, keyname, &keynamelen);
     if (res != 0) {
-      printf("Error create_response_atkey");
+      atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to create response atkey\n");
       goto clean_res;
     }
 
     res = notify(atclient, atclient_lock, &final_res_atkey, final_res_value);
     if (res != 0) {
-      printf("Error notify");
+      atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to send final response to %s\n",
+                   requesting_atsign);
       goto clean_res;
     }
 
-  clean_res: { free(keyname); }
-  clean_final_res_value: {
+  clean_res : { free(keyname); }
+  clean_final_res_value : {
     atclient_atkey_free(&final_res_atkey);
     free(final_res_value);
   }
-  clean_json: {
+  clean_json : {
     cJSON_Delete(final_res_envelope);
     free(signing_input);
   }
@@ -643,7 +654,7 @@ static int notify(atclient *atclient, pthread_mutex_t *atclient_lock, atclient_a
   size_t out;
   ret = atclient_atkey_to_string(key, final_keystr, 500, &out);
   if (ret != 0) {
-    //err
+    // err
     atclient_notify_params_free(&notify_params);
     return ret;
   }
@@ -651,7 +662,7 @@ static int notify(atclient *atclient, pthread_mutex_t *atclient_lock, atclient_a
   ret = pthread_mutex_lock(atclient_lock);
   if (ret != 0) {
     atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR,
-                  "Failed to get a lock on atclient for sending a notification\n");
+                 "Failed to get a lock on atclient for sending a notification\n");
     atclient_notify_params_free(&notify_params);
     return ret;
   }
