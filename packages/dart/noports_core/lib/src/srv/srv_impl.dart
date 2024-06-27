@@ -9,6 +9,7 @@ import 'package:cryptography/cryptography.dart';
 import 'package:cryptography/dart.dart';
 import 'package:dartssh2/dartssh2.dart';
 import 'package:meta/meta.dart';
+import 'package:mutex/mutex.dart';
 import 'package:noports_core/srv.dart';
 import 'package:noports_core/sshnp.dart';
 import 'package:socket_connector/socket_connector.dart';
@@ -537,18 +538,13 @@ class SrvImplDart implements Srv<SocketConnector> {
       multi: multi,
       timeout: timeout,
       beforeJoining: (Side sideA, Side sideB) {
-        // For some bizarro reason, we can't write to stderr in this callback
-        // when the Srv has been started via SrvImplExec. Thus it is very
-        // important that the srv binary never have a logger root level of
-        // anything below 'warning'
         logger.info('_runClientSideMulti Sending connect request');
 
         String socketAESKey =
             AtChopsUtil.generateSymmetricKey(EncryptionKeyType.aes256).key;
         String socketIV =
             base64Encode(AtChopsUtil.generateRandomIV(16).ivBytes);
-        controlSink.add(
-            Uint8List.fromList('connect:$socketAESKey:$socketIV'.codeUnits));
+
         // Authenticate the sideB socket (to the rvd)
         if (rvdAuthString != null) {
           logger
@@ -557,6 +553,9 @@ class SrvImplDart implements Srv<SocketConnector> {
         }
         sideA.transformer = createEncrypter(socketAESKey, socketIV);
         sideB.transformer = createDecrypter(socketAESKey, socketIV);
+
+        controlSink.add(
+            Uint8List.fromList('connect:$socketAESKey:$socketIV'.codeUnits));
       },
     );
     logger.info('_runClientSideMulti serverToSocket is ready');
@@ -568,6 +567,44 @@ class SrvImplDart implements Srv<SocketConnector> {
     }));
 
     return socketConnector;
+  }
+
+  Future _handleMultiConnectRequest(
+    SocketConnector sc,
+    List<InternetAddress> hosts,
+    String request,
+  ) async {
+    List<String> args = request.split(":");
+    switch (args.first) {
+      case 'connect':
+        if (args.length != 3) {
+          logger.severe('Unknown request to control socket: [$request]');
+          return;
+        }
+        logger.info('_runDaemonSideMulti'
+            ' Control socket received ${args.first} request - '
+            ' creating new socketToSocket connection');
+        await SocketConnector.socketToSocket(
+            connector: sc,
+            addressA:
+                (await InternetAddress.lookup(localHost ?? 'localhost'))[0],
+            portA: localPort,
+            addressB: hosts[0],
+            portB: streamingPort,
+            verbose: false,
+            logger: ioSinkForLogger(logger),
+            transformAtoB: createEncrypter(args[1], args[2]),
+            transformBtoA: createDecrypter(args[1], args[2]));
+        if (rvdAuthString != null) {
+          logger.info('_runDaemonSideMulti authenticating'
+              ' new socket connection to rvd');
+          sc.connections.last.sideB.socket.writeln(rvdAuthString);
+        }
+
+        break;
+      default:
+        logger.severe('Unknown request to control socket: [$request]');
+    }
   }
 
   Future<SocketConnector> _runDaemonSideMulti({
@@ -598,46 +635,29 @@ class SrvImplDart implements Srv<SocketConnector> {
     StreamController<Uint8List> controlSink = StreamController<Uint8List>();
     controlEncrypter(controlSink.stream).listen(sessionControlSocket.add);
 
+    Mutex controlStreamMutex = Mutex();
     controlStream.listen((event) async {
-      if (event.isEmpty) {
-        logger.info('Empty control message (Uint8List) received');
-        return;
-      }
-      String request = String.fromCharCodes(event).trim();
-      if (request.isEmpty) {
-        logger.info('Empty control message (String) received');
-        return;
-      }
-      List<String> args = request.split(":");
-      switch (args.first) {
-        case 'connect':
-          if (args.length != 3) {
-            logger.severe('Unknown request to control socket: [$request]');
-            return;
+      logger.info('Received event on control socket.');
+      try {
+        await controlStreamMutex.acquire();
+        if (event.isEmpty) {
+          logger.info('Empty control message (Uint8List) received');
+          return;
+        }
+        String eventStr = String.fromCharCodes(event).trim();
+        if (eventStr.isEmpty) {
+          logger.info('Empty control message (String) received');
+          return;
+        }
+        // TODO This resolves a particular issue for now, but the approach itself needs an overhaul
+        List<String> requests = eventStr.split('connect:');
+        for (String request in requests) {
+          if (request.isNotEmpty) {
+            await _handleMultiConnectRequest(sc, hosts, 'connect:$request');
           }
-          logger.info('_runDaemonSideMulti'
-              ' Control socket received ${args.first} request - '
-              ' creating new socketToSocket connection');
-          await SocketConnector.socketToSocket(
-              connector: sc,
-              addressA:
-                  (await InternetAddress.lookup(localHost ?? 'localhost'))[0],
-              portA: localPort,
-              addressB: hosts[0],
-              portB: streamingPort,
-              verbose: false,
-              logger: ioSinkForLogger(logger),
-              transformAtoB: createEncrypter(args[1], args[2]),
-              transformBtoA: createDecrypter(args[1], args[2]));
-          if (rvdAuthString != null) {
-            logger.info('_runDaemonSideMulti authenticating'
-                ' new socket connection to rvd');
-            sc.connections.last.sideB.socket.writeln(rvdAuthString);
-          }
-
-          break;
-        default:
-          logger.severe('Unknown request to control socket: [$request]');
+        }
+      } finally {
+        controlStreamMutex.release();
       }
     }, onError: (e) {
       logger.severe('controlSocket error: $e');
