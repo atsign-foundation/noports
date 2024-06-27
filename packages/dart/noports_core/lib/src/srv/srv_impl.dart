@@ -649,7 +649,10 @@ class SrvImplDart implements Srv<SocketConnector> {
           logger.info('Empty control message (String) received');
           return;
         }
-        // TODO This resolves a particular issue for now, but the approach itself needs an overhaul
+        // TODO This resolves a particular issue for now, but the overall
+        // approach to handling control messages needs to be redone.
+        // Ideally - send json, and a newline
+        // Receive - wait for newline, handle the json, repeat
         List<String> requests = eventStr.split('connect:');
         for (String request in requests) {
           if (request.isNotEmpty) {
