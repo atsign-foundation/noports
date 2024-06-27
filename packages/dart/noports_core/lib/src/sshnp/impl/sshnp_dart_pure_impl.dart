@@ -125,6 +125,7 @@ class SshnpDartPureImpl extends SshnpCore
       );
 
       /// Add the key pair to the key utility
+      // This type of keyUtil will not throw an error for this operation, since it is in memory
       await keyUtil.addKeyPair(keyPair: ephemeralKeyPair);
 
       try {
