@@ -243,8 +243,27 @@ int main(int argc, char **argv) {
 
   // 9. Start the device refresh loop - if hide is off
   pthread_t refresh_tid;
+  atclient_atkey *infokeys = malloc(sizeof(atclient_atkey) * params.manager_list_len);
+  if (infokeys == NULL) {
+    atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to allocate memory for infokeys\n");
+    exit_res = 1;
+    goto cancel_atclient;
+  }
+
+  atclient_atkey *usernamekeys = malloc(sizeof(atclient_atkey) * params.manager_list_len);
+  if (usernamekeys == NULL) {
+    atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to allocate memory for usernamekeys\n");
+    exit_res = 1;
+    goto clean_atkeys;
+  }
+
+  for(int i = 0; i < params.manager_list_len; i++) {
+    atclient_atkey_init(infokeys + i);
+    atclient_atkey_init(usernamekeys + i);
+  }
+
   struct refresh_device_entry_params refresh_params = {&worker,       &atclient_lock, &params,
-                                                       ping_response, username,       &should_run};
+                                                       ping_response, username,       &should_run, infokeys, usernamekeys};
   res = pthread_create(&refresh_tid, NULL, refresh_device_entry, (void *)&refresh_params);
   if (res != 0) {
     atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to start refresh device entry thread\n");
@@ -307,6 +326,14 @@ int main(int argc, char **argv) {
   atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_INFO, "Starting main loop\n");
   main_loop();
   atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_INFO, "Exited main loop\n");
+
+  for(int i = 0; i < params.manager_list_len; i++) {
+    atclient_atkey_free(infokeys + i);
+    atclient_atkey_free(usernamekeys + i);
+  }
+
+  free(infokeys);
+  free(usernamekeys);
 
 close_authkeys:
   fclose(authkeys_file);
