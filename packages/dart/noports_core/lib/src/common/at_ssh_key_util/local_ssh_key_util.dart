@@ -5,7 +5,7 @@ import 'package:noports_core/src/common/io_types.dart';
 import 'package:noports_core/sshnp.dart';
 import 'package:noports_core/utils.dart';
 import 'package:path/path.dart' as path;
-import 'package:posix/posix.dart' show chmod;
+import 'package:posix/posix.dart' show PosixException, chmod;
 
 class LocalSshKeyUtil implements AtSshKeyUtil {
   static const _sshKeygenArgMap = {
@@ -38,8 +38,14 @@ class LocalSshKeyUtil implements AtSshKeyUtil {
       fs.directory(sshnpHomeDirectory).createSync(recursive: true);
     }
     if (!Platform.isWindows) {
-      chmod(sshHomeDirectory, '700');
-      chmod(sshnpHomeDirectory, '700');
+      try {
+        chmod(sshHomeDirectory, '700');
+        chmod(sshnpHomeDirectory, '700');
+      } on PosixException catch (e, s) {
+        throw SshnpError(e.toString(), error: e, stackTrace: s);
+      } catch (_) {
+        rethrow;
+      }
     }
   }
 
@@ -75,8 +81,14 @@ class LocalSshKeyUtil implements AtSshKeyUtil {
     ]).catchError((e) => throw e);
 
     if (!Platform.isWindows) {
-      chmod(files[0].path, '600');
-      chmod(files[1].path, '644');
+      try {
+        chmod(files[0].path, '600');
+        chmod(files[1].path, '644');
+      } on PosixException catch (e, s) {
+        throw SshnpError(e.toString(), error: e, stackTrace: s);
+      } catch (_) {
+        rethrow;
+      }
     }
 
     return files;
