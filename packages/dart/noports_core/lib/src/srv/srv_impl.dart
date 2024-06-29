@@ -529,6 +529,10 @@ class SrvImplDart implements Srv<SocketConnector> {
     });
 
     logger.info('_runClientSideMulti calling SocketConnector.serverToSocket');
+    // final connectMutex = Mutex();
+    final spaceT = 10000;
+    int seq = 0;
+    int lastTs = DateTime.now().microsecondsSinceEpoch; // last TimeStamp
     socketConnector = await SocketConnector.serverToSocket(
       portA: localPort,
       addressB: hosts[0],
@@ -537,25 +541,43 @@ class SrvImplDart implements Srv<SocketConnector> {
       logger: ioSinkForLogger(logger),
       multi: multi,
       timeout: timeout,
+      backlog: 10000,
       beforeJoining: (Side sideA, Side sideB) {
-        logger.info('_runClientSideMulti Sending connect request');
+        try {
+          // await connectMutex.acquire();
+          int nowTs = DateTime.now().microsecondsSinceEpoch;
+          int deltaT = nowTs - lastTs;
+          if (deltaT < spaceT) {
+            logger.info(
+                '_runClientSideMulti new conn: Waiting ${spaceT - deltaT}us');
+            sleep(Duration(microseconds: spaceT - deltaT));
+            // await Future.delayed(Duration(microseconds: spaceT - deltaT));
+          }
+          lastTs = nowTs;
+          seq++;
 
-        String socketAESKey =
-            AtChopsUtil.generateSymmetricKey(EncryptionKeyType.aes256).key;
-        String socketIV =
-            base64Encode(AtChopsUtil.generateRandomIV(16).ivBytes);
+          String socketAESKey =
+              AtChopsUtil.generateSymmetricKey(EncryptionKeyType.aes256).key;
+          String socketIV =
+              base64Encode(AtChopsUtil.generateRandomIV(16).ivBytes);
 
-        // Authenticate the sideB socket (to the rvd)
-        if (rvdAuthString != null) {
-          logger
-              .info('_runClientSideMulti authenticating new connection to rvd');
-          sideB.socket.writeln(rvdAuthString);
+          // Tell the daemon another socket is required
+          logger.info(
+              '_runClientSideMulti Sending connect request $seq to daemon');
+          controlSink.add(
+              Uint8List.fromList('connect:$socketAESKey:$socketIV'.codeUnits));
+
+          // Authenticate the sideB socket (to the rvd)
+          if (rvdAuthString != null) {
+            logger.info(
+                '_runClientSideMulti authenticating connection $seq to rvd');
+            sideB.socket.writeln(rvdAuthString);
+          }
+          sideA.transformer = createEncrypter(socketAESKey, socketIV);
+          sideB.transformer = createDecrypter(socketAESKey, socketIV);
+        } finally {
+          // connectMutex.release();
         }
-        sideA.transformer = createEncrypter(socketAESKey, socketIV);
-        sideB.transformer = createDecrypter(socketAESKey, socketIV);
-
-        controlSink.add(
-            Uint8List.fromList('connect:$socketAESKey:$socketIV'.codeUnits));
       },
     );
     logger.info('_runClientSideMulti serverToSocket is ready');
