@@ -191,7 +191,7 @@ void handle_ssh_request(atclient *atclient, pthread_mutex_t *atclient_lock, sshn
     atclient_atkey error_res_atkey;
     atclient_atkey_init(&error_res_atkey);
 
-    err_res = create_response_atkey(&error_res_atkey, atsign, requesting_atsign, identifier, keyname, &keynamelen);
+    err_res = _create_response_atkey(&error_res_atkey, atsign, requesting_atsign, identifier, keyname, &keynamelen);
     if (res != 0) {
       atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to create error response atkey\n");
       free(envelope);
@@ -199,7 +199,7 @@ void handle_ssh_request(atclient *atclient, pthread_mutex_t *atclient_lock, sshn
       return;
     }
 
-    err_res = notify(atclient, atclient_lock, &error_res_atkey, value);
+    err_res = _notify(atclient, atclient_lock, &error_res_atkey, value);
     atclient_atkey_free(&error_res_atkey);
     if (res != 0) {
       atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to send rejection notification to %s\n",
@@ -568,13 +568,13 @@ void handle_ssh_request(atclient *atclient, pthread_mutex_t *atclient_lock, sshn
     atclient_atkey final_res_atkey;
     atclient_atkey_init(&final_res_atkey);
 
-    res = create_response_atkey(&final_res_atkey, atsign, requesting_atsign, identifier, keyname, &keynamelen);
+    res = _create_response_atkey(&final_res_atkey, atsign, requesting_atsign, identifier, keyname, &keynamelen);
     if (res != 0) {
       atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to create response atkey\n");
       goto clean_res;
     }
 
-    res = notify(atclient, atclient_lock, &final_res_atkey, final_res_value);
+    res = _notify(atclient, atclient_lock, &final_res_atkey, final_res_value);
     if (res != 0) {
       atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to send final response to %s\n",
                    requesting_atsign);
