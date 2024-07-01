@@ -23,10 +23,10 @@
 
 #define BYTES(x) (sizeof(unsigned char) * x)
 
-static int create_response_atkey(atclient_atkey *key, const char *atsign, const char *requesting_atsign,
+static int _create_response_atkey(atclient_atkey *key, const char *atsign, const char *requesting_atsign,
                                  const char *session_id, const char *keyname, const size_t *keynamelen);
 
-static int notify(atclient *atclient, pthread_mutex_t *atclient_lock, atclient_atkey *key, char *value);
+static int _notify(atclient *atclient, pthread_mutex_t *atclient_lock, atclient_atkey *key, char *value);
 
 void handle_ssh_request(atclient *atclient, pthread_mutex_t *atclient_lock, sshnpd_params *params,
                         bool *is_child_process, atclient_monitor_message *message, char *home_dir, FILE *authkeys_file,
@@ -631,7 +631,7 @@ int verify_envelope_signature(atchops_rsakey_publickey publickey, const unsigned
   return ret;
 }
 
-static int create_response_atkey(atclient_atkey *key, const char *atsign, const char *requesting_atsign,
+static int _create_response_atkey(atclient_atkey *key, const char *atsign, const char *requesting_atsign,
                                  const char *session_id, const char *keyname, const size_t *keynamelen) {
   int ret = 0;
 
@@ -649,7 +649,7 @@ static int create_response_atkey(atclient_atkey *key, const char *atsign, const 
   return ret;
 }
 
-static int notify(atclient *atclient, pthread_mutex_t *atclient_lock, atclient_atkey *key, char *value) {
+static int _notify(atclient *atclient, pthread_mutex_t *atclient_lock, atclient_atkey *key, char *value) {
 
   int ret = 0;
 
