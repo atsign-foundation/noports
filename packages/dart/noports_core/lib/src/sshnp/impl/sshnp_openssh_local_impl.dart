@@ -134,7 +134,9 @@ class SshnpOpensshLocalImpl extends SshnpCore
       );
 
       /// Add the key pair to the key utility
-      await keyUtil.addKeyPair(keyPair: ephemeralKeyPair);
+      await keyUtil.addKeyPair(keyPair: ephemeralKeyPair).catchError((e) {
+        throw e;
+      });
 
       try {
         /// Start the initial tunnel
