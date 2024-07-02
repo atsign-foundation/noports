@@ -12,7 +12,7 @@ npt -f @alice_client -t @alice_device -d my_server -r @rv_am -p 445 \
 ```
 
 {% hint style="info" %}
-NOTE Make sure the sshnpd daemon is allowing port 445 to the SAMB file server see Basic Usage for details.
+NOTE Make sure the sshnpd daemon is allowing port 445 to the SMB file server see Basic Usage for details.
 {% endhint %}
 
 Now you can mount the SMB share locally using the file explorer on Windows or the file app on MacOs
