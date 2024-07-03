@@ -100,10 +100,26 @@ jobs:
           name: ${{ matrix.output-name }}-${{github.ref_name}}-${{github.run_number}}-${{github.run_attempt}}
           path: ./packages/c/tarballs/${{ matrix.output-name }}.tgz
 
+  source_tarball:
+    name: Generate source tarball
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
+    - name: Create tarball
+      run: |
+        mkdir tarball
+        cd ./packages
+        mv c csshnpd-${{ github.ref_name }}
+        tar -cvzf ../tarball/csshnpd-${{ github.ref_name }}.tar.gz csshnpd-${{ github.ref_name }}
+    - uses: actions/upload-artifact@65462800fd760344b1a7b4382951275a0abb4808 # v4.3.3
+      with:
+        name: csshnpd-src-${{github.ref_name}}-${{github.run_number}}-${{github.run_attempt}}
+        path: ./tarball/csshnpd-${{ github.ref_name }}.tar.gz
+
   github-release:
     name: >-
       Upload artifacts and generate checksums for provenance
-    needs: [main_build, other_build]
+    needs: [main_build, other_build, source_tarball]
     runs-on: ubuntu-latest
     outputs:
       hashes: ${{ steps.hash.outputs.hashes }}
@@ -127,6 +143,7 @@ jobs:
         echo "Before:"
         ls -latrR *
         mv */*.tgz .
+        mv */*.tar.gz .
         mv */*.zip .
         rm -Rf -- */
         echo "After:"

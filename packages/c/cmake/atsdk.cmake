@@ -3,7 +3,7 @@ if(NOT atsdk_FOUND)
   FetchContent_Declare(
     atsdk
     GIT_REPOSITORY https://github.com/atsign-foundation/at_c.git
-    GIT_TAG dcda1141adc18b8be6608d2849de833c4f959005
+    GIT_TAG 504c299c48efdf7c9e6ecf9f7969ae9bedf495c7
   )
   FetchContent_MakeAvailable(atsdk)
   install(TARGETS atclient atchops atlogger)

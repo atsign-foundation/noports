@@ -18,6 +18,10 @@ enum DaemonFeature {
   /// could request to connect to port 80, and the daemon could allow it, but
   /// not allow connections to any other ports.
   supportsPortChoice,
+
+  /// Understands and respects the 'timeout' value in an npt session request
+  /// See also [NptParams.timeout]
+  adjustableTimeout,
 }
 
 extension FeatureDescription on DaemonFeature {
@@ -31,6 +35,8 @@ extension FeatureDescription on DaemonFeature {
         return 'encrypt traffic to the socket rendezvous';
       case DaemonFeature.supportsPortChoice:
         return 'support requests for specific device ports';
+      case DaemonFeature.adjustableTimeout:
+        return 'support the \'timeout\' value in npt session requests';
     }
   }
 }

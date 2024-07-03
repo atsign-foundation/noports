@@ -323,7 +323,7 @@ cancel_refresh:
   }
 
 cancel_atclient:
-  if (!free_ping_response) {
+  if (free_ping_response) {
     free(ping_response);
   }
   if (!is_child_process) {
