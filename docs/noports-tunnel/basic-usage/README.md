@@ -10,8 +10,24 @@ npt -f @<_client> -t @<_device> -r <@rv_(am|ap|eu) -d <name> \
 {% hint style="info" %}
 Replace the \<??> with your details and remember to logout and back into the client so you have`npt`in your PATH.\
 \
-Note: ensure that the sshnpd has included the remote port in their --permit-open rules.
+Note: ensure that the sshnpd on the server includes the remote port in their --permit-open/--po rules. By updating the \~/.local/bin/sshnpd.sh file, then rebooting or restarting the sshnpd daemon.  For example to allow ssh and smb access to 192.168.1.90 add the following.
+
+\
+`options="localhost:22,192.168.1.90:22,192.168.1.90:445"`&#x20;
+
+`sleep 10; # allow machine to bring up network`&#x20;
+
+`export USER="$user"`&#x20;
+
+`while true; do`
+
+&#x20;`"$HOME"/.local/bin/sshnpd -a "$device_atsign" -m "$manager_atsign" -d "$device_name" --po $options -v`&#x20;
+
+`sleep 10 done`\
+
 {% endhint %}
+
+
 
 ## Options
 
