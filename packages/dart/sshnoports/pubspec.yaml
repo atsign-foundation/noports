@@ -35,7 +35,7 @@ dependency_overrides:
 
 dev_dependencies:
   lints: ^4.0.0
-  test: ^1.25.7
+  test: ^1.25.8
   mocktail: ^1.0.4
   build_runner: ^2.4.11
   build_version: ^2.1.1
