@@ -4,8 +4,8 @@ coverY: 0
 
 # 🔢 Guides
 
-{% content-ref url="installation-guide.md" %}
-[installation-guide.md](installation-guide.md)
+{% content-ref url="installation-guide/" %}
+[installation-guide](installation-guide/)
 {% endcontent-ref %}
 
 {% content-ref url="usage-guide/" %}
