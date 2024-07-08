@@ -136,7 +136,7 @@ On the **device machine**, run the following command, using the DEVICE\_NAME tha
 <pre class="language-bash"><code class="lang-bash"><strong>~/.local/bin/at_activate enroll -a @&#x3C;REPLACE>_device \
 </strong><strong>  -s &#x3C;PASSCODE> \
 </strong><strong>  -p noports \
-</strong><strong>  -k ~/.atsign/keys/@&#x3C;REPLACE>_device.atKeys \
+</strong><strong>  -k ~/.atsign/keys/@&#x3C;REPLACE>_device_key.atKeys \
 </strong><strong>  -d &#x3C;DEVICE_NAME> \
 </strong><strong>  -n "sshnp:rw,sshrvd:rw"
 </strong></code></pre>
