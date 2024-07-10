@@ -123,7 +123,7 @@ jobs:
         name: sshnpd-python-package
         path: dist/
     - name: Install Syft
-      uses: anchore/sbom-action/download-syft@e8d2a6937ecead383dfe75190d104edd1f9c5751 # v0.16.0
+      uses: anchore/sbom-action/download-syft@95b086ac308035dc0850b3853be5b7ab108236a8 # v0.16.1
     - name: Generate SBOMs
       run: |
         syft scan file:./packages/python/sshnpd/requirements.txt \
@@ -138,7 +138,7 @@ jobs:
       run: |
         echo "hashes=$(cat checksums.txt | base64 -w0)" >> "$GITHUB_OUTPUT"
     - name: Attest the release artifacts
-      uses: actions/attest-build-provenance@bdd51370e0416ac948727f861e03c2f05d32d78e # v1.3.2
+      uses: actions/attest-build-provenance@5e9cb68e95676991667494a6a4e59b8a2f13e1d0 # v1.3.3
       with:
         subject-path: 'dist/**'
     - name: Upload artifact signatures to GitHub Release
