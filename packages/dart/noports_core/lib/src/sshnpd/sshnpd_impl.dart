@@ -470,7 +470,7 @@ class SshnpdImpl implements Sshnpd {
         atKey: _createResponseAtKey(
             requestingAtsign: requestingAtsign, sessionId: req.sessionId),
         value: 'Daemon does not permit connections to $requested',
-        sessionId: req.sessionId, 
+        sessionId: req.sessionId,
       );
 
       return;
