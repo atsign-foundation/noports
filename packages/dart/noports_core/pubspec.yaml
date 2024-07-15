@@ -23,6 +23,7 @@ dependencies:
   posix: ^6.0.1
   socket_connector: ^2.2.0
   uuid: ^3.0.7
+  mutex: ^3.1.0
 
 dependency_overrides:
   dartssh2:
