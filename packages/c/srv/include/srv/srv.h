@@ -90,6 +90,22 @@ typedef struct _chunked_transformer {
 int run_srv(srv_params_t *params);
 
 /**
+ * @brief run srv daemon side single with some parameters
+ *
+ * @param params a pointer to the parameters to run srv with
+ * @return int 0 on success, non-zero on error
+ */
+int run_srv_daemon_side_single(srv_params_t *params);
+
+/**
+ * @brief run srv daemon side multi with some parameters
+ *
+ * @param params a pointer to the parameters to run srv with
+ * @return int 0 on success, non-zero on error
+ */
+int run_srv_daemon_side_multi(srv_params_t *params);
+
+/**
  * @brief Run a socket to socket connection
  *
  * @param params a pointer to the original program parameters
@@ -130,4 +146,7 @@ int server_to_socket(const srv_params_t *params, const char *auth_string, chunke
  */
 int aes_ctr_crypt_stream(const chunked_transformer_t *self, size_t len, const unsigned char *input,
                          unsigned char *output);
+
+int create_encrypter_and_decrypter(const char *session_aes_key_string, const char *session_aes_iv_string,
+                                   chunked_transformer_t *encrypter, chunked_transformer_t *decrypter);
 #endif

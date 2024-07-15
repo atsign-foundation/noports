@@ -11,86 +11,174 @@
 
 #define TAG "srv - run"
 
+static int parse_control_message(char *original, char **message_type, char **new_session_aes_key_string,
+                                 char **new_session_aes_iv_string);
+
 int run_srv(srv_params_t *params) {
-  chunked_transformer_t encrypter;
-  chunked_transformer_t decrypter;
-  int res;
-  if (params->rv_e2ee == 1) {
-    atlogger_log(TAG, INFO, "Configuring encrypter/decrypter for srv\n");
-
-    // Temporary buffer for decoding the key
-    unsigned char aes_key[AES_256_KEY_BYTES];
-    size_t aes_key_len;
-
-    // Decode the key
-    res = atchops_base64_decode((unsigned char *)params->session_aes_key_string, strlen(params->session_aes_key_string),
-                                aes_key, AES_256_KEY_BYTES, &aes_key_len);
-
-    if (res != 0 || aes_key_len != AES_256_KEY_BYTES) {
-      atlogger_log(TAG, ERROR, "Error decoding session_aes_key_string\n");
-      return res;
-    }
-
-    mbedtls_aes_init(&encrypter.aes_ctr.ctx); // FREE
-    res = mbedtls_aes_setkey_enc(&encrypter.aes_ctr.ctx, aes_key, AES_256_KEY_BITS);
-    if (res != 0) {
-      atlogger_log(TAG, ERROR, "Error setting encryption key\n");
-      mbedtls_aes_free(&encrypter.aes_ctr.ctx);
-      return res;
-    }
-
-    mbedtls_aes_init(&decrypter.aes_ctr.ctx); // FREE
-    res = mbedtls_aes_setkey_enc(&decrypter.aes_ctr.ctx, aes_key, AES_256_KEY_BITS);
-    if (res != 0) {
-      atlogger_log(TAG, ERROR, "Error setting decryption key\n");
-      mbedtls_aes_free(&encrypter.aes_ctr.ctx);
-      mbedtls_aes_free(&decrypter.aes_ctr.ctx);
-      return res;
-    }
-
-    // Decode the iv
-    size_t iv_len;
-    res = atchops_base64_decode((unsigned char *)params->session_aes_iv_string, strlen(params->session_aes_iv_string),
-                                encrypter.aes_ctr.nonce_counter, AES_BLOCK_LEN, &iv_len);
-    if (res != 0 || iv_len != AES_BLOCK_LEN) {
-      atlogger_log(TAG, ERROR, "Error decoding session_aes_iv_string\n");
-      mbedtls_aes_free(&encrypter.aes_ctr.ctx);
-      mbedtls_aes_free(&decrypter.aes_ctr.ctx);
-      return res;
-    }
-
-    // Copy the iv to the decrypter
-    memcpy(decrypter.aes_ctr.nonce_counter, encrypter.aes_ctr.nonce_counter, AES_BLOCK_LEN);
-
-    // Set the stream blocks to 0
-    memset(encrypter.aes_ctr.stream_block, 0, AES_BLOCK_LEN);
-    memset(decrypter.aes_ctr.stream_block, 0, AES_BLOCK_LEN);
-
-    // Set the iv offset to 0
-    encrypter.aes_ctr.nc_off = 0;
-    decrypter.aes_ctr.nc_off = 0;
-
-    // Set the transform functions
-    encrypter.transform = aes_ctr_crypt_stream;
-    decrypter.transform = aes_ctr_crypt_stream;
-  }
-
+  int res = 0;
   if (params->bind_local_port == 0) {
-    atlogger_log(TAG, INFO, "Starting socket to socket srv\n");
-    res = socket_to_socket(params, params->rvd_auth_string, &encrypter, &decrypter);
+    // daemon side
+    if (params->multi == 0) {
+      res = run_srv_daemon_side_single(params);
+    } else {
+      res = run_srv_daemon_side_multi(params);
+    }
   } else {
     atlogger_log("srv - bind", ATLOGGER_LOGGING_LEVEL_ERROR, "--local-bind-port is disabled\n");
     exit(1);
 
-    atlogger_log(TAG, INFO, "Starting server to socket srv\n");
-    res = server_to_socket(params, params->rvd_auth_string, &encrypter, &decrypter);
+    // atlogger_log(TAG, INFO, "Starting server to socket srv\n");
+    // res = server_to_socket(params, params->rvd_auth_string, &encrypter, &decrypter);
+
+    // client side
+    // if (params->multi == 0) {
+    //   res = run_srv_client_side_single(params);
+    // } else {
+    //   // todo: check aes key and iv strings != null
+    //   // ...
+    //   res = run_srv_client_side_multi(params);
+    // }
   }
+}
+
+int run_srv_daemon_side_single(srv_params_t *params) {
+  chunked_transformer_t encrypter;
+  chunked_transformer_t decrypter;
+  int res;
+  if (params->rv_e2ee == 1) {
+    res = create_encrypter_and_decrypter(params->session_aes_key_string, params->session_aes_iv_string, &encrypter,
+                                         &decrypter);
+    if (res != 0) {
+      // err
+    }
+  }
+
+  atlogger_log(TAG, INFO, "Starting socket to socket srv\n");
+  res = socket_to_socket(params, params->rvd_auth_string, &encrypter, &decrypter);
 
   if (params->rv_e2ee == 1) {
     mbedtls_aes_free(&encrypter.aes_ctr.ctx);
     mbedtls_aes_free(&decrypter.aes_ctr.ctx);
   }
 
+  return res;
+}
+
+int run_srv_daemon_side_multi(srv_params_t *params) {
+  chunked_transformer_t encrypter;
+  chunked_transformer_t decrypter;
+  int res = 0;
+  if (params->rv_e2ee == 1) {
+    res = create_encrypter_and_decrypter(params->session_aes_key_string, params->session_aes_iv_string, &encrypter,
+                                         &decrypter);
+    if (res != 0) {
+      // err
+    }
+  }
+
+  // Open a control socket of type B (non local host and port)
+  // This socket will decrypt the messages comming from the other side
+  // which provide the information to create new sockets
+  side_t control_side;
+  side_hints_t hints_control = {1, 0, params->host, params->port};
+  if (params->rv_e2ee) {
+    hints_control.transformer = &decrypter;
+  }
+
+  atlogger_log(TAG, INFO, "Initializing connection for control side\n");
+  res = srv_side_init(&hints_control, &control_side);
+  if (res != 0) {
+    atlogger_log(TAG, ERROR, "Failed to initialize connection for control side\n");
+    return res;
+  }
+
+  // send the auth string to the other side
+  if (params->rv_auth == 1) {
+    atlogger_log(TAG, INFO, "Sending auth string: %s\n", (unsigned char *)params->rvd_auth_string);
+    int len = strlen(params->rvd_auth_string);
+
+    int slen = mbedtls_net_send(&control_side.socket, (unsigned char *)params->rvd_auth_string, len);
+    slen += mbedtls_net_send(&control_side.socket, (unsigned char *)"\n", 1);
+    if (slen != len + 1) {
+      atlogger_log(TAG, ERROR, "Failed to send auth string\n");
+      return -1;
+    }
+  }
+
+  atlogger_log(TAG, INFO, "Starting recv loop\n");
+
+  // signal to sshnpd that we are done
+  fprintf(stderr, "%s\n", SRV_COMPLETION_STRING);
+  fflush(stderr);
+
+  unsigned char *buffer = malloc(4096 * sizeof(unsigned char));
+  if (buffer == NULL) {
+    return -1;
+  }
+  memset(buffer, 0, 4096 * sizeof(unsigned char));
+
+  size_t len;
+  while ((res = mbedtls_net_recv(&control_side.socket, buffer, 4096)) > 0) {
+    if (res < 0) {
+      atlogger_log("srv - control (side b)", ERROR, "Error reading data: %d", len);
+      goto exit;
+    } else {
+      len = res;
+    }
+
+    if (&control_side.transformer != NULL) {
+      unsigned char *output = malloc(4096 * sizeof(unsigned char));
+      if (output == NULL) {
+        goto exit;
+      }
+      memset(output, 0, 4096 * sizeof(unsigned char));
+      res = (int)control_side.transformer->transform(control_side.transformer, len, buffer, output);
+      if (res != 0) {
+        free(output);
+        goto exit;
+      }
+      free(buffer);
+      buffer = output;
+    }
+
+    char *messagetype = NULL, *new_session_aes_key_string = NULL, *new_session_aes_iv_string = NULL;
+
+    res = parse_control_message(buffer, &messagetype, &new_session_aes_key_string, &new_session_aes_iv_string);
+    if (res != 0) {
+      atlogger_log(TAG, ATLOGGER_LOGGING_LEVEL_DEBUG, "Failed to find message type and message body from: %s\n",
+                   buffer);
+      goto exit;
+    }
+    atlogger_log(TAG, ATLOGGER_LOGGING_LEVEL_DEBUG, "\tRECV: %s:%s:%s\n", messagetype, new_session_aes_key_string,
+                 new_session_aes_iv_string);
+
+    if (strcmp(messagetype, "connect") == 0) {
+      chunked_transformer_t new_socket_encrypter;
+      chunked_transformer_t new_socket_decrypter;
+      atlogger_log(TAG, ATLOGGER_LOGGING_LEVEL_DEBUG,
+                   "run_srv_daemon_side_multi\n Control socket received %s request - \n creating new socketToSocket "
+                   "connection\n",
+                   messagetype);
+      // start socket_to_socket connection
+      res = create_encrypter_and_decrypter(new_session_aes_key_string, new_session_aes_iv_string, &new_socket_encrypter,
+                                           &new_socket_decrypter);
+      atlogger_log(TAG, INFO, "Starting socket to socket srv\n");
+      res = socket_to_socket(params, params->rvd_auth_string, &new_socket_encrypter, &new_socket_decrypter);
+    } else {
+      atlogger_log(TAG, ATLOGGER_LOGGING_LEVEL_DEBUG, "Unknown request to control socket: %s\n", buffer);
+    }
+
+    // Clean buffer for next iteration
+    memset(buffer, 0, 4096);
+  }
+
+exit:
+  free(buffer);
+  mbedtls_net_close(&control_side.socket);
+  if (params->rv_e2ee == 1) {
+    mbedtls_aes_free(&encrypter.aes_ctr.ctx);
+    mbedtls_aes_free(&decrypter.aes_ctr.ctx);
+  }
   return res;
 }
 
@@ -186,6 +274,11 @@ exit:
   close(fds[0]);
   close(fds[1]);
 
+  if (params->rv_e2ee == 1) {
+    mbedtls_aes_free(&encrypter->aes_ctr.ctx);
+    mbedtls_aes_free(&decrypter->aes_ctr.ctx);
+  }
+
   if (exit_res != 0) {
     return exit_res;
   }
@@ -196,6 +289,68 @@ exit:
 int server_to_socket(const srv_params_t *params, const char *auth_string, chunked_transformer_t *encrypter,
                      chunked_transformer_t *decrypter) {
   return 0;
+}
+
+int create_encrypter_and_decrypter(const char *session_aes_key_string, const char *session_aes_iv_string,
+                                   chunked_transformer_t *encrypter, chunked_transformer_t *decrypter) {
+  int res;
+  atlogger_log(TAG, INFO, "Configuring encrypter/decrypter for srv\n");
+
+  // Temporary buffer for decoding the key
+  unsigned char aes_key[AES_256_KEY_BYTES];
+  size_t aes_key_len;
+
+  // Decode the key
+  res = atchops_base64_decode((unsigned char *)session_aes_key_string, strlen(session_aes_key_string), aes_key,
+                              AES_256_KEY_BYTES, &aes_key_len);
+
+  if (res != 0 || aes_key_len != AES_256_KEY_BYTES) {
+    atlogger_log(TAG, ERROR, "Error decoding session_aes_key_string\n");
+    return res;
+  }
+
+  mbedtls_aes_init(&encrypter->aes_ctr.ctx); // FREE
+  res = mbedtls_aes_setkey_enc(&encrypter->aes_ctr.ctx, aes_key, AES_256_KEY_BITS);
+  if (res != 0) {
+    atlogger_log(TAG, ERROR, "Error setting encryption key\n");
+    mbedtls_aes_free(&encrypter->aes_ctr.ctx);
+    return res;
+  }
+
+  mbedtls_aes_init(&decrypter->aes_ctr.ctx); // FREE
+  res = mbedtls_aes_setkey_enc(&decrypter->aes_ctr.ctx, aes_key, AES_256_KEY_BITS);
+  if (res != 0) {
+    atlogger_log(TAG, ERROR, "Error setting decryption key\n");
+    mbedtls_aes_free(&encrypter->aes_ctr.ctx);
+    mbedtls_aes_free(&decrypter->aes_ctr.ctx);
+    return res;
+  }
+
+  // Decode the iv
+  size_t iv_len;
+  res = atchops_base64_decode((unsigned char *)session_aes_iv_string, strlen(session_aes_iv_string),
+                              encrypter->aes_ctr.nonce_counter, AES_BLOCK_LEN, &iv_len);
+  if (res != 0 || iv_len != AES_BLOCK_LEN) {
+    atlogger_log(TAG, ERROR, "Error decoding session_aes_iv_string\n");
+    mbedtls_aes_free(&encrypter->aes_ctr.ctx);
+    mbedtls_aes_free(&decrypter->aes_ctr.ctx);
+    return res;
+  }
+
+  // Copy the iv to the decrypter
+  memcpy(decrypter->aes_ctr.nonce_counter, encrypter->aes_ctr.nonce_counter, AES_BLOCK_LEN);
+
+  // Set the stream blocks to 0
+  memset(encrypter->aes_ctr.stream_block, 0, AES_BLOCK_LEN);
+  memset(decrypter->aes_ctr.stream_block, 0, AES_BLOCK_LEN);
+
+  // Set the iv offset to 0
+  encrypter->aes_ctr.nc_off = 0;
+  decrypter->aes_ctr.nc_off = 0;
+
+  // Set the transform functions
+  encrypter->transform = aes_ctr_crypt_stream;
+  decrypter->transform = aes_ctr_crypt_stream;
 }
 
 int aes_ctr_crypt_stream(const chunked_transformer_t *self, size_t len, const unsigned char *input,
@@ -213,4 +368,43 @@ int aes_ctr_crypt_stream(const chunked_transformer_t *self, size_t len, const un
   }
 
   return 0;
+}
+
+// connect:session_aes_key_string:session_aes_iv_string
+static int parse_control_message(char *original, char **message_type, char **new_session_aes_key_string,
+                                 char **new_session_aes_iv_string) {
+  int ret = -1;
+
+  char *temp = NULL;
+  char *saveptr = original;
+
+  // if message has any leading or trailing white space or new line characters, remove it
+  while ((saveptr)[0] == ' ' || (saveptr)[0] == '\n') {
+    saveptr = saveptr + 1;
+  }
+  size_t trail;
+  do {
+    trail = strlen(saveptr) - 1;
+    if ((saveptr)[trail] == ' ' || (saveptr)[trail] == '\n') {
+      (saveptr)[trail] = '\0';
+    }
+  } while ((saveptr)[trail] == ' ' || (saveptr)[trail] == '\n');
+
+  for (int i = 0; i < 3; i++) {
+    temp = strtok_r(saveptr, ":", &saveptr);
+    if (temp == NULL) {
+      atlogger_log(TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to parse message type\n");
+      goto exit;
+    }
+    if (i == 0)
+      *message_type = temp;
+    if (i == 1)
+      *new_session_aes_key_string = temp;
+    if (i == 2)
+      *new_session_aes_iv_string = temp;
+  }
+
+  ret = 0;
+  goto exit;
+exit : { return ret; }
 }

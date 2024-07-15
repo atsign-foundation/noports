@@ -69,6 +69,7 @@ void *srv_side_handle(void *side) {
   const char *const tag = s->is_side_a ? TAG_A : TAG_B;
 
   unsigned char *buffer = malloc(BUFFER_LEN * sizeof(unsigned char));
+  memset(buffer, 0, BUFFER_LEN * sizeof(unsigned char));
 
   if (s->is_server == 0) {
     size_t len;
@@ -83,6 +84,7 @@ void *srv_side_handle(void *side) {
       fflush(stdout);
       if (s->transformer != NULL) {
         unsigned char *output = malloc(BUFFER_LEN * sizeof(unsigned char));
+        memset(output, 0, BUFFER_LEN * sizeof(unsigned char));
         res = (int)s->transformer->transform(s->transformer, len, buffer, output);
         if (res != 0) {
           break;
