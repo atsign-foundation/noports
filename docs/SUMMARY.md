@@ -13,6 +13,7 @@
       * [🗃️ SFTP](ssh-no-ports/guides/usage-guide/sftp.md)
       * [🌐 Web Server](ssh-no-ports/guides/usage-guide/web-server.md)
       * [🖥️ RDP](ssh-no-ports/guides/usage-guide/rdp.md)
+      * [🔢 np.sh](ssh-no-ports/guides/usage-guide/np.sh.md)
     * [⬆️ Upgrade Guide](ssh-no-ports/guides/upgrade-guide/README.md)
       * [👩‍💻 Client Upgrade (sshnp)](ssh-no-ports/guides/upgrade-guide/client-upgrade-sshnp.md)
       * [💽 Device Upgrade (sshnpd)](ssh-no-ports/guides/upgrade-guide/device-upgrade-sshnpd.md)
