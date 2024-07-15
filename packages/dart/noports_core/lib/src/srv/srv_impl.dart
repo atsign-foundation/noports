@@ -538,10 +538,6 @@ class SrvImplDart implements Srv<SocketConnector> {
       multi: multi,
       timeout: timeout,
       beforeJoining: (Side sideA, Side sideB) {
-        // For some bizarro reason, we can't write to stderr in this callback
-        // when the Srv has been started via SrvImplExec. Thus it is very
-        // important that the srv binary never have a logger root level of
-        // anything below 'warning'
         logger.info('_runClientSideMulti Sending connect request');
 
         String socketAESKey =
@@ -651,10 +647,18 @@ class SrvImplDart implements Srv<SocketConnector> {
           logger.info('Empty control message (String) received');
           return;
         }
-        // TODO This resolves a particular issue for now, but the overall
-        // approach to handling control messages needs to be redone.
-        // Ideally - send json, and a newline
-        // Receive - wait for newline, handle the json, repeat
+        // TODO The code below (splitting by `connect:`) resolves a
+        // particular issue for the moment, but the overall approach
+        // to handling control messages needs to be redone, e.g. :
+        // Ideally - send the control request, and a newline
+        //   => as of this commit, this is the case
+        // Receive - wait for newline, handle the request, repeat
+        //   => older npt clients don't send `\n` so we will need to add some
+        //      magic to handle both (a) older clients which don't send `\n`
+        //      as well as (b) newer ones which do. Cleanest is to add a
+        //      flag to the npt request from the client stating that it sends
+        //      `\n` . If so then we handle that cleanly; if not then we use
+        //      this approach (split by `connect:`)
         List<String> requests = eventStr.split('connect:');
         for (String request in requests) {
           if (request.isNotEmpty) {
