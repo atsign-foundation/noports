@@ -21,6 +21,8 @@ struct refresh_device_entry_params {
   const char *payload;
   const char *username;
   volatile sig_atomic_t *should_run;
+  atclient_atkey *infokeys;
+  atclient_atkey *usernamekeys;
 };
 
 /**

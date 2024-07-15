@@ -17,12 +17,9 @@
 void *refresh_device_entry(void *void_refresh_device_entry_params) {
   struct refresh_device_entry_params *params = void_refresh_device_entry_params;
 
-  // Buffer for the atkeys
-  size_t num_managers = params->params->manager_list_len;
-  size_t num_username_keys = params->params->hide ? 0 : num_managers;
-
-  atclient_atkey infokeys[num_managers];
-  atclient_atkey usernamekeys[num_username_keys];
+  const size_t num_managers = params->params->manager_list_len;
+  atclient_atkey *infokeys = params->infokeys;
+  atclient_atkey *usernamekeys = params->usernamekeys;
 
   // Buffer for the base portion of each atkey
   size_t infokey_base_len = strlen(params->params->device) + strlen(params->params->atsign) +
@@ -55,7 +52,6 @@ void *refresh_device_entry(void *void_refresh_device_entry_params) {
   int index;
   for (index = 0; index < num_managers; index++) {
     // device_info
-    atclient_atkey_init(infokeys + index);
     size_t buffer_len = strlen(params->params->manager_list[index]) + infokey_base_len;
     char atkey_buffer[buffer_len];
     // example: @client_atsign:device_info.device_name.sshnp@client_atsign
@@ -65,7 +61,6 @@ void *refresh_device_entry(void *void_refresh_device_entry_params) {
     if (ret != 0) {
       atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to create device_info atkey for %s\n",
                    params->params->manager_list[index]);
-      atclient_atkey_free(infokeys + index);
       break;
     }
 
@@ -76,8 +71,6 @@ void *refresh_device_entry(void *void_refresh_device_entry_params) {
     atclient_atkey_metadata_set_ccd(metadata, true);
     atclient_atkey_metadata_set_ttl(metadata, (long)30 * 24 * 60 * 60 * 1000); // 30 days in ms
 
-    // username
-    atclient_atkey_init(usernamekeys + index);
     buffer_len = strlen(params->params->manager_list[index]) + usernamekey_base_len;
     // example: @client_atsign:device_info.device_name.sshnp@client_atsign
     snprintf(atkey_buffer, buffer_len, "%s%s", params->params->manager_list[index], username_key_base);
@@ -85,8 +78,6 @@ void *refresh_device_entry(void *void_refresh_device_entry_params) {
     if (ret != 0) {
       atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to create username atkey for %s\n",
                    params->params->manager_list[index]);
-      atclient_atkey_free(infokeys + index);
-      atclient_atkey_free(usernamekeys + index);
       break;
     }
 
@@ -100,8 +91,6 @@ void *refresh_device_entry(void *void_refresh_device_entry_params) {
       if (ret != 0) {
         atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to delete username atkey for %s\n",
                      params->params->manager_list[index]);
-        atclient_atkey_free(infokeys + index);
-        atclient_atkey_free(usernamekeys + index);
         break;
       }
     } else {
@@ -109,18 +98,12 @@ void *refresh_device_entry(void *void_refresh_device_entry_params) {
       if (ret != 0) {
         atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to put username atkey for %s\n",
                      params->params->manager_list[index]);
-        atclient_atkey_free(infokeys + index);
-        atclient_atkey_free(usernamekeys + index);
         break;
       }
     }
   }
 
   if (ret != 0) {
-    for (int i = 0; i < index; i++) {
-      atclient_atkey_free(infokeys + i);
-      atclient_atkey_free(usernamekeys + i);
-    }
     *params->should_run = 0;
   }
 
@@ -133,10 +116,6 @@ void *refresh_device_entry(void *void_refresh_device_entry_params) {
 
   if (!*params->should_run) {
     pthread_exit(NULL);
-  }
-
-  for (int i = 0; i < num_managers; i++) {
-    atclient_atkey_free(usernamekeys + i);
   }
 
   // Build each atkey
@@ -188,11 +167,6 @@ void *refresh_device_entry(void *void_refresh_device_entry_params) {
       counter++;
     }
     sleep(1);
-  }
-
-  // Clean up upon exit
-  for (int i = 0; i < num_managers; i++) {
-    atclient_atkey_free(infokeys + i); // automatically cleans up metadata as well
   }
 
   pthread_exit(NULL);
