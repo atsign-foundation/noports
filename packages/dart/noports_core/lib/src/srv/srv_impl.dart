@@ -549,7 +549,7 @@ class SrvImplDart implements Srv<SocketConnector> {
         String socketIV =
             base64Encode(AtChopsUtil.generateRandomIV(16).ivBytes);
         controlSink.add(
-            Uint8List.fromList('connect:$socketAESKey:$socketIV'.codeUnits));
+            Uint8List.fromList('connect:$socketAESKey:$socketIV\n'.codeUnits));
         // Authenticate the sideB socket (to the rvd)
         if (rvdAuthString != null) {
           logger
