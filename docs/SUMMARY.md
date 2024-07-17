@@ -32,5 +32,6 @@
   * [🗃️ SFTP](noports-tunnel/sftp.md)
   * [🌐 Web Server](noports-tunnel/web-server.md)
   * [🖥️ RDP](noports-tunnel/rdp.md)
+  * [🗄️ SMB](noports-tunnel/smb.md)
 * [📔 Developer Notes](developer-notes/README.md)
   * [Under The Hood](developer-notes/underthehood.md)

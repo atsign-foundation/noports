@@ -23,3 +23,7 @@ If you have any questions, see the [FAQ](../ssh-no-ports/faq.md) or reach out to
 {% content-ref url="rdp.md" %}
 [rdp.md](rdp.md)
 {% endcontent-ref %}
+
+{% content-ref url="smb.md" %}
+[smb.md](smb.md)
+{% endcontent-ref %}
