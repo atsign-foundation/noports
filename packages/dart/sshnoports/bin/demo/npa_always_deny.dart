@@ -11,6 +11,9 @@ class AlwaysDeny implements NPARequestHandler {
   Future<NPAAuthCheckResponse> doAuthCheck(
       NPAAuthCheckRequest authCheckRequest) async {
     return NPAAuthCheckResponse(
-        authorized: false, message: 'Computer says "Noooo..."');
+      authorized: false,
+      message: 'Computer says "Noooo..."',
+      permitOpen: [],
+    );
   }
 }

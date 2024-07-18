@@ -24,10 +24,10 @@ class NPAImpl implements NPA {
   String get authorizerAtsign => atClient.getCurrentAtSign()!;
 
   @override
-  Set<String> daemonAtsigns;
+  final Set<String> daemonAtsigns;
 
   @override
-  NPARequestHandler handler;
+  final NPARequestHandler handler;
 
   static const JsonEncoder jsonPrettyPrinter = JsonEncoder.withIndent('    ');
 
@@ -42,11 +42,14 @@ class NPAImpl implements NPA {
     logger.logger.level = Level.SHOUT;
   }
 
-  static Future<NPA> fromCommandLineArgs(List<String> args,
-      {required NPARequestHandler handler,
-      AtClient? atClient,
-      FutureOr<AtClient> Function(NPAParams)? atClientGenerator,
-      void Function(Object, StackTrace)? usageCallback}) async {
+  static Future<NPA> fromCommandLineArgs(
+    List<String> args, {
+    required NPARequestHandler handler,
+    AtClient? atClient,
+    FutureOr<AtClient> Function(NPAParams)? atClientGenerator,
+    void Function(Object, StackTrace)? usageCallback,
+    Set<String>? daemonAtsigns,
+  }) async {
     try {
       var p = await NPAParams.fromArgs(args);
 
@@ -117,9 +120,11 @@ class NPAImpl implements NPA {
       return AtRpcResp(
           reqId: request.reqId,
           respType: AtRpcRespType.success,
-          payload:
-              NPAAuthCheckResponse(authorized: false, message: 'Exception: $e')
-                  .toJson());
+          payload: NPAAuthCheckResponse(
+            authorized: false,
+            message: 'Exception: $e',
+            permitOpen: [],
+          ).toJson());
     }
   }
 

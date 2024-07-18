@@ -51,7 +51,8 @@ class NPAParams {
 
     parser.addOption(
       'daemon-atsigns',
-      mandatory: true,
+      mandatory: false,
+      defaultsTo: '',
       help: 'Comma-separated list of daemon atSigns which use this authorizer',
     );
 

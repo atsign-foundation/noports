@@ -268,14 +268,12 @@ class SshnpdImpl implements Sshnpd {
 
   /// Notification handler for sshnpd
   void _notificationHandler(AtNotification notification) async {
-    bool authed;
-    String message;
-    (authed, message) = await isFromAuthorizedAtsign(notification);
-    if (!authed) {
+    NPAAuthCheckResponse auth = await authCheck(notification);
+    if (!auth.authorized) {
       // TODO IF $someConditions apply then send a 'nice' error
       // TODO message notification back to the requester
       logger.shout('Notification ignored from ${notification.from}'
-          ' which is not authorized: $message'
+          ' which is not authorized: ${auth.message}'
           ' Notification value was ${notification.value}');
       return;
     }
@@ -321,40 +319,47 @@ class SshnpdImpl implements Sshnpd {
       case 'npt_request':
         logger.info('$notificationKey received from ${notification.from}'
             ' ( ${notification.value} )');
-        _handleNptRequestNotification(notification);
+        _handleNptRequestNotification(notification, auth);
         break;
     }
   }
 
-  Future<(bool, String)> isFromAuthorizedAtsign(
-      AtNotification notification) async {
+  Future<NPAAuthCheckResponse> authCheck(AtNotification notification) async {
     const authTimeoutSeconds = 10;
-    late bool authed;
-    late String message;
     String client = notification.from;
 
     if (managerAtsigns.contains(client)) {
-      return (true, '$client is in --managers list');
+      return NPAAuthCheckResponse(
+        authorized: true,
+        message: '$client is in --managers list',
+        permitOpen: ['*:*'],
+      );
     }
 
     if (authChecker != null) {
+      late NPAAuthCheckResponse resp;
       try {
         logger.info('Asking $policyManagerAtsign'
             ' whether $client may connect to this daemon');
-        NPAAuthCheckResponse resp = await authChecker!
+        resp = await authChecker!
             .mayConnect(clientAtsign: client)
             .timeout(const Duration(seconds: authTimeoutSeconds));
-        authed = resp.authorized;
-        message = resp.message ?? '';
       } on TimeoutException {
-        authed = false;
-        message = 'Timed out waiting for authorizer response';
+        resp = NPAAuthCheckResponse(
+          authorized: false,
+          message: 'Timed out waiting for authorizer response',
+          permitOpen: [],
+        );
       }
 
-      return (authed, message);
+      return resp;
     }
 
-    return (false, '$client is not in --managers list');
+    return NPAAuthCheckResponse(
+      authorized: false,
+      message: '$client is not in --managers list',
+      permitOpen: [],
+    );
   }
 
   void _handlePingNotification(AtNotification notification) {
@@ -420,7 +425,10 @@ class SshnpdImpl implements Sshnpd {
     }
   }
 
-  void _handleNptRequestNotification(AtNotification notification) async {
+  void _handleNptRequestNotification(
+    AtNotification notification,
+    NPAAuthCheckResponse auth,
+  ) async {
     String requestingAtsign = notification.from;
 
     // Extract the NPT request payload.
@@ -461,10 +469,8 @@ class SshnpdImpl implements Sshnpd {
     }
 
     String requested = '${req.requestedHost}:${req.requestedPort}';
-    if (!(permitOpen.contains(requested) ||
-        permitOpen.contains('*:${req.requestedPort}') ||
-        permitOpen.contains('${req.requestedHost}:*') ||
-        permitOpen.contains('*:*'))) {
+    // Check if this *daemon* allows connections to the requested host / port
+    if (!_permittedToOpen(permitOpen, req)) {
       // Notify noports client that this session is NOT connected
       await _notify(
         atKey: _createResponseAtKey(
@@ -475,11 +481,34 @@ class SshnpdImpl implements Sshnpd {
 
       return;
     }
+
+    // Check if this *client* is allowed connections to the requested host / port
+    if (!_permittedToOpen(auth.permitOpen, req)) {
+      // Notify noports client that this session is NOT connected
+      await _notify(
+        atKey: _createResponseAtKey(
+            requestingAtsign: requestingAtsign, sessionId: req.sessionId),
+        value: 'Client is not permitted connections to $requested',
+        sessionId: req.sessionId,
+      );
+
+      return;
+    }
+
     // Start our side of the tunnel
     await startNpt(
       requestingAtsign: requestingAtsign,
       req: req,
     );
+  }
+
+  bool _permittedToOpen (List<String> po, NptSessionRequest req) {
+    String requested = '${req.requestedHost}:${req.requestedPort}';
+    // Check if this daemon allows connections to the requested host / port
+    return (po.contains(requested) ||
+        po.contains('*:${req.requestedPort}') ||
+        po.contains('${req.requestedHost}:*') ||
+        po.contains('*:*'));
   }
 
   Future<void> startNpt({
@@ -1358,8 +1387,10 @@ class _NPAAuthChecker implements AuthChecker, AtRpcCallbacks {
             'Got non-success auth check response from ${sshnpd.policyManagerAtsign}'
             ' : $response');
         completer.complete(NPAAuthCheckResponse(
-            authorized: false,
-            message: response.message ?? 'Got non-success response $response'));
+          authorized: false,
+          message: response.message ?? 'Got non-success response $response',
+          permitOpen: [],
+        ));
         break;
     }
   }

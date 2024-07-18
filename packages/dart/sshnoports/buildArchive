@@ -17,6 +17,7 @@ echo "Compiling sshnpd"; dart compile exe --verbosity error bin/sshnpd.dart -o b
 echo "Compiling srvd"; dart compile exe --verbosity error bin/srvd.dart -o build/sshnp/srvd &
 echo "Compiling sshnp"; dart compile exe --verbosity error bin/sshnp.dart -o build/sshnp/sshnp &
 echo "Compiling npt"; dart compile exe --verbosity error bin/npt.dart -o build/sshnp/npt &
+echo "Compiling policy"; dart compile exe --verbosity error bin/policy.dart -o build/sshnp/policy &
 
 wait
 
