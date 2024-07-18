@@ -11,6 +11,8 @@
 
 #define TAG "srv - run"
 
+static int process_multiple_requests(const char *original, char **requests[], size_t *num_out_requests);
+
 static int parse_control_message(char *original, char **message_type, char **new_session_aes_key_string,
                                  char **new_session_aes_iv_string);
 
@@ -42,9 +44,12 @@ int run_srv(srv_params_t *params) {
 }
 
 int run_srv_daemon_side_single(srv_params_t *params) {
+
   chunked_transformer_t encrypter;
   chunked_transformer_t decrypter;
+
   int res;
+
   if (params->rv_e2ee == 1) {
     res = create_encrypter_and_decrypter(params->session_aes_key_string, params->session_aes_iv_string, &encrypter,
                                          &decrypter);
@@ -65,9 +70,13 @@ int run_srv_daemon_side_single(srv_params_t *params) {
 }
 
 int run_srv_daemon_side_multi(srv_params_t *params) {
+
   chunked_transformer_t encrypter;
   chunked_transformer_t decrypter;
+
+  char **requests = NULL;
   int res = 0;
+
   if (params->rv_e2ee == 1) {
     res = create_encrypter_and_decrypter(params->session_aes_key_string, params->session_aes_iv_string, &encrypter,
                                          &decrypter);
@@ -143,37 +152,55 @@ int run_srv_daemon_side_multi(srv_params_t *params) {
 
     char *messagetype = NULL, *new_session_aes_key_string = NULL, *new_session_aes_iv_string = NULL;
 
-    res = parse_control_message(buffer, &messagetype, &new_session_aes_key_string, &new_session_aes_iv_string);
+    atlogger_log(TAG, ATLOGGER_LOGGING_LEVEL_INFO, "requests buffer is: %s\n", buffer);
+    fprintf(stderr, "requests buffer is: %s\n", buffer);
+    fflush(stderr);
+
+    // First, check if the buffer contains just one or more requests
+    size_t nrequests = 0;
+    res = process_multiple_requests(buffer, &requests, &nrequests);
     if (res != 0) {
-      atlogger_log(TAG, ATLOGGER_LOGGING_LEVEL_DEBUG, "Failed to find message type and message body from: %s\n",
-                   buffer);
+      atlogger_log(TAG, ATLOGGER_LOGGING_LEVEL_DEBUG, "Failed to find any request from: %s\n", buffer);
       goto exit;
     }
-    atlogger_log(TAG, ATLOGGER_LOGGING_LEVEL_DEBUG, "\tRECV: %s:%s:%s\n", messagetype, new_session_aes_key_string,
-                 new_session_aes_iv_string);
 
-    if (strcmp(messagetype, "connect") == 0) {
-      chunked_transformer_t new_socket_encrypter;
-      chunked_transformer_t new_socket_decrypter;
-      atlogger_log(TAG, ATLOGGER_LOGGING_LEVEL_DEBUG,
-                   "run_srv_daemon_side_multi\n Control socket received %s request - \n creating new socketToSocket "
-                   "connection\n",
-                   messagetype);
-      // start socket_to_socket connection
-      res = create_encrypter_and_decrypter(new_session_aes_key_string, new_session_aes_iv_string, &new_socket_encrypter,
-                                           &new_socket_decrypter);
-      atlogger_log(TAG, INFO, "Starting socket to socket srv\n");
-      res = socket_to_socket(params, params->rvd_auth_string, &new_socket_encrypter, &new_socket_decrypter);
-    } else {
-      atlogger_log(TAG, ATLOGGER_LOGGING_LEVEL_DEBUG, "Unknown request to control socket: %s\n", buffer);
+    for (int i = 0; i < nrequests; i++) {
+      // Now process each of those requests
+      res = parse_control_message(requests[i], &messagetype, &new_session_aes_key_string, &new_session_aes_iv_string);
+      if (res != 0) {
+        atlogger_log(TAG, ATLOGGER_LOGGING_LEVEL_DEBUG, "Failed to find request type, aes key and/or iv from: %s\n",
+                     requests[i]);
+        goto exit;
+      }
+      atlogger_log(TAG, ATLOGGER_LOGGING_LEVEL_DEBUG, "\tRECV: %s:%s:%s\n", messagetype, new_session_aes_key_string,
+                   new_session_aes_iv_string);
+
+      if (strcmp(messagetype, "connect") == 0) {
+        chunked_transformer_t new_socket_encrypter;
+        chunked_transformer_t new_socket_decrypter;
+        atlogger_log(TAG, ATLOGGER_LOGGING_LEVEL_DEBUG,
+                     "run_srv_daemon_side_multi\n Control socket received %s request - \n creating new socketToSocket "
+                     "connection\n",
+                     messagetype);
+        // start socket_to_socket connection
+        res = create_encrypter_and_decrypter(new_session_aes_key_string, new_session_aes_iv_string,
+                                             &new_socket_encrypter, &new_socket_decrypter);
+        atlogger_log(TAG, INFO, "Starting socket to socket srv\n");
+        res = socket_to_socket(params, params->rvd_auth_string, &new_socket_encrypter, &new_socket_decrypter);
+      } else {
+        atlogger_log(TAG, ATLOGGER_LOGGING_LEVEL_DEBUG, "Unknown request to control socket: %s\n", requests[i]);
+      }
+
     }
-
-    // Clean buffer for next iteration
+    // Clean buffer for next iteration and free previous requests
     memset(buffer, 0, 4096);
+    free(requests);
+    requests = NULL;
   }
 
 exit:
   free(buffer);
+  if (requests) free(requests);
   mbedtls_net_close(&control_side.socket);
   if (params->rv_e2ee == 1) {
     mbedtls_aes_free(&encrypter.aes_ctr.ctx);
@@ -368,6 +395,35 @@ int aes_ctr_crypt_stream(const chunked_transformer_t *self, size_t len, const un
   }
 
   return 0;
+}
+
+static int process_multiple_requests(const char *original, char **requests[], size_t *num_out_requests) {
+  int ret = -1;
+  int num_requests = 0;
+
+  char *temp = NULL;
+  char *saveptr = original;
+  char **temp_requests = NULL;
+  size_t temp_count = 0;
+
+  while (temp = strtok_r(saveptr, "\n", &saveptr)) {
+    // realloc memory to save a new pointer
+    temp_requests = realloc(temp_requests, (temp_count + 1) * sizeof(char *));
+    if (!temp_requests) {
+      atlogger_log(TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "process_multiple_requests: Failed to allocate memory\n");
+      goto exit;
+    }
+
+    temp_requests[temp_count] = temp;
+    temp_count++;
+  }
+
+  *requests = temp_requests;
+  *num_out_requests = temp_count;
+
+  ret = 0;
+  goto exit;
+exit : { return ret; }
 }
 
 // connect:session_aes_key_string:session_aes_iv_string
