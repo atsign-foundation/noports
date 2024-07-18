@@ -118,7 +118,7 @@ int run_srv_daemon_side_multi(srv_params_t *params);
  * Note: params->bind_local_port is expected to be 0
  */
 int socket_to_socket(const srv_params_t *params, const char *auth_string, chunked_transformer_t *encrypter,
-                     chunked_transformer_t *decrypter);
+                     chunked_transformer_t *decrypter, bool is_srv_ready);
 
 /**
  * @brief Run a server to socket connection

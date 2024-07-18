@@ -59,7 +59,7 @@ int run_srv_daemon_side_single(srv_params_t *params) {
   }
 
   atlogger_log(TAG, INFO, "Starting socket to socket srv\n");
-  res = socket_to_socket(params, params->rvd_auth_string, &encrypter, &decrypter);
+  res = socket_to_socket(params, params->rvd_auth_string, &encrypter, &decrypter, false);
 
   if (params->rv_e2ee == 1) {
     mbedtls_aes_free(&encrypter.aes_ctr.ctx);
@@ -186,7 +186,7 @@ int run_srv_daemon_side_multi(srv_params_t *params) {
         res = create_encrypter_and_decrypter(new_session_aes_key_string, new_session_aes_iv_string,
                                              &new_socket_encrypter, &new_socket_decrypter);
         atlogger_log(TAG, INFO, "Starting socket to socket srv\n");
-        res = socket_to_socket(params, params->rvd_auth_string, &new_socket_encrypter, &new_socket_decrypter);
+        res = socket_to_socket(params, params->rvd_auth_string, &new_socket_encrypter, &new_socket_decrypter, true);
       } else {
         atlogger_log(TAG, ATLOGGER_LOGGING_LEVEL_DEBUG, "Unknown request to control socket: %s\n", requests[i]);
       }
@@ -210,7 +210,7 @@ exit:
 }
 
 int socket_to_socket(const srv_params_t *params, const char *auth_string, chunked_transformer_t *encrypter,
-                     chunked_transformer_t *decrypter) {
+                     chunked_transformer_t *decrypter, bool is_srv_ready) {
   side_t sides[2];
   side_hints_t hints_a = {1, 0, params->local_host, params->local_port};
   side_hints_t hints_b = {0, 0, params->host, params->port};
@@ -269,9 +269,12 @@ int socket_to_socket(const srv_params_t *params, const char *auth_string, chunke
     goto cancel;
   }
 
-  // signal to sshnpd that we are done
-  fprintf(stderr, "%s\n", SRV_COMPLETION_STRING);
-  fflush(stderr);
+  if (!is_srv_ready) {
+    // signal to sshnpd that we are done
+    fprintf(stderr, "%s\n", SRV_COMPLETION_STRING);
+    fflush(stderr);
+  }
+  
   // Wait for all threads to finish and join them back to the main thread
   int retval = 0;
 
