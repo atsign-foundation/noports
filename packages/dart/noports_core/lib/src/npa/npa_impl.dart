@@ -72,7 +72,7 @@ class NPAImpl implements NPA {
       var sshnpa = NPAImpl(
         atClient: atClient,
         homeDirectory: p.homeDirectory,
-        daemonAtsigns: p.daemonAtsigns,
+        daemonAtsigns: daemonAtsigns ?? p.daemonAtsigns,
         handler: handler,
       );
 

@@ -85,7 +85,7 @@ jobs:
           dart compile exe bin/activate_cli.dart -v -o sshnp/at_activate${{ matrix.ext }}
           dart compile exe bin/sshnp.dart -v -o sshnp/sshnp${{ matrix.ext }}
           dart compile exe bin/npt.dart -v -o sshnp/npt${{ matrix.ext }}
-          dart compile exe bin/policy.dart -v -o sshnp/policy${{ matrix.ext }}
+          dart compile exe bin/npa_file.dart -v -o sshnp/npa_file${{ matrix.ext }}
           dart compile exe bin/sshnpd.dart -v -o sshnp/sshnpd${{ matrix.ext }}
           dart compile exe bin/srv.dart -v -o sshnp/srv${{ matrix.ext }}
       - if: ${{ matrix.os != 'windows-latest' }}
@@ -125,7 +125,7 @@ jobs:
             --prefix "com.atsign." \
             --timestamp \
             -v \
-            sshnp/{sshnp,sshnpd,srv,srvd,at_activate,debug/srvd,npt,policy}
+            sshnp/{sshnp,sshnpd,srv,srvd,at_activate,debug/srvd,npt,npa_file}
       # zip the build
       - if: ${{ matrix.os == 'macos-13' || matrix.os == 'macos-14' }}
         run: ditto -c -k --keepParent sshnp tarball/${{ matrix.output-name }}.zip

@@ -50,7 +50,7 @@ class NPAAuthCheckResponse {
     return NPAAuthCheckResponse(
         authorized: json['authorized'],
         message: json['message'],
-        permitOpen: json['permitOpen']);
+        permitOpen: List<String>.from(json['permitOpen']));
   }
 
   Map<String, dynamic> toJson() => {
