@@ -502,7 +502,7 @@ class SshnpdImpl implements Sshnpd {
     );
   }
 
-  bool _permittedToOpen (List<String> po, NptSessionRequest req) {
+  bool _permittedToOpen(List<String> po, NptSessionRequest req) {
     String requested = '${req.requestedHost}:${req.requestedPort}';
     // Check if this daemon allows connections to the requested host / port
     return (po.contains(requested) ||

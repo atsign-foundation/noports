@@ -129,6 +129,7 @@ class FileBasedPolicy implements NPARequestHandler {
   }
 
   // TODO move to unit tests
+  // ignore: unused_element
   _randomChecks() {
     doAuthCheck(NPAAuthCheckRequest(
       daemonAtsign: '@baboonblue18',
