@@ -25,7 +25,8 @@
 
 void handle_ssh_request(atclient *atclient, pthread_mutex_t *atclient_lock, sshnpd_params *params,
                         bool *is_child_process, atclient_monitor_message *message, char *home_dir, FILE *authkeys_file,
-                        char *authkeys_filename, atchops_rsakey_privatekey signing_key) {
+                        char *authkeys_filename, atchops_rsakey_privatekey signing_key,
+                        struct sshnpd_process_queue *pids) {
   int res = 0;
   char *requesting_atsign = message->notification.from;
 
@@ -434,8 +435,8 @@ void handle_ssh_request(atclient *atclient, pthread_mutex_t *atclient_lock, sshn
       free(session_iv_encrypted);
       free_session_base64 = true;
     } // rsa2048 - allocates (session_iv_base64, session_aes_key_base64)
-  }   // case 7
-  }   // switch
+  } // case 7
+  } // switch
 
   if (!is_valid) {
     atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR,
@@ -479,7 +480,22 @@ void handle_ssh_request(atclient *atclient, pthread_mutex_t *atclient_lock, sshn
   } else if (pid > 0) {
 
     // parent process
-    waitpid(pid, &status, WNOHANG); // Don't wait for srv
+    waitpid(pid, &status, WNOHANG); // Don't wait for srv - we want it to be running in the bg
+    if (WIFEXITED(status)) {
+      goto cancel;
+    }
+
+    pids->processes = realloc(pids->processes, sizeof(pid_t) * (pids->len + 1));
+    if (pids->processes == NULL) {
+      // we leak ownership of srv here to the system... not much can be done if we run out of memory to track the
+      // process though
+      // TODO  - what should sshnpd do at this state?
+      // - shutdown everything?
+      // - try to kill the process we don't have enough memory to track
+      // - just move on and acccept that the process is srv and will self-shutdown eventually
+      goto cancel;
+    }
+    pids->processes[pids->len++] = pid;
 
     char *identifier = cJSON_GetStringValue(session_id);
     cJSON *final_res_payload = cJSON_CreateObject();
@@ -566,12 +582,12 @@ void handle_ssh_request(atclient *atclient, pthread_mutex_t *atclient_lock, sshn
       atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_DEBUG, "Released the atclient lock\n");
     }
 
-  clean_res : { free(keyname); }
-  clean_final_res_value : {
+  clean_res: { free(keyname); }
+  clean_final_res_value: {
     atclient_atkey_free(&final_res_atkey);
     free(final_res_value);
   }
-  clean_json : {
+  clean_json: {
     cJSON_Delete(final_res_envelope);
     cJSON_free(signing_input2);
   }
