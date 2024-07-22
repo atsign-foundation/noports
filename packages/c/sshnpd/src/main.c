@@ -322,8 +322,8 @@ int main(int argc, char **argv) {
   }
 
   // 12. Create child process queue
-  srv_pids.size = 1;
-  srv_pids.processes = malloc(sizeof(pid_t) * srv_pids.size);
+  srv_pids.len = 0;
+  srv_pids.processes = malloc(sizeof(pid_t) * srv_pids.len);
   if (srv_pids.processes == NULL) {
     goto clean_device_info_keys;
   }
@@ -522,7 +522,7 @@ void main_loop() {
         case NK_SSH_REQUEST:
           atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_DEBUG, "Executing handle_ssh_request\n");
           handle_ssh_request(&worker, &atclient_lock, &params, &is_child_process, &message, home_dir, authkeys_file,
-                             authkeys_filename, signingkey);
+                             authkeys_filename, signingkey, &srv_pids);
           if (is_child_process) {
             atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_DEBUG, "Exiting child process\n");
             atclient_monitor_message_free(&message);
