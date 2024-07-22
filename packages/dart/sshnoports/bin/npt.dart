@@ -340,6 +340,18 @@ void main(List<String> args) async {
           if (!keepAlive) {
             throw SshnpError(e.toString());
           }
+        } on SshnpError catch (e) {
+          logProgress(e.toString());
+          await npt.close();
+          if (!keepAlive) {
+            rethrow;
+          }
+        } catch (e) {
+          logProgress(e.toString());
+          await npt.close();
+          if (!keepAlive) {
+            rethrow;
+          }
         }
 
         await npt.done;
