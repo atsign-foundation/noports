@@ -29,18 +29,16 @@ void main(List<String> args) async {
 /// - Daemons send the daemonAtsign, clientAtSign, deviceName and deviceGroup to policy service
 /// - The policy service needs to check if the clientAtsign is
 ///   - 1. permitted to talk to this daemonAtsign
-///     - --> is there a value at permissions[@client][@daemon]
+///     - --> is there a value at permissions[@client]['daemons'][@daemon]
 ///   - and
 ///   - 2a. permitted to talk to this daemon's deviceName
-///      - --> is there a value at permissions[@client][@daemon]['deviceNames'][$deviceName]
+///      - --> is there a value at permissions[@client]['daemons'][@daemon]['deviceNames'][$deviceName]
 ///   - or
 ///   - 2b. permitted to talk to this daemon's deviceGroupName
-///     - --> is there a value at permissions[@client][@daemon]['deviceGroupNames'][$deviceGroupName]
+///     - --> is there a value at permissions[@client]['daemons'][@daemon]['deviceGroupNames'][$deviceGroupName]
 ///
-/// - The value at 2a or 2b should be a list of permitOpens (hostMask:portMask)
+/// - The value at 2a or 2b will be a list of permitOpens (hostMask:portMask)
 ///
-/// We'll start with a map exactly as described above. By definition, it will be
-/// fully denormalized. We will implement a more normalized structure later.
 class FileBasedPolicy implements NPARequestHandler {
   YamlMap yaml;
 
