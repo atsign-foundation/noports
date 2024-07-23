@@ -1,4 +1,4 @@
-# ⚙ Additional Configuration
+# ⚙️ Additional Configuration
 
 ## Additional Options
 
@@ -61,7 +61,7 @@ Enable this flag to pass the `-o, --local-ssh-options` to the initial ssh tunnel
 
 ### --ssh-client
 
-Which ssh-client to use, `openssh` (default) or `pure-dart`.
+Which ssh-client to use, `openssh` (default) or `dart`.
 
 ### --legacy-daemon
 
