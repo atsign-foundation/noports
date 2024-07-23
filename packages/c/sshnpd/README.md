@@ -51,7 +51,7 @@ With `gcc` (disables warnings found in mbedtls' tests):
 
 ```bash
 cd packages/c/sshnpd
-cmake -B build -S . -DBUILD_SHARED_LIBS=off -DCMAKE_C_COMPILER=gcc -DCMAKE_C_FLAGS="-Wno-calloc-transposed-args"
+cmake -B build -S . -DBUILD_SHARED_LIBS=off -DCMAKE_C_COMPILER=gcc -DCMAKE_C_FLAGS="-Wno-calloc-transposed-args -Wno-error -pthread -lrt"
 cmake --build build
 ```
 
@@ -59,7 +59,7 @@ With clang:
 
 ```bash
 cd packages/c/sshnpd
-cmake -B build -S . -DBUILD_SHARED_LIBS=off -DCMAKE_C_COMPILER=clang
+cmake -B build -S . -DBUILD_SHARED_LIBS=off -DCMAKE_C_COMPILER=clang -DCMAKE_C_FLAGS="-Wno-error -pthread -lrt"
 cmake --build build
 ```
 
