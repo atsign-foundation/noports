@@ -33,13 +33,13 @@ int run_srv(srv_params_t *params) {
     // res = server_to_socket(params, params->rvd_auth_string, &encrypter, &decrypter);
 
     // client side
-    // if (params->multi == 0) {
-    //   res = run_srv_client_side_single(params);
-    // } else {
-    //   // todo: check aes key and iv strings != null
-    //   // ...
-    //   res = run_srv_client_side_multi(params);
-    // }
+    if (params->multi == 0) {
+      // res = run_srv_client_side_single(params);
+    } else {
+      // todo: check aes key and iv strings != null
+      // ...
+      // res = run_srv_client_side_multi(params);
+    }
   }
 }
 
@@ -54,7 +54,7 @@ int run_srv_daemon_side_single(srv_params_t *params) {
     res = create_encrypter_and_decrypter(params->session_aes_key_string, params->session_aes_iv_string, &encrypter,
                                          &decrypter);
     if (res != 0) {
-      // err
+      atlogger_log(TAG, ERROR, "run_srv_daemon_side_single: Error creating new encrypter and decrypter: %d\n", res);
     }
   }
 
@@ -81,7 +81,7 @@ int run_srv_daemon_side_multi(srv_params_t *params) {
     res = create_encrypter_and_decrypter(params->session_aes_key_string, params->session_aes_iv_string, &encrypter,
                                          &decrypter);
     if (res != 0) {
-      // err
+      atlogger_log(TAG, ERROR, "run_srv_daemon_side_multi: Error creating new encrypter and decrypter: %d\n", res);
     }
   }
 
