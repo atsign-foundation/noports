@@ -11,7 +11,7 @@
 
 #define TAG "srv - run"
 
-static int process_multiple_requests(const char *original, char **requests[], size_t *num_out_requests);
+static int process_multiple_requests(char *original, char **requests[], size_t *num_out_requests);
 
 static int parse_control_message(char *original, char **message_type, char **new_session_aes_key_string,
                                  char **new_session_aes_iv_string);
