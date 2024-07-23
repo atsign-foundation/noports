@@ -103,7 +103,7 @@ int run_srv_daemon_side_multi(srv_params_t *params) {
 
   // send the auth string to the other side
   if (params->rv_auth == 1) {
-    atlogger_log(TAG, INFO, "Sending auth string: %s\n", (unsigned char *)params->rvd_auth_string);
+    atlogger_log(TAG, DEBUG, "Sending auth string: %s\n", (unsigned char *)params->rvd_auth_string);
     int len = strlen(params->rvd_auth_string);
 
     int slen = mbedtls_net_send(&control_side.socket, (unsigned char *)params->rvd_auth_string, len);
@@ -152,9 +152,7 @@ int run_srv_daemon_side_multi(srv_params_t *params) {
 
     char *messagetype = NULL, *new_session_aes_key_string = NULL, *new_session_aes_iv_string = NULL;
 
-    atlogger_log(TAG, ATLOGGER_LOGGING_LEVEL_INFO, "requests buffer is: %s\n", buffer);
-    fprintf(stderr, "requests buffer is: %s\n", buffer);
-    fflush(stderr);
+    atlogger_log(TAG, DEBUG, "requests buffer is: %s\n", buffer);
 
     // First, check if the buffer contains just one or more requests
     size_t nrequests = 0;
@@ -323,7 +321,7 @@ int server_to_socket(const srv_params_t *params, const char *auth_string, chunke
 
 int create_encrypter_and_decrypter(const char *session_aes_key_string, const char *session_aes_iv_string,
                                    chunked_transformer_t *encrypter, chunked_transformer_t *decrypter) {
-  int res;
+  int res = 0;
   atlogger_log(TAG, INFO, "Configuring encrypter/decrypter for srv\n");
 
   // Temporary buffer for decoding the key
