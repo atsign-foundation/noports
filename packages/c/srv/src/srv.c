@@ -379,6 +379,8 @@ int create_encrypter_and_decrypter(const char *session_aes_key_string, const cha
   // Set the transform functions
   encrypter->transform = aes_ctr_crypt_stream;
   decrypter->transform = aes_ctr_crypt_stream;
+
+  return res;
 }
 
 int aes_ctr_crypt_stream(const chunked_transformer_t *self, size_t len, const unsigned char *input,
