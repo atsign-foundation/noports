@@ -398,7 +398,7 @@ int aes_ctr_crypt_stream(const chunked_transformer_t *self, size_t len, const un
   return 0;
 }
 
-static int process_multiple_requests(const char *original, char **requests[], size_t *num_out_requests) {
+static int process_multiple_requests(char *original, char **requests[], size_t *num_out_requests) {
   int ret = -1;
   int num_requests = 0;
 
