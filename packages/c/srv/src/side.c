@@ -63,6 +63,7 @@ void srv_link_sides(side_t *side_a, side_t *side_b, int fds[2]) {
 }
 
 void srv_side_free(side_t *side) { mbedtls_net_free(&side->socket); }
+
 void *srv_side_handle(void *side) {
   side_t *s = (side_t *)side;
 
@@ -70,6 +71,8 @@ void *srv_side_handle(void *side) {
 
   unsigned char *buffer = malloc(BUFFER_LEN * sizeof(unsigned char));
   memset(buffer, 0, BUFFER_LEN * sizeof(unsigned char));
+
+  unsigned char *output = NULL;
 
   if (s->is_server == 0) {
     size_t len;
@@ -83,14 +86,21 @@ void *srv_side_handle(void *side) {
       }
       fflush(stdout);
       if (s->transformer != NULL) {
-        unsigned char *output = malloc(BUFFER_LEN * sizeof(unsigned char));
+        output = malloc(BUFFER_LEN * sizeof(unsigned char));
+        if (output == NULL) {
+          atlogger_log(tag, ERROR, "Error allocating memory for output: %d", len);
+          break;
+        }
         memset(output, 0, BUFFER_LEN * sizeof(unsigned char));
         res = (int)s->transformer->transform(s->transformer, len, buffer, output);
         if (res != 0) {
+          atlogger_log(tag, ERROR, "Error decrypting buffer and storing in output: %d", len);
+          free(output);
           break;
         }
         free(buffer);
         buffer = output;
+        output = NULL;
       }
 
       if (s->other->is_server == 0) {
@@ -106,7 +116,9 @@ void *srv_side_handle(void *side) {
       } else {
         halt_if_cant_bind_local_port();
       }
+      memset(buffer, 0, BUFFER_LEN * sizeof(unsigned char));
     }
+    if (output) free(output);
     free(buffer);
     mbedtls_net_close(&s->socket);
   } else {
