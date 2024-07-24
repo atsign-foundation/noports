@@ -15,10 +15,18 @@ npt -f @alice_client -t @alice_device -d my_server -r @rv_am -p 445 \
 NOTE Make sure the sshnpd daemon is allowing port 445 to the SMB file server see Basic Usage for details.
 {% endhint %}
 
-Now you can mount the SMB share locally using the file explorer on Windows or the file app on MacOs
+Now you can mount the SMB share locally using the finder app ( Go->Connect to server) on MacOs
 
-<figure><img src="../.gitbook/assets/smba.png" alt=""><figcaption></figcaption></figure>
+<figure><img src="../.gitbook/assets/Screenshot 2024-07-03 at 19.52.04.png" alt=""><figcaption></figcaption></figure>
 
 Once mounted you can use the file share as normal, as you dismount the file share the NPT command will disconnect.
+
+
+
+{% hint style="info" %}
+Windows mounting on a non-standard port is currently not supported by Microsoft but they are working on it.
+
+If you need this functionality, it is possible but fiddly to set up, contact us if you want to know how.
+{% endhint %}
 
 ### To learn more about NPT
