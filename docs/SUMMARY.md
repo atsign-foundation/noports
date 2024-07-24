@@ -39,4 +39,5 @@
   * [🖥️ RDP](noports-tunnel/rdp.md)
   * [🗄️ SMB](noports-tunnel/smb.md)
 * [📔 Developer Notes](developer-notes/README.md)
+  * [Sequence Diagram](developer-notes/sequence-diagram.md)
   * [Under The Hood](developer-notes/underthehood.md)
