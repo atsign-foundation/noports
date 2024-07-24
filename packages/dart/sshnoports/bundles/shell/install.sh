@@ -110,7 +110,7 @@ usage() {
 setup_authorized_keys() {
   mkdir -p "$user_ssh_dir"
   touch "$user_ssh_dir/authorized_keys"
-  chown $user:$user "$user_ssh_dir/authorized_keys"
+  chown $user:$user "$user_ssh_dir/authorized_keys" || chown $user "$user_ssh_dir/authorized_keys"
   chmod 644 "$user_ssh_dir/authorized_keys"
 }
 
@@ -150,12 +150,12 @@ install_single_binary() {
   then
     if ! [ -d "$user_bin_dir" ]; then
       mkdir -p "$user_bin_dir"
-      chown -R $user:$user "$user_bin_dir"
+      chown -R $user:$user "$user_bin_dir" || chown -R $user "$user_bin_dir"
     fi
 
     if [ -f "$dest/$1" ]; then
       ln -sf "$dest/$1" "$user_bin_dir/$1"
-      chown $user:$user "$user_bin_dir/$1"
+      chown $user:$user "$user_bin_dir/$1" || chown $user "$user_bin_dir/$1"
       echo "=> Linked $user_bin_dir/$1 to $dest/$1"
     else
       echo "Failed to link $user_bin_dir/$1 to $dest/$1:"
