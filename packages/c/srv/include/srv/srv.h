@@ -81,6 +81,14 @@ typedef struct _chunked_transformer {
   };
 } chunked_transformer_t;
 
+typedef struct {
+    const srv_params_t *params;
+    const char *auth_string;
+    chunked_transformer_t *encrypter;
+    chunked_transformer_t *decrypter;
+    bool is_srv_ready;
+} socket_to_socket_params_t;
+
 /**
  * @brief run srv with some parameters
  *

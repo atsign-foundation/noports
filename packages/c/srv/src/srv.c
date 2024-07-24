@@ -11,6 +11,8 @@
 
 #define TAG "srv - run"
 
+static void *run_socket_to_socket(void *args);
+
 static int process_multiple_requests(char *original, char **requests[], size_t *num_out_requests);
 
 static int parse_control_message(char *original, char **message_type, char **new_session_aes_key_string,
@@ -174,21 +176,52 @@ int run_srv_daemon_side_multi(srv_params_t *params) {
                    new_session_aes_iv_string);
 
       if (strcmp(messagetype, "connect") == 0) {
-        chunked_transformer_t new_socket_encrypter;
-        chunked_transformer_t new_socket_decrypter;
+        chunked_transformer_t *new_socket_encrypter = malloc(sizeof(chunked_transformer_t));
+        chunked_transformer_t *new_socket_decrypter = malloc(sizeof(chunked_transformer_t));
+        if (new_socket_encrypter == NULL || new_socket_decrypter == NULL) {
+          atlogger_log(TAG, ERROR, "Failed to allocate memory for new enc/dec\n");
+          free(new_socket_encrypter);
+          free(new_socket_decrypter);
+          goto exit;
+        }
         atlogger_log(TAG, ATLOGGER_LOGGING_LEVEL_DEBUG,
                      "run_srv_daemon_side_multi\n Control socket received %s request - \n creating new socketToSocket "
                      "connection\n",
                      messagetype);
         // start socket_to_socket connection
         res = create_encrypter_and_decrypter(new_session_aes_key_string, new_session_aes_iv_string,
-                                             &new_socket_encrypter, &new_socket_decrypter);
+                                             new_socket_encrypter, new_socket_decrypter);
         atlogger_log(TAG, INFO, "Starting socket to socket srv\n");
-        res = socket_to_socket(params, params->rvd_auth_string, &new_socket_encrypter, &new_socket_decrypter, true);
+
+        pthread_t sts_thread;
+        socket_to_socket_params_t *sts_thread_params = malloc(sizeof(socket_to_socket_params_t));
+        if (sts_thread_params == NULL) {
+          atlogger_log(TAG, ERROR, "Failed to allocate memory for thread parameters\n");
+          free(new_socket_encrypter);
+          free(new_socket_decrypter);
+          goto exit;
+        }
+
+        sts_thread_params->params = params;
+        sts_thread_params->auth_string = params->rvd_auth_string;
+        sts_thread_params->encrypter = new_socket_encrypter;
+        sts_thread_params->decrypter = new_socket_decrypter;
+        sts_thread_params->is_srv_ready = true;
+
+        res = pthread_create(&sts_thread, NULL, run_socket_to_socket, (void *)sts_thread_params);
+        if (res != 0) {
+          atlogger_log(TAG, ERROR, "Failed to create thread: %d\n", res);
+          free(new_socket_encrypter);
+          free(new_socket_decrypter);
+          free(sts_thread_params);
+          goto exit;
+        }
+
+        pthread_detach(sts_thread);
+
       } else {
         atlogger_log(TAG, ATLOGGER_LOGGING_LEVEL_DEBUG, "Unknown request to control socket: %s\n", requests[i]);
       }
-
     }
     // Clean buffer for next iteration and free previous requests
     memset(buffer, 0, 4096);
@@ -198,7 +231,8 @@ int run_srv_daemon_side_multi(srv_params_t *params) {
 
 exit:
   free(buffer);
-  if (requests) free(requests);
+  if (requests)
+    free(requests);
   mbedtls_net_close(&control_side.socket);
   if (params->rv_e2ee == 1) {
     mbedtls_aes_free(&encrypter.aes_ctr.ctx);
@@ -272,7 +306,7 @@ int socket_to_socket(const srv_params_t *params, const char *auth_string, chunke
     fprintf(stderr, "%s\n", SRV_COMPLETION_STRING);
     fflush(stderr);
   }
-  
+
   // Wait for all threads to finish and join them back to the main thread
   int retval = 0;
 
@@ -466,4 +500,16 @@ static int parse_control_message(char *original, char **message_type, char **new
   ret = 0;
   goto exit;
 exit : { return ret; }
+}
+
+static void *run_socket_to_socket(void *args) {
+  socket_to_socket_params_t *sts_thread_params = (socket_to_socket_params_t *)args;
+  socket_to_socket(sts_thread_params->params, sts_thread_params->auth_string, sts_thread_params->encrypter,
+                   sts_thread_params->decrypter, sts_thread_params->is_srv_ready);
+
+  free(sts_thread_params->encrypter);
+  free(sts_thread_params->decrypter);
+  free(sts_thread_params);
+
+  return NULL;
 }
