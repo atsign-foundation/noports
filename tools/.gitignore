@@ -1,1 +1,6 @@
 macos-signing.env
+
+#.NET Related
+.vs
+bin
+obj

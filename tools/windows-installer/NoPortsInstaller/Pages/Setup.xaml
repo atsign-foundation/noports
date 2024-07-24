@@ -1,0 +1,61 @@
+﻿<Page x:Class="NoPortsInstaller.Setup"
+      xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+      xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+      xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+      xmlns:local="clr-namespace:NoPortsInstaller"
+      mc:Ignorable="d" 
+      d:DesignHeight="350" d:DesignWidth="500"
+      Title="Setup">
+
+    <Grid>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="309*"/>
+            <ColumnDefinition Width="0*"/>
+            <ColumnDefinition Width="191*"/>
+        </Grid.ColumnDefinitions>
+        <Rectangle HorizontalAlignment="Left" Height="350" VerticalAlignment="Center" Width="162" Fill="#FF252526" Margin="-8,0,0,0">
+            <Rectangle.Stroke>
+                <LinearGradientBrush EndPoint="0.5,1" StartPoint="0.5,0">
+                    <GradientStop Color="Black"/>
+                    <GradientStop Color="White" Offset="1"/>
+                </LinearGradientBrush>
+            </Rectangle.Stroke>
+        </Rectangle>
+        <Rectangle HorizontalAlignment="Left" Stroke="Black" VerticalAlignment="Center" Height="1" Width="1">
+            <Rectangle.Fill>
+                <ImageBrush ImageSource="/NoPortsDark.png"/>
+            </Rectangle.Fill>
+        </Rectangle>
+        <Image HorizontalAlignment="Left" Height="178" Margin="20,0,0,0" VerticalAlignment="Center" Width="122" Source="/NoPortsDark.png" Stretch="Fill">
+            <Image.OpacityMask>
+                <LinearGradientBrush EndPoint="0.5,1" StartPoint="0.5,0">
+                    <GradientStop Color="Black"/>
+                    <GradientStop Color="White" Offset="1"/>
+                </LinearGradientBrush>
+            </Image.OpacityMask>
+        </Image>
+        <Label Content="NoPorts Installation" HorizontalAlignment="Left" Height="28" VerticalAlignment="Top" Width="194" Margin="168,10,0,0" FontSize="16" FontWeight="Bold" Grid.ColumnSpan="3"/>
+        <Label Content="Choose the installation directory" HorizontalAlignment="Left" Height="27" VerticalAlignment="Top" Width="199" Margin="168,45,0,0" Grid.ColumnSpan="3"/>
+        <ComboBox x:Name="Directory" HorizontalAlignment="Left" Margin="168,77,0,0" VerticalAlignment="Top" Width="254" SelectedIndex="0" Grid.ColumnSpan="3" IsEditable="True" IsReadOnly="True" Height="22">
+            <ComboBox.Background>
+                <LinearGradientBrush EndPoint="0,1">
+                    <GradientStop Color="#FFF0F0F0"/>
+                    <GradientStop Color="#FFE5E5E5" Offset="1"/>
+                    <GradientStop Color="#FFEDEDED" Offset="0.259"/>
+                </LinearGradientBrush>
+            </ComboBox.Background>
+            <ComboBoxItem Content="C:\Program Files\NoPorts\"/>
+        </ComboBox>
+        <Button x:Name="OpenDialogButton" Content=". . ." HorizontalAlignment="Left" Height="22" Margin="132,77,0,0" VerticalAlignment="Top" Width="40" Foreground="#FF423F3F" Click="OpenDialogButton_Click" Grid.Column="2"/>
+        <CheckBox x:Name="DeviceInstallType" Content="Device Install" HorizontalAlignment="Left" Height="27" VerticalAlignment="Top" Width="113" Margin="182,144,0,0"  Click="DeviceInstallType_Click"/>
+        <CheckBox x:Name="ClientInstallType" Content="Client Install" HorizontalAlignment="Left" Height="27" VerticalAlignment="Top" Width="113" Margin="182,171,0,0" RenderTransformOrigin="0.498,-0.368"  Click="ClientInstallType_Click"/>
+        <CheckBox x:Name="CustomInstallType" Content="Custom" HorizontalAlignment="Left" Height="27" VerticalAlignment="Top" Width="113" Margin="182,198,0,0" RenderTransformOrigin="0.498,-0.368" />
+
+
+
+
+        <Button x:Name="NextPageButton" Content="Next" HorizontalAlignment="Left" Height="24" Margin="120,297,0,0" VerticalAlignment="Top" Width="52" RenderTransformOrigin="0.536,-0.009" Click="NextPageButton_Click" Grid.Column="2" IsEnabled="False"/>
+        <Label x:Name="ErrorMessage" Content="Select an install type:" HorizontalAlignment="Left" Margin="168,111,0,0" VerticalAlignment="Top" Grid.ColumnSpan="3" Height="28" Width="258" Background="Transparent" Foreground="#FF211E1E"/>
+    </Grid>
+</Page>
