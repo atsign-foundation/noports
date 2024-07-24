@@ -1,8 +1,8 @@
 #ifndef SSHNPD_H
 #define SSHNPD_H
+#include <unistd.h>
 
 #define SSHNPD_VERSION "0.1.0"
-
 /* Windows Definitions */
 #ifdef _WIN32
 #define HOMEVAR "USERPROFILE"
@@ -30,6 +30,11 @@ enum notification_key {
   NK_PING,
   NK_SSH_REQUEST,
   NK_NPT_REQUEST,
+};
+
+struct sshnpd_process_queue {
+  size_t len;
+  pid_t *processes;
 };
 
 #define NOTIFICATION_KEYS_LEN 5

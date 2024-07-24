@@ -29,6 +29,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/errno.h>
+#include <sys/wait.h>
 #include <unistd.h>
 
 #define FILENAME_BUFFER_SIZE 500
@@ -83,6 +84,9 @@ static void sig_handler(int _) {
     atlogger_log("sig_handler", ATLOGGER_LOGGING_LEVEL_WARN, "Received SIGINT again, exiting forcefully\n");
   }
 }
+
+// Queue for all srv processes
+static struct sshnpd_process_queue srv_pids = {0, 0, NULL};
 
 int main(int argc, char **argv) {
   int res = 0;
@@ -202,10 +206,6 @@ int main(int argc, char **argv) {
     goto cancel_atclient;
   }
 
-  // pipe to communicate with the threads we will create in 9 & 10
-  int fds[2];
-  pipe(fds);
-
   cJSON *ping_response_json = cJSON_CreateObject();
 
   cJSON_AddItemToObject(ping_response_json, "devicename", cJSON_CreateString(params.device));
@@ -257,13 +257,13 @@ int main(int argc, char **argv) {
     goto clean_atkeys;
   }
 
-  for(int i = 0; i < params.manager_list_len; i++) {
+  for (int i = 0; i < params.manager_list_len; i++) {
     atclient_atkey_init(infokeys + i);
     atclient_atkey_init(usernamekeys + i);
   }
 
-  struct refresh_device_entry_params refresh_params = {&worker,       &atclient_lock, &params,
-                                                       ping_response, username,       &should_run, infokeys, usernamekeys};
+  struct refresh_device_entry_params refresh_params = {&worker,  &atclient_lock, &params,  ping_response,
+                                                       username, &should_run,    infokeys, usernamekeys};
   res = pthread_create(&refresh_tid, NULL, refresh_device_entry, (void *)&refresh_params);
   if (res != 0) {
     atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to start refresh device entry thread\n");
@@ -322,12 +322,22 @@ int main(int argc, char **argv) {
     goto close_authkeys;
   }
 
-  // 12. Main notification handler loop
+  // 12. Create child process queue
+  srv_pids.len = 0;
+  srv_pids.processes = malloc(sizeof(pid_t) * srv_pids.len);
+  if (srv_pids.processes == NULL) {
+    goto clean_device_info_keys;
+  }
+
+  // 13. Main notification handler loop
   atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_INFO, "Starting main loop\n");
   main_loop();
   atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_INFO, "Exited main loop\n");
 
-  for(int i = 0; i < params.manager_list_len; i++) {
+  free(srv_pids.processes);
+
+clean_device_info_keys:
+  for (int i = 0; i < params.manager_list_len; i++) {
     atclient_atkey_free(infokeys + i);
     atclient_atkey_free(usernamekeys + i);
   }
@@ -348,7 +358,6 @@ cancel_refresh:
   } else {
     atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_DEBUG, "Joined device entry refresh thread\n");
   }
-
 cancel_atclient:
   if (free_ping_response) {
     free(ping_response);
@@ -390,6 +399,18 @@ void main_loop() {
   while (should_run) {
     atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_DEBUG, "Waiting for next monitor thread message\n");
     atclient_monitor_message_init(&message);
+
+    // Loop through background instances of sshnpd to see if they are ready to exit
+    int status;
+    for (int i = 0; i < srv_pids.len; i++) {
+      waitpid(srv_pids.processes[i], &status, WNOHANG); // Don't wait for srv - we want it to be running in the bg
+      if (WIFEXITED(status)) {
+        atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_DEBUG, "Exited srv process: %d\n", srv_pids.processes[i]);
+        srv_pids.processes = realloc(srv_pids.processes, sizeof(pid_t) * --srv_pids.len);
+      }
+    }
+
+    // Read the next monitor message
     res = atclient_monitor_read(&monitor_ctx, &worker, &message, &monitor_hooks);
 
     atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_DEBUG, "Received message of type: %d\n", message.type);
@@ -502,7 +523,7 @@ void main_loop() {
         case NK_SSH_REQUEST:
           atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_DEBUG, "Executing handle_ssh_request\n");
           handle_ssh_request(&worker, &atclient_lock, &params, &is_child_process, &message, home_dir, authkeys_file,
-                             authkeys_filename, signingkey);
+                             authkeys_filename, signingkey, &srv_pids);
           if (is_child_process) {
             atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_DEBUG, "Exiting child process\n");
             atclient_monitor_message_free(&message);
