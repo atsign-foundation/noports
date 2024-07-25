@@ -45,12 +45,12 @@ jobs:
       - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
       # compile binaries
       - run: |
-          cmake -B build -S . -DBUILD_SHARED_LIBS=off -DCMAKE_C_COMPILER=clang -DCMAKE_C_FLAGS="-Wno-error -pthread -lrt"
+          cmake -B build -S . -DBUILD_SHARED_LIBS=off -DCMAKE_C_COMPILER=gcc -DCMAKE_C_FLAGS="-Wno-error -Wno-calloc-transposed-args -Wno-float-conversion -pthread -lrt"
           cmake --build build
           mkdir tarball
           mv build/sshnpd .
       # zip the build
-      - if: ${{ matrix.os == 'macOS-latest' || matrix.os == 'macos-14'}}
+      - if: ${{ matrix.os == 'macos-13' || matrix.os == 'macos-14'}}
         run:
           ditto -c -k --keepParent sshnpd tarball/${{ matrix.output-name }}.zip
       - if: ${{ matrix.os == 'ubuntu-latest' }}
