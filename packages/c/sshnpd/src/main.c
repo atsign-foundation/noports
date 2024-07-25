@@ -406,7 +406,8 @@ void main_loop() {
       waitpid(srv_pids.processes[i], &status, WNOHANG); // Don't wait for srv - we want it to be running in the bg
       if (WIFEXITED(status)) {
         atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_DEBUG, "Exited srv process: %d\n", srv_pids.processes[i]);
-        srv_pids.processes = realloc(srv_pids.processes, sizeof(pid_t) * --srv_pids.len);
+        srv_pids.processes[i] = srv_pids.processes[--srv_pids.len]; // move last element into the newly free slot
+        srv_pids.processes = realloc(srv_pids.processes, sizeof(pid_t) * srv_pids.len);
       }
     }
 
