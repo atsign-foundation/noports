@@ -217,6 +217,7 @@ namespace NoPortsInstaller
             ServiceInstaller.InstallAndStart("sshnpd", "sshnpd", InstallDirectory + @"\SshnpdService.exe");
             //ServiceInstaller.CreateUninstaller(System.AppDomain.CurrentDomain.BaseDirectory + @"NoPortsInstaller.exe");
             //ServiceInstaller.EnableRecovery("sshnpd");
+            Process.Start("sc", "description sshnpd NoPorts SSH Daemon");
         }
 
         private void CreateRegistryKeys()
