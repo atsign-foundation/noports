@@ -29,14 +29,22 @@ jobs:
             output-name: sshnp-linux-x64
             ext: ""
             bundle: "shell"
+            compiler: "gcc"
+            flags:
+              "-Wno-error -Wno-calloc-transposed-args -Wno-float-conversion
+              -pthread -lrt"
           - os: macos-13
             output-name: sshnp-macos-x64
             ext: ""
             bundle: "shell"
+            compiler: "clang"
+            flags: "-Wno-error -pthread"
           - os: macos-14
             output-name: sshnp-macos-arm64
             ext: ""
             bundle: "shell"
+            compiler: "clang"
+            flags: "-Wno-error -pthread"
     #          - os: windows-latest
     #            output-name: sshnp-windows-x64
     #            ext: '.exe'
@@ -45,7 +53,7 @@ jobs:
       - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
       # compile binaries
       - run: |
-          cmake -B build -S . -DBUILD_SHARED_LIBS=off -DCMAKE_C_COMPILER=gcc -DCMAKE_C_FLAGS="-Wno-error -Wno-calloc-transposed-args -Wno-float-conversion -pthread -lrt"
+          cmake -B build -S . -DBUILD_SHARED_LIBS=off -DCMAKE_C_COMPILER=${{ matrix.compiler }} -DCMAKE_C_FLAGS="${{matrix.flags}}"
           cmake --build build
           mkdir tarball
           mv build/sshnpd .
