@@ -77,7 +77,7 @@ sequenceDiagram
         cs -->> ds: 
         ds -->> d: 
     end
-    d ->> d: Verify perimissions for client's request (based on session request info)
+    d ->> d: Verify perimissions for client's request (based on session request info - i.e. is client allowed to connect?)
     d -x r: [TCP - A] Reverse TCP the requested service to open relay host2:port2
     d -x r: [TCP - A] Send auth string (signed json payload of: session id, nonce from relay,  nonce from client)
     r ->> r: [TCP - A] Verify auth string
