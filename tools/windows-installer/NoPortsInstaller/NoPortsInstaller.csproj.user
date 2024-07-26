@@ -1,7 +1,7 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="Current" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup>
-    <_LastSelectedProfileId>C:\Users\xavie\source\repos\NoPortsWindows\NoPortsInstaller\Properties\PublishProfiles\FolderProfile.pubxml</_LastSelectedProfileId>
+    <_LastSelectedProfileId>C:\Users\xavie\atsign\sshnoports\tools\windows-installer\NoPortsInstaller\Properties\PublishProfiles\FolderProfile.pubxml</_LastSelectedProfileId>
   </PropertyGroup>
   <ItemGroup>
     <ApplicationDefinition Update="App.xaml">
@@ -9,5 +9,15 @@
     </ApplicationDefinition>
   </ItemGroup>
   <ItemGroup />
-  <ItemGroup />
+  <ItemGroup>
+    <Page Update="Pages\FinishUninstall.xaml">
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Update="Pages\Uninstall.xaml">
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Update="Pages\UninstallWindow.xaml">
+      <SubType>Designer</SubType>
+    </Page>
+  </ItemGroup>
 </Project>

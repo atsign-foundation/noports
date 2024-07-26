@@ -1,4 +1,5 @@
 ﻿using Microsoft.Win32;
+using System.Diagnostics;
 using System.Reflection;
 using System.Runtime.InteropServices;
 
@@ -289,44 +290,27 @@ namespace NoPortsInstaller
             return status.dwCurrentState;
         }
 
-        public static void EnableRecovery(string serviceName)
+        public static void SetRecoveryOptions(string serviceName)
         {
-            IntPtr scm = OpenSCManager(ScmAccessRights.AllAccess);
-
-            try
+            int exitCode;
+            using (var process = new Process())
             {
-                IntPtr service = OpenService(scm, serviceName, ServiceAccessRights.AllAccess);
+                var startInfo = process.StartInfo;
+                startInfo.FileName = "sc";
+                startInfo.WindowStyle = ProcessWindowStyle.Hidden;
 
-                if (service == IntPtr.Zero)
-                {
-                    throw new ApplicationException("Service not installed.");
-                }
+                // tell Windows that the service should restart if it fails
+                startInfo.Arguments = string.Format("failure \"{0}\" reset= 0 actions= restart/3000/restart/60000/restart/180000", serviceName);
 
-                try
-                {
-                    SERVICE_FAILURE_ACTIONS failureActions = new SERVICE_FAILURE_ACTIONS();
-                    failureActions.dwResetPeriod = 10;
-                    failureActions.cActions = 3;
-                    failureActions.lpsaActions = new SC_ACTION[failureActions.cActions * 2];
-                    failureActions.lpsaActions[0] = new SC_ACTION { type = (int)ServiceAction.Restart, delay = 3333 };
-                    failureActions.lpsaActions[1] = new SC_ACTION { type = (int)ServiceAction.Restart, delay = 3333 };
-                    failureActions.lpsaActions[2] = new SC_ACTION { type = (int)ServiceAction.Restart, delay = 3333 };
-                    IntPtr lpInfo = Marshal.AllocHGlobal(Marshal.SizeOf(failureActions));
-                    Marshal.StructureToPtr(failureActions, lpInfo, false);
+                process.Start();
+                process.WaitForExit();
 
-                    if (ChangeServiceConfig(service, 2, lpInfo) == 0)
-                    {
-                        throw new ApplicationException("Failed to change service failure actions.");
-                    }
-                }
-                finally
-                {
-                    CloseServiceHandle(service);
-                }
+                exitCode = process.ExitCode;
             }
-            finally
+
+            if (exitCode != 0)
             {
-                CloseServiceHandle(scm);
+                throw new InvalidOperationException();
             }
         }
 

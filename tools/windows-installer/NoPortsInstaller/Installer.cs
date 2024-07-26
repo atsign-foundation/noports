@@ -6,6 +6,7 @@ using System.Net.Http;
 using System.Security.AccessControl;
 using System.Text.Json;
 using System.Text.RegularExpressions;
+using System.Windows;
 using System.Windows.Controls;
 namespace NoPortsInstaller
 {
@@ -43,19 +44,57 @@ namespace NoPortsInstaller
         public async void Install(ProgressBar progress)
         {
             CreateDirectories(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile));
-            UpdateProgress(progress, 25);
+            await UpdateProgress(progress, 25);
             await DownloadArchive();
-            UpdateProgress(progress, 50);
+            await UpdateProgress(progress, 50);
             ExtractArchive();
-            UpdateProgress(progress, 90);
+            await UpdateProgress(progress, 90);
             CreateRegistryKeys();
             if (DeviceInstall)
             {
                 CopyIntoServiceAccount();
                 SetupService();
             }
-            UpdateProgress(progress, 100);
+            await UpdateProgress(progress, 100);
             NextPage();
+        }
+
+        public async void Uninstall(ProgressBar progress)
+        {
+            try
+            {
+                RegistryKey? registryKey = Registry.LocalMachine.OpenSubKey(@"SOFTWARE\NoPorts");
+                object? binPath = null;
+                if (registryKey != null)
+                {
+                    binPath = registryKey.GetValue("BinPath");
+                }
+
+                if (ServiceInstaller.ServiceIsInstalled("sshnpd"))
+                {
+                    ServiceInstaller.StopService("sshnpd");
+                    ServiceInstaller.Uninstall("sshnpd");
+                }
+                if (binPath != null)
+                {
+                    DirectoryInfo di = new DirectoryInfo(binPath.ToString()!);
+                    foreach (FileInfo file in di.GetFiles())
+                    {
+                        file.Delete();
+                    }
+                    foreach (DirectoryInfo dir in di.GetDirectories())
+                    {
+                        dir.Delete(true);
+                    }
+                    di.Delete();
+                }
+                await UpdateProgress(progress, 100);
+
+            }
+            catch
+            {
+                throw;
+            }
         }
 
         private void CreateDirectories(string userHome)
@@ -181,12 +220,20 @@ namespace NoPortsInstaller
 
         private void ExtractArchive()
         {
+            if (DeviceInstall)
+            {
+                if (ServiceInstaller.ServiceIsInstalled("sshnpd"))
+                {
+                    ServiceInstaller.Uninstall("sshnpd");
+                }
+            }
             ZipFile.ExtractToDirectory(archiveDirectory!, InstallDirectory, overwriteFiles: true);
             InstallDirectory = Path.Combine(InstallDirectory, "sshnp");
             File.Delete(archiveDirectory!);
             if (DeviceInstall && ClientInstall) { }
             else if (DeviceInstall)
             {
+
                 File.Delete(Path.Combine(InstallDirectory, "sshnp.exe"));
                 File.Delete(Path.Combine(InstallDirectory, "npt.exe"));
                 Directory.Delete(Path.Combine(InstallDirectory, "docker"), true);
@@ -209,14 +256,10 @@ namespace NoPortsInstaller
             }
 
 
-            if (ServiceInstaller.ServiceIsInstalled("sshnpd"))
-            {
-                ServiceInstaller.StopService("sshnpd");
-                ServiceInstaller.Uninstall("sshnpd");
-            }
+
             ServiceInstaller.InstallAndStart("sshnpd", "sshnpd", InstallDirectory + @"\SshnpdService.exe");
-            //ServiceInstaller.CreateUninstaller(System.AppDomain.CurrentDomain.BaseDirectory + @"NoPortsInstaller.exe");
-            //ServiceInstaller.EnableRecovery("sshnpd");
+            ServiceInstaller.CreateUninstaller(System.AppDomain.CurrentDomain.BaseDirectory + @"NoPortsInstaller.exe u");
+            ServiceInstaller.SetRecoveryOptions("sshnpd");
             Process.Start("sc", "description sshnpd NoPorts SSH Daemon");
         }
 
@@ -254,19 +297,23 @@ namespace NoPortsInstaller
             window!.Content = Pages[index];
         }
 
-        public void Setup(MainWindow window)
+        public void Setup(Window window)
         {
-            this.window = window;
+            this.window = (MainWindow)window;
             window.Content = Pages[0];
         }
 
-        private void UpdateProgress(ProgressBar pb, int value)
+        private async Task UpdateProgress(ProgressBar pb, int value)
         {
-            for (int i = 0; i < value; i++)
+            double start = pb.Value;
+            await Task.Run(() =>
             {
-                pb.Value = i;
-                Thread.Sleep(10);
-            }
+                for (double i = start; i <= value; i++)
+                {
+                    pb.Dispatcher.Invoke(() => pb.Value = i);
+                    Thread.Sleep(20);
+                }
+            });
         }
 
         public bool VerifyAtsign()
