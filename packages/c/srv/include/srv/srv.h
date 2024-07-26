@@ -81,6 +81,14 @@ typedef struct _chunked_transformer {
   };
 } chunked_transformer_t;
 
+typedef struct {
+    const srv_params_t *params;
+    const char *auth_string;
+    chunked_transformer_t *encrypter;
+    chunked_transformer_t *decrypter;
+    bool is_srv_ready;
+} socket_to_socket_params_t;
+
 /**
  * @brief run srv with some parameters
  *
@@ -88,6 +96,22 @@ typedef struct _chunked_transformer {
  * @return int 0 on success, non-zero on error
  */
 int run_srv(srv_params_t *params);
+
+/**
+ * @brief run srv daemon side single with some parameters
+ *
+ * @param params a pointer to the parameters to run srv with
+ * @return int 0 on success, non-zero on error
+ */
+int run_srv_daemon_side_single(srv_params_t *params);
+
+/**
+ * @brief run srv daemon side multi with some parameters
+ *
+ * @param params a pointer to the parameters to run srv with
+ * @return int 0 on success, non-zero on error
+ */
+int run_srv_daemon_side_multi(srv_params_t *params);
 
 /**
  * @brief Run a socket to socket connection
@@ -102,7 +126,7 @@ int run_srv(srv_params_t *params);
  * Note: params->bind_local_port is expected to be 0
  */
 int socket_to_socket(const srv_params_t *params, const char *auth_string, chunked_transformer_t *encrypter,
-                     chunked_transformer_t *decrypter);
+                     chunked_transformer_t *decrypter, bool is_srv_ready);
 
 /**
  * @brief Run a server to socket connection
@@ -130,4 +154,7 @@ int server_to_socket(const srv_params_t *params, const char *auth_string, chunke
  */
 int aes_ctr_crypt_stream(const chunked_transformer_t *self, size_t len, const unsigned char *input,
                          unsigned char *output);
+
+int create_encrypter_and_decrypter(const char *session_aes_key_string, const char *session_aes_iv_string,
+                                   chunked_transformer_t *encrypter, chunked_transformer_t *decrypter);
 #endif
