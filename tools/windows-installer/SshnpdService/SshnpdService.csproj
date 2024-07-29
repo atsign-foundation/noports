@@ -9,6 +9,7 @@
 	<PublishSingleFile>true</PublishSingleFile>
 	<PublishReadyToRun>true</PublishReadyToRun>
 	<RuntimeIdentifier>win-x64</RuntimeIdentifier>
+	  <DebugType>embedded</DebugType>
 	<PlatformTarget>x64</PlatformTarget>
   </PropertyGroup>
 
