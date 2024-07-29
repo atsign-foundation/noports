@@ -1,6 +1,7 @@
 #!/bin/bash
 
 scriptName=$(basename -- "$0")
+testToRun="$scriptName"
 
 if test -z "$testScriptsDir"; then
   echo -e "    ${RED}check_env: testScriptsDir is not set${NC}" && exit 1
@@ -47,7 +48,8 @@ deviceName=$(getDeviceNameWithFlags "$commitId" "$daemonVersion")
 # We will capture daemon log from now until end of test
 outputDir=$(getOutputDir)
 daemonLogFile="${outputDir}/daemons/${deviceName}.log"
-tail -f -n 0 "$daemonLogFile" >>"$DAEMON_LOG_FRAGMENT_NAME" &
+daemonLogFragmentName="$(getDaemonLogFragmentName $testToRun $daemonVersion $clientVersion)"
+tail -f -n 0 "$daemonLogFile" >>"$daemonLogFragmentName" &
 tailPid=$! # We'll kill this later
 
 clientBinaryPath=$(getPathToBinariesForTypeAndVersion "$clientVersion")

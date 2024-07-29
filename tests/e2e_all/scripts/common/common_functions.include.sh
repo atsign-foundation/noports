@@ -181,6 +181,16 @@ logInfoAndReport() {
   echo -e "$(iso8601Date) | $1" | tee -a "$(getReportFile)"
 }
 
+getBaseFileName() {
+  # expected input: $testToRun $daemonVersion $clientVersion
+  printf "$(getOutputDir)/clients/${1}.daemon.${2}.client.${3}"
+}
+
+getDaemonLogFragmentName() {
+  # expected input: $testToRun $daemonVersion $clientVersion
+  printf "$(getBaseFileName $1 $2 $3).daemonLogFragment.log"
+}
+
 getVersionDescription() {
   if (($# != 1)); then logErrorAndExit "getVersionDescription requires 1 parameter"; fi
   IFS=: read -r type version <<<"$1"

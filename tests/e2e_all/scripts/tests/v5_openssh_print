@@ -2,8 +2,9 @@
 
 # shellcheck disable=SC2034
 scriptName=$(basename -- "$0")
+testToRun="$scriptName"
 
-if test -z "$testScriptsDir" ; then
+if test -z "$testScriptsDir"; then
   echo -e "    ${RED}check_env: testScriptsDir is not set${NC}" && exit 1
 fi
 
@@ -19,4 +20,4 @@ if [[ ${daemonVersion:0:1} == "c" ]] && [[ $(versionIsLessThan "$clientVersion" 
 fi
 
 # Execute ssh-client 'openssh', v5 daemon features, and print the ssh command
-"$testScriptsDir/tests/shared/sshnp" "$1" "$2" "openssh" "v5" "print"
+"$testScriptsDir/tests/shared/sshnp" "$1" "$2" "openssh" "v5" "print" "$testToRun"
