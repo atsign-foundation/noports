@@ -487,7 +487,7 @@ void handle_ssh_request(atclient *atclient, pthread_mutex_t *atclient_lock, sshn
     }
 
     struct sshnpd_process_node *pid_node = malloc(sizeof(struct sshnpd_process_node));
-    if (pid_node) {
+    if (pid_node == NULL) {
       // we leak ownership of srv here to the system... not much can be done if we run out of memory to track the
       // process though
       // TODO  - what should sshnpd do at this state?
