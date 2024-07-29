@@ -21,7 +21,9 @@ on:
 jobs:
   e2e_all:
     # Don't run on PRs from a fork or Dependabot as the secrets aren't available
-    if: ${{ github.event.pull_request.head.repo.fork == false && github.actor != 'dependabot[bot]'}}
+    if:
+      ${{ github.event.pull_request.head.repo.fork == false && github.actor !=
+      'dependabot[bot]'}}
     concurrency: e2e_all
     runs-on: ubuntu-latest
 
@@ -44,4 +46,4 @@ jobs:
             echo "Running git checkout -f $SHA"
             git checkout -f "$SHA"
             echo "Running tests"
-            tests/e2e_all/scripts/main.sh @apricoteventual @combinedbelgian @rv_am
+            tests/e2e_all/scripts/main.sh @apricoteventual @combinedbelgian @rv_am -p

@@ -33,7 +33,7 @@ if ! grep -q "current" <<<"$clientVersion" && ! grep -q "current" <<<"$daemonVer
 fi
 
 if [[ "$sshClient" != "openssh" ]] && [[ "$sshClient" != "dart" ]]; then
-  logError "tests/shared/sshnp: Unhandled sshClient parameter [$sshClient] - must be openssh or dart"
+  logErrorAndReport "tests/shared/sshnp: Unhandled sshClient parameter [$sshClient] - must be openssh or dart"
   exit 1
 fi
 
@@ -73,7 +73,7 @@ case "$daemonFeatureSet" in
     fi
     ;;
   *)
-    logError "tests/shared/sshnp: Unhandled daemonFeatureSet parameter [$daemonFeatureSet] - must be v4 or v5"
+    logErrorAndReport "tests/shared/sshnp: Unhandled daemonFeatureSet parameter [$daemonFeatureSet] - must be v4 or v5"
     exit 1
     ;;
 esac
@@ -99,7 +99,7 @@ case "$executionType" in
     fi
     ;;
   *)
-    logError "tests/shared/sshnp: Unhandled executionType parameter [$executionType] - must be print or inline"
+    logErrorAndReport "tests/shared/sshnp: Unhandled executionType parameter [$executionType] - must be print or inline"
     exit 1
     ;;
 esac

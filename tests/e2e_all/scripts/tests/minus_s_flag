@@ -98,7 +98,7 @@ else
 
   if ((exitStatus == 0)); then
     # It should have failed
-    logError "$scriptName: sshnp with new key did not fail as expected"
+    logErrorAndReport "$scriptName: sshnp with new key did not fail as expected"
     kill $tailPid
     exit 1
   else

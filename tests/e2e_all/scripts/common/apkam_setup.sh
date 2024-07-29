@@ -72,7 +72,7 @@ enroll() {
     logInfo "keys file HAS been created at $keysFileName"
     return 0
   else
-    logError "keys file has NOT been created at $keysFileName"
+    logErrorAndReport "keys file has NOT been created at $keysFileName"
     return 1
   fi
 }

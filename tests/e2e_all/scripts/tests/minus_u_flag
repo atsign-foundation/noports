@@ -82,7 +82,7 @@ sshnpExitStatus=$?
 
 if ((sshnpExitStatus == 0)); then
   # It should have failed
-  logError "$scriptName: sshnp to ${deviceName} without '-u <username>' did not fail as expected"
+  logErrorAndReport "$scriptName: sshnp to ${deviceName} without '-u <username>' did not fail as expected"
   kill $tailPid
   exit 1
 fi
@@ -109,7 +109,7 @@ echo "$(iso8601Date) | Executing $sshnpCommand"
 sshCommand=$($sshnpCommand)
 sshnpExitStatus=$?
 if ((sshnpExitStatus != 0)); then
-  logError "$scriptName: sshnp to ${deviceName} without '-u <username>' should have succeeded but did not"
+  logErrorAndReport "$scriptName: sshnp to ${deviceName} without '-u <username>' should have succeeded but did not"
   kill $tailPid
   exit $sshnpExitStatus
 fi
@@ -120,7 +120,7 @@ echo "$(iso8601Date) | Executing $sshCommand"
 $(getTestSshCommand "$sshCommand")
 sshExitStatus=$?
 if ((sshExitStatus != 0)); then
-  logError "$scriptName: ssh to ${deviceName} without '-u <username>' should have succeeded but did not"
+  logErrorAndReport "$scriptName: ssh to ${deviceName} without '-u <username>' should have succeeded but did not"
 fi
 kill $tailPid
 exit $sshExitStatus
