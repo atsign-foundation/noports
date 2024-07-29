@@ -42,7 +42,7 @@ sequenceDiagram
 
     note over c,d: Phase - Request relay session
     alt
-        c ->> r: request two public ports from relay
+        c ->> r: request two public ports from relay: {session id, nonce from client}
     else actual data flow
         c -->> cs: 
         cs -->> rs: 
@@ -50,14 +50,14 @@ sequenceDiagram
     end
     r ->> r: Request ephemeral ports from OS
     alt
-        r ->> c: ports response from relay
+        r ->> c: ports response from relay: {session id, host1:port1, host2:port2, nonce from relay}
     else actual data flow
         r -->> rs: 
         rs -->> cs: 
         cs -->> c: 
     end
 
-    note over c,d: Phase - Receive ping response from daemon
+    note over c,d: Phase - Receive ping response from daemon: {list of available features}
     alt
         d ->> c: ping response (device info / features) from daemon
         deactivate d
@@ -69,15 +69,18 @@ sequenceDiagram
     c ->> c: Validate request against daemon ping info
 
     note over c,d: Phase - Request daemon session
+    c ->> c: generate new aes encryption key & iv nonce
     alt
-        c ->> d: send session request to the daemon
+        c ->> d: send session request to the daemon: {host2:port2 from relay, aes stream encryption key, aes iv nonce, requested service to access (host:port), nonce from relay, nonce from client}
     else actual data flow
         c -->> cs: 
         cs -->> ds: 
         ds -->> d: 
     end
-    d ->> d: Verify perimissions for client's request
-    d -x r: [TCP - A] Reverse TCP the requested port to open relay port
+    d ->> d: Verify perimissions for client's request (based on session request info - i.e. is client allowed to connect?)
+    d -x r: [TCP - A] Reverse TCP the requested service to open relay host2:port2
+    d -x r: [TCP - A] Send auth string (signed json payload of: session id, nonce from relay,  nonce from client)
+    r ->> r: [TCP - A] Verify auth string
     alt 
         d ->> c: session (success) response from daemon
     else actual data flow
@@ -88,7 +91,8 @@ sequenceDiagram
     note over c,d: Phase - Client TCP connect
     c ->> c: Bind a local socket to expose the service on
     c -x r: [TCP - B] TCP connect to the other open relay port
-
+    c -x r: [TCP - B] Send auth string (signed json payload of: session id, nonce from relay,  nonce from client)
+    r ->> r: [TCP - B] Verify auth string
     note over c,d: Phase - internal traffic relays (lasts  entire duration of the session)
     par
         r -->> r: relay all traffic from [TCP - A] to [TCP - B] and vice-versa
