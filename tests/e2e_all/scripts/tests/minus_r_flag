@@ -32,8 +32,8 @@ if [[ $(versionIsLessThan "$clientVersion" "d:5.2.0") == "true" ]]; then
   exit 50
 fi
 
-if [[ "${daemonVersion:0:1}" == "c" ]]; then
-  logInfoAndReport "    N/A C daemon doesn't need to test a client side only feature"
+if [[ "${daemonVersion:0:1}" != "d" ]]; then
+  logInfoAndReport "    N/A client side only feature"
   exit 50
 fi
 

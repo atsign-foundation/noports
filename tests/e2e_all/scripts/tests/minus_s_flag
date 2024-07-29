@@ -27,7 +27,7 @@ if [[ "$clientVersion" != "d:current" ]] || [[ "${daemonVersion:1}" != ":current
 fi
 
 if [[ "${daemonVersion:0:1}" == "c" && $(versionIsLessThan "$clientVersion" "d:5.3.0") ]]; then
-  logInfoAndReport "    N/A C daemon is not compatible with thi client"
+  logInfoAndReport "    N/A C daemon is not compatible with this client"
   exit 50
 fi
 
