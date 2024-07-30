@@ -109,7 +109,7 @@ getReportFile() {
 
 getDeviceNameNoFlags() {
   if (($# != 2)); then
-    logError "getDeviceNameNoFlags expects two parameters; $# were supplied"
+    logErrorAndReport "getDeviceNameNoFlags expects two parameters; $# were supplied"
     exit 1
   fi
   commitId="$1"
@@ -124,45 +124,25 @@ getDeviceNameNoFlags() {
 
 getDeviceNameWithFlags() {
   if (($# != 2)); then
-    logError "getDeviceNameFlags expects two parameters; $# were supplied"
+    logErrorAndReport "getDeviceNameFlags expects two parameters; $# were supplied"
     exit 1
   fi
   # shellcheck disable=SC2086
   echo "$(getDeviceNameNoFlags $1 $2)f"
 }
 
-OS=""
+# Calling this "OS" unsets the environment variable of the same name thus it is named "cachedOS" to avoid side effects
+cachedOS=""
 iso8601Date() {
-  if test "$OS" == ""; then
-    OS=$(uname -s)
+  if test "$cachedOS" == ""; then
+    cachedOS=$(uname -s)
   fi
-  if test "$OS" == "Darwin"; then
+  if test "$cachedOS" == "Darwin"; then
     # no milliseconds in Darwin
     date +"%Y-%m-%d %H:%M:%S"
   else
     date +"%Y-%m-%d %H:%M:%S.%3N"
   fi
-}
-
-logGreenInfo() {
-  echo -e "$(iso8601Date) |     ${GREEN}INFO :${NC} $1"
-}
-
-logError() {
-  echo -e "$(iso8601Date) |     ${RED}ERROR:${NC} $1" | tee -a "$(getReportFile)"
-}
-
-logErrorAndExit() {
-  logError "$1"
-  exit 1
-}
-
-logWarning() {
-  echo -e "$(iso8601Date) |     ${ORANGE}WARN :${NC} $1" | tee -a "$(getReportFile)"
-}
-
-crLog() {
-  echo -e "\r$(iso8601Date) | $1"
 }
 
 log() {
@@ -173,12 +153,51 @@ logInfo() {
   log "$1"
 }
 
-reportInfo() {
-  logInfo "$1" >>"$(getReportFile)"
+logGreenInfo() {
+  log "${GREEN}INFO :${NC} $1"
+}
+
+logError() {
+  log "${RED}ERROR:${NC} $1"
+}
+
+logWarning() {
+  echo -e "$(iso8601Date) |     ${ORANGE}WARN :${NC} $1"
 }
 
 logInfoAndReport() {
-  echo -e "$(iso8601Date) | $1" | tee -a "$(getReportFile)"
+  logInfo "$1" | tee -a "$(getReportFile)"
+}
+
+logErrorAndReport() {
+  logError "$1" | tee -a "$(getReportFile)"
+}
+
+logErrorAndExit() {
+  logErrorAndReport "$1"
+  exit 1
+}
+
+crLog() {
+  echo -e "\r$(iso8601Date) | $1"
+}
+
+getBaseFileName() {
+  # expected input: $testToRun $daemonVersion $clientVersion
+  printf "$(getOutputDir)/clients/${1}.daemon.${2}.client.${3}"
+}
+
+getDaemonLogFragmentName() {
+  # expected input: $testToRun $daemonVersion $clientVersion
+  printf "$(getBaseFileName $1 $2 $3).daemonLogFragment.log"
+}
+
+getSingleTestOutputLogName() {
+  printf "$(getBaseFileName $1 $2 $3).testOutput.log"
+}
+
+getSingleTestResultLogName() {
+  printf "$(getBaseFileName $1 $2 $3).testResult.log"
 }
 
 getVersionDescription() {
@@ -307,7 +326,7 @@ versionIsAtLeast() {
 
 getPathToBinariesForTypeAndVersion() {
   if (($# != 1)); then
-    logError "getPathToBinariesForTypeAndVersion expects one parameter, but was supplied $#"
+    logErrorAndReport "getPathToBinariesForTypeAndVersion expects one parameter, but was supplied $#"
     exit 1
   fi
   typeAndVersion="$1"
@@ -552,3 +571,19 @@ buildCurrentCBinaries() {
 }
 
 ### END C ###
+
+setup_type_and_version() {
+  IFS=: read -r type version <<<"$1"
+  case "$type" in
+    d) # dart
+      setupDartVersion "$version" || logErrorAndExit "Failed to set up binaries for dart version [$version]"
+      ;;
+    c) # c
+      setupCVersion "$version" || logErrorAndExit "Failed to set up binaries for c version [$version]"
+      ;;
+    *)
+      logErrorAndExit "This script doesn't know where to find NoPorts daemon binary for [$typeAndVersion]"
+      exit 1
+      ;;
+  esac
+}

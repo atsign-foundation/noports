@@ -10,6 +10,7 @@
 #  - expect this test to fail
 
 scriptName=$(basename -- "$0")
+testToRun="$scriptName"
 
 if test -z "$testScriptsDir"; then
   echo -e "    ${RED}check_env: testScriptsDir is not set${NC}" && exit 1
@@ -28,12 +29,12 @@ badSrvAtSign="@do_not_activate" # This atsign is a known reserved atsign which i
 
 # -r added in d:5.2.0
 if [[ $(versionIsLessThan "$clientVersion" "d:5.2.0") == "true" ]]; then
-  logInfoAndReport "    N/A because client version is $clientVersion and -r was added in v5.2.0"
+  logInfo "    N/A because client version is $clientVersion and -r was added in v5.2.0"
   exit 50
 fi
 
 if [[ "${daemonVersion:0:1}" == "c" ]]; then
-  logInfoAndReport "    N/A C daemon doesn't need to test a client side only feature"
+  logInfo "    N/A C daemon doesn't need to test a client side only feature"
   exit 50
 fi
 
@@ -64,9 +65,10 @@ deviceName=$(getDeviceNameWithFlags "$commitId" "$daemonVersion")
 # We will capture daemon log from now until end of test
 outputDir=$(getOutputDir)
 daemonLogFile="${outputDir}/daemons/${deviceName}.log"
-echo "First daemon (--host) $deviceName" >>"$DAEMON_LOG_FRAGMENT_NAME"
-echo "" >>"$DAEMON_LOG_FRAGMENT_NAME"
-tail -f "$daemonLogFile" >>"$DAEMON_LOG_FRAGMENT_NAME" &
+daemonLogFragmentName="$(getDaemonLogFragmentName $testToRun $daemonVersion $clientVersion)"
+echo "First daemon (--host) $deviceName" >>"$daemonLogFragmentName"
+echo "" >>"$daemonLogFragmentName"
+tail -f "$daemonLogFile" >>"$daemonLogFragmentName" &
 tailPid=$! # We'll kill this later
 
 l1="$clientBinaryPath/sshnp -f $clientAtSign -d $deviceName -i $identityFilename"
@@ -102,9 +104,9 @@ kill $tailPid
 # We will capture daemon log from now until end of test
 outputDir=$(getOutputDir)
 daemonLogFile="${outputDir}/daemons/${deviceName}.log"
-echo "Third daemon (-r <good> && -h <bad>) $deviceName" >>"$DAEMON_LOG_FRAGMENT_NAME"
-echo "" >>"$DAEMON_LOG_FRAGMENT_NAME"
-tail -f "$daemonLogFile" >>"$DAEMON_LOG_FRAGMENT_NAME" &
+echo "Third daemon (-r <good> && -h <bad>) $deviceName" >>"$daemonLogFragmentName"
+echo "" >>"$daemonLogFragmentName"
+tail -f "$daemonLogFile" >>"$daemonLogFragmentName" &
 tailPid=$! # We'll kill this later
 
 l1="$clientBinaryPath/sshnp -f $clientAtSign -d $deviceName -i $identityFilename"
