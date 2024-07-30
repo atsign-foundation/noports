@@ -496,12 +496,15 @@ void handle_ssh_request(atclient *atclient, pthread_mutex_t *atclient_lock, sshn
     pid_node->process = pid;
     pid_node->next = NULL;
 
-    struct sshnpd_process_node *curr_node = process_head;
-    while (curr_node->next != NULL) {
-      curr_node = curr_node->next;
+    if (process_head == NULL) {
+      process_head = pid_node;
+    } else {
+      struct sshnpd_process_node *curr_node = process_head;
+      while (curr_node->next != NULL) {
+        curr_node = curr_node->next;
+      }
+      curr_node->next = pid_node;
     }
-    curr_node->next = pid_node;
-
     atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_DEBUG,
                  "Appended the srv process id node to the end of the process queue");
 

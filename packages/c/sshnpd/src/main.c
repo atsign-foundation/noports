@@ -607,7 +607,7 @@ exit:
 }
 
 static void free_sshnpd_process_nodes(struct sshnpd_process_node *process_head) {
-  if (process_head->next != NULL) {
+  if (process_head != NULL && process_head->next != NULL) {
     free_sshnpd_process_nodes(process_head->next);
   }
   free(process_head);
