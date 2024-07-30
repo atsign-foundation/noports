@@ -394,27 +394,25 @@ void main_loop() {
     atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_DEBUG, "Waiting for next monitor thread message\n");
     atclient_monitor_message_init(&message);
 
-    // Loop through background instances of sshnpd to see if they are ready to exit
-    struct sshnpd_process_node *curr_process = process_head;
+    int status;
     struct sshnpd_process_node *prev_process = NULL;
 
-    int status;
-    while (process_head != NULL) {
-      waitpid(process_head->process, &status, WNOHANG);
+    // Loop through background instances of sshnpd to see if they are ready to exit
+    for (struct sshnpd_process_node *curr_process = process_head; curr_process != NULL;
+         curr_process = curr_process->next) {
+      waitpid(curr_process->process, &status, WNOHANG);
       if (WIFEXITED(status)) {
-        if (curr_process != process_head) {
-          // curr is not the first element
+        if (curr_process != process_head) { // curr is not the first element
           prev_process->next = curr_process->next;
-        } else if (process_head->next != NULL) {
-          // curr is the first element, and we need to assign a new first
+        } else if (process_head->next != NULL) { // curr is the first element
           process_head = curr_process->next;
-        } else {
-          // we should be removing the only element, so set head to NULL
+        } else { // curr is the only element
           process_head = NULL;
         }
-        curr_process->next = NULL; // unlink the next so we only free this single node
+        curr_process->next = NULL; // unlink this element so we only free this single node
         free_sshnpd_process_nodes(curr_process);
       }
+      prev_process = curr_process; // set current to prev before next iteration
     }
 
     // Read the next monitor message

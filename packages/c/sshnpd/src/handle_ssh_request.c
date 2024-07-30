@@ -488,21 +488,22 @@ void handle_ssh_request(atclient *atclient, pthread_mutex_t *atclient_lock, sshn
 
     struct sshnpd_process_node *pid_node = malloc(sizeof(struct sshnpd_process_node));
     if (pid_node == NULL) {
-      // we leak ownership of srv here to the system... not much can be done if we run out of memory to track the
-      // process though
-      // TODO  - what should sshnpd do at this state?
-      // - shutdown everything?
-      // - try to kill the process we don't have enough memory to track
-      // - just move on and acccept that the process is srv and will self-shutdown eventually
+      atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR,
+                   "Unable to allocate memory to keep track of the srv process id");
       goto cancel;
     }
+
     pid_node->process = pid;
+    pid_node->next = NULL;
 
     struct sshnpd_process_node *curr_node = process_head;
     while (curr_node->next != NULL) {
       curr_node = curr_node->next;
     }
     curr_node->next = pid_node;
+
+    atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_DEBUG,
+                 "Appended the srv process id node to the end of the process queue");
 
     char *identifier = cJSON_GetStringValue(session_id);
     cJSON *final_res_payload = cJSON_CreateObject();
