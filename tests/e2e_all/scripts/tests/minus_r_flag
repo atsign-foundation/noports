@@ -29,12 +29,12 @@ badSrvAtSign="@do_not_activate" # This atsign is a known reserved atsign which i
 
 # -r added in d:5.2.0
 if [[ $(versionIsLessThan "$clientVersion" "d:5.2.0") == "true" ]]; then
-  logInfoAndReport "    N/A because client version is $clientVersion and -r was added in v5.2.0"
+  logInfo "    N/A because client version is $clientVersion and -r was added in v5.2.0"
   exit 50
 fi
 
 if [[ "${daemonVersion:0:1}" == "c" ]]; then
-  logInfoAndReport "    N/A C daemon doesn't need to test a client side only feature"
+  logInfo "    N/A C daemon doesn't need to test a client side only feature"
   exit 50
 fi
 
@@ -82,7 +82,7 @@ sshCommand=$($sshnpCommand)
 sshnpExitStatus=$?
 
 if ((sshnpExitStatus != 0)); then
-  logErrorAndReport "$scriptName: sshnp to ${deviceName} with '--host <host>' should have succeeded but did not"
+  logError "$scriptName: sshnp to ${deviceName} with '--host <host>' should have succeeded but did not"
   kill $tailPid
   exit $sshnpExitStatus
 fi
@@ -93,7 +93,7 @@ echo "$(iso8601Date) | Executing $sshCommand"
 $(getTestSshCommand "$sshCommand")
 sshExitStatus=$?
 if ((sshExitStatus != 0)); then
-  logErrorAndReport "$scriptName: ssh to ${deviceName} with '--host <host>' should have succeeded but did not"
+  logError "$scriptName: ssh to ${deviceName} with '--host <host>' should have succeeded but did not"
   kill $tailPid
   exit $sshExitStatus
 fi
@@ -121,7 +121,7 @@ sshCommand=$($sshnpCommand)
 sshnpExitStatus=$?
 
 if ((sshnpExitStatus != 0)); then
-  logErrorAndReport "$scriptName: sshnp to ${deviceName} with '-r <host> -h <bad host>' should have succeeded but did not"
+  logError "$scriptName: sshnp to ${deviceName} with '-r <host> -h <bad host>' should have succeeded but did not"
   kill $tailPid
   exit $sshnpExitStatus
 fi
@@ -132,7 +132,7 @@ echo "$(iso8601Date) | Executing $sshCommand"
 $(getTestSshCommand "$sshCommand")
 sshExitStatus=$?
 if ((sshExitStatus != 0)); then
-  logErrorAndReport "$scriptName: ssh to ${deviceName} with '-r <host> -h <bad host>' should have succeeded but did not"
+  logError "$scriptName: ssh to ${deviceName} with '-r <host> -h <bad host>' should have succeeded but did not"
 fi
 
 kill $tailPid

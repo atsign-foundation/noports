@@ -32,7 +32,7 @@ fi
 clientBinaryPath=$(getPathToBinariesForTypeAndVersion "$clientVersion")
 
 if [[ "${daemonVersion:0:1}" == "c" && $(versionIsLessThan "$clientVersion" "d:5.3.0") ]]; then
-  logInfoAndReport "    N/A C daemon is not compatible with this client"
+  logInfo "    N/A C daemon is not compatible with this client"
   exit 50
 fi
 
@@ -82,7 +82,7 @@ sshnpExitStatus=$?
 
 if ((sshnpExitStatus == 0)); then
   # It should have failed
-  logErrorAndReport "$scriptName: sshnp to ${deviceName} without '-u <username>' did not fail as expected"
+  logError "$scriptName: sshnp to ${deviceName} without '-u <username>' did not fail as expected"
   kill $tailPid
   exit 1
 fi
@@ -109,7 +109,7 @@ echo "$(iso8601Date) | Executing $sshnpCommand"
 sshCommand=$($sshnpCommand)
 sshnpExitStatus=$?
 if ((sshnpExitStatus != 0)); then
-  logErrorAndReport "$scriptName: sshnp to ${deviceName} without '-u <username>' should have succeeded but did not"
+  logError "$scriptName: sshnp to ${deviceName} without '-u <username>' should have succeeded but did not"
   kill $tailPid
   exit $sshnpExitStatus
 fi
@@ -120,7 +120,7 @@ echo "$(iso8601Date) | Executing $sshCommand"
 $(getTestSshCommand "$sshCommand")
 sshExitStatus=$?
 if ((sshExitStatus != 0)); then
-  logErrorAndReport "$scriptName: ssh to ${deviceName} without '-u <username>' should have succeeded but did not"
+  logError "$scriptName: ssh to ${deviceName} without '-u <username>' should have succeeded but did not"
 fi
 kill $tailPid
 exit $sshExitStatus

@@ -28,12 +28,12 @@ testToRun="$6"
 # i.e. if client != current and daemon != current then exit 50
 
 if ! grep -q "current" <<<"$clientVersion" && ! grep -q "current" <<<"$daemonVersion"; then
-  logInfoAndReport "    N/A  because released client $(getVersionDescription "$clientVersion") has already been tested against released daemon $(getVersionDescription "$daemonVersion")"
+  logInfo "    N/A  because released client $(getVersionDescription "$clientVersion") has already been tested against released daemon $(getVersionDescription "$daemonVersion")"
   exit 50
 fi
 
 if [[ "$sshClient" != "openssh" ]] && [[ "$sshClient" != "dart" ]]; then
-  logErrorAndReport "tests/shared/sshnp: Unhandled sshClient parameter [$sshClient] - must be openssh or dart"
+  logError "tests/shared/sshnp: Unhandled sshClient parameter [$sshClient] - must be openssh or dart"
   exit 1
 fi
 
@@ -63,17 +63,17 @@ case "$daemonFeatureSet" in
   v5)
     # Require a v5 client to test v5 features
     if [[ $(versionIsLessThan "$clientVersion" "d:5.0.0") == "true" ]]; then
-      logInfoAndReport "    N/A  because requires a v5+ client to test v5+ daemon features"
+      logInfo "    N/A  because requires a v5+ client to test v5+ daemon features"
       exit 50 # test rig interprets this exit status as 'test was not applicable'
     fi
     # Require a v5 daemon to test v5 features
     if [[ $(versionIsLessThan "$daemonVersion" "d:5.0.0") == "true" ]]; then
-      logInfoAndReport "    N/A  because can't test v5+ daemon features on a daemon version < 5"
+      logInfo "    N/A  because can't test v5+ daemon features on a daemon version < 5"
       exit 50 # test rig interprets this exit status as 'test was not applicable'
     fi
     ;;
   *)
-    logErrorAndReport "tests/shared/sshnp: Unhandled daemonFeatureSet parameter [$daemonFeatureSet] - must be v4 or v5"
+    logError "tests/shared/sshnp: Unhandled daemonFeatureSet parameter [$daemonFeatureSet] - must be v4 or v5"
     exit 1
     ;;
 esac
@@ -83,7 +83,7 @@ case "$executionType" in
     #  When outputting command line
     #    if ssh-client is 'dart' this is not applicable
     if [[ "$sshClient" == "dart" ]]; then
-      logInfoAndReport "    N/A  because sshClient is $sshClient which always executes the ssh 'inline'"
+      logInfo "    N/A  because sshClient is $sshClient which always executes the ssh 'inline'"
       exit 50 # test rig interprets this exit status as 'test was not applicable'
     fi
     #    if v5 client add the '-x' flag
@@ -94,12 +94,12 @@ case "$executionType" in
   "inline")
     # Running inline - requires either (1) sshClient='dart' or (2) v5+ client
     if [[ "$sshClient" != "dart" ]] && [[ $(versionIsAtLeast "$clientVersion" "d:5.0.0") != "true" ]]; then
-      logInfoAndReport "    N/A  because sshClient is $sshClient and client version is $clientVersion"
+      logInfo "    N/A  because sshClient is $sshClient and client version is $clientVersion"
       exit 50 # test rig interprets this exit status as 'test was not applicable'
     fi
     ;;
   *)
-    logErrorAndReport "tests/shared/sshnp: Unhandled executionType parameter [$executionType] - must be print or inline"
+    logError "tests/shared/sshnp: Unhandled executionType parameter [$executionType] - must be print or inline"
     exit 1
     ;;
 esac
@@ -119,7 +119,7 @@ case "$executionType" in
   "print")
     # If it's 5.0.x then we can't run this from a script because reasons
     if [[ $(versionIsAtLeast "$clientVersion" "d:5.0.0") == "true" ]] && [[ $(versionIsLessThan "$clientVersion" "d:5.1.0") == "true" ]]; then
-      logInfoAndReport "    N/A  because of bug in client versions 5.0.x which prevent running except with a real terminal attached "
+      logInfo "    N/A  because of bug in client versions 5.0.x which prevent running except with a real terminal attached "
       kill $tailPid
       exit 50 # test rig interprets this exit status as 'test was not applicable'
     fi

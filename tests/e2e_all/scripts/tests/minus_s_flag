@@ -28,7 +28,7 @@ if [[ "$clientVersion" != "d:current" ]] || [[ "${daemonVersion:1}" != ":current
 fi
 
 if [[ "${daemonVersion:0:1}" == "c" && $(versionIsLessThan "$clientVersion" "d:5.3.0") ]]; then
-  logInfoAndReport "    N/A C daemon is not compatible with thi client"
+  logInfo "    N/A C daemon is not compatible with thi client"
   exit 50
 fi
 
@@ -98,7 +98,7 @@ else
 
   if ((exitStatus == 0)); then
     # It should have failed
-    logErrorAndReport "$scriptName: sshnp with new key did not fail as expected"
+    logError "$scriptName: sshnp with new key did not fail as expected"
     kill $tailPid
     exit 1
   else
