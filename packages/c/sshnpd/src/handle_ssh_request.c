@@ -486,6 +486,7 @@ void handle_ssh_request(atclient *atclient, pthread_mutex_t *atclient_lock, sshn
       goto cancel;
     }
 
+    // Allocate a new linked-list node
     struct sshnpd_process_node *pid_node = malloc(sizeof(struct sshnpd_process_node));
     if (pid_node == NULL) {
       atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR,
@@ -493,9 +494,11 @@ void handle_ssh_request(atclient *atclient, pthread_mutex_t *atclient_lock, sshn
       goto cancel;
     }
 
+    // Assign the linked-list node values
     pid_node->process = pid;
     pid_node->next = NULL;
 
+    // Append to the linked-list
     if (process_head == NULL) {
       process_head = pid_node;
     } else {
