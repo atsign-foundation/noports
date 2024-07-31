@@ -29,14 +29,22 @@ jobs:
             output-name: sshnp-linux-x64
             ext: ""
             bundle: "shell"
+            compiler: "gcc"
+            flags:
+              "-Wno-error -Wno-calloc-transposed-args -Wno-float-conversion
+              -pthread -lrt"
           - os: macos-13
             output-name: sshnp-macos-x64
             ext: ""
             bundle: "shell"
+            compiler: "clang"
+            flags: "-Wno-error -pthread"
           - os: macos-14
             output-name: sshnp-macos-arm64
             ext: ""
             bundle: "shell"
+            compiler: "clang"
+            flags: "-Wno-error -pthread"
     #          - os: windows-latest
     #            output-name: sshnp-windows-x64
     #            ext: '.exe'
@@ -45,12 +53,12 @@ jobs:
       - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
       # compile binaries
       - run: |
-          cmake -B build -S . -DBUILD_SHARED_LIBS=off -DCMAKE_C_COMPILER=clang -DCMAKE_C_FLAGS="-Wno-error -pthread -lrt"
+          cmake -B build -S . -DBUILD_SHARED_LIBS=off -DCMAKE_C_COMPILER=${{ matrix.compiler }} -DCMAKE_C_FLAGS="${{matrix.flags}}"
           cmake --build build
           mkdir tarball
           mv build/sshnpd .
       # zip the build
-      - if: ${{ matrix.os == 'macOS-latest' || matrix.os == 'macos-14'}}
+      - if: ${{ matrix.os == 'macos-13' || matrix.os == 'macos-14'}}
         run:
           ditto -c -k --keepParent sshnpd tarball/${{ matrix.output-name }}.zip
       - if: ${{ matrix.os == 'ubuntu-latest' }}
@@ -90,7 +98,7 @@ jobs:
       - if: ${{ ! inputs.main_build_only }}
         uses: docker/setup-qemu-action@49b3bc8e6bdd4a60e6116a5414239cba5943d3cf # v3.2.0
       - if: ${{ ! inputs.main_build_only }}
-        uses: docker/setup-buildx-action@aa33708b10e362ff993539393ff100fa93ed6a27 # v3.5.0
+        uses: docker/setup-buildx-action@988b5a0280414f521da01fcc63a27aeeb4b104db # v3.6.1
       - if: ${{ ! inputs.main_build_only }}
         run: |
           docker buildx build -t cpswan/sshnpdc -f sshnpd/tools/Dockerfile.package \
@@ -170,7 +178,7 @@ jobs:
         working-directory: tarballs
         run: |
           echo "hashes=$(cat checksums.txt | base64 -w0)" >> "$GITHUB_OUTPUT"
-      - uses: actions/attest-build-provenance@5e9cb68e95676991667494a6a4e59b8a2f13e1d0 # v1.3.3
+      - uses: actions/attest-build-provenance@210c1913531870065f03ce1f9440dd87bc0938cd # v1.4.0
         with:
           subject-path: "tarballs/**"
 
