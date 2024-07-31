@@ -1,7 +1,7 @@
 #include "srv/params.h"
 #include "srv/srv.h"
 #include "sshnpd/params.h"
-#include <atclient/stringutils.h>
+#include <atclient/string_utils.h>
 #include <atlogger/atlogger.h>
 #include <cJSON.h>
 #include <stdio.h>
@@ -25,7 +25,7 @@ int run_srv_process(sshnpd_params *params, cJSON *host, cJSON *port, bool authen
 
   char *streaming_host = cJSON_GetStringValue(host);
   char *streaming_port = cJSON_Print(port); // FIXME: leak
-  long local_port_len = long_strlen(params->local_sshd_port);
+  long local_port_len = atclient_string_utils_long_strlen(params->local_sshd_port);
 
   size_t argc = 9 + authenticate_to_rvd + encrypt_rvd_traffic + multi;
   char **argv = malloc(sizeof(char *) * (argc + 1));

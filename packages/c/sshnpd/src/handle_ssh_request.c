@@ -3,10 +3,10 @@
 #include <atchops/aes.h>
 #include <atchops/base64.h>
 #include <atchops/iv.h>
-#include <atchops/rsakey.h>
+#include <atchops/rsa_key.h>
 #include <atclient/monitor.h>
 #include <atclient/notify.h>
-#include <atclient/stringutils.h>
+#include <atclient/string_utils.h>
 #include <atlogger/atlogger.h>
 #include <cJSON.h>
 #include <pthread.h>
@@ -24,20 +24,20 @@
 #define BYTES(x) (sizeof(unsigned char) * x)
 
 void handle_ssh_request(atclient *atclient, pthread_mutex_t *atclient_lock, sshnpd_params *params,
-                        bool *is_child_process, atclient_monitor_message *message, char *home_dir, FILE *authkeys_file,
-                        char *authkeys_filename, atchops_rsakey_privatekey signing_key,
+                        bool *is_child_process, atclient_monitor_response *message, char *home_dir, FILE *authkeys_file,
+                        char *authkeys_filename, atchops_rsa_key_private_key signing_key,
                         struct sshnpd_process_node *process_head) {
   int res = 0;
   char *requesting_atsign = message->notification.from;
 
-  char *decrypted_json = malloc(sizeof(char) * (message->notification.decryptedvaluelen + 1));
+  char *decrypted_json = malloc(sizeof(char) * (strlen(message->notification.decrypted_value) + 1));
   if (decrypted_json == NULL) {
     atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to allocate memory to decrypt the envelope\n");
     return;
   }
 
-  memcpy(decrypted_json, message->notification.decryptedvalue, message->notification.decryptedvaluelen);
-  *(decrypted_json + message->notification.decryptedvaluelen) = '\0';
+  memcpy(decrypted_json, message->notification.decrypted_value, strlen(message->notification.decrypted_value));
+  *(decrypted_json + strlen(message->notification.decrypted_value)) = '\0';
 
   cJSON *envelope = cJSON_Parse(decrypted_json);
   free(decrypted_json);
@@ -110,22 +110,19 @@ void handle_ssh_request(atclient *atclient, pthread_mutex_t *atclient_lock, sshn
   // verify signature of payload
 
   // - get public key of requesting atsign
-  const size_t valuelen = 4096;
-  char value[valuelen];
-  memset(value, 0, valuelen);
-  size_t valueolen = 0;
 
   atclient_atkey atkey;
   atclient_atkey_init(&atkey);
 
-  if ((res = atclient_atkey_create_publickey(&atkey, "publickey", 9, requesting_atsign, strlen(requesting_atsign), NULL,
-                                             0)) != 0) {
+  if ((res = atclient_atkey_create_public_key(&atkey, "publickey", requesting_atsign, NULL)) != 0) {
     atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to create public key\n");
     cJSON_Delete(envelope);
     return;
   }
 
-  res = atclient_get_publickey(atclient, &atkey, value, valuelen, &valueolen, true);
+  char *value = NULL;
+
+  res = atclient_get_public_key(atclient, &atkey, &value, NULL);
   if (res != 0) {
     atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to get public key\n");
     atclient_atkey_free(&atkey);
@@ -135,13 +132,14 @@ void handle_ssh_request(atclient *atclient, pthread_mutex_t *atclient_lock, sshn
 
   atclient_atkey_free(&atkey);
 
-  atchops_rsakey_publickey requesting_atsign_publickey;
-  atchops_rsakey_publickey_init(&requesting_atsign_publickey);
+  atchops_rsa_key_public_key requesting_atsign_publickey;
+  atchops_rsa_key_public_key_init(&requesting_atsign_publickey);
 
-  res = atchops_rsakey_populate_publickey(&requesting_atsign_publickey, value, strlen(value));
+  res = atchops_rsa_key_populate_public_key(&requesting_atsign_publickey, value, strlen(value));
   if (res != 0) {
     printf("atchops_rsakey_populate_publickey (failed): %d\n", res);
     cJSON_Delete(envelope);
+    free(value);
     return;
   }
 
@@ -153,13 +151,14 @@ void handle_ssh_request(atclient *atclient, pthread_mutex_t *atclient_lock, sshn
   char *hashing_algo_str = cJSON_GetStringValue(hashing_algo);
   char *signing_algo_str = cJSON_GetStringValue(signing_algo);
 
-  memset(value, 0, valuelen);
-  res = atchops_base64_decode((unsigned char *)signature_str, strlen(signature_str), (unsigned char *)value, valuelen,
+  size_t valueolen = 0;
+  res = atchops_base64_decode((unsigned char *)signature_str, strlen(signature_str), (unsigned char *)value, strlen(value),
                               &valueolen);
   if (res != 0) {
     atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "atchops_base64_decode: %d\n", res);
     cJSON_Delete(envelope);
     cJSON_free(payloadstr);
+    free(value);
     return;
   }
 
@@ -168,12 +167,13 @@ void handle_ssh_request(atclient *atclient, pthread_mutex_t *atclient_lock, sshn
   if (res != 0) {
     atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to verify envelope signature\n");
     cJSON_Delete(envelope);
-    atchops_rsakey_publickey_free(&requesting_atsign_publickey);
+    atchops_rsa_key_public_key_free(&requesting_atsign_publickey);
     cJSON_free(payloadstr);
+    free(value);
     return;
   }
 
-  atchops_rsakey_publickey_free(&requesting_atsign_publickey);
+  atchops_rsa_key_public_key_free(&requesting_atsign_publickey);
 
   bool authenticate_to_rvd = cJSON_IsTrue(auth_to_rvd);
   bool encrypt_rvd_traffic = cJSON_IsTrue(encrypt_traffic);
@@ -183,6 +183,7 @@ void handle_ssh_request(atclient *atclient, pthread_mutex_t *atclient_lock, sshn
                  "Encrypt rvd traffic flag is false, this feature must be enabled\n");
     cJSON_Delete(envelope);
     cJSON_free(payloadstr);
+    free(value);
     return;
   }
 
@@ -195,6 +196,7 @@ void handle_ssh_request(atclient *atclient, pthread_mutex_t *atclient_lock, sshn
                    "Missing nonce values, cannot create auth string for rvd\n");
       cJSON_Delete(envelope);
       cJSON_free(payloadstr);
+      free(value);
       return;
     }
 
@@ -211,7 +213,7 @@ void handle_ssh_request(atclient *atclient, pthread_mutex_t *atclient_lock, sshn
 
     unsigned char signature[256];
     memset(signature, 0, BYTES(256));
-    res = atchops_rsa_sign(signing_key, ATCHOPS_MD_SHA256, (unsigned char *)signing_input,
+    res = atchops_rsa_sign(&signing_key, ATCHOPS_MD_SHA256, (unsigned char *)signing_input,
                            strlen((char *)signing_input), signature);
     if (res != 0) {
       atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to sign the auth string payload\n");
@@ -220,6 +222,7 @@ void handle_ssh_request(atclient *atclient, pthread_mutex_t *atclient_lock, sshn
       cJSON_Delete(rvd_auth_payload);
       cJSON_Delete(envelope);
       cJSON_free(payloadstr);
+      free(value);
       return;
     }
 
@@ -235,6 +238,7 @@ void handle_ssh_request(atclient *atclient, pthread_mutex_t *atclient_lock, sshn
       cJSON_Delete(rvd_auth_payload);
       cJSON_Delete(envelope);
       cJSON_free(payloadstr);
+      free(value);
       return;
     }
 
@@ -246,9 +250,12 @@ void handle_ssh_request(atclient *atclient, pthread_mutex_t *atclient_lock, sshn
     cJSON_Delete(res_envelope);
     cJSON_Delete(rvd_auth_payload);
     cJSON_free(payloadstr);
+    free(value);
   }
 
+  unsigned char key[32];
   unsigned char session_aes_key[49], *session_aes_key_encrypted, *session_aes_key_base64;
+  unsigned char iv[16];
   unsigned char session_iv[25], *session_iv_encrypted, *session_iv_base64;
   bool free_session_base64 = false;
   size_t session_aes_key_len, session_iv_len, session_aes_key_encrypted_len, session_iv_encrypted_len;
@@ -273,8 +280,18 @@ void handle_ssh_request(atclient *atclient, pthread_mutex_t *atclient_lock, sshn
     return;
   }
 
+  memset(key, 0, BYTES(32));
+  if ((res = atchops_aes_generate_key(key, ATCHOPS_AES_256)) != 0) {
+    atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to generate session aes key\n");
+    if (authenticate_to_rvd) {
+      free(rvd_auth_string);
+    }
+    cJSON_Delete(envelope);
+    return;
+  }
+
   memset(session_aes_key, 0, BYTES(49));
-  res = atchops_aes_generate_keybase64(session_aes_key, 49, &session_aes_key_len, ATCHOPS_AES_256);
+  res = atchops_base64_encode(key, 32, session_aes_key, 49, &session_aes_key_len);
   if (res != 0) {
     atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to generate session aes key\n");
     if (authenticate_to_rvd) {
@@ -284,9 +301,18 @@ void handle_ssh_request(atclient *atclient, pthread_mutex_t *atclient_lock, sshn
     return;
   }
 
-  memset(session_iv, 0, BYTES(25));
+  memset(iv, 0, BYTES(16));
+  if ((res = atchops_iv_generate(iv)) != 0) {
+    atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to generate session iv\n");
+    if (authenticate_to_rvd) {
+      free(rvd_auth_string);
+    }
+    cJSON_Delete(envelope);
+    return;
+  }
 
-  res = atchops_iv_generate_base64(session_iv, 25, &session_iv_len);
+  memset(session_iv, 0, BYTES(25));
+  res = atchops_base64_encode(iv, 16, session_iv, 25, &session_iv_len);
   if (res != 0) {
     atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to generate session iv\n");
     if (authenticate_to_rvd) {
@@ -305,13 +331,13 @@ void handle_ssh_request(atclient *atclient, pthread_mutex_t *atclient_lock, sshn
   case 7: { // rsa2048 is the only valid type right now
     if (strncmp(pk_type, "rsa2048", 7) == 0) {
       is_valid = true;
-      atchops_rsakey_publickey ac;
-      atchops_rsakey_publickey_init(&ac);
+      atchops_rsa_key_public_key ac;
+      atchops_rsa_key_public_key_init(&ac);
 
-      res = atchops_rsakey_populate_publickey(&ac, pk, strlen(pk));
+      res = atchops_rsa_key_populate_public_key(&ac, pk, strlen(pk));
       if (res != 0) {
         atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to populate client ephemeral pk\n");
-        atchops_rsakey_publickey_free(&ac);
+        atchops_rsa_key_public_key_free(&ac);
         if (authenticate_to_rvd) {
           free(rvd_auth_string);
         }
@@ -323,7 +349,7 @@ void handle_ssh_request(atclient *atclient, pthread_mutex_t *atclient_lock, sshn
       if (session_aes_key_encrypted == NULL) {
         atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR,
                      "Failed to allocate memory to encrypt the session aes key\n");
-        atchops_rsakey_publickey_free(&ac);
+        atchops_rsa_key_public_key_free(&ac);
         if (authenticate_to_rvd) {
           free(rvd_auth_string);
         }
@@ -331,11 +357,10 @@ void handle_ssh_request(atclient *atclient, pthread_mutex_t *atclient_lock, sshn
         return;
       }
 
-      res = atchops_rsa_encrypt(ac, session_aes_key, session_aes_key_len, session_aes_key_encrypted, 256,
-                                &session_aes_key_encrypted_len);
+      res = atchops_rsa_encrypt(&ac, session_aes_key, session_aes_key_len, session_aes_key_encrypted);
       if (res != 0) {
         atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to encrypt the session aes key\n");
-        atchops_rsakey_publickey_free(&ac);
+        atchops_rsa_key_public_key_free(&ac);
         if (authenticate_to_rvd) {
           free(rvd_auth_string);
         }
@@ -344,13 +369,15 @@ void handle_ssh_request(atclient *atclient, pthread_mutex_t *atclient_lock, sshn
         return;
       }
 
+      session_aes_key_encrypted_len = 256;
+
       session_aes_key_len = session_aes_key_encrypted_len * 3 / 2; // reusing this since we can
 
       session_aes_key_base64 = malloc(BYTES(session_aes_key_len));
       if (session_aes_key_base64 == NULL) {
         atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR,
                      "Failed to allocate memory to base64 encode the session aes key\n");
-        atchops_rsakey_publickey_free(&ac);
+        atchops_rsa_key_public_key_free(&ac);
         if (authenticate_to_rvd) {
           free(rvd_auth_string);
         }
@@ -365,7 +392,7 @@ void handle_ssh_request(atclient *atclient, pthread_mutex_t *atclient_lock, sshn
                                   session_aes_key_len, &session_aes_key_base64_len);
       if (res != 0) {
         atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to base64 encode the session aes key\n");
-        atchops_rsakey_publickey_free(&ac);
+        atchops_rsa_key_public_key_free(&ac);
         if (authenticate_to_rvd) {
           free(rvd_auth_string);
         }
@@ -381,7 +408,7 @@ void handle_ssh_request(atclient *atclient, pthread_mutex_t *atclient_lock, sshn
       session_iv_encrypted = malloc(BYTES(256));
       if (session_iv_encrypted == NULL) {
         atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to allocate memory to encrypt the session iv\n");
-        atchops_rsakey_publickey_free(&ac);
+        atchops_rsa_key_public_key_free(&ac);
         if (authenticate_to_rvd) {
           free(rvd_auth_string);
         }
@@ -390,8 +417,8 @@ void handle_ssh_request(atclient *atclient, pthread_mutex_t *atclient_lock, sshn
         return;
       }
 
-      res = atchops_rsa_encrypt(ac, session_iv, session_iv_len, session_iv_encrypted, 256, &session_iv_encrypted_len);
-      atchops_rsakey_publickey_free(&ac);
+      res = atchops_rsa_encrypt(&ac, session_iv, session_iv_len, session_iv_encrypted);
+      atchops_rsa_key_public_key_free(&ac);
       if (res != 0) {
         atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to encrypt the session iv\n");
         if (authenticate_to_rvd) {
@@ -403,6 +430,7 @@ void handle_ssh_request(atclient *atclient, pthread_mutex_t *atclient_lock, sshn
         return;
       }
 
+      session_iv_encrypted_len = 256;
       session_iv_len = session_iv_encrypted_len * 3 / 2; // reusing this since we can
       session_iv_base64 = malloc(BYTES(session_iv_len));
       if (session_iv_base64 == NULL) {
@@ -526,7 +554,7 @@ void handle_ssh_request(atclient *atclient, pthread_mutex_t *atclient_lock, sshn
 
     unsigned char signature[256];
     memset(signature, 0, 256);
-    res = atchops_rsa_sign(signing_key, ATCHOPS_MD_SHA256, signing_input2, strlen((char *)signing_input2), signature);
+    res = atchops_rsa_sign(&signing_key, ATCHOPS_MD_SHA256, signing_input2, strlen((char *)signing_input2), signature);
     if (res != 0) {
       atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to sign the final res payload\n");
       goto clean_json;
@@ -559,12 +587,11 @@ void handle_ssh_request(atclient *atclient, pthread_mutex_t *atclient_lock, sshn
     }
 
     snprintf(keyname, keynamelen, "%s.%s", identifier, params->device);
-    atclient_atkey_create_sharedkey(&final_res_atkey, keyname, keynamelen, params->atsign, strlen(params->atsign),
-                                    requesting_atsign, strlen(requesting_atsign), SSHNP_NS, SSHNP_NS_LEN);
+    atclient_atkey_create_shared_key(&final_res_atkey, keyname, params->atsign, requesting_atsign, SSHNP_NS);
 
     atclient_atkey_metadata *metadata = &final_res_atkey.metadata;
-    atclient_atkey_metadata_set_ispublic(metadata, false);
-    atclient_atkey_metadata_set_isencrypted(metadata, true);
+    atclient_atkey_metadata_set_is_public(metadata, false);
+    atclient_atkey_metadata_set_is_encrypted(metadata, true);
     atclient_atkey_metadata_set_ttl(metadata, 10000);
 
     atclient_notify_params notify_params;
@@ -573,9 +600,8 @@ void handle_ssh_request(atclient *atclient, pthread_mutex_t *atclient_lock, sshn
     notify_params.value = final_res_value;
     notify_params.operation = ATCLIENT_NOTIFY_OPERATION_UPDATE;
 
-    char final_keystr[500];
-    size_t out;
-    atclient_atkey_to_string(&final_res_atkey, final_keystr, 500, &out);
+    char *final_keystr = NULL;
+    atclient_atkey_to_string(&final_res_atkey, &final_keystr);
 
     int ret = pthread_mutex_lock(atclient_lock);
     if (ret != 0) {
@@ -596,7 +622,10 @@ void handle_ssh_request(atclient *atclient, pthread_mutex_t *atclient_lock, sshn
       atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_DEBUG, "Released the atclient lock\n");
     }
 
-  clean_res: { free(keyname); }
+  clean_res: {
+    free(final_keystr);
+    free(keyname);
+  }
   clean_final_res_value: {
     atclient_atkey_free(&final_res_atkey);
     free(final_res_value);
@@ -622,7 +651,7 @@ cancel:
   return;
 }
 
-int verify_envelope_signature(atchops_rsakey_publickey publickey, const unsigned char *payload,
+int verify_envelope_signature(atchops_rsa_key_public_key publickey, const unsigned char *payload,
                               unsigned char *signature, const char *hashing_algo, const char *signing_algo) {
   int ret = 0;
 
@@ -635,7 +664,7 @@ int verify_envelope_signature(atchops_rsakey_publickey publickey, const unsigned
     return -1;
   }
 
-  ret = atchops_rsa_verify(publickey, ATCHOPS_MD_SHA256, payload, strlen((char *)payload), signature);
+  ret = atchops_rsa_verify(&publickey, ATCHOPS_MD_SHA256, payload, strlen((char *)payload), signature);
   if (ret != 0) {
     atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "verify_envelope_signature (failed)\n");
     return -1;

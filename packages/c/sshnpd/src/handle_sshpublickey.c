@@ -11,7 +11,7 @@ static char *supported_key_prefix_map[] = {
     [SKP_RSA] = "ssh-rsa", [SKP_ED9] = "ssh-ed25519",
 };
 
-void handle_sshpublickey(sshnpd_params *params, atclient_monitor_message *message, FILE *authkeys_file,
+void handle_sshpublickey(sshnpd_params *params, atclient_monitor_response *message, FILE *authkeys_file,
                          char *authkeys_filename) {
   if (!params->sshpublickey) {
     atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Ignoring sshpublickey from %s\n",
@@ -19,13 +19,13 @@ void handle_sshpublickey(sshnpd_params *params, atclient_monitor_message *messag
     return;
   }
 
-  char *ssh_key = (char *)message->notification.decryptedvalue;
+  char *ssh_key = (char *)message->notification.decrypted_value;
   size_t ssh_key_len = strlen(ssh_key);
 
   bool is_valid_prefix = false;
   for (int i = 1; i < SUPPORTED_KEY_PREFIX_LEN; i++) {
     char *prefix = supported_key_prefix_map[i];
-    size_t prefix_len = message->notification.decryptedvaluelen;
+    size_t prefix_len = strlen(message->notification.decrypted_value);
 
     if (prefix_len < strlen(ssh_key)) {
       continue;

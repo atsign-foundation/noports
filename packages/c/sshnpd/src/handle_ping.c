@@ -11,7 +11,7 @@
 
 #define LOGGER_TAG "PING RESPONSE"
 
-void handle_ping(sshnpd_params *params, atclient_monitor_message *message, char *ping_response, atclient *atclient,
+void handle_ping(sshnpd_params *params, atclient_monitor_response *message, char *ping_response, atclient *atclient,
                  pthread_mutex_t *atclient_lock) {
   atclient_atkey pingkey;
   atclient_atkey_init(&pingkey);
@@ -19,13 +19,11 @@ void handle_ping(sshnpd_params *params, atclient_monitor_message *message, char 
   size_t keynamelen = strlen("heartbeat") + strlen(params->device) + 2; // + 1 for '.' +1 for '\0'
   char keyname[keynamelen];
   snprintf(keyname, keynamelen, "heartbeat.%s", params->device);
-  atclient_atkey_create_sharedkey(&pingkey, keyname, keynamelen, params->atsign, strlen(params->atsign),
-                                  message->notification.from, strlen(message->notification.from), SSHNP_NS,
-                                  SSHNP_NS_LEN);
+  atclient_atkey_create_shared_key(&pingkey, keyname, params->atsign, message->notification.from, SSHNP_NS);
 
   atclient_atkey_metadata *metadata = &pingkey.metadata;
-  atclient_atkey_metadata_set_ispublic(metadata, false);
-  atclient_atkey_metadata_set_isencrypted(metadata, true);
+  atclient_atkey_metadata_set_is_public(metadata, false);
+  atclient_atkey_metadata_set_is_encrypted(metadata, true);
   atclient_atkey_metadata_set_ttl(metadata, 10000);
 
   atclient_notify_params notify_params;
