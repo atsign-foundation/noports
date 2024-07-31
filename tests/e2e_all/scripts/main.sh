@@ -25,6 +25,7 @@ function usageAndExit {
   echo "     [-u <remote username>] - defaults to the local username \\"
   echo "     [-w <daemon start wait time> - how long to wait for daemons to start up - defaults to 30 seconds] \\"
   echo "     [-n (Do not recompile binaries for current commit. Default is to always recompile.)]"
+  echo "     [-p (Enable test parallelization, requires GNU parallel to be installed.) ]"
   echo ""
   echo "Notes:"
   echo "  <atDirectory host> defaults to root.atsign.org"
@@ -48,8 +49,8 @@ atDirectoryPort=64
 testsToRun="all"
 
 # defaultDaemonVersions="c:current"
-defaultDaemonVersions="d:4.0.5 d:5.2.0 d:current c:current"
-defaultClientVersions="d:4.0.5 d:5.2.0 d:current"
+defaultDaemonVersions="d:4.0.5 d:5.2.0 d:5.5.0 d:current c:current"
+defaultClientVersions="d:4.0.5 d:5.2.0 d:5.5.0 d:current"
 
 daemonVersions=$defaultDaemonVersions
 clientVersions=$defaultClientVersions
@@ -57,6 +58,10 @@ clientVersions=$defaultClientVersions
 unset testScriptsDir
 unset testRootDir
 unset testRuntimeDir
+
+# Parallelization was designed for use with "GNU parallel 20210822"
+allowParallelization="false"
+
 recompile="true"
 
 scriptName=$(basename -- "$0")
@@ -80,17 +85,17 @@ fi
 
 clientAtSign="$1"
 if test "${clientAtSign:0:1}" != "@"; then
-  logError "invalid clientAtSign $clientAtSign"
+  logErrorAndReport "invalid clientAtSign $clientAtSign"
   usageAndExit
 fi
 daemonAtSign="$2"
 if test "${daemonAtSign:0:1}" != "@"; then
-  logError "invalid daemonAtSign $daemonAtSign"
+  logErrorAndReport "invalid daemonAtSign $daemonAtSign"
   usageAndExit
 fi
 srvAtSign="$3"
 if test "${srvAtSign:0:1}" != "@"; then
-  logError "invalid srvAtSign $srvAtSign"
+  logErrorAndReport "invalid srvAtSign $srvAtSign"
   usageAndExit
 fi
 
@@ -107,7 +112,7 @@ identityFilename="$HOME/.ssh/e2e_all.${commitId}"
 
 daemonStartWait=15
 
-while getopts r:t:s:c:u:w:n opt; do
+while getopts r:t:s:c:u:w:pn opt; do
   case $opt in
     r) atDirectoryHost=$OPTARG ;;
     t) testsToRun=$OPTARG ;;
@@ -115,6 +120,7 @@ while getopts r:t:s:c:u:w:n opt; do
     c) clientVersions=$OPTARG ;;
     u) remoteUsername=$OPTARG ;;
     w) daemonStartWait=$OPTARG ;;
+    p) allowParallelization="true" ;;
     n) recompile="false" ;;
     *) usageAndExit ;;
   esac
@@ -134,6 +140,7 @@ export clientVersions
 export remoteUsername
 export identityFilename
 export daemonStartWait
+export allowParallelization
 timeoutDuration=20
 export timeoutDuration
 
@@ -165,6 +172,7 @@ logInfo "    testRootDir:      $testRootDir"
 logInfo "    testRuntimeDir:   $testRuntimeDir"
 logInfo "    testScriptsDir:   $testScriptsDir"
 logInfo "    recompile:        $recompile"
+logInfo "    parallelization:  $allowParallelization"
 logInfo "    atDirectoryHost:  $atDirectoryHost"
 logInfo "    daemonVersions:   $daemonVersions"
 logInfo "    clientVersions:   $clientVersions"
@@ -177,7 +185,7 @@ export recompile
 "$testScriptsDir/common/setup_binaries.sh"
 retCode=$?
 if test "$retCode" != 0; then
-  logError "Failed to set up binaries - exiting"
+  logErrorAndReport "Failed to set up binaries - exiting"
   exit $retCode
 fi
 
@@ -202,7 +210,7 @@ logInfo "Calling start_daemons.sh"
 "$testScriptsDir/common/start_daemons.sh"
 retCode=$?
 if test "$retCode" != 0; then
-  logError "Failed to start daemons; will not run tests"
+  logErrorAndReport "Failed to start daemons; will not run tests"
   logInfo "Calling stop_daemons.sh"
   "$testScriptsDir/common/stop_daemons.sh"
   exit $retCode
@@ -216,7 +224,7 @@ logInfo "Calling common/stop_daemons.sh"
 "$testScriptsDir/common/stop_daemons.sh"
 retCode=$?
 if test "$retCode" != 0; then
-  logError "stop_daemons failed with exit status $retCode"
+  logErrorAndReport "stop_daemons failed with exit status $retCode"
 fi
 
 echo

@@ -2,8 +2,9 @@
 
 # shellcheck disable=SC2034
 scriptName=$(basename -- "$0")
+testToRun="$scriptName"
 
-if test -z "$testScriptsDir" ; then
+if test -z "$testScriptsDir"; then
   echo -e "    ${RED}check_env: testScriptsDir is not set${NC}" && exit 1
 fi
 
@@ -14,9 +15,9 @@ daemonVersion="$1"
 clientVersion="$2"
 
 if [[ ${daemonVersion:0:1} == "c" ]] && [[ $(versionIsLessThan "$clientVersion" "d:5.3.0") == "true" ]]; then
-  logInfoAndReport "    N/A  because c daemon requires clients >= v5.3.0"
+  logInfo "    N/A  because c daemon requires clients >= v5.3.0"
   exit 50
 fi
 
 # Execute ssh-client 'openssh', v5 daemon features, and print the ssh command
-"$testScriptsDir/tests/shared/sshnp" "$1" "$2" "openssh" "v5" "print"
+"$testScriptsDir/tests/shared/sshnp" "$1" "$2" "openssh" "v5" "print" "$testToRun"

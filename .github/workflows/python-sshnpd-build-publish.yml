@@ -138,7 +138,7 @@ jobs:
       run: |
         echo "hashes=$(cat checksums.txt | base64 -w0)" >> "$GITHUB_OUTPUT"
     - name: Attest the release artifacts
-      uses: actions/attest-build-provenance@5e9cb68e95676991667494a6a4e59b8a2f13e1d0 # v1.3.3
+      uses: actions/attest-build-provenance@210c1913531870065f03ce1f9440dd87bc0938cd # v1.4.0
       with:
         subject-path: 'dist/**'
     - name: Upload artifact signatures to GitHub Release
