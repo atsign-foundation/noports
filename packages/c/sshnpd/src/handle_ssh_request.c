@@ -468,7 +468,7 @@ void handle_ssh_request(atclient *atclient, pthread_mutex_t *atclient_lock, sshn
       free(session_iv_base64);
     }
 
-    int res = run_srv_process(params, host, port, authenticate_to_rvd, rvd_auth_string, encrypt_rvd_traffic,
+    int res = run_srv_process(params, host, port, authenticate_to_rvd, rvd_auth_string, encrypt_rvd_traffic, false,
                               session_aes_key, session_iv, authkeys_file, authkeys_filename);
     *is_child_process = true;
 
