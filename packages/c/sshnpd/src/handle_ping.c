@@ -13,6 +13,7 @@
 
 void handle_ping(sshnpd_params *params, atclient_monitor_response *message, char *ping_response, atclient *atclient,
                  pthread_mutex_t *atclient_lock) {
+  int ret = 1;
   atclient_atkey pingkey;
   atclient_atkey_init(&pingkey);
 
@@ -28,11 +29,22 @@ void handle_ping(sshnpd_params *params, atclient_monitor_response *message, char
 
   atclient_notify_params notify_params;
   atclient_notify_params_init(&notify_params);
-  notify_params.atkey = &pingkey;
-  notify_params.value = ping_response;
-  notify_params.operation = ATCLIENT_NOTIFY_OPERATION_UPDATE;
+  if((ret = atclient_notify_params_set_atkey(&notify_params, &pingkey)) != 0) {
+    atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to set atkey in notify params\n");
+    goto exit_ping;
+  }
 
-  int ret = pthread_mutex_lock(atclient_lock);
+  if((ret = atclient_notify_params_set_operation(&notify_params, ATCLIENT_NOTIFY_OPERATION_UPDATE)) != 0) {
+    atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to set operation in notify params\n");
+    goto exit_ping;
+  }
+
+  if((ret = atclient_notify_params_set_value(&notify_params, ping_response)) != 0) {
+    atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to set value in notify params\n");
+    goto exit_ping;
+  }
+
+  ret = pthread_mutex_lock(atclient_lock);
   if (ret != 0) {
     atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR,
                  "Failed to get a lock on atclient for sending a notification\n");

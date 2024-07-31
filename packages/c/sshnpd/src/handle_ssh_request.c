@@ -28,8 +28,16 @@ void handle_ssh_request(atclient *atclient, pthread_mutex_t *atclient_lock, sshn
                         char *authkeys_filename, atchops_rsa_key_private_key signing_key,
                         struct sshnpd_process_node *process_head) {
   int res = 0;
+  if(!atclient_atnotification_is_from_initialized(&message->notification) && message->notification.from != NULL) {
+    atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to initialize the from field of the notification\n");
+    return;
+  }
   char *requesting_atsign = message->notification.from;
 
+  if(!atclient_atnotification_is_decrypted_value_initialized(&message->notification) && message->notification.decrypted_value != NULL) {
+    atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to initialize the decrypted value of the notification\n");
+    return;
+  }
   char *decrypted_json = malloc(sizeof(char) * (strlen(message->notification.decrypted_value) + 1));
   if (decrypted_json == NULL) {
     atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to allocate memory to decrypt the envelope\n");
@@ -39,7 +47,13 @@ void handle_ssh_request(atclient *atclient, pthread_mutex_t *atclient_lock, sshn
   memcpy(decrypted_json, message->notification.decrypted_value, strlen(message->notification.decrypted_value));
   *(decrypted_json + strlen(message->notification.decrypted_value)) = '\0';
 
+  // log the decrypted json
+  atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_DEBUG, "Decrypted json: %s\n", decrypted_json);
+
   cJSON *envelope = cJSON_Parse(decrypted_json);
+
+  // log envelope
+  atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_DEBUG, "Received envelope: %s\n", cJSON_Print(envelope));
   free(decrypted_json);
 
   // First validate the types of everything we expect to be in the envelope
@@ -596,9 +610,18 @@ void handle_ssh_request(atclient *atclient, pthread_mutex_t *atclient_lock, sshn
 
     atclient_notify_params notify_params;
     atclient_notify_params_init(&notify_params);
-    notify_params.atkey = &final_res_atkey;
-    notify_params.value = final_res_value;
-    notify_params.operation = ATCLIENT_NOTIFY_OPERATION_UPDATE;
+    if((res = atclient_notify_params_set_atkey(&notify_params, &final_res_atkey)) != 0) {
+      atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to set atkey in notify params\n");
+      goto clean_res;
+    }
+    if((res = atclient_notify_params_set_value(&notify_params, final_res_value)) != 0) {
+      atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to set value in notify params\n");
+      goto clean_res;
+    }
+    if((res = atclient_notify_params_set_operation(&notify_params, ATCLIENT_NOTIFY_OPERATION_UPDATE)) != 0) {
+      atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to set operation in notify params\n");
+      goto clean_res;
+    }
 
     char *final_keystr = NULL;
     atclient_atkey_to_string(&final_res_atkey, &final_keystr);
