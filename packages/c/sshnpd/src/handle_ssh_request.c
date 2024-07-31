@@ -26,7 +26,7 @@
 void handle_ssh_request(atclient *atclient, pthread_mutex_t *atclient_lock, sshnpd_params *params,
                         bool *is_child_process, atclient_monitor_message *message, char *home_dir, FILE *authkeys_file,
                         char *authkeys_filename, atchops_rsakey_privatekey signing_key,
-                        struct sshnpd_process_queue *pids) {
+                        struct sshnpd_process_node *process_head) {
   int res = 0;
   char *requesting_atsign = message->notification.from;
 
@@ -154,7 +154,8 @@ void handle_ssh_request(atclient *atclient, pthread_mutex_t *atclient_lock, sshn
   char *signing_algo_str = cJSON_GetStringValue(signing_algo);
 
   memset(value, 0, valuelen);
-  res = atchops_base64_decode((unsigned char *)signature_str, strlen(signature_str), value, valuelen, &valueolen);
+  res = atchops_base64_decode((unsigned char *)signature_str, strlen(signature_str), (unsigned char *)value, valuelen,
+                              &valueolen);
   if (res != 0) {
     atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "atchops_base64_decode: %d\n", res);
     cJSON_Delete(envelope);
@@ -485,17 +486,30 @@ void handle_ssh_request(atclient *atclient, pthread_mutex_t *atclient_lock, sshn
       goto cancel;
     }
 
-    pids->processes = realloc(pids->processes, sizeof(pid_t) * (pids->len + 1));
-    if (pids->processes == NULL) {
-      // we leak ownership of srv here to the system... not much can be done if we run out of memory to track the
-      // process though
-      // TODO  - what should sshnpd do at this state?
-      // - shutdown everything?
-      // - try to kill the process we don't have enough memory to track
-      // - just move on and acccept that the process is srv and will self-shutdown eventually
+    // Allocate a new linked-list node
+    struct sshnpd_process_node *pid_node = malloc(sizeof(struct sshnpd_process_node));
+    if (pid_node == NULL) {
+      atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR,
+                   "Unable to allocate memory to keep track of the srv process id");
       goto cancel;
     }
-    pids->processes[pids->len++] = pid;
+
+    // Assign the linked-list node values
+    pid_node->process = pid;
+    pid_node->next = NULL;
+
+    // Append to the linked-list
+    if (process_head == NULL) {
+      process_head = pid_node;
+    } else {
+      struct sshnpd_process_node *curr_node = process_head;
+      while (curr_node->next != NULL) {
+        curr_node = curr_node->next;
+      }
+      curr_node->next = pid_node;
+    }
+    atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_DEBUG,
+                 "Appended the srv process id node to the end of the process queue");
 
     char *identifier = cJSON_GetStringValue(session_id);
     cJSON *final_res_payload = cJSON_CreateObject();
@@ -621,7 +635,7 @@ int verify_envelope_signature(atchops_rsakey_publickey publickey, const unsigned
     return -1;
   }
 
-  ret = atchops_rsa_verify(publickey, ATCHOPS_MD_SHA256, payload, strlen(payload), signature);
+  ret = atchops_rsa_verify(publickey, ATCHOPS_MD_SHA256, payload, strlen((char *)payload), signature);
   if (ret != 0) {
     atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "verify_envelope_signature (failed)\n");
     return -1;
