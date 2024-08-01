@@ -9,4 +9,4 @@ cmake \
   -DCMAKE_AR="$PWD/zig-ar" \
   -DCMAKE_RANLIB="$PWD/zig-ranlib" \
   -DCMAKE_C_FLAGS="-Wno-error -pthread -lrt" \
-  -B build-aarch64-linux-gnu
+  -B build-linux-arm64-gnu
