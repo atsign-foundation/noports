@@ -11,6 +11,7 @@
 #include <cJSON.h>
 #include <pthread.h>
 #include <sshnpd/handle_ssh_request.h>
+#include <sshnpd/handler_commons.h>
 #include <sshnpd/run_srv_process.h>
 #include <stdlib.h>
 #include <string.h>
@@ -20,8 +21,6 @@
 #include <unistd.h>
 
 #define LOGGER_TAG "SSH_REQUEST"
-
-#define BYTES(x) (sizeof(unsigned char) * x)
 
 void handle_ssh_request(atclient *atclient, pthread_mutex_t *atclient_lock, sshnpd_params *params,
                         bool *is_child_process, atclient_monitor_message *message, char *home_dir, FILE *authkeys_file,
@@ -468,8 +467,9 @@ void handle_ssh_request(atclient *atclient, pthread_mutex_t *atclient_lock, sshn
       free(session_iv_base64);
     }
 
-    int res = run_srv_process(params, host, port, false, NULL, NULL, authenticate_to_rvd, rvd_auth_string, encrypt_rvd_traffic,
-                              false, session_aes_key, session_iv, authkeys_file, authkeys_filename);
+    int res =
+        run_srv_process(params, host, port, false, NULL, NULL, authenticate_to_rvd, rvd_auth_string,
+                        encrypt_rvd_traffic, false, session_aes_key, session_iv, authkeys_file, authkeys_filename);
     *is_child_process = true;
 
     if (authenticate_to_rvd) {
@@ -620,28 +620,4 @@ cancel:
   }
   cJSON_Delete(envelope);
   return;
-}
-
-int verify_envelope_signature(atchops_rsakey_publickey publickey, const unsigned char *payload,
-                              unsigned char *signature, const char *hashing_algo, const char *signing_algo) {
-  int ret = 0;
-
-  atchops_md_type mdtype;
-
-  if (strcmp(hashing_algo, "sha256") == 0) {
-    mdtype = ATCHOPS_MD_SHA256;
-  } else {
-    atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Unsupported hash type for rsa verify\n");
-    return -1;
-  }
-
-  ret = atchops_rsa_verify(publickey, ATCHOPS_MD_SHA256, payload, strlen((char *)payload), signature);
-  if (ret != 0) {
-    atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "verify_envelope_signature (failed)\n");
-    return -1;
-  }
-
-  atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_DEBUG, "verify_envelope_signature (success)\n");
-
-  return ret;
 }

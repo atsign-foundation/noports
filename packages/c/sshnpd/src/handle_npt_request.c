@@ -11,6 +11,7 @@
 #include <cJSON.h>
 #include <pthread.h>
 #include <sshnpd/handle_ssh_request.h>
+#include <sshnpd/handler_commons.h>
 #include <sshnpd/run_srv_process.h>
 #include <stdlib.h>
 #include <string.h>
@@ -20,8 +21,6 @@
 #include <unistd.h>
 
 #define LOGGER_TAG "NPT_REQUEST"
-
-// void handle_npt_request(sshnpd_params *params, atclient_monitor_message *message) { int res = 0; }
 
 void handle_npt_request(atclient *atclient, pthread_mutex_t *atclient_lock, sshnpd_params *params,
                         bool *is_child_process, atclient_monitor_message *message, char *home_dir, FILE *authkeys_file,
@@ -514,7 +513,6 @@ void handle_npt_request(atclient *atclient, pthread_mutex_t *atclient_lock, sshn
     cJSON *final_res_payload = cJSON_CreateObject();
     cJSON_AddStringToObject(final_res_payload, "status", "connected");
     cJSON_AddItemReferenceToObject(final_res_payload, "sessionId", session_id);
-    cJSON_AddNullToObject(final_res_payload, "ephemeralPrivateKey");
     cJSON_AddStringToObject(final_res_payload, "sessionAESKey", (char *)session_aes_key_base64);
     cJSON_AddStringToObject(final_res_payload, "sessionIV", (char *)session_iv_base64);
 
