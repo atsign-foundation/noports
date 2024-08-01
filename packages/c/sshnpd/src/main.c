@@ -86,7 +86,8 @@ static void sig_handler(int _) {
 }
 
 // Queue for all srv processes
-static struct sshnpd_process_queue srv_pids = {0, 0, NULL};
+static struct sshnpd_process_node *process_head;
+static void free_sshnpd_process_nodes(struct sshnpd_process_node *process_head);
 
 int main(int argc, char **argv) {
   int res = 0;
@@ -322,19 +323,12 @@ int main(int argc, char **argv) {
     goto close_authkeys;
   }
 
-  // 12. Create child process queue
-  srv_pids.len = 0;
-  srv_pids.processes = malloc(sizeof(pid_t) * srv_pids.len);
-  if (srv_pids.processes == NULL) {
-    goto clean_device_info_keys;
-  }
-
   // 13. Main notification handler loop
   atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_INFO, "Starting main loop\n");
   main_loop();
   atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_INFO, "Exited main loop\n");
 
-  free(srv_pids.processes);
+  free_sshnpd_process_nodes(process_head);
 
 clean_device_info_keys:
   for (int i = 0; i < params.manager_list_len; i++) {
@@ -400,15 +394,25 @@ void main_loop() {
     atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_DEBUG, "Waiting for next monitor thread message\n");
     atclient_monitor_message_init(&message);
 
-    // Loop through background instances of sshnpd to see if they are ready to exit
     int status;
-    for (int i = 0; i < srv_pids.len; i++) {
-      waitpid(srv_pids.processes[i], &status, WNOHANG); // Don't wait for srv - we want it to be running in the bg
+    struct sshnpd_process_node *prev_process = NULL;
+
+    // Loop through background instances of sshnpd to see if they are ready to exit
+    for (struct sshnpd_process_node *curr_process = process_head; curr_process != NULL;
+         curr_process = curr_process->next) {
+      waitpid(curr_process->process, &status, WNOHANG);
       if (WIFEXITED(status)) {
-        atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_DEBUG, "Exited srv process: %d\n", srv_pids.processes[i]);
-        srv_pids.processes[i] = srv_pids.processes[--srv_pids.len]; // move last element into the newly free slot
-        srv_pids.processes = realloc(srv_pids.processes, sizeof(pid_t) * srv_pids.len);
+        if (curr_process != process_head) { // curr is not the first element
+          prev_process->next = curr_process->next;
+        } else if (process_head->next != NULL) { // curr is the first element
+          process_head = curr_process->next;
+        } else { // curr is the only element
+          process_head = NULL;
+        }
+        curr_process->next = NULL; // unlink this element so we only free this single node
+        free_sshnpd_process_nodes(curr_process);
       }
+      prev_process = curr_process; // set current to prev before next iteration
     }
 
     // Read the next monitor message
@@ -524,7 +528,7 @@ void main_loop() {
         case NK_SSH_REQUEST:
           atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_DEBUG, "Executing handle_ssh_request\n");
           handle_ssh_request(&worker, &atclient_lock, &params, &is_child_process, &message, home_dir, authkeys_file,
-                             authkeys_filename, signingkey, &srv_pids);
+                             authkeys_filename, signingkey, process_head);
           if (is_child_process) {
             atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_DEBUG, "Exiting child process\n");
             atclient_monitor_message_free(&message);
@@ -600,4 +604,11 @@ static int reconnect_atclient(const unsigned char *src, const size_t srclen, uns
 
 exit:
   return ret;
+}
+
+static void free_sshnpd_process_nodes(struct sshnpd_process_node *process_head) {
+  if (process_head != NULL && process_head->next != NULL) {
+    free_sshnpd_process_nodes(process_head->next);
+  }
+  free(process_head);
 }
