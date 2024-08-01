@@ -466,7 +466,7 @@ void handle_npt_request(atclient *atclient, pthread_mutex_t *atclient_lock, sshn
     }
 
     int res = run_srv_process(params, rvd_host, rvd_port, true, requested_host, requested_port, authenticate_to_rvd,
-                              rvd_auth_string, encrypt_rvd_traffic, false, session_aes_key, session_iv, authkeys_file,
+                              rvd_auth_string, encrypt_rvd_traffic, true, session_aes_key, session_iv, authkeys_file,
                               authkeys_filename);
     *is_child_process = true;
 
