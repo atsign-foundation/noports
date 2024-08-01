@@ -1,6 +1,8 @@
-#include <atchops/rsakey.h>
+#include "atchops/rsa.h"
 #include <atchops/constants.h>
+#include <atchops/rsakey.h>
 #include <atlogger/atlogger.h>
+#include <string.h>
 
 #define LOGGER_TAG "VERIFY_REQUEST_SIGNATURE"
 
