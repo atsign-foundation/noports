@@ -436,8 +436,8 @@ void handle_ssh_request(atclient *atclient, pthread_mutex_t *atclient_lock, sshn
       free(session_iv_encrypted);
       free_session_base64 = true;
     } // rsa2048 - allocates (session_iv_base64, session_aes_key_base64)
-  } // case 7
-  } // switch
+  }   // case 7
+  }   // switch
 
   if (!is_valid) {
     atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR,
@@ -468,8 +468,8 @@ void handle_ssh_request(atclient *atclient, pthread_mutex_t *atclient_lock, sshn
       free(session_iv_base64);
     }
 
-    int res = run_srv_process(params, host, port, authenticate_to_rvd, rvd_auth_string, encrypt_rvd_traffic, false,
-                              session_aes_key, session_iv, authkeys_file, authkeys_filename);
+    int res = run_srv_process(params, host, port, false, NULL, NULL, authenticate_to_rvd, rvd_auth_string, encrypt_rvd_traffic,
+                              false, session_aes_key, session_iv, authkeys_file, authkeys_filename);
     *is_child_process = true;
 
     if (authenticate_to_rvd) {
@@ -596,12 +596,12 @@ void handle_ssh_request(atclient *atclient, pthread_mutex_t *atclient_lock, sshn
       atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_DEBUG, "Released the atclient lock\n");
     }
 
-  clean_res: { free(keyname); }
-  clean_final_res_value: {
+  clean_res : { free(keyname); }
+  clean_final_res_value : {
     atclient_atkey_free(&final_res_atkey);
     free(final_res_value);
   }
-  clean_json: {
+  clean_json : {
     cJSON_Delete(final_res_envelope);
     cJSON_free(signing_input2);
   }
