@@ -154,7 +154,7 @@ int run_srv_daemon_side_multi(srv_params_t *params) {
 
     char *messagetype = NULL, *new_session_aes_key_string = NULL, *new_session_aes_iv_string = NULL;
 
-    atlogger_log(TAG, DEBUG, "requests buffer is: %s\n", buffer);
+    atlogger_log(TAG, INFO, "requests buffer is: %s\n", buffer);
 
     // First, check if the buffer contains just one or more requests
     size_t nrequests = 0;

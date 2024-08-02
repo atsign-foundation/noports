@@ -523,7 +523,7 @@ void main_loop() {
         case NK_NPT_REQUEST:
           atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_DEBUG, "Executing handle_npt_request\n");
           handle_npt_request(&worker, &atclient_lock, &params, &is_child_process, &message, home_dir, authkeys_file,
-                             authkeys_filename, signingkey, process_head);
+                             authkeys_filename, signingkey);
           break;
         case NK_NONE:
           break;
