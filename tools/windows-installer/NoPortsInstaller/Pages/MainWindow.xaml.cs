@@ -1,6 +1,6 @@
 ﻿using System.Windows;
 
-namespace NoPortsInstaller;
+namespace NoPortsInstaller.Pages;
 
 /// <summary>
 /// Interaction logic for MainWindow.xaml

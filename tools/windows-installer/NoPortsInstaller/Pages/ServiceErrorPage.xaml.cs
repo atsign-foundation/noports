@@ -4,15 +4,13 @@ using System.Windows.Controls;
 namespace NoPortsInstaller.Pages
 {
     /// <summary>
-    /// Interaction logic for FinishInstall.xaml
+    /// Interaction logic for ServiceErrorPage.xaml
     /// </summary>
-    public partial class FinishInstall : Page
+    public partial class ServiceErrorPage : Page
     {
-        private Installer _installer;
-        public FinishInstall(Installer installer)
+        public ServiceErrorPage()
         {
             InitializeComponent();
-            _installer = installer;
         }
 
         private void NextPageButton_Click(object sender, RoutedEventArgs e)

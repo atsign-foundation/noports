@@ -1,7 +1,7 @@
 ﻿using System.Windows;
 using System.Windows.Controls;
 
-namespace NoPortsInstaller
+namespace NoPortsInstaller.Pages
 {
     /// <summary>
     /// Interaction logic for FinishInstall.xaml

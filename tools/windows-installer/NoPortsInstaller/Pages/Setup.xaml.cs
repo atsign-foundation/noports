@@ -1,7 +1,7 @@
 ﻿using System.Windows;
 using System.Windows.Controls;
 
-namespace NoPortsInstaller
+namespace NoPortsInstaller.Pages
 {
     /// <summary>
     /// Interaction logic for Setup.xaml
@@ -13,6 +13,10 @@ namespace NoPortsInstaller
         {
             InitializeComponent();
             _installer = installer;
+            if (installer.IsInstalled)
+            {
+
+            }
         }
 
         private void OpenDialogButton_Click(object sender, RoutedEventArgs e)
