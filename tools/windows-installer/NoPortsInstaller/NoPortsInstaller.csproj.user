@@ -8,9 +8,16 @@
       <SubType>Designer</SubType>
     </ApplicationDefinition>
   </ItemGroup>
-  <ItemGroup />
+  <ItemGroup>
+    <Compile Update="Pages\ServiceErrorPage.xaml.cs">
+      <SubType>Code</SubType>
+    </Compile>
+  </ItemGroup>
   <ItemGroup>
     <Page Update="Pages\FinishUninstall.xaml">
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Update="Pages\ServiceErrorPage.xaml">
       <SubType>Designer</SubType>
     </Page>
     <Page Update="Pages\Uninstall.xaml">

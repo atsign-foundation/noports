@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk.Worker">
 
   <PropertyGroup>
-    <TargetFramework>net8.0</TargetFramework>
+    <TargetFramework>net8.0-windows10.0.22621.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <UserSecretsId>dotnet-SshnpdService-d2f561af-aaf6-4e52-869c-084e7d933422</UserSecretsId>
@@ -9,8 +9,11 @@
 	<PublishSingleFile>true</PublishSingleFile>
 	<PublishReadyToRun>true</PublishReadyToRun>
 	<RuntimeIdentifier>win-x64</RuntimeIdentifier>
+	<PublishReadyToRun>true</PublishReadyToRun>
+	<SelfContained>true</SelfContained>
 	  <DebugType>embedded</DebugType>
 	<PlatformTarget>x64</PlatformTarget>
+	<PublishTrimmed>True</PublishTrimmed>
   </PropertyGroup>
 
   <ItemGroup>
