@@ -1,4 +1,5 @@
 ﻿using Microsoft.Win32;
+using NoPortsInstaller.Pages;
 using System.Diagnostics;
 using System.IO;
 using System.IO.Compression;
@@ -21,6 +22,7 @@ namespace NoPortsInstaller
         public string RegionAtsign { get; set; }
         public string PermittedPorts { get; set; }
         public string MultipleDevices { get; set; }
+        public bool IsInstalled { get { return Directory.Exists(InstallDirectory); } set { } }
         public List<Page> Pages { get; set; }
         private int index = 0;
         private MainWindow? window;
@@ -39,24 +41,32 @@ namespace NoPortsInstaller
             MultipleDevices = "";
             PermittedPorts = "localhost:22,localhost:3389";
             Pages = new List<Page> { new Setup(this), new ConfigureInstall(this) };
+            IsInstalled = false;
         }
 
         public async void Install(ProgressBar progress)
         {
-            CreateDirectories(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile));
-            await UpdateProgress(progress, 25);
-            await DownloadArchive();
-            await UpdateProgress(progress, 50);
-            ExtractArchive();
-            await UpdateProgress(progress, 90);
-            CreateRegistryKeys();
-            if (DeviceInstall)
+            try
             {
-                CopyIntoServiceAccount();
-                SetupService();
+                CreateDirectories(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile));
+                await UpdateProgress(progress, 25);
+                await DownloadArchive();
+                await UpdateProgress(progress, 50);
+                ExtractArchive();
+                await UpdateProgress(progress, 90);
+                CreateRegistryKeys();
+                if (DeviceInstall)
+                {
+                    CopyIntoServiceAccount();
+                    await SetupService();
+                }
+                await UpdateProgress(progress, 100);
+                NextPage();
             }
-            await UpdateProgress(progress, 100);
-            NextPage();
+            catch
+            {
+                Pages.Add(new ServiceErrorPage());
+            }
         }
 
         public async void Uninstall(ProgressBar progress)
@@ -72,8 +82,15 @@ namespace NoPortsInstaller
 
                 if (ServiceInstaller.ServiceIsInstalled("sshnpd"))
                 {
-                    ServiceInstaller.StopService("sshnpd");
-                    ServiceInstaller.Uninstall("sshnpd");
+                    try
+                    {
+                        ServiceInstaller.StopService("sshnpd");
+                    }
+                    catch
+                    {
+                        throw;
+                    }
+                    await Task.Run(() => ServiceInstaller.Uninstall("sshnpd"));
                 }
                 if (binPath != null)
                 {
@@ -151,9 +168,9 @@ namespace NoPortsInstaller
                 {
                     File.Copy(sources[i], destinations[i], true);
                 }
-                catch (Exception ex)
+                catch
                 {
-                    Console.WriteLine($"An error occurred while copying {sources[i]} to {destinations[i]}: {ex.Message}");
+                    throw;
                 }
             }
         }
@@ -212,7 +229,7 @@ namespace NoPortsInstaller
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"An error occurred while downloading the archive: {ex.Message}");
+                throw;
             }
 
             return;
@@ -222,9 +239,16 @@ namespace NoPortsInstaller
         {
             if (DeviceInstall)
             {
-                if (ServiceInstaller.ServiceIsInstalled("sshnpd"))
+                try
                 {
-                    ServiceInstaller.Uninstall("sshnpd");
+                    if (ServiceInstaller.ServiceIsInstalled("sshnpd"))
+                    {
+                        ServiceInstaller.Uninstall("sshnpd");
+                    }
+                }
+                catch
+                {
+                    throw;
                 }
             }
             ZipFile.ExtractToDirectory(archiveDirectory!, InstallDirectory, overwriteFiles: true);
@@ -233,7 +257,6 @@ namespace NoPortsInstaller
             if (DeviceInstall && ClientInstall) { }
             else if (DeviceInstall)
             {
-
                 File.Delete(Path.Combine(InstallDirectory, "sshnp.exe"));
                 File.Delete(Path.Combine(InstallDirectory, "npt.exe"));
                 Directory.Delete(Path.Combine(InstallDirectory, "docker"), true);
@@ -248,19 +271,35 @@ namespace NoPortsInstaller
             Environment.SetEnvironmentVariable("PATH", newValue, EnvironmentVariableTarget.Machine);
         }
 
-        private void SetupService()
+        private async Task SetupService()
         {
             if (!EventLog.SourceExists("NoPorts"))
             {
                 EventLog.CreateEventSource("NoPorts", "NoPorts");
             }
 
-
-
-            ServiceInstaller.InstallAndStart("sshnpd", "sshnpd", InstallDirectory + @"\SshnpdService.exe");
-            ServiceInstaller.CreateUninstaller(System.AppDomain.CurrentDomain.BaseDirectory + @"NoPortsInstaller.exe u");
-            ServiceInstaller.SetRecoveryOptions("sshnpd");
+            try
+            {
+                await Task.Run(() =>
+                {
+                    try
+                    {
+                        ServiceInstaller.InstallAndStart("sshnpd", "sshnpd", InstallDirectory + @"\SshnpdService.exe");
+                    }
+                    catch
+                    {
+                        throw;
+                    }
+                });
+                await Task.Run(() => ServiceInstaller.CreateUninstaller(System.AppDomain.CurrentDomain.BaseDirectory + @"NoPortsInstaller.exe u"));
+                await Task.Run(() => ServiceInstaller.SetRecoveryOptions("sshnpd"));
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"An error occurred while setting up the service: {ex.Message}");
+            }
             Process.Start("sc", "description sshnpd NoPorts SSH Daemon");
+            return;
         }
 
         private void CreateRegistryKeys()
@@ -274,9 +313,9 @@ namespace NoPortsInstaller
             }
         }
 
-        private void CreateConfigFile()
+        private void UpdateConfigRegistry()
         {
-            // Not Implemented
+
         }
 
         public void NextPage()
@@ -344,5 +383,7 @@ namespace NoPortsInstaller
                 box.Items.Add(item);
             }
         }
+
+
     }
 }

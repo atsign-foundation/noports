@@ -102,16 +102,19 @@ namespace SshnpdService
                 using Process exeProcess = Process.Start(startInfo)!;
                 //Event Log has a default limit of 32KB per entry
                 int bufferLimit = 16384;
+                int outLines = 0;
+                int errLines = 0;
                 exeProcess.OutputDataReceived += (sender, e) =>
                 {
                     if (!string.IsNullOrEmpty(e.Data))
                     {
                         stdout.AppendLine(e.Data);
-                        if (stdout.Length >= bufferLimit)
+                        if (stdout.Length >= bufferLimit || outLines >= 5)
                         {
                             EventLog.WriteEntry("NoPorts", stdout.ToString(), EventLogEntryType.Information);
                             stdout.Clear();
                         }
+                        outLines++;
                     }
                 };
                 exeProcess.ErrorDataReceived += (sender, e) =>
@@ -119,11 +122,12 @@ namespace SshnpdService
                     if (!string.IsNullOrEmpty(e.Data))
                     {
                         stderr.AppendLine(e.Data);
-                        if (stderr.Length >= bufferLimit)
+                        if (stderr.Length >= bufferLimit || errLines >= 5)
                         {
                             EventLog.WriteEntry("NoPorts", stderr.ToString(), EventLogEntryType.Information);
                             stderr.Clear();
                         }
+                        errLines++;
                     }
                 };
 

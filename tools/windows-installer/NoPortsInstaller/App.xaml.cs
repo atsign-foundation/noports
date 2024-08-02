@@ -1,4 +1,5 @@
-﻿using System.Windows;
+﻿using NoPortsInstaller.Pages;
+using System.Windows;
 
 namespace NoPortsInstaller;
 
