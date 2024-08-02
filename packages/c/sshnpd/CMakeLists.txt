@@ -37,7 +37,7 @@ set(SRV_DIR ${CMAKE_CURRENT_LIST_DIR}/../srv)
 option(SSHNPD_BUILD_TESTS "Build sshnpd tests" OFF)
 
 # 1f. Old glibc headers
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -static-libgcc -include ${CMAKE_CURRENT_LIST_DIR}/../gnu/glibc/x64/force_link_glibc_2.5.h")
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -include ${CMAKE_CURRENT_LIST_DIR}/../gnu/glibc/x64/force_link_glibc_2.23.h")
 
 # 2. Include CMake modules
 
