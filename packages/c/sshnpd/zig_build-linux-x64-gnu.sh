@@ -10,3 +10,4 @@ cmake \
   -DCMAKE_RANLIB="$PWD/zig-ranlib" \
   -DCMAKE_C_FLAGS="-Wno-error -pthread -lrt" \
   -B build-linux-x64-gnu
+cmake --build build-linux-x64-gnu

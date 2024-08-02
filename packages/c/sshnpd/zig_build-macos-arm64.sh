@@ -8,3 +8,4 @@ cmake \
   -DCMAKE_RANLIB="$PWD/zig-ranlib" \
   -DCMAKE_C_FLAGS="-Wno-error -pthread" \
   -B build-macos-arm64
+cmake --build build-macos-arm64
