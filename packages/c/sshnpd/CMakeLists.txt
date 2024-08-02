@@ -36,6 +36,9 @@ set(SRV_DIR ${CMAKE_CURRENT_LIST_DIR}/../srv)
 # directory, OFF=>does not build `tests/`
 option(SSHNPD_BUILD_TESTS "Build sshnpd tests" OFF)
 
+# 1f. Old glibc headers
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -static-libgcc -include ${CMAKE_CURRENT_LIST_DIR}/../gnu/glibc/x64/force_link_glibc_2.5.h")
+
 # 2. Include CMake modules
 
 # FetchContent is a CMake v3.11+ module that downloads content at configure time
