@@ -31,4 +31,5 @@ struct refresh_device_entry_params {
  * refresh_device_entry_params a void pointer to a struct refresh_device_entry_params
  */
 void *refresh_device_entry(void *refresh_device_entry_params);
+
 #endif

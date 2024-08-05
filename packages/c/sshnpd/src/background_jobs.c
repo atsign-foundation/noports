@@ -3,6 +3,7 @@
 #include <atclient/connection.h>
 #include <atclient/metadata.h>
 #include <atlogger/atlogger.h>
+#include <errno.h>
 #include <pthread.h>
 #include <sshnpd/background_jobs.h>
 #include <sshnpd/sshnpd.h>
