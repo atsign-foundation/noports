@@ -18,12 +18,12 @@ Installation, use-cases and usage guides can all be found on our
 ## Source Code Availability
 
 If you are interested in auditing the source code for NoPorts, this is where you
-can find various bits of interest.
+can find various bits of interest:
 
 - [packages/](./packages/) - contains the bulk of the source code
   - [dart/](./packages/dart/) - contains the Dart implementation of NoPorts
     - [noports_core/](./packages/dart/noports_core/) - contains the core logic
-      for NoPorts as shared library
+      for NoPorts as a shared library which is used by the following
     - [sshnoports/](./packages/dart/sshnoports) - contains the Dart CLI binaries
       for NoPorts (sshnp, npt, sshnpd, srvd)
     - [sshnp_flutter/](./packages/dart/sshnp_flutter/) - contains the Flutter
