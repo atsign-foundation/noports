@@ -103,7 +103,7 @@ void handle_ssh_request(atclient *atclient, pthread_mutex_t *atclient_lock, sshn
   has_valid_values = has_valid_values && cJSON_IsString(host);
 
   cJSON *port = cJSON_GetObjectItem(payload, "port");
-  has_valid_values = has_valid_values && cJSON_IsNumber(port);
+  has_valid_values = has_valid_values && cJSON_IsNumber(port) && cJSON_GetNumberValue(port) > 0;
 
   if (!has_valid_values) {
     atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Received invalid payload format\n");
@@ -429,6 +429,7 @@ void handle_ssh_request(atclient *atclient, pthread_mutex_t *atclient_lock, sshn
         cJSON_Delete(envelope);
         return;
       }
+      memset(session_iv_encrypted, 0, BYTES(256));
 
       res = atchops_rsa_encrypt(&ac, session_iv, session_iv_len, session_iv_encrypted);
       atchops_rsa_key_public_key_free(&ac);
@@ -496,6 +497,8 @@ void handle_ssh_request(atclient *atclient, pthread_mutex_t *atclient_lock, sshn
   // - session_aes_key_base64 (if free_session_base64 == true)
   // - session_iv_base64 (if free_session_base64 == true)
 
+  atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_DEBUG, "Running fork()...\n");
+
   pid_t pid = fork();
   int status;
   bool free_envelope = true;
@@ -517,15 +520,17 @@ void handle_ssh_request(atclient *atclient, pthread_mutex_t *atclient_lock, sshn
       free(rvd_auth_string);
     }
     cJSON_Delete(envelope);
-    return;
+    exit(res);
     // end of child process
   } else if (pid > 0) {
 
     // parent process
     waitpid(pid, &status, WNOHANG); // Don't wait for srv - we want it to be running in the bg
-    if (WIFEXITED(status)) {
+    if (!WIFEXITED(status)) {
+      atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "srv process exited with status %d\n", status);
       goto cancel;
     }
+    atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_INFO, "srv process exited with status %d\n", WEXITSTATUS(status));
 
     char *identifier = cJSON_GetStringValue(session_id);
     cJSON *final_res_payload = cJSON_CreateObject();
@@ -576,6 +581,12 @@ void handle_ssh_request(atclient *atclient, pthread_mutex_t *atclient_lock, sshn
 
     snprintf(keyname, keynamelen, "%s.%s", identifier, params->device);
     atclient_atkey_create_shared_key(&final_res_atkey, keyname, params->atsign, requesting_atsign, SSHNP_NS);
+
+    // print final_res_atkey
+    char *final_res_atkey_str = NULL;
+    atclient_atkey_to_string(&final_res_atkey, &final_res_atkey_str);
+    atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_DEBUG, "Final response atkey: %s\n", final_res_atkey_str);
+    free(final_res_atkey_str);
 
     atclient_atkey_metadata *metadata = &final_res_atkey.metadata;
     atclient_atkey_metadata_set_is_public(metadata, false);
@@ -628,7 +639,7 @@ void handle_ssh_request(atclient *atclient, pthread_mutex_t *atclient_lock, sshn
     free(final_res_value);
   }
   clean_json: {
-    cJSON_Delete(final_res_envelope);
+    cJSON_Delete(final_res_envelope); 
     cJSON_free(signing_input2);
   }
 
