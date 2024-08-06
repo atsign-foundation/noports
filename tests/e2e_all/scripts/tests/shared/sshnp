@@ -123,7 +123,7 @@ case "$executionType" in
       kill $tailPid
       exit 50 # test rig interprets this exit status as 'test was not applicable'
     fi
-    echo "$(iso8601Date) | Executing $sshnpCommand" | tee -a "$(getReportFile)"
+    echo "$(iso8601Date) | Executing $sshnpCommand"
 
     # 1. Execute the sshnpCommand, output is the sshCommand
     # shellcheck disable=SC2086
@@ -136,7 +136,7 @@ case "$executionType" in
       exit $sshnpExitStatus
     fi
 
-    echo "$(iso8601Date) | Executing $sshCommand" | tee -a "$(getReportFile)"
+    echo "$(iso8601Date) | Executing $sshCommand"
 
     # 3. Execute the sshCommand
     # shellcheck disable=SC2091
@@ -160,7 +160,7 @@ case "$executionType" in
     REMOTE_USERNAME=$remoteUsername
     export REMOTE_USERNAME
 
-    echo "$(iso8601Date) | Executing sshnp.expect with sshnpCommand $sshnpCommand" | tee -a "$(getReportFile)"
+    echo "$(iso8601Date) | Executing sshnp.expect with sshnpCommand $sshnpCommand"
 
     "$testScriptsDir/tests/shared/sshnp.expect"
     retCode=$?

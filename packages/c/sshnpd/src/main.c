@@ -75,26 +75,32 @@ static bool is_child_process = false;
 
 // Signal handling
 static volatile sig_atomic_t should_run = 1;
-static void sig_handler(int _) {
-  (void)_;
+static void exit_handler(int sig) {
+  atlogger_log("exit_handler", ATLOGGER_LOGGING_LEVEL_WARN, "Received signal: %d\n");
   if (should_run == 1) {
-    atlogger_log("sig_handler", ATLOGGER_LOGGING_LEVEL_WARN, "Received SIGINT, exiting safely\n");
+    atlogger_log("exit_handler", ATLOGGER_LOGGING_LEVEL_WARN, "Received SIGINT, attempting a safe exit\n");
     should_run = 0;
   } else if (should_run == 0) {
-    atlogger_log("sig_handler", ATLOGGER_LOGGING_LEVEL_WARN, "Received SIGINT again, exiting forcefully\n");
+    atlogger_log("exit_handler", ATLOGGER_LOGGING_LEVEL_WARN, "Received SIGINT again, exiting forcefully\n");
+    exit(1);
   }
 }
-
-// Queue for all srv processes
-static struct sshnpd_process_node *process_head;
-static void free_sshnpd_process_nodes(struct sshnpd_process_node *process_head);
+static void child_exit_handler(int sig) {
+  atlogger_log("child_exit_handler", ATLOGGER_LOGGING_LEVEL_WARN, "Received signal: %d\n");
+  int status;
+  pid_t pid = waitpid(-1, &status, WNOHANG);
+  if (pid > 0 && WIFEXITED(status)) {
+    atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_DEBUG, "pid %d exited\n", pid);
+  }
+}
 
 int main(int argc, char **argv) {
   int res = 0;
   int exit_res = 0;
 
   // Catch sigint and pass to the handler
-  signal(SIGINT, sig_handler);
+  signal(SIGINT, exit_handler);
+  signal(SIGCHLD, child_exit_handler);
 
   // 1.  Load default values
   apply_default_values_to_sshnpd_params(&params);
@@ -252,15 +258,18 @@ int main(int argc, char **argv) {
     goto cancel_atclient;
   }
 
+  for (int i = 0; i < params.manager_list_len; i++) {
+    atclient_atkey_init(infokeys + i);
+  }
+
   atclient_atkey *usernamekeys = malloc(sizeof(atclient_atkey) * params.manager_list_len);
   if (usernamekeys == NULL) {
     atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to allocate memory for usernamekeys\n");
     exit_res = 1;
-    goto clean_atkeys;
+    goto clean_info_keys;
   }
 
   for (int i = 0; i < params.manager_list_len; i++) {
-    atclient_atkey_init(infokeys + i);
     atclient_atkey_init(usernamekeys + i);
   }
 
@@ -270,11 +279,11 @@ int main(int argc, char **argv) {
   if (res != 0) {
     atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to start refresh device entry thread\n");
     exit_res = res;
-    goto cancel_atclient;
+    goto clean_username_keys;
   }
 
   if (!should_run) {
-    goto cancel_atclient;
+    goto cancel_refresh;
   }
 
   // 10. Start monitor
@@ -282,7 +291,7 @@ int main(int argc, char **argv) {
   if (regex == NULL) {
     atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to allocate memory for the monitor regex\n");
     exit_res = 1;
-    goto cancel_atclient;
+    goto cancel_refresh;
   }
 
   sprintf(regex, "%s.%s@", params.device, SSHNP_NS);
@@ -329,21 +338,9 @@ int main(int argc, char **argv) {
   main_loop();
   atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_INFO, "Exited main loop\n");
 
-  free_sshnpd_process_nodes(process_head);
-
-clean_device_info_keys:
-  for (int i = 0; i < params.manager_list_len; i++) {
-    atclient_atkey_free(infokeys + i);
-    atclient_atkey_free(usernamekeys + i);
-  }
-
-  free(infokeys);
-  free(usernamekeys);
-
 close_authkeys:
   fclose(authkeys_file);
   free(authkeys_filename);
-
 cancel_refresh:
   free(regex);
   atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_DEBUG, "Joining device entry refresh thread\n");
@@ -353,6 +350,16 @@ cancel_refresh:
   } else {
     atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_DEBUG, "Joined device entry refresh thread\n");
   }
+clean_username_keys:
+  for (int i = 0; i < params.manager_list_len; i++) {
+    atclient_atkey_free(usernamekeys + i);
+  }
+  free(usernamekeys);
+clean_info_keys:
+  for (int i = 0; i < params.manager_list_len; i++) {
+    atclient_atkey_free(infokeys + i);
+  }
+  free(infokeys);
 cancel_atclient:
   if (free_ping_response) {
     free(ping_response);
@@ -361,7 +368,6 @@ cancel_atclient:
     atclient_connection_disconnect(&worker.atserver_connection);
     atclient_free(&worker);
   }
-
 cancel_monitor_ctx:
   if (!is_child_process) {
     atclient_connection_disconnect(&monitor_ctx.atserver_connection);
@@ -394,27 +400,6 @@ void main_loop() {
   while (should_run) {
     atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_DEBUG, "Waiting for next monitor thread message\n");
     atclient_monitor_response_init(&message);
-
-    int status;
-    struct sshnpd_process_node *prev_process = NULL;
-
-    // Loop through background instances of sshnpd to see if they are ready to exit
-    for (struct sshnpd_process_node *curr_process = process_head; curr_process != NULL;
-         curr_process = curr_process->next) {
-      waitpid(curr_process->process, &status, WNOHANG);
-      if (WIFEXITED(status)) {
-        if (curr_process != process_head) { // curr is not the first element
-          prev_process->next = curr_process->next;
-        } else if (process_head->next != NULL) { // curr is the first element
-          process_head = curr_process->next;
-        } else { // curr is the only element
-          process_head = NULL;
-        }
-        curr_process->next = NULL; // unlink this element so we only free this single node
-        free_sshnpd_process_nodes(curr_process);
-      }
-      prev_process = curr_process; // set current to prev before next iteration
-    }
 
     // Read the next monitor message
     res = atclient_monitor_read(&monitor_ctx, &worker, &message, &monitor_hooks);
@@ -529,7 +514,7 @@ void main_loop() {
         case NK_SSH_REQUEST:
           atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_DEBUG, "Executing handle_ssh_request\n");
           handle_ssh_request(&worker, &atclient_lock, &params, &is_child_process, &message, home_dir, authkeys_file,
-                             authkeys_filename, signingkey, process_head);
+                             authkeys_filename, signingkey);
           if (is_child_process) {
             atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_DEBUG, "Exiting child process\n");
             atclient_monitor_response_free(&message);
@@ -605,11 +590,4 @@ static int reconnect_atclient(const unsigned char *src, const size_t srclen, uns
 
 exit:
   return ret;
-}
-
-static void free_sshnpd_process_nodes(struct sshnpd_process_node *process_head) {
-  if (process_head != NULL && process_head->next != NULL) {
-    free_sshnpd_process_nodes(process_head->next);
-  }
-  free(process_head);
 }

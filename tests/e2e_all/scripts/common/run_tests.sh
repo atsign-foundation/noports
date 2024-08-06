@@ -62,8 +62,6 @@ failed=0
 ignored=0
 total=0
 
-logInfo "Aggregating Test Info:"
-
 # Aggregation of all the logs at the end serially so that the final report is in order
 for daemonVersion in $daemonVersions; do
   for testToRun in $testsToRun; do

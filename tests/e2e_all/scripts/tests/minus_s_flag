@@ -88,7 +88,7 @@ sshnpExitStatus=$?
 # - 4.x clients, and 5.x clients against 4.x daemons will show success to this point
 #   so let's try the ssh which will fail
 if ((sshnpExitStatus != 0)); then
-  logInfo "$scriptName: sshnp with new key failed as expected" | tee -a "$(getReportFile)"
+  logInfo "$scriptName: sshnp with new key failed as expected"
 else
   echo "$(iso8601Date) | Executing $sshCommand"
 
