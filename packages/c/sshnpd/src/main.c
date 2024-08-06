@@ -161,7 +161,8 @@ int main(int argc, char **argv) {
   }
 
   // 5.3 create a key copy for signing
-  atchops_rsa_key_private_key_clone(&signingkey, &atkeys.encrypt_private_key);
+  atchops_rsa_key_private_key_init(&signingkey);
+  atchops_rsa_key_private_key_clone(&atkeys.encrypt_private_key, &signingkey);
 
   // 6. Get atServer address
   res = atclient_utils_find_atserver_address(params.root_domain, ROOT_PORT, params.atsign, &atserver_host,
