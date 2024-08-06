@@ -6,7 +6,7 @@ on:
       - "c*.*.*"
   workflow_dispatch:
     inputs:
-      main_build_only:
+      native_build_only:
         description: "Run non-dockerx builds only"
         required: true
         default: false
@@ -16,7 +16,7 @@ permissions: # added using https://github.com/step-security/secure-repo
   contents: read
 
 jobs:
-  main_build:
+  native_build:
     runs-on: ${{ matrix.os }}
     defaults:
       run:
@@ -25,14 +25,6 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - os: ubuntu-latest
-            output-name: sshnp-linux-x64
-            ext: ""
-            bundle: "shell"
-            compiler: "gcc"
-            flags:
-              "-Wno-error -Wno-calloc-transposed-args -Wno-float-conversion
-              -pthread -lrt"
           - os: macos-13
             output-name: sshnp-macos-x64
             ext: ""
@@ -45,49 +37,46 @@ jobs:
             bundle: "shell"
             compiler: "clang"
             flags: "-Wno-error -pthread"
-    #          - os: windows-latest
-    #            output-name: sshnp-windows-x64
-    #            ext: '.exe'
-    #            bundle: 'windows'
+#          - os: windows-latest
+#            output-name: sshnp-windows-x64
+#            ext: '.exe'
+#            bundle: 'windows'
     steps:
       - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
       # compile binaries
       - run: |
-          cmake -B build -S . -DBUILD_SHARED_LIBS=off -DCMAKE_C_COMPILER=${{ matrix.compiler }} -DCMAKE_C_FLAGS="${{matrix.flags}}"
+          cmake -B build -S . -DBUILD_SHARED_LIBS=off -DCMAKE_C_COMPILER=clang
           cmake --build build
           mkdir tarball
           mv build/sshnpd .
       # zip the build
-      - if: ${{ matrix.os == 'macos-13' || matrix.os == 'macos-14'}}
-        run:
-          ditto -c -k --keepParent sshnpd tarball/${{ matrix.output-name }}.zip
+      - if: ${{ matrix.os == 'macOS-13' || matrix.os == 'macos-14'}}
+        run: ditto -c -k --keepParent sshnpd tarball/${{ matrix.output-name }}.zip
       - if: ${{ matrix.os == 'ubuntu-latest' }}
         run: tar -cvzf tarball/${{ matrix.output-name }}.tgz sshnpd
       - if: ${{ matrix.os == 'windows-latest' }}
-        run:
-          Compress-Archive -Path sshnpd -Destination tarball/${{
-          matrix.output-name }}.zip
+        run: Compress-Archive -Path sshnpd -Destination tarball/${{ matrix.output-name }}.zip
       # upload the build
       - uses: actions/upload-artifact@89ef406dd8d7e03cfd12d9e0a4a378f454709029 # v4.3.5
         with:
           name:
-            ${{ matrix.output-name }}_${{ matrix.compiler
-            }}-${{github.ref_name}}-${{github.run_number}}-${{github.run_attempt}}
+            ${{ matrix.output-name }}_${{ matrix.compiler }}-${{  github.ref_name  
+            }}-${{github.run_number}}-${{github.run_attempt}}
           path: ./packages/c/sshnpd/tarball
           if-no-files-found: error
 
-  other_build:
+  docker_build:
     runs-on: ubuntu-latest
     defaults:
       run:
         working-directory: ./packages/c
     strategy:
       matrix:
-        platform: [linux/arm/v7, linux/arm64]
-        #        platform: [linux/arm/v7, linux/arm64, linux/riscv64]
         include:
-          - platform: linux/arm/v7
-            output-name: sshnpd-linux-arm
+          - platform: linux/amd64
+            output-name: sshnpd-linux-x64
+    #      - platform: linux/arm/v7
+    #        output-name: sshnpd-linux-arm
           - platform: linux/arm64
             output-name: sshnpd-linux-arm64
     #          - platform: linux/riscv64
@@ -101,7 +90,7 @@ jobs:
         uses: docker/setup-buildx-action@988b5a0280414f521da01fcc63a27aeeb4b104db # v3.6.1
       - if: ${{ ! inputs.main_build_only }}
         run: |
-          docker buildx build -t cpswan/sshnpdc -f sshnpd/tools/Dockerfile.package \
+          docker buildx build -t atsigncompany/sshnpdc -f sshnpd/tools/Dockerfile.package \
           --platform ${{ matrix.platform }} -o type=tar,dest=bins.tar .
           mkdir tarballs
           tar -xvf bins.tar -C tarballs
@@ -109,8 +98,8 @@ jobs:
         uses: actions/upload-artifact@89ef406dd8d7e03cfd12d9e0a4a378f454709029 # v4.3.5
         with:
           name:
-            ${{ matrix.output-name
-            }}-${{github.ref_name}}-${{github.run_number}}-${{github.run_attempt}}
+            ${{ matrix.output-name  }}-${{  github.ref_name  }}-${{  github.run_number  
+            }}-${{  github.run_attempt  }}
           path: ./packages/c/tarballs/${{ matrix.output-name }}.tgz
 
   source_tarball:
@@ -132,7 +121,7 @@ jobs:
   github-release:
     name: >-
       Upload artifacts and generate checksums for provenance
-    needs: [main_build, other_build, source_tarball]
+    needs: [native_build, docker_build, source_tarball]
     runs-on: ubuntu-latest
     outputs:
       hashes: ${{ steps.hash.outputs.hashes }}
