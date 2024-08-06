@@ -241,7 +241,7 @@ void main() {
 
       // StreamController to add the mock notification responses from SSHNPD.
       StreamController<AtNotification> streamController = StreamController();
-      // Adding a 5-second delay to set the device as the active device.
+      // Adding a 2-second delay to set the device as the active device.
       // First, the list of devices are fetched using AtClient.get("device_info.local.sshnp@<device_atsign>").
       // Then, a heartbeat is sent to each device to check if it's active.
       // The 2-second delay ensures notification response is sent after AtClient.get is invoked.

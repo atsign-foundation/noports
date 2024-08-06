@@ -282,6 +282,60 @@ void main() {
       expect(srvdDartBindPortChannel.fetched, true);
       expect(srvdDartBindPortChannel.srvdAck, SrvdAck.acknowledged);
     });
+
+    test('A test to verify timeout exception when srvd does not respond',
+        () async {
+      registerFallbackValue(FakeNotificationParams());
+
+      String sessionId = 'dummy-session-id';
+      MockAtClient mockAtClient = MockAtClient();
+      MockNotificationService mockNotificationService =
+          MockNotificationService();
+
+      when(() => mockNotificationService.subscribe(
+              regex: any(named: 'regex'),
+              shouldDecrypt: any(named: 'shouldDecrypt')))
+          .thenAnswer((_) => StreamController<AtNotification>().stream);
+
+      when(() => mockNotificationService.notify(any(),
+          checkForFinalDeliveryStatus:
+              any(named: 'checkForFinalDeliveryStatus'),
+          waitForFinalDeliveryStatus: any(named: 'waitForFinalDeliveryStatus'),
+          onSuccess: any(named: 'onSuccess'),
+          onError: any(named: 'onError'),
+          onSentToSecondary:
+              any(named: 'onSentToSecondary'))).thenAnswer((_) async =>
+          Future.value(NotificationResult()
+            ..notificationStatusEnum = NotificationStatusEnum.delivered));
+
+      when(() => mockAtClient.notificationService)
+          .thenReturn(mockNotificationService);
+
+      SrvdChannelParams srvdChannelParams = NptParams(
+          clientAtSign: '@sshnp',
+          sshnpdAtSign: '@sshnpd',
+          srvdAtSign: '@srvd',
+          remoteHost: '127.0.0.1',
+          remotePort: 9887,
+          device: 'my_device1',
+          inline: true,
+          timeout: Duration(seconds: 30));
+
+      when(() => mockAtClient.notificationService)
+          .thenReturn(mockNotificationService);
+
+      SrvdDartBindPortChannel srvdDartBindPortChannel = SrvdDartBindPortChannel(
+          atClient: mockAtClient,
+          params: srvdChannelParams,
+          sessionId: sessionId);
+
+      expect(
+          () async => await srvdDartBindPortChannel.getHostAndPortFromSrvd(),
+          throwsA(predicate((dynamic e) =>
+              e is TimeoutException &&
+              e.message == 'Connection timeout to srvd @srvd service')));
+      expect(srvdDartBindPortChannel.srvdAck, SrvdAck.notAcknowledged);
+    });
   });
 }
 

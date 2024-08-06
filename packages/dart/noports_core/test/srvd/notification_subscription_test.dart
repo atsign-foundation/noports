@@ -90,6 +90,9 @@ void main() {
           .thenAnswer((_) => streamController.stream);
 
       await srvd.init();
+      // Starts listening on the notifications with regex "sshrvd". Upon receiving the notification,
+      // returns two ports for the client to communicate with the device.
+      // The notification response which contains host and ports numbers are asserted in the mockNotificationService.notify.
       await srvd.run();
     });
   });
