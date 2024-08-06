@@ -454,7 +454,7 @@ void main_loop() {
                    message.error_response);
       break;
     case ATCLIENT_MONITOR_MESSAGE_TYPE_NONE:
-      atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Received a NONE notification type");
+      atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Received a NONE notification type\n");
       break;
     case ATCLIENT_MONITOR_ERROR_PARSE_NOTIFICATION:
       atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to parse the notification\n");
