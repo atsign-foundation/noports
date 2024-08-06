@@ -42,7 +42,7 @@
 * [Under The Hood](reference/underthehood.md)
 * [Sequence Diagram](reference/sequence-diagram.md)
 
-***
+## Related Pages
 
 * [Main Site](https://noports.com)
 * [GitHub](https://github.com/atsign-foundation/noports)
