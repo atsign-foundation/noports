@@ -75,12 +75,14 @@ jobs:
         include:
           - platform: linux/amd64
             output-name: sshnpd-linux-x64
-    #      - platform: linux/arm/v7
-    #        output-name: sshnpd-linux-arm
           - platform: linux/arm64
             output-name: sshnpd-linux-arm64
-    #          - platform: linux/riscv64
-    #            output-name: sshnpd-linux-riscv64
+## 20240806: Clang and CMake that we use aren't packaged for
+## armv7 or riscv64 (also no Debian 10 for RISC-V)
+#          - platform: linux/arm/v7
+#            output-name: sshnpd-linux-arm
+#          - platform: linux/riscv64
+#            output-name: sshnpd-linux-riscv64
     steps:
       - if: ${{ ! inputs.native_build_only }}
         uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
@@ -91,6 +93,47 @@ jobs:
       - if: ${{ ! inputs.native_build_only }}
         run: |
           docker buildx build -t atsigncompany/sshnpdc -f sshnpd/tools/Dockerfile.package \
+          --platform ${{ matrix.platform }} -o type=tar,dest=bins.tar .
+          mkdir tarballs
+          tar -xvf bins.tar -C tarballs
+      - if: ${{ ! inputs.native_build_only }}
+        uses: actions/upload-artifact@89ef406dd8d7e03cfd12d9e0a4a378f454709029 # v4.3.5
+        with:
+          name:
+            ${{ matrix.output-name  }}-${{  github.ref_name  }}-${{  github.run_number  
+            }}-${{  github.run_attempt  }}
+          path: ./packages/c/tarballs/${{ matrix.output-name }}.tgz
+
+  musl_build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./packages/c
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: linux/amd64
+            output-name: sshnpd-linux-x64-musl
+          - platform: linux/arm/v7
+            output-name: sshnpd-linux-arm-musl
+## 20240806: arm64 failing due to Mbed TLS error:
+## /sshnpd/sshnpd/build/_deps/mbedtls-src/library/aesce.c:87:10:
+## fatal error: 'asm/hwcap.h' file not found
+#          - platform: linux/arm64
+#            output-name: sshnpd-linux-arm64-musl
+          - platform: linux/riscv64
+            output-name: sshnpd-linux-riscv64-musl
+    steps:
+      - if: ${{ ! inputs.native_build_only }}
+        uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
+      - if: ${{ ! inputs.native_build_only }}
+        uses: docker/setup-qemu-action@49b3bc8e6bdd4a60e6116a5414239cba5943d3cf # v3.2.0
+      - if: ${{ ! inputs.native_build_only }}
+        uses: docker/setup-buildx-action@988b5a0280414f521da01fcc63a27aeeb4b104db # v3.6.1
+      - if: ${{ ! inputs.native_build_only }}
+        run: |
+          docker buildx build -t atsigncompany/sshnpdcmusl -f sshnpd/tools/Dockerfile.musl \
           --platform ${{ matrix.platform }} -o type=tar,dest=bins.tar .
           mkdir tarballs
           tar -xvf bins.tar -C tarballs
@@ -121,7 +164,7 @@ jobs:
   github-release:
     name: >-
       Upload artifacts and generate checksums for provenance
-    needs: [native_build, docker_build, source_tarball]
+    needs: [native_build, docker_build, musl_build, source_tarball]
     runs-on: ubuntu-latest
     outputs:
       hashes: ${{ steps.hash.outputs.hashes }}
@@ -134,11 +177,12 @@ jobs:
         uses: actions/download-artifact@fa0a91b85d4f404e444e00e005971372dc801d16 # v4.1.8
         with:
           path: tarballs/
-      #    - name: Generate SBOMs
-      #      run: |
-      #        syft scan file:./packages/dart/sshnoports/pubspec.lock \
-      #          -o 'spdx-json=tarballs/dart_sshnoports_sbom.spdx.json' \
-      #          -o 'cyclonedx-json=tarballs/dart_sshnoports_sbom.cyclonedx.json'
+## 20240806: Need a different approach to SBOMs for C daemon
+#    - name: Generate SBOMs
+#      run: |
+#        syft scan file:./packages/dart/sshnoports/pubspec.lock \
+#          -o 'spdx-json=tarballs/dart_sshnoports_sbom.spdx.json' \
+#          -o 'cyclonedx-json=tarballs/dart_sshnoports_sbom.cyclonedx.json'
       - name: Move packages for signing
         run: |
           cd tarballs
@@ -156,9 +200,6 @@ jobs:
       - name: Upload artifacts to GitHub Release
         env:
           GITHUB_TOKEN: ${{ github.token }}
-        # Upload to GitHub Release using the `gh` CLI.
-        # `dist/` contains the built packages, and the
-        # sigstore-produced signatures and certificates.
         run: >-
           gh release upload '${{ github.ref_name }}' tarballs/** --repo '${{
           github.repository }}'
