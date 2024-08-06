@@ -23,7 +23,7 @@ can find various bits of interest:
 - [packages/](./packages/) - contains the bulk of the source code
   - [dart/](./packages/dart/) - contains the Dart implementation of NoPorts
     - [noports_core/](./packages/dart/noports_core/) - contains the core logic
-      for NoPorts as a shared library which is used by the following
+      for NoPorts as a shared library which is used by the other Dart packages
     - [sshnoports/](./packages/dart/sshnoports) - contains the Dart CLI binaries
       for NoPorts (sshnp, npt, sshnpd, srvd)
     - [sshnp_flutter/](./packages/dart/sshnp_flutter/) - contains the Flutter
