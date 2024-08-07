@@ -20,6 +20,6 @@ icon: desktop-arrow-down
 [advanced-installation-guides](advanced-installation-guides/)
 {% endcontent-ref %}
 
-{% content-ref url="custom-os-device-installs/" %}
-[custom-os-device-installs](custom-os-device-installs/)
+{% content-ref url="custom-os-device-installs/ipfire.md" %}
+[ipfire.md](custom-os-device-installs/ipfire.md)
 {% endcontent-ref %}
