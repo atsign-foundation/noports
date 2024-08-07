@@ -7,37 +7,37 @@ namespace NoPortsInstaller.Pages
     /// </summary>
     public partial class ConfigureInstall : Page
     {
-        private Installer _installer;
-        public ConfigureInstall(Installer installer)
+        private InstallController _controller;
+        public ConfigureInstall(InstallController installer)
         {
-            _installer = installer;
+            _controller = installer;
             InitializeComponent();
         }
 
         private void BackPageButton_Click(object sender, System.Windows.RoutedEventArgs e)
         {
-            _installer.PreviousPage();
+            _controller.PreviousPage();
         }
 
         private void NextPageButton_Click(object sender, System.Windows.RoutedEventArgs e)
         {
-            _installer.DeviceAtsign = DeviceCombo.Text;
-            _installer.ClientAtsign = ClientCombo.Text;
-            _installer.DeviceName = DeviceName.Text;
-            _installer.Pages.Add(new AdditionalConfiguration(_installer));
-            _installer.NextPage();
+            _controller.DeviceAtsign = DeviceCombo.Text;
+            _controller.ClientAtsign = ClientCombo.Text;
+            _controller.DeviceName = DeviceName.Text;
+            _controller.Pages.Add(new AdditionalConfiguration(_controller));
+            _controller.NextPage();
         }
 
         private void ClientCombo_Initialized(object sender, EventArgs e)
         {
             ComboBox comboBox = (ComboBox)sender;
-            _installer.PopulateAtsigns(comboBox);
+            _controller.PopulateAtsigns(comboBox);
         }
 
         private void DeviceCombo_Initialized(object sender, EventArgs e)
         {
             ComboBox comboBox = (ComboBox)sender;
-            _installer.PopulateAtsigns(comboBox);
+            _controller.PopulateAtsigns(comboBox);
         }
 
         private void ValidateInputs()

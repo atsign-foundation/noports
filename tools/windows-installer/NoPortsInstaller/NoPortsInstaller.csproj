@@ -16,14 +16,19 @@
 	 <IncludeAllContentForSelfExtract>true</IncludeAllContentForSelfExtract>
 	<SelfContained>true</SelfContained>
 	  <TrimMode>copyused</TrimMode>
+	  <ApplicationIcon>Assets\noports-stacked-dark.ico</ApplicationIcon>
   </PropertyGroup>
 
 	<ItemGroup>
-    <None Remove="NoPortsDark.png" />
-  </ItemGroup>
+	  <Resource Include="Assets\noports-stacked-dark.ico">
+	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+	  </Resource>
+	</ItemGroup>
 
   <ItemGroup>
-    <Resource Include="NoPortsDark.png" />
+    <Resource Include="Assets\NoPortsDark.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Resource>
   </ItemGroup>
 
   <ItemGroup>

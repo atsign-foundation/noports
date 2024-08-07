@@ -19,10 +19,10 @@
         </Rectangle>
         <Rectangle HorizontalAlignment="Left" Stroke="Black" VerticalAlignment="Center" Height="1" Width="1">
             <Rectangle.Fill>
-                <ImageBrush ImageSource="/NoPortsDark.png"/>
+                <ImageBrush ImageSource="/Assets/NoPortsDark.png"/>
             </Rectangle.Fill>
         </Rectangle>
-        <Image HorizontalAlignment="Left" Height="177" Margin="20,0,0,0" VerticalAlignment="Center" Width="122" Source="/NoPortsDark.png" Stretch="Fill">
+        <Image HorizontalAlignment="Left" Height="177" Margin="20,0,0,0" VerticalAlignment="Center" Width="122" Source="/Assets/NoPortsDark.png" Stretch="Fill">
             <Image.OpacityMask>
                 <LinearGradientBrush EndPoint="0.5,1" StartPoint="0.5,0">
                     <GradientStop Color="Black"/>
@@ -44,5 +44,6 @@
         </Rectangle>
         <Label Content="" HorizontalAlignment="Left" Height="28" VerticalAlignment="Top" Width="199" Margin="168,86,0,0" FontSize="11"/>
         <ProgressBar x:Name="InstallProgress" HorizontalAlignment="Left" Height="22" Margin="173,114,0,0" VerticalAlignment="Top" Width="228"/>
+        <Label x:Name="Status" Content="Starting Download..." HorizontalAlignment="Left" Margin="175,136,0,0" VerticalAlignment="Top" Width="226"/>
     </Grid>
 </Page>

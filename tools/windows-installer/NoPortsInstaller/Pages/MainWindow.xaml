@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:NoPortsInstaller"
         mc:Ignorable="d"
-        Title="NoPortsInstaller" Height="370" Width="500" WindowStyle="ToolWindow" ResizeMode="CanMinimize">
+        Title="NoPortsInstaller" Height="370" Width="500" WindowStyle="ToolWindow" ResizeMode="CanMinimize" Icon="/Assets/noports-stacked-dark.ico">
     <Grid>
         
 

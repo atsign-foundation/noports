@@ -8,11 +8,11 @@ namespace NoPortsInstaller.Pages
     /// </summary>
     public partial class FinishInstall : Page
     {
-        private Installer _installer;
-        public FinishInstall(Installer installer)
+        private InstallController _controller;
+        public FinishInstall(InstallController installer)
         {
             InitializeComponent();
-            _installer = installer;
+            _controller = installer;
         }
 
         private void NextPageButton_Click(object sender, RoutedEventArgs e)

@@ -8,36 +8,31 @@ namespace NoPortsInstaller.Pages
     /// </summary>
     public partial class Setup : Page
     {
-        private Installer _installer;
-        public Setup(Installer installer)
+        private InstallController _controller;
+        public Setup(InstallController installer)
         {
             InitializeComponent();
-            _installer = installer;
-            if (installer.IsInstalled)
-            {
-
-            }
+            _controller = installer;
         }
 
         private void OpenDialogButton_Click(object sender, RoutedEventArgs e)
         {
             var dialog = new Microsoft.Win32.OpenFolderDialog();
-            dialog.InitialDirectory = _installer.InstallDirectory;
+            dialog.InitialDirectory = _controller.InstallDirectory;
 
             // Process save file dialog box results
             if (dialog.ShowDialog() == true)
             {
-                _installer.InstallDirectory = dialog.FolderName + "\\NoPorts";
+                _controller.InstallDirectory = dialog.FolderName + "\\NoPorts";
             }
-            Directory.Text = _installer.InstallDirectory;
-
+            Directory.Text = _controller.InstallDirectory;
         }
 
         private void NextPageButton_Click(object sender, RoutedEventArgs e)
         {
-            _installer.DeviceInstall = DeviceInstallType.IsChecked == true;
-            _installer.ClientInstall = ClientInstallType.IsChecked == true;
-            _installer.NextPage();
+            _controller.DeviceInstall = DeviceInstallType.IsChecked == true;
+            _controller.ClientInstall = ClientInstallType.IsChecked == true;
+            _controller.NextPage();
         }
 
         private void EnableButton()

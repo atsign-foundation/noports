@@ -11,7 +11,7 @@ using System.Windows;
 using System.Windows.Controls;
 namespace NoPortsInstaller
 {
-    public class Installer
+    public class InstallController
     {
         public string InstallDirectory { get; set; }
         public bool DeviceInstall { get; set; }
@@ -25,11 +25,10 @@ namespace NoPortsInstaller
         public bool IsInstalled { get { return Directory.Exists(InstallDirectory); } set { } }
         public List<Page> Pages { get; set; }
         private int index = 0;
-        private MainWindow? window;
+        private Window? window;
         private string? archiveDirectory;
-        private string? serviceAccount = "NetworkService";
 
-        public Installer()
+        public InstallController()
         {
             InstallDirectory = "C:\\Program Files\\NoPorts";
             ClientInstall = false;
@@ -40,33 +39,40 @@ namespace NoPortsInstaller
             RegionAtsign = "";
             MultipleDevices = "";
             PermittedPorts = "localhost:22,localhost:3389";
-            Pages = new List<Page> { new Setup(this), new ConfigureInstall(this) };
+            Pages = new List<Page>();
             IsInstalled = false;
         }
 
-        public async void Install(ProgressBar progress)
+        public async void Install(ProgressBar progress, Label status)
         {
             try
             {
+                status.Content = "Creating directories...";
                 CreateDirectories(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile));
-                await UpdateProgress(progress, 25);
+                await UpdateProgressBar(progress, 25);
+                status.Content = "Downloading NoPorts...";
                 await DownloadArchive();
-                await UpdateProgress(progress, 50);
+                await UpdateProgressBar(progress, 50);
                 ExtractArchive();
-                await UpdateProgress(progress, 90);
+                await UpdateProgressBar(progress, 90);
+                status.Content = "Creating Registries NoPorts...";
                 CreateRegistryKeys();
+                status.Content = "Setting up NoPorts Service...";
                 if (DeviceInstall)
                 {
                     CopyIntoServiceAccount();
-                    await SetupService();
+                    await SetupService(status);
                 }
-                await UpdateProgress(progress, 100);
+                await UpdateProgressBar(progress, 100);
+                Pages.Add(new FinishInstall(this));
                 NextPage();
             }
-            catch
+            catch (Exception ex)
             {
-                Pages.Add(new ServiceErrorPage());
+                Pages.Add(new ServiceErrorPage(ex.Message));
+                NextPage();
             }
+
         }
 
         public async void Uninstall(ProgressBar progress)
@@ -80,17 +86,17 @@ namespace NoPortsInstaller
                     binPath = registryKey.GetValue("BinPath");
                 }
 
-                if (ServiceInstaller.ServiceIsInstalled("sshnpd"))
+                if (ServiceController.ServiceIsInstalled("sshnpd"))
                 {
                     try
                     {
-                        ServiceInstaller.StopService("sshnpd");
+                        ServiceController.StopService("sshnpd");
                     }
                     catch
                     {
                         throw;
                     }
-                    await Task.Run(() => ServiceInstaller.Uninstall("sshnpd"));
+                    await Task.Run(() => ServiceController.Uninstall("sshnpd"));
                 }
                 if (binPath != null)
                 {
@@ -104,13 +110,14 @@ namespace NoPortsInstaller
                         dir.Delete(true);
                     }
                     di.Delete();
+                    di.Parent!.Delete();
                 }
-                await UpdateProgress(progress, 100);
-
+                await UpdateProgressBar(progress, 100);
             }
-            catch
+            catch (Exception ex)
             {
-                throw;
+                Pages.Add(new ServiceErrorPage(ex.Message));
+                NextPage();
             }
         }
 
@@ -145,6 +152,8 @@ namespace NoPortsInstaller
                     Console.WriteLine($"An error occurred while creating {dir}: {ex.Message}");
                 }
             }
+            FileInfo fi = new FileInfo(Path.Combine(userHome, ".ssh", "authorized_keys"));
+            fi.Create().Close();
         }
 
         private void CopyIntoServiceAccount()
@@ -227,7 +236,7 @@ namespace NoPortsInstaller
                 archiveDirectory = Path.Combine(archiveDirectory, "sshnp-windows-x64.zip");
                 await File.WriteAllBytesAsync(archiveDirectory, fileBytes);
             }
-            catch (Exception ex)
+            catch
             {
                 throw;
             }
@@ -241,9 +250,9 @@ namespace NoPortsInstaller
             {
                 try
                 {
-                    if (ServiceInstaller.ServiceIsInstalled("sshnpd"))
+                    if (ServiceController.ServiceIsInstalled("sshnpd"))
                     {
-                        ServiceInstaller.Uninstall("sshnpd");
+                        ServiceController.Uninstall("sshnpd");
                     }
                 }
                 catch
@@ -271,7 +280,7 @@ namespace NoPortsInstaller
             Environment.SetEnvironmentVariable("PATH", newValue, EnvironmentVariableTarget.Machine);
         }
 
-        private async Task SetupService()
+        private async Task SetupService(Label status)
         {
             if (!EventLog.SourceExists("NoPorts"))
             {
@@ -280,25 +289,27 @@ namespace NoPortsInstaller
 
             try
             {
+                status.Content = "Installing sshnpd service...";
                 await Task.Run(() =>
                 {
                     try
                     {
-                        ServiceInstaller.InstallAndStart("sshnpd", "sshnpd", InstallDirectory + @"\SshnpdService.exe");
+                        ServiceController.InstallAndStart("sshnpd", "sshnpd", InstallDirectory + @"\SshnpdService.exe");
                     }
                     catch
                     {
                         throw;
                     }
                 });
-                await Task.Run(() => ServiceInstaller.CreateUninstaller(System.AppDomain.CurrentDomain.BaseDirectory + @"NoPortsInstaller.exe u"));
-                await Task.Run(() => ServiceInstaller.SetRecoveryOptions("sshnpd"));
+                status.Content = "Configuring the Windows Service...";
+                await Task.Run(() => ServiceController.CreateUninstaller(System.AppDomain.CurrentDomain.BaseDirectory + @"NoPortsInstaller.exe u"));
+                await Task.Run(() => ServiceController.SetRecoveryOptions("sshnpd"));
             }
-            catch (Exception ex)
+            catch
             {
-                Console.WriteLine($"An error occurred while setting up the service: {ex.Message}");
+                status.Content = "Error setting up the service.";
             }
-            Process.Start("sc", "description sshnpd NoPorts SSH Daemon");
+            Process.Start("sc", "description sshnpd NoPorts-SSH-Daemon");
             return;
         }
 
@@ -316,6 +327,21 @@ namespace NoPortsInstaller
         private void UpdateConfigRegistry()
         {
 
+        }
+
+        private Task CleanupOnExit()
+        {
+            return Task.Run(() =>
+            {
+                try
+                {
+                    Directory.Delete(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), @"Temp\NoPorts"), true);
+                }
+                catch
+                {
+                    throw;
+                }
+            });
         }
 
         public void NextPage()
@@ -336,13 +362,14 @@ namespace NoPortsInstaller
             window!.Content = Pages[index];
         }
 
-        public void Setup(Window window)
+        public void Setup(Window window, List<Page> pages)
         {
-            this.window = (MainWindow)window;
+            this.window = window;
+            Pages = pages;
             window.Content = Pages[0];
         }
 
-        private async Task UpdateProgress(ProgressBar pb, int value)
+        private async Task UpdateProgressBar(ProgressBar pb, int value)
         {
             double start = pb.Value;
             await Task.Run(() =>

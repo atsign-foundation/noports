@@ -7,19 +7,19 @@ namespace NoPortsInstaller.Pages
     /// </summary>
     public partial class Uninstall : Page
     {
-        private Installer _installer;
-        public Uninstall(Installer installer)
+        private InstallController _controller;
+        public Uninstall(InstallController installer)
         {
             InitializeComponent();
-            _installer = installer;
-            _installer.Uninstall(UninstallProgress);
+            _controller = installer;
+            _controller.Uninstall(UninstallProgress);
         }
 
         private void UninstallProgress_ValueChanged(object sender, System.Windows.RoutedPropertyChangedEventArgs<double> e)
         {
             if (UninstallProgress.Value == 100)
             {
-                this.Content = new FinishUninstall(_installer);
+                _controller.NextPage();
             }
         }
     }

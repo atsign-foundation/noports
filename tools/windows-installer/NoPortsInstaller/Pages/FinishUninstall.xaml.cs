@@ -8,11 +8,11 @@ namespace NoPortsInstaller.Pages
     /// </summary>
     public partial class FinishUninstall : Page
     {
-        private Installer _installer;
-        public FinishUninstall(Installer installer)
+        private InstallController _controller;
+        public FinishUninstall(InstallController installer)
         {
             InitializeComponent();
-            _installer = installer;
+            _controller = installer;
         }
 
         private void NextPageButton_Click(object sender, RoutedEventArgs e)

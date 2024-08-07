@@ -7,12 +7,12 @@ namespace NoPortsInstaller.Pages
     /// </summary>
     public partial class Download : Page
     {
-        private Installer _installer;
-        public Download(Installer installer)
+        private InstallController _controller;
+        public Download(InstallController installer)
         {
             InitializeComponent();
-            _installer = installer;
-            _installer.Install(InstallProgress);
+            _controller = installer;
+            _controller.Install(InstallProgress, Status);
         }
     }
 }

@@ -8,10 +8,10 @@ namespace NoPortsInstaller;
 /// </summary>
 public partial class App : Application
 {
-    public static Installer Instance { get; set; }
+    public static InstallController ControllerInstance { get; set; }
     public App()
     {
-        Instance = new Installer();
+        ControllerInstance = new InstallController();
     }
 
     public void OnStartup(object sender, StartupEventArgs e)

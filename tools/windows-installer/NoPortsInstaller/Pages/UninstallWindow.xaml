@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:NoPortsInstaller"
         mc:Ignorable="d"
-        Title="NoPortsInstaller" Height="370" Width="500" WindowStyle="ToolWindow" ResizeMode="CanMinimize">
+        Title="NoPortsInstaller" Height="370" Width="500" WindowStyle="ToolWindow" ResizeMode="CanMinimize"  Icon="/Assets/noports-stacked-dark.ico">
     <Grid>
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="309*"/>
@@ -22,10 +22,10 @@
         </Rectangle>
         <Rectangle HorizontalAlignment="Left" Stroke="Black" VerticalAlignment="Center" Height="1" Width="1">
             <Rectangle.Fill>
-                <ImageBrush ImageSource="/NoPortsDark.png"/>
+                <ImageBrush ImageSource="/Assets/NoPortsDark.png"/>
             </Rectangle.Fill>
         </Rectangle>
-        <Image HorizontalAlignment="Left" Height="178" Margin="20,0,0,0" VerticalAlignment="Center" Width="122" Source="/NoPortsDark.png" Stretch="Fill">
+        <Image HorizontalAlignment="Left" Height="178" Margin="20,0,0,0" VerticalAlignment="Center" Width="122" Source="/Assets/NoPortsDark.png" Stretch="Fill">
             <Image.OpacityMask>
                 <LinearGradientBrush EndPoint="0.5,1" StartPoint="0.5,0">
                     <GradientStop Color="Black"/>
