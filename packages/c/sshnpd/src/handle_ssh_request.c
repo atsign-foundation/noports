@@ -25,8 +25,7 @@
 
 void handle_ssh_request(atclient *atclient, pthread_mutex_t *atclient_lock, sshnpd_params *params,
                         bool *is_child_process, atclient_monitor_message *message, char *home_dir, FILE *authkeys_file,
-                        char *authkeys_filename, atchops_rsakey_privatekey signing_key,
-                        struct sshnpd_process_node *process_head) {
+                        char *authkeys_filename, atchops_rsakey_privatekey signing_key) {
   int res = 0;
   char *requesting_atsign = message->notification.from;
 
@@ -485,31 +484,6 @@ void handle_ssh_request(atclient *atclient, pthread_mutex_t *atclient_lock, sshn
     if (WIFEXITED(status)) {
       goto cancel;
     }
-
-    // Allocate a new linked-list node
-    struct sshnpd_process_node *pid_node = malloc(sizeof(struct sshnpd_process_node));
-    if (pid_node == NULL) {
-      atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR,
-                   "Unable to allocate memory to keep track of the srv process id");
-      goto cancel;
-    }
-
-    // Assign the linked-list node values
-    pid_node->process = pid;
-    pid_node->next = NULL;
-
-    // Append to the linked-list
-    if (process_head == NULL) {
-      process_head = pid_node;
-    } else {
-      struct sshnpd_process_node *curr_node = process_head;
-      while (curr_node->next != NULL) {
-        curr_node = curr_node->next;
-      }
-      curr_node->next = pid_node;
-    }
-    atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_DEBUG,
-                 "Appended the srv process id node to the end of the process queue");
 
     char *identifier = cJSON_GetStringValue(session_id);
     cJSON *final_res_payload = cJSON_CreateObject();
