@@ -2,7 +2,7 @@
 
 * [Home](README.md)
 * [Installation](installation/README.md)
-  * [Unix Installation Guide](installation/unix/README.md)
+  * [Linux & MacOS Installation Guide](installation/unix/README.md)
     * [Activating your atSigns](installation/unix/activating-your-atsigns.md)
     * [Installation Details](installation/unix/installation-details.md)
   * [Windows Installation Guide](installation/windows.md)

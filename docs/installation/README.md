@@ -1,5 +1,5 @@
 ---
-icon: sign-posts-wrench
+icon: desktop-arrow-down
 ---
 
 # Installation
