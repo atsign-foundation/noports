@@ -6,8 +6,8 @@ icon: desktop-arrow-down
 
 ## Main Installation Guides
 
-{% content-ref url="unix/" %}
-[unix](unix/)
+{% content-ref url="linux/" %}
+[linux](linux/)
 {% endcontent-ref %}
 
 {% content-ref url="windows.md" %}
