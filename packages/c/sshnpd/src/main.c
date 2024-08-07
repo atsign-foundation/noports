@@ -15,6 +15,7 @@
 #include <atclient/atkeys.h>
 #include <atclient/atkeysfile.h>
 #include <atclient/connection.h>
+#include <atclient/connection_hooks.h>
 #include <atclient/monitor.h>
 #include <atclient/notify.h>
 #include <atclient/string_utils.h>
