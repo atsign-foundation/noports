@@ -1,6 +1,6 @@
 ---
-description: SSH No Ports Windows
 icon: windows
+description: SSH No Ports Windows
 ---
 
 # Windows Installation Guide
@@ -71,6 +71,6 @@ Activated this atSign before ? As before if this atSign is already activated els
 
 ### RDP? Check this out.
 
-{% content-ref url="broken-reference" %}
-[Broken link](broken-reference)
+{% content-ref url="../use-cases/rdp.md" %}
+[rdp.md](../use-cases/rdp.md)
 {% endcontent-ref %}
