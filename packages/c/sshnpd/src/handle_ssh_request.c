@@ -523,14 +523,26 @@ void handle_ssh_request(atclient *atclient, pthread_mutex_t *atclient_lock, sshn
     exit(res);
     // end of child process
   } else if (pid > 0) {
-
     // parent process
-    waitpid(pid, &status, WNOHANG); // Don't wait for srv - we want it to be running in the bg
-    if (!WIFEXITED(status)) {
-      atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "srv process exited with status %d\n", status);
+
+    // since we use WNOHANG,
+    // waitpid will return -1, if an error occurred
+    // waitpid will return 0, if the child process has not exited
+    // waitpid will return the pid of the child process if it has exited
+    int waitpid_return = waitpid(pid, &status, WNOHANG); // Don't wait for srv - we want it to be running in the bg
+    if(waitpid_return > 0) {
+      // child process has already exited
+      atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "srv process has already exited\n");
+      if(WIFEXITED(status)) {
+        atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "srv process exited with status %d\n", status);
+      } else {
+        atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "srv process exited abnormally\n");
+      }
+      goto cancel;
+    } else if(waitpid_return == -1) {
+      atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to wait for srv process: %s\n", strerror(errno));
       goto cancel;
     }
-    atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_INFO, "srv process exited with status %d\n", WEXITSTATUS(status));
 
     char *identifier = cJSON_GetStringValue(session_id);
     cJSON *final_res_payload = cJSON_CreateObject();
