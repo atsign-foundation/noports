@@ -1,13 +1,13 @@
 ---
-icon: sign-posts-wrench
+icon: desktop-arrow-down
 ---
 
 # Installation
 
 ## Main Installation Guides
 
-{% content-ref url="unix/" %}
-[unix](unix/)
+{% content-ref url="linux/" %}
+[linux](linux/)
 {% endcontent-ref %}
 
 {% content-ref url="windows.md" %}
@@ -20,6 +20,6 @@ icon: sign-posts-wrench
 [advanced-installation-guides](advanced-installation-guides/)
 {% endcontent-ref %}
 
-{% content-ref url="custom-os-device-installs/" %}
-[custom-os-device-installs](custom-os-device-installs/)
+{% content-ref url="custom-os-device-installs/ipfire.md" %}
+[ipfire.md](custom-os-device-installs/ipfire.md)
 {% endcontent-ref %}
