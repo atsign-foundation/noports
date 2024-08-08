@@ -1,12 +1,12 @@
-name: Release_Automation
+name: C_Release_Automation
 
 on:
   push:
     tags:
-      - 'c*.*.*'
+      - "c*.*.*"
   workflow_dispatch:
     inputs:
-      main_build_only:
+      native_build_only:
         description: "Run non-dockerx builds only"
         required: true
         default: false
@@ -16,7 +16,7 @@ permissions: # added using https://github.com/step-security/secure-repo
   contents: read
 
 jobs:
-  main_build:
+  native_build:
     runs-on: ${{ matrix.os }}
     defaults:
       run:
@@ -24,21 +24,19 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, macOS-latest]
-#        os: [ubuntu-latest, macOS-latest, windows-latest]
         include:
-          - os: ubuntu-latest
-            output-name: sshnp-linux-x64
-            ext: ''
-            bundle: 'shell'
-          - os: macOS-latest
+          - os: macos-13
             output-name: sshnp-macos-x64
-            ext: ''
-            bundle: 'shell'
-#          - os: macos-14
-#            output-name: sshnp-macos-arm64
-#            ext: ''
-#            bundle: 'shell'
+            ext: ""
+            bundle: "shell"
+            compiler: "clang"
+            flags: "-Wno-error -pthread"
+          - os: macos-14
+            output-name: sshnp-macos-arm64
+            ext: ""
+            bundle: "shell"
+            compiler: "clang"
+            flags: "-Wno-error -pthread"
 #          - os: windows-latest
 #            output-name: sshnp-windows-x64
 #            ext: '.exe'
@@ -47,128 +45,172 @@ jobs:
       - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
       # compile binaries
       - run: |
-          cmake -B build -S . -DBUILD_SHARED_LIBS=off -DCMAKE_C_COMPILER=clang
+          cmake -B build -S . -DBUILD_SHARED_LIBS=off -DCMAKE_C_COMPILER=${{ matrix.compiler }} -DCMAKE_C_FLAGS="${{matrix.flags}}"
           cmake --build build
           mkdir tarball
           mv build/sshnpd .
       # zip the build
-      - if: ${{ matrix.os == 'macOS-latest' || matrix.os == 'macos-14'}}
+      - if: ${{ matrix.os == 'macOS-13' || matrix.os == 'macos-14'}}
         run: ditto -c -k --keepParent sshnpd tarball/${{ matrix.output-name }}.zip
       - if: ${{ matrix.os == 'ubuntu-latest' }}
         run: tar -cvzf tarball/${{ matrix.output-name }}.tgz sshnpd
       - if: ${{ matrix.os == 'windows-latest' }}
         run: Compress-Archive -Path sshnpd -Destination tarball/${{ matrix.output-name }}.zip
       # upload the build
-      - uses: actions/upload-artifact@0b2256b8c012f0828dc542b3febcab082c67f72b # v4.3.4
+      - uses: actions/upload-artifact@834a144ee995460fba8ed112a2fc961b36a5ec5a # v4.3.6
         with:
-          name: ${{ matrix.output-name }}_${{ matrix.compiler }}-${{github.ref_name}}-${{github.run_number}}-${{github.run_attempt}}
+          name:
+            ${{ matrix.output-name }}_${{ matrix.compiler }}-${{  github.ref_name  
+            }}-${{github.run_number}}-${{github.run_attempt}}
           path: ./packages/c/sshnpd/tarball
           if-no-files-found: error
 
-  other_build:
+  docker_build:
     runs-on: ubuntu-latest
     defaults:
       run:
         working-directory: ./packages/c
     strategy:
       matrix:
-        platform: [linux/arm/v7, linux/arm64]      
-#        platform: [linux/arm/v7, linux/arm64, linux/riscv64]
         include:
-          - platform: linux/arm/v7
-            output-name: sshnpd-linux-arm
+          - platform: linux/amd64
+            output-name: sshnpd-linux-x64
           - platform: linux/arm64
             output-name: sshnpd-linux-arm64
+## 20240806: Clang and CMake that we use aren't packaged for
+## armv7 or riscv64 (also no Debian 10 for RISC-V)
+#          - platform: linux/arm/v7
+#            output-name: sshnpd-linux-arm
 #          - platform: linux/riscv64
 #            output-name: sshnpd-linux-riscv64
     steps:
-      - if: ${{ ! inputs.main_build_only }}
+      - if: ${{ ! inputs.native_build_only }}
         uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
-      - if: ${{ ! inputs.main_build_only }}
-        uses: docker/setup-qemu-action@5927c834f5b4fdf503fca6f4c7eccda82949e1ee # v3.1.0
-      - if: ${{ ! inputs.main_build_only }}
-        uses: docker/setup-buildx-action@4fd812986e6c8c2a69e18311145f9371337f27d4 # v3.4.0
-      - if: ${{ ! inputs.main_build_only }}
+      - if: ${{ ! inputs.native_build_only }}
+        uses: docker/setup-qemu-action@49b3bc8e6bdd4a60e6116a5414239cba5943d3cf # v3.2.0
+      - if: ${{ ! inputs.native_build_only }}
+        uses: docker/setup-buildx-action@988b5a0280414f521da01fcc63a27aeeb4b104db # v3.6.1
+      - if: ${{ ! inputs.native_build_only }}
         run: |
-          docker buildx build -t cpswan/sshnpdc -f sshnpd/tools/Dockerfile.package \
+          docker buildx build -t atsigncompany/sshnpdc -f sshnpd/tools/Dockerfile.package \
+          --platform ${{ matrix.platform }} -o type=tar,dest=bins.tar .
+          mkdir tarballs
+          tar -xvf bins.tar -C tarballs
+      - if: ${{ ! inputs.native_build_only }}
+        uses: actions/upload-artifact@834a144ee995460fba8ed112a2fc961b36a5ec5a # v4.3.6
+        with:
+          name:
+            ${{ matrix.output-name  }}-${{  github.ref_name  }}-${{  github.run_number  
+            }}-${{  github.run_attempt  }}
+          path: ./packages/c/tarballs/${{ matrix.output-name }}.tgz
+
+  musl_build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./packages/c
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: linux/amd64
+            output-name: sshnpd-linux-x64-musl
+          - platform: linux/arm/v7
+            output-name: sshnpd-linux-arm-musl
+## 20240806: arm64 failing due to Mbed TLS error:
+## /sshnpd/sshnpd/build/_deps/mbedtls-src/library/aesce.c:87:10:
+## fatal error: 'asm/hwcap.h' file not found
+#          - platform: linux/arm64
+#            output-name: sshnpd-linux-arm64-musl
+          - platform: linux/riscv64
+            output-name: sshnpd-linux-riscv64-musl
+    steps:
+      - if: ${{ ! inputs.native_build_only }}
+        uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
+      - if: ${{ ! inputs.native_build_only }}
+        uses: docker/setup-qemu-action@49b3bc8e6bdd4a60e6116a5414239cba5943d3cf # v3.2.0
+      - if: ${{ ! inputs.native_build_only }}
+        uses: docker/setup-buildx-action@988b5a0280414f521da01fcc63a27aeeb4b104db # v3.6.1
+      - if: ${{ ! inputs.native_build_only }}
+        run: |
+          docker buildx build -t atsigncompany/sshnpdcmusl -f sshnpd/tools/Dockerfile.musl \
           --platform ${{ matrix.platform }} -o type=tar,dest=bins.tar .
           mkdir tarballs
           tar -xvf bins.tar -C tarballs
       - if: ${{ ! inputs.main_build_only }}
-        uses: actions/upload-artifact@0b2256b8c012f0828dc542b3febcab082c67f72b # v4.3.4
+        uses: actions/upload-artifact@834a144ee995460fba8ed112a2fc961b36a5ec5a # v4.3.6
         with:
-          name: ${{ matrix.output-name }}-${{github.ref_name}}-${{github.run_number}}-${{github.run_attempt}}
+          name:
+            ${{ matrix.output-name  }}-${{  github.ref_name  }}-${{  github.run_number  
+            }}-${{  github.run_attempt  }}
           path: ./packages/c/tarballs/${{ matrix.output-name }}.tgz
 
   source_tarball:
     name: Generate source tarball
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
-    - name: Create tarball
-      run: |
-        mkdir tarball
-        cd ./packages
-        mv c csshnpd-${{ github.ref_name }}
-        tar -cvzf ../tarball/csshnpd-${{ github.ref_name }}.tar.gz csshnpd-${{ github.ref_name }}
-    - uses: actions/upload-artifact@0b2256b8c012f0828dc542b3febcab082c67f72b # v4.3.4
-      with:
-        name: csshnpd-src-${{github.ref_name}}-${{github.run_number}}-${{github.run_attempt}}
-        path: ./tarball/csshnpd-${{ github.ref_name }}.tar.gz
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
+      - name: Create tarball
+        run: |
+          mkdir tarball
+          cd ./packages
+          mv c csshnpd-${{ github.ref_name }}
+          tar -cvzf ../tarball/csshnpd-${{ github.ref_name }}.tar.gz csshnpd-${{ github.ref_name }}
+      - uses: actions/upload-artifact@834a144ee995460fba8ed112a2fc961b36a5ec5a # v4.3.6
+        with:
+          name: csshnpd-src-${{github.ref_name}}-${{github.run_number}}-${{github.run_attempt}}
+          path: ./tarball/csshnpd-${{ github.ref_name }}.tar.gz
 
   github-release:
     name: >-
       Upload artifacts and generate checksums for provenance
-    needs: [main_build, other_build, source_tarball]
+    needs: [native_build, docker_build, musl_build, source_tarball]
     runs-on: ubuntu-latest
     outputs:
       hashes: ${{ steps.hash.outputs.hashes }}
     permissions:
-      contents: write  # IMPORTANT: mandatory for making GitHub Releases
-      id-token: write  # IMPORTANT: mandatory for sigstore
+      contents: write # IMPORTANT: mandatory for making GitHub Releases
+      id-token: write # IMPORTANT: mandatory for sigstore
       attestations: write
     steps:
-    - name: Download all the tarballs
-      uses: actions/download-artifact@fa0a91b85d4f404e444e00e005971372dc801d16 # v4.1.8
-      with:
-        path: tarballs/
+      - name: Download all the tarballs
+        uses: actions/download-artifact@fa0a91b85d4f404e444e00e005971372dc801d16 # v4.1.8
+        with:
+          path: tarballs/
+## 20240806: Need a different approach to SBOMs for C daemon
 #    - name: Generate SBOMs
 #      run: |
 #        syft scan file:./packages/dart/sshnoports/pubspec.lock \
 #          -o 'spdx-json=tarballs/dart_sshnoports_sbom.spdx.json' \
 #          -o 'cyclonedx-json=tarballs/dart_sshnoports_sbom.cyclonedx.json'
-    - name: Move packages for signing
-      run: |
-        cd tarballs
-        echo "Before:"
-        ls -latrR *
-        mv */*.tgz .
-        mv */*.tar.gz .
-        mv */*.zip .
-        rm -Rf -- */
-        echo "After:"
-        ls -latrR *
-    - name: Generate SHA256 checksums
-      working-directory: tarballs
-      run: sha256sum * > checksums.txt
-    - name: Upload artifacts to GitHub Release
-      env:
-        GITHUB_TOKEN: ${{ github.token }}
-      # Upload to GitHub Release using the `gh` CLI.
-      # `dist/` contains the built packages, and the
-      # sigstore-produced signatures and certificates.
-      run: >-
-        gh release upload
-        '${{ github.ref_name }}' tarballs/**
-        --repo '${{ github.repository }}'
-    - id: hash
-      name: Pass artifact hashes for SLSA provenance
-      working-directory: tarballs
-      run: |
-        echo "hashes=$(cat checksums.txt | base64 -w0)" >> "$GITHUB_OUTPUT"
-    - uses: actions/attest-build-provenance@5e9cb68e95676991667494a6a4e59b8a2f13e1d0 # v1.3.3
-      with:
-        subject-path: 'tarballs/**'
+      - name: Move packages for signing
+        run: |
+          cd tarballs
+          echo "Before:"
+          ls -latrR *
+          mv */*.tgz .
+          mv */*.tar.gz .
+          mv */*.zip .
+          rm -Rf -- */
+          echo "After:"
+          ls -latrR *
+      - name: Generate SHA256 checksums
+        working-directory: tarballs
+        run: sha256sum * > checksums.txt
+      - name: Upload artifacts to GitHub Release
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: >-
+          gh release upload '${{ github.ref_name }}' tarballs/** --repo '${{
+          github.repository }}'
+      - id: hash
+        name: Pass artifact hashes for SLSA provenance
+        working-directory: tarballs
+        run: |
+          echo "hashes=$(cat checksums.txt | base64 -w0)" >> "$GITHUB_OUTPUT"
+      - uses: actions/attest-build-provenance@210c1913531870065f03ce1f9440dd87bc0938cd # v1.4.0
+        with:
+          subject-path: "tarballs/**"
 
   provenance:
     needs: [github-release]

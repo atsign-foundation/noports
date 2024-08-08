@@ -617,7 +617,7 @@ get_atsign() {
     fi
   else
     mkdir -p "$user_home"/.atsign/keys
-    chown -R $user:$user "$user_home"/.atsign
+    chown_dir "$user_home"/.atsign
     echo "$HOME/.atsign/keys directory created"
     echo "Since we did not detect any atkeys on this machine, please enter the $clientOrDevice atSign manually."
     get_atsign_manually
