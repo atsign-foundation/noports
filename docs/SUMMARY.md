@@ -2,9 +2,9 @@
 
 * [Home](README.md)
 * [Installation](installation/README.md)
-  * [Unix Installation Guide](installation/unix/README.md)
-    * [Activating your atSigns](installation/unix/activating-your-atsigns.md)
-    * [Installation Details](installation/unix/installation-details.md)
+  * [Linux & MacOS Installation Guide](installation/linux/README.md)
+    * [Activating your atSigns](installation/linux/activating-your-atsigns.md)
+    * [Installation Details](installation/linux/installation-details.md)
   * [Windows Installation Guide](installation/windows.md)
   * [Manual Installation Guides](installation/advanced-installation-guides/README.md)
     * [Device installation](installation/advanced-installation-guides/device-installation-sshnpd/README.md)

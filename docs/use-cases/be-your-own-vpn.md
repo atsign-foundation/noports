@@ -1,11 +1,11 @@
 ---
-description: Using sshuttle and SSH built in SOCKS proxy.
 icon: house-signal
+description: Using sshuttle and SSH built in SOCKS proxy.
 ---
 
 # Be your own VPN
 
-To follow this guide, you will need to set up an SSH No Ports device (`sshnpd)`on your home network. For this, you could use a Raspberry Pi, an old PC running Linux, a virtual machine, or even a docker container—the choice is yours. You can get your No Ports free trial account [here](https://noports.com) and follow the [installation guide](../installation/unix/) to get started.
+To follow this guide, you will need to set up an SSH No Ports device (`sshnpd)`on your home network. For this, you could use a Raspberry Pi, an old PC running Linux, a virtual machine, or even a docker container—the choice is yours. You can get your No Ports free trial account [here](https://noports.com) and follow the [installation guide](../installation/linux/) to get started.
 
 SSH is a hugely versatile tool for command line access, but what if you want a full IP tunnel, like a VPN?
 
