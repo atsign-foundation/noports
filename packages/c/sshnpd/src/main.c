@@ -29,6 +29,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/errno.h>
+#include <sys/wait.h>
 #include <unistd.h>
 
 #define FILENAME_BUFFER_SIZE 500
@@ -74,13 +75,22 @@ static bool is_child_process = false;
 
 // Signal handling
 static volatile sig_atomic_t should_run = 1;
-static void sig_handler(int _) {
-  (void)_;
+static void exit_handler(int sig) {
+  atlogger_log("exit_handler", ATLOGGER_LOGGING_LEVEL_WARN, "Received signal: %d\n");
   if (should_run == 1) {
-    atlogger_log("sig_handler", ATLOGGER_LOGGING_LEVEL_WARN, "Received SIGINT, exiting safely\n");
+    atlogger_log("exit_handler", ATLOGGER_LOGGING_LEVEL_WARN, "Received SIGINT, attempting a safe exit\n");
     should_run = 0;
   } else if (should_run == 0) {
-    atlogger_log("sig_handler", ATLOGGER_LOGGING_LEVEL_WARN, "Received SIGINT again, exiting forcefully\n");
+    atlogger_log("exit_handler", ATLOGGER_LOGGING_LEVEL_WARN, "Received SIGINT again, exiting forcefully\n");
+    exit(1);
+  }
+}
+static void child_exit_handler(int sig) {
+  atlogger_log("child_exit_handler", ATLOGGER_LOGGING_LEVEL_WARN, "Received signal: %d\n");
+  int status;
+  pid_t pid = waitpid(-1, &status, WNOHANG);
+  if (pid > 0 && WIFEXITED(status)) {
+    atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_DEBUG, "pid %d exited\n", pid);
   }
 }
 
@@ -89,7 +99,8 @@ int main(int argc, char **argv) {
   int exit_res = 0;
 
   // Catch sigint and pass to the handler
-  signal(SIGINT, sig_handler);
+  signal(SIGINT, exit_handler);
+  signal(SIGCHLD, child_exit_handler);
 
   // 1.  Load default values
   apply_default_values_to_sshnpd_params(&params);
@@ -202,10 +213,6 @@ int main(int argc, char **argv) {
     goto cancel_atclient;
   }
 
-  // pipe to communicate with the threads we will create in 9 & 10
-  int fds[2];
-  pipe(fds);
-
   cJSON *ping_response_json = cJSON_CreateObject();
 
   cJSON_AddItemToObject(ping_response_json, "devicename", cJSON_CreateString(params.device));
@@ -250,29 +257,32 @@ int main(int argc, char **argv) {
     goto cancel_atclient;
   }
 
+  for (int i = 0; i < params.manager_list_len; i++) {
+    atclient_atkey_init(infokeys + i);
+  }
+
   atclient_atkey *usernamekeys = malloc(sizeof(atclient_atkey) * params.manager_list_len);
   if (usernamekeys == NULL) {
     atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to allocate memory for usernamekeys\n");
     exit_res = 1;
-    goto clean_atkeys;
+    goto clean_info_keys;
   }
 
-  for(int i = 0; i < params.manager_list_len; i++) {
-    atclient_atkey_init(infokeys + i);
+  for (int i = 0; i < params.manager_list_len; i++) {
     atclient_atkey_init(usernamekeys + i);
   }
 
-  struct refresh_device_entry_params refresh_params = {&worker,       &atclient_lock, &params,
-                                                       ping_response, username,       &should_run, infokeys, usernamekeys};
+  struct refresh_device_entry_params refresh_params = {&worker,  &atclient_lock, &params,  ping_response,
+                                                       username, &should_run,    infokeys, usernamekeys};
   res = pthread_create(&refresh_tid, NULL, refresh_device_entry, (void *)&refresh_params);
   if (res != 0) {
     atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to start refresh device entry thread\n");
     exit_res = res;
-    goto cancel_atclient;
+    goto clean_username_keys;
   }
 
   if (!should_run) {
-    goto cancel_atclient;
+    goto cancel_refresh;
   }
 
   // 10. Start monitor
@@ -280,7 +290,7 @@ int main(int argc, char **argv) {
   if (regex == NULL) {
     atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to allocate memory for the monitor regex\n");
     exit_res = 1;
-    goto cancel_atclient;
+    goto cancel_refresh;
   }
 
   sprintf(regex, "%s.%s@", params.device, SSHNP_NS);
@@ -322,23 +332,14 @@ int main(int argc, char **argv) {
     goto close_authkeys;
   }
 
-  // 12. Main notification handler loop
+  // 13. Main notification handler loop
   atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_INFO, "Starting main loop\n");
   main_loop();
   atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_INFO, "Exited main loop\n");
 
-  for(int i = 0; i < params.manager_list_len; i++) {
-    atclient_atkey_free(infokeys + i);
-    atclient_atkey_free(usernamekeys + i);
-  }
-
-  free(infokeys);
-  free(usernamekeys);
-
 close_authkeys:
   fclose(authkeys_file);
   free(authkeys_filename);
-
 cancel_refresh:
   free(regex);
   atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_DEBUG, "Joining device entry refresh thread\n");
@@ -348,7 +349,16 @@ cancel_refresh:
   } else {
     atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_DEBUG, "Joined device entry refresh thread\n");
   }
-
+clean_username_keys:
+  for (int i = 0; i < params.manager_list_len; i++) {
+    atclient_atkey_free(usernamekeys + i);
+  }
+  free(usernamekeys);
+clean_info_keys:
+  for (int i = 0; i < params.manager_list_len; i++) {
+    atclient_atkey_free(infokeys + i);
+  }
+  free(infokeys);
 cancel_atclient:
   if (free_ping_response) {
     free(ping_response);
@@ -357,7 +367,6 @@ cancel_atclient:
     atclient_connection_disconnect(&worker.atserver_connection);
     atclient_free(&worker);
   }
-
 cancel_monitor_ctx:
   if (!is_child_process) {
     atclient_connection_disconnect(&monitor_ctx.atserver_connection);
@@ -390,6 +399,8 @@ void main_loop() {
   while (should_run) {
     atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_DEBUG, "Waiting for next monitor thread message\n");
     atclient_monitor_message_init(&message);
+
+    // Read the next monitor message
     res = atclient_monitor_read(&monitor_ctx, &worker, &message, &monitor_hooks);
 
     atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_DEBUG, "Received message of type: %d\n", message.type);

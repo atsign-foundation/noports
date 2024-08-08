@@ -1,5 +1,6 @@
 ---
-description: Welcome to the No Ports documentation site.
+description: Welcome to the NoPorts documentation site.
+icon: ban
 layout:
   title:
     visible: true
@@ -13,22 +14,48 @@ layout:
     visible: true
 ---
 
-# 🚫 No Ports Documentation
+# Home
 
-## SSH No Ports
+### Get Started
 
-SSH No Ports is the flagship product in the No Ports suite. It enables you to SSH to any device with no open listening ports, making your devices reachable while eliminating network attack surfaces and reducing administrative overhead!
+Before you can use NoPorts, you need to have it installed! All of our installation guides can be found here:
 
-<table data-view="cards"><thead><tr><th data-card-target data-type="content-ref"></th></tr></thead><tbody><tr><td><a href="ssh-no-ports/">ssh-no-ports</a></td></tr><tr><td><a href="ssh-no-ports/guides/installation-guide.md">installation-guide.md</a></td></tr><tr><td><a href="ssh-no-ports/guides/upgrade-guide/">upgrade-guide</a></td></tr><tr><td><a href="ssh-no-ports/guides/usage-guide/">usage-guide</a></td></tr><tr><td><a href="ssh-no-ports/how-it-works.md">how-it-works.md</a></td></tr><tr><td><a href="ssh-no-ports/faq.md">faq.md</a></td></tr></tbody></table>
+{% content-ref url="installation/" %}
+[installation](installation/)
+{% endcontent-ref %}
 
-## No Ports Tunnel
+### Use-cases
 
-<table data-view="cards"><thead><tr><th data-type="content-ref"></th></tr></thead><tbody><tr><td><a href="noports-tunnel/basic-usage/">basic-usage</a></td></tr><tr><td><a href="noports-tunnel/rdp.md">rdp.md</a></td></tr></tbody></table>
+NoPorts has endless use-cases. We've provided a list of (what we think are) the most common ones:
 
-## Learn More about No Ports
+{% content-ref url="use-cases/ssh.md" %}
+[ssh.md](use-cases/ssh.md)
+{% endcontent-ref %}
 
-If you would like to learn more about how everything works, see our developer notes section.
+{% content-ref url="use-cases/sftp.md" %}
+[sftp.md](use-cases/sftp.md)
+{% endcontent-ref %}
 
-{% content-ref url="developer-notes/" %}
-[developer-notes](developer-notes/)
+{% content-ref url="use-cases/rdp.md" %}
+[rdp.md](use-cases/rdp.md)
+{% endcontent-ref %}
+
+{% content-ref url="use-cases/web-server.md" %}
+[web-server.md](use-cases/web-server.md)
+{% endcontent-ref %}
+
+{% content-ref url="use-cases/smb.md" %}
+[smb.md](use-cases/smb.md)
+{% endcontent-ref %}
+
+{% content-ref url="use-cases/be-your-own-vpn.md" %}
+[be-your-own-vpn.md](use-cases/be-your-own-vpn.md)
+{% endcontent-ref %}
+
+### Usage
+
+If you don't understand how something works, or want to see the full configuration options, checkout the usage section:
+
+{% content-ref url="usage/" %}
+[usage](usage/)
 {% endcontent-ref %}

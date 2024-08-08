@@ -1,8 +1,8 @@
 #ifndef SSHNPD_H
 #define SSHNPD_H
+#include <unistd.h>
 
 #define SSHNPD_VERSION "0.1.0"
-
 /* Windows Definitions */
 #ifdef _WIN32
 #define HOMEVAR "USERPROFILE"

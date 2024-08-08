@@ -498,7 +498,7 @@ class SrvImplDart implements Srv<SocketConnector> {
 
     Socket sessionControlSocket = await Socket.connect(
         streamingHost, streamingPort,
-        timeout: Duration(seconds: 1));
+        timeout: Duration(seconds: 10));
     // Authenticate the control socket
     if (rvdAuthString != null) {
       logger.info('_runClientSideMulti authenticating'
@@ -639,7 +639,7 @@ class SrvImplDart implements Srv<SocketConnector> {
     // - for each request, create a socketToSocket connection
     Socket sessionControlSocket = await Socket.connect(
         streamingHost, streamingPort,
-        timeout: Duration(seconds: 1));
+        timeout: Duration(seconds: 10));
     // Authenticate the control socket
     if (rvdAuthString != null) {
       logger.info('_runDaemonSideMulti authenticating'

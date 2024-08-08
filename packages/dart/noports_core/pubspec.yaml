@@ -23,13 +23,9 @@ dependencies:
   posix: ^6.0.1
   socket_connector: ^2.2.0
   uuid: ^3.0.7
-  mutex: 3.1.0
+  mutex: ^3.1.0
 
 dependency_overrides:
-  socket_connector:
-    git:
-      url: https://github.com/atsign-foundation/socket_connector
-      ref: gkc/2.3.0
   dartssh2:
     git:
       url: https://github.com/atsign-foundation/dartssh2

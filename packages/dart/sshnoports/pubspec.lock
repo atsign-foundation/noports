@@ -59,10 +59,10 @@ packages:
     dependency: transitive
     description:
       name: at_auth
-      sha256: db6ecc80b4661ea8a7763d1602849ec1ad6bf9fd9ff59a5e46ab6e6a9a062c48
+      sha256: "28f72f0fc26ec7f5f58d28fd29f964c9b2b35ecdc8dd4805ed7174851da2cbcc"
       url: "https://pub.dev"
     source: hosted
-    version: "2.0.4"
+    version: "2.0.5"
   at_base2e15:
     dependency: transitive
     description:
@@ -99,10 +99,10 @@ packages:
     dependency: transitive
     description:
       name: at_commons
-      sha256: "348dab0883fb14d99991875b2167d51cac7d6f320c89e6f0544b3262b67877af"
+      sha256: "2d0490a0c5bcd43c6a37911d85b71c133767aec47abc65bd8ecb20c8caaddeab"
       url: "https://pub.dev"
     source: hosted
-    version: "4.0.10"
+    version: "4.0.11"
   at_demo_data:
     dependency: transitive
     description:
@@ -123,10 +123,10 @@ packages:
     dependency: "direct main"
     description:
       name: at_onboarding_cli
-      sha256: "3b0d6801962585c89b0aed13eb19c2c3e285cb7eef11350446aedd13bd51cc33"
+      sha256: "6728eccbf2d89a83d872ef82f10ec36b0174699cfc1dadaaf6a9a53b35773115"
       url: "https://pub.dev"
     source: hosted
-    version: "1.6.0"
+    version: "1.6.1"
   at_persistence_secondary_server:
     dependency: transitive
     description:

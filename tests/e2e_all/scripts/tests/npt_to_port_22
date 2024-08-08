@@ -1,6 +1,7 @@
 #!/bin/bash
 
 scriptName=$(basename -- "$0")
+testToRun="$scriptName"
 
 if test -z "$testScriptsDir"; then
   echo -e "    ${RED}check_env: testScriptsDir is not set${NC}" && exit 1
@@ -26,19 +27,19 @@ fi
 # i.e. if client != current and daemon != current then exit 50
 
 if ! grep -q "current" <<<"$clientVersion" && ! grep -q "current" <<<"$daemonVersion"; then
-  logInfoAndReport "    N/A  because released client $(getVersionDescription "$clientVersion") has already been tested against released daemon $(getVersionDescription "$daemonVersion")"
+  logInfo "    N/A  because released client $(getVersionDescription "$clientVersion") has already been tested against released daemon $(getVersionDescription "$daemonVersion")"
   exit 50
 fi
 
 if [[ ${daemonVersion:0:1} == "c" ]]; then
-  logInfoAndReport "    N/A  because c daemon doesn't support npt request yet"
+  logInfo "    N/A  because c daemon doesn't support npt request yet"
   exit 50
 fi
 
 # Require a v5.1+ client to test v5.1+ features
 if [[ $(versionIsLessThan "$clientVersion" "d:5.1.0") == "true" ]] ||
   [[ $(versionIsLessThan "$daemonVersion" "d:5.1.0") == "true" ]]; then
-  logInfoAndReport "    N/A  because npt requires client and daemon versions >= v5.1.x"
+  logInfo "    N/A  because npt requires client and daemon versions >= v5.1.x"
   exit 50 # test rig interprets this exit status as 'test was not applicable'
 fi
 
@@ -47,7 +48,8 @@ deviceName=$(getDeviceNameWithFlags "$commitId" "$daemonVersion")
 # We will capture daemon log from now until end of test
 outputDir=$(getOutputDir)
 daemonLogFile="${outputDir}/daemons/${deviceName}.log"
-tail -f -n 0 "$daemonLogFile" >>"$DAEMON_LOG_FRAGMENT_NAME" &
+daemonLogFragmentName="$(getDaemonLogFragmentName $testToRun $daemonVersion $clientVersion)"
+tail -f -n 0 "$daemonLogFile" >>"$daemonLogFragmentName" &
 tailPid=$! # We'll kill this later
 
 clientBinaryPath=$(getPathToBinariesForTypeAndVersion "$clientVersion")
@@ -58,7 +60,7 @@ baseNptCommand=$(getBaseNptCommand "$clientBinaryPath")
 nptCommand="$baseNptCommand $extraFlags --verbose"
 
 # 1. Execute the npt command - its output is the port that npt is using
-echo "$(iso8601Date) | Executing $nptCommand" | tee -a "$(getReportFile)"
+echo "$(iso8601Date) | Executing $nptCommand"
 nptPort=$($nptCommand)
 
 # 2. Check the exit status
@@ -69,22 +71,22 @@ if ((nptExitStatus != 0)); then
   exit $nptExitStatus
 fi
 
-echo "$(iso8601Date) | npt OK, local port is $nptPort" >>"$(getReportFile)"
-echo "$(iso8601Date) | Running ps for the spawned srv process with port $nptPort BEFORE running ssh" >>"$(getReportFile)"
-ps -ef | grep "srv " | grep "$nptPort" >>"$(getReportFile)"
+echo "$(iso8601Date) | npt OK, local port is $nptPort"
+echo "$(iso8601Date) | Running ps for the spawned srv process with port $nptPort BEFORE running ssh"
+ps -ef | grep "srv " | grep "$nptPort"
 
 # 3. Execute an ssh
 sshCommand="ssh -p $nptPort -o StrictHostKeyChecking=accept-new -o IdentitiesOnly=yes"
 sshCommand="${sshCommand} ${remoteUsername}@localhost -i $identityFilename"
 
-echo "$(iso8601Date) | Executing $sshCommand" | tee -a "$(getReportFile)"
+echo "$(iso8601Date) | Executing $sshCommand"
 
 # shellcheck disable=SC2091
 $(getTestSshCommand "$sshCommand")
 sshExitStatus=$?
 
-echo "$(iso8601Date) | Running ps for the spawned srv process with port $nptPort AFTER running ssh" >>"$(getReportFile)"
-ps -ef | grep "srv " | grep "$nptPort" >>"$(getReportFile)"
+echo "$(iso8601Date) | Running ps for the spawned srv process with port $nptPort AFTER running ssh"
+ps -ef | grep "srv " | grep "$nptPort"
 
 # 4. Kill the daemon log tail, and exit with the exit status of the ssh command
 kill "$tailPid"

@@ -1,21 +1,16 @@
 # Dockerfile.package
 # A dockerfile for packaging SSH No Ports releases using docker buildx
 
-FROM debian:stable-20240701-slim@sha256:f8bbfa052db81e5b8ac12e4a1d8310a85d1509d4d0d5579148059c0e8b717d4e AS build
+FROM atsigncompany/cbuildimage:CMake-3.30.2@sha256:fe5604fec2c2b62097717ed71eed4a91657c0cab8c99c425d3f7f957330f5bd8 AS build
 WORKDIR /sshnpd
 COPY . .
 RUN set -eux; \
   case "$(dpkg --print-architecture)" in \
-    amd64)   ARCH="x64";; \
-    armhf)   ARCH="arm";; \
+    amd64)   ARCH="x64";;\
     arm64)   ARCH="arm64";; \
-    riscv64) ARCH="riscv64";; \
   esac; \
-  apt-get update; \
-  apt-get install -y --no-install-recommends \
-    ca-certificates clang cmake git make; \
-  cd sshnpd; \
-  cmake -B build -S . -DBUILD_SHARED_LIBS=off -DCMAKE_C_COMPILER=clang; \
+  cd /sshnpd/sshnpd; \
+  cmake -B build -S . -DBUILD_SHARED_LIBS=off -DCMAKE_C_COMPILER=clang-18 -DCMAKE_C_FLAGS="-Wno-error -pthread"; \
   cmake --build build; \
   mkdir /tarball; \
   cd build; \

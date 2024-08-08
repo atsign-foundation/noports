@@ -27,6 +27,8 @@ typedef struct {
   bool bind_local_port;
   bool rv_auth;
   bool rv_e2ee;
+  bool multi;
+  int timeout;
 
   char *rvd_auth_string;
   char *session_aes_key_string;
