@@ -24,7 +24,6 @@ dependency_overrides:
     git:
       url: https://github.com/atsign-foundation/dartssh2
       ref: trunk
-  pinenacl: ^0.6.0
   args:
     git:
       ref: gkc/show-aliases-in-usage
