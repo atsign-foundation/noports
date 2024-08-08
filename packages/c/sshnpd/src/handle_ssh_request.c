@@ -153,7 +153,8 @@ void handle_ssh_request(atclient *atclient, pthread_mutex_t *atclient_lock, sshn
   char *signing_algo_str = cJSON_GetStringValue(signing_algo);
 
   memset(value, 0, valuelen);
-  res = atchops_base64_decode((unsigned char *)signature_str, strlen(signature_str), value, valuelen, &valueolen);
+  res = atchops_base64_decode((unsigned char *)signature_str, strlen(signature_str), (unsigned char *)value, valuelen,
+                              &valueolen);
   if (res != 0) {
     atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "atchops_base64_decode: %d\n", res);
     cJSON_Delete(envelope);
@@ -434,8 +435,8 @@ void handle_ssh_request(atclient *atclient, pthread_mutex_t *atclient_lock, sshn
       free(session_iv_encrypted);
       free_session_base64 = true;
     } // rsa2048 - allocates (session_iv_base64, session_aes_key_base64)
-  }   // case 7
-  }   // switch
+  } // case 7
+  } // switch
 
   if (!is_valid) {
     atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR,
@@ -466,7 +467,7 @@ void handle_ssh_request(atclient *atclient, pthread_mutex_t *atclient_lock, sshn
       free(session_iv_base64);
     }
 
-    int res = run_srv_process(params, host, port, authenticate_to_rvd, rvd_auth_string, encrypt_rvd_traffic,
+    int res = run_srv_process(params, host, port, authenticate_to_rvd, rvd_auth_string, encrypt_rvd_traffic, false,
                               session_aes_key, session_iv, authkeys_file, authkeys_filename);
     *is_child_process = true;
 
@@ -479,7 +480,10 @@ void handle_ssh_request(atclient *atclient, pthread_mutex_t *atclient_lock, sshn
   } else if (pid > 0) {
 
     // parent process
-    waitpid(pid, &status, WNOHANG); // Don't wait for srv
+    waitpid(pid, &status, WNOHANG); // Don't wait for srv - we want it to be running in the bg
+    if (WIFEXITED(status)) {
+      goto cancel;
+    }
 
     char *identifier = cJSON_GetStringValue(session_id);
     cJSON *final_res_payload = cJSON_CreateObject();
@@ -566,12 +570,12 @@ void handle_ssh_request(atclient *atclient, pthread_mutex_t *atclient_lock, sshn
       atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_DEBUG, "Released the atclient lock\n");
     }
 
-  clean_res : { free(keyname); }
-  clean_final_res_value : {
+  clean_res: { free(keyname); }
+  clean_final_res_value: {
     atclient_atkey_free(&final_res_atkey);
     free(final_res_value);
   }
-  clean_json : {
+  clean_json: {
     cJSON_Delete(final_res_envelope);
     cJSON_free(signing_input2);
   }
@@ -605,7 +609,7 @@ int verify_envelope_signature(atchops_rsakey_publickey publickey, const unsigned
     return -1;
   }
 
-  ret = atchops_rsa_verify(publickey, ATCHOPS_MD_SHA256, payload, strlen(payload), signature);
+  ret = atchops_rsa_verify(publickey, ATCHOPS_MD_SHA256, payload, strlen((char *)payload), signature);
   if (ret != 0) {
     atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "verify_envelope_signature (failed)\n");
     return -1;

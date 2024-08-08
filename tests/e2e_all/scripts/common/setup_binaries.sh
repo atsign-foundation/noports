@@ -66,18 +66,11 @@ allVersions="$daemonVersions $clientVersions"
 uniqueVersions=$(for ver in $allVersions; do echo "$ver"; done | sort -u | tr "\n" " ")
 
 # Binaries for named versions will not be re-downloaded but will be linked
-for typeAndVersion in $uniqueVersions; do
-  IFS=: read -r type version <<<"$typeAndVersion"
-  case "$type" in
-    d) # dart
-      setupDartVersion "$version" || logErrorAndExit "Failed to set up binaries for dart version [$version]"
-      ;;
-    c) # c
-      setupCVersion "$version" || logErrorAndExit "Failed to set up binaries for c version [$version]"
-      ;;
-    *)
-      logErrorAndExit "This script doesn't know where to find NoPorts daemon binary for [$typeAndVersion]"
-      exit 1
-      ;;
-  esac
-done
+if [ $allowParallelization == "true" ] && command -v parallel >/dev/null 2>&1; then
+  parallel --jobs 2 \
+    "source $testScriptsDir/common/common_functions.include.sh && setup_type_and_version" ::: $uniqueVersions
+else
+  for typeAndVersion in $uniqueVersions; do
+    setup_type_and_version $typeAndVersion
+  done
+fi

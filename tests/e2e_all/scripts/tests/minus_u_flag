@@ -8,6 +8,7 @@
 # 2b. Verify it succeeds
 
 scriptName=$(basename -- "$0")
+testToRun="$scriptName"
 
 if test -z "$testScriptsDir"; then
   echo -e "    ${RED}check_env: testScriptsDir is not set${NC}" && exit 1
@@ -31,7 +32,7 @@ fi
 clientBinaryPath=$(getPathToBinariesForTypeAndVersion "$clientVersion")
 
 if [[ "${daemonVersion:0:1}" == "c" && $(versionIsLessThan "$clientVersion" "d:5.3.0") ]]; then
-  logInfoAndReport "    N/A C daemon is not compatible with this client"
+  logInfo "    N/A C daemon is not compatible with this client"
   exit 50
 fi
 
@@ -62,11 +63,11 @@ deviceName=$(getDeviceNameNoFlags "$commitId" "$daemonVersion")
 
 # We will capture daemon log from now until end of test
 outputDir=$(getOutputDir)
-daemonLogFile="${outputDir}/daemons/${deviceName}.log"
-echo "" >>"$DAEMON_LOG_FRAGMENT_NAME"
-echo "First daemon (without flags) $deviceName" >>"$DAEMON_LOG_FRAGMENT_NAME"
-echo "" >>"$DAEMON_LOG_FRAGMENT_NAME"
-tail -f "$daemonLogFile" >>"$DAEMON_LOG_FRAGMENT_NAME" &
+daemonLogFragmentName="$(getDaemonLogFragmentName $testToRun $daemonVersion $clientVersion)"
+echo "" >>"$daemonLogFragmentName"
+echo "First daemon (without flags) $deviceName" >>"$daemonLogFragmentName"
+echo "" >>"$daemonLogFragmentName"
+tail -f "$daemonLogFile" >>"$daemonLogFragmentName" &
 tailPid=$! # We'll kill this later
 
 l1="$clientBinaryPath/sshnp -f $clientAtSign -d $deviceName -i $identityFilename"
@@ -92,10 +93,10 @@ fi
 deviceName=$(getDeviceNameWithFlags "$commitId" "$daemonVersion")
 kill $tailPid
 daemonLogFile="${outputDir}/daemons/${deviceName}.log"
-echo "" >>"$DAEMON_LOG_FRAGMENT_NAME"
-echo "Second daemon (with flags) : $deviceName" >>"$DAEMON_LOG_FRAGMENT_NAME"
-echo "" >>"$DAEMON_LOG_FRAGMENT_NAME"
-tail -f "$daemonLogFile" >>"$DAEMON_LOG_FRAGMENT_NAME" &
+echo "" >>"$daemonLogFragmentName"
+echo "Second daemon (with flags) : $deviceName" >>"$daemonLogFragmentName"
+echo "" >>"$daemonLogFragmentName"
+tail -f "$daemonLogFile" >>"$daemonLogFragmentName" &
 tailPid=$! # We'll kill this later
 
 l1="$clientBinaryPath/sshnp -f $clientAtSign -d $deviceName -i $identityFilename"

@@ -7,6 +7,7 @@
 #   3b. Verify it succeeds
 
 scriptName=$(basename -- "$0")
+testToRun="$scriptName"
 
 if test -z "$testScriptsDir"; then
   echo -e "    ${RED}check_env: testScriptsDir is not set${NC}" && exit 1
@@ -27,7 +28,7 @@ if [[ "$clientVersion" != "d:current" ]] || [[ "${daemonVersion:1}" != ":current
 fi
 
 if [[ "${daemonVersion:0:1}" == "c" && $(versionIsLessThan "$clientVersion" "d:5.3.0") ]]; then
-  logInfoAndReport "    N/A C daemon is not compatible with thi client"
+  logInfo "    N/A C daemon is not compatible with thi client"
   exit 50
 fi
 
@@ -64,9 +65,11 @@ deviceName=$(getDeviceNameNoFlags "$commitId" "$daemonVersion")
 # We will capture daemon log from now until end of test
 outputDir=$(getOutputDir)
 daemonLogFile="${outputDir}/daemons/${deviceName}.log"
-echo "First daemon (without flags) $deviceName" >>"$DAEMON_LOG_FRAGMENT_NAME"
-echo "" >>"$DAEMON_LOG_FRAGMENT_NAME"
-tail -f "$daemonLogFile" >>"$DAEMON_LOG_FRAGMENT_NAME" &
+daemonLogFragmentName="$(getDaemonLogFragmentName $testToRun $daemonVersion $clientVersion)"
+
+echo "First daemon (without flags) $deviceName" >>"$daemonLogFragmentName"
+echo "" >>"$daemonLogFragmentName"
+tail -f "$daemonLogFile" >>"$daemonLogFragmentName" &
 tailPid=$! # We'll kill this later
 
 l1="$clientBinaryPath/sshnp -f $clientAtSign -d $deviceName -i $identityFilename"
@@ -85,7 +88,7 @@ sshnpExitStatus=$?
 # - 4.x clients, and 5.x clients against 4.x daemons will show success to this point
 #   so let's try the ssh which will fail
 if ((sshnpExitStatus != 0)); then
-  logInfo "$scriptName: sshnp with new key failed as expected" | tee -a "$(getReportFile)"
+  logInfo "$scriptName: sshnp with new key failed as expected"
 else
   echo "$(iso8601Date) | Executing $sshCommand"
 
@@ -111,10 +114,10 @@ deviceName=$(getDeviceNameWithFlags "$commitId" "$daemonVersion")
 kill $tailPid
 outputDir=$(getOutputDir)
 daemonLogFile="${outputDir}/daemons/${deviceName}.log"
-echo "" >>"$DAEMON_LOG_FRAGMENT_NAME"
-echo "Second daemon (with flags) : $deviceName" >>"$DAEMON_LOG_FRAGMENT_NAME"
-echo "" >>"$DAEMON_LOG_FRAGMENT_NAME"
-tail -f "$daemonLogFile" >>"$DAEMON_LOG_FRAGMENT_NAME" &
+echo "" >>"$daemonLogFragmentName"
+echo "Second daemon (with flags) : $deviceName" >>"$daemonLogFragmentName"
+echo "" >>"$daemonLogFragmentName"
+tail -f "$daemonLogFile" >>"$daemonLogFragmentName" &
 tailPid=$! # We'll kill this later
 
 l1="$clientBinaryPath/sshnp -f $clientAtSign -d $deviceName -i $identityFilename"

@@ -4,15 +4,15 @@
 # Individual sshnp test cases call this script with the appropriate parameters.
 scriptName=$(basename -- "$0")
 
-if test -z "$testScriptsDir" ; then
+if test -z "$testScriptsDir"; then
   echo -e "    ${RED}check_env: testScriptsDir is not set${NC}" && exit 1
 fi
 
 source "$testScriptsDir/common/common_functions.include.sh"
 source "$testScriptsDir/common/check_env.include.sh" || exit $?
 
-if test $# != 5 ; then
-  logErrorAndExit "Must supply daemonVersion, clientVersion, sshClient, daemonFeatureSet (v4 / v5 / etc), executionType (print or inline)"
+if test $# != 6; then
+  logErrorAndExit "Must supply daemonVersion, clientVersion, sshClient, daemonFeatureSet (v4 / v5 / etc), executionType (print or inline), testToRun"
 fi
 
 daemonVersion="$1"
@@ -20,14 +20,15 @@ clientVersion="$2"
 sshClient="$3"
 daemonFeatureSet="$4"
 executionType="$5"
+testToRun="$6"
 
 # If client has already been released
 # then it has already have been tested against all released daemon versions
 # So only test it against the 'current' daemon
 # i.e. if client != current and daemon != current then exit 50
 
-if ! grep -q "current" <<< "$clientVersion" && ! grep -q "current" <<< "$daemonVersion" ; then
-  logInfoAndReport "    N/A  because released client $(getVersionDescription "$clientVersion") has already been tested against released daemon $(getVersionDescription "$daemonVersion")"
+if ! grep -q "current" <<<"$clientVersion" && ! grep -q "current" <<<"$daemonVersion"; then
+  logInfo "    N/A  because released client $(getVersionDescription "$clientVersion") has already been tested against released daemon $(getVersionDescription "$daemonVersion")"
   exit 50
 fi
 
@@ -38,7 +39,7 @@ fi
 
 additionalSshnpFlags=" --ssh-client ${sshClient}"
 
-deviceName=$(getDeviceNameWithFlags "$commitId" "$daemonVersion" )
+deviceName=$(getDeviceNameWithFlags "$commitId" "$daemonVersion")
 
 clientBinaryPath=$(getPathToBinariesForTypeAndVersion "$clientVersion")
 
@@ -55,19 +56,19 @@ fi
 case "$daemonFeatureSet" in
   v4)
     # v5 clients need to unset some flags for backwards compatibility
-    if [[ $(versionIsAtLeast "$clientVersion" "d:5.0.0") == "true" ]] ; then
+    if [[ $(versionIsAtLeast "$clientVersion" "d:5.0.0") == "true" ]]; then
       additionalSshnpFlags="${additionalSshnpFlags} --no-ad --no-et"
     fi
     ;;
   v5)
     # Require a v5 client to test v5 features
     if [[ $(versionIsLessThan "$clientVersion" "d:5.0.0") == "true" ]]; then
-      logInfoAndReport "    N/A  because requires a v5+ client to test v5+ daemon features"
+      logInfo "    N/A  because requires a v5+ client to test v5+ daemon features"
       exit 50 # test rig interprets this exit status as 'test was not applicable'
     fi
     # Require a v5 daemon to test v5 features
     if [[ $(versionIsLessThan "$daemonVersion" "d:5.0.0") == "true" ]]; then
-      logInfoAndReport "    N/A  because can't test v5+ daemon features on a daemon version < 5"
+      logInfo "    N/A  because can't test v5+ daemon features on a daemon version < 5"
       exit 50 # test rig interprets this exit status as 'test was not applicable'
     fi
     ;;
@@ -82,19 +83,18 @@ case "$executionType" in
     #  When outputting command line
     #    if ssh-client is 'dart' this is not applicable
     if [[ "$sshClient" == "dart" ]]; then
-      logInfoAndReport "    N/A  because sshClient is $sshClient which always executes the ssh 'inline'"
+      logInfo "    N/A  because sshClient is $sshClient which always executes the ssh 'inline'"
       exit 50 # test rig interprets this exit status as 'test was not applicable'
     fi
     #    if v5 client add the '-x' flag
-    if [[ $(versionIsAtLeast "$clientVersion" "d:5.0.0") == "true" ]] ; then
+    if [[ $(versionIsAtLeast "$clientVersion" "d:5.0.0") == "true" ]]; then
       additionalSshnpFlags="${additionalSshnpFlags} -x"
     fi
     ;;
   "inline")
     # Running inline - requires either (1) sshClient='dart' or (2) v5+ client
-    if [[ "$sshClient" != "dart" ]] && [[ $(versionIsAtLeast "$clientVersion" "d:5.0.0") != "true" ]];
-    then
-      logInfoAndReport "    N/A  because sshClient is $sshClient and client version is $clientVersion"
+    if [[ "$sshClient" != "dart" ]] && [[ $(versionIsAtLeast "$clientVersion" "d:5.0.0") != "true" ]]; then
+      logInfo "    N/A  because sshClient is $sshClient and client version is $clientVersion"
       exit 50 # test rig interprets this exit status as 'test was not applicable'
     fi
     ;;
@@ -104,27 +104,26 @@ case "$executionType" in
     ;;
 esac
 
-
 # Let's put together the sshnp command we will execute
 sshnpCommand="$baseSshnpCommand -s ${additionalSshnpFlags} "
 
 # We will capture daemon log from now until end of test
 outputDir=$(getOutputDir)
 daemonLogFile="${outputDir}/daemons/${deviceName}.log"
-tail -f -n 0 "$daemonLogFile" >> "$DAEMON_LOG_FRAGMENT_NAME" &
+daemonLogFragmentName="$(getDaemonLogFragmentName $testToRun $daemonVersion $clientVersion)"
+tail -f -n 0 "$daemonLogFile" >>"$daemonLogFragmentName" &
 tailPid=$! # We'll kill this later
 
 # Finally, let's run the sshnp and ssh session
 case "$executionType" in
   "print")
     # If it's 5.0.x then we can't run this from a script because reasons
-    if [[ $(versionIsAtLeast "$clientVersion" "d:5.0.0") == "true" ]] && [[ $(versionIsLessThan "$clientVersion" "d:5.1.0") == "true" ]];
-    then
-      logInfoAndReport "    N/A  because of bug in client versions 5.0.x which prevent running except with a real terminal attached "
+    if [[ $(versionIsAtLeast "$clientVersion" "d:5.0.0") == "true" ]] && [[ $(versionIsLessThan "$clientVersion" "d:5.1.0") == "true" ]]; then
+      logInfo "    N/A  because of bug in client versions 5.0.x which prevent running except with a real terminal attached "
       kill $tailPid
       exit 50 # test rig interprets this exit status as 'test was not applicable'
     fi
-    echo "$(iso8601Date) | Executing $sshnpCommand" | tee -a "$(getReportFile)"
+    echo "$(iso8601Date) | Executing $sshnpCommand"
 
     # 1. Execute the sshnpCommand, output is the sshCommand
     # shellcheck disable=SC2086
@@ -132,12 +131,12 @@ case "$executionType" in
 
     # 2. Check the exit status
     sshnpExitStatus=$?
-    if (( sshnpExitStatus != 0 )); then
+    if ((sshnpExitStatus != 0)); then
       kill $tailPid
       exit $sshnpExitStatus
     fi
 
-    echo "$(iso8601Date) | Executing $sshCommand" | tee -a "$(getReportFile)"
+    echo "$(iso8601Date) | Executing $sshCommand"
 
     # 3. Execute the sshCommand
     # shellcheck disable=SC2091
@@ -152,22 +151,24 @@ case "$executionType" in
   "inline")
     # sshnp will itself run the ssh session
     # To test, we will run an expect script for $sshnpCommand
-    SSHNP_COMMAND="$sshnpCommand"; export SSHNP_COMMAND
-    SSHNP_TIMEOUT=$timeoutDuration; export SSHNP_TIMEOUT
-    REMOTE_HOSTNAME="$(hostname -s)"; export REMOTE_HOSTNAME
-    REMOTE_USERNAME=$remoteUsername; export REMOTE_USERNAME
+    SSHNP_COMMAND="$sshnpCommand"
+    export SSHNP_COMMAND
+    SSHNP_TIMEOUT=$timeoutDuration
+    export SSHNP_TIMEOUT
+    REMOTE_HOSTNAME="$(hostname -s)"
+    export REMOTE_HOSTNAME
+    REMOTE_USERNAME=$remoteUsername
+    export REMOTE_USERNAME
 
-    echo "$(iso8601Date) | Executing sshnp.expect with sshnpCommand $sshnpCommand" | tee -a "$(getReportFile)"
+    echo "$(iso8601Date) | Executing sshnp.expect with sshnpCommand $sshnpCommand"
 
     "$testScriptsDir/tests/shared/sshnp.expect"
     retCode=$?
-    if (( retCode == 0 )); then
+    if ((retCode == 0)); then
       echo 'sshnp.expect TEST PASSED'
     fi
     kill $tailPid
     exit $retCode
     ;;
-  *)
-    ;;
+  *) ;;
 esac
-
