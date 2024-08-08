@@ -6,9 +6,9 @@ import 'package:meta/meta.dart';
 import 'package:noports_core/src/common/mixins/async_initialization.dart';
 import 'package:noports_core/src/common/mixins/at_client_bindings.dart';
 import 'package:noports_core/src/sshnp/util/srvd_channel/notification_request_message.dart';
-import 'package:noports_core/sshnp.dart';
 import 'package:noports_core/srv.dart';
 import 'package:noports_core/srvd.dart';
+import 'package:noports_core/sshnp.dart';
 import 'package:noports_core/utils.dart';
 
 @visibleForTesting
@@ -129,6 +129,7 @@ abstract class SrvdChannel<T> with AsyncInitialization, AtClientBindings {
   }
 
   @protected
+  @visibleForTesting
   Future<void> getHostAndPortFromSrvd() async {
     srvdAck = SrvdAck.notAcknowledged;
     subscribe(regex: '$sessionId.${Srvd.namespace}@', shouldDecrypt: true)
