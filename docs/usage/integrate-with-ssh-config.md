@@ -6,7 +6,7 @@ icon: square-sliders-vertical
 
 ## The Template
 
-The following is a template for adding an sshnp connection to your ssh config for ease of use.
+The following is a template for adding an sshnp connection to your ssh config for ease of use:
 
 {% code title="~/.ssh/config" overflow="wrap" lineNumbers="true" %}
 ```
@@ -19,6 +19,24 @@ Host <host>
   ProxyCommand=$(sshnp -f <client> -t <device> -r <srvd> -d <device_name> -u <username> -x 2>/dev/null) -W "%h:%p" -o "StrictHostKeyChecking=no"
 ```
 {% endcode %}
+
+Example:
+
+{% code overflow="wrap" %}
+```
+Host alice_device
+  Hostname localhost
+  AddKeysToAgent yes
+  UserKnownHostsFile /dev/null
+  StrictHostKeyChecking no
+  IdentityFile ~/.ssh/id_ed25519
+  ProxyCommand=$(sshnp -f @alice_client -t @alice_device -r @rv_am -d my_device -u <username> -x 2>/dev/null) -W "%h:%p" -o "StrictHostKeyChecking=no"
+```
+{% endcode %}
+
+```
+sshnp -f @alice_client -t @alice_device -d my_server -r @rv_am
+```
 
 ### Usage
 
