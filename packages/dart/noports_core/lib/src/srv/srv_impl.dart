@@ -530,7 +530,7 @@ class SrvImplDart implements Srv<SocketConnector> {
 
     logger.info('_runClientSideMulti calling SocketConnector.serverToSocket');
     // final connectMutex = Mutex();
-    final spaceT = 10000;
+    final spaceT = 50000;
     int seq = 0;
     int lastTs = DateTime.now().microsecondsSinceEpoch; // last TimeStamp
     socketConnector = await SocketConnector.serverToSocket(
@@ -541,11 +541,12 @@ class SrvImplDart implements Srv<SocketConnector> {
       logger: ioSinkForLogger(logger),
       multi: multi,
       timeout: timeout,
-      backlog: 10000,
+      // backlog: 10000,
       beforeJoining: (Side sideA, Side sideB) {
         try {
           // await connectMutex.acquire();
           int nowTs = DateTime.now().microsecondsSinceEpoch;
+          logger.info('_runClientSideMulti: nowTs: $nowTs lastTs: $lastTs');
           int deltaT = nowTs - lastTs;
           if (deltaT < spaceT) {
             logger.info(
@@ -553,7 +554,7 @@ class SrvImplDart implements Srv<SocketConnector> {
             sleep(Duration(microseconds: spaceT - deltaT));
             // await Future.delayed(Duration(microseconds: spaceT - deltaT));
           }
-          lastTs = nowTs;
+          lastTs = DateTime.now().microsecondsSinceEpoch;
           seq++;
 
           String socketAESKey =
