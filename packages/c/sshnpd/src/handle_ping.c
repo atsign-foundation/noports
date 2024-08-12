@@ -11,30 +11,40 @@
 
 #define LOGGER_TAG "PING RESPONSE"
 
-void handle_ping(sshnpd_params *params, atclient_monitor_message *message, char *ping_response, atclient *atclient,
+void handle_ping(sshnpd_params *params, atclient_monitor_response *message, char *ping_response, atclient *atclient,
                  pthread_mutex_t *atclient_lock) {
+  int ret = 1;
   atclient_atkey pingkey;
   atclient_atkey_init(&pingkey);
 
   size_t keynamelen = strlen("heartbeat") + strlen(params->device) + 2; // + 1 for '.' +1 for '\0'
   char keyname[keynamelen];
   snprintf(keyname, keynamelen, "heartbeat.%s", params->device);
-  atclient_atkey_create_sharedkey(&pingkey, keyname, keynamelen, params->atsign, strlen(params->atsign),
-                                  message->notification.from, strlen(message->notification.from), SSHNP_NS,
-                                  SSHNP_NS_LEN);
+  atclient_atkey_create_shared_key(&pingkey, keyname, params->atsign, message->notification.from, SSHNP_NS);
 
   atclient_atkey_metadata *metadata = &pingkey.metadata;
-  atclient_atkey_metadata_set_ispublic(metadata, false);
-  atclient_atkey_metadata_set_isencrypted(metadata, true);
+  atclient_atkey_metadata_set_is_public(metadata, false);
+  atclient_atkey_metadata_set_is_encrypted(metadata, true);
   atclient_atkey_metadata_set_ttl(metadata, 10000);
 
   atclient_notify_params notify_params;
   atclient_notify_params_init(&notify_params);
-  notify_params.atkey = &pingkey;
-  notify_params.value = ping_response;
-  notify_params.operation = ATCLIENT_NOTIFY_OPERATION_UPDATE;
+  if((ret = atclient_notify_params_set_atkey(&notify_params, &pingkey)) != 0) {
+    atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to set atkey in notify params\n");
+    goto exit_ping;
+  }
 
-  int ret = pthread_mutex_lock(atclient_lock);
+  if((ret = atclient_notify_params_set_operation(&notify_params, ATCLIENT_NOTIFY_OPERATION_UPDATE)) != 0) {
+    atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to set operation in notify params\n");
+    goto exit_ping;
+  }
+
+  if((ret = atclient_notify_params_set_value(&notify_params, ping_response)) != 0) {
+    atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to set value in notify params\n");
+    goto exit_ping;
+  }
+
+  ret = pthread_mutex_lock(atclient_lock);
   if (ret != 0) {
     atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR,
                  "Failed to get a lock on atclient for sending a notification\n");

@@ -42,12 +42,15 @@ if [ $allowParallelization == "true" ] && command -v env_parallel >/dev/null 2>&
   export -f run_tests_for_daemon
   # Run a round of tests against each daemon in parallel
   parallel --jobs 5 \
+    --timeout 3m \
     --env run_tests_for_daemon \
     "testScriptsDir='$testScriptsDir' && testsToRun='$testsToRun' && clientVersions='$clientVersions' && testScriptsDir='$testScriptsDir' && timeoutDuration='$timeoutDuration' && run_tests_for_daemon" \
     ::: $daemonVersions
 else
   # The old way of running e2e tests - no parallelization
-  logWarning "Unable to find GNU parallel, running tests serially :("
+  if [ $allowParallelization == "true" ]; then
+    logWarning "Unable to find GNU parallel, running tests serially :("
+  fi
   for daemonVersion in $daemonVersions; do
     for testToRun in $testsToRun; do
       for clientVersion in $clientVersions; do

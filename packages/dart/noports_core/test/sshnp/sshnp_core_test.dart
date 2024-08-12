@@ -1,13 +1,23 @@
+import 'dart:async';
+
 import 'package:at_client/at_client.dart';
+import 'package:at_commons/at_builders.dart';
 import 'package:at_utils/at_logger.dart';
 import 'package:logging/logging.dart';
+import 'package:mocktail/mocktail.dart';
 import 'package:noports_core/src/common/features.dart';
 import 'package:noports_core/sshnp_foundation.dart';
 import 'package:test/test.dart';
-import 'package:mocktail/mocktail.dart';
 
-import 'sshnp_mocks.dart';
 import 'sshnp_core_mocks.dart';
+import 'sshnp_mocks.dart';
+import 'util/sshnpd_channel/sshnpd_channel_mocks.dart';
+
+class FakeScanVerbBuilder extends Fake implements ScanVerbBuilder {}
+
+class FakeAtKey extends Fake implements AtKey {}
+
+class FakeNotificationParams extends Fake implements NotificationParams {}
 
 void main() {
   group('SshnpCore', () {
@@ -209,4 +219,117 @@ void main() {
       });
     }); // group Initialization
   }); // group SshnpCore
+
+  group('A group of tests related to sshnp', () {
+    test('A test to verify list devices in sshnp', () async {
+      registerFallbackValue(FakeScanVerbBuilder());
+      registerFallbackValue(FakeAtKey());
+      registerFallbackValue(FakeNotificationParams());
+
+      MockAtClient mockAtClient = MockAtClient();
+      RemoteSecondary mockRemoteSecondary = MockRemoteSecondary();
+      NotificationService mockNotificationService = MockNotificationService();
+
+      when(() => mockAtClient.getRemoteSecondary())
+          .thenAnswer((_) => mockRemoteSecondary);
+      when(() => mockAtClient.notificationService)
+          .thenAnswer((_) => mockNotificationService);
+      when(() => mockRemoteSecondary.executeVerb(any(
+          that:
+              FakeScanVerbBuilderMatcher()))).thenAnswer((_) => Future.value(
+          'data:["device_info.active.sshnp@alice_device","device_info.inactive.sshnp@alice_device"]'));
+
+      // StreamController to add the mock notification responses from SSHNPD.
+      StreamController<AtNotification> streamController = StreamController();
+      // Adding a 2-second delay to set the device as the active device.
+      // First, the list of devices are fetched using AtClient.get("device_info.local.sshnp@<device_atsign>").
+      // Then, a heartbeat is sent to each device to check if it's active.
+      // The 2-second delay ensures notification response is sent after AtClient.get is invoked.
+      Future.delayed(Duration(seconds: 2), () {
+        streamController.add(AtNotification(
+            '123',
+            '@alice:heartbeat.active.sshnp@alice_device',
+            '@alice_device',
+            '@alice',
+            DateTime.now().millisecondsSinceEpoch,
+            'key',
+            false)
+          ..value =
+              '{"devicename":"active","version":"5.3.0","corePackageVersion":"6.1.0","supportedFeatures":{"srAuth":true,"srE2ee":true,"acceptsPublicKeys":true,"supportsPortChoice":true,"adjustableTimeout":true},"allowedServices":["localhost:22","localhost:3389"]}');
+      });
+      when(() => mockNotificationService.subscribe(
+          regex: any(named: 'regex'),
+          shouldDecrypt: any(named: 'shouldDecrypt'))).thenAnswer((_) {
+        return streamController.stream;
+      });
+
+      when(() => mockAtClient.get(any(that: FakeAtKeyMatcher()),
+              getRequestOptions: any(named: 'getRequestOptions')))
+          .thenAnswer((Invocation invocation) {
+        String deviceName;
+        (invocation.positionalArguments[0].key.contains('inactive'))
+            ? deviceName = 'inactive'
+            : deviceName = 'active';
+        String value =
+            '{"devicename":"$deviceName","version":"5.3.0","corePackageVersion":"6.1.0","supportedFeatures":{"srAuth":true,"srE2ee":true,"acceptsPublicKeys":true,"supportsPortChoice":true,"adjustableTimeout":true},"allowedServices":["localhost:22","localhost:3389"]}';
+        return Future.value(AtValue()..value = value);
+      });
+
+      when(() => mockNotificationService.notify(any(),
+          checkForFinalDeliveryStatus:
+              any(named: 'checkForFinalDeliveryStatus'),
+          waitForFinalDeliveryStatus: any(named: 'waitForFinalDeliveryStatus'),
+          onSuccess: any(named: 'onSuccess'),
+          onError: any(named: 'onError'),
+          onSentToSecondary:
+              any(named: 'onSentToSecondary'))).thenAnswer((_) async =>
+          Future.value(NotificationResult()
+            ..notificationStatusEnum = NotificationStatusEnum.delivered));
+
+      SshnpParams sshnpParams = SshnpParams(
+          clientAtSign: '@alice',
+          sshnpdAtSign: '@alice_device',
+          srvdAtSign: '@srvd');
+      AtSshKeyPair atSshKeyPair =
+          await DartSshKeyUtil().generateKeyPair(identifier: 'my-test');
+      StreamController<String> testStreamController = StreamController();
+      Sshnp sshnp = SshnpDartPureImpl(
+          atClient: mockAtClient,
+          params: sshnpParams,
+          identityKeyPair: atSshKeyPair,
+          logStream: testStreamController.stream);
+
+      SshnpDeviceList sshnpDeviceList = await sshnp.listDevices();
+      expect(sshnpDeviceList.info.length, 2);
+      expect(sshnpDeviceList.activeDevices, ['active']);
+      expect(sshnpDeviceList.inactiveDevices, ['inactive']);
+    });
+  });
+}
+
+class FakeScanVerbBuilderMatcher extends Matcher {
+  @override
+  Description describe(Description description) {
+    return description;
+  }
+
+  @override
+  bool matches(item, Map matchState) {
+    return true;
+  }
+}
+
+class FakeAtKeyMatcher extends Matcher {
+  @override
+  Description describe(Description description) {
+    return description;
+  }
+
+  @override
+  bool matches(item, Map matchState) {
+    if (item is AtKey) {
+      return true;
+    }
+    return false;
+  }
 }

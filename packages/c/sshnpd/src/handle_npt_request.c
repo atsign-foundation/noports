@@ -3,4 +3,4 @@
 
 #define LOGGER_TAG "NPT_REQUEST"
 
-void handle_npt_request(sshnpd_params *params, atclient_monitor_message *message) { int res = 0; }
+void handle_npt_request(sshnpd_params *params, atclient_monitor_response *response) { int res = 0; }
