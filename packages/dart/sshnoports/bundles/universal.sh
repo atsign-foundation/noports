@@ -668,26 +668,23 @@ check_ssh_keys() {
 }
 
 validate_activation(){
-  device_output=$(at_activate status -a $device_atsign)
-  device_status=$(echo $device_output | grep -oE 'returning [0-9]+' | awk {'print $2'})
-  client_output=$(at_activate status -a $client_atsign)
-  client_status=$(echo $client_output | grep -oE 'returning [0-9]+' | awk {'print $2'})
-  echo $client_status
-  echo $device_status
-  echo "Activiating your atsigns"
+  device_output=$(echo "$(at_activate status -a $device_atsign 2>&1)")
+  device_status=$(echo $device_output | grep -oE 'returning [0-9]+' | grep -oE '[0-9]+')
+  client_output=$(echo "$(at_activate status -a $client_atsign 2>&1)")
+  client_status=$(echo $client_output | grep -oE 'returning [0-9]+' | grep -oE '[0-9]+')
     if [ "$device_status" -ne 0 ]; then
+      echo "Activiating your device atsign"
       if [ "$device_status" -eq 3 ]; then
         echo $device_output
-        return
       fi
-      at_activate -a $device_atsign
+      at_activate onboard -a $device_atsign
     fi
     if [ "$client_status" -ne 0 ]; then
+          echo "Activiating your client atsign"
       if [ "$client_status" -eq 3 ]; then
         echo $client_output
-        return
       fi
-      at_activate -a $client_atsign
+      at_activate onboard -a $client_atsign
     fi
 }
 
