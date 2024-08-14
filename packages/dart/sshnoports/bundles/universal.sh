@@ -3,7 +3,7 @@
 # SCRIPT METADATA
 # DO NOT MODIFY/DELETE THIS BLOCK
 script_version="3.0.0"
-sshnp_version="5.1.0"
+sshnp_version="5.5.0"
 repo_url="https://github.com/atsign-foundation/sshnoports"
 # END METADATA
 
@@ -667,6 +667,30 @@ check_ssh_keys() {
   # TODO we could have a more sophisticated check for other files to see if they're keys
 }
 
+validate_activation(){
+  device_output=$(at_activate status -a $device_atsign)
+  device_status=$(echo $device_output | grep -oE 'returning [0-9]+' | awk {'print $2'})
+  client_output=$(at_activate status -a $client_atsign)
+  client_status=$(echo $client_output | grep -oE 'returning [0-9]+' | awk {'print $2'})
+  echo $client_status
+  echo $device_status
+  echo "Activiating your atsigns"
+    if [ "$device_status" -ne 0 ]; then
+      if [ "$device_status" -eq 3 ]; then
+        echo $device_output
+        return
+      fi
+      at_activate -a $device_atsign
+    fi
+    if [ "$client_status" -ne 0 ]; then
+      if [ "$client_status" -eq 3 ]; then
+        echo $client_output
+        return
+      fi
+      at_activate -a $client_atsign
+    fi
+}
+
 # CLIENT INSTALLATION #
 client() {
   mkdir -p "$bin_path"
@@ -755,7 +779,7 @@ client() {
       done
     fi
   fi
-
+  validate_activation
   # write the metadata to the magic script
   write_metadata "$magic_script" "client_atsign" "$(norm_atsign "$client_atsign")"
   write_metadata "$magic_script" "device_atsign" "$(norm_atsign "$device_atsign")"
