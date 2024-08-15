@@ -496,7 +496,7 @@ packages:
     source: hosted
     version: "6.1.4"
   file_picker:
-    dependency: transitive
+    dependency: "direct main"
     description:
       name: file_picker
       sha256: "1bbf65dd997458a08b531042ec3794112a6c39c07c37ff22113d2e7e4f81d4e4"
@@ -646,6 +646,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.1.2"
+  go_router:
+    dependency: "direct main"
+    description:
+      name: go_router
+      sha256: ddc16d34b0d74cb313986918c0f0885a7ba2fc24d8fb8419de75f0015144ccfe
+      url: "https://pub.dev"
+    source: hosted
+    version: "14.2.3"
   graphs:
     dependency: transitive
     description:
@@ -815,7 +823,7 @@ packages:
     source: hosted
     version: "0.1.1"
   meta:
-    dependency: transitive
+    dependency: "direct main"
     description:
       name: meta
       sha256: bdb68674043280c3428e9ec998512fb681678676b3c54e773629ffe74419f8c7
@@ -1298,6 +1306,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.0.1"
+  toml:
+    dependency: "direct main"
+    description:
+      name: toml
+      sha256: d968d149c8bd06dc14e09ea3a140f90a3f2ba71949e7a91df4a46f3107400e71
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.16.0"
   tray_manager:
     dependency: "direct main"
     description:
@@ -1515,13 +1531,21 @@ packages:
     source: hosted
     version: "6.5.0"
   yaml:
-    dependency: transitive
+    dependency: "direct main"
     description:
       name: yaml
       sha256: "75769501ea3489fca56601ff33454fe45507ea3bfb014161abc3b43ae25989d5"
       url: "https://pub.dev"
     source: hosted
     version: "3.1.2"
+  yaml_writer:
+    dependency: "direct main"
+    description:
+      name: yaml_writer
+      sha256: f182931a598f9a3fd29ff528f0caab98fffa713583e30c12c7a27ce0b66c1308
+      url: "https://pub.dev"
+    source: hosted
+    version: "2.0.0"
   zxing2:
     dependency: transitive
     description:

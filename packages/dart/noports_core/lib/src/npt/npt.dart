@@ -97,10 +97,6 @@ abstract class NptBase implements Npt {
   final StreamController<String> _progressStreamController =
       StreamController<String>.broadcast();
 
-  final StreamController<SocketConnector>
-      _inlineSocketConnectorStreamController =
-      StreamController<SocketConnector>.broadcast();
-
   /// Subclasses should use this method to generate progress messages
   sendProgress(String message) {
     _progressStreamController.add(message);
@@ -310,7 +306,7 @@ class _NptImpl extends NptBase
     /// Start srv
     if (params.inline) {
       // not detached
-      runInline();
+      await runInline();
     } else {
       await _srvdChannel.runSrv(
         localRvPort: localRvPort,
