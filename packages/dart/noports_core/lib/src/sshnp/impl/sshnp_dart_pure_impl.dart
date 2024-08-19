@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:at_client/at_client.dart';
 import 'package:dartssh2/dartssh2.dart';
+import 'package:meta/meta.dart';
 import 'package:noports_core/src/sshnp/impl/notification_request_message.dart';
 import 'package:noports_core/sshnp_foundation.dart';
 
@@ -64,31 +65,7 @@ class SshnpDartPureImpl extends SshnpCore
     sendProgress(msg);
 
     /// Send an ssh request to sshnpd
-    await notify(
-      AtKey()
-        ..key = 'ssh_request'
-        ..namespace = namespace
-        ..sharedBy = params.clientAtSign
-        ..sharedWith = params.sshnpdAtSign
-        ..metadata = (Metadata()..ttl = 10000),
-      signAndWrapAndJsonEncode(
-          atClient,
-          SshnpSessionRequest(
-            direct: true,
-            sessionId: sessionId,
-            host: srvdChannel.rvdHost,
-            port: srvdChannel.daemonPort,
-            authenticateToRvd: params.authenticateDeviceToRvd,
-            clientNonce: srvdChannel.clientNonce,
-            rvdNonce: srvdChannel.rvdNonce,
-            encryptRvdTraffic: params.encryptRvdTraffic,
-            clientEphemeralPK: params.sessionKP.atPublicKey.publicKey,
-            clientEphemeralPKType: params.sessionKPType.name,
-          ).toJson()),
-      checkForFinalDeliveryStatus: false,
-      waitForFinalDeliveryStatus: false,
-      ttln: Duration(minutes: 1),
-    );
+    await sendSshRequestToSshnpd();
 
     /// Wait for a response from sshnpd
     sendProgress('Waiting for response from the device daemon');
@@ -159,6 +136,35 @@ class SshnpDartPureImpl extends SshnpCore
           (params.addForwardsToTunnel) ? null : params.localSshOptions,
       privateKeyFileName: identityKeyPair?.identifier,
       connectionBean: tunnelSshClient,
+    );
+  }
+
+  @visibleForTesting
+  Future<void> sendSshRequestToSshnpd() async {
+    await notify(
+      AtKey()
+        ..key = 'ssh_request'
+        ..namespace = namespace
+        ..sharedBy = params.clientAtSign
+        ..sharedWith = params.sshnpdAtSign
+        ..metadata = (Metadata()..ttl = 10000),
+      signAndWrapAndJsonEncode(
+          atClient,
+          SshnpSessionRequest(
+            direct: true,
+            sessionId: sessionId,
+            host: srvdChannel.rvdHost,
+            port: srvdChannel.daemonPort,
+            authenticateToRvd: params.authenticateDeviceToRvd,
+            clientNonce: srvdChannel.clientNonce,
+            rvdNonce: srvdChannel.rvdNonce,
+            encryptRvdTraffic: params.encryptRvdTraffic,
+            clientEphemeralPK: params.sessionKP.atPublicKey.publicKey,
+            clientEphemeralPKType: params.sessionKPType.name,
+          ).toJson()),
+      checkForFinalDeliveryStatus: false,
+      waitForFinalDeliveryStatus: false,
+      ttln: Duration(minutes: 1),
     );
   }
 
