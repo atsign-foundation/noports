@@ -673,14 +673,16 @@ validate_activation(){
   client_output=$(echo "$(at_activate status -a $client_atsign 2>&1)")
   client_status=$(echo $client_output | grep -oE 'returning [0-9]+' | grep -oE '[0-9]+')
     if [ "$device_status" -ne 0 ]; then
-      echo "Activiating your device atsign"
+      echo
+      echo "Activating $device_atsign..."
       if [ "$device_status" -eq 3 ]; then
         echo $device_output
       fi
       at_activate onboard -a $device_atsign
     fi
     if [ "$client_status" -ne 0 ]; then
-          echo "Activiating your client atsign"
+      echo
+      echo "Activiating $client_atsign.."
       if [ "$client_status" -eq 3 ]; then
         echo $client_output
       fi
