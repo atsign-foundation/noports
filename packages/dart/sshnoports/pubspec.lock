@@ -206,10 +206,10 @@ packages:
     dependency: "direct dev"
     description:
       name: build_runner
-      sha256: "644dc98a0f179b872f612d3eb627924b578897c629788e858157fa5e704ca0c7"
+      sha256: dd09dd4e2b078992f42aac7f1a622f01882a8492fef08486b27ddde929c19f04
       url: "https://pub.dev"
     source: hosted
-    version: "2.4.11"
+    version: "2.4.12"
   build_runner_core:
     dependency: transitive
     description:
@@ -359,10 +359,10 @@ packages:
     description:
       path: "."
       ref: trunk
-      resolved-ref: "5322be8305c884ba0a17368bcf9b0e6c09e22f88"
+      resolved-ref: "36329826504e50f3d8f18ecc3b8865f4b469cc87"
       url: "https://github.com/atsign-foundation/dartssh2"
     source: git
-    version: "2.9.1-atsignfork"
+    version: "2.9.1-atsignfork-1"
   duration:
     dependency: "direct main"
     description:
@@ -630,10 +630,10 @@ packages:
     dependency: transitive
     description:
       name: pinenacl
-      sha256: "3a5503637587d635647c93ea9a8fecf48a420cc7deebe6f1fc85c2a5637ab327"
+      sha256: "57e907beaacbc3c024a098910b6240758e899674de07d6949a67b52fd984cbdf"
       url: "https://pub.dev"
     source: hosted
-    version: "0.5.1"
+    version: "0.6.0"
   platform:
     dependency: transitive
     description:
