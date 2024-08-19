@@ -1,11 +1,14 @@
 import 'dart:async';
+import 'dart:convert';
 
+import 'package:at_chops/at_chops.dart';
 import 'package:at_client/at_client.dart';
 import 'package:at_commons/at_builders.dart';
 import 'package:at_utils/at_logger.dart';
 import 'package:logging/logging.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:noports_core/src/common/features.dart';
+import 'package:noports_core/srvd.dart';
 import 'package:noports_core/sshnp_foundation.dart';
 import 'package:test/test.dart';
 
@@ -303,6 +306,95 @@ void main() {
       expect(sshnpDeviceList.info.length, 2);
       expect(sshnpDeviceList.activeDevices, ['active']);
       expect(sshnpDeviceList.inactiveDevices, ['inactive']);
+    });
+
+    test('A test to verify notifying ssh request to sshnpd', () async {
+      registerFallbackValue(FakeNotificationParams());
+      AtEncryptionKeyPair atEncryptionKeyPair =
+          AtChopsUtil.generateAtEncryptionKeyPair();
+
+      MockAtClient mockAtClient = MockAtClient();
+      MockNotificationService mockNotificationService =
+          MockNotificationService();
+
+      when(() => mockAtClient.atChops).thenAnswer(
+          (_) => AtChopsImpl(AtChopsKeys.create(atEncryptionKeyPair, null)));
+
+      when(() => mockAtClient.notificationService)
+          .thenAnswer((_) => mockNotificationService);
+
+      when(() =>
+              mockNotificationService.notify(any(),
+                  checkForFinalDeliveryStatus:
+                      any(named: 'checkForFinalDeliveryStatus'),
+                  waitForFinalDeliveryStatus:
+                      any(named: 'waitForFinalDeliveryStatus'),
+                  onSuccess: any(named: 'onSuccess'),
+                  onError: any(named: 'onError'),
+                  onSentToSecondary: any(named: 'onSentToSecondary')))
+          .thenAnswer(expectAsync1((Invocation invocation) async {
+        // Assert when the notification response belongs to "ssh_request"
+        if (invocation.positionalArguments[0].atKey.key
+            .contains('ssh_request')) {
+          expect(invocation.positionalArguments[0].atKey.toString(),
+              '@alice_device:ssh_request.default.sshnp@alice');
+          print(invocation.positionalArguments[0].value);
+          Map sshRequestResponse =
+              jsonDecode(invocation.positionalArguments[0].value);
+          expect(sshRequestResponse['payload']['direct'], true);
+          expect(
+              sshRequestResponse['payload']['sessionId'].toString().isNotEmpty,
+              true);
+          expect(sshRequestResponse['payload']['host'], '127.0.0.1');
+          expect(sshRequestResponse['payload']['port'], 98879);
+          expect(sshRequestResponse['payload']['authenticateToRvd'], true);
+          expect(sshRequestResponse['payload']['rvdNonce'], 'rvd_dummy_nonce');
+          expect(sshRequestResponse['payload']['encryptRvdTraffic'], true);
+          expect(sshRequestResponse['payload']['clientEphemeralPK'].isNotEmpty,
+              true);
+          expect(sshRequestResponse['signature'].isNotEmpty, true);
+          expect(sshRequestResponse['hashingAlgo'].isNotEmpty, true);
+          expect(sshRequestResponse['signingAlgo'].isNotEmpty, true);
+        }
+
+        return Future.value(NotificationResult()
+          ..notificationStatusEnum = NotificationStatusEnum.delivered);
+      }, count: 2));
+
+      // Create a stream controller to simulate the notification received from the srvd
+      // which contains the host and port numbers.
+      final streamController = StreamController<AtNotification>();
+      streamController.add(AtNotification(
+          '123',
+          'local.request_ports.${Srvd.namespace}',
+          '@alice',
+          '@bob',
+          123,
+          'key',
+          true)
+        ..value = '127.0.0.1,98878,98879,rvd_dummy_nonce');
+      when(() => mockNotificationService.subscribe(
+              regex: any(named: 'regex'),
+              shouldDecrypt: any(named: 'shouldDecrypt')))
+          .thenAnswer((_) => streamController.stream);
+
+      SshnpParams sshnpParams = SshnpParams(
+          clientAtSign: '@alice',
+          sshnpdAtSign: '@alice_device',
+          srvdAtSign: '@srvd');
+      AtSshKeyPair atSshKeyPair =
+          await DartSshKeyUtil().generateKeyPair(identifier: 'my-test');
+      StreamController<String> testStreamController = StreamController();
+      SshnpDartPureImpl sshnp = SshnpDartPureImpl(
+          atClient: mockAtClient,
+          params: sshnpParams,
+          identityKeyPair: atSshKeyPair,
+          logStream: testStreamController.stream);
+
+      // Initialize srvd, to fetch the host and port from the srvd -
+      // Here returning a mocked response from a stream controller.
+      await sshnp.srvdChannel.initialize();
+      await sshnp.sendSshRequestToSshnpd();
     });
   });
 }
