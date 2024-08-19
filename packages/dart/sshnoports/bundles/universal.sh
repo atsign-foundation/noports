@@ -880,7 +880,6 @@ device() {
   if ! check_cmd sshd; then
     >&2 echo "sshd not found. Please install sshd and ensure it is running."
   fi
-  validate_activation
 }
 
 main() {
