@@ -9,6 +9,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:npt_flutter/app.dart';
 import 'package:npt_flutter/features/profile/models/profile.dart';
 import 'package:npt_flutter/features/profile_list/profile_list.dart';
+import 'package:yaml/yaml.dart';
 import 'package:yaml_writer/yaml_writer.dart';
 
 enum ExportableProfileFiletype {
@@ -17,6 +18,9 @@ enum ExportableProfileFiletype {
 
   final String filetype;
   const ExportableProfileFiletype(this.filetype);
+
+  static ExportableProfileFiletype? fromExtension(String ext) =>
+      switch (ext) { "json" => json, "yaml" => yaml, _ => null };
 
   static Iterable<String> get filetypes =>
       ExportableProfileFiletype.values.map((e) => e.filetype);
@@ -83,20 +87,30 @@ class Export {
         return;
       }
       File f = File(result.files.single.path!);
+      var filetype = ExportableProfileFiletype.fromExtension(
+        f.path.substring(f.path.lastIndexOf('.') + 1),
+      );
+      if (filetype == null) return;
 
       var contents = await f.readAsString();
-      var json = jsonDecode(contents);
+
+      var json = switch (filetype) {
+        ExportableProfileFiletype.json => jsonDecode(contents),
+
+        /// Should return a [YamlMap] which implements [Map]
+        ExportableProfileFiletype.yaml => loadYaml(contents),
+      };
 
       /// Type validation to ensure type safety
-      if (json is! Map) throw 'decoded document is not a Map';
+      if (json is! Map) throw 'decoded $filetype document is not a Map';
       if (json[profilesKey] is! List) {
         throw 'profiles is not a List in this document';
       }
 
       var profiles = (json[profilesKey] as List)
           .map((e) {
-            if (e is! Map<String, dynamic>) return null;
-            return Profile.fromJson(e);
+            if (e is! Map) return null;
+            return Profile.fromJson(e.cast<String, dynamic>());
           })
           .where((e) => e != null)
           .cast<Profile>();
