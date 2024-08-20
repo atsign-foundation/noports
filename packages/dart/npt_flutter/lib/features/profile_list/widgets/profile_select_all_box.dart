@@ -1,4 +1,3 @@
-import 'package:at_client_mobile/at_client_mobile.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:npt_flutter/features/profile_list/profile_list.dart';
@@ -11,21 +10,19 @@ class ProfileSelectAllBox extends StatelessWidget {
     return BlocBuilder<ProfileListBloc, ProfileListState>(
       builder: (BuildContext context, ProfileListState list) {
         return BlocSelector<ProfilesSelectedCubit, ProfilesSelectedState,
-            Tuple<bool, bool>?>(
+            (bool, bool)?>(
           selector: (ProfilesSelectedState state) {
             if (list is! ProfileListLoaded) return null;
-            var tuple = Tuple<bool, bool>();
             // one - whether all elements are selected or not
-            tuple.one = list.profiles.isNotEmpty &&
+            var allChecked = list.profiles.isNotEmpty &&
                 state.selected.containsAll(list.profiles);
             // two - whether some elements are selected or not
-            tuple.two = state.selected.isNotEmpty;
-            return tuple;
+            var anyChecked = state.selected.isNotEmpty;
+            return (allChecked, anyChecked);
           },
-          builder: (BuildContext context, Tuple<bool, bool>? tuple) {
+          builder: (BuildContext context, (bool, bool)? tuple) {
             if (tuple == null) return const SizedBox();
-            bool allChecked = tuple.one;
-            bool someChecked = tuple.two;
+            var (allChecked, someChecked) = tuple;
             return Checkbox(
               tristate: true,
               value: allChecked
