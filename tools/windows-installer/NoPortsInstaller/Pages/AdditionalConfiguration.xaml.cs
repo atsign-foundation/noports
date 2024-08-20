@@ -7,12 +7,12 @@ namespace NoPortsInstaller.Pages
     /// </summary>
     public partial class AdditionalConfiguration : Page
     {
-        private InstallController _controller;
-        public AdditionalConfiguration(InstallController installer)
+        private readonly IController _controller;
+        public AdditionalConfiguration(IController installer)
         {
             _controller = installer;
             InitializeComponent();
-            if (_controller.ClientInstall)
+            if (_controller.InstallType.Equals(InstallType.Client))
             {
                 ClientConfig.IsEnabled = true;
             }
@@ -26,22 +26,10 @@ namespace NoPortsInstaller.Pages
 
         private void NextPageButton_Click(object sender, System.Windows.RoutedEventArgs e)
         {
-            _controller.RegionAtsign = RegionBox.Text;
+            _controller.RegionAtsign = _controller.NormalizeAtsign(RegionBox.Text);
             _controller.MultipleDevices = MultipleDevices.Text;
             _controller.Pages.Add(new Download(_controller));
             _controller.NextPage();
-        }
-
-        private void ValidateInputs()
-        {
-            if (RegionBox.Text == "")
-            {
-                NextPageButton.IsEnabled = false;
-            }
-            else
-            {
-                NextPageButton.IsEnabled = true;
-            }
         }
     }
 }

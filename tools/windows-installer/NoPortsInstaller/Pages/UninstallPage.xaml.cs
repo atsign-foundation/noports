@@ -4,20 +4,21 @@ using System.Windows.Controls;
 namespace NoPortsInstaller.Pages
 {
     /// <summary>
-    /// Interaction logic for FinishInstall.xaml
+    /// Interaction logic for UninstallPage.xaml
     /// </summary>
-    public partial class FinishUninstall : Page
+    public partial class UninstallPage : Page
     {
         private readonly IController _controller;
-        public FinishUninstall(IController installer)
+        public UninstallPage(IController controller)
         {
             InitializeComponent();
-            _controller = installer;
+            _controller = controller;
+            var pages = new List<Page> { new Uninstall(controller), new FinishUninstall(controller) };
         }
 
         private void NextPageButton_Click(object sender, RoutedEventArgs e)
         {
-            Application.Current.Shutdown();
+            _controller.NextPage();
         }
     }
 }

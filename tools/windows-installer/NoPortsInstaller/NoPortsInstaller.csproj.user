@@ -12,6 +12,12 @@
     <Compile Update="Pages\ServiceErrorPage.xaml.cs">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Update="Pages\UninstallPage.xaml.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Update="Pages\UpdateConfigs.xaml.cs">
+      <SubType>Code</SubType>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
     <Page Update="Pages\FinishUninstall.xaml">
@@ -23,7 +29,10 @@
     <Page Update="Pages\Uninstall.xaml">
       <SubType>Designer</SubType>
     </Page>
-    <Page Update="Pages\UninstallWindow.xaml">
+    <Page Update="Pages\UninstallPage.xaml">
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Update="Pages\UpdateConfigs.xaml">
       <SubType>Designer</SubType>
     </Page>
   </ItemGroup>

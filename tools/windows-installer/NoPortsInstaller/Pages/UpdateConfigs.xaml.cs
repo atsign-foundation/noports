@@ -2,26 +2,25 @@
 
 namespace NoPortsInstaller.Pages
 {
-    public partial class ConfigureInstall : Page
+    /// <summary>
+    /// Interaction logic for UpdateConfigs.xaml
+    /// </summary>
+    public partial class UpdateConfigs : Page
     {
         private readonly IController _controller;
-        public ConfigureInstall(IController installer)
+        public UpdateConfigs(IController controller)
         {
-            _controller = installer;
             InitializeComponent();
-        }
-
-        private void BackPageButton_Click(object sender, System.Windows.RoutedEventArgs e)
-        {
-            _controller.PreviousPage();
+            _controller = controller;
         }
 
         private void NextPageButton_Click(object sender, System.Windows.RoutedEventArgs e)
         {
-            _controller.DeviceAtsign = _controller.NormalizeAtsign(DeviceCombo.Text);
-            _controller.ClientAtsign = _controller.NormalizeAtsign(ClientCombo.Text);
-            _controller.DeviceName = _controller.NormalizeAtsign(DeviceName.Text);
-            _controller.Pages.Add(new AdditionalConfiguration(_controller));
+            _controller.DeviceAtsign = DeviceCombo.Text;
+            _controller.ClientAtsign = ClientCombo.Text;
+            _controller.DeviceName = DeviceName.Text;
+            _controller.UpdateConfigRegistry();
+            _controller.Pages.Add(new FinishInstall(_controller));
             _controller.NextPage();
         }
 
@@ -65,4 +64,3 @@ namespace NoPortsInstaller.Pages
         }
     }
 }
-

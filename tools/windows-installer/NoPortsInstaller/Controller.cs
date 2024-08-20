@@ -6,40 +6,37 @@ using System.IO.Compression;
 using System.Net.Http;
 using System.Security.AccessControl;
 using System.Text.Json;
-using System.Text.RegularExpressions;
 using System.Windows;
 using System.Windows.Controls;
 namespace NoPortsInstaller
 {
-    public class InstallController
+    public class Controller : IController
     {
         public string InstallDirectory { get; set; }
-        public bool DeviceInstall { get; set; }
-        public bool ClientInstall { get; set; }
+        public InstallType InstallType { get; set; }
         public string ClientAtsign { get; set; }
         public string DeviceAtsign { get; set; }
         public string DeviceName { get; set; }
         public string RegionAtsign { get; set; }
-        public string PermittedPorts { get; set; }
+        private string PermittedPorts { get; set; }
         public string MultipleDevices { get; set; }
         public bool IsInstalled { get { return Directory.Exists(InstallDirectory); } set { } }
         public List<Page> Pages { get; set; }
         private int index = 0;
-        private Window? window;
+        public Window? Window { get; set; }
         private string? archiveDirectory;
 
-        public InstallController()
+        public Controller()
         {
             InstallDirectory = "C:\\Program Files\\NoPorts";
-            ClientInstall = false;
-            DeviceInstall = false;
+            InstallType = InstallType.None;
             ClientAtsign = "";
             DeviceAtsign = "";
             DeviceName = "";
             RegionAtsign = "";
             MultipleDevices = "";
             PermittedPorts = "localhost:22,localhost:3389";
-            Pages = new List<Page>();
+            Pages = [];
             IsInstalled = false;
         }
 
@@ -58,7 +55,7 @@ namespace NoPortsInstaller
                 status.Content = "Creating Registries NoPorts...";
                 CreateRegistryKeys();
                 status.Content = "Setting up NoPorts Service...";
-                if (DeviceInstall)
+                if (InstallType.Equals(InstallType.Device))
                 {
                     CopyIntoServiceAccount();
                     await SetupService(status);
@@ -69,6 +66,7 @@ namespace NoPortsInstaller
             }
             catch (Exception ex)
             {
+                await Cleanup();
                 Pages.Add(new ServiceErrorPage(ex.Message));
                 NextPage();
             }
@@ -84,7 +82,12 @@ namespace NoPortsInstaller
                 if (registryKey != null)
                 {
                     binPath = registryKey.GetValue("BinPath");
+                    registryKey = Registry.LocalMachine.OpenSubKey(@"SOFTWARE\");
+                    registryKey!.DeleteSubKeyTree("NoPorts");
+                    registryKey = Registry.LocalMachine.OpenSubKey(@"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall");
+                    registryKey!.DeleteSubKeyTree("NoPorts");
                 }
+
 
                 if (ServiceController.ServiceIsInstalled("sshnpd"))
                 {
@@ -100,7 +103,7 @@ namespace NoPortsInstaller
                 }
                 if (binPath != null)
                 {
-                    DirectoryInfo di = new DirectoryInfo(binPath.ToString()!);
+                    DirectoryInfo di = new(binPath.ToString()!);
                     foreach (FileInfo file in di.GetFiles())
                     {
                         file.Delete();
@@ -121,19 +124,37 @@ namespace NoPortsInstaller
             }
         }
 
+        public void UpdateConfigRegistry()
+        {
+            try
+            {
+                RegistryKey? registryKey = Registry.LocalMachine.OpenSubKey(@"Software\NoPorts");
+                if (registryKey != null)
+                {
+                    registryKey.SetValue("DeviceArgs", $"-a {DeviceAtsign} -m {ClientAtsign} -d {DeviceName} -sv");
+                    registryKey.Close();
+                }
+            }
+            catch (Exception ex)
+            {
+                Pages.Add(new ServiceErrorPage(ex.Message));
+                NextPage();
+            }
+        }
+
         private void CreateDirectories(string userHome)
         {
-            DirectorySecurity securityRules = new DirectorySecurity();
+            DirectorySecurity securityRules = new();
             securityRules.AddAccessRule(new FileSystemAccessRule("Users", FileSystemRights.Modify, AccessControlType.Allow));
-            string[] directories = new string[]
-            {
-            Path.Combine(userHome, ".ssh"),
-            Path.Combine(userHome, ".sshnp"),
-            Path.Combine(userHome, ".atsign"),
-            Path.Combine(userHome, ".atsign", "keys"),
-            InstallDirectory,
-            Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), @"Temp\NoPorts")
-            };
+            string[] directories =
+            [
+                Path.Combine(userHome, ".ssh"),
+                Path.Combine(userHome, ".sshnp"),
+                Path.Combine(userHome, ".atsign"),
+                Path.Combine(userHome, ".atsign", "keys"),
+                InstallDirectory,
+                Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), @"Temp\NoPorts")
+            ];
 
             foreach (string dir in directories)
             {
@@ -152,7 +173,7 @@ namespace NoPortsInstaller
                     Console.WriteLine($"An error occurred while creating {dir}: {ex.Message}");
                 }
             }
-            FileInfo fi = new FileInfo(Path.Combine(userHome, ".ssh", "authorized_keys"));
+            FileInfo fi = new(Path.Combine(userHome, ".ssh", "authorized_keys"));
             fi.Create().Close();
         }
 
@@ -160,17 +181,17 @@ namespace NoPortsInstaller
         {
             string sourceFile = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
             string destinationFile = Environment.ExpandEnvironmentVariables("%systemroot%") + @"\ServiceProfiles\NetworkService\";
-            string[] sources = new string[]
-            {
+            string[] sources =
+            [
                 Path.Combine(sourceFile, ".ssh", "authorized_keys"),
                 Path.Combine(sourceFile, ".atsign", "keys", DeviceAtsign + "_key.atKeys")
-            };
+            ];
             CreateDirectories(destinationFile);
-            string[] destinations = new string[]
-            {
+            string[] destinations =
+            [
                 Path.Combine(destinationFile, ".ssh", "authorized_keys"),
                 Path.Combine(destinationFile, ".atsign", "keys", DeviceAtsign + "_key.atKeys")
-            };
+            ];
             for (int i = 0; i < sources.Length; i++)
             {
                 try
@@ -186,7 +207,7 @@ namespace NoPortsInstaller
 
         private async Task DownloadArchive()
         {
-            HttpClient client = new HttpClient();
+            HttpClient client = new();
             client.DefaultRequestHeaders.Add("User-Agent", "product/1");
             string content;
             var downloadUrl = "";
@@ -246,7 +267,7 @@ namespace NoPortsInstaller
 
         private void ExtractArchive()
         {
-            if (DeviceInstall)
+            if (InstallType.Equals(InstallType.Device))
             {
                 try
                 {
@@ -263,14 +284,14 @@ namespace NoPortsInstaller
             ZipFile.ExtractToDirectory(archiveDirectory!, InstallDirectory, overwriteFiles: true);
             InstallDirectory = Path.Combine(InstallDirectory, "sshnp");
             File.Delete(archiveDirectory!);
-            if (DeviceInstall && ClientInstall) { }
-            else if (DeviceInstall)
+            if (InstallType.Equals(InstallType.Both)) { }
+            else if (InstallType.Equals(InstallType.Device))
             {
                 File.Delete(Path.Combine(InstallDirectory, "sshnp.exe"));
                 File.Delete(Path.Combine(InstallDirectory, "npt.exe"));
                 Directory.Delete(Path.Combine(InstallDirectory, "docker"), true);
             }
-            else if (ClientInstall)
+            else if (InstallType.Equals(InstallType.Client))
             {
                 File.Delete(Path.Combine(InstallDirectory, "sshnpd.exe"));
                 File.Delete(Path.Combine(InstallDirectory, "sshnpd_service.xml"));
@@ -317,25 +338,27 @@ namespace NoPortsInstaller
         {
             RegistryKey registryKey = Registry.LocalMachine.CreateSubKey(@"Software\NoPorts");
             registryKey.SetValue("BinPath", InstallDirectory);
-            string KeyPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), @".atsign\keys", DeviceAtsign + "_key.atKeys");
-            if (DeviceInstall)
+            if (InstallType.Equals(InstallType.Device))
             {
                 registryKey.SetValue("DeviceArgs", $"-a {DeviceAtsign} -m {ClientAtsign} -d {DeviceName} -sv");
             }
+            registryKey.Close();
         }
 
-        private void UpdateConfigRegistry()
-        {
-
-        }
-
-        private Task CleanupOnExit()
+        private Task Cleanup()
         {
             return Task.Run(() =>
             {
                 try
                 {
                     Directory.Delete(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), @"Temp\NoPorts"), true);
+                    RegistryKey? registryKey = Registry.LocalMachine.OpenSubKey(@"SOFTWARE\NoPorts");
+                    if (registryKey != null)
+                    {
+                        registryKey.DeleteValue("BinPath");
+                        registryKey.DeleteValue("DeviceArgs");
+                        registryKey.Close();
+                    }
                 }
                 catch
                 {
@@ -344,13 +367,41 @@ namespace NoPortsInstaller
             });
         }
 
+        public void LoadPages()
+        {
+            switch (InstallType)
+            {
+                case InstallType.None:
+                    Pages.Add(new Setup(this));
+                    break;
+                case InstallType.Update:
+                    Pages.Add(new UpdateConfigs(this));
+                    break;
+                case InstallType.Uninstall:
+                    Pages.Add(new UninstallPage(this));
+                    break;
+                default:
+                    Pages.Add(new ConfigureInstall(this));
+                    Pages.Add(new AdditionalConfiguration(this));
+                    break;
+            }
+            if (Window != null)
+            {
+                Window.Content = Pages[index];
+            }
+            else
+            {
+                throw new Exception("Failed to initialize starting window.");
+            }
+        }
+
         public void NextPage()
         {
             if (index < Pages.Count - 1)
             {
                 index++;
             }
-            window!.Content = Pages[index];
+            Window!.Content = Pages[index];
         }
 
         public void PreviousPage()
@@ -359,14 +410,7 @@ namespace NoPortsInstaller
             {
                 index--;
             }
-            window!.Content = Pages[index];
-        }
-
-        public void Setup(Window window, List<Page> pages)
-        {
-            this.window = window;
-            Pages = pages;
-            window.Content = Pages[0];
+            Window!.Content = Pages[index];
         }
 
         private async Task UpdateProgressBar(ProgressBar pb, int value)
@@ -382,22 +426,7 @@ namespace NoPortsInstaller
             });
         }
 
-        public bool VerifyAtsign()
-        {
-            if (ClientAtsign == "" || DeviceAtsign == "")
-            {
-                return false;
-            }
-            if (!Regex.IsMatch(ClientAtsign, @"^@?[a-zA-Z0-9]{1,20}$"))
-            {
-                ClientAtsign = "@" + ClientAtsign;
-            }
-            if (!Regex.IsMatch(DeviceAtsign, @"^@?[a-zA-Z0-9]{1,20}$"))
-            {
-                DeviceAtsign = "@" + DeviceAtsign;
-            }
-            return true;
-        }
+
 
         public void PopulateAtsigns(ComboBox box)
         {
@@ -405,12 +434,33 @@ namespace NoPortsInstaller
             Directory.GetFiles(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), @".atsign\keys"), "*.atKeys", SearchOption.AllDirectories);
             foreach (var key in files)
             {
-                ComboBoxItem item = new ComboBoxItem();
+                ComboBoxItem item = new();
                 item.Content = Path.GetFileNameWithoutExtension(key).Replace("_key", "");
                 box.Items.Add(item);
             }
         }
 
+        public string NormalizeAtsign(string atsign)
+        {
+            if (atsign.StartsWith('@'))
+            {
+                return atsign;
+            }
+            else
+            {
+                return "@" + atsign;
+            }
+        }
 
+    }
+
+    public enum InstallType
+    {
+        None,
+        Device,
+        Client,
+        Both,
+        Update,
+        Uninstall
     }
 }

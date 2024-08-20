@@ -1,5 +1,4 @@
 ﻿using System.Windows;
-using System.Windows.Controls;
 
 namespace NoPortsInstaller.Pages;
 
@@ -8,12 +7,12 @@ namespace NoPortsInstaller.Pages;
 /// </summary>
 public partial class MainWindow : Window
 {
-    private InstallController _controller;
+    private readonly Controller _controller;
     public MainWindow()
     {
         InitializeComponent();
         _controller = App.ControllerInstance;
-        List<Page> pages = new List<Page> { new Setup(_controller), new ConfigureInstall(_controller) };
-        _controller.Setup(this, pages);
+        _controller.Window = this;
+        _controller.LoadPages();
     }
 }

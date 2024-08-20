@@ -1,11 +1,13 @@
-﻿<Window x:Class="NoPortsInstaller.Pages.UninstallWindow"
-        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        xmlns:local="clr-namespace:NoPortsInstaller"
-        mc:Ignorable="d"
-        Title="NoPortsInstaller" Height="370" Width="500" WindowStyle="ToolWindow" ResizeMode="CanMinimize"  Icon="/Assets/noports-stacked-dark.ico">
+﻿<Page x:Class="NoPortsInstaller.Pages.UninstallPage"
+      xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+      xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+      xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+      xmlns:local="clr-namespace:NoPortsInstaller.Pages"
+      mc:Ignorable="d" 
+      d:DesignHeight="350" d:DesignWidth="500 "
+      Title="UninstallPage">
+
     <Grid>
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="309*"/>
@@ -41,4 +43,4 @@
         <Button x:Name="NextPageButton" Content="Uninstall" HorizontalAlignment="Left" Height="24" Margin="120,297,0,0" VerticalAlignment="Top" Width="52" RenderTransformOrigin="0.536,-0.009" Click="NextPageButton_Click" Grid.Column="2"/>
 
     </Grid>
-</Window>
+</Page>

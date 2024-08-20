@@ -8,11 +8,15 @@ namespace NoPortsInstaller.Pages
     /// </summary>
     public partial class Setup : Page
     {
-        private InstallController _controller;
-        public Setup(InstallController installer)
+        private readonly IController _controller;
+        public Setup(IController installer)
         {
             InitializeComponent();
             _controller = installer;
+            if (_controller.IsInstalled)
+            {
+                UpdateConfig.IsEnabled = true;
+            }
         }
 
         private void OpenDialogButton_Click(object sender, RoutedEventArgs e)
@@ -26,12 +30,26 @@ namespace NoPortsInstaller.Pages
                 _controller.InstallDirectory = dialog.FolderName + "\\NoPorts";
             }
             Directory.Text = _controller.InstallDirectory;
+            if (_controller.IsInstalled)
+            {
+                UpdateConfig.IsEnabled = true;
+            }
         }
 
         private void NextPageButton_Click(object sender, RoutedEventArgs e)
         {
-            _controller.DeviceInstall = DeviceInstallType.IsChecked == true;
-            _controller.ClientInstall = ClientInstallType.IsChecked == true;
+            if (ClientInstallType.IsChecked == true && DeviceInstallType.IsChecked == true)
+            {
+                _controller.InstallType = InstallType.Both;
+            }
+            else if (DeviceInstallType.IsChecked == true)
+            {
+                _controller.InstallType = InstallType.Device;
+            }
+            else
+            {
+                _controller.InstallType = InstallType.Client;
+            }
             _controller.NextPage();
         }
 
@@ -56,6 +74,13 @@ namespace NoPortsInstaller.Pages
         private void ClientInstallType_Click(object sender, RoutedEventArgs e)
         {
             EnableButton();
+        }
+
+        private void UpdateConfigButton_Click(object sender, RoutedEventArgs e)
+        {
+            _controller.InstallType = InstallType.Update;
+            _controller.LoadPages();
+            _controller.NextPage();
         }
     }
 }

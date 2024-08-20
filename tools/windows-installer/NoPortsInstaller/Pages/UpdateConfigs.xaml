@@ -1,12 +1,12 @@
-﻿<Page x:Class="NoPortsInstaller.Pages.ConfigureInstall"
+﻿<Page x:Class="NoPortsInstaller.Pages.UpdateConfigs"
       xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
       xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
       xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
       xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
-      xmlns:local="clr-namespace:NoPortsInstaller"
+      xmlns:local="clr-namespace:NoPortsInstaller.Pages"
       mc:Ignorable="d" 
       d:DesignHeight="350" d:DesignWidth="500"
-      Title="ConfigureInstall">
+      Title="UpdateConfigs">  
 
     <Grid>
         <Rectangle HorizontalAlignment="Left" Height="350" VerticalAlignment="Center" Width="162" Fill="#FF252526" Margin="-8,0,0,0">
@@ -32,8 +32,7 @@
         </Image>
         <Label Content="NoPorts Installation" HorizontalAlignment="Left" Height="28" VerticalAlignment="Top" Width="194" Margin="168,10,0,0" FontSize="16" FontWeight="Bold"/>
         <Label Content="Configure your installation" HorizontalAlignment="Left" Height="27" VerticalAlignment="Top" Width="199" Margin="168,33,0,0"/>
-        <Button x:Name="BackPageButton" Content="&lt; Back" HorizontalAlignment="Left" Height="24" Margin="360,297,0,0" VerticalAlignment="Top" Width="52" Click="BackPageButton_Click"/>
-        <Button x:Name="NextPageButton" Content="Next" HorizontalAlignment="Left" Height="24" Margin="427,297,0,0" VerticalAlignment="Top" Width="52" RenderTransformOrigin="0.536,-0.009" Click="NextPageButton_Click" IsEnabled="False"/>
+        <Button x:Name="NextPageButton" Content="Update" HorizontalAlignment="Left" Height="24" Margin="427,297,0,0" VerticalAlignment="Top" Width="52" RenderTransformOrigin="0.536,-0.009" Click="NextPageButton_Click" IsEnabled="False"/>
         <Label Content="*Client atSign ( ex. @alice__client )" HorizontalAlignment="Left" Height="27" VerticalAlignment="Top" Width="199" Margin="168,65,0,0" FontSize="11"/>
         <Rectangle HorizontalAlignment="Left" Height="2" Margin="168,59,0,0" Stroke="Black" VerticalAlignment="Top" Width="220" Fill="Black" RenderTransformOrigin="0.5,0.5">
             <Rectangle.RenderTransform>

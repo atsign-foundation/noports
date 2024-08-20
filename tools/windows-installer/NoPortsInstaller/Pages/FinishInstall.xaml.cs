@@ -8,8 +8,8 @@ namespace NoPortsInstaller.Pages
     /// </summary>
     public partial class FinishInstall : Page
     {
-        private InstallController _controller;
-        public FinishInstall(InstallController installer)
+        private readonly IController _controller;
+        public FinishInstall(IController installer)
         {
             InitializeComponent();
             _controller = installer;

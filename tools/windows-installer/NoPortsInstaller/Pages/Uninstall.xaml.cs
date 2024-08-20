@@ -7,8 +7,8 @@ namespace NoPortsInstaller.Pages
     /// </summary>
     public partial class Uninstall : Page
     {
-        private InstallController _controller;
-        public Uninstall(InstallController installer)
+        private readonly IController _controller;
+        public Uninstall(IController installer)
         {
             InitializeComponent();
             _controller = installer;
