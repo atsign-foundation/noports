@@ -21,10 +21,10 @@ packages:
     dependency: transitive
     description:
       name: archive
-      sha256: ecf4273855368121b1caed0d10d4513c7241dfc813f7d3c8933b36622ae9b265
+      sha256: cb6a278ef2dbb298455e1a713bda08524a175630ec643a242c399c932a0a1f7d
       url: "https://pub.dev"
     source: hosted
-    version: "3.5.1"
+    version: "3.6.1"
   args:
     dependency: "direct main"
     description:
@@ -38,10 +38,10 @@ packages:
     dependency: transitive
     description:
       name: asn1lib
-      sha256: "21afe4333076c02877d14f4a89df111e658a6d466cbfc802eb705eb91bd5adfd"
+      sha256: "58082b3f0dca697204dbab0ef9ff208bfaea7767ea771076af9a343488428dda"
       url: "https://pub.dev"
     source: hosted
-    version: "1.5.0"
+    version: "1.5.3"
   async:
     dependency: transitive
     description:
@@ -54,10 +54,10 @@ packages:
     dependency: transitive
     description:
       name: at_auth
-      sha256: a14fbd4ea67349dba3bd06d2a58a5135a99396f3553a3d8bba83e8a5b93593a6
+      sha256: "28f72f0fc26ec7f5f58d28fd29f964c9b2b35ecdc8dd4805ed7174851da2cbcc"
       url: "https://pub.dev"
     source: hosted
-    version: "2.0.3"
+    version: "2.0.5"
   at_base2e15:
     dependency: transitive
     description:
@@ -86,18 +86,18 @@ packages:
     dependency: transitive
     description:
       name: at_client
-      sha256: "65fefc2c217376bdcdff1b7b5b30c476bc5bf8ca4146863aa4a28ce5401d3600"
+      sha256: "08fdcd3cb1ca94aa70e603bf86fba45f19608398749eaa35593f9161bdb88bb9"
       url: "https://pub.dev"
     source: hosted
-    version: "3.0.75"
+    version: "3.0.76"
   at_commons:
     dependency: transitive
     description:
       name: at_commons
-      sha256: f6022dbc7da52413a98a22f1d843b0c8277fb82f3583520a9c9a23483502e347
+      sha256: "2d0490a0c5bcd43c6a37911d85b71c133767aec47abc65bd8ecb20c8caaddeab"
       url: "https://pub.dev"
     source: hosted
-    version: "4.0.9"
+    version: "4.0.11"
   at_demo_data:
     dependency: transitive
     description:
@@ -118,10 +118,10 @@ packages:
     dependency: "direct main"
     description:
       name: at_onboarding_cli
-      sha256: "3b0d6801962585c89b0aed13eb19c2c3e285cb7eef11350446aedd13bd51cc33"
+      sha256: "6728eccbf2d89a83d872ef82f10ec36b0174699cfc1dadaaf6a9a53b35773115"
       url: "https://pub.dev"
     source: hosted
-    version: "1.6.0"
+    version: "1.6.1"
   at_persistence_secondary_server:
     dependency: transitive
     description:
@@ -206,10 +206,10 @@ packages:
     dependency: "direct dev"
     description:
       name: build_runner
-      sha256: "644dc98a0f179b872f612d3eb627924b578897c629788e858157fa5e704ca0c7"
+      sha256: dd09dd4e2b078992f42aac7f1a622f01882a8492fef08486b27ddde929c19f04
       url: "https://pub.dev"
     source: hosted
-    version: "2.4.11"
+    version: "2.4.12"
   build_runner_core:
     dependency: transitive
     description:
@@ -359,10 +359,10 @@ packages:
     description:
       path: "."
       ref: trunk
-      resolved-ref: "5322be8305c884ba0a17368bcf9b0e6c09e22f88"
+      resolved-ref: "36329826504e50f3d8f18ecc3b8865f4b469cc87"
       url: "https://github.com/atsign-foundation/dartssh2"
     source: git
-    version: "2.9.1-atsignfork"
+    version: "2.9.1-atsignfork-1"
   duration:
     dependency: "direct main"
     description:
@@ -630,10 +630,10 @@ packages:
     dependency: transitive
     description:
       name: pinenacl
-      sha256: "3a5503637587d635647c93ea9a8fecf48a420cc7deebe6f1fc85c2a5637ab327"
+      sha256: "57e907beaacbc3c024a098910b6240758e899674de07d6949a67b52fd984cbdf"
       url: "https://pub.dev"
     source: hosted
-    version: "0.5.1"
+    version: "0.6.0"
   platform:
     dependency: transitive
     description:

@@ -3,6 +3,7 @@
 #include <atclient/connection.h>
 #include <atclient/metadata.h>
 #include <atlogger/atlogger.h>
+#include <errno.h>
 #include <pthread.h>
 #include <sshnpd/background_jobs.h>
 #include <sshnpd/sshnpd.h>
@@ -56,7 +57,7 @@ void *refresh_device_entry(void *void_refresh_device_entry_params) {
     char atkey_buffer[buffer_len];
     // example: @client_atsign:device_info.device_name.sshnp@client_atsign
     snprintf(atkey_buffer, buffer_len, "%s%s", params->params->manager_list[index], infokey_base);
-    ret = atclient_atkey_from_string(infokeys + index, atkey_buffer, buffer_len);
+    ret = atclient_atkey_from_string(infokeys + index, atkey_buffer);
 
     if (ret != 0) {
       atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to create device_info atkey for %s\n",
@@ -65,8 +66,8 @@ void *refresh_device_entry(void *void_refresh_device_entry_params) {
     }
 
     atclient_atkey_metadata *metadata = &(infokeys + index)->metadata;
-    atclient_atkey_metadata_set_ispublic(metadata, false);
-    atclient_atkey_metadata_set_isencrypted(metadata, true);
+    atclient_atkey_metadata_set_is_public(metadata, false);
+    atclient_atkey_metadata_set_is_encrypted(metadata, true);
     atclient_atkey_metadata_set_ttr(metadata, -1);
     atclient_atkey_metadata_set_ccd(metadata, true);
     atclient_atkey_metadata_set_ttl(metadata, (long)30 * 24 * 60 * 60 * 1000); // 30 days in ms
@@ -74,7 +75,7 @@ void *refresh_device_entry(void *void_refresh_device_entry_params) {
     buffer_len = strlen(params->params->manager_list[index]) + usernamekey_base_len;
     // example: @client_atsign:device_info.device_name.sshnp@client_atsign
     snprintf(atkey_buffer, buffer_len, "%s%s", params->params->manager_list[index], username_key_base);
-    ret = atclient_atkey_from_string(usernamekeys + index, atkey_buffer, buffer_len);
+    ret = atclient_atkey_from_string(usernamekeys + index, atkey_buffer);
     if (ret != 0) {
       atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to create username atkey for %s\n",
                    params->params->manager_list[index]);
@@ -82,19 +83,19 @@ void *refresh_device_entry(void *void_refresh_device_entry_params) {
     }
 
     atclient_atkey_metadata *metadata2 = &(usernamekeys + index)->metadata;
-    atclient_atkey_metadata_set_ispublic(metadata2, false);
-    atclient_atkey_metadata_set_isencrypted(metadata2, true);
+    atclient_atkey_metadata_set_is_public(metadata2, false);
+    atclient_atkey_metadata_set_is_encrypted(metadata2, true);
     atclient_atkey_metadata_set_ttr(metadata2, -1);
     atclient_atkey_metadata_set_ccd(metadata2, true);
     if (params->params->hide) {
-      ret = atclient_delete(params->atclient, usernamekeys + index);
+      ret = atclient_delete(params->atclient, usernamekeys + index, NULL, NULL);
       if (ret != 0) {
         atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to delete username atkey for %s\n",
                      params->params->manager_list[index]);
         break;
       }
     } else {
-      ret = atclient_put(params->atclient, usernamekeys + index, params->username, strlen(params->username), NULL);
+      ret = atclient_put_shared_key(params->atclient, usernamekeys + index, params->username, NULL, NULL);
       if (ret != 0) {
         atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to put username atkey for %s\n",
                      params->params->manager_list[index]);
@@ -141,9 +142,9 @@ void *refresh_device_entry(void *void_refresh_device_entry_params) {
 
       for (int i = 0; i < num_managers; i++) {
         if (params->params->hide) {
-          ret = atclient_delete(params->atclient, infokeys + i);
+          ret = atclient_delete(params->atclient, infokeys + i, NULL, NULL);
         } else {
-          ret = atclient_put(params->atclient, infokeys + i, params->payload, strlen(params->payload), NULL);
+          ret = atclient_put_shared_key(params->atclient, infokeys + i, params->payload, NULL, NULL);
         }
         if (ret != 0) {
           atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to refresh device entry for %s\n",

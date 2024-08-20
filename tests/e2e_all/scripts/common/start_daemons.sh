@@ -17,7 +17,7 @@ waitUntilStarted() {
 
   while ! grep "Monitor .*monitor started" "$3"; do
     if ! ps -p "$1" >/dev/null; then
-      logError "Daemon $2 has exited. Log file follows: "
+      logErrorAndReport "Daemon $2 has exited. Log file follows: "
       cat "$3"
       # Do something knowing the pid exists, i.e. the process with $PID is running
       exit 1
@@ -25,7 +25,7 @@ waitUntilStarted() {
     sleep 1
     totalSleepTime=$((totalSleepTime + 1))
     if ((totalSleepTime > daemonStartWait)); then
-      logError "Daemon $2 has failed to start. Log file follows: "
+      logErrorAndReport "Daemon $2 has failed to start. Log file follows: "
       cat "$3"
       exit 1
     fi

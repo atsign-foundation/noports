@@ -32,11 +32,6 @@ enum notification_key {
   NK_NPT_REQUEST,
 };
 
-struct sshnpd_process_queue {
-  size_t len;
-  pid_t *processes;
-};
-
 #define NOTIFICATION_KEYS_LEN 5
 
 #endif
