@@ -45,6 +45,13 @@ abstract interface class Npt {
   /// - Return the port which the local srv is bound to
   Future<int> run();
 
+  /// - Sends request to rvd
+  /// - Sends request to npd
+  /// - Waits for success or error response, or time out after 10 secs
+  /// - Run local srv which will bind to some port and connect to the rvd
+  /// - Return the SocketConnector created by Npt
+  Future<SocketConnector> runInline();
+
   Future<void> close();
 
   Future get done;
@@ -222,8 +229,9 @@ class _NptImpl extends NptBase
     completeInitialization();
   }
 
-  @override
-  Future<int> run() async {
+  /// Shared setup log for [run] and [runInline]
+  /// returns [localRvPort]
+  Future<int> _preRun() async {
     /// Ensure that npt is initialized
     await callInitialization();
 
@@ -286,19 +294,19 @@ class _NptImpl extends NptBase
       localRvPort = params.localPort;
     }
 
-    /// Start srv
+    return localRvPort;
+  }
+
+  @override
+  Future<int> run() async {
+    int localRvPort = await _preRun();
+
     sendProgress('Creating connection to socket rendezvous');
+
+    /// Start srv
     if (params.inline) {
       // not detached
-      SocketConnector sc = await _srvdChannel.runSrv(
-        localRvPort: localRvPort,
-        sessionAESKeyString: sshnpdChannel.sessionAESKeyString,
-        sessionIVString: sshnpdChannel.sessionIVString,
-        multi: true,
-        detached: false,
-        timeout: params.timeout,
-      );
-      unawaited(sc.done.whenComplete(() => _completer.complete()));
+      await runInline();
     } else {
       await _srvdChannel.runSrv(
         localRvPort: localRvPort,
@@ -312,5 +320,30 @@ class _NptImpl extends NptBase
     }
 
     return localRvPort;
+  }
+
+  @override
+  Future<SocketConnector> runInline() async {
+    int localRvPort = await _preRun();
+    sendProgress('Creating connection to socket rendezvous');
+    if (!params.inline) {
+      logger.warning(
+          "WAT - runInline() was called but params.inline = false, running under the assumption that params.inline was meant to be true.");
+    }
+
+    SocketConnector sc = await _srvdChannel.runSrv(
+      localRvPort: localRvPort,
+      sessionAESKeyString: sshnpdChannel.sessionAESKeyString,
+      sessionIVString: sshnpdChannel.sessionIVString,
+      multi: true,
+      detached: false,
+      timeout: params.timeout,
+    );
+
+    unawaited(sc.done.then((_) {
+      _completer.complete();
+    }));
+
+    return sc;
   }
 }
