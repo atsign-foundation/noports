@@ -86,13 +86,14 @@ class TrayCubit extends LoggingCubit<TrayState> {
   }
 
   Future<void> reloadFavorites() async {
-    if (state is TrayInitial) return;
-
     var context = App.navState.currentContext;
     if (context == null) return;
-
     var showSettings = context.read<OnboardingCubit>().state is Onboarded;
     var favoriteBloc = context.read<FavoriteBloc>();
+
+    if (state is TrayInitial) {
+      await initialize();
+    }
     if (favoriteBloc.state is! FavoritesLoaded) return;
     var favorites = (favoriteBloc.state as FavoritesLoaded).favorites;
 

@@ -8,7 +8,7 @@ import 'package:npt_flutter/features/tray_manager/tray_manager.dart';
 part 'favorite_event.dart';
 part 'favorite_state.dart';
 
-class FavoriteBloc extends Bloc<FavoriteEvent, FavoritesState> {
+class FavoriteBloc extends LoggingBloc<FavoriteEvent, FavoritesState> {
   final FavoriteRepository _repo;
   FavoriteBloc(this._repo) : super(const FavoritesInitial()) {
     on<FavoriteLoadEvent>(_onLoad);
