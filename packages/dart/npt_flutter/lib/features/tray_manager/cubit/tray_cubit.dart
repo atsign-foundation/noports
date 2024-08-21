@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:json_annotation/json_annotation.dart';
 import 'package:npt_flutter/app.dart';
+import 'package:npt_flutter/constants.dart';
 import 'package:npt_flutter/features/favorite/favorite.dart';
 import 'package:npt_flutter/features/onboarding/onboarding.dart';
 import 'package:npt_flutter/routes.dart';
@@ -72,7 +73,7 @@ class TrayCubit extends LoggingCubit<TrayState> {
     var showSettings = context.read<OnboardingCubit>().state is Onboarded;
 
     await trayManager.setIcon(
-      Platform.isWindows ? 'assets/tray_icon.ico' : 'assets/tray_icon.png',
+      Platform.isWindows ? Constants.icoIcon : Constants.pngIcon,
     );
 
     await trayManager.setContextMenu(Menu(

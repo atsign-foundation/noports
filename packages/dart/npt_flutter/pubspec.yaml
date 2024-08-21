@@ -41,7 +41,6 @@ dependencies:
     #   url: https://github.com/atsign-foundation/at_widgets.git
     #   ref: enrollment_screens
     #   path: packages/at_onboarding_flutter
-  flutter_dotenv: ^5.1.0
   path_provider: ^2.1.4
   tray_manager: ^0.2.3
   noports_core:
@@ -93,10 +92,14 @@ flutter:
 
   # To add assets to your application, add an assets section, like this:
   assets:
-    - .env
-    - assets/tray_icon.png
-    # - assets/tray_icon.ico
-
+    - assets/noports-icon32.png
+    - assets/noports-icon64.png
+    - assets/noports-icon256.png
+    - assets/noports-icon512.png
+    - assets/noports-icon32.ico
+    - assets/noports-icon64.ico
+    - assets/noports-icon256.ico
+    - assets/noports-icon512.ico
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images
 
