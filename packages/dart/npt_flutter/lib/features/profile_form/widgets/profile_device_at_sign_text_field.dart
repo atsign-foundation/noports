@@ -28,7 +28,6 @@ class ProfileDeviceAtSignTextField extends StatelessWidget {
                       profile: (bloc.state as ProfileLoadedState)
                           .profile
                           .copyWith(sshnpdAtsign: value),
-                      save: false,
                     ));
                   });
             },

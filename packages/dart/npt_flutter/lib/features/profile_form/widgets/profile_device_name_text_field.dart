@@ -26,7 +26,6 @@ class ProfileDeviceNameTextField extends StatelessWidget {
                       profile: (bloc.state as ProfileLoadedState)
                           .profile
                           .copyWith(deviceName: value),
-                      save: false,
                     ));
                   });
             },

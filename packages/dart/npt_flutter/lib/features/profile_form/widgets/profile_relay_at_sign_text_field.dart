@@ -38,7 +38,6 @@ class _ProfileRelayAtSignTextFieldState
                         profile: (bloc.state as ProfileLoadedState)
                             .profile
                             .copyWith(relayAtsign: value),
-                        save: false,
                       ));
                     }),
               ]);
