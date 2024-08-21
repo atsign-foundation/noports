@@ -9,7 +9,7 @@ environment:
 dependencies:
   noports_core:
     path: "../noports_core"
-  at_onboarding_cli: 1.6.1
+  at_onboarding_cli: 1.6.2
   at_cli_commons: ^1.1.0
   args: 2.5.0
   socket_connector: ^2.2.0
