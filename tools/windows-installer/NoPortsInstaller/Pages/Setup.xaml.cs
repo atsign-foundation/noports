@@ -9,10 +9,10 @@ namespace NoPortsInstaller.Pages
     public partial class Setup : Page
     {
         private readonly IController _controller;
-        public Setup(IController installer)
+        public Setup()
         {
             InitializeComponent();
-            _controller = installer;
+            _controller = App.ControllerInstance;
             if (_controller.IsInstalled)
             {
                 UpdateConfig.IsEnabled = true;

@@ -5,9 +5,9 @@ namespace NoPortsInstaller.Pages
     public partial class ConfigureInstall : Page
     {
         private readonly IController _controller;
-        public ConfigureInstall(IController installer)
+        public ConfigureInstall()
         {
-            _controller = installer;
+            _controller = App.ControllerInstance;
             InitializeComponent();
         }
 
@@ -21,7 +21,6 @@ namespace NoPortsInstaller.Pages
             _controller.DeviceAtsign = _controller.NormalizeAtsign(DeviceCombo.Text);
             _controller.ClientAtsign = _controller.NormalizeAtsign(ClientCombo.Text);
             _controller.DeviceName = _controller.NormalizeAtsign(DeviceName.Text);
-            _controller.Pages.Add(new AdditionalConfiguration(_controller));
             _controller.NextPage();
         }
 

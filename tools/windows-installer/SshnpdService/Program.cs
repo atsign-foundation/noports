@@ -9,7 +9,7 @@ builder.Services.AddWindowsService(options =>
 });
 
 LoggerProviderOptions.RegisterProviderOptions<
-    EventLogSettings, EventLogLoggerProvider>(builder.Services);
+    EventLogSettings, EventLogLoggerProvider>(services: builder.Services);
 
 builder.Services.AddLogging(loggingBuilder => loggingBuilder
     .AddEventLog()

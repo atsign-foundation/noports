@@ -40,6 +40,11 @@ namespace NoPortsInstaller
             IsInstalled = false;
         }
 
+        /// <summary>
+        /// Installs NoPorts depending on the InstallType.
+        /// </summary>
+        /// <param name="progress"></param>
+        /// <param name="status"></param>
         public async void Install(ProgressBar progress, Label status)
         {
             try
@@ -61,7 +66,7 @@ namespace NoPortsInstaller
                     await SetupService(status);
                 }
                 await UpdateProgressBar(progress, 100);
-                Pages.Add(new FinishInstall(this));
+                Pages.Add(new FinishInstall());
                 NextPage();
             }
             catch (Exception ex)
@@ -73,6 +78,10 @@ namespace NoPortsInstaller
 
         }
 
+        /// <summary>
+        /// Uninstalls NoPorts, including the service.
+        /// </summary>
+        /// <param name="progress"></param>
         public async void Uninstall(ProgressBar progress)
         {
             try
@@ -371,18 +380,16 @@ namespace NoPortsInstaller
         {
             switch (InstallType)
             {
-                case InstallType.None:
-                    Pages.Add(new Setup(this));
-                    break;
                 case InstallType.Update:
-                    Pages.Add(new UpdateConfigs(this));
+                    Pages.Add(new UpdateConfigs());
                     break;
                 case InstallType.Uninstall:
-                    Pages.Add(new UninstallPage(this));
+                    Pages.Add(new UninstallPage());
                     break;
                 default:
-                    Pages.Add(new ConfigureInstall(this));
-                    Pages.Add(new AdditionalConfiguration(this));
+                    Pages.Add(new Setup());
+                    Pages.Add(new ConfigureInstall());
+                    Pages.Add(new AdditionalConfiguration());
                     break;
             }
             if (Window != null)
@@ -391,7 +398,7 @@ namespace NoPortsInstaller
             }
             else
             {
-                throw new Exception("Failed to initialize starting window.");
+                Pages.Add(new ServiceErrorPage("Window is null"));
             }
         }
 
@@ -430,8 +437,11 @@ namespace NoPortsInstaller
 
         public void PopulateAtsigns(ComboBox box)
         {
-            string[] files =
-            Directory.GetFiles(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), @".atsign\keys"), "*.atKeys", SearchOption.AllDirectories);
+            string[] files = [];
+            if (Directory.Exists(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), @".atsign\keys")))
+            {
+                files = Directory.GetFiles(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), @".atsign\keys"), "*.atKeys", SearchOption.AllDirectories);
+            }
             foreach (var key in files)
             {
                 ComboBoxItem item = new();
@@ -451,7 +461,6 @@ namespace NoPortsInstaller
                 return "@" + atsign;
             }
         }
-
     }
 
     public enum InstallType

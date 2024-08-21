@@ -4,8 +4,15 @@ using System.Text;
 
 namespace SshnpdService
 {
+    /// <summary>
+    /// This class is responsible for the creation and termination of the sshnpd process.
+    /// </summary>
     public sealed class Sshnpd
     {
+        /// <summary>
+        /// Gets the arguments for the sshnpd process from the registry.
+        /// </summary>
+
         private string GetArgs()
         {
             try
@@ -26,6 +33,10 @@ namespace SshnpdService
             }
             return string.Empty;
         }
+
+        /// <summary>
+        /// Gets the path to the sshnpd executable from the registry.
+        /// </summary>
 
         private string GetBinPath()
         {
@@ -48,6 +59,9 @@ namespace SshnpdService
             return string.Empty;
         }
 
+        /// <summary>
+        /// Closes the sshnpd process gracefully or forcefully terminates it.
+        /// </summary>
         public void Close()
         {
             try
@@ -80,11 +94,15 @@ namespace SshnpdService
             }
         }
 
+        /// <summary>
+        /// Runs the sshnpd process asynchronously.
+        /// </summary>
+        /// <param name="cancellationToken">The cancellation token to stop the process.</param>
         public async Task Run(CancellationToken cancellationToken)
         {
             var args = GetArgs();
             // Use ProcessStartInfo class
-            ProcessStartInfo startInfo = new ProcessStartInfo();
+            ProcessStartInfo startInfo = new();
             startInfo.CreateNoWindow = false;
             startInfo.UseShellExecute = false;
             startInfo.FileName = GetBinPath();
@@ -94,8 +112,8 @@ namespace SshnpdService
 
             startInfo.Arguments = GetArgs();
 
-            StringBuilder stdout = new StringBuilder();
-            StringBuilder stderr = new StringBuilder();
+            StringBuilder stdout = new();
+            StringBuilder stderr = new();
 
             try
             {

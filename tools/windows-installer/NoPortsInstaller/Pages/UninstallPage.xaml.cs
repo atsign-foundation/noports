@@ -9,11 +9,11 @@ namespace NoPortsInstaller.Pages
     public partial class UninstallPage : Page
     {
         private readonly IController _controller;
-        public UninstallPage(IController controller)
+        public UninstallPage()
         {
             InitializeComponent();
-            _controller = controller;
-            var pages = new List<Page> { new Uninstall(controller), new FinishUninstall(controller) };
+            _controller = App.ControllerInstance;
+            var pages = new List<Page> { new Uninstall(), new FinishUninstall() };
         }
 
         private void NextPageButton_Click(object sender, RoutedEventArgs e)

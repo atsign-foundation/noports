@@ -8,10 +8,10 @@ namespace NoPortsInstaller.Pages
     public partial class UpdateConfigs : Page
     {
         private readonly IController _controller;
-        public UpdateConfigs(IController controller)
+        public UpdateConfigs()
         {
             InitializeComponent();
-            _controller = controller;
+            _controller = App.ControllerInstance;
         }
 
         private void NextPageButton_Click(object sender, System.Windows.RoutedEventArgs e)
@@ -20,7 +20,7 @@ namespace NoPortsInstaller.Pages
             _controller.ClientAtsign = ClientCombo.Text;
             _controller.DeviceName = DeviceName.Text;
             _controller.UpdateConfigRegistry();
-            _controller.Pages.Add(new FinishInstall(_controller));
+            _controller.Pages.Add(new FinishInstall());
             _controller.NextPage();
         }
 

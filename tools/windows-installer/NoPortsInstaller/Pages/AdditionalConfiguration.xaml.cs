@@ -8,9 +8,9 @@ namespace NoPortsInstaller.Pages
     public partial class AdditionalConfiguration : Page
     {
         private readonly IController _controller;
-        public AdditionalConfiguration(IController installer)
+        public AdditionalConfiguration()
         {
-            _controller = installer;
+            _controller = App.ControllerInstance;
             InitializeComponent();
             if (_controller.InstallType.Equals(InstallType.Client))
             {
@@ -28,7 +28,7 @@ namespace NoPortsInstaller.Pages
         {
             _controller.RegionAtsign = _controller.NormalizeAtsign(RegionBox.Text);
             _controller.MultipleDevices = MultipleDevices.Text;
-            _controller.Pages.Add(new Download(_controller));
+            _controller.Pages.Add(new Download());
             _controller.NextPage();
         }
     }

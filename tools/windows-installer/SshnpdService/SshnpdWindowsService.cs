@@ -1,21 +1,30 @@
 namespace SshnpdService
 {
+    /// <summary>
+    /// Represents a Windows service for the Sshnpd application.
+    /// </summary>
     public class SshnpdWindowsService : BackgroundService
     {
         private readonly ILogger<SshnpdWindowsService> _logger;
         private readonly Sshnpd _sshnpdService;
-        private readonly IHostApplicationLifetime _lifetime;
 
-        public SshnpdWindowsService(Sshnpd sshnpdService, ILogger<SshnpdWindowsService> logger, IHostApplicationLifetime lifetime)
+        /// <summary>
+        /// Initializes a new instance of the <see cref="SshnpdWindowsService"/> class.
+        /// </summary>
+        /// <param name="sshnpdService">The Sshnpd service instance.</param>
+        /// <param name="logger">The logger instance.</param>
+        public SshnpdWindowsService(Sshnpd sshnpdService, ILogger<SshnpdWindowsService> logger)
         {
             _sshnpdService = sshnpdService;
             _logger = logger;
-            _lifetime = lifetime;
         }
 
+        /// <summary>
+        /// Executes the Sshnpd service asynchronously.
+        /// </summary>
+        /// <param name="stoppingToken">The cancellation token to stop the service.</param>
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
-
             while (!stoppingToken.IsCancellationRequested)
             {
                 try
@@ -44,7 +53,6 @@ namespace SshnpdService
                     // recovery options, we need to terminate the process with a non-zero exit code.
                     Environment.Exit(1);
                 }
-
             }
             _sshnpdService.Close();
         }
