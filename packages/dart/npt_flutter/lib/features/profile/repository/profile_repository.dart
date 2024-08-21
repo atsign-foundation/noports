@@ -8,7 +8,6 @@ import 'package:npt_flutter/util/uuid.dart';
 
 class ProfileRepository {
   final Map<String, Profile> _profileCache = {};
-  ProfileRepository();
 
   Future<Iterable<String>?> getProfileUuids() async {
     AtClient atClient = AtClientManager.getInstance().atClient;
@@ -33,14 +32,14 @@ class ProfileRepository {
     );
   }
 
-  Future<Profile?> getProfile(String uuid) async {
-    if (_profileCache.containsKey(uuid)) {
+  Future<Profile?> getProfile(String uuid, {bool useCache = true}) async {
+    if (useCache && _profileCache.containsKey(uuid)) {
       return _profileCache[uuid];
     }
 
     AtClient atClient = AtClientManager.getInstance().atClient;
     String? atSign = atClient.getCurrentAtSign();
-    AtKey key = Uuid(uuid).toAtKey(sharedBy: atSign);
+    AtKey key = Uuid(uuid).toProfileAtKey(sharedBy: atSign);
     try {
       var value = await atClient.get(key);
       var profile = Profile.fromJson(jsonDecode(value.value));
@@ -57,7 +56,7 @@ class ProfileRepository {
 
     AtClient atClient = AtClientManager.getInstance().atClient;
     String? atSign = atClient.getCurrentAtSign();
-    AtKey key = Uuid(profile.uuid).toAtKey(sharedBy: atSign);
+    AtKey key = Uuid(profile.uuid).toProfileAtKey(sharedBy: atSign);
 
     try {
       return await atClient.put(key, jsonEncode(profile.toJson()));
@@ -71,7 +70,7 @@ class ProfileRepository {
     _profileCache.remove(uuid);
     AtClient atClient = AtClientManager.getInstance().atClient;
     String? atSign = atClient.getCurrentAtSign();
-    AtKey key = Uuid(uuid).toAtKey(sharedBy: atSign);
+    AtKey key = Uuid(uuid).toProfileAtKey(sharedBy: atSign);
 
     try {
       return await atClient.delete(key);

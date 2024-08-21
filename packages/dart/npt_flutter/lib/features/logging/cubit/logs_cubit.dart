@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:npt_flutter/app.dart';
 
@@ -8,6 +9,7 @@ class LogsCubit extends Cubit<List<LogEntry>> {
 
   void log(Loggable loggable) {
     var enabled = App.navState.currentContext?.read<EnableLoggingCubit>().state;
+    debugPrint(loggable.toString());
     if (enabled != null && enabled) {
       emit(state..add(LogEntry(loggable)));
     }

@@ -8,6 +8,7 @@ import 'package:npt_flutter/app.dart';
 import 'package:npt_flutter/features/profile/profile.dart';
 import 'package:npt_flutter/features/profile_list/profile_list.dart';
 import 'package:npt_flutter/features/settings/settings.dart';
+import 'package:npt_flutter/features/tray_manager/tray_manager.dart';
 import 'package:socket_connector/socket_connector.dart';
 
 part 'profile_event.dart';
@@ -20,6 +21,7 @@ class ProfileBloc extends LoggingBloc<ProfileEvent, ProfileState> {
     on<ProfileLoadEvent>(_onLoad);
     on<ProfileLoadOrCreateEvent>(_onLoadOrCreate);
     on<ProfileEditEvent>(_onEdit);
+    on<ProfileSaveEvent>(_onSave);
     on<ProfileStartEvent>(_onStart);
     on<ProfileStopEvent>(_onStop);
   }
@@ -29,17 +31,19 @@ class ProfileBloc extends LoggingBloc<ProfileEvent, ProfileState> {
 
     Profile? profile;
     try {
-      profile = await _repo.getProfile(uuid);
+      profile = await _repo.getProfile(uuid, useCache: event.useCache);
     } catch (_) {
       profile = null;
     }
 
     if (profile == null) {
       emit(ProfileFailedLoad(uuid));
+      App.navState.currentContext?.read<TrayCubit>().reloadFavorites();
       return;
     }
 
     emit(ProfileLoaded(uuid, profile: profile));
+    App.navState.currentContext?.read<TrayCubit>().reloadFavorites();
   }
 
   Future<void> _onLoadOrCreate(
@@ -66,10 +70,12 @@ class ProfileBloc extends LoggingBloc<ProfileEvent, ProfileState> {
           localPort: 0,
         ),
       ));
+      App.navState.currentContext?.read<TrayCubit>().reloadFavorites();
       return;
     }
 
     emit(ProfileLoaded(uuid, profile: profile));
+    App.navState.currentContext?.read<TrayCubit>().reloadFavorites();
   }
 
   Future<void> _onEdit(
@@ -77,37 +83,34 @@ class ProfileBloc extends LoggingBloc<ProfileEvent, ProfileState> {
     if (state is! ProfileLoaded && state is! ProfileFailedSave) {
       return;
     }
+    emit(ProfileLoaded(uuid, profile: event.profile));
+  }
 
-    bool res = true; // true so we emit loaded state if not saving
-    if (event.save) {
-      emit(ProfileLoading(uuid));
-      try {
-        res = await _repo.putProfile(event.profile);
-      } catch (_) {
-        res = false;
-      }
+  FutureOr<void> _onSave(
+      ProfileSaveEvent event, Emitter<ProfileState> emit) async {
+    emit(ProfileLoading(uuid));
+    bool res;
+    try {
+      res = await _repo.putProfile(event.profile);
+    } catch (_) {
+      res = false;
     }
 
-    // Make sure to wipe profile.npt and profile.socketConnector since we changed the config so they are invalid
     if (res) {
       App.navState.currentContext
           ?.read<ProfilesRunningCubit>()
           .invalidate(uuid);
 
-      if (event.addToProfilesList) {
-        var listBloc = App.navState.currentContext?.read<ProfileListBloc>();
-        if (listBloc != null && listBloc.state is ProfileListLoaded) {
-          var profiles = (listBloc.state as ProfileListLoaded).profiles;
-          if (!profiles.contains(uuid)) {
-            listBloc.add(ProfileListUpdateEvent([...profiles, uuid]));
-          }
+      var listBloc = App.navState.currentContext?.read<ProfileListBloc>();
+      if (listBloc != null && listBloc.state is ProfileListLoaded) {
+        var profiles = (listBloc.state as ProfileListLoaded).profiles;
+        if (!profiles.contains(uuid)) {
+          listBloc.add(ProfileListUpdateEvent([...profiles, uuid]));
         }
-        if (event.popNavAfterAddToProfilesList) {
-          var context = App.navState.currentContext;
-          if (context != null && context.mounted) {
-            Navigator.of(context).pop();
-          }
-        }
+      }
+      var context = App.navState.currentContext;
+      if (context != null && context.mounted) {
+        Navigator.of(context).pop();
       }
       emit(ProfileLoaded(uuid, profile: event.profile));
     } else {
@@ -116,6 +119,7 @@ class ProfileBloc extends LoggingBloc<ProfileEvent, ProfileState> {
           .invalidate(uuid);
       emit(ProfileFailedSave(uuid, profile: event.profile));
     }
+    App.navState.currentContext?.read<TrayCubit>().reloadFavorites();
   }
 
   Future<void> _onStart(
@@ -210,6 +214,7 @@ class ProfileBloc extends LoggingBloc<ProfileEvent, ProfileState> {
       // Save the socket connector to state so it can be used to stop npt later
       App.navState.currentContext?.read<ProfilesRunningCubit>().cache(uuid, sc);
       emit(ProfileStarted(uuid, profile: profile));
+      App.navState.currentContext?.read<TrayCubit>().reloadFavorites();
     } catch (err) {
       cancelSubs?.call();
       emit(ProfileFailedStart(
@@ -224,6 +229,7 @@ class ProfileBloc extends LoggingBloc<ProfileEvent, ProfileState> {
           ?.read<ProfilesRunningCubit>()
           .invalidate(uuid);
       emit(ProfileLoaded(uuid, profile: profile));
+      App.navState.currentContext?.read<TrayCubit>().reloadFavorites();
     }
   }
 

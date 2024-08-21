@@ -34,7 +34,7 @@ class SettingsRelayQuickButtons extends StatelessWidget {
                     settings: (bloc.state as SettingsLoadedState)
                         .settings
                         .copyWith(relayAtsign: value),
-                    save: false,
+                    save: true,
                   ));
                 },
               ),

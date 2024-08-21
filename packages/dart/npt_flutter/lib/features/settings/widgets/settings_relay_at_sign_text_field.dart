@@ -38,7 +38,7 @@ class _SettingsRelayAtSignTextFieldState
                         settings: (bloc.state as SettingsLoadedState)
                             .settings
                             .copyWith(relayAtsign: value),
-                        save: false,
+                        save: true,
                       ));
                     }),
               ]);

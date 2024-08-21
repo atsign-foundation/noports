@@ -6,9 +6,13 @@ import 'package:npt_flutter/routes.dart';
 export 'package:npt_flutter/features/logging/logging.dart';
 
 class App extends StatelessWidget {
+  const App({super.key});
+
   static final GlobalKey<NavigatorState> navState = GlobalKey<NavigatorState>();
 
-  const App({super.key});
+  static void log(Loggable loggable) {
+    navState.currentContext?.read<LogsCubit>().log(loggable);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -19,6 +23,9 @@ class App extends StatelessWidget {
         ),
         RepositoryProvider<SettingsRepository>(
           create: (_) => const SettingsRepository(),
+        ),
+        RepositoryProvider<FavoriteRepository>(
+          create: (_) => FavoriteRepository(),
         ),
       ],
       child: MultiBlocProvider(
@@ -33,11 +40,30 @@ class App extends StatelessWidget {
             create: (_) => LogsCubit(),
           ),
 
+          /// A cubit which manages the onboarding status
+          BlocProvider<OnboardingCubit>(
+            create: (_) => OnboardingCubit(),
+          ),
+
+          /// Settings provider, not much else to say
+          /// - If settings are not found, we automatically load some defaults
+          ///   so it is possible that someone's settings get wiped if there is
+          ///   an issue loading them
+          BlocProvider<SettingsBloc>(
+            create: (ctx) => SettingsBloc(ctx.read<SettingsRepository>()),
+          ),
+
           /// - A list of all the uuids for profiles which have been found in persistence
           ///   - This list is ALL of the profiles which are loaded in the app for the onboarded atSign
           ///     Note that multiple client atSigns have not been considered as part of the current implementation
           BlocProvider<ProfileListBloc>(
             create: (ctx) => ProfileListBloc(ctx.read<ProfileRepository>()),
+          ),
+
+          /// A cubit which caches [ProfileBloc] by uuid so they can be shared
+          /// between the dashboard and the system tray
+          BlocProvider<ProfileCacheCubit>(
+            create: (ctx) => ProfileCacheCubit(ctx.read<ProfileRepository>()),
           ),
 
           /// [ProfilesSelectedCubit] reads from [ProfileListBloc], and must be under it
@@ -51,34 +77,24 @@ class App extends StatelessWidget {
             create: (_) => ProfilesRunningCubit(),
           ),
 
-          /// Settings provider, not much else to say
-          /// - If settings are not found, we automatically load some defaults
-          ///   so it is possible that someone's settings get wiped if there is
-          ///   an issue loading them
-          BlocProvider<SettingsBloc>(
-            create: (ctx) => SettingsBloc(ctx.read<SettingsRepository>()),
+          /// A cubit which manages the system tray entries
+          BlocProvider<TrayCubit>(
+            create: (_) => TrayCubit()..initialize(),
+          ),
+
+          /// A bloc which manages favorites
+          BlocProvider<FavoriteBloc>(
+            create: (ctx) => FavoriteBloc(ctx.read<FavoriteRepository>()),
           ),
         ],
-        child: MaterialApp(
-          navigatorKey: App.navState,
-          initialRoute: Routes.onboarding,
-          routes: Routes.routes,
+        child: TrayManager(
+          child: MaterialApp(
+            navigatorKey: navState,
+            initialRoute: Routes.onboarding,
+            routes: Routes.routes,
+          ),
         ),
       ),
     );
-  }
-
-  static void log(Loggable loggable) {
-    navState.currentContext?.read<LogsCubit>().log(loggable);
-  }
-
-  static Future<void> postOnboard() async {
-    // Start loading application data in the background as soon as we have an atClient
-    navState.currentContext
-        ?.read<ProfileListBloc>()
-        .add(const ProfileListLoadEvent());
-    navState.currentContext
-        ?.read<SettingsBloc>()
-        .add(const SettingsLoadEvent());
   }
 }

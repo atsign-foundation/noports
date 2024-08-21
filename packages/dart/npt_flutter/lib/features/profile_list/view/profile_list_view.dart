@@ -53,8 +53,9 @@ class ProfileListView extends StatelessWidget {
                       return BlocProvider<ProfileBloc>(
                         key: Key(
                             "ProfileListView-BlocProvider-${profiles[index]}"),
-                        create: (context) => ProfileBloc(
-                            context.read<ProfileRepository>(), profiles[index]),
+                        create: (context) => context
+                            .read<ProfileCacheCubit>()
+                            .getProfileBloc(profiles[index]),
                         child: const ProfileView(),
                       );
                     },

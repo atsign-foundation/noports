@@ -31,6 +31,10 @@ class SettingsBloc extends LoggingBloc<SettingsEvent, SettingsState> {
     }
 
     emit(SettingsLoaded(settings: settings));
+    // We want Logging off by default, but it starts as on and only gets
+    // disabled once the settings have loaded, otherwise there is no way to
+    // debug the startup phase of the app
+    //App.navState.currentContext?.read<EnableLoggingCubit>().disable();
   }
 
   Future<void> _onEdit(
