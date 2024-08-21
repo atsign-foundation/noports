@@ -2,12 +2,13 @@ import 'package:json_annotation/json_annotation.dart';
 import 'package:noports_core/npt.dart';
 import 'package:npt_flutter/constants.dart';
 import 'package:npt_flutter/app.dart';
+import 'package:npt_flutter/features/favorite/favorite.dart';
 import 'package:npt_flutter/util/uuid.dart';
 
 part 'profile.g.dart';
 
 @JsonSerializable()
-final class Profile extends Loggable {
+final class Profile extends Loggable with Favoritable {
   // Manually handle the json for uuid since we only sometimes want it
   @JsonKey(defaultValue: '', includeToJson: false)
   final String uuid;

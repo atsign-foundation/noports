@@ -9,11 +9,17 @@ class ProfileViewMinimal extends StatelessWidget {
     return const Row(children: [
       ProfileSelectBox(),
       ProfileDisplayName(),
+      SizedBox(width: 10),
       ProfileStatusIndicator(),
+      SizedBox(width: 10),
+      ProfileDeviceName(),
+      SizedBox(width: 10),
+      ProfileServiceView(),
       ProfileRunButton(),
       ProfileEditButton(),
       ProfileExportButton(),
       ProfileDeleteButton(),
+      ProfileFavoriteButton(),
     ]);
   }
 }

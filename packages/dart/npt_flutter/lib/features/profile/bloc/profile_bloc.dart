@@ -8,6 +8,7 @@ import 'package:npt_flutter/app.dart';
 import 'package:npt_flutter/features/profile/profile.dart';
 import 'package:npt_flutter/features/profile_list/profile_list.dart';
 import 'package:npt_flutter/features/settings/settings.dart';
+import 'package:npt_flutter/features/tray_manager/tray_manager.dart';
 import 'package:socket_connector/socket_connector.dart';
 
 part 'profile_event.dart';
@@ -29,7 +30,7 @@ class ProfileBloc extends LoggingBloc<ProfileEvent, ProfileState> {
 
     Profile? profile;
     try {
-      profile = await _repo.getProfile(uuid);
+      profile = await _repo.getProfile(uuid, useCache: event.useCache);
     } catch (_) {
       profile = null;
     }
@@ -210,6 +211,7 @@ class ProfileBloc extends LoggingBloc<ProfileEvent, ProfileState> {
       // Save the socket connector to state so it can be used to stop npt later
       App.navState.currentContext?.read<ProfilesRunningCubit>().cache(uuid, sc);
       emit(ProfileStarted(uuid, profile: profile));
+      App.navState.currentContext?.read<TrayCubit>().reloadFavorites();
     } catch (err) {
       cancelSubs?.call();
       emit(ProfileFailedStart(
@@ -224,6 +226,7 @@ class ProfileBloc extends LoggingBloc<ProfileEvent, ProfileState> {
           ?.read<ProfilesRunningCubit>()
           .invalidate(uuid);
       emit(ProfileLoaded(uuid, profile: profile));
+      App.navState.currentContext?.read<TrayCubit>().reloadFavorites();
     }
   }
 

@@ -11,6 +11,9 @@ class ProfileFormView extends StatelessWidget {
   Widget build(BuildContext context) {
     return BlocProvider<ProfileBloc>(
       create: (BuildContext context) =>
+
+          /// Don't use [ProfileCacheCubit] here, if we don't hit submit we want
+          /// all of the edits to automatically be lost
           ProfileBloc(context.read<ProfileRepository>(), uuid)
             ..add(const ProfileLoadOrCreateEvent()),
       child: Column(
@@ -23,19 +26,24 @@ class ProfileFormView extends StatelessWidget {
           const ProfileRemoteHostTextField(),
           const ProfileRemotePortSelector(),
           const ProfileLocalPortSelector(),
-          ElevatedButton(
-            onPressed: () {
-              var bloc = context.read<ProfileBloc>();
-              if (bloc.state is ProfileLoadedState) {
-                bloc.add(ProfileEditEvent(
-                  profile: (bloc.state as ProfileLoadedState).profile,
-                  save: true,
-                  addToProfilesList: true,
-                  popNavAfterAddToProfilesList: true,
-                ));
-              }
-            },
-            child: const Text("Submit"),
+          Builder(
+            builder: (context) => ElevatedButton(
+              onPressed: () {
+                var localBloc = context.read<ProfileBloc>();
+                var globalBloc =
+                    context.read<ProfileCacheCubit>().getProfileBloc(uuid);
+                if (localBloc.state is ProfileLoadedState &&
+                    globalBloc.state is ProfileLoadedState) {
+                  globalBloc.add(ProfileEditEvent(
+                    profile: (localBloc.state as ProfileLoadedState).profile,
+                    save: true,
+                    addToProfilesList: true,
+                    popNavAfterAddToProfilesList: true,
+                  ));
+                }
+              },
+              child: const Text("Submit"),
+            ),
           ),
         ],
       ),

@@ -33,7 +33,6 @@ class SettingsView extends StatelessWidget {
                 Text("Enable Logging"),
                 EnableLogsBox(),
                 ExportLogsButton(),
-                DebugDumpLogsButton(),
               ]),
             ]);
         }

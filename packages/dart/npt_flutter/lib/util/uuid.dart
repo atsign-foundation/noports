@@ -8,7 +8,7 @@ class Uuid {
 
   static const String profilesSubNamespace = 'profiles';
 
-  AtKey toAtKey({String? sharedBy}) {
+  AtKey toProfileAtKey({String? sharedBy}) {
     var key = AtKey.self(
       '$uuid.$profilesSubNamespace',
       namespace: Constants.namespace,

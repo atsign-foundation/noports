@@ -8,11 +8,12 @@ sealed class ProfileEvent extends Loggable {
 }
 
 final class ProfileLoadEvent extends ProfileEvent {
-  const ProfileLoadEvent();
+  final bool useCache;
+  const ProfileLoadEvent({this.useCache = true});
 
   @override
   String toString() {
-    return 'ProfileLoadEvent';
+    return 'ProfileLoadEvent(useCache: $useCache)';
   }
 }
 
