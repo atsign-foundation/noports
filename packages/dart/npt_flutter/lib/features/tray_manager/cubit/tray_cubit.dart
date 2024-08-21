@@ -7,6 +7,7 @@ import 'package:npt_flutter/app.dart';
 import 'package:npt_flutter/constants.dart';
 import 'package:npt_flutter/features/favorite/favorite.dart';
 import 'package:npt_flutter/features/onboarding/onboarding.dart';
+import 'package:npt_flutter/features/profile_list/profile_list.dart';
 import 'package:npt_flutter/routes.dart';
 import 'package:tray_manager/tray_manager.dart';
 import 'package:window_manager/window_manager.dart';
@@ -91,15 +92,16 @@ class TrayCubit extends LoggingCubit<TrayState> {
     if (context == null) return;
     var showSettings = context.read<OnboardingCubit>().state is Onboarded;
     var favoriteBloc = context.read<FavoriteBloc>();
-
+    var profilesList = context.read<ProfileListBloc>();
     if (state is TrayInitial) {
       await initialize();
     }
     if (favoriteBloc.state is! FavoritesLoaded) return;
     var favorites = (favoriteBloc.state as FavoritesLoaded).favorites;
-
+    if (profilesList.state is! ProfileListLoaded) return;
+    var profiles = (profilesList.state as ProfileListLoaded).profiles;
     var favMenuItems = await Future.wait(
-      favorites.map((e) async {
+      favorites.where((e) => e.isLoadedInProfiles(profiles)).map((e) async {
         /// Make sure to call [e.displayName] and [e.isRunning] only once to
         /// ensure good performance - these getters call a bunch of nested
         /// information from elsewhere in the app state

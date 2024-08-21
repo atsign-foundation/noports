@@ -29,6 +29,7 @@ sealed class Favorite extends Loggable {
   Future<String?> get displayName;
   String? get status;
   bool isFavoriteMatch(Favoritable favoritable);
+  bool isLoadedInProfiles(Iterable<String> profiles);
   void toggle();
 
   const Favorite({required this.uuid, required this.type});
@@ -126,5 +127,10 @@ class FavoriteProfile extends Favorite {
       default:
         break;
     }
+  }
+
+  @override
+  bool isLoadedInProfiles(Iterable<String> profiles) {
+    return profiles.contains(uuid);
   }
 }

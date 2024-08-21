@@ -2,7 +2,9 @@ import 'dart:async';
 
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:npt_flutter/app.dart';
+import 'package:npt_flutter/features/favorite/favorite.dart';
 import 'package:npt_flutter/features/profile/profile.dart';
+import 'package:npt_flutter/features/tray_manager/tray_manager.dart';
 
 part 'profile_list_event.dart';
 part 'profile_list_state.dart';
@@ -29,10 +31,12 @@ class ProfileListBloc extends LoggingBloc<ProfileListEvent, ProfileListState> {
 
     if (profiles == null) {
       emit(const ProfileListFailedLoad());
+      App.navState.currentContext?.read<TrayCubit>().reloadFavorites();
       return;
     }
 
     emit(ProfileListLoaded(profiles: profiles));
+    App.navState.currentContext?.read<TrayCubit>().reloadFavorites();
   }
 
   Future<void> _onUpdate(
@@ -51,9 +55,10 @@ class ProfileListBloc extends LoggingBloc<ProfileListEvent, ProfileListState> {
     emit(ProfileListLoaded(
       profiles: profiles.where((profile) => !event.toDelete.contains(profile)),
     ));
-
+    var bloc = App.navState.currentContext?.read<FavoriteBloc>();
     for (final uuid in event.toDelete) {
       unawaited(_repo.deleteProfile(uuid));
+      bloc?.add(FavoriteRemoveEvent(FavoriteProfile(uuid: uuid)));
     }
   }
 
