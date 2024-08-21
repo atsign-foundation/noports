@@ -33,7 +33,13 @@ part 'tray_cubit.g.dart';
             });
           }
         ),
-      TrayAction.quitApp => ('Quit', (_) => windowManager.destroy()),
+      TrayAction.quitApp => (
+          'Quit',
+          (_) async {
+            await windowManager.destroy();
+            exit(0);
+          }
+        ),
     };
 
 @JsonEnum(alwaysCreate: true)
@@ -61,6 +67,9 @@ class TrayCubit extends LoggingCubit<TrayState> {
 
   Future<void> initialize() async {
     if (state is! TrayInitial) return;
+    var context = App.navState.currentContext;
+    if (context == null) return;
+    var showSettings = context.read<OnboardingCubit>().state is Onboarded;
 
     await trayManager.setIcon(
       Platform.isWindows ? 'assets/tray_icon.ico' : 'assets/tray_icon.png',
@@ -69,7 +78,7 @@ class TrayCubit extends LoggingCubit<TrayState> {
     await trayManager.setContextMenu(Menu(
       items: [
         TrayAction.showDashboard.menuItem,
-        TrayAction.showSettings.menuItem,
+        if (showSettings) TrayAction.showSettings.menuItem,
         TrayAction.quitApp.menuItem,
       ],
     ));
@@ -82,6 +91,7 @@ class TrayCubit extends LoggingCubit<TrayState> {
     var context = App.navState.currentContext;
     if (context == null) return;
 
+    var showSettings = context.read<OnboardingCubit>().state is Onboarded;
     var favoriteBloc = context.read<FavoriteBloc>();
     if (favoriteBloc.state is! FavoritesLoaded) return;
     var favorites = (favoriteBloc.state as FavoritesLoaded).favorites;
@@ -92,16 +102,11 @@ class TrayCubit extends LoggingCubit<TrayState> {
         /// ensure good performance - these getters call a bunch of nested
         /// information from elsewhere in the app state
         var displayName = await e.displayName;
-        var isRunning = e.isRunning;
-        var runningTag = isRunning == null
-            ? 'unknown'
-            : isRunning
-                ? 'started'
-                : 'stopped';
-        var label = '$displayName - $runningTag';
+        var status = e.status;
+        var label = '$displayName $status';
         return MenuItem(
           label: label,
-          checked: isRunning,
+          toolTip: status,
           onClick: (_) => e.toggle(),
         );
       }),
@@ -111,7 +116,7 @@ class TrayCubit extends LoggingCubit<TrayState> {
         ...favMenuItems,
         MenuItem.separator(),
         TrayAction.showDashboard.menuItem,
-        TrayAction.showSettings.menuItem,
+        if (showSettings) TrayAction.showSettings.menuItem,
         TrayAction.quitApp.menuItem,
       ],
     ));

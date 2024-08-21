@@ -27,40 +27,49 @@ class _OnboardingButtonState extends State<OnboardingButton> {
   final Future<AtClientPreference> futurePreference = loadAtClientPreference();
 
   @override
+  void initState() {
+    super.initState();
+    onboard(isFromInitState: true);
+  }
+
+  @override
   Widget build(BuildContext context) {
     return ElevatedButton(
-      onPressed: () async {
-        AtOnboardingResult onboardingResult = await AtOnboarding.onboard(
-          // ignore: use_build_context_synchronously
-          context: context,
-          config: AtOnboardingConfig(
-            atClientPreference: await futurePreference,
-            rootEnvironment: RootEnvironment.Testing,
-            domain: Constants.rootDomain,
-            appAPIKey: Constants.appAPIKey,
-          ),
-        );
-
-        if (context.mounted) {
-          switch (onboardingResult.status) {
-            case AtOnboardingResultStatus.success:
-              postOnboard(onboardingResult.atsign!);
-              Navigator.of(context).pushReplacementNamed(widget.nextRoute);
-              break;
-            case AtOnboardingResultStatus.error:
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  backgroundColor: Colors.red,
-                  content: Text('An error has occurred'),
-                ),
-              );
-              break;
-            case AtOnboardingResultStatus.cancel:
-              break;
-          }
-        }
-      },
+      onPressed: onboard,
       child: const Text('Login'),
     );
+  }
+
+  Future<void> onboard({bool isFromInitState = false}) async {
+    AtOnboardingResult onboardingResult = await AtOnboarding.onboard(
+      // ignore: use_build_context_synchronously
+      context: context,
+      config: AtOnboardingConfig(
+        atClientPreference: await futurePreference,
+        rootEnvironment: RootEnvironment.Testing,
+        domain: Constants.rootDomain,
+        appAPIKey: Constants.appAPIKey,
+      ),
+    );
+
+    if (mounted) {
+      switch (onboardingResult.status) {
+        case AtOnboardingResultStatus.success:
+          postOnboard(onboardingResult.atsign!);
+          Navigator.of(context).pushReplacementNamed(widget.nextRoute);
+          break;
+        case AtOnboardingResultStatus.error:
+          if (isFromInitState) break;
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              backgroundColor: Colors.red,
+              content: Text('An error has occurred'),
+            ),
+          );
+          break;
+        case AtOnboardingResultStatus.cancel:
+          break;
+      }
+    }
   }
 }

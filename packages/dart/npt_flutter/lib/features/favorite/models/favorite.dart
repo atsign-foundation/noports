@@ -4,7 +4,6 @@ import 'package:meta/meta.dart';
 import 'package:npt_flutter/app.dart';
 import 'package:npt_flutter/features/favorite/favorite.dart';
 import 'package:npt_flutter/features/profile/profile.dart';
-import 'package:npt_flutter/features/profile_list/profile_list.dart';
 
 part 'favorite.g.dart';
 
@@ -28,7 +27,7 @@ sealed class Favorite extends Loggable {
   final FavoriteType type;
 
   Future<String?> get displayName;
-  bool? get isRunning;
+  String? get status;
   bool isFavoriteMatch(Favoritable favoritable);
   void toggle();
 
@@ -89,13 +88,19 @@ class FavoriteProfile extends Favorite {
   }
 
   @override
-  bool? get isRunning {
+  String? get status {
     var context = App.navState.currentContext;
     if (context == null) return null;
-    var cubit = context.read<ProfilesRunningCubit>();
-
-    return cubit.state.socketConnectors.containsKey(uuid) &&
-        !cubit.state.socketConnectors[uuid]!.closed;
+    var bloc = context.read<ProfileCacheCubit>().getProfileBloc(uuid);
+    return switch (bloc.state) {
+      ProfileLoaded _ || ProfileFailedSave _ || ProfileFailedStart _ => '[Off]',
+      ProfileStarting _ => '[Starting]',
+      ProfileStarted _ =>
+        '[On - ${(bloc.state as ProfileLoadedState).profile.localPort}]',
+      ProfileStopping _ => '[Stopping]',
+      ProfileInitial _ || ProfileLoading _ => '[Loading]',
+      ProfileFailedLoad _ => '[Failed to load]'
+    };
   }
 
   @override
@@ -109,13 +114,17 @@ class FavoriteProfile extends Favorite {
     var context = App.navState.currentContext;
     if (context == null) return;
 
-    final isRunning = this.isRunning;
-    if (isRunning == null) return;
     var cache = context.read<ProfileCacheCubit>();
-    if (isRunning) {
-      cache.getProfileBloc(uuid).add(const ProfileStopEvent());
-    } else {
-      cache.getProfileBloc(uuid).add(const ProfileStartEvent());
+    var bloc = cache.getProfileBloc(uuid);
+    switch (bloc.state) {
+      case ProfileLoaded _:
+      case ProfileFailedSave _:
+      case ProfileFailedStart _:
+        bloc.add(const ProfileStartEvent());
+      case ProfileStarted _:
+        bloc.add(const ProfileStopEvent());
+      default:
+        break;
     }
   }
 }

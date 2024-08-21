@@ -37,10 +37,12 @@ class ProfileBloc extends LoggingBloc<ProfileEvent, ProfileState> {
 
     if (profile == null) {
       emit(ProfileFailedLoad(uuid));
+      App.navState.currentContext?.read<TrayCubit>().reloadFavorites();
       return;
     }
 
     emit(ProfileLoaded(uuid, profile: profile));
+    App.navState.currentContext?.read<TrayCubit>().reloadFavorites();
   }
 
   Future<void> _onLoadOrCreate(
@@ -67,10 +69,12 @@ class ProfileBloc extends LoggingBloc<ProfileEvent, ProfileState> {
           localPort: 0,
         ),
       ));
+      App.navState.currentContext?.read<TrayCubit>().reloadFavorites();
       return;
     }
 
     emit(ProfileLoaded(uuid, profile: profile));
+    App.navState.currentContext?.read<TrayCubit>().reloadFavorites();
   }
 
   Future<void> _onEdit(
@@ -117,6 +121,7 @@ class ProfileBloc extends LoggingBloc<ProfileEvent, ProfileState> {
           .invalidate(uuid);
       emit(ProfileFailedSave(uuid, profile: event.profile));
     }
+    App.navState.currentContext?.read<TrayCubit>().reloadFavorites();
   }
 
   Future<void> _onStart(
