@@ -26,7 +26,6 @@ class ProfileRemoteHostTextField extends StatelessWidget {
                       profile: (bloc.state as ProfileLoadedState)
                           .profile
                           .copyWith(remoteHost: value),
-                      save: false,
                     ));
                   });
             },

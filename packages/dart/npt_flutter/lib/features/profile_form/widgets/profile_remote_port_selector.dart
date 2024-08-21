@@ -27,7 +27,6 @@ class ProfileRemotePortSelector extends StatelessWidget {
                       profile: (bloc.state as ProfileLoadedState)
                           .profile
                           .copyWith(remotePort: Port.fromString(value)),
-                      save: false,
                     ));
                   });
             },

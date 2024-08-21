@@ -27,7 +27,6 @@ class ProfileLocalPortSelector extends StatelessWidget {
                       profile: (bloc.state as ProfileLoadedState)
                           .profile
                           .copyWith(localPort: Port.fromString(value)),
-                      save: false,
                     ));
                   });
             },

@@ -21,6 +21,7 @@ class ProfileBloc extends LoggingBloc<ProfileEvent, ProfileState> {
     on<ProfileLoadEvent>(_onLoad);
     on<ProfileLoadOrCreateEvent>(_onLoadOrCreate);
     on<ProfileEditEvent>(_onEdit);
+    on<ProfileSaveEvent>(_onSave);
     on<ProfileStartEvent>(_onStart);
     on<ProfileStopEvent>(_onStop);
   }
@@ -82,37 +83,34 @@ class ProfileBloc extends LoggingBloc<ProfileEvent, ProfileState> {
     if (state is! ProfileLoaded && state is! ProfileFailedSave) {
       return;
     }
+    emit(ProfileLoaded(uuid, profile: event.profile));
+  }
 
-    bool res = true; // true so we emit loaded state if not saving
-    if (event.save) {
-      emit(ProfileLoading(uuid));
-      try {
-        res = await _repo.putProfile(event.profile);
-      } catch (_) {
-        res = false;
-      }
+  FutureOr<void> _onSave(
+      ProfileSaveEvent event, Emitter<ProfileState> emit) async {
+    emit(ProfileLoading(uuid));
+    bool res;
+    try {
+      res = await _repo.putProfile(event.profile);
+    } catch (_) {
+      res = false;
     }
 
-    // Make sure to wipe profile.npt and profile.socketConnector since we changed the config so they are invalid
     if (res) {
       App.navState.currentContext
           ?.read<ProfilesRunningCubit>()
           .invalidate(uuid);
 
-      if (event.addToProfilesList) {
-        var listBloc = App.navState.currentContext?.read<ProfileListBloc>();
-        if (listBloc != null && listBloc.state is ProfileListLoaded) {
-          var profiles = (listBloc.state as ProfileListLoaded).profiles;
-          if (!profiles.contains(uuid)) {
-            listBloc.add(ProfileListUpdateEvent([...profiles, uuid]));
-          }
+      var listBloc = App.navState.currentContext?.read<ProfileListBloc>();
+      if (listBloc != null && listBloc.state is ProfileListLoaded) {
+        var profiles = (listBloc.state as ProfileListLoaded).profiles;
+        if (!profiles.contains(uuid)) {
+          listBloc.add(ProfileListUpdateEvent([...profiles, uuid]));
         }
-        if (event.popNavAfterAddToProfilesList) {
-          var context = App.navState.currentContext;
-          if (context != null && context.mounted) {
-            Navigator.of(context).pop();
-          }
-        }
+      }
+      var context = App.navState.currentContext;
+      if (context != null && context.mounted) {
+        Navigator.of(context).pop();
       }
       emit(ProfileLoaded(uuid, profile: event.profile));
     } else {
