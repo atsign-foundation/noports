@@ -460,7 +460,7 @@ static int process_multiple_requests(char *original, char **requests[], size_t *
 
   ret = 0;
   goto exit;
-exit : { return ret; }
+exit: { return ret; }
 }
 
 // connect:session_aes_key_string:session_aes_iv_string
@@ -499,7 +499,7 @@ static int parse_control_message(char *original, char **message_type, char **new
 
   ret = 0;
   goto exit;
-exit : { return ret; }
+exit: { return ret; }
 }
 
 static void *run_socket_to_socket(void *args) {

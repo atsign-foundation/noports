@@ -7,7 +7,7 @@
 #include <atchops/aes.h>
 #include <atchops/iv.h>
 #include <atchops/rsa.h>
-#include <atchops/rsakey.h>
+#include <atchops/rsa_key.h>
 #include <atchops/sha.h>
 #include <atclient/atclient.h>
 #include <atclient/atclient_utils.h>
@@ -15,9 +15,10 @@
 #include <atclient/atkeys.h>
 #include <atclient/atkeysfile.h>
 #include <atclient/connection.h>
+#include <atclient/connection_hooks.h>
 #include <atclient/monitor.h>
 #include <atclient/notify.h>
-#include <atclient/stringutils.h>
+#include <atclient/string_utils.h>
 #include <atlogger/atlogger.h>
 #include <cJSON.h>
 #include <libgen.h>
@@ -70,30 +71,37 @@ static FILE *authkeys_file;
 static char *authkeys_filename;
 static char *ping_response;
 static char *home_dir;
-static atchops_rsakey_privatekey signingkey;
+static atchops_rsa_key_private_key signingkey;
 static bool is_child_process = false;
 
 // Signal handling
 static volatile sig_atomic_t should_run = 1;
-static void sig_handler(int _) {
-  (void)_;
+static void exit_handler(int sig) {
+  atlogger_log("exit_handler", ATLOGGER_LOGGING_LEVEL_WARN, "Received signal: %d\n");
   if (should_run == 1) {
-    atlogger_log("sig_handler", ATLOGGER_LOGGING_LEVEL_WARN, "Received SIGINT, exiting safely\n");
+    atlogger_log("exit_handler", ATLOGGER_LOGGING_LEVEL_WARN, "Received SIGINT, attempting a safe exit\n");
     should_run = 0;
   } else if (should_run == 0) {
-    atlogger_log("sig_handler", ATLOGGER_LOGGING_LEVEL_WARN, "Received SIGINT again, exiting forcefully\n");
+    atlogger_log("exit_handler", ATLOGGER_LOGGING_LEVEL_WARN, "Received SIGINT again, exiting forcefully\n");
+    exit(1);
   }
 }
-
-// Queue for all srv processes
-static struct sshnpd_process_queue srv_pids = {0, 0, NULL};
+static void child_exit_handler(int sig) {
+  atlogger_log("child_exit_handler", ATLOGGER_LOGGING_LEVEL_WARN, "Received signal: %d\n");
+  int status;
+  pid_t pid = waitpid(-1, &status, WNOHANG);
+  if (pid > 0 && WIFEXITED(status)) {
+    atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_DEBUG, "pid %d exited\n", pid);
+  }
+}
 
 int main(int argc, char **argv) {
   int res = 0;
   int exit_res = 0;
 
   // Catch sigint and pass to the handler
-  signal(SIGINT, sig_handler);
+  signal(SIGINT, exit_handler);
+  signal(SIGCHLD, child_exit_handler);
 
   // 1.  Load default values
   apply_default_values_to_sshnpd_params(&params);
@@ -160,7 +168,8 @@ int main(int argc, char **argv) {
   }
 
   // 5.3 create a key copy for signing
-  atchops_rsakey_privatekey_clone(&signingkey, &atkeys.encryptprivatekey);
+  atchops_rsa_key_private_key_init(&signingkey);
+  atchops_rsa_key_private_key_clone(&atkeys.encrypt_private_key, &signingkey);
 
   // 6. Get atServer address
   res = atclient_utils_find_atserver_address(params.root_domain, ROOT_PORT, params.atsign, &atserver_host,
@@ -250,15 +259,18 @@ int main(int argc, char **argv) {
     goto cancel_atclient;
   }
 
+  for (int i = 0; i < params.manager_list_len; i++) {
+    atclient_atkey_init(infokeys + i);
+  }
+
   atclient_atkey *usernamekeys = malloc(sizeof(atclient_atkey) * params.manager_list_len);
   if (usernamekeys == NULL) {
     atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to allocate memory for usernamekeys\n");
     exit_res = 1;
-    goto clean_atkeys;
+    goto clean_info_keys;
   }
 
   for (int i = 0; i < params.manager_list_len; i++) {
-    atclient_atkey_init(infokeys + i);
     atclient_atkey_init(usernamekeys + i);
   }
 
@@ -268,11 +280,11 @@ int main(int argc, char **argv) {
   if (res != 0) {
     atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to start refresh device entry thread\n");
     exit_res = res;
-    goto cancel_atclient;
+    goto clean_username_keys;
   }
 
   if (!should_run) {
-    goto cancel_atclient;
+    goto cancel_refresh;
   }
 
   // 10. Start monitor
@@ -280,11 +292,11 @@ int main(int argc, char **argv) {
   if (regex == NULL) {
     atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to allocate memory for the monitor regex\n");
     exit_res = 1;
-    goto cancel_atclient;
+    goto cancel_refresh;
   }
 
   sprintf(regex, "%s.%s@", params.device, SSHNP_NS);
-  res = atclient_monitor_start(&monitor_ctx, regex, strlen(regex));
+  res = atclient_monitor_start(&monitor_ctx, regex);
   if (res != 0) {
     atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to start monitor\n");
     exit_res = res;
@@ -322,33 +334,14 @@ int main(int argc, char **argv) {
     goto close_authkeys;
   }
 
-  // 12. Create child process queue
-  srv_pids.len = 0;
-  srv_pids.processes = malloc(sizeof(pid_t) * srv_pids.len);
-  if (srv_pids.processes == NULL) {
-    goto clean_device_info_keys;
-  }
-
   // 13. Main notification handler loop
   atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_INFO, "Starting main loop\n");
   main_loop();
   atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_INFO, "Exited main loop\n");
 
-  free(srv_pids.processes);
-
-clean_device_info_keys:
-  for (int i = 0; i < params.manager_list_len; i++) {
-    atclient_atkey_free(infokeys + i);
-    atclient_atkey_free(usernamekeys + i);
-  }
-
-  free(infokeys);
-  free(usernamekeys);
-
 close_authkeys:
   fclose(authkeys_file);
   free(authkeys_filename);
-
 cancel_refresh:
   free(regex);
   atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_DEBUG, "Joining device entry refresh thread\n");
@@ -358,6 +351,16 @@ cancel_refresh:
   } else {
     atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_DEBUG, "Joined device entry refresh thread\n");
   }
+clean_username_keys:
+  for (int i = 0; i < params.manager_list_len; i++) {
+    atclient_atkey_free(usernamekeys + i);
+  }
+  free(usernamekeys);
+clean_info_keys:
+  for (int i = 0; i < params.manager_list_len; i++) {
+    atclient_atkey_free(infokeys + i);
+  }
+  free(infokeys);
 cancel_atclient:
   if (free_ping_response) {
     free(ping_response);
@@ -366,7 +369,6 @@ cancel_atclient:
     atclient_connection_disconnect(&worker.atserver_connection);
     atclient_free(&worker);
   }
-
 cancel_monitor_ctx:
   if (!is_child_process) {
     atclient_connection_disconnect(&monitor_ctx.atserver_connection);
@@ -375,7 +377,7 @@ cancel_monitor_ctx:
   free(atserver_host);
 
 clean_atkeys:
-  atchops_rsakey_privatekey_free(&signingkey);
+  atchops_rsa_key_private_key_free(&signingkey);
   atclient_atkeys_free(&atkeys);
 
 exit:
@@ -394,22 +396,11 @@ void main_loop() {
   monitor_hooks.pre_decrypt_notification = lock_atclient;
   monitor_hooks.post_decrypt_notification = unlock_atclient;
 
-  atclient_monitor_message message;
+  atclient_monitor_response message;
 
   while (should_run) {
     atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_DEBUG, "Waiting for next monitor thread message\n");
-    atclient_monitor_message_init(&message);
-
-    // Loop through background instances of sshnpd to see if they are ready to exit
-    int status;
-    for (int i = 0; i < srv_pids.len; i++) {
-      waitpid(srv_pids.processes[i], &status, WNOHANG); // Don't wait for srv - we want it to be running in the bg
-      if (WIFEXITED(status)) {
-        atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_DEBUG, "Exited srv process: %d\n", srv_pids.processes[i]);
-        srv_pids.processes[i] = srv_pids.processes[--srv_pids.len]; // move last element into the newly free slot
-        srv_pids.processes = realloc(srv_pids.processes, sizeof(pid_t) * srv_pids.len);
-      }
-    }
+    atclient_monitor_response_init(&message);
 
     // Read the next monitor message
     res = atclient_monitor_read(&monitor_ctx, &worker, &message, &monitor_hooks);
@@ -432,7 +423,7 @@ void main_loop() {
           break;
         }
 
-        ret = atclient_monitor_start(&monitor_ctx, regex, strlen(regex));
+        ret = atclient_monitor_start(&monitor_ctx, regex);
         if (ret != 0) {
           atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Monitor verb failed to restart.\n");
           break;
@@ -449,7 +440,7 @@ void main_loop() {
                    message.error_response);
       break;
     case ATCLIENT_MONITOR_MESSAGE_TYPE_NONE:
-      atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Received a NONE notification type");
+      atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Received a NONE notification type\n");
       break;
     case ATCLIENT_MONITOR_ERROR_PARSE_NOTIFICATION:
       atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to parse the notification\n");
@@ -458,11 +449,11 @@ void main_loop() {
       atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to decrypt the notification\n");
       break;
     case ATCLIENT_MONITOR_MESSAGE_TYPE_NOTIFICATION: {
-      bool is_init = atclient_atnotification_decryptedvalue_is_initialized(&message.notification);
-      bool has_key = atclient_atnotification_key_is_initialized(&message.notification);
+      bool is_init = atclient_atnotification_is_decrypted_value_initialized(&message.notification);
+      bool has_key = atclient_atnotification_is_key_initialized(&message.notification);
       if (is_init) {
         atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_DEBUG, "Notification value received: %s\n",
-                     message.notification.decryptedvalue);
+                     message.notification.decrypted_value);
         if (!has_key || strcmp(message.notification.id, "-1") == 0) {
           break;
         }
@@ -524,10 +515,10 @@ void main_loop() {
         case NK_SSH_REQUEST:
           atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_DEBUG, "Executing handle_ssh_request\n");
           handle_ssh_request(&worker, &atclient_lock, &params, &is_child_process, &message, home_dir, authkeys_file,
-                             authkeys_filename, signingkey, &srv_pids);
+                             authkeys_filename, signingkey);
           if (is_child_process) {
             atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_DEBUG, "Exiting child process\n");
-            atclient_monitor_message_free(&message);
+            atclient_monitor_response_free(&message);
             return;
           }
           break;
@@ -545,7 +536,7 @@ void main_loop() {
       break;
     } // end of case ATCLIENT_MONITOR_MESSAGE_TYPE_NOTIFICATION
     } // end of switch
-    atclient_monitor_message_free(&message);
+    atclient_monitor_response_free(&message);
   } // end of while loop
 }
 
@@ -571,8 +562,8 @@ static int unlock_atclient(int ret) {
 }
 
 static int set_worker_hooks() {
-  atclient_connection_enable_hooks(&worker.atserver_connection);
-  return atclient_connection_hooks_set(&worker.atserver_connection, ATCLIENT_CONNECTION_HOOK_TYPE_PRE_SEND,
+  atclient_connection_hooks_enable(&worker.atserver_connection);
+  return atclient_connection_hooks_set(&worker.atserver_connection, ATCLIENT_CONNECTION_HOOK_TYPE_PRE_WRITE,
                                        reconnect_atclient);
 }
 
