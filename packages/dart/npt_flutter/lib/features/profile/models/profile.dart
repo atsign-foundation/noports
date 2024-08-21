@@ -118,9 +118,4 @@ final class Profile extends Loggable with Favoritable {
     return 'Profile(displayName: $displayName, sshnpd: $sshnpdAtsign, '
         'deviceName: $deviceName, relayAtsign: $relayAtsign, uuid: $uuid)';
   }
-
-  @override
-  bool isLoadedInProfiles(Iterable<String> profiles) {
-    return profiles.contains(uuid);
-  }
 }

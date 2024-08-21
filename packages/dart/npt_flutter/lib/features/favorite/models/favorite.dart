@@ -28,8 +28,10 @@ sealed class Favorite extends Loggable {
 
   Future<String?> get displayName;
   String? get status;
+  Iterable<String> get profileIds;
   bool isFavoriteMatch(Favoritable favoritable);
   bool isLoadedInProfiles(Iterable<String> profiles);
+  bool containsProfile(String uuid);
   void toggle();
 
   const Favorite({required this.uuid, required this.type});
@@ -132,5 +134,13 @@ class FavoriteProfile extends Favorite {
   @override
   bool isLoadedInProfiles(Iterable<String> profiles) {
     return profiles.contains(uuid);
+  }
+
+  @override
+  Iterable<String> get profileIds => [uuid];
+
+  @override
+  bool containsProfile(String uuid) {
+    return uuid == this.uuid;
   }
 }

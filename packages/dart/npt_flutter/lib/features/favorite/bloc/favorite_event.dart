@@ -29,14 +29,14 @@ final class FavoriteAddEvent extends FavoriteEvent {
 }
 
 final class FavoriteRemoveEvent extends FavoriteEvent {
-  final Favorite favorite;
-  const FavoriteRemoveEvent(this.favorite);
+  final Iterable<Favorite> toRemove;
+  const FavoriteRemoveEvent(this.toRemove);
 
   @override
-  List<Object?> get props => [favorite];
+  List<Object?> get props => [toRemove];
 
   @override
   String toString() {
-    return 'FavoriteRemoveEvent($favorite)';
+    return 'FavoriteRemoveEvent($toRemove)';
   }
 }

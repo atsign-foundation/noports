@@ -62,9 +62,11 @@ class FavoriteRepository {
     return _putFavorites();
   }
 
-  Future<bool> removeFavorite(String uuid) async {
+  Future<bool> removeFavorites(Iterable<String> uuids) async {
     _favoriteCache ??= {};
-    _favoriteCache?.remove(uuid);
+    for (final uuid in uuids) {
+      _favoriteCache?.remove(uuid);
+    }
     return _putFavorites();
   }
 }

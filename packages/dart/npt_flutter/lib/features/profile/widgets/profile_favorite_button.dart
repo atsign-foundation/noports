@@ -22,7 +22,7 @@ class ProfileFavoriteButton extends StatelessWidget {
           onPressed: () {
             if (isFavorited) {
               context.read<FavoriteBloc>().add(
-                    FavoriteRemoveEvent(FavoriteProfile(uuid: profile.uuid)),
+                    FavoriteRemoveEvent([FavoriteProfile(uuid: profile.uuid)]),
                   );
             } else {
               context.read<FavoriteBloc>().add(

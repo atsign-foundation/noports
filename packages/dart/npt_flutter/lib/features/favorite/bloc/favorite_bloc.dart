@@ -55,15 +55,21 @@ class FavoriteBloc extends LoggingBloc<FavoriteEvent, FavoritesState> {
     if (state is! FavoritesLoaded) {
       return;
     }
-    final uuid = event.favorite.uuid;
 
     emit(FavoritesLoaded(
-      (state as FavoritesLoaded).favorites.where((e) => e.uuid != uuid),
+      (state as FavoritesLoaded)
+          .favorites
+          .toSet()
+          .difference(event.toRemove.toSet()),
     ));
 
     App.navState.currentContext?.read<TrayCubit>().reloadFavorites();
     try {
-      await _repo.removeFavorite(uuid);
+      var profileIds = <String>{};
+      for (Favorite fav in event.toRemove) {
+        profileIds.addAll(fav.profileIds);
+      }
+      await _repo.removeFavorites(profileIds);
     } catch (_) {}
   }
 }

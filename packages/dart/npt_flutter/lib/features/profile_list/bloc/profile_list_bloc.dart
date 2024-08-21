@@ -42,6 +42,7 @@ class ProfileListBloc extends LoggingBloc<ProfileListEvent, ProfileListState> {
   Future<void> _onUpdate(
       ProfileListUpdateEvent event, Emitter<ProfileListState> emit) async {
     emit(ProfileListLoaded(profiles: event.profiles));
+    App.navState.currentContext?.read<TrayCubit>().reloadFavorites();
   }
 
   Future<void> _onDelete(
@@ -56,10 +57,19 @@ class ProfileListBloc extends LoggingBloc<ProfileListEvent, ProfileListState> {
       profiles: profiles.where((profile) => !event.toDelete.contains(profile)),
     ));
     var bloc = App.navState.currentContext?.read<FavoriteBloc>();
-    for (final uuid in event.toDelete) {
-      unawaited(_repo.deleteProfile(uuid));
-      bloc?.add(FavoriteRemoveEvent(FavoriteProfile(uuid: uuid)));
+    var favoritesToRemove = <Favorite>[];
+    var loadedFavorites = <Favorite>[];
+    if (bloc != null && bloc.state is FavoritesLoaded) {
+      loadedFavorites = (bloc.state as FavoritesLoaded).favorites.toList();
     }
+    for (final uuid in event.toDelete) {
+      for (final fav in loadedFavorites) {
+        if (fav.containsProfile(uuid)) favoritesToRemove.add(fav);
+      }
+      unawaited(_repo.deleteProfile(uuid));
+    }
+    bloc?.add(FavoriteRemoveEvent(favoritesToRemove));
+    App.navState.currentContext?.read<TrayCubit>().reloadFavorites();
   }
 
   Future<void> _onAdd(
