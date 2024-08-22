@@ -87,7 +87,7 @@ class TrayCubit extends LoggingCubit<TrayState> {
     emit(const TrayLoaded());
   }
 
-  Future<void> reloadFavorites() async {
+  Future<void> reloadTray() async {
     var context = App.navState.currentContext;
     if (context == null) return;
     var showSettings = context.read<OnboardingCubit>().state is Onboarded;
