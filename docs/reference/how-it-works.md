@@ -31,7 +31,7 @@ description: >-
 1. @client makes a request to @relay for two listening TCP/IP ports
 2. @client contacts @server to get status and capabilities
 3. @server responds if @client is permitted to connect, permission is either given locally or via @policy
-4. @client derives a new ephemeral AES 256bit key and sends the key along with the IP/DNS name and one of the ports it received from @relay plus any &#x20;
+4. @client derives a new ephemeral AES 256bit key and sends the key along with the IP/DNS name and one of the ports it received from @relay plus the requested remote host:service
 5. @server confirms that @client is allowed to connect and to the service requested either locally or via @policy. If permitted, then @server makes a TCP/IP connection to @relay on the specified port and authenticates
 6. @client makes a connection to @relay on the other port and authenticates
 7. @client listens on the localhost interface of the client and encrypts any connections made to it with the ephemeral AES key from stage 4
