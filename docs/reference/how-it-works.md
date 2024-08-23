@@ -38,7 +38,8 @@ description: >-
 8. @client listens on the localhost interface of the client and encrypts any connections made to it with the ephemeral AES key from stage 4
 9. @server connects the to the required TCP/IP service requested in stage 5 and then encrypts the connection and forwards on to @relay
 10. At this point a client application connects to the localhost interface on the client on the requested port and any data is encrypted and passed via @relay and on to @server then on to the listening service.
-11. If the service requested was SSH on @server for example the `ssh` command would be directed to locahost and yet in fact that connection would be forward to the `sshd` daemeon on @server
+
+If the service requested by @client was SSH on @server for example. The `ssh` command would be directed to locahost on @client and yet in fact that connection would be forward to the `sshd` daemeon on @server, via the outbound connections to @relay.
 
 This handshake takes a few seconds to make but once established the connection is near real time. You can see the handshake happening as you use the `sshnp` or the `npt` commands and if you what to see more details then, add the `-v` flag.
 
