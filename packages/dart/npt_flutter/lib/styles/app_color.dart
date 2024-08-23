@@ -2,12 +2,12 @@ import 'package:flutter/material.dart';
 
 class AppColor {
   static const primaryColor = Color(0xFFF05E3E);
-  static const backGroundColor = Color(0xFFF3F3F3);
+  static const surfaceColor = Color(0xFFD9D9D9);
   // static const profileBarColor = Color(0xff3a3a3a);
   // static const darBarColor = Color(0xFF1E1E1E);
   // static const profileBacgroundColor = Color(0xff262626);
   // static const profileFormFieldColor = Color(0xff303030);
-  // static const textColorDar = Color(0xffB3B3B3);
+  static const onSurfaceColor = Color(0xFF747474);
   // static const iconColorDar = Color(0xff585858);
   // static const iconColorBacground = Color(0xffDCDCDC);
   // static const iconColorBacgroundDar = Color(0xff888888);

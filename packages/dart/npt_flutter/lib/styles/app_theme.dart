@@ -77,8 +77,11 @@ class AppTheme {
       brightness: Brightness.light,
       colorScheme: const ColorScheme.light().copyWith(
         primary: AppColor.primaryColor,
-        surface: AppColor.backGroundColor,
+        surface: AppColor.surfaceColor,
+        onSurface: AppColor.onSurfaceColor,
       ),
+      appBarTheme: const AppBarTheme(
+          color: AppColor.surfaceColor, foregroundColor: Colors.black, surfaceTintColor: Colors.transparent),
       checkboxTheme: CheckboxThemeData(
         fillColor: WidgetStateColor.resolveWith(
           (states) {
