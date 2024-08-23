@@ -49,6 +49,30 @@ Be your own VPN
 
 With this example, you can see that port `63155` was used in the sshuttle command. You do not need to SSH into the machine—you can just get the port number and use `sshuttle.`  The choice is yours.
 
+This can get a bit tedious to do every day so feel free to script for your environment. Here is an example bash script that does just that!
+
+```bash
+#!/bin/bash
+#
+export USER=$USER
+export SSHNPHOME=$HOME/.local/bin <--<default-location-for-SSHNP>
+export HOSTDEVICE=<your-host-running-SSHNPD>
+export CLIENTATSIGN=<your-local-atsign format @34mypersonalatsign>>
+export HOSTATSIGN=<the-host-device-atsign format @55hostdeviceatsign>
+export LOCALPORT=<the-port-ito-use-forconnection example 46393>
+export NETA=<network-CIDR-style example 0/0 or 10.0.0.0/8>
+export NETB=<network-CIDR-style example 172.16.0.0/16>
+export NETC=<network-CIDR-style example 192.168.1.0/24>
+#
+echo ""
+echo Starting Atsign SSHNP connects to $HOSTDEVICE on port $LOCALPORT for personal VPN
+echo ""
+#
+$SSHNPHOME/sshnp --from $CLIENTATSIGN --to $HOSTATSIGN --srvd @rv_am --output-execution-command --idle-timeout 90 --device $HOSTDEVICE --local-port $LOCALPORT
+sleep 3
+sshuttle --dns --disable-ipv6 -r $USER@127.0.0.1:$LOCALPORT $NETA $NETB $NETC
+```
+
 ### SOCKS
 
 If you are using Windows, this is likely your best option unless you are comfortable setting up a virtual machine and using sshuttle.
