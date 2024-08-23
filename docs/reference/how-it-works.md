@@ -34,10 +34,11 @@ description: >-
 4. @client derives a new ephemeral AES 256bit key and sends the key along with the IP/DNS name and one of the ports it received from @relay plus the requested remote host:service
 5. @server confirms that @client is allowed to connect and to the service requested either locally or via @policy. If permitted, then @server makes a TCP/IP connection to @relay on the specified port and authenticates
 6. @client makes a connection to @relay on the other port and authenticates
-7. @client listens on the localhost interface of the client and encrypts any connections made to it with the ephemeral AES key from stage 4
-8. @server connects the to the required TCP/IP service requested in stage 5 and then encrypts the connection and forwards on to @relay
-9. At this point a client application connects to the localhost interface on the client on the requested port and any data is encrypted and passed via @relay and on to @server then on to the listening service.
-10. If the service requested was SSH on @server for example the `ssh` command would be directed to locahost and yet in fact that connection would be forward to the `sshd` daemeon on @server
+7. @relay then relays the data between the two TCP connections **@relay does not have the AES key** so cannot "see" the encrypted dataflow
+8. @client listens on the localhost interface of the client and encrypts any connections made to it with the ephemeral AES key from stage 4
+9. @server connects the to the required TCP/IP service requested in stage 5 and then encrypts the connection and forwards on to @relay
+10. At this point a client application connects to the localhost interface on the client on the requested port and any data is encrypted and passed via @relay and on to @server then on to the listening service.
+11. If the service requested was SSH on @server for example the `ssh` command would be directed to locahost and yet in fact that connection would be forward to the `sshd` daemeon on @server
 
 This handshake takes a few seconds to make but once established the connection is near real time. You can see the handshake happening as you use the `sshnp` or the `npt` commands and if you what to see more details then, add the `-v` flag.
 
