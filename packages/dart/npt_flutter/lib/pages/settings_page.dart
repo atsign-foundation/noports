@@ -9,7 +9,10 @@ class SettingsPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return const Scaffold(
-      appBar: NptAppBar(title: 'Settings', settingsSelectedColor: AppColor.primaryColor),
+      appBar: NptAppBar(
+        title: 'Settings',
+        settingsSelectedColor: AppColor.primaryColor,
+      ),
       body: SettingsView(),
     );
   }

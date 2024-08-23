@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:npt_flutter/styles/app_color.dart';
 
 import '../styles/sizes.dart';
@@ -6,29 +7,67 @@ import '../styles/sizes.dart';
 class NptAppBar extends StatelessWidget implements PreferredSizeWidget {
   final String title;
   final Color? settingsSelectedColor;
+  final bool isNavigateBack;
 
-  const NptAppBar({
-    super.key,
-    required this.title,
-    this.settingsSelectedColor,
-  });
+  const NptAppBar({super.key, required this.title, this.settingsSelectedColor, this.isNavigateBack = true});
 
   @override
-  Size get preferredSize => const Size.fromHeight(Sizes.p100);
+  Size get preferredSize => Size.fromHeight(isNavigateBack ? Sizes.p150 : Sizes.p100);
 
   @override
   Widget build(BuildContext context) {
     return AppBar(
+      titleSpacing: 0,
+      leading: gap0,
+      toolbarHeight: isNavigateBack ? Sizes.p150 : Sizes.p100,
       title: Row(
         children: [
-          Container(
-            color: AppColor.dividerColor,
-            height: Sizes.p38,
-            width: Sizes.p2,
+          Column(
+            children: [
+              gapH40,
+              SvgPicture.asset(
+                'assets/noports_logo.svg',
+                height: Sizes.p54,
+                width: Sizes.p175,
+              ),
+              gapH25,
+              TextButton.icon(
+                onPressed: () {
+                  Navigator.pop(context);
+                },
+                label: const Text(
+                  'Back',
+                  // style: TextStyle(
+                  //   color: AppColor.dividerColor,
+                  //   fontSize: 18,
+                  //   fontWeight: FontWeight.w500,
+                  // ),
+                ),
+                icon: const Icon(
+                  Icons.arrow_back_ios,
+                ),
+              ),
+            ],
+          ),
+          gapW27,
+          Column(
+            children: [
+              Container(
+                color: AppColor.dividerColor,
+                height: Sizes.p38,
+                width: Sizes.p2,
+              ),
+              gapH25
+            ],
           ),
           gapW20,
-          Text(
-            title,
+          Column(
+            children: [
+              Text(
+                title,
+              ),
+              gapH25,
+            ],
           ),
         ],
       ),
@@ -41,8 +80,7 @@ class NptAppBar extends StatelessWidget implements PreferredSizeWidget {
           },
         ),
       ],
-      centerTitle: false,
-      elevation: 4.0,
+      centerTitle: true,
     );
   }
 }

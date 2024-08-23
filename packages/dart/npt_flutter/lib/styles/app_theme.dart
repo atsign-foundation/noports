@@ -85,6 +85,18 @@ class AppTheme {
         foregroundColor: Colors.black,
         surfaceTintColor: Colors.transparent,
       ),
+      textButtonTheme: TextButtonThemeData(
+        style: ButtonStyle(
+          textStyle: WidgetStateProperty.all<TextStyle>(
+            const TextStyle(
+              fontSize: 18,
+            ),
+          ),
+          foregroundColor: WidgetStateProperty.all<Color>(
+            AppColor.primaryColor,
+          ),
+        ),
+      ),
       iconButtonTheme: IconButtonThemeData(
         style: ButtonStyle(
           foregroundColor: WidgetStateProperty.all<Color>(
