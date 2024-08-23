@@ -146,10 +146,10 @@ packages:
   at_onboarding_flutter:
     dependency: "direct main"
     description:
-      path: "/Users/chant/src/af/at_widgets/xc-npt-desktop-pin/packages/at_onboarding_flutter"
+      path: "/Users/curtlycritchlow/Documents/CCWC/clients/atsign/at_widgets/packages/at_onboarding_flutter"
       relative: false
     source: path
-    version: "6.1.7"
+    version: "6.1.8"
   at_persistence_secondary_server:
     dependency: transitive
     description:
@@ -499,10 +499,10 @@ packages:
     dependency: "direct main"
     description:
       name: file_picker
-      sha256: "1bbf65dd997458a08b531042ec3794112a6c39c07c37ff22113d2e7e4f81d4e4"
+      sha256: "167bb619cdddaa10ef2907609feb8a79c16dfa479d3afaf960f8e223f754bf12"
       url: "https://pub.dev"
     source: hosted
-    version: "6.2.1"
+    version: "8.1.2"
   file_selector:
     dependency: transitive
     description:
