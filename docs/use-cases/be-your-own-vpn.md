@@ -60,17 +60,19 @@ export HOSTDEVICE=<your-host-running-SSHNPD>
 export CLIENTATSIGN=<your-local-atsign format @34mypersonalatsign>>
 export HOSTATSIGN=<the-host-device-atsign format @55hostdeviceatsign>
 export LOCALPORT=<the-port-ito-use-forconnection example 46393>
+export SRVD=<atSign-of-srvd-daemon example @rv_eu or @rv_am or @rv_ap>
 export NETA=<network-CIDR-style example 0/0 or 10.0.0.0/8>
 export NETB=<network-CIDR-style example 172.16.0.0/16>
 export NETC=<network-CIDR-style example 192.168.1.0/24>
 #
 echo ""
-echo Starting Atsign SSHNP connects to $HOSTDEVICE on port $LOCALPORT for personal VPN
+echo Starting Atsign SSHNP connects to $HOSTDEVICE on port 46393 for personal VPN
 echo ""
 #
-$SSHNPHOME/sshnp --from $CLIENTATSIGN --to $HOSTATSIGN --srvd @rv_am --output-execution-command --idle-timeout 90 --device $HOSTDEVICE --local-port $LOCALPORT
+$SSHNPHOME/sshnp --from $CLIENTATSIGN --to $HOSTATSIGN --srvd $SRVD --remote-user-name $USER --output-execution-command --idle-timeout 90 --device $HOSTDEVICE --local-port $LOCALPORT
 sleep 3
-sshuttle --dns --disable-ipv6 -r $USER@127.0.0.1:$LOCALPORT $NETA $NETB $NETC
+sshuttle --dns -r $USER@127.0.0.1:$LOCALPORT $NETA $NETB $NETC 
+#
 ```
 
 ### SOCKS
