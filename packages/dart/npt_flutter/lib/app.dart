@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:npt_flutter/features/features.dart';
 import 'package:npt_flutter/routes.dart';
+import 'package:npt_flutter/styles/app_theme.dart';
 
 export 'package:npt_flutter/features/logging/logging.dart';
 
@@ -89,6 +90,7 @@ class App extends StatelessWidget {
         ],
         child: TrayManager(
           child: MaterialApp(
+            theme: AppTheme.light(),
             navigatorKey: navState,
             initialRoute: Routes.onboarding,
             routes: Routes.routes,
