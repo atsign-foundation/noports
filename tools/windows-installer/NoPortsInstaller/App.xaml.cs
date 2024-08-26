@@ -8,7 +8,7 @@ namespace NoPortsInstaller;
 /// </summary>
 public partial class App : Application
 {
-    public static Controller ControllerInstance { get; set; }
+    public static IController ControllerInstance { get; set; }
     public App()
     {
         ControllerInstance = new Controller();
@@ -16,7 +16,7 @@ public partial class App : Application
 
     public void OnStartup(object sender, StartupEventArgs e)
     {
-        MainWindow mainWindow = new MainWindow();
+        MainWindow mainWindow = new();
         mainWindow.Show();
         if (e.Args.Length == 1 && e.Args[0] == "u")
         {

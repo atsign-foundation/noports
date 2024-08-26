@@ -45,7 +45,7 @@ namespace NoPortsInstaller
         /// </summary>
         /// <param name="progress"></param>
         /// <param name="status"></param>
-        public async void Install(ProgressBar progress, Label status)
+        public async Task Install(ProgressBar progress, Label status)
         {
             try
             {
@@ -75,14 +75,13 @@ namespace NoPortsInstaller
                 Pages.Add(new ServiceErrorPage(ex.Message));
                 NextPage();
             }
-
         }
 
         /// <summary>
         /// Uninstalls NoPorts, including the service.
         /// </summary>
         /// <param name="progress"></param>
-        public async void Uninstall(ProgressBar progress)
+        public async Task Uninstall(ProgressBar progress)
         {
             try
             {
@@ -182,8 +181,13 @@ namespace NoPortsInstaller
                     Console.WriteLine($"An error occurred while creating {dir}: {ex.Message}");
                 }
             }
-            FileInfo fi = new(Path.Combine(userHome, ".ssh", "authorized_keys"));
-            fi.Create().Close();
+            var authkeys = Path.Combine(userHome, ".ssh", "authorized_keys");
+            if (!File.Exists(authkeys))
+            {
+                FileInfo fi = new(authkeys);
+                fi.Create().Close();
+            }
+
         }
 
         private void CopyIntoServiceAccount()
@@ -205,11 +209,14 @@ namespace NoPortsInstaller
             {
                 try
                 {
-                    File.Copy(sources[i], destinations[i], true);
+                    if (File.Exists(sources[i]))
+                    {
+                        File.Copy(sources[i], destinations[i], true);
+                    }
                 }
                 catch
                 {
-                    throw;
+                    throw new FileNotFoundException("No keys found. Use at_activate to onboard keys or enroll/approve this device.");
                 }
             }
         }
@@ -371,11 +378,15 @@ namespace NoPortsInstaller
                 }
                 catch
                 {
-                    throw;
                 }
             });
         }
 
+
+
+        /// <summary>
+        /// Loads the appropriate pages based on the InstallType.
+        /// </summary>
         public void LoadPages()
         {
             switch (InstallType)
@@ -402,6 +413,9 @@ namespace NoPortsInstaller
             }
         }
 
+        /// <summary>
+        /// Moves to the next page in the Pages list.
+        /// </summary>
         public void NextPage()
         {
             if (index < Pages.Count - 1)
@@ -411,6 +425,9 @@ namespace NoPortsInstaller
             Window!.Content = Pages[index];
         }
 
+        /// <summary>
+        /// Moves to the previous page in the Pages list.
+        /// </summary>
         public void PreviousPage()
         {
             if (index > 0)
@@ -420,6 +437,12 @@ namespace NoPortsInstaller
             Window!.Content = Pages[index];
         }
 
+        /// <summary>
+        /// Updates the progress bar value asynchronously.
+        /// </summary>
+        /// <param name="pb">The progress bar control.</param>
+        /// <param name="value">The target value for the progress bar.</param>
+        /// <returns>A task representing the asynchronous operation.</returns>
         private async Task UpdateProgressBar(ProgressBar pb, int value)
         {
             double start = pb.Value;
@@ -434,7 +457,10 @@ namespace NoPortsInstaller
         }
 
 
-
+        /// <summary>
+        /// Populates the given ComboBox with available Atsigns.
+        /// </summary>
+        /// <param name="box">The ComboBox control to populate.</param>
         public void PopulateAtsigns(ComboBox box)
         {
             string[] files = [];
@@ -450,6 +476,11 @@ namespace NoPortsInstaller
             }
         }
 
+        /// <summary>
+        /// Normalizes the given Atsign by adding the '@' symbol if it is missing.
+        /// </summary>
+        /// <param name="atsign">The Atsign to normalize.</param>
+        /// <returns>The normalized Atsign.</returns>
         public string NormalizeAtsign(string atsign)
         {
             if (atsign.StartsWith('@'))

@@ -43,7 +43,7 @@
                 </TransformGroup>
             </Rectangle.RenderTransform>
         </Rectangle>
-        <Label Content="" HorizontalAlignment="Left" Height="28" VerticalAlignment="Top" Width="199" Margin="168,86,0,0" FontSize="11"/>
-        <Label x:Name="ErrorBox" Content="" HorizontalAlignment="Left" Margin="179,100,0,0" VerticalAlignment="Top" Width="290" Height="183" FontSize="14"/>
+        <TextBlock x:Name="ErrorBox" HorizontalAlignment="Left" Margin="184,86,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Height="194" Width="295"/>
+
     </Grid>
 </Page>

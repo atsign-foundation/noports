@@ -16,8 +16,8 @@ namespace NoPortsInstaller
         List<Page> Pages { get; set; }
         Window? Window { get; set; }
 
-        void Install(ProgressBar progress, Label status);
-        void Uninstall(ProgressBar progress);
+        Task Install(ProgressBar progress, Label status);
+        Task Uninstall(ProgressBar progress);
         void LoadPages();
         void NextPage();
         void PreviousPage();

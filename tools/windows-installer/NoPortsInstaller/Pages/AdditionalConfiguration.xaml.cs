@@ -12,7 +12,7 @@ namespace NoPortsInstaller.Pages
         {
             _controller = App.ControllerInstance;
             InitializeComponent();
-            if (_controller.InstallType.Equals(InstallType.Client))
+            if (_controller.InstallType.Equals(InstallType.Client) || _controller.InstallType.Equals(InstallType.Both))
             {
                 ClientConfig.IsEnabled = true;
             }

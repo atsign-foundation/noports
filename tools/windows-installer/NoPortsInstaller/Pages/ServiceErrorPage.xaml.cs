@@ -11,7 +11,7 @@ namespace NoPortsInstaller.Pages
         public ServiceErrorPage(string errorMsg = "")
         {
             InitializeComponent();
-            ErrorBox.Content = errorMsg;
+            ErrorBox.Text = errorMsg;
         }
 
         private void NextPageButton_Click(object sender, RoutedEventArgs e)
