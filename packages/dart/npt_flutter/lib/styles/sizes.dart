@@ -7,7 +7,7 @@ class Sizes {
   static const p4 = 4.0;
   // static const p5 = 5.0;
   // static const p8 = 8.0;
-  // static const p10 = 10.0;
+  static const p10 = 10.0;
   static const p11 = 11.0;
   static const p12 = 12.0;
   // static const p14 = 14.0;
@@ -34,12 +34,16 @@ class Sizes {
   static const p150 = 150.0;
   static const p175 = 175.0;
   // static const p185 = 185.0;
-  // static const p233 = 233.0;
+  static const p192 = 192.0;
+  static const p202 = 202.0;
   // static const p244 = 244.0;
   // static const p247 = 247.0;
   // static const p286 = 286.0;
   // static const p320 = 320.0;
-  // static const p460 = 460.0;
+  static const p436 = 436.0;
+  static const p470 = 470.0;
+  static const p654 = 654.0;
+  static const p664 = 664.0;
 }
 
 const gap0 = SizedBox();
