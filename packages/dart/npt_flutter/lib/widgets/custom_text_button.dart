@@ -158,8 +158,6 @@ class CustomTextButton extends StatelessWidget {
         onPressed: onTap,
         icon: Icon(
           iconData,
-          // color: kIconColorDark,
-          // size: Sizes.p24.toFont,
         ),
       ),
     );

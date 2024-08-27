@@ -17,18 +17,23 @@ class SettingsOverrideRelaySwitch extends StatelessWidget {
       return null;
     }, builder: (context, overrideRelay) {
       if (overrideRelay == null) return const Spinner();
-      return SwitchListTile(
-        title: const Text("Global Relay Override"),
-        value: overrideRelay,
-        onChanged: (value) {
-          var bloc = context.read<SettingsBloc>();
-          bloc.add(SettingsEditEvent(
-            settings: (bloc.state as SettingsLoadedState)
-                .settings
-                .copyWith(overrideRelay: value),
-            save: true,
-          ));
-        },
+      return Row(
+        children: [
+          Checkbox(
+            value: overrideRelay,
+            onChanged: (value) {
+              var bloc = context.read<SettingsBloc>();
+              bloc.add(SettingsEditEvent(
+                settings: (bloc.state as SettingsLoadedState).settings.copyWith(overrideRelay: value),
+                save: true,
+              ));
+            },
+          ),
+          Text(
+            "Override all profiles",
+            style: Theme.of(context).textTheme.bodyLarge,
+          ),
+        ],
       );
     });
   }

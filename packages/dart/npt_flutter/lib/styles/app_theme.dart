@@ -105,6 +105,59 @@ class AppTheme {
           ),
         ),
       ),
+      iconTheme: const IconThemeData.fallback().copyWith(
+        color: AppColor.onSurfaceColor,
+      ),
+      checkboxTheme: CheckboxThemeData(
+        fillColor: WidgetStateProperty.resolveWith((states) => Colors.white),
+        checkColor: WidgetStateProperty.resolveWith(
+          (states) => AppColor.primaryColor,
+        ),
+        side: WidgetStateBorderSide.resolveWith(
+          (states) => const BorderSide(
+            color: AppColor.primaryColor,
+            width: Sizes.p2,
+          ),
+        ),
+      ),
+      inputDecorationTheme: const InputDecorationTheme().copyWith(
+        fillColor: const Color(0xFFF4F4F4),
+        filled: true,
+        constraints: const BoxConstraints(maxWidth: 179, maxHeight: 59.21),
+        enabledBorder: const OutlineInputBorder(
+          borderSide: BorderSide(color: AppColor.textFieldBorderColor, width: Sizes.p2),
+          borderRadius: BorderRadius.all(
+            Radius.circular(Sizes.p10),
+          ),
+        ),
+        focusedBorder: const OutlineInputBorder(
+            borderSide: BorderSide(color: AppColor.textFieldBorderColor, width: Sizes.p2),
+            borderRadius: BorderRadius.all(
+              Radius.circular(Sizes.p10),
+            )),
+        disabledBorder: const OutlineInputBorder(
+            borderSide: BorderSide(color: AppColor.textFieldBorderColor, width: Sizes.p2),
+            borderRadius: BorderRadius.all(
+              Radius.circular(Sizes.p10),
+            )),
+        errorBorder: const OutlineInputBorder(
+            borderSide: BorderSide(color: AppColor.textFieldBorderColor, width: Sizes.p2),
+            borderRadius: BorderRadius.all(
+              Radius.circular(Sizes.p10),
+            )),
+        focusedErrorBorder: const OutlineInputBorder(
+            borderSide: BorderSide(color: AppColor.textFieldBorderColor, width: Sizes.p2),
+            borderRadius: BorderRadius.all(
+              Radius.circular(Sizes.p10),
+            )),
+      ),
+      radioTheme: RadioThemeData(
+        fillColor: WidgetStateColor.resolveWith(
+          (states) {
+            return AppColor.primaryColor;
+          },
+        ),
+      ),
     );
 
     // checkboxTheme: CheckboxThemeData(
