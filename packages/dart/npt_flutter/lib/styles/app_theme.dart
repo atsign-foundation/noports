@@ -87,13 +87,14 @@ class AppTheme {
       ),
       textButtonTheme: TextButtonThemeData(
         style: ButtonStyle(
+          foregroundColor: WidgetStateProperty.all<Color>(
+            AppColor.onSurfaceColor,
+          ),
           textStyle: WidgetStateProperty.all<TextStyle>(
             const TextStyle(
-              fontSize: 18,
+              // fontSize: Sizes.p12,
+              fontWeight: FontWeight.w500,
             ),
-          ),
-          foregroundColor: WidgetStateProperty.all<Color>(
-            AppColor.primaryColor,
           ),
         ),
       ),

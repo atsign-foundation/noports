@@ -6,7 +6,7 @@ class Sizes {
   // static const p3 = 3.0;
   static const p4 = 4.0;
   // static const p5 = 5.0;
-  // static const p8 = 8.0;
+  static const p8 = 8.0;
   static const p10 = 10.0;
   static const p11 = 11.0;
   static const p12 = 12.0;
@@ -20,6 +20,7 @@ class Sizes {
   // static const p24 = 24.0;
   static const p25 = 25.0;
   static const p27 = 27.0;
+  static const p30 = 30.0;
   // static const p32 = 32.0;
   // static const p34 = 34.0;
   // static const p36 = 36.0;
@@ -31,8 +32,10 @@ class Sizes {
   static const p54 = 54.0;
   // static const p99 = 99.0;
   static const p100 = 100.0;
+  static const p108 = 108.0;
   static const p150 = 150.0;
   static const p175 = 175.0;
+  static const p177 = 177.0;
   // static const p185 = 185.0;
   static const p192 = 192.0;
   static const p202 = 202.0;
@@ -63,19 +66,20 @@ const gapW38 = SizedBox(width: Sizes.p38);
 // /// Constant gap heights
 // const gapH4 = SizedBox(height: Sizes.p4);
 // const gapH8 = SizedBox(height: Sizes.p8);
-// const gapH10 = SizedBox(height: Sizes.p10);
+const gapH10 = SizedBox(height: Sizes.p10);
 // const gapH12 = SizedBox(height: Sizes.p12);
 // const gapH14 = SizedBox(height: Sizes.p14);
 // const gapH16 = SizedBox(height: Sizes.p16);
 // const gapH18 = SizedBox(height: Sizes.p18);
-// const gapH20 = SizedBox(height: Sizes.p20);
+const gapH20 = SizedBox(height: Sizes.p20);
 const gapH25 = SizedBox(height: Sizes.p25);
-// const gapH30 = SizedBox(height: Sizes.p30);
+const gapH30 = SizedBox(height: Sizes.p30);
 // const gapH32 = SizedBox(height: Sizes.p32);
 // const gapH36 = SizedBox(height: Sizes.p36);
 const gapH40 = SizedBox(height: Sizes.p40);
 // const gapH46 = SizedBox(height: Sizes.p46);
 // const gapH60 = SizedBox(height: Sizes.p60);
+const gapH108 = SizedBox(height: Sizes.p108);
 
 const kWindowsMinWindowSize = Size(684, 541);
 

@@ -17,7 +17,7 @@ class CustomCard extends StatelessWidget {
     super.key,
   });
 
-  const CustomCard.settingsDashboard({
+  const CustomCard.settingsRail({
     required this.child,
     super.key,
   })  : height = Sizes.p436,

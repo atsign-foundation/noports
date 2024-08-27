@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:npt_flutter/styles/app_color.dart';
+import 'package:npt_flutter/styles/style_constants.dart';
 
 import '../styles/sizes.dart';
 
@@ -37,15 +38,11 @@ class NptAppBar extends StatelessWidget implements PreferredSizeWidget {
                 },
                 label: const Text(
                   'Back',
-                  // style: TextStyle(
-                  //   color: AppColor.dividerColor,
-                  //   fontSize: 18,
-                  //   fontWeight: FontWeight.w500,
-                  // ),
                 ),
                 icon: const Icon(
                   Icons.arrow_back_ios,
                 ),
+                style: StyleConstants.backButtonStyle,
               ),
             ],
           ),

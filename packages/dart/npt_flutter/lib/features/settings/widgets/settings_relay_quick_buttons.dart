@@ -8,8 +8,7 @@ class SettingsRelayQuickButtons extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return BlocSelector<SettingsBloc, SettingsState, String?>(
-        selector: (SettingsState state) {
+    return BlocSelector<SettingsBloc, SettingsState, String?>(selector: (SettingsState state) {
       if (state is SettingsLoadedState) {
         return state.settings.relayAtsign;
       }
@@ -18,7 +17,7 @@ class SettingsRelayQuickButtons extends StatelessWidget {
       if (relayAtsign == null) return const SizedBox();
       return Row(
         children: [
-          const SizedBox(width: 200),
+          const SizedBox(width: 50),
           const Text('Populate Relay atSign with a preset:'),
           ...Constants.defaultRelayOptions.entries.map(
             (e) => SizedBox(
@@ -31,9 +30,7 @@ class SettingsRelayQuickButtons extends StatelessWidget {
                 onChanged: (value) {
                   var bloc = context.read<SettingsBloc>();
                   bloc.add(SettingsEditEvent(
-                    settings: (bloc.state as SettingsLoadedState)
-                        .settings
-                        .copyWith(relayAtsign: value),
+                    settings: (bloc.state as SettingsLoadedState).settings.copyWith(relayAtsign: value),
                     save: true,
                   ));
                 },

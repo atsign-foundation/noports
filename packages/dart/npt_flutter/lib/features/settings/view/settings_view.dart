@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:npt_flutter/features/logging/logging.dart';
 import 'package:npt_flutter/features/settings/settings.dart';
+import 'package:npt_flutter/features/settings/widgets/contact_list_tile.dart';
 import 'package:npt_flutter/widgets/custom_card.dart';
+import 'package:npt_flutter/widgets/custom_text_button.dart';
 import 'package:npt_flutter/widgets/spinner.dart';
 
 import '../../../styles/sizes.dart';
@@ -50,9 +52,23 @@ class SettingsView extends StatelessWidget {
                   ),
                   Positioned(
                     left: 0,
-                    child: CustomCard.settingsDashboard(
-                      child: Column(
-                        children: [Text('Relay Atsign')],
+                    child: CustomCard.settingsRail(
+                      child: Padding(
+                        padding: EdgeInsets.all(0.0),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            gapH30,
+                            CustomTextButton.discord(),
+                            CustomTextButton.email(),
+                            CustomTextButton.faq(),
+                            CustomTextButton.privacyPolicy(),
+                            CustomTextButton.feedback(),
+                            CustomTextButton.backUpYourKey(),
+                            CustomTextButton.resetAtsign(),
+                            ContactListTile(),
+                          ],
+                        ),
                       ),
                     ),
                   ),
