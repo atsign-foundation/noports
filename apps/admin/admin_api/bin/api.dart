@@ -34,7 +34,9 @@ Future<void> _createGroups(PolicyService api) async {
     devices: [
       Device(name: 'bastion1', permitOpens: ['*:*'])
     ],
-    deviceGroups: [],
+    deviceGroups: [
+      DeviceGroup(name: 'atsign_staging_cloud', permitOpens: ['localhost:*','*:22'])
+    ],
   );
 
   await api.updateUserGroup(sysAdmins);

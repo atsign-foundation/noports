@@ -9,3 +9,7 @@
     font-weight: bold;
     background-color: coral;
 }
+
+.container {
+    max-width: 95%;
+}
