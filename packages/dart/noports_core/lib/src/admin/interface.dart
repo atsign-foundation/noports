@@ -6,33 +6,18 @@ abstract interface class PolicyService {
   /// Method rather than getter, as we will add query parameters later
   Future<List<UserGroup>> getUserGroups();
 
-  /// Get a group object by its name
-  Future<UserGroup?> getUserGroup(String name);
+  /// Get a group object by its ID
+  Future<UserGroup?> getUserGroup(String id);
 
-  /// Add or update a group.
+  /// Create a group. Must not already have an `id`
+  Future<UserGroup> createUserGroup(UserGroup group);
+
+  /// Update a group. Must already have an `id`
   Future<void> updateUserGroup(UserGroup group);
 
   /// Delete a group.
   /// Return true if deleted, false if not.
-  Future<bool> deleteUserGroup(String groupId);
-
-  /// Get (some of) the client-side users known to this policy service.
-  /// Method rather than getter, as we will add query parameters later.
-  Future<List<User>> getUsers();
-
-  /// Get user object by its atSign
-  Future<User?> getUser(String atSign);
-
-  /// Add or update a user.
-  Future<void> updateUser(User user);
-
-  /// Delete a user.
-  /// Return true if deleted, false if not.
-  /// Throws a StateError if user is still a member of any group
-  Future<bool> deleteUser(String atSign);
-
-  /// Get the list of groups of which this user is a member.
-  Future<List<UserGroup>> getGroupsForUser(String atSign);
+  Future<bool> deleteUserGroup(String id);
 
   factory PolicyService.withAtClient({
     required AtClient atClient,

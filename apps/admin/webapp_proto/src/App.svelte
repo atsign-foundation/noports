@@ -7,7 +7,7 @@
 </script>
 
 <div class="container">
-    <h1 style="color: darkorange"><img src={logoNoPorts} alt="AtSign NoPorts" height="35px"/> Policy Manager</h1>
+    <h1 style="color: coral"><img src={logoNoPorts} alt="AtSign NoPorts" height="35px"/> Policy Manager</h1>
 
     <hr/>
 

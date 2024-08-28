@@ -9,7 +9,6 @@ void main(List<String> args) async {
   CLIBase cli = await CLIBase.fromCommandLineArgs(args);
   final api = PolicyService.withAtClient(atClient: cli.atClient);
 
-  await _createUsers(api);
   await _createGroups(api);
 
   final app = Alfred();
@@ -17,12 +16,6 @@ void main(List<String> args) async {
   app.get('/static/*', (req, res) => Directory('static'));
   await expose.policy(app, '/api/policy', api);
   await app.listen();
-}
-
-Future<void> _createUsers(PolicyService api) async {
-  await api.updateUser(User(atSign: '@alice', name: 'Alice'));
-  await api.updateUser(User(atSign: '@bob', name: 'Bob'));
-  await api.updateUser(User(atSign: '@chuck', name: 'chuck'));
 }
 
 Future<void> _createGroups(PolicyService api) async {
@@ -39,7 +32,7 @@ Future<void> _createGroups(PolicyService api) async {
     ],
   );
 
-  await api.updateUserGroup(sysAdmins);
+  await api.createUserGroup(sysAdmins);
 
   UserGroup policyOwners = UserGroup(
     name: 'PolicyOwners',
@@ -51,7 +44,7 @@ Future<void> _createGroups(PolicyService api) async {
     ],
     deviceGroups: [],
   );
-  await api.updateUserGroup(policyOwners);
+  await api.createUserGroup(policyOwners);
 
   UserGroup rdpUsers = UserGroup(
     name: 'RdpUsers',
@@ -63,5 +56,5 @@ Future<void> _createGroups(PolicyService api) async {
     ],
     deviceGroups: [],
   );
-  await api.updateUserGroup(rdpUsers);
+  await api.createUserGroup(rdpUsers);
 }

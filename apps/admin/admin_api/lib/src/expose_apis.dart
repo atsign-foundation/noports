@@ -6,62 +6,6 @@ import 'package:at_client/at_client.dart';
 import 'package:noports_core/admin.dart';
 
 policy(Alfred app, String pathPrefix, PolicyService api) {
-  // all users TODO add query parameters for search, pagination etc
-  app.get('$pathPrefix/user', (req, res) async {
-    stderr.writeln('Fetching all users');
-    final r = jsonEncode(await api.getUsers());
-    stderr.writeln('Fetched all users');
-    return r;
-  });
-
-  // get individual user - {"atSign":"@alice","name":"Joe Smith"}
-  app.get('$pathPrefix/user/:atsign', (req, res) async {
-    final atSign = Uri.decodeFull(req.uri.toString()).split('/').last;
-    stderr.writeln('Fetching user $atSign');
-    final r = jsonEncode(await api.getUser(atSign));
-    stderr.writeln('Fetched user $atSign');
-    return r;
-  });
-
-  // add or update a user
-  app.post('$pathPrefix/user/:atsign', (req, res) async {
-    final atSign = Uri.decodeFull(req.uri.toString()).split('/').last;
-    stderr.writeln('Updating user $atSign');
-    User u;
-    try {
-      u = User.fromJson((await req.body)! as Map<String, dynamic>);
-    } catch (_) {
-      throw IllegalArgumentException('Unable to construct User from this json');
-    }
-    if (atSign != u.atSign) {
-      throw IllegalArgumentException('Mis-matched atSign');
-    }
-    await api.updateUser(u);
-    stderr.writeln('Updated user $atSign');
-  });
-
-  // delete a user
-  app.delete('$pathPrefix/user/:atsign', (req, res) async {
-    final atSign = Uri.decodeFull(req.uri.toString()).split('/').last;
-    stderr.writeln('Deleting user $atSign');
-    try {
-      await api.deleteUser(atSign);
-    } on Exception catch (e) {
-      res.statusCode = 400;
-      await res.send(e);
-    }
-    stderr.writeln('Deleted user $atSign');
-  });
-
-  // get groups that a user is a member of
-  app.get('$pathPrefix/user/:atsign/groups', (req, res) async {
-    final atSign = Uri.decodeFull(req.uri.toString()).split('/').last;
-    stderr.writeln('Fetching groups for user $atSign');
-    final r = jsonEncode(await api.getGroupsForUser(atSign));
-    stderr.writeln('Fetched groups for user $atSign');
-    return r;
-  });
-
   // all groups TODO add query parameters for search, pagination etc
   app.get('$pathPrefix/group', (req, res) async {
     stderr.writeln('Fetching all groups');
@@ -70,27 +14,74 @@ policy(Alfred app, String pathPrefix, PolicyService api) {
     return r;
   });
 
-  // get individual group -
-  // {"name":"sysadmins",
-  //  "userAtSigns":["@alice", ...],
-  //  "permissions":{
-  //    "daemonAtSigns":["@bob", ...],
-  //    "devices":{
-  //      "name":"some_device_name",
-  //      "permitOpens":["localhost:3000", ...]
-  //    },
-  //    "deviceGroups":{
-  //      "name":"some_device_group_name",
-  //      "permitOpens":["localhost:3000", ...]
-  //    }
-  //  }
-  // }
-  app.get('$pathPrefix/group/:name', (req, res) async {
-    final n = req.params['name'].toString();
-    stderr.writeln('Fetching group $n');
-    final r = jsonEncode(await api.getUserGroup(n));
-    stderr.writeln('Fetched group $n');
+  // get by group ID
+  app.get('$pathPrefix/group/:id', (req, res) async {
+    final id = req.params['id'].toString();
+    stderr.writeln('Fetching group $id');
+    final g = await api.getUserGroup(id);
+    if (g == null) {
+      res.statusCode = 404;
+      await res.send('No group with id $id');
+      return jsonEncode({});
+    }
+    final r = jsonEncode(g);
+    stderr.writeln('Fetched group $id (${g.name})');
     return r;
+  });
+
+  // create new group
+  app.post('$pathPrefix/group', (req, res) async {
+    stderr.writeln('Creating new group');
+    UserGroup ug;
+    try {
+      ug = UserGroup.fromJson((await req.body)! as Map<String, dynamic>);
+    } catch (_) {
+      throw IllegalArgumentException('Unable to construct User from this json');
+    }
+    try {
+      await api.createUserGroup(ug);
+      stderr.writeln('Updated group ${ug.name}');
+      return jsonEncode(ug);
+    } catch (e) {
+      res.statusCode = 400;
+      await res.send(e.toString());
+    }
+  });
+
+  // update group
+  app.put('$pathPrefix/group/:id', (req, res) async {
+    final id = req.params['id'].toString();
+    stderr.writeln('Updating group with ID $id');
+
+    UserGroup ug;
+    try {
+      ug = UserGroup.fromJson((await req.body)! as Map<String, dynamic>);
+    } catch (_) {
+      throw IllegalArgumentException('Unable to construct User from this json');
+    }
+    if (ug.id != id) {
+      throw IllegalArgumentException('GroupID mis-match');
+    }
+    try {
+      await api.updateUserGroup(ug);
+      stderr.writeln('Updated group ${ug.name}');
+      return jsonEncode(ug);
+    } catch (e) {
+      res.statusCode = 400;
+      await res.send(e.toString());
+    }
+  });
+
+  // delete group
+  app.delete('$pathPrefix/group/:id', (req, res) async {
+    final id = req.params['id'].toString();
+    stderr.writeln('Updating group with ID $id');
+    try {
+      await api.deleteUserGroup(id);
+    } catch (e) {
+      res.statusCode = 400;
+      await res.send(e.toString());
+    }
   });
 
   app.printRoutes();

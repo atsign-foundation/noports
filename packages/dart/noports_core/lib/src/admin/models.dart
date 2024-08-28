@@ -3,23 +3,6 @@ import 'package:json_annotation/json_annotation.dart';
 part 'models.g.dart';
 
 @JsonSerializable()
-class User {
-  // {"atSign":"@alice","name":"Joe Smith"}
-  final String atSign;
-
-  final String name;
-
-  User({
-    required this.atSign,
-    required this.name,
-  });
-
-  Map<String, dynamic> toJson() => _$UserToJson(this);
-
-  static User fromJson(Map<String, dynamic> json) => _$UserFromJson(json);
-}
-
-@JsonSerializable()
 class Device {
   final String name;
 
@@ -54,20 +37,21 @@ class DeviceGroup {
 
 @JsonSerializable()
 class UserGroup {
-  // {"name":"sysadmins",
+  // {
+  //  "id":"xyz123",
+  //  "name":"sysadmins",
   //  "userAtSigns":["@alice", ...],
-  //  "permissions":{
-  //    "daemonAtSigns":["@bob", ...],
-  //    "devices":{
-  //      "name":"some_device_name",
-  //      "permitOpens":["localhost:3000", ...]
-  //    },
-  //    "deviceGroups":{
-  //      "name":"some_device_group_name",
-  //      "permitOpens":["localhost:3000", ...]
-  //    }
+  //  "daemonAtSigns":["@bob", ...],
+  //  "devices":{
+  //    "name":"some_device_name",
+  //    "permitOpens":["localhost:3000", ...]
+  //  },
+  //  "deviceGroups":{
+  //    "name":"some_device_group_name",
+  //    "permitOpens":["localhost:3000", ...]
   //  }
   // }
+  String? id;
   final String name;
   final String description;
 
@@ -79,8 +63,9 @@ class UserGroup {
 
   final List<String> userAtSigns;
 
-  factory UserGroup.empty({required String name, required String description}) {
+  factory UserGroup.empty({String? id, required String name, required String description}) {
     return UserGroup(
+        id: id,
         name: name,
         description: description,
         userAtSigns: [],
@@ -90,6 +75,7 @@ class UserGroup {
   }
 
   UserGroup({
+    this.id,
     required this.name,
     required this.description,
     required this.userAtSigns,
