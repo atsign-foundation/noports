@@ -39,6 +39,45 @@ void main(List<String> args) async {
 ///
 /// - The value at 2a or 2b will be a list of permitOpens (hostMask:portMask)
 ///
+/// Uses a policy.yaml file like the following:
+/// userGroups:
+///   "api_users":
+///     userAtSigns:
+///       - "@alice"
+///       - "@bob"
+///       - "@chuck"
+///       - "@derek"
+///     permissions:
+///       daemonAtSigns:
+///         - "@zaphod"
+///         - "@dentarthurdent"
+///       deviceNames:
+///         "h2g2":
+///           - "localhost:3000"
+///   "rdp_users":
+///     userAtSigns:
+///       - "@charlie"
+///       - "@filip"
+///       - "@dipak"
+///     permissions:
+///       daemonAtSigns:
+///         - "@zaphod"
+///         - "@dentarthurdent"
+///       deviceNames:
+///       deviceGroupNames:
+///         "network_name_123":
+///           - "*:3389"
+///   "ssh_users":
+///     userAtSigns:
+///       - "@bob"
+///     permissions:
+///       daemonAtSigns:
+///         - "@zaphod"
+///         - "@dentarthurdent"
+///       deviceGroupNames:
+///       deviceNames:
+///         "h2g2":
+///           - "*:22"
 class FileBasedPolicy implements NPARequestHandler {
   YamlMap yaml;
 
@@ -188,58 +227,5 @@ class FileBasedPolicy implements NPARequestHandler {
           ' or the deviceGroup ${authCheckRequest.daemonDeviceGroupName}',
       permitOpen: [],
     );
-  }
-
-  // TODO move to unit tests
-  // ignore: unused_element
-  _randomChecks() {
-    doAuthCheck(NPAAuthCheckRequest(
-      daemonAtsign: '@baboonblue18',
-      daemonDeviceName: 'mbp',
-      daemonDeviceGroupName: 'gary_home',
-      clientAtsign: '@garycasey',
-    )).then((resp) => print(resp));
-
-    doAuthCheck(NPAAuthCheckRequest(
-      daemonAtsign: '@baboonblue18',
-      daemonDeviceName: 'gary_windows_box_1',
-      daemonDeviceGroupName: 'gary_home',
-      clientAtsign: '@garycasey',
-    )).then((resp) => print(resp));
-
-    doAuthCheck(NPAAuthCheckRequest(
-      daemonAtsign: '@baboonblue18',
-      daemonDeviceName: 'mbp',
-      daemonDeviceGroupName: 'gary_home',
-      clientAtsign: '@cconstab',
-    )).then((resp) => print(resp));
-
-    doAuthCheck(NPAAuthCheckRequest(
-      daemonAtsign: '@baboonblue18',
-      daemonDeviceName: 'gary_windows_box_1',
-      daemonDeviceGroupName: 'gary_home',
-      clientAtsign: '@cconstab',
-    )).then((resp) => print(resp));
-
-    doAuthCheck(NPAAuthCheckRequest(
-      daemonAtsign: '@baboonblue18',
-      daemonDeviceName: 'mbp',
-      daemonDeviceGroupName: 'gary_home',
-      clientAtsign: '@colin',
-    )).then((resp) => print(resp));
-
-    doAuthCheck(NPAAuthCheckRequest(
-      daemonAtsign: '@baboonblue18',
-      daemonDeviceName: 'gary_windows_box_1',
-      daemonDeviceGroupName: 'gary_home',
-      clientAtsign: '@colin',
-    )).then((resp) => print(resp));
-
-    doAuthCheck(NPAAuthCheckRequest(
-      daemonAtsign: '@baboonblue18',
-      daemonDeviceName: 'gary_lab_device_1',
-      daemonDeviceGroupName: 'gary_lab',
-      clientAtsign: '@colin',
-    )).then((resp) => print(resp));
   }
 }
