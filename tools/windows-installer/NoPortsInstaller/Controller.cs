@@ -24,7 +24,7 @@ namespace NoPortsInstaller
         public List<Page> Pages { get; set; }
         private int index = 0;
         public Window? Window { get; set; }
-        private string? archiveDirectory;
+        private string archiveDirectory;
 
         public Controller()
         {
@@ -38,6 +38,7 @@ namespace NoPortsInstaller
             PermittedPorts = "localhost:22,localhost:3389";
             Pages = [];
             IsInstalled = false;
+            archiveDirectory = Path.GetFullPath(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), @"Temp\NoPorts\"));
         }
 
         /// <summary>
@@ -56,9 +57,12 @@ namespace NoPortsInstaller
                 await DownloadArchive();
                 await UpdateProgressBar(progress, 50);
                 ExtractArchive();
-                await UpdateProgressBar(progress, 90);
+                status.Content = "Updating Trusted Certificates...";
+                UpdateTrustedCerts();
+                await UpdateProgressBar(progress, 75);
                 status.Content = "Creating Registries NoPorts...";
                 CreateRegistryKeys();
+                await UpdateProgressBar(progress, 90);
                 status.Content = "Setting up NoPorts Service...";
                 if (InstallType.Equals(InstallType.Device))
                 {
@@ -229,7 +233,6 @@ namespace NoPortsInstaller
             var downloadUrl = "";
             JsonDocument jsonDocument;
 
-            archiveDirectory = Path.GetFullPath(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), @"Temp\NoPorts\"));
             if (!Directory.Exists(archiveDirectory))
             {
                 Directory.CreateDirectory(archiveDirectory);
@@ -348,6 +351,44 @@ namespace NoPortsInstaller
             }
             Process.Start("sc", "description sshnpd NoPorts-SSH-Daemon");
             return;
+        }
+
+        private void UpdateTrustedCerts()
+        {
+            ProcessStartInfo startInfo = new()
+            {
+                FileName = "Certutil.exe",
+                Arguments = "-generateSSTFromWU roots.sst",
+                RedirectStandardOutput = true,
+                UseShellExecute = false,
+                CreateNoWindow = true
+            };
+
+            using (Process? process = Process.Start(startInfo))
+            {
+                if (process != null)
+                {
+                    process.WaitForExit();
+                }
+            }
+
+            startInfo = new ProcessStartInfo
+            {
+                FileName = "powershell.exe",
+                Arguments = "-Command \"$sstStore = Get-ChildItem -Path c:\\trusted-root-certs\\roots.sst; $sstStore | Import-Certificate -CertStoreLocation Cert:\\LocalMachine\\Root\"",
+                RedirectStandardOutput = true,
+                UseShellExecute = false,
+                CreateNoWindow = true
+            };
+
+            using (Process? process = Process.Start(startInfo))
+            {
+                if (process != null)
+                {
+                    process.WaitForExit();
+                }
+            }
+
         }
 
         private void CreateRegistryKeys()
