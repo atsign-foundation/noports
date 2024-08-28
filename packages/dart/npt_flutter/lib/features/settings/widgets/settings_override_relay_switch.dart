@@ -29,9 +29,8 @@ class SettingsOverrideRelaySwitch extends StatelessWidget {
               ));
             },
           ),
-          Text(
+          const Text(
             "Override all profiles",
-            style: Theme.of(context).textTheme.bodyLarge,
           ),
         ],
       );

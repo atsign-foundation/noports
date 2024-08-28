@@ -10,7 +10,7 @@ class ExportLogsButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ElevatedButton(
+    return TextButton.icon(
       onPressed: () async {
         var list = context.read<LogsCubit>().logs;
         final timestamp = DateTime.now().millisecondsSinceEpoch;
@@ -25,7 +25,8 @@ class ExportLogsButton extends StatelessWidget {
         await f.create(recursive: true);
         await f.writeAsString(list.join("\n"));
       },
-      child: const Text("Export Logs"),
+      label: const Text("Export Logs"),
+      icon: const Icon(Icons.download),
     );
   }
 }

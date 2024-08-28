@@ -1,15 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:npt_flutter/features/logging/logging.dart';
 import 'package:npt_flutter/features/settings/settings.dart';
+import 'package:npt_flutter/features/settings/widgets/advance_section.dart';
 import 'package:npt_flutter/features/settings/widgets/contact_list_tile.dart';
-import 'package:npt_flutter/features/settings/widgets/default_relay_slection_view.dart';
+import 'package:npt_flutter/features/settings/widgets/default_relay_section.dart';
+import 'package:npt_flutter/features/settings/widgets/language_section.dart';
 import 'package:npt_flutter/widgets/custom_card.dart';
 import 'package:npt_flutter/widgets/custom_text_button.dart';
 import 'package:npt_flutter/widgets/spinner.dart';
 
 import '../../../styles/sizes.dart';
-import '../widgets/dashboard_selection_view.dart';
+import '../widgets/dashboard_section.dart';
 
 class SettingsView extends StatelessWidget {
   const SettingsView({super.key});
@@ -42,15 +43,13 @@ class SettingsView extends StatelessWidget {
                         ),
                         child: ListView(children: const [
                           SettingsErrorHint(),
-                          DefaultRelaySelectionView(),
+                          DefaultRelaySection(),
                           gapH25,
-                          DashboardSelectionView(),
-                          Text("Advanced"),
-                          Row(children: [
-                            Text("Enable Logging"),
-                            EnableLogsBox(),
-                            ExportLogsButton(),
-                          ]),
+                          DashboardSection(),
+                          gapH25,
+                          AdvanceSection(),
+                          gapH25,
+                          LanguageSection(),
                         ]),
                       ),
                     ),

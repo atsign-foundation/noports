@@ -6,8 +6,8 @@ import '../../../widgets/custom_container.dart';
 import 'settings_override_relay_switch.dart';
 import 'settings_relay_quick_buttons.dart';
 
-class DefaultRelaySelectionView extends StatelessWidget {
-  const DefaultRelaySelectionView({super.key});
+class DefaultRelaySection extends StatelessWidget {
+  const DefaultRelaySection({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -16,7 +16,7 @@ class DefaultRelaySelectionView extends StatelessWidget {
         Row(
           children: [
             SvgPicture.asset('assets/radio_button.svg'),
-            Text(" Default Relay Selection", style: Theme.of(context).textTheme.bodyLarge),
+            const Text(" Default Relay Selection"),
           ],
         ),
         gapH16,

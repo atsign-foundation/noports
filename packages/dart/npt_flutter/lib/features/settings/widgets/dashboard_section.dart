@@ -5,8 +5,8 @@ import '../../../styles/sizes.dart';
 import '../../../widgets/custom_container.dart';
 import '../settings.dart';
 
-class DashboardSelectionView extends StatelessWidget {
-  const DashboardSelectionView({super.key});
+class DashboardSection extends StatelessWidget {
+  const DashboardSection({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -20,7 +20,7 @@ class DashboardSelectionView extends StatelessWidget {
         ),
         gapH16,
         const CustomContainer.background(
-          child: SettingsViewLayoutSelector(),
+          child: SettingsDashboardLayoutSelector(),
         ),
       ],
     );

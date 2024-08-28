@@ -5,8 +5,8 @@ import 'package:npt_flutter/features/settings/settings.dart';
 import 'package:npt_flutter/styles/sizes.dart';
 import 'package:npt_flutter/widgets/spinner.dart';
 
-class SettingsViewLayoutSelector extends StatelessWidget {
-  const SettingsViewLayoutSelector({
+class SettingsDashboardLayoutSelector extends StatelessWidget {
+  const SettingsDashboardLayoutSelector({
     super.key,
   });
 

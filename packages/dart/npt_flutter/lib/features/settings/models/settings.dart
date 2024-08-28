@@ -1,5 +1,5 @@
-import 'package:npt_flutter/app.dart';
 import 'package:json_annotation/json_annotation.dart';
+import 'package:npt_flutter/app.dart';
 
 part 'settings.g.dart';
 
@@ -18,6 +18,8 @@ enum PreferredViewLayout {
 enum Language {
   @JsonValue("en")
   english,
+  @JsonValue("es")
+  spanish,
 }
 
 @JsonSerializable()
@@ -59,8 +61,7 @@ class Settings extends Loggable {
   static const String customRelayKey = 'custom';
 
   Map<String, dynamic> toJson() => _$SettingsToJson(this);
-  factory Settings.fromJson(Map<String, dynamic> json) =>
-      _$SettingsFromJson(json);
+  factory Settings.fromJson(Map<String, dynamic> json) => _$SettingsFromJson(json);
 
   @override
   List<Object?> get props => [

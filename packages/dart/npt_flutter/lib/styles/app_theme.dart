@@ -71,94 +71,126 @@ class AppTheme {
 
   static ThemeData light() {
     return ThemeData(
-      fontFamily: 'Poppins',
-      useMaterial3: true,
-      brightness: Brightness.light,
-      textTheme: lightTextTheme,
-      colorScheme: const ColorScheme.light().copyWith(
-          primary: AppColor.primaryColor,
-          surface: AppColor.surfaceColor,
-          onSurface: AppColor.onSurfaceColor,
-          surfaceTint: Colors.transparent),
-      appBarTheme: const AppBarTheme(
-        color: AppColor.surfaceColor,
-        foregroundColor: Colors.black,
-        surfaceTintColor: Colors.transparent,
-      ),
-      textButtonTheme: TextButtonThemeData(
-        style: ButtonStyle(
-          foregroundColor: WidgetStateProperty.all<Color>(
-            AppColor.onSurfaceColor,
-          ),
-          textStyle: WidgetStateProperty.all<TextStyle>(
-            const TextStyle(
-              // fontSize: Sizes.p12,
-              fontWeight: FontWeight.w500,
+        fontFamily: 'Poppins',
+        useMaterial3: true,
+        brightness: Brightness.light,
+        textTheme: lightTextTheme,
+        colorScheme: const ColorScheme.light().copyWith(
+            primary: AppColor.primaryColor,
+            surface: AppColor.surfaceColor,
+            onSurface: AppColor.onSurfaceColor,
+            surfaceTint: Colors.transparent),
+        appBarTheme: const AppBarTheme(
+          color: AppColor.surfaceColor,
+          foregroundColor: Colors.black,
+          surfaceTintColor: Colors.transparent,
+        ),
+        textButtonTheme: TextButtonThemeData(
+          style: ButtonStyle(
+            foregroundColor: WidgetStateProperty.all<Color>(
+              AppColor.onSurfaceColor,
+            ),
+            textStyle: WidgetStateProperty.all<TextStyle>(
+              const TextStyle(
+                // fontSize: Sizes.p12,
+                fontWeight: FontWeight.w500,
+              ),
             ),
           ),
         ),
-      ),
-      iconButtonTheme: IconButtonThemeData(
-        style: ButtonStyle(
-          foregroundColor: WidgetStateProperty.all<Color>(
-            AppColor.onSurfaceColor,
+        iconButtonTheme: IconButtonThemeData(
+          style: ButtonStyle(
+            foregroundColor: WidgetStateProperty.all<Color>(
+              AppColor.onSurfaceColor,
+            ),
           ),
         ),
-      ),
-      iconTheme: const IconThemeData.fallback().copyWith(
-        color: AppColor.onSurfaceColor,
-      ),
-      checkboxTheme: CheckboxThemeData(
-        fillColor: WidgetStateProperty.resolveWith((states) => Colors.white),
-        checkColor: WidgetStateProperty.resolveWith(
-          (states) => AppColor.primaryColor,
+        iconTheme: const IconThemeData.fallback().copyWith(
+          color: AppColor.onSurfaceColor,
         ),
-        side: WidgetStateBorderSide.resolveWith(
-          (states) => const BorderSide(
-            color: AppColor.primaryColor,
-            width: Sizes.p2,
+        checkboxTheme: CheckboxThemeData(
+          fillColor: WidgetStateProperty.resolveWith((states) => Colors.white),
+          checkColor: WidgetStateProperty.resolveWith(
+            (states) => AppColor.primaryColor,
+          ),
+          side: WidgetStateBorderSide.resolveWith(
+            (states) => const BorderSide(
+              color: AppColor.primaryColor,
+              width: Sizes.p2,
+            ),
           ),
         ),
-      ),
-      inputDecorationTheme: const InputDecorationTheme().copyWith(
-        fillColor: const Color(0xFFF4F4F4),
-        filled: true,
-        constraints: const BoxConstraints(maxWidth: 179, maxHeight: 59.21),
-        enabledBorder: const OutlineInputBorder(
-          borderSide: BorderSide(color: AppColor.textFieldBorderColor, width: Sizes.p2),
-          borderRadius: BorderRadius.all(
-            Radius.circular(Sizes.p10),
+        inputDecorationTheme: const InputDecorationTheme().copyWith(
+          fillColor: const Color(0xFFF4F4F4),
+          filled: true,
+          constraints: const BoxConstraints(maxWidth: 179, maxHeight: 59.21),
+          enabledBorder: const OutlineInputBorder(
+            borderSide: BorderSide(color: AppColor.textFieldBorderColor, width: Sizes.p2),
+            borderRadius: BorderRadius.all(
+              Radius.circular(Sizes.p10),
+            ),
+          ),
+          focusedBorder: const OutlineInputBorder(
+              borderSide: BorderSide(color: AppColor.textFieldBorderColor, width: Sizes.p2),
+              borderRadius: BorderRadius.all(
+                Radius.circular(Sizes.p10),
+              )),
+          disabledBorder: const OutlineInputBorder(
+              borderSide: BorderSide(color: AppColor.textFieldBorderColor, width: Sizes.p2),
+              borderRadius: BorderRadius.all(
+                Radius.circular(Sizes.p10),
+              )),
+          errorBorder: const OutlineInputBorder(
+              borderSide: BorderSide(color: AppColor.textFieldBorderColor, width: Sizes.p2),
+              borderRadius: BorderRadius.all(
+                Radius.circular(Sizes.p10),
+              )),
+          focusedErrorBorder: const OutlineInputBorder(
+              borderSide: BorderSide(color: AppColor.textFieldBorderColor, width: Sizes.p2),
+              borderRadius: BorderRadius.all(
+                Radius.circular(Sizes.p10),
+              )),
+        ),
+        radioTheme: RadioThemeData(
+          fillColor: WidgetStateColor.resolveWith(
+            (states) {
+              return AppColor.primaryColor;
+            },
           ),
         ),
-        focusedBorder: const OutlineInputBorder(
-            borderSide: BorderSide(color: AppColor.textFieldBorderColor, width: Sizes.p2),
-            borderRadius: BorderRadius.all(
-              Radius.circular(Sizes.p10),
-            )),
-        disabledBorder: const OutlineInputBorder(
-            borderSide: BorderSide(color: AppColor.textFieldBorderColor, width: Sizes.p2),
-            borderRadius: BorderRadius.all(
-              Radius.circular(Sizes.p10),
-            )),
-        errorBorder: const OutlineInputBorder(
-            borderSide: BorderSide(color: AppColor.textFieldBorderColor, width: Sizes.p2),
-            borderRadius: BorderRadius.all(
-              Radius.circular(Sizes.p10),
-            )),
-        focusedErrorBorder: const OutlineInputBorder(
-            borderSide: BorderSide(color: AppColor.textFieldBorderColor, width: Sizes.p2),
-            borderRadius: BorderRadius.all(
-              Radius.circular(Sizes.p10),
-            )),
-      ),
-      radioTheme: RadioThemeData(
-        fillColor: WidgetStateColor.resolveWith(
-          (states) {
-            return AppColor.primaryColor;
-          },
-        ),
-      ),
-    );
+        dropdownMenuTheme: DropdownMenuThemeData(
+          inputDecorationTheme: const InputDecorationTheme().copyWith(
+            fillColor: const Color(0xE5FAFAFA),
+            filled: true,
+            constraints: const BoxConstraints(maxWidth: 179, maxHeight: 59.21),
+            enabledBorder: const OutlineInputBorder(
+              borderSide: BorderSide(color: AppColor.textFieldBorderColor, width: Sizes.p2),
+              borderRadius: BorderRadius.all(
+                Radius.circular(Sizes.p10),
+              ),
+            ),
+            focusedBorder: const OutlineInputBorder(
+                borderSide: BorderSide(color: AppColor.textFieldBorderColor, width: Sizes.p2),
+                borderRadius: BorderRadius.all(
+                  Radius.circular(Sizes.p10),
+                )),
+            disabledBorder: const OutlineInputBorder(
+                borderSide: BorderSide(color: AppColor.textFieldBorderColor, width: Sizes.p2),
+                borderRadius: BorderRadius.all(
+                  Radius.circular(Sizes.p10),
+                )),
+            errorBorder: const OutlineInputBorder(
+                borderSide: BorderSide(color: AppColor.textFieldBorderColor, width: Sizes.p2),
+                borderRadius: BorderRadius.all(
+                  Radius.circular(Sizes.p10),
+                )),
+            focusedErrorBorder: const OutlineInputBorder(
+                borderSide: BorderSide(color: AppColor.textFieldBorderColor, width: Sizes.p2),
+                borderRadius: BorderRadius.all(
+                  Radius.circular(Sizes.p10),
+                )),
+          ),
+        ));
 
     // checkboxTheme: CheckboxThemeData(
     //   fillColor: WidgetStateColor.resolveWith(
