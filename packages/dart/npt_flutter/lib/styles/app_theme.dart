@@ -13,8 +13,8 @@ class AppTheme {
       fontWeight: FontWeight.w500,
     ),
     bodyMedium: TextStyle(
-      fontSize: Sizes.p12,
-      fontWeight: FontWeight.w400,
+      fontSize: Sizes.p15,
+      fontWeight: FontWeight.w500,
     ),
     bodySmall: TextStyle(
       fontSize: Sizes.p11,

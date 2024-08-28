@@ -9,6 +9,7 @@ import 'package:npt_flutter/widgets/custom_text_button.dart';
 import 'package:npt_flutter/widgets/spinner.dart';
 
 import '../../../styles/sizes.dart';
+import '../widgets/dashboard_selection_view.dart';
 
 class SettingsView extends StatelessWidget {
   const SettingsView({super.key});
@@ -42,9 +43,8 @@ class SettingsView extends StatelessWidget {
                         child: ListView(children: const [
                           SettingsErrorHint(),
                           DefaultRelaySelectionView(),
-                          SizedBox(height: 100),
-                          Text("View Mode"),
-                          SettingsViewLayoutSelector(),
+                          gapH25,
+                          DashboardSelectionView(),
                           Text("Advanced"),
                           Row(children: [
                             Text("Enable Logging"),
