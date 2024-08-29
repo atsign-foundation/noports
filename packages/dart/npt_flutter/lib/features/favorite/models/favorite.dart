@@ -29,6 +29,9 @@ sealed class Favorite extends Loggable {
   Future<String?> get displayName;
   String? get status;
   Iterable<String> get profileIds;
+
+  /// These 4 functions are for interacting with favorites in the tray,
+  /// since the implementation may differ by type of favoritable
   bool isFavoriteMatch(Favoritable favoritable);
   bool isLoadedInProfiles(Iterable<String> profiles);
   bool containsProfile(String uuid);

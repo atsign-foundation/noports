@@ -27,7 +27,7 @@ class _TrayManagerState extends State<TrayManager>
     }
 
     void reloadTray(context, _) {
-      context.read<TrayCubit>().reloadFavorites();
+      context.read<TrayCubit>().reload();
     }
 
     var profileCacheCubit = context.read<ProfileCacheCubit>();
@@ -40,6 +40,9 @@ class _TrayManagerState extends State<TrayManager>
       },
       builder: (context, profiles) => MultiBlocListener(
         listeners: [
+          /// Reload the tray whenever one of the following states changes
+          /// Note: this doesn't always result in a change to the tray, but we
+          /// still have to check
           BlocListener<FavoriteBloc, FavoritesState>(
             listener: reloadTray,
           ),
@@ -50,10 +53,17 @@ class _TrayManagerState extends State<TrayManager>
             listener: reloadTray,
           ),
 
-          /// Yeah I really hate this... but it's the only way to decouple the
-          /// profiles from having to know about the tray tray should know about
-          /// profiles, profiles should not know about tray
+          /// Yeah I really hate this... an indefinite list of listeners
+          /// but it's the only way to decouple the profiles from having to know
+          /// about the tray
+          ///
+          /// The tray should know about profiles, profiles should not know
+          /// about tray. Even if it is slightly more costly in performance, the
+          /// calls where we take the performance hit are:
+          /// 1. In an asynchronous background task (who cares)
+          /// 2. Worth it, compared to the potential maintenance costs
           ...profiles.map((uuid) => BlocProvider<ProfileBloc>(
+                key: Key("TrayManager-$uuid"),
                 create: (context) => profileCacheCubit.getProfileBloc(uuid),
                 child: BlocListener<ProfileBloc, ProfileState>(
                   listener: reloadTray,
