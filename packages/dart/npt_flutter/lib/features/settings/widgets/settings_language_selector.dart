@@ -41,17 +41,6 @@ class SettingsLanguageSelector extends StatelessWidget {
                   ));
                 },
               ),
-              // Switch(
-              //   value: language == PreferredViewLayout.minimal ? false : true,
-              //   onChanged: (value) {
-              //     var bloc = context.read<SettingsBloc>();
-              //     bloc.add(SettingsEditEvent(
-              //       settings: (bloc.state as SettingsLoadedState).settings.copyWith(
-              //           viewLayout: value == false ? PreferredViewLayout.minimal : PreferredViewLayout.sshStyle),
-              //       save: true,
-              //     ));
-              //   },
-              // ),
             ],
           ),
         ],

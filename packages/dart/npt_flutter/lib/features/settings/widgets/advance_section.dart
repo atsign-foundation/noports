@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 import '../../../styles/sizes.dart';
 import '../../../widgets/custom_container.dart';
@@ -10,12 +11,14 @@ class AdvanceSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const Column(
+    final strings = AppLocalizations.of(context)!;
+    return Column(
       children: [
         Row(
           children: [
-            Icon(Icons.apps),
-            Text(" Advanced"),
+            const Icon(Icons.apps),
+            gapW4,
+            Text(strings.advanced),
           ],
         ),
         gapH16,
@@ -23,10 +26,10 @@ class AdvanceSection extends StatelessWidget {
           child: Column(
             children: [
               Row(children: [
-                Text("Enable Logging"),
-                EnableLogsBox(),
+                Text(strings.enableLogging),
+                const EnableLogsBox(),
                 gapW20,
-                ExportLogsButton(),
+                const ExportLogsButton(),
               ]),
             ],
           ),

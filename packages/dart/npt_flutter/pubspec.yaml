@@ -41,6 +41,9 @@ dependencies:
     sdk: flutter
   flutter_bloc: ^8.1.6
   flutter_svg: ^2.0.10+1
+  flutter_localizations:
+    sdk: flutter
+  intl: any
   json_annotation: ^4.9.0
   json_serializable: ^6.8.0
   meta: ^1.15.0
@@ -81,6 +84,7 @@ dependency_overrides:
 # following page: https://dart.dev/tools/pub/pubspec
 # The following section is specific to Flutter packages.
 flutter:
+  generate: true
   # The following line ensures that the Material Icons font is
   # included with your application, so that you can use the icons in
   # the material Icons class.

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:npt_flutter/features/settings/settings.dart';
 import 'package:npt_flutter/widgets/spinner.dart';
 
@@ -10,6 +11,7 @@ class SettingsOverrideRelaySwitch extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final strings = AppLocalizations.of(context)!;
     return BlocSelector<SettingsBloc, SettingsState, bool?>(selector: (state) {
       if (state is SettingsLoadedState) {
         return state.settings.overrideRelay;
@@ -29,8 +31,8 @@ class SettingsOverrideRelaySwitch extends StatelessWidget {
               ));
             },
           ),
-          const Text(
-            "Override all profiles",
+          Text(
+            strings.overrideAllProfile,
           ),
         ],
       );

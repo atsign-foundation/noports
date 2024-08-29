@@ -1,0 +1,23 @@
+{  
+   "allRightsReserved":"@ 2024 Atsign, All Rights Reserved",
+   "email" : "Email",
+   "discord" : "Discord",
+   "faq" : "faq",
+   "privacyPolicy" : "Privacy Policy",
+   "backupYourKey" : "Backup Your Key",
+   "resetAtsign" : "Reset Atsign",
+   "feedback" : "Feedback",
+   "defaultRelaySelection" : "Default Relay Selection",
+   "overrideAllProfile":"Override all profiles",
+   "dashboardView" : "Dashboard View",
+   "minimal" : "Simple",
+   "sshStyle" : "Advanced",
+   "advanced": "Advanced",
+   "enableLogging" : "Enable Logging",
+   "exportLogs" : "Export Logs",
+   "selectExportFile": "Please select a file to export to:",
+   "noPorts" : "NoPorts",
+   "logs" : "Logs",
+   "language" : "Language",
+   "settings" : "Settings"
+}

@@ -36,11 +36,11 @@ class ContactListTile extends StatelessWidget {
                     ),
                     title: Text(
                       snapshot.data?['name'] ?? '',
-                      style: bodyMedium.copyWith(fontSize: Sizes.p10.toFont),
+                      style: bodyMedium.copyWith(fontSize: 8.toFont),
                     ),
                     subtitle: Text(
                       contactRepo.atClientManager.atClient.getCurrentAtSign() ?? '',
-                      style: bodySmall.copyWith(fontSize: bodySmall.fontSize?.toFont),
+                      style: bodySmall.copyWith(fontSize: 8.toFont),
                     )),
               ),
             );

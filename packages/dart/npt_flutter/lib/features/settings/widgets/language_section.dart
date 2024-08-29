@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:npt_flutter/features/settings/widgets/settings_language_selector.dart';
 
 import '../../../styles/sizes.dart';
@@ -9,16 +10,18 @@ class LanguageSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const Column(
+    final strings = AppLocalizations.of(context)!;
+    return Column(
       children: [
         Row(
           children: [
-            Icon(Icons.public_outlined),
-            Text(" Language"),
+            const Icon(Icons.public_outlined),
+            gapW4,
+            Text(strings.language),
           ],
         ),
         gapH16,
-        CustomContainer.background(
+        const CustomContainer.background(
           child: SettingsLanguageSelector(),
         ),
       ],

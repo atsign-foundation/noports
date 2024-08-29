@@ -2,6 +2,7 @@ import 'package:at_contacts_flutter/services/contact_service.dart';
 import 'package:at_onboarding_flutter/at_onboarding_flutter.dart';
 import 'package:at_onboarding_flutter/services/onboarding_service.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:npt_flutter/constants.dart';
 import 'package:npt_flutter/routes.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -75,6 +76,7 @@ class CustomTextButton extends StatelessWidget {
     // SizeConfig().init(context);
     // final bodyMedium = Theme.of(context).textTheme.bodyMedium!;
     // final bodySmall = Theme.of(context).textTheme.bodySmall!;
+    final strings = AppLocalizations.of(context)!;
     Future<void> onTap() async {
       switch (type) {
         case CustomListTileType.email:
@@ -148,13 +150,31 @@ class CustomTextButton extends StatelessWidget {
       }
     }
 
+    String getTitle(AppLocalizations strings) {
+      switch (type) {
+        case CustomListTileType.email:
+          return strings.email;
+        case CustomListTileType.discord:
+          return strings.discord;
+        case CustomListTileType.faq:
+          return strings.faq;
+        case CustomListTileType.privacyPolicy:
+          return strings.privacyPolicy;
+        // case CustomListTileType.switchAtsign:
+        //   return strings.switchAtsign;
+        case CustomListTileType.backupYourKey:
+          return strings.backupYourKey;
+        case CustomListTileType.resetAtsign:
+          return strings.resetAtsign;
+        case CustomListTileType.feedback:
+          return strings.feedback;
+      }
+    }
+
     return Padding(
       padding: const EdgeInsets.only(left: Sizes.p30, right: Sizes.p30, bottom: Sizes.p10),
       child: TextButton.icon(
-        label: Text(
-          title,
-          // style: bodyMedium.copyWith(fontSize: bodyMedium.fontSize!.toFont),
-        ),
+        label: Text(getTitle(strings)),
         onPressed: onTap,
         icon: Icon(
           iconData,

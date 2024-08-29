@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
 import '../../../styles/sizes.dart';
@@ -11,12 +12,14 @@ class DefaultRelaySection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final strings = AppLocalizations.of(context)!;
     return Column(
       children: [
         Row(
           children: [
             SvgPicture.asset('assets/radio_button.svg'),
-            const Text(" Default Relay Selection"),
+            gapW4,
+            Text(strings.defaultRelaySelection),
           ],
         ),
         gapH16,

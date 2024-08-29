@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
 import '../../../styles/sizes.dart';
@@ -10,12 +11,14 @@ class DashboardSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final strings = AppLocalizations.of(context)!;
     return Column(
       children: [
         Row(
           children: [
             SvgPicture.asset('assets/list_dashes.svg'),
-            Text(" Dashboard View", style: Theme.of(context).textTheme.bodyLarge),
+            gapW4,
+            Text(strings.dashboardView),
           ],
         ),
         gapH16,

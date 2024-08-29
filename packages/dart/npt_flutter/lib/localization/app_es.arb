@@ -1,0 +1,22 @@
+{  
+   "allRightsReserved":"@ 2024 Atsign, Todos los derechos reservados",
+   "email" : "Correo electrónico",
+   "discord" : "Discordia",
+   "faq" : "Preguntas frecuentes",
+   "privacyPolicy" : "Política de privacidad",
+   "backupYourKey" : "Realiza una copia de seguridad de tu clave",
+   "resetAtsign" : "Restablecer Atsign",
+   "feedback" : "Comentarios",
+   "defaultRelaySelection" : "Selección de relé predeterminada",
+   "overrideAllProfile":"Anular todos los perfiles",
+   "dashboardView" : "Vista del panel de control",
+   "minimal" : "Simple",
+   "sshStyle" : "Avanzado",
+   "advanced": "Avanzado",
+   "enableLogging" : "Activar registro",
+   "exportLogs" : "Exportar registros",
+   "selectExportFile": "Por favor, selecciona un archivo para exportar:",
+   "noPorts" : "Sin puertos",
+   "logs" : "Registros",
+   "language" : "Idioma"
+}

@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:json_annotation/json_annotation.dart';
 import 'package:npt_flutter/app.dart';
 
@@ -20,6 +21,8 @@ enum Language {
   english,
   @JsonValue("es")
   spanish,
+  @JsonValue("pt-br")
+  portuguese,
 }
 
 @JsonSerializable()
@@ -79,3 +82,18 @@ class Settings extends Loggable {
         'darkMode: $darkMode, lang: ${_$LanguageEnumMap[language]}';
   }
 }
+
+extension LanguageExtension on Language {
+  Locale get locale {
+    switch (this) {
+      case Language.english:
+        return const Locale('en');
+      case Language.spanish:
+        return const Locale('es');
+      case Language.portuguese:
+        return const Locale('pt', 'BR');
+    }
+  }
+}
+
+// ['English', 'Spanish', 'Br portuguese', 'Mandarin', 'Cantonese']

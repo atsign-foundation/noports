@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:npt_flutter/features/settings/settings.dart';
 import 'package:npt_flutter/styles/sizes.dart';
@@ -24,7 +25,7 @@ class SettingsDashboardLayoutSelector extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Text(PreferredViewLayout.minimal.displayName),
+              Text(getPreferredViewLayoutText(context, PreferredViewLayout.minimal)),
               gapW20,
               Switch(
                 value: viewLayout == PreferredViewLayout.minimal ? false : true,
@@ -38,7 +39,7 @@ class SettingsDashboardLayoutSelector extends StatelessWidget {
                 },
               ),
               gapW20,
-              Text(PreferredViewLayout.sshStyle.displayName),
+              Text(getPreferredViewLayoutText(context, PreferredViewLayout.sshStyle)),
             ],
           ),
           gapH18,
@@ -48,5 +49,15 @@ class SettingsDashboardLayoutSelector extends StatelessWidget {
         ],
       );
     });
+  }
+}
+
+String getPreferredViewLayoutText(BuildContext context, PreferredViewLayout preferredViewLayout) {
+  final strings = AppLocalizations.of(context)!;
+  switch (preferredViewLayout) {
+    case PreferredViewLayout.minimal:
+      return strings.minimal;
+    case PreferredViewLayout.sshStyle:
+      return strings.sshStyle;
   }
 }
