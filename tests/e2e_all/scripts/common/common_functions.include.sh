@@ -578,6 +578,9 @@ buildCurrentCBinaries() {
 
 setup_type_and_version() {
   IFS=: read -r type version <<<"$1"
+  if isGithubActions; then
+    echo "::group::Show build logs"
+  fi
   case "$type" in
     d) # dart
       setupDartVersion "$version" || logErrorAndExit "Failed to set up binaries for dart version [$version]"
@@ -590,4 +593,7 @@ setup_type_and_version() {
       exit 1
       ;;
   esac
+  if isGithubActions; then
+    echo "::endgroup::"
+  fi
 }
