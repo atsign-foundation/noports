@@ -10,10 +10,6 @@ authKeysFile="$HOME/.ssh/authorized_keys"
 
 ### BEGIN GENERAL ###
 
-isGithubActions() {
-  return [[ $GITHUB_ACTIONS ]]
-}
-
 getApkamAppName() {
   echo "e2e_all"
 }
@@ -578,7 +574,7 @@ buildCurrentCBinaries() {
 
 setup_type_and_version() {
   IFS=: read -r type version <<<"$1"
-  if isGithubActions; then
+  if [[ $GITHUB_ACTIONS ]]; then
     echo "::group::Show build logs"
   fi
   case "$type" in
@@ -593,7 +589,7 @@ setup_type_and_version() {
       exit 1
       ;;
   esac
-  if isGithubActions; then
+  if [[ $GITHUB_ACTIONS ]]; then
     echo "::endgroup::"
   fi
 }
