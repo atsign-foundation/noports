@@ -26,7 +26,9 @@ class _TrayManagerState extends State<TrayManager>
       trayCubit.initialize();
     }
 
-    void reloadTray(context, _) {
+    /// Must strongly type [context] here or Dart will infer the wrong type for
+    /// the [.read()] extension which causes an error
+    void reloadTray(BuildContext context, _) {
       context.read<TrayCubit>().reload();
     }
 
