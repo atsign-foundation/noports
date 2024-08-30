@@ -10,6 +10,10 @@ authKeysFile="$HOME/.ssh/authorized_keys"
 
 ### BEGIN GENERAL ###
 
+isGithubActions() {
+  return [[ $GITHUB_ACTIONS ]]
+}
+
 getApkamAppName() {
   echo "e2e_all"
 }

@@ -48,6 +48,10 @@ while ((exitStatus != 0 && exitStatus != 50 && attempts < maxAttempts)); do
   exitStatus=$?
   if ((exitStatus != 0 && exitStatus != 50)); then
     # shellcheck disable=SC2129
+    if isGithubActions; then
+      echo "::group::See logs"
+    fi
+
     echo "    test execution's stdout: " >>"$singleTestOutputLog" 2>&1
     sed 's/^/        /' "$stdoutFileName" >>"$singleTestOutputLog" 2>&1
 
@@ -56,6 +60,10 @@ while ((exitStatus != 0 && exitStatus != 50 && attempts < maxAttempts)); do
 
     echo "    daemon log fragment: " >>"$singleTestOutputLog" 2>&1
     sed 's/^/        /' "$daemonLogFragmentName" >>"$singleTestOutputLog" 2>&1
+
+    if isGithubActions; then
+      echo "::endgroup::"
+    fi
 
     echo
     echo >>"$singleTestOutputLog" 2>&1

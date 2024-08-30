@@ -46,4 +46,5 @@ jobs:
             echo "Running git checkout -f $SHA"
             git checkout -f "$SHA"
             echo "Running tests"
+            export GITHUB_ACTIONS=true
             tests/e2e_all/scripts/main.sh @apricoteventual @combinedbelgian @rv_am -p
