@@ -1,15 +1,12 @@
 ---
-description: Installation of client and server software
 icon: linux
+description: Installation of client and server software
 ---
 
-# Unix Installation Guide
+# Linux & MacOS Installation Guide
 
-{% embed url="https://www.youtube.com/watch?v=HSthe7wVGao" %}
-Prefer to follow along to a video ? Great !  Below you can just cut and paste along with Colin.&#x20;
-{% endembed %}
+{% embed url="https://www.youtube.com/watch?v=pYyGXpMWN0Y" %}
 
-\
 For more control of the installation look at the [advanced-installation-guides](../advanced-installation-guides/ "mention").
 
 | Legend     | Meaning                   |
