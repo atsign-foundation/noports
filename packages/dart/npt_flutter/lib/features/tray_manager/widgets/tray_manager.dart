@@ -19,17 +19,17 @@ class TrayManager extends StatefulWidget {
 
 class _TrayManagerState extends State<TrayManager>
     with TrayListener, WindowListener {
+  /// Must strongly type [context] here or Dart will infer the wrong type for
+  /// the [.read()] extension which causes an error
+  void reloadTray(BuildContext context, _) {
+    context.read<TrayCubit>().reload();
+  }
+
   @override
   Widget build(BuildContext context) {
     var trayCubit = context.read<TrayCubit>();
     if (trayCubit.state is TrayInitial) {
       trayCubit.initialize();
-    }
-
-    /// Must strongly type [context] here or Dart will infer the wrong type for
-    /// the [.read()] extension which causes an error
-    void reloadTray(BuildContext context, _) {
-      context.read<TrayCubit>().reload();
     }
 
     var profileCacheCubit = context.read<ProfileCacheCubit>();
