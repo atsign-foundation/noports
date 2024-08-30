@@ -50,7 +50,7 @@ abstract interface class Npt {
   /// - Waits for success or error response, or time out after 10 secs
   /// - Run local srv which will bind to some port and connect to the rvd
   /// - Return the SocketConnector created by Npt
-  Future<SocketConnector> runInline();
+  Future<SocketConnector> runInline({int? localRvPort});
 
   Future<void> close();
 
@@ -301,13 +301,13 @@ class _NptImpl extends NptBase
   Future<int> run() async {
     int localRvPort = await _preRun();
 
-    sendProgress('Creating connection to socket rendezvous');
-
     /// Start srv
     if (params.inline) {
       // not detached
-      await runInline();
+      await runInline(localRvPort: localRvPort);
     } else {
+      sendProgress('Creating connection to socket rendezvous');
+
       await _srvdChannel.runSrv(
         localRvPort: localRvPort,
         sessionAESKeyString: sshnpdChannel.sessionAESKeyString,
@@ -323,8 +323,8 @@ class _NptImpl extends NptBase
   }
 
   @override
-  Future<SocketConnector> runInline() async {
-    int localRvPort = await _preRun();
+  Future<SocketConnector> runInline({int? localRvPort}) async {
+    localRvPort ??= await _preRun();
     sendProgress('Creating connection to socket rendezvous');
     if (!params.inline) {
       logger.warning(
@@ -341,6 +341,7 @@ class _NptImpl extends NptBase
     );
 
     unawaited(sc.done.then((_) {
+      logger.info('SocketConnector done');
       _completer.complete();
     }));
 
