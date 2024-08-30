@@ -3,7 +3,6 @@ import 'dart:async';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:npt_flutter/app.dart';
 import 'package:npt_flutter/features/favorite/favorite.dart';
-import 'package:npt_flutter/features/tray_manager/tray_manager.dart';
 
 part 'favorite_event.dart';
 part 'favorite_state.dart';
@@ -32,7 +31,6 @@ class FavoriteBloc extends LoggingBloc<FavoriteEvent, FavoritesState> {
       return;
     }
     emit(FavoritesLoaded(favs.values));
-    App.navState.currentContext?.read<TrayCubit>().reloadFavorites();
   }
 
   FutureOr<void> _onAdd(
@@ -44,7 +42,6 @@ class FavoriteBloc extends LoggingBloc<FavoriteEvent, FavoritesState> {
     emit(FavoritesLoaded(
       [...(state as FavoritesLoaded).favorites, event.favorite],
     ));
-    App.navState.currentContext?.read<TrayCubit>().reloadFavorites();
     try {
       await _repo.addFavorite(event.favorite);
     } catch (_) {}
@@ -63,7 +60,6 @@ class FavoriteBloc extends LoggingBloc<FavoriteEvent, FavoritesState> {
           .difference(event.toRemove.toSet()),
     ));
 
-    App.navState.currentContext?.read<TrayCubit>().reloadFavorites();
     try {
       var profileIds = <String>{};
       for (Favorite fav in event.toRemove) {
