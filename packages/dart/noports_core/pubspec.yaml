@@ -27,6 +27,8 @@ dependencies:
   json_annotation: ^4.9.0
 
 dependency_overrides:
+  at_client:
+    path: /Users/gary/dev/atsign/repos/at_client_sdk/packages/at_client
   dartssh2:
     git:
       url: https://github.com/atsign-foundation/dartssh2

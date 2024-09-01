@@ -9,7 +9,6 @@ import 'package:meta/meta.dart';
 import 'package:noports_core/npa.dart';
 import 'package:noports_core/utils.dart';
 
-@protected
 class NPAImpl implements NPA {
   @override
   final AtSignLogger logger = AtSignLogger(' sshnpa ');

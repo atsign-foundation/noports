@@ -19,6 +19,8 @@ dependencies:
     path: ../../../packages/dart/noports_core
 
 dependency_overrides:
+  at_client:
+    path: /Users/gary/dev/atsign/repos/at_client_sdk/packages/at_client
   args:
     git:
       ref: gkc/show-aliases-in-usage

@@ -6,12 +6,8 @@ import 'package:test/test.dart';
 class MockAtClient extends Mock implements AtClient {}
 
 void main() {
-  MockAtClient atClient = MockAtClient();
-
   group('core create retrieve update delete', () {
-    PolicyServiceWithAtClient api =
-        PolicyService.withAtClient(atClient: atClient)
-            as PolicyServiceWithAtClient;
+    final api = PolicyService.inMemory();
 
     setUp(() async {
       expect(api.groups, isEmpty);

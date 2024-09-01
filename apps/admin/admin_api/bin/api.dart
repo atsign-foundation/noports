@@ -8,8 +8,9 @@ import 'package:noports_core/admin.dart';
 void main(List<String> args) async {
   CLIBase cli = await CLIBase.fromCommandLineArgs(args);
   final api = PolicyService.withAtClient(atClient: cli.atClient);
+  await api.init();
 
-  await _createGroups(api);
+  // await _createGroups(api); // useful for testing
 
   final app = Alfred();
   app.all('*', cors(origin: 'http://localhost:5173'));
@@ -18,6 +19,7 @@ void main(List<String> args) async {
   await app.listen();
 }
 
+// ignore: unused_element
 Future<void> _createGroups(PolicyService api) async {
   UserGroup sysAdmins = UserGroup(
     name: 'SysAdmins',
