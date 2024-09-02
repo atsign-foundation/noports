@@ -57,7 +57,7 @@ jobs:
       - if: ${{ matrix.os == 'windows-latest' }}
         run: Compress-Archive -Path sshnpd -Destination tarball/${{ matrix.output-name }}.zip
       # upload the build
-      - uses: actions/upload-artifact@834a144ee995460fba8ed112a2fc961b36a5ec5a # v4.3.6
+      - uses: actions/upload-artifact@50769540e7f4bd5e21e526ee35c689e35e0d6874 # v4.4.0
         with:
           name:
             ${{ matrix.output-name }}_${{ matrix.compiler }}-${{  github.ref_name  
@@ -97,7 +97,7 @@ jobs:
           mkdir tarballs
           tar -xvf bins.tar -C tarballs
       - if: ${{ ! inputs.native_build_only }}
-        uses: actions/upload-artifact@834a144ee995460fba8ed112a2fc961b36a5ec5a # v4.3.6
+        uses: actions/upload-artifact@50769540e7f4bd5e21e526ee35c689e35e0d6874 # v4.4.0
         with:
           name:
             ${{ matrix.output-name  }}-${{  github.ref_name  }}-${{  github.run_number  
@@ -138,7 +138,7 @@ jobs:
           mkdir tarballs
           tar -xvf bins.tar -C tarballs
       - if: ${{ ! inputs.main_build_only }}
-        uses: actions/upload-artifact@834a144ee995460fba8ed112a2fc961b36a5ec5a # v4.3.6
+        uses: actions/upload-artifact@50769540e7f4bd5e21e526ee35c689e35e0d6874 # v4.4.0
         with:
           name:
             ${{ matrix.output-name  }}-${{  github.ref_name  }}-${{  github.run_number  
@@ -156,7 +156,7 @@ jobs:
           cd ./packages
           mv c csshnpd-${{ github.ref_name }}
           tar -cvzf ../tarball/csshnpd-${{ github.ref_name }}.tar.gz csshnpd-${{ github.ref_name }}
-      - uses: actions/upload-artifact@834a144ee995460fba8ed112a2fc961b36a5ec5a # v4.3.6
+      - uses: actions/upload-artifact@50769540e7f4bd5e21e526ee35c689e35e0d6874 # v4.4.0
         with:
           name: csshnpd-src-${{github.ref_name}}-${{github.run_number}}-${{github.run_attempt}}
           path: ./tarball/csshnpd-${{ github.ref_name }}.tar.gz
