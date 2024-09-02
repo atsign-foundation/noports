@@ -94,6 +94,17 @@ extension LanguageExtension on Language {
         return const Locale('pt', 'BR');
     }
   }
+
+  String get displayName {
+    switch (this) {
+      case Language.english:
+        return 'English';
+      case Language.spanish:
+        return 'Español';
+      case Language.portuguese:
+        return 'Português';
+    }
+  }
 }
 
 // ['English', 'Spanish', 'Br portuguese', 'Mandarin', 'Cantonese']

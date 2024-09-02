@@ -89,27 +89,21 @@ class App extends StatelessWidget {
               create: (ctx) => FavoriteBloc(ctx.read<FavoriteRepository>()),
             ),
           ],
-          child: BlocSelector<SettingsBloc, SettingsState, Language?>(selector: (state) {
+          child: BlocSelector<SettingsBloc, SettingsState, Language>(selector: (state) {
             if (state is SettingsLoadedState) {
               return state.settings.language;
             }
-            return null;
+
+            return Language.english;
           }, builder: (context, language) {
             return TrayManager(
               child: MaterialApp(
                 theme: AppTheme.light(),
                 localizationsDelegates: AppLocalizations.localizationsDelegates,
                 supportedLocales: AppLocalizations.supportedLocales,
-                locale: language?.locale,
+                locale: language.locale,
                 localeResolutionCallback: (locale, supportedLocales) {
-                  print(supportedLocales.toString());
-                  if (language != null) {
-                    print('language: ${language.locale}');
-                    return language.locale;
-                  } else {
-                    print('default local usef');
-                    return locale;
-                  }
+                  return language.locale;
                 },
                 navigatorKey: navState,
                 initialRoute: Routes.onboarding,

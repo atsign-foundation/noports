@@ -11,6 +11,7 @@ class SettingsRelayQuickButtons extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final ScrollController controller = ScrollController();
     return BlocSelector<SettingsBloc, SettingsState, String?>(selector: (SettingsState state) {
       if (state is SettingsLoadedState) {
         return state.settings.relayAtsign;
@@ -18,36 +19,42 @@ class SettingsRelayQuickButtons extends StatelessWidget {
       return null;
     }, builder: (BuildContext context, String? relayAtsign) {
       if (relayAtsign == null) return const SizedBox();
-      return SizedBox(
-        height: 50,
-        child: ListView(
-          scrollDirection: Axis.horizontal,
-          children: [
-            ...Constants.defaultRelayOptions.entries.map(
-              (e) => Padding(
-                padding: const EdgeInsets.only(right: Sizes.p10),
-                child: CustomContainer.foreground(
-                  key: Key(e.key),
-                  child: SizedBox(
-                    width: Sizes.p180,
-                    child: RadioListTile(
-                      title: Text(e.value),
-                      value: e.key,
-                      groupValue: relayAtsign,
-                      onChanged: (value) {
-                        var bloc = context.read<SettingsBloc>();
-                        bloc.add(SettingsEditEvent(
-                          settings: (bloc.state as SettingsLoadedState).settings.copyWith(relayAtsign: value),
-                          save: true,
-                        ));
-                      },
+      return Scrollbar(
+        controller: controller,
+        thumbVisibility: true,
+        child: Container(
+          padding: const EdgeInsets.only(bottom: Sizes.p20),
+          height: Sizes.p70,
+          child: ListView(
+            controller: controller,
+            scrollDirection: Axis.horizontal,
+            children: [
+              ...Constants.defaultRelayOptions.entries.map(
+                (e) => Padding(
+                  padding: const EdgeInsets.only(right: Sizes.p10),
+                  child: CustomContainer.foreground(
+                    key: Key(e.key),
+                    child: SizedBox(
+                      width: Sizes.p180,
+                      child: RadioListTile(
+                        title: Text(e.value),
+                        value: e.key,
+                        groupValue: relayAtsign,
+                        onChanged: (value) {
+                          var bloc = context.read<SettingsBloc>();
+                          bloc.add(SettingsEditEvent(
+                            settings: (bloc.state as SettingsLoadedState).settings.copyWith(relayAtsign: value),
+                            save: true,
+                          ));
+                        },
+                      ),
                     ),
                   ),
                 ),
               ),
-            ),
-            const SettingsRelayAtSignTextField(),
-          ],
+              const SettingsRelayAtSignTextField(),
+            ],
+          ),
         ),
       );
     });

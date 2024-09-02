@@ -29,11 +29,12 @@ class SettingsLanguageSelector extends StatelessWidget {
                     .map<DropdownMenuEntry<Language>>(
                       (Language l) => DropdownMenuEntry(
                         value: l,
-                        label: l.name,
+                        label: l.displayName,
                       ),
                     )
                     .toList(),
                 onSelected: (value) {
+                  if (value == null) return;
                   var bloc = context.read<SettingsBloc>();
                   bloc.add(SettingsEditEvent(
                     settings: (bloc.state as SettingsLoadedState).settings.copyWith(language: value),

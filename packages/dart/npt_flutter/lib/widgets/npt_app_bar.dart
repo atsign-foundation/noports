@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:npt_flutter/styles/app_color.dart';
 import 'package:npt_flutter/styles/style_constants.dart';
@@ -17,6 +18,7 @@ class NptAppBar extends StatelessWidget implements PreferredSizeWidget {
 
   @override
   Widget build(BuildContext context) {
+    final strings = AppLocalizations.of(context)!;
     return AppBar(
       titleSpacing: 0,
       leading: gap0,
@@ -36,8 +38,8 @@ class NptAppBar extends StatelessWidget implements PreferredSizeWidget {
                 onPressed: () {
                   Navigator.pop(context);
                 },
-                label: const Text(
-                  'Back',
+                label: Text(
+                  strings.back,
                 ),
                 icon: const Icon(
                   Icons.arrow_back_ios,
