@@ -5,22 +5,23 @@ icon: engine
 # Under The Hood
 
 {% hint style="info" %}
-This document describes version 4.0.0-rc.2. Other versions use a different method of forming the connection.
+This document describes version 5.6.x Other versions use a different method of forming the connection.
 {% endhint %}
 
 ## Overview
 
-There are three atSigns involved - one for each of
+There are four atSigns involved - one for each of
 
 * the noports daemon program (`sshnpd`) which runs on the device you want to ssh to
-* the noports client program (`sshnp`) which you run on the device you want to ssh from
+* the noports client programs (`sshnp/npt`) which you run on the device you want to ssh from
 * the noports tcp rendezvous program (`sshrvd`)
+* if required a policy engine
 
 The programs communicate via the atProtocol and the atClient SDKs; as a result, the payloads of the messages the programs send to each other are all end-to-end encrypted.
 
 In brief
 
-* The client (`sshnp`) creates a unique guid for the session
+* The client (`sshnp/npt`) creates a unique guid for the session
   * and sends a request notification to the `sshrvd` for a port1/port2 pair for this sessionId
 * The sshrvd
   * finds a pair of available ports
@@ -30,22 +31,14 @@ In brief
   * sends response to the client
 * The client
   * receives the response notification from sshrvd (rv\_host, rv\_port\_1, rv\_port\_2)
-  * and sends a request notification to the `sshnpd` including the sessionId and the rv\_host:rv\_port\_1
+  * and sends a request notification to the `sshnpd` including the sessionId and the rv\_host:rv\_port\_1 and a new ephemeral AES 256 key
 * The daemon (`sshnpd`)
-  * opens a socket to the rv\_host:rv\_port\_1
+  * opens a socket to the rv\_host:rv\_port\_1 and authenticates
   * and opens a socket to its local sshd port
-  * and bridges the sockets together
+  * and bridges the sockets together whilst also encrypting data towards the rv\_host
   * and sends a response notification to the `sshnp` client
 * The client
-  *   issues an ssh command like this to set up the ssh tunnel and do a local port forwarding
-
-      ```
-      /usr/bin/ssh gary@85.239.63.180 -p 40189 -i /Users/gary/.ssh/noports \
-        -L 58358:localhost:22 -t -t -f \
-        -o StrictHostKeyChecking=accept-new -o IdentitiesOnly=yes \
-        -o BatchMode=yes -o ExitOnForwardFailure=yes \
-        sleep 15
-      ```
+  * Listens on a specified port and on connection encrypts traffic received with the AES key and forward on to the rv\_host
 * The client displays a message to the user that they may now `ssh -p $local_port $username@localhost`, i.e. `ssh -p 58358 gary@localhost` in the example above, and exits
 
 This high-level flow is visualized in the diagrams below.
@@ -58,7 +51,15 @@ This high-level flow is visualized in the diagrams below.
 
 ### Overview diagram
 
-![](../.gitbook/assets/overview.png)
+<div data-full-width="true">
+
+<img src="../.gitbook/assets/atPlanes.png" alt="">
+
+</div>
+
+### Policy Plane
+
+At any point the `sshnpd` or the `srvd` software rather than using a local configuration to manage access rights, can forward those questions to another atSign. That atSign can in turn pass those queries to a policy engine and reflect the answer back to the asking atSign. In the example above @relay and/or @server could ask if @client is allowed to access the service. This allows decisions to be made at the Policy plane level and provides operational segregation of duties.&#x20;
 
 ### Control plane
 
@@ -68,42 +69,99 @@ Since the full details are provided in those other links, the `client_1 -> atSer
 
 ```mermaid
 sequenceDiagram
-    participant C as sshnp (@client)
-    participant R as sshrvd (@rv)
-    participant D as sshnpd (@device)
+    participant c as client
+    participant cs as client atServer
+    participant rs as relay atServer
+    participant r as relay
+    participant ds as daemon atServer
+    participant d as daemon
 
-    note over R,D: service startups
-    D->D: Authentication
-    D->D: Start monitor <br> (notification listener)
-    
-    R->R: Authentication
-    R->R: Start monitor <br> (notification listener)
+    note over c,d: Phase - Background services startup
+    par
+        r ->> rs: connect
+        r ->> rs: pkam authenticate
+        r ->> rs: monitor for notifications
+    and
+        d ->> ds: connect
+        d ->> ds: pkam authenticate
+        d ->> ds: monitor for notifications
+    end
 
-    note left of C: user runs the sshnp program
-    C->C: Authentication
-    C->C: Start monitor <br> (notification listener)
-    
-    note left of C: sshnp sends session request <br> notification to sshrvd
-    C->C: Create sessionId guid to send to @rv
-    C->C: Encrypt message to send to @rv
-    C->>R: Send notification to @rv <br> requesting host and port
-    
-    R->R: Decrypt request payload
-    R->R: Find two unused ports
-    R->R: Create an isolate <br> which creates server sockets <br> on the ports, waits for connections, <br> and joins their i/o streams
-    R->R: Create and encrypt <br> response message containing <br> sessionId, host, port_1, port_2
-    R->>C: Send response notification <br> to @client
-    
-    C->C: Create and encrypt request message <br> to send to @device (sessionId, host, port1)
-    C->>D: Send request to sshnpd
-    D->>D: SPAWN an sshrv process
-    D->>R: (Spawned) Open socket $npd_to_rv to host:port_1
-    D->>D: (Spawned) Open socket $npd_to_sshd to localhost:22
-    D->>D: (Spawned) Join $npd_to_rv and $npd_to_sshd <br> i/o streams, and vice versa
-    D->>C: Send "connected" response notification if spawned successfully
-    C->>C: Find an available $local_port<br>or use one supplied by the user via the command line
-    C->>C: Spawn an initial ssh command to set up the local port forwarding tunnel
-    C->>C: If spawned successfully, Write to stdout: "ssh -p $local_port $username@localhost"
+
+    note over c,d: Phase - Ping daemon
+    c ->> cs: connect & pkam authenticate
+    c ->> cs: monitor for notifications
+    alt
+        c ->> d: ping the daemon
+        activate d
+    else actual data flow
+        c -->> cs: 
+        cs -->> ds: 
+        ds -->> d: 
+    end
+
+
+    note over c,d: Phase - Request relay session
+    alt
+        c ->> r: request two public ports from relay: {session id, nonce from client}
+    else actual data flow
+        c -->> cs: 
+        cs -->> rs: 
+        rs -->> r: 
+    end
+    r ->> r: Request ephemeral ports from OS
+    alt
+        r ->> c: ports response from relay: {session id, host1:port1, host2:port2, nonce from relay}
+    else actual data flow
+        r -->> rs: 
+        rs -->> cs: 
+        cs -->> c: 
+    end
+
+    note over c,d: Phase - Receive ping response from daemon: {list of available features}
+    alt
+        d ->> c: ping response (device info / features) from daemon
+        deactivate d
+    else actual data flow
+        d -->> ds: 
+        ds -->> cs: 
+        cs -->> c: 
+    end
+    c ->> c: Validate request against daemon ping info
+
+    note over c,d: Phase - Request daemon session
+    c ->> c: generate new aes encryption key & iv nonce
+    alt
+        c ->> d: send session request to the daemon: {host2:port2 from relay, aes stream encryption key, aes iv nonce, requested service to access (host:port), nonce from relay, nonce from client}
+    else actual data flow
+        c -->> cs: 
+        cs -->> ds: 
+        ds -->> d: 
+    end
+    d ->> d: Verify perimissions for client's request (based on session request info - i.e. is client allowed to connect?)
+    d -x r: [TCP - A] Reverse TCP the requested service to open relay host2:port2
+    d -x r: [TCP - A] Send auth string (signed json payload of: session id, nonce from relay,  nonce from client)
+    r ->> r: [TCP - A] Verify auth string
+    alt 
+        d ->> c: session (success) response from daemon
+    else actual data flow
+        d -->> ds: 
+        ds -->> cs: 
+        cs -->> c: 
+    end
+    note over c,d: Phase - Client TCP connect
+    c ->> c: Bind a local socket to expose the service on
+    c -x r: [TCP - B] TCP connect to the other open relay port
+    c -x r: [TCP - B] Send auth string (signed json payload of: session id, nonce from relay,  nonce from client)
+    r ->> r: [TCP - B] Verify auth string
+    note over c,d: Phase - internal traffic relays (lasts  entire duration of the session)
+    par
+        r -->> r: relay all traffic from [TCP - A] to [TCP - B] and vice-versa
+    and
+        c -->> c: relay all traffic from [TCP - A] to local socket and vice-versa
+    end
+    note over c,d: Phase - using the connection
+    c ->> c: You connect to the local socket as if it were the remote service!
 ```
 
 ### Data plane
@@ -111,9 +169,9 @@ sequenceDiagram
 Once the interactions above have completed
 
 * the sshnpd nor the sshnp programs are no longer involved
-* there is a new sshrv process running on the device host which pipes i/o between device port 22 and $rv\_host:$rv\_port\_1
-* there is an ssh process running on the client host which provides the local port forwarding tunnel
-* User may now type "ssh -p $local\_port username@localhost" with traffic flowing
+* there is a new sshrv process running on the device host which pipes i/o between requested server:port and $rv\_host:$rv\_port\_1
+* there is a client process running on the client host which provides the local port forwarding tunnel
+* User may now type "ssh -p $local\_port username@localhost"  or use a client application like and RDP client with traffic flowing
   * client ssh program <===>
     * $client\_localhost:$local\_port <===> bridged by client-side ssh tunnel to
       * $rv\_host:$rv\_port\_2 <===> bridged by sshrvd to
