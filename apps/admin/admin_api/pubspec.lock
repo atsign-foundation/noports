@@ -98,10 +98,11 @@ packages:
   at_client:
     dependency: "direct main"
     description:
-      path: "/Users/gary/dev/atsign/repos/at_client_sdk/packages/at_client"
-      relative: false
-    source: path
-    version: "3.0.78"
+      name: at_client
+      sha256: "76a24bbf17867b64a5e827bb33d7c5f3ca2edfd5766d0920211e068d30ae748f"
+      url: "https://pub.dev"
+    source: hosted
+    version: "3.1.0"
   at_commons:
     dependency: transitive
     description:
