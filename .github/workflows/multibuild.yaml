@@ -96,7 +96,6 @@ jobs:
       - name: build admin API
         run: |
           dart pub get --enforce-lockfile
-          dart run build_runner build --delete-conflicting-outputs
           dart compile exe bin/admin_api.dart -v -o sshnp/admin_api${{ matrix.ext }}
         working-directory: ./apps/admin/admin_api
       - name: build admin webapp
