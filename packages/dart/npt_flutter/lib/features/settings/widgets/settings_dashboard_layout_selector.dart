@@ -6,6 +6,8 @@ import 'package:npt_flutter/features/settings/settings.dart';
 import 'package:npt_flutter/styles/sizes.dart';
 import 'package:npt_flutter/widgets/spinner.dart';
 
+import '../../../widgets/custom_card.dart';
+
 class SettingsDashboardLayoutSelector extends StatelessWidget {
   const SettingsDashboardLayoutSelector({
     super.key,
@@ -13,6 +15,7 @@ class SettingsDashboardLayoutSelector extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final strings = AppLocalizations.of(context)!;
     return BlocSelector<SettingsBloc, SettingsState, PreferredViewLayout?>(selector: (state) {
       if (state is SettingsLoadedState) {
         return state.settings.viewLayout;
@@ -43,9 +46,25 @@ class SettingsDashboardLayoutSelector extends StatelessWidget {
             ],
           ),
           gapH18,
-          viewLayout == PreferredViewLayout.minimal
-              ? SvgPicture.asset('assets/advance_preview.svg')
-              : SvgPicture.asset('assets/advance_preview.svg'),
+          CustomCard.settingsPreview(
+              child: Column(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              gapH13,
+              Padding(
+                padding: const EdgeInsets.only(left: Sizes.p20),
+                child: Align(
+                  alignment: Alignment.centerLeft,
+                  child: Text(strings.preview),
+                ),
+              ),
+              gapH10,
+              viewLayout == PreferredViewLayout.minimal
+                  ? SvgPicture.asset('assets/simple.svg')
+                  : SvgPicture.asset('assets/advance.svg'),
+              gapH16,
+            ],
+          ))
         ],
       );
     });
