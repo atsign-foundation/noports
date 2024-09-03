@@ -94,15 +94,15 @@ jobs:
           dart compile exe bin/srv.dart -v -o sshnp/srv${{ matrix.ext }}
           dart compile exe bin/npp.dart -v -o sshnp/srv${{ matrix.ext }}
       - name: build admin API
+        working-directory: ./apps/admin/admin_api
         run: |
           dart pub get --enforce-lockfile
-          dart compile exe bin/admin_api.dart -v -o sshnp/admin_api${{ matrix.ext }}
-        working-directory: ./apps/admin/admin_api
+          dart compile exe bin/admin_api.dart -v -o ../../../packages/dart/sshnoports/sshnp/admin_api${{ matrix.ext }}
       - name: build admin webapp
+        working-directory: ./apps/admin/webapp
         run: |
           npm install
           npm run build
-        working-directory: ./apps/admin/webapp
       - if: ${{ matrix.os != 'windows-latest' }}
         run: |
           dart compile exe bin/srvd.dart -v -o sshnp/srvd${{ matrix.ext }}
