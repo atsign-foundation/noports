@@ -8,7 +8,6 @@ import 'package:npt_flutter/app.dart';
 import 'package:npt_flutter/features/profile/profile.dart';
 import 'package:npt_flutter/features/profile_list/profile_list.dart';
 import 'package:npt_flutter/features/settings/settings.dart';
-import 'package:npt_flutter/features/tray_manager/tray_manager.dart';
 import 'package:socket_connector/socket_connector.dart';
 
 part 'profile_event.dart';
@@ -38,12 +37,10 @@ class ProfileBloc extends LoggingBloc<ProfileEvent, ProfileState> {
 
     if (profile == null) {
       emit(ProfileFailedLoad(uuid));
-      App.navState.currentContext?.read<TrayCubit>().reloadFavorites();
       return;
     }
 
     emit(ProfileLoaded(uuid, profile: profile));
-    App.navState.currentContext?.read<TrayCubit>().reloadFavorites();
   }
 
   Future<void> _onLoadOrCreate(
@@ -70,12 +67,10 @@ class ProfileBloc extends LoggingBloc<ProfileEvent, ProfileState> {
           localPort: 0,
         ),
       ));
-      App.navState.currentContext?.read<TrayCubit>().reloadFavorites();
       return;
     }
 
     emit(ProfileLoaded(uuid, profile: profile));
-    App.navState.currentContext?.read<TrayCubit>().reloadFavorites();
   }
 
   Future<void> _onEdit(
@@ -119,7 +114,6 @@ class ProfileBloc extends LoggingBloc<ProfileEvent, ProfileState> {
           .invalidate(uuid);
       emit(ProfileFailedSave(uuid, profile: event.profile));
     }
-    App.navState.currentContext?.read<TrayCubit>().reloadFavorites();
   }
 
   Future<void> _onStart(
@@ -214,7 +208,6 @@ class ProfileBloc extends LoggingBloc<ProfileEvent, ProfileState> {
       // Save the socket connector to state so it can be used to stop npt later
       App.navState.currentContext?.read<ProfilesRunningCubit>().cache(uuid, sc);
       emit(ProfileStarted(uuid, profile: profile));
-      App.navState.currentContext?.read<TrayCubit>().reloadFavorites();
     } catch (err) {
       cancelSubs?.call();
       emit(ProfileFailedStart(
@@ -229,7 +222,6 @@ class ProfileBloc extends LoggingBloc<ProfileEvent, ProfileState> {
           ?.read<ProfilesRunningCubit>()
           .invalidate(uuid);
       emit(ProfileLoaded(uuid, profile: profile));
-      App.navState.currentContext?.read<TrayCubit>().reloadFavorites();
     }
   }
 

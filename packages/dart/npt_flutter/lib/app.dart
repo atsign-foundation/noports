@@ -79,10 +79,10 @@ class App extends StatelessWidget {
               create: (_) => ProfilesRunningCubit(),
             ),
 
-            /// A cubit which manages the system tray entries
-            BlocProvider<TrayCubit>(
-              create: (_) => TrayCubit()..initialize(),
-            ),
+          /// A cubit which manages the system tray entries
+          BlocProvider<TrayCubit>(
+            create: (_) => TrayCubit(),
+          ),
 
             /// A bloc which manages favorites
             BlocProvider<FavoriteBloc>(

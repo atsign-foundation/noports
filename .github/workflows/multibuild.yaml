@@ -145,7 +145,7 @@ jobs:
             --password "$MACOS_APPLE_ID_PASSWORD" \
             --wait
       # upload the build
-      - uses: actions/upload-artifact@834a144ee995460fba8ed112a2fc961b36a5ec5a # v4.3.6
+      - uses: actions/upload-artifact@50769540e7f4bd5e21e526ee35c689e35e0d6874 # v4.4.0
         with:
           name: ${{ matrix.output-name }}-${{github.ref_name}}-${{github.run_number}}-${{github.run_attempt}}
           path: ./packages/dart/sshnoports/tarball
@@ -183,7 +183,7 @@ jobs:
           mkdir tarballs
           tar -xvf bins.tar -C tarballs
       - if: ${{ ! inputs.main_build_only }}
-        uses: actions/upload-artifact@834a144ee995460fba8ed112a2fc961b36a5ec5a # v4.3.6
+        uses: actions/upload-artifact@50769540e7f4bd5e21e526ee35c689e35e0d6874 # v4.4.0
         with:
           name: ${{ matrix.output-name }}-${{github.ref_name}}-${{github.run_number}}-${{github.run_attempt}}
           path: ./packages/dart/tarballs/${{ matrix.output-name }}.tgz
@@ -210,7 +210,7 @@ jobs:
           REF=${{ github.ref }}
           TAG=${REF:11}
           write_metadata universal.sh sshnp_version "$TAG"
-      - uses: actions/upload-artifact@834a144ee995460fba8ed112a2fc961b36a5ec5a # v4.3.6
+      - uses: actions/upload-artifact@50769540e7f4bd5e21e526ee35c689e35e0d6874 # v4.4.0
         with:
           name: universal.sh-${{github.ref_name}}-${{github.run_number}}-${{github.run_attempt}}
           path: ./packages/dart/sshnoports/bundles/universal.sh
@@ -224,7 +224,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
-    - uses: actions/upload-artifact@834a144ee995460fba8ed112a2fc961b36a5ec5a # v4.3.6
+    - uses: actions/upload-artifact@50769540e7f4bd5e21e526ee35c689e35e0d6874 # v4.4.0
       with: 
         name: universal.ps1-${{github.ref_name}}-${{github.run_number}}-${{github.run_attempt}}
         path: ./packages/dart/sshnoports/bundles/universal.ps1
@@ -285,7 +285,7 @@ jobs:
       working-directory: tarballs
       run: |
         echo "hashes=$(cat checksums.txt | base64 -w0)" >> "$GITHUB_OUTPUT"
-    - uses: actions/attest-build-provenance@310b0a4a3b0b78ef57ecda988ee04b132db73ef8 # v1.4.1
+    - uses: actions/attest-build-provenance@6149ea5740be74af77f260b9db67e633f6b0a9a1 # v1.4.2
       with:
         subject-path: 'tarballs/**'
 
