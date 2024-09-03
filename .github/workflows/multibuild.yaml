@@ -95,16 +95,16 @@ jobs:
           dart compile exe bin/srv.dart -v -o sshnp/srv${{ matrix.ext }}
           dart compile exe bin/npp.dart -v -o sshnp/srv${{ matrix.ext }}
       - name: build admin API
-      - run: |
-          working-directory: ./apps/admin/admin_api
+        run: |
           dart pub get --enforce-lockfile
           dart run build_runner build --delete-conflicting-outputs
           dart compile exe bin/admin_api.dart -v -o sshnp/admin_api${{ matrix.ext }}
+        working-directory: ./apps/admin/admin_api
       - name: build admin webapp
-      - run: |
-          working-directory: ./apps/admin/webapp
+        run: |
           npm install
           npm run build
+        working-directory: ./apps/admin/webapp
       - if: ${{ matrix.os != 'windows-latest' }}
         run: |
           dart compile exe bin/srvd.dart -v -o sshnp/srvd${{ matrix.ext }}
