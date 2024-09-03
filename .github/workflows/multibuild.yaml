@@ -72,13 +72,18 @@ jobs:
         with:
           ref: multibuild-${{github.run_number}}
       - uses: dart-lang/setup-dart@0a8a0fc875eb934c15d08629302413c671d3f672 # v1.6.5
+      - uses: actions/setup-node@1e60f620b9541d16bece96c5465dc8ee9832be0b # v4.0.3
+        with:
+          node-version: '20.17.0'
       # create directories need for build
       - run: |
           mkdir sshnp
+          mkdir sshnp/web
           mkdir tarball
       - if: ${{ matrix.os != 'windows-latest' }}
         run: mkdir sshnp/debug
       # compile binaries
+      - name: compile core binaries
       - run: |
           dart pub get --enforce-lockfile
           dart run build_runner build --delete-conflicting-outputs
@@ -88,6 +93,18 @@ jobs:
           dart compile exe bin/npa_file.dart -v -o sshnp/npa_file${{ matrix.ext }}
           dart compile exe bin/sshnpd.dart -v -o sshnp/sshnpd${{ matrix.ext }}
           dart compile exe bin/srv.dart -v -o sshnp/srv${{ matrix.ext }}
+          dart compile exe bin/npp.dart -v -o sshnp/srv${{ matrix.ext }}
+      - name: build admin API
+      - run: |
+          working-directory: ./apps/admin/admin_api
+          dart pub get --enforce-lockfile
+          dart run build_runner build --delete-conflicting-outputs
+          dart compile exe bin/admin_api.dart -v -o sshnp/admin_api${{ matrix.ext }}
+      - name: build admin webapp
+      - run: |
+          working-directory: ./apps/admin/webapp
+          npm install
+          npm run build
       - if: ${{ matrix.os != 'windows-latest' }}
         run: |
           dart compile exe bin/srvd.dart -v -o sshnp/srvd${{ matrix.ext }}
@@ -96,6 +113,7 @@ jobs:
       - run: |
           cp -r bundles/core/* sshnp/
           cp -r bundles/${{ matrix.bundle }}/* sshnp/
+          cp -r ../../../apps/admin/webapp/dist sshnp/web/admin
           cp LICENSE sshnp
       # codesign for apple
       - if: ${{ matrix.os == 'macos-13' || matrix.os == 'macos-14' }}
