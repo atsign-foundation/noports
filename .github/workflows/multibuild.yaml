@@ -83,7 +83,6 @@ jobs:
       - if: ${{ matrix.os != 'windows-latest' }}
         run: mkdir sshnp/debug
       # compile binaries
-      - name: compile core binaries
       - run: |
           dart pub get --enforce-lockfile
           dart run build_runner build --delete-conflicting-outputs
