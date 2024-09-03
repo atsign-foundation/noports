@@ -6,7 +6,7 @@ part of 'tray_cubit.dart';
 // JsonSerializableGenerator
 // **************************************************************************
 
-const _$TrayActionsEnumMap = {
+const _$TrayActionEnumMap = {
   TrayAction.showDashboard: 'showDashboard',
   TrayAction.showSettings: 'showSettings',
   TrayAction.quitApp: 'quitApp',
