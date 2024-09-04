@@ -42,7 +42,7 @@ WORKDIR /noports/apps/admin/webapp
 RUN npm install; \
   npm run build; \
   mkdir -p /sshnp/web/admin; \
-  cp -r ./dist /sshnp/web/admin
+  cp -r ./dist/* /sshnp/web/admin/
 
 RUN set -eux; \
   case "$(dpkg --print-architecture)" in \
