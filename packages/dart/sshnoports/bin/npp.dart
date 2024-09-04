@@ -22,6 +22,8 @@ void main(List<String> args) async {
   if (p.verbose) {
     AtSignLogger.root_level = 'INFO';
   }
+  AtSignLogger.defaultLoggingHandler = AtSignLogger.stdErrLoggingHandler;
+
 
   logger = AtSignLogger(' npp ');
   AtClient atClient = await createAtClientCli(
@@ -51,9 +53,6 @@ void main(List<String> args) async {
   if (p.verbose) {
     sshnpa.logger.logger.level = Level.INFO;
   }
-
-  AtSignLogger.root_level = 'SHOUT';
-  AtSignLogger.defaultLoggingHandler = AtSignLogger.stdErrLoggingHandler;
 
   atClient.notificationService.subscribe(
     regex: r'.*\.groups\.policy\.sshnp',

@@ -6,6 +6,18 @@ import 'package:at_client/at_client.dart';
 import 'package:noports_core/admin.dart';
 
 policy(Alfred app, String pathPrefix, PolicyService api) {
+  // policy log events
+  app.get('$pathPrefix/logs', (req, res) async {
+    stderr.writeln('Fetching policy log events');
+    final now = DateTime.now();
+    final r = jsonEncode(await api.getLogEvents(
+      from: now.subtract(Duration(hours: 24)).millisecondsSinceEpoch,
+      to: now.millisecondsSinceEpoch,
+    ));
+    stderr.writeln('Fetched policy log events');
+    return r;
+  });
+
   // all groups TODO add query parameters for search, pagination etc
   app.get('$pathPrefix/group', (req, res) async {
     stderr.writeln('Fetching all groups');

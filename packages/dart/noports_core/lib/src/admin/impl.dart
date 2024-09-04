@@ -3,9 +3,12 @@ import 'dart:convert';
 import 'package:at_client/at_client.dart';
 import 'package:at_utils/at_logger.dart';
 import 'package:noports_core/admin.dart';
+import 'package:noports_core/sshnp_foundation.dart';
 
-class PolicyServiceWithAtClient extends PolicyServiceInMem {
+class PolicyServiceWithAtClient extends PolicyServiceInMem with AtClientBindings {
+  @override
   final logger = AtSignLogger('PolicyServiceWithAtClient');
+  @override
   final AtClient atClient;
 
   PolicyServiceWithAtClient({
@@ -30,6 +33,14 @@ class PolicyServiceWithAtClient extends PolicyServiceInMem {
       }
     });
 
+    subscribe(
+      regex: r'.*\.logs\.policy\.sshnp',
+      shouldDecrypt: true,
+    ).listen((AtNotification n) {
+      // TODO Make a PolicyLogEvent and use PolicyLogEvent.fromJson()
+      onPolicyLogEvent(jsonDecode(n.value!));
+    });
+
     logger.shout('Loading groups via AtClient');
     // Fetch all the groups
     List<AtKey> groupKeys = await atClient.getAtKeys(
@@ -46,6 +57,10 @@ class PolicyServiceWithAtClient extends PolicyServiceInMem {
       groups[g.id!] = g;
     }
     logger.shout('Load complete');
+  }
+
+  Future<void> onPolicyLogEvent(event) async {
+    super.logEvents.add(event);
   }
 
   String _groupKey(String id) {
@@ -119,6 +134,9 @@ class PolicyServiceInMem implements PolicyService {
   @override
   final Map<String, UserGroup> groups = {};
 
+  @override
+  final List<dynamic> logEvents = [];
+
   int _maxGroupId() {
     int i = 0;
     for (final g in groups.values) {
@@ -129,6 +147,16 @@ class PolicyServiceInMem implements PolicyService {
     }
     return i;
   }
+
+  @override
+  Future<List<dynamic>> getLogEvents(
+      {required int from, required int to}) async {
+    return List.from(logEvents.where((event) {
+      int ts = event['timestamp'];
+      return (ts >= from && ts <= to);
+    }));
+  }
+
   @override
   Future<UserGroup?> getUserGroup(String id) async {
     return groups[id];

@@ -10,6 +10,14 @@ abstract interface class PolicyService {
   @visibleForTesting
   Map<String, UserGroup> get groups;
 
+  /// The in-memory list of log events. Not for external use.
+  @visibleForTesting
+  List<dynamic> get logEvents;
+
+  // TODO Use a PolicyLogEvent
+  /// Fetch some log events
+  Future<List<dynamic>> getLogEvents({required int from, required int to});
+
   /// Get (some of) the permission groups known to this policy service.
   /// Method rather than getter, as we will add query parameters later
   Future<List<UserGroup>> getUserGroups();

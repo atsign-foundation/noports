@@ -110,7 +110,7 @@ class NPAImpl with AtClientBindings implements NPA {
         '${jsonPrettyPrinter.convert(request.toJson())}');
     // We will send a 'log' notification to the loggingAtsign
     var logKey = AtKey()
-      ..key = '${DateTime.now().millisecondsSinceEpoch}.log.policy'
+      ..key = '${DateTime.now().millisecondsSinceEpoch}.logs.policy'
       ..sharedBy = authorizerAtsign
       ..sharedWith = loggingAtsign
       ..namespace = DefaultArgs.namespace
@@ -141,6 +141,7 @@ class NPAImpl with AtClientBindings implements NPA {
     }
     await notify(
       logKey,
+      // TODO Make a PolicyLogEvent and use PolicyLogEvent.toJson()
       jsonEncode(
         {
           'daemon': fromAtSign,
