@@ -6,8 +6,9 @@ FROM atsigncompany/buildimage:3.5.2_3.6.0-149.3.beta@sha256:df67b9e3271381fc0c5b
 WORKDIR /noports
 
 # install node for later (keep at the top file to increase cache hits)
+# hadolint ignore=DL3008
 RUN apt-get update; \
-  apt-get install -y --no-install-recommends nodejs=18.19.0+dfsg-6~deb12u2;
+  apt-get install -y --no-install-recommends nodejs
 
 COPY . .
 
