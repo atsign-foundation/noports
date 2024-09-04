@@ -119,6 +119,22 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "4.0.11"
+  at_contact:
+    dependency: "direct main"
+    description:
+      name: at_contact
+      sha256: e1b8904116e6e0fcbc5627409bffe3b620417c62b76bbedc84b1f66acc28adfe
+      url: "https://pub.dev"
+    source: hosted
+    version: "3.0.8"
+  at_contacts_flutter:
+    dependency: "direct main"
+    description:
+      name: at_contacts_flutter
+      sha256: "530a5112e303fdf8ae26bfbe477112b14c16c8b35f7005ea4919f05584fa8dec"
+      url: "https://pub.dev"
+    source: hosted
+    version: "4.0.15"
   at_demo_data:
     dependency: transitive
     description:
@@ -146,10 +162,10 @@ packages:
   at_onboarding_flutter:
     dependency: "direct main"
     description:
-      path: "/Users/chant/src/af/at_widgets/xc-npt-desktop-pin/packages/at_onboarding_flutter"
+      path: "/Users/curtlycritchlow/Documents/CCWC/clients/atsign/at_widgets/packages/at_onboarding_flutter"
       relative: false
     source: path
-    version: "6.1.7"
+    version: "6.1.8"
   at_persistence_secondary_server:
     dependency: transitive
     description:
@@ -191,7 +207,7 @@ packages:
     source: hosted
     version: "1.0.0"
   at_utils:
-    dependency: transitive
+    dependency: "direct main"
     description:
       name: at_utils
       sha256: ec28600e4eec321ee5e22be051109fa7b2e94590dc51d9f957730c2540beb681
@@ -499,10 +515,10 @@ packages:
     dependency: "direct main"
     description:
       name: file_picker
-      sha256: "1bbf65dd997458a08b531042ec3794112a6c39c07c37ff22113d2e7e4f81d4e4"
+      sha256: "167bb619cdddaa10ef2907609feb8a79c16dfa479d3afaf960f8e223f754bf12"
       url: "https://pub.dev"
     source: hosted
-    version: "6.2.1"
+    version: "8.1.2"
   file_selector:
     dependency: transitive
     description:
@@ -604,6 +620,11 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "4.0.0"
+  flutter_localizations:
+    dependency: "direct main"
+    description: flutter
+    source: sdk
+    version: "0.0.0"
   flutter_plugin_android_lifecycle:
     dependency: transitive
     description:
@@ -612,6 +633,22 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.0.21"
+  flutter_slidable:
+    dependency: transitive
+    description:
+      name: flutter_slidable
+      sha256: "2c5611c0b44e20d180e4342318e1bbc28b0a44ad2c442f5df16962606fd3e8e3"
+      url: "https://pub.dev"
+    source: hosted
+    version: "3.1.1"
+  flutter_svg:
+    dependency: "direct main"
+    description:
+      name: flutter_svg
+      sha256: "7b4ca6cf3304575fe9c8ec64813c8d02ee41d2afe60bcfe0678bcb5375d596a2"
+      url: "https://pub.dev"
+    source: hosted
+    version: "2.0.10+1"
   flutter_test:
     dependency: "direct dev"
     description: flutter
@@ -638,14 +675,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.1.2"
-  go_router:
-    dependency: "direct main"
-    description:
-      name: go_router
-      sha256: ddc16d34b0d74cb313986918c0f0885a7ba2fc24d8fb8419de75f0015144ccfe
-      url: "https://pub.dev"
-    source: hosted
-    version: "14.2.3"
   graphs:
     dependency: transitive
     description:
@@ -703,7 +732,7 @@ packages:
     source: hosted
     version: "1.0.0+1"
   intl:
-    dependency: transitive
+    dependency: "direct main"
     description:
       name: intl
       sha256: d6f56758b7d3014a48af9701c085700aac781a92a87a62b1333b46d8879661cf
@@ -901,6 +930,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.9.0"
+  path_parsing:
+    dependency: transitive
+    description:
+      name: path_parsing
+      sha256: e3e67b1629e6f7e8100b367d3db6ba6af4b1f0bb80f64db18ef1fbabd2fa9ccf
+      url: "https://pub.dev"
+    source: hosted
+    version: "1.0.1"
   path_provider:
     dependency: "direct main"
     description:
@@ -1339,7 +1376,7 @@ packages:
     source: hosted
     version: "1.3.2"
   url_launcher:
-    dependency: transitive
+    dependency: "direct main"
     description:
       name: url_launcher
       sha256: "21b704ce5fa560ea9f3b525b43601c678728ba46725bab9b01187b4831377ed3"
@@ -1410,6 +1447,30 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "3.0.7"
+  vector_graphics:
+    dependency: transitive
+    description:
+      name: vector_graphics
+      sha256: "32c3c684e02f9bc0afb0ae0aa653337a2fe022e8ab064bcd7ffda27a74e288e3"
+      url: "https://pub.dev"
+    source: hosted
+    version: "1.1.11+1"
+  vector_graphics_codec:
+    dependency: transitive
+    description:
+      name: vector_graphics_codec
+      sha256: c86987475f162fadff579e7320c7ddda04cd2fdeffbe1129227a85d9ac9e03da
+      url: "https://pub.dev"
+    source: hosted
+    version: "1.1.11+1"
+  vector_graphics_compiler:
+    dependency: transitive
+    description:
+      name: vector_graphics_compiler
+      sha256: "12faff3f73b1741a36ca7e31b292ddeb629af819ca9efe9953b70bd63fc8cd81"
+      url: "https://pub.dev"
+    source: hosted
+    version: "1.1.11+1"
   vector_math:
     dependency: transitive
     description:

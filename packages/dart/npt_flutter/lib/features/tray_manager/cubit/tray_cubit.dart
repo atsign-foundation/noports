@@ -12,11 +12,10 @@ import 'package:npt_flutter/routes.dart';
 import 'package:tray_manager/tray_manager.dart';
 import 'package:window_manager/window_manager.dart';
 
-part 'tray_state.dart';
 part 'tray_cubit.g.dart';
+part 'tray_state.dart';
 
-(String, void Function(MenuItem)) getAction(TrayAction action) =>
-    switch (action) {
+(String, void Function(MenuItem)) getAction(TrayAction action) => switch (action) {
       TrayAction.showDashboard => ('Show Window', (_) => windowManager.focus()),
       TrayAction.showSettings => (
           'Settings',
@@ -51,13 +50,13 @@ enum TrayAction {
   quitApp;
 
   static bool isTrayAction(String key) {
-    return _$TrayActionsEnumMap.values.contains(key);
+    return _$TrayActionEnumMap.values.contains(key);
   }
 
   MenuItem get menuItem {
     final (label, callback) = getAction(this);
     return MenuItem(
-      key: _$TrayActionsEnumMap[this],
+      key: _$TrayActionEnumMap[this],
       label: label,
       onClick: callback,
     );
