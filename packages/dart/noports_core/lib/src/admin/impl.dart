@@ -161,12 +161,32 @@ class PolicyServiceInMem implements PolicyService {
   }
 
   Future<void> onDaemonEvent(json) async {
-    esc.add(json);
+    final de = jsonDecode(json);
+    final e = {
+      'timestamp': de['timestamp'],
+      'type': 'DaemonHeartbeat',
+      'daemon': de['daemon'],
+      'deviceName': de['payload']['devicename'],
+      'deviceGroupName': de['payload']['deviceGroupName'],
+    };
+    esc.add(jsonEncode(e));
   }
 
   Future<void> onPolicyLogEvent(json) async {
-    logEvents.add(jsonDecode(json));
-    esc.add(json);
+    final pe = jsonDecode(json);
+    logEvents.add(pe);
+    final e = {
+      'timestamp': pe['timestamp'],
+      'type': 'PolicyCheck',
+      'daemon': pe['daemon'],
+      'deviceName': pe['payload']['request']['payload']['daemonDeviceName'],
+      'deviceGroupName': pe['payload']['request']['payload']['daemonDeviceGroupName'],
+      'user': pe['payload']['request']['payload']['clientAtsign'],
+      'authorized': pe['payload']['response']['payload']['authorized'],
+      'message': pe['payload']['response']['payload']['message'],
+      'permitOpen': pe['payload']['response']['payload']['permitOpen'],
+    };
+    esc.add(jsonEncode(e));
   }
 
   StreamController<String> esc = StreamController<String>.broadcast();

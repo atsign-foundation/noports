@@ -27,6 +27,31 @@
         }
     }
 
+    function bgForEvent(eventData) {
+        if (eventData.type === 'DaemonHeartbeat') {
+            return 'lightblue';
+        } else if (eventData.type === 'PolicyCheck') {
+            if (eventData.authorized) {
+                return 'mediumseagreen';
+            } else {
+                return 'palevioletred'
+            }
+        } else {
+            return 'lightblue';
+        }
+    }
+
+    function detailsForEvent(eventData) {
+        if (eventData.type === 'DaemonHeartbeat') {
+            return '';
+        } else if (eventData.type === 'PolicyCheck') {
+            return 'User: ' + eventData.user
+                + ';  PermitOpen: ' + eventData.permitOpen;
+        } else {
+            return JSON.stringify(eventData);
+        }
+    }
+
     function submit(object, field) {
         return ({detail: newValue}) => {
             // IRL: POST value to server here
@@ -598,23 +623,43 @@
     <div class="border border-primary rounded-3" style="background-color: lightblue">
         <h2>Logs</h2>
 
-        <table class="table">
-            <thead>
-                <tr>
-                    <th style="width: 15%">Timestamp</th>
-                    <th style="width: 15%">From device AtSign</th>
-                    <th style="width: 70%">Data</th>
-                </tr>
-            </thead>
-            <tbody>
-            {#each events as eventData}
-                <tr>
-                    <td>{new Date(eventData.timestamp).toLocaleString('en-GB', { timeZoneName: 'short' })}</td>
-                    <td>{eventData.daemon}</td>
-                    <td>{JSON.stringify(eventData.payload)}</td>
-                </tr>
-            {/each}
-            </tbody>
-        </table>
+        {#key events}
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th style="width: 16%">Timestamp</th>
+                        <th style="width: 11%">Type</th>
+                        <th style="width: 11%">DaemonAtSign</th>
+                        <th style="width: 6%">Device</th>
+                        <th style="width: 6%">DeviceGroup</th>
+                        <th style="width: 50%">Details</th>
+                    </tr>
+                </thead>
+                <tbody in:fade={{ duration: 3000 }}>
+                {#each events as eventData}
+                    <tr>
+                        <td style="background-color: {bgForEvent(eventData)}">
+                            {new Date(eventData.timestamp).toLocaleString('en-GB', {timeZoneName: 'short'})}
+                        </td>
+                        <td style="background-color: {bgForEvent(eventData)}">
+                            {eventData.type}
+                        </td>
+                        <td style="background-color: {bgForEvent(eventData)}">
+                            {eventData.daemon}
+                        </td>
+                        <td style="background-color: {bgForEvent(eventData)}">
+                            {eventData.deviceName}
+                        </td>
+                        <td style="background-color: {bgForEvent(eventData)}">
+                            {eventData.deviceGroupName}
+                        </td>
+                        <td style="background-color: {bgForEvent(eventData)}">
+                            {detailsForEvent(eventData)}
+                        </td>
+                    </tr>
+                {/each}
+                </tbody>
+            </table>
+        {/key}
     </div>
 </div>
