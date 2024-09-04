@@ -14,6 +14,8 @@ abstract interface class PolicyService {
   @visibleForTesting
   List<dynamic> get logEvents;
 
+  Stream<String> get eventStream;
+
   // TODO Use a PolicyLogEvent
   /// Fetch some log events
   Future<List<dynamic>> getLogEvents({required int from, required int to});

@@ -7,7 +7,7 @@
 
 .selected {
     font-weight: bold;
-    background-color: coral;
+    background-color: cadetblue !important;
 }
 
 .container {

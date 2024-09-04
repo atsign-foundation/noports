@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:at_client/at_client.dart';
@@ -37,8 +38,23 @@ class PolicyServiceWithAtClient extends PolicyServiceInMem with AtClientBindings
       regex: r'.*\.logs\.policy\.sshnp',
       shouldDecrypt: true,
     ).listen((AtNotification n) {
+      logger.shout('Received policy log notification from ${jsonDecode(n.value!)['daemon']}');
       // TODO Make a PolicyLogEvent and use PolicyLogEvent.fromJson()
-      onPolicyLogEvent(jsonDecode(n.value!));
+      onPolicyLogEvent(n.value!);
+    });
+
+    subscribe(
+      regex: r'.*\.devices\.policy\.sshnp',
+      shouldDecrypt: true,
+    ).listen((AtNotification n) {
+      logger.shout('Received device heartbeat from ${n.from}');
+      // TODO Make a PolicyLogEvent and use PolicyLogEvent.fromJson()
+      final v = jsonDecode(n.value!);
+      final e = {};
+      e['timestamp'] = n.epochMillis;
+      e['daemon'] = n.from;
+      e['payload'] = v;
+      onDaemonEvent(jsonEncode(e));
     });
 
     logger.shout('Loading groups via AtClient');
@@ -57,10 +73,6 @@ class PolicyServiceWithAtClient extends PolicyServiceInMem with AtClientBindings
       groups[g.id!] = g;
     }
     logger.shout('Load complete');
-  }
-
-  Future<void> onPolicyLogEvent(event) async {
-    super.logEvents.add(event);
   }
 
   String _groupKey(String id) {
@@ -146,6 +158,22 @@ class PolicyServiceInMem implements PolicyService {
       }
     }
     return i;
+  }
+
+  Future<void> onDaemonEvent(json) async {
+    esc.add(json);
+  }
+
+  Future<void> onPolicyLogEvent(json) async {
+    logEvents.add(jsonDecode(json));
+    esc.add(json);
+  }
+
+  StreamController<String> esc = StreamController<String>.broadcast();
+
+  @override
+  Stream<String> get eventStream {
+    return esc.stream;
   }
 
   @override

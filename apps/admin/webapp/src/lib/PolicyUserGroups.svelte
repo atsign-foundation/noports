@@ -6,20 +6,25 @@
     let groups = [];
 
     let selectedGroupIndex = -1;
-    let selectedGroupElement;
 
     let status = '';
     let statusColor = 'green';
     let statusTimeout;
 
+    let eventStream;
+    let events = [];
+
     function selectGroup(ix, event) {
         console.log('group selected: ', groups[ix], 'event', event);
         selectedGroupIndex = ix;
-        if (selectedGroupElement != null) {
-            selectedGroupElement.classList.remove('selected');
+    }
+
+    function bgForGroup(ix) {
+        if (ix === selectedGroupIndex) {
+            return 'cadetblue';
+        } else {
+            return 'lightblue';
         }
-        selectedGroupElement = event.target.parentElement;
-        selectedGroupElement.classList.add('selected');
     }
 
     function submit(object, field) {
@@ -35,8 +40,10 @@
 
     let baseUrl = 'http://localhost:3000/';
 
-    function displayStatus(msg, isError) {
-        let t = 1500;
+    function displayStatus(msg, isError, t) {
+        if (!t) {
+            t = 1500;
+        }
         statusColor = 'green';
         if (isError) {
             t = 5000;
@@ -153,6 +160,31 @@
             if (status === 'Loading ...') {
                 displayStatus('Data loaded');
             }
+            eventStream = new WebSocket("api/policy/events");
+
+            eventStream.onopen = function() {
+                eventStream.send("Browser says hi");
+            };
+
+            eventStream.onmessage = function(event) {
+                console.log(event);
+                events.unshift(JSON.parse(event.data));
+                events = events;
+            };
+
+            eventStream.onclose = function(event) {
+                if (event.wasClean) {
+                    alert(`[close] Connection closed cleanly, code=${event.code} reason=${event.reason}`);
+                } else {
+                    // e.g. server process killed or network down
+                    // event.code is usually 1006 in this case
+                    alert('[close] Connection died');
+                }
+            };
+
+            eventStream.onerror = function(error) {
+                alert(error);
+            };
         } catch (error) {
             displayStatus(error.message, true);
         }
@@ -169,75 +201,77 @@
     {/if}
 </div>
 
-<div class="row gx-5">
+<div class="row">
     <div class="col-4">
         <div class="row">
-            <div class="border border-primary rounded-3" style="background-color: lightblue">
-                <h2>Groups</h2>
-                <table class="table">
-                    <thead>
-                    <tr>
-                        <th></th>
-                        <th>Name</th>
-                        <th>Description</th>
-                    </tr>
-                    </thead>
-                    <tbody>
-                    {#each groups as group, i}
-                        <tr on:click={(e) => selectGroup(i, e)}>
+            {#key selectedGroupIndex}
+                <div class="border border-primary rounded-3" style="background-color: lightblue">
+                    <h2>Permission sets</h2>
+                    <table class="table">
+                        <thead>
+                        <tr>
+                            <th></th>
+                            <th>Name</th>
+                            <th>Description</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        {#each groups as group, i}
+                            <tr on:click={(e) => selectGroup(i, e)}>
+                                <td style="background-color: {bgForGroup(i)}">
+                                    <button type="button" class="btn btn-sm btn-outline-danger"
+                                            on:click={() => {
+                                            deleteGroup(group);
+                                        }}
+                                    >Delete
+                                    </button>
+                                </td>
+                                <td style="background-color: {bgForGroup(i)}">
+                                    <InPlaceEdit
+                                            bind:value={group.name}
+                                            on:submit={() => updateGroup(group)}
+                                    />
+                                </td>
+                                <td style="background-color: {bgForGroup(i)}">
+                                    <InPlaceEdit
+                                            bind:value={group.description}
+                                            on:submit={() => updateGroup(group)}
+                                    />
+                                </td>
+                            </tr>
+                        {/each}
+                        <tr>
                             <td>
-                                <button type="button" class="btn btn-sm btn-outline-danger"
-                                        on:click={() => {
-                                        deleteGroup(group);
+                                <button type="button" class="btn btn-sm btn-outline-success"
+                                        on:click={async () => {
+                                        let newGroup = {
+                                            name:'New group name',
+                                            description:'New group description',
+                                            userAtSigns: [],
+                                            daemonAtSigns: [],
+                                            devices: [],
+                                            deviceGroups: [],
+                                        };
+                                        await createGroup(newGroup);
                                     }}
-                                >Delete
+                                >Add new
                                 </button>
                             </td>
-                            <td>
-                                <InPlaceEdit
-                                        bind:value={group.name}
-                                        on:submit={() => updateGroup(group)}
-                                />
-                            </td>
-                            <td>
-                                <InPlaceEdit
-                                        bind:value={group.description}
-                                        on:submit={() => updateGroup(group)}
-                                />
-                            </td>
+                            <td></td>
+                            <td></td>
                         </tr>
-                    {/each}
-                    <tr>
-                        <td>
-                            <button type="button" class="btn btn-sm btn-outline-success"
-                                    on:click={async () => {
-                                    let newGroup = {
-                                        name:'New group name',
-                                        description:'New group description',
-                                        userAtSigns: [],
-                                        daemonAtSigns: [],
-                                        devices: [],
-                                        deviceGroups: [],
-                                    };
-                                    await createGroup(newGroup);
-                                }}
-                            >Add group
-                            </button>
-                        </td>
-                        <td></td>
-                        <td></td>
-                    </tr>
-                    </tbody>
-                </table>
-            </div>
+                        </tbody>
+                    </table>
+                </div>
+            {/key}
         </div>
     </div>
     <div class="col-8">
         {#key selectedGroupIndex}
             <div class="row" in:fade={{ duration: 600 }}>
                 {#if selectedGroupIndex >= 0 && selectedGroupIndex < groups.length}
-                    <div class="border border-primary rounded-3" style="background-color:lightblue">
-                        <h3>Group: {groups[selectedGroupIndex].name}</h3>
+                    <div class="border border-primary rounded-3" style="background-color:cadetblue">
+                        <h3>{groups[selectedGroupIndex].name}</h3>
                         <table class="table">
                             <thead>
                             </thead>
@@ -254,61 +288,7 @@
                         </table>
                         <div class="row">
                             <div class="col">
-                                <h4>Members</h4>
-                                <table class="table">
-                                    <thead>
-                                    <tr>
-                                        <th></th>
-                                        <th>atSign</th>
-                                    </tr>
-                                    </thead>
-                                    <!--suppress JSUnresolvedVariable -->
-                                    <tbody>
-                                    {#each groups[selectedGroupIndex].userAtSigns as userAtSign}
-                                        <tr>
-                                            <td>
-                                                <button type="button" class="btn btn-sm btn-outline-danger" style="font-size:10px"
-                                                        on:click={() => {
-                                                        let g = groups[selectedGroupIndex];
-                                                        let index = g.userAtSigns.indexOf(userAtSign);
-                                                        g.userAtSigns.splice( index, 1);
-                                                        // trigger svelte to update the DOM
-                                                        groups = groups;
-                                                        updateGroup(g);
-                                                        }
-                                                    }
-                                                >Delete
-                                                </button>
-                                            </td>
-                                            <td>
-                                                <InPlaceEdit
-                                                        bind:value={userAtSign}
-                                                        on:submit={() => updateGroup(groups[selectedGroupIndex])}
-                                                />
-                                            </td>
-                                        </tr>
-                                    {/each}
-                                    <tr>
-                                        <td>
-                                            <button type="button" class="btn btn-sm btn-outline-success" style="font-size:10px"
-                                                    on:click={() => {
-                                                    let g = groups[selectedGroupIndex];
-                                                    g.userAtSigns.push('@some_atsign');
-                                                    // trigger svelte to update the DOM
-                                                    groups = groups;
-                                                    updateGroup(g);
-                                                    }
-                                                }
-                                            >Add
-                                            </button>
-                                        </td>
-                                        <td></td>
-                                    </tr>
-                                    </tbody>
-                                </table>
-                            </div>
-                            <div class="col">
-                                <h4>Daemons</h4>
+                                <h4>Device AtSigns</h4>
                                 <table class="table">
                                     <thead>
                                     <tr>
@@ -549,6 +529,60 @@
                                     </tbody>
                                 </table>
                             </div>
+                            <div class="col">
+                                <h4>Users</h4>
+                                <table class="table">
+                                    <thead>
+                                    <tr>
+                                        <th></th>
+                                        <th>atSign</th>
+                                    </tr>
+                                    </thead>
+                                    <!--suppress JSUnresolvedVariable -->
+                                    <tbody>
+                                    {#each groups[selectedGroupIndex].userAtSigns as userAtSign}
+                                        <tr>
+                                            <td>
+                                                <button type="button" class="btn btn-sm btn-outline-danger" style="font-size:10px"
+                                                        on:click={() => {
+                                                        let g = groups[selectedGroupIndex];
+                                                        let index = g.userAtSigns.indexOf(userAtSign);
+                                                        g.userAtSigns.splice( index, 1);
+                                                        // trigger svelte to update the DOM
+                                                        groups = groups;
+                                                        updateGroup(g);
+                                                        }
+                                                    }
+                                                >Delete
+                                                </button>
+                                            </td>
+                                            <td>
+                                                <InPlaceEdit
+                                                        bind:value={userAtSign}
+                                                        on:submit={() => updateGroup(groups[selectedGroupIndex])}
+                                                />
+                                            </td>
+                                        </tr>
+                                    {/each}
+                                    <tr>
+                                        <td>
+                                            <button type="button" class="btn btn-sm btn-outline-success" style="font-size:10px"
+                                                    on:click={() => {
+                                                    let g = groups[selectedGroupIndex];
+                                                    g.userAtSigns.push('@some_atsign');
+                                                    // trigger svelte to update the DOM
+                                                    groups = groups;
+                                                    updateGroup(g);
+                                                    }
+                                                }
+                                            >Add
+                                            </button>
+                                        </td>
+                                        <td></td>
+                                    </tr>
+                                    </tbody>
+                                </table>
+                            </div>
                         </div>
                     </div>
                 {/if}
@@ -558,3 +592,29 @@
 </div>
 
 <hr/>
+
+<!-- Logs -->
+<div class="row">
+    <div class="border border-primary rounded-3" style="background-color: lightblue">
+        <h2>Logs</h2>
+
+        <table class="table">
+            <thead>
+                <tr>
+                    <th style="width: 15%">Timestamp</th>
+                    <th style="width: 15%">From device AtSign</th>
+                    <th style="width: 70%">Data</th>
+                </tr>
+            </thead>
+            <tbody>
+            {#each events as eventData}
+                <tr>
+                    <td>{new Date(eventData.timestamp).toLocaleString('en-GB', { timeZoneName: 'short' })}</td>
+                    <td>{eventData.daemon}</td>
+                    <td>{JSON.stringify(eventData.payload)}</td>
+                </tr>
+            {/each}
+            </tbody>
+        </table>
+    </div>
+</div>

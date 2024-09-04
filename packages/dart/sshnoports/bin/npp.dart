@@ -54,12 +54,26 @@ void main(List<String> args) async {
     sshnpa.logger.logger.level = Level.INFO;
   }
 
+  Set<String> notifiedDaemonAtSigns = {};
+
+  atClient.notificationService.subscribe(
+    regex: r'.*\.devices\.policy\.sshnp',
+    shouldDecrypt: true,
+  ).listen((AtNotification n) {
+    notifiedDaemonAtSigns.add(n.from);
+    sshnpa.daemonAtsigns.clear();
+    sshnpa.daemonAtsigns.addAll(handler.api.daemonAtSigns);
+    sshnpa.daemonAtsigns.addAll(notifiedDaemonAtSigns);
+    logger.info('daemonAtSigns is now ${sshnpa.daemonAtsigns}');
+  });
+
   atClient.notificationService.subscribe(
     regex: r'.*\.groups\.policy\.sshnp',
     shouldDecrypt: true,
   ).listen((AtNotification n) {
     sshnpa.daemonAtsigns.clear();
     sshnpa.daemonAtsigns.addAll(handler.api.daemonAtSigns);
+    sshnpa.daemonAtsigns.addAll(notifiedDaemonAtSigns);
     logger.info('daemonAtSigns is now ${sshnpa.daemonAtsigns}');
   });
 

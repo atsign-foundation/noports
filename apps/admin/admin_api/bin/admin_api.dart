@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:admin_api/src/expose_apis.dart' as expose;
 import 'package:alfred/alfred.dart';
+import 'package:alfred/src/type_handlers/websocket_type_handler.dart';
 import 'package:at_cli_commons/at_cli_commons.dart';
 import 'package:noports_core/admin.dart';
 
@@ -31,6 +32,31 @@ void main(List<String> args) async {
     app.get('/*', (req, res) => dir);
   }
   await expose.policy(app, '/api/policy', api);
+
+  // Track connected clients
+  var users = <WebSocket>[];
+
+  // WebSocket chat relay implementation
+  app.get('/api/policy/events', (req, res) {
+    return WebSocketSession(
+      onOpen: (ws) {
+        users.add(ws);
+      },
+      onClose: (ws) {
+        users.remove(ws);
+      },
+      onMessage: (ws, dynamic data) async {
+        stderr.writeln('Received $data on the events websocket');
+      },
+    );
+  });
+
+  api.eventStream.listen((s) {
+    for (final u in users) {
+      u.send(s);
+    }
+  });
+
   await app.listen();
 }
 

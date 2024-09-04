@@ -146,8 +146,10 @@ class NPAImpl with AtClientBindings implements NPA {
         {
           'daemon': fromAtSign,
           'timestamp': DateTime.now().millisecondsSinceEpoch,
-          'request': request,
-          'response': rpcResponse
+          'payload': {
+            'request': request,
+            'response': rpcResponse,
+          }
         },
       ),
       checkForFinalDeliveryStatus: false,
