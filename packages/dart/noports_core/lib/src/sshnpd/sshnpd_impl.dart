@@ -1306,7 +1306,6 @@ class SshnpdImpl implements Sshnpd {
         ..metadata = (Metadata()
           ..isPublic = false
           ..isEncrypted = true
-          ..ttl = DefaultSshnpdArgs.policyHeartbeatFrequency.inMilliseconds
           ..namespaceAware = true);
 
       logger.info('Sending heartbeat to policy service $policyManagerAtsign');
@@ -1314,6 +1313,7 @@ class SshnpdImpl implements Sshnpd {
       await _notify(
         atKey: atKey,
         value: jsonEncode(pingResponse),
+        ttln: DefaultSshnpdArgs.policyHeartbeatFrequency,
       );
     }
   }
