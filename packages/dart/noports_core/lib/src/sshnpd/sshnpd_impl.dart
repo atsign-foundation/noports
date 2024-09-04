@@ -1220,21 +1220,12 @@ class SshnpdImpl implements Sshnpd {
       if (makeDeviceInfoVisible) {
         try {
           logger.info('Sharing username $username with $managerAtsign');
-          await atClient.notificationService.notify(
-            NotificationParams.forUpdate(
-              atKey,
-              value: username,
-              // notification can expire rapidly, the info is being cached
-              notificationExpiry: Duration(minutes: 1),
-            ),
+          await _notify(
+            atKey: atKey,
+            value: username,
+            ttln: Duration(minutes: 1),
             waitForFinalDeliveryStatus: false,
             checkForFinalDeliveryStatus: false,
-            onSuccess: (notification) {
-              logger.info('SUCCESS:$notification $username');
-            },
-            onError: (notification) {
-              logger.info('ERROR:$notification $username');
-            },
           );
         } catch (e) {
           stderr.writeln(e.toString());
