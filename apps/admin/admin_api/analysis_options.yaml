@@ -14,4 +14,3 @@ linter:
     await_only_futures : true
     unawaited_futures: true
     depend_on_referenced_packages : false
-    unused_element: true

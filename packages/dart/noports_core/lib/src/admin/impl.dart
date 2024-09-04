@@ -116,6 +116,7 @@ class PolicyServiceInMem implements PolicyService {
 
   }
 
+  @override
   final Map<String, UserGroup> groups = {};
 
   int _maxGroupId() {
