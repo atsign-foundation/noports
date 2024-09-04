@@ -30,4 +30,6 @@ const _$PreferredViewLayoutEnumMap = {
 
 const _$LanguageEnumMap = {
   Language.english: 'en',
+  Language.spanish: 'es',
+  Language.portuguese: 'pt-br',
 };

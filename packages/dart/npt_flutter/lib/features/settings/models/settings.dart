@@ -1,5 +1,6 @@
-import 'package:npt_flutter/app.dart';
+import 'package:flutter/material.dart';
 import 'package:json_annotation/json_annotation.dart';
+import 'package:npt_flutter/app.dart';
 
 part 'settings.g.dart';
 
@@ -18,6 +19,10 @@ enum PreferredViewLayout {
 enum Language {
   @JsonValue("en")
   english,
+  @JsonValue("es")
+  spanish,
+  @JsonValue("pt-br")
+  portuguese,
 }
 
 @JsonSerializable()
@@ -59,8 +64,7 @@ class Settings extends Loggable {
   static const String customRelayKey = 'custom';
 
   Map<String, dynamic> toJson() => _$SettingsToJson(this);
-  factory Settings.fromJson(Map<String, dynamic> json) =>
-      _$SettingsFromJson(json);
+  factory Settings.fromJson(Map<String, dynamic> json) => _$SettingsFromJson(json);
 
   @override
   List<Object?> get props => [
@@ -78,3 +82,29 @@ class Settings extends Loggable {
         'darkMode: $darkMode, lang: ${_$LanguageEnumMap[language]}';
   }
 }
+
+extension LanguageExtension on Language {
+  Locale get locale {
+    switch (this) {
+      case Language.english:
+        return const Locale('en');
+      case Language.spanish:
+        return const Locale('es');
+      case Language.portuguese:
+        return const Locale('pt', 'BR');
+    }
+  }
+
+  String get displayName {
+    switch (this) {
+      case Language.english:
+        return 'English';
+      case Language.spanish:
+        return 'Español';
+      case Language.portuguese:
+        return 'Português';
+    }
+  }
+}
+
+// ['English', 'Spanish', 'Br portuguese', 'Mandarin', 'Cantonese']

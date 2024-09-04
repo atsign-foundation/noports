@@ -29,21 +29,27 @@ abstract class NPA implements AtRpcCallbacks {
 
   String get authorizerAtsign;
 
-  abstract Set<String> daemonAtsigns;
+  String get loggingAtsign;
 
-  abstract NPARequestHandler handler;
+  Set<String> get daemonAtsigns;
 
-  static Future<NPA> fromCommandLineArgs(List<String> args,
-      {required NPARequestHandler handler,
-      AtClient? atClient,
-      FutureOr<AtClient> Function(NPAParams)? atClientGenerator,
-      void Function(Object, StackTrace)? usageCallback}) async {
+  NPARequestHandler get handler;
+
+  static Future<NPA> fromCommandLineArgs(
+    List<String> args, {
+    required NPARequestHandler handler,
+    AtClient? atClient,
+    FutureOr<AtClient> Function(NPAParams)? atClientGenerator,
+    void Function(Object, StackTrace)? usageCallback,
+    Set<String>? daemonAtsigns,
+  }) async {
     return NPAImpl.fromCommandLineArgs(
       args,
       handler: handler,
       atClient: atClient,
       atClientGenerator: atClientGenerator,
       usageCallback: usageCallback,
+      daemonAtsigns: daemonAtsigns,
     );
   }
 

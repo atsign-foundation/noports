@@ -8,9 +8,12 @@ packageDir=$(pwd)
 echo "$(date) : Starting compilation"
 echo
 
-rm -rf build/sshnp
+rm -rf build/sshnp build/sshnp.zip build/sshnp.tgz
 mkdir -p build/sshnp
 
+dart pub get || exit 1
+
+echo "Building core binaries"
 echo "Compiling at_activate"; dart compile exe --verbosity error bin/activate_cli.dart -o build/sshnp/at_activate &
 echo "Compiling srv"; dart compile exe --verbosity error bin/srv.dart -o build/sshnp/srv &
 echo "Compiling sshnpd"; dart compile exe --verbosity error bin/sshnpd.dart -o build/sshnp/sshnpd &
@@ -19,15 +22,39 @@ echo "Compiling sshnp"; dart compile exe --verbosity error bin/sshnp.dart -o bui
 echo "Compiling npt"; dart compile exe --verbosity error bin/npt.dart -o build/sshnp/npt &
 
 wait
-
-echo
 echo "$(date) : Compilation complete"
 
+echo "Building policy binaries"
+echo "Compiling npa_file"; dart compile exe --verbosity error bin/npa_file.dart -o build/sshnp/npa_file &
+echo "Compiling npp"; dart compile exe --verbosity error bin/npp.dart -o build/sshnp/npp &
+
+wait
+echo "$(date) : Compilation complete"
+
+echo "Building admin API and webapp";
+pushd ../../../apps/admin/admin_api || exit 1
+dart pub get || exit 1
+echo "Compiling admin_api"; dart compile exe --verbosity error bin/admin_api.dart -o "${packageDir}/build/sshnp/admin_api" || exit 1
+wait
+cd ../webapp || exit 1
+echo "Building admin webapp"
+npm install || exit 1
+npm run build || exit 1
+
+wait
+echo
+echo "$(date) : Build complete"
+
+popd
 
 echo "$(date) : Copying bundles"
 cp -r bundles/core/* build/sshnp/
 cp -r bundles/shell/* build/sshnp/
 cp LICENSE build/sshnp
+
+echo "$(date) : Copying webapp files"
+mkdir -p build/sshnp/web
+cp -r ../../../apps/admin/webapp/dist build/sshnp/web/admin
 
 cd build
 
@@ -36,6 +63,9 @@ case "$(uname)" in
     echo "$(date) : Creating zip"
     ditto -c -k --keepParent sshnp sshnp.zip
     echo "$(date) : Created $packageDir/build/sshnp.zip"
+    echo "$(date) : Creating tgz"
+    tar -cvzf sshnp.tgz sshnp
+    echo "$(date) : Created $packageDir/build/sshnp.tgz"
     ;;
   Linux)
     echo "$(date) : Creating tgz"

@@ -1,3 +1,4 @@
+import 'package:at_contacts_flutter/at_contacts_flutter.dart';
 import 'package:at_onboarding_flutter/at_onboarding_flutter.dart';
 import 'package:flutter/material.dart';
 import 'package:npt_flutter/constants.dart';
@@ -55,6 +56,7 @@ class _OnboardingButtonState extends State<OnboardingButton> {
     if (mounted) {
       switch (onboardingResult.status) {
         case AtOnboardingResultStatus.success:
+          await initializeContactsService(rootDomain: Constants.rootDomain);
           postOnboard(onboardingResult.atsign!);
           Navigator.of(context).pushReplacementNamed(widget.nextRoute);
           break;
