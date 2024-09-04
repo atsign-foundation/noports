@@ -126,6 +126,7 @@ class SshnpdImpl implements Sshnpd {
 
     pingResponse = {
       'devicename': device,
+      'deviceGroupName': deviceGroup,
       'version': version,
       'corePackageVersion': packageVersion,
       'supportedFeatures': {
@@ -239,6 +240,13 @@ class SshnpdImpl implements Sshnpd {
       );
     }
 
+    // If using a policy service, tell it we're here
+    await _sendHeartbeatToPolicy();
+    Timer.periodic(
+      DefaultSshnpdArgs.policyHeartbeatFrequency,
+      (_) async => await _sendHeartbeatToPolicy(),
+    );
+
     logger.info('Done');
   }
 
@@ -332,6 +340,13 @@ class SshnpdImpl implements Sshnpd {
       return NPAAuthCheckResponse(
         authorized: true,
         message: '$client is in --managers list',
+        permitOpen: ['*:*'],
+      );
+    }
+    if (policyManagerAtsign == client) {
+      return NPAAuthCheckResponse(
+        authorized: true,
+        message: '$client is the policy manager',
         permitOpen: ['*:*'],
       );
     }
@@ -1288,6 +1303,29 @@ class SshnpdImpl implements Sshnpd {
       }
     }
   }
+
+  /// If using a policy service, tell it we're here
+  Future<void> _sendHeartbeatToPolicy() async {
+    if (policyManagerAtsign != null) {
+      var atKey = AtKey()
+        ..key = '$device.devices.policy'
+        ..sharedBy = deviceAtsign
+        ..sharedWith = policyManagerAtsign
+        ..namespace = DefaultArgs.namespace
+        ..metadata = (Metadata()
+          ..isPublic = false
+          ..isEncrypted = true
+          ..ttl = DefaultSshnpdArgs.policyHeartbeatFrequency.inMilliseconds
+          ..namespaceAware = true);
+
+      logger.info('Sending heartbeat to policy service $policyManagerAtsign');
+      /// send it
+      await _notify(
+        atKey: atKey,
+        value: jsonEncode(pingResponse),
+      );
+    }
+  }
 }
 
 abstract interface class AuthChecker {
@@ -1330,8 +1368,8 @@ class _NPAAuthChecker implements AuthChecker, AtRpcCallbacks {
     authCheckCache[clientAtsign] = request.reqId;
 
     // To keep memory tidy, we'll clear this request and its cached response
-    // after 30 seconds
-    Future.delayed(Duration(seconds: 30), () {
+    // after 15 seconds
+    Future.delayed(Duration(seconds: 15), () {
       completerMap.remove(request.reqId);
       authCheckCache.remove(clientAtsign);
     });

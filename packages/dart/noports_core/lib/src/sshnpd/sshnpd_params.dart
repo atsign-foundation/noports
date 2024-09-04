@@ -239,6 +239,7 @@ class SshnpdParams {
 
     parser.addOption(
       'device-group',
+      aliases: const ['dg'],
       mandatory: false,
       defaultsTo: DefaultSshnpdArgs.deviceGroupName,
       help: 'The name of this device\'s group. When delegated authorization'
