@@ -5,11 +5,11 @@ import 'dart:io';
 import 'package:at_client/at_client.dart' hide StringBuffer;
 import 'package:at_utils/at_logger.dart';
 import 'package:logging/logging.dart';
-import 'package:meta/meta.dart';
 import 'package:noports_core/npa.dart';
+import 'package:noports_core/src/common/mixins/at_client_bindings.dart';
 import 'package:noports_core/utils.dart';
 
-class NPAImpl implements NPA {
+class NPAImpl with AtClientBindings implements NPA {
   @override
   final AtSignLogger logger = AtSignLogger(' sshnpa ');
 
@@ -21,6 +21,9 @@ class NPAImpl implements NPA {
 
   @override
   String get authorizerAtsign => atClient.getCurrentAtSign()!;
+
+  @override
+  String get loggingAtsign => atClient.getCurrentAtSign()!;
 
   @override
   final Set<String> daemonAtsigns;
@@ -105,18 +108,29 @@ class NPAImpl implements NPA {
   Future<AtRpcResp> handleRequest(AtRpcReq request, String fromAtSign) async {
     logger.info('Received request from $fromAtSign: '
         '${jsonPrettyPrinter.convert(request.toJson())}');
+    // We will send a 'log' notification to the loggingAtsign
+    var logKey = AtKey()
+      ..key = '${DateTime.now().millisecondsSinceEpoch}.log.policy'
+      ..sharedBy = authorizerAtsign
+      ..sharedWith = loggingAtsign
+      ..namespace = DefaultArgs.namespace
+      ..metadata = (Metadata()
+        ..isPublic = false
+        ..isEncrypted = true
+        ..namespaceAware = true);
 
     NPAAuthCheckRequest authCheckRequest =
         NPAAuthCheckRequest.fromJson(request.payload);
+    AtRpcResp rpcResponse;
     try {
       var authCheckResponse = await handler.doAuthCheck(authCheckRequest);
-      return AtRpcResp(
+      rpcResponse = AtRpcResp(
           reqId: request.reqId,
           respType: AtRpcRespType.success,
           payload: authCheckResponse.toJson());
     } catch (e, st) {
       logger.shout('Exception: $e : StackTrace : \n$st');
-      return AtRpcResp(
+      rpcResponse = AtRpcResp(
           reqId: request.reqId,
           respType: AtRpcRespType.success,
           payload: NPAAuthCheckResponse(
@@ -125,6 +139,21 @@ class NPAImpl implements NPA {
             permitOpen: [],
           ).toJson());
     }
+    await notify(
+      logKey,
+      jsonEncode(
+        {
+          'daemon': fromAtSign,
+          'timestamp': DateTime.now().millisecondsSinceEpoch,
+          'request': request,
+          'response': rpcResponse
+        },
+      ),
+      checkForFinalDeliveryStatus: false,
+      waitForFinalDeliveryStatus: false,
+      ttln: Duration(hours: 1),
+    );
+    return rpcResponse;
   }
 
   /// We're not sending any RPCs so we don't implement `handleResponse`

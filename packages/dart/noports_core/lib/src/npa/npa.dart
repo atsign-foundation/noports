@@ -29,6 +29,8 @@ abstract class NPA implements AtRpcCallbacks {
 
   String get authorizerAtsign;
 
+  String get loggingAtsign;
+
   Set<String> get daemonAtsigns;
 
   NPARequestHandler get handler;
