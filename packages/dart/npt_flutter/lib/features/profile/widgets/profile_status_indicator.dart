@@ -8,20 +8,23 @@ class ProfileStatusIndicator extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return BlocBuilder<ProfileBloc, ProfileState>(builder: (BuildContext context, ProfileState state) {
-      if (state is ProfileFailedSave) {
-        return const Text("There was an error saving this profile");
-      }
+    return SizedBox(
+      width: Sizes.p150,
+      child: BlocBuilder<ProfileBloc, ProfileState>(builder: (BuildContext context, ProfileState state) {
+        if (state is ProfileFailedSave) {
+          return const Tooltip(message: 'error saving profile', child: Text("Failed"));
+        }
 
-      if (state is ProfileFailedStart) {
-        return Text("Failed to start profile: ${state.reason ?? '<no reason provided>'}");
-      }
+        if (state is ProfileFailedStart) {
+          return Tooltip(message: state.reason ?? 'No Reason Provided', child: const Text("Failed"));
+        }
 
-      if (state is ProfileStarting && state.status != null) {
-        return Text(state.status!);
-      }
+        if (state is ProfileStarting && state.status != null) {
+          return Text(state.status!);
+        }
 
-      return gapW38;
-    });
+        return gap0;
+      }),
+    );
   }
 }

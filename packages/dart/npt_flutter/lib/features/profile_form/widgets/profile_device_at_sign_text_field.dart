@@ -1,37 +1,46 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:npt_flutter/features/profile/profile.dart';
+import 'package:npt_flutter/styles/sizes.dart';
 
 class ProfileDeviceAtSignTextField extends StatelessWidget {
   const ProfileDeviceAtSignTextField({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return Row(
+    final strings = AppLocalizations.of(context)!;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const SizedBox(width: 200, child: Text("Device atSign")),
-        Expanded(
-          child: BlocSelector<ProfileBloc, ProfileState, String?>(
-            selector: (ProfileState state) {
-              if (state is ProfileLoadedState) {
-                return state.profile.sshnpdAtsign;
-              }
-              return null;
-            },
-            builder: (BuildContext context, String? state) {
-              if (state == null) return const SizedBox();
-              return TextFormField(
+        Text(strings.deviceAtsign),
+        gapH4,
+        Text(
+          strings.deviceAtsignDescription,
+          style: Theme.of(context).textTheme.bodySmall,
+        ),
+        gapH10,
+        BlocSelector<ProfileBloc, ProfileState, String?>(
+          selector: (ProfileState state) {
+            if (state is ProfileLoadedState) {
+              return state.profile.sshnpdAtsign;
+            }
+            return null;
+          },
+          builder: (BuildContext context, String? state) {
+            if (state == null) return const SizedBox();
+            return SizedBox(
+              width: Sizes.p300,
+              child: TextFormField(
                   initialValue: state,
                   onChanged: (value) {
                     var bloc = context.read<ProfileBloc>();
                     bloc.add(ProfileEditEvent(
-                      profile: (bloc.state as ProfileLoadedState)
-                          .profile
-                          .copyWith(sshnpdAtsign: value),
+                      profile: (bloc.state as ProfileLoadedState).profile.copyWith(sshnpdAtsign: value),
                     ));
-                  });
-            },
-          ),
+                  }),
+            );
+          },
         ),
       ],
     );

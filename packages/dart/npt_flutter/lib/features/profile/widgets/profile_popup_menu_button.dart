@@ -62,6 +62,17 @@ class ProfilePopupMenuButton extends StatelessWidget {
             PopupMenuItem(
                 child: Row(
                   children: [
+                    PhosphorIcon(PhosphorIcons.arrowClockwise()),
+                    gapW10,
+                    Text(strings.refresh),
+                  ],
+                ),
+                onTap: () {
+                  context.read<ProfileBloc>().add(const ProfileLoadEvent(useCache: false));
+                }),
+            PopupMenuItem(
+                child: Row(
+                  children: [
                     PhosphorIcon(PhosphorIcons.trash()),
                     gapW10,
                     Text(strings.delete),

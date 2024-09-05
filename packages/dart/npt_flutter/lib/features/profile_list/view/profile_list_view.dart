@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:npt_flutter/features/profile/profile.dart';
+import 'package:npt_flutter/features/profile/view/profile_header_view.dart';
 import 'package:npt_flutter/features/profile_list/profile_list.dart';
 import 'package:npt_flutter/styles/sizes.dart';
 import 'package:npt_flutter/widgets/spinner.dart';
@@ -38,55 +39,57 @@ class ProfileListView extends StatelessWidget {
             }
 
             var profiles = state.profiles.toList();
-            return CustomCard.dashboardContent(
-              child: Column(
-                children: [
-                  const Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            return Stack(
+              children: [
+                Align(
+                  alignment: Alignment.topCenter,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      gap0,
-                      Row(children: [
-                        ProfileListAddButton(),
-                        gapW10,
-                        ProfileListImportButton(),
-                        gapW10,
-                        ProfileListRefreshButton(),
-                        gapW10,
-                        ProfileSelectedExportButton(),
-                        gapW10,
-                        ProfileSelectedDeleteButton(),
-                      ])
+                      CustomCard.dashboardContent(
+                        child: Column(
+                          children: [
+                            const Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                gap0,
+                                Row(children: [
+                                  ProfileListAddButton(),
+                                  gapW10,
+                                  ProfileListImportButton(),
+                                  gapW10,
+                                  ProfileListRefreshButton(),
+                                  gapW10,
+                                  ProfileSelectedExportButton(),
+                                  gapW10,
+                                  ProfileSelectedDeleteButton(),
+                                ])
+                              ],
+                            ),
+                            gapH25,
+                            const ProfileHeaderView(),
+                            Expanded(
+                              child: ListView.builder(
+                                itemCount: state.profiles.length,
+                                itemBuilder: (context, index) {
+                                  return BlocProvider<ProfileBloc>(
+                                    key: Key("ProfileListView-BlocProvider-${profiles[index]}"),
+                                    create: (context) =>
+                                        context.read<ProfileCacheCubit>().getProfileBloc(profiles[index]),
+                                    child: const CustomCard.profile(child: ProfileView()),
+                                  );
+                                },
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      gapH16,
+                      Text(strings.allRightsReserved)
                     ],
                   ),
-                  gapH25,
-                  Padding(
-                    padding: const EdgeInsets.all(Sizes.p10),
-                    child: Row(
-                      children: [
-                        const ProfileSelectAllBox(),
-                        gapW10,
-                        Text(strings.status),
-                        gapW38,
-                        Text(strings.profileName),
-                        gapW10,
-                        const Text(''),
-                      ],
-                    ),
-                  ),
-                  Expanded(
-                    child: ListView.builder(
-                      itemCount: state.profiles.length,
-                      itemBuilder: (context, index) {
-                        return BlocProvider<ProfileBloc>(
-                          key: Key("ProfileListView-BlocProvider-${profiles[index]}"),
-                          create: (context) => context.read<ProfileCacheCubit>().getProfileBloc(profiles[index]),
-                          child: const CustomCard.settingsPreview(child: ProfileView()),
-                        );
-                      },
-                    ),
-                  ),
-                ],
-              ),
+                ),
+              ],
             );
           }),
       };
