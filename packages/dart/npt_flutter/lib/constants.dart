@@ -13,10 +13,5 @@ class Constants {
     "@rv_ap": "Singapore",
   };
 
-  // Languages (TODO)
-  // English
-  // Spanish
-  // Br portuguese
-  // Mandarin
-  // Cantonese
+  static const languages = ['English', 'Spanish', 'Br portuguese', 'Mandarin', 'Cantonese'];
 }
