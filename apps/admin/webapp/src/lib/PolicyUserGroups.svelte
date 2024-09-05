@@ -63,7 +63,7 @@
         }
     }
 
-    let baseUrl = 'http://localhost:3000/';
+    let baseUrl = '/';
 
     function displayStatus(msg, isError, t) {
         if (!t) {
@@ -231,7 +231,7 @@
         <div class="row">
             {#key selectedGroupIndex}
                 <div class="border border-primary rounded-3" style="background-color: lightblue">
-                    <h2>Permission sets</h2>
+                    <h2>Roles</h2>
                     <table class="table">
                         <thead>
                         <tr>
@@ -296,7 +296,7 @@
             <div class="row" in:fade={{ duration: 600 }}>
                 {#if selectedGroupIndex >= 0 && selectedGroupIndex < groups.length}
                     <div class="border border-primary rounded-3" style="background-color:cadetblue">
-                        <h3>{groups[selectedGroupIndex].name}</h3>
+                        <h3>Role: {groups[selectedGroupIndex].name}</h3>
                         <table class="table">
                             <thead>
                             </thead>
