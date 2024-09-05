@@ -24,7 +24,6 @@ RUN set -eux; \
   dart compile exe bin/sshnp.dart -v -o /sshnp/sshnp; \
   dart compile exe bin/npt.dart -v -o /sshnp/npt; \
   dart compile exe bin/npp_file.dart -v -o /sshnp/npp_file; \
-  ln -s sshnp/npp_file sshnp/npa_file; \
   dart compile exe bin/npp_atserver.dart -v -o /sshnp/beta/npp_atserver; \
   dart compile exe bin/sshnpd.dart -v -o /sshnp/sshnpd; \
   dart compile exe bin/srv.dart -v -o /sshnp/srv; \
