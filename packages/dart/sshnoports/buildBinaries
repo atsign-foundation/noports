@@ -9,8 +9,8 @@ echo "Compiling sshnpd"; dart compile exe --verbosity error bin/sshnpd.dart -o b
 echo "Compiling srvd"; dart compile exe --verbosity error bin/srvd.dart -o bin/srvd &
 echo "Compiling sshnp"; dart compile exe --verbosity error bin/sshnp.dart -o bin/sshnp &
 echo "Compiling npt"; dart compile exe --verbosity error bin/npt.dart -o bin/npt &
-echo "Compiling npa_file"; dart compile exe --verbosity error bin/npa_file.dart -o bin/npa_file &
-echo "Compiling npp"; dart compile exe --verbosity error bin/npp.dart -o bin/npp &
+echo "Compiling npp_file"; dart compile exe --verbosity error bin/npp_file.dart -o bin/npp_file &
+echo "Compiling npp_atserver"; dart compile exe --verbosity error bin/npp_atserver.dart -o bin/npp_atserver &
 echo "Compiling demo/npa_always_deny"; dart compile exe --verbosity error bin/demo/npa_always_deny.dart -o bin/demo/npa_always_deny &
 echo "Compiling demo/npa_cli"; dart compile exe --verbosity error bin/demo/npa_cli.dart -o bin/demo/npa_cli &
 

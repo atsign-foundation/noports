@@ -16,13 +16,16 @@ COPY . .
 WORKDIR /noports/packages/dart/sshnoports
 RUN set -eux; \
   mkdir -p /sshnp/debug; \
+  mkdir -p /sshnp/beta/web/admin; \
   mkdir /tarball; \
   dart pub get --enforce-lockfile; \
   dart run build_runner build --delete-conflicting-outputs; \
   dart compile exe bin/activate_cli.dart -v -o /sshnp/at_activate; \
   dart compile exe bin/sshnp.dart -v -o /sshnp/sshnp; \
   dart compile exe bin/npt.dart -v -o /sshnp/npt; \
-  dart compile exe bin/npa_file.dart -v -o /sshnp/npa_file; \
+  dart compile exe bin/npp_file.dart -v -o /sshnp/npp_file; \
+  ln -s sshnp/npp_file sshnp/npa_file; \
+  dart compile exe bin/npp_atserver.dart -v -o /sshnp/beta/npp_atserver; \
   dart compile exe bin/sshnpd.dart -v -o /sshnp/sshnpd; \
   dart compile exe bin/srv.dart -v -o /sshnp/srv; \
   dart compile exe bin/npp.dart -v -o /sshnp/npp; \
@@ -32,17 +35,17 @@ RUN set -eux; \
   cp -r bundles/shell/* /sshnp/; \
   cp LICENSE /sshnp/;
 
-# Build apps/admin/admin_api
+# Build apps/admin/admin_api - BETA
 WORKDIR /noports/apps/admin/admin_api
 RUN dart pub get --enforce-lockfile; \
-  dart compile exe bin/admin_api.dart -v -o /sshnp/admin_api
+  dart compile exe bin/np_admin.dart -v -o /sshnp/beta/np_admin
 
 # Build apps/admin/webapp
 WORKDIR /noports/apps/admin/webapp
 RUN npm install; \
   npm run build; \
   mkdir -p /sshnp/web/admin; \
-  cp -r ./dist/* /sshnp/web/admin/
+  cp -r ./dist/* /sshnp/beta/web/admin/
 
 RUN set -eux; \
   case "$(dpkg --print-architecture)" in \

@@ -9,7 +9,8 @@ echo "$(date) : Starting compilation"
 echo
 
 rm -rf build/sshnp build/sshnp.zip build/sshnp.tgz
-mkdir -p build/sshnp
+mkdir -p build/sshnp/web/admin
+mkdir -p build/sshnp/beta/web/admin
 
 dart pub get || exit 1
 
@@ -24,17 +25,18 @@ echo "Compiling npt"; dart compile exe --verbosity error bin/npt.dart -o build/s
 wait
 echo "$(date) : Compilation complete"
 
-echo "Building policy binaries"
-echo "Compiling npa_file"; dart compile exe --verbosity error bin/npa_file.dart -o build/sshnp/npa_file &
-echo "Compiling npp"; dart compile exe --verbosity error bin/npp.dart -o build/sshnp/npp &
+echo "Compiling policy binaries"
+echo "Compiling npp_file.dart to npp_file"; dart compile exe --verbosity error bin/npp_file.dart -o build/sshnp/npp_file &
+ln -s build/sshnp/npp_file build/sshnp/npa_file
+echo "Compiling npp_atserver (BETA)"; dart compile exe --verbosity error bin/npp_atserver.dart -o build/sshnp/beta/npp_atserver &
 
 wait
 echo "$(date) : Compilation complete"
 
-echo "Building admin API and webapp";
+echo "Building admin API and webapp - BETA";
 pushd ../../../apps/admin/admin_api || exit 1
 dart pub get || exit 1
-echo "Compiling admin_api"; dart compile exe --verbosity error bin/admin_api.dart -o "${packageDir}/build/sshnp/admin_api" || exit 1
+echo "Compiling admin_api"; dart compile exe --verbosity error bin/np_admin.dart -o "${packageDir}/build/sshnp/beta/np_admin" || exit 1
 wait
 cd ../webapp || exit 1
 echo "Building admin webapp"
@@ -52,9 +54,8 @@ cp -r bundles/core/* build/sshnp/
 cp -r bundles/shell/* build/sshnp/
 cp LICENSE build/sshnp
 
-echo "$(date) : Copying webapp files"
-mkdir -p build/sshnp/web
-cp -r ../../../apps/admin/webapp/dist build/sshnp/web/admin
+echo "$(date) : Copying webapp files - BETA"
+cp -r ../../../apps/admin/webapp/dist/* build/sshnp/beta/web/admin/
 
 cd build
 
