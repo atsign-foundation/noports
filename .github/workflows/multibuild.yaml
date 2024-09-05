@@ -95,7 +95,7 @@ jobs:
           dart compile exe bin/npp_file.dart -v -o sshnp/npp_file${{ matrix.ext }}
           dart compile exe bin/sshnpd.dart -v -o sshnp/sshnpd${{ matrix.ext }}
           dart compile exe bin/srv.dart -v -o sshnp/srv${{ matrix.ext }}
-          dart compile exe bin/npp.dart -v -o sshnp/srv${{ matrix.ext }}
+          dart compile exe bin/npp_atserver.dart -v -o sshnp/beta/npp_atserver${{ matrix.ext }}
       - name: build admin API
         working-directory: ./apps/admin/admin_api
         run: |
