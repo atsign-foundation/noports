@@ -80,7 +80,6 @@ jobs:
       # create directories need for build
       - run: |
           mkdir -p sshnp/web/admin
-          mkdir -p sshnp/beta/web/admin
           mkdir tarball
       - if: ${{ matrix.os != 'windows-latest' }}
         run: mkdir sshnp/debug
@@ -95,12 +94,12 @@ jobs:
           dart compile exe bin/npp_file.dart -v -o sshnp/npp_file${{ matrix.ext }}
           dart compile exe bin/sshnpd.dart -v -o sshnp/sshnpd${{ matrix.ext }}
           dart compile exe bin/srv.dart -v -o sshnp/srv${{ matrix.ext }}
-          dart compile exe bin/npp_atserver.dart -v -o sshnp/beta/npp_atserver${{ matrix.ext }}
+          dart compile exe bin/npp_atserver.dart -v -o sshnp/npp_atserver${{ matrix.ext }}
       - name: build admin API
         working-directory: ./apps/admin/admin_api
         run: |
           dart pub get --enforce-lockfile
-          dart compile exe bin/np_admin.dart -v -o ../../../packages/dart/sshnoports/sshnp/beta/np_admin${{ matrix.ext }}
+          dart compile exe bin/np_admin.dart -v -o ../../../packages/dart/sshnoports/sshnp/np_admin${{ matrix.ext }}
       - name: build admin webapp
         working-directory: ./apps/admin/webapp
         run: |
@@ -114,7 +113,7 @@ jobs:
       - run: |
           cp -r bundles/core/* sshnp/
           cp -r bundles/${{ matrix.bundle }}/* sshnp/
-          cp -r ../../../apps/admin/webapp/dist/* sshnp/beta/web/admin/
+          cp -r ../../../apps/admin/webapp/dist/* sshnp/web/admin/
           cp LICENSE sshnp
       # codesign for apple
       - if: ${{ matrix.os == 'macos-13' || matrix.os == 'macos-14' }}
@@ -145,7 +144,7 @@ jobs:
             --prefix "com.atsign." \
             --timestamp \
             -v \
-            sshnp/{sshnp,sshnpd,srv,srvd,at_activate,debug/srvd,npt,npa_file,npp_file,beta/npp_atserver,beta/np_admin}
+            sshnp/{sshnp,sshnpd,srv,srvd,at_activate,debug/srvd,npt,npa_file,npp_file,npp_atserver,np_admin}
       # zip the build
       - if: ${{ matrix.os == 'macos-13' || matrix.os == 'macos-14' }}
         run:
