@@ -8,18 +8,11 @@ class ProfileViewMinimal extends StatelessWidget {
   Widget build(BuildContext context) {
     return const Row(children: [
       ProfileSelectBox(),
-      ProfileDisplayName(),
-      SizedBox(width: 10),
       ProfileStatusIndicator(),
-      SizedBox(width: 10),
-      ProfileDeviceName(),
-      SizedBox(width: 10),
-      ProfileServiceView(),
+      ProfileDisplayName(),
       ProfileRunButton(),
-      ProfileEditButton(),
-      ProfileExportButton(),
-      ProfileDeleteButton(),
       ProfileFavoriteButton(),
+      ProfilePopupMenuButton(),
     ]);
   }
 }

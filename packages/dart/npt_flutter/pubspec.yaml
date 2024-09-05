@@ -40,9 +40,9 @@ dependencies:
   flutter:
     sdk: flutter
   flutter_bloc: ^8.1.6
-  flutter_svg: ^2.0.10+1
   flutter_localizations:
     sdk: flutter
+  flutter_svg: ^2.0.10+1
   intl: any
   json_annotation: ^4.9.0
   json_serializable: ^6.8.0
@@ -50,6 +50,7 @@ dependencies:
   noports_core:
     path: ../noports_core
   path_provider: ^2.1.4
+  phosphor_flutter: ^2.1.0
   socket_connector: ^2.2.0
   toml: ^0.16.0
   tray_manager: ^0.2.3

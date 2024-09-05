@@ -11,9 +11,7 @@ class ProfileViewSshStyle extends StatelessWidget {
       ProfileDisplayName(),
       ProfileStatusIndicator(),
       ProfileRunButton(),
-      ProfileEditButton(),
-      ProfileExportButton(),
-      ProfileDeleteButton(),
+      ProfilePopupMenuButton(),
     ]);
   }
 }

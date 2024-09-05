@@ -23,12 +23,13 @@ class Sizes {
   static const p27 = 27.0;
   static const p28 = 28.0;
   static const p30 = 30.0;
-  // static const p32 = 32.0;
+  static const p32 = 32.0;
   static const p33 = 33.0;
   // static const p34 = 34.0;
   // static const p36 = 36.0;
   static const p38 = 38.0;
   static const p40 = 40.0;
+  static const p44 = 44.0;
   // static const p46 = 46.0;
   // static const p48 = 48.0;
   static const p43 = 43.0;
@@ -50,8 +51,10 @@ class Sizes {
   // static const p320 = 320.0;
   static const p436 = 436.0;
   static const p470 = 470.0;
+
   static const p654 = 654.0;
   static const p664 = 664.0;
+  static const p941 = 941.0;
 }
 
 const gap0 = SizedBox();
@@ -59,6 +62,7 @@ const gap0 = SizedBox();
 /// Constant gap widths
 const gapW4 = SizedBox(width: Sizes.p4);
 // const gapW8 = SizedBox(width: Sizes.p8);
+const gapW10 = SizedBox(width: Sizes.p10);
 // const gapW12 = SizedBox(width: Sizes.p12);
 // const gapW16 = SizedBox(width: Sizes.p16);
 const gapW20 = SizedBox(width: Sizes.p20);

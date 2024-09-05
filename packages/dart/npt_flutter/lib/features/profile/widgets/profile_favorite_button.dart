@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:npt_flutter/features/favorite/favorite.dart';
 import 'package:npt_flutter/features/profile/profile.dart';
+import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 class ProfileFavoriteButton extends StatelessWidget {
   const ProfileFavoriteButton({super.key});
@@ -18,7 +19,7 @@ class ProfileFavoriteButton extends StatelessWidget {
           if (state is! FavoritesLoaded) return false;
           return profile.isInFavorites(state.favorites);
         },
-        builder: (BuildContext context, bool isFavorited) => ElevatedButton(
+        builder: (BuildContext context, bool isFavorited) => IconButton(
           onPressed: () {
             if (isFavorited) {
               context.read<FavoriteBloc>().add(
@@ -30,7 +31,10 @@ class ProfileFavoriteButton extends StatelessWidget {
                   );
             }
           },
-          child: Text(isFavorited ? 'Unfavorite' : 'Favorite'),
+          icon: PhosphorIcon(
+            isFavorited ? PhosphorIcons.star(PhosphorIconsStyle.fill) : PhosphorIcons.star(),
+            color: isFavorited ? Theme.of(context).colorScheme.primary : null,
+          ),
         ),
       );
     });
