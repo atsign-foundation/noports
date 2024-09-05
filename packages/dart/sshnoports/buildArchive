@@ -26,7 +26,6 @@ echo "$(date) : Compilation complete"
 
 echo "Compiling policy binaries"
 echo "Compiling npp_file.dart to npp_file"; dart compile exe --verbosity error bin/npp_file.dart -o build/sshnp/npp_file &
-ln -s build/sshnp/npp_file build/sshnp/npa_file
 echo "Compiling npp_atserver (BETA)"; dart compile exe --verbosity error bin/npp_atserver.dart -o build/sshnp/npp_atserver &
 
 wait
