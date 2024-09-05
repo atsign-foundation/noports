@@ -5,12 +5,11 @@ import 'dart:io';
 import 'package:at_client/at_client.dart' hide StringBuffer;
 import 'package:at_utils/at_logger.dart';
 import 'package:logging/logging.dart';
-import 'package:meta/meta.dart';
 import 'package:noports_core/npa.dart';
+import 'package:noports_core/src/common/mixins/at_client_bindings.dart';
 import 'package:noports_core/utils.dart';
 
-@protected
-class NPAImpl implements NPA {
+class NPAImpl with AtClientBindings implements NPA {
   @override
   final AtSignLogger logger = AtSignLogger(' sshnpa ');
 
@@ -24,10 +23,13 @@ class NPAImpl implements NPA {
   String get authorizerAtsign => atClient.getCurrentAtSign()!;
 
   @override
-  Set<String> daemonAtsigns;
+  String get loggingAtsign => atClient.getCurrentAtSign()!;
 
   @override
-  NPARequestHandler handler;
+  final Set<String> daemonAtsigns;
+
+  @override
+  final NPARequestHandler handler;
 
   static const JsonEncoder jsonPrettyPrinter = JsonEncoder.withIndent('    ');
 
@@ -42,11 +44,14 @@ class NPAImpl implements NPA {
     logger.logger.level = Level.SHOUT;
   }
 
-  static Future<NPA> fromCommandLineArgs(List<String> args,
-      {required NPARequestHandler handler,
-      AtClient? atClient,
-      FutureOr<AtClient> Function(NPAParams)? atClientGenerator,
-      void Function(Object, StackTrace)? usageCallback}) async {
+  static Future<NPA> fromCommandLineArgs(
+    List<String> args, {
+    required NPARequestHandler handler,
+    AtClient? atClient,
+    FutureOr<AtClient> Function(NPAParams)? atClientGenerator,
+    void Function(Object, StackTrace)? usageCallback,
+    Set<String>? daemonAtsigns,
+  }) async {
     try {
       var p = await NPAParams.fromArgs(args);
 
@@ -69,7 +74,7 @@ class NPAImpl implements NPA {
       var sshnpa = NPAImpl(
         atClient: atClient,
         homeDirectory: p.homeDirectory,
-        daemonAtsigns: p.daemonAtsigns,
+        daemonAtsigns: daemonAtsigns ?? p.daemonAtsigns,
         handler: handler,
       );
 
@@ -103,24 +108,55 @@ class NPAImpl implements NPA {
   Future<AtRpcResp> handleRequest(AtRpcReq request, String fromAtSign) async {
     logger.info('Received request from $fromAtSign: '
         '${jsonPrettyPrinter.convert(request.toJson())}');
+    // We will send a 'log' notification to the loggingAtsign
+    var logKey = AtKey()
+      ..key = '${DateTime.now().millisecondsSinceEpoch}.logs.policy'
+      ..sharedBy = authorizerAtsign
+      ..sharedWith = loggingAtsign
+      ..namespace = DefaultArgs.namespace
+      ..metadata = (Metadata()
+        ..isPublic = false
+        ..isEncrypted = true
+        ..namespaceAware = true);
 
     NPAAuthCheckRequest authCheckRequest =
         NPAAuthCheckRequest.fromJson(request.payload);
+    AtRpcResp rpcResponse;
     try {
       var authCheckResponse = await handler.doAuthCheck(authCheckRequest);
-      return AtRpcResp(
+      rpcResponse = AtRpcResp(
           reqId: request.reqId,
           respType: AtRpcRespType.success,
           payload: authCheckResponse.toJson());
     } catch (e, st) {
       logger.shout('Exception: $e : StackTrace : \n$st');
-      return AtRpcResp(
+      rpcResponse = AtRpcResp(
           reqId: request.reqId,
           respType: AtRpcRespType.success,
-          payload:
-              NPAAuthCheckResponse(authorized: false, message: 'Exception: $e')
-                  .toJson());
+          payload: NPAAuthCheckResponse(
+            authorized: false,
+            message: 'Exception: $e',
+            permitOpen: [],
+          ).toJson());
     }
+    await notify(
+      logKey,
+      // TODO Make a PolicyLogEvent and use PolicyLogEvent.toJson()
+      jsonEncode(
+        {
+          'daemon': fromAtSign,
+          'timestamp': DateTime.now().millisecondsSinceEpoch,
+          'payload': {
+            'request': request,
+            'response': rpcResponse,
+          }
+        },
+      ),
+      checkForFinalDeliveryStatus: false,
+      waitForFinalDeliveryStatus: false,
+      ttln: Duration(hours: 1),
+    );
+    return rpcResponse;
   }
 
   /// We're not sending any RPCs so we don't implement `handleResponse`

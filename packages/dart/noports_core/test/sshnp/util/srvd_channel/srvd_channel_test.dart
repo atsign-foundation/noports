@@ -62,9 +62,9 @@ void main() {
         atClient: mockAtClient,
         params: mockParams,
         sessionId: sessionId,
-        srvGenerator: srvGeneratorStub,
-        notify: notifyStub,
-        subscribe: subscribeStub,
+        srvGenerator: srvGeneratorStub.call,
+        notify: notifyStub.call,
+        subscribe: subscribeStub.call,
       );
 
       registerFallbackValue(AtKey());
