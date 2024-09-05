@@ -27,7 +27,6 @@ RUN set -eux; \
   dart compile exe bin/npp_atserver.dart -v -o /sshnp/npp_atserver; \
   dart compile exe bin/sshnpd.dart -v -o /sshnp/sshnpd; \
   dart compile exe bin/srv.dart -v -o /sshnp/srv; \
-  dart compile exe bin/npp.dart -v -o /sshnp/npp; \
   dart compile exe bin/srvd.dart -v -o /sshnp/srvd; \
   dart compile exe bin/srvd.dart -D ENABLE_SNOOP=true -v -o /sshnp/debug/srvd; \
   cp -r bundles/core/* /sshnp/; \
