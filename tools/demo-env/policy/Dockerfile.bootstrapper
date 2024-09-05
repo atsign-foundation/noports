@@ -1,0 +1,9 @@
+FROM alpine:3.20
+
+WORKDIR /atsign
+
+COPY ./bootstrap.sh .
+
+RUN chmod u+x /atsign/bootstrap.sh
+
+ENTRYPOINT [ "/atsign/bootstrap.sh" ]

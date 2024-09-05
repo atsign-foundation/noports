@@ -1,0 +1,148 @@
+# Good emoji: 🛠
+name: "noports-demo-environment"
+
+volumes:
+  atkeys:
+
+services:
+  # Just a blank alpine image for running some commands
+  blank:
+    image: alpine:3.20
+    command: tail -f /dev/null
+
+  # Virtual environment - a fully local containerized instance with:
+  # - supervisord to run all services
+  # - atDirectory (and redis instance for the atDirectory)
+  # - a bunch of atServers
+  virtualenv:
+    image: atsigncompany/virtualenv:vip
+    hostname: vip.ve.atsign.zone
+    ports:
+      - "127.0.0.1:9001:9001" # Service dashboard
+      # - "127.0.0.1:6379:6379" # Redis (for atDirectory)
+      - "64:64" # atDirectory
+      - "25000-25019:25000-25019" # atServers
+    command:
+      /bin/sh -c "(sleep 5 && supervisorctl start pkamLoad) & supervisord -n"
+
+  # Bootstrapper - provides the cryptographic keys with the other containers
+  bootstrapper:
+    build: bootstrapper
+    volumes:
+      - atkeys:/home/atsign/mount
+    depends_on:
+      virtualenv:
+        condition: service_started
+
+  # Relays
+  # Note: ephemeral ports for relays must be mapped 1:1
+  # e.g. 8000:8000 is GOOD
+  # e.g. 8000:9000 is BAD, since the relay response will resolve to the wrong port
+  relay-jagan:
+    build: srvd
+    volumes:
+      - atkeys:/home/atsign/mount
+    depends_on:
+      bootstrapper:
+        condition: service_completed_successfully
+    restart: unless-stopped
+    sysctls:
+      net.ipv4.ip_local_port_range: "20000 20099"
+    ports:
+      - "20000-20099:20000-20099"
+    hostname: relay1.atsign.zone
+    environment:
+      ATSIGN: "@jagan🛠"
+      ARGS: "--root-domain vip.ve.atsign.zone"
+
+  relay-ashish:
+    build: srvd
+    volumes:
+      - atkeys:/home/atsign/mount
+    depends_on:
+      bootstrapper:
+        condition: service_completed_successfully
+    restart: unless-stopped
+    sysctls:
+      net.ipv4.ip_local_port_range: "20100 20199"
+    ports:
+      - "20100-20199:20100-20199"
+    hostname: relay2.atsign.zone
+    environment:
+      ATSIGN: "@ashish🛠"
+      ARGS: "--root-domain vip.ve.atsign.zone"
+
+  # Daemons - ephemeral ports can be mapped however you like
+  device-alice:
+    build: sshnpd
+    volumes:
+      - atkeys:/home/atsign/mount
+    depends_on:
+      bootstrapper:
+        condition: service_completed_successfully
+    restart: unless-stopped
+    sysctls:
+      net.ipv4.ip_local_port_range: "20000 20099"
+    ports:
+      - "2201:22"
+      - "8001:80"
+      - "20200-20299:20000-20099"
+    environment:
+      ATSIGN: "@alice🛠"
+      MANAGER: "@colin🛠"
+      POLICY: "@kevin🛠"
+      ARGS:
+        "--root-domain vip.ve.atsign.zone --po
+        localhost:22,127.0.0.1:22,localhost:80,127.0.0.1:80 -sv"
+
+  device-bob:
+    build: sshnpd
+    volumes:
+      - atkeys:/home/atsign/mount
+    depends_on:
+      bootstrapper:
+        condition: service_completed_successfully
+    restart: unless-stopped
+    sysctls:
+      net.ipv4.ip_local_port_range: "20000 20099"
+    ports:
+      - "20300-20399:20000-20099"
+    environment:
+      ATSIGN: "@bob🛠"
+      MANAGER: "@colin🛠"
+      POLICY: "@kevin🛠"
+      ARGS:
+        "--root-domain vip.ve.atsign.zone --po
+        localhost:22,127.0.0.1:22,localhost:80,127.0.0.1:80,host.docker.internal:5900,host.docker.internal:3389
+        -sv"
+
+  # Policy
+  #
+  policy-kevin:
+    build: policy
+    volumes:
+      - atkeys:/home/atsign/mount
+    depends_on:
+      bootstrapper:
+        condition: service_completed_successfully
+    restart: unless-stopped
+    sysctls:
+      net.ipv4.ip_local_port_range: "20000 20099"
+    ports:
+      - "3000:3000"
+      - "20500-20599:20000-20099"
+    environment:
+      ATSIGN: "@kevin🛠"
+      ARGS: "--root-domain vip.ve.atsign.zone -v"
+      API_ARGS: "--root-domain vip.ve.atsign.zone --namespace sshnp"
+
+  # This will run before the policy api is ready thus nothing will until it is
+  # re-run manually, this is intentional
+  policy-kevin-bootstrapper:
+    build:
+      context: policy
+      dockerfile: ./Dockerfile.bootstrapper
+    restart: "no"
+    environment:
+      HOST: host.docker.internal
+      PORT: 3000
