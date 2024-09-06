@@ -194,6 +194,7 @@ parse_env() {
       ;;
     arm | armv7l)
       system_arch="arm."
+      # Note extra '.' is required
       ;;
     riscv64)
       system_arch="riscv64"
