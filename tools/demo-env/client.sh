@@ -28,7 +28,7 @@ __usage() {
 noports() {
   if [ "$#" -ne 4 ]; then
     __usage
-    exit 0
+    return
   fi
 
   FROM=$(__norm_atsign "$1")
@@ -70,7 +70,7 @@ noports() {
       ;;
     *)
       __usage
-      exit 1
+      return
       ;;
   esac
 }
