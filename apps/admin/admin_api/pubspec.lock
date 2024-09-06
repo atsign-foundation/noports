@@ -99,10 +99,10 @@ packages:
     dependency: "direct main"
     description:
       name: at_client
-      sha256: "76a24bbf17867b64a5e827bb33d7c5f3ca2edfd5766d0920211e068d30ae748f"
+      sha256: "2e98fe0c0c520b8e7ad6dfd0ad53ecb97f1ceb33c9b117dda69417b72a067c60"
       url: "https://pub.dev"
     source: hosted
-    version: "3.1.0"
+    version: "3.2.0"
   at_commons:
     dependency: transitive
     description:
@@ -371,18 +371,18 @@ packages:
     dependency: transitive
     description:
       name: ecdsa
-      sha256: b71687a843151255fced9fead63b09816cc59e9ae7b954e6a852bdc344ae1aca
+      sha256: "13b4e01ac140575cf88ef5e5268f92b8dd0a67a26c60a1b74e67d146068dc246"
       url: "https://pub.dev"
     source: hosted
-    version: "0.1.0"
+    version: "0.1.2"
   elliptic:
     dependency: transitive
     description:
       name: elliptic
-      sha256: "98e2fa89a714c649174553c823db2612dc9581814477fe1264a499d448237b6b"
+      sha256: "0c303d810603953a65dc39c4c542fb7538defd9e212403c54c266140819523b6"
       url: "https://pub.dev"
     source: hosted
-    version: "0.3.10"
+    version: "0.3.11"
   encrypt:
     dependency: transitive
     description:
