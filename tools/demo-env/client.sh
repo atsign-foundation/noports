@@ -38,35 +38,19 @@ noports() {
 
   case $SERVICE in
     ssh)
-      echo "sshnp \\"
-      echo "  --root-domain vip.ve.atsign.zone \\"
-      echo "  -f $FROM -t $TO -r $RELAY \\"
-      echo "  -u atsign \\"
-      echo "  -s -i ~/.ssh/id_ed25519"
+      echo "sshnp --root-domain vip.ve.atsign.zone -f $FROM -t $TO -r $RELAY -u atsign -s -i $HOME/.ssh/id_ed25519"
       ;;
     http)
-      echo "npt \\"
-      echo "  --root-domain vip.ve.atsign.zone \\"
-      echo "  -f $FROM -t $TO -r $RELAY \\"
-      echo "  -u atsign \\"
-      echo "-p 80 -l 8080 -K"
-      echo "# Then connect to: http://localhost:8080"
+      echo "npt --root-domain vip.ve.atsign.zone -f $FROM -t $TO -r $RELAY -d default -p 80 -l 8080 -K"
+      echo "# Then connect to: http://localhost:8080" 1>&2
       ;;
     vnc)
-      echo "npt \\"
-      echo "  --root-domain vip.ve.atsign.zone \\"
-      echo "  -f $FROM -t $TO -r $RELAY \\"
-      echo "  -u atsign \\"
-      echo " -h host.docker.internal -p 5900 -l 59000 -K"
-      echo "# Then connect to: vnc://localhost:59000"
+      echo "npt --root-domain vip.ve.atsign.zone -f $FROM -t $TO -r $RELAY -d default -h host.docker.internal -p 5900 -l 59000 -K"
+      echo "# Then connect to: vnc://localhost:59000" 1>&2
       ;;
     rdp)
-      echo "npt \\"
-      echo "  --root-domain vip.ve.atsign.zone \\"
-      echo "  -f $FROM -t $TO -r $RELAY \\"
-      echo "  -u atsign \\"
-      echo "-h host.docker.internal -p 3389 -l 33899 -K"
-      echo "# Then connect to: rdp://localhost:33899"
+      echo "npt --root-domain vip.ve.atsign.zone -f $FROM -t $TO -r $RELAY -d default -h host.docker.internal -p 3389 -l 33899 -K"
+      echo "# Then connect to: rdp://localhost:33899" 1>&2
       ;;
     *)
       __usage
