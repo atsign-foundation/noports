@@ -91,10 +91,10 @@ packages:
     dependency: transitive
     description:
       name: at_client
-      sha256: "12b7f5cacbb726e33a76ed4d069cb552df1333d30026cb9237f3b8b83bc0e6e4"
+      sha256: "2e98fe0c0c520b8e7ad6dfd0ad53ecb97f1ceb33c9b117dda69417b72a067c60"
       url: "https://pub.dev"
     source: hosted
-    version: "3.0.78"
+    version: "3.2.0"
   at_client_mobile:
     dependency: "direct main"
     description:
@@ -162,9 +162,11 @@ packages:
   at_onboarding_flutter:
     dependency: "direct main"
     description:
-      path: "/Users/curtlycritchlow/Documents/CCWC/clients/atsign/at_widgets/packages/at_onboarding_flutter"
-      relative: false
-    source: path
+      path: "packages/at_onboarding_flutter"
+      ref: trunk
+      resolved-ref: "3aa5f6a311293ab48a982fd54b97673cae8af201"
+      url: "https://github.com/atsign-foundation/at_widgets"
+    source: git
     version: "6.1.8"
   at_persistence_secondary_server:
     dependency: transitive

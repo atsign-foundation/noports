@@ -31,8 +31,7 @@ dependencies:
   at_client_mobile: ^3.2.18
   at_contact: ^3.0.8
   at_contacts_flutter: ^4.0.15
-  at_onboarding_flutter:
-    path: /Users/curtlycritchlow/Documents/CCWC/clients/atsign/at_widgets/packages/at_onboarding_flutter
+  at_onboarding_flutter: ^6.1.7
   at_utils: ^3.0.16
   cupertino_icons: ^1.0.8
   equatable: ^2.0.5
@@ -73,7 +72,11 @@ dependency_overrides:
     git:
       ref: gkc/show-aliases-in-usage
       url: https://github.com/gkc/args
-
+  at_onboarding_flutter:
+    git:
+      url: https://github.com/atsign-foundation/at_widgets
+      ref: trunk
+      path: packages/at_onboarding_flutter
   # The "flutter_lints" package below contains a set of recommended lints to
   # encourage good coding practices. The lint set provided by the package is
   # activated in the `analysis_options.yaml` file located at the root of your
