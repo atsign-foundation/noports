@@ -44,6 +44,8 @@ The @bob🛠 container also supports remote desktop passthrough back to the host
 
 ### Setup
 
+#### One-time setup
+
 Add the following entries to `/etc/hosts` on your host machine:
 
 ```txt
@@ -58,6 +60,26 @@ Setup docker environment with docker compose:
 ```sh
 docker compose up -d
 ```
+
+> You can turn this off later via the docker UI or using the command:
+> `docker compose down -d`
+
+After you've started the docker environment for the first time, there will be a
+docker volume containing all of the demo atSigns' atKeys files.
+
+1. Via Docker UI (User friendly)  
+   Go to the volumes tab and you will find a volume called
+   `noports-demo-environment_atkeys`, right-click the key you want and click
+   "Save as...", then save the key to `$HOME/.atsign/keys`.  
+   Note: `$HOME` is _your_ home folder - this is typically the parent folder of
+   your `Documents` folder
+
+2. Via Command Line (Advanced Docker users)  
+   Use `docker container cp` to copy files from one of the containers (any
+   container except blank and the bootstrapper containers), the atKeys are
+   located at `/home/atsign/mount` on the containers.
+
+#### Per-session utility setup
 
 Source the client utility file:
 
