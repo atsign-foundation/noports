@@ -92,11 +92,13 @@ class NPAImpl with AtClientBindings implements NPA {
   @override
   Future<void> run() async {
     AtRpc rpc = AtRpc(
-        atClient: atClient,
-        baseNameSpace: DefaultArgs.namespace,
-        domainNameSpace: 'auth_checks',
-        callbacks: this,
-        allowList: daemonAtsigns);
+      atClient: atClient,
+      baseNameSpace: DefaultArgs.namespace,
+      domainNameSpace: 'auth_checks',
+      callbacks: this,
+      allowList: daemonAtsigns,
+      allowAll: true,
+    );
 
     rpc.start();
 

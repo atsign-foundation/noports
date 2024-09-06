@@ -86,10 +86,10 @@ packages:
     dependency: transitive
     description:
       name: at_client
-      sha256: "76a24bbf17867b64a5e827bb33d7c5f3ca2edfd5766d0920211e068d30ae748f"
+      sha256: "2e98fe0c0c520b8e7ad6dfd0ad53ecb97f1ceb33c9b117dda69417b72a067c60"
       url: "https://pub.dev"
     source: hosted
-    version: "3.1.0"
+    version: "3.2.0"
   at_client_mobile:
     dependency: "direct main"
     description:
@@ -383,18 +383,18 @@ packages:
     dependency: transitive
     description:
       name: ecdsa
-      sha256: b71687a843151255fced9fead63b09816cc59e9ae7b954e6a852bdc344ae1aca
+      sha256: "13b4e01ac140575cf88ef5e5268f92b8dd0a67a26c60a1b74e67d146068dc246"
       url: "https://pub.dev"
     source: hosted
-    version: "0.1.0"
+    version: "0.1.2"
   elliptic:
     dependency: transitive
     description:
       name: elliptic
-      sha256: "98e2fa89a714c649174553c823db2612dc9581814477fe1264a499d448237b6b"
+      sha256: "0c303d810603953a65dc39c4c542fb7538defd9e212403c54c266140819523b6"
       url: "https://pub.dev"
     source: hosted
-    version: "0.3.10"
+    version: "0.3.11"
   encrypt:
     dependency: transitive
     description:
@@ -455,10 +455,10 @@ packages:
     dependency: transitive
     description:
       name: file_selector_android
-      sha256: "77f23eb5916fd0875946720d1f286f809a28a867d4882db6ac2cf053e2d5f7c6"
+      sha256: b8c9717a0177ca6fa035554b82cd6c83b838ddc66b7704eb6df0f77f027ecc90
       url: "https://pub.dev"
     source: hosted
-    version: "0.5.1+6"
+    version: "0.5.1+7"
   file_selector_ios:
     dependency: transitive
     description:
@@ -561,10 +561,10 @@ packages:
     dependency: transitive
     description:
       name: flutter_plugin_android_lifecycle
-      sha256: "9d98bd47ef9d34e803d438f17fd32b116d31009f534a6fa5ce3a1167f189a6de"
+      sha256: "9ee02950848f61c4129af3d6ec84a1cfc0e47931abc746b03e7a3bc3e8ff6eda"
       url: "https://pub.dev"
     source: hosted
-    version: "2.0.21"
+    version: "2.0.22"
   flutter_riverpod:
     dependency: "direct main"
     description:
@@ -731,10 +731,10 @@ packages:
     dependency: "direct main"
     description:
       name: macos_ui
-      sha256: "5238460b083411af1c6f2f6cb4771a7af82a3ecf5249b35ad7ac0013bcc93cef"
+      sha256: "80f6539aba5a3a1182d5225a6c27969a780bcb1d2d8135b4ffb708570cf0c854"
       url: "https://pub.dev"
     source: hosted
-    version: "2.0.8"
+    version: "2.0.9"
   macos_window_utils:
     dependency: transitive
     description:
@@ -771,10 +771,10 @@ packages:
     dependency: transitive
     description:
       name: mime
-      sha256: "2e123074287cc9fd6c09de8336dae606d1ddb88d9ac47358826db698c176a1f2"
+      sha256: "801fd0b26f14a4a58ccb09d5892c3fbdeff209594300a542492cf13fba9d247a"
       url: "https://pub.dev"
     source: hosted
-    version: "1.0.5"
+    version: "1.0.6"
   mocktail:
     dependency: "direct main"
     description:
@@ -1058,10 +1058,10 @@ packages:
     dependency: transitive
     description:
       name: quiver
-      sha256: b1c1ac5ce6688d77f65f3375a9abb9319b3cb32486bdc7a1e0fdf004d7ba4e47
+      sha256: ea0b925899e64ecdfbf9c7becb60d5b50e706ade44a85b2363be2a22d88117d2
       url: "https://pub.dev"
     source: hosted
-    version: "3.2.1"
+    version: "3.2.2"
   riverpod:
     dependency: transitive
     description:
@@ -1106,10 +1106,10 @@ packages:
     dependency: transitive
     description:
       name: shared_preferences_android
-      sha256: a7e8467e9181cef109f601e3f65765685786c1a738a83d7fbbde377589c0d974
+      sha256: "480ba4345773f56acda9abf5f50bd966f581dac5d514e5fc4a18c62976bbba7e"
       url: "https://pub.dev"
     source: hosted
-    version: "2.3.1"
+    version: "2.3.2"
   shared_preferences_foundation:
     dependency: transitive
     description:
@@ -1255,10 +1255,10 @@ packages:
     dependency: transitive
     description:
       name: url_launcher_android
-      sha256: f0c73347dfcfa5b3db8bc06e1502668265d39c08f310c29bff4e28eea9699f79
+      sha256: e35a698ac302dd68e41f73250bd9517fe3ab5fa4f18fe4647a0872db61bacbab
       url: "https://pub.dev"
     source: hosted
-    version: "6.3.9"
+    version: "6.3.10"
   url_launcher_ios:
     dependency: transitive
     description:
@@ -1383,10 +1383,10 @@ packages:
     dependency: transitive
     description:
       name: webview_flutter_android
-      sha256: c66651fba15f9d7ddd31daec42da8d6bce46c85610a7127e3ebcb39a4395c3c9
+      sha256: "6e64fcb1c19d92024da8f33503aaeeda35825d77142c01d0ea2aa32edc79fdc8"
       url: "https://pub.dev"
     source: hosted
-    version: "3.16.6"
+    version: "3.16.7"
   webview_flutter_platform_interface:
     dependency: transitive
     description:
