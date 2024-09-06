@@ -193,7 +193,7 @@ parse_env() {
       system_arch="arm64"
       ;;
     arm | armv7l)
-      system_arch="armv7"
+      system_arch="arm."
       ;;
     riscv64)
       system_arch="riscv64"
