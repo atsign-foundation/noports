@@ -4,8 +4,8 @@
 cp /home/atsign/mount/"${ATSIGN}_key.atKeys" /home/atsign/.atsign/keys/
 
 # Run the NoPorts Policy binary
-/home/atsign/npp -a "${ATSIGN}" ${ARGS} &
-/home/atsign/admin_api -a "${ATSIGN}" ${API_ARGS}
+/home/atsign/npp_atserver -a "${ATSIGN}" ${ARGS} &
+/home/atsign/np_admin -a "${ATSIGN}" ${API_ARGS}
 
 # Pause after a crash before restarting
 sleep 5
