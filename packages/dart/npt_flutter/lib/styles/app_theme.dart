@@ -108,6 +108,18 @@ class AppTheme {
         iconTheme: const IconThemeData.fallback().copyWith(
           color: AppColor.onSurfaceColor,
         ),
+        elevatedButtonTheme: ElevatedButtonThemeData(
+          style: ButtonStyle(
+            minimumSize: WidgetStateProperty.all<Size>(
+              const Size(102, 60),
+            ),
+            shape: WidgetStateProperty.all<RoundedRectangleBorder>(
+              RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(Sizes.p10),
+              ),
+            ),
+          ),
+        ),
         checkboxTheme: CheckboxThemeData(
           fillColor: WidgetStateProperty.resolveWith((states) => Colors.white),
           checkColor: WidgetStateProperty.resolveWith(
