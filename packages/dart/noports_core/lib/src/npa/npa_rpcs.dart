@@ -38,18 +38,26 @@ class NPAAuthCheckRequest {
 class NPAAuthCheckResponse {
   final bool authorized;
   final String? message;
+  final List<String> permitOpen;
 
-  NPAAuthCheckResponse({required this.authorized, required this.message});
+  NPAAuthCheckResponse({
+    required this.authorized,
+    required this.message,
+    required this.permitOpen,
+  });
 
   static NPAAuthCheckResponse fromJson(Map<String, dynamic> json) {
     return NPAAuthCheckResponse(
-      authorized: json['authorized'],
-      message: json['message'],
-    );
+        authorized: json['authorized'],
+        message: json['message'],
+        permitOpen: List<String>.from(json['permitOpen']));
   }
 
-  Map<String, dynamic> toJson() =>
-      {'authorized': authorized, 'message': message};
+  Map<String, dynamic> toJson() => {
+        'authorized': authorized,
+        'message': message,
+        'permitOpen': permitOpen,
+      };
 
   @override
   String toString() => jsonPrettyPrinter.convert(toJson());

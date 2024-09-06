@@ -3,7 +3,7 @@ name: Multibuild
 on:
   push:
     tags:
-      - 'v*.*.*'
+      - "v*.*.*"
   workflow_dispatch:
     inputs:
       main_build_only:
@@ -27,7 +27,9 @@ jobs:
           git config --global user.name 'Atsign Robot'
           git config --global user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git checkout -b multibuild-${{github.run_number}}
-      - name: Ensure pubspec.yaml matches git ref (if current git ref is a version tag)
+      - name:
+          Ensure pubspec.yaml matches git ref (if current git ref is a version
+          tag)
         shell: bash
         if: startsWith(github.ref, 'refs/tags/v')
         working-directory: ./packages/dart/sshnoports
@@ -53,28 +55,31 @@ jobs:
         include:
           - os: ubuntu-latest
             output-name: sshnp-linux-x64
-            ext: ''
-            bundle: 'shell'
+            ext: ""
+            bundle: "shell"
           - os: macos-13
             output-name: sshnp-macos-x64
-            ext: ''
-            bundle: 'shell'
+            ext: ""
+            bundle: "shell"
           - os: macos-14
             output-name: sshnp-macos-arm64
-            ext: ''
-            bundle: 'shell'
+            ext: ""
+            bundle: "shell"
           - os: windows-latest
             output-name: sshnp-windows-x64
-            ext: '.exe'
-            bundle: 'windows'
+            ext: ".exe"
+            bundle: "windows"
     steps:
       - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
         with:
           ref: multibuild-${{github.run_number}}
       - uses: dart-lang/setup-dart@0a8a0fc875eb934c15d08629302413c671d3f672 # v1.6.5
+      - uses: actions/setup-node@1e60f620b9541d16bece96c5465dc8ee9832be0b # v4.0.3
+        with:
+          node-version: '20.17.0'
       # create directories need for build
       - run: |
-          mkdir sshnp
+          mkdir -p sshnp/web/admin
           mkdir tarball
       - if: ${{ matrix.os != 'windows-latest' }}
         run: mkdir sshnp/debug
@@ -85,8 +90,21 @@ jobs:
           dart compile exe bin/activate_cli.dart -v -o sshnp/at_activate${{ matrix.ext }}
           dart compile exe bin/sshnp.dart -v -o sshnp/sshnp${{ matrix.ext }}
           dart compile exe bin/npt.dart -v -o sshnp/npt${{ matrix.ext }}
+          dart compile exe bin/npp_file.dart -v -o sshnp/npa_file${{ matrix.ext }}
+          dart compile exe bin/npp_file.dart -v -o sshnp/npp_file${{ matrix.ext }}
           dart compile exe bin/sshnpd.dart -v -o sshnp/sshnpd${{ matrix.ext }}
           dart compile exe bin/srv.dart -v -o sshnp/srv${{ matrix.ext }}
+          dart compile exe bin/npp_atserver.dart -v -o sshnp/npp_atserver${{ matrix.ext }}
+      - name: build admin API
+        working-directory: ./apps/admin/admin_api
+        run: |
+          dart pub get --enforce-lockfile
+          dart compile exe bin/np_admin.dart -v -o ../../../packages/dart/sshnoports/sshnp/np_admin${{ matrix.ext }}
+      - name: build admin webapp
+        working-directory: ./apps/admin/webapp
+        run: |
+          npm install
+          npm run build
       - if: ${{ matrix.os != 'windows-latest' }}
         run: |
           dart compile exe bin/srvd.dart -v -o sshnp/srvd${{ matrix.ext }}
@@ -95,13 +113,15 @@ jobs:
       - run: |
           cp -r bundles/core/* sshnp/
           cp -r bundles/${{ matrix.bundle }}/* sshnp/
+          cp -r ../../../apps/admin/webapp/dist/* sshnp/web/admin/
           cp LICENSE sshnp
       # codesign for apple
       - if: ${{ matrix.os == 'macos-13' || matrix.os == 'macos-14' }}
         name: Import certificates
         env:
           MACOS_CODESIGN_CERT: ${{ secrets.MACOS_CODESIGN_CERT }}
-          MACOS_CODESIGN_CERT_PASSWORD: ${{ secrets.MACOS_CODESIGN_CERT_PASSWORD }}
+          MACOS_CODESIGN_CERT_PASSWORD:
+            ${{ secrets.MACOS_CODESIGN_CERT_PASSWORD }}
           MACOS_SIGNING_IDENTITY: ${{ secrets.MACOS_SIGNING_IDENTITY }}
           MACOS_KEYCHAIN_PASSWORD: ${{ secrets.MACOS_KEYCHAIN_PASSWORD }}
         run: |
@@ -124,14 +144,17 @@ jobs:
             --prefix "com.atsign." \
             --timestamp \
             -v \
-            sshnp/{sshnp,sshnpd,srv,srvd,at_activate,debug/srvd,npt}
+            sshnp/{sshnp,sshnpd,srv,srvd,at_activate,debug/srvd,npt,npa_file,npp_file,npp_atserver,np_admin}
       # zip the build
       - if: ${{ matrix.os == 'macos-13' || matrix.os == 'macos-14' }}
-        run: ditto -c -k --keepParent sshnp tarball/${{ matrix.output-name }}.zip
+        run:
+          ditto -c -k --keepParent sshnp tarball/${{ matrix.output-name }}.zip
       - if: ${{ matrix.os == 'ubuntu-latest' }}
         run: tar -cvzf tarball/${{ matrix.output-name }}.tgz sshnp
       - if: ${{ matrix.os == 'windows-latest' }}
-        run: Compress-Archive -Path sshnp -Destination tarball/${{ matrix.output-name }}.zip
+        run:
+          Compress-Archive -Path sshnp -Destination tarball/${{
+          matrix.output-name }}.zip
       # notarize the build
       - if: ${{ matrix.os == 'macos-13' || matrix.os == 'macos-14' }}
         env:
@@ -147,16 +170,15 @@ jobs:
       # upload the build
       - uses: actions/upload-artifact@50769540e7f4bd5e21e526ee35c689e35e0d6874 # v4.4.0
         with:
-          name: ${{ matrix.output-name }}-${{github.ref_name}}-${{github.run_number}}-${{github.run_attempt}}
+          name:
+            ${{ matrix.output-name
+            }}-${{github.ref_name}}-${{github.run_number}}-${{github.run_attempt}}
           path: ./packages/dart/sshnoports/tarball
           if-no-files-found: error
 
   other_build:
     needs: verify_tags
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: ./packages/dart
     strategy:
       matrix:
         platform: [linux/arm/v7, linux/arm64, linux/riscv64]
@@ -178,15 +200,17 @@ jobs:
         uses: docker/setup-buildx-action@988b5a0280414f521da01fcc63a27aeeb4b104db # v3.6.1
       - if: ${{ ! inputs.main_build_only }}
         run: |
-          docker buildx build -t atsigncompany/sshnptarball -f sshnoports/tools/Dockerfile.package \
+          docker buildx build -t atsigncompany/sshnptarball -f ./tools/multibuild/Dockerfile.package \
           --platform ${{ matrix.platform }} -o type=tar,dest=bins.tar .
           mkdir tarballs
           tar -xvf bins.tar -C tarballs
       - if: ${{ ! inputs.main_build_only }}
         uses: actions/upload-artifact@50769540e7f4bd5e21e526ee35c689e35e0d6874 # v4.4.0
         with:
-          name: ${{ matrix.output-name }}-${{github.ref_name}}-${{github.run_number}}-${{github.run_attempt}}
-          path: ./packages/dart/tarballs/${{ matrix.output-name }}.tgz
+          name:
+            ${{ matrix.output-name
+            }}-${{github.ref_name}}-${{github.run_number}}-${{github.run_attempt}}
+          path: ./tarballs/${{ matrix.output-name }}.tgz
           if-no-files-found: error
 
   universal_sh:
@@ -223,13 +247,12 @@ jobs:
         working-directory: ./packages/dart/sshnoports/bundles
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
-    - uses: actions/upload-artifact@50769540e7f4bd5e21e526ee35c689e35e0d6874 # v4.4.0
-      with: 
-        name: universal.ps1-${{github.ref_name}}-${{github.run_number}}-${{github.run_attempt}}
-        path: ./packages/dart/sshnoports/bundles/universal.ps1
-        if-no-files-found: error
-
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
+      - uses: actions/upload-artifact@50769540e7f4bd5e21e526ee35c689e35e0d6874 # v4.4.0
+        with:
+          name: universal.ps1-${{github.ref_name}}-${{github.run_number}}-${{github.run_attempt}}
+          path: ./packages/dart/sshnoports/bundles/universal.ps1
+          if-no-files-found: error
 
   github-release:
     name: >-
@@ -239,55 +262,54 @@ jobs:
     outputs:
       hashes: ${{ steps.hash.outputs.hashes }}
     permissions:
-      contents: write  # Mandatory for making GitHub Releases
-      id-token: write  # Mandatory for sigstore
+      contents: write # Mandatory for making GitHub Releases
+      id-token: write # Mandatory for sigstore
       attestations: write
     steps:
-    - name: Checkout pubspec.lock
-      uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
-      with:
-        sparse-checkout: packages/dart/sshnoports/pubspec.lock
-        sparse-checkout-cone-mode: false
-    - name: Install Syft
-      uses: anchore/sbom-action/download-syft@61119d458adab75f756bc0b9e4bde25725f86a7a # v0.17.2
-    - name: Download all the tarballs
-      uses: actions/download-artifact@fa0a91b85d4f404e444e00e005971372dc801d16 # v4.1.8
-      with:
-        path: tarballs/
-    - name: Generate SBOMs
-      run: |
-        syft scan file:./packages/dart/sshnoports/pubspec.lock \
-          -o 'spdx-json=tarballs/dart_sshnoports_sbom.spdx.json' \
-          -o 'cyclonedx-json=tarballs/dart_sshnoports_sbom.cyclonedx.json'
-    - name: Move packages for signing
-      run: |
-        cd tarballs
-        mv */*.sh .
-        mv */*.ps1 .
-        mv */*.tgz .
-        mv */*.zip .
-        rm -Rf -- */
-    - name: Generate SHA256 checksums
-      working-directory: tarballs
-      run: sha256sum * > checksums.txt
-    - name: Upload artifacts to GitHub Release
-      env:
-        GITHUB_TOKEN: ${{ github.token }}
-      # Upload to GitHub Release using the `gh` CLI.
-      # `tarballs/` contains the built packages, and the
-      # Syft produced SBOMs
-      run: >-
-        gh release upload
-        '${{ github.ref_name }}' tarballs/**
-        --repo '${{ github.repository }}'
-    - id: hash
-      name: Pass artifact hashes for SLSA provenance
-      working-directory: tarballs
-      run: |
-        echo "hashes=$(cat checksums.txt | base64 -w0)" >> "$GITHUB_OUTPUT"
-    - uses: actions/attest-build-provenance@6149ea5740be74af77f260b9db67e633f6b0a9a1 # v1.4.2
-      with:
-        subject-path: 'tarballs/**'
+      - name: Checkout pubspec.lock
+        uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
+        with:
+          sparse-checkout: packages/dart/sshnoports/pubspec.lock
+          sparse-checkout-cone-mode: false
+      - name: Install Syft
+        uses: anchore/sbom-action/download-syft@61119d458adab75f756bc0b9e4bde25725f86a7a # v0.17.2
+      - name: Download all the tarballs
+        uses: actions/download-artifact@fa0a91b85d4f404e444e00e005971372dc801d16 # v4.1.8
+        with:
+          path: tarballs/
+      - name: Generate SBOMs
+        run: |
+          syft scan file:./packages/dart/sshnoports/pubspec.lock \
+            -o 'spdx-json=tarballs/dart_sshnoports_sbom.spdx.json' \
+            -o 'cyclonedx-json=tarballs/dart_sshnoports_sbom.cyclonedx.json'
+      - name: Move packages for signing
+        run: |
+          cd tarballs
+          mv */*.sh .
+          mv */*.ps1 .
+          mv */*.tgz .
+          mv */*.zip .
+          rm -Rf -- */
+      - name: Generate SHA256 checksums
+        working-directory: tarballs
+        run: sha256sum * > checksums.txt
+      - name: Upload artifacts to GitHub Release
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        # Upload to GitHub Release using the `gh` CLI.
+        # `tarballs/` contains the built packages, and the
+        # Syft produced SBOMs
+        run: >-
+          gh release upload '${{ github.ref_name }}' tarballs/** --repo '${{
+          github.repository }}'
+      - id: hash
+        name: Pass artifact hashes for SLSA provenance
+        working-directory: tarballs
+        run: |
+          echo "hashes=$(cat checksums.txt | base64 -w0)" >> "$GITHUB_OUTPUT"
+      - uses: actions/attest-build-provenance@1c608d11d69870c2092266b3f9a6f3abbf17002c # v1.4.3
+        with:
+          subject-path: "tarballs/**"
 
   provenance:
     needs: [github-release]
@@ -308,11 +330,11 @@ jobs:
     permissions:
       contents: write # Needed to delete workflow branch
     steps:
-    - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
-      with:
-        ref: multibuild-${{github.run_number}}
-    - name: Delete workflow branch
-      run: git push origin --delete multibuild-${{github.run_number}}
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
+        with:
+          ref: multibuild-${{github.run_number}}
+      - name: Delete workflow branch
+        run: git push origin --delete multibuild-${{github.run_number}}
 
   notify_on_completion:
     needs: [github-release, cleanup]
@@ -321,7 +343,9 @@ jobs:
       - name: Google Chat Notification
         uses: Co-qn/google-chat-notification@3691ccf4763537d6e544bc6cdcccc1965799d056 # v1
         with:
-          name: SSH no ports binaries were built by GitHub Action ${{ github.run_number }}
+          name:
+            SSH no ports binaries were built by GitHub Action ${{
+            github.run_number }}
           url: ${{ secrets.GOOGLE_CHAT_WEBHOOK }}
           status: ${{ job.status }}
 
@@ -333,6 +357,8 @@ jobs:
       - name: Google Chat Notification
         uses: Co-qn/google-chat-notification@3691ccf4763537d6e544bc6cdcccc1965799d056 # v1
         with:
-          name: SSH no ports binaries build by GitHub Action ${{ github.run_number }}
+          name:
+            SSH no ports binaries build by GitHub Action ${{ github.run_number
+            }}
           url: ${{ secrets.GOOGLE_CHAT_WEBHOOK }}
           status: failure

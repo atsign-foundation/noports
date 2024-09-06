@@ -59,9 +59,9 @@ void main() {
         params: mockParams,
         sessionId: sessionId,
         namespace: namespace,
-        notify: notifyStub,
-        subscribe: subscribeStub,
-        handleSshnpdPayload: payloadStub,
+        notify: notifyStub.call,
+        subscribe: subscribeStub.call,
+        handleSshnpdPayload: payloadStub.call,
       );
 
       registerFallbackValue(AtKey());
