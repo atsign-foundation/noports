@@ -18,6 +18,8 @@
     * [Client Upgrade](installation/advanced-installation-guides/client-upgrade-sshnp.md)
   * [Custom OS/Device Installs](installation/custom-os-device-installs/README.md)
     * [IPFire](installation/custom-os-device-installs/ipfire.md)
+  * [Cloud Installation Guides](installation/cloud-installation-guides/README.md)
+    * [Automated Installation on Oracle Cloud Infrastructure (OCI)](installation/cloud-installation-guides/automated-installation-on-oracle-cloud-infrastructure-oci.md)
 * [Usage](usage/README.md)
   * [npt Usage](usage/basic-usage/README.md)
     * [Additional Configuration](usage/basic-usage/additional-configuration.md)
