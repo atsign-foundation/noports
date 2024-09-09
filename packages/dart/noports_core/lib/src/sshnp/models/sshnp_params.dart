@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:at_chops/at_chops.dart';
+import 'package:at_commons/at_commons.dart';
 import 'package:at_utils/at_utils.dart';
 import 'package:noports_core/src/sshnp/models/config_file_repository.dart';
 import 'package:noports_core/src/sshnp/models/sshnp_arg.dart';
@@ -159,10 +160,12 @@ class NptParams extends ClientParamsBase
         srvdAtSign != srvdAtSign.toLowerCase()) {
       throw ArgumentError('atSigns must be lower-case');
     }
-    if (clientAtSign != AtUtils.fixAtSign(clientAtSign) ||
-        sshnpdAtSign != AtUtils.fixAtSign(sshnpdAtSign) ||
-        srvdAtSign != AtUtils.fixAtSign(srvdAtSign)) {
-      throw ArgumentError('atSigns must begin with an "@"');
+    try {
+      AtUtils.fixAtSign(clientAtSign);
+      AtUtils.fixAtSign(sshnpdAtSign);
+      AtUtils.fixAtSign(srvdAtSign);
+    } on InvalidAtSignException catch (e) {
+      throw ArgumentError(e.message);
     }
   }
 
