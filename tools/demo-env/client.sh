@@ -4,7 +4,7 @@ __norm_atsign() {
   ATSIGN="$1"
   FIRST="${ATSIGN:0:1}"
 
-  if [ "$FIRST" = "@" ]; then
+  if ! [ "$FIRST" = "@" ]; then
     ATSIGN="@$ATSIGN"
   fi
 
