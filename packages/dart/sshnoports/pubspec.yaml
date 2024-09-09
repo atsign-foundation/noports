@@ -30,6 +30,11 @@ dependency_overrides:
     git:
       ref: gkc/show-aliases-in-usage
       url: https://github.com/gkc/args
+  at_client:
+    git:
+      url: https://github.com/atsign-foundation/at_client_sdk.git
+      path: packages/at_client
+      ref: notification_service_encryptvalue
 
 dev_dependencies:
   lints: ^4.0.0
