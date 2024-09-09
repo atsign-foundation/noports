@@ -14,6 +14,9 @@ if [ -n "$POLICY" ]; then
   ARGS="-p $POLICY $ARGS"
 fi
 
+# Start nginx
+sudo /usr/sbin/nginx
+
 echo Running command: /home/atsign/sshnpd -a \"$ATSIGN\" $ARGS
 
 # Run the NoPorts agent
