@@ -153,7 +153,18 @@ class NptParams extends ClientParamsBase
     required this.inline,
     super.daemonPingTimeout,
     required this.timeout,
-  });
+  }) {
+    if (clientAtSign != clientAtSign.toLowerCase() ||
+        sshnpdAtSign != sshnpdAtSign.toLowerCase() ||
+        srvdAtSign != srvdAtSign.toLowerCase()) {
+      throw ArgumentError('atSigns must be lower-case');
+    }
+    if (clientAtSign != AtUtils.fixAtSign(clientAtSign) ||
+        sshnpdAtSign != AtUtils.fixAtSign(sshnpdAtSign) ||
+        srvdAtSign != AtUtils.fixAtSign(srvdAtSign)) {
+      throw ArgumentError('atSigns must begin with an "@"');
+    }
+  }
 
   /// not relevant for Npt
   @override
