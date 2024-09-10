@@ -1,6 +1,6 @@
 ---
-description: How to install NoPorts as part of creating a new VM
 icon: cloud
+description: How to install NoPorts as part of creating a new VM
 ---
 
 # Cloud Installation Guides
@@ -48,6 +48,18 @@ at_activate approve -a @democlient --arx noports --drx cloudvm1
 ```
 
 ### Cloud Specific Guides
+
+{% content-ref url="automated-installation-on-amazon-web-services-aws.md" %}
+[automated-installation-on-amazon-web-services-aws.md](automated-installation-on-amazon-web-services-aws.md)
+{% endcontent-ref %}
+
+{% content-ref url="automated-installation-on-google-cloud-platform-gcp.md" %}
+[automated-installation-on-google-cloud-platform-gcp.md](automated-installation-on-google-cloud-platform-gcp.md)
+{% endcontent-ref %}
+
+{% content-ref url="automated-installation-on-microsoft-azure.md" %}
+[automated-installation-on-microsoft-azure.md](automated-installation-on-microsoft-azure.md)
+{% endcontent-ref %}
 
 {% content-ref url="automated-installation-on-oracle-cloud-infrastructure-oci.md" %}
 [automated-installation-on-oracle-cloud-infrastructure-oci.md](automated-installation-on-oracle-cloud-infrastructure-oci.md)

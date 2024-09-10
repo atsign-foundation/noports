@@ -1,26 +1,14 @@
 ---
-icon: cloud-plus
+icon: microsoft
 ---
 
-# Automated Installation on Oracle Cloud Infrastructure (OCI)
+# Automated Installation on Microsoft Azure
 
-When starting a VM on OCI first click the `Show advanced options` button having selected the usual options above that.
+In the Azure Portal select `Virtual machines` and hit the `+ Create` button.
 
-<div align="left">
+Choose your preferred options for each sub-page of the `Create a virtual machine` process.
 
-<figure><img src="../../.gitbook/assets/OCI_ShowAdvancedOptions.PNG" alt=""><figcaption></figcaption></figure>
-
-</div>
-
-Then (in the `Management` tab) select `Paste cloud-init script`
-
-<div align="left">
-
-<figure><img src="../../.gitbook/assets/OCI_PasteCloudInit.PNG" alt=""><figcaption></figcaption></figure>
-
-</div>
-
-And paste your customised script into the `Cloud-init script` box:
+On the `Advanced` sub-page there's a `Custom data and cloud init` section where your customised script can be pasted:
 
 ```bash
 #!/bin/bash
@@ -29,7 +17,7 @@ ATCLIENT="@democlient"
 ATDEVICE="@demodevice"
 DEVNAME="cloudvm1"
 OTP="739128"
-USER="opc"
+USER="azureuser"
 # The rest of the script shouldn't be changed
 export HOME="/home/${USER}"
 export SUDO_USER="${USER}"
@@ -42,30 +30,32 @@ sh universal.sh -t device -c ${ATCLIENT} -d ${ATDEVICE} -n ${DEVNAME}
 chown -R ${USER}:${USER} /home/${USER}/.atsign
 ```
 
+It should look like this:
+
 <div align="left">
 
-<figure><img src="../../.gitbook/assets/OCI_CloudInitScript.PNG" alt=""><figcaption></figcaption></figure>
+<figure><img src="../../.gitbook/assets/Azure_Custom_data.PNG" alt=""><figcaption></figcaption></figure>
 
 </div>
 
-The VM is now ready for `Create`
+Once that's complete the VM is ready for `Review + create` then if all looks well hit `Create`
 
 After a few minutes the APKAM key can be approved:
 
-```bash
+```
 at_activate approve -a @demodevice --arx noports --drx cloudvm1
 ```
 
 If the VM isn't quite ready you'll see:
 
-```bash
+```
 Found 0 matching enrollment records
 No matching enrollment(s) found
 ```
 
 Waiting a little longer and retrying should produce a successful approval:
 
-```bash
+```
 Found 1 matching enrollment records
 Approving enrollmentId 0bd3613d-d3e2-45b3-b175-8cab06c9bad0
 Server response: AtEnrollmentResponse{enrollmentId: 0bd3613d-d3e2-45b3-b175-8cab06c9bad0, enrollStatus: EnrollmentStatus.approved}
