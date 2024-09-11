@@ -40,6 +40,7 @@ class ProfileRelayQuickButtons extends StatelessWidget {
                 padding: const EdgeInsets.only(bottom: Sizes.p20),
                 height: Sizes.p70,
                 child: ListView(
+                  shrinkWrap: true,
                   scrollDirection: Axis.horizontal,
                   controller: controller,
                   children: [
@@ -49,7 +50,8 @@ class ProfileRelayQuickButtons extends StatelessWidget {
                         child: CustomContainer.foreground(
                           key: Key(e.key),
                           child: SizedBox(
-                            width: 200,
+                            width: Sizes.p200,
+                            height: Sizes.p50,
                             child: RadioListTile(
                               title: Text(e.value),
                               value: e.key,

@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:npt_flutter/features/profile/profile.dart';
 import 'package:npt_flutter/styles/sizes.dart';
+import 'package:npt_flutter/util/form_validator.dart';
 
 class ProfileRemoteHostTextField extends StatelessWidget {
   const ProfileRemoteHostTextField({super.key});
@@ -24,14 +25,22 @@ class ProfileRemoteHostTextField extends StatelessWidget {
           },
           builder: (BuildContext context, String? state) {
             if (state == null) return const SizedBox();
-            return TextFormField(
-                initialValue: state,
-                onChanged: (value) {
-                  var bloc = context.read<ProfileBloc>();
-                  bloc.add(ProfileEditEvent(
-                    profile: (bloc.state as ProfileLoadedState).profile.copyWith(remoteHost: value),
-                  ));
-                });
+            return SizedBox(
+              height: Sizes.p100,
+              child: TextFormField(
+                  initialValue: state,
+                  autovalidateMode: AutovalidateMode.onUserInteraction,
+                  validator: FormValidator.validateRemoteHostField,
+                  decoration: const InputDecoration(
+                    errorMaxLines: 3,
+                  ),
+                  onChanged: (value) {
+                    var bloc = context.read<ProfileBloc>();
+                    bloc.add(ProfileEditEvent(
+                      profile: (bloc.state as ProfileLoadedState).profile.copyWith(remoteHost: value),
+                    ));
+                  }),
+            );
           },
         ),
       ],
