@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:npt_flutter/features/settings/settings.dart';
+import 'package:npt_flutter/util/form_validator.dart';
 
 class SettingsRelayAtSignTextField extends StatefulWidget {
   const SettingsRelayAtSignTextField({super.key});
@@ -14,7 +14,6 @@ class _SettingsRelayAtSignTextFieldState extends State<SettingsRelayAtSignTextFi
   final TextEditingController controller = TextEditingController();
   @override
   Widget build(BuildContext context) {
-    final strings = AppLocalizations.of(context)!;
     return BlocSelector<SettingsBloc, SettingsState, String?>(
       selector: (SettingsState state) {
         if (state is SettingsLoadedState) {
@@ -28,12 +27,7 @@ class _SettingsRelayAtSignTextFieldState extends State<SettingsRelayAtSignTextFi
         return TextFormField(
             controller: controller,
             autovalidateMode: AutovalidateMode.onUserInteraction,
-            validator: (value) {
-              if (value == null || value.isEmpty || !value.startsWith('@')) {
-                return strings.invalidRelayAtsignMsg;
-              }
-              return null;
-            },
+            validator: FormValidator.validateAtsignField,
             onChanged: (value) {
               var bloc = context.read<SettingsBloc>();
               bloc.add(SettingsEditEvent(

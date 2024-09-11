@@ -13,6 +13,7 @@ class ProfileFormView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final strings = AppLocalizations.of(context)!;
+    final GlobalKey<FormState> formkey = GlobalKey<FormState>();
     return BlocProvider<ProfileBloc>(
       create: (BuildContext context) =>
 
@@ -29,59 +30,64 @@ class ProfileFormView extends StatelessWidget {
                 children: [
                   CustomCard.profileFormContent(
                     child: SingleChildScrollView(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const ProfileDisplayNameTextField(),
-                          gapH10,
-                          const Padding(
-                            padding: EdgeInsets.symmetric(horizontal: Sizes.p50),
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                ProfileDeviceAtSignTextField(),
-                                ProfileDeviceNameTextField(),
-                              ],
+                      child: Form(
+                        key: formkey,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const ProfileDisplayNameTextField(),
+                            gapH10,
+                            const Padding(
+                              padding: EdgeInsets.symmetric(horizontal: Sizes.p50),
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  ProfileDeviceAtSignTextField(),
+                                  ProfileDeviceNameTextField(),
+                                ],
+                              ),
                             ),
-                          ),
-                          gapH10,
-                          const ProfileRelayQuickButtons(),
-                          gapH10,
-                          const Padding(
-                            padding: EdgeInsets.symmetric(horizontal: Sizes.p50),
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                ProfileLocalPortSelector(),
-                                ProfileRemoteHostTextField(),
-                                ProfileRemotePortSelector(),
-                              ],
+                            gapH10,
+                            const ProfileRelayQuickButtons(),
+                            gapH10,
+                            const Padding(
+                              padding: EdgeInsets.symmetric(horizontal: Sizes.p50),
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  ProfileLocalPortSelector(),
+                                  ProfileRemoteHostTextField(),
+                                  ProfileRemotePortSelector(),
+                                ],
+                              ),
                             ),
-                          ),
-                          gapH20,
-                          Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: Sizes.p50),
-                            child: Builder(
-                              builder: (context) => Center(
-                                child: SizedBox(
-                                  width: double.infinity,
-                                  child: ElevatedButton(
-                                    onPressed: () {
-                                      var localBloc = context.read<ProfileBloc>();
-                                      if (localBloc.state is! ProfileLoadedState) return;
+                            gapH20,
+                            Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: Sizes.p50),
+                              child: Builder(
+                                builder: (context) => Center(
+                                  child: SizedBox(
+                                    width: double.infinity,
+                                    child: ElevatedButton(
+                                      onPressed: () {
+                                        if (!formkey.currentState!.validate()) return;
 
-                                      /// Now take the localBloc and upload it back to the global bloc
-                                      context.read<ProfileCacheCubit>().getProfileBloc(uuid).add(ProfileSaveEvent(
-                                            profile: (localBloc.state as ProfileLoadedState).profile,
-                                          ));
-                                    },
-                                    child: Text(strings.submit),
+                                        var localBloc = context.read<ProfileBloc>();
+                                        if (localBloc.state is! ProfileLoadedState) return;
+
+                                        /// Now take the localBloc and upload it back to the global bloc
+                                        context.read<ProfileCacheCubit>().getProfileBloc(uuid).add(ProfileSaveEvent(
+                                              profile: (localBloc.state as ProfileLoadedState).profile,
+                                            ));
+                                      },
+                                      child: Text(strings.submit),
+                                    ),
                                   ),
                                 ),
                               ),
                             ),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
                     ),
                   ),

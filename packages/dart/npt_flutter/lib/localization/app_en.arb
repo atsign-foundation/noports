@@ -28,7 +28,6 @@
    "faq" : "faq",
    "feedback" : "Feedback",
    "import" : "Import",
-   "invalidRelayAtsignMsg" : "Please enter a valid atsign",
    "json" : "JSON",
    "language" : "Language",
    "localPort" : "Local Port",
@@ -60,5 +59,13 @@
    "sshStyle" : "Advanced",
    "status" : "Status",
    "submit" : "Submit",
+   "validationErrorEmptyField" : "Field cannot be left Blank",
+   "validationErrorAtsignField" : "Field must be a valid atsign that starts with @",
+   "validationErrorProfileNameField" : "Field can only contain lowercase letters, digits, and spaces.",
+   "validationErrorDeviceNameField" : "Field can only contain lowercase letters, digits, underscores.",
+   "validationErrorLongField" : "Field must be 1-36 characters long",
+   "validationErrorLocalPortField" : "Field must be 0 or between 1024-65535",
+   "validationErrorRemotePortField" : "Field must be between 1024-65535",
+   "validationErrorRemoteHostField" : "Field must be partially or fully qualified hostname or an IP address",
    "yaml" : "YAML"
 }

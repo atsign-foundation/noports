@@ -164,7 +164,7 @@ packages:
     description:
       path: "packages/at_onboarding_flutter"
       ref: trunk
-      resolved-ref: "3aa5f6a311293ab48a982fd54b97673cae8af201"
+      resolved-ref: "8df0a468041dd332534acf5e5e487e018f6ba2da"
       url: "https://github.com/atsign-foundation/at_widgets"
     source: git
     version: "6.1.8"
