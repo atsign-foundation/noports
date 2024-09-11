@@ -36,6 +36,7 @@ class Sizes {
   static const p50 = 50.0;
   static const p54 = 54.0;
   static const p70 = 70.0;
+  static const p80 = 80.0;
   // static const p99 = 99.0;
   static const p100 = 100.0;
   static const p108 = 108.0;
