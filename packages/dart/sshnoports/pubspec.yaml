@@ -11,6 +11,7 @@ dependencies:
     path: "../noports_core"
   at_onboarding_cli: 1.6.2
   at_cli_commons: ^1.1.0
+  at_client: ^3.2.0
   args: 2.5.0
   socket_connector: ^2.2.0
   dartssh2: 2.8.2
@@ -18,6 +19,7 @@ dependencies:
   at_utils: 3.0.16
   logging: ^1.2.0
   chalkdart: ^2.2.1
+  yaml: ^3.1.2
 
 dependency_overrides:
   dartssh2:

@@ -232,7 +232,7 @@ install_systemd_srvd() {
 
 systemd() {
   if is_darwin; then
-    echo "Unknown command: systemd"
+    echo "systemd is not supported on MacOS"
     usage
     exit 1
   fi

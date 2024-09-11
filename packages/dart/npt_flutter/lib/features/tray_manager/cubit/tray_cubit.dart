@@ -12,11 +12,10 @@ import 'package:npt_flutter/routes.dart';
 import 'package:tray_manager/tray_manager.dart';
 import 'package:window_manager/window_manager.dart';
 
-part 'tray_state.dart';
 part 'tray_cubit.g.dart';
+part 'tray_state.dart';
 
-(String, void Function(MenuItem)) getAction(TrayAction action) =>
-    switch (action) {
+(String, void Function(MenuItem)) getAction(TrayAction action) => switch (action) {
       TrayAction.showDashboard => ('Show Window', (_) => windowManager.focus()),
       TrayAction.showSettings => (
           'Settings',
@@ -51,13 +50,13 @@ enum TrayAction {
   quitApp;
 
   static bool isTrayAction(String key) {
-    return _$TrayActionsEnumMap.values.contains(key);
+    return _$TrayActionEnumMap.values.contains(key);
   }
 
   MenuItem get menuItem {
     final (label, callback) = getAction(this);
     return MenuItem(
-      key: _$TrayActionsEnumMap[this],
+      key: _$TrayActionEnumMap[this],
       label: label,
       onClick: callback,
     );
@@ -87,34 +86,50 @@ class TrayCubit extends LoggingCubit<TrayState> {
     emit(const TrayLoaded());
   }
 
-  Future<void> reloadFavorites() async {
+  Future<void> reload() async {
     var context = App.navState.currentContext;
     if (context == null) return;
+    var init = initialize();
+
+    /// Access the context before any awaited function calls
     var showSettings = context.read<OnboardingCubit>().state is Onboarded;
     var favoriteBloc = context.read<FavoriteBloc>();
     var profilesList = context.read<ProfileListBloc>();
-    if (state is TrayInitial) {
-      await initialize();
-    }
+
+    await init;
+
+    /// Get favorites
     if (favoriteBloc.state is! FavoritesLoaded) return;
     var favorites = (favoriteBloc.state as FavoritesLoaded).favorites;
+
+    /// Get profiles uuid list
     if (profilesList.state is! ProfileListLoaded) return;
     var profiles = (profilesList.state as ProfileListLoaded).profiles;
+
+    /// Generate the new menu based on current state
     var favMenuItems = await Future.wait(
-      favorites.where((e) => e.isLoadedInProfiles(profiles)).map((e) async {
+      favorites
+          .where((fav) => fav.isLoadedInProfiles(profiles))
+          .map((fav) async {
         /// Make sure to call [e.displayName] and [e.isRunning] only once to
         /// ensure good performance - these getters call a bunch of nested
         /// information from elsewhere in the app state
-        var displayName = await e.displayName;
-        var status = e.status;
+        var displayName = await fav.displayName;
+        var status = fav.status;
         var label = '$displayName $status';
         return MenuItem(
           label: label,
           toolTip: status,
-          onClick: (_) => e.toggle(),
+          onClick: (_) => fav.toggle(),
         );
       }),
     );
+
+    /// PERF: We should conditionally call setContextMenu if there was a state
+    /// change which resulted in an actual change to the favorites list.
+    /// Currently we just force call updates which is really inefficient
+
+    /// Set the new menu
     await trayManager.setContextMenu(Menu(
       items: [
         ...favMenuItems,

@@ -50,7 +50,7 @@ void main() {
         params: mockParams,
         sessionId: sessionId,
         namespace: namespace,
-        subscribe: subscribeStub,
+        subscribe: subscribeStub.call,
       );
 
       registerFallbackValue(AtKey());
