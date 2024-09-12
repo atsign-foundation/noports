@@ -21,6 +21,8 @@ dependencies:
   chalkdart: ^2.2.1
   yaml: ^3.1.2
 
+
+
 dependency_overrides:
   dartssh2:
     git:
@@ -30,6 +32,16 @@ dependency_overrides:
     git:
       ref: gkc/show-aliases-in-usage
       url: https://github.com/gkc/args
+  at_client:
+    git:
+      url: https://github.com/atsign-foundation/at_client_sdk.git
+      path: packages/at_client
+      ref: test_atclient
+  at_onboarding_cli:
+    git:
+      url: https://github.com/atsign-foundation/at_onboarding_cli.git
+      path: packages/at_onboarding_cli
+      ref: test_onboarding_cli
 
 dev_dependencies:
   lints: ^4.0.0
