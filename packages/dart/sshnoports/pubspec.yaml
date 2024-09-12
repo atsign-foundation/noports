@@ -39,7 +39,7 @@ dependency_overrides:
       ref: test_atclient
   at_onboarding_cli:
     git:
-      url: https://github.com/atsign-foundation/at_onboarding_cli.git
+      url: https://github.com/atsign-foundation/at_libraries.git
       path: packages/at_onboarding_cli
       ref: test_onboarding_cli
 
