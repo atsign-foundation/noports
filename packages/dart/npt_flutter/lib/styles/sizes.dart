@@ -23,17 +23,20 @@ class Sizes {
   static const p27 = 27.0;
   static const p28 = 28.0;
   static const p30 = 30.0;
-  // static const p32 = 32.0;
+  static const p32 = 32.0;
   static const p33 = 33.0;
   // static const p34 = 34.0;
   // static const p36 = 36.0;
   static const p38 = 38.0;
   static const p40 = 40.0;
+  static const p44 = 44.0;
   // static const p46 = 46.0;
   // static const p48 = 48.0;
   static const p43 = 43.0;
+  static const p50 = 50.0;
   static const p54 = 54.0;
   static const p70 = 70.0;
+  static const p80 = 80.0;
   // static const p99 = 99.0;
   static const p100 = 100.0;
   static const p108 = 108.0;
@@ -42,16 +45,21 @@ class Sizes {
   static const p177 = 177.0;
   // static const p185 = 185.0;
   static const p192 = 192.0;
+  static const p200 = 200.0;
   static const p202 = 202.0;
   static const p180 = 180.0;
   // static const p244 = 244.0;
   // static const p247 = 247.0;
   // static const p286 = 286.0;
-  // static const p320 = 320.0;
+  static const p300 = 300.0;
   static const p436 = 436.0;
+  static const p450 = 450.0;
   static const p470 = 470.0;
+  static const p500 = 500.0;
+
   static const p654 = 654.0;
   static const p664 = 664.0;
+  static const p941 = 941.0;
 }
 
 const gap0 = SizedBox();
@@ -59,6 +67,7 @@ const gap0 = SizedBox();
 /// Constant gap widths
 const gapW4 = SizedBox(width: Sizes.p4);
 // const gapW8 = SizedBox(width: Sizes.p8);
+const gapW10 = SizedBox(width: Sizes.p10);
 // const gapW12 = SizedBox(width: Sizes.p12);
 // const gapW16 = SizedBox(width: Sizes.p16);
 const gapW20 = SizedBox(width: Sizes.p20);
@@ -66,11 +75,11 @@ const gapW20 = SizedBox(width: Sizes.p20);
 const gapW27 = SizedBox(width: Sizes.p27);
 // const gapW34 = SizedBox(width: Sizes.p34);
 const gapW38 = SizedBox(width: Sizes.p38);
-// const gapW48 = SizedBox(width: Sizes.p48);
+const gapW40 = SizedBox(width: Sizes.p40);
 // const gapW64 = SizedBox(width: Sizes.p64);
 
 // /// Constant gap heights
-// const gapH4 = SizedBox(height: Sizes.p4);
+const gapH4 = SizedBox(height: Sizes.p4);
 // const gapH8 = SizedBox(height: Sizes.p8);
 const gapH10 = SizedBox(height: Sizes.p10);
 // const gapH12 = SizedBox(height: Sizes.p12);
