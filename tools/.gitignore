@@ -4,3 +4,4 @@ macos-signing.env
 .vs
 bin
 obj
+*.user
