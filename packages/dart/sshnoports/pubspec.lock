@@ -94,10 +94,10 @@ packages:
     dependency: transitive
     description:
       name: at_commons
-      sha256: "2d0490a0c5bcd43c6a37911d85b71c133767aec47abc65bd8ecb20c8caaddeab"
+      sha256: "5980b2bb7b8668fcd80bcda17161df350472e3449bbc30a60a1c7ca23c58d505"
       url: "https://pub.dev"
     source: hosted
-    version: "4.0.11"
+    version: "4.1.1"
   at_demo_data:
     dependency: transitive
     description:
@@ -158,10 +158,10 @@ packages:
     dependency: "direct main"
     description:
       name: at_utils
-      sha256: ec28600e4eec321ee5e22be051109fa7b2e94590dc51d9f957730c2540beb681
+      sha256: "29be5ecaa9861845232f800b7fd0ddfc8b2ad2b38b3e8b6e05972b4bd0defa62"
       url: "https://pub.dev"
     source: hosted
-    version: "3.0.16"
+    version: "3.0.18"
   boolean_selector:
     dependency: transitive
     description:
