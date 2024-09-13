@@ -231,7 +231,7 @@ namespace NoPortsInstaller
 
         private static void StartService(IntPtr service)
         {
-            SERVICE_STATUS status = new SERVICE_STATUS();
+            SERVICE_STATUS status = new();
             StartService(service, 0, 0);
             var changedStatus = WaitForServiceStatus(service, ServiceState.StartPending, ServiceState.Running);
             if (!changedStatus)
@@ -242,7 +242,7 @@ namespace NoPortsInstaller
 
         private static void StopService(IntPtr service)
         {
-            SERVICE_STATUS status = new SERVICE_STATUS();
+            SERVICE_STATUS status = new();
             ControlService(service, ServiceControl.Stop, status);
             var changedStatus = WaitForServiceStatus(service, ServiceState.StopPending, ServiceState.Stopped);
             if (!changedStatus)
@@ -280,7 +280,7 @@ namespace NoPortsInstaller
 
         private static ServiceState GetServiceStatus(IntPtr service)
         {
-            SERVICE_STATUS status = new SERVICE_STATUS();
+            SERVICE_STATUS status = new();
 
             if (QueryServiceStatus(service, status) == 0)
             {
@@ -300,7 +300,7 @@ namespace NoPortsInstaller
                 startInfo.WindowStyle = ProcessWindowStyle.Hidden;
 
                 // tell Windows that the service should restart if it fails
-                startInfo.Arguments = string.Format("failure \"{0}\" reset= 0 actions= restart/3000/restart/60000/restart/180000", serviceName);
+                startInfo.Arguments = string.Format("failure \"{0}\" reset= 0 actions= restart/3000/restart/60000/", serviceName);
 
                 process.Start();
                 process.WaitForExit();
@@ -316,7 +316,7 @@ namespace NoPortsInstaller
 
         private static bool WaitForServiceStatus(IntPtr service, ServiceState waitStatus, ServiceState desiredStatus)
         {
-            SERVICE_STATUS status = new SERVICE_STATUS();
+            SERVICE_STATUS status = new();
 
             QueryServiceStatus(service, status);
             if (status.dwCurrentState == desiredStatus)
@@ -429,8 +429,29 @@ namespace NoPortsInstaller
             }
         }
 
-    }
+        public static async Task TryUninstall(string service)
+        {
+            int maxAttempts = 3;
+            for (int i = 0; i < maxAttempts; i++)
+            {
+                try
+                {
+                    StopService(service);
+                    Uninstall(service);
+                    return;
+                }
+                catch (Exception ex)
+                {
+                    if (i == maxAttempts - 1)
+                    {
+                        throw new Exception("Failed to uninstall service", ex);
+                    }
+                    await Task.Delay(1000);
+                }
+            }
 
+        }
+    }
 
     public enum ServiceState
     {

@@ -5,6 +5,7 @@ using System.IO;
 using System.IO.Compression;
 using System.Net.Http;
 using System.Security.AccessControl;
+using System.Security.Principal;
 using System.Text.Json;
 using System.Windows;
 using System.Windows.Controls;
@@ -18,8 +19,9 @@ namespace NoPortsInstaller
         public string DeviceAtsign { get; set; }
         public string DeviceName { get; set; }
         public string RegionAtsign { get; set; }
-        private string PermittedPorts { get; set; }
+        public string PermittedPorts { get; set; }
         public string MultipleDevices { get; set; }
+        public string MultipleManagers { get; set; }
         public bool IsInstalled { get { return Directory.Exists(InstallDirectory); } set { } }
         public List<Page> Pages { get; set; }
         private int index = 0;
@@ -35,6 +37,7 @@ namespace NoPortsInstaller
             DeviceName = "";
             RegionAtsign = "";
             MultipleDevices = "";
+            MultipleManagers = "";
             PermittedPorts = "localhost:22,localhost:3389";
             Pages = [];
             IsInstalled = false;
@@ -56,16 +59,16 @@ namespace NoPortsInstaller
                 status.Content = "Downloading NoPorts...";
                 await DownloadArchive();
                 await UpdateProgressBar(progress, 50);
-                ExtractArchive();
+                await ExtractArchive();
                 status.Content = "Updating Trusted Certificates...";
                 UpdateTrustedCerts();
                 await UpdateProgressBar(progress, 75);
                 status.Content = "Creating Registries NoPorts...";
                 CreateRegistryKeys();
                 await UpdateProgressBar(progress, 90);
-                status.Content = "Setting up NoPorts Service...";
                 if (InstallType.Equals(InstallType.Device))
                 {
+                    status.Content = "Setting up NoPorts Service...";
                     CopyIntoServiceAccount();
                     await SetupService(status);
                 }
@@ -157,6 +160,7 @@ namespace NoPortsInstaller
         private void CreateDirectories(string userHome)
         {
             DirectorySecurity securityRules = new();
+            DirectoryInfo di;
             securityRules.AddAccessRule(new FileSystemAccessRule("Users", FileSystemRights.Modify, AccessControlType.Allow));
             string[] directories =
             [
@@ -164,8 +168,8 @@ namespace NoPortsInstaller
                 Path.Combine(userHome, ".sshnp"),
                 Path.Combine(userHome, ".atsign"),
                 Path.Combine(userHome, ".atsign", "keys"),
-                InstallDirectory,
-                Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), @"Temp\NoPorts")
+                Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), @"Temp\NoPorts"),
+                InstallDirectory
             ];
 
             foreach (string dir in directories)
@@ -175,7 +179,7 @@ namespace NoPortsInstaller
                     if (!Directory.Exists(dir))
                     {
                         Directory.CreateDirectory(dir);
-                        var di = new DirectoryInfo(dir);
+                        di = new DirectoryInfo(dir);
                         di.SetAccessControl(securityRules);
                         Console.WriteLine($"Directory created: {dir}");
                     }
@@ -185,8 +189,14 @@ namespace NoPortsInstaller
                     Console.WriteLine($"An error occurred while creating {dir}: {ex.Message}");
                 }
             }
+
+            SecurityIdentifier everyone = new(WellKnownSidType.WorldSid, null);
+            securityRules = new();
+            securityRules.AddAccessRule(new FileSystemAccessRule(everyone, FileSystemRights.Modify | FileSystemRights.Synchronize, InheritanceFlags.ContainerInherit | InheritanceFlags.ObjectInherit, PropagationFlags.None, AccessControlType.Allow));
+            di = new DirectoryInfo(directories.Last());
+            di.SetAccessControl(securityRules);
             var authkeys = Path.Combine(userHome, ".ssh", "authorized_keys");
-            if (!File.Exists(authkeys))
+            if (!System.IO.File.Exists(authkeys))
             {
                 FileInfo fi = new(authkeys);
                 fi.Create().Close();
@@ -213,9 +223,9 @@ namespace NoPortsInstaller
             {
                 try
                 {
-                    if (File.Exists(sources[i]))
+                    if (System.IO.File.Exists(sources[i]))
                     {
-                        File.Copy(sources[i], destinations[i], true);
+                        System.IO.File.Copy(sources[i], destinations[i], true);
                     }
                 }
                 catch
@@ -274,7 +284,7 @@ namespace NoPortsInstaller
 
                 byte[] fileBytes = response.Content.ReadAsByteArrayAsync().Result;
                 archiveDirectory = Path.Combine(archiveDirectory, "sshnp-windows-x64.zip");
-                await File.WriteAllBytesAsync(archiveDirectory, fileBytes);
+                await System.IO.File.WriteAllBytesAsync(archiveDirectory, fileBytes);
             }
             catch
             {
@@ -284,7 +294,7 @@ namespace NoPortsInstaller
             return;
         }
 
-        private void ExtractArchive()
+        private async Task ExtractArchive()
         {
             if (InstallType.Equals(InstallType.Device))
             {
@@ -292,7 +302,7 @@ namespace NoPortsInstaller
                 {
                     if (ServiceController.ServiceIsInstalled("sshnpd"))
                     {
-                        ServiceController.Uninstall("sshnpd");
+                        await ServiceController.TryUninstall("sshnpd");
                     }
                 }
                 catch
@@ -300,24 +310,49 @@ namespace NoPortsInstaller
                     throw;
                 }
             }
-            ZipFile.ExtractToDirectory(archiveDirectory!, InstallDirectory, overwriteFiles: true);
-            InstallDirectory = Path.Combine(InstallDirectory, "sshnp");
-            File.Delete(archiveDirectory!);
-            if (InstallType.Equals(InstallType.Both)) { }
+
+            string tempDirectory = Path.GetFullPath(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), @"Temp\NoPorts\"));
+            ZipFile.ExtractToDirectory(archiveDirectory!, tempDirectory, overwriteFiles: true);
+            tempDirectory = Path.Combine(tempDirectory, "sshnp");
+            if (InstallType.Equals(InstallType.Both))
+            {
+                if (System.IO.File.Exists(Path.Combine(tempDirectory, "SshnpdService.exe")))
+                {
+                    System.IO.File.Move(Path.Combine(tempDirectory, "SshnpdService.exe"), Path.Combine(InstallDirectory, "SshnpdService.exe"), true);
+                }
+                System.IO.File.Move(Path.Combine(tempDirectory, "sshnpd.exe"), Path.Combine(InstallDirectory, "sshnpd.exe"), true);
+                System.IO.File.Move(Path.Combine(tempDirectory, "sshnp.exe"), Path.Combine(InstallDirectory, "sshnp.exe"), true);
+                System.IO.File.Move(Path.Combine(tempDirectory, "npt.exe"), Path.Combine(InstallDirectory, "npt.exe"), true);
+                if (!System.IO.Directory.Exists(Path.Combine(InstallDirectory, "docker")))
+                {
+                    System.IO.Directory.Move(Path.Combine(tempDirectory, "docker"), Path.Combine(InstallDirectory, "docker"));
+                }
+            }
             else if (InstallType.Equals(InstallType.Device))
             {
-                File.Delete(Path.Combine(InstallDirectory, "sshnp.exe"));
-                File.Delete(Path.Combine(InstallDirectory, "npt.exe"));
-                Directory.Delete(Path.Combine(InstallDirectory, "docker"), true);
+                if (System.IO.File.Exists(Path.Combine(tempDirectory, "SshnpdService.exe")))
+                {
+                    System.IO.File.Move(Path.Combine(tempDirectory, "SshnpdService.exe"), Path.Combine(InstallDirectory, "SshnpdService.exe"), true);
+                }
+                System.IO.File.Move(Path.Combine(tempDirectory, "sshnpd.exe"), Path.Combine(InstallDirectory, "sshnpd.exe"), true);
             }
             else if (InstallType.Equals(InstallType.Client))
             {
-                File.Delete(Path.Combine(InstallDirectory, "sshnpd.exe"));
-                File.Delete(Path.Combine(InstallDirectory, "sshnpd_service.xml"));
-                //File.Delete(Path.Combine(InstallDirectory, "SshnpdService.exe"));
+                if (!System.IO.Directory.Exists(Path.Combine(InstallDirectory, "docker")))
+                {
+                    System.IO.Directory.Move(Path.Combine(tempDirectory, "docker"), Path.Combine(InstallDirectory, "docker"));
+                }
+                System.IO.File.Move(Path.Combine(tempDirectory, "sshnp.exe"), Path.Combine(InstallDirectory, "sshnp.exe"), true);
+                System.IO.File.Move(Path.Combine(tempDirectory, "npt.exe"), Path.Combine(InstallDirectory, "npt.exe"), true);
             }
+
+            System.IO.File.Move(Path.Combine(tempDirectory, "at_activate.exe"), Path.Combine(InstallDirectory, "at_activate.exe"), true);
+            System.IO.File.Move(Path.Combine(tempDirectory, "srv.exe"), Path.Combine(InstallDirectory, "srv.exe"), true);
+            System.IO.File.Move(Path.Combine(tempDirectory, "README.md"), Path.Combine(InstallDirectory, "README.md"), true);
+            System.IO.File.Move(Path.Combine(tempDirectory, "LICENSE"), Path.Combine(InstallDirectory, "LICENSE"), true);
             var newValue = Environment.GetEnvironmentVariable("PATH", EnvironmentVariableTarget.Machine) + ";" + InstallDirectory;
             Environment.SetEnvironmentVariable("PATH", newValue, EnvironmentVariableTarget.Machine);
+            System.IO.File.Delete(archiveDirectory!);
         }
 
         private async Task SetupService(Label status)
@@ -331,23 +366,15 @@ namespace NoPortsInstaller
             {
                 status.Content = "Installing sshnpd service...";
                 await Task.Run(() =>
-                {
-                    try
-                    {
-                        ServiceController.InstallAndStart("sshnpd", "sshnpd", InstallDirectory + @"\SshnpdService.exe");
-                    }
-                    catch
-                    {
-                        throw;
-                    }
-                });
+                    ServiceController.InstallAndStart("sshnpd", "sshnpd", InstallDirectory + @"\SshnpdService.exe")
+                );
                 status.Content = "Configuring the Windows Service...";
                 await Task.Run(() => ServiceController.CreateUninstaller(System.AppDomain.CurrentDomain.BaseDirectory + @"NoPortsInstaller.exe u"));
                 await Task.Run(() => ServiceController.SetRecoveryOptions("sshnpd"));
             }
             catch
             {
-                status.Content = "Error setting up the service.";
+                throw;
             }
             Process.Start("sc", "description sshnpd NoPorts-SSH-Daemon");
             return;
@@ -395,9 +422,15 @@ namespace NoPortsInstaller
         {
             RegistryKey registryKey = Registry.LocalMachine.CreateSubKey(@"Software\NoPorts");
             registryKey.SetValue("BinPath", InstallDirectory);
+            var args = $"-a {DeviceAtsign} -m {ClientAtsign} -d {DeviceName}";
+            if (MultipleManagers != "")
+            {
+                args += $" --managers {MultipleManagers}";
+            }
+            args += " -sv";
             if (InstallType.Equals(InstallType.Device))
             {
-                registryKey.SetValue("DeviceArgs", $"-a {DeviceAtsign} -m {ClientAtsign} -d {DeviceName} -sv");
+                registryKey.SetValue("DeviceArgs", args);
             }
             registryKey.Close();
         }
@@ -430,18 +463,26 @@ namespace NoPortsInstaller
         /// </summary>
         public void LoadPages()
         {
+            Pages.Clear();
             switch (InstallType)
             {
+                case InstallType.None:
+                    Pages.Add(new Setup());
+                    break;
                 case InstallType.Update:
                     Pages.Add(new UpdateConfigs());
                     break;
                 case InstallType.Uninstall:
                     Pages.Add(new UninstallPage());
                     break;
+                case InstallType.Client:
+                    Pages.Add(new Setup());
+                    Pages.Add(new ClientConfig());
+                    break;
                 default:
                     Pages.Add(new Setup());
                     Pages.Add(new ConfigureInstall());
-                    Pages.Add(new AdditionalConfiguration());
+                    Pages.Add(new DeviceConfig());
                     break;
             }
             if (Window != null)
@@ -532,6 +573,29 @@ namespace NoPortsInstaller
             {
                 return "@" + atsign;
             }
+        }
+
+        public string NormalizeMultipleManagers(string atsigns)
+        {
+            string[] atsignArray = atsigns.Split(',');
+            for (int i = 0; i < atsignArray.Length; i++)
+            {
+                atsignArray[i] = NormalizeAtsign(atsignArray[i]);
+            }
+            return string.Join(',', atsignArray);
+        }
+
+        public string NormalizePermittedPorts(string ports)
+        {
+            string[] portArray = ports.Split(',');
+            for (int i = 0; i < portArray.Length; i++)
+            {
+                if (!portArray[i].Contains(':'))
+                {
+                    portArray[i] = "localhost:" + portArray[i];
+                }
+            }
+            return string.Join(',', portArray);
         }
     }
 

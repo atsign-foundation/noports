@@ -1,4 +1,5 @@
-﻿using System.Windows;
+﻿using Microsoft.Win32;
+using System.Windows;
 using System.Windows.Controls;
 
 namespace NoPortsInstaller.Pages
@@ -21,7 +22,7 @@ namespace NoPortsInstaller.Pages
 
         private void OpenDialogButton_Click(object sender, RoutedEventArgs e)
         {
-            var dialog = new Microsoft.Win32.OpenFolderDialog();
+            OpenFolderDialog dialog = new();
             dialog.InitialDirectory = _controller.InstallDirectory;
 
             // Process save file dialog box results
@@ -50,6 +51,7 @@ namespace NoPortsInstaller.Pages
             {
                 _controller.InstallType = InstallType.Client;
             }
+            _controller.LoadPages();
             _controller.NextPage();
         }
 

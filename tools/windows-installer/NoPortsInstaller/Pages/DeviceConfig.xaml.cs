@@ -5,29 +5,30 @@ namespace NoPortsInstaller.Pages
     /// <summary>
     /// Interaction logic for Page2.xaml
     /// </summary>
-    public partial class AdditionalConfiguration : Page
+    public partial class DeviceConfig : Page
     {
         private readonly IController _controller;
-        public AdditionalConfiguration()
+        public DeviceConfig()
         {
             _controller = App.ControllerInstance;
             InitializeComponent();
-            if (_controller.InstallType.Equals(InstallType.Client) || _controller.InstallType.Equals(InstallType.Both))
-            {
-                ClientConfig.IsEnabled = true;
-            }
         }
 
         private void BackPageButton_Click(object sender, System.Windows.RoutedEventArgs e)
         {
-            _controller.Pages.Remove(this);
             _controller.PreviousPage();
         }
 
         private void NextPageButton_Click(object sender, System.Windows.RoutedEventArgs e)
         {
-            _controller.RegionAtsign = _controller.NormalizeAtsign(RegionBox.Text);
-            _controller.MultipleDevices = MultipleDevices.Text;
+            if (MultipleManagers.Text != "")
+            {
+                _controller.MultipleManagers = _controller.NormalizeMultipleManagers(MultipleManagers.Text);
+            }
+            if (PermittedPorts.Text != "")
+            {
+                _controller.PermittedPorts = _controller.NormalizePermittedPorts(PermittedPorts.Text);
+            }
             _controller.Pages.Add(new Download());
             _controller.NextPage();
         }

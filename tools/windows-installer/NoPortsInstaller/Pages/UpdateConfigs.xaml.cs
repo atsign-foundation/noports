@@ -10,8 +10,8 @@ namespace NoPortsInstaller.Pages
         private readonly IController _controller;
         public UpdateConfigs()
         {
-            InitializeComponent();
             _controller = App.ControllerInstance;
+            InitializeComponent();
         }
 
         private void NextPageButton_Click(object sender, System.Windows.RoutedEventArgs e)
@@ -22,6 +22,7 @@ namespace NoPortsInstaller.Pages
             _controller.UpdateConfigRegistry();
             _controller.Pages.Add(new FinishInstall());
             _controller.NextPage();
+
         }
 
         private void ClientCombo_Initialized(object sender, EventArgs e)
