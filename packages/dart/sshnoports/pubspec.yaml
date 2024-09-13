@@ -1,7 +1,7 @@
 name: sshnoports
 publish_to: none
 
-version: 5.6.1
+version: 5.6.2
 
 environment:
   sdk: ">=3.0.0 <4.0.0"
@@ -9,14 +9,14 @@ environment:
 dependencies:
   noports_core:
     path: "../noports_core"
-  at_onboarding_cli: 1.6.2
+  at_onboarding_cli: 1.6.3
   at_cli_commons: ^1.1.0
-  at_client: ^3.2.0
+  at_client: ^3.2.1
   args: 2.5.0
   socket_connector: ^2.2.0
   dartssh2: 2.8.2
   duration: ^4.0.3
-  at_utils: 3.0.16
+  at_utils: 3.0.18
   logging: ^1.2.0
   chalkdart: ^2.2.1
   yaml: ^3.1.2
