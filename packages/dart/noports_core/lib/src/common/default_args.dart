@@ -48,4 +48,5 @@ class DefaultSshnpdArgs {
   static const int localSshdPort = 22;
   static const String deviceGroupName = '__none__';
   static const String sshPublicKeyPermissions = "";
+  static const Duration policyHeartbeatFrequency = Duration(minutes: 5);
 }
