@@ -432,25 +432,27 @@ namespace NoPortsInstaller
 
         public static async Task TryUninstall(string service)
         {
-            int maxAttempts = 3;
-            for (int i = 0; i < maxAttempts; i++)
+            if (ServiceController.ServiceIsInstalled("sshnpd"))
             {
-                try
+                int maxAttempts = 3;
+                for (int i = 0; i < maxAttempts; i++)
                 {
-                    StopService(service);
-                    Uninstall(service);
-                    return;
-                }
-                catch (Exception ex)
-                {
-                    if (i == maxAttempts - 1)
+                    try
                     {
-                        throw new Exception("Failed to uninstall service", ex);
+                        StopService(service);
+                        Uninstall(service);
+                        return;
                     }
-                    await Task.Delay(1000);
+                    catch (Exception ex)
+                    {
+                        if (i == maxAttempts - 1)
+                        {
+                            throw new Exception("Failed to uninstall service", ex);
+                        }
+                        await Task.Delay(1000);
+                    }
                 }
             }
-
         }
     }
 

@@ -61,13 +61,13 @@ namespace NoPortsInstaller
                 status.Content = "Creating Registries NoPorts...";
                 CreateRegistryKeys();
                 await UpdateProgressBar(progress, 90);
-                if (InstallType.Equals(InstallType.Device))
+                if (InstallType.Equals(InstallType.Device) || InstallType.Equals(InstallType.Both))
                 {
                     status.Content = "Setting up NoPorts Service...";
                     CopyIntoServiceAccount();
                     await SetupService(status);
                 }
-                await Task.Run(() => ServiceController.CreateUninstaller(Path.Combine(Path.GetDirectoryName(Environment.ProcessPath)!, "NoPortsInstaller.exe /u")));
+                await Task.Run(() => ServiceController.CreateUninstaller(Path.Combine(Path.GetDirectoryName(Environment.ProcessPath)!, "NoPortsInstaller.exe u")));
                 await UpdateProgressBar(progress, 100);
                 Pages.Add(new FinishInstall());
                 NextPage();
@@ -97,11 +97,8 @@ namespace NoPortsInstaller
                     Registry.LocalMachine.DeleteSubKey(@"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\NoPorts");
                 }
 
+                await ServiceController.TryUninstall("sshnpd");
 
-                if (ServiceController.ServiceIsInstalled("sshnpd"))
-                {
-                    await ServiceController.TryUninstall("sshnpd");
-                }
                 if (binPath != null)
                 {
                     DirectoryInfo di = new(binPath.ToString()!);
