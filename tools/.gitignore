@@ -5,3 +5,4 @@ macos-signing.env
 bin
 obj
 *.user
+launchSettings.json
