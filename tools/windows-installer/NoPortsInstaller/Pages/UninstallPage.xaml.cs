@@ -13,11 +13,12 @@ namespace NoPortsInstaller.Pages
         {
             InitializeComponent();
             _controller = App.ControllerInstance;
-            var pages = new List<Page> { new Uninstall(), new FinishUninstall() };
         }
 
         private void NextPageButton_Click(object sender, RoutedEventArgs e)
         {
+            _controller.Pages.Add(new Uninstall());
+            _controller.Pages.Add(new FinishUninstall());
             _controller.NextPage();
         }
     }

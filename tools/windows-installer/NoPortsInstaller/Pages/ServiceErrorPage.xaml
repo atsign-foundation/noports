@@ -31,7 +31,7 @@
             </Image.OpacityMask>
         </Image>
         <Label Content="NoPorts Installation" HorizontalAlignment="Left" Height="28" VerticalAlignment="Top" Width="194" Margin="168,10,0,0" FontSize="16" FontWeight="Bold"/>
-        <Label Content="Error with Service Setup" HorizontalAlignment="Left" Height="27" VerticalAlignment="Top" Width="199" Margin="168,45,0,0"/>
+        <Label Content="Error with installation" HorizontalAlignment="Left" Height="27" VerticalAlignment="Top" Width="199" Margin="168,45,0,0"/>
         <Button x:Name="NextPageButton" Content="Finish" HorizontalAlignment="Left" Height="24" Margin="427,297,0,0" VerticalAlignment="Top" Width="52" RenderTransformOrigin="0.536,-0.009" Click="NextPageButton_Click"/>
         <Rectangle HorizontalAlignment="Left" Height="2" Margin="168,71,0,0" Stroke="Black" VerticalAlignment="Top" Width="220" Fill="Black" RenderTransformOrigin="0.5,0.5">
             <Rectangle.RenderTransform>

@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "NoPortsInstaller": {
+      "commandName": "Project",
+      "commandLineArgs": "u"
+    }
+  }
+}

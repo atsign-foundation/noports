@@ -2,11 +2,8 @@
 using NoPortsInstaller.Pages;
 using System.Diagnostics;
 using System.IO;
-using System.IO.Compression;
-using System.Net.Http;
 using System.Security.AccessControl;
 using System.Security.Principal;
-using System.Text.Json;
 using System.Windows;
 using System.Windows.Controls;
 namespace NoPortsInstaller
@@ -26,7 +23,6 @@ namespace NoPortsInstaller
         public List<Page> Pages { get; set; }
         private int index = 0;
         public Window? Window { get; set; }
-        private string archiveDirectory;
 
         public Controller()
         {
@@ -41,7 +37,6 @@ namespace NoPortsInstaller
             PermittedPorts = "localhost:22,localhost:3389";
             Pages = [];
             IsInstalled = false;
-            archiveDirectory = Path.GetFullPath(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), @"Temp\NoPorts\"));
         }
 
         /// <summary>
@@ -56,10 +51,10 @@ namespace NoPortsInstaller
                 status.Content = "Creating directories...";
                 CreateDirectories(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile));
                 await UpdateProgressBar(progress, 25);
-                status.Content = "Downloading NoPorts...";
-                await DownloadArchive();
+                status.Content = "Installing NoPorts...";
+                await MoveResources();
+                VerifyInstall();
                 await UpdateProgressBar(progress, 50);
-                await ExtractArchive();
                 status.Content = "Updating Trusted Certificates...";
                 UpdateTrustedCerts();
                 await UpdateProgressBar(progress, 75);
@@ -72,6 +67,7 @@ namespace NoPortsInstaller
                     CopyIntoServiceAccount();
                     await SetupService(status);
                 }
+                await Task.Run(() => ServiceController.CreateUninstaller(Path.Combine(Path.GetDirectoryName(Environment.ProcessPath)!, "NoPortsInstaller.exe /u")));
                 await UpdateProgressBar(progress, 100);
                 Pages.Add(new FinishInstall());
                 NextPage();
@@ -97,24 +93,14 @@ namespace NoPortsInstaller
                 if (registryKey != null)
                 {
                     binPath = registryKey.GetValue("BinPath");
-                    registryKey = Registry.LocalMachine.OpenSubKey(@"SOFTWARE\");
-                    registryKey!.DeleteSubKeyTree("NoPorts");
-                    registryKey = Registry.LocalMachine.OpenSubKey(@"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall");
-                    registryKey!.DeleteSubKeyTree("NoPorts");
+                    Registry.LocalMachine.DeleteSubKey(@"SOFTWARE\NoPorts");
+                    Registry.LocalMachine.DeleteSubKey(@"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\NoPorts");
                 }
 
 
                 if (ServiceController.ServiceIsInstalled("sshnpd"))
                 {
-                    try
-                    {
-                        ServiceController.StopService("sshnpd");
-                    }
-                    catch
-                    {
-                        throw;
-                    }
-                    await Task.Run(() => ServiceController.Uninstall("sshnpd"));
+                    await ServiceController.TryUninstall("sshnpd");
                 }
                 if (binPath != null)
                 {
@@ -128,7 +114,6 @@ namespace NoPortsInstaller
                         dir.Delete(true);
                     }
                     di.Delete();
-                    di.Parent!.Delete();
                 }
                 await UpdateProgressBar(progress, 100);
             }
@@ -235,124 +220,39 @@ namespace NoPortsInstaller
             }
         }
 
-        private async Task DownloadArchive()
+        private async Task MoveResources()
         {
-            HttpClient client = new();
-            client.DefaultRequestHeaders.Add("User-Agent", "product/1");
-            string content;
-            var downloadUrl = "";
-            JsonDocument jsonDocument;
-
-            if (!Directory.Exists(archiveDirectory))
+            Dictionary<byte[], string> resources = new()
             {
-                Directory.CreateDirectory(archiveDirectory);
-            }
-            HttpResponseMessage response = client.GetAsync("https://api.github.com/repos/atsign-foundation/noports/releases/latest").Result;
-            if (!response.IsSuccessStatusCode)
-            {
-                throw new Exception("Failed to find latest release");
-            }
-            try
-            {
-                content = response.Content.ReadAsStringAsync().Result;
-                jsonDocument = JsonDocument.Parse(content);
-            }
-            catch
-            {
-                throw new Exception("Failed to parse response");
-            }
+                { Properties.Resources.at_activate, "at_activate.exe" },
+                { Properties.Resources.srv, "srv.exe" }
+            };
 
-            foreach (var asset in jsonDocument.RootElement.GetProperty("assets").EnumerateArray())
-            {
-                if (asset.GetProperty("name").GetString() == "sshnp-windows-x64.zip")
-                {
-                    downloadUrl = asset.GetProperty("browser_download_url").GetString();
-                    break;
-                }
-            }
-
-            try
-            {
-                response = await client.GetAsync(downloadUrl);
-                response.EnsureSuccessStatusCode();
-
-                var fileInfo = new FileInfo(archiveDirectory);
-                if (fileInfo.Directory != null && !fileInfo.Directory.Exists)
-                {
-                    fileInfo.Directory.Create();
-                }
-
-                byte[] fileBytes = response.Content.ReadAsByteArrayAsync().Result;
-                archiveDirectory = Path.Combine(archiveDirectory, "sshnp-windows-x64.zip");
-                await System.IO.File.WriteAllBytesAsync(archiveDirectory, fileBytes);
-            }
-            catch
-            {
-                throw;
-            }
-
-            return;
-        }
-
-        private async Task ExtractArchive()
-        {
             if (InstallType.Equals(InstallType.Device))
             {
-                try
-                {
-                    if (ServiceController.ServiceIsInstalled("sshnpd"))
-                    {
-                        await ServiceController.TryUninstall("sshnpd");
-                    }
-                }
-                catch
-                {
-                    throw;
-                }
-            }
-
-            string tempDirectory = Path.GetFullPath(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), @"Temp\NoPorts\"));
-            ZipFile.ExtractToDirectory(archiveDirectory!, tempDirectory, overwriteFiles: true);
-            tempDirectory = Path.Combine(tempDirectory, "sshnp");
-            if (InstallType.Equals(InstallType.Both))
-            {
-                if (System.IO.File.Exists(Path.Combine(tempDirectory, "SshnpdService.exe")))
-                {
-                    System.IO.File.Move(Path.Combine(tempDirectory, "SshnpdService.exe"), Path.Combine(InstallDirectory, "SshnpdService.exe"), true);
-                }
-                System.IO.File.Move(Path.Combine(tempDirectory, "sshnpd.exe"), Path.Combine(InstallDirectory, "sshnpd.exe"), true);
-                System.IO.File.Move(Path.Combine(tempDirectory, "sshnp.exe"), Path.Combine(InstallDirectory, "sshnp.exe"), true);
-                System.IO.File.Move(Path.Combine(tempDirectory, "npt.exe"), Path.Combine(InstallDirectory, "npt.exe"), true);
-                if (!System.IO.Directory.Exists(Path.Combine(InstallDirectory, "docker")))
-                {
-                    System.IO.Directory.Move(Path.Combine(tempDirectory, "docker"), Path.Combine(InstallDirectory, "docker"));
-                }
-            }
-            else if (InstallType.Equals(InstallType.Device))
-            {
-                if (System.IO.File.Exists(Path.Combine(tempDirectory, "SshnpdService.exe")))
-                {
-                    System.IO.File.Move(Path.Combine(tempDirectory, "SshnpdService.exe"), Path.Combine(InstallDirectory, "SshnpdService.exe"), true);
-                }
-                System.IO.File.Move(Path.Combine(tempDirectory, "sshnpd.exe"), Path.Combine(InstallDirectory, "sshnpd.exe"), true);
+                await ServiceController.TryUninstall("sshnpd");
+                resources.Add(Properties.Resources.sshnpd, "sshnpd.exe");
+                resources.Add(Properties.Resources.SshnpdService, "SshnpdService.exe");
             }
             else if (InstallType.Equals(InstallType.Client))
             {
-                if (!System.IO.Directory.Exists(Path.Combine(InstallDirectory, "docker")))
-                {
-                    System.IO.Directory.Move(Path.Combine(tempDirectory, "docker"), Path.Combine(InstallDirectory, "docker"));
-                }
-                System.IO.File.Move(Path.Combine(tempDirectory, "sshnp.exe"), Path.Combine(InstallDirectory, "sshnp.exe"), true);
-                System.IO.File.Move(Path.Combine(tempDirectory, "npt.exe"), Path.Combine(InstallDirectory, "npt.exe"), true);
+                resources.Add(Properties.Resources.sshnp, "sshnp.exe");
+                resources.Add(Properties.Resources.npt, "npt.exe");
+            }
+            else if (InstallType.Equals(InstallType.Both))
+            {
+                await ServiceController.TryUninstall("sshnpd");
+                resources.Add(Properties.Resources.sshnpd, "sshnpd.exe");
+                resources.Add(Properties.Resources.SshnpdService, "SshnpdService.exe");
+                resources.Add(Properties.Resources.sshnp, "sshnp.exe");
+                resources.Add(Properties.Resources.npt, "npt.exe");
             }
 
-            System.IO.File.Move(Path.Combine(tempDirectory, "at_activate.exe"), Path.Combine(InstallDirectory, "at_activate.exe"), true);
-            System.IO.File.Move(Path.Combine(tempDirectory, "srv.exe"), Path.Combine(InstallDirectory, "srv.exe"), true);
-            System.IO.File.Move(Path.Combine(tempDirectory, "README.md"), Path.Combine(InstallDirectory, "README.md"), true);
-            System.IO.File.Move(Path.Combine(tempDirectory, "LICENSE"), Path.Combine(InstallDirectory, "LICENSE"), true);
-            var newValue = Environment.GetEnvironmentVariable("PATH", EnvironmentVariableTarget.Machine) + ";" + InstallDirectory;
-            Environment.SetEnvironmentVariable("PATH", newValue, EnvironmentVariableTarget.Machine);
-            System.IO.File.Delete(archiveDirectory!);
+            foreach (var resource in resources)
+            {
+                string path = Path.Combine(InstallDirectory, resource.Value);
+                await Task.Run(() => System.IO.File.WriteAllBytes(path, resource.Key));
+            }
         }
 
         private async Task SetupService(Label status)
@@ -369,7 +269,6 @@ namespace NoPortsInstaller
                     ServiceController.InstallAndStart("sshnpd", "sshnpd", InstallDirectory + @"\SshnpdService.exe")
                 );
                 status.Content = "Configuring the Windows Service...";
-                await Task.Run(() => ServiceController.CreateUninstaller(System.AppDomain.CurrentDomain.BaseDirectory + @"NoPortsInstaller.exe u"));
                 await Task.Run(() => ServiceController.SetRecoveryOptions("sshnpd"));
             }
             catch
@@ -380,12 +279,12 @@ namespace NoPortsInstaller
             return;
         }
 
-        private void UpdateTrustedCerts()
+        private static void UpdateTrustedCerts()
         {
             ProcessStartInfo startInfo = new()
             {
                 FileName = "Certutil.exe",
-                Arguments = "-generateSSTFromWU roots.sst",
+                Arguments = "-generateSSTFromWU c:\\trusted-root-certs\\roots.sst",
                 RedirectStandardOutput = true,
                 UseShellExecute = false,
                 CreateNoWindow = true
@@ -435,7 +334,7 @@ namespace NoPortsInstaller
             registryKey.Close();
         }
 
-        private Task Cleanup()
+        private static Task Cleanup()
         {
             return Task.Run(() =>
             {
@@ -525,7 +424,7 @@ namespace NoPortsInstaller
         /// <param name="pb">The progress bar control.</param>
         /// <param name="value">The target value for the progress bar.</param>
         /// <returns>A task representing the asynchronous operation.</returns>
-        private async Task UpdateProgressBar(ProgressBar pb, int value)
+        private async static Task UpdateProgressBar(ProgressBar pb, int value)
         {
             double start = pb.Value;
             await Task.Run(() =>
@@ -597,6 +496,20 @@ namespace NoPortsInstaller
             }
             return string.Join(',', portArray);
         }
+
+        public void VerifyInstall()
+        {
+            string[] dirs = { "at_activate.exe", "srv.exe" };
+            foreach (var dir in dirs)
+            {
+                string sourceFilePath = Path.Combine(InstallDirectory, dir);
+                if (!File.Exists(sourceFilePath))
+                {
+                    throw new Exception("File not found: " + sourceFilePath);
+                }
+            }
+        }
+
     }
 
     public enum InstallType

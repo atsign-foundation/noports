@@ -409,12 +409,13 @@ namespace NoPortsInstaller
 
                     key.SetValue("DisplayName", "NoPorts");
                     key.SetValue("ApplicationVersion", v.ToString());
-                    key.SetValue("Publisher", "Atsign Foundation");
+                    key.SetValue("Publisher", "Atsign Inc");
                     key.SetValue("DisplayVersion", v.ToString(2));
                     key.SetValue("URLInfoAbout", "http://www.noports.com");
                     key.SetValue("Contact", "info@atsign.com");
                     key.SetValue("InstallDate", DateTime.Now.ToString("yyyyMMdd"));
                     key.SetValue("UninstallString", $"{binPath} ");
+
                 }
                 finally
                 {
