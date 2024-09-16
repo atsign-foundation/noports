@@ -101,6 +101,13 @@ class SshnpdParams {
       throw ArgumentError(invalidSshKeyPermissionsMsg);
     }
 
+    var permitOpen = r['permit-open'];
+    // #1295 - if we have a policy-manager arg and no permit-open arg
+    // then we set permit-open '*:*' (since the policy manager will
+    // be taking care of decisions in any event)
+    if (r.wasParsed('policy-manager') && !r.wasParsed('permit-open')) {
+      permitOpen = '*:*';
+    }
     return SshnpdParams(
       device: r['device'],
       username: getUserName(throwIfNull: true)!,
@@ -127,7 +134,7 @@ class SshnpdParams {
               atSign: deviceAtsign,
               progName: '.sshnpd',
               uniqueID: r['device']),
-      permitOpen: r['permit-open'],
+      permitOpen: permitOpen,
     );
   }
 
@@ -288,7 +295,7 @@ class SshnpdParams {
       'permit-open',
       aliases: ['po'],
       mandatory: false,
-      defaultsTo: 'localhost:22,localhost:3389',
+      defaultsTo: DefaultSshnpdArgs.permitOpen,
       help: 'Comma separated-list of host:port to which the daemon will permit'
           ' a connection from an authorized client. Hosts may be dns names or'
           ' ip addresses.',
