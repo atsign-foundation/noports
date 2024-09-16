@@ -1,70 +1,87 @@
-import 'dart:developer';
+// This file contains the form validation logic for the app. It is used to validate the input fields in the app.
+
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:npt_flutter/app.dart';
 
 class FormValidator {
-  static const kEmptyFieldValidationError = 'Field cannot be left blank';
-  static const kAtsignFieldValidationError = 'Field must start with @';
-  static const kProfileNameFieldValidationError = 'Field must only use lower case alphanumeric characters and spaces';
-  static const kPrivateKeyFieldValidationError = 'Field must only use lower case alphanumeric characters';
-  static const kIntFieldValidationError = 'Field must only use numbers';
-  static const kPortFieldValidationError = 'Field must use a valid port number';
-  static const kPrivateKeyDropDownOption = 'Create a new private key';
   static String? validateRequiredField(String? value) {
+    final strings = AppLocalizations.of(App.navState.currentContext!)!;
     if (value?.isEmpty ?? true) {
-      return kEmptyFieldValidationError;
-    }
-    return null;
-  }
-
-  static String? validateRequiredPortField(String? value) {
-    String valid = r'^[0-9]+$';
-    if (value?.isEmpty ?? true) {
-      return kEmptyFieldValidationError;
-    } else if (!RegExp(valid).hasMatch(value!)) {
-      return kPortFieldValidationError;
-    } else if (!(int.parse(value) >= 0 && int.parse(value) <= 65535)) {
-      return kPortFieldValidationError;
+      return strings.validationErrorEmptyField;
     }
     return null;
   }
 
   static String? validateAtsignField(String? value) {
+    final strings = AppLocalizations.of(App.navState.currentContext!)!;
     if (value?.isEmpty ?? true) {
-      return kEmptyFieldValidationError;
+      return strings.validationErrorEmptyField;
     } else if (!value!.startsWith('@')) {
-      return kAtsignFieldValidationError;
+      return strings.validationErrorAtsignField;
     }
     validateRequiredField(value);
     return null;
   }
 
   static String? validateProfileNameField(String? value) {
-    String invalid = '[^a-z0-9 ]';
+    final strings = AppLocalizations.of(App.navState.currentContext!)!;
+    String invalid = r'[^a-z0-9 ]';
     if (value?.isEmpty ?? true) {
-      return kEmptyFieldValidationError;
+      return strings.validationErrorEmptyField;
     } else if (value!.contains(RegExp(invalid))) {
-      return kProfileNameFieldValidationError;
+      return strings.validationErrorProfileNameField;
     }
     return null;
   }
 
-  static String? validatePrivateKeyField(String? value) {
-    String invalid = '[^a-z0-9_]';
+  static String? validateDeviceNameField(String? value) {
+    final strings = AppLocalizations.of(App.navState.currentContext!)!;
+    String invalid = r'[^a-z0-9_]{1,36}';
     if (value?.isEmpty ?? true) {
-      return kEmptyFieldValidationError;
-    } else if (value! == kPrivateKeyDropDownOption) {
-      return kPrivateKeyFieldValidationError;
-    } else if (value.contains(RegExp(invalid))) {
-      return kPrivateKeyFieldValidationError;
+      return strings.validationErrorEmptyField;
+    } else if (value!.contains(RegExp(invalid))) {
+      return strings.validationErrorDeviceNameField;
+    } else if (value.length > 36) {
+      return strings.validationErrorLongField;
     }
     return null;
   }
 
-  static String? validateMultiSelectStringField(List<String>? value) {
-    if (value == null || value.isEmpty) {
-      log('value is empty');
-      return kEmptyFieldValidationError;
-    }
+  static String? validateLocalPortField(String? value) {
+    final strings = AppLocalizations.of(App.navState.currentContext!)!;
 
+    var port = int.tryParse(value ?? '');
+    if (value?.isEmpty ?? true) {
+      return strings.validationErrorEmptyField;
+    } else if (value == '0') {
+      return null;
+    } else if (port == null || !(port >= 1024 && port <= 65535)) {
+      return strings.validationErrorLocalPortField;
+    }
+    return null;
+  }
+
+  static String? validateRemotePortField(String? value) {
+    final strings = AppLocalizations.of(App.navState.currentContext!)!;
+
+    var port = int.tryParse(value ?? '');
+    if (value?.isEmpty ?? true) {
+      return strings.validationErrorEmptyField;
+    } else if (port == null || !(port >= 1024 && port <= 65535)) {
+      return strings.validationErrorRemotePortField;
+    }
+    return null;
+  }
+
+  static String? validateRemoteHostField(String? value) {
+    final strings = AppLocalizations.of(App.navState.currentContext!)!;
+    String valid =
+        r'^(?:(?:[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?\.)+[a-zA-Z]{2,}|localhost|(?:\d{1,3}\.){3}\d{1,3}|(?:[a-fA-F0-9]{1,4}:){7}[a-fA-F0-9]{1,4})$';
+    if (value?.isEmpty ?? true) {
+      return strings.validationErrorEmptyField;
+    } else if (!value!.contains(RegExp(valid))) {
+      return strings.validationErrorRemoteHostField;
+    }
     return null;
   }
 }

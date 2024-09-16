@@ -22,9 +22,15 @@ jobs:
       - uses: ./.github/composite/verify_cli_tags
   noports_core-unit_tests:
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        dart-channel: [stable,beta]
     steps:
       - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
       - uses: dart-lang/setup-dart@0a8a0fc875eb934c15d08629302413c671d3f672 # v1.6.5
+        with:
+          sdk: ${{ matrix.dart-channel}}
       - uses: actions/setup-go@0a12ed9d6a96ab950c8f026ed9f722fe0da7ef32 # v5.0.2
         with:
           go-version: "stable"
