@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:npt_flutter/features/profile/profile.dart';
 import 'package:npt_flutter/styles/sizes.dart';
+import 'package:npt_flutter/util/form_validator.dart';
 import 'package:npt_flutter/util/port.dart';
 
 class ProfileRemotePortSelector extends StatelessWidget {
@@ -25,14 +26,22 @@ class ProfileRemotePortSelector extends StatelessWidget {
           },
           builder: (BuildContext context, int? state) {
             if (state == null) return const SizedBox();
-            return TextFormField(
-                initialValue: state.toString(),
-                onChanged: (value) {
-                  var bloc = context.read<ProfileBloc>();
-                  bloc.add(ProfileEditEvent(
-                    profile: (bloc.state as ProfileLoadedState).profile.copyWith(remotePort: Port.fromString(value)),
-                  ));
-                });
+            return SizedBox(
+              height: Sizes.p100,
+              child: TextFormField(
+                  initialValue: state.toString(),
+                  autovalidateMode: AutovalidateMode.onUserInteraction,
+                  validator: FormValidator.validateRemotePortField,
+                  decoration: const InputDecoration(
+                    errorMaxLines: 2,
+                  ),
+                  onChanged: (value) {
+                    var bloc = context.read<ProfileBloc>();
+                    bloc.add(ProfileEditEvent(
+                      profile: (bloc.state as ProfileLoadedState).profile.copyWith(remotePort: Port.fromString(value)),
+                    ));
+                  }),
+            );
           },
         ),
       ],
