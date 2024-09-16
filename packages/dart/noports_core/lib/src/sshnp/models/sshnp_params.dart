@@ -155,11 +155,6 @@ class NptParams extends ClientParamsBase
     super.daemonPingTimeout,
     required this.timeout,
   }) {
-    if (clientAtSign != clientAtSign.toLowerCase() ||
-        sshnpdAtSign != sshnpdAtSign.toLowerCase() ||
-        srvdAtSign != srvdAtSign.toLowerCase()) {
-      throw ArgumentError('atSigns must be lower-case');
-    }
     try {
       AtUtils.fixAtSign(clientAtSign);
       AtUtils.fixAtSign(sshnpdAtSign);

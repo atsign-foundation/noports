@@ -6,8 +6,8 @@ import 'dart:io';
 import 'package:args/args.dart';
 
 // atPlatform packages
-import 'package:at_utils/at_logger.dart';
 import 'package:at_cli_commons/at_cli_commons.dart' as cli;
+import 'package:at_utils/at_utils.dart';
 import 'package:duration/duration.dart';
 import 'package:noports_core/npt.dart';
 import 'package:noports_core/sshnp_foundation.dart';
@@ -212,8 +212,17 @@ void main(List<String> args) async {
       }
 
       verbose = parsedArgs['verbose'];
+      String clientAtSign = parsedArgs['from'];
       String daemonAtSign = parsedArgs['to'];
       String srvdAtSign = parsedArgs['srvd'];
+      try {
+        clientAtSign = AtUtils.fixAtSign(clientAtSign);
+        daemonAtSign = AtUtils.fixAtSign(daemonAtSign);
+        srvdAtSign = AtUtils.fixAtSign(srvdAtSign);
+      } catch (e) {
+        throw ArgumentError(e.toString());
+      }
+
       int remotePort = int.parse(parsedArgs['remote-port']);
       String remoteHost = parsedArgs['remote-host'];
       String device = parsedArgs['device'];
@@ -242,8 +251,6 @@ void main(List<String> args) async {
 
       // Windows will not let us delete files in use so
       // We will point storage to temp directory and let OS clean up
-      var clientAtSign = parsedArgs['from'];
-
       late String uniqueID;
       if (perSessionStorage) {
         uniqueID = DateTime.now().millisecondsSinceEpoch.toString();

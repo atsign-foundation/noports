@@ -46,48 +46,6 @@ void main() {
               ),
           throwsA(TypeMatcher<ArgumentError>()));
     });
-    test('malformed client atSign contains uppercase', () {
-      expect(
-          () => NptParams(
-                clientAtSign: '@cLiEnT',
-                sshnpdAtSign: '@daemon',
-                srvdAtSign: '@relay',
-                device: 'foo',
-                inline: false,
-                remoteHost: 'localhost',
-                remotePort: 3389,
-                timeout: DefaultArgs.srvTimeout,
-              ),
-          throwsA(TypeMatcher<ArgumentError>()));
-    });
-    test('malformed daemon atSign contains uppercase', () {
-      expect(
-          () => NptParams(
-                clientAtSign: '@client',
-                sshnpdAtSign: 'dAeMoN',
-                srvdAtSign: '@relay',
-                device: 'foo',
-                inline: false,
-                remoteHost: 'localhost',
-                remotePort: 3389,
-                timeout: DefaultArgs.srvTimeout,
-              ),
-          throwsA(TypeMatcher<ArgumentError>()));
-    });
-    test('malformed relay atSign contains uppercase', () {
-      expect(
-          () => NptParams(
-                clientAtSign: '@client',
-                sshnpdAtSign: '@daemon',
-                srvdAtSign: 'rElAy',
-                device: 'foo',
-                inline: false,
-                remoteHost: 'localhost',
-                remotePort: 3389,
-                timeout: DefaultArgs.srvTimeout,
-              ),
-          throwsA(TypeMatcher<ArgumentError>()));
-    });
   });
   group('SshnpParams', () {
     test('public API test', () {
