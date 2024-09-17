@@ -15,6 +15,7 @@ namespace NoPortsInstaller
         string MultipleDevices { get; set; }
         string MultipleManagers { get; set; }
         bool IsInstalled { get; set; }
+        string AtkeysPath { get; set; }
         List<Page> Pages { get; set; }
         Window? Window { get; set; }
 
@@ -25,6 +26,7 @@ namespace NoPortsInstaller
         void PreviousPage();
         void UpdateConfigRegistry();
         void PopulateAtsigns(ComboBox box);
+        void MoveUploadedAtkeys();
         string NormalizeAtsign(string atsign);
         string NormalizeMultipleManagers(string atsigns);
         string NormalizePermittedPorts(string ports);

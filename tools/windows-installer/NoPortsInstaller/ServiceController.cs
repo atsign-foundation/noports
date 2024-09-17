@@ -449,7 +449,7 @@ namespace NoPortsInstaller
                         {
                             throw new Exception("Failed to uninstall service", ex);
                         }
-                        await Task.Delay(1000);
+                        await Task.Delay(500);
                     }
                 }
             }

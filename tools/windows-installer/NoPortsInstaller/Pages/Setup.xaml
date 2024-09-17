@@ -56,5 +56,7 @@
         <Button x:Name="NextPageButton" Content="Next" HorizontalAlignment="Left" Height="24" Margin="120,297,0,0" VerticalAlignment="Top" Width="52" RenderTransformOrigin="0.536,-0.009" Click="NextPageButton_Click" Grid.Column="2" IsEnabled="False"/>
         <Label x:Name="ErrorMessage" Content="Select an install type:" HorizontalAlignment="Left" Margin="168,111,0,0" VerticalAlignment="Top" Grid.ColumnSpan="3" Height="28" Width="258" Background="Transparent" Foreground="#FF211E1E"/>
         <Button x:Name="UpdateConfig" Content="Update Config" HorizontalAlignment="Left" Height="24" Margin="159,297,0,0" VerticalAlignment="Top" Width="91" RenderTransformOrigin="0.536,-0.009" Click="UpdateConfigButton_Click" IsEnabled="False"/>
+        <Button x:Name="AtKeyButton" Content="Upload atKey" HorizontalAlignment="Left" Height="22" Margin="182,215,0,0" VerticalAlignment="Top" Width="99" Foreground="#FF423F3F" Click="AtKeyButton_Click" />
+        <CheckBox x:Name="Uploaded" Content="" HorizontalAlignment="Left" Margin="291,218,0,0" VerticalAlignment="Top" Grid.ColumnSpan="3" IsEnabled="False" IsChecked="False"/>
     </Grid>
 </Page>

@@ -45,9 +45,9 @@
                 </TransformGroup>
             </Rectangle.RenderTransform>
         </Rectangle>
-        <ComboBox x:Name="ClientCombo" HorizontalAlignment="Left" Height="26" Margin="177,97,0,0" VerticalAlignment="Top" Width="211" IsEditable="True" Initialized="ClientCombo_Initialized" FocusableChanged="ClientCombo_FocusableChanged"/>
+        <ComboBox x:Name="ClientCombo" HorizontalAlignment="Left" Height="26" Margin="177,97,0,0" VerticalAlignment="Top" Width="211" IsEditable="True" FocusableChanged="ClientCombo_FocusableChanged" Initialized="ClientCombo_Initialized"/>
         <Label Content="*Device atSign ( ex. @alice__device )" HorizontalAlignment="Left" Height="28" VerticalAlignment="Top" Width="199" Margin="168,134,0,0" FontSize="11"/>
-        <ComboBox x:Name="DeviceCombo" HorizontalAlignment="Left" Height="26" Margin="177,166,0,0" VerticalAlignment="Top" Width="211" IsEditable="True" Initialized="DeviceCombo_Initialized" FocusableChanged="DeviceCombo_FocusableChanged"/>
+        <ComboBox x:Name="DeviceCombo" HorizontalAlignment="Left" Height="26" Margin="177,166,0,0" VerticalAlignment="Top" Width="211" IsEditable="True" FocusableChanged="DeviceCombo_FocusableChanged" Initialized="DeviceCombo_Initialized"/>
         <Label Content="*Device Name ( ex. esp_32 or my_home )" HorizontalAlignment="Left" Height="26" VerticalAlignment="Top" Width="199" Margin="168,206,0,0" FontSize="11"/>
         <TextBox x:Name="DeviceName" HorizontalAlignment="Left" Height="26" Margin="177,238,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="211" TextChanged="DeviceName_TextChanged" />
 

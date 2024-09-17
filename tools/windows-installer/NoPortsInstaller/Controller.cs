@@ -21,6 +21,7 @@ namespace NoPortsInstaller
         public string MultipleManagers { get; set; }
         public bool IsInstalled { get { return Directory.Exists(InstallDirectory); } set { } }
         public List<Page> Pages { get; set; }
+        public string AtkeysPath { get; set; }
         private int index = 0;
         public Window? Window { get; set; }
 
@@ -37,6 +38,7 @@ namespace NoPortsInstaller
             PermittedPorts = "localhost:22,localhost:3389";
             Pages = [];
             IsInstalled = false;
+            AtkeysPath = "";
         }
 
         /// <summary>
@@ -54,8 +56,8 @@ namespace NoPortsInstaller
                 status.Content = "Installing NoPorts...";
                 await MoveResources();
                 VerifyInstall();
-                await UpdateProgressBar(progress, 50);
                 status.Content = "Updating Trusted Certificates...";
+                await UpdateProgressBar(progress, 50);
                 UpdateTrustedCerts();
                 await UpdateProgressBar(progress, 75);
                 status.Content = "Creating Registries NoPorts...";
@@ -171,6 +173,10 @@ namespace NoPortsInstaller
                     Console.WriteLine($"An error occurred while creating {dir}: {ex.Message}");
                 }
             }
+            if (InstallType.Equals(InstallType.Client))
+            {
+                MoveUploadedAtkeys();
+            }
 
             SecurityIdentifier everyone = new(WellKnownSidType.WorldSid, null);
             securityRules = new();
@@ -193,7 +199,7 @@ namespace NoPortsInstaller
             string[] sources =
             [
                 Path.Combine(sourceFile, ".ssh", "authorized_keys"),
-                Path.Combine(sourceFile, ".atsign", "keys", DeviceAtsign + "_key.atKeys")
+                AtkeysPath
             ];
             CreateDirectories(destinationFile);
             string[] destinations =
@@ -278,10 +284,16 @@ namespace NoPortsInstaller
 
         private static void UpdateTrustedCerts()
         {
+            var tempPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), @"Temp\trusted-certs");
+            if (!Directory.Exists(tempPath))
+            {
+                Directory.CreateDirectory(tempPath);
+            }
+            tempPath += @"\roots.sst";
             ProcessStartInfo startInfo = new()
             {
                 FileName = "Certutil.exe",
-                Arguments = "-generateSSTFromWU c:\\trusted-root-certs\\roots.sst",
+                Arguments = $"-generateSSTFromWU {tempPath}",
                 RedirectStandardOutput = true,
                 UseShellExecute = false,
                 CreateNoWindow = true
@@ -298,9 +310,9 @@ namespace NoPortsInstaller
             startInfo = new ProcessStartInfo
             {
                 FileName = "powershell.exe",
-                Arguments = "-Command \"$sstStore = Get-ChildItem -Path c:\\trusted-root-certs\\roots.sst; $sstStore | Import-Certificate -CertStoreLocation Cert:\\LocalMachine\\Root\"",
-                RedirectStandardOutput = true,
-                UseShellExecute = false,
+                Verb = "runas",
+                Arguments = $"-WindowStyle Hidden -Command \"(Get-ChildItem '{tempPath}') | Import-Certificate -CertStoreLocation Cert:\\LocalMachine\\Root\"",
+                UseShellExecute = true,
                 CreateNoWindow = true
             };
 
@@ -311,7 +323,6 @@ namespace NoPortsInstaller
                     process.WaitForExit();
                 }
             }
-
         }
 
         private void CreateRegistryKeys()
@@ -324,7 +335,7 @@ namespace NoPortsInstaller
                 args += $" --managers {MultipleManagers}";
             }
             args += " -sv";
-            if (InstallType.Equals(InstallType.Device))
+            if (InstallType.Equals(InstallType.Device) || InstallType.Equals(InstallType.Both))
             {
                 registryKey.SetValue("DeviceArgs", args);
             }
@@ -359,24 +370,25 @@ namespace NoPortsInstaller
         /// </summary>
         public void LoadPages()
         {
-            Pages.Clear();
             switch (InstallType)
             {
                 case InstallType.None:
                     Pages.Add(new Setup());
                     break;
                 case InstallType.Update:
-                    Pages.Add(new UpdateConfigs());
+                    Pages.Clear();
+                    Pages.Add(new Setup());
+                    Pages.Add(new ConfigureInstall());
+                    Pages.Add(new UpdateDevice());
                     break;
                 case InstallType.Uninstall:
+                    Pages.Clear();
                     Pages.Add(new UninstallPage());
                     break;
                 case InstallType.Client:
-                    Pages.Add(new Setup());
                     Pages.Add(new ClientConfig());
                     break;
                 default:
-                    Pages.Add(new Setup());
                     Pages.Add(new ConfigureInstall());
                     Pages.Add(new DeviceConfig());
                     break;
@@ -441,10 +453,10 @@ namespace NoPortsInstaller
         /// <param name="box">The ComboBox control to populate.</param>
         public void PopulateAtsigns(ComboBox box)
         {
-            string[] files = [];
+            List<string> files = [];
             if (Directory.Exists(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), @".atsign\keys")))
             {
-                files = Directory.GetFiles(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), @".atsign\keys"), "*.atKeys", SearchOption.AllDirectories);
+                files = Directory.GetFiles(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), @".atsign\keys"), "*.atKeys", SearchOption.AllDirectories).ToList();
             }
             foreach (var key in files)
             {
@@ -507,15 +519,28 @@ namespace NoPortsInstaller
             }
         }
 
-    }
-
-    public enum InstallType
-    {
-        None,
-        Device,
-        Client,
-        Both,
-        Update,
-        Uninstall
+        public void MoveUploadedAtkeys()
+        {
+            if (AtkeysPath != "")
+            {
+                string destination = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".atsign", "keys");
+                if (Directory.Exists(destination))
+                {
+                    File.Move(AtkeysPath, Path.Combine(destination, Path.GetFileName(AtkeysPath)));
+                    AtkeysPath = Path.Combine(destination, Path.GetFileName(AtkeysPath));
+                }
+            }
+        }
     }
 }
+
+public enum InstallType
+{
+    None,
+    Device,
+    Client,
+    Both,
+    Update,
+    Uninstall
+}
+

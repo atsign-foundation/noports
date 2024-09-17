@@ -39,6 +39,7 @@ namespace NoPortsInstaller.Pages
 
         private void NextPageButton_Click(object sender, RoutedEventArgs e)
         {
+            _controller.Pages.RemoveRange(1, _controller.Pages.Count - 1);
             if (ClientInstallType.IsChecked == true && DeviceInstallType.IsChecked == true)
             {
                 _controller.InstallType = InstallType.Both;
@@ -83,6 +84,17 @@ namespace NoPortsInstaller.Pages
             _controller.InstallType = InstallType.Update;
             _controller.LoadPages();
             _controller.NextPage();
+        }
+
+        private void AtKeyButton_Click(object sender, RoutedEventArgs e)
+        {
+            OpenFileDialog dialog = new();
+            dialog.InitialDirectory = _controller.InstallDirectory;
+            if (dialog.ShowDialog() == true)
+            {
+                _controller.AtkeysPath = dialog.FileName;
+                Uploaded.IsChecked = true;
+            }
         }
     }
 }

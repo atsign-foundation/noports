@@ -1,4 +1,5 @@
-﻿using System.Windows.Controls;
+﻿using System.IO;
+using System.Windows.Controls;
 
 namespace NoPortsInstaller.Pages
 {
@@ -8,6 +9,11 @@ namespace NoPortsInstaller.Pages
         public ConfigureInstall()
         {
             _controller = App.ControllerInstance;
+            if (!Directory.Exists(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), @".atsign\keys")))
+            {
+                Directory.CreateDirectory(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), @".atsign\keys"));
+            }
+            _controller.MoveUploadedAtkeys();
             InitializeComponent();
         }
 
@@ -22,18 +28,6 @@ namespace NoPortsInstaller.Pages
             _controller.ClientAtsign = _controller.NormalizeAtsign(ClientCombo.Text);
             _controller.DeviceName = DeviceName.Text;
             _controller.NextPage();
-        }
-
-        private void ClientCombo_Initialized(object sender, EventArgs e)
-        {
-            ComboBox comboBox = (ComboBox)sender;
-            _controller.PopulateAtsigns(comboBox);
-        }
-
-        private void DeviceCombo_Initialized(object sender, EventArgs e)
-        {
-            ComboBox comboBox = (ComboBox)sender;
-            _controller.PopulateAtsigns(comboBox);
         }
 
         private void ValidateInputs()
@@ -61,6 +55,19 @@ namespace NoPortsInstaller.Pages
         private void DeviceName_TextChanged(object sender, TextChangedEventArgs e)
         {
             ValidateInputs();
+        }
+
+
+        private void ClientCombo_Initialized(object sender, EventArgs e)
+        {
+            ComboBox comboBox = (ComboBox)sender;
+            _controller.PopulateAtsigns(comboBox);
+        }
+
+        private void DeviceCombo_Initialized(object sender, EventArgs e)
+        {
+            ComboBox comboBox = (ComboBox)sender;
+            _controller.PopulateAtsigns(comboBox);
         }
     }
 }
