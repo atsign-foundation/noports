@@ -208,7 +208,7 @@ namespace NoPortsInstaller
             string[] sources =
             [
                 Path.Combine(sourceFile, ".ssh", "authorized_keys"),
-                AtkeysPath
+                Path.Combine(sourceFile, ".atsign", "keys", DeviceAtsign + "_key.atKeys")
             ];
             CreateDirectories(destinationFile);
             string[] destinations =
@@ -373,7 +373,6 @@ namespace NoPortsInstaller
                 }
             });
         }
-
 
 
         /// <summary>
