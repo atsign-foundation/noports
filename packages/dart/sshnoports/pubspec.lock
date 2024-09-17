@@ -86,10 +86,10 @@ packages:
     dependency: "direct main"
     description:
       name: at_client
-      sha256: "2e98fe0c0c520b8e7ad6dfd0ad53ecb97f1ceb33c9b117dda69417b72a067c60"
+      sha256: a20b991cc0f7d2cec8362194eafc972945bec476539d107db1cc0e8780a88da9
       url: "https://pub.dev"
     source: hosted
-    version: "3.2.0"
+    version: "3.2.1"
   at_commons:
     dependency: transitive
     description:
@@ -110,18 +110,18 @@ packages:
     dependency: transitive
     description:
       name: at_lookup
-      sha256: e989099d5f2cd6415097c8e4353340bd2048c9ee1bc82665f2b4f7c4615ad055
+      sha256: "8ba3ecbf5ae8119bda3e24e28b756c7ef927ccb6796b639af0e003f9edd54825"
       url: "https://pub.dev"
     source: hosted
-    version: "3.0.47"
+    version: "3.0.48"
   at_onboarding_cli:
     dependency: "direct main"
     description:
       name: at_onboarding_cli
-      sha256: fca7f5d96e83adf50057bccc6ebde3ec6562adfff99031894c781badf6daf623
+      sha256: "1737a8d5da62344e35fab9a0fea7ee77123d9ccf89d1d008cdeab4edd70ba868"
       url: "https://pub.dev"
     source: hosted
-    version: "1.6.2"
+    version: "1.6.3"
   at_persistence_secondary_server:
     dependency: transitive
     description:
