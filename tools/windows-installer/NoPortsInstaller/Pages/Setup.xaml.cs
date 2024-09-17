@@ -93,7 +93,6 @@ namespace NoPortsInstaller.Pages
             if (dialog.ShowDialog() == true)
             {
                 _controller.AtkeysPath = dialog.FileName;
-                Uploaded.IsChecked = true;
             }
         }
     }

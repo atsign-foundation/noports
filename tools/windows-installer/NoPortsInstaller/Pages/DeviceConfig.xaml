@@ -58,7 +58,7 @@
                     <ColumnDefinition Width="23*"/>
                 </Grid.ColumnDefinitions>
                 <TextBox x:Name="MultipleManagers" Grid.ColumnSpan="5" HorizontalAlignment="Left" Margin="22,46,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="219" Height="30" RenderTransformOrigin="0.501,0.621"/>
-                <Label Content="Multiple Managers? (ex. @alice, @bob, @soccer0)&#xA;must be comma separated*" HorizontalAlignment="Left" Height="41" VerticalAlignment="Top" Width="272" FontSize="11" Grid.ColumnSpan="6" Margin="10,0,0,0"/>
+                <Label Content="Multiple Managers? (ex. @alice, @bob, @soccer0)&#xA;must be comma separated" HorizontalAlignment="Left" Height="41" VerticalAlignment="Top" Width="272" FontSize="11" Grid.ColumnSpan="6" Margin="10,0,0,0"/>
             </Grid>
             <Grid HorizontalAlignment="Center" Height="93" VerticalAlignment="Top" Width="350" IsEnabled="True" Margin="0,93,0,0">
                 <Grid.ColumnDefinitions>
@@ -73,7 +73,7 @@
                     <ColumnDefinition Width="23*"/>
                 </Grid.ColumnDefinitions>
                 <TextBox x:Name="PermittedPorts" Grid.ColumnSpan="5" HorizontalAlignment="Left" Margin="22,46,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="219" Height="30" RenderTransformOrigin="0.501,0.621"/>
-                <Label Content="Permitted Ports? (default: 22,3389)&#xA;must be comma separated*" HorizontalAlignment="Left" Height="41" VerticalAlignment="Top" Width="272" FontSize="11" Grid.ColumnSpan="6" Margin="10,0,0,0"/>
+                <Label Content="Permitted Ports? (default: 22,3389)&#xA;must be comma separated" HorizontalAlignment="Left" Height="41" VerticalAlignment="Top" Width="272" FontSize="11" Grid.ColumnSpan="6" Margin="10,0,0,0"/>
             </Grid>
         </Grid>
     </Grid>

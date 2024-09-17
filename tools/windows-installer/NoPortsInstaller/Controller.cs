@@ -128,9 +128,18 @@ namespace NoPortsInstaller
             try
             {
                 RegistryKey? registryKey = Registry.LocalMachine.OpenSubKey(@"Software\NoPorts");
+                var args = $"-a {DeviceAtsign} -m {ClientAtsign} -d {DeviceName} -sv";
                 if (registryKey != null)
                 {
-                    registryKey.SetValue("DeviceArgs", $"-a {DeviceAtsign} -m {ClientAtsign} -d {DeviceName} -sv");
+                    if (MultipleManagers != "")
+                    {
+                        args += $" --managers {MultipleManagers}";
+                    }
+                    if (PermittedPorts != "")
+                    {
+                        args += $" --ports {PermittedPorts}";
+                    }
+                    registryKey.SetValue("DeviceArgs", args);
                     registryKey.Close();
                 }
             }
@@ -256,6 +265,8 @@ namespace NoPortsInstaller
                 string path = Path.Combine(InstallDirectory, resource.Value);
                 await Task.Run(() => System.IO.File.WriteAllBytes(path, resource.Key));
             }
+            var newValue = Environment.GetEnvironmentVariable("PATH", EnvironmentVariableTarget.Machine) + ";" + InstallDirectory;
+            Environment.SetEnvironmentVariable("PATH", newValue, EnvironmentVariableTarget.Machine);
         }
 
         private async Task SetupService(Label status)
