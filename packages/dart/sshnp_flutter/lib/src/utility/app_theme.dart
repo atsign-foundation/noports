@@ -80,7 +80,7 @@ class AppTheme {
           primary: kPrimaryColor,
         ),
         checkboxTheme: CheckboxThemeData(
-          fillColor: MaterialStateColor.resolveWith(
+          fillColor: WidgetStateColor.resolveWith(
             (states) {
               return Colors.black;
             },
@@ -93,13 +93,13 @@ class AppTheme {
         textTheme: lightTextTheme,
         elevatedButtonTheme: ElevatedButtonThemeData(
           style: ButtonStyle(
-            shape: MaterialStateProperty.all<RoundedRectangleBorder>(
+            shape: WidgetStateProperty.all<RoundedRectangleBorder>(
               RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(18.0),
               ),
             ),
-            backgroundColor: MaterialStateProperty.all<Color>(const Color(0xFF12DE26)),
-            foregroundColor: MaterialStateProperty.all<Color>(const Color(0xFFFFFFFF)),
+            backgroundColor: WidgetStateProperty.all<Color>(const Color(0xFF12DE26)),
+            foregroundColor: WidgetStateProperty.all<Color>(const Color(0xFFFFFFFF)),
           ),
         ),
         dialogTheme: const DialogTheme(
@@ -130,9 +130,9 @@ class AppTheme {
     return ThemeData(
       visualDensity: VisualDensity.adaptivePlatformDensity,
       useMaterial3: true,
-      colorScheme: const ColorScheme.dark().copyWith(primary: kPrimaryColor, background: kBackGroundColorDark),
+      colorScheme: const ColorScheme.dark().copyWith(primary: kPrimaryColor, surface: kBackGroundColorDark),
       checkboxTheme: CheckboxThemeData(
-        fillColor: MaterialStateColor.resolveWith(
+        fillColor: WidgetStateColor.resolveWith(
           (states) {
             return Colors.black;
           },
@@ -143,7 +143,7 @@ class AppTheme {
       textTheme: darkTextTheme,
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ButtonStyle(
-          shape: MaterialStateProperty.all<RoundedRectangleBorder>(
+          shape: WidgetStateProperty.all<RoundedRectangleBorder>(
             RoundedRectangleBorder(
               side: const BorderSide(
                 width: 1,
@@ -152,8 +152,8 @@ class AppTheme {
               borderRadius: BorderRadius.circular(Sizes.p3),
             ),
           ),
-          backgroundColor: MaterialStateProperty.all<Color>(const Color(0xFF2F2F2F)),
-          foregroundColor: MaterialStateProperty.all<Color>(const Color(0xFF707070)),
+          backgroundColor: WidgetStateProperty.all<Color>(const Color(0xFF2F2F2F)),
+          foregroundColor: WidgetStateProperty.all<Color>(const Color(0xFF707070)),
         ),
       ),
       dialogTheme: const DialogTheme(

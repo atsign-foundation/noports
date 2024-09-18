@@ -16,8 +16,8 @@ class _ImportProfileActionState extends ConsumerState<ImportProfileAction> {
   Widget build(BuildContext context) {
     return FilledButton(
       style: Theme.of(context).filledButtonTheme.style!.copyWith(
-            backgroundColor: MaterialStateProperty.all<Color>(Colors.white),
-            foregroundColor: MaterialStateProperty.all<Color>(kPrimaryColor),
+            backgroundColor: WidgetStateProperty.all<Color>(Colors.white),
+            foregroundColor: WidgetStateProperty.all<Color>(kPrimaryColor),
           ),
       onPressed: () {
         HomeScreenActionCallbacks.import(ref, context);

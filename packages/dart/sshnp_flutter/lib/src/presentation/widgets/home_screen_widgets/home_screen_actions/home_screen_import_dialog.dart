@@ -49,7 +49,7 @@ class _HomeScreenImportDialogState extends State<HomeScreenImportDialog> {
             }
           },
           style: Theme.of(context).elevatedButtonTheme.style!.copyWith(
-                backgroundColor: MaterialStateProperty.all(Colors.black),
+                backgroundColor: WidgetStateProperty.all(Colors.black),
               ),
           child: Text(
             strings.submit,

@@ -30,10 +30,7 @@ class ProfileDeleteDialog extends ConsumerWidget {
                   children: [
                     TextSpan(
                       text: strings.note,
-                      style: Theme.of(context)
-                          .textTheme
-                          .bodySmall!
-                          .copyWith(fontWeight: FontWeight.w700),
+                      style: Theme.of(context).textTheme.bodySmall!.copyWith(fontWeight: FontWeight.w700),
                     ),
                     TextSpan(
                       text: strings.noteMessage,
@@ -47,27 +44,20 @@ class ProfileDeleteDialog extends ConsumerWidget {
             OutlinedButton(
               onPressed: () => Navigator.of(context).pop(false),
               child: Text(strings.cancelButton,
-                  style: Theme.of(context)
-                      .textTheme
-                      .bodySmall!
-                      .copyWith(decoration: TextDecoration.underline)),
+                  style: Theme.of(context).textTheme.bodySmall!.copyWith(decoration: TextDecoration.underline)),
             ),
             ElevatedButton(
               onPressed: () async {
-                await ref
-                    .read(configFamilyController(profileName).notifier)
-                    .deleteConfig(context: context);
+                await ref.read(configFamilyController(profileName).notifier).deleteConfig(context: context);
                 if (context.mounted) Navigator.of(context).pop();
               },
               style: Theme.of(context).elevatedButtonTheme.style!.copyWith(
-                    backgroundColor: MaterialStateProperty.all(Colors.black),
+                    backgroundColor: WidgetStateProperty.all(Colors.black),
                   ),
               child: Text(
                 strings.deleteButton,
-                style: Theme.of(context)
-                    .textTheme
-                    .bodySmall!
-                    .copyWith(fontWeight: FontWeight.w700, color: Colors.white),
+                style:
+                    Theme.of(context).textTheme.bodySmall!.copyWith(fontWeight: FontWeight.w700, color: Colors.white),
               ),
             )
           ],
