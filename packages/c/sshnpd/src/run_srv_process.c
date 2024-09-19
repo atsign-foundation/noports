@@ -1,7 +1,7 @@
 #include "srv/params.h"
 #include "srv/srv.h"
 #include "sshnpd/params.h"
-#include <atclient/stringutils.h>
+#include <atclient/string_utils.h>
 #include <atlogger/atlogger.h>
 #include <cJSON.h>
 #include <stdio.h>

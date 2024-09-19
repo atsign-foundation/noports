@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:at_chops/at_chops.dart';
+import 'package:at_commons/at_commons.dart';
 import 'package:at_utils/at_utils.dart';
 import 'package:noports_core/src/sshnp/models/config_file_repository.dart';
 import 'package:noports_core/src/sshnp/models/sshnp_arg.dart';
@@ -153,7 +154,15 @@ class NptParams extends ClientParamsBase
     required this.inline,
     super.daemonPingTimeout,
     required this.timeout,
-  });
+  }) {
+    try {
+      AtUtils.fixAtSign(clientAtSign);
+      AtUtils.fixAtSign(sshnpdAtSign);
+      AtUtils.fixAtSign(srvdAtSign);
+    } on InvalidAtSignException catch (e) {
+      throw ArgumentError(e.message);
+    }
+  }
 
   /// not relevant for Npt
   @override

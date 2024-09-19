@@ -4,14 +4,16 @@ import 'package:at_chops/at_chops.dart';
 import 'package:at_client/at_client.dart';
 import 'package:at_utils/at_utils.dart';
 import 'package:mocktail/mocktail.dart';
-import 'package:noports_core/sshnp_foundation.dart';
 import 'package:noports_core/srv.dart';
 import 'package:noports_core/srvd.dart';
+import 'package:noports_core/sshnp_foundation.dart';
 import 'package:test/test.dart';
 import 'package:uuid/uuid.dart';
 
 import '../../sshnp_mocks.dart';
 import 'srvd_channel_mocks.dart';
+
+class FakeNotificationParams extends Fake implements NotificationParams {}
 
 void main() {
   group('SrvdChannel', () {
@@ -60,9 +62,9 @@ void main() {
         atClient: mockAtClient,
         params: mockParams,
         sessionId: sessionId,
-        srvGenerator: srvGeneratorStub,
-        notify: notifyStub,
-        subscribe: subscribeStub,
+        srvGenerator: srvGeneratorStub.call,
+        notify: notifyStub.call,
+        subscribe: subscribeStub.call,
       );
 
       registerFallbackValue(AtKey());
@@ -217,4 +219,137 @@ void main() {
       verifyNever(srvRunInvocation);
     }); // test runSrv
   }); // group SrvdChannel
+
+  group('A group of tests to assert notifications received from the srvd', () {
+    test(
+        'A test to assert getHostAndPortFromSrvd sets host and ports received from srvd via notification',
+        () async {
+      registerFallbackValue(FakeNotificationParams());
+      String sessionId = 'dummy-session-id';
+      MockAtClient mockAtClient = MockAtClient();
+      MockNotificationService mockNotificationService =
+          MockNotificationService();
+
+      when(() => mockAtClient.notificationService)
+          .thenReturn(mockNotificationService);
+
+      when(() => mockNotificationService.notify(any(),
+          checkForFinalDeliveryStatus:
+              any(named: 'checkForFinalDeliveryStatus'),
+          waitForFinalDeliveryStatus: any(named: 'waitForFinalDeliveryStatus'),
+          onSuccess: any(named: 'onSuccess'),
+          onError: any(named: 'onError'),
+          onSentToSecondary:
+              any(named: 'onSentToSecondary'))).thenAnswer((_) async =>
+          Future.value(NotificationResult()
+            ..notificationStatusEnum = NotificationStatusEnum.delivered));
+
+      // Create a stream controller to simulate the notification received from the srvd
+      // which contains the host and port numbers.
+      final streamController = StreamController<AtNotification>();
+      streamController.add(AtNotification(
+          '123',
+          'local.request_ports.${Srvd.namespace}',
+          '@alice',
+          '@bob',
+          123,
+          'key',
+          true)
+        ..value = '127.0.0.1,98878,98879,rvd_dummy_nonce');
+      when(() => mockNotificationService.subscribe(
+              regex: any(named: 'regex'),
+              shouldDecrypt: any(named: 'shouldDecrypt')))
+          .thenAnswer((_) => streamController.stream);
+
+      SrvdChannelParams srvdChannelParams = NptParams(
+          clientAtSign: '@sshnp',
+          sshnpdAtSign: '@sshnpd',
+          srvdAtSign: '@srvd',
+          remoteHost: '127.0.0.1',
+          remotePort: 9887,
+          device: 'my_device1',
+          inline: true,
+          timeout: Duration(seconds: 30));
+      SrvdDartBindPortChannel srvdDartBindPortChannel = SrvdDartBindPortChannel(
+          atClient: mockAtClient,
+          params: srvdChannelParams,
+          sessionId: sessionId);
+      await srvdDartBindPortChannel.getHostAndPortFromSrvd();
+      expect(srvdDartBindPortChannel.rvdHost, '127.0.0.1');
+      expect(srvdDartBindPortChannel.clientPort, 98878);
+      expect(srvdDartBindPortChannel.daemonPort, 98879);
+      expect(srvdDartBindPortChannel.rvdNonce, 'rvd_dummy_nonce');
+      expect(srvdDartBindPortChannel.fetched, true);
+      expect(srvdDartBindPortChannel.srvdAck, SrvdAck.acknowledged);
+    });
+
+    test('A test to verify timeout exception when srvd does not respond',
+        () async {
+      registerFallbackValue(FakeNotificationParams());
+
+      String sessionId = 'dummy-session-id';
+      MockAtClient mockAtClient = MockAtClient();
+      MockNotificationService mockNotificationService =
+          MockNotificationService();
+
+      when(() => mockNotificationService.subscribe(
+              regex: any(named: 'regex'),
+              shouldDecrypt: any(named: 'shouldDecrypt')))
+          .thenAnswer((_) => StreamController<AtNotification>().stream);
+
+      when(() => mockNotificationService.notify(any(),
+          checkForFinalDeliveryStatus:
+              any(named: 'checkForFinalDeliveryStatus'),
+          waitForFinalDeliveryStatus: any(named: 'waitForFinalDeliveryStatus'),
+          onSuccess: any(named: 'onSuccess'),
+          onError: any(named: 'onError'),
+          onSentToSecondary:
+              any(named: 'onSentToSecondary'))).thenAnswer((_) async =>
+          Future.value(NotificationResult()
+            ..notificationStatusEnum = NotificationStatusEnum.delivered));
+
+      when(() => mockAtClient.notificationService)
+          .thenReturn(mockNotificationService);
+
+      SrvdChannelParams srvdChannelParams = NptParams(
+          clientAtSign: '@sshnp',
+          sshnpdAtSign: '@sshnpd',
+          srvdAtSign: '@srvd',
+          remoteHost: '127.0.0.1',
+          remotePort: 9887,
+          device: 'my_device1',
+          inline: true,
+          timeout: Duration(seconds: 30));
+
+      when(() => mockAtClient.notificationService)
+          .thenReturn(mockNotificationService);
+
+      SrvdDartBindPortChannel srvdDartBindPortChannel = SrvdDartBindPortChannel(
+          atClient: mockAtClient,
+          params: srvdChannelParams,
+          sessionId: sessionId);
+
+      expect(
+          () async => await srvdDartBindPortChannel.getHostAndPortFromSrvd(),
+          throwsA(predicate((dynamic e) =>
+              e is TimeoutException &&
+              e.message == 'Connection timeout to srvd @srvd service')));
+      expect(srvdDartBindPortChannel.srvdAck, SrvdAck.notAcknowledged);
+    });
+  });
+}
+
+class FakeNotificationParamsMatcher extends Matcher {
+  @override
+  Description describe(Description description) {
+    return description;
+  }
+
+  @override
+  bool matches(item, Map matchState) {
+    if (item is NotificationParams) {
+      return true;
+    }
+    return false;
+  }
 }

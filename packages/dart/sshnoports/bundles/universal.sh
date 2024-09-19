@@ -3,7 +3,7 @@
 # SCRIPT METADATA
 # DO NOT MODIFY/DELETE THIS BLOCK
 script_version="3.0.0"
-sshnp_version="5.1.0"
+sshnp_version="5.5.0"
 repo_url="https://github.com/atsign-foundation/sshnoports"
 # END METADATA
 
@@ -51,6 +51,7 @@ quiet=false
 ### Client/ Device Install Variables
 client_atsign=""
 device_atsign=""
+policy_atsign=""
 
 ### Client Install Variables
 unset magic_script
@@ -148,9 +149,10 @@ usage() {
   echo "Device Options:"
   echo "  -c,   --client-atsign  <atsign>  Set the client atSign"
   echo "  -d,   --device-atsign  <atsign>  Set the device atSign"
+  echo "  -p,   --policy-atsign  <atsign>  Set the access policy atSign"
   echo "  -n,   --device-name    <name>    Set the device name"
   echo "  --dt, --device-type    <type>    Set the device type (launchd, systemd, tmux, headless)"
-  echo "        --no-sudo                  Deliberately install without sudo priveleges"
+  echo "        --no-sudo                  Deliberately install without sudo privileges"
 
 }
 
@@ -191,7 +193,7 @@ parse_env() {
       system_arch="arm64"
       ;;
     arm | armv7l)
-      system_arch="armv7"
+      system_arch="arm"
       ;;
     riscv64)
       system_arch="riscv64"
@@ -330,6 +332,10 @@ parse_args() {
         shift
         device_atsign="$1"
         ;;
+      -p | --policy-atsign)
+        shift
+        policy_atsign="$1"
+        ;;
       -r | --region)
         # notice that --region and --rv-atsign are basically the same under the hood,
         # if region's input starts with an "@" it will be equivalent to using --rv-atsign
@@ -376,6 +382,9 @@ parse_args() {
       if [ -z "$client_atsign" ] || [ -z "$device_atsign" ] || [ -z "$device_name" ]; then
         >&2 echo "Error: Missing required information for device installation. (-c, -d, -n)"
         exit 1
+      fi
+      if [ -z "$policy_atsign" ]; then
+        >&2 echo "Info: No policy atSign provided; continuing."
       fi
     elif [ "$install_type" = "client" ]; then
       if [ -z "$client_atsign" ] || [ -z "$device_atsign" ] || [ -z "$host_atsign" ]; then
@@ -450,7 +459,7 @@ get_download_url() {
   fi
 
   echo "$download_urls" | grep "$platform_name" |
-    grep "$system_arch" | cut -d\" -f4
+    grep "$system_arch." | cut -d\" -f4
 }
 
 download_archive() {
@@ -667,6 +676,48 @@ check_ssh_keys() {
   # TODO we could have a more sophisticated check for other files to see if they're keys
 }
 
+validate_activation(){
+  device_output=$(echo "$(at_activate status -a $device_atsign 2>&1)")
+  device_status=$(echo $device_output | grep -oE 'returning [0-9]+' | grep -oE '[0-9]+')
+
+  client_output=$(echo "$(at_activate status -a $client_atsign 2>&1)")
+  client_status=$(echo $client_output | grep -oE 'returning [0-9]+' | grep -oE '[0-9]+')
+
+  if [ -z "$policy_atsign" ]; then
+    policy_status=0
+  else
+    policy_output=$(echo "$(at_activate status -a $policy_atsign 2>&1)")
+    policy_status=$(echo $policy_output | grep -oE 'returning [0-9]+' | grep -oE '[0-9]+')
+  fi
+
+  if [ "$device_status" -ne 0 ]; then
+    echo
+    echo "Activating $device_atsign..."
+    if [ "$device_status" -eq 3 ]; then
+      echo $device_output
+    fi
+    at_activate onboard -a $device_atsign
+  fi
+
+  if [ "$client_status" -ne 0 ]; then
+    echo
+    echo "Activating $client_atsign.."
+    if [ "$client_status" -eq 3 ]; then
+      echo $client_output
+    fi
+    at_activate onboard -a $client_atsign
+  fi
+
+  if [ "$policy_status" -ne 0 ]; then
+    echo
+    echo "Activating $policy_atsign.."
+    if [ "$policy_status" -eq 3 ]; then
+      echo "$policy_output"
+    fi
+    at_activate onboard -a "$policy_atsign"
+  fi
+}
+
 # CLIENT INSTALLATION #
 client() {
   mkdir -p "$bin_path"
@@ -755,7 +806,7 @@ client() {
       done
     fi
   fi
-
+  validate_activation
   # write the metadata to the magic script
   write_metadata "$magic_script" "client_atsign" "$(norm_atsign "$client_atsign")"
   write_metadata "$magic_script" "device_atsign" "$(norm_atsign "$device_atsign")"
@@ -808,6 +859,9 @@ device() {
     device_atsign="$selectedatsign"
   fi
 
+  # Note: policy_atsign is not mandatory so, if none was supplied,
+  #       we will not prompt for it
+
   while [ -z "$device_name" ]; do
     printf "Enter device name: "
     read -r device_name
@@ -828,8 +882,19 @@ device() {
 
   case "$device_install_type" in
     launchd)
+      if [ -n "$policy_atsign" ]; then
+        policy_option="-p"
+        policy_atsign="$(norm_atsign "$client_atsign")"
+      else
+        policy_option=""
+      fi
       launchd_plist="$HOME/Library/LaunchAgents/com.atsign.sshnpd.plist"
-      write_program_arguments_plist "$launchd_plist" "$bin_path/sshnpd" "-m" "$(norm_atsign "$client_atsign")" "-a" "$(norm_atsign "$device_atsign")" "-d" "$device_name" "-su"
+      write_program_arguments_plist "$launchd_plist" "$bin_path/sshnpd" \
+        "-m" "$(norm_atsign "$client_atsign")" \
+        "-a" "$(norm_atsign "$device_atsign")" \
+        "-d" "$device_name" "-su" \
+        "$policy_option" "$policy_atsign"
+
       launchctl unload "$launchd_plist"
       launchctl load "$launchd_plist"
       echo "sshnpd installed with launchd"
@@ -839,9 +904,14 @@ device() {
       write_systemd_user "$systemd_service" "$user"
       write_systemd_environment "$systemd_service" "manager_atsign" "$(norm_atsign "$client_atsign")"
       write_systemd_environment "$systemd_service" "device_atsign" "$(norm_atsign "$device_atsign")"
+      if [ -n "$policy_atsign" ]; then
+        write_systemd_environment "$systemd_service" "delegate_policy" "-p $(norm_atsign "$policy_atsign")"
+      fi
       write_systemd_environment "$systemd_service" "device_name" "$device_name"
+
       systemctl enable sshnpd
       systemctl start sshnpd
+
       echo "sshnpd installed with systemd. To see logs use:"
       echo "journalctl -u sshnpd.service -f"
       ;;
@@ -850,6 +920,9 @@ device() {
       write_metadata "$shell_script" "manager_atsign" "$(norm_atsign "$client_atsign")"
       write_metadata "$shell_script" "device_atsign" "$(norm_atsign "$device_atsign")"
       write_metadata "$shell_script" "device_name" "$device_name"
+      if [ -n "$policy_atsign" ]; then
+        write_metadata "$shell_script" "delegate_policy" "-p $(norm_atsign "$policy_atsign")"
+      fi
       # split install output by lines, then grab the output after the line that says "To start immediately"
       eval "$(echo "$install_output" | grep -A1 "To start .* immediately:" | tail -n1)"
       ;;

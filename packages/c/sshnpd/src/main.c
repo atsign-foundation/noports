@@ -7,17 +7,18 @@
 #include <atchops/aes.h>
 #include <atchops/iv.h>
 #include <atchops/rsa.h>
-#include <atchops/rsakey.h>
+#include <atchops/rsa_key.h>
 #include <atchops/sha.h>
 #include <atclient/atclient.h>
 #include <atclient/atclient_utils.h>
 #include <atclient/atkey.h>
 #include <atclient/atkeys.h>
-#include <atclient/atkeysfile.h>
+#include <atclient/atkeys_file.h>
 #include <atclient/connection.h>
+#include <atclient/connection_hooks.h>
 #include <atclient/monitor.h>
 #include <atclient/notify.h>
-#include <atclient/stringutils.h>
+#include <atclient/string_utils.h>
 #include <atlogger/atlogger.h>
 #include <cJSON.h>
 #include <libgen.h>
@@ -70,7 +71,7 @@ static FILE *authkeys_file;
 static char *authkeys_filename;
 static char *ping_response;
 static char *home_dir;
-static atchops_rsakey_privatekey signingkey;
+static atchops_rsa_key_private_key signingkey;
 static bool is_child_process = false;
 
 // Signal handling
@@ -167,7 +168,8 @@ int main(int argc, char **argv) {
   }
 
   // 5.3 create a key copy for signing
-  atchops_rsakey_privatekey_clone(&signingkey, &atkeys.encryptprivatekey);
+  atchops_rsa_key_private_key_init(&signingkey);
+  atchops_rsa_key_private_key_clone(&atkeys.encrypt_private_key, &signingkey);
 
   // 6. Get atServer address
   res = atclient_utils_find_atserver_address(params.root_domain, ROOT_PORT, params.atsign, &atserver_host,
@@ -179,7 +181,7 @@ int main(int argc, char **argv) {
 
   // 7.a Initialize the monitor atclient
   atclient_init(&monitor_ctx);
-  res = atclient_pkam_authenticate(&monitor_ctx, atserver_host, atserver_port, &atkeys, params.atsign);
+  res = atclient_monitor_pkam_authenticate(&monitor_ctx, params.atsign, &atkeys, NULL);
   if (res != 0 || !should_run) {
     exit_res = res;
     goto cancel_monitor_ctx;
@@ -188,7 +190,7 @@ int main(int argc, char **argv) {
   // 7.b Initialize the worker atclient
   atclient_init(&worker);
   bool free_ping_response = false;
-  res = atclient_pkam_authenticate(&worker, atserver_host, atserver_port, &atkeys, params.atsign);
+  res = atclient_pkam_authenticate(&worker, params.atsign, &atkeys, NULL);
   if (res != 0 || !should_run) {
     exit_res = res;
     goto cancel_atclient;
@@ -294,7 +296,7 @@ int main(int argc, char **argv) {
   }
 
   sprintf(regex, "%s.%s@", params.device, SSHNP_NS);
-  res = atclient_monitor_start(&monitor_ctx, regex, strlen(regex));
+  res = atclient_monitor_start(&monitor_ctx, regex);
   if (res != 0) {
     atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to start monitor\n");
     exit_res = res;
@@ -375,7 +377,7 @@ cancel_monitor_ctx:
   free(atserver_host);
 
 clean_atkeys:
-  atchops_rsakey_privatekey_free(&signingkey);
+  atchops_rsa_key_private_key_free(&signingkey);
   atclient_atkeys_free(&atkeys);
 
 exit:
@@ -394,11 +396,11 @@ void main_loop() {
   monitor_hooks.pre_decrypt_notification = lock_atclient;
   monitor_hooks.post_decrypt_notification = unlock_atclient;
 
-  atclient_monitor_message message;
+  atclient_monitor_response message;
 
   while (should_run) {
     atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_DEBUG, "Waiting for next monitor thread message\n");
-    atclient_monitor_message_init(&message);
+    atclient_monitor_response_init(&message);
 
     // Read the next monitor message
     res = atclient_monitor_read(&monitor_ctx, &worker, &message, &monitor_hooks);
@@ -413,7 +415,7 @@ void main_loop() {
                      "Seems the monitor connection is down, trying to reconnect\n");
 
         int ret =
-            atclient_monitor_pkam_authenticate(&monitor_ctx, atserver_host, atserver_port, &atkeys, params.atsign);
+            atclient_monitor_pkam_authenticate(&monitor_ctx, params.atsign, &atkeys, NULL);
         if (ret != 0) {
           atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR,
                        "Monitor connection failed to reconnect, trying again in 1 second...\n");
@@ -421,7 +423,7 @@ void main_loop() {
           break;
         }
 
-        ret = atclient_monitor_start(&monitor_ctx, regex, strlen(regex));
+        ret = atclient_monitor_start(&monitor_ctx, regex);
         if (ret != 0) {
           atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Monitor verb failed to restart.\n");
           break;
@@ -438,7 +440,7 @@ void main_loop() {
                    message.error_response);
       break;
     case ATCLIENT_MONITOR_MESSAGE_TYPE_NONE:
-      atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Received a NONE notification type");
+      atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Received a NONE notification type\n");
       break;
     case ATCLIENT_MONITOR_ERROR_PARSE_NOTIFICATION:
       atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to parse the notification\n");
@@ -447,11 +449,11 @@ void main_loop() {
       atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to decrypt the notification\n");
       break;
     case ATCLIENT_MONITOR_MESSAGE_TYPE_NOTIFICATION: {
-      bool is_init = atclient_atnotification_decryptedvalue_is_initialized(&message.notification);
-      bool has_key = atclient_atnotification_key_is_initialized(&message.notification);
+      bool is_init = atclient_atnotification_is_decrypted_value_initialized(&message.notification);
+      bool has_key = atclient_atnotification_is_key_initialized(&message.notification);
       if (is_init) {
         atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_DEBUG, "Notification value received: %s\n",
-                     message.notification.decryptedvalue);
+                     message.notification.decrypted_value);
         if (!has_key || strcmp(message.notification.id, "-1") == 0) {
           break;
         }
@@ -516,7 +518,7 @@ void main_loop() {
                              authkeys_filename, signingkey);
           if (is_child_process) {
             atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_DEBUG, "Exiting child process\n");
-            atclient_monitor_message_free(&message);
+            atclient_monitor_response_free(&message);
             return;
           }
           break;
@@ -535,7 +537,7 @@ void main_loop() {
       break;
     } // end of case ATCLIENT_MONITOR_MESSAGE_TYPE_NOTIFICATION
     } // end of switch
-    atclient_monitor_message_free(&message);
+    atclient_monitor_response_free(&message);
   } // end of while loop
 }
 
@@ -561,8 +563,8 @@ static int unlock_atclient(int ret) {
 }
 
 static int set_worker_hooks() {
-  atclient_connection_enable_hooks(&worker.atserver_connection);
-  return atclient_connection_hooks_set(&worker.atserver_connection, ATCLIENT_CONNECTION_HOOK_TYPE_PRE_SEND,
+  atclient_connection_hooks_enable(&worker.atserver_connection);
+  return atclient_connection_hooks_set(&worker.atserver_connection, ATCLIENT_CONNECTION_HOOK_TYPE_PRE_WRITE,
                                        reconnect_atclient);
 }
 
@@ -573,7 +575,7 @@ static int reconnect_atclient(const unsigned char *src, const size_t srclen, uns
 
   if (!atclient_is_connected(&worker)) {
     atlogger_log(TAG, ATLOGGER_LOGGING_LEVEL_INFO, "Worker client is not connected, attempting to reconnect:\n");
-    ret = atclient_pkam_authenticate(&worker, atserver_host, atserver_port, &atkeys, params.atsign);
+    ret = atclient_pkam_authenticate(&worker, params.atsign, &atkeys, NULL);
 
     if (ret != 0) {
       atlogger_log(TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to reconnect to the atServer.\n");

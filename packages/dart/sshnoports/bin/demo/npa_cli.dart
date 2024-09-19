@@ -18,9 +18,18 @@ class CLI implements NPARequestHandler {
       decision = stdin.readLineSync()!;
     }
     final bool authorized = decision.toLowerCase().startsWith('a');
-    return NPAAuthCheckResponse(
-      authorized: authorized,
-      message: authorized ? 'Approved via CLI' : 'Denied via CLI',
-    );
+    if (authorized) {
+      return NPAAuthCheckResponse(
+        authorized: true,
+        message: 'Approved via CLI',
+        permitOpen: ['*:*'],
+      );
+    } else {
+      return NPAAuthCheckResponse(
+        authorized: false,
+        message: 'Denied via CLI',
+        permitOpen: [],
+      );
+    }
   }
 }

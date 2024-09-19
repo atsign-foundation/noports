@@ -1,0 +1,32 @@
+name: admin_api
+description: A sample command-line application.
+version: 1.0.0
+publish_to: none
+# repository: https://github.com/my_org/my_repo
+
+environment:
+  sdk: ^3.4.3
+
+# Add regular dependencies here.
+dependencies:
+  alfred: ^1.1.1
+  at_client: ^3.2.0
+  json_annotation: ^4.9.0
+  at_cli_commons: ^1.1.0
+  args: 2.5.0
+  meta: ^1.15.0
+  noports_core:
+    path: ../../../packages/dart/noports_core
+
+dependency_overrides:
+  args:
+    git:
+      ref: gkc/show-aliases-in-usage
+      url: https://github.com/gkc/args
+
+dev_dependencies:
+  lints: ^4.0.0
+  test: ^1.25.8
+  mocktail: ^1.0.4
+  build_runner: ^2.4.12
+  json_serializable: ^6.8.0

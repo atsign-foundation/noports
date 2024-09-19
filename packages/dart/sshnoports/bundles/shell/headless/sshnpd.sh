@@ -10,6 +10,7 @@ user="$(whoami)"                 # MANDATORY: Username
 v="-v"                           # Comment to disable verbose logging
 s="-s"                           # Comment to disable sending public keys
 u="-u"                           # Comment to disable sending user information
+delegate_policy=""
 # END METADATA
 
 sleep 10 # allow machine to bring up network
@@ -17,6 +18,6 @@ export USER="$user"
 while true; do
 	# The line below runs the sshnpd service, with the options set above.
 	# You can edit this line to further customize the service to your needs.
-	"$binary_path"/sshnpd -a "$device_atsign" -m "$manager_atsign" -d "$device_name" "$s" "$u" "$v"
+	"$binary_path"/sshnpd -a "$device_atsign" -m "$manager_atsign" -d "$device_name" "$delegate_policy" "$s" "$u" "$v"
 	sleep 10
 done
