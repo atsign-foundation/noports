@@ -1,4 +1,4 @@
-{  
+{
    "addNew" : "Add New",
    "addNewProfile" : "Add New Profile",
    "advanced": "Advanced",
@@ -67,5 +67,6 @@
    "validationErrorLocalPortField" : "Field must be 0 or between 1024-65535",
    "validationErrorRemotePortField" : "Field must be between 1024-65535",
    "validationErrorRemoteHostField" : "Field must be partially or fully qualified hostname or an IP address",
+   "profileRunningActionDeniedMessage" : "Cannot perform this action while profile is running",
    "yaml" : "YAML"
 }

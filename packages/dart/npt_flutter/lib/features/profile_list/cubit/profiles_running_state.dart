@@ -1,12 +1,12 @@
 part of 'profiles_running_cubit.dart';
 
 final class ProfilesRunningState extends Loggable {
-  final Map<String, SocketConnector> socketConnectors;
+  final Map<String, SocketConnector?> socketConnectors;
   const ProfilesRunningState(this.socketConnectors);
 
-  ProfilesRunningState withConnector(String uuid, SocketConnector connector) {
+  ProfilesRunningState withConnector(String uuid, SocketConnector? connector) {
     return ProfilesRunningState(
-      Map.fromEntries([...socketConnectors.entries, MapEntry(uuid, connector)]),
+      Map.fromEntries([...socketConnectors.entries.where((e) => e.key != uuid), MapEntry(uuid, connector)]),
     );
   }
 
