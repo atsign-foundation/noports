@@ -1,11 +1,10 @@
 #include "srv/params.h"
 #include "srv/srv.h"
 #include "sshnpd/params.h"
+#include <atclient/cjson.h>
 #include <atclient/string_utils.h>
 #include <atlogger/atlogger.h>
-#include <cJSON.h>
 #include <stdio.h>
-#include <stdlib.h>
 #include <string.h>
 #include <sys/errno.h>
 #include <unistd.h>

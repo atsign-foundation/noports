@@ -1,14 +1,15 @@
+#include "atclient/request_options.h"
 #include "sshnpd/params.h"
 #include "sshnpd/sshnpd.h"
 #include <atchops/aes.h>
 #include <atchops/base64.h>
 #include <atchops/iv.h>
-#include <atchops/rsakey.h>
+#include <atchops/rsa_key.h>
+#include <atclient/cjson.h>
 #include <atclient/monitor.h>
 #include <atclient/notify.h>
-#include <atclient/stringutils.h>
+#include <atclient/string_utils.h>
 #include <atlogger/atlogger.h>
-#include <cJSON.h>
 #include <pthread.h>
 #include <sshnpd/handle_ssh_request.h>
 #include <sshnpd/handler_commons.h>
@@ -23,21 +24,37 @@
 #define LOGGER_TAG "NPT_REQUEST"
 
 void handle_npt_request(atclient *atclient, pthread_mutex_t *atclient_lock, sshnpd_params *params,
-                        bool *is_child_process, atclient_monitor_message *message, char *home_dir, FILE *authkeys_file,
-                        char *authkeys_filename, atchops_rsakey_privatekey signing_key) {
+                        bool *is_child_process, atclient_monitor_response *message, char *home_dir, FILE *authkeys_file,
+                        char *authkeys_filename, atchops_rsa_key_private_key signing_key) {
   int res = 0;
+  if (!atclient_atnotification_is_from_initialized(&message->notification) && message->notification.from != NULL) {
+    atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to initialize the from field of the notification\n");
+    return;
+  }
   char *requesting_atsign = message->notification.from;
 
-  char *decrypted_json = malloc(sizeof(char) * (message->notification.decryptedvaluelen + 1));
+  if (!atclient_atnotification_is_decrypted_value_initialized(&message->notification) &&
+      message->notification.decrypted_value != NULL) {
+    atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR,
+                 "Failed to initialize the decrypted value of the notification\n");
+    return;
+  }
+  char *decrypted_json = malloc(sizeof(char) * (strlen(message->notification.decrypted_value) + 1));
   if (decrypted_json == NULL) {
     atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to allocate memory to decrypt the envelope\n");
     return;
   }
 
-  memcpy(decrypted_json, message->notification.decryptedvalue, message->notification.decryptedvaluelen);
-  *(decrypted_json + message->notification.decryptedvaluelen) = '\0';
+  memcpy(decrypted_json, message->notification.decrypted_value, strlen(message->notification.decrypted_value));
+  *(decrypted_json + strlen(message->notification.decrypted_value)) = '\0';
+
+  // log the decrypted json
+  atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_DEBUG, "Decrypted json: %s\n", decrypted_json);
 
   cJSON *envelope = cJSON_Parse(decrypted_json);
+
+  // log envelope
+  atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_DEBUG, "Received envelope: %s\n", cJSON_Print(envelope));
   free(decrypted_json);
 
   // First validate the types of everything we expect to be in the envelope
@@ -66,11 +83,6 @@ void handle_npt_request(atclient *atclient, pthread_mutex_t *atclient_lock, sshn
     return;
   }
 
-  // This is what we need to extract for NPT:
-  //
-  // sessionId, rvdHost, rvdPort, requestedHost, requestedPort, authenticateToRvd, clientNonce, rvdNonce,
-  // encryptRvdTraffic, clientEphemeralPK, clientEphemeralPKType, timeout
-
   cJSON *session_id = cJSON_GetObjectItem(payload, "sessionId");
   has_valid_values = cJSON_IsString(session_id);
 
@@ -84,7 +96,7 @@ void handle_npt_request(atclient *atclient, pthread_mutex_t *atclient_lock, sshn
   has_valid_values = has_valid_values && cJSON_IsString(requested_host);
 
   cJSON *requested_port = cJSON_GetObjectItem(payload, "requestedPort");
-  has_valid_values = has_valid_values && cJSON_IsNumber(requested_port);
+  has_valid_values = has_valid_values && cJSON_IsNumber(requested_port) && cJSON_GetNumberValue(requested_port) > 0;
 
   if (!has_valid_values) {
     atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Received invalid payload format\n");
@@ -95,9 +107,9 @@ void handle_npt_request(atclient *atclient, pthread_mutex_t *atclient_lock, sshn
   // These values do not need to be asserted for v4 compatibility, only for v5
 
   cJSON *auth_to_rvd = cJSON_GetObjectItem(payload, "authenticateToRvd");
+  cJSON *encrypt_traffic = cJSON_GetObjectItem(payload, "encryptRvdTraffic");
   cJSON *client_nonce = cJSON_GetObjectItem(payload, "clientNonce");
   cJSON *rvd_nonce = cJSON_GetObjectItem(payload, "rvdNonce");
-  cJSON *encrypt_traffic = cJSON_GetObjectItem(payload, "encryptRvdTraffic");
   cJSON *client_ephemeral_pk = cJSON_GetObjectItem(payload, "clientEphemeralPK");
   cJSON *client_ephemeral_pk_type = cJSON_GetObjectItem(payload, "clientEphemeralPKType");
 
@@ -106,22 +118,22 @@ void handle_npt_request(atclient *atclient, pthread_mutex_t *atclient_lock, sshn
   // verify signature of payload
 
   // - get public key of requesting atsign
-  const size_t valuelen = 4096;
-  char value[valuelen];
-  memset(value, 0, valuelen);
-  size_t valueolen = 0;
 
   atclient_atkey atkey;
   atclient_atkey_init(&atkey);
 
-  if ((res = atclient_atkey_create_publickey(&atkey, "publickey", 9, requesting_atsign, strlen(requesting_atsign), NULL,
-                                             0)) != 0) {
+  if ((res = atclient_atkey_create_public_key(&atkey, "publickey", requesting_atsign, NULL)) != 0) {
     atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to create public key\n");
     cJSON_Delete(envelope);
     return;
   }
 
-  res = atclient_get_publickey(atclient, &atkey, value, valuelen, &valueolen, true);
+  // temporary buffer used for multiple things:
+  // - holding publickey string to populate publickey
+  // - holding the signature to verify envelope
+  char *buffer = NULL;
+
+  res = atclient_get_public_key(atclient, &atkey, &buffer, NULL);
   if (res != 0) {
     atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to get public key\n");
     atclient_atkey_free(&atkey);
@@ -131,10 +143,10 @@ void handle_npt_request(atclient *atclient, pthread_mutex_t *atclient_lock, sshn
 
   atclient_atkey_free(&atkey);
 
-  atchops_rsakey_publickey requesting_atsign_publickey;
-  atchops_rsakey_publickey_init(&requesting_atsign_publickey);
+  atchops_rsa_key_public_key requesting_atsign_publickey;
+  atchops_rsa_key_public_key_init(&requesting_atsign_publickey);
 
-  res = atchops_rsakey_populate_publickey(&requesting_atsign_publickey, value, strlen(value));
+  res = atchops_rsa_key_populate_public_key(&requesting_atsign_publickey, buffer, strlen(buffer));
   if (res != 0) {
     printf("atchops_rsakey_populate_publickey (failed): %d\n", res);
     cJSON_Delete(envelope);
@@ -149,27 +161,30 @@ void handle_npt_request(atclient *atclient, pthread_mutex_t *atclient_lock, sshn
   char *hashing_algo_str = cJSON_GetStringValue(hashing_algo);
   char *signing_algo_str = cJSON_GetStringValue(signing_algo);
 
-  memset(value, 0, valuelen);
-  res = atchops_base64_decode((unsigned char *)signature_str, strlen(signature_str), (unsigned char *)value, valuelen,
-                              &valueolen);
+  size_t valueolen = 0;
+  res = atchops_base64_decode((unsigned char *)signature_str, strlen(signature_str), (unsigned char *)buffer,
+                              strlen(buffer), &valueolen);
+
   if (res != 0) {
     atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "atchops_base64_decode: %d\n", res);
     cJSON_Delete(envelope);
     cJSON_free(payloadstr);
+    free(buffer);
     return;
   }
 
   res = verify_envelope_signature(requesting_atsign_publickey, (const unsigned char *)payloadstr,
-                                  (unsigned char *)value, hashing_algo_str, signing_algo_str);
+                                  (unsigned char *)buffer, hashing_algo_str, signing_algo_str);
+  free(buffer);
   if (res != 0) {
     atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to verify envelope signature\n");
     cJSON_Delete(envelope);
-    atchops_rsakey_publickey_free(&requesting_atsign_publickey);
+    atchops_rsa_key_public_key_free(&requesting_atsign_publickey);
     cJSON_free(payloadstr);
     return;
   }
 
-  atchops_rsakey_publickey_free(&requesting_atsign_publickey);
+  atchops_rsa_key_public_key_free(&requesting_atsign_publickey);
 
   bool authenticate_to_rvd = cJSON_IsTrue(auth_to_rvd);
   bool encrypt_rvd_traffic = cJSON_IsTrue(encrypt_traffic);
@@ -207,7 +222,7 @@ void handle_npt_request(atclient *atclient, pthread_mutex_t *atclient_lock, sshn
 
     unsigned char signature[256];
     memset(signature, 0, BYTES(256));
-    res = atchops_rsa_sign(signing_key, ATCHOPS_MD_SHA256, (unsigned char *)signing_input,
+    res = atchops_rsa_sign(&signing_key, ATCHOPS_MD_SHA256, (unsigned char *)signing_input,
                            strlen((char *)signing_input), signature);
     if (res != 0) {
       atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to sign the auth string payload\n");
@@ -244,12 +259,16 @@ void handle_npt_request(atclient *atclient, pthread_mutex_t *atclient_lock, sshn
     cJSON_free(payloadstr);
   }
 
+  unsigned char key[32];
   unsigned char session_aes_key[49], *session_aes_key_encrypted, *session_aes_key_base64;
+  unsigned char iv[16];
   unsigned char session_iv[25], *session_iv_encrypted, *session_iv_base64;
   bool free_session_base64 = false;
   size_t session_aes_key_len, session_iv_len, session_aes_key_encrypted_len, session_iv_encrypted_len;
-  if (!encrypt_rvd_traffic) {
-    atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "encryptRvdTraffic=false is not supported by this daemon\n");
+
+  memset(key, 0, BYTES(32));
+  if ((res = atchops_aes_generate_key(key, ATCHOPS_AES_256)) != 0) {
+    atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to generate session aes key\n");
     if (authenticate_to_rvd) {
       free(rvd_auth_string);
     }
@@ -257,20 +276,8 @@ void handle_npt_request(atclient *atclient, pthread_mutex_t *atclient_lock, sshn
     return;
   }
 
-  //   has_valid_values = cJSON_IsString(client_ephemeral_pk) && cJSON_IsString(client_ephemeral_pk_type);
-  //   if (!has_valid_values) {
-  //     atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR,
-  //                  "encryptRvdTraffic was requested, but no client ephemeral public key / key type was provided\n");
-
-  //     if (authenticate_to_rvd) {
-  //       free(rvd_auth_string);
-  //     }
-  //     cJSON_Delete(envelope);
-  //     return;
-  //   }
-
   memset(session_aes_key, 0, BYTES(49));
-  res = atchops_aes_generate_keybase64(session_aes_key, 49, &session_aes_key_len, ATCHOPS_AES_256);
+  res = atchops_base64_encode(key, 32, session_aes_key, 49, &session_aes_key_len);
   if (res != 0) {
     atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to generate session aes key\n");
     if (authenticate_to_rvd) {
@@ -280,9 +287,18 @@ void handle_npt_request(atclient *atclient, pthread_mutex_t *atclient_lock, sshn
     return;
   }
 
-  memset(session_iv, 0, BYTES(25));
+  memset(iv, 0, BYTES(16));
+  if ((res = atchops_iv_generate(iv)) != 0) {
+    atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to generate session iv\n");
+    if (authenticate_to_rvd) {
+      free(rvd_auth_string);
+    }
+    cJSON_Delete(envelope);
+    return;
+  }
 
-  res = atchops_iv_generate_base64(session_iv, 25, &session_iv_len);
+  memset(session_iv, 0, BYTES(25));
+  res = atchops_base64_encode(iv, 16, session_iv, 25, &session_iv_len);
   if (res != 0) {
     atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to generate session iv\n");
     if (authenticate_to_rvd) {
@@ -292,7 +308,6 @@ void handle_npt_request(atclient *atclient, pthread_mutex_t *atclient_lock, sshn
     return;
   }
 
-  // enum EncryptionKeyType { rsa2048, rsa4096, ecc, aes128, aes192, aes256 }
   char *pk_type = cJSON_GetStringValue(client_ephemeral_pk_type);
   char *pk = cJSON_GetStringValue(client_ephemeral_pk);
 
@@ -301,13 +316,13 @@ void handle_npt_request(atclient *atclient, pthread_mutex_t *atclient_lock, sshn
   case 7: { // rsa2048 is the only valid type right now
     if (strncmp(pk_type, "rsa2048", 7) == 0) {
       is_valid = true;
-      atchops_rsakey_publickey ac;
-      atchops_rsakey_publickey_init(&ac);
+      atchops_rsa_key_public_key ac;
+      atchops_rsa_key_public_key_init(&ac);
 
-      res = atchops_rsakey_populate_publickey(&ac, pk, strlen(pk));
+      res = atchops_rsa_key_populate_public_key(&ac, pk, strlen(pk));
       if (res != 0) {
         atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to populate client ephemeral pk\n");
-        atchops_rsakey_publickey_free(&ac);
+        atchops_rsa_key_public_key_free(&ac);
         if (authenticate_to_rvd) {
           free(rvd_auth_string);
         }
@@ -319,7 +334,7 @@ void handle_npt_request(atclient *atclient, pthread_mutex_t *atclient_lock, sshn
       if (session_aes_key_encrypted == NULL) {
         atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR,
                      "Failed to allocate memory to encrypt the session aes key\n");
-        atchops_rsakey_publickey_free(&ac);
+        atchops_rsa_key_public_key_free(&ac);
         if (authenticate_to_rvd) {
           free(rvd_auth_string);
         }
@@ -327,11 +342,10 @@ void handle_npt_request(atclient *atclient, pthread_mutex_t *atclient_lock, sshn
         return;
       }
 
-      res = atchops_rsa_encrypt(ac, session_aes_key, session_aes_key_len, session_aes_key_encrypted, 256,
-                                &session_aes_key_encrypted_len);
+      res = atchops_rsa_encrypt(&ac, session_aes_key, session_aes_key_len, session_aes_key_encrypted);
       if (res != 0) {
         atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to encrypt the session aes key\n");
-        atchops_rsakey_publickey_free(&ac);
+        atchops_rsa_key_public_key_free(&ac);
         if (authenticate_to_rvd) {
           free(rvd_auth_string);
         }
@@ -340,13 +354,14 @@ void handle_npt_request(atclient *atclient, pthread_mutex_t *atclient_lock, sshn
         return;
       }
 
+      session_aes_key_encrypted_len = 256;
       session_aes_key_len = session_aes_key_encrypted_len * 3 / 2; // reusing this since we can
 
       session_aes_key_base64 = malloc(BYTES(session_aes_key_len));
       if (session_aes_key_base64 == NULL) {
         atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR,
                      "Failed to allocate memory to base64 encode the session aes key\n");
-        atchops_rsakey_publickey_free(&ac);
+        atchops_rsa_key_public_key_free(&ac);
         if (authenticate_to_rvd) {
           free(rvd_auth_string);
         }
@@ -361,7 +376,7 @@ void handle_npt_request(atclient *atclient, pthread_mutex_t *atclient_lock, sshn
                                   session_aes_key_len, &session_aes_key_base64_len);
       if (res != 0) {
         atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to base64 encode the session aes key\n");
-        atchops_rsakey_publickey_free(&ac);
+        atchops_rsa_key_public_key_free(&ac);
         if (authenticate_to_rvd) {
           free(rvd_auth_string);
         }
@@ -377,7 +392,7 @@ void handle_npt_request(atclient *atclient, pthread_mutex_t *atclient_lock, sshn
       session_iv_encrypted = malloc(BYTES(256));
       if (session_iv_encrypted == NULL) {
         atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to allocate memory to encrypt the session iv\n");
-        atchops_rsakey_publickey_free(&ac);
+        atchops_rsa_key_public_key_free(&ac);
         if (authenticate_to_rvd) {
           free(rvd_auth_string);
         }
@@ -385,9 +400,10 @@ void handle_npt_request(atclient *atclient, pthread_mutex_t *atclient_lock, sshn
         cJSON_Delete(envelope);
         return;
       }
+      memset(session_iv_encrypted, 0, BYTES(256));
 
-      res = atchops_rsa_encrypt(ac, session_iv, session_iv_len, session_iv_encrypted, 256, &session_iv_encrypted_len);
-      atchops_rsakey_publickey_free(&ac);
+      res = atchops_rsa_encrypt(&ac, session_iv, session_iv_len, session_iv_encrypted);
+      atchops_rsa_key_public_key_free(&ac);
       if (res != 0) {
         atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to encrypt the session iv\n");
         if (authenticate_to_rvd) {
@@ -399,6 +415,7 @@ void handle_npt_request(atclient *atclient, pthread_mutex_t *atclient_lock, sshn
         return;
       }
 
+      session_iv_encrypted_len = 256;
       session_iv_len = session_iv_encrypted_len * 3 / 2; // reusing this since we can
       session_iv_base64 = malloc(BYTES(session_iv_len));
       if (session_iv_base64 == NULL) {
@@ -432,8 +449,8 @@ void handle_npt_request(atclient *atclient, pthread_mutex_t *atclient_lock, sshn
       free(session_iv_encrypted);
       free_session_base64 = true;
     } // rsa2048 - allocates (session_iv_base64, session_aes_key_base64)
-  }   // case 7
-  }   // switch
+  } // case 7
+  } // switch
 
   if (!is_valid) {
     atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR,
@@ -450,6 +467,8 @@ void handle_npt_request(atclient *atclient, pthread_mutex_t *atclient_lock, sshn
   // - rvd_auth_string (if authenticate_to_rvd == true)
   // - session_aes_key_base64 (if free_session_base64 == true)
   // - session_iv_base64 (if free_session_base64 == true)
+
+  atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_DEBUG, "Running fork()...\n");
 
   pid_t pid = fork();
   int status;
@@ -472,13 +491,27 @@ void handle_npt_request(atclient *atclient, pthread_mutex_t *atclient_lock, sshn
       free(rvd_auth_string);
     }
     cJSON_Delete(envelope);
-    return;
+    exit(res);
     // end of child process
   } else if (pid > 0) {
-
     // parent process
-    waitpid(pid, &status, WNOHANG); // Don't wait for srv - we want it to be running in the bg
-    if (WIFEXITED(status)) {
+
+    // since we use WNOHANG,
+    // waitpid will return -1, if an error occurred
+    // waitpid will return 0, if the child process has not exited
+    // waitpid will return the pid of the child process if it has exited
+    int waitpid_return = waitpid(pid, &status, WNOHANG); // Don't wait for srv - we want it to be running in the bg
+    if (waitpid_return > 0) {
+      // child process has already exited
+      atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "srv process has already exited\n");
+      if (WIFEXITED(status)) {
+        atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "srv process exited with status %d\n", status);
+      } else {
+        atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "srv process exited abnormally\n");
+      }
+      goto cancel;
+    } else if (waitpid_return == -1) {
+      atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to wait for srv process: %s\n", strerror(errno));
       goto cancel;
     }
 
@@ -496,7 +529,7 @@ void handle_npt_request(atclient *atclient, pthread_mutex_t *atclient_lock, sshn
 
     unsigned char signature[256];
     memset(signature, 0, 256);
-    res = atchops_rsa_sign(signing_key, ATCHOPS_MD_SHA256, signing_input2, strlen((char *)signing_input2), signature);
+    res = atchops_rsa_sign(&signing_key, ATCHOPS_MD_SHA256, signing_input2, strlen((char *)signing_input2), signature);
     if (res != 0) {
       atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to sign the final res payload\n");
       goto clean_json;
@@ -529,23 +562,38 @@ void handle_npt_request(atclient *atclient, pthread_mutex_t *atclient_lock, sshn
     }
 
     snprintf(keyname, keynamelen, "%s.%s", identifier, params->device);
-    atclient_atkey_create_sharedkey(&final_res_atkey, keyname, keynamelen, params->atsign, strlen(params->atsign),
-                                    requesting_atsign, strlen(requesting_atsign), SSHNP_NS, SSHNP_NS_LEN);
+    atclient_atkey_create_shared_key(&final_res_atkey, keyname, params->atsign, requesting_atsign, SSHNP_NS);
+
+    // print final_res_atkey
+    char *final_res_atkey_str = NULL;
+    atclient_atkey_to_string(&final_res_atkey, &final_res_atkey_str);
+    atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_DEBUG, "Final response atkey: %s\n", final_res_atkey_str);
+    free(final_res_atkey_str);
 
     atclient_atkey_metadata *metadata = &final_res_atkey.metadata;
-    atclient_atkey_metadata_set_ispublic(metadata, false);
-    atclient_atkey_metadata_set_isencrypted(metadata, true);
+    atclient_atkey_metadata_set_is_public(metadata, false);
+    atclient_atkey_metadata_set_is_encrypted(metadata, true);
     atclient_atkey_metadata_set_ttl(metadata, 10000);
 
     atclient_notify_params notify_params;
     atclient_notify_params_init(&notify_params);
-    notify_params.atkey = &final_res_atkey;
-    notify_params.value = final_res_value;
-    notify_params.operation = ATCLIENT_NOTIFY_OPERATION_UPDATE;
+    if ((res = atclient_notify_params_set_atkey(&notify_params, &final_res_atkey)) != 0) {
+      atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to set atkey in notify params\n");
+      goto clean_res;
+    }
+    if ((res = atclient_notify_params_set_value(&notify_params, final_res_value)) != 0) {
+      atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to set value in notify params\n");
+      goto clean_res;
+    }
+    if ((res = atclient_notify_params_set_operation(&notify_params, ATCLIENT_NOTIFY_OPERATION_UPDATE)) != 0) {
+      atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to set operation in notify params\n");
+      goto clean_res;
+    }
 
-    char final_keystr[500];
-    size_t out;
-    atclient_atkey_to_string(&final_res_atkey, final_keystr, 500, &out);
+    char *final_keystr = NULL;
+    atclient_atkey_to_string(&final_res_atkey, &final_keystr);
+    atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_DEBUG, "Final response atkey: %s\n", final_res_atkey_str);
+    free(final_keystr);
 
     int ret = pthread_mutex_lock(atclient_lock);
     if (ret != 0) {
@@ -566,12 +614,12 @@ void handle_npt_request(atclient *atclient, pthread_mutex_t *atclient_lock, sshn
       atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_DEBUG, "Released the atclient lock\n");
     }
 
-  clean_res : { free(keyname); }
-  clean_final_res_value : {
+  clean_res: { free(keyname); }
+  clean_final_res_value: {
     atclient_atkey_free(&final_res_atkey);
     free(final_res_value);
   }
-  clean_json : {
+  clean_json: {
     cJSON_Delete(final_res_envelope);
     cJSON_free(signing_input2);
   }
