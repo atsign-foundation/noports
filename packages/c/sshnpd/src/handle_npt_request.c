@@ -92,11 +92,13 @@ void handle_npt_request(atclient *atclient, pthread_mutex_t *atclient_lock, sshn
   cJSON *rvd_port = cJSON_GetObjectItem(payload, "rvdPort");
   has_valid_values = has_valid_values && cJSON_IsNumber(rvd_port);
 
+  // NPT ONLY
   cJSON *requested_host = cJSON_GetObjectItem(payload, "requestedHost");
   has_valid_values = has_valid_values && cJSON_IsString(requested_host);
 
   cJSON *requested_port = cJSON_GetObjectItem(payload, "requestedPort");
   has_valid_values = has_valid_values && cJSON_IsNumber(requested_port) && cJSON_GetNumberValue(requested_port) > 0;
+  // END NPT ONLY
 
   if (!has_valid_values) {
     atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Received invalid payload format\n");
@@ -113,7 +115,9 @@ void handle_npt_request(atclient *atclient, pthread_mutex_t *atclient_lock, sshn
   cJSON *client_ephemeral_pk = cJSON_GetObjectItem(payload, "clientEphemeralPK");
   cJSON *client_ephemeral_pk_type = cJSON_GetObjectItem(payload, "clientEphemeralPKType");
 
+  // NPT ONLY
   // ignore timeout param for now
+  // END NPT ONLY
 
   // verify signature of payload
 
@@ -265,6 +269,26 @@ void handle_npt_request(atclient *atclient, pthread_mutex_t *atclient_lock, sshn
   unsigned char session_iv[25], *session_iv_encrypted, *session_iv_base64;
   bool free_session_base64 = false;
   size_t session_aes_key_len, session_iv_len, session_aes_key_encrypted_len, session_iv_encrypted_len;
+  if (!encrypt_rvd_traffic) {
+    atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "encryptRvdTraffic=false is not supported by this daemon\n");
+    if (authenticate_to_rvd) {
+      free(rvd_auth_string);
+    }
+    cJSON_Delete(envelope);
+    return;
+  }
+
+  has_valid_values = cJSON_IsString(client_ephemeral_pk) && cJSON_IsString(client_ephemeral_pk_type);
+  if (!has_valid_values) {
+    atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR,
+                 "encryptRvdTraffic was requested, but no client ephemeral public key / key type was provided\n");
+
+    if (authenticate_to_rvd) {
+      free(rvd_auth_string);
+    }
+    cJSON_Delete(envelope);
+    return;
+  }
 
   memset(key, 0, BYTES(32));
   if ((res = atchops_aes_generate_key(key, ATCHOPS_AES_256)) != 0) {
@@ -483,8 +507,19 @@ void handle_npt_request(atclient *atclient, pthread_mutex_t *atclient_lock, sshn
       free(session_iv_base64);
     }
 
-    int res = run_srv_process(params, rvd_host, rvd_port, true, requested_host, requested_port, authenticate_to_rvd,
-                              rvd_auth_string, encrypt_rvd_traffic, true, session_aes_key, session_iv);
+    char *rvd_host_str = cJSON_GetStringValue(rvd_host);
+    uint16_t rvd_port_int = cJSON_GetNumberValue(rvd_port);
+
+    char *requested_host_str = cJSON_GetStringValue(requested_host);
+    uint16_t requested_port_int = cJSON_GetNumberValue(requested_port);
+
+    const bool multi = true;
+
+    int res = run_srv_process(rvd_host_str, rvd_port_int, requested_host_str, requested_port_int, authenticate_to_rvd,
+                              rvd_auth_string, encrypt_rvd_traffic, multi, session_aes_key, session_iv);
+    free(rvd_host_str);
+    free(requested_host_str);
+
     *is_child_process = true;
 
     if (authenticate_to_rvd) {

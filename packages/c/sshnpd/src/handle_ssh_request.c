@@ -82,6 +82,7 @@ void handle_ssh_request(atclient *atclient, pthread_mutex_t *atclient_lock, sshn
     return;
   }
 
+  // SSH ONLY
   cJSON *direct = cJSON_GetObjectItem(payload, "direct");
   has_valid_values = cJSON_IsBool(direct);
 
@@ -96,15 +97,16 @@ void handle_ssh_request(atclient *atclient, pthread_mutex_t *atclient_lock, sshn
     cJSON_Delete(envelope);
     return;
   }
+  // END SSH ONLY
 
   cJSON *session_id = cJSON_GetObjectItem(payload, "sessionId");
   has_valid_values = cJSON_IsString(session_id);
 
-  cJSON *host = cJSON_GetObjectItem(payload, "host");
-  has_valid_values = has_valid_values && cJSON_IsString(host);
+  cJSON *rvd_host = cJSON_GetObjectItem(payload, "host");
+  has_valid_values = has_valid_values && cJSON_IsString(rvd_host);
 
-  cJSON *port = cJSON_GetObjectItem(payload, "port");
-  has_valid_values = has_valid_values && cJSON_IsNumber(port) && cJSON_GetNumberValue(port) > 0;
+  cJSON *rvd_port = cJSON_GetObjectItem(payload, "port");
+  has_valid_values = has_valid_values && cJSON_IsNumber(rvd_port);
 
   if (!has_valid_values) {
     atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Received invalid payload format\n");
@@ -509,8 +511,18 @@ void handle_ssh_request(atclient *atclient, pthread_mutex_t *atclient_lock, sshn
       free(session_iv_base64);
     }
 
-    int res = run_srv_process(params, host, port, false, NULL, NULL, authenticate_to_rvd, rvd_auth_string,
-                              encrypt_rvd_traffic, false, session_aes_key, session_iv);
+    char *rvd_host_str = cJSON_GetStringValue(rvd_host);
+    uint16_t rvd_port_int = cJSON_GetNumberValue(rvd_port);
+
+    char *requested_host_str = "localhost";
+    uint16_t requested_port_int = params->local_sshd_port;
+
+    const bool multi = false;
+
+    int res = run_srv_process(rvd_host_str, rvd_port_int, requested_host_str, requested_port_int, authenticate_to_rvd,
+                              rvd_auth_string, encrypt_rvd_traffic, multi, session_aes_key, session_iv);
+    free(rvd_host_str);
+
     *is_child_process = true;
 
     if (authenticate_to_rvd) {
@@ -545,7 +557,9 @@ void handle_ssh_request(atclient *atclient, pthread_mutex_t *atclient_lock, sshn
     cJSON *final_res_payload = cJSON_CreateObject();
     cJSON_AddStringToObject(final_res_payload, "status", "connected");
     cJSON_AddItemReferenceToObject(final_res_payload, "sessionId", session_id);
+    // SSH ONLY
     cJSON_AddNullToObject(final_res_payload, "ephemeralPrivateKey");
+    // END SSH ONLY
     cJSON_AddStringToObject(final_res_payload, "sessionAESKey", (char *)session_aes_key_base64);
     cJSON_AddStringToObject(final_res_payload, "sessionIV", (char *)session_iv_base64);
 
