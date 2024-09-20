@@ -4,13 +4,14 @@
 #include <atchops/base64.h>
 #include <atchops/iv.h>
 #include <atchops/rsa_key.h>
+#include <atclient/cjson.h>
 #include <atclient/monitor.h>
 #include <atclient/notify.h>
 #include <atclient/string_utils.h>
 #include <atlogger/atlogger.h>
-#include <cJSON.h>
 #include <pthread.h>
 #include <sshnpd/handle_ssh_request.h>
+#include <sshnpd/handler_commons.h>
 #include <sshnpd/run_srv_process.h>
 #include <stdlib.h>
 #include <string.h>
@@ -21,20 +22,20 @@
 
 #define LOGGER_TAG "SSH_REQUEST"
 
-#define BYTES(x) (sizeof(unsigned char) * x)
-
 void handle_ssh_request(atclient *atclient, pthread_mutex_t *atclient_lock, sshnpd_params *params,
                         bool *is_child_process, atclient_monitor_response *message, char *home_dir, FILE *authkeys_file,
                         char *authkeys_filename, atchops_rsa_key_private_key signing_key) {
   int res = 0;
-  if(!atclient_atnotification_is_from_initialized(&message->notification) && message->notification.from != NULL) {
+  if (!atclient_atnotification_is_from_initialized(&message->notification) && message->notification.from != NULL) {
     atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to initialize the from field of the notification\n");
     return;
   }
   char *requesting_atsign = message->notification.from;
 
-  if(!atclient_atnotification_is_decrypted_value_initialized(&message->notification) && message->notification.decrypted_value != NULL) {
-    atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to initialize the decrypted value of the notification\n");
+  if (!atclient_atnotification_is_decrypted_value_initialized(&message->notification) &&
+      message->notification.decrypted_value != NULL) {
+    atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR,
+                 "Failed to initialize the decrypted value of the notification\n");
     return;
   }
   char *decrypted_json = malloc(sizeof(char) * (strlen(message->notification.decrypted_value) + 1));
@@ -133,9 +134,12 @@ void handle_ssh_request(atclient *atclient, pthread_mutex_t *atclient_lock, sshn
     return;
   }
 
-  char *value = NULL;
+  // temporary buffer used for multiple things:
+  // - holding publickey string to populate publickey
+  // - holding the signature to verify envelope
+  char *buffer = NULL;
 
-  res = atclient_get_public_key(atclient, &atkey, &value, NULL);
+  res = atclient_get_public_key(atclient, &atkey, &buffer, NULL);
   if (res != 0) {
     atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to get public key\n");
     atclient_atkey_free(&atkey);
@@ -148,11 +152,10 @@ void handle_ssh_request(atclient *atclient, pthread_mutex_t *atclient_lock, sshn
   atchops_rsa_key_public_key requesting_atsign_publickey;
   atchops_rsa_key_public_key_init(&requesting_atsign_publickey);
 
-  res = atchops_rsa_key_populate_public_key(&requesting_atsign_publickey, value, strlen(value));
+  res = atchops_rsa_key_populate_public_key(&requesting_atsign_publickey, buffer, strlen(buffer));
   if (res != 0) {
     printf("atchops_rsakey_populate_publickey (failed): %d\n", res);
     cJSON_Delete(envelope);
-    free(value);
     return;
   }
 
@@ -165,24 +168,25 @@ void handle_ssh_request(atclient *atclient, pthread_mutex_t *atclient_lock, sshn
   char *signing_algo_str = cJSON_GetStringValue(signing_algo);
 
   size_t valueolen = 0;
-  res = atchops_base64_decode((unsigned char *)signature_str, strlen(signature_str), (unsigned char *)value, strlen(value),
-                              &valueolen);
+  res = atchops_base64_decode((unsigned char *)signature_str, strlen(signature_str), (unsigned char *)buffer,
+                              strlen(buffer), &valueolen);
+
   if (res != 0) {
     atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "atchops_base64_decode: %d\n", res);
     cJSON_Delete(envelope);
     cJSON_free(payloadstr);
-    free(value);
+    free(buffer);
     return;
   }
 
   res = verify_envelope_signature(requesting_atsign_publickey, (const unsigned char *)payloadstr,
-                                  (unsigned char *)value, hashing_algo_str, signing_algo_str);
+                                  (unsigned char *)buffer, hashing_algo_str, signing_algo_str);
+  free(buffer);
   if (res != 0) {
     atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to verify envelope signature\n");
     cJSON_Delete(envelope);
     atchops_rsa_key_public_key_free(&requesting_atsign_publickey);
     cJSON_free(payloadstr);
-    free(value);
     return;
   }
 
@@ -196,7 +200,6 @@ void handle_ssh_request(atclient *atclient, pthread_mutex_t *atclient_lock, sshn
                  "Encrypt rvd traffic flag is false, this feature must be enabled\n");
     cJSON_Delete(envelope);
     cJSON_free(payloadstr);
-    free(value);
     return;
   }
 
@@ -209,7 +212,6 @@ void handle_ssh_request(atclient *atclient, pthread_mutex_t *atclient_lock, sshn
                    "Missing nonce values, cannot create auth string for rvd\n");
       cJSON_Delete(envelope);
       cJSON_free(payloadstr);
-      free(value);
       return;
     }
 
@@ -235,7 +237,6 @@ void handle_ssh_request(atclient *atclient, pthread_mutex_t *atclient_lock, sshn
       cJSON_Delete(rvd_auth_payload);
       cJSON_Delete(envelope);
       cJSON_free(payloadstr);
-      free(value);
       return;
     }
 
@@ -251,7 +252,6 @@ void handle_ssh_request(atclient *atclient, pthread_mutex_t *atclient_lock, sshn
       cJSON_Delete(rvd_auth_payload);
       cJSON_Delete(envelope);
       cJSON_free(payloadstr);
-      free(value);
       return;
     }
 
@@ -263,7 +263,6 @@ void handle_ssh_request(atclient *atclient, pthread_mutex_t *atclient_lock, sshn
     cJSON_Delete(res_envelope);
     cJSON_Delete(rvd_auth_payload);
     cJSON_free(payloadstr);
-    free(value);
   }
 
   unsigned char key[32];
@@ -335,7 +334,6 @@ void handle_ssh_request(atclient *atclient, pthread_mutex_t *atclient_lock, sshn
     return;
   }
 
-  // enum EncryptionKeyType { rsa2048, rsa4096, ecc, aes128, aes192, aes256 }
   char *pk_type = cJSON_GetStringValue(client_ephemeral_pk_type);
   char *pk = cJSON_GetStringValue(client_ephemeral_pk);
 
@@ -383,7 +381,6 @@ void handle_ssh_request(atclient *atclient, pthread_mutex_t *atclient_lock, sshn
       }
 
       session_aes_key_encrypted_len = 256;
-
       session_aes_key_len = session_aes_key_encrypted_len * 3 / 2; // reusing this since we can
 
       session_aes_key_base64 = malloc(BYTES(session_aes_key_len));
@@ -512,8 +509,8 @@ void handle_ssh_request(atclient *atclient, pthread_mutex_t *atclient_lock, sshn
       free(session_iv_base64);
     }
 
-    int res = run_srv_process(params, host, port, authenticate_to_rvd, rvd_auth_string, encrypt_rvd_traffic, false,
-                              session_aes_key, session_iv, authkeys_file, authkeys_filename);
+    int res = run_srv_process(params, host, port, false, NULL, NULL, authenticate_to_rvd, rvd_auth_string,
+                              encrypt_rvd_traffic, false, session_aes_key, session_iv);
     *is_child_process = true;
 
     if (authenticate_to_rvd) {
@@ -530,16 +527,16 @@ void handle_ssh_request(atclient *atclient, pthread_mutex_t *atclient_lock, sshn
     // waitpid will return 0, if the child process has not exited
     // waitpid will return the pid of the child process if it has exited
     int waitpid_return = waitpid(pid, &status, WNOHANG); // Don't wait for srv - we want it to be running in the bg
-    if(waitpid_return > 0) {
+    if (waitpid_return > 0) {
       // child process has already exited
       atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "srv process has already exited\n");
-      if(WIFEXITED(status)) {
+      if (WIFEXITED(status)) {
         atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "srv process exited with status %d\n", status);
       } else {
         atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "srv process exited abnormally\n");
       }
       goto cancel;
-    } else if(waitpid_return == -1) {
+    } else if (waitpid_return == -1) {
       atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to wait for srv process: %s\n", strerror(errno));
       goto cancel;
     }
@@ -607,21 +604,23 @@ void handle_ssh_request(atclient *atclient, pthread_mutex_t *atclient_lock, sshn
 
     atclient_notify_params notify_params;
     atclient_notify_params_init(&notify_params);
-    if((res = atclient_notify_params_set_atkey(&notify_params, &final_res_atkey)) != 0) {
+    if ((res = atclient_notify_params_set_atkey(&notify_params, &final_res_atkey)) != 0) {
       atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to set atkey in notify params\n");
       goto clean_res;
     }
-    if((res = atclient_notify_params_set_value(&notify_params, final_res_value)) != 0) {
+    if ((res = atclient_notify_params_set_value(&notify_params, final_res_value)) != 0) {
       atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to set value in notify params\n");
       goto clean_res;
     }
-    if((res = atclient_notify_params_set_operation(&notify_params, ATCLIENT_NOTIFY_OPERATION_UPDATE)) != 0) {
+    if ((res = atclient_notify_params_set_operation(&notify_params, ATCLIENT_NOTIFY_OPERATION_UPDATE)) != 0) {
       atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to set operation in notify params\n");
       goto clean_res;
     }
 
     char *final_keystr = NULL;
     atclient_atkey_to_string(&final_res_atkey, &final_keystr);
+    atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_DEBUG, "Final response atkey: %s\n", final_res_atkey_str);
+    free(final_keystr);
 
     int ret = pthread_mutex_lock(atclient_lock);
     if (ret != 0) {
@@ -642,16 +641,13 @@ void handle_ssh_request(atclient *atclient, pthread_mutex_t *atclient_lock, sshn
       atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_DEBUG, "Released the atclient lock\n");
     }
 
-  clean_res: {
-    free(final_keystr);
-    free(keyname);
-  }
+  clean_res: { free(keyname); }
   clean_final_res_value: {
     atclient_atkey_free(&final_res_atkey);
     free(final_res_value);
   }
   clean_json: {
-    cJSON_Delete(final_res_envelope); 
+    cJSON_Delete(final_res_envelope);
     cJSON_free(signing_input2);
   }
 
@@ -669,28 +665,4 @@ cancel:
   }
   cJSON_Delete(envelope);
   return;
-}
-
-int verify_envelope_signature(atchops_rsa_key_public_key publickey, const unsigned char *payload,
-                              unsigned char *signature, const char *hashing_algo, const char *signing_algo) {
-  int ret = 0;
-
-  atchops_md_type mdtype;
-
-  if (strcmp(hashing_algo, "sha256") == 0) {
-    mdtype = ATCHOPS_MD_SHA256;
-  } else {
-    atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Unsupported hash type for rsa verify\n");
-    return -1;
-  }
-
-  ret = atchops_rsa_verify(&publickey, ATCHOPS_MD_SHA256, payload, strlen((char *)payload), signature);
-  if (ret != 0) {
-    atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "verify_envelope_signature (failed)\n");
-    return -1;
-  }
-
-  atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_DEBUG, "verify_envelope_signature (success)\n");
-
-  return ret;
 }
