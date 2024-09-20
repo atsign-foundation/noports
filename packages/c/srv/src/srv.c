@@ -37,12 +37,14 @@ int run_srv(srv_params_t *params) {
     // client side
     if (params->multi == 0) {
       // res = run_srv_client_side_single(params);
+      res = 1;
     } else {
       // todo: check aes key and iv strings != null
-      // ...
+      res = 1;
       // res = run_srv_client_side_multi(params);
     }
   }
+  return res;
 }
 
 int run_srv_daemon_side_single(srv_params_t *params) {
