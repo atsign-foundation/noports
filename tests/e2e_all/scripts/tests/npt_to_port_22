@@ -31,11 +31,6 @@ if ! grep -q "current" <<<"$clientVersion" && ! grep -q "current" <<<"$daemonVer
   exit 50
 fi
 
-if [[ ${daemonVersion:0:1} == "c" ]]; then
-  logInfo "    N/A  because c daemon doesn't support npt request yet"
-  exit 50
-fi
-
 # Require a v5.1+ client to test v5.1+ features
 if [[ $(versionIsLessThan "$clientVersion" "d:5.1.0") == "true" ]] ||
   [[ $(versionIsLessThan "$daemonVersion" "d:5.1.0") == "true" ]]; then

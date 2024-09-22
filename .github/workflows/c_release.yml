@@ -117,11 +117,8 @@ jobs:
             output-name: sshnpd-linux-x64-musl
           - platform: linux/arm/v7
             output-name: sshnpd-linux-arm-musl
-## 20240806: arm64 failing due to Mbed TLS error:
-## /sshnpd/sshnpd/build/_deps/mbedtls-src/library/aesce.c:87:10:
-## fatal error: 'asm/hwcap.h' file not found
-#          - platform: linux/arm64
-#            output-name: sshnpd-linux-arm64-musl
+          - platform: linux/arm64
+            output-name: sshnpd-linux-arm64-musl
           - platform: linux/riscv64
             output-name: sshnpd-linux-riscv64-musl
     steps:

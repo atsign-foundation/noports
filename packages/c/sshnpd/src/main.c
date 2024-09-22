@@ -13,14 +13,14 @@
 #include <atclient/atclient_utils.h>
 #include <atclient/atkey.h>
 #include <atclient/atkeys.h>
-#include <atclient/atkeysfile.h>
+#include <atclient/atkeys_file.h>
+#include <atclient/cjson.h>
 #include <atclient/connection.h>
 #include <atclient/connection_hooks.h>
 #include <atclient/monitor.h>
 #include <atclient/notify.h>
 #include <atclient/string_utils.h>
 #include <atlogger/atlogger.h>
-#include <cJSON.h>
 #include <libgen.h>
 #include <pthread.h>
 #include <signal.h>
@@ -181,7 +181,7 @@ int main(int argc, char **argv) {
 
   // 7.a Initialize the monitor atclient
   atclient_init(&monitor_ctx);
-  res = atclient_pkam_authenticate(&monitor_ctx, atserver_host, atserver_port, &atkeys, params.atsign);
+  res = atclient_monitor_pkam_authenticate(&monitor_ctx, params.atsign, &atkeys, NULL);
   if (res != 0 || !should_run) {
     exit_res = res;
     goto cancel_monitor_ctx;
@@ -190,7 +190,7 @@ int main(int argc, char **argv) {
   // 7.b Initialize the worker atclient
   atclient_init(&worker);
   bool free_ping_response = false;
-  res = atclient_pkam_authenticate(&worker, atserver_host, atserver_port, &atkeys, params.atsign);
+  res = atclient_pkam_authenticate(&worker, params.atsign, &atkeys, NULL);
   if (res != 0 || !should_run) {
     exit_res = res;
     goto cancel_atclient;
@@ -414,8 +414,7 @@ void main_loop() {
         atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR,
                      "Seems the monitor connection is down, trying to reconnect\n");
 
-        int ret =
-            atclient_monitor_pkam_authenticate(&monitor_ctx, atserver_host, atserver_port, &atkeys, params.atsign);
+        int ret = atclient_monitor_pkam_authenticate(&monitor_ctx, params.atsign, &atkeys, NULL);
         if (ret != 0) {
           atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR,
                        "Monitor connection failed to reconnect, trying again in 1 second...\n");
@@ -524,7 +523,8 @@ void main_loop() {
           break;
         case NK_NPT_REQUEST:
           atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_DEBUG, "Executing handle_npt_request\n");
-          handle_npt_request(&params, &message);
+          handle_npt_request(&worker, &atclient_lock, &params, &is_child_process, &message, home_dir, authkeys_file,
+                             authkeys_filename, signingkey);
           break;
         case NK_NONE:
           break;
@@ -574,7 +574,7 @@ static int reconnect_atclient(const unsigned char *src, const size_t srclen, uns
 
   if (!atclient_is_connected(&worker)) {
     atlogger_log(TAG, ATLOGGER_LOGGING_LEVEL_INFO, "Worker client is not connected, attempting to reconnect:\n");
-    ret = atclient_pkam_authenticate(&worker, atserver_host, atserver_port, &atkeys, params.atsign);
+    ret = atclient_pkam_authenticate(&worker, params.atsign, &atkeys, NULL);
 
     if (ret != 0) {
       atlogger_log(TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to reconnect to the atServer.\n");
