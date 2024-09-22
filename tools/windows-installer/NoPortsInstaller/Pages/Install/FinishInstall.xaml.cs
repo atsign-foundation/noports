@@ -1,14 +1,14 @@
 ﻿using System.Windows;
 using System.Windows.Controls;
 
-namespace NoPortsInstaller.Pages
+namespace NoPortsInstaller.Pages.Install
 {
     /// <summary>
     /// Interaction logic for FinishInstall.xaml
     /// </summary>
-    public partial class FinishUninstall : Page
+    public partial class FinishInstall : Page
     {
-        public FinishUninstall()
+        public FinishInstall()
         {
             InitializeComponent();
         }

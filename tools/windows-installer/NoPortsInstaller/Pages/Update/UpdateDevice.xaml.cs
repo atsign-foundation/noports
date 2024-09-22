@@ -1,14 +1,15 @@
-﻿using System.Windows.Controls;
+﻿using NoPortsInstaller.Pages.Install;
+using System.Windows.Controls;
 
-namespace NoPortsInstaller.Pages
+namespace NoPortsInstaller.Pages.Update
 {
     /// <summary>
     /// Interaction logic for Page2.xaml
     /// </summary>
-    public partial class DeviceConfig : Page
+    public partial class UpdateDevice : Page
     {
         private readonly IController _controller;
-        public DeviceConfig()
+        public UpdateDevice()
         {
             _controller = App.ControllerInstance;
             InitializeComponent();
@@ -21,15 +22,12 @@ namespace NoPortsInstaller.Pages
 
         private void NextPageButton_Click(object sender, System.Windows.RoutedEventArgs e)
         {
-            if (MultipleManagers.Text != "")
+            if (AdditionalArgs.Text != "")
             {
-                _controller.MultipleManagers = _controller.NormalizeMultipleManagers(MultipleManagers.Text);
+                _controller.AdditionalArgs = AdditionalArgs.Text;
             }
-            if (PermittedPorts.Text != "")
-            {
-                _controller.PermittedPorts = _controller.NormalizePermittedPorts(PermittedPorts.Text);
-            }
-            _controller.Pages.Add(new Download());
+            _controller.UpdateConfigRegistry();
+            _controller.Pages.Add(new FinishInstall());
             _controller.NextPage();
         }
     }

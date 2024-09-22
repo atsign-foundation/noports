@@ -20,8 +20,7 @@ public partial class App : Application
         mainWindow.Show();
         if (e.Args.Length == 1 && e.Args[0] == "u")
         {
-            ControllerInstance.InstallType = InstallType.Uninstall;
-            ControllerInstance.LoadPages();
+            ControllerInstance.LoadPages(InstallType.Uninstall);
         }
     }
 }

@@ -13,7 +13,6 @@ namespace NoPortsInstaller.Pages
             {
                 Directory.CreateDirectory(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), @".atsign\keys"));
             }
-            _controller.MoveUploadedAtkeys();
             InitializeComponent();
         }
 
@@ -26,37 +25,8 @@ namespace NoPortsInstaller.Pages
         {
             _controller.DeviceAtsign = _controller.NormalizeAtsign(DeviceCombo.Text);
             _controller.ClientAtsign = _controller.NormalizeAtsign(ClientCombo.Text);
-            _controller.DeviceName = DeviceName.Text;
             _controller.NextPage();
         }
-
-        private void ValidateInputs()
-        {
-            if (ClientCombo.Text == "" || DeviceCombo.Text == "" || DeviceName.Text == "")
-            {
-                NextPageButton.IsEnabled = false;
-            }
-            else
-            {
-                NextPageButton.IsEnabled = true;
-            }
-        }
-
-        private void ClientCombo_FocusableChanged(object sender, System.Windows.DependencyPropertyChangedEventArgs e)
-        {
-            ValidateInputs();
-        }
-
-        private void DeviceCombo_FocusableChanged(object sender, System.Windows.DependencyPropertyChangedEventArgs e)
-        {
-            ValidateInputs();
-        }
-
-        private void DeviceName_TextChanged(object sender, TextChangedEventArgs e)
-        {
-            ValidateInputs();
-        }
-
 
         private void ClientCombo_Initialized(object sender, EventArgs e)
         {
@@ -68,6 +38,30 @@ namespace NoPortsInstaller.Pages
         {
             ComboBox comboBox = (ComboBox)sender;
             _controller.PopulateAtsigns(comboBox);
+        }
+
+        private void ValidateInputs(object sender, SelectionChangedEventArgs e)
+        {
+            if (ClientCombo.Text == "" || DeviceCombo.Text == "")
+            {
+                NextPageButton.IsEnabled = false;
+            }
+            else
+            {
+                NextPageButton.IsEnabled = true;
+            }
+        }
+
+        private void ValidateInputs(object sender, TextChangedEventArgs e)
+        {
+            if (ClientCombo.Text == "" || DeviceCombo.Text == "")
+            {
+                NextPageButton.IsEnabled = false;
+            }
+            else
+            {
+                NextPageButton.IsEnabled = true;
+            }
         }
     }
 }

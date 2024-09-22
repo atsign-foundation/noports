@@ -13,6 +13,6 @@ public partial class MainWindow : Window
         InitializeComponent();
         _controller = App.ControllerInstance;
         _controller.Window = this;
-        _controller.LoadPages();
+        _controller.LoadPages(InstallType.Home);
     }
 }

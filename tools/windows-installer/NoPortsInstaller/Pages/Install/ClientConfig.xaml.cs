@@ -1,6 +1,6 @@
 ﻿using System.Windows.Controls;
 
-namespace NoPortsInstaller.Pages
+namespace NoPortsInstaller.Pages.Install
 {
     /// <summary>
     /// Interaction logic for Page2.xaml

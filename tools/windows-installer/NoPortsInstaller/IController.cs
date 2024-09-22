@@ -11,24 +11,22 @@ namespace NoPortsInstaller
         string DeviceAtsign { get; set; }
         string DeviceName { get; set; }
         string RegionAtsign { get; set; }
-        string PermittedPorts { get; set; }
-        string MultipleDevices { get; set; }
-        string MultipleManagers { get; set; }
+        public string AdditionalArgs { get; set; }
         bool IsInstalled { get; set; }
-        string AtkeysPath { get; set; }
         List<Page> Pages { get; set; }
         Window? Window { get; set; }
 
         Task Install(ProgressBar progress, Label status);
         Task Uninstall(ProgressBar progress);
-        void LoadPages();
+        Task Onboard();
+        Task Enroll();
+        void LoadPages(InstallType type);
         void NextPage();
         void PreviousPage();
         void UpdateConfigRegistry();
         void PopulateAtsigns(ComboBox box);
-        void MoveUploadedAtkeys();
         string NormalizeAtsign(string atsign);
-        string NormalizeMultipleManagers(string atsigns);
-        string NormalizePermittedPorts(string ports);
+        string NormalizeArgs(string args);
+        string CheckAtsignStatus(string atsign);
     }
 }

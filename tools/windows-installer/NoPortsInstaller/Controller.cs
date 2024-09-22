@@ -1,5 +1,8 @@
 ﻿using Microsoft.Win32;
 using NoPortsInstaller.Pages;
+using NoPortsInstaller.Pages.Activate;
+using NoPortsInstaller.Pages.Install;
+using NoPortsInstaller.Pages.Update;
 using System.Diagnostics;
 using System.IO;
 using System.Security.AccessControl;
@@ -16,29 +19,23 @@ namespace NoPortsInstaller
         public string DeviceAtsign { get; set; }
         public string DeviceName { get; set; }
         public string RegionAtsign { get; set; }
-        public string PermittedPorts { get; set; }
-        public string MultipleDevices { get; set; }
-        public string MultipleManagers { get; set; }
+        public string AdditionalArgs { get; set; }
         public bool IsInstalled { get { return Directory.Exists(InstallDirectory); } set { } }
         public List<Page> Pages { get; set; }
-        public string AtkeysPath { get; set; }
         private int index = 0;
         public Window? Window { get; set; }
 
         public Controller()
         {
             InstallDirectory = "C:\\Program Files\\NoPorts";
-            InstallType = InstallType.None;
+            InstallType = InstallType.Home;
             ClientAtsign = "";
             DeviceAtsign = "";
-            DeviceName = "";
+            DeviceName = System.Environment.MachineName;
             RegionAtsign = "";
-            MultipleDevices = "";
-            MultipleManagers = "";
-            PermittedPorts = "localhost:22,localhost:3389";
+            AdditionalArgs = "";
             Pages = [];
             IsInstalled = false;
-            AtkeysPath = "";
         }
 
         /// <summary>
@@ -63,7 +60,7 @@ namespace NoPortsInstaller
                 status.Content = "Creating Registries NoPorts...";
                 CreateRegistryKeys();
                 await UpdateProgressBar(progress, 90);
-                if (InstallType.Equals(InstallType.Device) || InstallType.Equals(InstallType.Both))
+                if (InstallType.Equals(InstallType.Device))
                 {
                     status.Content = "Setting up NoPorts Service...";
                     CopyIntoServiceAccount();
@@ -77,8 +74,7 @@ namespace NoPortsInstaller
             catch (Exception ex)
             {
                 await Cleanup();
-                Pages.Add(new ServiceErrorPage(ex.Message));
-                NextPage();
+                LoadError(ex.Message);
             }
         }
 
@@ -118,8 +114,37 @@ namespace NoPortsInstaller
             }
             catch (Exception ex)
             {
-                Pages.Add(new ServiceErrorPage(ex.Message));
+                LoadError(ex.Message);
+            }
+        }
+
+        public async Task Onboard()
+        {
+            try
+            {
+                CreateDirectories(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile));
+                await MoveResources();
+                VerifyInstall();
                 NextPage();
+            }
+            catch (Exception ex)
+            {
+                LoadError(ex.Message);
+            }
+        }
+
+        public async Task Enroll()
+        {
+            try
+            {
+                CreateDirectories(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile));
+                await MoveResources();
+                VerifyInstall();
+                NextPage();
+            }
+            catch (Exception ex)
+            {
+                LoadError(ex.Message);
             }
         }
 
@@ -131,13 +156,9 @@ namespace NoPortsInstaller
                 var args = $"-a {DeviceAtsign} -m {ClientAtsign} -d {DeviceName} -sv";
                 if (registryKey != null)
                 {
-                    if (MultipleManagers != "")
+                    if (AdditionalArgs != "")
                     {
-                        args += $" --managers {MultipleManagers}";
-                    }
-                    if (PermittedPorts != "")
-                    {
-                        args += $" --ports {PermittedPorts}";
+                        args += AdditionalArgs;
                     }
                     registryKey.SetValue("DeviceArgs", args);
                     registryKey.Close();
@@ -145,8 +166,7 @@ namespace NoPortsInstaller
             }
             catch (Exception ex)
             {
-                Pages.Add(new ServiceErrorPage(ex.Message));
-                NextPage();
+                LoadError(ex.Message);
             }
         }
 
@@ -182,10 +202,6 @@ namespace NoPortsInstaller
                     Console.WriteLine($"An error occurred while creating {dir}: {ex.Message}");
                 }
             }
-            if (InstallType.Equals(InstallType.Client))
-            {
-                MoveUploadedAtkeys();
-            }
 
             SecurityIdentifier everyone = new(WellKnownSidType.WorldSid, null);
             securityRules = new();
@@ -220,9 +236,9 @@ namespace NoPortsInstaller
             {
                 try
                 {
-                    if (System.IO.File.Exists(sources[i]))
+                    if (File.Exists(sources[i]))
                     {
-                        System.IO.File.Copy(sources[i], destinations[i], true);
+                        File.Copy(sources[i], destinations[i], true);
                     }
                 }
                 catch
@@ -248,14 +264,6 @@ namespace NoPortsInstaller
             }
             else if (InstallType.Equals(InstallType.Client))
             {
-                resources.Add(Properties.Resources.sshnp, "sshnp.exe");
-                resources.Add(Properties.Resources.npt, "npt.exe");
-            }
-            else if (InstallType.Equals(InstallType.Both))
-            {
-                await ServiceController.TryUninstall("sshnpd");
-                resources.Add(Properties.Resources.sshnpd, "sshnpd.exe");
-                resources.Add(Properties.Resources.SshnpdService, "SshnpdService.exe");
                 resources.Add(Properties.Resources.sshnp, "sshnp.exe");
                 resources.Add(Properties.Resources.npt, "npt.exe");
             }
@@ -341,15 +349,12 @@ namespace NoPortsInstaller
             RegistryKey registryKey = Registry.LocalMachine.CreateSubKey(@"Software\NoPorts");
             registryKey.SetValue("BinPath", InstallDirectory);
             var args = $"-a {DeviceAtsign} -m {ClientAtsign} -d {DeviceName}";
-            if (MultipleManagers != "")
+            if (AdditionalArgs != "")
             {
-                args += $" --managers {MultipleManagers}";
+                args += AdditionalArgs;
             }
             args += " -sv";
-            if (InstallType.Equals(InstallType.Device) || InstallType.Equals(InstallType.Both))
-            {
-                registryKey.SetValue("DeviceArgs", args);
-            }
+            registryKey.SetValue("DeviceArgs", args);
             registryKey.Close();
         }
 
@@ -378,29 +383,43 @@ namespace NoPortsInstaller
         /// <summary>
         /// Loads the appropriate pages based on the InstallType.
         /// </summary>
-        public void LoadPages()
+        public void LoadPages(InstallType type)
         {
+            InstallType = type;
+            index = 0;
+            Pages.Clear();
             switch (InstallType)
             {
-                case InstallType.None:
+                case InstallType.Home:
                     Pages.Add(new Setup());
                     break;
                 case InstallType.Update:
-                    Pages.Clear();
                     Pages.Add(new Setup());
                     Pages.Add(new ConfigureInstall());
                     Pages.Add(new UpdateDevice());
                     break;
                 case InstallType.Uninstall:
-                    Pages.Clear();
                     Pages.Add(new UninstallPage());
                     break;
                 case InstallType.Client:
+                    Pages.Add(new Setup());
                     Pages.Add(new ClientConfig());
                     break;
-                default:
+                case InstallType.Device:
+                    Pages.Add(new Setup());
                     Pages.Add(new ConfigureInstall());
                     Pages.Add(new DeviceConfig());
+                    break;
+                case InstallType.Onboard:
+                    Pages.Add(new Setup());
+                    Pages.Add(new Onboard());
+                    Pages.Add(new FinishGeneratingKeys());
+                    break;
+                case InstallType.Enroll:
+                    Pages.Add(new Setup());
+                    Pages.Add(new AtsignEnroll());
+                    Pages.Add(new Enroll());
+                    Pages.Add(new FinishGeneratingKeys());
                     break;
             }
             if (Window != null)
@@ -411,6 +430,13 @@ namespace NoPortsInstaller
             {
                 Pages.Add(new ServiceErrorPage("Window is null"));
             }
+        }
+
+        public void LoadError(string e)
+        {
+            index = 0;
+            Pages.Clear();
+            Pages.Add(new ServiceErrorPage(e));
         }
 
         /// <summary>
@@ -476,6 +502,7 @@ namespace NoPortsInstaller
             }
         }
 
+
         /// <summary>
         /// Normalizes the given Atsign by adding the '@' symbol if it is missing.
         /// </summary>
@@ -493,7 +520,24 @@ namespace NoPortsInstaller
             }
         }
 
-        public string NormalizeMultipleManagers(string atsigns)
+        public string NormalizeArgs(string args)
+        {
+            string[] argArray = args.Split(args, ' ');
+            for (int i = 0; i < argArray.Length; i++)
+            {
+                if (argArray[i].Equals("--managers"))
+                {
+                    argArray[i + 1] = NormalizeMultipleManagers(argArray[i + 1]);
+                }
+                if (argArray[i].Equals("--po"))
+                {
+                    argArray[i + 1] = NormalizePermittedPorts(argArray[i + 1]);
+                }
+            }
+            return string.Join(' ', argArray);
+        }
+
+        private string NormalizeMultipleManagers(string atsigns)
         {
             string[] atsignArray = atsigns.Split(',');
             for (int i = 0; i < atsignArray.Length; i++)
@@ -503,7 +547,7 @@ namespace NoPortsInstaller
             return string.Join(',', atsignArray);
         }
 
-        public string NormalizePermittedPorts(string ports)
+        private static string NormalizePermittedPorts(string ports)
         {
             string[] portArray = ports.Split(',');
             for (int i = 0; i < portArray.Length; i++)
@@ -529,15 +573,40 @@ namespace NoPortsInstaller
             }
         }
 
-        public void MoveUploadedAtkeys()
+        public string CheckAtsignStatus(string atsign)
         {
-            if (AtkeysPath != "")
+            using (Process p = new())
             {
-                string destination = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".atsign", "keys");
-                if (Directory.Exists(destination))
+                var exitCode = "0";
+                p.StartInfo.FileName = Path.Combine(InstallDirectory, "at_activate.exe");
+                p.StartInfo.Arguments = $"status -a {atsign}";
+                p.StartInfo.UseShellExecute = false;
+                p.StartInfo.CreateNoWindow = true;
+                p.StartInfo.RedirectStandardOutput = true;
+                p.StartInfo.RedirectStandardError = true;
+                p.Start();
+                p.WaitForExit(timeout: TimeSpan.FromSeconds(3));
+                var e = p.StandardOutput.ReadToEnd();
+                if (string.IsNullOrEmpty(e))
                 {
-                    File.Move(AtkeysPath, Path.Combine(destination, Path.GetFileName(AtkeysPath)));
-                    AtkeysPath = Path.Combine(destination, Path.GetFileName(AtkeysPath));
+                    e = p.StandardError.ReadToEnd();
+                }
+                if (!string.IsNullOrEmpty(e))
+                {
+                    var response = e.Split(":").ToList();
+                    exitCode = response[0].Split(" ")[1];
+                }
+                if (exitCode == "0")
+                {
+                    return "activated";
+                }
+                else if (exitCode == "1")
+                {
+                    return "not activated";
+                }
+                else
+                {
+                    return "dne";
                 }
             }
         }
@@ -546,10 +615,11 @@ namespace NoPortsInstaller
 
 public enum InstallType
 {
-    None,
+    Home,
     Device,
     Client,
-    Both,
+    Onboard,
+    Enroll,
     Update,
     Uninstall
 }
