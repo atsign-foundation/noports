@@ -63,8 +63,8 @@ namespace NoPortsInstaller.Pages
 
         private void Enroll_Click(object sender, RoutedEventArgs e)
         {
-            _controller.LoadPages(InstallType.Enroll);
-            _controller.Enroll();
+            _controller.LoadPages(InstallType.Approve);
+            _controller.Approve();
         }
     }
 }

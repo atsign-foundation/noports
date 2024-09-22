@@ -63,7 +63,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Compile Update="Pages\Activate\AtsignEnroll.xaml.cs">
+    <Compile Update="Pages\Activate\AtsignApprove.xaml.cs">
       <SubType>Code</SubType>
     </Compile>
     <Compile Update="Properties\Resources.Designer.cs">

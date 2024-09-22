@@ -19,7 +19,8 @@ namespace NoPortsInstaller
         Task Install(ProgressBar progress, Label status);
         Task Uninstall(ProgressBar progress);
         Task Onboard();
-        Task Enroll();
+        Task Approve();
+        void Enroll();
         void LoadPages(InstallType type);
         void NextPage();
         void PreviousPage();
@@ -28,5 +29,6 @@ namespace NoPortsInstaller
         string NormalizeAtsign(string atsign);
         string NormalizeArgs(string args);
         string CheckAtsignStatus(string atsign);
+        string GetPendingRequests();
     }
 }

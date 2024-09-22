@@ -133,7 +133,13 @@ namespace NoPortsInstaller
             }
         }
 
-        public async Task Enroll()
+        public void Enroll()
+        {
+            Pages.Insert(2, new Enroll());
+            NextPage();
+        }
+
+        public async Task Approve()
         {
             try
             {
@@ -415,11 +421,9 @@ namespace NoPortsInstaller
                     Pages.Add(new Onboard());
                     Pages.Add(new FinishGeneratingKeys());
                     break;
-                case InstallType.Enroll:
+                case InstallType.Approve:
                     Pages.Add(new Setup());
-                    Pages.Add(new AtsignEnroll());
-                    Pages.Add(new Enroll());
-                    Pages.Add(new FinishGeneratingKeys());
+                    Pages.Add(new AtsignApprove());
                     break;
             }
             if (Window != null)
@@ -610,6 +614,38 @@ namespace NoPortsInstaller
                 }
             }
         }
+
+        public string GetPendingRequests()
+        {
+            using (Process p = new())
+            {
+                p.StartInfo.FileName = Path.Combine(InstallDirectory, "at_activate.exe");
+                p.StartInfo.Arguments = $"list -a {DeviceAtsign}";
+                p.StartInfo.UseShellExecute = false;
+                p.StartInfo.CreateNoWindow = true;
+                p.StartInfo.RedirectStandardOutput = true;
+                p.StartInfo.RedirectStandardError = true;
+                p.Start();
+                p.WaitForExit();
+                var e = p.StandardOutput.ReadToEnd();
+                if (string.IsNullOrEmpty(e))
+                {
+                    e = p.StandardError.ReadToEnd();
+                }
+                var lines = e.Split("\n").ToList();
+                foreach (var line in lines)
+                {
+                    if (line.Contains("pending"))
+                    {
+                        var segs = line.Trim().Split(" ").ToList();
+                        segs.RemoveAll(x => x == "");
+                        DeviceName = segs[3];
+                        return segs[0];
+                    }
+                }
+                return "";
+            }
+        }
     }
 }
 
@@ -619,7 +655,7 @@ public enum InstallType
     Device,
     Client,
     Onboard,
-    Enroll,
+    Approve,
     Update,
     Uninstall
 }

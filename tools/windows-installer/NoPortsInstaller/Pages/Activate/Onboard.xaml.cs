@@ -109,19 +109,20 @@ namespace NoPortsInstaller.Pages.Activate
 
         private void Submit_Click(object sender, RoutedEventArgs e)
         {
-            var atsign = _controller.NormalizeAtsign(Atsign.Text);
-            response = _controller.CheckAtsignStatus(atsign);
+            _controller.DeviceAtsign = _controller.NormalizeAtsign(Atsign.Text);
+            response = _controller.CheckAtsignStatus(_controller.DeviceAtsign);
             if (response == "not activated")
             {
                 ActivateResponseText.Content = "Check the email that was used to create the atsign \n \n Enter One Time Password (OTP):";
                 ActivateResponseText.Visibility = Visibility.Visible;
 
-                Start_AtActivate(atsign);
+                Start_AtActivate(_controller.DeviceAtsign);
                 Submit.IsEnabled = false;
             }
             else if (response == "activated")
             {
                 ActivateResponseText.Content = "This atsign is already activated, please generate keys for this device.";
+                Generate.IsEnabled = true;
                 ActivateResponseText.Visibility = Visibility.Visible;
             }
             else
@@ -133,7 +134,12 @@ namespace NoPortsInstaller.Pages.Activate
 
         private void Generate_Click(object sender, RoutedEventArgs e)
         {
-            string otp = $"{OtpBox1.Text}{OtpBox2.Text}{OtpBox3.Text}{OtpBox4.Text}";
+            string otp = $"{OtpBox1.Text}{OtpBox2.Text}{OtpBox3.Text}{OtpBox4.Text}".ToUpper();
+            if (response == "activated")
+            {
+                _controller.Enroll();
+                return;
+            }
             if (!at_activate.HasExited)
             {
                 at_activate.StandardInput.WriteLine(otp);

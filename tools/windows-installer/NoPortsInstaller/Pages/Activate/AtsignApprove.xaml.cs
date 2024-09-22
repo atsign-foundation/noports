@@ -6,10 +6,10 @@ namespace NoPortsInstaller.Pages.Activate
     /// <summary>
     /// Interaction logic for Enroll.xaml
     /// </summary>
-    public partial class AtsignEnroll : Page
+    public partial class AtsignApprove : Page
     {
         private readonly IController _controller = App.ControllerInstance;
-        public AtsignEnroll()
+        public AtsignApprove()
         {
             InitializeComponent();
         }
@@ -31,6 +31,8 @@ namespace NoPortsInstaller.Pages.Activate
             if (AtsignCombo.Text != "")
             {
                 _controller.DeviceAtsign = _controller.NormalizeAtsign(AtsignCombo.Text);
+                _controller.Pages.Add(new Approve());
+                _controller.Pages.Add(new FinishGeneratingKeys());
                 _controller.NextPage();
             }
         }
