@@ -6,4 +6,4 @@ bin
 obj
 *.user
 launchSettings.json
-Properties/Resources/*
+windows-installer/NoPortsInstaller/Resources/*
