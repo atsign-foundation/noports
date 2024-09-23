@@ -4,6 +4,7 @@
 #include "sshnpd/handle_ssh_request.h"
 #include "sshnpd/handle_sshpublickey.h"
 #include "sshnpd/sshnpd.h"
+#include "sshnpd/version.h"
 #include <atchops/aes.h>
 #include <atchops/iv.h>
 #include <atchops/rsa.h>
