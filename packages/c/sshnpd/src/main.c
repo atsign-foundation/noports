@@ -14,13 +14,13 @@
 #include <atclient/atkey.h>
 #include <atclient/atkeys.h>
 #include <atclient/atkeys_file.h>
+#include <atclient/cjson.h>
 #include <atclient/connection.h>
 #include <atclient/connection_hooks.h>
 #include <atclient/monitor.h>
 #include <atclient/notify.h>
 #include <atclient/string_utils.h>
 #include <atlogger/atlogger.h>
-#include <cJSON.h>
 #include <libgen.h>
 #include <pthread.h>
 #include <signal.h>
@@ -414,8 +414,7 @@ void main_loop() {
         atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR,
                      "Seems the monitor connection is down, trying to reconnect\n");
 
-        int ret =
-            atclient_monitor_pkam_authenticate(&monitor_ctx, params.atsign, &atkeys, NULL);
+        int ret = atclient_monitor_pkam_authenticate(&monitor_ctx, params.atsign, &atkeys, NULL);
         if (ret != 0) {
           atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR,
                        "Monitor connection failed to reconnect, trying again in 1 second...\n");
@@ -524,7 +523,8 @@ void main_loop() {
           break;
         case NK_NPT_REQUEST:
           atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_DEBUG, "Executing handle_npt_request\n");
-          handle_npt_request(&params, &message);
+          handle_npt_request(&worker, &atclient_lock, &params, &is_child_process, &message, home_dir, authkeys_file,
+                             authkeys_filename, signingkey);
           break;
         case NK_NONE:
           break;
