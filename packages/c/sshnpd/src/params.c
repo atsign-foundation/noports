@@ -1,4 +1,5 @@
 #include <sshnpd/params.h>
+#include <sshnpd/version.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>

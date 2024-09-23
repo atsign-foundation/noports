@@ -1,6 +1,5 @@
 #ifndef SSHNPD_PARAMS_H
 #define SSHNPD_PARAMS_H
-#define SSHNPD_VERSION "0.1.0"
 
 #include <argparse/argparse.h>
 #include <getopt.h>
