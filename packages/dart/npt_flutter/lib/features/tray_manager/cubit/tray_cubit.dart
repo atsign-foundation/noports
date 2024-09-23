@@ -72,9 +72,7 @@ class TrayCubit extends LoggingCubit<TrayState> {
     if (context == null) return;
     var showSettings = context.read<OnboardingCubit>().state is Onboarded;
 
-    await trayManager.setIcon(
-      Platform.isWindows ? Constants.icoIcon : Constants.pngIcon,
-    );
+    await reloadIcon();
 
     await trayManager.setContextMenu(Menu(
       items: [
@@ -84,6 +82,14 @@ class TrayCubit extends LoggingCubit<TrayState> {
       ],
     ));
     emit(const TrayLoaded());
+  }
+
+  Future<void> reloadIcon() async {
+    final brightness = WidgetsBinding.instance.platformDispatcher.platformBrightness;
+    await trayManager.setIcon(switch (brightness) {
+      Brightness.light => Platform.isWindows ? Constants.icoIconLight : Constants.pngIconLight,
+      Brightness.dark => Platform.isWindows ? Constants.icoIconDark : Constants.pngIconDark,
+    });
   }
 
   Future<void> reload() async {
@@ -108,9 +114,7 @@ class TrayCubit extends LoggingCubit<TrayState> {
 
     /// Generate the new menu based on current state
     var favMenuItems = await Future.wait(
-      favorites
-          .where((fav) => fav.isLoadedInProfiles(profiles))
-          .map((fav) async {
+      favorites.where((fav) => fav.isLoadedInProfiles(profiles)).map((fav) async {
         /// Make sure to call [e.displayName] and [e.isRunning] only once to
         /// ensure good performance - these getters call a bunch of nested
         /// information from elsewhere in the app state
