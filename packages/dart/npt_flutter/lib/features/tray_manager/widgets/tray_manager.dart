@@ -1,5 +1,7 @@
+import 'package:flutter/scheduler.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:npt_flutter/app.dart';
 import 'package:npt_flutter/features/favorite/favorite.dart';
 import 'package:npt_flutter/features/profile/profile.dart';
 import 'package:npt_flutter/features/profile_list/profile_list.dart';
@@ -17,8 +19,7 @@ class TrayManager extends StatefulWidget {
   State<TrayManager> createState() => _TrayManagerState();
 }
 
-class _TrayManagerState extends State<TrayManager>
-    with TrayListener, WindowListener {
+class _TrayManagerState extends State<TrayManager> with TrayListener, WindowListener {
   /// Must strongly type [context] here or Dart will infer the wrong type for
   /// the [.read()] extension which causes an error
   void reloadTray(BuildContext context, _) {
@@ -83,6 +84,12 @@ class _TrayManagerState extends State<TrayManager>
     trayManager.addListener(this);
     super.initState();
     windowManager.setPreventClose(true);
+    var dispatcher = SchedulerBinding.instance.platformDispatcher;
+
+    // This callback is called every time the brightness changes.
+    dispatcher.onPlatformBrightnessChanged = () {
+      App.navState.currentContext?.read<TrayCubit>().reloadIcon();
+    };
   }
 
   @override
