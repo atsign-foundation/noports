@@ -139,7 +139,7 @@ int run_srv_daemon_side_multi(srv_params_t *params) {
       len = res;
     }
 
-    if (&control_side.transformer != NULL) {
+    if (control_side.transformer != NULL) {
       unsigned char *output = malloc(4096 * sizeof(unsigned char));
       if (output == NULL) {
         goto exit;
@@ -160,7 +160,7 @@ int run_srv_daemon_side_multi(srv_params_t *params) {
 
     // First, check if the buffer contains just one or more requests
     size_t nrequests = 0;
-    res = process_multiple_requests(buffer, &requests, &nrequests);
+    res = process_multiple_requests((char *)buffer, &requests, &nrequests);
     if (res != 0) {
       atlogger_log(TAG, ATLOGGER_LOGGING_LEVEL_DEBUG, "Failed to find any request from: %s\n", buffer);
       goto exit;
@@ -445,7 +445,7 @@ static int process_multiple_requests(char *original, char **requests[], size_t *
   char **temp_requests = NULL;
   size_t temp_count = 0;
 
-  while (temp = strtok_r(saveptr, "\n", &saveptr)) {
+  while ((temp = strtok_r(saveptr, "\n", &saveptr))) {
     // realloc memory to save a new pointer
     temp_requests = realloc(temp_requests, (temp_count + 1) * sizeof(char *));
     if (!temp_requests) {
