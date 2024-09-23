@@ -63,7 +63,8 @@ class UserGroup {
 
   final List<String> userAtSigns;
 
-  factory UserGroup.empty({String? id, required String name, required String description}) {
+  factory UserGroup.empty(
+      {String? id, required String name, required String description}) {
     return UserGroup(
         id: id,
         name: name,

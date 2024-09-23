@@ -1309,6 +1309,7 @@ class SshnpdImpl implements Sshnpd {
           ..namespaceAware = true);
 
       logger.info('Sending heartbeat to policy service $policyManagerAtsign');
+
       /// send it
       await _notify(
         atKey: atKey,

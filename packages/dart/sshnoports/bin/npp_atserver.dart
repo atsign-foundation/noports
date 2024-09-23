@@ -24,7 +24,6 @@ void main(List<String> args) async {
   }
   AtSignLogger.defaultLoggingHandler = AtSignLogger.stdErrLoggingHandler;
 
-
   logger = AtSignLogger(' npp ');
   AtClient atClient = await createAtClientCli(
     atsign: p.authorizerAtsign,
@@ -56,10 +55,12 @@ void main(List<String> args) async {
 
   Set<String> notifiedDaemonAtSigns = {};
 
-  atClient.notificationService.subscribe(
+  atClient.notificationService
+      .subscribe(
     regex: r'.*\.devices\.policy\.sshnp',
     shouldDecrypt: true,
-  ).listen((AtNotification n) {
+  )
+      .listen((AtNotification n) {
     notifiedDaemonAtSigns.add(n.from);
     sshnpa.daemonAtsigns.clear();
     sshnpa.daemonAtsigns.addAll(handler.api.daemonAtSigns);
@@ -67,10 +68,12 @@ void main(List<String> args) async {
     logger.info('daemonAtSigns is now ${sshnpa.daemonAtsigns}');
   });
 
-  atClient.notificationService.subscribe(
+  atClient.notificationService
+      .subscribe(
     regex: r'.*\.groups\.policy\.sshnp',
     shouldDecrypt: true,
-  ).listen((AtNotification n) {
+  )
+      .listen((AtNotification n) {
     sshnpa.daemonAtsigns.clear();
     sshnpa.daemonAtsigns.addAll(handler.api.daemonAtSigns);
     sshnpa.daemonAtsigns.addAll(notifiedDaemonAtSigns);
@@ -97,7 +100,6 @@ class Handler implements NPARequestHandler {
   @override
   Future<NPAAuthCheckResponse> doAuthCheck(
       NPAAuthCheckRequest authCheckRequest) async {
-
     logger.info('Checking policy for request: $authCheckRequest');
     // member of any groups?
     final groups = await api.getGroupsForUser(authCheckRequest.clientAtsign);
@@ -116,7 +118,6 @@ class Handler implements NPARequestHandler {
     // does it contain the authCheckRequest.daemonAtsign?
     for (final group in groups) {
       if (group.daemonAtSigns.contains(authCheckRequest.daemonAtsign)) {
-
         // does it contain a matching deviceName? if so, add the permitOpens
         for (final d in group.devices) {
           if (d.name == authCheckRequest.daemonDeviceName) {
@@ -129,7 +130,6 @@ class Handler implements NPARequestHandler {
             permitOpens.addAll(dg.permitOpens);
           }
         }
-
       }
     }
 
