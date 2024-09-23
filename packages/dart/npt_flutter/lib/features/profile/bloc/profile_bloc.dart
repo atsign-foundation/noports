@@ -114,12 +114,14 @@ class ProfileBloc extends LoggingBloc<ProfileEvent, ProfileState> {
     // ProfileLoaded and ProfileFailedSave are both ProfileLoadedState
     var profile = (state as ProfileLoadedState).profile;
     emit(ProfileStarting(uuid, profile: profile));
+    App.navState.currentContext?.read<ProfilesRunningCubit>().prepare(uuid);
 
     AtClient atClient = AtClientManager.getInstance().atClient;
 
     String? atSign = atClient.getCurrentAtSign();
     if (atSign == null) {
       emit(ProfileFailedStart(uuid, profile: profile));
+      App.navState.currentContext?.read<ProfilesRunningCubit>().invalidate(uuid);
       return;
     }
 
@@ -130,6 +132,7 @@ class ProfileBloc extends LoggingBloc<ProfileEvent, ProfileState> {
         profile: profile,
         reason: "Couldn't fetch settings",
       ));
+      App.navState.currentContext?.read<ProfilesRunningCubit>().invalidate(uuid);
       return;
     }
     var settings = currentSettingsState.settings;
@@ -180,6 +183,7 @@ class ProfileBloc extends LoggingBloc<ProfileEvent, ProfileState> {
           profile: profile,
           reason: 'Npt startup timedout',
         ));
+        App.navState.currentContext?.read<ProfilesRunningCubit>().invalidate(uuid);
         return;
       }
 
@@ -190,6 +194,7 @@ class ProfileBloc extends LoggingBloc<ProfileEvent, ProfileState> {
           profile: profile,
           reason: 'Socketconnector closed prematurely',
         ));
+        App.navState.currentContext?.read<ProfilesRunningCubit>().invalidate(uuid);
         return;
       }
 
@@ -203,6 +208,7 @@ class ProfileBloc extends LoggingBloc<ProfileEvent, ProfileState> {
         profile: profile,
         reason: 'Error during startup: $err',
       ));
+      App.navState.currentContext?.read<ProfilesRunningCubit>().invalidate(uuid);
     } finally {
       await npt?.done;
       cancelSubs?.call();
