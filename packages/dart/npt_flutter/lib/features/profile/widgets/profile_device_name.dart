@@ -15,7 +15,7 @@ class ProfileDeviceName extends StatelessWidget {
         if (state is! ProfileLoadedState) return null;
         return (state.profile.deviceName, state.profile.sshnpdAtsign);
       }, builder: (BuildContext context, (String, String)? tuple) {
-        if (tuple == null) return const SizedBox();
+        if (tuple == null) return gap0;
         var (deviceName, sshnpdAtSign) = tuple;
         return Text('$deviceName$sshnpdAtSign');
       }),
