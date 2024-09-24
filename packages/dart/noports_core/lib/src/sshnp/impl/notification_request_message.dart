@@ -1,27 +1,62 @@
+import 'package:noports_core/utils.dart';
+
 class SshnpSessionRequest {
   final bool direct;
   final String sessionId;
   final String host;
   final int port;
-  final bool authenticateToRvd;
-  final String clientNonce;
+  final bool? authenticateToRvd;
+  final String? clientNonce;
   final String? rvdNonce;
-  final bool encryptRvdTraffic;
+  final bool? encryptRvdTraffic;
   final String? clientEphemeralPK;
   final String? clientEphemeralPKType;
+  final String? username;
+  final int? remoteForwardPort;
+  final String? privateKey;
 
   SshnpSessionRequest({
     required this.direct,
     required this.sessionId,
     required this.host,
     required this.port,
-    required this.authenticateToRvd,
-    required this.clientNonce,
-    required this.rvdNonce,
-    required this.encryptRvdTraffic,
-    required this.clientEphemeralPK,
-    required this.clientEphemeralPKType,
-  });
+    // optional params
+    this.authenticateToRvd,
+    this.clientNonce,
+    this.rvdNonce,
+    this.encryptRvdTraffic,
+    this.clientEphemeralPK,
+    this.clientEphemeralPKType,
+    // required for reverse (direct = false)
+    this.username,
+    this.remoteForwardPort,
+    this.privateKey,
+  }) {
+    // Assertations originally from Sshnpd
+    // sessionId, host (of the rvd) and port (of the rvd) are required.
+    assertValidValue('sessionId', sessionId, String);
+    assertValidValue('host', host, String);
+    assertValidValue('port', port, int);
+
+    // v5+ params are not required but must be valid if supplied
+    assertNullOrValidValue('authenticateToRvd', authenticateToRvd, bool);
+    assertNullOrValidValue('clientNonce', clientNonce, String);
+    assertNullOrValidValue('rvdNonce', rvdNonce, String);
+    assertNullOrValidValue('encryptRvdTraffic', encryptRvdTraffic, bool);
+    assertNullOrValidValue('clientEphemeralPK', clientEphemeralPK, String);
+    assertNullOrValidValue(
+        'clientEphemeralPKType', clientEphemeralPKType, String);
+
+    // If a reverse ssh (v3, LEGACY BEHAVIOUR) is being requested, then we
+    // also require a username (to ssh back to the client), a privateKey (for
+    // that ssh) and a remoteForwardPort, to set up the ssh tunnel back to
+    // this device from the client side.
+    if (!direct) {
+      assertValidValue('username', username, String);
+      assertValidValue('remoteForwardPort', remoteForwardPort, int);
+      assertValidValue('privateKey', privateKey, String);
+    }
+  }
 
   static SshnpSessionRequest fromJson(Map<String, dynamic> json) {
     return SshnpSessionRequest(
