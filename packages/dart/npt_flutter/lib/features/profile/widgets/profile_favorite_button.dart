@@ -17,7 +17,7 @@ class ProfileFavoriteButton extends StatelessWidget {
         if (state is! ProfileLoadedState) return null;
         return state.profile;
       }, builder: (context, profile) {
-        if (profile == null) return const SizedBox();
+        if (profile == null) return gap0;
         return BlocSelector<FavoriteBloc, FavoritesState, bool>(
           selector: (FavoritesState state) {
             if (state is! FavoritesLoaded) return false;

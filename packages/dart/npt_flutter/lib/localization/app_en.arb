@@ -68,5 +68,6 @@
    "validationErrorRemotePortField" : "Field must be between 1024-65535",
    "validationErrorRemoteHostField" : "Field must be partially or fully qualified hostname or an IP address",
    "profileRunningActionDeniedMessage" : "Cannot perform this action while profile is running",
+   "emptyProfileMessage" : "No profiles found\nCreate or Import a profile to start using NoPorts.",
    "yaml" : "YAML"
 }

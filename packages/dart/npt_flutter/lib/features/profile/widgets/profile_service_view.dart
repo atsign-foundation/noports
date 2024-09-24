@@ -15,7 +15,7 @@ class ProfileServiceView extends StatelessWidget {
         if (state is! ProfileLoadedState) return null;
         return (state.profile.localPort, state.profile.remoteHost, state.profile.remotePort);
       }, builder: (BuildContext context, (int, String, int)? triple) {
-        if (triple == null) return const SizedBox();
+        if (triple == null) return gap0;
         var (localPort, remoteHost, remotePort) = triple;
         return Text('$localPort:$remoteHost:$remotePort');
       }),

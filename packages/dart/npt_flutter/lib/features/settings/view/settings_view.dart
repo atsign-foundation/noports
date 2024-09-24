@@ -27,7 +27,7 @@ class SettingsView extends StatelessWidget {
         switch (state) {
           case SettingsInitial():
           case SettingsLoading():
-            return const Spinner();
+            return const Center(child: Spinner());
           case SettingsLoadedState():
             return Padding(
               padding: const EdgeInsets.only(top: 18, bottom: 92, left: 120, right: 77),
