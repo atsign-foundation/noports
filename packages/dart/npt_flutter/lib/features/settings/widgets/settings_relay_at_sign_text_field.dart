@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:npt_flutter/features/settings/settings.dart';
+import 'package:npt_flutter/styles/sizes.dart';
 import 'package:npt_flutter/util/form_validator.dart';
 
 class SettingsRelayAtSignTextField extends StatefulWidget {
@@ -22,7 +23,7 @@ class _SettingsRelayAtSignTextFieldState extends State<SettingsRelayAtSignTextFi
         return null;
       },
       builder: (BuildContext context, String? relayAtsign) {
-        if (relayAtsign == null) return const SizedBox();
+        if (relayAtsign == null) return gap0;
         controller.text = relayAtsign;
         return TextFormField(
             controller: controller,

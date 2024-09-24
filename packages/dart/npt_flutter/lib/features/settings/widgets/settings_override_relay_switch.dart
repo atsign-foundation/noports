@@ -18,7 +18,7 @@ class SettingsOverrideRelaySwitch extends StatelessWidget {
       }
       return null;
     }, builder: (context, overrideRelay) {
-      if (overrideRelay == null) return const Spinner();
+      if (overrideRelay == null) return const Center(child: Spinner());
       return Row(
         children: [
           Checkbox(

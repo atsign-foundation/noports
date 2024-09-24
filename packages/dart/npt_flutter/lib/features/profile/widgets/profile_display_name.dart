@@ -19,7 +19,7 @@ class ProfileDisplayName extends StatelessWidget {
           return null;
         },
         builder: (BuildContext context, String? displayName) {
-          if (displayName == null) return const SizedBox();
+          if (displayName == null) return gap0;
           return Text(displayName);
         },
       ),

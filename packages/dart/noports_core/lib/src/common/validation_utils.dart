@@ -49,9 +49,24 @@ Future<bool> atSignIsActivated(final AtClient atClient, String atSign) async {
   }
 }
 
+void assertValidValue(String name, dynamic v, Type t) {
+  if (v == null || v.runtimeType != t) {
+    throw ArgumentError(
+        'Parameter $name should be a $t but is actually a ${v.runtimeType} with value $v');
+  }
+}
+
+void assertNullOrValidValue(String name, dynamic v, Type t) {
+  if (v == null) {
+    return;
+  } else {
+    return assertValidValue(name, v, t);
+  }
+}
+
 /// Assert that the value for key k in Map m is non-null and is of Type t.
 /// Throws an ArgumentError if the value is null, or is not of Type t.
-void assertValidValue(Map m, String k, Type t) {
+void assertValidMapValue(Map m, String k, Type t) {
   var v = m[k];
   if (v == null || v.runtimeType != t) {
     throw ArgumentError(
@@ -61,12 +76,12 @@ void assertValidValue(Map m, String k, Type t) {
 
 /// Assert that the value for key k in Map m is non-null and is of Type t.
 /// Throws an ArgumentError if the value is null, or is not of Type t.
-void assertNullOrValidValue(Map m, String k, Type t) {
+void assertNullOrValidMapValue(Map m, String k, Type t) {
   var v = m[k];
   if (v == null) {
     return;
   } else {
-    return assertValidValue(m, k, t);
+    return assertValidMapValue(m, k, t);
   }
 }
 
