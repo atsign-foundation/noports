@@ -84,15 +84,12 @@ class ProfileListView extends StatelessWidget {
                                     child: ListView.builder(
                                       itemCount: state.profiles.length,
                                       itemBuilder: (context, index) {
-                                        if (state.profiles.isEmpty) {
-                                          return BlocProvider<ProfileBloc>(
-                                            key: Key("ProfileListView-BlocProvider-${profiles[index]}"),
-                                            create: (context) =>
-                                                context.read<ProfileCacheCubit>().getProfileBloc(profiles[index]),
-                                            child: const CustomCard.profile(child: ProfileView()),
-                                          );
-                                        }
-                                        return null;
+                                        return BlocProvider<ProfileBloc>(
+                                          key: Key("ProfileListView-BlocProvider-${profiles[index]}"),
+                                          create: (context) =>
+                                              context.read<ProfileCacheCubit>().getProfileBloc(profiles[index]),
+                                          child: const CustomCard.profile(child: ProfileView()),
+                                        );
                                       },
                                     ),
                                   )
