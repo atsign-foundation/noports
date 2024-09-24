@@ -77,7 +77,7 @@ This version of NoPorts only supports SSH, with terminal windows embedded into t
 
 ## 3. Install the NoPorts daemon
 
-### 2.1. Use the guided installer (recommended)
+### 3.1. Use the guided installer (recommended)
 
 These guides will help you use the guided installer to install the NoPorts daemon.
 
@@ -94,7 +94,7 @@ Don't worry! You have the right installer.
 [windows.md](windows.md)
 {% endcontent-ref %}
 
-### 2.2. Manual installation guides
+### 3.2. Manual installation guides
 
 These are supplementary guides, which involve some manual work. You may require this in a bespoke environment, but we recommend using the [automated installation guides](./#id-2.1.-automated-installation-guides-recommended) whenever possible.
 
@@ -106,15 +106,13 @@ These are supplementary guides, which involve some manual work. You may require 
 [ipfire.md](custom-os-device-installs/ipfire.md)
 {% endcontent-ref %}
 
-## 3. Use NoPorts
+## 4. Use NoPorts
 
 Start by exploring the use-cases available in the side bar. We also provide in-depth usage information:
 
 {% content-ref url="../usage/" %}
 [usage](../usage/)
 {% endcontent-ref %}
-
-## 4. Reach out to us
 
 
 
