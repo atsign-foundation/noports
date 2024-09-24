@@ -12,10 +12,19 @@ class FormValidator {
     return null;
   }
 
-  static String? validateAtsignField(String? value) {
+  static String? validateRequiredAtsignField(String? value) {
+    final strings = AppLocalizations.of(App.navState.currentContext!)!;
+    if (!value!.startsWith('@')) {
+      return strings.validationErrorAtsignField;
+    }
+    validateRequiredField(value);
+    return null;
+  }
+
+  static String? validateEmptyAtsignField(String? value) {
     final strings = AppLocalizations.of(App.navState.currentContext!)!;
     if (value?.isEmpty ?? true) {
-      return strings.validationErrorEmptyField;
+      return null;
     } else if (!value!.startsWith('@')) {
       return strings.validationErrorAtsignField;
     }
@@ -67,7 +76,7 @@ class FormValidator {
     var port = int.tryParse(value ?? '');
     if (value?.isEmpty ?? true) {
       return strings.validationErrorEmptyField;
-    } else if (port == null || !(port >= 1024 && port <= 65535)) {
+    } else if (port == null || !(port >= 1 && port <= 65535)) {
       return strings.validationErrorRemotePortField;
     }
     return null;

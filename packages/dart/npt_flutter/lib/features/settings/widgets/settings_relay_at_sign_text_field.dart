@@ -28,7 +28,7 @@ class _SettingsRelayAtSignTextFieldState extends State<SettingsRelayAtSignTextFi
         return TextFormField(
             controller: controller,
             autovalidateMode: AutovalidateMode.onUserInteraction,
-            validator: FormValidator.validateAtsignField,
+            validator: FormValidator.validateRequiredAtsignField,
             onChanged: (value) {
               var bloc = context.read<SettingsBloc>();
               bloc.add(SettingsEditEvent(
