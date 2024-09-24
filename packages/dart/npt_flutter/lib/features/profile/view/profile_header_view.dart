@@ -30,6 +30,7 @@ class ProfileHeaderView extends StatelessWidget {
 
         case ProfileListFailedLoad _:
           return const Row(
+            mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Text("Failed to load this profile, please refresh manually:"),
               ProfileListRefreshButton(),
@@ -46,7 +47,7 @@ class ProfileHeaderView extends StatelessWidget {
             },
             builder: (BuildContext context, PreferredViewLayout? viewLayout) {
               return switch (viewLayout) {
-                null => const Spinner(),
+                null => const Center(child: Spinner()),
                 PreferredViewLayout.minimal => CustomCard.profileHeader(
                     child: Padding(
                       padding: const EdgeInsets.all(Sizes.p10),
