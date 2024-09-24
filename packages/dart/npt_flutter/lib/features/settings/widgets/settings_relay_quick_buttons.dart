@@ -18,7 +18,7 @@ class SettingsRelayQuickButtons extends StatelessWidget {
       }
       return null;
     }, builder: (BuildContext context, String? relayAtsign) {
-      if (relayAtsign == null) return const SizedBox();
+      if (relayAtsign == null) return gap0;
       return Scrollbar(
         controller: controller,
         thumbVisibility: true,

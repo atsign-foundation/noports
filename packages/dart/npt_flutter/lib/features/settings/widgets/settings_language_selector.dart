@@ -16,7 +16,7 @@ class SettingsLanguageSelector extends StatelessWidget {
       }
       return null;
     }, builder: (context, language) {
-      if (language == null) return const Spinner();
+      if (language == null) return const Center(child: Spinner());
       return Column(
         children: [
           Row(

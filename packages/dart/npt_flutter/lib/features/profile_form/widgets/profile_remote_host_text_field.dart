@@ -24,7 +24,7 @@ class ProfileRemoteHostTextField extends StatelessWidget {
             return null;
           },
           builder: (BuildContext context, String? state) {
-            if (state == null) return const SizedBox();
+            if (state == null) return gap0;
             return SizedBox(
               height: Sizes.p100,
               child: TextFormField(

@@ -18,7 +18,7 @@ class ProfileListView extends StatelessWidget {
     final strings = AppLocalizations.of(context)!;
     return BlocBuilder<ProfileListBloc, ProfileListState>(builder: (context, state) {
       return switch (state) {
-        ProfileListInitial() || ProfileListLoading() => const Spinner(),
+        ProfileListInitial() || ProfileListLoading() => const Center(child: Spinner()),
         ProfileListFailedLoad() => CustomCard.dashboardContent(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.center,

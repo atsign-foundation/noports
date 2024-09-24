@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:npt_flutter/app.dart';
 import 'package:npt_flutter/features/profile_list/profile_list.dart';
+import 'package:npt_flutter/styles/sizes.dart';
 import 'package:npt_flutter/widgets/confirmation_dialog.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 
@@ -18,7 +19,7 @@ class ProfileSelectedDeleteButton extends StatelessWidget {
       },
       builder: (BuildContext context, Set<String> selected) {
         // Hide this button if nothing is selected
-        if (selected.isEmpty) return const SizedBox();
+        if (selected.isEmpty) return gap0;
         return BlocSelector<ProfilesRunningCubit, ProfilesRunningState, Set<String>>(
             selector: (ProfilesRunningState state) {
           return state.socketConnectors.keys.toSet();

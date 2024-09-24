@@ -18,6 +18,7 @@ class ProfileView extends StatelessWidget {
         case ProfileInitial _:
         case ProfileLoading _:
           return const Row(
+            mainAxisAlignment: MainAxisAlignment.center,
             children: [
               LoaderBar(),
               ProfileRefreshButton(),
@@ -26,6 +27,7 @@ class ProfileView extends StatelessWidget {
 
         case ProfileFailedLoad _:
           return const Row(
+            mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Text("Failed to load this profile, please refresh manually:"),
               ProfileRefreshButton(),
@@ -33,8 +35,7 @@ class ProfileView extends StatelessWidget {
           );
 
         case ProfileLoadedState _:
-          return BlocSelector<SettingsBloc, SettingsState,
-              PreferredViewLayout?>(
+          return BlocSelector<SettingsBloc, SettingsState, PreferredViewLayout?>(
             selector: (SettingsState state) {
               if (state is SettingsLoadedState) {
                 return state.settings.viewLayout;
@@ -43,7 +44,7 @@ class ProfileView extends StatelessWidget {
             },
             builder: (BuildContext context, PreferredViewLayout? viewLayout) {
               return switch (viewLayout) {
-                null => const Spinner(),
+                null => const Center(child: Spinner()),
                 PreferredViewLayout.minimal => const ProfileViewMinimal(),
                 PreferredViewLayout.sshStyle => const ProfileViewSshStyle(),
               };
