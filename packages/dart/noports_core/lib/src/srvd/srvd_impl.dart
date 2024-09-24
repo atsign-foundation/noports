@@ -309,12 +309,12 @@ class SrvdUtil {
       AtNotification notification) async {
     dynamic jsonValue = jsonDecode(notification.value ?? '');
 
-    assertValidValue(jsonValue, 'sessionId', String);
-    assertValidValue(jsonValue, 'atSignA', String);
-    assertValidValue(jsonValue, 'atSignB', String);
-    assertValidValue(jsonValue, 'clientNonce', String);
-    assertValidValue(jsonValue, 'authenticateSocketA', bool);
-    assertValidValue(jsonValue, 'authenticateSocketA', bool);
+    assertValidMapValue(jsonValue, 'sessionId', String);
+    assertValidMapValue(jsonValue, 'atSignA', String);
+    assertValidMapValue(jsonValue, 'atSignB', String);
+    assertValidMapValue(jsonValue, 'clientNonce', String);
+    assertValidMapValue(jsonValue, 'authenticateSocketA', bool);
+    assertValidMapValue(jsonValue, 'authenticateSocketA', bool);
 
     final String sessionId = jsonValue['sessionId'];
     final String atSignA = jsonValue['atSignA'];
