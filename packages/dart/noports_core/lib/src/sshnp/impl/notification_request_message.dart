@@ -32,7 +32,7 @@ class SshnpSessionRequest {
     this.remoteForwardPort,
     this.privateKey,
   }) {
-    // Assertations originally from Sshnpd
+    // Assertions originally from Sshnpd
     // sessionId, host (of the rvd) and port (of the rvd) are required.
     assertValidValue('sessionId', sessionId, String);
     assertValidValue('host', host, String);
