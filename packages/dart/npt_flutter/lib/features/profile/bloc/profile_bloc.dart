@@ -62,7 +62,7 @@ class ProfileBloc extends LoggingBloc<ProfileEvent, ProfileState> {
           relayAtsign: '',
           deviceName: '',
           remotePort: 3389,
-          localPort: 1024,
+          localPort: 0,
         ),
       ));
       return;

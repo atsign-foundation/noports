@@ -30,7 +30,7 @@ class ProfileLocalPortSelector extends StatelessWidget {
               height: Sizes.p100,
               child: TextFormField(
                   initialValue: state.toString(),
-                  autovalidateMode: AutovalidateMode.onUserInteraction,
+                  autovalidateMode: AutovalidateMode.always,
                   validator: FormValidator.validateLocalPortField,
                   decoration: const InputDecoration(
                     errorMaxLines: 2,

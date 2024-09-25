@@ -89,7 +89,7 @@ class FormValidator {
   static String? validateRemoteHostField(String? value) {
     final strings = AppLocalizations.of(App.navState.currentContext!)!;
     String valid =
-        r'^(?:(?:[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?\.)+[a-zA-Z]{2,}|localhost|(?:\d{1,3}\.){3}\d{1,3}|(?:[a-fA-F0-9]{1,4}:){7}[a-fA-F0-9]{1,4})$';
+        r'^(?:(?:[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?\.)*[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)$';
     if (value?.isEmpty ?? true) {
       return strings.validationErrorEmptyField;
     } else if (!value!.contains(RegExp(valid))) {
