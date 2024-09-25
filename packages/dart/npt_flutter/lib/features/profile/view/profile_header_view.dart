@@ -50,7 +50,7 @@ class ProfileHeaderView extends StatelessWidget {
                 null => const Center(child: Spinner()),
                 PreferredViewLayout.minimal => CustomCard.profileHeader(
                     child: Padding(
-                      padding: const EdgeInsets.all(Sizes.p10),
+                      padding: const EdgeInsets.symmetric(vertical: Sizes.p10),
                       child: Row(
                         children: [
                           const ProfileSelectAllBox(),
