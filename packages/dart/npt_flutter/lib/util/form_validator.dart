@@ -21,6 +21,15 @@ class FormValidator {
     return null;
   }
 
+  static String? validateOptionalAtsignField(String? value) {
+    final strings = AppLocalizations.of(App.navState.currentContext!)!;
+    if (!value!.startsWith('@')) {
+      return strings.validationErrorAtsignField;
+    }
+
+    return null;
+  }
+
   static String? validateEmptyAtsignField(String? value) {
     final strings = AppLocalizations.of(App.navState.currentContext!)!;
     if (value?.isEmpty ?? true) {

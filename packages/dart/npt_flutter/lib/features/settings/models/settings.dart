@@ -38,7 +38,7 @@ class Settings extends Loggable {
   final Language language;
 
   const Settings({
-    required this.relayAtsign,
+    this.relayAtsign = '@rv_am',
     required this.overrideRelay,
     required this.viewLayout,
     this.darkMode = false,
@@ -53,7 +53,7 @@ class Settings extends Loggable {
     Language? language,
   }) {
     return Settings(
-      relayAtsign: relayAtsign ?? this.relayAtsign,
+      relayAtsign: (relayAtsign == null || relayAtsign.isEmpty) ? '@rv_am' : relayAtsign,
       overrideRelay: overrideRelay ?? this.overrideRelay,
       viewLayout: viewLayout ?? this.viewLayout,
       darkMode: darkMode ?? this.darkMode,
