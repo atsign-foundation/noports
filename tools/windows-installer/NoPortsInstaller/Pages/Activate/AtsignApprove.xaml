@@ -31,7 +31,7 @@
             </Image.OpacityMask>
         </Image>
         <Label Content="NoPorts Installation" HorizontalAlignment="Left" Height="28" VerticalAlignment="Top" Width="194" Margin="168,10,0,0" FontSize="16" FontWeight="Bold"/>
-        <Label Content="Pick a key to manage" HorizontalAlignment="Left" Height="27" VerticalAlignment="Top" Width="199" Margin="168,45,0,0"/>
+        <Label Content="Pick an atSign to manage" HorizontalAlignment="Left" Height="27" VerticalAlignment="Top" Width="199" Margin="168,45,0,0"/>
         <Button x:Name="BackPageButton" Content="&lt; Back" HorizontalAlignment="Left" Height="24" Margin="168,295,0,0" VerticalAlignment="Top" Width="52" Click="BackPageButton_Click"/>
         <Rectangle HorizontalAlignment="Left" Height="2" Margin="168,71,0,0" Stroke="Black" VerticalAlignment="Top" Width="220" Fill="Black" RenderTransformOrigin="0.5,0.5">
             <Rectangle.RenderTransform>
@@ -45,7 +45,7 @@
 
         </Rectangle>
         <Button x:Name="Next" Content="Next" HorizontalAlignment="Left" Height="24" Margin="415,295,0,0" VerticalAlignment="Top" Width="57" Click="Next_Click"/>
-        <Label Content="Manager Atsign" HorizontalAlignment="Left" Height="27" VerticalAlignment="Top" Width="199" Margin="168,75,0,0" FontSize="11"/>
+        <Label Content="Enter atSign:" HorizontalAlignment="Left" Height="27" VerticalAlignment="Top" Width="199" Margin="168,75,0,0" FontSize="11"/>
         <ComboBox x:Name="AtsignCombo" HorizontalAlignment="Left" Height="26" Margin="177,107,0,0" VerticalAlignment="Top" Width="211" IsEditable="True"  Initialized="AtsignCombo_Initialized">
         </ComboBox>
     </Grid>

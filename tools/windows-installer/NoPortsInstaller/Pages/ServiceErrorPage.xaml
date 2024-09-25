@@ -44,6 +44,7 @@
             </Rectangle.RenderTransform>
         </Rectangle>
         <TextBlock x:Name="ErrorBox" HorizontalAlignment="Left" Margin="184,86,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Height="194" Width="295"/>
+        <Label Content="Additional Logs are stored in&#xD;&#xA;%localappdata%\NoPortsInstaller\install.log" HorizontalAlignment="Left" Margin="168,238,0,0" VerticalAlignment="Top" Width="285" Height="71"/>
 
     </Grid>
 </Page>

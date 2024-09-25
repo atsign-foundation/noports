@@ -12,7 +12,7 @@ namespace NoPortsInstaller.Pages.Activate
     {
         private readonly IController _controller = App.ControllerInstance;
         private readonly Process at_activate = new();
-        private string response { get; set; }
+        private string Response { get; set; }
         public Onboard()
         {
             InitializeComponent();
@@ -23,6 +23,7 @@ namespace NoPortsInstaller.Pages.Activate
             at_activate.StartInfo.RedirectStandardInput = true;
             at_activate.StartInfo.RedirectStandardError = true;
             at_activate.StartInfo.CreateNoWindow = true;
+            Response = "";
         }
 
         private void BackPageButton_Click(object sender, RoutedEventArgs e)
@@ -101,7 +102,7 @@ namespace NoPortsInstaller.Pages.Activate
             }
         }
 
-        private bool IsProcessReady(Process process)
+        private static bool IsProcessReady(Process process)
         {
             // Check if the process has started and is ready to receive input
             return process.StandardInput.BaseStream.CanWrite;
@@ -110,8 +111,8 @@ namespace NoPortsInstaller.Pages.Activate
         private void Submit_Click(object sender, RoutedEventArgs e)
         {
             _controller.DeviceAtsign = _controller.NormalizeAtsign(Atsign.Text);
-            response = _controller.CheckAtsignStatus(_controller.DeviceAtsign);
-            if (response == "not activated")
+            Response = _controller.CheckAtsignStatus(_controller.DeviceAtsign);
+            if (Response == "not activated")
             {
                 ActivateResponseText.Content = "Check the email that was used to create the atsign \n \n Enter One Time Password (OTP):";
                 ActivateResponseText.Visibility = Visibility.Visible;
@@ -119,7 +120,7 @@ namespace NoPortsInstaller.Pages.Activate
                 Start_AtActivate(_controller.DeviceAtsign);
                 Submit.IsEnabled = false;
             }
-            else if (response == "activated")
+            else if (Response == "activated")
             {
                 ActivateResponseText.Content = "This atsign is already activated, please generate keys for this device.";
                 Generate.IsEnabled = true;
@@ -135,7 +136,7 @@ namespace NoPortsInstaller.Pages.Activate
         private void Generate_Click(object sender, RoutedEventArgs e)
         {
             string otp = $"{OtpBox1.Text}{OtpBox2.Text}{OtpBox3.Text}{OtpBox4.Text}".ToUpper();
-            if (response == "activated")
+            if (Response == "activated")
             {
                 _controller.Enroll();
                 return;

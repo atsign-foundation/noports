@@ -98,7 +98,7 @@
             </Rectangle.RenderTransform>
 
         </Rectangle>
-        <Grid x:Name="Enrollment" Margin="179,175,28,60">
+        <Grid x:Name="Enrollment" Margin="179,175,28,60" Visibility="Hidden">
             <Label Content="Device" HorizontalAlignment="Left" VerticalAlignment="Top"/>
             <Label x:Name="DeviceNameLabel" Content="Name" HorizontalAlignment="Left" Margin="85,0,0,0" VerticalAlignment="Top" Width="132" FontSize="10"/>
             <Label Content="ID" HorizontalAlignment="Left" Margin="0,26,0,0" VerticalAlignment="Top"/>

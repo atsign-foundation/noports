@@ -17,6 +17,7 @@ namespace NoPortsInstaller.Pages.Activate
         {
             InitializeComponent();
             StartLoadingAnimation();
+            Header.Content = $"Generate atKeys for {_controller.DeviceAtsign}";
             at_activate.StartInfo.FileName = Path.Combine(_controller.InstallDirectory, "at_activate.exe");
             at_activate.StartInfo.Arguments = $"enroll -a ";
             at_activate.StartInfo.UseShellExecute = false;
@@ -33,7 +34,7 @@ namespace NoPortsInstaller.Pages.Activate
             {
                 if (textBox.Text.Length == 1)
                 {
-                    // Move focus to the next TextBox
+                    // Move focus to the next TextBox.
                     switch (textBox.Name)
                     {
                         case "OtpBox1":

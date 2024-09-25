@@ -15,6 +15,7 @@ namespace NoPortsInstaller.Pages.Install
 
         private void NextPageButton_Click(object sender, RoutedEventArgs e)
         {
+            InstallLogger.DumpLog();
             Application.Current.Shutdown();
         }
     }
