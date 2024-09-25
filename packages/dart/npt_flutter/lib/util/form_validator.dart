@@ -43,11 +43,8 @@ class FormValidator {
 
   static String? validateProfileNameField(String? value) {
     final strings = AppLocalizations.of(App.navState.currentContext!)!;
-    String invalid = r'[^a-z0-9 ]';
     if (value?.isEmpty ?? true) {
       return strings.validationErrorEmptyField;
-    } else if (value!.contains(RegExp(invalid))) {
-      return strings.validationErrorProfileNameField;
     }
     return null;
   }
