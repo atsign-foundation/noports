@@ -2,8 +2,8 @@ namespace NoPortsInstaller
 {
     public class AccessEntry : IAccessEntry
     {
-        String atSign { get; set; }
-        AccessType type { get; set; }
+        public String atSign { get; set; }
+        public AccessType type { get; set; }
 
         AccessEntry()
         {
@@ -14,36 +14,38 @@ namespace NoPortsInstaller
 
     public class AccessRules : IAccessRules
     {
-        List<AccessEntry> entries { get; set; }
+        public List<AccessEntry> Entries { get; set; }
 
-        List<AccessEntry> managers
+        public List<AccessEntry> Managers
         {
-            get { return entries.FindAll(IsManager); }
+            get { return Entries.FindAll(IsManager); }
         }
 
-        AccessRules policy
+        public AccessRules Policy
         {
-            get { return entries.Find(IsPolicy); }
+            get { return Entries.Find(IsPolicy); }
         }
 
-        bool IsValid
+        public bool IsValid
         {
-            get { return entries.Count > 0; }
+            get { return Entries.Count > 0; }
         }
 
         AccessRules()
         {
-            entries = List<AccessEntry>();
+            Entries = List<AccessEntry>();
         }
 
-        void SetEntryType(String atSign, AccessType type)
+        public void SetEntryType(String atSign, AccessType type)
         {
             // Unset the current policy atSign if it exists (there can only be one)
-            if (type == AccessType.Policy)
+            if (type == AccessType.Policy && Policy != null)
             {
-                policy.type = AccessType.Manager;
+                InstallLogger.Log($"Unsetting current policy atSign: {Policy.atSign}");
+                Policy.type = AccessType.Manager;
             }
-            entries.Find(IsAtsign).type = type;
+            InstallLogger.Log($"Setting policy atSign: {atSign}");
+            Entries.Find(IsAtsign).type = type;
         }
 
         private static bool IsManager(AccessEntry entry)
