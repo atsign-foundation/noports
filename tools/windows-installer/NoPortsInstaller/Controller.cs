@@ -23,6 +23,7 @@ namespace NoPortsInstaller
         public List<Page> Pages { get; set; }
         private int index = 0;
         public Window? Window { get; set; }
+        List<AccessEntry> accessRules { get; set; }
 
         public Controller()
         {
