@@ -2,6 +2,7 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:npt_flutter/features/profile/profile.dart';
 import 'package:npt_flutter/features/settings/settings.dart';
+import 'package:npt_flutter/styles/sizes.dart';
 import 'package:npt_flutter/widgets/loader_bar.dart';
 import 'package:npt_flutter/widgets/spinner.dart';
 
@@ -21,6 +22,7 @@ class ProfileView extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               LoaderBar(),
+              gapW10,
               ProfileRefreshButton(),
             ],
           );

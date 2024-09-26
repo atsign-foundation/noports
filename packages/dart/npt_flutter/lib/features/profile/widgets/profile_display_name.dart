@@ -11,17 +11,20 @@ class ProfileDisplayName extends StatelessWidget {
   Widget build(BuildContext context) {
     return SizedBox(
       width: Sizes.p150,
-      child: BlocSelector<ProfileBloc, ProfileState, String?>(
-        selector: (ProfileState state) {
-          if (state is ProfileLoadedState) {
-            return state.profile.displayName;
-          }
-          return null;
-        },
-        builder: (BuildContext context, String? displayName) {
-          if (displayName == null) return gap0;
-          return Text(displayName);
-        },
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: BlocSelector<ProfileBloc, ProfileState, String?>(
+          selector: (ProfileState state) {
+            if (state is ProfileLoadedState) {
+              return state.profile.displayName;
+            }
+            return null;
+          },
+          builder: (BuildContext context, String? displayName) {
+            if (displayName == null) return gap0;
+            return Text(displayName);
+          },
+        ),
       ),
     );
   }

@@ -18,7 +18,6 @@ class ProfileViewSshStyle extends StatelessWidget {
       gapW10,
       ProfileStatusIndicator(),
       gapW10,
-      Spacer(),
       ProfileRunButton(),
       gapW10,
       ProfileFavoriteButton(),
