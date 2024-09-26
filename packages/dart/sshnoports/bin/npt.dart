@@ -4,7 +4,6 @@ import 'dart:io';
 
 // other packages
 import 'package:args/args.dart';
-
 // atPlatform packages
 import 'package:at_cli_commons/at_cli_commons.dart' as cli;
 import 'package:at_utils/at_utils.dart';
@@ -12,7 +11,6 @@ import 'package:duration/duration.dart';
 import 'package:noports_core/npt.dart';
 import 'package:noports_core/sshnp_foundation.dart';
 import 'package:sshnoports/src/extended_arg_parser.dart';
-
 // local packages
 import 'package:sshnoports/src/print_version.dart';
 
@@ -203,6 +201,16 @@ void main(List<String> args) async {
             ' it has started its session.',
       );
 
+      parser.addFlag(
+        'encrypt-rvd-traffic',
+        aliases: ['et'],
+        help: 'When true, traffic via the socket rendezvous is encrypted,'
+            ' in addition to whatever encryption the traffic already has'
+            ' (e.g. an ssh session)',
+        defaultsTo: DefaultArgs.encryptRvdTraffic,
+        negatable: true,
+      );
+
       // Parse Args
       ArgResults parsedArgs = parser.parse(args);
 
@@ -321,6 +329,7 @@ void main(List<String> args) async {
         inline: inline,
         daemonPingTimeout:
             Duration(seconds: int.parse(parsedArgs['daemon-ping-timeout'])),
+        encryptRvdTraffic: parsedArgs['encrypt-rvd-traffic'],
         timeout: parseDuration(timeoutArg),
       );
 
