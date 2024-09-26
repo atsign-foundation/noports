@@ -35,6 +35,7 @@ class Sizes {
   static const p43 = 43.0;
   static const p50 = 50.0;
   static const p54 = 54.0;
+
   static const p70 = 70.0;
   static const p80 = 80.0;
   // static const p99 = 99.0;
@@ -94,7 +95,7 @@ const gapH30 = SizedBox(height: Sizes.p30);
 // const gapH36 = SizedBox(height: Sizes.p36);
 const gapH40 = SizedBox(height: Sizes.p40);
 // const gapH46 = SizedBox(height: Sizes.p46);
-// const gapH60 = SizedBox(height: Sizes.p60);
+
 const gapH108 = SizedBox(height: Sizes.p108);
 
 const kWindowsMinWindowSize = Size(684, 541);
