@@ -1,13 +1,14 @@
-﻿using Microsoft.Win32;
-using NoPortsInstaller.Pages;
-using NoPortsInstaller.Pages.Activate;
-using NoPortsInstaller.Pages.Install;
-using NoPortsInstaller.Pages.Update;
-using System.Diagnostics;
+﻿using System.Diagnostics;
 using System.IO;
 using System.Security.AccessControl;
 using System.Windows;
 using System.Windows.Controls;
+using Microsoft.Win32;
+using NoPortsInstaller.Pages;
+using NoPortsInstaller.Pages.Activate;
+using NoPortsInstaller.Pages.Install;
+using NoPortsInstaller.Pages.Update;
+
 namespace NoPortsInstaller
 {
     public class Controller : IController
@@ -19,11 +20,27 @@ namespace NoPortsInstaller
         public string DeviceName { get; set; }
         public string RegionAtsign { get; set; }
         public string AdditionalArgs { get; set; }
-        public bool IsInstalled { get { return Directory.Exists(InstallDirectory); } set { } }
+        public bool IsInstalled
+        {
+            get { return Directory.Exists(InstallDirectory); }
+            set { }
+        }
         public List<Page> Pages { get; set; }
         private int index = 0;
         public Window? Window { get; set; }
         public AccessRules AccessRules { get; set; }
+
+        public string AtsignKeysDirectory
+        {
+            get
+            {
+                return Path.Combine(
+                    Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
+                    @".atsign\keys",
+                    _controller.DeviceAtsign + "_key.atKeys"
+                );
+            }
+        }
 
         public Controller()
         {
@@ -93,7 +110,9 @@ namespace NoPortsInstaller
                 {
                     binPath = registryKey.GetValue("BinPath");
                     Registry.LocalMachine.DeleteSubKey(@"SOFTWARE\NoPorts");
-                    Registry.LocalMachine.DeleteSubKey(@"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\NoPorts");
+                    Registry.LocalMachine.DeleteSubKey(
+                        @"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\NoPorts"
+                    );
                 }
 
                 await ServiceController.TryUninstall("sshnpd");
@@ -184,13 +203,15 @@ namespace NoPortsInstaller
         {
             DirectorySecurity securityRules = new();
             DirectoryInfo di;
-            securityRules.AddAccessRule(new FileSystemAccessRule("Users", FileSystemRights.Modify, AccessControlType.Allow));
+            securityRules.AddAccessRule(
+                new FileSystemAccessRule("Users", FileSystemRights.Modify, AccessControlType.Allow)
+            );
             List<string> directories =
             [
                 Path.Combine(userHome, ".sshnp"),
                 Path.Combine(userHome, ".atsign"),
                 Path.Combine(userHome, ".atsign", "keys"),
-                InstallDirectory
+                InstallDirectory,
             ];
 
             if (InstallType.Equals(InstallType.Device))
@@ -227,18 +248,20 @@ namespace NoPortsInstaller
         private void CopyIntoServiceAccount()
         {
             string sourceFile = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
-            string destinationFile = Environment.ExpandEnvironmentVariables("%systemroot%") + @"\ServiceProfiles\NetworkService\";
+            string destinationFile =
+                Environment.ExpandEnvironmentVariables("%systemroot%")
+                + @"\ServiceProfiles\NetworkService\";
             string[] sources =
             [
                 Path.Combine(sourceFile, ".ssh", "authorized_keys"),
-                Path.Combine(sourceFile, ".atsign", "keys", DeviceAtsign + "_key.atKeys")
+                Path.Combine(sourceFile, ".atsign", "keys", DeviceAtsign + "_key.atKeys"),
             ];
             InstallLogger.Log($"Creating Directories in NetworkService Account: {destinationFile}");
             CreateDirectories(destinationFile);
             string[] destinations =
             [
                 Path.Combine(destinationFile, ".ssh", "authorized_keys"),
-                Path.Combine(destinationFile, ".atsign", "keys", DeviceAtsign + "_key.atKeys")
+                Path.Combine(destinationFile, ".atsign", "keys", DeviceAtsign + "_key.atKeys"),
             ];
             for (int i = 0; i < sources.Length; i++)
             {
@@ -252,18 +275,21 @@ namespace NoPortsInstaller
                 }
                 catch
                 {
-                    throw new FileNotFoundException("No keys found. Use at_activate to onboard keys or enroll/approve this device.");
+                    throw new FileNotFoundException(
+                        "No keys found. Use at_activate to onboard keys or enroll/approve this device."
+                    );
                 }
             }
         }
 
         private async Task MoveResources()
         {
-            Dictionary<byte[], string> resources = new()
-            {
-                { Properties.Resources.at_activate, "at_activate.exe" },
-                { Properties.Resources.srv, "srv.exe" }
-            };
+            Dictionary<byte[], string> resources =
+                new()
+                {
+                    { Properties.Resources.at_activate, "at_activate.exe" },
+                    { Properties.Resources.srv, "srv.exe" },
+                };
 
             if (InstallType.Equals(InstallType.Device))
             {
@@ -291,7 +317,10 @@ namespace NoPortsInstaller
                 }
             }
             InstallLogger.Log("Adding NoPorts to PATH...");
-            var newValue = Environment.GetEnvironmentVariable("PATH", EnvironmentVariableTarget.Machine) + ";" + InstallDirectory;
+            var newValue =
+                Environment.GetEnvironmentVariable("PATH", EnvironmentVariableTarget.Machine)
+                + ";"
+                + InstallDirectory;
             Environment.SetEnvironmentVariable("PATH", newValue, EnvironmentVariableTarget.Machine);
         }
 
@@ -307,15 +336,28 @@ namespace NoPortsInstaller
             {
                 InstallLogger.Log("Installing sshnpd service...");
                 status.Content = "Installing sshnpd service...";
-                await Task.Run(() =>
-                    ServiceController.InstallAndStart("sshnpd", "sshnpd", InstallDirectory + @"\SshnpdService.exe")
+                await Task.Run(
+                    () =>
+                        ServiceController.InstallAndStart(
+                            "sshnpd",
+                            "sshnpd",
+                            InstallDirectory + @"\SshnpdService.exe"
+                        )
                 );
                 InstallLogger.Log($"sshnpd for {DeviceAtsign} at {DeviceName} is now running.");
                 InstallLogger.Log("Setting service options for sshnpd...");
                 status.Content = "Configuring the Windows Service...";
                 await Task.Run(() => ServiceController.SetRecoveryOptions("sshnpd"));
                 Process.Start("sc", "description sshnpd NoPorts-SSH-Daemon");
-                await Task.Run(() => ServiceController.CreateUninstaller(Path.Combine(Path.GetDirectoryName(Environment.ProcessPath)!, "NoPortsInstaller.exe u")));
+                await Task.Run(
+                    () =>
+                        ServiceController.CreateUninstaller(
+                            Path.Combine(
+                                Path.GetDirectoryName(Environment.ProcessPath)!,
+                                "NoPortsInstaller.exe u"
+                            )
+                        )
+                );
             }
             catch
             {
@@ -326,21 +368,25 @@ namespace NoPortsInstaller
 
         private static void UpdateTrustedCerts()
         {
-            var tempPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), @"Temp\trusted-certs");
+            var tempPath = Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                @"Temp\trusted-certs"
+            );
             if (!Directory.Exists(tempPath))
             {
                 Directory.CreateDirectory(tempPath);
             }
             tempPath += @"\roots.sst";
             InstallLogger.Log("Generating certificates...");
-            ProcessStartInfo startInfo = new()
-            {
-                FileName = "Certutil.exe",
-                Arguments = $"-generateSSTFromWU {tempPath}",
-                RedirectStandardOutput = true,
-                UseShellExecute = false,
-                CreateNoWindow = true
-            };
+            ProcessStartInfo startInfo =
+                new()
+                {
+                    FileName = "Certutil.exe",
+                    Arguments = $"-generateSSTFromWU {tempPath}",
+                    RedirectStandardOutput = true,
+                    UseShellExecute = false,
+                    CreateNoWindow = true,
+                };
 
             using (Process? process = Process.Start(startInfo))
             {
@@ -351,9 +397,10 @@ namespace NoPortsInstaller
             {
                 FileName = "powershell.exe",
                 Verb = "runas",
-                Arguments = $"-WindowStyle Hidden -Command \"(Get-ChildItem '{tempPath}') | Import-Certificate -CertStoreLocation Cert:\\LocalMachine\\Root\"",
+                Arguments =
+                    $"-WindowStyle Hidden -Command \"(Get-ChildItem '{tempPath}') | Import-Certificate -CertStoreLocation Cert:\\LocalMachine\\Root\"",
                 UseShellExecute = true,
-                CreateNoWindow = true
+                CreateNoWindow = true,
             };
 
             using (Process? process = Process.Start(startInfo))
@@ -383,8 +430,18 @@ namespace NoPortsInstaller
             {
                 try
                 {
-                    Directory.Delete(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), @"Temp\NoPorts"), true);
-                    RegistryKey? registryKey = Registry.LocalMachine.OpenSubKey(@"SOFTWARE\NoPorts");
+                    Directory.Delete(
+                        Path.Combine(
+                            Environment.GetFolderPath(
+                                Environment.SpecialFolder.LocalApplicationData
+                            ),
+                            @"Temp\NoPorts"
+                        ),
+                        true
+                    );
+                    RegistryKey? registryKey = Registry.LocalMachine.OpenSubKey(
+                        @"SOFTWARE\NoPorts"
+                    );
                     if (registryKey != null)
                     {
                         registryKey.DeleteValue("BinPath");
@@ -392,12 +449,9 @@ namespace NoPortsInstaller
                         registryKey.Close();
                     }
                 }
-                catch
-                {
-                }
+                catch { }
             });
         }
-
 
         /// <summary>
         /// Loads the appropriate pages based on the InstallType.
@@ -503,7 +557,6 @@ namespace NoPortsInstaller
             });
         }
 
-
         /// <summary>
         /// Populates the given ComboBox with available Atsigns.
         /// </summary>
@@ -511,20 +564,34 @@ namespace NoPortsInstaller
         public void PopulateAtsigns(ComboBox box)
         {
             List<string> files = [];
-            if (Directory.Exists(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), @".atsign\keys")))
+            if (
+                Directory.Exists(
+                    Path.Combine(
+                        Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
+                        @".atsign\keys"
+                    )
+                )
+            )
             {
-                files = [.. Directory.GetFiles(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), @".atsign\keys"), "*.atKeys", SearchOption.AllDirectories)];
+                files =
+                [
+                    .. Directory.GetFiles(
+                        Path.Combine(
+                            Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
+                            @".atsign\keys"
+                        ),
+                        "*.atKeys",
+                        SearchOption.AllDirectories
+                    ),
+                ];
             }
             foreach (var key in files)
             {
-                ComboBoxItem item = new()
-                {
-                    Content = Path.GetFileNameWithoutExtension(key).Replace("_key", "")
-                };
+                ComboBoxItem item =
+                    new() { Content = Path.GetFileNameWithoutExtension(key).Replace("_key", "") };
                 box.Items.Add(item);
             }
         }
-
 
         /// <summary>
         /// Normalizes the given Atsign by adding the '@' symbol if it is missing.
@@ -641,16 +708,26 @@ namespace NoPortsInstaller
             }
         }
 
-        static private void LogEnvironment()
+        private static void LogEnvironment()
         {
             InstallLogger.Log("Environment Variables:");
-            InstallLogger.Log($"User Home: {Environment.GetFolderPath(Environment.SpecialFolder.UserProfile)}");
-            InstallLogger.Log($"Program Files: {Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles)}");
-            InstallLogger.Log($"Local App Data: {Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData)}");
-            InstallLogger.Log($"NetworkService: {Environment.ExpandEnvironmentVariables("%systemroot%") + @"\ServiceProfiles\NetworkService\"}");
+            InstallLogger.Log(
+                $"User Home: {Environment.GetFolderPath(Environment.SpecialFolder.UserProfile)}"
+            );
+            InstallLogger.Log(
+                $"Program Files: {Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles)}"
+            );
+            InstallLogger.Log(
+                $"Local App Data: {Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData)}"
+            );
+            InstallLogger.Log(
+                $"NetworkService: {Environment.ExpandEnvironmentVariables("%systemroot%") + @"\ServiceProfiles\NetworkService\"}"
+            );
             try
             {
-                Directory.CreateDirectory(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile) + @"\.atsign");
+                Directory.CreateDirectory(
+                    Environment.GetFolderPath(Environment.SpecialFolder.UserProfile) + @"\.atsign"
+                );
             }
             catch
             {
@@ -660,7 +737,6 @@ namespace NoPortsInstaller
             InstallLogger.Log("User Information:");
             InstallLogger.Log($"Username: {Environment.UserName}");
             InstallLogger.Log($"Domain: {Environment.UserDomainName}");
-
 
             InstallLogger.Log("Operating System Information:");
             InstallLogger.Log($"OS Version: {Environment.OSVersion}");
@@ -673,9 +749,6 @@ namespace NoPortsInstaller
             InstallLogger.Log($"Process Path: {Environment.ProcessPath}");
             InstallLogger.Log($"Process is run as Admin: {Environment.IsPrivilegedProcess}");
             InstallLogger.Log($"Runtime Version:{Environment.Version}");
-
-
         }
     }
 }
-
