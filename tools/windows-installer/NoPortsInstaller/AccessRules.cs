@@ -2,7 +2,7 @@ namespace NoPortsInstaller
 {
     public class AccessEntry : IAccessEntry
     {
-        public String atSign { get; set; }
+        public string atSign { get; set; }
         public AccessType type { get; set; }
 
         AccessEntry()
@@ -14,16 +14,16 @@ namespace NoPortsInstaller
 
     public class AccessRules : IAccessRules
     {
-        public List<AccessEntry> Entries { get; set; }
+        public List<IAccessEntry> Entries { get; set; }
 
-        public List<AccessEntry> Managers
+        public List<IAccessEntry> Managers
         {
-            get { return Entries.FindAll(IsManager); }
+            get { return Entries.FindAll(entry => IsManager((AccessEntry)entry)); }
         }
 
-        public AccessRules Policy
+        public IAccessEntry? Policy
         {
-            get { return Entries.Find(IsPolicy); }
+            get { return Entries.Find(entry => IsPolicy((AccessEntry)entry)); }
         }
 
         public bool IsValid
@@ -33,10 +33,10 @@ namespace NoPortsInstaller
 
         AccessRules()
         {
-            Entries = List<AccessEntry>();
+            Entries = new();
         }
 
-        public void SetEntryType(String atSign, AccessType type)
+        public void SetEntryType(string atSign, AccessType type)
         {
             // Unset the current policy atSign if it exists (there can only be one)
             if (type == AccessType.Policy && Policy != null)
@@ -45,17 +45,12 @@ namespace NoPortsInstaller
                 Policy.type = AccessType.Manager;
             }
             InstallLogger.Log($"Setting policy atSign: {atSign}");
-            Entries.Find(IsAtsign).type = type;
+            Entries.Find(entry => entry.atSign == atSign).type = type;
         }
 
         private static bool IsManager(AccessEntry entry)
         {
             return entry.type == AccessType.Manager;
-        }
-
-        private static bool IsAtsign(String atSign)
-        {
-            return entry.atSign == atSign;
         }
 
         private static bool IsPolicy(AccessEntry entry)
