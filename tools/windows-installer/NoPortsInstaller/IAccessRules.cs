@@ -6,20 +6,20 @@ namespace NoPortsInstaller
         Policy,
     }
 
-    public class IAccessEntry
+    public interface IAccessEntry
     {
-        String atSign { get; set; }
+        string atSign { get; set; }
         AccessType type { get; set; }
     }
 
-    public class IAccessRules
+    public interface IAccessRules
     {
-        List<IAccessEntry> entries { get; set; }
-        List<IAccessEntry> managers { get; }
-        IAccessEntry policy { get; }
+        List<IAccessEntry> Entries { get; set; }
+        List<IAccessEntry> Managers { get; }
+        IAccessEntry? Policy { get; }
 
         bool IsValid { get; }
 
-        void SetEntryType(String atSign, AccessType type);
+        void SetEntryType(string atSign, AccessType type);
     }
 }

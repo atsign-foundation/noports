@@ -99,12 +99,12 @@ namespace NoPortsInstaller.Pages.Activate
 
         }
 
-        private void BackPageButton_Click(object sender, System.Windows.RoutedEventArgs e)
+        private void BackPageButton_Click(object sender, RoutedEventArgs e)
         {
             _controller.PreviousPage();
         }
 
-        private async void Generate_Click(object sender, System.Windows.RoutedEventArgs e)
+        private async void Generate_Click(object sender, RoutedEventArgs e)
         {
             string otp = $"{OtpBox1.Text}{OtpBox2.Text}{OtpBox3.Text}{OtpBox4.Text}{OtpBox5.Text}{OtpBox6.Text}".ToUpper();
             at_activate.StartInfo.Arguments = $@"enroll -a ""{_controller.DeviceAtsign}"" -s {otp} -d {_controller.DeviceName} -p noports -n ""sshnp:rw,sshrvd:rw"" -k {Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), @".atsign\keys", _controller.DeviceAtsign + "_key.atKeys")}";

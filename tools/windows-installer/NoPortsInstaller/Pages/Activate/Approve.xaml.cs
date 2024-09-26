@@ -55,7 +55,7 @@ namespace NoPortsInstaller.Pages.Activate
 
         private void FillEnrollmentRequest()
         {
-            id = _controller.GetPendingRequests();
+            id = "_controller.GetPendingRequests()";
             if (!string.IsNullOrEmpty(id))
             {
                 DeviceNameLabel.Content = _controller.DeviceName;
