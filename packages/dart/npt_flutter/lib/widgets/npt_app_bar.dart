@@ -34,18 +34,20 @@ class NptAppBar extends StatelessWidget implements PreferredSizeWidget {
                 width: Sizes.p175,
               ),
               gapH16,
-              TextButton.icon(
-                onPressed: () {
-                  Navigator.pop(context);
-                },
-                label: Text(
-                  strings.back,
-                ),
-                icon: const Icon(
-                  Icons.arrow_back_ios,
-                ),
-                style: StyleConstants.backButtonStyle,
-              ),
+              isNavigateBack
+                  ? TextButton.icon(
+                      onPressed: () {
+                        Navigator.pop(context);
+                      },
+                      label: Text(
+                        strings.back,
+                      ),
+                      icon: const Icon(
+                        Icons.arrow_back_ios,
+                      ),
+                      style: StyleConstants.backButtonStyle,
+                    )
+                  : gap0,
             ],
           ),
           gapW27,
