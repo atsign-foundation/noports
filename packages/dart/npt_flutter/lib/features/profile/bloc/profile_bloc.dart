@@ -109,8 +109,12 @@ class ProfileBloc extends LoggingBloc<ProfileEvent, ProfileState> {
   }
 
   Future<void> _onStart(ProfileStartEvent event, Emitter<ProfileState> emit) async {
-    if (state is! ProfileLoadedState || state is ProfileStarting || state is ProfileStopping || state is ProfileStarted)
+    if (state is! ProfileLoadedState ||
+        state is ProfileStarting ||
+        state is ProfileStopping ||
+        state is ProfileStarted) {
       return;
+    }
     // ProfileLoaded and ProfileFailedSave are both ProfileLoadedState
     var profile = (state as ProfileLoadedState).profile;
     emit(ProfileStarting(uuid, profile: profile));
@@ -137,7 +141,7 @@ class ProfileBloc extends LoggingBloc<ProfileEvent, ProfileState> {
     }
     var settings = currentSettingsState.settings;
 
-    void Function()? cancelSubs;
+    void Function()? cancel;
     SocketConnector? sc;
     Npt? npt;
     try {
@@ -158,26 +162,20 @@ class ProfileBloc extends LoggingBloc<ProfileEvent, ProfileState> {
         emit(ProfileStarting(uuid, profile: profile, status: err));
       });
 
-      cancelSubs = () {
+      cancel = () {
         progressSub?.cancel();
         progressSub = null;
 
         errorSub?.cancel();
         errorSub = null;
+
+        if (sc is SocketConnector) sc.close();
       };
 
-      sc = await npt
-          .runInline()
-          // Todo - make this timeout configurable from settings
-          .timeout(
-        const Duration(seconds: 10),
-        onTimeout: () {
-          return TimedOutSocketConnector();
-        },
-      );
+      sc = await npt.runInline();
 
       if (sc is TimedOutSocketConnector) {
-        cancelSubs();
+        cancel();
         emit(ProfileFailedStart(
           uuid,
           profile: profile,
@@ -188,7 +186,7 @@ class ProfileBloc extends LoggingBloc<ProfileEvent, ProfileState> {
       }
 
       if (sc.closed) {
-        cancelSubs();
+        cancel();
         emit(ProfileFailedStart(
           uuid,
           profile: profile,
@@ -202,7 +200,7 @@ class ProfileBloc extends LoggingBloc<ProfileEvent, ProfileState> {
       App.navState.currentContext?.read<ProfilesRunningCubit>().cache(uuid, sc);
       emit(ProfileStarted(uuid, profile: profile));
     } catch (err) {
-      cancelSubs?.call();
+      cancel?.call();
       emit(ProfileFailedStart(
         uuid,
         profile: profile,
@@ -211,7 +209,7 @@ class ProfileBloc extends LoggingBloc<ProfileEvent, ProfileState> {
       App.navState.currentContext?.read<ProfilesRunningCubit>().invalidate(uuid);
     } finally {
       await npt?.done;
-      cancelSubs?.call();
+      cancel?.call();
       App.navState.currentContext?.read<ProfilesRunningCubit>().invalidate(uuid);
       emit(ProfileLoaded(uuid, profile: profile));
     }

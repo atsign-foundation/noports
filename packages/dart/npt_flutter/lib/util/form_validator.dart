@@ -12,10 +12,28 @@ class FormValidator {
     return null;
   }
 
-  static String? validateAtsignField(String? value) {
+  static String? validateRequiredAtsignField(String? value) {
+    final strings = AppLocalizations.of(App.navState.currentContext!)!;
+    if (!value!.startsWith('@')) {
+      return strings.validationErrorAtsignField;
+    }
+    validateRequiredField(value);
+    return null;
+  }
+
+  static String? validateOptionalAtsignField(String? value) {
+    final strings = AppLocalizations.of(App.navState.currentContext!)!;
+    if (!value!.startsWith('@')) {
+      return strings.validationErrorAtsignField;
+    }
+
+    return null;
+  }
+
+  static String? validateEmptyAtsignField(String? value) {
     final strings = AppLocalizations.of(App.navState.currentContext!)!;
     if (value?.isEmpty ?? true) {
-      return strings.validationErrorEmptyField;
+      return null;
     } else if (!value!.startsWith('@')) {
       return strings.validationErrorAtsignField;
     }
@@ -25,11 +43,8 @@ class FormValidator {
 
   static String? validateProfileNameField(String? value) {
     final strings = AppLocalizations.of(App.navState.currentContext!)!;
-    String invalid = r'[^a-z0-9 ]';
     if (value?.isEmpty ?? true) {
       return strings.validationErrorEmptyField;
-    } else if (value!.contains(RegExp(invalid))) {
-      return strings.validationErrorProfileNameField;
     }
     return null;
   }
@@ -53,8 +68,6 @@ class FormValidator {
     var port = int.tryParse(value ?? '');
     if (value?.isEmpty ?? true) {
       return strings.validationErrorEmptyField;
-    } else if (value == '0') {
-      return null;
     } else if (port == null || !(port >= 1024 && port <= 65535)) {
       return strings.validationErrorLocalPortField;
     }
@@ -67,7 +80,7 @@ class FormValidator {
     var port = int.tryParse(value ?? '');
     if (value?.isEmpty ?? true) {
       return strings.validationErrorEmptyField;
-    } else if (port == null || !(port >= 1024 && port <= 65535)) {
+    } else if (port == null || !(port >= 1 && port <= 65535)) {
       return strings.validationErrorRemotePortField;
     }
     return null;
@@ -76,7 +89,7 @@ class FormValidator {
   static String? validateRemoteHostField(String? value) {
     final strings = AppLocalizations.of(App.navState.currentContext!)!;
     String valid =
-        r'^(?:(?:[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?\.)+[a-zA-Z]{2,}|localhost|(?:\d{1,3}\.){3}\d{1,3}|(?:[a-fA-F0-9]{1,4}:){7}[a-fA-F0-9]{1,4})$';
+        r'^(?:(?:[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?\.)*[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)$';
     if (value?.isEmpty ?? true) {
       return strings.validationErrorEmptyField;
     } else if (!value!.contains(RegExp(valid))) {
