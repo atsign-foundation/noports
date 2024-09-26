@@ -1,5 +1,3 @@
-import 'dart:developer';
-
 import 'package:npt_flutter/app.dart';
 import 'package:socket_connector/socket_connector.dart';
 
