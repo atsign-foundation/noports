@@ -5,6 +5,4 @@ structure:
   summary: SUMMARY.md
 
 redirects:
-  ssh-no-ports:
-    guides:
-      installation-guide: installation
+  ssh-no-ports/guides/installation-guide: installation/README.md
