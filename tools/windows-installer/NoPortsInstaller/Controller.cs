@@ -36,6 +36,7 @@ namespace NoPortsInstaller
             AdditionalArgs = "";
             Pages = [];
             IsInstalled = false;
+            LogEnvironment();
         }
 
         /// <summary>
@@ -205,6 +206,10 @@ namespace NoPortsInstaller
                     Directory.CreateDirectory(dir);
                     di = new DirectoryInfo(dir);
                     di.SetAccessControl(securityRules);
+                }
+                else
+                {
+                    InstallLogger.Log($"Directory already exists, skipping: {dir}");
                 }
             }
             if (InstallType.Equals(InstallType.Device))
@@ -636,34 +641,40 @@ namespace NoPortsInstaller
             }
         }
 
-        public string GetPendingRequests()
+        static private void LogEnvironment()
         {
-            using Process p = new();
-            p.StartInfo.FileName = Path.Combine(InstallDirectory, "at_activate.exe");
-            p.StartInfo.Arguments = $"list -a {DeviceAtsign}";
-            p.StartInfo.UseShellExecute = false;
-            p.StartInfo.CreateNoWindow = true;
-            p.StartInfo.RedirectStandardOutput = true;
-            p.StartInfo.RedirectStandardError = true;
-            p.Start();
-            p.WaitForExit();
-            var e = p.StandardOutput.ReadToEnd();
-            if (string.IsNullOrEmpty(e))
+            InstallLogger.Log("Environment Variables:");
+            InstallLogger.Log($"User Home: {Environment.GetFolderPath(Environment.SpecialFolder.UserProfile)}");
+            InstallLogger.Log($"Program Files: {Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles)}");
+            InstallLogger.Log($"Local App Data: {Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData)}");
+            InstallLogger.Log($"NetworkService: {Environment.ExpandEnvironmentVariables("%systemroot%") + @"\ServiceProfiles\NetworkService\"}");
+            try
             {
-                e = p.StandardError.ReadToEnd();
+                Directory.CreateDirectory(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile) + @"\.atsign");
             }
-            var lines = e.Split("\n").ToList();
-            foreach (var line in lines)
+            catch
             {
-                if (line.Contains("pending"))
-                {
-                    var segs = line.Trim().Split(" ").ToList();
-                    segs.RemoveAll(x => x == "");
-                    DeviceName = segs[3];
-                    return segs[0];
-                }
+                InstallLogger.Log("Failed to create .atsign directory in NetworkService Account.");
             }
-            return "";
+
+            InstallLogger.Log("User Information:");
+            InstallLogger.Log($"Username: {Environment.UserName}");
+            InstallLogger.Log($"Domain: {Environment.UserDomainName}");
+
+
+            InstallLogger.Log("Operating System Information:");
+            InstallLogger.Log($"OS Version: {Environment.OSVersion}");
+            InstallLogger.Log($"Machine Name: {Environment.MachineName}");
+            InstallLogger.Log($"System Directory: {Environment.SystemDirectory}");
+            InstallLogger.Log($"Is 64-bit Operating System: {Environment.Is64BitOperatingSystem}");
+            InstallLogger.Log($"Is 64-bit Process: {Environment.Is64BitProcess}");
+
+            InstallLogger.Log("Process Information:");
+            InstallLogger.Log($"Process Path: {Environment.ProcessPath}");
+            InstallLogger.Log($"Process is run as Admin: {Environment.IsPrivilegedProcess}");
+            InstallLogger.Log($"Runtime Version:{Environment.Version}");
+
+
         }
     }
 }

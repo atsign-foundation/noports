@@ -29,6 +29,5 @@ namespace NoPortsInstaller
         string NormalizeAtsign(string atsign);
         string NormalizeArgs(string args);
         string CheckAtsignStatus(string atsign);
-        string GetPendingRequests();
     }
 }
