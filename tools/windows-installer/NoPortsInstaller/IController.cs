@@ -15,6 +15,7 @@ namespace NoPortsInstaller
         bool IsInstalled { get; set; }
         List<Page> Pages { get; set; }
         Window? Window { get; set; }
+        public string AtsignKeysDirectory { get; }
 
         Task Install(ProgressBar progress, Label status);
         Task Uninstall(ProgressBar progress);
