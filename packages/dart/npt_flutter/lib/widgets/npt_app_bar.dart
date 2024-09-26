@@ -27,13 +27,13 @@ class NptAppBar extends StatelessWidget implements PreferredSizeWidget {
         children: [
           Column(
             children: [
-              gapH40,
+              gapH16,
               SvgPicture.asset(
                 'assets/noports_logo.svg',
                 height: Sizes.p54,
                 width: Sizes.p175,
               ),
-              gapH25,
+              gapH16,
               TextButton.icon(
                 onPressed: () {
                   Navigator.pop(context);
@@ -72,6 +72,7 @@ class NptAppBar extends StatelessWidget implements PreferredSizeWidget {
       ),
       actions: [
         IconButton(
+          padding: const EdgeInsets.only(bottom: Sizes.p30),
           color: settingsSelectedColor,
           icon: const Icon(Icons.settings_outlined),
           onPressed: () {
