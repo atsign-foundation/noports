@@ -3,3 +3,6 @@ root: ./docs
 structure:
   readme: README.md
   summary: SUMMARY.md
+
+redirects:
+  "ssh-no-ports/guides/installation-guide": installation
