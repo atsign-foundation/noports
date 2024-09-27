@@ -1,4 +1,5 @@
 <script>
+    import NPUtils from './utils.js';
     import {onMount} from 'svelte';
     import {fade} from 'svelte/transition';
     import InPlaceEdit from './InPlaceEdit.svelte'
@@ -28,10 +29,10 @@
     }
 
     function bgForEvent(eventData) {
-        if (eventData.type === 'DaemonHeartbeat') {
+        if (eventData.type === 'DeviceInfo') {
             return 'lightblue';
         } else if (eventData.type === 'PolicyCheck') {
-            if (eventData.authorized) {
+            if (eventData.payload.authorized) {
                 return 'mediumseagreen';
             } else {
                 return 'palevioletred'
@@ -42,11 +43,11 @@
     }
 
     function detailsForEvent(eventData) {
-        if (eventData.type === 'DaemonHeartbeat') {
-            return '';
+        if (eventData.type === 'DeviceInfo') {
+            return 'Heartbeat';
         } else if (eventData.type === 'PolicyCheck') {
-            return 'User: ' + eventData.user
-                + ';  PermitOpen: ' + eventData.permitOpen;
+            return 'User: ' + eventData.payload.userAtsign
+                + ';  PermitOpen: ' + eventData.payload.permitOpen;
         } else {
             return JSON.stringify(eventData);
         }
@@ -62,8 +63,6 @@
             // groups = groups;
         }
     }
-
-    let baseUrl = '/';
 
     function displayStatus(msg, isError, t) {
         if (!t) {
@@ -86,29 +85,10 @@
         }
     }
 
-    async function loadData(url) {
-        const res = await fetch(baseUrl + url);
-        const resText = await res.text();
-        if (!res.ok) {
-            if (resText) {
-                throw new Error(resText);
-            } else {
-                throw new Error(`${res.statusText}`);
-            }
-        }
-
-        console.log(resText);
-
-        let obj = JSON.parse(resText);
-        console.log('Length: ', obj.length, 'Values: ', obj.values(), 'Object: ', obj);
-
-        return obj;
-    }
-
     async function updateGroup(group) {
         displayStatus('Saving group data ... ');
         try {
-            await saveData('PUT', 'group/' + group.id, group);
+            await NPUtils.saveData('PUT', '/api/policy/group/' + group.id, group);
             displayStatus('Saving group data ... saved');
         } catch (error) {
             displayStatus(error.message, true);
@@ -118,7 +98,7 @@
     async function createGroup(group) {
         displayStatus('Creating new group ... ');
         try {
-            group = await saveData('POST', 'group', group);
+            group = await NPUtils.saveData('POST', '/api/policy/group', group);
             displayStatus('Creating new group ... done');
             groups.push(group);
             groups = groups;
@@ -127,49 +107,10 @@
         }
     }
 
-    async function saveData(method, url, obj) {
-        const res = await fetch(baseUrl + 'api/policy/' + url, {
-            method: method,
-            headers: {
-                Accept: 'application.json',
-                'Content-Type': 'application/json; charset=UTF-8'
-            },
-            body: JSON.stringify(obj),
-            cache: 'default'
-        });
-        const resText = await res.text();
-        if (!res.ok) {
-            if (resText) {
-                throw new Error(resText);
-            } else {
-                throw new Error(`${res.statusText}`);
-            }
-        }
-        return JSON.parse(resText);
-    }
-
-    async function deleteData(url) {
-        const res = await fetch(baseUrl + 'api/policy/' + url, {
-            method: 'DELETE',
-            headers: {
-                Accept: 'application.json',
-                'Content-Type': 'application/json; charset=UTF-8'
-            },
-        });
-        const resText = await res.text();
-        if (!res.ok) {
-            if (resText) {
-                throw new Error(resText);
-            } else {
-                throw new Error(`${res.statusText}`);
-            }
-        }
-    }
-
     async function deleteGroup(group) {
         try {
             displayStatus('Deleting group ...');
-            await deleteData('group/' + group.id);
+            await NPUtils.deleteData('/api/policy/group/' + group.id);
             displayStatus('Deleting group ... done');
             groups.splice(groups.indexOf(group), 1);
             groups = groups;
@@ -180,15 +121,32 @@
 
     onMount(async () => {
         displayStatus('Loading ...')
+        let targetUri = 'n/a';
         try {
-            groups = await loadData('api/policy/group');
+            targetUri = '/api/policy/group';
+            groups = await NPUtils.loadData(targetUri);
             if (status === 'Loading ...') {
                 displayStatus('Data loaded');
             }
-            eventStream = new WebSocket("api/policy/events");
+        } catch (error) {
+            alert('Error loading from ' + targetUri + ' : ' + error.message);
+        }
+
+        try {
+            targetUri = '/api/policy/events';
+            events = await NPUtils.loadData(targetUri);
+            if (status === 'Loading ...') {
+                displayStatus('Data loaded');
+            }
+        } catch (error) {
+            alert('Error loading from ' + targetUri + ' : ' + error.message);
+        }
+
+        try {
+            targetUri = '/api/policy/ws';
+            eventStream = new WebSocket(targetUri);
 
             eventStream.onopen = function() {
-                eventStream.send("Browser says hi");
             };
 
             eventStream.onmessage = function(event) {
@@ -197,19 +155,14 @@
                 events = events;
             };
 
-            eventStream.onclose = function(event) {
-                if (event.wasClean) {
-                    alert(`[close] Connection closed cleanly, code=${event.code} reason=${event.reason}`);
-                } else {
-                    // e.g. server process killed or network down
-                    // event.code is usually 1006 in this case
-                    alert('[close] Connection died');
-                }
+            eventStream.onclose = function (event) {
             };
 
-            eventStream.onerror = function(error) {
-                alert(error);
+            eventStream.onerror = function (error) {
+                alert('Error on websocket to ' + targetUri + ' : ' + JSON.stringify(error));
             };
+
+            return () => eventStream.close();
         } catch (error) {
             displayStatus(error.message, true);
         }
@@ -231,7 +184,7 @@
         <div class="row">
             {#key selectedGroupIndex}
                 <div class="border border-primary rounded-3" style="background-color: lightblue">
-                    <h2>Roles</h2>
+                    <h2>Permission Groups</h2>
                     <table class="table">
                         <thead>
                         <tr>
@@ -296,7 +249,7 @@
             <div class="row" in:fade={{ duration: 600 }}>
                 {#if selectedGroupIndex >= 0 && selectedGroupIndex < groups.length}
                     <div class="border border-primary rounded-3" style="background-color:cadetblue">
-                        <h3>Role: {groups[selectedGroupIndex].name}</h3>
+                        <h3>Permission Group: {groups[selectedGroupIndex].name}</h3>
                         <table class="table">
                             <thead>
                             </thead>
@@ -312,58 +265,6 @@
                             </tbody>
                         </table>
                         <div class="row">
-                            <div class="col">
-                                <h4>Device AtSigns</h4>
-                                <table class="table">
-                                    <thead>
-                                    <tr>
-                                        <th></th>
-                                        <th>atSign</th>
-                                    </tr>
-                                    </thead>
-                                    <!--suppress JSUnresolvedVariable -->
-                                    <tbody>
-                                    {#each groups[selectedGroupIndex].daemonAtSigns as daemonAtSign}
-                                        <tr>
-                                            <td>
-                                                <button type="button" class="btn btn-sm btn-outline-danger" style="font-size:10px"
-                                                        on:click={() => {
-                                                        let g = groups[selectedGroupIndex];
-                                                        g.daemonAtSigns.splice(g.daemonAtSigns.indexOf(daemonAtSign), 1);
-                                                        g.daemonAtSigns = g.daemonAtSigns;
-                                                        // trigger svelte to update the DOM
-                                                        groups = groups;
-                                                        updateGroup(g);
-                                                    }}
-                                                >Delete
-                                                </button>
-                                            </td>
-                                            <td>
-                                                <InPlaceEdit
-                                                        bind:value={daemonAtSign}
-                                                        on:submit={() => updateGroup(groups[selectedGroupIndex])}
-                                                />
-                                            </td>
-                                        </tr>
-                                    {/each}
-                                    <tr>
-                                        <td>
-                                            <button type="button" class="btn btn-sm btn-outline-success" style="font-size:10px"
-                                                    on:click={() => {
-                                                    let g = groups[selectedGroupIndex];
-                                                    g.daemonAtSigns.push('@some_atsign');
-                                                    // trigger svelte to update the DOM
-                                                    groups = groups;
-                                                    updateGroup(g);
-                                                }}
-                                            >Add
-                                            </button>
-                                        </td>
-                                        <td></td>
-                                    </tr>
-                                    </tbody>
-                                </table>
-                            </div>
                             <div class="col">
                                 <h4>Devices</h4>
                                 <table class="table">
@@ -460,78 +361,36 @@
                                 </table>
                             </div>
                             <div class="col">
-                                <h4>Device Groups</h4>
+                                <h4>Daemons</h4>
                                 <table class="table">
                                     <thead>
                                     <tr>
                                         <th></th>
-                                        <th>Name</th>
-                                        <th>Access</th>
+                                        <th>atSign</th>
                                     </tr>
                                     </thead>
                                     <!--suppress JSUnresolvedVariable -->
                                     <tbody>
-                                    {#each groups[selectedGroupIndex].deviceGroups as dg}
+                                    {#each groups[selectedGroupIndex].daemonAtSigns as daemonAtSign}
                                         <tr>
                                             <td>
                                                 <button type="button" class="btn btn-sm btn-outline-danger" style="font-size:10px"
                                                         on:click={() => {
                                                         let g = groups[selectedGroupIndex];
-                                                        g.deviceGroups.splice(g.deviceGroups.indexOf(dg), 1);
+                                                        g.daemonAtSigns.splice(g.daemonAtSigns.indexOf(daemonAtSign), 1);
+                                                        g.daemonAtSigns = g.daemonAtSigns;
                                                         // trigger svelte to update the DOM
                                                         groups = groups;
-                                                        updateGroup(groups[selectedGroupIndex]);
+                                                        updateGroup(g);
                                                     }}
                                                 >Delete
                                                 </button>
                                             </td>
                                             <td>
                                                 <InPlaceEdit
-                                                        bind:value={dg.name}
+                                                        bind:value={daemonAtSign}
                                                         on:submit={() => updateGroup(groups[selectedGroupIndex])}
                                                 />
-                                            </td>
-                                            <td>
-                                                <table>
-                                                    <thead style="display:none; border-width: 0"></thead>
-                                                    <!--suppress JSUnresolvedVariable -->
-                                                    <tbody>
-                                                    {#each dg.permitOpens as po, i}
-                                                        <tr>
-                                                            <td>
-                                                                <button type="button" class="btn btn-sm btn-outline-danger" style="font-size:10px"
-                                                                        on:click={() => {
-                                                                    dg.permitOpens.splice(dg.permitOpens.indexOf(po), 1);
-                                                                    // trigger svelte to update the DOM
-                                                                    groups = groups;
-                                                                    updateGroup(groups[selectedGroupIndex]);
-                                                                }}
-                                                                >-
-                                                                </button>
-                                                            </td>
-                                                            <td>
-                                                                <InPlaceEdit
-                                                                        bind:value={po}
-                                                                        on:submit={() => updateGroup(groups[selectedGroupIndex])}
-                                                                />
-                                                            </td>
-                                                        </tr>
-                                                    {/each}
-                                                    </tbody>
-                                                    <tr>
-                                                        <td>
-                                                            <button type="button" class="btn btn-sm btn-outline-success" style="font-size:10px"
-                                                                    on:click={() => {
-                                                                    dg.permitOpens.push('host:port');
-                                                                    // trigger svelte to update the DOM
-                                                                    groups = groups;
-                                                                    updateGroup(groups[selectedGroupIndex]);
-                                                                }}
-                                                            >+
-                                                            </button>
-                                                        </td>
-                                                    </tr>
-                                                </table>
                                             </td>
                                         </tr>
                                     {/each}
@@ -540,22 +399,116 @@
                                             <button type="button" class="btn btn-sm btn-outline-success" style="font-size:10px"
                                                     on:click={() => {
                                                     let g = groups[selectedGroupIndex];
-                                                    g.deviceGroups.push({name:'device group name', permitOpens: []});
+                                                    g.daemonAtSigns.push('@some_atsign');
                                                     // trigger svelte to update the DOM
                                                     groups = groups;
-                                                    updateGroup(groups[selectedGroupIndex]);
+                                                    updateGroup(g);
                                                 }}
-                                            >+
+                                            >Add
                                             </button>
                                         </td>
-                                        <td></td>
                                         <td></td>
                                     </tr>
                                     </tbody>
                                 </table>
                             </div>
+<!--                            <div class="col">-->
+<!--                                <h4>Device Groups</h4>-->
+<!--                                <table class="table">-->
+<!--                                    <thead>-->
+<!--                                    <tr>-->
+<!--                                        <th></th>-->
+<!--                                        <th>Name</th>-->
+<!--                                        <th>Access</th>-->
+<!--                                    </tr>-->
+<!--                                    </thead>-->
+<!--                                    &lt;!&ndash;suppress JSUnresolvedVariable &ndash;&gt;-->
+<!--                                    <tbody>-->
+<!--                                    {#each groups[selectedGroupIndex].deviceGroups as dg}-->
+<!--                                        <tr>-->
+<!--                                            <td>-->
+<!--                                                <button type="button" class="btn btn-sm btn-outline-danger" style="font-size:10px"-->
+<!--                                                        on:click={() => {-->
+<!--                                                        let g = groups[selectedGroupIndex];-->
+<!--                                                        g.deviceGroups.splice(g.deviceGroups.indexOf(dg), 1);-->
+<!--                                                        // trigger svelte to update the DOM-->
+<!--                                                        groups = groups;-->
+<!--                                                        updateGroup(groups[selectedGroupIndex]);-->
+<!--                                                    }}-->
+<!--                                                >Delete-->
+<!--                                                </button>-->
+<!--                                            </td>-->
+<!--                                            <td>-->
+<!--                                                <InPlaceEdit-->
+<!--                                                        bind:value={dg.name}-->
+<!--                                                        on:submit={() => updateGroup(groups[selectedGroupIndex])}-->
+<!--                                                />-->
+<!--                                            </td>-->
+<!--                                            <td>-->
+<!--                                                <table>-->
+<!--                                                    <thead style="display:none; border-width: 0"></thead>-->
+<!--                                                    &lt;!&ndash;suppress JSUnresolvedVariable &ndash;&gt;-->
+<!--                                                    <tbody>-->
+<!--                                                    {#each dg.permitOpens as po, i}-->
+<!--                                                        <tr>-->
+<!--                                                            <td>-->
+<!--                                                                <button type="button" class="btn btn-sm btn-outline-danger" style="font-size:10px"-->
+<!--                                                                        on:click={() => {-->
+<!--                                                                    dg.permitOpens.splice(dg.permitOpens.indexOf(po), 1);-->
+<!--                                                                    // trigger svelte to update the DOM-->
+<!--                                                                    groups = groups;-->
+<!--                                                                    updateGroup(groups[selectedGroupIndex]);-->
+<!--                                                                }}-->
+<!--                                                                >- -->
+<!--                                                                </button>-->
+<!--                                                            </td>-->
+<!--                                                            <td>-->
+<!--                                                                <InPlaceEdit-->
+<!--                                                                        bind:value={po}-->
+<!--                                                                        on:submit={() => updateGroup(groups[selectedGroupIndex])}-->
+<!--                                                                />-->
+<!--                                                            </td>-->
+<!--                                                        </tr>-->
+<!--                                                    {/each}-->
+<!--                                                    </tbody>-->
+<!--                                                    <tr>-->
+<!--                                                        <td>-->
+<!--                                                            <button type="button" class="btn btn-sm btn-outline-success" style="font-size:10px"-->
+<!--                                                                    on:click={() => {-->
+<!--                                                                    dg.permitOpens.push('host:port');-->
+<!--                                                                    // trigger svelte to update the DOM-->
+<!--                                                                    groups = groups;-->
+<!--                                                                    updateGroup(groups[selectedGroupIndex]);-->
+<!--                                                                }}-->
+<!--                                                            >+-->
+<!--                                                            </button>-->
+<!--                                                        </td>-->
+<!--                                                    </tr>-->
+<!--                                                </table>-->
+<!--                                            </td>-->
+<!--                                        </tr>-->
+<!--                                    {/each}-->
+<!--                                    <tr>-->
+<!--                                        <td>-->
+<!--                                            <button type="button" class="btn btn-sm btn-outline-success" style="font-size:10px"-->
+<!--                                                    on:click={() => {-->
+<!--                                                    let g = groups[selectedGroupIndex];-->
+<!--                                                    g.deviceGroups.push({name:'device group name', permitOpens: []});-->
+<!--                                                    // trigger svelte to update the DOM-->
+<!--                                                    groups = groups;-->
+<!--                                                    updateGroup(groups[selectedGroupIndex]);-->
+<!--                                                }}-->
+<!--                                            >+-->
+<!--                                            </button>-->
+<!--                                        </td>-->
+<!--                                        <td></td>-->
+<!--                                        <td></td>-->
+<!--                                    </tr>-->
+<!--                                    </tbody>-->
+<!--                                </table>-->
+<!--                            </div>-->
                             <div class="col">
-                                <h4>Users</h4>
+                                <h4>Members</h4>
                                 <table class="table">
                                     <thead>
                                     <tr>
@@ -629,7 +582,7 @@
                     <tr>
                         <th style="width: 16%">Timestamp</th>
                         <th style="width: 11%">Type</th>
-                        <th style="width: 11%">DaemonAtSign</th>
+                        <th style="width: 11%">DeviceAtSign</th>
                         <th style="width: 6%">Device</th>
                         <th style="width: 6%">DeviceGroup</th>
                         <th style="width: 50%">Details</th>
@@ -639,19 +592,19 @@
                 {#each events as eventData}
                     <tr>
                         <td style="background-color: {bgForEvent(eventData)}">
-                            {new Date(eventData.timestamp).toLocaleString('en-GB', {timeZoneName: 'short'})}
+                            {new Date(eventData.payload.timestamp).toLocaleString('en-GB', {timeZoneName: 'short'})}
                         </td>
                         <td style="background-color: {bgForEvent(eventData)}">
                             {eventData.type}
                         </td>
                         <td style="background-color: {bgForEvent(eventData)}">
-                            {eventData.daemon}
+                            {eventData.payload.deviceAtsign}
                         </td>
                         <td style="background-color: {bgForEvent(eventData)}">
-                            {eventData.deviceName}
+                            {eventData.payload.devicename}
                         </td>
                         <td style="background-color: {bgForEvent(eventData)}">
-                            {eventData.deviceGroupName}
+                            {eventData.payload.deviceGroupName}
                         </td>
                         <td style="background-color: {bgForEvent(eventData)}">
                             {detailsForEvent(eventData)}

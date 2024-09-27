@@ -48,4 +48,4 @@ Environment=v="-v"
 
 # The line below runs the sshnpd service, with the options set above.
 # You can edit this line to further customize the service to your needs.
-ExecStart=/usr/local/bin/sshnpd -a "$device_atsign" -m "$manager_atsign" -d "$device_name" "$delegate_policy" "$s" "$u" "$v"
+ExecStart=/usr/local/bin/sshnpd -a "$device_atsign" -m "$manager_atsign" -d "$device_name" $delegate_policy "$s" "$u" "$v"

@@ -1,6 +1,6 @@
 <#
 .SYNOPSIS
-   Installtion script for sshnpd on Windows
+   Installation script for sshnpd on Windows
 .DESCRIPTION
     Usage: universal.ps1 
 

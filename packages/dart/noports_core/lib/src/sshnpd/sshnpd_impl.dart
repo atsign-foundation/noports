@@ -8,6 +8,7 @@ import 'package:at_utils/at_logger.dart';
 import 'package:dartssh2/dartssh2.dart';
 import 'package:logging/logging.dart';
 import 'package:meta/meta.dart';
+import 'package:noports_core/admin.dart';
 import 'package:noports_core/src/common/features.dart';
 import 'package:noports_core/src/common/openssh_binary_path.dart';
 import 'package:noports_core/src/srv/srv.dart';
@@ -84,7 +85,7 @@ class SshnpdImpl implements Sshnpd {
 
   AuthChecker? authChecker;
 
-  late final Map<String, dynamic> pingResponse;
+  late final DeviceInfo pingResponse;
 
   final List<String> permitOpen;
 
@@ -124,20 +125,24 @@ class SshnpdImpl implements Sshnpd {
       );
     }
 
-    pingResponse = {
-      'devicename': device,
-      'deviceGroupName': deviceGroup,
-      'version': version,
-      'corePackageVersion': packageVersion,
-      'supportedFeatures': {
+    pingResponse = DeviceInfo(
+      deviceAtsign: deviceAtsign,
+      devicename: device,
+      deviceGroupName: deviceGroup,
+      version: version,
+      corePackageVersion: packageVersion,
+      supportedFeatures: {
         DaemonFeature.srAuth.name: true,
         DaemonFeature.srE2ee.name: true,
         DaemonFeature.acceptsPublicKeys.name: addSshPublicKeys,
         DaemonFeature.supportsPortChoice.name: true,
         DaemonFeature.adjustableTimeout.name: true,
       },
-      'allowedServices': permitOpen,
-    };
+      allowedServices: permitOpen,
+      policyAtsign: policyManagerAtsign,
+      timestamp: DateTime.now().millisecondsSinceEpoch,
+      status: 'Active',
+    );
   }
 
   static Future<Sshnpd> fromCommandLineArgs(
@@ -1185,11 +1190,11 @@ class SshnpdImpl implements Sshnpd {
           value: value, notificationExpiry: ttln),
       checkForFinalDeliveryStatus: checkForFinalDeliveryStatus,
       waitForFinalDeliveryStatus: waitForFinalDeliveryStatus,
-      onSuccess: (notification) {
-        logger.info('SUCCESS:$notification for: $sessionId with value: $value');
+      onSuccess: (notificationResult) {
+        logger.info('SUCCESS:$notificationResult for: $sessionId with value: $value');
       },
-      onError: (notification) {
-        logger.info('ERROR:$notification');
+      onError: (notificationResult) {
+        logger.info('ERROR:${notificationResult.atClientException}');
       },
     );
   }
@@ -1308,7 +1313,7 @@ class SshnpdImpl implements Sshnpd {
           ..isEncrypted = true
           ..namespaceAware = true);
 
-      logger.info('Sending heartbeat to policy service $policyManagerAtsign');
+      logger.info('Sending heartbeat "$atKey" to policy service $policyManagerAtsign');
 
       /// send it
       await _notify(

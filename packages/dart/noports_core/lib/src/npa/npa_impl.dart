@@ -5,6 +5,7 @@ import 'dart:io';
 import 'package:at_client/at_client.dart' hide StringBuffer;
 import 'package:at_utils/at_logger.dart';
 import 'package:logging/logging.dart';
+import 'package:noports_core/admin.dart';
 import 'package:noports_core/npa.dart';
 import 'package:noports_core/src/common/mixins/at_client_bindings.dart';
 import 'package:noports_core/utils.dart';
@@ -123,37 +124,42 @@ class NPAImpl with AtClientBindings implements NPA {
 
     NPAAuthCheckRequest authCheckRequest =
         NPAAuthCheckRequest.fromJson(request.payload);
+    NPAAuthCheckResponse authCheckResponse;
     AtRpcResp rpcResponse;
     try {
-      var authCheckResponse = await handler.doAuthCheck(authCheckRequest);
+      authCheckResponse = await handler.doAuthCheck(authCheckRequest);
       rpcResponse = AtRpcResp(
           reqId: request.reqId,
           respType: AtRpcRespType.success,
           payload: authCheckResponse.toJson());
     } catch (e, st) {
       logger.shout('Exception: $e : StackTrace : \n$st');
+      authCheckResponse = NPAAuthCheckResponse(
+        authorized: false,
+        message: 'Exception: $e',
+        permitOpen: [],
+      );
       rpcResponse = AtRpcResp(
           reqId: request.reqId,
           respType: AtRpcRespType.success,
-          payload: NPAAuthCheckResponse(
-            authorized: false,
-            message: 'Exception: $e',
-            permitOpen: [],
-          ).toJson());
+          payload: authCheckResponse.toJson());
     }
+    //       'message': pe['payload']['response']['payload']['message'],
+    //       'permitOpen': pe['payload']['response']['payload']['permitOpen'],
+    PolicyLogEvent pe = PolicyLogEvent(
+      timestamp: DateTime.now().millisecondsSinceEpoch,
+      deviceAtsign: fromAtSign,
+      policyAtsign: atClient.getCurrentAtSign(),
+      devicename: authCheckRequest.daemonDeviceName,
+      deviceGroupName: authCheckRequest.daemonDeviceGroupName,
+      clientAtsign: authCheckRequest.clientAtsign,
+      authorized: authCheckResponse.authorized,
+      message: authCheckResponse.message,
+      permitOpen: authCheckResponse.permitOpen,
+    );
     await notify(
       logKey,
-      // TODO Make a PolicyLogEvent and use PolicyLogEvent.toJson()
-      jsonEncode(
-        {
-          'daemon': fromAtSign,
-          'timestamp': DateTime.now().millisecondsSinceEpoch,
-          'payload': {
-            'request': request,
-            'response': rpcResponse,
-          }
-        },
-      ),
+      jsonEncode(pe),
       checkForFinalDeliveryStatus: false,
       waitForFinalDeliveryStatus: false,
       ttln: Duration(hours: 1),
@@ -164,7 +170,6 @@ class NPAImpl with AtClientBindings implements NPA {
   /// We're not sending any RPCs so we don't implement `handleResponse`
   @override
   Future<void> handleResponse(AtRpcResp response) {
-    // TODO: implement handleResponse
     throw UnimplementedError();
   }
 }

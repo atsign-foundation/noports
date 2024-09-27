@@ -88,7 +88,10 @@ class Handler implements NPARequestHandler {
   late final PolicyServiceWithAtClient api;
 
   Handler(this.atClient) {
-    api = PolicyServiceWithAtClient(atClient: atClient);
+    api = PolicyServiceWithAtClient(
+      policyAtSign: atClient.getCurrentAtSign()!,
+      atClient: atClient,
+    );
   }
 
   Future<void> init() async {

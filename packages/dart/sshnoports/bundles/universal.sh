@@ -47,11 +47,21 @@ unset download_url
 local_archive=""
 no_sudo=false
 quiet=false
+gui=false
 
 ### Client/ Device Install Variables
 client_atsign=""
 device_atsign=""
+device_enrollment_passcode=""
 policy_atsign=""
+
+client_cram_arg=""
+device_cram_arg=""
+policy_cram_arg=""
+
+at_directory_arg=""
+at_directory_dart_arg=""
+
 
 ### Client Install Variables
 unset magic_script
@@ -85,6 +95,10 @@ is_darwin() {
 is_systemd_available() {
   # https://superuser.com/questions/1017959/how-to-know-if-i-am-using-systemd-on-linux
   [ -d /run/systemd/system ]
+}
+
+is_xdg_open_available() {
+  [ -d /usr/bin/xdg-open ]
 }
 
 check_quiet() {
@@ -138,17 +152,23 @@ usage() {
   echo "  -q, --quiet                    Disables any printing to the terminal from the script. Ensure you are including options."
   echo
   echo "Client Options:"
-  echo "  -c, --client-atsign  <atsign>  Set the client atSign"
-  echo "  -d, --device-atsign  <atsign>  Set the device atSign"
-  echo "  -r, --region         <region>  Set the default rendezvous region (am, eu, ap)"
-  echo "      --rv-atsign      <atsign>  Set the default rendezvous atsign"
-  echo "  -l, --device-list    <names>   Set the device names for the quick picker script (comma separated)"
+  echo "  -c,  --client-atsign  <atsign>  Set the client atSign"
+  echo "  -cc, --client-cram    <cram>    Set the client atSign's initial activation key"
+  echo "  -d,  --device-atsign  <atsign>  Set the device atSign"
+  echo "  -dc, --device-cram    <cram>    Set the device atSign's initial activation key"
+  echo "  -p,  --policy-atsign  <atsign>  Set the access policy atSign"
+  echo "  -pc, --policy-cram    <cram>    Set the access policy atSign's initial activation key"
+  echo "  -r,  --region         <region>  Set the default rendezvous region (am, eu, ap)"
+  echo "       --rv-atsign      <atsign>  Set the default rendezvous atsign"
+  echo "  -l,  --device-list    <names>   Set the device names for the quick picker script (comma separated)"
+  echo "       --gui                      Run the np_admin service with web UI"
   echo
   echo "Note: only one of --region or --rv-atsign can be used"
   echo
   echo "Device Options:"
   echo "  -c,   --client-atsign  <atsign>  Set the client atSign"
   echo "  -d,   --device-atsign  <atsign>  Set the device atSign"
+  echo "  -dp,  --device-pass    <code>    Set the device atSign's enrollment passcode"
   echo "  -p,   --policy-atsign  <atsign>  Set the access policy atSign"
   echo "  -n,   --device-name    <name>    Set the device name"
   echo "  --dt, --device-type    <type>    Set the device type (launchd, systemd, tmux, headless)"
@@ -328,13 +348,29 @@ parse_args() {
         shift
         client_atsign="$1"
         ;;
+      -cc | --client-cram)
+        shift
+        client_cram_arg="-c $1"
+        ;;
       -d | --device-atsign)
         shift
         device_atsign="$1"
         ;;
+      -dc | --device-cram)
+        shift
+        device_cram_arg="-c $1"
+        ;;
+      -dp | --device-pass)
+        shift
+        device_enrollment_passcode=$1
+        ;;
       -p | --policy-atsign)
         shift
         policy_atsign="$1"
+        ;;
+      -pc | --policy-cram)
+        shift
+        policy_cram_arg="-c $1"
         ;;
       -r | --region)
         # notice that --region and --rv-atsign are basically the same under the hood,
@@ -369,6 +405,14 @@ parse_args() {
         ;;
       -q | --quiet)
         quiet=true
+        ;;
+      --gui)
+        gui=true
+        ;;
+      --at-directory)
+        shift
+        at_directory_arg="-r $1"
+        at_directory_dart_arg="-d $1"
         ;;
       *)
         >&2 echo "Unexpected option: $1"
@@ -676,36 +720,40 @@ check_ssh_keys() {
   # TODO we could have a more sophisticated check for other files to see if they're keys
 }
 
-validate_activation(){
-  device_output=$(echo "$(at_activate status -a $device_atsign 2>&1)")
-  device_status=$(echo $device_output | grep -oE 'returning [0-9]+' | grep -oE '[0-9]+')
+validate_activation_client_side(){
+  # disabling SC2005 because we have a trap in this script and we don't
+  # want to exit if at_activate status exits with a non-zero return code
+  # shellcheck disable=SC2005
+  device_output=$(echo "$("${bin_path}/at_activate" status -a "$device_atsign" $at_directory_arg 2>&1)")
+  device_status=$(echo "$device_output": | grep -oE 'returning [0-9]+' | grep -oE '[0-9]+')
 
-  client_output=$(echo "$(at_activate status -a $client_atsign 2>&1)")
-  client_status=$(echo $client_output | grep -oE 'returning [0-9]+' | grep -oE '[0-9]+')
+  # shellcheck disable=SC2005
+  client_output=$(echo "$("${bin_path}/at_activate" status -a "$client_atsign" $at_directory_arg 2>&1)")
+  client_status=$(echo "$client_output" | grep -oE 'returning [0-9]+' | grep -oE '[0-9]+')
 
   if [ -z "$policy_atsign" ]; then
     policy_status=0
   else
-    policy_output=$(echo "$(at_activate status -a $policy_atsign 2>&1)")
-    policy_status=$(echo $policy_output | grep -oE 'returning [0-9]+' | grep -oE '[0-9]+')
+    policy_output=$(echo "$("${bin_path}/at_activate" status -a "$policy_atsign" $at_directory_arg 2>&1)")
+    policy_status=$(echo "$policy_output" | grep -oE 'returning [0-9]+' | grep -oE '[0-9]+')
   fi
 
   if [ "$device_status" -ne 0 ]; then
     echo
     echo "Activating $device_atsign..."
     if [ "$device_status" -eq 3 ]; then
-      echo $device_output
+      echo "$device_output"
     fi
-    at_activate onboard -a $device_atsign
+    "${bin_path}/at_activate" onboard -a "$device_atsign" $device_cram_arg $at_directory_arg
   fi
 
   if [ "$client_status" -ne 0 ]; then
     echo
     echo "Activating $client_atsign.."
     if [ "$client_status" -eq 3 ]; then
-      echo $client_output
+      echo "$client_output"
     fi
-    at_activate onboard -a $client_atsign
+    "${bin_path}/at_activate" onboard -a "$client_atsign" $client_cram_arg $at_directory_arg
   fi
 
   if [ "$policy_status" -ne 0 ]; then
@@ -714,7 +762,21 @@ validate_activation(){
     if [ "$policy_status" -eq 3 ]; then
       echo "$policy_output"
     fi
-    at_activate onboard -a "$policy_atsign"
+    "${bin_path}/at_activate" onboard -a "$policy_atsign" $policy_cram_arg $at_directory_arg
+  fi
+}
+validate_activation_device_side(){
+  if [ ! -f $user_home/.atsign/keys/${device_atsign}_key.atKeys ]; then
+    echo
+    echo "Enrolling this device to $device_atsign..."
+    "${bin_path}/at_activate" enroll \
+      -a "$device_atsign" \
+      $at_directory_arg \
+      -p noports \
+      -d $device_name \
+      -s $device_enrollment_passcode \
+      -k $user_home/.atsign/keys/${device_atsign}_key.atKeys \
+      -n "sshnp:rw,sshrvd:rw"
   fi
 }
 
@@ -727,6 +789,7 @@ client() {
   "$extract_path"/sshnp/install.sh -b "$bin_path" -u "$user" npt
   "$extract_path"/sshnp/install.sh -b "$bin_path" -u "$user" srv
   "$extract_path"/sshnp/install.sh -b "$bin_path" -u "$user" at_activate
+  "$extract_path"/sshnp/install.sh -b "$bin_path" -u "$user" np_admin
 
   # check that there are some ssh keys
   check_ssh_keys
@@ -785,7 +848,7 @@ client() {
   done
 
   if [ -z "$devices" ]; then
-    if [ "$quiet" = false ]; then
+    if [ "$quiet" = false ] && [ "$gui" = false ]; then
       done_input=false
       echo "Installing a quick picker script to make it easy to connect to devices..."
       echo "Type a device name and press enter to submit it."
@@ -806,7 +869,7 @@ client() {
       done
     fi
   fi
-  validate_activation
+  validate_activation_client_side
   # write the metadata to the magic script
   write_metadata "$magic_script" "client_atsign" "$(norm_atsign "$client_atsign")"
   write_metadata "$magic_script" "device_atsign" "$(norm_atsign "$device_atsign")"
@@ -814,6 +877,14 @@ client() {
   write_metadata_array "$magic_script" "devices" "$devices"
 
   echo "Run ${bin_path}/np.sh to get your quick pick of devices to connect to."
+
+  if [ "$gui" = "true" ]; then
+    echo "starting np_admin and UI"
+    echo
+    echo "Open a web browser window to http://localhost:3000"
+    echo
+    "${bin_path}/np_admin" -a "$client_atsign" -n sshnp --device-atsigns "$device_atsign" $at_directory_dart_arg
+  fi
 }
 
 # DEVICE INSTALLATION #
@@ -880,6 +951,8 @@ device() {
     echo "$install_output"
   fi
 
+  validate_activation_device_side
+
   case "$device_install_type" in
     launchd)
       if [ -n "$policy_atsign" ]; then
@@ -895,7 +968,7 @@ device() {
         "-d" "$device_name" "-su" \
         "$policy_option" "$policy_atsign"
 
-      launchctl unload "$launchd_plist"
+      launchctl unload "$launchd_plist" || echo 'nothing to unload'
       launchctl load "$launchd_plist"
       echo "sshnpd installed with launchd"
       ;;
@@ -924,7 +997,9 @@ device() {
         write_metadata "$shell_script" "delegate_policy" "-p $(norm_atsign "$policy_atsign")"
       fi
       # split install output by lines, then grab the output after the line that says "To start immediately"
-      eval "$(echo "$install_output" | grep -A1 "To start .* immediately:" | tail -n1)"
+      theCommand="$(echo "$install_output" | grep -A1 "To start .* immediately:" | tail -n1)"
+      echo "Starting $theCommand"
+      eval "$theCommand"
       ;;
   esac
   if ! check_cmd sshd; then
@@ -953,8 +1028,11 @@ main() {
   get_user_inputs
   case "$install_type" in
     client) client ;;
-    device) device ;;
+    device)device ;;
   esac
+
+  echo
+  echo "Installation complete"
 }
 
 main "$@"

@@ -5,6 +5,151 @@ import 'package:alfred/alfred.dart';
 import 'package:at_client/at_client.dart';
 import 'package:noports_core/admin.dart';
 
+// ignore: implementation_imports
+import 'package:alfred/src/type_handlers/websocket_type_handler.dart';
+import 'package:noports_core/sshnp_foundation.dart';
+
+admin(
+  Alfred app,
+  String pathPrefix,
+  PolicyService api,
+  List<String> deviceAtsigns,
+  String atDirectory,
+) {
+  // Track connected clients
+  var users = <WebSocket>[];
+
+  var atSignMap = {};
+
+  atSignMap[api.policyAtSign] = {
+    'atSign': api.policyAtSign,
+    'status': 'Activated',
+  };
+  for (String das in deviceAtsigns) {
+    atSignMap[das] = {
+      'atSign': das,
+      'status': 'Activated',
+    };
+  }
+
+  // WebSocket chat relay implementation
+  app.get('$pathPrefix/ws', (req, res) {
+    final uri = '$pathPrefix/ws';
+    return WebSocketSession(
+      onOpen: (ws) {
+        stderr.writeln('Opening $uri websocket');
+        users.add(ws);
+      },
+      onClose: (ws) {
+        stderr.writeln('Closing $uri websocket');
+        users.remove(ws);
+      },
+      onMessage: (ws, dynamic data) async {
+        stderr.writeln('Received $data on the $uri websocket');
+      },
+    );
+  });
+
+  app.get('$pathPrefix/info', (req, res) async {
+    final rd = [];
+    for (String das in deviceAtsigns) {
+      rd.add(atSignMap[das]);
+    }
+    final r = jsonEncode({
+      'policyAtsign': atSignMap[api.policyAtSign],
+      'deviceAtsigns': rd,
+    });
+    stderr.writeln('Sent info: $r');
+    return r;
+  });
+
+  app.get('$pathPrefix/devices', (req, res) async {
+    final r = jsonEncode(await api.getDevices());
+    stderr.writeln('Sent devices');
+    return r;
+  });
+
+  String activateCommand;
+  String? firstActivateArg;
+  if (Platform.executable.endsWith('np_admin')) {
+    // Production usage - we're using the compiled binary
+    final executableLocation =
+    (Platform.resolvedExecutable.split(Platform.pathSeparator)
+      ..removeLast())
+        .join(Platform.pathSeparator);
+    activateCommand = Directory(
+        [executableLocation, 'at_activate'].join(Platform.pathSeparator))
+        .toString();
+  } else {
+    // TODO Maybe do something smarter here, but this is for dev purposes only
+    activateCommand = 'dart';
+    firstActivateArg = 'bin/activate_cli.dart';
+  }
+
+  Future<String> generateEnrollPasscode(String deviceAtsign) async {
+    return '23ab45cd';
+    // List<String> args = [];
+    // if (firstActivateArg != null) {
+    //   args.add(firstActivateArg);
+    // }
+    // args.addAll('-a $deviceAtsign -r $atDirectory'.split(' '));
+    // final pr = Process.runSync(activateCommand, args);
+    // stderr.writeln('generateOtp stderr: ${pr.stderr}');
+    // stderr.writeln('generateOtp stdout: ${pr.stdout}');
+    // return pr.stdout;
+  }
+
+  String generateInstallCommand(String enrollPasscode, DeviceInfo di) {
+    return './universal.sh '
+        ' --local build/sshnp.zip -t device'
+        ' -c ${api.policyAtSign} -p ${api.policyAtSign} -d ${di.deviceAtsign} -n ${di.devicename}'
+        ' -dp $enrollPasscode'
+        ' --at-directory vip.ve.atsign.zone --device-type headless';
+  }
+
+  app.post('$pathPrefix/devices', (req, res) async {
+    Map b = await req.body as Map;
+    stderr.writeln(b);
+
+    DeviceInfo di = DeviceInfo(
+      timestamp: DateTime.now().millisecondsSinceEpoch,
+      deviceAtsign: b['deviceAtsign'],
+      policyAtsign: b['policyAtsign'],
+      devicename: b['devicename'],
+      deviceGroupName:
+          b['deviceGroupName'] ?? DefaultSshnpdArgs.deviceGroupName,
+      version: '0.0.0',
+      corePackageVersion: '0.0.0',
+      supportedFeatures: {},
+      allowedServices: [],
+      status: 'Pending',
+    );
+
+    try {
+      await api.createDevice(di);
+      stderr.writeln('Created device ${di.devicename}');
+
+      String otp = await generateEnrollPasscode(di.deviceAtsign);
+      return jsonEncode({
+        'command': generateInstallCommand(otp, di)
+      });
+    } catch (e) {
+      res.statusCode = 400;
+      await res.send(e.toString());
+    }
+  });
+
+  app.delete('$pathPrefix/devices', (req, res) async {
+    await api.deleteDevices();
+  });
+
+  api.eventStream.listen((s) {
+    for (final u in users) {
+      u.send(s);
+    }
+  });
+}
+
 policy(Alfred app, String pathPrefix, PolicyService api) {
   // policy log events
   app.get('$pathPrefix/logs', (req, res) async {
@@ -96,5 +241,36 @@ policy(Alfred app, String pathPrefix, PolicyService api) {
     }
   });
 
-  app.printRoutes();
+  // Track connected clients
+  var users = <WebSocket>[];
+
+  // WebSocket chat relay implementation
+  app.get('$pathPrefix/ws', (req, res) {
+    final uri = '$pathPrefix/ws';
+    return WebSocketSession(
+      onOpen: (ws) {
+        stderr.writeln('Opening $uri websocket');
+        users.add(ws);
+      },
+      onClose: (ws) {
+        stderr.writeln('Closing $uri websocket');
+        users.remove(ws);
+      },
+      onMessage: (ws, dynamic data) async {
+        stderr.writeln('Received $data on the $uri websocket');
+      },
+    );
+  });
+
+  final events = [];
+  api.eventStream.listen((s) {
+    events.insert(0, jsonDecode(s));
+    for (final u in users) {
+      u.send(s);
+    }
+  });
+
+  app.get('$pathPrefix/events', (req, res) {
+    return jsonEncode(events);
+  });
 }

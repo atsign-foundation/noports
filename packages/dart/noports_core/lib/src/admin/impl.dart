@@ -3,6 +3,7 @@ import 'dart:convert';
 
 import 'package:at_client/at_client.dart';
 import 'package:at_utils/at_logger.dart';
+import 'package:meta/meta.dart';
 import 'package:noports_core/admin.dart';
 import 'package:noports_core/sshnp_foundation.dart';
 
@@ -14,6 +15,7 @@ class PolicyServiceWithAtClient extends PolicyServiceInMem
   final AtClient atClient;
 
   PolicyServiceWithAtClient({
+    required super.policyAtSign,
     required this.atClient,
   });
 
@@ -21,12 +23,26 @@ class PolicyServiceWithAtClient extends PolicyServiceInMem
   Future<void> init() async {
     await super.init();
 
-    atClient.notificationService
-        .subscribe(
+    logger.shout('Loading groups via AtClient');
+    // Fetch all the groups
+    List<AtKey> groupKeys = await atClient.getAtKeys(
+        regex: '.*.groups.policy.sshnp', sharedBy: policyAtSign);
+    for (final AtKey groupKey in groupKeys) {
+      logger.shout('Loading group from atKey: $groupKey');
+      final v = await atClient.get(
+        groupKey,
+        getRequestOptions: GetRequestOptions()..useRemoteAtServer = true,
+      );
+      UserGroup g = UserGroup.fromJson(jsonDecode(v.value));
+      logger.shout('Loaded $groupKey - group name is (${g.name})');
+      groups[g.id!] = g;
+    }
+    logger.shout('Completed groups load');
+
+    subscribe(
       regex: r'.*\.groups\.policy\.sshnp',
       shouldDecrypt: true,
-    )
-        .listen((AtNotification n) {
+    ).listen((AtNotification n) {
       String groupId = n.key.split(':')[1].split('.').first;
       logger.info(
           'Received ${n.operation} notification for group ${n.key} - ID is $groupId');
@@ -38,53 +54,86 @@ class PolicyServiceWithAtClient extends PolicyServiceInMem
       }
     });
 
-    subscribe(
-      regex: r'.*\.logs\.policy\.sshnp',
-      shouldDecrypt: true,
-    ).listen((AtNotification n) {
-      logger.shout(
-          'Received policy log notification from ${jsonDecode(n.value!)['daemon']}');
-      // TODO Make a PolicyLogEvent and use PolicyLogEvent.fromJson()
-      onPolicyLogEvent(n.value!);
-    });
+    logger.shout('Loading device infos via AtClient');
+    // Fetch all the devices
+    List<AtKey> diKeys = await atClient.getAtKeys(
+        regex: '.*.devices.policy.sshnp', sharedBy: policyAtSign);
+    for (final AtKey diKey in diKeys) {
+      logger.shout('Loading device from atKey: $diKey');
+      final v = await atClient.get(
+        diKey,
+        getRequestOptions: GetRequestOptions()..useRemoteAtServer = true,
+      );
+      DeviceInfo di = DeviceInfo.fromJson(jsonDecode(v.value));
+      logger.shout('Loaded $diKey - device name is (${di.devicename})');
+      deviceInfos[di.devicename] = di;
+    }
+    logger.shout('Completed device infos load');
 
     subscribe(
       regex: r'.*\.devices\.policy\.sshnp',
       shouldDecrypt: true,
     ).listen((AtNotification n) {
       logger.shout('Received device heartbeat from ${n.from}');
-      // TODO Make a PolicyLogEvent and use PolicyLogEvent.fromJson()
-      final v = jsonDecode(n.value!);
-      final e = {};
-      e['timestamp'] = n.epochMillis;
-      e['daemon'] = n.from;
-      e['payload'] = v;
-      onDaemonEvent(jsonEncode(e));
+      final DeviceInfo di = DeviceInfo.fromJson(jsonDecode(n.value!));
+      deviceInfos[di.devicename] = di;
+      // and store it
+      atClient.put(
+        AtKey.fromString('${di.devicename}.devices.policy.sshnp$policyAtSign'),
+        jsonEncode(di.toJson()),
+      );
+      onDeviceInfo(di);
     });
 
-    logger.shout('Loading groups via AtClient');
-    // Fetch all the groups
-    List<AtKey> groupKeys = await atClient.getAtKeys(
-        regex: '.*.groups.policy.sshnp', sharedBy: atClient.getCurrentAtSign());
-    for (final AtKey groupKey in groupKeys) {
-      logger.shout('Loading group from atKey: $groupKey');
-      final v = await atClient.get(
-        groupKey,
-        getRequestOptions: GetRequestOptions()..useRemoteAtServer = true,
-      );
-      UserGroup g = UserGroup.fromJson(jsonDecode(v.value));
-      logger.shout('Loaded $groupKey - group name is (${g.name})');
-      groups[g.id!] = g;
-    }
-    logger.shout('Load complete');
+    subscribe(
+      regex: r'.*\.logs\.policy\.sshnp',
+      shouldDecrypt: true,
+    ).listen((AtNotification n) {
+      logger.shout(
+          'Received policy log notification from ${jsonDecode(n.value!)['daemon']}');
+      onPolicyLogEvent(PolicyLogEvent.fromJson(jsonDecode(n.value!)));
+    });
   }
 
   String _groupKey(String id) {
-    return '$id.groups.policy.sshnp${atClient.getCurrentAtSign()!}';
+    return '$id.groups.policy.sshnp$policyAtSign';
   }
 
   AtKey _groupAtKey(String id) {
     return AtKey.fromString(_groupKey(id));
+  }
+
+  @override
+  @mustBeOverridden
+  Future<DeviceInfo> createDevice(DeviceInfo di) async {
+    await super.createDevice(di);
+
+    // persist in the atServer
+    await atClient.put(
+      AtKey.fromString('${di.devicename}.devices.policy.sshnp$policyAtSign'),
+      jsonEncode(di.toJson()),
+      putRequestOptions: PutRequestOptions()..useRemoteAtServer = true,
+    );
+
+    await onDeviceInfo(di);
+
+    return di;
+  }
+
+  @override
+  Future<void> deleteDevices() async {
+    List<AtKey> diKeys = await atClient.getAtKeys(
+        regex: '.*.devices.policy.sshnp', sharedBy: policyAtSign);
+    for (final AtKey diKey in diKeys) {
+      logger.shout('Deleting $diKey');
+      await atClient.delete(
+        diKey,
+        deleteRequestOptions: DeleteRequestOptions()..useRemoteAtServer = true,
+      );
+    }
+    logger.shout('Completed device infos load');
+
+    await super.deleteDevices();
   }
 
   @override
@@ -101,8 +150,7 @@ class PolicyServiceWithAtClient extends PolicyServiceInMem
     );
     await atClient.notificationService.notify(
       NotificationParams.forUpdate(
-        AtKey.fromString(
-            '${atClient.getCurrentAtSign()}:${_groupAtKey(group.id!)}'),
+        AtKey.fromString('$policyAtSign:${_groupAtKey(group.id!)}'),
         value: jsonEncode(group),
       ),
     );
@@ -122,8 +170,7 @@ class PolicyServiceWithAtClient extends PolicyServiceInMem
     );
     await atClient.notificationService.notify(
       NotificationParams.forUpdate(
-        AtKey.fromString(
-            '${atClient.getCurrentAtSign()}:${_groupAtKey(group.id!)}'),
+        AtKey.fromString('$policyAtSign:${_groupAtKey(group.id!)}'),
         value: jsonEncode(group),
       ),
     );
@@ -138,7 +185,7 @@ class PolicyServiceWithAtClient extends PolicyServiceInMem
     );
     await atClient.notificationService.notify(
       NotificationParams.forDelete(
-        AtKey.fromString('${atClient.getCurrentAtSign()}:${_groupAtKey(id)}'),
+        AtKey.fromString('$policyAtSign:${_groupAtKey(id)}'),
       ),
     );
     return groups.remove(id) != null;
@@ -147,13 +194,21 @@ class PolicyServiceWithAtClient extends PolicyServiceInMem
 
 class PolicyServiceInMem implements PolicyService {
   @override
+  final String policyAtSign;
+
+  PolicyServiceInMem({required this.policyAtSign});
+
+  @override
   Future<void> init() async {}
 
   @override
   final Map<String, UserGroup> groups = {};
 
   @override
-  final List<dynamic> logEvents = [];
+  final Map<String, DeviceInfo> deviceInfos = {};
+
+  @override
+  final List<PolicyLogEvent> logEvents = [];
 
   int _maxGroupId() {
     int i = 0;
@@ -166,32 +221,19 @@ class PolicyServiceInMem implements PolicyService {
     return i;
   }
 
-  Future<void> onDaemonEvent(json) async {
-    final de = jsonDecode(json);
+  Future<void> onDeviceInfo(DeviceInfo di) async {
     final e = {
-      'timestamp': de['timestamp'],
-      'type': 'DaemonHeartbeat',
-      'daemon': de['daemon'],
-      'deviceName': de['payload']['devicename'],
-      'deviceGroupName': de['payload']['deviceGroupName'],
+      'type': 'DeviceInfo',
+      'payload': di,
     };
     esc.add(jsonEncode(e));
   }
 
-  Future<void> onPolicyLogEvent(json) async {
-    final pe = jsonDecode(json);
+  Future<void> onPolicyLogEvent(PolicyLogEvent pe) async {
     logEvents.add(pe);
     final e = {
-      'timestamp': pe['timestamp'],
       'type': 'PolicyCheck',
-      'daemon': pe['daemon'],
-      'deviceName': pe['payload']['request']['payload']['daemonDeviceName'],
-      'deviceGroupName': pe['payload']['request']['payload']
-          ['daemonDeviceGroupName'],
-      'user': pe['payload']['request']['payload']['clientAtsign'],
-      'authorized': pe['payload']['response']['payload']['authorized'],
-      'message': pe['payload']['response']['payload']['message'],
-      'permitOpen': pe['payload']['response']['payload']['permitOpen'],
+      'payload': pe,
     };
     esc.add(jsonEncode(e));
   }
@@ -204,11 +246,10 @@ class PolicyServiceInMem implements PolicyService {
   }
 
   @override
-  Future<List<dynamic>> getLogEvents(
+  Future<List<PolicyLogEvent>> getLogEvents(
       {required int from, required int to}) async {
     return List.from(logEvents.where((event) {
-      int ts = event['timestamp'];
-      return (ts >= from && ts <= to);
+      return (event.timestamp >= from && event.timestamp <= to);
     }));
   }
 
@@ -219,6 +260,25 @@ class PolicyServiceInMem implements PolicyService {
 
   @override
   Future<List<UserGroup>> getUserGroups() async => List.from(groups.values);
+
+  @override
+  @mustBeOverridden
+  @mustCallSuper
+  Future<DeviceInfo> createDevice(DeviceInfo di) async {
+    if (deviceInfos.containsKey(di.devicename)) {
+      throw IllegalArgumentException(
+          'Device with name ${di.devicename} already exists');
+    }
+    deviceInfos[di.devicename] = di;
+
+    return di;
+  }
+
+  @override
+  Future<List<DeviceInfo>> getDevices() async => List.from(deviceInfos.values);
+
+  @override
+  Future<void> deleteDevices() async => deviceInfos.clear();
 
   @override
   Future<UserGroup> createUserGroup(UserGroup group) async {

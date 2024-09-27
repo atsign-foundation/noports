@@ -7,7 +7,7 @@ class MockAtClient extends Mock implements AtClient {}
 
 void main() {
   group('core create retrieve update delete', () {
-    final api = PolicyService.inMemory();
+    final api = PolicyService.inMemory(policyAtSign: '@policy');
 
     setUp(() async {
       expect(api.groups, isEmpty);

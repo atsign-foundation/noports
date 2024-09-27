@@ -2,19 +2,30 @@ import 'dart:io';
 
 import 'package:admin_api/src/expose_apis.dart' as expose;
 import 'package:alfred/alfred.dart';
-import 'package:alfred/src/type_handlers/websocket_type_handler.dart';
+import 'package:args/args.dart';
 import 'package:at_cli_commons/at_cli_commons.dart';
 import 'package:noports_core/admin.dart';
 
 void main(List<String> args) async {
+  ArgParser parser = CLIBase.argsParser;
+  parser.addOption(
+    'device-atsigns',
+    aliases: ['das'],
+    help: 'comma-separated list of device atSigns',
+    mandatory: false,
+    defaultsTo: '',
+  );
   CLIBase cli = await CLIBase.fromCommandLineArgs(args);
-  final api = PolicyService.withAtClient(atClient: cli.atClient);
+  final api = PolicyService.withAtClient(
+    policyAtSign: cli.atSign,
+    atClient: cli.atClient,
+  );
   await api.init();
 
   // await _createGroups(api); // useful for testing
+  await api.deleteDevices(); // TODO Remove
 
   final app = Alfred();
-  app.all('*', cors(origin: 'http://localhost:5173'));
   if (Platform.executable.endsWith('np_admin')) {
     // Production usage - we're using the compiled binary
     final executableLocation =
@@ -23,39 +34,26 @@ void main(List<String> args) async {
             .join(Platform.pathSeparator);
     final dir = Directory(
         [executableLocation, 'web', 'admin'].join(Platform.pathSeparator));
-    print ('Will serve webapp from $dir');
+    print('Will serve webapp from $dir');
     app.get('/*', (req, res) => dir);
   } else {
     // TODO Maybe do something smarter here, but this is for dev purposes only
     final dir = Directory('../../../apps/admin/webapp/dist');
-    print ('Will serve webapp from ${dir.absolute}');
+    print('Will serve webapp from ${dir.absolute}');
     app.get('/*', (req, res) => dir);
   }
+
   await expose.policy(app, '/api/policy', api);
 
-  // Track connected clients
-  var users = <WebSocket>[];
+  final parsedArgs = parser.parse(args);
+  final deviceAtsigns = parsedArgs['device-atsigns']
+      .toString()
+      .split(',')
+      .map((e) => e.trim().toLowerCase())
+      .toList();
+  await expose.admin(app, '/api/admin', api, deviceAtsigns, parsedArgs['root-domain']);
 
-  // WebSocket chat relay implementation
-  app.get('/api/policy/events', (req, res) {
-    return WebSocketSession(
-      onOpen: (ws) {
-        users.add(ws);
-      },
-      onClose: (ws) {
-        users.remove(ws);
-      },
-      onMessage: (ws, dynamic data) async {
-        stderr.writeln('Received $data on the events websocket');
-      },
-    );
-  });
-
-  api.eventStream.listen((s) {
-    for (final u in users) {
-      u.send(s);
-    }
-  });
+  app.printRoutes();
 
   await app.listen();
 }

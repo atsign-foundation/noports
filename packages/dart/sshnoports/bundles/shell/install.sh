@@ -77,6 +77,7 @@ usage() {
   echo "sshnpd          - install sshnpd"
   echo "srv             - install srv"
   echo "srvd            - install srvd"
+  echo "np_admin        - install np_admin"
   echo "binaries        - install all base binaries (everything above)"
   echo ""
   echo "debug_srvd      - install srvd with debugging enabled"
@@ -115,6 +116,20 @@ setup_authorized_keys() {
 }
 
 # INSTALL BINARIES #
+
+install_web_asset() {
+  if [ -n "$binary_dir" ]; then
+    dest="$binary_dir"
+  elif is_root; then
+    dest="$bin_dir"
+  else
+    dest="$user_bin_dir"
+  fi
+  mkdir -p "$dest/web"
+  rm -rf "$dest/web/$1"
+  cp -r "$script_dir/web/$1" "$dest/web/$1"
+  echo "=> Installed $script_dir/web/$1 to $dest/web/$1"
+}
 
 install_single_binary() {
   if [ -n "$binary_dir" ]; then
@@ -171,6 +186,9 @@ install_base_binaries() {
   install_single_binary "srv"
   install_single_binary "srvd"
   install_single_binary "npt"
+
+  install_single_binary "np_admin"
+  install_web_asset "admin"
 }
 
 install_debug_binary() {
@@ -479,7 +497,13 @@ main() {
         user_home=$(sudo -u "$user" sh -c 'echo $HOME')
         shift
         ;;
-      at_activate | npt | sshnp | sshnpd | srv | srvd) install_single_binary "$1" ;;
+      at_activate | npt | sshnp | sshnpd | srv | srvd)
+        install_single_binary "$1"
+        ;;
+      np_admin)
+        install_single_binary "$1"
+        install_web_asset "admin"
+        ;;
       binaries) install_base_binaries ;;
       debug_srvd) install_debug_binary "${1#"debug_"}" ;; # strips debug_ prefix from the command input
       debug) install_debug_binaries ;;

@@ -49,5 +49,5 @@ class DefaultSshnpdArgs {
   static const String deviceGroupName = '__none__';
   static const String sshPublicKeyPermissions = "";
   static const Duration policyHeartbeatFrequency = Duration(minutes: 5);
-  static const String permitOpen ='localhost:22,localhost:3389';
+  static const String permitOpen = 'localhost:22,localhost:3389';
 }
