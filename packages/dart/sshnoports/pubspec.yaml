@@ -32,7 +32,7 @@ dependency_overrides:
       url: https://github.com/gkc/args
 
 dev_dependencies:
-  lints: ^4.0.0
+  lints: ^5.0.0
   test: ^1.25.8
   mocktail: ^1.0.4
   build_runner: ^2.4.12
