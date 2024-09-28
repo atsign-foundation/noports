@@ -1,4 +1,3 @@
-#include "atclient/request_options.h"
 #include "sshnpd/params.h"
 #include "sshnpd/permitopen.h"
 #include "sshnpd/sshnpd.h"
@@ -160,7 +159,6 @@ void handle_npt_request(atclient *atclient, pthread_mutex_t *atclient_lock, sshn
   atclient_atkey_free(&atkey);
   if (res != 0) {
     atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to get public key\n");
-    atclient_atkey_free(&atkey);
     cJSON_Delete(envelope);
     return;
   }
