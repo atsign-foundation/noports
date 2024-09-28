@@ -34,7 +34,7 @@ class _ProfileRelayAtSignTextFieldState extends State<ProfileRelayAtSignTextFiel
               decoration: const InputDecoration(
                 errorMaxLines: 2,
               ),
-              validator: FormValidator.validateAtsignField,
+              validator: FormValidator.validateEmptyAtsignField,
               onChanged: (value) {
                 var bloc = context.read<ProfileBloc>();
                 bloc.add(ProfileEditEvent(

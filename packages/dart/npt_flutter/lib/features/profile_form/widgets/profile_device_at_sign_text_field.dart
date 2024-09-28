@@ -36,7 +36,7 @@ class ProfileDeviceAtSignTextField extends StatelessWidget {
               child: TextFormField(
                   initialValue: state,
                   autovalidateMode: AutovalidateMode.onUserInteraction,
-                  validator: FormValidator.validateAtsignField,
+                  validator: FormValidator.validateRequiredAtsignField,
                   onChanged: (value) {
                     var bloc = context.read<ProfileBloc>();
                     bloc.add(ProfileEditEvent(
