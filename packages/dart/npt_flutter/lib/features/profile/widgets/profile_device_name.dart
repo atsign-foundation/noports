@@ -9,8 +9,9 @@ class ProfileDeviceName extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final deviceWidth = MediaQuery.of(context).size.width;
     return SizedBox(
-      width: Sizes.p150,
+      width: deviceWidth * Sizes.profileFieldsWidthFactor,
       child: SingleChildScrollView(
         scrollDirection: Axis.horizontal,
         child: BlocSelector<ProfileBloc, ProfileState, (String, String)?>(selector: (state) {

@@ -9,6 +9,7 @@ class DashboardPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final strings = AppLocalizations.of(context)!;
+
     return Scaffold(
       appBar: NptAppBar(
         title: strings.dashboard,

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:npt_flutter/app.dart';
 
 /// Constant sizes to be used in the app (paddings, gaps, rounded corners etc.)
 class Sizes {
@@ -61,6 +62,11 @@ class Sizes {
   static const p654 = 654.0;
   static const p664 = 664.0;
   static const p941 = 941.0;
+  // The below size factors are constants that are used to determine the height or width based on the device size.
+  static const dashboardCardHeightFactor = 489 / 691;
+  static const dashboardCardWidthFactor = 941 / 1053;
+  static const profileFieldsWidthFactor = 150 / 1053;
+  static const profileFieldsWidthFactorAlt = 300 / 1053;
 }
 
 const gap0 = SizedBox();
@@ -132,8 +138,8 @@ class SizeConfig {
       MediaQuery.of(context).size.width >= 700 && MediaQuery.of(context).size.width < 1200;
   bool isDesktop(BuildContext context) => MediaQuery.of(context).size.width >= 1200;
 
-  void init(BuildContext context) {
-    _mediaQueryData = MediaQuery.of(context);
+  void init() {
+    _mediaQueryData = MediaQuery.of(App.navState.currentContext!);
     screenWidth = _mediaQueryData.size.width;
     screenHeight = _mediaQueryData.size.height;
     refHeight = 505;
