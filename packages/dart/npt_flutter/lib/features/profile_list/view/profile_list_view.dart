@@ -53,6 +53,7 @@ class ProfileListView extends StatelessWidget {
                   alignment: Alignment.topCenter,
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                     children: [
                       CustomCard.dashboardContent(
                         height: deviceSize.height * Sizes.dashboardCardHeightFactor,
@@ -117,7 +118,6 @@ class ProfileListView extends StatelessWidget {
                           ],
                         ),
                       ),
-                      gapH16,
                       Text(
                         strings.allRightsReserved,
                         style: bodyMedium?.copyWith(fontSize: bodyMedium.fontSize?.toFont),
