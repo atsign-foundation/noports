@@ -16,6 +16,9 @@ class ProfileListView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final strings = AppLocalizations.of(context)!;
+    final deviceSize = MediaQuery.of(context).size;
+    final bodyMedium = Theme.of(context).textTheme.labelSmall;
+    SizeConfig().init();
     return BlocBuilder<ProfileListBloc, ProfileListState>(builder: (context, state) {
       return switch (state) {
         ProfileListInitial() || ProfileListLoading() => const Center(child: Spinner()),
@@ -52,6 +55,8 @@ class ProfileListView extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       CustomCard.dashboardContent(
+                        height: deviceSize.height * Sizes.dashboardCardHeightFactor,
+                        width: deviceSize.width * Sizes.dashboardCardWidthFactor,
                         child: Column(
                           children: [
                             isFullProfile
@@ -113,7 +118,10 @@ class ProfileListView extends StatelessWidget {
                         ),
                       ),
                       gapH16,
-                      Text(strings.allRightsReserved)
+                      Text(
+                        strings.allRightsReserved,
+                        style: bodyMedium?.copyWith(fontSize: bodyMedium.fontSize?.toFont),
+                      ),
                     ],
                   ),
                 ),
