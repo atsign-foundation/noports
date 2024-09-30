@@ -54,9 +54,9 @@ class CustomCard extends StatelessWidget {
         bottomBorderSide = BorderSide.none;
   const CustomCard.profileFormContent({
     required this.child,
+    this.height = Sizes.p500,
     super.key,
-  })  : height = Sizes.p450,
-        width = null,
+  })  : width = null,
         color = AppColor.cardColorDark,
         radiusTopLeft = const Radius.circular(Sizes.p20),
         radiusTopRight = const Radius.circular(Sizes.p20),
