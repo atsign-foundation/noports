@@ -1,6 +1,4 @@
-﻿using System.Diagnostics;
-using System.IO;
-using System.Windows;
+﻿using System.Windows;
 using System.Windows.Controls;
 
 namespace NoPortsInstaller.Pages.Activate
@@ -10,41 +8,33 @@ namespace NoPortsInstaller.Pages.Activate
     /// </summary>
     public partial class Approve : Page
     {
-        private readonly IController _controller = App.ControllerInstance;
-        private readonly Process at_activate = new();
+        private readonly Controller _controller = App.ControllerInstance;
         private string response { get; set; }
-        private string id { get; set; }
+        private static EnrollmentRecord? enrollmentRecord;
         public Approve()
         {
-            at_activate.StartInfo.FileName = Path.Combine(_controller.InstallDirectory, "at_activate.exe");
-            at_activate.StartInfo.Arguments = $"otp -a {_controller.DeviceAtsign}";
-            at_activate.StartInfo.UseShellExecute = false;
-            at_activate.StartInfo.RedirectStandardOutput = true;
-            at_activate.StartInfo.RedirectStandardInput = true;
-            at_activate.StartInfo.RedirectStandardError = true;
-            at_activate.StartInfo.CreateNoWindow = true;
-            at_activate.Start();
-            response = at_activate.StandardOutput.ReadToEnd();
-            at_activate.WaitForExit();
+            response = ActivateController.GenerateOTP();
             InitializeComponent();
             Header.Content = $"Generate atKeys for {_controller.DeviceAtsign}";
             FillEnrollmentRequest();
-            id = "";
         }
 
         private void ApproveButton_Click(object sender, RoutedEventArgs e)
         {
-            at_activate.StartInfo.Arguments = $"approve -a {_controller.DeviceAtsign} -i {id}";
-            at_activate.Start();
-            at_activate.WaitForExit();
+            try
+            {
+                ActivateController.Approve(enrollmentRecord!.Id);
+            }
+            catch (Exception ex)
+            {
+                _controller.LoadError(ex);
+            }
             FillEnrollmentRequest();
         }
 
         private void DenyButton_Click(object sender, RoutedEventArgs e)
         {
-            at_activate.StartInfo.Arguments = $"deny -a {_controller.DeviceAtsign} -i {id}";
-            at_activate.Start();
-            at_activate.WaitForExit();
+
             FillEnrollmentRequest();
         }
 
@@ -55,11 +45,21 @@ namespace NoPortsInstaller.Pages.Activate
 
         private void FillEnrollmentRequest()
         {
-            id = "_controller.GetPendingRequests()";
-            if (!string.IsNullOrEmpty(id))
+            List<EnrollmentRecord> requests = [];
+            try
             {
-                DeviceNameLabel.Content = _controller.DeviceName;
-                IdLabel.Content = id;
+                requests = ActivateController.ListEnrollments();
+            }
+            catch
+            {
+                InstallLogger.Log("Failed to find any active enrollments");
+                return;
+            }
+            enrollmentRecord = requests.FirstOrDefault();
+            if (enrollmentRecord != null)
+            {
+                DeviceNameLabel.Content = enrollmentRecord.DeviceName;
+                IdLabel.Content = enrollmentRecord.Id;
                 Enrollment.Visibility = Visibility.Visible;
             }
             else

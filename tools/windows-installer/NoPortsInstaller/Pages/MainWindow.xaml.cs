@@ -7,7 +7,7 @@ namespace NoPortsInstaller.Pages;
 /// </summary>
 public partial class MainWindow : Window
 {
-    private readonly IController _controller;
+    private readonly Controller _controller;
     public MainWindow()
     {
         InitializeComponent();

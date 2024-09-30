@@ -5,33 +5,27 @@ namespace NoPortsInstaller
 {
     class ActivateController
     {
-        private readonly IController _controller = App.ControllerInstance;
+        private static readonly Controller _controller = App.ControllerInstance;
 
-        ActivateController()
+        /// <summary>
+        /// Run a command with the at_activate.exe, if you want the return codes that comes in stdErr, use returnStdErr = true
+        /// </summary>
+        /// <param name="args"></param>
+        /// <param name="returnStdErr">
+        /// returns the values that come in stdErr if the errorCode is not 0 (an error exit)
+        /// </param>
+        /// <returns>stdOut of the command</returns>
+        /// <exception cref="System.Exception"></exception>
+        private static string RunCommand(string args, bool returnStdErr = false)
         {
-            AtActivate = new Process();
-            AtActivate.StartInfo.FileName = Path.Combine(
-                _controller.InstallDirectory,
-                "AtActivate.exe"
-            );
-            AtActivate.StartInfo.Arguments = $"interactive -a {_controller.DeviceAtsign}";
-            AtActivate.StartInfo.UseShellExecute = false;
-            AtActivate.StartInfo.RedirectStandardOutput = true;
-            AtActivate.StartInfo.RedirectStandardInput = true;
-            AtActivate.StartInfo.RedirectStandardError = true;
-            AtActivate.StartInfo.CreateNoWindow = true;
-        }
-
-        private async Task<List<string>> RunCommand(string args)
-        {
-            List<string> stdout = [];
-            List<string> stderr = [];
+            string stdout = "";
+            string stderr = "";
             int exitCode;
             using (var process = new Process())
             {
                 var startInfo = process.StartInfo;
 
-                startInfo.FileName = Path.Combine(_controller.InstallDirectory, "AtActivate.exe");
+                startInfo.FileName = Path.Combine(_controller.InstallDirectory, "at_activate.exe");
                 startInfo.UseShellExecute = false;
                 startInfo.RedirectStandardOutput = true;
                 startInfo.RedirectStandardInput = true;
@@ -41,64 +35,81 @@ namespace NoPortsInstaller
 
                 process.Start();
 
-                process.StandardInput.Write(command);
-                process.StandardInput.Flush();
-
-                while (!process.StandardOutput.EndOfStream)
-                {
-                    string line = process.StandardOutput.ReadLine();
-                    stdout.Add(line);
-                }
-
-                while (!process.StandardError.EndOfStream)
-                {
-                    string line = process.StandardError.ReadLine();
-                    stderr.Add(line);
-                }
-
                 process.WaitForExit();
-
+                stdout = process.StandardOutput.ReadToEnd();
+                stderr = process.StandardError.ReadToEnd();
                 exitCode = process.ExitCode;
             }
 
-            if (exitCode != 0)
+            if (exitCode != 0 && !returnStdErr)
             {
-                throw new System.Exception(String.Join("\n", stderr));
+                throw new System.Exception(string.Join("\n", stderr));
             }
-
+            if (!string.IsNullOrEmpty(stderr) && returnStdErr)
+            {
+                return stderr;
+            }
             return stdout;
+
         }
 
-        public async Task Approve(string enrollmentId)
+        public static void Approve(string enrollmentId)
         {
-            var args = $"deny -a {_controller.DeviceAtsign} -i {enrollmentId}";
-            await RunCommand(args);
+            var args = $"approve -a \"{_controller.DeviceAtsign}\" -i {enrollmentId}";
+            RunCommand(args);
         }
 
-        public async Task Deny(string enrollmentId)
+        public static void Deny(string enrollmentId)
         {
-            var args = $"deny -a {_controller.DeviceAtsign} -i {enrollmentId}";
-            await RunCommand(args);
+            var args = $"deny -a \"{_controller.DeviceAtsign}\" -i {enrollmentId}";
+            RunCommand(args);
         }
 
-        public async Task<string> GenerateOTP()
+        public static string GenerateOTP()
         {
-            var args = $"otp -a {_controller.DeviceAtsign}";
-            var response = await RunCommand(args);
+            var args = $"otp -a \"{_controller.DeviceAtsign}\"";
+            var response = RunCommand(args);
 
-            return response[0];
+            return response;
         }
 
-        private string AppName = "noports_win";
-        private List<string> Namespaces = ["{sshnp: rw, sshrvd: rw}", "{sshrvd: rw, sshnp: rw}"];
+        public static AtsignStatus Status(string atsign)
+        {
+            var args = $"status -a \"{atsign}\"";
+            string response = "";
+            try
+            {
+                response = RunCommand(args, true);
+            }
+            catch (Exception ex)
+            {
+                _controller.LoadError(ex);
+            }
+            var returnString = response.Split(":").ToList();
+            var exitCode = returnString[0].Split(" ")[1];
 
-        public async Task<bool> Enroll(string otp)
+            if (exitCode == "0")
+            {
+                return AtsignStatus.Activated;
+            }
+            if (exitCode == "1")
+            {
+                return AtsignStatus.NotActivated;
+            }
+            return AtsignStatus.DNE;
+
+        }
+
+        private static readonly string AppName = "noports_win";
+        private static readonly List<string> Namespaces = ["{sshnp: rw, sshrvd: rw}", "{sshrvd: rw, sshnp: rw}"];
+
+        public static bool Enroll(string otp)
         {
             var args =
-                $"enroll -a {_controller.DeviceAtsign} -s {otp} -p {AppName} -d {_controller.DeviceName} -n {Namespaces[0]} -k {_controller.AtsignKeysDirectory}";
-            var response = await RunCommand(args);
+                $"enroll -a \"{_controller.DeviceAtsign}\" -s {otp} -p {AppName} -d {_controller.DeviceName} -n \"{Namespaces[0]}\" -k {_controller.AtsignKeysDirectory}";
+            string response = RunCommand(args);
 
-            if (response.Last.Contains(["Success"]))
+            if (response.Contains("[Success]"))
             {
                 return true;
             }
@@ -106,22 +117,27 @@ namespace NoPortsInstaller
             return false;
         }
 
-        public async Task<List<EnrollmentRecord>> ListEnrollments()
+        public static List<EnrollmentRecord> ListEnrollments()
         {
-            var args = "list -s pending";
-            var response = await RunCommand(args);
-
+            var args = $"list -a \"{_controller.DeviceAtsign}\" -s pending";
+            var response = RunCommand(args);
+            List<string> strings = response.Split("\n").ToList();
+            int count = strings.Count - 2;
             List<EnrollmentRecord> lines = [];
-            for (int i = 2; i < response.Count; i++)
+            if (count == 1)
             {
-                var parts = line.Trim().Split(" ").ToList();
+                throw new Exception("No enrollments found.");
+            }
+            for (int i = 2; i <= count; i++)
+            {
+                var parts = strings[i].Trim().Split(" ").ToList();
                 parts.RemoveAll(x => x == "");
-                if (x[2] != AppName || !Namespaces.Contains(x[4]))
+                if (parts[2] != AppName)
                 {
                     continue;
                 }
 
-                EnrollmentRecord record = EnrollmentRecord(x[0], x[3]);
+                EnrollmentRecord record = new(parts[0], parts[3]);
                 lines.Add(record);
             }
 
@@ -129,15 +145,16 @@ namespace NoPortsInstaller
         }
     }
 
-    class EnrollmentRecord
+    public class EnrollmentRecord(string Id, string DeviceName)
     {
-        string Id { get; set; }
-        string DeviceName { get; set; }
+        public string Id { get; set; } = Id;
+        public string DeviceName { get; set; } = DeviceName;
+    }
 
-        EnrollmentRecord(string Id, String DeviceName)
-        {
-            this.Id = Id;
-            this.DeviceName = DeviceName;
-        }
+    public enum AtsignStatus
+    {
+        DNE,
+        NotActivated,
+        Activated
     }
 }

@@ -45,7 +45,7 @@ namespace NoPortsInstaller
                 Policy.type = AccessType.Manager;
             }
             InstallLogger.Log($"Setting policy atSign: {atSign}");
-            Entries.Find(entry => entry.atSign == atSign).type = type;
+            Entries.Find(entry => entry.atSign == atSign)!.type = type;
         }
 
         private static bool IsManager(AccessEntry entry)

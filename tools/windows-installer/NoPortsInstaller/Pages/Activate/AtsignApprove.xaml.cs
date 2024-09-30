@@ -8,7 +8,7 @@ namespace NoPortsInstaller.Pages.Activate
     /// </summary>
     public partial class AtsignApprove : Page
     {
-        private readonly IController _controller = App.ControllerInstance;
+        private readonly Controller _controller = App.ControllerInstance;
         public AtsignApprove()
         {
             InitializeComponent();

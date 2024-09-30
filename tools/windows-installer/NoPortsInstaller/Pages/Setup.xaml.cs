@@ -9,7 +9,7 @@ namespace NoPortsInstaller.Pages
     /// </summary>
     public partial class Setup : Page
     {
-        private readonly IController _controller;
+        private readonly Controller _controller;
         public Setup()
         {
             InitializeComponent();

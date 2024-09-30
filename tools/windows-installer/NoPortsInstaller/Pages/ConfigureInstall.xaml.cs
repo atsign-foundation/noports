@@ -5,7 +5,7 @@ namespace NoPortsInstaller.Pages
 {
     public partial class ConfigureInstall : Page
     {
-        private readonly IController _controller;
+        private readonly Controller _controller;
         public ConfigureInstall()
         {
             _controller = App.ControllerInstance;

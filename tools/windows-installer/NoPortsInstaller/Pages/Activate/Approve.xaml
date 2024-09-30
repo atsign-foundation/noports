@@ -98,13 +98,13 @@
             </Rectangle.RenderTransform>
 
         </Rectangle>
-        <Grid x:Name="Enrollment" Margin="179,175,28,60" Visibility="Hidden">
+        <Grid x:Name="Enrollment" Margin="179,175,28,43">
             <Label Content="Device" HorizontalAlignment="Left" VerticalAlignment="Top"/>
             <Label x:Name="DeviceNameLabel" Content="Name" HorizontalAlignment="Left" Margin="85,0,0,0" VerticalAlignment="Top" Width="132" FontSize="10"/>
             <Label Content="ID" HorizontalAlignment="Left" Margin="0,26,0,0" VerticalAlignment="Top"/>
             <Label x:Name="IdLabel" Content="value" HorizontalAlignment="Left" Margin="85,26,0,0" VerticalAlignment="Top" Width="198" Height="26" FontSize="10"/>
-            <Button x:Name="ApproveButton" Content="Approve" HorizontalAlignment="Left" Margin="58,78,0,0" VerticalAlignment="Top" Click="ApproveButton_Click" Width="53" Height="27"/>
-            <Button x:Name="DenyButton" Content="Deny" HorizontalAlignment="Left" Margin="177,78,0,0" VerticalAlignment="Top" Click="DenyButton_Click" Width="40" Height="27"/>
+            <Button x:Name="ApproveButton" Content="Approve" HorizontalAlignment="Left" Margin="58,66,0,0" VerticalAlignment="Top" Click="ApproveButton_Click" Width="53" Height="27"/>
+            <Button x:Name="DenyButton" Content="Deny" HorizontalAlignment="Left" Margin="177,66,0,0" VerticalAlignment="Top" Click="DenyButton_Click" Width="40" Height="27"/>
         </Grid>
     </Grid>
 </Page>

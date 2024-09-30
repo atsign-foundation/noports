@@ -1,6 +1,4 @@
-﻿using System.Diagnostics;
-using System.IO;
-using System.Windows;
+﻿using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media.Animation;
 
@@ -11,20 +9,15 @@ namespace NoPortsInstaller.Pages.Activate
     /// </summary>
     public partial class Enroll : Page
     {
-        private readonly IController _controller = App.ControllerInstance;
-        private readonly Process at_activate = new();
+        private readonly Controller _controller = App.ControllerInstance;
         public Enroll()
         {
             InitializeComponent();
             StartLoadingAnimation();
             Header.Content = $"Generate atKeys for {_controller.DeviceAtsign}";
-            at_activate.StartInfo.FileName = Path.Combine(_controller.InstallDirectory, "at_activate.exe");
-            at_activate.StartInfo.Arguments = $"enroll -a ";
-            at_activate.StartInfo.UseShellExecute = false;
-            at_activate.StartInfo.RedirectStandardOutput = true;
-            at_activate.StartInfo.RedirectStandardInput = true;
-            at_activate.StartInfo.RedirectStandardError = true;
-            at_activate.StartInfo.CreateNoWindow = true;
+            OTPLabel.Content = $"at_activate otp -a \"{_controller.DeviceAtsign}\"";
+            ApproveLabel.Content = $"at_activate approve -a \"{_controller.DeviceAtsign}\" -i [enrollmentId]";
+
         }
 
         // Event handler for TextChanged
@@ -106,26 +99,27 @@ namespace NoPortsInstaller.Pages.Activate
 
         private async void Generate_Click(object sender, RoutedEventArgs e)
         {
+            EnrollResponse.Content = "";
             string otp = $"{OtpBox1.Text}{OtpBox2.Text}{OtpBox3.Text}{OtpBox4.Text}{OtpBox5.Text}{OtpBox6.Text}".ToUpper();
-            at_activate.StartInfo.Arguments = $@"enroll -a ""{_controller.DeviceAtsign}"" -s {otp} -d {_controller.DeviceName} -p noports -n ""sshnp:rw,sshrvd:rw"" -k {Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), @".atsign\keys", _controller.DeviceAtsign + "_key.atKeys")}";
-            at_activate.Start();
+
             Loading.Visibility = Visibility.Visible;
-            string output = await at_activate.StandardOutput.ReadToEndAsync();
-            string error = await at_activate.StandardError.ReadToEndAsync();
-            await at_activate.WaitForExitAsync();
-            Loading.Visibility = Visibility.Hidden;
-            if (error.Contains("Invalid"))
+            try
             {
-                EnrollResponse.Content = "Invalid OTP, Enrollment failed. Please make sure you have an otp and try again.";
+                bool value = await Task.Run(() => ActivateController.Enroll(otp));
+                if (value)
+                {
+                    _controller.NextPage();
+                }
+                else
+                {
+                    EnrollResponse.Content = "Invalid OTP, Enrollment failed. Please make sure you have an otp and try again.";
+                }
             }
-            else if (output.Contains("[Success]"))
+            catch (Exception ex)
             {
-                _controller.NextPage();
+                _controller.LoadError(ex);
             }
-            else
-            {
-                EnrollResponse.Content = "Enrollment failed. Please make sure you have an otp and try again.";
-            }
+
         }
 
         private void StartLoadingAnimation()

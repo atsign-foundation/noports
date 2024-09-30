@@ -8,7 +8,7 @@ namespace NoPortsInstaller.Pages.Update
     /// </summary>
     public partial class UpdateDevice : Page
     {
-        private readonly IController _controller;
+        private readonly Controller _controller;
         public UpdateDevice()
         {
             _controller = App.ControllerInstance;

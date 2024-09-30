@@ -10,9 +10,8 @@ namespace NoPortsInstaller.Pages.Activate
     /// </summary>
     public partial class Onboard : Page
     {
-        private readonly IController _controller = App.ControllerInstance;
+        private readonly Controller _controller = App.ControllerInstance;
         private readonly Process at_activate = new();
-        private string Response { get; set; }
         public Onboard()
         {
             InitializeComponent();
@@ -23,7 +22,6 @@ namespace NoPortsInstaller.Pages.Activate
             at_activate.StartInfo.RedirectStandardInput = true;
             at_activate.StartInfo.RedirectStandardError = true;
             at_activate.StartInfo.CreateNoWindow = true;
-            Response = "";
         }
 
         private void BackPageButton_Click(object sender, RoutedEventArgs e)
@@ -113,8 +111,8 @@ namespace NoPortsInstaller.Pages.Activate
             ActivateResponseText.Visibility = Visibility.Hidden;
             ActivateResponseText.Content = "";
             _controller.DeviceAtsign = _controller.NormalizeAtsign(Atsign.Text);
-            Response = _controller.CheckAtsignStatus(_controller.DeviceAtsign);
-            if (Response == "not activated")
+            var response = ActivateController.Status(_controller.DeviceAtsign);
+            if (response == AtsignStatus.NotActivated)
             {
                 ActivateResponseText.Content = "Check the email that was used to create the atsign \n \n Enter One Time Password (OTP):";
                 ActivateResponseText.Visibility = Visibility.Visible;
@@ -122,7 +120,7 @@ namespace NoPortsInstaller.Pages.Activate
                 Start_AtActivate(_controller.DeviceAtsign);
                 Submit.IsEnabled = false;
             }
-            else if (Response == "activated")
+            else if (response == AtsignStatus.Activated)
             {
                 ActivateResponseText.Content = "This atsign is already activated, please continue to device/client installation";
                 ActivateResponseText.Visibility = Visibility.Visible;

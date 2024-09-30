@@ -8,7 +8,7 @@ namespace NoPortsInstaller.Pages.Update
     /// </summary>
     public partial class UninstallPage : Page
     {
-        private readonly IController _controller;
+        private readonly Controller _controller;
         public UninstallPage()
         {
             InitializeComponent();

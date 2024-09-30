@@ -8,7 +8,7 @@ namespace NoPortsInstaller.Pages.Activate
     /// </summary>
     public partial class FinishGeneratingKeys : Page
     {
-        private readonly IController _controller = App.ControllerInstance;
+        private readonly Controller _controller = App.ControllerInstance;
         public FinishGeneratingKeys()
         {
             InitializeComponent();
@@ -20,9 +20,5 @@ namespace NoPortsInstaller.Pages.Activate
             _controller.NextPage();
         }
 
-        private void FinishButton_Click(object sender, RoutedEventArgs e)
-        {
-            Application.Current.Shutdown();
-        }
     }
 }

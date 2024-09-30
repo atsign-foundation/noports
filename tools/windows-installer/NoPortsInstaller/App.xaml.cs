@@ -8,7 +8,7 @@ namespace NoPortsInstaller;
 /// </summary>
 public partial class App : Application
 {
-    public static IController ControllerInstance { get; set; }
+    public static Controller ControllerInstance { get; set; }
     public App()
     {
         ControllerInstance = new Controller();

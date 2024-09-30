@@ -7,7 +7,7 @@ namespace NoPortsInstaller.Pages.Install
     /// </summary>
     public partial class Download : Page
     {
-        private readonly IController _controller;
+        private readonly Controller _controller;
         public Download()
         {
             InitializeComponent();

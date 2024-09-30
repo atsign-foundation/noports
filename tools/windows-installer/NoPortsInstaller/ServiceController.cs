@@ -152,7 +152,7 @@ namespace NoPortsInstaller
                 if (service == IntPtr.Zero)
                 {
 
-                    service = CreateService(scm, serviceName, displayName, ServiceAccessRights.AllAccess, SERVICE_WIN32_OWN_PROCESS, ServiceBootFlag.AutoStart, ServiceError.Normal, fileName, null, IntPtr.Zero, null, @"NT AUTHORITY\NetworkService", null);
+                    service = CreateService(scm, serviceName, displayName, ServiceAccessRights.AllAccess, SERVICE_WIN32_OWN_PROCESS, ServiceBootFlag.AutoStart, ServiceError.Normal, fileName, null, IntPtr.Zero, null, @"NT AUTHORITY\LocalService", null);
                 }
 
                 if (service == IntPtr.Zero)
@@ -432,7 +432,7 @@ namespace NoPortsInstaller
 
         public static async Task TryUninstall(string service)
         {
-            if (ServiceController.ServiceIsInstalled("sshnpd"))
+            if (ServiceController.ServiceIsInstalled(service))
             {
                 int maxAttempts = 3;
                 for (int i = 0; i < maxAttempts; i++)

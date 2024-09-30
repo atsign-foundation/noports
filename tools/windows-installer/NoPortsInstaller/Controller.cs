@@ -1,17 +1,17 @@
-﻿using System.Diagnostics;
-using System.IO;
-using System.Security.AccessControl;
-using System.Windows;
-using System.Windows.Controls;
-using Microsoft.Win32;
+﻿using Microsoft.Win32;
 using NoPortsInstaller.Pages;
 using NoPortsInstaller.Pages.Activate;
 using NoPortsInstaller.Pages.Install;
 using NoPortsInstaller.Pages.Update;
+using System.Diagnostics;
+using System.IO;
+using System.Security.AccessControl;
+using System.Windows;
+using System.Windows.Controls;
 
 namespace NoPortsInstaller
 {
-    public class Controller : IController
+    public class Controller
     {
         public string InstallDirectory { get; set; }
         public InstallType InstallType { get; set; }
@@ -27,6 +27,9 @@ namespace NoPortsInstaller
         }
         public List<Page> Pages { get; set; }
         private int index = 0;
+        private readonly string serviceDirectory =
+                Environment.ExpandEnvironmentVariables("%systemroot%")
+                + @"\ServiceProfiles\LocalService\";
         public Window? Window { get; set; }
         public AccessRules AccessRules { get; set; }
 
@@ -37,7 +40,7 @@ namespace NoPortsInstaller
                 return Path.Combine(
                     Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
                     @".atsign\keys",
-                    _controller.DeviceAtsign + "_key.atKeys"
+                    DeviceAtsign + "_key.atKeys"
                 );
             }
         }
@@ -158,8 +161,28 @@ namespace NoPortsInstaller
         /// </summary>
         public void Enroll()
         {
-            Pages.Insert(2, new Enroll());
-            NextPage();
+            try
+            {
+                if (!KeysInstalled())
+                {
+                    InstallLogger.Log("Keys not found, starting enrollment process...");
+                    if (ActivateController.Status(DeviceAtsign) != AtsignStatus.Activated)
+                    {
+                        throw new Exception("Keys not found locally and on registrar. Please onboard first.");
+                    }
+                    Pages.Add(new Enroll());
+                    Pages.Add(new Install("APKAM Keys cut, continue to installation."));
+                }
+                else
+                {
+                    InstallLogger.Log("Keys found. Continuing to install...");
+                    Pages.Add(new Install("Keys found on device, continue to installation."));
+                }
+            }
+            catch (Exception ex)
+            {
+                LoadError(ex);
+            }
         }
 
         public async Task Approve()
@@ -248,20 +271,17 @@ namespace NoPortsInstaller
         private void CopyIntoServiceAccount()
         {
             string sourceFile = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
-            string destinationFile =
-                Environment.ExpandEnvironmentVariables("%systemroot%")
-                + @"\ServiceProfiles\NetworkService\";
             string[] sources =
             [
                 Path.Combine(sourceFile, ".ssh", "authorized_keys"),
                 Path.Combine(sourceFile, ".atsign", "keys", DeviceAtsign + "_key.atKeys"),
             ];
-            InstallLogger.Log($"Creating Directories in NetworkService Account: {destinationFile}");
-            CreateDirectories(destinationFile);
+            InstallLogger.Log($"Creating Directories in LocalService Account: {serviceDirectory}");
+            CreateDirectories(serviceDirectory);
             string[] destinations =
             [
-                Path.Combine(destinationFile, ".ssh", "authorized_keys"),
-                Path.Combine(destinationFile, ".atsign", "keys", DeviceAtsign + "_key.atKeys"),
+                Path.Combine(serviceDirectory, ".ssh", "authorized_keys"),
+                Path.Combine(serviceDirectory, ".atsign", "keys", DeviceAtsign + "_key.atKeys"),
             ];
             for (int i = 0; i < sources.Length; i++)
             {
@@ -672,40 +692,9 @@ namespace NoPortsInstaller
             }
         }
 
-        public string CheckAtsignStatus(string atsign)
+        private bool KeysInstalled()
         {
-            using Process p = new();
-            var exitCode = "0";
-            p.StartInfo.FileName = Path.Combine(InstallDirectory, "at_activate.exe");
-            p.StartInfo.Arguments = $"status -a {atsign}";
-            p.StartInfo.UseShellExecute = false;
-            p.StartInfo.CreateNoWindow = true;
-            p.StartInfo.RedirectStandardOutput = true;
-            p.StartInfo.RedirectStandardError = true;
-            p.Start();
-            p.WaitForExit(timeout: TimeSpan.FromSeconds(3));
-            var e = p.StandardOutput.ReadToEnd();
-            if (string.IsNullOrEmpty(e))
-            {
-                e = p.StandardError.ReadToEnd();
-            }
-            if (!string.IsNullOrEmpty(e))
-            {
-                var response = e.Split(":").ToList();
-                exitCode = response[0].Split(" ")[1];
-            }
-            if (exitCode == "0")
-            {
-                return "activated";
-            }
-            else if (exitCode == "1")
-            {
-                return "not activated";
-            }
-            else
-            {
-                return "dne";
-            }
+            return File.Exists(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), @".atsign\keys", DeviceAtsign + "_key.atKeys"));
         }
 
         private static void LogEnvironment()
@@ -721,17 +710,18 @@ namespace NoPortsInstaller
                 $"Local App Data: {Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData)}"
             );
             InstallLogger.Log(
-                $"NetworkService: {Environment.ExpandEnvironmentVariables("%systemroot%") + @"\ServiceProfiles\NetworkService\"}"
+                $"LocalService: {Environment.ExpandEnvironmentVariables("%systemroot%") + @"\ServiceProfiles\LocalService\"}"
             );
             try
             {
                 Directory.CreateDirectory(
-                    Environment.GetFolderPath(Environment.SpecialFolder.UserProfile) + @"\.atsign"
+                    Environment.ExpandEnvironmentVariables("%systemroot%") + @"\ServiceProfiles\LocalService\" + @"\.atsign"
                 );
+                InstallLogger.Log("Created .atsign directory in LocalService.");
             }
             catch
             {
-                InstallLogger.Log("Failed to create .atsign directory in NetworkService Account.");
+                InstallLogger.Log("Failed to create .atsign directory in LocalService Account.");
             }
 
             InstallLogger.Log("User Information:");

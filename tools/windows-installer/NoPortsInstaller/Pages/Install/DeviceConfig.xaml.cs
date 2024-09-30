@@ -7,10 +7,9 @@ namespace NoPortsInstaller.Pages.Install
     /// </summary>
     public partial class DeviceConfig : Page
     {
-        private readonly IController _controller;
+        private readonly Controller _controller = App.ControllerInstance;
         public DeviceConfig()
         {
-            _controller = App.ControllerInstance;
             InitializeComponent();
         }
 
@@ -22,6 +21,7 @@ namespace NoPortsInstaller.Pages.Install
         private void NextPageButton_Click(object sender, System.Windows.RoutedEventArgs e)
         {
             _controller.AdditionalArgs = _controller.NormalizeArgs(AdditionalArgs.Text);
+            _controller.Enroll();
             _controller.NextPage();
         }
     }
