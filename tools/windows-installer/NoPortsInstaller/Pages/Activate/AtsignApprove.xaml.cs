@@ -30,10 +30,21 @@ namespace NoPortsInstaller.Pages.Activate
         {
             if (AtsignCombo.Text != "")
             {
-                _controller.DeviceAtsign = _controller.NormalizeAtsign(AtsignCombo.Text);
-                _controller.Pages.Add(new Approve());
-                _controller.Pages.Add(new FinishGeneratingKeys());
-                _controller.NextPage();
+                try
+                {
+                    var atsign = _controller.NormalizeAtsign(AtsignCombo.Text);
+                    if (ActivateController.CheckIfMPKAM(atsign))
+                    {
+                        _controller.DeviceAtsign = _controller.NormalizeAtsign(AtsignCombo.Text);
+                        _controller.Pages.Add(new Approve());
+                        _controller.Pages.Add(new FinishGeneratingKeys());
+                        _controller.NextPage();
+                    }
+                }
+                catch
+                {
+                    _controller.LoadError(new Exception("Failed to find MPKAM Keys for the given atsign"));
+                }
             }
         }
     }

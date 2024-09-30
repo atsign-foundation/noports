@@ -143,18 +143,31 @@ namespace NoPortsInstaller
 
             return lines;
         }
-    }
 
-    public class EnrollmentRecord(string Id, string DeviceName)
-    {
-        public string Id { get; set; } = Id;
-        public string DeviceName { get; set; } = DeviceName;
-    }
+        public static bool CheckIfMPKAM(string atsign)
+        {
+            var dir = Path.Combine(_controller.AtsignKeysDirectory, atsign + "_key.atKeys");
+            if (File.Exists(dir))
+            {
+                var fileContent = File.ReadAllText(dir);
+                if (fileContent.Contains("enrollmentId"))
+                {
+                    return false;
+                }
+            }
+            return true;
+        }
 
-    public enum AtsignStatus
-    {
-        DNE,
-        NotActivated,
-        Activated
+        public class EnrollmentRecord(string Id, string DeviceName)
+        {
+            public string Id { get; set; } = Id;
+            public string DeviceName { get; set; } = DeviceName;
+        }
+
+        public enum AtsignStatus
+        {
+            DNE,
+            NotActivated,
+            Activated
+        }
     }
-}

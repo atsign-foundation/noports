@@ -48,5 +48,6 @@
         <Label Content="Enter atSign:" HorizontalAlignment="Left" Height="27" VerticalAlignment="Top" Width="199" Margin="168,75,0,0" FontSize="11"/>
         <ComboBox x:Name="AtsignCombo" HorizontalAlignment="Left" Height="26" Margin="177,107,0,0" VerticalAlignment="Top" Width="211" IsEditable="True"  Initialized="AtsignCombo_Initialized">
         </ComboBox>
+        <Label x:Name="MPKAMCheckLabel" Content="" HorizontalAlignment="Left" Margin="177,149,0,0" VerticalAlignment="Top" Width="224"/>
     </Grid>
 </Page>
