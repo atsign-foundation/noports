@@ -7,25 +7,35 @@
 int default_values_test();
 int parse_params_test();
 int atsign_mandatory_test();
-int manager_mandatory_test();
+int manager_policy_mandatory_test();
 int ssh_algorithm_parse_test();
+int permit_open_parse_test();
 
 int main() {
   int ret = 0;
 
   if (default_values_test()) {
+    printf("Default values test failed\n");
     ret++;
   }
   if (parse_params_test()) {
+    printf("Parse params test failed\n");
     ret++;
   }
   if (atsign_mandatory_test()) {
+    printf("atSign mandatory test failed\n");
     ret++;
   }
-  if (manager_mandatory_test()) {
+  if (manager_policy_mandatory_test()) {
+    printf("manager/policy mandatory test failed\n");
     ret++;
   }
   if (ssh_algorithm_parse_test()) {
+    printf("ssh algorithm parse test failed\n");
+    ret++;
+  }
+  if (permit_open_parse_test()) {
+    printf("permit open parse test failed\n");
     ret++;
   }
 
@@ -36,8 +46,8 @@ int main() {
 // Define the tests
 int default_values_test() {
   int ret = 0;
-  sshnpd_params_t *params = malloc(sizeof(sshnpd_params_t));
-  apply_default_values_to_params(params);
+  sshnpd_params *params = malloc(sizeof(sshnpd_params));
+  apply_default_values_to_sshnpd_params(params);
 
   if (strcmp(params->device, "default") != 0) {
     ret = 1;
@@ -45,7 +55,7 @@ int default_values_test() {
   if (params->sshpublickey != 0) {
     ret = 1;
   }
-  if (params->unhide != 0) {
+  if (params->hide != 0) {
     ret = 1;
   }
   if (params->verbose != 0) {
@@ -71,7 +81,7 @@ int default_values_test() {
 int parse_params_test() {
   int ret = 0;
 
-  sshnpd_params_t *params = malloc(sizeof(sshnpd_params_t));
+  sshnpd_params *params = malloc(sizeof(sshnpd_params));
 
   const char *argv[] = {"sshnpd", "-a", "atsign", "-m", "manager"};
   int argc = 4;
@@ -82,6 +92,8 @@ int parse_params_test() {
 
 int atsign_mandatory_test() { return 0; }
 
-int manager_mandatory_test() { return 0; }
+int manager_policy_mandatory_test() { return 0; }
 
 int ssh_algorithm_parse_test() { return 0; }
+
+int permit_open_parse_test() { return 0; }

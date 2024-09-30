@@ -5,6 +5,9 @@ foreach(file ${files})
   string(REPLACE ".c" "" filename ${filename})
 
   add_executable(${filename} ${file})
-  target_link_libraries(${filename} PRIVATE sshnpd_lib)
+  target_link_libraries(
+    ${filename}
+    PRIVATE sshnpd-lib argparse::argparse-static
+  )
   add_test(NAME ${filename} COMMAND $<TARGET_FILE:${filename}>)
 endforeach()
