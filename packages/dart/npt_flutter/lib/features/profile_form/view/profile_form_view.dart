@@ -14,21 +14,24 @@ class ProfileFormView extends StatelessWidget {
   Widget build(BuildContext context) {
     final strings = AppLocalizations.of(context)!;
     final GlobalKey<FormState> formkey = GlobalKey<FormState>();
+    final deviceSize = MediaQuery.of(context).size;
     return BlocProvider<ProfileBloc>(
       create: (BuildContext context) =>
 
           /// Local copy of the profile which is used by the form
           ProfileBloc(context.read<ProfileRepository>(), uuid)..add(const ProfileLoadOrCreateEvent()),
       child: Padding(
-        padding: const EdgeInsets.only(left: Sizes.p100, right: Sizes.p100, top: Sizes.p20),
+        padding: const EdgeInsets.only(left: Sizes.p100, right: Sizes.p100),
         child: Stack(
           children: [
             Align(
               alignment: Alignment.topCenter,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: [
                   CustomCard.profileFormContent(
+                    height: deviceSize.height * Sizes.dashboardCardHeightFactor,
                     child: SingleChildScrollView(
                       child: Form(
                         key: formkey,
@@ -91,7 +94,6 @@ class ProfileFormView extends StatelessWidget {
                       ),
                     ),
                   ),
-                  gapH16,
                   Text(strings.allRightsReserved),
                 ],
               ),
