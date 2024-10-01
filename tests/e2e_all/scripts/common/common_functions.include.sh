@@ -64,11 +64,9 @@ getBaseNptCommand() {
   l2=" -t $daemonAtSign -r $srvAtSign"
   l3=" --root-domain $atDirectoryHost"
   if [ -z "$2" ]; then
-    echo "npt command running with encrypt traffic"
     echo "$l1" "$l2" "$l3"
   else
-    echo "npt command running with no-encrypt traffic"
-    echo "$l1" "$l2" "$l3" "--no-encrypt-rvd-traffic"
+    echo "$l1" "$l2" "$l3" "$2"
   fi
 }
 
