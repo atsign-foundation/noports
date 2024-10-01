@@ -56,14 +56,20 @@ getBaseSshnpCommand() {
 }
 
 getBaseNptCommand() {
-  if (($# != 1)); then
-    logErrorAndExit "getBaseNptCommand requires 1 argument (clientBinaryPath)"
+  if (($# < 1 || $# > 2)); then
+      logErrorAndExit "getBaseNptCommand requires 1 mandatory argument (clientBinaryPath) and optionally a second argument (encryptRvdTraffic)"
   fi
   clientBinaryPath="$1"
   l1="$clientBinaryPath/npt -f $clientAtSign -d $deviceName"
   l2=" -t $daemonAtSign -r $srvAtSign"
   l3=" --root-domain $atDirectoryHost"
-  echo "$l1" "$l2" "$l3"
+  if [ -z "$2" ]; then
+    echo "npt command running with encrypt traffic"
+    echo "$l1" "$l2" "$l3"
+  else
+    echo "npt command running with no-encrypt traffic"
+    echo "$l1" "$l2" "$l3" "--no-encrypt-rvd-traffic"
+  fi
 }
 
 getTestSshCommand() {
