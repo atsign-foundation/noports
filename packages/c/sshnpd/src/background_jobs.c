@@ -120,6 +120,7 @@ void *refresh_device_entry(void *void_refresh_device_entry_params) {
   }
 
   // Build each atkey
+  // TODO: @xavierchanth - review this implementation
   int interval_seconds = 60 * 60; // once an hour
   int counter = 0;
   while (*params->should_run) {

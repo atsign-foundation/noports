@@ -21,8 +21,11 @@ struct _sshnpd_params {
   size_t manager_list_len;
   char **manager_list;
 
+  char *policy;
+
   size_t permitopen_len;
-  char **permitopen;
+  char **permitopen_hosts;
+  uint16_t *permitopen_ports; // 0 = '*'
   char *permitopen_str;
   bool should_free_permitopen_str;
 

@@ -18,6 +18,7 @@ set(
   ${CMAKE_CURRENT_LIST_DIR}/src/handler_commons.c
   ${CMAKE_CURRENT_LIST_DIR}/src/main.c
   ${CMAKE_CURRENT_LIST_DIR}/src/params.c
+  ${CMAKE_CURRENT_LIST_DIR}/src/permitopen.c
   ${CMAKE_CURRENT_LIST_DIR}/src/run_srv_process.c
 )
 
