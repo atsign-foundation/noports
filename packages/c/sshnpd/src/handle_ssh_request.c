@@ -142,14 +142,12 @@ void handle_ssh_request(atclient *atclient, pthread_mutex_t *atclient_lock, sshn
   char *buffer = NULL;
 
   res = atclient_get_public_key(atclient, &atkey, &buffer, NULL);
+  atclient_atkey_free(&atkey);
   if (res != 0) {
     atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to get public key\n");
-    atclient_atkey_free(&atkey);
     cJSON_Delete(envelope);
     return;
   }
-
-  atclient_atkey_free(&atkey);
 
   atchops_rsa_key_public_key requesting_atsign_publickey;
   atchops_rsa_key_public_key_init(&requesting_atsign_publickey);
@@ -276,7 +274,7 @@ void handle_ssh_request(atclient *atclient, pthread_mutex_t *atclient_lock, sshn
   if (!encrypt_rvd_traffic) {
     atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "encryptRvdTraffic=false is not supported by this daemon\n");
     if (authenticate_to_rvd) {
-      free(rvd_auth_string);
+      cJSON_free(rvd_auth_string);
     }
     cJSON_Delete(envelope);
     return;
@@ -288,7 +286,7 @@ void handle_ssh_request(atclient *atclient, pthread_mutex_t *atclient_lock, sshn
                  "encryptRvdTraffic was requested, but no client ephemeral public key / key type was provided\n");
 
     if (authenticate_to_rvd) {
-      free(rvd_auth_string);
+      cJSON_free(rvd_auth_string);
     }
     cJSON_Delete(envelope);
     return;
@@ -298,7 +296,7 @@ void handle_ssh_request(atclient *atclient, pthread_mutex_t *atclient_lock, sshn
   if ((res = atchops_aes_generate_key(key, ATCHOPS_AES_256)) != 0) {
     atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to generate session aes key\n");
     if (authenticate_to_rvd) {
-      free(rvd_auth_string);
+      cJSON_free(rvd_auth_string);
     }
     cJSON_Delete(envelope);
     return;
@@ -309,7 +307,7 @@ void handle_ssh_request(atclient *atclient, pthread_mutex_t *atclient_lock, sshn
   if (res != 0) {
     atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to generate session aes key\n");
     if (authenticate_to_rvd) {
-      free(rvd_auth_string);
+      cJSON_free(rvd_auth_string);
     }
     cJSON_Delete(envelope);
     return;
@@ -319,7 +317,7 @@ void handle_ssh_request(atclient *atclient, pthread_mutex_t *atclient_lock, sshn
   if ((res = atchops_iv_generate(iv)) != 0) {
     atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to generate session iv\n");
     if (authenticate_to_rvd) {
-      free(rvd_auth_string);
+      cJSON_free(rvd_auth_string);
     }
     cJSON_Delete(envelope);
     return;
@@ -330,7 +328,7 @@ void handle_ssh_request(atclient *atclient, pthread_mutex_t *atclient_lock, sshn
   if (res != 0) {
     atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to generate session iv\n");
     if (authenticate_to_rvd) {
-      free(rvd_auth_string);
+      cJSON_free(rvd_auth_string);
     }
     cJSON_Delete(envelope);
     return;
@@ -352,7 +350,7 @@ void handle_ssh_request(atclient *atclient, pthread_mutex_t *atclient_lock, sshn
         atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to populate client ephemeral pk\n");
         atchops_rsa_key_public_key_free(&ac);
         if (authenticate_to_rvd) {
-          free(rvd_auth_string);
+          cJSON_free(rvd_auth_string);
         }
         cJSON_Delete(envelope);
         return;
@@ -364,7 +362,7 @@ void handle_ssh_request(atclient *atclient, pthread_mutex_t *atclient_lock, sshn
                      "Failed to allocate memory to encrypt the session aes key\n");
         atchops_rsa_key_public_key_free(&ac);
         if (authenticate_to_rvd) {
-          free(rvd_auth_string);
+          cJSON_free(rvd_auth_string);
         }
         cJSON_Delete(envelope);
         return;
@@ -375,7 +373,7 @@ void handle_ssh_request(atclient *atclient, pthread_mutex_t *atclient_lock, sshn
         atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to encrypt the session aes key\n");
         atchops_rsa_key_public_key_free(&ac);
         if (authenticate_to_rvd) {
-          free(rvd_auth_string);
+          cJSON_free(rvd_auth_string);
         }
         free(session_aes_key_encrypted);
         cJSON_Delete(envelope);
@@ -391,7 +389,7 @@ void handle_ssh_request(atclient *atclient, pthread_mutex_t *atclient_lock, sshn
                      "Failed to allocate memory to base64 encode the session aes key\n");
         atchops_rsa_key_public_key_free(&ac);
         if (authenticate_to_rvd) {
-          free(rvd_auth_string);
+          cJSON_free(rvd_auth_string);
         }
         free(session_aes_key_encrypted);
         cJSON_Delete(envelope);
@@ -406,7 +404,7 @@ void handle_ssh_request(atclient *atclient, pthread_mutex_t *atclient_lock, sshn
         atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to base64 encode the session aes key\n");
         atchops_rsa_key_public_key_free(&ac);
         if (authenticate_to_rvd) {
-          free(rvd_auth_string);
+          cJSON_free(rvd_auth_string);
         }
         free(session_aes_key_base64);
         free(session_aes_key_encrypted);
@@ -422,7 +420,7 @@ void handle_ssh_request(atclient *atclient, pthread_mutex_t *atclient_lock, sshn
         atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to allocate memory to encrypt the session iv\n");
         atchops_rsa_key_public_key_free(&ac);
         if (authenticate_to_rvd) {
-          free(rvd_auth_string);
+          cJSON_free(rvd_auth_string);
         }
         free(session_aes_key_base64);
         cJSON_Delete(envelope);
@@ -435,7 +433,7 @@ void handle_ssh_request(atclient *atclient, pthread_mutex_t *atclient_lock, sshn
       if (res != 0) {
         atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to encrypt the session iv\n");
         if (authenticate_to_rvd) {
-          free(rvd_auth_string);
+          cJSON_free(rvd_auth_string);
         }
         free(session_iv_encrypted);
         free(session_aes_key_base64);
@@ -450,7 +448,7 @@ void handle_ssh_request(atclient *atclient, pthread_mutex_t *atclient_lock, sshn
         atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR,
                      "Failed to allocate memory to base64 encode the session iv\n");
         if (authenticate_to_rvd) {
-          free(rvd_auth_string);
+          cJSON_free(rvd_auth_string);
         }
         free(session_iv_encrypted);
         free(session_aes_key_base64);
@@ -465,7 +463,7 @@ void handle_ssh_request(atclient *atclient, pthread_mutex_t *atclient_lock, sshn
       if (res != 0) {
         atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to base64 encode the session iv\n");
         if (authenticate_to_rvd) {
-          free(rvd_auth_string);
+          cJSON_free(rvd_auth_string);
         }
         free(session_iv_base64);
         free(session_iv_encrypted);
@@ -484,7 +482,7 @@ void handle_ssh_request(atclient *atclient, pthread_mutex_t *atclient_lock, sshn
     atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR,
                  "%s is not an accepted key type for encrypting the aes key\n", pk_type);
     if (authenticate_to_rvd) {
-      free(rvd_auth_string);
+      cJSON_free(rvd_auth_string);
     }
     cJSON_Delete(envelope);
     return;
@@ -521,12 +519,11 @@ void handle_ssh_request(atclient *atclient, pthread_mutex_t *atclient_lock, sshn
 
     int res = run_srv_process(rvd_host_str, rvd_port_int, requested_host_str, requested_port_int, authenticate_to_rvd,
                               rvd_auth_string, encrypt_rvd_traffic, multi, session_aes_key, session_iv);
-    free(rvd_host_str);
 
     *is_child_process = true;
 
     if (authenticate_to_rvd) {
-      free(rvd_auth_string);
+      cJSON_free(rvd_auth_string);
     }
     cJSON_Delete(envelope);
     exit(res);
@@ -658,7 +655,7 @@ void handle_ssh_request(atclient *atclient, pthread_mutex_t *atclient_lock, sshn
   clean_res: { free(keyname); }
   clean_final_res_value: {
     atclient_atkey_free(&final_res_atkey);
-    free(final_res_value);
+    cJSON_free(final_res_value);
   }
   clean_json: {
     cJSON_Delete(final_res_envelope);
@@ -671,7 +668,7 @@ void handle_ssh_request(atclient *atclient, pthread_mutex_t *atclient_lock, sshn
   }
 cancel:
   if (authenticate_to_rvd) {
-    free(rvd_auth_string);
+    cJSON_free(rvd_auth_string);
   }
   if (free_session_base64) {
     free(session_iv_base64);
