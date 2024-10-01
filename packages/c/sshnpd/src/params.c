@@ -17,7 +17,6 @@ void apply_default_values_to_sshnpd_params(sshnpd_params *params) {
   params->hide = 0;
   params->verbose = 0;
   params->ssh_algorithm = ED25519;
-  params->ephemeral_permission = "";
   params->root_domain = "root.atsign.org";
   params->local_sshd_port = 22;
   params->storage_path = NULL;
@@ -27,6 +26,7 @@ int parse_sshnpd_params(sshnpd_params *params, int argc, const char **argv) {
   char *ssh_algorithm_input = "";
   char *manager = NULL;
   char *permitopen = NULL;
+  char *ephemeral_permissions = NULL;
 
   ArgparseOption options[] = {
       OPT_HELP(),
@@ -46,7 +46,7 @@ int parse_sshnpd_params(sshnpd_params *params, int argc, const char **argv) {
                  "Comma separated-list of host:port to which the daemon will permit a connection from an authorized "
                  "client. (defaults to \"localhost:22,localhost:3389\")"),
       OPT_STRING(0, "ssh-algorithm", &ssh_algorithm_input, "SSH algorithm to use"),
-      OPT_STRING(0, "ephemeral-permission", &params->ephemeral_permission, "Ephemeral permission to use"),
+      OPT_STRING(0, "ephemeral-permission", &ephemeral_permissions, "(Kept for compatibility)"),
       OPT_STRING(0, "root-domain", &params->root_domain, "Root domain to use"),
       OPT_INTEGER(0, "local-sshd-port", &params->local_sshd_port, "Local sshd port to use"),
       OPT_STRING(0, "storage-path", &params->storage_path, NULL),
