@@ -31,10 +31,9 @@ if ! grep -q "current" <<<"$clientVersion" && ! grep -q "current" <<<"$daemonVer
   exit 50
 fi
 
-# Require a v5.1+ client to test v5.1+ features
-if [[ $(versionIsLessThan "$clientVersion" "d:5.1.0") == "true" ]] ||
-  [[ $(versionIsLessThan "$daemonVersion" "d:5.1.0") == "true" ]]; then
-  logInfo "    N/A  because npt requires client and daemon versions >= v5.1.x"
+# The -no-encrypt-rvd-traffic is supported from 5.6.2 release which is the current as of now.
+if [[ "$clientVersion" != "d:current" ]] || [[ "$daemonVersion" != "d:current" ]]; then
+  logInfo "    N/A  The feature is supported on client and daemon version >= 5.6.2"
   exit 50 # test rig interprets this exit status as 'test was not applicable'
 fi
 
