@@ -7,3 +7,4 @@ obj
 *.user
 launchSettings.json
 windows-installer/NoPortsInstaller/Resources/*
+windows-installer/NoPortsHealthCheck/publish
