@@ -67,6 +67,8 @@ class Sizes {
   static const dashboardCardWidthFactor = 941 / 1053;
   static const profileFieldsWidthFactor = 150 / 1053;
   static const profileFieldsWidthFactorAlt = 300 / 1053;
+  static const SettingsCardWidthFactor = 654 / 1053;
+  static const SettingsCardHeightFactor = 438 / 691;
 }
 
 const gap0 = SizedBox();

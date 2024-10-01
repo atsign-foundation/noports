@@ -23,10 +23,10 @@ class CustomCard extends StatelessWidget {
 
   const CustomCard.settingsRail({
     required this.child,
+    this.height = Sizes.p436,
+    this.width = Sizes.p202,
     super.key,
-  })  : height = Sizes.p436,
-        width = Sizes.p202,
-        color = Colors.white,
+  })  : color = Colors.white,
         radiusTopLeft = const Radius.circular(Sizes.p10),
         radiusTopRight = const Radius.circular(Sizes.p10),
         radiusBottomLeft = const Radius.circular(Sizes.p10),
@@ -39,10 +39,10 @@ class CustomCard extends StatelessWidget {
 
   const CustomCard.settingsContent({
     required this.child,
+    this.height = Sizes.p470,
+    this.width = Sizes.p664,
     super.key,
-  })  : height = Sizes.p436,
-        width = Sizes.p664,
-        color = AppColor.cardColorDark,
+  })  : color = AppColor.cardColorDark,
         radiusTopLeft = Radius.zero,
         radiusTopRight = const Radius.circular(Sizes.p20),
         radiusBottomLeft = Radius.zero,
