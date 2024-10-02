@@ -49,7 +49,7 @@ You can either:
 ~/.local/bin/at_activate enroll -a @<REPLACE>_client \
   -s <PASSCODE> \
   -p noports \
-  -k ~/.atsign/keys/@<REPLACE>_device.atKeys \
+  -k ~/.atsign/keys/@<REPLACE_client>_key.atKeys \
   -d <client_device_name> \
   -n "sshnp:rw,sshrvd:rw"
 ```
