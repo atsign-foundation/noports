@@ -1,3 +1,5 @@
+# 6.2.0
+- feat: allow hyphens in device name
 # 6.1.1
 - build[deps]: upgrade: \
   at_client to 3.2.2 | at_onboarding_cli to 1.6.4 | at_utils to 3.0.19 | at_commons to 5.0.0
