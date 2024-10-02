@@ -171,3 +171,4 @@ namespace NoPortsInstaller
             Activated
         }
     }
+}
