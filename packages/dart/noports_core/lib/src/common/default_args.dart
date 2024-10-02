@@ -24,10 +24,15 @@ class DefaultArgs {
   static const bool authenticateDeviceToRvd = true;
   static const bool encryptRvdTraffic = true;
 
-  /// How long a client should wait for response after pinging a daemon
+  /// How long a client should wait for response after pinging a NoPorts daemon
   static const int daemonPingTimeoutSeconds = 20;
   static const Duration daemonPingTimeoutDuration =
       Duration(seconds: daemonPingTimeoutSeconds);
+
+  /// How long a client should wait for response from a NoPorts relay
+  static const int relayResponseTimeoutSeconds = 20;
+  static const Duration relayResponseTimeoutDuration =
+      Duration(seconds: relayResponseTimeoutSeconds);
 
   /// How long srv should stay running if SocketConnector has no connections
   static const int srvTimeoutInSeconds = 30;
