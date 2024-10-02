@@ -1,5 +1,6 @@
 ﻿using System.Windows;
 using System.Windows.Controls;
+using static NoPortsInstaller.ActivateController;
 
 namespace NoPortsInstaller.Pages.Activate
 {

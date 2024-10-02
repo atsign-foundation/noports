@@ -8,6 +8,7 @@ using System.IO;
 using System.Security.AccessControl;
 using System.Windows;
 using System.Windows.Controls;
+using static NoPortsInstaller.ActivateController;
 
 namespace NoPortsInstaller
 {
