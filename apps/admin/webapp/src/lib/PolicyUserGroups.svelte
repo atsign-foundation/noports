@@ -46,7 +46,7 @@
         if (eventData.type === 'DeviceInfo') {
             return 'Heartbeat';
         } else if (eventData.type === 'PolicyCheck') {
-            return 'User: ' + eventData.payload.userAtsign
+            return 'User: ' + eventData.payload.clientAtsign
                 + ';  PermitOpen: ' + eventData.payload.permitOpen;
         } else {
             return JSON.stringify(eventData);
