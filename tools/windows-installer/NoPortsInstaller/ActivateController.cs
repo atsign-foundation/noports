@@ -101,7 +101,7 @@ namespace NoPortsInstaller
         }
 
         private static readonly string AppName = "noports_win";
-        private static readonly List<string> Namespaces = ["{sshnp: rw, sshrvd: rw}", "{sshrvd: rw, sshnp: rw}"];
+        private static readonly List<string> Namespaces = ["sshnp: rw, sshrvd: rw", "sshrvd: rw, sshnp: rw"];
 
         public static bool Enroll(string otp)
         {
@@ -140,7 +140,6 @@ namespace NoPortsInstaller
                 EnrollmentRecord record = new(parts[0], parts[3]);
                 lines.Add(record);
             }
-
             return lines;
         }
 
