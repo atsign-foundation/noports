@@ -30,14 +30,7 @@ namespace NoPortsInstaller.Pages.Activate
                 Button button = (Button)sender;
                 EnrollmentRecord record = (EnrollmentRecord)button.CommandParameter;
                 RemoveEnrollment(record.Id);
-                try
-                {
-                    ActivateController.Approve(record.Id);
-                }
-                catch (Exception ex)
-                {
-                    _controller.LoadError(ex);
-                }
+                ActivateController.Approve(record.Id);
                 FillEnrollmentRequests();
             }
         }
@@ -49,14 +42,7 @@ namespace NoPortsInstaller.Pages.Activate
                 Button button = (Button)sender;
                 EnrollmentRecord record = (EnrollmentRecord)button.CommandParameter;
                 RemoveEnrollment(record.Id);
-                try
-                {
-                    ActivateController.Deny(record.Id);
-                }
-                catch (Exception ex)
-                {
-                    _controller.LoadError(ex);
-                }
+                ActivateController.Deny(record.Id);
                 FillEnrollmentRequests();
             }
         }

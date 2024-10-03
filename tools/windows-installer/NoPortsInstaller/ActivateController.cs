@@ -34,12 +34,18 @@ namespace NoPortsInstaller
                 startInfo.CreateNoWindow = true;
                 startInfo.Arguments = args;
 
-                process.Start();
-
-                process.WaitForExit();
-                stdout = process.StandardOutput.ReadToEnd();
-                stderr = process.StandardError.ReadToEnd();
-                exitCode = process.ExitCode;
+                try
+                {
+                    process.Start();
+                    process.WaitForExit();
+                    stdout = process.StandardOutput.ReadToEnd();
+                    stderr = process.StandardError.ReadToEnd();
+                    exitCode = process.ExitCode;
+                }
+                catch(Exception ex)
+                {
+                    _controller.LoadError(ex);
+                }
             }
 
             if (exitCode != 0 && !returnStdErr)
@@ -57,21 +63,41 @@ namespace NoPortsInstaller
         public static void Approve(string enrollmentId)
         {
             var args = $"approve -a \"{_controller.DeviceAtsign}\" -i {enrollmentId}";
-            RunCommand(args);
+            try
+            {
+                RunCommand(args);
+            }
+            catch(Exception ex)
+            {
+                _controller.LoadError(ex);
+            }
         }
 
         public static void Deny(string enrollmentId)
         {
             var args = $"deny -a \"{_controller.DeviceAtsign}\" -i {enrollmentId}";
-            RunCommand(args);
+            try
+            {
+                RunCommand(args);
+            }
+            catch(Exception ex)
+            {
+                _controller.LoadError(ex);
+            }
         }
 
         public static string GenerateOTP()
         {
             var args = $"otp -a \"{_controller.DeviceAtsign}\"";
-            var response = RunCommand(args);
-
-            return response;
+            try
+            {
+                return RunCommand(args);
+            }
+            catch(Exception ex)
+            {
+                _controller.LoadError(ex);
+                return "";
+            }
         }
 
         public static AtsignStatus Status(string atsign)
@@ -108,7 +134,15 @@ namespace NoPortsInstaller
         {
             var args =
                 $"enroll -a \"{_controller.DeviceAtsign}\" -s {otp} -p {AppName} -d {_controller.DeviceName} -n \"{Namespaces[0]}\" -k {Path.Combine(_controller.AtsignKeysDirectory, _controller.DeviceAtsign + "_key.atKeys")}";
-            string response = RunCommand(args);
+            string response = "";
+            try
+            {
+                response = RunCommand(args);
+            }
+            catch(Exception ex)
+            {
+                _controller.LoadError(ex);
+            }
 
             if (response.Contains("[Success]"))
             {
@@ -121,7 +155,15 @@ namespace NoPortsInstaller
         public static List<EnrollmentRecord> ListEnrollments()
         {
             var args = $"list -a \"{_controller.DeviceAtsign}\" -s pending";
-            var response = RunCommand(args);
+            var response = "";
+            try
+            {
+                response = RunCommand(args);
+            }
+            catch(Exception ex)
+            {
+                _controller.LoadError(ex);
+            }
             List<string> strings = response.Split("\n").ToList();
             List<EnrollmentRecord> lines = [];
             for (int i = 2; i < strings.Count; i++) 

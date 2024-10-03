@@ -102,23 +102,15 @@ namespace NoPortsInstaller.Pages.Activate
             string otp = $"{OtpBox1.Text}{OtpBox2.Text}{OtpBox3.Text}{OtpBox4.Text}{OtpBox5.Text}{OtpBox6.Text}".ToUpper();
 
             Loading.Visibility = Visibility.Visible;
-            try
+            bool value = await Task.Run(() => ActivateController.Enroll(otp));
+            if (value)
             {
-                bool value = await Task.Run(() => ActivateController.Enroll(otp));
-                if (value)
-                {
-                    _controller.NextPage();
-                }
-                else
-                {
-                    EnrollResponse.Content = "Invalid OTP, Enrollment failed. Please make sure you have a valid otp and try again.";
-                }
+                _controller.NextPage();
             }
-            catch (Exception ex)
+            else
             {
-                _controller.LoadError(ex);
+                EnrollResponse.Content = "Invalid OTP, Enrollment failed. Please make sure you have a valid otp and try again.";
             }
-
         }
 
         private void StartLoadingAnimation()
