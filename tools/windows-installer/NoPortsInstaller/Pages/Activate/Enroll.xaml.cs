@@ -112,7 +112,7 @@ namespace NoPortsInstaller.Pages.Activate
                 }
                 else
                 {
-                    EnrollResponse.Content = "Invalid OTP, Enrollment failed. Please make sure you have an otp and try again.";
+                    EnrollResponse.Content = "Invalid OTP, Enrollment failed. Please make sure you have a valid otp and try again.";
                 }
             }
             catch (Exception ex)

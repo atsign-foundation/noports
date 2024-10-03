@@ -106,5 +106,6 @@
             <Button x:Name="ApproveButton" Content="Approve" HorizontalAlignment="Left" Margin="58,66,0,0" VerticalAlignment="Top" Click="ApproveButton_Click" Width="53" Height="27"/>
             <Button x:Name="DenyButton" Content="Deny" HorizontalAlignment="Left" Margin="177,66,0,0" VerticalAlignment="Top" Click="DenyButton_Click" Width="40" Height="27"/>
         </Grid>
+        <Button x:Name="NewOtpButton" Content="New OTP" HorizontalAlignment="Left" Margin="415,71,0,0" VerticalAlignment="Top" Width="57" Click="NewOtpButton_Click"/>
     </Grid>
 </Page>

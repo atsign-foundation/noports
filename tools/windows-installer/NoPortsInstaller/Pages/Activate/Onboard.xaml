@@ -31,7 +31,7 @@
             </Image.OpacityMask>
         </Image>
         <Label Content="NoPorts Installation" HorizontalAlignment="Left" Height="28" VerticalAlignment="Top" Width="194" Margin="168,10,0,0" FontSize="16" FontWeight="Bold"/>
-        <Label Content="Generate fresh atKeys / Generate APKAM keys" HorizontalAlignment="Left" Height="27" VerticalAlignment="Top" Width="276" Margin="168,45,0,0"/>
+        <Label Content="Activate atSign / Generate Manager Keys" HorizontalAlignment="Left" Height="27" VerticalAlignment="Top" Width="276" Margin="168,45,0,0"/>
         <Button x:Name="BackPageButton" Content="&lt; Back" HorizontalAlignment="Left" Height="24" Margin="168,295,0,0" VerticalAlignment="Top" Width="52" Click="BackPageButton_Click"/>
         <Rectangle HorizontalAlignment="Left" Height="2" Margin="168,71,0,0" Stroke="Black" VerticalAlignment="Top" Width="220" Fill="Black" RenderTransformOrigin="0.5,0.5">
             <Rectangle.RenderTransform>
@@ -44,7 +44,7 @@
             </Rectangle.RenderTransform>
 
         </Rectangle>
-        <TextBox x:Name="Atsign" HorizontalAlignment="Left" Margin="184,107,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="219" Height="29" RenderTransformOrigin="0.501,0.621" />
+        <TextBox x:Name="Atsign" HorizontalAlignment="Left" Margin="184,107,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="219" Height="29" RenderTransformOrigin="0.501,0.621" TextChanged="Atsign_TextChanged" />
         <Label Content="Enter atsign:" HorizontalAlignment="Left" Height="28" VerticalAlignment="Top" Width="272" FontSize="11" Margin="172,79,0,0"/>
         <Button x:Name="Generate" Content="Generate" HorizontalAlignment="Left" Height="24" Margin="415,295,0,0" VerticalAlignment="Top" Width="57" IsEnabled="False" Click="Generate_Click"/>
         <Grid x:Name="ActivateResponse" Margin="172,141,0,0" HorizontalAlignment="Left" VerticalAlignment="Top" Height="145" Width="255">

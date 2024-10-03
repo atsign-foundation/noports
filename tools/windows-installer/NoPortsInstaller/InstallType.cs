@@ -4,8 +4,8 @@
     Device,
     Client,
     Onboard,
+    Enroll,
     Approve,
-    Update,
     Uninstall
 }
 

@@ -14,10 +14,10 @@ namespace NoPortsInstaller.Pages.Activate
         private static EnrollmentRecord? enrollmentRecord;
         public Approve()
         {
-            response = ActivateController.GenerateOTP();
             InitializeComponent();
             Header.Content = $"Generate atKeys for {_controller.DeviceAtsign}";
             FillEnrollmentRequest();
+            response = ActivateController.GenerateOTP();
         }
 
         private void ApproveButton_Click(object sender, RoutedEventArgs e)
@@ -35,7 +35,14 @@ namespace NoPortsInstaller.Pages.Activate
 
         private void DenyButton_Click(object sender, RoutedEventArgs e)
         {
-
+			try
+			{
+				ActivateController.Deny(enrollmentRecord!.Id);
+            }
+            catch (Exception ex)
+            {
+                _controller.LoadError(ex);
+            }
             FillEnrollmentRequest();
         }
 
@@ -107,5 +114,10 @@ namespace NoPortsInstaller.Pages.Activate
         {
             _controller.LoadPages(InstallType.Home);
         }
-    }
+
+		private void NewOtpButton_Click(object sender, RoutedEventArgs e)
+		{
+            response = ActivateController.GenerateOTP();
+		}
+	}
 }

@@ -122,7 +122,7 @@ namespace NoPortsInstaller
             var args = $"list -a \"{_controller.DeviceAtsign}\" -s pending";
             var response = RunCommand(args);
             List<string> strings = response.Split("\n").ToList();
-            int count = strings.Count - 2;
+            int count = strings.Count;
             List<EnrollmentRecord> lines = [];
             if (count == 1)
             {
@@ -151,10 +151,27 @@ namespace NoPortsInstaller
                 var fileContent = File.ReadAllText(dir);
                 if (fileContent.Contains("enrollmentId"))
                 {
-                    return false;
-                }
-            }
-            return true;
+					// TODO read in enrollment id
+					string enrollmentId = "";
+					var args = $"list -a \"{atsign}\" -s \"approved\"";
+					var response = RunCommand(args);
+					List<string> strings = response.Split("\n").ToList();
+					int count = strings.Count;
+					for (int i = 2; i <= count; i++)
+					{
+                        if (strings[i].Contains(enrollmentId))
+                        {
+                            var braceStart = strings[i].IndexOf("{");
+                            var braceEnd = strings[i].IndexOf("}");
+                            var permissions = strings[i].Substring(braceStart, braceEnd - braceStart);
+                            return permissions.Contains("__manage: rw") && permissions.Contains("*: rw");
+                        }
+					}
+
+					return false;
+				}
+			}
+			return true;
         }
 
         public class EnrollmentRecord(string Id, string DeviceName)

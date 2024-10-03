@@ -51,8 +51,8 @@
         <Label x:Name="ErrorMessage" Content="Select an install type:" HorizontalAlignment="Left" Margin="168,111,0,0" VerticalAlignment="Top" Grid.ColumnSpan="3" Height="28" Width="258" Background="Transparent" Foreground="#FF211E1E"/>
         <Button x:Name="ClientInstall" Content="Client Install" HorizontalAlignment="Left" Height="24" Margin="176,186,0,0" VerticalAlignment="Top" Width="154" RenderTransformOrigin="0.536,-0.009" Grid.ColumnSpan="3" Click="ClientInstall_Click"/>
         <Button x:Name="DeviceInstall" Content="Device Install" HorizontalAlignment="Left" Height="24" Margin="176,151,0,0" VerticalAlignment="Top" Width="154" RenderTransformOrigin="0.536,-0.009" Grid.ColumnSpan="3" Click="DeviceInstall_Click"/>
-        <Button x:Name="UpdateConfig" Content="Update Device Install" HorizontalAlignment="Left" Height="24" Margin="176,221,0,0" VerticalAlignment="Top" Width="154" RenderTransformOrigin="0.536,-0.009" Click="UpdateConfigButton_Click" Grid.ColumnSpan="3" IsEnabled="False"/>
-        <Button x:Name="Onboard" Content="Generate Keys" HorizontalAlignment="Left" Height="24" Margin="176,256,0,0" VerticalAlignment="Top" Width="154" RenderTransformOrigin="0.536,-0.009" Grid.ColumnSpan="3" Click="Onboard_Click"/>
-        <Button x:Name="Enroll" Content="Generate Keys for a new Device" HorizontalAlignment="Left" Height="24" Margin="176,292,0,0" VerticalAlignment="Top" Width="154" RenderTransformOrigin="0.536,-0.009" Grid.ColumnSpan="3" FontSize="10" Click="Enroll_Click"/>
+        <Button x:Name="Onboard" Content="Activate atSign" HorizontalAlignment="Left" Height="24" Margin="176,221,0,0" VerticalAlignment="Top" Width="154" RenderTransformOrigin="0.536,-0.009" Grid.ColumnSpan="3" Click="Onboard_Click"/>
+        <Button x:Name="Apkam_Enroll" Content="Generate Keys" HorizontalAlignment="Left" Height="24" Margin="176,256,0,0" VerticalAlignment="Top" Width="154" RenderTransformOrigin="0.536,-0.009" Grid.ColumnSpan="3" Click="Enroll_Click"/>
+        <Button x:Name="Apkam_Otp" Content="Generate Keys for a new Device" HorizontalAlignment="Left" Height="24" Margin="176,292,0,0" VerticalAlignment="Top" Width="154" RenderTransformOrigin="0.536,-0.009" Grid.ColumnSpan="3" FontSize="10" Click="Otp_Click"/>
     </Grid>
 </Page>

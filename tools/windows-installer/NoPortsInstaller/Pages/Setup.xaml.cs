@@ -14,10 +14,6 @@ namespace NoPortsInstaller.Pages
         {
             InitializeComponent();
             _controller = App.ControllerInstance;
-            if (_controller.IsInstalled)
-            {
-                UpdateConfig.IsEnabled = true;
-            }
         }
 
         private void OpenDialogButton_Click(object sender, RoutedEventArgs e)
@@ -31,21 +27,11 @@ namespace NoPortsInstaller.Pages
                 _controller.InstallDirectory = dialog.FolderName + "\\NoPorts";
             }
             Directory.Text = _controller.InstallDirectory;
-            if (_controller.IsInstalled)
-            {
-                UpdateConfig.IsEnabled = true;
-            }
         }
 
         private void DeviceInstall_Click(object sender, RoutedEventArgs e)
         {
             _controller.LoadPages(InstallType.Device);
-            _controller.NextPage();
-        }
-
-        private void UpdateConfigButton_Click(object sender, RoutedEventArgs e)
-        {
-            _controller.LoadPages(InstallType.Update);
             _controller.NextPage();
         }
 
@@ -58,14 +44,20 @@ namespace NoPortsInstaller.Pages
         private void Onboard_Click(object sender, RoutedEventArgs e)
         {
             _controller.LoadPages(InstallType.Onboard);
-            _controller.Onboard();
+            _controller.NextPage();
         }
 
-        private void Enroll_Click(object sender, RoutedEventArgs e)
-        {
-            _controller.LoadPages(InstallType.Approve);
-            _controller.Approve();
-        }
-    }
+		private void Enroll_Click(object sender, RoutedEventArgs e)
+		{
+            _controller.LoadPages(InstallType.Enroll);
+            _controller.NextPage();
+		}
+
+		private void Otp_Click(object sender, RoutedEventArgs e)
+		{
+			_controller.LoadPages(InstallType.Approve);
+			_controller.NextPage();
+		}
+	}
 }
 
