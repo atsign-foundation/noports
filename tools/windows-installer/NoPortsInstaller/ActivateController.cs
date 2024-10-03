@@ -1,5 +1,6 @@
 ﻿using System.Diagnostics;
 using System.IO;
+using System.Text.Json.Nodes;
 
 namespace NoPortsInstaller
 {
@@ -106,7 +107,7 @@ namespace NoPortsInstaller
         public static bool Enroll(string otp)
         {
             var args =
-                $"enroll -a \"{_controller.DeviceAtsign}\" -s {otp} -p {AppName} -d {_controller.DeviceName} -n \"{Namespaces[0]}\" -k {_controller.AtsignKeysDirectory}";
+                $"enroll -a \"{_controller.DeviceAtsign}\" -s {otp} -p {AppName} -d {_controller.DeviceName} -n \"{Namespaces[0]}\" -k {Path.Combine(_controller.AtsignKeysDirectory, _controller.DeviceAtsign + "_key.atKeys")}";
             string response = RunCommand(args);
 
             if (response.Contains("[Success]"))
@@ -122,20 +123,12 @@ namespace NoPortsInstaller
             var args = $"list -a \"{_controller.DeviceAtsign}\" -s pending";
             var response = RunCommand(args);
             List<string> strings = response.Split("\n").ToList();
-            int count = strings.Count;
             List<EnrollmentRecord> lines = [];
-            if (count == 1)
+            for (int i = 2; i < strings.Count; i++) 
             {
-                throw new Exception("No enrollments found.");
-            }
-            for (int i = 2; i <= count; i++)
-            {
-                var parts = strings[i].Trim().Split(" ").ToList();
+                var parts = strings[i].Trim().Split().ToList();
+                if (parts.Count < 4) continue;
                 parts.RemoveAll(x => x == "");
-                if (parts[2] != AppName)
-                {
-                    continue;
-                }
 
                 EnrollmentRecord record = new(parts[0], parts[3]);
                 lines.Add(record);
@@ -148,43 +141,59 @@ namespace NoPortsInstaller
             var dir = Path.Combine(_controller.AtsignKeysDirectory, atsign + "_key.atKeys");
             if (File.Exists(dir))
             {
+                string enrollmentId = "";
                 var fileContent = File.ReadAllText(dir);
                 if (fileContent.Contains("enrollmentId"))
                 {
-					// TODO read in enrollment id
-					string enrollmentId = "";
-					var args = $"list -a \"{atsign}\" -s \"approved\"";
-					var response = RunCommand(args);
-					List<string> strings = response.Split("\n").ToList();
-					int count = strings.Count;
-					for (int i = 2; i <= count; i++)
-					{
+                    try
+                    {
+                        var json = JsonObject.Parse(fileContent);
+                        if (json != null) enrollmentId = (String?)json["enrollmentId"] ?? "";
+                    }
+                    catch
+                    {
+                        throw new Exception("Failed to parse the atKeys file json");
+                    }
+                    var args = $"list -a \"{atsign}\" -s \"approved\"";
+                    var response = RunCommand(args);
+
+                    List<string> strings = response.Split("\n").ToList();
+                    int count = strings.Count;
+                    for (int i = 2; i <= count; i++)
+                    {
                         if (strings[i].Contains(enrollmentId))
                         {
                             var braceStart = strings[i].IndexOf("{");
                             var braceEnd = strings[i].IndexOf("}");
-                            var permissions = strings[i].Substring(braceStart, braceEnd - braceStart);
-                            return permissions.Contains("__manage: rw") && permissions.Contains("*: rw");
+                            if (braceStart != -1 && braceEnd != -1)
+                            {
+                                var permissions = strings[i].Substring(braceStart, braceEnd - braceStart);
+                                return permissions.Contains("__manage: rw") && permissions.Contains("*: rw");
+                            }
                         }
-					}
+                    }
 
-					return false;
+                    return false;
 				}
-			}
-			return true;
-        }
-
-        public class EnrollmentRecord(string Id, string DeviceName)
-        {
-            public string Id { get; set; } = Id;
-            public string DeviceName { get; set; } = DeviceName;
-        }
-
-        public enum AtsignStatus
-        {
-            DNE,
-            NotActivated,
-            Activated
+				else
+				{
+					return true;
+				}
+			} 
+            throw new Exception("Failed to locate atKeys file");
         }
     }
+
+	public class EnrollmentRecord(string Id, string DeviceName)
+	{
+		public string Id { get; set; } = Id;
+		public string DeviceName { get; set; } = DeviceName;
+	}
+
+	public enum AtsignStatus
+	{
+		DNE,
+		NotActivated,
+		Activated
+	}
 }

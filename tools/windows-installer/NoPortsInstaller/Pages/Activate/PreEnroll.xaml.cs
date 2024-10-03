@@ -44,6 +44,7 @@ namespace NoPortsInstaller.Pages.Activate
 		{
 			ActivateResponseText.Visibility = Visibility.Hidden;
 			ActivateResponseText.Content = "";
+            
 			_controller.DeviceAtsign = _controller.NormalizeAtsign(Atsign.Text);
             var response = ActivateController.Status(_controller.DeviceAtsign);
             if (response != AtsignStatus.NotActivated && response != AtsignStatus.Activated)
@@ -53,19 +54,22 @@ namespace NoPortsInstaller.Pages.Activate
 			}
             else
 			{
+				_controller.Pages.Add(new Enroll());
+				_controller.Pages.Add(new FinishGeneratingKeys());
 				_controller.NextPage();
 			}
 		}
 
 		private void Atsign_TextChanged(object sender, TextChangedEventArgs e)
 		{
-            if (Atsign.Text.Length > 0)
-            {
-				ActivateResponseText.Visibility = Visibility.Visible;
+			ActivateResponseText.Visibility = Visibility.Hidden;
+			if (Atsign.Text.Length > 0)
+			{
+				Next.IsEnabled = true;
 			}
 			else
 			{
-				ActivateResponseText.Visibility = Visibility.Hidden;
+				Next.IsEnabled = false;
 			}
 		}
 	}

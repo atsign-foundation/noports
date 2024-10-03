@@ -46,8 +46,11 @@
         </Rectangle>
         <Button x:Name="Next" Content="Next" HorizontalAlignment="Left" Height="24" Margin="415,295,0,0" VerticalAlignment="Top" Width="57" Click="Next_Click"/>
         <Label Content="Enter atSign:" HorizontalAlignment="Left" Height="27" VerticalAlignment="Top" Width="199" Margin="168,75,0,0" FontSize="11"/>
-        <ComboBox x:Name="AtsignCombo" HorizontalAlignment="Left" Height="26" Margin="177,107,0,0" VerticalAlignment="Top" Width="211" IsEditable="True"  Initialized="AtsignCombo_Initialized">
+        <ComboBox x:Name="AtsignCombo" HorizontalAlignment="Left" Height="26" Margin="177,107,0,0" VerticalAlignment="Top" Width="211" IsEditable="True"  Initialized="AtsignCombo_Initialized" SelectionChanged="AtsignCombo_SelectionChanged">
         </ComboBox>
         <Label x:Name="MPKAMCheckLabel" Content="" HorizontalAlignment="Left" Margin="177,149,0,0" VerticalAlignment="Top" Width="224"/>
+        <Grid x:Name="AtsignResponseCheck" Margin="172,141,0,0" HorizontalAlignment="Left" VerticalAlignment="Top" Height="145" Width="255">
+            <Label x:Name="AtsignResponseCheckText" Content="The keys on this device do not have permissions&#xD;&#xA;to manage other devices." HorizontalAlignment="Center" Height="62" VerticalAlignment="Top" Width="255" FontSize="11" Margin="0,10,0,0" Visibility="Hidden"/>
+        </Grid>
     </Grid>
 </Page>

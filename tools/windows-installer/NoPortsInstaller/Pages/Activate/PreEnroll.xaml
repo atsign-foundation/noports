@@ -44,7 +44,7 @@
             </Rectangle.RenderTransform>
 
         </Rectangle>
-        <TextBox x:Name="Atsign" HorizontalAlignment="Left" Margin="184,107,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="250" Height="29" RenderTransformOrigin="0.501,0.621" />
+        <TextBox x:Name="Atsign" HorizontalAlignment="Left" Margin="184,107,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="250" Height="29" RenderTransformOrigin="0.501,0.621" TextChanged="Atsign_TextChanged" />
         <Label Content="Enter atsign:" HorizontalAlignment="Left" Height="28" VerticalAlignment="Top" Width="272" FontSize="11" Margin="172,79,0,0"/>
         <Grid x:Name="ActivateResponse" Margin="172,141,0,0" HorizontalAlignment="Left" VerticalAlignment="Top" Height="62" Width="255">
             <Label x:Name="ActivateResponseText" Content="Check the email that was used to create the atsign&#xD;&#xA;&#xD;&#xA;Enter One Time Password (OTP):" HorizontalAlignment="Left" Height="54" VerticalAlignment="Top" Width="272" FontSize="11" Margin="0,10,0,0" Visibility="Hidden"/>

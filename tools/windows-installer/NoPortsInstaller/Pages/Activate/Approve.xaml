@@ -32,16 +32,15 @@
         </Image>
         <Label Content="NoPorts Installation" HorizontalAlignment="Left" Height="28" VerticalAlignment="Top" Width="194" Margin="168,10,0,0" FontSize="16" FontWeight="Bold"/>
         <Button x:Name="BackPageButton" Content="&lt; Back" HorizontalAlignment="Left" Height="24" Margin="168,295,0,0" VerticalAlignment="Top" Width="52" Click="BackPageButton_Click"/>
-       
+
 
         <Button x:Name="Home" Content="&lt;&lt; Home" HorizontalAlignment="Left" Height="24" Margin="388,295,0,0" VerticalAlignment="Top" Width="84" Click="Home_Click" />
-        <Grid x:Name="ActivateResponse" Margin="168,71,0,0" HorizontalAlignment="Left" VerticalAlignment="Top" Height="94" Width="322">
+        <Grid x:Name="ActivateResponse" Margin="168,71,0,0" HorizontalAlignment="Left" VerticalAlignment="Top" Height="62" Width="322">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="61*"/>
                 <ColumnDefinition Width="261*"/>
             </Grid.ColumnDefinitions>
-            <Label x:Name="ActivateResponseText" Content="OTP&#xD;&#xA;" HorizontalAlignment="Left" Height="30" VerticalAlignment="Top" Width="223" FontSize="11" Margin="0,10,0,0" Grid.ColumnSpan="2"/>
-            <Grid x:Name="OtpInput" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="-22,25,0,0" Width="289" Grid.ColumnSpan="2" >
+            <Grid x:Name="OtpInput" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="-22,-1,0,0" Width="289" Grid.ColumnSpan="2" >
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="131*"/>
                     <ColumnDefinition Width="42*"/>
@@ -49,12 +48,12 @@
                 </Grid.ColumnDefinitions>
                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Left" Grid.ColumnSpan="2" Margin="28,9,0,-9" Width="262">
                     <!-- OTP Input TextBoxes -->
-                    <TextBox x:Name="OtpBox1" Width="35" MaxLength="1" Initialized="FillOtp" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" IsReadOnly="True"/>
-                    <TextBox x:Name="OtpBox2" Width="35" MaxLength="1" Initialized="FillOtp" HorizontalContentAlignment="Center" VerticalContentAlignment="Center"  IsReadOnly="True" Margin="10,0,0,0"/>
-                    <TextBox x:Name="OtpBox3" Width="35" MaxLength="1" Initialized="FillOtp" HorizontalContentAlignment="Center" VerticalContentAlignment="Center"  IsReadOnly="True" Margin="10,0,0,0"/>
-                    <TextBox x:Name="OtpBox4" Width="35" MaxLength="1" Initialized="FillOtp" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" IsReadOnly="True"  Margin="10,0,0,0" />
-                    <TextBox x:Name="OtpBox5" Width="35" MaxLength="1" Initialized="FillOtp" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" IsReadOnly="True" Margin="10,0,0,0"/>
-                    <TextBox x:Name="OtpBox6" Width="35" MaxLength="1" Initialized="FillOtp" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" Margin="10,0,0,0"/>
+                    <TextBox x:Name="OtpBox1" Width="35" MaxLength="1" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" IsReadOnly="True" />
+                    <TextBox x:Name="OtpBox2" Width="35" MaxLength="1" HorizontalContentAlignment="Center" VerticalContentAlignment="Center"  IsReadOnly="True" Margin="10,0,0,0"/>
+                    <TextBox x:Name="OtpBox3" Width="35" MaxLength="1" HorizontalContentAlignment="Center" VerticalContentAlignment="Center"  IsReadOnly="True" Margin="10,0,0,0"/>
+                    <TextBox x:Name="OtpBox4" Width="35" MaxLength="1" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" IsReadOnly="True"  Margin="10,0,0,0" />
+                    <TextBox x:Name="OtpBox5" Width="35" MaxLength="1" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" IsReadOnly="True" Margin="10,0,0,0"/>
+                    <TextBox x:Name="OtpBox6" Width="35" MaxLength="1" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" Margin="10,0,0,0"/>
 
                 </StackPanel>
 
@@ -71,10 +70,10 @@
                     </Ellipse.RenderTransform>
                 </Ellipse>
             </Canvas>
-            <Label x:Name="EnrollResponse" Content="Enter this OTP on another device" HorizontalAlignment="Left" Height="30" VerticalAlignment="Top" Width="322" FontSize="11" Margin="0,54,0,0" Grid.ColumnSpan="2"/>
+            <Label x:Name="EnrollResponse" Content="Enter this OTP on another device" HorizontalAlignment="Left" Height="30" VerticalAlignment="Top" Width="322" FontSize="11" Grid.ColumnSpan="2" Margin="0,31,0,0"/>
         </Grid>
-        <Label Content="Enrollment Request" HorizontalAlignment="Left" Height="27" VerticalAlignment="Top" Width="199" Margin="168,147,0,0" FontWeight="Bold"/>
-        <Rectangle HorizontalAlignment="Left" Height="2" Margin="168,176,0,0" Stroke="Black" VerticalAlignment="Top" Width="220" Fill="Black" RenderTransformOrigin="0.5,0.5">
+        <Label Content="Enrollment Request" HorizontalAlignment="Left" Height="27" VerticalAlignment="Top" Width="199" Margin="168,127,0,0" FontWeight="Bold"/>
+        <Rectangle HorizontalAlignment="Left" Height="2" Margin="168,156,0,0" Stroke="Black" VerticalAlignment="Top" Width="220" Fill="Black" RenderTransformOrigin="0.5,0.5">
             <Rectangle.RenderTransform>
                 <TransformGroup>
                     <ScaleTransform ScaleY="-1"/>
@@ -85,8 +84,9 @@
             </Rectangle.RenderTransform>
 
         </Rectangle>
-        <Button x:Name="RefreshButton" Content="Refresh" HorizontalAlignment="Left" Margin="415,156,0,0" VerticalAlignment="Top" Width="57" Click="RefreshButton_Click"/>
-        <Label x:Name="Header" Content="Generate atKeys for " HorizontalAlignment="Left" Height="27" VerticalAlignment="Top" Width="313" Margin="168,45,0,0"/>
+        <Button x:Name="RefreshButton" Content="Refresh" HorizontalAlignment="Left" Margin="413,139,0,0" VerticalAlignment="Top" Width="57" Click="RefreshButton_Click"/>
+        <Label x:Name="Header" Content="Generate OTP " HorizontalAlignment="Left" Height="27" VerticalAlignment="Top" Width="313" Margin="168,45,0,0"/>
+        <Button x:Name="NewOtpButton" Content="New OTP" HorizontalAlignment="Left" Margin="413,51,0,0" VerticalAlignment="Top" Width="57" Click="NewOtpButton_Click"/>
         <Rectangle HorizontalAlignment="Left" Height="2" Margin="168,71,0,0" Stroke="Black" VerticalAlignment="Top" Width="220" Fill="Black" RenderTransformOrigin="0.5,0.5">
             <Rectangle.RenderTransform>
                 <TransformGroup>
@@ -96,16 +96,32 @@
                     <TranslateTransform/>
                 </TransformGroup>
             </Rectangle.RenderTransform>
-
         </Rectangle>
-        <Grid x:Name="Enrollment" Margin="179,175,28,43">
-            <Label Content="Device" HorizontalAlignment="Left" VerticalAlignment="Top"/>
-            <Label x:Name="DeviceNameLabel" Content="Name" HorizontalAlignment="Left" Margin="85,0,0,0" VerticalAlignment="Top" Width="132" FontSize="10"/>
-            <Label Content="ID" HorizontalAlignment="Left" Margin="0,26,0,0" VerticalAlignment="Top"/>
-            <Label x:Name="IdLabel" Content="value" HorizontalAlignment="Left" Margin="85,26,0,0" VerticalAlignment="Top" Width="198" Height="26" FontSize="10"/>
-            <Button x:Name="ApproveButton" Content="Approve" HorizontalAlignment="Left" Margin="58,66,0,0" VerticalAlignment="Top" Click="ApproveButton_Click" Width="53" Height="27"/>
-            <Button x:Name="DenyButton" Content="Deny" HorizontalAlignment="Left" Margin="177,66,0,0" VerticalAlignment="Top" Click="DenyButton_Click" Width="40" Height="27"/>
+
+        <Grid Margin="168,161,28,55">
+            <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto">
+                <ItemsControl Name="icEnrollments">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="10" />
+                                    <ColumnDefinition Width="50" />
+                                    <ColumnDefinition Width="50" />
+                                    <ColumnDefinition Width="10" />
+                                    <ColumnDefinition Width="300" />
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Grid.Column="0" Text="{Binding DeviceName}" />
+                                <Button Grid.Column="2" Content="Approve" CommandParameter="{Binding}" Click="ApproveButton_Click" />
+                                <Button Grid.Column="3" Content="Deny" CommandParameter="{Binding}" Click="DenyButton_Click" />
+                                <TextBlock Grid.Column="5" Text="{Binding Id}" />
+                            </Grid>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </ScrollViewer>
+
         </Grid>
-        <Button x:Name="NewOtpButton" Content="New OTP" HorizontalAlignment="Left" Margin="415,71,0,0" VerticalAlignment="Top" Width="57" Click="NewOtpButton_Click"/>
     </Grid>
 </Page>

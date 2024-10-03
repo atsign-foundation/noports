@@ -46,8 +46,7 @@ namespace NoPortsInstaller
             {
                 return Path.Combine(
                     Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
-                    @".atsign\keys",
-                    DeviceAtsign + "_key.atKeys"
+                    @".atsign\keys"
                 );
             }
         }
@@ -468,6 +467,7 @@ namespace NoPortsInstaller
             switch (InstallType)
             {
                 case InstallType.Home:
+                    InstallLogger.DumpLog();
                     Pages.Add(new Setup());
                     break;
                 case InstallType.Uninstall:
@@ -489,8 +489,6 @@ namespace NoPortsInstaller
                         Pages.Add(new Download());
                     }
                     Pages.Add(new PreEnroll());
-                    Pages.Add(new Enroll());
-                    Pages.Add(new FinishGeneratingKeys());
                     break;
                 case InstallType.Onboard:
                     Pages.Add(new Setup());

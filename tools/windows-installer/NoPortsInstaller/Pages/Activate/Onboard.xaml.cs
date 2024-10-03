@@ -127,7 +127,7 @@ namespace NoPortsInstaller.Pages.Activate
 			}
 			else
 			{
-				ActivateResponseText.Content = "This atsign does not exist.";
+				ActivateResponseText.Content = "Make sure to enter an atSign you own and \n make sure to press 'Activate' on your dashboard.";
 				ActivateResponseText.Visibility = Visibility.Visible;
 			}
 		}

@@ -51,7 +51,7 @@
                 <ColumnDefinition Width="58*"/>
                 <ColumnDefinition Width="203*"/>
             </Grid.ColumnDefinitions>
-            <Label x:Name="ActivateResponseText" Content="Step 2: One TIme Password (at-activate \ from installer)" HorizontalAlignment="Left" Height="30" VerticalAlignment="Top" Width="312" Margin="0,10,0,0" Grid.ColumnSpan="3"/>
+            <Label x:Name="ActivateResponseText" Content="Step 2: Enter One Time Password from other device" HorizontalAlignment="Left" Height="30" VerticalAlignment="Top" Width="312" Margin="0,10,0,0" Grid.ColumnSpan="3"/>
             <Grid x:Name="OtpInput" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="-22,25,0,0" Width="289" Grid.ColumnSpan="3" >
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="131*"/>
@@ -84,9 +84,9 @@
             </Canvas>
             <Label x:Name="EnrollResponse" Content="" HorizontalAlignment="Left" Height="30" VerticalAlignment="Top" Width="322" FontSize="11" Margin="0,54,0,0" Grid.ColumnSpan="3"/>
         </Grid>
-        <Label Content="Step 1: Generate OTP's (cli or app)" HorizontalAlignment="Left" Height="28" VerticalAlignment="Top" Width="200" Margin="178,86,0,0"/>
-        <Label Content="Step 3: Approve Enrollment (cli or app)" HorizontalAlignment="Left" Height="28" VerticalAlignment="Top" Width="280" Margin="178,227,0,0"/>
-        <Label x:Name="OTPLabel" Content="&#xD;&#xA;" HorizontalAlignment="Left" Height="28" VerticalAlignment="Top" Width="226" Margin="194,110,0,0"/>
-        <Label x:Name="ApproveLabel" Content="" HorizontalAlignment="Left" Height="28" VerticalAlignment="Top" Width="226" Margin="194,251,0,0"/>
+        <Label Content="Step 1: Generate OTP on other device" HorizontalAlignment="Left" Height="28" VerticalAlignment="Top" Width="234" Margin="178,86,0,0"/>
+        <Label Content="Step 3: Approve enrollment on other device" HorizontalAlignment="Left" Height="28" VerticalAlignment="Top" Width="280" Margin="178,227,0,0"/>
+        <Label x:Name="OTPLabel" Content="&#xD;&#xA;" HorizontalAlignment="Left" Height="28" VerticalAlignment="Top" Width="242" Margin="178,110,0,0"/>
+        <Label x:Name="ApproveLabel" Content="" HorizontalAlignment="Left" Height="28" VerticalAlignment="Top" Width="294" Margin="178,251,0,0"/>
     </Grid>
 </Page>

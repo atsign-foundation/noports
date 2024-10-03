@@ -15,9 +15,8 @@ namespace NoPortsInstaller.Pages.Activate
             InitializeComponent();
             StartLoadingAnimation();
             Header.Content = $"Generate atKeys for {_controller.DeviceAtsign}";
-            OTPLabel.Content = $"at_activate otp -a \"{_controller.DeviceAtsign}\"";
-            ApproveLabel.Content = $"at_activate approve -a \"{_controller.DeviceAtsign}\" -i [enrollmentId]";
-
+            OTPLabel.Content = $"at__activate otp -a \"{_controller.DeviceAtsign}\"";
+            ApproveLabel.Content = $"at__activate approve -a \"{_controller.DeviceAtsign}\" -i [enrollmentId]";
         }
 
         // Event handler for TextChanged
