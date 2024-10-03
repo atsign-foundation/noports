@@ -5,7 +5,7 @@ import 'package:test/test.dart';
 void main() {
   group('ParserType', () {
     test('public API test', () {
-      // abitrary values
+      // arbitrary values
       ParserType parserType = ParserType.all;
       ParseWhen parseWhen = ParseWhen.always;
 

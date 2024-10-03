@@ -241,6 +241,14 @@ void main(List<String> args) async {
       bool quiet = parsedArgs[quietFlag];
       bool keepAlive = parsedArgs['keep-alive'];
 
+      // Do we have a valid device name?
+      // First of all let's snakify it
+      device = snakifyDeviceName(device);
+      // and now check it against desired regex
+      if (invalidDeviceName(device)) {
+        throw ArgumentError(invalidDeviceNameMsg);
+      }
+
       // A listen progress listener for the CLI
       // Will only log if verbose is false, since if verbose is true
       // there will already be a boatload of log messages.

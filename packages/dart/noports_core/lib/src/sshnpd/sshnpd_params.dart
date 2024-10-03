@@ -78,14 +78,15 @@ class SshnpdParams {
     }
     String homeDirectory = getHomeDirectory()!;
 
-    // Do we have a device ?
-    String device = r['device'];
-
     SupportedSshClient sshClient = SupportedSshClient.values.firstWhere(
         (c) => c.toString() == r['ssh-client'],
         orElse: () => DefaultSshnpdArgs.sshClient);
 
-    // Do we have an ASCII ?
+    // Do we have a valid device name?
+    String device = r['device'];
+    // First of all let's snakify it
+    device = snakifyDeviceName(device);
+    // and now check it against desired regex
     if (invalidDeviceName(device)) {
       throw ArgumentError(invalidDeviceNameMsg);
     }
@@ -109,7 +110,7 @@ class SshnpdParams {
       permitOpen = '*:*';
     }
     return SshnpdParams(
-      device: r['device'],
+      device: device,
       username: getUserName(throwIfNull: true)!,
       homeDirectory: homeDirectory,
       managerAtsigns: managerAtsigns,
@@ -133,7 +134,7 @@ class SshnpdParams {
               homeDirectory: homeDirectory,
               atSign: deviceAtsign,
               progName: '.sshnpd',
-              uniqueID: r['device']),
+              uniqueID: device),
       permitOpen: permitOpen,
     );
   }

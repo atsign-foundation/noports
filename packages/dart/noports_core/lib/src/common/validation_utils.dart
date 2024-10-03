@@ -8,13 +8,21 @@ import 'package:noports_core/src/common/file_system_utils.dart';
 import 'package:noports_core/src/common/io_types.dart';
 import 'package:path/path.dart' as path;
 
-const String sshnpDeviceNameRegex = r'[a-z0-9_]{1,36}';
+const String sshnpDeviceNameRegex = r'[a-z0-9][a-z0-9_\-]{1,35}';
 const String invalidDeviceNameMsg = 'Device name must be alphanumeric'
-    ' snake case, max length 36';
-const String deviceNameFormatHelp = 'Alphanumeric snake case, max length 36.';
+    ' snake case, max length 36. First char must be a-z or 0-9.';
+const String deviceNameFormatHelp = 'Alphanumeric snake case, max length 36. First char must be a-z or 0-9.';
 const String invalidSshKeyPermissionsMsg =
     'Detected newline characters in the ssh public key permissions which malforms the authorized_keys file.';
 
+/// Returns deviceName with uppercase latin replaced by lowercase, and
+/// whitespace replaced with underscores. Note that multiple consecutive
+/// whitespace characters will be replaced by a single underscore.
+String snakifyDeviceName(String deviceName) {
+  return deviceName.toLowerCase().replaceAll(RegExp(r'\s+'), '_');
+}
+
+/// Returns false if the device name does not match [sshnpDeviceNameRegex]
 bool invalidDeviceName(String test) {
   return RegExp(sshnpDeviceNameRegex).allMatches(test).first.group(0) != test;
 }
