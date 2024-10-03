@@ -54,6 +54,8 @@ class SshnpdImpl implements Sshnpd {
   @override
   final bool addSshPublicKeys;
 
+  final String localSshdHost = "localhost";
+
   @override
   final int localSshdPort;
 
@@ -314,7 +316,7 @@ class SshnpdImpl implements Sshnpd {
         logger.info(
             'LEGACY $notificationKey request received from ${notification.from}'
             ' ( ${notification.value} )');
-        _handleLegacySshRequestNotification(notification);
+        _handleLegacySshRequestNotification(notification, auth);
         break;
 
       case 'ping':
@@ -326,7 +328,7 @@ class SshnpdImpl implements Sshnpd {
       case 'ssh_request':
         logger.info('$notificationKey received from ${notification.from}'
             ' ( ${notification.value} )');
-        _handleSshRequestNotification(notification);
+        _handleSshRequestNotification(notification, auth);
         break;
 
       case 'npt_request':
@@ -456,9 +458,9 @@ class SshnpdImpl implements Sshnpd {
     late final NptSessionRequest req;
     try {
       envelope = jsonDecode(notification.value!);
-      assertValidValue(envelope, 'signature', String);
-      assertValidValue(envelope, 'hashingAlgo', String);
-      assertValidValue(envelope, 'signingAlgo', String);
+      assertValidMapValue(envelope, 'signature', String);
+      assertValidMapValue(envelope, 'hashingAlgo', String);
+      assertValidMapValue(envelope, 'signingAlgo', String);
 
       Map<String, dynamic> params = envelope['payload'];
 
@@ -522,13 +524,26 @@ class SshnpdImpl implements Sshnpd {
     );
   }
 
-  bool _permittedToOpen(List<String> po, NptSessionRequest req) {
-    String requested = '${req.requestedHost}:${req.requestedPort}';
-    // Check if this daemon allows connections to the requested host / port
-    return (po.contains(requested) ||
-        po.contains('*:${req.requestedPort}') ||
-        po.contains('${req.requestedHost}:*') ||
-        po.contains('*:*'));
+  /// request can be a [NptSessionRequest] or [SshnpSessionRequest]
+  bool _permittedToOpen(List<String> po, dynamic req) {
+    if (req is NptSessionRequest) {
+      String requested = '${req.requestedHost}:${req.requestedPort}';
+      // Check if this daemon allows connections to the requested host / port
+      return (po.contains(requested) ||
+          po.contains('*:${req.requestedPort}') ||
+          po.contains('${req.requestedHost}:*') ||
+          po.contains('*:*'));
+    }
+    if (req is SshnpSessionRequest) {
+      String requested = "$localSshdHost:$localSshdPort";
+      return (po.contains(requested) ||
+          po.contains('*:$localSshdPort') ||
+          po.contains('$localSshdHost:*') ||
+          po.contains('*:*'));
+    }
+    logger.severe(
+        "Denying permission to open in _permittedToOpen, unknown request type: ${req.runtimeType}");
+    return false;
   }
 
   Future<void> startNpt({
@@ -636,42 +651,22 @@ class SshnpdImpl implements Sshnpd {
   /// which are also provided in the json payload, and requesting a remote
   /// port forwarding of the provided `remoteForwardPort` to this device's
   /// [localSshdPort].
-  void _handleSshRequestNotification(AtNotification notification) async {
+  void _handleSshRequestNotification(
+      AtNotification notification, NPAAuthCheckResponse auth) async {
     String requestingAtsign = notification.from;
 
     // Validate the request payload.
     late final Map envelope;
-    late final Map params;
+    late final SshnpSessionRequest req;
     try {
       envelope = jsonDecode(notification.value!);
-      assertValidValue(envelope, 'signature', String);
-      assertValidValue(envelope, 'hashingAlgo', String);
-      assertValidValue(envelope, 'signingAlgo', String);
+      assertValidMapValue(envelope, 'signature', String);
+      assertValidMapValue(envelope, 'hashingAlgo', String);
+      assertValidMapValue(envelope, 'signingAlgo', String);
 
-      params = envelope['payload'] as Map;
+      Map<String, dynamic> params = envelope['payload'];
 
-      // sessionId, host (of the rvd) and port (of the rvd) are required.
-      assertValidValue(params, 'sessionId', String);
-      assertValidValue(params, 'host', String);
-      assertValidValue(params, 'port', int);
-
-      // v5+ params are not required but must be valid if supplied
-      assertNullOrValidValue(params, 'authenticateToRvd', bool);
-      assertNullOrValidValue(params, 'clientNonce', String);
-      assertNullOrValidValue(params, 'rvdNonce', String);
-      assertNullOrValidValue(params, 'encryptRvdTraffic', bool);
-      assertNullOrValidValue(params, 'clientEphemeralPK', String);
-      assertNullOrValidValue(params, 'clientEphemeralPKType', String);
-
-      // If a reverse ssh (v3, LEGACY BEHAVIOUR) is being requested, then we
-      // also require a username (to ssh back to the client), a privateKey (for
-      // that ssh) and a remoteForwardPort, to set up the ssh tunnel back to
-      // this device from the client side.
-      if (params['direct'] != true) {
-        assertValidValue(params, 'username', String);
-        assertValidValue(params, 'remoteForwardPort', int);
-        assertValidValue(params, 'privateKey', String);
-      }
+      req = SshnpSessionRequest.fromJson(params);
     } catch (e) {
       logger.warning(
           'Failed to extract parameters from notification value "${notification.value}" with error : $e');
@@ -688,35 +683,51 @@ class SshnpdImpl implements Sshnpd {
       return;
     }
 
-    if (params['direct'] == true) {
+    String requested = '$localSshdHost:$localSshdPort';
+    // Check if this *daemon* allows connections to the requested host / port
+    if (!_permittedToOpen(permitOpen, req)) {
+      // Notify noports client that this session is NOT connected
+      await _notify(
+        atKey: _createResponseAtKey(
+            requestingAtsign: requestingAtsign, sessionId: req.sessionId),
+        value: 'Daemon does not permit connections to $requested',
+        sessionId: req.sessionId,
+      );
+
+      return;
+    }
+
+    // Check if this *client* is allowed connections to the requested host / port
+    if (!_permittedToOpen(auth.permitOpen, req)) {
+      // Notify noports client that this session is NOT connected
+      await _notify(
+        atKey: _createResponseAtKey(
+            requestingAtsign: requestingAtsign, sessionId: req.sessionId),
+        value: 'Client is not permitted connections to $requested',
+        sessionId: req.sessionId,
+      );
+
+      return;
+    }
+
+    if (req.direct) {
       // direct ssh requested
       await startDirectSsh(
         requestingAtsign: requestingAtsign,
-        sessionId: params['sessionId'],
-        host: params['host'],
-        port: params['port'],
-        authenticateToRvd: params['authenticateToRvd'],
-        clientNonce: params['clientNonce'],
-        rvdNonce: params['rvdNonce'],
-        encryptRvdTraffic: params['encryptRvdTraffic'],
-        clientEphemeralPK: params['clientEphemeralPK'],
-        clientEphemeralPKType: params['clientEphemeralPKType'],
+        req: req,
       );
     } else {
       // reverse ssh requested
       await startReverseSsh(
-          requestingAtsign: requestingAtsign,
-          sessionId: params['sessionId'],
-          host: params['host'],
-          port: params['port'],
-          username: params['username'],
-          privateKey: params['privateKey'],
-          remoteForwardPort: params['remoteForwardPort']);
+        requestingAtsign: requestingAtsign,
+        req: req,
+      );
     }
   }
 
   /// ssh through to the remote device with the information we've received
-  void _handleLegacySshRequestNotification(AtNotification notification) async {
+  void _handleLegacySshRequestNotification(
+      AtNotification notification, NPAAuthCheckResponse auth) async {
     String requestingAtsign = notification.from;
 
     /// notification value is `$remoteForwardPort $remotePort $username $remoteHost $sessionId`
@@ -733,15 +744,42 @@ class SshnpdImpl implements Sshnpd {
       // sshnp <2.0.0 clients do not send sessionId, it's generated here
       sessionId = Uuid().v4();
     }
+    SshnpSessionRequest req = SshnpSessionRequest(
+      direct: false,
+      sessionId: sessionId,
+      username: username,
+      host: host,
+      port: int.parse(port),
+      privateKey: _privateKey,
+      remoteForwardPort: int.parse(remoteForwardPort),
+    );
 
-    await startReverseSsh(
-        requestingAtsign: requestingAtsign,
-        sessionId: sessionId,
-        username: username,
-        host: host,
-        port: int.parse(port),
-        privateKey: _privateKey,
-        remoteForwardPort: int.parse(remoteForwardPort));
+    String requested = '$localSshdHost:$localSshdPort';
+    if (!_permittedToOpen(permitOpen, req)) {
+      // Notify noports client that this session is NOT connected
+      await _notify(
+        atKey: _createResponseAtKey(
+            requestingAtsign: requestingAtsign, sessionId: req.sessionId),
+        value: 'Daemon does not permit connections to $requested',
+        sessionId: req.sessionId,
+      );
+
+      return;
+    }
+
+    // Check if this *client* is allowed connections to the requested host / port
+    if (!_permittedToOpen(auth.permitOpen, req)) {
+      // Notify noports client that this session is NOT connected
+      await _notify(
+        atKey: _createResponseAtKey(
+            requestingAtsign: requestingAtsign, sessionId: req.sessionId),
+        value: 'Client is not permitted connections to $requested',
+        sessionId: req.sessionId,
+      );
+
+      return;
+    }
+    await startReverseSsh(requestingAtsign: requestingAtsign, req: req);
   }
 
   /// - Starts an srv process bridging the rvd to localhost:$localSshdPort
@@ -754,16 +792,18 @@ class SshnpdImpl implements Sshnpd {
   ///   after 15 seconds
   Future<void> startDirectSsh({
     required String requestingAtsign,
-    required String sessionId,
-    required String host,
-    required int port,
-    required bool? authenticateToRvd,
-    required String? clientNonce,
-    required String? rvdNonce,
-    required bool? encryptRvdTraffic,
-    required String? clientEphemeralPK,
-    required String? clientEphemeralPKType,
+    required SshnpSessionRequest req,
   }) async {
+    String sessionId = req.sessionId;
+    String host = req.host;
+    int port = req.port;
+    bool? authenticateToRvd = req.authenticateToRvd;
+    String? clientNonce = req.clientNonce;
+    String? rvdNonce = req.rvdNonce;
+    bool? encryptRvdTraffic = req.encryptRvdTraffic;
+    String? clientEphemeralPK = req.clientEphemeralPK;
+    String? clientEphemeralPKType = req.clientEphemeralPKType;
+
     logger.info(
         'Setting up ports for direct ssh session using ${sshClient.name} ($sshClient) from: $requestingAtsign session: $sessionId');
 
@@ -881,14 +921,23 @@ class SshnpdImpl implements Sshnpd {
     }
   }
 
-  Future<void> startReverseSsh(
-      {required String requestingAtsign,
-      required String sessionId,
-      required String host,
-      required int port,
-      required String username,
-      required String privateKey,
-      required int remoteForwardPort}) async {
+  Future<void> startReverseSsh({
+    required String requestingAtsign,
+    required SshnpSessionRequest req,
+  }) async {
+    if (req.direct) {
+      throw ArgumentError(
+        "req.direct = true was passed to startReverseSsh, this is not allowed, use startDirectSsh instead.",
+      );
+    }
+
+    String sessionId = req.sessionId;
+    String host = req.host;
+    int port = req.port;
+    String username = req.username!;
+    String privateKey = req.privateKey!;
+    int remoteForwardPort = req.remoteForwardPort!;
+
     logger.info(
         'Starting reverse ssh session for $username to $host on port $port with forwardRemote of $remoteForwardPort');
     logger.shout(

@@ -983,7 +983,7 @@ device() {
       write_systemd_environment "$systemd_service" "device_name" "$device_name"
 
       systemctl enable sshnpd
-      systemctl start sshnpd
+      systemctl restart sshnpd
 
       echo "sshnpd installed with systemd. To see logs use:"
       echo "journalctl -u sshnpd.service -f"

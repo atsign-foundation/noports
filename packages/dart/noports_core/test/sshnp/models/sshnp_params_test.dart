@@ -92,6 +92,16 @@ void main() {
             clientAtSign: '', sshnpdAtSign: '', srvdAtSign: '@my_srvd');
         expect(params.srvdAtSign, equals('@my_srvd'));
       });
+      test('Test snakifyDeviceName', () {
+        expect(snakifyDeviceName('ABCDEF'), 'abcdef');
+        expect(snakifyDeviceName('Ab_cd_Ef'), 'ab_cd_ef');
+        expect(snakifyDeviceName('Ab-cd-Ef'), 'ab-cd-ef');
+        expect(snakifyDeviceName('Ab cD-Ef'), 'ab_cd-ef');
+        expect(snakifyDeviceName('Ab-cD Ef'), 'ab-cd_ef');
+        expect(snakifyDeviceName('Ab cD Ef'), 'ab_cd_ef');
+        expect(snakifyDeviceName('Ab\tcD\nEf'), 'ab_cd_ef');
+        expect(snakifyDeviceName('Ab \t\n cD      Ef'), 'ab_cd_ef');
+      });
       test('SshnpParams.device invalid with uppercase test', () {
         expect(
             () => SshnpParams(
@@ -107,7 +117,7 @@ void main() {
                 clientAtSign: '',
                 sshnpdAtSign: '',
                 srvdAtSign: '',
-                device: 'my-device-name'),
+                device: 'my#device#name'),
             throwsA(TypeMatcher<ArgumentError>()));
       });
       test('SshnpParams.device invalid too long test', () {
@@ -119,8 +129,26 @@ void main() {
                 device: 'abcde_12345_abcde_12345_abcde_12345_X'),
             throwsA(TypeMatcher<ArgumentError>()));
       });
-      test('SshnpParams.device test', () {
+      test('SshnpParams.device invalid must start with a-z or 0-9', () {
+        expect(
+            () => SshnpParams(
+                clientAtSign: '',
+                sshnpdAtSign: '',
+                srvdAtSign: '',
+                device: '_abcde-12345-abcde_12345_abcde_12345'),
+            throwsA(TypeMatcher<ArgumentError>()));
+      });
+      test('SshnpParams.device test pure snake case', () {
         String deviceName = 'my_device_name_12345';
+        final params = SshnpParams(
+            clientAtSign: '',
+            sshnpdAtSign: '',
+            srvdAtSign: '',
+            device: deviceName);
+        expect(params.device, equals(deviceName));
+      });
+      test('SshnpParams.device test with hyphens', () {
+        String deviceName = 'my-device-name_12345';
         final params = SshnpParams(
             clientAtSign: '',
             sshnpdAtSign: '',

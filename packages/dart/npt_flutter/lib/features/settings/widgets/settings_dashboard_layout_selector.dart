@@ -22,7 +22,7 @@ class SettingsDashboardLayoutSelector extends StatelessWidget {
       }
       return null;
     }, builder: (context, viewLayout) {
-      if (viewLayout == null) return const Spinner();
+      if (viewLayout == null) return const Center(child: Spinner());
       return Column(
         children: [
           Row(

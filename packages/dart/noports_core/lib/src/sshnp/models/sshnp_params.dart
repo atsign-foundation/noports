@@ -299,12 +299,14 @@ class SshnpParams extends ClientParamsBase
               'srvdAtSign is mandatory, unless list-devices is passed.'));
     }
 
+    String device = partial.device ?? DefaultSshnpArgs.device;
+    device = snakifyDeviceName(device);
     return SshnpParams(
       profileName: partial.profileName,
       clientAtSign: partial.clientAtSign!,
       sshnpdAtSign: partial.sshnpdAtSign ?? "",
       srvdAtSign: partial.srvdAtSign ?? "",
-      device: partial.device ?? DefaultSshnpArgs.device,
+      device: device,
       localPort: partial.localPort ?? DefaultSshnpArgs.localPort,
       identityFile: partial.identityFile,
       identityPassphrase: partial.identityPassphrase,

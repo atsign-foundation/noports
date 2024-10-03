@@ -23,7 +23,7 @@ class _ProfileRelayAtSignTextFieldState extends State<ProfileRelayAtSignTextFiel
         return null;
       },
       builder: (BuildContext context, String? relayAtsign) {
-        if (relayAtsign == null) return const SizedBox();
+        if (relayAtsign == null) return gap0;
         Future.microtask(() => controller.text = relayAtsign);
         return SizedBox(
           width: Sizes.p200,
@@ -34,7 +34,7 @@ class _ProfileRelayAtSignTextFieldState extends State<ProfileRelayAtSignTextFiel
               decoration: const InputDecoration(
                 errorMaxLines: 2,
               ),
-              validator: FormValidator.validateAtsignField,
+              validator: FormValidator.validateEmptyAtsignField,
               onChanged: (value) {
                 var bloc = context.read<ProfileBloc>();
                 bloc.add(ProfileEditEvent(

@@ -61,12 +61,12 @@
    "submit" : "Submit",
    "validationErrorEmptyField" : "Field cannot be left Blank",
    "validationErrorAtsignField" : "Field must be a valid atsign that starts with @",
-   "validationErrorProfileNameField" : "Field can only contain lowercase letters, digits, and spaces.",
    "validationErrorDeviceNameField" : "Field can only contain lowercase letters, digits, underscores.",
    "validationErrorLongField" : "Field must be 1-36 characters long",
-   "validationErrorLocalPortField" : "Field must be 0 or between 1024-65535",
-   "validationErrorRemotePortField" : "Field must be between 1024-65535",
+   "validationErrorLocalPortField" : "Field must be between 1024-65535",
+   "validationErrorRemotePortField" : "Field must be between 1-65535",
    "validationErrorRemoteHostField" : "Field must be partially or fully qualified hostname or an IP address",
    "profileRunningActionDeniedMessage" : "Cannot perform this action while profile is running",
+   "emptyProfileMessage" : "No profiles found\nCreate or Import a profile to start using NoPorts.",
    "yaml" : "YAML"
 }
