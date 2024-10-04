@@ -26,8 +26,6 @@ namespace NoPortsInstaller
             get { return Directory.Exists(InstallDirectory); }
             set { }
         }
-        public bool AutoGoNextAfterInstall { get; set; }
-
         public bool IsActivateInstalled
         {
             get { return Directory.Exists(InstallDirectory) && File.Exists(InstallDirectory + "/at_activate.exe"); }
@@ -63,7 +61,6 @@ namespace NoPortsInstaller
             AdditionalArgs = "";
             Pages = [];
             IsInstalled = false;
-            AutoGoNextAfterInstall = true;
             LogEnvironment();
         }
 
@@ -74,7 +71,6 @@ namespace NoPortsInstaller
         /// <param name="status"></param>
         public async Task Install(ProgressBar progress, Label status )
         {
-            AutoGoNextAfterInstall = true;
             try
             {
                 status.Content = "Creating directories...";
@@ -99,10 +95,7 @@ namespace NoPortsInstaller
                 {
                     EnrollDevice();
                 }
-				if (AutoGoNextAfterInstall)
-				{
-					NextPage();
-                }
+
 			}
 			catch (Exception ex)
             {
