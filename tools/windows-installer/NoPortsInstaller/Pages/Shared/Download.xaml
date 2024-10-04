@@ -46,5 +46,6 @@
         <ProgressBar x:Name="InstallProgress" HorizontalAlignment="Left" Height="22" Margin="173,114,0,0" VerticalAlignment="Top" Width="228"/>
         <Label x:Name="Status" Content="Starting Download..." HorizontalAlignment="Left" Margin="175,136,0,0" VerticalAlignment="Top" Width="226"/>
         <Button x:Name="BackPageButton" Content="&lt; Back" HorizontalAlignment="Left" Height="24" Margin="173,300,0,0" VerticalAlignment="Top" Width="52" Click="BackPageButton_Click"/>
+        <Button x:Name="NextPageButton" Content="Next" HorizontalAlignment="Left" Height="24" Margin="427,300,0,0" VerticalAlignment="Top" Width="52" RenderTransformOrigin="0.536,-0.009" Click="NextPageButton_Click" IsEnabled="False"/>
     </Grid>
 </Page>

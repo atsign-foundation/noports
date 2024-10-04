@@ -12,12 +12,23 @@ namespace NoPortsInstaller.Pages.Install
         {
             InitializeComponent();
             _controller = App.ControllerInstance;
-			_ = _controller.Install(InstallProgress, Status);
+             DoInstall();
+        }
+
+        private async void DoInstall()
+        {
+			await _controller.Install(InstallProgress, Status);
+            NextPageButton.IsEnabled = true;
         }
 
 		private void BackPageButton_Click(object sender, System.Windows.RoutedEventArgs e)
 		{
             _controller.PreviousPage();
+		}
+
+		private void NextPageButton_Click(object sender, System.Windows.RoutedEventArgs e)
+		{
+            _controller.NextPage();
 		}
 	}
 }
