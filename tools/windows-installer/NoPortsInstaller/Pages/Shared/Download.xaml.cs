@@ -23,6 +23,7 @@ namespace NoPortsInstaller.Pages.Install
 
 		private void BackPageButton_Click(object sender, System.Windows.RoutedEventArgs e)
 		{
+            _controller.AutoGoNextAfterInstall = false;
             _controller.PreviousPage();
 		}
 

@@ -26,6 +26,7 @@ namespace NoPortsInstaller
             get { return Directory.Exists(InstallDirectory); }
             set { }
         }
+        public bool AutoGoNextAfterInstall { get; set; }
 
         public bool IsActivateInstalled
         {
@@ -62,6 +63,7 @@ namespace NoPortsInstaller
             AdditionalArgs = "";
             Pages = [];
             IsInstalled = false;
+            AutoGoNextAfterInstall = true;
             LogEnvironment();
         }
 
@@ -70,8 +72,9 @@ namespace NoPortsInstaller
         /// </summary>
         /// <param name="progress"></param>
         /// <param name="status"></param>
-        public async Task Install(ProgressBar progress, Label status)
+        public async Task Install(ProgressBar progress, Label status )
         {
+            AutoGoNextAfterInstall = true;
             try
             {
                 status.Content = "Creating directories...";
@@ -95,6 +98,10 @@ namespace NoPortsInstaller
                 if (InstallType.Equals(InstallType.Device))
                 {
                     EnrollDevice();
+                }
+				if (AutoGoNextAfterInstall)
+				{
+					NextPage();
                 }
 			}
 			catch (Exception ex)
