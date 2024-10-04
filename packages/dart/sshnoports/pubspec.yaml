@@ -31,6 +31,16 @@ dependency_overrides:
     git:
       ref: gkc/show-aliases-in-usage
       url: https://github.com/gkc/args
+  at_client:
+    git:
+      url: https://github.com/atsign-foundation/at_client_sdk.git
+      ref: update_verb_isencrypted_changes
+      path: packages/at_client
+  at_onboarding_cli:
+    git:
+      url: https://github.com/atsign-foundation/at_libraries.git
+      ref: test_onboarding_cli
+      path: packages/at_onboarding_cli
 
 dev_dependencies:
   lints: ^5.0.0
