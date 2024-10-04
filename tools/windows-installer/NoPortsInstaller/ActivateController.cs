@@ -134,9 +134,8 @@ namespace NoPortsInstaller
         public static bool Enroll(string otp)
         {
             string devName = _controller.DeviceName;
-            if (devName == null || devName.Length == 0) devName = "client";
             var args =
-                $"enroll -a \"{_controller.DeviceAtsign}\" -s {otp} -p {AppName} -d {_controller.DeviceName} -n \"{Namespaces[0]}\" -k {Path.Combine(_controller.AtsignKeysDirectory, _controller.DeviceAtsign + "_key.atKeys")}";
+                $"enroll -a \"{_controller.DeviceAtsign}\" -s \"{otp}\" -p \"{AppName}\" -d \"{devName}\" -n \"sshnp:rw,sshrvd:rw\" -k \"{Path.Combine(_controller.AtsignKeysDirectory, _controller.DeviceAtsign + "_key.atKeys")}\"";
             string response = "";
             try
             {

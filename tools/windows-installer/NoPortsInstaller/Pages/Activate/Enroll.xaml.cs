@@ -101,9 +101,11 @@ namespace NoPortsInstaller.Pages.Activate
             EnrollResponse.Content = "";
             string otp = $"{OtpBox1.Text}{OtpBox2.Text}{OtpBox3.Text}{OtpBox4.Text}{OtpBox5.Text}{OtpBox6.Text}".ToUpper();
 
+            _controller.DeviceName = _controller.NormalizeDeviceName($"client_{otp}");
             Loading.Visibility = Visibility.Visible;
             bool value = await Task.Run(() => ActivateController.Enroll(otp));
-            if (value)
+			Loading.Visibility = Visibility.Hidden;
+			if (value)
             {
                 _controller.NextPage();
             }
