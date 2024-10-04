@@ -45,5 +45,6 @@
         <Label Content="" HorizontalAlignment="Left" Height="28" VerticalAlignment="Top" Width="199" Margin="168,86,0,0" FontSize="11"/>
         <ProgressBar x:Name="InstallProgress" HorizontalAlignment="Left" Height="22" Margin="173,114,0,0" VerticalAlignment="Top" Width="228"/>
         <Label x:Name="Status" Content="Starting Download..." HorizontalAlignment="Left" Margin="175,136,0,0" VerticalAlignment="Top" Width="226"/>
+        <Button x:Name="BackPageButton" Content="&lt; Back" HorizontalAlignment="Left" Height="24" Margin="173,300,0,0" VerticalAlignment="Top" Width="52" Click="BackPageButton_Click"/>
     </Grid>
 </Page>

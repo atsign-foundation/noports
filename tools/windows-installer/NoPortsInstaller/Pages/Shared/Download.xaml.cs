@@ -14,5 +14,10 @@ namespace NoPortsInstaller.Pages.Install
             _controller = App.ControllerInstance;
 			_ = _controller.Install(InstallProgress, Status);
         }
-    }
+
+		private void BackPageButton_Click(object sender, System.Windows.RoutedEventArgs e)
+		{
+            _controller.PreviousPage();
+		}
+	}
 }
