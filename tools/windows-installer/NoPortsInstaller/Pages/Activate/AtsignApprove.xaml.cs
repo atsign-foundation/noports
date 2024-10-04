@@ -4,7 +4,7 @@ using System.Windows.Controls;
 namespace NoPortsInstaller.Pages.Activate
 {
 	/// <summary>
-	/// Interaction logic for Enroll.xaml
+	/// Interaction logic for EnrollDevice.xaml
 	/// </summary>
 	public partial class AtsignApprove : Page
 	{

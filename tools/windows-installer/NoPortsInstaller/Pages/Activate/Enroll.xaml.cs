@@ -1,11 +1,12 @@
-﻿using System.Windows;
+﻿using NoPortsInstaller.Pages.Install;
+using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media.Animation;
 
 namespace NoPortsInstaller.Pages.Activate
 {
     /// <summary>
-    /// Interaction logic for Enroll.xaml
+    /// Interaction logic for EnrollDevice.xaml
     /// </summary>
     public partial class Enroll : Page
     {
@@ -100,14 +101,21 @@ namespace NoPortsInstaller.Pages.Activate
         {
             EnrollResponse.Content = "";
             string otp = $"{OtpBox1.Text}{OtpBox2.Text}{OtpBox3.Text}{OtpBox4.Text}{OtpBox5.Text}{OtpBox6.Text}".ToUpper();
-
-            _controller.DeviceName = _controller.NormalizeDeviceName($"client_{otp}");
+            if (!_controller.InstallType.Equals(InstallType.Device))
+            {
+                _controller.DeviceName = _controller.NormalizeDeviceName($"client_{otp}");
+            }
             Loading.Visibility = Visibility.Visible;
             bool value = await Task.Run(() => ActivateController.Enroll(otp));
 			Loading.Visibility = Visibility.Hidden;
 			if (value)
             {
-                _controller.NextPage();
+				if (_controller.InstallType.Equals(InstallType.Device))
+				{
+					_controller.Pages.Add(new InstallService());
+					_controller.Pages.Add(new FinishInstall());
+				}
+				_controller.NextPage();
             }
             else
             {

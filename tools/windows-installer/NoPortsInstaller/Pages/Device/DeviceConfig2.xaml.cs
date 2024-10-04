@@ -21,7 +21,7 @@ namespace NoPortsInstaller.Pages.Install
         private void NextPageButton_Click(object sender, System.Windows.RoutedEventArgs e)
         {
             _controller.AdditionalArgs = _controller.NormalizeArgs(AdditionalArgs.Text);
-            _controller.Enroll();
+            _controller.Pages.Add(new Download());
             _controller.NextPage();
         }
     }

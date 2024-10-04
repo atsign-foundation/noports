@@ -5,14 +5,14 @@ namespace NoPortsInstaller.Pages.Install
     /// <summary>
     /// Interaction logic for Page1.xaml
     /// </summary>
-    public partial class Download : Page
+    public partial class InstallService : Page
     {
         private readonly Controller _controller;
-        public Download()
+        public InstallService()
         {
             InitializeComponent();
             _controller = App.ControllerInstance;
-			_ = _controller.Install(InstallProgress, Status);
+			_ = _controller.InstallService(InstallProgress, Status);
         }
     }
 }

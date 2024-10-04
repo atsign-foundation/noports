@@ -86,33 +86,48 @@ namespace NoPortsInstaller
                 await UpdateProgressBar(progress, 75);
 				status.Content = "Creating Registries NoPorts...";
 				CreateRegistryKeys();
-				await UpdateProgressBar(progress, 90);
-                if (InstallType.Equals(InstallType.Device))
-                {
-                    status.Content = "Setting up NoPorts Service...";
-                    CopyIntoServiceAccount();
-                    await SetupService(status);
-                }
                 await UpdateProgressBar(progress, 100);
                 InstallLogger.Log($"Installation Complete");
-				if (InstallType.Equals(InstallType.Client) || InstallType.Equals(InstallType.Device))
+				if (InstallType.Equals(InstallType.Client))
 				{
 					Pages.Add(new FinishInstall());
 				}
+                if (InstallType.Equals(InstallType.Device))
+                {
+                    EnrollDevice();
+                }
 				NextPage();
-            }
-            catch (Exception ex)
+			}
+			catch (Exception ex)
             {
                 await Cleanup();
                 LoadError(ex);
             }
         }
 
-        /// <summary>
-        /// Uninstalls NoPorts, including the service.
-        /// </summary>
-        /// <param name="progress"></param>
-        public async Task Uninstall(ProgressBar progress)
+        public async Task InstallService(ProgressBar progress, Label status)
+        {
+			try
+			{
+				await UpdateProgressBar(progress, 25);
+				status.Content = "Setting up NoPorts Service...";
+				CopyIntoServiceAccount();
+				await SetupService(status);
+				await UpdateProgressBar(progress, 100);
+				NextPage();
+			}
+			catch (Exception ex)
+			{
+				await Cleanup();
+				LoadError(ex);
+			}
+		}
+
+		/// <summary>
+		/// Uninstalls NoPorts, including the service.
+		/// </summary>
+		/// <param name="progress"></param>
+		public async Task Uninstall(ProgressBar progress)
         {
             try
             {
@@ -153,33 +168,27 @@ namespace NoPortsInstaller
         /// <summary>
         /// will change
         /// </summary>
-        public void Enroll()
+        public void EnrollDevice()
         {
-            try
-            {
-                if (!KeysInstalled())
-                {
-                    InstallLogger.Log("Keys not found, starting enrollment process...");
-                    if (ActivateController.Status(DeviceAtsign) != AtsignStatus.Activated)
-                    {
-                        throw new Exception("Keys not found locally and on registrar. Please onboard first.");
-                    }
-                    Pages.Add(new Enroll());
-                    Pages.Add(new Install("APKAM Keys cut, continue to installation."));
-                }
-                else
-                {
-                    InstallLogger.Log("Keys found. Continuing to install...");
-                    Pages.Add(new Install("Keys found on device, continue to installation."));
-                }
-            }
-            catch (Exception ex)
-            {
-                LoadError(ex);
-            }
-        }
+			if (!KeysInstalled())
+			{
+				if (ActivateController.Status(DeviceAtsign) != AtsignStatus.Activated)
+				{
+					throw new Exception("Keys not found locally and on registrar. Please onboard first.");
+				}
 
-        public void UpdateConfigRegistry()
+				InstallLogger.Log("Starting enrollment process before continuing to install...");
+				Pages.Add(new Enroll());
+			}
+			else
+			{
+				InstallLogger.Log("Keys found. Continuing to service install...");
+				Pages.Add(new InstallService());
+				Pages.Add(new FinishInstall());
+			}
+		}
+
+		public void UpdateConfigRegistry()
         {
             try
             {

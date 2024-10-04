@@ -114,6 +114,11 @@ namespace NoPortsInstaller
                 _controller.LoadError(ex);
             }
             var returnString = response.Split(":").ToList();
+            if(returnString.Count < 1)
+            {
+                // Most likely at_activate binary is missing if the output was empty
+                _controller.LoadError(new Exception("No output from at_activate status"));
+            }
             var exitCode = returnString[0].Split(" ")[1];
 
             if (exitCode == "0")
