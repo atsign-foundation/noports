@@ -96,7 +96,6 @@ namespace NoPortsInstaller
                 {
                     EnrollDevice();
                 }
-				NextPage();
 			}
 			catch (Exception ex)
             {
