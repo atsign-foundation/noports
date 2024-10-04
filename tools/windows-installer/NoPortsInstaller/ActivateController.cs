@@ -44,6 +44,7 @@ namespace NoPortsInstaller
                 }
                 catch(Exception ex)
                 {
+                    exitCode = 1;
                     _controller.LoadError(ex);
                 }
             }
