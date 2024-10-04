@@ -79,7 +79,6 @@ namespace NoPortsInstaller.Pages.Activate
                 InstallLogger.Log(e.Message);
                 return;
             }
-            enrollments = enrollments.Append(new EnrollmentRecord("fake-id-asdfasdfasdfasdf", "myDevice"));
             RedrawEnrollments();
         }
 

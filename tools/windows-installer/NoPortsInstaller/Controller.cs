@@ -95,8 +95,11 @@ namespace NoPortsInstaller
                 }
                 await UpdateProgressBar(progress, 100);
                 InstallLogger.Log($"Installation Complete");
-                Pages.Add(new FinishInstall());
-                NextPage();
+				if (InstallType.Equals(InstallType.Client) || InstallType.Equals(InstallType.Device))
+				{
+					Pages.Add(new FinishInstall());
+				}
+				NextPage();
             }
             catch (Exception ex)
             {
