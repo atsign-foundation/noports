@@ -19,7 +19,7 @@ class Sizes {
   static const p20 = 20.0;
   // static const p21 = 21.0;
   // static const p28 = 28.0;
-  // static const p24 = 24.0;
+  static const p24 = 24.0;
   static const p25 = 25.0;
   static const p27 = 27.0;
   static const p28 = 28.0;
