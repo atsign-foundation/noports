@@ -99,6 +99,11 @@ class App extends StatelessWidget {
             BlocProvider<FavoriteBloc>(
               create: (ctx) => FavoriteBloc(ctx.read<FavoriteRepository>()),
             ),
+
+            // A bloc which manages the atDirectory state
+            BlocProvider<AtDirectoryCubit>(
+              create: (_) => AtDirectoryCubit(),
+            ),
           ],
           child: BlocSelector<SettingsBloc, SettingsState, Language?>(selector: (state) {
             if (state is SettingsLoadedState) {
