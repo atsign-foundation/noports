@@ -1,13 +1,17 @@
+import 'dart:developer';
+
 import 'package:at_contacts_flutter/services/contact_service.dart';
 import 'package:at_onboarding_flutter/at_onboarding_flutter.dart';
 import 'package:at_onboarding_flutter/services/onboarding_service.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:npt_flutter/constants.dart';
+import 'package:npt_flutter/features/onboarding/cubit/at_directory_cubit.dart';
+import 'package:npt_flutter/features/onboarding/widgets/onboarding_button.dart';
 import 'package:npt_flutter/routes.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-import '../features/onboarding/onboarding.dart';
 import '../styles/sizes.dart';
 import 'custom_snack_bar.dart';
 
@@ -77,7 +81,7 @@ class CustomTextButton extends StatelessWidget {
     // final bodyMedium = Theme.of(context).textTheme.bodyMedium!;
     // final bodySmall = Theme.of(context).textTheme.bodySmall!;
     final strings = AppLocalizations.of(context)!;
-    Future<void> onTap() async {
+    Future<void> onTap(String rootDomain) async {
       switch (type) {
         case CustomListTileType.email:
           Uri emailUri = Uri(
@@ -117,14 +121,15 @@ class CustomTextButton extends StatelessWidget {
           }
           break;
         case CustomListTileType.resetAtsign:
-          final futurePreference = await loadAtClientPreference();
+          log(rootDomain);
+          final futurePreference = await loadAtClientPreference(rootDomain);
           if (context.mounted) {
             final result = await AtOnboarding.reset(
               context: context,
               config: AtOnboardingConfig(
                 atClientPreference: futurePreference,
                 rootEnvironment: RootEnvironment.Testing,
-                domain: Constants.rootDomain,
+                domain: rootDomain,
                 appAPIKey: Constants.appAPIKey,
               ),
             );
@@ -171,16 +176,20 @@ class CustomTextButton extends StatelessWidget {
       }
     }
 
-    return Padding(
-      padding: const EdgeInsets.only(left: Sizes.p30, right: Sizes.p30, bottom: Sizes.p10),
-      child: TextButton.icon(
-        label: Text(getTitle(strings)),
-        onPressed: onTap,
-        icon: Icon(
-          iconData,
+    return BlocBuilder<AtDirectoryCubit, String>(builder: (context, rootDomain) {
+      return Padding(
+        padding: const EdgeInsets.only(left: Sizes.p30, right: Sizes.p30, bottom: Sizes.p10),
+        child: TextButton.icon(
+          label: Text(getTitle(strings)),
+          onPressed: () {
+            onTap(rootDomain);
+          },
+          icon: Icon(
+            iconData,
+          ),
         ),
-      ),
-    );
+      );
+    });
   }
 }
 
