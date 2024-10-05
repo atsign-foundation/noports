@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:npt_flutter/features/onboarding/onboarding.dart';
+import 'package:npt_flutter/features/onboarding/view/onboaring_view.dart';
+import 'package:npt_flutter/widgets/npt_app_bar.dart';
 
 class OnboardingPage extends StatelessWidget {
   const OnboardingPage({super.key, required this.nextRoute});
@@ -7,6 +8,14 @@ class OnboardingPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(body: OnboardingButton(nextRoute: nextRoute));
+    return const Scaffold(
+      extendBodyBehindAppBar: true,
+      extendBody: true,
+      appBar: NptAppBar(
+        isNavigateBack: false,
+        showSettings: false,
+      ),
+      body: OnboardingView(),
+    );
   }
 }

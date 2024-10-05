@@ -10,8 +10,15 @@ class NptAppBar extends StatelessWidget implements PreferredSizeWidget {
   final String title;
   final Color? settingsSelectedColor;
   final bool isNavigateBack;
+  final bool showSettings;
 
-  const NptAppBar({super.key, required this.title, this.settingsSelectedColor, this.isNavigateBack = true});
+  const NptAppBar({
+    super.key,
+    this.title = '',
+    this.settingsSelectedColor,
+    this.isNavigateBack = true,
+    this.showSettings = true,
+  });
 
   @override
   Size get preferredSize => Size.fromHeight(isNavigateBack ? Sizes.p150 : Sizes.p100);
@@ -73,14 +80,16 @@ class NptAppBar extends StatelessWidget implements PreferredSizeWidget {
         ],
       ),
       actions: [
-        IconButton(
-          padding: const EdgeInsets.only(bottom: Sizes.p30),
-          color: settingsSelectedColor,
-          icon: const Icon(Icons.settings_outlined),
-          onPressed: () {
-            Navigator.pushNamed(context, '/settings');
-          },
-        ),
+        showSettings
+            ? IconButton(
+                padding: const EdgeInsets.only(bottom: Sizes.p30),
+                color: settingsSelectedColor,
+                icon: const Icon(Icons.settings_outlined),
+                onPressed: () {
+                  Navigator.pushNamed(context, '/settings');
+                },
+              )
+            : gap0,
       ],
       centerTitle: true,
     );
