@@ -49,6 +49,7 @@ dependencies:
   meta: ^1.15.0
   noports_core:
     path: ../noports_core
+  path: ^1.9.0
   path_provider: ^2.1.4
   phosphor_flutter: ^2.1.0
   socket_connector: ^2.2.0

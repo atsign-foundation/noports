@@ -16,4 +16,6 @@ class ProfileCacheCubit extends LoggingCubit<ProfileCacheState> {
     emit(state.withAdded(uuid, bloc));
     return bloc;
   }
+
+  void clear() => emit(const ProfileCacheState({}));
 }

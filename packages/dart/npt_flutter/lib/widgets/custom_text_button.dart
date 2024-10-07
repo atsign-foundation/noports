@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:npt_flutter/constants.dart';
+import 'package:npt_flutter/features/logging/models/loggable.dart';
 import 'package:npt_flutter/features/onboarding/cubit/at_directory_cubit.dart';
 import 'package:npt_flutter/features/onboarding/widgets/onboarding_button.dart';
 import 'package:npt_flutter/routes.dart';
@@ -93,13 +94,15 @@ class CustomTextButton extends StatelessWidget {
           }
           break;
         case CustomListTileType.discord:
-          final Uri url = Uri.parse('https://discord.gg/atsign-778383211214536722');
+          final Uri url =
+              Uri.parse('https://discord.gg/atsign-778383211214536722');
           if (!await launchUrl(url)) {
             throw Exception('Could not launch $url');
           }
           break;
         case CustomListTileType.faq:
-          final Uri url = Uri.parse('https://docs.noports.com/ssh-no-ports/faq');
+          final Uri url =
+              Uri.parse('https://docs.noports.com/ssh-no-ports/faq');
           if (!await launchUrl(url)) {
             throw Exception('Could not launch $url');
           }
@@ -117,7 +120,8 @@ class CustomTextButton extends StatelessWidget {
         //   break;
         case CustomListTileType.backupYourKey:
           if (context.mounted) {
-            BackupKeyWidget(atsign: ContactService().currentAtsign).showBackupDialog(context);
+            BackupKeyWidget(atsign: ContactService().currentAtsign)
+                .showBackupDialog(context);
           }
           break;
         case CustomListTileType.resetAtsign:
@@ -133,7 +137,8 @@ class CustomTextButton extends StatelessWidget {
                 appAPIKey: Constants.appAPIKey,
               ),
             );
-            final OnboardingService onboardingService = OnboardingService.getInstance();
+            final OnboardingService onboardingService =
+                OnboardingService.getInstance();
 
             if (context.mounted && result == AtOnboardingResetResult.success) {
               onboardingService.setAtsign = null;
@@ -176,13 +181,15 @@ class CustomTextButton extends StatelessWidget {
       }
     }
 
-    return BlocBuilder<AtDirectoryCubit, String>(builder: (context, rootDomain) {
+    return BlocBuilder<AtDirectoryCubit, LoggableString>(
+        builder: (context, rootDomain) {
       return Padding(
-        padding: const EdgeInsets.only(left: Sizes.p30, right: Sizes.p30, bottom: Sizes.p10),
+        padding: const EdgeInsets.only(
+            left: Sizes.p30, right: Sizes.p30, bottom: Sizes.p10),
         child: TextButton.icon(
           label: Text(getTitle(strings)),
           onPressed: () {
-            onTap(rootDomain);
+            onTap(rootDomain.string);
           },
           icon: Icon(
             iconData,

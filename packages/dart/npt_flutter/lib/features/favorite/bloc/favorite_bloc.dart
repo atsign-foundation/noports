@@ -15,6 +15,8 @@ class FavoriteBloc extends LoggingBloc<FavoriteEvent, FavoritesState> {
     on<FavoriteRemoveEvent>(_onRemove);
   }
 
+  void clearAll() => emit(const FavoritesInitial());
+
   FutureOr<void> _onLoad(
       FavoriteLoadEvent event, Emitter<FavoritesState> emit) async {
     emit(const FavoritesLoading());
