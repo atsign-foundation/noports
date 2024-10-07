@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:json_annotation/json_annotation.dart';
 import 'package:npt_flutter/app.dart';
 
@@ -106,5 +107,38 @@ extension LanguageExtension on Language {
     }
   }
 }
+
+enum RelayOptions {
+  am,
+  eu,
+  ap,
+}
+
+extension RelayOptionsExtension on RelayOptions {
+  String get relayAtsign {
+    switch (this) {
+      case RelayOptions.am:
+        return '@rv_am';
+      case RelayOptions.eu:
+        return '@rv_eu';
+      case RelayOptions.ap:
+        return '@rv_ap';
+    }
+  }
+
+  String get regions {
+    final strings = AppLocalizations.of(App.navState.currentContext!)!;
+    switch (this) {
+      case RelayOptions.am:
+        return strings.americas;
+      case RelayOptions.eu:
+        return strings.europe;
+      case RelayOptions.ap:
+        return strings.asiaPacific;
+    }
+  }
+}
+
+
 
 // ['English', 'Spanish', 'Br portuguese', 'Mandarin', 'Cantonese']

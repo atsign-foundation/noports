@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:npt_flutter/constants.dart';
 import 'package:npt_flutter/features/settings/settings.dart';
 import 'package:npt_flutter/widgets/custom_container.dart';
 
@@ -29,16 +28,16 @@ class SettingsRelayQuickButtons extends StatelessWidget {
             controller: controller,
             scrollDirection: Axis.horizontal,
             children: [
-              ...Constants.defaultRelayOptions.entries.map(
+              ...RelayOptions.values.map(
                 (e) => Padding(
                   padding: const EdgeInsets.only(right: Sizes.p10),
                   child: CustomContainer.foreground(
-                    key: Key(e.key),
+                    key: Key(e.name),
                     child: SizedBox(
                       width: Sizes.p180,
                       child: RadioListTile(
-                        title: Text(e.value),
-                        value: e.key,
+                        title: Text(e.regions),
+                        value: e.relayAtsign,
                         groupValue: relayAtsign,
                         onChanged: (value) {
                           var bloc = context.read<SettingsBloc>();
