@@ -75,5 +75,11 @@
    "atDirectorySubtitle" : "Select the domain you want to use",
    "onboard" : "Onboard",
    "onboardingError" : "An error has occurred",
+   "failed": "Failed",
+   "profileFailedSaveMessage": "Profile failed to save",
+   "profileFailedUnknownMessage" : "No reason provided",
+   "noName" : "No Name",
+   "noAtsign" : "No Atsign",
+   "noEmailClientAvailable" : "No email client available",
    "yaml" : "YAML"
 }
