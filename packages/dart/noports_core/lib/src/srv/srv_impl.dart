@@ -407,11 +407,15 @@ class SrvImplDart implements Srv<SocketConnector> {
   Future<SocketConnector> run() async {
     try {
       var hosts = await InternetAddress.lookup(streamingHost);
-
       late SocketConnector sc;
+      // Determines whether the traffic in the socket is encrypted or transmitted in plain text.
+      bool encryptRvdTraffic =
+          (sessionAESKeyString != null && sessionIVString != null);
+
       if (bindLocalPort) {
         if (multi) {
-          if (sessionAESKeyString == null || sessionIVString == null) {
+          if (encryptRvdTraffic == true &&
+              (sessionAESKeyString == null || sessionIVString == null)) {
             throw ArgumentError('Symmetric session encryption key required');
           }
           sc = await _runClientSideMulti(hosts: hosts, timeout: timeout);
@@ -421,7 +425,8 @@ class SrvImplDart implements Srv<SocketConnector> {
       } else {
         // daemon side
         if (multi) {
-          if (sessionAESKeyString == null || sessionIVString == null) {
+          if (encryptRvdTraffic == true &&
+              (sessionAESKeyString == null || sessionIVString == null)) {
             throw ArgumentError('Symmetric session encryption key required');
           }
           sc = await _runDaemonSideMulti(hosts: hosts, timeout: timeout);
@@ -485,7 +490,6 @@ class SrvImplDart implements Srv<SocketConnector> {
         }
       },
     );
-
     return sc;
   }
 
@@ -495,7 +499,6 @@ class SrvImplDart implements Srv<SocketConnector> {
   }) async {
     // client side
     SocketConnector? socketConnector;
-
     Socket sessionControlSocket = await Socket.connect(
         streamingHost, streamingPort,
         timeout: Duration(seconds: 10));
@@ -505,6 +508,74 @@ class SrvImplDart implements Srv<SocketConnector> {
           ' control socket connection to rvd');
       sessionControlSocket.writeln(rvdAuthString);
     }
+
+    if (sessionAESKeyString != null && sessionIVString != null) {
+      logger
+          .info('_runClientSideMulti: On the client-side traffic is encrypted');
+      socketConnector = await _clientSideEncryptedSocket(
+          sessionControlSocket, socketConnector, hosts, timeout);
+    } else {
+      logger.info(
+          '_runClientSideMulti: On the client-side traffic is transmitted in plain text');
+      socketConnector = await _clientSidePlainSocket(
+          sessionControlSocket, socketConnector, hosts, timeout);
+    }
+
+    logger.info('_runClientSideMulti serverToSocket is ready');
+    // upon socketConnector.done, destroy the control socket, and complete
+    unawaited(socketConnector.done.whenComplete(() {
+      logger.info('_runClientSideMulti sc.done');
+      sessionControlSocket.destroy();
+    }));
+    return socketConnector;
+  }
+
+  /// On the client side, the data in this socket remains unencrypted and is transmitted in plain text
+  Future<SocketConnector> _clientSidePlainSocket(
+      Socket sessionControlSocket,
+      SocketConnector? socketConnector,
+      List<InternetAddress> hosts,
+      Duration timeout) async {
+    sessionControlSocket.listen((event) {
+      String response = String.fromCharCodes(event).trim();
+      logger.info('_runClientSideMulti'
+          ' Received control socket response: [$response]');
+    }, onError: (e) {
+      logger.severe('_runClientSideMulti controlSocket error: $e');
+      socketConnector?.close();
+    }, onDone: () {
+      logger.info('_runClientSideMulti controlSocket done');
+      socketConnector?.close();
+    });
+    socketConnector = await SocketConnector.serverToSocket(
+      portA: localPort,
+      addressB: hosts[0],
+      portB: streamingPort,
+      verbose: false,
+      logger: ioSinkForLogger(logger),
+      multi: multi,
+      timeout: timeout,
+      beforeJoining: (Side sideA, Side sideB) {
+        logger.info('_runClientSideMulti Sending connect request');
+        sessionControlSocket
+            .add(Uint8List.fromList('connect:no:encrypt\n'.codeUnits));
+        // Authenticate the sideB socket (to the rvd)
+        if (rvdAuthString != null) {
+          logger
+              .info('_runClientSideMulti authenticating new connection to rvd');
+          sideB.socket.writeln(rvdAuthString);
+        }
+      },
+    );
+    return socketConnector;
+  }
+
+  /// On the client side, the data in encrypted and is transmitted through this socket.
+  Future<SocketConnector> _clientSideEncryptedSocket(
+      Socket sessionControlSocket,
+      SocketConnector? socketConnector,
+      List<InternetAddress> hosts,
+      Duration timeout) async {
     DataTransformer controlEncrypter =
         createEncrypter(sessionAESKeyString!, sessionIVString!);
     DataTransformer controlDecrypter =
@@ -556,14 +627,6 @@ class SrvImplDart implements Srv<SocketConnector> {
         sideB.transformer = createDecrypter(socketAESKey, socketIV);
       },
     );
-    logger.info('_runClientSideMulti serverToSocket is ready');
-
-    // upon socketConnector.done, destroy the control socket, and complete
-    unawaited(socketConnector.done.whenComplete(() {
-      logger.info('_runClientSideMulti sc.done');
-      sessionControlSocket.destroy();
-    }));
-
     return socketConnector;
   }
 
@@ -575,30 +638,50 @@ class SrvImplDart implements Srv<SocketConnector> {
     List<String> args = request.split(":");
     switch (args.first) {
       case 'connect':
-        if (args.length != 3) {
-          logger.severe('Unknown request to control socket: [$request]');
+        // Handles the request from the socket where data needs no encryption.
+        // When --no-encrypt-rvd-traffic flag is set to true.
+        if (request == 'connect:no:encrypt') {
+          await SocketConnector.socketToSocket(
+              connector: sc,
+              addressA:
+                  (await InternetAddress.lookup(localHost ?? 'localhost'))[0],
+              portA: localPort,
+              addressB: hosts[0],
+              portB: streamingPort,
+              verbose: false,
+              logger: ioSinkForLogger(logger));
+          if (rvdAuthString != null) {
+            logger.info('_runDaemonSideMulti authenticating'
+                ' new socket connection to rvd');
+            sc.connections.last.sideB.socket.writeln(rvdAuthString);
+          }
           return;
+        } else {
+          // In this case, the data in the socket is encrypted.
+          if (args.length != 3) {
+            logger.severe('Unknown request to control socket: [$request]');
+            return;
+          }
+          logger.info('_runDaemonSideMulti'
+              ' Control socket received ${args.first} request - '
+              ' creating new socketToSocket connection');
+          await SocketConnector.socketToSocket(
+              connector: sc,
+              addressA:
+                  (await InternetAddress.lookup(localHost ?? 'localhost'))[0],
+              portA: localPort,
+              addressB: hosts[0],
+              portB: streamingPort,
+              verbose: false,
+              logger: ioSinkForLogger(logger),
+              transformAtoB: createEncrypter(args[1], args[2]),
+              transformBtoA: createDecrypter(args[1], args[2]));
+          if (rvdAuthString != null) {
+            logger.info('_runDaemonSideMulti authenticating'
+                ' new socket connection to rvd');
+            sc.connections.last.sideB.socket.writeln(rvdAuthString);
+          }
         }
-        logger.info('_runDaemonSideMulti'
-            ' Control socket received ${args.first} request - '
-            ' creating new socketToSocket connection');
-        await SocketConnector.socketToSocket(
-            connector: sc,
-            addressA:
-                (await InternetAddress.lookup(localHost ?? 'localhost'))[0],
-            portA: localPort,
-            addressB: hosts[0],
-            portB: streamingPort,
-            verbose: false,
-            logger: ioSinkForLogger(logger),
-            transformAtoB: createEncrypter(args[1], args[2]),
-            transformBtoA: createDecrypter(args[1], args[2]));
-        if (rvdAuthString != null) {
-          logger.info('_runDaemonSideMulti authenticating'
-              ' new socket connection to rvd');
-          sc.connections.last.sideB.socket.writeln(rvdAuthString);
-        }
-
         break;
       default:
         logger.severe('Unknown request to control socket: [$request]');
@@ -622,6 +705,41 @@ class SrvImplDart implements Srv<SocketConnector> {
           ' control socket connection to rvd');
       sessionControlSocket.writeln(rvdAuthString);
     }
+
+    if (sessionAESKeyString != null && sessionIVString != null) {
+      logger
+          .info('_runDaemonSideMulti: On the daemon side traffic is encrypted');
+      _daemonSideEncryptedSocket(sessionControlSocket, sc, hosts);
+    } else {
+      logger.info(
+          '_runDaemonSideMulti: On the daemon side traffic is transmitted in plain text');
+      _daemonSidePlainSocket(sessionControlSocket, sc, hosts);
+    }
+
+    // upon socketConnector.done, destroy the control socket, and complete
+    unawaited(sc.done.whenComplete(() {
+      sessionControlSocket.destroy();
+    }));
+
+    return sc;
+  }
+
+  void _daemonSidePlainSocket(Socket sessionControlSocket, SocketConnector sc,
+      List<InternetAddress> hosts) {
+    Mutex controlStreamMutex = Mutex();
+    sessionControlSocket.listen((event) async {
+      await _sessionControlSocketListener(controlStreamMutex, event, sc, hosts);
+    }, onError: (e) {
+      logger.severe('controlSocket error: $e');
+      sc.close();
+    }, onDone: () {
+      logger.info('controlSocket done');
+      sc.close();
+    });
+  }
+
+  void _daemonSideEncryptedSocket(Socket sessionControlSocket,
+      SocketConnector sc, List<InternetAddress> hosts) {
     DataTransformer controlEncrypter =
         createEncrypter(sessionAESKeyString!, sessionIVString!);
     DataTransformer controlDecrypter =
@@ -636,38 +754,7 @@ class SrvImplDart implements Srv<SocketConnector> {
     Mutex controlStreamMutex = Mutex();
     controlStream.listen((event) async {
       logger.info('Received event on control socket.');
-      try {
-        await controlStreamMutex.acquire();
-        if (event.isEmpty) {
-          logger.info('Empty control message (Uint8List) received');
-          return;
-        }
-        String eventStr = String.fromCharCodes(event).trim();
-        if (eventStr.isEmpty) {
-          logger.info('Empty control message (String) received');
-          return;
-        }
-        // TODO The code below (splitting by `connect:`) resolves a
-        // particular issue for the moment, but the overall approach
-        // to handling control messages needs to be redone, e.g. :
-        // Ideally - send the control request, and a newline
-        //   => as of this commit, this is the case
-        // Receive - wait for newline, handle the request, repeat
-        //   => older npt clients don't send `\n` so we will need to add some
-        //      magic to handle both (a) older clients which don't send `\n`
-        //      as well as (b) newer ones which do. Cleanest is to add a
-        //      flag to the npt request from the client stating that it sends
-        //      `\n` . If so then we handle that cleanly; if not then we use
-        //      this approach (split by `connect:`)
-        List<String> requests = eventStr.split('connect:');
-        for (String request in requests) {
-          if (request.isNotEmpty) {
-            await _handleMultiConnectRequest(sc, hosts, 'connect:$request');
-          }
-        }
-      } finally {
-        controlStreamMutex.release();
-      }
+      await _sessionControlSocketListener(controlStreamMutex, event, sc, hosts);
     }, onError: (e) {
       logger.severe('controlSocket error: $e');
       sc.close();
@@ -675,13 +762,42 @@ class SrvImplDart implements Srv<SocketConnector> {
       logger.info('controlSocket done');
       sc.close();
     });
+  }
 
-    // upon socketConnector.done, destroy the control socket, and complete
-    unawaited(sc.done.whenComplete(() {
-      sessionControlSocket.destroy();
-    }));
-
-    return sc;
+  Future<void> _sessionControlSocketListener(Mutex controlStreamMutex,
+      List<int> event, SocketConnector sc, List<InternetAddress> hosts) async {
+    try {
+      await controlStreamMutex.acquire();
+      if (event.isEmpty) {
+        logger.info('Empty control message (Uint8List) received');
+        return;
+      }
+      String eventStr = String.fromCharCodes(event).trim();
+      if (eventStr.isEmpty) {
+        logger.info('Empty control message (String) received');
+        return;
+      }
+      // TODO The code below (splitting by `connect:`) resolves a
+      // particular issue for the moment, but the overall approach
+      // to handling control messages needs to be redone, e.g. :
+      // Ideally - send the control request, and a newline
+      //   => as of this commit, this is the case
+      // Receive - wait for newline, handle the request, repeat
+      //   => older npt clients don't send `\n` so we will need to add some
+      //      magic to handle both (a) older clients which don't send `\n`
+      //      as well as (b) newer ones which do. Cleanest is to add a
+      //      flag to the npt request from the client stating that it sends
+      //      `\n` . If so then we handle that cleanly; if not then we use
+      //      this approach (split by `connect:`)
+      List<String> requests = eventStr.split('connect:');
+      for (String request in requests) {
+        if (request.isNotEmpty) {
+          await _handleMultiConnectRequest(sc, hosts, 'connect:$request');
+        }
+      }
+    } finally {
+      controlStreamMutex.release();
+    }
   }
 
   Future<SocketConnector> _runDaemonSideSingle({

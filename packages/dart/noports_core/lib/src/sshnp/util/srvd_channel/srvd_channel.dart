@@ -130,7 +130,8 @@ abstract class SrvdChannel<T> with AsyncInitialization, AtClientBindings {
 
   @protected
   @visibleForTesting
-  Future<void> getHostAndPortFromSrvd() async {
+  Future<void> getHostAndPortFromSrvd(
+      {Duration timeout = DefaultArgs.relayResponseTimeoutDuration}) async {
     srvdAck = SrvdAck.notAcknowledged;
     subscribe(regex: '$sessionId.${Srvd.namespace}@', shouldDecrypt: true)
         .listen((notification) async {
@@ -201,13 +202,16 @@ abstract class SrvdChannel<T> with AsyncInitialization, AtClientBindings {
     );
 
     int counter = 1;
+    int t = DateTime.now().add(timeout).millisecondsSinceEpoch;
     while (srvdAck == SrvdAck.notAcknowledged) {
-      if (counter % 20 == 0) {
+      // we'll log a message every two seconds while we're waiting
+      // (40 loops, 50 milliseconds sleep per loop)
+      if (counter % 40 == 0) {
         logger.info('Still waiting for srvd response');
       }
-      await Future.delayed(Duration(milliseconds: 100));
+      await Future.delayed(Duration(milliseconds: 50));
       counter++;
-      if (counter > 150) {
+      if (DateTime.now().millisecondsSinceEpoch > t) {
         logger.warning('Timed out waiting for srvd response');
         throw TimeoutException(
             'Connection timeout to srvd ${params.srvdAtSign} service');
