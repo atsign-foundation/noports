@@ -130,13 +130,33 @@ void main() {
             throwsA(TypeMatcher<ArgumentError>()));
       });
       test('SshnpParams.device invalid must start with a-z or 0-9', () {
-        expect(
-            () => SshnpParams(
-                clientAtSign: '',
-                sshnpdAtSign: '',
-                srvdAtSign: '',
-                device: '_abcde-12345-abcde_12345_abcde_12345'),
-            throwsA(TypeMatcher<ArgumentError>()));
+        final l = [
+          '-abcde',
+          '#abcde',
+          ' abcde',
+          '@abcde',
+          '£abcde',
+          '\$abcde',
+          '^abcde',
+        ];
+        for (final s in l) {
+          expect(
+              () => SshnpParams(
+                  clientAtSign: '',
+                  sshnpdAtSign: '',
+                  srvdAtSign: '',
+                  device: s),
+              throwsA(TypeMatcher<ArgumentError>()));
+        }
+      });
+      test('SshnpParams.device may start with underscore', () {
+        String deviceName = '_my-device-name_12345';
+        final params = SshnpParams(
+            clientAtSign: '',
+            sshnpdAtSign: '',
+            srvdAtSign: '',
+            device: deviceName);
+        expect(params.device, equals(deviceName));
       });
       test('SshnpParams.device test pure snake case', () {
         String deviceName = 'my_device_name_12345';
