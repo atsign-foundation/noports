@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:npt_flutter/features/logging/models/loggable.dart';
 import 'package:npt_flutter/features/onboarding/cubit/at_directory_cubit.dart';
 
 typedef OnboardingMapCallback = void Function(Map<String, String> val);
@@ -17,8 +18,9 @@ class OnboardingAtDirectorySelector extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return BlocBuilder<AtDirectoryCubit, String>(builder: (context, rootDomain) {
-      controller.text = rootDomain;
+    return BlocBuilder<AtDirectoryCubit, LoggableString>(
+        builder: (context, rootDomain) {
+      controller.text = rootDomain.string;
       return Column(
         children: [
           Row(
@@ -26,7 +28,9 @@ class OnboardingAtDirectorySelector extends StatelessWidget {
             children: [
               Flexible(
                 child: DropdownMenu<String>(
-                  initialSelection: options.contains(rootDomain) ? rootDomain : null,
+                  initialSelection: options.contains(rootDomain.string)
+                      ? rootDomain.string
+                      : null,
                   dropdownMenuEntries: options
                       .map<DropdownMenuEntry<String>>(
                         (o) => DropdownMenuEntry(
@@ -56,7 +60,9 @@ class OnboardingAtDirectorySelector extends StatelessWidget {
                     // validator: FormValidator.validateRequiredAtsignField,
                     onChanged: (value) {
                       // prevent the user from adding the default values to the dropdown a second time.
-                      if (value != options[0] || value != options[1]) options.add(value);
+                      if (value != options[0] || value != options[1]) {
+                        options.add(value);
+                      }
                       //removes the third element making the final entry the only additional value in options. This prevents the dropdown from having more than 3 entries.
                       if (options.length > 3) options.removeAt(2);
 

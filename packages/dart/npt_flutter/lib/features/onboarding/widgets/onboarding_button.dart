@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:npt_flutter/constants.dart';
+import 'package:npt_flutter/features/logging/models/loggable.dart';
 import 'package:npt_flutter/features/onboarding/cubit/at_directory_cubit.dart';
 import 'package:npt_flutter/features/onboarding/onboarding.dart';
 import 'package:npt_flutter/features/onboarding/widgets/at_directory_dialog.dart';
@@ -35,12 +36,13 @@ class _OnboardingButtonState extends State<OnboardingButton> {
   @override
   Widget build(BuildContext context) {
     final strings = AppLocalizations.of(context)!;
-    return BlocBuilder<AtDirectoryCubit, String>(builder: (context, rootDomain) {
+    return BlocBuilder<AtDirectoryCubit, LoggableString>(
+        builder: (context, rootDomain) {
       return ElevatedButton.icon(
         onPressed: () async {
           final result = await selectOptions();
 
-          if (result && context.mounted) onboard(rootDomain: context.read<AtDirectoryCubit>().state);
+          if (result && context.mounted) onboard(rootDomain: rootDomain.string);
         },
         icon: PhosphorIcon(PhosphorIcons.arrowUpRight()),
         label: Text(
@@ -51,7 +53,8 @@ class _OnboardingButtonState extends State<OnboardingButton> {
     });
   }
 
-  Future<void> onboard({required String rootDomain, bool isFromInitState = false}) async {
+  Future<void> onboard(
+      {required String rootDomain, bool isFromInitState = false}) async {
     AtOnboardingResult onboardingResult = await AtOnboarding.onboard(
       // ignore: use_build_context_synchronously
       context: context,
@@ -68,7 +71,9 @@ class _OnboardingButtonState extends State<OnboardingButton> {
         case AtOnboardingResultStatus.success:
           await initializeContactsService(rootDomain: rootDomain);
           postOnboard(onboardingResult.atsign!);
-          Navigator.of(context).pushReplacementNamed(Routes.dashboard);
+          if (mounted) {
+            Navigator.of(context).pushReplacementNamed(Routes.dashboard);
+          }
           break;
         case AtOnboardingResultStatus.error:
           if (isFromInitState) break;

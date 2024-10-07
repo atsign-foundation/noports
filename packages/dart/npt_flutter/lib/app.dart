@@ -33,6 +33,8 @@ class App extends StatelessWidget {
       ],
       child: MultiBlocProvider(
           providers: [
+            // TODO this should be called LocalSettingsCubit and move
+            // Localization from the SettingsCubit to this
             BlocProvider<EnableLoggingCubit>(
               create: (_) => EnableLoggingCubit(),
             ),
@@ -46,6 +48,11 @@ class App extends StatelessWidget {
             /// A cubit which manages the onboarding status
             BlocProvider<OnboardingCubit>(
               create: (_) => OnboardingCubit(),
+            ),
+
+            // A bloc which manages the atDirectory state
+            BlocProvider<AtDirectoryCubit>(
+              create: (_) => AtDirectoryCubit(),
             ),
 
             /// Settings provider, not much else to say
@@ -89,13 +96,9 @@ class App extends StatelessWidget {
             BlocProvider<FavoriteBloc>(
               create: (ctx) => FavoriteBloc(ctx.read<FavoriteRepository>()),
             ),
-
-            // A bloc which manages the atDirectory state
-            BlocProvider<AtDirectoryCubit>(
-              create: (_) => AtDirectoryCubit(),
-            ),
           ],
-          child: BlocSelector<SettingsBloc, SettingsState, Language>(selector: (state) {
+          child: BlocSelector<SettingsBloc, SettingsState, Language>(
+              selector: (state) {
             if (state is SettingsLoadedState) {
               return state.settings.language;
             }

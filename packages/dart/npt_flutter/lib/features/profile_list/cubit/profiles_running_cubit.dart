@@ -17,4 +17,11 @@ class ProfilesRunningCubit extends LoggingCubit<ProfilesRunningState> {
   void invalidate(String uuid) {
     emit(state.withoutConnector(uuid));
   }
+
+  void stopAllAndClear() {
+    state.socketConnectors.forEach((_, socketConnector) {
+      socketConnector?.close();
+    });
+    emit(const ProfilesRunningState({}));
+  }
 }

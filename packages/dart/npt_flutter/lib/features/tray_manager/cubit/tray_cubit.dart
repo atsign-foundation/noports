@@ -15,7 +15,8 @@ import 'package:window_manager/window_manager.dart';
 part 'tray_cubit.g.dart';
 part 'tray_state.dart';
 
-(String, void Function(MenuItem)) getAction(TrayAction action) => switch (action) {
+(String, void Function(MenuItem)) getAction(TrayAction action) =>
+    switch (action) {
       TrayAction.showDashboard => ('Show Window', (_) => windowManager.focus()),
       TrayAction.showSettings => (
           'Settings',
@@ -85,10 +86,13 @@ class TrayCubit extends LoggingCubit<TrayState> {
   }
 
   Future<void> reloadIcon() async {
-    final brightness = WidgetsBinding.instance.platformDispatcher.platformBrightness;
+    final brightness =
+        WidgetsBinding.instance.platformDispatcher.platformBrightness;
     await trayManager.setIcon(switch (brightness) {
-      Brightness.light => Platform.isWindows ? Constants.icoIconLight : Constants.pngIconLight,
-      Brightness.dark => Platform.isWindows ? Constants.icoIconDark : Constants.pngIconDark,
+      Brightness.light =>
+        Platform.isWindows ? Constants.icoIconLight : Constants.pngIconLight,
+      Brightness.dark =>
+        Platform.isWindows ? Constants.icoIconDark : Constants.pngIconDark,
     });
   }
 
@@ -114,7 +118,9 @@ class TrayCubit extends LoggingCubit<TrayState> {
 
     /// Generate the new menu based on current state
     var favMenuItems = await Future.wait(
-      favorites.where((fav) => fav.isLoadedInProfiles(profiles)).map((fav) async {
+      favorites
+          .where((fav) => fav.isLoadedInProfiles(profiles))
+          .map((fav) async {
         /// Make sure to call [e.displayName] and [e.isRunning] only once to
         /// ensure good performance - these getters call a bunch of nested
         /// information from elsewhere in the app state

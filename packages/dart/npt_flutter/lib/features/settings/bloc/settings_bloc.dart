@@ -12,6 +12,8 @@ class SettingsBloc extends LoggingBloc<SettingsEvent, SettingsState> {
     on<SettingsEditEvent>(_onEdit);
   }
 
+  void clear() => emit(const SettingsInitial());
+
   Future<void> _onLoad(
       SettingsLoadEvent event, Emitter<SettingsState> emit) async {
     emit(const SettingsLoading());
