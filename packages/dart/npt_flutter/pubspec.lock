@@ -172,7 +172,7 @@ packages:
     description:
       path: "packages/at_onboarding_flutter"
       ref: trunk
-      resolved-ref: "69585d39813bf09faa94edad15b3de5a38cce750"
+      resolved-ref: "2a32ac2461673e0df16f5de2e24305309a8fcd95"
       url: "https://github.com/atsign-foundation/at_widgets"
     source: git
     version: "6.1.9"
@@ -933,7 +933,7 @@ packages:
     source: hosted
     version: "3.0.1"
   path:
-    dependency: transitive
+    dependency: "direct main"
     description:
       name: path
       sha256: "087ce49c3f0dc39180befefc60fdb4acd8f8620e5682fe2476afd0b3688bb4af"
@@ -1509,10 +1509,10 @@ packages:
     dependency: transitive
     description:
       name: vm_service
-      sha256: f652077d0bdf60abe4c1f6377448e8655008eef28f128bc023f7b5e8dfeb48fc
+      sha256: "5c5f338a667b4c644744b661f309fb8080bb94b18a7e91ef1dbd343bed00ed6d"
       url: "https://pub.dev"
     source: hosted
-    version: "14.2.4"
+    version: "14.2.5"
   watcher:
     dependency: transitive
     description:
