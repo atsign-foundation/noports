@@ -1,8 +1,11 @@
 ---
 icon: microsoft
+description: How to deploy NoPorts on Azure using a cloud-init script
 ---
 
 # Automated Installation on Microsoft Azure
+
+{% embed url="https://vimeo.com/1015039181" %}
 
 In the Azure Portal select `Virtual machines` and hit the `+ Create` button.
 
