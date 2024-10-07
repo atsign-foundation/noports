@@ -1,8 +1,11 @@
 ---
 icon: aws
+description: How to deploy NoPorts on Amazon Web Services using a cloud-init script
 ---
 
 # Automated Installation on Amazon Web Services (AWS)
+
+{% embed url="https://vimeo.com/1015039889" %}
 
 When launching an instance on EC2 choose settings as usual for the instance type etc.
 
