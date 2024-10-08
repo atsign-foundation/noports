@@ -9,6 +9,7 @@ import 'package:npt_flutter/constants.dart';
 import 'package:npt_flutter/features/logging/models/loggable.dart';
 import 'package:npt_flutter/features/onboarding/cubit/at_directory_cubit.dart';
 import 'package:npt_flutter/features/onboarding/util/pre_offboard.dart';
+import 'package:npt_flutter/features/onboarding/widgets/at_directory_dialog.dart';
 import 'package:npt_flutter/features/onboarding/widgets/onboarding_button.dart';
 import 'package:npt_flutter/pages/loading_page.dart';
 import 'package:npt_flutter/routes.dart';
@@ -76,6 +77,11 @@ class CustomTextButton extends StatelessWidget {
       {this.iconData = Icons.feedback_outlined,
       this.title = 'Feedback',
       this.type = CustomListTileType.feedback,
+      super.key});
+  const CustomTextButton.selectRootDomain(
+      {this.iconData = Icons.dns_outlined,
+      this.title = 'Select Root Domain',
+      this.type = CustomListTileType.selectRootDomain,
       super.key});
 
   final IconData iconData;
@@ -166,6 +172,12 @@ class CustomTextButton extends StatelessWidget {
           await preSignout();
           Navigator.of(context).pushReplacementNamed(Routes.onboarding);
           break;
+        case CustomListTileType.selectRootDomain:
+          await showDialog(
+            context: context,
+            builder: (BuildContext context) => const AtDirectoryDialog(),
+          );
+          break;
       }
     }
 
@@ -190,6 +202,9 @@ class CustomTextButton extends StatelessWidget {
         case CustomListTileType.signOut:
           // TODO Localize in the next PR.
           return 'signOut';
+        case CustomListTileType.selectRootDomain:
+          // TODO Localize in the next PR.
+          return 'Select Root Domain';
       }
     }
 
@@ -220,4 +235,5 @@ enum CustomListTileType {
   resetAtsign,
   feedback,
   signOut,
+  selectRootDomain,
 }
