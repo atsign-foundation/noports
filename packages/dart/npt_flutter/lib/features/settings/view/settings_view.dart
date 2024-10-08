@@ -38,8 +38,7 @@ class SettingsView extends StatelessWidget {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     CustomCard.settingsRail(
-                      height:
-                          deviceSize.height * Sizes.settingsCardHeightFactor,
+                      height: deviceSize.height * Sizes.settingsCardHeightFactor,
                       child: const Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -51,14 +50,13 @@ class SettingsView extends StatelessWidget {
                           CustomTextButton.privacyPolicy(),
                           CustomTextButton.feedback(),
                           CustomTextButton.backUpYourKey(),
-                          CustomTextButton.resetAtsign(),
+                          CustomTextButton.signOut(),
                           ContactListTile(),
                         ],
                       ),
                     ),
                     CustomCard.settingsContent(
-                      height:
-                          deviceSize.height * Sizes.settingsCardHeightFactor,
+                      height: deviceSize.height * Sizes.settingsCardHeightFactor,
                       width: deviceSize.width * Sizes.settingsCardWidthFactor,
                       child: Padding(
                         padding: const EdgeInsets.only(
