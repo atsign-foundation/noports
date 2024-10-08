@@ -177,6 +177,12 @@ class CustomTextButton extends StatelessWidget {
             builder: (BuildContext context) => const AtDirectoryDialog(),
           );
           break;
+        case CustomListTileType.selectRootDomain:
+          await showDialog(
+            context: context,
+            builder: (BuildContext context) => const AtDirectoryDialog(),
+          );
+          break;
       }
     }
 
