@@ -140,6 +140,7 @@ Future<List<AtsignInformation>> _getAtsignInformationFromFile([File? f]) async {
   if (f == null) throw Exception("Failed to get the Atsign Information File");
   try {
     var contents = await f.readAsString();
+    if (contents.trim().isEmpty) return [];
     var json = jsonDecode(contents);
     if (json is! Iterable) {
       return []; // The file format is invalid so return as a non-error and we will overwrite it
