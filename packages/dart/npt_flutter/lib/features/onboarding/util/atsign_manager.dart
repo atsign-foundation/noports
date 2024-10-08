@@ -3,8 +3,8 @@ import 'dart:io';
 
 import 'package:at_onboarding_flutter/at_onboarding_flutter.dart';
 import 'package:npt_flutter/app.dart';
-import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as p;
+import 'package:path_provider/path_provider.dart';
 
 class AtsignInformation {
   final String atSign;
@@ -51,8 +51,7 @@ Future<Map<String, AtsignInformation>> getAtsignEntries() async {
     atSignInfo = await _getAtsignInformationFromFile();
   } catch (e) {
     App.log(
-      "Failed get Atsign Information, ignoring invalid file: ${e.toString()}"
-          .loggable,
+      "Failed get Atsign Information, ignoring invalid file: ${e.toString()}".loggable,
     );
     return {};
   }

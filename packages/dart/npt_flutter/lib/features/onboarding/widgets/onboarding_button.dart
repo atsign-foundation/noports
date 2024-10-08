@@ -1,3 +1,5 @@
+import 'dart:developer';
+
 import 'package:at_contacts_flutter/at_contacts_flutter.dart';
 import 'package:at_onboarding_flutter/at_onboarding_flutter.dart';
 import 'package:flutter/material.dart';
@@ -7,7 +9,8 @@ import 'package:npt_flutter/constants.dart';
 import 'package:npt_flutter/features/logging/models/loggable.dart';
 import 'package:npt_flutter/features/onboarding/cubit/at_directory_cubit.dart';
 import 'package:npt_flutter/features/onboarding/onboarding.dart';
-import 'package:npt_flutter/features/onboarding/widgets/at_directory_dialog.dart';
+import 'package:npt_flutter/features/onboarding/util/atsign_manager.dart';
+import 'package:npt_flutter/features/onboarding/widgets/atsign_dialog.dart';
 import 'package:npt_flutter/routes.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
@@ -33,28 +36,7 @@ class OnboardingButton extends StatefulWidget {
 }
 
 class _OnboardingButtonState extends State<OnboardingButton> {
-  @override
-  Widget build(BuildContext context) {
-    final strings = AppLocalizations.of(context)!;
-    return BlocBuilder<AtDirectoryCubit, LoggableString>(
-        builder: (context, rootDomain) {
-      return ElevatedButton.icon(
-        onPressed: () async {
-          final result = await selectOptions();
-
-          if (result && context.mounted) onboard(rootDomain: rootDomain.string);
-        },
-        icon: PhosphorIcon(PhosphorIcons.arrowUpRight()),
-        label: Text(
-          strings.getStarted,
-        ),
-        iconAlignment: IconAlignment.end,
-      );
-    });
-  }
-
-  Future<void> onboard(
-      {required String rootDomain, bool isFromInitState = false}) async {
+  Future<void> onboard({required String rootDomain, bool isFromInitState = false}) async {
     AtOnboardingResult onboardingResult = await AtOnboarding.onboard(
       // ignore: use_build_context_synchronously
       context: context,
@@ -71,6 +53,10 @@ class _OnboardingButtonState extends State<OnboardingButton> {
         case AtOnboardingResultStatus.success:
           await initializeContactsService(rootDomain: rootDomain);
           postOnboard(onboardingResult.atsign!);
+          final result =
+              await saveAtsignInformation(AtsignInformation(atSign: onboardingResult.atsign!, rootDomain: rootDomain));
+          log('atsign result is:$result');
+
           if (mounted) {
             Navigator.of(context).pushReplacementNamed(Routes.dashboard);
           }
@@ -90,11 +76,33 @@ class _OnboardingButtonState extends State<OnboardingButton> {
     }
   }
 
-  Future<bool> selectOptions() async {
+  Future<bool> selectAtsign() async {
     final results = await showDialog(
       context: context,
-      builder: (BuildContext context) => const AtDirectoryDialog(),
+      builder: (BuildContext context) => const AtSignDialog(),
     );
     return results ?? false;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final strings = AppLocalizations.of(context)!;
+    return BlocBuilder<AtDirectoryCubit, LoggableString>(builder: (context, rootDomain) {
+      return ElevatedButton.icon(
+        onPressed: () async {
+          final isEmptyAtsignList = (await getAtsignEntries()).isNotEmpty;
+          log(isEmptyAtsignList.toString());
+
+          if (isEmptyAtsignList) await selectAtsign();
+
+          onboard(rootDomain: rootDomain.string);
+        },
+        icon: PhosphorIcon(PhosphorIcons.arrowUpRight()),
+        label: Text(
+          strings.getStarted,
+        ),
+        iconAlignment: IconAlignment.end,
+      );
+    });
   }
 }
