@@ -1,15 +1,16 @@
-import 'dart:developer';
-
 import 'package:at_contacts_flutter/services/contact_service.dart';
 import 'package:at_onboarding_flutter/at_onboarding_flutter.dart';
 import 'package:at_onboarding_flutter/services/onboarding_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:npt_flutter/app.dart';
 import 'package:npt_flutter/constants.dart';
 import 'package:npt_flutter/features/logging/models/loggable.dart';
 import 'package:npt_flutter/features/onboarding/cubit/at_directory_cubit.dart';
+import 'package:npt_flutter/features/onboarding/util/pre_offboard.dart';
 import 'package:npt_flutter/features/onboarding/widgets/onboarding_button.dart';
+import 'package:npt_flutter/pages/loading_page.dart';
 import 'package:npt_flutter/routes.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -65,6 +66,11 @@ class CustomTextButton extends StatelessWidget {
       this.title = 'Reset App',
       this.type = CustomListTileType.resetAtsign,
       super.key});
+  const CustomTextButton.signOut(
+      {this.iconData = Icons.logout_outlined,
+      this.title = 'Sign Out',
+      this.type = CustomListTileType.signOut,
+      super.key});
 
   const CustomTextButton.feedback(
       {this.iconData = Icons.feedback_outlined,
@@ -94,15 +100,13 @@ class CustomTextButton extends StatelessWidget {
           }
           break;
         case CustomListTileType.discord:
-          final Uri url =
-              Uri.parse('https://discord.gg/atsign-778383211214536722');
+          final Uri url = Uri.parse('https://discord.gg/atsign-778383211214536722');
           if (!await launchUrl(url)) {
             throw Exception('Could not launch $url');
           }
           break;
         case CustomListTileType.faq:
-          final Uri url =
-              Uri.parse('https://docs.noports.com/ssh-no-ports/faq');
+          final Uri url = Uri.parse('https://docs.noports.com/ssh-no-ports/faq');
           if (!await launchUrl(url)) {
             throw Exception('Could not launch $url');
           }
@@ -120,12 +124,10 @@ class CustomTextButton extends StatelessWidget {
         //   break;
         case CustomListTileType.backupYourKey:
           if (context.mounted) {
-            BackupKeyWidget(atsign: ContactService().currentAtsign)
-                .showBackupDialog(context);
+            BackupKeyWidget(atsign: ContactService().currentAtsign).showBackupDialog(context);
           }
           break;
         case CustomListTileType.resetAtsign:
-          log(rootDomain);
           final futurePreference = await loadAtClientPreference(rootDomain);
           if (context.mounted) {
             final result = await AtOnboarding.reset(
@@ -137,8 +139,7 @@ class CustomTextButton extends StatelessWidget {
                 appAPIKey: Constants.appAPIKey,
               ),
             );
-            final OnboardingService onboardingService =
-                OnboardingService.getInstance();
+            final OnboardingService onboardingService = OnboardingService.getInstance();
 
             if (context.mounted && result == AtOnboardingResetResult.success) {
               onboardingService.setAtsign = null;
@@ -157,6 +158,14 @@ class CustomTextButton extends StatelessWidget {
           if (!await launchUrl(emailUri)) {
             CustomSnackBar.notification(content: 'No email client available');
           }
+          break;
+
+        case CustomListTileType.signOut:
+          Navigator.of(context)
+              .pushAndRemoveUntil(MaterialPageRoute(builder: (context) => const LoadingPage()), (route) => false);
+          await preSignout(ContactService().currentAtsign);
+          Navigator.of(context).pushReplacementNamed(Routes.onboarding);
+          break;
       }
     }
 
@@ -178,14 +187,15 @@ class CustomTextButton extends StatelessWidget {
           return strings.resetAtsign;
         case CustomListTileType.feedback:
           return strings.feedback;
+        case CustomListTileType.signOut:
+          // TODO Localize in the next PR.
+          return 'signOut';
       }
     }
 
-    return BlocBuilder<AtDirectoryCubit, LoggableString>(
-        builder: (context, rootDomain) {
+    return BlocBuilder<AtDirectoryCubit, LoggableString>(builder: (context, rootDomain) {
       return Padding(
-        padding: const EdgeInsets.only(
-            left: Sizes.p30, right: Sizes.p30, bottom: Sizes.p10),
+        padding: const EdgeInsets.only(left: Sizes.p30, right: Sizes.p30, bottom: Sizes.p10),
         child: TextButton.icon(
           label: Text(getTitle(strings)),
           onPressed: () {
@@ -209,4 +219,5 @@ enum CustomListTileType {
   backupYourKey,
   resetAtsign,
   feedback,
+  signOut,
 }
