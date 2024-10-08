@@ -163,7 +163,7 @@ class CustomTextButton extends StatelessWidget {
         case CustomListTileType.signOut:
           Navigator.of(context)
               .pushAndRemoveUntil(MaterialPageRoute(builder: (context) => const LoadingPage()), (route) => false);
-          await preSignout(ContactService().currentAtsign);
+          await preSignout();
           Navigator.of(context).pushReplacementNamed(Routes.onboarding);
           break;
       }
