@@ -97,8 +97,7 @@ class App extends StatelessWidget {
               create: (ctx) => FavoriteBloc(ctx.read<FavoriteRepository>()),
             ),
           ],
-          child: BlocSelector<SettingsBloc, SettingsState, Language>(
-              selector: (state) {
+          child: BlocSelector<SettingsBloc, SettingsState, Language>(selector: (state) {
             if (state is SettingsLoadedState) {
               return state.settings.language;
             }

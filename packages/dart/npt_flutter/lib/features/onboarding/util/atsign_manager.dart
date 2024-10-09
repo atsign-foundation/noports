@@ -6,11 +6,11 @@ import 'package:npt_flutter/app.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 
-class AtsignInformation {
+class AtsignInformation extends Loggable {
   final String atSign;
   final String rootDomain;
 
-  AtsignInformation({required this.atSign, required this.rootDomain});
+  const AtsignInformation({required this.atSign, required this.rootDomain});
 
   Map<String, String> toJson() => {
         "atsign": atSign,
@@ -25,6 +25,14 @@ class AtsignInformation {
       atSign: json["atsign"],
       rootDomain: json["root-domain"],
     );
+  }
+
+  @override
+  List<Object?> get props => [atSign, rootDomain];
+
+  @override
+  String toString() {
+    return 'AtsignInformation($atSign, $rootDomain)';
   }
 }
 
@@ -96,7 +104,7 @@ Future<bool> saveAtsignInformation(AtsignInformation info) async {
   }
   try {
     f.writeAsString(
-      jsonEncode(atSignInfo.map((e) => e.toJson())),
+      jsonEncode(atSignInfo.map((e) => e.toJson()).toList()),
       mode: FileMode.writeOnly,
       flush: true,
     );
