@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:npt_flutter/features/logging/models/loggable.dart';
 import 'package:npt_flutter/features/onboarding/cubit/at_directory_cubit.dart';
+import 'package:npt_flutter/features/onboarding/util/atsign_manager.dart';
 
 typedef OnboardingMapCallback = void Function(Map<String, String> val);
 
@@ -18,9 +18,8 @@ class OnboardingAtDirectorySelector extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return BlocBuilder<AtDirectoryCubit, LoggableString>(
-        builder: (context, rootDomain) {
-      controller.text = rootDomain.string;
+    return BlocBuilder<AtDirectoryCubit, AtsignInformation>(builder: (context, atsignInformation) {
+      controller.text = atsignInformation.rootDomain;
       return Column(
         children: [
           Row(
@@ -28,9 +27,8 @@ class OnboardingAtDirectorySelector extends StatelessWidget {
             children: [
               Flexible(
                 child: DropdownMenu<String>(
-                  initialSelection: options.contains(rootDomain.string)
-                      ? rootDomain.string
-                      : null,
+                  initialSelection:
+                      options.contains(atsignInformation.rootDomain) ? atsignInformation.rootDomain : null,
                   dropdownMenuEntries: options
                       .map<DropdownMenuEntry<String>>(
                         (o) => DropdownMenuEntry(

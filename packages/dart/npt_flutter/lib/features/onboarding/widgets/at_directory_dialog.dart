@@ -13,7 +13,7 @@ class AtDirectoryDialog extends StatelessWidget {
       title: strings.atDirectory,
       subtitle: strings.atDirectorySubtitle,
       // TODO: Add success button text to the AppLocalizations
-      successButtonText: 'select',
+      successButtonText: 'Done',
       children: [
         OnboardingAtDirectorySelector(),
       ],

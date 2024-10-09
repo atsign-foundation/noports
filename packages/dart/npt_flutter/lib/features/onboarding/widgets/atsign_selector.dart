@@ -1,17 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:npt_flutter/features/logging/models/loggable.dart';
 import 'package:npt_flutter/features/onboarding/cubit/at_directory_cubit.dart';
+import 'package:npt_flutter/features/onboarding/util/atsign_manager.dart';
 
 typedef OnboardingMapCallback = void Function(Map<String, String> val);
 
 class AtsignSelector extends StatefulWidget {
-  AtsignSelector({
+  const AtsignSelector({
     super.key,
   });
-
-  final List<String> options = [];
 
   @override
   State<AtsignSelector> createState() => _AtsignSelectorState();
@@ -21,11 +19,29 @@ class _AtsignSelectorState extends State<AtsignSelector> {
   final FocusNode focusNode = FocusNode();
 
   final TextEditingController controller = TextEditingController();
+  List<String> options = [];
+  late final List<String> originalOptions;
+
+  late int originalOptionsLength;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      options = (await getAtsignEntries()).keys.toList();
+      if (mounted) context.read<AtDirectoryCubit>().setAtSign(options[0]);
+
+      controller.text = options[0];
+      originalOptions = List.from(options);
+      originalOptionsLength = options.length;
+      setState(() {});
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
-    return BlocBuilder<AtDirectoryCubit, LoggableString>(builder: (context, rootDomain) {
-      controller.text = rootDomain.string;
+    return BlocBuilder<AtDirectoryCubit, AtsignInformation>(builder: (context, atsignInformation) {
+      controller.text = atsignInformation.atSign;
       return Column(
         children: [
           Row(
@@ -33,8 +49,9 @@ class _AtsignSelectorState extends State<AtsignSelector> {
             children: [
               Flexible(
                 child: DropdownMenu<String>(
-                  initialSelection: widget.options.contains(rootDomain.string) ? rootDomain.string : null,
-                  dropdownMenuEntries: widget.options
+                  initialSelection:
+                      options.contains(atsignInformation.atSign) ? atsignInformation.atSign : controller.text,
+                  dropdownMenuEntries: options
                       .map<DropdownMenuEntry<String>>(
                         (o) => DropdownMenuEntry(
                           value: o,
@@ -45,7 +62,7 @@ class _AtsignSelectorState extends State<AtsignSelector> {
                   onSelected: (value) {
                     if (value == null) return;
 
-                    context.read<AtDirectoryCubit>().setRootDomain(value);
+                    context.read<AtDirectoryCubit>().setAtSign(value);
                   },
                 ),
               ),
@@ -54,7 +71,7 @@ class _AtsignSelectorState extends State<AtsignSelector> {
                   focusNode: focusNode,
                   onKeyEvent: (value) {
                     if (value.logicalKey == LogicalKeyboardKey.backspace) {
-                      if (widget.options.length > 2) widget.options.removeLast();
+                      if (options.length > originalOptionsLength) options.removeLast();
                     }
                   },
                   child: TextFormField(
@@ -63,13 +80,15 @@ class _AtsignSelectorState extends State<AtsignSelector> {
                     // validator: FormValidator.validateRequiredAtsignField,
                     onChanged: (value) {
                       // prevent the user from adding the default values to the dropdown a second time.
-                      if (value != widget.options[0] || value != widget.options[1]) {
-                        widget.options.add(value);
-                      }
-                      //removes the third element making the final entry the only additional value in options. This prevents the dropdown from having more than 3 entries.
-                      if (widget.options.length > 3) widget.options.removeAt(2);
+                      if (!originalOptions.contains(value)) {
+                        options.add(value);
 
-                      context.read<AtDirectoryCubit>().setRootDomain(value);
+                        setState(() {});
+                      }
+                      //removes the last element making the final entry the only additional value in options. This prevents the dropdown from having more than original options + one entries.
+                      if (options.length > originalOptionsLength + 1) options.removeAt(originalOptionsLength);
+
+                      context.read<AtDirectoryCubit>().setAtSign(value);
                     },
                   ),
                 ),

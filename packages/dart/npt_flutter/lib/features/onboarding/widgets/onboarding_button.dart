@@ -6,7 +6,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:npt_flutter/constants.dart';
-import 'package:npt_flutter/features/logging/models/loggable.dart';
 import 'package:npt_flutter/features/onboarding/cubit/at_directory_cubit.dart';
 import 'package:npt_flutter/features/onboarding/onboarding.dart';
 import 'package:npt_flutter/features/onboarding/util/atsign_manager.dart';
@@ -87,15 +86,15 @@ class _OnboardingButtonState extends State<OnboardingButton> {
   @override
   Widget build(BuildContext context) {
     final strings = AppLocalizations.of(context)!;
-    return BlocBuilder<AtDirectoryCubit, LoggableString>(builder: (context, rootDomain) {
+    return BlocBuilder<AtDirectoryCubit, AtsignInformation>(builder: (context, atsignInformation) {
       return ElevatedButton.icon(
         onPressed: () async {
           final isEmptyAtsignList = (await getAtsignEntries()).isNotEmpty;
-          log(isEmptyAtsignList.toString());
+          log('atsign entries is empty state: $isEmptyAtsignList');
 
           if (isEmptyAtsignList) await selectAtsign();
 
-          onboard(rootDomain: rootDomain.string);
+          onboard(rootDomain: atsignInformation.rootDomain);
         },
         icon: PhosphorIcon(PhosphorIcons.arrowUpRight()),
         label: Text(
