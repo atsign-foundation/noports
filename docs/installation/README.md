@@ -19,7 +19,7 @@ Installing NoPorts consists of the following steps:
       1. Use our enrollment tool to activate your device
 3. Use NoPorts!
 4. Reach out to us\
-   We want to hear about your use-cases. We take all feedback into consideration, it helps us make the best tool we possibly can.&#x20;
+   We want to hear about your use-cases. We take all feedback into consideration, it helps us make the best tool we possibly can.
 
 ## 1. Obtain your license
 
@@ -31,7 +31,7 @@ During registration, you will receive two atSigns, these are the identifiers tha
 
 There are two options for registration:
 
-1. [Register for the 14-day evaluation](https://my.noports.com/no-ports-invite/14dayfreetrial)&#x20;
+1. [Register for the 14-day evaluation](https://my.noports.com/no-ports-invite/14dayfreetrial)
 2. Or for additional licenses, use [the main portal](https://my.noports.com/login)\
    after signing in, click "Buy atSigns"
 
@@ -106,6 +106,28 @@ These are supplementary guides, which involve some manual work. You may require 
 [ipfire.md](custom-os-device-installs/ipfire.md)
 {% endcontent-ref %}
 
+### 3.3. Cloud installation guides
+
+These guides will show you how to install NoPorts as part of creating a new VM.
+
+{% content-ref url="cloud-installation-guides/automated-installation-on-amazon-web-services-aws.md" %}
+[automated-installation-on-amazon-web-services-aws.md](cloud-installation-guides/automated-installation-on-amazon-web-services-aws.md)
+{% endcontent-ref %}
+
+{% content-ref url="cloud-installation-guides/automated-installation-on-google-cloud-platform-gcp.md" %}
+[automated-installation-on-google-cloud-platform-gcp.md](cloud-installation-guides/automated-installation-on-google-cloud-platform-gcp.md)
+{% endcontent-ref %}
+
+{% content-ref url="cloud-installation-guides/automated-installation-on-microsoft-azure.md" %}
+[automated-installation-on-microsoft-azure.md](cloud-installation-guides/automated-installation-on-microsoft-azure.md)
+{% endcontent-ref %}
+
+{% content-ref url="cloud-installation-guides/automated-installation-on-oracle-cloud-infrastructure-oci.md" %}
+[automated-installation-on-oracle-cloud-infrastructure-oci.md](cloud-installation-guides/automated-installation-on-oracle-cloud-infrastructure-oci.md)
+{% endcontent-ref %}
+
+
+
 ## 4. Use NoPorts
 
 Start by exploring the use-cases available in the side bar. We also provide in-depth usage information:
@@ -113,8 +135,6 @@ Start by exploring the use-cases available in the side bar. We also provide in-d
 {% content-ref url="../usage/" %}
 [usage](../usage/)
 {% endcontent-ref %}
-
-
 
 [^1]: There are some multi-socket use-cases which also work. If you have a use-case please reach out to us.
 
