@@ -170,7 +170,7 @@ class CustomTextButton extends StatelessWidget {
           Navigator.of(context)
               .pushAndRemoveUntil(MaterialPageRoute(builder: (context) => const LoadingPage()), (route) => false);
           await preSignout();
-          Navigator.of(context).pushReplacementNamed(Routes.onboarding);
+          if (context.mounted) Navigator.of(context).pushReplacementNamed(Routes.onboarding);
           break;
         case CustomListTileType.selectRootDomain:
           await showDialog(
