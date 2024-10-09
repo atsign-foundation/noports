@@ -91,7 +91,7 @@ jobs:
           Compress-Archive -Path sshnpd -Destination tarball/${{
           matrix.output-name }}.zip
       # upload the build
-      - uses: actions/upload-artifact@604373da6381bf24206979c74d06a550515601b9 # v4.4.1
+      - uses: actions/upload-artifact@84480863f228bb9747b473957fcc9e309aa96097 # v4.4.2
         with:
           name:
             ${{ matrix.output-name }}_${{ matrix.compiler
@@ -131,7 +131,7 @@ jobs:
           --platform ${{ matrix.platform }} -o type=tar,dest=bins.tar .
           mkdir tarballs
           tar -xvf bins.tar -C tarballs
-      - uses: actions/upload-artifact@604373da6381bf24206979c74d06a550515601b9 # v4.4.1
+      - uses: actions/upload-artifact@84480863f228bb9747b473957fcc9e309aa96097 # v4.4.2
         with:
           name:
             ${{
@@ -169,7 +169,7 @@ jobs:
           --platform ${{ matrix.platform }} -o type=tar,dest=bins.tar .
           mkdir tarballs
           tar -xvf bins.tar -C tarballs
-      - uses: actions/upload-artifact@604373da6381bf24206979c74d06a550515601b9 # v4.4.1
+      - uses: actions/upload-artifact@84480863f228bb9747b473957fcc9e309aa96097 # v4.4.2
         with:
           name:
             ${{
@@ -191,7 +191,7 @@ jobs:
           cd ./packages
           mv c csshnpd-${{ github.ref_name }}
           tar -cvzf ../tarball/csshnpd-${{ github.ref_name }}.tar.gz csshnpd-${{ github.ref_name }}
-      - uses: actions/upload-artifact@604373da6381bf24206979c74d06a550515601b9 # v4.4.1
+      - uses: actions/upload-artifact@84480863f228bb9747b473957fcc9e309aa96097 # v4.4.2
         with:
           name: csshnpd-src-${{github.ref_name}}-${{github.run_number}}-${{github.run_attempt}}
           path: ./tarball/csshnpd-${{ github.ref_name }}.tar.gz
