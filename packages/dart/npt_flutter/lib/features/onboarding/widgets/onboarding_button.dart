@@ -90,11 +90,11 @@ class _OnboardingButtonState extends State<OnboardingButton> {
       return ElevatedButton.icon(
         onPressed: () async {
           final isEmptyAtsignList = (await getAtsignEntries()).isNotEmpty;
-          log('atsign entries is empty state: $isEmptyAtsignList');
 
-          if (isEmptyAtsignList) await selectAtsign();
+          bool proceedToOnboard = false;
+          if (isEmptyAtsignList) proceedToOnboard = await selectAtsign();
 
-          onboard(rootDomain: atsignInformation.rootDomain);
+          if (proceedToOnboard) onboard(rootDomain: atsignInformation.rootDomain);
         },
         icon: PhosphorIcon(PhosphorIcons.arrowUpRight()),
         label: Text(

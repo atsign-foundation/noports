@@ -199,11 +199,9 @@ class CustomTextButton extends StatelessWidget {
         case CustomListTileType.feedback:
           return strings.feedback;
         case CustomListTileType.signOut:
-          // TODO Localize in the next PR.
-          return 'signOut';
+          return strings.signout;
         case CustomListTileType.selectRootDomain:
-          // TODO Localize in the next PR.
-          return 'Select Root Domain';
+          return strings.selectRootDomain;
       }
     }
 

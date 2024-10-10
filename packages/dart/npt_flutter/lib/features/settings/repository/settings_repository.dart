@@ -1,8 +1,11 @@
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:at_client_mobile/at_client_mobile.dart';
+import 'package:flutter/material.dart';
 import 'package:npt_flutter/constants.dart';
 import 'package:npt_flutter/features/settings/settings.dart';
+import 'package:npt_flutter/util/language.dart';
 
 class SettingsRepository {
   const SettingsRepository();
@@ -12,6 +15,10 @@ class SettingsRepository {
         relayAtsign: RelayOptions.am.relayAtsign,
         viewLayout: PreferredViewLayout.minimal,
         overrideRelay: false,
+        // set the default language to the device's language
+        language: LanguageUtil.getLanguageFromLocale(
+          Locale(Platform.localeName.split('_').first),
+        ),
       );
 
   Future<Settings?> getSettings() async {

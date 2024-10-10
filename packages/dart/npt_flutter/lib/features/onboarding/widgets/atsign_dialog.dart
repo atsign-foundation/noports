@@ -10,11 +10,10 @@ class AtSignDialog extends StatelessWidget {
   Widget build(BuildContext context) {
     final strings = AppLocalizations.of(context)!;
     return OnboardingDialog(
-      // TODO: Add title, subtitle and success button text to the AppLocalizations
-      title: 'AtSign',
-      subtitle: 'Please select your @sign',
-      successButtonText: 'Next',
-      children: [
+      title: strings.atsignDialogTitle,
+      subtitle: strings.atsignDialogSubtitle,
+      successButtonText: strings.next,
+      children: const [
         AtsignSelector(),
       ],
     );
