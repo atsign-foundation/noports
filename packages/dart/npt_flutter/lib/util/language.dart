@@ -9,6 +9,10 @@ enum Language {
   spanish,
   @JsonValue("pt-br")
   portuguese,
+  @JsonValue("cn")
+  mandarin,
+  @JsonValue("hk")
+  cantonese,
 }
 
 extension LanguageExtension on Language {
@@ -20,6 +24,10 @@ extension LanguageExtension on Language {
         return const Locale('es');
       case Language.portuguese:
         return const Locale('pt', 'BR');
+      case Language.cantonese:
+        return const Locale.fromSubtags(languageCode: 'zh', scriptCode: 'Hant', countryCode: 'HK');
+      case Language.mandarin:
+        return const Locale.fromSubtags(languageCode: 'zh', scriptCode: 'Hans', countryCode: 'CN');
     }
   }
 
@@ -31,6 +39,10 @@ extension LanguageExtension on Language {
         return 'Español';
       case Language.portuguese:
         return 'Português';
+      case Language.cantonese:
+        return '廣東話';
+      case Language.mandarin:
+        return '普通话';
     }
   }
 }
@@ -40,14 +52,24 @@ class LanguageUtil {
   // Returns English if the language code is not supported.
   static Language getLanguageFromLocale(Locale locale) {
     switch (locale.languageCode) {
-      case 'en':
-        return Language.english;
-      case 'es':
-        return Language.spanish;
-      case 'pt':
+      case 'pt_BR':
         return Language.portuguese;
+      case 'zh_Hans_CH':
+        return Language.mandarin;
+      case 'zh_Hant_HK':
+        return Language.cantonese;
       default:
-        return Language.english;
+        if (locale.languageCode.startsWith('zh_Hans')) {
+          return Language.mandarin;
+        } else if (locale.languageCode.startsWith('zh_Hant')) {
+          return Language.cantonese;
+        } else if (locale.languageCode.startsWith('pt')) {
+          return Language.portuguese;
+        } else if (locale.languageCode.startsWith('es')) {
+          return Language.spanish;
+        } else {
+          return Language.english;
+        }
     }
   }
 }

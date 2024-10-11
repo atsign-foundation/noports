@@ -107,11 +107,11 @@ class App extends StatelessWidget {
 
             return null;
           }, builder: (context, language) {
-            Locale defaultLocal = Language.english.locale;
+            Locale? defaultLocal;
             if (language == null) {
-              //check if the device language is supported or not use english as the default.
-              final deviceLocal = Locale(Platform.localeName.split('_').first);
-              defaultLocal = LanguageUtil.getLanguageFromLocale(deviceLocal).locale;
+              //check if the device language is supported, if not use english as the default.
+
+              defaultLocal = LanguageUtil.getLanguageFromLocale(Locale(Platform.localeName)).locale;
             }
             return TrayManager(
               child: MaterialApp(
