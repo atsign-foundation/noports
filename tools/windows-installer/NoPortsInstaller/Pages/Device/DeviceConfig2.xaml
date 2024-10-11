@@ -58,7 +58,7 @@
                     <ColumnDefinition Width="23*"/>
                 </Grid.ColumnDefinitions>
                 <TextBox x:Name="AdditionalArgs" Grid.ColumnSpan="5" HorizontalAlignment="Left" Margin="22,28,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="219" Height="45" RenderTransformOrigin="0.501,0.621"/>
-                <Label Content="Additional Arguments:" HorizontalAlignment="Left" Height="28" VerticalAlignment="Top" Width="272" FontSize="11" Grid.ColumnSpan="6" Margin="10,0,0,0"/>
+                <Label Content="Additional NoPorts Arguments:" HorizontalAlignment="Left" Height="28" VerticalAlignment="Top" Width="272" FontSize="11" Grid.ColumnSpan="6" Margin="10,0,0,0"/>
             </Grid>
         </Grid>
     </Grid>

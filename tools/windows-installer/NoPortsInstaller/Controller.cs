@@ -21,6 +21,7 @@ namespace NoPortsInstaller
         public string DeviceName { get; set; }
         public string RegionAtsign { get; set; }
         public string AdditionalArgs { get; set; }
+        public string AccessGroup { get; set; }
         public bool IsInstalled
         {
             get { return Directory.Exists(InstallDirectory); }
@@ -61,6 +62,7 @@ namespace NoPortsInstaller
             AdditionalArgs = "";
             Pages = [];
             IsInstalled = false;
+            AccessGroup = "Users";
             LogEnvironment();
         }
 
@@ -214,7 +216,7 @@ namespace NoPortsInstaller
             DirectorySecurity securityRules = new();
             DirectoryInfo di;
             securityRules.AddAccessRule(
-                new FileSystemAccessRule("Users", FileSystemRights.Modify, AccessControlType.Allow)
+                new FileSystemAccessRule(AccessGroup, FileSystemRights.ExecuteFile, AccessControlType.Allow)
             );
             List<string> directories =
             [

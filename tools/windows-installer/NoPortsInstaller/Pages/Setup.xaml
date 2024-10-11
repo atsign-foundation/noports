@@ -54,5 +54,7 @@
         <Button x:Name="Onboard" Content="Activate atSign" HorizontalAlignment="Left" Height="24" Margin="176,221,0,0" VerticalAlignment="Top" Width="154" RenderTransformOrigin="0.536,-0.009" Grid.ColumnSpan="3" Click="Onboard_Click"/>
         <Button x:Name="Apkam_Enroll" Content="Generate Keys" HorizontalAlignment="Left" Height="24" Margin="176,256,0,0" VerticalAlignment="Top" Width="154" RenderTransformOrigin="0.536,-0.009" Grid.ColumnSpan="3" Click="Enroll_Click"/>
         <Button x:Name="Apkam_Otp" Content="Manage Keys" HorizontalAlignment="Left" Height="24" Margin="176,292,0,0" VerticalAlignment="Top" Width="154" RenderTransformOrigin="0.536,-0.009" Grid.ColumnSpan="3" Click="Otp_Click"/>
+        <Label Content="Access Group:" HorizontalAlignment="Left" Height="28" VerticalAlignment="Top" Width="136" Margin="39,264,0,0" FontSize="11" Grid.Column="2"/>
+        <TextBox x:Name="AccessGroupText" HorizontalAlignment="Left" Margin="39,292,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="133" Height="24" TextChanged="AccessGroupText_TextChanged" Grid.Column="2" />
     </Grid>
 </Page>

@@ -41,21 +41,10 @@ namespace NoPortsInstaller.Pages
             _controller.PopulateAtsigns(comboBox);
         }
 
-        private void ValidateInputs(object sender, SelectionChangedEventArgs e)
-        {
-            if (ClientCombo.Text == "" || DeviceCombo.Text == "")
-            {
-                NextPageButton.IsEnabled = false;
-            }
-            else
-            {
-                NextPageButton.IsEnabled = true;
-            }
-        }
 
-        private void ValidateInputs(object sender, TextChangedEventArgs e)
-        {
-            if (ClientCombo.Text == "" || DeviceCombo.Text == "" || DeviceNameText.ToString() == "" )
+		private void ValidateInputs(object sender, dynamic e)
+		{
+			if (ClientCombo.Text == "" || DeviceCombo.Text == "" || DeviceNameText.Text == "")
             {
                 NextPageButton.IsEnabled = false;
             }

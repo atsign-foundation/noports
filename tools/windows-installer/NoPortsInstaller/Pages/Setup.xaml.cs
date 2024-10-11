@@ -10,13 +10,15 @@ namespace NoPortsInstaller.Pages
     public partial class Setup : Page
     {
         private readonly Controller _controller;
-        public Setup()
+
+		public Setup()
         {
             InitializeComponent();
-            _controller = App.ControllerInstance;
-        }
+			_controller = App.ControllerInstance;
+			AccessGroupText.Text = _controller.AccessGroup;
+		}
 
-        private void OpenDialogButton_Click(object sender, RoutedEventArgs e)
+		private void OpenDialogButton_Click(object sender, RoutedEventArgs e)
         {
             OpenFolderDialog dialog = new();
             dialog.InitialDirectory = _controller.InstallDirectory;
@@ -58,6 +60,13 @@ namespace NoPortsInstaller.Pages
 			_controller.LoadPages(InstallType.Approve);
 			_controller.NextPage();
 		}
-	}
+
+		private void AccessGroupText_TextChanged(object sender, TextChangedEventArgs e)
+		{
+            InstallLogger.Log(AccessGroupText.Text);
+            InstallLogger.DumpLog();
+            _controller.AccessGroup = AccessGroupText.Text;
+        }
+    }
 }
 
