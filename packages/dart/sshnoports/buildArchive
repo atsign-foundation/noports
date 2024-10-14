@@ -39,7 +39,7 @@ wait
 cd ../webapp || exit 1
 echo "Building admin webapp"
 npm install -g npm@10.8.2 || exit 1
-npm install || exit 1
+npm ci || exit 1
 npm run build || exit 1
 
 wait
