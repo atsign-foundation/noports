@@ -9,8 +9,7 @@ WORKDIR /noports
 # install node for later (keep at the top file to increase cache hits)
 # hadolint ignore=DL3008
 RUN apt-get update; \
-  apt-get install -y --no-install-recommends npm; \
-  npm install -g npm@10.8.2
+  apt-get install -y --no-install-recommends npm
 
 COPY . .
 
