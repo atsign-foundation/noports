@@ -1,10 +1,66 @@
 // GENERATED CODE - DO NOT MODIFY BY HAND
 
-part of 'models.dart';
+part of 'policy_models.dart';
 
 // **************************************************************************
 // JsonSerializableGenerator
 // **************************************************************************
+
+PolicyIntent _$PolicyIntentFromJson(Map<String, dynamic> json) => PolicyIntent(
+      intent: json['intent'] as String,
+      params: json['params'] as Map<String, dynamic>?,
+    );
+
+Map<String, dynamic> _$PolicyIntentToJson(PolicyIntent instance) =>
+    <String, dynamic>{
+      'intent': instance.intent,
+      'params': instance.params,
+    };
+
+PolicyInfo _$PolicyInfoFromJson(Map<String, dynamic> json) => PolicyInfo(
+      intent: json['intent'] as String,
+      info: json['info'] as Map<String, dynamic>,
+    );
+
+Map<String, dynamic> _$PolicyInfoToJson(PolicyInfo instance) =>
+    <String, dynamic>{
+      'intent': instance.intent,
+      'info': instance.info,
+    };
+
+PolicyRequest _$PolicyRequestFromJson(Map<String, dynamic> json) =>
+    PolicyRequest(
+      daemonAtsign: json['daemonAtsign'] as String,
+      daemonDeviceName: json['daemonDeviceName'] as String,
+      daemonDeviceGroupName: json['daemonDeviceGroupName'] as String,
+      clientAtsign: json['clientAtsign'] as String,
+      intents: (json['intents'] as List<dynamic>)
+          .map((e) => PolicyIntent.fromJson(e as Map<String, dynamic>))
+          .toList(),
+    );
+
+Map<String, dynamic> _$PolicyRequestToJson(PolicyRequest instance) =>
+    <String, dynamic>{
+      'daemonAtsign': instance.daemonAtsign,
+      'daemonDeviceName': instance.daemonDeviceName,
+      'daemonDeviceGroupName': instance.daemonDeviceGroupName,
+      'clientAtsign': instance.clientAtsign,
+      'intents': instance.intents,
+    };
+
+PolicyResponse _$PolicyResponseFromJson(Map<String, dynamic> json) =>
+    PolicyResponse(
+      message: json['message'] as String?,
+      policyInfos: (json['policies'] as List<dynamic>)
+          .map((e) => PolicyInfo.fromJson(e as Map<String, dynamic>))
+          .toList(),
+    );
+
+Map<String, dynamic> _$PolicyResponseToJson(PolicyResponse instance) =>
+    <String, dynamic>{
+      'message': instance.message,
+      'policies': instance.policyInfos,
+    };
 
 DeviceInfo _$DeviceInfoFromJson(Map<String, dynamic> json) => DeviceInfo(
       timestamp: (json['timestamp'] as num).toInt(),
@@ -12,6 +68,9 @@ DeviceInfo _$DeviceInfoFromJson(Map<String, dynamic> json) => DeviceInfo(
       policyAtsign: json['policyAtsign'] as String?,
       devicename: json['devicename'] as String,
       deviceGroupName: json['deviceGroupName'] as String,
+      managerAtsigns: (json['managerAtsigns'] as List<dynamic>)
+          .map((e) => e as String)
+          .toList(),
       version: json['version'] as String,
       corePackageVersion: json['corePackageVersion'] as String,
       supportedFeatures: json['supportedFeatures'] as Map<String, dynamic>,
@@ -28,6 +87,7 @@ Map<String, dynamic> _$DeviceInfoToJson(DeviceInfo instance) =>
       'policyAtsign': instance.policyAtsign,
       'devicename': instance.devicename,
       'deviceGroupName': instance.deviceGroupName,
+      'managerAtsigns': instance.managerAtsigns,
       'version': instance.version,
       'corePackageVersion': instance.corePackageVersion,
       'supportedFeatures': instance.supportedFeatures,
@@ -43,11 +103,9 @@ PolicyLogEvent _$PolicyLogEventFromJson(Map<String, dynamic> json) =>
       devicename: json['devicename'] as String,
       deviceGroupName: json['deviceGroupName'] as String,
       clientAtsign: json['clientAtsign'] as String,
-      authorized: json['authorized'] as bool,
+      eventType: $enumDecode(_$PolicyLogEventTypeEnumMap, json['eventType']),
+      eventDetails: json['eventDetails'] as Map<String, dynamic>,
       message: json['message'] as String?,
-      permitOpen: (json['permitOpen'] as List<dynamic>)
-          .map((e) => e as String)
-          .toList(),
     );
 
 Map<String, dynamic> _$PolicyLogEventToJson(PolicyLogEvent instance) =>
@@ -58,10 +116,16 @@ Map<String, dynamic> _$PolicyLogEventToJson(PolicyLogEvent instance) =>
       'devicename': instance.devicename,
       'deviceGroupName': instance.deviceGroupName,
       'clientAtsign': instance.clientAtsign,
-      'authorized': instance.authorized,
+      'eventType': _$PolicyLogEventTypeEnumMap[instance.eventType]!,
       'message': instance.message,
-      'permitOpen': instance.permitOpen,
+      'eventDetails': instance.eventDetails,
     };
+
+const _$PolicyLogEventTypeEnumMap = {
+  PolicyLogEventType.requestFromDevice: 'requestFromDevice',
+  PolicyLogEventType.responseToDevice: 'responseToDevice',
+  PolicyLogEventType.deviceDecision: 'deviceDecision',
+};
 
 Device _$DeviceFromJson(Map<String, dynamic> json) => Device(
       name: json['name'] as String,

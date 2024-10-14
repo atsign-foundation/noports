@@ -1,13 +1,16 @@
 name: noports_core
 description: Core library code for sshnoports
 homepage: https://docs.atsign.com/
+publish_to: none
 
-version: 6.2.0
+version: 7.0.0
 
 environment:
   sdk: ">=3.0.0 <4.0.0"
 
 dependencies:
+  at_policy:
+    path: ../at_policy
   args: ^2.4.2
   at_chops: ^2.0.1
   at_client: ^3.2.2
@@ -27,6 +30,8 @@ dependencies:
   json_annotation: ^4.9.0
 
 dependency_overrides:
+  at_policy:
+    path: ../at_policy
   dartssh2:
     git:
       url: https://github.com/atsign-foundation/dartssh2

@@ -78,7 +78,7 @@ void main() {
           .thenAnswer((_) async => 'myTunnelUsername');
       when(() => mockSshnpdChannel.sharePublicKeyIfRequired(
           identityKeyPair ?? any())).thenAnswer((_) async {});
-      when(() => mockSshnpdChannel.featureCheck(any())).thenAnswer((_) async {
+      when(() => mockSshnpdChannel.featureCheck(any(),any())).thenAnswer((_) async {
         return DaemonFeature.values.map((f) => (f, true, 'mocked')).toList();
       });
       when(() => mockSrvdChannel.callInitialization()).thenAnswer((_) async {});

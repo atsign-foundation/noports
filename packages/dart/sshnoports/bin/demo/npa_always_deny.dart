@@ -1,19 +1,17 @@
 import 'dart:async';
-import 'package:noports_core/npa.dart';
-import 'package:sshnoports/npa_bootstrapper.dart' as bootstrapper;
+import 'package:at_policy/at_policy.dart';
+import 'package:sshnoports/policy_bootstrapper.dart' as bootstrapper;
 
 void main(List<String> args) async {
   await bootstrapper.run(AlwaysDeny(), args);
 }
 
-class AlwaysDeny implements NPARequestHandler {
+class AlwaysDeny implements PolicyRequestHandler {
   @override
-  Future<NPAAuthCheckResponse> doAuthCheck(
-      NPAAuthCheckRequest authCheckRequest) async {
-    return NPAAuthCheckResponse(
-      authorized: false,
+  Future<PolicyResponse> doAuthCheck(PolicyRequest authCheckRequest) async {
+    return PolicyResponse(
       message: 'Computer says "Noooo..."',
-      permitOpen: [],
+      policyInfos: [],
     );
   }
 }

@@ -1,12 +1,13 @@
 import 'dart:async';
 import 'dart:io';
 import 'package:args/args.dart';
-import 'package:noports_core/npa.dart';
-import 'package:sshnoports/npa_bootstrapper.dart' as bootstrapper;
+import 'package:at_policy/at_policy.dart';
+import 'package:noports_core/utils.dart';
+import 'package:sshnoports/policy_bootstrapper.dart' as bootstrapper;
 import 'package:yaml/yaml.dart';
 
 void main(List<String> args) async {
-  ArgParser parser = NPAParams.parser;
+  ArgParser parser = PolicyServiceParams.parser;
   parser.addOption(
     'yaml',
     mandatory: true,
@@ -78,7 +79,7 @@ void main(List<String> args) async {
 ///       deviceNames:
 ///         "h2g2":
 ///           - "*:22"
-class FileBasedPolicy implements NPARequestHandler {
+class FileBasedPolicy implements PolicyRequestHandler {
   YamlMap yaml;
 
   final Set<String> _daemonAtSigns = {};
@@ -161,26 +162,23 @@ class FileBasedPolicy implements NPARequestHandler {
   Set<String> get daemonAtsigns => _daemonAtSigns;
 
   @override
-  Future<NPAAuthCheckResponse> doAuthCheck(
-      NPAAuthCheckRequest authCheckRequest) async {
+  Future<PolicyResponse> doAuthCheck(PolicyRequest authCheckRequest) async {
     /// - The policy service needs to check if the clientAtsign is
     ///   - 1. permitted to talk to this daemonAtsign
     ///     - --> is there a value at _userAtSigns[@client][@daemon]
     final clientEntry = _userAtSigns[authCheckRequest.clientAtsign];
     if (clientEntry == null) {
-      return NPAAuthCheckResponse(
-        authorized: false,
+      return PolicyResponse(
         message: 'No permissions for ${authCheckRequest.clientAtsign}',
-        permitOpen: [],
+        policyInfos: [],
       );
     }
     final daemonEntry = clientEntry['daemons'][authCheckRequest.daemonAtsign];
     if (daemonEntry == null) {
-      return NPAAuthCheckResponse(
-        authorized: false,
+      return PolicyResponse(
         message: 'No permissions for ${authCheckRequest.clientAtsign}'
             ' at ${authCheckRequest.daemonAtsign}',
-        permitOpen: [],
+        policyInfos: [],
       );
     }
 
@@ -191,12 +189,11 @@ class FileBasedPolicy implements NPARequestHandler {
     if (deviceNames != null) {
       final deviceNameEntry = deviceNames[authCheckRequest.daemonDeviceName];
       if (deviceNameEntry != null) {
-        return NPAAuthCheckResponse(
-          authorized: true,
+        return PolicyResponse(
           message: '${authCheckRequest.clientAtsign} has permission'
               ' for device ${authCheckRequest.daemonDeviceName}'
               ' at daemon ${authCheckRequest.daemonAtsign}',
-          permitOpen: List<String>.from(deviceNameEntry),
+          policyInfos: [infoPermitOpen(List<String>.from(deviceNameEntry))],
         );
       }
     }
@@ -209,23 +206,21 @@ class FileBasedPolicy implements NPARequestHandler {
       final deviceGroupNameEntry =
           deviceGroupNames[authCheckRequest.daemonDeviceGroupName];
       if (deviceGroupNameEntry != null) {
-        return NPAAuthCheckResponse(
-          authorized: true,
+        return PolicyResponse(
           message: '${authCheckRequest.clientAtsign} has permission'
               ' for device group ${authCheckRequest.daemonDeviceGroupName}'
               ' at daemon ${authCheckRequest.daemonAtsign}',
-          permitOpen: List<String>.from(deviceGroupNameEntry),
+          policyInfos: [infoPermitOpen(List<String>.from(deviceGroupNameEntry))],
         );
       }
     }
 
-    return NPAAuthCheckResponse(
-      authorized: false,
+    return PolicyResponse(
       message: 'No permissions for ${authCheckRequest.clientAtsign}'
           ' at ${authCheckRequest.daemonAtsign}'
           ' for either the device ${authCheckRequest.daemonDeviceName}'
           ' or the deviceGroup ${authCheckRequest.daemonDeviceGroupName}',
-      permitOpen: [],
+      policyInfos: [],
     );
   }
 }

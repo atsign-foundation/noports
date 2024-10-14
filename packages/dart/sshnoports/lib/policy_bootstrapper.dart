@@ -1,27 +1,27 @@
 import 'dart:async';
 import 'dart:io';
 import 'package:at_utils/at_logger.dart';
-import 'package:noports_core/npa.dart';
+import 'package:at_policy/at_policy.dart';
 import 'package:noports_core/utils.dart';
 import 'package:sshnoports/src/create_at_client_cli.dart';
 import 'package:sshnoports/src/print_version.dart';
 import 'package:sshnoports/src/service_factories.dart';
 
 Future<void> run(
-  NPARequestHandler handler,
+  PolicyRequestHandler handler,
   List<String> commandLineArgs, {
   Set<String>? daemonAtsigns,
 }) async {
   AtSignLogger.root_level = 'SHOUT';
   AtSignLogger.defaultLoggingHandler = AtSignLogger.stdErrLoggingHandler;
-  late final NPA sshnpa;
+  late final PolicyService sshnpa;
 
   try {
-    sshnpa = await NPA.fromCommandLineArgs(
+    sshnpa = await PolicyService.fromCommandLineArgs(
       commandLineArgs,
       handler: handler,
       daemonAtsigns: daemonAtsigns,
-      atClientGenerator: (NPAParams p) => createAtClientCli(
+      atClientGenerator: (PolicyServiceParams p) => createAtClientCli(
         atsign: p.authorizerAtsign,
         atKeysFilePath: p.atKeysFilePath,
         rootDomain: p.rootDomain,
@@ -35,7 +35,7 @@ Future<void> run(
       ),
       usageCallback: (e, s) {
         printVersion();
-        stdout.writeln(NPAParams.parser.usage);
+        stdout.writeln(PolicyServiceParams.parser.usage);
         stderr.writeln('\n$e');
       },
     );

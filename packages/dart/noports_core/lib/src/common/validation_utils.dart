@@ -11,7 +11,8 @@ import 'package:path/path.dart' as path;
 const String sshnpDeviceNameRegex = r'[a-z0-9][a-z0-9_\-]{1,35}';
 const String invalidDeviceNameMsg = 'Device name must be alphanumeric'
     ' snake case, max length 36. First char must be a-z or 0-9.';
-const String deviceNameFormatHelp = 'Alphanumeric snake case, max length 36. First char must be a-z or 0-9.';
+const String deviceNameFormatHelp =
+    'Alphanumeric snake case, max length 36. First char must be a-z or 0-9.';
 const String invalidSshKeyPermissionsMsg =
     'Detected newline characters in the ssh public key permissions which malforms the authorized_keys file.';
 

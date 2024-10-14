@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:args/args.dart';
 import 'package:at_client/at_client.dart';
+import 'package:at_policy/at_policy.dart';
 import 'package:at_utils/at_logger.dart';
 import 'package:meta/meta.dart';
 import 'package:noports_core/src/sshnp/util/srvd_channel/srvd_exec_channel.dart';
@@ -180,6 +181,13 @@ class _NptImpl extends NptBase
     }
   }
 
+  List<PolicyIntent> _policyIntents() {
+    return [
+      intentPing(),
+      intentPermitOpen(['${params.remoteHost}:${params.remotePort}']),
+    ];
+  }
+
   @override
   @mustCallSuper
   Future<void> initialize() async {
@@ -202,8 +210,11 @@ class _NptImpl extends NptBase
     sendProgress('Sending daemon feature check request');
 
     Future<List<(DaemonFeature feature, bool supported, String reason)>>
-        featureCheckFuture = sshnpdChannel.featureCheck(requiredFeatures,
-            timeout: params.daemonPingTimeout);
+        featureCheckFuture = sshnpdChannel.featureCheck(
+      requiredFeatures,
+      _policyIntents(),
+      timeout: params.daemonPingTimeout,
+    );
 
     /// Retrieve the srvd host and port pair
     sendProgress('Fetching host and port from srvd');

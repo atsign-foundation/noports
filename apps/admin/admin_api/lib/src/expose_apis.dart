@@ -3,7 +3,7 @@ import 'dart:io';
 
 import 'package:alfred/alfred.dart';
 import 'package:at_client/at_client.dart';
-import 'package:noports_core/admin.dart';
+import 'package:at_policy/at_policy.dart';
 
 // ignore: implementation_imports
 import 'package:alfred/src/type_handlers/websocket_type_handler.dart';
@@ -12,7 +12,7 @@ import 'package:noports_core/sshnp_foundation.dart';
 admin(
   Alfred app,
   String pathPrefix,
-  PolicyService api,
+  PolicyAPI api,
   List<String> deviceAtsigns,
   String atDirectory,
 ) {
@@ -108,16 +108,17 @@ admin(
   }
 
   app.post('$pathPrefix/devices', (req, res) async {
-    Map b = await req.body as Map;
-    stderr.writeln(b);
+    Map reqBody = await req.body as Map;
+    stderr.writeln(reqBody);
 
     DeviceInfo di = DeviceInfo(
       timestamp: DateTime.now().millisecondsSinceEpoch,
-      deviceAtsign: b['deviceAtsign'],
-      policyAtsign: b['policyAtsign'],
-      devicename: b['devicename'],
+      deviceAtsign: reqBody['deviceAtsign'],
+      policyAtsign: reqBody['policyAtsign'],
+      managerAtsigns: [reqBody['policyAtsign']],
+      devicename: reqBody['devicename'],
       deviceGroupName:
-          b['deviceGroupName'] ?? DefaultSshnpdArgs.deviceGroupName,
+          reqBody['deviceGroupName'] ?? DefaultSshnpdArgs.deviceGroupName,
       version: '0.0.0',
       corePackageVersion: '0.0.0',
       supportedFeatures: {},
@@ -150,7 +151,7 @@ admin(
   });
 }
 
-policy(Alfred app, String pathPrefix, PolicyService api) {
+policy(Alfred app, String pathPrefix, PolicyAPI api) {
   // policy log events
   app.get('$pathPrefix/logs', (req, res) async {
     stderr.writeln('Fetching policy log events');

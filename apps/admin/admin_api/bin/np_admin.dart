@@ -4,7 +4,7 @@ import 'package:admin_api/src/expose_apis.dart' as expose;
 import 'package:alfred/alfred.dart';
 import 'package:args/args.dart';
 import 'package:at_cli_commons/at_cli_commons.dart';
-import 'package:noports_core/admin.dart';
+import 'package:at_policy/at_policy.dart';
 
 void main(List<String> args) async {
   ArgParser parser = CLIBase.argsParser;
@@ -16,7 +16,7 @@ void main(List<String> args) async {
     defaultsTo: '',
   );
   CLIBase cli = await CLIBase.fromCommandLineArgs(args);
-  final api = PolicyService.withAtClient(
+  final api = PolicyAPI.inAtClient(
     policyAtSign: cli.atSign,
     atClient: cli.atClient,
   );
@@ -59,7 +59,7 @@ void main(List<String> args) async {
 }
 
 // ignore: unused_element
-Future<void> _createGroups(PolicyService api) async {
+Future<void> _createGroups(PolicyAPI api) async {
   UserGroup sysAdmins = UserGroup(
     name: 'SysAdmins',
     description: 'System Administrators - full access',

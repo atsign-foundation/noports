@@ -1,4 +1,4 @@
-import 'package:noports_core/admin.dart';
+import 'package:at_policy/at_policy.dart';
 import 'package:at_client/at_client.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:test/test.dart';
@@ -7,7 +7,7 @@ class MockAtClient extends Mock implements AtClient {}
 
 void main() {
   group('core create retrieve update delete', () {
-    final api = PolicyService.inMemory(policyAtSign: '@policy');
+    final api = PolicyAPI.inMemory(policyAtSign: '@policy');
 
     setUp(() async {
       expect(api.groups, isEmpty);

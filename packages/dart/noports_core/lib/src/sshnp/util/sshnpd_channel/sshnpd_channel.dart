@@ -3,6 +3,7 @@ import 'dart:convert';
 
 import 'package:at_client/at_client.dart';
 import 'package:at_commons/at_builders.dart';
+import 'package:at_policy/at_policy.dart';
 import 'package:at_utils/at_logger.dart';
 import 'package:meta/meta.dart';
 import 'package:noports_core/src/common/mixins/async_initialization.dart';
@@ -178,8 +179,11 @@ abstract class SshnpdChannel with AsyncInitialization, AtClientBindings {
   }
 
   Future<List<(DaemonFeature feature, bool supported, String reason)>>
-      featureCheck(List<DaemonFeature> featuresToCheck,
-          {Duration timeout = DefaultArgs.daemonPingTimeoutDuration}) async {
+      featureCheck(
+    List<DaemonFeature> featuresToCheck,
+    List<PolicyIntent> intents, {
+    Duration timeout = DefaultArgs.daemonPingTimeoutDuration,
+  }) async {
     if (featuresToCheck.isEmpty) {
       return [];
     }

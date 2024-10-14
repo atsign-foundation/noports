@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:at_client/at_client.dart' hide StringBuffer;
+import 'package:at_policy/at_policy.dart';
 import 'package:at_utils/at_logger.dart';
 import 'package:meta/meta.dart';
 import 'package:noports_core/src/common/features.dart';
@@ -8,6 +9,7 @@ import 'package:noports_core/src/common/mixins/async_completion.dart';
 import 'package:noports_core/src/common/mixins/async_initialization.dart';
 import 'package:noports_core/src/common/mixins/at_client_bindings.dart';
 import 'package:noports_core/src/common/default_args.dart';
+import 'package:noports_core/src/common/noports_policy_utils.dart';
 import 'package:noports_core/src/sshnp/util/sshnp_ssh_key_handler/sshnp_ssh_key_handler.dart';
 import 'package:noports_core/src/sshnp/util/sshnpd_channel/sshnpd_channel.dart';
 import 'package:noports_core/src/sshnp/util/srvd_channel/srvd_channel.dart';
@@ -94,6 +96,20 @@ abstract class SshnpCore
     atClient.setPreferences(preference);
   }
 
+  List<PolicyIntent> _policyIntents() {
+    List<PolicyIntent> intents = [];
+
+    intents.add(intentPing());
+
+    if (params.sendSshPublicKey) {
+      intents.add(intentSendSshPublicKey());
+    }
+
+    intents.add(intentPermitOpen(['localhost:${params.remoteSshdPort}']));
+
+    return intents;
+  }
+
   @override
   @mustCallSuper
   Future<void> initialize() async {
@@ -121,8 +137,11 @@ abstract class SshnpCore
     sendProgress('Sending daemon feature check request');
 
     Future<List<(DaemonFeature feature, bool supported, String reason)>>
-        featureCheckFuture = sshnpdChannel.featureCheck(requiredFeatures,
-            timeout: params.daemonPingTimeout);
+        featureCheckFuture = sshnpdChannel.featureCheck(
+      requiredFeatures,
+      _policyIntents(),
+      timeout: params.daemonPingTimeout,
+    );
 
     /// Set the remote username to use for the ssh session
     sendProgress('Resolving remote username for user session');

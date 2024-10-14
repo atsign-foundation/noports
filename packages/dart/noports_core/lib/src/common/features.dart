@@ -22,11 +22,6 @@ enum DaemonFeature {
   /// Understands and respects the 'timeout' value in an npt session request
   /// See also [NptParams.timeout]
   adjustableTimeout,
-
-  /// Listens on a local port which will send 'hello\n' when connected to.
-  /// This enables clients to do a basic e2e health check by creating an npt
-  /// session to that port
-  e2eHealthCheck,
 }
 
 extension FeatureDescription on DaemonFeature {
@@ -42,8 +37,6 @@ extension FeatureDescription on DaemonFeature {
         return 'support requests for specific device ports';
       case DaemonFeature.adjustableTimeout:
         return 'support the \'timeout\' value in npt session requests';
-      case DaemonFeature.e2eHealthCheck:
-        return 'bind to a local port to facilitate doing an e2e health check';
     }
   }
 }

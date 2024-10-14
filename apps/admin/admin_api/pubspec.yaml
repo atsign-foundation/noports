@@ -9,6 +9,8 @@ environment:
 
 # Add regular dependencies here.
 dependencies:
+  at_policy:
+    path: "../../../packages/dart/at_policy"
   alfred: ^1.1.1
   at_client: ^3.2.0
   json_annotation: ^4.9.0

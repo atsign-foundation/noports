@@ -1,16 +1,16 @@
 import 'dart:async';
 import 'dart:io';
-import 'package:noports_core/npa.dart';
-import 'package:sshnoports/npa_bootstrapper.dart' as bootstrapper;
+import 'package:at_policy/at_policy.dart';
+import 'package:noports_core/utils.dart';
+import 'package:sshnoports/policy_bootstrapper.dart' as bootstrapper;
 
 void main(List<String> args) async {
   await bootstrapper.run(CLI(), args);
 }
 
-class CLI implements NPARequestHandler {
+class CLI implements PolicyRequestHandler {
   @override
-  Future<NPAAuthCheckResponse> doAuthCheck(
-      NPAAuthCheckRequest authCheckRequest) async {
+  Future<PolicyResponse> doAuthCheck(PolicyRequest authCheckRequest) async {
     stdout.writeln('Received request: $authCheckRequest');
     stdout.write('(A)pprove or (D)eny? : ');
     String decision = '';
@@ -19,16 +19,14 @@ class CLI implements NPARequestHandler {
     }
     final bool authorized = decision.toLowerCase().startsWith('a');
     if (authorized) {
-      return NPAAuthCheckResponse(
-        authorized: true,
+      return PolicyResponse(
         message: 'Approved via CLI',
-        permitOpen: ['*:*'],
+        policyInfos: [infoPermitOpen(['*:*'])],
       );
     } else {
-      return NPAAuthCheckResponse(
-        authorized: false,
+      return PolicyResponse(
         message: 'Denied via CLI',
-        permitOpen: [],
+        policyInfos: [],
       );
     }
   }

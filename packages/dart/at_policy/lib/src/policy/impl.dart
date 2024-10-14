@@ -1,20 +1,190 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
 
-import 'package:at_client/at_client.dart';
+import 'package:at_client/at_client.dart' hide StringBuffer;
+import 'package:at_policy/at_policy.dart';
+import 'package:at_policy/src/mixins/at_client_bindings.dart';
 import 'package:at_utils/at_logger.dart';
+import 'package:logging/logging.dart';
 import 'package:meta/meta.dart';
-import 'package:noports_core/admin.dart';
-import 'package:noports_core/sshnp_foundation.dart';
 
-class PolicyServiceWithAtClient extends PolicyServiceInMem
-    with AtClientBindings {
+class PolicyServiceImpl with AtClientBindings implements PolicyService {
+  @override
+  final AtSignLogger logger = AtSignLogger(' PolicyServiceImpl ');
+
+  @override
+  late AtClient atClient;
+
+  @override
+  final String homeDirectory;
+
+  @override
+  final String baseNamespace;
+
+  @override
+  String get authorizerAtsign => atClient.getCurrentAtSign()!;
+
+  @override
+  String get loggingAtsign => atClient.getCurrentAtSign()!;
+
+  @override
+  final Set<String> deviceAtsigns;
+
+  @override
+  final PolicyRequestHandler handler;
+
+  static const JsonEncoder jsonPrettyPrinter = JsonEncoder.withIndent('    ');
+
+  PolicyServiceImpl({
+    // final fields
+    required this.baseNamespace,
+    required this.atClient,
+    required this.homeDirectory,
+    required this.deviceAtsigns,
+    required this.handler,
+  }) {
+    logger.hierarchicalLoggingEnabled = true;
+    logger.logger.level = Level.SHOUT;
+  }
+
+  static Future<PolicyService> fromCommandLineArgs(
+    List<String> args, {
+    required PolicyRequestHandler handler,
+    AtClient? atClient,
+    FutureOr<AtClient> Function(PolicyServiceParams)? atClientGenerator,
+    void Function(Object, StackTrace)? usageCallback,
+    Set<String>? daemonAtsigns,
+  }) async {
+    try {
+      var p = await PolicyServiceParams.fromArgs(args);
+
+      // Check atKeyFile selected exists
+      if (!await File(p.atKeysFilePath).exists()) {
+        throw ('\n Unable to find .atKeys file : ${p.atKeysFilePath}');
+      }
+
+      AtSignLogger.root_level = 'SHOUT';
+      if (p.verbose) {
+        AtSignLogger.root_level = 'INFO';
+      }
+
+      if (atClient == null && atClientGenerator == null) {
+        throw StateError('atClient and atClientGenerator are both null');
+      }
+
+      atClient ??= await atClientGenerator!(p);
+
+      var sshnpa = PolicyServiceImpl(
+        baseNamespace: p.baseNamespace,
+        atClient: atClient,
+        homeDirectory: p.homeDirectory,
+        deviceAtsigns: daemonAtsigns ?? p.daemonAtsigns,
+        handler: handler,
+      );
+
+      if (p.verbose) {
+        sshnpa.logger.logger.level = Level.INFO;
+      }
+
+      return sshnpa;
+    } catch (e, s) {
+      usageCallback?.call(e, s);
+      rethrow;
+    }
+  }
+
+  @override
+  Future<void> run() async {
+    AtRpc rpc = AtRpc(
+      atClient: atClient,
+      baseNameSpace: baseNamespace,
+      domainNameSpace: 'requests.policy',
+      callbacks: this,
+      allowList: deviceAtsigns,
+      allowAll: true,
+    );
+
+    rpc.start();
+
+    logger.info('Listening for requests at '
+        '${rpc.domainNameSpace}.${rpc.rpcsNameSpace}.${rpc.baseNameSpace}');
+  }
+
+  @override
+  Future<AtRpcResp> handleRequest(AtRpcReq rpcRequest, String fromAtSign) async {
+    logger.info('Received request from $fromAtSign: '
+        '${jsonPrettyPrinter.convert(rpcRequest.toJson())}');
+
+    PolicyRequest policyRequest = PolicyRequest.fromJson(rpcRequest.payload);
+
+    // We will send a 'log' notification to the loggingAtsign
+    var logKey = AtKey()
+      ..key = '${DateTime.now().millisecondsSinceEpoch}.logs.policy'
+      ..sharedBy = authorizerAtsign
+      ..sharedWith = loggingAtsign
+      ..namespace = baseNamespace
+      ..metadata = (Metadata()
+        ..isPublic = false
+        ..isEncrypted = true
+        ..namespaceAware = true);
+
+    final event = PolicyLogEvent(
+      timestamp: DateTime.now().millisecondsSinceEpoch,
+      deviceAtsign: fromAtSign,
+      policyAtsign: atClient.getCurrentAtSign(),
+      devicename: policyRequest.daemonDeviceName,
+      deviceGroupName: policyRequest.daemonDeviceGroupName,
+      clientAtsign: policyRequest.clientAtsign,
+      eventType: PolicyLogEventType.requestFromDevice,
+      eventDetails: {'intents': policyRequest.intents},
+      message: '',
+    );
+    await notify(
+      logKey,
+      jsonEncode(event),
+      checkForFinalDeliveryStatus: false,
+      waitForFinalDeliveryStatus: false,
+      ttln: Duration(hours: 1),
+    );
+
+    PolicyResponse authCheckResponse;
+    AtRpcResp rpcResponse;
+    try {
+      authCheckResponse = await handler.doAuthCheck(policyRequest);
+      rpcResponse = AtRpcResp(
+          reqId: rpcRequest.reqId,
+          respType: AtRpcRespType.success,
+          payload: authCheckResponse.toJson());
+    } catch (e, st) {
+      logger.shout('Exception: $e : StackTrace : \n$st');
+      authCheckResponse = PolicyResponse(
+        message: 'Exception: $e',
+        policyInfos: [],
+      );
+      rpcResponse = AtRpcResp(
+          reqId: rpcRequest.reqId,
+          respType: AtRpcRespType.success,
+          payload: authCheckResponse.toJson());
+    }
+
+    return rpcResponse;
+  }
+
+  /// We're not sending any RPCs so we don't implement `handleResponse`
+  @override
+  Future<void> handleResponse(AtRpcResp response) {
+    throw UnimplementedError();
+  }
+}
+
+class PolicyApiWithAtClient extends PolicyApiInMemory with AtClientBindings {
   @override
   final logger = AtSignLogger('PolicyServiceWithAtClient');
   @override
   final AtClient atClient;
 
-  PolicyServiceWithAtClient({
+  PolicyApiWithAtClient({
     required super.policyAtSign,
     required this.atClient,
   });
@@ -192,11 +362,11 @@ class PolicyServiceWithAtClient extends PolicyServiceInMem
   }
 }
 
-class PolicyServiceInMem implements PolicyService {
+class PolicyApiInMemory implements PolicyAPI {
   @override
   final String policyAtSign;
 
-  PolicyServiceInMem({required this.policyAtSign});
+  PolicyApiInMemory({required this.policyAtSign});
 
   @override
   Future<void> init() async {}

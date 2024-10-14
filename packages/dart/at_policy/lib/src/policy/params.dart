@@ -1,7 +1,8 @@
 import 'package:args/args.dart';
-import 'package:noports_core/src/common/file_system_utils.dart';
+import 'package:at_cli_commons/at_cli_commons.dart';
 
-class NPAParams {
+class PolicyServiceParams {
+  final String baseNamespace;
   final String authorizerAtsign;
   final Set<String> daemonAtsigns;
   final String atKeysFilePath;
@@ -11,7 +12,8 @@ class NPAParams {
 
   // Non param variables
   static final ArgParser parser = _createArgParser();
-  NPAParams({
+  PolicyServiceParams({
+    required this.baseNamespace,
     required this.authorizerAtsign,
     required this.daemonAtsigns,
     required this.atKeysFilePath,
@@ -20,14 +22,15 @@ class NPAParams {
     required this.homeDirectory,
   });
 
-  static Future<NPAParams> fromArgs(List<String> args) async {
+  static Future<PolicyServiceParams> fromArgs(List<String> args) async {
     // Arg check
     ArgResults r = parser.parse(args);
 
     String authorizerAtsign = r['atsign'];
     String homeDirectory = getHomeDirectory()!;
 
-    return NPAParams(
+    return PolicyServiceParams(
+      baseNamespace: r['namespace'],
       authorizerAtsign: authorizerAtsign,
       daemonAtsigns: r['daemon-atsigns'].toString().split(',').toSet(),
       atKeysFilePath: r['key-file'] ??

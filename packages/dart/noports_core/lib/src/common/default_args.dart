@@ -53,6 +53,7 @@ class DefaultSshnpdArgs {
   static const int localSshdPort = 22;
   static const String deviceGroupName = '__none__';
   static const String sshPublicKeyPermissions = "";
-  static const Duration policyHeartbeatFrequency = Duration(minutes: 5);
+  static const Duration policyHeartbeatFrequency = Duration(hours: 1);
+  static const Duration deviceInfoShareFrequency = Duration(hours: 1);
   static const String permitOpen = 'localhost:22,localhost:3389';
 }
