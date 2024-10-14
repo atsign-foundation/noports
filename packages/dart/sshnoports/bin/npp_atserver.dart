@@ -6,7 +6,7 @@ import 'package:at_utils/at_logger.dart';
 import 'package:logging/logging.dart';
 import 'package:noports_core/admin.dart';
 import 'package:noports_core/npa.dart';
-import 'package:noports_core/sshnp_foundation.dart';
+import 'package:noports_core/sshnp_foundation.dart' hide standardAtClientStoragePath;
 import 'package:sshnoports/src/create_at_client_cli.dart';
 
 late AtSignLogger logger;
@@ -32,7 +32,7 @@ void main(List<String> args) async {
     atServiceFactory: ServiceFactoryWithNoOpSyncService(),
     namespace: DefaultArgs.namespace,
     storagePath: standardAtClientStoragePath(
-        homeDirectory: p.homeDirectory,
+        baseDir: p.homeDirectory,
         atSign: p.authorizerAtsign,
         progName: '.${DefaultArgs.namespace}',
         uniqueID: 'single'),
