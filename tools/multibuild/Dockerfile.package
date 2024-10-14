@@ -10,7 +10,7 @@ WORKDIR /noports
 # hadolint ignore=DL3008
 RUN apt-get update; \
   apt-get install -y --no-install-recommends npm; \
-  npm install -g npm@10.9.0
+  npm install -g npm@10.8.2
 
 COPY . .
 
@@ -42,7 +42,7 @@ RUN dart pub get --enforce-lockfile; \
 
 # Build apps/admin/webapp
 WORKDIR /noports/apps/admin/webapp
-RUN npm install; \
+RUN npm ci; \
   npm run build; \
   mkdir -p /sshnp/web/admin; \
   cp -r ./dist/* /sshnp/web/admin/
