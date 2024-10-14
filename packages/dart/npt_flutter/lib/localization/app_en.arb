@@ -86,14 +86,6 @@
    "validationErrorLocalPortField" : "Field must be between 1024-65535",
    "validationErrorLongField" : "Field must be 1-36 characters long",
    "validationErrorRemoteHostField" : "Field must be partially or fully qualified hostname or an IP address",
-   "profileRunningActionDeniedMessage" : "Cannot perform this action while profile is running",
-   "emptyProfileMessage" : "No profiles found\nCreate or Import a profile to start using NoPorts.",
-   "onboardingTitle" : "Welcome",
-   "onboardingSubTitle" : "to NoPorts Desktop",
-   "getStarted" : "Get Started",
-   "atDirectory" : "AtDirectory",
-   "atDirectorySubtitle" : "Select the domain you want to use",
-   "onboard" : "Onboard",
-   "onboardingError" : "An error has occurred",
+   "validationErrorRemotePortField" : "Field must be between 1-65535",
    "yaml" : "YAML"
 }
