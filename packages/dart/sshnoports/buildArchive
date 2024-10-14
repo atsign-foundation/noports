@@ -38,7 +38,7 @@ echo "Compiling admin_api"; dart compile exe --verbosity error bin/np_admin.dart
 wait
 cd ../webapp || exit 1
 echo "Building admin webapp"
-npm install -g npm@10.9.0 || exit 1
+npm install -g npm@10.8.2 || exit 1
 npm install || exit 1
 npm run build || exit 1
 

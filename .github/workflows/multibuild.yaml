@@ -103,7 +103,7 @@ jobs:
       - name: build admin webapp
         working-directory: ./apps/admin/webapp
         run: |
-          npm install -g npm@10.9.0
+          npm install -g npm@10.8.2
           npm install
           npm run build
       - if: ${{ matrix.os != 'windows-latest' }}
