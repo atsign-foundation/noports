@@ -37,6 +37,7 @@ jobs:
           username: ubuntu
           key: ${{ secrets.NOPORTS_CICD_SSH_KEY }}
           envs: SHA
+          command_timeout: 15m
           script: |
             cd noports
             rm -rf tests/e2e_all/runtime
