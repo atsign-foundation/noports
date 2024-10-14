@@ -44,3 +44,7 @@ updates:
     directory: "/apps/admin/webapp/"
     schedule:
       interval: "daily"
+    groups:
+      npm:
+        patterns:
+          - "*"
