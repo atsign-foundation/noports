@@ -1,19 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:npt_flutter/features/onboarding/util/atsign_manager.dart';
+import 'package:npt_flutter/features/onboarding/widgets/at_directory_selector.dart';
+import 'package:npt_flutter/features/onboarding/widgets/atsign_selector.dart';
 import 'package:npt_flutter/styles/sizes.dart';
 import 'package:npt_flutter/widgets/custom_container.dart';
 
 class OnboardingDialog extends StatelessWidget {
-  const OnboardingDialog(
-      {required this.title,
-      required this.subtitle,
-      required this.successButtonText,
-      required this.children,
-      super.key});
-  final String title;
-  final String subtitle;
-  final String successButtonText;
-  final List<Widget> children;
+  const OnboardingDialog({required this.options, super.key});
+  final Map<String, AtsignInformation> options;
 
   @override
   Widget build(BuildContext context) {
@@ -30,10 +25,16 @@ class OnboardingDialog extends StatelessWidget {
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(title),
-                  Text(subtitle),
+                  const Text("Select or type the client atSign"),
                   gapH16,
-                  ...children,
+                  AtsignSelector(
+                    options: options,
+                  ),
+                  gapH16,
+                  const Text("Select or type the root domain"),
+                  AtDirectorySelector(
+                    options: options,
+                  ),
                 ],
               ),
             ),
@@ -52,7 +53,7 @@ class OnboardingDialog extends StatelessWidget {
                   onPressed: () {
                     Navigator.of(context).pop(true);
                   },
-                  child: Text(successButtonText),
+                  child: const Text("Next"),
                 ),
               ],
             ))

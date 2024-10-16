@@ -14,7 +14,7 @@ Future<bool> preSignout() async {
   App.navState.currentContext?.read<FavoriteBloc>().clearAll();
   App.navState.currentContext?.read<ProfileListBloc>().clearAll();
   App.navState.currentContext?.read<SettingsBloc>().clear();
-  App.navState.currentContext?.read<OnboardingCubit>().offboard();
+  App.navState.currentContext?.read<OnboardingCubit>().setStatus(OnboardingStatus.offboarded);
   // - Reset the tray icon
   App.navState.currentContext?.read<TrayCubit>().initialize();
   return true;
