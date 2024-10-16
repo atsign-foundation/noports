@@ -25,7 +25,7 @@ part 'tray_state.dart';
               if (context == null) return;
               if (context.mounted) {
                 var cubit = context.read<OnboardingCubit>();
-                if (cubit.state is! Onboarded) return;
+                if (cubit.getStatus() != OnboardingStatus.onboarded) return;
                 Navigator.of(context).pushNamedAndRemoveUntil(
                   Routes.settings,
                   (route) => route.isFirst,
@@ -70,7 +70,7 @@ class TrayCubit extends LoggingCubit<TrayState> {
     if (state is! TrayInitial) return;
     var context = App.navState.currentContext;
     if (context == null) return;
-    var showSettings = context.read<OnboardingCubit>().state is Onboarded;
+    var showSettings = context.read<OnboardingCubit>().getStatus() == OnboardingStatus.onboarded;
 
     await reloadIcon();
 
@@ -98,7 +98,7 @@ class TrayCubit extends LoggingCubit<TrayState> {
     var init = initialize();
 
     /// Access the context before any awaited function calls
-    var showSettings = context.read<OnboardingCubit>().state is Onboarded;
+    var showSettings = context.read<OnboardingCubit>().getStatus() == OnboardingStatus.onboarded;
     var favoriteBloc = context.read<FavoriteBloc>();
     var profilesList = context.read<ProfileListBloc>();
 

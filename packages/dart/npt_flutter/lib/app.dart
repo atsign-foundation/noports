@@ -32,6 +32,8 @@ class App extends StatelessWidget {
       ],
       child: MultiBlocProvider(
           providers: [
+            // TODO this should be called LocalSettingsCubit and move
+            // Localization from the SettingsCubit to this
             BlocProvider<EnableLoggingCubit>(
               create: (_) => EnableLoggingCubit(),
             ),
@@ -42,7 +44,7 @@ class App extends StatelessWidget {
               create: (_) => LogsCubit(),
             ),
 
-            /// A cubit which manages the onboarding status
+            // A bloc which manages the atDirectory state
             BlocProvider<OnboardingCubit>(
               create: (_) => OnboardingCubit(),
             ),

@@ -46,25 +46,29 @@ class SettingsDashboardLayoutSelector extends StatelessWidget {
             ],
           ),
           gapH18,
-          CustomCard.settingsPreview(
-              child: Column(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              gapH13,
-              Padding(
-                padding: const EdgeInsets.only(left: Sizes.p20),
-                child: Align(
-                  alignment: Alignment.centerLeft,
-                  child: Text(strings.preview),
+          SizedBox(
+            height: 295,
+            width: 537,
+            child: CustomCard.settingsPreview(
+                child: Column(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                gapH13,
+                Padding(
+                  padding: const EdgeInsets.only(left: Sizes.p20),
+                  child: Align(
+                    alignment: Alignment.centerLeft,
+                    child: Text(strings.preview),
+                  ),
                 ),
-              ),
-              gapH10,
-              viewLayout == PreferredViewLayout.minimal
-                  ? SvgPicture.asset('assets/simple.svg')
-                  : SvgPicture.asset('assets/advance.svg'),
-              gapH16,
-            ],
-          ))
+                gapH10,
+                viewLayout == PreferredViewLayout.minimal
+                    ? SvgPicture.asset('assets/simple.svg')
+                    : SvgPicture.asset('assets/advance.svg'),
+                gapH16,
+              ],
+            )),
+          )
         ],
       );
     });

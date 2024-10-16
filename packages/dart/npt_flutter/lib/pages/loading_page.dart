@@ -1,10 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:npt_flutter/features/onboarding/view/onboarding_view.dart';
 import 'package:npt_flutter/widgets/npt_app_bar.dart';
 
-class OnboardingPage extends StatelessWidget {
-  const OnboardingPage({super.key, required this.nextRoute});
-  final String nextRoute;
+class LoadingPage extends StatelessWidget {
+  const LoadingPage({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -15,7 +13,9 @@ class OnboardingPage extends StatelessWidget {
         isNavigateBack: false,
         showSettings: false,
       ),
-      body: OnboardingView(),
+      body: Center(
+        child: CircularProgressIndicator.adaptive(),
+      ),
     );
   }
 }

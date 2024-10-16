@@ -53,6 +53,9 @@
    "remotePort" : "Remote Port",
    "remotePortDescription" : "",
    "resetAtsign" : "Reset Atsign",
+   "rvAmDisplayName" : "Americas",
+   "rvApDisplayName" : "Asia-Pacific",
+   "rvEuDisplayName" : "Europe",
    "selectExportFile": "Please select a file to export to:",
    "serviceMapping" : "Service Mapping",
    "settings" : "Settings",
@@ -68,5 +71,12 @@
    "validationErrorRemoteHostField" : "Field must be partially or fully qualified hostname or an IP address",
    "profileRunningActionDeniedMessage" : "Cannot perform this action while profile is running",
    "emptyProfileMessage" : "No profiles found\nCreate or Import a profile to start using NoPorts.",
+   "onboardingTitle" : "Welcome",
+   "onboardingSubTitle" : "to NoPorts Desktop",
+   "getStarted" : "Get Started",
+   "atDirectory" : "AtDirectory",
+   "atDirectorySubtitle" : "Select the domain you want to use",
+   "onboard" : "Onboard",
+   "onboardingError" : "An error has occurred",
    "yaml" : "YAML"
 }

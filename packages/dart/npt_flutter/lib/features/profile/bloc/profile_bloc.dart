@@ -149,6 +149,7 @@ class ProfileBloc extends LoggingBloc<ProfileEvent, ProfileState> {
         atClient: atClient,
         params: profile.toNptParams(
           clientAtsign: atSign,
+          rootDomain: atClient.getPreferences()!.rootDomain,
           fallbackRelayAtsign: settings.relayAtsign,
           overrideRelayWithFallback: settings.overrideRelay,
         ),

@@ -9,16 +9,20 @@ class ProfileDeviceName extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final deviceWidth = MediaQuery.of(context).size.width;
     return SizedBox(
-      width: Sizes.p150,
-      child: BlocSelector<ProfileBloc, ProfileState, (String, String)?>(selector: (state) {
-        if (state is! ProfileLoadedState) return null;
-        return (state.profile.deviceName, state.profile.sshnpdAtsign);
-      }, builder: (BuildContext context, (String, String)? tuple) {
-        if (tuple == null) return gap0;
-        var (deviceName, sshnpdAtSign) = tuple;
-        return Text('$deviceName$sshnpdAtSign');
-      }),
+      width: deviceWidth * Sizes.profileFieldsWidthFactor,
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: BlocSelector<ProfileBloc, ProfileState, (String, String)?>(selector: (state) {
+          if (state is! ProfileLoadedState) return null;
+          return (state.profile.deviceName, state.profile.sshnpdAtsign);
+        }, builder: (BuildContext context, (String, String)? tuple) {
+          if (tuple == null) return gap0;
+          var (deviceName, sshnpdAtSign) = tuple;
+          return Text('$deviceName$sshnpdAtSign');
+        }),
+      ),
     );
   }
 }

@@ -1,5 +1,6 @@
+import 'package:flutter/material.dart';
+
 class Constants {
-  static const rootDomain = 'root.atsign.org';
   static String? get namespace => 'noports';
   // TODO: issue & secure API key properly
   static String? get appAPIKey => 'asdf';
@@ -14,6 +15,11 @@ class Constants {
     "@rv_eu": "London",
     "@rv_ap": "Singapore",
   };
+
+  static Map<String, String> getRootDomains(BuildContext context) {
+    // TODO localize right hand side of map
+    return {'root.atsign.org': 'Default (Prod)', 'vip.ve.atsign.zone': 'Demo (VE)'};
+  }
 
   static const languages = ['English', 'Spanish', 'Br portuguese', 'Mandarin', 'Cantonese'];
 }

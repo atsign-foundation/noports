@@ -9,7 +9,7 @@ class ContactListTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    SizeConfig().init(context);
+    SizeConfig().init();
     final contactRepo = ContactsService.getInstance();
 
     final bodyMedium = Theme.of(context).textTheme.bodyMedium!;
