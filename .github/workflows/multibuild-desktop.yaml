@@ -1,0 +1,269 @@
+name: Multibuild
+
+on:
+  push:
+    tags:
+      - "v*.*.*"
+  workflow_dispatch:
+    inputs:
+      main_build_only:
+        description: "Run non-dockerx builds only"
+        required: true
+        default: false
+        type: boolean
+
+permissions: # added using https://github.com/step-security/secure-repo
+  contents: read
+
+jobs:
+  verify_tags:
+    permissions:
+      contents: write # Needed to create workflow branch
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@eef61447b9ff4aafe5dcd4e0bbf5d482be7e7871 # v4.2.1
+      - name: Create action branch
+        run: |
+          git config --global user.name 'Atsign Robot'
+          git config --global user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git checkout -b multibuild-${{github.run_number}}
+      - name:
+          Ensure pubspec.yaml matches git ref (if current git ref is a version
+          tag)
+        shell: bash
+        if: startsWith(github.ref, 'refs/tags/v')
+        working-directory: ./packages/dart/sshnoports
+        run: |
+          REF=${{ github.ref }}
+          VER=${REF:11}
+          sed -i "0,/version:/{s/version: \(.*\)/version: "${VER}"/}" pubspec.yaml
+          if [ "$(git status --porcelain)" ]; then
+            git add .
+            git commit -m 'ci: Updated version to tag'
+          fi
+      - name: Push changes to branch
+        run:
+          git push --set-upstream origin
+          multibuild-desktop-${{github.run_number}}
+
+  main_build:
+    needs: verify_tags
+    runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        working-directory: ./packages/dart/npt_flutter
+    strategy:
+      matrix:
+        include:
+          - os: ubuntu-latest
+            output-name: noports-desktop-linux-x64
+            ext: ""
+          - os: macos-13
+            output-name: noports-desktop-macos-x64
+            ext: ""
+          - os: macos-14
+            output-name: noports-desktop-macos-arm64
+            ext: ""
+          - os: windows-latest
+            output-name: noports-desktop-windows-x64
+            ext: ".exe"
+    steps:
+      - uses: actions/checkout@eef61447b9ff4aafe5dcd4e0bbf5d482be7e7871 # v4.2.1
+        with:
+          ref: multibuild-${{github.run_number}}
+      - name: Setup Flutter SDK
+        uses: flutter-actions/setup-flutter@v3
+        with:
+          channel: stable
+          version: 3.24.3
+      # create directories need for build
+      - run: |
+          mkdir tarball
+          mkdir noports
+      # prepare for build
+      - run: |
+          dart pub get --enforce-lockfile
+          dart run build_runner build --delete-conflicting-outputs
+      # build for platform
+      - if: ${{ matrix.os == 'macos-13' || matrix.os == 'macos-14' }}
+        run: |
+          flutter build macos --release
+          mv build/macos/Build/Products/Release/npt_flutter.app noports/
+          # TODO: package as .dmg?
+      - if: ${{ matrix.os == 'windows-latest' }}
+        run: |
+          flutter build windows --release
+          mv build/windows/Build/Products/Release/npt_flutter.exe noports/
+      - if: ${{ matrix.os == 'ubuntu-latest' }}
+        run: |
+          flutter build linux --release
+          mv build/linux/x64/release/bundle/npt_flutter noports/
+          # TODO: snap releases https://docs.flutter.dev/deployment/linux
+      # copy additional bundle items to build
+      - run: |
+          cp LICENSE noports
+      # codesign for apple
+      - if: ${{ matrix.os == 'macos-13' || matrix.os == 'macos-14' }}
+        name: Import certificates
+        env:
+          MACOS_CODESIGN_CERT: ${{ secrets.MACOS_CODESIGN_CERT }}
+          MACOS_CODESIGN_CERT_PASSWORD:
+            ${{ secrets.MACOS_CODESIGN_CERT_PASSWORD }}
+          MACOS_SIGNING_IDENTITY: ${{ secrets.MACOS_SIGNING_IDENTITY }}
+          MACOS_KEYCHAIN_PASSWORD: ${{ secrets.MACOS_KEYCHAIN_PASSWORD }}
+        run: |
+          # Load certificate
+          CERT_PATH=$RUNNER_TEMP/noports-codesign.p12
+          echo -n "$MACOS_CODESIGN_CERT" | base64 --decode -o $CERT_PATH
+          # create temp keychain
+          KEYCHAIN_PATH=$RUNNER_TEMP/build.keychain
+          security create-keychain -p "$MACOS_KEYCHAIN_PASSWORD" $KEYCHAIN_PATH
+          security default-keychain -s $KEYCHAIN_PATH
+          security unlock-keychain -p "$MACOS_KEYCHAIN_PASSWORD" $KEYCHAIN_PATH
+          security import $CERT_PATH -k $KEYCHAIN_PATH -P "$MACOS_CODESIGN_CERT_PASSWORD" -T /usr/bin/codesign
+          security set-key-partition-list -S apple-tool:apple,:,codesign: -s -k "$MACOS_KEYCHAIN_PASSWORD" $KEYCHAIN_PATH
+          # codesign
+          /usr/bin/codesign \
+            --force \
+            -s "$MACOS_SIGNING_IDENTITY" \
+            --options=runtime \
+            --entitlements ./tools/templates/entitlements.plist \
+            --prefix "com.atsign." \
+            --timestamp \
+            -v \
+            noports/{npt_flutter.app}
+      # zip the build
+      - if: ${{ matrix.os == 'macos-13' || matrix.os == 'macos-14' }}
+        run:
+          ditto -c -k --keepParent sshnp tarball/${{ matrix.output-name }}.zip
+      - if: ${{ matrix.os == 'ubuntu-latest' }}
+        run: tar -cvzf tarball/${{ matrix.output-name }}.tgz sshnp
+      - if: ${{ matrix.os == 'windows-latest' }}
+        run:
+          Compress-Archive -Path sshnp -Destination tarball/${{
+          matrix.output-name }}.zip
+      # notarize the build
+      - if: ${{ matrix.os == 'macos-13' || matrix.os == 'macos-14' }}
+        env:
+          MACOS_APPLE_ID: ${{ secrets.MACOS_APPLE_ID }}
+          MACOS_TEAM_ID: ${{ secrets.MACOS_TEAM_ID }}
+          MACOS_APPLE_ID_PASSWORD: ${{ secrets.MACOS_APPLE_ID_PASSWORD }}
+        run: |
+          xcrun notarytool submit tarball/${{ matrix.output-name }}.zip \
+            --apple-id "$MACOS_APPLE_ID" \
+            --team-id "$MACOS_TEAM_ID" \
+            --password "$MACOS_APPLE_ID_PASSWORD" \
+            --wait
+      # upload the build
+      - uses: actions/upload-artifact@b4b15b8c7c6ac21ea08fcf65892d2ee8f75cf882 # v4.4.3
+        with:
+          name:
+            ${{ matrix.output-name
+            }}-${{github.ref_name}}-${{github.run_number}}-${{github.run_attempt}}
+          path: ./packages/dart/npt_flutter/tarball
+          if-no-files-found: error
+
+  github-release:
+    name: >-
+      Upload artifacts and generate SBOMs and checksums for provenance
+    needs: [main_build]
+    runs-on: ubuntu-latest
+    outputs:
+      hashes: ${{ steps.hash.outputs.hashes }}
+    permissions:
+      contents: write # Mandatory for making GitHub Releases
+      id-token: write # Mandatory for sigstore
+      attestations: write
+    steps:
+      - name: Checkout pubspec.lock
+        uses: actions/checkout@eef61447b9ff4aafe5dcd4e0bbf5d482be7e7871 # v4.2.1
+        with:
+          sparse-checkout: packages/dart/sshnoports/pubspec.lock
+          sparse-checkout-cone-mode: false
+      - name: Install Syft
+        uses: anchore/sbom-action/download-syft@61119d458adab75f756bc0b9e4bde25725f86a7a # v0.17.2
+      - name: Download all the tarballs
+        uses: actions/download-artifact@fa0a91b85d4f404e444e00e005971372dc801d16 # v4.1.8
+        with:
+          path: tarballs/
+      - name: Generate SBOMs
+        run: |
+          syft scan file:./packages/dart/sshnoports/pubspec.lock \
+            -o 'spdx-json=tarballs/dart_sshnoports_sbom.spdx.json' \
+            -o 'cyclonedx-json=tarballs/dart_sshnoports_sbom.cyclonedx.json'
+      - name: Move packages for signing
+        run: |
+          cd tarballs
+          mv */*.sh .
+          mv */*.ps1 .
+          mv */*.tgz .
+          mv */*.zip .
+          rm -Rf -- */
+      - name: Generate SHA256 checksums
+        working-directory: tarballs
+        run: sha256sum * > checksums.txt
+      - name: Upload artifacts to GitHub Release
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        # Upload to GitHub Release using the `gh` CLI.
+        # `tarballs/` contains the built packages, and the
+        # Syft produced SBOMs
+        run: >-
+          gh release upload '${{ github.ref_name }}' tarballs/** --repo '${{
+          github.repository }}'
+      - id: hash
+        name: Pass artifact hashes for SLSA provenance
+        working-directory: tarballs
+        run: |
+          echo "hashes=$(cat checksums.txt | base64 -w0)" >> "$GITHUB_OUTPUT"
+      - uses: actions/attest-build-provenance@1c608d11d69870c2092266b3f9a6f3abbf17002c # v1.4.3
+        with:
+          subject-path: "tarballs/**"
+
+  provenance:
+    needs: [github-release]
+    permissions:
+      actions: read # Needed for detection of GitHub Actions environment.
+      id-token: write # Needed for provenance signing and ID
+      contents: write # Needed for release uploads
+    uses: slsa-framework/slsa-github-generator/.github/workflows/generator_generic_slsa3.yml@v2.0.0 # 5a775b367a56d5bd118a224a811bba288150a563
+    with:
+      base64-subjects: "${{ needs.github-release.outputs.hashes }}"
+      upload-assets: true
+
+  cleanup:
+    name: Clean up temporary branch
+    needs: [main_build]
+    runs-on: ubuntu-latest
+    if: ${{ always() }}
+    permissions:
+      contents: write # Needed to delete workflow branch
+    steps:
+      - uses: actions/checkout@eef61447b9ff4aafe5dcd4e0bbf5d482be7e7871 # v4.2.1
+        with:
+          ref: multibuild-${{github.run_number}}
+      - name: Delete workflow branch
+        run: git push origin --delete multibuild-desktop-${{github.run_number}}
+
+  notify_on_completion:
+    needs: [github-release, cleanup]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Google Chat Notification
+        uses: Co-qn/google-chat-notification@3691ccf4763537d6e544bc6cdcccc1965799d056 # v1
+        with:
+          name: NoPorts desktop built by GitHub Action ${{ github.run_number }}
+          url: ${{ secrets.GOOGLE_CHAT_WEBHOOK }}
+          status: ${{ job.status }}
+
+  notify_on_failure:
+    if: failure()
+    needs: [github-release, cleanup]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Google Chat Notification
+        uses: Co-qn/google-chat-notification@3691ccf4763537d6e544bc6cdcccc1965799d056 # v1
+        with:
+          name: NoPorts desktop build by GitHub Action ${{ github.run_number }}
+          url: ${{ secrets.GOOGLE_CHAT_WEBHOOK }}
+          status: failure
