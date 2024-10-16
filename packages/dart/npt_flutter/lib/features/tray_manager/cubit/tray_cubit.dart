@@ -15,8 +15,7 @@ import 'package:window_manager/window_manager.dart';
 part 'tray_cubit.g.dart';
 part 'tray_state.dart';
 
-(String, void Function(MenuItem)) getAction(TrayAction action) =>
-    switch (action) {
+(String, void Function(MenuItem)) getAction(TrayAction action) => switch (action) {
       TrayAction.showDashboard => ('Show Window', (_) => windowManager.focus()),
       TrayAction.showSettings => (
           'Settings',
@@ -26,7 +25,7 @@ part 'tray_state.dart';
               if (context == null) return;
               if (context.mounted) {
                 var cubit = context.read<OnboardingCubit>();
-                if (cubit.state is! Onboarded) return;
+                if (cubit.getStatus() != OnboardingStatus.onboarded) return;
                 Navigator.of(context).pushNamedAndRemoveUntil(
                   Routes.settings,
                   (route) => route.isFirst,
@@ -71,7 +70,7 @@ class TrayCubit extends LoggingCubit<TrayState> {
     if (state is! TrayInitial) return;
     var context = App.navState.currentContext;
     if (context == null) return;
-    var showSettings = context.read<OnboardingCubit>().state is Onboarded;
+    var showSettings = context.read<OnboardingCubit>().getStatus() == OnboardingStatus.onboarded;
 
     await reloadIcon();
 
@@ -86,13 +85,10 @@ class TrayCubit extends LoggingCubit<TrayState> {
   }
 
   Future<void> reloadIcon() async {
-    final brightness =
-        WidgetsBinding.instance.platformDispatcher.platformBrightness;
+    final brightness = WidgetsBinding.instance.platformDispatcher.platformBrightness;
     await trayManager.setIcon(switch (brightness) {
-      Brightness.light =>
-        Platform.isWindows ? Constants.icoIconLight : Constants.pngIconLight,
-      Brightness.dark =>
-        Platform.isWindows ? Constants.icoIconDark : Constants.pngIconDark,
+      Brightness.light => Platform.isWindows ? Constants.icoIconLight : Constants.pngIconLight,
+      Brightness.dark => Platform.isWindows ? Constants.icoIconDark : Constants.pngIconDark,
     });
   }
 
@@ -102,7 +98,7 @@ class TrayCubit extends LoggingCubit<TrayState> {
     var init = initialize();
 
     /// Access the context before any awaited function calls
-    var showSettings = context.read<OnboardingCubit>().state is Onboarded;
+    var showSettings = context.read<OnboardingCubit>().getStatus() == OnboardingStatus.onboarded;
     var favoriteBloc = context.read<FavoriteBloc>();
     var profilesList = context.read<ProfileListBloc>();
 
@@ -118,9 +114,7 @@ class TrayCubit extends LoggingCubit<TrayState> {
 
     /// Generate the new menu based on current state
     var favMenuItems = await Future.wait(
-      favorites
-          .where((fav) => fav.isLoadedInProfiles(profiles))
-          .map((fav) async {
+      favorites.where((fav) => fav.isLoadedInProfiles(profiles)).map((fav) async {
         /// Make sure to call [e.displayName] and [e.isRunning] only once to
         /// ensure good performance - these getters call a bunch of nested
         /// information from elsewhere in the app state

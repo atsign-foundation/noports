@@ -5,10 +5,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:npt_flutter/constants.dart';
-import 'package:npt_flutter/features/onboarding/cubit/at_directory_cubit.dart';
+import 'package:npt_flutter/features/onboarding/cubit/onboarding_cubit.dart';
 import 'package:npt_flutter/features/onboarding/util/atsign_manager.dart';
 import 'package:npt_flutter/features/onboarding/util/pre_offboard.dart';
-import 'package:npt_flutter/features/onboarding/widgets/at_directory_dialog.dart';
 import 'package:npt_flutter/features/onboarding/widgets/onboarding_button.dart';
 import 'package:npt_flutter/pages/loading_page.dart';
 import 'package:npt_flutter/routes.dart';
@@ -76,11 +75,6 @@ class CustomTextButton extends StatelessWidget {
       {this.iconData = Icons.feedback_outlined,
       this.title = 'Feedback',
       this.type = CustomListTileType.feedback,
-      super.key});
-  const CustomTextButton.selectRootDomain(
-      {this.iconData = Icons.dns_outlined,
-      this.title = 'Select Root Domain',
-      this.type = CustomListTileType.selectRootDomain,
       super.key});
 
   final IconData iconData;
@@ -212,7 +206,7 @@ class CustomTextButton extends StatelessWidget {
     }
 
     if (type == CustomListTileType.resetAtsign) {
-      return BlocBuilder<AtDirectoryCubit, AtsignInformation>(builder: (context, atsignInformation) {
+      return BlocBuilder<OnboardingCubit, AtsignInformation>(builder: (context, atsignInformation) {
         return Padding(
           padding: const EdgeInsets.only(left: Sizes.p30, right: Sizes.p30, bottom: Sizes.p10),
           child: TextButton.icon(
@@ -252,5 +246,4 @@ enum CustomListTileType {
   resetAtsign,
   feedback,
   signOut,
-  selectRootDomain,
 }
