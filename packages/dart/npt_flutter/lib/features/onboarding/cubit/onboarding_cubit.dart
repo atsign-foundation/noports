@@ -27,9 +27,9 @@ class OnboardingCubit extends LoggingCubit<OnboardingState> {
     String? rootDomain,
   }) =>
       emit(OnboardingState(
-        atSign: atSign ?? this.state.atSign,
-        status: status ?? this.state.status,
-        rootDomain: rootDomain ?? this.state.rootDomain,
+        atSign: atSign ?? state.atSign,
+        status: status ?? state.status,
+        rootDomain: rootDomain ?? state.rootDomain,
       ));
 }
 
