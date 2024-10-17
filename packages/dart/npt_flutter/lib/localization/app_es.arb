@@ -72,6 +72,8 @@
    "remotePort" : "Puerto remoto",
    "remotePortDescription" : "",
    "resetAtsign" : "Restablecer Atsign",
+   "rootDomainDefault" : "Predeterminado (Producción)",
+   "rootDomainDemo" : "Demostración (VE)",
    "selectExportFile": "Por favor seleccione un archivo para exportar a:",
    "selectRootDomain" : "Seleccionar dominio raíz",
    "serviceMapping" : "Mapeo de servicios",

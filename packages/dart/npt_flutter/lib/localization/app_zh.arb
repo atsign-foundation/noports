@@ -73,6 +73,8 @@
    "remotePort" : "远程端口",
    "remotePortDescription" : "",
    "resetAtsign" : "重置Atsign",
+   "rootDomainDefault" : "默认（生产）",
+   "rootDomainDemo" : "演示（VE）",
    "selectExportFile": "请选择要导出的文件：",
    "selectRootDomain" : "选择根域",
    "serviceMapping" : "服务映射",

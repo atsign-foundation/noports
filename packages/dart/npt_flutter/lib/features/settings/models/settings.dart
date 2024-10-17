@@ -29,7 +29,7 @@ class Settings extends Loggable {
   final Language language;
 
   const Settings({
-    this.relayAtsign = '@rv_am',
+    required this.relayAtsign,
     required this.overrideRelay,
     required this.viewLayout,
     this.darkMode = false,

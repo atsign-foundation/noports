@@ -16,9 +16,7 @@ class SettingsRepository {
         viewLayout: PreferredViewLayout.minimal,
         overrideRelay: false,
         // set the default language to the device's language
-        language: LanguageUtil.getLanguageFromLocale(
-          Locale(Platform.localeName.split('_').first),
-        ),
+        language: LanguageUtil.getLanguageFromLocale(Locale(Platform.localeName)),
       );
 
   Future<Settings?> getSettings() async {
