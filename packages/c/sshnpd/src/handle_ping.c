@@ -1,5 +1,5 @@
+#include "sshnpd/main.h"
 #include "sshnpd/params.h"
-#include "sshnpd/sshnpd.h"
 #include <atclient/atkey.h>
 #include <atclient/monitor.h>
 #include <atclient/notify.h>
@@ -29,17 +29,17 @@ void handle_ping(sshnpd_params *params, atclient_monitor_response *message, char
 
   atclient_notify_params notify_params;
   atclient_notify_params_init(&notify_params);
-  if((ret = atclient_notify_params_set_atkey(&notify_params, &pingkey)) != 0) {
+  if ((ret = atclient_notify_params_set_atkey(&notify_params, &pingkey)) != 0) {
     atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to set atkey in notify params\n");
     goto exit_ping;
   }
 
-  if((ret = atclient_notify_params_set_operation(&notify_params, ATCLIENT_NOTIFY_OPERATION_UPDATE)) != 0) {
+  if ((ret = atclient_notify_params_set_operation(&notify_params, ATCLIENT_NOTIFY_OPERATION_UPDATE)) != 0) {
     atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to set operation in notify params\n");
     goto exit_ping;
   }
 
-  if((ret = atclient_notify_params_set_value(&notify_params, ping_response)) != 0) {
+  if ((ret = atclient_notify_params_set_value(&notify_params, ping_response)) != 0) {
     atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to set value in notify params\n");
     goto exit_ping;
   }

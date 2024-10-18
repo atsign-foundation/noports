@@ -1,7 +1,7 @@
+#include <sshnpd/main.h>
 #include <sshnpd/params.h>
 #include <sshnpd/permitopen.h>
 #include <sshnpd/version.h>
-#include <sshnpd/sshnpd.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -21,6 +21,7 @@ void apply_default_values_to_sshnpd_params(sshnpd_params *params) {
   params->root_domain = "root.atsign.org";
   params->local_sshd_port = 22;
   params->storage_path = NULL;
+  params->monitor_read_timeout = 45;
 }
 
 int parse_sshnpd_params(sshnpd_params *params, int argc, const char **argv) {
@@ -54,7 +55,9 @@ int parse_sshnpd_params(sshnpd_params *params, int argc, const char **argv) {
 
       // Doesn't do anything more, added in case old config would cause a parsing issue
       OPT_BOOLEAN('u', "un-hide", NULL, NULL),
-      OPT_INTEGER(0, "monitor-read-timeout", &params->monitor_read_timeout, "Seconds to block and wait for data to arrive in monitor connection before sending a noop:0 to ping connection if alive (defaults to 10)"),
+      OPT_INTEGER(0, "monitor-read-timeout", &params->monitor_read_timeout,
+                  "Seconds to block and wait for data to arrive in monitor connection before sending a noop:0 to ping "
+                  "connection if alive (defaults to 45)"),
       OPT_END(),
   };
 
@@ -174,11 +177,6 @@ int parse_sshnpd_params(sshnpd_params *params, int argc, const char **argv) {
     params->manager_list_len = sep_count + 1;
   } else {
     params->manager_list_len = 0;
-  }
-
-  // check if the monitor_read_timeout is set
-  if(params->monitor_read_timeout == 0) {
-    params->monitor_read_timeout = SSHNPD_DEFAUT_MONITOR_READ_TIMEOUT_SECONDS; // default is 10 seconds
   }
 
   return 0;
