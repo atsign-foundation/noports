@@ -176,41 +176,6 @@ int parse_sshnpd_params(sshnpd_params *params, int argc, const char **argv) {
     params->manager_list_len = 0;
   }
 
-  // Repeat for permit-open
-  sep_count = 0;
-  for (int i = 0; i < permitopen_end - 1; i++) {
-    if (permitopen[i] == ',') {
-      sep_count++;
-    }
-  }
-
-  // malloc pointers to each string, but don't malloc any more memory for individual char storage
-  params->permitopen = malloc((sep_count + 1) * sizeof(char *)); // FIXME  leak
-  if (params->permitopen == NULL) {
-    printf("Failed to allocate memory for permitopen\n");
-    free(params->manager_list);
-    free(params->permitopen_str);
-    return 1;
-  }
-
-  params->permitopen[0] = permitopen;
-  pos = 1; // Starts at 1 since we already added the first item to the list
-  for (int i = 0; i < permitopen_end; i++) {
-    if (permitopen[i] == ',') {
-      // Set this comma to a null terminator
-      permitopen[i] = '\0';
-      if (permitopen[i + 1] == '\0') {
-        // Trailing comma, so we over counted by one
-        sep_count--;
-        // The allocated memory has a double trailing null seperator, but that's fine
-        break;
-      }
-      // Keep track of the start of the next item
-      params->permitopen[pos++] = permitopen + i + 1;
-    }
-  }
-  params->permitopen_len = sep_count + 1;
-
   // check if the monitor_read_timeout is set
   if(params->monitor_read_timeout == 0) {
     params->monitor_read_timeout = SSHNPD_DEFAUT_MONITOR_READ_TIMEOUT_SECONDS; // default is 10 seconds
