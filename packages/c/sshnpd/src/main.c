@@ -78,16 +78,6 @@ static bool is_child_process = false;
 
 // Signal handling
 static volatile sig_atomic_t should_run = 1;
-static void exit_handler(int sig) {
-  atlogger_log("exit_handler", ATLOGGER_LOGGING_LEVEL_WARN, "Received signal: %d\n");
-  if (should_run == 1) {
-    atlogger_log("exit_handler", ATLOGGER_LOGGING_LEVEL_WARN, "Received SIGINT, attempting a safe exit\n");
-    should_run = 0;
-  } else if (should_run == 0) {
-    atlogger_log("exit_handler", ATLOGGER_LOGGING_LEVEL_WARN, "Received SIGINT again, exiting forcefully\n");
-    exit(1);
-  }
-}
 static void child_exit_handler(int sig) {
   atlogger_log("child_exit_handler", ATLOGGER_LOGGING_LEVEL_WARN, "Received signal: %d\n");
   int status;
@@ -100,10 +90,6 @@ static void child_exit_handler(int sig) {
 int main(int argc, char **argv) {
   int res = 0;
   int exit_res = 0;
-
-  // Catch sigint and pass to the handler
-  signal(SIGINT, exit_handler);
-  signal(SIGCHLD, child_exit_handler);
 
   // 1.  Load default values
   apply_default_values_to_sshnpd_params(&params);
