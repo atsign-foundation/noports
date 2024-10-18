@@ -1,5 +1,5 @@
+#include "sshnpd/main.h"
 #include "sshnpd/params.h"
-#include "sshnpd/sshnpd.h"
 #include <atchops/aes.h>
 #include <atchops/base64.h>
 #include <atchops/iv.h>
