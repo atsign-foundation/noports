@@ -147,22 +147,19 @@ class _OnboardingButtonState extends State<OnboardingButton> {
   @override
   Widget build(BuildContext context) {
     final strings = AppLocalizations.of(context)!;
-    return BlocBuilder<AtDirectoryCubit, AtsignInformation>(builder: (context, atsignInformation) {
-      return ElevatedButton.icon(
-        onPressed: () async {
-          final isEmptyAtsignList = (await getAtsignEntries()).isNotEmpty;
-
-          bool proceedToOnboard = false;
-          if (isEmptyAtsignList) proceedToOnboard = await selectAtsign();
-
-          if (proceedToOnboard) onboard(rootDomain: atsignInformation.rootDomain);
-        },
-        icon: PhosphorIcon(PhosphorIcons.arrowUpRight()),
-        label: Text(
-          strings.getStarted,
-        ),
-        iconAlignment: IconAlignment.end,
-      );
-    });
+    return ElevatedButton.icon(
+      onPressed: () async {
+        bool shouldOnboard = await selectAtsign();
+        if (shouldOnboard && context.mounted) {
+          var atsignInformation = context.read<OnboardingCubit>().state;
+          onboard(atsign: atsignInformation.atSign, rootDomain: atsignInformation.rootDomain);
+        }
+      },
+      icon: PhosphorIcon(PhosphorIcons.arrowUpRight()),
+      label: Text(
+        strings.getStarted,
+      ),
+      iconAlignment: IconAlignment.end,
+    );
   }
 }

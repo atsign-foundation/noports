@@ -165,18 +165,6 @@ class CustomTextButton extends StatelessWidget {
           await preSignout();
           if (context.mounted) Navigator.of(context).pushReplacementNamed(Routes.onboarding);
           break;
-        case CustomListTileType.selectRootDomain:
-          await showDialog(
-            context: context,
-            builder: (BuildContext context) => const AtDirectoryDialog(),
-          );
-          break;
-        case CustomListTileType.selectRootDomain:
-          await showDialog(
-            context: context,
-            builder: (BuildContext context) => const AtDirectoryDialog(),
-          );
-          break;
       }
     }
 
@@ -200,8 +188,6 @@ class CustomTextButton extends StatelessWidget {
           return strings.feedback;
         case CustomListTileType.signOut:
           return strings.signout;
-        case CustomListTileType.selectRootDomain:
-          return strings.selectRootDomain;
       }
     }
 
