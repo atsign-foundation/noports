@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+
 
 class Constants {
   static String? get namespace => 'noports';
@@ -10,16 +12,9 @@ class Constants {
   static const pngIconLight = 'assets/noports-icon64-light.png';
   static const icoIconLight = 'assets/noports-icon64-light.ico';
 
-  static const Map<String, String> defaultRelayOptions = {
-    "@rv_am": "Los Angeles",
-    "@rv_eu": "London",
-    "@rv_ap": "Singapore",
-  };
-
   static Map<String, String> getRootDomains(BuildContext context) {
-    // TODO localize right hand side of map
-    return {'root.atsign.org': 'Default (Prod)', 'vip.ve.atsign.zone': 'Demo (VE)'};
-  }
+    AppLocalizations strings = AppLocalizations.of(context)!;
 
-  static const languages = ['English', 'Spanish', 'Br portuguese', 'Mandarin', 'Cantonese'];
+    return {'root.atsign.org': strings.rootDomainDefault, 'vip.ve.atsign.zone': strings.rootDomainDemo};
+  }
 }

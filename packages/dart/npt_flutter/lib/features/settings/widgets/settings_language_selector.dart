@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:npt_flutter/features/settings/settings.dart';
+import 'package:npt_flutter/util/language.dart';
 import 'package:npt_flutter/widgets/spinner.dart';
 
 class SettingsLanguageSelector extends StatelessWidget {

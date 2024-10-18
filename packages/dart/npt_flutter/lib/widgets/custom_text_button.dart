@@ -95,7 +95,7 @@ class CustomTextButton extends StatelessWidget {
             path: 'info@noports.com',
           );
           if (!await launchUrl(emailUri)) {
-            CustomSnackBar.notification(content: 'No email client available');
+            CustomSnackBar.notification(content: strings.noEmailClientAvailable);
           }
           break;
         case CustomListTileType.discord:
@@ -151,11 +151,11 @@ class CustomTextButton extends StatelessWidget {
           final emailUri = Uri(
             scheme: 'mailto',
             path: 'info@noports.com',
-            query: 'subject=SSH No Ports Desktop Feedback',
+            query: 'subject=No Port Desktop Feedback',
           );
 
           if (!await launchUrl(emailUri)) {
-            CustomSnackBar.notification(content: 'No email client available');
+            CustomSnackBar.notification(content: strings.noEmailClientAvailable);
           }
           break;
 
@@ -187,8 +187,7 @@ class CustomTextButton extends StatelessWidget {
         case CustomListTileType.feedback:
           return strings.feedback;
         case CustomListTileType.signOut:
-          // TODO Localize in the next PR.
-          return 'Sign out';
+          return strings.signout;
       }
     }
 

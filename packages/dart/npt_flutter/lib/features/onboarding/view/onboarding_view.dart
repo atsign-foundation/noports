@@ -43,12 +43,7 @@ class OnboardingView extends StatelessWidget {
               bottom: Sizes.p44,
               right: Sizes.p44,
             ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.end,
-              children: [
-                CustomTextButton.resetAtsign(),
-              ],
-            ),
+            child: CustomTextButton.resetAtsign(),
           ),
         )
       ],
