@@ -5,6 +5,7 @@ import 'package:npt_flutter/app.dart';
 import 'package:npt_flutter/features/profile/profile.dart';
 import 'package:npt_flutter/features/profile_list/bloc/profile_list_bloc.dart';
 import 'package:npt_flutter/styles/sizes.dart';
+import 'package:npt_flutter/widgets/custom_snack_bar.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 import '../../../routes.dart';
@@ -18,6 +19,8 @@ class ProfilePopupMenuButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final strings = AppLocalizations.of(context)!;
+    final state = context.watch<ProfileBloc>().state;
+    final isDisableIcons = state is ProfileStarting || state is ProfileStarted || state is ProfileStopping;
     return PopupMenuButton<PopupMenuEntry>(
         padding: EdgeInsets.zero,
         itemBuilder: (_) {
@@ -31,8 +34,12 @@ class ProfilePopupMenuButton extends StatelessWidget {
                 ],
               ),
               onTap: () {
-                var state = context.read<ProfileBloc>().state;
                 if (state is! ProfileLoadedState) return;
+                if (isDisableIcons) {
+                  CustomSnackBar.notification(content: strings.profileRunningActionDeniedMessage);
+                  return;
+                }
+
                 if (context.mounted) {
                   Navigator.of(context).pushNamed(Routes.profileForm, arguments: state.profile.uuid);
                 }
@@ -79,6 +86,10 @@ class ProfilePopupMenuButton extends StatelessWidget {
                   ],
                 ),
                 onTap: () {
+                  if (isDisableIcons) {
+                    CustomSnackBar.notification(content: strings.profileRunningActionDeniedMessage);
+                    return;
+                  }
                   showDialog(
                     context: context,
                     builder: (BuildContext context) {

@@ -17,6 +17,8 @@ class ProfileListBloc extends LoggingBloc<ProfileListEvent, ProfileListState> {
     on<ProfileListAddEvent>(_onAdd);
   }
 
+  void clearAll() => emit(const ProfileListInitial());
+
   Future<void> _onLoad(
       ProfileListLoadEvent event, Emitter<ProfileListState> emit) async {
     emit(const ProfileListLoading());

@@ -330,7 +330,9 @@ void main() {
           sessionId: sessionId);
 
       expect(
-          () async => await srvdDartBindPortChannel.getHostAndPortFromSrvd(),
+          () async => await srvdDartBindPortChannel.getHostAndPortFromSrvd(
+              // set timeout to something short so unit test runs quickly
+              timeout: Duration(milliseconds: 50)),
           throwsA(predicate((dynamic e) =>
               e is TimeoutException &&
               e.message == 'Connection timeout to srvd @srvd service')));

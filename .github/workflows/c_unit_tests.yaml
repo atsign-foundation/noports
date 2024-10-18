@@ -1,0 +1,24 @@
+name: C Unit Tests
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [trunk]
+  pull_request:
+    branches: [trunk]
+
+permissions: # added using https://github.com/step-security/secure-repo
+  contents: read
+
+jobs:
+  unit-tests:
+    runs-on: "ubuntu-latest"
+    steps:
+      - uses: actions/checkout@eef61447b9ff4aafe5dcd4e0bbf5d482be7e7871 # v4.2.1
+
+      - name: sshnpd Unit CTest
+        working-directory: packages/c
+        run: |
+          cmake -S . -B build -DSSHNPD_BUILD_TESTS=ON
+          cmake --build build
+          ctest --test-dir build/sshnpd/tests --output-on-failure --timeout 2

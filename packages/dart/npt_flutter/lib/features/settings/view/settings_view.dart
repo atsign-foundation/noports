@@ -19,6 +19,7 @@ class SettingsView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final strings = AppLocalizations.of(context)!;
+    final deviceSize = MediaQuery.of(context).size;
     return BlocBuilder<SettingsBloc, SettingsState>(
       builder: (context, state) {
         if (state is SettingsInitial) {
@@ -27,16 +28,36 @@ class SettingsView extends StatelessWidget {
         switch (state) {
           case SettingsInitial():
           case SettingsLoading():
-            return const Spinner();
+            return const Center(child: Spinner());
           case SettingsLoadedState():
-            return Padding(
-              padding: const EdgeInsets.only(top: 18, bottom: 92, left: 120, right: 77),
-              child: Stack(
-                clipBehavior: Clip.none,
-                children: [
-                  Positioned(
-                    left: Sizes.p192,
-                    child: CustomCard.settingsContent(
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    CustomCard.settingsRail(
+                      height: deviceSize.height * Sizes.settingsCardHeightFactor,
+                      child: const Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                        children: [
+                          // gapH30,
+                          CustomTextButton.discord(),
+                          CustomTextButton.email(),
+                          CustomTextButton.faq(),
+                          CustomTextButton.privacyPolicy(),
+                          CustomTextButton.feedback(),
+                          CustomTextButton.backUpYourKey(),
+                          CustomTextButton.signOut(),
+                          ContactListTile(),
+                        ],
+                      ),
+                    ),
+                    CustomCard.settingsContent(
+                      height: deviceSize.height * Sizes.settingsCardHeightFactor,
+                      width: deviceSize.width * Sizes.settingsCardWidthFactor,
                       child: Padding(
                         padding: const EdgeInsets.only(
                           left: Sizes.p43,
@@ -55,35 +76,10 @@ class SettingsView extends StatelessWidget {
                         ]),
                       ),
                     ),
-                  ),
-                  const Positioned(
-                    left: 0,
-                    child: CustomCard.settingsRail(
-                      child: Padding(
-                        padding: EdgeInsets.all(0.0),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            gapH30,
-                            CustomTextButton.discord(),
-                            CustomTextButton.email(),
-                            CustomTextButton.faq(),
-                            CustomTextButton.privacyPolicy(),
-                            CustomTextButton.feedback(),
-                            CustomTextButton.backUpYourKey(),
-                            CustomTextButton.resetAtsign(),
-                            ContactListTile(),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
-                  Positioned(
-                    top: Sizes.p470,
-                    child: Text(strings.allRightsReserved),
-                  ),
-                ],
-              ),
+                  ],
+                ),
+                Text(strings.allRightsReserved)
+              ],
             );
         }
       },

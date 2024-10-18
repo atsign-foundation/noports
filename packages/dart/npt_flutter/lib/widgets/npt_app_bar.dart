@@ -10,8 +10,15 @@ class NptAppBar extends StatelessWidget implements PreferredSizeWidget {
   final String title;
   final Color? settingsSelectedColor;
   final bool isNavigateBack;
+  final bool showSettings;
 
-  const NptAppBar({super.key, required this.title, this.settingsSelectedColor, this.isNavigateBack = true});
+  const NptAppBar({
+    super.key,
+    this.title = '',
+    this.settingsSelectedColor,
+    this.isNavigateBack = true,
+    this.showSettings = true,
+  });
 
   @override
   Size get preferredSize => Size.fromHeight(isNavigateBack ? Sizes.p150 : Sizes.p100);
@@ -27,25 +34,27 @@ class NptAppBar extends StatelessWidget implements PreferredSizeWidget {
         children: [
           Column(
             children: [
-              gapH40,
+              gapH16,
               SvgPicture.asset(
                 'assets/noports_logo.svg',
                 height: Sizes.p54,
                 width: Sizes.p175,
               ),
-              gapH25,
-              TextButton.icon(
-                onPressed: () {
-                  Navigator.pop(context);
-                },
-                label: Text(
-                  strings.back,
-                ),
-                icon: const Icon(
-                  Icons.arrow_back_ios,
-                ),
-                style: StyleConstants.backButtonStyle,
-              ),
+              gapH16,
+              isNavigateBack
+                  ? TextButton.icon(
+                      onPressed: () {
+                        Navigator.pop(context);
+                      },
+                      label: Text(
+                        strings.back,
+                      ),
+                      icon: const Icon(
+                        Icons.arrow_back_ios,
+                      ),
+                      style: StyleConstants.backButtonStyle,
+                    )
+                  : gap0,
             ],
           ),
           gapW27,
@@ -71,13 +80,16 @@ class NptAppBar extends StatelessWidget implements PreferredSizeWidget {
         ],
       ),
       actions: [
-        IconButton(
-          color: settingsSelectedColor,
-          icon: const Icon(Icons.settings_outlined),
-          onPressed: () {
-            Navigator.pushNamed(context, '/settings');
-          },
-        ),
+        showSettings
+            ? IconButton(
+                padding: const EdgeInsets.only(bottom: Sizes.p30),
+                color: settingsSelectedColor,
+                icon: const Icon(Icons.settings_outlined),
+                onPressed: () {
+                  Navigator.pushNamed(context, '/settings');
+                },
+              )
+            : gap0,
       ],
       centerTitle: true,
     );

@@ -28,6 +28,7 @@ environment:
 # the latest version available on pub.dev. To see which dependencies have newer
 # versions available, run `flutter pub outdated`.
 dependencies:
+  adaptive_theme: ^3.6.0
   at_client_mobile: ^3.2.18
   at_contact: ^3.0.8
   at_contacts_flutter: ^4.0.15
@@ -48,6 +49,7 @@ dependencies:
   meta: ^1.15.0
   noports_core:
     path: ../noports_core
+  path: ^1.9.0
   path_provider: ^2.1.4
   phosphor_flutter: ^2.1.0
   socket_connector: ^2.2.0

@@ -9,16 +9,20 @@ class ProfileServiceView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final deviceWidth = MediaQuery.of(context).size.width;
     return SizedBox(
-      width: Sizes.p150,
-      child: BlocSelector<ProfileBloc, ProfileState, (int, String, int)?>(selector: (state) {
-        if (state is! ProfileLoadedState) return null;
-        return (state.profile.localPort, state.profile.remoteHost, state.profile.remotePort);
-      }, builder: (BuildContext context, (int, String, int)? triple) {
-        if (triple == null) return const SizedBox();
-        var (localPort, remoteHost, remotePort) = triple;
-        return Text('$localPort:$remoteHost:$remotePort');
-      }),
+      width: deviceWidth * Sizes.profileFieldsWidthFactor,
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: BlocSelector<ProfileBloc, ProfileState, (int, String, int)?>(selector: (state) {
+          if (state is! ProfileLoadedState) return null;
+          return (state.profile.localPort, state.profile.remoteHost, state.profile.remotePort);
+        }, builder: (BuildContext context, (int, String, int)? triple) {
+          if (triple == null) return gap0;
+          var (localPort, remoteHost, remotePort) = triple;
+          return Text('$localPort:$remoteHost:$remotePort');
+        }),
+      ),
     );
   }
 }

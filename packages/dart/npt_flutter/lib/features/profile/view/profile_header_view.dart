@@ -1,8 +1,8 @@
 import 'package:flutter/widgets.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
-import 'package:npt_flutter/features/profile/profile.dart';
-import 'package:npt_flutter/features/profile_list/widgets/profile_select_all_box.dart';
+import 'package:npt_flutter/features/profile/widgets/profile_header_column.dart';
+import 'package:npt_flutter/features/profile_list/profile_list.dart';
 import 'package:npt_flutter/features/settings/settings.dart';
 import 'package:npt_flutter/styles/sizes.dart';
 import 'package:npt_flutter/widgets/custom_card.dart';
@@ -15,29 +15,31 @@ class ProfileHeaderView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final strings = AppLocalizations.of(context)!;
-    return BlocBuilder<ProfileBloc, ProfileState>(builder: (context, state) {
-      if (state is ProfileInitial) {
-        context.read<ProfileBloc>().add(const ProfileLoadEvent());
+
+    return BlocBuilder<ProfileListBloc, ProfileListState>(builder: (context, state) {
+      if (state is ProfileListInitial) {
+        context.read<ProfileListBloc>().add(const ProfileListLoadEvent());
       }
       switch (state) {
-        case ProfileInitial _:
-        case ProfileLoading _:
+        case ProfileListInitial _:
+        case ProfileListLoading _:
           return const Row(
             children: [
               LoaderBar(),
-              ProfileRefreshButton(),
+              ProfileListRefreshButton(),
             ],
           );
 
-        case ProfileFailedLoad _:
+        case ProfileListFailedLoad _:
           return const Row(
+            mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Text("Failed to load this profile, please refresh manually:"),
-              ProfileRefreshButton(),
+              ProfileListRefreshButton(),
             ],
           );
 
-        case ProfileLoadedState _:
+        case ProfileListLoaded _:
           return BlocSelector<SettingsBloc, SettingsState, PreferredViewLayout?>(
             selector: (SettingsState state) {
               if (state is SettingsLoadedState) {
@@ -47,15 +49,15 @@ class ProfileHeaderView extends StatelessWidget {
             },
             builder: (BuildContext context, PreferredViewLayout? viewLayout) {
               return switch (viewLayout) {
-                null => const Spinner(),
+                null => const Center(child: Spinner()),
                 PreferredViewLayout.minimal => CustomCard.profileHeader(
                     child: Padding(
-                      padding: const EdgeInsets.all(Sizes.p10),
+                      padding: const EdgeInsets.symmetric(vertical: Sizes.p10),
                       child: Row(
                         children: [
                           const ProfileSelectAllBox(),
                           gapW10,
-                          SizedBox(width: Sizes.p150, child: Text(strings.profileName)),
+                          ProfileHeaderColumn(title: strings.profileName, layout: PreferredViewLayout.minimal),
                           gapW10,
                           Text(strings.status),
                           // gapW10,
@@ -74,11 +76,11 @@ class ProfileHeaderView extends StatelessWidget {
                         children: [
                           const ProfileSelectAllBox(),
                           gapW10,
-                          SizedBox(width: Sizes.p150, child: Text(strings.profileName)),
+                          ProfileHeaderColumn(title: strings.profileName),
                           gapW10,
-                          SizedBox(width: Sizes.p150, child: Text(strings.deviceName)),
+                          ProfileHeaderColumn(title: strings.deviceName),
                           gapW10,
-                          SizedBox(width: Sizes.p150, child: Text(strings.serviceMapping)),
+                          ProfileHeaderColumn(title: strings.serviceMapping),
                           gapW10,
                           Text(strings.status),
                           // gapW10,

@@ -3,7 +3,9 @@
 #include "sshnpd/handle_ping.h"
 #include "sshnpd/handle_ssh_request.h"
 #include "sshnpd/handle_sshpublickey.h"
+#include "sshnpd/permitopen.h"
 #include "sshnpd/sshnpd.h"
+#include "sshnpd/version.h"
 #include <atchops/aes.h>
 #include <atchops/iv.h>
 #include <atchops/rsa.h>
@@ -208,6 +210,11 @@ int main(int argc, char **argv) {
     // atclient_get_public_encryption_key(&atclient, params.manager_list[i], &public_encryption_key);
     // TODO: finish caching
   }
+  if (params.policy == NULL) {
+    atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_DEBUG, "Policy Manager: NULL");
+  } else {
+    atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_DEBUG, "Policy Manager: %s", params.policy);
+  }
   printf("\n");
 
   if (!should_run) {
@@ -230,9 +237,13 @@ int main(int argc, char **argv) {
   cJSON_AddItemToObject(ping_response_json, "supportedFeatures", supported_features);
 
   cJSON *allowed_services = cJSON_CreateArray();
+  char *buf = malloc(sizeof(char) * 1024);
   for (int i = 0; i < params.permitopen_len; i++) {
-    cJSON_AddItemToArray(allowed_services, cJSON_CreateString(params.permitopen[i]));
+    sprintf(buf, "%s:%u", params.permitopen_hosts[i], (unsigned int)params.permitopen_ports[i]);
+    cJSON_AddItemToArray(allowed_services, cJSON_CreateString(buf));
   }
+  free(buf);
+
   cJSON_AddItemToObject(ping_response_json, "allowedServices", allowed_services);
 
   //
@@ -382,9 +393,9 @@ clean_atkeys:
 
 exit:
   free(params.manager_list);
-  free(params.permitopen);
+  free(params.permitopen_hosts);
+  free(params.permitopen_ports);
   free(params.permitopen_str);
-
   exit(exit_res);
 }
 
@@ -398,6 +409,13 @@ void main_loop() {
 
   atclient_monitor_response message;
 
+  permitopen_params permitopen;
+  permitopen.permitopen_len = params.permitopen_len;
+  permitopen.permitopen_hosts = params.permitopen_hosts;
+  permitopen.permitopen_ports = params.permitopen_ports;
+
+  permitopen_params npa_permitopen;
+
   while (should_run) {
     atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_DEBUG, "Waiting for next monitor thread message\n");
     atclient_monitor_response_init(&message);
@@ -407,7 +425,6 @@ void main_loop() {
 
     atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_DEBUG, "Received message of type: %d\n", message.type);
 
-    // in code -> clang-format -> out code
     switch (message.type) {
     case ATCLIENT_MONITOR_ERROR_READ:
       if (!atclient_monitor_is_connected(&monitor_ctx)) {
@@ -501,7 +518,14 @@ void main_loop() {
           break;
         }
 
+        if (params.policy != NULL) {
+          // TODO: implement a separate permitopen check for npa checks
+          // DO NOT USE permitopen, use npa_permitopen
+        }
+
         // TODO: maybe multithread these handlers
+        char *requested_host = NULL;
+        uint16_t requested_port = 0;
         switch (notification_key) {
         case NK_SSHPUBLICKEY:
           atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_DEBUG, "Executing handle_sshpublickey\n");
@@ -513,6 +537,15 @@ void main_loop() {
           break;
         case NK_SSH_REQUEST:
           atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_DEBUG, "Executing handle_ssh_request\n");
+          // permitopen happens first for ssh so we can avoid a bunch of unnecessary tasks
+          permitopen.requested_host = "localhost";
+          permitopen.requested_port = params.local_sshd_port;
+          if (!should_permitopen(&permitopen)) {
+            atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_DEBUG, "Ignoring request to localhost:%d\n",
+                         params.local_sshd_port);
+            // TODO notify daemon doesn't permit connections to $requested_host:$requested_port
+            break;
+          }
           handle_ssh_request(&worker, &atclient_lock, &params, &is_child_process, &message, home_dir, authkeys_file,
                              authkeys_filename, signingkey);
           if (is_child_process) {
@@ -523,6 +556,8 @@ void main_loop() {
           break;
         case NK_NPT_REQUEST:
           atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_DEBUG, "Executing handle_npt_request\n");
+          // No permitopen here... since we need to parse the json first in order to check, it happens inside
+          // handle_npt_request
           handle_npt_request(&worker, &atclient_lock, &params, &is_child_process, &message, home_dir, authkeys_file,
                              authkeys_filename, signingkey);
           break;
