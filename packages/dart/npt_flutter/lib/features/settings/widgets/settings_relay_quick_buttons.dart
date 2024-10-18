@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:npt_flutter/features/settings/settings.dart';
+import 'package:npt_flutter/util/relay.dart';
 import 'package:npt_flutter/widgets/custom_container.dart';
 
 import '../../../styles/sizes.dart';
@@ -49,8 +50,6 @@ class SettingsRelayQuickButtons extends StatelessWidget {
                       ),
                     ),
                   ),
-                ),
-              ),
               const SettingsRelayAtSignTextField(),
             ],
           ),
