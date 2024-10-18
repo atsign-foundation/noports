@@ -188,6 +188,7 @@ int main(int argc, char **argv) {
     exit_res = res;
     goto cancel_monitor_ctx;
   }
+  atclient_monitor_set_read_timeout(&monitor_ctx, params.monitor_read_timeout*1000);
 
   // 7.b Initialize the worker atclient
   atclient_init(&worker);
@@ -438,6 +439,7 @@ void main_loop() {
           sleep(1);
           break;
         }
+        atclient_monitor_set_read_timeout(&monitor_ctx, params.monitor_read_timeout*1000);
 
         ret = atclient_monitor_start(&monitor_ctx, regex);
         if (ret != 0) {

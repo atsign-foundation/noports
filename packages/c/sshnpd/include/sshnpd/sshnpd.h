@@ -33,4 +33,6 @@ enum notification_key {
 
 #define NOTIFICATION_KEYS_LEN 5
 
+#define SSHNPD_DEFAUT_MONITOR_READ_TIMEOUT_SECONDS 10
+
 #endif
