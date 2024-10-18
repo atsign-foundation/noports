@@ -41,6 +41,8 @@ struct _sshnpd_params {
 
   char *key_file;
   char *storage_path;
+
+  int monitor_read_timeout; // the amount of time that the monitor connection will wait for data before giving up and then sending a noop:0 to check if we're still connected
 };
 typedef struct _sshnpd_params sshnpd_params;
 

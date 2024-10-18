@@ -1,6 +1,7 @@
 #include <sshnpd/params.h>
 #include <sshnpd/permitopen.h>
 #include <sshnpd/version.h>
+#include <sshnpd/sshnpd.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -53,6 +54,7 @@ int parse_sshnpd_params(sshnpd_params *params, int argc, const char **argv) {
 
       // Doesn't do anything more, added in case old config would cause a parsing issue
       OPT_BOOLEAN('u', "un-hide", NULL, NULL),
+      OPT_INTEGER(0, "monitor-read-timeout", &params->monitor_read_timeout, "Seconds to block and wait for data to arrive in monitor connection before sending a noop:0 to ping connection if alive (defaults to 10)"),
       OPT_END(),
   };
 
@@ -175,5 +177,44 @@ int parse_sshnpd_params(sshnpd_params *params, int argc, const char **argv) {
   }
 
   // Repeat for permit-open
+  sep_count = 0;
+  for (int i = 0; i < permitopen_end - 1; i++) {
+    if (permitopen[i] == ',') {
+      sep_count++;
+    }
+  }
+
+  // malloc pointers to each string, but don't malloc any more memory for individual char storage
+  params->permitopen = malloc((sep_count + 1) * sizeof(char *)); // FIXME  leak
+  if (params->permitopen == NULL) {
+    printf("Failed to allocate memory for permitopen\n");
+    free(params->manager_list);
+    free(params->permitopen_str);
+    return 1;
+  }
+
+  params->permitopen[0] = permitopen;
+  pos = 1; // Starts at 1 since we already added the first item to the list
+  for (int i = 0; i < permitopen_end; i++) {
+    if (permitopen[i] == ',') {
+      // Set this comma to a null terminator
+      permitopen[i] = '\0';
+      if (permitopen[i + 1] == '\0') {
+        // Trailing comma, so we over counted by one
+        sep_count--;
+        // The allocated memory has a double trailing null seperator, but that's fine
+        break;
+      }
+      // Keep track of the start of the next item
+      params->permitopen[pos++] = permitopen + i + 1;
+    }
+  }
+  params->permitopen_len = sep_count + 1;
+
+  // check if the monitor_read_timeout is set
+  if(params->monitor_read_timeout == 0) {
+    params->monitor_read_timeout = SSHNPD_DEFAUT_MONITOR_READ_TIMEOUT_SECONDS; // default is 10 seconds
+  }
+
   return 0;
 }
