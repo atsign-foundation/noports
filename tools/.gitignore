@@ -1,1 +1,10 @@
 macos-signing.env
+
+#.NET Related
+.vs
+bin
+obj
+*.user
+launchSettings.json
+windows-installer/NoPortsInstaller/Resources/*
+windows-installer/NoPortsHealthCheck/publish
