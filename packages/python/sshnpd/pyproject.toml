@@ -12,7 +12,7 @@ sshnpd = 'sshnpd:main'
 
 [tool.poetry.dependencies]
 python = "^3.10"
-atsdk = "0.2.28"
+atsdk = "0.2.30"
 
 [build-system]
 requires = ["poetry-core"]
