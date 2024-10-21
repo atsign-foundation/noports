@@ -1,10 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
-import 'package:npt_flutter/features/profile/profile.dart';
+import 'package:npt_flutter/features/features.dart';
 import 'package:npt_flutter/features/profile_form/widgets/profile_relay_at_sign_text_field.dart';
 import 'package:npt_flutter/styles/sizes.dart';
-import 'package:npt_flutter/util/relay.dart';
 import 'package:npt_flutter/widgets/custom_container.dart';
 
 class ProfileRelayQuickButtons extends StatelessWidget {
@@ -44,29 +43,29 @@ class ProfileRelayQuickButtons extends StatelessWidget {
                   scrollDirection: Axis.horizontal,
                   controller: controller,
                   children: [
-                    ...RelayUtil.getRelayDisplayNameMap(context).entries.map(
-                          (e) => Padding(
-                            padding: const EdgeInsets.only(right: Sizes.p10),
-                            child: CustomContainer.foreground(
-                              key: Key(e.key),
-                              child: SizedBox(
-                                width: Sizes.p200,
-                                height: Sizes.p50,
-                                child: RadioListTile(
-                                  title: Text(e.value),
-                                  value: e.key,
-                                  groupValue: relayAtsign,
-                                  onChanged: (value) {
-                                    var bloc = context.read<ProfileBloc>();
-                                    bloc.add(ProfileEditEvent(
-                                      profile: (bloc.state as ProfileLoadedState).profile.copyWith(relayAtsign: value),
-                                    ));
-                                  },
-                                ),
-                              ),
+                    ...RelayOptions.values.map(
+                      (e) => Padding(
+                        padding: const EdgeInsets.only(right: Sizes.p10),
+                        child: CustomContainer.foreground(
+                          key: Key(e.name),
+                          child: SizedBox(
+                            width: Sizes.p200,
+                            height: Sizes.p50,
+                            child: RadioListTile(
+                              title: Text(e.regions),
+                              value: e.relayAtsign,
+                              groupValue: relayAtsign,
+                              onChanged: (value) {
+                                var bloc = context.read<ProfileBloc>();
+                                bloc.add(ProfileEditEvent(
+                                  profile: (bloc.state as ProfileLoadedState).profile.copyWith(relayAtsign: value),
+                                ));
+                              },
                             ),
                           ),
                         ),
+                      ),
+                    ),
                     const ProfileRelayAtSignTextField(),
                   ],
                 ),

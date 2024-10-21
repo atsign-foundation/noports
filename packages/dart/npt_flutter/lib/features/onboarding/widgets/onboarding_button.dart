@@ -1,4 +1,5 @@
 import 'dart:developer';
+import 'dart:io';
 
 import 'package:at_contacts_flutter/at_contacts_flutter.dart';
 import 'package:at_onboarding_flutter/at_onboarding_flutter.dart';
@@ -11,6 +12,8 @@ import 'package:npt_flutter/features/onboarding/onboarding.dart';
 import 'package:npt_flutter/features/onboarding/util/atsign_manager.dart';
 import 'package:npt_flutter/features/onboarding/widgets/onboarding_dialog.dart';
 import 'package:npt_flutter/routes.dart';
+import 'package:npt_flutter/util/language.dart';
+
 import 'package:path_provider/path_provider.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 
@@ -64,7 +67,7 @@ class _OnboardingButtonState extends State<OnboardingButton> {
       // hours for this tiny UX fix
 
       // TODO: fix localizations
-      await AtOnboardingLocalizations.load(const Locale("en"));
+      await AtOnboardingLocalizations.load(LanguageUtil.getLanguageFromLocale(Locale(Platform.localeName)).locale);
       onboardingResult = await Navigator.push(
         // ignore: use_build_context_synchronously
         context,
