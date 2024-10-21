@@ -6,7 +6,7 @@
 #include <errno.h>
 #include <pthread.h>
 #include <sshnpd/background_jobs.h>
-#include <sshnpd/sshnpd.h>
+#include <sshnpd/main.h>
 #include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
