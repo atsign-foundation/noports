@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 import '../../../styles/app_color.dart';
 import '../../../styles/sizes.dart';
@@ -11,6 +12,7 @@ class ContactListTile extends StatelessWidget {
   Widget build(BuildContext context) {
     SizeConfig().init();
     final contactRepo = ContactsService.getInstance();
+    final strings = AppLocalizations.of(context)!;
 
     final bodyMedium = Theme.of(context).textTheme.bodyMedium!;
     final bodySmall = Theme.of(context).textTheme.bodySmall!;
@@ -45,12 +47,12 @@ class ContactListTile extends StatelessWidget {
               ),
             );
           } else {
-            return const ListTile(
-              leading: CircleAvatar(
+            return ListTile(
+              leading: const CircleAvatar(
                 child: Icon(Icons.person),
               ),
-              title: Text('No Name'),
-              subtitle: Text('No Atsign'),
+              title: Text(strings.noName),
+              subtitle: Text(strings.noAtsign),
             );
           }
         }));
