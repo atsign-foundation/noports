@@ -63,6 +63,7 @@ dependencies:
 dev_dependencies:
   msix: ^3.16.8
   build_runner: ^2.4.12
+  flutter_launcher_icons: "^0.14.1"
   flutter_test:
     sdk: flutter
 
@@ -123,11 +124,24 @@ flutter:
   #
   # For details regarding fonts from package dependencies,
   # see https://flutter.dev/to/font-from-package
+
 msix_config:
   display_name: "NoPorts Desktop"
   publisher_display_name: Atsign
   identity_name: TheCompany.NoPortsDesktop
   publisher: CN=BBFE1D0B-F713-4C7F-B375-5EA851CBB1FF
   msix_version: 1.0.0.0
-  logo_path: 
+  logo_path: "assets/logo.png"
   store: true
+
+flutter_launcher_icons:
+  android: "launcher_icon"
+  ios: true
+  remove_alpha_ios: true
+  image_path: "assets/logo.png"
+  macos:
+    generate: true
+    image_path: "assets/logo.png"
+  windows:
+    generate: true
+    image_path: "assets/logo.png"
