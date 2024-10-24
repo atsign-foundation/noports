@@ -90,12 +90,12 @@ BEGIN
         BLOCK "040904e4"
         BEGIN
             VALUE "CompanyName", "com.example" "\0"
-            VALUE "FileDescription", "npt_flutter" "\0"
+            VALUE "FileDescription", "NoPorts Desktop" "\0"
             VALUE "FileVersion", VERSION_AS_STRING "\0"
             VALUE "InternalName", "npt_flutter" "\0"
-            VALUE "LegalCopyright", "Copyright (C) 2024 com.example. All rights reserved." "\0"
+            VALUE "LegalCopyright", "Copyright (C) 2024 com.atsign. All rights reserved." "\0"
             VALUE "OriginalFilename", "npt_flutter.exe" "\0"
-            VALUE "ProductName", "npt_flutter" "\0"
+            VALUE "ProductName", "NoPorts Desktop" "\0"
             VALUE "ProductVersion", VERSION_AS_STRING "\0"
         END
     END
