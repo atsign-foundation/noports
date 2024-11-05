@@ -1,10 +1,14 @@
+import 'dart:developer';
+
 import 'package:flutter/scheduler.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:npt_flutter/app.dart';
 import 'package:npt_flutter/features/favorite/favorite.dart';
+import 'package:npt_flutter/features/onboarding/cubit/onboarding_cubit.dart';
 import 'package:npt_flutter/features/profile/profile.dart';
 import 'package:npt_flutter/features/profile_list/profile_list.dart';
+import 'package:npt_flutter/features/settings/bloc/settings_bloc.dart';
 import 'package:npt_flutter/features/tray_manager/tray_manager.dart';
 import 'package:tray_manager/tray_manager.dart';
 import 'package:window_manager/window_manager.dart';
@@ -54,6 +58,15 @@ class _TrayManagerState extends State<TrayManager> with TrayListener, WindowList
           ),
           BlocListener<ProfilesRunningCubit, ProfilesRunningState>(
             listener: reloadTray,
+          ),
+          BlocListener<OnboardingCubit, OnboardingState>(
+            listener: reloadTray,
+          ),
+          BlocListener<SettingsBloc, SettingsState>(
+            listener: (BuildContext context, _) {
+              reloadTray(context, null);
+              log(('reloadTray called for settings'));
+            },
           ),
 
           /// Yeah I really hate this... an indefinite list of listeners

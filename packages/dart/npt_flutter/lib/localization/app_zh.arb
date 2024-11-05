@@ -1,5 +1,4 @@
 {
-   
    "addNew" : "新增",
    "addNewProfile" : "新增配置文件",
    "advanced": "高级",
@@ -15,6 +14,7 @@
    "backupYourKey" : "备份您的密钥",
    "cancel" : "取消",
    "confirm" : "确认",
+   "connected" : "已连接",
    "dashboard" : "仪表板",
    "dashboardView" : "仪表板视图",
    "defaultRelaySelection" : "默认中继选择",
@@ -23,6 +23,7 @@
    "deviceAtsignDescription" : "这是与您设备关联的atSign",
    "deviceName": "设备名称",
    "deviceNameDescription" : "这是您的远程设备的名称",
+   "disconnected" : "断开连接",
    "discord" : "Discord",
    "done": "完成",
    "edit" : "编辑",
@@ -33,12 +34,14 @@
    "export" : "导出",
    "exportLogs" : "导出日志",
    "failed": "失败",
+   "failedToLoad" : "加载失败",
    "faq" : "常见问题",
    "feedback" : "反馈",
    "getStarted" : "开始",
    "import" : "导入",
    "json" : "JSON",
    "language" : "语言",
+   "loading" : "加载中",
    "localPort" : "本地端口",
    "localPortDescription" : "",
    "logs" : "日志",
@@ -65,6 +68,7 @@
    "profileName" : "配置文件名称",
    "profileNameDescription" : "这将是您的配置名称",
    "profileRunningActionDeniedMessage" : "配置文件运行时无法执行此操作",
+   "quit": "退出",
    "refresh" : "刷新",
    "relay" : "中继",
    "relayDescription" : "您可以从我们现有的RV中选择或创建一个新的",
@@ -79,9 +83,12 @@
    "selectRootDomain" : "选择根域",
    "serviceMapping" : "服务映射",
    "settings" : "设置",
+   "showWindow" : "显示窗口",
    "signout" : "登出",
    "sshStyle" : "高级",
+   "starting" : "启动中",
    "status" : "状态",
+   "stopping" : "停止中",
    "submit" : "提交",
    "validationErrorAtsignField" : "字段必须是以@开头的有效atSign",
    "validationErrorDeviceNameField" : "字段只能包含小写字母、数字、下划线。",
@@ -91,5 +98,4 @@
    "validationErrorRemoteHostField" : "字段必须是部分或完全合格的主机名或IP地址",
    "validationErrorRemotePortField" : "字段必须在1-65535之间",
    "yaml" : "YAML"
-   
 }

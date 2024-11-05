@@ -108,19 +108,22 @@ class App extends StatelessWidget {
               defaultLocal = LanguageUtil.getLanguageFromLocale(Locale(Platform.localeName)).locale;
             }
 
-            return TrayManager(
-              child: MaterialApp(
-                theme: AppTheme.light(),
-                localizationsDelegates: AppLocalizations.localizationsDelegates,
-                supportedLocales: AppLocalizations.supportedLocales,
-                locale: language != null ? language.locale : defaultLocal,
-                localeResolutionCallback: (locale, supportedLocales) {
-                  return language != null ? language.locale : locale;
-                },
-                navigatorKey: navState,
-                initialRoute: Routes.onboarding,
-                routes: Routes.routes,
-              ),
+            return MaterialApp(
+              theme: AppTheme.light(),
+              localizationsDelegates: AppLocalizations.localizationsDelegates,
+              supportedLocales: AppLocalizations.supportedLocales,
+              locale: language != null ? language.locale : defaultLocal,
+              localeResolutionCallback: (locale, supportedLocales) {
+                return language != null ? language.locale : locale;
+              },
+              navigatorKey: navState,
+              initialRoute: Routes.onboarding,
+              // routes: Routes.routes,
+              onGenerateRoute: (settings) {
+                return MaterialPageRoute(
+                    builder: (context) =>
+                        TrayManager(key: const Key('tray_manager'), child: Routes.routes[settings.name]!(context)));
+              },
             );
           })),
     );

@@ -1,4 +1,5 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:json_annotation/json_annotation.dart';
 import 'package:meta/meta.dart';
 import 'package:npt_flutter/app.dart';
@@ -62,8 +63,7 @@ sealed class Favorite extends Loggable {
 
 @JsonSerializable()
 class FavoriteProfile extends Favorite {
-  const FavoriteProfile({required super.uuid})
-      : super(type: FavoriteType.profile);
+  const FavoriteProfile({required super.uuid}) : super(type: FavoriteType.profile);
 
   @override
   List<Object?> get props => [uuid];
@@ -73,8 +73,7 @@ class FavoriteProfile extends Favorite {
     return 'FavoriteProfile(uuid: $uuid)';
   }
 
-  factory FavoriteProfile.fromJson(Map<String, dynamic> json) =>
-      _$FavoriteProfileFromJson(json);
+  factory FavoriteProfile.fromJson(Map<String, dynamic> json) => _$FavoriteProfileFromJson(json);
 
   @override
   Map<String, dynamic> toJson() {
@@ -96,16 +95,17 @@ class FavoriteProfile extends Favorite {
   @override
   String? get status {
     var context = App.navState.currentContext;
+
     if (context == null) return null;
+    final strings = AppLocalizations.of(context)!;
     var bloc = context.read<ProfileCacheCubit>().getProfileBloc(uuid);
     return switch (bloc.state) {
-      ProfileLoaded _ || ProfileFailedSave _ || ProfileFailedStart _ => '[Off]',
-      ProfileStarting _ => '[Starting]',
-      ProfileStarted _ =>
-        '[On - ${(bloc.state as ProfileLoadedState).profile.localPort}]',
-      ProfileStopping _ => '[Stopping]',
-      ProfileInitial _ || ProfileLoading _ => '[Loading]',
-      ProfileFailedLoad _ => '[Failed to load]'
+      ProfileLoaded _ || ProfileFailedSave _ || ProfileFailedStart _ => strings.disconnected,
+      ProfileStarting _ => strings.starting,
+      ProfileStarted _ => '[${strings.connected} - ${(bloc.state as ProfileLoadedState).profile.localPort}]',
+      ProfileStopping _ => strings.stopping,
+      ProfileInitial _ || ProfileLoading _ => strings.loading,
+      ProfileFailedLoad _ => strings.failedToLoad,
     };
   }
 

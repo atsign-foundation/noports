@@ -1,7 +1,9 @@
+import 'dart:developer';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:json_annotation/json_annotation.dart';
 import 'package:npt_flutter/app.dart';
 import 'package:npt_flutter/constants.dart';
@@ -15,33 +17,37 @@ import 'package:window_manager/window_manager.dart';
 part 'tray_cubit.g.dart';
 part 'tray_state.dart';
 
-(String, void Function(MenuItem)) getAction(TrayAction action) => switch (action) {
-      TrayAction.showDashboard => ('Show Window', (_) => windowManager.focus()),
-      TrayAction.showSettings => (
-          'Settings',
-          (_) {
-            windowManager.focus().then((_) {
-              var context = App.navState.currentContext;
-              if (context == null) return;
-              if (context.mounted) {
-                var cubit = context.read<OnboardingCubit>();
-                if (cubit.getStatus() != OnboardingStatus.onboarded) return;
-                Navigator.of(context).pushNamedAndRemoveUntil(
-                  Routes.settings,
-                  (route) => route.isFirst,
-                );
-              }
-            });
-          }
-        ),
-      TrayAction.quitApp => (
-          'Quit',
-          (_) async {
-            await windowManager.destroy();
-            exit(0);
-          }
-        ),
-    };
+(String, void Function(MenuItem)) getAction(TrayAction action) {
+  final strings = AppLocalizations.of(App.navState.currentContext!)!;
+  log('getAction called again');
+  return switch (action) {
+    TrayAction.showDashboard => (strings.showWindow, (_) => windowManager.focus()),
+    TrayAction.showSettings => (
+        strings.settings,
+        (_) {
+          windowManager.focus().then((_) {
+            var context = App.navState.currentContext;
+            if (context == null) return;
+            if (context.mounted) {
+              var cubit = context.read<OnboardingCubit>();
+              if (cubit.getStatus() != OnboardingStatus.onboarded) return;
+              Navigator.of(context).pushNamedAndRemoveUntil(
+                Routes.settings,
+                (route) => route.isFirst,
+              );
+            }
+          });
+        }
+      ),
+    TrayAction.quitApp => (
+        strings.quit,
+        (_) async {
+          await windowManager.destroy();
+          exit(0);
+        }
+      ),
+  };
+}
 
 @JsonEnum(alwaysCreate: true)
 enum TrayAction {
@@ -67,6 +73,7 @@ class TrayCubit extends LoggingCubit<TrayState> {
   TrayCubit() : super(const TrayInitial());
 
   Future<void> initialize() async {
+    log('initializ called');
     if (state is! TrayInitial) return;
     var context = App.navState.currentContext;
     if (context == null) return;
