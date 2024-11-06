@@ -5,23 +5,18 @@ packages:
     dependency: transitive
     description:
       name: _fe_analyzer_shared
-      sha256: "45cfa8471b89fb6643fe9bf51bd7931a76b8f5ec2d65de4fb176dba8d4f22c77"
+      sha256: "0b2f2bd91ba804e53a61d757b986f89f1f9eaed5b11e4b2f5a2468d86d6c9fc7"
       url: "https://pub.dev"
     source: hosted
-    version: "73.0.0"
-  _macros:
-    dependency: transitive
-    description: dart
-    source: sdk
-    version: "0.3.2"
+    version: "67.0.0"
   analyzer:
     dependency: transitive
     description:
       name: analyzer
-      sha256: "4959fec185fe70cce007c57e9ab6983101dbe593d2bf8bbfb4453aaec0cf470a"
+      sha256: "37577842a27e4338429a1cbc32679d508836510b056f1eedf0c8d20e39c1383d"
       url: "https://pub.dev"
     source: hosted
-    version: "6.8.0"
+    version: "6.4.1"
   archive:
     dependency: transitive
     description:
@@ -83,18 +78,18 @@ packages:
     dependency: "direct main"
     description:
       name: at_cli_commons
-      sha256: "36bb90335b6066cac33e5dcae1f4cc0087a9a0098bdffd9ff4536836fe13b6f3"
+      sha256: "558625a307f34e92d4690dc8ff34965140a1a397b907411088820c4c99c46ff5"
       url: "https://pub.dev"
     source: hosted
-    version: "1.2.0"
+    version: "1.2.1"
   at_client:
     dependency: "direct main"
     description:
       name: at_client
-      sha256: "2c6aca2b3a2dab16b58330f99bdd00fe05bd05a76ffc5ed6b0d0eb34aaaaab8a"
+      sha256: "50c7e5988fde978f41c4c3a12cc367f92b235193e9bc1567551765dc453b5f91"
       url: "https://pub.dev"
     source: hosted
-    version: "3.2.2"
+    version: "3.3.0"
   at_commons:
     dependency: transitive
     description:
@@ -355,10 +350,10 @@ packages:
     dependency: transitive
     description:
       name: dart_style
-      sha256: "7856d364b589d1f08986e140938578ed36ed948581fbc3bc9aef1805039ac5ab"
+      sha256: "99e066ce75c89d6b29903d788a7bb9369cf754f7b24bf70bf4b6d6d6b26853b9"
       url: "https://pub.dev"
     source: hosted
-    version: "2.3.7"
+    version: "2.3.6"
   dartssh2:
     dependency: "direct main"
     description:

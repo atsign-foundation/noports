@@ -48,7 +48,7 @@ class Sizes {
   // static const p185 = 185.0;
   static const p192 = 192.0;
   static const p200 = 200.0;
-  static const p202 = 202.0;
+  static const p210 = 210.0;
   static const p180 = 180.0;
   // static const p244 = 244.0;
   // static const p247 = 247.0;
@@ -69,6 +69,7 @@ class Sizes {
   static const profileFieldsWidthFactorAlt = 300 / 1053;
   static const settingsCardWidthFactor = 654 / 1053;
   static const settingsCardHeightFactor = 438 / 691;
+  static const settingsIconPaddingFactor = 89 / 1053;
 }
 
 const gap0 = SizedBox();
@@ -134,14 +135,11 @@ class SizeConfig {
 
   double textFactor = 1.0;
 
-  bool isMobile(BuildContext context) =>
-      MediaQuery.of(context).size.width < 700;
+  bool isMobile(BuildContext context) => MediaQuery.of(context).size.width < 700;
 
   bool isTablet(BuildContext context) =>
-      MediaQuery.of(context).size.width >= 700 &&
-      MediaQuery.of(context).size.width < 1200;
-  bool isDesktop(BuildContext context) =>
-      MediaQuery.of(context).size.width >= 1200;
+      MediaQuery.of(context).size.width >= 700 && MediaQuery.of(context).size.width < 1200;
+  bool isDesktop(BuildContext context) => MediaQuery.of(context).size.width >= 1200;
 
   void init() {
     _mediaQueryData = MediaQuery.of(App.navState.currentContext!);
@@ -158,20 +156,16 @@ class SizeConfig {
       blockSizeHorizontal = screenWidth / 100;
       blockSizeVertical = screenHeight / 100;
 
-      _safeAreaHorizontal =
-          _mediaQueryData.padding.left + _mediaQueryData.padding.right;
-      _safeAreaVertical =
-          _mediaQueryData.padding.top + _mediaQueryData.padding.bottom;
+      _safeAreaHorizontal = _mediaQueryData.padding.left + _mediaQueryData.padding.right;
+      _safeAreaVertical = _mediaQueryData.padding.top + _mediaQueryData.padding.bottom;
       safeBlockHorizontal = (screenWidth - _safeAreaHorizontal) / 100;
       safeBlockVertical = (screenHeight - _safeAreaVertical) / 100;
     } else {
       blockSizeHorizontal = screenWidth / 120;
       blockSizeVertical = screenHeight / 120;
 
-      _safeAreaHorizontal =
-          _mediaQueryData.padding.left + _mediaQueryData.padding.right;
-      _safeAreaVertical =
-          _mediaQueryData.padding.top + _mediaQueryData.padding.bottom;
+      _safeAreaHorizontal = _mediaQueryData.padding.left + _mediaQueryData.padding.right;
+      _safeAreaVertical = _mediaQueryData.padding.top + _mediaQueryData.padding.bottom;
       safeBlockHorizontal = (screenWidth - _safeAreaHorizontal) / 120;
       safeBlockVertical = (screenHeight - _safeAreaVertical) / 120;
     }

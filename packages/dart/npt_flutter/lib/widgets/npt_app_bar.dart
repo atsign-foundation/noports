@@ -81,13 +81,19 @@ class NptAppBar extends StatelessWidget implements PreferredSizeWidget {
       ),
       actions: [
         showSettings
-            ? IconButton(
-                padding: const EdgeInsets.only(bottom: Sizes.p30),
-                color: settingsSelectedColor,
-                icon: const Icon(Icons.settings_outlined),
-                onPressed: () {
-                  Navigator.pushNamed(context, '/settings');
-                },
+            ? Padding(
+                padding: EdgeInsets.only(
+                  bottom: Sizes.p30,
+                  right: MediaQuery.of(context).size.width * Sizes.settingsIconPaddingFactor,
+                ),
+                child: IconButton(
+                  color: settingsSelectedColor,
+                  icon: const Icon(Icons.settings_outlined),
+                  onPressed: () {
+                    // the primary color is used when the navbar is on the settings screen and therefore the settings icon is not clickable.
+                    if (settingsSelectedColor != AppColor.primaryColor) Navigator.pushNamed(context, '/settings');
+                  },
+                ),
               )
             : gap0,
       ],

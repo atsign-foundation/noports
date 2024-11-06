@@ -8,10 +8,13 @@
 #include <sshnpd/background_jobs.h>
 #include <sshnpd/sshnpd.h>
 #include <stddef.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+
+const int64_t THIRTY_DAYS_MS = (int64_t)30 * 24 * 60 * 60 * 1000;
 
 #define LOGGER_TAG "refresh_device_entry"
 
@@ -70,7 +73,7 @@ void *refresh_device_entry(void *void_refresh_device_entry_params) {
     atclient_atkey_metadata_set_is_encrypted(metadata, true);
     atclient_atkey_metadata_set_ttr(metadata, -1);
     atclient_atkey_metadata_set_ccd(metadata, true);
-    atclient_atkey_metadata_set_ttl(metadata, (long)30 * 24 * 60 * 60 * 1000); // 30 days in ms
+    atclient_atkey_metadata_set_ttl(metadata, THIRTY_DAYS_MS);
 
     buffer_len = strlen(params->params->manager_list[index]) + usernamekey_base_len;
     // example: @client_atsign:device_info.device_name.sshnp@client_atsign
