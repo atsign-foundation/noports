@@ -1,0 +1,82 @@
+name: C Unit Tests
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [trunk]
+  pull_request:
+    branches: [trunk]
+
+permissions: # added using https://github.com/step-security/secure-repo
+  contents: read
+
+jobs:
+  iwyu:
+    runs-on: "ubuntu-22.04"
+    env:
+      LLVM_TAG: ""
+      IWYU_SOURCE: https://github.com/include-what-you-use/include-what-you-use/archive/refs/tags/0.22.tar.gz
+      IWYU_DIR: include-what-you-use-0.22
+
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      # FROM https://github.com/include-what-you-use/include-what-you-use/blob/master/.github/workflows/ci.yml
+      # Copyright (c) 2003-2010 University of Illinois at Urbana-Champaign.
+      # All rights reserved.
+
+      - name: Install prerequisites
+        run: |
+          wget -O - https://apt.llvm.org/llvm-snapshot.gpg.key | sudo apt-key add -
+          sudo add-apt-repository "deb http://apt.llvm.org/jammy/ llvm-toolchain-jammy$LLVM_TAG main"
+          sudo apt update
+          # Remove any base dist LLVM/Clang installations
+          sudo apt remove -y \
+               "libclang*" \
+               "clang*" \
+               "llvm*"
+          # Reinstall tagged versions
+          sudo apt install -y \
+               ninja-build \
+               llvm$LLVM_TAG-dev \
+               libclang$LLVM_TAG-dev \
+               clang$LLVM_TAG
+
+      - name: Capture LLVM major version and install prefix
+        run: |
+          LLVM_MAJOR=$(ls -1d /usr/lib/llvm-* | sort -n | tail -n1 | sed 's/.*llvm-//')
+          LLVM_PREFIX=$(llvm-config-$LLVM_MAJOR --prefix)
+          echo "LLVM_MAJOR=${LLVM_MAJOR}" >> $GITHUB_ENV
+          echo "LLVM_PREFIX=${LLVM_PREFIX}" >> $GITHUB_ENV
+
+      - name: Pull IWYU from github
+        run: |
+          curl -fsSL ${IWYU_SOURCE} -o iwyu.tar.gz
+          tar -xf iwyu.tar.gz
+
+      - name: Work around broken packaging
+        run: |
+          # Disable CMake target checks. 
+          # sudo ./iwyu-fixup-llvm-target-checks.bash "$LLVM_PREFIX"
+
+      - name: Build include-what-you-use
+        run: |
+          mkdir iwyu
+          cd ./iwyu
+          cmake -G Ninja \
+                -DCMAKE_EXPORT_COMPILE_COMMANDS=on \
+                -DCMAKE_C_COMPILER=clang$LLVM_TAG \
+                -DCMAKE_CXX_COMPILER=clang++$LLVM_TAG \
+                -DCMAKE_INSTALL_PREFIX=./ \
+                -DCMAKE_INSTALL_RPATH_USE_LINK_PATH=on \
+                ../${IWYU_DIR}
+          ninja
+          cd ../
+
+      # END OF FROM https://github.com/include-what-you-use/include-what-you-use/blob/master/.github/workflows/ci.yml
+
+      - name: Build with iwyu
+        working-directory: packages/c
+        run: |
+          CC="clang" cmake -S . -B build -DSSHNPD_BUILD_TESTS=OFF -DCMAKE_C_INCLUDE_WHAT_YOU_USE="$(pwd)/iwyu/include-what-you-use"
+          cmake --build build
