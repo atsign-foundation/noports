@@ -22,13 +22,15 @@ enum FavoriteType {
   }
 }
 
-sealed class Favorite extends Loggable {
+sealed class Favorite<T extends Loggable> extends Loggable {
   final String uuid;
   final FavoriteType type;
 
   Future<String?> get displayName;
   String? get status;
   Iterable<String> get profileIds;
+
+  String resolveStatus(T state);
 
   /// These 4 functions are for interacting with favorites in the tray,
   /// since the implementation may differ by type of favoritable
@@ -61,9 +63,8 @@ sealed class Favorite extends Loggable {
 }
 
 @JsonSerializable()
-class FavoriteProfile extends Favorite {
-  const FavoriteProfile({required super.uuid})
-      : super(type: FavoriteType.profile);
+class FavoriteProfile extends Favorite<ProfileState> {
+  const FavoriteProfile({required super.uuid}) : super(type: FavoriteType.profile);
 
   @override
   List<Object?> get props => [uuid];
@@ -73,8 +74,7 @@ class FavoriteProfile extends Favorite {
     return 'FavoriteProfile(uuid: $uuid)';
   }
 
-  factory FavoriteProfile.fromJson(Map<String, dynamic> json) =>
-      _$FavoriteProfileFromJson(json);
+  factory FavoriteProfile.fromJson(Map<String, dynamic> json) => _$FavoriteProfileFromJson(json);
 
   @override
   Map<String, dynamic> toJson() {
@@ -98,11 +98,15 @@ class FavoriteProfile extends Favorite {
     var context = App.navState.currentContext;
     if (context == null) return null;
     var bloc = context.read<ProfileCacheCubit>().getProfileBloc(uuid);
-    return switch (bloc.state) {
+    return resolveStatus(bloc.state);
+  }
+
+  @override
+  String resolveStatus(ProfileState state) {
+    return switch (state) {
       ProfileLoaded _ || ProfileFailedSave _ || ProfileFailedStart _ => '[Off]',
       ProfileStarting _ => '[Starting]',
-      ProfileStarted _ =>
-        '[On - ${(bloc.state as ProfileLoadedState).profile.localPort}]',
+      ProfileStarted _ => '[On - ${(state as ProfileLoadedState).profile.localPort}]',
       ProfileStopping _ => '[Stopping]',
       ProfileInitial _ || ProfileLoading _ => '[Loading]',
       ProfileFailedLoad _ => '[Failed to load]'

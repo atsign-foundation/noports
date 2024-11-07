@@ -1,11 +1,14 @@
 import 'package:flutter/scheduler.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:npt_flutter/app.dart';
 import 'package:npt_flutter/features/favorite/favorite.dart';
 import 'package:npt_flutter/features/profile/profile.dart';
 import 'package:npt_flutter/features/profile_list/profile_list.dart';
+import 'package:npt_flutter/features/settings/settings.dart';
 import 'package:npt_flutter/features/tray_manager/tray_manager.dart';
+import 'package:npt_flutter/util/language.dart';
 import 'package:tray_manager/tray_manager.dart';
 import 'package:window_manager/window_manager.dart';
 
@@ -13,7 +16,8 @@ import 'package:window_manager/window_manager.dart';
 /// It wraps the whole [MaterialApp] so that it can be used from anywhere
 class TrayManager extends StatefulWidget {
   final Widget child;
-  const TrayManager({required this.child, super.key});
+  final Locale locale;
+  const TrayManager({required this.child, required this.locale, super.key});
 
   @override
   State<TrayManager> createState() => _TrayManagerState();
@@ -22,15 +26,30 @@ class TrayManager extends StatefulWidget {
 class _TrayManagerState extends State<TrayManager> with TrayListener, WindowListener {
   /// Must strongly type [context] here or Dart will infer the wrong type for
   /// the [.read()] extension which causes an error
-  void reloadTray(BuildContext context, _) {
-    context.read<TrayCubit>().reload();
+  void reloadTray(BuildContext context, Loggable state) async {
+    var cubit = context.read<TrayCubit>();
+    switch (state) {
+      case FavoritesState _:
+        cubit.reload(favoriteState: state);
+      case ProfileListState _:
+        cubit.reload(profileListState: state);
+      case ProfilesRunningState _:
+        cubit.reload(profilesRunningState: state);
+      case SettingsLoadedState _:
+        var localizations = await AppLocalizations.delegate.load(state.settings.language.locale);
+        cubit.reload(localizations: localizations);
+      case ProfileState _:
+        cubit.reload(profileState: state);
+      default:
+        cubit.reload(localizations: AppLocalizations.of(context));
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     var trayCubit = context.read<TrayCubit>();
     if (trayCubit.state is TrayInitial) {
-      trayCubit.initialize();
+      trayCubit.initialize(localizations: AppLocalizations.of(context));
     }
 
     var profileCacheCubit = context.read<ProfileCacheCubit>();
@@ -55,6 +74,17 @@ class _TrayManagerState extends State<TrayManager> with TrayListener, WindowList
           BlocListener<ProfilesRunningCubit, ProfilesRunningState>(
             listener: reloadTray,
           ),
+          BlocListener<SettingsBloc, SettingsState>(
+              listener: reloadTray,
+              // Only call listener when the language changes in settings
+              listenWhen: (prev, next) {
+                if (prev is SettingsLoadedState && next is SettingsLoadedState) {
+                  return prev.settings.language != next.settings.language;
+                }
+                // This may cause some extra reloading (very occasionally, settings shouldn't change often)
+                // but it should catch all of the edge cases
+                return prev is SettingsLoadedState || next is SettingsLoadedState;
+              }),
 
           /// Yeah I really hate this... an indefinite list of listeners
           /// but it's the only way to decouple the profiles from having to know
