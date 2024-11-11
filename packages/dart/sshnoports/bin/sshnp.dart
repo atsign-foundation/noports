@@ -3,20 +3,18 @@ import 'dart:async';
 import 'dart:io';
 import 'dart:typed_data';
 
+// atPlatform packages
+import 'package:at_utils/at_logger.dart';
 // other packages
 import 'package:chalkdart/chalk.dart';
 import 'package:dartssh2/dartssh2.dart';
-
-// atPlatform packages
-import 'package:at_utils/at_logger.dart';
-
 // local packages
 import 'package:noports_core/sshnp_foundation.dart';
-import 'package:sshnoports/src/extended_arg_parser.dart';
 import 'package:sshnoports/src/create_at_client_cli.dart';
+import 'package:sshnoports/src/create_sshnp.dart';
+import 'package:sshnoports/src/extended_arg_parser.dart';
 import 'package:sshnoports/src/print_devices.dart';
 import 'package:sshnoports/src/print_version.dart';
-import 'package:sshnoports/src/create_sshnp.dart';
 import 'package:sshnoports/src/service_factories.dart';
 
 void main(List<String> args) async {
@@ -154,7 +152,7 @@ void main(List<String> args) async {
           storagePath: storageDir!.path,
           namespace: DefaultArgs.namespace,
           atServiceFactory: ServiceFactoryWithNoOpSyncService(),
-        ),
+            passPhrase: params.passPhrase),
         sshClient:
             SupportedSshClient.fromString(argResults['ssh-client'] as String),
       ).catchError((e) {

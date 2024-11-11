@@ -1,5 +1,7 @@
 import 'dart:async';
 import 'dart:io';
+
+import 'package:at_client/at_client.dart';
 import 'package:at_utils/at_logger.dart';
 import 'package:noports_core/sshnp_foundation.dart';
 import 'package:noports_core/sshnpd.dart';
@@ -17,13 +19,13 @@ void main(List<String> args) async {
     sshnpd = await Sshnpd.fromCommandLineArgs(
       args,
       atClientGenerator: (SshnpdParams p) => createAtClientCli(
-        atsign: p.deviceAtsign,
-        atKeysFilePath: p.atKeysFilePath,
-        rootDomain: p.rootDomain,
-        storagePath: p.storagePath,
-        namespace: DefaultArgs.namespace,
-        atServiceFactory: ServiceFactoryWithNoOpSyncService(),
-      ),
+          atsign: p.deviceAtsign,
+          atKeysFilePath: p.atKeysFilePath,
+          rootDomain: p.rootDomain,
+          storagePath: p.storagePath,
+          namespace: DefaultArgs.namespace,
+          atServiceFactory: ServiceFactoryWithNoOpSyncService(),
+          passPhrase: p.passPhrase),
       usageCallback: (e, s) {
         printVersion();
         stderr.writeln(SshnpdParams.parser.usage);
@@ -32,6 +34,8 @@ void main(List<String> args) async {
       version: packageVersion,
     );
   } on ArgumentError catch (_) {
+    exit(1);
+  } on AtException catch (_) {
     exit(1);
   }
 

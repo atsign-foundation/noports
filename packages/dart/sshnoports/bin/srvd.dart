@@ -1,5 +1,7 @@
 import 'dart:async';
 import 'dart:io';
+
+import 'package:at_client/at_client.dart';
 import 'package:at_utils/at_logger.dart';
 import 'package:noports_core/srvd.dart';
 import 'package:noports_core/utils.dart';
@@ -16,17 +18,17 @@ void main(List<String> args) async {
     srvd = await Srvd.fromCommandLineArgs(
       args,
       atClientGenerator: (SrvdParams p) => createAtClientCli(
-        storagePath: standardAtClientStoragePath(
-            homeDirectory: p.homeDirectory,
-            atSign: p.atSign,
-            progName: '.srvd',
-            uniqueID: 'single'),
-        atsign: p.atSign,
-        atKeysFilePath: p.atKeysFilePath,
-        namespace: Srvd.namespace,
-        rootDomain: p.rootDomain,
-        atServiceFactory: ServiceFactoryWithNoOpSyncService(),
-      ),
+          storagePath: standardAtClientStoragePath(
+              homeDirectory: p.homeDirectory,
+              atSign: p.atSign,
+              progName: '.srvd',
+              uniqueID: 'single'),
+          atsign: p.atSign,
+          atKeysFilePath: p.atKeysFilePath,
+          namespace: Srvd.namespace,
+          rootDomain: p.rootDomain,
+          atServiceFactory: ServiceFactoryWithNoOpSyncService(),
+          passPhrase: p.passPhrase),
       usageCallback: (e, s) {
         printVersion();
         stderr.writeln(SrvdParams.parser.usage);
@@ -34,6 +36,8 @@ void main(List<String> args) async {
       },
     );
   } on ArgumentError catch (_) {
+    exit(1);
+  } on AtException catch (_) {
     exit(1);
   }
 

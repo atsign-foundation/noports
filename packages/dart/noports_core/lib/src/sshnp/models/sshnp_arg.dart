@@ -1,5 +1,4 @@
 import 'package:args/args.dart';
-
 import 'package:noports_core/utils.dart';
 
 enum ArgFormat {
@@ -126,6 +125,7 @@ class SshnpArg {
     authenticateDeviceToRvdArg,
     encryptRvdTrafficArg,
     daemonPingTimeoutArg,
+    passPhrase
   ];
 
   @override
@@ -383,6 +383,14 @@ class SshnpArg {
     mandatory: false,
     format: ArgFormat.option,
     type: ArgType.integer,
+    parseWhen: ParseWhen.commandLine,
+  );
+  static const passPhrase = SshnpArg(
+    name: 'passPhrase',
+    abbr: 'P',
+    help: 'The pass phrase to encrypt/decrypt the atKeys file content',
+    mandatory: false,
+    type: ArgType.string,
     parseWhen: ParseWhen.commandLine,
   );
 }

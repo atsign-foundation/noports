@@ -10,8 +10,8 @@ dependencies:
   noports_core:
     path: "../noports_core"
     version: 6.2.1
-  at_onboarding_cli: 1.7.0
-  at_cli_commons: 1.2.1
+  at_onboarding_cli: 1.8.0
+  at_cli_commons: 1.3.0
   at_client: 3.3.0
   args: 2.5.0
   socket_connector: 2.3.3

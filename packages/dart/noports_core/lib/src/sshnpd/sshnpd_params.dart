@@ -26,31 +26,32 @@ class SshnpdParams {
   final String deviceGroup;
   final String storagePath;
   final String permitOpen;
+  final String passPhrase;
 
   // Non param variables
   static final ArgParser parser = _createArgParser();
 
-  SshnpdParams({
-    required this.device,
-    required this.username,
-    required this.homeDirectory,
-    required this.managerAtsigns,
-    required this.policyManagerAtsign,
-    required this.atKeysFilePath,
-    required this.deviceAtsign,
-    required this.verbose,
-    required this.makeDeviceInfoVisible,
-    required this.addSshPublicKeys,
-    required this.sshClient,
-    required this.rootDomain,
-    required this.localSshdPort,
-    required this.sshPublicKeyPermissions,
-    required this.ephemeralPermissions,
-    required this.sshAlgorithm,
-    required this.deviceGroup,
-    required this.storagePath,
-    required this.permitOpen,
-  }) {
+  SshnpdParams(
+      {required this.device,
+      required this.username,
+      required this.homeDirectory,
+      required this.managerAtsigns,
+      required this.policyManagerAtsign,
+      required this.atKeysFilePath,
+      required this.deviceAtsign,
+      required this.verbose,
+      required this.makeDeviceInfoVisible,
+      required this.addSshPublicKeys,
+      required this.sshClient,
+      required this.rootDomain,
+      required this.localSshdPort,
+      required this.sshPublicKeyPermissions,
+      required this.ephemeralPermissions,
+      required this.sshAlgorithm,
+      required this.deviceGroup,
+      required this.storagePath,
+      required this.permitOpen,
+      required this.passPhrase}) {
     if (invalidDeviceName(device)) {
       throw ArgumentError(invalidDeviceNameMsg);
     }
@@ -110,33 +111,33 @@ class SshnpdParams {
       permitOpen = '*:*';
     }
     return SshnpdParams(
-      device: device,
-      username: getUserName(throwIfNull: true)!,
-      homeDirectory: homeDirectory,
-      managerAtsigns: managerAtsigns,
-      policyManagerAtsign: r['policy-manager'],
-      atKeysFilePath: r['key-file'] ??
-          getDefaultAtKeysFilePath(homeDirectory, deviceAtsign),
-      deviceAtsign: deviceAtsign,
-      verbose: r['verbose'],
-      makeDeviceInfoVisible: makeDeviceInfoVisible,
-      addSshPublicKeys: r['sshpublickey'],
-      sshClient: sshClient,
-      rootDomain: r['root-domain'],
-      localSshdPort:
-          int.tryParse(r['local-sshd-port']) ?? DefaultSshnpdArgs.localSshdPort,
-      sshPublicKeyPermissions: normalizedPermissions,
-      ephemeralPermissions: r['ephemeral-permissions'],
-      sshAlgorithm: SupportedSshAlgorithm.fromString(r['ssh-algorithm']),
-      deviceGroup: r['device-group'],
-      storagePath: r['storage-path'] ??
-          standardAtClientStoragePath(
-              homeDirectory: homeDirectory,
-              atSign: deviceAtsign,
-              progName: '.sshnpd',
-              uniqueID: device),
-      permitOpen: permitOpen,
-    );
+        device: device,
+        username: getUserName(throwIfNull: true)!,
+        homeDirectory: homeDirectory,
+        managerAtsigns: managerAtsigns,
+        policyManagerAtsign: r['policy-manager'],
+        atKeysFilePath: r['key-file'] ??
+            getDefaultAtKeysFilePath(homeDirectory, deviceAtsign),
+        deviceAtsign: deviceAtsign,
+        verbose: r['verbose'],
+        makeDeviceInfoVisible: makeDeviceInfoVisible,
+        addSshPublicKeys: r['sshpublickey'],
+        sshClient: sshClient,
+        rootDomain: r['root-domain'],
+        localSshdPort: int.tryParse(r['local-sshd-port']) ??
+            DefaultSshnpdArgs.localSshdPort,
+        sshPublicKeyPermissions: normalizedPermissions,
+        ephemeralPermissions: r['ephemeral-permissions'],
+        sshAlgorithm: SupportedSshAlgorithm.fromString(r['ssh-algorithm']),
+        deviceGroup: r['device-group'],
+        storagePath: r['storage-path'] ??
+            standardAtClientStoragePath(
+                homeDirectory: homeDirectory,
+                atSign: deviceAtsign,
+                progName: '.sshnpd',
+                uniqueID: device),
+        permitOpen: permitOpen,
+        passPhrase: (r['passPhrase'] != null) ? r['passPhrase'] : '');
   }
 
   static ArgParser _createArgParser() {
@@ -314,6 +315,11 @@ class SshnpdParams {
           ' a connection from an authorized client. Hosts may be dns names or'
           ' ip addresses.',
     );
+
+    parser.addOption('passPhrase',
+        abbr: 'P',
+        mandatory: false,
+        help: 'To password protect the AtKeys file');
 
     return parser;
   }

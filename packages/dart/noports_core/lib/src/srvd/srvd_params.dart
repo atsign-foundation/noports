@@ -12,21 +12,22 @@ class SrvdParams {
   final bool verbose;
   final bool logTraffic;
   final String rootDomain;
+  final String passPhrase;
 
   // Non param variables
   static final ArgParser parser = _createArgParser();
 
-  SrvdParams({
-    required this.username,
-    required this.atSign,
-    required this.homeDirectory,
-    required this.atKeysFilePath,
-    required this.managerAtsign,
-    required this.ipAddress,
-    required this.verbose,
-    required this.logTraffic,
-    required this.rootDomain,
-  });
+  SrvdParams(
+      {required this.username,
+      required this.atSign,
+      required this.homeDirectory,
+      required this.atKeysFilePath,
+      required this.managerAtsign,
+      required this.ipAddress,
+      required this.verbose,
+      required this.logTraffic,
+      required this.rootDomain,
+      required this.passPhrase});
 
   static Future<SrvdParams> fromArgs(List<String> args) async {
     // Arg check
@@ -36,17 +37,17 @@ class SrvdParams {
     String homeDirectory = getHomeDirectory()!;
 
     return SrvdParams(
-      username: getUserName(throwIfNull: true)!,
-      atSign: atSign,
-      homeDirectory: homeDirectory,
-      atKeysFilePath:
-          r['key-file'] ?? getDefaultAtKeysFilePath(homeDirectory, atSign),
-      managerAtsign: r['manager'],
-      ipAddress: r['ip'],
-      verbose: r['verbose'],
-      logTraffic: BuildEnv.enableSnoop && r['snoop'],
-      rootDomain: r['root-domain'],
-    );
+        username: getUserName(throwIfNull: true)!,
+        atSign: atSign,
+        homeDirectory: homeDirectory,
+        atKeysFilePath:
+            r['key-file'] ?? getDefaultAtKeysFilePath(homeDirectory, atSign),
+        managerAtsign: r['manager'],
+        ipAddress: r['ip'],
+        verbose: r['verbose'],
+        logTraffic: BuildEnv.enableSnoop && r['snoop'],
+        rootDomain: r['root-domain'],
+        passPhrase: (r['passPhrase'] != null) ? r['passPhrase'] : '');
   }
 
   static ArgParser _createArgParser() {
@@ -99,6 +100,10 @@ class SrvdParams {
       defaultsTo: 'root.atsign.org',
       help: 'atDirectory domain',
     );
+    parser.addOption('passPhrase',
+        abbr: 'P',
+        mandatory: false,
+        help: 'Password to encrypt/decrypt the atKeys file');
     return parser;
   }
 }

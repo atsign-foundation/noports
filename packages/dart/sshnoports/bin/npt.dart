@@ -211,6 +211,11 @@ void main(List<String> args) async {
         negatable: true,
       );
 
+      parser.addOption('passPhrase',
+          abbr: 'P',
+          mandatory: false,
+          help: 'The pass phrase to access the password protected atKeys file');
+
       // Parse Args
       ArgResults parsedArgs = parser.parse(args);
 
@@ -307,7 +312,8 @@ void main(List<String> args) async {
           homeDir: getHomeDirectory(),
           storageDir: storageDir?.path,
           verbose: parsedArgs['verbose'],
-          syncDisabled: true);
+          syncDisabled: true,
+          passPhrase: parsedArgs['passPhrase']);
 
       await cliBase.init();
 
