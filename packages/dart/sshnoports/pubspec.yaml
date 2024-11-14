@@ -14,7 +14,7 @@ dependencies:
   at_cli_commons: 1.2.1
   at_client: 3.3.0
   args: 2.5.0
-  socket_connector: 2.2.0
+  socket_connector: 2.3.2
   dartssh2: 2.8.2
   duration: 4.0.3
   at_utils: 3.0.19
