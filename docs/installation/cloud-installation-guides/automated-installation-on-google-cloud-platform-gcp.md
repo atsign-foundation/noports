@@ -1,8 +1,11 @@
 ---
 icon: google
+description: How to deploy NoPorts on Google Cloud Platform using a cloud-init script
 ---
 
 # Automated Installation on Google Cloud Platform (GCP)
+
+{% embed url="https://vimeo.com/1015037879" %}
 
 Navigate to Compute Engine > VM instances and hit the `+ CREATE INSTANCE` button as usual, then select Name, Region, Machine configuration etc.
 

@@ -1,12 +1,12 @@
 #include "sshnpd/file_utils.h"
 #include <atlogger/atlogger.h>
+#include <errno.h>
 #include <pthread.h>
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <sys/errno.h>
 #include <unistd.h>
 
 int authorize_ssh_public_key(authkeys_params *params) {

@@ -8,10 +8,13 @@
 #include <sshnpd/background_jobs.h>
 #include <sshnpd/sshnpd.h>
 #include <stddef.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+
+const int64_t THIRTY_DAYS_MS = (int64_t)30 * 24 * 60 * 60 * 1000;
 
 #define LOGGER_TAG "refresh_device_entry"
 
@@ -45,12 +48,13 @@ void *refresh_device_entry(void *void_refresh_device_entry_params) {
   }
   ret = pthread_mutex_lock(params->atclient_lock);
   if (ret != 0) {
-    atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to lock the atclient\n");
+    atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR,
+                 "Failed to lock the atclient for initial device entry refresh\n");
     *params->should_run = 0;
     pthread_exit(NULL);
   }
 
-  int index;
+  size_t index;
   for (index = 0; index < num_managers; index++) {
     // device_info
     size_t buffer_len = strlen(params->params->manager_list[index]) + infokey_base_len;
@@ -70,7 +74,7 @@ void *refresh_device_entry(void *void_refresh_device_entry_params) {
     atclient_atkey_metadata_set_is_encrypted(metadata, true);
     atclient_atkey_metadata_set_ttr(metadata, -1);
     atclient_atkey_metadata_set_ccd(metadata, true);
-    atclient_atkey_metadata_set_ttl(metadata, (long)30 * 24 * 60 * 60 * 1000); // 30 days in ms
+    atclient_atkey_metadata_set_ttl(metadata, THIRTY_DAYS_MS);
 
     buffer_len = strlen(params->params->manager_list[index]) + usernamekey_base_len;
     // example: @client_atsign:device_info.device_name.sshnp@client_atsign
@@ -120,15 +124,16 @@ void *refresh_device_entry(void *void_refresh_device_entry_params) {
   }
 
   // Build each atkey
+  // TODO: @xavierchanth - review this implementation
   int interval_seconds = 60 * 60; // once an hour
   int counter = 0;
   while (*params->should_run) {
     if (counter == 0) {
       ret = pthread_mutex_lock(params->atclient_lock);
       if (ret != 0) {
-        atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to get a lock on atclient\n");
-        *params->should_run = 0;
-        break;
+        atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR,
+                     "Failed to get a lock on atclient, will try again at next iteration\n");
+        continue;
       }
       // once an hour the counter will reset
       if (params->params->hide) {
@@ -140,7 +145,7 @@ void *refresh_device_entry(void *void_refresh_device_entry_params) {
 
       fflush(stdout);
 
-      for (int i = 0; i < num_managers; i++) {
+      for (size_t i = 0; i < num_managers; i++) {
         if (params->params->hide) {
           ret = atclient_delete(params->atclient, infokeys + i, NULL, NULL);
         } else {
@@ -154,7 +159,7 @@ void *refresh_device_entry(void *void_refresh_device_entry_params) {
 
       ret = pthread_mutex_unlock(params->atclient_lock);
       if (ret != 0) {
-        atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to release atclient lock\n");
+        atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Bad pthread state, exiting to prevent deadlock");
         *params->should_run = 0;
         break;
       }

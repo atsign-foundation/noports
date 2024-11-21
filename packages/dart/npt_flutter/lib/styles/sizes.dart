@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:npt_flutter/app.dart';
 
 /// Constant sizes to be used in the app (paddings, gaps, rounded corners etc.)
 class Sizes {
@@ -18,7 +19,7 @@ class Sizes {
   static const p20 = 20.0;
   // static const p21 = 21.0;
   // static const p28 = 28.0;
-  // static const p24 = 24.0;
+  static const p24 = 24.0;
   static const p25 = 25.0;
   static const p27 = 27.0;
   static const p28 = 28.0;
@@ -35,6 +36,7 @@ class Sizes {
   static const p43 = 43.0;
   static const p50 = 50.0;
   static const p54 = 54.0;
+
   static const p70 = 70.0;
   static const p80 = 80.0;
   // static const p99 = 99.0;
@@ -46,7 +48,7 @@ class Sizes {
   // static const p185 = 185.0;
   static const p192 = 192.0;
   static const p200 = 200.0;
-  static const p202 = 202.0;
+  static const p210 = 210.0;
   static const p180 = 180.0;
   // static const p244 = 244.0;
   // static const p247 = 247.0;
@@ -60,6 +62,14 @@ class Sizes {
   static const p654 = 654.0;
   static const p664 = 664.0;
   static const p941 = 941.0;
+  // The below size factors are constants that are used to determine the height or width based on the device size.
+  static const dashboardCardHeightFactor = 489 / 691;
+  static const dashboardCardWidthFactor = 941 / 1053;
+  static const profileFieldsWidthFactor = 136 / 1053;
+  static const profileFieldsWidthFactorAlt = 300 / 1053;
+  static const settingsCardWidthFactor = 654 / 1053;
+  static const settingsCardHeightFactor = 438 / 691;
+  static const settingsIconPaddingFactor = 89 / 1053;
 }
 
 const gap0 = SizedBox();
@@ -94,7 +104,7 @@ const gapH30 = SizedBox(height: Sizes.p30);
 // const gapH36 = SizedBox(height: Sizes.p36);
 const gapH40 = SizedBox(height: Sizes.p40);
 // const gapH46 = SizedBox(height: Sizes.p46);
-// const gapH60 = SizedBox(height: Sizes.p60);
+
 const gapH108 = SizedBox(height: Sizes.p108);
 
 const kWindowsMinWindowSize = Size(684, 541);
@@ -131,16 +141,14 @@ class SizeConfig {
       MediaQuery.of(context).size.width >= 700 && MediaQuery.of(context).size.width < 1200;
   bool isDesktop(BuildContext context) => MediaQuery.of(context).size.width >= 1200;
 
-  void init(BuildContext context) {
-    _mediaQueryData = MediaQuery.of(context);
+  void init() {
+    _mediaQueryData = MediaQuery.of(App.navState.currentContext!);
     screenWidth = _mediaQueryData.size.width;
     screenHeight = _mediaQueryData.size.height;
     refHeight = 505;
     refWidth = 671;
 
     deviceTextFactor = _mediaQueryData.textScaler.scale(20) / 20;
-
-    // print("height is::: $screenHeight");
 
     if (screenHeight < 1200) {
       blockSizeHorizontal = screenWidth / 100;
@@ -170,7 +178,6 @@ class SizeConfig {
     // }
     double res = (val / refWidth) * 100;
     double temp = res * blockSizeHorizontal;
-    // print("width$temp");
 
     return temp;
   }
@@ -195,7 +202,7 @@ class SizeConfig {
     } else {
       temp = res * safeBlockVertical + (val * 0.2473919523099851) * textFactor;
     }
-    // print('$val,$temp,$refHeight,$refWidth');
+
     final maxSize = val + Sizes.p4;
     if (temp > maxSize) {
       return maxSize;

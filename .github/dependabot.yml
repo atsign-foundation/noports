@@ -40,3 +40,11 @@ updates:
       pip:
         patterns:
           - "*"
+  - package-ecosystem: 'npm'
+    directory: "/apps/admin/webapp/"
+    schedule:
+      interval: "daily"
+    groups:
+      npm:
+        patterns:
+          - "*"

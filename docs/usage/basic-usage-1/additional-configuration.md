@@ -1,8 +1,9 @@
 ---
 icon: gear-complex-code
+description: NoPorts client `sshnp` additional configuration
 ---
 
-# Additional Configuration
+# Client Additional Configuration
 
 ## Additional Options
 
@@ -61,7 +62,7 @@ Additional ssh options which are passed to the ssh program.
 
 ### --add-forwards-to-tunnel
 
-Enable this flag to pass the `-o, --local-ssh-options` to the initial ssh tunnel instead of the ssh session.&#x20;
+Enable this flag to pass the `-o, --local-ssh-options` to the initial ssh tunnel instead of the ssh session.
 
 ### --ssh-client
 
@@ -82,4 +83,3 @@ Pass command line arguments via an environment file.
 ### --list-devices
 
 List devices which have discovery (-u) enabled.
-

@@ -4,6 +4,14 @@ import 'package:npt_flutter/styles/sizes.dart';
 
 class AppTheme {
   static TextTheme lightTextTheme = const TextTheme(
+    headlineLarge: TextStyle(
+      fontSize: Sizes.p32,
+      fontWeight: FontWeight.w600,
+    ),
+    headlineMedium: TextStyle(
+      fontSize: Sizes.p24,
+      fontWeight: FontWeight.w500,
+    ),
     titleMedium: TextStyle(
       fontSize: Sizes.p18,
       fontWeight: FontWeight.w600,

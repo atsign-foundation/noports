@@ -4,11 +4,13 @@ import 'dart:io';
 
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
-import 'package:meta/meta.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:meta/meta.dart';
 import 'package:npt_flutter/app.dart';
 import 'package:npt_flutter/features/profile/models/profile.dart';
 import 'package:npt_flutter/features/profile_list/profile_list.dart';
+import 'package:npt_flutter/widgets/custom_snack_bar.dart';
 import 'package:yaml/yaml.dart';
 import 'package:yaml_writer/yaml_writer.dart';
 
@@ -22,15 +24,13 @@ enum ExportableProfileFiletype {
   static ExportableProfileFiletype? fromExtension(String ext) =>
       switch (ext) { "json" => json, "yaml" => yaml, _ => null };
 
-  static Iterable<String> get filetypes =>
-      ExportableProfileFiletype.values.map((e) => e.filetype);
+  static Iterable<String> get filetypes => ExportableProfileFiletype.values.map((e) => e.filetype);
 }
 
 class Export {
   static const profilesKey = 'profiles';
   @visibleForTesting
-  static Future<File?> pickAndCreateFile(
-      ExportableProfileFiletype filetype) async {
+  static Future<File?> pickAndCreateFile(ExportableProfileFiletype filetype) async {
     String? outputFile = await FilePicker.platform.saveFile(
       dialogTitle: 'Please select a file to export to:',
       fileName: 'export.${filetype.filetype}',
@@ -81,7 +81,8 @@ class Export {
   /// asynchronously
   static void importProfiles() async {
     try {
-      FilePickerResult? result = await FilePicker.platform.pickFiles();
+      FilePickerResult? result =
+          await FilePicker.platform.pickFiles(type: FileType.custom, allowedExtensions: ['json', 'yaml']);
 
       if (result == null) {
         return;
@@ -100,10 +101,15 @@ class Export {
         /// Should return a [YamlMap] which implements [Map]
         ExportableProfileFiletype.yaml => loadYaml(contents),
       };
+      final strings = AppLocalizations.of(App.navState.currentContext!)!;
 
       /// Type validation to ensure type safety
-      if (json is! Map) throw 'decoded $filetype document is not a Map';
+      if (json is! Map) {
+        CustomSnackBar.error(content: strings.fileFormatInvalid);
+        throw 'decoded $filetype document is not a Map';
+      }
       if (json[profilesKey] is! List) {
+        CustomSnackBar.error(content: strings.fileFormatInvalidDetails, duration: const Duration(seconds: 3));
         throw 'profiles is not a List in this document';
       }
 
@@ -115,9 +121,7 @@ class Export {
           .where((e) => e != null)
           .cast<Profile>();
 
-      App.navState.currentContext
-          ?.read<ProfileListBloc>()
-          .add(ProfileListAddEvent(profiles));
+      App.navState.currentContext?.read<ProfileListBloc>().add(ProfileListAddEvent(profiles));
     } catch (e) {
       App.log('Failed to import file: $e'.loggable);
     }

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:npt_flutter/features/profile/profile.dart';
+import 'package:npt_flutter/features/settings/models/settings.dart';
 import 'package:npt_flutter/styles/sizes.dart';
 
 class ProfileViewMinimal extends StatelessWidget {
@@ -10,11 +11,10 @@ class ProfileViewMinimal extends StatelessWidget {
     return const Row(children: [
       ProfileSelectBox(),
       gapW10,
-      ProfileDisplayName(),
+      ProfileDisplayName(layout: PreferredViewLayout.minimal),
       gapW10,
       ProfileStatusIndicator(),
       gapW10,
-      Spacer(),
       ProfileRunButton(),
       gapW10,
       ProfileFavoriteButton(),

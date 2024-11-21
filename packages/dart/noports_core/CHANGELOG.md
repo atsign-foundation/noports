@@ -1,3 +1,10 @@
+# 6.2.1
+- fix: multiple enhancements for stability of `npt` under heavy concurrent load
+# 6.2.0
+- feat: allow hyphens in device name
+# 6.1.1
+- build[deps]: upgrade: \
+  at_client to 3.2.2 | at_onboarding_cli to 1.6.4 | at_utils to 3.0.19 | at_commons to 5.0.0
 # 6.1.0
 - feat: npt: added 'keep-alive' flag, and an adjustable session timeout (#1110)
 - fix: sshnpd: ensure required directories exist (#1139)

@@ -1,8 +1,11 @@
 ---
 icon: cloud-plus
+description: How to deploy NoPorts on Oracle Cloud Infrastructure using a cloud-init script
 ---
 
 # Automated Installation on Oracle Cloud Infrastructure (OCI)
+
+{% embed url="https://vimeo.com/1015035980" %}
 
 When starting a VM on OCI first click the `Show advanced options` button having selected the usual options above that.
 

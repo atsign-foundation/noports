@@ -1,17 +1,21 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+
 class Constants {
-  static const rootDomain = 'root.atsign.org';
   static String? get namespace => 'noports';
   // TODO: issue & secure API key properly
   static String? get appAPIKey => 'asdf';
 
-  static const pngIcon = 'assets/noports-icon64.png';
-  static const icoIcon = 'assets/noports-icon64.ico';
+  static const pngIconDark = 'assets/noports-icon64-dark.png';
+  static const icoIconDark = 'assets/noports-icon64-dark.ico';
+  static const pngIconLight = 'assets/noports-icon64-light.png';
+  static const icoIconLight = 'assets/noports-icon64-light.ico';
 
-  static const Map<String, String> defaultRelayOptions = {
-    "@rv_am": "Los Angeles",
-    "@rv_eu": "London",
-    "@rv_ap": "Singapore",
-  };
+  static Map<String, String> getRootDomains(BuildContext context) {
+    AppLocalizations strings = AppLocalizations.of(context)!;
 
-  static const languages = ['English', 'Spanish', 'Br portuguese', 'Mandarin', 'Cantonese'];
+    return {'root.atsign.org': strings.rootDomainDefault, 'vip.ve.atsign.zone': strings.rootDomainDemo};
+  }
+
+  static const kWindowsMinWindowSize = Size(1053, 691);
 }

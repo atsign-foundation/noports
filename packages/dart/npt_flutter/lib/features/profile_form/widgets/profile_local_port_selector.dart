@@ -25,14 +25,16 @@ class ProfileLocalPortSelector extends StatelessWidget {
             return null;
           },
           builder: (BuildContext context, int? state) {
-            if (state == null) return const SizedBox();
+            if (state == null) return gap0;
             return SizedBox(
               height: Sizes.p100,
               child: TextFormField(
-                  initialValue: state.toString(),
-                  autovalidateMode: AutovalidateMode.onUserInteraction,
+                  initialValue: state == 0 ? null : state.toString(),
+                  autovalidateMode: AutovalidateMode.always,
                   validator: FormValidator.validateLocalPortField,
-                  decoration: const InputDecoration(
+                  decoration: InputDecoration(
+                    hintText: '0',
+                    hintStyle: Theme.of(context).textTheme.bodyLarge,
                     errorMaxLines: 2,
                   ),
                   onChanged: (value) {

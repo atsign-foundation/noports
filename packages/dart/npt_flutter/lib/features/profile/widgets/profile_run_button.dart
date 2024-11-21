@@ -21,7 +21,7 @@ class ProfileRunButton extends StatelessWidget {
           return null;
         },
         builder: (BuildContext context, ProfileLoadedState? state) => switch (state) {
-          null => const SizedBox(),
+          null => gap0,
           ProfileLoaded() || ProfileFailedSave() || ProfileFailedStart() => IconButton(
               icon: PhosphorIcon(PhosphorIcons.play()),
               onPressed: () {

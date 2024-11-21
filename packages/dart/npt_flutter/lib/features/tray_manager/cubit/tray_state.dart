@@ -16,14 +16,13 @@ final class TrayInitial extends TrayState {
 }
 
 final class TrayLoaded extends TrayState {
-  final Iterable<Favorite> favorites;
-  const TrayLoaded({this.favorites = const []});
+  const TrayLoaded();
 
   @override
-  List<Object?> get props => [favorites];
+  List<Object?> get props => [];
 
   @override
   String toString() {
-    return 'TrayLoaded(favorites: $favorites)';
+    return 'TrayLoaded';
   }
 }

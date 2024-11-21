@@ -20,7 +20,7 @@ void handle_sshpublickey(sshnpd_params *params, atclient_monitor_response *messa
   }
 
   char *ssh_key = (char *)message->notification.decrypted_value;
-  size_t ssh_key_len = strlen(ssh_key);
+  // size_t ssh_key_len = strlen(ssh_key);
 
   bool is_valid_prefix = false;
   for (int i = 1; i < SUPPORTED_KEY_PREFIX_LEN; i++) {

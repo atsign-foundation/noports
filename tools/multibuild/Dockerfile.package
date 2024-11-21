@@ -1,15 +1,10 @@
 # Dockerfile.package
 # A dockerfile for packaging SSH No Ports releases using docker buildx
 
-FROM atsigncompany/buildimage:3.5.2@sha256:3edb21e4d12e11d7a7a9a52af694b739eb3579c4deff2aa1ca6c31699a8af64c AS build
+FROM atsigncompany/buildimage:3.5.4@sha256:0d21c9f6dc856f1e3df933b99dd88a4833057ffee9665857d31f32d32a9d1a74 AS build
 # Using atsigncompany/buildimage until official dart image has RISC-V support
 # See https://github.com/atsign-company/at_dockerfiles for source and automated builds
 WORKDIR /noports
-
-# install node for later (keep at the top file to increase cache hits)
-# hadolint ignore=DL3008
-RUN apt-get update; \
-  apt-get install -y --no-install-recommends npm
 
 COPY . .
 
@@ -35,16 +30,10 @@ RUN set -eux; \
   cp LICENSE /sshnp/;
 
 # Build apps/admin/admin_api - BETA
+# Note: Only the API; webapp only included in the main platform builds
 WORKDIR /noports/apps/admin/admin_api
 RUN dart pub get --enforce-lockfile; \
   dart compile exe bin/np_admin.dart -v -o /sshnp/np_admin
-
-# Build apps/admin/webapp
-WORKDIR /noports/apps/admin/webapp
-RUN npm install; \
-  npm run build; \
-  mkdir -p /sshnp/web/admin; \
-  cp -r ./dist/* /sshnp/web/admin/
 
 RUN set -eux; \
   case "$(dpkg --print-architecture)" in \

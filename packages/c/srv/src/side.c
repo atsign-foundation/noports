@@ -8,7 +8,6 @@
 #include <srv/params.h>
 #include <stdlib.h>
 #include <string.h>
-#include <sys/socket.h>
 #include <unistd.h>
 
 #define TAG "srv - side"
@@ -118,7 +117,8 @@ void *srv_side_handle(void *side) {
       }
       memset(buffer, 0, BUFFER_LEN * sizeof(unsigned char));
     }
-    if (output) free(output);
+    if (output)
+      free(output);
     free(buffer);
     mbedtls_net_close(&s->socket);
   } else {

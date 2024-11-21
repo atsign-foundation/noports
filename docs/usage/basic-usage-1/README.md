@@ -70,7 +70,7 @@ sshnp ... -h @rv_ap ...
 
 ## SSH Authentication
 
-In addition to the four main parameters, it is important to ensure that the appropriate SSH authentication keys are in place.&#x20;
+In addition to the four main parameters, it is important to ensure that the appropriate SSH authentication keys are in place.
 
 #### Pre-existing keys in place
 
@@ -102,7 +102,7 @@ Then use the associated private key, as mentioned under [#pre-existing-keys-in-p
 sshnp ... -i path/to/my/ssh/private/key ...
 ```
 
-## Putting it altogether
+## Putting it all together
 
 An example of a complete command might look like this:
 
@@ -117,9 +117,9 @@ sshnp -f @alice_client -t @alice_device -d my_server \
  -h @rv_am -i ~/.ssh/id_ed25519 -u bobc -U bobc
 ```
 
-The rest of the configuration for `sshnp` is contained in a separate guide:
-
 ## Additional Configuration
+
+The rest of the configuration for `sshnp` is contained in a separate guide:
 
 {% content-ref url="additional-configuration.md" %}
 [additional-configuration.md](additional-configuration.md)
@@ -127,6 +127,5 @@ The rest of the configuration for `sshnp` is contained in a separate guide:
 
 ## Want to use RDP, SFTP or etc?
 
-{% content-ref url="broken-reference" %}
-[Broken link](broken-reference)
-{% endcontent-ref %}
+The NoPorts Tunnel (NPT) can carry a wide variety of TCP based protocols such as [SFTP](../../use-cases/sftp.md), [RDP](../../use-cases/rdp.md), [SMB](../../use-cases/smb.md) and [HTTP(S)](../../use-cases/web-server.md).
+

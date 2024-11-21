@@ -27,7 +27,9 @@
   * [npt Usage](usage/basic-usage/README.md)
     * [Additional Configuration](usage/basic-usage/additional-configuration.md)
   * [sshnp Usage](usage/basic-usage-1/README.md)
-    * [Additional Configuration](usage/basic-usage-1/additional-configuration.md)
+    * [Client Additional Configuration](usage/basic-usage-1/additional-configuration.md)
+  * [sshnpd configuration](usage/sshnpd-configuration/README.md)
+    * [Daemon Additional Configuration](usage/sshnpd-configuration/daemon-additional-configuration.md)
   * [Quick SSH picker script](usage/quick-ssh-picker-script.md)
   * [Integrate with ssh config](usage/integrate-with-ssh-config.md)
 
@@ -42,6 +44,7 @@
 
 ## Product Information <a href="#reference" id="reference"></a>
 
+* [Managing Policies](reference/policy.md)
 * [FAQ](reference/faq.md)
 * [How It Works](reference/how-it-works.md)
 * [Under The Hood](reference/underthehood.md)

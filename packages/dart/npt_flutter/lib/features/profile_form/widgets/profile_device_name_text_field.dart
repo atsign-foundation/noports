@@ -27,7 +27,7 @@ class ProfileDeviceNameTextField extends StatelessWidget {
             return null;
           },
           builder: (BuildContext context, String? state) {
-            if (state == null) return const SizedBox();
+            if (state == null) return gap0;
             return SizedBox(
               width: Sizes.p300,
               height: Sizes.p80,

@@ -29,14 +29,14 @@ class ProfileDeviceAtSignTextField extends StatelessWidget {
             return null;
           },
           builder: (BuildContext context, String? state) {
-            if (state == null) return const SizedBox();
+            if (state == null) return gap0;
             return SizedBox(
               width: Sizes.p300,
               height: Sizes.p80,
               child: TextFormField(
                   initialValue: state,
                   autovalidateMode: AutovalidateMode.onUserInteraction,
-                  validator: FormValidator.validateAtsignField,
+                  validator: FormValidator.validateRequiredAtsignField,
                   onChanged: (value) {
                     var bloc = context.read<ProfileBloc>();
                     bloc.add(ProfileEditEvent(

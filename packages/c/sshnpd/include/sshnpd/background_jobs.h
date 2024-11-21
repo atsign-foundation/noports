@@ -17,6 +17,7 @@
 struct refresh_device_entry_params {
   atclient *atclient;
   pthread_mutex_t *atclient_lock;
+  pthread_cond_t *refresh_cond;
   const sshnpd_params *params;
   const char *payload;
   const char *username;
