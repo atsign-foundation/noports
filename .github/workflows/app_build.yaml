@@ -1,0 +1,42 @@
+name: NoPorts Desktop Builds
+
+on:
+  push:
+    branches:
+      - trunk
+permissions: # added using https://github.com/step-security/secure-repo
+  contents: read
+
+jobs:
+  windows_build:
+    name: Windows Build
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: "stable"
+          flutter-version-file: "3.24.5"
+      - run: flutter pub get
+
+      - name: Build msix file with Dart SDK
+        uses: dart-lang/setup-dart@v1
+        with:
+          sdk: stable
+      - run: dart run msix:create
+
+      - name: Upload msix Artifact
+        uses: actions/upload-artifact@v4.4.3
+        with:
+          name: noPorts-Desktop-msix
+          path:
+          if-no-files-found: error
+          overwrite: true
+
+      - name: Download msix Artifact
+        uses: actions/download-artifact@v4.1.8
+        with:
+          name: noPorts-Desktop-msix
+          path: $GITHUB_WORKSPACE/noports_desktop/
