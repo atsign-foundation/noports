@@ -37,12 +37,14 @@ int run_srv(srv_params_t *params) {
     // client side
     if (params->multi == 0) {
       // res = run_srv_client_side_single(params);
+      res = 1;
     } else {
       // todo: check aes key and iv strings != null
-      // ...
+      res = 1;
       // res = run_srv_client_side_multi(params);
     }
   }
+  return res;
 }
 
 int run_srv_daemon_side_single(srv_params_t *params) {
@@ -91,7 +93,7 @@ int run_srv_daemon_side_multi(srv_params_t *params) {
   // This socket will decrypt the messages comming from the other side
   // which provide the information to create new sockets
   side_t control_side;
-  side_hints_t hints_control = {1, 0, params->host, params->port};
+  side_hints_t hints_control = {1, 0, params->host, params->port, NULL};
   if (params->rv_e2ee) {
     hints_control.transformer = &decrypter;
   }
@@ -137,7 +139,7 @@ int run_srv_daemon_side_multi(srv_params_t *params) {
       len = res;
     }
 
-    if (&control_side.transformer != NULL) {
+    if (control_side.transformer != NULL) {
       unsigned char *output = malloc(4096 * sizeof(unsigned char));
       if (output == NULL) {
         goto exit;
@@ -154,17 +156,17 @@ int run_srv_daemon_side_multi(srv_params_t *params) {
 
     char *messagetype = NULL, *new_session_aes_key_string = NULL, *new_session_aes_iv_string = NULL;
 
-    atlogger_log(TAG, DEBUG, "requests buffer is: %s\n", buffer);
+    atlogger_log(TAG, INFO, "requests buffer is: %s\n", buffer);
 
     // First, check if the buffer contains just one or more requests
     size_t nrequests = 0;
-    res = process_multiple_requests(buffer, &requests, &nrequests);
+    res = process_multiple_requests((char *)buffer, &requests, &nrequests);
     if (res != 0) {
       atlogger_log(TAG, ATLOGGER_LOGGING_LEVEL_DEBUG, "Failed to find any request from: %s\n", buffer);
       goto exit;
     }
 
-    for (int i = 0; i < nrequests; i++) {
+    for (size_t i = 0; i < nrequests; i++) {
       // Now process each of those requests
       res = parse_control_message(requests[i], &messagetype, &new_session_aes_key_string, &new_session_aes_iv_string);
       if (res != 0) {
@@ -188,17 +190,30 @@ int run_srv_daemon_side_multi(srv_params_t *params) {
                      "run_srv_daemon_side_multi\n Control socket received %s request - \n creating new socketToSocket "
                      "connection\n",
                      messagetype);
-        // start socket_to_socket connection
-        res = create_encrypter_and_decrypter(new_session_aes_key_string, new_session_aes_iv_string,
-                                             new_socket_encrypter, new_socket_decrypter);
+
+        bool no_encrypt =
+            strcmp(new_session_aes_key_string, "no") == 0 && strcmp("new_session_aes_iv_string", "encrypt") == 0;
+        if (no_encrypt) {
+          atlogger_log(TAG, ATLOGGER_LOGGING_LEVEL_WARN,
+                       "Socket connector requested no encryption!\n\tOnly disable encryption if you know what you "
+                       "are doing!\n");
+        }
+
+        if (!no_encrypt) {
+          // start socket_to_socket connection
+          res = create_encrypter_and_decrypter(new_session_aes_key_string, new_session_aes_iv_string,
+                                               new_socket_encrypter, new_socket_decrypter);
+        }
         atlogger_log(TAG, INFO, "Starting socket to socket srv\n");
 
         pthread_t sts_thread;
         socket_to_socket_params_t *sts_thread_params = malloc(sizeof(socket_to_socket_params_t));
         if (sts_thread_params == NULL) {
           atlogger_log(TAG, ERROR, "Failed to allocate memory for thread parameters\n");
-          free(new_socket_encrypter);
-          free(new_socket_decrypter);
+          if (!no_encrypt) {
+            free(new_socket_encrypter);
+            free(new_socket_decrypter);
+          }
           goto exit;
         }
 
@@ -211,8 +226,10 @@ int run_srv_daemon_side_multi(srv_params_t *params) {
         res = pthread_create(&sts_thread, NULL, run_socket_to_socket, (void *)sts_thread_params);
         if (res != 0) {
           atlogger_log(TAG, ERROR, "Failed to create thread: %d\n", res);
-          free(new_socket_encrypter);
-          free(new_socket_decrypter);
+          if (!no_encrypt) {
+            free(new_socket_encrypter);
+            free(new_socket_decrypter);
+          }
           free(sts_thread_params);
           goto exit;
         }
@@ -244,14 +261,13 @@ exit:
 int socket_to_socket(const srv_params_t *params, const char *auth_string, chunked_transformer_t *encrypter,
                      chunked_transformer_t *decrypter, bool is_srv_ready) {
   side_t sides[2];
-  side_hints_t hints_a = {1, 0, params->local_host, params->local_port};
-  side_hints_t hints_b = {0, 0, params->host, params->port};
+  side_hints_t hints_a = {1, 0, params->local_host, params->local_port, NULL};
+  side_hints_t hints_b = {0, 0, params->host, params->port, NULL};
 
   if (params->rv_e2ee) {
     hints_a.transformer = encrypter;
     hints_b.transformer = decrypter;
   }
-
   atlogger_log(TAG, INFO, "Initializing connection for side a\n");
   int res = srv_side_init(&hints_a, &sides[0]);
   if (res != 0) {
@@ -269,6 +285,7 @@ int socket_to_socket(const srv_params_t *params, const char *auth_string, chunke
   int fds[2], tidx;
   int exit_res = 0;
   pthread_t threads[2], tid;
+  bool cancel_first = false;
   pipe(fds);
 
   srv_link_sides(&sides[0], &sides[1], fds);
@@ -297,6 +314,7 @@ int socket_to_socket(const srv_params_t *params, const char *auth_string, chunke
   res = pthread_create(&threads[1], NULL, srv_side_handle, &sides[1]);
   if (res != 0) {
     atlogger_log(TAG, ERROR, "Failed to create thread: 1\n");
+    cancel_first = true;
     exit_res = res;
     goto cancel;
   }
@@ -314,10 +332,13 @@ int socket_to_socket(const srv_params_t *params, const char *auth_string, chunke
   read(fds[0], &tid, sizeof(pthread_t));
 
   atlogger_log(TAG, DEBUG, "Joining exited thread\n");
+
+  // When a thread exits, join it.
   res = pthread_join(tid, (void *)&retval);
 
 cancel:
-  if (pthread_equal(threads[0], tid) > 0) {
+  // Then figure out which thread didn't close
+  if (!cancel_first && pthread_equal(threads[0], tid) > 0) {
     // If threads[0] exited normally then we will cancel threads[1]
     // In all other cases, cancel threads[0] (could be because threads[1] exited or errored)
     tidx = 1;
@@ -325,6 +346,7 @@ cancel:
     tidx = 0;
   }
 
+  // Then cancel the other thread
   atlogger_log(TAG, DEBUG, "Cancelling remaining open thread: %d\n", tidx);
   if (pthread_cancel(threads[tidx]) != 0) {
     atlogger_log(TAG, WARN, "Failed to cancel thread: %d\n", tidx);
@@ -348,10 +370,13 @@ exit:
   return 0;
 }
 
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wunused-parameter"
 int server_to_socket(const srv_params_t *params, const char *auth_string, chunked_transformer_t *encrypter,
                      chunked_transformer_t *decrypter) {
   return 0;
 }
+#pragma clang diagnostic pop
 
 int create_encrypter_and_decrypter(const char *session_aes_key_string, const char *session_aes_iv_string,
                                    chunked_transformer_t *encrypter, chunked_transformer_t *decrypter) {
@@ -436,14 +461,13 @@ int aes_ctr_crypt_stream(const chunked_transformer_t *self, size_t len, const un
 
 static int process_multiple_requests(char *original, char **requests[], size_t *num_out_requests) {
   int ret = -1;
-  int num_requests = 0;
 
   char *temp = NULL;
   char *saveptr = original;
   char **temp_requests = NULL;
   size_t temp_count = 0;
 
-  while (temp = strtok_r(saveptr, "\n", &saveptr)) {
+  while ((temp = strtok_r(saveptr, "\n", &saveptr))) {
     // realloc memory to save a new pointer
     temp_requests = realloc(temp_requests, (temp_count + 1) * sizeof(char *));
     if (!temp_requests) {

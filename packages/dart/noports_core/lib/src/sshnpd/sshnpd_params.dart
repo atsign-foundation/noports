@@ -78,14 +78,15 @@ class SshnpdParams {
     }
     String homeDirectory = getHomeDirectory()!;
 
-    // Do we have a device ?
-    String device = r['device'];
-
     SupportedSshClient sshClient = SupportedSshClient.values.firstWhere(
         (c) => c.toString() == r['ssh-client'],
         orElse: () => DefaultSshnpdArgs.sshClient);
 
-    // Do we have an ASCII ?
+    // Do we have a valid device name?
+    String device = r['device'];
+    // First of all let's snakify it
+    device = snakifyDeviceName(device);
+    // and now check it against desired regex
     if (invalidDeviceName(device)) {
       throw ArgumentError(invalidDeviceNameMsg);
     }
@@ -101,8 +102,15 @@ class SshnpdParams {
       throw ArgumentError(invalidSshKeyPermissionsMsg);
     }
 
+    var permitOpen = r['permit-open'];
+    // #1295 - if we have a policy-manager arg and no permit-open arg
+    // then we set permit-open '*:*' (since the policy manager will
+    // be taking care of decisions in any event)
+    if (r.wasParsed('policy-manager') && !r.wasParsed('permit-open')) {
+      permitOpen = '*:*';
+    }
     return SshnpdParams(
-      device: r['device'],
+      device: device,
       username: getUserName(throwIfNull: true)!,
       homeDirectory: homeDirectory,
       managerAtsigns: managerAtsigns,
@@ -126,8 +134,8 @@ class SshnpdParams {
               homeDirectory: homeDirectory,
               atSign: deviceAtsign,
               progName: '.sshnpd',
-              uniqueID: r['device']),
-      permitOpen: r['permit-open'],
+              uniqueID: device),
+      permitOpen: permitOpen,
     );
   }
 
@@ -145,12 +153,14 @@ class SshnpdParams {
       aliases: const ['keyFile'],
       help: 'Sending atSign\'s keyFile if not in ~/.atsign/keys/',
     );
+
     parser.addOption(
       'atsign',
       abbr: 'a',
       mandatory: true,
       help: 'atSign of this device',
     );
+
     parser.addOption(
       'managers',
       aliases: ['manager'],
@@ -163,6 +173,7 @@ class SshnpdParams {
           ' the daemon will check with the --policy-manager atSign re '
           ' requests which come from atSigns not in the --managers list.',
     );
+
     parser.addOption(
       'policy-manager',
       abbr: 'p',
@@ -174,6 +185,7 @@ class SshnpdParams {
           ' the daemon will check with the --policy-manager atSign re '
           ' requests which come from atSigns not in the --managers list.',
     );
+
     parser.addOption(
       'device',
       abbr: 'd',
@@ -191,6 +203,7 @@ class SshnpdParams {
       help: 'When set, will update authorized_keys'
           ' to include public key sent by manager',
     );
+
     parser.addFlag(
       'hide',
       abbr: 'h',
@@ -200,6 +213,7 @@ class SshnpdParams {
           ' atSign. Even with this enabled, sshnpd will still respond to ping'
           ' requests from the manager. (This takes priority over -u / --un-hide)',
     );
+
     parser.addFlag(
       'un-hide',
       abbr: 'u',
@@ -214,21 +228,24 @@ class SshnpdParams {
         }
       },
     );
+
     parser.addFlag(
       'verbose',
       abbr: 'v',
       help: 'More logging',
     );
 
-    parser.addOption('ssh-client',
-        mandatory: false,
-        defaultsTo: DefaultSshnpdArgs.sshClient.toString(),
-        allowed: SupportedSshClient.values
-            .map(
-              (c) => c.toString(),
-            )
-            .toList(),
-        help: 'What to use for outbound ssh connections.');
+    parser.addOption(
+      'ssh-client',
+      mandatory: false,
+      defaultsTo: DefaultSshnpdArgs.sshClient.toString(),
+      allowed: SupportedSshClient.values
+          .map(
+            (c) => c.toString(),
+          )
+          .toList(),
+      help: 'What to use for outbound ssh connections.',
+    );
 
     parser.addOption(
       'root-domain',
@@ -250,10 +267,11 @@ class SshnpdParams {
 
     parser.addOption(
       'local-sshd-port',
-      help: 'port on which sshd is listening locally on localhost',
-      defaultsTo: DefaultSshnpdArgs.localSshdPort.toString(),
       mandatory: false,
+      defaultsTo: DefaultSshnpdArgs.localSshdPort.toString(),
+      help: 'port on which sshd is listening locally on localhost',
     );
+
     parser.addOption(
       'sshpublickey-permissions',
       abbr: 'S',
@@ -262,13 +280,16 @@ class SshnpdParams {
           'When --sshpublickey is enabled, will include the specified permissions'
           ' in the public key entry in authorized_keys',
     );
-    parser.addOption('ephemeral-permissions',
-        help: 'The permissions which will be added to the authorized_keys file'
-            ' for the ephemeral public keys which are generated when a client'
-            ' is connecting via forward ssh'
-            ' e.g. PermitOpen="host-1:3389",PermitOpen="localhost:80"',
-        defaultsTo: '',
-        mandatory: false);
+
+    parser.addOption(
+      'ephemeral-permissions',
+      mandatory: false,
+      defaultsTo: '',
+      help: 'The permissions which will be added to the authorized_keys file'
+          ' for the ephemeral public keys which are generated when a client'
+          ' is connecting via forward ssh'
+          ' e.g. PermitOpen="host-1:3389",PermitOpen="localhost:80"',
+    );
 
     parser.addOption(
       'ssh-algorithm',
@@ -288,7 +309,7 @@ class SshnpdParams {
       'permit-open',
       aliases: ['po'],
       mandatory: false,
-      defaultsTo: 'localhost:22,localhost:3389',
+      defaultsTo: DefaultSshnpdArgs.permitOpen,
       help: 'Comma separated-list of host:port to which the daemon will permit'
           ' a connection from an authorized client. Hosts may be dns names or'
           ' ip addresses.',

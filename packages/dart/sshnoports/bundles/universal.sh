@@ -193,7 +193,7 @@ parse_env() {
       system_arch="arm64"
       ;;
     arm | armv7l)
-      system_arch="armv7"
+      system_arch="arm"
       ;;
     riscv64)
       system_arch="riscv64"
@@ -459,7 +459,7 @@ get_download_url() {
   fi
 
   echo "$download_urls" | grep "$platform_name" |
-    grep "$system_arch" | cut -d\" -f4
+    grep "$system_arch." | cut -d\" -f4
 }
 
 download_archive() {
@@ -910,7 +910,7 @@ device() {
       write_systemd_environment "$systemd_service" "device_name" "$device_name"
 
       systemctl enable sshnpd
-      systemctl start sshnpd
+      systemctl restart sshnpd
 
       echo "sshnpd installed with systemd. To see logs use:"
       echo "journalctl -u sshnpd.service -f"

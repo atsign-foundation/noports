@@ -13,6 +13,8 @@ void apply_default_values_to_srv_params(srv_params_t *params) {
 }
 
 int parse_srv_params(srv_params_t *params, int argc, const char **argv, srv_env_t *environment) {
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wmissing-field-initializers"
   struct argparse_option options[] = {
       OPT_BOOLEAN(0, "help", NULL, "show this help message and exit", argparse_help_cb, 0, OPT_NONEG),
       OPT_STRING('h', "host", &params->host, "rvd host"),
@@ -33,6 +35,7 @@ int parse_srv_params(srv_params_t *params, int argc, const char **argv, srv_env_
                   "How long to keep the socket connector open if there have been no connections"),
       OPT_END(),
   };
+#pragma clang diagnostic pop
 
   struct argparse argparse;
   argparse_init(&argparse, options, NULL, 0);

@@ -15,7 +15,7 @@ void main(List<String> args) async {
 
   final app = Alfred();
   app.all('*', cors(origin: 'http://localhost:5173'));
-  if (Platform.executable.contains('admin_api')) {
+  if (Platform.executable.endsWith('np_admin')) {
     // Production usage - we're using the compiled binary
     final executableLocation =
         (Platform.resolvedExecutable.split(Platform.pathSeparator)

@@ -20,7 +20,6 @@ class ContactsService {
   final AtSignLogger _logger = AtSignLogger(Constants.namespace!);
 
   AtClient? atClient;
-  AtClientService? atClientService;
   var atClientManager = AtClientManager.getInstance();
   static var atContactService = ContactService();
 
@@ -31,20 +30,24 @@ class ContactsService {
 
   /// Fetch the current atsign profile image
   Future<Uint8List?> getCurrentAtsignProfileImage() async {
-    return atContactService.getContactDetails(atClientManager.atClient.getCurrentAtSign(), null).then((value) {
+    return atContactService
+        .getContactDetails(atClientManager.atClient.getCurrentAtSign(), null)
+        .then((value) {
       return value['image'];
     });
   }
 
   /// Fetch details for the current atsign
   Future<Map<String, dynamic>> getCurrentAtsignContactDetails() {
-    return atContactService.getContactDetails(atClientManager.atClient.getCurrentAtSign(), null);
+    return atContactService.getContactDetails(
+        atClientManager.atClient.getCurrentAtSign(), null);
   }
 
   /// Delete contact from contact list.
   Future<bool> addContact(String atSign, String? nickname) async {
     try {
-      bool isAdded = await atContactService.addAtSign(atSign: atSign, nickName: nickname);
+      bool isAdded =
+          await atContactService.addAtSign(atSign: atSign, nickName: nickname);
 
       return isAdded;
     } on AtClientException catch (atClientExcep) {

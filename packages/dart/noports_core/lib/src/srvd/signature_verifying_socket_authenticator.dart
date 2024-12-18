@@ -140,7 +140,10 @@ class SignatureAuthVerifier {
           }
         }
       }
-    }, onError: (error) => sc.addError(error), onDone: () => sc.close());
+    }, onError: (Object error, StackTrace stackTrace) {
+      sc.addError(error);
+      sc.close();
+    }, onDone: () => sc.close());
     return completer.future;
   }
 }

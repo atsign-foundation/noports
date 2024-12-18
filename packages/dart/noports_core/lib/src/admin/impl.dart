@@ -6,7 +6,8 @@ import 'package:at_utils/at_logger.dart';
 import 'package:noports_core/admin.dart';
 import 'package:noports_core/sshnp_foundation.dart';
 
-class PolicyServiceWithAtClient extends PolicyServiceInMem with AtClientBindings {
+class PolicyServiceWithAtClient extends PolicyServiceInMem
+    with AtClientBindings {
   @override
   final logger = AtSignLogger('PolicyServiceWithAtClient');
   @override
@@ -20,12 +21,15 @@ class PolicyServiceWithAtClient extends PolicyServiceInMem with AtClientBindings
   Future<void> init() async {
     await super.init();
 
-    atClient.notificationService.subscribe(
+    atClient.notificationService
+        .subscribe(
       regex: r'.*\.groups\.policy\.sshnp',
       shouldDecrypt: true,
-    ).listen((AtNotification n) {
+    )
+        .listen((AtNotification n) {
       String groupId = n.key.split(':')[1].split('.').first;
-      logger.info('Received ${n.operation} notification for group ${n.key} - ID is $groupId');
+      logger.info(
+          'Received ${n.operation} notification for group ${n.key} - ID is $groupId');
       if (n.operation == 'delete') {
         groups.remove(groupId);
       } else {
@@ -38,7 +42,8 @@ class PolicyServiceWithAtClient extends PolicyServiceInMem with AtClientBindings
       regex: r'.*\.logs\.policy\.sshnp',
       shouldDecrypt: true,
     ).listen((AtNotification n) {
-      logger.shout('Received policy log notification from ${jsonDecode(n.value!)['daemon']}');
+      logger.shout(
+          'Received policy log notification from ${jsonDecode(n.value!)['daemon']}');
       // TODO Make a PolicyLogEvent and use PolicyLogEvent.fromJson()
       onPolicyLogEvent(n.value!);
     });
@@ -60,8 +65,7 @@ class PolicyServiceWithAtClient extends PolicyServiceInMem with AtClientBindings
     logger.shout('Loading groups via AtClient');
     // Fetch all the groups
     List<AtKey> groupKeys = await atClient.getAtKeys(
-        regex: '.*.groups.policy.sshnp',
-        sharedBy: atClient.getCurrentAtSign());
+        regex: '.*.groups.policy.sshnp', sharedBy: atClient.getCurrentAtSign());
     for (final AtKey groupKey in groupKeys) {
       logger.shout('Loading group from atKey: $groupKey');
       final v = await atClient.get(
@@ -82,6 +86,7 @@ class PolicyServiceWithAtClient extends PolicyServiceInMem with AtClientBindings
   AtKey _groupAtKey(String id) {
     return AtKey.fromString(_groupKey(id));
   }
+
   @override
   Future<UserGroup> createUserGroup(UserGroup group) async {
     if (group.id != null) {
@@ -96,7 +101,8 @@ class PolicyServiceWithAtClient extends PolicyServiceInMem with AtClientBindings
     );
     await atClient.notificationService.notify(
       NotificationParams.forUpdate(
-        AtKey.fromString('${atClient.getCurrentAtSign()}:${_groupAtKey(group.id!)}'),
+        AtKey.fromString(
+            '${atClient.getCurrentAtSign()}:${_groupAtKey(group.id!)}'),
         value: jsonEncode(group),
       ),
     );
@@ -116,7 +122,8 @@ class PolicyServiceWithAtClient extends PolicyServiceInMem with AtClientBindings
     );
     await atClient.notificationService.notify(
       NotificationParams.forUpdate(
-        AtKey.fromString('${atClient.getCurrentAtSign()}:${_groupAtKey(group.id!)}'),
+        AtKey.fromString(
+            '${atClient.getCurrentAtSign()}:${_groupAtKey(group.id!)}'),
         value: jsonEncode(group),
       ),
     );
@@ -125,7 +132,8 @@ class PolicyServiceWithAtClient extends PolicyServiceInMem with AtClientBindings
 
   @override
   Future<bool> deleteUserGroup(String id) async {
-    await atClient.delete(_groupAtKey(id),
+    await atClient.delete(
+      _groupAtKey(id),
       deleteRequestOptions: DeleteRequestOptions()..useRemoteAtServer = true,
     );
     await atClient.notificationService.notify(
@@ -139,9 +147,7 @@ class PolicyServiceWithAtClient extends PolicyServiceInMem with AtClientBindings
 
 class PolicyServiceInMem implements PolicyService {
   @override
-  Future<void> init() async {
-
-  }
+  Future<void> init() async {}
 
   @override
   final Map<String, UserGroup> groups = {};
@@ -180,7 +186,8 @@ class PolicyServiceInMem implements PolicyService {
       'type': 'PolicyCheck',
       'daemon': pe['daemon'],
       'deviceName': pe['payload']['request']['payload']['daemonDeviceName'],
-      'deviceGroupName': pe['payload']['request']['payload']['daemonDeviceGroupName'],
+      'deviceGroupName': pe['payload']['request']['payload']
+          ['daemonDeviceGroupName'],
       'user': pe['payload']['request']['payload']['clientAtsign'],
       'authorized': pe['payload']['response']['payload']['authorized'],
       'message': pe['payload']['response']['payload']['message'],

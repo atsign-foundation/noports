@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:npt_flutter/features/profile/profile.dart';
+import 'package:npt_flutter/features/settings/models/settings.dart';
+import 'package:npt_flutter/styles/sizes.dart';
 
 class ProfileViewMinimal extends StatelessWidget {
   const ProfileViewMinimal({super.key});
@@ -8,18 +10,17 @@ class ProfileViewMinimal extends StatelessWidget {
   Widget build(BuildContext context) {
     return const Row(children: [
       ProfileSelectBox(),
-      ProfileDisplayName(),
-      SizedBox(width: 10),
+      gapW10,
+      ProfileDisplayName(layout: PreferredViewLayout.minimal),
+      gapW10,
       ProfileStatusIndicator(),
-      SizedBox(width: 10),
-      ProfileDeviceName(),
-      SizedBox(width: 10),
-      ProfileServiceView(),
+      gapW10,
       ProfileRunButton(),
-      ProfileEditButton(),
-      ProfileExportButton(),
-      ProfileDeleteButton(),
+      gapW10,
       ProfileFavoriteButton(),
+      gapW10,
+      ProfilePopupMenuButton(),
+      gapW20,
     ]);
   }
 }

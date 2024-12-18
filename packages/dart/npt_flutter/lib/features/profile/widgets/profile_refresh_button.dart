@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:npt_flutter/features/profile/profile.dart';
 
 class ProfileRefreshButton extends StatelessWidget {
@@ -10,11 +11,9 @@ class ProfileRefreshButton extends StatelessWidget {
     return BlocBuilder<ProfileBloc, ProfileState>(
       builder: (BuildContext context, ProfileState state) => ElevatedButton(
         onPressed: () {
-          context
-              .read<ProfileBloc>()
-              .add(const ProfileLoadEvent(useCache: false));
+          context.read<ProfileBloc>().add(const ProfileLoadEvent(useCache: false));
         },
-        child: const Text("Refresh"),
+        child: Text(AppLocalizations.of(context)!.refresh),
       ),
     );
   }

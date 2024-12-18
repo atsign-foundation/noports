@@ -5,7 +5,7 @@ description: Installation of client and server software
 
 # Linux & MacOS Installation Guide
 
-{% embed url="https://www.youtube.com/watch?v=pYyGXpMWN0Y" %}
+{% embed url="https://player.vimeo.com/video/1004237823?amp;app_id=58479&amp;autopause=0&amp;badge=0&amp;byline=0&amp;player_id=0&amp;portrait=0&title=0" %}
 
 For more control of the installation look at the [advanced-installation-guides](../advanced-installation-guides/ "mention").
 

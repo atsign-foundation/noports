@@ -18,23 +18,26 @@ class SettingsOverrideRelaySwitch extends StatelessWidget {
       }
       return null;
     }, builder: (context, overrideRelay) {
-      if (overrideRelay == null) return const Spinner();
-      return Row(
-        children: [
-          Checkbox(
-            value: overrideRelay,
-            onChanged: (value) {
-              var bloc = context.read<SettingsBloc>();
-              bloc.add(SettingsEditEvent(
-                settings: (bloc.state as SettingsLoadedState).settings.copyWith(overrideRelay: value),
-                save: true,
-              ));
-            },
-          ),
-          Text(
-            strings.overrideAllProfile,
-          ),
-        ],
+      if (overrideRelay == null) return const Center(child: Spinner());
+      return SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: Row(
+          children: [
+            Checkbox(
+              value: overrideRelay,
+              onChanged: (value) {
+                var bloc = context.read<SettingsBloc>();
+                bloc.add(SettingsEditEvent(
+                  settings: (bloc.state as SettingsLoadedState).settings.copyWith(overrideRelay: value),
+                  save: true,
+                ));
+              },
+            ),
+            Text(
+              strings.overrideAllProfile,
+            ),
+          ],
+        ),
       );
     });
   }

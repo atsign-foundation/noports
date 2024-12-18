@@ -17,6 +17,9 @@ Host <host>
   StrictHostKeyChecking no
   IdentityFile ~/.ssh/id_ed25519
   ProxyCommand=$(sshnp -f <client> -t <device> -r <srvd> -d <device_name> -u <username> -x 2>/dev/null) -W "%h:%p" -o "StrictHostKeyChecking=no"
+  ControlMaster auto
+  ControlPath ~/.ssh/control-%r@%n:%p
+
 ```
 {% endcode %}
 
@@ -31,6 +34,8 @@ Host alice_device
   StrictHostKeyChecking no
   IdentityFile ~/.ssh/id_ed25519
   ProxyCommand=$(sshnp -f @alice_client -t @alice_device -r @rv_am -d my_device -u <username> -x 2>/dev/null) -W "%h:%p" -o "StrictHostKeyChecking=no"
+  ControlMaster auto
+  ControlPath ~/.ssh/control-%r@%n:%p
 ```
 {% endcode %}
 
@@ -81,6 +86,10 @@ The ssh key you would like to load and authenticate with (this is equivalent to 
 A proxy command, which first executes sshnp to determine the ssh proxy command which will be executed, fill in the arguments on this line as you would normally.
 
 See [basic-usage-1](basic-usage-1/ "mention") to learn more about filling in this line.
+
+#### Lines 8 & 9
+
+ControlMaster and ControlPath tell ssh to try to reuse existing ssh connections if you start up multiple. This means only the first connection will setup sshnp, the rest of the connections will use the tunnel that is already there!
 
 ### Additional Usage Tips
 

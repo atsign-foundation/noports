@@ -18,11 +18,18 @@
     * [Client Upgrade](installation/advanced-installation-guides/client-upgrade-sshnp.md)
   * [Custom OS/Device Installs](installation/custom-os-device-installs/README.md)
     * [IPFire](installation/custom-os-device-installs/ipfire.md)
+  * [Cloud Installation Guides](installation/cloud-installation-guides/README.md)
+    * [Automated Installation on Amazon Web Services (AWS)](installation/cloud-installation-guides/automated-installation-on-amazon-web-services-aws.md)
+    * [Automated Installation on Google Cloud Platform (GCP)](installation/cloud-installation-guides/automated-installation-on-google-cloud-platform-gcp.md)
+    * [Automated Installation on Microsoft Azure](installation/cloud-installation-guides/automated-installation-on-microsoft-azure.md)
+    * [Automated Installation on Oracle Cloud Infrastructure (OCI)](installation/cloud-installation-guides/automated-installation-on-oracle-cloud-infrastructure-oci.md)
 * [Usage](usage/README.md)
   * [npt Usage](usage/basic-usage/README.md)
     * [Additional Configuration](usage/basic-usage/additional-configuration.md)
   * [sshnp Usage](usage/basic-usage-1/README.md)
-    * [Additional Configuration](usage/basic-usage-1/additional-configuration.md)
+    * [Client Additional Configuration](usage/basic-usage-1/additional-configuration.md)
+  * [sshnpd configuration](usage/sshnpd-configuration/README.md)
+    * [Daemon Additional Configuration](usage/sshnpd-configuration/daemon-additional-configuration.md)
   * [Quick SSH picker script](usage/quick-ssh-picker-script.md)
   * [Integrate with ssh config](usage/integrate-with-ssh-config.md)
 
@@ -37,6 +44,7 @@
 
 ## Product Information <a href="#reference" id="reference"></a>
 
+* [Managing Policies](reference/policy.md)
 * [FAQ](reference/faq.md)
 * [How It Works](reference/how-it-works.md)
 * [Under The Hood](reference/underthehood.md)

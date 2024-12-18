@@ -43,12 +43,12 @@ mixin SshnpdDefaultPayloadHandler on SshnpdChannel {
       late final Map daemonResponse;
       try {
         envelope = jsonDecode(notification.value!);
-        assertValidValue(envelope, 'signature', String);
-        assertValidValue(envelope, 'hashingAlgo', String);
-        assertValidValue(envelope, 'signingAlgo', String);
+        assertValidMapValue(envelope, 'signature', String);
+        assertValidMapValue(envelope, 'hashingAlgo', String);
+        assertValidMapValue(envelope, 'signingAlgo', String);
 
         daemonResponse = envelope['payload'] as Map;
-        assertValidValue(daemonResponse, 'sessionId', String);
+        assertValidMapValue(daemonResponse, 'sessionId', String);
       } catch (e) {
         logger.shout(
             'Failed to extract parameters from notification value "${notification.value}" with error : $e');

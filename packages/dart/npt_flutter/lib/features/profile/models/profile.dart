@@ -1,6 +1,5 @@
 import 'package:json_annotation/json_annotation.dart';
 import 'package:noports_core/npt.dart';
-import 'package:npt_flutter/constants.dart';
 import 'package:npt_flutter/app.dart';
 import 'package:npt_flutter/features/favorite/favorite.dart';
 import 'package:npt_flutter/util/uuid.dart';
@@ -87,13 +86,12 @@ final class Profile extends Loggable with Favoritable {
 
   NptParams toNptParams({
     required String clientAtsign,
+    required String rootDomain,
     required String fallbackRelayAtsign,
     bool overrideRelayWithFallback = false,
   }) {
     String srvdAtSign = fallbackRelayAtsign;
-    if (!overrideRelayWithFallback &&
-        relayAtsign != null &&
-        relayAtsign!.isNotEmpty) {
+    if (!overrideRelayWithFallback && relayAtsign != null && relayAtsign!.isNotEmpty) {
       srvdAtSign = relayAtsign!;
     }
     return NptParams(
@@ -104,7 +102,7 @@ final class Profile extends Loggable with Favoritable {
       remotePort: remotePort,
       device: deviceName,
       localPort: localPort,
-      rootDomain: Constants.rootDomain,
+      rootDomain: rootDomain,
 
       // hardcoded for now, because it makes the app simpler
       // and there's very few use-cases where you wouldn't want these settings

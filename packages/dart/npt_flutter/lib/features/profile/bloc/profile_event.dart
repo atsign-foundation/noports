@@ -18,7 +18,8 @@ final class ProfileLoadEvent extends ProfileEvent {
 }
 
 final class ProfileLoadOrCreateEvent extends ProfileEvent {
-  const ProfileLoadOrCreateEvent();
+  final Profile? copyFrom;
+  const ProfileLoadOrCreateEvent({this.copyFrom});
 
   @override
   String toString() {

@@ -92,14 +92,15 @@ void socketConnector(ConnectorParams connectorParams) async {
 
   /// Create the socket connector
   SocketConnector connector = await SocketConnector.serverToServer(
-      addressA: InternetAddress.anyIPv4,
-      addressB: InternetAddress.anyIPv4,
-      portA: portA,
-      portB: portB,
-      verbose: verbose,
-      logTraffic: logTraffic,
-      socketAuthVerifierA: socketAuthVerifierA,
-      socketAuthVerifierB: socketAuthVerifierB);
+    addressA: InternetAddress.anyIPv4,
+    addressB: InternetAddress.anyIPv4,
+    portA: portA,
+    portB: portB,
+    verbose: verbose,
+    logTraffic: logTraffic,
+    socketAuthVerifierA: socketAuthVerifierA,
+    socketAuthVerifierB: socketAuthVerifierB,
+  );
 
   /// Get the assigned ports from the socket connector
   portA = connector.sideAPort!;

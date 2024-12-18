@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:npt_flutter/features/settings/settings.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 class SettingsErrorHint extends StatelessWidget {
   const SettingsErrorHint({
@@ -19,7 +20,7 @@ class SettingsErrorHint extends StatelessWidget {
     return BlocSelector<SettingsBloc, SettingsState, bool>(selector: (state) {
       return state is SettingsFailedLoad;
     }, builder: (context, hasError) {
-      if (hasError) return const Text("Error loading profile");
+      if (hasError) return Text(AppLocalizations.of(context)!.profileFailedLoaded);
       return Container();
     });
   }

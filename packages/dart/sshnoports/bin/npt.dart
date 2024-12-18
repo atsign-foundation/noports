@@ -4,15 +4,13 @@ import 'dart:io';
 
 // other packages
 import 'package:args/args.dart';
-
 // atPlatform packages
-import 'package:at_utils/at_logger.dart';
 import 'package:at_cli_commons/at_cli_commons.dart' as cli;
+import 'package:at_utils/at_utils.dart';
 import 'package:duration/duration.dart';
 import 'package:noports_core/npt.dart';
 import 'package:noports_core/sshnp_foundation.dart';
 import 'package:sshnoports/src/extended_arg_parser.dart';
-
 // local packages
 import 'package:sshnoports/src/print_version.dart';
 
@@ -203,6 +201,16 @@ void main(List<String> args) async {
             ' it has started its session.',
       );
 
+      parser.addFlag(
+        'encrypt-rvd-traffic',
+        aliases: ['et'],
+        help: 'When true, traffic via the socket rendezvous is encrypted,'
+            ' in addition to whatever encryption the traffic already has'
+            ' (e.g. an ssh session)',
+        defaultsTo: DefaultArgs.encryptRvdTraffic,
+        negatable: true,
+      );
+
       // Parse Args
       ArgResults parsedArgs = parser.parse(args);
 
@@ -212,8 +220,17 @@ void main(List<String> args) async {
       }
 
       verbose = parsedArgs['verbose'];
+      String clientAtSign = parsedArgs['from'];
       String daemonAtSign = parsedArgs['to'];
       String srvdAtSign = parsedArgs['srvd'];
+      try {
+        clientAtSign = AtUtils.fixAtSign(clientAtSign);
+        daemonAtSign = AtUtils.fixAtSign(daemonAtSign);
+        srvdAtSign = AtUtils.fixAtSign(srvdAtSign);
+      } catch (e) {
+        throw ArgumentError(e.toString());
+      }
+
       int remotePort = int.parse(parsedArgs['remote-port']);
       String remoteHost = parsedArgs['remote-host'];
       String device = parsedArgs['device'];
@@ -223,6 +240,14 @@ void main(List<String> args) async {
       bool inline = !parsedArgs['exit-when-connected'];
       bool quiet = parsedArgs[quietFlag];
       bool keepAlive = parsedArgs['keep-alive'];
+
+      // Do we have a valid device name?
+      // First of all let's snakify it
+      device = snakifyDeviceName(device);
+      // and now check it against desired regex
+      if (invalidDeviceName(device)) {
+        throw ArgumentError(invalidDeviceNameMsg);
+      }
 
       // A listen progress listener for the CLI
       // Will only log if verbose is false, since if verbose is true
@@ -242,8 +267,6 @@ void main(List<String> args) async {
 
       // Windows will not let us delete files in use so
       // We will point storage to temp directory and let OS clean up
-      var clientAtSign = parsedArgs['from'];
-
       late String uniqueID;
       if (perSessionStorage) {
         uniqueID = DateTime.now().millisecondsSinceEpoch.toString();
@@ -314,6 +337,7 @@ void main(List<String> args) async {
         inline: inline,
         daemonPingTimeout:
             Duration(seconds: int.parse(parsedArgs['daemon-ping-timeout'])),
+        encryptRvdTraffic: parsedArgs['encrypt-rvd-traffic'],
         timeout: parseDuration(timeoutArg),
       );
 

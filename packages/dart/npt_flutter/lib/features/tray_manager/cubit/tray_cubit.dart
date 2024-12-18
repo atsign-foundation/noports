@@ -2,46 +2,21 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:json_annotation/json_annotation.dart';
 import 'package:npt_flutter/app.dart';
 import 'package:npt_flutter/constants.dart';
 import 'package:npt_flutter/features/favorite/favorite.dart';
 import 'package:npt_flutter/features/onboarding/onboarding.dart';
+import 'package:npt_flutter/features/profile/profile.dart';
 import 'package:npt_flutter/features/profile_list/profile_list.dart';
 import 'package:npt_flutter/routes.dart';
+import 'package:npt_flutter/util/profile_status.dart';
 import 'package:tray_manager/tray_manager.dart';
 import 'package:window_manager/window_manager.dart';
 
 part 'tray_cubit.g.dart';
 part 'tray_state.dart';
-
-(String, void Function(MenuItem)) getAction(TrayAction action) => switch (action) {
-      TrayAction.showDashboard => ('Show Window', (_) => windowManager.focus()),
-      TrayAction.showSettings => (
-          'Settings',
-          (_) {
-            windowManager.focus().then((_) {
-              var context = App.navState.currentContext;
-              if (context == null) return;
-              if (context.mounted) {
-                var cubit = context.read<OnboardingCubit>();
-                if (cubit.state is! Onboarded) return;
-                Navigator.of(context).pushNamedAndRemoveUntil(
-                  Routes.settings,
-                  (route) => route.isFirst,
-                );
-              }
-            });
-          }
-        ),
-      TrayAction.quitApp => (
-          'Quit',
-          (_) async {
-            await windowManager.destroy();
-            exit(0);
-          }
-        ),
-    };
 
 @JsonEnum(alwaysCreate: true)
 enum TrayAction {
@@ -52,71 +27,135 @@ enum TrayAction {
   static bool isTrayAction(String key) {
     return _$TrayActionEnumMap.values.contains(key);
   }
-
-  MenuItem get menuItem {
-    final (label, callback) = getAction(this);
-    return MenuItem(
-      key: _$TrayActionEnumMap[this],
-      label: label,
-      onClick: callback,
-    );
-  }
 }
 
 class TrayCubit extends LoggingCubit<TrayState> {
   TrayCubit() : super(const TrayInitial());
 
-  Future<void> initialize() async {
-    if (state is! TrayInitial) return;
+  Future<void> initialize({AppLocalizations? localizations}) async {
+    if (state is! TrayInitial || localizations == null) return;
     var context = App.navState.currentContext;
     if (context == null) return;
-    var showSettings = context.read<OnboardingCubit>().state is Onboarded;
+    var showSettings = context.read<OnboardingCubit>().getStatus() == OnboardingStatus.onboarded;
 
-    await trayManager.setIcon(
-      Platform.isWindows ? Constants.icoIcon : Constants.pngIcon,
-    );
+    await reloadIcon();
 
     await trayManager.setContextMenu(Menu(
       items: [
-        TrayAction.showDashboard.menuItem,
-        if (showSettings) TrayAction.showSettings.menuItem,
-        TrayAction.quitApp.menuItem,
+        _getMenuItem(TrayAction.showDashboard, localizations),
+        if (showSettings) _getMenuItem(TrayAction.showSettings, localizations),
+        _getMenuItem(TrayAction.quitApp, localizations),
       ],
     ));
     emit(const TrayLoaded());
   }
 
-  Future<void> reload() async {
+  Future<void> reloadIcon() async {
+    final brightness = WidgetsBinding.instance.platformDispatcher.platformBrightness;
+    await trayManager.setIcon(switch (brightness) {
+      Brightness.light => Platform.isWindows ? Constants.icoIconLight : Constants.pngIconLight,
+      Brightness.dark => Platform.isWindows ? Constants.icoIconDark : Constants.pngIconDark,
+    });
+  }
+
+  MenuItem _getMenuItem(TrayAction action, AppLocalizations localizations) {
+    final (label, callback) = _getAction(action, localizations);
+    return MenuItem(
+      key: _$TrayActionEnumMap[action],
+      label: label,
+      onClick: callback,
+    );
+  }
+
+  (String, void Function(MenuItem)) _getAction(TrayAction action, AppLocalizations localizations) {
+    return switch (action) {
+      TrayAction.showDashboard => (localizations.showWindow, (_) => windowManager.show(inactive: true)),
+      TrayAction.showSettings => (
+          localizations.settings,
+          (_) => windowManager.show(inactive: true).then((_) {
+                var context = App.navState.currentContext;
+                if (context == null) return;
+                if (context.mounted) {
+                  var cubit = context.read<OnboardingCubit>();
+                  if (cubit.getStatus() != OnboardingStatus.onboarded) return;
+                  Navigator.of(context).pushNamedAndRemoveUntil(
+                    Routes.settings,
+                    (route) => route.isFirst,
+                  );
+                }
+              })
+        ),
+      TrayAction.quitApp => (
+          localizations.quit,
+          (_) async {
+            await windowManager.destroy();
+            exit(0);
+          }
+        ),
+    };
+  }
+
+  Future<void> reload({
+    AppLocalizations? localizations,
+    FavoritesState? favoriteState,
+    ProfileListState? profileListState,
+    ProfilesRunningState? profilesRunningState,
+    OnboardingState? onboardingState,
+    ProfileState? profileState,
+  }) async {
     var context = App.navState.currentContext;
     if (context == null) return;
-    var init = initialize();
+
+    localizations ??= AppLocalizations.of(context);
+    if (localizations == null) return;
+    var init = initialize(localizations: localizations);
 
     /// Access the context before any awaited function calls
-    var showSettings = context.read<OnboardingCubit>().state is Onboarded;
-    var favoriteBloc = context.read<FavoriteBloc>();
-    var profilesList = context.read<ProfileListBloc>();
+    favoriteState ??= context.read<FavoriteBloc>().state;
+    profileListState ??= context.read<ProfileListBloc>().state;
+    onboardingState ??= context.read<OnboardingCubit>().state;
+    var showSettings = onboardingState.status == OnboardingStatus.onboarded;
 
     await init;
 
-    /// Get favorites
-    if (favoriteBloc.state is! FavoritesLoaded) return;
-    var favorites = (favoriteBloc.state as FavoritesLoaded).favorites;
-
-    /// Get profiles uuid list
-    if (profilesList.state is! ProfileListLoaded) return;
-    var profiles = (profilesList.state as ProfileListLoaded).profiles;
+    // Guard against empty values
+    if (favoriteState is! FavoritesLoaded) return;
+    if (profileListState is! ProfileListLoaded) return;
 
     /// Generate the new menu based on current state
     var favMenuItems = await Future.wait(
-      favorites
-          .where((fav) => fav.isLoadedInProfiles(profiles))
+      favoriteState.favorites
+          .where((fav) => fav.isLoadedInProfiles((profileListState as ProfileListLoaded).profiles))
           .map((fav) async {
         /// Make sure to call [e.displayName] and [e.isRunning] only once to
         /// ensure good performance - these getters call a bunch of nested
         /// information from elsewhere in the app state
-        var displayName = await fav.displayName;
-        var status = fav.status;
-        var label = '$displayName $status';
+
+        var displayName = (profileState != null && profileState is ProfileLoadedState && profileState.uuid == fav.uuid)
+            ? profileState.profile.displayName
+            : await fav.displayName;
+
+        final status = fav.status;
+
+        final String statusIcon;
+        if (status == ProfileStatus.off.message) {
+          statusIcon = ProfileStatus.off.emoji;
+        } else if (status == ProfileStatus.starting.message) {
+          statusIcon = ProfileStatus.starting.emoji;
+        } else if (status?.contains(ProfileStatus.on.message) ?? false) {
+          statusIcon = ProfileStatus.on.emoji;
+        } else if (status == ProfileStatus.stopping.message) {
+          statusIcon = ProfileStatus.stopping.emoji;
+        } else if (status == ProfileStatus.loading.message) {
+          statusIcon = ProfileStatus.loading.emoji;
+        } else if (status == ProfileStatus.failedToStart.message) {
+          statusIcon = ProfileStatus.failedToStart.emoji;
+        } else if (status == ProfileStatus.failedToLoad.message) {
+          statusIcon = ProfileStatus.failedToLoad.emoji;
+        } else {
+          statusIcon = '';
+        }
+        var label = '$statusIcon $displayName';
         return MenuItem(
           label: label,
           toolTip: status,
@@ -134,11 +173,11 @@ class TrayCubit extends LoggingCubit<TrayState> {
       items: [
         ...favMenuItems,
         MenuItem.separator(),
-        TrayAction.showDashboard.menuItem,
-        if (showSettings) TrayAction.showSettings.menuItem,
-        TrayAction.quitApp.menuItem,
+        _getMenuItem(TrayAction.showDashboard, localizations),
+        if (showSettings) _getMenuItem(TrayAction.showSettings, localizations),
+        _getMenuItem(TrayAction.quitApp, localizations),
       ],
     ));
-    emit(TrayLoaded(favorites: favorites));
+    emit(const TrayLoaded());
   }
 }

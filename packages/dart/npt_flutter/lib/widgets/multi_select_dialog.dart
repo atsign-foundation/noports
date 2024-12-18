@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:npt_flutter/styles/app_color.dart';
 
 class MultiSelectDialog extends StatelessWidget {
   final String message;
@@ -7,30 +9,30 @@ class MultiSelectDialog extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Dialog(
-        child: Column(
-      children: [
-        Text(message),
-        Row(
-          children: [
-            TextButton(
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
-              child: const Text("Cancel"),
+    final strings = AppLocalizations.of(context)!;
+    return AlertDialog(
+      title: Text(strings.profileExportDialogTitle),
+      content: Text(message),
+      actions: <Widget>[
+        TextButton(
+          onPressed: () {
+            Navigator.of(context).pop();
+          },
+          child: Text(strings.cancel),
+        ),
+        ...actions.entries.map(
+          (e) => TextButton(
+            style: TextButton.styleFrom(
+              foregroundColor: AppColor.primaryColor,
             ),
-            ...actions.entries.map(
-              (e) => ElevatedButton(
-                onPressed: () {
-                  e.value();
-                  Navigator.of(context).pop();
-                },
-                child: Text(e.key),
-              ),
-            ),
-          ],
+            onPressed: () {
+              e.value();
+              Navigator.of(context).pop();
+            },
+            child: Text(e.key),
+          ),
         ),
       ],
-    ));
+    );
   }
 }

@@ -1,7 +1,9 @@
 import 'package:flutter/widgets.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:npt_flutter/features/profile/profile.dart';
 import 'package:npt_flutter/features/settings/settings.dart';
+import 'package:npt_flutter/styles/sizes.dart';
 import 'package:npt_flutter/widgets/loader_bar.dart';
 import 'package:npt_flutter/widgets/spinner.dart';
 
@@ -18,23 +20,25 @@ class ProfileView extends StatelessWidget {
         case ProfileInitial _:
         case ProfileLoading _:
           return const Row(
+            mainAxisAlignment: MainAxisAlignment.center,
             children: [
               LoaderBar(),
+              gapW10,
               ProfileRefreshButton(),
             ],
           );
 
         case ProfileFailedLoad _:
-          return const Row(
+          return Row(
+            mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Text("Failed to load this profile, please refresh manually:"),
-              ProfileRefreshButton(),
+              Text(AppLocalizations.of(context)!.errorProfileLoadFailed),
+              const ProfileRefreshButton(),
             ],
           );
 
         case ProfileLoadedState _:
-          return BlocSelector<SettingsBloc, SettingsState,
-              PreferredViewLayout?>(
+          return BlocSelector<SettingsBloc, SettingsState, PreferredViewLayout?>(
             selector: (SettingsState state) {
               if (state is SettingsLoadedState) {
                 return state.settings.viewLayout;
@@ -43,7 +47,7 @@ class ProfileView extends StatelessWidget {
             },
             builder: (BuildContext context, PreferredViewLayout? viewLayout) {
               return switch (viewLayout) {
-                null => const Spinner(),
+                null => const Center(child: Spinner()),
                 PreferredViewLayout.minimal => const ProfileViewMinimal(),
                 PreferredViewLayout.sshStyle => const ProfileViewSshStyle(),
               };

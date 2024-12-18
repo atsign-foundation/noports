@@ -5,6 +5,10 @@ is_root() {
   [ "$(id -u)" -eq 0 ]
 }
 
+is_darwin() {
+  [ "$(uname)" = 'Darwin' ]
+}
+
 unset binary_dir
 user_home=$HOME
 define_env() {
@@ -12,6 +16,10 @@ define_env() {
   bin_dir="/usr/local/bin"
   systemd_dir="/etc/systemd/system"
   if is_root; then
+    if is_darwin; then
+      echo "Installing as root is not available on MacOS"
+      exit 1
+    fi
     user="$SUDO_USER"
     if [ -z "$user" ]; then
       user="root"
@@ -28,10 +36,6 @@ define_env() {
   user_sshnpd_dir="$user_home/.sshnpd"
   user_log_dir="$user_sshnpd_dir/logs"
   user_ssh_dir="$user_home/.ssh"
-}
-
-is_darwin() {
-  [ "$(uname)" = 'Darwin' ]
 }
 
 sedi() {
@@ -237,17 +241,17 @@ systemd() {
     exit 1
   fi
   case "$1" in
-    --help)
-      usage
-      exit 0
-      ;;
-    sshnpd) install_systemd_sshnpd ;;
-    srvd) install_systemd_srvd ;;
-    *)
-      echo "Unknown systemd unit: $1"
-      usage
-      exit 1
-      ;;
+  --help)
+    usage
+    exit 0
+    ;;
+  sshnpd) install_systemd_sshnpd ;;
+  srvd) install_systemd_srvd ;;
+  *)
+    echo "Unknown systemd unit: $1"
+    usage
+    exit 1
+    ;;
   esac
   setup_authorized_keys
 }
@@ -281,16 +285,16 @@ launchd() {
     exit 1
   fi
   case "$1" in
-    --help)
-      usage
-      exit 0
-      ;;
-    sshnpd) install_launchd_sshnpd ;;
-    *)
-      echo "Unknown launchd unit: $1"
-      usage
-      exit 1
-      ;;
+  --help)
+    usage
+    exit 0
+    ;;
+  sshnpd) install_launchd_sshnpd ;;
+  *)
+    echo "Unknown launchd unit: $1"
+    usage
+    exit 1
+    ;;
   esac
   setup_authorized_keys
 }
@@ -361,17 +365,17 @@ install_headless_srvd() {
 
 headless() {
   case "$1" in
-    --help | '')
-      usage
-      exit 0
-      ;;
-    sshnpd) install_headless_sshnpd ;;
-    srvd) install_headless_srvd ;;
-    *)
-      echo "Error: Unknown headless job: $1"
-      usage
-      exit 1
-      ;;
+  --help | '')
+    usage
+    exit 0
+    ;;
+  sshnpd) install_headless_sshnpd ;;
+  srvd) install_headless_srvd ;;
+  *)
+    echo "Error: Unknown headless job: $1"
+    usage
+    exit 1
+    ;;
   esac
   setup_authorized_keys
 }
@@ -442,17 +446,17 @@ install_tmux_srvd() {
 
 tmux() {
   case "$1" in
-    --help | '')
-      usage
-      exit 0
-      ;;
-    sshnpd) install_tmux_sshnpd ;;
-    srvd) install_tmux_srvd ;;
-    *)
-      echo "Unknown tmux service: $1"
-      usage
-      exit 1
-      ;;
+  --help | '')
+    usage
+    exit 0
+    ;;
+  sshnpd) install_tmux_sshnpd ;;
+  srvd) install_tmux_srvd ;;
+  *)
+    echo "Unknown tmux service: $1"
+    usage
+    exit 1
+    ;;
   esac
   setup_authorized_keys
 }
@@ -466,34 +470,34 @@ main() {
 
   while [ $# -gt 0 ]; do
     case "$1" in
-      -h)
-        usage
-        exit 0
-        ;;
-      -b)
-        binary_dir="$2"
-        shift
-        ;;
-      -u)
-        user="$2"
-        user_home=$(sudo -u "$user" sh -c 'echo $HOME')
-        shift
-        ;;
-      at_activate | npt | sshnp | sshnpd | srv | srvd) install_single_binary "$1" ;;
-      binaries) install_base_binaries ;;
-      debug_srvd) install_debug_binary "${1#"debug_"}" ;; # strips debug_ prefix from the command input
-      debug) install_debug_binaries ;;
-      all) install_all_binaries ;;
-      systemd | launchd | headless | tmux)
-        command=$1
-        shift 1
-        $command "$@"
-        ;;
-      *)
-        echo "Unknown command: $1"
-        usage
-        exit 1
-        ;;
+    -h)
+      usage
+      exit 0
+      ;;
+    -b)
+      binary_dir="$2"
+      shift
+      ;;
+    -u)
+      user="$2"
+      user_home=$(sudo -u "$user" sh -c 'echo $HOME')
+      shift
+      ;;
+    at_activate | npt | sshnp | sshnpd | srv | srvd) install_single_binary "$1" ;;
+    binaries) install_base_binaries ;;
+    debug_srvd) install_debug_binary "${1#"debug_"}" ;; # strips debug_ prefix from the command input
+    debug) install_debug_binaries ;;
+    all) install_all_binaries ;;
+    systemd | launchd | headless | tmux)
+      command=$1
+      shift 1
+      $command "$@"
+      ;;
+    *)
+      echo "Unknown command: $1"
+      usage
+      exit 1
+      ;;
     esac
     shift
   done

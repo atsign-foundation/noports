@@ -64,9 +64,15 @@ ssh-keygen -t ed25519
 First time activating this atSign
 
 ```powershell
-Users\alice\.local\bin\at_activate -a @<REPLACE>_device
+at_activate onboard -a "@<REPLACE>_device"
 ```
 
+or
+
+<pre><code>Users\&#x3C;<a data-footnote-ref href="#user-content-fn-1">user</a>>\.local\bin\at_activate onboard -a "&#x3C;REPLACE>_device"
+</code></pre>
+
+\
 Activated this atSign before ? As before if this atSign is already activated elsewhere then you need to copy the .atKeys file for this atSign into the \~/.atsign/keys/ directory.
 
 ### RDP? Check this out.
@@ -74,3 +80,5 @@ Activated this atSign before ? As before if this atSign is already activated els
 {% content-ref url="../use-cases/rdp.md" %}
 [rdp.md](../use-cases/rdp.md)
 {% endcontent-ref %}
+
+[^1]: replace

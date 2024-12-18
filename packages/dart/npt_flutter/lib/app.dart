@@ -1,9 +1,12 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:npt_flutter/features/features.dart';
 import 'package:npt_flutter/routes.dart';
 import 'package:npt_flutter/styles/app_theme.dart';
+import 'package:npt_flutter/util/language.dart';
 
 export 'package:npt_flutter/features/logging/logging.dart';
 
@@ -32,6 +35,8 @@ class App extends StatelessWidget {
       ],
       child: MultiBlocProvider(
           providers: [
+            // TODO this should be called LocalSettingsCubit and move
+            // Localization from the SettingsCubit to this
             BlocProvider<EnableLoggingCubit>(
               create: (_) => EnableLoggingCubit(),
             ),
@@ -42,7 +47,7 @@ class App extends StatelessWidget {
               create: (_) => LogsCubit(),
             ),
 
-            /// A cubit which manages the onboarding status
+            // A bloc which manages the atDirectory state
             BlocProvider<OnboardingCubit>(
               create: (_) => OnboardingCubit(),
             ),
@@ -79,31 +84,34 @@ class App extends StatelessWidget {
               create: (_) => ProfilesRunningCubit(),
             ),
 
-          /// A cubit which manages the system tray entries
-          BlocProvider<TrayCubit>(
-            create: (_) => TrayCubit(),
-          ),
+            /// A cubit which manages the system tray entries
+            BlocProvider<TrayCubit>(
+              create: (_) => TrayCubit(),
+            ),
 
             /// A bloc which manages favorites
             BlocProvider<FavoriteBloc>(
               create: (ctx) => FavoriteBloc(ctx.read<FavoriteRepository>()),
             ),
           ],
-          child: BlocSelector<SettingsBloc, SettingsState, Language>(selector: (state) {
+          child: BlocSelector<SettingsBloc, SettingsState, Language?>(selector: (state) {
             if (state is SettingsLoadedState) {
               return state.settings.language;
             }
 
-            return Language.english;
+            return null;
           }, builder: (context, language) {
+            Locale locale = language?.locale ?? LanguageUtil.getLanguageFromLocale(Locale(Platform.localeName)).locale;
             return TrayManager(
+              locale: locale,
               child: MaterialApp(
+                key: const Key("MaterialApp"),
                 theme: AppTheme.light(),
                 localizationsDelegates: AppLocalizations.localizationsDelegates,
                 supportedLocales: AppLocalizations.supportedLocales,
-                locale: language.locale,
+                locale: locale,
                 localeResolutionCallback: (locale, supportedLocales) {
-                  return language.locale;
+                  return language != null ? language.locale : locale;
                 },
                 navigatorKey: navState,
                 initialRoute: Routes.onboarding,

@@ -24,8 +24,7 @@ class ProfileBloc extends LoggingBloc<ProfileEvent, ProfileState> {
     on<ProfileStartEvent>(_onStart);
     on<ProfileStopEvent>(_onStop);
   }
-  Future<void> _onLoad(
-      ProfileLoadEvent event, Emitter<ProfileState> emit) async {
+  Future<void> _onLoad(ProfileLoadEvent event, Emitter<ProfileState> emit) async {
     emit(ProfileLoading(uuid));
 
     Profile? profile;
@@ -43,8 +42,7 @@ class ProfileBloc extends LoggingBloc<ProfileEvent, ProfileState> {
     emit(ProfileLoaded(uuid, profile: profile));
   }
 
-  Future<void> _onLoadOrCreate(
-      ProfileLoadOrCreateEvent event, Emitter<ProfileState> emit) async {
+  Future<void> _onLoadOrCreate(ProfileLoadOrCreateEvent event, Emitter<ProfileState> emit) async {
     emit(ProfileLoading(uuid));
 
     Profile? profile;
@@ -52,6 +50,12 @@ class ProfileBloc extends LoggingBloc<ProfileEvent, ProfileState> {
       profile = await _repo.getProfile(uuid);
     } catch (_) {
       profile = null;
+    }
+
+    if (event.copyFrom != null) {
+      var json = event.copyFrom!.toJson();
+      json["uuid"] = uuid;
+      profile = Profile.fromJson(json);
     }
 
     if (profile == null) {
@@ -63,7 +67,7 @@ class ProfileBloc extends LoggingBloc<ProfileEvent, ProfileState> {
           sshnpdAtsign: '',
           relayAtsign: '',
           deviceName: '',
-          remotePort: 0,
+          remotePort: 3389,
           localPort: 0,
         ),
       ));
@@ -73,16 +77,14 @@ class ProfileBloc extends LoggingBloc<ProfileEvent, ProfileState> {
     emit(ProfileLoaded(uuid, profile: profile));
   }
 
-  Future<void> _onEdit(
-      ProfileEditEvent event, Emitter<ProfileState> emit) async {
+  Future<void> _onEdit(ProfileEditEvent event, Emitter<ProfileState> emit) async {
     if (state is! ProfileLoaded && state is! ProfileFailedSave) {
       return;
     }
     emit(ProfileLoaded(uuid, profile: event.profile));
   }
 
-  FutureOr<void> _onSave(
-      ProfileSaveEvent event, Emitter<ProfileState> emit) async {
+  FutureOr<void> _onSave(ProfileSaveEvent event, Emitter<ProfileState> emit) async {
     emit(ProfileLoading(uuid));
     bool res;
     try {
@@ -92,9 +94,7 @@ class ProfileBloc extends LoggingBloc<ProfileEvent, ProfileState> {
     }
 
     if (res) {
-      App.navState.currentContext
-          ?.read<ProfilesRunningCubit>()
-          .invalidate(uuid);
+      App.navState.currentContext?.read<ProfilesRunningCubit>().invalidate(uuid);
 
       var listBloc = App.navState.currentContext?.read<ProfileListBloc>();
       if (listBloc != null && listBloc.state is ProfileListLoaded) {
@@ -109,44 +109,45 @@ class ProfileBloc extends LoggingBloc<ProfileEvent, ProfileState> {
       }
       emit(ProfileLoaded(uuid, profile: event.profile));
     } else {
-      App.navState.currentContext
-          ?.read<ProfilesRunningCubit>()
-          .invalidate(uuid);
+      App.navState.currentContext?.read<ProfilesRunningCubit>().invalidate(uuid);
       emit(ProfileFailedSave(uuid, profile: event.profile));
     }
   }
 
-  Future<void> _onStart(
-      ProfileStartEvent event, Emitter<ProfileState> emit) async {
+  Future<void> _onStart(ProfileStartEvent event, Emitter<ProfileState> emit) async {
     if (state is! ProfileLoadedState ||
         state is ProfileStarting ||
         state is ProfileStopping ||
-        state is ProfileStarted) return;
+        state is ProfileStarted) {
+      return;
+    }
     // ProfileLoaded and ProfileFailedSave are both ProfileLoadedState
     var profile = (state as ProfileLoadedState).profile;
     emit(ProfileStarting(uuid, profile: profile));
+    App.navState.currentContext?.read<ProfilesRunningCubit>().prepare(uuid);
 
     AtClient atClient = AtClientManager.getInstance().atClient;
 
     String? atSign = atClient.getCurrentAtSign();
     if (atSign == null) {
       emit(ProfileFailedStart(uuid, profile: profile));
+      App.navState.currentContext?.read<ProfilesRunningCubit>().invalidate(uuid);
       return;
     }
 
-    SettingsState? currentSettingsState =
-        App.navState.currentContext?.read<SettingsBloc>().state;
+    SettingsState? currentSettingsState = App.navState.currentContext?.read<SettingsBloc>().state;
     if (currentSettingsState is! SettingsLoadedState) {
       emit(ProfileFailedStart(
         uuid,
         profile: profile,
         reason: "Couldn't fetch settings",
       ));
+      App.navState.currentContext?.read<ProfilesRunningCubit>().invalidate(uuid);
       return;
     }
     var settings = currentSettingsState.settings;
 
-    void Function()? cancelSubs;
+    void Function()? cancel;
     SocketConnector? sc;
     Npt? npt;
     try {
@@ -154,6 +155,7 @@ class ProfileBloc extends LoggingBloc<ProfileEvent, ProfileState> {
         atClient: atClient,
         params: profile.toNptParams(
           clientAtsign: atSign,
+          rootDomain: atClient.getPreferences()!.rootDomain,
           fallbackRelayAtsign: settings.relayAtsign,
           overrideRelayWithFallback: settings.overrideRelay,
         ),
@@ -167,41 +169,37 @@ class ProfileBloc extends LoggingBloc<ProfileEvent, ProfileState> {
         emit(ProfileStarting(uuid, profile: profile, status: err));
       });
 
-      cancelSubs = () {
+      cancel = () {
         progressSub?.cancel();
         progressSub = null;
 
         errorSub?.cancel();
         errorSub = null;
+
+        if (sc is SocketConnector) sc.close();
       };
 
-      sc = await npt
-          .runInline()
-          // Todo - make this timeout configurable from settings
-          .timeout(
-        const Duration(seconds: 10),
-        onTimeout: () {
-          return TimedOutSocketConnector();
-        },
-      );
+      sc = await npt.runInline();
 
       if (sc is TimedOutSocketConnector) {
-        cancelSubs();
+        cancel();
         emit(ProfileFailedStart(
           uuid,
           profile: profile,
           reason: 'Npt startup timedout',
         ));
+        App.navState.currentContext?.read<ProfilesRunningCubit>().invalidate(uuid);
         return;
       }
 
       if (sc.closed) {
-        cancelSubs();
+        cancel();
         emit(ProfileFailedStart(
           uuid,
           profile: profile,
           reason: 'Socketconnector closed prematurely',
         ));
+        App.navState.currentContext?.read<ProfilesRunningCubit>().invalidate(uuid);
         return;
       }
 
@@ -209,24 +207,22 @@ class ProfileBloc extends LoggingBloc<ProfileEvent, ProfileState> {
       App.navState.currentContext?.read<ProfilesRunningCubit>().cache(uuid, sc);
       emit(ProfileStarted(uuid, profile: profile));
     } catch (err) {
-      cancelSubs?.call();
+      cancel?.call();
       emit(ProfileFailedStart(
         uuid,
         profile: profile,
         reason: 'Error during startup: $err',
       ));
+      App.navState.currentContext?.read<ProfilesRunningCubit>().invalidate(uuid);
     } finally {
       await npt?.done;
-      cancelSubs?.call();
-      App.navState.currentContext
-          ?.read<ProfilesRunningCubit>()
-          .invalidate(uuid);
+      cancel?.call();
+      App.navState.currentContext?.read<ProfilesRunningCubit>().invalidate(uuid);
       emit(ProfileLoaded(uuid, profile: profile));
     }
   }
 
-  Future<void> _onStop(
-      ProfileStopEvent event, Emitter<ProfileState> emit) async {
+  Future<void> _onStop(ProfileStopEvent event, Emitter<ProfileState> emit) async {
     if (state is! ProfileStarted) return;
     var profile = (state as ProfileStarted).profile;
     emit(ProfileStopping(uuid, profile: profile));

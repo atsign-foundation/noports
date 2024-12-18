@@ -1,13 +1,23 @@
-import 'package:at_contacts_flutter/services/contact_service.dart';
+import 'dart:convert';
+import 'dart:io';
+import 'dart:typed_data';
+
+import 'package:at_backupkey_flutter/services/backupkey_service.dart';
 import 'package:at_onboarding_flutter/at_onboarding_flutter.dart';
-import 'package:at_onboarding_flutter/services/onboarding_service.dart';
+import 'package:at_onboarding_flutter/at_onboarding_services.dart';
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:npt_flutter/constants.dart';
+import 'package:npt_flutter/features/onboarding/cubit/onboarding_cubit.dart';
+import 'package:npt_flutter/features/onboarding/util/atsign_manager.dart';
+import 'package:npt_flutter/features/onboarding/util/pre_offboard.dart';
+import 'package:npt_flutter/features/onboarding/widgets/onboarding_button.dart';
+import 'package:npt_flutter/pages/loading_page.dart';
 import 'package:npt_flutter/routes.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-import '../features/onboarding/onboarding.dart';
 import '../styles/sizes.dart';
 import 'custom_snack_bar.dart';
 
@@ -60,6 +70,11 @@ class CustomTextButton extends StatelessWidget {
       this.title = 'Reset App',
       this.type = CustomListTileType.resetAtsign,
       super.key});
+  const CustomTextButton.signOut(
+      {this.iconData = Icons.logout_outlined,
+      this.title = 'Sign Out',
+      this.type = CustomListTileType.signOut,
+      super.key});
 
   const CustomTextButton.feedback(
       {this.iconData = Icons.feedback_outlined,
@@ -77,7 +92,7 @@ class CustomTextButton extends StatelessWidget {
     // final bodyMedium = Theme.of(context).textTheme.bodyMedium!;
     // final bodySmall = Theme.of(context).textTheme.bodySmall!;
     final strings = AppLocalizations.of(context)!;
-    Future<void> onTap() async {
+    Future<void> onTap({String? rootDomain}) async {
       switch (type) {
         case CustomListTileType.email:
           Uri emailUri = Uri(
@@ -85,7 +100,7 @@ class CustomTextButton extends StatelessWidget {
             path: 'info@noports.com',
           );
           if (!await launchUrl(emailUri)) {
-            CustomSnackBar.notification(content: 'No email client available');
+            CustomSnackBar.notification(content: strings.noEmailClientAvailable);
           }
           break;
         case CustomListTileType.discord:
@@ -113,19 +128,46 @@ class CustomTextButton extends StatelessWidget {
         //   break;
         case CustomListTileType.backupYourKey:
           if (context.mounted) {
-            BackupKeyWidget(atsign: ContactService().currentAtsign).showBackupDialog(context);
+            var atsign = context.read<OnboardingCubit>().getAtSign();
+            // Build file data
+            var aesEncryptedKeys = await BackUpKeyService.getEncryptedKeys(atsign);
+            var keyString = jsonEncode(aesEncryptedKeys);
+            final List<int> codeUnits = keyString.codeUnits;
+            final Uint8List data = Uint8List.fromList(codeUnits);
+
+            // Get file path to write to
+            String? outputFile = await FilePicker.platform.saveFile(
+              dialogTitle: strings.backupKeyDialogTitle,
+              fileName: '${atsign}_key.atKeys',
+            );
+            if (outputFile == null) return;
+            // Create and write the file
+            try {
+              var f = File(outputFile);
+              await f.create(recursive: true);
+              await f.writeAsBytes(data);
+            } catch (e) {
+              if (!context.mounted) return;
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  backgroundColor: Colors.red,
+                  content: Text(strings.errorAtKeySaveFailed(e.toString())),
+                ),
+              );
+            }
           }
           break;
         case CustomListTileType.resetAtsign:
-          final futurePreference = await loadAtClientPreference();
+          final futurePreference = await loadAtClientPreference(rootDomain!);
+          final apiKey = await Constants.appAPIKey;
           if (context.mounted) {
             final result = await AtOnboarding.reset(
               context: context,
               config: AtOnboardingConfig(
                 atClientPreference: futurePreference,
                 rootEnvironment: RootEnvironment.Testing,
-                domain: Constants.rootDomain,
-                appAPIKey: Constants.appAPIKey,
+                domain: rootDomain,
+                appAPIKey: apiKey,
               ),
             );
             final OnboardingService onboardingService = OnboardingService.getInstance();
@@ -141,12 +183,20 @@ class CustomTextButton extends StatelessWidget {
           final emailUri = Uri(
             scheme: 'mailto',
             path: 'info@noports.com',
-            query: 'subject=SSH No Ports Desktop Feedback',
+            query: 'subject=No Port Desktop Feedback',
           );
 
           if (!await launchUrl(emailUri)) {
-            CustomSnackBar.notification(content: 'No email client available');
+            CustomSnackBar.notification(content: strings.noEmailClientAvailable);
           }
+          break;
+
+        case CustomListTileType.signOut:
+          Navigator.of(context)
+              .pushAndRemoveUntil(MaterialPageRoute(builder: (context) => const LoadingPage()), (route) => false);
+          await preSignout();
+          if (context.mounted) Navigator.of(context).pushReplacementNamed(Routes.onboarding);
+          break;
       }
     }
 
@@ -168,14 +218,34 @@ class CustomTextButton extends StatelessWidget {
           return strings.resetAtsign;
         case CustomListTileType.feedback:
           return strings.feedback;
+        case CustomListTileType.signOut:
+          return strings.signout;
       }
     }
 
+    if (type == CustomListTileType.resetAtsign) {
+      return BlocBuilder<OnboardingCubit, AtsignInformation>(builder: (context, atsignInformation) {
+        return Padding(
+          padding: const EdgeInsets.only(left: Sizes.p30, right: Sizes.p30, bottom: Sizes.p10),
+          child: TextButton.icon(
+            label: Text(getTitle(strings)),
+            onPressed: () {
+              onTap(rootDomain: atsignInformation.rootDomain);
+            },
+            icon: Icon(
+              iconData,
+            ),
+          ),
+        );
+      });
+    }
     return Padding(
       padding: const EdgeInsets.only(left: Sizes.p30, right: Sizes.p30, bottom: Sizes.p10),
       child: TextButton.icon(
         label: Text(getTitle(strings)),
-        onPressed: onTap,
+        onPressed: () {
+          onTap();
+        },
         icon: Icon(
           iconData,
         ),
@@ -193,4 +263,5 @@ enum CustomListTileType {
   backupYourKey,
   resetAtsign,
   feedback,
+  signOut,
 }
