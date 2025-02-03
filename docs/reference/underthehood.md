@@ -1,5 +1,8 @@
 ---
 icon: engine
+description: >-
+  This guide provides information on the technical aspects of NoPorts, including
+  its architecture, protocols, and security mechanisms.
 ---
 
 # Under The Hood
@@ -51,15 +54,11 @@ This high-level flow is visualized in the diagrams below.
 
 ### Overview diagram
 
-<div data-full-width="true">
-
-<img src="../.gitbook/assets/atPlanes.png" alt="">
-
-</div>
+<div data-full-width="true"><img src="../.gitbook/assets/atPlanes.png" alt=""></div>
 
 ### Policy Plane
 
-At any point the `sshnpd` or the `srvd` software rather than using a local configuration to manage access rights, can forward those questions to another atSign. That atSign can in turn pass those queries to a policy engine and reflect the answer back to the asking atSign. In the example above @relay and/or @server could ask if @client is allowed to access the service. This allows decisions to be made at the Policy plane level and provides operational segregation of duties.&#x20;
+At any point the `sshnpd` or the `srvd` software rather than using a local configuration to manage access rights, can forward those questions to another atSign. That atSign can in turn pass those queries to a policy engine and reflect the answer back to the asking atSign. In the example above @relay and/or @server could ask if @client is allowed to access the service. This allows decisions to be made at the Policy plane level and provides operational segregation of duties.
 
 ### Control plane
 
@@ -171,7 +170,7 @@ Once the interactions above have completed
 * the sshnpd nor the sshnp programs are no longer involved
 * there is a new sshrv process running on the device host which pipes i/o between requested server:port and $rv\_host:$rv\_port\_1
 * there is a client process running on the client host which provides the local port forwarding tunnel
-* User may now type "ssh -p $local\_port username@localhost"  or use a client application like and RDP client with traffic flowing
+* User may now type "ssh -p $local\_port username@localhost" or use a client application like and RDP client with traffic flowing
   * client ssh program <===>
     * $client\_localhost:$local\_port <===> bridged by client-side ssh tunnel to
       * $rv\_host:$rv\_port\_2 <===> bridged by sshrvd to
@@ -187,6 +186,6 @@ In the sections above, we referred to "authentication", "sending notifications" 
 
 Here are some links to detailed diagrams covering
 
-* [how atClients authenticate to their atServers](https://github.com/atsign-foundation/at\_protocol/blob/trunk/decisions/2023-01-pkam-per-app-and-device.md#appendix---current-flows)
-* [how encrypted data is exchanged](https://github.com/atsign-foundation/at\_protocol/blob/trunk/usage-examples/how-to-exchange-encrypted-data.md) (including how keys are exchanged)
-* [how notifications work](https://github.com/atsign-foundation/at\_protocol/blob/trunk/usage-examples/how-notifications-work.md)
+* [how atClients authenticate to their atServers](https://github.com/atsign-foundation/at_protocol/blob/trunk/decisions/2023-01-pkam-per-app-and-device.md#appendix---current-flows)
+* [how encrypted data is exchanged](https://github.com/atsign-foundation/at_protocol/blob/trunk/usage-examples/how-to-exchange-encrypted-data.md) (including how keys are exchanged)
+* [how notifications work](https://github.com/atsign-foundation/at_protocol/blob/trunk/usage-examples/how-notifications-work.md)

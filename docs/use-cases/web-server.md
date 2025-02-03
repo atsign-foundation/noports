@@ -1,10 +1,11 @@
 ---
 icon: globe-pointer
+description: This guide covers usage of NoPorts with webpages or APIs.
 ---
 
 # Web Server
 
-Here, we demonstrate how to use the NoPorts Tunnel to bridge a web server on a remote machine to localhost:80 so we can access the web server locally.&#x20;
+Here, we demonstrate how to use the NoPorts Tunnel to bridge a web server on a remote machine to localhost:80 so we can access the web server locally.
 
 {% hint style="info" %}
 We are assuming that the web server is running on port `8080`, you can replace it with the port that your web server is running on. (Also works over TLS with port 443)

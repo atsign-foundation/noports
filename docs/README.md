@@ -1,6 +1,6 @@
 ---
-description: Welcome to the NoPorts documentation site.
 icon: ban
+description: Welcome to the NoPorts documentation site.
 layout:
   title:
     visible: true
@@ -26,7 +26,7 @@ Before you can use NoPorts, you need to have it installed! All of our installati
 
 ### Use-cases
 
-NoPorts has endless use-cases. We've provided a list of (what we think are) the most common ones:
+NoPorts has endless use-cases. We've provided a list of the most common ones:
 
 {% content-ref url="use-cases/ssh.md" %}
 [ssh.md](use-cases/ssh.md)

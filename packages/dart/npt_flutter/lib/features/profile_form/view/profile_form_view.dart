@@ -28,7 +28,7 @@ class ProfileFormView extends StatelessWidget {
             Align(
               alignment: Alignment.topCenter,
               child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+                crossAxisAlignment: CrossAxisAlignment.center,
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: [
                   CustomCard.profileFormContent(
@@ -37,16 +37,16 @@ class ProfileFormView extends StatelessWidget {
                       child: Form(
                         key: formkey,
                         child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
+                          crossAxisAlignment: CrossAxisAlignment.center,
                           children: [
                             const ProfileDisplayNameTextField(),
                             gapH10,
                             const Padding(
                               padding: EdgeInsets.symmetric(horizontal: Sizes.p50),
                               child: Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                 children: [
                                   ProfileDeviceAtSignTextField(),
+                                  gapW143,
                                   ProfileDeviceNameTextField(),
                                 ],
                               ),
@@ -57,10 +57,12 @@ class ProfileFormView extends StatelessWidget {
                             const Padding(
                               padding: EdgeInsets.symmetric(horizontal: Sizes.p50),
                               child: Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                mainAxisAlignment: MainAxisAlignment.start,
                                 children: [
                                   ProfileLocalPortSelector(),
+                                  gapW103,
                                   ProfileRemoteHostTextField(),
+                                  gapW103,
                                   ProfileRemotePortSelector(),
                                 ],
                               ),
@@ -69,23 +71,21 @@ class ProfileFormView extends StatelessWidget {
                             Padding(
                               padding: const EdgeInsets.symmetric(horizontal: Sizes.p50),
                               child: Builder(
-                                builder: (context) => Center(
-                                  child: SizedBox(
-                                    width: double.infinity,
-                                    child: ElevatedButton(
-                                      onPressed: () {
-                                        if (!formkey.currentState!.validate()) return;
+                                builder: (context) => SizedBox(
+                                  width: Sizes.p743,
+                                  child: ElevatedButton(
+                                    onPressed: () {
+                                      if (!formkey.currentState!.validate()) return;
 
-                                        var localBloc = context.read<ProfileBloc>();
-                                        if (localBloc.state is! ProfileLoadedState) return;
+                                      var localBloc = context.read<ProfileBloc>();
+                                      if (localBloc.state is! ProfileLoadedState) return;
 
-                                        /// Now take the localBloc and upload it back to the global bloc
-                                        context.read<ProfileCacheCubit>().getProfileBloc(uuid).add(ProfileSaveEvent(
-                                              profile: (localBloc.state as ProfileLoadedState).profile,
-                                            ));
-                                      },
-                                      child: Text(strings.submit),
-                                    ),
+                                      /// Now take the localBloc and upload it back to the global bloc
+                                      context.read<ProfileCacheCubit>().getProfileBloc(uuid).add(ProfileSaveEvent(
+                                            profile: (localBloc.state as ProfileLoadedState).profile,
+                                          ));
+                                    },
+                                    child: Text(strings.submit),
                                   ),
                                 ),
                               ),

@@ -574,7 +574,7 @@
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = "1.1.1+1";
+				CURRENT_PROJECT_VERSION = "1.1.6+8";
 				DEVELOPMENT_TEAM = 5XUSS6C2DF;
 				INFOPLIST_FILE = Runner/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = "Noports Desktop";
@@ -583,7 +583,7 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				MARKETING_VERSION = 1.1.1;
+				MARKETING_VERSION = 1.1.6;
 				PRODUCT_BUNDLE_IDENTIFIER = com.atsign.noports;
 				PRODUCT_NAME = "NoPorts Desktop";
 				PROVISIONING_PROFILE_SPECIFIER = "";
@@ -714,7 +714,7 @@
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = "1.1.1+1";
+				CURRENT_PROJECT_VERSION = "1.1.6+8";
 				DEVELOPMENT_TEAM = 5XUSS6C2DF;
 				INFOPLIST_FILE = Runner/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = "Noports Desktop";
@@ -723,7 +723,7 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				MARKETING_VERSION = 1.1.1;
+				MARKETING_VERSION = 1.1.6;
 				PRODUCT_BUNDLE_IDENTIFIER = com.atsign.noports;
 				PRODUCT_NAME = "NoPorts Desktop";
 				PROVISIONING_PROFILE_SPECIFIER = "";
@@ -742,7 +742,7 @@
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = "1.1.1+1";
+				CURRENT_PROJECT_VERSION = "1.1.6+8";
 				DEVELOPMENT_TEAM = 5XUSS6C2DF;
 				INFOPLIST_FILE = Runner/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = "Noports Desktop";
@@ -751,7 +751,7 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				MARKETING_VERSION = 1.1.1;
+				MARKETING_VERSION = 1.1.6;
 				PRODUCT_BUNDLE_IDENTIFIER = com.atsign.noports;
 				PRODUCT_NAME = "NoPorts Desktop";
 				PROVISIONING_PROFILE_SPECIFIER = "";

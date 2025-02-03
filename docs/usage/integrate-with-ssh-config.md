@@ -4,7 +4,21 @@ icon: square-sliders-vertical
 
 # Integrate with ssh config
 
-## The Template
+## Overview
+
+This guide will help you setup NoPorts in your ssh configuration. Once setup, you will be able to ssh to machines using NoPorts the same way you would for a normal ssh host. As this is integrated with the SSH configuration, it will also work with other applications that support SSH proxying.
+
+### Usage
+
+Once you've setup your configuration, you will be able to SSH over NoPorts just like any other host, using your own custom hostnames for devices.
+
+For example, with a device called `my_lab`:
+
+```sh
+ssh my_lab
+```
+
+### The Template
 
 The following is a template for adding an sshnp connection to your ssh config for ease of use:
 
@@ -23,7 +37,15 @@ Host <host>
 ```
 {% endcode %}
 
-Example:
+You need to replace the values surrounded with `<>` on lines 1 & 7 with your own values.
+
+`host` is any valid hostname you would like, this is what you will use to invoke your ssh command, so make sure it's easy to remember and type.
+
+`username` is the username on the remote machine you wish to login as.
+
+The rest of the values are the normal arguments you would invoke with sshnp, see [here](basic-usage-1/) for more info.
+
+#### Example
 
 {% code overflow="wrap" %}
 ```
@@ -39,19 +61,50 @@ Host alice_device
 ```
 {% endcode %}
 
+This example shows the configuration for the following equivalent sshnp command:
+
 ```
 sshnp -f @alice_client -t @alice_device -d my_server -r @rv_am
 ```
 
-### Usage
-
-Use this config as you would any other ssh config entry:
+When you want to connect to this device, this is what you would type:
 
 ```bash
-ssh <host>
+ssh alice_device
+```
+
+`alice_device` maps the the `Host alice_device` line.
+
+### Additional Usage Tips
+
+#### 1. Extending ssh config
+
+You can add any additional ssh config to the file as you normally would, for example a TCP forwarding:
+
+{% code title="~/.ssh/config" overflow="wrap" lineNumbers="true" %}
+```
+Host my_webdev_server
+  Hostname localhost
+  AddKeysToAgent yes
+  UserKnownHostsFile /dev/null
+  StrictHostKeyChecking no
+  IdentityFile ~/.ssh/id_ed25519
+  LocalForward 8080:0:8080
+  ProxyCommand=...
+```
+{% endcode %}
+
+#### 2. Extending ssh command
+
+You can also add any additional flags to the ssh command, for example a TCP forwarding:
+
+```bash
+ssh my_webdev_server -L "8080:0:8080"
 ```
 
 ### Template Explained
+
+If you want to understand each line of the template, and what it does, read on.
 
 #### Line 1
 
@@ -91,29 +144,3 @@ See [basic-usage-1](basic-usage-1/ "mention") to learn more about filling in thi
 
 ControlMaster and ControlPath tell ssh to try to reuse existing ssh connections if you start up multiple. This means only the first connection will setup sshnp, the rest of the connections will use the tunnel that is already there!
 
-### Additional Usage Tips
-
-#### 1. Extending ssh config
-
-You can add any additional ssh config to the file as you normally would, for example a TCP forwarding:
-
-{% code title="~/.ssh/config" overflow="wrap" lineNumbers="true" %}
-```
-Host my_webdev_server
-  Hostname localhost
-  AddKeysToAgent yes
-  UserKnownHostsFile /dev/null
-  StrictHostKeyChecking no
-  IdentityFile ~/.ssh/id_ed25519
-  LocalForward 8080:0:8080
-  ProxyCommand=...
-```
-{% endcode %}
-
-#### 2. Extending ssh command
-
-You can also add any additional flags to the ssh command, for example a TCP forwarding:
-
-```bash
-ssh my_webdev_server -L "8080:0:8080"
-```

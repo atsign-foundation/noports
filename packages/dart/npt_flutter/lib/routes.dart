@@ -6,6 +6,7 @@ class Routes {
   static const onboarding = '/';
   static const dashboard = '/dashboard';
   static const settings = '/settings';
+  static const authorisation = '/authorisation';
   static const profileForm = '/profile';
   static const loadingPage = '/loading';
 
@@ -13,6 +14,7 @@ class Routes {
     onboarding: (_) => const OnboardingPage(nextRoute: dashboard),
     dashboard: (_) => const DashboardPage(),
     settings: (_) => const SettingsPage(),
+    authorisation: (_) => const AuthorisationPage(),
     profileForm: (_) => const ProfileFormPage(),
     loadingPage: (_) => const LoadingPage(),
   };

@@ -16,9 +16,7 @@ class ProfileLocalPortSelector extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(strings.localPort),
-        gapH4,
-        Text(strings.localPortDescription, style: Theme.of(context).textTheme.bodySmall),
-        gapH10,
+        gapH14,
         BlocSelector<ProfileBloc, ProfileState, int?>(
           selector: (ProfileState state) {
             if (state is ProfileLoadedState) return state.profile.localPort;

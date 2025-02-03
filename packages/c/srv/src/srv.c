@@ -388,8 +388,8 @@ int create_encrypter_and_decrypter(const char *session_aes_key_string, const cha
   size_t aes_key_len;
 
   // Decode the key
-  res = atchops_base64_decode((unsigned char *)session_aes_key_string, strlen(session_aes_key_string), aes_key,
-                              AES_256_KEY_BYTES, &aes_key_len);
+  res = atchops_base64_decode(session_aes_key_string, strlen(session_aes_key_string), aes_key, AES_256_KEY_BYTES,
+                              &aes_key_len);
 
   if (res != 0 || aes_key_len != AES_256_KEY_BYTES) {
     atlogger_log(TAG, ERROR, "Error decoding session_aes_key_string\n");
@@ -415,8 +415,8 @@ int create_encrypter_and_decrypter(const char *session_aes_key_string, const cha
 
   // Decode the iv
   size_t iv_len;
-  res = atchops_base64_decode((unsigned char *)session_aes_iv_string, strlen(session_aes_iv_string),
-                              encrypter->aes_ctr.nonce_counter, AES_BLOCK_LEN, &iv_len);
+  res = atchops_base64_decode(session_aes_iv_string, strlen(session_aes_iv_string), encrypter->aes_ctr.nonce_counter,
+                              AES_BLOCK_LEN, &iv_len);
   if (res != 0 || iv_len != AES_BLOCK_LEN) {
     atlogger_log(TAG, ERROR, "Error decoding session_aes_iv_string\n");
     mbedtls_aes_free(&encrypter->aes_ctr.ctx);

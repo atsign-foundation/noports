@@ -35,41 +35,44 @@ class ProfileRelayQuickButtons extends StatelessWidget {
             Scrollbar(
               controller: controller,
               thumbVisibility: true,
-              child: Container(
-                padding: const EdgeInsets.only(bottom: Sizes.p20),
-                height: Sizes.p70,
-                child: ListView(
-                  shrinkWrap: true,
+              child: SingleChildScrollView(
                   scrollDirection: Axis.horizontal,
                   controller: controller,
-                  children: [
-                    ...RelayOptions.values.map(
-                      (e) => Padding(
-                        padding: const EdgeInsets.only(right: Sizes.p10),
-                        child: CustomContainer.foreground(
-                          key: Key(e.name),
-                          child: SizedBox(
+                  child: Padding(
+                    padding: const EdgeInsets.only(bottom: Sizes.p10),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        ...RelayOptions.values.map(
+                          (e) => SizedBox(
                             width: Sizes.p200,
                             height: Sizes.p50,
-                            child: RadioListTile(
-                              title: Text(e.regions),
-                              value: e.relayAtsign,
-                              groupValue: relayAtsign,
-                              onChanged: (value) {
-                                var bloc = context.read<ProfileBloc>();
-                                bloc.add(ProfileEditEvent(
-                                  profile: (bloc.state as ProfileLoadedState).profile.copyWith(relayAtsign: value),
-                                ));
-                              },
+                            child: Padding(
+                              padding: const EdgeInsets.only(right: Sizes.p10),
+                              child: CustomContainer.foreground(
+                                key: Key(e.name),
+                                child: RadioListTile(
+                                  title: Text(e.regions),
+                                  value: e.relayAtsign,
+                                  groupValue: relayAtsign,
+                                  onChanged: (value) {
+                                    var bloc = context.read<ProfileBloc>();
+                                    bloc.add(ProfileEditEvent(
+                                      profile: (bloc.state as ProfileLoadedState).profile.copyWith(relayAtsign: value),
+                                    ));
+                                  },
+                                ),
+                              ),
                             ),
                           ),
                         ),
-                      ),
+                        const Padding(
+                          padding: EdgeInsets.only(top: Sizes.p4),
+                          child: ProfileRelayAtSignTextField(),
+                        ),
+                      ],
                     ),
-                    const ProfileRelayAtSignTextField(),
-                  ],
-                ),
-              ),
+                  )),
             ),
           ],
         ),

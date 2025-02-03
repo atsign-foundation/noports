@@ -16,9 +16,7 @@ class ProfileRemotePortSelector extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(strings.remotePort),
-        gapH4,
-        Text(strings.remotePortDescription, style: Theme.of(context).textTheme.bodySmall),
-        gapH10,
+        gapH14,
         BlocSelector<ProfileBloc, ProfileState, int?>(
           selector: (ProfileState state) {
             if (state is ProfileLoadedState) return state.profile.remotePort;

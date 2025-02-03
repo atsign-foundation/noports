@@ -218,12 +218,7 @@
 </script>
 
 <div class="row" style="color: {statusColor}; text-align: center">
-    {#if status !== ''}
-        <h2>{status}</h2>
-    {:else}
-        <h2>&nbsp;</h2>
-
-    {/if}
+    <h2>{status}</h2>
 </div>
 
 <div class="row">
@@ -517,7 +512,6 @@
                                                             </td>
                                                         </tr>
                                                     {/each}
-                                                    </tbody>
                                                     <tr>
                                                         <td>
                                                             <button type="button" class="btn btn-sm btn-outline-success" style="font-size:10px"
@@ -531,6 +525,7 @@
                                                             </button>
                                                         </td>
                                                     </tr>
+                                                    </tbody>
                                                 </table>
                                             </td>
                                         </tr>

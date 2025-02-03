@@ -133,6 +133,10 @@ class _ActivateAtsignDialogState extends State<ActivateAtsignDialog> {
       setState(() {
         status = ActivationStatus.otpWait;
       });
+      // pinFocusNode.
+      if (!pinFocusNode.hasFocus) {
+        pinFocusNode.requestFocus();
+      }
     } else {
       if (!mounted) return;
       if (status == ActivationStatus.preparing) {
@@ -147,9 +151,6 @@ class _ActivateAtsignDialogState extends State<ActivateAtsignDialog> {
           ),
         ),
       );
-    }
-    if (!pinFocusNode.hasFocus) {
-      pinFocusNode.requestFocus();
     }
   }
 

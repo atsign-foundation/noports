@@ -202,7 +202,10 @@ install_all_binaries() {
 # SYSTEMD #
 
 post_systemd_message() {
-  echo "Systemd unit installed, make sure to configure the unit by editing $dest"
+  echo "Systemd unit installed, make sure to configure the unit by editing"
+  echo "the override.conf using:"
+  echo "  sudo systemctl edit $unit_name"
+  echo ""
   echo "Learn more in $script_dir/systemd/README.md"
   echo ""
   echo "To enable the service on next boot:"
@@ -214,10 +217,54 @@ post_systemd_message() {
 
 install_systemd_unit() {
   unit_name="$1"
+  systemd_unit="$systemd_dir/$unit_name"
+  systemd_config="$systemd_unit.d/override.conf"
+  if ! [ -d "$systemd_unit.d" ]; then
+    mkdir -p "$systemd_unit.d"
+  fi
   no_mac
-  mkdir -p "$systemd_dir"
-  dest="$systemd_dir/$unit_name"
-  cp "$script_dir/systemd/$unit_name" "$dest"
+  if [ -f "$systemd_unit" ]; then
+    # migrate old config from systemd unit file to override.conf
+    touch "$systemd_config"
+    if [ ! -s "$systemd_config" ]; then
+      echo "[Service]" >> "$systemd_config"
+    fi
+    temp_file="$systemd_unit.tmp"
+    while IFS= read -r line; do
+      case "$line" in
+        Environment=*)
+            # Comment out the line in the original file
+            echo "# config migrated to $systemd_config" >> "$temp_file"
+            echo "# $line" >> "$temp_file"
+            # Extract the environment variable and write it to the override file
+            echo "# config migrated from $systemd_unit" >> "$systemd_config"
+            echo "$line" >> "$systemd_config"
+            ;;
+        User=*)
+            # Comment out the line in the original file
+            echo "# config migrated to $systemd_config" >> "$temp_file"
+            echo "# $line" >> "$temp_file"
+            # Extract the user variable and write it to the override file
+            echo "# config migrated from $systemd_unit" >> "$systemd_config"
+            echo "$line" >> "$systemd_config"
+            ;;
+        *)
+            echo "$line" >> "$temp_file"
+            ;;
+        esac
+    done < "$systemd_unit"
+    # Overwrite the original file with the modified content
+    mv "$temp_file" "$systemd_unit"
+    echo "sshnpd configuration migrated to override.conf"
+  else
+    cp "$script_dir/systemd/$unit_name" "$systemd_unit"
+  fi
+  if [ -f "$systemd_config" ]; then
+    echo "systemd config already in place"
+  else
+    cp "$script_dir/systemd/$unit_name.d/override.conf" "$systemd_config"
+  fi
+  systemctl daemon-reload
   post_systemd_message
 }
 
@@ -268,7 +315,11 @@ install_launchd_unit() {
   mac_only
   mkdir -p "$launchd_dir"
   dest="$launchd_dir/$unit_name"
-  cp "$script_dir/launchd/$unit_name" "$dest"
+  if [ -f "$dest" ]; then
+    echo "launchd config already in place"
+  else
+    cp "$script_dir/launchd/$unit_name" "$dest"
+  fi
   post_launchd_message
 }
 

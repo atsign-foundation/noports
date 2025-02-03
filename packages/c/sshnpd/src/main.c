@@ -16,9 +16,9 @@
 #include <atclient/atkey.h>
 #include <atclient/atkeys.h>
 #include <atclient/atkeys_file.h>
-#include <atclient/cjson.h>
 #include <atclient/connection.h>
 #include <atclient/connection_hooks.h>
+#include <atclient/json.h>
 #include <atclient/monitor.h>
 #include <atclient/notify.h>
 #include <atclient/string_utils.h>
@@ -37,6 +37,10 @@
 
 #define FILENAME_BUFFER_SIZE 500
 #define LOGGER_TAG "sshnpd"
+
+#define MONITOR_READ_TIMEOUT_MS 5000
+// How often to try to reconnect if the connect appears stale
+#define MONITOR_NOOP_TIMEOUT_MS 40000
 
 static struct {
   char *str;
@@ -57,6 +61,7 @@ static int lock_atclient(void);
 static int unlock_atclient(int);
 
 static int reconnect_atclient();
+static int reconnect_monitor();
 
 static int set_worker_hooks();
 static void main_loop();
@@ -64,7 +69,7 @@ static void main_loop();
 // information to be shared between functions in this file
 static atclient worker;
 static char *atserver_host;
-static int atserver_port;
+static uint16_t atserver_port;
 static atclient_atkeys atkeys;
 static sshnpd_params params;
 static atclient monitor_ctx;
@@ -178,6 +183,7 @@ int main(int argc, char **argv) {
 
   // 7.a Initialize the monitor atclient
   atclient_init(&monitor_ctx);
+  atclient_set_read_timeout(&monitor_ctx, MONITOR_READ_TIMEOUT_MS); // 5 seconds for timeout
   res = atclient_monitor_pkam_authenticate(&monitor_ctx, params.atsign, &atkeys, NULL);
   if (res != 0 || !should_run) {
     exit_res = res;
@@ -187,7 +193,7 @@ int main(int argc, char **argv) {
   // 7.b Initialize the worker atclient
   atclient_init(&worker);
   bool free_ping_response = false;
-  res = atclient_pkam_authenticate(&worker, params.atsign, &atkeys, NULL);
+  res = atclient_pkam_authenticate(&worker, params.atsign, &atkeys, NULL, NULL);
   if (res != 0 || !should_run) {
     exit_res = res;
     goto cancel_atclient;
@@ -205,12 +211,12 @@ int main(int argc, char **argv) {
     // atclient_get_public_encryption_key(&atclient, params.manager_list[i], &public_encryption_key);
     // TODO: finish caching
   }
+  printf("\n");
   if (params.policy == NULL) {
     atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_DEBUG, "Policy Manager: NULL");
   } else {
     atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_DEBUG, "Policy Manager: %s", params.policy);
   }
-  printf("\n");
 
   if (!should_run) {
     exit_res = res;
@@ -408,49 +414,47 @@ void main_loop() {
   permitopen.permitopen_hosts = params.permitopen_hosts;
   permitopen.permitopen_ports = params.permitopen_ports;
 
+  size_t timeout_counter = 0;
+
   while (should_run) {
     atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_DEBUG, "Waiting for next monitor thread message\n");
     atclient_monitor_response_init(&message);
 
+    int ret;
+    if (timeout_counter * MONITOR_READ_TIMEOUT_MS > MONITOR_NOOP_TIMEOUT_MS) {
+      // Do noop & reconnect if needed
+      ret = reconnect_monitor();
+      if (ret != 0) {
+        timeout_counter = MONITOR_NOOP_TIMEOUT_MS / MONITOR_READ_TIMEOUT_MS + 1;
+        atclient_monitor_response_free(&message);
+        continue;
+      } else {
+        timeout_counter = 0;
+      }
+    }
+
     // Read the next monitor message
-    int ret = atclient_monitor_read(&monitor_ctx, &worker, &message, &monitor_hooks);
+    ret = atclient_monitor_read(&monitor_ctx, &worker, &message, &monitor_hooks);
     if (ret != 0) {
-      atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Possible bad state: monitor read failed (ret: %d)\n",
-                   ret);
+      atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR,
+                   "Possible bad state: monitor read failed, resetting connection (ret: %d)\n", ret);
+      timeout_counter = MONITOR_NOOP_TIMEOUT_MS / MONITOR_READ_TIMEOUT_MS + 1;
     }
 
     atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_DEBUG, "Received message of type: %d\n", message.type);
-
     switch (message.type) {
     case ATCLIENT_MONITOR_MESSAGE_TYPE_EMPTY:
-      // We got a timeout, nothing to read, nothing to do
+      timeout_counter++;
       break;
     case ATCLIENT_MONITOR_ERROR_READ:
-      if (!atclient_monitor_is_connected(&monitor_ctx)) {
-        atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR,
-                     "Seems the monitor connection is down, trying to reconnect\n");
-
-        int ret = atclient_monitor_pkam_authenticate(&monitor_ctx, params.atsign, &atkeys, NULL);
-        if (ret != 0) {
-          atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR,
-                       "Monitor connection failed to reconnect, trying again in 1 second...\n");
-          sleep(1);
-          break;
-        }
-
-        ret = atclient_monitor_start(&monitor_ctx, regex);
-        if (ret != 0) {
-          atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Monitor verb failed to restart.\n");
-          break;
-        }
-
-        atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_INFO, "Reconnected the monitor connection.\n");
-      }
+      timeout_counter = MONITOR_NOOP_TIMEOUT_MS / MONITOR_READ_TIMEOUT_MS + 1;
       break;
     case ATCLIENT_MONITOR_MESSAGE_TYPE_DATA_RESPONSE:
+      timeout_counter = 0;
       atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_DEBUG, "Received a data response: %s\n", message.data_response);
       break;
     case ATCLIENT_MONITOR_MESSAGE_TYPE_ERROR_RESPONSE:
+      timeout_counter = 0;
       atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Received an error response: %s\n",
                    message.error_response);
       break;
@@ -458,12 +462,15 @@ void main_loop() {
       atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Received a NONE notification type\n");
       break;
     case ATCLIENT_MONITOR_ERROR_PARSE_NOTIFICATION:
+      timeout_counter = MONITOR_NOOP_TIMEOUT_MS + 1;
       atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to parse the notification\n");
       break;
     case ATCLIENT_MONITOR_ERROR_DECRYPT_NOTIFICATION:
+      timeout_counter = MONITOR_NOOP_TIMEOUT_MS + 1;
       atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to decrypt the notification\n");
       break;
     case ATCLIENT_MONITOR_MESSAGE_TYPE_NOTIFICATION: {
+      timeout_counter = 0;
       bool is_init = atclient_atnotification_is_decrypted_value_initialized(&message.notification);
       bool has_key = atclient_atnotification_is_key_initialized(&message.notification);
       if (is_init) {
@@ -522,7 +529,6 @@ void main_loop() {
           // DO NOT USE permitopen, use npa_permitopen
         }
 
-        // TODO: maybe multithread these handlers
         switch (notification_key) {
         case NK_SSHPUBLICKEY:
           atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_DEBUG, "Executing handle_sshpublickey\n");
@@ -604,7 +610,7 @@ static int reconnect_atclient() {
 
   if (!atclient_is_connected(&worker)) {
     atlogger_log(TAG, ATLOGGER_LOGGING_LEVEL_INFO, "Worker client is not connected, attempting to reconnect:\n");
-    ret = atclient_pkam_authenticate(&worker, params.atsign, &atkeys, NULL);
+    ret = atclient_pkam_authenticate(&worker, params.atsign, &atkeys, NULL, NULL);
 
     if (ret != 0) {
       atlogger_log(TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to reconnect to the atServer.\n");
@@ -621,4 +627,25 @@ static int reconnect_atclient() {
 
 exit:
   return ret;
+}
+
+static int reconnect_monitor() {
+  atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Seems the monitor connection is down, trying to reconnect\n");
+
+  int ret = atclient_monitor_pkam_authenticate(&monitor_ctx, params.atsign, &atkeys, NULL);
+  if (ret != 0) {
+    atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR,
+                 "Monitor connection failed to reconnect, trying again in 1 second...\n");
+    sleep(1);
+    return ret;
+  }
+
+  ret = atclient_monitor_start(&monitor_ctx, regex);
+  if (ret != 0) {
+    atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Monitor verb failed to restart.\n");
+    return ret;
+  }
+
+  atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_INFO, "Reconnected the monitor connection.\n");
+  return 0;
 }

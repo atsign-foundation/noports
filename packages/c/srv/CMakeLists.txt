@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.19)
 set(CMAKE_C_STANDARD 99)
 cmake_policy(SET CMP0135 NEW)
 
-project(srv VERSION 0.0.1 LANGUAGES C)
+project(srv VERSION 0.4.1 LANGUAGES C)
 
 # 1. Variables - you are free to edit anything in this step
 
@@ -52,7 +52,7 @@ include(${CMAKE_CURRENT_SOURCE_DIR}/../cmake/atsdk.cmake)
 find_package(argparse-static QUIET)
 if(NOT argparse-static_FOUND)
   message(STATUS "[SRV] argparse not found, fetching from local repository..")
-  fetchcontent_declare(argparse-static SOURCE_DIR ${ARGPARSE_DIR})
+  FetchContent_Declare(argparse-static SOURCE_DIR ${ARGPARSE_DIR})
   list(APPEND SRV_TARGETS_TO_INSTALL argparse-static)
   list(APPEND SRV_MAKE_AVAILABLE argparse-static)
 else()
@@ -61,7 +61,7 @@ endif()
 
 # 4c. make everything available
 if(SRV_MAKE_AVAILABLE)
-  fetchcontent_makeavailable(${SRV_MAKE_AVAILABLE})
+  FetchContent_MakeAvailable(${SRV_MAKE_AVAILABLE})
 endif()
 
 # 5. Create srv_lib library target

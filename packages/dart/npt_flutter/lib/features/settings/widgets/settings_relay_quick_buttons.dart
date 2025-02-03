@@ -21,40 +21,44 @@ class SettingsRelayQuickButtons extends StatelessWidget {
       return Scrollbar(
         controller: controller,
         thumbVisibility: true,
-        child: Container(
-          padding: const EdgeInsets.only(bottom: Sizes.p20),
-          height: Sizes.p70,
-          child: ListView(
+        child: SingleChildScrollView(
             controller: controller,
             scrollDirection: Axis.horizontal,
-            children: [
-              ...RelayOptions.values.map(
-                (e) => Padding(
-                  padding: const EdgeInsets.only(right: Sizes.p10),
-                  child: CustomContainer.foreground(
-                    key: Key(e.name),
-                    child: SizedBox(
-                      width: Sizes.p180,
-                      child: RadioListTile(
-                        title: Text(e.regions),
-                        value: e.relayAtsign,
-                        groupValue: relayAtsign,
-                        onChanged: (value) {
-                          var bloc = context.read<SettingsBloc>();
-                          bloc.add(SettingsEditEvent(
-                            settings: (bloc.state as SettingsLoadedState).settings.copyWith(relayAtsign: value),
-                            save: true,
-                          ));
-                        },
+            child: Padding(
+              padding: const EdgeInsets.only(bottom: Sizes.p10),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  ...RelayOptions.values.map(
+                    (e) => Padding(
+                      padding: const EdgeInsets.only(right: Sizes.p10, top: Sizes.p4),
+                      child: CustomContainer.foreground(
+                        key: Key(e.name),
+                        child: SizedBox(
+                          width: Sizes.p200,
+                          child: RadioListTile(
+                            title: Text(e.regions),
+                            value: e.relayAtsign,
+                            groupValue: relayAtsign,
+                            onChanged: (value) {
+                              var bloc = context.read<SettingsBloc>();
+                              bloc.add(SettingsEditEvent(
+                                settings: (bloc.state as SettingsLoadedState).settings.copyWith(relayAtsign: value),
+                                save: true,
+                              ));
+                            },
+                          ),
+                        ),
                       ),
                     ),
                   ),
-                ),
+                  const Padding(
+                    padding: EdgeInsets.only(top: Sizes.p4),
+                    child: SettingsRelayAtSignTextField(),
+                  ),
+                ],
               ),
-              const SettingsRelayAtSignTextField(),
-            ],
-          ),
-        ),
+            )),
       );
     });
   }

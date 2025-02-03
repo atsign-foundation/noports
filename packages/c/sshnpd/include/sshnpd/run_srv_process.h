@@ -1,7 +1,7 @@
 #ifndef RUN_SRV_H
 #define RUN_SRV_H
 
-#include <atclient/cjson.h>
+#include <atclient/json.h>
 #include <stdbool.h>
 #include <stdint.h>
 

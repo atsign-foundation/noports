@@ -8,12 +8,14 @@ import 'package:npt_flutter/styles/sizes.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 class ProfileStatusIndicator extends StatelessWidget {
-  const ProfileStatusIndicator({super.key});
-
+  const ProfileStatusIndicator({required this.width, super.key});
+  final double width;
   @override
   Widget build(BuildContext context) {
     final strings = AppLocalizations.of(context)!;
-    return Expanded(
+
+    return SizedBox(
+      width: width,
       child: BlocBuilder<ProfileBloc, ProfileState>(builder: (BuildContext context, ProfileState state) {
         log(state.runtimeType.toString());
         if (state is ProfileLoading) {
@@ -105,6 +107,7 @@ class StatusMessage extends StatelessWidget {
     return Tooltip(
       message: tooltip,
       child: ListTile(
+        contentPadding: EdgeInsets.zero,
         leading: PhosphorIcon(
           icon,
           color: color,

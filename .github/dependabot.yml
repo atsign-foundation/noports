@@ -26,6 +26,7 @@ updates:
     directories:
       - "/packages/dart/sshnoports/"
       - "/packages/dart/sshnp_flutter/"
+      - "/apps/admin/admin_api/"
     schedule:
       interval: "daily"
     groups:

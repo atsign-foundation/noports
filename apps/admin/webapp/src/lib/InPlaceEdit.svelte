@@ -38,10 +38,12 @@
 </script>
 
 {#if editing}
+    <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
     <form on:submit|preventDefault={submit} on:keydown={keydown}>
         <input bind:value on:blur={submit} {required} use:focus/>
     </form>
 {:else}
+    <!-- svelte-ignore a11y_no_static_element_interactions -->
     <div on:dblclick={edit}>
         {value}
     </div>

@@ -5,6 +5,10 @@ description: How to install NoPorts as part of creating a new VM
 
 # Cloud Installation Guides
 
+{% hint style="info" %}
+This is a generic cloud-init guide, we also have some [cloud specific guides](./#cloud-specific-guides) below
+{% endhint %}
+
 The NoPorts daemon can be installed on a Linux cloud virtual machine (VM) using a cloud-init script of the form:
 
 ```bash

@@ -1,12 +1,14 @@
 ---
 icon: folder-tree
+description: >-
+  In this guide, we demonstrate how to use the NoPorts Tunnel to mount a SMB
+  share on a remote machine on 192.168.1.90 to localhost:9000 so we can access
+  the SMB share service locally.
 ---
 
 # SMB
 
-## Overview
 
-In this guide, we demonstrate how to use the NoPorts Tunnel to mount a SMB share on a remote machine on 192.168.1.90 to localhost:9000 so we can access the SMB share service locally.
 
 The command should look like:
 
@@ -31,8 +33,6 @@ Now you can mount the SMB share locally using the finder app ( Go->Connect to se
 <figure><img src="../.gitbook/assets/Screenshot 2024-07-03 at 19.52.04.png" alt=""><figcaption></figcaption></figure>
 
 Once mounted you can use the file share as normal, as you dismount the file share the NPT command will disconnect.
-
-
 
 {% hint style="info" %}
 Windows mounting on a non-standard port is currently not supported by Microsoft but they are working on it.

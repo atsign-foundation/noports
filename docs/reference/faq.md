@@ -1,5 +1,6 @@
 ---
 icon: comments-question-check
+description: Common questions about NoPorts
 ---
 
 # FAQ
@@ -12,33 +13,33 @@ SSH No Ports is focused on providing end-to-end encrypted and authenticated acce
 
 SSH No Ports does not require any open (listening) ports on external interfaces, so there is no network attack surface on devices using SSH No Ports.
 
-SSH No ports provide socket rendezvous points like Ngrok, but connections are authenticated then connected. Once connected, the connection is encrypted with ephemeral (AES256) keys that the socket rendezvous point never has or needs.
+SSH No ports provide relays like Ngrok, but connections are authenticated then connected. Once connected, the connection is encrypted with ephemeral (AES256) keys that the relay never has or needs.
 
 SSH No ports abstracts away the TCP/IP layer, so whilst IP address on the client or device may change, the command you use never does.
 
-## **Is the socket rendezvous (SR) necessary?**
+## **Is the relay necessary?**
 
-The SR ensures that connections from client and server are always outbound, removing the need for listening ports, firewall rules, and network attack surfurces on devices.
+The relay ensures that connections from client and server are always outbound, removing the need for listening ports, firewall rules, and network attack surfaces on devices.
 
-SSH No ports uses TCP sockets to communicate. "Hole punching" can work sometimes, but we decided to never do that. Using the socket rendezvous, you know that SSH No Ports will always work and is friendly to both network admins and firewall rules.
+SSH No ports uses TCP sockets to communicate. "Hole punching" can work sometimes, but we decided to never do that. Using the relay, you know that SSH No Ports will always work and is friendly to both network admins and firewall rules.
 
-For most customers our SR service is robust and placed regionally. The SR code is open and the binaries are part of the distribution, so you can place your own SR where it makes sense for your network.
+For most customers our relay service is robust and placed regionally. The relay code is open and the binaries are part of the distribution, so you can place your own relay where it makes sense for your network.
 
-## **If a bad actor takes down the socket rendezvous (SR), does the tool fail?**
+## **If a bad actor takes down the relay, does the tool fail?**
 
-In the unlikely event that a bad actor takes down an SR, the tool will indeed fail. Fortunately, we run multiple SRs, so if one is down or unavailable, you can easily switch to another.
+In the unlikely event that a bad actor takes down an relay, the tool will indeed fail. Fortunately, we run multiple relays, so if one is down or unavailable, you can easily switch to another.
 
-## **Since the device and the client need to connect out to the socket rendezvous (SR), do I need to open ports on my firewall for them to connect out to the SR?**
+## **Since the device and the client need to connect out to the relays, do I need to open ports on my firewall for them to connect out to the SR?**
 
-You do not need to open any inbound ports to connect out to the SR. However, the outbound traffic to the SR server does need to be open. Outbound access is, in most situations, automatically allowed so things just work. If you work in a location where outbound access is also controlled, then please contact us as we have options for for your IT team.
+You do not need to open any inbound ports to connect out to the relay. However, the outbound traffic to the relay server does need to be open. Outbound access is, in most situations, automatically allowed so things just work. If you work in a location where outbound access is also controlled, then please contact us as we have options for for your IT team.
 
-## **Who pays the ingress & egress costs to the socket rendezvous (SR)?**
+## **Who pays the ingress & egress costs to the relay?**
 
 These costs are included in the SSH No Ports subscription.
 
 ## **Why is additional encryption needed when SSH provides its own encryption?**
 
-Additional encryption protects the request and rendezvous information (on the SR) that is sent from the client device to the remote device’s atServer and ultimately to the client. Without encryption, this information could be intercepted, and a bad actor could meet the client device at the socket rendezvous. This is precisely how the [https://terrapin-attack.com/](https://terrapin-attack.com/) works. Using SSH No Ports mitigates any man-in-the-middle attacks like Terrapin.
+Additional encryption protects the request and rendezvous information (on the relay) that is sent from the client device to the remote device’s atServer and ultimately to the client. Without encryption, this information could be intercepted, and a bad actor could meet the client device at the socket rendezvous. This is precisely how the [https://terrapin-attack.com/](https://terrapin-attack.com/) works. Using SSH No Ports mitigates any man-in-the-middle attacks like Terrapin.
 
 ## **Is SSH No Ports a reverse SSH tunnel?**
 

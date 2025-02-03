@@ -1,3 +1,9 @@
+---
+description: >-
+  Follow these two steps to install the NoPorts daemon so you can install your
+  own background service
+---
+
 # Standalone Binaries
 
 ### 1. Run the installer

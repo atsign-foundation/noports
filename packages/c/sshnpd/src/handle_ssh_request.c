@@ -3,7 +3,7 @@
 #include <atchops/base64.h>
 #include <atchops/iv.h>
 #include <atchops/rsa_key.h>
-#include <atclient/cjson.h>
+#include <atclient/json.h>
 #include <atclient/monitor.h>
 #include <atclient/notify.h>
 #include <atclient/string_utils.h>
@@ -67,8 +67,8 @@ void handle_ssh_request(atclient *atclient, pthread_mutex_t *atclient_lock, sshn
   bool encrypt_rvd_traffic = cJSON_IsTrue(cJSON_GetObjectItem(payload, "encryptRvdTraffic"));
   unsigned char *session_aes_key = NULL;
   unsigned char *session_iv = NULL;
-  unsigned char *session_aes_key_base64 = NULL;
-  unsigned char *session_iv_base64 = NULL;
+  char *session_aes_key_base64 = NULL;
+  char *session_iv_base64 = NULL;
 
   if (encrypt_rvd_traffic) {
     res = setup_rvd_session_encryption(payload, &session_aes_key, &session_aes_key_base64, &session_iv,

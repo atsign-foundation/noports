@@ -1,19 +1,13 @@
 import 'package:flutter/material.dart';
-import 'package:npt_flutter/features/settings/models/settings.dart';
-import 'package:npt_flutter/styles/sizes.dart';
 
 class ProfileHeaderColumn extends StatelessWidget {
-  const ProfileHeaderColumn({super.key, required this.title, this.layout = PreferredViewLayout.sshStyle});
+  const ProfileHeaderColumn({super.key, required this.title, required this.width});
 
   final String title;
-  final PreferredViewLayout layout;
+  final double width;
 
   @override
   Widget build(BuildContext context) {
-    final deviceWidth = MediaQuery.of(context).size.width;
-    final double widthFactor =
-        layout == PreferredViewLayout.sshStyle ? Sizes.profileFieldsWidthFactor : Sizes.profileFieldsWidthFactorAlt;
-
-    return SizedBox(width: deviceWidth * widthFactor, child: Text(title));
+    return SizedBox(width: width, child: Text(title));
   }
 }

@@ -9,7 +9,8 @@
 # as of 5th Feb 2024 - Will check state as 3.3 Stable is released
 #FROM dart:beta-sdk AS buildimage
 
-FROM dart:3.6.0@sha256:b677df29e01bca3a2d5bdaffe204498834d56a4ed38ff56c0ac6a42d6541b58e  AS buildimage
+FROM dart:3.6.1@sha256:a071f0322c7c80469842f7c8258de51d1946ba9b79d09bb8fc4dc969487a68ca  AS buildimage
+ARG TARGETARCH
 ENV PACKAGEDIR=packages/dart/sshnoports
 ENV OPENSSH=tools/static-openssh
 ENV BINARYDIR=/usr/local/at
@@ -39,7 +40,7 @@ RUN \
   # build static openssh binaries
   apt update && apt install -y curl gcc make autoconf ; \
   cd ${WORKDIR}/${OPENSSH} ; \
-  ./static-openssh.sh ; \
+  ARCH=${TARGETARCH} ./static-openssh.sh ; \
   cp build/openssh-portable*/ssh-keygen ${BINARYDIR}/ ; \ 
   cp build/openssh-portable*/ssh ${BINARYDIR}/ ; \
   chmod 755 ${BINARYDIR}/ssh-keygen ; \

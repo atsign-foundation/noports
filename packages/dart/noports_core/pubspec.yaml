@@ -10,8 +10,8 @@ environment:
 dependencies:
   args: ^2.4.2
   at_chops: ^2.0.1
-  at_client: ^3.2.2
-  at_commons: ^5.0.0
+  at_client: ^3.4.0
+  at_commons: ^5.1.2
   at_utils: ^3.0.19
   cryptography: ^2.7.0
   dartssh2: ^2.8.2

@@ -57,6 +57,10 @@ jobs:
             output-name: sshnp-linux-x64
             ext: ""
             bundle: "shell"
+          - os: ubuntu-24.04-arm
+            output-name: sshnp-linux-arm64
+            ext: ""
+            bundle: "shell"
           - os: macos-13
             output-name: sshnp-macos-x64
             ext: ""
@@ -70,18 +74,21 @@ jobs:
             ext: ".exe"
             bundle: "windows"
     steps:
-      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - name: Checkout multibuild branch
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
           ref: multibuild-${{github.run_number}}
-      - uses: dart-lang/setup-dart@e630b99d28a3b71860378cafdc2a067c71107f94 # v1.7.0
-      # create directories needed for build
-      - run: |
+      - name: Setup dart
+        uses: dart-lang/setup-dart@e630b99d28a3b71860378cafdc2a067c71107f94 # v1.7.0
+      - name: Create directories
+        run: |
           mkdir sshnp
           mkdir tarball
-      - if: ${{ matrix.os != 'windows-latest' }}
+      - name: Create debug directory (Windows only)
+        if: ${{ matrix.os != 'windows-latest' }}
         run: mkdir sshnp/debug
-      # compile binaries
-      - run: |
+      - name: Compile binaries
+        run: |
           dart pub get --enforce-lockfile
           dart run build_runner build --delete-conflicting-outputs
           dart compile exe bin/activate_cli.dart -v -o sshnp/at_activate${{ matrix.ext }}
@@ -92,23 +99,23 @@ jobs:
           dart compile exe bin/sshnpd.dart -v -o sshnp/sshnpd${{ matrix.ext }}
           dart compile exe bin/srv.dart -v -o sshnp/srv${{ matrix.ext }}
           dart compile exe bin/npp_atserver.dart -v -o sshnp/npp_atserver${{ matrix.ext }}
-      - name: build admin API
+      - name: Build admin API
         working-directory: ./apps/admin/admin_api
         run: |
           dart pub get --enforce-lockfile
           dart compile exe bin/np_admin.dart -v -o ../../../packages/dart/sshnoports/sshnp/np_admin${{ matrix.ext }}
-      - if: ${{ matrix.os != 'windows-latest' }}
+      - name: Compile debug binaries (MacOS and Linux only)
+        if: ${{ matrix.os != 'windows-latest' }}
         run: |
           dart compile exe bin/srvd.dart -v -o sshnp/srvd${{ matrix.ext }}
           dart compile exe bin/srvd.dart -D ENABLE_SNOOP=true -v -o sshnp/debug/srvd${{ matrix.ext }}
-      # copy additional bundle items to build
-      - run: |
+      - name: Copy additional bundle items to build
+        run: |
           cp -r bundles/core/* sshnp/
           cp -r bundles/${{ matrix.bundle }}/* sshnp/
           cp LICENSE sshnp
-      # codesign for apple
-      - if: ${{ matrix.os == 'macos-13' || matrix.os == 'macos-14' }}
-        name: Import certificates
+      - name: Codesign (MacOS only)
+        if: ${{ matrix.os == 'macos-13' || matrix.os == 'macos-14' }}
         env:
           MACOS_CODESIGN_CERT: ${{ secrets.MACOS_CODESIGN_CERT }}
           MACOS_CODESIGN_CERT_PASSWORD:
@@ -136,18 +143,20 @@ jobs:
             --timestamp \
             -v \
             sshnp/{sshnp,sshnpd,srv,srvd,at_activate,debug/srvd,npt,npa_file,npp_file,npp_atserver,np_admin}
-      # zip the build
-      - if: ${{ matrix.os == 'macos-13' || matrix.os == 'macos-14' }}
+      - name: Compress to zip (MacOS only)
+        if: ${{ matrix.os == 'macos-13' || matrix.os == 'macos-14' }}
         run:
           ditto -c -k --keepParent sshnp tarball/${{ matrix.output-name }}.zip
-      - if: ${{ matrix.os == 'ubuntu-latest' }}
+      - name: Compress to tgz (Linux only)
+        if: ${{ matrix.os == 'ubuntu-latest' || matrix.os == 'ubuntu-24.04-arm'  }}
         run: tar -cvzf tarball/${{ matrix.output-name }}.tgz sshnp
-      - if: ${{ matrix.os == 'windows-latest' }}
+      - name: Compress to zip (Windows Only)
+        if: ${{ matrix.os == 'windows-latest' }}
         run:
           Compress-Archive -Path sshnp -Destination tarball/${{
           matrix.output-name }}.zip
-      # notarize the build
-      - if: ${{ matrix.os == 'macos-13' || matrix.os == 'macos-14' }}
+      - name: Notarize the build (MacOS only)
+        if: ${{ matrix.os == 'macos-13' || matrix.os == 'macos-14' }}
         env:
           MACOS_APPLE_ID: ${{ secrets.MACOS_APPLE_ID }}
           MACOS_TEAM_ID: ${{ secrets.MACOS_TEAM_ID }}
@@ -158,8 +167,8 @@ jobs:
             --team-id "$MACOS_TEAM_ID" \
             --password "$MACOS_APPLE_ID_PASSWORD" \
             --wait
-      # upload the build
-      - uses: actions/upload-artifact@b4b15b8c7c6ac21ea08fcf65892d2ee8f75cf882 # v4.4.3
+      - name: Upload the build
+        uses: actions/upload-artifact@65c4c4a1ddee5b72f698fdd19549f0f0fb45cf08 # v4.6.0
         with:
           name:
             ${{ matrix.output-name
@@ -169,35 +178,37 @@ jobs:
 
   other_build:
     needs: verify_tags
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04-arm
     strategy:
       matrix:
-        # platform: [linux/arm/v7, linux/arm64, linux/riscv64]
-        platform: [linux/arm/v7, linux/arm64]
+        platform: [linux/arm/v7, linux/riscv64]
         include:
           - platform: linux/arm/v7
             output-name: sshnp-linux-arm
-          - platform: linux/arm64
-            output-name: sshnp-linux-arm64
-#          - platform: linux/riscv64
-#            output-name: sshnp-linux-riscv64
+          - platform: linux/riscv64
+            output-name: sshnp-linux-riscv64
     steps:
-      - if: ${{ ! inputs.main_build_only }}
+      - name: Checkout multibuild branch
+        if: ${{ ! inputs.main_build_only }}
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
           ref: multibuild-${{github.run_number}}
-      - if: ${{ ! inputs.main_build_only }}
-        uses: docker/setup-qemu-action@49b3bc8e6bdd4a60e6116a5414239cba5943d3cf # v3.2.0
-      - if: ${{ ! inputs.main_build_only }}
+      - name: Setup QEMU
+        if: ${{ ! inputs.main_build_only }}
+        uses: docker/setup-qemu-action@53851d14592bedcffcf25ea515637cff71ef929a # v3.3.0
+      - name: Setup Docker BuildX
+        if: ${{ ! inputs.main_build_only }}
         uses: docker/setup-buildx-action@6524bf65af31da8d45b59e8c27de4bd072b392f5 # v3.8.0
-      - if: ${{ ! inputs.main_build_only }}
+      - name: Run build inside of Docker
+        if: ${{ ! inputs.main_build_only }}
         run: |
           docker buildx build -t atsigncompany/sshnptarball -f ./tools/multibuild/Dockerfile.package \
           --platform ${{ matrix.platform }} -o type=tar,dest=bins.tar .
           mkdir tarballs
           tar -xvf bins.tar -C tarballs
-      - if: ${{ ! inputs.main_build_only }}
-        uses: actions/upload-artifact@b4b15b8c7c6ac21ea08fcf65892d2ee8f75cf882 # v4.4.3
+      - name: Upload the build
+        if: ${{ ! inputs.main_build_only }}
+        uses: actions/upload-artifact@65c4c4a1ddee5b72f698fdd19549f0f0fb45cf08 # v4.6.0
         with:
           name:
             ${{ matrix.output-name
@@ -209,17 +220,18 @@ jobs:
     needs: verify_tags
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - name: Checkout multibuild branch
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
           ref: multibuild-${{github.run_number}}
-      - uses: actions/setup-node@39370e3970a6d050c480ffad4ff0ed4d3fdee5af # v4.1.0
+      - name: Setup node-version
+        uses: actions/setup-node@1d0ff469b7ec7b3cb9d8673fde0c81c44821de2a # v4.2.0
         with:
           node-version: '20.17.0'
-      # setup required npm version
-      - run: |
+      - name: setup required npm version
+        run: |
           npm install -g npm@10.8.2
-      # create directory needed for build
-      - name: build admin webapp
+      - name: Build admin webapp
         working-directory: ./apps/admin/webapp
         run: |
           mkdir -p sshnp/web/admin
@@ -228,8 +240,8 @@ jobs:
           npm run build
           cp -r dist/* sshnp/web/admin/
           tar -cvzf tarball/sshnp-web-admin-noarch.tgz sshnp
-      # upload the build
-      - uses: actions/upload-artifact@b4b15b8c7c6ac21ea08fcf65892d2ee8f75cf882 # v4.4.3
+      - name: Upload the build
+        uses: actions/upload-artifact@65c4c4a1ddee5b72f698fdd19549f0f0fb45cf08 # v4.6.0
         with:
           name:
             sshnp-web-admin-noarch-${{github.ref_name}}-${{github.run_number
@@ -258,7 +270,7 @@ jobs:
           REF=${{ github.ref }}
           TAG=${REF:11}
           write_metadata universal.sh sshnp_version "$TAG"
-      - uses: actions/upload-artifact@b4b15b8c7c6ac21ea08fcf65892d2ee8f75cf882 # v4.4.3
+      - uses: actions/upload-artifact@65c4c4a1ddee5b72f698fdd19549f0f0fb45cf08 # v4.6.0
         with:
           name: universal.sh-${{github.ref_name}}-${{github.run_number}}-${{github.run_attempt}}
           path: ./packages/dart/sshnoports/bundles/universal.sh
@@ -272,7 +284,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
-      - uses: actions/upload-artifact@b4b15b8c7c6ac21ea08fcf65892d2ee8f75cf882 # v4.4.3
+      - uses: actions/upload-artifact@65c4c4a1ddee5b72f698fdd19549f0f0fb45cf08 # v4.6.0
         with:
           name: universal.ps1-${{github.ref_name}}-${{github.run_number}}-${{github.run_attempt}}
           path: ./packages/dart/sshnoports/bundles/universal.ps1
@@ -335,7 +347,7 @@ jobs:
         working-directory: tarballs
         run: |
           echo "hashes=$(cat checksums.txt | base64 -w0)" >> "$GITHUB_OUTPUT"
-      - uses: actions/attest-build-provenance@7668571508540a607bdfd90a87a560489fe372eb # v2.1.0
+      - uses: actions/attest-build-provenance@520d128f165991a6c774bcb264f323e3d70747f4 # v2.2.0
         with:
           subject-path: "tarballs/**"
 

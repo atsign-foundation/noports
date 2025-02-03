@@ -125,7 +125,7 @@ namespace NoPortsInstaller
             {
                 return AtsignStatus.Activated;
             }
-            if (exitCode == "1")
+            if (exitCode == "1" || exitCode == "3")
             {
                 return AtsignStatus.NotActivated;
             }

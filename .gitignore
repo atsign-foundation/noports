@@ -6,6 +6,8 @@ pubspec_overrides.yaml
 .dart_tool/
 .packages
 
+
+
 # Binaries build from dart/sshnoports
 packages/dart/sshnoports/bin/activate_cli
 packages/dart/sshnoports/bin/at_activate
@@ -18,6 +20,9 @@ packages/dart/sshnoports/bin/sshnp
 packages/dart/sshnoports/bin/sshnpd
 
 packages/dart/sshnoports/build/
+
+# Visual Studio
+.vs/*
 
 # Jetbrains
 .idea/*
@@ -46,7 +51,6 @@ build/
 
 # Python
 dist/
-poetry.lock
 __pycache__
 
 .env

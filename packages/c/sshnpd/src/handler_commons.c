@@ -8,7 +8,7 @@
 #include "sshnpd/sshnpd.h"
 #include <atchops/constants.h>
 #include <atchops/rsa_key.h>
-#include <atclient/cjson.h>
+#include <atclient/json.h>
 #include <atlogger/atlogger.h>
 #include <sshnpd/handler_commons.h>
 #include <stdlib.h>
@@ -72,8 +72,8 @@ int verify_envelope_signature_from(cJSON *envelope, char *requesting_atsign, atc
   char *signing_algo_str = cJSON_GetStringValue(signing_algo);
 
   size_t valueolen = 0;
-  res = atchops_base64_decode((unsigned char *)signature_str, strlen(signature_str), (unsigned char *)buffer,
-                              strlen(buffer), &valueolen);
+  res =
+      atchops_base64_decode(signature_str, strlen(signature_str), (unsigned char *)buffer, strlen(buffer), &valueolen);
 
   if (res != 0) {
     atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "atchops_base64_decode: %d\n", res);
@@ -260,7 +260,7 @@ int create_rvd_auth_string(cJSON *payload, atchops_rsa_key_private_key *signing_
     return res;
   }
 
-  unsigned char base64signature[384];
+  char base64signature[384];
   memset(base64signature, 0, BYTES(384));
 
   size_t sig_len;
@@ -287,9 +287,8 @@ int create_rvd_auth_string(cJSON *payload, atchops_rsa_key_private_key *signing_
   return 0;
 }
 
-int setup_rvd_session_encryption(cJSON *payload, unsigned char **session_aes_key,
-                                 unsigned char **session_aes_key_base64, unsigned char **session_iv,
-                                 unsigned char **session_iv_base64) {
+int setup_rvd_session_encryption(cJSON *payload, unsigned char **session_aes_key, char **session_aes_key_base64,
+                                 unsigned char **session_iv, char **session_iv_base64) {
   cJSON *client_ephemeral_pk = cJSON_GetObjectItem(payload, "clientEphemeralPK");
   cJSON *client_ephemeral_pk_type = cJSON_GetObjectItem(payload, "clientEphemeralPKType");
   unsigned char key[32], iv[16];
@@ -319,7 +318,7 @@ int setup_rvd_session_encryption(cJSON *payload, unsigned char **session_aes_key
   }
 
   memset(*session_aes_key, 0, BYTES(49));
-  res = atchops_base64_encode(key, 32, *session_aes_key, 49, &session_aes_key_len);
+  res = atchops_base64_encode(key, 32, (char *)*session_aes_key, 49, &session_aes_key_len);
   if (res != 0) {
     atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to generate session aes key\n");
     free(*session_aes_key);
@@ -341,7 +340,7 @@ int setup_rvd_session_encryption(cJSON *payload, unsigned char **session_aes_key
   }
 
   memset(*session_iv, 0, BYTES(25));
-  res = atchops_base64_encode(iv, 16, *session_iv, 25, &session_iv_len);
+  res = atchops_base64_encode(iv, 16, (char *)*session_iv, 25, &session_iv_len);
   if (res != 0) {
     atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to generate session iv\n");
     free(*session_aes_key);
@@ -479,7 +478,7 @@ int setup_rvd_session_encryption(cJSON *payload, unsigned char **session_aes_key
 }
 
 int send_success_payload(cJSON *payload, atclient *atclient, pthread_mutex_t *atclient_lock, sshnpd_params *params,
-                         unsigned char *session_aes_key_base64, unsigned char *session_iv_base64,
+                         char *session_aes_key_base64, char *session_iv_base64,
                          atchops_rsa_key_private_key *signing_key, char *requesting_atsign) {
   int res = 0;
   cJSON *session_id = cJSON_GetObjectItem(payload, "sessionId");
@@ -503,7 +502,7 @@ int send_success_payload(cJSON *payload, atclient *atclient, pthread_mutex_t *at
     goto clean_json;
   }
 
-  unsigned char base64signature[384];
+  char base64signature[384];
   memset(base64signature, 0, sizeof(unsigned char) * 384);
 
   size_t sig_len;

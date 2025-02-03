@@ -5,13 +5,12 @@ import 'package:npt_flutter/features/profile/profile.dart';
 import '../../../styles/sizes.dart';
 
 class ProfileDeviceName extends StatelessWidget {
-  const ProfileDeviceName({super.key});
-
+  const ProfileDeviceName({required this.width, super.key});
+  final double width;
   @override
   Widget build(BuildContext context) {
-    final deviceWidth = MediaQuery.of(context).size.width;
     return SizedBox(
-      width: deviceWidth * Sizes.profileFieldsWidthFactor,
+      width: width,
       child: SingleChildScrollView(
         scrollDirection: Axis.horizontal,
         child: BlocSelector<ProfileBloc, ProfileState, (String, String)?>(selector: (state) {

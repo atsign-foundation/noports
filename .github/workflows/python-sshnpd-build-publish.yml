@@ -22,14 +22,14 @@ jobs:
       uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
 
     - name: Set up Python
-      uses: actions/setup-python@0b93645e9fea7318ecaed2b359559ac225c90a2b # v5.3.0
+      uses: actions/setup-python@42375524e23c412d93fb67b49958b491fce71c38 # v5.4.0
       with:
-          python-version: '3.11'
+          python-version: '3.13'
 
     - name: Install Poetry
-      uses: abatilo/actions-poetry@e78f54a89cb052fff327414dd9ff010b5d2b4dbd # v3.0.1
+      uses: abatilo/actions-poetry@3765cf608f2d4a72178a9fc5b918668e542b89b1 # v4.0.0
       with:
-        poetry-version: '1.8.3'
+        poetry-version: '2.0.1'
 
     # The dark mode and light mode Atsign logos in the GitHub README don't
     # show properly on PyPI so we have a copy of the README.md in
@@ -49,7 +49,7 @@ jobs:
         cp -r dist/ $GITHUB_WORKSPACE
 
     - name: Store the distribution packages
-      uses: actions/upload-artifact@b4b15b8c7c6ac21ea08fcf65892d2ee8f75cf882 # v4.4.3
+      uses: actions/upload-artifact@65c4c4a1ddee5b72f698fdd19549f0f0fb45cf08 # v4.6.0
       with:
         name: sshnpd-python-package
         path: dist/
@@ -74,7 +74,7 @@ jobs:
         name: sshnpd-python-package
         path: dist/
     - name: Publish distribution to TestPyPI
-      uses: pypa/gh-action-pypi-publish@67339c736fd9354cd4f8cb0b744f2b82a74b5c70 # v1.12.3
+      uses: pypa/gh-action-pypi-publish@76f52bc884231f62b9a034ebfe128415bbaabdfc # v1.12.4
       with:
         skip-existing: true
         attestations: true
@@ -99,7 +99,7 @@ jobs:
         name: sshnpd-python-package
         path: dist/
     - name: Publish distribution to PyPI
-      uses: pypa/gh-action-pypi-publish@67339c736fd9354cd4f8cb0b744f2b82a74b5c70 # v1.12.3
+      uses: pypa/gh-action-pypi-publish@76f52bc884231f62b9a034ebfe128415bbaabdfc # v1.12.4
       with:
         attestations: true
 
@@ -115,10 +115,10 @@ jobs:
       id-token: write  # IMPORTANT: mandatory for sigstore
       attestations: write
     steps:
-    - name: Checkout requirements.txt
+    - name: Checkout poetry.lock
       uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
       with:
-        sparse-checkout: packages/python/sshnpd/requirements.txt
+        sparse-checkout: packages/python/sshnpd/poetry.lock
         sparse-checkout-cone-mode: false
     - name: Download all the dists
       uses: actions/download-artifact@fa0a91b85d4f404e444e00e005971372dc801d16 # v4.1.8
@@ -130,7 +130,7 @@ jobs:
       env:
         TOKEN: ${{ secrets.SBOMIFY_TOKEN }}
         COMPONENT_ID: 'jqh6pn8rti'
-        LOCK_FILE: './packages/python/sshnpd/requirements.txt'
+        LOCK_FILE: './packages/python/sshnpd/poetry.lock'
         SBOM_VERSION: ${{github.ref_name}}
         OUTPUT_FILE: 'dist/noports_python-${{github.ref_name}}-sbom.cdx.json'
         AUGMENT: true
@@ -145,7 +145,7 @@ jobs:
       run: |
         echo "hashes=$(cat checksums.txt | base64 -w0)" >> "$GITHUB_OUTPUT"
     - name: Attest the release artifacts
-      uses: actions/attest-build-provenance@7668571508540a607bdfd90a87a560489fe372eb # v2.1.0
+      uses: actions/attest-build-provenance@520d128f165991a6c774bcb264f323e3d70747f4 # v2.2.0
       with:
         subject-path: 'dist/**'
     - name: Upload artifact signatures to GitHub Release

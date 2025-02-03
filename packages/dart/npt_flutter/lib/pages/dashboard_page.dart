@@ -3,6 +3,8 @@ import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:npt_flutter/features/profile_list/profile_list.dart';
 import 'package:npt_flutter/widgets/npt_app_bar.dart';
 
+import '../styles/sizes.dart';
+
 class DashboardPage extends StatelessWidget {
   const DashboardPage({super.key});
 
@@ -14,6 +16,7 @@ class DashboardPage extends StatelessWidget {
       appBar: NptAppBar(
         title: strings.dashboard,
         isNavigateBack: false,
+        settingsIconWidthFactor: Sizes.dashboardIconPaddingFactor,
       ),
       body: const ProfileListView(),
     );

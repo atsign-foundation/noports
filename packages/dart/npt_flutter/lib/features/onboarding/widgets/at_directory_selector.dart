@@ -23,7 +23,8 @@ class _AtDirectorySelectorState extends State<AtDirectorySelector> {
   Widget build(BuildContext context) {
     final rootDomains = Constants.getRootDomains(context);
     return BlocBuilder<OnboardingCubit, OnboardingState>(builder: (context, state) {
-      controller.value = TextEditingValue(text: state.rootDomain);
+      controller.value =
+          TextEditingValue(text: state.rootDomain, selection: TextSelection.collapsed(offset: state.rootDomain.length));
       return TextFormField(
         enabled: !widget.options.containsKey(state.atSign),
         controller: controller,

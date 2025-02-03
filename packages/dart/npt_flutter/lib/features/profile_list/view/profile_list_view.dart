@@ -1,3 +1,5 @@
+import 'dart:developer';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
@@ -9,6 +11,7 @@ import 'package:npt_flutter/styles/sizes.dart';
 import 'package:npt_flutter/widgets/spinner.dart';
 
 import '../../../widgets/custom_card.dart';
+import '../cubit/sync_cubit.dart';
 
 class ProfileListView extends StatelessWidget {
   const ProfileListView({super.key});
@@ -17,7 +20,8 @@ class ProfileListView extends StatelessWidget {
   Widget build(BuildContext context) {
     final strings = AppLocalizations.of(context)!;
     final deviceSize = MediaQuery.of(context).size;
-    final bodyMedium = Theme.of(context).textTheme.labelSmall;
+    final labelSmall = Theme.of(context).textTheme.labelSmall;
+    final bodyMedium = Theme.of(context).textTheme.bodyMedium;
     SizeConfig().init();
     return BlocBuilder<ProfileListBloc, ProfileListState>(builder: (context, state) {
       return switch (state) {
@@ -46,6 +50,7 @@ class ProfileListView extends StatelessWidget {
 
             final profiles = state.profiles.toList();
             final isFullProfile = profiles.isNotEmpty;
+            log('profile: isFullProfile: $isFullProfile');
 
             return Stack(
               children: [
@@ -57,8 +62,9 @@ class ProfileListView extends StatelessWidget {
                     children: [
                       CustomCard.dashboardContent(
                         height: deviceSize.height * Sizes.dashboardCardHeightFactor,
-                        width: deviceSize.width * Sizes.dashboardCardWidthFactor,
+                        width: SizeConfig.setDashboardWidth(),
                         child: Column(
+                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                           children: [
                             isFullProfile
                                 ? const Row(
@@ -67,8 +73,6 @@ class ProfileListView extends StatelessWidget {
                                       ProfileListAddButton(),
                                       gapW10,
                                       ProfileListImportButton(),
-                                      gapW10,
-                                      ProfileListRefreshButton(),
                                       gapW10,
                                       ProfileSelectedExportButton(),
                                       gapW10,
@@ -100,7 +104,7 @@ class ProfileListView extends StatelessWidget {
                                     ),
                                   )
                                 : Stack(
-                                    alignment: Alignment.bottomCenter,
+                                    alignment: Alignment.center,
                                     children: [
                                       Align(
                                         alignment: Alignment.center,
@@ -110,17 +114,33 @@ class ProfileListView extends StatelessWidget {
                                         alignment: Alignment.bottomCenter,
                                         child: Text(
                                           strings.emptyProfileMessage,
+                                          style: bodyMedium?.copyWith(fontSize: Sizes.p16),
                                           textAlign: TextAlign.center,
                                         ),
-                                      ),
+                                      )
                                     ],
                                   ),
+                            BlocBuilder<SyncCubit, bool>(builder: (context, state) {
+                              if (state == false) {
+                                return Column(
+                                  children: [
+                                    isFullProfile ? gapH25 : gap0,
+                                    Text(
+                                      strings.syncInProgress,
+                                      textAlign: TextAlign.center,
+                                    ),
+                                  ],
+                                );
+                              }
+                              return gap0;
+                            }),
+                            gapH25,
                           ],
                         ),
                       ),
                       Text(
                         strings.allRightsReserved,
-                        style: bodyMedium?.copyWith(fontSize: bodyMedium.fontSize?.toFont),
+                        style: labelSmall?.copyWith(fontSize: labelSmall.fontSize?.toFont),
                       ),
                     ],
                   ),

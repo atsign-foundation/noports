@@ -21,20 +21,17 @@ class ContactListTile extends StatelessWidget {
         builder: ((context, snapshot) {
           if (snapshot.hasData) {
             return Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 13.0),
+              padding: const EdgeInsets.symmetric(horizontal: Sizes.p15),
               child: Container(
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(Sizes.p10),
                   color: AppColor.cardColorDark,
                 ),
                 child: ListTile(
+                    contentPadding: const EdgeInsets.symmetric(horizontal: Sizes.p30),
+                    dense: true,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(Sizes.p8.toFont),
-                    ),
-                    leading: CircleAvatar(
-                      radius: Sizes.p18.toFont,
-                      backgroundColor: AppColor.primaryColor,
-                      backgroundImage: snapshot.data!['image'] != null ? MemoryImage(snapshot.data!['image']) : null,
                     ),
                     title: Text(
                       snapshot.data?['name'] ?? '',
@@ -48,9 +45,6 @@ class ContactListTile extends StatelessWidget {
             );
           } else {
             return ListTile(
-              leading: const CircleAvatar(
-                child: Icon(Icons.person),
-              ),
               title: Text(strings.noName),
               subtitle: Text(strings.noAtsign),
             );

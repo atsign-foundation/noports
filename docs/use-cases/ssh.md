@@ -1,12 +1,15 @@
 ---
 icon: rectangle-terminal
+description: >-
+  In this guide, we demonstrate how to use SSH NoPorts to SSH to a remote
+  machine.
 ---
 
 # SSH
 
-## Overview
 
-In this guide, we demonstrate how to use SSH NoPorts to SSH to a remote machine.
+
+
 
 The command should look like:
 

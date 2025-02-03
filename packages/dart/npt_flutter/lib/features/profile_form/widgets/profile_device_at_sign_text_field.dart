@@ -5,9 +5,15 @@ import 'package:npt_flutter/features/profile/profile.dart';
 import 'package:npt_flutter/styles/sizes.dart';
 import 'package:npt_flutter/util/form_validator.dart';
 
-class ProfileDeviceAtSignTextField extends StatelessWidget {
+class ProfileDeviceAtSignTextField extends StatefulWidget {
   const ProfileDeviceAtSignTextField({super.key});
 
+  @override
+  State<ProfileDeviceAtSignTextField> createState() => _ProfileDeviceAtSignTextFieldState();
+}
+
+class _ProfileDeviceAtSignTextFieldState extends State<ProfileDeviceAtSignTextField> {
+  final TextEditingController controller = TextEditingController();
   @override
   Widget build(BuildContext context) {
     final strings = AppLocalizations.of(context)!;
@@ -30,14 +36,23 @@ class ProfileDeviceAtSignTextField extends StatelessWidget {
           },
           builder: (BuildContext context, String? state) {
             if (state == null) return gap0;
+            Future.microtask(() => controller.value =
+                TextEditingValue(text: state, selection: TextSelection.collapsed(offset: state.length)));
             return SizedBox(
               width: Sizes.p300,
               height: Sizes.p80,
               child: TextFormField(
-                  initialValue: state,
+                  controller: controller,
                   autovalidateMode: AutovalidateMode.onUserInteraction,
                   validator: FormValidator.validateRequiredAtsignField,
                   onChanged: (value) {
+                    if (!value.startsWith('@')) {
+                      value = '@$value';
+                    }
+                    setState(() {
+                      value = value.trim();
+                    });
+
                     var bloc = context.read<ProfileBloc>();
                     bloc.add(ProfileEditEvent(
                       profile: (bloc.state as ProfileLoadedState).profile.copyWith(sshnpdAtsign: value),

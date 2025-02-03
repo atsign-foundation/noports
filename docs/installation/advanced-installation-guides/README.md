@@ -1,8 +1,13 @@
 ---
 icon: wrench
+description: >-
+  These guides also use shell scripts for installation, but they require manual
+  invocation if you want a truly manual process.
 ---
 
 # Manual Installation Guides
+
+
 
 ### Device Side
 

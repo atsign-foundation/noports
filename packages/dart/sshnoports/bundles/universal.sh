@@ -2,8 +2,8 @@
 
 # SCRIPT METADATA
 # DO NOT MODIFY/DELETE THIS BLOCK
-script_version="3.0.0"
-sshnp_version="5.5.0"
+script_version="3.1.0"
+sshnp_version="5.8.0"
 repo_url="https://github.com/atsign-foundation/sshnoports"
 # END METADATA
 
@@ -15,6 +15,9 @@ repo_url="https://github.com/atsign-foundation/sshnoports"
 # shellcheck disable=SC2034
 GREP_COLOR=never
 unset GREP_OPTIONS
+
+### Constants
+systemd_config_path="/etc/systemd/system/sshnpd.service.d/override.conf"
 
 ### Environment based variables
 arg_zero="$0"
@@ -38,6 +41,8 @@ unset is_dotssh_created
 unset is_dotsshnp_created
 unset is_dotatsign_created
 unset is_dotatsignkeys_created
+unset is_overrideconf_created
+
 
 ### Input Variables
 verbose=false
@@ -238,6 +243,7 @@ parse_env() {
   [ -d $user_home/.sshnp/ ] && is_dotsshnp_created=true || is_dotsshnp_created=false
   [ -d $user_home/.atsign/ ] && is_dotatsign_created=true || is_dotatsign_created=false
   [ -d $user_home/.atsign/keys/ ] && is_dotatsignkeys_created=true || is_dotatsignkeys_created=false
+  [ -f "$systemd_config_path" ] && is_overrideconf_created=true || is_overrideconf_created=false
 }
 
 is_valid_source_mode() {
@@ -562,7 +568,11 @@ write_systemd_environment() {
   file=$1
   variable=$2
   value=$3
-  sedi "s|Environment=$variable=\".*\"|Environment=$variable=\"$value\"|g" "$file"
+  if grep  -q "Environment=$variable=" < "$file"; then
+    sedi "s|Environment=$variable=\".*\"|Environment=$variable=\"$value\"|g" "$file"
+  else
+    echo "Environment=$variable=\"$value\"" >"$file"
+  fi
 }
 
 get_atsign_manually() {
@@ -849,6 +859,41 @@ device() {
     device_install_type=$device_type
   fi
 
+  # install at_activate binary
+  "$extract_path"/sshnp/install.sh -b "$bin_path" -u "$user" at_activate
+
+  # install sshnpd binary and capture the installer output
+  install_output=$("$extract_path"/sshnp/install.sh -b "$bin_path" -u "$user" "$device_install_type" sshnpd)
+
+  if [ "$verbose" = true ]; then
+    echo "$install_output"
+  fi
+
+  # upgrade an existing installation if we find one
+  case "$device_install_type" in
+    launchd)
+      launchd_plist="$HOME/Library/LaunchAgents/com.atsign.sshnpd.plist"
+      if [ -f "$launchd_plist" ]; then
+        echo "launchd config already in place"
+        # TODO: restart service?
+        return
+      fi
+      ;;
+    systemd)
+      if [ "$is_overrideconf_created" = true ]; then
+        echo "systemd config for sshnpd service already in place"
+        echo "sshnpd systemd upgraded and restarted. To see logs use:"
+        echo "  journalctl -u sshnpd -f"
+        systemctl restart sshnpd
+        return
+      fi
+      ;;
+    tmux | headless)
+      # TODO: deal with restarting this type of service
+      ;;
+  esac
+
+  # Get atSigns for fresh install
   if [ -z "$client_atsign" ]; then
     get_atsign_manually "client"
     client_atsign="$selectedatsign"
@@ -871,15 +916,7 @@ device() {
     fi
   done
 
-  "$extract_path"/sshnp/install.sh -b "$bin_path" -u "$user" at_activate
-
-  # run the device install script and capture the output
-  install_output=$("$extract_path"/sshnp/install.sh -b "$bin_path" -u "$user" "$device_install_type" sshnpd)
-
-  if [ "$verbose" = true ]; then
-    echo "$install_output"
-  fi
-
+  # configure service for fresh install
   case "$device_install_type" in
     launchd)
       if [ -n "$policy_atsign" ]; then
@@ -900,20 +937,19 @@ device() {
       echo "sshnpd installed with launchd"
       ;;
     systemd)
-      systemd_service="/etc/systemd/system/sshnpd.service"
-      write_systemd_user "$systemd_service" "$user"
-      write_systemd_environment "$systemd_service" "manager_atsign" "$(norm_atsign "$client_atsign")"
-      write_systemd_environment "$systemd_service" "device_atsign" "$(norm_atsign "$device_atsign")"
+      write_systemd_user "$systemd_config_path" "$user"
+      write_systemd_environment "$systemd_config_path" "manager_atsign" "$(norm_atsign "$client_atsign")"
+      write_systemd_environment "$systemd_config_path" "device_atsign" "$(norm_atsign "$device_atsign")"
       if [ -n "$policy_atsign" ]; then
-        write_systemd_environment "$systemd_service" "delegate_policy" "-p $(norm_atsign "$policy_atsign")"
+        write_systemd_environment "$systemd_config_path" "delegate_policy" "-p $(norm_atsign "$policy_atsign")"
       fi
-      write_systemd_environment "$systemd_service" "device_name" "$device_name"
+      write_systemd_environment "$systemd_config_path" "device_name" "$device_name"
 
       systemctl enable sshnpd
-      systemctl restart sshnpd
+      systemctl start sshnpd
 
       echo "sshnpd installed with systemd. To see logs use:"
-      echo "journalctl -u sshnpd.service -f"
+      echo "  journalctl -u sshnpd -f"
       ;;
     tmux | headless)
       shell_script="$bin_path"/sshnpd.sh

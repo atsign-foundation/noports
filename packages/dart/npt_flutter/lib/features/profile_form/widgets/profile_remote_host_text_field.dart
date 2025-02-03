@@ -15,9 +15,7 @@ class ProfileRemoteHostTextField extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(strings.remoteHost),
-        gapH4,
-        Text(strings.remoteHostDescription, style: Theme.of(context).textTheme.bodySmall),
-        gapH10,
+        gapH14,
         BlocSelector<ProfileBloc, ProfileState, String?>(
           selector: (ProfileState state) {
             if (state is ProfileLoadedState) return state.profile.remoteHost;

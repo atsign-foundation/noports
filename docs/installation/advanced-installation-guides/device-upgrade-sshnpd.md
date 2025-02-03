@@ -62,13 +62,9 @@ After upgrading the sshnpd binary, we must restart the sshnpd service so that it
 
 ### Systemd unit
 
-We simply need to restart the systemd service:
+The `universal.sh`installer script will automatically restart the `sshnpd.service`unit.
 
-```bash
-sudo systemctl restart sshnpd.service
-```
-
-The service will restart using the new binary that has been put in place.
+Any existing config will be preserved.
 
 ### Tmux session
 
@@ -108,7 +104,7 @@ Find the process id of the program which was started using the command matching 
 
 </details>
 
-You should get a single number as output, this is the process ID of the sshnpd process.&#x20;
+You should get a single number as output, this is the process ID of the sshnpd process.
 
 **Example:**
 

@@ -1,47 +1,46 @@
 ---
 icon: magnifying-glass
-description: >-
-  SSH No Ports uses Atsign’s end-to-end encrypted control plane to initiate SSH
-  connections without opening ports on either of your devices.
+description: NoPorts connection establishment and architecture
 ---
 
 # How It Works
 
-## **Atsign’s Core Technology (a.k.a. Control Plane)**
+**What is NoPorts?** NoPorts is a zero trust security tool that uses Atsign's atPlatform to initiate connections without opening ports on either of your devices. It creates a privacy-first environment, and completely removes network attack surfaces. NoPorts is already being used in the field to do things like [replace VPNs and firewalls](https://www.noports.com/use-cases/vpn-replacement), and enable [zero trust remote access](https://www.noports.com/use-cases/remote-access).
 
-1. **Addressability**\
-   Atsign’s core technology uses identifiers which replace the need to manage IP addresses. If you remember the atSign (Atsign’s version of an address), you can look up the IP address and port in the atDirectory which manages this information for you.
-2. **Reachability**\
-   **‍**Atsign’s core technology provides each device with its own microservice which makes it reachable from anywhere on the Internet.
-3. **No open ports (no network attack surface) on the device**\
-   Connections are always made from the device to the microservice, meaning that no ports ever need to be opened on devices using this technology.
-4. **End-to-end encrypted**\
-   Information is automatically encrypted on the edge devices before it is sent over Atsign’s control plane.
-5. **Zero Trust**\
-   Atsign’s technology is designed so that cryptographic keys are only stored on the edge device. No third party or intermediary ever possesses the decryption keys which are required to access the information. You don’t need to trust any of the microservices, because they never see information in the clear.
+**How does this technology work?** In the simplest explanation, NoPorts utilizes the atPlatform and atSigns to create an encrypted connection between devices over TCP/IP. An intriguing part of this technology is that TCP ports are not open on the endpoints, and the connection is completely invisible to prying eyes with no entry-point for cybersecurity attacks. Any device or application sitting behind NoPorts has no open ports, no static IP address required, and cannot be digitally hacked! This a huge leap forward in cybersecurity as there are no other solutions that can provide this level of system security. Pretty awesome right? We think so too!\
+\
+To further our understanding of how zero trust security is established via NoPorts, let’s briefly discuss the function of an atSign. Then, we can explore the connectivity process with easy to follow diagrams. An atSign is a resolvable address assigned to a device, person, an entire organization, or anything you like. For example, @alice could be an atSign for a person named Alice. An atSign is used to securely exchange information without any chance of surveillance, impersonation, or theft.
 
-## **How SSH No Ports uses Atsign’s Control Plane & Policy Plane**
+Now, let’s look at a diagram of a completed atSign/NoPorts connection between two devices.
 
-<div data-full-width="true">
+<figure><img src="../.gitbook/assets/NoPorts-Connection-Diagram.png" alt=""><figcaption></figcaption></figure>
 
-<figure><img src="../.gitbook/assets/atPlanes.png" alt=""><figcaption><p>Planes of the atPlatform</p></figcaption></figure>
+In the diagram, you can see two devices connected with atSigns (@PointA and @PointB). The connection is established without having any open external ports on the client or remote machine and any TCP application can be setup to utilize a NoPorts connection. Because all ports are closed, the atSign encrypted tunnel is set up with outbound requests only which are sent to an atServer.&#x20;
 
-</div>
+Now, let’s discuss what an atServer is and how it functions as part of the overall atPlatform topology. An atServer is responsible for managing identity and maintaining the key-value data store for each atSign. It performs cryptographic identity validation to ensure that each entity is who they claim to be, supporting secure interactions. It serves as a secure repository and only holds data that is either explicitly made public or data that is encrypted. The atServers cannot decrypt or view any encrypted data as they do not hold the keys to decrypt it. Each atSign utilizes a separate atServer, and the atServers complete the negotiation for setting up the connection between the endpoints.
 
-1. @client makes a request to @relay for two listening TCP/IP ports
-2. @client contacts @server to get status and capabilities
-3. @server responds if @client is permitted to connect, permission is either given locally or via @policy
-4. @client derives a new ephemeral AES 256bit key and sends the key along with the IP/DNS name and one of the ports it received from @relay plus the requested remote host:service
-5. @server confirms that @client is allowed to connect and to the service requested either locally or via @policy. If permitted, then @server makes a TCP/IP connection to @relay on the specified port and authenticates
-6. @client makes a connection to @relay on the other port and authenticates
-7. @relay then relays the data between the two TCP connections **@relay does not have the AES key** so cannot "see" the encrypted dataflow
-8. @client listens on the localhost interface of the client and encrypts any connections made to it with the ephemeral AES key from stage 4
-9. @server connects the to the required TCP/IP service requested in stage 5 and then encrypts the connection and forwards on to @relay
-10. At this point a client application connects to the localhost interface on the client on the requested port and any data is encrypted and passed via @relay and on to @server then on to the listening service.
+Since we now have a basic understanding of atSigns and atServers we can take a look at a more comprehensive diagram and discuss further details about the atPlatform.
 
-If the service requested by @client was SSH on @server for example. The `ssh` command would be directed to locahost on @client and yet in fact that connection would be forward to the `sshd` daemeon on @server, via the outbound connections to @relay.
+<figure><img src="../.gitbook/assets/atPlatform Diagram.png" alt=""><figcaption><p>atPlatform</p></figcaption></figure>
 
-This handshake takes a few seconds to make but once established the connection is near real time. You can see the handshake happening as you use the `sshnp` or the `npt` commands and if you what to see more details then, add the `-v` flag.
+**Connection Establishment**
+
+So, how exactly does a NoPorts connection get established and what are the steps? Let's look at a summary overview of each step in a NoPorts connection:
+
+1. NoPorts Client @pointA sends a request to NoPorts Relay service @relay to ask for an IP address and a pair of ports to rendezvous with Remote Machine @pointB.
+2. NoPorts Relay receives the request, allocates a pair of ports on the host it is running on, responds with its IP address and the pair of ports.
+3. Client receives response from Relay
+4. Client sends request to the Remote Machine to connect which includes session information, the client’s intent (such as destination TCP port 3389 on localhost), and the generated public key from an ephemeral asymmetric key-pair.
+5. NoPorts Daemon on Remote Machine sends request to NoPorts Policy service @policy to determine whether or not @pointA is permitted to connect to @pointB on the specified localhost port.
+6. Policy service looks up information accordingly and sends response back to the daemon on Remote Machine.
+   1. If request is not allowed, the daemon will not respond to the client, or send a not permitted response.
+   2. If request is allowed, the daemon generates a symmetric encryption key and a socket connection to the Relay IP address and port 2. Response is sent to the Client for ‘session started’ and includes the symmetric encryption key which is encrypted with the ephemeral public key which was previously sent by the Client.
+7. NoPorts daemon on Remote Machine sends response to Client as ‘session started’.
+8. Client receives response and creates a socket to the Relay IP address and port 1.
+9. The Relay verifies the authentication strings and joins the authenticated sockets from the Client and Remote Machine.
+10. NoPorts connection established.
+
+And that's it! At this point, the real client application (e.g. RDP) can connect to a local port on the Client to be sent over the NoPorts connection for secure remote access to the Remote Machine.
 
 
 

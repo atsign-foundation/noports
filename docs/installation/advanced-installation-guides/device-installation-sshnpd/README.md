@@ -1,21 +1,17 @@
 ---
 icon: server
+description: Begin with the three steps below
 ---
 
 # Device installation
 
 ## Overview
 
-The SSH No Ports daemon (a.k.a. sshnpd) is installable as a background service in many ways depending on your environment you can choice your best option. The service may be installed as a `systemd unit`, `docker container`, `tmux session`, or as a background job using `cron` and `nohup`. The binaries can also be installed standalone so that you can install your own custom background service.
+The NoPorts daemon (a.k.a. sshnpd) is installable as a background service in many ways. Choose the best option for your environment. The service may be installed as a `systemd unit`, `docker container`, `tmux session`, or as a background job using `cron` and `nohup`. The binaries can also be installed standalone so that you can install your own custom background service.
 
-### No Windows Support
+### :warning: This guide doesn't support Windows
 
-We currently don't offer sshnpd as part of our releases. \
-If this is something you would like for us to prioritize, please let us know through one of the following options:
-
-* Create a new [GitHub issue](https://github.com/atsign-foundation/noports/issues/new/choose)
-* Join [our discord](https://discord.atsign.com) and post to our `📑｜forum` channel
-* [Contact support via email](mailto:support@noports.com)
+On windows, we strongly recommend sticking to our automated installation process on Windows. This is because properly installing NoPorts as a Windows service requires making entries in the registry. If you want to create a custom installer for your organization, please speak to us directly at [info@noports.com](mailto:info@noports.com).
 
 ## 1. Download
 
@@ -23,14 +19,9 @@ If this is something you would like for us to prioritize, please let us know thr
 
 You can [download a release from GitHub](https://github.com/atsign-foundation/noports/releases/), or see the table below to download the latest release for your platform.
 
-| Platform | Linux                                                                                                                | macOS                                                                                                                        |
-| -------- | -------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------- |
-| x64      | [sshnp-linux-x64.tgz](https://github.com/atsign-foundation/noports/releases/latest/download/sshnp-linux-x64.tgz)     | [sshnp-macos-x64.zip](https://github.com/atsign-foundation/noports/releases/latest/download/sshnp-macos-x64.zip) (intel)     |
-| arm64    | [sshnp-linux-arm64.tgz](https://github.com/atsign-foundation/noports/releases/latest/download/sshnp-linux-arm64.tgz) | [sshnp-macos-arm64.zip](https://github.com/atsign-foundation/noports/releases/latest/download/sshnp-macos-arm64.zip) (apple) |
-| arm      | [sshnp-linux-arm.tgz](https://github.com/atsign-foundation/noports/releases/latest/download/sshnp-linux-arm.tgz)     |                                                                                                                              |
-| risc-v   | [sshnp-linux-riscv.tgz](https://github.com/atsign-foundation/noports/releases/latest/download/sshnp-linux-riscv.tgz) |                                                                                                                              |
+{% include "../../../.gitbook/includes/linux-macos-release-table.md" %}
 
-### &#x20;1.b. Download using curl
+### 1.b. Download using curl
 
 Alternatively, if you want to download from the command line, you can do so with curl.
 
@@ -98,4 +89,4 @@ unzip sshnp.zip
 
 See the links in the table below to continue with the installation process.
 
-<table><thead><tr><th width="196" data-type="content-ref">Installation method</th><th>When to use this method</th></tr></thead><tbody><tr><td><a href="tmux-session.md">tmux-session.md</a></td><td>You have tmux installed, or can install it. (recommended)</td></tr><tr><td><a href="headless.md">headless.md</a></td><td>If you do not have root access and cannot install tmux</td></tr><tr><td><a href="systemd-unit.md">systemd-unit.md</a></td><td>You are on Linux and have root access. (Here be dragons!)</td></tr><tr><td><a href="standalone-binaries.md">standalone-binaries.md</a></td><td>You want to manually setup the background service after downloading the binaries. (roll your own)</td></tr></tbody></table>
+<table><thead><tr><th width="196" data-type="content-ref">Installation method</th><th>When to use this method</th></tr></thead><tbody><tr><td><a href="systemd-unit.md">systemd-unit.md</a></td><td>You are on Linux and have root access. (Recommended)</td></tr><tr><td><a href="tmux-session.md">tmux-session.md</a></td><td>You have tmux installed, or can install it. (Deprecated)</td></tr><tr><td><a href="headless.md">headless.md</a></td><td>If you do not have root access and cannot install tmux (Deprecated)</td></tr><tr><td><a href="standalone-binaries.md">standalone-binaries.md</a></td><td>You want to manually setup the background service after downloading the binaries. (roll your own)</td></tr></tbody></table>

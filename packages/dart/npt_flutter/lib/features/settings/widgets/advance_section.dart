@@ -17,8 +17,8 @@ class AdvanceSection extends StatelessWidget {
         Row(
           children: [
             const Icon(Icons.apps),
-            gapW4,
             Text(strings.advanced),
+            gapW4,
           ],
         ),
         gapH16,
@@ -26,8 +26,8 @@ class AdvanceSection extends StatelessWidget {
           child: Column(
             children: [
               Row(children: [
-                Text(strings.enableLogging),
                 const EnableLogsBox(),
+                Text(strings.enableLogging),
                 gapW20,
                 const ExportLogsButton(),
               ]),

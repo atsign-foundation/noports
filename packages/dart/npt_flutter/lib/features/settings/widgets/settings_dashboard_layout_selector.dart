@@ -6,6 +6,7 @@ import 'package:npt_flutter/features/settings/settings.dart';
 import 'package:npt_flutter/styles/sizes.dart';
 import 'package:npt_flutter/widgets/spinner.dart';
 
+import '../../../styles/app_color.dart';
 import '../../../widgets/custom_card.dart';
 
 class SettingsDashboardLayoutSelector extends StatelessWidget {
@@ -31,6 +32,8 @@ class SettingsDashboardLayoutSelector extends StatelessWidget {
               Text(getPreferredViewLayoutText(context, PreferredViewLayout.minimal)),
               gapW20,
               Switch(
+                activeColor: Colors.black,
+                activeTrackColor: AppColor.primaryColor,
                 value: viewLayout == PreferredViewLayout.minimal ? false : true,
                 onChanged: (value) {
                   var bloc = context.read<SettingsBloc>();

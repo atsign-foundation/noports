@@ -6,7 +6,7 @@ list(APPEND FLUTTER_PLUGIN_LIST
   at_file_saver
   file_selector_windows
   permission_handler_windows
-  screen_retriever
+  screen_retriever_windows
   share_plus
   tray_manager
   url_launcher_windows
