@@ -34,7 +34,7 @@ main(List<String> args) async {
       '${profile.uuid}.profiles.noports'
       '$myAtsign');
   profileKey.metadata.ttr = -1; // cache indefinitely
-  profileKey.metadata.ttl = 30000;
+  profileKey.metadata.ttl = 60 * 60 * 1000; // 1 hour
 
   print(profileKey);
   print(jsonEncode(profile.toJson()));
@@ -44,7 +44,7 @@ main(List<String> args) async {
       putRequestOptions: PutRequestOptions()..useRemoteAtServer = true);
 
   print('\nWaiting for 20 seconds');
-  await Future.delayed(Duration(seconds: 25));
+  await Future.delayed(Duration(seconds: 20));
 
   print ('$myAtsign is DELETING $profileKey');
   await cliBase.atClient.delete(profileKey,

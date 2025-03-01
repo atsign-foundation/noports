@@ -8,11 +8,11 @@ import 'package:npt_flutter/util/uuid.dart';
 
 class ProfileRepository {
   final Map<String, Profile> _profileCache = {};
-  final Map<String, String?> _uuidMap = {};
+  final Map<String, String?> _profileSharedByMap = {};
 
   Future<Iterable<String>?> getProfileUuids() async {
     _profileCache.clear();
-    _uuidMap.clear();
+    _profileSharedByMap.clear();
     AtClient atClient = AtClientManager.getInstance().atClient;
 
     String namespace = Constants.namespace ?? '';
@@ -30,13 +30,13 @@ class ProfileRepository {
       if (ix >= 0) {
         final uuid = key.key.substring(0, ix);
         final sharedBy = key.sharedBy;
-        _uuidMap[uuid] = sharedBy;
+        _profileSharedByMap[uuid] = sharedBy;
       }
     }
 
-    App.log('[DEBUG] _uuidMap = $_uuidMap'.loggable);
+    App.log('[DEBUG] _uuidMap = $_profileSharedByMap'.loggable);
 
-    return _uuidMap.keys;
+    return _profileSharedByMap.keys;
   }
 
   Future<Iterable<Profile>> getProfiles(Iterable<String> uuids) {
@@ -52,7 +52,7 @@ class ProfileRepository {
     }
 
     AtClient atClient = AtClientManager.getInstance().atClient;
-    String ? sharedBy = _uuidMap[uuid] ?? atClient.getCurrentAtSign();
+    String ? sharedBy = _profileSharedByMap[uuid] ?? atClient.getCurrentAtSign();
     AtKey key = Uuid(uuid).toProfileAtKey(sharedBy: sharedBy);
     try {
       App.log('[DEBUG] loading profile $key'.loggable);
@@ -83,6 +83,7 @@ class ProfileRepository {
 
   Future<bool> deleteProfile(String uuid) async {
     _profileCache.remove(uuid);
+    _profileSharedByMap.remove(uuid);
     AtClient atClient = AtClientManager.getInstance().atClient;
     String? atSign = atClient.getCurrentAtSign();
     AtKey key = Uuid(uuid).toProfileAtKey(sharedBy: atSign);
