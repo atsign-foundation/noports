@@ -8,8 +8,11 @@ import 'package:npt_flutter/util/uuid.dart';
 
 class ProfileRepository {
   final Map<String, Profile> _profileCache = {};
+  final Map<String, String?> _uuidMap = {};
 
   Future<Iterable<String>?> getProfileUuids() async {
+    _profileCache.clear();
+    _uuidMap.clear();
     AtClient atClient = AtClientManager.getInstance().atClient;
 
     String namespace = Constants.namespace ?? '';
@@ -21,8 +24,19 @@ class ProfileRepository {
       App.log('[ERROR] getProfileUuids failed: $e'.loggable);
       keys = [];
     }
-    return keys.map((key) =>
-        key.key.substring(0, key.key.indexOf('.${Uuid.profilesSubNamespace}')));
+
+    for (final key in keys) {
+      final ix = key.key.indexOf('.${Uuid.profilesSubNamespace}');
+      if (ix >= 0) {
+        final uuid = key.key.substring(0, ix);
+        final sharedBy = key.sharedBy;
+        _uuidMap[uuid] = sharedBy;
+      }
+    }
+
+    App.log('[DEBUG] _uuidMap = $_uuidMap'.loggable);
+
+    return _uuidMap.keys;
   }
 
   Future<Iterable<Profile>> getProfiles(Iterable<String> uuids) {
@@ -38,9 +52,10 @@ class ProfileRepository {
     }
 
     AtClient atClient = AtClientManager.getInstance().atClient;
-    String? atSign = atClient.getCurrentAtSign();
-    AtKey key = Uuid(uuid).toProfileAtKey(sharedBy: atSign);
+    String ? sharedBy = _uuidMap[uuid] ?? atClient.getCurrentAtSign();
+    AtKey key = Uuid(uuid).toProfileAtKey(sharedBy: sharedBy);
     try {
+      App.log('[DEBUG] loading profile $key'.loggable);
       var value = await atClient.get(key);
       var profile = Profile.fromJson(jsonDecode(value.value));
       _profileCache[uuid] = profile;

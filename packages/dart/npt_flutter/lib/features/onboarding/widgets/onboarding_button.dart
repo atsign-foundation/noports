@@ -1,6 +1,7 @@
 import 'dart:developer';
 import 'dart:io';
 
+import 'package:at_client/src/service/sync_service_impl.dart';
 import 'package:at_contacts_flutter/at_contacts_flutter.dart';
 import 'package:at_onboarding_flutter/at_onboarding_flutter.dart';
 import 'package:at_onboarding_flutter/at_onboarding_services.dart';
@@ -129,6 +130,9 @@ class _OnboardingButtonState extends State<OnboardingButton> {
   }
 
   Future<void> onboard({required String atsign, required String rootDomain, bool isFromInitState = false}) async {
+    SyncServiceImpl.queueSize = 1;
+    SyncServiceImpl.syncRequestThreshold = 1;
+    SyncServiceImpl.syncRequestTriggerInSeconds = 1;
     var atSigns = await KeyChainManager.getInstance().getAtSignListFromKeychain();
     var apiKey = await Constants.appAPIKey;
     var config = AtOnboardingConfig(
