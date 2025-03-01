@@ -1,7 +1,6 @@
 import 'dart:developer';
 import 'dart:io';
 
-import 'package:at_client/src/service/sync_service_impl.dart';
 import 'package:at_contacts_flutter/at_contacts_flutter.dart';
 import 'package:at_onboarding_flutter/at_onboarding_flutter.dart';
 import 'package:at_onboarding_flutter/at_onboarding_services.dart';
@@ -25,6 +24,8 @@ import 'package:npt_flutter/routes.dart';
 import 'package:npt_flutter/util/language.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
+// ignore: implementation_imports, depend_on_referenced_packages
+import 'package:at_client/src/service/sync_service_impl.dart';
 
 final strings = AppLocalizations.of(App.navState.currentContext!)!;
 Future<AtClientPreference> loadAtClientPreference(String rootDomain) async {
@@ -163,6 +164,7 @@ class _OnboardingButtonState extends State<OnboardingButton> {
     switch (onboardingResult?.status ?? AtOnboardingResultStatus.cancel) {
       case AtOnboardingResultStatus.success:
         await initializeContactsService(rootDomain: rootDomain);
+        AtClientManager.getInstance().atClient.notificationService;
         AtClientManager.getInstance().atClient.syncService.addProgressListener(ProfileProgressListener());
         AtClientManager.getInstance().atClient.syncService.sync();
         postOnboard(onboardingResult!.atsign!, rootDomain);
@@ -276,7 +278,7 @@ class _OnboardingButtonState extends State<OnboardingButton> {
           final statusStream = util.uploadAtKeysFile(atsign);
           result = await handleFileUploadStatusStream(statusStream, atsign);
         } else {
-          final atClientPrefernce = await loadAtClientPreference(
+          final atClientPreference = await loadAtClientPreference(
             util.config.atClientPreference.rootDomain,
           );
           if (!mounted) return null;
@@ -285,7 +287,7 @@ class _OnboardingButtonState extends State<OnboardingButton> {
             routeSettings: const RouteSettings(name: 'APKAM onboarding'),
             builder: (context) => OnboardingApkamDialog(
               atsign: atsign,
-              atClientPreference: atClientPrefernce,
+              atClientPreference: atClientPreference,
             ),
           );
         }
