@@ -163,10 +163,10 @@ class _OnboardingButtonState extends State<OnboardingButton> {
     if (!mounted) return;
     switch (onboardingResult?.status ?? AtOnboardingResultStatus.cancel) {
       case AtOnboardingResultStatus.success:
+        AtClient atClient = AtClientManager.getInstance().atClient;
         await initializeContactsService(rootDomain: rootDomain);
-        AtClientManager.getInstance().atClient.notificationService;
-        AtClientManager.getInstance().atClient.syncService.addProgressListener(ProfileProgressListener());
-        AtClientManager.getInstance().atClient.syncService.sync();
+        atClient.syncService.addProgressListener(ProfileProgressListener(atClient));
+        atClient.syncService.sync();
         postOnboard(onboardingResult!.atsign!, rootDomain);
         final result = await saveAtsignInformation(
           AtsignInformation(

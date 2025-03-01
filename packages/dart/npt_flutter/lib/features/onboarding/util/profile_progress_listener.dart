@@ -11,13 +11,11 @@ import 'package:npt_flutter/util/uuid.dart';
 import '../../profile_list/cubit/sync_cubit.dart';
 
 class ProfileProgressListener extends SyncProgressListener {
-  ProfileProgressListener() {
-    Stream<AtNotification> subscription = AtClientManager.getInstance()
-        .atClient
-        .notificationService
-        .subscribe(
-            regex:
-                '\\.${Uuid.profilesSubNamespace}\\.${Constants.namespace!}@');
+  ProfileProgressListener(AtClient atClient) {
+    Stream<AtNotification> subscription =
+        atClient.notificationService.subscribe(
+            regex: '\\.${Uuid.profilesSubNamespace}'
+                '\\.${Constants.namespace!}@');
     subscription.listen((AtNotification n) async {
       try {
         final profileListBlock =
@@ -28,12 +26,11 @@ class ProfileProgressListener extends SyncProgressListener {
             '.${Uuid.profilesSubNamespace}.${Constants.namespace!}')) {
           switch (n.operation) {
             case 'update':
-              AtClientManager.getInstance().atClient.syncService.sync();
+              atClient.syncService.sync();
               break;
 
             case 'delete':
-              await AtClientManager.getInstance()
-                  .atClient
+              await atClient
                   .getLocalSecondary()!
                   .keyStore!
                   .remove('cached:${n.key}', skipCommit: true);
