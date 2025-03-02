@@ -24,6 +24,8 @@ import 'package:npt_flutter/routes.dart';
 import 'package:npt_flutter/util/language.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
+// ignore: implementation_imports, depend_on_referenced_packages
+import 'package:at_client/src/service/sync_service_impl.dart';
 
 final strings = AppLocalizations.of(App.navState.currentContext!)!;
 Future<AtClientPreference> loadAtClientPreference(String rootDomain) async {
@@ -129,6 +131,9 @@ class _OnboardingButtonState extends State<OnboardingButton> {
   }
 
   Future<void> onboard({required String atsign, required String rootDomain, bool isFromInitState = false}) async {
+    SyncServiceImpl.queueSize = 1;
+    SyncServiceImpl.syncRequestThreshold = 1;
+    SyncServiceImpl.syncRequestTriggerInSeconds = 1;
     var atSigns = await KeyChainManager.getInstance().getAtSignListFromKeychain();
     var apiKey = await Constants.appAPIKey;
     var config = AtOnboardingConfig(
@@ -158,9 +163,10 @@ class _OnboardingButtonState extends State<OnboardingButton> {
     if (!mounted) return;
     switch (onboardingResult?.status ?? AtOnboardingResultStatus.cancel) {
       case AtOnboardingResultStatus.success:
+        AtClient atClient = AtClientManager.getInstance().atClient;
         await initializeContactsService(rootDomain: rootDomain);
-        AtClientManager.getInstance().atClient.syncService.addProgressListener(ProfileProgressListener());
-        AtClientManager.getInstance().atClient.syncService.sync();
+        atClient.syncService.addProgressListener(ProfileProgressListener(atClient));
+        atClient.syncService.sync();
         postOnboard(onboardingResult!.atsign!, rootDomain);
         final result = await saveAtsignInformation(
           AtsignInformation(
@@ -272,7 +278,7 @@ class _OnboardingButtonState extends State<OnboardingButton> {
           final statusStream = util.uploadAtKeysFile(atsign);
           result = await handleFileUploadStatusStream(statusStream, atsign);
         } else {
-          final atClientPrefernce = await loadAtClientPreference(
+          final atClientPreference = await loadAtClientPreference(
             util.config.atClientPreference.rootDomain,
           );
           if (!mounted) return null;
@@ -281,7 +287,7 @@ class _OnboardingButtonState extends State<OnboardingButton> {
             routeSettings: const RouteSettings(name: 'APKAM onboarding'),
             builder: (context) => OnboardingApkamDialog(
               atsign: atsign,
-              atClientPreference: atClientPrefernce,
+              atClientPreference: atClientPreference,
             ),
           );
         }
