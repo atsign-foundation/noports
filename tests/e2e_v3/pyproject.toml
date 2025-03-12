@@ -1,0 +1,7 @@
+[project]
+name = "e2e-v3"
+version = "0.1.0"
+description = "e2e tests for NoPorts"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = []
