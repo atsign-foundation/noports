@@ -110,7 +110,7 @@ To setup a new device, create a new python (`.py`) in the same folder where you 
 
 {% code title="example_config.py" %}
 ```python
-from noports_base import my_default_config
+from .noports_base import my_default_config
 class device(my_default_config):
     # TODO: setup device name and override any default config here
     # make sure to indent these lines the same
@@ -126,7 +126,7 @@ If you have a bunch of devices that all use the same configuration values, then 
 
 {% code title="override_defaults.py" %}
 ```python
-from noports_base import my_default_config
+from .noports_base import my_default_config
 class device(my_default_config):
     # TODO: setup device name and override any default config here
     # make sure to indent these lines the same
