@@ -1,6 +1,6 @@
 ---
-icon: table-rows
 description: Includes stable and beta releases
+icon: table-rows
 ---
 
 # Available Releases
@@ -19,13 +19,9 @@ Our dedicated desktop app is preferred in most cases.
 
 If your use case is primarily SSH, we recommend using sshnp from the [#cli-binaries](available-releases.md#cli-binaries "mention") section.
 
-{% include "../.gitbook/includes/desktop-app-release-table.md" %}
-
 #### Cli Binaries
 
 This includes all binaries for NoPorts.
-
-{% include "../.gitbook/includes/dart-binary-releases-table.md" %}
 
 ### Beta Releases
 

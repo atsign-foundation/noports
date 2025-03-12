@@ -8,8 +8,6 @@ description: Video and written directions for installing the NoPorts desktop app
 NoPorts Desktop Overview
 {% endembed %}
 
-{% include "../../.gitbook/includes/get-atsigns-from-reg-warning.md" %}
-
 ## Step 1: Download the NoPorts desktop application&#x20;
 
 [Link to Apple Store](https://apps.apple.com/ca/app/noports-desktop/id6737338881)

@@ -1,7 +1,5 @@
 # Windows CLI Client Installation
 
-{% include "../../.gitbook/includes/windows-download-installer.md" %}
-
 ### Step 2: Client Install
 
 Launch the NoPortsInstaller.exe program and allow it administrative permissions:
@@ -22,17 +20,9 @@ If you've activated your **client** atSign on another device already, this step 
 
 #### Step 3.1 Open the Windows installer and click "Activate atSign"
 
-{% include "../../.gitbook/includes/windows-activate-1.md" %}
-
 #### Step 3.2 Enter the atSign you wish to activate and click "Submit"
-
-{% include "../../.gitbook/includes/windows-activate-2.md" %}
 
 #### Step 3.3 Wait for the OTP (One time pincode) then enter it and press "Generate"
 
-{% include "../../.gitbook/includes/windows-activate-3.md" %}
-
 #### Step 3.4 Wait for the keys to generate, then you may either exit the program or go home
-
-{% include "../../.gitbook/includes/windows-activate-4.md" %}
 

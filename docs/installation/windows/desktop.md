@@ -8,8 +8,6 @@ description: Video and written directions for installing the NoPorts desktop app
 NoPorts Desktop Overview
 {% endembed %}
 
-{% include "../../.gitbook/includes/get-atsigns-from-reg-warning.md" %}
-
 ## Step 1: Download the NoPorts desktop application
 
 [Link to Windows Store](https://apps.microsoft.com/detail/9n69scrrgv6r)

@@ -1,6 +1,6 @@
 ---
-icon: server
 description: Begin with the three steps below
+icon: server
 ---
 
 # Device installation
@@ -18,8 +18,6 @@ On windows, we strongly recommend sticking to our automated installation process
 ### 1.a. Download from GitHub
 
 You can [download a release from GitHub](https://github.com/atsign-foundation/noports/releases/), or see the table below to download the latest release for your platform.
-
-{% include "../../../.gitbook/includes/linux-macos-release-table.md" %}
 
 ### 1.b. Download using curl
 

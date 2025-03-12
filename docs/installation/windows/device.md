@@ -1,7 +1,5 @@
 # Windows Device Installation
 
-{% include "../../.gitbook/includes/windows-download-installer.md" %}
-
 ### Step 2: Activate your client Atsign
 
 {% hint style="warning" %}
@@ -9,8 +7,6 @@ If you've activated your **client** atSign on another device already, this step 
 {% endhint %}
 
 #### Step 2.1 Open the Windows installer and click "Activate atSign"
-
-{% include "../../.gitbook/includes/windows-activate-1.md" %}
 
 #### Step 2.2 Enter the atSign you wish to activate and click "Submit"
 
@@ -21,8 +17,6 @@ If you've activated your **client** atSign on another device already, this step 
 <figure><img src="../../.gitbook/assets/CleanShot 2025-01-20 at 18.42.40@2x.png" alt=""><figcaption></figcaption></figure>
 
 #### Step 2.4 Wait for the keys to generate, then go home
-
-{% include "../../.gitbook/includes/windows-activate-4.md" %}
 
 ### Step 3: Install the Device Software
 
