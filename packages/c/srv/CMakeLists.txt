@@ -10,8 +10,20 @@ project(srv VERSION 1.0.8 LANGUAGES C)
 # globs are known as bad practice, so we do not use them here
 set(
   SRV_SRCS
+  ${CMAKE_CURRENT_LIST_DIR}/src/authenticate.c
+  ${CMAKE_CURRENT_LIST_DIR}/src/channel.c
+  ${CMAKE_CURRENT_LIST_DIR}/src/channel_io.c
+  ${CMAKE_CURRENT_LIST_DIR}/src/channel_io_tcp.c
+  ${CMAKE_CURRENT_LIST_DIR}/src/channel_sink.c
+  ${CMAKE_CURRENT_LIST_DIR}/src/channel_transformer.c
+  ${CMAKE_CURRENT_LIST_DIR}/src/channel_transformer_aes_ctr.c
   ${CMAKE_CURRENT_LIST_DIR}/src/params.c
-  ${CMAKE_CURRENT_LIST_DIR}/src/side.c
+  ${CMAKE_CURRENT_LIST_DIR}/src/pthread_handle.c
+  ${CMAKE_CURRENT_LIST_DIR}/src/ring.c
+  ${CMAKE_CURRENT_LIST_DIR}/src/session.c
+  ${CMAKE_CURRENT_LIST_DIR}/src/session_control.c
+  ${CMAKE_CURRENT_LIST_DIR}/src/session_single.c
+  ${CMAKE_CURRENT_LIST_DIR}/src/session_stacking.c
   ${CMAKE_CURRENT_LIST_DIR}/src/srv.c
 )
 
@@ -67,16 +79,16 @@ endif()
 # 5. Create srv_lib library target
 
 add_compile_options("-pthread")
-add_library(${PROJECT_NAME}-lib STATIC ${SRV_SRCS})
+add_library(lib${PROJECT_NAME} STATIC ${SRV_SRCS})
 
 target_link_libraries(
-  ${PROJECT_NAME}-lib
+  lib${PROJECT_NAME}
   PRIVATE argparse::argparse-static atlogger atchops mbedtls
 )
 
 # Set include directories for srv target
 target_include_directories(
-  ${PROJECT_NAME}-lib
+  lib${PROJECT_NAME}
   PUBLIC
     $<BUILD_INTERFACE:${SRV_INCLUDE_DIR}>
     $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
@@ -85,13 +97,13 @@ target_include_directories(
 # 6 Install srv library
 # This step configures running `cmake --build build --target install` (which is the same thing as `make install`)
 # This work also helps other CMake projects use `find_package(atclient)` to find our library, once installed.
-list(APPEND SRV_TARGETS_TO_INSTALL ${PROJECT_NAME}-lib) # install srv_lib
+list(APPEND SRV_TARGETS_TO_INSTALL lib${PROJECT_NAME}) # install srv_lib
 
 foreach(target ${SRV_TARGETS_TO_INSTALL})
   message(STATUS "[SRV] Installing ${target}..")
   install(
     TARGETS ${target}
-    EXPORT ${PROJECT_NAME}-lib-config
+    EXPORT lib${PROJECT_NAME}-config
     ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
   )
 endforeach()
@@ -102,11 +114,11 @@ install(
 )
 
 # 7. Create srv executable target
-add_executable(${PROJECT_NAME} ${CMAKE_CURRENT_LIST_DIR}/src/main.c)
+add_executable(${PROJECT_NAME} ${CMAKE_CURRENT_LIST_DIR}/src/srv.c)
 
 target_link_libraries(
   ${PROJECT_NAME}
-  PRIVATE ${PROJECT_NAME}-lib atlogger atchops mbedtls argparse::argparse-static
+  PRIVATE lib${PROJECT_NAME} atlogger atchops mbedtls argparse::argparse-static
 )
 
 # 8. Build tests

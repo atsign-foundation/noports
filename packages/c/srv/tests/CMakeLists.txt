@@ -7,9 +7,10 @@ foreach(file ${files})
   string(REPLACE ".c" "" filename ${filename})
 
   add_executable(${filename} ${file})
-  target_link_libraries(${filename} PRIVATE
-    srv_lib
-    atchops::atchops
+  target_link_libraries(${filename} PRIVATE libsrv atchops)
+  target_include_directories(
+    ${filename}
+    PUBLIC ${CMAKE_CURRENT_LIST_DIR}/../src
   )
   add_test(NAME ${filename} COMMAND $<TARGET_FILE:${filename}>)
 endforeach()

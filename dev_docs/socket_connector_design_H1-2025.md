@@ -108,9 +108,10 @@ connector into an application directly.
 
 There are more types to of channel IO to consider below.
 
-#### Directional Typing
+#### Directional Typing ("Class")
 
 - Inbound IO like tcp bind sockets, which accept a connection to be used
+- Accepted IO like tcp accepted sockets
 - Outbound IO like tcp clients, which make connections to bind sockets
 
 #### Remote IO vs Local IO

@@ -81,14 +81,14 @@ else()
 endif()
 
 # 4c. srv
-find_package(srv-lib QUIET)
-if(NOT srv-lib_FOUND)
-  message(STATUS "[SSHNPD] srv-lib not found, fetching from local repository..")
-  FetchContent_Declare(srv-lib SOURCE_DIR ${SRV_DIR})
-  list(APPEND SSHNPD_TARGETS_TO_INSTALL srv-lib argparse-static)
-  list(APPEND SSHNPD_MAKE_AVAILABLE srv-lib argparse-static)
+find_package(libsrv QUIET)
+if(NOT libsrv_FOUND)
+  message(STATUS "[SSHNPD] libsrv not found, fetching from local repository..")
+  FetchContent_Declare(libsrv SOURCE_DIR ${SRV_DIR})
+  list(APPEND SSHNPD_TARGETS_TO_INSTALL libsrv argparse-static)
+  list(APPEND SSHNPD_MAKE_AVAILABLE libsrv argparse-static)
 else()
-  message(STATUS "[SSHNPD] srv-lib found package..")
+  message(STATUS "[SSHNPD] libsrv found package..")
 endif()
 
 # 4d. make everything available
@@ -99,23 +99,23 @@ endif()
 # 5. Create sshnpd_lib library target
 
 add_compile_options("-lrt")
-add_library(${PROJECT_NAME}-lib STATIC ${SSHNPD_SRCS})
+add_library(lib${PROJECT_NAME} STATIC ${SSHNPD_SRCS})
 
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
   target_link_libraries(
-    ${PROJECT_NAME}-lib
-    PRIVATE atclient atchops atlogger cjson srv-lib argparse::argparse-static
+    lib${PROJECT_NAME}
+    PRIVATE atclient atchops atlogger cjson libsrv argparse::argparse-static
   )
 else()
   target_link_libraries(
-    ${PROJECT_NAME}-lib
-    PRIVATE atclient atchops atlogger cjson srv-lib argparse::argparse-static
+    lib${PROJECT_NAME}
+    PRIVATE atclient atchops atlogger cjson libsrv argparse::argparse-static
   )
 endif()
 
 # Set include directories for sshnpd target
 target_include_directories(
-  ${PROJECT_NAME}-lib
+  lib${PROJECT_NAME}
   PUBLIC
     $<BUILD_INTERFACE:${SSHNPD_INCLUDE_DIR}>
     $<BUILD_INTERFACE:${argparse-static_SOURCE_DIR}>
@@ -125,13 +125,13 @@ target_include_directories(
 # 6 Install sshnpd library
 # This step configures running `cmake --build build --target install` (which is the same thing as `make install`)
 # This work also helps other CMake projects use `find_package(atclient)` to find our library, once installed.
-list(APPEND SSHNPD_TARGETS_TO_INSTALL ${PROJECT_NAME}-lib) # install sshnpd_lib
+list(APPEND SSHNPD_TARGETS_TO_INSTALL lib${PROJECT_NAME}) # install sshnpd_lib
 
 foreach(target ${SSHNPD_TARGETS_TO_INSTALL})
   message(STATUS "[SSHNPD] Installing ${target}..")
   install(
     TARGETS ${target}
-    EXPORT ${PROJECT_NAME}-lib-config
+    EXPORT lib${PROJECT_NAME}-config
     ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
   )
 endforeach()
@@ -147,7 +147,7 @@ add_executable(${PROJECT_NAME} ${CMAKE_CURRENT_LIST_DIR}/src/main.c)
 target_link_libraries(
   ${PROJECT_NAME}
   PRIVATE
-    ${PROJECT_NAME}-lib
+    lib${PROJECT_NAME}
     atclient
     atchops
     atlogger

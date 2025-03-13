@@ -1,0 +1,35 @@
+alias build := build-debug
+
+set dotenv-filename := "just.env"
+set dotenv-load
+
+postfix := quote(os() + "-" + arch())
+debug_dir := quote(justfile_directory() / "build/debug-") + postfix
+release_dir := quote(justfile_directory() / "build/release-") + postfix
+
+setup: configure-debug
+  [ -f "$PWD/compile_commands.json" ] && rm $PWD/compile_commands.json || true
+  ln -s {{debug_dir}}/compile_commands.json $PWD/
+  [ -f "$PWD/tests/compile_commands.json" ] && rm $PWD/tests/compile_commands.json || true
+  ln -s {{debug_dir}}/compile_commands.json $PWD/tests/
+
+clean:
+  rm -rf $PWD/build
+  rm $PWD/compile_commands.json
+
+build-debug: configure-debug
+  cmake --build {{ debug_dir }}
+
+configure-debug:
+  cmake -B {{ debug_dir }} \
+    -S $PWD \
+    -G "$GENERATOR" \
+    -DCMAKE_INSTALL_PREFIX="$HOME/.local/" \
+    -DCMAKE_BUILD_TYPE=Debug \
+    -DCMAKE_EXPORT_COMPILE_COMMANDS=ON \
+    -DCMAKE_C_COMPILER=$C_COMPILER \
+    -DCMAKE_C_FLAGS="-std=c99 -Wno-error -DATSDK_DEBUG_MODE" \
+    -DSRV_BUILD_TESTS=ON
+
+test +ARGS='': build-debug
+  ctest --test-dir {{debug_dir}} {{ARGS}}

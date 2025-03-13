@@ -537,4 +537,39 @@ static void *run_socket_to_socket(void *args) {
   free(sts_thread_params);
 
   return NULL;
+
+#include "atlogger/atlogger.h"
+#include "session.h"
+#include <srv/srv.h>
+
+#define TAG "srv"
+int run_srv(struct srv_params params) {
+  struct session session = create_session(params);
+  if (session.type == session_type_unset) {
+    atlogger_log(TAG, ATLOGGER_LOGGING_LEVEL_ERROR,
+                 "Failed to run srv, created session is type unset\n");
+    return 1;
+  }
+  return run_session(params, session);
+}
+
+int main(int argc, char **argv) {
+  atlogger_set_logging_level(ATLOGGER_LOGGING_LEVEL_INFO);
+
+  struct srv_params params = srv_params_initializer;
+  int ret = parse_srv_params(argc, argv, &params);
+  if (ret != 0) {
+    atlogger_log(TAG, ATLOGGER_LOGGING_LEVEL_ERROR,
+                 "Failed to parse srv parameters\n");
+    return ret;
+  }
+  if (params.verbose)
+    atlogger_set_logging_level(ATLOGGER_LOGGING_LEVEL_DEBUG);
+
+  ret = run_srv(params);
+  if (ret != 0) {
+    atlogger_log(TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "run_srv exited with %d\n",
+                 ret);
+  }
+  return ret;
 }
