@@ -38,6 +38,8 @@ If you've already activated the device atSign skip to [step 2](device.md#step-2-
 
 ### (3.1) Generate a passcode from your <mark style="color:red;">client machine</mark>
 
+{% include "../../.gitbook/includes/apkam-1-unix.md" %}
+
 ### (3.2) Make an authorization request from your <mark style="color:orange;">device machine</mark>
 
 {% include "../../.gitbook/includes/apkam-2-unix.md" %}
@@ -79,6 +81,8 @@ If you've already activated the device atSign skip to [step 2](device.md#step-2-
 ## Step 3: Authorizing the device atSign
 
 ### (3.1) Generate a passcode from your <mark style="color:red;">client machine</mark>
+
+{% include "../../.gitbook/includes/apkam-1-unix.md" %}
 
 ### (3.2) Make an authorization request from your <mark style="color:orange;">device machine</mark>
 
