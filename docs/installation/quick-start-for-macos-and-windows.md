@@ -1,6 +1,6 @@
 ---
-icon: forward
 description: How to quickly install and use NoPorts on both macOS and Windows devices.
+icon: forward
 layout:
   title:
     visible: true
@@ -46,9 +46,8 @@ For Linux please follow the [Linux Installation Guide](https://docs.noports.com/
 
 Your atKeys (cryptographic keys) will be used to pair your atSign with this and other devices in future. You can [learn more about these keys here](../installation-faq/why-activate-the-device-atsign-on-the-client.md).
 
-1. Click on the **Settings Icon** in the top right corner of the app.
-2. Click on **Back Up Your Keys** in the left navigation panel.
-3. Select a location on your device and **save** your keys.
+1. Click on **Save atKeys**
+2. Select a location on your device and **save** your keys.
 
 ## Step 5: Set up a test connection
 
