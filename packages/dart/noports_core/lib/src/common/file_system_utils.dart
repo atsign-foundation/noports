@@ -1,7 +1,7 @@
 import 'package:noports_core/src/common/io_types.dart';
 import 'package:path/path.dart' as path;
 
-/// $homeDirectory/.atsign/storage/$atSign/.$progName/$uniqueID
+/// $homeDirectory/.atsign/storage/$atSign/$progName/$uniqueID
 String standardAtClientStoragePath({
   required String homeDirectory,
   required String atSign,
@@ -12,8 +12,9 @@ String standardAtClientStoragePath({
       '/.atsign'
       '/storage'
       '/$atSign'
-      '/.$progName'
-      '/$uniqueID');
+      '/$progName'
+      '/$uniqueID'
+      .replaceAll('/', Platform.pathSeparator));
 }
 
 /// Get the home directory or null if unknown.

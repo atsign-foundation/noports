@@ -1,3 +1,11 @@
+## 1.0.3
+
+- fix: uptake segfault bug fix in atsdk
+
+## 1.0.2
+
+- chore: uptake atsdk changes
+
 ## 1.0.1
 
 - fix: remove the background thread used to update device_info (now synchronous)

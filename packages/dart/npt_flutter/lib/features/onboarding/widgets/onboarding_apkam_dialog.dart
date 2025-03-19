@@ -116,7 +116,8 @@ class OnboardingApkamDialogState extends State<OnboardingApkamDialog> {
     if (sentEnrollRequest != null) {
       if (DateTime.now()
               .toUtc()
-              .difference(DateTime.fromMillisecondsSinceEpoch(sentEnrollRequest.enrollmentSubmissionTimeEpoch))
+              .difference(DateTime.fromMillisecondsSinceEpoch(
+                  sentEnrollRequest.enrollmentSubmissionTimeEpoch))
               .inHours >=
           48) {
         await _setStateOnStatus(EnrollmentStatus.expired);
@@ -159,7 +160,8 @@ class OnboardingApkamDialogState extends State<OnboardingApkamDialog> {
     await Future.delayed(const Duration(milliseconds: 3000));
     if (mounted) {
       final strings = AppLocalizations.of(context)!;
-      Navigator.of(context).pop(AtOnboardingResult.error(message: strings.enrollRequestDenied));
+      Navigator.of(context)
+          .pop(AtOnboardingResult.error(message: strings.enrollRequestDenied));
     }
   }
 
@@ -182,6 +184,8 @@ class OnboardingApkamDialogState extends State<OnboardingApkamDialog> {
       otp: otp,
       namespaces: {
         Constants.namespace!: 'rw',
+        "sshnp": 'rw',
+        'sshrvd': 'rw',
       },
     );
 
@@ -208,9 +212,11 @@ class OnboardingApkamDialogState extends State<OnboardingApkamDialog> {
         // Doesn't seem like enroll throws an `AtException`.
         if (e.toString().contains('AT0011')) {
           log('Invalid OTP');
-          Navigator.of(context).pop(AtOnboardingResult.error(message: strings.invalidOtp));
+          Navigator.of(context)
+              .pop(AtOnboardingResult.error(message: strings.invalidOtp));
         } else {
-          Navigator.of(context).pop(AtOnboardingResult.error(message: strings.unknownError));
+          Navigator.of(context)
+              .pop(AtOnboardingResult.error(message: strings.unknownError));
         }
       }
     }
@@ -238,14 +244,19 @@ class OnboardingApkamDialogState extends State<OnboardingApkamDialog> {
           OnboardingStatus.preparing => const CircularProgressIndicator(
               key: Key('preparing'),
             ),
-          OnboardingStatus.otpRequired || OnboardingStatus.validatingOtp => Column(
+          OnboardingStatus.otpRequired ||
+          OnboardingStatus.validatingOtp =>
+            Column(
               key: const Key('otp'),
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
                   strings.enterOtp,
-                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(color: Colors.black),
+                  style: Theme.of(context)
+                      .textTheme
+                      .headlineSmall
+                      ?.copyWith(color: Colors.black),
                 ),
                 gapH4,
                 Text(
@@ -288,11 +299,14 @@ class OnboardingApkamDialogState extends State<OnboardingApkamDialog> {
                                 disabledColor: Colors.blue,
                                 inactiveColor: const Color(0xFF747474),
                                 selectedFillColor: Colors.white,
-                                selectedColor: Theme.of(context).colorScheme.primary,
-                                fieldOuterPadding: const EdgeInsets.all(Sizes.p2),
+                                selectedColor:
+                                    Theme.of(context).colorScheme.primary,
+                                fieldOuterPadding:
+                                    const EdgeInsets.all(Sizes.p2),
                               ),
                               cursorColor: Colors.black,
-                              animationDuration: const Duration(milliseconds: 300),
+                              animationDuration:
+                                  const Duration(milliseconds: 300),
                               enableActiveFill: true,
                               keyboardType: TextInputType.text,
                               beforeTextPaste: (text) => true,
@@ -306,18 +320,24 @@ class OnboardingApkamDialogState extends State<OnboardingApkamDialog> {
                                     textStyle: const TextStyle(
                                       fontSize: Sizes.p18,
                                     ),
-                                    padding: const EdgeInsets.symmetric(horizontal: Sizes.p32, vertical: Sizes.p20),
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: Sizes.p32,
+                                        vertical: Sizes.p20),
                                     shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(Sizes.p8),
+                                      borderRadius:
+                                          BorderRadius.circular(Sizes.p8),
                                     ),
                                   ),
-                                  onPressed: pinController.text.length == _kPinLength &&
-                                          onboardingStatus != OnboardingStatus.validatingOtp
+                                  onPressed: pinController.text.length ==
+                                              _kPinLength &&
+                                          onboardingStatus !=
+                                              OnboardingStatus.validatingOtp
                                       ? () async {
                                           await otpSubmit(pinController.text);
                                         }
                                       : null,
-                                  child: onboardingStatus == OnboardingStatus.validatingOtp
+                                  child: onboardingStatus ==
+                                          OnboardingStatus.validatingOtp
                                       ? const CircularProgressIndicator()
                                       : Text(strings.submitOtp),
                                 );
@@ -363,7 +383,10 @@ class OnboardingApkamDialogState extends State<OnboardingApkamDialog> {
                         Expanded(
                           child: Text(
                             strings.waitingForApproval,
-                            style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                            style: Theme.of(context)
+                                .textTheme
+                                .titleLarge
+                                ?.copyWith(
                                   color: Theme.of(context).primaryColor,
                                 ),
                           ),
@@ -387,9 +410,10 @@ class OnboardingApkamDialogState extends State<OnboardingApkamDialog> {
                           gapH12,
                           Text(
                             strings.whereToAccept,
-                            style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                                  fontWeight: FontWeight.bold,
-                                ),
+                            style:
+                                Theme.of(context).textTheme.bodyLarge?.copyWith(
+                                      fontWeight: FontWeight.bold,
+                                    ),
                           ),
                           Text(
                             strings.whereToAcceptDescription,

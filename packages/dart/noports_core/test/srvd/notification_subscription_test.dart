@@ -32,15 +32,19 @@ void main() {
       registerFallbackValue(FakeAtKey());
 
       String atSign = '@bob';
-      String managerAtsign = '@alice';
+      String relayAtSign = '@alice';
 
       MockAtClient mockAtClient = MockAtClient();
       MockNotificationService mockNotificationService =
           MockNotificationService();
 
+      when(() => mockAtClient.getCurrentAtSign()).thenReturn(relayAtSign);
       when(() => mockAtClient.notificationService)
           .thenReturn(mockNotificationService);
 
+      when(() => mockAtClient.put(any(), any(),
+              putRequestOptions: any(named: 'putRequestOptions')))
+          .thenAnswer((_) => Future.value(true));
       when(() => mockNotificationService.notify(any(),
           checkForFinalDeliveryStatus:
               any(named: 'checkForFinalDeliveryStatus'),
@@ -67,7 +71,7 @@ void main() {
           atSign: atSign,
           homeDirectory: Directory.current.path,
           atKeysFilePath: Directory.current.path,
-          managerAtsign: managerAtsign,
+          managerAtsign: relayAtSign,
           ipAddress: '127.0.0.1',
           logTraffic: false,
           verbose: false);

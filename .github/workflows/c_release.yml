@@ -183,7 +183,7 @@ jobs:
       attestations: write
     steps:
       - name: Download all the tarballs
-        uses: actions/download-artifact@cc203385981b70ca67e1cc392babf9cc229d5806 # v4.1.9
+        uses: actions/download-artifact@b14cf4c92620c250e1c074ab0a5800e37df86765 # v4.2.0
         with:
           path: tarballs/
       ## 20240806: Need a different approach to SBOMs for C daemon

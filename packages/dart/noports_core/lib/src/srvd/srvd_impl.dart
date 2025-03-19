@@ -131,8 +131,6 @@ class SrvdImpl implements Srvd {
       return;
     }
 
-    logger.shout('New session request from ${notification.from}');
-
     late SrvdSessionParams sessionParams;
     try {
       sessionParams = await srvdUtil.getParams(notification);
@@ -149,6 +147,34 @@ class SrvdImpl implements Srvd {
     }
 
     logger.info('New session request params: $sessionParams');
+
+    var mutexKey = AtKey.fromString('${sessionParams.sessionId}'
+        '.session_mutexes.${Srvd.namespace}'
+        '${atClient.getCurrentAtSign()!}')
+      ..metadata = (Metadata()
+        ..immutable = true // only one srvd will succeed in doing this
+        ..ttl = 30000); // expire after 30 seconds to keep datastore clean
+    PutRequestOptions pro = PutRequestOptions()
+      ..shouldEncrypt = false
+      ..useRemoteAtServer = true;
+
+    try {
+      await atClient.put(
+        mutexKey,
+        'lock',
+        putRequestOptions: pro,
+      );
+      logger.shout('😎 Will handle request from ${notification.from}'
+          '; acquired mutex $mutexKey');
+    } catch (err) {
+      if (err.toString().toLowerCase().contains('immutable')) {
+        logger.shout('🤷‍♂️ Will not handle request from ${notification.from}'
+            '; did not acquire mutex $mutexKey');
+      } else {
+        logger.shout('Will not handle; did not acquire mutex $mutexKey : $err');
+      }
+      return;
+    }
 
     (int, int) ports = await _spawnSocketConnector(
       0,

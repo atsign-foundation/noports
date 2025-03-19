@@ -19,8 +19,8 @@ void main(List<String> args) async {
         storagePath: standardAtClientStoragePath(
             homeDirectory: p.homeDirectory,
             atSign: p.atSign,
-            progName: '.srvd',
-            uniqueID: 'single'),
+            progName: 'srvd',
+            uniqueID: DateTime.now().millisecondsSinceEpoch.toString()),
         atsign: p.atSign,
         atKeysFilePath: p.atKeysFilePath,
         namespace: Srvd.namespace,

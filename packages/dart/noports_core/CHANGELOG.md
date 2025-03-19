@@ -1,3 +1,5 @@
+# 6.3.0
+- feat: enable multiple instances of relays for load balancing and resilience
 # 6.2.1
 - fix: multiple enhancements for stability of `npt` under heavy concurrent load
 # 6.2.0
