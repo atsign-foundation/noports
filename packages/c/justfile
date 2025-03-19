@@ -28,6 +28,12 @@ install: build-dev
 
 # BUILD COMMANDS
 
+package-static:
+  cmake --workflow --preset package-static
+
+package-source:
+  cmake --workflow --preset package-source
+
 build-dev: configure-dev
   cmake --build {{ dev_dir }}
 
@@ -52,7 +58,7 @@ memcheck +ARGS='': build-dev
   #!/usr/bin/env bash
   file="valgrind-sshnpd-$(date +%s).log"
   # child-silient-after-fork=yes: ignore session forks, we don't care
-  valgrind --log-file="$file" \
+  valgrind --log-file="logs/$file" \
   --tool=memcheck \
   --leak-check=full \
   --show-leak-kinds=all \
@@ -94,6 +100,7 @@ configure-dev:
     -DCMAKE_BUILD_TYPE=Debug \
     -DCMAKE_C_COMPILER=$C_COMPILER \
     -DCMAKE_C_FLAGS="-std=c99 -Wno-error -DATSDK_DEBUG_MODE" \
+    -DNOPORTS_GS_TOOL=ON \
     -DSSHNPD_ENABLE_TESTING_SHUTDOWN_NOTIFICATION=ON
 
 configure-strict:

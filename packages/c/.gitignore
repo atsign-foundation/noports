@@ -5,7 +5,6 @@ compile_commands.json
 
 just.env
 
-valgrind-sshnpd-*
-*.log
+/logs/
 core
 Testing/

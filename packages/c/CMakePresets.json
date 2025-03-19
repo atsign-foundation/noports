@@ -50,6 +50,81 @@
       "name": "strict-ninja",
       "inherits": ["strict"],
       "generator": "Ninja"
+    },
+    {
+      "name": "release-static",
+      "binaryDir": "${sourceDir}/build/release-static",
+      "cacheVariables": {
+        "BUILD_SHARED_LIBS": "OFF",
+        "CMAKE_BUILD_TYPE": "Release",
+        "CMAKE_C_FLAGS": "-std=c99 -Wno-error -Wextra -Werror-implicit-function-declaration",
+        "CMAKE_INSTALL_PREFIX": "${sourceDir}/build/release-static/tmp-install-dir",
+        "CMAKE_EXPORT_COMPILE_COMMANDS": "OFF",
+        "ATSDK_BUILD_TESTS": "OFF",
+        "ATSDK_MEMCHECK": "OFF",
+        "ENABLE_TESTING": "OFF",
+        "ENABLE_PROGRAMS": "OFF",
+        "ENABLE_CJSON_TEST": "OFF",
+        "CJSON_OVERRIDE_BUILD_SHARED_LIBS": "ON",
+        "CJSON_BUILD_SHARED_LIBS": "OFF",
+        "BUILD_SHARED_AND_STATIC_LIBS": "OFF",
+        "ENABLE_TARGET_EXPORT": "OFF",
+        "ENABLE_CJSON_VERSION_SO": "OFF"
+      }
+    },
+    {
+      "name": "from-package-source",
+      "binaryDir": "${sourceDir}/build",
+      "cacheVariables": {
+        "NOPORTS_MBEDTLS_PATH": "deps/mbedtls-src",
+        "NOPORTS_CJSON_PATH": "deps/cjson-src",
+        "NOPORTS_ATSDK_PATH": "deps/atsdk-src"
+      }
+    }
+  ],
+  "buildPresets": [
+    {
+      "name": "release-static",
+      "configurePreset": "release-static"
+    },
+    {
+      "name": "package-source",
+      "configurePreset": "release-static",
+      "targets": ["package_source"]
+    },
+    {
+      "name": "from-package-source",
+      "configurePreset": "from-package-source"
+    }
+  ],
+  "packagePresets": [
+    {
+      "name": "release-static",
+      "configurePreset": "release-static"
+    }
+  ],
+  "workflowPresets": [
+    {
+      "name": "package-static",
+      "steps": [
+        { "type": "configure", "name": "release-static" },
+        { "type": "build", "name": "release-static" },
+        { "type": "package", "name": "release-static" }
+      ]
+    },
+    {
+      "name": "package-source",
+      "steps": [
+        { "type": "configure", "name": "release-static" },
+        { "type": "build", "name": "package-source" }
+      ]
+    },
+    {
+      "name": "from-package-source",
+      "steps": [
+        { "type": "configure", "name": "from-package-source" },
+        { "type": "build", "name": "from-package-source" }
+      ]
     }
   ]
 }
