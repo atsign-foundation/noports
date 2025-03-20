@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.19)
 set(CMAKE_C_STANDARD 99)
 cmake_policy(SET CMP0135 NEW)
-project(graceful-shutdown-tool VERSION 0.4.1 LANGUAGES C)
+project(graceful-shutdown-tool VERSION 1.0.4 LANGUAGES C)
 
 include(FetchContent)
 include(GNUInstallDirs)

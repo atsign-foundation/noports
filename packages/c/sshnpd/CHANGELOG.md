@@ -1,3 +1,9 @@
+## 1.0.4
+
+- chore: change source packaging format
+  - If you are using 1.0.3 from GitHub releases (non-source code),
+    then there is no need to upgrade
+
 ## 1.0.3
 
 - fix: uptake segfault bug fix in atsdk
