@@ -66,6 +66,7 @@ endif()
 
 # 5. Create srv_lib library target
 
+add_compile_options("-pthread")
 add_library(${PROJECT_NAME}-lib STATIC ${SRV_SRCS})
 
 target_link_libraries(

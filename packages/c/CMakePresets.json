@@ -78,7 +78,7 @@
       "cacheVariables": {
         "NOPORTS_MBEDTLS_PATH": "deps/mbedtls-src",
         "NOPORTS_CJSON_PATH": "deps/cjson-src",
-        "NOPORTS_ATSDK_PATH": "deps/atsdk-src"
+        "NOPORTS_ATSDK_PATH": "deps/atsdk-src",
         "BUILD_SHARED_LIBS": "OFF",
         "CMAKE_BUILD_TYPE": "Release",
         "CMAKE_C_FLAGS": "-std=c99 -Wno-error -Wextra -Werror-implicit-function-declaration -Wno-calloc-transposed-args",
@@ -102,7 +102,7 @@
       "cacheVariables": {
         "NOPORTS_MBEDTLS_PATH": "deps/mbedtls-src",
         "NOPORTS_CJSON_PATH": "deps/cjson-src",
-        "NOPORTS_ATSDK_PATH": "deps/atsdk-src"
+        "NOPORTS_ATSDK_PATH": "deps/atsdk-src",
         "BUILD_SHARED_LIBS": "OFF",
         "CMAKE_BUILD_TYPE": "Release",
         "CMAKE_C_FLAGS": "-std=c99 -Wno-error -Wextra -Werror-implicit-function-declaration -fPIC -fhonour-copts -Wno-calloc-transposed-args",
@@ -134,6 +134,10 @@
     {
       "name": "from-package-source",
       "configurePreset": "from-package-source"
+    },
+    {
+      "name": "openwrt",
+      "configurePreset": "openwrt"
     }
   ],
   "packagePresets": [
@@ -169,7 +173,7 @@
       "name": "openwrt",
       "steps": [
         { "type": "configure", "name": "openwrt" },
-        { "type": "build", "name": "from-package-source" }
+        { "type": "build", "name": "openwrt" }
       ]
     }
   ]

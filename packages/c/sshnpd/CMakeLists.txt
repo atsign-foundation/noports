@@ -98,6 +98,7 @@ endif()
 
 # 5. Create sshnpd_lib library target
 
+add_compile_options("-lrt")
 add_library(${PROJECT_NAME}-lib STATIC ${SSHNPD_SRCS})
 
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
