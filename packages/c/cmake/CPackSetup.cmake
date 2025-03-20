@@ -8,12 +8,12 @@ set(CPACK_PACKAGE_VENDOR_NAME atsign-foundation)
 set(CPACK_CMAKE_GENERATOR "Unix Makefiles")
 
 # static cpack configuration
-set(CPACK_PACKAGE_FILE_NAME noports-static)
+set(CPACK_PACKAGE_FILE_NAME csshnpd-static-c${CPACK_PACKAGE_VERSION})
 set(CPACK_GENERATOR ZIP TGZ)
 set(CPACK_INSTALL_CMAKE_PROJECTS ".;noports;ALL;/")
 
 # source cpack configuration
-set(CPACK_SOURCE_PACKAGE_FILE_NAME noports-source)
+set(CPACK_SOURCE_PACKAGE_FILE_NAME csshnpd-c${CPACK_PACKAGE_VERSION})
 set(CPACK_SOURCE_GENERATOR TGZ ZIP)
 
 set(CPACK_SOURCE_INSTALLED_DIRECTORIES "${CMAKE_CURRENT_SOURCE_DIR};/")
