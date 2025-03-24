@@ -1,5 +1,9 @@
 # Windows Device Installation
 
+### Step 1: Download the Installer
+
+Download the installer [from GitHub](https://github.com/atsign-foundation/noports/releases/download/v5.8.7/NoPortsInstaller-windows-x64.zip). Then unzip the file.
+
 ### Step 2: Activate your client Atsign
 
 {% hint style="warning" %}
@@ -7,6 +11,8 @@ If you've activated your **client** atSign on another device already, this step 
 {% endhint %}
 
 #### Step 2.1 Open the Windows installer and click "Activate atSign"
+
+<figure><img src="../../.gitbook/assets/CleanShot 2025-01-20 at 16.48.11@2x.png" alt=""><figcaption></figcaption></figure>
 
 #### Step 2.2 Enter the atSign you wish to activate and click "Submit"
 
@@ -32,6 +38,6 @@ If you've activated your **client** atSign on another device already, this step 
 
 <figure><img src="../../.gitbook/assets/CleanShot 2025-01-20 at 17.51.22@2x.png" alt=""><figcaption></figcaption></figure>
 
-3.4 Wait for the installation to complete, then click "Next", and continue through the rest of the installation. Once installation has completed, it will look like this:
+#### 3.4 Wait for the installation to complete, then click "Next", and continue through the rest of the installation. Once installation has completed, it will look like this:
 
 <figure><img src="../../.gitbook/assets/CleanShot 2025-01-20 at 18.46.29@2x.png" alt=""><figcaption></figcaption></figure>
