@@ -27,6 +27,10 @@ With the key in place navigate to `System`>`Startup` and `Start` the `sshnpd` se
 
 ### Command line installation
 
+{% embed url="https://vimeo.com/1068947993" %}
+Walk through of OpenWrt CLI installation onto a Teltonika RUT241
+{% endembed %}
+
 The [releases](https://github.com/atsign-foundation/Atsign_OpenWRT_packages/releases) page includes instructions for command line installation, though these may need to be edited to suit your system architecture.
 
 Those command line snippets set some variables for the `RELEASE` number and `PACKAGE` name then use `wget` to download the package from GitHub.
