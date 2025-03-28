@@ -80,7 +80,7 @@ Make sure to replace the appropriate values:\
 
 ### Step 3) Approve the request on your <mark style="color:red;">Old machine</mark>
 
-Choose the operating that is running on your old machine.
+Choose the operating system that is running on your old machine.
 
 {% tabs %}
 {% tab title="MacOS/Linux" %}
