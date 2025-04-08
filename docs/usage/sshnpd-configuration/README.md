@@ -7,7 +7,7 @@ icon: square-sliders
 ### TL;DR
 
 ```
-sshnp -m @<_client> -a @<_device> -d <name> 
+sshnpd -m @<_client> -a @<_device> -d <name> 
 ```
 
 {% hint style="info" %}
@@ -75,3 +75,55 @@ The rest of the configuration for `sshnpd` is contained in a separate guide:
 {% content-ref url="daemon-additional-configuration.md" %}
 [daemon-additional-configuration.md](daemon-additional-configuration.md)
 {% endcontent-ref %}
+
+### Modifying your device's systemd unit&#x20;
+
+If you installed sshnpd through the [universal installer](../../installation/linux/device.md), then you can modify the `/etc/systemd/system/sshnpd.service.d/override.conf`  file to take advantage of the configurations and options listed above to tailor sshnpd to your needs.
+
+Lots of configuration can be done to sshnpd by editing this file, such as changing the user that sshnpd runs as, changing the atSigns, enabling/disabling verbose logging, and more.
+
+Sample `override.conf`file:
+
+```sh
+# MANDATORY: User to run the daemon as
+User=bob
+
+# MANDATORY: Manager (client) or policy manager address (atSign)
+Environment=manager_atsign="@alice"
+
+# MANDATORY: Device address (atSign)
+Environment=device_atsign="@bob"
+
+# OPTIONAL: Delegated access policy management
+Environment=delegate_policy=""
+
+# Device name
+Environment=device_name="atsign"
+
+# Comment if you don't want the daemon to update authorized_keys to include
+# public keys sent by authorized manager atSigns
+Environment=s="-s"
+
+# Comment to disable verbose logging
+Environment=v="-v"
+
+# Any additional command line arguments for sshnpd
+Environment=additional_args=""
+```
+
+Adding additional arguments is as simple as modifying the `Environment=additional_args=""`string found inside of `override.conf` .
+
+The example adds the `--permit-open` to the string of additional args which enables clients to access ports 22, 3389, and 2221 on localhost.
+
+```sh
+# Any additional command line arguments for sshnpd
+Environment=additional_args="--permit-open \"localhost:22,localhost:3389,localhost:2221\""
+```
+
+Don't forget to update sshnpd by executing (may require sudo):
+
+```sh
+systemctl daemon-reload
+systemctl restart sshnpd.service
+```
+
