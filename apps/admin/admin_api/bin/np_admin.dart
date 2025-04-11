@@ -15,20 +15,18 @@ void main(List<String> args) async {
 
   final app = Alfred();
   app.all('*', cors(origin: 'http://localhost:5173'));
-  if (Platform.executable.endsWith('np_admin')) {
+  if (Platform.executable.endsWith('np_admin') || Platform.executable.endsWith('np_admin.exe')) {
     // Production usage - we're using the compiled binary
     final executableLocation =
-        (Platform.resolvedExecutable.split(Platform.pathSeparator)
-              ..removeLast())
-            .join(Platform.pathSeparator);
-    final dir = Directory(
-        [executableLocation, 'web', 'admin'].join(Platform.pathSeparator));
-    print ('Will serve webapp from $dir');
+        (Platform.resolvedExecutable.split(Platform.pathSeparator)..removeLast()).join(Platform.pathSeparator);
+    print(">>>>$executableLocation");
+    final dir = Directory([executableLocation, 'web', 'admin'].join(Platform.pathSeparator));
+    print('Will serve webapp from $dir');
     app.get('/*', (req, res) => dir);
   } else {
     // TODO Maybe do something smarter here, but this is for dev purposes only
     final dir = Directory('../../../apps/admin/webapp/dist');
-    print ('Will serve webapp from ${dir.absolute}');
+    print('Will serve webapp from ${dir.absolute}');
     app.get('/*', (req, res) => dir);
   }
   await expose.policy(app, '/api/policy', api);
@@ -57,7 +55,9 @@ void main(List<String> args) async {
     }
   });
 
-  await app.listen();
+  // Listen only on localhost
+  await app.listen(3000,'127.0.0.1',true,0);
+
 }
 
 // ignore: unused_element
@@ -71,8 +71,7 @@ Future<void> _createGroups(PolicyService api) async {
       Device(name: 'bastion1', permitOpens: ['*:*'])
     ],
     deviceGroups: [
-      DeviceGroup(
-          name: 'atsign_staging_cloud', permitOpens: ['localhost:*', '*:22'])
+      DeviceGroup(name: 'atsign_staging_cloud', permitOpens: ['localhost:*', '*:22'])
     ],
   );
 
