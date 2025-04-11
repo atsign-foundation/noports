@@ -9,7 +9,11 @@ environment:
 
 # Add regular dependencies here.
 dependencies:
-  alfred: ^1.1.2+1
+  alfred:
+    git: 
+      url: git@github.com:cconstab/alfred.git
+      ref: cc-directory-4-windows
+
   at_client: ^3.4.2
   json_annotation: ^4.9.0
   at_cli_commons: ^2.0.0

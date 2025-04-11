@@ -14,6 +14,8 @@ void main(List<String> args) async {
   // await _createGroups(api); // useful for testing
 
   final app = Alfred();
+  // if you need debug info
+  //final app = Alfred(logLevel: LogType.debug);
   app.all('*', cors(origin: 'http://localhost:5173'));
   if (Platform.executable.endsWith('np_admin') || Platform.executable.endsWith('np_admin.exe')) {
     // Production usage - we're using the compiled binary
@@ -55,7 +57,7 @@ void main(List<String> args) async {
     }
   });
 
-  // Listen only on localhost
+  // Listen only on
   await app.listen(3000,'127.0.0.1',true,0);
 
 }
