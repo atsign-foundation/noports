@@ -1,9 +1,9 @@
 ---
-icon: desktop-arrow-down
 description: >-
   On this page you will find instructions on how to get started with NoPorts and
   set up secure remote access. Installation guides are also provided for each
   Operating System. Let's get started!
+icon: desktop-arrow-down
 ---
 
 # Installation
@@ -11,6 +11,12 @@ description: >-
 ## Installation Overview
 
 To complete an installation of NoPorts and set up remote access from a client to a remote device, we must perform an installation on both the client and device machines. We will also obtain two atSigns during registration: one client atSign and one device atSign. Once we have the client and device atSigns, we are ready to begin installation.
+
+{% hint style="info" %}
+Before you get started, please watch this quick video to understand the role of cryptographic keys in NoPorts.
+{% endhint %}
+
+{% embed url="https://vimeo.com/1075825418" %}
 
 1. [Obtain your NoPorts license](./#id-1.-obtain-your-license) from [noports.com](https://my.noports.com/no-ports-plans)\
    &#xNAN;_&#x59;ou can start with a 30-day evaluation license, no credit-card required_

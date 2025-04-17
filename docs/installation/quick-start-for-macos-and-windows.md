@@ -44,7 +44,7 @@ For Linux please follow the [Linux Installation Guide](https://docs.noports.com/
 
 ## Step 4: Save a copy of your atKeys
 
-Your atKeys (cryptographic keys) will be used to pair your atSign with this and other devices in future. You can [learn more about these keys here](../installation-faq/why-activate-the-device-atsign-on-the-client.md).
+Your atKeys (cryptographic keys) will be used to pair your atSign with this and other devices in future. You can [learn more about these keys here](https://www.youtube.com/watch?v=bRRLCOHP-BY).
 
 1. Click on **Save atKeys**
 2. Select a location on your device and **save** your keys.
