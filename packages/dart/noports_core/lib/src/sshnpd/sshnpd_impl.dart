@@ -141,6 +141,12 @@ class SshnpdImpl with AtClientBindings implements Sshnpd {
         DaemonFeature.supportsPortChoice.name: true,
         DaemonFeature.adjustableTimeout.name: true,
       },
+      'e2eeModes': {
+        'v1': {'algos':['AES:CTR']}, // two AES keys + IVs per socket
+      },
+      'authModes': {
+        'v1': {}, // per-socket signing
+      },
       'allowedServices': permitOpen,
     };
   }
