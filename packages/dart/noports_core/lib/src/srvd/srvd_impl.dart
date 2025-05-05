@@ -41,7 +41,7 @@ class SrvdImpl implements Srvd {
 
   static int timeoutMs = 1000;
 
-  static final String subscriptionRegex = '${Srvd.namespace}@';
+  static final String subscriptionRegex = '\\.${Srvd.namespace}@';
 
   late final SrvdUtil srvdUtil;
 
