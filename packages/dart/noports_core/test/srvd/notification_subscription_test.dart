@@ -20,9 +20,12 @@ void main() {
             .hasMatch('jagan@test.${Srvd.namespace}@jagan'),
         true);
     expect(RegExp(SrvdImpl.subscriptionRegex).hasMatch('${Srvd.namespace}@'),
-        true);
+        false);
     expect(
         RegExp(SrvdImpl.subscriptionRegex).hasMatch('${Srvd.namespace}.test@'),
+        false);
+    expect(
+        RegExp(SrvdImpl.subscriptionRegex).hasMatch('foo.${Srvd.namespace}.test@'),
         false);
   });
 
@@ -90,7 +93,7 @@ void main() {
           regex: any(named: 'regex'),
           shouldDecrypt: any(named: 'shouldDecrypt'))).thenAnswer((i) {
         switch (i.namedArguments[Symbol('regex')]) {
-          case 'sshrvd@':
+          case '\\.sshrvd@':
             print('Returning streamController.stream');
             return streamController.stream;
           default:

@@ -4,7 +4,7 @@ import 'dart:io';
 import 'dart:typed_data';
 import 'package:at_chops/at_chops.dart';
 import 'package:mocktail/mocktail.dart';
-import 'package:noports_core/src/srvd/signature_verifying_socket_authenticator.dart';
+import 'package:noports_core/src/srvd/socket_authenticators.dart';
 import 'package:test/test.dart';
 import 'package:uuid/uuid.dart';
 
@@ -17,7 +17,7 @@ void main() {
 
     atChops = AtChopsImpl(AtChopsKeys.create(encryptionKeyPair, null));
   });
-  test('SignatureVerifyingSocketAuthenticator signature verification success',
+  test('signature verification success',
       () async {
     String rvdSessionNonce = DateTime.now().toIso8601String();
     Map payload = {'sessionId': Uuid().v4(), 'rvdNonce': rvdSessionNonce};
@@ -26,11 +26,14 @@ void main() {
     MockSocket mockSocket = MockSocket();
 
     String signedEnvelope = signPayload(atChops, payload);
-    SignatureAuthVerifier sa = SignatureAuthVerifier(
-        atChops.atChopsKeys.atEncryptionKeyPair!.atPublicKey.publicKey,
-        jsonEncode(payload), // We'll verify the signature against this
-        rvdSessionNonce,
-        'test_for_success');
+    SocketAuthenticatorLegacy sa = SocketAuthenticatorLegacy(
+      atChops.atChopsKeys.atEncryptionKeyPair!.atPublicKey.publicKey,
+      jsonEncode(payload), // We'll verify the signature against this
+      rvdSessionNonce,
+      'test_for_success',
+      '@alice',
+      payload['sessionId'],
+    );
 
     List<int> list = utf8.encode('$signedEnvelope\n');
     Uint8List data = Uint8List.fromList(list);
@@ -53,7 +56,7 @@ void main() {
     expect(stream, isNotNull);
   });
 
-  test('SignatureVerifyingSocketAuthenticator signature verification failure',
+  test('signature verification failure',
       () async {
     String rvdSessionNonce = DateTime.now().toIso8601String();
     Map payload = {
@@ -62,12 +65,15 @@ void main() {
     };
 
     String signedEnvelope = signPayload(atChops, payload);
-    SignatureAuthVerifier sa = SignatureAuthVerifier(
-        atChops.atChopsKeys.atEncryptionKeyPair!.atPublicKey.publicKey,
-        // using a different payload; signature verification will fail
-        'some other payload',
-        rvdSessionNonce,
-        'test_for_failure');
+    SocketAuthenticatorLegacy sa = SocketAuthenticatorLegacy(
+      atChops.atChopsKeys.atEncryptionKeyPair!.atPublicKey.publicKey,
+      // using a different payload; signature verification will fail
+      'some other payload',
+      rvdSessionNonce,
+      'test_for_failure',
+      '@alice',
+      payload['sessionId'],
+    );
 
     List<int> list = utf8.encode('$signedEnvelope\n');
     Uint8List data = Uint8List.fromList(list);
@@ -95,18 +101,21 @@ void main() {
   });
 
   test(
-      'SignatureVerifyingSocketAuthenticator signature verification ok but mismatched nonce',
+      'signature verification ok but mismatched nonce',
       () async {
     final uuidString = Uuid().v4().toString();
     String rvdSessionNonce = DateTime.now().toIso8601String();
     Map payload = {'sessionId': uuidString, 'rvdNonce': rvdSessionNonce};
 
     String signedEnvelope = signPayload(atChops, payload);
-    SignatureAuthVerifier sa = SignatureAuthVerifier(
-        atChops.atChopsKeys.atEncryptionKeyPair!.atPublicKey.publicKey,
-        jsonEncode(payload),
-        rvdSessionNonce,
-        'test_for_mismatch');
+    SocketAuthenticatorLegacy sa = SocketAuthenticatorLegacy(
+      atChops.atChopsKeys.atEncryptionKeyPair!.atPublicKey.publicKey,
+      jsonEncode(payload),
+      rvdSessionNonce,
+      'test_for_mismatch',
+      '@alice',
+      payload['sessionId'],
+    );
 
     Map fakedEnvelope = jsonDecode(signedEnvelope);
     fakedEnvelope['payload']['rvdNonce'] = 'not the same nonce';

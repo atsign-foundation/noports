@@ -142,7 +142,9 @@ class SshnpdImpl with AtClientBindings implements Sshnpd {
         DaemonFeature.adjustableTimeout.name: true,
       },
       'e2eeModes': {
-        'v1': {'algos':['AES:CTR']}, // two AES keys + IVs per socket
+        'v1': {
+          'algos': ['AES:CTR'],
+        }, // two AES keys + IVs per socket
       },
       'authModes': {
         'v1': {}, // per-socket signing

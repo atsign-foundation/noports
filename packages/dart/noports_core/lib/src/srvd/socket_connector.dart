@@ -5,7 +5,7 @@ import 'package:at_utils/at_logger.dart';
 import 'package:noports_core/src/srvd/srvd_impl.dart';
 import 'package:socket_connector/socket_connector.dart';
 
-import 'signature_verifying_socket_authenticator.dart';
+import 'socket_authenticators.dart';
 
 typedef ConnectorParams = (
   SendPort,
@@ -63,11 +63,13 @@ void socketConnector(ConnectorParams connectorParams) async {
       throw Exception('Failed to create SocketAuthenticator'
           ' for ${srvdSessionParams.atSignA} due to failure to get public key for ${srvdSessionParams.atSignA}');
     }
-    socketAuthVerifierA = SignatureAuthVerifier(
+    socketAuthVerifierA = SocketAuthenticatorLegacy(
       pkAtSignA,
       jsonEncode(expectedPayloadForSignature),
       srvdSessionParams.rvdNonce!,
       srvdSessionParams.atSignA,
+      srvdSessionParams.atSignA,
+      srvdSessionParams.sessionId,
     ).authenticate;
   }
 
@@ -82,11 +84,13 @@ void socketConnector(ConnectorParams connectorParams) async {
       throw Exception('Failed to create SocketAuthenticator'
           ' for ${srvdSessionParams.atSignB} due to failure to get public key for ${srvdSessionParams.atSignB}');
     }
-    socketAuthVerifierB = SignatureAuthVerifier(
+    socketAuthVerifierB = SocketAuthenticatorLegacy(
       pkAtSignB,
       jsonEncode(expectedPayloadForSignature),
       srvdSessionParams.rvdNonce!,
       srvdSessionParams.atSignB!,
+      srvdSessionParams.atSignB!,
+      srvdSessionParams.sessionId,
     ).authenticate;
   }
 
