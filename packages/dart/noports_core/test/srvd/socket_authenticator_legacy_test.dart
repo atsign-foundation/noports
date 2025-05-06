@@ -26,7 +26,7 @@ void main() {
     MockSocket mockSocket = MockSocket();
 
     String signedEnvelope = signPayload(atChops, payload);
-    SocketAuthenticatorLegacy sa = SocketAuthenticatorLegacy(
+    SocketAuthVerifierLegacy sa = SocketAuthVerifierLegacy(
       atChops.atChopsKeys.atEncryptionKeyPair!.atPublicKey.publicKey,
       jsonEncode(payload), // We'll verify the signature against this
       rvdSessionNonce,
@@ -65,7 +65,7 @@ void main() {
     };
 
     String signedEnvelope = signPayload(atChops, payload);
-    SocketAuthenticatorLegacy sa = SocketAuthenticatorLegacy(
+    SocketAuthVerifierLegacy sa = SocketAuthVerifierLegacy(
       atChops.atChopsKeys.atEncryptionKeyPair!.atPublicKey.publicKey,
       // using a different payload; signature verification will fail
       'some other payload',
@@ -108,7 +108,7 @@ void main() {
     Map payload = {'sessionId': uuidString, 'rvdNonce': rvdSessionNonce};
 
     String signedEnvelope = signPayload(atChops, payload);
-    SocketAuthenticatorLegacy sa = SocketAuthenticatorLegacy(
+    SocketAuthVerifierLegacy sa = SocketAuthVerifierLegacy(
       atChops.atChopsKeys.atEncryptionKeyPair!.atPublicKey.publicKey,
       jsonEncode(payload),
       rvdSessionNonce,

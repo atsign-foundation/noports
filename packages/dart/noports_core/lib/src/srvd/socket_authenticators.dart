@@ -7,7 +7,7 @@ import 'package:at_chops/at_chops.dart';
 import 'package:at_commons/atsign.dart';
 import 'package:at_utils/at_logger.dart';
 
-abstract interface class SocketAuthenticator {
+abstract interface class SocketAuthVerifier {
   /// The authentication which is expected
   Future<(bool, Stream<Uint8List>?)> authenticate(Socket socket);
 
@@ -28,7 +28,7 @@ abstract interface class SocketAuthenticator {
 /// 2. Receive `${sessionId}:${auth-payload-as-base64}\n` from client
 /// 3. Verify that `sessionId` is currently active
 /// 4. Auth payload is json like this: `{'iv':'dsahjk','e':'ecehwuorhi'}`
-/// 5. Use session's AES key and the provided IV to decrypt the auth envelope
+/// 5. Fetch session's AES key. Use it and the provided IV to decrypt the auth envelope
 /// 6. Expect decrypted auth envelope to look like this:
 ///   ```
 ///   {
@@ -41,10 +41,10 @@ abstract interface class SocketAuthenticator {
 ///   ```
 /// 7. Verify that the contents of the payload are as expected (session id, challenge)
 /// 8. Fetch the public signing key
-/// 9. Verify the signature of the payload using the signing key,
+/// 9. Verify the signature of the payload using the public signing key,
 ///   hashingAlgo and signingAlgo
 /// 10. If all successful, return (true, dataStream)
-class SocketAuthenticatorV1 implements SocketAuthenticator {
+class SocketAuthVerifierV1 implements SocketAuthVerifier {
   static final AtSignLogger logger = AtSignLogger(' SocketAuthenticatorV1 ');
 
   @override
@@ -56,7 +56,7 @@ class SocketAuthenticatorV1 implements SocketAuthenticator {
   @override
   final String tag;
 
-  SocketAuthenticatorV1(this.tag);
+  SocketAuthVerifierV1(this.tag);
 
   @override
   Future<(bool, Stream<Uint8List>?)> authenticate(Socket socket) async {
@@ -215,7 +215,7 @@ class SocketAuthenticatorV1 implements SocketAuthenticator {
 /// also expects signature to be base64 encoded
 ///
 ///
-class SocketAuthenticatorLegacy implements SocketAuthenticator {
+class SocketAuthVerifierLegacy implements SocketAuthVerifier {
   static final AtSignLogger logger =
       AtSignLogger(' SocketAuthenticatorLegacy ');
 
@@ -238,7 +238,7 @@ class SocketAuthenticatorLegacy implements SocketAuthenticator {
   @override
   final String sessionId;
 
-  SocketAuthenticatorLegacy(
+  SocketAuthVerifierLegacy(
     this.publicKey,
     this.dataToVerify,
     this.rvdNonce,
