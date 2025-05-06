@@ -7,7 +7,7 @@ import 'package:at_chops/at_chops.dart';
 import 'package:at_commons/atsign.dart';
 import 'package:at_utils/at_logger.dart';
 
-abstract interface class SocketAuthVerifier {
+abstract interface class RelayAuthVerifier {
   /// The authentication which is expected
   Future<(bool, Stream<Uint8List>?)> authenticate(Socket socket);
 
@@ -44,7 +44,7 @@ abstract interface class SocketAuthVerifier {
 /// 9. Verify the signature of the payload using the public signing key,
 ///   hashingAlgo and signingAlgo
 /// 10. If all successful, return (true, dataStream)
-class SocketAuthVerifierV1 implements SocketAuthVerifier {
+class RelayAuthVerifierV1 implements RelayAuthVerifier {
   static final AtSignLogger logger = AtSignLogger(' SocketAuthenticatorV1 ');
 
   @override
@@ -56,7 +56,7 @@ class SocketAuthVerifierV1 implements SocketAuthVerifier {
   @override
   final String tag;
 
-  SocketAuthVerifierV1(this.tag);
+  RelayAuthVerifierV1(this.tag);
 
   @override
   Future<(bool, Stream<Uint8List>?)> authenticate(Socket socket) async {
@@ -215,7 +215,7 @@ class SocketAuthVerifierV1 implements SocketAuthVerifier {
 /// also expects signature to be base64 encoded
 ///
 ///
-class SocketAuthVerifierLegacy implements SocketAuthVerifier {
+class RelayAuthVerifierLegacy implements RelayAuthVerifier {
   static final AtSignLogger logger =
       AtSignLogger(' SocketAuthenticatorLegacy ');
 
@@ -238,7 +238,7 @@ class SocketAuthVerifierLegacy implements SocketAuthVerifier {
   @override
   final String sessionId;
 
-  SocketAuthVerifierLegacy(
+  RelayAuthVerifierLegacy(
     this.publicKey,
     this.dataToVerify,
     this.rvdNonce,

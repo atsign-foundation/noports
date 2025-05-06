@@ -63,7 +63,7 @@ void socketConnector(ConnectorParams connectorParams) async {
       throw Exception('Failed to create SocketAuthenticator'
           ' for ${srvdSessionParams.atSignA} due to failure to get public key for ${srvdSessionParams.atSignA}');
     }
-    socketAuthVerifierA = SocketAuthVerifierLegacy(
+    socketAuthVerifierA = RelayAuthVerifierLegacy(
       pkAtSignA,
       jsonEncode(expectedPayloadForSignature),
       srvdSessionParams.rvdNonce!,
@@ -84,7 +84,7 @@ void socketConnector(ConnectorParams connectorParams) async {
       throw Exception('Failed to create SocketAuthenticator'
           ' for ${srvdSessionParams.atSignB} due to failure to get public key for ${srvdSessionParams.atSignB}');
     }
-    socketAuthVerifierB = SocketAuthVerifierLegacy(
+    socketAuthVerifierB = RelayAuthVerifierLegacy(
       pkAtSignB,
       jsonEncode(expectedPayloadForSignature),
       srvdSessionParams.rvdNonce!,
