@@ -6,6 +6,8 @@ class SshnpSessionRequest {
   final String host;
   final int port;
   final bool? authenticateToRvd;
+  final String relayAuthMode;
+  final String? relayAuthAesKey;
   final String? clientNonce;
   final String? rvdNonce;
   final bool? encryptRvdTraffic;
@@ -22,6 +24,8 @@ class SshnpSessionRequest {
     required this.port,
     // optional params
     this.authenticateToRvd,
+    required this.relayAuthMode,
+    required this.relayAuthAesKey,
     this.clientNonce,
     this.rvdNonce,
     this.encryptRvdTraffic,
@@ -65,6 +69,8 @@ class SshnpSessionRequest {
       host: json['host'],
       port: json['port'],
       authenticateToRvd: json['authenticateToRvd'],
+      relayAuthMode: json['relayAuthMode'] ?? DefaultArgs.legacyRelayAuthMode,
+      relayAuthAesKey: json['relayAuthAesKey'],
       clientNonce: json['clientNonce'],
       rvdNonce: json['rvdNonce'],
       encryptRvdTraffic: json['encryptRvdTraffic'],
@@ -80,6 +86,8 @@ class SshnpSessionRequest {
         'host': host,
         'port': port,
         'authenticateToRvd': authenticateToRvd,
+        'relayAuthMode': relayAuthMode,
+        'relayAuthAesKey': relayAuthAesKey,
         'clientNonce': clientNonce,
         'rvdNonce': rvdNonce,
         'encryptRvdTraffic': encryptRvdTraffic,
@@ -96,6 +104,8 @@ class NptSessionRequest {
   final String requestedHost;
   final int requestedPort;
   final bool authenticateToRvd;
+  final String relayAuthMode;
+  final String? relayAuthAesKey;
   final String clientNonce;
   final String rvdNonce;
   final bool encryptRvdTraffic;
@@ -110,6 +120,8 @@ class NptSessionRequest {
     required this.requestedHost,
     required this.requestedPort,
     required this.authenticateToRvd,
+    required this.relayAuthMode,
+    required this.relayAuthAesKey,
     required this.clientNonce,
     required this.rvdNonce,
     required this.encryptRvdTraffic,
@@ -126,6 +138,8 @@ class NptSessionRequest {
       requestedHost: json['requestedHost'],
       requestedPort: json['requestedPort'],
       authenticateToRvd: json['authenticateToRvd'],
+      relayAuthMode: json['relayAuthMode'] ?? DefaultArgs.legacyRelayAuthMode,
+      relayAuthAesKey: json['relayAuthAesKey'],
       clientNonce: json['clientNonce'],
       rvdNonce: json['rvdNonce'],
       encryptRvdTraffic: json['encryptRvdTraffic'],
@@ -143,6 +157,8 @@ class NptSessionRequest {
         'requestedPort': requestedPort,
         'requestedHost': requestedHost,
         'authenticateToRvd': authenticateToRvd,
+        'relayAuthMode': relayAuthMode,
+        'relayAuthAesKey': relayAuthAesKey,
         'clientNonce': clientNonce,
         'rvdNonce': rvdNonce,
         'encryptRvdTraffic': encryptRvdTraffic,

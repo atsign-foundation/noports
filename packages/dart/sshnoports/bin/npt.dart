@@ -211,6 +211,13 @@ void main(List<String> args) async {
         negatable: true,
       );
 
+      parser.addOption(
+        'relay-auth-mode',
+        aliases: ['ram'],
+        help: 'v0 for legacy auth mode, v1 for strongest auth mode',
+        defaultsTo: DefaultArgs.legacyRelayAuthMode,
+      );
+
       // Parse Args
       ArgResults parsedArgs = parser.parse(args);
 
@@ -338,6 +345,7 @@ void main(List<String> args) async {
         daemonPingTimeout:
             Duration(seconds: int.parse(parsedArgs['daemon-ping-timeout'])),
         encryptRvdTraffic: parsedArgs['encrypt-rvd-traffic'],
+        relayAuthMode: parsedArgs['relay-auth-mode'],
         timeout: parseDuration(timeoutArg),
       );
 

@@ -1,3 +1,4 @@
+import 'package:noports_core/src/srv/relay_authenticators.dart';
 import 'package:noports_core/srv.dart';
 
 typedef SrvGenerator<T> = Srv<T> Function(
@@ -6,7 +7,7 @@ typedef SrvGenerator<T> = Srv<T> Function(
   int? localPort,
   bool? bindLocalPort,
   String? localHost,
-  String? rvdAuthString,
+  required RelayAuthenticator? relayAuthenticator,
   String? sessionAESKeyString,
   String? sessionIVString,
   bool multi,

@@ -24,6 +24,8 @@ class DefaultArgs {
   static const bool authenticateDeviceToRvd = true;
   static const bool encryptRvdTraffic = true;
 
+  static const String legacyRelayAuthMode = 'v0'; // legacy
+
   /// How long a client should wait for response after pinging a NoPorts daemon
   static const int daemonPingTimeoutSeconds = 20;
   static const Duration daemonPingTimeoutDuration =

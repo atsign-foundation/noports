@@ -156,6 +156,8 @@ class SshnpDartPureImpl extends SshnpCore
             host: srvdChannel.rvdHost,
             port: srvdChannel.daemonPort,
             authenticateToRvd: params.authenticateDeviceToRvd,
+            relayAuthMode: params.relayAuthMode,
+            relayAuthAesKey: srvdChannel.relayAuthAesKey,
             clientNonce: srvdChannel.clientNonce,
             rvdNonce: srvdChannel.rvdNonce,
             encryptRvdTraffic: params.encryptRvdTraffic,

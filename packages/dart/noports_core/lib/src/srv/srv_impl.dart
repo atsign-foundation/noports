@@ -10,9 +10,12 @@ import 'package:cryptography/dart.dart';
 import 'package:dartssh2/dartssh2.dart';
 import 'package:meta/meta.dart';
 import 'package:mutex/mutex.dart';
+import 'package:noports_core/src/srv/relay_authenticators.dart';
 import 'package:noports_core/srv.dart';
 import 'package:noports_core/sshnp.dart';
 import 'package:socket_connector/socket_connector.dart';
+
+String? rvdAuthString = 'abcde';
 
 @visibleForTesting
 class SrvImplExec implements Srv<Process> {
@@ -34,7 +37,7 @@ class SrvImplExec implements Srv<Process> {
   final bool? bindLocalPort;
 
   @override
-  final String? rvdAuthString;
+  final RelayAuthenticator? relayAuthenticator;
 
   @override
   final String? sessionAESKeyString;
@@ -54,7 +57,7 @@ class SrvImplExec implements Srv<Process> {
     this.localPort,
     this.localHost,
     this.bindLocalPort = false,
-    this.rvdAuthString,
+    required this.relayAuthenticator,
     this.sessionAESKeyString,
     this.sessionIVString,
     required this.multi,
@@ -179,7 +182,7 @@ class SrvImplInline implements Srv<SSHSocket> {
   final String? localHost = null;
 
   @override
-  final String? rvdAuthString;
+  final RelayAuthenticator? relayAuthenticator;
 
   @override
   final String? sessionAESKeyString;
@@ -196,7 +199,7 @@ class SrvImplInline implements Srv<SSHSocket> {
   SrvImplInline(
     this.streamingHost,
     this.streamingPort, {
-    this.rvdAuthString,
+    required this.relayAuthenticator,
     this.sessionAESKeyString,
     this.sessionIVString,
     this.multi = false,
@@ -252,7 +255,7 @@ class SrvImplInline implements Srv<SSHSocket> {
       }
 
       WrappedSSHSocket sshSocket =
-          WrappedSSHSocket(socket, rvdAuthString, encrypter, decrypter);
+          WrappedSSHSocket(socket, encrypter, decrypter);
 
       return sshSocket;
     } catch (e) {
@@ -268,7 +271,6 @@ class SrvImplInline implements Srv<SSHSocket> {
 class WrappedSSHSocket implements SSHSocket {
   /// The actual underlying socket
   final Socket socket;
-  final String? rvdAuthString;
   final DataTransformer? encrypter;
   final DataTransformer? decrypter;
 
@@ -276,7 +278,7 @@ class WrappedSSHSocket implements SSHSocket {
   late Stream<Uint8List> _stream;
 
   WrappedSSHSocket(
-      this.socket, this.rvdAuthString, this.encrypter, this.decrypter) {
+      this.socket, this.encrypter, this.decrypter) {
     if (encrypter == null) {
       _sink = socket;
     } else {
@@ -331,7 +333,7 @@ class SrvImplDart implements Srv<SocketConnector> {
   final bool bindLocalPort;
 
   @override
-  final String? rvdAuthString;
+  final RelayAuthenticator? relayAuthenticator;
 
   @override
   final String? sessionAESKeyString;
@@ -355,7 +357,7 @@ class SrvImplDart implements Srv<SocketConnector> {
     required this.localPort,
     required this.bindLocalPort,
     this.localHost,
-    this.rvdAuthString,
+    required this.relayAuthenticator,
     this.sessionAESKeyString,
     this.sessionIVString,
     this.multi = false,

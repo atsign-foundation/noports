@@ -5,6 +5,7 @@ import 'package:at_client/at_client.dart';
 import 'package:at_client/at_client_mixins.dart';
 import 'package:at_utils/at_utils.dart';
 import 'package:mocktail/mocktail.dart';
+import 'package:noports_core/src/srv/relay_authenticators.dart';
 import 'package:noports_core/srv.dart';
 import 'package:noports_core/srvd.dart';
 import 'package:noports_core/sshnp_foundation.dart';
@@ -45,7 +46,7 @@ void main() {
     srvGeneratorInvocation() => srvGeneratorStub(any(), any(),
         localPort: any(named: 'localPort'),
         bindLocalPort: any(named: 'bindLocalPort'),
-        rvdAuthString: any(named: 'rvdAuthString'));
+        relayAuthenticator: any(named: 'relayAuthenticator'));
     srvRunInvocation() => mockSrv.run();
 
     setUp(() {
@@ -100,7 +101,7 @@ void main() {
             Srv<String> Function(String, int,
                 {required int localPort,
                 required bool bindLocalPort,
-                String? rvdAuthString})>(),
+                RelayAuthenticator? relayAuthenticator})>(),
       );
       expect(stubbedSrvdChannel.atClient, mockAtClient);
       expect(stubbedSrvdChannel.params, mockParams);

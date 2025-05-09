@@ -5,7 +5,7 @@ import 'package:at_utils/at_logger.dart';
 import 'package:noports_core/src/srvd/srvd_impl.dart';
 import 'package:socket_connector/socket_connector.dart';
 
-import 'socket_authenticators.dart';
+import 'relay_auth_verifiers.dart';
 
 typedef ConnectorParams = (
   SendPort,
@@ -70,7 +70,7 @@ void socketConnector(ConnectorParams connectorParams) async {
       srvdSessionParams.atSignA,
       srvdSessionParams.atSignA,
       srvdSessionParams.sessionId,
-    ).authenticate;
+    ).verifySocketAuth;
   }
 
   SocketAuthVerifier? socketAuthVerifierB;
@@ -91,7 +91,7 @@ void socketConnector(ConnectorParams connectorParams) async {
       srvdSessionParams.atSignB!,
       srvdSessionParams.atSignB!,
       srvdSessionParams.sessionId,
-    ).authenticate;
+    ).verifySocketAuth;
   }
 
   /// Create the socket connector

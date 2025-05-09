@@ -11,7 +11,9 @@ import 'package:logging/logging.dart';
 import 'package:meta/meta.dart';
 import 'package:noports_core/src/common/features.dart';
 import 'package:noports_core/src/common/handle_server_events.dart';
+import 'package:noports_core/src/common/mixins/apkam_signing.dart';
 import 'package:noports_core/src/common/openssh_binary_path.dart';
+import 'package:noports_core/src/srv/relay_authenticators.dart';
 import 'package:noports_core/src/srv/srv.dart';
 import 'package:noports_core/src/sshnp/impl/notification_request_message.dart';
 import 'package:noports_core/sshnpd.dart';
@@ -22,7 +24,7 @@ import 'package:socket_connector/socket_connector.dart';
 import 'package:uuid/uuid.dart';
 
 @protected
-class SshnpdImpl with AtClientBindings implements Sshnpd {
+class SshnpdImpl with AtClientBindings, ApkamSigning implements Sshnpd {
   @override
   final AtSignLogger logger = AtSignLogger(' sshnpd ');
 
@@ -565,14 +567,31 @@ class SshnpdImpl with AtClientBindings implements Sshnpd {
     //      e.g. making the rvdAuthString; generating AES and IV and encrypting them
 
     try {
-      String? rvdAuthString;
+      RelayAuthenticator? relayAuthenticator;
+
       if (req.authenticateToRvd) {
-        // TODO refactor duplicate code from startDirectSsh
-        rvdAuthString = signAndWrapAndJsonEncode(atClient, {
-          'sessionId': req.sessionId,
-          'clientNonce': req.clientNonce,
-          'rvdNonce': req.rvdNonce,
-        });
+        switch (req.relayAuthMode) {
+          case 'v0':
+            relayAuthenticator =
+                RelayAuthenticatorLegacy(signAndWrapAndJsonEncode(atClient, {
+              'sessionId': req.sessionId,
+              'clientNonce': req.clientNonce,
+              'rvdNonce': req.rvdNonce,
+            }));
+            break;
+          case 'v1':
+            relayAuthenticator = RelayAuthenticatorV1(
+              sessionId: req.sessionId,
+              relayAuthAesKey: req.relayAuthAesKey!,
+              publicSigningKeyUri: publicSigningKeyUri,
+              publicSigningKey: publicSigningKey,
+              privateSigningKey: privateSigningKey,
+            );
+            break;
+          default:
+            throw StateError('Unknown relayAuthMode ${req.relayAuthMode}'
+                ' - expected v0 or v1');
+        }
       }
 
       String? sessionAESKey, sessionAESKeyEncrypted;
@@ -616,7 +635,7 @@ class SshnpdImpl with AtClientBindings implements Sshnpd {
           localPort: req.requestedPort,
           bindLocalPort: false,
           localHost: req.requestedHost,
-          rvdAuthString: rvdAuthString,
+          relayAuthenticator: relayAuthenticator,
           sessionAESKeyString: sessionAESKey,
           sessionIVString: sessionIV,
           multi: true,
@@ -632,7 +651,7 @@ class SshnpdImpl with AtClientBindings implements Sshnpd {
           localPort: req.requestedPort,
           bindLocalPort: false,
           localHost: req.requestedHost,
-          rvdAuthString: rvdAuthString,
+          relayAuthenticator: relayAuthenticator,
           sessionAESKeyString: sessionAESKey,
           sessionIVString: sessionIV,
           multi: true,
@@ -776,6 +795,8 @@ class SshnpdImpl with AtClientBindings implements Sshnpd {
       port: int.parse(port),
       privateKey: _privateKey,
       remoteForwardPort: int.parse(remoteForwardPort),
+      relayAuthMode: 'v0',
+      relayAuthAesKey: null,
     );
 
     String requested = '$localSshdHost:$localSshdPort';
@@ -818,29 +839,39 @@ class SshnpdImpl with AtClientBindings implements Sshnpd {
     required String requestingAtsign,
     required SshnpSessionRequest req,
   }) async {
-    String sessionId = req.sessionId;
-    String host = req.host;
-    int port = req.port;
     bool? authenticateToRvd = req.authenticateToRvd;
-    String? clientNonce = req.clientNonce;
-    String? rvdNonce = req.rvdNonce;
     bool? encryptRvdTraffic = req.encryptRvdTraffic;
     String? clientEphemeralPK = req.clientEphemeralPK;
     String? clientEphemeralPKType = req.clientEphemeralPKType;
 
     logger.info(
-        'Setting up ports for direct ssh session using ${sshClient.name} ($sshClient) from: $requestingAtsign session: $sessionId');
+        'Setting up ports for direct ssh session using ${sshClient.name} ($sshClient) from: $requestingAtsign session: ${req.sessionId}');
 
     authenticateToRvd ??= false;
     encryptRvdTraffic ??= false;
     try {
-      String? rvdAuthString;
+      RelayAuthenticator? relayAuthenticator;
       if (authenticateToRvd) {
-        rvdAuthString = signAndWrapAndJsonEncode(atClient, {
-          'sessionId': sessionId,
-          'clientNonce': clientNonce,
-          'rvdNonce': rvdNonce,
-        });
+        switch (req.relayAuthMode) {
+          case 'v0':
+            relayAuthenticator =
+                RelayAuthenticatorLegacy(signAndWrapAndJsonEncode(atClient, {
+              'sessionId': req.sessionId,
+              'clientNonce': req.clientNonce,
+              'rvdNonce': req.rvdNonce,
+            }));
+            break;
+          case 'v1':
+            relayAuthenticator = RelayAuthenticatorV1(
+                sessionId: req.sessionId,
+                relayAuthAesKey: req.relayAuthAesKey!,
+                publicSigningKeyUri: publicSigningKeyUri,
+                publicSigningKey: publicSigningKey,
+                privateSigningKey: privateSigningKey);
+          default:
+            throw StateError('Unknown relayAuthMode ${req.relayAuthMode}'
+                ' - expected v0 or v1');
+        }
       }
 
       String? sessionAESKey, sessionAESKeyEncrypted;
@@ -881,11 +912,11 @@ class SshnpdImpl with AtClientBindings implements Sshnpd {
       // Connect to rendezvous point using background process.
       // This program can then exit without causing an issue.
       Process rv = await Srv.exec(
-        host,
-        port,
+        req.host,
+        req.port,
         localPort: localSshdPort,
         bindLocalPort: false,
-        rvdAuthString: rvdAuthString,
+        relayAuthenticator: relayAuthenticator,
         sessionAESKeyString: sessionAESKey,
         sessionIVString: sessionIV,
         timeout: DefaultArgs.srvTimeout,
@@ -897,12 +928,12 @@ class SshnpdImpl with AtClientBindings implements Sshnpd {
       /// Generate the ephemeral key pair which the client will use for the
       /// initial tunnel ssh session
       AtSshKeyPair tunnelKeyPair = await keyUtil.generateKeyPair(
-          algorithm: sshAlgorithm, identifier: 'ephemeral_$sessionId');
+          algorithm: sshAlgorithm, identifier: 'ephemeral_${req.sessionId}');
 
       await keyUtil.authorizePublicKey(
         sshPublicKey: tunnelKeyPair.publicKeyContents,
         localSshdPort: localSshdPort,
-        sessionId: sessionId,
+        sessionId: req.sessionId,
         permissions: ephemeralPermissions,
       );
 
@@ -917,30 +948,30 @@ class SshnpdImpl with AtClientBindings implements Sshnpd {
       ///   ephemeral private key
       await _notify(
         atKey: _createResponseAtKey(
-            requestingAtsign: requestingAtsign, sessionId: sessionId),
+            requestingAtsign: requestingAtsign, sessionId: req.sessionId),
         value: signAndWrapAndJsonEncode(atClient, {
           'status': 'connected',
-          'sessionId': sessionId,
+          'sessionId': req.sessionId,
           'ephemeralPrivateKey': tunnelKeyPair.privateKeyContents,
           'sessionAESKey': sessionAESKeyEncrypted,
           'sessionIV': sessionIVEncrypted,
         }),
-        sessionId: sessionId,
+        sessionId: req.sessionId,
       );
 
       /// - start a timer to remove the ephemeral key from `authorized_keys`
       ///   after 15 seconds
       Timer(const Duration(seconds: 15),
-          () => keyUtil.deauthorizePublicKey(sessionId));
+          () => keyUtil.deauthorizePublicKey(req.sessionId));
     } catch (e) {
       logger.severe('startDirectSsh failed with unexpected error : $e');
       // Notify sshnp that this session is NOT connected
       await _notify(
         atKey: _createResponseAtKey(
-            requestingAtsign: requestingAtsign, sessionId: sessionId),
+            requestingAtsign: requestingAtsign, sessionId: req.sessionId),
         value:
             'Failed to start up the daemon side of the srv socket tunnel : $e',
-        sessionId: sessionId,
+        sessionId: req.sessionId,
       );
     }
   }

@@ -1,10 +1,13 @@
 import 'dart:async';
 
+import 'package:at_chops/at_chops.dart';
 import 'package:at_client/at_client.dart';
 import 'package:at_client/at_client_mixins.dart';
 import 'package:at_utils/at_utils.dart';
 import 'package:meta/meta.dart';
+import 'package:noports_core/src/common/mixins/apkam_signing.dart';
 import 'package:noports_core/src/common/mixins/async_initialization.dart';
+import 'package:noports_core/src/srv/relay_authenticators.dart';
 import 'package:noports_core/src/sshnp/util/srvd_channel/notification_request_message.dart';
 import 'package:noports_core/srv.dart';
 import 'package:noports_core/srvd.dart';
@@ -23,7 +26,8 @@ enum SrvdAck {
   notAcknowledged,
 }
 
-abstract class SrvdChannel<T> with AsyncInitialization, AtClientBindings {
+abstract class SrvdChannel<T>
+    with AsyncInitialization, AtClientBindings, ApkamSigning {
   @override
   final logger = AtSignLogger(' SrvdChannel ');
 
@@ -71,6 +75,17 @@ abstract class SrvdChannel<T> with AsyncInitialization, AtClientBindings {
   String? rvdNonce;
   String? sessionAESKeyString;
   String? sessionIVString;
+  String? _relayAuthAesKey;
+
+  String? get relayAuthAesKey {
+    if (params.relayAuthMode == DefaultArgs.legacyRelayAuthMode) {
+      return null;
+    } else {
+      _relayAuthAesKey ??=
+          AtChopsUtil.generateSymmetricKey(EncryptionKeyType.aes256).key;
+      return _relayAuthAesKey;
+    }
+  }
 
   /// Whether srvd acknowledged our request
   @visibleForTesting
@@ -107,18 +122,36 @@ abstract class SrvdChannel<T> with AsyncInitialization, AtClientBindings {
 
     late Srv<T> srv;
 
+    RelayAuthenticator? relayAuthenticator;
+    if (params.authenticateClientToRvd) {
+      switch (params.relayAuthMode) {
+        case 'v0':
+          relayAuthenticator =
+              RelayAuthenticatorLegacy(signAndWrapAndJsonEncode(atClient, {
+            'sessionId': sessionId,
+            'clientNonce': clientNonce,
+            'rvdNonce': rvdNonce,
+          }));
+          break;
+        case 'v1':
+          relayAuthenticator = RelayAuthenticatorV1(
+            sessionId: sessionId,
+            relayAuthAesKey: relayAuthAesKey!,
+            publicSigningKeyUri: publicSigningKeyUri,
+            publicSigningKey: publicSigningKey,
+            privateSigningKey: privateSigningKey,
+          );
+        default:
+          throw StateError('Unknown relayAuthMode ${params.relayAuthMode}'
+              ' - expected v0 or v1');
+      }
+    }
     srv = srvGenerator(
       rvdHost,
       clientPort,
       localPort: localRvPort,
       bindLocalPort: true,
-      rvdAuthString: params.authenticateClientToRvd
-          ? signAndWrapAndJsonEncode(atClient, {
-              'sessionId': sessionId,
-              'clientNonce': clientNonce,
-              'rvdNonce': rvdNonce,
-            })
-          : null,
+      relayAuthenticator: relayAuthenticator,
       sessionAESKeyString: sessionAESKeyString,
       sessionIVString: sessionIVString,
       multi: multi,
@@ -172,13 +205,16 @@ abstract class SrvdChannel<T> with AsyncInitialization, AtClientBindings {
           ..namespaceAware = false
           ..ttl = 10000);
 
-      var message = SocketRendezvousRequestMessage();
-      message.sessionId = sessionId;
-      message.atSignA = params.clientAtSign;
-      message.atSignB = params.sshnpdAtSign;
-      message.authenticateSocketA = params.authenticateClientToRvd;
-      message.authenticateSocketB = params.authenticateDeviceToRvd;
-      message.clientNonce = clientNonce;
+      var message = SocketRendezvousRequestMessage(
+        sessionId: sessionId,
+        atSignA: params.clientAtSign,
+        atSignB: params.sshnpdAtSign,
+        authenticateSocketA: params.authenticateClientToRvd,
+        authenticateSocketB: params.authenticateDeviceToRvd,
+        clientNonce: clientNonce,
+        relayAuthMode: params.relayAuthMode,
+        relayAuthAesKey: relayAuthAesKey,
+      );
 
       rvdRequestValue = message.toString();
     } else {

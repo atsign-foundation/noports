@@ -1,5 +1,6 @@
 import 'package:at_client/at_client.dart';
 import 'package:mocktail/mocktail.dart';
+import 'package:noports_core/src/srv/relay_authenticators.dart';
 import 'package:noports_core/sshnp_foundation.dart';
 import 'package:noports_core/srv.dart';
 
@@ -11,7 +12,7 @@ abstract class SrvGeneratorCaller<T> {
     int? localPort,
     bool? bindLocalPort,
     String? localHost,
-    String? rvdAuthString,
+    RelayAuthenticator? relayAuthenticator,
     String? sessionAESKeyString,
     String? sessionIVString,
     bool multi = false,

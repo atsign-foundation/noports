@@ -5,6 +5,7 @@ import 'package:at_client/at_client_mixins.dart';
 import 'package:at_utils/at_logger.dart';
 import 'package:meta/meta.dart';
 import 'package:noports_core/src/common/features.dart';
+import 'package:noports_core/src/common/mixins/apkam_signing.dart';
 import 'package:noports_core/src/common/mixins/async_completion.dart';
 import 'package:noports_core/src/common/mixins/async_initialization.dart';
 import 'package:noports_core/src/common/default_args.dart';
@@ -17,7 +18,7 @@ import 'package:uuid/uuid.dart';
 // If you've never seen an abstract implementation before, here it is :P
 @protected
 abstract class SshnpCore
-    with AsyncInitialization, AsyncDisposal, AtClientBindings, SshnpKeyHandler
+    with AsyncInitialization, AsyncDisposal, AtClientBindings, SshnpKeyHandler, ApkamSigning
     implements Sshnp {
   // * AtClientBindings members
   /// The logger for this class
@@ -77,6 +78,19 @@ abstract class SshnpCore
   sendProgress(String message) {
     _progressStreamController.add(message);
   }
+
+  /// the uri (e.g. public:foo.bar.baz@atsign) of the [publicSigningKey]
+  @override
+  String get publicSigningKeyUri;
+
+  /// the public key which can be used to verify signatures made using
+  /// [privateSigningKey]
+  @override
+  String get publicSigningKey;
+
+  /// the private key used to sign things this program sends
+  @override
+  String get privateSigningKey;
 
   SshnpCore({
     required this.atClient,

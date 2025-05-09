@@ -1,0 +1,163 @@
+import 'dart:async';
+import 'dart:convert';
+import 'dart:io';
+import 'dart:typed_data';
+
+import 'package:at_chops/at_chops.dart';
+import 'package:mutex/mutex.dart';
+
+/// Clients which are authenticating to a relay may use a [RelayAuthenticator]
+/// to do so. Responsibility of a [RelayAuthenticator] is typically to
+/// - wait to receive some sort of challenge from the relay
+/// - send a response back to the relay based on that challenge (typically
+///   a signed payload)
+abstract interface class RelayAuthenticator {
+  /// The function which will do whichever flavour of relay authentication
+  /// that is required.
+  ///
+  /// Returns a stream which Srv's will listen to rather than listening
+  /// to the socket directly.
+  Future<(bool, Stream<Uint8List>?)> authenticate(Socket socket);
+}
+
+class RelayAuthenticatorLegacy implements RelayAuthenticator {
+  final String authString;
+
+  RelayAuthenticatorLegacy(this.authString);
+
+  /// Legacy authentication just writes the string it's been provided
+  /// and returns. Since it doesn't need to listen to the socket
+  /// it just returns the socket for the application code to listen to.
+  @override
+  Future<(bool, Stream<Uint8List>?)> authenticate(Socket socket) async {
+    socket.writeln(authString);
+    return (true, socket);
+  }
+}
+
+class RelayAuthenticatorV1 implements RelayAuthenticator {
+  final String sessionId;
+  final String relayAuthAesKey;
+  final String publicSigningKeyUri;
+  final String publicSigningKey;
+  final String privateSigningKey;
+
+  late final AtChops _atChops;
+
+  RelayAuthenticatorV1({
+    required this.sessionId,
+    required this.relayAuthAesKey,
+    required this.publicSigningKeyUri,
+    required this.publicSigningKey,
+    required this.privateSigningKey,
+  }) {
+    _atChops = AtChopsImpl(AtChopsKeys()
+      ..atEncryptionKeyPair =
+          AtEncryptionKeyPair.create(publicSigningKey, privateSigningKey));
+  }
+
+  /// v1 authentication to relay
+  /// - listens to socket
+  /// - waits for challenge (base64 terminated by newline)
+  /// - constructs challenge response as
+  ///   `${sessionId}:${auth-payload-as-base64}\n`, where
+  ///   - `auth-payload-as-base64` is base64-encoding of
+  ///     `{'iv':'some_iv','e':'encrypted-payload-as-base64'}`
+  ///   - `encrypted-payload-as-base64` is base64-encoding of the encrypted
+  ///     payload, encrypted using the session AES key and the `iv` from above
+  ///   - the actual payload is
+  ///     ```
+  ///     {
+  ///       'p':{'sid':'session-id','c':'challenge'},
+  ///       's':'signature of json string encoding of p
+  ///       'ha':'hashingAlgo',
+  ///       'sa':'signingAlgo',
+  ///       'sk':'public:some_key.some.namespace@atSign'
+  ///     }
+  ///     ```
+  ///     where `s` is signed by some private signing key, and `sk` is the
+  ///     atProtocol URI of the corresponding public key.
+  ///
+  @override
+  Future<(bool, Stream<Uint8List>?)> authenticate(Socket socket) {
+    Completer<(bool, Stream<Uint8List>?)> completer = Completer();
+    bool authenticated = false;
+    StreamController<Uint8List> sc = StreamController();
+    List<int> buffer = [];
+
+    Mutex listenMutex = Mutex();
+
+    socket.listen((Uint8List data) async {
+      await listenMutex.acquire();
+      try {
+        if (authenticated) {
+          sc.add(data);
+        } else {
+          // TODO maximum buffer size check to prevent dos attacks
+          // TODO unit test for same
+          buffer.addAll(data);
+          if (buffer.contains(10)) {
+            List<int> authBuffer = buffer.sublist(0, buffer.indexOf(10));
+            buffer.removeRange(0, buffer.indexOf(10) + 1);
+
+            try {
+              /// We've got the `$challenge\n` from relay
+              final challenge = String.fromCharCodes(authBuffer);
+
+              socket.writeln(responseToChallenge(challenge));
+
+              if (buffer.isNotEmpty) {
+                sc.add(Uint8List.fromList(buffer));
+              }
+
+              authenticated = true;
+
+              completer.complete((true, sc.stream));
+            } catch (e) {
+              completer.completeError('Error during relay authentication: $e');
+            }
+          }
+        }
+      } finally {
+        listenMutex.release();
+      }
+    }, onError: (Object error, StackTrace stackTrace) {
+      sc.addError(error);
+
+      sc.close();
+    }, onDone: () => sc.close());
+    return completer.future;
+  }
+
+  String responseToChallenge(String challenge) {
+    /// Construct response payload
+    Map envelope = {
+      'p': {'sid': sessionId, 'c': challenge}
+    };
+    final AtSigningInput signingInput =
+        AtSigningInput(jsonEncode(envelope['p']))
+          ..signingMode = AtSigningMode.data;
+    final AtSigningResult sr = _atChops.sign(signingInput);
+    final String signature = sr.result.toString();
+    envelope['s'] = signature;
+    envelope['ha'] = sr.atSigningMetaData.hashingAlgoType!.name;
+    envelope['sa'] = sr.atSigningMetaData.signingAlgoType!.name;
+    envelope['sk'] = publicSigningKeyUri;
+
+    String envelope64 = base64Encode(jsonEncode(envelope).codeUnits);
+    /// Encrypt the response payload
+    final InitialisationVector iv = AtChopsUtil.generateRandomIV(16);
+    final ea = AESEncryptionAlgo(AESKey(relayAuthAesKey));
+    final String envelopeEncrypted64 = _atChops
+        .encryptString(envelope64, EncryptionKeyType.aes256,
+            encryptionAlgorithm: ea, iv: iv)
+        .result;
+
+    String authPayload64 = base64Encode(jsonEncode({
+      'iv': base64Encode(iv.ivBytes),
+      'e': envelopeEncrypted64,
+    }).codeUnits);
+
+    return '$sessionId:$authPayload64';
+  }
+}

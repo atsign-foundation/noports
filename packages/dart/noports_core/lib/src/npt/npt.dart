@@ -254,6 +254,8 @@ class _NptImpl extends NptBase
             rvdHost: _srvdChannel.rvdHost,
             rvdPort: _srvdChannel.daemonPort,
             authenticateToRvd: params.authenticateDeviceToRvd,
+            relayAuthMode: params.relayAuthMode,
+            relayAuthAesKey: _srvdChannel.relayAuthAesKey,
             clientNonce: _srvdChannel.clientNonce,
             rvdNonce: _srvdChannel.rvdNonce!,
             encryptRvdTraffic: params.encryptRvdTraffic,
