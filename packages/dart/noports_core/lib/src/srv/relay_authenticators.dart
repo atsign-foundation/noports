@@ -87,11 +87,12 @@ class RelayAuthenticatorV1 implements RelayAuthenticator {
     'RV_SESSION_ID': sessionId,
     'RV_AUTH_AES_KEY': relayAuthAesKey,
     'RV_PUB_KEY_URI': publicSigningKeyUri,
-    'RV_SIGNING_KEY': privateSigningKey,
+    'RV_SIGNING_PUBKEY': publicSigningKey,
+    'RV_SIGNING_PRIVKEY': privateSigningKey,
   };
 
   @override
-  List<String> get rvArgs => ['--rv-auth-mode', 'v0'];
+  List<String> get rvArgs => ['--rv-auth-mode', 'v1'];
 
   /// v1 authentication to relay
   /// - listens to socket
