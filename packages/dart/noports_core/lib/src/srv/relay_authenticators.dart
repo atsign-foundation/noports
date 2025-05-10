@@ -18,12 +18,30 @@ abstract interface class RelayAuthenticator {
   /// Returns a stream which Srv's will listen to rather than listening
   /// to the socket directly.
   Future<(bool, Stream<Uint8List>?)> authenticate(Socket socket);
+
+  /// Map of things to place in the environment when executing the srv
+  /// in a separate process
+  Map<String, String> get envMap;
+
+  /// Command-line args when executing the srv in a separate process
+  List<String> get rvArgs;
 }
 
 class RelayAuthenticatorLegacy implements RelayAuthenticator {
   final String authString;
 
   RelayAuthenticatorLegacy(this.authString);
+
+  /// Map of things to place in the environment when executing the srv
+  /// in a separate process
+  /// - RV_AUTH: [authString] - sent to relay for legacy (v0) auth
+  @override
+  Map<String, String> get envMap => {
+    'RV_AUTH': authString,
+  };
+
+  @override
+  List<String> get rvArgs => ['--rv-auth'];
 
   /// Legacy authentication just writes the string it's been provided
   /// and returns. Since it doesn't need to listen to the socket
@@ -55,6 +73,25 @@ class RelayAuthenticatorV1 implements RelayAuthenticator {
       ..atEncryptionKeyPair =
           AtEncryptionKeyPair.create(publicSigningKey, privateSigningKey));
   }
+
+  /// Map of things to place in the environment when executing the srv
+  /// in a separate process
+  /// - sessionId - RV_SESSION_ID - required in the auth message
+  /// - relayAuthAesKey - RV_AUTH_AES_KEY - to encrypt the auth envelope
+  /// - publicSigningKeyUri - RV_PUB_KEY_URI - used by verifier to fetch the
+  ///   publicSigningKey
+  /// - privateSigningKey - RV_SIGNING_KEY used here to sign the
+  ///   actual payload within the auth envelope
+  @override
+  Map<String, String> get envMap => {
+    'RV_SESSION_ID': sessionId,
+    'RV_AUTH_AES_KEY': relayAuthAesKey,
+    'RV_PUB_KEY_URI': publicSigningKeyUri,
+    'RV_SIGNING_KEY': privateSigningKey,
+  };
+
+  @override
+  List<String> get rvArgs => ['--rv-auth-mode', 'v0'];
 
   /// v1 authentication to relay
   /// - listens to socket

@@ -15,8 +15,6 @@ import 'package:noports_core/srv.dart';
 import 'package:noports_core/sshnp.dart';
 import 'package:socket_connector/socket_connector.dart';
 
-String? rvdAuthString = 'abcde';
-
 @visibleForTesting
 class SrvImplExec implements Srv<Process> {
   static final AtSignLogger logger = AtSignLogger('SrvImplExec');
@@ -103,9 +101,12 @@ class SrvImplExec implements Srv<Process> {
       rvArgs.add('--bind-local-port');
     }
     Map<String, String> environment = {};
-    if (rvdAuthString != null) {
-      rvArgs.addAll(['--rv-auth']);
-      environment['RV_AUTH'] = rvdAuthString!;
+
+    if (relayAuthenticator != null) {
+      rvArgs.addAll(relayAuthenticator!.rvArgs);
+      for (final String name in relayAuthenticator!.envMap.keys) {
+        environment[name] = relayAuthenticator!.envMap[name]!;
+      }
     }
     if (sessionAESKeyString != null && sessionIVString != null) {
       rvArgs.addAll(['--rv-e2ee']);
@@ -247,15 +248,28 @@ class SrvImplInline implements Srv<SSHSocket> {
           ' at $streamingHost:$streamingPort');
       Socket socket = await Socket.connect(streamingHost, streamingPort);
 
-      // Authenticate if we have an rvdAuthString
-      if (rvdAuthString != null) {
+      // Authenticate if we have a relayAuthenticator
+      Stream<Uint8List>? socketStream;
+      if (relayAuthenticator != null) {
+        bool authenticated;
         logger.info('run() authenticating to rvd');
-        socket.writeln(rvdAuthString);
-        await socket.flush();
+        (authenticated, socketStream) =
+            await relayAuthenticator!.authenticate(socket);
+        if (!authenticated) {
+          throw Exception('Authentication failed');
+        }
+      } else {
+        socketStream = socket;
       }
 
-      WrappedSSHSocket sshSocket =
-          WrappedSSHSocket(socket, encrypter, decrypter);
+      WrappedSSHSocket sshSocket = WrappedSSHSocket(
+        socketStream!,
+        socket,
+        encrypter,
+        decrypter,
+        onClose: () async => socket.close(),
+        onDestroy: () => socket.destroy(),
+      );
 
       return sshSocket;
     } catch (e) {
@@ -269,44 +283,53 @@ class SrvImplInline implements Srv<SSHSocket> {
 /// - Wrap the StreamSink with encrypter
 /// - Wrap the Stream with decrypter
 class WrappedSSHSocket implements SSHSocket {
-  /// The actual underlying socket
-  final Socket socket;
+  final Stream<Uint8List> underlyingStream;
+  final IOSink underlyingSink;
   final DataTransformer? encrypter;
   final DataTransformer? decrypter;
 
   late StreamSink<List<int>> _sink;
   late Stream<Uint8List> _stream;
 
+  Future<void> Function() onClose;
+  void Function() onDestroy;
+
   WrappedSSHSocket(
-      this.socket, this.encrypter, this.decrypter) {
+    this.underlyingStream,
+    this.underlyingSink,
+    this.encrypter,
+    this.decrypter, {
+    required this.onClose,
+    required this.onDestroy,
+  }) {
     if (encrypter == null) {
-      _sink = socket;
+      _sink = underlyingSink;
     } else {
       StreamController<Uint8List> sc = StreamController<Uint8List>();
       Stream<List<int>> encrypted = encrypter!(sc.stream);
-      encrypted.listen(socket.add);
+      encrypted.listen(underlyingSink.add);
       _sink = sc;
     }
 
     if (decrypter == null) {
-      _stream = socket;
+      _stream = underlyingStream;
     } else {
-      _stream = decrypter!(socket).cast<Uint8List>();
+      _stream = decrypter!(underlyingStream).cast<Uint8List>();
     }
   }
 
   @override
   Future<void> close() async {
-    await socket.close();
+    await onClose();
   }
 
   @override
   void destroy() {
-    socket.destroy();
+    onDestroy();
   }
 
   @override
-  Future<void> get done => socket.done;
+  Future<void> get done => sink.done;
 
   @override
   StreamSink<List<int>> get sink => _sink;
@@ -489,13 +512,19 @@ class SrvImplDart implements Srv<SocketConnector> {
       transformBtoA: decrypter,
       multi: multi,
       timeout: timeout,
-      beforeJoining: (Side sideA, Side sideB) {
+      beforeJoining: (Side sideA, Side sideB) async {
         logger.info('beforeJoining called');
         // Authenticate the sideB socket (to the rvd)
-        if (rvdAuthString != null) {
+        if (relayAuthenticator != null) {
           logger.info('_runClientSideSingle authenticating'
               ' new connection to rvd');
-          sideB.socket.writeln(rvdAuthString);
+          var (authenticated, authenticatedStream) =
+              await relayAuthenticator!.authenticate(sideB.socket);
+          if (!authenticated || authenticatedStream == null) {
+            sideB.socket.destroy();
+          } else {
+            sideB.stream = authenticatedStream;
+          }
         }
       },
     );
@@ -512,22 +541,42 @@ class SrvImplDart implements Srv<SocketConnector> {
         streamingHost, streamingPort,
         timeout: Duration(seconds: 10));
     // Authenticate the control socket
-    if (rvdAuthString != null) {
+    Stream<Uint8List>? authenticatedControlSocketStream;
+    if (relayAuthenticator != null) {
       logger.info('_runClientSideMulti authenticating'
           ' control socket connection to rvd');
-      sessionControlSocket.writeln(rvdAuthString);
+      bool authenticated;
+      (authenticated, authenticatedControlSocketStream) =
+          await relayAuthenticator!.authenticate(sessionControlSocket);
+      if (!authenticated || authenticatedControlSocketStream == null) {
+        sessionControlSocket.destroy();
+        throw Exception('_runClientSideMulti'
+            ' Failed to authenticate control socket');
+      }
+    } else {
+      authenticatedControlSocketStream = sessionControlSocket;
     }
 
     if (sessionAESKeyString != null && sessionIVString != null) {
-      logger
-          .info('_runClientSideMulti: On the client-side traffic is encrypted');
+      logger.info('_runClientSideMulti:'
+          ' On the client-side traffic is encrypted');
       socketConnector = await _clientSideEncryptedSocket(
-          sessionControlSocket, socketConnector, relayAddress, timeout);
+        authenticatedControlSocketStream,
+        sessionControlSocket,
+        socketConnector,
+        relayAddress,
+        timeout,
+      );
     } else {
-      logger.info(
-          '_runClientSideMulti: On the client-side traffic is transmitted in plain text');
+      logger.info('_runClientSideMulti:'
+          ' On the client-side traffic is transmitted in plain text');
       socketConnector = await _clientSidePlainSocket(
-          sessionControlSocket, socketConnector, relayAddress, timeout);
+        authenticatedControlSocketStream,
+        sessionControlSocket,
+        socketConnector,
+        relayAddress,
+        timeout,
+      );
     }
 
     logger.info('_runClientSideMulti serverToSocket is ready');
@@ -541,11 +590,12 @@ class SrvImplDart implements Srv<SocketConnector> {
 
   /// On the client side, the data in this socket remains unencrypted and is transmitted in plain text
   Future<SocketConnector> _clientSidePlainSocket(
-      Socket sessionControlSocket,
+      Stream<Uint8List> sessionControlSocketStream,
+      IOSink sessionControlSocketSink,
       SocketConnector? socketConnector,
       InternetAddress relayAddress,
       Duration timeout) async {
-    sessionControlSocket.listen((event) {
+    sessionControlSocketStream.listen((event) {
       String response = String.fromCharCodes(event).trim();
       logger.info('_runClientSideMulti'
           ' Received control socket response: [$response]');
@@ -564,15 +614,21 @@ class SrvImplDart implements Srv<SocketConnector> {
       logger: ioSinkForLogger(logger),
       multi: multi,
       timeout: timeout,
-      beforeJoining: (Side sideA, Side sideB) {
+      beforeJoining: (Side sideA, Side sideB) async {
         logger.info('_runClientSideMulti Sending connect request');
-        sessionControlSocket
+        sessionControlSocketSink
             .add(Uint8List.fromList('connect:no:encrypt\n'.codeUnits));
         // Authenticate the sideB socket (to the rvd)
-        if (rvdAuthString != null) {
+        if (relayAuthenticator != null) {
           logger
               .info('_runClientSideMulti authenticating new connection to rvd');
-          sideB.socket.writeln(rvdAuthString);
+          var (authenticated, authenticatedStream) =
+              await relayAuthenticator!.authenticate(sideB.socket);
+          if (!authenticated || authenticatedStream == null) {
+            sideB.socket.destroy();
+          } else {
+            sideB.stream = authenticatedStream;
+          }
         }
       },
     );
@@ -581,7 +637,8 @@ class SrvImplDart implements Srv<SocketConnector> {
 
   /// On the client side, the data in encrypted and is transmitted through this socket.
   Future<SocketConnector> _clientSideEncryptedSocket(
-      Socket sessionControlSocket,
+      Stream<Uint8List> sessionControlSocketStream,
+      IOSink sessionControlSocketSink,
       SocketConnector? socketConnector,
       InternetAddress relayAddress,
       Duration timeout) async {
@@ -592,9 +649,10 @@ class SrvImplDart implements Srv<SocketConnector> {
 
     // Listen to stream which is decrypting the socket stream
     // Write to a stream controller which encrypts and writes to the socket
-    Stream<List<int>> controlStream = controlDecrypter(sessionControlSocket);
+    Stream<List<int>> controlStream =
+        controlDecrypter(sessionControlSocketStream);
     StreamController<Uint8List> controlSink = StreamController<Uint8List>();
-    controlEncrypter(controlSink.stream).listen(sessionControlSocket.add);
+    controlEncrypter(controlSink.stream).listen(sessionControlSocketSink.add);
 
     controlStream.listen((event) {
       String response = String.fromCharCodes(event).trim();
@@ -617,7 +675,7 @@ class SrvImplDart implements Srv<SocketConnector> {
       logger: ioSinkForLogger(logger),
       multi: multi,
       timeout: timeout,
-      beforeJoining: (Side sideA, Side sideB) {
+      beforeJoining: (Side sideA, Side sideB) async {
         logger.info('_runClientSideMulti Sending connect request');
 
         String socketAESKey =
@@ -627,10 +685,16 @@ class SrvImplDart implements Srv<SocketConnector> {
         controlSink.add(
             Uint8List.fromList('connect:$socketAESKey:$socketIV\n'.codeUnits));
         // Authenticate the sideB socket (to the rvd)
-        if (rvdAuthString != null) {
-          logger
-              .info('_runClientSideMulti authenticating new connection to rvd');
-          sideB.socket.writeln(rvdAuthString);
+        if (relayAuthenticator != null) {
+          logger.info('_runClientSideMulti'
+              ' authenticating new connection to rvd');
+          var (authenticated, authenticatedStream) =
+              await relayAuthenticator!.authenticate(sideB.socket);
+          if (!authenticated || authenticatedStream == null) {
+            sideB.socket.destroy();
+          } else {
+            sideB.stream = authenticatedStream;
+          }
         }
         sideA.transformer = createEncrypter(socketAESKey, socketIV);
         sideB.transformer = createDecrypter(socketAESKey, socketIV);
@@ -653,22 +717,27 @@ class SrvImplDart implements Srv<SocketConnector> {
 
     // First, connect to the relay.
     // If it fails, return, as we can't do anything more
-    late Socket sideBSocket;
+    late Socket sideBSocketActual;
     late Side sideB;
     logger.info(
         'socket_connector: Connecting side B (relay - $relayAddress:$streamingPort)');
     try {
-      sideBSocket = await Socket.connect(relayAddress, streamingPort);
-      sideB = Side(sideBSocket, false, transformer: decrypter);
-      unawaited(sideBSocket.done
+      sideBSocketActual = await Socket.connect(relayAddress, streamingPort);
+      sideB = Side(sideBSocketActual, false, transformer: decrypter);
+      unawaited(sideBSocketActual.done
           .then((v) => logger.info('relay socket done'))
           .catchError(
               (err) => logger.warning('relay socket done with error $err')));
-      if (rvdAuthString != null) {
+      if (relayAuthenticator != null) {
         logger.info('_runDaemonSideMulti authenticating'
             ' new socket connection to relay');
-        sideBSocket.writeln(rvdAuthString);
-        await sideBSocket.flush();
+        var (authenticated, authenticatedStream) =
+            await relayAuthenticator!.authenticate(sideB.socket);
+        if (!authenticated || authenticatedStream == null) {
+          sideB.socket.destroy();
+        } else {
+          sideB.stream = authenticatedStream;
+        }
       }
     } catch (e) {
       logger.shout(
@@ -678,19 +747,19 @@ class SrvImplDart implements Srv<SocketConnector> {
 
     // Now, connect to the local host:port
     // If it fails, we need to close the socket connection to the relay
-    late Socket sideASocket;
+    late Socket sideASocketActual;
     late Side sideA;
-    logger.info(
-        'socket_connector: Connecting side A (local - $localAddress:$localPort)');
+    logger.info('socket_connector:'
+        ' Connecting side A (local - $localAddress:$localPort)');
 
     try {
-      sideASocket = await Socket.connect(localAddress, localPort);
-      sideA = Side(sideASocket, true, transformer: encrypter);
+      sideASocketActual = await Socket.connect(localAddress, localPort);
+      sideA = Side(sideASocketActual, true, transformer: encrypter);
     } catch (e) {
       logger.shout(
           'Failed to connect locally ($localAddress:$localPort) with error : $e');
       logger.shout('Closing sideB (relay) socket connection');
-      sideBSocket.destroy();
+      sideBSocketActual.destroy();
 
       return;
     }
@@ -751,20 +820,40 @@ class SrvImplDart implements Srv<SocketConnector> {
         streamingHost, streamingPort,
         timeout: Duration(seconds: 10));
     // Authenticate the control socket
-    if (rvdAuthString != null) {
+    Stream<Uint8List>? authenticatedControlSocketStream;
+    if (relayAuthenticator != null) {
       logger.info('_runDaemonSideMulti authenticating'
           ' control socket connection to rvd');
-      sessionControlSocket.writeln(rvdAuthString);
+      bool authenticated;
+      (authenticated, authenticatedControlSocketStream) =
+          await relayAuthenticator!.authenticate(sessionControlSocket);
+      if (!authenticated || authenticatedControlSocketStream == null) {
+        sessionControlSocket.destroy();
+        throw Exception('_runClientSideMulti'
+            ' Failed to authenticate control socket');
+      }
+    } else {
+      authenticatedControlSocketStream = sessionControlSocket;
     }
 
     if (sessionAESKeyString != null && sessionIVString != null) {
       logger
           .info('_runDaemonSideMulti: On the daemon side traffic is encrypted');
-      _daemonSideEncryptedSocket(sessionControlSocket, sc, relayAddress);
+      _daemonSideEncryptedSocket(
+        authenticatedControlSocketStream,
+        sessionControlSocket,
+        sc,
+        relayAddress,
+      );
     } else {
       logger.info(
           '_runDaemonSideMulti: On the daemon side traffic is transmitted in plain text');
-      _daemonSidePlainSocket(sessionControlSocket, sc, relayAddress);
+      _daemonSidePlainSocket(
+        authenticatedControlSocketStream,
+        sessionControlSocket,
+        sc,
+        relayAddress,
+      );
     }
 
     // upon socketConnector.done, destroy the control socket, and complete
@@ -775,10 +864,14 @@ class SrvImplDart implements Srv<SocketConnector> {
     return sc;
   }
 
-  void _daemonSidePlainSocket(Socket sessionControlSocket, SocketConnector sc,
-      InternetAddress relayAddress) {
+  void _daemonSidePlainSocket(
+    Stream<Uint8List> sessionControlSocketStream,
+    IOSink sessionControlSocketSink,
+    SocketConnector sc,
+    InternetAddress relayAddress,
+  ) {
     Mutex controlStreamMutex = Mutex();
-    sessionControlSocket.listen((event) async {
+    sessionControlSocketStream.listen((event) async {
       await _sessionControlSocketListener(
           controlStreamMutex, event, sc, relayAddress);
     }, onError: (e) {
@@ -790,8 +883,12 @@ class SrvImplDart implements Srv<SocketConnector> {
     });
   }
 
-  void _daemonSideEncryptedSocket(Socket sessionControlSocket,
-      SocketConnector sc, InternetAddress relayAddress) {
+  void _daemonSideEncryptedSocket(
+    Stream<Uint8List> sessionControlSocketStream,
+    IOSink sessionControlSocketSink,
+    SocketConnector sc,
+    InternetAddress relayAddress,
+  ) {
     DataTransformer controlEncrypter =
         createEncrypter(sessionAESKeyString!, sessionIVString!);
     DataTransformer controlDecrypter =
@@ -799,9 +896,9 @@ class SrvImplDart implements Srv<SocketConnector> {
 
     // Listen to stream which is decrypting the socket stream
     // Write to a stream controller which encrypts and writes to the socket
-    Stream<List<int>> controlStream = controlDecrypter(sessionControlSocket);
+    Stream<List<int>> controlStream = controlDecrypter(sessionControlSocketStream);
     StreamController<Uint8List> controlSink = StreamController<Uint8List>();
-    controlEncrypter(controlSink.stream).listen(sessionControlSocket.add);
+    controlEncrypter(controlSink.stream).listen(sessionControlSocketSink.add);
 
     Mutex controlStreamMutex = Mutex();
     controlStream.listen((event) async {
@@ -891,9 +988,15 @@ class SrvImplDart implements Srv<SocketConnector> {
         logger: ioSinkForLogger(logger),
         transformAtoB: encrypter,
         transformBtoA: decrypter);
-    if (rvdAuthString != null) {
+    if (relayAuthenticator != null) {
       logger.info('_runDaemonSideSingle authenticating socketB to rvd');
-      socketConnector.connections.first.sideB.socket.writeln(rvdAuthString);
+      var (authenticated, authenticatedStream) =
+      await relayAuthenticator!.authenticate(socketConnector.connections.first.sideB.socket);
+      if (!authenticated || authenticatedStream == null) {
+        socketConnector.connections.first.sideB.socket.destroy();
+      } else {
+        socketConnector.connections.first.sideB.stream = authenticatedStream;
+      }
     }
 
     return socketConnector;
