@@ -7,6 +7,7 @@ import 'package:at_client/at_client.dart' hide StringBuffer;
 import 'package:at_client/at_client_mixins.dart';
 import 'package:at_utils/at_logger.dart';
 import 'package:dartssh2/dartssh2.dart';
+import 'package:file/local.dart';
 import 'package:logging/logging.dart';
 import 'package:meta/meta.dart';
 import 'package:noports_core/src/common/features.dart';
@@ -209,6 +210,14 @@ class SshnpdImpl with AtClientBindings, ApkamSigning implements Sshnpd {
         sshnpd.logger.logger.level = Level.INFO;
       }
 
+      if (p.clearCachedPKs) {
+        sshnpd.logger.shout('Clearing cached public keys');
+        await clearLocallyCachedPKs(
+          logger: sshnpd.logger,
+          fs: LocalFileSystem(),
+          atClient: sshnpd.atClient,
+        );
+      }
       return sshnpd;
     } catch (e, s) {
       usageCallback?.call(e, s);

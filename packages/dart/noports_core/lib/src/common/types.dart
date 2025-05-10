@@ -1,4 +1,3 @@
-import 'package:noports_core/src/srv/relay_authenticators.dart';
 import 'package:noports_core/srv.dart';
 
 typedef SrvGenerator<T> = Srv<T> Function(
