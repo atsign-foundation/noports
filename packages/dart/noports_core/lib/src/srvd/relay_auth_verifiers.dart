@@ -75,7 +75,7 @@ abstract interface class RelayAuthVerifier {
 ///   hashingAlgo and signingAlgo
 /// 10. If all successful, return (true, dataStream)
 class RelayAuthVerifierV1 implements RelayAuthVerifier {
-  static final AtSignLogger logger = AtSignLogger(' SocketAuthenticatorV1 ');
+  static final AtSignLogger logger = AtSignLogger(' RelayAuthVerifierV1 ');
 
   @override
   String? atSign;
@@ -332,7 +332,7 @@ class RelayAuthVerifierV1 implements RelayAuthVerifier {
 ///
 class RelayAuthVerifierLegacy implements RelayAuthVerifier {
   static final AtSignLogger logger =
-      AtSignLogger(' SocketAuthenticatorLegacy ');
+      AtSignLogger(' RelayAuthVerifierLegacy ');
 
   /// Public key of the signing algorithm used to sign the data
   String publicKey;

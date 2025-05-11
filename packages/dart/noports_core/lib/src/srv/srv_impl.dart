@@ -10,7 +10,6 @@ import 'package:cryptography/dart.dart';
 import 'package:dartssh2/dartssh2.dart';
 import 'package:meta/meta.dart';
 import 'package:mutex/mutex.dart';
-import 'package:noports_core/src/srv/relay_authenticators.dart';
 import 'package:noports_core/srv.dart';
 import 'package:noports_core/sshnp.dart';
 import 'package:socket_connector/socket_connector.dart';

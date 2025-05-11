@@ -1,6 +1,5 @@
 import 'package:at_client/at_client.dart';
 import 'package:mocktail/mocktail.dart';
-import 'package:noports_core/src/srv/relay_authenticators.dart';
 import 'package:noports_core/sshnp_foundation.dart';
 import 'package:noports_core/srv.dart';
 

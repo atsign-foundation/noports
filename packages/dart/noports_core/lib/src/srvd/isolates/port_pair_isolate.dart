@@ -5,7 +5,7 @@ import 'package:at_utils/at_logger.dart';
 import 'package:noports_core/src/srvd/srvd_impl.dart';
 import 'package:socket_connector/socket_connector.dart';
 
-import 'relay_auth_verifiers.dart';
+import '../relay_auth_verifiers.dart';
 
 typedef ConnectorParams = (
   SendPort,
@@ -20,7 +20,7 @@ typedef PortPair = (int, int);
 /// This function is meant to be run in a separate isolate
 /// It starts the socket connector, and sends back the assigned ports to the main isolate
 /// It then waits for socket connector to die before shutting itself down
-void socketConnector(ConnectorParams connectorParams) async {
+void portPairIsolateEntryPoint(ConnectorParams connectorParams) async {
   var (
     sendPort,
     portA,

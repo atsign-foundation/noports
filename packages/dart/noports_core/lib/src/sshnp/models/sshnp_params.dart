@@ -162,6 +162,9 @@ class NptParams extends ClientParamsBase
     super.daemonPingTimeout,
     required this.timeout,
   }) {
+    if (relayAuthMode != 'v0' && relayAuthMode != 'v1') {
+      throw ArgumentError ('Invalid relayAuthMode "$relayAuthMode"');
+    }
     try {
       AtUtils.fixAtSign(clientAtSign);
       AtUtils.fixAtSign(sshnpdAtSign);
