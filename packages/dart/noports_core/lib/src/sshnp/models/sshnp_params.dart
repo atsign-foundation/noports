@@ -163,7 +163,7 @@ class NptParams extends ClientParamsBase
     required this.timeout,
   }) {
     if (relayAuthMode != 'v0' && relayAuthMode != 'v1') {
-      throw ArgumentError ('Invalid relayAuthMode "$relayAuthMode"');
+      throw ArgumentError('Invalid relayAuthMode "$relayAuthMode"');
     }
     try {
       AtUtils.fixAtSign(clientAtSign);
@@ -283,8 +283,7 @@ class SshnpParams extends ClientParamsBase
           params2.authenticateClientToRvd ?? params1.authenticateClientToRvd,
       authenticateDeviceToRvd:
           params2.authenticateDeviceToRvd ?? params1.authenticateDeviceToRvd,
-      relayAuthMode:
-      params2.relayAuthMode ?? params1.relayAuthMode,
+      relayAuthMode: params2.relayAuthMode ?? params1.relayAuthMode,
       encryptRvdTraffic: params2.encryptRvdTraffic ?? params1.encryptRvdTraffic,
       daemonPingTimeout: params2.daemonPingTimeout ?? params1.daemonPingTimeout,
     );
@@ -341,8 +340,7 @@ class SshnpParams extends ClientParamsBase
           DefaultArgs.authenticateClientToRvd,
       authenticateDeviceToRvd: partial.authenticateDeviceToRvd ??
           DefaultArgs.authenticateDeviceToRvd,
-      relayAuthMode: partial.relayAuthMode ??
-          DefaultArgs.legacyRelayAuthMode,
+      relayAuthMode: partial.relayAuthMode ?? DefaultArgs.legacyRelayAuthMode,
       encryptRvdTraffic:
           partial.encryptRvdTraffic ?? DefaultArgs.encryptRvdTraffic,
       daemonPingTimeout:

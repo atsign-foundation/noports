@@ -895,7 +895,8 @@ class SrvImplDart implements Srv<SocketConnector> {
 
     // Listen to stream which is decrypting the socket stream
     // Write to a stream controller which encrypts and writes to the socket
-    Stream<List<int>> controlStream = controlDecrypter(sessionControlSocketStream);
+    Stream<List<int>> controlStream =
+        controlDecrypter(sessionControlSocketStream);
     StreamController<Uint8List> controlSink = StreamController<Uint8List>();
     controlEncrypter(controlSink.stream).listen(sessionControlSocketSink.add);
 
@@ -989,8 +990,8 @@ class SrvImplDart implements Srv<SocketConnector> {
         transformBtoA: decrypter);
     if (relayAuthenticator != null) {
       logger.info('_runDaemonSideSingle authenticating socketB to rvd');
-      var (authenticated, authenticatedStream) =
-      await relayAuthenticator!.authenticate(socketConnector.connections.first.sideB.socket);
+      var (authenticated, authenticatedStream) = await relayAuthenticator!
+          .authenticate(socketConnector.connections.first.sideB.socket);
       if (!authenticated || authenticatedStream == null) {
         socketConnector.connections.first.sideB.socket.destroy();
       } else {

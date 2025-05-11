@@ -6,13 +6,14 @@ import 'package:at_client/at_client.dart';
 import 'package:at_utils/at_logger.dart';
 import 'package:logging/logging.dart';
 import 'package:meta/meta.dart';
+import 'package:noports_core/src/common/handle_server_events.dart';
 import 'package:noports_core/src/common/validation_utils.dart';
 import 'package:noports_core/src/srvd/build_env.dart';
 import 'package:noports_core/src/srvd/isolates/port_pair_isolate.dart';
 import 'package:noports_core/src/srvd/srvd.dart';
 import 'package:noports_core/src/srvd/srvd_params.dart';
 
-import '../common/handle_server_events.dart';
+import 'types.dart';
 
 @protected
 class SrvdImpl implements Srvd {
@@ -38,8 +39,6 @@ class SrvdImpl implements Srvd {
   @override
   @visibleForTesting
   bool initialized = false;
-
-  static int timeoutMs = 1000;
 
   static final String subscriptionRegex = '\\.${Srvd.namespace}@';
 
@@ -196,7 +195,10 @@ class SrvdImpl implements Srvd {
       if (err.toString().toLowerCase().contains('immutable')) {
         logger.shout('🤷‍♂️ Will not handle request from ${notification.from}'
             '; did not acquire mutex $mutexKey');
-        sendToSpawned.send('kill');
+        sendToSpawned.send({
+          'req': 'stop',
+          'payload': null,
+        });
       } else {
         logger.shout('Will not handle; did not acquire mutex $mutexKey : $err');
       }
@@ -248,32 +250,73 @@ class SrvdImpl implements Srvd {
     logger.shout('Acquiring port pair');
 
     /// Spawn an isolate and wait for it to send back the issued port numbers
-    ReceivePort receivePort = ReceivePort(sessionParams.sessionId);
+    ReceivePort fromSpawned = ReceivePort(sessionParams.sessionId);
 
     ConnectorParams parameters = (
-      receivePort.sendPort, // spawned will use this to communicate with main
-      0,
-      0,
-      jsonEncode(sessionParams),
+      fromSpawned.sendPort, // spawned will use this to communicate with main
       BuildEnv.enableSnoop && logTraffic,
       verbose,
+      sessionParams.sessionId,
     );
 
     logger.info("Spawning socket connector isolate"
         " with parameters $parameters");
-    PortPair ports;
-    Isolate spawned;
-    SendPort sendToSpawned;
 
-    spawned = await Isolate.spawn<ConnectorParams>(portPairIsolateEntryPoint, parameters);
+    Isolate spawned = await Isolate.spawn<ConnectorParams>(
+      portPairIsolateEntryPoint,
+      parameters,
+    );
+
+    Completer receivedSendToSpawned = Completer();
+    late SendPort sendToSpawned;
+    Completer receivedPortPair = Completer();
+    late PortPair ports;
 
     logger.info('Waiting for isolate to send its port pair info');
+    fromSpawned.listen((message) async {
+      if (message is SendPort) {
+        sendToSpawned = message;
+        receivedSendToSpawned.complete();
+        return;
+      }
+      if (message is PortPair) {
+        ports = message;
+        receivedPortPair.complete();
+        return;
+      }
+      if (message is Map) {
+        return;
+      }
+
+      // We only expect SendPort, PortPair or Map
+      logger.shout('Unknown message from isolate -'
+          ' type: ${message.runtimeType} message: $message');
+    });
+
+    // Wait to receive the SendPort from the spawned isolate
     try {
-      (ports, sendToSpawned) = await receivePort.first.timeout(
-        Duration(milliseconds: timeoutMs),
+      await receivedSendToSpawned.future.timeout(
+        Duration(milliseconds: isolateStartTimeoutMs),
       );
     } on TimeoutException catch (_) {
-      throw TimeoutException('Timed out after ${timeoutMs}ms');
+      throw TimeoutException(
+          'No sendPort received after ${isolateStartTimeoutMs}ms');
+    }
+
+    // Ask the spawned isolate to start the session
+    sendToSpawned.send({
+      'req': 'start',
+      'payload': sessionParams,
+    });
+
+    // Wait to receive the PortPair from the spawned isolate
+    try {
+      await receivedPortPair.future.timeout(
+        Duration(milliseconds: isolateBindPortsTimeoutMs),
+      );
+    } on TimeoutException catch (_) {
+      throw TimeoutException(
+          'No sendPort received after ${isolateBindPortsTimeoutMs}ms');
     }
 
     logger.info('Received ports $ports in main isolate'
@@ -330,7 +373,8 @@ class SrvdSessionParams {
         'rvdNonce': rvdNonce,
         'clientNonce': clientNonce,
         'relayAuthMode': relayAuthMode,
-        'relayAuthAesKey': relayAuthAesKey
+        'relayAuthAesKey': relayAuthAesKey,
+        'only443': only443,
       };
 
   static SrvdSessionParams fromJson(Map<String, dynamic> json) {
@@ -364,16 +408,24 @@ class SrvdUtil {
     if (notification.key.contains('.request_ports.${Srvd.namespace}')) {
       return await _processJSONRequest(notification);
     }
-    return _processLegacyRequest(notification);
+    return _processAncientClientRequest(notification);
   }
 
-  SrvdSessionParams _processLegacyRequest(AtNotification notification) {
+  /// Handles requests from ancient (v3) clients
+  SrvdSessionParams _processAncientClientRequest(AtNotification notification) {
     return SrvdSessionParams(
       sessionId: notification.value!,
       atSignA: notification.from,
     );
   }
 
+  /// Handles requests from all clients v4 onwards
+  ///
+  /// If session wants v0 authentication, fetch atSigns' public keys here
+  ///
+  /// When sessions want v1 authentication, we don't until auth time
+  /// what signing keys are going to be used, so the spawned isolate
+  /// will ask the main isolate to fetch public signing keys
   Future<SrvdSessionParams> _processJSONRequest(
       AtNotification notification) async {
     dynamic json = jsonDecode(notification.value ?? '');
@@ -394,12 +446,13 @@ class SrvdUtil {
 
     String rvdSessionNonce = DateTime.now().toIso8601String();
 
+    String relayAuthMode = json['relayAuthMode'] ?? 'v0';
     String? publicKeyA;
     String? publicKeyB;
-    if (authenticateSocketA) {
+    if (relayAuthMode == 'v0' && authenticateSocketA) {
       publicKeyA = await _fetchPublicKey(atSignA);
     }
-    if (authenticateSocketB) {
+    if (relayAuthMode == 'v0' && authenticateSocketB) {
       publicKeyB = await _fetchPublicKey(atSignB);
     }
     return SrvdSessionParams(
@@ -412,7 +465,7 @@ class SrvdUtil {
       publicKeyB: publicKeyB,
       rvdNonce: rvdSessionNonce,
       clientNonce: clientNonce,
-      relayAuthMode: json['relayAuthMode'] ?? 'v0',
+      relayAuthMode: relayAuthMode,
       relayAuthAesKey: json['relayAuthAesKey'],
       only443: json['only443'] ?? false,
     );

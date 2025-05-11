@@ -37,8 +37,8 @@ class RelayAuthenticatorLegacy implements RelayAuthenticator {
   /// - RV_AUTH: [authString] - sent to relay for legacy (v0) auth
   @override
   Map<String, String> get envMap => {
-    'RV_AUTH': authString,
-  };
+        'RV_AUTH': authString,
+      };
 
   @override
   List<String> get rvArgs => ['--rv-auth'];
@@ -84,12 +84,12 @@ class RelayAuthenticatorV1 implements RelayAuthenticator {
   ///   actual payload within the auth envelope
   @override
   Map<String, String> get envMap => {
-    'RV_SESSION_ID': sessionId,
-    'RV_AUTH_AES_KEY': relayAuthAesKey,
-    'RV_PUB_KEY_URI': publicSigningKeyUri,
-    'RV_SIGNING_PUBKEY': publicSigningKey,
-    'RV_SIGNING_PRIVKEY': privateSigningKey,
-  };
+        'RV_SESSION_ID': sessionId,
+        'RV_AUTH_AES_KEY': relayAuthAesKey,
+        'RV_PUB_KEY_URI': publicSigningKeyUri,
+        'RV_SIGNING_PUBKEY': publicSigningKey,
+        'RV_SIGNING_PRIVKEY': privateSigningKey,
+      };
 
   @override
   List<String> get rvArgs => ['--rv-auth-mode', 'v1'];
@@ -183,6 +183,7 @@ class RelayAuthenticatorV1 implements RelayAuthenticator {
     envelope['sk'] = publicSigningKeyUri;
 
     String envelope64 = base64Encode(jsonEncode(envelope).codeUnits);
+
     /// Encrypt the response payload
     final InitialisationVector iv = AtChopsUtil.generateRandomIV(16);
     final ea = AESEncryptionAlgo(AESKey(relayAuthAesKey));

@@ -331,8 +331,7 @@ class RelayAuthVerifierV1 implements RelayAuthVerifier {
 /// also expects signature to be base64 encoded
 ///
 class RelayAuthVerifierLegacy implements RelayAuthVerifier {
-  static final AtSignLogger logger =
-      AtSignLogger(' RelayAuthVerifierLegacy ');
+  static final AtSignLogger logger = AtSignLogger(' RelayAuthVerifierLegacy ');
 
   /// Public key of the signing algorithm used to sign the data
   String publicKey;

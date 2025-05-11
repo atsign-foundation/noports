@@ -18,7 +18,12 @@ import 'package:uuid/uuid.dart';
 // If you've never seen an abstract implementation before, here it is :P
 @protected
 abstract class SshnpCore
-    with AsyncInitialization, AsyncDisposal, AtClientBindings, SshnpKeyHandler, ApkamSigning
+    with
+        AsyncInitialization,
+        AsyncDisposal,
+        AtClientBindings,
+        SshnpKeyHandler,
+        ApkamSigning
     implements Sshnp {
   // * AtClientBindings members
   /// The logger for this class

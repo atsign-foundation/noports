@@ -49,5 +49,4 @@ mixin ApkamSigning {
   String get privateSigningKey {
     return atClient.atChops!.atChopsKeys.atPkamKeyPair!.atPrivateKey.privateKey;
   }
-
 }

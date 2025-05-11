@@ -25,7 +25,8 @@ void main() {
         RegExp(SrvdImpl.subscriptionRegex).hasMatch('${Srvd.namespace}.test@'),
         false);
     expect(
-        RegExp(SrvdImpl.subscriptionRegex).hasMatch('foo.${Srvd.namespace}.test@'),
+        RegExp(SrvdImpl.subscriptionRegex)
+            .hasMatch('foo.${Srvd.namespace}.test@'),
         false);
   });
 
