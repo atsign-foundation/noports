@@ -2,7 +2,6 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'dart:isolate';
-import 'package:noports_core/src/srvd/srvd_impl.dart';
 import 'package:socket_connector/socket_connector.dart';
 
 import '../relay_auth_verifiers.dart';
@@ -58,15 +57,14 @@ class PortPairWorker extends RelayWorker {
   @override
   Future<void> run() async {
     fromMain.listen((msg) async {
-      if (msg is Map) {
-        String req = msg['req'];
-        switch (req) {
+      if (msg is IIRequest) {
+        switch (msg.type) {
           case 'stop':
             logger.shout('Received "stop" request - terminating');
             await stop();
             break;
           case 'start':
-            srvdSessionParams = msg['payload'];
+            srvdSessionParams = msg.payload;
             await startSession();
             break;
           default:
@@ -77,7 +75,7 @@ class PortPairWorker extends RelayWorker {
         return;
       }
 
-      logger.shout('Unhandled message from main isolate - exiting');
+      logger.shout('Unhandled message $msg from main isolate - exiting');
       await stop();
     });
 
@@ -95,8 +93,7 @@ class PortPairWorker extends RelayWorker {
   }
 
   Future<void> startSession() async {
-    logger.info(
-        'Starting socket connector session for ${srvdSessionParams.toJson()}');
+    logger.info('Starting socket connector session for $srvdSessionParams');
 
     /// Create the socketAuthVerifiers as required
     Map expectedPayloadForSignature = {
@@ -148,7 +145,7 @@ class PortPairWorker extends RelayWorker {
     }
 
     /// Create the socket connector
-    SocketConnector connector = await SocketConnector.serverToServer(
+    connector = await SocketConnector.serverToServer(
       addressA: InternetAddress.anyIPv4,
       addressB: InternetAddress.anyIPv4,
       portA: 0,
@@ -159,9 +156,12 @@ class PortPairWorker extends RelayWorker {
       socketAuthVerifierB: socketAuthVerifierB,
     );
 
+    /// Connector created, so complete the sessionStarted future
+    sessionStarted.complete();
+
     /// Get the assigned ports from the socket connector
-    portA = connector.sideAPort!;
-    portB = connector.sideBPort!;
+    portA = connector!.sideAPort!;
+    portB = connector!.sideBPort!;
 
     // and send them to the main isolate
     PortPair ports = (portA!, portB!);

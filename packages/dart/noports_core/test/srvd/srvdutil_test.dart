@@ -1,7 +1,7 @@
 import 'dart:convert';
 
 import 'package:at_client/at_client.dart';
-import 'package:noports_core/src/srvd/srvd_impl.dart';
+import 'package:noports_core/src/srvd/types.dart';
 import 'package:noports_core/srvd.dart';
 import 'package:test/test.dart';
 

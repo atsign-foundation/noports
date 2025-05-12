@@ -1,13 +1,11 @@
 import 'dart:async';
 import 'dart:io';
 import 'dart:isolate';
-import 'dart:convert';
 import 'package:at_client/at_client.dart';
 import 'package:at_utils/at_logger.dart';
 import 'package:logging/logging.dart';
 import 'package:meta/meta.dart';
 import 'package:noports_core/src/common/handle_server_events.dart';
-import 'package:noports_core/src/common/validation_utils.dart';
 import 'package:noports_core/src/srvd/build_env.dart';
 import 'package:noports_core/src/srvd/isolates/port_pair_isolate.dart';
 import 'package:noports_core/src/srvd/srvd.dart';
@@ -195,10 +193,7 @@ class SrvdImpl implements Srvd {
       if (err.toString().toLowerCase().contains('immutable')) {
         logger.shout('🤷‍♂️ Will not handle request from ${notification.from}'
             '; did not acquire mutex $mutexKey');
-        sendToSpawned.send({
-          'req': 'stop',
-          'payload': null,
-        });
+        sendToSpawned.send(IIRequest.create('stop', null));
       } else {
         logger.shout('Will not handle; did not acquire mutex $mutexKey : $err');
       }
@@ -247,8 +242,6 @@ class SrvdImpl implements Srvd {
   Future<(PortPair, Isolate, SendPort)> spawnNewPortPairIsolate(
     SrvdSessionParams sessionParams,
   ) async {
-    logger.shout('Acquiring port pair');
-
     /// Spawn an isolate and wait for it to send back the issued port numbers
     ReceivePort fromSpawned = ReceivePort(sessionParams.sessionId);
 
@@ -268,29 +261,58 @@ class SrvdImpl implements Srvd {
     );
 
     Completer receivedSendToSpawned = Completer();
-    late SendPort sendToSpawned;
+    late SendPort toSpawned;
     Completer receivedPortPair = Completer();
     late PortPair ports;
 
     logger.info('Waiting for isolate to send its port pair info');
-    fromSpawned.listen((message) async {
-      if (message is SendPort) {
-        sendToSpawned = message;
+    fromSpawned.listen((msg) async {
+      if (msg is SendPort) {
+        toSpawned = msg;
         receivedSendToSpawned.complete();
         return;
       }
-      if (message is PortPair) {
-        ports = message;
+      if (msg is PortPair) {
+        ports = msg;
         receivedPortPair.complete();
         return;
       }
-      if (message is Map) {
+      if (msg is IIRequest) {
+        switch (msg.type) {
+          case 'lookup':
+            final AtValue value;
+            try {
+              value = await atClient.get(msg.payload);
+            } catch (err) {
+              toSpawned.send(IIResponse(
+                id: msg.id,
+                isError: false,
+                payload: err.toString(),
+              ));
+              break;
+            }
+            toSpawned.send(IIResponse(
+              id: msg.id,
+              isError: false,
+              payload: value.value,
+            ));
+            break;
+          default:
+            toSpawned.send(IIResponse(
+                id: msg.id,
+                isError: true,
+                payload: 'Unknown request type ${msg.type}'));
+            break;
+        }
         return;
       }
 
-      // We only expect SendPort, PortPair or Map
+      if (msg is IIResponse) {
+        // find the corresponding request
+      }
+
       logger.shout('Unknown message from isolate -'
-          ' type: ${message.runtimeType} message: $message');
+          ' type: ${msg.runtimeType} message: $msg');
     });
 
     // Wait to receive the SendPort from the spawned isolate
@@ -304,10 +326,10 @@ class SrvdImpl implements Srvd {
     }
 
     // Ask the spawned isolate to start the session
-    sendToSpawned.send({
-      'req': 'start',
-      'payload': sessionParams,
-    });
+    toSpawned.send(IIRequest.create(
+      'start',
+      sessionParams,
+    ));
 
     // Wait to receive the PortPair from the spawned isolate
     try {
@@ -319,160 +341,9 @@ class SrvdImpl implements Srvd {
           'No sendPort received after ${isolateBindPortsTimeoutMs}ms');
     }
 
-    logger.info('Received ports $ports in main isolate'
+    logger.shout('Received ports $ports in main isolate'
         ' for session ${sessionParams.sessionId}');
 
-    return (ports, spawned, sendToSpawned);
-  }
-}
-
-class SrvdSessionParams {
-  final String sessionId;
-  final String atSignA;
-  final String? atSignB;
-  final bool authenticateSocketA;
-  final bool authenticateSocketB;
-  final String? publicKeyA;
-  final String? publicKeyB;
-  final String? clientNonce;
-  final String? rvdNonce;
-  final String relayAuthMode;
-  final String? relayAuthAesKey;
-  final bool only443;
-
-  SrvdSessionParams({
-    required this.sessionId,
-    required this.atSignA,
-    this.atSignB,
-    this.authenticateSocketA = false,
-    this.authenticateSocketB = false,
-    this.publicKeyA,
-    this.publicKeyB,
-    this.rvdNonce,
-    this.clientNonce,
-    this.relayAuthMode = 'v0',
-    this.relayAuthAesKey,
-    this.only443 = false,
-  }) {
-    if (relayAuthMode != 'v0' && relayAuthMode != 'v1') {
-      throw ArgumentError('Invalid relayAuthMode "$relayAuthMode"');
-    }
-  }
-
-  @override
-  String toString() => toJson().toString();
-
-  Map<String, dynamic> toJson() => {
-        'sessionId': sessionId,
-        'atSignA': atSignA,
-        'atSignB': atSignB,
-        'authenticateSocketA': authenticateSocketA,
-        'authenticateSocketB': authenticateSocketB,
-        'publicKeyA': publicKeyA,
-        'publicKeyB': publicKeyB,
-        'rvdNonce': rvdNonce,
-        'clientNonce': clientNonce,
-        'relayAuthMode': relayAuthMode,
-        'relayAuthAesKey': relayAuthAesKey,
-        'only443': only443,
-      };
-
-  static SrvdSessionParams fromJson(Map<String, dynamic> json) {
-    return SrvdSessionParams(
-      sessionId: json['sessionId'],
-      atSignA: json['atSignA'],
-      atSignB: json['atSignB'],
-      authenticateSocketA: json['authenticateSocketA'],
-      authenticateSocketB: json['authenticateSocketB'],
-      publicKeyA: json['publicKeyA'],
-      publicKeyB: json['publicKeyB'],
-      rvdNonce: json['rvdNonce'],
-      clientNonce: json['clientNonce'],
-      relayAuthMode: json['relayAuthMode'] ?? 'v0',
-      relayAuthAesKey: json['relayAuthAesKey'],
-      only443: json['only443'] ?? false,
-    );
-  }
-}
-
-class SrvdUtil {
-  final AtClient atClient;
-
-  SrvdUtil(this.atClient);
-
-  bool accept(AtNotification notification) {
-    return notification.key.contains(Srvd.namespace);
-  }
-
-  Future<SrvdSessionParams> getParams(AtNotification notification) async {
-    if (notification.key.contains('.request_ports.${Srvd.namespace}')) {
-      return await _processJSONRequest(notification);
-    }
-    return _processAncientClientRequest(notification);
-  }
-
-  /// Handles requests from ancient (v3) clients
-  SrvdSessionParams _processAncientClientRequest(AtNotification notification) {
-    return SrvdSessionParams(
-      sessionId: notification.value!,
-      atSignA: notification.from,
-    );
-  }
-
-  /// Handles requests from all clients v4 onwards
-  ///
-  /// If session wants v0 authentication, fetch atSigns' public keys here
-  ///
-  /// When sessions want v1 authentication, we don't until auth time
-  /// what signing keys are going to be used, so the spawned isolate
-  /// will ask the main isolate to fetch public signing keys
-  Future<SrvdSessionParams> _processJSONRequest(
-      AtNotification notification) async {
-    dynamic json = jsonDecode(notification.value ?? '');
-
-    assertValidMapValue(json, 'sessionId', String);
-    assertValidMapValue(json, 'atSignA', String);
-    assertValidMapValue(json, 'atSignB', String);
-    assertValidMapValue(json, 'clientNonce', String);
-    assertValidMapValue(json, 'authenticateSocketA', bool);
-    assertValidMapValue(json, 'authenticateSocketA', bool);
-
-    final String sessionId = json['sessionId'];
-    final String atSignA = json['atSignA'];
-    final String atSignB = json['atSignB'];
-    final String clientNonce = json['clientNonce'];
-    final bool authenticateSocketA = json['authenticateSocketA'];
-    final bool authenticateSocketB = json['authenticateSocketB'];
-
-    String rvdSessionNonce = DateTime.now().toIso8601String();
-
-    String relayAuthMode = json['relayAuthMode'] ?? 'v0';
-    String? publicKeyA;
-    String? publicKeyB;
-    if (relayAuthMode == 'v0' && authenticateSocketA) {
-      publicKeyA = await _fetchPublicKey(atSignA);
-    }
-    if (relayAuthMode == 'v0' && authenticateSocketB) {
-      publicKeyB = await _fetchPublicKey(atSignB);
-    }
-    return SrvdSessionParams(
-      sessionId: sessionId,
-      atSignA: atSignA,
-      atSignB: atSignB,
-      authenticateSocketA: authenticateSocketA,
-      authenticateSocketB: authenticateSocketB,
-      publicKeyA: publicKeyA,
-      publicKeyB: publicKeyB,
-      rvdNonce: rvdSessionNonce,
-      clientNonce: clientNonce,
-      relayAuthMode: relayAuthMode,
-      relayAuthAesKey: json['relayAuthAesKey'],
-      only443: json['only443'] ?? false,
-    );
-  }
-
-  Future<String?> _fetchPublicKey(String atSign) async {
-    AtValue v = await atClient.get(AtKey.fromString('public:publickey$atSign'));
-    return v.value;
+    return (ports, spawned, toSpawned);
   }
 }
