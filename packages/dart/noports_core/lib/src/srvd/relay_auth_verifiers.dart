@@ -30,11 +30,11 @@ class RAVE implements Exception {
 }
 
 abstract interface class RelayAuthVerifyHelper {
-  Future<String> lookupAtKey(String atKey);
+  Future<String> lookup(String atKey);
 
-  Future<bool> sessionIsActive(String sessionId);
+  Future<bool> isSessionActive(String sessionId);
 
-  Future<String> relayAuthAesKey(String sessionId);
+  Future<String> getRelayAuthAesKey(String sessionId);
 }
 
 abstract interface class RelayAuthVerifier {
@@ -53,6 +53,8 @@ abstract interface class RelayAuthVerifier {
   String get tag;
 }
 
+/// RelayAuthVerifierECR where ECR stands for "EncryptedChallengeResponse"
+///
 /// Authenticates new socket connection as follows:
 /// 1. Send a challenge to the client, terminated with a newline
 /// 2. Receive `${sessionId}:${auth-payload-as-base64}\n` from client
@@ -74,8 +76,8 @@ abstract interface class RelayAuthVerifier {
 /// 9. Verify the signature of the payload using the public signing key,
 ///   hashingAlgo and signingAlgo
 /// 10. If all successful, return (true, dataStream)
-class RelayAuthVerifierV1 implements RelayAuthVerifier {
-  static final AtSignLogger logger = AtSignLogger(' RelayAuthVerifierV1 ');
+class RelayAuthVerifierESCR implements RelayAuthVerifier {
+  static final AtSignLogger logger = AtSignLogger(' RelayAuthVerifierECR ');
 
   @override
   String? atSign;
@@ -93,7 +95,7 @@ class RelayAuthVerifierV1 implements RelayAuthVerifier {
   final String challenge =
       AtChopsUtil.generateSymmetricKey(EncryptionKeyType.aes256).key;
 
-  RelayAuthVerifierV1(this.tag, this.helper);
+  RelayAuthVerifierESCR(this.tag, this.helper);
 
   Future<bool> verifyChallengeResponse(String response) async {
     // Split by ':' - expect two parts - sessionId, encryptedAuthEnvelope64
@@ -113,7 +115,7 @@ class RelayAuthVerifierV1 implements RelayAuthVerifier {
 
     /// 3. Verify that `sessionId` is currently active
     /// TODO unit test for active
-    final bool active = await helper.sessionIsActive(sessionId);
+    final bool active = await helper.isSessionActive(sessionId);
     if (!active) {
       throw RAVE(
         'Session $sessionId is not active',
@@ -155,7 +157,7 @@ class RelayAuthVerifierV1 implements RelayAuthVerifier {
     /// 5. Use session's AES key and the provided IV to decrypt the auth envelope
     /// TODO unit tests for failed to decrypt
     // Fetch the session's AES Key
-    String aesKey64 = await helper.relayAuthAesKey(sessionId);
+    String aesKey64 = await helper.getRelayAuthAesKey(sessionId);
 
     var encryptionAlgo = AESEncryptionAlgo(AESKey(aesKey64));
     String envelope64;
@@ -214,7 +216,7 @@ class RelayAuthVerifierV1 implements RelayAuthVerifier {
     }
 
     /// TODO 8. Fetch the public signing key
-    String publicSigningKey = await helper.lookupAtKey(envelope['sk']);
+    String publicSigningKey = await helper.lookup(envelope['sk']);
 
     /// TODO 9. Verify the signature of the payload
     final hashingAlgo = HashingAlgoType.values.byName(envelope['ha']);
@@ -260,7 +262,13 @@ class RelayAuthVerifierV1 implements RelayAuthVerifier {
       await listenMutex.acquire();
       try {
         if (authenticated) {
-          sc.add(data);
+          if (!sc.isClosed) {
+            try {
+              sc.add(data);
+            } catch (err) {
+              logger.shout('post-verify sc.add failed with $err');
+            }
+          }
         } else {
           // TODO maximum buffer size check to prevent dos attacks
           // TODO unit test for same
@@ -290,17 +298,33 @@ class RelayAuthVerifierV1 implements RelayAuthVerifier {
 
               /// TODO 10. If all successful, return (true, dataStream)
               authenticated = true;
-              completer.complete((true, sc.stream));
+              if (!completer.isCompleted) {
+                completer.complete((true, sc.stream));
+              } else {
+                if (!sc.isClosed) {
+                  sc.addError('Verify succeeded but'
+                      ' completer already completed!!!');
+                }
+              }
 
               if (buffer.isNotEmpty) {
-                sc.add(Uint8List.fromList(buffer));
+                if (!sc.isClosed) {
+                  try {
+                    sc.add(Uint8List.fromList(buffer));
+                  } catch (err) {
+                    logger.shout('finishing verify: sc.add failed with $err');
+                  }
+                }
               }
             } catch (e) {
               logger.shout('SignatureAuthVerifier $tag :'
                   ' verification FAILED with exception :'
                   ' $e');
 
-              completer.completeError('Error during socket authentication: $e');
+              if (!completer.isCompleted) {
+                completer
+                    .completeError('Error during socket authentication: $e');
+              }
             }
           }
         }
@@ -308,10 +332,15 @@ class RelayAuthVerifierV1 implements RelayAuthVerifier {
         listenMutex.release();
       }
     }, onError: (Object error, StackTrace stackTrace) {
-      sc.addError(error);
-
-      sc.close();
-    }, onDone: () => sc.close());
+      if (!sc.isClosed) {
+        sc.addError(error);
+        sc.close();
+      }
+    }, onDone: () {
+      if (!sc.isClosed) {
+        sc.close();
+      }
+    });
     return completer.future;
   }
 }
@@ -383,7 +412,13 @@ class RelayAuthVerifierLegacy implements RelayAuthVerifier {
     List<int> buffer = [];
     socket.listen((Uint8List data) {
       if (authenticated) {
-        sc.add(data);
+        if (!sc.isClosed) {
+          try {
+            sc.add(data);
+          } catch (err) {
+            logger.shout('post-verify sc.add failed with $err');
+          }
+        }
       } else {
         buffer.addAll(data);
         if (buffer.contains(10)) {
@@ -406,13 +441,17 @@ class RelayAuthVerifierLegacy implements RelayAuthVerifier {
 
             var payload = envelope['payload'];
             if (payload == null || payload is! Map) {
-              completer.completeError(
-                  'Received an auth signature which does not include the payload');
+              if (!completer.isCompleted) {
+                completer.completeError(
+                    'Received an auth signature which does not include the payload');
+              }
               return;
             }
             if (payload['rvdNonce'] != rvdNonce) {
-              completer.completeError(
-                  'Received rvdNonce which does not match what is expected');
+              if (!completer.isCompleted) {
+                completer.completeError(
+                    'Received rvdNonce which does not match what is expected');
+              }
               return;
             }
 
@@ -432,8 +471,10 @@ class RelayAuthVerifierLegacy implements RelayAuthVerifier {
               logger.shout('SignatureAuthVerifier $tag :'
                   ' verification FAILURE :'
                   ' ${atSigningResult.result}');
-              completer.completeError(
-                  'Signature verification failed. Signatures did not match.');
+              if (!completer.isCompleted) {
+                completer.completeError(
+                    'Signature verification failed. Signatures did not match.');
+              }
               return;
             }
 
@@ -441,24 +482,45 @@ class RelayAuthVerifierLegacy implements RelayAuthVerifier {
                 ' verification SUCCESS :'
                 ' ${atSigningResult.result}');
             authenticated = true;
-            completer.complete((true, sc.stream));
+            if (!completer.isCompleted) {
+              completer.complete((true, sc.stream));
+            } else {
+              if (!sc.isClosed) {
+                sc.addError('Verify succeeded but'
+                    ' completer already completed!!!');
+              }
+            }
 
             if (buffer.isNotEmpty) {
-              sc.add(Uint8List.fromList(buffer));
+              if (!sc.isClosed) {
+                try {
+                  sc.add(Uint8List.fromList(buffer));
+                } catch (err) {
+                  logger.shout('finishing verify: sc.add failed with $err');
+                }
+              }
             }
           } catch (e) {
             logger.shout('SignatureAuthVerifier $tag :'
                 ' verification FAILED with exception :'
                 ' $e');
 
-            completer.completeError('Error during socket authentication: $e');
+            if (!completer.isCompleted) {
+              completer.completeError('Error during socket authentication: $e');
+            }
           }
         }
       }
     }, onError: (Object error, StackTrace stackTrace) {
-      sc.addError(error);
-      sc.close();
-    }, onDone: () => sc.close());
+      if (!sc.isClosed) {
+        sc.addError(error);
+        sc.close();
+      }
+    }, onDone: () {
+      if (!sc.isClosed) {
+        sc.close();
+      }
+    });
     return completer.future;
   }
 }

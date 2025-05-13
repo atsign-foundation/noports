@@ -1,5 +1,7 @@
 import 'dart:convert';
 
+import 'package:noports_core/sshnp_foundation.dart';
+
 class SocketRendezvousRequestMessage {
   final String sessionId;
   final String atSignA;
@@ -7,7 +9,7 @@ class SocketRendezvousRequestMessage {
   final bool authenticateSocketA;
   final bool authenticateSocketB;
   final String clientNonce;
-  final String relayAuthMode;
+  final RelayAuthMode relayAuthMode;
   final String? relayAuthAesKey;
 
   SocketRendezvousRequestMessage({
@@ -30,7 +32,7 @@ class SocketRendezvousRequestMessage {
     m['authenticateSocketA'] = authenticateSocketA;
     m['authenticateSocketB'] = authenticateSocketB;
     m['clientNonce'] = clientNonce;
-    m['relayAuthMode'] = relayAuthMode;
+    m['relayAuthMode'] = relayAuthMode.name;
     m['relayAuthAesKey'] = relayAuthAesKey;
     return jsonEncode(m);
   }

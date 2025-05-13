@@ -11,7 +11,8 @@ import 'package:noports_core/src/srvd/isolates/port_pair_isolate.dart';
 import 'package:noports_core/src/srvd/srvd.dart';
 import 'package:noports_core/src/srvd/srvd_params.dart';
 
-import 'types.dart';
+import 'isolates/types.dart';
+import 'srvd_session_params.dart';
 
 @protected
 class SrvdImpl implements Srvd {
@@ -201,7 +202,7 @@ class SrvdImpl implements Srvd {
     }
 
     var (portA, portB) = ports;
-    logger.shout('Starting session ${sessionParams.sessionId}'
+    logger.shout('Started session ${sessionParams.sessionId}'
         ' for ${sessionParams.atSignA} to ${sessionParams.atSignB}'
         ' using ports $ports');
 
@@ -255,6 +256,20 @@ class SrvdImpl implements Srvd {
     logger.info("Spawning socket connector isolate"
         " with parameters $parameters");
 
+    /// This function is meant to be run in a separate isolate
+    /// It starts the socket connector, and sends back the assigned ports to the main isolate
+    /// It then waits for socket connector to die before shutting itself down
+    void portPairIsolateEntryPoint(ConnectorParams connectorParams) async {
+      PortPairWorker worker = PortPairWorker(
+        toMain: connectorParams.$1,
+        logTraffic: connectorParams.$2,
+        verbose: connectorParams.$3,
+        loggingTag: connectorParams.$4,
+      );
+
+      await worker.run();
+    }
+
     Isolate spawned = await Isolate.spawn<ConnectorParams>(
       portPairIsolateEntryPoint,
       parameters,
@@ -280,22 +295,7 @@ class SrvdImpl implements Srvd {
       if (msg is IIRequest) {
         switch (msg.type) {
           case 'lookup':
-            final AtValue value;
-            try {
-              value = await atClient.get(msg.payload);
-            } catch (err) {
-              toSpawned.send(IIResponse(
-                id: msg.id,
-                isError: false,
-                payload: err.toString(),
-              ));
-              break;
-            }
-            toSpawned.send(IIResponse(
-              id: msg.id,
-              isError: false,
-              payload: value.value,
-            ));
+            await lookup(msg, toSpawned);
             break;
           default:
             toSpawned.send(IIResponse(
@@ -345,5 +345,29 @@ class SrvdImpl implements Srvd {
         ' for session ${sessionParams.sessionId}');
 
     return (ports, spawned, toSpawned);
+  }
+
+  Future<void> lookup(IIRequest msg, SendPort toSpawned) async {
+    final AtValue value;
+    try {
+      logger.info('request: "lookup" : ${msg.payload}');
+      value = await atClient.get(
+        AtKey.fromString(msg.payload),
+        getRequestOptions: GetRequestOptions()..useRemoteAtServer = true,
+      );
+      logger.info('request: "lookup" : success ${value.value}');
+      toSpawned.send(IIResponse(
+        id: msg.id,
+        isError: false,
+        payload: value.value,
+      ));
+    } catch (err) {
+      logger.info('request: "lookup" : error $err');
+      toSpawned.send(IIResponse(
+        id: msg.id,
+        isError: true,
+        payload: err.toString(),
+      ));
+    }
   }
 }

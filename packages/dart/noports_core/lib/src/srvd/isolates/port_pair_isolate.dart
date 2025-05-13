@@ -2,33 +2,14 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'dart:isolate';
+import 'package:noports_core/src/srvd/isolates/types.dart';
+import 'package:noports_core/sshnp_foundation.dart';
 import 'package:socket_connector/socket_connector.dart';
 
-import '../relay_auth_verifiers.dart';
-import '../types.dart';
-
-/// This function is meant to be run in a separate isolate
-/// It starts the socket connector, and sends back the assigned ports to the main isolate
-/// It then waits for socket connector to die before shutting itself down
-void portPairIsolateEntryPoint(ConnectorParams connectorParams) async {
-  PortPairWorker worker = PortPairWorker(
-    toMain: connectorParams.$1,
-    logTraffic: connectorParams.$2,
-    verbose: connectorParams.$3,
-    loggingTag: connectorParams.$4,
-  );
-
-  await worker.run();
-}
+import 'package:noports_core/src/srvd/relay_auth_verifiers.dart';
+import 'package:noports_core/src/srvd/srvd_session_params.dart';
 
 class PortPairWorker extends RelayWorker {
-  PortPairWorker({
-    required super.toMain,
-    required super.logTraffic,
-    required super.verbose,
-    required super.loggingTag,
-  });
-
   /// Completes once we've started the session;
   final Completer sessionStarted = Completer();
 
@@ -44,41 +25,18 @@ class PortPairWorker extends RelayWorker {
   /// Set when we start the session
   int? portB;
 
-  @override
-  Future<void> stop() async {
-    if (connector != null) {
-      connector!.close();
-    } else {
-      logger.shout('Connector not yet started - killing this isolate');
-      Isolate.current.kill();
-    }
+  PortPairWorker({
+    required super.toMain,
+    required super.logTraffic,
+    required super.verbose,
+    required super.loggingTag,
+  }) {
+    reqHandlers['start'] = startSession;
+    reqHandlers['stop'] = stop;
   }
 
   @override
   Future<void> run() async {
-    fromMain.listen((msg) async {
-      if (msg is IIRequest) {
-        switch (msg.type) {
-          case 'stop':
-            logger.shout('Received "stop" request - terminating');
-            await stop();
-            break;
-          case 'start':
-            srvdSessionParams = msg.payload;
-            await startSession();
-            break;
-          default:
-            logger.shout('Received $msg from main isolate - terminating');
-            await stop();
-            break;
-        }
-        return;
-      }
-
-      logger.shout('Unhandled message $msg from main isolate - exiting');
-      await stop();
-    });
-
     await sessionStarted.future;
 
     /// Shut myself down once the socket connector closes
@@ -92,57 +50,24 @@ class PortPairWorker extends RelayWorker {
     Isolate.current.kill();
   }
 
-  Future<void> startSession() async {
+  @override
+  Future<void> stop([IIRequest? req]) async {
+    if (connector != null) {
+      connector!.close();
+    } else {
+      logger.shout('Connector not yet started - killing this isolate');
+      Isolate.current.kill();
+    }
+  }
+
+  Future<void> startSession(IIRequest req) async {
+    srvdSessionParams = req.payload;
     logger.info('Starting socket connector session for $srvdSessionParams');
 
-    /// Create the socketAuthVerifiers as required
-    Map expectedPayloadForSignature = {
-      'sessionId': srvdSessionParams.sessionId,
-      'clientNonce': srvdSessionParams.clientNonce,
-      'rvdNonce': srvdSessionParams.rvdNonce,
-    };
+    RelayAuthVerifier? authVerifierA;
+    RelayAuthVerifier? authVerifierB;
 
-    SocketAuthVerifier? socketAuthVerifierA;
-    if (srvdSessionParams.authenticateSocketA) {
-      String? pkAtSignA = srvdSessionParams.publicKeyA;
-      if (pkAtSignA == null) {
-        logger.shout('Cannot spawn socket connector.'
-            ' Authenticator for ${srvdSessionParams.atSignA}'
-            ' could not be created as PublicKey could not be'
-            ' fetched from the atServer.');
-        throw Exception('Failed to create SocketAuthenticator'
-            ' for ${srvdSessionParams.atSignA} due to failure to get public key for ${srvdSessionParams.atSignA}');
-      }
-      socketAuthVerifierA = RelayAuthVerifierLegacy(
-        pkAtSignA,
-        jsonEncode(expectedPayloadForSignature),
-        srvdSessionParams.rvdNonce!,
-        srvdSessionParams.atSignA,
-        srvdSessionParams.atSignA,
-        srvdSessionParams.sessionId,
-      ).verifySocketAuth;
-    }
-
-    SocketAuthVerifier? socketAuthVerifierB;
-    if (srvdSessionParams.authenticateSocketB) {
-      String? pkAtSignB = srvdSessionParams.publicKeyB;
-      if (pkAtSignB == null) {
-        logger.shout('Cannot spawn socket connector.'
-            ' Authenticator for ${srvdSessionParams.atSignB}'
-            ' could not be created as PublicKey could not be'
-            ' fetched from the atServer');
-        throw Exception('Failed to create SocketAuthenticator'
-            ' for ${srvdSessionParams.atSignB} due to failure to get public key for ${srvdSessionParams.atSignB}');
-      }
-      socketAuthVerifierB = RelayAuthVerifierLegacy(
-        pkAtSignB,
-        jsonEncode(expectedPayloadForSignature),
-        srvdSessionParams.rvdNonce!,
-        srvdSessionParams.atSignB!,
-        srvdSessionParams.atSignB!,
-        srvdSessionParams.sessionId,
-      ).verifySocketAuth;
-    }
+    (authVerifierA, authVerifierB) = await createAuthVerifiers();
 
     /// Create the socket connector
     connector = await SocketConnector.serverToServer(
@@ -152,8 +77,8 @@ class PortPairWorker extends RelayWorker {
       portB: 0,
       verbose: verbose,
       logTraffic: logTraffic,
-      socketAuthVerifierA: socketAuthVerifierA,
-      socketAuthVerifierB: socketAuthVerifierB,
+      socketAuthVerifierA: authVerifierA?.verifySocketAuth,
+      socketAuthVerifierB: authVerifierB?.verifySocketAuth,
     );
 
     /// Connector created, so complete the sessionStarted future
@@ -169,5 +94,126 @@ class PortPairWorker extends RelayWorker {
 
     logger.info('Assigned ports [$portA, $portB]'
         ' for session ${srvdSessionParams.sessionId}');
+  }
+
+  Map<String, dynamic> lookups = {};
+  @override
+  Future<String> lookup(String atKey) async {
+    if (lookups.containsKey(atKey)) {
+      return lookups[atKey];
+    } else {
+      final resp = await rpcToMain(IIRequest.create('lookup', atKey));
+      lookups[atKey] = resp.payload;
+      return resp.payload;
+    }
+  }
+
+  @override
+  Future<bool> isSessionActive(String sessionId) async {
+    return !(connector?.closed ?? true);
+  }
+
+  @override
+  Future<String> getRelayAuthAesKey(String sessionId) async {
+    if (srvdSessionParams.relayAuthAesKey == null) {
+      throw StateError('relayAuthAesKey is null');
+    } else {
+      return srvdSessionParams.relayAuthAesKey!;
+    }
+  }
+
+  Future<(RelayAuthVerifier?, RelayAuthVerifier?)> createAuthVerifiers() async {
+    switch (srvdSessionParams.relayAuthMode) {
+      case RelayAuthMode.payload:
+        return await createPayloadAuthVerifiers();
+      case RelayAuthMode.escr:
+        return await createEscrAuthVerifiers();
+    }
+  }
+
+  Future<(RelayAuthVerifier?, RelayAuthVerifier?)>
+      createPayloadAuthVerifiers() async {
+    RelayAuthVerifier? authVerifierA;
+    RelayAuthVerifier? authVerifierB;
+
+    Map expectedPayloadForSignature = {
+      'sessionId': srvdSessionParams.sessionId,
+      'clientNonce': srvdSessionParams.clientNonce,
+      'rvdNonce': srvdSessionParams.rvdNonce,
+    };
+
+    if (srvdSessionParams.authenticateSocketA) {
+      String? pkAtSignA = srvdSessionParams.publicKeyA ??
+          (await rpcToMain(IIRequest.create(
+            'lookup',
+            'public:publickey${srvdSessionParams.atSignA}',
+          )))
+              .payload;
+      if (pkAtSignA == null) {
+        logger.shout('Cannot spawn socket connector.'
+            ' Authenticator for ${srvdSessionParams.atSignA}'
+            ' could not be created as PublicKey could not be'
+            ' fetched from the atServer.');
+        throw Exception('Failed to create SocketAuthenticator'
+            ' for ${srvdSessionParams.atSignA} due to failure to get public key for ${srvdSessionParams.atSignA}');
+      }
+      authVerifierA = RelayAuthVerifierLegacy(
+        pkAtSignA,
+        jsonEncode(expectedPayloadForSignature),
+        srvdSessionParams.rvdNonce!,
+        srvdSessionParams.atSignA!,
+        srvdSessionParams.atSignA!,
+        srvdSessionParams.sessionId,
+      );
+    }
+
+    if (srvdSessionParams.authenticateSocketB) {
+      String? pkAtSignB = srvdSessionParams.publicKeyB ??
+          (await rpcToMain(IIRequest.create(
+            'lookup',
+            'public:publickey${srvdSessionParams.atSignB}',
+          )))
+              .payload;
+      if (pkAtSignB == null) {
+        logger.shout('Cannot spawn socket connector.'
+            ' Authenticator for ${srvdSessionParams.atSignB}'
+            ' could not be created as PublicKey could not be'
+            ' fetched from the atServer');
+        throw Exception('Failed to create SocketAuthenticator'
+            ' for ${srvdSessionParams.atSignB} due to failure to get public key for ${srvdSessionParams.atSignB}');
+      }
+      authVerifierB = RelayAuthVerifierLegacy(
+        pkAtSignB,
+        jsonEncode(expectedPayloadForSignature),
+        srvdSessionParams.rvdNonce!,
+        srvdSessionParams.atSignB!,
+        srvdSessionParams.atSignB!,
+        srvdSessionParams.sessionId,
+      );
+    }
+
+    return (authVerifierA, authVerifierB);
+  }
+
+  Future<(RelayAuthVerifier?, RelayAuthVerifier?)>
+      createEscrAuthVerifiers() async {
+    RelayAuthVerifierESCR? authVerifierA;
+    RelayAuthVerifierESCR? authVerifierB;
+
+    if (srvdSessionParams.authenticateSocketA) {
+      authVerifierA = RelayAuthVerifierESCR(
+        '${srvdSessionParams.sessionId} sideA',
+        this,
+      );
+    }
+
+    if (srvdSessionParams.authenticateSocketB) {
+      authVerifierB = RelayAuthVerifierESCR(
+        '${srvdSessionParams.sessionId} sideB',
+        this,
+      );
+    }
+
+    return (authVerifierA, authVerifierB);
   }
 }

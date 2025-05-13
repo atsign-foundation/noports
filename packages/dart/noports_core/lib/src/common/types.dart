@@ -51,3 +51,11 @@ enum SupportedSshAlgorithm {
   @override
   String toString() => _cliArg;
 }
+
+enum RelayAuthMode {
+  /// simple payload - signed response to implicit challenge
+  payload,
+
+  /// encrypted signed response to explicit challenge
+  escr;
+}

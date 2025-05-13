@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:io';
 
+import 'package:noports_core/utils.dart';
 import 'package:path/path.dart' as path;
 import 'package:args/args.dart';
 import 'package:at_utils/at_logger.dart';
@@ -37,12 +38,14 @@ Future<void> main(List<String> args) async {
             ' daemon\'s local network to connect to; defaults to localhost.')
     ..addFlag('rv-auth',
         defaultsTo: false,
-        help: '(Legacy) Whether this rv process will authenticate to rvd'
-            ' using legacy (v0) auth')
+        help: '(Legacy) Whether this rv process will authenticate to rvd using'
+            ' legacy "payload" (signed response to implicit challenge) auth.')
     ..addOption(
       'rv-auth-mode',
+      abbr: 'a',
       mandatory: false,
-      help: 'The relay auth mode, if required. Valid values are v0 or v1',
+      help: 'The relay auth mode, if required.',
+      allowed: RelayAuthMode.values.map((c) => c.name).toList(),
     )
     ..addFlag('rv-e2ee',
         defaultsTo: false,
@@ -71,7 +74,9 @@ Future<void> main(List<String> args) async {
       final bool rvE2ee = parsed['rv-e2ee'];
       final bool multi = parsed['multi'];
       final Duration timeout = Duration(seconds: int.parse(parsed['timeout']));
-      String? relayAuthMode = parsed['rv-auth-mode'];
+      RelayAuthMode? relayAuthMode = parsed['rv-auth-mode'] == null
+          ? null
+          : RelayAuthMode.values.byName(parsed['rv-auth-mode']);
 
       String? sessionAESKeyString =
           rvE2ee ? Platform.environment['RV_AES'] : null;
@@ -82,14 +87,14 @@ Future<void> main(List<String> args) async {
           throw ArgumentError('Only one of "--rv-auth" (legacy)'
               ' and "--rv-auth-mode <version>" may be supplied');
         } else {
-          relayAuthMode = 'v0';
+          relayAuthMode = RelayAuthMode.payload;
         }
       }
 
       RelayAuthenticator? relayAuthenticator;
       if (relayAuthMode != null) {
         switch (relayAuthMode) {
-          case 'v0':
+          case RelayAuthMode.payload:
             String? legacyAuthString =
                 parsed['rv-auth'] ? Platform.environment['RV_AUTH'] : null;
             if ((legacyAuthString ?? '').isEmpty) {
@@ -98,36 +103,33 @@ Future<void> main(List<String> args) async {
             }
             relayAuthenticator = RelayAuthenticatorLegacy(legacyAuthString!);
             break;
-          case 'v1':
-            //     'RV_SESSION_ID': sessionId,
-            //     'RV_AUTH_AES_KEY': relayAuthAesKey,
-            //     'RV_PUB_KEY_URI': publicSigningKeyUri,
-            //     'RV_SIGNING_KEY': privateSigningKey,
-            String sessionId = Platform.environment['RV_SESSION_ID'] ?? '';
+          case RelayAuthMode.escr:
+            String sessionId =
+                Platform.environment['REMOTE_AUTH_ECR_SESSION_ID'] ?? '';
             if (sessionId.isEmpty) {
-              throw ArgumentError('No RV_SESSION_ID in env');
+              throw ArgumentError('No REMOTE_AUTH_ECR_SESSION_ID in env');
             }
             String relayAuthAesKey =
-                Platform.environment['RV_AUTH_AES_KEY'] ?? '';
+                Platform.environment['REMOTE_AUTH_ECR_AES_KEY'] ?? '';
             if (relayAuthAesKey.isEmpty) {
-              throw ArgumentError('No RV_AUTH_AES_KEY in env');
+              throw ArgumentError('No REMOTE_AUTH_ECR_AES_KEY in env');
             }
             String publicSigningKeyUri =
-                Platform.environment['RV_PUB_KEY_URI'] ?? '';
+                Platform.environment['REMOTE_AUTH_ECR_PUB_KEY_URI'] ?? '';
             if (publicSigningKeyUri.isEmpty) {
-              throw ArgumentError('No RV_PUB_KEY_URI in env');
+              throw ArgumentError('No REMOTE_AUTH_ECR_PUB_KEY_URI in env');
             }
             String publicSigningKey =
-                Platform.environment['RV_SIGNING_PUBKEY'] ?? '';
+                Platform.environment['REMOTE_AUTH_ECR_SIGNING_PUBKEY'] ?? '';
             if (publicSigningKey.isEmpty) {
-              throw ArgumentError('No RV_SIGNING_PUBKEY in env');
+              throw ArgumentError('No REMOTE_AUTH_ECR_SIGNING_PUBKEY in env');
             }
             String privateSigningKey =
-                Platform.environment['RV_SIGNING_PRIVKEY'] ?? '';
+                Platform.environment['REMOTE_AUTH_ECR_SIGNING_PRIVKEY'] ?? '';
             if (privateSigningKey.isEmpty) {
-              throw ArgumentError('No RV_SIGNING_PRIVKEY in env');
+              throw ArgumentError('No REMOTE_AUTH_ECR_SIGNING_PRIVKEY in env');
             }
-            relayAuthenticator = RelayAuthenticatorV1(
+            relayAuthenticator = RelayAuthenticatorESCR(
               sessionId: sessionId,
               relayAuthAesKey: relayAuthAesKey,
               publicSigningKeyUri: publicSigningKeyUri,
@@ -135,9 +137,6 @@ Future<void> main(List<String> args) async {
               privateSigningKey: privateSigningKey,
             );
             break;
-          default:
-            throw ArgumentError('Invalid --rv-auth-mode $relayAuthMode.'
-                ' Valid values are v0 or v1');
         }
       }
       if (rvE2ee && (sessionAESKeyString ?? '').isEmpty) {

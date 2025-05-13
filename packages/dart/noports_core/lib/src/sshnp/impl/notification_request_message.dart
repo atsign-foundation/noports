@@ -6,7 +6,7 @@ class SshnpSessionRequest {
   final String host;
   final int port;
   final bool? authenticateToRvd;
-  final String relayAuthMode;
+  final RelayAuthMode relayAuthMode;
   final String? relayAuthAesKey;
   final String? clientNonce;
   final String? rvdNonce;
@@ -69,7 +69,9 @@ class SshnpSessionRequest {
       host: json['host'],
       port: json['port'],
       authenticateToRvd: json['authenticateToRvd'],
-      relayAuthMode: json['relayAuthMode'] ?? DefaultArgs.legacyRelayAuthMode,
+      relayAuthMode: json['relayAuthMode'] == null
+          ? RelayAuthMode.payload
+          : RelayAuthMode.values.byName(json['relayAuthMode']),
       relayAuthAesKey: json['relayAuthAesKey'],
       clientNonce: json['clientNonce'],
       rvdNonce: json['rvdNonce'],
@@ -86,7 +88,7 @@ class SshnpSessionRequest {
         'host': host,
         'port': port,
         'authenticateToRvd': authenticateToRvd,
-        'relayAuthMode': relayAuthMode,
+        'relayAuthMode': relayAuthMode.name,
         'relayAuthAesKey': relayAuthAesKey,
         'clientNonce': clientNonce,
         'rvdNonce': rvdNonce,
@@ -104,7 +106,7 @@ class NptSessionRequest {
   final String requestedHost;
   final int requestedPort;
   final bool authenticateToRvd;
-  final String relayAuthMode;
+  final RelayAuthMode relayAuthMode;
   final String? relayAuthAesKey;
   final String clientNonce;
   final String rvdNonce;
@@ -138,7 +140,9 @@ class NptSessionRequest {
       requestedHost: json['requestedHost'],
       requestedPort: json['requestedPort'],
       authenticateToRvd: json['authenticateToRvd'],
-      relayAuthMode: json['relayAuthMode'] ?? DefaultArgs.legacyRelayAuthMode,
+      relayAuthMode: json['relayAuthMode'] == null
+          ? RelayAuthMode.payload
+          : RelayAuthMode.values.byName(json['relayAuthMode']),
       relayAuthAesKey: json['relayAuthAesKey'],
       clientNonce: json['clientNonce'],
       rvdNonce: json['rvdNonce'],
@@ -157,7 +161,7 @@ class NptSessionRequest {
         'requestedPort': requestedPort,
         'requestedHost': requestedHost,
         'authenticateToRvd': authenticateToRvd,
-        'relayAuthMode': relayAuthMode,
+        'relayAuthMode': relayAuthMode.name,
         'relayAuthAesKey': relayAuthAesKey,
         'clientNonce': clientNonce,
         'rvdNonce': rvdNonce,

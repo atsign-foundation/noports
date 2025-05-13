@@ -25,7 +25,7 @@ abstract interface class ClientParams {
 
   bool get authenticateDeviceToRvd;
 
-  String get relayAuthMode;
+  RelayAuthMode get relayAuthMode;
 
   bool get encryptRvdTraffic;
 
@@ -73,7 +73,7 @@ abstract class ClientParamsBase implements ClientParams {
   final bool authenticateDeviceToRvd;
 
   @override
-  final String relayAuthMode;
+  final RelayAuthMode relayAuthMode;
 
   @override
   final bool encryptRvdTraffic;
@@ -156,15 +156,12 @@ class NptParams extends ClientParamsBase
     super.rootDomain = DefaultArgs.rootDomain,
     super.authenticateClientToRvd = DefaultArgs.authenticateClientToRvd,
     super.authenticateDeviceToRvd = DefaultArgs.authenticateDeviceToRvd,
-    super.relayAuthMode = DefaultArgs.legacyRelayAuthMode,
+    super.relayAuthMode = RelayAuthMode.payload,
     super.encryptRvdTraffic = DefaultArgs.encryptRvdTraffic,
     required this.inline,
     super.daemonPingTimeout,
     required this.timeout,
   }) {
-    if (relayAuthMode != 'v0' && relayAuthMode != 'v1') {
-      throw ArgumentError('Invalid relayAuthMode "$relayAuthMode"');
-    }
     try {
       AtUtils.fixAtSign(clientAtSign);
       AtUtils.fixAtSign(sshnpdAtSign);
@@ -238,7 +235,7 @@ class SshnpParams extends ClientParamsBase
     this.addForwardsToTunnel = DefaultArgs.addForwardsToTunnel,
     super.authenticateClientToRvd = DefaultArgs.authenticateClientToRvd,
     super.authenticateDeviceToRvd = DefaultArgs.authenticateDeviceToRvd,
-    super.relayAuthMode = DefaultArgs.legacyRelayAuthMode,
+    super.relayAuthMode = RelayAuthMode.payload,
     super.encryptRvdTraffic = DefaultArgs.encryptRvdTraffic,
     super.daemonPingTimeout,
   });
@@ -340,7 +337,7 @@ class SshnpParams extends ClientParamsBase
           DefaultArgs.authenticateClientToRvd,
       authenticateDeviceToRvd: partial.authenticateDeviceToRvd ??
           DefaultArgs.authenticateDeviceToRvd,
-      relayAuthMode: partial.relayAuthMode ?? DefaultArgs.legacyRelayAuthMode,
+      relayAuthMode: partial.relayAuthMode ?? RelayAuthMode.payload,
       encryptRvdTraffic:
           partial.encryptRvdTraffic ?? DefaultArgs.encryptRvdTraffic,
       daemonPingTimeout:
@@ -431,7 +428,7 @@ class SshnpPartialParams {
   final SupportedSshAlgorithm? sshAlgorithm;
   final bool? authenticateClientToRvd;
   final bool? authenticateDeviceToRvd;
-  final String? relayAuthMode;
+  final RelayAuthMode? relayAuthMode;
   final bool? encryptRvdTraffic;
   final Duration? daemonPingTimeout;
 
@@ -502,6 +499,7 @@ class SshnpPartialParams {
           params2.authenticateClientToRvd ?? params1.authenticateClientToRvd,
       authenticateDeviceToRvd:
           params2.authenticateDeviceToRvd ?? params1.authenticateDeviceToRvd,
+      relayAuthMode: params2.relayAuthMode ?? params1.relayAuthMode,
       encryptRvdTraffic: params2.encryptRvdTraffic ?? params1.encryptRvdTraffic,
       daemonPingTimeout: params2.daemonPingTimeout ?? params1.daemonPingTimeout,
     );
@@ -559,6 +557,9 @@ class SshnpPartialParams {
       authenticateClientToRvd: args[SshnpArg.authenticateClientToRvdArg.name],
       authenticateDeviceToRvd: args[SshnpArg.authenticateDeviceToRvdArg.name],
       encryptRvdTraffic: args[SshnpArg.encryptRvdTrafficArg.name],
+      relayAuthMode: args[SshnpArg.relayAuthModeArg.name] == null
+          ? null
+          : RelayAuthMode.values.byName(args[SshnpArg.relayAuthModeArg.name]),
       daemonPingTimeout: Duration(
           seconds: args[SshnpArg.daemonPingTimeoutArg.name] ??
               DefaultArgs.daemonPingTimeoutSeconds),

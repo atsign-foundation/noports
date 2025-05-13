@@ -19,6 +19,8 @@ import 'package:at_utils/at_logger.dart';
 /// to enforce the rule that if you are creating records in the
 /// <enrollment id>.__wa namespace, then you are authenticated as that
 /// same enrollment.
+///
+/// TODO: Move this into at_client package's AtClientBindings
 mixin ApkamSigning {
   AtClient get atClient;
 
@@ -33,10 +35,28 @@ mixin ApkamSigning {
     return id;
   }
 
-  /// the uri (e.g. `public:<id>.<enrollment_id>.__wa@atsign`) of the
+  /// the uri (e.g. `public:apsk.<enrollment_id>.__wa@atsign`) of the
   /// [publicSigningKey]
   String get publicSigningKeyUri {
-    return 'public:dsk.$enrollmentId.__wa${atClient.getCurrentAtSign()}';
+    return 'public:apsk.$enrollmentId.__wa${atClient.getCurrentAtSign()}';
+  }
+
+  Future publishPublicSigningKey() async {
+    try {
+      logger.info('publishPublicSigningKey: checking $publicSigningKeyUri');
+      await atClient.get(
+        AtKey.fromString(publicSigningKeyUri),
+        getRequestOptions: GetRequestOptions()..useRemoteAtServer = true,
+      );
+      logger.info('publishPublicSigningKey: have already published');
+    } on AtKeyNotFoundException catch (err) {
+      logger.info('${err.message} - publishing now');
+      await atClient.put(
+        AtKey.fromString(publicSigningKeyUri),
+        publicSigningKey,
+        putRequestOptions: PutRequestOptions()..useRemoteAtServer = true,
+      );
+    }
   }
 
   /// the public key which can be used to verify signatures made using

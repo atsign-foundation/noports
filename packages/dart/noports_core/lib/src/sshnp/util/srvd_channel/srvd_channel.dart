@@ -77,12 +77,13 @@ abstract class SrvdChannel<T>
   String? _relayAuthAesKey;
 
   String? get relayAuthAesKey {
-    if (params.relayAuthMode == DefaultArgs.legacyRelayAuthMode) {
-      return null;
-    } else {
-      _relayAuthAesKey ??=
-          AtChopsUtil.generateSymmetricKey(EncryptionKeyType.aes256).key;
-      return _relayAuthAesKey;
+    switch (params.relayAuthMode) {
+      case RelayAuthMode.payload:
+        return null;
+      case RelayAuthMode.escr:
+        _relayAuthAesKey ??=
+            AtChopsUtil.generateSymmetricKey(EncryptionKeyType.aes256).key;
+        return _relayAuthAesKey;
     }
   }
 
@@ -101,6 +102,8 @@ abstract class SrvdChannel<T>
 
   @override
   Future<void> initialize() async {
+    await publishPublicSigningKey();
+
     await getHostAndPortFromSrvd();
 
     completeInitialization();
@@ -124,7 +127,7 @@ abstract class SrvdChannel<T>
     RelayAuthenticator? relayAuthenticator;
     if (params.authenticateClientToRvd) {
       switch (params.relayAuthMode) {
-        case 'v0':
+        case RelayAuthMode.payload:
           relayAuthenticator =
               RelayAuthenticatorLegacy(signAndWrapAndJsonEncode(atClient, {
             'sessionId': sessionId,
@@ -132,17 +135,15 @@ abstract class SrvdChannel<T>
             'rvdNonce': rvdNonce,
           }));
           break;
-        case 'v1':
-          relayAuthenticator = RelayAuthenticatorV1(
+        case RelayAuthMode.escr:
+          relayAuthenticator = RelayAuthenticatorESCR(
             sessionId: sessionId,
             relayAuthAesKey: relayAuthAesKey!,
             publicSigningKeyUri: publicSigningKeyUri,
             publicSigningKey: publicSigningKey,
             privateSigningKey: privateSigningKey,
           );
-        default:
-          throw StateError('Unknown relayAuthMode ${params.relayAuthMode}'
-              ' - expected v0 or v1');
+          break;
       }
     }
     srv = srvGenerator(

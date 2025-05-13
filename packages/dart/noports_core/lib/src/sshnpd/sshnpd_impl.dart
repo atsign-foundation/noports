@@ -145,13 +145,16 @@ class SshnpdImpl with AtClientBindings, ApkamSigning implements Sshnpd {
         DaemonFeature.adjustableTimeout.name: true,
       },
       'e2eeModes': {
-        'v1': {
+        'legacy': {
+          // one AES key + IV per socket
           'algos': ['AES:CTR'],
-        }, // two AES keys + IVs per socket
+        },
+        'symmetric': {
+          // two AES keys + IVs per socket
+          'algos': ['AES:CTR'],
+        },
       },
-      'authModes': {
-        'v1': {}, // per-socket signing
-      },
+      'authModes': RelayAuthMode.values.map((c) => c.name).toList(),
       'allowedServices': permitOpen,
     };
   }
@@ -230,6 +233,8 @@ class SshnpdImpl with AtClientBindings, ApkamSigning implements Sshnpd {
     if (initialized) {
       throw StateError('Cannot init() - already initialized');
     }
+
+    await publishPublicSigningKey();
 
     initialized = true;
   }
@@ -580,7 +585,7 @@ class SshnpdImpl with AtClientBindings, ApkamSigning implements Sshnpd {
 
       if (req.authenticateToRvd) {
         switch (req.relayAuthMode) {
-          case 'v0':
+          case RelayAuthMode.payload:
             relayAuthenticator =
                 RelayAuthenticatorLegacy(signAndWrapAndJsonEncode(atClient, {
               'sessionId': req.sessionId,
@@ -588,8 +593,8 @@ class SshnpdImpl with AtClientBindings, ApkamSigning implements Sshnpd {
               'rvdNonce': req.rvdNonce,
             }));
             break;
-          case 'v1':
-            relayAuthenticator = RelayAuthenticatorV1(
+          case RelayAuthMode.escr:
+            relayAuthenticator = RelayAuthenticatorESCR(
               sessionId: req.sessionId,
               relayAuthAesKey: req.relayAuthAesKey!,
               publicSigningKeyUri: publicSigningKeyUri,
@@ -597,9 +602,6 @@ class SshnpdImpl with AtClientBindings, ApkamSigning implements Sshnpd {
               privateSigningKey: privateSigningKey,
             );
             break;
-          default:
-            throw StateError('Unknown relayAuthMode ${req.relayAuthMode}'
-                ' - expected v0 or v1');
         }
       }
 
@@ -804,7 +806,7 @@ class SshnpdImpl with AtClientBindings, ApkamSigning implements Sshnpd {
       port: int.parse(port),
       privateKey: _privateKey,
       remoteForwardPort: int.parse(remoteForwardPort),
-      relayAuthMode: 'v0',
+      relayAuthMode: RelayAuthMode.payload,
       relayAuthAesKey: null,
     );
 
@@ -862,7 +864,7 @@ class SshnpdImpl with AtClientBindings, ApkamSigning implements Sshnpd {
       RelayAuthenticator? relayAuthenticator;
       if (authenticateToRvd) {
         switch (req.relayAuthMode) {
-          case 'v0':
+          case RelayAuthMode.payload:
             relayAuthenticator =
                 RelayAuthenticatorLegacy(signAndWrapAndJsonEncode(atClient, {
               'sessionId': req.sessionId,
@@ -870,16 +872,14 @@ class SshnpdImpl with AtClientBindings, ApkamSigning implements Sshnpd {
               'rvdNonce': req.rvdNonce,
             }));
             break;
-          case 'v1':
-            relayAuthenticator = RelayAuthenticatorV1(
+          case RelayAuthMode.escr:
+            relayAuthenticator = RelayAuthenticatorESCR(
                 sessionId: req.sessionId,
                 relayAuthAesKey: req.relayAuthAesKey!,
                 publicSigningKeyUri: publicSigningKeyUri,
                 publicSigningKey: publicSigningKey,
                 privateSigningKey: privateSigningKey);
-          default:
-            throw StateError('Unknown relayAuthMode ${req.relayAuthMode}'
-                ' - expected v0 or v1');
+            break;
         }
       }
 

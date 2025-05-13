@@ -40,7 +40,7 @@ class MockSshnpParams extends Mock implements SshnpParams {
   Duration get daemonPingTimeout => DefaultArgs.daemonPingTimeoutDuration;
 
   @override
-  String get relayAuthMode => DefaultArgs.legacyRelayAuthMode;
+  RelayAuthMode get relayAuthMode => RelayAuthMode.payload;
 }
 
 class MockSshnpdChannel extends Mock implements SshnpdChannel {}

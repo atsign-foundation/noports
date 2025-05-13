@@ -979,24 +979,47 @@ class SrvImplDart implements Srv<SocketConnector> {
     }
     InternetAddress localAddress = await resolveRequestedLocalHost();
 
-    SocketConnector socketConnector = await SocketConnector.socketToSocket(
-        addressA: localAddress,
-        portA: localPort,
-        addressB: relayAddress,
-        portB: streamingPort,
-        verbose: Platform.environment['SRV_TRACE'] == 'true',
-        logger: ioSinkForLogger(logger),
-        transformAtoB: encrypter,
-        transformBtoA: decrypter);
+    bool verbose = Platform.environment['SRV_TRACE'] == 'true';
+    IOSink logSink = ioSinkForLogger(logger);
+    SocketConnector socketConnector = SocketConnector(
+      verbose: verbose,
+      logger: ioSinkForLogger(logger),
+    );
+    if (verbose) {
+      logSink.writeln('socket_connector:'
+          ' Connecting to $localAddress:$localPort');
+    }
+    Socket sideASocket = await Socket.connect(localAddress, localPort);
+    Side sideA = Side(sideASocket, true, transformer: encrypter);
+    unawaited(socketConnector.handleSingleConnection(sideA).catchError((err) {
+      logSink.writeln('ERROR $err from handleSingleConnection on sideA $sideA');
+    }));
+
+    if (verbose) {
+      logSink.writeln(
+          'socket_connector: Connecting to $relayAddress:$streamingPort');
+    }
+    Socket sideBSocket = await Socket.connect(relayAddress, streamingPort);
+    Side sideB = Side(sideBSocket, false, transformer: decrypter);
+
+    // Authenticate the sideB socket (to the rvd)
     if (relayAuthenticator != null) {
       logger.info('_runDaemonSideSingle authenticating socketB to rvd');
-      var (authenticated, authenticatedStream) = await relayAuthenticator!
-          .authenticate(socketConnector.connections.first.sideB.socket);
+      var (authenticated, authenticatedStream) =
+          await relayAuthenticator!.authenticate(sideB.socket);
       if (!authenticated || authenticatedStream == null) {
-        socketConnector.connections.first.sideB.socket.destroy();
+        sideB.socket.destroy();
       } else {
-        socketConnector.connections.first.sideB.stream = authenticatedStream;
+        sideB.stream = authenticatedStream;
       }
+    }
+
+    unawaited(socketConnector.handleSingleConnection(sideB).catchError((err) {
+      logSink.writeln('ERROR $err from handleSingleConnection on sideB $sideB');
+    }));
+
+    if (verbose) {
+      logSink.writeln('socket_connector: started');
     }
 
     return socketConnector;

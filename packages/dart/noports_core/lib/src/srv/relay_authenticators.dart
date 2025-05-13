@@ -53,7 +53,7 @@ class RelayAuthenticatorLegacy implements RelayAuthenticator {
   }
 }
 
-class RelayAuthenticatorV1 implements RelayAuthenticator {
+class RelayAuthenticatorESCR implements RelayAuthenticator {
   final String sessionId;
   final String relayAuthAesKey;
   final String publicSigningKeyUri;
@@ -62,7 +62,7 @@ class RelayAuthenticatorV1 implements RelayAuthenticator {
 
   late final AtChops _atChops;
 
-  RelayAuthenticatorV1({
+  RelayAuthenticatorESCR({
     required this.sessionId,
     required this.relayAuthAesKey,
     required this.publicSigningKeyUri,
@@ -84,15 +84,15 @@ class RelayAuthenticatorV1 implements RelayAuthenticator {
   ///   actual payload within the auth envelope
   @override
   Map<String, String> get envMap => {
-        'RV_SESSION_ID': sessionId,
-        'RV_AUTH_AES_KEY': relayAuthAesKey,
-        'RV_PUB_KEY_URI': publicSigningKeyUri,
-        'RV_SIGNING_PUBKEY': publicSigningKey,
-        'RV_SIGNING_PRIVKEY': privateSigningKey,
+        'REMOTE_AUTH_ECR_SESSION_ID': sessionId,
+        'REMOTE_AUTH_ECR_AES_KEY': relayAuthAesKey,
+        'REMOTE_AUTH_ECR_PUB_KEY_URI': publicSigningKeyUri,
+        'REMOTE_AUTH_ECR_SIGNING_PUBKEY': publicSigningKey,
+        'REMOTE_AUTH_ECR_SIGNING_PRIVKEY': privateSigningKey,
       };
 
   @override
-  List<String> get rvArgs => ['--rv-auth-mode', 'v1'];
+  List<String> get rvArgs => ['-a', 'escr'];
 
   /// v1 authentication to relay
   /// - listens to socket

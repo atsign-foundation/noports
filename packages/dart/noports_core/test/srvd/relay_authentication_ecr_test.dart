@@ -14,7 +14,7 @@ class MockSocket extends Mock implements Socket {}
 class MockStreamSubscription<T> extends Mock implements StreamSubscription<T> {}
 
 void main() {
-  group('Tests of RelayAuthenticatorV1 and RelayAuthVerifierV1', () {
+  group('Tests of RelayAuthenticatorECR and RelayAuthVerifierECR', () {
     late String relayAuthAesKey;
     late String wrongAesKey;
     late String relaySessionId;
@@ -22,7 +22,7 @@ void main() {
     late AtEncryptionKeyPair signingKP;
     late AtEncryptionKeyPair wrongKP;
     late RelayAuthVerifyHelper helper;
-    late RelayAuthVerifierV1 verifier;
+    late RelayAuthVerifierESCR verifier;
     late String wrongChallenge =
         AtChopsUtil.generateSymmetricKey(EncryptionKeyType.aes256).key;
 
@@ -38,31 +38,31 @@ void main() {
       relaySessionId = Uuid().v4();
 
       helper = MockRelayAuthVerifyHelper();
-      when(() => helper.sessionIsActive(relaySessionId))
+      when(() => helper.isSessionActive(relaySessionId))
           .thenAnswer((_) => Future.value(true));
-      when(() => helper.relayAuthAesKey(relaySessionId))
+      when(() => helper.getRelayAuthAesKey(relaySessionId))
           .thenAnswer((_) => Future.value(relayAuthAesKey));
-      when(() => helper.lookupAtKey(publicSigningKeyUri))
+      when(() => helper.lookup(publicSigningKeyUri))
           .thenAnswer((_) => Future.value(signingKP.atPublicKey.publicKey));
 
-      verifier = RelayAuthVerifierV1('test', helper);
+      verifier = RelayAuthVerifierESCR('test', helper);
     });
 
     test('all is well', () async {
-      RelayAuthenticatorV1 authenticator = RelayAuthenticatorV1(
+      RelayAuthenticatorESCR authenticator = RelayAuthenticatorESCR(
           sessionId: relaySessionId,
           relayAuthAesKey: relayAuthAesKey,
           publicSigningKeyUri: publicSigningKeyUri,
           publicSigningKey: signingKP.atPublicKey.publicKey,
           privateSigningKey: signingKP.atPrivateKey.privateKey);
       RelayAuthVerifyHelper helper = MockRelayAuthVerifyHelper();
-      RelayAuthVerifierV1 verifier = RelayAuthVerifierV1('test', helper);
+      RelayAuthVerifierESCR verifier = RelayAuthVerifierESCR('test', helper);
 
-      when(() => helper.sessionIsActive(relaySessionId))
+      when(() => helper.isSessionActive(relaySessionId))
           .thenAnswer((_) => Future.value(true));
-      when(() => helper.relayAuthAesKey(relaySessionId))
+      when(() => helper.getRelayAuthAesKey(relaySessionId))
           .thenAnswer((_) => Future.value(relayAuthAesKey));
-      when(() => helper.lookupAtKey(publicSigningKeyUri))
+      when(() => helper.lookup(publicSigningKeyUri))
           .thenAnswer((_) => Future.value(signingKP.atPublicKey.publicKey));
 
       await verifier.verifyChallengeResponse(
@@ -70,7 +70,7 @@ void main() {
     });
 
     test('wrong signing key', () async {
-      RelayAuthenticatorV1 authenticator = RelayAuthenticatorV1(
+      RelayAuthenticatorESCR authenticator = RelayAuthenticatorESCR(
           sessionId: relaySessionId,
           relayAuthAesKey: relayAuthAesKey,
           publicSigningKeyUri: publicSigningKeyUri,
@@ -85,7 +85,7 @@ void main() {
     });
 
     test('wrong AES key', () async {
-      RelayAuthenticatorV1 authenticator = RelayAuthenticatorV1(
+      RelayAuthenticatorESCR authenticator = RelayAuthenticatorESCR(
           sessionId: relaySessionId,
           relayAuthAesKey: wrongAesKey,
           publicSigningKeyUri: publicSigningKeyUri,
@@ -100,7 +100,7 @@ void main() {
     });
 
     test('wrong challenge', () async {
-      RelayAuthenticatorV1 authenticator = RelayAuthenticatorV1(
+      RelayAuthenticatorESCR authenticator = RelayAuthenticatorESCR(
           sessionId: relaySessionId,
           relayAuthAesKey: relayAuthAesKey,
           publicSigningKeyUri: publicSigningKeyUri,
