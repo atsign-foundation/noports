@@ -370,13 +370,14 @@ exit:
   return 0;
 }
 
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wunused-parameter"
 int server_to_socket(const srv_params_t *params, const char *auth_string, chunked_transformer_t *encrypter,
                      chunked_transformer_t *decrypter) {
-  return 0;
+  (void)params;
+  (void)auth_string;
+  (void)encrypter;
+  (void)decrypter;
+  return 1;
 }
-#pragma clang diagnostic pop
 
 int create_encrypter_and_decrypter(const char *session_aes_key_string, const char *session_aes_iv_string,
                                    chunked_transformer_t *encrypter, chunked_transformer_t *decrypter) {

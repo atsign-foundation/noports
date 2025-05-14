@@ -28,8 +28,9 @@ int parse_sshnpd_params(sshnpd_params *params, int argc, const char **argv) {
   char *permitopen = NULL;
   char *ephemeral_permissions = NULL;
 
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wmissing-field-initializers"
+// pragma GCC works for both gcc and clang
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wmissing-field-initializers"
   ArgparseOption options[] = {
       OPT_HELP(),
       OPT_STRING('k', "key-file", &params->key_file, "Path to the key file"),
@@ -57,7 +58,7 @@ int parse_sshnpd_params(sshnpd_params *params, int argc, const char **argv) {
       OPT_BOOLEAN('u', "un-hide", NULL, NULL),
       OPT_END(),
   };
-#pragma clang diagnostic pop
+#pragma GCC diagnostic pop
 
   Argparse argparse;
   argparse_init(&argparse, options, NULL, 0);

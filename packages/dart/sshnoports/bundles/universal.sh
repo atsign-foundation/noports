@@ -723,7 +723,7 @@ validate_activation() {
     if [ "$device_status" -eq 3 ]; then
       echo $device_output
     fi
-    at_activate onboard -a $device_atsign
+    at_activate onboard -a $device_atsign -k "${user_home}/.atsign/keys/${device_atsign}_key.atKeys"
   fi
 
   if [ "$client_status" -ne 0 ]; then
@@ -732,7 +732,7 @@ validate_activation() {
     if [ "$client_status" -eq 3 ]; then
       echo $client_output
     fi
-    at_activate onboard -a $client_atsign
+    at_activate onboard -a $client_atsign -k "${user_home}/.atsign/keys/${client_atsign}_key.atKeys"
   fi
 
   if [ "$policy_status" -ne 0 ]; then
@@ -741,7 +741,7 @@ validate_activation() {
     if [ "$policy_status" -eq 3 ]; then
       echo "$policy_output"
     fi
-    at_activate onboard -a "$policy_atsign"
+    at_activate onboard -a "$policy_atsign" -k "${user_home}/.atsign/keys/${policy_atsign}_key.atKeys"
   fi
 }
 
@@ -755,6 +755,11 @@ client() {
   "$extract_path"/sshnp/install.sh -b "$bin_path" -u "$user" srv
   "$extract_path"/sshnp/install.sh -b "$bin_path" -u "$user" at_activate
 
+  # set PATH so it includes user's private bin if it exists
+  if [ -d "$user_home/.local/bin" ] ; then
+    PATH="$user_home/.local/bin:$PATH"
+  fi
+
   # check that there are some ssh keys
   check_ssh_keys
 
@@ -764,7 +769,6 @@ client() {
     get_atsign_manually_once "client"
     client_atsign="$selectedatsign"
   fi
-
   if [ -z "$device_atsign" ]; then
     get_atsign_manually_once "device"
     device_atsign="$selectedatsign"

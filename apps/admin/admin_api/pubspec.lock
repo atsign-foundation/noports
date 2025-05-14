@@ -12,10 +12,11 @@ packages:
   alfred:
     dependency: "direct main"
     description:
-      name: alfred
-      sha256: cecd070b75d10eacce2c2148f7ffd489bf85faea4b12cfa608a3428febdaf6ca
-      url: "https://pub.dev"
-    source: hosted
+      path: "."
+      ref: cc-directory-4-windows
+      resolved-ref: "8ecf0437cb91d591d5b1e1547e662438d5f65351"
+      url: "https://github.com/atsign-foundation/alfred"
+    source: git
     version: "1.1.2+1"
   analyzer:
     dependency: transitive

@@ -1,6 +1,6 @@
 name: admin_api
 description: A sample command-line application.
-version: 1.0.0
+version: 1.0.1
 publish_to: none
 # repository: https://github.com/my_org/my_repo
 
@@ -23,6 +23,10 @@ dependency_overrides:
     git:
       ref: gkc/show-aliases-in-usage
       url: https://github.com/gkc/args
+  alfred:
+    git:
+      ref: cc-directory-4-windows
+      url: https://github.com/atsign-foundation/alfred
 
 dev_dependencies:
   lints: ^5.1.1

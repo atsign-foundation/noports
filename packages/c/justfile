@@ -108,7 +108,7 @@ configure-dev:
     -DSSHNPD_ENABLE_TESTING_SHUTDOWN_NOTIFICATION=ON
 
 configure-strict:
-  cmake -B {{ dev_dir }} \
+  cmake -B {{ strict_dir }} \
     -S $PWD \
     -G "$GENERATOR" \
     --preset dev \
