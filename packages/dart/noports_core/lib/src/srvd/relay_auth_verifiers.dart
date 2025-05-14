@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
+import 'dart:math';
 import 'dart:typed_data';
 
 import 'package:at_chops/at_chops.dart';
@@ -15,6 +16,7 @@ enum RAVEReason {
   dataMismatch,
   decryptionFailed,
   signatureVerificationFailed,
+  randomlyInjectedFailure
 }
 
 class RAVE implements Exception {
@@ -75,7 +77,9 @@ abstract interface class RelayAuthVerifier {
 /// 8. Fetch the public signing key
 /// 9. Verify the signature of the payload using the public signing key,
 ///   hashingAlgo and signingAlgo
-/// 10. If all successful, return (true, dataStream)
+/// 10. If all successful
+///   - `socket.writeln('ok');`
+///   - complete successfully
 class RelayAuthVerifierESCR implements RelayAuthVerifier {
   static final AtSignLogger logger = AtSignLogger(' RelayAuthVerifierECR ');
 
@@ -95,7 +99,22 @@ class RelayAuthVerifierESCR implements RelayAuthVerifier {
   final String challenge =
       AtChopsUtil.generateSymmetricKey(EncryptionKeyType.aes256).key;
 
-  RelayAuthVerifierESCR(this.tag, this.helper);
+  /// If [randomlyFail] > 0 && random.nextInt([randomlyFail]) == 0
+  /// then fail the verification
+  final int randomlyFail;
+
+  /// If [randomlyAddLatency] > 0 && random.nextInt([randomlyAddLatency]) == 0
+  /// then add (100 + random.nextInt(3900))ms delay
+  final int randomlyAddLatency;
+
+  Random random = Random();
+
+  RelayAuthVerifierESCR(
+    this.tag,
+    this.helper, {
+    this.randomlyFail = 25,
+    this.randomlyAddLatency = 25,
+  });
 
   Future<bool> verifyChallengeResponse(String response) async {
     // Split by ':' - expect two parts - sessionId, encryptedAuthEnvelope64
@@ -255,6 +274,7 @@ class RelayAuthVerifierESCR implements RelayAuthVerifier {
 
     /// 1. Sends a challenge to the client, terminated with a newline
     socket.writeln(challenge);
+    await socket.flush();
 
     Mutex listenMutex = Mutex();
 
@@ -296,7 +316,23 @@ class RelayAuthVerifierESCR implements RelayAuthVerifier {
                 );
               }
 
-              /// TODO 10. If all successful, return (true, dataStream)
+              if (randomlyFail > 0 && random.nextInt(randomlyFail) == 0) {
+                throw RAVE('Randomly injected failure',
+                    RAVEReason.randomlyInjectedFailure);
+              }
+
+              if (randomlyAddLatency > 0 && random.nextInt(randomlyAddLatency) == 0) {
+                final int l = 100 + random.nextInt(3900);
+                logger.shout('Injecting random latency of $l ms');
+                await Future.delayed(Duration(milliseconds: l));
+              }
+
+              /// If all successful
+              /// - send 'ok' to client
+              /// - return (true, dataStream)
+              socket.writeln('ok');
+              await socket.flush();
+
               authenticated = true;
               if (!completer.isCompleted) {
                 completer.complete((true, sc.stream));
@@ -322,6 +358,8 @@ class RelayAuthVerifierESCR implements RelayAuthVerifier {
                   ' $e');
 
               if (!completer.isCompleted) {
+                socket.writeln(e);
+                await socket.flush();
                 completer
                     .completeError('Error during socket authentication: $e');
               }
@@ -442,8 +480,8 @@ class RelayAuthVerifierLegacy implements RelayAuthVerifier {
             var payload = envelope['payload'];
             if (payload == null || payload is! Map) {
               if (!completer.isCompleted) {
-                completer.completeError(
-                    'Received an auth signature which does not include the payload');
+                completer.completeError('Received an auth signature'
+                    ' which does not include the payload');
               }
               return;
             }

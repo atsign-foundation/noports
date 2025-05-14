@@ -179,7 +179,7 @@ class SshnpdImpl with AtClientBindings, ApkamSigning implements Sshnpd {
         throw ('\n Unable to find .atKeys file : ${p.atKeysFilePath}');
       }
 
-      AtSignLogger.root_level = 'SHOUT';
+      AtSignLogger.root_level = 'SEVERE';
       if (p.verbose) {
         AtSignLogger.root_level = 'INFO';
       }
@@ -691,7 +691,7 @@ class SshnpdImpl with AtClientBindings, ApkamSigning implements Sshnpd {
         atKey: _createResponseAtKey(
             requestingAtsign: requestingAtsign, sessionId: req.sessionId),
         value:
-            'Failed to start up the daemon side of the srv socket tunnel : $e',
+            'Failed to start up the daemon side of the relay socket tunnel : $e',
         sessionId: req.sessionId,
       );
     }
@@ -979,7 +979,7 @@ class SshnpdImpl with AtClientBindings, ApkamSigning implements Sshnpd {
         atKey: _createResponseAtKey(
             requestingAtsign: requestingAtsign, sessionId: req.sessionId),
         value:
-            'Failed to start up the daemon side of the srv socket tunnel : $e',
+            'Failed to start up the daemon side of the relay socket tunnel : $e',
         sessionId: req.sessionId,
       );
     }

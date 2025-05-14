@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'dart:isolate';
+import 'dart:math';
 import 'package:noports_core/src/srvd/isolates/types.dart';
 import 'package:noports_core/sshnp_foundation.dart';
 import 'package:socket_connector/socket_connector.dart';
@@ -97,6 +98,7 @@ class PortPairWorker extends RelayWorker {
   }
 
   Map<String, dynamic> lookups = {};
+  Random random = Random();
   @override
   Future<String> lookup(String atKey) async {
     if (lookups.containsKey(atKey)) {

@@ -277,7 +277,8 @@ class _NptImpl extends NptBase
       case SshnpdAck.acknowledged:
         sendProgress('Received response from the device daemon');
       case SshnpdAck.acknowledgedWithErrors:
-        throw SshnpError('Received error response from the device daemon');
+        throw SshnpError('Error response from device daemon:'
+            ' ${sshnpdChannel.errorReceived ?? ''}');
       case SshnpdAck.notAcknowledged:
         throw SshnpError('No response from the device daemon');
     }

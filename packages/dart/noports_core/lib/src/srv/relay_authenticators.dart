@@ -4,6 +4,7 @@ import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:at_chops/at_chops.dart';
+import 'package:at_client/at_client.dart';
 import 'package:mutex/mutex.dart';
 
 /// Clients which are authenticating to a relay may use a [RelayAuthenticator]
@@ -11,6 +12,7 @@ import 'package:mutex/mutex.dart';
 /// - wait to receive some sort of challenge from the relay
 /// - send a response back to the relay based on that challenge (typically
 ///   a signed payload)
+/// - wait for confirmation from the relay
 abstract interface class RelayAuthenticator {
   /// The function which will do whichever flavour of relay authentication
   /// that is required.
@@ -53,6 +55,33 @@ class RelayAuthenticatorLegacy implements RelayAuthenticator {
   }
 }
 
+/// Authenticate to relay with Encrypted Signed Challenge response
+///
+/// - listens to socket
+/// - waits for challenge (base64 terminated by newline)
+/// - constructs challenge response as
+///   `${sessionId}:${auth-payload-as-base64}\n`, where
+///   - `auth-payload-as-base64` is base64-encoding of
+///     `{'iv':'some_iv','e':'encrypted-payload-as-base64'}`
+///   - `encrypted-payload-as-base64` is base64-encoding of the encrypted
+///     payload, encrypted using the session AES key and the `iv` from above
+///   - the actual payload is
+///     ```
+///     {
+///       'p':{'sid':'session-id','c':'challenge'},
+///       's':'signature of json string encoding of p
+///       'ha':'hashingAlgo',
+///       'sa':'signingAlgo',
+///       'sk':'public:some_key.some.namespace@atSign'
+///     }
+///     ```
+///     where `s` is signed by some private signing key, and `sk` is the
+///     atProtocol URI of the corresponding public key.
+/// - sends challenge response `${sessionId}:${auth-payload-as-base64}\n`
+/// - waits for confirmation from relay
+///   - `ok` is good
+///   - anything else is bad
+///
 class RelayAuthenticatorESCR implements RelayAuthenticator {
   final String sessionId;
   final String relayAuthAesKey;
@@ -94,31 +123,10 @@ class RelayAuthenticatorESCR implements RelayAuthenticator {
   @override
   List<String> get rvArgs => ['-a', 'escr'];
 
-  /// v1 authentication to relay
-  /// - listens to socket
-  /// - waits for challenge (base64 terminated by newline)
-  /// - constructs challenge response as
-  ///   `${sessionId}:${auth-payload-as-base64}\n`, where
-  ///   - `auth-payload-as-base64` is base64-encoding of
-  ///     `{'iv':'some_iv','e':'encrypted-payload-as-base64'}`
-  ///   - `encrypted-payload-as-base64` is base64-encoding of the encrypted
-  ///     payload, encrypted using the session AES key and the `iv` from above
-  ///   - the actual payload is
-  ///     ```
-  ///     {
-  ///       'p':{'sid':'session-id','c':'challenge'},
-  ///       's':'signature of json string encoding of p
-  ///       'ha':'hashingAlgo',
-  ///       'sa':'signingAlgo',
-  ///       'sk':'public:some_key.some.namespace@atSign'
-  ///     }
-  ///     ```
-  ///     where `s` is signed by some private signing key, and `sk` is the
-  ///     atProtocol URI of the corresponding public key.
-  ///
   @override
   Future<(bool, Stream<Uint8List>?)> authenticate(Socket socket) {
     Completer<(bool, Stream<Uint8List>?)> completer = Completer();
+    bool receivedChallenge = false;
     bool authenticated = false;
     StreamController<Uint8List> sc = StreamController();
     List<int> buffer = [];
@@ -135,24 +143,50 @@ class RelayAuthenticatorESCR implements RelayAuthenticator {
           // TODO unit test for same
           buffer.addAll(data);
           if (buffer.contains(10)) {
-            List<int> authBuffer = buffer.sublist(0, buffer.indexOf(10));
-            buffer.removeRange(0, buffer.indexOf(10) + 1);
+            if (receivedChallenge) {
+              List<int> received = buffer.sublist(0, buffer.indexOf(10));
+              buffer.removeRange(0, buffer.indexOf(10) + 1);
 
-            try {
-              /// We've got the `$challenge\n` from relay
-              final challenge = String.fromCharCodes(authBuffer);
+              // "ok" - great. Anything else - error.
+              try {
+                /// We've got the verification result from the relay
+                final verifyResult = String.fromCharCodes(received);
 
-              socket.writeln(responseToChallenge(challenge));
+                if (verifyResult == 'ok') {
+                  if (buffer.isNotEmpty) {
+                    sc.add(Uint8List.fromList(buffer));
+                  }
 
-              if (buffer.isNotEmpty) {
-                sc.add(Uint8List.fromList(buffer));
+                  authenticated = true;
+
+                  completer.complete((true, sc.stream));
+                } else {
+                  if (!completer.isCompleted) {
+                    completer.completeError(UnAuthenticatedException(verifyResult));
+                  }
+                }
+              } catch (e) {
+                if (!completer.isCompleted) {
+                  completer
+                      .completeError('Error during relay authentication: $e');
+                }
               }
+            } else {
+              List<int> received = buffer.sublist(0, buffer.indexOf(10));
+              buffer.removeRange(0, buffer.indexOf(10) + 1);
 
-              authenticated = true;
+              try {
+                /// We've got the `$challenge\n` from relay
+                final challenge = String.fromCharCodes(received);
 
-              completer.complete((true, sc.stream));
-            } catch (e) {
-              completer.completeError('Error during relay authentication: $e');
+                receivedChallenge = true;
+
+                socket.writeln(responseToChallenge(challenge));
+                await socket.flush();
+              } catch (e) {
+                completer
+                    .completeError('Error during relay authentication: $e');
+              }
             }
           }
         }
@@ -164,6 +198,7 @@ class RelayAuthenticatorESCR implements RelayAuthenticator {
 
       sc.close();
     }, onDone: () => sc.close());
+
     return completer.future;
   }
 

@@ -60,6 +60,7 @@ class SrvImplExec implements Srv<Process> {
     required this.multi,
     required this.timeout,
   }) {
+    logger.info('New SrvImplDart - localPort $localPort - timeout $timeout');
     if (localPort == null) {
       throw ArgumentError('localPort must be non-null');
     }
@@ -205,6 +206,7 @@ class SrvImplInline implements Srv<SSHSocket> {
     this.multi = false,
     required this.timeout,
   }) {
+    logger.info('New SrvImplInline - timeout $timeout');
     if ((sessionAESKeyString == null && sessionIVString != null) ||
         (sessionAESKeyString != null && sessionIVString == null)) {
       throw ArgumentError('Both AES key and IV are required, or neither');
@@ -386,7 +388,7 @@ class SrvImplDart implements Srv<SocketConnector> {
     required this.detached,
     required this.timeout,
   }) {
-    logger.info('New SrvImplDart - localPort $localPort');
+    logger.info('New SrvImplDart - localPort $localPort - timeout $timeout');
     if ((sessionAESKeyString == null && sessionIVString != null) ||
         (sessionAESKeyString != null && sessionIVString == null)) {
       throw ArgumentError('Both AES key and IV are required, or neither');
@@ -517,12 +519,18 @@ class SrvImplDart implements Srv<SocketConnector> {
         if (relayAuthenticator != null) {
           logger.info('_runClientSideSingle authenticating'
               ' new connection to rvd');
-          var (authenticated, authenticatedStream) =
-              await relayAuthenticator!.authenticate(sideB.socket);
-          if (!authenticated || authenticatedStream == null) {
+          try {
+            var (authenticated, authenticatedStream) =
+            await relayAuthenticator!.authenticate(sideB.socket);
+            if (!authenticated || authenticatedStream == null) {
+              sideB.socket.destroy();
+            } else {
+              sideB.stream = authenticatedStream;
+            }
+          } catch (err) {
+            logger.severe('_runClientSideSingle'
+                ' Failed to authenticate to relay: $err');
             sideB.socket.destroy();
-          } else {
-            sideB.stream = authenticatedStream;
           }
         }
       },
@@ -545,12 +553,19 @@ class SrvImplDart implements Srv<SocketConnector> {
       logger.info('_runClientSideMulti authenticating'
           ' control socket connection to rvd');
       bool authenticated;
-      (authenticated, authenticatedControlSocketStream) =
-          await relayAuthenticator!.authenticate(sessionControlSocket);
-      if (!authenticated || authenticatedControlSocketStream == null) {
+      try {
+        (authenticated, authenticatedControlSocketStream) =
+        await relayAuthenticator!.authenticate(sessionControlSocket);
+        if (!authenticated || authenticatedControlSocketStream == null) {
+          sessionControlSocket.destroy();
+          throw Exception('_runClientSideMulti'
+              ' Failed to authenticate control socket');
+        }
+      } catch (err) {
+        logger.severe('_runClientSideMulti'
+            ' Failed to authenticate control socket: $err');
         sessionControlSocket.destroy();
-        throw Exception('_runClientSideMulti'
-            ' Failed to authenticate control socket');
+        rethrow;
       }
     } else {
       authenticatedControlSocketStream = sessionControlSocket;
@@ -596,13 +611,15 @@ class SrvImplDart implements Srv<SocketConnector> {
       Duration timeout) async {
     sessionControlSocketStream.listen((event) {
       String response = String.fromCharCodes(event).trim();
-      logger.info('_runClientSideMulti'
+      logger.info('_runClientSideMulti (_client_sidePlainSocket)'
           ' Received control socket response: [$response]');
     }, onError: (e) {
-      logger.severe('_runClientSideMulti controlSocket error: $e');
+      logger.severe('_runClientSideMulti (_clientSidePlainSocket)'
+          ' controlSocket error: $e');
       socketConnector?.close();
     }, onDone: () {
-      logger.info('_runClientSideMulti controlSocket done');
+      logger.info('_runClientSideMulti (_clientSidePlainSocket)'
+          ' controlSocket done');
       socketConnector?.close();
     });
     socketConnector = await SocketConnector.serverToSocket(
@@ -614,19 +631,27 @@ class SrvImplDart implements Srv<SocketConnector> {
       multi: multi,
       timeout: timeout,
       beforeJoining: (Side sideA, Side sideB) async {
-        logger.info('_runClientSideMulti Sending connect request');
+        logger.info('_runClientSideMulti (_clientSidePlainSocket)'
+            ' Sending connect request');
         sessionControlSocketSink
             .add(Uint8List.fromList('connect:no:encrypt\n'.codeUnits));
         // Authenticate the sideB socket (to the rvd)
         if (relayAuthenticator != null) {
           logger
-              .info('_runClientSideMulti authenticating new connection to rvd');
-          var (authenticated, authenticatedStream) =
-              await relayAuthenticator!.authenticate(sideB.socket);
-          if (!authenticated || authenticatedStream == null) {
+              .info('_runClientSideMulti (_clientSidePlainSocket)'
+              'authenticating new connection to rvd');
+          try {
+            var (authenticated, authenticatedStream) =
+            await relayAuthenticator!.authenticate(sideB.socket);
+            if (!authenticated || authenticatedStream == null) {
+              sideB.socket.destroy();
+            } else {
+              sideB.stream = authenticatedStream;
+            }
+          } catch (err) {
+            logger.severe('_runClientSideMulti (_clientSidePlainSocket)'
+                ' Failed to authenticate to relay: $err');
             sideB.socket.destroy();
-          } else {
-            sideB.stream = authenticatedStream;
           }
         }
       },
@@ -655,17 +680,20 @@ class SrvImplDart implements Srv<SocketConnector> {
 
     controlStream.listen((event) {
       String response = String.fromCharCodes(event).trim();
-      logger.info('_runClientSideMulti'
+      logger.info('_runClientSideMulti (_clientSideEncryptedSocket)'
           ' Received control socket response: [$response]');
     }, onError: (e) {
-      logger.severe('_runClientSideMulti controlSocket error: $e');
+      logger.severe('_runClientSideMulti  (_clientSideEncryptedSocket)'
+          ' controlSocket error: $e');
       socketConnector?.close();
     }, onDone: () {
-      logger.info('_runClientSideMulti controlSocket done');
+      logger.info('_runClientSideMulti  (_clientSideEncryptedSocket)'
+          ' controlSocket done');
       socketConnector?.close();
     });
 
-    logger.info('_runClientSideMulti calling SocketConnector.serverToSocket');
+    logger.info('_runClientSideMulti  (_clientSideEncryptedSocket)'
+        ' calling SocketConnector.serverToSocket');
     socketConnector = await SocketConnector.serverToSocket(
       portA: localPort,
       addressB: relayAddress,
@@ -675,28 +703,37 @@ class SrvImplDart implements Srv<SocketConnector> {
       multi: multi,
       timeout: timeout,
       beforeJoining: (Side sideA, Side sideB) async {
-        logger.info('_runClientSideMulti Sending connect request');
-
         String socketAESKey =
             AtChopsUtil.generateSymmetricKey(EncryptionKeyType.aes256).key;
         String socketIV =
             base64Encode(AtChopsUtil.generateRandomIV(16).ivBytes);
-        controlSink.add(
-            Uint8List.fromList('connect:$socketAESKey:$socketIV\n'.codeUnits));
         // Authenticate the sideB socket (to the rvd)
-        if (relayAuthenticator != null) {
-          logger.info('_runClientSideMulti'
-              ' authenticating new connection to rvd');
-          var (authenticated, authenticatedStream) =
-              await relayAuthenticator!.authenticate(sideB.socket);
-          if (!authenticated || authenticatedStream == null) {
-            sideB.socket.destroy();
-          } else {
-            sideB.stream = authenticatedStream;
+        try {
+          if (relayAuthenticator != null) {
+            logger.info('_runClientSideMulti  (_clientSideEncryptedSocket)'
+                ' authenticating new connection to rvd');
+            var (authenticated, authenticatedStream) =
+            await relayAuthenticator!.authenticate(sideB.socket);
+            if (!authenticated || authenticatedStream == null) {
+              sideB.socket.destroy();
+            } else {
+              sideB.stream = authenticatedStream;
+            }
           }
+          sideA.transformer = createEncrypter(socketAESKey, socketIV);
+          sideB.transformer = createDecrypter(socketAESKey, socketIV);
+          logger.info('_runClientSideMulti (_clientSideEncryptedSocket)'
+              ' Client side connected.'
+              ' Sending connect request to daemon');
+          controlSink.add(
+              Uint8List.fromList('connect:$socketAESKey:$socketIV\n'.codeUnits));
+        } catch (err) {
+          logger.severe('_runClientSideMulti (_clientSideEncryptedSocket)'
+              ' Failed to authenticate to relay: $err'
+              '\n\tWill destroy local socket also'); // TODO add retries like on daemon side
+          sideB.socket.destroy();
+          sideA.socket.destroy();
         }
-        sideA.transformer = createEncrypter(socketAESKey, socketIV);
-        sideB.transformer = createDecrypter(socketAESKey, socketIV);
       },
     );
     return socketConnector;
@@ -716,39 +753,64 @@ class SrvImplDart implements Srv<SocketConnector> {
 
     // First, connect to the relay.
     // If it fails, return, as we can't do anything more
-    late Socket sideBSocketActual;
     late Side sideB;
     logger.info(
-        'socket_connector: Connecting side B (relay - $relayAddress:$streamingPort)');
+        '_runDaemonSideMulti: Connecting side B (relay - $relayAddress:$streamingPort)');
+    bool candidateConnected = false;
     try {
-      sideBSocketActual = await Socket.connect(relayAddress, streamingPort);
-      sideB = Side(sideBSocketActual, false, transformer: decrypter);
-      unawaited(sideBSocketActual.done
-          .then((v) => logger.info('relay socket done'))
-          .catchError(
-              (err) => logger.warning('relay socket done with error $err')));
-      if (relayAuthenticator != null) {
-        logger.info('_runDaemonSideMulti authenticating'
-            ' new socket connection to relay');
-        var (authenticated, authenticatedStream) =
-            await relayAuthenticator!.authenticate(sideB.socket);
-        if (!authenticated || authenticatedStream == null) {
-          sideB.socket.destroy();
+      int attempts = 4;
+      for (int i = 1; i <= attempts && !candidateConnected; i++) {
+        Side candidateSideB = Side(
+            await Socket.connect(relayAddress, streamingPort), false,
+            transformer: decrypter);
+        unawaited(candidateSideB.socket.done
+            .then((v) => logger.info('relay socket done'))
+            .catchError(
+                (err) => logger.warning('relay socket done with error $err')));
+        if (relayAuthenticator == null) {
+          candidateConnected = true;
         } else {
-          sideB.stream = authenticatedStream;
+          logger.info('_runDaemonSideMulti authenticating'
+              ' new socket connection to relay');
+          try {
+            var (authenticated, authenticatedStream) =
+            await relayAuthenticator!.authenticate(candidateSideB.socket);
+            logger.info('_runDaemonSideMulti authentication apparently complete'
+                '\n\t=> authenticated: $authenticated'
+                '\n\t=> stream: $authenticatedStream');
+            if (!authenticated || authenticatedStream == null) {
+              candidateSideB.socket.destroy();
+            } else {
+              candidateSideB.stream = authenticatedStream;
+              sideB = candidateSideB;
+              candidateConnected = true;
+            }
+          } catch (err) {
+            logger.info('_runDaemonSideMulti (_handleMultiConnectRequest)'
+                ' Failed to authenticate to relay: $err');
+            candidateSideB.socket.destroy();
+          }
         }
+        if (!candidateConnected && i < attempts) {
+          logger.info('Will try again in 1 second');
+          await Future.delayed(Duration(seconds:1));
+        }
+      }
+      if (!candidateConnected) {
+        logger.shout('Failed to authenticate to relay $attempts times');
+        sc.close();
       }
     } catch (e) {
       logger.shout(
           'Failed to connect to relay ($relayAddress:$streamingPort) with error : $e');
-      return;
+      sc.close();
     }
 
     // Now, connect to the local host:port
     // If it fails, we need to close the socket connection to the relay
     late Socket sideASocketActual;
     late Side sideA;
-    logger.info('socket_connector:'
+    logger.info('_runDaemonSideMulti:'
         ' Connecting side A (local - $localAddress:$localPort)');
 
     try {
@@ -758,7 +820,7 @@ class SrvImplDart implements Srv<SocketConnector> {
       logger.shout(
           'Failed to connect locally ($localAddress:$localPort) with error : $e');
       logger.shout('Closing sideB (relay) socket connection');
-      sideBSocketActual.destroy();
+      sideB.socket.destroy();
 
       return;
     }
@@ -766,11 +828,11 @@ class SrvImplDart implements Srv<SocketConnector> {
     // Finally, let's have the socket connector join the sides together
     unawaited(sc.handleSingleConnection(sideB).catchError((err) {
       logger.severe(
-          'ERROR $err from handleSingleConnection on sideB (relay - $relayAddress:$streamingPort)');
+          'ERROR $err in _runDaemonSideMulti from handleSingleConnection on sideB (relay - $relayAddress:$streamingPort)');
     }));
     unawaited(sc.handleSingleConnection(sideA).catchError((err) {
       logger.severe(
-          'ERROR $err from handleSingleConnection on sideA (local - $localAddress:$localPort)');
+          'ERROR $err in _runDaemonSideMulti from handleSingleConnection on sideA (local - $localAddress:$localPort)');
     }));
 
     logger.info('socket_connector: started');
@@ -807,6 +869,7 @@ class SrvImplDart implements Srv<SocketConnector> {
     required InternetAddress relayAddress,
     required Duration timeout,
   }) async {
+    logger.info('_runDaemonSideMulti: creating SocketConnector with timeout $timeout');
     SocketConnector sc = SocketConnector(
       timeout: timeout,
       verbose: Platform.environment['SRV_TRACE'] == 'true',
@@ -824,12 +887,19 @@ class SrvImplDart implements Srv<SocketConnector> {
       logger.info('_runDaemonSideMulti authenticating'
           ' control socket connection to rvd');
       bool authenticated;
-      (authenticated, authenticatedControlSocketStream) =
-          await relayAuthenticator!.authenticate(sessionControlSocket);
-      if (!authenticated || authenticatedControlSocketStream == null) {
+      try {
+        (authenticated, authenticatedControlSocketStream) =
+        await relayAuthenticator!.authenticate(sessionControlSocket);
+        if (!authenticated || authenticatedControlSocketStream == null) {
+          sessionControlSocket.destroy();
+          throw Exception('_runDaemonSideMulti'
+              ' Failed to authenticate control socket');
+        }
+      } catch (err) {
+        logger.severe('_runDaemonSideMulti'
+            ' Failed to authenticate control socket: $err');
         sessionControlSocket.destroy();
-        throw Exception('_runClientSideMulti'
-            ' Failed to authenticate control socket');
+        rethrow;
       }
     } else {
       authenticatedControlSocketStream = sessionControlSocket;
@@ -992,7 +1062,7 @@ class SrvImplDart implements Srv<SocketConnector> {
     Socket sideASocket = await Socket.connect(localAddress, localPort);
     Side sideA = Side(sideASocket, true, transformer: encrypter);
     unawaited(socketConnector.handleSingleConnection(sideA).catchError((err) {
-      logSink.writeln('ERROR $err from handleSingleConnection on sideA $sideA');
+      logSink.writeln('ERROR $err in _runDaemonSideSingle from handleSingleConnection on sideA (local)');
     }));
 
     if (verbose) {
@@ -1005,17 +1075,24 @@ class SrvImplDart implements Srv<SocketConnector> {
     // Authenticate the sideB socket (to the rvd)
     if (relayAuthenticator != null) {
       logger.info('_runDaemonSideSingle authenticating socketB to rvd');
-      var (authenticated, authenticatedStream) =
-          await relayAuthenticator!.authenticate(sideB.socket);
-      if (!authenticated || authenticatedStream == null) {
+      try {
+        var (authenticated, authenticatedStream) =
+        await relayAuthenticator!.authenticate(sideB.socket);
+        if (!authenticated || authenticatedStream == null) {
+          sideB.socket.destroy();
+        } else {
+          sideB.stream = authenticatedStream;
+        }
+      } catch (err) {
+        logger.severe('_runDaemonSideSingle'
+            ' Failed to authenticate socketB: $err');
         sideB.socket.destroy();
-      } else {
-        sideB.stream = authenticatedStream;
+        sideA.socket.destroy();
       }
     }
 
     unawaited(socketConnector.handleSingleConnection(sideB).catchError((err) {
-      logSink.writeln('ERROR $err from handleSingleConnection on sideB $sideB');
+      logSink.writeln('ERROR $err in _runDaemonSideSingle from handleSingleConnection on sideB (relay)');
     }));
 
     if (verbose) {
