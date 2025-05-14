@@ -38,7 +38,8 @@ mixin ApkamSigning {
   /// the uri (e.g. `public:apsk.<enrollment_id>.__wa@atsign`) of the
   /// [publicSigningKey]
   String get publicSigningKeyUri {
-    return 'public:apsk.$enrollmentId.__wa${atClient.getCurrentAtSign()}';
+    return 'public:apsk.$enrollmentId.a.__e.sshnp${atClient.getCurrentAtSign()}';
+    // return 'public:apsk.$enrollmentId.a.__e${atClient.getCurrentAtSign()}';
   }
 
   Future publishPublicSigningKey() async {

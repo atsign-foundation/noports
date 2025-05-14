@@ -320,7 +320,7 @@ void main() {
 
       when(() => mockAtClient.getCurrentAtSign()).thenReturn('@alice');
       when(() => mockAtClient.get(any(),
-          getRequestOptions: any(named: 'getRequestOptions')))
+              getRequestOptions: any(named: 'getRequestOptions')))
           .thenAnswer((_) => Future.value(AtValue()..value = 'Hello hello'));
       when(() => mockAtClient.atChops).thenAnswer(
           (_) => AtChopsImpl(AtChopsKeys.create(atEncryptionKeyPair, null)));

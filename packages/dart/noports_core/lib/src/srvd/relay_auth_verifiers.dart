@@ -40,6 +40,8 @@ abstract interface class RelayAuthVerifyHelper {
 }
 
 abstract interface class RelayAuthVerifier {
+  static final maxAuthBufferLength = 4096;
+
   /// The auth verification which is expected
   Future<(bool, Stream<Uint8List>?)> verifySocketAuth(Socket socket);
 
@@ -81,8 +83,6 @@ abstract interface class RelayAuthVerifier {
 ///   - `socket.writeln('ok');`
 ///   - complete successfully
 class RelayAuthVerifierESCR implements RelayAuthVerifier {
-  static final AtSignLogger logger = AtSignLogger(' RelayAuthVerifierECR ');
-
   @override
   String? atSign;
 
@@ -107,6 +107,8 @@ class RelayAuthVerifierESCR implements RelayAuthVerifier {
   /// then add (100 + random.nextInt(3900))ms delay
   final int randomlyAddLatency;
 
+  late final AtSignLogger logger;
+
   Random random = Random();
 
   RelayAuthVerifierESCR(
@@ -114,23 +116,39 @@ class RelayAuthVerifierESCR implements RelayAuthVerifier {
     this.helper, {
     this.randomlyFail = 0,
     this.randomlyAddLatency = 0,
-  });
+  }) {
+    logger = AtSignLogger(' $runtimeType ($tag) ');
+  }
 
   Future<bool> verifyChallengeResponse(String response) async {
     // Split by ':' - expect two parts - sessionId, encryptedAuthEnvelope64
     List<String> responseParts = response.split(':');
     // TODO unit test for parts
     if (responseParts.length != 2) {
+      String abbreviated = response;
+      if (response.length > 40) {
+        abbreviated = '${response.substring(0, 40)}'
+            ' and ${response.length - 40} more';
+      }
       throw RAVE(
-        'Expected <sid>:<payload> but got $response',
+        'Expected <sid>:<payload> but got $abbreviated',
         RAVEReason.malformedChallengeResponse,
       );
     }
     sessionId = responseParts[0];
     String encryptedAuthEnvelope64 = responseParts[1];
-    String encryptedAuthEnvelopeJson = String.fromCharCodes(
-      base64Decode(encryptedAuthEnvelope64),
-    );
+    String encryptedAuthEnvelopeJson;
+    try {
+      encryptedAuthEnvelopeJson = String.fromCharCodes(
+        base64Decode(encryptedAuthEnvelope64),
+      );
+    } catch (err) {
+      throw RAVE(
+        '${err.runtimeType} while doing'
+        ' String.fromCharCodes(base64Decode(encryptedAuthEnvelope64))',
+        RAVEReason.malformedChallengeResponse,
+      );
+    }
 
     /// 3. Verify that `sessionId` is currently active
     /// TODO unit test for active
@@ -255,8 +273,7 @@ class RelayAuthVerifierESCR implements RelayAuthVerifier {
     AtSigningResult atSigningResult = atChops.verify(input);
     bool verified = atSigningResult.result == true;
     if (!verified) {
-      logger.shout('SignatureAuthVerifier $tag :'
-          ' verification FAILURE. ');
+      logger.shout('verification FAILURE. ');
       throw RAVE(
         'Signatures did not match.',
         RAVEReason.signatureVerificationFailed,
@@ -274,7 +291,7 @@ class RelayAuthVerifierESCR implements RelayAuthVerifier {
     Completer<(bool, Stream<Uint8List>?)> completer = Completer();
     bool authenticated = false;
     StreamController<Uint8List> sc = StreamController();
-    logger.info('SignatureAuthVerifier for $tag: starting listen');
+    logger.info('starting listen');
     List<int> buffer = [];
 
     /// 1. Sends a challenge to the client, terminated with a newline
@@ -295,13 +312,21 @@ class RelayAuthVerifierESCR implements RelayAuthVerifier {
             }
           }
         } else {
-          // TODO maximum buffer size check to prevent dos attacks
-          // TODO unit test for same
+          if (buffer.length + data.length >
+              RelayAuthVerifier.maxAuthBufferLength) {
+            throw RAVE(
+              'Too much data from client'
+              ' (more than ${RelayAuthVerifier.maxAuthBufferLength} bytes)',
+              RAVEReason.malformedChallengeResponse,
+            );
+          }
           buffer.addAll(data);
           if (buffer.contains(10)) {
             logger.finer('original buffer length ${buffer.length}');
+
             List<int> authBuffer = buffer.sublist(0, buffer.indexOf(10));
-            logger.finer('authBuffer length ${authBuffer.length}');
+            logger.info('authBuffer length ${authBuffer.length}');
+
             buffer.removeRange(0, buffer.indexOf(10) + 1);
             logger.finer('remaining buffer length ${buffer.length}');
 
@@ -310,7 +335,7 @@ class RelayAuthVerifierESCR implements RelayAuthVerifier {
               /// TODO try-catch check here?
               /// TODO unit test for this
               final response = String.fromCharCodes(authBuffer);
-              logger.finer('$tag received data: $response');
+              logger.finer('received data: $response');
 
               bool verified = await verifyChallengeResponse(response);
 
@@ -332,6 +357,8 @@ class RelayAuthVerifierESCR implements RelayAuthVerifier {
                 logger.shout('Injecting random latency of $l ms');
                 await Future.delayed(Duration(milliseconds: l));
               }
+
+              logger.info('Verification success');
 
               /// If all successful
               /// - send 'ok' to client
@@ -359,8 +386,7 @@ class RelayAuthVerifierESCR implements RelayAuthVerifier {
                 }
               }
             } catch (e) {
-              logger.shout('SignatureAuthVerifier $tag :'
-                  ' verification FAILED with exception :'
+              logger.shout('verification FAILED with exception :'
                   ' $e');
 
               if (!completer.isCompleted) {
@@ -406,8 +432,6 @@ class RelayAuthVerifierESCR implements RelayAuthVerifier {
 /// also expects signature to be base64 encoded
 ///
 class RelayAuthVerifierLegacy implements RelayAuthVerifier {
-  static final AtSignLogger logger = AtSignLogger(' RelayAuthVerifierLegacy ');
-
   /// Public key of the signing algorithm used to sign the data
   String publicKey;
 
@@ -427,6 +451,8 @@ class RelayAuthVerifierLegacy implements RelayAuthVerifier {
   @override
   final String sessionId;
 
+  late final AtSignLogger logger;
+
   RelayAuthVerifierLegacy(
     this.publicKey,
     this.dataToVerify,
@@ -434,7 +460,9 @@ class RelayAuthVerifierLegacy implements RelayAuthVerifier {
     this.tag,
     this.atSign,
     this.sessionId,
-  );
+  ) {
+    logger = AtSignLogger(' $runtimeType ($tag) ');
+  }
 
   /// We expect the authenticating client to send a JSON message with
   /// this structure:
@@ -466,19 +494,38 @@ class RelayAuthVerifierLegacy implements RelayAuthVerifier {
           }
         }
       } else {
+        if (buffer.length + data.length >
+            RelayAuthVerifier.maxAuthBufferLength) {
+          throw RAVE(
+            'Too much data from client'
+            ' (more than ${RelayAuthVerifier.maxAuthBufferLength} bytes)',
+            RAVEReason.malformedChallengeResponse,
+          );
+        }
         buffer.addAll(data);
         if (buffer.contains(10)) {
           logger.finer('original buffer length ${buffer.length}');
+
           List<int> authBuffer = buffer.sublist(0, buffer.indexOf(10));
-          logger.finer('authBuffer length ${authBuffer.length}');
+          logger.shout('authBuffer length ${authBuffer.length}');
+
           buffer.removeRange(0, buffer.indexOf(10) + 1);
           logger.finer('remaining buffer length ${buffer.length}');
 
           try {
-            final message = String.fromCharCodes(authBuffer);
-            logger.finer('SignatureAuthVerifier $tag received data: $message');
+            final String message;
+            try {
+              message = String.fromCharCodes(authBuffer);
+            } catch (e) {
+              throw RAVE(
+                'Caught ${e.runtimeType}'
+                ' while creating String from received authBuffer',
+                RAVEReason.malformedChallengeResponse,
+              );
+            }
+            logger.finer('$tag received data: $message');
             var envelope = jsonDecode(message);
-            logger.finer('SignatureAuthVerifier $tag decoded JSON message OK');
+            logger.finer('$tag decoded JSON message OK');
 
             final hashingAlgo =
                 HashingAlgoType.values.byName(envelope['hashingAlgo']);
@@ -514,7 +561,7 @@ class RelayAuthVerifierLegacy implements RelayAuthVerifier {
             bool result = atSigningResult.result;
 
             if (result == false) {
-              logger.shout('SignatureAuthVerifier $tag :'
+              logger.shout('$tag :'
                   ' verification FAILURE :'
                   ' ${atSigningResult.result}');
               if (!completer.isCompleted) {
@@ -524,7 +571,7 @@ class RelayAuthVerifierLegacy implements RelayAuthVerifier {
               return;
             }
 
-            logger.info('SignatureAuthVerifier $tag :'
+            logger.info('$tag :'
                 ' verification SUCCESS :'
                 ' ${atSigningResult.result}');
             authenticated = true;
@@ -547,7 +594,7 @@ class RelayAuthVerifierLegacy implements RelayAuthVerifier {
               }
             }
           } catch (e) {
-            logger.shout('SignatureAuthVerifier $tag :'
+            logger.shout('$tag :'
                 ' verification FAILED with exception :'
                 ' $e');
 

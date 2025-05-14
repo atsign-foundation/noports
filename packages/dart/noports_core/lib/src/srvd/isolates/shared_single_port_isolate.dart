@@ -120,10 +120,13 @@ class SinglePortWorker extends RelayWorker {
   }
 
   void socketHandler(Socket socket) async {
-    final rav = RelayAuthVerifierESCR('$address:$bindPort', this);
-    String sockStr = 'socket from ${socket.remoteAddress}:${socket.remotePort}';
+    String sockStr = 'host ${socket.remoteAddress} port ${socket.remotePort}';
+    final rav = RelayAuthVerifierESCR(
+      'to port $bindPort from $sockStr',
+      this,
+    );
     if (verbose) {
-      logger.info('New $sockStr');
+      logger.info('New connection from $sockStr');
     }
 
     bool authenticated;
@@ -162,7 +165,7 @@ class SinglePortWorker extends RelayWorker {
         side.socket.destroy();
       }));
     } catch (e) {
-      logger.info('Error "$e" while authenticating new $sockStr');
+      logger.info('Error "$e" while authenticating socket from $sockStr');
       socket.destroy();
     }
   }

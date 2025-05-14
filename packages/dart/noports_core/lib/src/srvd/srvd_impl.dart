@@ -169,10 +169,8 @@ class SrvdImpl implements Srvd {
 
     try {
       if (sessionParams.only443) {
-        logger.shout('No need to acquire port pair');
         ports = (443, 443);
       } else {
-        logger.shout('Acquiring next port pair');
         (ports, ppiSpawned, ppiSendToSpawned) =
             await spawnNewPortPairIsolate(sessionParams);
       }
