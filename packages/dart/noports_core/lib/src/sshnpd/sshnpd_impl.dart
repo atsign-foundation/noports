@@ -888,22 +888,22 @@ class SshnpdImpl with AtClientBindings implements Sshnpd {
 
       /// Generate the ephemeral key pair which the client will use for the
       /// initial tunnel ssh session
-      AtSshKeyPair tunnelKeyPair = await keyUtil.generateKeyPair(
-          algorithm: sshAlgorithm, identifier: 'ephemeral_$sessionId');
+      // AtSshKeyPair tunnelKeyPair = await keyUtil.generateKeyPair(
+      //     algorithm: sshAlgorithm, identifier: 'ephemeral_$sessionId');
 
-      await keyUtil.authorizePublicKey(
-        sshPublicKey: tunnelKeyPair.publicKeyContents,
-        localSshdPort: localSshdPort,
-        sessionId: sessionId,
-        permissions: ephemeralPermissions,
-      );
+      // await keyUtil.authorizePublicKey(
+      //   sshPublicKey: tunnelKeyPair.publicKeyContents,
+      //   localSshdPort: localSshdPort,
+      //   sessionId: sessionId,
+      //   permissions: ephemeralPermissions,
+      // );
 
-      /// Remove the ephemeral keypair from persistent storage
-      try {
-        await keyUtil.deleteKeyPair(identifier: tunnelKeyPair.identifier);
-      } catch (e) {
-        logger.shout('Failed to delete ephemeral keyPair: $e');
-      }
+      // /// Remove the ephemeral keypair from persistent storage
+      // try {
+      //   await keyUtil.deleteKeyPair(identifier: tunnelKeyPair.identifier);
+      // } catch (e) {
+      //   logger.shout('Failed to delete ephemeral keyPair: $e');
+      // }
 
       /// - Send response message to the sshnp client which includes the
       ///   ephemeral private key
@@ -913,7 +913,7 @@ class SshnpdImpl with AtClientBindings implements Sshnpd {
         value: signAndWrapAndJsonEncode(atClient, {
           'status': 'connected',
           'sessionId': sessionId,
-          'ephemeralPrivateKey': tunnelKeyPair.privateKeyContents,
+          // 'ephemeralPrivateKey': tunnelKeyPair.privateKeyContents,
           'sessionAESKey': sessionAESKeyEncrypted,
           'sessionIV': sessionIVEncrypted,
         }),

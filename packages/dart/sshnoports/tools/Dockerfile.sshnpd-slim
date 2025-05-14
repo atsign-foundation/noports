@@ -34,32 +34,20 @@ RUN \
   dart compile exe bin/srv.dart -o ${BINARYDIR}/srv ; \
   # create atsign account
   addgroup --gid $GROUP_ID atsign ; \
-  useradd --system --uid $USER_ID --gid $GROUP_ID --shell /bin/bash \
-  --home $HOMEDIR atsign ; \
-  chown -R atsign:atsign $HOMEDIR ; \
-  # build static openssh binaries
-  apt update && apt install -y curl gcc make autoconf ; \
-  cd ${WORKDIR}/${OPENSSH} ; \
-  ARCH=${TARGETARCH} ./static-openssh.sh ; \
-  cp build/openssh-portable*/ssh-keygen ${BINARYDIR}/ ; \ 
-  cp build/openssh-portable*/ssh ${BINARYDIR}/ ; \
-  chmod 755 ${BINARYDIR}/ssh-keygen ; \
-  chmod 755 ${BINARYDIR}/ssh 
+  useradd --system --uid $USER_ID --gid $GROUP_ID --shell /bin/bash --home $HOMEDIR atsign 
 
-
-# Second stage of build FROM scratch
+ # Second stage of build FROM scratch
 FROM scratch
 ENV PATH=/usr/local/at
 ENV USER=atsign
-COPY --from=buildimage /atsign /atsign/
 COPY --from=buildimage /runtime/ /
 COPY --from=buildimage /etc/passwd /etc/passwd
 COPY --from=buildimage /etc/group /etc/group
 COPY --from=buildimage /etc/cacert /etc/cacert
+COPY --from=buildimage --chown=atsign:atsign /tmp /tmp
+COPY --from=buildimage --chown=atsign:atsign /atsign /atsign/
 WORKDIR /usr/local/at
 COPY --from=buildimage  /usr/local/at/sshnpd /usr/local/at/
 COPY --from=buildimage  /usr/local/at/srv /usr/local/at/
-COPY --from=buildimage  /usr/local/at/ssh-keygen /usr/local/at/
-COPY --from=buildimage  /usr/local/at/ssh /usr/local/at/
 USER atsign
 ENTRYPOINT ["/usr/local/at/sshnpd"]
