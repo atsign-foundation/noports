@@ -325,7 +325,7 @@ class RelayAuthVerifierESCR implements RelayAuthVerifier {
             logger.finer('original buffer length ${buffer.length}');
 
             List<int> authBuffer = buffer.sublist(0, buffer.indexOf(10));
-            logger.info('authBuffer length ${authBuffer.length}');
+            logger.finer('authBuffer length ${authBuffer.length}');
 
             buffer.removeRange(0, buffer.indexOf(10) + 1);
             logger.finer('remaining buffer length ${buffer.length}');
@@ -507,7 +507,7 @@ class RelayAuthVerifierLegacy implements RelayAuthVerifier {
           logger.finer('original buffer length ${buffer.length}');
 
           List<int> authBuffer = buffer.sublist(0, buffer.indexOf(10));
-          logger.shout('authBuffer length ${authBuffer.length}');
+          logger.finer('authBuffer length ${authBuffer.length}');
 
           buffer.removeRange(0, buffer.indexOf(10) + 1);
           logger.finer('remaining buffer length ${buffer.length}');
