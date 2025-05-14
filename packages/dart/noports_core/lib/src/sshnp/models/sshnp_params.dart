@@ -45,6 +45,8 @@ abstract interface class ClientParams {
   int get localPort;
 
   Duration get daemonPingTimeout;
+
+  bool get only443;
 }
 
 abstract class ClientParamsBase implements ClientParams {
@@ -98,6 +100,9 @@ abstract class ClientParamsBase implements ClientParams {
   @override
   final Duration daemonPingTimeout;
 
+  @override
+  final bool only443;
+
   ClientParamsBase({
     required this.clientAtSign,
     required this.sshnpdAtSign,
@@ -112,6 +117,7 @@ abstract class ClientParamsBase implements ClientParams {
     required this.relayAuthMode,
     this.encryptRvdTraffic = DefaultArgs.encryptRvdTraffic,
     this.daemonPingTimeout = DefaultArgs.daemonPingTimeoutDuration,
+    required this.only443,
   }) {
     if (invalidDeviceName(device)) {
       throw ArgumentError(invalidDeviceNameMsg);
@@ -161,6 +167,7 @@ class NptParams extends ClientParamsBase
     required this.inline,
     super.daemonPingTimeout,
     required this.timeout,
+    super.only443 = false,
   }) {
     try {
       AtUtils.fixAtSign(clientAtSign);
@@ -238,6 +245,7 @@ class SshnpParams extends ClientParamsBase
     super.relayAuthMode = RelayAuthMode.payload,
     super.encryptRvdTraffic = DefaultArgs.encryptRvdTraffic,
     super.daemonPingTimeout,
+    super.only443 = false,
   });
 
   factory SshnpParams.empty() {

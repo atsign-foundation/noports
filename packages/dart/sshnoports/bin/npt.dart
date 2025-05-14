@@ -219,6 +219,12 @@ void main(List<String> args) async {
         defaultsTo: RelayAuthMode.payload.name,
       );
 
+      parser.addFlag(
+        '443',
+        help: 'When true, asks the relay to use port 443 for this session',
+        defaultsTo: false,
+      );
+
       // Parse Args
       ArgResults parsedArgs = parser.parse(args);
 
@@ -349,6 +355,7 @@ void main(List<String> args) async {
         relayAuthMode:
             RelayAuthMode.values.byName(parsedArgs['relay-auth-mode']),
         timeout: parseDuration(timeoutArg),
+        only443: parsedArgs['443'],
       );
 
       while (true) {

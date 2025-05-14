@@ -162,7 +162,8 @@ class RelayAuthenticatorESCR implements RelayAuthenticator {
                   completer.complete((true, sc.stream));
                 } else {
                   if (!completer.isCompleted) {
-                    completer.completeError(UnAuthenticatedException(verifyResult));
+                    completer
+                        .completeError(UnAuthenticatedException(verifyResult));
                   }
                 }
               } catch (e) {

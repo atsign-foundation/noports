@@ -32,7 +32,7 @@ class RAVE implements Exception {
 }
 
 abstract interface class RelayAuthVerifyHelper {
-  Future<String> lookup(String atKey);
+  Future<String> lookup(String sessionId, String atKey);
 
   Future<bool> isSessionActive(String sessionId);
 
@@ -112,8 +112,8 @@ class RelayAuthVerifierESCR implements RelayAuthVerifier {
   RelayAuthVerifierESCR(
     this.tag,
     this.helper, {
-    this.randomlyFail = 25,
-    this.randomlyAddLatency = 25,
+    this.randomlyFail = 0,
+    this.randomlyAddLatency = 0,
   });
 
   Future<bool> verifyChallengeResponse(String response) async {
@@ -126,7 +126,7 @@ class RelayAuthVerifierESCR implements RelayAuthVerifier {
         RAVEReason.malformedChallengeResponse,
       );
     }
-    String sessionId = responseParts[0];
+    sessionId = responseParts[0];
     String encryptedAuthEnvelope64 = responseParts[1];
     String encryptedAuthEnvelopeJson = String.fromCharCodes(
       base64Decode(encryptedAuthEnvelope64),
@@ -134,7 +134,7 @@ class RelayAuthVerifierESCR implements RelayAuthVerifier {
 
     /// 3. Verify that `sessionId` is currently active
     /// TODO unit test for active
-    final bool active = await helper.isSessionActive(sessionId);
+    final bool active = await helper.isSessionActive(sessionId!);
     if (!active) {
       throw RAVE(
         'Session $sessionId is not active',
@@ -176,7 +176,7 @@ class RelayAuthVerifierESCR implements RelayAuthVerifier {
     /// 5. Use session's AES key and the provided IV to decrypt the auth envelope
     /// TODO unit tests for failed to decrypt
     // Fetch the session's AES Key
-    String aesKey64 = await helper.getRelayAuthAesKey(sessionId);
+    String aesKey64 = await helper.getRelayAuthAesKey(sessionId!);
 
     var encryptionAlgo = AESEncryptionAlgo(AESKey(aesKey64));
     String envelope64;
@@ -235,7 +235,9 @@ class RelayAuthVerifierESCR implements RelayAuthVerifier {
     }
 
     /// TODO 8. Fetch the public signing key
-    String publicSigningKey = await helper.lookup(envelope['sk']);
+    String publicSigningKeyUri = envelope['sk'];
+    String publicSigningKey =
+        await helper.lookup(sessionId!, publicSigningKeyUri);
 
     /// TODO 9. Verify the signature of the payload
     final hashingAlgo = HashingAlgoType.values.byName(envelope['ha']);
@@ -260,6 +262,9 @@ class RelayAuthVerifierESCR implements RelayAuthVerifier {
         RAVEReason.signatureVerificationFailed,
       );
     }
+
+    atSign =
+        publicSigningKeyUri.substring(publicSigningKeyUri.lastIndexOf('@'));
 
     return verified;
   }
@@ -321,7 +326,8 @@ class RelayAuthVerifierESCR implements RelayAuthVerifier {
                     RAVEReason.randomlyInjectedFailure);
               }
 
-              if (randomlyAddLatency > 0 && random.nextInt(randomlyAddLatency) == 0) {
+              if (randomlyAddLatency > 0 &&
+                  random.nextInt(randomlyAddLatency) == 0) {
                 final int l = 100 + random.nextInt(3900);
                 logger.shout('Injecting random latency of $l ms');
                 await Future.delayed(Duration(milliseconds: l));
@@ -358,8 +364,10 @@ class RelayAuthVerifierESCR implements RelayAuthVerifier {
                   ' $e');
 
               if (!completer.isCompleted) {
-                socket.writeln(e);
+                // TODO Make this a feature flag to see the exception or not
+                socket.writeln('Socket auth failed');
                 await socket.flush();
+                socket.destroy();
                 completer
                     .completeError('Error during socket authentication: $e');
               }

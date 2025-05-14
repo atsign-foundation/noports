@@ -11,6 +11,7 @@ class SocketRendezvousRequestMessage {
   final String clientNonce;
   final RelayAuthMode relayAuthMode;
   final String? relayAuthAesKey;
+  final bool only443;
 
   SocketRendezvousRequestMessage({
     required this.sessionId,
@@ -21,6 +22,7 @@ class SocketRendezvousRequestMessage {
     required this.clientNonce,
     required this.relayAuthMode,
     required this.relayAuthAesKey,
+    required this.only443,
   });
 
   @override
@@ -34,6 +36,7 @@ class SocketRendezvousRequestMessage {
     m['clientNonce'] = clientNonce;
     m['relayAuthMode'] = relayAuthMode.name;
     m['relayAuthAesKey'] = relayAuthAesKey;
+    m['only443'] = only443;
     return jsonEncode(m);
   }
 }

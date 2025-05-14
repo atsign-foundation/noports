@@ -28,7 +28,7 @@ mixin ApkamSigning {
 
   String get enrollmentId {
     String id =
-        atClient.getRemoteSecondary()!.atLookUp.enrollmentId ?? 'primary';
+        atClient.getRemoteSecondary()?.atLookUp.enrollmentId ?? 'primary';
     if (id == 'primary') {
       logger.warning('No enrollmentID ... using "primary"');
     }

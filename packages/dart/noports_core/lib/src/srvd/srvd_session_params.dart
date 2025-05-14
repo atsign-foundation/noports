@@ -31,7 +31,7 @@ class SrvdSessionParams {
     this.clientNonce,
     this.relayAuthMode = RelayAuthMode.payload,
     this.relayAuthAesKey,
-    this.only443 = false,
+    required this.only443,
   });
 
   @override
@@ -75,6 +75,7 @@ class SrvdUtil {
     return SrvdSessionParams(
       sessionId: notification.value!,
       atSignA: notification.from,
+      only443: false,
     );
   }
 

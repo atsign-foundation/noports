@@ -8,6 +8,7 @@ import 'package:meta/meta.dart';
 import 'package:noports_core/src/common/handle_server_events.dart';
 import 'package:noports_core/src/srvd/build_env.dart';
 import 'package:noports_core/src/srvd/isolates/port_pair_isolate.dart';
+import 'package:noports_core/src/srvd/isolates/shared_single_port_isolate.dart';
 import 'package:noports_core/src/srvd/srvd.dart';
 import 'package:noports_core/src/srvd/srvd_params.dart';
 
@@ -42,6 +43,10 @@ class SrvdImpl implements Srvd {
   static final String subscriptionRegex = '\\.${Srvd.namespace}@';
 
   late final SrvdUtil srvdUtil;
+
+  Isolate? isolate443;
+  SendPort? toIsolate443;
+  PortPair portPair443 = (443, 443);
 
   SrvdImpl({
     required this.atClient,
@@ -113,6 +118,11 @@ class SrvdImpl implements Srvd {
       throw StateError('Cannot init() - already initialized');
     }
 
+    final r = await spawnNewSinglePortIsolate(ipAddress, false, 443);
+    portPair443 = r.$1;
+    isolate443 = r.$2;
+    toIsolate443 = r.$3;
+
     initialized = true;
   }
 
@@ -154,17 +164,16 @@ class SrvdImpl implements Srvd {
 
     PortPair ports;
     // ignore: unused_local_variable
-    Isolate spawned;
-    SendPort sendToSpawned;
+    Isolate? ppiSpawned;
+    SendPort? ppiSendToSpawned;
 
     try {
       if (sessionParams.only443) {
-        logger.shout('only443 not yet handled');
-        logger.shout('Sending to the 443 isolate');
-        throw UnimplementedError('only443 not yet handled');
+        logger.shout('No need to acquire port pair');
+        ports = (443, 443);
       } else {
         logger.shout('Acquiring next port pair');
-        (ports, spawned, sendToSpawned) =
+        (ports, ppiSpawned, ppiSendToSpawned) =
             await spawnNewPortPairIsolate(sessionParams);
       }
     } catch (e) {
@@ -194,11 +203,15 @@ class SrvdImpl implements Srvd {
       if (err.toString().toLowerCase().contains('immutable')) {
         logger.shout('🤷‍♂️ Will not handle request from ${notification.from}'
             '; did not acquire mutex $mutexKey');
-        sendToSpawned.send(IIRequest.create('stop', null));
+        ppiSendToSpawned?.send(IIRequest.create('stop', null));
       } else {
         logger.shout('Will not handle; did not acquire mutex $mutexKey : $err');
       }
       return;
+    }
+
+    if (sessionParams.only443) {
+      toIsolate443!.send(IIRequest.create('start', sessionParams));
     }
 
     var (portA, portB) = ports;
@@ -236,17 +249,43 @@ class SrvdImpl implements Srvd {
     }
   }
 
+  @override
+  Future<void> lookup(IIRequest msg, SendPort toSpawned) async {
+    final AtValue value;
+    try {
+      logger.info('request: "lookup" : ${msg.payload}');
+      value = await atClient.get(
+        AtKey.fromString(msg.payload),
+        getRequestOptions: GetRequestOptions()..useRemoteAtServer = true,
+      );
+      logger.info('request: "lookup" : success ${value.value}');
+      toSpawned.send(IIResponse(
+        id: msg.id,
+        isError: false,
+        payload: value.value,
+      ));
+    } catch (err) {
+      logger.info('request: "lookup" : error $err');
+      toSpawned.send(IIResponse(
+        id: msg.id,
+        isError: true,
+        payload: err.toString(),
+      ));
+    }
+  }
+
   /// This function spawns a new socketConnector in a background isolate
   /// once the socketConnector has spawned and is ready to accept connections
   /// it sends back the port numbers to the main isolate
   /// then the port numbers are returned from this function
+  @override
   Future<(PortPair, Isolate, SendPort)> spawnNewPortPairIsolate(
     SrvdSessionParams sessionParams,
   ) async {
     /// Spawn an isolate and wait for it to send back the issued port numbers
     ReceivePort fromSpawned = ReceivePort(sessionParams.sessionId);
 
-    ConnectorParams parameters = (
+    PortPairIsolateParams parameters = (
       fromSpawned.sendPort, // spawned will use this to communicate with main
       BuildEnv.enableSnoop && logTraffic,
       verbose,
@@ -259,7 +298,8 @@ class SrvdImpl implements Srvd {
     /// This function is meant to be run in a separate isolate
     /// It starts the socket connector, and sends back the assigned ports to the main isolate
     /// It then waits for socket connector to die before shutting itself down
-    void portPairIsolateEntryPoint(ConnectorParams connectorParams) async {
+    void portPairIsolateEntryPoint(
+        PortPairIsolateParams connectorParams) async {
       PortPairWorker worker = PortPairWorker(
         toMain: connectorParams.$1,
         logTraffic: connectorParams.$2,
@@ -270,7 +310,7 @@ class SrvdImpl implements Srvd {
       await worker.run();
     }
 
-    Isolate spawned = await Isolate.spawn<ConnectorParams>(
+    Isolate spawned = await Isolate.spawn<PortPairIsolateParams>(
       portPairIsolateEntryPoint,
       parameters,
     );
@@ -347,27 +387,96 @@ class SrvdImpl implements Srvd {
     return (ports, spawned, toSpawned);
   }
 
-  Future<void> lookup(IIRequest msg, SendPort toSpawned) async {
-    final AtValue value;
-    try {
-      logger.info('request: "lookup" : ${msg.payload}');
-      value = await atClient.get(
-        AtKey.fromString(msg.payload),
-        getRequestOptions: GetRequestOptions()..useRemoteAtServer = true,
-      );
-      logger.info('request: "lookup" : success ${value.value}');
-      toSpawned.send(IIResponse(
-        id: msg.id,
-        isError: false,
-        payload: value.value,
-      ));
-    } catch (err) {
-      logger.info('request: "lookup" : error $err');
-      toSpawned.send(IIResponse(
-        id: msg.id,
-        isError: true,
-        payload: err.toString(),
-      ));
+  /// Spawns an isolate which:
+  /// - Binds to the required port
+  /// - Waits for requests about new sessions from the main isolate
+  ///   - --> sessionID, sideA atSign, sideB atSign
+  /// - Makes SocketConnector objects for new sessions
+  /// - Assigns sockets to SocketConnectors once they have completed auth
+  /// (Part of the socket auth job now is to determine the session ID and the atSign)
+  @override
+  Future<(PortPair, Isolate, SendPort)> spawnNewSinglePortIsolate(
+    String address,
+    bool useTLS,
+    int bindPort,
+  ) async {
+    /// Spawn the isolate and wait for it to send back the issued port numbers
+    ReceivePort fromSpawned = ReceivePort('port $bindPort');
+
+    SinglePortIsolateParams parameters = (
+      fromSpawned.sendPort, // spawned will use this to communicate with main
+      BuildEnv.enableSnoop && logTraffic, // logTraffic
+      verbose, // verbose logging
+      '$address:$bindPort', // logging tag
+      address,
+      useTLS,
+      bindPort,
+    );
+
+    /// This function is meant to be run in a separate isolate
+    /// It starts the socket connector, and sends back the assigned ports to the main isolate
+    /// It then waits for socket connector to die before shutting itself down
+    void singlePortIsolateEntryPoint(SinglePortIsolateParams params) async {
+      SinglePortWorker worker = SinglePortWorker(
+          toMain: params.$1,
+          logTraffic: params.$2,
+          verbose: params.$3,
+          loggingTag: params.$4,
+          address: params.$5,
+          useTLS: params.$6,
+          bindPort: params.$7);
+
+      await worker.run();
     }
+
+    logger.info("Spawning single-port isolate for port $bindPort");
+
+    // Spawn the isolate
+    Isolate spawned = await Isolate.spawn<SinglePortIsolateParams>(
+      singlePortIsolateEntryPoint,
+      parameters,
+    );
+
+    Completer receivedSendToSpawned = Completer();
+    late SendPort toSpawned;
+
+    logger.info('Listening for messages from spawned isolate');
+    fromSpawned.listen((msg) async {
+      if (msg is SendPort) {
+        toSpawned = msg;
+        receivedSendToSpawned.complete();
+        return;
+      }
+      if (msg is IIRequest) {
+        switch (msg.type) {
+          case 'lookup':
+            await lookup(msg, toSpawned);
+            break;
+          default:
+            toSpawned.send(IIResponse(
+                id: msg.id,
+                isError: true,
+                payload: 'Unknown request type ${msg.type}'));
+            break;
+        }
+        return;
+      }
+
+      logger.shout('Unknown message from isolate -'
+          ' type: ${msg.runtimeType} message: $msg');
+    });
+
+    // Wait to receive the SendPort from the spawned isolate
+    try {
+      logger.info('Waiting for isolate to send its port pair info');
+      await receivedSendToSpawned.future.timeout(
+        Duration(milliseconds: isolateStartTimeoutMs),
+      );
+    } on TimeoutException catch (_) {
+      throw TimeoutException(
+          'No sendPort received after ${isolateStartTimeoutMs}ms');
+    }
+
+    return (portPair443, spawned, toSpawned);
   }
 }

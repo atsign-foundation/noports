@@ -521,7 +521,7 @@ class SrvImplDart implements Srv<SocketConnector> {
               ' new connection to rvd');
           try {
             var (authenticated, authenticatedStream) =
-            await relayAuthenticator!.authenticate(sideB.socket);
+                await relayAuthenticator!.authenticate(sideB.socket);
             if (!authenticated || authenticatedStream == null) {
               sideB.socket.destroy();
             } else {
@@ -555,7 +555,7 @@ class SrvImplDart implements Srv<SocketConnector> {
       bool authenticated;
       try {
         (authenticated, authenticatedControlSocketStream) =
-        await relayAuthenticator!.authenticate(sessionControlSocket);
+            await relayAuthenticator!.authenticate(sessionControlSocket);
         if (!authenticated || authenticatedControlSocketStream == null) {
           sessionControlSocket.destroy();
           throw Exception('_runClientSideMulti'
@@ -637,12 +637,11 @@ class SrvImplDart implements Srv<SocketConnector> {
             .add(Uint8List.fromList('connect:no:encrypt\n'.codeUnits));
         // Authenticate the sideB socket (to the rvd)
         if (relayAuthenticator != null) {
-          logger
-              .info('_runClientSideMulti (_clientSidePlainSocket)'
+          logger.info('_runClientSideMulti (_clientSidePlainSocket)'
               'authenticating new connection to rvd');
           try {
             var (authenticated, authenticatedStream) =
-            await relayAuthenticator!.authenticate(sideB.socket);
+                await relayAuthenticator!.authenticate(sideB.socket);
             if (!authenticated || authenticatedStream == null) {
               sideB.socket.destroy();
             } else {
@@ -713,7 +712,7 @@ class SrvImplDart implements Srv<SocketConnector> {
             logger.info('_runClientSideMulti  (_clientSideEncryptedSocket)'
                 ' authenticating new connection to rvd');
             var (authenticated, authenticatedStream) =
-            await relayAuthenticator!.authenticate(sideB.socket);
+                await relayAuthenticator!.authenticate(sideB.socket);
             if (!authenticated || authenticatedStream == null) {
               sideB.socket.destroy();
             } else {
@@ -725,8 +724,8 @@ class SrvImplDart implements Srv<SocketConnector> {
           logger.info('_runClientSideMulti (_clientSideEncryptedSocket)'
               ' Client side connected.'
               ' Sending connect request to daemon');
-          controlSink.add(
-              Uint8List.fromList('connect:$socketAESKey:$socketIV\n'.codeUnits));
+          controlSink.add(Uint8List.fromList(
+              'connect:$socketAESKey:$socketIV\n'.codeUnits));
         } catch (err) {
           logger.severe('_runClientSideMulti (_clientSideEncryptedSocket)'
               ' Failed to authenticate to relay: $err'
@@ -774,7 +773,7 @@ class SrvImplDart implements Srv<SocketConnector> {
               ' new socket connection to relay');
           try {
             var (authenticated, authenticatedStream) =
-            await relayAuthenticator!.authenticate(candidateSideB.socket);
+                await relayAuthenticator!.authenticate(candidateSideB.socket);
             logger.info('_runDaemonSideMulti authentication apparently complete'
                 '\n\t=> authenticated: $authenticated'
                 '\n\t=> stream: $authenticatedStream');
@@ -793,7 +792,7 @@ class SrvImplDart implements Srv<SocketConnector> {
         }
         if (!candidateConnected && i < attempts) {
           logger.info('Will try again in 1 second');
-          await Future.delayed(Duration(seconds:1));
+          await Future.delayed(Duration(seconds: 1));
         }
       }
       if (!candidateConnected) {
@@ -869,7 +868,8 @@ class SrvImplDart implements Srv<SocketConnector> {
     required InternetAddress relayAddress,
     required Duration timeout,
   }) async {
-    logger.info('_runDaemonSideMulti: creating SocketConnector with timeout $timeout');
+    logger.info(
+        '_runDaemonSideMulti: creating SocketConnector with timeout $timeout');
     SocketConnector sc = SocketConnector(
       timeout: timeout,
       verbose: Platform.environment['SRV_TRACE'] == 'true',
@@ -889,7 +889,7 @@ class SrvImplDart implements Srv<SocketConnector> {
       bool authenticated;
       try {
         (authenticated, authenticatedControlSocketStream) =
-        await relayAuthenticator!.authenticate(sessionControlSocket);
+            await relayAuthenticator!.authenticate(sessionControlSocket);
         if (!authenticated || authenticatedControlSocketStream == null) {
           sessionControlSocket.destroy();
           throw Exception('_runDaemonSideMulti'
@@ -1062,7 +1062,8 @@ class SrvImplDart implements Srv<SocketConnector> {
     Socket sideASocket = await Socket.connect(localAddress, localPort);
     Side sideA = Side(sideASocket, true, transformer: encrypter);
     unawaited(socketConnector.handleSingleConnection(sideA).catchError((err) {
-      logSink.writeln('ERROR $err in _runDaemonSideSingle from handleSingleConnection on sideA (local)');
+      logSink.writeln(
+          'ERROR $err in _runDaemonSideSingle from handleSingleConnection on sideA (local)');
     }));
 
     if (verbose) {
@@ -1077,7 +1078,7 @@ class SrvImplDart implements Srv<SocketConnector> {
       logger.info('_runDaemonSideSingle authenticating socketB to rvd');
       try {
         var (authenticated, authenticatedStream) =
-        await relayAuthenticator!.authenticate(sideB.socket);
+            await relayAuthenticator!.authenticate(sideB.socket);
         if (!authenticated || authenticatedStream == null) {
           sideB.socket.destroy();
         } else {
@@ -1092,7 +1093,8 @@ class SrvImplDart implements Srv<SocketConnector> {
     }
 
     unawaited(socketConnector.handleSingleConnection(sideB).catchError((err) {
-      logSink.writeln('ERROR $err in _runDaemonSideSingle from handleSingleConnection on sideB (relay)');
+      logSink.writeln(
+          'ERROR $err in _runDaemonSideSingle from handleSingleConnection on sideB (relay)');
     }));
 
     if (verbose) {

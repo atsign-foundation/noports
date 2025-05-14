@@ -81,6 +81,10 @@ void main() {
       );
 
       when(() => mockAtClient.atChops).thenReturn(atChops);
+      when(() => mockAtClient.getCurrentAtSign()).thenReturn('@alice');
+      when(() => mockAtClient.get(any(),
+              getRequestOptions: any(named: 'getRequestOptions')))
+          .thenAnswer((_) => Future.value(AtValue()..value = 'Hello hello'));
     });
 
     test('public API', () {

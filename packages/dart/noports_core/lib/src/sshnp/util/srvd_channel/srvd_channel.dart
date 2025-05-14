@@ -214,6 +214,7 @@ abstract class SrvdChannel<T>
         clientNonce: clientNonce,
         relayAuthMode: params.relayAuthMode,
         relayAuthAesKey: relayAuthAesKey,
+        only443: params.only443,
       );
 
       rvdRequestValue = message.toString();

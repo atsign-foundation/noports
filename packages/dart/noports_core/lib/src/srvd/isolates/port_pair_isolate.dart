@@ -1,10 +1,9 @@
 import 'dart:async';
-import 'dart:convert';
 import 'dart:io';
 import 'dart:isolate';
 import 'dart:math';
+import 'package:noports_core/src/srvd/isolates/relay_worker.dart';
 import 'package:noports_core/src/srvd/isolates/types.dart';
-import 'package:noports_core/sshnp_foundation.dart';
 import 'package:socket_connector/socket_connector.dart';
 
 import 'package:noports_core/src/srvd/relay_auth_verifiers.dart';
@@ -68,7 +67,8 @@ class PortPairWorker extends RelayWorker {
     RelayAuthVerifier? authVerifierA;
     RelayAuthVerifier? authVerifierB;
 
-    (authVerifierA, authVerifierB) = await createAuthVerifiers();
+    (authVerifierA, authVerifierB) =
+        await createAuthVerifiers(srvdSessionParams);
 
     /// Create the socket connector
     connector = await SocketConnector.serverToServer(
@@ -100,7 +100,7 @@ class PortPairWorker extends RelayWorker {
   Map<String, dynamic> lookups = {};
   Random random = Random();
   @override
-  Future<String> lookup(String atKey) async {
+  Future<String> lookup(String sessionId, String atKey) async {
     if (lookups.containsKey(atKey)) {
       return lookups[atKey];
     } else {
@@ -122,100 +122,5 @@ class PortPairWorker extends RelayWorker {
     } else {
       return srvdSessionParams.relayAuthAesKey!;
     }
-  }
-
-  Future<(RelayAuthVerifier?, RelayAuthVerifier?)> createAuthVerifiers() async {
-    switch (srvdSessionParams.relayAuthMode) {
-      case RelayAuthMode.payload:
-        return await createPayloadAuthVerifiers();
-      case RelayAuthMode.escr:
-        return await createEscrAuthVerifiers();
-    }
-  }
-
-  Future<(RelayAuthVerifier?, RelayAuthVerifier?)>
-      createPayloadAuthVerifiers() async {
-    RelayAuthVerifier? authVerifierA;
-    RelayAuthVerifier? authVerifierB;
-
-    Map expectedPayloadForSignature = {
-      'sessionId': srvdSessionParams.sessionId,
-      'clientNonce': srvdSessionParams.clientNonce,
-      'rvdNonce': srvdSessionParams.rvdNonce,
-    };
-
-    if (srvdSessionParams.authenticateSocketA) {
-      String? pkAtSignA = srvdSessionParams.publicKeyA ??
-          (await rpcToMain(IIRequest.create(
-            'lookup',
-            'public:publickey${srvdSessionParams.atSignA}',
-          )))
-              .payload;
-      if (pkAtSignA == null) {
-        logger.shout('Cannot spawn socket connector.'
-            ' Authenticator for ${srvdSessionParams.atSignA}'
-            ' could not be created as PublicKey could not be'
-            ' fetched from the atServer.');
-        throw Exception('Failed to create SocketAuthenticator'
-            ' for ${srvdSessionParams.atSignA} due to failure to get public key for ${srvdSessionParams.atSignA}');
-      }
-      authVerifierA = RelayAuthVerifierLegacy(
-        pkAtSignA,
-        jsonEncode(expectedPayloadForSignature),
-        srvdSessionParams.rvdNonce!,
-        srvdSessionParams.atSignA!,
-        srvdSessionParams.atSignA!,
-        srvdSessionParams.sessionId,
-      );
-    }
-
-    if (srvdSessionParams.authenticateSocketB) {
-      String? pkAtSignB = srvdSessionParams.publicKeyB ??
-          (await rpcToMain(IIRequest.create(
-            'lookup',
-            'public:publickey${srvdSessionParams.atSignB}',
-          )))
-              .payload;
-      if (pkAtSignB == null) {
-        logger.shout('Cannot spawn socket connector.'
-            ' Authenticator for ${srvdSessionParams.atSignB}'
-            ' could not be created as PublicKey could not be'
-            ' fetched from the atServer');
-        throw Exception('Failed to create SocketAuthenticator'
-            ' for ${srvdSessionParams.atSignB} due to failure to get public key for ${srvdSessionParams.atSignB}');
-      }
-      authVerifierB = RelayAuthVerifierLegacy(
-        pkAtSignB,
-        jsonEncode(expectedPayloadForSignature),
-        srvdSessionParams.rvdNonce!,
-        srvdSessionParams.atSignB!,
-        srvdSessionParams.atSignB!,
-        srvdSessionParams.sessionId,
-      );
-    }
-
-    return (authVerifierA, authVerifierB);
-  }
-
-  Future<(RelayAuthVerifier?, RelayAuthVerifier?)>
-      createEscrAuthVerifiers() async {
-    RelayAuthVerifierESCR? authVerifierA;
-    RelayAuthVerifierESCR? authVerifierB;
-
-    if (srvdSessionParams.authenticateSocketA) {
-      authVerifierA = RelayAuthVerifierESCR(
-        '${srvdSessionParams.sessionId} sideA',
-        this,
-      );
-    }
-
-    if (srvdSessionParams.authenticateSocketB) {
-      authVerifierB = RelayAuthVerifierESCR(
-        '${srvdSessionParams.sessionId} sideB',
-        this,
-      );
-    }
-
-    return (authVerifierA, authVerifierB);
   }
 }

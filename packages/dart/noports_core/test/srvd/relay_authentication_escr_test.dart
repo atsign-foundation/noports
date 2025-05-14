@@ -14,7 +14,7 @@ class MockSocket extends Mock implements Socket {}
 class MockStreamSubscription<T> extends Mock implements StreamSubscription<T> {}
 
 void main() {
-  group('Tests of RelayAuthenticatorECR and RelayAuthVerifierECR', () {
+  group('Tests of RelayAuthenticatorESCR and RelayAuthVerifierESCR', () {
     late String relayAuthAesKey;
     late String wrongAesKey;
     late String relaySessionId;
@@ -42,7 +42,7 @@ void main() {
           .thenAnswer((_) => Future.value(true));
       when(() => helper.getRelayAuthAesKey(relaySessionId))
           .thenAnswer((_) => Future.value(relayAuthAesKey));
-      when(() => helper.lookup(publicSigningKeyUri))
+      when(() => helper.lookup(relaySessionId, publicSigningKeyUri))
           .thenAnswer((_) => Future.value(signingKP.atPublicKey.publicKey));
 
       verifier = RelayAuthVerifierESCR('test', helper);
@@ -62,11 +62,17 @@ void main() {
           .thenAnswer((_) => Future.value(true));
       when(() => helper.getRelayAuthAesKey(relaySessionId))
           .thenAnswer((_) => Future.value(relayAuthAesKey));
-      when(() => helper.lookup(publicSigningKeyUri))
+      when(() => helper.lookup(relaySessionId, publicSigningKeyUri))
           .thenAnswer((_) => Future.value(signingKP.atPublicKey.publicKey));
+
+      expect(verifier.atSign, isNull);
+      expect(verifier.sessionId, isNull);
 
       await verifier.verifyChallengeResponse(
           authenticator.responseToChallenge(verifier.challenge));
+
+      expect(verifier.atSign, '@alice');
+      expect(verifier.sessionId, relaySessionId);
     });
 
     test('wrong signing key', () async {
@@ -82,6 +88,9 @@ void main() {
               authenticator.responseToChallenge(verifier.challenge)),
           throwsA(isA<RAVE>().having((e) => e.reason, 'reason',
               RAVEReason.signatureVerificationFailed)));
+
+      expect(verifier.atSign, null);
+      expect(verifier.sessionId, relaySessionId);
     });
 
     test('wrong AES key', () async {
@@ -97,6 +106,9 @@ void main() {
               authenticator.responseToChallenge(verifier.challenge)),
           throwsA(isA<RAVE>()
               .having((e) => e.reason, 'reason', RAVEReason.decryptionFailed)));
+
+      expect(verifier.atSign, null);
+      expect(verifier.sessionId, relaySessionId);
     });
 
     test('wrong challenge', () async {
@@ -114,6 +126,9 @@ void main() {
               .having((e) => e.reason, 'reason', RAVEReason.dataMismatch)
               .having((e) => e.message, 'message',
                   contains('does not match challenge issued'))));
+
+      expect(verifier.atSign, null);
+      expect(verifier.sessionId, relaySessionId);
     });
   });
 }
