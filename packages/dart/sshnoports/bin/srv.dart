@@ -41,7 +41,7 @@ Future<void> main(List<String> args) async {
         help: '(Legacy) Whether this rv process will authenticate to rvd using'
             ' legacy "payload" (signed response to implicit challenge) auth.')
     ..addOption(
-      'rv-auth-mode',
+      'relay-auth-mode',
       abbr: 'a',
       mandatory: false,
       help: 'The relay auth mode, if required.',
@@ -74,9 +74,9 @@ Future<void> main(List<String> args) async {
       final bool rvE2ee = parsed['rv-e2ee'];
       final bool multi = parsed['multi'];
       final Duration timeout = Duration(seconds: int.parse(parsed['timeout']));
-      RelayAuthMode? relayAuthMode = parsed['rv-auth-mode'] == null
+      RelayAuthMode? relayAuthMode = parsed['relay-auth-mode'] == null
           ? null
-          : RelayAuthMode.values.byName(parsed['rv-auth-mode']);
+          : RelayAuthMode.values.byName(parsed['relay-auth-mode']);
 
       String? sessionAESKeyString =
           rvE2ee ? Platform.environment['RV_AES'] : null;
@@ -85,7 +85,7 @@ Future<void> main(List<String> args) async {
       if (parsed['rv-auth']) {
         if (relayAuthMode != null) {
           throw ArgumentError('Only one of "--rv-auth" (legacy)'
-              ' and "--rv-auth-mode <version>" may be supplied');
+              ' and "--relay-auth-mode <version>" may be supplied');
         } else {
           relayAuthMode = RelayAuthMode.payload;
         }
@@ -99,7 +99,7 @@ Future<void> main(List<String> args) async {
                 parsed['rv-auth'] ? Platform.environment['RV_AUTH'] : null;
             if ((legacyAuthString ?? '').isEmpty) {
               throw ArgumentError(
-                  '--rv-auth-mode is v0, but RV_AUTH is not in environment');
+                  '--relay-auth-mode is v0, but RV_AUTH is not in environment');
             }
             relayAuthenticator = RelayAuthenticatorLegacy(legacyAuthString!);
             break;
