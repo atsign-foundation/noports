@@ -57,7 +57,7 @@ abstract interface class RelayAuthVerifier {
   String get tag;
 }
 
-/// RelayAuthVerifierECR where ECR stands for "EncryptedChallengeResponse"
+/// RelayAuthVerifierESCR where ESCR stands for "Encrypted Signed Challenge-Response"
 ///
 /// Authenticates new socket connection as follows:
 /// 1. Send a challenge to the client, terminated with a newline

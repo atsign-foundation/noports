@@ -105,29 +105,29 @@ Future<void> main(List<String> args) async {
             break;
           case RelayAuthMode.escr:
             String sessionId =
-                Platform.environment['REMOTE_AUTH_ECR_SESSION_ID'] ?? '';
+                Platform.environment['REMOTE_AUTH_ESCR_SESSION_ID'] ?? '';
             if (sessionId.isEmpty) {
-              throw ArgumentError('No REMOTE_AUTH_ECR_SESSION_ID in env');
+              throw ArgumentError('No REMOTE_AUTH_ESCR_SESSION_ID in env');
             }
             String relayAuthAesKey =
-                Platform.environment['REMOTE_AUTH_ECR_AES_KEY'] ?? '';
+                Platform.environment['REMOTE_AUTH_ESCR_AES_KEY'] ?? '';
             if (relayAuthAesKey.isEmpty) {
-              throw ArgumentError('No REMOTE_AUTH_ECR_AES_KEY in env');
+              throw ArgumentError('No REMOTE_AUTH_ESCR_AES_KEY in env');
             }
             String publicSigningKeyUri =
-                Platform.environment['REMOTE_AUTH_ECR_PUB_KEY_URI'] ?? '';
+                Platform.environment['REMOTE_AUTH_ESCR_PUB_KEY_URI'] ?? '';
             if (publicSigningKeyUri.isEmpty) {
-              throw ArgumentError('No REMOTE_AUTH_ECR_PUB_KEY_URI in env');
+              throw ArgumentError('No REMOTE_AUTH_ESCR_PUB_KEY_URI in env');
             }
             String publicSigningKey =
-                Platform.environment['REMOTE_AUTH_ECR_SIGNING_PUBKEY'] ?? '';
+                Platform.environment['REMOTE_AUTH_ESCR_SIGNING_PUBKEY'] ?? '';
             if (publicSigningKey.isEmpty) {
-              throw ArgumentError('No REMOTE_AUTH_ECR_SIGNING_PUBKEY in env');
+              throw ArgumentError('No REMOTE_AUTH_ESCR_SIGNING_PUBKEY in env');
             }
             String privateSigningKey =
-                Platform.environment['REMOTE_AUTH_ECR_SIGNING_PRIVKEY'] ?? '';
+                Platform.environment['REMOTE_AUTH_ESCR_SIGNING_PRIVKEY'] ?? '';
             if (privateSigningKey.isEmpty) {
-              throw ArgumentError('No REMOTE_AUTH_ECR_SIGNING_PRIVKEY in env');
+              throw ArgumentError('No REMOTE_AUTH_ESCR_SIGNING_PRIVKEY in env');
             }
             relayAuthenticator = RelayAuthenticatorESCR(
               sessionId: sessionId,

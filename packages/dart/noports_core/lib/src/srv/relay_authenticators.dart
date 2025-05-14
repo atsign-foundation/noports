@@ -113,11 +113,11 @@ class RelayAuthenticatorESCR implements RelayAuthenticator {
   ///   actual payload within the auth envelope
   @override
   Map<String, String> get envMap => {
-        'REMOTE_AUTH_ECR_SESSION_ID': sessionId,
-        'REMOTE_AUTH_ECR_AES_KEY': relayAuthAesKey,
-        'REMOTE_AUTH_ECR_PUB_KEY_URI': publicSigningKeyUri,
-        'REMOTE_AUTH_ECR_SIGNING_PUBKEY': publicSigningKey,
-        'REMOTE_AUTH_ECR_SIGNING_PRIVKEY': privateSigningKey,
+        'REMOTE_AUTH_ESCR_SESSION_ID': sessionId,
+        'REMOTE_AUTH_ESCR_AES_KEY': relayAuthAesKey,
+        'REMOTE_AUTH_ESCR_PUB_KEY_URI': publicSigningKeyUri,
+        'REMOTE_AUTH_ESCR_SIGNING_PUBKEY': publicSigningKey,
+        'REMOTE_AUTH_ESCR_SIGNING_PRIVKEY': privateSigningKey,
       };
 
   @override
