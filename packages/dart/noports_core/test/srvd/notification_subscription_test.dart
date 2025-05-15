@@ -68,14 +68,16 @@ void main() {
           (_) async => Future.value(AtValue()..value = 'dummy-public-key'));
 
       Srvd srvd = SrvdImpl(
-          atClient: mockAtClient,
-          atSign: atSign,
-          homeDirectory: Directory.current.path,
-          atKeysFilePath: Directory.current.path,
-          managerAtsign: relayAtSign,
-          ipAddress: '127.0.0.1',
-          logTraffic: false,
-          verbose: false);
+        atClient: mockAtClient,
+        atSign: atSign,
+        homeDirectory: Directory.current.path,
+        atKeysFilePath: Directory.current.path,
+        managerAtsign: relayAtSign,
+        ipAddress: '127.0.0.1',
+        logTraffic: false,
+        verbose: false,
+        bind443: false,
+      );
 
       // Create a stream controller to simulate the notification received from the sshnp
       final streamController = StreamController<AtNotification>();
