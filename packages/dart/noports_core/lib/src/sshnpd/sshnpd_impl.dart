@@ -884,7 +884,7 @@ class SshnpdImpl with AtClientBindings implements Sshnpd {
       ).run();
       logger.info('Started rv - pid is ${rv.pid}');
 
-      LocalSshKeyUtil keyUtil = LocalSshKeyUtil();
+      // LocalSshKeyUtil keyUtil = LocalSshKeyUtil();
 
       /// Generate the ephemeral key pair which the client will use for the
       /// initial tunnel ssh session
@@ -922,8 +922,8 @@ class SshnpdImpl with AtClientBindings implements Sshnpd {
 
       /// - start a timer to remove the ephemeral key from `authorized_keys`
       ///   after 15 seconds
-      Timer(const Duration(seconds: 15),
-          () => keyUtil.deauthorizePublicKey(sessionId));
+      // Timer(const Duration(seconds: 15),
+      //     () => keyUtil.deauthorizePublicKey(sessionId));
     } catch (e) {
       logger.severe('startDirectSsh failed with unexpected error : $e');
       // Notify sshnp that this session is NOT connected

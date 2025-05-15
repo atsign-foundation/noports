@@ -23,8 +23,9 @@ WORKDIR /app
 COPY . .
 RUN \
   set -eux ; \
-  mkdir -p $HOMEDIR/storage ; \
-  mkdir -p $HOMEDIR/config ; \
+  mkdir -p $HOMEDIR/.atsign/storage ; \
+  mkdir -p $HOMEDIR/.atsign/config ; \
+  mkdir -p $HOMEDIR/.sshnp ; \
   mkdir -p /etc/cacert ; \
   mkdir -p ${BINARYDIR} ; \
   # build sshnpd
@@ -34,7 +35,8 @@ RUN \
   dart compile exe bin/srv.dart -o ${BINARYDIR}/srv ; \
   # create atsign account
   addgroup --gid $GROUP_ID atsign ; \
-  useradd --system --uid $USER_ID --gid $GROUP_ID --shell /bin/bash --home $HOMEDIR atsign 
+  useradd --system --uid $USER_ID --gid $GROUP_ID --shell /bin/bash --home $HOMEDIR atsign ;\
+  chown -R atsign:atsign $HOMEDIR 
 
  # Second stage of build FROM scratch
 FROM scratch
@@ -44,10 +46,10 @@ COPY --from=buildimage /runtime/ /
 COPY --from=buildimage /etc/passwd /etc/passwd
 COPY --from=buildimage /etc/group /etc/group
 COPY --from=buildimage /etc/cacert /etc/cacert
-COPY --from=buildimage --chown=atsign:atsign /tmp /tmp
-COPY --from=buildimage --chown=atsign:atsign /atsign /atsign/
+COPY --from=buildimage --chown=1024:1024 /tmp /tmp
+COPY --from=buildimage --chown=1024:1024 /atsign /atsign
 WORKDIR /usr/local/at
-COPY --from=buildimage  /usr/local/at/sshnpd /usr/local/at/
-COPY --from=buildimage  /usr/local/at/srv /usr/local/at/
+COPY --from=buildimage  /usr/local/at/sshnpd /usr/local/at
+COPY --from=buildimage  /usr/local/at/srv /usr/local/at
 USER atsign
 ENTRYPOINT ["/usr/local/at/sshnpd"]
