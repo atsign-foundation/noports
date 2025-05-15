@@ -122,6 +122,17 @@ abstract class ClientParamsBase implements ClientParams {
     if (invalidDeviceName(device)) {
       throw ArgumentError(invalidDeviceNameMsg);
     }
+    if (only443 && relayAuthMode != RelayAuthMode.escr) {
+      throw ArgumentError('You must use'
+          ' "${SshnpArg.relayAuthModeArg.name} ${RelayAuthMode.escr.name}"'
+          ' when using the "${SshnpArg.only443Arg.name}" flag');
+    }
+    if (relayAuthMode == RelayAuthMode.escr &&
+        (!authenticateClientToRvd || !authenticateDeviceToRvd)) {
+      throw ArgumentError('Both client and device need to authenticate to the'
+          ' relay when using'
+          ' "${SshnpArg.relayAuthModeArg.name} ${RelayAuthMode.escr.name}"');
+    }
   }
 }
 
@@ -254,6 +265,7 @@ class SshnpParams extends ClientParamsBase
       clientAtSign: '',
       sshnpdAtSign: '',
       srvdAtSign: '',
+      only443: false,
     );
   }
 
@@ -291,6 +303,7 @@ class SshnpParams extends ClientParamsBase
       relayAuthMode: params2.relayAuthMode ?? params1.relayAuthMode,
       encryptRvdTraffic: params2.encryptRvdTraffic ?? params1.encryptRvdTraffic,
       daemonPingTimeout: params2.daemonPingTimeout ?? params1.daemonPingTimeout,
+      only443: params2.only443 ?? params1.only443,
     );
   }
 
@@ -350,6 +363,7 @@ class SshnpParams extends ClientParamsBase
           partial.encryptRvdTraffic ?? DefaultArgs.encryptRvdTraffic,
       daemonPingTimeout:
           partial.daemonPingTimeout ?? DefaultArgs.daemonPingTimeoutDuration,
+      only443: partial.only443 ?? false,
     );
   }
 
@@ -439,6 +453,7 @@ class SshnpPartialParams {
   final RelayAuthMode? relayAuthMode;
   final bool? encryptRvdTraffic;
   final Duration? daemonPingTimeout;
+  final bool? only443;
 
   /// Operation flags
   final bool? listDevices;
@@ -469,6 +484,7 @@ class SshnpPartialParams {
     this.relayAuthMode,
     this.encryptRvdTraffic,
     this.daemonPingTimeout,
+    this.only443,
   });
 
   factory SshnpPartialParams.empty() {
@@ -510,6 +526,7 @@ class SshnpPartialParams {
       relayAuthMode: params2.relayAuthMode ?? params1.relayAuthMode,
       encryptRvdTraffic: params2.encryptRvdTraffic ?? params1.encryptRvdTraffic,
       daemonPingTimeout: params2.daemonPingTimeout ?? params1.daemonPingTimeout,
+      only443: params2.only443 ?? params1.only443,
     );
   }
 
@@ -571,6 +588,7 @@ class SshnpPartialParams {
       daemonPingTimeout: Duration(
           seconds: args[SshnpArg.daemonPingTimeoutArg.name] ??
               DefaultArgs.daemonPingTimeoutSeconds),
+      only443: args[SshnpArg.only443Arg.name],
     );
   }
 

@@ -127,6 +127,7 @@ class SshnpArg {
     relayAuthModeArg,
     encryptRvdTrafficArg,
     daemonPingTimeoutArg,
+    only443Arg,
   ];
 
   @override
@@ -395,5 +396,12 @@ class SshnpArg {
     format: ArgFormat.option,
     type: ArgType.integer,
     parseWhen: ParseWhen.commandLine,
+  );
+  static const only443Arg = SshnpArg(
+    name: '443',
+    help: 'When true, will request ports (443, 443) from relay',
+    defaultsTo: false,
+    format: ArgFormat.flag,
+    mandatory: false,
   );
 }
