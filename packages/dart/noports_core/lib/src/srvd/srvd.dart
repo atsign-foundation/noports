@@ -20,6 +20,7 @@ abstract interface class Srvd {
   abstract final String managerAtsign;
   abstract final String ipAddress;
   abstract final bool logTraffic;
+  abstract final bool bind443;
   abstract bool verbose;
 
   /// true once [init] has completed

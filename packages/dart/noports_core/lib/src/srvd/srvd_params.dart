@@ -15,6 +15,7 @@ class SrvdParams {
   final bool logTraffic;
   final String rootDomain;
   final bool perSessionStorage;
+  final bool bind443;
 
   // Non param variables
   static final ArgParser parser = _createArgParser();
@@ -30,6 +31,7 @@ class SrvdParams {
     required this.logTraffic,
     required this.rootDomain,
     required this.perSessionStorage,
+    required this.bind443,
   });
 
   static Future<SrvdParams> fromArgs(List<String> args) async {
@@ -51,6 +53,7 @@ class SrvdParams {
       logTraffic: BuildEnv.enableSnoop && r['snoop'],
       rootDomain: r['root-domain'],
       perSessionStorage: r['per-session-storage'],
+      bind443: r['443'],
     );
   }
 
@@ -116,6 +119,12 @@ class SrvdParams {
           ' When true, allows you to run multiple srvds concurrently on the'
           ' same host, as the same user. When false, only a single local srvd'
           ' may run concurrently on the same host as the same user.',
+    );
+    parser.addFlag(
+      '443',
+      defaultsTo: false,
+      help: 'Also bind to port 443, to support clients which want to connect'
+          ' only to port 443 (for ... \$reasons)',
     );
     parser.addFlag(
       'help',

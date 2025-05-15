@@ -34,6 +34,8 @@ class SrvdImpl implements Srvd {
   @override
   final bool logTraffic;
   @override
+  final bool bind443;
+  @override
   bool verbose = false;
 
   @override
@@ -58,6 +60,7 @@ class SrvdImpl implements Srvd {
     required this.logTraffic,
     required this.verbose,
     SrvdUtil? srvdUtil,
+    required this.bind443,
   }) {
     this.srvdUtil = srvdUtil ?? SrvdUtil(atClient);
     logger.hierarchicalLoggingEnabled = true;
@@ -100,6 +103,7 @@ class SrvdImpl implements Srvd {
         ipAddress: p.ipAddress,
         logTraffic: p.logTraffic,
         verbose: p.verbose,
+        bind443: p.bind443,
       );
 
       if (p.verbose) {
@@ -118,10 +122,12 @@ class SrvdImpl implements Srvd {
       throw StateError('Cannot init() - already initialized');
     }
 
-    final r = await spawnNewSinglePortIsolate(ipAddress, false, 443);
-    portPair443 = r.$1;
-    isolate443 = r.$2;
-    toIsolate443 = r.$3;
+    if (bind443) {
+      final r = await spawnNewSinglePortIsolate(ipAddress, false, 443);
+      portPair443 = r.$1;
+      isolate443 = r.$2;
+      toIsolate443 = r.$3;
+    }
 
     initialized = true;
   }
@@ -169,6 +175,11 @@ class SrvdImpl implements Srvd {
 
     try {
       if (sessionParams.only443) {
+        if (!bind443) {
+          logger.shout('Client requested port 443'
+              ' but --443 flag was not set in this relay');
+          return;
+        }
         ports = (443, 443);
       } else {
         (ports, ppiSpawned, ppiSendToSpawned) =
