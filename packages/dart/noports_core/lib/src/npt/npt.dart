@@ -195,6 +195,9 @@ class _NptImpl extends NptBase
       DaemonFeature.srE2ee,
       DaemonFeature.supportsPortChoice,
     ];
+    if (params.relayAuthMode == RelayAuthMode.escr) {
+      requiredFeatures.add(DaemonFeature.supportsRamEscr);
+    }
     if (!(params.timeout == DefaultArgs.srvTimeout)) {
       requiredFeatures.add(DaemonFeature.adjustableTimeout);
     }
@@ -224,6 +227,7 @@ class _NptImpl extends NptBase
         }
       }
     }
+
     sendProgress('Required daemon features are supported');
 
     completeInitialization();
