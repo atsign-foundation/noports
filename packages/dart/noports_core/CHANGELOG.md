@@ -1,3 +1,8 @@
+# 6.5.0
+- feat: New ESCR (Encrypted Signed Challenge-Response) relay socket 
+  authentication
+- feat: Ability to have relay sessions where both sides are connecting to 
+  port 443
 # 6.4.0
 - feat: have srvd use ephemeral local storage for its AtClient by default
 - feat: have srvd listen for PublicKeyChanged events
