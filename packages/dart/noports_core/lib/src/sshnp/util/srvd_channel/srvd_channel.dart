@@ -142,6 +142,7 @@ abstract class SrvdChannel<T>
             publicSigningKeyUri: publicSigningKeyUri,
             publicSigningKey: publicSigningKey,
             privateSigningKey: privateSigningKey,
+            isSideA: true,
           );
           break;
       }

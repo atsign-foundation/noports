@@ -89,6 +89,10 @@ class RelayAuthenticatorESCR implements RelayAuthenticator {
   final String publicSigningKey;
   final String privateSigningKey;
 
+  /// `true` for client (npt, sshnp, ...) connections
+  /// `false` for daemon connections
+  final bool isSideA;
+
   late final AtChops _atChops;
 
   RelayAuthenticatorESCR({
@@ -97,6 +101,7 @@ class RelayAuthenticatorESCR implements RelayAuthenticator {
     required this.publicSigningKeyUri,
     required this.publicSigningKey,
     required this.privateSigningKey,
+    required this.isSideA,
   }) {
     _atChops = AtChopsImpl(AtChopsKeys()
       ..atEncryptionKeyPair =
@@ -118,6 +123,7 @@ class RelayAuthenticatorESCR implements RelayAuthenticator {
         'REMOTE_AUTH_ESCR_PUB_KEY_URI': publicSigningKeyUri,
         'REMOTE_AUTH_ESCR_SIGNING_PUBKEY': publicSigningKey,
         'REMOTE_AUTH_ESCR_SIGNING_PRIVKEY': privateSigningKey,
+        'REMOTE_AUTH_ESCR_IS_SIDE_A': isSideA.toString(),
       };
 
   @override
@@ -206,7 +212,7 @@ class RelayAuthenticatorESCR implements RelayAuthenticator {
   String responseToChallenge(String challenge) {
     /// Construct response payload
     Map envelope = {
-      'p': {'sid': sessionId, 'c': challenge}
+      'p': {'sid': sessionId, 'c': challenge, 'side': (isSideA ? 'a' : 'b')}
     };
     final AtSigningInput signingInput =
         AtSigningInput(jsonEncode(envelope['p']))

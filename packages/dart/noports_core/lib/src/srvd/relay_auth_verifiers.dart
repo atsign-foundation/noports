@@ -68,7 +68,7 @@ abstract interface class RelayAuthVerifier {
 /// 6. Expect decrypted auth envelope to look like this:
 ///   ```
 ///   {
-///     'p':{'sid':'session-id','c':'challenge'},
+///     'p':{'sid':'session-id','c':'challenge','side':'<a|b>'},
 ///     's':'signature of p encoded as string',
 ///     'ha':'hashingAlgo',
 ///     'sa':'signingAlgo',
@@ -109,6 +109,8 @@ class RelayAuthVerifierESCR implements RelayAuthVerifier {
 
   late final AtSignLogger logger;
 
+  bool? isSideA;
+
   Random random = Random();
 
   RelayAuthVerifierESCR(
@@ -121,9 +123,13 @@ class RelayAuthVerifierESCR implements RelayAuthVerifier {
   }
 
   Future<bool> verifyChallengeResponse(String response) async {
+    // TODO Eliminate re-entrance race conditions
+    // TODO While not a problem right now, is laying a trap for the future
+    atSign = null;
+    isSideA = null;
+    sessionId = null;
     // Split by ':' - expect two parts - sessionId, encryptedAuthEnvelope64
     List<String> responseParts = response.split(':');
-    // TODO unit test for parts
     if (responseParts.length != 2) {
       String abbreviated = response;
       if (response.length > 40) {
@@ -151,7 +157,6 @@ class RelayAuthVerifierESCR implements RelayAuthVerifier {
     }
 
     /// 3. Verify that `sessionId` is currently active
-    /// TODO unit test for active
     final bool active = await helper.isSessionActive(sessionId!);
     if (!active) {
       throw RAVE(
@@ -161,7 +166,6 @@ class RelayAuthVerifierESCR implements RelayAuthVerifier {
     }
 
     /// 4. Auth payload is json like this: `{'iv':'dsahjk','e':'ecehwuorhi'}`
-    /// TODO Unit tests for valid auth payload
     final Map encryptedAuthEnvelope;
     try {
       encryptedAuthEnvelope = jsonDecode(encryptedAuthEnvelopeJson);
@@ -192,7 +196,6 @@ class RelayAuthVerifierESCR implements RelayAuthVerifier {
     }
 
     /// 5. Use session's AES key and the provided IV to decrypt the auth envelope
-    /// TODO unit tests for failed to decrypt
     // Fetch the session's AES Key
     String aesKey64 = await helper.getRelayAuthAesKey(sessionId!);
 
@@ -217,10 +220,10 @@ class RelayAuthVerifierESCR implements RelayAuthVerifier {
       base64Decode(envelope64),
     );
 
-    /// TODO 6. Expect decrypted auth envelope to look like this:
+    /// Expect decrypted auth envelope to look like this:
     ///   ```
     ///   {
-    ///     'p':{'sid':'session-id','c':'challenge'},
+    ///     'p':{'sid':'session-id','c':'challenge','side':'<a|b>'},
     ///     's':'signature of p encoded as string',
     ///     'ha':'hashingAlgo',
     ///     'sa':'signingAlgo',
@@ -229,11 +232,23 @@ class RelayAuthVerifierESCR implements RelayAuthVerifier {
     ///   ```
     Map envelope = jsonDecode(envelopeJson);
 
-    /// TODO 7. Verify that the contents of the payload are as expected (session id, challenge)
+    /// Verify that the contents of the payload are as expected (session id, challenge, side)
     var signedPayload = envelope['p'];
     if (signedPayload == null || signedPayload is! Map) {
       throw RAVE(
         'Decrypted challenge response envelope does not contain signedPayload',
+        RAVEReason.malformedChallengeResponse,
+      );
+    }
+    var side = (signedPayload['side'] ?? '').toString().toLowerCase();
+    if (side == 'a') {
+      isSideA = true;
+    } else if (side == 'b') {
+      isSideA = false;
+    } else {
+      throw RAVE(
+        'signedPayload side ("${signedPayload['side']}")'
+        ' must be either "a" or "b"',
         RAVEReason.malformedChallengeResponse,
       );
     }
@@ -252,12 +267,15 @@ class RelayAuthVerifierESCR implements RelayAuthVerifier {
       );
     }
 
-    /// TODO 8. Fetch the public signing key
+    /// Fetch the public signing key
     String publicSigningKeyUri = envelope['sk'];
     String publicSigningKey =
         await helper.lookup(sessionId!, publicSigningKeyUri);
 
-    /// TODO 9. Verify the signature of the payload
+    atSign =
+        publicSigningKeyUri.substring(publicSigningKeyUri.lastIndexOf('@'));
+
+    /// Verify the signature of the payload
     final hashingAlgo = HashingAlgoType.values.byName(envelope['ha']);
     final signingAlgo = SigningAlgoType.values.byName(envelope['sa']);
 
@@ -273,15 +291,11 @@ class RelayAuthVerifierESCR implements RelayAuthVerifier {
     AtSigningResult atSigningResult = atChops.verify(input);
     bool verified = atSigningResult.result == true;
     if (!verified) {
-      logger.shout('verification FAILURE. ');
       throw RAVE(
         'Signatures did not match.',
         RAVEReason.signatureVerificationFailed,
       );
     }
-
-    atSign =
-        publicSigningKeyUri.substring(publicSigningKeyUri.lastIndexOf('@'));
 
     return verified;
   }
@@ -332,8 +346,6 @@ class RelayAuthVerifierESCR implements RelayAuthVerifier {
 
             try {
               /// 2. Receives `${sessionId}:${auth-payload-as-base64}\n` from client
-              /// TODO try-catch check here?
-              /// TODO unit test for this
               final response = String.fromCharCodes(authBuffer);
               logger.finer('received data: $response');
 

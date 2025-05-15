@@ -22,7 +22,6 @@ void main() {
     late AtEncryptionKeyPair signingKP;
     late AtEncryptionKeyPair wrongKP;
     late RelayAuthVerifyHelper helper;
-    late RelayAuthVerifierESCR verifier;
     late String wrongChallenge =
         AtChopsUtil.generateSymmetricKey(EncryptionKeyType.aes256).key;
 
@@ -44,19 +43,19 @@ void main() {
           .thenAnswer((_) => Future.value(relayAuthAesKey));
       when(() => helper.lookup(relaySessionId, publicSigningKeyUri))
           .thenAnswer((_) => Future.value(signingKP.atPublicKey.publicKey));
-
-      verifier = RelayAuthVerifierESCR('test', helper);
     });
 
     test('all is well', () async {
       RelayAuthenticatorESCR authenticator = RelayAuthenticatorESCR(
-          sessionId: relaySessionId,
-          relayAuthAesKey: relayAuthAesKey,
-          publicSigningKeyUri: publicSigningKeyUri,
-          publicSigningKey: signingKP.atPublicKey.publicKey,
-          privateSigningKey: signingKP.atPrivateKey.privateKey);
-      RelayAuthVerifyHelper helper = MockRelayAuthVerifyHelper();
-      RelayAuthVerifierESCR verifier = RelayAuthVerifierESCR('test', helper);
+        sessionId: relaySessionId,
+        relayAuthAesKey: relayAuthAesKey,
+        publicSigningKeyUri: publicSigningKeyUri,
+        publicSigningKey: signingKP.atPublicKey.publicKey,
+        privateSigningKey: signingKP.atPrivateKey.privateKey,
+        isSideA: false,
+      );
+      RelayAuthVerifierESCR verifier =
+          RelayAuthVerifierESCR('test all is well', helper);
 
       when(() => helper.isSessionActive(relaySessionId))
           .thenAnswer((_) => Future.value(true));
@@ -67,41 +66,55 @@ void main() {
 
       expect(verifier.atSign, isNull);
       expect(verifier.sessionId, isNull);
+      expect(verifier.isSideA, null);
 
-      await verifier.verifyChallengeResponse(
+      bool verified = await verifier.verifyChallengeResponse(
           authenticator.responseToChallenge(verifier.challenge));
 
+      expect(verified, true);
       expect(verifier.atSign, '@alice');
       expect(verifier.sessionId, relaySessionId);
+      expect(verifier.isSideA, false);
     });
 
     test('wrong signing key', () async {
       RelayAuthenticatorESCR authenticator = RelayAuthenticatorESCR(
-          sessionId: relaySessionId,
-          relayAuthAesKey: relayAuthAesKey,
-          publicSigningKeyUri: publicSigningKeyUri,
-          publicSigningKey: wrongKP.atPublicKey.publicKey,
-          privateSigningKey: wrongKP.atPrivateKey.privateKey);
+        sessionId: relaySessionId,
+        relayAuthAesKey: relayAuthAesKey,
+        publicSigningKeyUri: publicSigningKeyUri,
+        publicSigningKey: wrongKP.atPublicKey.publicKey,
+        privateSigningKey: wrongKP.atPrivateKey.privateKey,
+        isSideA: true,
+      );
 
-      expect(
+      RelayAuthVerifierESCR verifier =
+          RelayAuthVerifierESCR('test wrong signing key', helper);
+
+      await expectLater(
           verifier.verifyChallengeResponse(
               authenticator.responseToChallenge(verifier.challenge)),
           throwsA(isA<RAVE>().having((e) => e.reason, 'reason',
               RAVEReason.signatureVerificationFailed)));
 
-      expect(verifier.atSign, null);
+      expect(verifier.atSign, '@alice');
       expect(verifier.sessionId, relaySessionId);
+      expect(verifier.isSideA, true);
     });
 
     test('wrong AES key', () async {
       RelayAuthenticatorESCR authenticator = RelayAuthenticatorESCR(
-          sessionId: relaySessionId,
-          relayAuthAesKey: wrongAesKey,
-          publicSigningKeyUri: publicSigningKeyUri,
-          publicSigningKey: signingKP.atPublicKey.publicKey,
-          privateSigningKey: signingKP.atPrivateKey.privateKey);
+        sessionId: relaySessionId,
+        relayAuthAesKey: wrongAesKey,
+        publicSigningKeyUri: publicSigningKeyUri,
+        publicSigningKey: signingKP.atPublicKey.publicKey,
+        privateSigningKey: signingKP.atPrivateKey.privateKey,
+        isSideA: true,
+      );
 
-      expect(
+      RelayAuthVerifierESCR verifier =
+          RelayAuthVerifierESCR('test wrong AES key', helper);
+
+      await expectLater(
           verifier.verifyChallengeResponse(
               authenticator.responseToChallenge(verifier.challenge)),
           throwsA(isA<RAVE>()
@@ -109,17 +122,23 @@ void main() {
 
       expect(verifier.atSign, null);
       expect(verifier.sessionId, relaySessionId);
+      expect(verifier.isSideA, null);
     });
 
     test('wrong challenge', () async {
       RelayAuthenticatorESCR authenticator = RelayAuthenticatorESCR(
-          sessionId: relaySessionId,
-          relayAuthAesKey: relayAuthAesKey,
-          publicSigningKeyUri: publicSigningKeyUri,
-          publicSigningKey: signingKP.atPublicKey.publicKey,
-          privateSigningKey: signingKP.atPrivateKey.privateKey);
+        sessionId: relaySessionId,
+        relayAuthAesKey: relayAuthAesKey,
+        publicSigningKeyUri: publicSigningKeyUri,
+        publicSigningKey: signingKP.atPublicKey.publicKey,
+        privateSigningKey: signingKP.atPrivateKey.privateKey,
+        isSideA: false,
+      );
 
-      expect(
+      RelayAuthVerifierESCR verifier =
+          RelayAuthVerifierESCR('test wrong challenge', helper);
+
+      await expectLater(
           verifier.verifyChallengeResponse(
               authenticator.responseToChallenge(wrongChallenge)),
           throwsA(isA<RAVE>()
@@ -129,6 +148,7 @@ void main() {
 
       expect(verifier.atSign, null);
       expect(verifier.sessionId, relaySessionId);
+      expect(verifier.isSideA, false);
     });
   });
 }

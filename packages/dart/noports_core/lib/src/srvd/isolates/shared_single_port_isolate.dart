@@ -143,9 +143,9 @@ class SinglePortWorker extends RelayWorker {
             ' but authenticated is false');
       }
 
-      if (rav.sessionId == null || rav.atSign == null) {
+      if (rav.sessionId == null || rav.atSign == null || rav.isSideA == null) {
         throw Exception(
-            'Verified? But sessionId == ${rav.sessionId} and atSign == ${rav.atSign}');
+            'Verified? But sessionId == ${rav.sessionId} and atSign == ${rav.atSign} and isSideA == ${rav.isSideA}');
       }
       String sessionId = rav.sessionId!;
       String atSign = rav.atSign!;
@@ -158,7 +158,8 @@ class SinglePortWorker extends RelayWorker {
             ' which is not one of the atSigns (${si.atSignA}, ${si.atSignB})'
             ' for this session $sessionId');
       }
-      Side side = Side(socket, (atSign == si.atSignA));
+      Side side = Side(socket, rav.isSideA!);
+
       side.stream = verifiedSocketStream!;
 
       unawaited(si.connector.handleSingleConnection(side).catchError((err) {

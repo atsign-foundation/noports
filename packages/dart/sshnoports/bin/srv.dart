@@ -129,12 +129,24 @@ Future<void> main(List<String> args) async {
             if (privateSigningKey.isEmpty) {
               throw ArgumentError('No REMOTE_AUTH_ESCR_SIGNING_PRIVKEY in env');
             }
+            String isSideA =
+                (Platform.environment['REMOTE_AUTH_ESCR_IS_SIDE_A'] ?? '')
+                    .trim()
+                    .toLowerCase();
+            if (isSideA.isEmpty) {
+              throw ArgumentError('No REMOTE_AUTH_ESCR_IS_SIDE_A in env');
+            }
+            if (isSideA != 'true' && isSideA != 'false') {
+              throw ArgumentError('Env var REMOTE_AUTH_ESCR_IS_SIDE_A'
+                  ' must be "true" or "false"');
+            }
             relayAuthenticator = RelayAuthenticatorESCR(
               sessionId: sessionId,
               relayAuthAesKey: relayAuthAesKey,
               publicSigningKeyUri: publicSigningKeyUri,
               publicSigningKey: publicSigningKey,
               privateSigningKey: privateSigningKey,
+              isSideA: isSideA == 'true',
             );
             break;
         }

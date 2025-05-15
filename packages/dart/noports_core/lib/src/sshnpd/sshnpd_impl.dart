@@ -591,6 +591,7 @@ class SshnpdImpl with AtClientBindings, ApkamSigning implements Sshnpd {
               publicSigningKeyUri: publicSigningKeyUri,
               publicSigningKey: publicSigningKey,
               privateSigningKey: privateSigningKey,
+              isSideA: false,
             );
             break;
         }
@@ -865,11 +866,13 @@ class SshnpdImpl with AtClientBindings, ApkamSigning implements Sshnpd {
             break;
           case RelayAuthMode.escr:
             relayAuthenticator = RelayAuthenticatorESCR(
-                sessionId: req.sessionId,
-                relayAuthAesKey: req.relayAuthAesKey!,
-                publicSigningKeyUri: publicSigningKeyUri,
-                publicSigningKey: publicSigningKey,
-                privateSigningKey: privateSigningKey);
+              sessionId: req.sessionId,
+              relayAuthAesKey: req.relayAuthAesKey!,
+              publicSigningKeyUri: publicSigningKeyUri,
+              publicSigningKey: publicSigningKey,
+              privateSigningKey: privateSigningKey,
+              isSideA: false,
+            );
             break;
         }
       }
