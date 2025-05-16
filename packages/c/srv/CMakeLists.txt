@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.19)
 set(CMAKE_C_STANDARD 99)
 cmake_policy(SET CMP0135 NEW)
 
-project(srv VERSION 1.0.7 LANGUAGES C)
+project(srv VERSION 1.0.8 LANGUAGES C)
 
 # 1. Variables - you are free to edit anything in this step
 

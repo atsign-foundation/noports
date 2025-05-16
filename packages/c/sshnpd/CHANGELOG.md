@@ -1,3 +1,7 @@
+## 1.0.8
+
+- fix: version number in version.h
+
 ## 1.0.7
 
 - fix: switch statement fallthrough warning

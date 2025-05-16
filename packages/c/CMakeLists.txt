@@ -11,7 +11,7 @@ set(ATSDK_MBEDTLS_PATH ${NOPORTS_MBEDTLS_PATH})
 cmake_minimum_required(VERSION 3.19)
 set(CMAKE_C_STANDARD 99)
 cmake_policy(SET CMP0135 NEW)
-project(noports VERSION 1.0.7 LANGUAGES C)
+project(noports VERSION 1.0.8 LANGUAGES C)
 
 include("${CMAKE_CURRENT_LIST_DIR}/cmake/CPackSetup.cmake")
 
