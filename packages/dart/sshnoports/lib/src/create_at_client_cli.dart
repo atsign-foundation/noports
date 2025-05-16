@@ -14,6 +14,14 @@ Future<AtClient> createAtClientCli({
 }) async {
   // Now on to the atPlatform startup
   //onboarding preference builder can be used to set onboardingService parameters
+  int rootPort = 64;
+  if (rootDomain.contains(':')) {
+    rootPort = int.parse(rootDomain.split(':')[1]);
+    print(rootPort);
+    print(rootDomain);
+    rootDomain = rootDomain.split(':')[0];
+    print(rootDomain);
+  }
   AtOnboardingPreference atOnboardingConfig = AtOnboardingPreference()
     ..hiveStoragePath = storagePath
     ..namespace = namespace
@@ -23,6 +31,7 @@ Future<AtClient> createAtClientCli({
     ..fetchOfflineNotifications = false
     ..atKeysFilePath = atKeysFilePath
     ..atProtocolEmitted = Version(2, 0, 0)
+    ..rootPort = rootPort
     ..rootDomain = rootDomain;
 
   AtOnboardingService onboardingService = AtOnboardingServiceImpl(
