@@ -17,10 +17,7 @@ Future<AtClient> createAtClientCli({
   int rootPort = 64;
   if (rootDomain.contains(':')) {
     rootPort = int.parse(rootDomain.split(':')[1]);
-    print(rootPort);
-    print(rootDomain);
     rootDomain = rootDomain.split(':')[0];
-    print(rootDomain);
   }
   AtOnboardingPreference atOnboardingConfig = AtOnboardingPreference()
     ..hiveStoragePath = storagePath
