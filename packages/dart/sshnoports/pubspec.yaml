@@ -31,6 +31,11 @@ dependency_overrides:
     git:
       ref: gkc/show-aliases-in-usage
       url: https://github.com/gkc/args
+  at_cli_commons:
+    git:    
+      ref: origin/cc-rootdomain-port
+      url: https://github.com/atsign-foundation/at_libraries
+      path: packages/at_cli_commons
 
 dev_dependencies:
   lints: ^5.1.1
