@@ -82,7 +82,6 @@ class SettingsView extends StatelessWidget {
                           top: Sizes.p28,
                         ),
                         child: ListView(children: const [
-                          SettingsErrorHint(),
                           DefaultRelaySection(),
                           gapH25,
                           DashboardSection(),
