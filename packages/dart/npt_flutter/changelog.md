@@ -1,8 +1,9 @@
 ## 1.3.0+16
 
-- **FIX**: Settings hint message widget removed since a failed profile load is an expected behavior and not a bug.
-- **FIX**: Version number visible on settings navigation rail by making it scrollable on windows.
 - **FIX**: Prevented MissingPluginException on Windows by calling setVisibleOnAllWorkspaces only on macOS in TrayManager initState
+- **FIX**: Version number visible on settings navigation rail by making it scrollable on windows.
+- **FIX**: Settings hint message widget removed since a failed profile load is an expected behavior and not a bug.
+- **FIX**: authorization icon is now greyed out when it's not available to be pressed on a non-dashboard screen and primary color when app is on the authorization screen.
 - **FEAT**: demo profile is downloaded and added to profile screen by pressing the try now button.
 - **FEAT**: atSigns can be switched in the settings screen.
 

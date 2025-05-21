@@ -9,6 +9,7 @@ import 'package:npt_flutter/pages/sub_nav_cubit.dart';
 import 'package:npt_flutter/routes.dart';
 import 'package:npt_flutter/styles/app_color.dart';
 import 'package:npt_flutter/styles/style_constants.dart';
+import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 import '../styles/sizes.dart';
 
@@ -32,6 +33,7 @@ class _NptAppBarState extends State<NptAppBar> {
     return BlocBuilder<SubNavCubit, String>(
       builder: (context, state) {
         final isDashboard = state == HomeRoutes.dashboard;
+        final isAuthorization = state == HomeRoutes.authorisation;
         return SizedBox(
           width: Sizes.p853,
           child: AppBar(
@@ -154,12 +156,15 @@ class _NptAppBarState extends State<NptAppBar> {
                     ),
                     IgnorePointer(
                       ignoring: !isDashboard,
-                      child: AnimatedOpacity(
-                        duration: const Duration(milliseconds: 300),
-                        curve: Curves.easeInOut,
-                        opacity: isDashboard ? 1 : 0,
-                        child: const AuthorisationAppBarButton(),
-                      ),
+                      child: isDashboard
+                          ? const AuthorisationAppBarButton()
+                          : IconButton(
+                              onPressed: () {},
+                              icon: PhosphorIcon(
+                                PhosphorIcons.key(),
+                                color: isAuthorization ? AppColor.primaryColor : Colors.grey,
+                              ),
+                            ),
                     ),
                   ],
                 ),
