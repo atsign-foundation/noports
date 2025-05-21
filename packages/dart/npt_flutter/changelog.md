@@ -1,8 +1,10 @@
 ## 1.3.0+16
-- **FIX**: Version number vissible on settings navigation rail by making it scrollable on windows.
+
+- **FIX**: Settings hint message widget removed since a failed profile load is an expected behavior and not a bug.
+- **FIX**: Version number visible on settings navigation rail by making it scrollable on windows.
 - **FIX**: Prevented MissingPluginException on Windows by calling setVisibleOnAllWorkspaces only on macOS in TrayManager initState
 - **FEAT**: demo profile is downloaded and added to profile screen by pressing the try now button.
-- **FEAT**: atsigns can be switched in the settings screen.
+- **FEAT**: atSigns can be switched in the settings screen.
 
 ## 1.2.0+15
 
