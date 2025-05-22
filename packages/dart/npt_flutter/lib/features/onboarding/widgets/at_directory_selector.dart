@@ -3,6 +3,8 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:npt_flutter/constants.dart';
 import 'package:npt_flutter/features/onboarding/cubit/onboarding_cubit.dart';
 import 'package:npt_flutter/features/onboarding/util/atsign_manager.dart';
+import 'package:npt_flutter/styles/app_color.dart';
+import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 class AtDirectorySelector extends StatefulWidget {
   const AtDirectorySelector({
@@ -63,7 +65,10 @@ class _AtDirectorySelectorState extends State<AtDirectorySelector> {
                               controller.open();
                             }
                           },
-                          icon: const Icon(Icons.arrow_drop_down),
+                          icon: Icon(
+                            PhosphorIcons.caretDown(),
+                            color: AppColor.primaryColor,
+                          ),
                         );
                       },
                     ),

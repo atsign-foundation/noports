@@ -24,7 +24,8 @@ class CustomCard extends StatelessWidget {
   const CustomCard.settingsRail({
     required this.child,
     this.height = Sizes.p436,
-    this.width = Sizes.p234,
+    // this.width = Sizes.p240,
+    this.width = 255,
     super.key,
   })  : color = Colors.white,
         radiusTopLeft = const Radius.circular(Sizes.p10),

@@ -7,6 +7,7 @@ import 'package:npt_flutter/features/settings/widgets/language_section.dart';
 import 'package:npt_flutter/widgets/custom_card.dart';
 import 'package:npt_flutter/widgets/custom_text_button.dart';
 import 'package:npt_flutter/widgets/spinner.dart';
+import 'package:npt_flutter/widgets/switch_atsign_button.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 
 import '../../../styles/sizes.dart';
@@ -42,12 +43,14 @@ class SettingsView extends StatelessWidget {
                         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                         children: [
                           gapH10,
+                          const SwitchAtsignButton(),
                           const CustomTextButton.backUpYourKey(),
                           const CustomTextButton.faq(),
                           const CustomTextButton.email(),
                           const CustomTextButton.discord(),
                           const CustomTextButton.feedback(),
                           const CustomTextButton.privacyPolicy(),
+                          // const CustomTextButton.switchAtsign(),
                           const CustomTextButton.signOut(),
                           gapH13,
                           FutureBuilder(

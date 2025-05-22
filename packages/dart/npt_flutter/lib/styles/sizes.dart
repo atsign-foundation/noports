@@ -45,6 +45,7 @@ class Sizes {
   static const p100 = 100.0;
   static const p103 = 103.0;
   static const p108 = 108.0;
+  static const p110 = 110.0;
   static const p143 = 143.0;
   static const p150 = 150.0;
   static const p175 = 175.0;
@@ -54,11 +55,12 @@ class Sizes {
   static const p200 = 200.0;
   static const p210 = 210.0;
   static const p180 = 180.0;
-  static const p234 = 234.0;
+  static const p240 = 240.0;
   // static const p247 = 247.0;
   static const p280 = 280.0;
   static const p295 = 295.0;
   static const p300 = 300.0;
+  static const p322 = 322.0;
   static const p400 = 400.0;
   static const p436 = 436.0;
   static const p450 = 450.0;

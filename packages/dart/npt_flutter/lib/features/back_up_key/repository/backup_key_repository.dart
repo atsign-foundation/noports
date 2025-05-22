@@ -12,6 +12,8 @@ class BackUpKeyRepository {
   bool _fromJson(Map<String, dynamic> json) => json['status'];
   Map<String, dynamic> _toJson(bool status) => {'status': status};
 
+  /// This method is used to get the backup key status from the atClient.
+  /// If it is already backed up, it returns false, if not or if there is an error, it returns true.
   Future<bool> getBackupKeyStatus() async {
     AtClient atClient = AtClientManager.getInstance().atClient;
     String? atSign = atClient.getCurrentAtSign();

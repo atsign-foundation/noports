@@ -13,7 +13,7 @@ import 'package:npt_flutter/widgets/custom_snack_bar.dart';
 
 class BackupKeyCubit extends Cubit<bool> {
   BackupKeyCubit() : super(true);
-
+  //
   Future<bool> getBackupKeyStatus() async {
     final result = await BackUpKeyRepository().getBackupKeyStatus();
     emit(result);

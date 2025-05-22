@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:npt_flutter/features/onboarding/cubit/onboarding_cubit.dart';
 import 'package:npt_flutter/features/onboarding/util/atsign_manager.dart';
+import 'package:npt_flutter/styles/app_color.dart';
 import 'package:npt_flutter/util/form_validator.dart';
 import 'package:npt_flutter/util/general_extensions.dart';
+import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 class AtsignSelector extends StatefulWidget {
   const AtsignSelector({
@@ -72,7 +74,10 @@ class _AtsignSelectorState extends State<AtsignSelector> {
                               controller.open();
                             }
                           },
-                          icon: const Icon(Icons.arrow_drop_down),
+                          icon: Icon(
+                            PhosphorIcons.caretDown(),
+                            color: AppColor.primaryColor,
+                          ),
                         );
                       },
                     ),

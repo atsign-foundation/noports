@@ -73,3 +73,10 @@ class LanguageUtil {
     }
   }
 }
+
+/// Constants for string that does not need to be localized.
+class StringConst {
+  static const String ampersand = '@';
+  static const String atsign_client = 'atsign_client';
+  static const String myNoPorts = 'My NoPorts';
+}

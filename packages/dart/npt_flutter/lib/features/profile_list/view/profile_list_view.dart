@@ -4,12 +4,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:flutter_svg/svg.dart';
-import 'package:npt_flutter/app.dart';
-import 'package:npt_flutter/features/back_up_key/cubit/backup_key_cubit.dart';
-import 'package:npt_flutter/features/back_up_key/widgets/backup_key_alert_dialog.dart';
+import 'package:npt_flutter/features/back_up_key/util/backup_key_utils.dart';
 import 'package:npt_flutter/features/profile/profile.dart';
 import 'package:npt_flutter/features/profile/view/profile_header_view.dart';
 import 'package:npt_flutter/features/profile_list/profile_list.dart';
+import 'package:npt_flutter/features/profile_list/widgets/demo_profile_info_widget.dart';
 import 'package:npt_flutter/features/profile_list/widgets/profile_list_failed_load_content.dart';
 import 'package:npt_flutter/styles/sizes.dart';
 import 'package:npt_flutter/widgets/spinner.dart';
@@ -28,16 +27,7 @@ class _ProfileListViewState extends State<ProfileListView> {
   @override
   void initState() {
     WidgetsBinding.instance.addPostFrameCallback((_) async {
-      final shouldBackupKey = await App.navState.currentContext!.read<BackupKeyCubit>().getBackupKeyStatus();
-
-      if (shouldBackupKey == false && mounted) {
-        showDialog(
-          context: context,
-          barrierDismissible: false,
-          barrierColor: Colors.black.withValues(alpha: 0.2),
-          builder: (context) => const BackupKeyAlertDialog(),
-        );
-      }
+      await BackupKeyUtils().BackupKeyStatusCheck();
     });
     super.initState();
   }
@@ -129,7 +119,11 @@ class _ProfileListViewState extends State<ProfileListView> {
                                           style: bodyMedium?.copyWith(fontSize: Sizes.p16),
                                           textAlign: TextAlign.center,
                                         ),
-                                      )
+                                      ),
+                                      const Positioned(
+                                        top: 1,
+                                        child: DemoProfileInfoWidget(),
+                                      ),
                                     ],
                                   ),
                             BlocBuilder<SyncCubit, bool>(buildWhen: (previous, current) {

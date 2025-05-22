@@ -167,4 +167,26 @@ class Export {
 
     convertExternalDataSourceToProfile(fileType: profileFileType, contents: result);
   }
+
+  /// Fetches and returns the demo profile JSON from the provided Google Drive link.
+  /// Returns a Map<String, dynamic> containing the JSON content.
+  static Future<String> getDemoProfile() async {
+    // The Google Drive file's direct download URL
+    const fileId = '1qb0YrpRaGstLSBKoLJ4wwVUIMO5zCaMq';
+    const url = 'https://drive.google.com/uc?export=download&id=$fileId';
+
+    try {
+      final client = HttpClient();
+      final request = await client.getUrl(Uri.parse(url));
+      final response = await request.close();
+      if (response.statusCode != 200) {
+        throw Exception('Failed to download demo profile: HTTP ${response.statusCode}');
+      }
+      final content = await response.transform(utf8.decoder).join();
+
+      return content;
+    } catch (e) {
+      throw Exception('Failed to fetch demo profile: $e');
+    }
+  }
 }

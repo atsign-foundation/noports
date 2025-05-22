@@ -8,10 +8,10 @@ import 'package:npt_flutter/features/back_up_key/cubit/backup_key_cubit.dart';
 import 'package:npt_flutter/features/onboarding/cubit/onboarding_cubit.dart';
 import 'package:npt_flutter/features/onboarding/util/atsign_manager.dart';
 import 'package:npt_flutter/features/onboarding/util/pre_offboard.dart';
-import 'package:npt_flutter/features/onboarding/widgets/onboarding_button.dart';
 import 'package:npt_flutter/home_wrapper_widget.dart';
 import 'package:npt_flutter/pages/loading_page.dart';
 import 'package:npt_flutter/routes.dart';
+import 'package:npt_flutter/util/at_client_methods.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../styles/sizes.dart';
@@ -21,65 +21,42 @@ class CustomTextButton extends StatelessWidget {
   const CustomTextButton({
     super.key,
     required this.iconData,
-    required this.title,
     required this.type,
   });
 
   const CustomTextButton.email({
     super.key,
   })  : iconData = Icons.email_outlined,
-        title = 'Email',
         type = CustomListTileType.email;
 
   const CustomTextButton.discord({
     super.key,
   })  : iconData = Icons.discord,
-        title = 'Discord',
         type = CustomListTileType.discord;
 
   const CustomTextButton.faq({
     super.key,
   })  : iconData = Icons.help_center_outlined,
-        title = 'FAQ',
         type = CustomListTileType.faq;
 
   const CustomTextButton.privacyPolicy({
     super.key,
   })  : iconData = Icons.account_balance_wallet_outlined,
-        title = 'Privacy Policy',
         type = CustomListTileType.privacyPolicy;
 
-  // const CustomListTile.switchAtsign(
-  //     {this.iconData = Icons.switch_account_outlined,
-  //     this.title = 'Switch atsign',
-  //     this.type = CustomListTileType.switchAtsign,
-  //     super.key});
-
   const CustomTextButton.backUpYourKey(
-      {this.iconData = Icons.bookmark_outline,
-      this.title = 'Back Up Your Keys',
-      this.type = CustomListTileType.backupYourKey,
-      super.key});
+      {this.iconData = Icons.bookmark_outline, this.type = CustomListTileType.backupYourKey, super.key});
 
   const CustomTextButton.resetAtsign(
-      {this.iconData = Icons.rotate_right,
-      this.title = 'Reset App',
-      this.type = CustomListTileType.resetAtsign,
-      super.key});
+      {this.iconData = Icons.rotate_right, this.type = CustomListTileType.resetAtsign, super.key});
   const CustomTextButton.signOut(
-      {this.iconData = Icons.logout_outlined,
-      this.title = 'Sign Out',
-      this.type = CustomListTileType.signOut,
-      super.key});
+      {this.iconData = Icons.logout_outlined, this.type = CustomListTileType.signOut, super.key});
 
   const CustomTextButton.feedback(
-      {this.iconData = Icons.feedback_outlined,
-      this.title = 'Feedback',
-      this.type = CustomListTileType.feedback,
-      super.key});
+      {this.iconData = Icons.feedback_outlined, this.type = CustomListTileType.feedback, super.key});
 
   final IconData iconData;
-  final String title;
+
   final CustomListTileType type;
 
   @override
@@ -117,18 +94,13 @@ class CustomTextButton extends StatelessWidget {
             throw Exception('Could not launch $url');
           }
           break;
-        // case CustomListTileType.switchAtsign:
-        //   if (context.mounted) {
-        //     await showModalBottomSheet(context: context, builder: (context) => const SwitchAtSignBottomSheet());
-        //   }
-        //   break;
         case CustomListTileType.backupYourKey:
           if (context.mounted) {
             context.read<BackupKeyCubit>().backUpKeys();
           }
           break;
         case CustomListTileType.resetAtsign:
-          final futurePreference = await loadAtClientPreference(rootDomain!);
+          final futurePreference = await AtClientMethods.loadAtClientPreference(rootDomain!);
           final apiKey = await Constants.appAPIKey;
           if (context.mounted) {
             final result = await AtOnboarding.reset(
@@ -239,7 +211,6 @@ enum CustomListTileType {
   discord,
   faq,
   privacyPolicy,
-  // switchAtsign,
   backupYourKey,
   resetAtsign,
   feedback,

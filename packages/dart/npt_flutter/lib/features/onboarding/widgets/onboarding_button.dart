@@ -23,21 +23,11 @@ import 'package:npt_flutter/features/onboarding/widgets/onboarding_apkam_dialog.
 import 'package:npt_flutter/features/onboarding/widgets/onboarding_dialog.dart';
 import 'package:npt_flutter/routes.dart';
 import 'package:npt_flutter/styles/sizes.dart';
+import 'package:npt_flutter/util/at_client_methods.dart';
 import 'package:npt_flutter/util/language.dart';
-import 'package:path_provider/path_provider.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 final strings = AppLocalizations.of(App.navState.currentContext!)!;
-Future<AtClientPreference> loadAtClientPreference(String rootDomain) async {
-  var dir = await getApplicationSupportDirectory();
-
-  return AtClientPreference()
-    ..rootDomain = rootDomain
-    ..namespace = Constants.namespace
-    ..hiveStoragePath = dir.path
-    ..commitLogPath = dir.path
-    ..isLocalStoreRequired = true;
-}
 
 class OnboardingButton extends StatefulWidget {
   const OnboardingButton({
@@ -134,7 +124,7 @@ class _OnboardingButtonState extends State<OnboardingButton> {
     var atSigns = await KeyChainManager.getInstance().getAtSignListFromKeychain();
     var apiKey = await Constants.appAPIKey;
     var config = AtOnboardingConfig(
-      atClientPreference: await loadAtClientPreference(rootDomain),
+      atClientPreference: await AtClientMethods.loadAtClientPreference(rootDomain),
       rootEnvironment: RootEnvironment.Production,
       domain: rootDomain,
       appAPIKey: apiKey,
@@ -280,7 +270,7 @@ class _OnboardingButtonState extends State<OnboardingButton> {
           final statusStream = util.uploadAtKeysFile(atsign);
           result = await handleFileUploadStatusStream(statusStream, atsign);
         } else {
-          final atClientPrefernce = await loadAtClientPreference(
+          final atClientPrefernce = await AtClientMethods.loadAtClientPreference(
             util.config.atClientPreference.rootDomain,
           );
           if (!mounted) return null;
