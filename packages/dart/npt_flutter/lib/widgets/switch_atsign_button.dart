@@ -1,14 +1,17 @@
+import 'dart:developer';
+
 import 'package:at_onboarding_flutter/at_onboarding_flutter.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:npt_flutter/app.dart';
 import 'package:npt_flutter/constants.dart';
 import 'package:npt_flutter/features/back_up_key/util/backup_key_utils.dart';
 import 'package:npt_flutter/features/onboarding/cubit/onboarding_cubit.dart';
-import 'package:npt_flutter/features/profile_list/bloc/profile_list_bloc.dart';
+import 'package:npt_flutter/features/onboarding/util/post_onboard.dart';
+import 'package:npt_flutter/features/onboarding/util/pre_offboard.dart';
 import 'package:npt_flutter/features/profile_list/cubit/profiles_running_cubit.dart';
 import 'package:npt_flutter/features/profile_list/widgets/connected_profiles_dialog.dart';
-import 'package:npt_flutter/features/settings/bloc/settings_bloc.dart';
 import 'package:npt_flutter/styles/app_color.dart';
 import 'package:npt_flutter/styles/sizes.dart';
 import 'package:npt_flutter/util/at_client_methods.dart';
@@ -37,6 +40,7 @@ class SwitchAtsignButton extends StatelessWidget {
           trailing: PhosphorIcon(PhosphorIcons.caretUpDown()),
           onTap: () async {
             var isProfileConnected = false;
+
             if (context.read<ProfilesRunningCubit>().state.socketConnectors.keys.toSet().isNotEmpty) {
               isProfileConnected = await showDialog(
                 barrierDismissible: false,
@@ -66,13 +70,17 @@ class SwitchAtsignButton extends StatelessWidget {
                     .toList(),
               );
               if (selectedAtSign != null) {
+                final currentContext = App.navState.currentContext!;
                 final rootDomain =
-                    context.read<OnboardingCubit>().getRootDomain(); // Or get from your state/cubit if needed
+                    currentContext.read<OnboardingCubit>().getRootDomain(); // Or get from your state/cubit if needed
                 final atClientPreference = await AtClientMethods.loadAtClientPreference(rootDomain);
+                await preSignout();
                 final result = await AtOnboarding.changePrimaryAtsign(atsign: selectedAtSign);
-                if (result && context.mounted) {
+
+                if (result) {
                   final onboardingResult = await AtOnboarding.onboard(
-                    context: context,
+                    atsign: selectedAtSign,
+                    context: currentContext,
                     config: AtOnboardingConfig(
                       atClientPreference: atClientPreference,
                       domain: rootDomain,
@@ -80,12 +88,11 @@ class SwitchAtsignButton extends StatelessWidget {
                       appAPIKey: await Constants.appAPIKey,
                     ),
                   );
+                  log("onboarding result: $onboardingResult");
                   if (onboardingResult.status == AtOnboardingResultStatus.success) {
                     await BackupKeyUtils().BackupKeyStatusCheck();
-                    if (context.mounted) {
-                      context.read<ProfileListBloc>().add(const ProfileListLoadEvent());
-                      context.read<SettingsBloc>().add(const SettingsLoadEvent());
-                    }
+                    log("postOnbarding called");
+                    await postOnboard(selectedAtSign, rootDomain);
                   }
                 }
               }
