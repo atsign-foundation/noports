@@ -35,7 +35,7 @@
   "defaultRelaySelection": "Selección de Relay Predeterminado",
   "delete": "Eliminar",
   "demo": "Demo",
-  "demoDescription": "Introduce información de perfil de prueba en el nuevo perfil.",
+  "demoDescription": "Haz clic aquí para cargar el perfil de prueba.",
   "demoTextButton": "Probar Ahora",
   "deviceAtsign": "atSign del Dispositivo",
   "deviceAtsignDescription": "Este es el atSign asociado con tu dispositivo.",

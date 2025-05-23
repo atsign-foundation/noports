@@ -35,7 +35,7 @@
   "defaultRelaySelection": "默认 Relay 选择",
   "delete": "删除",
   "demo": "演示",
-  "demoDescription": "在新配置文件中填充测试配置文件信息。",
+  "demoDescription": "点击此处加载测试配置文件。",
   "demoTextButton": "立即试用",
   "deviceAtsign": "设备 atSign",
   "deviceAtsignDescription": "这是与您的设备关联的 atSign。",

@@ -35,7 +35,7 @@
   "defaultRelaySelection": "預設 Relay 選取",
   "delete": "刪除",
   "demo": "示範",
-  "demoDescription": "在新設定檔中填入測試設定檔資訊。",
+  "demoDescription": "點擊此處載入測試設定檔。",
   "demoTextButton": "立即試用",
   "deviceAtsign": "裝置 atSign",
   "deviceAtsignDescription": "這是與您的裝置相關聯的 atSign。",

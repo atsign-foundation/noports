@@ -35,7 +35,7 @@
    "defaultRelaySelection": "Default Relay Selection",
    "delete": "Delete",
    "demo": "Demo",
-   "demoDescription": "Populate test profile info in new profile.",
+   "demoDescription": "Click here to load the test profile.",
    "demoTextButton": "Try Now",
    "deviceAtsign": "Device atSign",
    "deviceAtsignDescription": "This is the atSign associated with your device.",
