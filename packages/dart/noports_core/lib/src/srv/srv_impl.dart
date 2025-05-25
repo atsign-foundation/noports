@@ -841,11 +841,13 @@ class SrvImplDart implements Srv<SocketConnector> {
       if (!candidateConnected) {
         logger.shout('Failed to authenticate to relay $attempts times');
         sc.close();
+        return;
       }
     } catch (e) {
       logger.shout(
           'Failed to connect to relay ($relayAddress:$streamingPort) with error : $e');
       sc.close();
+      return;
     }
 
     // Now, connect to the local host:port
@@ -992,21 +994,20 @@ class SrvImplDart implements Srv<SocketConnector> {
     SocketConnector sc,
     InternetAddress relayAddress,
   ) {
-    Mutex controlStreamMutex = Mutex();
-    sessionControlSocketStream.listen((event) async {
-      await _sessionControlSocketListener(
-          controlStreamMutex, event, sc, relayAddress);
-    }, onError: (e) {
-      logger.severe('controlSocket error: $e');
-      sc.close();
-    }, onDone: () {
-      logger.info('controlSocket done');
-      sc.close();
-    });
+    _startDaemonControlSocketListener(
+      sessionControlSocketStream,
+      sessionControlSocketSink,
+      sc,
+      relayAddress,
+    );
   }
 
-  void _daemonSideEncryptedSocket(Socket sessionControlSocket,
-      SocketConnector sc, InternetAddress relayAddress) {
+  void _daemonSideEncryptedSocket(
+    Stream<Uint8List> sessionControlSocketStream,
+    IOSink sessionControlSocketSink,
+    SocketConnector sc,
+    InternetAddress relayAddress,
+  ) {
     DataTransformer controlEncrypter =
         createEncrypter(sessionAESKeyString!, sessionIVString!);
     DataTransformer controlDecrypter =
