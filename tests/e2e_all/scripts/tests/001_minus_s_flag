@@ -24,10 +24,11 @@ daemonVersion="$1"
 clientVersion="$2"
 
 if [[ "$clientVersion" != "d:current" ]]; then
+  logInfo "    N/A - client version \"$clientVersion\" is not d:current"
   exit 50 # test rig interprets this exit status as 'test was not applicable'
 fi
 
-if [[ "${daemonVersion:0:1}" == "c" && $(versionIsLessThan "$clientVersion" "d:5.3.0") ]]; then
+if [[ "${daemonVersion:0:1}" == "c" && $(versionIsLessThan "$clientVersion" "d:5.3.0") == "true" ]]; then
   logInfo "    N/A C daemon is not compatible with this client"
   exit 50
 fi

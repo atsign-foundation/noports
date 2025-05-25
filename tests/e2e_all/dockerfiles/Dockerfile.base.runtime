@@ -1,0 +1,31 @@
+# Dockerfile.base-runtime
+FROM debian:stable-slim@sha256:5484adc33b4c352c5a9f4c4ae295fc49aed1cb54a7a0712a1b29674fb6f4f10f
+
+ENV USER=atsign
+ENV HOMEDIR=/${USER}
+ENV USER_ID=1024
+ENV GROUP_ID=1024
+
+RUN set -eux ; \
+    apt-get update ; \
+    apt-get install -y openssh-server sudo; \
+    groupadd --gid ${GROUP_ID} ${USER} ; \
+    useradd --system --shell /bin/bash --home ${HOMEDIR} --uid ${USER_ID} --gid ${GROUP_ID} ${USER} ; \
+    usermod -aG sudo ${USER} ; \
+    mkdir -p ${HOMEDIR}/.ssh ${HOMEDIR}/.atsign/keys ; \
+    touch ${HOMEDIR}/.ssh/authorized_keys ; \
+    ssh-keygen -t ed25519 -a 100 -f ${HOMEDIR}/.ssh/id_ed25519 -q -N '' ; \
+    cat ${HOMEDIR}/.ssh/id_ed25519.pub >> ${HOMEDIR}/.ssh/authorized_keys ; \
+    chmod 700 ${HOMEDIR}/.ssh ; \
+    chmod 644 ${HOMEDIR}/.ssh/authorized_keys ; \
+    chmod 600 ${HOMEDIR}/.ssh/id_ed25519 ; \
+    chmod 644 ${HOMEDIR}/.ssh/id_ed25519.pub ; \
+    sed -i '$ a %sudo ALL=(ALL:ALL) NOPASSWD:ALL' /etc/sudoers ; \
+    sed -E -i 's|^#?(PasswordAuthentication)\s.*|\1 no|' /etc/ssh/sshd_config ; \
+    sed -i 's/#ListenAddress 0.0.0.0/ListenAddress localhost/g' /etc/ssh/sshd_config ; \
+    chown -R ${USER}:${USER} ${HOMEDIR} ;
+
+USER ${USER}
+WORKDIR ${HOMEDIR}
+
+CMD sudo service ssh start

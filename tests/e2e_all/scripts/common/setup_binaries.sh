@@ -66,9 +66,20 @@ allVersions="$daemonVersions $clientVersions"
 uniqueVersions=$(for ver in $allVersions; do echo "$ver"; done | sort -u | tr "\n" " ")
 
 # Binaries for named versions will not be re-downloaded but will be linked
-if [ $allowParallelization == "true" ] && command -v parallel >/dev/null 2>&1; then
-  parallel --jobs 2 \
-    "source $testScriptsDir/common/common_functions.include.sh && setup_type_and_version" ::: $uniqueVersions
+if [ $allowParallelization == "true" ]; then
+  pids=()
+  for typeAndVersion in $uniqueVersions; do
+    setup_type_and_version $typeAndVersion &
+    pid=$!
+    pids+=($pid)
+  done
+  for pid in "${pids[@]}"; do
+    wait $pid
+    if [ $? -ne 0 ]; then
+      logErrorAndReport "Error: setup_type_and_version failed with exit code $?"
+      exit 1
+    fi
+  done
 else
   for typeAndVersion in $uniqueVersions; do
     setup_type_and_version $typeAndVersion

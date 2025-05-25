@@ -12,6 +12,7 @@ typedef SrvGenerator<T> = Srv<T> Function(
   bool multi,
   bool detached,
   Duration timeout,
+  Duration? controlChannelHeartbeat,
 });
 
 enum SupportedSshClient {

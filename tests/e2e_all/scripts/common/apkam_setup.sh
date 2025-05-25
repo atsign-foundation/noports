@@ -86,6 +86,11 @@ logInfo "Doing APKAM enrollment for $daemonAtSign daemon"
 enroll "$daemonAtSign" daemon || exit 1
 
 logInfo
+atKeysDir="$testRuntimeDir/keys"
+logInfo "Copying all contents in "$(getApkamKeysDir)" to $atKeysDir"
+cp $(getApkamKeysDir)/* "$atKeysDir" || exit 1
+
+logInfo
 logInfo "apkam_setup.sh complete"
 
 exit 0

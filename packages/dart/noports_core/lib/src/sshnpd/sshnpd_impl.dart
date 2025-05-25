@@ -143,10 +143,12 @@ class SshnpdImpl with AtClientBindings, ApkamSigning implements Sshnpd {
         DaemonFeature.acceptsPublicKeys.name: addSshPublicKeys,
         DaemonFeature.supportsPortChoice.name: true,
         DaemonFeature.adjustableTimeout.name: true,
+        DaemonFeature.controlChannelHeartbeats.name: true,
         DaemonFeature.supportsRamEscr.name: true,
       },
       'authModes': RelayAuthMode.values.map((c) => c.name).toList(),
       'allowedServices': permitOpen,
+      'npCpVersion': DaemonFeature.latestVersion.toString(),
     };
   }
 

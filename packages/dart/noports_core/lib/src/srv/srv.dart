@@ -42,6 +42,13 @@ abstract class Srv<T> {
   /// How long to keep the SocketConnector open if there have been no connections
   abstract final Duration timeout;
 
+  /// How frequently to send heartbeats over the control channel.
+  ///
+  /// Heartbeats are an attempt to persuade over-zealous network
+  /// intermediaries that the control channel shouldn't be closed due to lack
+  /// of activity.
+  abstract final Duration? controlChannelHeartbeat;
+
   Future<T> run();
 
   // Can't use factory functions since Srv contains a generic type
@@ -58,6 +65,7 @@ abstract class Srv<T> {
     bool multi = false,
     bool detached = false,
     Duration timeout = DefaultArgs.srvTimeout,
+    Duration? controlChannelHeartbeat,
   }) {
     return SrvImplExec(
       streamingHost,
@@ -70,6 +78,7 @@ abstract class Srv<T> {
       sessionIVString: sessionIVString,
       multi: multi,
       timeout: timeout,
+      controlChannelHeartbeat: controlChannelHeartbeat,
     );
   }
 
@@ -86,6 +95,7 @@ abstract class Srv<T> {
     bool multi = false,
     bool detached = false,
     Duration timeout = DefaultArgs.srvTimeout,
+    Duration? controlChannelHeartbeat,
   }) {
     return SrvImplDart(
       streamingHost,
@@ -99,6 +109,7 @@ abstract class Srv<T> {
       multi: multi,
       detached: detached,
       timeout: timeout,
+      controlChannelHeartbeat: controlChannelHeartbeat,
     );
   }
 
@@ -115,6 +126,7 @@ abstract class Srv<T> {
     bool multi = false,
     bool detached = false,
     Duration timeout = DefaultArgs.srvTimeout,
+    Duration? controlChannelHeartbeat,
   }) {
     return SrvImplInline(
       streamingHost,
@@ -124,6 +136,7 @@ abstract class Srv<T> {
       sessionIVString: sessionIVString,
       multi: multi,
       timeout: timeout,
+      controlChannelHeartbeat: controlChannelHeartbeat,
     );
   }
 

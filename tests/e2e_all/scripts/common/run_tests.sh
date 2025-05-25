@@ -27,30 +27,48 @@ numClients=$(wc -w <<<"$clientVersions")
 numTestScripts=$(wc -w <<<"$testsToRun")
 totalNumTests=$((numDaemons * numClients * numTestScripts))
 
-# N.B. any variable used by this function must be explicitly set when called from GNU parallel
-run_tests_for_daemon() {
-  local daemonVersion="$1"
-  for testToRun in $testsToRun; do
-    for clientVersion in $clientVersions; do
-      "$testScriptsDir/common/run_single_test.sh" $clientVersion $daemonVersion $testToRun $timeoutDuration
+if [[ $allowParallelization == "true" ]]; then
+  # 1. Run the 001_minus_s_flag test in parallel for all client and daemon versions
+  listOfPids=()
+  for clientVersion in $clientVersions; do
+    for daemonVersion in $daemonVersions; do
+      "$testScriptsDir/common/run_single_test.sh" $clientVersion $daemonVersion '001_minus_s_flag' $timeoutDuration
+    done &
+    pid=$!
+    listOfPids+=($pid)
+    sleep 0.2
+  done
+  # Wait for all the 001_minus_s_flag tests to finish
+  for pid in "${listOfPids[@]}"; do
+    wait $pid
+    if [ $? -ne 0 ]; then
+      logErrorAndReport "001_minus_s_flag test failed with pid $pid, exiting because the rest of the tests depend on it"
+      exit 1
+    fi
+  done
+
+  # 2. Run the rest of the tests in parallel for all client and daemon versions
+  for clientVersion in $clientVersions; do
+    listOfPids=()
+    for testToRun in $testsToRun; do
+      for daemonVersion in $daemonVersions; do
+        if [ "$testToRun" == "001_minus_s_flag" ]; then
+          # Skip this test because it was already run above
+          continue
+        fi
+        "$testScriptsDir/common/run_single_test.sh" $clientVersion $daemonVersion $testToRun $timeoutDuration
+      done &
+      pid=$!
+      listOfPids+=($pid)
+      sleep 0.2
+    done
+    # Wait for all the tests to finish
+    for pid in "${listOfPids[@]}"; do
+      wait $pid
     done
   done
-}
-
-if [ $allowParallelization == "true" ] && command -v env_parallel >/dev/null 2>&1; then
-  logInfo "Found GNU parallel, running tests in parallel"
-  export -f run_tests_for_daemon
-  # Run a round of tests against each daemon in parallel
-  parallel --jobs 5 \
-    --timeout 3m \
-    --env run_tests_for_daemon \
-    "testScriptsDir='$testScriptsDir' && testsToRun='$testsToRun' && clientVersions='$clientVersions' && testScriptsDir='$testScriptsDir' && timeoutDuration='$timeoutDuration' && run_tests_for_daemon" \
-    ::: $daemonVersions
 else
   # The old way of running e2e tests - no parallelization
-  if [ $allowParallelization == "true" ]; then
-    logWarning "Unable to find GNU parallel, running tests serially :("
-  fi
   for daemonVersion in $daemonVersions; do
     for testToRun in $testsToRun; do
       for clientVersion in $clientVersions; do

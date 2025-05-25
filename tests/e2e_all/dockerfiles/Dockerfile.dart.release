@@ -1,0 +1,44 @@
+FROM debian:stable-slim@sha256:5484adc33b4c352c5a9f4c4ae295fc49aed1cb54a7a0712a1b29674fb6f4f10f AS buildimage
+
+ENV URL="https://api.github.com/repos/atsign-foundation/noports/releases/latest"
+ENV URLP="https://github.com/atsign-foundation/noports/releases/download"
+ENV BUILD_DIR=/app
+ENV OUTPUT_DIR=/output
+
+ARG release=latest
+
+RUN apt-get update && \
+    apt-get install -y wget dpkg curl && \
+    mkdir -p ${BUILD_DIR} ${OUTPUT_DIR} && \
+    cd ${BUILD_DIR} && \
+    case "$(dpkg --print-architecture)" in \
+    amd64) ARCH="x64";; \
+    armhf) ARCH="arm";; \
+    arm64) ARCH="arm64";; \
+    riscv64) ARCH="riscv64";; \
+    esac && \
+    if [ -z ${release} ] || [ "${release}" = 'latest' ]; then \
+        LATEST_VERSION=$(curl --silent ${URL} | grep -Po '"tag_name": "\Kv.*?(?=")') && \
+        VERSION=${LATEST_VERSION}; \
+    else \
+        VERSION=${release}; \
+    fi && \
+    wget "${URLP}/${VERSION}/sshnp-linux-${ARCH}.tgz" && \
+    tar -xvf sshnp-linux-${ARCH}.tgz && \
+    rm sshnp-linux-${ARCH}.tgz && \
+    cd sshnp && \
+    mv -f at_activate install.sh np_admin npp_atserver npp_file npt srv srvd sshnp sshnpd ${OUTPUT_DIR} || true
+
+FROM atsigncompany/noports_e2e_all_base_runtime:latest AS runtime
+
+ENV USER=atsign
+ENV HOMEDIR=/${USER}
+ENV USER_ID=1024
+ENV GROUP_ID=1024
+
+COPY --from=buildimage /output/ /usr/local/bin/
+
+USER ${USER}
+WORKDIR ${HOMEDIR}
+
+CMD sudo service ssh start

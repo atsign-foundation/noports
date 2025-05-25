@@ -9,7 +9,7 @@
 # as of 5th Feb 2024 - Will check state as 3.3 Stable is released
 #FROM dart:beta-sdk AS buildimage
 
-FROM dart:3.8.0@sha256:945277de3e08fbd3ca804d33e7c3b5c3098922846849646f85187f0ce56a9277  AS buildimage
+FROM dart:3.8.0@sha256:132fea97bf17a4e50202ebf282f29f0e798f269ffd2d03f5179dec066727f676  AS buildimage
 ARG TARGETARCH
 ENV PACKAGEDIR=packages/dart/sshnoports
 ENV OPENSSH=tools/static-openssh

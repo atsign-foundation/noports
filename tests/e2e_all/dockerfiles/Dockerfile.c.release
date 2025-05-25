@@ -1,0 +1,49 @@
+FROM atsigncompany/cbuildimage:CMake-3.31.4@sha256:0b443da3bccd746e23323eb374d19ba156b497ecbee6c5e84f97d77954515cbf AS buildimage
+
+ENV URL="https://api.github.com/repos/atsign-foundation/noports/releases/latest"
+ENV URLP="https://github.com/atsign-foundation/noports/releases/download"
+ENV BUILD_DIR=/app
+ENV OUTPUT_DIR=/output
+
+ARG release
+
+RUN set -eux ; \
+    apt-get update ; \
+    apt-get install -y wget dpkg curl gcc ; \
+    mkdir -p ${BUILD_DIR} ${OUTPUT_DIR} ; \
+    cd ${BUILD_DIR} ; \
+    case "$(dpkg --print-architecture)" in \
+        amd64) ARCH="x64";; \
+        armhf) ARCH="arm";; \
+        arm64) ARCH="arm64";; \
+        riscv64) ARCH="riscv64";; \
+    esac ; \
+    VERSION=${release} ; \
+    wget "${URLP}/${VERSION}/csshnpd-${VERSION}.tar.gz" ; \
+    tar -xvf csshnpd-${VERSION}.tar.gz ; \
+    rm csshnpd-${VERSION}.tar.gz ; \
+    cd csshnpd-${VERSION} ; \
+    cd sshnpd ; \
+    cmake -S . -B build -DCMAKE_C_COMPILER=gcc -DBUILD_SHARED_LIBS=off -DCMAKE_C_FLAGS="-Wno-error -pthread" ; \
+    cmake --build build ; \
+    mv ./build/at_activate ${OUTPUT_DIR}/at_activate ; \
+    mv ./build/sshnpd ${OUTPUT_DIR}/sshnpd ; \
+    mv ./build/libsshnpd-lib.a ${OUTPUT_DIR}/libsshnpd-lib.a ; \
+    cd ../srv ; \
+    cmake -S . -B build -DCMAKE_C_COMPILER=gcc -DATAUTH_BUILD_EXECUTABLES=OFF -DBUILD_SHARED_LIBS=off -DCMAKE_C_FLAGS="-Wno-error -pthread" ; \
+    cmake --build build ; \
+    mv build/srv ${OUTPUT_DIR}/srv ;
+
+FROM atsigncompany/noports_e2e_all_base_runtime:latest AS runtime
+
+ENV USER=atsign
+ENV HOMEDIR=/${USER}
+ENV USER_ID=1024
+ENV GROUP_ID=1024
+
+COPY --from=buildimage /output/ /usr/local/bin/
+
+USER ${USER}
+WORKDIR ${HOMEDIR}
+
+CMD sudo service ssh start
