@@ -1,3 +1,7 @@
+## 1.0.10
+
+- fix: CMake search paths for cross compile
+
 ## 1.0.9
 
 - feat: add support for linking against shared third party dependencies
