@@ -1,17 +1,20 @@
 option(NOPORTS_ATSDK_PATH "Local atsdk path" OFF)
 option(NOPORTS_CJSON_PATH "Local cJSON path" OFF)
 option(NOPORTS_MBEDTLS_PATH "Local mbedtls path" OFF)
+option(NOPORTS_USE_SHARED_LIBS "Link against shared thirdparty libs" OFF)
 # GS tool used to signal sshnpd to exit at a dedicated time
 # allows us to properly test for memory leaks
 option(NOPORTS_GS_TOOL "Include graceful-shutdown-tool" OFF)
 option(NOPORTS_BUILD_TESTS "Enable testing" OFF)
+
 set(ATSDK_CJSON_PATH ${NOPORTS_CJSON_PATH})
 set(ATSDK_MBEDTLS_PATH ${NOPORTS_MBEDTLS_PATH})
+set(ATSDK_USE_SHARED_LIBS ${NOPORTS_USE_SHARED_LIBS})
 
 cmake_minimum_required(VERSION 3.19)
 set(CMAKE_C_STANDARD 99)
 cmake_policy(SET CMP0135 NEW)
-project(noports VERSION 1.0.8 LANGUAGES C)
+project(noports VERSION 1.0.9 LANGUAGES C)
 
 include("${CMAKE_CURRENT_LIST_DIR}/cmake/CPackSetup.cmake")
 

@@ -1,7 +1,7 @@
 # package info
 set(CPACK_PACKAGE_NAME noports)
 set(CPACK_PACKAGE_DESCRIPTION "noports source tarballs")
-set(CPACK_PACKAGE_VERSION 1.0.8)
+set(CPACK_PACKAGE_VERSION 1.0.9)
 set(CPACK_PACKAGE_VENDOR_NAME atsign-foundation)
 
 # cmake configuration

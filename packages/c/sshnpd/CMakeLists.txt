@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.19)
 set(CMAKE_C_STANDARD 99)
 cmake_policy(SET CMP0135 NEW)
-project(sshnpd VERSION 1.0.8 LANGUAGES C)
+project(sshnpd VERSION 1.0.9 LANGUAGES C)
 
 # 1. Variables - you are free to edit anything in this step
 
@@ -100,18 +100,35 @@ endif()
 
 add_compile_options("-lrt")
 add_library(${PROJECT_NAME}-lib STATIC ${SSHNPD_SRCS})
-
-if(CMAKE_BUILD_TYPE STREQUAL "Debug")
-  target_link_libraries(
-    ${PROJECT_NAME}-lib
-    PRIVATE atclient atchops atlogger cjson srv-lib argparse::argparse-static
+set(include_dirs "")
+set(
+  link_libs
+  atclient
+  atchops
+  atlogger
+  srv-lib
+  argparse::argparse-static
+)
+if(NOPORTS_USE_SHARED_LIBS)
+  find_path(cjson_include_dir NAMES cjson/cJSON.h REQUIRED)
+  list(APPEND include_dirs ${cjson_include_dir})
+  find_library(
+    cjson_lib_path
+    NAMES libcjson.so
+    PATHS /usr/lib /usr/lib64 /usr/local/lib NO_CACHE
+    REQUIRED
+    NO_DEFAULT_PATH
+    NO_PACKAGE_ROOT_PATH
+    NO_CMAKE_PATH
+    NO_CMAKE_ENVIRONMENT_PATH
+    NO_CMAKE_SYSTEM_PATH
+    NO_CMAKE_INSTALL_PREFIX
   )
+  list(APPEND link_libs ${cjson_lib_path})
 else()
-  target_link_libraries(
-    ${PROJECT_NAME}-lib
-    PRIVATE atclient atchops atlogger cjson srv-lib argparse::argparse-static
-  )
+  list(APPEND link_libs cjson)
 endif()
+target_link_libraries(${PROJECT_NAME}-lib PRIVATE ${link_libs})
 
 # Set include directories for sshnpd target
 target_include_directories(
@@ -120,6 +137,7 @@ target_include_directories(
     $<BUILD_INTERFACE:${SSHNPD_INCLUDE_DIR}>
     $<BUILD_INTERFACE:${argparse-static_SOURCE_DIR}>
     $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
+    ${include_dirs}
 )
 
 # 6 Install sshnpd library
@@ -144,16 +162,7 @@ install(
 # 7. Create sshnpd executable target
 add_executable(${PROJECT_NAME} ${CMAKE_CURRENT_LIST_DIR}/src/main.c)
 
-target_link_libraries(
-  ${PROJECT_NAME}
-  PRIVATE
-    ${PROJECT_NAME}-lib
-    atclient
-    atchops
-    atlogger
-    cjson
-    argparse::argparse-static
-)
+target_link_libraries(${PROJECT_NAME} PRIVATE ${PROJECT_NAME}-lib ${link_libs})
 
 # 8. Build tests
 if(SSHNPD_BUILD_TESTS)
