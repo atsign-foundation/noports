@@ -28,6 +28,8 @@ class BackupKeyCubit extends Cubit<bool> {
     App.log('BackupKeyCubit: getShouldBackupKeyStatus: $result'.loggable);
   }
 
+  /// Sets the backup key status and emits the new status.
+  /// This method is used to set the backup key status in the cubit. It does not save the key to the atServer.
   void setBackupKeyStatus(bool status) {
     emit(status);
   }

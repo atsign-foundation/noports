@@ -161,11 +161,10 @@ class _OnboardingButtonState extends State<OnboardingButton> {
           ),
         );
         final backupKeyCubit = App.navState.currentContext!.read<BackupKeyCubit>();
-        if (backupKeyCubit.state == false) {
-          await backupKeyCubit.putBackupKeyStatus(backupKeyCubit.state);
-        }
 
-        log('atsign result is:$result');
+        await backupKeyCubit.putBackupKeyStatus(backupKeyCubit.state);
+
+        App.log('atsign result is:$result'.loggable);
 
         if (!mounted) return;
         Navigator.of(context, rootNavigator: true).pushNamed(Routes.home);
@@ -282,6 +281,8 @@ class _OnboardingButtonState extends State<OnboardingButton> {
               atClientPreference: atClientPrefernce,
             ),
           );
+          // If the user used APKAM, we do not have to back up the keys after onboarding
+          App.navState.currentContext!.read<BackupKeyCubit>().setBackupKeyStatus(true);
         }
       case AtSignStatus.notFound:
         result = AtOnboardingResult.error(

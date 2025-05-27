@@ -11,8 +11,8 @@ class BackupKeyUtils {
     final context = App.navState.currentContext!;
 
     final backupKeyCubit = context.read<BackupKeyCubit>();
-    final keyAlreadyBackedup = await backupKeyCubit.getBackupKeyStatus();
-    if (keyAlreadyBackedup == false && context.mounted) {
+    final keyAlreadyBackedUp = await backupKeyCubit.getBackupKeyStatus();
+    if (keyAlreadyBackedUp == false && context.mounted) {
       showDialog(
         context: context,
         barrierDismissible: false,
