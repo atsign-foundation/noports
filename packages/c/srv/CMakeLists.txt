@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.19)
 set(CMAKE_C_STANDARD 99)
 cmake_policy(SET CMP0135 NEW)
 
-project(srv VERSION 1.0.9 LANGUAGES C)
+project(srv VERSION 1.0.10 LANGUAGES C)
 
 # 1. Variables - you are free to edit anything in this step
 
@@ -79,12 +79,6 @@ if(NOPORTS_USE_SHARED_LIBS)
     NAMES libmbedtls.so
     PATHS /usr/lib /usr/lib64 /usr/local/lib NO_CACHE
     REQUIRED
-    NO_DEFAULT_PATH
-    NO_PACKAGE_ROOT_PATH
-    NO_CMAKE_PATH
-    NO_CMAKE_ENVIRONMENT_PATH
-    NO_CMAKE_SYSTEM_PATH
-    NO_CMAKE_INSTALL_PREFIX
   )
   list(APPEND link_libs ${mbedtls_lib_path})
 else()
