@@ -39,62 +39,73 @@ class SwitchAtsignButton extends StatelessWidget {
           title: Text(strings.switchAtSign),
           trailing: PhosphorIcon(PhosphorIcons.caretUpDown()),
           onTap: () async {
+            // Select atsign to switch
+            final atSignList = await KeychainUtil.getAtsignList();
+            // set to dynamic to handle being popped by the AppBar back button which returns a 'StatefulElement'
+            final selectedAtSign = await showMenu<dynamic>(
+              context: context,
+              position:
+                  const RelativeRect.fromLTRB(-1000, 1, 0, 0), // You may want to calculate this based on tap position
+              shape: RoundedRectangleBorder(
+                side: const BorderSide(
+                  color: AppColor.primaryColor,
+                  width: Sizes.p2,
+                ),
+                borderRadius: BorderRadius.circular(Sizes.p8),
+              ),
+              items: (atSignList ?? [])
+                  .map((atSign) => PopupMenuItem<String>(
+                        padding: const EdgeInsets.all(Sizes.p0),
+                        value: atSign,
+                        child: _HoverableMenuItem(atSign: atSign),
+                      ))
+                  .toList(),
+            );
+
+            if (selectedAtSign is! String) {
+              //
+              return; // Exit if selectedAtsign is not a string.
+            }
+
+            // Check for connected profiles before switching
             var isProfileConnected = false;
 
             if (context.read<ProfilesRunningCubit>().state.socketConnectors.keys.toSet().isNotEmpty) {
+              log('tap triggered more than once');
               isProfileConnected = await showDialog(
                 barrierDismissible: false,
                 context: context,
                 builder: (context) => const ConnectedProfilesDialog(),
               );
             }
-            if (context.mounted && isProfileConnected == false) {
-              final atSignList = await KeychainUtil.getAtsignList();
-              final selectedAtSign = await showMenu<String>(
-                context: context,
-                position:
-                    const RelativeRect.fromLTRB(-1000, 1, 0, 0), // You may want to calculate this based on tap position
-                shape: RoundedRectangleBorder(
-                  side: const BorderSide(
-                    color: AppColor.primaryColor,
-                    width: Sizes.p2,
-                  ),
-                  borderRadius: BorderRadius.circular(Sizes.p8),
-                ),
-                items: (atSignList ?? [])
-                    .map((atSign) => PopupMenuItem<String>(
-                          padding: const EdgeInsets.all(Sizes.p0),
-                          value: atSign,
-                          child: _HoverableMenuItem(atSign: atSign),
-                        ))
-                    .toList(),
-              );
-              if (selectedAtSign != null) {
-                final currentContext = App.navState.currentContext!;
-                final rootDomain =
-                    currentContext.read<OnboardingCubit>().getRootDomain(); // Or get from your state/cubit if needed
-                final atClientPreference = await AtClientMethods.loadAtClientPreference(rootDomain);
-                await preSignout();
-                final result = await AtOnboarding.changePrimaryAtsign(atsign: selectedAtSign);
+            if (context.mounted && isProfileConnected) {
+              // If a proifle is connected, exit.
+              return;
+            }
+            final currentContext = App.navState.currentContext!;
 
-                if (result) {
-                  final onboardingResult = await AtOnboarding.onboard(
-                    atsign: selectedAtSign,
-                    context: currentContext,
-                    config: AtOnboardingConfig(
-                      atClientPreference: atClientPreference,
-                      domain: rootDomain,
-                      rootEnvironment: RootEnvironment.Production,
-                      appAPIKey: await Constants.appAPIKey,
-                    ),
-                  );
-                  log("onboarding result: $onboardingResult");
-                  if (onboardingResult.status == AtOnboardingResultStatus.success) {
-                    await BackupKeyUtils().BackupKeyStatusCheck();
-                    log("postOnbarding called");
-                    await postOnboard(selectedAtSign, rootDomain);
-                  }
-                }
+            final rootDomain =
+                currentContext.read<OnboardingCubit>().getRootDomain(); // Or get from your state/cubit if needed
+            final atClientPreference = await AtClientMethods.loadAtClientPreference(rootDomain);
+            await preSignout();
+            final result = await AtOnboarding.changePrimaryAtsign(atsign: selectedAtSign);
+
+            if (result) {
+              final onboardingResult = await AtOnboarding.onboard(
+                atsign: selectedAtSign,
+                context: currentContext,
+                config: AtOnboardingConfig(
+                  atClientPreference: atClientPreference,
+                  domain: rootDomain,
+                  rootEnvironment: RootEnvironment.Production,
+                  appAPIKey: await Constants.appAPIKey,
+                ),
+              );
+              log("onboarding result: $onboardingResult");
+              if (onboardingResult.status == AtOnboardingResultStatus.success) {
+                await BackupKeyUtils().BackupKeyStatusCheck();
+                log("postOnbarding called");
+                await postOnboard(selectedAtSign, rootDomain);
               }
             }
           },
