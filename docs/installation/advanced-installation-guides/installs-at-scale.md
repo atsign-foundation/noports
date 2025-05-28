@@ -1,9 +1,10 @@
 ---
 description: Typing is less fun after a few devices.
+hidden: true
 icon: grid-horizontal
 ---
 
-# Installs at scale
+# Installs at Scale
 
 ## Important Notes
 

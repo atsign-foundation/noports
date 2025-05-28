@@ -4,7 +4,7 @@ description: Follow these four steps to run the NoPorts daemon within a tmux ses
 
 # Tmux session
 
-## 1. Run the installer
+### Step 1. Run the installer
 
 {% tabs %}
 {% tab title="Linux" %}
@@ -70,9 +70,9 @@ sudo ./install.sh tmux sshnpd
 {% endtab %}
 {% endtabs %}
 
-## 2. Configure the startup script
+### Step 2. Configure the startup script
 
-After installing the startup script, we must configure it, with `nano` or `vi` depending on your preference.
+After installing the startup script, we must configure it, with `nano` or `vi` depending upon your preference.
 
 ```bash
 nano ~/.local/bin/sshnpd.sh
@@ -106,13 +106,13 @@ Add any additional config to the end of the line where sshnpd is run, some usefu
 * `-s` : "ssh-public-key", allow ssh public keys to be shared by sshnp and automatically authorized by sshd, saves you from dealing with ssh public key management. If multiple people use the device, we recommend leaving this off and managing ssh public keys yourself.
 * To see the rest of the available options run sshnpd to see the usage.
 
-## 3. Activate your device address
+### Step 3. Activate your device address
 
 {% hint style="danger" %}
 If you don't own a pair of noports addresses, please visit [the registrar](https://my.noports.com/no-ports-invite/14dayfreetrial) before continuing.
 {% endhint %}
 
-### 3.a. First time activating your address
+### Step 3.1. First time activating your address
 
 We will now activate the device address, you only need to activate the device address now. The client address will be activated later during the client installation.
 
@@ -133,27 +133,27 @@ Now that you have at\_activate installed, you can invoke the command with the na
 {% endtab %}
 {% endtabs %}
 
-### Enter the One Time Password (OTP) & Check your SPAM folder!
+### Enter the One-Time Password (OTP) & Check your SPAM folder!
 
-The application will pause and wait for the input of a one time pin (OTP) before you can continue. You should receive this pin to the contact information associated with the registration of your noports address (i.e. email or text message).\
+The application will pause and wait for the input of a one-time password (OTP) before you can continue. You should receive this pin to the contact information associated with the registration of your noports address (i.e. email or text message).\
 \
 \*\*\*If you are using a gmail.com account we have seen that sometimes the OTP gets stuck in the SPAM or PROMOTIONS folder. If you do not see the OTP check those folders.
 
-Once you receive the message, enter the pin into the application and press enter to continue. The application should proceed to create the cryptographic keys and store them at [`~/.atsign/keys/<address_name>_key.atKeys`](#user-content-fn-5)[^5].
+Once you receive the message, enter the pin into the application and press **Enter** to continue. The application should proceed to create the cryptographic keys and store them at [`~/.atsign/keys/<address_name>_key.atKeys`](#user-content-fn-5)[^5].
 
 An address can only be activated once, to install this address to future devices, you must copy this file to the device (see 3.b.).
 
-### 3.b. Activated this address before
+### Step 3.2. Activated this address before
 
 {% hint style="warning" %}
 If you have activated the device address before, you must copy the address from another machine where it's been activated.
 {% endhint %}
 
-The address will be located at [`~/.atsign/keys/<address_name>_key.atKeys`](#user-content-fn-6)[^6]. Copy this file from your other machine to the same location on the machine that you are installing sshnpd on.
+The address will be located at [`~/.atsign/keys/<address_name>_key.atKeys`](#user-content-fn-5)[^5]. Copy this file from your other machine to the same location on the machine that you are installing sshnpd on.
 
-## 4. Start the service
+### Step 4. Start the service
 
-The tmux service will automatically be started by the `cron @reboot` directive when your machine restarts. If you would like to start it immediately, note that you must make sure to disown the tmux process so that it doesn't hangup when you logout.
+The tmux service will automatically be started by the `cron @reboot` directive when your machine restarts. If you would like to start it immediately, note that you must make sure to disown the tmux process so that it doesn't hang up when you log out.
 
 Run the following command to start it immediately:
 
@@ -173,9 +173,9 @@ tmux a -t sshnpd
 To detach from the tmux session use the keybind `Ctrl + B, D`. This will safely detach from the tmux session without killing it.
 {% endhint %}
 
-## 5. All done!
+### Step 5. All done!
 
-Your tmux session is ready to go, you can now proceed to [installing your client](../client-installation-sshnp.md), or if you've already done that, checkout our [usage guide](../../../usage/basic-usage-1/).
+Your tmux session is ready to go, you can now proceed to [installing your client](../client-installation-sshnp.md), or if you've already done that, check out our [usage guide](../../../usage/basic-usage-1/).
 
 [^1]: If you aren't sure, type "echo $USER" in your terminal.
 
@@ -186,5 +186,3 @@ Your tmux session is ready to go, you can now proceed to [installing your client
 [^4]: This device name is how you distinguish between all of the devices you have running sshnpd.
 
 [^5]: where `<address_name>` is the name of your device address e.g. `@alice_device`
-
-[^6]: where `<address_name>` is the name of your device address e.g. `@alice_device`

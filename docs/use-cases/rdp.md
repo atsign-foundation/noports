@@ -1,15 +1,11 @@
 ---
-icon: desktop
 description: >-
   In this guide, we demonstrate how to use the NoPorts Tunnel to RDP on a remote
   machine to localhost:3389 so we can access the RDP service locally.
+icon: desktop
 ---
 
 # RDP
-
-
-
-
 
 The command should look like:
 
@@ -27,6 +23,6 @@ Now you can connect to localhost:33899 in your favorite RDP client.
 
 ### To learn more about NPT
 
-{% content-ref url="../usage/basic-usage/" %}
-[basic-usage](../usage/basic-usage/)
+{% content-ref url="../usage/basic-usage.md" %}
+[basic-usage.md](../usage/basic-usage.md)
 {% endcontent-ref %}
