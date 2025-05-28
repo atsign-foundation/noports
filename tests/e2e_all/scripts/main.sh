@@ -68,6 +68,7 @@ cd "$(dirname -- "$0")" || exit 1
 testScriptsDir=$(pwd)
 export testScriptsDir
 
+export recompile
 source "$testScriptsDir/common/common_functions.include.sh"
 
 if ! command -v timeout &>/dev/null; then
@@ -188,7 +189,6 @@ fi
 
 echo
 logInfo "Calling common/setup_binaries.sh"
-export recompile
 if [ "${allowParallelization}" = "true" ]; then
   "$testScriptsDir/common/setup_binaries.sh" &
   setupBinariesPidParallel=$!
