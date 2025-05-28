@@ -59,7 +59,7 @@ if [ "${allowParallelization}" = "true" ]; then
     version=$(echo "$typeAndVersion" | cut -d: -f2)
 
     imageName=$(getDockerDaemonImageName "$type" "$version")
-    if [[ "$recompile" == "false" && "$(isImageExists "$imageName")" == "true" && "$version" != "current" ]]; then
+    if [[ "$recompile" == "false" && "$(isImageExists "$imageName")" == "true" ]]; then
       logInfo "You set recompile = $recompile and $imageName already exists, so skipping build for $typeAndVersion"
       continue
     fi
