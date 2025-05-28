@@ -1,8 +1,9 @@
 ---
-icon: apple
 description: >-
   How to install NoPorts on macOS. Guides for desktop app, CLI, and device
   installation.
+hidden: true
+icon: apple
 ---
 
 # MacOS Installation Guides
@@ -30,3 +31,4 @@ If you want to setup access to your MacOS device, follow this guide:
 {% content-ref url="device.md" %}
 [device.md](device.md)
 {% endcontent-ref %}
+

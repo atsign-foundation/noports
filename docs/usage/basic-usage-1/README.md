@@ -4,11 +4,10 @@ icon: rectangle-terminal
 
 # sshnp Usage
 
-## TL;DR
+### TL;DR
 
-```
-sshnp -f @<_client> -t @<_device> -h <@rv_(am|ap|eu) -d <name> -i <~/.ssh<ssh_key> -s
-```
+<pre><code><strong>sshnp -f @&#x3C;your_client_atsign> -t @&#x3C;your_device_atsign> -h @rv_(am|ap|eu|oc) -d &#x3C;name> -i &#x3C;~/.ssh&#x3C;ssh_key> -s
+</strong></code></pre>
 
 {% hint style="info" %}
 Replace the \<??> with your details and remember to logout and back into the client so you have `sshnp` in your PATH.
@@ -16,15 +15,15 @@ Replace the \<??> with your details and remember to logout and back into the cli
 Once you have successfully used the command to get access to the device once, you can drop the `-i` and `-s` flags if you wish.
 {% endhint %}
 
-## Overview
+### Overview
 
 This guide covers the basics to understanding the parameters of and invoking sshnp.
 
-## The four main parameters
+### The four main parameters
 
 ### -f, --from
 
-This argument is the client address, a.k.a. the from address, since we are connecting **from** the client. This argument is mandatory, in the form of an atSign. For example:
+This argument is the client address, a.k.a. the from address, since we are **connecting** **from** the client. This argument is mandatory, in the form of an atSign. For example:
 
 ```bash
 sshnp ... -f @alice_client ...
@@ -32,7 +31,7 @@ sshnp ... -f @alice_client ...
 
 ### -t, --to
 
-This argument is the device address, a.k.a. the to address, since we are connecting **to** the device. This argument is mandatory, in the form of an atSign. For example:
+This argument is the device address, a.k.a. the to address, since we are **connecting** **to** the device. This argument is mandatory, in the form of an atSign. For example:
 
 ```bash
 sshnp ... -t @alice_device ...
@@ -50,29 +49,29 @@ sshnp ... -d my_device ...
 
 This argument is the address of the socket rendezvous used to establish the session connection. Atsign currently provides coverage in 3 regions, use whichever is closest to you:
 
-#### Americas
+### Americas
 
 ```bash
 sshnp ... -h @rv_am ...
 ```
 
-#### Europe
+### Europe
 
 ```bash
 sshnp ... -h @rv_eu ...
 ```
 
-#### Asia-Pacific
+### Asia-Pacific
 
 ```bash
 sshnp ... -h @rv_ap ...
 ```
 
-## SSH Authentication
+### SSH Authentication
 
 In addition to the four main parameters, it is important to ensure that the appropriate SSH authentication keys are in place.
 
-#### Pre-existing keys in place
+### Pre-existing keys in place
 
 If you already have an SSH public key installed on the device, use `-i` to specify it. For example:
 
@@ -80,7 +79,7 @@ If you already have an SSH public key installed on the device, use `-i` to speci
 sshnp ... -i path/to/my/ssh/private/key ...
 ```
 
-#### Automated SSH public key management
+### Automated SSH public key management
 
 If you don't have an SSH public key installed on the device, and -s is enabled for the device, then sshnp can extract the SSH public key from the SSH private key, and send it to the daemon for you. This will automatically authorize your SSH private key. For example:
 
@@ -88,7 +87,7 @@ If you don't have an SSH public key installed on the device, and -s is enabled f
 sshnp ... -i path/to/my/ssh/private/key -s ...
 ```
 
-#### Manual SSH public key management
+### Manual SSH public key management
 
 If you don't have any SSH public keys in place, you must install them yourself. Copy the SSH public key to `~/.ssh/authorized_keys` on the remote device. For example:
 
@@ -102,7 +101,7 @@ Then use the associated private key, as mentioned under [#pre-existing-keys-in-p
 sshnp ... -i path/to/my/ssh/private/key ...
 ```
 
-## Putting it all together
+### Putting it all together
 
 An example of a complete command might look like this:
 
@@ -117,7 +116,7 @@ sshnp -f @alice_client -t @alice_device -d my_server \
  -h @rv_am -i ~/.ssh/id_ed25519 -u bobc -U bobc
 ```
 
-## Additional Configuration
+### Additional Configuration
 
 The rest of the configuration for `sshnp` is contained in a separate guide:
 

@@ -1,16 +1,16 @@
 ---
-icon: at
 description: Steps for client and device atSigns
+icon: at
 ---
 
 # How to activate an atSign
 
 ## Overview
 
-NoPorts software needs to be installed on both the machine you are going to connect to (device) and the machine you are going to connect from (client). NoPorts uses [atSigns](https://atsign.com/faqs/) as addresses and you will need two, one for the client and one for the device
+NoPorts needs to be installed on both the machine you are going to connect to (device) and the machine you are going to connect from (client). NoPorts uses [atSigns](https://atsign.com/faqs/) as addresses and you will need two, one for the client and one for the device.
 
 {% hint style="danger" %}
-If you don't own a pair of atSigns/addresses, please visit [the registrar](https://my.noports.com/no-ports-invite/14dayfreetrial) before continuing.
+If you don't own a pair of atSigns/addresses, please visit [my.noports.com](https://my.noports.com/no-ports-plans) before continuing.
 {% endhint %}
 
 Example client atSign
@@ -42,7 +42,7 @@ You will activate both the client atSign _**and**_ the device atSign on your cli
 
 (2) Enter the One Time Password (OTP) & Check your SPAM/PROMOTIONS folders
 
-at\_activate will pause and wait for the input of a one time pin (OTP) before you can continue. You should receive this pin to the contact information associated with the registration of your noports address (i.e. email or text message).
+at\_activate will pause and wait for the input of a one time pin (OTP) before you can continue. You should receive this pin to the contact information associated with the registration of your NoPorts address (i.e. email or text message).
 
 {% hint style="warning" %}
 If you are using a gmail.com account we have seen that sometimes the OTP gets stuck in the SPAM or PROMOTIONS folder. If you do not see the OTP check those folders.
@@ -59,7 +59,7 @@ Once you receive the message, enter the pin into the application and press enter
 
 2\) Enter the One Time Password (OTP) & Check your SPAM/PROMOTIONS folders
 
-Again, at\_activate will pause and wait for the input of a one time pin (OTP) before you can continue. You should receive this pin to the contact information associated with the registration of your noports address (i.e. email or text message).
+Again, at\_activate will pause and wait for the input of a one time pin (OTP) before you can continue. You should receive this pin to the contact information associated with the registration of your NoPorts address (i.e. email or text message).
 
 {% hint style="warning" %}
 If you are using a gmail.com account we have seen that sometimes the OTP gets stuck in the SPAM or PROMOTIONS folder. If you do not see the OTP check those folders.

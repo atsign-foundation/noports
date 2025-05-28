@@ -2,15 +2,15 @@
 icon: laptop
 ---
 
-# Client installation
+# Client Installation
 
-## Overview
+### Overview
 
 The SSH No Ports client (a.k.a. sshnp) is available as a command line application or desktop application (alpha). This guide is for installing the command line application, the desktop application installation guide will be made available upon official release.
 
-## 1. Download
+### Step 1. Download
 
-### 1.a. Download from GitHub
+### Step 1.1. Download from GitHub
 
 You can [download a release from GitHub](https://github.com/atsign-foundation/noports/releases/), or see the table below to download the latest release for your platform.
 
@@ -21,7 +21,7 @@ You can [download a release from GitHub](https://github.com/atsign-foundation/no
 | arm      | [sshnp-linux-arm.tgz](https://github.com/atsign-foundation/noports/releases/latest/download/sshnp-linux-arm.tgz)     |                                                                                                                              |                                                                                                                      |
 | risc-v   | [sshnp-linux-riscv.tgz](https://github.com/atsign-foundation/noports/releases/latest/download/sshnp-linux-riscv.tgz) |                                                                                                                              |                                                                                                                      |
 
-### 1.b. Download using curl
+### Step 1.2. Download using curl
 
 {% tabs %}
 {% tab title="Linux" %}
@@ -73,7 +73,7 @@ curl.exe -fSL https://github.com/atsign-foundation/noports/releases/latest/downl
 {% endtab %}
 {% endtabs %}
 
-## 2. Unpack the Archive
+### Step 2. Unpack the Archive
 
 If you downloaded from GitHub, the file name may be slightly different.
 
@@ -97,7 +97,7 @@ Expand-Archive -Force .\sshnp.zip
 {% endtab %}
 {% endtabs %}
 
-## 3. Install sshnp
+### Step 3. Install sshnp
 
 {% tabs %}
 {% tab title="Linux" %}
@@ -149,7 +149,7 @@ You can find `sshnp.exe` in the unpacked archive, you may move this binary to wh
 {% endtab %}
 {% endtabs %}
 
-## 4. Add bin folder to the path
+### Step 4. Add bin folder to the path
 
 This step is optional, but highly recommended.
 
@@ -173,13 +173,13 @@ export PATH="$PATH:$HOME/.local/bin";
 {% endtab %}
 {% endtabs %}
 
-## 5. Activate your client address
+### Step 5. Activate your client address
 
 {% hint style="danger" %}
-If you don't own a pair of noports addresses, please visit [the registrar](https://my.noports.com/no-ports-invite/14dayfreetrial) before continuing.
+If you don't own a pair of NoPorts addresses, please visit [the registrar](https://my.noports.com/no-ports-plans) before continuing.
 {% endhint %}
 
-### 3.a. First time activating your address
+### Step 5.1. First time activating your address
 
 We will now activate the client address, you only need to activate the client address now. The device address should be activated during the device installation.
 
@@ -204,20 +204,20 @@ Now that you have at\_activate installed, you can invoke the command with the na
 
 The application will pause and wait for the input of a one time pin (OTP) before you can continue. You should receive this pin to the contact information associated with the registration of your noports address (i.e. email or text message).
 
-\*\*\*If you are using a gmail.com account we have seen that sometimes the OTP gets stuck in the SPAM or PROMOTIONS folder. If you do not see the OTP check those folders.&#x20;
+\*\*\*If you are using a gmail.com account we have seen that sometimes the OTP gets stuck in the SPAM or PROMOTIONS folder. If you do not see the OTP check those folders.
 
 Once you receive the message, enter the pin into the application and press enter to continue. The application should proceed to create the cryptographic keys and store them at `~/.atsign/keys/@my_noports_client_key.atKeys`.
 
 An address can only be activated once, to install this address to future devices, you must copy this file to the device (see 3.b.).
 
-### 3.b. Activated this address before
+### Step 5.2. Activated this address before
 
 {% hint style="warning" %}
-If you have activated the client address before, you must copy the address from another machine where it's been activated.&#x20;
+If you have activated the client address before, you must copy the address from another machine where it's been activated.
 {% endhint %}
 
 The address will be located at `~/.atsign/keys/@my_noports_client_key.atKeys`. Copy this file from your other machine to the same location on the machine that you are installing sshnpd on.
 
-## All Done!
+### All Done!
 
 sshnp is ready to go, you can now proceed to [installing your device](device-installation-sshnpd/), or if you've already done that, checkout our [usage guide](../../usage/basic-usage-1/).

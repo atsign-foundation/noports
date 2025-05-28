@@ -41,3 +41,17 @@ If you've activated your **client** atSign on another device already, this step 
 #### 3.4 Wait for the installation to complete, then click "Next", and continue through the rest of the installation. Once installation has completed, it will look like this:
 
 <figure><img src="../../.gitbook/assets/CleanShot 2025-01-20 at 18.46.29@2x.png" alt=""><figcaption></figcaption></figure>
+
+## FAQ
+
+### How does the Windows Service work?
+
+We use a lightweight wrapper service to run sshnpd. It pulls the arguments from the Windows Registry and executes sshnpd with them.
+
+### How do I start or stop the service?
+
+Open services.msc (appears as "services" from the start menu). The service will be called `sshnpd` with description `NoPorts-SSH-Daemon` . Click on the service and you will be provided with options to start/restart/stop the service depending on it's current status.
+
+### How do I modify my configuration?
+
+Open the registry editor (a.k.a. regedit) and navigate to `Computer\HKEY_LOCAL_MACHINE\SOFTWARE\NoPorts` . The `DeviceArgs` entry will contain all of the arguments that get passed directly into sshnpd. You may modify these accordingly, then [restart the service](device.md#how-do-i-start-or-stop-the-service).

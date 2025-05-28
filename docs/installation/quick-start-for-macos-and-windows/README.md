@@ -1,5 +1,5 @@
 ---
-description: How to quickly install and use NoPorts on both macOS and Windows devices.
+description: How to quickly install and use NoPorts on both MacOS and Windows devices.
 icon: forward
 layout:
   title:
@@ -14,7 +14,7 @@ layout:
     visible: true
 ---
 
-# Quick Start for MacOS and Windows
+# Quick Start from macOS or Windows
 
 ## Step 1: Sign up for a NoPorts free trial
 
@@ -26,15 +26,15 @@ Make note of your client atSign (e.g., @pluto83\_client). You'll need it shortly
 
 ## Step 2: Download the NoPorts desktop application
 
+{% hint style="info" %}
+For Linux please follow the [Linux Installation Guide](../connecting-from-linux/).
+{% endhint %}
+
 Download the NoPorts desktop app using one of the links below:
 
 [Link to Apple Store](https://apps.apple.com/ca/app/noports-desktop/id6737338881)
 
 [Link to Windows Store](https://apps.microsoft.com/detail/9n69scrrgv6r)
-
-{% hint style="info" %}
-For Linux please follow the [Linux Installation Guide](https://docs.noports.com/installation/linux).
-{% endhint %}
 
 ## Step 3: Log into the NoPorts desktop application
 

@@ -5,9 +5,9 @@ icon: windows
 
 # PuTTY config
 
-## Overview
+### Overview
 
-This guide will help you setup some very minimal Python scripts to manage connections with NoPorts. In most cases only 4-5 lines of python will be required to setup a new device.
+This guide will help you set up some very minimal Python scripts to manage connections with NoPorts. In most cases only 4-5 lines of Python will be required to set up a new device.
 
 ### Requirements
 
@@ -16,7 +16,7 @@ This guide will help you setup some very minimal Python scripts to manage connec
 
 ### Usage
 
-Once you've setup your configuration, you will be able to SSH over NoPorts by double clicking a simple shortcut. It will first launch NoPorts, then once NoPorts is started, it will setup your PuTTY session.
+Once you've setup your configuration, you will be able to SSH over NoPorts by double clicking a simple shortcut. It will first launch NoPorts, then once NoPorts is started, it will set up your PuTTY session.
 
 ### The Base Configuration
 
@@ -106,7 +106,7 @@ class my_default_config(noports_config):
 
 ### Setting up a new device
 
-To setup a new device, create a new python (`.py`) in the same folder where you created `noports_base.py`. Then copy the following file:
+To set up a new device, create a new python (`.py`) in the same folder where you created `noports_base.py`. Then copy the following file:
 
 {% code title="example_config.py" %}
 ```python
