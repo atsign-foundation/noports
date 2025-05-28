@@ -1,3 +1,7 @@
+## 1.0.11
+
+- build(deps): Bump to at_c 0.4.3 to get mbedtls 3.6.3.1
+
 ## 1.0.10
 
 - fix: CMake search paths for cross compile
