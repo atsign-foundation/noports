@@ -141,6 +141,7 @@ export daemonStartWait
 export allowParallelization
 timeoutDuration=30 # time out for each test
 export timeoutDuration
+export recompile
 
 shift "$((OPTIND - 1))"
 
