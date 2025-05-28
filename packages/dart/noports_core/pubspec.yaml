@@ -26,6 +26,7 @@ dependencies:
   uuid: ^3.0.7
   mutex: ^3.1.0
   json_annotation: ^4.9.0
+  version: ^3.0.2
 
 dependency_overrides:
   dartssh2:

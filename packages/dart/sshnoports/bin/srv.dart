@@ -58,6 +58,10 @@ Future<void> main(List<String> args) async {
         help: 'On the daemon side, this is the local port to connect to.'
             ' On the client side this is the local port which the srv will bind'
             ' to so that client-side programs can create sockets to it.')
+    ..addOption('heartbeat',
+        defaultsTo: '1800',
+        help: 'How frequently to send heartbeats on the connection\'s'
+            ' control channel. Defaults to 30 minutes (1800 seconds)')
     ..addOption('timeout',
         defaultsTo: '60',
         help: 'How long to keep the SocketConnector open'
@@ -100,6 +104,8 @@ Future<void> main(List<String> args) async {
       final bool rvE2ee = parsed['rv-e2ee'];
       final bool multi = parsed['multi'];
       final Duration timeout = Duration(seconds: int.parse(parsed['timeout']));
+      final Duration heartbeat =
+          Duration(seconds: int.parse(parsed['heartbeat']));
 
       String? rvdAuthString = rvAuth ? Platform.environment['RV_AUTH'] : null;
       String? sessionAESKeyString =
@@ -132,6 +138,7 @@ Future<void> main(List<String> args) async {
         detached: true,
         // by definition - this is the srv binary
         timeout: timeout,
+        controlChannelHeartbeat: heartbeat,
       ).run();
     } on ArgumentError catch (e) {
       printVersion();
