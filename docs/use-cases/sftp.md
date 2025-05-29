@@ -1,14 +1,13 @@
 ---
-icon: folder-closed
 description: >-
   In this guide, we demonstrate how to use the NoPorts Tunnel to bridge SFTP on
   a remote machine to localhost:2222 so we can access it in an SFTP client
   locally.
+icon: folder-closed
 ---
 
 # SFTP
 
-\
 The command should look like:
 
 ```
@@ -25,6 +24,6 @@ Now you can connect to localhost:2222 in your favorite SFTP client.
 
 ### To learn more about NPT
 
-{% content-ref url="../usage/basic-usage/" %}
-[basic-usage](../usage/basic-usage/)
+{% content-ref url="../usage/basic-usage.md" %}
+[basic-usage.md](../usage/basic-usage.md)
 {% endcontent-ref %}

@@ -20,7 +20,7 @@ NoPorts Desktop Overview
 
 ## Step 3: Back up your atKeys
 
-Your atKeys (cryptographic keys) will be used to pair your atSign with this and other devices in future. You can [learn more about these keys here](https://docs.noports.com/installation-faq/why-activate-the-device-atsign-on-the-client).
+Your atKeys (cryptographic keys) will be used to pair your atSign with this and other devices in future. You can [learn more about these keys here](https://www.youtube.com/watch?v=bRRLCOHP-BY).
 
 1. Click on the Settings Icon in the top right corner of the app.
 2. Click on 'Back Up Your Keys' in the left navigation panel.

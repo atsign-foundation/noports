@@ -1,6 +1,6 @@
 ---
-icon: file-import
 description: A review of two available methods
+icon: file-import
 ---
 
 # Reuse your client atSign on another machine
@@ -17,32 +17,16 @@ B. Copy the cryptographic keys from the machine where it's been activated in the
 
 To generate a new set of cryptographic keys, there are three main steps. They occur from two different machines, so pay careful attention to which machine you perform each step on.
 
-"Old machine" is the machine that has the **original** set of cryptographic keys that were generated. "New machine" is the device you want the new set of cryptographic keys on, these new keys will have restricted permissions that only work with NoPorts, and cannot be used for generating other keys.
+"Old machine" is the machine that has the **original** set of cryptographic keys that were generated. "New machine" is the device you want the new set of cryptographic keys on. These new keys will have restricted permissions that only work with NoPorts, and cannot be used for generating other keys.
 
-1. \[Old machine] Generate an OTP (one time pin code)
+1. \[Old machine] Generate a Passcode&#x20;
 2. \[New machine] Enroll the new key pair (send a request for keys from the new machine)
 3. \[Old machine] Approve the request
 
-Depending on type of machines, there are different guides for each of these three steps:
+**For detailed instructions, follow this guide:**
 
-#### **Old machine:**
-
-{% content-ref url="old-machine-activate-from-the-command-line.md" %}
-[old-machine-activate-from-the-command-line.md](old-machine-activate-from-the-command-line.md)
-{% endcontent-ref %}
-
-{% content-ref url="old-machine-activate-from-the-windows-installer.md" %}
-[old-machine-activate-from-the-windows-installer.md](old-machine-activate-from-the-windows-installer.md)
-{% endcontent-ref %}
-
-#### **New machine:**
-
-{% content-ref url="new-machine-activate-from-the-command-line.md" %}
-[new-machine-activate-from-the-command-line.md](new-machine-activate-from-the-command-line.md)
-{% endcontent-ref %}
-
-{% content-ref url="new-machine-activate-from-the-windows-installer.md" %}
-[new-machine-activate-from-the-windows-installer.md](new-machine-activate-from-the-windows-installer.md)
+{% content-ref url="generate-a-new-set-of-cryptographic-keys.md" %}
+[generate-a-new-set-of-cryptographic-keys.md](generate-a-new-set-of-cryptographic-keys.md)
 {% endcontent-ref %}
 
 ### **Option B) Copy the cryptographic keys from the machine where it's been activated in the past (Not recommended)**

@@ -1,27 +1,27 @@
 ---
-icon: comments-question-check
 description: Common questions about NoPorts
+icon: comments-question-check
 ---
 
-# FAQ
+# Frequently Asked Questions
 
-## **How is SSH No Ports different from Tailscale and ngrok?**
+## **How is NoPorts different from Tailscale and Ngrok?**
 
-Everything is in your control. There are no Web Interfaces or centralized control by us, as we never want to be an attack surface for your infrastructure. SSH No ports does not connect "networks," but provides on demand encrypted TCP connectivity to existing SSH daemons.
+Everything is in your control. There are no Web Interfaces or centralized control by us, as we never want to be an attack surface for your infrastructure. NoPorts does not connect "networks," but provides on demand encrypted TCP connectivity to existing SSH daemons.
 
-SSH No Ports is focused on providing end-to-end encrypted and authenticated access to a remote ssh daemon, bound to localhost.
+NoPorts is focused on providing end-to-end encrypted and authenticated access to a remote ssh daemon, bound to localhost.
 
-SSH No Ports does not require any open (listening) ports on external interfaces, so there is no network attack surface on devices using SSH No Ports.
+NoPorts does not require any open (listening) ports on external interfaces, so there is no network attack surface on devices using NoPorts.
 
-SSH No ports provide relays like Ngrok, but connections are authenticated then connected. Once connected, the connection is encrypted with ephemeral (AES256) keys that the relay never has or needs.
+NoPorts provide relays like Ngrok, but connections are authenticated then connected. Once connected, the connection is encrypted with ephemeral (AES256) keys that the relay never has or needs.
 
-SSH No ports abstracts away the TCP/IP layer, so whilst IP address on the client or device may change, the command you use never does.
+NoPorts abstracts away the TCP/IP layer, so whilst IP address on the client or device may change, the command you use never does.
 
 ## **Is the relay necessary?**
 
 The relay ensures that connections from client and server are always outbound, removing the need for listening ports, firewall rules, and network attack surfaces on devices.
 
-SSH No ports uses TCP sockets to communicate. "Hole punching" can work sometimes, but we decided to never do that. Using the relay, you know that SSH No Ports will always work and is friendly to both network admins and firewall rules.
+NoPorts uses TCP sockets to communicate. "Hole punching" can work sometimes, but we decided to never do that. Using the relay, you know that NoPorts will always work and is friendly to both network admins and firewall rules.
 
 For most customers our relay service is robust and placed regionally. The relay code is open and the binaries are part of the distribution, so you can place your own relay where it makes sense for your network.
 
@@ -29,29 +29,29 @@ For most customers our relay service is robust and placed regionally. The relay 
 
 In the unlikely event that a bad actor takes down an relay, the tool will indeed fail. Fortunately, we run multiple relays, so if one is down or unavailable, you can easily switch to another.
 
-## **Since the device and the client need to connect out to the relays, do I need to open ports on my firewall for them to connect out to the SR?**
+## **Since the device and the client need to connect out to the relays, do I need to open ports on my firewall for them to connect out to the relay?**
 
 You do not need to open any inbound ports to connect out to the relay. However, the outbound traffic to the relay server does need to be open. Outbound access is, in most situations, automatically allowed so things just work. If you work in a location where outbound access is also controlled, then please contact us as we have options for for your IT team.
 
 ## **Who pays the ingress & egress costs to the relay?**
 
-These costs are included in the SSH No Ports subscription.
+These costs are included in the NoPorts subscription.
 
 ## **Why is additional encryption needed when SSH provides its own encryption?**
 
-Additional encryption protects the request and rendezvous information (on the relay) that is sent from the client device to the remote device’s atServer and ultimately to the client. Without encryption, this information could be intercepted, and a bad actor could meet the client device at the socket rendezvous. This is precisely how the [https://terrapin-attack.com/](https://terrapin-attack.com/) works. Using SSH No Ports mitigates any man-in-the-middle attacks like Terrapin.
+Additional encryption protects the request and rendezvous information (on the relay) that is sent from the client device to the remote device’s atServer and ultimately to the client. Without encryption, this information could be intercepted, and a bad actor could meet the client device at the relay This is precisely how the [https://terrapin-attack.com/](https://terrapin-attack.com/) works. Using NoPorts mitigates any man-in-the-middle attacks like Terrapin.
 
-## **Is SSH No Ports a reverse SSH tunnel?**
+## **Is sshnp a reverse SSH tunnel?**
 
-SSH No Ports is similar to a reverse tunnel in that it has the remote device start an outbound SSH session. What makes SSH No Ports better than a reverse SSH tunnel is that you don’t need access to the device to initiate it. This means you don’t need to leave open ports when not in use (i.e. there are no network attack surfaces).
+sshnp is similar to a reverse tunnel in that it has the remote device start an outbound SSH session. What makes sshnp better than a reverse SSH tunnel is that you don’t need access to the device to initiate it. This means you don’t need to leave open ports when not in use (i.e. there are no network attack surfaces).
 
 ## **The TCP layer is not taken out in your architecture. Does your protocol run over and above it?**
 
-Yes. SSH No Ports uses the atProtocol which runs on TCP. In order for SSH No Ports to reach the device, the device must have an IP address. However, it does not need to be a static IP address, and SSH No Ports doesn't even need to know what the IP address is. So, even though it runs over TCP/IP, it does away with all the pain of finding and managing IP addresses.
+Yes. NoPorts uses the atProtocol which runs on TCP. In order for NoPorts to reach the device, the device must have an IP address. However, it does not need to be a static IP address, and NoPorts doesn't even need to know what the IP address is. So, even though it runs over TCP/IP, it does away with all the pain of finding and managing IP addresses.
 
-## **So, you can SSH without any open ports...what about RDP?**
+## **So, you can SSH without any open ports... what about RDP?**
 
-You can use SSH No Ports (as it is) to RDP right now! While it is still not its own "RDP No Ports" product, you can run an SSH No Ports session in the background and append the -L SSH flag using the -o sshnp flag to forward the local RDP port 3389 on your desktop to a local port on your client. Here's a [quick video explainer](https://www.youtube.com/watch?v=G3rRBHdwHvI) for more details. We are working on other No Ports products that will not be reliant on SSH.
+You can use NoPorts Tunnel for RDP. [This guide](../use-cases/rdp.md) demonstrates how.&#x20;
 
 ## How do I close port 22?
 
@@ -61,7 +61,7 @@ To close port 22, edit `/etc/ssh/sshd_config` remove any lines containing `Liste
 
 <summary>Additional notes for advanced users</summary>
 
-You may also replace `localhost` with the ipv4 (`127.0.0.1`) or ipv6 (`::1`) loopback address. However beware! All No Ports tech defaults to doing lookups for localhost. If your system has both configured in `/etc/hosts` then SSH No Ports may resolve to the wrong address for which sshd is configured for.
+You may also replace `localhost` with the ipv4 (`127.0.0.1`) or ipv6 (`::1`) loopback address. However beware! All NoPorts tech defaults to doing lookups for localhost. If your system has both configured in `/etc/hosts` then NoPorts may resolve to the wrong address for which sshd is configured for.
 
 </details>
 

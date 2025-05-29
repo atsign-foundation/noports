@@ -1,4 +1,5 @@
 ---
+hidden: true
 icon: arrow-up-from-square
 ---
 
