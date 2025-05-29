@@ -364,14 +364,14 @@ getPathToBinariesForTypeAndVersion() {
   esac
 }
 
-setup_type_and_version() {
+setUpTypeAndVersion() {
   IFS=: read -r type version <<<"$1"
   case "$type" in
     d) # dart
-      setupDartVersion "$version" || logErrorAndExit "Failed to set up binaries for dart version [$version]"
+      setUpDartVersion "$version" || logErrorAndExit "Failed to set up binaries for dart version [$version]"
       ;;
     c) # c
-      setupCVersion "$version" || logErrorAndExit "Failed to set up binaries for c version [$version]"
+      setUpCVersionersion "$version" || logErrorAndExit "Failed to set up binaries for c version [$version]"
       ;;
     *)
       logErrorAndExit "This script doesn't know where to find NoPorts daemon binary for [$typeAndVersion]"
@@ -397,7 +397,7 @@ getDartReleaseBinDirForVersion() {
   echo "$testRootDir/releases/dart.$version/sshnp"
 }
 
-setupDartVersion() {
+setUpDartVersion() {
   version="$1"
 
   if test "$version" = "current"; then
@@ -526,7 +526,7 @@ getCCompilationOutputDir() {
   echo "$testRuntimeDir/binaries/c.branch"
 }
 
-setupCVersion() {
+setUpCVersionersion() {
   version="$1"
 
   if test "$version" = "current"; then
@@ -545,7 +545,7 @@ buildCurrentCBinaries() {
   binaryOutputDir=$(getCCompilationOutputDir)
   mkdir -p "$binaryOutputDir"
 
-  if [ "$recompile" = "true" ]; then
+  if [[ "$recompile" = "true" ]]; then
     cd "$binaryOutputDir" || exit 1
     rm -f activate_cli srv sshnpd srvd sshnp npt
   fi
@@ -592,30 +592,45 @@ buildCurrentCBinaries() {
 
 ### END C ###
 
-### BEGIN start_daemons.sh FUNCTIONS ###
+### BEGIN build_docker_daemons.sh and start_daemons.sh FUNCTIONS ###
+
+getDockerDaemonImageName() {
+  type="$1" # e.g. "d" or "c"
+  version="$2" # e.g. "current" or "4.0.5"
+  if [ "$version" = "current" ]; then
+      echo "atsigncompany/noports_e2e_all_$type:current"
+  else
+      echo "atsigncompany/noports_e2e_all_$type:v$version"
+  fi
+}
+
+getBaseRuntimeImageName() {
+  echo "atsigncompany/noports_e2e_all_base_runtime:latest"
+}
 
 buildDockerDaemon() {
   local type="$1"
   local version="$2"
   
-  if [[ "$type" == "d" ]]; then
+  if [ "$type" = "d" ]; then
       language="dart"
-  elif [[ "$type" == "c" ]]; then
+  elif [ "$type" = "c" ]; then
       language="c"
   else
       logErrorAndReport "Error: Unknown type: $type"
       return 1
   fi
 
-  if [[ "$version" == "current" ]]; then
+  imageName=$(getDockerDaemonImageName "$type" "$version")
+  if [ "$version" = "current" ]; then
       dockerfile="$dockerfilesDir/Dockerfile.$language.current"
-      tag="noports-$type:current"
+      tag="$imageName"
       fBuildArg=""
       fCache="--no-cache"
   else
       # assume "$version" is a release version like "4.0.5" or "5.2.0"
       dockerfile="$dockerfilesDir/Dockerfile.$language.release"
-      tag="noports-$type:v$version"
+      tag="$imageName"
       fBuildArg="--build-arg release=v$version"
       fCache=""
   fi
@@ -637,8 +652,8 @@ buildDockerDaemon() {
   local retry_count=0
   local exitCode=1
 
-  while [[ $exitCode -ne 0 && $retry_count -lt $max_retries ]]; do
-    if [[ $retry_count -gt 0 ]]; then
+  while [ $exitCode -ne 0 ] && [ $retry_count -lt $max_retries ]; do
+    if [ $retry_count -gt 0 ]; then
       logInfo "Retrying Docker build (attempt $((retry_count+1))/$max_retries)..."
       sleep 1
     fi
@@ -648,7 +663,7 @@ buildDockerDaemon() {
     retry_count=$((retry_count+1))
   done
   
-  if [[ $exitCode -ne 0 ]]; then
+  if [ $exitCode -ne 0 ]; then
       logErrorAndReport "Error: Docker build failed with exit code $exitCode after $max_retries attempts"
       return $exitCode
   else
@@ -686,11 +701,7 @@ runDockerDaemon() {
   local daemonAt="$5"
   local daemonFlags="$6"
 
-  if [[ "$version" == "current" ]]; then
-    tag="noports-$type:current"
-  else
-    tag="noports-$type:v$version"
-  fi
+  tag=$(getDockerDaemonImageName "$type" "$version")
 
   logInfo "Starting container for: Type: $type, Version: $version, atDirectory: $atDirectoryHost Flags: $daemonFlags, Device name: $deviceName, Client atSign: $clientAt, Daemon atSign: $daemonAt"
 
@@ -707,4 +718,4 @@ runDockerDaemon() {
   eval "$dockerRunCommand"
 }
 
-### END start_daemons.sh FUNCTIONS ###
+### END build_docker_daemons.sh and start_daemons.sh FUNCTIONS ###
