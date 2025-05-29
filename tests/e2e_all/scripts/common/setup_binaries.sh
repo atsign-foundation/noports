@@ -69,7 +69,7 @@ uniqueVersions=$(for ver in $allVersions; do echo "$ver"; done | sort -u | tr "\
 if [ $allowParallelization == "true" ]; then
   pids=()
   for typeAndVersion in $uniqueVersions; do
-    setup_type_and_version $typeAndVersion &
+    setUpTypeAndVersion $typeAndVersion &
     pid=$!
     pids+=($pid)
   done
@@ -82,6 +82,6 @@ if [ $allowParallelization == "true" ]; then
   done
 else
   for typeAndVersion in $uniqueVersions; do
-    setup_type_and_version $typeAndVersion
+    setUpTypeAndVersion $typeAndVersion
   done
 fi
