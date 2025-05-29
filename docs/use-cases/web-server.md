@@ -1,6 +1,6 @@
 ---
-icon: globe-pointer
 description: This guide covers usage of NoPorts with webpages or APIs.
+icon: globe-pointer
 ---
 
 # Web Server
@@ -28,6 +28,6 @@ Now you can access localhost:80 in your browser to access the web server locally
 
 ### To learn more about NPT
 
-{% content-ref url="../usage/basic-usage/" %}
-[basic-usage](../usage/basic-usage/)
+{% content-ref url="../usage/basic-usage.md" %}
+[basic-usage.md](../usage/basic-usage.md)
 {% endcontent-ref %}
