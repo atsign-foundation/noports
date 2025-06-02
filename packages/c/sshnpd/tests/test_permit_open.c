@@ -44,8 +44,6 @@ int star_star_test() {
   params.permitopen_ports = ports;
   params.permitopen_len = 1;
 
-  bool allow;
-
   params.requested_host = "localhost";
   params.requested_port = 22;
   if (!should_permitopen(&params)) {
@@ -74,7 +72,6 @@ int localhost_star_test() {
   params.permitopen_hosts = hosts;
   params.permitopen_ports = ports;
   params.permitopen_len = 1;
-  bool allow;
   params.requested_host = "localhost";
   params.requested_port = 22;
   if (!should_permitopen(&params)) {
@@ -101,8 +98,6 @@ int star_port_test() {
   params.permitopen_hosts = hosts;
   params.permitopen_ports = ports;
   params.permitopen_len = 1;
-
-  bool allow;
 
   params.requested_host = "localhost";
   params.requested_port = 22;
@@ -131,8 +126,6 @@ int localhost_port_test() {
   params.permitopen_hosts = hosts;
   params.permitopen_ports = ports;
   params.permitopen_len = 1;
-
-  bool allow;
 
   params.requested_host = "localhost";
   params.requested_port = 22;
@@ -167,8 +160,6 @@ int list_test() {
   params.permitopen_hosts = hosts;
   params.permitopen_ports = ports;
   params.permitopen_len = 2;
-
-  bool allow;
 
   params.requested_host = "localhost";
   params.requested_port = 22;

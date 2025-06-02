@@ -179,5 +179,11 @@ int parse_sshnpd_params(sshnpd_params *params, int argc, const char **argv) {
   }
 
   // Repeat for permit-open
+  // Convert devicename to lower case
+  for (char *c = params->device; c[0] != '\0'; c++) {
+    if (*c >= 'A' && *c <= 'Z') {
+      *c += ('a' - 'A');
+    }
+  }
   return 0;
 }
