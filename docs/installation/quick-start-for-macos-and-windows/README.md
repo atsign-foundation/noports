@@ -42,6 +42,10 @@ Download the NoPorts desktop app using one of the links below:
 2. Enter your **client atSign** into the text field (e.g., @pluto83\_client), leave the root domain as is, and then click **Next**.
 3. A **one-time password (OTP)** will be sent to you via email. Enter this OTP into the app and then click **Confirm**.&#x20;
 
+{% hint style="info" %}
+For Windows, if the app stalls at "Preparing for activation", verify that your CA certificates are up to date.
+{% endhint %}
+
 ## Step 4: Save a copy of your atKeys
 
 Your atKeys (cryptographic keys) will be used to pair your atSign with this and other devices in future. You can [learn more about these keys here](https://www.youtube.com/watch?v=bRRLCOHP-BY).
