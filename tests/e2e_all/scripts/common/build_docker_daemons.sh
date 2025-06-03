@@ -21,19 +21,22 @@ isImageExists() {
   fi
 }
 
+baseRuntimeImageName=$(getBaseRuntimeImageName)
+
 pullBaseRuntimeImage() {
   logInfo "Pulling base runtime image"
-  imageName="atsigncompany/noports_e2e_all_base_runtime:latest"
-  sudo docker pull $imageName --quiet
+  sudo docker pull $baseRuntimeImageName --quiet
   if [ $? -ne 0 ]; then
-    logError "Failed to pull base runtime image $imageName"
-    return 1
+    logError "Failed to pull base runtime image $baseRuntimeImageName, attempting with --platform linux/amd64 as a fail safe"
+    sudo docker pull $baseRuntimeImageName --platform linux/amd64 --quiet
+    if [ $? -ne 0 ]; then
+      logError "Failed to pull base runtime image $baseRuntimeImageName even with --platform linux/amd64"
+      return 1
+    fi
   fi
-  logInfo "Successfully pulled base runtime image $imageName"
+  logInfo "Successfully pulled base runtime image $baseRuntimeImageName"
   return 0
 }
-
-baseRuntimeImageName=$(getBaseRuntimeImageName)
 
 buildBaseRuntimeImage() {
   logInfo "Building Dockerfile.base.runtime"
