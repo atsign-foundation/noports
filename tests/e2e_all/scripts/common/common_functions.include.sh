@@ -371,7 +371,7 @@ setUpTypeAndVersion() {
       setUpDartVersion "$version" || logErrorAndExit "Failed to set up binaries for dart version [$version]"
       ;;
     c) # c
-      setUpCVersion "$version" || logErrorAndExit "Failed to set up binaries for c version [$version]"
+      setUpCVersionersion "$version" || logErrorAndExit "Failed to set up binaries for c version [$version]"
       ;;
     *)
       logErrorAndExit "This script doesn't know where to find NoPorts daemon binary for [$typeAndVersion]"
@@ -526,7 +526,7 @@ getCCompilationOutputDir() {
   echo "$testRuntimeDir/binaries/c.branch"
 }
 
-setUpCVersion() {
+setUpCVersionersion() {
   version="$1"
 
   if test "$version" = "current"; then
@@ -644,7 +644,7 @@ getDockerDaemonImageName() {
   if [ "$version" = "current" ]; then
       echo "atsigncompany/noports_e2e_all_$type:current"
   else
-      echo "atsigncompany/noports_e2e_all_$type:$version"
+      echo "atsigncompany/noports_e2e_all_$type:v$version"
   fi
 }
 
@@ -675,7 +675,7 @@ buildDockerDaemon() {
       # assume "$version" is a release version like "4.0.5" or "5.2.0"
       dockerfile="$dockerfilesDir/Dockerfile.$language.release"
       tag="$imageName"
-      fBuildArg="--build-arg release=$version"
+      fBuildArg="--build-arg release=v$version"
       fCache=""
   fi
 
