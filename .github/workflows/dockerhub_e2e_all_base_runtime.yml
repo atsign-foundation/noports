@@ -26,6 +26,7 @@ jobs:
         with:
           file: ./tests/e2e_all/dockerfiles/Dockerfile.base.runtime
           push: true
+          platforms: linux/amd64,linux/arm64
           tags: |
             atsigncompany/noports_e2e_all_base_runtime:latest
             atsigncompany/noports_e2e_all_base_runtime:gha${{ github.run_number }}
