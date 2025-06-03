@@ -1,3 +1,8 @@
+## 1.0.12
+
+- fix: convert device name to lower case to comply with Dart
+- build(deps): Bump at_c to support cjson patch
+
 ## 1.0.11
 
 - build(deps): Bump to at_c 0.4.3 to get mbedtls 3.6.3.1
