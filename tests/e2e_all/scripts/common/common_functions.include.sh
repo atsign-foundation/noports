@@ -675,7 +675,7 @@ buildDockerDaemon() {
       # assume "$version" is a release version like "4.0.5" or "5.2.0"
       dockerfile="$dockerfilesDir/Dockerfile.$language.release"
       tag="$imageName"
-      fBuildArg="--build-arg release=v$version"
+      fBuildArg="--build-arg release=$version"
       fCache=""
   fi
 
