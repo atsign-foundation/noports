@@ -644,7 +644,7 @@ getDockerDaemonImageName() {
   if [ "$version" = "current" ]; then
       echo "atsigncompany/noports_e2e_all_$type:current"
   else
-      echo "atsigncompany/noports_e2e_all_$type:v$version"
+      echo "atsigncompany/noports_e2e_all_$type:$version"
   fi
 }
 
