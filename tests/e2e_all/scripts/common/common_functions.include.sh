@@ -532,8 +532,7 @@ setUpCVersionersion() {
   if test "$version" = "current"; then
     buildCurrentCBinaries || exit $?
   else
-    logErrorAndExit "Versions other than 'current' are unimplemented for C"
-    # downloadDartBinaries "$version" || exit $?
+    downloadCBinaries "$version" || exit $?
   fi
 }
 
@@ -588,6 +587,51 @@ buildCurrentCBinaries() {
   fi
 
   cp "$testScriptsDir/srv.sh" "$binaryOutputDir/srv.sh"
+}
+
+getCReleaseDirForVersion() {
+  version="$1"
+  echo "$testRootDir/releases/c.$version"
+}
+
+downloadCBinaries() {
+  version="$1"
+
+  versionBinDir=$(getCReleaseDirForVersion "$version")
+  mkdir -p "$versionBinDir"
+  EXT="tar.gz"
+  downloadZipName="csshnpd-c$version.$EXT"
+  logInfo "    Getting binaries for C release $version"
+
+  if [ -f "$versionBinDir/$downloadZipName" ]; then
+    logInfo "        $versionBinDir/$downloadZipName has already been downloaded"
+  else
+    baseUrl="https://github.com/atsign-foundation/noports/releases/download"
+    downloadUrl="$baseUrl/c$version/$downloadZipName"
+    logInfo "        Downloading $downloadUrl to $versionBinDir/$downloadZipName"
+    curl -f -s -L -X GET "$downloadUrl" -o "$versionBinDir/$downloadZipName"
+    retCode=$?
+    if [ "$retCode" -ne 0 ]; then
+      logErrorAndExit "Failed to download $downloadUrl with curl exit status $retCode"
+    fi
+  fi
+
+  if [ ! -d "$versionBinDir/sshnp" ]; then
+    case "$EXT" in
+      zip)
+        unzip -qo "$versionBinDir/$downloadZipName" -d "$versionBinDir"
+        ;;
+      tgz | tar.gz)
+        tar -zxf "$versionBinDir/$downloadZipName" -C "$versionBinDir"
+        ;;
+      *)
+        logErrorAndExit "Unsupported archive extension: $EXT"
+        ;;
+    esac
+  fi
+
+  rm -f "${testRuntimeDir}/binaries/c.$version"
+  ln -s "$versionBinDir/sshnp" "${testRuntimeDir}/binaries/c.$version"
 }
 
 ### END C ###
