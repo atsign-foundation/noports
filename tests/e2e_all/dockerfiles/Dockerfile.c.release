@@ -19,7 +19,7 @@ RUN set -eux ; \
         riscv64) ARCH="riscv64";; \
     esac ; \
     VERSION=${release} ; \
-    wget "${URLP}/${VERSION}/csshnpd-${VERSION}.tar.gz" ; \
+    wget "${URLP}/c${VERSION}/csshnpd-c${VERSION}.tar.gz" ; \
     tar -xvf csshnpd-${VERSION}.tar.gz ; \
     rm csshnpd-${VERSION}.tar.gz ; \
     cd csshnpd-${VERSION} ; \
