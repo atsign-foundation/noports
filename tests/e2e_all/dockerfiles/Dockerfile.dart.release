@@ -29,7 +29,7 @@ RUN apt-get update && \
     cd sshnp && \
     mv -f at_activate install.sh np_admin npp_atserver npp_file npt srv srvd sshnp sshnpd ${OUTPUT_DIR} || true
 
-FROM atsigncompany/noports_e2e_all_base_runtime:latest@sha256:8b54e9be61464b6497581d89ba37858e39bd61b496a6bec838b21f3b3af69e52 AS runtime
+FROM atsigncompany/noports_e2e_all_base_runtime:latest@sha256:7ddde24b6c38aa59aba522cca89ec8d5904e1ff54a3fdc16f88423fd5308ed9f AS runtime
 
 ENV USER=atsign
 ENV HOMEDIR=/${USER}
