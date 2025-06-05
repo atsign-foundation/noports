@@ -6,6 +6,8 @@
 - **FIX**: authorization icon is now greyed out when it's not available to be pressed on a non-dashboard screen and primary color when app is on the authorization screen.
 - **FEAT**: demo profile is downloaded and added to profile screen by pressing the try now button.
 - **FEAT**: atSigns can be switched in the settings screen.
+- **FIX**: NoPorts logo changed to the correct one.
+- **CHORE**: Client atSign changed to NoPorts atSign.
 
 ## 1.2.0+15
 
