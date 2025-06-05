@@ -17,6 +17,7 @@ abstract class SrvGeneratorCaller<T> {
     bool multi = false,
     bool detached = false,
     Duration timeout = DefaultArgs.srvTimeout,
+    Duration? controlChannelHeartbeat,
   });
 }
 

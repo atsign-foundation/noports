@@ -13,6 +13,9 @@ import 'package:mutex/mutex.dart';
 import 'package:noports_core/srv.dart';
 import 'package:noports_core/sshnp.dart';
 import 'package:socket_connector/socket_connector.dart';
+import 'package:at_commons/at_commons.dart' as at_commons;
+
+const newLineCodeUnit = 10;
 
 @visibleForTesting
 class SrvImplExec implements Srv<Process> {
@@ -48,6 +51,9 @@ class SrvImplExec implements Srv<Process> {
   @override
   final Duration timeout;
 
+  @override
+  final Duration? controlChannelHeartbeat;
+
   SrvImplExec(
     this.streamingHost,
     this.streamingPort, {
@@ -59,6 +65,7 @@ class SrvImplExec implements Srv<Process> {
     this.sessionIVString,
     required this.multi,
     required this.timeout,
+    this.controlChannelHeartbeat,
   }) {
     if (localPort == null) {
       throw ArgumentError('localPort must be non-null');
@@ -93,6 +100,10 @@ class SrvImplExec implements Srv<Process> {
       '--timeout',
       timeout.inSeconds.toString(),
     ];
+    if (controlChannelHeartbeat != null) {
+      rvArgs.addAll(
+          ['--heartbeat', controlChannelHeartbeat!.inSeconds.toString()]);
+    }
     if (multi) {
       rvArgs.add('--multi');
     }
@@ -193,6 +204,9 @@ class SrvImplInline implements Srv<SSHSocket> {
   @override
   final Duration timeout;
 
+  @override
+  final Duration? controlChannelHeartbeat;
+
   SrvImplInline(
     this.streamingHost,
     this.streamingPort, {
@@ -201,6 +215,7 @@ class SrvImplInline implements Srv<SSHSocket> {
     this.sessionIVString,
     this.multi = false,
     required this.timeout,
+    required this.controlChannelHeartbeat,
   }) {
     if ((sessionAESKeyString == null && sessionIVString != null) ||
         (sessionAESKeyString != null && sessionIVString == null)) {
@@ -347,6 +362,9 @@ class SrvImplDart implements Srv<SocketConnector> {
   @override
   final Duration timeout;
 
+  @override
+  final Duration? controlChannelHeartbeat;
+
   final AtSignLogger logger = AtSignLogger(' SrvImplDart ');
 
   SrvImplDart(
@@ -361,6 +379,7 @@ class SrvImplDart implements Srv<SocketConnector> {
     this.multi = false,
     required this.detached,
     required this.timeout,
+    this.controlChannelHeartbeat,
   }) {
     logger.info('New SrvImplDart - localPort $localPort');
     if ((sessionAESKeyString == null && sessionIVString != null) ||
@@ -509,10 +528,10 @@ class SrvImplDart implements Srv<SocketConnector> {
     Socket sessionControlSocket = await Socket.connect(
         streamingHost, streamingPort,
         timeout: Duration(seconds: 10));
-    // Authenticate the control socket
+    // Authenticate the control channel
     if (rvdAuthString != null) {
       logger.info('_runClientSideMulti authenticating'
-          ' control socket connection to rvd');
+          ' control channel connection to rvd');
       sessionControlSocket.writeln(rvdAuthString);
     }
 
@@ -529,7 +548,7 @@ class SrvImplDart implements Srv<SocketConnector> {
     }
 
     logger.info('_runClientSideMulti serverToSocket is ready');
-    // upon socketConnector.done, destroy the control socket, and complete
+    // upon socketConnector.done, destroy the control channel, and complete
     unawaited(socketConnector.done.whenComplete(() {
       logger.info('_runClientSideMulti sc.done');
       sessionControlSocket.destroy();
@@ -546,7 +565,7 @@ class SrvImplDart implements Srv<SocketConnector> {
     sessionControlSocket.listen((event) {
       String response = String.fromCharCodes(event).trim();
       logger.info('_runClientSideMulti'
-          ' Received control socket response: [$response]');
+          ' Received control channel response: [$response]');
     }, onError: (e) {
       logger.severe('_runClientSideMulti controlSocket error: $e');
       socketConnector?.close();
@@ -564,8 +583,9 @@ class SrvImplDart implements Srv<SocketConnector> {
       timeout: timeout,
       beforeJoining: (Side sideA, Side sideB) {
         logger.info('_runClientSideMulti Sending connect request');
-        sessionControlSocket
-            .add(Uint8List.fromList('connect:no:encrypt\n'.codeUnits));
+        sessionControlSocket.add(
+          Uint8List.fromList('connect:no:encrypt\n'.codeUnits),
+        );
         // Authenticate the sideB socket (to the rvd)
         if (rvdAuthString != null) {
           logger
@@ -597,7 +617,7 @@ class SrvImplDart implements Srv<SocketConnector> {
     controlStream.listen((event) {
       String response = String.fromCharCodes(event).trim();
       logger.info('_runClientSideMulti'
-          ' Received control socket response: [$response]');
+          ' Received control channel response: [$response]');
     }, onError: (e) {
       logger.severe('_runClientSideMulti controlSocket error: $e');
       socketConnector?.close();
@@ -605,6 +625,27 @@ class SrvImplDart implements Srv<SocketConnector> {
       logger.info('_runClientSideMulti controlSocket done');
       socketConnector?.close();
     });
+
+    if (controlChannelHeartbeat != null) {
+      bool heartbeatInProgress = false;
+      int heartbeatCounter = 1;
+      Timer.periodic(controlChannelHeartbeat!, (timer) async {
+        if (heartbeatInProgress) {
+          logger.warning('control channel heartbeat already in progress');
+          return;
+        }
+        try {
+          heartbeatInProgress = true;
+          logger.info('Sending heartbeat $heartbeatCounter on control channel');
+          controlSink.add(
+            Uint8List.fromList('heartbeat:$heartbeatCounter\n'.codeUnits),
+          );
+          heartbeatCounter++;
+        } finally {
+          heartbeatInProgress = false;
+        }
+      });
+    }
 
     logger.info('_runClientSideMulti calling SocketConnector.serverToSocket');
     socketConnector = await SocketConnector.serverToSocket(
@@ -615,7 +656,7 @@ class SrvImplDart implements Srv<SocketConnector> {
       logger: ioSinkForLogger(logger),
       multi: multi,
       timeout: timeout,
-      beforeJoining: (Side sideA, Side sideB) {
+      beforeJoining: (Side sideA, Side sideB) async {
         logger.info('_runClientSideMulti Sending connect request');
 
         String socketAESKey =
@@ -644,7 +685,7 @@ class SrvImplDart implements Srv<SocketConnector> {
     DataTransformer? decrypter,
   ) async {
     logger.info('_runDaemonSideMulti'
-        ' Control socket received connect request - '
+        ' control channel received connect request - '
         ' creating new socketToSocket connection');
 
     InternetAddress localAddress = await resolveRequestedLocalHost();
@@ -669,8 +710,8 @@ class SrvImplDart implements Srv<SocketConnector> {
         await sideBSocket.flush();
       }
     } catch (e) {
-      logger.shout(
-          'Failed to connect to relay ($relayAddress:$streamingPort) with error : $e');
+      logger.shout('Failed to connect to relay ($relayAddress:$streamingPort)'
+          ' with error : $e');
       return;
     }
 
@@ -685,8 +726,8 @@ class SrvImplDart implements Srv<SocketConnector> {
       sideASocket = await Socket.connect(localAddress, localPort);
       sideA = Side(sideASocket, true, transformer: encrypter);
     } catch (e) {
-      logger.shout(
-          'Failed to connect locally ($localAddress:$localPort) with error : $e');
+      logger.shout('Failed to connect locally ($localAddress:$localPort)'
+          ' with error : $e');
       logger.shout('Closing sideB (relay) socket connection');
       sideBSocket.destroy();
 
@@ -706,29 +747,39 @@ class SrvImplDart implements Srv<SocketConnector> {
     logger.info('socket_connector: started');
   }
 
-  Future<void> _handleControlRequest(
+  Future<void> _handleControlMessage(
     SocketConnector sc,
     InternetAddress relayAddress,
-    String request,
+    String message,
   ) async {
-    request = request.trim();
-    List<String> args = request.split(":");
+    message = message.trim();
+    List<String> args = message.split(":");
     DataTransformer? encrypter;
     DataTransformer? decrypter;
     switch (args.first) {
       case 'connect':
-        if (request != 'connect:no:encrypt') {
-          if (args.length != 3) {
-            logger.severe('Unknown request to control socket: [$request]');
+        if (message == 'connect:no:encrypt') {
+          // unencrypted session
+          encrypter = null;
+          decrypter = null;
+        } else {
+          // Encrypted session, we expect params
+          if (args.length < 3) {
+            logger.severe('Malformed control message: [$message]');
             return;
           }
           decrypter = createDecrypter(args[1], args[2]);
           encrypter = createEncrypter(args[1], args[2]);
         }
+
         await _handleMultiConnectRequest(
             sc, relayAddress, encrypter, decrypter);
+        break;
+      case 'heartbeat':
+        logger.info('Received control message: $message');
+        break;
       default:
-        logger.severe('Unknown request to control socket: [$request]');
+        logger.shout('Received unknown control message: [$message]');
         return;
     }
   }
@@ -743,15 +794,15 @@ class SrvImplDart implements Srv<SocketConnector> {
       logger: ioSinkForLogger(logger),
     );
 
-    // - create control socket and listen for requests
+    // - create control channel and listen for requests
     // - for each request, create a socketToSocket connection
     Socket sessionControlSocket = await Socket.connect(
         streamingHost, streamingPort,
         timeout: Duration(seconds: 10));
-    // Authenticate the control socket
+    // Authenticate the control channel
     if (rvdAuthString != null) {
       logger.info('_runDaemonSideMulti authenticating'
-          ' control socket connection to rvd');
+          ' control channel connection to rvd');
       sessionControlSocket.writeln(rvdAuthString);
     }
 
@@ -765,7 +816,7 @@ class SrvImplDart implements Srv<SocketConnector> {
       _daemonSidePlainSocket(sessionControlSocket, sc, relayAddress);
     }
 
-    // upon socketConnector.done, destroy the control socket, and complete
+    // upon socketConnector.done, destroy the control channel, and complete
     unawaited(sc.done.whenComplete(() {
       sessionControlSocket.destroy();
     }));
@@ -773,21 +824,19 @@ class SrvImplDart implements Srv<SocketConnector> {
     return sc;
   }
 
+  /// Start the control stream listener on the control channel itself
+  /// since there is no encryption / decryption
   void _daemonSidePlainSocket(Socket sessionControlSocket, SocketConnector sc,
       InternetAddress relayAddress) {
-    Mutex controlStreamMutex = Mutex();
-    sessionControlSocket.listen((event) async {
-      await _sessionControlSocketListener(
-          controlStreamMutex, event, sc, relayAddress);
-    }, onError: (e) {
-      logger.severe('controlSocket error: $e');
-      sc.close();
-    }, onDone: () {
-      logger.info('controlSocket done');
-      sc.close();
-    });
+    _startDaemonControlSocketListener(
+      sessionControlSocket,
+      sessionControlSocket,
+      sc,
+      relayAddress,
+    );
   }
 
+  /// Set up encrypter & decrypter and then start the control stream listener
   void _daemonSideEncryptedSocket(Socket sessionControlSocket,
       SocketConnector sc, InternetAddress relayAddress) {
     DataTransformer controlEncrypter =
@@ -801,11 +850,86 @@ class SrvImplDart implements Srv<SocketConnector> {
     StreamController<Uint8List> controlSink = StreamController<Uint8List>();
     controlEncrypter(controlSink.stream).listen(sessionControlSocket.add);
 
+    _startDaemonControlSocketListener(
+      controlStream,
+      controlSink,
+      sc,
+      relayAddress,
+    );
+  }
+
+  void _startDaemonControlSocketListener(
+    Stream<List<int>> sessionControlStream,
+    StreamSink<List<int>> sessionControlSink,
+    SocketConnector sc,
+    InternetAddress relayAddress,
+  ) {
+    logger.info('Starting control channel listener');
+    at_commons.ByteBuffer rcvBuffer = at_commons.ByteBuffer(capacity: 4096);
     Mutex controlStreamMutex = Mutex();
-    controlStream.listen((event) async {
-      logger.info('Received event on control socket.');
-      await _sessionControlSocketListener(
-          controlStreamMutex, event, sc, relayAddress);
+    sessionControlStream.listen((data) async {
+      try {
+        await controlStreamMutex.acquire();
+        for (int element = 0; element < data.length; element++) {
+          // If it's a '\n' then complete data has been received, so process it
+          if (data[element] == newLineCodeUnit) {
+            String controlMsg = '';
+            try {
+              controlMsg = utf8.decode(rcvBuffer.getData().toList()).trim();
+              try {
+                if (controlMsg.isEmpty) {
+                  logger.info('Empty control message (Uint8List) received');
+                  return;
+                }
+                await _handleControlMessage(sc, relayAddress, controlMsg);
+              } catch (e, st) {
+                logger.shout(
+                    'Caught (will rethrow) error: $e\nStack Trace:\n$st');
+                rethrow;
+              }
+            } catch (e) {
+              logger.severe('$e while handling control message: $controlMsg');
+            } finally {
+              rcvBuffer.clear();
+            }
+          } else {
+            rcvBuffer.addByte(data[element]);
+            // Backwards compatibility for clients prior to 5.6.1
+            // IF we're at the LAST byte in the received data
+            // AND the rcvBuffer length is currently *precisely* an exact
+            // multiple of the length of
+            //   'connect:$socketAESKey:$socketIV'
+            //       7   1     44      1   24
+            // i.e. an exact multiple of 77
+            // THEN we should also go ahead and process the request (or requests)
+            int oldMagic = 7 + 1 + 44 + 1 + 24;
+            if (element == data.length - 1) {
+              if (rcvBuffer.length() % oldMagic == 0) {
+                logger.shout('Backwards compatibility handler will process'
+                    ' ${rcvBuffer.length() / oldMagic} messages');
+                try {
+                  List<int> toProcess = rcvBuffer.getData().toList();
+                  while (toProcess.isNotEmpty) {
+                    String controlMsg =
+                        utf8.decode(toProcess.sublist(0, oldMagic)).trim();
+                    toProcess = toProcess.sublist(oldMagic);
+                    try {
+                      await _handleControlMessage(sc, relayAddress, controlMsg);
+                    } catch (e) {
+                      logger.severe(
+                          '$e while handling control message: $controlMsg');
+                    }
+                  }
+                } finally {
+                  rcvBuffer.clear();
+                }
+              }
+            }
+          }
+        }
+      } finally {
+        controlStreamMutex.release();
+      }
     }, onError: (e) {
       logger.severe('controlSocket error: $e');
       sc.close();
@@ -813,45 +937,6 @@ class SrvImplDart implements Srv<SocketConnector> {
       logger.info('controlSocket done');
       sc.close();
     });
-  }
-
-  Future<void> _sessionControlSocketListener(Mutex controlStreamMutex,
-      List<int> event, SocketConnector sc, InternetAddress relayAddress) async {
-    try {
-      await controlStreamMutex.acquire();
-      if (event.isEmpty) {
-        logger.info('Empty control message (Uint8List) received');
-        return;
-      }
-      String eventStr = String.fromCharCodes(event).trim();
-      if (eventStr.isEmpty) {
-        logger.info('Empty control message (String) received');
-        return;
-      }
-      // TODO The code below (splitting by `connect:`) resolves a
-      // particular issue for the moment, but the overall approach
-      // to handling control messages needs to be redone, e.g. :
-      // Ideally - send the control request, and a newline
-      //   => as of this commit, this is the case
-      // Receive - wait for newline, handle the request, repeat
-      //   => older npt clients don't send `\n` so we will need to add some
-      //      magic to handle both (a) older clients which don't send `\n`
-      //      as well as (b) newer ones which do. Cleanest is to add a
-      //      flag to the npt request from the client stating that it sends
-      //      `\n` . If so then we handle that cleanly; if not then we use
-      //      this approach (split by `connect:`)
-      List<String> requests = eventStr.split('connect:');
-      for (String request in requests) {
-        if (request.isNotEmpty) {
-          await _handleControlRequest(sc, relayAddress, 'connect:$request');
-        }
-      }
-    } catch (e, st) {
-      logger.shout('Caught (will rethrow) error: $e\nStack Trace:\n$st');
-      rethrow;
-    } finally {
-      controlStreamMutex.release();
-    }
   }
 
   Future<InternetAddress> resolveRequestedLocalHost() async {

@@ -89,7 +89,7 @@ int run_srv_daemon_side_multi(srv_params_t *params) {
     }
   }
 
-  // Open a control socket of type B (non local host and port)
+  // Open a control channel of type B (non local host and port)
   // This socket will decrypt the messages comming from the other side
   // which provide the information to create new sockets
   side_t control_side;
@@ -187,7 +187,7 @@ int run_srv_daemon_side_multi(srv_params_t *params) {
           goto exit;
         }
         atlogger_log(TAG, ATLOGGER_LOGGING_LEVEL_DEBUG,
-                     "run_srv_daemon_side_multi\n Control socket received %s request - \n creating new socketToSocket "
+                     "run_srv_daemon_side_multi\n control channel received %s request - \n creating new socketToSocket "
                      "connection\n",
                      messagetype);
 
@@ -237,7 +237,7 @@ int run_srv_daemon_side_multi(srv_params_t *params) {
         pthread_detach(sts_thread);
 
       } else {
-        atlogger_log(TAG, ATLOGGER_LOGGING_LEVEL_DEBUG, "Unknown request to control socket: %s\n", requests[i]);
+        atlogger_log(TAG, ATLOGGER_LOGGING_LEVEL_DEBUG, "Unknown request to control channel: %s\n", requests[i]);
       }
     }
     // Clean buffer for next iteration and free previous requests

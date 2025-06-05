@@ -99,6 +99,7 @@ abstract class SrvdChannel<T> with AsyncInitialization, AtClientBindings {
     bool multi = false,
     bool detached = false,
     Duration timeout = DefaultArgs.srvTimeout,
+    Duration? controlChannelHeartbeat,
   }) async {
     await callInitialization();
 
@@ -124,6 +125,7 @@ abstract class SrvdChannel<T> with AsyncInitialization, AtClientBindings {
       multi: multi,
       detached: detached,
       timeout: timeout,
+      controlChannelHeartbeat: controlChannelHeartbeat,
     );
     return srv.run();
   }

@@ -113,6 +113,8 @@ abstract class NptBase implements Npt {
 
   final logger = AtSignLogger(' Npt ');
 
+  bool sendControlHeartbeats = false;
+
   NptBase({
     required this.params,
     required this.atClient,
@@ -194,6 +196,7 @@ class _NptImpl extends NptBase
       DaemonFeature.srAuth,
       DaemonFeature.srE2ee,
       DaemonFeature.supportsPortChoice,
+      DaemonFeature.controlChannelHeartbeats,
     ];
     if (!(params.timeout == DefaultArgs.srvTimeout)) {
       requiredFeatures.add(DaemonFeature.adjustableTimeout);
@@ -215,7 +218,18 @@ class _NptImpl extends NptBase
     sendProgress('Received daemon feature check response');
 
     await Future.delayed(Duration(milliseconds: 1));
-    for (final (DaemonFeature _, bool supported, String reason) in features) {
+    for (final (DaemonFeature feature, bool supported, String reason)
+        in features) {
+      if (feature == DaemonFeature.controlChannelHeartbeats) {
+        if (supported) {
+          sendProgress('Will send control channel heartbeats');
+          sendControlHeartbeats = true;
+        } else {
+          sendProgress('Will not send control channel heartbeats');
+          sendControlHeartbeats = false;
+        }
+        continue;
+      }
       if (!supported) {
         if (reason.contains('timed out')) {
           throw TimeoutException('Ping to NoPorts daemon timed out');
@@ -315,6 +329,8 @@ class _NptImpl extends NptBase
         multi: true,
         detached: true,
         timeout: params.timeout,
+        controlChannelHeartbeat:
+            sendControlHeartbeats ? params.controlChannelHeartbeat : null,
       );
       _completer.complete();
     }
@@ -338,6 +354,8 @@ class _NptImpl extends NptBase
       multi: true,
       detached: false,
       timeout: params.timeout,
+      controlChannelHeartbeat:
+          sendControlHeartbeats ? params.controlChannelHeartbeat : null,
     );
 
     unawaited(sc.done.then((_) {
