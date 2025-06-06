@@ -214,7 +214,13 @@ getVersionDescription() {
   esac
   case $version in
     current) desc="${desc} (current)" ;;
-    *) desc="${desc} v${version}" ;;
+    *) 
+      if [ "$type" = "c" ]; then
+        desc="${desc} c${version}"
+      else
+        desc="${desc} v${version}"
+      fi
+      ;;
   esac
   echo "$desc"
 }
