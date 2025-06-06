@@ -37,18 +37,12 @@ pullBaseRuntimeImage() {
   logInfo "Pulling base runtime image"
   sudo docker pull $baseRuntimeImageName --quiet
   if [ $? -ne 0 ]; then
-    logError "Failed to pull base runtime image $baseRuntimeImageName, attempting with --platform linux/amd64 as a fail safe"
-    sudo docker pull $baseRuntimeImageName --platform linux/amd64 --quiet
-    if [ $? -ne 0 ]; then
-      logError "Failed to pull base runtime image $baseRuntimeImageName even with --platform linux/amd64"
-      return 1
-    fi
+    logError "Failed to pull base runtime image $baseRuntimeImageName"
+    return 1
   fi
   logInfo "Successfully pulled base runtime image $baseRuntimeImageName"
   return 0
 }
-
-baseRuntimeImageName=$(getBaseRuntimeImageName)
 
 buildBaseRuntimeImage() {
   logInfo "Building Dockerfile.base.runtime"
