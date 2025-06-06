@@ -203,7 +203,7 @@ class _OnboardingButtonState extends State<OnboardingButton> {
       // Automatically start activation with the already entered atSign
       case AtSignStatus.unavailable:
       case AtSignStatus.teapot:
-        // If the atSign is in teapot, we have to back up the keys after onboarding
+        // When onboarding from teapot, set backup status to false (not atKeys not backed up)
         App.navState.currentContext!.read<BackupKeyCubit>().setBackupKeyStatus(false);
         final apiKey = await Constants.appAPIKey;
 
@@ -281,7 +281,7 @@ class _OnboardingButtonState extends State<OnboardingButton> {
               atClientPreference: atClientPrefernce,
             ),
           );
-          // If the user used APKAM, we do not have to back up the keys after onboarding
+          // When onboarding via APKAM or uploading atKeys, set backup status to true (atKeys don't need to be backed up)
           App.navState.currentContext!.read<BackupKeyCubit>().setBackupKeyStatus(true);
         }
       case AtSignStatus.notFound:
