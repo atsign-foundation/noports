@@ -19,10 +19,11 @@ RUN set -eux ; \
         riscv64) ARCH="riscv64";; \
     esac ; \
     VERSION=${release} ; \
-    wget "${URLP}/${VERSION}/csshnpd-${VERSION}.tar.gz" ; \
-    tar -xvf csshnpd-${VERSION}.tar.gz ; \
-    rm csshnpd-${VERSION}.tar.gz ; \
-    cd csshnpd-${VERSION} ; \
+    EXT="tar.gz" ; \
+    TARGZNAME="csshnpd-c${VERSION}.$EXT" ; \
+    wget "${URLP}/c${VERSION}/${TARGZNAME}" ; \
+    tar -xvf ${TARGZNAME} ; \
+    cd csshnpd-c${VERSION} ; \
     cd sshnpd ; \
     cmake -S . -B build -DCMAKE_C_COMPILER=gcc -DBUILD_SHARED_LIBS=off -DCMAKE_C_FLAGS="-Wno-error -pthread" ; \
     cmake --build build ; \

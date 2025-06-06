@@ -23,7 +23,7 @@ RUN apt-get update && \
     else \
         VERSION=${release}; \
     fi && \
-    wget "${URLP}/${VERSION}/sshnp-linux-${ARCH}.tgz" && \
+    wget "${URLP}/v${VERSION}/sshnp-linux-${ARCH}.tgz" && \
     tar -xvf sshnp-linux-${ARCH}.tgz && \
     rm sshnp-linux-${ARCH}.tgz && \
     cd sshnp && \

@@ -62,7 +62,8 @@ logInfo "    Architecture is $ARCH"
 logInfo "    Exporting OS ($OS) ARCH ($ARCH) and EXT ($EXT)"
 export OS ARCH EXT
 
-allVersions="$daemonVersions $clientVersions"
+# allVersions="$daemonVersions $clientVersions"
+allVersions="$clientVersions" # we only want to set up client binaries locally, since the Docker images set up the daemons themselves.
 uniqueVersions=$(for ver in $allVersions; do echo "$ver"; done | sort -u | tr "\n" " ")
 
 # Binaries for named versions will not be re-downloaded but will be linked
