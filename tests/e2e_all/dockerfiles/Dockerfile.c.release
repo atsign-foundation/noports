@@ -1,4 +1,4 @@
-FROM atsigncompany/cbuildimage:CMake-3.31.4@sha256:0b443da3bccd746e23323eb374d19ba156b497ecbee6c5e84f97d77954515cbf AS buildimage
+FROM atsigncompany/cbuildimage:CMake-3.31.7@sha256:531a43b0a56e9840c441afcaaad3f093a2d5d30d6001977a052d303160fa10d1 AS buildimage
 
 ENV URL="https://api.github.com/repos/atsign-foundation/noports/releases/latest"
 ENV URLP="https://github.com/atsign-foundation/noports/releases/download"
@@ -19,10 +19,11 @@ RUN set -eux ; \
         riscv64) ARCH="riscv64";; \
     esac ; \
     VERSION=${release} ; \
-    wget "${URLP}/${VERSION}/csshnpd-${VERSION}.tar.gz" ; \
-    tar -xvf csshnpd-${VERSION}.tar.gz ; \
-    rm csshnpd-${VERSION}.tar.gz ; \
-    cd csshnpd-${VERSION} ; \
+    EXT="tar.gz" ; \
+    TARGZNAME="csshnpd-c${VERSION}.$EXT" ; \
+    wget "${URLP}/c${VERSION}/${TARGZNAME}" ; \
+    tar -xvf ${TARGZNAME} ; \
+    cd csshnpd-c${VERSION} ; \
     cd sshnpd ; \
     cmake -S . -B build -DCMAKE_C_COMPILER=gcc -DBUILD_SHARED_LIBS=off -DCMAKE_C_FLAGS="-Wno-error -pthread" ; \
     cmake --build build ; \
@@ -34,7 +35,7 @@ RUN set -eux ; \
     cmake --build build ; \
     mv build/srv ${OUTPUT_DIR}/srv ;
 
-FROM atsigncompany/noports_e2e_all_base_runtime:latest@sha256:b93eedf0cb5fb439d46f02519cd94faf11180117fc5c89d7983621a20756b067 AS runtime
+FROM atsigncompany/noports_e2e_all_base_runtime:latest@sha256:7ddde24b6c38aa59aba522cca89ec8d5904e1ff54a3fdc16f88423fd5308ed9f AS runtime
 
 ENV USER=atsign
 ENV HOMEDIR=/${USER}
