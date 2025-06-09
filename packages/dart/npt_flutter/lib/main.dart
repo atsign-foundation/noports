@@ -12,7 +12,7 @@ Future<void> main() async {
     minimumSize: Constants.kWindowsMinWindowSize,
     skipTaskbar: false,
   );
-  windowManager.ensureInitialized();
-  windowManager.waitUntilReadyToShow(windowOptions);
+  await windowManager.ensureInitialized();
+  await windowManager.waitUntilReadyToShow(windowOptions);
   runApp(const App());
 }
