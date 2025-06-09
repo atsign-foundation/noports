@@ -6,13 +6,15 @@ import '../../../app.dart';
 import '../cubit/backup_key_cubit.dart';
 
 class BackupKeyUtils {
-  // This method checks if the backing up of key is needed and shows a dialog if necessary.
+  /// This method checks if the backup key has been backed up.
+  /// If it has not been backed up, it shows a dialog to the user.
+  /// If the backup key has already been backed up, it does nothing.
   Future<void> BackupKeyStatusCheck() async {
     final context = App.navState.currentContext!;
 
     final backupKeyCubit = context.read<BackupKeyCubit>();
-    final keyAlreadyBackedup = await backupKeyCubit.getBackupKeyStatus();
-    if (keyAlreadyBackedup == false && context.mounted) {
+    final keyAlreadyBackedUp = await backupKeyCubit.getBackupKeyStatus();
+    if (keyAlreadyBackedUp == false && context.mounted) {
       showDialog(
         context: context,
         barrierDismissible: false,
