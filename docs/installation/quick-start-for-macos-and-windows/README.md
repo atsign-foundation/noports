@@ -1,5 +1,5 @@
 ---
-description: How to quickly install and use NoPorts on both MacOS and Windows devices.
+description: How to quickly install and try NoPorts on both MacOS and Windows devices.
 icon: forward
 layout:
   title:
@@ -15,6 +15,14 @@ layout:
 ---
 
 # Quick Start from macOS or Windows
+
+This guide allows you to quickly try NoPorts without having to set up your own device. You'll simply use the NoPorts desktop application to activate your atSign and then use our demo profile to establish a NoPorts connection to our hidden webpage. Once you've tried this, you can set up NoPorts to connect to and from your own devices.
+
+This guide is for MacOS and Windows.
+
+{% hint style="info" %}
+For Linux please follow the [Linux Installation Guide](../connecting-from-linux/).
+{% endhint %}
 
 ## Step 1: Sign up for a NoPorts free trial
 
