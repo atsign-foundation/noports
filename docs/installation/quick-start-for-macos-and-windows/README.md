@@ -59,7 +59,7 @@ For Windows, if the app stalls at "Preparing for activation", verify that your C
 Your atKeys (cryptographic keys) will be used to pair your atSign with this and other devices in future. You can [learn more about these keys here](https://www.youtube.com/watch?v=bRRLCOHP-BY).
 
 1. Click on **Save atKeys**
-2. Select a location on your device and **save** your keys.
+2. Create a keys folder in this location `~/.atsign/keys` and **save** your keys.
 
 ## Step 5: Set up a test connection
 
