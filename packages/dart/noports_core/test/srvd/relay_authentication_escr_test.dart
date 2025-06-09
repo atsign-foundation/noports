@@ -28,7 +28,7 @@ void main() {
     setUpAll(() {
       signingKP = AtChopsUtil.generateAtEncryptionKeyPair(keySize: 2048);
       wrongKP = AtChopsUtil.generateAtEncryptionKeyPair(keySize: 2048);
-      publicSigningKeyUri = '12345.my_enrollment_id.__wa@alice';
+      publicSigningKeyUri = '_apsk.my_enrollment_id.a.__e@alice';
 
       relayAuthAesKey =
           AtChopsUtil.generateSymmetricKey(EncryptionKeyType.aes256).key;

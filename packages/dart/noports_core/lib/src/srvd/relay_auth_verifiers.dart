@@ -5,7 +5,7 @@ import 'dart:math';
 import 'dart:typed_data';
 
 import 'package:at_chops/at_chops.dart';
-import 'package:at_commons/atsign.dart';
+import 'package:at_client/at_client.dart';
 import 'package:at_utils/at_logger.dart';
 import 'package:mutex/mutex.dart';
 
@@ -269,11 +269,21 @@ class RelayAuthVerifierESCR implements RelayAuthVerifier {
 
     /// Fetch the public signing key
     String publicSigningKeyUri = envelope['sk'];
-    String publicSigningKey =
-        await helper.lookup(sessionId!, publicSigningKeyUri);
-
     atSign =
         publicSigningKeyUri.substring(publicSigningKeyUri.lastIndexOf('@'));
+
+    if (!publicSigningKeyUri
+        .substring(0, publicSigningKeyUri.lastIndexOf('@'))
+        .endsWith(EnrollmentConstants.perEnrollmentApproved)) {
+      throw RAVE(
+        'Signing key ($publicSigningKeyUri)'
+        ' is not in the per-enrollment data namespace'
+        ' (${EnrollmentConstants.perEnrollmentApproved})',
+        RAVEReason.signatureVerificationFailed,
+      );
+    }
+    String publicSigningKey =
+        await helper.lookup(sessionId!, publicSigningKeyUri);
 
     /// Verify the signature of the payload
     final hashingAlgo = HashingAlgoType.values.byName(envelope['ha']);
