@@ -132,6 +132,30 @@ class SrvdImpl implements Srvd {
     initialized = true;
   }
 
+  Future<void> sendNack({
+    required String sessionId,
+    required String requestingAtsign,
+    required String message,
+  }) async {
+    var metaData = Metadata()
+      ..isPublic = false
+      ..isEncrypted = true
+      ..namespaceAware = true;
+
+    var atKey = AtKey()
+      ..key = 'nack.$sessionId'
+      ..sharedBy = atSign
+      ..sharedWith = requestingAtsign
+      ..namespace = Srvd.namespace
+      ..metadata = metaData;
+
+    await atClient.notificationService.notify(
+        NotificationParams.forUpdate(atKey,
+            value: message, notificationExpiry: Duration(minutes: 1)),
+        waitForFinalDeliveryStatus: false,
+        checkForFinalDeliveryStatus: false);
+  }
+
   @override
   Future<void> run() async {
     if (!initialized) {
@@ -175,11 +199,6 @@ class SrvdImpl implements Srvd {
 
     try {
       if (sessionParams.only443) {
-        if (!bind443) {
-          logger.shout('Client requested port 443'
-              ' but --443 flag was not set in this relay');
-          return;
-        }
         ports = (443, 443);
       } else {
         (ports, ppiSpawned, ppiSendToSpawned) =
@@ -220,7 +239,25 @@ class SrvdImpl implements Srvd {
     }
 
     if (sessionParams.only443) {
-      toIsolate443!.send(IIRequest.create('start', sessionParams));
+      if (!bind443) {
+        var message = 'Client requested port 443'
+            ' but this relay is not bound to port 443';
+        logger.shout(message);
+        if (sessionParams.sendNacks) {
+          try {
+            await sendNack(
+              sessionId: sessionParams.sessionId,
+              requestingAtsign: notification.from,
+              message: message,
+            );
+          } catch (e) {
+            logger.shout('Error while sending NACK: $e');
+          }
+        }
+        return;
+      } else {
+        toIsolate443!.send(IIRequest.create('start', sessionParams));
+      }
     }
 
     var (portA, portB) = ports;

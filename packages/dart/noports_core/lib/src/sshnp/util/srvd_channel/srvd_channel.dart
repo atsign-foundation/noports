@@ -91,6 +91,9 @@ abstract class SrvdChannel<T>
   @visibleForTesting
   SrvdAck srvdAck = SrvdAck.notAcknowledged;
 
+  /// Will be set when we receive a NACK notification from srvd
+  String srvdNackMessage = '';
+
   SrvdChannel({
     required this.atClient,
     required this.params,
@@ -176,6 +179,12 @@ abstract class SrvdChannel<T>
             'Got additional relay response ${notification.value} - ignoring');
         return;
       }
+      if (notification.key.contains('nack.$sessionId')) {
+        logger.warning('Got NACK response from relay: ${notification.key}');
+        srvdNackMessage = notification.value.toString();
+        srvdAck = SrvdAck.acknowledgedWithErrors;
+        return;
+      }
       String ipPorts = notification.value.toString();
       logger.info('Received from srvd: $ipPorts');
       List results = ipPorts.split(',');
@@ -218,6 +227,7 @@ abstract class SrvdChannel<T>
         relayAuthMode: params.relayAuthMode,
         relayAuthAesKey: relayAuthAesKey,
         only443: params.only443,
+        sendNacks: true,
       );
 
       rvdRequestValue = message.toString();
@@ -261,6 +271,10 @@ abstract class SrvdChannel<T>
         throw TimeoutException(
             'Connection timeout to srvd ${params.srvdAtSign} service');
       }
+    }
+
+    if (srvdAck == SrvdAck.acknowledgedWithErrors) {
+      throw SshnpError(srvdNackMessage);
     }
   }
 }

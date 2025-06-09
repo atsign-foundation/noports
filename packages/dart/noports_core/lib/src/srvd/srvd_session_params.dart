@@ -18,6 +18,7 @@ class SrvdSessionParams {
   final RelayAuthMode relayAuthMode;
   final String? relayAuthAesKey;
   final bool only443;
+  final bool sendNacks;
 
   SrvdSessionParams({
     required this.sessionId,
@@ -32,6 +33,7 @@ class SrvdSessionParams {
     this.relayAuthMode = RelayAuthMode.payload,
     this.relayAuthAesKey,
     required this.only443,
+    required this.sendNacks,
   });
 
   @override
@@ -50,6 +52,7 @@ class SrvdSessionParams {
         'relayAuthMode': relayAuthMode.name,
         'relayAuthAesKey': relayAuthAesKey,
         'only443': only443,
+        'sendNacks': sendNacks,
       };
 }
 
@@ -76,6 +79,7 @@ class SrvdUtil {
       sessionId: notification.value!,
       atSignA: notification.from,
       only443: false,
+      sendNacks: false,
     );
   }
 
@@ -131,6 +135,7 @@ class SrvdUtil {
       relayAuthMode: relayAuthMode,
       relayAuthAesKey: json['relayAuthAesKey'],
       only443: json['only443'] ?? false,
+      sendNacks: json['sendNacks'] ?? false,
     );
   }
 
