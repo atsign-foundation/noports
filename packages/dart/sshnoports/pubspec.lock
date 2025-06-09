@@ -102,10 +102,10 @@ packages:
     dependency: "direct main"
     description:
       name: at_commons
-      sha256: "2b0db42dd47dec7fffccd0cf215eb40a6fd6bdb7e145f721da54d633a929997f"
+      sha256: "2b86d4e8b80fddcbec87be20270ec8c9dfb11aab25c29cfd1b082b328c39f92a"
       url: "https://pub.dev"
     source: hosted
-    version: "5.3.0"
+    version: "5.4.0"
   at_demo_data:
     dependency: transitive
     description:
