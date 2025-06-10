@@ -77,6 +77,7 @@ void main() {
         logTraffic: false,
         verbose: false,
         bind443: false,
+        localBindPort443: 443,
       );
 
       // Create a stream controller to simulate the notification received from the sshnp

@@ -36,6 +36,8 @@ class SrvdImpl implements Srvd {
   @override
   final bool bind443;
   @override
+  final int localBindPort443;
+  @override
   bool verbose = false;
 
   @override
@@ -61,6 +63,7 @@ class SrvdImpl implements Srvd {
     required this.verbose,
     SrvdUtil? srvdUtil,
     required this.bind443,
+    required this.localBindPort443,
   }) {
     this.srvdUtil = srvdUtil ?? SrvdUtil(atClient);
     logger.hierarchicalLoggingEnabled = true;
@@ -104,6 +107,7 @@ class SrvdImpl implements Srvd {
         logTraffic: p.logTraffic,
         verbose: p.verbose,
         bind443: p.bind443,
+        localBindPort443: p.localBindPort443,
       );
 
       if (p.verbose) {
@@ -123,7 +127,11 @@ class SrvdImpl implements Srvd {
     }
 
     if (bind443) {
-      final r = await spawnNewSinglePortIsolate(ipAddress, false, 443);
+      final r = await spawnNewSinglePortIsolate(
+        ipAddress,
+        false,
+        localBindPort443,
+      );
       portPair443 = r.$1;
       isolate443 = r.$2;
       toIsolate443 = r.$3;
