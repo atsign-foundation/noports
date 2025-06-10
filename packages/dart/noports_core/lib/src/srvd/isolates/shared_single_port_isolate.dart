@@ -104,8 +104,12 @@ class SinglePortWorker extends RelayWorker {
         throw UnimplementedError('Not yet implemented');
         // final _serverSocket = await SecureServerSocket.bind(....);
       } else {
-        _serverSocket = await ServerSocket.bind(address, bindPort);
-        _serverSocket!.listen(socketHandler);
+        try {
+          _serverSocket = await ServerSocket.bind(address, bindPort);
+          _serverSocket!.listen(socketHandler);
+        } catch (e) {
+          toMain.send(IIRequest.create('handleIsolateFailure', e.toString()));
+        }
       }
 
       // Wait until session is ended

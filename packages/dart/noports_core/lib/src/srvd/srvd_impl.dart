@@ -506,6 +506,15 @@ class SrvdImpl implements Srvd {
           case 'lookup':
             await lookup(msg, toSpawned);
             break;
+          case 'handleIsolateFailure':
+            logger.shout('');
+            logger.shout('Single-port isolate failed: ${msg.payload}');
+            logger.shout('');
+            toSpawned.send(IIRequest.create('stop', null));
+            await Future.delayed(Duration(milliseconds: 5));
+            logger.shout('');
+            logger.shout('Exiting');
+            exit(1);
           default:
             toSpawned.send(IIResponse(
                 id: msg.id,
