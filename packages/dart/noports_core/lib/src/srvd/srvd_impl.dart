@@ -510,7 +510,7 @@ class SrvdImpl implements Srvd {
             logger.shout('');
             logger.shout('Single-port isolate failed: ${msg.payload}');
             logger.shout('');
-            toSpawned.send(IIRequest.create('stop', null));
+            toSpawned.send(IIRequest.create('stop', false));
             await Future.delayed(Duration(milliseconds: 5));
             logger.shout('');
             logger.shout('Exiting');

@@ -188,7 +188,9 @@ class SinglePortWorker extends RelayWorker {
   @override
   Future<void> stop([IIRequest? req]) async {
     if (!stopped.isCompleted) {
-      logger.shout('Stopped by main');
+      if (req?.payload != false) {
+        logger.shout('Stopped by main');
+      }
       await _stop();
     }
   }
