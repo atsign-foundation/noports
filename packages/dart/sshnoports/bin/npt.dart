@@ -226,6 +226,20 @@ void main(List<String> args) async {
         negatable: true,
       );
 
+      parser.addOption(
+        'relay-auth-mode',
+        aliases: ['ram'],
+        help: 'The authentication mode to use. "ecr" is strongest',
+        allowed: RelayAuthMode.values.map((c) => c.name).toList(),
+        defaultsTo: RelayAuthMode.payload.name,
+      );
+
+      parser.addFlag(
+        '443',
+        help: 'When true, asks the relay to use port 443 for this session',
+        defaultsTo: false,
+      );
+
       // Parse Args
       ArgResults parsedArgs = parser.parse(args);
 
@@ -354,8 +368,11 @@ void main(List<String> args) async {
         daemonPingTimeout:
             Duration(seconds: int.parse(parsedArgs['daemon-ping-timeout'])),
         encryptRvdTraffic: parsedArgs['encrypt-rvd-traffic'],
+        relayAuthMode:
+            RelayAuthMode.values.byName(parsedArgs['relay-auth-mode']),
         timeout: parseDuration(timeoutArg),
         controlChannelHeartbeat: parseDuration(parsedArgs['heartbeat']),
+        only443: parsedArgs['443'],
       );
 
       while (true) {

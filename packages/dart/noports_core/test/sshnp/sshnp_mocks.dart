@@ -38,6 +38,12 @@ class MockNotificationService extends Mock implements NotificationService {}
 class MockSshnpParams extends Mock implements SshnpParams {
   @override
   Duration get daemonPingTimeout => DefaultArgs.daemonPingTimeoutDuration;
+
+  @override
+  RelayAuthMode get relayAuthMode => RelayAuthMode.payload;
+
+  @override
+  bool get only443 => false;
 }
 
 class MockSshnpdChannel extends Mock implements SshnpdChannel {}

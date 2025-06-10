@@ -44,6 +44,8 @@ abstract class SshnpdChannel with AsyncInitialization, AtClientBindings {
   @protected
   SshnpdAck sshnpdAck = SshnpdAck.notAcknowledged;
 
+  Map<String, dynamic>? pingResponse;
+
   SshnpdChannel({
     required this.atClient,
     required this.params,
@@ -184,7 +186,6 @@ abstract class SshnpdChannel with AsyncInitialization, AtClientBindings {
     if (featuresToCheck.isEmpty) {
       return [];
     }
-    Map<String, dynamic> pingResponse;
     try {
       pingResponse = await ping().timeout(timeout);
     } on TimeoutException catch (_) {
@@ -194,7 +195,7 @@ abstract class SshnpdChannel with AsyncInitialization, AtClientBindings {
     // If supportedFeatures was null (i.e. a response from a v4 daemon),
     // then we will assume that "acceptsPublicKeys" is true
     final Map<String, dynamic> daemonFeatures =
-        pingResponse['supportedFeatures'] ??
+        pingResponse!['supportedFeatures'] ??
             {DaemonFeature.acceptsPublicKeys.name: true};
     return featuresToCheck
         .map((featureToCheck) => (

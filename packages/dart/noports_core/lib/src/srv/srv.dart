@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:dartssh2/dartssh2.dart';
+import 'package:noports_core/src/srv/relay_authenticators.dart';
 import 'package:noports_core/src/srv/srv_impl.dart';
 import 'package:noports_core/utils.dart';
 import 'package:socket_connector/socket_connector.dart';
@@ -24,9 +25,7 @@ abstract class Srv<T> {
   /// Defaults to localhost
   abstract final String? localHost;
 
-  /// A string which needs to be presented to the rvd before the rvd
-  /// will allow any further traffic on the socket
-  abstract final String? rvdAuthString;
+  abstract final RelayAuthenticator? relayAuthenticator;
 
   /// The AES key for encryption / decryption of the rv traffic
   abstract final String? sessionAESKeyString;
@@ -60,6 +59,7 @@ abstract class Srv<T> {
     String? localHost,
     bool? bindLocalPort,
     String? rvdAuthString,
+    required RelayAuthenticator? relayAuthenticator,
     String? sessionAESKeyString,
     String? sessionIVString,
     bool multi = false,
@@ -73,7 +73,7 @@ abstract class Srv<T> {
       localPort: localPort,
       localHost: localHost,
       bindLocalPort: bindLocalPort,
-      rvdAuthString: rvdAuthString,
+      relayAuthenticator: relayAuthenticator,
       sessionAESKeyString: sessionAESKeyString,
       sessionIVString: sessionIVString,
       multi: multi,
@@ -89,6 +89,7 @@ abstract class Srv<T> {
     bool? bindLocalPort,
     String? localHost,
     String? rvdAuthString,
+    required RelayAuthenticator? relayAuthenticator,
     String? sessionAESKeyString,
     String? sessionIVString,
     bool multi = false,
@@ -102,7 +103,7 @@ abstract class Srv<T> {
       localPort: localPort!,
       localHost: localHost,
       bindLocalPort: bindLocalPort!,
-      rvdAuthString: rvdAuthString,
+      relayAuthenticator: relayAuthenticator,
       sessionAESKeyString: sessionAESKeyString,
       sessionIVString: sessionIVString,
       multi: multi,
@@ -119,6 +120,7 @@ abstract class Srv<T> {
     bool? bindLocalPort,
     String? localHost,
     String? rvdAuthString,
+    required RelayAuthenticator? relayAuthenticator,
     String? sessionAESKeyString,
     String? sessionIVString,
     bool multi = false,
@@ -129,7 +131,7 @@ abstract class Srv<T> {
     return SrvImplInline(
       streamingHost,
       streamingPort,
-      rvdAuthString: rvdAuthString,
+      relayAuthenticator: relayAuthenticator,
       sessionAESKeyString: sessionAESKeyString,
       sessionIVString: sessionIVString,
       multi: multi,

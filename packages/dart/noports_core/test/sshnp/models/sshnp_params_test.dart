@@ -77,6 +77,72 @@ void main() {
     });
 
     group('SshnpParams final variables', () {
+      test('ClientParamsBase 443 requires escr', () {
+        expect(
+            () => SshnpParams(
+                  clientAtSign: '@myClientAtSign',
+                  sshnpdAtSign: '',
+                  srvdAtSign: '',
+                  only443: true,
+                  relayAuthMode: RelayAuthMode.payload,
+                ),
+            throwsA(isA<ArgumentError>()));
+        expect(
+            SshnpParams(
+              clientAtSign: '@myClientAtSign',
+              sshnpdAtSign: '',
+              srvdAtSign: '',
+              only443: true,
+              relayAuthMode: RelayAuthMode.escr,
+            ).only443,
+            true);
+      });
+      test('ClientParamsBase escr requires both sides auth', () {
+        expect(
+            () => SshnpParams(
+                  clientAtSign: '@myClientAtSign',
+                  sshnpdAtSign: '',
+                  srvdAtSign: '',
+                  only443: true,
+                  relayAuthMode: RelayAuthMode.escr,
+                  authenticateClientToRvd: false,
+                  authenticateDeviceToRvd: false,
+                ),
+            throwsA(isA<ArgumentError>()));
+        expect(
+            () => SshnpParams(
+                  clientAtSign: '@myClientAtSign',
+                  sshnpdAtSign: '',
+                  srvdAtSign: '',
+                  only443: true,
+                  relayAuthMode: RelayAuthMode.escr,
+                  authenticateClientToRvd: false,
+                  authenticateDeviceToRvd: true,
+                ),
+            throwsA(isA<ArgumentError>()));
+        expect(
+            () => SshnpParams(
+                  clientAtSign: '@myClientAtSign',
+                  sshnpdAtSign: '',
+                  srvdAtSign: '',
+                  only443: true,
+                  relayAuthMode: RelayAuthMode.escr,
+                  authenticateClientToRvd: true,
+                  authenticateDeviceToRvd: false,
+                ),
+            throwsA(isA<ArgumentError>()));
+        expect(
+            SshnpParams(
+              clientAtSign: '@myClientAtSign',
+              sshnpdAtSign: '',
+              srvdAtSign: '',
+              only443: true,
+              relayAuthMode: RelayAuthMode.escr,
+              authenticateClientToRvd: true,
+              authenticateDeviceToRvd: true,
+            ).relayAuthMode,
+            RelayAuthMode.escr);
+      });
       test('SshnpParams.clientAtSign test', () {
         final params = SshnpParams(
             clientAtSign: '@myClientAtSign', sshnpdAtSign: '', srvdAtSign: '');

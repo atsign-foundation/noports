@@ -2,7 +2,7 @@ name: noports_core
 description: Core library code for sshnoports
 homepage: https://docs.atsign.com/
 
-version: 6.4.0
+version: 6.5.0
 
 environment:
   sdk: ">=3.0.0 <4.0.0"
@@ -11,7 +11,7 @@ dependencies:
   args: ^2.4.2
   at_chops: ^2.0.1
   at_client: ^3.4.0
-  at_commons: ^5.3.0
+  at_commons: ^5.4.0
   at_cli_commons: ^2.1.0
   at_utils: ^3.0.19
   cryptography: ^2.7.0

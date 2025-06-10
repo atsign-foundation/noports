@@ -25,6 +25,8 @@ abstract interface class ClientParams {
 
   bool get authenticateDeviceToRvd;
 
+  RelayAuthMode get relayAuthMode;
+
   bool get encryptRvdTraffic;
 
   String? get atKeysFilePath;
@@ -43,6 +45,8 @@ abstract interface class ClientParams {
   int get localPort;
 
   Duration get daemonPingTimeout;
+
+  bool get only443;
 }
 
 abstract class ClientParamsBase implements ClientParams {
@@ -71,6 +75,9 @@ abstract class ClientParamsBase implements ClientParams {
   final bool authenticateDeviceToRvd;
 
   @override
+  final RelayAuthMode relayAuthMode;
+
+  @override
   final bool encryptRvdTraffic;
 
   @override
@@ -93,6 +100,9 @@ abstract class ClientParamsBase implements ClientParams {
   @override
   final Duration daemonPingTimeout;
 
+  @override
+  final bool only443;
+
   ClientParamsBase({
     required this.clientAtSign,
     required this.sshnpdAtSign,
@@ -104,11 +114,24 @@ abstract class ClientParamsBase implements ClientParams {
     this.rootDomain = DefaultArgs.rootDomain,
     this.authenticateClientToRvd = DefaultArgs.authenticateClientToRvd,
     this.authenticateDeviceToRvd = DefaultArgs.authenticateDeviceToRvd,
+    required this.relayAuthMode,
     this.encryptRvdTraffic = DefaultArgs.encryptRvdTraffic,
     this.daemonPingTimeout = DefaultArgs.daemonPingTimeoutDuration,
+    required this.only443,
   }) {
     if (invalidDeviceName(device)) {
       throw ArgumentError(invalidDeviceNameMsg);
+    }
+    if (only443 && relayAuthMode != RelayAuthMode.escr) {
+      throw ArgumentError('You must use'
+          ' "${SshnpArg.relayAuthModeArg.name} ${RelayAuthMode.escr.name}"'
+          ' when using the "${SshnpArg.only443Arg.name}" flag');
+    }
+    if (relayAuthMode == RelayAuthMode.escr &&
+        (!authenticateClientToRvd || !authenticateDeviceToRvd)) {
+      throw ArgumentError('Both client and device need to authenticate to the'
+          ' relay when using'
+          ' "${SshnpArg.relayAuthModeArg.name} ${RelayAuthMode.escr.name}"');
     }
   }
 }
@@ -153,11 +176,13 @@ class NptParams extends ClientParamsBase
     super.rootDomain = DefaultArgs.rootDomain,
     super.authenticateClientToRvd = DefaultArgs.authenticateClientToRvd,
     super.authenticateDeviceToRvd = DefaultArgs.authenticateDeviceToRvd,
+    super.relayAuthMode = RelayAuthMode.payload,
     super.encryptRvdTraffic = DefaultArgs.encryptRvdTraffic,
     required this.inline,
     super.daemonPingTimeout,
     required this.timeout,
     this.controlChannelHeartbeat,
+    super.only443 = false,
   }) {
     try {
       AtUtils.fixAtSign(clientAtSign);
@@ -232,8 +257,10 @@ class SshnpParams extends ClientParamsBase
     this.addForwardsToTunnel = DefaultArgs.addForwardsToTunnel,
     super.authenticateClientToRvd = DefaultArgs.authenticateClientToRvd,
     super.authenticateDeviceToRvd = DefaultArgs.authenticateDeviceToRvd,
+    super.relayAuthMode = RelayAuthMode.payload,
     super.encryptRvdTraffic = DefaultArgs.encryptRvdTraffic,
     super.daemonPingTimeout,
+    super.only443 = false,
   });
 
   factory SshnpParams.empty() {
@@ -242,6 +269,7 @@ class SshnpParams extends ClientParamsBase
       clientAtSign: '',
       sshnpdAtSign: '',
       srvdAtSign: '',
+      only443: false,
     );
   }
 
@@ -276,8 +304,10 @@ class SshnpParams extends ClientParamsBase
           params2.authenticateClientToRvd ?? params1.authenticateClientToRvd,
       authenticateDeviceToRvd:
           params2.authenticateDeviceToRvd ?? params1.authenticateDeviceToRvd,
+      relayAuthMode: params2.relayAuthMode ?? params1.relayAuthMode,
       encryptRvdTraffic: params2.encryptRvdTraffic ?? params1.encryptRvdTraffic,
       daemonPingTimeout: params2.daemonPingTimeout ?? params1.daemonPingTimeout,
+      only443: params2.only443 ?? params1.only443,
     );
   }
 
@@ -332,10 +362,12 @@ class SshnpParams extends ClientParamsBase
           DefaultArgs.authenticateClientToRvd,
       authenticateDeviceToRvd: partial.authenticateDeviceToRvd ??
           DefaultArgs.authenticateDeviceToRvd,
+      relayAuthMode: partial.relayAuthMode ?? RelayAuthMode.payload,
       encryptRvdTraffic:
           partial.encryptRvdTraffic ?? DefaultArgs.encryptRvdTraffic,
       daemonPingTimeout:
           partial.daemonPingTimeout ?? DefaultArgs.daemonPingTimeoutDuration,
+      only443: partial.only443 ?? false,
     );
   }
 
@@ -422,8 +454,10 @@ class SshnpPartialParams {
   final SupportedSshAlgorithm? sshAlgorithm;
   final bool? authenticateClientToRvd;
   final bool? authenticateDeviceToRvd;
+  final RelayAuthMode? relayAuthMode;
   final bool? encryptRvdTraffic;
   final Duration? daemonPingTimeout;
+  final bool? only443;
 
   /// Operation flags
   final bool? listDevices;
@@ -451,8 +485,10 @@ class SshnpPartialParams {
     this.sshAlgorithm,
     this.authenticateClientToRvd,
     this.authenticateDeviceToRvd,
+    this.relayAuthMode,
     this.encryptRvdTraffic,
     this.daemonPingTimeout,
+    this.only443,
   });
 
   factory SshnpPartialParams.empty() {
@@ -491,8 +527,10 @@ class SshnpPartialParams {
           params2.authenticateClientToRvd ?? params1.authenticateClientToRvd,
       authenticateDeviceToRvd:
           params2.authenticateDeviceToRvd ?? params1.authenticateDeviceToRvd,
+      relayAuthMode: params2.relayAuthMode ?? params1.relayAuthMode,
       encryptRvdTraffic: params2.encryptRvdTraffic ?? params1.encryptRvdTraffic,
       daemonPingTimeout: params2.daemonPingTimeout ?? params1.daemonPingTimeout,
+      only443: params2.only443 ?? params1.only443,
     );
   }
 
@@ -548,9 +586,13 @@ class SshnpPartialParams {
       authenticateClientToRvd: args[SshnpArg.authenticateClientToRvdArg.name],
       authenticateDeviceToRvd: args[SshnpArg.authenticateDeviceToRvdArg.name],
       encryptRvdTraffic: args[SshnpArg.encryptRvdTrafficArg.name],
+      relayAuthMode: args[SshnpArg.relayAuthModeArg.name] == null
+          ? null
+          : RelayAuthMode.values.byName(args[SshnpArg.relayAuthModeArg.name]),
       daemonPingTimeout: Duration(
           seconds: args[SshnpArg.daemonPingTimeoutArg.name] ??
               DefaultArgs.daemonPingTimeoutSeconds),
+      only443: args[SshnpArg.only443Arg.name],
     );
   }
 
