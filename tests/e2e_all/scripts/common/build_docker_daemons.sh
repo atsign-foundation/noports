@@ -29,11 +29,20 @@ pullBaseRuntimeImage() {
     logError "Failed to pull base runtime image $imageName"
     return 1
   fi
-  logInfo "Successfully pulled base runtime image $imageName"
-  return 0
 }
 
 baseRuntimeImageName=$(getBaseRuntimeImageName)
+
+pullBaseRuntimeImage() {
+  logInfo "Pulling base runtime image"
+  sudo docker pull $baseRuntimeImageName --quiet
+  if [ $? -ne 0 ]; then
+    logError "Failed to pull base runtime image $baseRuntimeImageName"
+    return 1
+  fi
+  logInfo "Successfully pulled base runtime image $baseRuntimeImageName"
+  return 0
+}
 
 buildBaseRuntimeImage() {
   logInfo "Building Dockerfile.base.runtime"

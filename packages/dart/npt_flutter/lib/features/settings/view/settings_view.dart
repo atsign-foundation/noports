@@ -38,36 +38,38 @@ class SettingsView extends StatelessWidget {
                   children: [
                     CustomCard.settingsRail(
                       height: deviceSize.height * Sizes.settingsCardHeightFactor,
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                        children: [
-                          gapH10,
-                          const SwitchAtsignButton(),
-                          const CustomTextButton.backUpYourKey(),
-                          const CustomTextButton.faq(),
-                          const CustomTextButton.email(),
-                          const CustomTextButton.discord(),
-                          const CustomTextButton.feedback(),
-                          const CustomTextButton.privacyPolicy(),
-                          // const CustomTextButton.switchAtsign(),
-                          const CustomTextButton.signOut(),
-                          gapH13,
-                          FutureBuilder(
-                              future: PackageInfo.fromPlatform(),
-                              builder: (_, snapshot) {
-                                if (snapshot.connectionState == ConnectionState.done) {
-                                  return Center(
-                                    child: Text(
-                                      'v${snapshot.data?.version}',
-                                      style: Theme.of(context).textTheme.bodySmall,
-                                    ),
-                                  );
-                                }
-                                return const SizedBox.shrink();
-                              }),
-                          gapH10,
-                        ],
+                      child: SingleChildScrollView(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                          children: [
+                            gapH10,
+                            const SwitchAtsignButton(),
+                            const CustomTextButton.backUpYourKey(),
+                            const CustomTextButton.faq(),
+                            const CustomTextButton.email(),
+                            const CustomTextButton.discord(),
+                            const CustomTextButton.feedback(),
+                            const CustomTextButton.privacyPolicy(),
+                            // const CustomTextButton.switchAtsign(),
+                            const CustomTextButton.signOut(),
+                            gapH13,
+                            FutureBuilder(
+                                future: PackageInfo.fromPlatform(),
+                                builder: (_, snapshot) {
+                                  if (snapshot.connectionState == ConnectionState.done) {
+                                    return Center(
+                                      child: Text(
+                                        'v${snapshot.data?.version}',
+                                        style: Theme.of(context).textTheme.bodySmall,
+                                      ),
+                                    );
+                                  }
+                                  return const SizedBox.shrink();
+                                }),
+                            gapH10,
+                          ],
+                        ),
                       ),
                     ),
                     CustomCard.settingsContent(
@@ -80,7 +82,6 @@ class SettingsView extends StatelessWidget {
                           top: Sizes.p28,
                         ),
                         child: ListView(children: const [
-                          SettingsErrorHint(),
                           DefaultRelaySection(),
                           gapH25,
                           DashboardSection(),

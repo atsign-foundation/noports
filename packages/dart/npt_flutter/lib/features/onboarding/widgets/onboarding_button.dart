@@ -161,11 +161,10 @@ class _OnboardingButtonState extends State<OnboardingButton> {
           ),
         );
         final backupKeyCubit = App.navState.currentContext!.read<BackupKeyCubit>();
-        if (backupKeyCubit.state == false) {
-          await backupKeyCubit.putBackupKeyStatus(backupKeyCubit.state);
-        }
 
-        log('atsign result is:$result');
+        await backupKeyCubit.putBackupKeyStatus(backupKeyCubit.state);
+
+        App.log('atsign result is:$result'.loggable);
 
         if (!mounted) return;
         Navigator.of(context, rootNavigator: true).pushNamed(Routes.home);
@@ -204,7 +203,7 @@ class _OnboardingButtonState extends State<OnboardingButton> {
       // Automatically start activation with the already entered atSign
       case AtSignStatus.unavailable:
       case AtSignStatus.teapot:
-        // If the atSign is in teapot, we have to back up the keys after onboarding
+        // When onboarding from teapot, set backup status to false (not atKeys not backed up)
         App.navState.currentContext!.read<BackupKeyCubit>().setBackupKeyStatus(false);
         final apiKey = await Constants.appAPIKey;
 
@@ -282,6 +281,8 @@ class _OnboardingButtonState extends State<OnboardingButton> {
               atClientPreference: atClientPrefernce,
             ),
           );
+          // When onboarding via APKAM or uploading atKeys, set backup status to true (atKeys don't need to be backed up)
+          App.navState.currentContext!.read<BackupKeyCubit>().setBackupKeyStatus(true);
         }
       case AtSignStatus.notFound:
         result = AtOnboardingResult.error(

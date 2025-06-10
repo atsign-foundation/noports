@@ -4,6 +4,7 @@ import 'package:npt_flutter/app.dart';
 import 'package:npt_flutter/features/features.dart';
 
 Future<void> postOnboard(String atSign, String rootDomain) async {
+  App.log("setting all application state after onboarding".loggable);
   App.navState.currentContext?.read<OnboardingCubit>().setState(
         atSign: atSign,
         rootDomain: rootDomain,
