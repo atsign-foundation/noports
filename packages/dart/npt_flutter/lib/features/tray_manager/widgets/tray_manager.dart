@@ -120,8 +120,13 @@ class _TrayManagerState extends State<TrayManager>
     windowManager.addListener(this);
     trayManager.addListener(this);
     super.initState();
-    windowManager.setPreventClose(true);
-    windowManager.setVisibleOnAllWorkspaces(true);
+    WidgetsBinding.instance.addPostFrameCallback((_) async{
+      await windowManager.setPreventClose(true);
+      if (Platform.isMacOS) {
+        await windowManager.setVisibleOnAllWorkspaces(true);
+      }
+    });
+    
     var dispatcher = SchedulerBinding.instance.platformDispatcher;
 
     // This callback is called every time the brightness changes.

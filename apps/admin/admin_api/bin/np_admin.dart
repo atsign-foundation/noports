@@ -75,6 +75,8 @@ void main(List<String> args) async {
     exit(1);
   }
 
+  stderr.writeln('Will bind to port $bindPort on $bindIp');
+
   final api = PolicyService.withAtClient(atClient: cli.atClient);
   await api.init();
 

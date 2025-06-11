@@ -11,7 +11,7 @@ abstract class SrvGeneratorCaller<T> {
     int? localPort,
     bool? bindLocalPort,
     String? localHost,
-    String? rvdAuthString,
+    RelayAuthenticator? relayAuthenticator,
     String? sessionAESKeyString,
     String? sessionIVString,
     bool multi = false,

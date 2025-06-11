@@ -214,7 +214,13 @@ getVersionDescription() {
   esac
   case $version in
     current) desc="${desc} (current)" ;;
-    *) desc="${desc} v${version}" ;;
+    *) 
+      if [ "$type" = "c" ]; then
+        desc="${desc} c${version}"
+      else
+        desc="${desc} v${version}"
+      fi
+      ;;
   esac
   echo "$desc"
 }
@@ -532,8 +538,7 @@ setUpCVersionersion() {
   if test "$version" = "current"; then
     buildCurrentCBinaries || exit $?
   else
-    logErrorAndExit "Versions other than 'current' are unimplemented for C"
-    # downloadDartBinaries "$version" || exit $?
+    downloadCBinaries "$version" || exit $?
   fi
 }
 
@@ -590,6 +595,51 @@ buildCurrentCBinaries() {
   cp "$testScriptsDir/srv.sh" "$binaryOutputDir/srv.sh"
 }
 
+getCReleaseDirForVersion() {
+  version="$1"
+  echo "$testRootDir/releases/c.$version"
+}
+
+downloadCBinaries() {
+  version="$1"
+
+  versionBinDir=$(getCReleaseDirForVersion "$version")
+  mkdir -p "$versionBinDir"
+  EXT="tar.gz"
+  downloadZipName="csshnpd-c$version.$EXT"
+  logInfo "    Getting binaries for C release $version"
+
+  if [ -f "$versionBinDir/$downloadZipName" ]; then
+    logInfo "        $versionBinDir/$downloadZipName has already been downloaded"
+  else
+    baseUrl="https://github.com/atsign-foundation/noports/releases/download"
+    downloadUrl="$baseUrl/c$version/$downloadZipName"
+    logInfo "        Downloading $downloadUrl to $versionBinDir/$downloadZipName"
+    curl -f -s -L -X GET "$downloadUrl" -o "$versionBinDir/$downloadZipName"
+    retCode=$?
+    if [ "$retCode" -ne 0 ]; then
+      logErrorAndExit "Failed to download $downloadUrl with curl exit status $retCode"
+    fi
+  fi
+
+  if [ ! -d "$versionBinDir/sshnp" ]; then
+    case "$EXT" in
+      zip)
+        unzip -qo "$versionBinDir/$downloadZipName" -d "$versionBinDir"
+        ;;
+      tgz | tar.gz)
+        tar -zxf "$versionBinDir/$downloadZipName" -C "$versionBinDir"
+        ;;
+      *)
+        logErrorAndExit "Unsupported archive extension: $EXT"
+        ;;
+    esac
+  fi
+
+  rm -f "${testRuntimeDir}/binaries/c.$version"
+  ln -s "$versionBinDir/sshnp" "${testRuntimeDir}/binaries/c.$version"
+}
+
 ### END C ###
 
 ### BEGIN build_docker_daemons.sh and start_daemons.sh FUNCTIONS ###
@@ -631,7 +681,7 @@ buildDockerDaemon() {
       # assume "$version" is a release version like "4.0.5" or "5.2.0"
       dockerfile="$dockerfilesDir/Dockerfile.$language.release"
       tag="$imageName"
-      fBuildArg="--build-arg release=v$version"
+      fBuildArg="--build-arg release=$version"
       fCache=""
   fi
 

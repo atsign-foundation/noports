@@ -26,6 +26,7 @@ class SshnpdParams {
   final String deviceGroup;
   final String storagePath;
   final String permitOpen;
+  final bool clearCachedPKs;
 
   // Non param variables
   static final ArgParser parser = _createArgParser();
@@ -50,6 +51,7 @@ class SshnpdParams {
     required this.deviceGroup,
     required this.storagePath,
     required this.permitOpen,
+    required this.clearCachedPKs,
   }) {
     if (invalidDeviceName(device)) {
       throw ArgumentError(invalidDeviceNameMsg);
@@ -136,6 +138,7 @@ class SshnpdParams {
               progName: 'sshnpd',
               uniqueID: device),
       permitOpen: permitOpen,
+      clearCachedPKs: r['clear-cached-pks'],
     );
   }
 
@@ -313,6 +316,12 @@ class SshnpdParams {
       help: 'Comma separated-list of host:port to which the daemon will permit'
           ' a connection from an authorized client. Hosts may be dns names or'
           ' ip addresses.',
+    );
+
+    parser.addFlag(
+      'clear-cached-pks',
+      help: 'Clear cached public keys',
+      hide: true,
     );
 
     return parser;

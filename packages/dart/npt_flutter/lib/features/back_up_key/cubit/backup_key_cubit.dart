@@ -12,8 +12,9 @@ import 'package:npt_flutter/features/onboarding/cubit/onboarding_cubit.dart';
 import 'package:npt_flutter/widgets/custom_snack_bar.dart';
 
 class BackupKeyCubit extends Cubit<bool> {
-  BackupKeyCubit() : super(true);
-  //
+  BackupKeyCubit() : super(true); // Initialize with true to indicate that atKeys are backed up by default.
+
+  /// Retrieves the backup key status from the repository and emits it.
   Future<bool> getBackupKeyStatus() async {
     final result = await BackUpKeyRepository().getBackupKeyStatus();
     emit(result);
@@ -21,6 +22,7 @@ class BackupKeyCubit extends Cubit<bool> {
     return result;
   }
 
+  /// Updates the backup key status in the repository and emits the new status.
   Future<void> putBackupKeyStatus(bool status) async {
     log('putBackupKeyStatus: $status');
     final result = await BackUpKeyRepository().putBackupKeyStatus(status);
@@ -28,10 +30,18 @@ class BackupKeyCubit extends Cubit<bool> {
     App.log('BackupKeyCubit: getShouldBackupKeyStatus: $result'.loggable);
   }
 
+  /// Sets the backup key status and emits the new status.
+  /// This method is used to set the backup key status in the cubit. It does not save the key to the atServer.
   void setBackupKeyStatus(bool status) {
     emit(status);
   }
 
+  /// This method is used to back up the atKeys to a file.
+  /// It encrypts the atKeys using AES encryption and saves them to a file.
+  /// It also updates the backup key status in the cubit.
+  /// If the backup is successful, it shows a success message.
+  /// If the backup fails, it shows an error message.
+  /// It also pops the dialog if the backup is successful.
   Future<void> backUpKeys() async {
     final context = App.navState.currentContext!;
     final strings = AppLocalizations.of(context)!;
