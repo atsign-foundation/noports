@@ -9,10 +9,6 @@ icon: linux
 
 These initial steps set up the machine initiating the connection.
 
-{% hint style="danger" %}
-If you’ve already completed the Quick Start guide with the client atSign you intend on using on this machine, you can skip **Step 2**. However, be sure to complete **Steps 1, 3, and 4**.
-{% endhint %}
-
 <details>
 
 <summary>On the machine you are connecting from</summary>

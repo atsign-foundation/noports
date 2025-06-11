@@ -61,7 +61,7 @@ Your atKeys (cryptographic keys) will be used to pair your atSign with this and 
 
 Please select the operating system running on the machine you are connecting to:
 
-<table data-view="cards"><thead><tr><th></th><th data-hidden data-card-target data-type="content-ref"></th></tr></thead><tbody><tr><td>macOS</td><td><a href="../connecting-from-macos/macos-to-macos.md">macos-to-macos.md</a></td></tr><tr><td>Linux</td><td><a href="../connecting-from-macos/macos-to-linux.md">macos-to-linux.md</a></td></tr><tr><td>Windows</td><td><a href="../connecting-from-macos/macos-to-windows.md">macos-to-windows.md</a></td></tr></tbody></table>
+<table data-view="cards"><thead><tr><th></th><th data-hidden data-card-target data-type="content-ref"></th></tr></thead><tbody><tr><td>macOS</td><td><a href="to-macos.md">to-macos.md</a></td></tr><tr><td>Linux</td><td><a href="../connecting-from-macos/macos-to-linux.md">macos-to-linux.md</a></td></tr><tr><td>Windows</td><td><a href="to-windows.md">to-windows.md</a></td></tr></tbody></table>
 
 **Or set up a test connection to our hidden trial page**&#x20;
 
