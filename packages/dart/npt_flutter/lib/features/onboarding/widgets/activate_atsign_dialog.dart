@@ -3,13 +3,13 @@ import 'dart:convert';
 import 'package:at_onboarding_flutter/at_onboarding_flutter.dart';
 import 'package:at_server_status/at_server_status.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:npt_flutter/app.dart';
 import 'package:npt_flutter/features/onboarding/util/activate_util.dart';
 import 'package:npt_flutter/features/onboarding/util/onboarding_util.dart';
 import 'package:npt_flutter/widgets/spinner.dart';
 import 'package:pin_code_fields/pin_code_fields.dart';
 
+import '../../../localization/app_localizations.dart';
 import '../../../styles/sizes.dart';
 
 class ActivateAtsignDialog extends StatefulWidget {

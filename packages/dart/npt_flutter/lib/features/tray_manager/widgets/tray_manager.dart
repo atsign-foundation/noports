@@ -3,7 +3,6 @@ import 'dart:io';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:npt_flutter/app.dart';
 import 'package:npt_flutter/features/favorite/favorite.dart';
 import 'package:npt_flutter/features/onboarding/cubit/onboarding_cubit.dart';
@@ -11,6 +10,7 @@ import 'package:npt_flutter/features/profile/profile.dart';
 import 'package:npt_flutter/features/profile_list/profile_list.dart';
 import 'package:npt_flutter/features/settings/settings.dart';
 import 'package:npt_flutter/features/tray_manager/tray_manager.dart';
+import 'package:npt_flutter/localization/app_localizations.dart';
 import 'package:npt_flutter/util/language.dart';
 import 'package:tray_manager/tray_manager.dart';
 import 'package:window_manager/window_manager.dart';
@@ -26,8 +26,7 @@ class TrayManager extends StatefulWidget {
   State<TrayManager> createState() => _TrayManagerState();
 }
 
-class _TrayManagerState extends State<TrayManager>
-    with TrayListener, WindowListener {
+class _TrayManagerState extends State<TrayManager> with TrayListener, WindowListener {
   /// Must strongly type [context] here or Dart will infer the wrong type for
   /// the [.read()] extension which causes an error
   void reloadTray(BuildContext context, Loggable state) async {
@@ -40,8 +39,7 @@ class _TrayManagerState extends State<TrayManager>
       case ProfilesRunningState _:
         cubit.reload(profilesRunningState: state);
       case SettingsLoadedState _:
-        var localizations = await AppLocalizations.delegate
-            .load(state.settings.language.locale);
+        var localizations = await AppLocalizations.delegate.load(state.settings.language.locale);
         cubit.reload(localizations: localizations);
       case ProfileState _:
         cubit.reload(profileState: state);
@@ -83,14 +81,12 @@ class _TrayManagerState extends State<TrayManager>
               listener: reloadTray,
               // Only call listener when the language changes in settings
               listenWhen: (prev, next) {
-                if (prev is SettingsLoadedState &&
-                    next is SettingsLoadedState) {
+                if (prev is SettingsLoadedState && next is SettingsLoadedState) {
                   return prev.settings.language != next.settings.language;
                 }
                 // This may cause some extra reloading (very occasionally, settings shouldn't change often)
                 // but it should catch all of the edge cases
-                return prev is SettingsLoadedState ||
-                    next is SettingsLoadedState;
+                return prev is SettingsLoadedState || next is SettingsLoadedState;
               }),
 
           /// Yeah I really hate this... an indefinite list of listeners
@@ -120,13 +116,13 @@ class _TrayManagerState extends State<TrayManager>
     windowManager.addListener(this);
     trayManager.addListener(this);
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) async{
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
       await windowManager.setPreventClose(true);
       if (Platform.isMacOS) {
         await windowManager.setVisibleOnAllWorkspaces(true);
       }
     });
-    
+
     var dispatcher = SchedulerBinding.instance.platformDispatcher;
 
     // This callback is called every time the brightness changes.

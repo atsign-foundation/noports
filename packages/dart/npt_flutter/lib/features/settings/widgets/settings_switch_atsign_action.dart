@@ -2,7 +2,7 @@
 // import 'package:at_contact/at_contact.dart';
 // import 'package:at_contacts_flutter/widgets/circular_contacts.dart';
 // import 'package:flutter/material.dart';
-// import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+// import 'package:npt_flutter/localization/app_localizations.dart';
 // import 'package:flutter_riverpod/flutter_riverpod.dart';
 // import 'package:npt_flutter/app.dart';
 // import 'package:sshnp_flutter/src/controllers/authentication_controller.dart';

@@ -1,3 +1,8 @@
+
+## 1.4.0+17
+
+--**FIX**: changed imports for app_Llocalization.dart
+
 ## 1.3.0+16
 
 - **FIX**: Prevented MissingPluginException on Windows by calling setVisibleOnAllWorkspaces only on macOS in TrayManager initState

@@ -93,6 +93,7 @@ dev_dependencies:
   msix: ^3.16.8
 
 dependency_overrides:
+  intl: 0.20.2
   device_info_plus: 11.3.3
   file: 7.0.1
   meta: 1.15.0

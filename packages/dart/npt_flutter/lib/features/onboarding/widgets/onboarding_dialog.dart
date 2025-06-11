@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:npt_flutter/features/onboarding/onboarding.dart';
 import 'package:npt_flutter/features/onboarding/util/atsign_manager.dart';
 import 'package:npt_flutter/features/onboarding/widgets/at_directory_selector.dart';
 import 'package:npt_flutter/features/onboarding/widgets/atsign_selector.dart';
 import 'package:npt_flutter/features/onboarding/widgets/client_atsign_description_widget.dart';
+import 'package:npt_flutter/localization/app_localizations.dart';
 import 'package:npt_flutter/styles/sizes.dart';
 import 'package:npt_flutter/util/form_validator.dart';
 import 'package:npt_flutter/widgets/custom_container.dart';
