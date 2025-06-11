@@ -45,7 +45,7 @@ During registration, you will receive your client and device atSigns. Ensure tha
 
 ### Quick Start for macOS and Windows Only
 
-Follow these guides to try NoPorts by establishing a remote connection to our test connection page using the NoPorts desktop application.&#x20;
+Follow these guides to try NoPorts using the desktop application. You can establish a remote connection to our test connection page or set up a connection to your own remote machine.&#x20;
 
 {% content-ref url="quick-start-for-macos-and-windows/" %}
 [quick-start-for-macos-and-windows](quick-start-for-macos-and-windows/)

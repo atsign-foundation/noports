@@ -16,27 +16,21 @@ layout:
 
 # Quick Start from macOS or Windows
 
-This guide allows you to quickly try NoPorts without having to set up your own device. You'll simply use the NoPorts desktop application to activate your atSign and then use our demo profile to establish a NoPorts connection to our hidden webpage. Once you've tried this, you can set up NoPorts to connect to and from your own devices.
-
-This guide is for MacOS and Windows.
+This guide is intended for people connecting from a machine running Windows or macOS.
 
 {% hint style="info" %}
-For Linux please follow the [Linux Installation Guide](../connecting-from-linux/).
+For people connecting from Linux please follow the [Linux Installation Guide](../connecting-from-linux/).
 {% endhint %}
 
-## Step 1: Sign up for a NoPorts free trial
+### <mark style="color:orange;">Step 1:</mark> Sign up for a NoPorts free trial
 
 Go to [noports.com](https://my.noports.com/no-ports-invite/30dayfreetrial) and sign up for a 30-day free trial.&#x20;
 
 {% hint style="info" %}
-Make note of your client atSign (e.g., @pluto83\_client). You'll need it shortly.
+Make note of your atSigns (e.g., @pluto83\_client). You'll need them shortly.
 {% endhint %}
 
-## Step 2: Download the NoPorts desktop application
-
-{% hint style="info" %}
-For Linux please follow the [Linux Installation Guide](../connecting-from-linux/).
-{% endhint %}
+### <mark style="color:orange;">Step 2:</mark> Download the NoPorts desktop application
 
 Download the NoPorts desktop app using one of the links below:
 
@@ -44,7 +38,7 @@ Download the NoPorts desktop app using one of the links below:
 
 [Link to Windows Store](https://apps.microsoft.com/detail/9n69scrrgv6r)
 
-## Step 3: Log into the NoPorts desktop application
+### <mark style="color:orange;">Step 3:</mark> Activate your client atSign
 
 1. Launch the NoPorts desktop app and click **Get Started**.
 2. Enter your **client atSign** into the text field (e.g., @pluto83\_client), leave the root domain as is, and then click **Next**.
@@ -54,14 +48,22 @@ Download the NoPorts desktop app using one of the links below:
 For Windows, if the app stalls at "Preparing for activation", verify that your CA certificates are up to date.
 {% endhint %}
 
-## Step 4: Save a copy of your atKeys
+### <mark style="color:orange;">Step 4:</mark> Save a copy of your client atKeys
 
 Your atKeys (cryptographic keys) will be used to pair your atSign with this and other devices in future. You can [learn more about these keys here](https://www.youtube.com/watch?v=bRRLCOHP-BY).
 
 1. Click on **Save atKeys**
-2. Create a keys folder in this location `~/.atsign/keys` and **save** your keys.
+2. Select a memorable location on your machine and **save** your keys. We recommend creating a folder in your home drive called `~/.atsign/keys` and storing your keys there.
 
-## Step 5: Set up a test connection
+### <mark style="color:orange;">Step 5:</mark> Establish a connection&#x20;
+
+**Connect to your own remote machine**
+
+Please select the operating system running on the machine you are connecting to:
+
+<table data-view="cards"><thead><tr><th></th><th data-hidden data-card-target data-type="content-ref"></th></tr></thead><tbody><tr><td>macOS</td><td><a href="../connecting-from-macos/macos-to-macos.md">macos-to-macos.md</a></td></tr><tr><td>Linux</td><td><a href="../connecting-from-macos/macos-to-linux.md">macos-to-linux.md</a></td></tr><tr><td>Windows</td><td><a href="../connecting-from-macos/macos-to-windows.md">macos-to-windows.md</a></td></tr></tbody></table>
+
+**Or set up a test connection to our hidden trial page**&#x20;
 
 1. Download the[ NoPorts test connection profile. ](https://drive.google.com/file/d/1qb0YrpRaGstLSBKoLJ4wwVUIMO5zCaMq/view)This is a json file containing connection details for a test profile we have created.
 2. Return to the NoPorts app **Dashboard**.
