@@ -14,6 +14,7 @@ permissions: # added using https://github.com/step-security/secure-workflows
 jobs:
   docker:
     strategy:
+      fail-fast: false
       matrix:
         os: [ubuntu-24.04-arm, ubuntu-24.04]
         name:
@@ -77,9 +78,9 @@ jobs:
             # Decorated tag for workflow_dispatch (dev_env-branch-gha)
             type=raw,value=${{ matrix.prefix }}dev_env-${{ github.ref_name }}-gha${{ github.run_number }},enable=${{ github.event_name == 'workflow_dispatch' }}
             # Tag for tagged releases
-            type=raw,value=${{ matrix.prefix }}release,enable=${{ startsWith(github.ref, 'refs/tags/l') }}
+            type=raw,value=${{ matrix.prefix }}release,enable=${{ startsWith(github.ref, 'refs/tags/v') }}
             # Also add the Git tag name itself for releases
-            type=raw,value=${{ matrix.prefix }}release-${{ github.ref_name }},enable=${{ startsWith(github.ref, 'refs/tags/l') }}
+            type=raw,value=${{ matrix.prefix }}release-${{ github.ref_name }},enable=${{ startsWith(github.ref, 'refs/tags/v') }}
       - name: Build and push
         uses: docker/build-push-action@263435318d21b8e681c14492fe198d362a7d2c83 # v6.18.0
         with:
@@ -94,6 +95,7 @@ jobs:
     needs: docker
     runs-on: ubuntu-24.04
     strategy:
+      fail-fast: false
       matrix:
         include:
           - name: sshnpd
