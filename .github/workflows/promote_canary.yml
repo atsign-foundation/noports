@@ -36,7 +36,11 @@ jobs:
         run: |
           docker buildx imagetools create -t \
             atsigncompany/${{ github.event.inputs.image }}:latest \
+            atsigncompany/${{ github.event.inputs.image }}:canary
+          docker buildx imagetools create -t \
             atsigncompany/${{ github.event.inputs.image }}:prod \
+            atsigncompany/${{ github.event.inputs.image }}:canary
+          docker buildx imagetools create -t \
             atsigncompany/${{ github.event.inputs.image }}:prod-wd-gha${{ github.run_number }} \
             atsigncompany/${{ github.event.inputs.image }}:canary
 
@@ -64,6 +68,10 @@ jobs:
         run: |
           docker buildx imagetools create -t \
             atsigncompany/${{ matrix.name }}:latest \
+            atsigncompany/${{ matrix.name }}:canary
+          docker buildx imagetools create -t \
             atsigncompany/${{ matrix.name }}:prod \
+            atsigncompany/${{ matrix.name }}:canary
+          docker buildx imagetools create -t \
             atsigncompany/${{ matrix.name }}:prod-${{ github.ref_name }} \
             atsigncompany/${{ matrix.name }}:canary
