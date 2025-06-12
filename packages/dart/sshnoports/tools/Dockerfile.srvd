@@ -1,6 +1,6 @@
 # Dockerfile.srvd
 # Build image for a containerized call of the srvd and srv binaries 
-FROM dart:3.8.1@sha256:3c201c4f5a7cb7680ec000d1c7e3b665c87ec7b608be3e1cb5957901b1d2fa07 AS buildimage
+FROM dart:3.8.1@sha256:50056357ebfe43304527d5c811f537be8e2675f3460b719c6083eb89d2791517 AS buildimage
 ENV PACKAGEDIR=packages/dart/sshnoports
 ENV BINARYDIR=/usr/local/at
 SHELL ["/bin/bash", "-c"]
