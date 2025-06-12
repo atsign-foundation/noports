@@ -133,15 +133,13 @@ jobs:
           docker buildx imagetools create \
             -t atsigncompany/${{ matrix.name }}:${{ env.TAG2 }} \
             --append atsigncompany/${{ matrix.name }}:amd64-${{ env.TAG2 }}
-      # Promote to canary so long as this isn't a pre-release
+      # Promote to canary
       - name: Update canary tag
+        if: startsWith(github.ref, 'refs/tags/v')
         run: |
-          RELEASE_JSON=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
-            "https://api.github.com/repos/${{ github.repository }}/releases/tags/${{ env.VERSION }}")
-          PRERELEASE=$(echo "$RELEASE_JSON" | jq -r '.prerelease')
-          if [ $PRERELEASE == 'false' ]; then
-            docker buildx imagetools create -t \
-              atsigncompany/${{ matrix.name }}:canary \
-              atsigncompany/${{ matrix.name }}:canary-${{ github.ref_name }} \
-              atsigncompany/${{ matrix.name }}:release-${{ github.ref_name }}
-          fi
+          docker buildx imagetools create -t \
+            atsigncompany/${{ matrix.name }}:canary \
+            atsigncompany/${{ matrix.name }}:release-${{ github.ref_name }}
+          docker buildx imagetools create -t \
+            atsigncompany/${{ matrix.name }}:canary-${{ github.ref_name }} \
+            atsigncompany/${{ matrix.name }}:release-${{ github.ref_name }}
