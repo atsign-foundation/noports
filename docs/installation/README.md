@@ -113,6 +113,6 @@ Monday - Friday, 6am - 6pm (PT)
 
 <summary><mark style="color:orange;">via Discord</mark></summary>
 
-[Join our Discord](https://discord.gg/atsign-778383211214536722) for technical support. Our team and community are hear to help!
+[Join our Discord](https://discord.gg/atsign-778383211214536722) for technical support. Our team and community are here to help!
 
 </details>
