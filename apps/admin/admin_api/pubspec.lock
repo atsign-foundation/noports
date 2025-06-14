@@ -95,10 +95,10 @@ packages:
     dependency: "direct main"
     description:
       name: at_client
-      sha256: d437de35f99d1f70192f785413d39ad1617d3374477a7b03c8b110eb92bad030
+      sha256: edd43d3070a30246490a1e81e3e05631db3a484d2f97849ddfac654d42303c5f
       url: "https://pub.dev"
     source: hosted
-    version: "3.4.2"
+    version: "3.4.3"
   at_commons:
     dependency: transitive
     description:
@@ -127,26 +127,26 @@ packages:
     dependency: transitive
     description:
       name: at_onboarding_cli
-      sha256: "4fd96f94ba01299a2dac1ab4261b1778840d74185fde041432a491cea09755df"
+      sha256: "1eb5768d4a43e51f8a8292bb721135e17bf7f0a3738556842ceb94cd93798993"
       url: "https://pub.dev"
     source: hosted
-    version: "1.10.0"
+    version: "1.10.1"
   at_persistence_secondary_server:
     dependency: transitive
     description:
       name: at_persistence_secondary_server
-      sha256: bf6aac91a74416239da4e0d1cf9c483a4a336c3e10d3d326d1b2664b1900a184
+      sha256: "00a964a0e7f4ca984276975f043d55d17c969feea5e6bc5ee554a72579b4b160"
       url: "https://pub.dev"
     source: hosted
-    version: "3.1.0"
+    version: "4.1.0"
   at_persistence_spec:
     dependency: transitive
     description:
       name: at_persistence_spec
-      sha256: ea8e550368ccee9150247ae7abdc256dccf78467bb48c11d1d0d66b843b21ba7
+      sha256: "2b8a414f53ae2368023862cda0b6c2ccef3a3876acc355ea064654df434aedbd"
       url: "https://pub.dev"
     source: hosted
-    version: "2.0.14"
+    version: "3.1.0"
   at_server_status:
     dependency: transitive
     description:
@@ -971,4 +971,4 @@ packages:
     source: hosted
     version: "0.2.3"
 sdks:
-  dart: ">=3.7.0 <4.0.0"
+  dart: ">=3.8.0-0 <4.0.0"

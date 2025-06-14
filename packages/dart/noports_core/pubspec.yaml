@@ -10,7 +10,7 @@ environment:
 dependencies:
   args: ^2.4.2
   at_chops: ^2.0.1
-  at_client: ^3.4.0
+  at_client: ^3.4.3
   at_commons: ^5.4.0
   at_cli_commons: ^2.1.0
   at_utils: ^3.0.19

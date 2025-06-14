@@ -10,14 +10,15 @@ class HandleSshnpdPayloadStub extends Mock
     implements HandleSshnpdPayloadCaller {}
 
 class StubbedSshnpdChannel extends SshnpdChannel {
-  final Future<void> Function(
+  final Future<NotificationResult> Function(
     AtKey,
     String, {
     required bool checkForFinalDeliveryStatus,
     required bool waitForFinalDeliveryStatus,
     required Duration ttln,
-  })? _notify;
-  final Stream<AtNotification> Function({String? regex, bool shouldDecrypt})?
+    int maxTries,
+  }) _notify;
+  final Stream<AtNotification> Function({String? regex, bool shouldDecrypt})
       _subscribe;
   final Future<SshnpdAck> Function(AtNotification notification)?
       _handleSshnpdPayload;
@@ -27,15 +28,18 @@ class StubbedSshnpdChannel extends SshnpdChannel {
     required super.params,
     required super.sessionId,
     required super.namespace,
-    Future<void> Function(
+    required Future<NotificationResult> Function(
       AtKey,
       String, {
       required bool checkForFinalDeliveryStatus,
       required bool waitForFinalDeliveryStatus,
       required Duration ttln,
-    })? notify,
-    Stream<AtNotification> Function({String? regex, bool shouldDecrypt})?
-        subscribe,
+      int maxTries,
+    }) notify,
+    required Stream<AtNotification> Function({
+      String? regex,
+      bool shouldDecrypt,
+    }) subscribe,
     Future<SshnpdAck> Function(AtNotification notification)?
         handleSshnpdPayload,
   })  : _notify = notify,
@@ -49,19 +53,21 @@ class StubbedSshnpdChannel extends SshnpdChannel {
   }
 
   @override
-  Future<void> notify(
+  Future<NotificationResult> notify(
     AtKey atKey,
     String value, {
     required bool checkForFinalDeliveryStatus,
     required bool waitForFinalDeliveryStatus,
     required Duration ttln,
+    int maxTries = 3,
   }) async {
-    return _notify?.call(
+    return _notify.call(
       atKey,
       value,
       checkForFinalDeliveryStatus: checkForFinalDeliveryStatus,
       waitForFinalDeliveryStatus: waitForFinalDeliveryStatus,
       ttln: ttln,
+      maxTries: maxTries,
     );
   }
 
@@ -70,8 +76,7 @@ class StubbedSshnpdChannel extends SshnpdChannel {
     String? regex,
     bool shouldDecrypt = false,
   }) {
-    return _subscribe?.call(regex: regex, shouldDecrypt: shouldDecrypt) ??
-        Stream.empty();
+    return _subscribe.call(regex: regex, shouldDecrypt: shouldDecrypt);
   }
 }
 

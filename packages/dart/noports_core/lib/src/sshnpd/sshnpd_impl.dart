@@ -1451,6 +1451,8 @@ class _NPAAuthChecker implements AuthChecker, AtRpcCallbacks {
       domainNameSpace: 'auth_checks',
       allowList: {sshnpd.policyManagerAtsign!},
       callbacks: this,
+      isClient: true,
+      isServer: false,
     );
     rpc.start();
   }

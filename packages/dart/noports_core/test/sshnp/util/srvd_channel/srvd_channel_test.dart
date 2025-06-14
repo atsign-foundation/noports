@@ -37,6 +37,7 @@ void main() {
               any(named: 'checkForFinalDeliveryStatus'),
           waitForFinalDeliveryStatus: any(named: 'waitForFinalDeliveryStatus'),
           ttln: any(named: 'ttln'),
+          maxTries: any(named: 'maxTries'),
         );
     subscribeInvocation() => subscribeStub(
           regex: any(named: 'regex'),
@@ -131,15 +132,18 @@ void main() {
           final portB = 10789;
           final rvdSessionNonce = DateTime.now().toIso8601String();
 
-          notificationStreamController.add(
-            AtNotification.empty()
-              ..id = Uuid().v4()
-              ..key = '$sessionId.${Srvd.namespace}'
-              ..from = '@srvd'
-              ..to = '@client'
-              ..epochMillis = DateTime.now().millisecondsSinceEpoch
-              ..value = '$testIp,$portA,$portB,$rvdSessionNonce',
-          );
+          final n = AtNotification.empty()
+            ..id = Uuid().v4()
+            ..key = '$sessionId.${Srvd.namespace}'
+            ..from = '@srvd'
+            ..to = '@client'
+            ..epochMillis = DateTime.now().millisecondsSinceEpoch
+            ..value = '$testIp,$portA,$portB,$rvdSessionNonce';
+          notificationStreamController.add(n);
+          return NotificationResult()
+            ..atKey = AtKey.fromString('${n.to}:${n.key}${n.from}')
+            ..notificationID = n.id
+            ..notificationStatusEnum = NotificationStatusEnum.undelivered;
         },
       );
     }
@@ -176,6 +180,7 @@ void main() {
               waitForFinalDeliveryStatus:
                   any(named: 'waitForFinalDeliveryStatus'),
               ttln: any(named: 'ttln'),
+              maxTries: any(named: 'maxTries'),
             ),
       ]);
 
