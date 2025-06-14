@@ -93,12 +93,11 @@ packages:
   at_client:
     dependency: "direct main"
     description:
-      path: "packages/at_client"
-      ref: at-rpc-enable-same-atsign
-      resolved-ref: "4c9259ac78a683afe434d19676e977a8488d1e50"
-      url: "https://github.com/atsign-foundation/at_client_sdk"
-    source: git
-    version: "3.4.2"
+      name: at_client
+      sha256: edd43d3070a30246490a1e81e3e05631db3a484d2f97849ddfac654d42303c5f
+      url: "https://pub.dev"
+    source: hosted
+    version: "3.4.3"
   at_commons:
     dependency: "direct main"
     description:
@@ -126,12 +125,11 @@ packages:
   at_onboarding_cli:
     dependency: "direct main"
     description:
-      path: "packages/at_onboarding_cli"
-      ref: remove-dependency-from-onboarding-cli
-      resolved-ref: "2d997ec5eb6fad0d850a226da514114a2f8c8be0"
-      url: "https://github.com/atsign-foundation/at_libraries"
-    source: git
-    version: "1.10.0"
+      name: at_onboarding_cli
+      sha256: "1eb5768d4a43e51f8a8292bb721135e17bf7f0a3738556842ceb94cd93798993"
+      url: "https://pub.dev"
+    source: hosted
+    version: "1.10.1"
   at_persistence_secondary_server:
     dependency: transitive
     description:

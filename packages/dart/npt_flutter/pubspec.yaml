@@ -96,7 +96,7 @@ dependency_overrides:
   intl: ^0.20.0
   device_info_plus: 11.3.3
   file: 7.0.1
-  meta: 1.15.0
+  meta: ^1.15.0
   dartssh2:
     git:
       url: https://github.com/atsign-foundation/dartssh2
@@ -113,7 +113,7 @@ dependency_overrides:
   at_client_mobile:
     git:
       url: https://github.com/atsign-foundation/at_client_sdk
-      ref: 533f657eec18f13a11dafbf67c0006c6cc010dde
+      ref: 5f256fce7af97dcc554c5dd13e8a6b44a167febe
       path: packages/at_client_mobile
   # The "flutter_lints" package below contains a set of recommended lints to
   # encourage good coding practices. The lint set provided by the package is
