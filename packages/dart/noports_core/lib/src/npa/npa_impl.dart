@@ -98,6 +98,8 @@ class NPAImpl with AtClientBindings implements NPA {
       callbacks: this,
       allowList: daemonAtsigns,
       allowAll: true,
+      isClient: false,
+      isServer: true,
     );
 
     rpc.start();
