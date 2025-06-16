@@ -324,6 +324,11 @@ class SshnpdParams {
       hide: true,
     );
 
+    parser.addFlag(
+      'help',
+      help: 'Show usage',
+    );
+
     return parser;
   }
 }
