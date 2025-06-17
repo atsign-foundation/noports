@@ -20,6 +20,22 @@ jobs:
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
       - uses: ./.github/composite/verify_cli_tags
+  np_admin-unit-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - uses: dart-lang/setup-dart@e51d8e571e22473a2ddebf0ef8a2123f0ab2c02c # v1.7.1
+        with:
+          sdk: stable
+      - name: dart pub get enforce lockfile
+        working-directory: apps/admin/admin_api
+        run: dart pub get --enforce-lockfile
+      - name: dart analyze
+        working-directory: apps/admin/admin_api
+        run: dart analyze
+      - name: dart test
+        working-directory: apps/admin/admin_api
+        run: dart test
   noports_core-unit_tests:
     runs-on: ubuntu-latest
     strategy:

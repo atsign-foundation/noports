@@ -138,6 +138,35 @@ Future<void> verifyEnvelopeSignature(
   }
 }
 
+/// Remove all PKs which this atSign has cached in filesystem or in
+/// atClient storage
+Future<void> clearLocallyCachedPKs({
+  required AtSignLogger logger,
+  FileSystem? fs,
+  AtClient? atClient,
+}) async {
+  if (fs != null) {
+    String dirName = path
+        .normalize('${getHomeDirectory()}/.atsign/sshnp/cached_pks')
+        .replaceAll('/', Platform.pathSeparator);
+    Directory d = fs.directory(dirName);
+    if (await d.exists()) {
+      logger.shout('Deleting $dirName');
+      await d.delete(recursive: true);
+    }
+  }
+
+  if (atClient != null) {
+    // find all `local:` keys which end with `.cached_pks.sshnp`
+    List<AtKey> keys =
+        await atClient.getAtKeys(regex: r'^local:.*\.cached_pks\.sshnp');
+    for (final key in keys) {
+      logger.shout('Deleting $key');
+      await atClient.delete(key);
+    }
+  }
+}
+
 /// If the PK for [atSign] is in the sshnp local cache, then return it.
 /// If it is not, then fetch it via the [atClient], and store it.
 ///

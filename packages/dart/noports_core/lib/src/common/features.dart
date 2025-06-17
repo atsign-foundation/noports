@@ -28,6 +28,9 @@ enum DaemonFeature {
   /// Can handle heartbeat messages being sent over the control channel.
   /// See also [NptParams.controlChannelHeartbeat]
   controlChannelHeartbeats('1.4.0'),
+
+  /// Understands [RelayAuthMode.escr]
+  supportsRamEscr('1.4.0'),
   ;
 
   /// The version of the NoPorts control protocol which introduced this feature.
@@ -70,6 +73,8 @@ extension FeatureDescription on DaemonFeature {
         return 'support the \'timeout\' value in npt session requests';
       case DaemonFeature.controlChannelHeartbeats:
         return 'handle heartbeat messages being send over the control channel';
+      case DaemonFeature.supportsRamEscr:
+        return 'support the \'ESCR\' relay auth mode';
     }
   }
 }

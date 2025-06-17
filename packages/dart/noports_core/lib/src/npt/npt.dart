@@ -198,6 +198,9 @@ class _NptImpl extends NptBase
       DaemonFeature.supportsPortChoice,
       DaemonFeature.controlChannelHeartbeats,
     ];
+    if (params.relayAuthMode == RelayAuthMode.escr) {
+      requiredFeatures.add(DaemonFeature.supportsRamEscr);
+    }
     if (!(params.timeout == DefaultArgs.srvTimeout)) {
       requiredFeatures.add(DaemonFeature.adjustableTimeout);
     }
@@ -238,6 +241,7 @@ class _NptImpl extends NptBase
         }
       }
     }
+
     sendProgress('Required daemon features are supported');
 
     completeInitialization();
@@ -268,6 +272,8 @@ class _NptImpl extends NptBase
             rvdHost: _srvdChannel.rvdHost,
             rvdPort: _srvdChannel.daemonPort,
             authenticateToRvd: params.authenticateDeviceToRvd,
+            relayAuthMode: params.relayAuthMode,
+            relayAuthAesKey: _srvdChannel.relayAuthAesKey,
             clientNonce: _srvdChannel.clientNonce,
             rvdNonce: _srvdChannel.rvdNonce!,
             encryptRvdTraffic: params.encryptRvdTraffic,
@@ -289,7 +295,8 @@ class _NptImpl extends NptBase
       case SshnpdAck.acknowledged:
         sendProgress('Received response from the device daemon');
       case SshnpdAck.acknowledgedWithErrors:
-        throw SshnpError('Received error response from the device daemon');
+        throw SshnpError('Error response from device daemon:'
+            ' ${sshnpdChannel.errorReceived ?? ''}');
       case SshnpdAck.notAcknowledged:
         throw SshnpError('No response from the device daemon');
     }

@@ -226,8 +226,11 @@ void main() {
             waitForFinalDeliveryStatus:
                 any(named: 'waitForFinalDeliveryStatus'),
             ttln: any(named: 'ttln'),
+            maxTries: any(named: 'maxTries'),
           ),
-        ).thenAnswer((_) async {});
+        ).thenAnswer((_) async {
+          return NotificationResult();
+        });
 
         verifyNever(notifyInvocation);
 
@@ -246,6 +249,7 @@ void main() {
             waitForFinalDeliveryStatus:
                 any(named: 'waitForFinalDeliveryStatus'),
             ttln: any(named: 'ttln'),
+            maxTries: any(named: 'maxTries'),
           ),
         ).called(1);
       }); // test sharePublicKeyIfRequired

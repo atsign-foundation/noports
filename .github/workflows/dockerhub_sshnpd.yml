@@ -14,6 +14,7 @@ permissions: # added using https://github.com/step-security/secure-workflows
 jobs:
   docker:
     strategy:
+      fail-fast: false
       matrix:
         os: [ubuntu-24.04-arm, ubuntu-24.04]
         name:
@@ -56,7 +57,7 @@ jobs:
       - name: Set up QEMU
         uses: docker/setup-qemu-action@29109295f81e9208d7d86ff1c6c12d2833863392 # v3.6.0
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@b5ca514318bd6ebac0fb2aedd5d36ec1b5c232a2 # v3.10.0
+        uses: docker/setup-buildx-action@18ce135bb5112fa8ce4ed6c17ab05699d7f3a5e0 # v3.11.0
       - name: Login to Docker Hub
         uses: docker/login-action@74a5d142397b4f367a81961eba4e8cd7edddf772 # v3.4.0
         with:
@@ -77,9 +78,9 @@ jobs:
             # Decorated tag for workflow_dispatch (dev_env-branch-gha)
             type=raw,value=${{ matrix.prefix }}dev_env-${{ github.ref_name }}-gha${{ github.run_number }},enable=${{ github.event_name == 'workflow_dispatch' }}
             # Tag for tagged releases
-            type=raw,value=${{ matrix.prefix }}release,enable=${{ startsWith(github.ref, 'refs/tags/l') }}
+            type=raw,value=${{ matrix.prefix }}release,enable=${{ startsWith(github.ref, 'refs/tags/v') }}
             # Also add the Git tag name itself for releases
-            type=raw,value=${{ matrix.prefix }}release-${{ github.ref_name }},enable=${{ startsWith(github.ref, 'refs/tags/l') }}
+            type=raw,value=${{ matrix.prefix }}release-${{ github.ref_name }},enable=${{ startsWith(github.ref, 'refs/tags/v') }}
       - name: Build and push
         uses: docker/build-push-action@263435318d21b8e681c14492fe198d362a7d2c83 # v6.18.0
         with:
@@ -94,6 +95,7 @@ jobs:
     needs: docker
     runs-on: ubuntu-24.04
     strategy:
+      fail-fast: false
       matrix:
         include:
           - name: sshnpd
@@ -104,7 +106,7 @@ jobs:
           - name: srvd
     steps:
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@b5ca514318bd6ebac0fb2aedd5d36ec1b5c232a2 # v3.10.0
+        uses: docker/setup-buildx-action@18ce135bb5112fa8ce4ed6c17ab05699d7f3a5e0 # v3.11.0
       - name: Login to Docker Hub
         uses: docker/login-action@74a5d142397b4f367a81961eba4e8cd7edddf772 # v3.4.0
         with:
@@ -131,15 +133,13 @@ jobs:
           docker buildx imagetools create \
             -t atsigncompany/${{ matrix.name }}:${{ env.TAG2 }} \
             --append atsigncompany/${{ matrix.name }}:amd64-${{ env.TAG2 }}
-      # Promote to canary so long as this isn't a pre-release
+      # Promote to canary
       - name: Update canary tag
+        if: startsWith(github.ref, 'refs/tags/v')
         run: |
-          RELEASE_JSON=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
-            "https://api.github.com/repos/${{ github.repository }}/releases/tags/${{ env.VERSION }}")
-          PRERELEASE=$(echo "$RELEASE_JSON" | jq -r '.prerelease')
-          if [ $PRERELEASE == 'false' ]; then
-            docker buildx imagetools create -t \
-              atsigncompany/${{ matrix.name }}:canary \
-              atsigncompany/${{ matrix.name }}:canary-${{ github.ref_name }} \
-              atsigncompany/${{ matrix.name }}:release-${{ github.ref_name }}
-          fi
+          docker buildx imagetools create -t \
+            atsigncompany/${{ matrix.name }}:canary \
+            atsigncompany/${{ matrix.name }}:release-${{ github.ref_name }}
+          docker buildx imagetools create -t \
+            atsigncompany/${{ matrix.name }}:canary-${{ github.ref_name }} \
+            atsigncompany/${{ matrix.name }}:release-${{ github.ref_name }}

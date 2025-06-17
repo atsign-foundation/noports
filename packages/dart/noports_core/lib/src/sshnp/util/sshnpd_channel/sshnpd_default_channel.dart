@@ -21,6 +21,7 @@ mixin SshnpdDefaultPayloadHandler on SshnpdChannel {
   String? ephemeralPrivateKey;
   String? sessionAESKeyString;
   String? sessionIVString;
+  String? errorReceived;
 
   @visibleForTesting
   // disable publickey cache on windows
@@ -37,6 +38,7 @@ mixin SshnpdDefaultPayloadHandler on SshnpdChannel {
     bool validResponse = notification.value?.startsWith('{') ?? false;
     if (!validResponse) {
       logger.shout('invalid daemon response: ${notification.value}');
+      errorReceived = notification.value;
       return SshnpdAck.acknowledgedWithErrors;
     } else {
       late final Map envelope;

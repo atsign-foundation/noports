@@ -12,12 +12,13 @@ abstract class FunctionCaller<T> {
 class FunctionStub<T> extends Mock implements FunctionCaller<T> {}
 
 abstract class NotifyCaller {
-  Future<void> call(
+  Future<NotificationResult> call(
     AtKey key,
     String value, {
     required bool checkForFinalDeliveryStatus,
     required bool waitForFinalDeliveryStatus,
     required Duration ttln,
+    int maxTries,
   });
 }
 
@@ -38,6 +39,12 @@ class MockNotificationService extends Mock implements NotificationService {}
 class MockSshnpParams extends Mock implements SshnpParams {
   @override
   Duration get daemonPingTimeout => DefaultArgs.daemonPingTimeoutDuration;
+
+  @override
+  RelayAuthMode get relayAuthMode => RelayAuthMode.payload;
+
+  @override
+  bool get only443 => false;
 }
 
 class MockSshnpdChannel extends Mock implements SshnpdChannel {}

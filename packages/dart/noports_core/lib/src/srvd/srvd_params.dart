@@ -5,7 +5,6 @@ import 'package:at_cli_commons/at_cli_commons.dart';
 import 'package:noports_core/src/srvd/build_env.dart';
 
 class SrvdParams {
-  final String username;
   final String atSign;
   final String homeDirectory;
   final String atKeysFilePath;
@@ -16,11 +15,17 @@ class SrvdParams {
   final String rootDomain;
   final bool perSessionStorage;
 
+  /// Whether to start an isolate where all connections are to the same port
+  final bool bind443;
+
+  /// The actual port to bind to - for example in a docker env you may wish
+  /// to forward port 443 on the host to some local port in the container
+  final int localBindPort443;
+
   // Non param variables
   static final ArgParser parser = _createArgParser();
 
   SrvdParams({
-    required this.username,
     required this.atSign,
     required this.homeDirectory,
     required this.atKeysFilePath,
@@ -30,6 +35,8 @@ class SrvdParams {
     required this.logTraffic,
     required this.rootDomain,
     required this.perSessionStorage,
+    required this.bind443,
+    required this.localBindPort443,
   });
 
   static Future<SrvdParams> fromArgs(List<String> args) async {
@@ -37,10 +44,14 @@ class SrvdParams {
     ArgResults r = parser.parse(args);
 
     String atSign = r['atsign'];
-    String homeDirectory = getHomeDirectory()!;
+    String homeDirectory;
+    try {
+      homeDirectory = getHomeDirectory(throwIfNull: true)!;
+    } catch (e) {
+      throw ArgumentError(e);
+    }
 
     return SrvdParams(
-      username: getUserName(throwIfNull: true)!,
       atSign: atSign,
       homeDirectory: homeDirectory,
       atKeysFilePath:
@@ -51,6 +62,9 @@ class SrvdParams {
       logTraffic: BuildEnv.enableSnoop && r['snoop'],
       rootDomain: r['root-domain'],
       perSessionStorage: r['per-session-storage'],
+      bind443: r['443'],
+      localBindPort443:
+          r['443-bind-port'] == null ? 443 : int.parse(r['443-bind-port']),
     );
   }
 
@@ -116,6 +130,19 @@ class SrvdParams {
           ' When true, allows you to run multiple srvds concurrently on the'
           ' same host, as the same user. When false, only a single local srvd'
           ' may run concurrently on the same host as the same user.',
+    );
+    parser.addFlag(
+      '443',
+      defaultsTo: false,
+      help: 'Also bind to port 443, to support clients which want to connect'
+          ' only to port 443 (for ... \$reasons)',
+    );
+    parser.addOption(
+      '443-bind-port',
+      mandatory: false,
+      help: 'The actual port to bind to - for example in a docker env you may'
+          ' wish to forward port 443 on the host to a different port in the'
+          ' container',
     );
     parser.addFlag(
       'help',
