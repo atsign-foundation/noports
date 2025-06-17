@@ -6,9 +6,9 @@ import 'package:at_onboarding_flutter/at_onboarding_flutter.dart';
 import 'package:at_onboarding_flutter/at_onboarding_services.dart';
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:npt_flutter/constants.dart';
 import 'package:npt_flutter/features/onboarding/widgets/enrollment_dialog.dart';
+import 'package:npt_flutter/localization/app_localizations.dart';
 import 'package:npt_flutter/styles/sizes.dart';
 import 'package:pin_code_fields/pin_code_fields.dart';
 

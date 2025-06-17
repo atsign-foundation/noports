@@ -2,7 +2,6 @@ import 'package:at_onboarding_flutter/at_onboarding_flutter.dart';
 import 'package:at_onboarding_flutter/at_onboarding_services.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:npt_flutter/constants.dart';
 import 'package:npt_flutter/features/back_up_key/cubit/backup_key_cubit.dart';
 import 'package:npt_flutter/features/onboarding/cubit/onboarding_cubit.dart';
@@ -14,6 +13,7 @@ import 'package:npt_flutter/routes.dart';
 import 'package:npt_flutter/util/at_client_methods.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../localization/app_localizations.dart';
 import '../styles/sizes.dart';
 import 'custom_snack_bar.dart';
 

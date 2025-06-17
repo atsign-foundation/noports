@@ -5,10 +5,10 @@ import 'dart:typed_data';
 import 'package:at_backupkey_flutter/services/backupkey_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:npt_flutter/app.dart';
 import 'package:npt_flutter/features/back_up_key/repository/backup_key_repository.dart';
 import 'package:npt_flutter/features/onboarding/cubit/onboarding_cubit.dart';
+import 'package:npt_flutter/localization/app_localizations.dart';
 import 'package:npt_flutter/widgets/custom_snack_bar.dart';
 
 class BackupKeyCubit extends Cubit<bool> {

@@ -2,7 +2,6 @@ import 'dart:developer';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:npt_flutter/features/back_up_key/util/backup_key_utils.dart';
 import 'package:npt_flutter/features/profile/profile.dart';
@@ -10,6 +9,7 @@ import 'package:npt_flutter/features/profile/view/profile_header_view.dart';
 import 'package:npt_flutter/features/profile_list/profile_list.dart';
 import 'package:npt_flutter/features/profile_list/widgets/demo_profile_info_widget.dart';
 import 'package:npt_flutter/features/profile_list/widgets/profile_list_failed_load_content.dart';
+import 'package:npt_flutter/localization/app_localizations.dart';
 import 'package:npt_flutter/styles/sizes.dart';
 import 'package:npt_flutter/widgets/spinner.dart';
 
