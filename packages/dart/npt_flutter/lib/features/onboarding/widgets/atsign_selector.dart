@@ -8,8 +8,10 @@ import 'package:npt_flutter/util/general_extensions.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 class AtsignSelector extends StatefulWidget {
+  final void Function(String)? onSubmit;
   const AtsignSelector({
     required this.options,
+    this.onSubmit,
     super.key,
   });
   final Map<String, AtsignInformation> options;
@@ -25,20 +27,24 @@ class _AtsignSelectorState extends State<AtsignSelector> {
   Widget build(BuildContext context) {
     return SizedBox(
       width: double.infinity,
-      child: BlocBuilder<OnboardingCubit, OnboardingState>(builder: (context, state) {
-        controller.value =
-            TextEditingValue(text: state.atSign, selection: TextSelection.collapsed(offset: state.atSign.length));
+      child: BlocBuilder<OnboardingCubit, OnboardingState>(
+          builder: (context, state) {
+        controller.value = TextEditingValue(
+            text: state.atSign,
+            selection: TextSelection.collapsed(offset: state.atSign.length));
         return TextFormField(
           controller: controller,
           onChanged: (atsign) {
             atsign = atsign.atsignify();
-            controller.value =
-                TextEditingValue(text: atsign, selection: TextSelection.collapsed(offset: atsign.length));
+            controller.value = TextEditingValue(
+                text: atsign,
+                selection: TextSelection.collapsed(offset: atsign.length));
             context.read<OnboardingCubit>().setState(
                   atSign: atsign,
                   rootDomain: widget.options[atsign]?.rootDomain,
                 );
           },
+          onFieldSubmitted: widget.onSubmit,
           validator: FormValidator.validateRequiredAtsignField,
           autovalidateMode: AutovalidateMode.onUserInteraction,
           decoration: InputDecoration(
@@ -48,7 +54,8 @@ class _AtsignSelectorState extends State<AtsignSelector> {
                 ? Directionality(
                     textDirection: TextDirection.rtl,
                     child: MenuAnchor(
-                      style: const MenuStyle(alignment: AlignmentDirectional.bottomStart),
+                      style: const MenuStyle(
+                          alignment: AlignmentDirectional.bottomStart),
                       childFocusNode: focusNode,
                       menuChildren: widget.options.keys.map((atsign) {
                         return Directionality(
@@ -58,13 +65,15 @@ class _AtsignSelectorState extends State<AtsignSelector> {
                             onPressed: () {
                               context.read<OnboardingCubit>().setState(
                                     atSign: atsign,
-                                    rootDomain: widget.options[atsign]?.rootDomain,
+                                    rootDomain:
+                                        widget.options[atsign]?.rootDomain,
                                   );
                             },
                           ),
                         );
                       }).toList(),
-                      builder: (BuildContext context, MenuController controller, Widget? child) {
+                      builder: (BuildContext context, MenuController controller,
+                          Widget? child) {
                         return IconButton(
                           focusNode: focusNode,
                           onPressed: () {

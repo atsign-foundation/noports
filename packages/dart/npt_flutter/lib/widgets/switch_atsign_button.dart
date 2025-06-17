@@ -42,10 +42,11 @@ class SwitchAtsignButton extends StatelessWidget {
             // Select atsign to switch
             final atSignList = await KeychainUtil.getAtsignList();
             // set to dynamic to handle being popped by the AppBar back button which returns a 'StatefulElement'
+            if (!context.mounted) return;
             final selectedAtSign = await showMenu<dynamic>(
               context: context,
-              position:
-                  const RelativeRect.fromLTRB(-1000, 1, 0, 0), // You may want to calculate this based on tap position
+              position: const RelativeRect.fromLTRB(-1000, 1, 0,
+                  0), // You may want to calculate this based on tap position
               shape: RoundedRectangleBorder(
                 side: const BorderSide(
                   color: AppColor.primaryColor,
@@ -70,7 +71,14 @@ class SwitchAtsignButton extends StatelessWidget {
             // Check for connected profiles before switching
             var isProfileConnected = false;
 
-            if (context.read<ProfilesRunningCubit>().state.socketConnectors.keys.toSet().isNotEmpty) {
+            if (!context.mounted) return;
+            if (context
+                .read<ProfilesRunningCubit>()
+                .state
+                .socketConnectors
+                .keys
+                .toSet()
+                .isNotEmpty) {
               log('tap triggered more than once');
               isProfileConnected = await showDialog(
                 barrierDismissible: false,
@@ -84,21 +92,29 @@ class SwitchAtsignButton extends StatelessWidget {
             }
             final currentContext = App.navState.currentContext!;
 
-            final rootDomain =
-                currentContext.read<OnboardingCubit>().getRootDomain(); // Or get from your state/cubit if needed
-            final atClientPreference = await AtClientMethods.loadAtClientPreference(rootDomain);
+            if (!currentContext.mounted) return;
+            final rootDomain = currentContext
+                .read<OnboardingCubit>()
+                .getRootDomain(); // Or get from your state/cubit if needed
+            final atClientPreference =
+                await AtClientMethods.loadAtClientPreference(rootDomain);
             await preSignout();
-            final result = await AtOnboarding.changePrimaryAtsign(atsign: selectedAtSign);
+            final result =
+                await AtOnboarding.changePrimaryAtsign(atsign: selectedAtSign);
+
+            if (!currentContext.mounted) return;
+            final root = Constants.getRootDomains(currentContext)[rootDomain];
 
             if (result) {
               final onboardingResult = await AtOnboarding.onboard(
                 atsign: selectedAtSign,
+                // ignore: use_build_context_synchronously
                 context: currentContext,
                 config: AtOnboardingConfig(
                   atClientPreference: atClientPreference,
                   domain: rootDomain,
                   rootEnvironment: RootEnvironment.Production,
-                  appAPIKey: await Constants.appAPIKey,
+                  appAPIKey: await root?.apiKey,
                 ),
               );
               log("onboarding result: $onboardingResult");
@@ -130,7 +146,9 @@ class _HoverableMenuItemState extends State<_HoverableMenuItem> {
       onEnter: (_) => setState(() => _hovering = true),
       onExit: (_) => setState(() => _hovering = false),
       child: Container(
-        color: _hovering ? AppColor.primaryColorButtonBackgroundAlt : Colors.transparent,
+        color: _hovering
+            ? AppColor.primaryColorButtonBackgroundAlt
+            : Colors.transparent,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -141,10 +159,13 @@ class _HoverableMenuItemState extends State<_HoverableMenuItem> {
                 children: [
                   RichText(
                     text: TextSpan(children: [
-                      const TextSpan(text: '@', style: TextStyle(color: AppColor.primaryColor)),
+                      const TextSpan(
+                          text: '@',
+                          style: TextStyle(color: AppColor.primaryColor)),
                       TextSpan(
                         text: widget.atSign.split('@').last,
-                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(),
+                        style:
+                            Theme.of(context).textTheme.bodyMedium?.copyWith(),
                       ),
                     ]),
                   ),

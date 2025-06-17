@@ -45,15 +45,23 @@ class CustomTextButton extends StatelessWidget {
         type = CustomListTileType.privacyPolicy;
 
   const CustomTextButton.backUpYourKey(
-      {this.iconData = Icons.bookmark_outline, this.type = CustomListTileType.backupYourKey, super.key});
+      {this.iconData = Icons.bookmark_outline,
+      this.type = CustomListTileType.backupYourKey,
+      super.key});
 
   const CustomTextButton.resetAtsign(
-      {this.iconData = Icons.rotate_right, this.type = CustomListTileType.resetAtsign, super.key});
+      {this.iconData = Icons.rotate_right,
+      this.type = CustomListTileType.resetAtsign,
+      super.key});
   const CustomTextButton.signOut(
-      {this.iconData = Icons.logout_outlined, this.type = CustomListTileType.signOut, super.key});
+      {this.iconData = Icons.logout_outlined,
+      this.type = CustomListTileType.signOut,
+      super.key});
 
   const CustomTextButton.feedback(
-      {this.iconData = Icons.feedback_outlined, this.type = CustomListTileType.feedback, super.key});
+      {this.iconData = Icons.feedback_outlined,
+      this.type = CustomListTileType.feedback,
+      super.key});
 
   final IconData iconData;
 
@@ -73,17 +81,20 @@ class CustomTextButton extends StatelessWidget {
             path: 'info@noports.com',
           );
           if (!await launchUrl(emailUri)) {
-            CustomSnackBar.notification(content: strings.noEmailClientAvailable);
+            CustomSnackBar.notification(
+                content: strings.noEmailClientAvailable);
           }
           break;
         case CustomListTileType.discord:
-          final Uri url = Uri.parse('https://discord.gg/atsign-778383211214536722');
+          final Uri url =
+              Uri.parse('https://discord.gg/atsign-778383211214536722');
           if (!await launchUrl(url)) {
             throw Exception('Could not launch $url');
           }
           break;
         case CustomListTileType.faq:
-          final Uri url = Uri.parse('https://docs.noports.com/ssh-no-ports/faq');
+          final Uri url =
+              Uri.parse('https://docs.noports.com/ssh-no-ports/faq');
           if (!await launchUrl(url)) {
             throw Exception('Could not launch $url');
           }
@@ -100,8 +111,8 @@ class CustomTextButton extends StatelessWidget {
           }
           break;
         case CustomListTileType.resetAtsign:
-          final futurePreference = await AtClientMethods.loadAtClientPreference(rootDomain!);
-          final apiKey = await Constants.appAPIKey;
+          final futurePreference =
+              await AtClientMethods.loadAtClientPreference(rootDomain!);
           if (context.mounted) {
             final result = await AtOnboarding.reset(
               context: context,
@@ -109,14 +120,16 @@ class CustomTextButton extends StatelessWidget {
                 atClientPreference: futurePreference,
                 rootEnvironment: RootEnvironment.Testing,
                 domain: rootDomain,
-                appAPIKey: apiKey,
+                appAPIKey: null,
               ),
             );
-            final OnboardingService onboardingService = OnboardingService.getInstance();
+            final OnboardingService onboardingService =
+                OnboardingService.getInstance();
 
             if (context.mounted && result == AtOnboardingResetResult.success) {
               onboardingService.setAtsign = null;
-              Navigator.of(context, rootNavigator: true).pushNamedAndRemoveUntil(
+              Navigator.of(context, rootNavigator: true)
+                  .pushNamedAndRemoveUntil(
                 Routes.onboarding,
                 (route) => false,
               );
@@ -132,7 +145,8 @@ class CustomTextButton extends StatelessWidget {
           );
 
           if (!await launchUrl(emailUri)) {
-            CustomSnackBar.notification(content: strings.noEmailClientAvailable);
+            CustomSnackBar.notification(
+                content: strings.noEmailClientAvailable);
           }
           break;
 
@@ -176,9 +190,11 @@ class CustomTextButton extends StatelessWidget {
     }
 
     if (type == CustomListTileType.resetAtsign) {
-      return BlocBuilder<OnboardingCubit, AtsignInformation>(builder: (context, atsignInformation) {
+      return BlocBuilder<OnboardingCubit, AtsignInformation>(
+          builder: (context, atsignInformation) {
         return Padding(
-          padding: const EdgeInsets.only(left: Sizes.p30, right: Sizes.p30, bottom: Sizes.p10),
+          padding: const EdgeInsets.only(
+              left: Sizes.p30, right: Sizes.p30, bottom: Sizes.p10),
           child: TextButton.icon(
             label: Text(getTitle(strings)),
             onPressed: () {
@@ -192,7 +208,8 @@ class CustomTextButton extends StatelessWidget {
       });
     }
     return Padding(
-      padding: const EdgeInsets.only(left: Sizes.p30, right: Sizes.p30, bottom: Sizes.p10),
+      padding: const EdgeInsets.only(
+          left: Sizes.p30, right: Sizes.p30, bottom: Sizes.p10),
       child: TextButton.icon(
         label: Text(getTitle(strings)),
         onPressed: () {

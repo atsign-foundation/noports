@@ -55,6 +55,7 @@ class _OnboardingDialogState extends State<OnboardingDialog> {
                     gapH16,
                     AtsignSelector(
                       options: widget.options,
+                      onSubmit: onSubmit,
                     ),
                   ],
                 ),
@@ -78,7 +79,8 @@ class _OnboardingDialogState extends State<OnboardingDialog> {
                   ],
                 ),
               ),
-              BlocBuilder<OnboardingCubit, OnboardingState>(builder: (context, state) {
+              BlocBuilder<OnboardingCubit, OnboardingState>(
+                  builder: (context, state) {
                 return SizedBox(
                   width: width,
                   child: CustomContainer.background(
@@ -92,11 +94,7 @@ class _OnboardingDialogState extends State<OnboardingDialog> {
                       ),
                       const Spacer(),
                       ElevatedButton(
-                        onPressed: FormValidator.validateRequiredAtsignField(state.atSign) == null
-                            ? () {
-                                Navigator.of(context).pop(true);
-                              }
-                            : null,
+                        onPressed: () => onSubmit(state.atSign),
                         child: Text(strings.next),
                       ),
                     ],
@@ -108,5 +106,11 @@ class _OnboardingDialogState extends State<OnboardingDialog> {
         ),
       ),
     );
+  }
+
+  void onSubmit(String atSign) {
+    if (FormValidator.validateRequiredAtsignField(atSign) == null) {
+      Navigator.of(context).pop(true);
+    }
   }
 }

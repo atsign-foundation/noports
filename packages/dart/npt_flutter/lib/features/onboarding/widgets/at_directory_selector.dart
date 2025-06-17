@@ -26,9 +26,12 @@ class _AtDirectorySelectorState extends State<AtDirectorySelector> {
     final rootDomains = Constants.getRootDomains(context);
     return SizedBox(
       width: double.infinity,
-      child: BlocBuilder<OnboardingCubit, OnboardingState>(builder: (context, state) {
+      child: BlocBuilder<OnboardingCubit, OnboardingState>(
+          builder: (context, state) {
         controller.value = TextEditingValue(
-            text: state.rootDomain, selection: TextSelection.collapsed(offset: state.rootDomain.length));
+            text: state.rootDomain,
+            selection:
+                TextSelection.collapsed(offset: state.rootDomain.length));
         return TextFormField(
           enabled: !widget.options.containsKey(state.atSign),
           controller: controller,
@@ -42,20 +45,24 @@ class _AtDirectorySelectorState extends State<AtDirectorySelector> {
                 ? Directionality(
                     textDirection: TextDirection.rtl,
                     child: MenuAnchor(
-                      style: const MenuStyle(alignment: AlignmentDirectional.bottomStart),
+                      style: const MenuStyle(
+                          alignment: AlignmentDirectional.bottomStart),
                       childFocusNode: focusNode,
                       menuChildren: rootDomains.entries.map((e) {
                         return Directionality(
                           textDirection: TextDirection.ltr,
                           child: MenuItemButton(
-                            child: Text(e.value),
+                            child: Text(e.value.description),
                             onPressed: () {
-                              context.read<OnboardingCubit>().setRootDomain(e.key);
+                              context
+                                  .read<OnboardingCubit>()
+                                  .setRootDomain(e.key);
                             },
                           ),
                         );
                       }).toList(),
-                      builder: (BuildContext context, MenuController controller, Widget? child) {
+                      builder: (BuildContext context, MenuController controller,
+                          Widget? child) {
                         return IconButton(
                           focusNode: focusNode,
                           onPressed: () {

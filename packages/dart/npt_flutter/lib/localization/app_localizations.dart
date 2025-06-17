@@ -107,6 +107,12 @@ abstract class AppLocalizations {
         languageCode: 'zh', countryCode: 'HK', scriptCode: 'Hant')
   ];
 
+  /// No description provided for @activateUsingLicense.
+  ///
+  /// In en, this message translates to:
+  /// **'activate using a license key'**
+  String get activateUsingLicense;
+
   /// No description provided for @activationStatusActivating.
   ///
   /// In en, this message translates to:
@@ -329,29 +335,29 @@ abstract class AppLocalizations {
   /// **'Try Now'**
   String get demoTextButton;
 
-  /// No description provided for @deviceAtsign.
-  ///
-  /// In en, this message translates to:
-  /// **'Device atSign'**
-  String get deviceAtsign;
-
   /// No description provided for @deviceAtsignDescription.
   ///
   /// In en, this message translates to:
   /// **'This is the atSign associated with your device.'**
   String get deviceAtsignDescription;
 
-  /// No description provided for @deviceName.
+  /// No description provided for @deviceAtsign.
   ///
   /// In en, this message translates to:
-  /// **'Device Name'**
-  String get deviceName;
+  /// **'Device atSign'**
+  String get deviceAtsign;
 
   /// No description provided for @deviceNameDescription.
   ///
   /// In en, this message translates to:
   /// **'This is the name of your remote device.'**
   String get deviceNameDescription;
+
+  /// No description provided for @deviceName.
+  ///
+  /// In en, this message translates to:
+  /// **'Device Name'**
+  String get deviceName;
 
   /// No description provided for @disconnected.
   ///
@@ -401,12 +407,6 @@ abstract class AppLocalizations {
   /// **'Enable Logging'**
   String get enableLogging;
 
-  /// No description provided for @enroll.
-  ///
-  /// In en, this message translates to:
-  /// **'Enroll'**
-  String get enroll;
-
   /// No description provided for @enrollApproved.
   ///
   /// In en, this message translates to:
@@ -419,17 +419,17 @@ abstract class AppLocalizations {
   /// **'Enrollment request denied'**
   String get enrollDenied;
 
+  /// No description provided for @enroll.
+  ///
+  /// In en, this message translates to:
+  /// **'Enroll'**
+  String get enroll;
+
   /// No description provided for @enrollRequestDenied.
   ///
   /// In en, this message translates to:
   /// **'Enrollment request denied'**
   String get enrollRequestDenied;
-
-  /// No description provided for @enrollWithAuthenticator.
-  ///
-  /// In en, this message translates to:
-  /// **'Enroll with Authenticator'**
-  String get enrollWithAuthenticator;
 
   /// No description provided for @enrollWithAuthenticatorDescription.
   ///
@@ -437,17 +437,17 @@ abstract class AppLocalizations {
   /// **'Authenticate through app with manager keys'**
   String get enrollWithAuthenticatorDescription;
 
+  /// No description provided for @enrollWithAuthenticator.
+  ///
+  /// In en, this message translates to:
+  /// **'Enroll with Authenticator'**
+  String get enrollWithAuthenticator;
+
   /// No description provided for @enterOtp.
   ///
   /// In en, this message translates to:
   /// **'Enter OTP'**
   String get enterOtp;
-
-  /// No description provided for @error.
-  ///
-  /// In en, this message translates to:
-  /// **'Error'**
-  String get error;
 
   /// No description provided for @errorAtKeySaveFailed.
   ///
@@ -515,6 +515,12 @@ abstract class AppLocalizations {
   /// **'Authentication timed out.'**
   String get errorAuthenticationTimedOut;
 
+  /// No description provided for @error.
+  ///
+  /// In en, this message translates to:
+  /// **'Error'**
+  String get error;
+
   /// No description provided for @errorOtpRequestFailed.
   ///
   /// In en, this message translates to:
@@ -575,17 +581,17 @@ abstract class AppLocalizations {
   /// **'Feedback'**
   String get feedback;
 
-  /// No description provided for @fileFormatInvalid.
-  ///
-  /// In en, this message translates to:
-  /// **'The document format is invalid. Please upload a valid file.'**
-  String get fileFormatInvalid;
-
   /// No description provided for @fileFormatInvalidDetails.
   ///
   /// In en, this message translates to:
   /// **'The profiles section is missing or incorrectly formatted. Please check the document.'**
   String get fileFormatInvalidDetails;
+
+  /// No description provided for @fileFormatInvalid.
+  ///
+  /// In en, this message translates to:
+  /// **'The document format is invalid. Please upload a valid file.'**
+  String get fileFormatInvalid;
 
   /// No description provided for @fileImported.
   ///
@@ -611,17 +617,17 @@ abstract class AppLocalizations {
   /// **'Get Started'**
   String get getStarted;
 
-  /// No description provided for @import.
-  ///
-  /// In en, this message translates to:
-  /// **'Import'**
-  String get import;
-
   /// No description provided for @importFile.
   ///
   /// In en, this message translates to:
   /// **'Import File'**
   String get importFile;
+
+  /// No description provided for @import.
+  ///
+  /// In en, this message translates to:
+  /// **'Import'**
+  String get import;
 
   /// No description provided for @info.
   ///
@@ -713,12 +719,6 @@ abstract class AppLocalizations {
   /// **'NoPorts'**
   String get noPorts;
 
-  /// No description provided for @onboard.
-  ///
-  /// In en, this message translates to:
-  /// **'Onboard'**
-  String get onboard;
-
   /// No description provided for @onboardingButtonStatusPicking.
   ///
   /// In en, this message translates to:
@@ -749,11 +749,23 @@ abstract class AppLocalizations {
   /// **'Welcome'**
   String get onboardingTitle;
 
+  /// No description provided for @onboard.
+  ///
+  /// In en, this message translates to:
+  /// **'Onboard'**
+  String get onboard;
+
   /// No description provided for @or.
   ///
   /// In en, this message translates to:
   /// **'Or'**
   String get or;
+
+  /// No description provided for @orSpace.
+  ///
+  /// In en, this message translates to:
+  /// **'or '**
+  String get orSpace;
 
   /// No description provided for @overrideAllProfile.
   ///
@@ -761,17 +773,17 @@ abstract class AppLocalizations {
   /// **'Override all profiles with default relay selection'**
   String get overrideAllProfile;
 
-  /// No description provided for @pasteProfile.
-  ///
-  /// In en, this message translates to:
-  /// **'Paste Profile'**
-  String get pasteProfile;
-
   /// No description provided for @pasteProfileDescription.
   ///
   /// In en, this message translates to:
   /// **'Paste the JSON/YAML content here'**
   String get pasteProfileDescription;
+
+  /// No description provided for @pasteProfile.
+  ///
+  /// In en, this message translates to:
+  /// **'Paste Profile'**
+  String get pasteProfile;
 
   /// No description provided for @preview.
   ///
@@ -784,12 +796,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Privacy Policy'**
   String get privacyPolicy;
-
-  /// No description provided for @profile.
-  ///
-  /// In en, this message translates to:
-  /// **'Profile'**
-  String get profile;
 
   /// No description provided for @profileDeleteMessage.
   ///
@@ -863,17 +869,23 @@ abstract class AppLocalizations {
   /// **'How would you like to import a profile?'**
   String get profileImportSelectedMessage;
 
+  /// No description provided for @profileNameDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'This will be the name of your configurations.'**
+  String get profileNameDescription;
+
   /// No description provided for @profileName.
   ///
   /// In en, this message translates to:
   /// **'Profile Name'**
   String get profileName;
 
-  /// No description provided for @profileNameDescription.
+  /// No description provided for @profile.
   ///
   /// In en, this message translates to:
-  /// **'This will be the name of your configurations.'**
-  String get profileNameDescription;
+  /// **'Profile'**
+  String get profile;
 
   /// No description provided for @profileRunningActionDeniedMessage.
   ///
@@ -971,17 +983,17 @@ abstract class AppLocalizations {
   /// **'register'**
   String get register;
 
-  /// No description provided for @relay.
-  ///
-  /// In en, this message translates to:
-  /// **'Relay'**
-  String get relay;
-
   /// No description provided for @relayDescription.
   ///
   /// In en, this message translates to:
   /// **'Choose from our existing relays or create a new one.'**
   String get relayDescription;
+
+  /// No description provided for @relay.
+  ///
+  /// In en, this message translates to:
+  /// **'Relay'**
+  String get relay;
 
   /// No description provided for @reload.
   ///
@@ -1139,29 +1151,23 @@ abstract class AppLocalizations {
   /// **'Stopping'**
   String get stopping;
 
-  /// No description provided for @submit.
-  ///
-  /// In en, this message translates to:
-  /// **'Submit'**
-  String get submit;
-
   /// No description provided for @submitOtp.
   ///
   /// In en, this message translates to:
   /// **'Submit OTP'**
   String get submitOtp;
 
+  /// No description provided for @submit.
+  ///
+  /// In en, this message translates to:
+  /// **'Submit'**
+  String get submit;
+
   /// No description provided for @success.
   ///
   /// In en, this message translates to:
   /// **'Success'**
   String get success;
-
-  /// No description provided for @switchAtSign.
-  ///
-  /// In en, this message translates to:
-  /// **'Switch atSign'**
-  String get switchAtSign;
 
   /// No description provided for @switchAtSignDescription.
   ///
@@ -1175,11 +1181,23 @@ abstract class AppLocalizations {
   /// **'Note: Switching atSigns ends all connections.'**
   String get switchAtSignNote;
 
+  /// No description provided for @switchAtSign.
+  ///
+  /// In en, this message translates to:
+  /// **'Switch atSign'**
+  String get switchAtSign;
+
   /// No description provided for @syncInProgress.
   ///
   /// In en, this message translates to:
   /// **'Sync in progress. Some profiles may still be loading.'**
   String get syncInProgress;
+
+  /// No description provided for @typePasteLicense.
+  ///
+  /// In en, this message translates to:
+  /// **'Type/paste your license key'**
+  String get typePasteLicense;
 
   /// No description provided for @unknownError.
   ///
@@ -1187,17 +1205,17 @@ abstract class AppLocalizations {
   /// **'An unknown error occurred'**
   String get unknownError;
 
-  /// No description provided for @uploadKey.
-  ///
-  /// In en, this message translates to:
-  /// **'Upload atKey'**
-  String get uploadKey;
-
   /// No description provided for @uploadKeyDescription.
   ///
   /// In en, this message translates to:
   /// **'Select a local .atkey file'**
   String get uploadKeyDescription;
+
+  /// No description provided for @uploadKey.
+  ///
+  /// In en, this message translates to:
+  /// **'Upload atKey'**
+  String get uploadKey;
 
   /// No description provided for @validationErrorAtsignField.
   ///
@@ -1265,29 +1283,29 @@ abstract class AppLocalizations {
   /// **'What is a NoPorts atSign?'**
   String get whatIsClientAtsign;
 
-  /// No description provided for @whereToAccept.
-  ///
-  /// In en, this message translates to:
-  /// **'Where to accept?'**
-  String get whereToAccept;
-
   /// No description provided for @whereToAcceptDescription.
   ///
   /// In en, this message translates to:
   /// **'Please approve the request in an app with a manager key.'**
   String get whereToAcceptDescription;
 
-  /// No description provided for @yaml.
+  /// No description provided for @whereToAccept.
   ///
   /// In en, this message translates to:
-  /// **'YAML'**
-  String get yaml;
+  /// **'Where to accept?'**
+  String get whereToAccept;
 
   /// No description provided for @yamlRecommended.
   ///
   /// In en, this message translates to:
   /// **'YAML (Recommended)'**
   String get yamlRecommended;
+
+  /// No description provided for @yaml.
+  ///
+  /// In en, this message translates to:
+  /// **'YAML'**
+  String get yaml;
 }
 
 class _AppLocalizationsDelegate

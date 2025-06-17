@@ -9,6 +9,9 @@ class AppLocalizationsPt extends AppLocalizations {
   AppLocalizationsPt([String locale = 'pt']) : super(locale);
 
   @override
+  String get activateUsingLicense => 'ativar usando uma chave de licença';
+
+  @override
   String get activationStatusActivating => 'Ativando';
 
   @override
@@ -126,18 +129,18 @@ class AppLocalizationsPt extends AppLocalizations {
   String get demoTextButton => 'Experimentar Agora';
 
   @override
-  String get deviceAtsign => 'atSign do Dispositivo';
-
-  @override
   String get deviceAtsignDescription =>
       'Este é o atSign associado ao seu dispositivo.';
 
   @override
-  String get deviceName => 'Nome do Dispositivo';
+  String get deviceAtsign => 'atSign do Dispositivo';
 
   @override
   String get deviceNameDescription =>
       'Este é o nome do seu dispositivo remoto.';
+
+  @override
+  String get deviceName => 'Nome do Dispositivo';
 
   @override
   String get disconnected => 'Desconectado';
@@ -165,29 +168,26 @@ class AppLocalizationsPt extends AppLocalizations {
   String get enableLogging => 'Habilitar Log';
 
   @override
-  String get enroll => 'Inscrever-se';
-
-  @override
   String get enrollApproved => 'Solicitação de inscrição aprovada';
 
   @override
   String get enrollDenied => 'Solicitação de inscrição negada';
 
   @override
-  String get enrollRequestDenied => 'Solicitação de inscrição negada';
+  String get enroll => 'Inscrever-se';
 
   @override
-  String get enrollWithAuthenticator => 'Inscrever-se com o Authenticator';
+  String get enrollRequestDenied => 'Solicitação de inscrição negada';
 
   @override
   String get enrollWithAuthenticatorDescription =>
       'Autenticar através do aplicativo com chaves de gerenciador';
 
   @override
-  String get enterOtp => 'Inserir OTP';
+  String get enrollWithAuthenticator => 'Inscrever-se com o Authenticator';
 
   @override
-  String get error => 'Erro';
+  String get enterOtp => 'Inserir OTP';
 
   @override
   String errorAtKeySaveFailed(Object error) {
@@ -234,6 +234,9 @@ class AppLocalizationsPt extends AppLocalizations {
       'Tempo limite de autenticação excedido.';
 
   @override
+  String get error => 'Erro';
+
+  @override
   String get errorOtpRequestFailed =>
       'Falha ao solicitar um OTP, tente reenviar ou entre em contato com o suporte se o problema persistir.';
 
@@ -269,12 +272,12 @@ class AppLocalizationsPt extends AppLocalizations {
   String get feedback => 'Feedback';
 
   @override
-  String get fileFormatInvalid =>
-      'O formato do documento é inválido. Por favor, carregue um arquivo válido.';
-
-  @override
   String get fileFormatInvalidDetails =>
       'A seção de perfis está ausente ou formatada incorretamente. Por favor, verifique o documento.';
+
+  @override
+  String get fileFormatInvalid =>
+      'O formato do documento é inválido. Por favor, carregue um arquivo válido.';
 
   @override
   String get fileImported => 'Arquivo Importado';
@@ -290,10 +293,10 @@ class AppLocalizationsPt extends AppLocalizations {
   String get getStarted => 'Começar';
 
   @override
-  String get import => 'Importar';
+  String get importFile => 'Importar Arquivo';
 
   @override
-  String get importFile => 'Importar Arquivo';
+  String get import => 'Importar';
 
   @override
   String get info => 'Informação';
@@ -341,9 +344,6 @@ class AppLocalizationsPt extends AppLocalizations {
   String get noPorts => 'NoPorts';
 
   @override
-  String get onboard => 'Integrar';
-
-  @override
   String get onboardingButtonStatusPicking => 'Aguardando a seleção do arquivo';
 
   @override
@@ -359,26 +359,29 @@ class AppLocalizationsPt extends AppLocalizations {
   String get onboardingTitle => 'Bem-vindo';
 
   @override
+  String get onboard => 'Integrar';
+
+  @override
   String get or => 'Ou';
+
+  @override
+  String get orSpace => 'ou ';
 
   @override
   String get overrideAllProfile =>
       'Substituir todos os perfis com a seleção de relay padrão';
 
   @override
-  String get pasteProfile => 'Colar Perfil';
+  String get pasteProfileDescription => 'Cole o conteúdo JSON/YAML aqui';
 
   @override
-  String get pasteProfileDescription => 'Cole o conteúdo JSON/YAML aqui';
+  String get pasteProfile => 'Colar Perfil';
 
   @override
   String get preview => 'Visualizar';
 
   @override
   String get privacyPolicy => 'Política de Privacidade';
-
-  @override
-  String get profile => 'Perfil';
 
   @override
   String get profileDeleteMessage =>
@@ -423,11 +426,14 @@ class AppLocalizationsPt extends AppLocalizations {
       'Como você gostaria de importar um perfil?';
 
   @override
+  String get profileNameDescription =>
+      'Este será o nome de suas configurações.';
+
+  @override
   String get profileName => 'Nome do Perfil';
 
   @override
-  String get profileNameDescription =>
-      'Este será o nome de suas configurações.';
+  String get profile => 'Perfil';
 
   @override
   String get profileRunningActionDeniedMessage =>
@@ -480,11 +486,11 @@ class AppLocalizationsPt extends AppLocalizations {
   String get register => 'Registrar';
 
   @override
-  String get relay => 'Relay';
-
-  @override
   String get relayDescription =>
       'Escolha entre nossos relays existentes ou crie um novo.';
+
+  @override
+  String get relay => 'Relay';
 
   @override
   String get reload => 'Recarregar';
@@ -568,16 +574,13 @@ class AppLocalizationsPt extends AppLocalizations {
   String get stopping => 'Desligando';
 
   @override
-  String get submit => 'Enviar';
-
-  @override
   String get submitOtp => 'Enviar OTP';
 
   @override
-  String get success => 'Sucesso';
+  String get submit => 'Enviar';
 
   @override
-  String get switchAtSign => 'Mudar atSign';
+  String get success => 'Sucesso';
 
   @override
   String get switchAtSignDescription =>
@@ -588,17 +591,23 @@ class AppLocalizationsPt extends AppLocalizations {
       'Observação: Mudar de atSign encerra todas as conexões.';
 
   @override
+  String get switchAtSign => 'Mudar atSign';
+
+  @override
   String get syncInProgress =>
       'Sincronização em andamento. Alguns perfis ainda podem estar carregando.';
+
+  @override
+  String get typePasteLicense => 'Digite/cole sua chave de licença';
 
   @override
   String get unknownError => 'Ocorreu um erro desconhecido';
 
   @override
-  String get uploadKey => 'Enviar atKey';
+  String get uploadKeyDescription => 'Selecione um arquivo .atkey local';
 
   @override
-  String get uploadKeyDescription => 'Selecione um arquivo .atkey local';
+  String get uploadKey => 'Enviar atKey';
 
   @override
   String get validationErrorAtsignField => 'O campo deve ser um atSign válido';
@@ -640,17 +649,17 @@ class AppLocalizationsPt extends AppLocalizations {
   String get whatIsClientAtsign => 'O que é um atSign NoPorts?';
 
   @override
-  String get whereToAccept => 'Onde aceitar?';
-
-  @override
   String get whereToAcceptDescription =>
       'Por favor, aprov a solicitação em um aplicativo com uma chave de gerenciador.';
 
   @override
-  String get yaml => 'YAML';
+  String get whereToAccept => 'Onde aceitar?';
 
   @override
   String get yamlRecommended => 'YAML (Recomendado)';
+
+  @override
+  String get yaml => 'YAML';
 }
 
 /// The translations for Portuguese, as used in Brazil (`pt_BR`).
@@ -658,6 +667,9 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
   AppLocalizationsPtBr() : super('pt_BR');
 
   @override
+  String get activateUsingLicense => 'ativar com uma chave de licença';
+
+  @override
   String get activationStatusActivating => 'Ativando';
 
   @override
@@ -775,18 +787,18 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
   String get demoTextButton => 'Experimentar Agora';
 
   @override
-  String get deviceAtsign => 'atSign do Dispositivo';
-
-  @override
   String get deviceAtsignDescription =>
       'Este é o atSign associado ao seu dispositivo.';
 
   @override
-  String get deviceName => 'Nome do Dispositivo';
+  String get deviceAtsign => 'atSign do Dispositivo';
 
   @override
   String get deviceNameDescription =>
       'Este é o nome do seu dispositivo remoto.';
+
+  @override
+  String get deviceName => 'Nome do Dispositivo';
 
   @override
   String get disconnected => 'Desconectado';
@@ -814,29 +826,26 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
   String get enableLogging => 'Habilitar Log';
 
   @override
-  String get enroll => 'Inscrever-se';
-
-  @override
   String get enrollApproved => 'Solicitação de inscrição aprovada';
 
   @override
   String get enrollDenied => 'Solicitação de inscrição negada';
 
   @override
-  String get enrollRequestDenied => 'Solicitação de inscrição negada';
+  String get enroll => 'Inscrever-se';
 
   @override
-  String get enrollWithAuthenticator => 'Inscrever-se com o Authenticator';
+  String get enrollRequestDenied => 'Solicitação de inscrição negada';
 
   @override
   String get enrollWithAuthenticatorDescription =>
       'Autenticar através do aplicativo com chaves de gerenciador';
 
   @override
-  String get enterOtp => 'Inserir OTP';
+  String get enrollWithAuthenticator => 'Inscrever-se com o Authenticator';
 
   @override
-  String get error => 'Erro';
+  String get enterOtp => 'Inserir OTP';
 
   @override
   String errorAtKeySaveFailed(Object error) {
@@ -883,6 +892,9 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
       'Tempo limite de autenticação excedido.';
 
   @override
+  String get error => 'Erro';
+
+  @override
   String get errorOtpRequestFailed =>
       'Falha ao solicitar um OTP, tente reenviar ou entre em contato com o suporte se o problema persistir.';
 
@@ -918,12 +930,12 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
   String get feedback => 'Feedback';
 
   @override
-  String get fileFormatInvalid =>
-      'O formato do documento é inválido. Por favor, carregue um arquivo válido.';
-
-  @override
   String get fileFormatInvalidDetails =>
       'A seção de perfis está ausente ou formatada incorretamente. Por favor, verifique o documento.';
+
+  @override
+  String get fileFormatInvalid =>
+      'O formato do documento é inválido. Por favor, carregue um arquivo válido.';
 
   @override
   String get fileImported => 'Arquivo Importado';
@@ -939,10 +951,10 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
   String get getStarted => 'Começar';
 
   @override
-  String get import => 'Importar';
+  String get importFile => 'Importar Arquivo';
 
   @override
-  String get importFile => 'Importar Arquivo';
+  String get import => 'Importar';
 
   @override
   String get info => 'Informação';
@@ -990,9 +1002,6 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
   String get noPorts => 'NoPorts';
 
   @override
-  String get onboard => 'Integrar';
-
-  @override
   String get onboardingButtonStatusPicking => 'Aguardando a seleção do arquivo';
 
   @override
@@ -1008,26 +1017,29 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
   String get onboardingTitle => 'Bem-vindo';
 
   @override
+  String get onboard => 'Integrar';
+
+  @override
   String get or => 'Ou';
+
+  @override
+  String get orSpace => 'ou ';
 
   @override
   String get overrideAllProfile =>
       'Substituir todos os perfis com a seleção de relay padrão';
 
   @override
-  String get pasteProfile => 'Colar Perfil';
+  String get pasteProfileDescription => 'Cole o conteúdo JSON/YAML aqui';
 
   @override
-  String get pasteProfileDescription => 'Cole o conteúdo JSON/YAML aqui';
+  String get pasteProfile => 'Colar Perfil';
 
   @override
   String get preview => 'Visualizar';
 
   @override
   String get privacyPolicy => 'Política de Privacidade';
-
-  @override
-  String get profile => 'Perfil';
 
   @override
   String get profileDeleteMessage =>
@@ -1072,11 +1084,14 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
       'Como você gostaria de importar um perfil?';
 
   @override
+  String get profileNameDescription =>
+      'Este será o nome de suas configurações.';
+
+  @override
   String get profileName => 'Nome do Perfil';
 
   @override
-  String get profileNameDescription =>
-      'Este será o nome de suas configurações.';
+  String get profile => 'Perfil';
 
   @override
   String get profileRunningActionDeniedMessage =>
@@ -1129,11 +1144,11 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
   String get register => 'Registrar';
 
   @override
-  String get relay => 'Relay';
-
-  @override
   String get relayDescription =>
       'Escolha entre nossos relays existentes ou crie um novo.';
+
+  @override
+  String get relay => 'Relay';
 
   @override
   String get reload => 'Recarregar';
@@ -1217,16 +1232,13 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
   String get stopping => 'Desligando';
 
   @override
-  String get submit => 'Enviar';
-
-  @override
   String get submitOtp => 'Enviar OTP';
 
   @override
-  String get success => 'Sucesso';
+  String get submit => 'Enviar';
 
   @override
-  String get switchAtSign => 'Mudar atSign';
+  String get success => 'Sucesso';
 
   @override
   String get switchAtSignDescription =>
@@ -1237,17 +1249,23 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
       'Observação: Mudar de atSign encerra todas as conexões.';
 
   @override
+  String get switchAtSign => 'Mudar atSign';
+
+  @override
   String get syncInProgress =>
       'Sincronização em andamento. Alguns perfis ainda podem estar carregando.';
+
+  @override
+  String get typePasteLicense => 'Digite ou cole sua chave de licença';
 
   @override
   String get unknownError => 'Ocorreu um erro desconhecido';
 
   @override
-  String get uploadKey => 'Enviar atKey';
+  String get uploadKeyDescription => 'Selecione um arquivo .atkey local';
 
   @override
-  String get uploadKeyDescription => 'Selecione um arquivo .atkey local';
+  String get uploadKey => 'Enviar atKey';
 
   @override
   String get validationErrorAtsignField => 'O campo deve ser um atSign válido';
@@ -1289,15 +1307,15 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
   String get whatIsClientAtsign => 'O que é um atSign NoPorts?';
 
   @override
-  String get whereToAccept => 'Onde aceitar?';
-
-  @override
   String get whereToAcceptDescription =>
       'Por favor, aprov a solicitação em um aplicativo com uma chave de gerenciador.';
 
   @override
-  String get yaml => 'YAML';
+  String get whereToAccept => 'Onde aceitar?';
 
   @override
   String get yamlRecommended => 'YAML (Recomendado)';
+
+  @override
+  String get yaml => 'YAML';
 }

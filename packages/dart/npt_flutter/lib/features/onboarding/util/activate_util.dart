@@ -24,24 +24,28 @@ enum NoPortsActivateApiEndpoints {
 }
 
 class ActivateUtil {
-  final String registrarUrl;
-  final String apiKey;
+  final String? registrarUrl;
+  final String? apiKey;
   late final IOClient _http;
 
-  ActivateUtil({required this.registrarUrl, required this.apiKey}) {
+  ActivateUtil({this.registrarUrl, this.apiKey}) {
     var innerClient = HttpClient();
-    innerClient.badCertificateCallback = (X509Certificate cert, String host, int port) => true;
+    innerClient.badCertificateCallback =
+        (X509Certificate cert, String host, int port) => true;
     _http = IOClient();
   }
 
-  Future<Response> registrarApiRequest(NoPortsActivateApiEndpoints endpoint, Map<String, String?> data) async {
-    Uri url = Uri.https(registrarUrl, endpoint.path);
+  Future<Response> registrarApiRequest(
+      NoPortsActivateApiEndpoints endpoint, Map<String, String?> data) async {
+    if (registrarUrl == null) throw "registrar url not set";
+    if (apiKey == null) throw "registrar api key not set";
+    Uri url = Uri.https(registrarUrl!, endpoint.path);
 
     return _http.post(
       url,
       body: jsonEncode(data),
       headers: <String, String>{
-        'Authorization': apiKey,
+        'Authorization': apiKey!,
         'Content-Type': 'application/json',
       },
     );
@@ -58,7 +62,8 @@ class ActivateUtil {
     );
     if (res.statusCode != 200) {
       return (
-        errorMessage: AtOnboardingLocalizations.current.error_server_unavailable,
+        errorMessage:
+            AtOnboardingLocalizations.current.error_server_unavailable,
         cramkey: null,
       );
     }
@@ -101,14 +106,16 @@ class ActivateUtil {
 
       if (res) {
         int round = 1;
-        ServerStatus? atSignStatus = await onboardingService.checkAtSignServerStatus(atsign);
+        ServerStatus? atSignStatus =
+            await onboardingService.checkAtSignServerStatus(atsign);
         while (atSignStatus != ServerStatus.activated) {
           if (round > 10) {
             break;
           }
           await Future.delayed(const Duration(seconds: 3));
           round++;
-          atSignStatus = await onboardingService.checkAtSignServerStatus(atsign);
+          atSignStatus =
+              await onboardingService.checkAtSignServerStatus(atsign);
         }
 
         if (atSignStatus == ServerStatus.teapot) {
@@ -120,7 +127,9 @@ class ActivateUtil {
         }
       }
 
-      return AtOnboardingResult.error(message: AtOnboardingLocalizations.current.error_authenticated_failed);
+      return AtOnboardingResult.error(
+          message:
+              AtOnboardingLocalizations.current.error_authenticated_failed);
     } catch (e) {
       if (e == AtOnboardingResponseStatus.authFailed) {
         return AtOnboardingResult.error(
