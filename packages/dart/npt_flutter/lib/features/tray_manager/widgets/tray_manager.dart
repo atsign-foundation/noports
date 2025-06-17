@@ -26,7 +26,8 @@ class TrayManager extends StatefulWidget {
   State<TrayManager> createState() => _TrayManagerState();
 }
 
-class _TrayManagerState extends State<TrayManager> with TrayListener, WindowListener {
+class _TrayManagerState extends State<TrayManager>
+    with TrayListener, WindowListener {
   /// Must strongly type [context] here or Dart will infer the wrong type for
   /// the [.read()] extension which causes an error
   void reloadTray(BuildContext context, Loggable state) async {
@@ -39,7 +40,8 @@ class _TrayManagerState extends State<TrayManager> with TrayListener, WindowList
       case ProfilesRunningState _:
         cubit.reload(profilesRunningState: state);
       case SettingsLoadedState _:
-        var localizations = await AppLocalizations.delegate.load(state.settings.language.locale);
+        var localizations = await AppLocalizations.delegate
+            .load(state.settings.language.locale);
         cubit.reload(localizations: localizations);
       case ProfileState _:
         cubit.reload(profileState: state);
@@ -81,12 +83,14 @@ class _TrayManagerState extends State<TrayManager> with TrayListener, WindowList
               listener: reloadTray,
               // Only call listener when the language changes in settings
               listenWhen: (prev, next) {
-                if (prev is SettingsLoadedState && next is SettingsLoadedState) {
+                if (prev is SettingsLoadedState &&
+                    next is SettingsLoadedState) {
                   return prev.settings.language != next.settings.language;
                 }
                 // This may cause some extra reloading (very occasionally, settings shouldn't change often)
                 // but it should catch all of the edge cases
-                return prev is SettingsLoadedState || next is SettingsLoadedState;
+                return prev is SettingsLoadedState ||
+                    next is SettingsLoadedState;
               }),
 
           /// Yeah I really hate this... an indefinite list of listeners
