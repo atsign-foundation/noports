@@ -611,6 +611,7 @@ class SshnpdImpl with AtClientBindings, ApkamSigning implements Sshnpd {
         c2dBundle = await genBundle(encKeyType, req.clientEphemeralPK);
 
         if (req.twinKeys) {
+          logger.info('Session will use twinned keys');
           d2cBundle = await genBundle(encKeyType, req.clientEphemeralPK);
         }
       }
@@ -894,6 +895,7 @@ class SshnpdImpl with AtClientBindings, ApkamSigning implements Sshnpd {
         c2dBundle = await genBundle(encKeyType, req.clientEphemeralPK!);
 
         if (req.twinKeys) {
+          logger.info('Session will use twinned keys');
           d2cBundle = await genBundle(encKeyType, req.clientEphemeralPK!);
         }
       }

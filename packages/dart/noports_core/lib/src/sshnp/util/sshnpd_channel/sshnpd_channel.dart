@@ -46,6 +46,8 @@ abstract class SshnpdChannel with AsyncInitialization, AtClientBindings {
 
   Map<String, dynamic>? pingResponse;
 
+  Completer acked = Completer();
+
   /// If the daemon supports twinKeys then this gets set to true by the
   /// [featureCheck] function.
   late final bool twinKeys;
@@ -82,6 +84,7 @@ abstract class SshnpdChannel with AsyncInitialization, AtClientBindings {
     logger.info('Received $notificationKey notification');
 
     sshnpdAck = await handleSshnpdPayload(notification);
+    acked.complete();
 
     if (sshnpdAck == SshnpdAck.acknowledged) {
       logger.info('Session $sessionId connected successfully');
@@ -99,15 +102,9 @@ abstract class SshnpdChannel with AsyncInitialization, AtClientBindings {
   Future<SshnpdAck> waitForDaemonResponse({int maxWaitMillis = 15000}) async {
     // TODO Would maybe be better to return a Future<SshnpdAck, String>
     //      with the String being the failure reason (if any)
-
-    // Timer to timeout after 10 Secs or after the Ack of connected/Errors
-    for (int counter = 1; counter <= 100; counter++) {
-      if (counter % 20 == 0) {
-        logger.info('Still waiting for sshnpd response');
-      }
-      await Future.delayed(Duration(milliseconds: maxWaitMillis ~/ 100));
-      if (sshnpdAck != SshnpdAck.notAcknowledged) break;
-    }
+    try {
+      await acked.future.timeout(Duration(milliseconds: maxWaitMillis));
+    } on TimeoutException catch (_) {}
     logger.info('sshnpdAck: $sshnpdAck');
     return sshnpdAck;
   }

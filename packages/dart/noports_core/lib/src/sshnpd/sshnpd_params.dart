@@ -223,13 +223,6 @@ class SshnpdParams {
       aliases: const ['username'],
       defaultsTo: true,
       hide: true,
-      callback: (bool unhide) {
-        if (unhide) {
-          stderr.writeln(
-              "[WARN] -u, --un-hide is deprecated, since it is now on by default."
-              " Use --hide if you want to disable device information sharing.");
-        }
-      },
     );
 
     parser.addFlag(
