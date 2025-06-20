@@ -80,7 +80,7 @@ mixin SshnpdDefaultPayloadHandler on SshnpdChannel {
       ephemeralPrivateKey = daemonResponse['ephemeralPrivateKey'];
       logger.info('Received ephemeralPrivateKey: $ephemeralPrivateKey');
 
-      AtChops atChops = AtChopsImpl(AtChopsKeys.create(params.sessionKP, null));
+      AtChops? atChops;
 
       String? aesKeyC2DEncrypted =
           daemonResponse['sessionAESKey'] ?? daemonResponse['aesKeyC2D'];
@@ -91,6 +91,7 @@ mixin SshnpdDefaultPayloadHandler on SshnpdChannel {
       logger.info('Received encrypted ivC2D: $ivC2DEncrypted');
 
       if (aesKeyC2DEncrypted != null && ivC2DEncrypted != null) {
+        atChops ??= AtChopsImpl(AtChopsKeys.create(params.sessionKP, null));
         aesC2D = atChops
             .decryptString(aesKeyC2DEncrypted, params.sessionKPType)
             .result;
@@ -105,6 +106,7 @@ mixin SshnpdDefaultPayloadHandler on SshnpdChannel {
       logger.info('Received encrypted ivD2C: $ivD2CEncrypted');
 
       if (aesKeyD2CEncrypted != null && ivD2CEncrypted != null) {
+        atChops ??= AtChopsImpl(AtChopsKeys.create(params.sessionKP, null));
         aesD2C = atChops
             .decryptString(aesKeyD2CEncrypted, params.sessionKPType)
             .result;

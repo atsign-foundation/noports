@@ -256,6 +256,11 @@ class _NptImpl extends NptBase
     var msg = 'Sending session request to the device daemon';
     logger.info(msg);
     sendProgress(msg);
+    if (sshnpdChannel.twinKeys) {
+      msg = 'Session will use twinned keys';
+      logger.info(msg);
+      sendProgress(msg);
+    }
 
     /// Send an ssh request to sshnpd
     await notify(
