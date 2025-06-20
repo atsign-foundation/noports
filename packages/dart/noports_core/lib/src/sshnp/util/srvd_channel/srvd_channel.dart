@@ -72,8 +72,10 @@ abstract class SrvdChannel<T>
   // * Volatile fields set at runtime
 
   String? rvdNonce;
-  String? sessionAESKeyString;
-  String? sessionIVString;
+  String? aesKeyC2D;
+  String? ivC2D;
+  String? aesKeyD2C;
+  String? ivD2C;
   String? _relayAuthAesKey;
 
   String? get relayAuthAesKey {
@@ -114,8 +116,10 @@ abstract class SrvdChannel<T>
 
   Future<T?> runSrv({
     int? localRvPort,
-    String? sessionAESKeyString,
-    String? sessionIVString,
+    String? aesC2D,
+    String? ivC2D,
+    String? aesD2C,
+    String? ivD2C,
     bool multi = false,
     bool detached = false,
     Duration timeout = DefaultArgs.srvTimeout,
@@ -157,8 +161,10 @@ abstract class SrvdChannel<T>
       localPort: localRvPort,
       bindLocalPort: true,
       relayAuthenticator: relayAuthenticator,
-      sessionAESKeyString: sessionAESKeyString,
-      sessionIVString: sessionIVString,
+      aesC2D: aesC2D,
+      ivC2D: ivC2D,
+      aesD2C: aesD2C,
+      ivD2C: ivD2C,
       multi: multi,
       detached: detached,
       timeout: timeout,

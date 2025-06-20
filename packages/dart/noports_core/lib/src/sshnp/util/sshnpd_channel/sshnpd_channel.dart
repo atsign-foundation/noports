@@ -46,6 +46,10 @@ abstract class SshnpdChannel with AsyncInitialization, AtClientBindings {
 
   Map<String, dynamic>? pingResponse;
 
+  /// If the daemon supports twinKeys then this gets set to true by the
+  /// [featureCheck] function.
+  late bool twinKeys;
+
   SshnpdChannel({
     required this.atClient,
     required this.params,
@@ -197,6 +201,15 @@ abstract class SshnpdChannel with AsyncInitialization, AtClientBindings {
     final Map<String, dynamic> daemonFeatures =
         pingResponse!['supportedFeatures'] ??
             {DaemonFeature.acceptsPublicKeys.name: true};
+    if (pingResponse!['supportedFeatures']?[DaemonFeature.twinKeys.name] ==
+        true) {
+      logger.shout('Setting twinKeys to true');
+      twinKeys = true;
+    } else {
+      logger.shout('Setting twinKeys to false');
+      twinKeys = false;
+    }
+
     return featuresToCheck
         .map((featureToCheck) => (
               featureToCheck,

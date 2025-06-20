@@ -77,6 +77,7 @@ class SshnpOpensshLocalImpl extends SshnpCore
             encryptRvdTraffic: params.encryptRvdTraffic,
             clientEphemeralPK: params.sessionKP.atPublicKey.publicKey,
             clientEphemeralPKType: params.sessionKPType.name,
+            twinKeys: sshnpdChannel.twinKeys,
           ).toJson()),
       checkForFinalDeliveryStatus: false,
       waitForFinalDeliveryStatus: false,
@@ -116,8 +117,10 @@ class SshnpOpensshLocalImpl extends SshnpCore
     sendProgress('Creating connection to socket rendezvous');
     await srvdChannel.runSrv(
       localRvPort: localRvPort,
-      sessionAESKeyString: sshnpdChannel.sessionAESKeyString,
-      sessionIVString: sshnpdChannel.sessionIVString,
+      aesC2D: sshnpdChannel.aesC2D,
+      ivC2D: sshnpdChannel.ivC2D,
+      aesD2C: sshnpdChannel.aesD2C,
+      ivD2C: sshnpdChannel.ivD2C,
       multi: false,
       detached: true,
       timeout: DefaultArgs.srvTimeout,

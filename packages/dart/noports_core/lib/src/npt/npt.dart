@@ -282,6 +282,7 @@ class _NptImpl extends NptBase
             requestedPort: params.remotePort,
             requestedHost: params.remoteHost,
             timeout: params.timeout,
+            twinKeys: sshnpdChannel.twinKeys,
           ).toJson()),
       checkForFinalDeliveryStatus: false,
       waitForFinalDeliveryStatus: false,
@@ -331,8 +332,10 @@ class _NptImpl extends NptBase
 
       await _srvdChannel.runSrv(
         localRvPort: localRvPort,
-        sessionAESKeyString: sshnpdChannel.sessionAESKeyString,
-        sessionIVString: sshnpdChannel.sessionIVString,
+        aesC2D: sshnpdChannel.aesC2D,
+        ivC2D: sshnpdChannel.ivC2D,
+        aesD2C: sshnpdChannel.aesD2C,
+        ivD2C: sshnpdChannel.ivD2C,
         multi: true,
         detached: true,
         timeout: params.timeout,
@@ -356,8 +359,10 @@ class _NptImpl extends NptBase
 
     SocketConnector sc = await _srvdChannel.runSrv(
       localRvPort: localRvPort,
-      sessionAESKeyString: sshnpdChannel.sessionAESKeyString,
-      sessionIVString: sshnpdChannel.sessionIVString,
+      aesC2D: sshnpdChannel.aesC2D,
+      ivC2D: sshnpdChannel.ivC2D,
+      aesD2C: sshnpdChannel.aesD2C,
+      ivD2C: sshnpdChannel.ivD2C,
       multi: true,
       detached: false,
       timeout: params.timeout,

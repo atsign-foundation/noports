@@ -27,11 +27,19 @@ abstract class Srv<T> {
 
   abstract final RelayAuthenticator? relayAuthenticator;
 
-  /// The AES key for encryption / decryption of the rv traffic
-  abstract final String? sessionAESKeyString;
+  /// The AES key for Client-to-Daemon encryption in a single-socket
+  /// session, or on the control channel for a multi-socket session
+  abstract final String? aesC2D;
 
-  /// The IV to use with the [sessionAESKeyString]
-  abstract final String? sessionIVString;
+  /// The IV to use with the [aesC2D]
+  abstract final String? ivC2D;
+
+  /// The AES key for Daemon-to-Client encryption in a single-socket
+  /// session, or on the control channel for a multi-socket session
+  abstract final String? aesD2C;
+
+  /// The IV to use with the [aesD2C]
+  abstract final String? ivD2C;
 
   /// Whether to bind a local port or not
   abstract final bool? bindLocalPort;
@@ -60,8 +68,10 @@ abstract class Srv<T> {
     bool? bindLocalPort,
     String? rvdAuthString,
     required RelayAuthenticator? relayAuthenticator,
-    String? sessionAESKeyString,
-    String? sessionIVString,
+    String? aesC2D,
+    String? ivC2D,
+    String? aesD2C,
+    String? ivD2C,
     bool multi = false,
     bool detached = false,
     Duration timeout = DefaultArgs.srvTimeout,
@@ -74,8 +84,10 @@ abstract class Srv<T> {
       localHost: localHost,
       bindLocalPort: bindLocalPort,
       relayAuthenticator: relayAuthenticator,
-      sessionAESKeyString: sessionAESKeyString,
-      sessionIVString: sessionIVString,
+      aesC2D: aesC2D,
+      ivC2D: ivC2D,
+      aesD2C: aesD2C,
+      ivD2C: ivD2C,
       multi: multi,
       timeout: timeout,
       controlChannelHeartbeat: controlChannelHeartbeat,
@@ -90,8 +102,10 @@ abstract class Srv<T> {
     String? localHost,
     String? rvdAuthString,
     required RelayAuthenticator? relayAuthenticator,
-    String? sessionAESKeyString,
-    String? sessionIVString,
+    String? aesC2D,
+    String? ivC2D,
+    String? aesD2C,
+    String? ivD2C,
     bool multi = false,
     bool detached = false,
     Duration timeout = DefaultArgs.srvTimeout,
@@ -104,8 +118,10 @@ abstract class Srv<T> {
       localHost: localHost,
       bindLocalPort: bindLocalPort!,
       relayAuthenticator: relayAuthenticator,
-      sessionAESKeyString: sessionAESKeyString,
-      sessionIVString: sessionIVString,
+      aesC2D: aesC2D,
+      ivC2D: ivC2D,
+      aesD2C: aesD2C,
+      ivD2C: ivD2C,
       multi: multi,
       detached: detached,
       timeout: timeout,
@@ -121,8 +137,10 @@ abstract class Srv<T> {
     String? localHost,
     String? rvdAuthString,
     required RelayAuthenticator? relayAuthenticator,
-    String? sessionAESKeyString,
-    String? sessionIVString,
+    String? aesC2D,
+    String? ivC2D,
+    String? aesD2C,
+    String? ivD2C,
     bool multi = false,
     bool detached = false,
     Duration timeout = DefaultArgs.srvTimeout,
@@ -132,8 +150,10 @@ abstract class Srv<T> {
       streamingHost,
       streamingPort,
       relayAuthenticator: relayAuthenticator,
-      sessionAESKeyString: sessionAESKeyString,
-      sessionIVString: sessionIVString,
+      aesC2D: aesC2D,
+      ivC2D: ivC2D,
+      aesD2C: aesD2C,
+      ivD2C: ivD2C,
       multi: multi,
       timeout: timeout,
       controlChannelHeartbeat: controlChannelHeartbeat,
