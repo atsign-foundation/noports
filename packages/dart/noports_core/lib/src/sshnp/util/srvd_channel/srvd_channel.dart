@@ -38,7 +38,10 @@ abstract class SrvdChannel<T>
   final String sessionId;
   final String clientNonce = DateTime.now().toIso8601String();
 
+  Completer acked = Completer();
+
   bool fetched = false;
+
   late String _rvdHost;
   late int _rvdPortA;
   late int _rvdPortB;
@@ -185,10 +188,14 @@ abstract class SrvdChannel<T>
             'Got additional relay response ${notification.value} - ignoring');
         return;
       }
+
       if (notification.key.contains('nack.$sessionId')) {
         logger.warning('Got NACK response from relay: ${notification.key}');
         srvdNackMessage = notification.value.toString();
         srvdAck = SrvdAck.acknowledgedWithErrors;
+
+        acked.complete();
+
         return;
       }
       String ipPorts = notification.value.toString();
@@ -200,7 +207,10 @@ abstract class SrvdChannel<T>
       if (results.length >= 4) {
         rvdNonce = results[3];
       }
+
       fetched = true;
+      acked.complete();
+
       logger.info('Received from srvd:'
           ' rvdHost:clientPort:daemonPort $rvdHost:$clientPort:$daemonPort'
           ' rvdNonce: $rvdNonce');
@@ -262,21 +272,13 @@ abstract class SrvdChannel<T>
       ttln: Duration(minutes: 1),
     );
 
-    int counter = 1;
-    int t = DateTime.now().add(timeout).millisecondsSinceEpoch;
-    while (srvdAck == SrvdAck.notAcknowledged) {
-      // we'll log a message every two seconds while we're waiting
-      // (40 loops, 50 milliseconds sleep per loop)
-      if (counter % 40 == 0) {
-        logger.info('Still waiting for srvd response');
-      }
-      await Future.delayed(Duration(milliseconds: 50));
-      counter++;
-      if (DateTime.now().millisecondsSinceEpoch > t) {
-        logger.warning('Timed out waiting for srvd response');
-        throw TimeoutException(
-            'Connection timeout to srvd ${params.srvdAtSign} service');
-      }
+    logger.info('Will wait for a response for up to ${timeout.inSeconds} seconds');
+    try {
+      await acked.future.timeout(timeout);
+    } on TimeoutException catch (_) {
+      logger.warning('Timed out waiting for srvd response after ${timeout.inSeconds} seconds');
+      throw TimeoutException(
+          'Connection timeout to srvd ${params.srvdAtSign} service');
     }
 
     if (srvdAck == SrvdAck.acknowledgedWithErrors) {
