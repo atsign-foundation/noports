@@ -101,7 +101,8 @@ abstract class SshnpdChannel with AsyncInitialization, AtClientBindings {
   /// have timed out while waiting.
   Future<SshnpdAck> waitForDaemonResponse({int maxWaitMillis = 15000}) async {
     Duration timeout = Duration(milliseconds: maxWaitMillis);
-    logger.info('Will wait for a response for up to ${timeout.inSeconds} seconds');
+    logger.info(
+        'Will wait for a response for up to ${timeout.inSeconds} seconds');
     try {
       await acked.future.timeout(timeout);
     } on TimeoutException catch (_) {}

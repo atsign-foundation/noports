@@ -272,11 +272,13 @@ abstract class SrvdChannel<T>
       ttln: Duration(minutes: 1),
     );
 
-    logger.info('Will wait for a response for up to ${timeout.inSeconds} seconds');
+    logger.info(
+        'Will wait for a response for up to ${timeout.inSeconds} seconds');
     try {
       await acked.future.timeout(timeout);
     } on TimeoutException catch (_) {
-      logger.warning('Timed out waiting for srvd response after ${timeout.inSeconds} seconds');
+      logger.warning(
+          'Timed out waiting for srvd response after ${timeout.inSeconds} seconds');
       throw TimeoutException(
           'Connection timeout to srvd ${params.srvdAtSign} service');
     }
