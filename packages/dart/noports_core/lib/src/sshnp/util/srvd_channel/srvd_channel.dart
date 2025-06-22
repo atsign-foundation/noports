@@ -38,7 +38,10 @@ abstract class SrvdChannel<T>
   final String sessionId;
   final String clientNonce = DateTime.now().toIso8601String();
 
+  Completer acked = Completer();
+
   bool fetched = false;
+
   late String _rvdHost;
   late int _rvdPortA;
   late int _rvdPortB;
@@ -72,8 +75,10 @@ abstract class SrvdChannel<T>
   // * Volatile fields set at runtime
 
   String? rvdNonce;
-  String? sessionAESKeyString;
-  String? sessionIVString;
+  String? aesKeyC2D;
+  String? ivC2D;
+  String? aesKeyD2C;
+  String? ivD2C;
   String? _relayAuthAesKey;
 
   String? get relayAuthAesKey {
@@ -114,8 +119,10 @@ abstract class SrvdChannel<T>
 
   Future<T?> runSrv({
     int? localRvPort,
-    String? sessionAESKeyString,
-    String? sessionIVString,
+    String? aesC2D,
+    String? ivC2D,
+    String? aesD2C,
+    String? ivD2C,
     bool multi = false,
     bool detached = false,
     Duration timeout = DefaultArgs.srvTimeout,
@@ -157,8 +164,10 @@ abstract class SrvdChannel<T>
       localPort: localRvPort,
       bindLocalPort: true,
       relayAuthenticator: relayAuthenticator,
-      sessionAESKeyString: sessionAESKeyString,
-      sessionIVString: sessionIVString,
+      aesC2D: aesC2D,
+      ivC2D: ivC2D,
+      aesD2C: aesD2C,
+      ivD2C: ivD2C,
       multi: multi,
       detached: detached,
       timeout: timeout,
@@ -179,10 +188,14 @@ abstract class SrvdChannel<T>
             'Got additional relay response ${notification.value} - ignoring');
         return;
       }
+
       if (notification.key.contains('nack.$sessionId')) {
         logger.warning('Got NACK response from relay: ${notification.key}');
         srvdNackMessage = notification.value.toString();
         srvdAck = SrvdAck.acknowledgedWithErrors;
+
+        acked.complete();
+
         return;
       }
       String ipPorts = notification.value.toString();
@@ -194,7 +207,10 @@ abstract class SrvdChannel<T>
       if (results.length >= 4) {
         rvdNonce = results[3];
       }
+
       fetched = true;
+      acked.complete();
+
       logger.info('Received from srvd:'
           ' rvdHost:clientPort:daemonPort $rvdHost:$clientPort:$daemonPort'
           ' rvdNonce: $rvdNonce');
@@ -256,21 +272,15 @@ abstract class SrvdChannel<T>
       ttln: Duration(minutes: 1),
     );
 
-    int counter = 1;
-    int t = DateTime.now().add(timeout).millisecondsSinceEpoch;
-    while (srvdAck == SrvdAck.notAcknowledged) {
-      // we'll log a message every two seconds while we're waiting
-      // (40 loops, 50 milliseconds sleep per loop)
-      if (counter % 40 == 0) {
-        logger.info('Still waiting for srvd response');
-      }
-      await Future.delayed(Duration(milliseconds: 50));
-      counter++;
-      if (DateTime.now().millisecondsSinceEpoch > t) {
-        logger.warning('Timed out waiting for srvd response');
-        throw TimeoutException(
-            'Connection timeout to srvd ${params.srvdAtSign} service');
-      }
+    logger.info(
+        'Will wait for a response for up to ${timeout.inSeconds} seconds');
+    try {
+      await acked.future.timeout(timeout);
+    } on TimeoutException catch (_) {
+      logger.warning(
+          'Timed out waiting for srvd response after ${timeout.inSeconds} seconds');
+      throw TimeoutException(
+          'Connection timeout to srvd ${params.srvdAtSign} service');
     }
 
     if (srvdAck == SrvdAck.acknowledgedWithErrors) {

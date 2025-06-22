@@ -16,6 +16,7 @@ class SshnpSessionRequest {
   final String? username;
   final int? remoteForwardPort;
   final String? privateKey;
+  final bool twinKeys;
 
   SshnpSessionRequest({
     required this.direct,
@@ -35,6 +36,7 @@ class SshnpSessionRequest {
     this.username,
     this.remoteForwardPort,
     this.privateKey,
+    required this.twinKeys,
   }) {
     // Assertions originally from Sshnpd
     // sessionId, host (of the rvd) and port (of the rvd) are required.
@@ -78,6 +80,7 @@ class SshnpSessionRequest {
       encryptRvdTraffic: json['encryptRvdTraffic'],
       clientEphemeralPK: json['clientEphemeralPK'],
       clientEphemeralPKType: json['clientEphemeralPKType'],
+      twinKeys: json['twinKeys'] ?? false,
     );
   }
 
@@ -95,6 +98,7 @@ class SshnpSessionRequest {
         'encryptRvdTraffic': encryptRvdTraffic,
         'clientEphemeralPK': clientEphemeralPK,
         'clientEphemeralPKType': clientEphemeralPKType,
+        'twinKeys': twinKeys,
       };
 }
 
@@ -114,6 +118,7 @@ class NptSessionRequest {
   final String clientEphemeralPK;
   final String clientEphemeralPKType;
   final Duration timeout;
+  final bool twinKeys;
 
   NptSessionRequest({
     required this.sessionId,
@@ -130,6 +135,7 @@ class NptSessionRequest {
     required this.clientEphemeralPK,
     required this.clientEphemeralPKType,
     required this.timeout,
+    required this.twinKeys,
   });
 
   static NptSessionRequest fromJson(Map<String, dynamic> json) {
@@ -150,6 +156,7 @@ class NptSessionRequest {
       clientEphemeralPK: json['clientEphemeralPK'],
       clientEphemeralPKType: json['clientEphemeralPKType'],
       timeout: Duration(milliseconds: json['timeout'] ?? defaultTimeout),
+      twinKeys: json['twinKeys'] ?? false,
     );
   }
 
@@ -169,5 +176,6 @@ class NptSessionRequest {
         'clientEphemeralPK': clientEphemeralPK,
         'clientEphemeralPKType': clientEphemeralPKType,
         'timeout': timeout.inMilliseconds,
+        'twinKeys': twinKeys,
       };
 }

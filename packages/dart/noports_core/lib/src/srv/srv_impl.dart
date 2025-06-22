@@ -40,10 +40,16 @@ class SrvImplExec implements Srv<Process> {
   final RelayAuthenticator? relayAuthenticator;
 
   @override
-  final String? sessionAESKeyString;
+  final String? aesC2D;
 
   @override
-  final String? sessionIVString;
+  final String? ivC2D;
+
+  @override
+  final String? aesD2C;
+
+  @override
+  final String? ivD2C;
 
   @override
   final bool multi;
@@ -61,8 +67,10 @@ class SrvImplExec implements Srv<Process> {
     this.localHost,
     this.bindLocalPort = false,
     required this.relayAuthenticator,
-    this.sessionAESKeyString,
-    this.sessionIVString,
+    this.aesC2D,
+    this.ivC2D,
+    this.aesD2C,
+    this.ivD2C,
     required this.multi,
     required this.timeout,
     this.controlChannelHeartbeat,
@@ -71,8 +79,10 @@ class SrvImplExec implements Srv<Process> {
     if (localPort == null) {
       throw ArgumentError('localPort must be non-null');
     }
-    if ((sessionAESKeyString == null && sessionIVString != null) ||
-        (sessionAESKeyString != null && sessionIVString == null)) {
+    if ((aesC2D == null && ivC2D != null) ||
+        (aesC2D != null && ivC2D == null) ||
+        (aesD2C == null && ivD2C != null) ||
+        (aesD2C != null && ivD2C == null)) {
       throw ArgumentError('Both AES key and IV are required, or neither');
     }
   }
@@ -119,10 +129,14 @@ class SrvImplExec implements Srv<Process> {
         environment[name] = relayAuthenticator!.envMap[name]!;
       }
     }
-    if (sessionAESKeyString != null && sessionIVString != null) {
-      rvArgs.addAll(['--rv-e2ee']);
-      environment['RV_AES'] = sessionAESKeyString!;
-      environment['RV_IV'] = sessionIVString!;
+    if (aesC2D != null && ivC2D != null) {
+      rvArgs.add('--rv-e2ee');
+      environment['RV_AES_C2D'] = aesC2D!;
+      environment['RV_IV_C2D'] = ivC2D!;
+      if (aesD2C != null && ivD2C != null) {
+        environment['RV_AES_D2C'] = aesD2C!;
+        environment['RV_IV_D2C'] = ivD2C!;
+      }
     }
 
     logger.info('$runtimeType.run(): executing $command'
@@ -174,6 +188,7 @@ class SrvImplExec implements Srv<Process> {
   }
 }
 
+/// Only used on client side
 @visibleForTesting
 class SrvImplInline implements Srv<SSHSocket> {
   final AtSignLogger logger = AtSignLogger('SrvImplInline');
@@ -197,10 +212,16 @@ class SrvImplInline implements Srv<SSHSocket> {
   final RelayAuthenticator? relayAuthenticator;
 
   @override
-  final String? sessionAESKeyString;
+  final String? aesC2D;
 
   @override
-  final String? sessionIVString;
+  final String? ivC2D;
+
+  @override
+  final String? aesD2C;
+
+  @override
+  final String? ivD2C;
 
   @override
   final bool multi;
@@ -215,15 +236,19 @@ class SrvImplInline implements Srv<SSHSocket> {
     this.streamingHost,
     this.streamingPort, {
     required this.relayAuthenticator,
-    this.sessionAESKeyString,
-    this.sessionIVString,
+    this.aesC2D,
+    this.ivC2D,
+    this.aesD2C,
+    this.ivD2C,
     this.multi = false,
     required this.timeout,
     required this.controlChannelHeartbeat,
   }) {
     logger.info('New SrvImplInline - timeout $timeout');
-    if ((sessionAESKeyString == null && sessionIVString != null) ||
-        (sessionAESKeyString != null && sessionIVString == null)) {
+    if ((aesC2D == null && ivC2D != null) ||
+        (aesC2D != null && ivC2D == null) ||
+        (aesD2C == null && ivD2C != null) ||
+        (aesD2C != null && ivD2C == null)) {
       throw ArgumentError('Both AES key and IV are required, or neither');
     }
   }
@@ -233,30 +258,45 @@ class SrvImplInline implements Srv<SSHSocket> {
     DataTransformer? encrypter;
     DataTransformer? decrypter;
 
-    if (sessionAESKeyString != null && sessionIVString != null) {
+    // Only used on client side, so we know to use C2D for the encrypter
+    // and D2C for the decrypter (or C2D for backwards compatibility)
+    if (aesC2D != null && ivC2D != null) {
       final DartAesCtr algorithm = DartAesCtr.with256bits(
         macAlgorithm: Hmac.sha256(),
       );
-      final SecretKey sessionAESKey =
-          SecretKey(base64Decode(sessionAESKeyString!));
-      final List<int> sessionIV = base64Decode(sessionIVString!);
+      final SecretKey sessionAESKeyC2D = SecretKey(base64Decode(aesC2D!));
+      final List<int> sessionIVC2D = base64Decode(ivC2D!);
 
       encrypter = (Stream<List<int>> stream) {
         return algorithm.encryptStream(
           stream,
-          secretKey: sessionAESKey,
-          nonce: sessionIV,
+          secretKey: sessionAESKeyC2D,
+          nonce: sessionIVC2D,
           onMac: (mac) {},
         );
       };
-      decrypter = (Stream<List<int>> stream) {
-        return algorithm.decryptStream(
-          stream,
-          secretKey: sessionAESKey,
-          nonce: sessionIV,
-          mac: Mac.empty,
-        );
-      };
+      if (aesD2C == null) {
+        // backwards compatibility - use the same AES & IV
+        decrypter = (Stream<List<int>> stream) {
+          return algorithm.decryptStream(
+            stream,
+            secretKey: sessionAESKeyC2D,
+            nonce: sessionIVC2D,
+            mac: Mac.empty,
+          );
+        };
+      } else {
+        final SecretKey sessionAESKeyD2C = SecretKey(base64Decode(aesD2C!));
+        final List<int> sessionIVD2C = base64Decode(ivD2C!);
+        decrypter = (Stream<List<int>> stream) {
+          return algorithm.decryptStream(
+            stream,
+            secretKey: sessionAESKeyD2C,
+            nonce: sessionIVD2C,
+            mac: Mac.empty,
+          );
+        };
+      }
     }
 
     try {
@@ -375,10 +415,16 @@ class SrvImplDart implements Srv<SocketConnector> {
   final RelayAuthenticator? relayAuthenticator;
 
   @override
-  final String? sessionAESKeyString;
+  final String? aesC2D;
 
   @override
-  final String? sessionIVString;
+  final String? ivC2D;
+
+  @override
+  final String? aesD2C;
+
+  @override
+  final String? ivD2C;
 
   @override
   final bool multi;
@@ -393,6 +439,8 @@ class SrvImplDart implements Srv<SocketConnector> {
 
   final AtSignLogger logger = AtSignLogger(' SrvImplDart ');
 
+  late bool twinKeys;
+
   SrvImplDart(
     this.streamingHost,
     this.streamingPort, {
@@ -400,32 +448,37 @@ class SrvImplDart implements Srv<SocketConnector> {
     required this.bindLocalPort,
     this.localHost,
     required this.relayAuthenticator,
-    this.sessionAESKeyString,
-    this.sessionIVString,
+    this.aesC2D,
+    this.ivC2D,
+    this.aesD2C,
+    this.ivD2C,
     this.multi = false,
     required this.detached,
     required this.timeout,
     this.controlChannelHeartbeat,
   }) {
     logger.info('New SrvImplDart - localPort $localPort - timeout $timeout');
-    if ((sessionAESKeyString == null && sessionIVString != null) ||
-        (sessionAESKeyString != null && sessionIVString == null)) {
+    if ((aesC2D == null && ivC2D != null) ||
+        (aesC2D != null && ivC2D == null) ||
+        (aesD2C == null && ivD2C != null) ||
+        (aesD2C != null && ivD2C == null)) {
       throw ArgumentError('Both AES key and IV are required, or neither');
     }
+    twinKeys = (aesD2C != null);
   }
 
   DataTransformer createEncrypter(String aesKeyBase64, String ivBase64) {
     final DartAesCtr algorithm = DartAesCtr.with256bits(
       macAlgorithm: MacAlgorithm.empty,
     );
-    final SecretKey sessionAESKey = SecretKey(base64Decode(aesKeyBase64));
-    final List<int> sessionIV = base64Decode(ivBase64);
+    final SecretKey aesKey = SecretKey(base64Decode(aesKeyBase64));
+    final List<int> iv = base64Decode(ivBase64);
 
     return (Stream<List<int>> stream) {
       return algorithm.encryptStream(
         stream,
-        secretKey: sessionAESKey,
-        nonce: sessionIV,
+        secretKey: aesKey,
+        nonce: iv,
         onMac: (mac) {},
       );
     };
@@ -435,14 +488,14 @@ class SrvImplDart implements Srv<SocketConnector> {
     final DartAesCtr algorithm = DartAesCtr.with256bits(
       macAlgorithm: MacAlgorithm.empty,
     );
-    final SecretKey sessionAESKey = SecretKey(base64Decode(aesKeyBase64));
-    final List<int> sessionIV = base64Decode(ivBase64);
+    final SecretKey aesKey = SecretKey(base64Decode(aesKeyBase64));
+    final List<int> iv = base64Decode(ivBase64);
 
     return (Stream<List<int>> stream) {
       return algorithm.decryptStream(
         stream,
-        secretKey: sessionAESKey,
-        nonce: sessionIV,
+        secretKey: aesKey,
+        nonce: iv,
         mac: Mac.empty,
       );
     };
@@ -457,14 +510,15 @@ class SrvImplDart implements Srv<SocketConnector> {
       }
       InternetAddress relayAddress = relayAddresses[0];
       late SocketConnector sc;
-      // Determines whether the traffic in the socket is encrypted or transmitted in plain text.
-      bool encryptRvdTraffic =
-          (sessionAESKeyString != null && sessionIVString != null);
 
+      // Determines whether the traffic in the socket is encrypted or transmitted in plain text.
+      bool encryptRvdTraffic = (aesC2D != null && ivC2D != null);
+
+      // If we are binding a local port, we are running on the client side.
+      // Use aesC2D for encryption, aesD2C for decryption
       if (bindLocalPort) {
         if (multi) {
-          if (encryptRvdTraffic == true &&
-              (sessionAESKeyString == null || sessionIVString == null)) {
+          if (encryptRvdTraffic == true && (aesC2D == null || ivC2D == null)) {
             throw ArgumentError('Symmetric session encryption key required');
           }
           sc = await _runClientSideMulti(
@@ -476,8 +530,7 @@ class SrvImplDart implements Srv<SocketConnector> {
       } else {
         // daemon side
         if (multi) {
-          if (encryptRvdTraffic == true &&
-              (sessionAESKeyString == null || sessionIVString == null)) {
+          if (encryptRvdTraffic == true && (aesC2D == null || ivC2D == null)) {
             throw ArgumentError('Symmetric session encryption key required');
           }
           sc = await _runDaemonSideMulti(
@@ -517,9 +570,14 @@ class SrvImplDart implements Srv<SocketConnector> {
   }) async {
     DataTransformer? encrypter;
     DataTransformer? decrypter;
-    if (sessionAESKeyString != null && sessionIVString != null) {
-      encrypter = createEncrypter(sessionAESKeyString!, sessionIVString!);
-      decrypter = createDecrypter(sessionAESKeyString!, sessionIVString!);
+    if (aesC2D != null && ivC2D != null) {
+      encrypter = createEncrypter(aesC2D!, ivC2D!);
+      if (aesD2C == null) {
+        // Backwards compatibility - use the same key & iv
+        decrypter = createDecrypter(aesC2D!, ivC2D!);
+      } else {
+        decrypter = createDecrypter(aesD2C!, ivD2C!);
+      }
     }
     // client side
     SocketConnector sc = await SocketConnector.serverToSocket(
@@ -590,7 +648,7 @@ class SrvImplDart implements Srv<SocketConnector> {
       authenticatedControlSocketStream = sessionControlSocket;
     }
 
-    if (sessionAESKeyString != null && sessionIVString != null) {
+    if (aesC2D != null && ivC2D != null) {
       logger.info('_runClientSideMulti:'
           ' On the client-side traffic is encrypted');
       socketConnector = await _clientSideEncryptedSocket(
@@ -684,10 +742,14 @@ class SrvImplDart implements Srv<SocketConnector> {
       SocketConnector? socketConnector,
       InternetAddress relayAddress,
       Duration timeout) async {
-    DataTransformer controlEncrypter =
-        createEncrypter(sessionAESKeyString!, sessionIVString!);
-    DataTransformer controlDecrypter =
-        createDecrypter(sessionAESKeyString!, sessionIVString!);
+    DataTransformer controlEncrypter = createEncrypter(aesC2D!, ivC2D!);
+    DataTransformer controlDecrypter;
+    if (aesD2C == null) {
+      // Backwards compatibility - use same key & iv
+      controlDecrypter = createDecrypter(aesC2D!, ivC2D!);
+    } else {
+      controlDecrypter = createDecrypter(aesD2C!, ivD2C!);
+    }
 
     // Listen to stream which is decrypting the socket stream
     // Write to a stream controller which encrypts and writes to the socket
@@ -745,10 +807,6 @@ class SrvImplDart implements Srv<SocketConnector> {
       beforeJoining: (Side sideA, Side sideB) async {
         logger.info('_runClientSideMulti Sending connect request');
 
-        String socketAESKey =
-            AtChopsUtil.generateSymmetricKey(EncryptionKeyType.aes256).key;
-        String socketIV =
-            base64Encode(AtChopsUtil.generateRandomIV(16).ivBytes);
         // Authenticate the sideB socket (to the rvd)
         try {
           if (relayAuthenticator != null) {
@@ -762,13 +820,45 @@ class SrvImplDart implements Srv<SocketConnector> {
               sideB.stream = authenticatedStream;
             }
           }
-          sideA.transformer = createEncrypter(socketAESKey, socketIV);
-          sideB.transformer = createDecrypter(socketAESKey, socketIV);
+          String socketAESKeyC2D =
+              AtChopsUtil.generateSymmetricKey(EncryptionKeyType.aes256).key;
+          String socketIVC2D =
+              base64Encode(AtChopsUtil.generateRandomIV(16).ivBytes);
+
+          String socketAESKeyD2C, socketIVD2C;
+
+          if (twinKeys) {
+            socketAESKeyD2C =
+                AtChopsUtil.generateSymmetricKey(EncryptionKeyType.aes256).key;
+            socketIVD2C =
+                base64Encode(AtChopsUtil.generateRandomIV(16).ivBytes);
+          } else {
+            // Backwards compatibility
+            socketAESKeyD2C = socketAESKeyC2D;
+            socketIVD2C = socketIVC2D;
+          }
+
+          sideA.transformer = createEncrypter(socketAESKeyC2D, socketIVC2D);
+          sideB.transformer = createDecrypter(socketAESKeyD2C, socketIVD2C);
+
           logger.info('_runClientSideMulti (_clientSideEncryptedSocket)'
               ' Client side connected.'
-              ' Sending connect request to daemon');
-          controlSink.add(Uint8List.fromList(
-              'connect:$socketAESKey:$socketIV\n'.codeUnits));
+              ' Sending connect (twinKeys) request to daemon');
+
+          if (twinKeys) {
+            logger.info('_runClientSideMulti (_clientSideEncryptedSocket)'
+                ' Client side connected.'
+                ' Sending connect (twinKeys) request to daemon');
+            controlSink.add(Uint8List.fromList(
+                'connect:$socketAESKeyC2D:$socketIVC2D:$socketAESKeyD2C:$socketIVD2C\n'
+                    .codeUnits));
+          } else {
+            logger.info('_runClientSideMulti (_clientSideEncryptedSocket)'
+                ' Client side connected.'
+                ' Sending connect request to daemon');
+            controlSink.add(Uint8List.fromList(
+                'connect:$socketAESKeyC2D:$socketIVC2D\n'.codeUnits));
+          }
         } catch (err) {
           logger.severe('_runClientSideMulti (_clientSideEncryptedSocket)'
               ' Failed to authenticate to relay: $err'
@@ -903,8 +993,18 @@ class SrvImplDart implements Srv<SocketConnector> {
             logger.severe('Malformed control message: [$message]');
             return;
           }
-          decrypter = createDecrypter(args[1], args[2]);
-          encrypter = createEncrypter(args[1], args[2]);
+          String aesC2D = args[1];
+          String ivC2D = args[2];
+          decrypter = createDecrypter(aesC2D, ivC2D);
+          if (args.length == 3) {
+            // we only have one key & iv
+            encrypter = createEncrypter(aesC2D, ivC2D);
+          } else {
+            // we have two keys & ivs
+            String aesD2C = args[3];
+            String ivD2C = args[4];
+            encrypter = createEncrypter(aesD2C, ivD2C);
+          }
         }
 
         await _handleMultiConnectRequest(
@@ -960,7 +1060,7 @@ class SrvImplDart implements Srv<SocketConnector> {
       authenticatedControlSocketStream = sessionControlSocket;
     }
 
-    if (sessionAESKeyString != null && sessionIVString != null) {
+    if (aesC2D != null && ivC2D != null) {
       logger
           .info('_runDaemonSideMulti: On the daemon side traffic is encrypted');
       _daemonSideEncryptedSocket(
@@ -1008,10 +1108,15 @@ class SrvImplDart implements Srv<SocketConnector> {
     SocketConnector sc,
     InternetAddress relayAddress,
   ) {
-    DataTransformer controlEncrypter =
-        createEncrypter(sessionAESKeyString!, sessionIVString!);
-    DataTransformer controlDecrypter =
-        createDecrypter(sessionAESKeyString!, sessionIVString!);
+    DataTransformer controlDecrypter = createDecrypter(aesC2D!, ivC2D!);
+
+    DataTransformer controlEncrypter;
+    if (aesD2C == null) {
+      // backwards compatibility - use the same key for the encryption
+      controlEncrypter = createEncrypter(aesC2D!, ivC2D!);
+    } else {
+      controlEncrypter = createEncrypter(aesD2C!, ivD2C!);
+    }
 
     // Listen to stream which is decrypting the socket stream
     // Write to a stream controller which encrypts and writes to the socket
@@ -1037,12 +1142,14 @@ class SrvImplDart implements Srv<SocketConnector> {
     logger.info('Starting control channel listener');
     at_commons.ByteBuffer rcvBuffer = at_commons.ByteBuffer(capacity: 4096);
     Mutex controlStreamMutex = Mutex();
+    bool receivedNewline = false;
     sessionControlStream.listen((data) async {
       try {
         await controlStreamMutex.acquire();
         for (int element = 0; element < data.length; element++) {
           // If it's a '\n' then complete data has been received, so process it
           if (data[element] == newLineCodeUnit) {
+            receivedNewline = true;
             String controlMsg = '';
             try {
               controlMsg = utf8.decode(rcvBuffer.getData().toList()).trim();
@@ -1064,34 +1171,37 @@ class SrvImplDart implements Srv<SocketConnector> {
             }
           } else {
             rcvBuffer.addByte(data[element]);
-            // Backwards compatibility for clients prior to 5.6.1
-            // IF we're at the LAST byte in the received data
-            // AND the rcvBuffer length is currently *precisely* an exact
-            // multiple of the length of
-            //   'connect:$socketAESKey:$socketIV'
-            //       7   1     44      1   24
-            // i.e. an exact multiple of 77
-            // THEN we should also go ahead and process the request (or requests)
-            int oldMagic = 7 + 1 + 44 + 1 + 24;
-            if (element == data.length - 1) {
-              if (rcvBuffer.length() % oldMagic == 0) {
-                logger.shout('Backwards compatibility handler will process'
-                    ' ${rcvBuffer.length() / oldMagic} messages');
-                try {
-                  List<int> toProcess = rcvBuffer.getData().toList();
-                  while (toProcess.isNotEmpty) {
-                    String controlMsg =
-                        utf8.decode(toProcess.sublist(0, oldMagic)).trim();
-                    toProcess = toProcess.sublist(oldMagic);
-                    try {
-                      await _handleControlMessage(sc, relayAddress, controlMsg);
-                    } catch (e) {
-                      logger.severe(
-                          '$e while handling control message: $controlMsg');
+            if (!receivedNewline) {
+              // Backwards compatibility for clients prior to 5.6.1
+              // IF we're at the LAST byte in the received data
+              // AND the rcvBuffer length is currently *precisely* an exact
+              // multiple of the length of
+              //   'connect:$socketAESKey:$socketIV'
+              //       7   1     44      1   24
+              // i.e. an exact multiple of 77
+              // THEN we should also go ahead and process the request (or requests)
+              int oldMagic = 7 + 1 + 44 + 1 + 24;
+              if (element == data.length - 1) {
+                if (rcvBuffer.length() % oldMagic == 0) {
+                  logger.shout('Backwards compatibility handler will process'
+                      ' ${rcvBuffer.length() / oldMagic} messages');
+                  try {
+                    List<int> toProcess = rcvBuffer.getData().toList();
+                    while (toProcess.isNotEmpty) {
+                      String controlMsg =
+                          utf8.decode(toProcess.sublist(0, oldMagic)).trim();
+                      toProcess = toProcess.sublist(oldMagic);
+                      try {
+                        await _handleControlMessage(
+                            sc, relayAddress, controlMsg);
+                      } catch (e) {
+                        logger.severe(
+                            '$e while handling control message: $controlMsg');
+                      }
                     }
+                  } finally {
+                    rcvBuffer.clear();
                   }
-                } finally {
-                  rcvBuffer.clear();
                 }
               }
             }
@@ -1129,9 +1239,13 @@ class SrvImplDart implements Srv<SocketConnector> {
   }) async {
     DataTransformer? encrypter;
     DataTransformer? decrypter;
-    if (sessionAESKeyString != null && sessionIVString != null) {
-      encrypter = createEncrypter(sessionAESKeyString!, sessionIVString!);
-      decrypter = createDecrypter(sessionAESKeyString!, sessionIVString!);
+    if (aesC2D != null && ivC2D != null) {
+      decrypter = createDecrypter(aesC2D!, ivC2D!);
+      if (aesD2C == null) {
+        encrypter = createEncrypter(aesC2D!, ivC2D!);
+      } else {
+        encrypter = createEncrypter(aesD2C!, ivD2C!);
+      }
     }
     InternetAddress localAddress = await resolveRequestedLocalHost();
 

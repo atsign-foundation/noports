@@ -145,6 +145,7 @@ class SshnpdImpl with AtClientBindings, ApkamSigning implements Sshnpd {
         DaemonFeature.adjustableTimeout.name: true,
         DaemonFeature.controlChannelHeartbeats.name: true,
         DaemonFeature.supportsRamEscr.name: true,
+        DaemonFeature.twinKeys.name: true,
       },
       'authModes': RelayAuthMode.values.map((c) => c.name).toList(),
       'allowedServices': permitOpen,
@@ -570,9 +571,6 @@ class SshnpdImpl with AtClientBindings, ApkamSigning implements Sshnpd {
     logger.info(
         'Setting up ports for tunnel session using ${sshClient.name} ($sshClient) from: $requestingAtsign session: ${req.sessionId}');
 
-    // TODO Loads of duplicated code here with startDirectSsh, duplicate code needs to be factored out
-    //      e.g. making the rvdAuthString; generating AES and IV and encrypting them
-
     try {
       RelayAuthenticator? relayAuthenticator;
 
@@ -599,38 +597,22 @@ class SshnpdImpl with AtClientBindings, ApkamSigning implements Sshnpd {
         }
       }
 
-      String? sessionAESKey, sessionAESKeyEncrypted;
-      String? sessionIV, sessionIVEncrypted;
+      AesKeyBundle? c2dBundle, d2cBundle;
       if (req.encryptRvdTraffic) {
-        // TODO refactor duplicate code from startDirectSsh
-        // 256-bit AES, 128-bit IV
-        sessionAESKey =
-            AtChopsUtil.generateSymmetricKey(EncryptionKeyType.aes256).key;
-        sessionIV = base64Encode(AtChopsUtil.generateRandomIV(16).ivBytes);
-        late EncryptionKeyType ect;
+        late EncryptionKeyType encKeyType;
         try {
-          ect = EncryptionKeyType.values.byName(req.clientEphemeralPKType);
+          encKeyType =
+              EncryptionKeyType.values.byName(req.clientEphemeralPKType);
         } catch (e) {
           throw Exception(
               'Unknown ephemeralPKType: ${req.clientEphemeralPKType}');
         }
-        switch (ect) {
-          case EncryptionKeyType.rsa2048:
-            AtChops ac = AtChopsImpl(AtChopsKeys.create(
-                AtEncryptionKeyPair.create(req.clientEphemeralPK, 'n/a'),
-                null));
-            sessionAESKeyEncrypted = ac
-                .encryptString(sessionAESKey,
-                    EncryptionKeyType.values.byName(req.clientEphemeralPKType))
-                .result;
-            sessionIVEncrypted = ac
-                .encryptString(sessionIV,
-                    EncryptionKeyType.values.byName(req.clientEphemeralPKType))
-                .result;
-            break;
-          default:
-            throw Exception(
-                'No handling for ephemeralPKType ${req.clientEphemeralPKType}');
+
+        c2dBundle = await genBundle(encKeyType, req.clientEphemeralPK);
+
+        if (req.twinKeys) {
+          logger.info('Session will use twinned keys');
+          d2cBundle = await genBundle(encKeyType, req.clientEphemeralPK);
         }
       }
       if (Platform.environment['SRV_INLINE'] == 'true') {
@@ -641,8 +623,10 @@ class SshnpdImpl with AtClientBindings, ApkamSigning implements Sshnpd {
           bindLocalPort: false,
           localHost: req.requestedHost,
           relayAuthenticator: relayAuthenticator,
-          sessionAESKeyString: sessionAESKey,
-          sessionIVString: sessionIV,
+          aesC2D: c2dBundle?.aesKey,
+          ivC2D: c2dBundle?.iv,
+          aesD2C: d2cBundle?.aesKey,
+          ivD2C: d2cBundle?.iv,
           multi: true,
           timeout: req.timeout,
         ).run();
@@ -657,8 +641,10 @@ class SshnpdImpl with AtClientBindings, ApkamSigning implements Sshnpd {
           bindLocalPort: false,
           localHost: req.requestedHost,
           relayAuthenticator: relayAuthenticator,
-          sessionAESKeyString: sessionAESKey,
-          sessionIVString: sessionIV,
+          aesC2D: c2dBundle?.aesKey,
+          ivC2D: c2dBundle?.iv,
+          aesD2C: d2cBundle?.aesKey,
+          ivD2C: d2cBundle?.iv,
           multi: true,
           timeout: req.timeout,
         ).run();
@@ -667,14 +653,24 @@ class SshnpdImpl with AtClientBindings, ApkamSigning implements Sshnpd {
 
       /// - Send response message to the sshnp client which includes the
       ///   ephemeral private key
+      String aesKeyC2DName, ivC2DName;
+      if (req.twinKeys) {
+        aesKeyC2DName = 'aesKeyC2D';
+        ivC2DName = 'ivC2D';
+      } else {
+        aesKeyC2DName = 'sessionAESKey';
+        ivC2DName = 'sessionIV';
+      }
       await _notify(
         atKey: _createResponseAtKey(
             requestingAtsign: requestingAtsign, sessionId: req.sessionId),
         value: signAndWrapAndJsonEncode(atClient, {
           'status': 'connected',
           'sessionId': req.sessionId,
-          'sessionAESKey': sessionAESKeyEncrypted,
-          'sessionIV': sessionIVEncrypted,
+          aesKeyC2DName: c2dBundle?.aesKeyEncrypted,
+          ivC2DName: c2dBundle?.ivEncrypted,
+          'aesKeyD2C': d2cBundle?.aesKeyEncrypted,
+          'ivD2C': d2cBundle?.ivEncrypted,
         }),
         sessionId: req.sessionId,
       );
@@ -802,6 +798,7 @@ class SshnpdImpl with AtClientBindings, ApkamSigning implements Sshnpd {
       remoteForwardPort: int.parse(remoteForwardPort),
       relayAuthMode: RelayAuthMode.payload,
       relayAuthAesKey: null,
+      twinKeys: false,
     );
 
     String requested = '$localSshdHost:$localSshdPort';
@@ -846,8 +843,8 @@ class SshnpdImpl with AtClientBindings, ApkamSigning implements Sshnpd {
   }) async {
     bool? authenticateToRvd = req.authenticateToRvd;
     bool? encryptRvdTraffic = req.encryptRvdTraffic;
-    String? clientEphemeralPK = req.clientEphemeralPK;
-    String? clientEphemeralPKType = req.clientEphemeralPKType;
+    req.clientEphemeralPK;
+    req.clientEphemeralPKType;
 
     logger.info(
         'Setting up ports for direct ssh session using ${sshClient.name} ($sshClient) from: $requestingAtsign session: ${req.sessionId}');
@@ -879,39 +876,27 @@ class SshnpdImpl with AtClientBindings, ApkamSigning implements Sshnpd {
         }
       }
 
-      String? sessionAESKey, sessionAESKeyEncrypted;
-      String? sessionIV, sessionIVEncrypted;
+      AesKeyBundle? c2dBundle, d2cBundle;
       if (encryptRvdTraffic) {
-        if (clientEphemeralPK == null || clientEphemeralPKType == null) {
+        if (req.clientEphemeralPK == null ||
+            req.clientEphemeralPKType == null) {
           throw Exception(
               'encryptRvdTraffic was requested, but no client ephemeral public key / key type was provided');
         }
-        // 256-bit AES, 128-bit IV
-        sessionAESKey =
-            AtChopsUtil.generateSymmetricKey(EncryptionKeyType.aes256).key;
-        sessionIV = base64Encode(AtChopsUtil.generateRandomIV(16).ivBytes);
-        late EncryptionKeyType ect;
+        late EncryptionKeyType encKeyType;
         try {
-          ect = EncryptionKeyType.values.byName(clientEphemeralPKType);
+          encKeyType =
+              EncryptionKeyType.values.byName(req.clientEphemeralPKType!);
         } catch (e) {
-          throw Exception('Unknown ephemeralPKType: $clientEphemeralPKType');
+          throw Exception(
+              'Unknown ephemeralPKType: ${req.clientEphemeralPKType}');
         }
-        switch (ect) {
-          case EncryptionKeyType.rsa2048:
-            AtChops ac = AtChopsImpl(AtChopsKeys.create(
-                AtEncryptionKeyPair.create(clientEphemeralPK, 'n/a'), null));
-            sessionAESKeyEncrypted = ac
-                .encryptString(sessionAESKey,
-                    EncryptionKeyType.values.byName(clientEphemeralPKType))
-                .result;
-            sessionIVEncrypted = ac
-                .encryptString(sessionIV,
-                    EncryptionKeyType.values.byName(clientEphemeralPKType))
-                .result;
-            break;
-          default:
-            throw Exception(
-                'No handling for ephemeralPKType $clientEphemeralPKType');
+
+        c2dBundle = await genBundle(encKeyType, req.clientEphemeralPK!);
+
+        if (req.twinKeys) {
+          logger.info('Session will use twinned keys');
+          d2cBundle = await genBundle(encKeyType, req.clientEphemeralPK!);
         }
       }
       // Connect to rendezvous point using background process.
@@ -922,8 +907,10 @@ class SshnpdImpl with AtClientBindings, ApkamSigning implements Sshnpd {
         localPort: localSshdPort,
         bindLocalPort: false,
         relayAuthenticator: relayAuthenticator,
-        sessionAESKeyString: sessionAESKey,
-        sessionIVString: sessionIV,
+        aesC2D: c2dBundle?.aesKey,
+        ivC2D: c2dBundle?.iv,
+        aesD2C: d2cBundle?.aesKey,
+        ivD2C: d2cBundle?.iv,
         timeout: DefaultArgs.srvTimeout,
       ).run();
       logger.info('Started rv - pid is ${rv.pid}');
@@ -951,6 +938,14 @@ class SshnpdImpl with AtClientBindings, ApkamSigning implements Sshnpd {
 
       /// - Send response message to the sshnp client which includes the
       ///   ephemeral private key
+      String aesKeyC2DName, ivC2DName;
+      if (req.twinKeys) {
+        aesKeyC2DName = 'aesKeyC2D';
+        ivC2DName = 'ivC2D';
+      } else {
+        aesKeyC2DName = 'sessionAESKey';
+        ivC2DName = 'sessionIV';
+      }
       await _notify(
         atKey: _createResponseAtKey(
             requestingAtsign: requestingAtsign, sessionId: req.sessionId),
@@ -958,8 +953,10 @@ class SshnpdImpl with AtClientBindings, ApkamSigning implements Sshnpd {
           'status': 'connected',
           'sessionId': req.sessionId,
           'ephemeralPrivateKey': tunnelKeyPair.privateKeyContents,
-          'sessionAESKey': sessionAESKeyEncrypted,
-          'sessionIV': sessionIVEncrypted,
+          aesKeyC2DName: c2dBundle?.aesKeyEncrypted,
+          ivC2DName: c2dBundle?.ivEncrypted,
+          'aesKeyD2C': d2cBundle?.aesKeyEncrypted,
+          'ivD2C': d2cBundle?.ivEncrypted,
         }),
         sessionId: req.sessionId,
       );
@@ -1540,4 +1537,52 @@ class _NPAAuthChecker implements AuthChecker, AtRpcCallbacks {
         break;
     }
   }
+}
+
+/// Just a data structure
+class AesKeyBundle {
+  /// AES key, base64 encoded
+  final String aesKey;
+
+  /// encrypted copy of [aesKey], base64 encoded
+  final String aesKeyEncrypted;
+
+  /// IV, base64 encoded
+  final String iv;
+
+  /// encrypted copy of [iv], base64 encoded
+  final String ivEncrypted;
+
+  AesKeyBundle({
+    required this.aesKey,
+    required this.aesKeyEncrypted,
+    required this.iv,
+    required this.ivEncrypted,
+  });
+}
+
+Future<AesKeyBundle> genBundle(
+    EncryptionKeyType encKeyType, String encPubKey) async {
+  String aesKey, aesKeyEncrypted, iv, ivEncrypted;
+
+  aesKey = AtChopsUtil.generateSymmetricKey(EncryptionKeyType.aes256).key;
+  iv = base64Encode(AtChopsUtil.generateRandomIV(16).ivBytes);
+
+  switch (encKeyType) {
+    case EncryptionKeyType.rsa2048:
+      AtChops atChops = AtChopsImpl(AtChopsKeys.create(
+          AtEncryptionKeyPair.create(encPubKey, 'n/a'), null));
+      aesKeyEncrypted = atChops.encryptString(aesKey, encKeyType).result;
+      ivEncrypted = atChops.encryptString(iv, encKeyType).result;
+      break;
+    default:
+      throw Exception('No handling for ephemeralPKType $encKeyType');
+  }
+
+  return AesKeyBundle(
+    aesKey: aesKey,
+    aesKeyEncrypted: aesKeyEncrypted,
+    iv: iv,
+    ivEncrypted: ivEncrypted,
+  );
 }

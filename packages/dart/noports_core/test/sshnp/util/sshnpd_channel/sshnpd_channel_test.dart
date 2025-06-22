@@ -1,8 +1,11 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:at_client/at_client.dart';
 import 'package:at_commons/at_builders.dart';
+import 'package:noports_core/src/common/features.dart';
 import 'package:noports_core/sshnp_foundation.dart';
+import 'package:noports_core/version.dart';
 import 'package:test/test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:uuid/uuid.dart';
@@ -15,6 +18,7 @@ import 'sshnpd_channel_mocks.dart';
 void main() {
   group('SshnpdChannel', () {
     late MockAtClient mockAtClient;
+    late MockNotificationService mockNotificationService;
     late MockSshnpParams mockParams;
     late String sessionId;
     late String namespace;
@@ -43,10 +47,14 @@ void main() {
 
     setUp(() {
       mockAtClient = MockAtClient();
+      mockNotificationService = MockNotificationService();
+      when(() => mockAtClient.notificationService)
+          .thenReturn(mockNotificationService);
       mockParams = MockSshnpParams();
       when(() => mockParams.verbose).thenReturn(false);
       sessionId = Uuid().v4();
-      notificationStreamController = StreamController();
+
+      notificationStreamController = StreamController.broadcast();
       notifyStub = NotifyStub();
       subscribeStub = SubscribeStub();
       payloadStub = HandleSshnpdPayloadStub();
@@ -100,6 +108,96 @@ void main() {
       ).called(1);
     }); // test Initialization
 
+    group('handlePingResponses', () {
+      late SshnpdChannel c;
+      pingTestParameterizedSetUp({required bool? daemonTwinKeys}) {
+        c = SshnpdDefaultChannel(
+          atClient: mockAtClient,
+          params: mockParams,
+          sessionId: 'abcde',
+          namespace: 'test',
+        );
+        when(() => mockParams.sshnpdAtSign).thenReturn('@device');
+        when(() => mockParams.clientAtSign).thenReturn('@client');
+
+        when(() => mockNotificationService.subscribe(
+              regex: any(named: 'regex'),
+              shouldDecrypt: any(named: 'shouldDecrypt'),
+            )).thenAnswer((invocation) => notificationStreamController.stream);
+
+        Map<String, dynamic> pingResponse = {
+          'devicename': device,
+          'deviceGroupName': DefaultSshnpdArgs.deviceGroupName,
+          'version': packageVersion,
+          'corePackageVersion': packageVersion,
+          'supportedFeatures': {
+            DaemonFeature.srAuth.name: true,
+            DaemonFeature.srE2ee.name: true,
+            DaemonFeature.acceptsPublicKeys.name: false,
+            DaemonFeature.supportsPortChoice.name: true,
+            DaemonFeature.adjustableTimeout.name: true,
+            DaemonFeature.controlChannelHeartbeats.name: true,
+            DaemonFeature.supportsRamEscr.name: true,
+          },
+          'authModes': RelayAuthMode.values.map((c) => c.name).toList(),
+          'allowedServices': '*:*',
+          'npCpVersion': DaemonFeature.latestVersion.toString(),
+        };
+        switch (daemonTwinKeys) {
+          case true:
+            pingResponse['supportedFeatures']![DaemonFeature.twinKeys.name] =
+                true;
+            break;
+          case false:
+            pingResponse['supportedFeatures']![DaemonFeature.twinKeys.name] =
+                false;
+            break;
+          case null:
+            // don't add into the pingResponse at all
+            break;
+        }
+        registerFallbackValue(NotificationParams());
+        when(() => mockNotificationService.notify(
+              any(),
+              waitForFinalDeliveryStatus:
+                  any(named: 'waitForFinalDeliveryStatus'),
+              checkForFinalDeliveryStatus:
+                  any(named: 'checkForFinalDeliveryStatus'),
+              encryptValue: any(named: 'encryptValue'),
+              onSuccess: any(named: 'onSuccess'),
+              onError: any(named: 'onError'),
+              onSentToSecondary: any(named: 'onSentToSecondary'),
+            )).thenAnswer((i) async {
+          notificationStreamController.add(AtNotification(
+              '1',
+              'heartbeat.device_id',
+              '@device',
+              '@client',
+              DateTime.now().millisecondsSinceEpoch,
+              'update',
+              false,
+              value: jsonEncode(pingResponse),
+              operation: 'update'));
+          return NotificationResult();
+        });
+      }
+
+      test('twinKeys true if daemon says true', () async {
+        pingTestParameterizedSetUp(daemonTwinKeys: true);
+        await c.featureCheck([DaemonFeature.srE2ee]);
+        expect(c.twinKeys, true);
+      });
+      test('twinKeys false if daemon says false', () async {
+        pingTestParameterizedSetUp(daemonTwinKeys: false);
+        await c.featureCheck([DaemonFeature.srE2ee]);
+        expect(c.twinKeys, false);
+      });
+      test('twinKeys false if daemon says null', () async {
+        pingTestParameterizedSetUp(daemonTwinKeys: null);
+        await c.featureCheck([DaemonFeature.srE2ee]);
+        expect(c.twinKeys, false);
+      });
+    });
     group('handleSshnpdResponses', () {
       test('handleSshnpdResponses', () async {
         whenInitialization();
@@ -369,6 +467,7 @@ void main() {
         expect(await tunnelUsername, null);
       }); // resolveTunnelUsername - both usernames null
     }); // group Username resolution
+
     group('Device List', () {
       // TODO
     }); // group Device List

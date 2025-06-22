@@ -399,6 +399,7 @@ void main() {
       // Initialize srvd, to fetch the host and port from the srvd -
       // Here returning a mocked response from a stream controller.
       await sshnp.srvdChannel.initialize();
+      sshnp.sshnpdChannel.twinKeys = false;
       await sshnp.sendSshRequestToSshnpd();
     });
   });

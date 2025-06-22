@@ -84,9 +84,11 @@ Future<void> main(List<String> args) async {
       final Duration heartbeat =
           Duration(seconds: int.parse(parsed['heartbeat']));
 
-      String? sessionAESKeyString =
-          rvE2ee ? Platform.environment['RV_AES'] : null;
-      String? sessionIVString = rvE2ee ? Platform.environment['RV_IV'] : null;
+      String? aesC2D = rvE2ee ? Platform.environment['RV_AES_C2D'] : null;
+      String? ivC2D = rvE2ee ? Platform.environment['RV_IV_C2D'] : null;
+
+      String? aesD2C = rvE2ee ? Platform.environment['RV_AES_D2C'] : null;
+      String? ivD2C = rvE2ee ? Platform.environment['RV_IV_D2C'] : null;
 
       if (parsed['rv-auth']) {
         if (relayAuthMode != null) {
@@ -157,11 +159,11 @@ Future<void> main(List<String> args) async {
             break;
         }
       }
-      if (rvE2ee && (sessionAESKeyString ?? '').isEmpty) {
+      if (rvE2ee && (aesC2D ?? '').isEmpty) {
         throw ArgumentError(
             '--rv-e2ee required, but RV_AES is not in environment');
       }
-      if (rvE2ee && (sessionIVString ?? '').isEmpty) {
+      if (rvE2ee && (ivC2D ?? '').isEmpty) {
         throw ArgumentError(
             '--rv-e2ee required, but RV_IV is not in environment');
       }
@@ -173,8 +175,10 @@ Future<void> main(List<String> args) async {
         localHost: localHost,
         bindLocalPort: bindLocalPort,
         relayAuthenticator: relayAuthenticator,
-        sessionAESKeyString: sessionAESKeyString,
-        sessionIVString: sessionIVString,
+        aesC2D: aesC2D,
+        ivC2D: ivC2D,
+        aesD2C: aesD2C,
+        ivD2C: ivD2C,
         multi: multi,
         detached: true,
         // by definition - this is the srv binary

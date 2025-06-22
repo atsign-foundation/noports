@@ -31,6 +31,9 @@ enum DaemonFeature {
 
   /// Understands [RelayAuthMode.escr]
   supportsRamEscr('1.4.0'),
+
+  /// Separate keys & IVs for client-to-server and server-to-client
+  twinKeys('1.5.0'),
   ;
 
   /// The version of the NoPorts control protocol which introduced this feature.
@@ -75,6 +78,8 @@ extension FeatureDescription on DaemonFeature {
         return 'handle heartbeat messages being send over the control channel';
       case DaemonFeature.supportsRamEscr:
         return 'support the \'ESCR\' relay auth mode';
+      case DaemonFeature.twinKeys:
+        return 'support separate keys for each direction';
     }
   }
 }
