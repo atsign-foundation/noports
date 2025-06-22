@@ -257,9 +257,7 @@ class _NptImpl extends NptBase
     logger.info(msg);
     sendProgress(msg);
     if (sshnpdChannel.twinKeys) {
-      msg = 'Session will use twinned keys';
-      logger.info(msg);
-      sendProgress(msg);
+      logger.info('Session will use twinned keys');
     }
 
     /// Send an ssh request to sshnpd
