@@ -57,13 +57,13 @@ class Constants {
       description: (BuildContext context) =>
           AppLocalizations.of(context)!.rootDomainDefault,
       registrarUrl: "my.atsign.com",
-      apiKey: null,
+      apiKey: null, // injected via .env file
     ));
     registerRootDomain('vip.ve.atsign.zone', (
       description: (BuildContext context) =>
           AppLocalizations.of(context)!.rootDomainDemo,
       registrarUrl: null,
-      apiKey: null, // injected via .env file
+      apiKey: null,
     ));
   }
 

@@ -196,8 +196,8 @@ packages:
     dependency: "direct main"
     description:
       path: "packages/at_onboarding_flutter"
-      ref: at_onboarding_flutter_layers
-      resolved-ref: "3b22ed2d8608b11203d7a3fa767d5a64406eef01"
+      ref: "1e244eb5f522d31d9d0eb3c67990d7d6bd612446"
+      resolved-ref: "1e244eb5f522d31d9d0eb3c67990d7d6bd612446"
       url: "https://github.com/atsign-foundation/at_widgets"
     source: git
     version: "6.1.10"

@@ -72,7 +72,7 @@ ArgResults parseArgsAndHandleConstants(ArgParser parser, List<String> args) {
       description: root["description"]!,
       registrarUrl:
           (root["registrar-url"] is String) ? root["registrar-url"] : null,
-      apiKey: null,
+      apiKey: (root["api-key"] is String) ? root["api-key"] : null,
     ));
   }
 

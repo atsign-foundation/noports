@@ -9,6 +9,8 @@ import 'package:at_onboarding_flutter/src/utils/at_onboarding_response_status.da
 import 'package:at_server_status/at_server_status.dart';
 import 'package:http/http.dart';
 import 'package:http/io_client.dart';
+// ignore: implementation_imports
+import 'package:at_onboarding_flutter/src/utils/at_onboarding_app_constants.dart';
 
 // Type returned from a method below
 export 'package:at_onboarding_flutter/src/utils/at_onboarding_response_status.dart';
@@ -96,9 +98,12 @@ class ActivateUtil {
 
       config.atClientPreference.cramSecret = cramkey;
       onboardingService.setAtClientPreference = config.atClientPreference;
+      AtOnboardingConstants.rootDomain = config.atClientPreference.rootDomain;
 
       onboardingService.setAtsign = atsign;
       AtOnboardingRequest req = AtOnboardingRequest(atsign);
+      req.rootDomain = config.atClientPreference.rootDomain;
+      req.rootPort = config.atClientPreference.rootPort;
       var res = await onboardingService.onboard(
         cramSecret: cramkey,
         atOnboardingRequest: req,

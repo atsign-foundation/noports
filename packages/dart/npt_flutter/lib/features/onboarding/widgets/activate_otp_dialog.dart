@@ -68,7 +68,6 @@ class _ActivateOtpDialogState extends State<ActivateOtpDialog> {
       return ActivateCramDialog(
         atSign: widget.atSign,
         config: widget.config,
-        onboardingUtil: widget.onboardingUtil,
       );
     }
 

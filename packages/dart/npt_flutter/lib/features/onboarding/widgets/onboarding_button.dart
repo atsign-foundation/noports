@@ -233,7 +233,7 @@ class _OnboardingButtonState extends State<OnboardingButton> {
 
         final apiKey = await root?.apiKey;
         if (apiKey != null) {
-          AtOnboardingConstants.setApiKey(apiKey!);
+          AtOnboardingConstants.setApiKey(apiKey);
         }
         AtOnboardingConstants.rootDomain =
             util.config.atClientPreference.rootDomain;
@@ -251,7 +251,6 @@ class _OnboardingButtonState extends State<OnboardingButton> {
               ? ActivateCramDialog(
                   atSign: atsign,
                   config: util.config,
-                  onboardingUtil: util,
                 )
               : ActivateOtpDialog(
                   atSign: atsign,

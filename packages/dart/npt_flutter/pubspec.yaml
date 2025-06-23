@@ -110,7 +110,7 @@ dependency_overrides:
   at_onboarding_flutter:
     git:
       url: https://github.com/atsign-foundation/at_widgets
-      ref: at_onboarding_flutter_layers
+      ref: 1e244eb5f522d31d9d0eb3c67990d7d6bd612446
       path: packages/at_onboarding_flutter
   at_client_mobile:
     git:

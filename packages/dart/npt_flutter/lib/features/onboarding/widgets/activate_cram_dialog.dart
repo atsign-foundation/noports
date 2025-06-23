@@ -2,7 +2,6 @@ import 'package:at_onboarding_flutter/at_onboarding_flutter.dart';
 import 'package:flutter/material.dart';
 import 'package:npt_flutter/app.dart';
 import 'package:npt_flutter/features/onboarding/util/activate_util.dart';
-import 'package:npt_flutter/features/onboarding/util/onboarding_util.dart';
 import 'package:npt_flutter/styles/app_color.dart' show AppColor;
 import 'package:npt_flutter/widgets/spinner.dart';
 import 'package:npt_flutter/localization/app_localizations.dart';
@@ -12,12 +11,10 @@ class ActivateCramDialog extends StatefulWidget {
   final int cramKeyLength;
   final String atSign;
   final AtOnboardingConfig config;
-  final NoPortsOnboardingUtil onboardingUtil;
   const ActivateCramDialog({
     super.key,
     required this.atSign,
     required this.config,
-    required this.onboardingUtil,
     this.cramKeyLength = 128,
   });
 
@@ -71,13 +68,14 @@ class _ActivateCramDialogState extends State<ActivateCramDialog> {
                       controller: cramController,
                       onChanged: (value) {
                         var normalized = value.trim().toLowerCase();
-                            setState(() {
-                            cramController.value = TextEditingValue(
-                              text: normalized,
-                              selection: TextSelection.collapsed(
-                                  offset: normalized.length),
-                            );
-                                          });
+                        setState(() {
+                          cramController.value = TextEditingValue(
+                            text: normalized,
+                            selection: TextSelection.collapsed(
+                              offset: normalized.length,
+                            ),
+                          );
+                        });
                       },
                       onSubmitted: (textChanged) {},
                       cursorColor: AppColor.primaryColor,
@@ -124,9 +122,6 @@ class _ActivateCramDialogState extends State<ActivateCramDialog> {
       status = ActivationStatus.activating;
     });
 
-    // Assuming we got the correct OTP, and we are in teapot,
-    // being activation: Generating keys, bootstrapping server, etc.
-    // i.e. all the stuff to go from teapot -> activated
     var result = await util.onboardFromCramKey(
       atsign: widget.atSign,
       cramkey: cramController.text,

@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:npt_flutter/features/onboarding/cubit/onboarding_cubit.dart';
 import 'package:npt_flutter/localization/app_localizations.dart';
 import 'package:npt_flutter/styles/app_color.dart';
 import 'package:npt_flutter/styles/sizes.dart';
@@ -12,8 +14,15 @@ class DemoProfileInfoWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final strings = AppLocalizations.of(context)!;
+
+    // Disable the test profile helper widget when not running on prod
+    if (context.read<OnboardingCubit>().state.rootDomain != "root.atsign.com") {
+      return const SizedBox();
+    }
+
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: Sizes.p16, vertical: Sizes.p10),
+      padding: const EdgeInsets.symmetric(
+          horizontal: Sizes.p16, vertical: Sizes.p10),
       width: MediaQuery.of(context).size.width * 0.8,
       decoration: BoxDecoration(
         color: AppColor.primaryColorBackground,
@@ -48,15 +57,20 @@ class DemoProfileInfoWidget extends StatelessWidget {
               showDialog(
                 context: context,
                 barrierDismissible: false,
-                builder: (context) => const Center(child: CircularProgressIndicator()),
+                builder: (context) =>
+                    const Center(child: CircularProgressIndicator()),
               );
               final content = await Export.getDemoProfile();
-              Navigator.of(context, rootNavigator: true).pop(); // Dismiss the progress indicator
-              Export.convertExternalDataSourceToProfile(fileType: ExportableProfileFiletype.json, contents: content);
+              Navigator.of(context, rootNavigator: true)
+                  .pop(); // Dismiss the progress indicator
+              Export.convertExternalDataSourceToProfile(
+                  fileType: ExportableProfileFiletype.json, contents: content);
             },
             child: Text(
               strings.demoTextButton,
-              style: const TextStyle(color: AppColor.primaryColor, decoration: TextDecoration.underline),
+              style: const TextStyle(
+                  color: AppColor.primaryColor,
+                  decoration: TextDecoration.underline),
             ),
           ),
         ],

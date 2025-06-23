@@ -4,7 +4,6 @@
   // TO="@my_device"
   // FROM="@my_client"
   // DEVICE="foobardevice"
-
   "version": "0.2.0",
   "configurations": [
     {
@@ -48,11 +47,33 @@
       "args": [
         "-s",
         "-v",
-        "-a", "${env:TO}",
-        "-m", "${env:FROM}",
-        "-d", "${env:DEVICE}"
+        "-a",
+        "${env:TO}",
+        "-m",
+        "${env:FROM}",
+        "-d",
+        "${env:DEVICE}"
       ],
       "cwd": ""
+    },
+    {
+      "name": "NoPorts Desktop Staging",
+      "type": "dart",
+      "request": "launch",
+      "program": "packages/dart/npt_flutter/lib/main.dart",
+      "args": [
+        "--debug",
+        "-a",
+        "--register-root",
+        "-a",
+        "domain:root.atsign.wtf;description:Staging",
+        "-a",
+        "--register-root",
+        "-a",
+        "domain:fake.atsign.wtf;description:fake",
+        "-a",
+        "--no-include-default-roots"
+      ]
     }
   ]
 }
