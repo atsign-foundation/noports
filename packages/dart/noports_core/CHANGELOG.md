@@ -1,3 +1,7 @@
+# 6.6.0
+- feat: twin keys for control socket and data sockets
+- fix: enable daemons and policy service to use the same atSign
+
 # 6.5.0
 - feat: New ESCR (Encrypted Signed Challenge-Response) relay socket 
   authentication
