@@ -23,7 +23,7 @@ class _AtDirectorySelectorState extends State<AtDirectorySelector> {
 
   @override
   Widget build(BuildContext context) {
-    final rootDomains = Constants.getRootDomains(context);
+    final rootDomains = Constants.getRoots(context);
     return SizedBox(
       width: double.infinity,
       child: BlocBuilder<OnboardingCubit, OnboardingState>(

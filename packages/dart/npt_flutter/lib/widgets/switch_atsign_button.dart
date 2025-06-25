@@ -103,7 +103,7 @@ class SwitchAtsignButton extends StatelessWidget {
                 await AtOnboarding.changePrimaryAtsign(atsign: selectedAtSign);
 
             if (!currentContext.mounted) return;
-            final root = Constants.getRootDomains(currentContext)[rootDomain];
+            final root = Constants.getRoots(currentContext)[rootDomain];
 
             if (result) {
               final onboardingResult = await AtOnboarding.onboard(

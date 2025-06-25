@@ -17,5 +17,34 @@ possible. You can circumvent this by either:
 
 - Downloading the app from the store
 - Use the [at_activate binary](../sshnoports/README.md) to activate first, then
-  load the generated .atkeys file into the app.
+  load the generated .atKeys file into the app.
 
+### Commands to build
+
+```sh
+flutter pub get
+dart run build_runner build
+flutter build <OS> --release --dart-define-from-file .env.json
+```
+
+Example .env.json file for production NoPorts Desktop:
+
+```json
+{
+  "roots": {
+    "root.atsign.org": {
+      "port": 64,
+      "description": {
+        "en": "Atsign (default)"
+      },
+      "registrar-url": "my.atsign.com",
+      "api-key": "REDACTED"
+    },
+    "vip.ve.atsign.zone": {
+      "description": {
+        "en": "Demo Environment (VE)"
+      }
+    }
+  }
+}
+```

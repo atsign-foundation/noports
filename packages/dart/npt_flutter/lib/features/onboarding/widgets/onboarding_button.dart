@@ -112,7 +112,8 @@ class _OnboardingButtonState extends State<OnboardingButton> {
     if (options.keys.contains(atsign)) {
       rootDomain = options[atsign]?.rootDomain;
     } else {
-      rootDomain = Constants.getRootDomains(context).keys.first;
+      var keys = Constants.getRoots(context).keys;
+      rootDomain = keys.isNotEmpty ? keys.first : "";
     }
 
     cubit.setState(atSign: atsign, rootDomain: rootDomain);
@@ -129,8 +130,7 @@ class _OnboardingButtonState extends State<OnboardingButton> {
       bool isFromInitState = false}) async {
     var atSigns =
         await KeyChainManager.getInstance().getAtSignListFromKeychain();
-    final roots =
-        Constants.getRootDomains(App.navState.currentContext!)[rootDomain];
+    final roots = Constants.getRoots(App.navState.currentContext!)[rootDomain];
     var apiKey = await roots?.apiKey;
     var config = AtOnboardingConfig(
       atClientPreference:
@@ -229,7 +229,7 @@ class _OnboardingButtonState extends State<OnboardingButton> {
             .getRootDomain(); // Or get from your state/cubit if needed
         final root =
             // ignore: use_build_context_synchronously
-            Constants.getRootDomains(context)[rootDomain];
+            Constants.getRoots(context)[rootDomain];
 
         final apiKey = await root?.apiKey;
         if (apiKey != null) {

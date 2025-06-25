@@ -76,7 +76,7 @@ ArgResults parseArgsAndHandleConstants(ArgParser parser, List<String> args) {
     ));
   }
 
-  if (Constants.rootDomainsIsEmpty()) {
+  if (Constants.rootsIsEmpty()) {
     String error = "No registered root domains for the app.";
     // ignore: avoid_print
     print(error);

@@ -1,4 +1,5 @@
 .env
+.env.json
 
 # Flatpak-flutter build files
 com.atsign.NoPortsDesktop.yaml

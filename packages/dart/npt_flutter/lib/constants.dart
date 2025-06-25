@@ -1,93 +1,85 @@
-import 'dart:async' show FutureOr;
-import 'dart:developer' show log;
+import 'dart:convert' show JsonDecoder, JsonEncoder, jsonDecode, withIndent;
+import 'dart:io' show exit;
 
 import 'package:flutter/material.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart' show dotenv;
-import 'package:npt_flutter/localization/app_localizations.dart';
+import 'package:intl/intl.dart' show Intl;
+import 'package:npt_flutter/localization/app_localizations.dart'
+    show AppLocalizations;
 
-typedef RootDomainMetadata = ({
-  dynamic description,
+typedef RootMetadata = ({
+  int port,
+  LocalizedString description,
   String? registrarUrl,
   String? apiKey,
 });
-typedef RootDomainMap = Map<String, RootDomainMetadata>;
+typedef RootMap = Map<String, RootMetadata>;
 
-typedef ResolvedRootDomainMetadata = ({
+typedef LocalizedRootMetadata = ({
+  int port,
   String description,
   String? registrarUrl,
-  FutureOr<String?> apiKey,
+  String? apiKey,
 });
-typedef ResolvedRootDomainMap = Map<String, ResolvedRootDomainMetadata>;
+typedef LocalizedRootMap = Map<String, LocalizedRootMetadata>;
+typedef LocalizedString = Map<String, String>;
+
+extension _StringUtils on String {
+  String? get nullIfEmpty => isEmpty ? null : this;
+
+  String toEnvKey() => toUpperCase().replaceAll(".", "_").trim();
+}
 
 class Constants {
-  // Environment
-  static bool dotenvLoaded = false;
-  static Future<void> loadDotenv() async {
-    if (dotenvLoaded) return;
-    try {
-      await dotenv.load();
-      dotenvLoaded = true;
-    } catch (e) {
-      log(".env file failed to load");
-      dotenvLoaded = false;
+  static const String namespace = 'noports';
+
+  static final RootMap _rootMap = {};
+  static initialize() {
+    String rootsJson =
+        const String.fromEnvironment('roots', defaultValue: '{}');
+    Map<String, dynamic> roots = jsonDecode(rootsJson);
+    for (var root in roots.entries) {
+      var domain = root.key;
+      if (root.value is! Map<String, dynamic>) {
+        // ignore: avoid_print
+        print("ERROR with configuration, root entry is not a JSON object");
+        exit(1);
+      }
+      var port = root.value['port'] ?? 64;
+      var descriptionJson = root.value['description'];
+      var registrarUrl = root.value['registrarUrl'];
+      var apiKey = root.value['api-key'];
+
+      LocalizedString description = {};
+      for (var desc in descriptionJson.entries) {
+        if (desc.value is String) {
+          description[desc.key] = desc.value;
+        }
+      }
+
+      _rootMap[domain] = (
+        port: (port is int && port > 0 && port < 65536) ? port : 64,
+        description: description,
+        registrarUrl: (registrarUrl is String) ? registrarUrl : null,
+        apiKey: (apiKey is String) ? apiKey : null,
+      );
     }
   }
 
-  static String? get namespace => 'noports';
-
-  static Future<String?> get appAPIKey async {
-    await loadDotenv();
-    return dotenv.env["APP_API_KEY"];
-  }
-
-  static Future<String?> _getApiKey(String? registrarUrl) async {
-    if (registrarUrl == null) return null;
-    await loadDotenv();
-    String key = "API_KEY_${registrarUrl.toUpperCase().replaceAll(".", "_")}";
-    return dotenv.env[key];
-  }
-
   // Root Domain configuration
+  static bool rootsIsEmpty() => _rootMap.isEmpty;
+  static LocalizedRootMap getRoots(BuildContext context) {
+    return _rootMap.map((k, v) {
+      var locale = Locale(AppLocalizations.of(context)?.localeName ?? "en");
+      var desc = v.description[locale.toString()] ?? // localized string
+          v.description["en"] ?? // fallback to english
+          k; // fallback to the domain if we couldn't find a description
 
-  // description may be a String or String Function(BuildContext)
-  static final RootDomainMap _rootDomainMap = {};
-
-  static void registerDefaultRootDomains() {
-    registerRootDomain('root.atsign.org', (
-      description: (BuildContext context) =>
-          AppLocalizations.of(context)!.rootDomainDefault,
-      registrarUrl: "my.atsign.com",
-      apiKey: null, // injected via .env file
-    ));
-    registerRootDomain('vip.ve.atsign.zone', (
-      description: (BuildContext context) =>
-          AppLocalizations.of(context)!.rootDomainDemo,
-      registrarUrl: null,
-      apiKey: null,
-    ));
-  }
-
-  static void registerRootDomain(
-      String rootDomain, RootDomainMetadata metadata) {
-    _rootDomainMap[rootDomain] = metadata;
-  }
-
-  static bool rootDomainsIsEmpty() => _rootDomainMap.isEmpty;
-  static ResolvedRootDomainMap getRootDomains(BuildContext context) {
-    return _rootDomainMap.map((k, v) {
-      late String desc;
-      var reg = v.registrarUrl;
-      var api = v.apiKey ?? _getApiKey(reg);
-      if (v.description is String Function(BuildContext)) {
-        desc = v.description.call(context);
-      } else {
-        desc = v.description as String;
-      }
-      return MapEntry(
-        k,
-        (description: desc, registrarUrl: reg, apiKey: api)
-            as ResolvedRootDomainMetadata,
-      );
+      return MapEntry(k, (
+        port: v.port,
+        description: desc,
+        registrarUrl: v.registrarUrl,
+        apiKey: v.apiKey,
+      ));
     });
   }
 
