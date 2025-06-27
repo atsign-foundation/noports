@@ -89,8 +89,8 @@ else
     type=$(echo "$typeAndVersion" | cut -d: -f1)
     version=$(echo "$typeAndVersion" | cut -d: -f2)
     imageName=$(getDockerDaemonImageName "$type" "$version")
-    if [ "$(isImageExists "$imageName")" = "true" ] && [ "$recompile" = "true" ]; then
-      logInfo "You set $recompile = true (using -n) and $imageName already exists, so skipping build for $typeAndVersion"
+    if [ "$(isImageExists "$imageName")" = "true" ] && [ "$recompile" = "false" ]; then
+      logInfo "You set $recompile = false (using -n) and $imageName already exists, so skipping build for $typeAndVersion"
       continue
     fi
 
