@@ -124,18 +124,21 @@ class SinglePortWorker extends RelayWorker {
   }
 
   void socketHandler(Socket socket) async {
-    String sockStr = 'host ${socket.remoteAddress} port ${socket.remotePort}';
-    final rav = RelayAuthVerifierESCR(
-      'to port $bindPort from $sockStr',
-      this,
-    );
-    if (verbose) {
-      logger.info('New connection from $sockStr');
-    }
-
-    bool authenticated;
-    Stream<Uint8List>? verifiedSocketStream;
+    String sockStr = 'new socket';
     try {
+      // asking for remoteAddress and remotePort may throw an exception
+      // hence we put it within the try-catch block
+      sockStr = 'host ${socket.remoteAddress} port ${socket.remotePort}';
+      final rav = RelayAuthVerifierESCR(
+        'to port $bindPort from $sockStr',
+        this,
+      );
+      if (verbose) {
+        logger.info('New connection from $sockStr');
+      }
+
+      bool authenticated;
+      Stream<Uint8List>? verifiedSocketStream;
       (authenticated, verifiedSocketStream) =
           await rav.verifySocketAuth(socket).timeout(Duration(seconds: 10));
       if (authenticated) {
@@ -171,7 +174,9 @@ class SinglePortWorker extends RelayWorker {
       }));
     } catch (e) {
       logger.info('Error "$e" while authenticating socket from $sockStr');
-      socket.destroy();
+      try {
+        socket.destroy();
+      } catch (_) {}
     }
   }
 
