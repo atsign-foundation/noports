@@ -9,6 +9,8 @@ import 'package:at_client/at_client.dart';
 import 'package:at_utils/at_logger.dart';
 import 'package:mutex/mutex.dart';
 
+import '../../utils.dart';
+
 enum RAVEReason {
   jsonDecodeFailed,
   malformedChallengeResponse,
@@ -128,14 +130,16 @@ class RelayAuthVerifierESCR implements RelayAuthVerifier {
     atSign = null;
     isSideA = null;
     sessionId = null;
+
+    String abbreviated = response;
+    if (response.length > 40) {
+      abbreviated = '${response.substring(0, 40)}'
+          '...[${response.length - 40} chars]';
+    }
+
     // Split by ':' - expect two parts - sessionId, encryptedAuthEnvelope64
     List<String> responseParts = response.split(':');
     if (responseParts.length != 2) {
-      String abbreviated = response;
-      if (response.length > 40) {
-        abbreviated = '${response.substring(0, 40)}'
-            ' and ${response.length - 40} more';
-      }
       throw RAVE(
         'Expected <sid>:<payload> but got $abbreviated',
         RAVEReason.malformedChallengeResponse,
@@ -151,7 +155,8 @@ class RelayAuthVerifierESCR implements RelayAuthVerifier {
     } catch (err) {
       throw RAVE(
         '${err.runtimeType} while doing'
-        ' String.fromCharCodes(base64Decode(encryptedAuthEnvelope64))',
+        ' String.fromCharCodes(base64Decode(encryptedAuthEnvelope64))'
+        ' on $abbreviated',
         RAVEReason.malformedChallengeResponse,
       );
     }
@@ -356,7 +361,13 @@ class RelayAuthVerifierESCR implements RelayAuthVerifier {
 
             try {
               /// 2. Receives `${sessionId}:${auth-payload-as-base64}\n` from client
-              final response = String.fromCharCodes(authBuffer);
+              final response = String.fromCharCodes(authBuffer).trim();
+              for (final cu in response.codeUnits) {
+                if (isUnprintable(cu)) {
+                  throw RAVE('received unprintable code units',
+                      RAVEReason.malformedChallengeResponse);
+                }
+              }
               logger.finer('received data: $response');
 
               bool verified = await verifyChallengeResponse(response);
@@ -414,10 +425,14 @@ class RelayAuthVerifierESCR implements RelayAuthVerifier {
               if (!completer.isCompleted) {
                 // TODO Make this a feature flag to see the exception or not
                 socket.writeln('Socket auth failed');
-                await socket.flush();
-                socket.destroy();
-                completer
-                    .completeError('Error during socket authentication: $e');
+                try {
+                  await socket.flush();
+                  socket.destroy();
+                } catch (_) {
+                } finally {
+                  completer
+                      .completeError('Error during socket authentication: $e');
+                }
               }
             }
           }
