@@ -46,6 +46,12 @@ abstract class SshnpdChannel with AsyncInitialization, AtClientBindings {
 
   Map<String, dynamic>? pingResponse;
 
+  String get locallyCachedPingResponseKey =>
+      'local:cached:${params.clientAtSign}:'
+      'ping.${params.device}.${DefaultArgs.namespace}'
+      '${params.sshnpdAtSign}';
+  Map<String, dynamic>? cachedPingResponse;
+
   Completer acked = Completer();
 
   /// If the daemon supports twinKeys then this gets set to true by the
@@ -70,6 +76,14 @@ abstract class SshnpdChannel with AsyncInitialization, AtClientBindings {
       regex: regex,
       shouldDecrypt: true,
     ).listen(handleSshnpdResponses);
+
+    try {
+      cachedPingResponse = jsonDecode(
+          (await atClient.get(AtKey.fromString(locallyCachedPingResponseKey)))
+              .value);
+    } catch (e) {
+      logger.shout('$e while fetching $locallyCachedPingResponseKey');
+    }
   }
 
   /// Main response handler for the daemon's notifications.
@@ -195,6 +209,13 @@ abstract class SshnpdChannel with AsyncInitialization, AtClientBindings {
       pingResponse = await ping().timeout(timeout);
     } on TimeoutException catch (_) {
       throw TimeoutException('Daemon feature check timed out');
+    }
+
+    try {
+      await atClient.put(AtKey.fromString(locallyCachedPingResponseKey),
+          jsonEncode(pingResponse));
+    } catch (e) {
+      logger.shout('$e while storing $locallyCachedPingResponseKey');
     }
 
     // If supportedFeatures was null (i.e. a response from a v4 daemon),

@@ -67,6 +67,7 @@ void main() {
     }); // test public API
 
     whenInitialization() {
+      when(() => mockParams.clientAtSign).thenReturn('@client');
       when(() => mockParams.sshnpdAtSign).thenReturn('@sshnpd');
       when(() => mockParams.authenticateDeviceToRvd).thenReturn(true);
       when(() => mockParams.authenticateClientToRvd).thenReturn(true);

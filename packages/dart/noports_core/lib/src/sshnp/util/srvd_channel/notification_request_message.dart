@@ -13,6 +13,7 @@ class SocketRendezvousRequestMessage {
   final String? relayAuthAesKey;
   final bool only443;
   final bool sendNacks;
+  final List<String> preFetch;
 
   SocketRendezvousRequestMessage({
     required this.sessionId,
@@ -25,6 +26,7 @@ class SocketRendezvousRequestMessage {
     required this.relayAuthAesKey,
     required this.only443,
     required this.sendNacks,
+    required this.preFetch,
   });
 
   @override
@@ -40,6 +42,7 @@ class SocketRendezvousRequestMessage {
     m['relayAuthAesKey'] = relayAuthAesKey;
     m['only443'] = only443;
     m['sendNacks'] = sendNacks;
+    m['preFetch'] = preFetch;
     return jsonEncode(m);
   }
 }
