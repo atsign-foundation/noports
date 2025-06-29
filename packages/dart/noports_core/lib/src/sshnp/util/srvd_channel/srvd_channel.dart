@@ -252,7 +252,7 @@ abstract class SrvdChannel<T>
         relayAuthMode: params.relayAuthMode,
         relayAuthAesKey: relayAuthAesKey,
         only443: params.only443,
-        sendNacks: true,
+        multipleAcksOk: true,
         preFetch: preFetch,
       );
 

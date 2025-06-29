@@ -220,33 +220,41 @@ class SrvdImpl implements Srvd {
       return;
     }
 
-    var mutexKey = AtKey.fromString('${sessionParams.sessionId}'
-        '.session_mutexes.${Srvd.namespace}'
-        '${atClient.getCurrentAtSign()!}')
-      ..metadata = (Metadata()
-        ..immutable = true // only one srvd will succeed in doing this
-        ..ttl = 30000); // expire after 30 seconds to keep datastore clean
-    PutRequestOptions pro = PutRequestOptions()
-      ..shouldEncrypt = false
-      ..useRemoteAtServer = true;
-
-    try {
-      await atClient.put(
-        mutexKey,
-        'lock',
-        putRequestOptions: pro,
-      );
+    if (sessionParams.multipleAcksOk) {
+      // client can handle multiple acks, no need to lock a mutex
       logger.shout('😎 Will handle request from ${notification.from}'
-          '; acquired mutex $mutexKey');
-    } catch (err) {
-      if (err.toString().toLowerCase().contains('immutable')) {
-        logger.shout('🤷‍♂️ Will not handle request from ${notification.from}'
-            '; did not acquire mutex $mutexKey');
-        ppiSendToSpawned?.send(IIRequest.create('stop', null));
-      } else {
-        logger.shout('Will not handle; did not acquire mutex $mutexKey : $err');
+          ' which can handle multiple acks (no mutex required)');
+    } else {
+      // client cannot handle multiple acks, so we need to lock a mutex
+      var mutexKey = AtKey.fromString('${sessionParams.sessionId}'
+          '.session_mutexes.${Srvd.namespace}'
+          '${atClient.getCurrentAtSign()!}')
+        ..metadata = (Metadata()
+          ..immutable = true // only one srvd will succeed in doing this
+          ..ttl = 30000); // expire after 30 seconds to keep datastore clean
+      PutRequestOptions pro = PutRequestOptions()
+        ..shouldEncrypt = false
+        ..useRemoteAtServer = true;
+
+      try {
+        await atClient.put(
+          mutexKey,
+          'lock',
+          putRequestOptions: pro,
+        );
+        logger.shout('😎 Will handle request from ${notification.from}'
+            '; acquired mutex $mutexKey');
+      } catch (err) {
+        if (err.toString().toLowerCase().contains('immutable')) {
+          logger.shout('🤷‍♂️ Will not handle request from ${notification.from}'
+              '; did not acquire mutex $mutexKey');
+          ppiSendToSpawned?.send(IIRequest.create('stop', null));
+        } else {
+          logger.shout(
+              'Will not handle; did not acquire mutex $mutexKey : $err');
+        }
+        return;
       }
-      return;
     }
 
     if (sessionParams.only443) {
@@ -254,7 +262,7 @@ class SrvdImpl implements Srvd {
         var message = 'Client requested port 443'
             ' but this relay is not bound to port 443';
         logger.shout(message);
-        if (sessionParams.sendNacks) {
+        if (sessionParams.multipleAcksOk) {
           try {
             await sendNack(
               sessionId: sessionParams.sessionId,

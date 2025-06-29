@@ -289,7 +289,7 @@ void main() {
 
     // Verify SshnpError thrown if a NACK is received from a relay.
     // For backwards compatibility, note that NACKs are only send if the
-    // `sendNacks` flag is set to true in the relay session request.
+    // `multipleAcksOk` flag is set to true in the relay session request.
 
     // We'll mock sending a request
     // And we'll mock sending a NACK response
