@@ -90,6 +90,9 @@ class SrvdImpl implements Srvd {
       if (p.verbose) {
         AtSignLogger.root_level = 'INFO';
       }
+      if (p.debug) {
+        AtSignLogger.root_level = 'FINEST';
+      }
 
       if (atClient == null && atClientGenerator == null) {
         throw StateError('atClient and atClientGenerator are both null');
