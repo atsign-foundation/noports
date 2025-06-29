@@ -25,8 +25,7 @@ enum SrvdAck {
   notAcknowledged,
 }
 
-abstract class SrvdChannel<T>
-    with AsyncInitialization, AtClientBindings, ApkamSigning {
+abstract class SrvdChannel<T> with AsyncInitialization, AtClientBindings, ApkamSigning {
   @override
   final logger = AtSignLogger(' SrvdChannel ');
 
@@ -88,8 +87,7 @@ abstract class SrvdChannel<T>
       case RelayAuthMode.payload:
         return null;
       case RelayAuthMode.escr:
-        _relayAuthAesKey ??=
-            AtChopsUtil.generateSymmetricKey(EncryptionKeyType.aes256).key;
+        _relayAuthAesKey ??= AtChopsUtil.generateSymmetricKey(EncryptionKeyType.aes256).key;
         return _relayAuthAesKey;
     }
   }
@@ -143,8 +141,7 @@ abstract class SrvdChannel<T>
     if (params.authenticateClientToRvd) {
       switch (params.relayAuthMode) {
         case RelayAuthMode.payload:
-          relayAuthenticator =
-              RelayAuthenticatorLegacy(signAndWrapAndJsonEncode(atClient, {
+          relayAuthenticator = RelayAuthenticatorLegacy(signAndWrapAndJsonEncode(atClient, {
             'sessionId': sessionId,
             'clientNonce': clientNonce,
             'rvdNonce': rvdNonce,
@@ -182,14 +179,11 @@ abstract class SrvdChannel<T>
 
   @protected
   @visibleForTesting
-  Future<void> getHostAndPortFromSrvd(
-      {Duration timeout = DefaultArgs.relayResponseTimeoutDuration}) async {
+  Future<void> getHostAndPortFromSrvd({Duration timeout = DefaultArgs.relayResponseTimeoutDuration}) async {
     srvdAck = SrvdAck.notAcknowledged;
-    subscribe(regex: '$sessionId.${Srvd.namespace}@', shouldDecrypt: true)
-        .listen((notification) async {
+    subscribe(regex: '$sessionId.${Srvd.namespace}@', shouldDecrypt: true).listen((notification) async {
       if (fetched) {
-        logger.warning(
-            'Got additional relay response ${notification.value} - ignoring');
+        logger.warning('Got additional relay response ${notification.value} - ignoring');
         return;
       }
 
@@ -277,8 +271,7 @@ abstract class SrvdChannel<T>
       rvdRequestValue = sessionId;
     }
 
-    logger.info(
-        'Sending notification to srvd with key $rvdRequestKey and value $rvdRequestValue');
+    logger.info('Sending notification to srvd with key $rvdRequestKey and value $rvdRequestValue');
     await notify(
       rvdRequestKey,
       rvdRequestValue,
@@ -287,15 +280,12 @@ abstract class SrvdChannel<T>
       ttln: Duration(minutes: 1),
     );
 
-    logger.info(
-        'Will wait for a response for up to ${timeout.inSeconds} seconds');
+    logger.info('Will wait for a response for up to ${timeout.inSeconds} seconds');
     try {
       await acked.future.timeout(timeout);
     } on TimeoutException catch (_) {
-      logger.warning(
-          'Timed out waiting for srvd response after ${timeout.inSeconds} seconds');
-      throw TimeoutException(
-          'Connection timeout to srvd ${params.srvdAtSign} service');
+      logger.warning('Timed out waiting for srvd response after ${timeout.inSeconds} seconds');
+      throw TimeoutException('Connection timeout to srvd ${params.srvdAtSign} service');
     }
 
     if (srvdAck == SrvdAck.acknowledgedWithErrors) {
