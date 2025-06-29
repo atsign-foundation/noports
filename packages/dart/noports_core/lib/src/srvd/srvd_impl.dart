@@ -161,8 +161,7 @@ class SrvdImpl implements Srvd {
       ..metadata = metaData;
 
     await atClient.notificationService.notify(
-        NotificationParams.forUpdate(atKey,
-            value: message, notificationExpiry: Duration(minutes: 1)),
+        NotificationParams.forUpdate(atKey, value: message, notificationExpiry: Duration(minutes: 1)),
         waitForFinalDeliveryStatus: false,
         checkForFinalDeliveryStatus: false);
   }
@@ -176,9 +175,7 @@ class SrvdImpl implements Srvd {
 
     handlePublicKeyChangedEvent(atClient, atSign);
 
-    notificationService
-        .subscribe(regex: subscriptionRegex, shouldDecrypt: true)
-        .listen(_notificationHandler);
+    notificationService.subscribe(regex: subscriptionRegex, shouldDecrypt: true).listen(_notificationHandler);
   }
 
   void _notificationHandler(AtNotification notification) async {
@@ -212,8 +209,7 @@ class SrvdImpl implements Srvd {
       if (sessionParams.only443) {
         ports = (443, 443);
       } else {
-        (ports, ppiSpawned, ppiSendToSpawned) =
-            await spawnNewPortPairIsolate(sessionParams);
+        (ports, ppiSpawned, ppiSendToSpawned) = await spawnNewPortPairIsolate(sessionParams);
       }
     } catch (e) {
       logger.shout('_spawnSocketConnector exception: $e');
@@ -250,8 +246,7 @@ class SrvdImpl implements Srvd {
               '; did not acquire mutex $mutexKey');
           ppiSendToSpawned?.send(IIRequest.create('stop', null));
         } else {
-          logger
-              .shout('Will not handle; did not acquire mutex $mutexKey : $err');
+          logger.shout('Will not handle; did not acquire mutex $mutexKey : $err');
         }
         return;
       }
@@ -305,8 +300,7 @@ class SrvdImpl implements Srvd {
 
     try {
       await atClient.notificationService.notify(
-          NotificationParams.forUpdate(atKey,
-              value: data, notificationExpiry: Duration(minutes: 1)),
+          NotificationParams.forUpdate(atKey, value: data, notificationExpiry: Duration(minutes: 1)),
           waitForFinalDeliveryStatus: false,
           checkForFinalDeliveryStatus: false);
     } catch (e) {
@@ -322,8 +316,7 @@ class SrvdImpl implements Srvd {
         logger.shout('$e while preFetching $s');
       }
     }
-    unawaited(Future.delayed(Duration(seconds: 30))
-        .whenComplete(() => preFetched.remove(sessionParams.sessionId)));
+    unawaited(Future.delayed(Duration(seconds: 30)).whenComplete(() => preFetched.remove(sessionParams.sessionId)));
   }
 
   Map<String, Map<String, dynamic>> preFetched = {};
@@ -390,8 +383,7 @@ class SrvdImpl implements Srvd {
     /// This function is meant to be run in a separate isolate
     /// It starts the socket connector, and sends back the assigned ports to the main isolate
     /// It then waits for socket connector to die before shutting itself down
-    void portPairIsolateEntryPoint(
-        PortPairIsolateParams connectorParams) async {
+    void portPairIsolateEntryPoint(PortPairIsolateParams connectorParams) async {
       PortPairWorker worker = PortPairWorker(
         toMain: connectorParams.$1,
         logTraffic: connectorParams.$2,
@@ -430,10 +422,7 @@ class SrvdImpl implements Srvd {
             await lookup(msg, toSpawned);
             break;
           default:
-            toSpawned.send(IIResponse(
-                id: msg.id,
-                isError: true,
-                payload: 'Unknown request type ${msg.type}'));
+            toSpawned.send(IIResponse(id: msg.id, isError: true, payload: 'Unknown request type ${msg.type}'));
             break;
         }
         return;
@@ -453,8 +442,7 @@ class SrvdImpl implements Srvd {
         Duration(milliseconds: isolateStartTimeoutMs),
       );
     } on TimeoutException catch (_) {
-      throw TimeoutException(
-          'No sendPort received after ${isolateStartTimeoutMs}ms');
+      throw TimeoutException('No sendPort received after ${isolateStartTimeoutMs}ms');
     }
 
     // Ask the spawned isolate to start the session
@@ -469,8 +457,7 @@ class SrvdImpl implements Srvd {
         Duration(milliseconds: isolateBindPortsTimeoutMs),
       );
     } on TimeoutException catch (_) {
-      throw TimeoutException(
-          'No sendPort received after ${isolateBindPortsTimeoutMs}ms');
+      throw TimeoutException('No sendPort received after ${isolateBindPortsTimeoutMs}ms');
     }
 
     logger.shout('Received ports $ports in main isolate'
@@ -554,10 +541,7 @@ class SrvdImpl implements Srvd {
             logger.shout('Exiting');
             exit(1);
           default:
-            toSpawned.send(IIResponse(
-                id: msg.id,
-                isError: true,
-                payload: 'Unknown request type ${msg.type}'));
+            toSpawned.send(IIResponse(id: msg.id, isError: true, payload: 'Unknown request type ${msg.type}'));
             break;
         }
         return;
@@ -574,8 +558,7 @@ class SrvdImpl implements Srvd {
         Duration(milliseconds: isolateStartTimeoutMs),
       );
     } on TimeoutException catch (_) {
-      throw TimeoutException(
-          'No sendPort received after ${isolateStartTimeoutMs}ms');
+      throw TimeoutException('No sendPort received after ${isolateStartTimeoutMs}ms');
     }
 
     return (portPair443, spawned, toSpawned);
