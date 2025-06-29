@@ -161,6 +161,11 @@ abstract class SshnpCore
     }
     await sshnpdChannel.sharePublicKeyIfRequired(identityKeyPair);
 
+    if (sshnpdChannel.cachedPingResponse != null) {
+      srvdChannel.cachedDaemonPublicSigningKeyUri =
+          sshnpdChannel.cachedPingResponse!['publicSigningKeyUri'];
+    }
+
     /// Retrieve the srvd host and port pair
     sendProgress('Fetching host and port from srvd');
     await srvdChannel.callInitialization();

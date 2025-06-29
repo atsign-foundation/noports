@@ -192,6 +192,11 @@ class _NptImpl extends NptBase
     /// Start the sshnpd payload handler
     await sshnpdChannel.callInitialization();
 
+    if (sshnpdChannel.cachedPingResponse != null) {
+      _srvdChannel.cachedDaemonPublicSigningKeyUri =
+          sshnpdChannel.cachedPingResponse!['publicSigningKeyUri'];
+    }
+
     List<DaemonFeature> requiredFeatures = [
       DaemonFeature.srAuth,
       DaemonFeature.srE2ee,
