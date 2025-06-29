@@ -150,6 +150,7 @@ class SshnpdImpl with AtClientBindings, ApkamSigning implements Sshnpd {
       'authModes': RelayAuthMode.values.map((c) => c.name).toList(),
       'allowedServices': permitOpen,
       'npCpVersion': DaemonFeature.latestVersion.toString(),
+      'publicSigningKeyUri': publicSigningKeyUri,
     };
   }
 
