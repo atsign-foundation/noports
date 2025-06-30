@@ -38,6 +38,10 @@ Download the NoPorts desktop app using one of the links below:
 
 [Link to Windows Store](https://apps.microsoft.com/detail/9n69scrrgv6r)
 
+{% hint style="info" %}
+For people connecting from Linux please follow the [Linux Installation Guide](../connecting-from-linux/).
+{% endhint %}
+
 ### <mark style="color:orange;">Step 3:</mark> Activate your client atSign
 
 1. Launch the NoPorts desktop app and click **Get Started**.
