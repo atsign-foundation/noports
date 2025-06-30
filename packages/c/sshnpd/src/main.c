@@ -181,6 +181,58 @@ int main(int argc, char **argv) {
     return res;
   }
 
+  // 6. Get root host and port
+  const size_t host_name_max_length = 253;
+  const size_t root_host_size = host_name_max_length + 1; // 253 is the max length of a hostname, +1 for null terminator
+  char *root_host = malloc(sizeof(char) * root_host_size); 
+  if(root_host == NULL) {
+    atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to allocate memory for root_host\n");
+    atcommons_memlist_failure_free(&memlist);
+    res = 1;
+    return res;
+  }
+  res = atcommons_memlist_add(&memlist, root_host, true, free_if_not_null);
+  if (res != 0) {
+    free(root_host);
+    atcommons_memlist_failure_free(&memlist);
+    return res;
+  }
+  memset(root_host, 0, sizeof(char) * root_host_size);
+  uint16_t root_port = 0;
+  if (params.root_domain != NULL) {
+    // root_domain is something like 'root.atsign.wtf:64'
+    // get the host and port and set them
+    char *colon_pos = strchr(params.root_domain, ':');
+    if (colon_pos != NULL) {
+      size_t host_len = colon_pos - params.root_domain;
+      if (host_len >= host_name_max_length) {
+        atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Root domain host name is too long (it is >= %lu\n", host_name_max_length);
+        atcommons_memlist_failure_free(&memlist);
+        res = 1;
+        return res;
+      }
+      snprintf(root_host, root_host_size, "%.*s", (int)host_len, params.root_domain);
+      char *port_str = colon_pos + 1;
+      root_port = (uint16_t)atoi(port_str);
+      if (root_port == 0) {
+        atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Root domain port is not a valid number: %s\n", port_str);
+        atcommons_memlist_failure_free(&memlist);
+        res = 1;
+        return res;
+      }
+    } else {
+      // no port specified, use the default port
+      snprintf(root_host, root_host_size, "%s", params.root_domain);
+      root_port = DEFAULT_ROOT_PORT;
+      atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_INFO, "Using root_host: \"%s\" and root_port: %d\n", root_host, root_port);
+    }
+  } else {
+    // use the default root domain
+    snprintf(root_host, FILENAME_BUFFER_SIZE, "%s", DEFAULT_ROOT_HOST);
+    root_port = DEFAULT_ROOT_PORT;
+  }
+  atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_DEBUG, "Using root_host: \"%s\" and root_port: %d\n", root_host, root_port);
+
   // 7.a Initialize the monitor atclient
   atclient_monitor_init(&monitor_ctx);
   res = atcommons_memlist_add(&memlist, &monitor_ctx, false, atclient_monitor_free);
@@ -190,8 +242,20 @@ int main(int argc, char **argv) {
     return res;
   }
 
+  // 7.a.2 Build monitor_options
+  atclient_authenticate_options_init(&monitor_options);
+  res = atcommons_memlist_add(&memlist, &monitor_options, true, atclient_authenticate_options_free);
+  if (res != 0) {
+    atclient_authenticate_options_free(&monitor_options);
+    atcommons_memlist_failure_free(&memlist);
+    return res;
+  }
+  atclient_authenticate_options_set_atdirectory_host(&monitor_options, root_host);
+  atclient_authenticate_options_set_atdirectory_port(&monitor_options, root_port);
+
+  // 7.a.3 pkam auth the monitor client
   atclient_monitor_set_read_timeout(&monitor_ctx, MONITOR_READ_TIMEOUT_MS); // 5 seconds for timeout
-  res = atclient_monitor_pkam_authenticate(&monitor_ctx, params.atsign, &atkeys, NULL);
+  res = atclient_monitor_pkam_authenticate(&monitor_ctx, params.atsign, &atkeys, &monitor_options);
   if (res != 0 || !should_run) {
     atcommons_memlist_failure_free(&memlist);
     return res;
@@ -206,7 +270,18 @@ int main(int argc, char **argv) {
     return res;
   }
 
-  res = atclient_pkam_authenticate(&worker, params.atsign, &atkeys, NULL, NULL);
+  atclient_authenticate_options_init(&worker_options);
+  res = atcommons_memlist_add(&memlist, &worker_options, true, atclient_authenticate_options_free);
+  if(res != 0) {
+    atclient_authenticate_options_free(&worker_options);
+    atcommons_memlist_failure_free(&memlist);
+    return res;
+  }
+  atclient_authenticate_options_set_atdirectory_host(&worker_options, root_host);
+  atclient_authenticate_options_set_atdirectory_port(&worker_options, root_port);
+
+
+  res = atclient_pkam_authenticate(&worker, params.atsign, &atkeys, &worker_options, NULL);
   if (res != 0 || !should_run) {
     atcommons_memlist_failure_free(&memlist);
     return res;
