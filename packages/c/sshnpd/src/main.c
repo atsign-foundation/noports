@@ -228,7 +228,7 @@ int main(int argc, char **argv) {
     }
   } else {
     // use the default root domain
-    snprintf(root_host, FILENAME_BUFFER_SIZE, "%s", DEFAULT_ROOT_HOST);
+    snprintf(root_host, root_host_size, "%s", DEFAULT_ROOT_HOST);
     root_port = DEFAULT_ROOT_PORT;
   }
   atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_DEBUG, "Using root_host: \"%s\" and root_port: %d\n", root_host, root_port);
