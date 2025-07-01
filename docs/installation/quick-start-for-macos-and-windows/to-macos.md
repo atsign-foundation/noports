@@ -131,6 +131,8 @@ With both machines now configured, the final steps bring us back to the machine 
    6. Remote Host - The hostname or IP address of the machine you are connecting to.
    7. Remote Port - The port that will be used on the remote machine.
 
+For reference, you can take a look at the [examples in this FAQ](../../reference/faq.md#what-should-i-enter-when-creating-a-profile-in-the-noports-desktop-application).
+
 ### <mark style="color:orange;">Step 9:</mark> Establish a connection
 
 Click the **Connect Icon ▶️** to establish a connection with your remote device. If the connection is successful, you will see green. If you see red, hover over the icon to see reason for failure.

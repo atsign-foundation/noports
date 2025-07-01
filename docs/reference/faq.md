@@ -65,6 +65,30 @@ You may also replace `localhost` with the ipv4 (`127.0.0.1`) or ipv6 (`::1`) loo
 
 </details>
 
+## What should I enter when creating a profile in the NoPorts desktop application?
+
+A profile in NoPorts is a collection of saved settings that lets you quickly connect to your remote device. When setting one up, you’ll need to provide a few details—here are some examples of what you might enter:
+
+### **RDP Example**
+
+**Profile Name** - Camera RDP                                     &#x20;
+
+**Device atSign** - @purple66\_device                       **Device Name** - homecam
+
+**Relay** - rv\_am
+
+**Local Port** - 33389                  **Remote Host** - localhost                **Remote Port** - 3389
+
+### **SFTP Example**
+
+**Profile Name** - VM SFTP                                     &#x20;
+
+**Device atSign** - @purple66\_device                       **Device Name** - windowsvm
+
+**Relay** - rv\_am
+
+**Local Port** - 2222                  **Remote Host** - localhost                **Remote Port** - 22
+
 ## Did we miss something?
 
 If you have a question that needs answering, please do one of the following:
