@@ -21,6 +21,7 @@ class HomeRoutes {
   static const authorisation = '/authorization';
   static const profileForm = '/profile';
   static const loadingPage = '/loading';
+  static const policyManager = '/policy-manager';
 
   static final Map<String, WidgetBuilder> routes = {
     // The parent navigator initially pushes '/' as the route so needs to be handled.
@@ -31,6 +32,7 @@ class HomeRoutes {
     authorisation: (_) => const AuthorisationPage(),
     profileForm: (_) => const ProfileFormPage(),
     loadingPage: (_) => const LoadingPage(),
+    policyManager: (_) => const PolicyManagerPage(),
   };
 }
 

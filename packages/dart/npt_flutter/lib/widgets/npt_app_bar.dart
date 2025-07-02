@@ -187,6 +187,23 @@ class _NptAppBarState extends State<NptAppBar> {
                 ),
               ),
               gapW103,
+              IgnorePointer(
+                ignoring: !isDashboard,
+                child: AnimatedOpacity(
+                  duration: const Duration(milliseconds: 300),
+                  curve: Curves.easeInOut,
+                  opacity: isDashboard ? 1 : 0,
+                  child: IconButton(
+                  tooltip: strings.policyManager,
+                  icon: const Icon(
+                    Icons.policy, // New icon for policy manager
+                  ),
+                  onPressed: () {
+                    wrapperNav.currentState!.pushNamed(HomeRoutes.policyManager);
+                  },
+                  ),
+                ),
+              )
             ],
           ),
         );
