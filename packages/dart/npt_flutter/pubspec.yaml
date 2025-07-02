@@ -16,7 +16,7 @@ publish_to: "none" # Remove this line if you wish to publish to pub.dev
 # https://developer.apple.com/library/archive/documentation/General/Reference/InfoPlistKeyReference/Articles/CoreFoundationKeys.html
 # In Windows, build-name is used as the major, minor, and patch parts
 # of the product and file versions while build-number is used as the build suffix.
-version: 1.4.0+17
+version: 1.4.0+18
 msix_config:
   display_name: "NoPorts Desktop"
   publisher_display_name: Atsign Inc
@@ -87,13 +87,18 @@ dev_dependencies:
   flutter_launcher_icons: "^0.14.1"
   flutter_test:
     sdk: flutter
+  mockito: ^5.4.4
+  bloc_test: ^9.1.7
   msix: ^3.16.8
 
 dependency_overrides:
   intl: 0.20.2
   device_info_plus: 11.3.3
   file: 7.0.1
-  meta: ^1.15.0
+  meta: ^1.17.0
+  # chalkdart: ^2.2.1
+  # at_utils: ^3.0.15
+  at_commons: ^4.0.7
   dartssh2:
     git:
       url: https://github.com/atsign-foundation/dartssh2
