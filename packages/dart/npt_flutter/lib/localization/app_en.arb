@@ -195,5 +195,6 @@
    "whereToAccept": "Where to accept?",
    "whereToAcceptDescription": "Please approve the request in an app with a manager key.",
    "yaml": "YAML",
-   "yamlRecommended": "YAML (Recommended)"
+   "yamlRecommended": "YAML (Recommended)",
+   "policyManager": "Policy Manager"
 }

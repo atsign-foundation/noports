@@ -195,5 +195,6 @@
   "whereToAccept": "在哪裡接受？",
   "whereToAcceptDescription": "請在具有管理金鑰的應用程式中核准該請求。",
   "yaml": "YAML",
-  "yamlRecommended": "YAML (推薦)"
+  "yamlRecommended": "YAML (推薦)",
+  "policyManager": "政策管理員"
 }

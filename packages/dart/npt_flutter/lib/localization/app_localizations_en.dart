@@ -645,4 +645,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get yamlRecommended => 'YAML (Recommended)';
+
+  @override
+  String get policyManager => 'Policy Manager';
 }
