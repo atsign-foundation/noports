@@ -87,7 +87,8 @@ abstract class SshnpdChannel with AsyncInitialization, AtClientBindings {
       // AtKeyNotFoundException is fine
     } catch (e) {
       // Any other exception is not fine, but the session can still proceed OK
-      logger.warning('${e.runtimeType} $e while fetching $locallyCachedPingResponseKey');
+      logger.warning(
+          '${e.runtimeType} $e while fetching $locallyCachedPingResponseKey');
     }
   }
 
