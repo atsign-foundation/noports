@@ -237,9 +237,14 @@ abstract class SrvdChannel<T>
           ..namespaceAware = false
           ..ttl = 10000);
 
-      List<String> preFetch = [publicSigningKeyUri];
-      if (cachedDaemonPublicSigningKeyUri != null) {
-        preFetch.add(cachedDaemonPublicSigningKeyUri!);
+      List<String> preFetch = [];
+
+      // Currently prefetch is only needed if auth mode is ESCR
+      if (params.relayAuthMode == RelayAuthMode.escr) {
+        preFetch.add(publicSigningKeyUri);
+        if (cachedDaemonPublicSigningKeyUri != null) {
+          preFetch.add(cachedDaemonPublicSigningKeyUri!);
+        }
       }
 
       var message = SocketRendezvousRequestMessage(
