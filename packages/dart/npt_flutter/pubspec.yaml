@@ -99,9 +99,8 @@ dependency_overrides:
   device_info_plus: 11.3.3
   file: 7.0.1
   meta: ^1.17.0
-  # chalkdart: ^2.2.1
-  # at_utils: ^3.0.15
-  at_commons: ^4.0.7
+  chalkdart: ^2.2.1
+  at_utils: ^3.0.15
   dartssh2:
     git:
       url: https://github.com/atsign-foundation/dartssh2
