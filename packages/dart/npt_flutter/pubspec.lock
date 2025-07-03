@@ -249,14 +249,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "3.2.0"
-  biometric_storage:
-    dependency: transitive
-    description:
-      name: biometric_storage
-      sha256: "2cc569f2dbab39950812a6ae7fefa28c7d1c1eb07d2035c88f5e27da09022f5f"
-      url: "https://pub.dev"
-    source: hosted
-    version: "5.0.1"
   bloc:
     dependency: transitive
     description:
@@ -703,14 +695,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "5.2.1"
-  flutter_keychain:
-    dependency: transitive
-    description:
-      name: flutter_keychain
-      sha256: "0d000c0e9b3c16fdec016df406b4e89e7195bf719ed0882157400f1e16323cf8"
-      url: "https://pub.dev"
-    source: hosted
-    version: "2.5.0"
   flutter_launcher_icons:
     dependency: "direct dev"
     description:
