@@ -51,7 +51,8 @@ String routeName(String route) {
       return strings.profile;
     case 'Loading':
       return strings.loading;
-
+    case 'PolicyManager':
+      return strings.policyManager;
     default:
   }
   return capitalized;

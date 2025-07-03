@@ -1,12 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:npt_flutter/features/policy_manager/view/policy_manager_view.dart';
-import 'package:npt_flutter/features/profile_form/profile_form.dart';
-import 'package:npt_flutter/features/profile/models/profile.dart';
 
 class PolicyManagerPageArguments {
-  final String? atSign;
+  final String atSign;
 
-  PolicyManagerPageArguments({this.atSign});
+  PolicyManagerPageArguments(this.atSign);
 }
 
 class PolicyManagerPage extends StatelessWidget {
