@@ -14,6 +14,7 @@ class SrvdParams {
   final bool logTraffic;
   final String rootDomain;
   final bool perSessionStorage;
+  final bool debug;
 
   /// Whether to start an isolate where all connections are to the same port
   final bool bind443;
@@ -37,6 +38,7 @@ class SrvdParams {
     required this.perSessionStorage,
     required this.bind443,
     required this.localBindPort443,
+    required this.debug,
   });
 
   static Future<SrvdParams> fromArgs(List<String> args) async {
@@ -65,6 +67,7 @@ class SrvdParams {
       bind443: r['443'],
       localBindPort443:
           r['443-bind-port'] == null ? 443 : int.parse(r['443-bind-port']),
+      debug: r['debug'],
     );
   }
 
@@ -105,7 +108,12 @@ class SrvdParams {
     parser.addFlag(
       'verbose',
       abbr: 'v',
-      help: 'More logging',
+      help: 'Show more logs (INFO and above)',
+    );
+    parser.addFlag(
+      'debug',
+      defaultsTo: false,
+      help: 'Show all logs (FINEST and above)',
     );
     if (BuildEnv.enableSnoop) {
       parser.addFlag(

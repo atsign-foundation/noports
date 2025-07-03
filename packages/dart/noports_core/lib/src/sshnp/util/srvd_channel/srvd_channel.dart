@@ -38,6 +38,8 @@ abstract class SrvdChannel<T>
   final String sessionId;
   final String clientNonce = DateTime.now().toIso8601String();
 
+  String? cachedDaemonPublicSigningKeyUri;
+
   Completer acked = Completer();
 
   bool fetched = false;
@@ -110,9 +112,11 @@ abstract class SrvdChannel<T>
 
   @override
   Future<void> initialize() async {
-    await publishPublicSigningKey();
+    Future publishPSKFuture = publishPublicSigningKey();
 
     await getHostAndPortFromSrvd();
+
+    await publishPSKFuture;
 
     completeInitialization();
   }
@@ -233,6 +237,16 @@ abstract class SrvdChannel<T>
           ..namespaceAware = false
           ..ttl = 10000);
 
+      List<String> preFetch = [];
+
+      // Currently prefetch is only needed if auth mode is ESCR
+      if (params.relayAuthMode == RelayAuthMode.escr) {
+        preFetch.add(publicSigningKeyUri);
+        if (cachedDaemonPublicSigningKeyUri != null) {
+          preFetch.add(cachedDaemonPublicSigningKeyUri!);
+        }
+      }
+
       var message = SocketRendezvousRequestMessage(
         sessionId: sessionId,
         atSignA: params.clientAtSign,
@@ -243,7 +257,8 @@ abstract class SrvdChannel<T>
         relayAuthMode: params.relayAuthMode,
         relayAuthAesKey: relayAuthAesKey,
         only443: params.only443,
-        sendNacks: true,
+        multipleAcksOk: true,
+        preFetch: preFetch,
       );
 
       rvdRequestValue = message.toString();

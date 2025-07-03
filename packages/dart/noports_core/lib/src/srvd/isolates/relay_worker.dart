@@ -56,6 +56,8 @@ abstract class RelayWorker implements RelayAuthVerifyHelper {
           } else {
             rpcCompleters[msg.id]!.complete(msg);
           }
+        } else {
+          logger.shout('Got an unexpected IIResponse (${msg.toString()})');
         }
         return;
       } else {
