@@ -137,7 +137,7 @@ packages:
     source: hosted
     version: "2.0.14"
   at_commons:
-    dependency: "direct overridden"
+    dependency: transitive
     description:
       name: at_commons
       sha256: "9e7568b90efd8643ad34a3536211757d66596cb65477cfc9f2accf4ac7b0b399"
@@ -346,7 +346,7 @@ packages:
     source: hosted
     version: "8.9.3"
   chalkdart:
-    dependency: transitive
+    dependency: "direct overridden"
     description:
       name: chalkdart
       sha256: "82dfa884e3cf97641eb0742a3b9ffd41490666b9ece548b2e32cbfefe540bf86"

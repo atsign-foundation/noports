@@ -3,7 +3,6 @@ import 'package:npt_flutter/features/favorite/models/favoritable.dart';
 import 'package:npt_flutter/features/profile/models/profile.dart';
 
 void main() {
-  print('Testing Profile Model');
   group('Profile Model Tests', () {
     const testUuid = 'test-uuid-123';
     const testDisplayName = 'Test Profile';
@@ -380,5 +379,4 @@ void main() {
       });
     });
   });
-  print('Profile Model Tests Completed');
 }
