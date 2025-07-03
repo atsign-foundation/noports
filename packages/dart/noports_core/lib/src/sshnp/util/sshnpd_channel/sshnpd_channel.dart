@@ -46,10 +46,12 @@ abstract class SshnpdChannel with AsyncInitialization, AtClientBindings {
 
   Map<String, dynamic>? pingResponse;
 
-  String get locallyCachedPingResponseKey =>
-      'local:cached:${params.clientAtSign}:'
-      'ping.${params.device}.${DefaultArgs.namespace}'
-      '${params.sshnpdAtSign}';
+  /// The keystore key we are going to use to cache ping responses in local
+  /// storage.
+  /// local:cached.ping.bob.device_name.sshnp@alice
+  String get locallyCachedPingResponseKey => 'local:'
+      'cached.ping.${params.sshnpdAtSign.substring(1)}.${params.device}.${DefaultArgs.namespace}'
+      '${params.clientAtSign}';
   Map<String, dynamic>? cachedPingResponse;
 
   Completer acked = Completer();
@@ -81,8 +83,11 @@ abstract class SshnpdChannel with AsyncInitialization, AtClientBindings {
       cachedPingResponse = jsonDecode(
           (await atClient.get(AtKey.fromString(locallyCachedPingResponseKey)))
               .value);
+    } on AtKeyNotFoundException catch (_) {
+      // AtKeyNotFoundException is fine
     } catch (e) {
-      logger.shout('$e while fetching $locallyCachedPingResponseKey');
+      // Any other exception is not fine, but the session can still proceed OK
+      logger.warning('${e.runtimeType} $e while fetching $locallyCachedPingResponseKey');
     }
   }
 

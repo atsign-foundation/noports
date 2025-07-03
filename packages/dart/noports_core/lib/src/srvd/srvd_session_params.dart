@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:at_client/at_client.dart';
+import 'package:at_utils/at_logger.dart';
 import 'package:noports_core/sshnp_foundation.dart';
 import 'package:noports_core/srvd.dart';
 
@@ -19,6 +20,7 @@ class SrvdSessionParams {
   final String? relayAuthAesKey;
   final bool only443;
   final bool multipleAcksOk;
+  final List<String> preFetch;
 
   SrvdSessionParams({
     required this.sessionId,
@@ -34,6 +36,7 @@ class SrvdSessionParams {
     this.relayAuthAesKey,
     required this.only443,
     required this.multipleAcksOk,
+    required this.preFetch,
   });
 
   @override
@@ -53,10 +56,12 @@ class SrvdSessionParams {
         'relayAuthAesKey': relayAuthAesKey,
         'only443': only443,
         'multipleAcksOk': multipleAcksOk,
+        'preFetch': preFetch,
       };
 }
 
 class SrvdUtil {
+  static AtSignLogger logger = AtSignLogger(' SrvdUtil ');
   final AtClient atClient;
 
   SrvdUtil(this.atClient);
@@ -80,6 +85,7 @@ class SrvdUtil {
       atSignA: notification.from,
       only443: false,
       multipleAcksOk: false,
+      preFetch: [],
     );
   }
 
@@ -93,6 +99,7 @@ class SrvdUtil {
   Future<SrvdSessionParams> _sessionParamsForJsonRequest(
       AtNotification notification) async {
     dynamic json = jsonDecode(notification.value ?? '');
+    logger.info('Received session request JSON: $json');
 
     assertValidMapValue(json, 'sessionId', String);
     assertValidMapValue(json, 'atSignA', String);
@@ -136,6 +143,7 @@ class SrvdUtil {
       relayAuthAesKey: json['relayAuthAesKey'],
       only443: json['only443'] ?? false,
       multipleAcksOk: json['multipleAcksOk'] ?? false,
+      preFetch: List<String>.from(json['preFetch'] ?? []),
     );
   }
 

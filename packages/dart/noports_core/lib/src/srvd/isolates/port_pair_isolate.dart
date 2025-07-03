@@ -104,7 +104,8 @@ class PortPairWorker extends RelayWorker {
     if (lookups.containsKey(atKey)) {
       return lookups[atKey];
     } else {
-      final resp = await rpcToMain(IIRequest.create('lookup', atKey));
+      final resp = await rpcToMain(
+          IIRequest.create('lookup', {'key': atKey, 'sessionId': sessionId}));
       lookups[atKey] = resp.payload;
       return resp.payload;
     }

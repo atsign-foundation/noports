@@ -71,7 +71,8 @@ class SinglePortWorker extends RelayWorker {
     if (si.lookups[atKey] != null) {
       return si.lookups[atKey]!;
     } else {
-      final resp = await rpcToMain(IIRequest.create('lookup', atKey));
+      final resp = await rpcToMain(
+          IIRequest.create('lookup', {'key': atKey, 'sessionId': sessionId}));
       si.lookups[atKey] = resp.payload;
       return resp.payload;
     }

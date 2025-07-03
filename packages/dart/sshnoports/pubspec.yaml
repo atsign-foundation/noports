@@ -9,10 +9,10 @@ environment:
 dependencies:
   noports_core:
     path: "../noports_core"
-  at_onboarding_cli: 1.10.1
+  at_onboarding_cli: 1.11.0
   at_commons: ^5.4.0
   at_cli_commons: 2.1.0
-  at_client: 3.4.4
+  at_client: 3.5.0
   args: 2.6.0
   socket_connector: 2.3.3
   dartssh2: 2.11.0
