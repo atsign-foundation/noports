@@ -18,7 +18,7 @@ import 'srvd_session_params.dart';
 @protected
 class SrvdImpl implements Srvd {
   @override
-  final AtSignLogger logger = AtSignLogger(' srvd ');
+  final AtSignLogger logger = AtSignLogger(' srvd main ');
   @override
   AtClient atClient;
   @override
@@ -250,8 +250,8 @@ class SrvdImpl implements Srvd {
               '; did not acquire mutex $mutexKey');
           ppiSendToSpawned?.send(IIRequest.create('stop', null));
         } else {
-          logger.shout(
-              'Will not handle; did not acquire mutex $mutexKey : $err');
+          logger
+              .shout('Will not handle; did not acquire mutex $mutexKey : $err');
         }
         return;
       }
@@ -310,20 +310,47 @@ class SrvdImpl implements Srvd {
           waitForFinalDeliveryStatus: false,
           checkForFinalDeliveryStatus: false);
     } catch (e) {
-      stderr.writeln("Error writing session ${notification.value} atKey");
+      logger.shout("Error sending response to client");
     }
+
+    preFetched[sessionParams.sessionId] = {};
+    for (final s in sessionParams.preFetch) {
+      try {
+        final AtValue value = await _lookup(AtKey.fromString(s));
+        preFetched[sessionParams.sessionId]![s] = value.value;
+      } catch (e) {
+        logger.shout('$e while preFetching $s');
+      }
+    }
+    unawaited(Future.delayed(Duration(seconds: 30))
+        .whenComplete(() => preFetched.remove(sessionParams.sessionId)));
+  }
+
+  Map<String, Map<String, dynamic>> preFetched = {};
+
+  Future<AtValue> _lookup(AtKey atKey) async {
+    logger.info('Looking up $atKey on atServer');
+    return await atClient.get(
+      atKey,
+      getRequestOptions: GetRequestOptions()..useRemoteAtServer = true,
+    );
   }
 
   @override
   Future<void> lookup(IIRequest msg, SendPort toSpawned) async {
-    final AtValue value;
     try {
       logger.info('request: "lookup" : ${msg.payload}');
-      value = await atClient.get(
-        AtKey.fromString(msg.payload),
-        getRequestOptions: GetRequestOptions()..useRemoteAtServer = true,
-      );
-      logger.info('request: "lookup" : success ${value.value}');
+      String sessionId = msg.payload['sessionId'];
+      String key = msg.payload['key'];
+      AtValue value;
+      String fromPreFetch = '';
+      if (preFetched[sessionId]?[key] != null) {
+        value = AtValue()..value = preFetched[sessionId]?[key];
+        fromPreFetch = ' (pre-fetched)';
+      } else {
+        value = await _lookup(AtKey.fromString(key));
+      }
+      logger.info('request: "lookup" : success$fromPreFetch: ${value.value}');
       toSpawned.send(IIResponse(
         id: msg.id,
         isError: false,
