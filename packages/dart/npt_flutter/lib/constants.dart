@@ -14,6 +14,7 @@ class Constants {
     }
   }
 
+  static String get favoriteKeyName => 'favorites';
   static String? get namespace => 'noports';
 
   static Future<String?> get appAPIKey async {
