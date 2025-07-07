@@ -8,7 +8,11 @@ import 'package:npt_flutter/features/settings/settings.dart';
 import 'package:npt_flutter/util/language.dart';
 
 class SettingsRepository {
-  const SettingsRepository();
+  final AtClient? _atClient;
+
+  const SettingsRepository({AtClient? atClient}) : _atClient = atClient;
+
+  AtClient get _client => _atClient ?? AtClientManager.getInstance().atClient;
   AtKey get settingsAtKey => AtKey.self('settings', namespace: Constants.namespace).build();
 
   Settings get defaultSettings => Settings(
@@ -20,7 +24,7 @@ class SettingsRepository {
       );
 
   Future<Settings?> getSettings() async {
-    AtClient atClient = AtClientManager.getInstance().atClient;
+    AtClient atClient = _client;
     try {
       var value = await atClient.get(settingsAtKey..sharedBy = atClient.getCurrentAtSign());
       if (value.value == null) {
@@ -35,7 +39,7 @@ class SettingsRepository {
   }
 
   Future<bool> putSettings(Settings settings) async {
-    AtClient atClient = AtClientManager.getInstance().atClient;
+    AtClient atClient = _client;
     try {
       return await atClient.put(settingsAtKey, jsonEncode(settings.toJson()));
     } catch (e) {
@@ -44,7 +48,7 @@ class SettingsRepository {
   }
 
   Future<bool> deleteSettings(Settings settings) async {
-    AtClient atClient = AtClientManager.getInstance().atClient;
+    AtClient atClient = _client;
     try {
       return await atClient.delete(settingsAtKey..sharedBy = atClient.getCurrentAtSign());
     } catch (_) {
