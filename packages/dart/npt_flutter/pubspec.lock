@@ -115,19 +115,19 @@ packages:
     dependency: transitive
     description:
       name: at_client
-      sha256: edd43d3070a30246490a1e81e3e05631db3a484d2f97849ddfac654d42303c5f
+      sha256: "71d54d9a05ef1e14054ebd55f74f8192dbcd7abd7d14dee063201542681dad8f"
       url: "https://pub.dev"
     source: hosted
-    version: "3.4.3"
+    version: "3.5.0"
   at_client_mobile:
     dependency: "direct main"
     description:
       path: "packages/at_client_mobile"
-      ref: "5f256fce7af97dcc554c5dd13e8a6b44a167febe"
-      resolved-ref: "5f256fce7af97dcc554c5dd13e8a6b44a167febe"
+      ref: "2ecfe7208c0a5520be21c99007c8d365dabb001a"
+      resolved-ref: "2ecfe7208c0a5520be21c99007c8d365dabb001a"
       url: "https://github.com/atsign-foundation/at_client_sdk"
     source: git
-    version: "3.2.22"
+    version: "3.2.24"
   at_common_flutter:
     dependency: transitive
     description:
@@ -180,10 +180,10 @@ packages:
     dependency: transitive
     description:
       name: at_lookup
-      sha256: "4bfac8b2ceacf351765494aad2954e5067b140ae4c8333be35cb583402289dd4"
+      sha256: "3f645bb27394a4299fd4a39c7358f28fa3f7e5ccb24264d58b1217bafbfaf5a3"
       url: "https://pub.dev"
     source: hosted
-    version: "3.0.52"
+    version: "3.1.0"
   at_onboarding_cli:
     dependency: transitive
     description:
