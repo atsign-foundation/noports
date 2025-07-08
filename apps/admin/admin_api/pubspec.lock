@@ -94,19 +94,20 @@ packages:
   at_client:
     dependency: "direct main"
     description:
-      name: at_client
-      sha256: "71d54d9a05ef1e14054ebd55f74f8192dbcd7abd7d14dee063201542681dad8f"
-      url: "https://pub.dev"
-    source: hosted
-    version: "3.5.0"
+      path: "packages/at_client"
+      ref: more-namespace-hassles
+      resolved-ref: "065c8612e7d905e793ffccbac8ce690ca27f1599"
+      url: "https://github.com/atsign-foundation/at_client_sdk"
+    source: git
+    version: "3.5.2"
   at_commons:
     dependency: transitive
     description:
       name: at_commons
-      sha256: "2b86d4e8b80fddcbec87be20270ec8c9dfb11aab25c29cfd1b082b328c39f92a"
+      sha256: "9e7568b90efd8643ad34a3536211757d66596cb65477cfc9f2accf4ac7b0b399"
       url: "https://pub.dev"
     source: hosted
-    version: "5.4.0"
+    version: "5.4.1"
   at_demo_data:
     dependency: transitive
     description:
