@@ -94,10 +94,10 @@ packages:
     dependency: "direct main"
     description:
       name: at_client
-      sha256: "71d54d9a05ef1e14054ebd55f74f8192dbcd7abd7d14dee063201542681dad8f"
+      sha256: "50e70ee47f5aec7aca32ffd694b1f00eb57b402c0089f4ac95587d29b9ff2708"
       url: "https://pub.dev"
     source: hosted
-    version: "3.5.0"
+    version: "3.5.1"
   at_commons:
     dependency: "direct main"
     description:
