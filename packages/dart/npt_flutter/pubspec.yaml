@@ -40,11 +40,7 @@ dependencies:
   adaptive_theme: ^3.6.0
   at_auth: ^2.0.7
   at_backupkey_flutter: ^4.0.16
-  at_client_mobile:
-    git:
-      url: https://github.com/atsign-foundation/at_client_sdk.git
-      path: packages/at_client_mobile
-      ref: 8e8b68d2f00db0aeca266685be1e9c0b103ad301
+  at_client_mobile: ^3.2.24
   at_contact: ^3.0.8
   at_contacts_flutter: ^4.0.15
   at_onboarding_flutter:
@@ -117,7 +113,7 @@ dependency_overrides:
   at_client_mobile:
     git:
       url: https://github.com/atsign-foundation/at_client_sdk
-      ref: 5f256fce7af97dcc554c5dd13e8a6b44a167febe
+      ref: 2ecfe7208c0a5520be21c99007c8d365dabb001a
       path: packages/at_client_mobile
   # The "flutter_lints" package below contains a set of recommended lints to
   # encourage good coding practices. The lint set provided by the package is
