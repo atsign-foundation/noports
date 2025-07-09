@@ -148,7 +148,7 @@ Once approved, the request will disappear from the list. On the machine you are 
 
 ### <mark style="color:orange;">Step 8:</mark> Use NoPorts!
 
-That's it. You can start using NoPorts or explore some of the available use cases, such as [MCP](../../use-cases/mcp.md), [SSH](../../use-cases/ssh.md), [RDP](../../use-cases/rdp.md), [SFTP](../../use-cases/sftp.md), [Web Server](../../use-cases/web-server.md), and [SMB](../../use-cases/smb.md).&#x20;
+That's it. You can start using NoPorts or explore some of the documented use cases, including [MCP](../../use-cases/mcp.md), [SSH](../../use-cases/ssh.md), [RDP](../../use-cases/rdp.md), [SFTP](../../use-cases/sftp.md), [Web Server](../../use-cases/web-server.md), and [SMB](../../use-cases/smb.md).&#x20;
 
 </details>
 

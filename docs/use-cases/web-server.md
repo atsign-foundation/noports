@@ -47,11 +47,3 @@ When using the NoPorts desktop application, your connection profile should look 
 | **Local Port**    | 8880                     |
 | **Remote Host**   | localhost                |
 | **Remote Port**   | 8080                     |
-
-**Profile Name** - `My Web Server Connection`                                     &#x20;
-
-**Device atSign** - `@alice_device`                       **Device Name** - `my_server`
-
-**Relay** - `rv_am`
-
-**Local Port** - `8880`               **Remote Host** - `localhost`             **Remote Port** - 8080
