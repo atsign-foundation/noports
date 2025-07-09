@@ -1,6 +1,18 @@
 ---
 description: NoPorts daemon `sshnpd` additional configuration
 icon: gear
+layout:
+  width: default
+  title:
+    visible: true
+  description:
+    visible: true
+  tableOfContents:
+    visible: true
+  outline:
+    visible: true
+  pagination:
+    visible: false
 ---
 
 # Daemon Additional Configuration

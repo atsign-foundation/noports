@@ -1,5 +1,17 @@
 ---
 description: Follow these four steps to run the NoPorts daemon within a tmux session
+layout:
+  width: default
+  title:
+    visible: true
+  description:
+    visible: true
+  tableOfContents:
+    visible: true
+  outline:
+    visible: true
+  pagination:
+    visible: false
 ---
 
 # Tmux session

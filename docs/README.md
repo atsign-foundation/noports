@@ -4,17 +4,6 @@ description: >-
   configuration. Devices using NoPorts have no exposed ports, making them
   undetectable on a network scan.
 icon: ban
-layout:
-  title:
-    visible: true
-  description:
-    visible: true
-  tableOfContents:
-    visible: true
-  outline:
-    visible: true
-  pagination:
-    visible: true
 ---
 
 # NoPorts Documentation

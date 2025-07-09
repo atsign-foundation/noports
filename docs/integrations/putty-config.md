@@ -1,24 +1,38 @@
 ---
 description: How to manage tons of NoPorts SSH connections with Putty
 icon: windows
+layout:
+  width: default
+  title:
+    visible: true
+  description:
+    visible: true
+  tableOfContents:
+    visible: true
+  outline:
+    visible: true
+  pagination:
+    visible: false
 ---
 
 # PuTTY config
 
-## Overview
+## PuTTY config
+
+### Overview
 
 This guide will help you setup some very minimal Python scripts to manage connections with NoPorts. In most cases only 4-5 lines of python will be required to setup a new device.
 
-### Requirements
+#### Requirements
 
 * Python (version 3)
 * OpenSSH (acts as a proxy between NoPorts & PuTTY)
 
-### Usage
+#### Usage
 
 Once you've setup your configuration, you will be able to SSH over NoPorts by double clicking a simple shortcut. It will first launch NoPorts, then once NoPorts is started, it will setup your PuTTY session.
 
-### The Base Configuration
+#### The Base Configuration
 
 The base configuration contains all of the core logic for starting a PuTTY session over NoPorts. Copy this to the folder where you want to store all of your device configurations, name the file `noports_base.py`.
 
@@ -104,7 +118,7 @@ class my_default_config(noports_config):
 
 </details>
 
-### Setting up a new device
+#### Setting up a new device
 
 To setup a new device, create a new python (`.py`) in the same folder where you created `noports_base.py`. Then copy the following file:
 
@@ -120,7 +134,7 @@ device().run_putty()
 ```
 {% endcode %}
 
-### Overriding the Default Configuration
+#### Overriding the Default Configuration
 
 If you have a bunch of devices that all use the same configuration values, then you'd want to put that in the noports\_base configuration. However, there may be a few devices where you want to use a different value. You can simply override the value from your device profile:
 
@@ -139,32 +153,33 @@ device().run_putty()
 ```
 {% endcode %}
 
-### Create Shortcuts to Organize your Profiles
+#### Create Shortcuts to Organize your Profiles
 
 Because all of the profiles need to be in the same directory as the `noports_base.py` file, you can't easily move those files around to organize them. To work around this, simply create shortcuts of all the device profiles, then you can move and rename those shortcuts around freely.
 
 <figure><img src="../.gitbook/assets/CleanShot 2025-03-11 at 16.31.23@2x.png" alt=""><figcaption><p>Example of separate shortcuts into different folders</p></figcaption></figure>
----
-description: How to manage tons of NoPorts SSH connections with Putty
-icon: windows
----
 
-# PuTTY config
+\---\
+description: How to manage tons of NoPorts SSH connections with Putty\
+icon: windows\
+\---
 
-### Overview
+## PuTTY config
+
+#### Overview
 
 This guide will help you set up some very minimal Python scripts to manage connections with NoPorts. In most cases only 4-5 lines of Python will be required to set up a new device.
 
-### Requirements
+#### Requirements
 
 * Python (version 3)
 * OpenSSH (acts as a proxy between NoPorts & PuTTY)
 
-### Usage
+#### Usage
 
 Once you've setup your configuration, you will be able to SSH over NoPorts by double clicking a simple shortcut. It will first launch NoPorts, then once NoPorts is started, it will set up your PuTTY session.
 
-### The Base Configuration
+#### The Base Configuration
 
 The base configuration contains all of the core logic for starting a PuTTY session over NoPorts. Copy this to the folder where you want to store all of your device configurations, name the file `noports_base.py`.
 
@@ -250,7 +265,7 @@ class my_default_config(noports_config):
 
 </details>
 
-### Setting up a new device
+#### Setting up a new device
 
 To set up a new device, create a new python (`.py`) in the same folder where you created `noports_base.py`. Then copy the following file:
 
@@ -266,7 +281,7 @@ device().run_putty()
 ```
 {% endcode %}
 
-### Overriding the Default Configuration
+#### Overriding the Default Configuration
 
 If you have a bunch of devices that all use the same configuration values, then you'd want to put that in the noports\_base configuration. However, there may be a few devices where you want to use a different value. You can simply override the value from your device profile:
 
@@ -285,7 +300,7 @@ device().run_putty()
 ```
 {% endcode %}
 
-### Create Shortcuts to Organize your Profiles
+#### Create Shortcuts to Organize your Profiles
 
 Because all of the profiles need to be in the same directory as the `noports_base.py` file, you can't easily move those files around to organize them. To work around this, simply create shortcuts of all the device profiles, then you can move and rename those shortcuts around freely.
 

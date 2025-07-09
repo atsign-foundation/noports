@@ -7,6 +7,8 @@ icon: desktop
 
 # RDP
 
+### Command Line
+
 The command should look like:
 
 ```
@@ -26,3 +28,17 @@ Now you can connect to localhost:33899 in your favorite RDP client.
 {% content-ref url="../usage/basic-usage.md" %}
 [basic-usage.md](../usage/basic-usage.md)
 {% endcontent-ref %}
+
+### Desktop Application
+
+When using the NoPorts desktop application, your connection profile should look something like this:
+
+|                   |                   |
+| ----------------- | ----------------- |
+| **Profile Name**  | My RDP Connection |
+| **Device atSign** | @alice\_device    |
+| **Device Name**   | my\_server        |
+| **Relay**         | @rv\_am           |
+| **Local Port**    | 33389             |
+| **Remote Host**   | localhost         |
+| **Remote Port**   | 3389              |

@@ -1,6 +1,18 @@
 ---
 description: How to install NoPorts onto an OpenWrt router.
 icon: router
+layout:
+  width: default
+  title:
+    visible: true
+  description:
+    visible: true
+  tableOfContents:
+    visible: true
+  outline:
+    visible: true
+  pagination:
+    visible: false
 ---
 
 # OpenWrt Installation Guide

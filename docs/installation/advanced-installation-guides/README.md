@@ -3,6 +3,18 @@ description: >-
   These guides also use shell scripts for installation, but they require manual
   invocation if you want a truly manual process.
 icon: wrench
+layout:
+  width: default
+  title:
+    visible: true
+  description:
+    visible: true
+  tableOfContents:
+    visible: true
+  outline:
+    visible: true
+  pagination:
+    visible: false
 ---
 
 # Manual Installation Guides

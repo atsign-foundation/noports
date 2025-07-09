@@ -1,5 +1,17 @@
 ---
 icon: arrow-up-from-square
+layout:
+  width: default
+  title:
+    visible: true
+  description:
+    visible: true
+  tableOfContents:
+    visible: true
+  outline:
+    visible: true
+  pagination:
+    visible: false
 ---
 
 # NoPorts Client Upgrade

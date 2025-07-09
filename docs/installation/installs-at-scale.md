@@ -1,6 +1,18 @@
 ---
 description: Typing is less fun after a few devices.
 icon: grid-horizontal
+layout:
+  width: default
+  title:
+    visible: true
+  description:
+    visible: true
+  tableOfContents:
+    visible: true
+  outline:
+    visible: true
+  pagination:
+    visible: false
 ---
 
 # Installs at Scale

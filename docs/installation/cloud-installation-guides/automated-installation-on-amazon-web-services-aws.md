@@ -1,6 +1,18 @@
 ---
-icon: aws
 description: How to deploy NoPorts on Amazon Web Services using a cloud-init script
+icon: aws
+layout:
+  width: default
+  title:
+    visible: true
+  description:
+    visible: true
+  tableOfContents:
+    visible: true
+  outline:
+    visible: true
+  pagination:
+    visible: false
 ---
 
 # Automated Installation on Amazon Web Services (AWS)
@@ -13,11 +25,7 @@ A security group with no external ports open can be created or reused.
 
 Expand the `Advanced details` section at the bottom of the Launch an Instance page:
 
-<div align="left">
-
-<figure><img src="../../.gitbook/assets/AWS_Advanced_details.PNG" alt=""><figcaption></figcaption></figure>
-
-</div>
+<div align="left"><figure><img src="../../.gitbook/assets/AWS_Advanced_details.PNG" alt=""><figcaption></figcaption></figure></div>
 
 Scroll down to the `User data - optional` box and paste in your customised YAML e.g.:
 
@@ -44,11 +52,7 @@ runcmd:
 
 Which will end up looking something like this:
 
-<div align="left">
-
-<figure><img src="../../.gitbook/assets/AWS_user_data.PNG" alt=""><figcaption></figcaption></figure>
-
-</div>
+<div align="left"><figure><img src="../../.gitbook/assets/AWS_user_data.PNG" alt=""><figcaption></figcaption></figure></div>
 
 The VM config should now be ready for `Launch instance`
 

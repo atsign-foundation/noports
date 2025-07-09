@@ -1,6 +1,18 @@
 ---
 description: Begin with the three steps below
 icon: server
+layout:
+  width: default
+  title:
+    visible: true
+  description:
+    visible: true
+  tableOfContents:
+    visible: true
+  outline:
+    visible: true
+  pagination:
+    visible: false
 ---
 
 # Device Installation
@@ -20,6 +32,7 @@ On Windows, we strongly recommend sticking to our automated installation process
 You can [download a release from GitHub](https://github.com/atsign-foundation/noports/releases/), or see the table below to download the latest release for your platform.
 
 ### 1.b. Download using curl
+
 | Architecture | Linux                                                                                                                | macOS                                                                                                                        | Windows                                                                                                              |
 | ------------ | -------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------- |
 | x64          | [sshnp-linux-x64.tgz](https://github.com/atsign-foundation/noports/releases/latest/download/sshnp-linux-x64.tgz)     | [sshnp-macos-x64.zip](https://github.com/atsign-foundation/noports/releases/latest/download/sshnp-macos-x64.zip) (intel)     | [sshnp-windows-x64.zip](https://github.com/atsign-foundation/noports/releases/latest/download/sshnp-windows-x64.zip) |

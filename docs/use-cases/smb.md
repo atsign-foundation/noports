@@ -8,6 +8,8 @@ icon: folder-tree
 
 # SMB
 
+### Command Line
+
 The command should look like:
 
 ```
@@ -43,3 +45,17 @@ If you need this functionality, it is possible but fiddly to set up. Contact us 
 {% content-ref url="../usage/basic-usage.md" %}
 [basic-usage.md](../usage/basic-usage.md)
 {% endcontent-ref %}
+
+### Desktop Application
+
+When using the NoPorts desktop application, your connection profile should look something like this:
+
+|                   |                   |
+| ----------------- | ----------------- |
+| **Profile Name**  | My SMB Connection |
+| **Device atSign** | @alice\_device    |
+| **Device Name**   | my\_server        |
+| **Relay**         | @rv\_am           |
+| **Local Port**    | 9000              |
+| **Remote Host**   | localhost         |
+| **Remote Port**   | 445               |

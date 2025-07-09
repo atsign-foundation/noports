@@ -1,5 +1,17 @@
 ---
 icon: book
+layout:
+  width: default
+  title:
+    visible: true
+  description:
+    visible: true
+  tableOfContents:
+    visible: true
+  outline:
+    visible: true
+  pagination:
+    visible: false
 ---
 
 # The NoPorts Philosophy

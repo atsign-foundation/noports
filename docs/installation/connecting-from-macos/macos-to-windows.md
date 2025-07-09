@@ -1,6 +1,18 @@
 ---
 description: How to install NoPorts when connecting from macOS to Windows
 icon: windows
+layout:
+  width: default
+  title:
+    visible: true
+  description:
+    visible: true
+  tableOfContents:
+    visible: true
+  outline:
+    visible: true
+  pagination:
+    visible: false
 ---
 
 # macOS to Windows
@@ -150,7 +162,7 @@ Be sure to replace the following values:
 
 ### <mark style="color:orange;">Step 8:</mark> Use NoPorts!
 
-That's it. You can start using NoPorts or explore some of the [use cases available here](../../use-cases/).
+That's it. You can start using NoPorts or explore some of the available use cases, such as [MCP](../../use-cases/mcp.md), [SSH](../../use-cases/ssh.md), [RDP](../../use-cases/rdp.md), [SFTP](../../use-cases/sftp.md), [Web Server](../../use-cases/web-server.md), and [SMB](../../use-cases/smb.md).&#x20;
 
 </details>
 

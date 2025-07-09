@@ -1,6 +1,18 @@
 ---
 description: Steps for client and device atSigns
 icon: at
+layout:
+  width: default
+  title:
+    visible: true
+  description:
+    visible: true
+  tableOfContents:
+    visible: true
+  outline:
+    visible: true
+  pagination:
+    visible: false
 ---
 
 # How to activate an atSign
