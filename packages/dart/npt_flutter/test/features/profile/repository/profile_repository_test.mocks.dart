@@ -647,6 +647,7 @@ class MockAtClientManager extends _i1.Mock implements _i2.AtClientManager {
     _i2.AtClientPreference? preference, {
     _i2.AtServiceFactory? serviceFactory,
     _i5.AtChops? atChops,
+    _i10.AtLookUp? atLookUp,
     String? enrollmentId,
   }) =>
       (super.noSuchMethod(
@@ -656,6 +657,7 @@ class MockAtClientManager extends _i1.Mock implements _i2.AtClientManager {
               {
                 #serviceFactory: serviceFactory,
                 #atChops: atChops,
+                #atLookUp: atLookUp,
                 #enrollmentId: enrollmentId,
               },
             ),
@@ -668,6 +670,7 @@ class MockAtClientManager extends _i1.Mock implements _i2.AtClientManager {
                   {
                     #serviceFactory: serviceFactory,
                     #atChops: atChops,
+                    #atLookUp: atLookUp,
                     #enrollmentId: enrollmentId,
                   },
                 ),

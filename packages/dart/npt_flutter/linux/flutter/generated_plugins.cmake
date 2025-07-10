@@ -4,7 +4,7 @@
 
 list(APPEND FLUTTER_PLUGIN_LIST
   at_file_saver
-  file_selector_linux
+  biometric_storage
   screen_retriever_linux
   tray_manager
   url_launcher_linux
