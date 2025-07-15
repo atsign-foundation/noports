@@ -18,6 +18,7 @@ class Device {
   static Device fromJson(Map<String, dynamic> json) => _$DeviceFromJson(json);
 }
 
+
 @JsonSerializable()
 class DeviceGroup {
   final String name;
