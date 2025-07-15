@@ -1,6 +1,7 @@
 import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:npt_flutter/features/profile_list/cubit/profiles_selected_cubit.dart';
+
 void main() {
   // Initialize the binding for Flutter tests
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -72,7 +73,7 @@ void main() {
       test('maintains set properties for uniqueness', () {
         cubit.select('uuid1');
         cubit.select('uuid1');
-        
+
         expect(cubit.state.selected, hasLength(1));
         expect(cubit.state.selected, contains('uuid1'));
       });
@@ -163,7 +164,7 @@ void main() {
         cubit.select('uuid1');
         cubit.select('uuid2');
         cubit.deselectAll();
-        
+
         expect(cubit.state.selected, isEmpty);
       });
     });
@@ -172,9 +173,9 @@ void main() {
       test('does nothing when no context available', () {
         // Without setting up any widget tree, App.navState.currentContext will be null
         final initialState = cubit.state;
-        
+
         cubit.selectAll();
-        
+
         // Should not change state when no context is available
         expect(cubit.state, equals(initialState));
       });
@@ -202,21 +203,25 @@ void main() {
 
       test('props includes the selected set', () {
         const state = ProfilesSelectedState({'uuid1', 'uuid2'});
-        expect(state.props, equals([{'uuid1', 'uuid2'}]));
+        expect(
+            state.props,
+            equals([
+              {'uuid1', 'uuid2'}
+            ]));
       });
 
       group('withAdded', () {
         test('adds new UUIDs to existing selection', () {
           const initialState = ProfilesSelectedState({'uuid1'});
           final newState = initialState.withAdded({'uuid2', 'uuid3'});
-          
+
           expect(newState.selected, equals({'uuid1', 'uuid2', 'uuid3'}));
         });
 
         test('handles adding existing UUIDs (no duplicates)', () {
           const initialState = ProfilesSelectedState({'uuid1', 'uuid2'});
           final newState = initialState.withAdded({'uuid2', 'uuid3'});
-          
+
           expect(newState.selected, equals({'uuid1', 'uuid2', 'uuid3'}));
           expect(newState.selected, hasLength(3));
         });
@@ -224,14 +229,14 @@ void main() {
         test('handles adding empty set', () {
           const initialState = ProfilesSelectedState({'uuid1'});
           final newState = initialState.withAdded(<String>{});
-          
+
           expect(newState.selected, equals({'uuid1'}));
         });
 
         test('creates new instance (immutability)', () {
           const initialState = ProfilesSelectedState({'uuid1'});
           final newState = initialState.withAdded({'uuid2'});
-          
+
           expect(initialState.selected, equals({'uuid1'}));
           expect(newState.selected, equals({'uuid1', 'uuid2'}));
           expect(identical(initialState, newState), isFalse);
@@ -242,35 +247,35 @@ void main() {
         test('removes specified UUIDs from selection', () {
           const initialState = ProfilesSelectedState({'uuid1', 'uuid2', 'uuid3'});
           final newState = initialState.withRemoved({'uuid1', 'uuid3'});
-          
+
           expect(newState.selected, equals({'uuid2'}));
         });
 
         test('handles removing non-existent UUIDs gracefully', () {
           const initialState = ProfilesSelectedState({'uuid1', 'uuid2'});
           final newState = initialState.withRemoved({'uuid3', 'uuid4'});
-          
+
           expect(newState.selected, equals({'uuid1', 'uuid2'}));
         });
 
         test('handles removing empty set', () {
           const initialState = ProfilesSelectedState({'uuid1', 'uuid2'});
           final newState = initialState.withRemoved(<String>{});
-          
+
           expect(newState.selected, equals({'uuid1', 'uuid2'}));
         });
 
         test('can result in empty selection', () {
           const initialState = ProfilesSelectedState({'uuid1', 'uuid2'});
           final newState = initialState.withRemoved({'uuid1', 'uuid2'});
-          
+
           expect(newState.selected, isEmpty);
         });
 
         test('creates new instance (immutability)', () {
           const initialState = ProfilesSelectedState({'uuid1', 'uuid2'});
           final newState = initialState.withRemoved({'uuid1'});
-          
+
           expect(initialState.selected, equals({'uuid1', 'uuid2'}));
           expect(newState.selected, equals({'uuid2'}));
           expect(identical(initialState, newState), isFalse);
@@ -282,19 +287,19 @@ void main() {
       test('handles complex selection and deselection workflow', () {
         cubit.select('uuid1');
         expect(cubit.state.selected, equals({'uuid1'}));
-        
+
         cubit.select('uuid2');
         expect(cubit.state.selected, equals({'uuid1', 'uuid2'}));
-        
+
         cubit.select('uuid3');
         expect(cubit.state.selected, equals({'uuid1', 'uuid2', 'uuid3'}));
-        
+
         cubit.deselect('uuid2');
         expect(cubit.state.selected, equals({'uuid1', 'uuid3'}));
-        
+
         cubit.select('uuid4');
         expect(cubit.state.selected, equals({'uuid1', 'uuid3', 'uuid4'}));
-        
+
         cubit.deselect('uuid1');
         expect(cubit.state.selected, equals({'uuid3', 'uuid4'}));
       });
@@ -303,11 +308,11 @@ void main() {
         cubit.select('uuid1');
         cubit.select('uuid2');
         expect(cubit.state.selected, hasLength(2));
-        
+
         cubit.deselect('uuid1');
         expect(cubit.state.selected, hasLength(1));
         expect(cubit.state.selected, contains('uuid2'));
-        
+
         cubit.deselectAll();
         expect(cubit.state.selected, isEmpty);
       });
@@ -328,20 +333,20 @@ void main() {
       test('handles special characters in UUID', () {
         cubit.select('uuid-with-dashes');
         expect(cubit.state.selected, contains('uuid-with-dashes'));
-        
+
         cubit.select('uuid_with_underscores');
         expect(cubit.state.selected, contains('uuid_with_underscores'));
-        
+
         cubit.select('uuid.with.dots');
         expect(cubit.state.selected, contains('uuid.with.dots'));
-        
+
         expect(cubit.state.selected, hasLength(3));
       });
 
       testWidgets('selectAll handles null context gracefully', (tester) async {
         // Don't set up any widget tree, so App.navState.currentContext will be null
         cubit.selectAll();
-        
+
         // Should not throw and selection should remain unchanged
         expect(cubit.state.selected, isEmpty);
       });
@@ -351,11 +356,11 @@ void main() {
       test('selection persists between different operations', () {
         cubit.select('uuid1');
         cubit.select('uuid2');
-        
+
         final firstSelection = Set<String>.from(cubit.state.selected);
-        
+
         cubit.select('uuid3');
-        
+
         expect(cubit.state.selected, containsAll(firstSelection));
         expect(cubit.state.selected, contains('uuid3'));
       });
@@ -364,9 +369,9 @@ void main() {
         cubit.select('uuid1');
         cubit.select('uuid2');
         cubit.select('uuid3');
-        
+
         cubit.deselect('uuid2');
-        
+
         expect(cubit.state.selected, contains('uuid1'));
         expect(cubit.state.selected, contains('uuid3'));
         expect(cubit.state.selected, isNot(contains('uuid2')));
