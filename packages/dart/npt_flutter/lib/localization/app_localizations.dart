@@ -530,7 +530,7 @@ abstract class AppLocalizations {
   /// No description provided for @errorProfileLoadFailed.
   ///
   /// In en, this message translates to:
-  /// **'Failed to load this profile, please refresh manually:'**
+  /// **'Failed to load this profile'**
   String get errorProfileLoadFailed;
 
   /// No description provided for @errorRootDomainNotSupported.

@@ -143,9 +143,10 @@ class SizeConfig {
     }
   }
 
-  static double setProfileFieldWidth({bool statusField = false}) {
-    final calculation = MediaQuery.of(App.navState.currentContext!).size.width *
-        (statusField ? Sizes.statusFieldsWidthFactor : Sizes.profileFieldsWidthFactor);
+  static double setProfileFieldWidth({bool statusField = false, BuildContext? context}) {
+    final mediaQuery = context != null ? MediaQuery.of(context) : MediaQuery.of(App.navState.currentContext!);
+    final calculation =
+        mediaQuery.size.width * (statusField ? Sizes.statusFieldsWidthFactor : Sizes.profileFieldsWidthFactor);
 
     if (calculation > 252) {
       return 252;
@@ -154,8 +155,9 @@ class SizeConfig {
     }
   }
 
-  static double setProfileFieldWidthMinimalView({bool statusField = false}) {
-    final calculation = MediaQuery.of(App.navState.currentContext!).size.width *
+  static double setProfileFieldWidthMinimalView({bool statusField = false, BuildContext? context}) {
+    final mediaQuery = context != null ? MediaQuery.of(context) : MediaQuery.of(App.navState.currentContext!);
+    final calculation = mediaQuery.size.width *
         (statusField ? Sizes.statusFieldsWidthFactorMinimalView : Sizes.profileFieldsWidthFactorMinimalView);
 
     if (calculation > 500) {
