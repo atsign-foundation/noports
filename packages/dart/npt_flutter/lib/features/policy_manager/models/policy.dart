@@ -3,15 +3,15 @@ import 'package:json_annotation/json_annotation.dart';
 part 'policy.g.dart';
 
 @JsonSerializable()
-class DeviceAtSign {
+class DaemonAtSign {
   final String atSign;
 
-  DeviceAtSign({
+  DaemonAtSign({
     required this.atSign,
   });
 
-  factory DeviceAtSign.fromJson(Map<String, dynamic> json) => _$DeviceAtSignFromJson(json);
-  Map<String, dynamic> toJson() => _$DeviceAtSignToJson(this);
+  factory DaemonAtSign.fromJson(Map<String, dynamic> json) => _$DaemonAtSignFromJson(json);
+  Map<String, dynamic> toJson() => _$DaemonAtSignToJson(this);
 }
 
 @JsonSerializable()
@@ -59,10 +59,10 @@ class Role {
   String? id;
   final String name;
   final String description;
-  final List<DeviceAtSign> deviceAtSigns;
-  final List<Device> deviceNames;
+  final List<String> daemonAtSigns;
+  final List<Device> devices;
   final List<DeviceGroup> deviceGroups;
-  final List<UserAtSign> userAtSigns;
+  final List<String> userAtSigns;
 
   factory Role.empty({
     String? id,
@@ -72,8 +72,8 @@ class Role {
       id: id,
       description: '',
       name: name,
-      deviceAtSigns: [],
-      deviceNames: [],
+      daemonAtSigns: [],
+      devices: [],
       deviceGroups: [],
       userAtSigns: [],
     );
@@ -83,8 +83,8 @@ class Role {
     this.id,
     required this.name,
     required this.description,
-    required this.deviceAtSigns,
-    required this.deviceNames,
+    required this.daemonAtSigns,
+    required this.devices,
     required this.deviceGroups,
     required this.userAtSigns,
   });

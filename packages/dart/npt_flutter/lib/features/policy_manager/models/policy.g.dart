@@ -6,11 +6,11 @@ part of 'policy.dart';
 // JsonSerializableGenerator
 // **************************************************************************
 
-DeviceAtSign _$DeviceAtSignFromJson(Map<String, dynamic> json) => DeviceAtSign(
+DaemonAtSign _$DaemonAtSignFromJson(Map<String, dynamic> json) => DaemonAtSign(
       atSign: json['atSign'] as String,
     );
 
-Map<String, dynamic> _$DeviceAtSignToJson(DeviceAtSign instance) =>
+Map<String, dynamic> _$DaemonAtSignToJson(DaemonAtSign instance) =>
     <String, dynamic>{
       'atSign': instance.atSign,
     };
@@ -53,17 +53,17 @@ Role _$RoleFromJson(Map<String, dynamic> json) => Role(
       id: json['id'] as String?,
       name: json['name'] as String,
       description: json['description'] as String,
-      deviceAtSigns: (json['deviceAtSigns'] as List<dynamic>)
-          .map((e) => DeviceAtSign.fromJson(e as Map<String, dynamic>))
+      daemonAtSigns: (json['daemonAtSigns'] as List<dynamic>)
+          .map((e) => e as String)
           .toList(),
-      deviceNames: (json['deviceNames'] as List<dynamic>)
+      devices: (json['devices'] as List<dynamic>)
           .map((e) => Device.fromJson(e as Map<String, dynamic>))
           .toList(),
       deviceGroups: (json['deviceGroups'] as List<dynamic>)
           .map((e) => DeviceGroup.fromJson(e as Map<String, dynamic>))
           .toList(),
       userAtSigns: (json['userAtSigns'] as List<dynamic>)
-          .map((e) => UserAtSign.fromJson(e as Map<String, dynamic>))
+          .map((e) => e as String)
           .toList(),
     );
 
@@ -71,8 +71,8 @@ Map<String, dynamic> _$RoleToJson(Role instance) => <String, dynamic>{
       'id': instance.id,
       'name': instance.name,
       'description': instance.description,
-      'deviceAtSigns': instance.deviceAtSigns,
-      'deviceNames': instance.deviceNames,
+      'daemonAtSigns': instance.daemonAtSigns,
+      'devices': instance.devices,
       'deviceGroups': instance.deviceGroups,
       'userAtSigns': instance.userAtSigns,
     };
