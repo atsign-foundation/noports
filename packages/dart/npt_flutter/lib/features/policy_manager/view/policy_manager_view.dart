@@ -1,15 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import '../cubit/policy_manager_cubit.dart';
-import '../cubit/policy_manager_state.dart';
+import '../bloc/policy_manager_bloc.dart';
+import '../bloc/policy_manager_event.dart';
+import '../bloc/policy_manager_state.dart';
 import '../models/policy.dart';
-import '../../policy_manager_form/view/policy_manager_form_view.dart';
-import '../shared/dialogs/policy_dialogs.dart';
-import '../shared/utils/policy_utils.dart';
-import '../shared/widgets/policy_empty_state_widget.dart';
-import '../shared/widgets/policy_error_state_widget.dart';
-import '../shared/widgets/policy_small_loading_indicator_widget.dart';
-import '../shared/widgets/policy_role_list_item_widget.dart';
 
 class PolicyManagerView extends StatelessWidget {
   final String atSign;
@@ -19,7 +13,7 @@ class PolicyManagerView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
-      create: (context) => PolicyManagerCubit(),
+      create: (context) => PolicyManagerBloc()..add(const PolicyManagerLoadingRoles()),
       child: PolicyManagerContent(atSign: atSign),
     );
   }
@@ -32,227 +26,130 @@ class PolicyManagerContent extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return BlocConsumer<PolicyManagerCubit, PolicyManagerState>(
-      listener: (context, state) {
-        if (state is PolicyManagerError) {
-          PolicyUtils.showErrorSnackBar(context, state.message);
-        }
-      },
+    return BlocBuilder<PolicyManagerBloc, PolicyManagerState>(
       builder: (context, state) {
-        if (state is PolicyManagerInitial) {
-          return const Center(child: CircularProgressIndicator());
-        } else if (state is PolicyManagerLoading) {
-          return _buildLoadingState(state);
-        } else if (state is PolicyManagerError) {
-          return Builder(
-            builder: (context) => _buildErrorState(context, state),
-          );
-        } else if (state is PolicyManagerLoaded) {
-          return Builder(
-            builder: (context) => _buildLoadedState(context, state),
-          );
-        }
-        return const SizedBox();
+        return Scaffold(
+          body: Row(
+            children: [
+              _buildRolesSidebar(state, context),
+              Expanded(
+                child: _buildMainContent(state),
+              ),
+            ],
+          ),
+        );
       },
     );
   }
 
-  Widget _buildLoadingState(PolicyManagerLoading state) {
-    return Builder(
-      builder: (context) => Row(
+  Widget _buildRolesSidebar(PolicyManagerState state, BuildContext context) {
+    return Container(
+      width: 300,
+      decoration: const BoxDecoration(
+        border: Border(
+          right: BorderSide(color: Colors.grey),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Left Sidebar - Role List with Loading
-          Container(
-            width: 300,
-            decoration: const BoxDecoration(
-              border: Border(
-                right: BorderSide(color: Colors.grey, width: 1),
+          const Padding(
+            padding: EdgeInsets.all(16.0),
+            child: Text(
+              'Roles',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
               ),
             ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Header with loading indicator
-                Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: const BoxDecoration(
-                    border: Border(
-                      bottom: BorderSide(color: Colors.grey, width: 1),
-                    ),
-                  ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      const Text(
-                        'Roles',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      Row(
-                        children: [
-                          const PolicySmallLoadingIndicatorWidget(),
-                          const SizedBox(width: 8),
-                          const IconButton(
-                            icon: Icon(Icons.refresh),
-                            onPressed: null, // Disabled during loading
-                            tooltip: 'Refresh roles',
-                          ),
-                          IconButton(
-                            icon: const Icon(Icons.add),
-                            onPressed: () => _showAddRoleDialog(context),
-                            tooltip: 'Add new role',
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-                // Roles List
-                Expanded(
-                  child: state.roles.isEmpty
-                      ? _buildEmptyState()
-                      : _buildRolesList(state.roles, state.selectedRole),
-                ),
-              ],
-            ),
           ),
-          // Main Content Area
           Expanded(
-            child: state.selectedRole == null
-                ? _buildEmptyState()
-                : PolicyManagerFormView(
-                    role: state.selectedRole!,
-                    onRoleUpdated: (updatedRole) {
-                      context.read<PolicyManagerCubit>().updateSelectedRole(updatedRole);
-                    },
-                    onSaveSuccess: () {
-                      // Handle save success if needed
-                    },
-                  ),
+            child: _buildRolesList(state, context),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildErrorState(BuildContext context, PolicyManagerError state) {
-    return PolicyErrorStateWidget(
-      message: state.message,
-      onRetry: () => context.read<PolicyManagerCubit>().refreshRoles(),
-    );
-  }
-
-  Widget _buildLoadedState(BuildContext context, PolicyManagerLoaded state) {
-    return Row(
-      children: [
-        // Left Sidebar - Role List
-        Container(
-          width: 300,
-          decoration: const BoxDecoration(
-            border: Border(
-              right: BorderSide(color: Colors.grey, width: 1),
+  Widget _buildRolesList(PolicyManagerState state, BuildContext context) {
+    if (state is PolicyManagerLoading) {
+      return const Center(child: CircularProgressIndicator());
+    } else if (state is PolicyManagerError) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Icon(Icons.error, color: Colors.red),
+            const SizedBox(height: 8),
+            Text(
+              'Error: ${state.message}',
+              style: const TextStyle(color: Colors.red),
+              textAlign: TextAlign.center,
             ),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Header
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: const BoxDecoration(
-                  border: Border(
-                    bottom: BorderSide(color: Colors.grey, width: 1),
-                  ),
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    const Text(
-                      'Roles',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    Row(
-                      children: [
-                        IconButton(
-                          icon: const Icon(Icons.refresh),
-                          onPressed: () => context.read<PolicyManagerCubit>().refreshRoles(),
-                          tooltip: 'Refresh roles',
-                        ),
-                        IconButton(
-                          icon: const Icon(Icons.add),
-                          onPressed: () => _showAddRoleDialog(context),
-                          tooltip: 'Add new role',
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-              // Roles List
-              Expanded(
-                child: _buildRolesList(state.roles, state.selectedRole),
-              ),
-            ],
-          ),
+          ],
         ),
-        // Main Content Area
-        Expanded(
-          child: state.selectedRole == null
-              ? _buildEmptyState()
-              : PolicyManagerFormView(
-                  role: state.selectedRole!,
-                  onRoleUpdated: (updatedRole) {
-                    context.read<PolicyManagerCubit>().updateSelectedRole(updatedRole);
-                  },
-                  onSaveSuccess: () {
-                    // Handle save success if needed
-                  },
-                ),
-        ),
-      ],
-    );
+      );
+    } else if (state is PolicyManagerLoaded) {
+      return _buildLoadedRolesList(state.roles, context);
+    } else {
+      return const Center(child: CircularProgressIndicator());
+    }
   }
 
-  Widget _buildEmptyState() {
-    return const PolicyEmptyStateWidget(
-      title: 'No roles found'
-    );
-  }
+  Widget _buildLoadedRolesList(List<Role> roles, BuildContext context) {
+    if (roles.isEmpty) {
+      return const Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.group, size: 48, color: Colors.grey),
+            SizedBox(height: 16),
+            Text(
+              'No roles found',
+              style: TextStyle(color: Colors.grey),
+            ),
+          ],
+        ),
+      );
+    }
 
-  Widget _buildRolesList(List<Role> roles, Role? selectedRole) {
     return ListView.builder(
       itemCount: roles.length,
       itemBuilder: (context, index) {
         final role = roles[index];
-        final isSelected = selectedRole?.id == role.id;
-        
-        return PolicyRoleListItemWidget(
-          name: role.name,
-          description: role.description,
-          isSelected: isSelected,
-          onTap: () => context.read<PolicyManagerCubit>().selectRole(role),
-          onDelete: () => _showDeleteRoleDialog(context, role),
-        );
+        return _buildRoleListItem(role, context);
       },
     );
   }
 
-  void _showAddRoleDialog(BuildContext context) async {
-    final roleName = await PolicyDialogs.showAddRoleDialog(context);
-    if (roleName != null && context.mounted) {
-      context.read<PolicyManagerCubit>().addRole(roleName);
-    }
+  Widget _buildRoleListItem(Role role, BuildContext context) {
+    return Card(
+      margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      child: ListTile(
+        leading: const Icon(Icons.group),
+        title: Text(role.name),
+        subtitle: Text(
+          role.description.isEmpty ? 'No description' : role.description,
+          maxLines: 2,
+          overflow: TextOverflow.ellipsis,
+        ),
+        trailing: Text(
+          '${role.userAtSigns.length} users',
+          style: const TextStyle(
+            fontSize: 12,
+            color: Colors.grey,
+          ),
+        ),
+        onTap: () {
+          context.read<PolicyManagerBloc>().add(PolicyManagerViewingLoadedRole(role.id ?? ''));
+        },
+      ),
+    );
   }
 
-  void _showDeleteRoleDialog(BuildContext context, Role role) async {
-    final confirmed = await PolicyDialogs.showDeleteRoleDialog(context, role);
-    if (confirmed == true && context.mounted) {
-      context.read<PolicyManagerCubit>().deleteRole(role);
-    }
+  Widget _buildMainContent(PolicyManagerState state) {
+    return const Center(
+      child: Text('Main content area - role details will be shown here'),
+    );
   }
 }

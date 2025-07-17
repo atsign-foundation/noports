@@ -6,8 +6,6 @@ import '../models/policy.dart';
 import 'role_repository.dart';
 
 class RoleRepositoryImpl implements RoleRepository {
-  static const String _rolesKey = 'policy_manager_roles';
-
   @override
   Future<List<Role>> getAllRoles() async {
     final rolesJson = <String>[]; // placeholder
