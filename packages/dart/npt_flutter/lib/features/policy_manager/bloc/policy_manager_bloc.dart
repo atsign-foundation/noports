@@ -32,7 +32,7 @@ class PolicyManagerBloc extends Bloc<PolicyManagerEvent, PolicyManagerState> {
       final selectedRole = currentState.roles.firstWhere(
         (role) => role.id == event.roleId,
         orElse: () => currentState.roles.first,
-      );
+      );                
       
       emit(currentState.copyWith(selectedRole: selectedRole));
     }

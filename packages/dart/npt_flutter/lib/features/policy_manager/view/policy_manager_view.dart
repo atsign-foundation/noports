@@ -5,6 +5,7 @@ import '../bloc/policy_manager_event.dart';
 import '../bloc/policy_manager_state.dart';
 import '../models/policy.dart';
 import '../repositories/role_repository_impl.dart';
+import '../../policy_manager_form/view/policy_manager_form_view.dart';
 
 class PolicyManagerView extends StatelessWidget {
   final String atSign;
@@ -149,8 +150,25 @@ class PolicyManagerContent extends StatelessWidget {
   }
 
   Widget _buildMainContent(PolicyManagerState state) {
+    if (state is PolicyManagerLoaded && state.selectedRole != null) {
+      return PolicyManagerFormView(role: state.selectedRole!);
+    }
+    
     return const Center(
-      child: Text('Main content area - role details will be shown here'),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(Icons.group, size: 64, color: Colors.grey),
+          SizedBox(height: 16),
+          Text(
+            'Select a role to view details',
+            style: TextStyle(
+              fontSize: 18,
+              color: Colors.grey,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
