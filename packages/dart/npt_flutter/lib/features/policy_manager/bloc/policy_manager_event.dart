@@ -1,4 +1,5 @@
 import 'package:equatable/equatable.dart';
+import '../models/policy.dart';
 
 abstract class PolicyManagerEvent extends Equatable {
   const PolicyManagerEvent();
@@ -35,4 +36,22 @@ class PolicyManagerInitialEvent extends PolicyManagerEvent {
 
 class PolicyManagerViewingNoRole extends PolicyManagerEvent {
   const PolicyManagerViewingNoRole();
+}
+
+class PolicyManagerEdit extends PolicyManagerEvent {
+  final String roleId;
+
+  const PolicyManagerEdit(this.roleId);
+
+  @override
+  List<Object?> get props => [roleId];
+}
+
+class PolicyManagerSave extends PolicyManagerEvent {
+  final Role role;
+
+  const PolicyManagerSave(this.role);
+
+  @override
+  List<Object?> get props => [role];
 }

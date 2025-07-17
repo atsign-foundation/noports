@@ -13,6 +13,8 @@ class PolicyManagerBloc extends Bloc<PolicyManagerEvent, PolicyManagerState> {
     on<PolicyManagerViewingNoRole>(_onViewingNoRole);
     on<PolicyManagerViewingLoadedRole>(_onViewingLoadedRole);
     on<PolicyManagerEditingLoadedRole>(_onEditingLoadedRole);
+    on<PolicyManagerEdit>(_onEdit);
+    on<PolicyManagerSave>(_onSave);
   }
 
   void _onLoadingRoles(PolicyManagerLoadingRoles event, Emitter<PolicyManagerState> emit) async {
@@ -59,6 +61,51 @@ class PolicyManagerBloc extends Bloc<PolicyManagerEvent, PolicyManagerState> {
     if (state is PolicyManagerLoaded) {
       final currentState = state as PolicyManagerLoaded;
       emit(currentState.copyWith(clearSelectedRole: true));
+    }
+  }
+
+  void _onEdit(PolicyManagerEdit event, Emitter<PolicyManagerState> emit) {
+    if (state is PolicyManagerLoaded) {
+      final currentState = state as PolicyManagerLoaded;
+      final selectedRole = currentState.roles.firstWhere(
+        (role) => role.id == event.roleId,
+        orElse: () => currentState.roles.first,
+      );
+      
+      // Set the selected role and mark it for editing
+      emit(currentState.copyWith(selectedRole: selectedRole));
+    }
+  }
+
+  void _onSave(PolicyManagerSave event, Emitter<PolicyManagerState> emit) async {
+    if (state is PolicyManagerLoaded) {
+      final currentState = state as PolicyManagerLoaded;
+      
+      // Update the loading state to show saving in progress
+      emit(PolicyManagerLoading(
+        roles: currentState.roles,
+        selectedRole: currentState.selectedRole,
+      ));
+      
+      try {
+        // TODO: Implement role save functionality in repository
+        // await _roleRepository.saveRole(event.role);
+        
+        // Update the roles list with the saved role
+        final updatedRoles = currentState.roles.map((role) {
+          if (role.id == event.role.id) {
+            return event.role;
+          }
+          return role;
+        }).toList();
+        
+        emit(PolicyManagerLoaded(
+          roles: updatedRoles,
+          selectedRole: event.role,
+        ));
+      } catch (error) {
+        emit(PolicyManagerError('Failed to save role: $error', roles: currentState.roles));
+      }
     }
   }
 
