@@ -56,7 +56,7 @@ class _DaemonAtSignsFieldState extends State<DaemonAtSignsField> {
           deviceGroups: widget.role.deviceGroups,
           userAtSigns: widget.role.userAtSigns,
         );
-        context.read<PolicyManagerBloc>().add(PolicyManagerSave(updatedRole));
+        context.read<PolicyManagerBloc>().add(PolicyManagerSaveRole(updatedRole));
       },
     );
   }

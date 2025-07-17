@@ -12,46 +12,72 @@ class PolicyManagerLoadingRoles extends PolicyManagerEvent {
   const PolicyManagerLoadingRoles();
 }
 
-class PolicyManagerViewingLoadedRole extends PolicyManagerEvent {
-  final String roleId;
-
-  const PolicyManagerViewingLoadedRole(this.roleId);
-
-  @override
-  List<Object?> get props => [roleId];
-}
-
-class PolicyManagerEditingLoadedRole extends PolicyManagerEvent {
-  final String roleId;
-
-  const PolicyManagerEditingLoadedRole(this.roleId);
-
-  @override
-  List<Object?> get props => [roleId];
-}
-
 class PolicyManagerInitialEvent extends PolicyManagerEvent {
   const PolicyManagerInitialEvent();
 }
 
-class PolicyManagerViewingNoRole extends PolicyManagerEvent {
-  const PolicyManagerViewingNoRole();
-}
-
-class PolicyManagerEdit extends PolicyManagerEvent {
+class PolicyManagerRoleSelected extends PolicyManagerEvent {
   final String roleId;
 
-  const PolicyManagerEdit(this.roleId);
+  const PolicyManagerRoleSelected(this.roleId);
 
   @override
   List<Object?> get props => [roleId];
 }
 
-class PolicyManagerSave extends PolicyManagerEvent {
+class PolicyManagerRoleDeselected extends PolicyManagerEvent {
+  const PolicyManagerRoleDeselected();
+}
+
+class PolicyManagerStartEditing extends PolicyManagerEvent {
+  final String roleId;
+
+  const PolicyManagerStartEditing(this.roleId);
+
+  @override
+  List<Object?> get props => [roleId];
+}
+
+class PolicyManagerStopEditing extends PolicyManagerEvent {
+  const PolicyManagerStopEditing();
+}
+
+class PolicyManagerSaveRole extends PolicyManagerEvent {
   final Role role;
 
-  const PolicyManagerSave(this.role);
+  const PolicyManagerSaveRole(this.role);
 
   @override
   List<Object?> get props => [role];
+}
+
+class PolicyManagerCreateRole extends PolicyManagerEvent {
+  final Role role;
+
+  const PolicyManagerCreateRole(this.role);
+
+  @override
+  List<Object?> get props => [role];
+}
+
+class PolicyManagerDeleteRole extends PolicyManagerEvent {
+  final String roleId;
+
+  const PolicyManagerDeleteRole(this.roleId);
+
+  @override
+  List<Object?> get props => [roleId];
+}
+
+class PolicyManagerUpdateRole extends PolicyManagerEvent {
+  final Role role;
+
+  const PolicyManagerUpdateRole(this.role);
+
+  @override
+  List<Object?> get props => [role];
+}
+
+class PolicyManagerCancelEdit extends PolicyManagerEvent {
+  const PolicyManagerCancelEdit();
 }

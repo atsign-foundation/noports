@@ -143,7 +143,7 @@ class PolicyManagerContent extends StatelessWidget {
           ),
         ),
         onTap: () {
-          context.read<PolicyManagerBloc>().add(PolicyManagerViewingLoadedRole(role.id ?? ''));
+          context.read<PolicyManagerBloc>().add(PolicyManagerRoleSelected(role.id ?? ''));
         },
       ),
     );

@@ -56,7 +56,7 @@ class _UserAtSignsFieldState extends State<UserAtSignsField> {
           deviceGroups: widget.role.deviceGroups,
           userAtSigns: atSigns,
         );
-        context.read<PolicyManagerBloc>().add(PolicyManagerSave(updatedRole));
+        context.read<PolicyManagerBloc>().add(PolicyManagerSaveRole(updatedRole));
       },
     );
   }

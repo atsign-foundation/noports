@@ -46,7 +46,7 @@ class _FormContentState extends State<FormContent> {
                 const SizedBox(width: 8),
                 ElevatedButton(
                   onPressed: () {
-                    context.read<PolicyManagerBloc>().add(PolicyManagerSave(widget.role));
+                    context.read<PolicyManagerBloc>().add(PolicyManagerSaveRole(widget.role));
                     setState(() => _isEditing = false);
                   },
                   child: const Text('Save'),
@@ -55,7 +55,7 @@ class _FormContentState extends State<FormContent> {
                 ElevatedButton(
                   onPressed: () {
                     setState(() => _isEditing = true);
-                    context.read<PolicyManagerBloc>().add(PolicyManagerEdit(widget.role.id ?? ''));
+                    context.read<PolicyManagerBloc>().add(PolicyManagerStartEditing(widget.role.id ?? ''));
                   },
                   child: const Text('Edit'),
                 ),

@@ -9,7 +9,7 @@ class RoleDescriptionField extends StatefulWidget {
   final Role role;
   final bool isEditing;
 
-  const RoleDescriptionField({super.key, required this.role, required this.isEditing});
+  const  RoleDescriptionField({super.key, required this.role, required this.isEditing});
 
   @override
   State<RoleDescriptionField> createState() => _RoleDescriptionFieldState();
@@ -55,7 +55,7 @@ class _RoleDescriptionFieldState extends State<RoleDescriptionField> {
           deviceGroups: widget.role.deviceGroups,
           userAtSigns: widget.role.userAtSigns,
         );
-        context.read<PolicyManagerBloc>().add(PolicyManagerSave(updatedRole));
+        context.read<PolicyManagerBloc>().add(PolicyManagerSaveRole(updatedRole));
       },
     );
   }
