@@ -4,6 +4,7 @@ import '../bloc/policy_manager_bloc.dart';
 import '../bloc/policy_manager_event.dart';
 import '../bloc/policy_manager_state.dart';
 import '../models/policy.dart';
+import '../repositories/role_repository_impl.dart';
 
 class PolicyManagerView extends StatelessWidget {
   final String atSign;
@@ -13,7 +14,7 @@ class PolicyManagerView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
-      create: (context) => PolicyManagerBloc()..add(const PolicyManagerLoadingRoles()),
+      create: (context) => PolicyManagerBloc(RoleRepositoryImpl())..add(const PolicyManagerLoadingRoles()),
       child: PolicyManagerContent(atSign: atSign),
     );
   }
