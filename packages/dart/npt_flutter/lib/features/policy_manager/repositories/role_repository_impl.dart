@@ -15,16 +15,7 @@ class RoleRepositoryImpl implements RoleRepository {
   @override
   Future<void> fetchRoles() async {
     final rolesJson = <String>[];
-
     AtClient atClient = AtClientManager.getInstance().atClient;
-    String? currentAtSign = atClient.getCurrentAtSign();
-    
-    if (currentAtSign != null && currentAtSign.startsWith('@')) {
-      currentAtSign = currentAtSign.substring(1);
-    }
-    
-    App.log('[DEBUG] fetchRoles: currentAtSign = "$currentAtSign"'.loggable);
-    
     const String regex = r'^[a-zA-Z0-9]+\.' + groupsPolicyNamespace + r'@[a-zA-Z0-9]+$';
 
     try {
@@ -149,13 +140,17 @@ class RoleRepositoryImpl implements RoleRepository {
     try {
       bool success = await atClient.delete(AtKey.fromString(atKeyStr), deleteRequestOptions: dro);
       if (success) {
-        _roles.removeWhere((r) => r.id == roleId);
+        _removeRoleFromCache(roleId);
       }
       return success;
     } catch (e) {
       App.log('[ERROR] deleteRole: Failed to delete role: $e'.loggable);
       return false;
     }
+  }
+
+  void _removeRoleFromCache(String roleId) {
+    _roles.removeWhere((r) => r.id == roleId);
   }
 
   int get _maxGroupId {

@@ -141,22 +141,24 @@ class PolicyManagerBloc extends Bloc<PolicyManagerEvent, PolicyManagerState> {
     if (state is PolicyManagerLoaded) {
       final currentState = state as PolicyManagerLoaded;
       
-      emit(PolicyManagerLoading(
-        roles: currentState.roles,
-        selectedRole: currentState.selectedRole,
+      final optimisticRoles = currentState.roles.where((role) => role.id != event.roleId).toList();
+      
+      emit(PolicyManagerLoaded(
+        roles: optimisticRoles,
+        selectedRole: null,
       ));
       
       try {
         bool success = await _roleRepository.deleteRole(event.roleId);
         
         if (success) {
-          // Refresh roles after successful deletion
+          // Refresh roles to ensure consistency with backend
           await _roleRepository.fetchRoles();
           final updatedRoles = _roleRepository.getRoles;
           
           emit(PolicyManagerLoaded(
             roles: updatedRoles,
-            selectedRole: null, // Clear selection since role was deleted
+            selectedRole: null,
           ));
         } else {
           emit(PolicyManagerError('Failed to delete role', roles: currentState.roles));
@@ -180,7 +182,6 @@ class PolicyManagerBloc extends Bloc<PolicyManagerEvent, PolicyManagerState> {
         bool success = await _roleRepository.updateExistingRole(event.role);
         
         if (success) {
-          // Get updated roles from repository
           final updatedRoles = _roleRepository.getRoles;
           
           emit(PolicyManagerLoaded(
@@ -197,8 +198,6 @@ class PolicyManagerBloc extends Bloc<PolicyManagerEvent, PolicyManagerState> {
   }
 
   void _onCancelEdit(PolicyManagerCancelEdit event, Emitter<PolicyManagerState> emit) {
-    // This can be used to revert any unsaved changes
-    // For now, we'll just maintain the current state
     if (state is PolicyManagerLoaded) {
       final currentState = state as PolicyManagerLoaded;
       emit(currentState.copyWith());
