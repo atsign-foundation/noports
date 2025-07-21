@@ -112,26 +112,24 @@ class PolicyManagerBloc extends Bloc<PolicyManagerEvent, PolicyManagerState> {
     if (state is PolicyManagerLoaded) {
       final currentState = state as PolicyManagerLoaded;
       
-      emit(PolicyManagerLoading(
-        roles: currentState.roles,
-        selectedRole: currentState.selectedRole,
+      // Optimistically add the role to local state first
+      final updatedRoles = [...currentState.roles, event.role];
+      
+      emit(PolicyManagerLoaded(
+        roles: updatedRoles,
+        selectedRole: event.role,
       ));
       
       try {
         bool success = await _roleRepository.createNewRole(event.role);
         
-        if (success) {
-          // Get updated roles from repository
-          final updatedRoles = _roleRepository.getRoles;
-          
-          emit(PolicyManagerLoaded(
-            roles: updatedRoles,
-            selectedRole: event.role,
-          ));
-        } else {
+        if (!success) {
+          // If creation failed, revert to original state
           emit(PolicyManagerError('Failed to create role', roles: currentState.roles));
         }
+        // If successful, keep the optimistic update (role already added to UI)
       } catch (error) {
+        // If creation failed, revert to original state
         emit(PolicyManagerError('Failed to create role: $error', roles: currentState.roles));
       }
     }
@@ -151,19 +149,13 @@ class PolicyManagerBloc extends Bloc<PolicyManagerEvent, PolicyManagerState> {
       try {
         bool success = await _roleRepository.deleteRole(event.roleId);
         
-        if (success) {
-          // Refresh roles to ensure consistency with backend
-          await _roleRepository.fetchRoles();
-          final updatedRoles = _roleRepository.getRoles;
-          
-          emit(PolicyManagerLoaded(
-            roles: updatedRoles,
-            selectedRole: null,
-          ));
-        } else {
+        if (!success) {
+          // If deletion failed, revert to original state
           emit(PolicyManagerError('Failed to delete role', roles: currentState.roles));
         }
+        // If successful, keep the optimistic update (role already removed from UI)
       } catch (error) {
+        // If deletion failed, revert to original state
         emit(PolicyManagerError('Failed to delete role: $error', roles: currentState.roles));
       }
     }
@@ -173,25 +165,29 @@ class PolicyManagerBloc extends Bloc<PolicyManagerEvent, PolicyManagerState> {
     if (state is PolicyManagerLoaded) {
       final currentState = state as PolicyManagerLoaded;
       
-      emit(PolicyManagerLoading(
-        roles: currentState.roles,
-        selectedRole: currentState.selectedRole,
+      // Optimistically update the role in local state
+      final updatedRoles = currentState.roles.map((role) {
+        if (role.id == event.role.id) {
+          return event.role;
+        }
+        return role;
+      }).toList();
+      
+      emit(PolicyManagerLoaded(
+        roles: updatedRoles,
+        selectedRole: event.role,
       ));
       
       try {
         bool success = await _roleRepository.updateExistingRole(event.role);
         
-        if (success) {
-          final updatedRoles = _roleRepository.getRoles;
-          
-          emit(PolicyManagerLoaded(
-            roles: updatedRoles,
-            selectedRole: event.role,
-          ));
-        } else {
+        if (!success) {
+          // If update failed, revert to original state
           emit(PolicyManagerError('Failed to update role', roles: currentState.roles));
         }
+        // If successful, keep the optimistic update (role already updated in UI)
       } catch (error) {
+        // If update failed, revert to original state
         emit(PolicyManagerError('Failed to update role: $error', roles: currentState.roles));
       }
     }

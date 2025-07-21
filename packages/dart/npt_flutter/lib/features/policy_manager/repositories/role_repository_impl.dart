@@ -55,7 +55,7 @@ class RoleRepositoryImpl implements RoleRepository {
       return false;
     }
 
-    PutRequestOptions pro = PutRequestOptions()..useRemoteAtServer = true;
+    // PutRequestOptions pro = PutRequestOptions()..useRemoteAtServer = true;
     AtClient atClient = AtClientManager.getInstance().atClient;
     String? currentAtSign = atClient.getCurrentAtSign();
 
@@ -68,7 +68,8 @@ class RoleRepositoryImpl implements RoleRepository {
     final String value = jsonEncode(role.toJson());
 
     try {
-      bool success = await atClient.put(AtKey.fromString(atKeyStr), value, putRequestOptions: pro);
+      // bool success = await atClient.put(AtKey.fromString(atKeyStr), value, putRequestOptions: pro);
+      bool success = await atClient.put(AtKey.fromString(atKeyStr), value);
       if (success) {
         _updateRoleInCache(role);
       }
@@ -82,7 +83,7 @@ class RoleRepositoryImpl implements RoleRepository {
 
   @override
   Future<bool> createNewRole(Role role) async {
-    final PutRequestOptions pro = PutRequestOptions()..useRemoteAtServer = true;
+    // final PutRequestOptions pro = PutRequestOptions()..useRemoteAtServer = true;
     final AtClient atClient = AtClientManager.getInstance().atClient;
     String? currentAtSign = atClient.getCurrentAtSign();
     final String newRoleId = (_maxGroupId + 1).toString();
@@ -98,7 +99,8 @@ class RoleRepositoryImpl implements RoleRepository {
     final String value = jsonEncode(role.toJson());
 
     try {
-      bool success = await atClient.put(AtKey.fromString(atKeyStr), value, putRequestOptions: pro);
+      // bool success = await atClient.put(AtKey.fromString(atKeyStr), value, putRequestOptions: pro);
+      bool success = await atClient.put(AtKey.fromString(atKeyStr), value);
       if (success) {
         _roles.add(role);
       }
@@ -133,12 +135,13 @@ class RoleRepositoryImpl implements RoleRepository {
     if (currentAtSign != null && !currentAtSign.startsWith('@')) {
       currentAtSign = '@$currentAtSign';
     }
-    
+
     final String atKeyStr = '$roleId.$groupsPolicyNamespace$currentAtSign';
-    final DeleteRequestOptions dro = DeleteRequestOptions()..useRemoteAtServer = true;
+    // final DeleteRequestOptions dro = DeleteRequestOptions()..useRemoteAtServer = true;
 
     try {
-      bool success = await atClient.delete(AtKey.fromString(atKeyStr), deleteRequestOptions: dro);
+      // bool success = await atClient.delete(AtKey.fromString(atKeyStr), deleteRequestOptions: dro);
+      bool success = await atClient.delete(AtKey.fromString(atKeyStr));
       if (success) {
         _removeRoleFromCache(roleId);
       }
