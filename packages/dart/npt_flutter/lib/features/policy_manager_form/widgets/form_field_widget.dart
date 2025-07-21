@@ -31,16 +31,19 @@ class FormFieldWidget extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 8),
-        TextFormField(
-          controller: controller,
-          enabled: enabled,
-          maxLines: maxLines,
-          onChanged: onChanged,
-          decoration: InputDecoration(
-            border: const OutlineInputBorder(),
-            helperText: helperText,
-            filled: !enabled,
-            fillColor: enabled ? null : Colors.grey[100],
+        SizedBox(
+          width: double.infinity,
+          child: TextFormField(
+            controller: controller,
+            enabled: enabled,
+            maxLines: maxLines,
+            onChanged: onChanged,
+            decoration: InputDecoration(
+              border: const OutlineInputBorder(),
+              helperText: helperText,
+              filled: !enabled,
+              fillColor: enabled ? null : Colors.grey[100],
+            ),
           ),
         ),
       ],
