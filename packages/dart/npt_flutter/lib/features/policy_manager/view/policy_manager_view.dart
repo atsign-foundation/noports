@@ -46,7 +46,7 @@ class PolicyManagerContent extends StatelessWidget {
 
   Widget _buildRolesSidebar(PolicyManagerState state, BuildContext context) {
     return Container(
-      width: 300,
+      width: 250,
       decoration: const BoxDecoration(
         border: Border(
           right: BorderSide(color: Colors.grey),

@@ -46,7 +46,7 @@ class _RoleDescriptionFieldState extends State<RoleDescriptionField> {
       label: 'Description (optional)',
       controller: _controller,
       enabled: widget.isEditing,
-      maxLines: 5,
+      maxLines: 8,
       onChanged: widget.onChanged,
     );
   }

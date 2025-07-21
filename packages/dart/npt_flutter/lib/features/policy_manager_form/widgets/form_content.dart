@@ -79,11 +79,18 @@ class _FormContentState extends State<FormContent> {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.all(16.0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
+    return BlocListener<PolicyManagerBloc, PolicyManagerState>(
+      listener: (context, state) {
+        // Exit editing mode when role is successfully updated
+        if (state is PolicyManagerLoaded && _isEditing) {
+          setState(() => _isEditing = false);
+        }
+      },
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
           Row(
             children: [
               Text(
@@ -109,7 +116,6 @@ class _FormContentState extends State<FormContent> {
                 ElevatedButton(
                   onPressed: () {
                     context.read<PolicyManagerBloc>().add(PolicyManagerUpdateRole(_currentRole));
-                    setState(() => _isEditing = false);
                   },
                   child: const Text('Save'),
                 ),
@@ -130,12 +136,11 @@ class _FormContentState extends State<FormContent> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Name and Description at the top
+                  // Row 1: Name and Description
                   Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Expanded(
-                        flex: 2,
                         child: RoleNameField(
                           role: _currentRole,
                           isEditing: _isEditing,
@@ -156,7 +161,6 @@ class _FormContentState extends State<FormContent> {
                       ),
                       const SizedBox(width: 16),
                       Expanded(
-                        flex: 3,
                         child: RoleDescriptionField(
                           role: _currentRole,
                           isEditing: _isEditing,
@@ -177,7 +181,7 @@ class _FormContentState extends State<FormContent> {
                       ),
                     ],
                   ),
-                  const SizedBox(height: 32),
+                  const SizedBox(height: 24),
                   // Row 2: User AtSigns and Device AtSigns
                   Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -277,7 +281,8 @@ class _FormContentState extends State<FormContent> {
               ),
             ),
           ),
-        ],
+          ],
+        ),
       ),
     );
   }
