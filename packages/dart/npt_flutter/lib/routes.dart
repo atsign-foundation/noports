@@ -51,7 +51,7 @@ String routeName(String route) {
       return strings.profile;
     case 'Loading':
       return strings.loading;
-    case 'PolicyManager':
+    case 'Policy-manager':
       return strings.policyManager;
     default:
   }
