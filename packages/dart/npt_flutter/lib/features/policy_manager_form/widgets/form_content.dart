@@ -133,6 +133,7 @@ class _FormContentState extends State<FormContent> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Expanded(
+                        flex: 2,
                         child: RoleNameField(
                           role: _currentRole,
                           isEditing: _isEditing,
@@ -153,6 +154,7 @@ class _FormContentState extends State<FormContent> {
                       ),
                       const SizedBox(width: 16),
                       Expanded(
+                        flex: 3,
                         child: RoleDescriptionField(
                           role: _currentRole,
                           isEditing: _isEditing,
