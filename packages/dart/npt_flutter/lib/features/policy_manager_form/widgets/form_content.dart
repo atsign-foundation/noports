@@ -46,21 +46,23 @@ class _FormContentState extends State<FormContent> {
   }
 
   void _showDeleteConfirmation(BuildContext context) {
+    final bloc = context.read<PolicyManagerBloc>();
+    
     showDialog(
       context: context,
-      builder: (BuildContext context) {
+      builder: (BuildContext dialogContext) {
         return AlertDialog(
           title: const Text('Delete Role'),
           content: Text('Are you sure you want to delete the role "${_currentRole.name}"? This action cannot be undone.'),
           actions: [
             TextButton(
-              onPressed: () => Navigator.of(context).pop(),
+              onPressed: () => Navigator.of(dialogContext).pop(),
               child: const Text('Cancel'),
             ),
             ElevatedButton(
               onPressed: () {
-                Navigator.of(context).pop();
-                context.read<PolicyManagerBloc>().add(PolicyManagerDeleteRole(_currentRole.id ?? ''));
+                Navigator.of(dialogContext).pop();
+                bloc.add(PolicyManagerDeleteRole(_currentRole.id ?? ''));
                 setState(() => _isEditing = false);
               },
               style: ElevatedButton.styleFrom(
