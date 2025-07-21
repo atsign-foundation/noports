@@ -7,6 +7,8 @@ import 'package:npt_flutter/features/authorisation/cubit/pending_requests_count_
 import 'package:npt_flutter/features/back_up_key/cubit/backup_key_cubit.dart';
 import 'package:npt_flutter/features/back_up_key/repository/backup_key_repository.dart';
 import 'package:npt_flutter/features/features.dart';
+import 'package:npt_flutter/features/policy_manager/repositories/role_repository.dart';
+import 'package:npt_flutter/features/policy_manager/repositories/role_repository_impl.dart';
 import 'package:npt_flutter/features/profile_list/cubit/sync_cubit.dart';
 import 'package:npt_flutter/localization/app_localizations.dart';
 import 'package:npt_flutter/routes.dart';
@@ -40,7 +42,10 @@ class App extends StatelessWidget {
         RepositoryProvider<AuthorisationService>(
           create: (_) => AuthorisationService(),
         ),
-        RepositoryProvider<BackUpKeyRepository>(create: (_) => BackUpKeyRepository())
+        RepositoryProvider<BackUpKeyRepository>(create: (_) => BackUpKeyRepository()),
+        RepositoryProvider<RoleRepository>(
+          create: (_) => RoleRepositoryImpl(),
+        ),
       ],
       child: MultiBlocProvider(
         providers: [

@@ -29,7 +29,8 @@ class PolicyManagerBloc extends Bloc<PolicyManagerEvent, PolicyManagerState> {
     emit(const PolicyManagerLoading(roles: []));
     
     try {
-      final roles = await _roleRepository.getAllRoles();
+      await _roleRepository.fetchRoles();
+      final roles = _roleRepository.getRoles;
       emit(PolicyManagerLoaded(roles: roles));
     } catch (error) {
       emit(PolicyManagerError('Failed to load roles: $error'));
@@ -88,21 +89,19 @@ class PolicyManagerBloc extends Bloc<PolicyManagerEvent, PolicyManagerState> {
       ));
       
       try {
-        // TODO: Implement role save functionality in repository
-        // await _roleRepository.saveRole(event.role);
+        bool success = await _roleRepository.updateExistingRole(event.role);
         
-        // Update the roles list with the saved role
-        final updatedRoles = currentState.roles.map((role) {
-          if (role.id == event.role.id) {
-            return event.role;
-          }
-          return role;
-        }).toList();
-        
-        emit(PolicyManagerLoaded(
-          roles: updatedRoles,
-          selectedRole: event.role,
-        ));
+        if (success) {
+          // Get updated roles from repository
+          final updatedRoles = _roleRepository.getRoles;
+          
+          emit(PolicyManagerLoaded(
+            roles: updatedRoles,
+            selectedRole: event.role,
+          ));
+        } else {
+          emit(PolicyManagerError('Failed to save role', roles: currentState.roles));
+        }
       } catch (error) {
         emit(PolicyManagerError('Failed to save role: $error', roles: currentState.roles));
       }
@@ -119,16 +118,19 @@ class PolicyManagerBloc extends Bloc<PolicyManagerEvent, PolicyManagerState> {
       ));
       
       try {
-        // TODO: Implement role creation functionality in repository
-        // await _roleRepository.createRole(event.role);
+        bool success = await _roleRepository.createNewRole(event.role);
         
-        // Add the new role to the roles list
-        final updatedRoles = [...currentState.roles, event.role];
-        
-        emit(PolicyManagerLoaded(
-          roles: updatedRoles,
-          selectedRole: event.role,
-        ));
+        if (success) {
+          // Get updated roles from repository
+          final updatedRoles = _roleRepository.getRoles;
+          
+          emit(PolicyManagerLoaded(
+            roles: updatedRoles,
+            selectedRole: event.role,
+          ));
+        } else {
+          emit(PolicyManagerError('Failed to create role', roles: currentState.roles));
+        }
       } catch (error) {
         emit(PolicyManagerError('Failed to create role: $error', roles: currentState.roles));
       }
@@ -145,21 +147,9 @@ class PolicyManagerBloc extends Bloc<PolicyManagerEvent, PolicyManagerState> {
       ));
       
       try {
-        // TODO: Implement role deletion functionality in repository
-        // await _roleRepository.deleteRole(event.roleId);
-        
-        // Remove the role from the roles list
-        final updatedRoles = currentState.roles.where((role) => role.id != event.roleId).toList();
-        
-        // Clear selected role if it was the one being deleted
-        final selectedRole = currentState.selectedRole?.id == event.roleId 
-            ? null 
-            : currentState.selectedRole;
-        
-        emit(PolicyManagerLoaded(
-          roles: updatedRoles,
-          selectedRole: selectedRole,
-        ));
+        // Note: Delete functionality not implemented in current repository interface
+        // For now, we'll just show an error
+        emit(PolicyManagerError('Delete functionality not yet implemented', roles: currentState.roles));
       } catch (error) {
         emit(PolicyManagerError('Failed to delete role: $error', roles: currentState.roles));
       }
@@ -176,21 +166,19 @@ class PolicyManagerBloc extends Bloc<PolicyManagerEvent, PolicyManagerState> {
       ));
       
       try {
-        // TODO: Implement role update functionality in repository
-        // await _roleRepository.updateRole(event.role);
+        bool success = await _roleRepository.updateExistingRole(event.role);
         
-        // Update the roles list with the updated role
-        final updatedRoles = currentState.roles.map((role) {
-          if (role.id == event.role.id) {
-            return event.role;
-          }
-          return role;
-        }).toList();
-        
-        emit(PolicyManagerLoaded(
-          roles: updatedRoles,
-          selectedRole: event.role,
-        ));
+        if (success) {
+          // Get updated roles from repository
+          final updatedRoles = _roleRepository.getRoles;
+          
+          emit(PolicyManagerLoaded(
+            roles: updatedRoles,
+            selectedRole: event.role,
+          ));
+        } else {
+          emit(PolicyManagerError('Failed to update role', roles: currentState.roles));
+        }
       } catch (error) {
         emit(PolicyManagerError('Failed to update role: $error', roles: currentState.roles));
       }

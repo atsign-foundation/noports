@@ -4,7 +4,7 @@ import '../bloc/policy_manager_bloc.dart';
 import '../bloc/policy_manager_event.dart';
 import '../bloc/policy_manager_state.dart';
 import '../models/policy.dart';
-import '../repositories/role_repository_impl.dart';
+import '../repositories/role_repository.dart';
 import '../../policy_manager_form/view/policy_manager_form_view.dart';
 
 class PolicyManagerView extends StatelessWidget {
@@ -15,7 +15,7 @@ class PolicyManagerView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
-      create: (context) => PolicyManagerBloc(RoleRepositoryImpl())..add(const PolicyManagerLoadingRoles()),
+      create: (context) => PolicyManagerBloc(context.read<RoleRepository>())..add(const PolicyManagerLoadingRoles()),
       child: PolicyManagerContent(atSign: atSign),
     );
   }
@@ -55,16 +55,43 @@ class PolicyManagerContent extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Padding(
-            padding: EdgeInsets.all(16.0),
-            child: Text(
-              'Roles',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
+          Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Row(
+              children: [
+                const Text(
+                  'Roles',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const Spacer(),
+                IconButton(
+                  icon: const Icon(Icons.refresh),
+                  onPressed: () {
+                    context.read<PolicyManagerBloc>().add(const PolicyManagerLoadingRoles());
+                  },
+                  tooltip: 'Refresh roles',
+                ),
+              ],
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16.0),
+            child: SizedBox(
+              width: double.infinity,
+              child: ElevatedButton.icon(
+                onPressed: () {
+                  final newRole = Role.empty(name: '');
+                  context.read<PolicyManagerBloc>().add(PolicyManagerCreateRole(newRole));
+                },
+                icon: const Icon(Icons.add),
+                label: const Text('Add New Role'),
               ),
             ),
           ),
+          const SizedBox(height: 16),
           Expanded(
             child: _buildRolesList(state, context),
           ),
@@ -128,19 +155,16 @@ class PolicyManagerContent extends StatelessWidget {
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       child: ListTile(
-        leading: const Icon(Icons.group),
-        title: Text(role.name),
+        title: Text(
+          role.name,
+          style: const TextStyle(
+            fontWeight: FontWeight.bold,
+          ),
+        ),
         subtitle: Text(
           role.description.isEmpty ? 'No description' : role.description,
           maxLines: 2,
           overflow: TextOverflow.ellipsis,
-        ),
-        trailing: Text(
-          '${role.userAtSigns.length} users',
-          style: const TextStyle(
-            fontSize: 12,
-            color: Colors.grey,
-          ),
         ),
         onTap: () {
           context.read<PolicyManagerBloc>().add(PolicyManagerRoleSelected(role.id ?? ''));
