@@ -147,9 +147,20 @@ class PolicyManagerBloc extends Bloc<PolicyManagerEvent, PolicyManagerState> {
       ));
       
       try {
-        // Note: Delete functionality not implemented in current repository interface
-        // For now, we'll just show an error
-        emit(PolicyManagerError('Delete functionality not yet implemented', roles: currentState.roles));
+        bool success = await _roleRepository.deleteRole(event.roleId);
+        
+        if (success) {
+          // Refresh roles after successful deletion
+          await _roleRepository.fetchRoles();
+          final updatedRoles = _roleRepository.getRoles;
+          
+          emit(PolicyManagerLoaded(
+            roles: updatedRoles,
+            selectedRole: null, // Clear selection since role was deleted
+          ));
+        } else {
+          emit(PolicyManagerError('Failed to delete role', roles: currentState.roles));
+        }
       } catch (error) {
         emit(PolicyManagerError('Failed to delete role: $error', roles: currentState.roles));
       }

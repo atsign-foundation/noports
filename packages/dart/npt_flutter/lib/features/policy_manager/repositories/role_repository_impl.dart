@@ -5,6 +5,8 @@ import '../models/policy.dart';
 import 'role_repository.dart';
 
 class RoleRepositoryImpl implements RoleRepository {
+  static const String groupsPolicyNamespace = 'groups.policy.sshnp'; // TODO move string somewhere
+  
   List<Role> _roles = [];
 
   @override
@@ -17,14 +19,13 @@ class RoleRepositoryImpl implements RoleRepository {
     AtClient atClient = AtClientManager.getInstance().atClient;
     String? currentAtSign = atClient.getCurrentAtSign();
     
-    // Remove @ symbol if present since AtKey expects atSign without @
     if (currentAtSign != null && currentAtSign.startsWith('@')) {
       currentAtSign = currentAtSign.substring(1);
     }
     
     App.log('[DEBUG] fetchRoles: currentAtSign = "$currentAtSign"'.loggable);
     
-    const String regex = r'^[a-zA-Z0-9]+\.groups\.policy\.sshnp@[a-zA-Z0-9]+$';
+    const String regex = r'^[a-zA-Z0-9]+\.' + groupsPolicyNamespace + r'@[a-zA-Z0-9]+$';
 
     try {
       List<String> groupAtKeyStrs = await atClient.getKeys(regex: regex);
@@ -66,27 +67,18 @@ class RoleRepositoryImpl implements RoleRepository {
     PutRequestOptions pro = PutRequestOptions()..useRemoteAtServer = true;
     AtClient atClient = AtClientManager.getInstance().atClient;
     String? currentAtSign = atClient.getCurrentAtSign();
-    
-    // Remove @ symbol if present since AtKey expects atSign without @
-    if (currentAtSign != null && currentAtSign.startsWith('@')) {
-      currentAtSign = currentAtSign.substring(1);
+
+    // ensure currentAtSign is not null and starts with '@'
+    if (currentAtSign != null && !currentAtSign.startsWith('@')) {
+      currentAtSign = '@$currentAtSign';
     }
-    
-    App.log('[DEBUG] updateExistingRole: currentAtSign = "$currentAtSign"'.loggable);
-    
-    if (currentAtSign == null || currentAtSign.isEmpty) {
-      App.log('[ERROR] updateExistingRole: Cannot get current atSign'.loggable);
-      return false;
-    }
-    
-    final String atKeyStr = '${role.id}.groups.policy.sshnp@$currentAtSign';
+
+    final String atKeyStr = '${role.id}.$groupsPolicyNamespace$currentAtSign';
     final String value = jsonEncode(role.toJson());
 
     try {
       bool success = await atClient.put(AtKey.fromString(atKeyStr), value, putRequestOptions: pro);
-      
       if (success) {
-        // Update the role in cache
         _updateRoleInCache(role);
       }
       
@@ -99,43 +91,26 @@ class RoleRepositoryImpl implements RoleRepository {
 
   @override
   Future<bool> createNewRole(Role role) async {
-    PutRequestOptions pro = PutRequestOptions()..useRemoteAtServer = true;
-    AtClient atClient = AtClientManager.getInstance().atClient;
+    final PutRequestOptions pro = PutRequestOptions()..useRemoteAtServer = true;
+    final AtClient atClient = AtClientManager.getInstance().atClient;
     String? currentAtSign = atClient.getCurrentAtSign();
-    
-    // Remove @ symbol if present since AtKey expects atSign without @
-    if (currentAtSign != null && currentAtSign.startsWith('@')) {
-      currentAtSign = currentAtSign.substring(1);
-    }
-    
-    App.log('[DEBUG] createNewRole: currentAtSign = "$currentAtSign"'.loggable);
-    
-    if (currentAtSign == null || currentAtSign.isEmpty) {
-      App.log('[ERROR] createNewRole: Cannot get current atSign'.loggable);
-      return false;
-    }
-    
-    // Generate a new unique ID for the role
     final String newRoleId = (_maxGroupId + 1).toString();
 
-    // Overwrite the role.id as specified in the interface
     role.id = newRoleId;
 
-    final String atKeyStr = '${role.id}.groups.policy.sshnp@$currentAtSign';
+    // ensure currentAtSign is not null and starts with '@'
+    if (currentAtSign != null && !currentAtSign.startsWith('@')) {
+      currentAtSign = '@$currentAtSign';
+    }
+
+    final String atKeyStr = '${role.id}.$groupsPolicyNamespace$currentAtSign';
     final String value = jsonEncode(role.toJson());
-    
-    App.log('[DEBUG] createNewRole: role.id = "${role.id}"'.loggable);
-    App.log('[DEBUG] createNewRole: atKeyStr = "$atKeyStr"'.loggable);
-    App.log('[DEBUG] createNewRole: value = "$value"'.loggable);
 
     try {
       bool success = await atClient.put(AtKey.fromString(atKeyStr), value, putRequestOptions: pro);
-      
       if (success) {
-        // Add the new role to cache
         _roles.add(role);
       }
-      
       return success;
     } catch (e) {
       App.log('[ERROR] createNewRole: Failed to create role: $e'.loggable);
@@ -147,22 +122,48 @@ class RoleRepositoryImpl implements RoleRepository {
     final existingIndex = _roles.indexWhere((r) => r.id == role.id);
     
     if (existingIndex != -1) {
-      // Update existing role
       _roles[existingIndex] = role;
     } else {
-      // Add new role if not found (shouldn't happen in updateExistingRole)
       _roles.add(role);
     }
   }
 
-  /// Helper method to get the maximum existing role ID (for reference)
+  @override
+  Future<bool> deleteRole(String roleId) async {
+    if (roleId.isEmpty) {
+      App.log('[ERROR] deleteRole: Role ID is required for deletion'.loggable);
+      return false;
+    }
+
+    final AtClient atClient = AtClientManager.getInstance().atClient;
+    String? currentAtSign = atClient.getCurrentAtSign();
+
+    // ensure currentAtSign is not null and starts with '@'
+    if (currentAtSign != null && !currentAtSign.startsWith('@')) {
+      currentAtSign = '@$currentAtSign';
+    }
+    
+    final String atKeyStr = '$roleId.$groupsPolicyNamespace$currentAtSign';
+    final DeleteRequestOptions dro = DeleteRequestOptions()..useRemoteAtServer = true;
+
+    try {
+      bool success = await atClient.delete(AtKey.fromString(atKeyStr), deleteRequestOptions: dro);
+      if (success) {
+        _roles.removeWhere((r) => r.id == roleId);
+      }
+      return success;
+    } catch (e) {
+      App.log('[ERROR] deleteRole: Failed to delete role: $e'.loggable);
+      return false;
+    }
+  }
+
   int get _maxGroupId {
     if (_roles.isEmpty) return 0;
     
     int maxId = 0;
     for (final role in _roles) {
       if (role.id != null) {
-        // Try to parse as int, fall back to 0 if not numeric
         final parsedId = int.tryParse(role.id!) ?? 0;
         if (parsedId > maxId) {
           maxId = parsedId;
@@ -171,4 +172,5 @@ class RoleRepositoryImpl implements RoleRepository {
     }
     return maxId;
   }
+
 }

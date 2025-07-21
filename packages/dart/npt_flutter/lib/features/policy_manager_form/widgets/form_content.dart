@@ -45,6 +45,36 @@ class _FormContentState extends State<FormContent> {
     }
   }
 
+  void _showDeleteConfirmation(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Delete Role'),
+          content: Text('Are you sure you want to delete the role "${_currentRole.name}"? This action cannot be undone.'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Cancel'),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+                context.read<PolicyManagerBloc>().add(PolicyManagerDeleteRole(_currentRole.id ?? ''));
+                setState(() => _isEditing = false);
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.red,
+                foregroundColor: Colors.white,
+              ),
+              child: const Text('Delete'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Padding(
@@ -60,6 +90,15 @@ class _FormContentState extends State<FormContent> {
               ),
               const Spacer(),
               if (_isEditing) ...[
+                ElevatedButton(
+                  onPressed: () => _showDeleteConfirmation(context),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.red,
+                    foregroundColor: Colors.white,
+                  ),
+                  child: const Text('Delete'),
+                ),
+                const SizedBox(width: 8),
                 TextButton(
                   onPressed: () => setState(() => _isEditing = false),
                   child: const Text('Cancel'),
