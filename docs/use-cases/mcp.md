@@ -17,13 +17,13 @@ In this example, we assume the OpenAPI-based MCP Server is listening on port 300
 The command should look like:
 
 ```
-npt -f @<client> -t @<device> -d <device name> -r @<relay> -p 3001 -l 3000
+npt -f @<client> -t @<device> -d <device name> -r @<relay> -p 3000 -l 3001
 ```
 
 Example:
 
 ```
-npt -f @alice_client -t @alice_device -d my_server -r @rv_am -p 3001 -l 3000
+npt -f @alice_client -t @alice_device -d my_server -r @rv_am -p 3000 -l 3001
 ```
 
 Now you can interact with your OpenAPI-based MCP server by connecting to `http://localhost:3001` .
