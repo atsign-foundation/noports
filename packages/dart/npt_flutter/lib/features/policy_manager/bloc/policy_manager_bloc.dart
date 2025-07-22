@@ -1,6 +1,6 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
-import '../models/policy.dart';
 import '../repositories/role_repository.dart';
+import '../models/policy.dart';
 import 'policy_manager_state.dart';
 import 'policy_manager_event.dart';
 
@@ -19,6 +19,7 @@ class PolicyManagerBloc extends Bloc<PolicyManagerEvent, PolicyManagerState> {
     on<PolicyManagerDeleteRole>(_onDeleteRole);
     on<PolicyManagerUpdateRole>(_onUpdateRole);
     on<PolicyManagerCancelEdit>(_onCancelEdit);
+    on<PolicyManagerStartNewRole>(_onStartNewRole);
   }
 
   void _onInitial(PolicyManagerInitialEvent event, Emitter<PolicyManagerState> emit) {
@@ -26,177 +27,173 @@ class PolicyManagerBloc extends Bloc<PolicyManagerEvent, PolicyManagerState> {
   }
 
   void _onLoadingRoles(PolicyManagerLoadingRoles event, Emitter<PolicyManagerState> emit) async {
-    emit(const PolicyManagerLoading(roles: []));
+    emit(const PolicyManagerLoading());
     
     try {
-      await _roleRepository.fetchRoles();
-      final roles = _roleRepository.getRoles;
+      final roles = await _roleRepository.fetchRoles();
       emit(PolicyManagerLoaded(roles: roles));
     } catch (error) {
       emit(PolicyManagerError('Failed to load roles: $error'));
     }
   }
 
-  void _onRoleSelected(PolicyManagerRoleSelected event, Emitter<PolicyManagerState> emit) {
+  void _onRoleSelected(PolicyManagerRoleSelected event, Emitter<PolicyManagerState> emit) async {
     if (state is PolicyManagerLoaded) {
       final currentState = state as PolicyManagerLoaded;
-      final selectedRole = currentState.roles.firstWhere(
-        (role) => role.id == event.roleId,
-        orElse: () => currentState.roles.first,
-      );
+      final selectedRole = currentState.roles.isNotEmpty
+          ? currentState.roles.firstWhere(
+              (role) => role.id == event.roleId,
+              orElse: () => currentState.roles.first,
+            )
+          : null;
       
-      emit(currentState.copyWith(selectedRole: selectedRole));
+      emit(PolicyManagerLoaded(roles: currentState.roles, selectedRole: selectedRole));
     }
   }
 
-  void _onRoleDeselected(PolicyManagerRoleDeselected event, Emitter<PolicyManagerState> emit) {
+  void _onRoleDeselected(PolicyManagerRoleDeselected event, Emitter<PolicyManagerState> emit) async {
     if (state is PolicyManagerLoaded) {
       final currentState = state as PolicyManagerLoaded;
-      emit(currentState.copyWith(clearSelectedRole: true));
+      emit(PolicyManagerLoaded(roles: currentState.roles));
     }
   }
 
-  void _onStartEditing(PolicyManagerStartEditing event, Emitter<PolicyManagerState> emit) {
+  void _onStartEditing(PolicyManagerStartEditing event, Emitter<PolicyManagerState> emit) async {
     if (state is PolicyManagerLoaded) {
       final currentState = state as PolicyManagerLoaded;
-      final selectedRole = currentState.roles.firstWhere(
-        (role) => role.id == event.roleId,
-        orElse: () => currentState.roles.first,
-      );
+      final selectedRole = currentState.roles.isNotEmpty
+          ? currentState.roles.firstWhere(
+              (role) => role.id == event.roleId,
+              orElse: () => currentState.roles.first,
+            )
+          : null;
       
-      // Set the selected role and indicate editing mode
-      emit(currentState.copyWith(selectedRole: selectedRole));
+      emit(PolicyManagerLoaded(roles: currentState.roles, selectedRole: selectedRole));
     }
   }
 
-  void _onStopEditing(PolicyManagerStopEditing event, Emitter<PolicyManagerState> emit) {
-    // This can be used to clear any editing-specific state
-    // For now, we'll just maintain the current state
+  void _onStopEditing(PolicyManagerStopEditing event, Emitter<PolicyManagerState> emit) async {
     if (state is PolicyManagerLoaded) {
       final currentState = state as PolicyManagerLoaded;
-      emit(currentState.copyWith());
+      emit(PolicyManagerLoaded(roles: currentState.roles));
     }
   }
 
   void _onSaveRole(PolicyManagerSaveRole event, Emitter<PolicyManagerState> emit) async {
-    if (state is PolicyManagerLoaded) {
-      final currentState = state as PolicyManagerLoaded;
+    emit(const PolicyManagerLoading());
+    
+    try {
+      bool success = await _roleRepository.updateExistingRole(event.role);
       
-      // Update the loading state to show saving in progress
-      emit(PolicyManagerLoading(
-        roles: currentState.roles,
-        selectedRole: currentState.selectedRole,
-      ));
-      
-      try {
-        bool success = await _roleRepository.updateExistingRole(event.role);
-        
-        if (success) {
-          // Get updated roles from repository
-          final updatedRoles = _roleRepository.getRoles;
-          
-          emit(PolicyManagerLoaded(
-            roles: updatedRoles,
-            selectedRole: event.role,
-          ));
-        } else {
-          emit(PolicyManagerError('Failed to save role', roles: currentState.roles));
-        }
-      } catch (error) {
-        emit(PolicyManagerError('Failed to save role: $error', roles: currentState.roles));
+      if (success) {
+        final updatedRoles = await _roleRepository.fetchRoles();
+        emit(PolicyManagerLoaded(
+          roles: updatedRoles,
+          selectedRole: event.role,
+        ));
+      } else {
+        emit(const PolicyManagerError('Failed to save role'));
       }
+    } catch (error) {
+      emit(PolicyManagerError('Failed to save role: $error'));
     }
   }
 
   void _onCreateRole(PolicyManagerCreateRole event, Emitter<PolicyManagerState> emit) async {
-    if (state is PolicyManagerLoaded) {
-      final currentState = state as PolicyManagerLoaded;
+    emit(const PolicyManagerLoading());
+    
+    try {
+      bool success = await _roleRepository.createNewRole(event.role);
       
-      // Optimistically add the role to local state first
-      final updatedRoles = [...currentState.roles, event.role];
-      
-      emit(PolicyManagerLoaded(
-        roles: updatedRoles,
-        selectedRole: event.role,
-      ));
-      
-      try {
-        bool success = await _roleRepository.createNewRole(event.role);
-        
-        if (!success) {
-          // If creation failed, revert to original state
-          emit(PolicyManagerError('Failed to create role', roles: currentState.roles));
-        }
-        // If successful, keep the optimistic update (role already added to UI)
-      } catch (error) {
-        // If creation failed, revert to original state
-        emit(PolicyManagerError('Failed to create role: $error', roles: currentState.roles));
+      if (success) {
+        // Fetch updated roles after successful creation
+        final updatedRoles = await _roleRepository.fetchRoles();
+        final createdRole = updatedRoles.firstWhere(
+          (role) => role.name == event.role.name && role.description == event.role.description,
+          orElse: () => event.role,
+        );
+        emit(PolicyManagerLoaded(
+          roles: updatedRoles,
+          selectedRole: createdRole,
+        ));
+      } else {
+        emit(const PolicyManagerError('Failed to create role'));
       }
+    } catch (error) {
+      emit(PolicyManagerError('Failed to create role: $error'));
     }
   }
 
   void _onDeleteRole(PolicyManagerDeleteRole event, Emitter<PolicyManagerState> emit) async {
     if (state is PolicyManagerLoaded) {
       final currentState = state as PolicyManagerLoaded;
-      
-      final optimisticRoles = currentState.roles.where((role) => role.id != event.roleId).toList();
-      
-      emit(PolicyManagerLoaded(
-        roles: optimisticRoles,
-        selectedRole: null,
-      ));
+      // Keep roles visible during deletion by passing them to loading state
+      emit(PolicyManagerLoading(selectedRole: currentState.selectedRole, roles: currentState.roles));
       
       try {
         bool success = await _roleRepository.deleteRole(event.roleId);
         
-        if (!success) {
-          // If deletion failed, revert to original state
-          emit(PolicyManagerError('Failed to delete role', roles: currentState.roles));
+        if (success) {
+          final updatedRoles = await _roleRepository.fetchRoles();
+          // Clear selectedRole since the role was deleted
+          emit(PolicyManagerLoaded(roles: updatedRoles, selectedRole: null));
+        } else {
+          // Preserve current roles on failure and show error
+          emit(const PolicyManagerError('Failed to delete role'));
+          // Immediately restore the loaded state with current roles
+          emit(PolicyManagerLoaded(
+            roles: currentState.roles,
+            selectedRole: currentState.selectedRole,
+          ));
         }
-        // If successful, keep the optimistic update (role already removed from UI)
       } catch (error) {
-        // If deletion failed, revert to original state
-        emit(PolicyManagerError('Failed to delete role: $error', roles: currentState.roles));
+        // Preserve current roles on error and show error
+        emit(PolicyManagerError('Failed to delete role: $error'));
+        // Immediately restore the loaded state with current roles
+        emit(PolicyManagerLoaded(
+          roles: currentState.roles,
+          selectedRole: currentState.selectedRole,
+        ));
       }
     }
   }
 
   void _onUpdateRole(PolicyManagerUpdateRole event, Emitter<PolicyManagerState> emit) async {
-    if (state is PolicyManagerLoaded) {
-      final currentState = state as PolicyManagerLoaded;
+    emit(const PolicyManagerLoading());
+    
+    try {
+      bool success = await _roleRepository.updateExistingRole(event.role);
       
-      // Optimistically update the role in local state
-      final updatedRoles = currentState.roles.map((role) {
-        if (role.id == event.role.id) {
-          return event.role;
-        }
-        return role;
-      }).toList();
-      
-      emit(PolicyManagerLoaded(
-        roles: updatedRoles,
-        selectedRole: event.role,
-      ));
-      
-      try {
-        bool success = await _roleRepository.updateExistingRole(event.role);
-        
-        if (!success) {
-          // If update failed, revert to original state
-          emit(PolicyManagerError('Failed to update role', roles: currentState.roles));
-        }
-        // If successful, keep the optimistic update (role already updated in UI)
-      } catch (error) {
-        // If update failed, revert to original state
-        emit(PolicyManagerError('Failed to update role: $error', roles: currentState.roles));
+      if (success) {
+        final updatedRoles = await _roleRepository.fetchRoles();
+        emit(PolicyManagerLoaded(
+          roles: updatedRoles,
+          selectedRole: event.role,
+        ));
+      } else {
+        emit(const PolicyManagerError('Failed to update role'));
       }
+    } catch (error) {
+      emit(PolicyManagerError('Failed to update role: $error'));
     }
   }
 
-  void _onCancelEdit(PolicyManagerCancelEdit event, Emitter<PolicyManagerState> emit) {
+  void _onCancelEdit(PolicyManagerCancelEdit event, Emitter<PolicyManagerState> emit) async {
     if (state is PolicyManagerLoaded) {
       final currentState = state as PolicyManagerLoaded;
-      emit(currentState.copyWith());
+      emit(PolicyManagerLoaded(roles: currentState.roles));
+    }
+  }
+
+  void _onStartNewRole(PolicyManagerStartNewRole event, Emitter<PolicyManagerState> emit) async {
+    if (state is PolicyManagerLoaded) {
+      final currentState = state as PolicyManagerLoaded;
+      // Create an empty role for editing without server call
+      final emptyRole = Role.empty(name: '');
+      emit(PolicyManagerLoaded(
+        roles: currentState.roles,
+        selectedRole: emptyRole,
+      ));
     }
   }
 }

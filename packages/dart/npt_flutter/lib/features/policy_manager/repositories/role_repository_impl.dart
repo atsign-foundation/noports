@@ -6,24 +6,21 @@ import 'role_repository.dart';
 
 class RoleRepositoryImpl implements RoleRepository {
   static const String groupsPolicyNamespace = 'groups.policy.sshnp'; // TODO move string somewhere
-  
-  List<Role> _roles = [];
 
   @override
-  List<Role> get getRoles => _roles;
-
-  @override
-  Future<void> fetchRoles() async {
+  Future<List<Role>> fetchRoles() async {
     final rolesJson = <String>[];
     AtClient atClient = AtClientManager.getInstance().atClient;
     const String regex = r'^[a-zA-Z0-9]+\.' + groupsPolicyNamespace + r'@[a-zA-Z0-9]+$';
 
     try {
+      atClient.syncService.sync();
       List<String> groupAtKeyStrs = await atClient.getKeys(regex: regex);
       List<AtKey> groupAtKeys = groupAtKeyStrs.map((key) => AtKey.fromString(key)).toList();
 
       for (final AtKey atKey in groupAtKeys) {
-        final AtValue atValue = await atClient.get(atKey);
+        GetRequestOptions gro = GetRequestOptions()..useRemoteAtServer = true;
+        final AtValue atValue = await atClient.get(atKey, getRequestOptions: gro);
         final String groupJsonStr = atValue.value;
         rolesJson.add(groupJsonStr);
       }
@@ -41,10 +38,10 @@ class RoleRepositoryImpl implements RoleRepository {
         }
       }
 
-      _roles = roles;
+      return roles;
     } catch (e) {
       App.log('[ERROR] fetchRoles: Failed to fetch roles: $e'.loggable);
-      _roles = [];
+      return [];
     }
   }
 
@@ -55,7 +52,6 @@ class RoleRepositoryImpl implements RoleRepository {
       return false;
     }
 
-    // PutRequestOptions pro = PutRequestOptions()..useRemoteAtServer = true;
     AtClient atClient = AtClientManager.getInstance().atClient;
     String? currentAtSign = atClient.getCurrentAtSign();
 
@@ -68,12 +64,8 @@ class RoleRepositoryImpl implements RoleRepository {
     final String value = jsonEncode(role.toJson());
 
     try {
-      // bool success = await atClient.put(AtKey.fromString(atKeyStr), value, putRequestOptions: pro);
-      bool success = await atClient.put(AtKey.fromString(atKeyStr), value);
-      if (success) {
-        _updateRoleInCache(role);
-      }
-      
+      PutRequestOptions pro = PutRequestOptions()..useRemoteAtServer = true;
+      bool success = await atClient.put(AtKey.fromString(atKeyStr), value, putRequestOptions: pro);
       return success;
     } catch (e) {
       App.log('[ERROR] updateExistingRole: Failed to update role: $e'.loggable);
@@ -83,10 +75,9 @@ class RoleRepositoryImpl implements RoleRepository {
 
   @override
   Future<bool> createNewRole(Role role) async {
-    // final PutRequestOptions pro = PutRequestOptions()..useRemoteAtServer = true;
     final AtClient atClient = AtClientManager.getInstance().atClient;
     String? currentAtSign = atClient.getCurrentAtSign();
-    final String newRoleId = (_maxGroupId + 1).toString();
+    final String newRoleId = (await _maxGroupId + 1).toString();
 
     role.id = newRoleId;
 
@@ -99,11 +90,8 @@ class RoleRepositoryImpl implements RoleRepository {
     final String value = jsonEncode(role.toJson());
 
     try {
-      // bool success = await atClient.put(AtKey.fromString(atKeyStr), value, putRequestOptions: pro);
-      bool success = await atClient.put(AtKey.fromString(atKeyStr), value);
-      if (success) {
-        _roles.add(role);
-      }
+      final PutRequestOptions pro = PutRequestOptions()..useRemoteAtServer = true;
+      final bool success = await atClient.put(AtKey.fromString(atKeyStr), value, putRequestOptions: pro);
       return success;
     } catch (e) {
       App.log('[ERROR] createNewRole: Failed to create role: $e'.loggable);
@@ -111,15 +99,6 @@ class RoleRepositoryImpl implements RoleRepository {
     }
   }
 
-  void _updateRoleInCache(Role role) {
-    final existingIndex = _roles.indexWhere((r) => r.id == role.id);
-    
-    if (existingIndex != -1) {
-      _roles[existingIndex] = role;
-    } else {
-      _roles.add(role);
-    }
-  }
 
   @override
   Future<bool> deleteRole(String roleId) async {
@@ -137,14 +116,10 @@ class RoleRepositoryImpl implements RoleRepository {
     }
 
     final String atKeyStr = '$roleId.$groupsPolicyNamespace$currentAtSign';
-    // final DeleteRequestOptions dro = DeleteRequestOptions()..useRemoteAtServer = true;
 
     try {
-      // bool success = await atClient.delete(AtKey.fromString(atKeyStr), deleteRequestOptions: dro);
-      bool success = await atClient.delete(AtKey.fromString(atKeyStr));
-      if (success) {
-        _removeRoleFromCache(roleId);
-      }
+      final DeleteRequestOptions dro = DeleteRequestOptions()..useRemoteAtServer = true;
+      bool success = await atClient.delete(AtKey.fromString(atKeyStr), deleteRequestOptions: dro);
       return success;
     } catch (e) {
       App.log('[ERROR] deleteRole: Failed to delete role: $e'.loggable);
@@ -152,15 +127,13 @@ class RoleRepositoryImpl implements RoleRepository {
     }
   }
 
-  void _removeRoleFromCache(String roleId) {
-    _roles.removeWhere((r) => r.id == roleId);
-  }
 
-  int get _maxGroupId {
-    if (_roles.isEmpty) return 0;
+  Future<int> get _maxGroupId async {
+    final roles = await fetchRoles();
+    if (roles.isEmpty) return 0;
     
     int maxId = 0;
-    for (final role in _roles) {
+    for (final role in roles) {
       if (role.id != null) {
         final parsedId = int.tryParse(role.id!) ?? 0;
         if (parsedId > maxId) {

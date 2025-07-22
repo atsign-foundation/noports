@@ -24,6 +24,7 @@ class FormContent extends StatefulWidget {
 class _FormContentState extends State<FormContent> {
   bool _isEditing = false;
   late Role _currentRole;
+  bool _isSaving = false;
 
   @override
   void initState() {
@@ -81,9 +82,23 @@ class _FormContentState extends State<FormContent> {
   Widget build(BuildContext context) {
     return BlocListener<PolicyManagerBloc, PolicyManagerState>(
       listener: (context, state) {
-        // Exit editing mode when role is successfully updated
-        if (state is PolicyManagerLoaded && _isEditing) {
-          setState(() => _isEditing = false);
+        // Exit editing mode when save operation completes successfully
+        if (_isSaving && state is PolicyManagerLoaded) {
+          setState(() {
+            _isEditing = false;
+            _isSaving = false;
+          });
+        } else if (_isSaving && state is PolicyManagerError) {
+          setState(() {
+            _isSaving = false;
+          });
+          // Show error message to user
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(state.message),
+              backgroundColor: Colors.red,
+            ),
+          );
         }
       },
       child: Padding(
@@ -115,7 +130,15 @@ class _FormContentState extends State<FormContent> {
                 const SizedBox(width: 8),
                 ElevatedButton(
                   onPressed: () {
-                    context.read<PolicyManagerBloc>().add(PolicyManagerUpdateRole(_currentRole));
+                    setState(() => _isSaving = true);
+                    // Distinguish between creating new role vs updating existing role
+                    if (_currentRole.id == null || _currentRole.id!.isEmpty) {
+                      // Creating a new role
+                      context.read<PolicyManagerBloc>().add(PolicyManagerCreateRole(_currentRole));
+                    } else {
+                      // Updating an existing role
+                      context.read<PolicyManagerBloc>().add(PolicyManagerUpdateRole(_currentRole));
+                    }
                   },
                   child: const Text('Save'),
                 ),

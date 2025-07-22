@@ -11,16 +11,16 @@ abstract class PolicyManagerState extends Equatable {
 class PolicyManagerInitial extends PolicyManagerState {}
 
 class PolicyManagerLoading extends PolicyManagerState {
-  final List<Role> roles;
   final Role? selectedRole;
+  final List<Role>? roles;
 
   const PolicyManagerLoading({
-    required this.roles,
     this.selectedRole,
+    this.roles,
   });
 
   @override
-  List<Object?> get props => [roles, selectedRole];
+  List<Object?> get props => [selectedRole, roles];
 }
 
 class PolicyManagerLoaded extends PolicyManagerState {
@@ -49,10 +49,9 @@ class PolicyManagerLoaded extends PolicyManagerState {
 
 class PolicyManagerError extends PolicyManagerState {
   final String message;
-  final List<Role> roles;
 
-  const PolicyManagerError(this.message, {this.roles = const []});
+  const PolicyManagerError(this.message);
 
   @override
-  List<Object?> get props => [message, roles];
+  List<Object?> get props => [message];
 }

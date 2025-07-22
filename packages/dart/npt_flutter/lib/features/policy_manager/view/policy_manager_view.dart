@@ -83,8 +83,7 @@ class PolicyManagerContent extends StatelessWidget {
               width: double.infinity,
               child: ElevatedButton.icon(
                 onPressed: () {
-                  final newRole = Role.empty(name: '');
-                  context.read<PolicyManagerBloc>().add(PolicyManagerCreateRole(newRole));
+                  context.read<PolicyManagerBloc>().add(const PolicyManagerStartNewRole());
                 },
                 icon: const Icon(Icons.add),
                 label: const Text('Add New Role'),
@@ -102,7 +101,12 @@ class PolicyManagerContent extends StatelessWidget {
 
   Widget _buildRolesList(PolicyManagerState state, BuildContext context) {
     if (state is PolicyManagerLoading) {
-      return const Center(child: CircularProgressIndicator());
+      // If loading state has roles, show them; otherwise show loading spinner
+      if (state.roles != null) {
+        return _buildLoadedRolesList(state.roles!, context);
+      } else {
+        return const Center(child: CircularProgressIndicator());
+      }
     } else if (state is PolicyManagerError) {
       return Center(
         child: Column(

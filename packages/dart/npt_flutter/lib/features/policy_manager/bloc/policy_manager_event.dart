@@ -81,3 +81,7 @@ class PolicyManagerUpdateRole extends PolicyManagerEvent {
 class PolicyManagerCancelEdit extends PolicyManagerEvent {
   const PolicyManagerCancelEdit();
 }
+
+class PolicyManagerStartNewRole extends PolicyManagerEvent {
+  const PolicyManagerStartNewRole();
+}
