@@ -8,7 +8,10 @@ import 'dart:async' as _i4;
 import 'package:flutter_bloc/flutter_bloc.dart' as _i5;
 import 'package:mockito/mockito.dart' as _i1;
 import 'package:mockito/src/dummies.dart' as _i3;
+import 'package:npt_flutter/app.dart' as _i9;
+import 'package:npt_flutter/features/favorite/favorite.dart' as _i8;
 import 'package:npt_flutter/features/profile/profile.dart' as _i2;
+import 'package:npt_flutter/features/profile_list/profile_list.dart' as _i7;
 import 'package:npt_flutter/features/settings/settings.dart' as _i6;
 
 // ignore_for_file: type=lint
@@ -315,4 +318,322 @@ class MockSettingsBloc extends _i1.Mock implements _i6.SettingsBloc {
         ),
         returnValueForMissingStub: null,
       );
+}
+
+/// A class which mocks [ProfilesSelectedCubit].
+///
+/// See the documentation for Mockito's code generation for more information.
+class MockProfilesSelectedCubit extends _i1.Mock
+    implements _i7.ProfilesSelectedCubit {
+  @override
+  _i7.ProfilesSelectedState get state => (super.noSuchMethod(
+        Invocation.getter(#state),
+        returnValue: _i3.dummyValue<_i7.ProfilesSelectedState>(
+          this,
+          Invocation.getter(#state),
+        ),
+        returnValueForMissingStub: _i3.dummyValue<_i7.ProfilesSelectedState>(
+          this,
+          Invocation.getter(#state),
+        ),
+      ) as _i7.ProfilesSelectedState);
+
+  @override
+  _i4.Stream<_i7.ProfilesSelectedState> get stream => (super.noSuchMethod(
+        Invocation.getter(#stream),
+        returnValue: _i4.Stream<_i7.ProfilesSelectedState>.empty(),
+        returnValueForMissingStub:
+            _i4.Stream<_i7.ProfilesSelectedState>.empty(),
+      ) as _i4.Stream<_i7.ProfilesSelectedState>);
+
+  @override
+  bool get isClosed => (super.noSuchMethod(
+        Invocation.getter(#isClosed),
+        returnValue: false,
+        returnValueForMissingStub: false,
+      ) as bool);
+
+  @override
+  void select(String? uuid) => super.noSuchMethod(
+        Invocation.method(
+          #select,
+          [uuid],
+        ),
+        returnValueForMissingStub: null,
+      );
+
+  @override
+  void deselect(String? uuid) => super.noSuchMethod(
+        Invocation.method(
+          #deselect,
+          [uuid],
+        ),
+        returnValueForMissingStub: null,
+      );
+
+  @override
+  void deselectAll() => super.noSuchMethod(
+        Invocation.method(
+          #deselectAll,
+          [],
+        ),
+        returnValueForMissingStub: null,
+      );
+
+  @override
+  void selectAll() => super.noSuchMethod(
+        Invocation.method(
+          #selectAll,
+          [],
+        ),
+        returnValueForMissingStub: null,
+      );
+
+  @override
+  void emit(_i7.ProfilesSelectedState? state) => super.noSuchMethod(
+        Invocation.method(
+          #emit,
+          [state],
+        ),
+        returnValueForMissingStub: null,
+      );
+
+  @override
+  void onChange(_i5.Change<_i7.ProfilesSelectedState>? change) =>
+      super.noSuchMethod(
+        Invocation.method(
+          #onChange,
+          [change],
+        ),
+        returnValueForMissingStub: null,
+      );
+
+  @override
+  void addError(
+    Object? error, [
+    StackTrace? stackTrace,
+  ]) =>
+      super.noSuchMethod(
+        Invocation.method(
+          #addError,
+          [
+            error,
+            stackTrace,
+          ],
+        ),
+        returnValueForMissingStub: null,
+      );
+
+  @override
+  void onError(
+    Object? error,
+    StackTrace? stackTrace,
+  ) =>
+      super.noSuchMethod(
+        Invocation.method(
+          #onError,
+          [
+            error,
+            stackTrace,
+          ],
+        ),
+        returnValueForMissingStub: null,
+      );
+
+  @override
+  _i4.Future<void> close() => (super.noSuchMethod(
+        Invocation.method(
+          #close,
+          [],
+        ),
+        returnValue: _i4.Future<void>.value(),
+        returnValueForMissingStub: _i4.Future<void>.value(),
+      ) as _i4.Future<void>);
+}
+
+/// A class which mocks [FavoriteBloc].
+///
+/// See the documentation for Mockito's code generation for more information.
+class MockFavoriteBloc extends _i1.Mock implements _i8.FavoriteBloc {
+  @override
+  _i8.FavoritesState get state => (super.noSuchMethod(
+        Invocation.getter(#state),
+        returnValue: _i3.dummyValue<_i8.FavoritesState>(
+          this,
+          Invocation.getter(#state),
+        ),
+        returnValueForMissingStub: _i3.dummyValue<_i8.FavoritesState>(
+          this,
+          Invocation.getter(#state),
+        ),
+      ) as _i8.FavoritesState);
+
+  @override
+  _i4.Stream<_i8.FavoritesState> get stream => (super.noSuchMethod(
+        Invocation.getter(#stream),
+        returnValue: _i4.Stream<_i8.FavoritesState>.empty(),
+        returnValueForMissingStub: _i4.Stream<_i8.FavoritesState>.empty(),
+      ) as _i4.Stream<_i8.FavoritesState>);
+
+  @override
+  bool get isClosed => (super.noSuchMethod(
+        Invocation.getter(#isClosed),
+        returnValue: false,
+        returnValueForMissingStub: false,
+      ) as bool);
+
+  @override
+  void clearAll() => super.noSuchMethod(
+        Invocation.method(
+          #clearAll,
+          [],
+        ),
+        returnValueForMissingStub: null,
+      );
+
+  @override
+  void onEvent(_i8.FavoriteEvent? event) => super.noSuchMethod(
+        Invocation.method(
+          #onEvent,
+          [event],
+        ),
+        returnValueForMissingStub: null,
+      );
+
+  @override
+  void emit(_i8.FavoritesState? state) => super.noSuchMethod(
+        Invocation.method(
+          #emit,
+          [state],
+        ),
+        returnValueForMissingStub: null,
+      );
+
+  @override
+  void add(_i8.FavoriteEvent? event) => super.noSuchMethod(
+        Invocation.method(
+          #add,
+          [event],
+        ),
+        returnValueForMissingStub: null,
+      );
+
+  @override
+  void on<E extends _i8.FavoriteEvent>(
+    _i5.EventHandler<E, _i8.FavoritesState>? handler, {
+    _i5.EventTransformer<E>? transformer,
+  }) =>
+      super.noSuchMethod(
+        Invocation.method(
+          #on,
+          [handler],
+          {#transformer: transformer},
+        ),
+        returnValueForMissingStub: null,
+      );
+
+  @override
+  void onTransition(
+          _i5.Transition<_i8.FavoriteEvent, _i8.FavoritesState>? transition) =>
+      super.noSuchMethod(
+        Invocation.method(
+          #onTransition,
+          [transition],
+        ),
+        returnValueForMissingStub: null,
+      );
+
+  @override
+  _i4.Future<void> close() => (super.noSuchMethod(
+        Invocation.method(
+          #close,
+          [],
+        ),
+        returnValue: _i4.Future<void>.value(),
+        returnValueForMissingStub: _i4.Future<void>.value(),
+      ) as _i4.Future<void>);
+
+  @override
+  void onChange(_i5.Change<_i8.FavoritesState>? change) => super.noSuchMethod(
+        Invocation.method(
+          #onChange,
+          [change],
+        ),
+        returnValueForMissingStub: null,
+      );
+
+  @override
+  void addError(
+    Object? error, [
+    StackTrace? stackTrace,
+  ]) =>
+      super.noSuchMethod(
+        Invocation.method(
+          #addError,
+          [
+            error,
+            stackTrace,
+          ],
+        ),
+        returnValueForMissingStub: null,
+      );
+
+  @override
+  void onError(
+    Object? error,
+    StackTrace? stackTrace,
+  ) =>
+      super.noSuchMethod(
+        Invocation.method(
+          #onError,
+          [
+            error,
+            stackTrace,
+          ],
+        ),
+        returnValueForMissingStub: null,
+      );
+}
+
+/// A class which mocks [FavoriteRepository].
+///
+/// See the documentation for Mockito's code generation for more information.
+class MockFavoriteRepository extends _i1.Mock
+    implements _i8.FavoriteRepository {
+  @override
+  _i4.Future<Map<String, _i8.Favorite<_i9.Loggable>>?> getFavorites(
+          {bool? useCache = true}) =>
+      (super.noSuchMethod(
+        Invocation.method(
+          #getFavorites,
+          [],
+          {#useCache: useCache},
+        ),
+        returnValue:
+            _i4.Future<Map<String, _i8.Favorite<_i9.Loggable>>?>.value(),
+        returnValueForMissingStub:
+            _i4.Future<Map<String, _i8.Favorite<_i9.Loggable>>?>.value(),
+      ) as _i4.Future<Map<String, _i8.Favorite<_i9.Loggable>>?>);
+
+  @override
+  _i4.Future<bool> addFavorite(_i8.Favorite<_i9.Loggable>? favorite) =>
+      (super.noSuchMethod(
+        Invocation.method(
+          #addFavorite,
+          [favorite],
+        ),
+        returnValue: _i4.Future<bool>.value(false),
+        returnValueForMissingStub: _i4.Future<bool>.value(false),
+      ) as _i4.Future<bool>);
+
+  @override
+  _i4.Future<bool> removeFavorites(Iterable<String>? uuids) =>
+      (super.noSuchMethod(
+        Invocation.method(
+          #removeFavorites,
+          [uuids],
+        ),
+        returnValue: _i4.Future<bool>.value(false),
+        returnValueForMissingStub: _i4.Future<bool>.value(false),
+      ) as _i4.Future<bool>);
 }
