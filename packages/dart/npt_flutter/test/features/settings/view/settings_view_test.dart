@@ -1,0 +1,156 @@
+import 'dart:async';
+
+import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:mockito/annotations.dart';
+import 'package:mockito/mockito.dart';
+import 'package:npt_flutter/app.dart';
+import 'package:npt_flutter/features/settings/settings.dart';
+import 'package:npt_flutter/features/settings/widgets/advance_section.dart';
+import 'package:npt_flutter/features/settings/widgets/dashboard_section.dart';
+import 'package:npt_flutter/features/settings/widgets/default_relay_section.dart';
+import 'package:npt_flutter/features/settings/widgets/language_section.dart';
+import 'package:npt_flutter/localization/app_localizations.dart';
+import 'package:npt_flutter/util/language.dart';
+import 'package:npt_flutter/widgets/custom_card.dart';
+import 'package:npt_flutter/widgets/custom_text_button.dart';
+import 'package:npt_flutter/widgets/spinner.dart';
+import 'package:npt_flutter/widgets/switch_atsign_button.dart';
+import 'package:package_info_plus/package_info_plus.dart';
+
+import 'settings_view_test.mocks.dart';
+
+@GenerateNiceMocks([
+  MockSpec<SettingsBloc>(),
+])
+void main() {
+  group('SettingsView Widget Tests', () {
+    late MockSettingsBloc mockSettingsBloc;
+
+    const testSettings = Settings(
+      relayAtsign: '@rv_eu',
+      overrideRelay: false,
+      viewLayout: PreferredViewLayout.minimal,
+      darkMode: false,
+      language: Language.english,
+    );
+
+    setUp(() {
+      mockSettingsBloc = MockSettingsBloc();
+
+      // Provide dummy values for non-nullable states
+      provideDummy<SettingsState>(const SettingsInitial());
+
+      // Set up default mock behaviors
+      when(mockSettingsBloc.state).thenReturn(const SettingsInitial());
+      when(mockSettingsBloc.stream).thenAnswer((_) => Stream.value(const SettingsInitial()));
+    });
+
+    Widget createWidgetUnderTest(SettingsState state) {
+      when(mockSettingsBloc.state).thenReturn(state);
+      when(mockSettingsBloc.stream).thenAnswer((_) => Stream.value(state));
+
+      return MaterialApp(
+        navigatorKey: App.navState,
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: Scaffold(
+          body: SizedBox(
+            width: 1200, // Adequate width for settings UI
+            height: 800, // Adequate height for settings UI
+            child: BlocProvider<SettingsBloc>.value(
+              value: mockSettingsBloc,
+              child: const SettingsView(),
+            ),
+          ),
+        ),
+      );
+    }
+
+    group('SettingsInitial State', () {
+      testWidgets('should display Spinner when state is SettingsInitial', (WidgetTester tester) async {
+        await tester.pumpWidget(createWidgetUnderTest(const SettingsInitial()));
+        await tester.pump();
+
+        expect(find.byType(Spinner), findsOneWidget);
+        expect(find.byType(Center), findsOneWidget);
+
+        // Should trigger settings load event
+        verify(mockSettingsBloc.add(const SettingsLoadEvent())).called(greaterThanOrEqualTo(1));
+      });
+    });
+
+    group('SettingsLoading State', () {
+      testWidgets('should display Spinner when state is SettingsLoading', (WidgetTester tester) async {
+        await tester.pumpWidget(createWidgetUnderTest(const SettingsLoading()));
+        await tester.pump();
+
+        expect(find.byType(Spinner), findsOneWidget);
+        expect(find.byType(Center), findsOneWidget);
+      });
+    });
+
+    group('SettingsLoaded State', () {
+      testWidgets('should display all main components when loaded', (WidgetTester tester) async {
+        await tester.pumpWidget(createWidgetUnderTest(const SettingsLoaded(settings: testSettings)));
+        await tester.pump();
+
+        // Should not show spinner
+        expect(find.byType(Spinner), findsNothing);
+
+        // Should show main layout
+        expect(find.byType(Column), findsWidgets);
+        expect(find.byType(Row), findsWidgets);
+
+        // Should show the two main cards
+        expect(find.byType(CustomCard), findsAtLeastNWidgets(2));
+      });
+
+      testWidgets('should display settings rail with action buttons', (WidgetTester tester) async {
+        await tester.pumpWidget(createWidgetUnderTest(const SettingsLoaded(settings: testSettings)));
+        await tester.pump();
+
+        // Should show switch AtSign button
+        expect(find.byType(SwitchAtsignButton), findsOneWidget);
+
+        // Should show custom text buttons
+        expect(find.byType(CustomTextButton), findsNWidgets(7));
+      });
+
+      testWidgets('should display settings content sections', (WidgetTester tester) async {
+        await tester.pumpWidget(createWidgetUnderTest(const SettingsLoaded(settings: testSettings)));
+        await tester.pump();
+
+        // Should show all settings sections
+        expect(find.byType(DefaultRelaySection), findsOneWidget);
+        expect(find.byType(DashboardSection), findsOneWidget);
+
+        expect(find.byType(LanguageSection), findsOneWidget); // TODO: FIX- This test fails, working fine in production.
+        expect(find.byType(AdvanceSection), findsOneWidget); // TODO: FIX- This test fails, working fine in production.
+
+        // Should show ListView for scrollable content
+        expect(find.byType(ListView), findsOneWidget);
+      });
+
+      testWidgets('should display version information', (WidgetTester tester) async {
+        await tester.pumpWidget(createWidgetUnderTest(const SettingsLoaded(settings: testSettings)));
+        await tester.pump();
+
+        // Should show FutureBuilder for version info
+        expect(find.byType(FutureBuilder<PackageInfo>), findsOneWidget);
+      });
+
+      testWidgets('should have proper widget hierarchy', (WidgetTester tester) async {
+        await tester.pumpWidget(createWidgetUnderTest(const SettingsLoaded(settings: testSettings)));
+        await tester.pump();
+
+        // Check main structure
+        expect(find.byType(Column), findsWidgets);
+        expect(find.byType(Row), findsAtLeastNWidgets(1));
+        expect(find.byType(CustomCard), findsAtLeastNWidgets(2));
+        expect(find.byType(Padding), findsWidgets);
+      });
+    });
+  });
+}
