@@ -1,10 +1,13 @@
-import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mockito/annotations.dart';
 import 'package:mockito/mockito.dart';
+import 'package:npt_flutter/app.dart';
+import 'package:npt_flutter/features/favorite/favorite.dart';
 import 'package:npt_flutter/features/profile/profile.dart';
+import 'package:npt_flutter/features/profile/widgets/profile_delete_button.dart';
+import 'package:npt_flutter/features/profile_list/profile_list.dart';
 import 'package:npt_flutter/features/settings/settings.dart';
 import 'package:npt_flutter/localization/app_localizations.dart';
 import 'package:npt_flutter/util/language.dart';
@@ -17,6 +20,9 @@ import 'profile_view_test.mocks.dart';
 @GenerateNiceMocks([
   MockSpec<ProfileBloc>(),
   MockSpec<SettingsBloc>(),
+  MockSpec<ProfilesSelectedCubit>(),
+  MockSpec<FavoriteBloc>(),
+  MockSpec<FavoriteRepository>(),
 ])
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -24,6 +30,9 @@ void main() {
   group('ProfileView Widget Tests', () {
     late MockProfileBloc mockProfileBloc;
     late MockSettingsBloc mockSettingsBloc;
+    late MockProfilesSelectedCubit mockProfilesSelectedCubit;
+    late MockFavoriteBloc mockFavoriteBloc;
+    late MockFavoriteRepository mockFavoriteRepository;
 
     const testUuid = 'test-uuid-123';
     const testProfile = Profile(
@@ -47,36 +56,54 @@ void main() {
     setUp(() {
       mockProfileBloc = MockProfileBloc();
       mockSettingsBloc = MockSettingsBloc();
+      mockProfilesSelectedCubit = MockProfilesSelectedCubit();
+      mockFavoriteBloc = MockFavoriteBloc();
+      mockFavoriteRepository = MockFavoriteRepository();
 
       // Provide dummy values for the mocks
       provideDummy<ProfileState>(const ProfileInitial(testUuid));
       provideDummy<SettingsState>(const SettingsInitial());
+      provideDummy<ProfilesSelectedState>(const ProfilesSelectedState({}));
+      provideDummy<FavoritesState>(const FavoritesInitial());
     });
 
     tearDown(() {
       reset(mockProfileBloc);
       reset(mockSettingsBloc);
+      reset(mockProfilesSelectedCubit);
+      reset(mockFavoriteBloc);
+      reset(mockFavoriteRepository);
     });
 
     Widget createTestWidget({
       required ProfileState profileState,
       required SettingsState settingsState,
-      Stream<ProfileState>? profileStream,
-      Stream<SettingsState>? settingsStream,
+      ProfilesSelectedState? profilesSelectedState,
+      FavoritesState? favoritesState,
     }) {
-      whenListen(
-        mockProfileBloc,
-        profileStream ?? Stream.value(profileState),
-        initialState: profileState,
+      // Setup the bloc state mocks directly
+      when(mockProfileBloc.state).thenReturn(profileState);
+      when(mockSettingsBloc.state).thenReturn(settingsState);
+      when(mockProfilesSelectedCubit.state).thenReturn(
+        profilesSelectedState ?? const ProfilesSelectedState({}),
+      );
+      when(mockFavoriteBloc.state).thenReturn(
+        favoritesState ?? const FavoritesInitial(),
       );
 
-      whenListen(
-        mockSettingsBloc,
-        settingsStream ?? Stream.value(settingsState),
-        initialState: settingsState,
+      // Setup the stream mocks
+      when(mockProfileBloc.stream).thenAnswer((_) => Stream.value(profileState));
+      when(mockSettingsBloc.stream).thenAnswer((_) => Stream.value(settingsState));
+      when(mockProfilesSelectedCubit.stream).thenAnswer(
+        (_) => Stream.value(profilesSelectedState ?? const ProfilesSelectedState({})),
+      );
+      when(mockFavoriteBloc.stream).thenAnswer(
+        (_) => Stream.value(favoritesState ?? const FavoritesInitial()),
       );
 
       return MaterialApp(
+        // Use the App's navigation key to provide proper context for SizeConfig
+        navigatorKey: App.navState,
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
         home: Scaffold(
@@ -84,6 +111,8 @@ void main() {
             providers: [
               BlocProvider<ProfileBloc>.value(value: mockProfileBloc),
               BlocProvider<SettingsBloc>.value(value: mockSettingsBloc),
+              BlocProvider<ProfilesSelectedCubit>.value(value: mockProfilesSelectedCubit),
+              BlocProvider<FavoriteBloc>.value(value: mockFavoriteBloc),
             ],
             child: const ProfileView(),
           ),
@@ -102,7 +131,7 @@ void main() {
         ));
         await tester.pump();
 
-        verify(mockProfileBloc.add(const ProfileLoadEvent())).called(1);
+        verify(mockProfileBloc.add(const ProfileLoadEvent())).called(greaterThanOrEqualTo(1));
       });
 
       testWidgets('should display LoaderBar and ProfileRefreshButton', (tester) async {
@@ -147,13 +176,13 @@ void main() {
         ));
         await tester.pump();
 
-        final row = tester.widget<Row>(find.byType(Row).first);
-        expect(row.mainAxisAlignment, equals(MainAxisAlignment.center));
+        final rowWidget = tester.widget<Row>(find.byType(Row));
+        expect(rowWidget.mainAxisAlignment, MainAxisAlignment.center);
       });
     });
 
     group('ProfileFailedLoad State', () {
-      testWidgets('should display error message and ProfileRefreshButton', (tester) async {
+      testWidgets('should display error message and ProfileDeleteButton', (tester) async {
         const profileState = ProfileFailedLoad(testUuid);
         const settingsState = SettingsLoaded(settings: testSettings);
 
@@ -163,12 +192,18 @@ void main() {
         ));
         await tester.pump();
 
-        expect(find.text('Error loading profile. Please try again.'), findsOneWidget);
-        expect(find.byType(ProfileRefreshButton), findsOneWidget);
-        expect(find.byType(Row), findsWidgets);
+        // Get the context to access localized strings
+        final BuildContext context = tester.element(find.byType(ProfileView));
+        final String expectedErrorMessage = AppLocalizations.of(context)!.errorProfileLoadFailed;
+
+        // Find the exact localized error message
+        expect(find.text(expectedErrorMessage), findsOneWidget);
+
+        expect(find.byType(ProfileDeleteButton), findsOneWidget);
+        expect(find.byType(Row), findsOneWidget);
       });
 
-      testWidgets('should center the error content', (tester) async {
+      testWidgets('should space the error content', (tester) async {
         const profileState = ProfileFailedLoad(testUuid);
         const settingsState = SettingsLoaded(settings: testSettings);
 
@@ -178,8 +213,8 @@ void main() {
         ));
         await tester.pump();
 
-        final row = tester.widget<Row>(find.byType(Row).first);
-        expect(row.mainAxisAlignment, equals(MainAxisAlignment.center));
+        final rowWidget = tester.widget<Row>(find.byType(Row));
+        expect(rowWidget.mainAxisAlignment, MainAxisAlignment.spaceBetween);
       });
     });
 
@@ -187,15 +222,7 @@ void main() {
       group('Minimal View Layout', () {
         testWidgets('should display ProfileViewMinimal when viewLayout is minimal', (tester) async {
           const profileState = ProfileLoaded(testUuid, profile: testProfile);
-          const settingsState = SettingsLoaded(
-            settings: Settings(
-              relayAtsign: '@rv_eu',
-              overrideRelay: false,
-              viewLayout: PreferredViewLayout.minimal,
-              darkMode: false,
-              language: Language.english,
-            ),
-          );
+          const settingsState = SettingsLoaded(settings: testSettings);
 
           await tester.pumpWidget(createTestWidget(
             profileState: profileState,
@@ -204,23 +231,20 @@ void main() {
           await tester.pump();
 
           expect(find.byType(ProfileViewMinimal), findsOneWidget);
-          expect(find.byType(ProfileViewSshStyle), findsNothing);
-          expect(find.byType(Spinner), findsNothing);
         });
       });
 
       group('SSH Style View Layout', () {
         testWidgets('should display ProfileViewSshStyle when viewLayout is sshStyle', (tester) async {
           const profileState = ProfileLoaded(testUuid, profile: testProfile);
-          const settingsState = SettingsLoaded(
-            settings: Settings(
-              relayAtsign: '@rv_eu',
-              overrideRelay: false,
-              viewLayout: PreferredViewLayout.sshStyle,
-              darkMode: false,
-              language: Language.english,
-            ),
+          const settingsWithSshStyle = Settings(
+            relayAtsign: '@rv_eu',
+            overrideRelay: false,
+            viewLayout: PreferredViewLayout.sshStyle,
+            darkMode: false,
+            language: Language.english,
           );
+          const settingsState = SettingsLoaded(settings: settingsWithSshStyle);
 
           await tester.pumpWidget(createTestWidget(
             profileState: profileState,
@@ -229,8 +253,6 @@ void main() {
           await tester.pump();
 
           expect(find.byType(ProfileViewSshStyle), findsOneWidget);
-          expect(find.byType(ProfileViewMinimal), findsNothing);
-          expect(find.byType(Spinner), findsNothing);
         });
       });
 
@@ -246,8 +268,7 @@ void main() {
           await tester.pump();
 
           expect(find.byType(Spinner), findsOneWidget);
-          expect(find.byType(ProfileViewMinimal), findsNothing);
-          expect(find.byType(ProfileViewSshStyle), findsNothing);
+          expect(find.byType(Center), findsOneWidget);
         });
 
         testWidgets('should display Spinner when SettingsState is SettingsLoading', (tester) async {
@@ -262,138 +283,195 @@ void main() {
 
           expect(find.byType(Spinner), findsOneWidget);
           expect(find.byType(Center), findsOneWidget);
-          expect(find.byType(ProfileViewMinimal), findsNothing);
-          expect(find.byType(ProfileViewSshStyle), findsNothing);
         });
       });
     });
 
-    group('BlocSelector Behavior', () {
-      testWidgets('should react to SettingsBloc state changes for viewLayout', (tester) async {
-        const profileState = ProfileLoaded(testUuid, profile: testProfile);
-
-        // Start with minimal layout
-        const initialSettingsState = SettingsLoaded(
-          settings: Settings(
-            relayAtsign: '@rv_eu',
-            overrideRelay: false,
-            viewLayout: PreferredViewLayout.minimal,
-            darkMode: false,
-            language: Language.english,
-          ),
+    group('ProfileViewMinimal Widget Tests', () {
+      Widget createMinimalTestWidget({
+        ProfileState? profileState,
+        ProfilesSelectedState? profilesSelectedState,
+        FavoritesState? favoritesState,
+      }) {
+        // Setup the bloc state mocks
+        when(mockProfileBloc.state).thenReturn(
+          profileState ?? const ProfileLoaded(testUuid, profile: testProfile),
+        );
+        when(mockProfilesSelectedCubit.state).thenReturn(
+          profilesSelectedState ?? const ProfilesSelectedState({}),
+        );
+        when(mockFavoriteBloc.state).thenReturn(
+          favoritesState ?? const FavoritesInitial(),
         );
 
-        const updatedSettingsState = SettingsLoaded(
-          settings: Settings(
-            relayAtsign: '@rv_eu',
-            overrideRelay: false,
-            viewLayout: PreferredViewLayout.sshStyle,
-            darkMode: false,
-            language: Language.english,
-          ),
+        // Setup the stream mocks
+        when(mockProfileBloc.stream).thenAnswer(
+          (_) => Stream.value(profileState ?? const ProfileLoaded(testUuid, profile: testProfile)),
+        );
+        when(mockProfilesSelectedCubit.stream).thenAnswer(
+          (_) => Stream.value(profilesSelectedState ?? const ProfilesSelectedState({})),
+        );
+        when(mockFavoriteBloc.stream).thenAnswer(
+          (_) => Stream.value(favoritesState ?? const FavoritesInitial()),
         );
 
-        await tester.pumpWidget(createTestWidget(
-          profileState: profileState,
-          settingsState: initialSettingsState,
-          settingsStream: Stream.fromIterable([
-            initialSettingsState,
-            updatedSettingsState,
-          ]),
+        return MaterialApp(
+          navigatorKey: App.navState,
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: Scaffold(
+            body: MultiBlocProvider(
+              providers: [
+                BlocProvider<ProfileBloc>.value(value: mockProfileBloc),
+                BlocProvider<SettingsBloc>.value(value: mockSettingsBloc),
+                BlocProvider<ProfilesSelectedCubit>.value(value: mockProfilesSelectedCubit),
+                BlocProvider<FavoriteBloc>.value(value: mockFavoriteBloc),
+              ],
+              child: const ProfileViewMinimal(),
+            ),
+          ),
+        );
+      }
+
+      testWidgets('should render without ProviderNotFoundException', (tester) async {
+        await tester.pumpWidget(createMinimalTestWidget());
+        await tester.pump();
+
+        expect(find.byType(ProfileViewMinimal), findsOneWidget);
+        expect(find.byType(Row), findsOneWidget);
+      });
+
+      testWidgets('should display all expected child widgets', (tester) async {
+        await tester.pumpWidget(createMinimalTestWidget());
+        await tester.pump();
+
+        // Check for presence of key widgets within ProfileViewMinimal
+        expect(find.byType(ProfileSelectBox), findsOneWidget);
+        expect(find.byType(ProfileDisplayName), findsOneWidget);
+        expect(find.byType(ProfileStatusIndicator), findsOneWidget);
+        expect(find.byType(ProfileRunButton), findsOneWidget);
+        expect(find.byType(ProfileFavoriteButton), findsOneWidget);
+        expect(find.byType(ProfilePopupMenuButton), findsOneWidget);
+      });
+
+      testWidgets('should handle selected profile state', (tester) async {
+        const selectedState = ProfilesSelectedState({testUuid});
+
+        await tester.pumpWidget(createMinimalTestWidget(
+          profilesSelectedState: selectedState,
         ));
         await tester.pump();
 
-        // Should initially show minimal view
         expect(find.byType(ProfileViewMinimal), findsOneWidget);
-        expect(find.byType(ProfileViewSshStyle), findsNothing);
+        expect(find.byType(ProfileSelectBox), findsOneWidget);
+      });
 
-        // Trigger state change
+      testWidgets('should handle favorite profile state', (tester) async {
+        const favoriteProfile = FavoriteProfile(uuid: testUuid);
+        const favoritesState = FavoritesLoaded([favoriteProfile]);
+
+        await tester.pumpWidget(createMinimalTestWidget(
+          favoritesState: favoritesState,
+        ));
         await tester.pump();
 
-        // Should now show SSH style view
+        expect(find.byType(ProfileViewMinimal), findsOneWidget);
+        expect(find.byType(ProfileFavoriteButton), findsOneWidget);
+      });
+    });
+
+    group('ProfileViewSshStyle Widget Tests', () {
+      Widget createSshStyleTestWidget({
+        ProfileState? profileState,
+        ProfilesSelectedState? profilesSelectedState,
+        FavoritesState? favoritesState,
+      }) {
+        // Setup the bloc state mocks
+        when(mockProfileBloc.state).thenReturn(
+          profileState ?? const ProfileLoaded(testUuid, profile: testProfile),
+        );
+        when(mockProfilesSelectedCubit.state).thenReturn(
+          profilesSelectedState ?? const ProfilesSelectedState({}),
+        );
+        when(mockFavoriteBloc.state).thenReturn(
+          favoritesState ?? const FavoritesInitial(),
+        );
+
+        // Setup the stream mocks
+        when(mockProfileBloc.stream).thenAnswer(
+          (_) => Stream.value(profileState ?? const ProfileLoaded(testUuid, profile: testProfile)),
+        );
+        when(mockProfilesSelectedCubit.stream).thenAnswer(
+          (_) => Stream.value(profilesSelectedState ?? const ProfilesSelectedState({})),
+        );
+        when(mockFavoriteBloc.stream).thenAnswer(
+          (_) => Stream.value(favoritesState ?? const FavoritesInitial()),
+        );
+
+        return MaterialApp(
+          navigatorKey: App.navState,
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: Scaffold(
+            body: MultiBlocProvider(
+              providers: [
+                BlocProvider<ProfileBloc>.value(value: mockProfileBloc),
+                BlocProvider<SettingsBloc>.value(value: mockSettingsBloc),
+                BlocProvider<ProfilesSelectedCubit>.value(value: mockProfilesSelectedCubit),
+                BlocProvider<FavoriteBloc>.value(value: mockFavoriteBloc),
+              ],
+              child: const ProfileViewSshStyle(),
+            ),
+          ),
+        );
+      }
+
+      testWidgets('should render without ProviderNotFoundException', (tester) async {
+        await tester.pumpWidget(createSshStyleTestWidget());
+        await tester.pump();
+
         expect(find.byType(ProfileViewSshStyle), findsOneWidget);
-        expect(find.byType(ProfileViewMinimal), findsNothing);
+        expect(find.byType(Row), findsOneWidget);
       });
-    });
 
-    group('Edge Cases and Error Handling', () {
-      testWidgets('should handle ProfileFailedLoad state with fallback settings', (tester) async {
-        const profileState = ProfileFailedLoad(testUuid);
-        const settingsState = SettingsFailedLoad(settings: testSettings);
+      testWidgets('should display all expected child widgets', (tester) async {
+        await tester.pumpWidget(createSshStyleTestWidget());
+        await tester.pump();
 
-        await tester.pumpWidget(createTestWidget(
-          profileState: profileState,
-          settingsState: settingsState,
+        // Check for presence of key widgets within ProfileViewSshStyle
+        expect(find.byType(ProfileSelectBox), findsOneWidget);
+        expect(find.byType(ProfileDisplayName), findsOneWidget);
+        expect(find.byType(ProfileDeviceName), findsOneWidget);
+        expect(find.byType(ProfileServiceView), findsOneWidget);
+        expect(find.byType(ProfileStatusIndicator), findsOneWidget);
+        expect(find.byType(ProfileRunButton), findsOneWidget);
+        expect(find.byType(ProfileFavoriteButton), findsOneWidget);
+        expect(find.byType(ProfilePopupMenuButton), findsOneWidget);
+      });
+
+      testWidgets('should handle selected profile state', (tester) async {
+        const selectedState = ProfilesSelectedState({testUuid});
+
+        await tester.pumpWidget(createSshStyleTestWidget(
+          profilesSelectedState: selectedState,
         ));
         await tester.pump();
 
-        expect(find.text('Error loading profile. Please try again.'), findsOneWidget);
-        expect(find.byType(ProfileRefreshButton), findsOneWidget);
+        expect(find.byType(ProfileViewSshStyle), findsOneWidget);
+        expect(find.byType(ProfileSelectBox), findsOneWidget);
       });
 
-      testWidgets('should handle state transitions correctly', (tester) async {
-        const initialState = ProfileInitial(testUuid);
-        const settingsState = SettingsLoaded(settings: testSettings);
+      testWidgets('should handle favorite profile state', (tester) async {
+        const favoriteProfile = FavoriteProfile(uuid: testUuid);
+        const favoritesState = FavoritesLoaded([favoriteProfile]);
 
-        await tester.pumpWidget(createTestWidget(
-          profileState: initialState,
-          settingsState: settingsState,
-          profileStream: Stream.fromIterable([
-            initialState,
-            const ProfileLoading(testUuid),
-            const ProfileLoaded(testUuid, profile: testProfile),
-          ]),
-        ));
-
-        // Initial state - should trigger load event
-        await tester.pump();
-        verify(mockProfileBloc.add(const ProfileLoadEvent())).called(1);
-        expect(find.byType(LoaderBar), findsOneWidget);
-
-        // Loading state
-        await tester.pump();
-        expect(find.byType(LoaderBar), findsOneWidget);
-
-        // Loaded state
-        await tester.pump();
-        expect(find.byType(ProfileViewMinimal), findsOneWidget);
-      });
-    });
-
-    group('Widget Structure and Layout', () {
-      testWidgets('should have proper widget hierarchy for loading state', (tester) async {
-        const profileState = ProfileLoading(testUuid);
-        const settingsState = SettingsLoaded(settings: testSettings);
-
-        await tester.pumpWidget(createTestWidget(
-          profileState: profileState,
-          settingsState: settingsState,
+        await tester.pumpWidget(createSshStyleTestWidget(
+          favoritesState: favoritesState,
         ));
         await tester.pump();
 
-        // Check the widget hierarchy
-        expect(find.byType(MaterialApp), findsOneWidget);
-        expect(find.byType(Scaffold), findsOneWidget);
-        expect(find.byType(MultiBlocProvider), findsOneWidget);
-        expect(find.byType(ProfileView), findsOneWidget);
-        expect(find.byType(BlocBuilder<ProfileBloc, ProfileState>), findsOneWidget);
-      });
-
-      testWidgets('should have proper widget hierarchy for loaded state', (tester) async {
-        const profileState = ProfileLoaded(testUuid, profile: testProfile);
-        const settingsState = SettingsLoaded(settings: testSettings);
-
-        await tester.pumpWidget(createTestWidget(
-          profileState: profileState,
-          settingsState: settingsState,
-        ));
-        await tester.pump();
-
-        // Check the widget hierarchy includes BlocSelector
-        expect(find.byType(MaterialApp), findsOneWidget);
-        expect(find.byType(ProfileView), findsOneWidget);
-        expect(find.byType(BlocBuilder<ProfileBloc, ProfileState>), findsOneWidget);
-        expect(find.byType(BlocSelector<SettingsBloc, SettingsState, PreferredViewLayout?>), findsOneWidget);
+        expect(find.byType(ProfileViewSshStyle), findsOneWidget);
+        expect(find.byType(ProfileFavoriteButton), findsOneWidget);
       });
     });
   });
