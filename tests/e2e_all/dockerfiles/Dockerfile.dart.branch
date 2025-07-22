@@ -1,4 +1,4 @@
-FROM dart:3.8.2@sha256:b751e2ebf640e910b48f75396cfddf2b6cbd99f1a6ba919220e39c7f8cf3a0fa AS buildimage
+FROM dart:3.8.2@sha256:d870d0bbe1ada135be805e775c5cf8444751724a924ea5e53a2f9cc5fcb1be48 AS buildimage
 
 ENV URL=https://github.com/atsign-foundation/noports.git
 ENV REPO_DIR=/app/repo
