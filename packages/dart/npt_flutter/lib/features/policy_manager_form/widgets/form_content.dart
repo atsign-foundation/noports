@@ -28,6 +28,7 @@ class FormContent extends StatefulWidget {
 class _FormContentState extends State<FormContent> {
   bool _isEditing = false;
   late Role _currentRole;
+  late Role _originalRole; // Backup of original role for cancel functionality
   bool _isSaving = false;
   final PolicyLogMonitorService _monitorService = PolicyLogMonitorService.getInstance();
 
@@ -35,6 +36,7 @@ class _FormContentState extends State<FormContent> {
   void initState() {
     super.initState();
     _currentRole = widget.role;
+    _originalRole = widget.role; // Backup original role data
     // Automatically start editing if this is a new role (empty name)
     _isEditing = widget.role.name.isEmpty;
     
@@ -47,6 +49,7 @@ class _FormContentState extends State<FormContent> {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.role != widget.role) {
       _currentRole = widget.role;
+      _originalRole = widget.role; // Update backup when role changes
       // Automatically start editing if this is a new role (empty name)
       if (widget.role.name.isEmpty) {
         _isEditing = true;
@@ -96,7 +99,6 @@ class _FormContentState extends State<FormContent> {
               onPressed: () {
                 Navigator.of(dialogContext).pop();
                 bloc.add(PolicyManagerDeleteRole(_currentRole.id ?? ''));
-                setState(() => _isEditing = false);
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColor.errorColor,
@@ -114,11 +116,17 @@ class _FormContentState extends State<FormContent> {
   Widget build(BuildContext context) {
     return BlocListener<PolicyManagerBloc, PolicyManagerState>(
       listener: (context, state) {
-        // Exit editing mode when save operation completes successfully
-        if (_isSaving && state is PolicyManagerLoaded) {
+        // Update local editing state from bloc and handle save completion
+        if (state is PolicyManagerLoaded) {
           setState(() {
-            _isEditing = false;
-            _isSaving = false;
+            // Backup original data when starting to edit
+            if (!_isEditing && state.isEditing) {
+              _originalRole = _currentRole;
+            }
+            _isEditing = state.isEditing;
+            if (_isSaving) {
+              _isSaving = false;
+            }
           });
         } else if (_isSaving && state is PolicyManagerError) {
           setState(() {
@@ -140,10 +148,6 @@ class _FormContentState extends State<FormContent> {
           children: [
           Row(
             children: [
-              Text(
-                'Role Details',
-                style: Theme.of(context).textTheme.headlineSmall,
-              ),
               const Spacer(),
               if (_isEditing) ...[
                 ElevatedButton(
@@ -156,7 +160,13 @@ class _FormContentState extends State<FormContent> {
                 ),
                 const SizedBox(width: Sizes.p8),
                 TextButton(
-                  onPressed: () => setState(() => _isEditing = false),
+                  onPressed: () {
+                    // Restore original role data before canceling
+                    setState(() {
+                      _currentRole = _originalRole;
+                    });
+                    context.read<PolicyManagerBloc>().add(const PolicyManagerStopEditing());
+                  },
                   child: const Text('Cancel'),
                 ),
                 const SizedBox(width: Sizes.p8),
@@ -181,7 +191,6 @@ class _FormContentState extends State<FormContent> {
               ] else ...[
                 ElevatedButton(
                   onPressed: () {
-                    setState(() => _isEditing = true);
                     context.read<PolicyManagerBloc>().add(PolicyManagerStartEditing(widget.role.id ?? ''));
                   },
                   style: ElevatedButton.styleFrom(
@@ -196,6 +205,7 @@ class _FormContentState extends State<FormContent> {
           const SizedBox(height: Sizes.p24),
           Expanded(
             child: SingleChildScrollView(
+              padding: const EdgeInsets.only(right: Sizes.p16),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -245,30 +255,10 @@ class _FormContentState extends State<FormContent> {
                     ],
                   ),
                   const SizedBox(height: Sizes.p24),
-                  // Row 2: User AtSigns and Device AtSigns
+                  // Row 2: Device AtSigns, Devices, Device Groups
                   Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Expanded(
-                        child: UserAtSignsField(
-                          role: _currentRole,
-                          isEditing: _isEditing,
-                          onChanged: (value) {
-                            setState(() {
-                              _currentRole = Role(
-                                id: _currentRole.id,
-                                name: _currentRole.name,
-                                description: _currentRole.description,
-                                daemonAtSigns: _currentRole.daemonAtSigns,
-                                devices: _currentRole.devices,
-                                deviceGroups: _currentRole.deviceGroups,
-                                userAtSigns: value,
-                              );
-                            });
-                          },
-                        ),
-                      ),
-                      const SizedBox(width: Sizes.p16),
                       Expanded(
                         child: DaemonAtSignsField(
                           role: _currentRole,
@@ -288,13 +278,7 @@ class _FormContentState extends State<FormContent> {
                           },
                         ),
                       ),
-                    ],
-                  ),
-                  const SizedBox(height: Sizes.p24),
-                  // Row 3: Devices and Device Groups
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
+                      const SizedBox(width: Sizes.p16),
                       Expanded(
                         child: DeviceListWidget(
                           label: 'Devices',
@@ -341,7 +325,33 @@ class _FormContentState extends State<FormContent> {
                     ],
                   ),
                   const SizedBox(height: Sizes.p24),
-                  // Logs section
+                  // Row 3: User AtSigns
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(
+                        child: UserAtSignsField(
+                          role: _currentRole,
+                          isEditing: _isEditing,
+                          onChanged: (value) {
+                            setState(() {
+                              _currentRole = Role(
+                                id: _currentRole.id,
+                                name: _currentRole.name,
+                                description: _currentRole.description,
+                                daemonAtSigns: _currentRole.daemonAtSigns,
+                                devices: _currentRole.devices,
+                                deviceGroups: _currentRole.deviceGroups,
+                                userAtSigns: value,
+                              );
+                            });
+                          },
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: Sizes.p24),
+                  // Row 4: Logs
                   const LogsSection(),
                 ],
               ),

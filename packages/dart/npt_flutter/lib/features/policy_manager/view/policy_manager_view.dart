@@ -95,9 +95,11 @@ class PolicyManagerContent extends StatelessWidget {
               child: SizedBox(
                 width: double.infinity,
                 child: ElevatedButton.icon(
-                  onPressed: () {
-                    context.read<PolicyManagerBloc>().add(const PolicyManagerStartNewRole());
-                  },
+                  onPressed: (state is PolicyManagerLoaded && state.isEditing) 
+                    ? null 
+                    : () {
+                        context.read<PolicyManagerBloc>().add(const PolicyManagerStartNewRole());
+                      },
                   icon: const Icon(Icons.add),
                   label: const Text('Add New Role'),
                   style: ElevatedButton.styleFrom(
@@ -174,27 +176,35 @@ class PolicyManagerContent extends StatelessWidget {
   }
 
   Widget _buildRoleListItem(Role role, BuildContext context) {
-    return Card(
-      margin: const EdgeInsets.symmetric(horizontal: Sizes.p8, vertical: Sizes.p4),
-      color: Colors.white,
-      elevation: 1,
-      child: ListTile(
-        title: Text(
-          role.name,
-          style: const TextStyle(
-            fontWeight: FontWeight.bold,
+    return BlocBuilder<PolicyManagerBloc, PolicyManagerState>(
+      builder: (context, state) {
+        final isEditing = state is PolicyManagerLoaded && state.isEditing;
+        
+        return Card(
+          margin: const EdgeInsets.symmetric(horizontal: Sizes.p8, vertical: Sizes.p4),
+          color: Colors.white,
+          elevation: 1,
+          child: ListTile(
+            title: Text(
+              role.name,
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                color: isEditing ? AppColor.onSurfaceColor : null,
+              ),
+            ),
+            subtitle: Text(
+              role.description.isEmpty ? 'No description' : role.description,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(color: AppColor.onSurfaceColor),
+            ),
+            onTap: isEditing ? null : () {
+              context.read<PolicyManagerBloc>().add(PolicyManagerRoleSelected(role.id ?? ''));
+            },
+            enabled: !isEditing,
           ),
-        ),
-        subtitle: Text(
-          role.description.isEmpty ? 'No description' : role.description,
-          maxLines: 2,
-          overflow: TextOverflow.ellipsis,
-          style: const TextStyle(color: AppColor.onSurfaceColor),
-        ),
-        onTap: () {
-          context.read<PolicyManagerBloc>().add(PolicyManagerRoleSelected(role.id ?? ''));
-        },
-      ),
+        );
+      },
     );
   }
 

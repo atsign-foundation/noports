@@ -141,13 +141,6 @@ class _DeviceGroupListWidgetState extends State<DeviceGroupListWidget> {
                 ),
               ),
             ],
-            const Spacer(),
-            if (widget.isEditing)
-              ElevatedButton.icon(
-                onPressed: _addDeviceGroup,
-                icon: const Icon(Icons.add, size: 18),
-                label: const Text('Add Group'),
-              ),
           ],
         ),
         const SizedBox(height: 12),
@@ -225,6 +218,22 @@ class _DeviceGroupListWidgetState extends State<DeviceGroupListWidget> {
               },
             ),
           ),
+        
+        // Add button below the list
+        if (widget.isEditing) ...[
+          const SizedBox(height: 12),
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton.icon(
+              onPressed: _addDeviceGroup,
+              icon: const Icon(Icons.add, size: 18),
+              label: const Text('Add Group'),
+              style: ElevatedButton.styleFrom(
+                alignment: Alignment.center,
+              ),
+            ),
+          ),
+        ],
       ],
     );
   }

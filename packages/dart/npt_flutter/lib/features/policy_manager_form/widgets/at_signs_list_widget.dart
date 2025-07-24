@@ -137,33 +137,7 @@ class _AtSignsListWidgetState extends State<AtSignsListWidget> {
             ],
           ],
         ),
-        const SizedBox(height: 8),
-        
-        // Add new atSign input (only show when editing)
-        if (widget.isEditing) ...[
-          Row(
-            children: [
-              Expanded(
-                child: TextFormField(
-                  controller: _addController,
-                  decoration: const InputDecoration(
-                    border: OutlineInputBorder(),
-                    contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                  ),
-                  onChanged: (_) => setState(() {}),
-                  onFieldSubmitted: (_) => _addAtSign(),
-                ),
-              ),
-              const SizedBox(width: 8),
-              ElevatedButton.icon(
-                onPressed: _addController.text.trim().isEmpty ? null : _addAtSign,
-                icon: const Icon(Icons.add, size: 18),
-                label: const Text('Add'),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-        ],
+        const SizedBox(height: 12),
         
         // List of atSigns
         if (_localAtSigns.isEmpty)
@@ -212,6 +186,31 @@ class _AtSignsListWidgetState extends State<AtSignsListWidget> {
               },
             ),
           ),
+        
+        if (widget.isEditing) ...[
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Expanded(
+                child: TextFormField(
+                  controller: _addController,
+                  decoration: const InputDecoration(
+                    border: OutlineInputBorder(),
+                    contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  ),
+                  onChanged: (_) => setState(() {}),
+                  onFieldSubmitted: (_) => _addAtSign(),
+                ),
+              ),
+              const SizedBox(width: 8),
+              ElevatedButton.icon(
+                onPressed: _addController.text.trim().isEmpty ? null : _addAtSign,
+                icon: const Icon(Icons.add, size: 18),
+                label: const Text('Add'),
+              ),
+            ],
+          ),
+        ],
       ],
     );
   }

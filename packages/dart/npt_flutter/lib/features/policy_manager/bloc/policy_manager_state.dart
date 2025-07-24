@@ -26,23 +26,27 @@ class PolicyManagerLoading extends PolicyManagerState {
 class PolicyManagerLoaded extends PolicyManagerState {
   final List<Role> roles;
   final Role? selectedRole;
+  final bool isEditing;
 
   const PolicyManagerLoaded({
     required this.roles,
     this.selectedRole,
+    this.isEditing = false,
   });
 
   @override
-  List<Object?> get props => [roles, selectedRole];
+  List<Object?> get props => [roles, selectedRole, isEditing];
 
   PolicyManagerLoaded copyWith({
     List<Role>? roles,
     Role? selectedRole,
+    bool? isEditing,
     bool clearSelectedRole = false,
   }) {
     return PolicyManagerLoaded(
       roles: roles ?? this.roles,
       selectedRole: clearSelectedRole ? null : selectedRole ?? this.selectedRole,
+      isEditing: isEditing ?? this.isEditing,
     );
   }
 }

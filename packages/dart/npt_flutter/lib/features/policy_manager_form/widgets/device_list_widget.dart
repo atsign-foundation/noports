@@ -141,13 +141,6 @@ class _DeviceListWidgetState extends State<DeviceListWidget> {
                 ),
               ),
             ],
-            const Spacer(),
-            if (widget.isEditing)
-              ElevatedButton.icon(
-                onPressed: _addDevice,
-                icon: const Icon(Icons.add, size: 18),
-                label: const Text('Add Device'),
-              ),
           ],
         ),
         const SizedBox(height: 12),
@@ -225,6 +218,22 @@ class _DeviceListWidgetState extends State<DeviceListWidget> {
               },
             ),
           ),
+        
+        // Add button below the list
+        if (widget.isEditing) ...[
+          const SizedBox(height: 12),
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton.icon(
+              onPressed: _addDevice,
+              icon: const Icon(Icons.add, size: 18),
+              label: const Text('Add Device'),
+              style: ElevatedButton.styleFrom(
+                alignment: Alignment.center,
+              ),
+            ),
+          ),
+        ],
       ],
     );
   }

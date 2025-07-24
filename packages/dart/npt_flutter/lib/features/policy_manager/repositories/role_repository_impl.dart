@@ -1,55 +1,60 @@
 import 'dart:convert';
 import 'package:at_client_mobile/at_client_mobile.dart';
 import 'package:npt_flutter/app.dart';
-import 'package:path/path.dart';
 import '../models/policy.dart';
 import 'role_repository.dart';
 
 class RoleRepositoryImpl implements RoleRepository {
-  static const String groupsPolicyNamespace = 'groups.policy.sshnp'; // TODO move string somewhere
+  static const String groupsPolicyNamespace =
+      'groups.policy.sshnp'; // TODO move string somewhere
 
   @override
   Future<List<Role>> fetchRoles() async {
     final rolesJson = <String>[];
     AtClient atClient = AtClientManager.getInstance().atClient;
-    const String regex = r'^[a-zA-Z0-9]+\.' + groupsPolicyNamespace + r'@[a-zA-Z0-9]+$';
+    const String regex =
+        r'^[a-zA-Z0-9]+\.' + groupsPolicyNamespace + r'@[a-zA-Z0-9]+$';
 
-    try {
-      atClient.syncService.sync();
-      List<String> groupAtKeyStrs = await atClient.getKeys(regex: regex);
-      List<AtKey> groupAtKeys = groupAtKeyStrs.map((key) => AtKey.fromString(key)).toList();
+    // atClient.syncService.sync();
+    List<String> groupAtKeyStrs = await atClient.getKeys(regex: regex);
+    List<AtKey> groupAtKeys =
+        groupAtKeyStrs.map((key) => AtKey.fromString(key)).toList();
 
-      for (final AtKey atKey in groupAtKeys) {
-        GetRequestOptions gro = GetRequestOptions()..useRemoteAtServer = true;
-        final AtValue atValue = await atClient.get(atKey, getRequestOptions: gro);
-        final String groupJsonStr = atValue.value;
-        rolesJson.add(groupJsonStr);
+    for (final AtKey atKey in groupAtKeys) {
+      GetRequestOptions gro = GetRequestOptions()..useRemoteAtServer = true;
+      AtValue atValue;
+      try {
+        atValue = await atClient.get(atKey, getRequestOptions: gro);
+      } catch (e) {
+        // Key not found or other error, continue to next key
+        continue;
       }
-
-      final roles = <Role>[];
-
-      for (final roleJsonStr in rolesJson) {
-        try {
-          final roleJson = jsonDecode(roleJsonStr) as Map<String, dynamic>;
-          final role = Role.fromJson(roleJson);
-          roles.add(role);
-        } catch (e) {
-          App.log('[ERROR] fetchRoles: Failed to parse role JSON: $e'.loggable);
-          continue;
-        }
-      }
-
-      return roles;
-    } catch (e) {
-      App.log('[ERROR] fetchRoles: Failed to fetch roles: $e'.loggable);
-      return [];
+      if (atValue.value == null) continue;
+      final String groupJsonStr = atValue.value;
+      rolesJson.add(groupJsonStr);
     }
+
+    final roles = <Role>[];
+
+    for (final roleJsonStr in rolesJson) {
+      try {
+        final roleJson = jsonDecode(roleJsonStr) as Map<String, dynamic>;
+        final role = Role.fromJson(roleJson);
+        roles.add(role);
+      } catch (e) {
+        App.log('[ERROR] fetchRoles: Failed to parse role JSON: $e'.loggable);
+        continue;
+      }
+    }
+
+    return roles;
   }
 
   @override
   Future<bool> updateExistingRole(Role role) async {
     if (role.id == null || role.id!.isEmpty) {
-      App.log('[ERROR] updateExistingRole: Role ID is required for update'.loggable);
+      App.log('[ERROR] updateExistingRole: Role ID is required for update'
+          .loggable);
       return false;
     }
 
@@ -66,7 +71,8 @@ class RoleRepositoryImpl implements RoleRepository {
 
     try {
       PutRequestOptions pro = PutRequestOptions()..useRemoteAtServer = true;
-      bool success = await atClient.put(AtKey.fromString(atKeyStr), value, putRequestOptions: pro);
+      bool success = await atClient.put(AtKey.fromString(atKeyStr), value,
+          putRequestOptions: pro);
 
       if (success) {
         try {
@@ -77,10 +83,12 @@ class RoleRepositoryImpl implements RoleRepository {
             ),
           );
         } catch (notifyError) {
-          App.log('[WARNING] updateExistingRole: Failed to send notification: $notifyError'.loggable);
+          App.log(
+              '[WARNING] updateExistingRole: Failed to send notification: $notifyError'
+                  .loggable);
         }
       }
-      
+
       return success;
     } catch (e) {
       App.log('[ERROR] updateExistingRole: Failed to update role: $e'.loggable);
@@ -105,9 +113,11 @@ class RoleRepositoryImpl implements RoleRepository {
     final String value = jsonEncode(role.toJson());
 
     try {
-      final PutRequestOptions pro = PutRequestOptions()..useRemoteAtServer = true;
-      final bool success = await atClient.put(AtKey.fromString(atKeyStr), value, putRequestOptions: pro);
-      
+      final PutRequestOptions pro = PutRequestOptions()
+        ..useRemoteAtServer = true;
+      final bool success = await atClient.put(AtKey.fromString(atKeyStr), value,
+          putRequestOptions: pro);
+
       if (success) {
         // Send notification about new role creation
         try {
@@ -118,18 +128,19 @@ class RoleRepositoryImpl implements RoleRepository {
             ),
           );
         } catch (notifyError) {
-          App.log('[WARNING] createNewRole: Failed to send notification: $notifyError'.loggable);
+          App.log(
+              '[WARNING] createNewRole: Failed to send notification: $notifyError'
+                  .loggable);
           // Continue anyway since the role creation was successful
         }
       }
-      
+
       return success;
     } catch (e) {
       App.log('[ERROR] createNewRole: Failed to create role: $e'.loggable);
       return false;
     }
   }
-
 
   @override
   Future<bool> deleteRole(String roleId) async {
@@ -149,8 +160,10 @@ class RoleRepositoryImpl implements RoleRepository {
     final String atKeyStr = '$roleId.$groupsPolicyNamespace$currentAtSign';
 
     try {
-      final DeleteRequestOptions dro = DeleteRequestOptions()..useRemoteAtServer = true;
-      bool success = await atClient.delete(AtKey.fromString(atKeyStr), deleteRequestOptions: dro);
+      final DeleteRequestOptions dro = DeleteRequestOptions()
+        ..useRemoteAtServer = true;
+      bool success = await atClient.delete(AtKey.fromString(atKeyStr),
+          deleteRequestOptions: dro);
       if (success) {
         try {
           await atClient.notificationService.notify(
@@ -159,7 +172,9 @@ class RoleRepositoryImpl implements RoleRepository {
             ),
           );
         } catch (notifyError) {
-          App.log('[WARNING] deleteRole: Failed to send notification: $notifyError'.loggable);
+          App.log(
+              '[WARNING] deleteRole: Failed to send notification: $notifyError'
+                  .loggable);
         }
       }
       return success;
@@ -169,11 +184,10 @@ class RoleRepositoryImpl implements RoleRepository {
     }
   }
 
-
   Future<int> get _maxGroupId async {
     final roles = await fetchRoles();
     if (roles.isEmpty) return 0;
-    
+
     int maxId = 0;
     for (final role in roles) {
       if (role.id != null) {
@@ -185,5 +199,4 @@ class RoleRepositoryImpl implements RoleRepository {
     }
     return maxId;
   }
-
 }
