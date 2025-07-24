@@ -86,6 +86,8 @@ dev_dependencies:
   flutter_launcher_icons: "^0.14.1"
   flutter_test:
     sdk: flutter
+  integration_test:
+    sdk: flutter
   mockito: ^5.4.4
   bloc_test: ^9.1.7
   msix: ^3.16.8
