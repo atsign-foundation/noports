@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:at_client_mobile/at_client_mobile.dart';
 import 'package:npt_flutter/app.dart';
+import 'package:path/path.dart';
 import '../models/policy.dart';
 import 'role_repository.dart';
 
@@ -66,6 +67,20 @@ class RoleRepositoryImpl implements RoleRepository {
     try {
       PutRequestOptions pro = PutRequestOptions()..useRemoteAtServer = true;
       bool success = await atClient.put(AtKey.fromString(atKeyStr), value, putRequestOptions: pro);
+
+      if (success) {
+        try {
+          await atClient.notificationService.notify(
+            NotificationParams.forUpdate(
+              AtKey.fromString('$currentAtSign:$atKeyStr'),
+              value: jsonEncode(role),
+            ),
+          );
+        } catch (notifyError) {
+          App.log('[WARNING] updateExistingRole: Failed to send notification: $notifyError'.loggable);
+        }
+      }
+      
       return success;
     } catch (e) {
       App.log('[ERROR] updateExistingRole: Failed to update role: $e'.loggable);
@@ -92,6 +107,22 @@ class RoleRepositoryImpl implements RoleRepository {
     try {
       final PutRequestOptions pro = PutRequestOptions()..useRemoteAtServer = true;
       final bool success = await atClient.put(AtKey.fromString(atKeyStr), value, putRequestOptions: pro);
+      
+      if (success) {
+        // Send notification about new role creation
+        try {
+          await atClient.notificationService.notify(
+            NotificationParams.forUpdate(
+              AtKey.fromString('$currentAtSign:$atKeyStr'),
+              value: jsonEncode(role),
+            ),
+          );
+        } catch (notifyError) {
+          App.log('[WARNING] createNewRole: Failed to send notification: $notifyError'.loggable);
+          // Continue anyway since the role creation was successful
+        }
+      }
+      
       return success;
     } catch (e) {
       App.log('[ERROR] createNewRole: Failed to create role: $e'.loggable);
@@ -120,6 +151,17 @@ class RoleRepositoryImpl implements RoleRepository {
     try {
       final DeleteRequestOptions dro = DeleteRequestOptions()..useRemoteAtServer = true;
       bool success = await atClient.delete(AtKey.fromString(atKeyStr), deleteRequestOptions: dro);
+      if (success) {
+        try {
+          await atClient.notificationService.notify(
+            NotificationParams.forDelete(
+              AtKey.fromString('$currentAtSign:$atKeyStr'),
+            ),
+          );
+        } catch (notifyError) {
+          App.log('[WARNING] deleteRole: Failed to send notification: $notifyError'.loggable);
+        }
+      }
       return success;
     } catch (e) {
       App.log('[ERROR] deleteRole: Failed to delete role: $e'.loggable);
