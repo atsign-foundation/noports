@@ -174,6 +174,7 @@ class _LogsSectionState extends State<LogsSection> {
           deviceName: log.deviceName,
           deviceGroup: log.deviceGroup,
           allowedServices: log.allowedServices,
+          policyPayload: log.policyPayload,
         );
       },
     );

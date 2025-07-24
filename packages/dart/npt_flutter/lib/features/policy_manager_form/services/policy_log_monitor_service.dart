@@ -10,6 +10,7 @@ class PolicyLogEntry {
   final String deviceName;
   final String deviceGroup;
   final String allowedServices;
+  final String? policyPayload; // For policy request notifications
 
   PolicyLogEntry({
     required this.timestamp,
@@ -19,6 +20,7 @@ class PolicyLogEntry {
     required this.deviceName,
     required this.deviceGroup,
     required this.allowedServices,
+    this.policyPayload,
   });
 
   factory PolicyLogEntry.fromNotification(AtNotification notification) {
@@ -28,27 +30,79 @@ class PolicyLogEntry {
     String deviceGroup = '';
     String allowedServices = '';
     String type = 'heartbeat';
+    String? policyPayload;
     
-    // Parse the JSON value if it exists and is encrypted/decrypted
-    if (notification.value != null && notification.value!.isNotEmpty) {
-      try {
-        final Map<String, dynamic> data = jsonDecode(notification.value!);
-        deviceName = data['devicename'] ?? 'unknown';
-        deviceGroup = data['deviceGroupName'] ?? '';
-        
-        // Format allowed services
-        if (data['allowedServices'] != null && data['allowedServices'] is List) {
-          final List<String> services = List<String>.from(data['allowedServices']);
-          allowedServices = services.join(', ');
+    // Check if this is a policy request notification
+    if (notification.key.contains('logs.policy.sshnp')) {
+      type = 'policy request';
+      policyPayload = notification.value; // Store the entire JSON payload
+      
+      // Try to parse the payload to extract device info for display
+      if (notification.value != null && notification.value!.isNotEmpty) {
+        try {
+          final Map<String, dynamic> data = jsonDecode(notification.value!);
+          
+          // Extract device info from the nested payload structure
+          final payload = data['payload'];
+          if (payload is Map<String, dynamic>) {
+            final request = payload['request'];
+            if (request is Map<String, dynamic>) {
+              final requestPayload = request['payload'];
+              if (requestPayload is Map<String, dynamic>) {
+                deviceName = requestPayload['daemonDeviceName'] ?? 'unknown';
+                deviceGroup = requestPayload['daemonDeviceGroupName'] ?? '';
+                
+                // Show request info in allowed services field
+                final clientAtSign = requestPayload['clientAtsign'] ?? 'unknown';
+                final daemonAtSign = requestPayload['daemonAtsign'] ?? 'unknown';
+                allowedServices = 'Request: $clientAtSign → $daemonAtSign';
+              }
+            }
+            
+            // Also check response for additional info
+            final response = payload['response'];
+            if (response is Map<String, dynamic>) {
+              final responsePayload = response['payload'];
+              if (responsePayload is Map<String, dynamic>) {
+                final authorized = responsePayload['authorized'] ?? false;
+                final message = responsePayload['message'] ?? '';
+                final permitOpen = responsePayload['permitOpen'];
+                
+                String authStatus = authorized ? 'AUTHORIZED' : 'DENIED';
+                String permits = '';
+                if (permitOpen is List && permitOpen.isNotEmpty) {
+                  permits = ' - Permit: ${permitOpen.join(', ')}';
+                }
+                allowedServices = '$allowedServices ($authStatus$permits)';
+              }
+            }
+          }
+        } catch (e) {
+          allowedServices = 'Parse error: ${e.toString()}';
         }
-      } catch (e) {
-        // If JSON parsing fails, try to extract device name from key
-        final keyParts = notification.key.split(':');
-        if (keyParts.length > 1) {
-          final devicePart = keyParts[1].split('.devices.policy.sshnp')[0];
-          deviceName = devicePart;
+      }
+    } else {
+      // Handle regular heartbeat notifications as before
+      if (notification.value != null && notification.value!.isNotEmpty) {
+        try {
+          final Map<String, dynamic> data = jsonDecode(notification.value!);
+          deviceName = data['devicename'] ?? 'unknown';
+          deviceGroup = data['deviceGroupName'] ?? '';
+          
+          // Format allowed services
+          if (data['allowedServices'] != null && data['allowedServices'] is List) {
+            final List<String> services = List<String>.from(data['allowedServices']);
+            allowedServices = services.join(', ');
+          }
+        } catch (e) {
+          // If JSON parsing fails, try to extract device name from key
+          final keyParts = notification.key.split(':');
+          if (keyParts.length > 1) {
+            final devicePart = keyParts[1].split('.devices.policy.sshnp')[0];
+            deviceName = devicePart;
+          }
+          allowedServices = 'Parse error: ${e.toString()}';
         }
-              allowedServices = 'Parse error: ${e.toString()}';
       }
     }
 
@@ -60,6 +114,7 @@ class PolicyLogEntry {
       deviceName: deviceName,
       deviceGroup: deviceGroup,
       allowedServices: allowedServices,
+      policyPayload: policyPayload,
     );
   }
 }
@@ -93,10 +148,15 @@ class PolicyLogMonitorService {
     try {
       final AtClient atClient = AtClientManager.getInstance().atClient;
       
-      // Create regex for monitoring device-specific policy keys
-      // Pattern: @*:deviceName.devices.policy.sshnp@*
+      // Create regex for monitoring both device-specific policy keys and policy request logs
+      // Pattern 1: @*:deviceName.devices.policy.sshnp@* (device heartbeats)
+      // Pattern 2: @*:logs.policy.sshnp@* (policy requests)
       final deviceRegexParts = deviceNames.map((device) => '$device\\.devices\\.policy\\.sshnp').toList();
-      final monitorRegex = '(${deviceRegexParts.join('|')})';
+      final deviceRegex = deviceRegexParts.isNotEmpty ? '(${deviceRegexParts.join('|')})' : '';
+      const policyLogRegex = 'logs\\.policy\\.sshnp';
+      
+      // Combine both patterns
+      final monitorRegex = deviceRegex.isNotEmpty ? '($deviceRegex|$policyLogRegex)' : policyLogRegex;
 
       // Subscribe to notification stream
       var notificationService = atClient.notificationService;
