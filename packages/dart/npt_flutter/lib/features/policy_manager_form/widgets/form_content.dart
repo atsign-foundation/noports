@@ -12,6 +12,8 @@ import 'device_list_widget.dart';
 import 'device_group_list_widget.dart';
 import 'logs_section.dart';
 import '../services/policy_log_monitor_service.dart';
+import '../../../styles/app_color.dart';
+import '../../../styles/sizes.dart';
 
 class FormContent extends StatefulWidget {
   final Role role;
@@ -97,7 +99,7 @@ class _FormContentState extends State<FormContent> {
                 setState(() => _isEditing = false);
               },
               style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.red,
+                backgroundColor: AppColor.errorColor,
                 foregroundColor: Colors.white,
               ),
               child: const Text('Delete'),
@@ -126,13 +128,13 @@ class _FormContentState extends State<FormContent> {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text(state.message),
-              backgroundColor: Colors.red,
+              backgroundColor: AppColor.errorColor,
             ),
           );
         }
       },
       child: Padding(
-        padding: const EdgeInsets.all(16.0),
+        padding: const EdgeInsets.all(Sizes.p16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -147,17 +149,17 @@ class _FormContentState extends State<FormContent> {
                 ElevatedButton(
                   onPressed: () => _showDeleteConfirmation(context),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.red,
+                    backgroundColor: AppColor.errorColor,
                     foregroundColor: Colors.white,
                   ),
                   child: const Text('Delete'),
                 ),
-                const SizedBox(width: 8),
+                const SizedBox(width: Sizes.p8),
                 TextButton(
                   onPressed: () => setState(() => _isEditing = false),
                   child: const Text('Cancel'),
                 ),
-                const SizedBox(width: 8),
+                const SizedBox(width: Sizes.p8),
                 ElevatedButton(
                   onPressed: () {
                     setState(() => _isSaving = true);
@@ -170,6 +172,10 @@ class _FormContentState extends State<FormContent> {
                       context.read<PolicyManagerBloc>().add(PolicyManagerUpdateRole(_currentRole));
                     }
                   },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColor.primaryColor,
+                    foregroundColor: Colors.white,
+                  ),
                   child: const Text('Save'),
                 ),
               ] else ...[
@@ -178,12 +184,16 @@ class _FormContentState extends State<FormContent> {
                     setState(() => _isEditing = true);
                     context.read<PolicyManagerBloc>().add(PolicyManagerStartEditing(widget.role.id ?? ''));
                   },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColor.primaryColor,
+                    foregroundColor: Colors.white,
+                  ),
                   child: const Text('Edit'),
                 ),
               ],
             ],
           ),
-          const SizedBox(height: 24),
+          const SizedBox(height: Sizes.p24),
           Expanded(
             child: SingleChildScrollView(
               child: Column(
@@ -212,7 +222,7 @@ class _FormContentState extends State<FormContent> {
                           },
                         ),
                       ),
-                      const SizedBox(width: 16),
+                      const SizedBox(width: Sizes.p16),
                       Expanded(
                         child: RoleDescriptionField(
                           role: _currentRole,
@@ -234,7 +244,7 @@ class _FormContentState extends State<FormContent> {
                       ),
                     ],
                   ),
-                  const SizedBox(height: 24),
+                  const SizedBox(height: Sizes.p24),
                   // Row 2: User AtSigns and Device AtSigns
                   Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -258,7 +268,7 @@ class _FormContentState extends State<FormContent> {
                           },
                         ),
                       ),
-                      const SizedBox(width: 16),
+                      const SizedBox(width: Sizes.p16),
                       Expanded(
                         child: DaemonAtSignsField(
                           role: _currentRole,
@@ -280,7 +290,7 @@ class _FormContentState extends State<FormContent> {
                       ),
                     ],
                   ),
-                  const SizedBox(height: 24),
+                  const SizedBox(height: Sizes.p24),
                   // Row 3: Devices and Device Groups
                   Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -306,7 +316,7 @@ class _FormContentState extends State<FormContent> {
                           },
                         ),
                       ),
-                      const SizedBox(width: 16),
+                      const SizedBox(width: Sizes.p16),
                       Expanded(
                         child: DeviceGroupListWidget(
                           label: 'Device Groups',
@@ -330,7 +340,7 @@ class _FormContentState extends State<FormContent> {
                       ),
                     ],
                   ),
-                  const SizedBox(height: 24),
+                  const SizedBox(height: Sizes.p24),
                   // Logs section
                   const LogsSection(),
                 ],
