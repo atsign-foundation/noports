@@ -10,6 +10,8 @@ import 'daemon_at_signs_field.dart';
 import 'user_at_signs_field.dart';
 import 'device_list_widget.dart';
 import 'device_group_list_widget.dart';
+import 'logs_section.dart';
+import '../services/policy_log_monitor_service.dart';
 
 class FormContent extends StatefulWidget {
   final Role role;
@@ -25,6 +27,7 @@ class _FormContentState extends State<FormContent> {
   bool _isEditing = false;
   late Role _currentRole;
   bool _isSaving = false;
+  final PolicyLogMonitorService _monitorService = PolicyLogMonitorService.getInstance();
 
   @override
   void initState() {
@@ -32,6 +35,9 @@ class _FormContentState extends State<FormContent> {
     _currentRole = widget.role;
     // Automatically start editing if this is a new role (empty name)
     _isEditing = widget.role.name.isEmpty;
+    
+    // Start monitoring for device names in this role
+    _startMonitoring();
   }
 
   @override
@@ -43,7 +49,31 @@ class _FormContentState extends State<FormContent> {
       if (widget.role.name.isEmpty) {
         _isEditing = true;
       }
+      
+      // Restart monitoring for the new role's device names
+      _startMonitoring();
     }
+  }
+
+  @override
+  void dispose() {
+    // Stop monitoring and clear logs when leaving the form
+    _stopMonitoring();
+    super.dispose();
+  }
+
+  void _startMonitoring() {
+    // Clear previous logs and start monitoring device names
+    _monitorService.clearLogs();
+    final deviceNames = _currentRole.devices.map((device) => device.name).toList();
+    if (deviceNames.isNotEmpty) {
+      _monitorService.startMonitoring(deviceNames);
+    }
+  }
+
+  void _stopMonitoring() {
+    _monitorService.stopMonitoring();
+    _monitorService.clearLogs();
   }
 
   void _showDeleteConfirmation(BuildContext context) {
@@ -300,6 +330,9 @@ class _FormContentState extends State<FormContent> {
                       ),
                     ],
                   ),
+                  const SizedBox(height: 24),
+                  // Logs section
+                  const LogsSection(),
                 ],
               ),
             ),
