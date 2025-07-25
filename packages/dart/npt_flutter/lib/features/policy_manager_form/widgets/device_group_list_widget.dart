@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../policy_manager/models/policy.dart';
+import '../../../util/form_validator.dart';
 
 class DeviceGroupListWidget extends StatefulWidget {
   final String label;
@@ -274,6 +275,20 @@ class _AddDeviceGroupDialogState extends State<_AddDeviceGroupDialog> {
 
   void _addPermitOpen() {
     final value = _permitOpenController.text.trim();
+    
+    // Validate host:port format
+    final validationError = FormValidator.validateHostPortField(value);
+    if (validationError != null) {
+      // Show error message to user
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(validationError),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+    
     if (value.isNotEmpty && !_permitOpens.contains(value)) {
       setState(() {
         _permitOpens.add(value);

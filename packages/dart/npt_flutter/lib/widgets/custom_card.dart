@@ -27,7 +27,7 @@ class CustomCard extends StatelessWidget {
     // this.width = Sizes.p240,
     this.width = 255,
     super.key,
-  })  : color = Colors.white,
+  })  : color = AppColor.cardColorDark,
         radiusTopLeft = const Radius.circular(Sizes.p10),
         radiusTopRight = const Radius.circular(Sizes.p10),
         radiusBottomLeft = const Radius.circular(Sizes.p10),
