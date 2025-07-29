@@ -112,7 +112,7 @@ packages:
     source: hosted
     version: "2.1.0"
   at_client:
-    dependency: "direct main"
+    dependency: transitive
     description:
       name: at_client
       sha256: "568fd8f58ad4bc7bf0486e38fa0509ed3612d0bd91e5378aaf6e4f3dbd2455b6"
