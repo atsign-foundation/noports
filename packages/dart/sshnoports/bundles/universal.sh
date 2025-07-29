@@ -2,9 +2,9 @@
 
 # SCRIPT METADATA
 # DO NOT MODIFY/DELETE THIS BLOCK
-script_version="3.1.0"
-sshnp_version="5.8.0"
-repo_url="https://github.com/atsign-foundation/sshnoports"
+script_version="4.0.0"
+sshnp_version="5.11.2"
+repo_url="https://github.com/atsign-foundation/noports"
 # END METADATA
 
 # N.B. Other than the variable definitions, and the call to the main function,
@@ -16,15 +16,11 @@ repo_url="https://github.com/atsign-foundation/sshnoports"
 GREP_COLOR=never
 unset GREP_OPTIONS
 
-# used to rerun as sudo to install to systemd
-original_command="$0 $*"
-
 ### Constants
 systemd_config_path="/etc/systemd/system/sshnpd.service.d/override.conf"
 
 ### Environment based variables
 arg_zero="$0"
-unset script_dir
 unset platform_name
 unset system_arch
 unset archive_ext
@@ -34,7 +30,6 @@ unset as_root
 unset bin_path
 unset user
 unset user_home
-unset user_bin_dir
 
 ### Pre-installation validation
 unset ssh_localhost_status
@@ -47,33 +42,9 @@ unset is_dotatsignkeys_created
 unset is_overrideconf_created
 
 ### Input Variables
-verbose=false
 unset tmp_path
-install_type=""
 unset download_url
 local_archive=""
-no_sudo=false
-quiet=false
-
-### Client/ Device Install Variables
-client_atsign=""
-device_atsign=""
-policy_atsign=""
-
-### Client Install Variables
-unset magic_script
-host_atsign=""
-devices=""
-
-### Device Install Variables
-device_name=""
-device_type=""
-
-norm_atsign() {
-  # Prepend an @ to the front of the atsign if missing
-  atsign="@$(echo "$1" | sed -e 's/"//g' -e 's/^@//g')"
-  echo "$atsign"
-}
 
 norm_version() {
   # Ensure the version is in the format "tags/vX.Y.Z" (github version tag)
@@ -120,9 +91,9 @@ sedi() {
 }
 
 chown_dir() {
-  if [ -d $1 ]; then
+  if [ -d "$1" ]; then
     echo "$1 was created by this installer, ensuring that it is owned by $user"
-    chown -R $user:$user "$1" 2>/dev/null || chown -R $user "$1" 2>/dev/null
+    chown -R "$user:$user" "$1" 2>/dev/null || chown -R "$user" "$1" 2>/dev/null
   fi
 }
 
@@ -140,27 +111,9 @@ usage() {
   echo "  -v, --verbose                  Verbose tracing"
   echo "      --version                  Display version"
   echo "      --temp-path      <path>    Set the temporary path for downloads"
-  echo "  -t, --type           <type>    Set the install type (device, client)"
   echo "      --local          <path>    Install from a local archive"
   echo "  -q, --quiet                    Disables any printing to the terminal from the script. Ensure you are including options."
   echo
-  echo "Client Options:"
-  echo "  -c, --client-atsign  <atsign>  Set the client atSign"
-  echo "  -d, --device-atsign  <atsign>  Set the device atSign"
-  echo "  -r, --region         <region>  Set the default rendezvous region (am, eu, ap)"
-  echo "      --rv-atsign      <atsign>  Set the default rendezvous atsign"
-  echo "  -l, --device-list    <names>   Set the device names for the quick picker script (comma separated)"
-  echo
-  echo "Note: only one of --region or --rv-atsign can be used"
-  echo
-  echo "Device Options:"
-  echo "  -c,   --client-atsign  <atsign>  Set the client atSign"
-  echo "  -d,   --device-atsign  <atsign>  Set the device atSign"
-  echo "  -p,   --policy-atsign  <atsign>  Set the access policy atSign"
-  echo "  -n,   --device-name    <name>    Set the device name"
-  echo "  --dt, --device-type    <type>    Set the device type (launchd, systemd, tmux, headless)"
-  echo "        --no-sudo                  Deliberately install without sudo privileges"
-
 }
 
 check_ssh_localhost() {
@@ -219,79 +172,20 @@ parse_env() {
   extract_path="$tmp_path/sshnp-$time_stamp"
   archive_path="$extract_path.$archive_ext"
   user_home="$HOME"
-  if is_root; then
-    user="$SUDO_USER"
-    as_root=true
-    bin_path="/usr/local/bin"
-    if [ -z "$user" ]; then
-      user="root"
-    else
-      # we are root, but via sudo
-      # so get home directory of SUDO_USER
-      user_home=$(sudo -u "$user" sh -c 'echo $HOME')
-    fi
-  else
-    as_root=false
-    bin_path="$HOME/.local/bin"
-    user="$USER"
-  fi
-  user_bin_dir=$user_home/.local/bin
+  bin_path="/usr/local/bin"
+  is_root && user="$SUDO_USER" || user="$USER"
 
   check_ssh_localhost
 
-  [ -d $user_home/.local/ ] && is_dotlocal_created=true || is_dotlocal_created=false
-  [ -d $user_home/.local/bin ] && is_dotlocalbin_created=true || is_dotlocalbin_created=false
-  [ -d $user_home/.ssh/ ] && is_dotssh_created=true || is_dotssh_created=false
-  [ -d $user_home/.sshnp/ ] && is_dotsshnp_created=true || is_dotsshnp_created=false
-  [ -d $user_home/.atsign/ ] && is_dotatsign_created=true || is_dotatsign_created=false
-  [ -d $user_home/.atsign/keys/ ] && is_dotatsignkeys_created=true || is_dotatsignkeys_created=false
+  [ -d "$user_home/.ssh/" ] && is_dotssh_created=true || is_dotssh_created=false
+  [ -d "$user_home/.sshnp/" ] && is_dotsshnp_created=true || is_dotsshnp_created=false
+  [ -d "$user_home/.atsign/" ] && is_dotatsign_created=true || is_dotatsign_created=false
+  [ -d "$user_home/.atsign/keys/" ] && is_dotatsignkeys_created=true || is_dotatsignkeys_created=false
   [ -f "$systemd_config_path" ] && is_overrideconf_created=true || is_overrideconf_created=false
 }
 
 is_valid_source_mode() {
   [ "$1" = "download" ] || [ "$1" = "local" ] || [ "$1" = "build" ]
-}
-
-is_valid_install_type() {
-  [ "$1" = "device" ] || [ "$1" = "client" ]
-}
-
-norm_install_type() {
-  case "$1" in
-  d*)
-    echo "device"
-    ;;
-  c*)
-    echo "client"
-    ;;
-  *)
-    echo ""
-    ;;
-  esac
-}
-
-is_valid_device_type() {
-  [ "$1" = "launchd" ] || [ "$1" = "systemd" ] || [ "$1" = "tmux" ] || [ "$1" = "headless" ]
-}
-
-norm_device_type() {
-  case "$1" in
-  l*)
-    echo "launchd"
-    ;;
-  s*)
-    echo "systemd"
-    ;;
-  t*)
-    echo "tmux"
-    ;;
-  h*)
-    echo "headless"
-    ;;
-  *)
-    echo ""
-    ;;
-  esac
 }
 
 parse_args() {
@@ -302,7 +196,6 @@ parse_args() {
       exit 0
       ;;
     -v | --verbose)
-      verbose=true
       set -x
       ;;
     --version)
@@ -314,15 +207,6 @@ parse_args() {
       mkdir -p "$1"
       tmp_path="$1"
       ;;
-    -t | --type)
-      shift
-      install_type_input="$1"
-      install_type=$(norm_install_type "$install_type_input")
-      if ! is_valid_install_type "$install_type"; then
-        >&2 echo "Invalid install type: $install_type_input"
-        >&2 echo "Valid options are: (device, client)" exit 1
-      fi
-      ;;
     --local)
       shift
       if [ -f "$1" ]; then
@@ -332,52 +216,6 @@ parse_args() {
         exit 1
       fi
       ;;
-    -c | --client-atsign)
-      shift
-      client_atsign="$1"
-      ;;
-    -d | --device-atsign)
-      shift
-      device_atsign="$1"
-      ;;
-    -p | --policy-atsign)
-      shift
-      policy_atsign="$1"
-      ;;
-    -r | --region)
-      # notice that --region and --rv-atsign are basically the same under the hood,
-      # if region's input starts with an "@" it will be equivalent to using --rv-atsign
-      # without an "@", it will try to map to one of the @rv_XX regions
-      shift
-      host_atsign="$1"
-      ;;
-    --rv-atsign)
-      shift
-      host_atsign="$(norm_atsign "$1")"
-      ;;
-    -l | --device-list)
-      shift
-      devices="$1"
-      ;;
-    -n | --device-name)
-      shift
-      device_name="$1"
-      ;;
-    --dt | --device-type)
-      shift
-      device_type_input="$1"
-      device_type=$(norm_device_type "$device_type_input")
-      if ! is_valid_device_type "$device_type"; then
-        >&2 echo "Invalid device type: $device_type_input"
-        >&2 echo "Valid options are: (launchd, systemd, tmux, headless)" exit 1
-      fi
-      ;;
-    --no-sudo)
-      no_sudo=true
-      ;;
-    -q | --quiet)
-      quiet=true
-      ;;
     *)
       >&2 echo "Unexpected option: $1"
       exit 1
@@ -385,36 +223,6 @@ parse_args() {
     esac
     shift
   done
-  if [ $quiet = true ]; then
-    if [ "$install_type" = "device" ]; then
-      if [ -z "$client_atsign" ] || [ -z "$device_atsign" ] || [ -z "$device_name" ]; then
-        >&2 echo "Error: Missing required information for device installation. (-c, -d, -n)"
-        exit 1
-      fi
-      if [ -z "$policy_atsign" ]; then
-        >&2 echo "Info: No policy atSign provided; continuing."
-      fi
-    elif [ "$install_type" = "client" ]; then
-      if [ -z "$client_atsign" ] || [ -z "$device_atsign" ] || [ -z "$host_atsign" ]; then
-        >&2 echo "Error: Missing required information for client installation. (-c, -d, -r)"
-        exit 1
-      fi
-    else
-      >&2 echo "Specify -t, (device or client) and its required parameters."
-      exit 1
-    fi
-  fi
-}
-
-get_user_inputs() {
-  if [ -z "$install_type" ]; then
-    unset install_type_input
-    while [ -z "$install_type" ]; do
-      printf "Install type (device, client):  "
-      read -r install_type_input
-      install_type=$(norm_install_type "$install_type_input")
-    done
-  fi
 }
 
 print_env() {
@@ -423,18 +231,16 @@ Environment:
   Platform name: $platform_name
   System arch: $system_arch
   Temp path: $tmp_path
-  As root: $as_root
   Binary path: $bin_path
   User: $user
   User home: $user_home
   Ssh status: $ssh_localhost_status
-  Did directories exist (prior to install):
-  -       .local/ : $is_dotlocal_created
-  -   .local/bin/ : $is_dotlocalbin_created
+  Did file/dir exist (prior to install):
   -         .ssh/ : $is_dotssh_created
-  -       .sshnp/ : $is_dotssh_created
+  -       .sshnp/ : $is_dotsshnp_created
   -      .atsign/ : $is_dotatsign_created
   - .atsign/keys/ : $is_dotatsignkeys_created
+  - override.conf : $is_overrideconf_created
 EOF
 }
 
@@ -507,171 +313,12 @@ cleanup() {
   rm -f "$archive_path"
   rm -rf "$extract_path"
 
-  if $as_root; then
-    $is_dotlocal_created || chown_dir $user_home/.local
-    $is_dotlocalbin_created || chown_dir $user_home/.local/bin
-    $is_dotssh_created || chown_dir $user_home/.ssh/
-    $is_dotsshnp_created || chown_dir $user_home/.sshnp/
-    $is_dotatsign_created || chown_dir $user_home/.atsign/
-    $is_dotatsignkeys_created || chown_dir $user_home/.atsign/keys/
+  if is_root; then
+    chown_dir "$user_home/.ssh/"
+    chown_dir "$user_home/.sshnp/"
+    chown_dir "$user_home/.atsign/"
+    chown_dir "$user_home/.atsign/keys/"
   fi
-}
-
-write_metadata() {
-  start_line="# SCRIPT METADATA"
-  end_line="# END METADATA"
-  file=$1
-  variable=$2
-  value=$3
-  sedi "/$start_line/,/$end_line/s|$variable=\".*\"|$variable=\"$value\"|g " "$file"
-}
-
-write_metadata_array() {
-  # Takes a comma separated list and writes it into a bash array in the metadata of the script
-  start_line="# SCRIPT METADATA"
-  end_line="# END METADATA"
-  file=$1
-  variable=$2
-  value=$(echo "$3" | tr ',' ' ')
-  sedi "/$start_line/,/$end_line/s|$variable=(.*)|$variable=($value)|g" "$file"
-}
-
-write_program_arguments_plist() {
-  # Takes a comma separated list and writes it into a string array in the plist document
-  start_line="<key>ProgramArguments</key>"
-  second_line="<array>"
-  end_line="</array>"
-  file=$1
-  shift
-  string_array=""
-  while [ $# -gt 0 ]; do
-    string_array="$string_array\\
-    <string>$1</string>"
-    shift
-  done
-  sedi "s|$end_line|\\
-    $end_line\\
-    |g" "$file" # make sure </array> is on a new line or we might delete something we shouldn't
-  sedi "/<key>ProgramArguments<\\/key>/,/<\\/array>/c\\
-  $start_line\\
-  $second_line$string_array\\
-  $end_line\\
-  " "$file"
-  sedi '/^[[:space:]]*$/d' "$file" # remove empty lines to keep things clean
-}
-
-write_systemd_user() {
-  file=$1
-  user=$2
-  sedi "s|<username>|$user|g" "$file"
-}
-
-write_systemd_environment() {
-  file=$1
-  variable=$2
-  value=$3
-  if grep -q "Environment=$variable=" <"$file"; then
-    sedi "s|Environment=$variable=\".*\"|Environment=$variable=\"$value\"|g" "$file"
-  else
-    echo "Environment=$variable=\"$value\"" >"$file"
-  fi
-}
-
-get_atsign_manually() {
-  selectedatsign=""
-  if [ $# -gt 0 ]; then
-    clientOrDevice="$1"
-  fi
-  while [ -z "$selectedatsign" ]; do
-    printf "Enter %s atSign: " "$clientOrDevice"
-    read -r selectedatsign
-  done
-}
-
-get_atsign_manually_once() {
-  selectedatsign=""
-  if [ $# -gt 0 ]; then
-    clientOrDevice="$1"
-  fi
-  printf "Enter %s atSign (leave blank to skip): " "$clientOrDevice"
-  read -r selectedatsign
-}
-
-get_atsign() {
-  clientOrDevice="$1"
-  atkeycount=0
-  atkeys=""
-  selectedatsign=""
-  echo
-  echo "Setting up $clientOrDevice atSign"
-  if [ -d "${user_home}/.atsign/keys" ]; then
-    # Disable unsafe find looping (will break if atkey file name contains a space, which it shouldn't)
-    # shellcheck disable=SC2044
-    for file in $(find "$user_home"/.atsign/keys/*.atKeys -type f); do
-      atkeys="$atkeys $(echo "$file" | sed s/^.*@// | sed s/_key.atKeys//)"
-      atkeycount=$((atkeycount + 1))
-    done
-    atkeys="$(echo "$atkeys" | sed s/\ \ /\ / | sed s/^\ //)" # remove double & leading space since it will interfere with cut
-    if [ $atkeycount -eq 0 ]; then
-      echo "$HOME/.atsign/keys directory found but there are no keys there yet, please enter the $clientOrDevice atSign manually"
-      get_atsign_manually
-    elif [ $atkeycount -eq 1 ]; then
-      atkey=$(echo "$atkeys" | sed "s/\ //g")
-      echo "1 atKeys file found: ${atkey}"
-      printf "Would you like to use @%s? " "$atkey"
-      read -r use_atkey
-      case $use_atkey in
-      [Yy]*)
-        selectedatsign=$atkey
-        ;;
-      esac
-    else
-      echo "0) None"
-      for i in $(seq 1 $atkeycount); do
-        echo "$i) @$(echo "$atkeys" | cut -d' ' -f"$i")"
-      done
-      echo
-      printf "Found .atKeys for %s atSigns." "$atkeycount"
-      echo
-      printf 'Choose %s atSign (input the number): $ ' "$clientOrDevice"
-      read -r selectedinput
-
-      selectedindex=$((selectedinput))
-      if [ "$selectedindex" -gt 0 ]; then
-        selectedatsign="$(echo "$atkeys" | cut -d' ' -f"$selectedindex")"
-        echo "Selected: @$selectedatsign"
-      else
-        echo "No existing atkeys were selected, please enter the $clientOrDevice atSign manually."
-        get_atsign_manually
-      fi
-    fi
-  else
-    mkdir -p "$user_home"/.atsign/keys
-    chown_dir "$user_home"/.atsign
-    echo "$HOME/.atsign/keys directory created"
-    echo "Since we did not detect any atkeys on this machine, please enter the $clientOrDevice atSign manually."
-    get_atsign_manually
-  fi
-}
-
-suggest_sudo() {
-  echo
-  echo "Systemd is present but this script is not running with sudo"
-  echo "We recommend that you install to systemd (requires root privileges to write the unit file)"
-  echo
-  echo "Rerunning the script with command: 'sudo $original_command'"
-  echo
-  echo "If you'd rather proceed with a non systemd installation,"
-  echo "then press Ctrl+C and then run the following command:"
-  echo
-  echo "sh universal.sh --no-sudo"
-  echo
-  echo "NB: Issues with installation through --no-sudo is not covered by support."
-  echo "    It is not a reliable installation method and it is NOT RECOMMENDED."
-  echo
-  echo "Executing 'sudo $original_command':"
-  sudo $original_command
-  exit $?
 }
 
 check_ssh_keys() {
@@ -700,230 +347,112 @@ check_ssh_keys() {
     echo
     return
   fi
-  # TODO we could have a more sophisticated check for other files to see if they're keys
 }
 
-validate_activation() {
-  device_output=$(echo "$(at_activate status -a $device_atsign 2>&1)")
-  device_status=$(echo $device_output | grep -oE 'returning [0-9]+' | grep -oE '[0-9]+')
-
-  client_output=$(echo "$(at_activate status -a $client_atsign 2>&1)")
-  client_status=$(echo $client_output | grep -oE 'returning [0-9]+' | grep -oE '[0-9]+')
-
-  if [ -z "$policy_atsign" ]; then
-    policy_status=0
-  else
-    policy_output=$(echo "$(at_activate status -a $policy_atsign 2>&1)")
-    policy_status=$(echo $policy_output | grep -oE 'returning [0-9]+' | grep -oE '[0-9]+')
-  fi
-
-  if [ "$device_status" -ne 0 ]; then
+install_macos_config() {
+  launchd_dir="$user_home/Library/LaunchAgents"
+  unit="com.atsign.sshnpd.plist"
+  mkdir -p "$launchd_dir"
+  dest="$launchd_dir/$unit"
+  [ -f "$dest" ] || {
+    cp "$extract_path/sshnp/launchd/$unit" "$dest"
+    echo Installed launchd config at "$dest".
+    echo First configure the file by running:
     echo
-    echo "Activating $device_atsign..."
-    if [ "$device_status" -eq 3 ]; then
-      echo $device_output
-    fi
-    at_activate onboard -a $device_atsign -k "${user_home}/.atsign/keys/${device_atsign}_key.atKeys"
-  fi
-
-  if [ "$client_status" -ne 0 ]; then
+    echo xcode "$dest"
     echo
-    echo "Activating $client_atsign.."
-    if [ "$client_status" -eq 3 ]; then
-      echo $client_output
-    fi
-    at_activate onboard -a $client_atsign -k "${user_home}/.atsign/keys/${client_atsign}_key.atKeys"
-  fi
-
-  if [ "$policy_status" -ne 0 ]; then
-    echo
-    echo "Activating $policy_atsign.."
-    if [ "$policy_status" -eq 3 ]; then
-      echo "$policy_output"
-    fi
-    at_activate onboard -a "$policy_atsign" -k "${user_home}/.atsign/keys/${policy_atsign}_key.atKeys"
-  fi
+    echo Then start the service from the "Login Items" menu in System Settings
+  }
 }
 
-# CLIENT INSTALLATION #
-client() {
-  mkdir -p "$bin_path"
+install_systemd_config() {
+  systemd_dir="/etc/systemd/system"
+  for unit in sshnpd srvd; do
+    systemd_unit="$systemd_dir/$unit.service"
+    systemd_config="$systemd_dir/$unit.service.d/override.conf"
 
-  # install the binaries
-  "$extract_path"/sshnp/install.sh -b "$bin_path" -u "$user" sshnp
-  "$extract_path"/sshnp/install.sh -b "$bin_path" -u "$user" npt
-  "$extract_path"/sshnp/install.sh -b "$bin_path" -u "$user" srv
-  "$extract_path"/sshnp/install.sh -b "$bin_path" -u "$user" at_activate
-
-  # set PATH so it includes user's private bin if it exists
-  if [ -d "$user_home/.local/bin" ] ; then
-    PATH="$user_home/.local/bin:$PATH"
-  fi
-
-  # check that there are some ssh keys
-  check_ssh_keys
-
-  echo "Please enter atSigns you would like activated"
-  # get the inputs for client & device atsign to do activation
-  if [ -z "$client_atsign" ]; then
-    get_atsign_manually_once "client"
-    client_atsign="$selectedatsign"
-  fi
-  if [ -z "$device_atsign" ]; then
-    get_atsign_manually_once "device"
-    device_atsign="$selectedatsign"
-  fi
-  if [ -n "$device_atsign" ] || [ -n "$client_atsign" ]; then
-    echo "Ensuring your atSigns are activated..."
-    validate_activation
-  fi
-}
-
-# DEVICE INSTALLATION #
-device() {
-  unset device_install_type
-  if [ -z "$device_type" ]; then
-    if is_darwin; then
-      device_install_type="launchd"
-    elif is_root && is_systemd_available; then
-      device_install_type="systemd"
+    if ! [ -d "$systemd_unit.d" ]; then
+      mkdir -p "$systemd_unit.d"
+    fi
+    if [ -f "$systemd_unit" ]; then
+      # migrate old config from systemd unit file to override.conf
+      touch "$systemd_config"
+      if [ ! -s "$systemd_config" ]; then
+        echo "[Service]" >>"$systemd_config"
+      fi
+      temp_file="$systemd_unit.tmp"
+      while IFS= read -r line; do
+        case "$line" in
+        Environment=*)
+          # Comment out the line in the original file
+          echo "# config migrated to $systemd_config" >>"$temp_file"
+          echo "# $line" >>"$temp_file"
+          # Extract the environment variable and write it to the override file
+          echo "# config migrated from $systemd_unit" >>"$systemd_config"
+          echo "$line" >>"$systemd_config"
+          ;;
+        User=*)
+          # Comment out the line in the original file
+          echo "# config migrated to $systemd_config" >>"$temp_file"
+          echo "# $line" >>"$temp_file"
+          # Extract the user variable and write it to the override file
+          echo "# config migrated from $systemd_unit" >>"$systemd_config"
+          echo "$line" >>"$systemd_config"
+          ;;
+        *)
+          echo "$line" >>"$temp_file"
+          ;;
+        esac
+      done <"$systemd_unit"
+      # Overwrite the original file with the modified content
+      mv "$temp_file" "$systemd_unit"
+      echo "sshnpd configuration migrated to $systemd_config"
     else
-      if ! $no_sudo && is_systemd_available; then
-        suggest_sudo
-      fi
-      if check_cmd tmux; then
-        device_install_type="tmux"
-      else
-        if ! check_cmd cron; then
-          >&2 echo "ERROR: crontab not available"
-          >&2 echo "Please install cron and make it available on the PATH"
-          exit 1
-        fi
-        if ! check_cmd nohup; then
-          >&2 echo "ERROR: nohup not available"
-          >&2 echo "Please install nohup and make it available on the PATH"
-          exit 1
-        fi
-        device_install_type="headless"
-      fi
+      cp "$extract_path/sshnp/systemd/$unit.service" "$systemd_unit"
     fi
+
+    # Create override.conf if it's missing
+    [ -f "$systemd_config" ] || {
+      cp "$extract_path/sshnp/systemd/$unit.service.d/override.conf" "$systemd_config"
+      echo "$unit config installed at $systemd_config"
+      echo "This file must be edited before you can start the systemd service"
+      echo
+    }
+    sedi "s|<username>|$user|g" "$systemd_config"
+  done
+}
+
+install_service_file() {
+  if is_darwin; then
+    install_macos_config
+  elif is_systemd_available; then
+    install_systemd_config
   else
-    # override the device type if it is set
-    device_install_type=$device_type
+    echo "Unable to detect your service manager."
+    echo "If you want to run sshnpd, you will have to set up the service manually."
   fi
+}
 
-  # install at_activate binary
-  "$extract_path"/sshnp/install.sh -b "$bin_path" -u "$user" at_activate
-
-  # install sshnpd binary and capture the installer output
-  install_output=$("$extract_path"/sshnp/install.sh -b "$bin_path" -u "$user" "$device_install_type" sshnpd)
-
-  if [ "$verbose" = true ]; then
-    echo "$install_output"
-  fi
-
-  # upgrade an existing installation if we find one
-  case "$device_install_type" in
-  launchd)
-    launchd_plist="$HOME/Library/LaunchAgents/com.atsign.sshnpd.plist"
-    if [ -f "$launchd_plist" ]; then
-      echo "launchd config already in place"
-      echo "To update your config, edit $launchd_plist"
-      return
-    fi
-    ;;
-  systemd)
-    if [ "$is_overrideconf_created" = true ]; then
-      echo "systemd config for sshnpd service already in place"
-      echo "sshnpd systemd upgraded and restarted. To see logs use:"
-      echo "  journalctl -u sshnpd -f"
-      systemctl restart sshnpd
-      return
-    fi
-    ;;
-  tmux | headless)
-    # Not recommended, we don't offer any help
-    ;;
-  esac
-
-  # Get atSigns for fresh install
-  if [ -z "$client_atsign" ]; then
-    get_atsign_manually "client"
-    client_atsign="$selectedatsign"
-  fi
-
-  if [ -z "$device_atsign" ]; then
-    get_atsign "device"
-    device_atsign="$selectedatsign"
-  fi
-
-  # Note: policy_atsign is not mandatory so, if none was supplied,
-  #       we will not prompt for it
-
-  while [ -z "$device_name" ]; do
-    printf "Enter device name: "
-    read -r device_name
-    # capitals are allowed here, sshnpd will convert to lowercase
-    if ! echo "$device_name" | grep -Eq '^[A-Za-z0-9_][A-Za-z0-9_-]{0,35}$'; then
-      echo "Device name must only contain alphanumeric characters, '-', or '_' and may not start with '-'."
-      echo "Device name may have a maximum length of 36 characters"
-      device_name=""
+install_binaries() {
+  for bin in at_activate srv npt sshnp sshnpd srvd npp_atserver npp_file npa_file np_admin; do
+    asset="$extract_path/sshnp/$bin"
+    if [ -f "$asset" ]; then
+      cp "$asset" "$bin_path/"
+      chmod 555 "$bin_path/$bin"
     fi
   done
+}
 
-  # configure service for fresh install
-  case "$device_install_type" in
-  launchd)
-    if [ -n "$policy_atsign" ]; then
-      policy_option="-p"
-      policy_atsign="$(norm_atsign "$client_atsign")"
-    else
-      policy_option=""
-    fi
-    launchd_plist="$HOME/Library/LaunchAgents/com.atsign.sshnpd.plist"
-    write_program_arguments_plist "$launchd_plist" "$bin_path/sshnpd" \
-      "-m" "$(norm_atsign "$client_atsign")" \
-      "-a" "$(norm_atsign "$device_atsign")" \
-      "-d" "$device_name" "-su" \
-      "$policy_option" "$policy_atsign"
-
-    launchctl unload "$launchd_plist"
-    launchctl load "$launchd_plist"
-    echo "sshnpd installed with launchd"
-    ;;
-  systemd)
-    write_systemd_user "$systemd_config_path" "$user"
-    write_systemd_environment "$systemd_config_path" "manager_atsign" "$(norm_atsign "$client_atsign")"
-    write_systemd_environment "$systemd_config_path" "device_atsign" "$(norm_atsign "$device_atsign")"
-    if [ -n "$policy_atsign" ]; then
-      write_systemd_environment "$systemd_config_path" "delegate_policy" "-p $(norm_atsign "$policy_atsign")"
-    fi
-    write_systemd_environment "$systemd_config_path" "device_name" "$device_name"
-
-    systemctl enable sshnpd
-    systemctl start sshnpd
-
-    echo "sshnpd installed with systemd. To see logs use:"
-    echo "  journalctl -u sshnpd -f"
-    ;;
-  tmux | headless)
-    shell_script="$bin_path"/sshnpd.sh
-    write_metadata "$shell_script" "manager_atsign" "$(norm_atsign "$client_atsign")"
-    write_metadata "$shell_script" "device_atsign" "$(norm_atsign "$device_atsign")"
-    write_metadata "$shell_script" "device_name" "$device_name"
-    if [ -n "$policy_atsign" ]; then
-      write_metadata "$shell_script" "delegate_policy" "-p $(norm_atsign "$policy_atsign")"
-    fi
-    # split install output by lines, then grab the output after the line that says "To start immediately"
-    eval "$(echo "$install_output" | grep -A1 "To start .* immediately:" | tail -n1)"
-    ;;
-  esac
-  if ! check_cmd sshd; then
-    >&2 echo "sshd not found. Please install sshd and ensure it is running."
-  fi
+run_self_as_root() {
+  echo Running this as root...
+  echo "Executing: \"sudo $0 $*\""
+  exec sudo "$0" "$@"
+  exit $?
 }
 
 main() {
+  is_root || run_self_as_root "$@"
+
   trap cleanup EXIT
   set -eu
   check_quiet "$@"
@@ -941,11 +470,8 @@ main() {
 
   unpack_archive
 
-  get_user_inputs
-  case "$install_type" in
-  client) client ;;
-  device) device ;;
-  esac
+  install_binaries
+  install_service_file
 }
 
 main "$@"
