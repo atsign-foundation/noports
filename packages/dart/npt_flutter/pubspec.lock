@@ -107,13 +107,13 @@ packages:
     source: hosted
     version: "2.1.0"
   at_client:
-    dependency: "direct main"
+    dependency: transitive
     description:
       name: at_client
-      sha256: eb0b882dfe1ddd645f933a6125bc8b8cde8ceae72f93e9851ad482914692c7ed
+      sha256: "568fd8f58ad4bc7bf0486e38fa0509ed3612d0bd91e5378aaf6e4f3dbd2455b6"
       url: "https://pub.dev"
     source: hosted
-    version: "3.5.2"
+    version: "3.6.0"
   at_client_mobile:
     dependency: "direct main"
     description:

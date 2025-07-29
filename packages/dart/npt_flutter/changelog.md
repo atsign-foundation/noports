@@ -1,3 +1,6 @@
+## 1.4.0+18
+
+--**TESTS**: Unit and integration tests added.
 
 ## 1.4.0+17
 
