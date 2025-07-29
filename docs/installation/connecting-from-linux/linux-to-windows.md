@@ -1,18 +1,6 @@
 ---
 description: How to install NoPorts when connecting from Linux to Windows
 icon: windows
-layout:
-  width: default
-  title:
-    visible: true
-  description:
-    visible: true
-  tableOfContents:
-    visible: true
-  outline:
-    visible: true
-  pagination:
-    visible: false
 ---
 
 # Linux to Windows
@@ -110,7 +98,7 @@ After setting up the machine you're connecting from, you'll configure the machin
 
 ### <mark style="color:orange;">Step 5:</mark> Download and run the Installer
 
-Download the installer [from GitHub](https://github.com/atsign-foundation/noports/releases/download/v5.8.7/NoPortsInstaller-windows-x64.zip). Then unzip the file.
+Download the installer [from GitHub](https://github.com/atsign-foundation/noports/releases/latest/download/NoPortsInstaller-windows-x64.zip). Then unzip the file.
 
 Install the Device Software
 
