@@ -183,7 +183,7 @@ class OnboardingApkamDialogState extends State<OnboardingApkamDialog> {
       deviceName: deviceName,
       otp: otp,
       namespaces: {
-        Constants.namespace!: 'rw',
+        Constants.namespace: 'rw',
         "sshnp": 'rw',
         'sshrvd': 'rw',
       },

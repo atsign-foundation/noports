@@ -1126,7 +1126,7 @@ packages:
     source: hosted
     version: "4.2.3"
   permission_handler_windows:
-    dependency: transitive
+    dependency: "direct main"
     description:
       name: permission_handler_windows
       sha256: "1a790728016f79a41216d88672dbc5df30e686e811ad4e698bfc51f76ad91f1e"
@@ -1286,7 +1286,7 @@ packages:
     source: hosted
     version: "0.2.0"
   screen_retriever_windows:
-    dependency: transitive
+    dependency: "direct main"
     description:
       name: screen_retriever_windows
       sha256: "449ee257f03ca98a57288ee526a301a430a344a161f9202b4fcc38576716fe13"

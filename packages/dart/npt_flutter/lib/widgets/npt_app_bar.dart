@@ -1,3 +1,4 @@
+import 'package:at_onboarding_flutter/at_onboarding_flutter.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_svg/flutter_svg.dart';
@@ -66,8 +67,13 @@ class _NptAppBarState extends State<NptAppBar> {
                       switchOutCurve: Curves.easeInOut,
                       transitionBuilder: (child, animation) {
                         final offsetAnimation = child.key == ValueKey(state)
-                            ? Tween<Offset>(begin: const Offset(0, 1), end: Offset.zero).animate(animation)
-                            : Tween<Offset>(begin: const Offset(0, -1), end: Offset.zero).animate(animation);
+                            ? Tween<Offset>(
+                                    begin: const Offset(0, 1), end: Offset.zero)
+                                .animate(animation)
+                            : Tween<Offset>(
+                                    begin: const Offset(0, -1),
+                                    end: Offset.zero)
+                                .animate(animation);
                         return SlideTransition(
                           position: offsetAnimation,
                           child: FadeTransition(
@@ -116,7 +122,11 @@ class _NptAppBarState extends State<NptAppBar> {
             ),
             actions: [
               Container(
-                padding: const EdgeInsets.only(top: Sizes.p8, bottom: Sizes.p8, left: Sizes.p8, right: Sizes.p0),
+                padding: const EdgeInsets.only(
+                    top: Sizes.p8,
+                    bottom: Sizes.p8,
+                    left: Sizes.p8,
+                    right: Sizes.p0),
                 decoration: BoxDecoration(
                   color: AppColor.outlinePaddingColor,
                   borderRadius: BorderRadius.circular(Sizes.p4),
@@ -130,7 +140,8 @@ class _NptAppBarState extends State<NptAppBar> {
                         curve: Curves.easeInOut,
                         opacity: 1,
                         child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: Sizes.p8),
+                          padding:
+                              const EdgeInsets.symmetric(horizontal: Sizes.p8),
                           decoration: BoxDecoration(
                             color: Colors.white,
                             borderRadius: BorderRadius.circular(Sizes.p4),
@@ -139,14 +150,16 @@ class _NptAppBarState extends State<NptAppBar> {
                           child: Row(
                             children: [
                               Text(
-                                atsign != null ? '@' : '',
+                                '@',
                                 style: Theme.of(context)
                                     .textTheme
                                     .bodyLarge!
-                                    .copyWith(color: AppColor.primaryColor, fontSize: Sizes.p20),
+                                    .copyWith(
+                                        color: AppColor.primaryColor,
+                                        fontSize: Sizes.p20),
                               ),
                               Text(
-                                atsign.replaceFirst('@', '') ?? '',
+                                atsign.withoutAt(),
                                 style: Theme.of(context).textTheme.bodyLarge,
                               ),
                             ],
@@ -162,7 +175,9 @@ class _NptAppBarState extends State<NptAppBar> {
                               onPressed: () {},
                               icon: PhosphorIcon(
                                 PhosphorIcons.key(),
-                                color: isAuthorization ? AppColor.primaryColor : Colors.grey,
+                                color: isAuthorization
+                                    ? AppColor.primaryColor
+                                    : Colors.grey,
                               ),
                             ),
                     ),

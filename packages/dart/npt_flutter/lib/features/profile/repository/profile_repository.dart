@@ -12,7 +12,7 @@ class ProfileRepository {
   Future<Iterable<String>?> getProfileUuids() async {
     AtClient atClient = AtClientManager.getInstance().atClient;
 
-    String namespace = Constants.namespace ?? '';
+    String namespace = Constants.namespace;
     List<AtKey> keys;
     try {
       keys = await atClient.getAtKeys(

@@ -18,7 +18,7 @@ import 'srvd_session_params.dart';
 @protected
 class SrvdImpl implements Srvd {
   @override
-  final AtSignLogger logger = AtSignLogger(' srvd ');
+  final AtSignLogger logger = AtSignLogger(' srvd main ');
   @override
   AtClient atClient;
   @override
@@ -89,6 +89,9 @@ class SrvdImpl implements Srvd {
       AtSignLogger.root_level = 'SHOUT';
       if (p.verbose) {
         AtSignLogger.root_level = 'INFO';
+      }
+      if (p.debug) {
+        AtSignLogger.root_level = 'FINEST';
       }
 
       if (atClient == null && atClientGenerator == null) {
@@ -217,33 +220,41 @@ class SrvdImpl implements Srvd {
       return;
     }
 
-    var mutexKey = AtKey.fromString('${sessionParams.sessionId}'
-        '.session_mutexes.${Srvd.namespace}'
-        '${atClient.getCurrentAtSign()!}')
-      ..metadata = (Metadata()
-        ..immutable = true // only one srvd will succeed in doing this
-        ..ttl = 30000); // expire after 30 seconds to keep datastore clean
-    PutRequestOptions pro = PutRequestOptions()
-      ..shouldEncrypt = false
-      ..useRemoteAtServer = true;
-
-    try {
-      await atClient.put(
-        mutexKey,
-        'lock',
-        putRequestOptions: pro,
-      );
+    if (sessionParams.multipleAcksOk) {
+      // client can handle multiple acks, no need to lock a mutex
       logger.shout('😎 Will handle request from ${notification.from}'
-          '; acquired mutex $mutexKey');
-    } catch (err) {
-      if (err.toString().toLowerCase().contains('immutable')) {
-        logger.shout('🤷‍♂️ Will not handle request from ${notification.from}'
-            '; did not acquire mutex $mutexKey');
-        ppiSendToSpawned?.send(IIRequest.create('stop', null));
-      } else {
-        logger.shout('Will not handle; did not acquire mutex $mutexKey : $err');
+          ' which can handle multiple acks (no mutex required)');
+    } else {
+      // client cannot handle multiple acks, so we need to lock a mutex
+      var mutexKey = AtKey.fromString('${sessionParams.sessionId}'
+          '.session_mutexes.${Srvd.namespace}'
+          '${atClient.getCurrentAtSign()!}')
+        ..metadata = (Metadata()
+          ..immutable = true // only one srvd will succeed in doing this
+          ..ttl = 30000); // expire after 30 seconds to keep datastore clean
+      PutRequestOptions pro = PutRequestOptions()
+        ..shouldEncrypt = false
+        ..useRemoteAtServer = true;
+
+      try {
+        await atClient.put(
+          mutexKey,
+          'lock',
+          putRequestOptions: pro,
+        );
+        logger.shout('😎 Will handle request from ${notification.from}'
+            '; acquired mutex $mutexKey');
+      } catch (err) {
+        if (err.toString().toLowerCase().contains('immutable')) {
+          logger.shout('🤷‍♂️ Will not handle request from ${notification.from}'
+              '; did not acquire mutex $mutexKey');
+          ppiSendToSpawned?.send(IIRequest.create('stop', null));
+        } else {
+          logger
+              .shout('Will not handle; did not acquire mutex $mutexKey : $err');
+        }
+        return;
       }
-      return;
     }
 
     if (sessionParams.only443) {
@@ -251,7 +262,7 @@ class SrvdImpl implements Srvd {
         var message = 'Client requested port 443'
             ' but this relay is not bound to port 443';
         logger.shout(message);
-        if (sessionParams.sendNacks) {
+        if (sessionParams.multipleAcksOk) {
           try {
             await sendNack(
               sessionId: sessionParams.sessionId,
@@ -299,20 +310,47 @@ class SrvdImpl implements Srvd {
           waitForFinalDeliveryStatus: false,
           checkForFinalDeliveryStatus: false);
     } catch (e) {
-      stderr.writeln("Error writing session ${notification.value} atKey");
+      logger.shout("Error sending response to client");
     }
+
+    preFetched[sessionParams.sessionId] = {};
+    for (final s in sessionParams.preFetch) {
+      try {
+        final AtValue value = await _lookup(AtKey.fromString(s));
+        preFetched[sessionParams.sessionId]![s] = value.value;
+      } catch (e) {
+        logger.shout('$e while preFetching $s');
+      }
+    }
+    unawaited(Future.delayed(Duration(seconds: 30))
+        .whenComplete(() => preFetched.remove(sessionParams.sessionId)));
+  }
+
+  Map<String, Map<String, dynamic>> preFetched = {};
+
+  Future<AtValue> _lookup(AtKey atKey) async {
+    logger.info('Looking up $atKey on atServer');
+    return await atClient.get(
+      atKey,
+      getRequestOptions: GetRequestOptions()..useRemoteAtServer = true,
+    );
   }
 
   @override
   Future<void> lookup(IIRequest msg, SendPort toSpawned) async {
-    final AtValue value;
     try {
       logger.info('request: "lookup" : ${msg.payload}');
-      value = await atClient.get(
-        AtKey.fromString(msg.payload),
-        getRequestOptions: GetRequestOptions()..useRemoteAtServer = true,
-      );
-      logger.info('request: "lookup" : success ${value.value}');
+      String sessionId = msg.payload['sessionId'];
+      String key = msg.payload['key'];
+      AtValue value;
+      String fromPreFetch = '';
+      if (preFetched[sessionId]?[key] != null) {
+        value = AtValue()..value = preFetched[sessionId]?[key];
+        fromPreFetch = ' (pre-fetched)';
+      } else {
+        value = await _lookup(AtKey.fromString(key));
+      }
+      logger.info('request: "lookup" : success$fromPreFetch: ${value.value}');
       toSpawned.send(IIResponse(
         id: msg.id,
         isError: false,

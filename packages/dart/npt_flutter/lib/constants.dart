@@ -1,8 +1,7 @@
-import 'dart:convert' show JsonDecoder, JsonEncoder, jsonDecode, withIndent;
+import 'dart:convert' show jsonDecode;
 import 'dart:io' show exit;
 
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart' show Intl;
 import 'package:npt_flutter/localization/app_localizations.dart'
     show AppLocalizations;
 
@@ -22,12 +21,6 @@ typedef LocalizedRootMetadata = ({
 });
 typedef LocalizedRootMap = Map<String, LocalizedRootMetadata>;
 typedef LocalizedString = Map<String, String>;
-
-extension _StringUtils on String {
-  String? get nullIfEmpty => isEmpty ? null : this;
-
-  String toEnvKey() => toUpperCase().replaceAll(".", "_").trim();
-}
 
 class Constants {
   static const String namespace = 'noports';

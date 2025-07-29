@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:at_client/at_client.dart';
+import 'package:at_utils/at_logger.dart';
 import 'package:noports_core/sshnp_foundation.dart';
 import 'package:noports_core/srvd.dart';
 
@@ -18,7 +19,8 @@ class SrvdSessionParams {
   final RelayAuthMode relayAuthMode;
   final String? relayAuthAesKey;
   final bool only443;
-  final bool sendNacks;
+  final bool multipleAcksOk;
+  final List<String> preFetch;
 
   SrvdSessionParams({
     required this.sessionId,
@@ -33,7 +35,8 @@ class SrvdSessionParams {
     this.relayAuthMode = RelayAuthMode.payload,
     this.relayAuthAesKey,
     required this.only443,
-    required this.sendNacks,
+    required this.multipleAcksOk,
+    required this.preFetch,
   });
 
   @override
@@ -52,11 +55,13 @@ class SrvdSessionParams {
         'relayAuthMode': relayAuthMode.name,
         'relayAuthAesKey': relayAuthAesKey,
         'only443': only443,
-        'sendNacks': sendNacks,
+        'multipleAcksOk': multipleAcksOk,
+        'preFetch': preFetch,
       };
 }
 
 class SrvdUtil {
+  static AtSignLogger logger = AtSignLogger(' SrvdUtil ');
   final AtClient atClient;
 
   SrvdUtil(this.atClient);
@@ -79,7 +84,8 @@ class SrvdUtil {
       sessionId: notification.value!,
       atSignA: notification.from,
       only443: false,
-      sendNacks: false,
+      multipleAcksOk: false,
+      preFetch: [],
     );
   }
 
@@ -93,6 +99,7 @@ class SrvdUtil {
   Future<SrvdSessionParams> _sessionParamsForJsonRequest(
       AtNotification notification) async {
     dynamic json = jsonDecode(notification.value ?? '');
+    logger.info('Received session request JSON: $json');
 
     assertValidMapValue(json, 'sessionId', String);
     assertValidMapValue(json, 'atSignA', String);
@@ -135,7 +142,8 @@ class SrvdUtil {
       relayAuthMode: relayAuthMode,
       relayAuthAesKey: json['relayAuthAesKey'],
       only443: json['only443'] ?? false,
-      sendNacks: json['sendNacks'] ?? false,
+      multipleAcksOk: json['multipleAcksOk'] ?? false,
+      preFetch: List<String>.from(json['preFetch'] ?? []),
     );
   }
 
