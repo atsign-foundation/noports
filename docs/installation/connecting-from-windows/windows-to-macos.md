@@ -1,18 +1,6 @@
 ---
 description: How to install NoPorts when connecting from Windows to macOS
 icon: apple
-layout:
-  width: default
-  title:
-    visible: true
-  description:
-    visible: true
-  tableOfContents:
-    visible: true
-  outline:
-    visible: true
-  pagination:
-    visible: false
 ---
 
 # Windows to macOS
@@ -27,7 +15,7 @@ These initial steps set up the machine initiating the connection.
 
 ### <mark style="color:orange;">Step 1:</mark> Download and run the Installer
 
-Download the installer [from GitHub](https://github.com/atsign-foundation/noports/releases/download/v5.8.7/NoPortsInstaller-windows-x64.zip). Then unzip the file.
+Download the installer [from GitHub](https://github.com/atsign-foundation/noports/releases/download/latest/NoPortsInstaller-windows-x64.zip). Then unzip the file.
 
 Launch the NoPortsInstaller.exe program and allow it administrative permissions. Click **Client** **Install** and follow the process until installation is complete.
 
