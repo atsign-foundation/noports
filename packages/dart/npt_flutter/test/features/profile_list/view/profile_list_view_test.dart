@@ -79,10 +79,6 @@ void main() {
     });
 
     setUp(() {
-      // Set test window size to match production
-      final binding = TestWidgetsFlutterBinding.ensureInitialized();
-      binding.window.physicalSizeTestValue = const Size(1053, 691);
-      binding.window.devicePixelRatioTestValue = 1.0;
       mockProfileListBloc = MockProfileListBloc();
       mockProfileCacheCubit = MockProfileCacheCubit();
       mockSyncCubit = MockSyncCubit();
@@ -174,6 +170,10 @@ void main() {
 
     group('ProfileListInitial State', () {
       testWidgets('should display Spinner when state is ProfileListInitial', (WidgetTester tester) async {
+        // Set test window size to match production
+        tester.view.physicalSize = const Size(1053, 691);
+        tester.view.devicePixelRatio = 1.0;
+
         await tester.pumpWidget(createWidgetUnderTest(const ProfileListInitial()));
         await tester.pump();
 
@@ -184,6 +184,10 @@ void main() {
 
     group('ProfileListLoading State', () {
       testWidgets('should display Spinner when state is ProfileListLoading', (WidgetTester tester) async {
+        // Set test window size to match production
+        tester.view.physicalSize = const Size(1053, 691);
+        tester.view.devicePixelRatio = 1.0;
+
         await tester.pumpWidget(createWidgetUnderTest(const ProfileListLoading()));
         await tester.pump();
 
@@ -195,6 +199,10 @@ void main() {
     group('ProfileListFailedLoad State', () {
       testWidgets('should display ProfileListFailedLoadContent when state is ProfileListFailedLoad',
           (WidgetTester tester) async {
+        // Set test window size to match production
+        tester.view.physicalSize = const Size(1053, 691);
+        tester.view.devicePixelRatio = 1.0;
+
         await tester.pumpWidget(createWidgetUnderTest(const ProfileListFailedLoad()));
         await tester.pump();
 
@@ -205,6 +213,10 @@ void main() {
 
     group('ProfileListLoaded State', () {
       testWidgets('should display empty state when no profiles are loaded', (WidgetTester tester) async {
+        // Set test window size to match production
+        tester.view.physicalSize = const Size(1053, 691);
+        tester.view.devicePixelRatio = 1.0;
+
         await tester.pumpWidget(createWidgetUnderTest(const ProfileListLoaded(profiles: [])));
         await tester.pump();
 
@@ -234,6 +246,10 @@ void main() {
       });
 
       testWidgets('should display profiles when profiles are loaded', (WidgetTester tester) async {
+        // Set test window size to match production
+        tester.view.physicalSize = const Size(1053, 691);
+        tester.view.devicePixelRatio = 1.0;
+
         await tester.pumpWidget(createWidgetUnderTest(const ProfileListLoaded(profiles: testUuids)));
         await tester.pump();
 
@@ -268,6 +284,10 @@ void main() {
       });
 
       testWidgets('should display sync status when sync is in progress', (WidgetTester tester) async {
+        // Set test window size to match production
+        tester.view.physicalSize = const Size(1053, 691);
+        tester.view.devicePixelRatio = 1.0;
+
         when(mockSyncCubit.state).thenReturn(false);
         when(mockSyncCubit.stream).thenAnswer((_) => Stream.value(false));
 
@@ -279,6 +299,10 @@ void main() {
       });
 
       testWidgets('should not display sync status when sync is complete', (WidgetTester tester) async {
+        // Set test window size to match production
+        tester.view.physicalSize = const Size(1053, 691);
+        tester.view.devicePixelRatio = 1.0;
+
         when(mockSyncCubit.state).thenReturn(true);
         when(mockSyncCubit.stream).thenAnswer((_) => Stream.value(true));
 
@@ -290,6 +314,10 @@ void main() {
       });
 
       testWidgets('should provide correct BlocProvider keys for profiles', (WidgetTester tester) async {
+        // Set test window size to match production
+        tester.view.physicalSize = const Size(1053, 691);
+        tester.view.devicePixelRatio = 1.0;
+
         await tester.pumpWidget(createWidgetUnderTest(const ProfileListLoaded(profiles: testUuids)));
         await tester.pump();
 
