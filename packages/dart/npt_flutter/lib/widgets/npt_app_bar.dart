@@ -139,14 +139,14 @@ class _NptAppBarState extends State<NptAppBar> {
                           child: Row(
                             children: [
                               Text(
-                                atsign != null ? '@' : '',
+                                '@',
                                 style: Theme.of(context)
                                     .textTheme
                                     .bodyLarge!
                                     .copyWith(color: AppColor.primaryColor, fontSize: Sizes.p20),
                               ),
                               Text(
-                                atsign.replaceFirst('@', '') ?? '',
+                                atsign.replaceFirst('@', ''),
                                 style: Theme.of(context).textTheme.bodyLarge,
                               ),
                             ],

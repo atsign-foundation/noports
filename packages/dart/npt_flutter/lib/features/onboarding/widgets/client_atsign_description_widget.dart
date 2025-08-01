@@ -139,7 +139,7 @@ class _ClientAtsignDescriptionWidgetState extends State<ClientAtsignDescriptionW
                                   style: TextStyle(color: AppColor.primaryColor, fontSize: 10),
                                   children: [
                                     TextSpan(
-                                      text: StringConst.atsign_client,
+                                      text: StringConst.atsignClient,
                                       style: TextStyle(color: Colors.black, fontSize: Sizes.p10),
                                     ),
                                   ],

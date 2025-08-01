@@ -1,5 +1,3 @@
-import 'dart:developer';
-
 import 'package:at_onboarding_flutter/at_onboarding_flutter.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -71,7 +69,6 @@ class SwitchAtsignButton extends StatelessWidget {
             var isProfileConnected = false;
 
             if (context.read<ProfilesRunningCubit>().state.socketConnectors.keys.toSet().isNotEmpty) {
-              log('tap triggered more than once');
               isProfileConnected = await showDialog(
                 barrierDismissible: false,
                 context: context,
@@ -101,10 +98,10 @@ class SwitchAtsignButton extends StatelessWidget {
                   appAPIKey: await Constants.appAPIKey,
                 ),
               );
-              log("onboarding result: $onboardingResult");
+
               if (onboardingResult.status == AtOnboardingResultStatus.success) {
-                await BackupKeyUtils().BackupKeyStatusCheck();
-                log("postOnbarding called");
+                await BackupKeyUtils().backupKeyStatusCheck();
+
                 await postOnboard(selectedAtSign, rootDomain);
               }
             }
