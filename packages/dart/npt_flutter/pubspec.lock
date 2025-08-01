@@ -112,7 +112,7 @@ packages:
     source: hosted
     version: "2.1.0"
   at_client:
-    dependency: transitive
+    dependency: "direct main"
     description:
       name: at_client
       sha256: "568fd8f58ad4bc7bf0486e38fa0509ed3612d0bd91e5378aaf6e4f3dbd2455b6"
@@ -1805,7 +1805,7 @@ packages:
     dependency: transitive
     description:
       name: web_socket_channel
-      sha256: "9f187088ed104edd8662ca07af4b124465893caf063ba29758f97af57e61da8f"
+      sha256: d645757fb0f4773d602444000a8131ff5d48c9e47adfe9772652dd1a4f2d45c8
       url: "https://pub.dev"
     source: hosted
     version: "3.0.3"
