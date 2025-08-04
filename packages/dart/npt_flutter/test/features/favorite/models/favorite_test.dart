@@ -70,43 +70,31 @@ void main() {
       expect(favoriteProfile.type, equals(FavoriteType.profile));
     });
 
-    test('should implement toString correctly', () {
-      final result = favoriteProfile.toString();
-      expect(result, equals('FavoriteProfile(uuid: $testUuid)'));
-    });
+    test('should handle string representation and JSON serialization correctly', () {
+      // Test toString
+      final stringResult = favoriteProfile.toString();
+      expect(stringResult, equals('FavoriteProfile(uuid: $testUuid)'));
 
-    test('should serialize to JSON correctly', () {
+      // Test JSON serialization
       final json = favoriteProfile.toJson();
-
       expect(json['uuid'], equals(testUuid));
       expect(json['type'], equals('profile'));
+
+      // Test JSON deserialization
+      final deserializedResult = FavoriteProfile.fromJson(json);
+      expect(deserializedResult.uuid, equals(testUuid));
+      expect(deserializedResult.type, equals(FavoriteType.profile));
     });
 
-    test('should deserialize from JSON correctly', () {
-      final json = {
-        'uuid': testUuid,
-        'type': 'profile',
-      };
-
-      final result = FavoriteProfile.fromJson(json);
-
-      expect(result.uuid, equals(testUuid));
-      expect(result.type, equals(FavoriteType.profile));
-    });
-
-    test('should have correct profileIds', () {
+    test('should handle profile management operations correctly', () {
+      // Test profileIds
       expect(favoriteProfile.profileIds, equals([testUuid]));
-    });
 
-    test('containsProfile should return true for matching uuid', () {
+      // Test containsProfile
       expect(favoriteProfile.containsProfile(testUuid), isTrue);
-    });
-
-    test('containsProfile should return false for non-matching uuid', () {
       expect(favoriteProfile.containsProfile('different-uuid'), isFalse);
-    });
 
-    test('isLoadedInProfiles should return true when uuid is in list', () {
+      // Test isLoadedInProfiles
       final profiles = [testUuid, 'other-uuid'];
       expect(favoriteProfile.isLoadedInProfiles(profiles), isTrue);
     });

@@ -117,9 +117,9 @@ void main() {
     });
 
     group('Profile JSON Serialization', () {
-      test('should serialize to JSON correctly', () {
+      test('should handle JSON serialization and deserialization correctly', () {
+        // Test standard JSON serialization
         final json = testProfile.toJson();
-
         expect(json['uuid'], equals(testUuid));
         expect(json['displayName'], equals(testDisplayName));
         expect(json['sshnpdAtsign'], equals(testSshnpdAtsign));
@@ -128,73 +128,34 @@ void main() {
         expect(json['remotePort'], equals(testRemotePort));
         expect(json['localPort'], equals(testLocalPort));
         expect(json['relayAtsign'], equals(testRelayAtsign));
-      });
 
-      test('should serialize to exportable JSON without uuid', () {
+        // Test exportable JSON (without UUID)
         final exportableJson = testProfile.toExportableJson();
-
         expect(exportableJson.containsKey('uuid'), isFalse);
         expect(exportableJson['displayName'], equals(testDisplayName));
         expect(exportableJson['sshnpdAtsign'], equals(testSshnpdAtsign));
         expect(exportableJson['deviceName'], equals(testDeviceName));
-      });
 
-      test('should deserialize from JSON correctly', () {
-        final json = {
-          'uuid': testUuid,
-          'displayName': testDisplayName,
-          'sshnpdAtsign': testSshnpdAtsign,
-          'deviceName': testDeviceName,
-          'remoteHost': testRemoteHost,
-          'remotePort': testRemotePort,
-          'localPort': testLocalPort,
-          'relayAtsign': testRelayAtsign,
-        };
-
-        final profile = Profile.fromJson(json);
-
-        expect(profile.uuid, equals(testUuid));
-        expect(profile.displayName, equals(testDisplayName));
-        expect(profile.sshnpdAtsign, equals(testSshnpdAtsign));
-        expect(profile.deviceName, equals(testDeviceName));
-        expect(profile.remoteHost, equals(testRemoteHost));
-        expect(profile.remotePort, equals(testRemotePort));
-        expect(profile.localPort, equals(testLocalPort));
-        expect(profile.relayAtsign, equals(testRelayAtsign));
-      });
-
-      test('should deserialize from JSON with default remoteHost', () {
-        final json = {
-          'displayName': testDisplayName,
-          'sshnpdAtsign': testSshnpdAtsign,
-          'deviceName': testDeviceName,
-          'remotePort': testRemotePort,
-          'localPort': testLocalPort,
-        };
-
-        final profile = Profile.fromJson(json);
-
-        expect(profile.remoteHost, equals('localhost'));
-        expect(profile.displayName, equals(testDisplayName));
-      });
-
-      test('should handle JSON round trip correctly', () {
-        final json = testProfile.toJson();
+        // Test deserialization from complete JSON
         final deserializedProfile = Profile.fromJson(json);
+        expect(deserializedProfile, equals(testProfile));
 
-        expect(deserializedProfile.uuid, equals(testProfile.uuid));
-        expect(deserializedProfile.displayName, equals(testProfile.displayName));
-        expect(deserializedProfile.sshnpdAtsign, equals(testProfile.sshnpdAtsign));
-        expect(deserializedProfile.deviceName, equals(testProfile.deviceName));
-        expect(deserializedProfile.remoteHost, equals(testProfile.remoteHost));
-        expect(deserializedProfile.remotePort, equals(testProfile.remotePort));
-        expect(deserializedProfile.localPort, equals(testProfile.localPort));
-        expect(deserializedProfile.relayAtsign, equals(testProfile.relayAtsign));
+        // Test deserialization with default remoteHost
+        final jsonWithoutHost = {
+          'displayName': testDisplayName,
+          'sshnpdAtsign': testSshnpdAtsign,
+          'deviceName': testDeviceName,
+          'remotePort': testRemotePort,
+          'localPort': testLocalPort,
+        };
+        final profileWithDefaultHost = Profile.fromJson(jsonWithoutHost);
+        expect(profileWithDefaultHost.remoteHost, equals('localhost'));
+        expect(profileWithDefaultHost.displayName, equals(testDisplayName));
       });
     });
 
-    group('Profile Equality', () {
-      test('should be equal when all properties match', () {
+    group('Profile Equality and String Representation', () {
+      test('should implement equality correctly', () {
         const profile1 = Profile(
           testUuid,
           displayName: testDisplayName,
@@ -213,33 +174,29 @@ void main() {
           localPort: testLocalPort,
         );
 
+        final profile3 = testProfile.copyWith(uuid: 'different-uuid');
+        final profile4 = testProfile.copyWith(displayName: 'Different Name');
+
+        // Test equality when all properties match
         expect(profile1, equals(profile2));
         expect(profile1.hashCode, equals(profile2.hashCode));
+
+        // Test inequality when properties differ
+        expect(testProfile, isNot(equals(profile3)));
+        expect(testProfile, isNot(equals(profile4)));
       });
 
-      test('should not be equal when uuid differs', () {
-        final profile1 = testProfile;
-        final profile2 = testProfile.copyWith(uuid: 'different-uuid');
-
-        expect(profile1, isNot(equals(profile2)));
-      });
-
-      test('should not be equal when displayName differs', () {
-        final profile1 = testProfile;
-        final profile2 = testProfile.copyWith(displayName: 'Different Name');
-
-        expect(profile1, isNot(equals(profile2)));
-      });
-    });
-
-    group('Profile toString', () {
-      test('should return readable string representation', () {
+      test('should provide readable string representation', () {
         final stringRepresentation = testProfile.toString();
 
-        expect(stringRepresentation, contains(testDisplayName));
-        expect(stringRepresentation, contains(testSshnpdAtsign));
-        expect(stringRepresentation, contains(testDeviceName));
-        expect(stringRepresentation, contains(testUuid));
+        expect(
+            stringRepresentation,
+            allOf(
+              contains(testDisplayName),
+              contains(testSshnpdAtsign),
+              contains(testDeviceName),
+              contains(testUuid),
+            ));
       });
     });
 

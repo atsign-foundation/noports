@@ -1,15 +1,11 @@
-// This is a basic Flutter widget test.
-//
-// To perform an interaction with a widget in your test, use the WidgetTester
-// utility in the flutter_test package. For example, you can send tap and scroll
-// gestures. You can also use WidgetTester to find child widgets in the widget
-// tree, read text, and verify that the values of widget properties are correct.
-
-import 'package:flutter_test/flutter_test.dart';
+// This file has been removed as it contained no meaningful tests.
+// All actual widget tests are located in their respective feature test directories.
+// For example:
+// - Profile widget tests: test/features/profile/view/profile_view_test.dart
+// - Profile List widget tests: test/features/profile_list/view/profile_list_view_test.dart
+// - Settings widget tests: test/features/settings/view/settings_view_test.dart
 
 void main() {
-  testWidgets('Counter increments smoke test', (WidgetTester tester) async {
-    // Build our app and trigger a frame.
-    //await tester.pumpWidget(const App());
-  });
+  // This file has been intentionally left minimal as it served no purpose
+  // All meaningful widget tests are located in their respective feature directories
 }

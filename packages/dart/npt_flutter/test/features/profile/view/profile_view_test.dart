@@ -151,7 +151,7 @@ void main() {
     });
 
     group('ProfileLoading State', () {
-      testWidgets('should display LoaderBar and ProfileRefreshButton', (tester) async {
+      testWidgets('should display loading components with proper layout', (tester) async {
         const profileState = ProfileLoading(testUuid);
         const settingsState = SettingsLoaded(settings: testSettings);
 
@@ -161,21 +161,12 @@ void main() {
         ));
         await tester.pump();
 
+        // Verify loading components are displayed
         expect(find.byType(LoaderBar), findsOneWidget);
         expect(find.byType(ProfileRefreshButton), findsOneWidget);
         expect(find.byType(Row), findsWidgets);
-      });
 
-      testWidgets('should center the loading content', (tester) async {
-        const profileState = ProfileLoading(testUuid);
-        const settingsState = SettingsLoaded(settings: testSettings);
-
-        await tester.pumpWidget(createTestWidget(
-          profileState: profileState,
-          settingsState: settingsState,
-        ));
-        await tester.pump();
-
+        // Verify layout is centered
         final rowWidget = tester.widget<Row>(find.byType(Row));
         expect(rowWidget.mainAxisAlignment, MainAxisAlignment.center);
       });
@@ -354,27 +345,23 @@ void main() {
         expect(find.byType(ProfilePopupMenuButton), findsOneWidget);
       });
 
-      testWidgets('should handle selected profile state', (tester) async {
+      testWidgets('should handle different profile states correctly', (tester) async {
+        // Test selected profile state
         const selectedState = ProfilesSelectedState({testUuid});
-
         await tester.pumpWidget(createMinimalTestWidget(
           profilesSelectedState: selectedState,
         ));
         await tester.pump();
-
         expect(find.byType(ProfileViewMinimal), findsOneWidget);
         expect(find.byType(ProfileSelectBox), findsOneWidget);
-      });
 
-      testWidgets('should handle favorite profile state', (tester) async {
+        // Test favorite profile state
         const favoriteProfile = FavoriteProfile(uuid: testUuid);
         const favoritesState = FavoritesLoaded([favoriteProfile]);
-
         await tester.pumpWidget(createMinimalTestWidget(
           favoritesState: favoritesState,
         ));
         await tester.pump();
-
         expect(find.byType(ProfileViewMinimal), findsOneWidget);
         expect(find.byType(ProfileFavoriteButton), findsOneWidget);
       });
@@ -450,26 +437,21 @@ void main() {
       });
 
       testWidgets('should handle selected profile state', (tester) async {
+        // Test selected and favorite profile states
         const selectedState = ProfilesSelectedState({testUuid});
-
         await tester.pumpWidget(createSshStyleTestWidget(
           profilesSelectedState: selectedState,
         ));
         await tester.pump();
-
         expect(find.byType(ProfileViewSshStyle), findsOneWidget);
         expect(find.byType(ProfileSelectBox), findsOneWidget);
-      });
 
-      testWidgets('should handle favorite profile state', (tester) async {
         const favoriteProfile = FavoriteProfile(uuid: testUuid);
         const favoritesState = FavoritesLoaded([favoriteProfile]);
-
         await tester.pumpWidget(createSshStyleTestWidget(
           favoritesState: favoritesState,
         ));
         await tester.pump();
-
         expect(find.byType(ProfileViewSshStyle), findsOneWidget);
         expect(find.byType(ProfileFavoriteButton), findsOneWidget);
       });

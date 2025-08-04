@@ -1,33 +1,84 @@
-I'll examine your Flutter app codebase to understand the structure and determine what should be tested and in what order. Let me start by exploring the codebase to understand the app's functionality and architecture. Now let me explore the feature structure and testing patterns to understand what needs testing: Now let me explore the models and widgets to understand the complete structure: Now let me explore the test structure and dependencies: Based on my comprehensive analysis of your Flutter app codebase, I can provide you with a structured testing strategy. Your app is a sophisticated NoPorts Desktop application built with Flutter that uses BLoC pattern for state management. Here's what should be tested and in what order:
+# NPT Flutter Testing Strategy
 
-## **Testing Strategy & Priority Order**
+This document outlines the testing approach for the NPT Flutter application, prioritizing critical functionality and maintainability.
+
+## **Testing Pyramid & Priority Order**
 
 ### **1. Unit Tests (Highest Priority)**
 
 #### **Core Models & Data Structures**
-
-- **Profile model** (profile.dart)
-
-  - JSON serialization/deserialization
-  - copyWith functionality
-  - toNptParams conversion
-  - Favoritable mixin implementation
-
-- **Settings model** (settings.dart)
-
-  - Default settings creation
-  - copyWith functionality
-  - JSON handling
-  - Language and layout preferences
-
-- **Favorite models** (models)
-  - FavoriteProfile creation and matching
-  - JSON serialization
-  - Profile relationship tracking
+- ✅ **Profile model** - JSON serialization, copyWith, Favoritable mixin
+- ✅ **Settings model** - Default settings, JSON handling, preferences  
+- ✅ **Favorite models** - Profile relationships, JSON serialization
 
 #### **Repositories (Data Layer)**
+- ✅ **ProfileRepository** - CRUD operations, AtKey handling, caching
+- ✅ **SettingsRepository** - Settings persistence, AtClient integration
+- ✅ **FavoriteRepository** - Favorite management, cache invalidation
 
-- **ProfileRepository** (profile_repository.dart)
+#### **BLoC/Cubit Business Logic**
+- ✅ **ProfileBloc** - Profile loading, creation, editing events
+- ✅ **ProfileListBloc** - List management, deletion, favorite integration
+- ✅ **SettingsBloc** - Settings loading and persistence
+- ✅ **FavoriteBloc** - Add/remove favorites, profile relationships
+- ✅ **OnboardingCubit** - State management during onboarding
+- ✅ **ProfilesRunningCubit** - Socket connection management
+- ✅ **ProfilesSelectedCubit** - Multi-selection state
+
+### **2. Widget Tests (Medium Priority)**
+- ✅ **ProfileView** - Profile display and form interactions
+- ✅ **ProfileListView** - List rendering, selection, actions
+- ✅ **SettingsView** - Settings form and persistence
+
+### **3. Integration Tests (High Value)**
+- ✅ **comprehensive_e2e_test.dart** - Complete user workflows from onboarding to profile management
+
+## **Current Test Coverage**
+
+### ✅ **Completed Tests**
+- All core models with comprehensive test coverage
+- Repository layer with mocking and error handling
+- Business logic (BLoC/Cubit) with state transitions
+- Key widget tests for main user interfaces
+- End-to-end integration test covering full user journey
+
+### **Test Quality Standards**
+- **Unit Tests**: 90%+ code coverage for models and repositories
+- **BLoC Tests**: All state transitions and edge cases covered
+- **Widget Tests**: Critical user interactions and error states
+- **Integration Tests**: Complete user workflows with realistic scenarios
+
+## **Testing Philosophy**
+
+1. **Test Behavior, Not Implementation** - Focus on what the code does, not how
+2. **Realistic Test Data** - Use meaningful test data that reflects real usage
+3. **Deterministic Tests** - Ensure tests are repeatable and reliable
+4. **Fast Feedback** - Unit tests should run quickly for rapid development
+5. **Comprehensive Integration** - E2E tests cover critical user paths
+
+## **Running Tests**
+
+```bash
+# Run all unit tests
+flutter test test/
+
+# Run integration tests  
+flutter test integration_test/
+
+# Run tests with coverage
+flutter test --coverage
+
+# Run specific test file
+flutter test test/features/profile/models/profile_test.dart
+```
+
+## **Maintenance Guidelines**
+
+- **Add tests for new features** before implementation
+- **Update tests** when refactoring existing code  
+- **Remove obsolete tests** when features are deprecated
+- **Keep test data realistic** and representative of actual usage
+- **Mock external dependencies** appropriately in unit tests
 
   - CRUD operations for profiles
   - AtKey handling and namespacing

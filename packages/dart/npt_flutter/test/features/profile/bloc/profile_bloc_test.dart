@@ -218,114 +218,64 @@ void main() {
     });
 
     group('Event toString Methods', () {
-      test('ProfileLoadEvent toString should include useCache', () {
-        const event = ProfileLoadEvent(useCache: false);
-        expect(event.toString(), contains('useCache: false'));
-      });
+      test('Event toString methods should provide proper string representations', () {
+        const loadEvent = ProfileLoadEvent(useCache: false);
+        const createEvent = ProfileLoadOrCreateEvent();
+        const editEvent = ProfileEditEvent(profile: testProfile);
+        const startEvent = ProfileStartEvent();
+        const stopEvent = ProfileStopEvent();
 
-      test('ProfileLoadOrCreateEvent toString should be correct', () {
-        const event = ProfileLoadOrCreateEvent();
-        expect(event.toString(), equals('ProfileLoadOrCreateEvent'));
-      });
-
-      test('ProfileEditEvent toString should include profile', () {
-        const event = ProfileEditEvent(profile: testProfile);
-        expect(event.toString(), contains('profile: $testProfile'));
-      });
-
-      test('ProfileStartEvent toString should be correct', () {
-        const event = ProfileStartEvent();
-        expect(event.toString(), equals('ProfileStartEvent'));
-      });
-
-      test('ProfileStopEvent toString should be correct', () {
-        const event = ProfileStopEvent();
-        expect(event.toString(), equals('ProfileStopEvent'));
+        expect(loadEvent.toString(), contains('useCache: false'));
+        expect(createEvent.toString(), equals('ProfileLoadOrCreateEvent'));
+        expect(editEvent.toString(), contains('profile: $testProfile'));
+        expect(startEvent.toString(), equals('ProfileStartEvent'));
+        expect(stopEvent.toString(), equals('ProfileStopEvent'));
       });
     });
 
     group('State toString Methods', () {
-      test('ProfileInitial toString should include uuid', () {
-        const state = ProfileInitial(testUuid);
-        expect(state.toString(), contains(testUuid));
-      });
+      test('State toString methods should include relevant information', () {
+        const initialState = ProfileInitial(testUuid);
+        const loadingState = ProfileLoading(testUuid);
+        const failedLoadState = ProfileFailedLoad(testUuid);
+        const loadedState = ProfileLoaded(testUuid, profile: testProfile);
+        const failedSaveState = ProfileFailedSave(testUuid, profile: testProfile);
 
-      test('ProfileLoading toString should include uuid', () {
-        const state = ProfileLoading(testUuid);
-        expect(state.toString(), contains(testUuid));
-      });
-
-      test('ProfileFailedLoad toString should include uuid', () {
-        const state = ProfileFailedLoad(testUuid);
-        expect(state.toString(), contains(testUuid));
-      });
-
-      test('ProfileLoaded toString should include uuid and profile', () {
-        const state = ProfileLoaded(testUuid, profile: testProfile);
-        expect(state.toString(), contains(testUuid));
-        expect(state.toString(), contains('profile: $testProfile'));
-      });
-
-      test('ProfileFailedSave toString should include uuid and profile', () {
-        const state = ProfileFailedSave(testUuid, profile: testProfile);
-        expect(state.toString(), contains(testUuid));
-        expect(state.toString(), contains('profile: $testProfile'));
+        expect(initialState.toString(), contains(testUuid));
+        expect(loadingState.toString(), contains(testUuid));
+        expect(failedLoadState.toString(), contains(testUuid));
+        expect(loadedState.toString(), allOf(contains(testUuid), contains('profile: $testProfile')));
+        expect(failedSaveState.toString(), allOf(contains(testUuid), contains('profile: $testProfile')));
       });
     });
 
-    group('Event Props', () {
-      test('ProfileLoadEvent props should be empty', () {
-        const event = ProfileLoadEvent();
-        expect(event.props, isEmpty);
+    group('Event and State Props', () {
+      test('Event props should contain appropriate data for equality', () {
+        const loadEvent = ProfileLoadEvent();
+        const createEvent = ProfileLoadOrCreateEvent();
+        const editEvent = ProfileEditEvent(profile: testProfile);
+        const startEvent = ProfileStartEvent();
+        const stopEvent = ProfileStopEvent();
+
+        expect(loadEvent.props, isEmpty);
+        expect(createEvent.props, isEmpty);
+        expect(editEvent.props, contains(testProfile));
+        expect(startEvent.props, isEmpty);
+        expect(stopEvent.props, isEmpty);
       });
 
-      test('ProfileLoadOrCreateEvent props should be empty', () {
-        const event = ProfileLoadOrCreateEvent();
-        expect(event.props, isEmpty);
-      });
+      test('State props should contain appropriate data for equality', () {
+        const initialState = ProfileInitial(testUuid);
+        const loadingState = ProfileLoading(testUuid);
+        const failedLoadState = ProfileFailedLoad(testUuid);
+        const loadedState = ProfileLoaded(testUuid, profile: testProfile);
+        const failedSaveState = ProfileFailedSave(testUuid, profile: testProfile);
 
-      test('ProfileEditEvent props should include profile', () {
-        const event = ProfileEditEvent(profile: testProfile);
-        expect(event.props, contains(testProfile));
-      });
-
-      test('ProfileStartEvent props should be empty', () {
-        const event = ProfileStartEvent();
-        expect(event.props, isEmpty);
-      });
-
-      test('ProfileStopEvent props should be empty', () {
-        const event = ProfileStopEvent();
-        expect(event.props, isEmpty);
-      });
-    });
-
-    group('State Props', () {
-      test('ProfileInitial props should contain uuid', () {
-        const state = ProfileInitial(testUuid);
-        expect(state.props, contains(testUuid));
-      });
-
-      test('ProfileLoading props should contain uuid', () {
-        const state = ProfileLoading(testUuid);
-        expect(state.props, contains(testUuid));
-      });
-
-      test('ProfileFailedLoad props should contain uuid', () {
-        const state = ProfileFailedLoad(testUuid);
-        expect(state.props, contains(testUuid));
-      });
-
-      test('ProfileLoaded props should contain uuid and profile', () {
-        const state = ProfileLoaded(testUuid, profile: testProfile);
-        expect(state.props, contains(testUuid));
-        expect(state.props, contains(testProfile));
-      });
-
-      test('ProfileFailedSave props should contain uuid and profile', () {
-        const state = ProfileFailedSave(testUuid, profile: testProfile);
-        expect(state.props, contains(testUuid));
-        expect(state.props, contains(testProfile));
+        expect(initialState.props, contains(testUuid));
+        expect(loadingState.props, contains(testUuid));
+        expect(failedLoadState.props, contains(testUuid));
+        expect(loadedState.props, allOf(contains(testUuid), contains(testProfile)));
+        expect(failedSaveState.props, allOf(contains(testUuid), contains(testProfile)));
       });
     });
 

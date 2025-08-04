@@ -168,29 +168,21 @@ void main() {
       );
     }
 
-    group('ProfileListInitial State', () {
-      testWidgets('should display Spinner when state is ProfileListInitial', (WidgetTester tester) async {
+    group('ProfileList Loading States', () {
+      testWidgets('should display Spinner for initial and loading states', (WidgetTester tester) async {
         // Set test window size to match production
         tester.view.physicalSize = const Size(1053, 691);
         tester.view.devicePixelRatio = 1.0;
 
+        // Test ProfileListInitial state
         await tester.pumpWidget(createWidgetUnderTest(const ProfileListInitial()));
         await tester.pump();
-
         expect(find.byType(Spinner), findsOneWidget);
         expect(find.byType(Center), findsOneWidget);
-      });
-    });
 
-    group('ProfileListLoading State', () {
-      testWidgets('should display Spinner when state is ProfileListLoading', (WidgetTester tester) async {
-        // Set test window size to match production
-        tester.view.physicalSize = const Size(1053, 691);
-        tester.view.devicePixelRatio = 1.0;
-
+        // Test ProfileListLoading state
         await tester.pumpWidget(createWidgetUnderTest(const ProfileListLoading()));
         await tester.pump();
-
         expect(find.byType(Spinner), findsOneWidget);
         expect(find.byType(Center), findsOneWidget);
       });

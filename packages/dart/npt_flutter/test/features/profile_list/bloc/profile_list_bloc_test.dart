@@ -308,104 +308,82 @@ void main() {
       );
     });
 
-    group('State Transitions', () {
-      test('ProfileListInitial should have correct props', () {
-        const state = ProfileListInitial();
-        expect(state.props, isEmpty);
+    group('Event and State Properties and String Representations', () {
+      test('State props should contain appropriate data for equality', () {
+        const initialState = ProfileListInitial();
+        const loadingState = ProfileListLoading();
+        const loadedState = ProfileListLoaded(profiles: testProfileUuids);
+        const failedState = ProfileListFailedLoad();
+
+        expect(initialState.props, isEmpty);
+        expect(loadingState.props, isEmpty);
+        expect(loadedState.props, contains(testProfileUuids));
+        expect(failedState.props, isEmpty);
       });
 
-      test('ProfileListLoading should have correct props', () {
-        const state = ProfileListLoading();
-        expect(state.props, isEmpty);
-      });
+      test('Event props should contain appropriate data for equality', () {
+        const loadEvent = ProfileListLoadEvent();
+        const updateEvent = ProfileListUpdateEvent(testProfileUuids);
+        const deleteEvent = ProfileListDeleteEvent(toDelete: [testUuid1]);
+        const addEvent = ProfileListAddEvent([testProfile1]);
 
-      test('ProfileListLoaded should have correct props', () {
-        const state = ProfileListLoaded(profiles: testProfileUuids);
-        expect(state.props, contains(testProfileUuids));
-      });
-
-      test('ProfileListFailedLoad should have correct props', () {
-        const state = ProfileListFailedLoad();
-        expect(state.props, isEmpty);
-      });
-    });
-
-    group('Event Properties', () {
-      test('ProfileListLoadEvent should have correct props', () {
-        const event = ProfileListLoadEvent();
-        expect(event.props, isEmpty);
-      });
-
-      test('ProfileListUpdateEvent should have correct props', () {
-        const event = ProfileListUpdateEvent(testProfileUuids);
-        expect(event.props, contains(testProfileUuids));
-      });
-
-      test('ProfileListDeleteEvent should have correct props', () {
-        const event = ProfileListDeleteEvent(toDelete: [testUuid1]);
+        expect(loadEvent.props, isEmpty);
+        expect(updateEvent.props, contains(testProfileUuids));
         expect(
-            event.props,
+            deleteEvent.props,
             equals([
               [testUuid1]
-            ])); // The props contain the toDelete list as a single element
-      });
-
-      test('ProfileListAddEvent should have correct props', () {
-        const event = ProfileListAddEvent([testProfile1]);
+            ]));
         expect(
-            event.props,
+            addEvent.props,
             equals([
               [testProfile1]
-            ])); // The props contain the toAdd list as a single element
-      });
-    });
-
-    group('Event toString Methods', () {
-      test('ProfileListLoadEvent toString should be correct', () {
-        const event = ProfileListLoadEvent();
-        expect(event.toString(), equals('ProfileListLoadEvent'));
+            ]));
       });
 
-      test('ProfileListUpdateEvent toString should include profiles', () {
-        const event = ProfileListUpdateEvent(testProfileUuids);
-        expect(event.toString(), contains('ProfileListUpdateEvent'));
-        expect(event.toString(), contains(testProfileUuids.toString()));
+      test('Event toString methods should provide proper string representations', () {
+        const loadEvent = ProfileListLoadEvent();
+        const updateEvent = ProfileListUpdateEvent(testProfileUuids);
+        const deleteEvent = ProfileListDeleteEvent(toDelete: [testUuid1]);
+        const addEvent = ProfileListAddEvent([testProfile1]);
+
+        expect(loadEvent.toString(), equals('ProfileListLoadEvent'));
+        expect(
+            updateEvent.toString(),
+            allOf(
+              contains('ProfileListUpdateEvent'),
+              contains(testProfileUuids.toString()),
+            ));
+        expect(
+            deleteEvent.toString(),
+            allOf(
+              contains('ProfileListDeleteEvent'),
+              contains('toDelete'),
+              contains(testUuid1),
+            ));
+        expect(
+            addEvent.toString(),
+            allOf(
+              contains('ProfileListAddEvent'),
+              contains('toAdd'),
+            ));
       });
 
-      test('ProfileListDeleteEvent toString should include toDelete', () {
-        const event = ProfileListDeleteEvent(toDelete: [testUuid1]);
-        expect(event.toString(), contains('ProfileListDeleteEvent'));
-        expect(event.toString(), contains('toDelete'));
-        expect(event.toString(), contains(testUuid1));
-      });
+      test('State toString methods should provide proper string representations', () {
+        const initialState = ProfileListInitial();
+        const loadingState = ProfileListLoading();
+        const loadedState = ProfileListLoaded(profiles: testProfileUuids);
+        const failedState = ProfileListFailedLoad();
 
-      test('ProfileListAddEvent toString should include toAdd', () {
-        const event = ProfileListAddEvent([testProfile1]);
-        expect(event.toString(), contains('ProfileListAddEvent'));
-        expect(event.toString(), contains('toAdd'));
-      });
-    });
-
-    group('State toString Methods', () {
-      test('ProfileListInitial toString should be correct', () {
-        const state = ProfileListInitial();
-        expect(state.toString(), equals('ProfileListState'));
-      });
-
-      test('ProfileListLoading toString should be correct', () {
-        const state = ProfileListLoading();
-        expect(state.toString(), equals('ProfileListLoading'));
-      });
-
-      test('ProfileListLoaded toString should include profiles', () {
-        const state = ProfileListLoaded(profiles: testProfileUuids);
-        expect(state.toString(), contains('ProfileListLoaded'));
-        expect(state.toString(), contains('profiles'));
-      });
-
-      test('ProfileListFailedLoad toString should be correct', () {
-        const state = ProfileListFailedLoad();
-        expect(state.toString(), equals('ProfileListFailedLoad'));
+        expect(initialState.toString(), equals('ProfileListState'));
+        expect(loadingState.toString(), equals('ProfileListLoading'));
+        expect(
+            loadedState.toString(),
+            allOf(
+              contains('ProfileListLoaded'),
+              contains('profiles'),
+            ));
+        expect(failedState.toString(), equals('ProfileListFailedLoad'));
       });
     });
 

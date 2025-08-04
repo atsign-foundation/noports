@@ -312,7 +312,7 @@ void main() {
         expect(state1, isNot(equals(state3)));
       });
 
-      test('toString returns correct format', () {
+      test('toString and props work correctly', () {
         const state = OnboardingState(
           atSign: '@test_user',
           status: OnboardingStatus.onboarded,
@@ -320,27 +320,19 @@ void main() {
         );
 
         expect(state.toString(), equals('OnboardingState(@test_user, onboarded, test.domain.com)'));
-      });
-
-      test('props includes all relevant fields', () {
-        const state = OnboardingState(
-          atSign: '@test_user',
-          status: OnboardingStatus.onboarded,
-          rootDomain: 'test.domain.com',
-        );
-
         expect(state.props, equals(['@test_user', OnboardingStatus.onboarded, 'test.domain.com']));
       });
     });
 
     group('OnboardingStatus', () {
-      test('enum has correct values', () {
+      test('enum properties work correctly', () {
         expect(OnboardingStatus.values, hasLength(2));
-        expect(OnboardingStatus.values, contains(OnboardingStatus.onboarded));
-        expect(OnboardingStatus.values, contains(OnboardingStatus.offboarded));
-      });
-
-      test('enum name property works correctly', () {
+        expect(
+            OnboardingStatus.values,
+            allOf(
+              contains(OnboardingStatus.onboarded),
+              contains(OnboardingStatus.offboarded),
+            ));
         expect(OnboardingStatus.onboarded.name, equals('onboarded'));
         expect(OnboardingStatus.offboarded.name, equals('offboarded'));
       });
