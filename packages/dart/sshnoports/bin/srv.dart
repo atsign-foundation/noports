@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:io';
 
+import 'package:noports_core/utils.dart';
 import 'package:path/path.dart' as path;
 import 'package:args/args.dart';
 import 'package:at_utils/at_logger.dart';
@@ -8,40 +9,6 @@ import 'package:logging/logging.dart';
 import 'package:noports_core/srv.dart';
 import 'package:socket_connector/socket_connector.dart';
 import 'package:sshnoports/src/print_version.dart';
-
-class TmpFileLoggingHandler implements LoggingHandler {
-  late final File f;
-
-  bool logToStderr = true;
-
-  TmpFileLoggingHandler() {
-    if (Platform.isWindows) {
-      f = File(path.normalize('${Platform.environment['TEMP']}'
-          '/srv.$pid.log'));
-    } else {
-      f = File('/tmp/srv.$pid.log');
-    }
-    f.createSync(recursive: true);
-  }
-
-  @override
-  void call(LogRecord record) {
-    f.writeAsStringSync(
-        '${record.level.name}'
-        '|${record.time}'
-        '|${record.loggerName}'
-        '|${record.message} \n',
-        mode: FileMode.writeOnlyAppend);
-    if (logToStderr) {
-      try {
-        AtSignLogger.stdErrLoggingHandler.call(record);
-      } catch (e) {
-        f.writeAsStringSync('********** Failed to log to stderr: $e',
-            mode: FileMode.writeOnlyAppend);
-      }
-    }
-  }
-}
 
 Future<void> main(List<String> args) async {
   AtSignLogger.root_level = 'INFO';
@@ -75,7 +42,15 @@ Future<void> main(List<String> args) async {
             ' daemon\'s local network to connect to; defaults to localhost.')
     ..addFlag('rv-auth',
         defaultsTo: false,
-        help: 'Whether this rv process will authenticate to rvd')
+        help: '(Legacy) Whether this rv process will authenticate to rvd using'
+            ' legacy "payload" (signed response to implicit challenge) auth.')
+    ..addOption(
+      'relay-auth-mode',
+      abbr: 'a',
+      mandatory: false,
+      help: 'The relay auth mode, if required.',
+      allowed: RelayAuthMode.values.map((c) => c.name).toList(),
+    )
     ..addFlag('rv-e2ee',
         defaultsTo: false,
         help: 'Whether this rv process will encrypt/decrypt'
@@ -100,27 +75,95 @@ Future<void> main(List<String> args) async {
       final int localPort = int.parse(parsed['local-port']);
       final bool bindLocalPort = parsed['bind-local-port'];
       final String localHost = parsed['local-host'];
-      final bool rvAuth = parsed['rv-auth'];
       final bool rvE2ee = parsed['rv-e2ee'];
       final bool multi = parsed['multi'];
       final Duration timeout = Duration(seconds: int.parse(parsed['timeout']));
+      RelayAuthMode? relayAuthMode = parsed['relay-auth-mode'] == null
+          ? null
+          : RelayAuthMode.values.byName(parsed['relay-auth-mode']);
       final Duration heartbeat =
           Duration(seconds: int.parse(parsed['heartbeat']));
 
-      String? rvdAuthString = rvAuth ? Platform.environment['RV_AUTH'] : null;
-      String? sessionAESKeyString =
-          rvE2ee ? Platform.environment['RV_AES'] : null;
-      String? sessionIVString = rvE2ee ? Platform.environment['RV_IV'] : null;
+      String? aesC2D = rvE2ee ? Platform.environment['RV_AES_C2D'] : null;
+      String? ivC2D = rvE2ee ? Platform.environment['RV_IV_C2D'] : null;
 
-      if (rvAuth && (rvdAuthString ?? '').isEmpty) {
-        throw ArgumentError(
-            '--rv-auth required, but RV_AUTH is not in environment');
+      String? aesD2C = rvE2ee ? Platform.environment['RV_AES_D2C'] : null;
+      String? ivD2C = rvE2ee ? Platform.environment['RV_IV_D2C'] : null;
+
+      if (parsed['rv-auth']) {
+        if (relayAuthMode != null) {
+          throw ArgumentError('Only one of "--rv-auth" (legacy)'
+              ' and "--relay-auth-mode <version>" may be supplied');
+        } else {
+          relayAuthMode = RelayAuthMode.payload;
+        }
       }
-      if (rvE2ee && (sessionAESKeyString ?? '').isEmpty) {
+
+      RelayAuthenticator? relayAuthenticator;
+      if (relayAuthMode != null) {
+        switch (relayAuthMode) {
+          case RelayAuthMode.payload:
+            String? legacyAuthString =
+                parsed['rv-auth'] ? Platform.environment['RV_AUTH'] : null;
+            if ((legacyAuthString ?? '').isEmpty) {
+              throw ArgumentError(
+                  '--relay-auth-mode is v0, but RV_AUTH is not in environment');
+            }
+            relayAuthenticator = RelayAuthenticatorLegacy(legacyAuthString!);
+            break;
+          case RelayAuthMode.escr:
+            String sessionId =
+                Platform.environment['REMOTE_AUTH_ESCR_SESSION_ID'] ?? '';
+            if (sessionId.isEmpty) {
+              throw ArgumentError('No REMOTE_AUTH_ESCR_SESSION_ID in env');
+            }
+            String relayAuthAesKey =
+                Platform.environment['REMOTE_AUTH_ESCR_AES_KEY'] ?? '';
+            if (relayAuthAesKey.isEmpty) {
+              throw ArgumentError('No REMOTE_AUTH_ESCR_AES_KEY in env');
+            }
+            String publicSigningKeyUri =
+                Platform.environment['REMOTE_AUTH_ESCR_PUB_KEY_URI'] ?? '';
+            if (publicSigningKeyUri.isEmpty) {
+              throw ArgumentError('No REMOTE_AUTH_ESCR_PUB_KEY_URI in env');
+            }
+            String publicSigningKey =
+                Platform.environment['REMOTE_AUTH_ESCR_SIGNING_PUBKEY'] ?? '';
+            if (publicSigningKey.isEmpty) {
+              throw ArgumentError('No REMOTE_AUTH_ESCR_SIGNING_PUBKEY in env');
+            }
+            String privateSigningKey =
+                Platform.environment['REMOTE_AUTH_ESCR_SIGNING_PRIVKEY'] ?? '';
+            if (privateSigningKey.isEmpty) {
+              throw ArgumentError('No REMOTE_AUTH_ESCR_SIGNING_PRIVKEY in env');
+            }
+            String isSideA =
+                (Platform.environment['REMOTE_AUTH_ESCR_IS_SIDE_A'] ?? '')
+                    .trim()
+                    .toLowerCase();
+            if (isSideA.isEmpty) {
+              throw ArgumentError('No REMOTE_AUTH_ESCR_IS_SIDE_A in env');
+            }
+            if (isSideA != 'true' && isSideA != 'false') {
+              throw ArgumentError('Env var REMOTE_AUTH_ESCR_IS_SIDE_A'
+                  ' must be "true" or "false"');
+            }
+            relayAuthenticator = RelayAuthenticatorESCR(
+              sessionId: sessionId,
+              relayAuthAesKey: relayAuthAesKey,
+              publicSigningKeyUri: publicSigningKeyUri,
+              publicSigningKey: publicSigningKey,
+              privateSigningKey: privateSigningKey,
+              isSideA: isSideA == 'true',
+            );
+            break;
+        }
+      }
+      if (rvE2ee && (aesC2D ?? '').isEmpty) {
         throw ArgumentError(
             '--rv-e2ee required, but RV_AES is not in environment');
       }
-      if (rvE2ee && (sessionIVString ?? '').isEmpty) {
+      if (rvE2ee && (ivC2D ?? '').isEmpty) {
         throw ArgumentError(
             '--rv-e2ee required, but RV_IV is not in environment');
       }
@@ -131,9 +174,11 @@ Future<void> main(List<String> args) async {
         localPort: localPort,
         localHost: localHost,
         bindLocalPort: bindLocalPort,
-        rvdAuthString: rvdAuthString,
-        sessionAESKeyString: sessionAESKeyString,
-        sessionIVString: sessionIVString,
+        relayAuthenticator: relayAuthenticator,
+        aesC2D: aesC2D,
+        ivC2D: ivC2D,
+        aesD2C: aesD2C,
+        ivD2C: ivD2C,
         multi: multi,
         detached: true,
         // by definition - this is the srv binary
@@ -171,4 +216,38 @@ Future<void> main(List<String> args) async {
     // We will leave the log file in /tmp since we are exiting abnormally
     exit(200);
   });
+}
+
+class TmpFileLoggingHandler implements LoggingHandler {
+  late final File f;
+
+  bool logToStderr = true;
+
+  TmpFileLoggingHandler() {
+    if (Platform.isWindows) {
+      f = File(path.normalize('${Platform.environment['TEMP']}'
+          '/srv.$pid.log'));
+    } else {
+      f = File('/tmp/srv.$pid.log');
+    }
+    f.createSync(recursive: true);
+  }
+
+  @override
+  void call(LogRecord record) {
+    f.writeAsStringSync(
+        '${record.level.name}'
+        '|${record.time}'
+        '|${record.loggerName}'
+        '|${record.message} \n',
+        mode: FileMode.writeOnlyAppend);
+    if (logToStderr) {
+      try {
+        AtSignLogger.stdErrLoggingHandler.call(record);
+      } catch (e) {
+        f.writeAsStringSync('********** Failed to log to stderr: $e',
+            mode: FileMode.writeOnlyAppend);
+      }
+    }
+  }
 }

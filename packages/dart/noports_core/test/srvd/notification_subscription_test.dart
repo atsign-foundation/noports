@@ -20,9 +20,13 @@ void main() {
             .hasMatch('jagan@test.${Srvd.namespace}@jagan'),
         true);
     expect(RegExp(SrvdImpl.subscriptionRegex).hasMatch('${Srvd.namespace}@'),
-        true);
+        false);
     expect(
         RegExp(SrvdImpl.subscriptionRegex).hasMatch('${Srvd.namespace}.test@'),
+        false);
+    expect(
+        RegExp(SrvdImpl.subscriptionRegex)
+            .hasMatch('foo.${Srvd.namespace}.test@'),
         false);
   });
 
@@ -64,14 +68,17 @@ void main() {
           (_) async => Future.value(AtValue()..value = 'dummy-public-key'));
 
       Srvd srvd = SrvdImpl(
-          atClient: mockAtClient,
-          atSign: atSign,
-          homeDirectory: Directory.current.path,
-          atKeysFilePath: Directory.current.path,
-          managerAtsign: relayAtSign,
-          ipAddress: '127.0.0.1',
-          logTraffic: false,
-          verbose: false);
+        atClient: mockAtClient,
+        atSign: atSign,
+        homeDirectory: Directory.current.path,
+        atKeysFilePath: Directory.current.path,
+        managerAtsign: relayAtSign,
+        ipAddress: '127.0.0.1',
+        logTraffic: false,
+        verbose: false,
+        bind443: false,
+        localBindPort443: 443,
+      );
 
       // Create a stream controller to simulate the notification received from the sshnp
       final streamController = StreamController<AtNotification>();
@@ -90,7 +97,7 @@ void main() {
           regex: any(named: 'regex'),
           shouldDecrypt: any(named: 'shouldDecrypt'))).thenAnswer((i) {
         switch (i.namedArguments[Symbol('regex')]) {
-          case 'sshrvd@':
+          case '\\.sshrvd@':
             print('Returning streamController.stream');
             return streamController.stream;
           default:

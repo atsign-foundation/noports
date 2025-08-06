@@ -9,7 +9,6 @@ import 'package:at_onboarding_flutter/src/utils/at_onboarding_app_constants.dart
 import 'package:at_server_status/at_server_status.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:npt_flutter/app.dart';
 import 'package:npt_flutter/constants.dart';
 import 'package:npt_flutter/features/back_up_key/cubit/backup_key_cubit.dart';
@@ -21,6 +20,7 @@ import 'package:npt_flutter/features/onboarding/widgets/activate_atsign_dialog.d
 import 'package:npt_flutter/features/onboarding/widgets/apkam_choice_dialog.dart';
 import 'package:npt_flutter/features/onboarding/widgets/onboarding_apkam_dialog.dart';
 import 'package:npt_flutter/features/onboarding/widgets/onboarding_dialog.dart';
+import 'package:npt_flutter/localization/app_localizations.dart';
 import 'package:npt_flutter/routes.dart';
 import 'package:npt_flutter/styles/sizes.dart';
 import 'package:npt_flutter/util/at_client_methods.dart';
@@ -161,11 +161,10 @@ class _OnboardingButtonState extends State<OnboardingButton> {
           ),
         );
         final backupKeyCubit = App.navState.currentContext!.read<BackupKeyCubit>();
-        if (backupKeyCubit.state == false) {
-          await backupKeyCubit.putBackupKeyStatus(backupKeyCubit.state);
-        }
 
-        log('atsign result is:$result');
+        await backupKeyCubit.putBackupKeyStatus(backupKeyCubit.state);
+
+        App.log('atsign result is:$result'.loggable);
 
         if (!mounted) return;
         Navigator.of(context, rootNavigator: true).pushNamed(Routes.home);
@@ -204,7 +203,7 @@ class _OnboardingButtonState extends State<OnboardingButton> {
       // Automatically start activation with the already entered atSign
       case AtSignStatus.unavailable:
       case AtSignStatus.teapot:
-        // If the atSign is in teapot, we have to back up the keys after onboarding
+        // When onboarding from teapot, set backup status to false (not atKeys not backed up)
         App.navState.currentContext!.read<BackupKeyCubit>().setBackupKeyStatus(false);
         final apiKey = await Constants.appAPIKey;
 
@@ -282,6 +281,8 @@ class _OnboardingButtonState extends State<OnboardingButton> {
               atClientPreference: atClientPrefernce,
             ),
           );
+          // When onboarding via APKAM or uploading atKeys, set backup status to true (atKeys don't need to be backed up)
+          App.navState.currentContext!.read<BackupKeyCubit>().setBackupKeyStatus(true);
         }
       case AtSignStatus.notFound:
         result = AtOnboardingResult.error(

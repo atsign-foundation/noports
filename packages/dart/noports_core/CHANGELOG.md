@@ -1,3 +1,17 @@
+# 6.6.1
+- fix: better srvd exception handling
+
+# 6.6.0
+- feat: twin keys for control socket and data sockets
+- fix: enable daemons and policy service to use the same atSign
+
+# 6.5.0
+- feat: New ESCR (Encrypted Signed Challenge-Response) relay socket 
+  authentication
+- feat: Ability to have relay sessions where both sides are connecting to 
+  port 443
+- feat: Ability to send heartbeats over the npt control socket to let network
+  intermediaries know that it is active.
 # 6.4.0
 - feat: have srvd use ephemeral local storage for its AtClient by default
 - feat: have srvd listen for PublicKeyChanged events

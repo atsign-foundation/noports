@@ -14,8 +14,8 @@
 #define USERVAR "USER"
 #endif
 
-#define ROOT_HOST "root.atsign.org"
-#define ROOT_PORT 64
+#define DEFAULT_ROOT_HOST "root.atsign.org"
+#define DEFAULT_ROOT_PORT 64
 
 #define PUBLICKEY_PREFIX "public:publickey@"
 #define PUBLICKEY_PREFIX_LEN 17

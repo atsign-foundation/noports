@@ -113,6 +113,9 @@ usage() {
 
 setup_authorized_keys() {
   mkdir -p "$user_ssh_dir"
+  if is_root; then
+    chown $user:$user "$user_ssh_dir" 2>/dev/null || chown $user "$user_ssh_dir" 2>/dev/null
+  fi
   touch "$user_ssh_dir/authorized_keys"
   chown $user:$user "$user_ssh_dir/authorized_keys" 2>/dev/null || chown $user "$user_ssh_dir/authorized_keys" 2>/dev/null
   chmod 644 "$user_ssh_dir/authorized_keys"

@@ -22,6 +22,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "3.7.0"
+  alfred:
+    dependency: transitive
+    description:
+      name: alfred
+      sha256: "7acfe84f0a73333308f580084b1d517e5210a4df2d632ebc204c50ffcb8f09e0"
+      url: "https://pub.dev"
+    source: hosted
+    version: "1.1.3"
   analyzer:
     dependency: transitive
     description:
@@ -59,18 +67,18 @@ packages:
     dependency: transitive
     description:
       name: async
-      sha256: d2872f9c19731c2e5f10444b14686eb7cc85c76274bd6c16e1816bff9a3bab63
+      sha256: "758e6d74e971c3e5aceb4110bfd6698efc7f501675bcfe0c775459a8140750eb"
       url: "https://pub.dev"
     source: hosted
-    version: "2.12.0"
+    version: "2.13.0"
   at_auth:
     dependency: "direct main"
     description:
       name: at_auth
-      sha256: "4d23e7ffd799104ccc74ce006a8a286dcefaeafcc8f72c6bcbbc6a893244abeb"
+      sha256: "28f6e04428f608f283166a7f716df7bcab28a20623f2659c3df1f4362add8cff"
       url: "https://pub.dev"
     source: hosted
-    version: "2.0.10"
+    version: "2.2.0"
   at_backupkey_flutter:
     dependency: "direct main"
     description:
@@ -104,22 +112,22 @@ packages:
     source: hosted
     version: "2.1.0"
   at_client:
-    dependency: transitive
+    dependency: "direct main"
     description:
       name: at_client
-      sha256: "32cc7619091e19d23348c3363e6e63f0a57b102f41a06eb327ce47dd50f3d2b7"
+      sha256: "568fd8f58ad4bc7bf0486e38fa0509ed3612d0bd91e5378aaf6e4f3dbd2455b6"
       url: "https://pub.dev"
     source: hosted
-    version: "3.4.0"
+    version: "3.6.0"
   at_client_mobile:
     dependency: "direct main"
     description:
       path: "packages/at_client_mobile"
-      ref: "533f657eec18f13a11dafbf67c0006c6cc010dde"
-      resolved-ref: "533f657eec18f13a11dafbf67c0006c6cc010dde"
+      ref: "2ecfe7208c0a5520be21c99007c8d365dabb001a"
+      resolved-ref: "2ecfe7208c0a5520be21c99007c8d365dabb001a"
       url: "https://github.com/atsign-foundation/at_client_sdk"
     source: git
-    version: "3.2.19"
+    version: "3.2.24"
   at_common_flutter:
     dependency: transitive
     description:
@@ -132,10 +140,10 @@ packages:
     dependency: transitive
     description:
       name: at_commons
-      sha256: "2b0db42dd47dec7fffccd0cf215eb40a6fd6bdb7e145f721da54d633a929997f"
+      sha256: "9e7568b90efd8643ad34a3536211757d66596cb65477cfc9f2accf4ac7b0b399"
       url: "https://pub.dev"
     source: hosted
-    version: "5.3.0"
+    version: "5.4.1"
   at_contact:
     dependency: "direct main"
     description:
@@ -172,18 +180,18 @@ packages:
     dependency: transitive
     description:
       name: at_lookup
-      sha256: "2fa727fbdd6d3e5a79132786a74cbf03776833e1671f8cb471d21585f8448f95"
+      sha256: "3f645bb27394a4299fd4a39c7358f28fa3f7e5ccb24264d58b1217bafbfaf5a3"
       url: "https://pub.dev"
     source: hosted
-    version: "3.0.49"
+    version: "3.1.0"
   at_onboarding_cli:
     dependency: transitive
     description:
       name: at_onboarding_cli
-      sha256: fe286f23be753e6b5a9773a3d3d90b490320fd3cb5a1e2248dd7162821e10bd1
+      sha256: "1eb5768d4a43e51f8a8292bb721135e17bf7f0a3738556842ceb94cd93798993"
       url: "https://pub.dev"
     source: hosted
-    version: "1.8.3"
+    version: "1.10.1"
   at_onboarding_flutter:
     dependency: "direct main"
     description:
@@ -197,18 +205,18 @@ packages:
     dependency: transitive
     description:
       name: at_persistence_secondary_server
-      sha256: bf6aac91a74416239da4e0d1cf9c483a4a336c3e10d3d326d1b2664b1900a184
+      sha256: "00a964a0e7f4ca984276975f043d55d17c969feea5e6bc5ee554a72579b4b160"
       url: "https://pub.dev"
     source: hosted
-    version: "3.1.0"
+    version: "4.1.0"
   at_persistence_spec:
     dependency: transitive
     description:
       name: at_persistence_spec
-      sha256: ea8e550368ccee9150247ae7abdc256dccf78467bb48c11d1d0d66b843b21ba7
+      sha256: "2b8a414f53ae2368023862cda0b6c2ccef3a3876acc355ea064654df434aedbd"
       url: "https://pub.dev"
     source: hosted
-    version: "2.0.14"
+    version: "3.1.0"
   at_server_status:
     dependency: "direct main"
     description:
@@ -237,10 +245,10 @@ packages:
     dependency: "direct main"
     description:
       name: at_utils
-      sha256: b4461b0743f323429d57c387e91186537df8a6aeb4608bbeb6c2adf01d9f08f9
+      sha256: "97507d219c528ee2f3f7aba0d6b2641221e79ff67264fe2e24531dfd8edf8edd"
       url: "https://pub.dev"
     source: hosted
-    version: "3.0.19"
+    version: "3.2.0"
   biometric_storage:
     dependency: transitive
     description:
@@ -542,10 +550,10 @@ packages:
     dependency: transitive
     description:
       name: fake_async
-      sha256: "6a95e56b2449df2273fd8c45a662d6947ce1ebb7aafe80e550a3f68297f3cacc"
+      sha256: "5368f224a74523e8d2e7399ea1638b37aecfca824a3cc4dfdf77bf1fa905ac44"
       url: "https://pub.dev"
     source: hosted
-    version: "1.3.2"
+    version: "1.3.3"
   ffi:
     dependency: transitive
     description:
@@ -810,10 +818,10 @@ packages:
     dependency: "direct main"
     description:
       name: intl
-      sha256: d6f56758b7d3014a48af9701c085700aac781a92a87a62b1333b46d8879661cf
+      sha256: "3df61194eb431efc39c4ceba583b95633a403f46c9fd341e550ce0bfa50e9aa5"
       url: "https://pub.dev"
     source: hosted
-    version: "0.19.0"
+    version: "0.20.2"
   io:
     dependency: transitive
     description:
@@ -850,10 +858,10 @@ packages:
     dependency: transitive
     description:
       name: leak_tracker
-      sha256: c35baad643ba394b40aac41080300150a4f08fd0fd6a10378f8f7c6bc161acec
+      sha256: "6bb818ecbdffe216e81182c2f0714a2e62b593f4a4f13098713ff1685dfb6ab0"
       url: "https://pub.dev"
     source: hosted
-    version: "10.0.8"
+    version: "10.0.9"
   leak_tracker_flutter_testing:
     dependency: transitive
     description:
@@ -930,10 +938,18 @@ packages:
     dependency: transitive
     description:
       name: mime
-      sha256: "41a20518f0cb1256669420fdba0cd90d21561e560ac240f26ef8322e45bb7ed6"
+      sha256: "801fd0b26f14a4a58ccb09d5892c3fbdeff209594300a542492cf13fba9d247a"
       url: "https://pub.dev"
     source: hosted
-    version: "2.0.0"
+    version: "1.0.6"
+  mime_type:
+    dependency: transitive
+    description:
+      name: mime_type
+      sha256: d652b613e84dac1af28030a9fba82c0999be05b98163f9e18a0849c6e63838bb
+      url: "https://pub.dev"
+    source: hosted
+    version: "1.0.1"
   msix:
     dependency: "direct dev"
     description:
@@ -972,7 +988,7 @@ packages:
       path: "../noports_core"
       relative: true
     source: path
-    version: "6.4.0"
+    version: "6.6.1"
   openssh_ed25519:
     dependency: transitive
     description:
@@ -1229,6 +1245,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.0.1"
+  queue:
+    dependency: transitive
+    description:
+      name: queue
+      sha256: "9bc29632072f4dac6cd0056acbb63361f654e2def9ceb4b08cfe0f9cf5618409"
+      url: "https://pub.dev"
+    source: hosted
+    version: "3.4.0"
   screen_retriever:
     dependency: transitive
     description:
@@ -1622,10 +1646,10 @@ packages:
     dependency: transitive
     description:
       name: vm_service
-      sha256: "0968250880a6c5fe7edc067ed0a13d4bae1577fe2771dcf3010d52c4a9d3ca14"
+      sha256: ddfa8d30d89985b96407efce8acbdd124701f96741f2d981ca860662f1c0dc02
       url: "https://pub.dev"
     source: hosted
-    version: "14.3.1"
+    version: "15.0.0"
   watcher:
     dependency: transitive
     description:

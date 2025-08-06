@@ -18,6 +18,10 @@ const String deviceNameFormatHelp =
 const String invalidSshKeyPermissionsMsg =
     'Detected newline characters in the ssh public key permissions which malforms the authorized_keys file.';
 
+bool isUnprintable(int codeUnit) {
+  return (codeUnit < 33 || codeUnit > 127);
+}
+
 /// Returns deviceName with uppercase latin replaced by lowercase, and
 /// whitespace replaced with underscores. Note that multiple consecutive
 /// whitespace characters will be replaced by a single underscore.
@@ -135,6 +139,35 @@ Future<void> verifyEnvelopeSignature(
   if (svr.result != true) {
     throw AtSigningVerificationException(
         'signature verification returned false using cached public key for $requestingAtsign $pk');
+  }
+}
+
+/// Remove all PKs which this atSign has cached in filesystem or in
+/// atClient storage
+Future<void> clearLocallyCachedPKs({
+  required AtSignLogger logger,
+  FileSystem? fs,
+  AtClient? atClient,
+}) async {
+  if (fs != null) {
+    String dirName = path
+        .normalize('${getHomeDirectory()}/.atsign/sshnp/cached_pks')
+        .replaceAll('/', Platform.pathSeparator);
+    Directory d = fs.directory(dirName);
+    if (await d.exists()) {
+      logger.shout('Deleting $dirName');
+      await d.delete(recursive: true);
+    }
+  }
+
+  if (atClient != null) {
+    // find all `local:` keys which end with `.cached_pks.sshnp`
+    List<AtKey> keys =
+        await atClient.getAtKeys(regex: r'^local:.*\.cached_pks\.sshnp');
+    for (final key in keys) {
+      logger.shout('Deleting $key');
+      await atClient.delete(key);
+    }
   }
 }
 

@@ -124,8 +124,10 @@ class SshnpArg {
     listDevicesArg,
     authenticateClientToRvdArg,
     authenticateDeviceToRvdArg,
+    relayAuthModeArg,
     encryptRvdTrafficArg,
     daemonPingTimeoutArg,
+    only443Arg,
   ];
 
   @override
@@ -375,6 +377,16 @@ class SshnpArg {
     format: ArgFormat.flag,
     mandatory: false,
   );
+  static const relayAuthModeArg = SshnpArg(
+    name: 'relay-auth-mode',
+    aliases: ['ram'],
+    help: 'The authentication mode to use. "escr" (encrypted signed challenge'
+        ' response) is strongest',
+    defaultsTo: 'payload',
+    allowed: ['payload', 'escr'],
+    // allowed: RelayAuthMode.values.map((c) => c.name).toList(),
+    // defaultsTo: RelayAuthMode.payload.name,
+  );
   static const daemonPingTimeoutArg = SshnpArg(
     name: 'daemon-ping-timeout',
     aliases: ['dpt'],
@@ -384,5 +396,12 @@ class SshnpArg {
     format: ArgFormat.option,
     type: ArgType.integer,
     parseWhen: ParseWhen.commandLine,
+  );
+  static const only443Arg = SshnpArg(
+    name: '443',
+    help: 'When true, will request ports (443, 443) from relay',
+    defaultsTo: false,
+    format: ArgFormat.flag,
+    mandatory: false,
   );
 }

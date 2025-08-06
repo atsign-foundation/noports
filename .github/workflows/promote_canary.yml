@@ -1,0 +1,77 @@
+name: Promote Canary
+
+on:
+  push:
+    tags:
+      - 'r*.*.*' 
+  workflow_dispatch:
+    inputs:
+      image:
+        type: choice
+        description: Select image to promote
+        options:
+          - sshnpd
+          - activate_sshnpd
+          - sshnp_sshnpd
+          - npt_sshnpd
+          - sshnpd-slim
+          - srvd
+
+permissions: # added using https://github.com/step-security/secure-workflows
+  contents: read
+
+jobs:
+  single:
+    if: ${{ github.event_name == 'workflow_dispatch' }}
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@e468171a9de216ec08956ac3ada2f0791b6bd435 # v3.11.1
+      - name: Login to Docker Hub
+        uses: docker/login-action@184bdaa0721073962dff0199f1fb9940f07167d1 # v3.5.0
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+      - name: Promote canary to latest
+        run: |
+          docker buildx imagetools create -t \
+            atsigncompany/${{ github.event.inputs.image }}:latest \
+            atsigncompany/${{ github.event.inputs.image }}:canary
+          docker buildx imagetools create -t \
+            atsigncompany/${{ github.event.inputs.image }}:prod \
+            atsigncompany/${{ github.event.inputs.image }}:canary
+          docker buildx imagetools create -t \
+            atsigncompany/${{ github.event.inputs.image }}:prod-wd-gha${{ github.run_number }} \
+            atsigncompany/${{ github.event.inputs.image }}:canary
+
+  multi:
+    if: ${{ github.event_name == 'push' }}
+    runs-on: ubuntu-24.04
+    strategy:
+      matrix:
+        include:
+          - name: sshnpd
+          - name: activate_sshnpd
+          - name: sshnp_sshnpd
+          - name: npt_sshnpd
+          - name: sshnpd-slim
+          - name: srvd
+    steps:
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@e468171a9de216ec08956ac3ada2f0791b6bd435 # v3.11.1
+      - name: Login to Docker Hub
+        uses: docker/login-action@184bdaa0721073962dff0199f1fb9940f07167d1 # v3.5.0
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+      - name: Promote canary to latest
+        run: |
+          docker buildx imagetools create -t \
+            atsigncompany/${{ matrix.name }}:latest \
+            atsigncompany/${{ matrix.name }}:canary
+          docker buildx imagetools create -t \
+            atsigncompany/${{ matrix.name }}:prod \
+            atsigncompany/${{ matrix.name }}:canary
+          docker buildx imagetools create -t \
+            atsigncompany/${{ matrix.name }}:prod-${{ github.ref_name }} \
+            atsigncompany/${{ matrix.name }}:canary

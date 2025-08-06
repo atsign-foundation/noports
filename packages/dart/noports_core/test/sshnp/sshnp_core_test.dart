@@ -318,6 +318,10 @@ void main() {
       MockNotificationService mockNotificationService =
           MockNotificationService();
 
+      when(() => mockAtClient.getCurrentAtSign()).thenReturn('@alice');
+      when(() => mockAtClient.get(any(),
+              getRequestOptions: any(named: 'getRequestOptions')))
+          .thenAnswer((_) => Future.value(AtValue()..value = 'Hello hello'));
       when(() => mockAtClient.atChops).thenAnswer(
           (_) => AtChopsImpl(AtChopsKeys.create(atEncryptionKeyPair, null)));
 
@@ -395,6 +399,7 @@ void main() {
       // Initialize srvd, to fetch the host and port from the srvd -
       // Here returning a mocked response from a stream controller.
       await sshnp.srvdChannel.initialize();
+      sshnp.sshnpdChannel.twinKeys = false;
       await sshnp.sendSshRequestToSshnpd();
     });
   });

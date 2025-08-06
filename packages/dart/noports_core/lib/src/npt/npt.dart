@@ -192,12 +192,20 @@ class _NptImpl extends NptBase
     /// Start the sshnpd payload handler
     await sshnpdChannel.callInitialization();
 
+    if (sshnpdChannel.cachedPingResponse != null) {
+      _srvdChannel.cachedDaemonPublicSigningKeyUri =
+          sshnpdChannel.cachedPingResponse!['publicSigningKeyUri'];
+    }
+
     List<DaemonFeature> requiredFeatures = [
       DaemonFeature.srAuth,
       DaemonFeature.srE2ee,
       DaemonFeature.supportsPortChoice,
       DaemonFeature.controlChannelHeartbeats,
     ];
+    if (params.relayAuthMode == RelayAuthMode.escr) {
+      requiredFeatures.add(DaemonFeature.supportsRamEscr);
+    }
     if (!(params.timeout == DefaultArgs.srvTimeout)) {
       requiredFeatures.add(DaemonFeature.adjustableTimeout);
     }
@@ -238,6 +246,7 @@ class _NptImpl extends NptBase
         }
       }
     }
+
     sendProgress('Required daemon features are supported');
 
     completeInitialization();
@@ -252,6 +261,9 @@ class _NptImpl extends NptBase
     var msg = 'Sending session request to the device daemon';
     logger.info(msg);
     sendProgress(msg);
+    if (sshnpdChannel.twinKeys) {
+      logger.info('Session will use twinned keys');
+    }
 
     /// Send an ssh request to sshnpd
     await notify(
@@ -268,6 +280,8 @@ class _NptImpl extends NptBase
             rvdHost: _srvdChannel.rvdHost,
             rvdPort: _srvdChannel.daemonPort,
             authenticateToRvd: params.authenticateDeviceToRvd,
+            relayAuthMode: params.relayAuthMode,
+            relayAuthAesKey: _srvdChannel.relayAuthAesKey,
             clientNonce: _srvdChannel.clientNonce,
             rvdNonce: _srvdChannel.rvdNonce!,
             encryptRvdTraffic: params.encryptRvdTraffic,
@@ -276,6 +290,7 @@ class _NptImpl extends NptBase
             requestedPort: params.remotePort,
             requestedHost: params.remoteHost,
             timeout: params.timeout,
+            twinKeys: sshnpdChannel.twinKeys,
           ).toJson()),
       checkForFinalDeliveryStatus: false,
       waitForFinalDeliveryStatus: false,
@@ -289,7 +304,8 @@ class _NptImpl extends NptBase
       case SshnpdAck.acknowledged:
         sendProgress('Received response from the device daemon');
       case SshnpdAck.acknowledgedWithErrors:
-        throw SshnpError('Received error response from the device daemon');
+        throw SshnpError('Error response from device daemon:'
+            ' ${sshnpdChannel.errorReceived ?? ''}');
       case SshnpdAck.notAcknowledged:
         throw SshnpError('No response from the device daemon');
     }
@@ -324,8 +340,10 @@ class _NptImpl extends NptBase
 
       await _srvdChannel.runSrv(
         localRvPort: localRvPort,
-        sessionAESKeyString: sshnpdChannel.sessionAESKeyString,
-        sessionIVString: sshnpdChannel.sessionIVString,
+        aesC2D: sshnpdChannel.aesC2D,
+        ivC2D: sshnpdChannel.ivC2D,
+        aesD2C: sshnpdChannel.aesD2C,
+        ivD2C: sshnpdChannel.ivD2C,
         multi: true,
         detached: true,
         timeout: params.timeout,
@@ -349,8 +367,10 @@ class _NptImpl extends NptBase
 
     SocketConnector sc = await _srvdChannel.runSrv(
       localRvPort: localRvPort,
-      sessionAESKeyString: sshnpdChannel.sessionAESKeyString,
-      sessionIVString: sshnpdChannel.sessionIVString,
+      aesC2D: sshnpdChannel.aesC2D,
+      ivC2D: sshnpdChannel.ivC2D,
+      aesD2C: sshnpdChannel.aesD2C,
+      ivD2C: sshnpdChannel.ivD2C,
       multi: true,
       detached: false,
       timeout: params.timeout,

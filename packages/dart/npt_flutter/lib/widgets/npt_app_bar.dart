@@ -1,14 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:npt_flutter/features/authorisation/widgets/authorisation_app_bar_button.dart';
-import 'package:npt_flutter/features/settings/repository/contact_repository.dart';
+import 'package:npt_flutter/features/onboarding/cubit/onboarding_cubit.dart';
 import 'package:npt_flutter/home_wrapper_widget.dart';
+import 'package:npt_flutter/localization/app_localizations.dart';
 import 'package:npt_flutter/pages/sub_nav_cubit.dart';
 import 'package:npt_flutter/routes.dart';
 import 'package:npt_flutter/styles/app_color.dart';
 import 'package:npt_flutter/styles/style_constants.dart';
+import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 import '../styles/sizes.dart';
 
@@ -28,10 +29,11 @@ class _NptAppBarState extends State<NptAppBar> {
   @override
   Widget build(BuildContext context) {
     final strings = AppLocalizations.of(context)!;
-    final atsign = ContactsService.getInstance().atClientManager.atClient.getCurrentAtSign();
+    final atsign = context.watch<OnboardingCubit>().getAtSign();
     return BlocBuilder<SubNavCubit, String>(
       builder: (context, state) {
         final isDashboard = state == HomeRoutes.dashboard;
+        final isAuthorization = state == HomeRoutes.authorisation;
         return SizedBox(
           width: Sizes.p853,
           child: AppBar(
@@ -144,7 +146,7 @@ class _NptAppBarState extends State<NptAppBar> {
                                     .copyWith(color: AppColor.primaryColor, fontSize: Sizes.p20),
                               ),
                               Text(
-                                atsign?.replaceFirst('@', '') ?? '',
+                                atsign.replaceFirst('@', '') ?? '',
                                 style: Theme.of(context).textTheme.bodyLarge,
                               ),
                             ],
@@ -154,12 +156,15 @@ class _NptAppBarState extends State<NptAppBar> {
                     ),
                     IgnorePointer(
                       ignoring: !isDashboard,
-                      child: AnimatedOpacity(
-                        duration: const Duration(milliseconds: 300),
-                        curve: Curves.easeInOut,
-                        opacity: isDashboard ? 1 : 0,
-                        child: const AuthorisationAppBarButton(),
-                      ),
+                      child: isDashboard
+                          ? const AuthorisationAppBarButton()
+                          : IconButton(
+                              onPressed: () {},
+                              icon: PhosphorIcon(
+                                PhosphorIcons.key(),
+                                color: isAuthorization ? AppColor.primaryColor : Colors.grey,
+                              ),
+                            ),
                     ),
                   ],
                 ),

@@ -1,7 +1,7 @@
 // This file contains the form validation logic for the app. It is used to validate the input fields in the app.
 
-import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:npt_flutter/app.dart';
+import 'package:npt_flutter/localization/app_localizations.dart';
 
 class FormValidator {
   static String? validateRequiredField(String? value) {

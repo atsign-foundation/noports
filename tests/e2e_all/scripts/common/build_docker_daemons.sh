@@ -29,11 +29,20 @@ pullBaseRuntimeImage() {
     logError "Failed to pull base runtime image $imageName"
     return 1
   fi
-  logInfo "Successfully pulled base runtime image $imageName"
-  return 0
 }
 
 baseRuntimeImageName=$(getBaseRuntimeImageName)
+
+pullBaseRuntimeImage() {
+  logInfo "Pulling base runtime image"
+  sudo docker pull $baseRuntimeImageName --quiet
+  if [ $? -ne 0 ]; then
+    logError "Failed to pull base runtime image $baseRuntimeImageName"
+    return 1
+  fi
+  logInfo "Successfully pulled base runtime image $baseRuntimeImageName"
+  return 0
+}
 
 buildBaseRuntimeImage() {
   logInfo "Building Dockerfile.base.runtime"
@@ -80,8 +89,8 @@ else
     type=$(echo "$typeAndVersion" | cut -d: -f1)
     version=$(echo "$typeAndVersion" | cut -d: -f2)
     imageName=$(getDockerDaemonImageName "$type" "$version")
-    if [ "$(isImageExists "$imageName")" = "true" && $recompile = "true"]; then
-      logInfo "You set $recompile = true (using -n) and $imageName already exists, so skipping build for $typeAndVersion"
+    if [ "$(isImageExists "$imageName")" = "true" ] && [ "$recompile" = "false" ]; then
+      logInfo "You set recompile = $recompile (using -n) and $imageName already exists, so skipping build for $typeAndVersion"
       continue
     fi
 

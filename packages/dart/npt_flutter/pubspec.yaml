@@ -16,13 +16,13 @@ publish_to: "none" # Remove this line if you wish to publish to pub.dev
 # https://developer.apple.com/library/archive/documentation/General/Reference/InfoPlistKeyReference/Articles/CoreFoundationKeys.html
 # In Windows, build-name is used as the major, minor, and patch parts
 # of the product and file versions while build-number is used as the build suffix.
-version: 1.3.0+16
+version: 1.4.0+17
 msix_config:
   display_name: "NoPorts Desktop"
   publisher_display_name: Atsign Inc
   identity_name: TheCompany.NoPortsDesktop
   publisher: CN=BBFE1D0B-F713-4C7F-B375-5EA851CBB1FF
-  msix_version: 1.3.0.0
+  msix_version: 1.4.0.0
   logo_path: "assets/logo.png"
   capabilities: internetClient
   store: true
@@ -40,11 +40,8 @@ dependencies:
   adaptive_theme: ^3.6.0
   at_auth: ^2.0.7
   at_backupkey_flutter: ^4.0.16
-  at_client_mobile:
-    git:
-      url: https://github.com/atsign-foundation/at_client_sdk.git
-      path: packages/at_client_mobile
-      ref: 8e8b68d2f00db0aeca266685be1e9c0b103ad301
+  at_client_mobile: ^3.2.24
+  at_client: ^3.6.0
   at_contact: ^3.0.8
   at_contacts_flutter: ^4.0.15
   at_onboarding_flutter:
@@ -93,9 +90,10 @@ dev_dependencies:
   msix: ^3.16.8
 
 dependency_overrides:
+  intl: 0.20.2
   device_info_plus: 11.3.3
   file: 7.0.1
-  meta: 1.15.0
+  meta: ^1.15.0
   dartssh2:
     git:
       url: https://github.com/atsign-foundation/dartssh2
@@ -112,7 +110,7 @@ dependency_overrides:
   at_client_mobile:
     git:
       url: https://github.com/atsign-foundation/at_client_sdk
-      ref: 533f657eec18f13a11dafbf67c0006c6cc010dde
+      ref: 2ecfe7208c0a5520be21c99007c8d365dabb001a
       path: packages/at_client_mobile
   # The "flutter_lints" package below contains a set of recommended lints to
   # encourage good coding practices. The lint set provided by the package is

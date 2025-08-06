@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:npt_flutter/localization/app_localizations.dart';
 import 'package:npt_flutter/util/export.dart';
 import 'package:npt_flutter/widgets/multi_select_dialog.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';

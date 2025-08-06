@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:npt_flutter/features/profile/bloc/profile_bloc.dart';
 import 'package:npt_flutter/features/profile/cubit/profile_cache_cubit.dart';
 import 'package:npt_flutter/features/profile_list/bloc/profile_list_bloc.dart';
 import 'package:npt_flutter/features/profile_list/cubit/profiles_running_cubit.dart';
+import 'package:npt_flutter/localization/app_localizations.dart';
+import 'package:npt_flutter/styles/app_color.dart';
 import 'package:npt_flutter/styles/sizes.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 
@@ -18,15 +19,15 @@ class ConnectedProfilesDialog extends StatelessWidget {
     final connectedUuids = context.watch<ProfilesRunningCubit>().state.socketConnectors.keys.toSet();
     // Get all loaded profiles (UUIDs)
     final profileListState = context.watch<ProfileListBloc>().state;
-    List<String> connectedProfileNames = [];
+    List<Map<String, String>> connectedProfileNames = [];
     if (profileListState is ProfileListLoaded) {
       connectedProfileNames = profileListState.profiles.where((uuid) => connectedUuids.contains(uuid)).map((uuid) {
         final profileBloc = context.read<ProfileCacheCubit>().getProfileBloc(uuid);
         final profileState = profileBloc.state;
         if (profileState is ProfileLoadedState) {
-          return profileState.profile.displayName;
+          return {'profileName': profileState.profile.displayName, 'deviceName': profileState.profile.deviceName};
         } else {
-          return uuid; // fallback if not loaded
+          return {'profileName': uuid, 'deviceName': ''}; // fallback if not loaded
         }
       }).toList();
     }
@@ -36,45 +37,77 @@ class ConnectedProfilesDialog extends StatelessWidget {
         spacing: Sizes.p8,
         children: [
           PhosphorIcon(
-            PhosphorIcons.x(PhosphorIconsStyle.bold),
-            color: Colors.red,
+            PhosphorIcons.userCircle(),
+            // color: Colors.red,
           ),
-          Text(strings.switchAtSign, style: Theme.of(context).textTheme.titleMedium)
+          Text(strings.switchAtSign)
         ],
       ),
       content: connectedProfileNames.isNotEmpty
           ? Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Row(
-                  spacing: Sizes.p8,
-                  children: [
-                    PhosphorIcon(
-                      PhosphorIcons.plugsConnected(),
-                    ),
-                    Text(strings.activeConnections)
-                  ],
+                Text(
+                  strings.switchAtSignDescription,
+                  style: Theme.of(context)
+                      .textTheme
+                      .bodyMedium!
+                      .copyWith(color: Colors.black, fontWeight: FontWeight.bold),
                 ),
-                gapH8,
                 Text(strings.profileRunningCloseMsgStart),
                 gapH8,
-                SizedBox(
-                  width: Sizes.p210,
-                  height: Sizes.p150,
-                  child: ListView.builder(
-                    shrinkWrap: true,
-                    itemCount: connectedProfileNames.length,
-                    itemBuilder: (context, count) => Row(
-                      children: [
-                        PhosphorIcon(
-                          PhosphorIcons.dot(),
+                Container(
+                  color: AppColor.greyColor,
+                  width: 470,
+                  height: Sizes.p192,
+                  child: Column(
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 0, top: Sizes.p10, left: Sizes.p10, right: Sizes.p10),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(strings.profileName),
+                            Text(strings.deviceName),
+                          ],
                         ),
-                        Text(connectedProfileNames[count]),
-                      ],
-                    ),
+                      ),
+                      Expanded(
+                        child: ListView.builder(
+                          padding: const EdgeInsets.all(Sizes.p8),
+                          shrinkWrap: true,
+                          itemCount: connectedProfileNames.length,
+                          itemBuilder: (context, count) => Card(
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(Sizes.p4),
+                            ),
+                            child: Padding(
+                              padding: const EdgeInsets.all(Sizes.p10),
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Text(connectedProfileNames[count]['profileName'] ?? ''),
+                                  Text(connectedProfileNames[count]['deviceName'] ?? ''),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-                Text(strings.profileRunningCloseMsgEnd),
+                gapH16,
+                Text.rich(TextSpan(children: [
+                  TextSpan(
+                    text: strings.switchAtSignNote.split(' ').first,
+                    style: Theme.of(context).textTheme.bodyMedium!.copyWith(
+                          color: AppColor.primaryColor,
+                          fontWeight: FontWeight.bold,
+                        ),
+                  ),
+                  TextSpan(text: ' ${strings.switchAtSignNote.split(' ').skip(1).join(' ')}'),
+                ])),
               ],
             )
           : gap0,

@@ -44,6 +44,22 @@ abstract class SshnpdChannel with AsyncInitialization, AtClientBindings {
   @protected
   SshnpdAck sshnpdAck = SshnpdAck.notAcknowledged;
 
+  Map<String, dynamic>? pingResponse;
+
+  /// The keystore key we are going to use to cache ping responses in local
+  /// storage.
+  /// local:cached.ping.bob.device_name.sshnp@alice
+  String get locallyCachedPingResponseKey => 'local:'
+      'cached.ping.${params.sshnpdAtSign.substring(1)}.${params.device}.${DefaultArgs.namespace}'
+      '${params.clientAtSign}';
+  Map<String, dynamic>? cachedPingResponse;
+
+  Completer acked = Completer();
+
+  /// If the daemon supports twinKeys then this gets set to true by the
+  /// [featureCheck] function.
+  late final bool twinKeys;
+
   SshnpdChannel({
     required this.atClient,
     required this.params,
@@ -62,6 +78,18 @@ abstract class SshnpdChannel with AsyncInitialization, AtClientBindings {
       regex: regex,
       shouldDecrypt: true,
     ).listen(handleSshnpdResponses);
+
+    try {
+      cachedPingResponse = jsonDecode(
+          (await atClient.get(AtKey.fromString(locallyCachedPingResponseKey)))
+              .value);
+    } on AtKeyNotFoundException catch (_) {
+      // AtKeyNotFoundException is fine
+    } catch (e) {
+      // Any other exception is not fine, but the session can still proceed OK
+      logger.warning(
+          '${e.runtimeType} $e while fetching $locallyCachedPingResponseKey');
+    }
   }
 
   /// Main response handler for the daemon's notifications.
@@ -76,6 +104,7 @@ abstract class SshnpdChannel with AsyncInitialization, AtClientBindings {
     logger.info('Received $notificationKey notification');
 
     sshnpdAck = await handleSshnpdPayload(notification);
+    acked.complete();
 
     if (sshnpdAck == SshnpdAck.acknowledged) {
       logger.info('Session $sessionId connected successfully');
@@ -91,18 +120,16 @@ abstract class SshnpdChannel with AsyncInitialization, AtClientBindings {
   /// Wait until we've received an acknowledgement from the daemon, or
   /// have timed out while waiting.
   Future<SshnpdAck> waitForDaemonResponse({int maxWaitMillis = 15000}) async {
-    // TODO Would maybe be better to return a Future<SshnpdAck, String>
-    //      with the String being the failure reason (if any)
-
-    // Timer to timeout after 10 Secs or after the Ack of connected/Errors
-    for (int counter = 1; counter <= 100; counter++) {
-      if (counter % 20 == 0) {
-        logger.info('Still waiting for sshnpd response');
-      }
-      await Future.delayed(Duration(milliseconds: maxWaitMillis ~/ 100));
-      if (sshnpdAck != SshnpdAck.notAcknowledged) break;
-    }
+    Duration timeout = Duration(milliseconds: maxWaitMillis);
+    logger.info(
+        'Will wait for a response for up to ${timeout.inSeconds} seconds');
+    try {
+      await acked.future.timeout(timeout);
+    } on TimeoutException catch (_) {}
     logger.info('sshnpdAck: $sshnpdAck');
+
+    // Might be nicer to return a Future<SshnpdAck, String>
+    // with the String being the failure reason (if any)
     return sshnpdAck;
   }
 
@@ -184,18 +211,29 @@ abstract class SshnpdChannel with AsyncInitialization, AtClientBindings {
     if (featuresToCheck.isEmpty) {
       return [];
     }
-    Map<String, dynamic> pingResponse;
     try {
       pingResponse = await ping().timeout(timeout);
     } on TimeoutException catch (_) {
       throw TimeoutException('Daemon feature check timed out');
     }
 
+    try {
+      await atClient.put(AtKey.fromString(locallyCachedPingResponseKey),
+          jsonEncode(pingResponse));
+    } catch (e) {
+      logger.shout('$e while storing $locallyCachedPingResponseKey');
+    }
+
     // If supportedFeatures was null (i.e. a response from a v4 daemon),
     // then we will assume that "acceptsPublicKeys" is true
     final Map<String, dynamic> daemonFeatures =
-        pingResponse['supportedFeatures'] ??
+        pingResponse!['supportedFeatures'] ??
             {DaemonFeature.acceptsPublicKeys.name: true};
+
+    // set twinKeys (late variable, thus important it gets set here)
+    twinKeys = (pingResponse!['supportedFeatures']
+            ?[DaemonFeature.twinKeys.name] ==
+        true);
     return featuresToCheck
         .map((featureToCheck) => (
               featureToCheck,

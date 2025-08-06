@@ -6,9 +6,11 @@ typedef SrvGenerator<T> = Srv<T> Function(
   int? localPort,
   bool? bindLocalPort,
   String? localHost,
-  String? rvdAuthString,
-  String? sessionAESKeyString,
-  String? sessionIVString,
+  required RelayAuthenticator? relayAuthenticator,
+  String? aesC2D,
+  String? ivC2D,
+  String? aesD2C,
+  String? ivD2C,
   bool multi,
   bool detached,
   Duration timeout,
@@ -51,4 +53,12 @@ enum SupportedSshAlgorithm {
 
   @override
   String toString() => _cliArg;
+}
+
+enum RelayAuthMode {
+  /// simple payload - signed response to implicit challenge
+  payload,
+
+  /// encrypted signed response to explicit challenge
+  escr;
 }

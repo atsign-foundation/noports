@@ -1,7 +1,18 @@
+
+## 1.4.0+17
+
+--**FIX**: changed imports for app_Llocalization.dart
+
 ## 1.3.0+16
 
+- **FIX**: Prevented MissingPluginException on Windows by calling setVisibleOnAllWorkspaces only on macOS in TrayManager initState
+- **FIX**: Version number visible on settings navigation rail by making it scrollable on windows.
+- **FIX**: Settings hint message widget removed since a failed profile load is an expected behavior and not a bug.
+- **FIX**: authorization icon is now greyed out when it's not available to be pressed on a non-dashboard screen and primary color when app is on the authorization screen.
 - **FEAT**: demo profile is downloaded and added to profile screen by pressing the try now button.
-- **FEAT**: atsigns can be switched in the settings screen.
+- **FEAT**: atSigns can be switched in the settings screen.
+- **FIX**: NoPorts logo changed to the correct one.
+- **CHORE**: Client atSign changed to NoPorts atSign.
 
 ## 1.2.0+15
 

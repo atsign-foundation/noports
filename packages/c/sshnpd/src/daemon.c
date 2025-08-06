@@ -44,7 +44,9 @@ struct _notification_key_map notification_key_map[] = {
     {"graceful_shutdown", NK_GRACEFUL_SHUTDOWN},
 };
 
+atclient_authenticate_options worker_options;
 atclient worker;
+atclient_authenticate_options monitor_options;
 atclient monitor_ctx;
 char *ping_response;
 char *atserver_host;
