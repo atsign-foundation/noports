@@ -15,7 +15,7 @@ These initial steps set up the machine initiating the connection.
 
 ### <mark style="color:orange;">Step 1:</mark> Download and run the Installer
 
-Download the installer [from GitHub](https://github.com/atsign-foundation/noports/releases/download/latest/NoPortsInstaller-windows-x64.zip). Then unzip the file.
+Download the installer [from GitHub](https://github.com/atsign-foundation/noports/releases/latest/download/NoPortsInstaller-windows-x64.zip). Then unzip the file.
 
 Launch the NoPortsInstaller.exe program and allow it administrative permissions. Click **Client Install** and follow the process until installation is complete.
 
