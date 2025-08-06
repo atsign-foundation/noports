@@ -1,11 +1,23 @@
 ---
 description: Typing is less fun after a few devices.
 icon: grid-horizontal
+layout:
+  width: default
+  title:
+    visible: true
+  description:
+    visible: true
+  tableOfContents:
+    visible: true
+  outline:
+    visible: true
+  pagination:
+    visible: false
 ---
 
-# Installs at scale
+# Installs at Scale
 
-## Important Notes
+### Important Notes
 
 This is an engineering guide, not a definitive solution, as every production environment is different. Feel free to borrow what is useful and ignore what is not. If you have better ideas or ways, please let us know!
 
@@ -17,7 +29,7 @@ Each atSign has a reasonable maximum of 25 devices that it can manage, so keep t
 * Case insensitive Alphanumeric max 36 Chars Snake Case from version 5.0.3 onwards.
   * allows UUID snake cased device names.
 
-## Install.sh
+### Install.sh
 
 Cut and paste this script and tailor it to your needs. Do not forget to chmod 500 or else it will not run! More details below on how to set things up, and a demo run, too, using Docker.
 
@@ -172,13 +184,13 @@ Gist for sshnpd config file
 
 The other variables set up the atSigns for the manager and device and for the device name itself. The device name by default uses the `hostname` using the shell command `$(hostname)` , but that only works if the hostname is compliant with the `-d` format of sshnpd. You can pick another way to identify the host or just make sure the hostname is compliant.
 
-## Running the install.sh (Note: Has to be run as root)
+### Running the install.sh (Note: Has to be run as root)
 
 This is a simple matter now of getting the install.sh to the target device and running it. The needed files will be installed, the username name created, cronjobs put in place, and the 'sshnpd' will be started.
 
 How you get the `install.sh` file to the target machine is going to vary depending on your environment. Using scp is a good option, as is using ssh or curl and pulling the file (using the same encryption method perhaps).
 
-## Scaling things up
+### Scaling things up
 
 The install.sh script works fine on individual machines, but if you want to install on, say, 25 machines, this is how you do it.
 
@@ -194,7 +206,7 @@ For example:
 
 `./install.sh ubuntu changeme https://raw.githubusercontent.com/cconstab/sshnpd_config/main/config/sshnpd.sh http://192.168.1.61:8080/@ssh_1_key.atKeys.aes helloworld @cconstab @ssh_1 $(hostname)`
 
-## To test this
+### To test this
 
 Using Docker is the simple way to test any options first before moving to production.
 

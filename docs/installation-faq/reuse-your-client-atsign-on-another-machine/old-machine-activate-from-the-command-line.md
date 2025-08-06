@@ -1,3 +1,7 @@
+---
+hidden: true
+---
+
 # Old machine: activate from the command line
 
 {% hint style="info" %}

@@ -1,18 +1,30 @@
 ---
 icon: upload
+layout:
+  width: default
+  title:
+    visible: true
+  description:
+    visible: true
+  tableOfContents:
+    visible: true
+  outline:
+    visible: true
+  pagination:
+    visible: false
 ---
 
-# Device Upgrade
+# NoPorts Daemon Upgrade
 
-## Upgrade the sshnpd binary
+### Upgrade the sshnpd binary
 
-Upgrading to the latest version of sshnpd is identical to the installation process.
+Upgrading to the latest version of sshnpd follows the same process as installation, as the installer automatically replaces existing binaries with the new ones.
 
-Please see the [installation guide](device-upgrade-sshnpd.md#upgrade-the-sshnpd-binary) to proceed.
+To upgrade, follow the [installation guide](../advanced-installation-guides/device-installation-sshnpd/) up to **Step 3**, then return to this page to complete the process.
 
 ### Verify the Upgrade
 
-To check the current version of sshnpd installed on your machine simply execute the binary:
+To check the current version of sshnpd installed on your machine, simply execute the binary:
 
 {% tabs %}
 {% tab title="Linux" %}
@@ -20,7 +32,7 @@ To check the current version of sshnpd installed on your machine simply execute 
 $HOME/.local/bin/sshnpd
 ```
 
-Or if you installed as root:
+Or, if you installed as root:
 
 ```
 /usr/local/bin/sshnpd
@@ -52,9 +64,9 @@ Version : x.x.x
 {% endtab %}
 {% endtabs %}
 
-## Reload the sshnpd service
+### Reload the sshnpd service
 
-After upgrading the sshnpd binary, we must restart the sshnpd service so that it runs using the new version. How you proceed is dependent on the original installation method you used:
+After upgrading the sshnpd binary, we must restart the sshnpd service so that it runs using the new version. How you proceed is dependent upon the original installation method you used:
 
 1. [Systemd unit](device-upgrade-sshnpd.md#systemd-unit)
 2. [Tmux session](device-upgrade-sshnpd.md#tmux-session)
