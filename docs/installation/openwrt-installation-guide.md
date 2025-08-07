@@ -1,18 +1,6 @@
 ---
 description: How to install NoPorts onto an OpenWrt router.
 icon: router
-layout:
-  width: default
-  title:
-    visible: true
-  description:
-    visible: true
-  tableOfContents:
-    visible: true
-  outline:
-    visible: true
-  pagination:
-    visible: false
 ---
 
 # OpenWrt Installation Guide
@@ -21,11 +9,15 @@ layout:
 OpenWrt installation walk through
 {% endembed %}
 
-### Using the LuCI web interface
+### Package repo for OpenWrt 24.10 and 23.05
+
+We now have our own [package repo](https://atsign-foundation.github.io/OpenWrt-releases/) for the currently supported releases of OpenWrt. Please follow [this guide](https://github.com/atsign-foundation/OpenWrt-releases/tree/gh-pages?tab=readme-ov-file#how-to-use-on-openwrt) for installing the Atsign key and adding the packages.
+
+### Manual install using the LuCI web interface
 
 First download the latest packages for your chosen architecture from our [releases](https://github.com/atsign-foundation/Atsign_OpenWRT_packages/releases) page.
 
-We've created packages for x86\_64, aarch64\_cortex-a53, ramips and mips\_siflower; but if your chosen architecture isn't there please let us know by opening an [issue](https://github.com/atsign-foundation/Atsign_OpenWRT_packages/issues).
+We've created packages for aarch64\_cortex-a53, arm\_cortex-a7\_neon-vfpv4, mips\_siflower, ramips (mipsel\_24k) and x86\_64; but if your chosen architecture isn't there please let us know by opening an [issue](https://github.com/atsign-foundation/Atsign_OpenWRT_packages/issues). These packages _should_ work on older OpenWrt (and OpenWrt derivatives like GL.iNet), though note that the LuCI package uses the JavaScript framework that was introduced in OpenWrt 21.02.
 
 With the packages ready to go, sign into the web interface for your router and go to `System`> `Software` in the menu. Click on `Upload Package` and `Browse` to the csshnpd package you downloaded. Click `Open` then `Upload` and `Install`. Repeat that process with the luci-app-csshnpd package.
 
@@ -33,7 +25,7 @@ For the new menu to appear you'll need to `Log out` then sign in again.
 
 You can now go to `Network`>`NoPorts` and fill out the config tab with your device atSign, manager atSign, device name and the OTP for key generation. Click the `Enabled` box then hit `Save & Apply`.
 
-No go to the `NoPorts Enrollment` tab and follow the instructions there to generate a device key.
+Now go to the `NoPorts Enrollment` tab and follow the instructions there to generate a device key.
 
 With the key in place navigate to `System`>`Startup` and `Start` the `sshnpd` service.
 
@@ -43,17 +35,18 @@ With the key in place navigate to `System`>`Startup` and `Start` the `sshnpd` se
 Walk through of OpenWrt CLI installation onto a Teltonika RUT241
 {% endembed %}
 
-The [releases](https://github.com/atsign-foundation/Atsign_OpenWRT_packages/releases) page includes instructions for command line installation, though these may need to be edited to suit your system architecture.
+The [releases](https://github.com/atsign-foundation/Atsign_OpenWRT_packages/releases) page includes instructions for command line installation. These will work on OpenWrt derivatives that don't use LuCI (e.g. Teltonika) or if you just prefer working on the command line.
 
-Those command line snippets set some variables for the `RELEASE` number and `PACKAGE` name then use `wget` to download the package from GitHub.
+Those command line snippets set some variables for the `RELEASE` number, `ARCH` for system architecture and `PACKAGE` name then use `wget` to download the package from GitHub.
 
 Packages are installed using `opkg install` for OpenWrt 24.10 and earlier releases that use `.ipk` type packages, or `apk add` for newer OpenWrt which uses `.apk` packages.
 
-For example, to install c1.0.3 on a Teltonika RUTX10 device, which uses the arm\_cortex-a7\_neon-vfpv4 architecture:
+For example, to install the c1.0.14 release:
 
 ```
-RELEASE="1.0.3"
-PACKAGE="csshnpd_${RELEASE}-1_arm_cortex-a7_neon-vfpv4.ipk"
+RELEASE="1.0.14"
+ARCH=$(opkg print-architecture | grep ' 10$' | awk '{print $2}')
+PACKAGE="csshnpd_${RELEASE}-1_${ARCH}.ipk"
 wget -O ${PACKAGE} https://github.com/atsign-foundation/Atsign_OpenWRT_packages/releases/download/c${RELEASE}/${PACKAGE}
 opkg install ${PACKAGE}
 ```
@@ -88,4 +81,13 @@ And you should be ready to connect to the device:
 
 ```
 sshnp -f @example_client -t @example_device -d rutx10_remote -h rv_eu
+```
+
+### SNAPSHOT packages
+
+NoPorts is now upstream in SNAPSHOT builds so you can install `luci-app-csshnpd` from the System > Software page on LuCI. Or for a command line install run:
+
+```
+apk update
+apk add csshnpd
 ```
