@@ -1,6 +1,18 @@
 ---
-icon: cloud-plus
 description: How to deploy NoPorts on Oracle Cloud Infrastructure using a cloud-init script
+icon: cloud-plus
+layout:
+  width: default
+  title:
+    visible: true
+  description:
+    visible: true
+  tableOfContents:
+    visible: true
+  outline:
+    visible: true
+  pagination:
+    visible: false
 ---
 
 # Automated Installation on Oracle Cloud Infrastructure (OCI)
@@ -9,19 +21,11 @@ description: How to deploy NoPorts on Oracle Cloud Infrastructure using a cloud-
 
 When starting a VM on OCI first click the `Show advanced options` button having selected the usual options above that.
 
-<div align="left">
-
-<figure><img src="../../.gitbook/assets/OCI_ShowAdvancedOptions.PNG" alt=""><figcaption></figcaption></figure>
-
-</div>
+<div align="left"><figure><img src="../../.gitbook/assets/OCI_ShowAdvancedOptions.PNG" alt=""><figcaption></figcaption></figure></div>
 
 Then (in the `Management` tab) select `Paste cloud-init script`
 
-<div align="left">
-
-<figure><img src="../../.gitbook/assets/OCI_PasteCloudInit.PNG" alt=""><figcaption></figcaption></figure>
-
-</div>
+<div align="left"><figure><img src="../../.gitbook/assets/OCI_PasteCloudInit.PNG" alt=""><figcaption></figcaption></figure></div>
 
 And paste your customised script into the `Cloud-init script` box:
 
@@ -45,11 +49,7 @@ sh universal.sh -t device -c ${ATCLIENT} -d ${ATDEVICE} -n ${DEVNAME}
 chown -R ${USER}:${USER} /home/${USER}/.atsign
 ```
 
-<div align="left">
-
-<figure><img src="../../.gitbook/assets/OCI_CloudInitScript.PNG" alt=""><figcaption></figcaption></figure>
-
-</div>
+<div align="left"><figure><img src="../../.gitbook/assets/OCI_CloudInitScript.PNG" alt=""><figcaption></figcaption></figure></div>
 
 The VM is now ready for `Create`
 

@@ -1,14 +1,26 @@
 ---
 icon: arrow-up-from-square
+layout:
+  width: default
+  title:
+    visible: true
+  description:
+    visible: true
+  tableOfContents:
+    visible: true
+  outline:
+    visible: true
+  pagination:
+    visible: false
 ---
 
-# Client Upgrade
+# NoPorts Client Upgrade
 
-## Upgrade sshnp
+### Upgrade sshnp
 
-Upgrading to the latest version of sshnp is identical to the installation process.
+Upgrading to the latest version of sshnp follows the same process as installation, as the installer automatically replaces existing binaries with the new ones.
 
-Please see the [installation guide](client-installation-sshnp.md) to proceed.
+To upgrade, follow the [installation guide](../advanced-installation-guides/client-installation-sshnp.md) up to **Step 3**, then return to this page to verify the upgrade.
 
 ### Verify the Upgrade
 

@@ -1,6 +1,18 @@
 ---
-icon: google
 description: How to deploy NoPorts on Google Cloud Platform using a cloud-init script
+icon: google
+layout:
+  width: default
+  title:
+    visible: true
+  description:
+    visible: true
+  tableOfContents:
+    visible: true
+  outline:
+    visible: true
+  pagination:
+    visible: false
 ---
 
 # Automated Installation on Google Cloud Platform (GCP)
@@ -11,19 +23,11 @@ Navigate to Compute Engine > VM instances and hit the `+ CREATE INSTANCE` button
 
 Expand `Advanced options` at the bottom of the page:
 
-<div align="left">
-
-<figure><img src="../../.gitbook/assets/GCP_Advanced_options.PNG" alt=""><figcaption></figcaption></figure>
-
-</div>
+<div align="left"><figure><img src="../../.gitbook/assets/GCP_Advanced_options.PNG" alt=""><figcaption></figcaption></figure></div>
 
 Then scroll down and expand `Management`:
 
-<div align="left">
-
-<figure><img src="../../.gitbook/assets/GCP_Management.PNG" alt=""><figcaption></figcaption></figure>
-
-</div>
+<div align="left"><figure><img src="../../.gitbook/assets/GCP_Management.PNG" alt=""><figcaption></figcaption></figure></div>
 
 In the `Automation` section paste in your customised startup script like:
 
@@ -52,11 +56,7 @@ NB this script is creating a new user `noports` to deal with the fact that GCP i
 
 Once filled, the box should look something like:
 
-<div align="left">
-
-<figure><img src="../../.gitbook/assets/GCP_Startup_script.PNG" alt=""><figcaption></figcaption></figure>
-
-</div>
+<div align="left"><figure><img src="../../.gitbook/assets/GCP_Startup_script.PNG" alt=""><figcaption></figcaption></figure></div>
 
 The VM is now ready for `Create`
 
