@@ -8,6 +8,7 @@ import 'dart:async' as _i4;
 import 'package:flutter_bloc/flutter_bloc.dart' as _i5;
 import 'package:mockito/mockito.dart' as _i1;
 import 'package:mockito/src/dummies.dart' as _i3;
+import 'package:npt_flutter/app.dart' as _i6;
 import 'package:npt_flutter/features/settings/settings.dart' as _i2;
 
 // ignore_for_file: type=lint
@@ -128,4 +129,82 @@ class MockSettingsBloc extends _i1.Mock implements _i2.SettingsBloc {
     Invocation.method(#onError, [error, stackTrace]),
     returnValueForMissingStub: null,
   );
+}
+
+/// A class which mocks [EnableLoggingCubit].
+///
+/// See the documentation for Mockito's code generation for more information.
+class MockEnableLoggingCubit extends _i1.Mock
+    implements _i6.EnableLoggingCubit {
+  @override
+  bool get state =>
+      (super.noSuchMethod(
+            Invocation.getter(#state),
+            returnValue: false,
+            returnValueForMissingStub: false,
+          )
+          as bool);
+
+  @override
+  _i4.Stream<bool> get stream =>
+      (super.noSuchMethod(
+            Invocation.getter(#stream),
+            returnValue: _i4.Stream<bool>.empty(),
+            returnValueForMissingStub: _i4.Stream<bool>.empty(),
+          )
+          as _i4.Stream<bool>);
+
+  @override
+  bool get isClosed =>
+      (super.noSuchMethod(
+            Invocation.getter(#isClosed),
+            returnValue: false,
+            returnValueForMissingStub: false,
+          )
+          as bool);
+
+  @override
+  void disable() => super.noSuchMethod(
+    Invocation.method(#disable, []),
+    returnValueForMissingStub: null,
+  );
+
+  @override
+  void enable() => super.noSuchMethod(
+    Invocation.method(#enable, []),
+    returnValueForMissingStub: null,
+  );
+
+  @override
+  void emit(bool? state) => super.noSuchMethod(
+    Invocation.method(#emit, [state]),
+    returnValueForMissingStub: null,
+  );
+
+  @override
+  void onChange(_i5.Change<bool>? change) => super.noSuchMethod(
+    Invocation.method(#onChange, [change]),
+    returnValueForMissingStub: null,
+  );
+
+  @override
+  void addError(Object? error, [StackTrace? stackTrace]) => super.noSuchMethod(
+    Invocation.method(#addError, [error, stackTrace]),
+    returnValueForMissingStub: null,
+  );
+
+  @override
+  void onError(Object? error, StackTrace? stackTrace) => super.noSuchMethod(
+    Invocation.method(#onError, [error, stackTrace]),
+    returnValueForMissingStub: null,
+  );
+
+  @override
+  _i4.Future<void> close() =>
+      (super.noSuchMethod(
+            Invocation.method(#close, []),
+            returnValue: _i4.Future<void>.value(),
+            returnValueForMissingStub: _i4.Future<void>.value(),
+          )
+          as _i4.Future<void>);
 }
