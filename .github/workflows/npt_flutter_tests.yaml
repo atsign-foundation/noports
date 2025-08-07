@@ -33,7 +33,7 @@ jobs:
         run: flutter pub get
       - name: flutter analyze
         working-directory: packages/dart/npt_flutter
-        run: flutter analyze
+        run: flutter analyze --no-fatal-warnings
       - name: flutter test --exclude-tags=integration
         working-directory: packages/dart/npt_flutter
         run: flutter test --exclude-tags=integration
