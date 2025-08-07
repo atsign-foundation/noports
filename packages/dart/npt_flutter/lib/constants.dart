@@ -27,12 +27,16 @@ class Constants {
   static const pngIconLight = 'assets/noports-icon64-light.png';
   static const icoIconLight = 'assets/noports-icon64-light.ico';
   static const authenticatorMockup = 'assets/authenticator-mockup.png';
-  static const authenticatorApprovalMockup = 'assets/authenticator-approval-mockup.png';
+  static const authenticatorApprovalMockup =
+      'assets/authenticator-approval-mockup.png';
 
   static Map<String, String> getRootDomains(BuildContext context) {
     AppLocalizations strings = AppLocalizations.of(context)!;
 
-    return {'root.atsign.org': strings.rootDomainDefault, 'vip.ve.atsign.zone': strings.rootDomainDemo};
+    return {
+      'root.atsign.org': strings.rootDomainDefault,
+      'vip.ve.atsign.zone': strings.rootDomainDemo
+    };
   }
 
   static const kWindowsMinWindowSize = Size(1053, 691);

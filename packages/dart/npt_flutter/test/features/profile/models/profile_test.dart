@@ -40,7 +40,8 @@ void main() {
         expect(testProfile.relayAtsign, equals(testRelayAtsign));
       });
 
-      test('should create profile with default remoteHost when not provided', () {
+      test('should create profile with default remoteHost when not provided',
+          () {
         const profileWithoutRemoteHost = Profile(
           testUuid,
           displayName: testDisplayName,
@@ -70,7 +71,8 @@ void main() {
     group('Profile copyWith', () {
       test('should copy profile with updated displayName', () {
         const newDisplayName = 'Updated Profile Name';
-        final updatedProfile = testProfile.copyWith(displayName: newDisplayName);
+        final updatedProfile =
+            testProfile.copyWith(displayName: newDisplayName);
 
         expect(updatedProfile.displayName, equals(newDisplayName));
         expect(updatedProfile.uuid, equals(testProfile.uuid));
@@ -101,7 +103,8 @@ void main() {
 
       test('should copy profile with updated relayAtsign', () {
         const newRelayAtsign = '@new_relay';
-        final updatedProfile = testProfile.copyWith(relayAtsign: newRelayAtsign);
+        final updatedProfile =
+            testProfile.copyWith(relayAtsign: newRelayAtsign);
 
         expect(updatedProfile.relayAtsign, equals(newRelayAtsign));
         expect(updatedProfile.uuid, equals(testProfile.uuid));
@@ -117,7 +120,8 @@ void main() {
     });
 
     group('Profile JSON Serialization', () {
-      test('should handle JSON serialization and deserialization correctly', () {
+      test('should handle JSON serialization and deserialization correctly',
+          () {
         // Test standard JSON serialization
         final json = testProfile.toJson();
         expect(json['uuid'], equals(testUuid));
@@ -223,7 +227,8 @@ void main() {
 
         expect(nptParams.clientAtSign, equals(clientAtsign));
         expect(nptParams.sshnpdAtSign, equals(testSshnpdAtsign));
-        expect(nptParams.srvdAtSign, equals(testRelayAtsign)); // Should use profile's relay
+        expect(nptParams.srvdAtSign,
+            equals(testRelayAtsign)); // Should use profile's relay
         expect(nptParams.remoteHost, equals(testRemoteHost));
         expect(nptParams.remotePort, equals(testRemotePort));
         expect(nptParams.device, equals(testDeviceName));
@@ -231,7 +236,8 @@ void main() {
         expect(nptParams.rootDomain, equals(rootDomain));
       });
 
-      test('should use fallback relay when overrideRelayWithFallback is true', () {
+      test('should use fallback relay when overrideRelayWithFallback is true',
+          () {
         const clientAtsign = '@client';
         const rootDomain = 'test.domain.com';
         const fallbackRelayAtsign = '@fallback_relay';
@@ -243,7 +249,8 @@ void main() {
           overrideRelayWithFallback: true,
         );
 
-        expect(nptParams.srvdAtSign, equals(fallbackRelayAtsign)); // Should use fallback
+        expect(nptParams.srvdAtSign,
+            equals(fallbackRelayAtsign)); // Should use fallback
       });
 
       test('should use fallback relay when profile relay is null', () {
@@ -302,7 +309,9 @@ void main() {
         expect(profile.uuid, equals(providedUuid));
       });
 
-      test('should generate uuid when profile uuid is empty and no uuid provided', () {
+      test(
+          'should generate uuid when profile uuid is empty and no uuid provided',
+          () {
         final json = {
           'displayName': testDisplayName,
           'sshnpdAtsign': testSshnpdAtsign,
@@ -317,7 +326,9 @@ void main() {
         expect(profile.uuid, isNot(equals('')));
       });
 
-      test('should keep existing uuid when profile already has one and no new uuid is passed in', () {
+      test(
+          'should keep existing uuid when profile already has one and no new uuid is passed in',
+          () {
         final json = {
           'uuid': testUuid,
           'displayName': testDisplayName,

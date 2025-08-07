@@ -104,42 +104,51 @@ void main() {
 
       // Set up default mock behaviors
       when(mockProfileListBloc.state).thenReturn(const ProfileListInitial());
-      when(mockProfileListBloc.stream).thenAnswer((_) => Stream.value(const ProfileListInitial()));
+      when(mockProfileListBloc.stream)
+          .thenAnswer((_) => Stream.value(const ProfileListInitial()));
 
       when(mockSyncCubit.state).thenReturn(true);
       when(mockSyncCubit.stream).thenAnswer((_) => Stream.value(true));
 
       when(mockProfileBloc.uuid).thenReturn(testUuid1);
-      when(mockProfileBloc.state).thenReturn(const ProfileLoaded(testUuid1, profile: testProfile1));
-      when(mockProfileBloc.stream)
-          .thenAnswer((_) => Stream.value(const ProfileLoaded(testUuid1, profile: testProfile1)));
+      when(mockProfileBloc.state)
+          .thenReturn(const ProfileLoaded(testUuid1, profile: testProfile1));
+      when(mockProfileBloc.stream).thenAnswer((_) =>
+          Stream.value(const ProfileLoaded(testUuid1, profile: testProfile1)));
 
-      when(mockProfileCacheCubit.getProfileBloc(any)).thenReturn(mockProfileBloc);
+      when(mockProfileCacheCubit.getProfileBloc(any))
+          .thenReturn(mockProfileBloc);
 
       when(mockBackupKeyCubit.state).thenReturn(false);
       when(mockBackupKeyCubit.stream).thenAnswer((_) => Stream.value(false));
-      when(mockBackupKeyCubit.getBackupKeyStatus())
-          .thenAnswer((_) => Future.value(true)); // Mock as already backed up to avoid dialog
+      when(mockBackupKeyCubit.getBackupKeyStatus()).thenAnswer((_) =>
+          Future.value(true)); // Mock as already backed up to avoid dialog
 
       when(mockOnboardingCubit.state).thenReturn(const OnboardingState(
         atSign: '@test',
         status: OnboardingStatus.onboarded,
         rootDomain: 'root.atsign.org',
       ));
-      when(mockOnboardingCubit.stream).thenAnswer((_) => Stream.value(const OnboardingState(
-            atSign: '@test',
-            status: OnboardingStatus.onboarded,
-            rootDomain: 'root.atsign.org',
-          )));
+      when(mockOnboardingCubit.stream)
+          .thenAnswer((_) => Stream.value(const OnboardingState(
+                atSign: '@test',
+                status: OnboardingStatus.onboarded,
+                rootDomain: 'root.atsign.org',
+              )));
 
-      when(mockSettingsBloc.state).thenReturn(const SettingsLoaded(settings: testSettings));
-      when(mockSettingsBloc.stream).thenAnswer((_) => Stream.value(const SettingsLoaded(settings: testSettings)));
+      when(mockSettingsBloc.state)
+          .thenReturn(const SettingsLoaded(settings: testSettings));
+      when(mockSettingsBloc.stream).thenAnswer(
+          (_) => Stream.value(const SettingsLoaded(settings: testSettings)));
 
-      when(mockProfilesSelectedCubit.state).thenReturn(const ProfilesSelectedState({}));
-      when(mockProfilesSelectedCubit.stream).thenAnswer((_) => Stream.value(const ProfilesSelectedState({})));
+      when(mockProfilesSelectedCubit.state)
+          .thenReturn(const ProfilesSelectedState({}));
+      when(mockProfilesSelectedCubit.stream)
+          .thenAnswer((_) => Stream.value(const ProfilesSelectedState({})));
 
       when(mockFavoriteBloc.state).thenReturn(const FavoritesInitial());
-      when(mockFavoriteBloc.stream).thenAnswer((_) => Stream.value(const FavoritesInitial()));
+      when(mockFavoriteBloc.stream)
+          .thenAnswer((_) => Stream.value(const FavoritesInitial()));
     });
 
     Widget createWidgetUnderTest(ProfileListState state) {
@@ -154,7 +163,8 @@ void main() {
           BlocProvider<BackupKeyCubit>.value(value: mockBackupKeyCubit),
           BlocProvider<OnboardingCubit>.value(value: mockOnboardingCubit),
           BlocProvider<SettingsBloc>.value(value: mockSettingsBloc),
-          BlocProvider<ProfilesSelectedCubit>.value(value: mockProfilesSelectedCubit),
+          BlocProvider<ProfilesSelectedCubit>.value(
+              value: mockProfilesSelectedCubit),
           BlocProvider<FavoriteBloc>.value(value: mockFavoriteBloc),
         ],
         child: MaterialApp(
@@ -169,19 +179,22 @@ void main() {
     }
 
     group('ProfileList Loading States', () {
-      testWidgets('should display Spinner for initial and loading states', (WidgetTester tester) async {
+      testWidgets('should display Spinner for initial and loading states',
+          (WidgetTester tester) async {
         // Set test window size to match production
         tester.view.physicalSize = const Size(1053, 691);
         tester.view.devicePixelRatio = 1.0;
 
         // Test ProfileListInitial state
-        await tester.pumpWidget(createWidgetUnderTest(const ProfileListInitial()));
+        await tester
+            .pumpWidget(createWidgetUnderTest(const ProfileListInitial()));
         await tester.pump();
         expect(find.byType(Spinner), findsOneWidget);
         expect(find.byType(Center), findsOneWidget);
 
         // Test ProfileListLoading state
-        await tester.pumpWidget(createWidgetUnderTest(const ProfileListLoading()));
+        await tester
+            .pumpWidget(createWidgetUnderTest(const ProfileListLoading()));
         await tester.pump();
         expect(find.byType(Spinner), findsOneWidget);
         expect(find.byType(Center), findsOneWidget);
@@ -189,13 +202,15 @@ void main() {
     });
 
     group('ProfileListFailedLoad State', () {
-      testWidgets('should display ProfileListFailedLoadContent when state is ProfileListFailedLoad',
+      testWidgets(
+          'should display ProfileListFailedLoadContent when state is ProfileListFailedLoad',
           (WidgetTester tester) async {
         // Set test window size to match production
         tester.view.physicalSize = const Size(1053, 691);
         tester.view.devicePixelRatio = 1.0;
 
-        await tester.pumpWidget(createWidgetUnderTest(const ProfileListFailedLoad()));
+        await tester
+            .pumpWidget(createWidgetUnderTest(const ProfileListFailedLoad()));
         await tester.pump();
 
         expect(find.byType(ProfileListFailedLoadContent), findsOneWidget);
@@ -204,12 +219,14 @@ void main() {
     });
 
     group('ProfileListLoaded State', () {
-      testWidgets('should display empty state when no profiles are loaded', (WidgetTester tester) async {
+      testWidgets('should display empty state when no profiles are loaded',
+          (WidgetTester tester) async {
         // Set test window size to match production
         tester.view.physicalSize = const Size(1053, 691);
         tester.view.devicePixelRatio = 1.0;
 
-        await tester.pumpWidget(createWidgetUnderTest(const ProfileListLoaded(profiles: [])));
+        await tester.pumpWidget(
+            createWidgetUnderTest(const ProfileListLoaded(profiles: [])));
         await tester.pump();
 
         // Should not show spinner
@@ -237,12 +254,14 @@ void main() {
         expect(find.byType(ListView), findsNothing);
       });
 
-      testWidgets('should display profiles when profiles are loaded', (WidgetTester tester) async {
+      testWidgets('should display profiles when profiles are loaded',
+          (WidgetTester tester) async {
         // Set test window size to match production
         tester.view.physicalSize = const Size(1053, 691);
         tester.view.devicePixelRatio = 1.0;
 
-        await tester.pumpWidget(createWidgetUnderTest(const ProfileListLoaded(profiles: testUuids)));
+        await tester.pumpWidget(createWidgetUnderTest(
+            const ProfileListLoaded(profiles: testUuids)));
         await tester.pump();
 
         // Should not show spinner
@@ -271,11 +290,14 @@ void main() {
         expect(find.byType(DemoProfileInfoWidget), findsNothing);
 
         // Verify ProfileCacheCubit.getProfileBloc was called for each profile
-        verify(mockProfileCacheCubit.getProfileBloc(testUuid1)).called(greaterThanOrEqualTo(1));
-        verify(mockProfileCacheCubit.getProfileBloc(testUuid2)).called(greaterThanOrEqualTo(1));
+        verify(mockProfileCacheCubit.getProfileBloc(testUuid1))
+            .called(greaterThanOrEqualTo(1));
+        verify(mockProfileCacheCubit.getProfileBloc(testUuid2))
+            .called(greaterThanOrEqualTo(1));
       });
 
-      testWidgets('should display sync status when sync is in progress', (WidgetTester tester) async {
+      testWidgets('should display sync status when sync is in progress',
+          (WidgetTester tester) async {
         // Set test window size to match production
         tester.view.physicalSize = const Size(1053, 691);
         tester.view.devicePixelRatio = 1.0;
@@ -283,14 +305,19 @@ void main() {
         when(mockSyncCubit.state).thenReturn(false);
         when(mockSyncCubit.stream).thenAnswer((_) => Stream.value(false));
 
-        await tester.pumpWidget(createWidgetUnderTest(const ProfileListLoaded(profiles: testUuids)));
+        await tester.pumpWidget(createWidgetUnderTest(
+            const ProfileListLoaded(profiles: testUuids)));
         await tester.pump();
 
         // Should show sync in progress message
-        expect(find.text(AppLocalizations.of(App.navState.currentContext!)!.syncInProgress), findsOneWidget);
+        expect(
+            find.text(AppLocalizations.of(App.navState.currentContext!)!
+                .syncInProgress),
+            findsOneWidget);
       });
 
-      testWidgets('should not display sync status when sync is complete', (WidgetTester tester) async {
+      testWidgets('should not display sync status when sync is complete',
+          (WidgetTester tester) async {
         // Set test window size to match production
         tester.view.physicalSize = const Size(1053, 691);
         tester.view.devicePixelRatio = 1.0;
@@ -298,24 +325,32 @@ void main() {
         when(mockSyncCubit.state).thenReturn(true);
         when(mockSyncCubit.stream).thenAnswer((_) => Stream.value(true));
 
-        await tester.pumpWidget(createWidgetUnderTest(const ProfileListLoaded(profiles: testUuids)));
+        await tester.pumpWidget(createWidgetUnderTest(
+            const ProfileListLoaded(profiles: testUuids)));
         await tester.pump();
 
         // Should not show sync in progress message
-        expect(find.text(AppLocalizations.of(App.navState.currentContext!)!.syncInProgress), findsNothing);
+        expect(
+            find.text(AppLocalizations.of(App.navState.currentContext!)!
+                .syncInProgress),
+            findsNothing);
       });
 
-      testWidgets('should provide correct BlocProvider keys for profiles', (WidgetTester tester) async {
+      testWidgets('should provide correct BlocProvider keys for profiles',
+          (WidgetTester tester) async {
         // Set test window size to match production
         tester.view.physicalSize = const Size(1053, 691);
         tester.view.devicePixelRatio = 1.0;
 
-        await tester.pumpWidget(createWidgetUnderTest(const ProfileListLoaded(profiles: testUuids)));
+        await tester.pumpWidget(createWidgetUnderTest(
+            const ProfileListLoaded(profiles: testUuids)));
         await tester.pump();
 
         // Check that BlocProvider keys are set correctly for each profile
-        expect(find.byKey(const Key("ProfileListView-BlocProvider-$testUuid1")), findsOneWidget);
-        expect(find.byKey(const Key("ProfileListView-BlocProvider-$testUuid2")), findsOneWidget);
+        expect(find.byKey(const Key("ProfileListView-BlocProvider-$testUuid1")),
+            findsOneWidget);
+        expect(find.byKey(const Key("ProfileListView-BlocProvider-$testUuid2")),
+            findsOneWidget);
       });
     });
   });

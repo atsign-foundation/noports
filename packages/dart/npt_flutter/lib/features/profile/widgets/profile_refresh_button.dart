@@ -11,7 +11,9 @@ class ProfileRefreshButton extends StatelessWidget {
     return BlocBuilder<ProfileBloc, ProfileState>(
       builder: (BuildContext context, ProfileState state) => ElevatedButton(
         onPressed: () {
-          context.read<ProfileBloc>().add(const ProfileLoadEvent(useCache: false));
+          context
+              .read<ProfileBloc>()
+              .add(const ProfileLoadEvent(useCache: false));
         },
         child: Text(AppLocalizations.of(context)!.refresh),
       ),

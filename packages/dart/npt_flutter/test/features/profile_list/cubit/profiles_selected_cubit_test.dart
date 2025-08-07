@@ -29,14 +29,16 @@ void main() {
         const state1 = ProfilesSelectedState({'uuid1', 'uuid2'});
         const state2 = ProfilesSelectedState({'uuid1', 'uuid2'});
         const state3 = ProfilesSelectedState({'uuid1', 'uuid3'});
-        const state4 = ProfilesSelectedState({'uuid2', 'uuid1'}); // Same items, different order
+        const state4 = ProfilesSelectedState(
+            {'uuid2', 'uuid1'}); // Same items, different order
 
         expect(state1, equals(state2));
         expect(state1, equals(state4)); // Sets ignore order
         expect(state1, isNot(equals(state3)));
 
         // toString formatting
-        expect(state1.toString(), equals('ProfilesSelectedState({uuid1, uuid2})'));
+        expect(
+            state1.toString(), equals('ProfilesSelectedState({uuid1, uuid2})'));
 
         // Props validation
         expect(
@@ -170,7 +172,8 @@ void main() {
 
       group('withRemoved', () {
         test('handles removing UUIDs with immutability and edge cases', () {
-          const initialState = ProfilesSelectedState({'uuid1', 'uuid2', 'uuid3'});
+          const initialState =
+              ProfilesSelectedState({'uuid1', 'uuid2', 'uuid3'});
 
           // Basic removal
           final removedState = initialState.withRemoved({'uuid1', 'uuid3'});
@@ -178,14 +181,17 @@ void main() {
 
           // Handle non-existent UUIDs
           final nonExistentState = initialState.withRemoved({'uuid4', 'uuid5'});
-          expect(nonExistentState.selected, equals({'uuid1', 'uuid2', 'uuid3'}));
+          expect(
+              nonExistentState.selected, equals({'uuid1', 'uuid2', 'uuid3'}));
 
           // Handle empty set removal
           final emptyRemoveState = initialState.withRemoved(<String>{});
-          expect(emptyRemoveState.selected, equals({'uuid1', 'uuid2', 'uuid3'}));
+          expect(
+              emptyRemoveState.selected, equals({'uuid1', 'uuid2', 'uuid3'}));
 
           // Can result in empty selection
-          final emptyResult = initialState.withRemoved({'uuid1', 'uuid2', 'uuid3'});
+          final emptyResult =
+              initialState.withRemoved({'uuid1', 'uuid2', 'uuid3'});
           expect(emptyResult.selected, isEmpty);
 
           // Verify immutability
@@ -225,13 +231,20 @@ void main() {
         cubit.select('uuid-with-dashes');
         cubit.select('uuid_with_underscores');
         cubit.select('uuid.with.dots');
-        expect(cubit.state.selected, containsAll(['uuid-with-dashes', 'uuid_with_underscores', 'uuid.with.dots']));
+        expect(
+            cubit.state.selected,
+            containsAll([
+              'uuid-with-dashes',
+              'uuid_with_underscores',
+              'uuid.with.dots'
+            ]));
       });
 
       testWidgets('selectAll handles null context gracefully', (tester) async {
         // Don't set up any widget tree, so App.navState.currentContext will be null
         cubit.selectAll();
-        expect(cubit.state.selected, isEmpty); // Should not throw and remain unchanged
+        expect(cubit.state.selected,
+            isEmpty); // Should not throw and remain unchanged
       });
     });
   });

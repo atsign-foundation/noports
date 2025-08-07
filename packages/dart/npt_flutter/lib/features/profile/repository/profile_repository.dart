@@ -23,17 +23,20 @@ class ProfileRepository {
     String namespace = Constants.namespace ?? '';
     List<AtKey> keys;
     try {
-      keys = await atClient.getAtKeys(regex: '.${Uuid.profilesSubNamespace}.$namespace');
+      keys = await atClient.getAtKeys(
+          regex: '.${Uuid.profilesSubNamespace}.$namespace');
     } catch (e) {
       App.log('[ERROR] getProfileUuids failed: $e'.loggable);
       keys = [];
     }
-    return keys.map((key) => key.key.substring(0, key.key.indexOf('.${Uuid.profilesSubNamespace}')));
+    return keys.map((key) =>
+        key.key.substring(0, key.key.indexOf('.${Uuid.profilesSubNamespace}')));
   }
 
   Future<Iterable<Profile>> getProfiles(Iterable<String> uuids) {
     return Future.wait(uuids.map((uuid) => getProfile(uuid))).then(
-      (profiles) => profiles.where((profile) => profile != null).cast<Profile>(),
+      (profiles) =>
+          profiles.where((profile) => profile != null).cast<Profile>(),
     );
   }
 

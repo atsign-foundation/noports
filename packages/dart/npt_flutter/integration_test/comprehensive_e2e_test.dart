@@ -17,10 +17,12 @@ void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
 
   group('NPT Flutter App - Comprehensive End-to-End Tests', () {
-    testWidgets('Complete app workflow: Onboarding → Dashboard → Profile Management → Settings → Error Recovery',
+    testWidgets(
+        'Complete app workflow: Onboarding → Dashboard → Profile Management → Settings → Error Recovery',
         (WidgetTester tester) async {
       // === PHASE 1: APP LAUNCH & INITIAL STATE ===
-      tester.printToConsole('=== Phase 1: App Launch & Initial Verification ===');
+      tester
+          .printToConsole('=== Phase 1: App Launch & Initial Verification ===');
 
       app.main();
       await tester.pumpAndSettle();
@@ -33,7 +35,8 @@ void main() {
 
       // Verify onboarding UI elements are present
       expect(find.byType(OnboardingButton), findsOneWidget);
-      expect(find.widgetWithText(CustomTextButton, 'Reset atSign'), findsOneWidget);
+      expect(find.widgetWithText(CustomTextButton, 'Reset atSign'),
+          findsOneWidget);
       expect(find.textContaining('v'), findsOneWidget); // Version display
       tester.printToConsole('✓ Onboarding interface elements verified');
 
@@ -107,7 +110,8 @@ void main() {
       await _testProfileOperations(tester);
 
       // === PHASE 8: ERROR RESILIENCE & STRESS TESTING ===
-      tester.printToConsole('=== Phase 8: Error Resilience & Stress Testing ===');
+      tester
+          .printToConsole('=== Phase 8: Error Resilience & Stress Testing ===');
 
       await _testErrorResilience(tester);
       await _testRapidInteractions(tester);
@@ -127,7 +131,8 @@ void main() {
       tester.printToConsole('=== Complete E2E Test Successfully Finished ===');
     });
 
-    testWidgets('Workflow interruption and recovery scenarios', (WidgetTester tester) async {
+    testWidgets('Workflow interruption and recovery scenarios',
+        (WidgetTester tester) async {
       tester.printToConsole('=== Testing Workflow Interruption Recovery ===');
 
       app.main();
@@ -160,11 +165,13 @@ void main() {
 
         // App should still be stable
         expect(tester.takeException(), isNull);
-        tester.printToConsole('✓ App recovered gracefully from workflow interruption');
+        tester.printToConsole(
+            '✓ App recovered gracefully from workflow interruption');
       }
     });
 
-    testWidgets('App stability under repeated navigation stress', (WidgetTester tester) async {
+    testWidgets('App stability under repeated navigation stress',
+        (WidgetTester tester) async {
       tester.printToConsole('=== Stress Testing: Repeated Navigation ===');
 
       app.main();
@@ -180,7 +187,8 @@ void main() {
       }
 
       expect(tester.takeException(), isNull);
-      tester.printToConsole('✓ App remained stable under intensive navigation stress');
+      tester.printToConsole(
+          '✓ App remained stable under intensive navigation stress');
     });
   });
 }
@@ -207,7 +215,8 @@ Future<void> _testProfileManagement(WidgetTester tester) async {
 
     tester.printToConsole('✓ Profile creation workflow tested');
   } else {
-    tester.printToConsole('ℹ Profile creation button not found - testing with existing profiles');
+    tester.printToConsole(
+        'ℹ Profile creation button not found - testing with existing profiles');
   }
 }
 
@@ -277,7 +286,8 @@ Future<void> _testAppNavigation(WidgetTester tester) async {
 }
 
 /// Navigate to a specific page
-Future<void> _navigateToPage(WidgetTester tester, String pageName, Type pageType) async {
+Future<void> _navigateToPage(
+    WidgetTester tester, String pageName, Type pageType) async {
   var navButton = find.text(pageName);
   if (navButton.evaluate().isEmpty) {
     navButton = find.byIcon(_getIconForPage(pageName));
@@ -354,7 +364,8 @@ Future<void> _testProfileOperations(WidgetTester tester) async {
   final profileViews = find.byType(ProfileView);
 
   if (profileViews.evaluate().isNotEmpty) {
-    tester.printToConsole('✓ Found ${profileViews.evaluate().length} profile(s) for operations testing');
+    tester.printToConsole(
+        '✓ Found ${profileViews.evaluate().length} profile(s) for operations testing');
 
     // Test popup menu interactions
     final popupMenus = find.byIcon(Icons.more_vert);
@@ -467,7 +478,8 @@ Future<void> _quickOnboarding(WidgetTester tester) async {
         await tester.pumpAndSettle();
       }
     } catch (e) {
-      tester.printToConsole('⚠ Quick onboarding handled gracefully: ${e.toString().substring(0, 50)}...');
+      tester.printToConsole(
+          '⚠ Quick onboarding handled gracefully: ${e.toString().substring(0, 50)}...');
     }
   }
 }

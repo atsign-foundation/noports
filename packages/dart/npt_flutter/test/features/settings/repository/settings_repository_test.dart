@@ -59,9 +59,12 @@ void main() {
         final defaultSettings1 = repository.defaultSettings;
         final defaultSettings2 = repository.defaultSettings;
 
-        expect(defaultSettings1.relayAtsign, equals(defaultSettings2.relayAtsign));
-        expect(defaultSettings1.viewLayout, equals(defaultSettings2.viewLayout));
-        expect(defaultSettings1.overrideRelay, equals(defaultSettings2.overrideRelay));
+        expect(
+            defaultSettings1.relayAtsign, equals(defaultSettings2.relayAtsign));
+        expect(
+            defaultSettings1.viewLayout, equals(defaultSettings2.viewLayout));
+        expect(defaultSettings1.overrideRelay,
+            equals(defaultSettings2.overrideRelay));
         expect(defaultSettings1.darkMode, equals(defaultSettings2.darkMode));
         expect(defaultSettings1.language, equals(defaultSettings2.language));
       });
@@ -73,7 +76,8 @@ void main() {
 
         expect(atKey.key, equals('settings'));
         expect(atKey.namespace, equals(Constants.namespace));
-        expect(atKey.sharedBy, equals('')); // Self key shouldn't have sharedBy initially
+        expect(atKey.sharedBy,
+            equals('')); // Self key shouldn't have sharedBy initially
       });
     });
 
@@ -118,7 +122,8 @@ void main() {
         test('should return null when AtClient throws exception', () async {
           final atKey = repository.settingsAtKey..sharedBy = testAtsign;
 
-          when(mockAtClient.get(atKey)).thenThrow(Exception('Settings not found'));
+          when(mockAtClient.get(atKey))
+              .thenThrow(Exception('Settings not found'));
 
           final result = await repository.getSettings();
 
@@ -151,23 +156,27 @@ void main() {
         test('should successfully save settings to AtClient', () async {
           final atKey = repository.settingsAtKey;
 
-          when(mockAtClient.put(atKey, jsonEncode(testSettings.toJson()))).thenAnswer((_) async => true);
+          when(mockAtClient.put(atKey, jsonEncode(testSettings.toJson())))
+              .thenAnswer((_) async => true);
 
           final result = await repository.putSettings(testSettings);
 
           expect(result, isTrue);
-          verify(mockAtClient.put(atKey, jsonEncode(testSettings.toJson()))).called(1);
+          verify(mockAtClient.put(atKey, jsonEncode(testSettings.toJson())))
+              .called(1);
         });
 
         test('should return false when AtClient put fails', () async {
           final atKey = repository.settingsAtKey;
 
-          when(mockAtClient.put(atKey, jsonEncode(testSettings.toJson()))).thenThrow(Exception('Put failed'));
+          when(mockAtClient.put(atKey, jsonEncode(testSettings.toJson())))
+              .thenThrow(Exception('Put failed'));
 
           final result = await repository.putSettings(testSettings);
 
           expect(result, isFalse);
-          verify(mockAtClient.put(atKey, jsonEncode(testSettings.toJson()))).called(1);
+          verify(mockAtClient.put(atKey, jsonEncode(testSettings.toJson())))
+              .called(1);
         });
 
         test('should handle different settings configurations', () async {
@@ -181,12 +190,14 @@ void main() {
 
           final atKey = repository.settingsAtKey;
 
-          when(mockAtClient.put(atKey, jsonEncode(darkModeSettings.toJson()))).thenAnswer((_) async => true);
+          when(mockAtClient.put(atKey, jsonEncode(darkModeSettings.toJson())))
+              .thenAnswer((_) async => true);
 
           final result = await repository.putSettings(darkModeSettings);
 
           expect(result, isTrue);
-          verify(mockAtClient.put(atKey, jsonEncode(darkModeSettings.toJson()))).called(1);
+          verify(mockAtClient.put(atKey, jsonEncode(darkModeSettings.toJson())))
+              .called(1);
         });
       });
 
@@ -205,7 +216,8 @@ void main() {
         test('should return false when AtClient delete fails', () async {
           final atKey = repository.settingsAtKey..sharedBy = testAtsign;
 
-          when(mockAtClient.delete(atKey)).thenThrow(Exception('Delete failed'));
+          when(mockAtClient.delete(atKey))
+              .thenThrow(Exception('Delete failed'));
 
           final result = await repository.deleteSettings(testSettings);
 
@@ -237,10 +249,12 @@ void main() {
         final putAtKey = repository.settingsAtKey..sharedBy = testAtsign;
 
         // Setup put
-        when(mockAtClient.put(atKey, jsonEncode(originalSettings.toJson()))).thenAnswer((_) async => true);
+        when(mockAtClient.put(atKey, jsonEncode(originalSettings.toJson())))
+            .thenAnswer((_) async => true);
 
         // Setup get
-        final atValue = AtValue()..value = jsonEncode(originalSettings.toJson());
+        final atValue = AtValue()
+          ..value = jsonEncode(originalSettings.toJson());
         when(mockAtClient.get(putAtKey)).thenAnswer((_) async => atValue);
 
         // Put settings
@@ -260,29 +274,34 @@ void main() {
 
     group('Error Handling and Edge Cases', () {
       test('should handle network errors gracefully', () async {
-        when(mockAtClient.get(any)).thenThrow(const SocketException('Network error'));
+        when(mockAtClient.get(any))
+            .thenThrow(const SocketException('Network error'));
 
         final getResult = await repository.getSettings();
         expect(getResult, isNull);
 
-        when(mockAtClient.put(any, any)).thenThrow(const SocketException('Network error'));
+        when(mockAtClient.put(any, any))
+            .thenThrow(const SocketException('Network error'));
 
         final putResult = await repository.putSettings(testSettings);
         expect(putResult, isFalse);
 
-        when(mockAtClient.delete(any)).thenThrow(const SocketException('Network error'));
+        when(mockAtClient.delete(any))
+            .thenThrow(const SocketException('Network error'));
 
         final deleteResult = await repository.deleteSettings(testSettings);
         expect(deleteResult, isFalse);
       });
 
       test('should handle AtClient timeout errors', () async {
-        when(mockAtClient.get(any)).thenThrow(TimeoutException('Request timeout'));
+        when(mockAtClient.get(any))
+            .thenThrow(TimeoutException('Request timeout'));
 
         final getResult = await repository.getSettings();
         expect(getResult, isNull);
 
-        when(mockAtClient.put(any, any)).thenThrow(TimeoutException('Request timeout'));
+        when(mockAtClient.put(any, any))
+            .thenThrow(TimeoutException('Request timeout'));
 
         final putResult = await repository.putSettings(testSettings);
         expect(putResult, isFalse);

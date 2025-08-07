@@ -20,7 +20,8 @@ class SettingsErrorHint extends StatelessWidget {
     return BlocSelector<SettingsBloc, SettingsState, bool>(selector: (state) {
       return state is SettingsFailedLoad;
     }, builder: (context, hasError) {
-      if (hasError) return Text(AppLocalizations.of(context)!.profileFailedLoaded);
+      if (hasError)
+        return Text(AppLocalizations.of(context)!.profileFailedLoaded);
       return Container();
     });
   }

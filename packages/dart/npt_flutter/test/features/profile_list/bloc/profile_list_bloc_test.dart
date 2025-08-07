@@ -85,7 +85,8 @@ void main() {
       blocTest<ProfileListBloc, ProfileListState>(
         'should emit ProfileListLoading then ProfileListLoaded when profiles load successfully',
         build: () {
-          when(mockRepository.getProfileUuids()).thenAnswer((_) async => testProfileUuids);
+          when(mockRepository.getProfileUuids())
+              .thenAnswer((_) async => testProfileUuids);
           return profileListBloc;
         },
         act: (bloc) => bloc.add(const ProfileListLoadEvent()),
@@ -111,7 +112,8 @@ void main() {
       blocTest<ProfileListBloc, ProfileListState>(
         'should emit ProfileListLoading then ProfileListFailedLoad when repository throws exception',
         build: () {
-          when(mockRepository.getProfileUuids()).thenThrow(Exception('Repository error'));
+          when(mockRepository.getProfileUuids())
+              .thenThrow(Exception('Repository error'));
           return profileListBloc;
         },
         act: (bloc) => bloc.add(const ProfileListLoadEvent()),
@@ -124,7 +126,8 @@ void main() {
       blocTest<ProfileListBloc, ProfileListState>(
         'should handle empty profile list',
         build: () {
-          when(mockRepository.getProfileUuids()).thenAnswer((_) async => <String>[]);
+          when(mockRepository.getProfileUuids())
+              .thenAnswer((_) async => <String>[]);
           return profileListBloc;
         },
         act: (bloc) => bloc.add(const ProfileListLoadEvent()),
@@ -169,11 +172,13 @@ void main() {
       blocTest<ProfileListBloc, ProfileListState>(
         'should remove profiles from loaded list',
         build: () {
-          when(mockRepository.deleteProfile(testUuid2)).thenAnswer((_) async => true);
+          when(mockRepository.deleteProfile(testUuid2))
+              .thenAnswer((_) async => true);
           return profileListBloc;
         },
         seed: () => const ProfileListLoaded(profiles: testProfileUuids),
-        act: (bloc) => bloc.add(const ProfileListDeleteEvent(toDelete: [testUuid2])),
+        act: (bloc) =>
+            bloc.add(const ProfileListDeleteEvent(toDelete: [testUuid2])),
         expect: () => [
           const ProfileListLoaded(profiles: [testUuid1, testUuid3]),
         ],
@@ -185,12 +190,15 @@ void main() {
       blocTest<ProfileListBloc, ProfileListState>(
         'should remove multiple profiles from loaded list',
         build: () {
-          when(mockRepository.deleteProfile(testUuid1)).thenAnswer((_) async => true);
-          when(mockRepository.deleteProfile(testUuid3)).thenAnswer((_) async => true);
+          when(mockRepository.deleteProfile(testUuid1))
+              .thenAnswer((_) async => true);
+          when(mockRepository.deleteProfile(testUuid3))
+              .thenAnswer((_) async => true);
           return profileListBloc;
         },
         seed: () => const ProfileListLoaded(profiles: testProfileUuids),
-        act: (bloc) => bloc.add(const ProfileListDeleteEvent(toDelete: [testUuid1, testUuid3])),
+        act: (bloc) => bloc.add(
+            const ProfileListDeleteEvent(toDelete: [testUuid1, testUuid3])),
         expect: () => [
           const ProfileListLoaded(profiles: [testUuid2]),
         ],
@@ -204,7 +212,8 @@ void main() {
         'should not emit anything when state is not ProfileListLoaded',
         build: () => profileListBloc,
         seed: () => const ProfileListLoading(),
-        act: (bloc) => bloc.add(const ProfileListDeleteEvent(toDelete: [testUuid1])),
+        act: (bloc) =>
+            bloc.add(const ProfileListDeleteEvent(toDelete: [testUuid1])),
         expect: () => [],
         verify: (_) {
           verifyNever(mockRepository.deleteProfile(any));
@@ -215,13 +224,17 @@ void main() {
       blocTest<ProfileListBloc, ProfileListState>(
         'should delete all profiles when all UUIDs provided',
         build: () {
-          when(mockRepository.deleteProfile(testUuid1)).thenAnswer((_) async => true);
-          when(mockRepository.deleteProfile(testUuid2)).thenAnswer((_) async => true);
-          when(mockRepository.deleteProfile(testUuid3)).thenAnswer((_) async => true);
+          when(mockRepository.deleteProfile(testUuid1))
+              .thenAnswer((_) async => true);
+          when(mockRepository.deleteProfile(testUuid2))
+              .thenAnswer((_) async => true);
+          when(mockRepository.deleteProfile(testUuid3))
+              .thenAnswer((_) async => true);
           return profileListBloc;
         },
         seed: () => const ProfileListLoaded(profiles: testProfileUuids),
-        act: (bloc) => bloc.add(const ProfileListDeleteEvent(toDelete: testProfileUuids)),
+        act: (bloc) =>
+            bloc.add(const ProfileListDeleteEvent(toDelete: testProfileUuids)),
         expect: () => [
           const ProfileListLoaded(profiles: <String>[]),
         ],
@@ -237,7 +250,8 @@ void main() {
       blocTest<ProfileListBloc, ProfileListState>(
         'should add profiles to loaded list',
         build: () {
-          when(mockRepository.putProfile(testProfile3)).thenAnswer((_) async => true);
+          when(mockRepository.putProfile(testProfile3))
+              .thenAnswer((_) async => true);
           return profileListBloc;
         },
         seed: () => const ProfileListLoaded(profiles: [testUuid1, testUuid2]),
@@ -253,12 +267,15 @@ void main() {
       blocTest<ProfileListBloc, ProfileListState>(
         'should add multiple profiles to loaded list',
         build: () {
-          when(mockRepository.putProfile(testProfile2)).thenAnswer((_) async => true);
-          when(mockRepository.putProfile(testProfile3)).thenAnswer((_) async => true);
+          when(mockRepository.putProfile(testProfile2))
+              .thenAnswer((_) async => true);
+          when(mockRepository.putProfile(testProfile3))
+              .thenAnswer((_) async => true);
           return profileListBloc;
         },
         seed: () => const ProfileListLoaded(profiles: [testUuid1]),
-        act: (bloc) => bloc.add(const ProfileListAddEvent([testProfile2, testProfile3])),
+        act: (bloc) =>
+            bloc.add(const ProfileListAddEvent([testProfile2, testProfile3])),
         expect: () => [
           const ProfileListLoaded(profiles: [testUuid1, testUuid2, testUuid3]),
         ],
@@ -294,7 +311,8 @@ void main() {
       blocTest<ProfileListBloc, ProfileListState>(
         'should add profiles to empty list',
         build: () {
-          when(mockRepository.putProfile(testProfile1)).thenAnswer((_) async => true);
+          when(mockRepository.putProfile(testProfile1))
+              .thenAnswer((_) async => true);
           return profileListBloc;
         },
         seed: () => const ProfileListLoaded(profiles: <String>[]),
@@ -341,7 +359,9 @@ void main() {
             ]));
       });
 
-      test('Event toString methods should provide proper string representations', () {
+      test(
+          'Event toString methods should provide proper string representations',
+          () {
         const loadEvent = ProfileListLoadEvent();
         const updateEvent = ProfileListUpdateEvent(testProfileUuids);
         const deleteEvent = ProfileListDeleteEvent(toDelete: [testUuid1]);
@@ -369,7 +389,9 @@ void main() {
             ));
       });
 
-      test('State toString methods should provide proper string representations', () {
+      test(
+          'State toString methods should provide proper string representations',
+          () {
         const initialState = ProfileListInitial();
         const loadingState = ProfileListLoading();
         const loadedState = ProfileListLoaded(profiles: testProfileUuids);
@@ -391,9 +413,12 @@ void main() {
       blocTest<ProfileListBloc, ProfileListState>(
         'should handle load -> add -> delete workflow',
         build: () {
-          when(mockRepository.getProfileUuids()).thenAnswer((_) async => [testUuid1]);
-          when(mockRepository.putProfile(testProfile2)).thenAnswer((_) async => true);
-          when(mockRepository.deleteProfile(testUuid1)).thenAnswer((_) async => true);
+          when(mockRepository.getProfileUuids())
+              .thenAnswer((_) async => [testUuid1]);
+          when(mockRepository.putProfile(testProfile2))
+              .thenAnswer((_) async => true);
+          when(mockRepository.deleteProfile(testUuid1))
+              .thenAnswer((_) async => true);
           return profileListBloc;
         },
         act: (bloc) async {
@@ -414,8 +439,10 @@ void main() {
       blocTest<ProfileListBloc, ProfileListState>(
         'should handle multiple rapid operations',
         build: () {
-          when(mockRepository.putProfile(testProfile1)).thenAnswer((_) async => true);
-          when(mockRepository.putProfile(testProfile2)).thenAnswer((_) async => true);
+          when(mockRepository.putProfile(testProfile1))
+              .thenAnswer((_) async => true);
+          when(mockRepository.putProfile(testProfile2))
+              .thenAnswer((_) async => true);
           return profileListBloc;
         },
         seed: () => const ProfileListLoaded(profiles: <String>[]),
@@ -436,7 +463,8 @@ void main() {
       blocTest<ProfileListBloc, ProfileListState>(
         'should handle clearAll during operations',
         build: () {
-          when(mockRepository.getProfileUuids()).thenAnswer((_) async => testProfileUuids);
+          when(mockRepository.getProfileUuids())
+              .thenAnswer((_) async => testProfileUuids);
           return profileListBloc;
         },
         act: (bloc) async {
@@ -457,8 +485,10 @@ void main() {
       blocTest<ProfileListBloc, ProfileListState>(
         'should handle concurrent delete and add operations',
         build: () {
-          when(mockRepository.deleteProfile(testUuid1)).thenAnswer((_) async => true);
-          when(mockRepository.putProfile(testProfile3)).thenAnswer((_) async => true);
+          when(mockRepository.deleteProfile(testUuid1))
+              .thenAnswer((_) async => true);
+          when(mockRepository.putProfile(testProfile3))
+              .thenAnswer((_) async => true);
           return profileListBloc;
         },
         seed: () => const ProfileListLoaded(profiles: [testUuid1, testUuid2]),
@@ -476,7 +506,8 @@ void main() {
       blocTest<ProfileListBloc, ProfileListState>(
         'should handle adding duplicate profiles',
         build: () {
-          when(mockRepository.putProfile(testProfile1)).thenAnswer((_) async => true);
+          when(mockRepository.putProfile(testProfile1))
+              .thenAnswer((_) async => true);
           return profileListBloc;
         },
         seed: () => const ProfileListLoaded(profiles: [testUuid1]),
@@ -492,11 +523,13 @@ void main() {
       blocTest<ProfileListBloc, ProfileListState>(
         'should handle deleting from empty list',
         build: () {
-          when(mockRepository.deleteProfile(testUuid1)).thenAnswer((_) async => true);
+          when(mockRepository.deleteProfile(testUuid1))
+              .thenAnswer((_) async => true);
           return profileListBloc;
         },
         seed: () => const ProfileListLoaded(profiles: <String>[]),
-        act: (bloc) => bloc.add(const ProfileListDeleteEvent(toDelete: [testUuid1])),
+        act: (bloc) =>
+            bloc.add(const ProfileListDeleteEvent(toDelete: [testUuid1])),
         expect: () => [], // Delete from empty list does not emit state
         verify: (_) {
           verify(mockRepository.deleteProfile(testUuid1)).called(1);

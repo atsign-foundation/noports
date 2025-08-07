@@ -65,14 +65,17 @@ class _ActivateAtsignDialogState extends State<ActivateAtsignDialog> {
         child: switch (status) {
           ActivationStatus.preparing => Text(strings.activationStatusPreparing),
           ActivationStatus.otpWait => Text(strings.activationStatusOtpWait),
-          ActivationStatus.activating => Text(strings.activationStatusActivating),
+          ActivationStatus.activating =>
+            Text(strings.activationStatusActivating),
         },
       ),
       content: SizedBox(
         height: Sizes.p80,
         width: Sizes.p400,
         child: switch (status) {
-          ActivationStatus.preparing || ActivationStatus.activating => const Spinner(),
+          ActivationStatus.preparing ||
+          ActivationStatus.activating =>
+            const Spinner(),
           ActivationStatus.otpWait => SizedBox(
               height: Sizes.p80,
               child: Column(
@@ -117,7 +120,11 @@ class _ActivateAtsignDialogState extends State<ActivateAtsignDialog> {
       ),
       actions: switch (status) {
         ActivationStatus.preparing => [cancelButton],
-        ActivationStatus.otpWait => [cancelButton, resendPinButton, confirmPinButton],
+        ActivationStatus.otpWait => [
+            cancelButton,
+            resendPinButton,
+            confirmPinButton
+          ],
         // Don't allow the user to cancel activate as this opens up a bunch of
         // edge cases around navigation and onboarding state
         ActivationStatus.activating => [],
@@ -131,7 +138,8 @@ class _ActivateAtsignDialogState extends State<ActivateAtsignDialog> {
       {'atsign': widget.atSign},
     );
 
-    if (res.statusCode == 200 && jsonDecode(res.body)["message"] == "Sent Successfully") {
+    if (res.statusCode == 200 &&
+        jsonDecode(res.body)["message"] == "Sent Successfully") {
       setState(() {
         status = ActivationStatus.otpWait;
       });
@@ -142,7 +150,8 @@ class _ActivateAtsignDialogState extends State<ActivateAtsignDialog> {
     } else {
       if (!mounted) return;
       if (status == ActivationStatus.preparing) {
-        Navigator.of(context).pop(AtOnboardingResult.error(message: "@${jsonDecode(res.body)["message"]}"));
+        Navigator.of(context).pop(AtOnboardingResult.error(
+            message: "@${jsonDecode(res.body)["message"]}"));
         return;
       }
       ScaffoldMessenger.of(context).showSnackBar(
@@ -198,7 +207,8 @@ class _ActivateAtsignDialogState extends State<ActivateAtsignDialog> {
                     ),
                   );
                   setState(() {
-                    pinController = TextEditingController(); // controller was disposed, make a new one
+                    pinController =
+                        TextEditingController(); // controller was disposed, make a new one
                     status = ActivationStatus.otpWait;
                   });
                   return;
@@ -209,7 +219,9 @@ class _ActivateAtsignDialogState extends State<ActivateAtsignDialog> {
                 if (widget.waitForTeapot) {
                   int round = 1;
                   getStatus() async {
-                    return (await widget.onboardingUtil.atServerStatus(widget.atSign)).status();
+                    return (await widget.onboardingUtil
+                            .atServerStatus(widget.atSign))
+                        .status();
                   }
 
                   AtSignStatus? atSignStatus = await getStatus();
@@ -229,7 +241,8 @@ class _ActivateAtsignDialogState extends State<ActivateAtsignDialog> {
                   if (atSignStatus != AtSignStatus.teapot) {
                     if (mounted) {
                       Navigator.of(context).pop(
-                        AtOnboardingResult.error(message: strings.errorAuthenticationTimedOut),
+                        AtOnboardingResult.error(
+                            message: strings.errorAuthenticationTimedOut),
                       );
                     }
                     return;

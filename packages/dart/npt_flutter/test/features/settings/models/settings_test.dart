@@ -179,7 +179,8 @@ void main() {
         final deserializedSettings = Settings.fromJson(json);
 
         expect(deserializedSettings.relayAtsign, originalSettings.relayAtsign);
-        expect(deserializedSettings.overrideRelay, originalSettings.overrideRelay);
+        expect(
+            deserializedSettings.overrideRelay, originalSettings.overrideRelay);
         expect(deserializedSettings.viewLayout, originalSettings.viewLayout);
         expect(deserializedSettings.darkMode, originalSettings.darkMode);
         expect(deserializedSettings.language, originalSettings.language);
@@ -262,7 +263,8 @@ void main() {
 
         expect(stringRepresentation, contains('Settings with relay:@rv_eu'));
         expect(stringRepresentation, contains('overrideRelay: true'));
-        expect(stringRepresentation, contains('view: PreferredViewLayout.sshStyle'));
+        expect(stringRepresentation,
+            contains('view: PreferredViewLayout.sshStyle'));
         expect(stringRepresentation, contains('darkMode: false'));
         expect(stringRepresentation, contains('lang: pt-br'));
       });
@@ -311,7 +313,8 @@ void main() {
       expect(RelayOptions.ap.relayAtsign, '@rv_ap');
     });
 
-    test('should have regions property (requires app context for localization)', () {
+    test('should have regions property (requires app context for localization)',
+        () {
       // Note: Testing regions requires app context for AppLocalizations
       // This would typically be tested in widget tests or integration tests
       // where the app context is available

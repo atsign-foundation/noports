@@ -92,10 +92,13 @@ void main() {
       );
 
       // Setup the stream mocks
-      when(mockProfileBloc.stream).thenAnswer((_) => Stream.value(profileState));
-      when(mockSettingsBloc.stream).thenAnswer((_) => Stream.value(settingsState));
+      when(mockProfileBloc.stream)
+          .thenAnswer((_) => Stream.value(profileState));
+      when(mockSettingsBloc.stream)
+          .thenAnswer((_) => Stream.value(settingsState));
       when(mockProfilesSelectedCubit.stream).thenAnswer(
-        (_) => Stream.value(profilesSelectedState ?? const ProfilesSelectedState({})),
+        (_) => Stream.value(
+            profilesSelectedState ?? const ProfilesSelectedState({})),
       );
       when(mockFavoriteBloc.stream).thenAnswer(
         (_) => Stream.value(favoritesState ?? const FavoritesInitial()),
@@ -111,7 +114,8 @@ void main() {
             providers: [
               BlocProvider<ProfileBloc>.value(value: mockProfileBloc),
               BlocProvider<SettingsBloc>.value(value: mockSettingsBloc),
-              BlocProvider<ProfilesSelectedCubit>.value(value: mockProfilesSelectedCubit),
+              BlocProvider<ProfilesSelectedCubit>.value(
+                  value: mockProfilesSelectedCubit),
               BlocProvider<FavoriteBloc>.value(value: mockFavoriteBloc),
             ],
             child: const ProfileView(),
@@ -121,7 +125,9 @@ void main() {
     }
 
     group('ProfileInitial State', () {
-      testWidgets('should trigger ProfileLoadEvent when state is ProfileInitial', (tester) async {
+      testWidgets(
+          'should trigger ProfileLoadEvent when state is ProfileInitial',
+          (tester) async {
         const profileState = ProfileInitial(testUuid);
         const settingsState = SettingsLoaded(settings: testSettings);
 
@@ -131,10 +137,12 @@ void main() {
         ));
         await tester.pump();
 
-        verify(mockProfileBloc.add(const ProfileLoadEvent())).called(greaterThanOrEqualTo(1));
+        verify(mockProfileBloc.add(const ProfileLoadEvent()))
+            .called(greaterThanOrEqualTo(1));
       });
 
-      testWidgets('should display LoaderBar and ProfileRefreshButton', (tester) async {
+      testWidgets('should display LoaderBar and ProfileRefreshButton',
+          (tester) async {
         const profileState = ProfileInitial(testUuid);
         const settingsState = SettingsLoaded(settings: testSettings);
 
@@ -151,7 +159,8 @@ void main() {
     });
 
     group('ProfileLoading State', () {
-      testWidgets('should display loading components with proper layout', (tester) async {
+      testWidgets('should display loading components with proper layout',
+          (tester) async {
         const profileState = ProfileLoading(testUuid);
         const settingsState = SettingsLoaded(settings: testSettings);
 
@@ -173,7 +182,8 @@ void main() {
     });
 
     group('ProfileFailedLoad State', () {
-      testWidgets('should display error message and ProfileDeleteButton', (tester) async {
+      testWidgets('should display error message and ProfileDeleteButton',
+          (tester) async {
         const profileState = ProfileFailedLoad(testUuid);
         const settingsState = SettingsLoaded(settings: testSettings);
 
@@ -185,7 +195,8 @@ void main() {
 
         // Get the context to access localized strings
         final BuildContext context = tester.element(find.byType(ProfileView));
-        final String expectedErrorMessage = AppLocalizations.of(context)!.errorProfileLoadFailed;
+        final String expectedErrorMessage =
+            AppLocalizations.of(context)!.errorProfileLoadFailed;
 
         // Find the exact localized error message
         expect(find.text(expectedErrorMessage), findsOneWidget);
@@ -211,7 +222,9 @@ void main() {
 
     group('ProfileLoadedState with Settings', () {
       group('Minimal View Layout', () {
-        testWidgets('should display ProfileViewMinimal when viewLayout is minimal', (tester) async {
+        testWidgets(
+            'should display ProfileViewMinimal when viewLayout is minimal',
+            (tester) async {
           const profileState = ProfileLoaded(testUuid, profile: testProfile);
           const settingsState = SettingsLoaded(settings: testSettings);
 
@@ -226,7 +239,9 @@ void main() {
       });
 
       group('SSH Style View Layout', () {
-        testWidgets('should display ProfileViewSshStyle when viewLayout is sshStyle', (tester) async {
+        testWidgets(
+            'should display ProfileViewSshStyle when viewLayout is sshStyle',
+            (tester) async {
           const profileState = ProfileLoaded(testUuid, profile: testProfile);
           const settingsWithSshStyle = Settings(
             relayAtsign: '@rv_eu',
@@ -248,7 +263,9 @@ void main() {
       });
 
       group('No Settings State (null viewLayout)', () {
-        testWidgets('should display Spinner when SettingsState is not SettingsLoadedState', (tester) async {
+        testWidgets(
+            'should display Spinner when SettingsState is not SettingsLoadedState',
+            (tester) async {
           const profileState = ProfileLoaded(testUuid, profile: testProfile);
           const settingsState = SettingsInitial();
 
@@ -262,7 +279,9 @@ void main() {
           expect(find.byType(Center), findsOneWidget);
         });
 
-        testWidgets('should display Spinner when SettingsState is SettingsLoading', (tester) async {
+        testWidgets(
+            'should display Spinner when SettingsState is SettingsLoading',
+            (tester) async {
           const profileState = ProfileLoaded(testUuid, profile: testProfile);
           const settingsState = SettingsLoading();
 
@@ -297,10 +316,12 @@ void main() {
 
         // Setup the stream mocks
         when(mockProfileBloc.stream).thenAnswer(
-          (_) => Stream.value(profileState ?? const ProfileLoaded(testUuid, profile: testProfile)),
+          (_) => Stream.value(profileState ??
+              const ProfileLoaded(testUuid, profile: testProfile)),
         );
         when(mockProfilesSelectedCubit.stream).thenAnswer(
-          (_) => Stream.value(profilesSelectedState ?? const ProfilesSelectedState({})),
+          (_) => Stream.value(
+              profilesSelectedState ?? const ProfilesSelectedState({})),
         );
         when(mockFavoriteBloc.stream).thenAnswer(
           (_) => Stream.value(favoritesState ?? const FavoritesInitial()),
@@ -315,7 +336,8 @@ void main() {
               providers: [
                 BlocProvider<ProfileBloc>.value(value: mockProfileBloc),
                 BlocProvider<SettingsBloc>.value(value: mockSettingsBloc),
-                BlocProvider<ProfilesSelectedCubit>.value(value: mockProfilesSelectedCubit),
+                BlocProvider<ProfilesSelectedCubit>.value(
+                    value: mockProfilesSelectedCubit),
                 BlocProvider<FavoriteBloc>.value(value: mockFavoriteBloc),
               ],
               child: const ProfileViewMinimal(),
@@ -324,7 +346,8 @@ void main() {
         );
       }
 
-      testWidgets('should render without ProviderNotFoundException', (tester) async {
+      testWidgets('should render without ProviderNotFoundException',
+          (tester) async {
         await tester.pumpWidget(createMinimalTestWidget());
         await tester.pump();
 
@@ -345,7 +368,8 @@ void main() {
         expect(find.byType(ProfilePopupMenuButton), findsOneWidget);
       });
 
-      testWidgets('should handle different profile states correctly', (tester) async {
+      testWidgets('should handle different profile states correctly',
+          (tester) async {
         // Test selected profile state
         const selectedState = ProfilesSelectedState({testUuid});
         await tester.pumpWidget(createMinimalTestWidget(
@@ -386,10 +410,12 @@ void main() {
 
         // Setup the stream mocks
         when(mockProfileBloc.stream).thenAnswer(
-          (_) => Stream.value(profileState ?? const ProfileLoaded(testUuid, profile: testProfile)),
+          (_) => Stream.value(profileState ??
+              const ProfileLoaded(testUuid, profile: testProfile)),
         );
         when(mockProfilesSelectedCubit.stream).thenAnswer(
-          (_) => Stream.value(profilesSelectedState ?? const ProfilesSelectedState({})),
+          (_) => Stream.value(
+              profilesSelectedState ?? const ProfilesSelectedState({})),
         );
         when(mockFavoriteBloc.stream).thenAnswer(
           (_) => Stream.value(favoritesState ?? const FavoritesInitial()),
@@ -404,7 +430,8 @@ void main() {
               providers: [
                 BlocProvider<ProfileBloc>.value(value: mockProfileBloc),
                 BlocProvider<SettingsBloc>.value(value: mockSettingsBloc),
-                BlocProvider<ProfilesSelectedCubit>.value(value: mockProfilesSelectedCubit),
+                BlocProvider<ProfilesSelectedCubit>.value(
+                    value: mockProfilesSelectedCubit),
                 BlocProvider<FavoriteBloc>.value(value: mockFavoriteBloc),
               ],
               child: const ProfileViewSshStyle(),
@@ -413,7 +440,8 @@ void main() {
         );
       }
 
-      testWidgets('should render without ProviderNotFoundException', (tester) async {
+      testWidgets('should render without ProviderNotFoundException',
+          (tester) async {
         await tester.pumpWidget(createSshStyleTestWidget());
         await tester.pump();
 

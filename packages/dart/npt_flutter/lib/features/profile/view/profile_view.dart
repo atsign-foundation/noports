@@ -43,7 +43,8 @@ class ProfileView extends StatelessWidget {
           );
 
         case ProfileLoadedState _:
-          return BlocSelector<SettingsBloc, SettingsState, PreferredViewLayout?>(
+          return BlocSelector<SettingsBloc, SettingsState,
+              PreferredViewLayout?>(
             selector: (SettingsState state) {
               if (state is SettingsLoadedState) {
                 return state.settings.viewLayout;

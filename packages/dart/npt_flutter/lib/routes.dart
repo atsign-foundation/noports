@@ -36,7 +36,8 @@ class HomeRoutes {
 
 String routeName(String route) {
   final uncapitalized = route.split('/').last;
-  final capitalized = uncapitalized[0].toUpperCase() + uncapitalized.substring(1);
+  final capitalized =
+      uncapitalized[0].toUpperCase() + uncapitalized.substring(1);
   final strings = AppLocalizations.of(App.navState.currentContext!)!;
   switch (capitalized) {
     case 'Dashboard':

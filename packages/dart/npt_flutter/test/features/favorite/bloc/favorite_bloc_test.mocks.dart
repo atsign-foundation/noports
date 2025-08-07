@@ -37,25 +37,22 @@ class MockFavoriteRepository extends _i1.Mock
     bool? useCache = true,
   }) =>
       (super.noSuchMethod(
-            Invocation.method(#getFavorites, [], {#useCache: useCache}),
-            returnValue:
-                _i3.Future<Map<String, _i2.Favorite<_i4.Loggable>>?>.value(),
-          )
-          as _i3.Future<Map<String, _i2.Favorite<_i4.Loggable>>?>);
+        Invocation.method(#getFavorites, [], {#useCache: useCache}),
+        returnValue:
+            _i3.Future<Map<String, _i2.Favorite<_i4.Loggable>>?>.value(),
+      ) as _i3.Future<Map<String, _i2.Favorite<_i4.Loggable>>?>);
 
   @override
   _i3.Future<bool> addFavorite(_i2.Favorite<_i4.Loggable>? favorite) =>
       (super.noSuchMethod(
-            Invocation.method(#addFavorite, [favorite]),
-            returnValue: _i3.Future<bool>.value(false),
-          )
-          as _i3.Future<bool>);
+        Invocation.method(#addFavorite, [favorite]),
+        returnValue: _i3.Future<bool>.value(false),
+      ) as _i3.Future<bool>);
 
   @override
   _i3.Future<bool> removeFavorites(Iterable<String>? uuids) =>
       (super.noSuchMethod(
-            Invocation.method(#removeFavorites, [uuids]),
-            returnValue: _i3.Future<bool>.value(false),
-          )
-          as _i3.Future<bool>);
+        Invocation.method(#removeFavorites, [uuids]),
+        returnValue: _i3.Future<bool>.value(false),
+      ) as _i3.Future<bool>);
 }

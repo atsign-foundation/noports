@@ -60,7 +60,8 @@ void main() {
         expect(firstResult!.uuid, equals(testUuid));
 
         // Second call - should use cache
-        final secondResult = await repository.getProfile(testUuid, useCache: true);
+        final secondResult =
+            await repository.getProfile(testUuid, useCache: true);
         expect(secondResult, isNotNull);
         expect(secondResult!.uuid, equals(testUuid));
 
@@ -100,11 +101,13 @@ void main() {
         final atKey = const Uuid(testUuid).toProfileAtKey(sharedBy: testAtsign);
 
         // Put original profile
-        when(mockAtClient.put(atKey, jsonEncode(testProfile.toJson()))).thenAnswer((_) async => true);
+        when(mockAtClient.put(atKey, jsonEncode(testProfile.toJson())))
+            .thenAnswer((_) async => true);
         await repository.putProfile(testProfile);
 
         // Put updated profile
-        when(mockAtClient.put(atKey, jsonEncode(updatedProfile.toJson()))).thenAnswer((_) async => true);
+        when(mockAtClient.put(atKey, jsonEncode(updatedProfile.toJson())))
+            .thenAnswer((_) async => true);
         await repository.putProfile(updatedProfile);
 
         // Get profile - should return updated version from cache
@@ -121,7 +124,8 @@ void main() {
         final atKey = const Uuid(testUuid).toProfileAtKey(sharedBy: testAtsign);
 
         // First, put a profile in cache
-        when(mockAtClient.put(atKey, jsonEncode(testProfile.toJson()))).thenAnswer((_) async => true);
+        when(mockAtClient.put(atKey, jsonEncode(testProfile.toJson())))
+            .thenAnswer((_) async => true);
         await repository.putProfile(testProfile);
 
         // Then delete it
@@ -131,7 +135,8 @@ void main() {
 
         // Verify profile is removed from cache by checking it tries to fetch from AtClient
         when(mockAtClient.get(atKey)).thenThrow(Exception('Not found'));
-        final cachedProfile = await repository.getProfile(testUuid, useCache: true);
+        final cachedProfile =
+            await repository.getProfile(testUuid, useCache: true);
         expect(cachedProfile, isNull);
 
         verify(mockAtClient.delete(atKey)).called(1);
@@ -141,7 +146,8 @@ void main() {
     group('CRUD Operations', () {
       group('getProfile', () {
         test('should return profile from AtClient when not cached', () async {
-          final atKey = const Uuid(testUuid).toProfileAtKey(sharedBy: testAtsign);
+          final atKey =
+              const Uuid(testUuid).toProfileAtKey(sharedBy: testAtsign);
           final atValue = AtValue()..value = jsonEncode(testProfile.toJson());
 
           when(mockAtClient.get(atKey)).thenAnswer((_) async => atValue);
@@ -157,9 +163,11 @@ void main() {
         });
 
         test('should return null when AtClient throws exception', () async {
-          final atKey = const Uuid(testUuid).toProfileAtKey(sharedBy: testAtsign);
+          final atKey =
+              const Uuid(testUuid).toProfileAtKey(sharedBy: testAtsign);
 
-          when(mockAtClient.get(atKey)).thenThrow(Exception('Profile not found'));
+          when(mockAtClient.get(atKey))
+              .thenThrow(Exception('Profile not found'));
 
           final result = await repository.getProfile(testUuid);
 
@@ -168,7 +176,8 @@ void main() {
         });
 
         test('should handle JSON decode errors gracefully', () async {
-          final atKey = const Uuid(testUuid).toProfileAtKey(sharedBy: testAtsign);
+          final atKey =
+              const Uuid(testUuid).toProfileAtKey(sharedBy: testAtsign);
           final atValue = AtValue()..value = 'invalid json';
 
           when(mockAtClient.get(atKey)).thenAnswer((_) async => atValue);
@@ -189,41 +198,52 @@ void main() {
       });
 
       group('putProfile', () {
-        test('should successfully save profile to AtClient and cache', () async {
-          final atKey = Uuid(testProfile.uuid).toProfileAtKey(sharedBy: testAtsign);
+        test('should successfully save profile to AtClient and cache',
+            () async {
+          final atKey =
+              Uuid(testProfile.uuid).toProfileAtKey(sharedBy: testAtsign);
 
-          when(mockAtClient.put(atKey, jsonEncode(testProfile.toJson()))).thenAnswer((_) async => true);
+          when(mockAtClient.put(atKey, jsonEncode(testProfile.toJson())))
+              .thenAnswer((_) async => true);
 
           final result = await repository.putProfile(testProfile);
 
           expect(result, isTrue);
-          verify(mockAtClient.put(atKey, jsonEncode(testProfile.toJson()))).called(1);
+          verify(mockAtClient.put(atKey, jsonEncode(testProfile.toJson())))
+              .called(1);
 
           // Verify profile is cached
-          final cachedProfile = await repository.getProfile(testProfile.uuid, useCache: true);
+          final cachedProfile =
+              await repository.getProfile(testProfile.uuid, useCache: true);
           expect(cachedProfile, equals(testProfile));
         });
 
         test('should return false when AtClient put fails', () async {
-          final atKey = Uuid(testProfile.uuid).toProfileAtKey(sharedBy: testAtsign);
+          final atKey =
+              Uuid(testProfile.uuid).toProfileAtKey(sharedBy: testAtsign);
 
-          when(mockAtClient.put(atKey, jsonEncode(testProfile.toJson()))).thenThrow(Exception('Put failed'));
+          when(mockAtClient.put(atKey, jsonEncode(testProfile.toJson())))
+              .thenThrow(Exception('Put failed'));
 
           final result = await repository.putProfile(testProfile);
 
           expect(result, isFalse);
-          verify(mockAtClient.put(atKey, jsonEncode(testProfile.toJson()))).called(1);
+          verify(mockAtClient.put(atKey, jsonEncode(testProfile.toJson())))
+              .called(1);
         });
 
         test('should update cache even when AtClient fails', () async {
-          final atKey = Uuid(testProfile.uuid).toProfileAtKey(sharedBy: testAtsign);
+          final atKey =
+              Uuid(testProfile.uuid).toProfileAtKey(sharedBy: testAtsign);
 
-          when(mockAtClient.put(atKey, jsonEncode(testProfile.toJson()))).thenThrow(Exception('Put failed'));
+          when(mockAtClient.put(atKey, jsonEncode(testProfile.toJson())))
+              .thenThrow(Exception('Put failed'));
 
           await repository.putProfile(testProfile);
 
           // Profile should still be in cache
-          final cachedProfile = await repository.getProfile(testProfile.uuid, useCache: true);
+          final cachedProfile =
+              await repository.getProfile(testProfile.uuid, useCache: true);
           expect(cachedProfile, equals(testProfile));
         });
 
@@ -237,11 +257,14 @@ void main() {
       });
 
       group('deleteProfile', () {
-        test('should successfully delete profile from AtClient and cache', () async {
-          final atKey = const Uuid(testUuid).toProfileAtKey(sharedBy: testAtsign);
+        test('should successfully delete profile from AtClient and cache',
+            () async {
+          final atKey =
+              const Uuid(testUuid).toProfileAtKey(sharedBy: testAtsign);
 
           // First, put a profile in cache
-          when(mockAtClient.put(atKey, jsonEncode(testProfile.toJson()))).thenAnswer((_) async => true);
+          when(mockAtClient.put(atKey, jsonEncode(testProfile.toJson())))
+              .thenAnswer((_) async => true);
           await repository.putProfile(testProfile);
 
           // Then delete it
@@ -254,14 +277,17 @@ void main() {
 
           // Verify profile is removed from cache
           when(mockAtClient.get(atKey)).thenThrow(Exception('Not found'));
-          final cachedProfile = await repository.getProfile(testUuid, useCache: true);
+          final cachedProfile =
+              await repository.getProfile(testUuid, useCache: true);
           expect(cachedProfile, isNull);
         });
 
         test('should return false when AtClient delete fails', () async {
-          final atKey = const Uuid(testUuid).toProfileAtKey(sharedBy: testAtsign);
+          final atKey =
+              const Uuid(testUuid).toProfileAtKey(sharedBy: testAtsign);
 
-          when(mockAtClient.delete(atKey)).thenThrow(Exception('Delete failed'));
+          when(mockAtClient.delete(atKey))
+              .thenThrow(Exception('Delete failed'));
 
           final result = await repository.deleteProfile(testUuid);
 
@@ -269,21 +295,26 @@ void main() {
           verify(mockAtClient.delete(atKey)).called(1);
         });
 
-        test('should remove from cache even when AtClient delete fails', () async {
-          final atKey = const Uuid(testUuid).toProfileAtKey(sharedBy: testAtsign);
+        test('should remove from cache even when AtClient delete fails',
+            () async {
+          final atKey =
+              const Uuid(testUuid).toProfileAtKey(sharedBy: testAtsign);
 
           // First, put a profile in cache
-          when(mockAtClient.put(atKey, jsonEncode(testProfile.toJson()))).thenAnswer((_) async => true);
+          when(mockAtClient.put(atKey, jsonEncode(testProfile.toJson())))
+              .thenAnswer((_) async => true);
           await repository.putProfile(testProfile);
 
           // Mock delete failure
-          when(mockAtClient.delete(atKey)).thenThrow(Exception('Delete failed'));
+          when(mockAtClient.delete(atKey))
+              .thenThrow(Exception('Delete failed'));
 
           await repository.deleteProfile(testUuid);
 
           // Profile should still be removed from cache
           when(mockAtClient.get(atKey)).thenThrow(Exception('Not found'));
-          final cachedProfile = await repository.getProfile(testUuid, useCache: true);
+          final cachedProfile =
+              await repository.getProfile(testUuid, useCache: true);
           expect(cachedProfile, isNull);
         });
 
@@ -326,17 +357,20 @@ void main() {
             final profile = profiles[i];
             final atKey = Uuid(uuid).toProfileAtKey(sharedBy: testAtsign);
 
-            when(mockAtClient.get(atKey)).thenAnswer((_) async => AtValue()..value = jsonEncode(profile.toJson()));
+            when(mockAtClient.get(atKey)).thenAnswer(
+                (_) async => AtValue()..value = jsonEncode(profile.toJson()));
           }
 
           final result = await repository.getProfiles(uuids);
 
           expect(result, hasLength(3));
           expect(result.map((p) => p.uuid).toList(), equals(uuids));
-          expect(result.map((p) => p.displayName).toList(), equals(['Profile 1', 'Profile 2', 'Profile 3']));
+          expect(result.map((p) => p.displayName).toList(),
+              equals(['Profile 1', 'Profile 2', 'Profile 3']));
         });
 
-        test('should filter out null profiles when some fail to load', () async {
+        test('should filter out null profiles when some fail to load',
+            () async {
           const uuids = ['uuid1', 'uuid2', 'uuid3'];
           const successProfile = Profile('uuid1',
               displayName: 'Profile 1',
@@ -346,13 +380,16 @@ void main() {
               localPort: 2222);
 
           // Mock successful call for uuid1
-          final atKey1 = const Uuid('uuid1').toProfileAtKey(sharedBy: testAtsign);
-          when(mockAtClient.get(atKey1))
-              .thenAnswer((_) async => AtValue()..value = jsonEncode(successProfile.toJson()));
+          final atKey1 =
+              const Uuid('uuid1').toProfileAtKey(sharedBy: testAtsign);
+          when(mockAtClient.get(atKey1)).thenAnswer((_) async =>
+              AtValue()..value = jsonEncode(successProfile.toJson()));
 
           // Mock failed calls for uuid2 and uuid3
-          final atKey2 = const Uuid('uuid2').toProfileAtKey(sharedBy: testAtsign);
-          final atKey3 = const Uuid('uuid3').toProfileAtKey(sharedBy: testAtsign);
+          final atKey2 =
+              const Uuid('uuid2').toProfileAtKey(sharedBy: testAtsign);
+          final atKey3 =
+              const Uuid('uuid3').toProfileAtKey(sharedBy: testAtsign);
           when(mockAtClient.get(atKey2)).thenThrow(Exception('Not found'));
           when(mockAtClient.get(atKey3)).thenThrow(Exception('Not found'));
 
@@ -363,7 +400,8 @@ void main() {
           expect(result.first.displayName, equals('Profile 1'));
         });
 
-        test('should return empty iterable when all profiles fail to load', () async {
+        test('should return empty iterable when all profiles fail to load',
+            () async {
           const uuids = ['uuid1', 'uuid2'];
 
           for (final uuid in uuids) {
@@ -399,13 +437,17 @@ void main() {
               localPort: 2223);
 
           // Pre-cache profile1
-          final atKey1 = const Uuid('uuid1').toProfileAtKey(sharedBy: testAtsign);
-          when(mockAtClient.put(atKey1, jsonEncode(profile1.toJson()))).thenAnswer((_) async => true);
+          final atKey1 =
+              const Uuid('uuid1').toProfileAtKey(sharedBy: testAtsign);
+          when(mockAtClient.put(atKey1, jsonEncode(profile1.toJson())))
+              .thenAnswer((_) async => true);
           await repository.putProfile(profile1);
 
           // Mock AtClient call for profile2
-          final atKey2 = const Uuid('uuid2').toProfileAtKey(sharedBy: testAtsign);
-          when(mockAtClient.get(atKey2)).thenAnswer((_) async => AtValue()..value = jsonEncode(profile2.toJson()));
+          final atKey2 =
+              const Uuid('uuid2').toProfileAtKey(sharedBy: testAtsign);
+          when(mockAtClient.get(atKey2)).thenAnswer(
+              (_) async => AtValue()..value = jsonEncode(profile2.toJson()));
 
           final result = await repository.getProfiles(uuids);
 
@@ -427,7 +469,8 @@ void main() {
             AtKey()..key = 'uuid3.profiles.noports',
           ];
 
-          when(mockAtClient.getAtKeys(regex: '.profiles.noports')).thenAnswer((_) async => mockKeys);
+          when(mockAtClient.getAtKeys(regex: '.profiles.noports'))
+              .thenAnswer((_) async => mockKeys);
 
           final result = await repository.getProfileUuids();
 
@@ -436,8 +479,10 @@ void main() {
           expect(result!.toList(), equals(['uuid1', 'uuid2', 'uuid3']));
         });
 
-        test('should return empty list when AtClient throws exception', () async {
-          when(mockAtClient.getAtKeys(regex: '.profiles.noports')).thenThrow(Exception('Failed to get keys'));
+        test('should return empty list when AtClient throws exception',
+            () async {
+          when(mockAtClient.getAtKeys(regex: '.profiles.noports'))
+              .thenThrow(Exception('Failed to get keys'));
 
           final result = await repository.getProfileUuids();
 
@@ -446,7 +491,8 @@ void main() {
         });
 
         test('should handle empty key list', () async {
-          when(mockAtClient.getAtKeys(regex: '.profiles.noports')).thenAnswer((_) async => <AtKey>[]);
+          when(mockAtClient.getAtKeys(regex: '.profiles.noports'))
+              .thenAnswer((_) async => <AtKey>[]);
 
           final result = await repository.getProfileUuids();
 
@@ -458,10 +504,11 @@ void main() {
 
     group('AtKey Generation and Namespacing', () {
       test('should generate correct AtKey for profile operations', () async {
-        final expectedAtKey = const Uuid(testUuid).toProfileAtKey(sharedBy: testAtsign);
+        final expectedAtKey =
+            const Uuid(testUuid).toProfileAtKey(sharedBy: testAtsign);
 
-        when(mockAtClient.get(expectedAtKey))
-            .thenAnswer((_) async => AtValue()..value = jsonEncode(testProfile.toJson()));
+        when(mockAtClient.get(expectedAtKey)).thenAnswer(
+            (_) async => AtValue()..value = jsonEncode(testProfile.toJson()));
 
         await repository.getProfile(testUuid);
 
@@ -469,15 +516,19 @@ void main() {
       });
 
       test('should use consistent AtKey format across operations', () async {
-        final atKey = Uuid(testProfile.uuid).toProfileAtKey(sharedBy: testAtsign);
+        final atKey =
+            Uuid(testProfile.uuid).toProfileAtKey(sharedBy: testAtsign);
 
-        when(mockAtClient.put(atKey, jsonEncode(testProfile.toJson()))).thenAnswer((_) async => true);
-        when(mockAtClient.get(atKey)).thenAnswer((_) async => AtValue()..value = jsonEncode(testProfile.toJson()));
+        when(mockAtClient.put(atKey, jsonEncode(testProfile.toJson())))
+            .thenAnswer((_) async => true);
+        when(mockAtClient.get(atKey)).thenAnswer(
+            (_) async => AtValue()..value = jsonEncode(testProfile.toJson()));
         when(mockAtClient.delete(atKey)).thenAnswer((_) async => true);
 
         // Test put
         await repository.putProfile(testProfile);
-        verify(mockAtClient.put(atKey, jsonEncode(testProfile.toJson()))).called(1);
+        verify(mockAtClient.put(atKey, jsonEncode(testProfile.toJson())))
+            .called(1);
 
         // Test get
         await repository.getProfile(testProfile.uuid, useCache: false);
@@ -507,7 +558,8 @@ void main() {
         final atKey = const Uuid(testUuid).toProfileAtKey(sharedBy: testAtsign);
 
         when(mockAtClient.get(atKey)).thenThrow(Exception('Network error'));
-        when(mockAtClient.put(atKey, any)).thenThrow(Exception('Network error'));
+        when(mockAtClient.put(atKey, any))
+            .thenThrow(Exception('Network error'));
         when(mockAtClient.delete(atKey)).thenThrow(Exception('Network error'));
 
         // Should not throw, should return null/false
@@ -540,7 +592,8 @@ void main() {
         when(mockAtClient.get(atKey)).thenAnswer((_) async => atValue);
 
         // Simulate concurrent gets
-        final futures = List.generate(5, (_) => repository.getProfile(testUuid, useCache: false));
+        final futures = List.generate(
+            5, (_) => repository.getProfile(testUuid, useCache: false));
         final results = await Future.wait(futures);
 
         for (final result in results) {

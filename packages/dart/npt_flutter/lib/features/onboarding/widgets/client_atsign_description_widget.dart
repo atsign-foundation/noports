@@ -14,14 +14,17 @@ class ClientAtsignDescriptionWidget extends StatefulWidget {
   final double width;
 
   @override
-  State<ClientAtsignDescriptionWidget> createState() => _ClientAtsignDescriptionWidgetState();
+  State<ClientAtsignDescriptionWidget> createState() =>
+      _ClientAtsignDescriptionWidgetState();
 }
 
-class _ClientAtsignDescriptionWidgetState extends State<ClientAtsignDescriptionWidget> {
+class _ClientAtsignDescriptionWidgetState
+    extends State<ClientAtsignDescriptionWidget> {
   bool visibility = false;
 
   void visitRegistarSite() async {
-    final Uri url = Uri.parse('https://my.noports.com/no-ports-invite/14dayfreetrial');
+    final Uri url =
+        Uri.parse('https://my.noports.com/no-ports-invite/14dayfreetrial');
     if (!await launchUrl(url)) {
       throw Exception('Could not launch $url');
     }
@@ -52,7 +55,8 @@ class _ClientAtsignDescriptionWidgetState extends State<ClientAtsignDescriptionW
                 color: AppColor.primaryColor,
               ),
               gapW14,
-              Text(strings.whatIsClientAtsign, style: const TextStyle(color: AppColor.primaryColor)),
+              Text(strings.whatIsClientAtsign,
+                  style: const TextStyle(color: AppColor.primaryColor)),
               const Spacer(),
               IconButton(
                 onPressed: () {
@@ -121,7 +125,8 @@ class _ClientAtsignDescriptionWidgetState extends State<ClientAtsignDescriptionW
                                 margin: EdgeInsets.zero,
                                 shape: OutlineInputBorder(
                                   borderRadius: BorderRadius.circular(Sizes.p8),
-                                  borderSide: const BorderSide(color: Colors.transparent),
+                                  borderSide: const BorderSide(
+                                      color: Colors.transparent),
                                 ),
                                 elevation: Sizes.p15,
                                 child: SvgPicture.asset(
@@ -136,11 +141,15 @@ class _ClientAtsignDescriptionWidgetState extends State<ClientAtsignDescriptionW
                               child: RichText(
                                 text: const TextSpan(
                                   text: StringConst.ampersand,
-                                  style: TextStyle(color: AppColor.primaryColor, fontSize: 10),
+                                  style: TextStyle(
+                                      color: AppColor.primaryColor,
+                                      fontSize: 10),
                                   children: [
                                     TextSpan(
                                       text: StringConst.atsignClient,
-                                      style: TextStyle(color: Colors.black, fontSize: Sizes.p10),
+                                      style: TextStyle(
+                                          color: Colors.black,
+                                          fontSize: Sizes.p10),
                                     ),
                                   ],
                                 ),
@@ -154,7 +163,10 @@ class _ClientAtsignDescriptionWidgetState extends State<ClientAtsignDescriptionW
                 ),
                 Text(
                   strings.or,
-                  style: Theme.of(context).textTheme.titleMedium!.copyWith(color: AppColor.primaryColor),
+                  style: Theme.of(context)
+                      .textTheme
+                      .titleMedium!
+                      .copyWith(color: AppColor.primaryColor),
                 ),
                 Expanded(
                   child: CustomContainer.foreground(
@@ -171,7 +183,8 @@ class _ClientAtsignDescriptionWidgetState extends State<ClientAtsignDescriptionW
                       children: [
                         Text(
                           strings.atsignUncreated,
-                          style: bodyMedium.copyWith(color: AppColor.primaryColor),
+                          style:
+                              bodyMedium.copyWith(color: AppColor.primaryColor),
                         ),
                         gapH10,
                         SizedBox(
@@ -179,7 +192,9 @@ class _ClientAtsignDescriptionWidgetState extends State<ClientAtsignDescriptionW
                           child: ElevatedButton(
                             style: ElevatedButton.styleFrom(
                               shape: RoundedRectangleBorder(
-                                side: const BorderSide(color: AppColor.primaryColor, width: Sizes.p2),
+                                side: const BorderSide(
+                                    color: AppColor.primaryColor,
+                                    width: Sizes.p2),
                                 borderRadius: BorderRadius.circular(Sizes.p10),
                               ),
                             ),

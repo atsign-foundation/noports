@@ -31,44 +31,36 @@ class MockProfileRepository extends _i1.Mock implements _i2.ProfileRepository {
   }
 
   @override
-  _i3.Future<Iterable<String>?> getProfileUuids() =>
-      (super.noSuchMethod(
-            Invocation.method(#getProfileUuids, []),
-            returnValue: _i3.Future<Iterable<String>?>.value(),
-          )
-          as _i3.Future<Iterable<String>?>);
+  _i3.Future<Iterable<String>?> getProfileUuids() => (super.noSuchMethod(
+        Invocation.method(#getProfileUuids, []),
+        returnValue: _i3.Future<Iterable<String>?>.value(),
+      ) as _i3.Future<Iterable<String>?>);
 
   @override
   _i3.Future<Iterable<_i2.Profile>> getProfiles(Iterable<String>? uuids) =>
       (super.noSuchMethod(
-            Invocation.method(#getProfiles, [uuids]),
-            returnValue: _i3.Future<Iterable<_i2.Profile>>.value(
-              <_i2.Profile>[],
-            ),
-          )
-          as _i3.Future<Iterable<_i2.Profile>>);
+        Invocation.method(#getProfiles, [uuids]),
+        returnValue: _i3.Future<Iterable<_i2.Profile>>.value(
+          <_i2.Profile>[],
+        ),
+      ) as _i3.Future<Iterable<_i2.Profile>>);
 
   @override
   _i3.Future<_i2.Profile?> getProfile(String? uuid, {bool? useCache = true}) =>
       (super.noSuchMethod(
-            Invocation.method(#getProfile, [uuid], {#useCache: useCache}),
-            returnValue: _i3.Future<_i2.Profile?>.value(),
-          )
-          as _i3.Future<_i2.Profile?>);
+        Invocation.method(#getProfile, [uuid], {#useCache: useCache}),
+        returnValue: _i3.Future<_i2.Profile?>.value(),
+      ) as _i3.Future<_i2.Profile?>);
 
   @override
-  _i3.Future<bool> putProfile(_i2.Profile? profile) =>
-      (super.noSuchMethod(
-            Invocation.method(#putProfile, [profile]),
-            returnValue: _i3.Future<bool>.value(false),
-          )
-          as _i3.Future<bool>);
+  _i3.Future<bool> putProfile(_i2.Profile? profile) => (super.noSuchMethod(
+        Invocation.method(#putProfile, [profile]),
+        returnValue: _i3.Future<bool>.value(false),
+      ) as _i3.Future<bool>);
 
   @override
-  _i3.Future<bool> deleteProfile(String? uuid) =>
-      (super.noSuchMethod(
-            Invocation.method(#deleteProfile, [uuid]),
-            returnValue: _i3.Future<bool>.value(false),
-          )
-          as _i3.Future<bool>);
+  _i3.Future<bool> deleteProfile(String? uuid) => (super.noSuchMethod(
+        Invocation.method(#deleteProfile, [uuid]),
+        returnValue: _i3.Future<bool>.value(false),
+      ) as _i3.Future<bool>);
 }

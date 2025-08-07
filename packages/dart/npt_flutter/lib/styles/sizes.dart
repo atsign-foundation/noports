@@ -134,7 +134,8 @@ class SizeConfig {
   static final SizeConfig _instance = SizeConfig._();
 
   static double setDashboardWidth() {
-    final calculation = MediaQuery.of(App.navState.currentContext!).size.width * Sizes.dashboardCardWidthFactor;
+    final calculation = MediaQuery.of(App.navState.currentContext!).size.width *
+        Sizes.dashboardCardWidthFactor;
 
     if (calculation > 1351) {
       return 1351;
@@ -143,10 +144,15 @@ class SizeConfig {
     }
   }
 
-  static double setProfileFieldWidth({bool statusField = false, BuildContext? context}) {
-    final mediaQuery = context != null ? MediaQuery.of(context) : MediaQuery.of(App.navState.currentContext!);
-    final calculation =
-        mediaQuery.size.width * (statusField ? Sizes.statusFieldsWidthFactor : Sizes.profileFieldsWidthFactor);
+  static double setProfileFieldWidth(
+      {bool statusField = false, BuildContext? context}) {
+    final mediaQuery = context != null
+        ? MediaQuery.of(context)
+        : MediaQuery.of(App.navState.currentContext!);
+    final calculation = mediaQuery.size.width *
+        (statusField
+            ? Sizes.statusFieldsWidthFactor
+            : Sizes.profileFieldsWidthFactor);
 
     if (calculation > 252) {
       return 252;
@@ -155,10 +161,15 @@ class SizeConfig {
     }
   }
 
-  static double setProfileFieldWidthMinimalView({bool statusField = false, BuildContext? context}) {
-    final mediaQuery = context != null ? MediaQuery.of(context) : MediaQuery.of(App.navState.currentContext!);
+  static double setProfileFieldWidthMinimalView(
+      {bool statusField = false, BuildContext? context}) {
+    final mediaQuery = context != null
+        ? MediaQuery.of(context)
+        : MediaQuery.of(App.navState.currentContext!);
     final calculation = mediaQuery.size.width *
-        (statusField ? Sizes.statusFieldsWidthFactorMinimalView : Sizes.profileFieldsWidthFactorMinimalView);
+        (statusField
+            ? Sizes.statusFieldsWidthFactorMinimalView
+            : Sizes.profileFieldsWidthFactorMinimalView);
 
     if (calculation > 500) {
       return 500;
@@ -186,11 +197,14 @@ class SizeConfig {
 
   double textFactor = 1.0;
 
-  bool isMobile(BuildContext context) => MediaQuery.of(context).size.width < 700;
+  bool isMobile(BuildContext context) =>
+      MediaQuery.of(context).size.width < 700;
 
   bool isTablet(BuildContext context) =>
-      MediaQuery.of(context).size.width >= 700 && MediaQuery.of(context).size.width < 1200;
-  bool isDesktop(BuildContext context) => MediaQuery.of(context).size.width >= 1200;
+      MediaQuery.of(context).size.width >= 700 &&
+      MediaQuery.of(context).size.width < 1200;
+  bool isDesktop(BuildContext context) =>
+      MediaQuery.of(context).size.width >= 1200;
 
   void init() {
     _mediaQueryData = MediaQuery.of(App.navState.currentContext!);
@@ -205,16 +219,20 @@ class SizeConfig {
       blockSizeHorizontal = screenWidth / 100;
       blockSizeVertical = screenHeight / 100;
 
-      _safeAreaHorizontal = _mediaQueryData.padding.left + _mediaQueryData.padding.right;
-      _safeAreaVertical = _mediaQueryData.padding.top + _mediaQueryData.padding.bottom;
+      _safeAreaHorizontal =
+          _mediaQueryData.padding.left + _mediaQueryData.padding.right;
+      _safeAreaVertical =
+          _mediaQueryData.padding.top + _mediaQueryData.padding.bottom;
       safeBlockHorizontal = (screenWidth - _safeAreaHorizontal) / 100;
       safeBlockVertical = (screenHeight - _safeAreaVertical) / 100;
     } else {
       blockSizeHorizontal = screenWidth / 120;
       blockSizeVertical = screenHeight / 120;
 
-      _safeAreaHorizontal = _mediaQueryData.padding.left + _mediaQueryData.padding.right;
-      _safeAreaVertical = _mediaQueryData.padding.top + _mediaQueryData.padding.bottom;
+      _safeAreaHorizontal =
+          _mediaQueryData.padding.left + _mediaQueryData.padding.right;
+      _safeAreaVertical =
+          _mediaQueryData.padding.top + _mediaQueryData.padding.bottom;
       safeBlockHorizontal = (screenWidth - _safeAreaHorizontal) / 120;
       safeBlockVertical = (screenHeight - _safeAreaVertical) / 120;
     }

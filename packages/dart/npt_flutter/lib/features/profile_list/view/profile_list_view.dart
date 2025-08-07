@@ -38,12 +38,15 @@ class _ProfileListViewState extends State<ProfileListView> {
     final deviceSize = MediaQuery.of(context).size;
     final bodyMedium = Theme.of(context).textTheme.bodyMedium;
     SizeConfig().init();
-    return BlocBuilder<ProfileListBloc, ProfileListState>(builder: (context, state) {
+    return BlocBuilder<ProfileListBloc, ProfileListState>(
+        builder: (context, state) {
       return switch (state) {
-        ProfileListInitial() || ProfileListLoading() => const Center(child: Spinner()),
+        ProfileListInitial() ||
+        ProfileListLoading() =>
+          const Center(child: Spinner()),
         ProfileListFailedLoad() => const ProfileListFailedLoadContent(),
-        ProfileListLoaded() =>
-          BlocBuilder<ProfileListBloc, ProfileListState>(builder: (BuildContext context, ProfileListState state) {
+        ProfileListLoaded() => BlocBuilder<ProfileListBloc, ProfileListState>(
+              builder: (BuildContext context, ProfileListState state) {
             if (state is! ProfileListLoaded) {
               // These states should be handled by the ancestor
               return gap0;
@@ -62,7 +65,8 @@ class _ProfileListViewState extends State<ProfileListView> {
                     mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                     children: [
                       CustomCard.dashboardContent(
-                        height: deviceSize.height * Sizes.dashboardCardHeightFactor,
+                        height:
+                            deviceSize.height * Sizes.dashboardCardHeightFactor,
                         width: SizeConfig.setDashboardWidth(),
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -98,9 +102,13 @@ class _ProfileListViewState extends State<ProfileListView> {
                                       itemCount: state.profiles.length,
                                       itemBuilder: (context, index) {
                                         return BlocProvider.value(
-                                          key: Key("ProfileListView-BlocProvider-${profiles[index]}"),
-                                          value: context.read<ProfileCacheCubit>().getProfileBloc(profiles[index]),
-                                          child: const CustomCard.profile(child: ProfileView()),
+                                          key: Key(
+                                              "ProfileListView-BlocProvider-${profiles[index]}"),
+                                          value: context
+                                              .read<ProfileCacheCubit>()
+                                              .getProfileBloc(profiles[index]),
+                                          child: const CustomCard.profile(
+                                              child: ProfileView()),
                                         );
                                       },
                                     ),
@@ -110,13 +118,15 @@ class _ProfileListViewState extends State<ProfileListView> {
                                     children: [
                                       Align(
                                         alignment: Alignment.center,
-                                        child: SvgPicture.asset('assets/empty_state_profile_bg.svg'),
+                                        child: SvgPicture.asset(
+                                            'assets/empty_state_profile_bg.svg'),
                                       ),
                                       Align(
                                         alignment: Alignment.bottomCenter,
                                         child: Text(
                                           strings.emptyProfileMessage,
-                                          style: bodyMedium?.copyWith(fontSize: Sizes.p16),
+                                          style: bodyMedium?.copyWith(
+                                              fontSize: Sizes.p16),
                                           textAlign: TextAlign.center,
                                         ),
                                       ),
@@ -126,7 +136,8 @@ class _ProfileListViewState extends State<ProfileListView> {
                                       ),
                                     ],
                                   ),
-                            BlocBuilder<SyncCubit, bool>(buildWhen: (previous, current) {
+                            BlocBuilder<SyncCubit, bool>(
+                                buildWhen: (previous, current) {
                               log('previous: $previous, current: $current');
                               return previous != current;
                             }, builder: (context, state) {

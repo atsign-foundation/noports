@@ -9,10 +9,12 @@ class ProfileDeviceAtSignTextField extends StatefulWidget {
   const ProfileDeviceAtSignTextField({super.key});
 
   @override
-  State<ProfileDeviceAtSignTextField> createState() => _ProfileDeviceAtSignTextFieldState();
+  State<ProfileDeviceAtSignTextField> createState() =>
+      _ProfileDeviceAtSignTextFieldState();
 }
 
-class _ProfileDeviceAtSignTextFieldState extends State<ProfileDeviceAtSignTextField> {
+class _ProfileDeviceAtSignTextFieldState
+    extends State<ProfileDeviceAtSignTextField> {
   final TextEditingController controller = TextEditingController();
   @override
   Widget build(BuildContext context) {
@@ -36,8 +38,9 @@ class _ProfileDeviceAtSignTextFieldState extends State<ProfileDeviceAtSignTextFi
           },
           builder: (BuildContext context, String? state) {
             if (state == null) return gap0;
-            Future.microtask(() => controller.value =
-                TextEditingValue(text: state, selection: TextSelection.collapsed(offset: state.length)));
+            Future.microtask(() => controller.value = TextEditingValue(
+                text: state,
+                selection: TextSelection.collapsed(offset: state.length)));
             return SizedBox(
               width: Sizes.p300,
               height: Sizes.p80,
@@ -55,7 +58,9 @@ class _ProfileDeviceAtSignTextFieldState extends State<ProfileDeviceAtSignTextFi
 
                     var bloc = context.read<ProfileBloc>();
                     bloc.add(ProfileEditEvent(
-                      profile: (bloc.state as ProfileLoadedState).profile.copyWith(sshnpdAtsign: value),
+                      profile: (bloc.state as ProfileLoadedState)
+                          .profile
+                          .copyWith(sshnpdAtsign: value),
                     ));
                   }),
             );

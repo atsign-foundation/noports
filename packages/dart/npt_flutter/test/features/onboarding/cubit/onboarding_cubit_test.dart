@@ -25,11 +25,13 @@ void main() {
       });
 
       test('initial state toString is correct', () {
-        expect(cubit.state.toString(), equals('OnboardingState(, offboarded, root.atsign.org)'));
+        expect(cubit.state.toString(),
+            equals('OnboardingState(, offboarded, root.atsign.org)'));
       });
 
       test('initial state props are correct', () {
-        expect(cubit.state.props, equals(['', OnboardingStatus.offboarded, 'root.atsign.org']));
+        expect(cubit.state.props,
+            equals(['', OnboardingStatus.offboarded, 'root.atsign.org']));
       });
     });
 
@@ -221,7 +223,8 @@ void main() {
           );
           return cubit;
         },
-        act: (cubit) => cubit.setState(atSign: '@new_user'), // Only update atSign
+        act: (cubit) =>
+            cubit.setState(atSign: '@new_user'), // Only update atSign
         expect: () => [
           const OnboardingState(
             atSign: '@new_user',
@@ -319,8 +322,12 @@ void main() {
           rootDomain: 'test.domain.com',
         );
 
-        expect(state.toString(), equals('OnboardingState(@test_user, onboarded, test.domain.com)'));
-        expect(state.props, equals(['@test_user', OnboardingStatus.onboarded, 'test.domain.com']));
+        expect(state.toString(),
+            equals('OnboardingState(@test_user, onboarded, test.domain.com)'));
+        expect(
+            state.props,
+            equals(
+                ['@test_user', OnboardingStatus.onboarded, 'test.domain.com']));
       });
     });
 

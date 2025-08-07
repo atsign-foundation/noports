@@ -64,7 +64,8 @@ void main() {
       blocTest<SettingsBloc, SettingsState>(
         'emits [SettingsLoading, SettingsLoaded] when settings load successfully',
         build: () {
-          when(mockRepository.getSettings()).thenAnswer((_) async => testSettings);
+          when(mockRepository.getSettings())
+              .thenAnswer((_) async => testSettings);
           return settingsBloc;
         },
         act: (bloc) => bloc.add(const SettingsLoadEvent()),
@@ -98,7 +99,8 @@ void main() {
       blocTest<SettingsBloc, SettingsState>(
         'emits [SettingsLoading, SettingsFailedLoad] when repository throws exception',
         build: () {
-          when(mockRepository.getSettings()).thenThrow(Exception('Load failed'));
+          when(mockRepository.getSettings())
+              .thenThrow(Exception('Load failed'));
           when(mockRepository.defaultSettings).thenReturn(defaultSettings);
           return settingsBloc;
         },
@@ -134,7 +136,8 @@ void main() {
       blocTest<SettingsBloc, SettingsState>(
         'emits [SettingsLoaded] when editing and saving successfully',
         build: () {
-          when(mockRepository.putSettings(testSettings)).thenAnswer((_) async => true);
+          when(mockRepository.putSettings(testSettings))
+              .thenAnswer((_) async => true);
           return settingsBloc;
         },
         act: (bloc) => bloc.add(const SettingsEditEvent(
@@ -152,7 +155,8 @@ void main() {
       blocTest<SettingsBloc, SettingsState>(
         'emits [SettingsFailedSave] when editing and saving fails',
         build: () {
-          when(mockRepository.putSettings(testSettings)).thenAnswer((_) async => false);
+          when(mockRepository.putSettings(testSettings))
+              .thenAnswer((_) async => false);
           return settingsBloc;
         },
         act: (bloc) => bloc.add(const SettingsEditEvent(
@@ -170,7 +174,8 @@ void main() {
       blocTest<SettingsBloc, SettingsState>(
         'emits [SettingsFailedSave] when saving throws exception',
         build: () {
-          when(mockRepository.putSettings(testSettings)).thenThrow(Exception('Save failed'));
+          when(mockRepository.putSettings(testSettings))
+              .thenThrow(Exception('Save failed'));
           return settingsBloc;
         },
         act: (bloc) => bloc.add(const SettingsEditEvent(
@@ -205,7 +210,8 @@ void main() {
       blocTest<SettingsBloc, SettingsState>(
         'can transition from loaded to editing and back to loaded',
         build: () {
-          when(mockRepository.putSettings(testSettings)).thenAnswer((_) async => true);
+          when(mockRepository.putSettings(testSettings))
+              .thenAnswer((_) async => true);
           return settingsBloc;
         },
         seed: () => const SettingsLoaded(settings: defaultSettings),
@@ -221,7 +227,8 @@ void main() {
       blocTest<SettingsBloc, SettingsState>(
         'can transition from failed load to editing',
         build: () {
-          when(mockRepository.putSettings(testSettings)).thenAnswer((_) async => true);
+          when(mockRepository.putSettings(testSettings))
+              .thenAnswer((_) async => true);
           return settingsBloc;
         },
         seed: () => const SettingsFailedLoad(settings: defaultSettings),
@@ -237,7 +244,8 @@ void main() {
       blocTest<SettingsBloc, SettingsState>(
         'can transition from failed save to editing again',
         build: () {
-          when(mockRepository.putSettings(testSettings)).thenAnswer((_) async => true);
+          when(mockRepository.putSettings(testSettings))
+              .thenAnswer((_) async => true);
           return settingsBloc;
         },
         seed: () => const SettingsFailedSave(settings: testSettings),
@@ -255,13 +263,16 @@ void main() {
       blocTest<SettingsBloc, SettingsState>(
         'handles multiple edit events in sequence',
         build: () {
-          when(mockRepository.putSettings(defaultSettings)).thenAnswer((_) async => true);
+          when(mockRepository.putSettings(defaultSettings))
+              .thenAnswer((_) async => true);
           return settingsBloc;
         },
         act: (bloc) async {
-          bloc.add(const SettingsEditEvent(settings: testSettings, save: false));
+          bloc.add(
+              const SettingsEditEvent(settings: testSettings, save: false));
           await Future.delayed(const Duration(milliseconds: 10));
-          bloc.add(const SettingsEditEvent(settings: defaultSettings, save: true));
+          bloc.add(
+              const SettingsEditEvent(settings: defaultSettings, save: true));
         },
         expect: () => [
           const SettingsLoaded(settings: testSettings),
@@ -272,14 +283,17 @@ void main() {
       blocTest<SettingsBloc, SettingsState>(
         'handles load event followed by edit event',
         build: () {
-          when(mockRepository.getSettings()).thenAnswer((_) async => testSettings);
-          when(mockRepository.putSettings(defaultSettings)).thenAnswer((_) async => true);
+          when(mockRepository.getSettings())
+              .thenAnswer((_) async => testSettings);
+          when(mockRepository.putSettings(defaultSettings))
+              .thenAnswer((_) async => true);
           return settingsBloc;
         },
         act: (bloc) async {
           bloc.add(const SettingsLoadEvent());
           await Future.delayed(const Duration(milliseconds: 10));
-          bloc.add(const SettingsEditEvent(settings: defaultSettings, save: true));
+          bloc.add(
+              const SettingsEditEvent(settings: defaultSettings, save: true));
         },
         expect: () => [
           const SettingsLoading(),
@@ -297,8 +311,12 @@ void main() {
       blocTest<SettingsBloc, SettingsState>(
         'handles rapid successive events gracefully',
         build: () {
-          when(mockRepository.putSettings(testSettings.copyWith(darkMode: true))).thenAnswer((_) async => true);
-          when(mockRepository.putSettings(testSettings.copyWith(darkMode: false))).thenAnswer((_) async => true);
+          when(mockRepository
+                  .putSettings(testSettings.copyWith(darkMode: true)))
+              .thenAnswer((_) async => true);
+          when(mockRepository
+                  .putSettings(testSettings.copyWith(darkMode: false)))
+              .thenAnswer((_) async => true);
           return settingsBloc;
         },
         act: (bloc) {

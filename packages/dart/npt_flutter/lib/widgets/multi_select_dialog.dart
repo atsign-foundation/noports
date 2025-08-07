@@ -6,7 +6,11 @@ class MultiSelectDialog extends StatelessWidget {
   final String message;
   final String title;
   final Map<String, VoidCallback> actions;
-  const MultiSelectDialog({required this.title, required this.message, required this.actions, super.key});
+  const MultiSelectDialog(
+      {required this.title,
+      required this.message,
+      required this.actions,
+      super.key});
 
   @override
   Widget build(BuildContext context) {

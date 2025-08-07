@@ -70,7 +70,8 @@ void main() {
       expect(favoriteProfile.type, equals(FavoriteType.profile));
     });
 
-    test('should handle string representation and JSON serialization correctly', () {
+    test('should handle string representation and JSON serialization correctly',
+        () {
       // Test toString
       final stringResult = favoriteProfile.toString();
       expect(stringResult, equals('FavoriteProfile(uuid: $testUuid)'));
