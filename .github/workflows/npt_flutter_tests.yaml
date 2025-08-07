@@ -31,6 +31,9 @@ jobs:
       - name: flutter pub get
         working-directory: packages/dart/npt_flutter
         run: flutter pub get
+      - name: Create .env file for tests
+        working-directory: packages/dart/npt_flutter
+        run: touch .env
       - name: flutter analyze
         working-directory: packages/dart/npt_flutter
         run: flutter analyze --no-fatal-warnings --no-fatal-infos
