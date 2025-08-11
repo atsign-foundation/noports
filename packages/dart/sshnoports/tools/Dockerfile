@@ -37,7 +37,7 @@ RUN \
   chown -R ${USER}:${USER} ${HOMEDIR} ; \
   chmod 600 ${HOMEDIR}/.ssh/authorized_keys ; \
   usermod -aG sudo ${USER} ; \
-  mkdir /run/sshd ; \
+  mkdir -p /run/sshd ; \
   chmod 755 /${USER}/.startup.sh
 
 COPY --from=buildimage --chown=${USER}:${USER} /usr/local/at/sshnpd /usr/local/at/

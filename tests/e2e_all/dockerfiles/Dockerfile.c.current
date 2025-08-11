@@ -1,4 +1,4 @@
-FROM atsigncompany/cbuildimage:CMake-3.31.8@sha256:cb29d4124e9208a1d6f7277e56fd489b1e22461554a3bc31cb0561a8db19914e AS buildimage
+FROM atsigncompany/cbuildimage:CMake-3.31.8@sha256:586a3c7ac9844148b0a8b3fea3e4728dfbf3c3430328051f56fb2865ca952056 AS buildimage
 
 ENV REPO_DIR=/app/repo
 ENV OUTPUT_DIR=/output
@@ -25,7 +25,7 @@ RUN set -eux ; \
     mv build/srv ${OUTPUT_DIR}/srv
 
 
-FROM atsigncompany/noports_e2e_all_base_runtime:latest@sha256:6223c926c4e22b5fee4a93bef3cb4288633548e37afda634ffb10ffe9dd9b5e9 AS runtime
+FROM atsigncompany/noports_e2e_all_base_runtime:latest@sha256:ac7aa4dac41182634924210b0251c31efa72bb10885b4bd68e981f6f56266842 AS runtime
 
 ENV USER=atsign
 ENV HOMEDIR=/${USER}
