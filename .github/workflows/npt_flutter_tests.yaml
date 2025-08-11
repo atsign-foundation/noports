@@ -1,4 +1,4 @@
-name: npt_flutter_tests
+name: npt_flutter
 
 permissions:
   contents: read
@@ -34,6 +34,9 @@ jobs:
       - name: Create .env file for tests
         working-directory: packages/dart/npt_flutter
         run: touch .env
+      - name: Run build runner
+        working-directory: packages/dart/npt_flutter
+        run: dart run build_runner build --delete-conflicting-outputs
       - name: flutter analyze
         working-directory: packages/dart/npt_flutter
         run: flutter analyze --no-fatal-warnings --no-fatal-infos
