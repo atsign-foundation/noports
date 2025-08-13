@@ -36,7 +36,8 @@ class TrayCubit extends LoggingCubit<TrayState> {
     if (state is! TrayInitial || localizations == null) return;
     var context = App.navState.currentContext;
     if (context == null) return;
-    var showSettings = context.read<OnboardingCubit>().getStatus() == OnboardingStatus.onboarded;
+    var showSettings = context.read<OnboardingCubit>().getStatus() ==
+        OnboardingStatus.onboarded;
 
     await reloadIcon();
 
@@ -51,10 +52,13 @@ class TrayCubit extends LoggingCubit<TrayState> {
   }
 
   Future<void> reloadIcon() async {
-    final brightness = WidgetsBinding.instance.platformDispatcher.platformBrightness;
+    final brightness =
+        WidgetsBinding.instance.platformDispatcher.platformBrightness;
     await trayManager.setIcon(switch (brightness) {
-      Brightness.light => Platform.isWindows ? Constants.icoIconLight : Constants.pngIconLight,
-      Brightness.dark => Platform.isWindows ? Constants.icoIconDark : Constants.pngIconDark,
+      Brightness.light =>
+        Platform.isWindows ? Constants.icoIconLight : Constants.pngIconLight,
+      Brightness.dark =>
+        Platform.isWindows ? Constants.icoIconDark : Constants.pngIconDark,
     });
   }
 
@@ -67,9 +71,13 @@ class TrayCubit extends LoggingCubit<TrayState> {
     );
   }
 
-  (String, void Function(MenuItem)) _getAction(TrayAction action, AppLocalizations localizations) {
+  (String, void Function(MenuItem)) _getAction(
+      TrayAction action, AppLocalizations localizations) {
     return switch (action) {
-      TrayAction.showDashboard => (localizations.showWindow, (_) => windowManager.show(inactive: true)),
+      TrayAction.showDashboard => (
+          localizations.showWindow,
+          (_) => windowManager.show(inactive: true)
+        ),
       TrayAction.showSettings => (
           localizations.settings,
           (_) => windowManager.show(inactive: true).then((_) {
@@ -125,13 +133,16 @@ class TrayCubit extends LoggingCubit<TrayState> {
     /// Generate the new menu based on current state
     var favMenuItems = await Future.wait(
       favoriteState.favorites
-          .where((fav) => fav.isLoadedInProfiles((profileListState as ProfileListLoaded).profiles))
+          .where((fav) => fav.isLoadedInProfiles(
+              (profileListState as ProfileListLoaded).profiles))
           .map((fav) async {
         /// Make sure to call [e.displayName] and [e.isRunning] only once to
         /// ensure good performance - these getters call a bunch of nested
         /// information from elsewhere in the app state
 
-        var displayName = (profileState != null && profileState is ProfileLoadedState && profileState.uuid == fav.uuid)
+        var displayName = (profileState != null &&
+                profileState is ProfileLoadedState &&
+                profileState.uuid == fav.uuid)
             ? profileState.profile.displayName
             : await fav.displayName;
 

@@ -13,7 +13,8 @@ class ProfileRelayQuickButtons extends StatelessWidget {
   Widget build(BuildContext context) {
     final strings = AppLocalizations.of(context)!;
     final ScrollController controller = ScrollController();
-    return BlocSelector<ProfileBloc, ProfileState, String?>(selector: (ProfileState state) {
+    return BlocSelector<ProfileBloc, ProfileState, String?>(
+        selector: (ProfileState state) {
       if (state is ProfileLoadedState) {
         return state.profile.relayAtsign;
       }
@@ -58,7 +59,10 @@ class ProfileRelayQuickButtons extends StatelessWidget {
                                   onChanged: (value) {
                                     var bloc = context.read<ProfileBloc>();
                                     bloc.add(ProfileEditEvent(
-                                      profile: (bloc.state as ProfileLoadedState).profile.copyWith(relayAtsign: value),
+                                      profile:
+                                          (bloc.state as ProfileLoadedState)
+                                              .profile
+                                              .copyWith(relayAtsign: value),
                                     ));
                                   },
                                 ),

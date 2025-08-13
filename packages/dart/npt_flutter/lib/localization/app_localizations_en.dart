@@ -239,8 +239,7 @@ class AppLocalizationsEn extends AppLocalizations {
       'Failed to verify the OTP with the activation server, please try again. Contact support if the issue persists.';
 
   @override
-  String get errorProfileLoadFailed =>
-      'Failed to load this profile, please refresh manually:';
+  String get errorProfileLoadFailed => 'Failed to load this profile';
 
   @override
   String get errorRootDomainNotSupported =>

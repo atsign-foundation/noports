@@ -16,7 +16,8 @@ class ProfileHeaderView extends StatelessWidget {
   Widget build(BuildContext context) {
     final strings = AppLocalizations.of(context)!;
 
-    return BlocBuilder<ProfileListBloc, ProfileListState>(builder: (context, state) {
+    return BlocBuilder<ProfileListBloc, ProfileListState>(
+        builder: (context, state) {
       if (state is ProfileListInitial) {
         context.read<ProfileListBloc>().add(const ProfileListLoadEvent());
       }
@@ -40,7 +41,8 @@ class ProfileHeaderView extends StatelessWidget {
           );
 
         case ProfileListLoaded _:
-          return BlocSelector<SettingsBloc, SettingsState, PreferredViewLayout?>(
+          return BlocSelector<SettingsBloc, SettingsState,
+              PreferredViewLayout?>(
             selector: (SettingsState state) {
               if (state is SettingsLoadedState) {
                 return state.settings.viewLayout;
@@ -48,30 +50,37 @@ class ProfileHeaderView extends StatelessWidget {
               return null;
             },
             builder: (BuildContext context, PreferredViewLayout? viewLayout) {
-              return LayoutBuilder(builder: (BuildContext context, BoxConstraints constraints) {
+              return LayoutBuilder(
+                  builder: (BuildContext context, BoxConstraints constraints) {
                 final width = SizeConfig.setProfileFieldWidth();
                 return switch (viewLayout) {
                   null => const Center(child: Spinner()),
                   PreferredViewLayout.minimal => CustomCard.profileHeader(
                       child: Padding(
-                        padding: const EdgeInsets.symmetric(vertical: Sizes.p10),
+                        padding:
+                            const EdgeInsets.symmetric(vertical: Sizes.p10),
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.start,
                           children: [
                             const ProfileSelectAllBox(),
                             gapW10,
                             ProfileHeaderColumn(
-                                title: strings.profileName, width: SizeConfig.setProfileFieldWidthMinimalView()),
+                                title: strings.profileName,
+                                width: SizeConfig
+                                    .setProfileFieldWidthMinimalView()),
                             gapW10,
                             ProfileHeaderColumn(
-                                title: strings.status, width: SizeConfig.setProfileFieldWidthMinimalView()),
+                                title: strings.status,
+                                width: SizeConfig
+                                    .setProfileFieldWidthMinimalView()),
                           ],
                         ),
                       ),
                     ),
                   PreferredViewLayout.sshStyle => CustomCard.profileHeader(
                       child: Padding(
-                        padding: const EdgeInsets.symmetric(vertical: Sizes.p10),
+                        padding:
+                            const EdgeInsets.symmetric(vertical: Sizes.p10),
                         child: Row(
                           children: [
                             const ProfileSelectAllBox(),
@@ -81,12 +90,16 @@ class ProfileHeaderView extends StatelessWidget {
                               width: width,
                             ),
                             gapW10,
-                            ProfileHeaderColumn(title: strings.deviceName, width: width),
-                            gapW10,
-                            ProfileHeaderColumn(title: strings.serviceMapping, width: width),
+                            ProfileHeaderColumn(
+                                title: strings.deviceName, width: width),
                             gapW10,
                             ProfileHeaderColumn(
-                                title: strings.status, width: SizeConfig.setProfileFieldWidth(statusField: true)),
+                                title: strings.serviceMapping, width: width),
+                            gapW10,
+                            ProfileHeaderColumn(
+                                title: strings.status,
+                                width: SizeConfig.setProfileFieldWidth(
+                                    statusField: true)),
                           ],
                         ),
                       ),

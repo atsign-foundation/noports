@@ -1,7 +1,10 @@
+## 1.4.0+18
+
+--**TEST**: Unit and integration tests added.
 
 ## 1.4.0+17
 
---**FIX**: changed imports for app_Llocalization.dart
+--**FIX**: changed imports for app_localization.dart
 
 ## 1.3.0+16
 

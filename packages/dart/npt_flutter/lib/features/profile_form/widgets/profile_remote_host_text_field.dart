@@ -35,7 +35,9 @@ class ProfileRemoteHostTextField extends StatelessWidget {
                   onChanged: (value) {
                     var bloc = context.read<ProfileBloc>();
                     bloc.add(ProfileEditEvent(
-                      profile: (bloc.state as ProfileLoadedState).profile.copyWith(remoteHost: value),
+                      profile: (bloc.state as ProfileLoadedState)
+                          .profile
+                          .copyWith(remoteHost: value),
                     ));
                   }),
             );
