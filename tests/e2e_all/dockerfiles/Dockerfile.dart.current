@@ -1,4 +1,4 @@
-FROM dart:3.8.3@sha256:a4788db0b556d0049c3d50a5168f95f7b89fe68bba1139900181e940ce9c6aee AS buildimage
+FROM dart:3.8.3@sha256:9d475ffd9d9e1353b2d2c67edfa1e7a1aebf8d7cd49f3179904ef34f3f21bdb0 AS buildimage
 
 ENV REPO_DIR=/app/repo
 ENV OUTPUT_DIR=/output
