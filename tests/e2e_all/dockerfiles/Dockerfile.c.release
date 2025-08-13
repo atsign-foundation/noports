@@ -1,4 +1,4 @@
-FROM atsigncompany/cbuildimage:CMake-3.31.8@sha256:586a3c7ac9844148b0a8b3fea3e4728dfbf3c3430328051f56fb2865ca952056 AS buildimage
+FROM atsigncompany/cbuildimage:CMake-3.31.8@sha256:079b479d10cbd505c85178e8a8b8e3e27463711eb6310d7e0c7395b49c7168db AS buildimage
 
 ENV URL="https://api.github.com/repos/atsign-foundation/noports/releases/latest"
 ENV URLP="https://github.com/atsign-foundation/noports/releases/download"
