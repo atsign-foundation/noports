@@ -28,7 +28,7 @@ WORKDIR ${HOMEDIR}
 RUN \
   set -eux ; \
   apt-get update ; \
-  apt-get install -y sudo ; \
+  apt-get install -y adduser sudo ; \
   addgroup --gid ${GROUP_ID} ${USER} ; \
   useradd --system --uid ${USER_ID} --gid ${GROUP_ID} --shell /bin/bash --home ${HOMEDIR} ${USER} ; \
   mkdir -p ${HOMEDIR}/.atsign/keys ; \
