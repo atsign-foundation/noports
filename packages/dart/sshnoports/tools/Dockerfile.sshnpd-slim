@@ -33,12 +33,12 @@ RUN \
   dart compile exe bin/sshnpd.dart -o ${BINARYDIR}/sshnpd ; \
   dart compile exe bin/srv.dart -o ${BINARYDIR}/srv ; \
   # create atsign account
+  apt-get update && apt-get install -y adduser autoconf curl gcc make ; \
   addgroup --gid $GROUP_ID atsign ; \
   useradd --system --uid $USER_ID --gid $GROUP_ID --shell /bin/bash \
   --home $HOMEDIR atsign ; \
   chown -R atsign:atsign $HOMEDIR ; \
   # build static openssh binaries
-  apt update && apt install -y curl gcc make autoconf ; \
   cd ${WORKDIR}/${OPENSSH} ; \
   ARCH=${TARGETARCH} ./static-openssh.sh ; \
   cp build/openssh-portable*/ssh-keygen ${BINARYDIR}/ ; \ 
