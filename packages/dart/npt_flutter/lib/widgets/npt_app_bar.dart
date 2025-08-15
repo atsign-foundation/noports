@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:npt_flutter/features/onboarding/cubit/onboarding_cubit.dart';
 import 'package:npt_flutter/home_wrapper_widget.dart';
 import 'package:npt_flutter/pages/pages.dart';
@@ -144,6 +145,15 @@ class _NptAppBarState extends State<NptAppBar> {
                             }
                           },
                         ),
+                        _NavTab(
+                          label: 'Settings',
+                          isActive: state == HomeRoutes.settings,
+                          onTap: () {
+                            if (state != HomeRoutes.settings) {
+                              wrapperNav.currentState!.pushNamed(HomeRoutes.settings);
+                            }
+                          },
+                        ),
                       ],
                     ),
                   ),
@@ -153,57 +163,33 @@ class _NptAppBarState extends State<NptAppBar> {
               // User section on right
               Padding(
                 padding: const EdgeInsets.only(right: 24),
-                child: Row(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                      decoration: BoxDecoration(
-                        color: AppColor.primaryColor,
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Container(
-                            width: 20,
-                            height: 20,
-                            decoration: const BoxDecoration(
-                              color: Colors.white,
-                              shape: BoxShape.circle,
-                            ),
-                            child: Icon(
-                              Icons.person,
-                              size: 12,
-                              color: Colors.grey[600],
-                            ),
-                          ),
-                          const SizedBox(width: 6),
-                          Text(
-                            atsign.isNotEmpty ? '@${atsign.replaceFirst('@', '')}' : '@user',
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 12,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                        ],
-                      ),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  decoration: BoxDecoration(
+                    border: Border.all(
+                      color: AppColor.primaryColor,
+                      width: 1,
                     ),
-                    const SizedBox(width: 12),
-                    IconButton(
-                      onPressed: () {
-                        if (state != HomeRoutes.settings) {
-                          wrapperNav.currentState!.pushNamed(HomeRoutes.settings);
-                        }
-                      },
-                      icon: const Icon(
-                        Icons.settings_outlined,
-                        size: 20,
-                        color: Colors.grey,
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      SvgPicture.asset(
+                        'assets/At.svg',
+                        width: 16,
+                        height: 16,
                       ),
-                      tooltip: 'Settings',
-                    ),
-                  ],
+                      const SizedBox(width: 4),
+                      Text(
+                        atsign.isNotEmpty ? atsign.replaceFirst('@', '') : 'user',
+                        style: const TextStyle(
+                          color: Colors.black,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ],
