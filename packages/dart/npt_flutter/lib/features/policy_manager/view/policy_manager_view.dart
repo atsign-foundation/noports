@@ -261,19 +261,11 @@ class PolicyManagerContent extends StatelessWidget {
       return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Header with back button
+          // Header
           Padding(
             padding: const EdgeInsets.all(8.0),
             child: Row(
               children: [
-                TextButton.icon(
-                  onPressed: () {
-                    context.read<PolicyManagerBloc>().add(const PolicyManagerShowRoles());
-                  },
-                  icon: const Icon(Icons.arrow_back),
-                  label: const Text('Back to Roles'),
-                ),
-                const Spacer(),
                 Text(
                   'Policy Logs',
                   style: Theme.of(context).textTheme.headlineMedium?.copyWith(
