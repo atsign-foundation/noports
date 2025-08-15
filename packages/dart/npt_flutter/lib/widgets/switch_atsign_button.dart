@@ -103,7 +103,7 @@ class SwitchAtsignButton extends StatelessWidget {
               );
               log("onboarding result: $onboardingResult");
               if (onboardingResult.status == AtOnboardingResultStatus.success) {
-                await BackupKeyUtils().BackupKeyStatusCheck();
+                await BackupKeyUtils().backupKeyStatusCheck();
                 log("postOnbarding called");
                 await postOnboard(selectedAtSign, rootDomain);
               }

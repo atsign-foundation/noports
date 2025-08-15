@@ -13,7 +13,7 @@ class PolicyCardWidget extends StatelessWidget {
     required this.child,
     this.padding,
     this.backgroundColor,
-    this.borderRadius = 8,
+    this.borderRadius = 0,
     this.borderColor,
     this.borderWidth = 1,
   });

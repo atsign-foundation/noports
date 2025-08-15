@@ -26,8 +26,6 @@ class _RoleDescriptionFieldState extends State<RoleDescriptionField> {
   void didUpdateWidget(RoleDescriptionField oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.role.description != widget.role.description) {
-      // Only update if the controller text doesn't match the new role description
-      // This prevents unnecessary text selection
       if (_controller.text != widget.role.description) {
         _controller.text = widget.role.description;
       }
@@ -43,10 +41,10 @@ class _RoleDescriptionFieldState extends State<RoleDescriptionField> {
   @override
   Widget build(BuildContext context) {
     return FormFieldWidget(
-      label: 'Description (optional)',
+      label: 'Description',
       controller: _controller,
       enabled: widget.isEditing,
-      maxLines: 8,
+      maxLines: null,
       onChanged: widget.onChanged,
     );
   }

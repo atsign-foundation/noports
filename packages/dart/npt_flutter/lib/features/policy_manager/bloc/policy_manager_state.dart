@@ -23,12 +23,12 @@ class PolicyManagerLoading extends PolicyManagerState {
   List<Object?> get props => [selectedRole, roles];
 }
 
-class PolicyManagerLoaded extends PolicyManagerState {
+class PolicyManagerRoleLoaded extends PolicyManagerState {
   final List<Role> roles;
   final Role? selectedRole;
   final bool isEditing;
 
-  const PolicyManagerLoaded({
+  const PolicyManagerRoleLoaded({
     required this.roles,
     this.selectedRole,
     this.isEditing = false,
@@ -37,16 +37,40 @@ class PolicyManagerLoaded extends PolicyManagerState {
   @override
   List<Object?> get props => [roles, selectedRole, isEditing];
 
-  PolicyManagerLoaded copyWith({
+  PolicyManagerRoleLoaded copyWith({
     List<Role>? roles,
     Role? selectedRole,
     bool? isEditing,
     bool clearSelectedRole = false,
   }) {
-    return PolicyManagerLoaded(
+    return PolicyManagerRoleLoaded(
       roles: roles ?? this.roles,
       selectedRole: clearSelectedRole ? null : selectedRole ?? this.selectedRole,
       isEditing: isEditing ?? this.isEditing,
+    );
+  }
+}
+
+class PolicyManagerViewLogsPageLoaded extends PolicyManagerState {
+  final List<Role> roles;
+  final Role? selectedRole;
+
+  const PolicyManagerViewLogsPageLoaded({
+    required this.roles,
+    this.selectedRole,
+  });
+
+  @override
+  List<Object?> get props => [roles, selectedRole];
+
+  PolicyManagerViewLogsPageLoaded copyWith({
+    List<Role>? roles,
+    Role? selectedRole,
+    bool clearSelectedRole = false,
+  }) {
+    return PolicyManagerViewLogsPageLoaded(
+      roles: roles ?? this.roles,
+      selectedRole: clearSelectedRole ? null : selectedRole ?? this.selectedRole,
     );
   }
 }

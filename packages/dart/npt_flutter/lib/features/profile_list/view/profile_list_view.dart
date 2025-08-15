@@ -27,7 +27,7 @@ class _ProfileListViewState extends State<ProfileListView> {
   @override
   void initState() {
     WidgetsBinding.instance.addPostFrameCallback((_) async {
-      await BackupKeyUtils().BackupKeyStatusCheck();
+      await BackupKeyUtils().backupKeyStatusCheck();
     });
     super.initState();
   }

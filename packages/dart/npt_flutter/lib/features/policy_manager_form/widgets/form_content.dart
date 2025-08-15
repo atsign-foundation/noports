@@ -10,14 +10,12 @@ import 'daemon_at_signs_field.dart';
 import 'user_at_signs_field.dart';
 import 'device_list_widget.dart';
 import 'device_group_list_widget.dart';
-import 'logs_section.dart';
-import '../services/policy_log_monitor_service.dart';
 import '../../../styles/app_color.dart';
 import '../../../styles/sizes.dart';
 
 class FormContent extends StatefulWidget {
   final Role role;
-  final PolicyManagerLoaded state;
+  final PolicyManagerRoleLoaded state;
 
   const FormContent({super.key, required this.role, required this.state});
 
@@ -30,7 +28,6 @@ class _FormContentState extends State<FormContent> {
   late Role _currentRole;
   late Role _originalRole; // Backup of original role for cancel functionality
   bool _isSaving = false;
-  final PolicyLogMonitorService _monitorService = PolicyLogMonitorService.getInstance();
 
   @override
   void initState() {
@@ -39,9 +36,6 @@ class _FormContentState extends State<FormContent> {
     _originalRole = widget.role; // Backup original role data
     // Automatically start editing if this is a new role (empty name)
     _isEditing = widget.role.name.isEmpty;
-    
-    // Start monitoring for device names in this role
-    _startMonitoring();
   }
 
   @override
@@ -54,31 +48,7 @@ class _FormContentState extends State<FormContent> {
       if (widget.role.name.isEmpty) {
         _isEditing = true;
       }
-      
-      // Restart monitoring for the new role's device names
-      _startMonitoring();
     }
-  }
-
-  @override
-  void dispose() {
-    // Stop monitoring and clear logs when leaving the form
-    _stopMonitoring();
-    super.dispose();
-  }
-
-  void _startMonitoring() {
-    // Clear previous logs and start monitoring device names
-    _monitorService.clearLogs();
-    final deviceNames = _currentRole.devices.map((device) => device.name).toList();
-    if (deviceNames.isNotEmpty) {
-      _monitorService.startMonitoring(deviceNames);
-    }
-  }
-
-  void _stopMonitoring() {
-    _monitorService.stopMonitoring();
-    _monitorService.clearLogs();
   }
 
   void _showDeleteConfirmation(BuildContext context) {
@@ -117,7 +87,7 @@ class _FormContentState extends State<FormContent> {
     return BlocListener<PolicyManagerBloc, PolicyManagerState>(
       listener: (context, state) {
         // Update local editing state from bloc and handle save completion
-        if (state is PolicyManagerLoaded) {
+        if (state is PolicyManagerRoleLoaded) {
           setState(() {
             // Backup original data when starting to edit
             if (!_isEditing && state.isEditing) {
@@ -142,70 +112,73 @@ class _FormContentState extends State<FormContent> {
         }
       },
       child: Padding(
-        padding: const EdgeInsets.all(Sizes.p16),
+        padding: const EdgeInsets.all(8.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-          Row(
-            children: [
-              const Spacer(),
-              if (_isEditing) ...[
-                ElevatedButton(
-                  onPressed: () => _showDeleteConfirmation(context),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColor.errorColor,
-                    foregroundColor: Colors.white,
+          Padding(
+            padding: const EdgeInsets.only(right: 8.0),
+            child: Row(
+              children: [
+                const Spacer(),
+                if (_isEditing) ...[
+                  ElevatedButton(
+                    onPressed: () => _showDeleteConfirmation(context),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColor.errorColor,
+                      foregroundColor: Colors.white,
+                    ),
+                    child: const Text('Delete'),
                   ),
-                  child: const Text('Delete'),
-                ),
-                const SizedBox(width: Sizes.p8),
-                TextButton(
-                  onPressed: () {
-                    // Restore original role data before canceling
-                    setState(() {
-                      _currentRole = _originalRole;
-                    });
-                    context.read<PolicyManagerBloc>().add(const PolicyManagerStopEditing());
-                  },
-                  child: const Text('Cancel'),
-                ),
-                const SizedBox(width: Sizes.p8),
-                ElevatedButton(
-                  onPressed: () {
-                    setState(() => _isSaving = true);
-                    // Distinguish between creating new role vs updating existing role
-                    if (_currentRole.id == null || _currentRole.id!.isEmpty) {
-                      // Creating a new role
-                      context.read<PolicyManagerBloc>().add(PolicyManagerCreateRole(_currentRole));
-                    } else {
-                      // Updating an existing role
-                      context.read<PolicyManagerBloc>().add(PolicyManagerUpdateRole(_currentRole));
-                    }
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColor.primaryColor,
-                    foregroundColor: Colors.white,
+                  const SizedBox(width: Sizes.p8),
+                  TextButton(
+                    onPressed: () {
+                      // Restore original role data before canceling
+                      setState(() {
+                        _currentRole = _originalRole;
+                      });
+                      context.read<PolicyManagerBloc>().add(const PolicyManagerStopEditing());
+                    },
+                    child: const Text('Cancel'),
                   ),
-                  child: const Text('Save'),
-                ),
-              ] else ...[
-                ElevatedButton(
-                  onPressed: () {
-                    context.read<PolicyManagerBloc>().add(PolicyManagerStartEditing(widget.role.id ?? ''));
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColor.primaryColor,
-                    foregroundColor: Colors.white,
+                  const SizedBox(width: Sizes.p8),
+                  ElevatedButton(
+                    onPressed: () {
+                      setState(() => _isSaving = true);
+                      // Distinguish between creating new role vs updating existing role
+                      if (_currentRole.id == null || _currentRole.id!.isEmpty) {
+                        // Creating a new role
+                        context.read<PolicyManagerBloc>().add(PolicyManagerCreateRole(_currentRole));
+                      } else {
+                        // Updating an existing role
+                        context.read<PolicyManagerBloc>().add(PolicyManagerUpdateRole(_currentRole));
+                      }
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColor.primaryColor,
+                      foregroundColor: Colors.white,
+                    ),
+                    child: const Text('Save'),
                   ),
-                  child: const Text('Edit'),
-                ),
+                ] else ...[
+                  ElevatedButton(
+                    onPressed: () {
+                      context.read<PolicyManagerBloc>().add(PolicyManagerStartEditing(widget.role.id ?? ''));
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColor.primaryColor,
+                      foregroundColor: Colors.white,
+                    ),
+                    child: const Text('Edit'),
+                  ),
+                ],
               ],
-            ],
+            ),
           ),
           const SizedBox(height: Sizes.p24),
           Expanded(
             child: SingleChildScrollView(
-              padding: const EdgeInsets.only(right: Sizes.p16),
+              padding: const EdgeInsets.only(right: 8.0),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -350,9 +323,6 @@ class _FormContentState extends State<FormContent> {
                       ),
                     ],
                   ),
-                  const SizedBox(height: Sizes.p24),
-                  // Row 4: Logs
-                  const LogsSection(),
                 ],
               ),
             ),

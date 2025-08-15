@@ -43,49 +43,14 @@ class _PolicyLogItemState extends State<PolicyLogItem> {
               children: [
                 Expanded(
                   flex: 2,
-                  child: Text(
-                    widget.timestamp,
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      fontFamily: 'monospace',
-                    ),
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  flex: 2,
-                  child: Text(
-                    widget.fromAtSign,
-                    style: Theme.of(context).textTheme.bodyMedium,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  flex: 2,
-                  child: Text(
-                    widget.toAtSign,
-                    style: Theme.of(context).textTheme.bodyMedium,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  flex: 1,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: _getTypeColor(widget.type),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
+                  child: Tooltip(
+                    message: widget.timestamp,
+                    waitDuration: const Duration(milliseconds: 500),
                     child: Text(
-                      widget.type,
+                      widget.timestamp,
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: Colors.white,
-                        fontWeight: FontWeight.w500,
-                        fontSize: 11,
+                        fontFamily: 'monospace',
                       ),
-                      textAlign: TextAlign.center,
                       overflow: TextOverflow.ellipsis,
                     ),
                   ),
@@ -93,30 +58,93 @@ class _PolicyLogItemState extends State<PolicyLogItem> {
                 const SizedBox(width: 8),
                 Expanded(
                   flex: 2,
-                  child: Text(
-                    widget.deviceName,
-                    style: Theme.of(context).textTheme.bodyMedium,
-                    overflow: TextOverflow.ellipsis,
+                  child: Tooltip(
+                    message: widget.fromAtSign,
+                    waitDuration: const Duration(milliseconds: 500),
+                    child: Text(
+                      widget.fromAtSign,
+                      style: Theme.of(context).textTheme.bodySmall,
+                      overflow: TextOverflow.ellipsis,
+                    ),
                   ),
                 ),
                 const SizedBox(width: 8),
                 Expanded(
                   flex: 2,
-                  child: Text(
-                    widget.deviceGroup.isEmpty ? '-' : widget.deviceGroup,
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: widget.deviceGroup.isEmpty ? Colors.grey : null,
+                  child: Tooltip(
+                    message: widget.toAtSign,
+                    waitDuration: const Duration(milliseconds: 500),
+                    child: Text(
+                      widget.toAtSign,
+                      style: Theme.of(context).textTheme.bodySmall,
+                      overflow: TextOverflow.ellipsis,
                     ),
-                    overflow: TextOverflow.ellipsis,
                   ),
                 ),
                 const SizedBox(width: 8),
                 Expanded(
-                  flex: 3,
-                  child: Text(
-                    widget.allowedServices,
-                    style: Theme.of(context).textTheme.bodyMedium,
-                    overflow: TextOverflow.ellipsis,
+                  flex: 1,
+                  child: Tooltip(
+                    message: widget.type,
+                    waitDuration: const Duration(milliseconds: 500),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: _getTypeColor(widget.type),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Text(
+                        widget.type,
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w300,
+                          fontSize: 11,
+                        ),
+                        textAlign: TextAlign.center,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  flex: 1,
+                  child: Tooltip(
+                    message: widget.deviceName,
+                    waitDuration: const Duration(milliseconds: 500),
+                    child: Text(
+                      widget.deviceName,
+                      style: Theme.of(context).textTheme.bodySmall,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  flex: 1,
+                  child: Tooltip(
+                    message: widget.deviceGroup.isEmpty ? 'No device group' : widget.deviceGroup,
+                    waitDuration: const Duration(milliseconds: 500),
+                    child: Text(
+                      widget.deviceGroup.isEmpty ? '-' : widget.deviceGroup,
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: widget.deviceGroup.isEmpty ? Colors.grey : null,
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  flex: 2,
+                  child: Tooltip(
+                    message: widget.allowedServices,
+                    waitDuration: const Duration(milliseconds: 500),
+                    child: Text(
+                      widget.allowedServices,
+                      style: Theme.of(context).textTheme.bodySmall,
+                      overflow: TextOverflow.ellipsis,
+                    ),
                   ),
                 ),
                 // Add expand button for policy requests
@@ -156,7 +184,7 @@ class _PolicyLogItemState extends State<PolicyLogItem> {
                       Text(
                         'Policy Request Payload',
                         style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                          fontWeight: FontWeight.w600,
+                          fontWeight: FontWeight.w300,
                           color: Colors.deepPurple,
                         ),
                       ),

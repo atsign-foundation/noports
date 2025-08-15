@@ -25,7 +25,7 @@ class PolicyListSectionWidget extends StatelessWidget {
     return Container(
       decoration: BoxDecoration(
         border: Border.all(color: Colors.grey.withValues(alpha: 0.3)),
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.zero,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -35,10 +35,7 @@ class PolicyListSectionWidget extends StatelessWidget {
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
               color: Colors.grey.withValues(alpha: 0.1),
-              borderRadius: const BorderRadius.only(
-                topLeft: Radius.circular(8),
-                topRight: Radius.circular(8),
-              ),
+              borderRadius: BorderRadius.zero,
             ),
             child: Row(
               children: [
@@ -171,7 +168,7 @@ class PolicyListItemWidget extends StatelessWidget {
       margin: const EdgeInsets.symmetric(vertical: 2),
       decoration: BoxDecoration(
         color: Colors.grey.withValues(alpha: 0.05),
-        borderRadius: BorderRadius.circular(4),
+        borderRadius: BorderRadius.zero,
       ),
       child: ListTile(
         dense: dense,

@@ -5,7 +5,7 @@ class FormFieldWidget extends StatelessWidget {
   final TextEditingController controller;
   final bool enabled;
   final String? helperText;
-  final int maxLines;
+  final int? maxLines;
   final void Function(String)? onChanged;
 
   const FormFieldWidget({

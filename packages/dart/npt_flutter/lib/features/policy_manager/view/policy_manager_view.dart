@@ -6,6 +6,7 @@ import '../bloc/policy_manager_state.dart';
 import '../models/policy.dart';
 import '../repositories/role_repository.dart';
 import '../../policy_manager_form/view/policy_manager_form_view.dart';
+import '../../policy_logs/widgets/logs_viewer.dart';
 import '../../../widgets/custom_card.dart';
 import '../../../styles/app_color.dart';
 import '../../../styles/sizes.dart';
@@ -39,19 +40,16 @@ class PolicyManagerContent extends StatelessWidget {
             children: [
               _buildRolesSidebar(state, context),
               Expanded(
-                child: Padding(
-                  padding: const EdgeInsets.all(Sizes.p16),
-                  child: Column(
-                    children: [
-                      Expanded(
-                        child: CustomCard.dashboardContent(
-                          height: deviceSize.height * Sizes.dashboardCardHeightFactor,
-                          width: SizeConfig.setDashboardWidth(),
-                          child: _buildMainContent(state),
-                        ),
+                child: Column(
+                  children: [
+                    Expanded(
+                      child: CustomCard.dashboardContent(
+                        height: deviceSize.height * Sizes.dashboardCardHeightFactor,
+                        width: SizeConfig.setDashboardWidth(),
+                        child: _buildMainContent(state, context),
                       ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
               ),
             ],
@@ -70,7 +68,7 @@ class PolicyManagerContent extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Padding(
-              padding: const EdgeInsets.all(Sizes.p16),
+              padding: const EdgeInsets.all(8.0),
               child: Row(
                 children: [
                   Text(
@@ -91,11 +89,40 @@ class PolicyManagerContent extends StatelessWidget {
               ),
             ),
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: Sizes.p16),
+              padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
               child: SizedBox(
+                height: 48,
+                width: double.infinity,
+                child: BlocBuilder<PolicyManagerBloc, PolicyManagerState>(
+                  builder: (context, state) {
+                    final isLogsView = state is PolicyManagerViewLogsPageLoaded;
+                    return OutlinedButton.icon(
+                      onPressed: () {
+                        context.read<PolicyManagerBloc>().add(const PolicyManagerShowLogs());
+                      },
+                      icon: const Icon(Icons.list_alt),
+                      label: const Text('View Logs'),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: isLogsView ? Colors.white : AppColor.primaryColor,
+                        backgroundColor: isLogsView ? AppColor.primaryColor : null,
+                        side: const BorderSide(color: AppColor.primaryColor),
+                        shape: const RoundedRectangleBorder(
+                          borderRadius: BorderRadius.zero,
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ),
+            ),
+            const SizedBox(height: 8),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
+              child: SizedBox(
+                height: 48,
                 width: double.infinity,
                 child: ElevatedButton.icon(
-                  onPressed: (state is PolicyManagerLoaded && state.isEditing) 
+                  onPressed: (state is PolicyManagerRoleLoaded && state.isEditing) 
                     ? null 
                     : () {
                         context.read<PolicyManagerBloc>().add(const PolicyManagerStartNewRole());
@@ -105,6 +132,9 @@ class PolicyManagerContent extends StatelessWidget {
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColor.primaryColor,
                     foregroundColor: Colors.white,
+                    shape: const RoundedRectangleBorder(
+                      borderRadius: BorderRadius.zero,
+                    ),
                   ),
                 ),
               ),
@@ -142,7 +172,9 @@ class PolicyManagerContent extends StatelessWidget {
           ],
         ),
       );
-    } else if (state is PolicyManagerLoaded) {
+    } else if (state is PolicyManagerRoleLoaded) {
+      return _buildLoadedRolesList(state.roles, context);
+    } else if (state is PolicyManagerViewLogsPageLoaded) {
       return _buildLoadedRolesList(state.roles, context);
     } else {
       return const Center(child: CircularProgressIndicator());
@@ -178,41 +210,98 @@ class PolicyManagerContent extends StatelessWidget {
   Widget _buildRoleListItem(Role role, BuildContext context) {
     return BlocBuilder<PolicyManagerBloc, PolicyManagerState>(
       builder: (context, state) {
-        final isEditing = state is PolicyManagerLoaded && state.isEditing;
+        final isEditing = state is PolicyManagerRoleLoaded && state.isEditing;
+        final isLogsView = state is PolicyManagerViewLogsPageLoaded;
+        final isDisabled = isEditing && !isLogsView;
         
-        return Card(
-          margin: const EdgeInsets.symmetric(horizontal: Sizes.p8, vertical: Sizes.p4),
-          color: Colors.white,
-          elevation: 1,
-          child: ListTile(
-            title: Text(
-              role.name,
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                color: isEditing ? AppColor.onSurfaceColor : null,
+        return Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
+          child: SizedBox(
+            height: 80,
+            width: double.infinity,
+            child: Card(
+              margin: EdgeInsets.zero,
+              color: Colors.white,
+              elevation: 1,
+              shape: const RoundedRectangleBorder(
+                borderRadius: BorderRadius.zero,
+              ),
+              child: ListTile(
+                contentPadding: const EdgeInsets.symmetric(horizontal: Sizes.p12, vertical: Sizes.p4),
+                title: Text(
+                  role.name,
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    color: isDisabled ? AppColor.onSurfaceColor : null,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                subtitle: Text(
+                  role.description.isEmpty ? 'No description' : role.description,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(color: AppColor.onSurfaceColor),
+                ),
+                onTap: isDisabled ? null : () {
+                  context.read<PolicyManagerBloc>().add(PolicyManagerRoleSelected(role.id ?? ''));
+                },
+                enabled: !isDisabled,
               ),
             ),
-            subtitle: Text(
-              role.description.isEmpty ? 'No description' : role.description,
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-              style: const TextStyle(color: AppColor.onSurfaceColor),
-            ),
-            onTap: isEditing ? null : () {
-              context.read<PolicyManagerBloc>().add(PolicyManagerRoleSelected(role.id ?? ''));
-            },
-            enabled: !isEditing,
           ),
         );
       },
     );
   }
 
-  Widget _buildMainContent(PolicyManagerState state) {
-    if (state is PolicyManagerLoaded && state.selectedRole != null) {
-      return PolicyManagerFormView(role: state.selectedRole!);
+  Widget _buildMainContent(PolicyManagerState state, BuildContext context) {
+    if (state is PolicyManagerViewLogsPageLoaded) {
+      // Show logs view
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Header with back button
+          Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: Row(
+              children: [
+                TextButton.icon(
+                  onPressed: () {
+                    context.read<PolicyManagerBloc>().add(const PolicyManagerShowRoles());
+                  },
+                  icon: const Icon(Icons.arrow_back),
+                  label: const Text('Back to Roles'),
+                ),
+                const Spacer(),
+                Text(
+                  'Policy Logs',
+                  style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          // Logs viewer
+          const Expanded(
+            child: Padding(
+              padding: EdgeInsets.all(8.0),
+              child: LogsViewer(),
+            ),
+          ),
+        ],
+      );
     }
     
+    if (state is PolicyManagerRoleLoaded) {
+      // Show role form if a role is selected
+      if (state.selectedRole != null) {
+        return PolicyManagerFormView(role: state.selectedRole!);
+      }
+    }
+    
+    // Default view when no role is selected
     return const Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,

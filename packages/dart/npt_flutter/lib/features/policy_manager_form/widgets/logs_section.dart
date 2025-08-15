@@ -44,7 +44,7 @@ class _LogsSectionState extends State<LogsSection> {
         Text(
           'Logs',
           style: Theme.of(context).textTheme.titleLarge?.copyWith(
-            fontWeight: FontWeight.w600,
+            fontWeight: FontWeight.w500,
           ),
         ),
         const SizedBox(height: 16),
@@ -57,80 +57,86 @@ class _LogsSectionState extends State<LogsSection> {
             children: [
               // Header row
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
                 decoration: BoxDecoration(
                   color: Colors.grey.shade100,
                   borderRadius: const BorderRadius.vertical(top: Radius.circular(8)),
                 ),
                 child: Row(
                   children: [
-                    Expanded(
-                      flex: 2,
+                    SizedBox(
+                      width: 130,
                       child: Text(
                         'Timestamp',
                         style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          fontWeight: FontWeight.w600,
+                          fontWeight: FontWeight.w300,
                         ),
+                        overflow: TextOverflow.ellipsis,
                       ),
                     ),
                     const SizedBox(width: 8),
-                    Expanded(
-                      flex: 2,
+                    SizedBox(
+                      width: 120,
                       child: Text(
-                        'From AtSign',
+                        'From atSign',
                         style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          fontWeight: FontWeight.w600,
+                          fontWeight: FontWeight.w300,
                         ),
+                        overflow: TextOverflow.ellipsis,
                       ),
                     ),
                     const SizedBox(width: 8),
-                    Expanded(
-                      flex: 2,
+                    SizedBox(
+                      width: 120,
                       child: Text(
-                        'To AtSign',
+                        'To atSign',
                         style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          fontWeight: FontWeight.w600,
+                          fontWeight: FontWeight.w300,
                         ),
+                        overflow: TextOverflow.ellipsis,
                       ),
                     ),
                     const SizedBox(width: 8),
-                    Expanded(
-                      flex: 1,
+                    SizedBox(
+                      width: 110,
                       child: Text(
-                        'Type',
+                        'Log Type',
                         style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          fontWeight: FontWeight.w600,
+                          fontWeight: FontWeight.w300,
                         ),
+                        overflow: TextOverflow.ellipsis,
                       ),
                     ),
                     const SizedBox(width: 8),
-                    Expanded(
-                      flex: 2,
+                    SizedBox(
+                      width: 100,
                       child: Text(
                         'Device Name',
                         style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          fontWeight: FontWeight.w600,
+                          fontWeight: FontWeight.w300,
                         ),
+                        overflow: TextOverflow.ellipsis,
                       ),
                     ),
                     const SizedBox(width: 8),
-                    Expanded(
-                      flex: 2,
+                    SizedBox(
+                      width: 100,
                       child: Text(
                         'Device Group',
                         style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          fontWeight: FontWeight.w600,
+                          fontWeight: FontWeight.w300,
                         ),
+                        overflow: TextOverflow.ellipsis,
                       ),
                     ),
                     const SizedBox(width: 8),
                     Expanded(
-                      flex: 3,
                       child: Text(
                         'Allowed Services',
                         style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          fontWeight: FontWeight.w600,
+                          fontWeight: FontWeight.w300,
                         ),
+                        overflow: TextOverflow.ellipsis,
                       ),
                     ),
                   ],
@@ -139,7 +145,7 @@ class _LogsSectionState extends State<LogsSection> {
               // Logs container
               Container(
                 height: 300,
-                padding: const EdgeInsets.all(8),
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
                 child: _buildLogsList(),
               ),
             ],
