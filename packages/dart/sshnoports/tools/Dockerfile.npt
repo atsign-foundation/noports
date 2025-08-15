@@ -1,6 +1,6 @@
 # Dockerfile.activate
 # Build image for a containerized call of the at_activate binary
-FROM dart:3.8.3@sha256:9d475ffd9d9e1353b2d2c67edfa1e7a1aebf8d7cd49f3179904ef34f3f21bdb0 AS buildimage
+FROM dart:3.9.0@sha256:bb7ee3bd0d370d6f54f4f701cf8eec10ad8a9d726f9073ad3586b2128ad78771 AS buildimage
 ENV PACKAGEDIR=packages/dart/sshnoports
 ENV BINARYDIR=/usr/local/at
 SHELL ["/bin/bash", "-c"]
