@@ -10,6 +10,8 @@ import 'daemon_at_signs_field.dart';
 import 'user_at_signs_field.dart';
 import 'device_list_widget.dart';
 import 'device_group_list_widget.dart';
+import 'logs_section.dart';
+import '../services/policy_log_monitor_service.dart';
 import '../../../styles/app_color.dart';
 import '../../../styles/sizes.dart';
 
@@ -28,6 +30,7 @@ class _FormContentState extends State<FormContent> {
   late Role _currentRole;
   late Role _originalRole; // Backup of original role for cancel functionality
   bool _isSaving = false;
+  final PolicyLogMonitorService _monitorService = PolicyLogMonitorService.getInstance();
 
   @override
   void initState() {
@@ -36,6 +39,24 @@ class _FormContentState extends State<FormContent> {
     _originalRole = widget.role; // Backup original role data
     // Automatically start editing if this is a new role (empty name)
     _isEditing = widget.role.name.isEmpty;
+    _startMonitoringForRole();
+  }
+
+  @override
+  void dispose() {
+    _monitorService.stopMonitoring();
+    super.dispose();
+  }
+
+  void _startMonitoringForRole() {
+    // Start monitoring for devices in the current role
+    if (_currentRole.devices.isNotEmpty) {
+      final deviceNames = _currentRole.devices.map((device) => device.name).toList();
+      _monitorService.startMonitoring(deviceNames);
+    } else {
+      // If no specific devices, start global monitoring to capture heartbeats and policy requests
+      _monitorService.startGlobalMonitoring();
+    }
   }
 
   @override
@@ -48,6 +69,8 @@ class _FormContentState extends State<FormContent> {
       if (widget.role.name.isEmpty) {
         _isEditing = true;
       }
+      // Restart monitoring for the new role
+      _startMonitoringForRole();
     }
   }
 
@@ -270,6 +293,8 @@ class _FormContentState extends State<FormContent> {
                                 userAtSigns: _currentRole.userAtSigns,
                               );
                             });
+                            // Restart monitoring when devices change
+                            _startMonitoringForRole();
                           },
                         ),
                       ),
@@ -323,6 +348,9 @@ class _FormContentState extends State<FormContent> {
                       ),
                     ],
                   ),
+                  const SizedBox(height: Sizes.p24),
+                  // Logs section
+                  const LogsSection(),
                 ],
               ),
             ),
