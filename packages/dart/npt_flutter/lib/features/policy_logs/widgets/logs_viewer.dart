@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'dart:async';
 import '../../policy_manager_form/widgets/policy_log_item.dart';
-import '../services/policy_log_monitor_service.dart';
+import '../../policy_manager_form/services/policy_log_monitor_service.dart';
 
 class LogsViewer extends StatefulWidget {
   const LogsViewer({super.key});
