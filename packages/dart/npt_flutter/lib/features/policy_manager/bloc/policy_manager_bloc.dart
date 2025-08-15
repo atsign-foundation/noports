@@ -47,6 +47,15 @@ class PolicyManagerBloc extends Bloc<PolicyManagerEvent, PolicyManagerState> {
             )
           : null;
       emit(PolicyManagerRoleLoaded(roles: currentState.roles, selectedRole: selectedRole, isEditing: false));
+    } else if (state is PolicyManagerViewLogsPageLoaded) {
+      final currentState = state as PolicyManagerViewLogsPageLoaded;
+      final selectedRole = currentState.roles.isNotEmpty
+          ? currentState.roles.firstWhere(
+              (role) => role.id == event.roleId,
+              orElse: () => currentState.roles.first,
+            )
+          : null;
+      emit(PolicyManagerRoleLoaded(roles: currentState.roles, selectedRole: selectedRole, isEditing: false));
     }
   }
 
