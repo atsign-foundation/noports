@@ -28,7 +28,7 @@ msix_config:
   store: true
 
 environment:
-  sdk: ^3.5.0
+  sdk: ^3.8.0
 
 # Dependencies specify other packages that your package needs in order to work.
 # To automatically upgrade your package dependencies to the latest versions
@@ -89,7 +89,7 @@ dev_dependencies:
     sdk: flutter
   integration_test:
     sdk: flutter
-  mockito: ^5.4.4
+  mockito: ^5.5.0
   bloc_test: ^9.1.7
   msix: ^3.16.8
 
