@@ -7,11 +7,7 @@ part of 'favorite.dart';
 // **************************************************************************
 
 FavoriteProfile _$FavoriteProfileFromJson(Map<String, dynamic> json) =>
-    FavoriteProfile(
-      uuid: json['uuid'] as String,
-    );
+    FavoriteProfile(uuid: json['uuid'] as String);
 
 Map<String, dynamic> _$FavoriteProfileToJson(FavoriteProfile instance) =>
-    <String, dynamic>{
-      'uuid': instance.uuid,
-    };
+    <String, dynamic>{'uuid': instance.uuid};

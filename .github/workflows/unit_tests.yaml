@@ -47,10 +47,6 @@ jobs:
       - uses: dart-lang/setup-dart@e51d8e571e22473a2ddebf0ef8a2123f0ab2c02c # v1.7.1
         with:
           sdk: ${{ matrix.dart-channel}}
-      - uses: actions/setup-go@d35c59abb061a4a6fb18e82ac0862c26744d6ab5 # v5.5.0
-        with:
-          go-version: "stable"
-          cache-dependency-path: tools/osv-scanner/go.sum
       - name: dart pub get
         working-directory: packages/dart/noports_core
         run: dart pub get
@@ -64,9 +60,9 @@ jobs:
       # It needs to look at pubspec.lock files, which is why it's
       # placed here, as the `dart pub get` above will create them
       - name: Run osv-scanner
-        working-directory: packages/dart
-        run: |
-          go install github.com/google/osv-scanner/v2/cmd/osv-scanner@04a8728383d8f286cf2b0f110e68482e8773df6e # v2.2.1
-          osv-scanner --lockfile=./sshnoports/pubspec.lock
-          osv-scanner --lockfile=./sshnp_flutter/pubspec.lock
-          osv-scanner --lockfile=./noports_core/pubspec.lock
+        uses: google/osv-scanner-action/osv-scanner-action@456ceb78310755116e0a3738121351006286b797 # v2.2.1
+        with:
+          scan-args: |-
+            --lockfile=./packages/dart/sshnoports/pubspec.lock
+            --lockfile=./packages/dart/sshnp_flutter/pubspec.lock
+            --lockfile=./packages/dart/noports_core/pubspec.lock
