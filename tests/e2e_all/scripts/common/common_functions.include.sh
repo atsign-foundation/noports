@@ -51,7 +51,7 @@ getBaseSshnpCommand() {
   else
     l2=" -t $daemonAtSign -r $srvAtSign -u $remoteUsername"
   fi
-  l3=" --root-server $atDirectoryHost"
+  l3=" --root-domain $atDirectoryHost"
   echo "$l1" "$l2" "$l3"
 }
 
@@ -62,7 +62,7 @@ getBaseNptCommand() {
   clientBinaryPath="$1"
   l1="$clientBinaryPath/npt -f $clientAtSign -d $deviceName"
   l2=" -t $daemonAtSign -r $srvAtSign"
-  l3=" --root-server $atDirectoryHost"
+  l3=" --root-domain $atDirectoryHost"
   if [ -z "$2" ]; then
     echo "$l1" "$l2" "$l3"
   else
@@ -762,7 +762,7 @@ runDockerDaemon() {
     --name \"$containerName\" \
     -v \"$testRuntimeDir/keys/:/atsign/.atsign/keys/\" \
     \"$tag\" \
-    /bin/bash -c \"sudo service ssh start && /usr/local/bin/sshnpd -a $daemonAt -m $clientAt -d $deviceName $daemonFlags --root-server $atDirectoryHost -v\""
+    /bin/bash -c \"sudo service ssh start && /usr/local/bin/sshnpd -a $daemonAt -m $clientAt -d $deviceName $daemonFlags --root-domain $atDirectoryHost -v\""
 
   logInfo "Executing: $dockerRunCommand"
   eval "$dockerRunCommand"
