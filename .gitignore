@@ -54,3 +54,4 @@ dist/
 __pycache__
 
 .env
+.serena
