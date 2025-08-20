@@ -29,9 +29,15 @@ What to use for outbound ssh connections.
 
 \[openssh (default), dart]
 
-#### --root-domain
+#### --root-server
 
 atDirectory domain
+
+(Defaults to "root.atsign.org")
+
+#### --root-domain
+
+atDirectory domain (deprecated, use --root-server instead)
 
 (Defaults to "root.atsign.org")
 
