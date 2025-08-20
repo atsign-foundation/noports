@@ -115,6 +115,7 @@ class SshnpArg {
     verboseArg,
     remoteUserNameArg,
     tunnelUserNameArg,
+    rootServerArg,
     rootDomainArg,
     remoteSshdPortArg,
     idleTimeoutArg,

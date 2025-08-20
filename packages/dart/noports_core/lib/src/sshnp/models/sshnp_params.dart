@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:at_chops/at_chops.dart';
 import 'package:at_commons/at_commons.dart';
@@ -574,7 +575,7 @@ class SshnpPartialParams {
       remoteUsername: args[SshnpArg.remoteUserNameArg.name],
       tunnelUsername: args[SshnpArg.tunnelUserNameArg.name],
       verbose: args[SshnpArg.verboseArg.name],
-      rootDomain: args[SshnpArg.rootDomainArg.name],
+      rootDomain: _getRootDomain(args),
       listDevices: args[SshnpArg.listDevicesArg.name],
       remoteSshdPort: args[SshnpArg.remoteSshdPortArg.name],
       idleTimeout: args[SshnpArg.idleTimeoutArg.name],
@@ -641,5 +642,21 @@ class SshnpPartialParams {
       params,
       SshnpPartialParams.fromArgMap(parsedArgsMap),
     );
+  }
+
+  static String _getRootDomain(Map<String, dynamic> args) {
+    // Prefer the new --root-server flag
+    if (args[SshnpArg.rootServerArg.name] != null) {
+      return args[SshnpArg.rootServerArg.name];
+    }
+    
+    // Fall back to deprecated --root-domain flag with warning
+    if (args[SshnpArg.rootDomainArg.name] != null) {
+      stderr.writeln('Warning: --root-domain is deprecated, please use --root-server instead');
+      return args[SshnpArg.rootDomainArg.name];
+    }
+    
+    // Default value
+    return DefaultArgs.rootDomain;
   }
 }
