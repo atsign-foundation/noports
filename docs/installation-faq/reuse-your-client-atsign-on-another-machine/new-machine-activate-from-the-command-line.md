@@ -1,3 +1,7 @@
+---
+hidden: true
+---
+
 # New machine: activate from the command line
 
 {% hint style="info" %}

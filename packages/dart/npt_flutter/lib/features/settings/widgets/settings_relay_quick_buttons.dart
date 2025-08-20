@@ -11,7 +11,8 @@ class SettingsRelayQuickButtons extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final ScrollController controller = ScrollController();
-    return BlocSelector<SettingsBloc, SettingsState, String?>(selector: (SettingsState state) {
+    return BlocSelector<SettingsBloc, SettingsState, String?>(
+        selector: (SettingsState state) {
       if (state is SettingsLoadedState) {
         return state.settings.relayAtsign;
       }
@@ -31,7 +32,8 @@ class SettingsRelayQuickButtons extends StatelessWidget {
                 children: [
                   ...RelayOptions.values.map(
                     (e) => Padding(
-                      padding: const EdgeInsets.only(right: Sizes.p10, top: Sizes.p4),
+                      padding: const EdgeInsets.only(
+                          right: Sizes.p10, top: Sizes.p4),
                       child: CustomContainer.foreground(
                         key: Key(e.name),
                         child: SizedBox(
@@ -43,7 +45,9 @@ class SettingsRelayQuickButtons extends StatelessWidget {
                             onChanged: (value) {
                               var bloc = context.read<SettingsBloc>();
                               bloc.add(SettingsEditEvent(
-                                settings: (bloc.state as SettingsLoadedState).settings.copyWith(relayAtsign: value),
+                                settings: (bloc.state as SettingsLoadedState)
+                                    .settings
+                                    .copyWith(relayAtsign: value),
                                 save: true,
                               ));
                             },

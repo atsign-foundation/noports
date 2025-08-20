@@ -227,7 +227,7 @@ class AppLocalizationsZh extends AppLocalizations {
       '使用激活服务器验证 OTP 失败，请重试。如果问题仍然存在，请联系支持人员。';
 
   @override
-  String get errorProfileLoadFailed => '加载此配置文件失败，请手动刷新：';
+  String get errorProfileLoadFailed => '加载此配置文件失败：';
 
   @override
   String get errorRootDomainNotSupported => '自动激活不支持指定的根域。';
@@ -836,7 +836,7 @@ class AppLocalizationsZhHansCh extends AppLocalizationsZh {
       '使用激活服务器验证 OTP 失败，请重试。如果问题仍然存在，请联系支持人员。';
 
   @override
-  String get errorProfileLoadFailed => '加载此配置文件失败，请手动刷新：';
+  String get errorProfileLoadFailed => '加载此配置文件失败：';
 
   @override
   String get errorRootDomainNotSupported => '自动激活不支持指定的根域。';
@@ -1444,7 +1444,7 @@ class AppLocalizationsZhHantHk extends AppLocalizationsZh {
       '使用啟動伺服器驗證 OTP 失敗，請重試。如果問題仍然存在，請聯絡支援人員。';
 
   @override
-  String get errorProfileLoadFailed => '載入此設定檔失敗，請手動重新整理：';
+  String get errorProfileLoadFailed => '載入此設定檔失敗：';
 
   @override
   String get errorRootDomainNotSupported => '自動啟動不支援指定的根網域。';

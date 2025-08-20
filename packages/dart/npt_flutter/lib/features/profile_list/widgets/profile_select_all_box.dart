@@ -10,11 +10,13 @@ class ProfileSelectAllBox extends StatelessWidget {
   Widget build(BuildContext context) {
     return BlocBuilder<ProfileListBloc, ProfileListState>(
       builder: (BuildContext context, ProfileListState list) {
-        return BlocSelector<ProfilesSelectedCubit, ProfilesSelectedState, (bool, bool)?>(
+        return BlocSelector<ProfilesSelectedCubit, ProfilesSelectedState,
+            (bool, bool)?>(
           selector: (ProfilesSelectedState state) {
             if (list is! ProfileListLoaded) return null;
             // one - whether all elements are selected or not
-            var allChecked = list.profiles.isNotEmpty && state.selected.containsAll(list.profiles);
+            var allChecked = list.profiles.isNotEmpty &&
+                state.selected.containsAll(list.profiles);
             // two - whether some elements are selected or not
             var anyChecked = state.selected.isNotEmpty;
             return (allChecked, anyChecked);

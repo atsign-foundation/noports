@@ -60,7 +60,9 @@ class _OnboardingButtonState extends State<OnboardingButton> {
               bool shouldOnboard = await selectAtsign();
               if (shouldOnboard && context.mounted) {
                 var atsignInformation = context.read<OnboardingCubit>().state;
-                onboard(atsign: atsignInformation.atSign, rootDomain: atsignInformation.rootDomain);
+                onboard(
+                    atsign: atsignInformation.atSign,
+                    rootDomain: atsignInformation.rootDomain);
               }
             } finally {
               if (mounted) {
@@ -120,11 +122,16 @@ class _OnboardingButtonState extends State<OnboardingButton> {
     return results ?? false;
   }
 
-  Future<void> onboard({required String atsign, required String rootDomain, bool isFromInitState = false}) async {
-    var atSigns = await KeyChainManager.getInstance().getAtSignListFromKeychain();
+  Future<void> onboard(
+      {required String atsign,
+      required String rootDomain,
+      bool isFromInitState = false}) async {
+    var atSigns =
+        await KeyChainManager.getInstance().getAtSignListFromKeychain();
     var apiKey = await Constants.appAPIKey;
     var config = AtOnboardingConfig(
-      atClientPreference: await AtClientMethods.loadAtClientPreference(rootDomain),
+      atClientPreference:
+          await AtClientMethods.loadAtClientPreference(rootDomain),
       rootEnvironment: RootEnvironment.Production,
       domain: rootDomain,
       appAPIKey: apiKey,
@@ -151,7 +158,10 @@ class _OnboardingButtonState extends State<OnboardingButton> {
     switch (onboardingResult?.status ?? AtOnboardingResultStatus.cancel) {
       case AtOnboardingResultStatus.success:
         await initializeContactsService(rootDomain: rootDomain);
-        AtClientManager.getInstance().atClient.syncService.addProgressListener(ProfileProgressListener());
+        AtClientManager.getInstance()
+            .atClient
+            .syncService
+            .addProgressListener(ProfileProgressListener());
         AtClientManager.getInstance().atClient.syncService.sync();
         postOnboard(onboardingResult!.atsign!, rootDomain);
         final result = await saveAtsignInformation(
@@ -160,7 +170,8 @@ class _OnboardingButtonState extends State<OnboardingButton> {
             rootDomain: rootDomain,
           ),
         );
-        final backupKeyCubit = App.navState.currentContext!.read<BackupKeyCubit>();
+        final backupKeyCubit =
+            App.navState.currentContext!.read<BackupKeyCubit>();
 
         await backupKeyCubit.putBackupKeyStatus(backupKeyCubit.state);
 
@@ -176,7 +187,8 @@ class _OnboardingButtonState extends State<OnboardingButton> {
           SnackBar(
             backgroundColor: Colors.red,
             content: Text(
-              onboardingResult?.message ?? AppLocalizations.of(context)!.onboardingError,
+              onboardingResult?.message ??
+                  AppLocalizations.of(context)!.onboardingError,
             ),
           ),
         );
@@ -186,7 +198,8 @@ class _OnboardingButtonState extends State<OnboardingButton> {
     }
   }
 
-  Future<AtOnboardingResult?> handleAtsignByStatus(String atsign, NoPortsOnboardingUtil util) async {
+  Future<AtOnboardingResult?> handleAtsignByStatus(
+      String atsign, NoPortsOnboardingUtil util) async {
     AtStatus status;
 
     try {
@@ -204,7 +217,9 @@ class _OnboardingButtonState extends State<OnboardingButton> {
       case AtSignStatus.unavailable:
       case AtSignStatus.teapot:
         // When onboarding from teapot, set backup status to false (not atKeys not backed up)
-        App.navState.currentContext!.read<BackupKeyCubit>().setBackupKeyStatus(false);
+        App.navState.currentContext!
+            .read<BackupKeyCubit>()
+            .setBackupKeyStatus(false);
         final apiKey = await Constants.appAPIKey;
 
         if (apiKey == null) {
@@ -214,9 +229,12 @@ class _OnboardingButtonState extends State<OnboardingButton> {
           break;
         }
         AtOnboardingConstants.setApiKey(apiKey);
-        AtOnboardingConstants.rootDomain = util.config.atClientPreference.rootDomain;
+        AtOnboardingConstants.rootDomain =
+            util.config.atClientPreference.rootDomain;
 
-        await AtOnboardingLocalizations.load(LanguageUtil.getLanguageFromLocale(Locale(Platform.localeName)).locale);
+        await AtOnboardingLocalizations.load(
+            LanguageUtil.getLanguageFromLocale(Locale(Platform.localeName))
+                .locale);
         if (!mounted) return null;
         Map<String, String> apis = {
           "root.atsign.org": "my.atsign.com",
@@ -244,11 +262,14 @@ class _OnboardingButtonState extends State<OnboardingButton> {
 
         if (result is AtOnboardingResult) {
           //Update primary atsign after onboard success
-          if (result.status == AtOnboardingResultStatus.success && result.atsign != null) {
+          if (result.status == AtOnboardingResultStatus.success &&
+              result.atsign != null) {
             var onboardingService = OnboardingService.getInstance();
-            bool res = await onboardingService.changePrimaryAtsign(atsign: result.atsign!);
+            bool res = await onboardingService.changePrimaryAtsign(
+                atsign: result.atsign!);
             if (!res) {
-              result = AtOnboardingResult.error(message: strings.errorSwitchAtSignFailed);
+              result = AtOnboardingResult.error(
+                  message: strings.errorSwitchAtSignFailed);
             }
           }
         }
@@ -269,7 +290,8 @@ class _OnboardingButtonState extends State<OnboardingButton> {
           final statusStream = util.uploadAtKeysFile(atsign);
           result = await handleFileUploadStatusStream(statusStream, atsign);
         } else {
-          final atClientPrefernce = await AtClientMethods.loadAtClientPreference(
+          final atClientPrefernce =
+              await AtClientMethods.loadAtClientPreference(
             util.config.atClientPreference.rootDomain,
           );
           if (!mounted) return null;
@@ -282,7 +304,9 @@ class _OnboardingButtonState extends State<OnboardingButton> {
             ),
           );
           // When onboarding via APKAM or uploading atKeys, set backup status to true (atKeys don't need to be backed up)
-          App.navState.currentContext!.read<BackupKeyCubit>().setBackupKeyStatus(true);
+          App.navState.currentContext!
+              .read<BackupKeyCubit>()
+              .setBackupKeyStatus(true);
         }
       case AtSignStatus.notFound:
         result = AtOnboardingResult.error(
@@ -297,7 +321,8 @@ class _OnboardingButtonState extends State<OnboardingButton> {
     return result;
   }
 
-  Future<AtOnboardingResult?> handleFileUploadStatusStream(Stream<FileUploadStatus> statusStream, String atsign) async {
+  Future<AtOnboardingResult?> handleFileUploadStatusStream(
+      Stream<FileUploadStatus> statusStream, String atsign) async {
     AtOnboardingResult? result;
     outer:
     await for (FileUploadStatus status in statusStream) {

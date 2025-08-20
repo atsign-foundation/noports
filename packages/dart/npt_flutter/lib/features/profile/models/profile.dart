@@ -96,7 +96,9 @@ final class Profile extends Loggable with Favoritable {
     bool overrideRelayWithFallback = false,
   }) {
     String srvdAtSign = fallbackRelayAtsign;
-    if (!overrideRelayWithFallback && relayAtsign != null && relayAtsign!.isNotEmpty) {
+    if (!overrideRelayWithFallback &&
+        relayAtsign != null &&
+        relayAtsign!.isNotEmpty) {
       srvdAtSign = relayAtsign!;
     }
     return NptParams(

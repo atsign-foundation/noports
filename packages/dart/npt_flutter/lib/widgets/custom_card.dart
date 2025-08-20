@@ -165,7 +165,11 @@ class CustomCard extends StatelessWidget {
       height: height,
       width: width,
       child: Padding(
-        padding: EdgeInsets.only(left: leftPadding, right: rightPadding, top: topPadding, bottom: bottomPadding),
+        padding: EdgeInsets.only(
+            left: leftPadding,
+            right: rightPadding,
+            top: topPadding,
+            bottom: bottomPadding),
         child: child,
       ),
     );

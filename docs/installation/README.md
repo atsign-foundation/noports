@@ -1,152 +1,118 @@
 ---
-icon: desktop-arrow-down
 description: >-
-  On this page you will find instructions on how to get started with NoPorts and
-  set up secure remote access. Installation guides are also provided for each
-  Operating System. Let's get started!
+  Get started with NoPorts! Find secure remote access setup instructions and
+  installation guides for each OS on this page.
+icon: desktop-arrow-down
 ---
 
 # Installation
 
-## Installation Overview
+Getting Started Overview
 
-To complete an installation of NoPorts and set up remote access from a client to a remote device, we must perform an installation on both the client and device machines. We will also obtain two atSigns during registration: one client atSign and one device atSign. Once we have the client and device atSigns, we are ready to begin installation.
+{% stepper %}
+{% step %}
+### <mark style="color:orange;">Sign up for NoPorts</mark>
 
-1. [Obtain your NoPorts license](./#id-1.-obtain-your-license) from [noports.com](https://my.noports.com/no-ports-plans)\
-   &#xNAN;_&#x59;ou can start with a 30-day evaluation license, no credit-card required_
-2. [Install NoPorts](./#id-2.-install-noports) software on your devices
-   1. Install the NoPorts client\
-      &#xNAN;_&#x74;ypically on your desktop_
-      1. Activate both management keys on your desktop
-   2. Install the NoPorts daemon\
-      &#xNAN;_&#x6F;nto the device(s) you want to connect to, repeat for each device_
-      1. Use our enrollment tool to activate your device
-3. Use NoPorts!
-4. Reach out to us\
-   We want to hear about your use-cases. We take all feedback into consideration, it helps us make the best tool we possibly can.
+Sign up for a NoPorts subscription or free trial, which includes 2 atSigns.
+{% endstep %}
 
-The Client is defined as the machine where we are launching the remote access from. The Device is defined as the remote device that we are connecting to.
+{% step %}
+### <mark style="color:orange;">Install the NoPorts Client</mark>&#x20;
 
-* Client installation has two options: Desktop App or CLI
-* Device installation is CLI only
+Download and install the NoPorts Client on the machine you are connecting from.
+{% endstep %}
 
-In summary, Installing and using NoPorts consists of the following steps:
+{% step %}
+### <mark style="color:orange;">Install the NoPorts Daemon</mark>&#x20;
 
-1. Obtain NoPorts License and atSigns
-2. Install the NoPorts Client on the client machine
-   1. Register the client atSign
-   2. Register device atSign
-3. Install the NoPorts Daemon on the remote device
-   1. Repeat for multiple devices
+Download and install the NoPorts Daemon onto the machine(s) you are connecting to.
+{% endstep %}
 
-Once NoPorts is installed you will be able to utilize it for any TCP connections such as remote access via SSH and RDP etc! Please see the complete instructions below:
+{% step %}
+### <mark style="color:orange;">Use NoPorts</mark>
 
-## 1. Obtain NoPorts License and atSigns
+Use NoPorts or explore the use cases available [here](../use-cases/).
+{% endstep %}
+{% endstepper %}
 
-To begin, you will need a NoPorts subscription or Free Trial
+### Sign up for a NoPorts subscription or free trial
 
-1. [Purchase NoPorts](https://my.noports.com/no-ports-plans)
-2. Or, [Activate a Free Trial](https://my.noports.com/no-ports-invite/30dayfreetrial)
+Head over to [my.noports.com/no-ports-plans](https://my.noports.com/no-ports-plans) to sign up for a subscription or free trial.
 
-{% hint style="info" %}
-During registration, you will receive your client and device atSigns. Ensure you make note of them for future reference.
+{% hint style="warning" %}
+During registration, you will receive your client and device atSigns. Ensure that you make note of them for future reference.
 {% endhint %}
 
-## 2. Install the NoPorts Client on the client machine
+### Quick Start for macOS and Windows Only
 
-{% hint style="info" %}
-If this is your first time using NoPorts on Mac or Windows, we recommend getting started with the desktop app for client installation.
-{% endhint %}
+Follow these guides to try NoPorts using the desktop application. You can establish a remote connection to our test connection page or set up a connection to your own remote machine.&#x20;
 
-### MacOS: Choose Desktop App or CLI installation for the client
-
-{% content-ref url="macos/desktop.md" %}
-[desktop.md](macos/desktop.md)
+{% content-ref url="quick-start-for-macos-and-windows/" %}
+[quick-start-for-macos-and-windows](quick-start-for-macos-and-windows/)
 {% endcontent-ref %}
 
-{% content-ref url="macos/cli-client.md" %}
-[cli-client.md](macos/cli-client.md)
-{% endcontent-ref %}
+### Install via CLI for macOS, Linux and Windows&#x20;
 
-### Linux: CLI only
+Follow these detailed guides to install NoPorts via the command line and use it for establishing remote connections to your devices.
 
-{% content-ref url="linux/cli-client.md" %}
-[cli-client.md](linux/cli-client.md)
-{% endcontent-ref %}
+Select your operating system and remote device to see specific installation instructions.
 
-### Windows: Choose Desktop App or CLI installation for the client&#x20;
+<details>
 
-{% content-ref url="windows/desktop.md" %}
-[desktop.md](windows/desktop.md)
-{% endcontent-ref %}
+<summary>Connecting from macOS</summary>
 
-{% content-ref url="windows/cli-client.md" %}
-[cli-client.md](windows/cli-client.md)
-{% endcontent-ref %}
+<table data-view="cards"><thead><tr><th></th><th data-hidden data-card-target data-type="content-ref"></th></tr></thead><tbody><tr><td>to macOS</td><td><a href="connecting-from-macos/macos-to-macos.md">macos-to-macos.md</a></td></tr><tr><td>to Linux</td><td><a href="connecting-from-macos/macos-to-linux.md">macos-to-linux.md</a></td></tr><tr><td>to Windows</td><td><a href="connecting-from-macos/macos-to-windows.md">macos-to-windows.md</a></td></tr></tbody></table>
 
-## 3. Install the NoPorts Daemon on the remote device
+</details>
 
-### MacOS
+<details>
 
-{% content-ref url="macos/device.md" %}
-[device.md](macos/device.md)
-{% endcontent-ref %}
+<summary>Connecting from Linux</summary>
 
-### Linux:
+<table data-view="cards"><thead><tr><th></th><th data-hidden data-card-target data-type="content-ref"></th></tr></thead><tbody><tr><td>to macOS</td><td><a href="connecting-from-linux/linux-to-macos.md">linux-to-macos.md</a></td></tr><tr><td>to Linux</td><td><a href="connecting-from-linux/linux-to-linux.md">linux-to-linux.md</a></td></tr><tr><td>to Windows</td><td><a href="connecting-from-linux/linux-to-windows.md">linux-to-windows.md</a></td></tr></tbody></table>
 
-{% content-ref url="linux/device.md" %}
-[device.md](linux/device.md)
-{% endcontent-ref %}
+</details>
 
-### Windows:
+<details>
 
-{% content-ref url="windows/device.md" %}
-[device.md](windows/device.md)
-{% endcontent-ref %}
+<summary>Connecting from Windows</summary>
 
-#### This concludes the installation instructions and you are now ready to use NoPorts for secure remote access!
+<table data-view="cards"><thead><tr><th></th><th data-hidden data-card-target data-type="content-ref"></th></tr></thead><tbody><tr><td>to macOS</td><td><a href="connecting-from-windows/windows-to-macos.md">windows-to-macos.md</a></td></tr><tr><td>to Linux</td><td><a href="connecting-from-windows/windows-to-linux.md">windows-to-linux.md</a></td></tr><tr><td>to Windows</td><td><a href="connecting-from-windows/windows-to-windows.md">windows-to-windows.md</a></td></tr></tbody></table>
+
+</details>
+
+### Other Installation Options
+
+<table data-view="cards"><thead><tr><th></th><th data-hidden data-card-cover data-type="files"></th><th data-hidden data-card-target data-type="content-ref"></th></tr></thead><tbody><tr><td><strong>Cloud Installation</strong></td><td><a href="../.gitbook/assets/Cloud.png">Cloud.png</a></td><td><a href="cloud-installation-guides/">cloud-installation-guides</a></td></tr><tr><td><strong>OpenWrt Installation</strong></td><td><a href="../.gitbook/assets/Webserver.png">Webserver.png</a></td><td><a href="openwrt-installation-guide.md">openwrt-installation-guide.md</a></td></tr><tr><td><strong>Manual Installation</strong></td><td><a href="../.gitbook/assets/Manual Installation.png">Manual Installation.png</a></td><td><a href="advanced-installation-guides/">advanced-installation-guides</a></td></tr><tr><td><strong>Custom OS Installation</strong></td><td><a href="../.gitbook/assets/Custom OS Install.png">Custom OS Install.png</a></td><td><a href="custom-os-device-installs/">custom-os-device-installs</a></td></tr><tr><td><strong>Installs at Scale</strong></td><td><a href="../.gitbook/assets/atScale.png">atScale.png</a></td><td><a href="broken-reference">Broken link</a></td></tr><tr><td><strong>Upgrading NoPorts</strong></td><td><a href="../.gitbook/assets/Updating NoPorts.png">Updating NoPorts.png</a></td><td><a href="upgrading-noports-software/">upgrading-noports-software</a></td></tr></tbody></table>
 
 ## Use NoPorts
 
-Start by exploring the use-cases available in the side bar such as SSH, RDP, SFTP, Web Server, and SMB. We also provide in-depth usage information here:
+Start by exploring the available use cases, such as [MCP](../use-cases/mcp.md), [SSH](../use-cases/ssh.md), [RDP](../use-cases/rdp.md), [SFTP](../use-cases/sftp.md), [Web Server](../use-cases/web-server.md), and [SMB](../use-cases/smb.md). We also provide in-depth usage information here.
 
 {% content-ref url="../usage/" %}
 [usage](../usage/)
 {% endcontent-ref %}
 
-## Other Installation Guides:
+### Need Help?
 
-We have additional installation guides below if you are looking for more advanced/custom installations, or installing NoPorts as part of creating a new virtual machine.
-
-### Manual Installation Guides
-
-These are supplementary guides, which involve some manual work.
-
-{% content-ref url="advanced-installation-guides/" %}
-[advanced-installation-guides](advanced-installation-guides/)
+{% content-ref url="../reference/faq.md" %}
+[faq.md](../reference/faq.md)
 {% endcontent-ref %}
 
-{% content-ref url="custom-os-device-installs/ipfire.md" %}
-[ipfire.md](custom-os-device-installs/ipfire.md)
-{% endcontent-ref %}
+<details>
 
-### Cloud Installation Guides
+<summary><mark style="color:orange;">via Email</mark></summary>
 
-These guides will show you how to install NoPorts as part of creating a new VM.
+Send us an email: [support@noports.com](mailto:support@noports.com)
 
-{% content-ref url="cloud-installation-guides/automated-installation-on-amazon-web-services-aws.md" %}
-[automated-installation-on-amazon-web-services-aws.md](cloud-installation-guides/automated-installation-on-amazon-web-services-aws.md)
-{% endcontent-ref %}
+Monday - Friday, 6am - 6pm (PT)
 
-{% content-ref url="cloud-installation-guides/automated-installation-on-google-cloud-platform-gcp.md" %}
-[automated-installation-on-google-cloud-platform-gcp.md](cloud-installation-guides/automated-installation-on-google-cloud-platform-gcp.md)
-{% endcontent-ref %}
+</details>
 
-{% content-ref url="cloud-installation-guides/automated-installation-on-microsoft-azure.md" %}
-[automated-installation-on-microsoft-azure.md](cloud-installation-guides/automated-installation-on-microsoft-azure.md)
-{% endcontent-ref %}
+<details>
 
-{% content-ref url="cloud-installation-guides/automated-installation-on-oracle-cloud-infrastructure-oci.md" %}
-[automated-installation-on-oracle-cloud-infrastructure-oci.md](cloud-installation-guides/automated-installation-on-oracle-cloud-infrastructure-oci.md)
-{% endcontent-ref %}
+<summary><mark style="color:orange;">via Discord</mark></summary>
 
+[Join our Discord](https://discord.gg/atsign-778383211214536722) for technical support. Our team and community are here to help!
+
+</details>

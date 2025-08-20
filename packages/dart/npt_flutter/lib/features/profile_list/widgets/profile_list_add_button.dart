@@ -18,7 +18,8 @@ class ProfileListAddButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final strings = AppLocalizations.of(context)!;
-    return BlocSelector<ProfilesSelectedCubit, ProfilesSelectedState, Set<String>>(
+    return BlocSelector<ProfilesSelectedCubit, ProfilesSelectedState,
+            Set<String>>(
         selector: (ProfilesSelectedState state) => state.selected,
         builder: (BuildContext context, Set<String> selected) {
           // Hide this button if something is selected
@@ -27,7 +28,8 @@ class ProfileListAddButton extends StatelessWidget {
             onPressed: () {
               final uuid = Uuid.generate();
               if (context.mounted) {
-                wrapperNav.currentState!.pushNamed(HomeRoutes.profileForm, arguments: ProfileFormPageArguments(uuid));
+                wrapperNav.currentState!.pushNamed(HomeRoutes.profileForm,
+                    arguments: ProfileFormPageArguments(uuid));
               }
             },
             label: Text(strings.addNew),

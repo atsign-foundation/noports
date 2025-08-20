@@ -3,7 +3,8 @@ import 'package:npt_flutter/constants.dart';
 import 'package:path_provider/path_provider.dart';
 
 class AtClientMethods {
-  static Future<AtClientPreference> loadAtClientPreference(String rootDomain) async {
+  static Future<AtClientPreference> loadAtClientPreference(
+      String rootDomain) async {
     var dir = await getApplicationSupportDirectory();
 
     return AtClientPreference()

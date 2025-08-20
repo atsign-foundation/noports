@@ -69,7 +69,7 @@
   "errorAuthenticationTimedOut": "身份验证超时。",
   "errorOtpRequestFailed": "请求 OTP 失败，请尝试重新发送，如果问题仍然存在，请联系支持人员。",
   "errorOtpVerificationFailed": "使用激活服务器验证 OTP 失败，请重试。如果问题仍然存在，请联系支持人员。",
-  "errorProfileLoadFailed": "加载此配置文件失败，请手动刷新：",
+  "errorProfileLoadFailed": "加载此配置文件失败：",
   "errorRootDomainNotSupported": "自动激活不支持指定的根域。",
   "errorSwitchAtSignFailed": "激活后切换 atSign 失败。",
   "europe": "欧洲",

@@ -10,10 +10,12 @@ class ProfileRelayAtSignTextField extends StatefulWidget {
   const ProfileRelayAtSignTextField({super.key});
 
   @override
-  State<ProfileRelayAtSignTextField> createState() => _ProfileRelayAtSignTextFieldState();
+  State<ProfileRelayAtSignTextField> createState() =>
+      _ProfileRelayAtSignTextFieldState();
 }
 
-class _ProfileRelayAtSignTextFieldState extends State<ProfileRelayAtSignTextField> {
+class _ProfileRelayAtSignTextFieldState
+    extends State<ProfileRelayAtSignTextField> {
   final TextEditingController controller = TextEditingController();
   @override
   Widget build(BuildContext context) {
@@ -26,8 +28,9 @@ class _ProfileRelayAtSignTextFieldState extends State<ProfileRelayAtSignTextFiel
       },
       builder: (BuildContext context, String? relayAtsign) {
         if (relayAtsign == null) return gap0;
-        Future.microtask(() => controller.value =
-            TextEditingValue(text: relayAtsign, selection: TextSelection.collapsed(offset: relayAtsign.length)));
+        Future.microtask(() => controller.value = TextEditingValue(
+            text: relayAtsign,
+            selection: TextSelection.collapsed(offset: relayAtsign.length)));
         return SizedBox(
           width: Sizes.p200,
           height: Sizes.p70,
@@ -41,11 +44,14 @@ class _ProfileRelayAtSignTextFieldState extends State<ProfileRelayAtSignTextFiel
               validator: FormValidator.validateEmptyRelayField,
               onChanged: (value) {
                 value = value.atsignify();
-                controller.value =
-                    TextEditingValue(text: value, selection: TextSelection.collapsed(offset: value.length));
+                controller.value = TextEditingValue(
+                    text: value,
+                    selection: TextSelection.collapsed(offset: value.length));
                 var bloc = context.read<ProfileBloc>();
                 bloc.add(ProfileEditEvent(
-                  profile: (bloc.state as ProfileLoadedState).profile.copyWith(relayAtsign: value),
+                  profile: (bloc.state as ProfileLoadedState)
+                      .profile
+                      .copyWith(relayAtsign: value),
                 ));
               }),
         );

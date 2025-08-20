@@ -1,3 +1,7 @@
+---
+hidden: true
+---
+
 # New machine: activate from the Windows installer
 
 ### Step 2) Enroll the new key pair (send a request for keys from the new machine)

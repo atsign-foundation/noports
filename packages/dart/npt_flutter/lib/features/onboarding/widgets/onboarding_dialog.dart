@@ -78,7 +78,8 @@ class _OnboardingDialogState extends State<OnboardingDialog> {
                   ],
                 ),
               ),
-              BlocBuilder<OnboardingCubit, OnboardingState>(builder: (context, state) {
+              BlocBuilder<OnboardingCubit, OnboardingState>(
+                  builder: (context, state) {
                 return SizedBox(
                   width: width,
                   child: CustomContainer.background(
@@ -92,7 +93,9 @@ class _OnboardingDialogState extends State<OnboardingDialog> {
                       ),
                       const Spacer(),
                       ElevatedButton(
-                        onPressed: FormValidator.validateRequiredAtsignField(state.atSign) == null
+                        onPressed: FormValidator.validateRequiredAtsignField(
+                                    state.atSign) ==
+                                null
                             ? () {
                                 Navigator.of(context).pop(true);
                               }

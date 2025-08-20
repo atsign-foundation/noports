@@ -6,10 +6,16 @@ import 'package:npt_flutter/constants.dart';
 import 'package:npt_flutter/features/favorite/favorite.dart';
 
 class FavoriteRepository {
+  final AtClient? _atClient;
   Map<String, Favorite>? _favoriteCache;
+
+  FavoriteRepository({AtClient? atClient}) : _atClient = atClient;
+
+  AtClient get _client => _atClient ?? AtClientManager.getInstance().atClient;
+
   static AtKey getFavoriteAtKey({String? sharedBy}) {
     var key = AtKey.self(
-      'favorites',
+      Constants.favoriteKeyName,
       namespace: Constants.namespace,
     );
     if (sharedBy != null) key.sharedBy(sharedBy);
@@ -20,12 +26,11 @@ class FavoriteRepository {
     if (useCache && _favoriteCache != null) return _favoriteCache;
     _favoriteCache ??= {};
 
-    AtClient atClient = AtClientManager.getInstance().atClient;
-    String? atSign = atClient.getCurrentAtSign();
+    String? atSign = _client.getCurrentAtSign();
     AtKey key = getFavoriteAtKey(sharedBy: atSign);
 
     try {
-      var value = await atClient.get(key);
+      var value = await _client.get(key);
       if (value.value == null) return _favoriteCache;
       var json = jsonDecode(value.value);
       if (json is! Map) {
@@ -45,11 +50,10 @@ class FavoriteRepository {
   }
 
   Future<bool> _putFavorites() async {
-    AtClient atClient = AtClientManager.getInstance().atClient;
-    String? atSign = atClient.getCurrentAtSign();
+    String? atSign = _client.getCurrentAtSign();
     AtKey key = getFavoriteAtKey(sharedBy: atSign);
     try {
-      return await atClient.put(key, jsonEncode(_favoriteCache));
+      return await _client.put(key, jsonEncode(_favoriteCache));
     } catch (e) {
       App.log('[ERROR] _putFavorites: $e'.loggable);
       return false;

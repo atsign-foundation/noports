@@ -16,7 +16,8 @@ class ProfileListImportButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final strings = AppLocalizations.of(context)!;
-    return BlocSelector<ProfilesSelectedCubit, ProfilesSelectedState, Set<String>>(
+    return BlocSelector<ProfilesSelectedCubit, ProfilesSelectedState,
+            Set<String>>(
         selector: (state) => state.selected,
         builder: (BuildContext context, Set<String> selected) {
           // Hide this button if something is selected

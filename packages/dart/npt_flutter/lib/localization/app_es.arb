@@ -69,7 +69,7 @@
   "errorAuthenticationTimedOut": "La autenticación ha expirado.",
   "errorOtpRequestFailed": "Error al solicitar un OTP, intenta reenviar o contacta a soporte si el problema persiste.",
   "errorOtpVerificationFailed": "Error al verificar el OTP con el servidor de activación, por favor intenta nuevamente. Contacta a soporte si el problema persiste.",
-  "errorProfileLoadFailed": "Error al cargar este perfil, por favor actualiza manualmente:",
+  "errorProfileLoadFailed": "Error al cargar este perfil:",
   "errorRootDomainNotSupported": "El dominio raíz especificado no es compatible con la activación automática.",
   "errorSwitchAtSignFailed": "Error al cambiar de atSign después de la activación.",
   "europe": "Europa",

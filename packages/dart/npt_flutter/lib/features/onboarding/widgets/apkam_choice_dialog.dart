@@ -23,7 +23,10 @@ class ApkamChoiceDialog extends StatelessWidget {
         children: [
           Text(
             strings.authenticate,
-            style: Theme.of(context).textTheme.headlineSmall?.copyWith(color: Colors.black),
+            style: Theme.of(context)
+                .textTheme
+                .headlineSmall
+                ?.copyWith(color: Colors.black),
           ),
           gapH4,
           Text(
@@ -66,7 +69,8 @@ class ApkamChoiceDialog extends StatelessWidget {
                       ),
                       foregroundColor: Theme.of(context).primaryColor,
                       side: BorderSide(color: Theme.of(context).primaryColor),
-                      padding: const EdgeInsets.symmetric(horizontal: Sizes.p32, vertical: Sizes.p20),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: Sizes.p32, vertical: Sizes.p20),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(Sizes.p8),
                       ),
@@ -114,7 +118,8 @@ class ApkamChoiceDialog extends StatelessWidget {
                       textStyle: const TextStyle(
                         fontSize: Sizes.p18,
                       ),
-                      padding: const EdgeInsets.symmetric(horizontal: Sizes.p32, vertical: Sizes.p20),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: Sizes.p32, vertical: Sizes.p20),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(Sizes.p8),
                       ),

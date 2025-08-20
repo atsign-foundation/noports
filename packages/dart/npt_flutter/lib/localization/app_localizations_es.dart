@@ -244,8 +244,7 @@ class AppLocalizationsEs extends AppLocalizations {
       'Error al verificar el OTP con el servidor de activación, por favor intenta nuevamente. Contacta a soporte si el problema persiste.';
 
   @override
-  String get errorProfileLoadFailed =>
-      'Error al cargar este perfil, por favor actualiza manualmente:';
+  String get errorProfileLoadFailed => 'Error al cargar este perfil:';
 
   @override
   String get errorRootDomainNotSupported =>

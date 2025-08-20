@@ -150,28 +150,33 @@ class AppTheme {
           filled: true,
           constraints: const BoxConstraints(maxWidth: 179, maxHeight: 59.21),
           enabledBorder: const OutlineInputBorder(
-            borderSide: BorderSide(color: AppColor.textFieldBorderColor, width: Sizes.p2),
+            borderSide: BorderSide(
+                color: AppColor.textFieldBorderColor, width: Sizes.p2),
             borderRadius: BorderRadius.all(
               Radius.circular(Sizes.p10),
             ),
           ),
           focusedBorder: const OutlineInputBorder(
-              borderSide: BorderSide(color: AppColor.textFieldBorderColor, width: Sizes.p2),
+              borderSide: BorderSide(
+                  color: AppColor.textFieldBorderColor, width: Sizes.p2),
               borderRadius: BorderRadius.all(
                 Radius.circular(Sizes.p10),
               )),
           disabledBorder: const OutlineInputBorder(
-              borderSide: BorderSide(color: AppColor.textFieldBorderColor, width: Sizes.p2),
+              borderSide: BorderSide(
+                  color: AppColor.textFieldBorderColor, width: Sizes.p2),
               borderRadius: BorderRadius.all(
                 Radius.circular(Sizes.p10),
               )),
           errorBorder: const OutlineInputBorder(
-              borderSide: BorderSide(color: AppColor.textFieldBorderColor, width: Sizes.p2),
+              borderSide: BorderSide(
+                  color: AppColor.textFieldBorderColor, width: Sizes.p2),
               borderRadius: BorderRadius.all(
                 Radius.circular(Sizes.p10),
               )),
           focusedErrorBorder: const OutlineInputBorder(
-              borderSide: BorderSide(color: AppColor.textFieldBorderColor, width: Sizes.p2),
+              borderSide: BorderSide(
+                  color: AppColor.textFieldBorderColor, width: Sizes.p2),
               borderRadius: BorderRadius.all(
                 Radius.circular(Sizes.p10),
               )),
@@ -189,28 +194,33 @@ class AppTheme {
             filled: true,
             constraints: const BoxConstraints(maxWidth: 179, maxHeight: 59.21),
             enabledBorder: const OutlineInputBorder(
-              borderSide: BorderSide(color: AppColor.textFieldBorderColor, width: Sizes.p2),
+              borderSide: BorderSide(
+                  color: AppColor.textFieldBorderColor, width: Sizes.p2),
               borderRadius: BorderRadius.all(
                 Radius.circular(Sizes.p10),
               ),
             ),
             focusedBorder: const OutlineInputBorder(
-                borderSide: BorderSide(color: AppColor.textFieldBorderColor, width: Sizes.p2),
+                borderSide: BorderSide(
+                    color: AppColor.textFieldBorderColor, width: Sizes.p2),
                 borderRadius: BorderRadius.all(
                   Radius.circular(Sizes.p10),
                 )),
             disabledBorder: const OutlineInputBorder(
-                borderSide: BorderSide(color: AppColor.textFieldBorderColor, width: Sizes.p2),
+                borderSide: BorderSide(
+                    color: AppColor.textFieldBorderColor, width: Sizes.p2),
                 borderRadius: BorderRadius.all(
                   Radius.circular(Sizes.p10),
                 )),
             errorBorder: const OutlineInputBorder(
-                borderSide: BorderSide(color: AppColor.textFieldBorderColor, width: Sizes.p2),
+                borderSide: BorderSide(
+                    color: AppColor.textFieldBorderColor, width: Sizes.p2),
                 borderRadius: BorderRadius.all(
                   Radius.circular(Sizes.p10),
                 )),
             focusedErrorBorder: const OutlineInputBorder(
-                borderSide: BorderSide(color: AppColor.textFieldBorderColor, width: Sizes.p2),
+                borderSide: BorderSide(
+                    color: AppColor.textFieldBorderColor, width: Sizes.p2),
                 borderRadius: BorderRadius.all(
                   Radius.circular(Sizes.p10),
                 )),

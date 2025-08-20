@@ -1,5 +1,17 @@
 ---
 icon: square-kanban
+layout:
+  width: default
+  title:
+    visible: true
+  description:
+    visible: true
+  tableOfContents:
+    visible: true
+  outline:
+    visible: true
+  pagination:
+    visible: false
 ---
 
 # Sequence Diagram
@@ -106,4 +118,3 @@ sequenceDiagram
     note over c,d: Phase - using the connection
     c ->> c: You connect to the local socket as if it were the remote service!
 ```
-

@@ -7,7 +7,8 @@ class ProfileViewSshStyle extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return LayoutBuilder(builder: (BuildContext context, BoxConstraints constraints) {
+    return LayoutBuilder(
+        builder: (BuildContext context, BoxConstraints constraints) {
       final width = SizeConfig.setProfileFieldWidth();
       return Row(mainAxisSize: MainAxisSize.min, children: [
         const ProfileSelectBox(),
@@ -18,7 +19,8 @@ class ProfileViewSshStyle extends StatelessWidget {
         gapW10,
         ProfileServiceView(width: width),
         gapW10,
-        ProfileStatusIndicator(width: SizeConfig.setProfileFieldWidth(statusField: true)),
+        ProfileStatusIndicator(
+            width: SizeConfig.setProfileFieldWidth(statusField: true)),
         gapW10,
         const Flexible(child: ProfileRunButton()),
         gapW10,

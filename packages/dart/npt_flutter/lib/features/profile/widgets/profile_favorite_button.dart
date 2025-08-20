@@ -13,7 +13,8 @@ class ProfileFavoriteButton extends StatelessWidget {
   Widget build(BuildContext context) {
     return SizedBox(
       width: Sizes.p40,
-      child: BlocSelector<ProfileBloc, ProfileState, Profile?>(selector: (state) {
+      child:
+          BlocSelector<ProfileBloc, ProfileState, Profile?>(selector: (state) {
         if (state is! ProfileLoadedState) return null;
         return state.profile;
       }, builder: (context, profile) {
@@ -27,7 +28,8 @@ class ProfileFavoriteButton extends StatelessWidget {
             onPressed: () {
               if (isFavorited) {
                 context.read<FavoriteBloc>().add(
-                      FavoriteRemoveEvent([FavoriteProfile(uuid: profile.uuid)]),
+                      FavoriteRemoveEvent(
+                          [FavoriteProfile(uuid: profile.uuid)]),
                     );
               } else {
                 context.read<FavoriteBloc>().add(
@@ -36,7 +38,9 @@ class ProfileFavoriteButton extends StatelessWidget {
               }
             },
             icon: PhosphorIcon(
-              isFavorited ? PhosphorIcons.star(PhosphorIconsStyle.fill) : PhosphorIcons.star(),
+              isFavorited
+                  ? PhosphorIcons.star(PhosphorIconsStyle.fill)
+                  : PhosphorIcons.star(),
               color: isFavorited ? Theme.of(context).colorScheme.primary : null,
             ),
           ),

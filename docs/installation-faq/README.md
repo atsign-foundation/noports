@@ -1,10 +1,23 @@
 ---
 description: These guides cover our most commonly asked NoPorts installation questions
+icon: seal-question
+layout:
+  width: default
+  title:
+    visible: true
+  description:
+    visible: true
+  tableOfContents:
+    visible: true
+  outline:
+    visible: true
+  pagination:
+    visible: false
 ---
 
-# Installation FAQ
+# Resources
 
-
+While these are frequently asked questions, if you are responsible for installing NoPorts for your organization, these guides are worth reading for better understanding.
 
 {% content-ref url="activating-your-atsigns.md" %}
 [activating-your-atsigns.md](activating-your-atsigns.md)
@@ -25,4 +38,3 @@ description: These guides cover our most commonly asked NoPorts installation que
 {% content-ref url="why-activate-the-device-atsign-on-the-client.md" %}
 [why-activate-the-device-atsign-on-the-client.md](why-activate-the-device-atsign-on-the-client.md)
 {% endcontent-ref %}
-

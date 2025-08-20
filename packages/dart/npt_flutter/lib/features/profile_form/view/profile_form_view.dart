@@ -20,7 +20,8 @@ class ProfileFormView extends StatelessWidget {
       create: (BuildContext context) =>
 
           /// Local copy of the profile which is used by the form
-          ProfileBloc(context.read<ProfileRepository>(), uuid)..add(ProfileLoadOrCreateEvent(copyFrom: copyFrom)),
+          ProfileBloc(context.read<ProfileRepository>(), uuid)
+            ..add(ProfileLoadOrCreateEvent(copyFrom: copyFrom)),
       child: Padding(
         padding: const EdgeInsets.only(left: Sizes.p100, right: Sizes.p100),
         child: Stack(
@@ -42,7 +43,8 @@ class ProfileFormView extends StatelessWidget {
                             const ProfileDisplayNameTextField(),
                             gapH10,
                             const Padding(
-                              padding: EdgeInsets.symmetric(horizontal: Sizes.p50),
+                              padding:
+                                  EdgeInsets.symmetric(horizontal: Sizes.p50),
                               child: Row(
                                 children: [
                                   ProfileDeviceAtSignTextField(),
@@ -55,7 +57,8 @@ class ProfileFormView extends StatelessWidget {
                             const ProfileRelayQuickButtons(),
                             gapH10,
                             const Padding(
-                              padding: EdgeInsets.symmetric(horizontal: Sizes.p50),
+                              padding:
+                                  EdgeInsets.symmetric(horizontal: Sizes.p50),
                               child: Row(
                                 mainAxisAlignment: MainAxisAlignment.start,
                                 children: [
@@ -87,20 +90,29 @@ class ProfileFormView extends StatelessWidget {
                             ),
                             gapH20,
                             Padding(
-                              padding: const EdgeInsets.symmetric(horizontal: Sizes.p50),
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: Sizes.p50),
                               child: Builder(
                                 builder: (context) => SizedBox(
                                   width: Sizes.p743,
                                   child: ElevatedButton(
                                     onPressed: () {
-                                      if (!formkey.currentState!.validate()) return;
+                                      if (!formkey.currentState!.validate())
+                                        return;
 
-                                      var localBloc = context.read<ProfileBloc>();
-                                      if (localBloc.state is! ProfileLoadedState) return;
+                                      var localBloc =
+                                          context.read<ProfileBloc>();
+                                      if (localBloc.state
+                                          is! ProfileLoadedState) return;
 
                                       /// Now take the localBloc and upload it back to the global bloc
-                                      context.read<ProfileCacheCubit>().getProfileBloc(uuid).add(ProfileSaveEvent(
-                                            profile: (localBloc.state as ProfileLoadedState).profile,
+                                      context
+                                          .read<ProfileCacheCubit>()
+                                          .getProfileBloc(uuid)
+                                          .add(ProfileSaveEvent(
+                                            profile: (localBloc.state
+                                                    as ProfileLoadedState)
+                                                .profile,
                                           ));
                                     },
                                     child: Text(strings.submit),

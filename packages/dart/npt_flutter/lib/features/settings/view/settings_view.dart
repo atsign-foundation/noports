@@ -37,7 +37,8 @@ class SettingsView extends StatelessWidget {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     CustomCard.settingsRail(
-                      height: deviceSize.height * Sizes.settingsCardHeightFactor,
+                      height:
+                          deviceSize.height * Sizes.settingsCardHeightFactor,
                       child: SingleChildScrollView(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -57,11 +58,14 @@ class SettingsView extends StatelessWidget {
                             FutureBuilder(
                                 future: PackageInfo.fromPlatform(),
                                 builder: (_, snapshot) {
-                                  if (snapshot.connectionState == ConnectionState.done) {
+                                  if (snapshot.connectionState ==
+                                      ConnectionState.done) {
                                     return Center(
                                       child: Text(
                                         'v${snapshot.data?.version}',
-                                        style: Theme.of(context).textTheme.bodySmall,
+                                        style: Theme.of(context)
+                                            .textTheme
+                                            .bodySmall,
                                       ),
                                     );
                                   }
@@ -73,7 +77,8 @@ class SettingsView extends StatelessWidget {
                       ),
                     ),
                     CustomCard.settingsContent(
-                      height: deviceSize.height * Sizes.settingsCardHeightFactor,
+                      height:
+                          deviceSize.height * Sizes.settingsCardHeightFactor,
                       width: deviceSize.width * Sizes.settingsCardWidthFactor,
                       child: Padding(
                         padding: const EdgeInsets.only(

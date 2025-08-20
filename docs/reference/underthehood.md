@@ -1,8 +1,20 @@
 ---
-icon: engine
 description: >-
   This guide provides information on the technical aspects of NoPorts, including
   its architecture, protocols, and security mechanisms.
+icon: engine
+layout:
+  width: default
+  title:
+    visible: true
+  description:
+    visible: true
+  tableOfContents:
+    visible: true
+  outline:
+    visible: true
+  pagination:
+    visible: false
 ---
 
 # Under The Hood
