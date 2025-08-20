@@ -54,3 +54,7 @@ dist/
 __pycache__
 
 .env
+
+# Claude
+.claude/
+CLAUDE.md
