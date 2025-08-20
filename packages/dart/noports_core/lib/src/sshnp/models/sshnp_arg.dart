@@ -295,9 +295,16 @@ class SshnpArg {
     abbr: 'U',
     help: 'username to use for the initial ssh tunnel',
   );
+  static const rootServerArg = SshnpArg(
+    name: 'root-server',
+    help: 'atDirectory domain',
+    defaultsTo: DefaultArgs.rootDomain,
+    mandatory: false,
+    format: ArgFormat.option,
+  );
   static const rootDomainArg = SshnpArg(
     name: 'root-domain',
-    help: 'atDirectory domain',
+    help: 'atDirectory domain (deprecated)',
     defaultsTo: DefaultArgs.rootDomain,
     mandatory: false,
     format: ArgFormat.option,

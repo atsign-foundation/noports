@@ -39,6 +39,22 @@ class SrvdParams {
     required this.localBindPort443,
   });
 
+  static String _getRootDomain(ArgResults r) {
+    // Prefer the new --root-server flag
+    if (r.wasParsed('root-server')) {
+      return r['root-server'];
+    }
+    
+    // Fall back to deprecated --root-domain flag with warning
+    if (r.wasParsed('root-domain')) {
+      stderr.writeln('Warning: --root-domain is deprecated, please use --root-server instead');
+      return r['root-domain'];
+    }
+    
+    // Default value
+    return 'root.atsign.org';
+  }
+
   static Future<SrvdParams> fromArgs(List<String> args) async {
     // Arg check
     ArgResults r = parser.parse(args);
@@ -60,7 +76,7 @@ class SrvdParams {
       ipAddress: r['ip'],
       verbose: r['verbose'],
       logTraffic: BuildEnv.enableSnoop && r['snoop'],
-      rootDomain: r['root-domain'],
+      rootDomain: _getRootDomain(r),
       perSessionStorage: r['per-session-storage'],
       bind443: r['443'],
       localBindPort443:
@@ -116,10 +132,16 @@ class SrvdParams {
       );
     }
     parser.addOption(
-      'root-domain',
+      'root-server',
       mandatory: false,
       defaultsTo: 'root.atsign.org',
       help: 'atDirectory domain',
+    );
+    parser.addOption(
+      'root-domain',
+      mandatory: false,
+      defaultsTo: 'root.atsign.org',
+      help: 'atDirectory domain (deprecated)',
     );
     parser.addFlag(
       'per-session-storage',
