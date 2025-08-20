@@ -72,7 +72,7 @@ tailPid=$! # We'll kill this later
 
 l1="$clientBinaryPath/sshnp -f $clientAtSign -d $deviceName -i $identityFilename"
 l2=" -t $daemonAtSign -h $srvAtSign "
-l4=" --root-domain $atDirectoryHost"
+l4=" --root-server $atDirectoryHost"
 l5=" ${extraFlags}"
 sshnpCommand="$l1 $l2 $l3 $l4 $l5 -s"
 
@@ -101,7 +101,7 @@ tailPid=$! # We'll kill this later
 
 l1="$clientBinaryPath/sshnp -f $clientAtSign -d $deviceName -i $identityFilename"
 l2=" -t $daemonAtSign -h $srvAtSign"
-l4=" --root-domain $atDirectoryHost"
+l4=" --root-server $atDirectoryHost"
 l5=" ${extraFlags}"
 sshnpCommand="$l1 $l2 $l3 $l4 $l5 -s"
 
