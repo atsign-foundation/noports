@@ -44,7 +44,8 @@ class Settings extends Loggable {
     Language? language,
   }) {
     return Settings(
-      relayAtsign: (relayAtsign == null || relayAtsign.isEmpty) ? '@rv_am' : relayAtsign,
+      relayAtsign:
+          (relayAtsign == null || relayAtsign.isEmpty) ? '@rv_am' : relayAtsign,
       overrideRelay: overrideRelay ?? this.overrideRelay,
       viewLayout: viewLayout ?? this.viewLayout,
       darkMode: darkMode ?? this.darkMode,
@@ -55,7 +56,8 @@ class Settings extends Loggable {
   static const String customRelayKey = 'custom';
 
   Map<String, dynamic> toJson() => _$SettingsToJson(this);
-  factory Settings.fromJson(Map<String, dynamic> json) => _$SettingsFromJson(json);
+  factory Settings.fromJson(Map<String, dynamic> json) =>
+      _$SettingsFromJson(json);
 
   @override
   List<Object?> get props => [
@@ -104,7 +106,5 @@ extension RelayOptionsExtension on RelayOptions {
     }
   }
 }
-
-
 
 // ['English', 'Spanish', 'Br portuguese', 'Mandarin', 'Cantonese']

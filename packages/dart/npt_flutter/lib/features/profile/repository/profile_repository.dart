@@ -9,8 +9,16 @@ import 'package:npt_flutter/util/uuid.dart';
 class ProfileRepository {
   final Map<String, Profile> _profileCache = {};
 
+  final AtClient? _atClient;
+
+  /// [AtClient] added for dependency injection during testing. Do not use this in production code.
+  /// Leave as null since [AtClientManager.getInstance().atClient] is used internally in production.
+  ProfileRepository({AtClient? atClient}) : _atClient = atClient;
+
+  AtClient get _client => _atClient ?? AtClientManager.getInstance().atClient;
+
   Future<Iterable<String>?> getProfileUuids() async {
-    AtClient atClient = AtClientManager.getInstance().atClient;
+    AtClient atClient = _client;
 
     String namespace = Constants.namespace ?? '';
     List<AtKey> keys;
@@ -37,7 +45,7 @@ class ProfileRepository {
       return _profileCache[uuid];
     }
 
-    AtClient atClient = AtClientManager.getInstance().atClient;
+    AtClient atClient = _client;
     String? atSign = atClient.getCurrentAtSign();
     AtKey key = Uuid(uuid).toProfileAtKey(sharedBy: atSign);
     try {
@@ -54,7 +62,7 @@ class ProfileRepository {
   Future<bool> putProfile(Profile profile) async {
     _profileCache[profile.uuid] = profile;
 
-    AtClient atClient = AtClientManager.getInstance().atClient;
+    AtClient atClient = _client;
     String? atSign = atClient.getCurrentAtSign();
     AtKey key = Uuid(profile.uuid).toProfileAtKey(sharedBy: atSign);
 
@@ -68,7 +76,7 @@ class ProfileRepository {
 
   Future<bool> deleteProfile(String uuid) async {
     _profileCache.remove(uuid);
-    AtClient atClient = AtClientManager.getInstance().atClient;
+    AtClient atClient = _client;
     String? atSign = atClient.getCurrentAtSign();
     AtKey key = Uuid(uuid).toProfileAtKey(sharedBy: atSign);
 

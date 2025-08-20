@@ -59,7 +59,8 @@ Future<Map<String, AtsignInformation>> getAtsignEntries() async {
     atSignInfo = await _getAtsignInformationFromFile();
   } catch (e) {
     App.log(
-      "Failed get Atsign Information, ignoring invalid file: ${e.toString()}".loggable,
+      "Failed get Atsign Information, ignoring invalid file: ${e.toString()}"
+          .loggable,
     );
     return {};
   }

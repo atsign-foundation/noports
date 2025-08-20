@@ -16,7 +16,9 @@ extern struct _notification_key_map {
   enum notification_key key;
 } notification_key_map[];
 
+extern atclient_authenticate_options worker_options;
 extern atclient worker;
+extern atclient_authenticate_options monitor_options;
 extern atclient monitor_ctx;
 extern char *ping_response;
 extern char *atserver_host;

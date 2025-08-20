@@ -13,7 +13,8 @@ class AuthorisationAppBarButton extends StatefulWidget {
   const AuthorisationAppBarButton({super.key});
 
   @override
-  AuthorisationAppBarButtonState createState() => AuthorisationAppBarButtonState();
+  AuthorisationAppBarButtonState createState() =>
+      AuthorisationAppBarButtonState();
 }
 
 class AuthorisationAppBarButtonState extends State<AuthorisationAppBarButton> {
@@ -32,7 +33,8 @@ class AuthorisationAppBarButtonState extends State<AuthorisationAppBarButton> {
         // When a page is pushed on top of this it doesn't get rebuilt
         // so using this as a proxy
         if (visibilityInfo.visibleFraction > 0.9) {
-          unawaited(context.read<PendingRequestsCountCubit>().getPendingRequests());
+          unawaited(
+              context.read<PendingRequestsCountCubit>().getPendingRequests());
         }
       },
       child: StreamBuilder(
@@ -48,7 +50,10 @@ class AuthorisationAppBarButtonState extends State<AuthorisationAppBarButton> {
                 icon: Badge.count(
                     count: authorisationNotificationCount.count,
                     isLabelVisible: authorisationNotificationCount.count > 0,
-                    backgroundColor: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
+                    backgroundColor: Theme.of(context)
+                        .colorScheme
+                        .primary
+                        .withValues(alpha: 0.1),
                     textColor: Theme.of(context).colorScheme.primary,
                     child: PhosphorIcon(PhosphorIcons.key())),
                 onPressed: () {

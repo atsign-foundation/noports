@@ -22,7 +22,9 @@ class ProfilePopupMenuButton extends StatelessWidget {
   Widget build(BuildContext context) {
     final strings = AppLocalizations.of(context)!;
     final state = context.watch<ProfileBloc>().state;
-    final isDisableIcons = state is ProfileStarting || state is ProfileStarted || state is ProfileStopping;
+    final isDisableIcons = state is ProfileStarting ||
+        state is ProfileStarted ||
+        state is ProfileStopping;
     return PopupMenuButton<PopupMenuEntry>(
         padding: EdgeInsets.zero,
         itemBuilder: (_) {
@@ -38,13 +40,14 @@ class ProfilePopupMenuButton extends StatelessWidget {
               onTap: () {
                 if (state is! ProfileLoadedState) return;
                 if (isDisableIcons) {
-                  CustomSnackBar.notification(content: strings.profileRunningActionDeniedMessage);
+                  CustomSnackBar.notification(
+                      content: strings.profileRunningActionDeniedMessage);
                   return;
                 }
 
                 if (context.mounted) {
-                  Navigator.of(context)
-                      .pushNamed(HomeRoutes.profileForm, arguments: ProfileFormPageArguments(state.profile.uuid));
+                  Navigator.of(context).pushNamed(HomeRoutes.profileForm,
+                      arguments: ProfileFormPageArguments(state.profile.uuid));
                 }
               },
             ),
@@ -62,7 +65,8 @@ class ProfilePopupMenuButton extends StatelessWidget {
                   var copyFrom = state.profile;
                   if (context.mounted) {
                     Navigator.of(context).pushNamed(HomeRoutes.profileForm,
-                        arguments: ProfileFormPageArguments(Uuid.generate(), copyFrom: copyFrom));
+                        arguments: ProfileFormPageArguments(Uuid.generate(),
+                            copyFrom: copyFrom));
                   }
                 }),
             PopupMenuItem(
@@ -85,9 +89,11 @@ class ProfilePopupMenuButton extends StatelessWidget {
                               title: strings.profileExportDialogTitle,
                               message: strings.profileExportMessage,
                               actions: {
-                                strings.json: Export.getExportCallback(ExportableProfileFiletype.json, [json]),
+                                strings.json: Export.getExportCallback(
+                                    ExportableProfileFiletype.json, [json]),
                                 strings.yamlRecommended:
-                                    Export.getExportCallback(ExportableProfileFiletype.yaml, [json]),
+                                    Export.getExportCallback(
+                                        ExportableProfileFiletype.yaml, [json]),
                               }));
                 }),
             PopupMenuItem(
@@ -100,7 +106,8 @@ class ProfilePopupMenuButton extends StatelessWidget {
                 ),
                 onTap: () {
                   if (isDisableIcons) {
-                    CustomSnackBar.notification(content: strings.profileRunningActionDeniedMessage);
+                    CustomSnackBar.notification(
+                        content: strings.profileRunningActionDeniedMessage);
                     return;
                   }
                   var state = context.read<ProfileBloc>().state;
@@ -114,7 +121,8 @@ class ProfilePopupMenuButton extends StatelessWidget {
                           action: () {
                             App.navState.currentContext
                                 ?.read<ProfileListBloc>()
-                                .add(ProfileListDeleteEvent(toDelete: [state.uuid]));
+                                .add(ProfileListDeleteEvent(
+                                    toDelete: [state.uuid]));
                           });
                     },
                   );

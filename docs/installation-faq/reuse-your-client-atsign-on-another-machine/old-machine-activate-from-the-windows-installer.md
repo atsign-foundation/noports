@@ -1,3 +1,7 @@
+---
+hidden: true
+---
+
 # Old machine: activate from the Windows installer
 
 ### Step 1) Generate an OTP (one time pin code)

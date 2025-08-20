@@ -13,7 +13,8 @@ class ProfileDeviceName extends StatelessWidget {
       width: width,
       child: SingleChildScrollView(
         scrollDirection: Axis.horizontal,
-        child: BlocSelector<ProfileBloc, ProfileState, (String, String)?>(selector: (state) {
+        child: BlocSelector<ProfileBloc, ProfileState, (String, String)?>(
+            selector: (state) {
           if (state is! ProfileLoadedState) return null;
           return (state.profile.deviceName, state.profile.sshnpdAtsign);
         }, builder: (BuildContext context, (String, String)? tuple) {

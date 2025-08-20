@@ -69,7 +69,7 @@
    "errorAuthenticationTimedOut": "Authentication timed out.",
    "errorOtpRequestFailed": "Failed to request an OTP, try resending, or contact support if the issue persists.",
    "errorOtpVerificationFailed": "Failed to verify the OTP with the activation server, please try again. Contact support if the issue persists.",
-   "errorProfileLoadFailed": "Failed to load this profile, please refresh manually:",
+   "errorProfileLoadFailed": "Failed to load this profile",
    "errorRootDomainNotSupported": "The specified root domain is not supported by automatic activation.",
    "errorSwitchAtSignFailed": "Failed to switch atSigns after activation.",
    "europe": "Europe",

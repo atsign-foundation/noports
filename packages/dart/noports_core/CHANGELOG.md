@@ -1,3 +1,6 @@
+# 6.6.1
+- fix: better srvd exception handling
+
 # 6.6.0
 - feat: twin keys for control socket and data sockets
 - fix: enable daemons and policy service to use the same atSign

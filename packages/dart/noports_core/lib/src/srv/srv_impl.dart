@@ -180,7 +180,7 @@ class SrvImplExec implements Srv<Process> {
       }
     });
 
-    await rvPortBound.future.timeout(Duration(seconds: 3));
+    await rvPortBound.future.timeout(Duration(seconds: 15));
 
     await Future.delayed(Duration(milliseconds: 100));
 

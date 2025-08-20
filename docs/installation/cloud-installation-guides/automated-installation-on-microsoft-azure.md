@@ -1,6 +1,18 @@
 ---
-icon: microsoft
 description: How to deploy NoPorts on Azure using a cloud-init script
+icon: microsoft
+layout:
+  width: default
+  title:
+    visible: true
+  description:
+    visible: true
+  tableOfContents:
+    visible: true
+  outline:
+    visible: true
+  pagination:
+    visible: false
 ---
 
 # Automated Installation on Microsoft Azure
@@ -35,11 +47,7 @@ chown -R ${USER}:${USER} /home/${USER}/.atsign
 
 It should look like this:
 
-<div align="left">
-
-<figure><img src="../../.gitbook/assets/Azure_Custom_data.PNG" alt=""><figcaption></figcaption></figure>
-
-</div>
+<div align="left"><figure><img src="../../.gitbook/assets/Azure_Custom_data.PNG" alt=""><figcaption></figcaption></figure></div>
 
 Once that's complete the VM is ready for `Review + create` then if all looks well hit `Create`
 

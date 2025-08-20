@@ -1,6 +1,18 @@
 ---
-icon: key
 description: Using ssh-keygen
+icon: key
+layout:
+  width: default
+  title:
+    visible: true
+  description:
+    visible: true
+  tableOfContents:
+    visible: true
+  outline:
+    visible: true
+  pagination:
+    visible: false
 ---
 
 # How to generate SSH keys
@@ -13,4 +25,3 @@ Example ssh-keygen command to create SSH Key Pair
 ssh-keygen -t ed25519 -a 100 -f ~/.ssh/id_ed25519
 ```
 
-##

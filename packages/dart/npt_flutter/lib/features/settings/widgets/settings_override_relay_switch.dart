@@ -28,7 +28,9 @@ class SettingsOverrideRelaySwitch extends StatelessWidget {
               onChanged: (value) {
                 var bloc = context.read<SettingsBloc>();
                 bloc.add(SettingsEditEvent(
-                  settings: (bloc.state as SettingsLoadedState).settings.copyWith(overrideRelay: value),
+                  settings: (bloc.state as SettingsLoadedState)
+                      .settings
+                      .copyWith(overrideRelay: value),
                   save: true,
                 ));
               },

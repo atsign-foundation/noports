@@ -21,7 +21,12 @@ class CustomContainer extends StatelessWidget {
         decorationImage = null;
 
   const CustomContainer.foreground(
-      {required this.child, this.width, super.key, this.padding = 0, this.decorationImage, this.height})
+      {required this.child,
+      this.width,
+      super.key,
+      this.padding = 0,
+      this.decorationImage,
+      this.height})
       : color = Colors.white;
 
   final Widget child;

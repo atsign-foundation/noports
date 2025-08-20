@@ -25,9 +25,11 @@ extension LanguageExtension on Language {
       case Language.portuguese:
         return const Locale('pt', 'BR');
       case Language.cantonese:
-        return const Locale.fromSubtags(languageCode: 'zh', scriptCode: 'Hant', countryCode: 'HK');
+        return const Locale.fromSubtags(
+            languageCode: 'zh', scriptCode: 'Hant', countryCode: 'HK');
       case Language.mandarin:
-        return const Locale.fromSubtags(languageCode: 'zh', scriptCode: 'Hans', countryCode: 'CN');
+        return const Locale.fromSubtags(
+            languageCode: 'zh', scriptCode: 'Hans', countryCode: 'CN');
     }
   }
 
@@ -77,6 +79,6 @@ class LanguageUtil {
 /// Constants for string that does not need to be localized.
 class StringConst {
   static const String ampersand = '@';
-  static const String atsign_client = 'atsign_client';
+  static const String atsignClient = 'atsign_client';
   static const String myNoPorts = 'My NoPorts';
 }

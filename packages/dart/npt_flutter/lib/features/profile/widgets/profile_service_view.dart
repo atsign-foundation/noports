@@ -13,9 +13,14 @@ class ProfileServiceView extends StatelessWidget {
       width: width,
       child: SingleChildScrollView(
         scrollDirection: Axis.horizontal,
-        child: BlocSelector<ProfileBloc, ProfileState, (int, String, int)?>(selector: (state) {
+        child: BlocSelector<ProfileBloc, ProfileState, (int, String, int)?>(
+            selector: (state) {
           if (state is! ProfileLoadedState) return null;
-          return (state.profile.localPort, state.profile.remoteHost, state.profile.remotePort);
+          return (
+            state.profile.localPort,
+            state.profile.remoteHost,
+            state.profile.remotePort
+          );
         }, builder: (BuildContext context, (int, String, int)? triple) {
           if (triple == null) return gap0;
           var (localPort, remoteHost, remotePort) = triple;

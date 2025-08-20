@@ -18,6 +18,10 @@ const String deviceNameFormatHelp =
 const String invalidSshKeyPermissionsMsg =
     'Detected newline characters in the ssh public key permissions which malforms the authorized_keys file.';
 
+bool isUnprintable(int codeUnit) {
+  return (codeUnit < 33 || codeUnit > 127);
+}
+
 /// Returns deviceName with uppercase latin replaced by lowercase, and
 /// whitespace replaced with underscores. Note that multiple consecutive
 /// whitespace characters will be replaced by a single underscore.

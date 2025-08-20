@@ -1,3 +1,11 @@
+## 1.0.14
+
+- build(deps): Bump at_c to use MbedTLS 3.6.4
+
+## 1.0.13
+
+- feat: csshnpd root-domain implementation
+
 ## 1.0.12
 
 - fix: convert device name to lower case to comply with Dart
