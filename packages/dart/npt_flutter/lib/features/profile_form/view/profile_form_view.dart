@@ -68,6 +68,24 @@ class ProfileFormView extends StatelessWidget {
                               ),
                             ),
                             gapH20,
+                            const Padding(
+                              padding: EdgeInsets.symmetric(horizontal: Sizes.p50),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'Advanced Settings',
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                  gapH10,
+                                  Profile443Checkbox(),
+                                ],
+                              ),
+                            ),
+                            gapH20,
                             Padding(
                               padding: const EdgeInsets.symmetric(horizontal: Sizes.p50),
                               child: Builder(
