@@ -20,9 +20,13 @@ class ProfileRunButton extends StatelessWidget {
           }
           return null;
         },
-        builder: (BuildContext context, ProfileLoadedState? state) => switch (state) {
+        builder: (BuildContext context, ProfileLoadedState? state) =>
+            switch (state) {
           null => gap0,
-          ProfileLoaded() || ProfileFailedSave() || ProfileFailedStart() => IconButton(
+          ProfileLoaded() ||
+          ProfileFailedSave() ||
+          ProfileFailedStart() =>
+            IconButton(
               icon: PhosphorIcon(PhosphorIcons.play()),
               onPressed: () {
                 context.read<ProfileBloc>().add(const ProfileStartEvent());

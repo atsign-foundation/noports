@@ -19,7 +19,8 @@ class ProfileListBloc extends LoggingBloc<ProfileListEvent, ProfileListState> {
 
   void clearAll() => emit(const ProfileListInitial());
 
-  Future<void> _onLoad(ProfileListLoadEvent event, Emitter<ProfileListState> emit) async {
+  Future<void> _onLoad(
+      ProfileListLoadEvent event, Emitter<ProfileListState> emit) async {
     emit(const ProfileListLoading());
 
     Iterable<String>? profiles;
@@ -37,11 +38,13 @@ class ProfileListBloc extends LoggingBloc<ProfileListEvent, ProfileListState> {
     emit(ProfileListLoaded(profiles: profiles));
   }
 
-  Future<void> _onUpdate(ProfileListUpdateEvent event, Emitter<ProfileListState> emit) async {
+  Future<void> _onUpdate(
+      ProfileListUpdateEvent event, Emitter<ProfileListState> emit) async {
     emit(ProfileListLoaded(profiles: event.profiles));
   }
 
-  Future<void> _onDelete(ProfileListDeleteEvent event, Emitter<ProfileListState> emit) async {
+  Future<void> _onDelete(
+      ProfileListDeleteEvent event, Emitter<ProfileListState> emit) async {
     // Don't allow deletes unless listed is loaded - this reduces the number of edge cases significantly
     if (state is! ProfileListLoaded) {
       return;
@@ -66,7 +69,8 @@ class ProfileListBloc extends LoggingBloc<ProfileListEvent, ProfileListState> {
     bloc?.add(FavoriteRemoveEvent(favoritesToRemove));
   }
 
-  Future<void> _onAdd(ProfileListAddEvent event, Emitter<ProfileListState> emit) async {
+  Future<void> _onAdd(
+      ProfileListAddEvent event, Emitter<ProfileListState> emit) async {
     // Don't allow async bulk adds unless listed is loaded - this reduces the number of edge cases significantly
     if (state is! ProfileListLoaded) {
       return;

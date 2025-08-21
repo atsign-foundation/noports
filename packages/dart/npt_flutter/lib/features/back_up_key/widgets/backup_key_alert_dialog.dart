@@ -41,13 +41,15 @@ class _BackupKeyAlertDialogState extends State<BackupKeyAlertDialog> {
                   gapW10,
                   Text(
                     strings.backUpAtKeys,
-                    style: const TextStyle(fontSize: Sizes.p18, color: Colors.black),
+                    style: const TextStyle(
+                        fontSize: Sizes.p18, color: Colors.black),
                     softWrap: false,
                   ),
                   const Spacer(),
                   Text(
                     strings.required,
-                    style: const TextStyle(color: AppColor.primaryColor, fontSize: Sizes.p16),
+                    style: const TextStyle(
+                        color: AppColor.primaryColor, fontSize: Sizes.p16),
                   )
                 ],
               ),
@@ -83,7 +85,8 @@ class _BackupKeyAlertDialogState extends State<BackupKeyAlertDialog> {
                         color: AppColor.primaryColor,
                       ),
                       gapW14,
-                      Text(strings.whatAreAtKeys, style: const TextStyle(color: AppColor.primaryColor)),
+                      Text(strings.whatAreAtKeys,
+                          style: const TextStyle(color: AppColor.primaryColor)),
                       const Spacer(),
                       IconButton(
                         onPressed: () {

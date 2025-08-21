@@ -40,7 +40,8 @@ class App extends StatelessWidget {
         RepositoryProvider<AuthorisationService>(
           create: (_) => AuthorisationService(),
         ),
-        RepositoryProvider<BackUpKeyRepository>(create: (_) => BackUpKeyRepository())
+        RepositoryProvider<BackUpKeyRepository>(
+            create: (_) => BackUpKeyRepository())
       ],
       child: MultiBlocProvider(
         providers: [
@@ -103,7 +104,8 @@ class App extends StatelessWidget {
             create: (ctx) => FavoriteBloc(ctx.read<FavoriteRepository>()),
           ),
           BlocProvider<PendingRequestsCountCubit>(
-            create: (ctx) => PendingRequestsCountCubit(ctx.read<AuthorisationService>()),
+            create: (ctx) =>
+                PendingRequestsCountCubit(ctx.read<AuthorisationService>()),
           ),
 
           /// A cubit which tracks the sync status of the profiles
@@ -122,7 +124,9 @@ class App extends StatelessWidget {
             return null;
           },
           builder: (context, language) {
-            Locale locale = language?.locale ?? LanguageUtil.getLanguageFromLocale(Locale(Platform.localeName)).locale;
+            Locale locale = language?.locale ??
+                LanguageUtil.getLanguageFromLocale(Locale(Platform.localeName))
+                    .locale;
             return TrayManager(
               locale: locale,
               child: MaterialApp(

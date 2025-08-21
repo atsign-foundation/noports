@@ -40,7 +40,9 @@ class ProfileDisplayNameTextField extends StatelessWidget {
                     onChanged: (value) {
                       var bloc = context.read<ProfileBloc>();
                       bloc.add(ProfileEditEvent(
-                        profile: (bloc.state as ProfileLoadedState).profile.copyWith(displayName: value),
+                        profile: (bloc.state as ProfileLoadedState)
+                            .profile
+                            .copyWith(displayName: value),
                       ));
                     }),
               );

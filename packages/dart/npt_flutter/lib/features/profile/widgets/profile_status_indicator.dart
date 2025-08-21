@@ -16,7 +16,8 @@ class ProfileStatusIndicator extends StatelessWidget {
 
     return SizedBox(
       width: width,
-      child: BlocBuilder<ProfileBloc, ProfileState>(builder: (BuildContext context, ProfileState state) {
+      child: BlocBuilder<ProfileBloc, ProfileState>(
+          builder: (BuildContext context, ProfileState state) {
         log(state.runtimeType.toString());
         if (state is ProfileLoading) {
           return StatusMessage(

@@ -27,13 +27,15 @@ class ContactListTile extends StatelessWidget {
                   color: AppColor.cardColorDark,
                 ),
                 child: ListTile(
-                    contentPadding: const EdgeInsets.symmetric(horizontal: Sizes.p30),
+                    contentPadding:
+                        const EdgeInsets.symmetric(horizontal: Sizes.p30),
                     dense: true,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(Sizes.p8.toFont),
                     ),
                     title: Text(
-                      contactRepo.atClientManager.atClient.getCurrentAtSign() ?? '',
+                      contactRepo.atClientManager.atClient.getCurrentAtSign() ??
+                          '',
                       style: bodySmall.copyWith(fontSize: 8.toFont),
                     )),
               ),

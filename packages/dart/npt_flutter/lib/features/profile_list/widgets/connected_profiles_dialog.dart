@@ -16,18 +16,32 @@ class ConnectedProfilesDialog extends StatelessWidget {
   Widget build(BuildContext context) {
     final strings = AppLocalizations.of(context)!;
     // Get running profile UUIDs
-    final connectedUuids = context.watch<ProfilesRunningCubit>().state.socketConnectors.keys.toSet();
+    final connectedUuids = context
+        .watch<ProfilesRunningCubit>()
+        .state
+        .socketConnectors
+        .keys
+        .toSet();
     // Get all loaded profiles (UUIDs)
     final profileListState = context.watch<ProfileListBloc>().state;
     List<Map<String, String>> connectedProfileNames = [];
     if (profileListState is ProfileListLoaded) {
-      connectedProfileNames = profileListState.profiles.where((uuid) => connectedUuids.contains(uuid)).map((uuid) {
-        final profileBloc = context.read<ProfileCacheCubit>().getProfileBloc(uuid);
+      connectedProfileNames = profileListState.profiles
+          .where((uuid) => connectedUuids.contains(uuid))
+          .map((uuid) {
+        final profileBloc =
+            context.read<ProfileCacheCubit>().getProfileBloc(uuid);
         final profileState = profileBloc.state;
         if (profileState is ProfileLoadedState) {
-          return {'profileName': profileState.profile.displayName, 'deviceName': profileState.profile.deviceName};
+          return {
+            'profileName': profileState.profile.displayName,
+            'deviceName': profileState.profile.deviceName
+          };
         } else {
-          return {'profileName': uuid, 'deviceName': ''}; // fallback if not loaded
+          return {
+            'profileName': uuid,
+            'deviceName': ''
+          }; // fallback if not loaded
         }
       }).toList();
     }
@@ -49,10 +63,8 @@ class ConnectedProfilesDialog extends StatelessWidget {
               children: [
                 Text(
                   strings.switchAtSignDescription,
-                  style: Theme.of(context)
-                      .textTheme
-                      .bodyMedium!
-                      .copyWith(color: Colors.black, fontWeight: FontWeight.bold),
+                  style: Theme.of(context).textTheme.bodyMedium!.copyWith(
+                      color: Colors.black, fontWeight: FontWeight.bold),
                 ),
                 Text(strings.profileRunningCloseMsgStart),
                 gapH8,
@@ -63,7 +75,11 @@ class ConnectedProfilesDialog extends StatelessWidget {
                   child: Column(
                     children: [
                       Padding(
-                        padding: const EdgeInsets.only(bottom: 0, top: Sizes.p10, left: Sizes.p10, right: Sizes.p10),
+                        padding: const EdgeInsets.only(
+                            bottom: 0,
+                            top: Sizes.p10,
+                            left: Sizes.p10,
+                            right: Sizes.p10),
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
@@ -84,10 +100,15 @@ class ConnectedProfilesDialog extends StatelessWidget {
                             child: Padding(
                               padding: const EdgeInsets.all(Sizes.p10),
                               child: Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
                                 children: [
-                                  Text(connectedProfileNames[count]['profileName'] ?? ''),
-                                  Text(connectedProfileNames[count]['deviceName'] ?? ''),
+                                  Text(connectedProfileNames[count]
+                                          ['profileName'] ??
+                                      ''),
+                                  Text(connectedProfileNames[count]
+                                          ['deviceName'] ??
+                                      ''),
                                 ],
                               ),
                             ),
@@ -106,7 +127,9 @@ class ConnectedProfilesDialog extends StatelessWidget {
                           fontWeight: FontWeight.bold,
                         ),
                   ),
-                  TextSpan(text: ' ${strings.switchAtSignNote.split(' ').skip(1).join(' ')}'),
+                  TextSpan(
+                      text:
+                          ' ${strings.switchAtSignNote.split(' ').skip(1).join(' ')}'),
                 ])),
               ],
             )

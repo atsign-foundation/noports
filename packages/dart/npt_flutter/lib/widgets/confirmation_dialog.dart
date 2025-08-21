@@ -7,7 +7,11 @@ class ConfirmationDialog extends StatelessWidget {
   final String actionText;
   final VoidCallback action;
   const ConfirmationDialog(
-      {required this.message, required this.action, required this.actionText, this.secondaryMessage, super.key});
+      {required this.message,
+      required this.action,
+      required this.actionText,
+      this.secondaryMessage,
+      super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -16,7 +20,9 @@ class ConfirmationDialog extends StatelessWidget {
       title: Text(strings.alertDialogTitle),
       content: Text.rich(TextSpan(text: message, children: [
         if (secondaryMessage != null)
-          TextSpan(text: '\n\n$secondaryMessage', style: const TextStyle(fontStyle: FontStyle.italic)),
+          TextSpan(
+              text: '\n\n$secondaryMessage',
+              style: const TextStyle(fontStyle: FontStyle.italic)),
       ])),
       actions: <Widget>[
         TextButton(

@@ -1,10 +1,12 @@
 import 'dart:async';
 import 'package:at_onboarding_flutter/at_onboarding_flutter.dart';
-import 'package:at_onboarding_flutter/at_onboarding_services.dart' show AtKeysFileUploadService, FileUploadStatus;
+import 'package:at_onboarding_flutter/at_onboarding_services.dart'
+    show AtKeysFileUploadService, FileUploadStatus;
 import 'package:at_server_status/at_server_status.dart';
 
 // These types are returned from methods in this class so exports are provided for ease of use
-export 'package:at_onboarding_flutter/at_onboarding_services.dart' show FileUploadStatus;
+export 'package:at_onboarding_flutter/at_onboarding_services.dart'
+    show FileUploadStatus;
 export 'package:at_server_status/at_server_status.dart' show AtStatus;
 
 class NoPortsOnboardingUtil {
@@ -16,8 +18,9 @@ class NoPortsOnboardingUtil {
 
   /// A method to check whether an atSign has been activated or not
   Future<AtStatus> atServerStatus(String atSign) async {
-    _atServerStatus ??=
-        AtStatusImpl(rootUrl: config.atClientPreference.rootDomain, rootPort: config.atClientPreference.rootPort);
+    _atServerStatus ??= AtStatusImpl(
+        rootUrl: config.atClientPreference.rootDomain,
+        rootPort: config.atClientPreference.rootPort);
     return _atServerStatus!.get(atSign);
   }
 
