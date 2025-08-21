@@ -1,18 +1,6 @@
 ---
 description: NoPorts connection establishment and architecture
 icon: magnifying-glass
-layout:
-  width: default
-  title:
-    visible: true
-  description:
-    visible: true
-  tableOfContents:
-    visible: true
-  outline:
-    visible: true
-  pagination:
-    visible: false
 ---
 
 # How It Works

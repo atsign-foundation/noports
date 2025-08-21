@@ -1,18 +1,6 @@
 ---
 description: Common questions about NoPorts
 icon: comments-question-check
-layout:
-  width: default
-  title:
-    visible: true
-  description:
-    visible: true
-  tableOfContents:
-    visible: true
-  outline:
-    visible: true
-  pagination:
-    visible: false
 ---
 
 # Frequently Asked Questions

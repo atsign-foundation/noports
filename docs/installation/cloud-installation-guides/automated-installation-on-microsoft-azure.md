@@ -1,18 +1,6 @@
 ---
 description: How to deploy NoPorts on Azure using a cloud-init script
 icon: microsoft
-layout:
-  width: default
-  title:
-    visible: true
-  description:
-    visible: true
-  tableOfContents:
-    visible: true
-  outline:
-    visible: true
-  pagination:
-    visible: false
 ---
 
 # Automated Installation on Microsoft Azure

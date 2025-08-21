@@ -1,18 +1,6 @@
 ---
 description: How to manage tons of NoPorts SSH connections with Putty
 icon: windows
-layout:
-  width: default
-  title:
-    visible: true
-  description:
-    visible: true
-  tableOfContents:
-    visible: true
-  outline:
-    visible: true
-  pagination:
-    visible: false
 ---
 
 # PuTTY config
