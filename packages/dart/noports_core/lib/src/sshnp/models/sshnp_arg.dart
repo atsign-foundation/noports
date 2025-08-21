@@ -116,7 +116,6 @@ class SshnpArg {
     remoteUserNameArg,
     tunnelUserNameArg,
     rootServerArg,
-    rootDomainArg,
     remoteSshdPortArg,
     idleTimeoutArg,
     sshAlgorithmArg,
@@ -302,13 +301,7 @@ class SshnpArg {
     defaultsTo: DefaultArgs.rootDomain,
     mandatory: false,
     format: ArgFormat.option,
-  );
-  static const rootDomainArg = SshnpArg(
-    name: 'root-domain',
-    help: 'atDirectory domain (deprecated)',
-    defaultsTo: DefaultArgs.rootDomain,
-    mandatory: false,
-    format: ArgFormat.option,
+    aliases: ['root-domain', 'rootDomain'],
   );
   static const remoteSshdPortArg = SshnpArg(
     name: 'remote-sshd-port',

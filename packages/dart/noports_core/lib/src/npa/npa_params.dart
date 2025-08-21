@@ -23,22 +23,6 @@ class NPAParams {
     required this.homeDirectory,
   });
 
-  static String _getRootDomain(ArgResults r) {
-    // Prefer the new --root-server flag
-    if (r.wasParsed('root-server')) {
-      return r['root-server'];
-    }
-    
-    // Fall back to deprecated --root-domain flag with warning
-    if (r.wasParsed('root-domain')) {
-      stderr.writeln('Warning: --root-domain is deprecated, please use --root-server instead');
-      return r['root-domain'];
-    }
-    
-    // Default value
-    return 'root.atsign.org';
-  }
-
   static Future<NPAParams> fromArgs(List<String> args) async {
     // Arg check
     ArgResults r = parser.parse(args);
@@ -52,7 +36,7 @@ class NPAParams {
       atKeysFilePath: r['key-file'] ??
           getDefaultAtKeysFilePath(homeDirectory, authorizerAtsign),
       verbose: r['verbose'],
-      rootDomain: _getRootDomain(r),
+      rootDomain: r['root-server'] ?? 'root.atsign.org',
       homeDirectory: homeDirectory,
     );
   }
@@ -102,16 +86,10 @@ class NPAParams {
 
     parser.addOption(
       'root-server',
+      aliases: const ['root-domain'],
       mandatory: false,
       defaultsTo: 'root.atsign.org',
       help: 'atDirectory domain',
-      hide: true,
-    );
-    parser.addOption(
-      'root-domain',
-      mandatory: false,
-      defaultsTo: 'root.atsign.org',
-      help: 'atDirectory domain (deprecated)',
       hide: true,
     );
 

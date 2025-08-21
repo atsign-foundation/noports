@@ -14,21 +14,6 @@ import 'package:sshnoports/src/extended_arg_parser.dart';
 // local packages
 import 'package:sshnoports/src/print_version.dart';
 
-String _getRootDomain(ArgResults parsedArgs) {
-  // Prefer the new --root-server flag
-  if (parsedArgs.wasParsed('root-server')) {
-    return parsedArgs['root-server'];
-  }
-  
-  // Fall back to deprecated --root-domain flag with warning
-  if (parsedArgs.wasParsed('root-domain')) {
-    stderr.writeln('Warning: --root-domain is deprecated, please use --root-server instead');
-    return parsedArgs['root-domain'];
-  }
-  
-  // Default value
-  return 'root.atsign.org';
-}
 
 void main(List<String> args) async {
   const int keepAliveDefaultTimeoutHours = 24;
@@ -135,15 +120,10 @@ void main(List<String> args) async {
       );
       parser.addOption(
         'root-server',
+        aliases: const ['root-domain'],
         mandatory: false,
         defaultsTo: 'root.atsign.org',
         help: 'atDirectory domain',
-      );
-      parser.addOption(
-        'root-domain',
-        mandatory: false,
-        defaultsTo: 'root.atsign.org',
-        help: 'atDirectory domain (deprecated)',
       );
       parser.addOption(
         'daemon-ping-timeout',
@@ -285,7 +265,7 @@ void main(List<String> args) async {
       int remotePort = int.parse(parsedArgs['remote-port']);
       String remoteHost = parsedArgs['remote-host'];
       String device = parsedArgs['device'];
-      String rootDomain = _getRootDomain(parsedArgs);
+      String rootDomain = parsedArgs['root-server'] ?? 'root.atsign.org';
       perSessionStorage = parsedArgs['per-session-storage'];
       int localPort = int.parse(parsedArgs['local-port']);
       bool inline = !parsedArgs['exit-when-connected'];
