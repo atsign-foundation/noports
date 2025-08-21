@@ -47,12 +47,6 @@ atDirectory domain
 
 (Defaults to "root.atsign.org")
 
-#### --root-domain
-
-atDirectory domain (deprecated, use --root-server instead)
-
-(Defaults to "root.atsign.org")
-
 #### --device-group
 
 The name of this device's group. When delegated authorization is being used then the group name is sent to the authorizer service as well as the device name, this daemon's atSign, and the client atSign which is requesting a connection
@@ -94,4 +88,3 @@ Directory for local storage.
 Comma separated-list of host:port to which the daemon will permit a connection from an authorized client. Hosts may be dns names or ip addresses.
 
 (Defaults to "localhost:22,localhost:3389")
-
